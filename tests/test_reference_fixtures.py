@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 
 from metafopy import MetaData, datasets
+
 from reference_data import case_names, load_case
 
 CASES = case_names()

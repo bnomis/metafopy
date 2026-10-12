@@ -17,4 +17,5 @@ def case_names() -> list[str]:
 @cache
 def load_case(name: str) -> dict[str, Any]:
     with (REFERENCE_DIR / f"{name}.json").open() as fh:
-        return json.load(fh)
+        data: dict[str, Any] = json.load(fh)
+    return data
