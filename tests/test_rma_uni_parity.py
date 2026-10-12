@@ -34,9 +34,7 @@ def _arr(value: Any) -> np.ndarray:
 
 
 def _close(actual: Any, expected: Any, what: str, rtol: float = RTOL) -> None:
-    np.testing.assert_allclose(
-        _arr(actual), _arr(expected), rtol=rtol, atol=ATOL, equal_nan=True, err_msg=what
-    )
+    np.testing.assert_allclose(_arr(actual), _arr(expected), rtol=rtol, atol=ATOL, equal_nan=True, err_msg=what)
 
 
 FITS = _fits()

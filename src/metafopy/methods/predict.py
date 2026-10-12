@@ -96,9 +96,7 @@ def _predict_rma_uni(
             col = 1.0 if intercept is None or intercept else 0.0
             arr = np.column_stack([np.full(arr.shape[0], col), arr])
         if arr.shape[1] != p:
-            raise ValueError(
-                f'dimensions of newmods ({arr.shape[1]} columns) do not match the model ({p})'
-            )
+            raise ValueError(f'dimensions of newmods ({arr.shape[1]} columns) do not match the model ({p})')
         X_new = arr
 
     alpha = x.level if level is None else level_to_alpha(level)
@@ -122,13 +120,9 @@ def _predict_rma_uni(
         pi_ub = np.full_like(pred, np.nan)
 
     if transf is not None:
-        pred, ci_lb, ci_ub, pi_lb, pi_ub = (
-            np.asarray(transf(a), dtype=np.float64) for a in (pred, ci_lb, ci_ub, pi_lb, pi_ub)
-        )
+        pred, ci_lb, ci_ub, pi_lb, pi_ub = (np.asarray(transf(a), dtype=np.float64) for a in (pred, ci_lb, ci_ub, pi_lb, pi_ub))
         se = np.full_like(pred, np.nan)
         ci_lb, ci_ub = np.minimum(ci_lb, ci_ub), np.maximum(ci_lb, ci_ub)
         pi_lb, pi_ub = np.minimum(pi_lb, pi_ub), np.maximum(pi_lb, pi_ub)
 
-    return PredictResult(
-        pred=pred, se=se, ci_lb=ci_lb, ci_ub=ci_ub, pi_lb=pi_lb, pi_ub=pi_ub, slab=slab
-    )
+    return PredictResult(pred=pred, se=se, ci_lb=ci_lb, ci_ub=ci_ub, pi_lb=pi_lb, pi_ub=pi_ub, slab=slab)

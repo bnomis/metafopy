@@ -96,9 +96,7 @@ def _confint_rma_uni(
 
         if type == 'qp':
             if not x.allvipos:
-                raise ValueError(
-                    'cannot compute CI for tau^2 when there are non-positive sampling variances'
-                )
+                raise ValueError('cannot compute CI for tau^2 when there are non-positive sampling variances')
             y, vi, X = x.yi, x.vi, x.X
             crit_u = float(stats.chi2.isf(alpha / 2, k - p))
             crit_l = float(stats.chi2.ppf(alpha / 2, k - p))

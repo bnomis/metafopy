@@ -14,9 +14,7 @@ import pytest
 from metafopy import LRTResult, anova, confint, datasets, predict, rma
 from metafopy.models.rma_uni import RMAResult
 
-REF: dict[str, Any] = json.loads(
-    (Path(__file__).parent / 'reference' / 'extras' / 'rma_uni.json').read_text()
-)
+REF: dict[str, Any] = json.loads((Path(__file__).parent / 'reference' / 'extras' / 'rma_uni.json').read_text())
 RTOL = 1e-7
 
 

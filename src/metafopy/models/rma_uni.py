@@ -376,17 +376,13 @@ def fit_rma_uni(
     if not (int_only and k == 1):
         need = p if (methods[0] in FIXED_EFFECTS or tau2_fix) else p + 1
         if need > k:
-            raise ValueError(
-                'Number of parameters to be estimated is larger than the number of observations.'
-            )
+            raise ValueError('Number of parameters to be estimated is larger than the number of observations.')
 
     btt_idx = set_btt(btt, p, int_incl, names)
     m = len(btt_idx)
 
     con = _control(control)
-    if control is None or 'tau2_max' not in {
-        key.replace('.', '_') for key in (control if isinstance(control, Mapping) else {})
-    }:
+    if control is None or 'tau2_max' not in {key.replace('.', '_') for key in (control if isinstance(control, Mapping) else {})}:
         con = replace(con, tau2_max=max(con.tau2_max, 10 * _mad(yi) ** 2))
 
     if not is_positive_definite(X.T @ X, tol=con.evtol):
@@ -695,11 +691,7 @@ def _format(res: RMAResult, digits: int) -> str:
     out: list[str] = ['']
     fe = res.method in FIXED_EFFECTS
     if fe:
-        kind = (
-            'Equal-Effects'
-            if res.method == 'EE'
-            else ('Fixed-Effects' if res.method == 'FE' else 'Common-Effects')
-        )
+        kind = 'Equal-Effects' if res.method == 'EE' else ('Fixed-Effects' if res.method == 'FE' else 'Common-Effects')
         out.append(f'{kind} Model (k = {res.k})')
     else:
         kind = 'Random-Effects' if res.int_only else 'Mixed-Effects'
@@ -743,24 +735,16 @@ def _format(res: RMAResult, digits: int) -> str:
     if not math.isnan(res.QE):
         name, label = ('Q', 'Heterogeneity') if res.int_only else ('QE', 'Residual Heterogeneity')
         out.append(f'Test for {label}:')
-        out.append(
-            f'{name}(df = {res.k - res.p}) = {fmt_num(res.QE, digits)}, '
-            f'p-val {_pfmt(res.QEp, digits)}'
-        )
+        out.append(f'{name}(df = {res.k - res.p}) = {fmt_num(res.QE, digits)}, p-val {_pfmt(res.QEp, digits)}')
         out.append('')
 
     if not res.int_only:
         coefs = coef_span(res.btt)
         out.append(f'Test of Moderators (coefficient{"s" if res.m > 1 else ""} {coefs}):')
         if res.ddf is not None:
-            out.append(
-                f'F(df1 = {res.m}, df2 = {res.ddf}) = {fmt_num(res.QM, digits)}, '
-                f'p-val {_pfmt(res.QMp, digits)}'
-            )
+            out.append(f'F(df1 = {res.m}, df2 = {res.ddf}) = {fmt_num(res.QM, digits)}, p-val {_pfmt(res.QMp, digits)}')
         else:
-            out.append(
-                f'QM(df = {res.m}) = {fmt_num(res.QM, digits)}, p-val {_pfmt(res.QMp, digits)}'
-            )
+            out.append(f'QM(df = {res.m}) = {fmt_num(res.QM, digits)}, p-val {_pfmt(res.QMp, digits)}')
         out.append('')
 
     out.append('Model Results:')

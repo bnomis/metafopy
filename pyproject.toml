@@ -51,7 +51,7 @@ dev = [
 packages = ["src/metafopy"]
 
 [tool.ruff]
-line-length = 100
+line-length = 160
 target-version = "py314"
 src = ["src", "tests"]
 

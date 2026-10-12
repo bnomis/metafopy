@@ -47,9 +47,7 @@ def r_column_name(name: str) -> str:
     return ':'.join(parts)
 
 
-def design_matrix(
-    formula: str, data: pd.DataFrame
-) -> tuple[NDArray[np.float64], tuple[str, ...], NDArray[np.bool_]]:
+def design_matrix(formula: str, data: pd.DataFrame) -> tuple[NDArray[np.float64], tuple[str, ...], NDArray[np.bool_]]:
     """Build a model matrix from a one-sided formula.
 
     Returns the matrix (one row per row of ``data``), R-style column names, and

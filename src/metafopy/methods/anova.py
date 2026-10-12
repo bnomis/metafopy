@@ -38,11 +38,7 @@ class WaldResult:
 
     def __str__(self) -> str:
         m, ddf = self.QMdf
-        head = (
-            f'Test of Moderators (coefficient{"s" if m > 1 else ""} {coef_span(self.btt)}):'
-            if self.btt is not None
-            else 'Omnibus Test of Hypotheses:'
-        )
+        head = f'Test of Moderators (coefficient{"s" if m > 1 else ""} {coef_span(self.btt)}):' if self.btt is not None else 'Omnibus Test of Hypotheses:'
         p = fmt_pval(self.QMp)
         p = f'< {p[1:]}' if p.startswith('<') else f'= {p}'
         if ddf is None:
@@ -188,8 +184,7 @@ def _lrt(a: RMAResult, b: RMAResult) -> LRTResult:
     same_X = full.X.shape == red.X.shape and np.allclose(full.X, red.X)
     if full.method == 'REML' and not same_X:
         warnings.warn(
-            'REML comparisons not meaningful for models with different fixed effects '
-            "(refit both models with method='ML').",
+            "REML comparisons not meaningful for models with different fixed effects (refit both models with method='ML').",
             stacklevel=3,
         )
     use_reml = full.method == 'REML'

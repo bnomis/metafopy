@@ -47,9 +47,7 @@ def test_formula_without_intercept() -> None:
 
 
 def test_na_omit_then_subset_bookkeeping() -> None:
-    md = MetaData.from_inputs(
-        [0.1, np.nan, 0.3, 0.4], [0.1, 0.1, 0.1, 0.1], subset=[True, True, True, False]
-    )
+    md = MetaData.from_inputs([0.1, np.nan, 0.3, 0.4], [0.1, 0.1, 0.1, 0.1], subset=[True, True, True, False])
     assert md.k == 2
     assert md.k_all == 4
     np.testing.assert_array_equal(md.keep, [True, False, True, False])
