@@ -10,6 +10,7 @@ from importlib.metadata import version
 from metafopy import datasets
 from metafopy._data import MetaData
 from metafopy._formula import RandomTerm, parse_random
+from metafopy.effects import cmicalc, escalc
 from metafopy.methods.anova import LRTResult, WaldResult, anova
 from metafopy.methods.confint import ConfintResult, confint
 from metafopy.methods.predict import PredictResult, predict
@@ -29,8 +30,10 @@ __all__ = [
     'WaldResult',
     '__version__',
     'anova',
+    'cmicalc',
     'confint',
     'datasets',
+    'escalc',
     'parse_random',
     'predict',
     'rma',
