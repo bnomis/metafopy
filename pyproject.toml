@@ -61,6 +61,7 @@ quote-style = "single"
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "N", "SIM", "RUF", "NPY", "PT", "Q"]
 ignore = [
+    "SIM108",  # nested ternaries read worse than if/else blocks at 160 columns
     "N802",  # metafor-style names such as rma_uni / QE are intentional
     "N803",
     "N806",
