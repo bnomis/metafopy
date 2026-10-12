@@ -27,25 +27,25 @@ from metafopy.core.zeroin import uniroot
 FloatArray = NDArray[np.float64]
 
 ESTIMATORS = (
-    "EE",
-    "FE",
-    "CE",
-    "DL",
-    "DLIT",
-    "HE",
-    "HS",
-    "HSk",
-    "SJ",
-    "SJIT",
-    "ML",
-    "REML",
-    "EB",
-    "PM",
-    "MP",
-    "PMM",
-    "GENQ",
+    'EE',
+    'FE',
+    'CE',
+    'DL',
+    'DLIT',
+    'HE',
+    'HS',
+    'HSk',
+    'SJ',
+    'SJIT',
+    'ML',
+    'REML',
+    'EB',
+    'PM',
+    'MP',
+    'PMM',
+    'GENQ',
 )
-FIXED_EFFECTS = ("EE", "FE", "CE")
+FIXED_EFFECTS = ('EE', 'FE', 'CE')
 
 
 class EstimationError(RuntimeError):
@@ -83,7 +83,7 @@ def _P(X: FloatArray, w: FloatArray) -> FloatArray:
 
 def _qe(tau2: float, Y: FloatArray, vi: FloatArray, X: FloatArray) -> float:
     if np.any(tau2 + vi < 0):
-        raise EstimationError("Some marginal variances are negative.")
+        raise EstimationError('Some marginal variances are negative.')
     P = _P(X, 1.0 / (vi + tau2))
     return float(Y @ P @ Y)
 
@@ -117,30 +117,30 @@ def estimate_tau2(
     trP = trPV = math.nan
     wi = np.empty(0)
 
-    if method in ("HS", "HSk"):
+    if method in ('HS', 'HSk'):
         if not allvipos:
             raise EstimationError(
-                f"{method} estimator cannot be used when there are non-positive sampling variances."
+                f'{method} estimator cannot be used when there are non-positive sampling variances.'
             )
         wi = 1.0 / vi
         P = _P(X, wi)
         RSS = float(ymc @ P @ ymc)
-        if method == "HS":
+        if method == 'HS':
             tau2 = pick((RSS - k) / wi.sum())
         else:
             tau2 = pick((k / (k - p) * RSS - k) / wi.sum())
 
-    if method in ("HE", "ML", "REML", "EB"):
+    if method in ('HE', 'ML', 'REML', 'EB'):
         P = np.eye(k) - X @ invcalc(X, np.ones(k)) @ X.T
         RSS = float(ymc @ P @ ymc)
         PV = P * vi[None, :]
         trPV = float(np.trace(PV))
         tau2 = pick((RSS - trPV) / (k - p))
 
-    if method == "DL":
+    if method == 'DL':
         if not allvipos:
             raise EstimationError(
-                "DL estimator cannot be used when there are non-positive sampling variances."
+                'DL estimator cannot be used when there are non-positive sampling variances.'
             )
         wi = 1.0 / vi
         P = _P(X, wi)
@@ -148,14 +148,14 @@ def estimate_tau2(
         trP = float(np.trace(P))
         tau2 = pick((RSS - (k - p)) / trP)
 
-    if method == "DLIT":
+    if method == 'DLIT':
         tau2 = con.tau2_init if con.tau2_init is not None else 0.0
         change = con.threshold + 1
         while change > con.threshold:
             iterations += 1
             old = tau2
             if np.any(tau2 + vi < 0):
-                raise EstimationError("Some marginal variances are negative.")
+                raise EstimationError('Some marginal variances are negative.')
             wi = 1.0 / (vi + tau2)
             P = _P(X, wi)
             trP = float(np.trace(P))
@@ -165,9 +165,9 @@ def estimate_tau2(
             tau2 = max(tau2, con.tau2_min)
             change = abs(old - tau2)
             if iterations > con.maxiter:
-                raise EstimationError("Iterative DL estimator did not converge.")
+                raise EstimationError('Iterative DL estimator did not converge.')
 
-    if method == "GENQ":
+    if method == 'GENQ':
         if weights is None:
             raise EstimationError("Must specify the 'weights' argument when method='GENQ'.")
         P = _P(X, weights)
@@ -177,7 +177,7 @@ def estimate_tau2(
         RSS = float(ymc @ P @ ymc)
         tau2 = pick((RSS - trPV) / trP)
 
-    if method == "SJ":
+    if method == 'SJ':
         tau2_0 = con.tau2_init if con.tau2_init is not None else float(np.mean(ymc**2))
         wi = 1.0 / (vi + tau2_0)
         P = _P(X, wi)
@@ -185,7 +185,7 @@ def estimate_tau2(
         PV = P * vi[None, :]
         tau2 = pick(tau2_0 * RSS / (k - p))
 
-    if method == "SJIT":
+    if method == 'SJIT':
         tau2 = con.tau2_init if con.tau2_init is not None else float(np.mean(ymc**2))
         change = con.threshold + 1
         while change > con.threshold:
@@ -197,14 +197,14 @@ def estimate_tau2(
             tau2 = pick(tau2 * RSS / (k - p))
             change = abs(old - tau2)
             if iterations > con.maxiter:
-                raise EstimationError("Iterative SJ estimator did not converge.")
+                raise EstimationError('Iterative SJ estimator did not converge.')
 
-    if method in ("PM", "MP", "PMM"):
+    if method in ('PM', 'MP', 'PMM'):
         if not allvipos:
             raise EstimationError(
-                f"{method} estimator cannot be used when there are non-positive sampling variances."
+                f'{method} estimator cannot be used when there are non-positive sampling variances.'
             )
-        target = float(stats.chi2.ppf(0.5, k - p)) if method == "PMM" else float(k - p)
+        target = float(stats.chi2.ppf(0.5, k - p)) if method == 'PMM' else float(k - p)
         if fix:
             tau2 = float(tau2_fixed)  # type: ignore[arg-type]
         elif _qe(con.tau2_min, ymc, vi, X) < target:
@@ -225,29 +225,29 @@ def estimate_tau2(
                 )
             except ValueError as exc:
                 raise EstimationError(
-                    "Error in iterative search for tau^2 using uniroot()."
+                    'Error in iterative search for tau^2 using uniroot().'
                 ) from exc
             tau2 = res.root
             iterations = res.iterations
 
-    if method in ("ML", "REML", "EB"):
+    if method in ('ML', 'REML', 'EB'):
         tau2 = con.tau2_init if con.tau2_init is not None else max(0.0, tau2, con.tau2_min)
         change = con.threshold + 1
         while change > con.threshold:
             iterations += 1
             old = tau2
             if np.any(tau2 + vi < 0):
-                raise EstimationError("Some marginal variances are negative.")
+                raise EstimationError('Some marginal variances are negative.')
             wi = 1.0 / (vi + tau2)
             if np.any(np.isinf(wi)):
                 raise EstimationError(
-                    "Division by zero when computing the inverse variance weights."
+                    'Division by zero when computing the inverse variance weights.'
                 )
             P = _P(X, wi)
-            if method == "ML":
+            if method == 'ML':
                 PP = P @ P
                 adj = (float(ymc @ PP @ ymc) - float(wi.sum())) / float(np.sum(wi**2))
-            elif method == "REML":
+            elif method == 'REML':
                 PP = P @ P
                 adj = (float(ymc @ PP @ ymc) - float(np.trace(P))) / float(np.trace(PP))
             else:
@@ -261,10 +261,10 @@ def estimate_tau2(
             change = abs(old - tau2)
             if iterations > con.maxiter:
                 raise EstimationError(
-                    "Fisher scoring algorithm did not converge. See the rma_uni docs for remedies."
+                    'Fisher scoring algorithm did not converge. See the rma_uni docs for remedies.'
                 )
 
-        if method in ("ML", "REML") and con.ll0check and allvipos and not fix:
+        if method in ('ML', 'REML') and con.ll0check and allvipos and not fix:
             ll0 = _ll(method, ymc, vi, X, 0.0)
             ll = _ll(method, ymc, vi, X, tau2)
             if ll0 - ll > con.tol and tau2 > con.threshold:
@@ -273,37 +273,37 @@ def estimate_tau2(
 
         wi = 1.0 / (vi + tau2)
         if np.any(np.isinf(wi)):
-            raise EstimationError("Division by zero when computing the inverse variance weights.")
+            raise EstimationError('Division by zero when computing the inverse variance weights.')
         P = _P(X, wi)
 
     tau2 = max(con.tau2_min, tau2)
     if np.any(tau2 + vi < 0):
-        raise EstimationError("Some marginal variances are negative.")
+        raise EstimationError('Some marginal variances are negative.')
 
     t = max(tau2, 0.0)
     se = math.nan
-    if method in ("HS", "HSk"):
+    if method in ('HS', 'HSk'):
         assert P is not None
         se = math.sqrt(
             1 / wi.sum() ** 2 * (2 * (k - p) + 4 * t * np.trace(P) + 2 * t**2 * np.sum(P * P))
         )
-        if method == "HSk":
+        if method == 'HSk':
             se *= k / (k - p)
-    elif method == "HE":
+    elif method == 'HE':
         assert PV is not None
         se = math.sqrt(
             1 / (k - p) ** 2 * (2 * np.sum(PV * PV.T) + 4 * t * trPV + 2 * t**2 * (k - p))
         )
-    elif method == "DL":
+    elif method == 'DL':
         assert P is not None
         se = math.sqrt(1 / trP**2 * (2 * (k - p) + 4 * t * trP + 2 * t**2 * np.sum(P * P)))
-    elif method == "GENQ":
+    elif method == 'GENQ':
         assert P is not None
         assert PV is not None
         se = math.sqrt(
             1 / trP**2 * (2 * np.sum(PV * PV.T) + 4 * t * np.sum(PV * P) + 2 * t**2 * np.sum(P * P))
         )
-    elif method == "SJ":
+    elif method == 'SJ':
         assert P is not None
         assert PV is not None
         se = math.sqrt(
@@ -311,12 +311,12 @@ def estimate_tau2(
             / (k - p) ** 2
             * (2 * np.sum(PV * PV.T) + 4 * t * np.sum(PV * P) + 2 * t**2 * np.sum(P * P))
         )
-    elif method == "ML":
+    elif method == 'ML':
         se = math.sqrt(2 / np.sum(wi**2))
-    elif method == "REML":
+    elif method == 'REML':
         assert P is not None
         se = math.sqrt(2 / np.sum(P * P))
-    elif method in ("EB", "PM", "MP", "PMM", "DLIT", "SJIT"):
+    elif method in ('EB', 'PM', 'MP', 'PMM', 'DLIT', 'SJIT'):
         wi = 1.0 / (vi + tau2)
         se = math.sqrt(2 * k**2 / (k - p) / wi.sum() ** 2)
 
@@ -329,7 +329,7 @@ def _ll(method: str, y: FloatArray, vi: FloatArray, X: FloatArray, tau2: float) 
     wi = 1.0 / (vi + tau2)
     beta = invcalc(X, wi) @ (X.T @ (wi * y))
     RSS = float(np.sum(wi * (y - X @ beta) ** 2))
-    if method == "ML":
+    if method == 'ML':
         return -0.5 * k * math.log(2 * math.pi) - 0.5 * float(np.sum(np.log(vi + tau2))) - 0.5 * RSS
     return (
         -0.5 * (k - p) * math.log(2 * math.pi)

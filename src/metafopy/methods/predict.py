@@ -15,7 +15,7 @@ from scipy import stats
 from metafopy.models._tau2 import FIXED_EFFECTS
 from metafopy.models.rma_uni import RMAResult, level_to_alpha
 
-__all__ = ["PredictResult", "predict"]
+__all__ = ['PredictResult', 'predict']
 
 FloatArray = NDArray[np.float64]
 
@@ -38,19 +38,19 @@ class PredictResult:
     def to_frame(self) -> pd.DataFrame:
         return pd.DataFrame(
             {
-                "pred": self.pred,
-                "se": self.se,
-                "ci.lb": self.ci_lb,
-                "ci.ub": self.ci_ub,
-                "pi.lb": self.pi_lb,
-                "pi.ub": self.pi_ub,
+                'pred': self.pred,
+                'se': self.se,
+                'ci.lb': self.ci_lb,
+                'ci.ub': self.ci_ub,
+                'pi.lb': self.pi_lb,
+                'pi.ub': self.pi_ub,
             },
             index=list(self.slab) if self.slab is not None else None,
         )
 
     def __str__(self) -> str:
         frame = self.to_frame()
-        for col in ("se", "pi.lb", "pi.ub"):
+        for col in ('se', 'pi.lb', 'pi.ub'):
             if frame[col].isna().all():
                 frame = frame.drop(columns=col)
         return frame.round(4).to_string()
@@ -59,7 +59,7 @@ class PredictResult:
 @singledispatch
 def predict(model: Any, *args: Any, **kwargs: Any) -> PredictResult:
     """Predicted values for a fitted model; see :func:`_predict_rma_uni`."""
-    raise TypeError(f"predict() not implemented for {type(model).__name__}")
+    raise TypeError(f'predict() not implemented for {type(model).__name__}')
 
 
 @predict.register
@@ -97,14 +97,14 @@ def _predict_rma_uni(
             arr = np.column_stack([np.full(arr.shape[0], col), arr])
         if arr.shape[1] != p:
             raise ValueError(
-                f"dimensions of newmods ({arr.shape[1]} columns) do not match the model ({p})"
+                f'dimensions of newmods ({arr.shape[1]} columns) do not match the model ({p})'
             )
         X_new = arr
 
     alpha = x.level if level is None else level_to_alpha(level)
 
     pred = X_new @ x.beta
-    vpred = np.einsum("ij,jk,ik->i", X_new, x.vb, X_new)
+    vpred = np.einsum('ij,jk,ik->i', X_new, x.vb, X_new)
     vpred = np.where(vpred < 0, np.nan, vpred)
     se = np.sqrt(vpred)
     if x.ddf is not None:

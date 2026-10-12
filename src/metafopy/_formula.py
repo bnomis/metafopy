@@ -19,10 +19,10 @@ import pandas as pd
 from formulaic import model_matrix
 from numpy.typing import NDArray
 
-__all__ = ["RandomTerm", "design_matrix", "parse_random", "r_column_name"]
+__all__ = ['RandomTerm', 'design_matrix', 'parse_random', 'r_column_name']
 
-_LEVEL = re.compile(r"\[(?:T\.)?(.*?)\]")
-_CWRAP = re.compile(r"^C\((.*?)(?:,.*)?\)$")
+_LEVEL = re.compile(r'\[(?:T\.)?(.*?)\]')
+_CWRAP = re.compile(r'^C\((.*?)(?:,.*)?\)$')
 
 
 def r_column_name(name: str) -> str:
@@ -32,19 +32,19 @@ def r_column_name(name: str) -> str:
     such as ``alloc[T.random]`` or ``C(alloc)[T.random]`` become ``allocrandom``.
     Interaction terms are translated part by part.
     """
-    if name == "Intercept":
-        return "intrcpt"
+    if name == 'Intercept':
+        return 'intrcpt'
     parts: list[str] = []
-    for part in name.split(":"):
+    for part in name.split(':'):
         level = _LEVEL.search(part)
         if level is not None:
             var = part[: level.start()]
             m = _CWRAP.match(var)
             if m is not None:
                 var = m.group(1)
-            part = f"{var}{level.group(1)}"
+            part = f'{var}{level.group(1)}'
         parts.append(part)
-    return ":".join(parts)
+    return ':'.join(parts)
 
 
 def design_matrix(
@@ -58,11 +58,11 @@ def design_matrix(
     metafor's ``na.action`` rules jointly with ``yi`` and ``vi``.
     """
     rhs = formula.strip()
-    if "~" in rhs:
-        lhs, _, rhs = rhs.partition("~")
+    if '~' in rhs:
+        lhs, _, rhs = rhs.partition('~')
         if lhs.strip():
-            raise ValueError(f"expected a one-sided formula, got {formula!r}")
-    mm = model_matrix(rhs, data, na_action="ignore")
+            raise ValueError(f'expected a one-sided formula, got {formula!r}')
+    mm = model_matrix(rhs, data, na_action='ignore')
     X = np.asarray(mm.to_numpy(dtype=float), dtype=np.float64)
     if X.ndim == 1:
         X = X[:, None]
@@ -90,26 +90,26 @@ class RandomTerm:
     nested: bool
 
     def __str__(self) -> str:
-        lhs = "1" if self.inner is None else self.inner
-        sep = "/" if self.nested else ""
-        return f"~ {lhs} | {sep.join(self.outer)}"
+        lhs = '1' if self.inner is None else self.inner
+        sep = '/' if self.nested else ''
+        return f'~ {lhs} | {sep.join(self.outer)}'
 
 
 def parse_random(formula: str) -> RandomTerm:
     """Parse a single ``rma.mv`` random-effects formula."""
     text = formula.strip()
-    if not text.startswith("~"):
+    if not text.startswith('~'):
         raise ValueError(f"random effects formula must start with '~': {formula!r}")
     body = text[1:]
-    if body.count("|") != 1:
+    if body.count('|') != 1:
         raise ValueError(f"random effects formula needs exactly one '|': {formula!r}")
-    lhs, rhs = (s.strip() for s in body.split("|"))
+    lhs, rhs = (s.strip() for s in body.split('|'))
     if not lhs or not rhs:
-        raise ValueError(f"malformed random effects formula: {formula!r}")
-    outer = tuple(s.strip() for s in rhs.split("/"))
+        raise ValueError(f'malformed random effects formula: {formula!r}')
+    outer = tuple(s.strip() for s in rhs.split('/'))
     if any(not s for s in outer):
-        raise ValueError(f"malformed nesting in random effects formula: {formula!r}")
-    inner = None if lhs == "1" else lhs
+        raise ValueError(f'malformed nesting in random effects formula: {formula!r}')
+    inner = None if lhs == '1' else lhs
     if inner is not None and len(outer) > 1:
         raise ValueError(f"'~ inner | outer' terms cannot also be nested: {formula!r}")
     return RandomTerm(inner=inner, outer=outer, nested=len(outer) > 1)

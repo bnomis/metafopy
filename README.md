@@ -17,8 +17,8 @@ reference fixtures. `escalc` arrives next.
 import numpy as np
 from metafopy import datasets, rma, confint, predict
 
-dat = datasets.load("dat.hackshaw1998")      # already has yi / vi columns
-res = rma(data=dat, method="REML")
+dat = datasets.load('dat.hackshaw1998')  # already has yi / vi columns
+res = rma(data=dat, method='REML')
 print(res)
 print(confint(res))
 print(predict(res, transf=np.exp))

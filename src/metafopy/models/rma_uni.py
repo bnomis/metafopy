@@ -40,10 +40,10 @@ from metafopy.models._tau2 import (
     estimate_tau2,
 )
 
-__all__ = ["Control", "FitStats", "RMAResult", "rma", "rma_uni"]
+__all__ = ['Control', 'FitStats', 'RMAResult', 'rma', 'rma_uni']
 
 type FloatArray = NDArray[np.float64]
-type Test = Literal["z", "t", "knha", "adhoc"]
+type Test = Literal['z', 't', 'knha', 'adhoc']
 type Btt = int | Sequence[int] | str | None
 
 _DBL_EPS = np.finfo(float).eps
@@ -120,7 +120,7 @@ class RMAResult:
 
     def coef(self) -> pd.Series:
         """Estimated coefficients, indexed by name."""
-        return pd.Series(self.beta, index=list(self.coef_names), name="estimate")
+        return pd.Series(self.beta, index=list(self.coef_names), name='estimate')
 
     def vcov(self) -> pd.DataFrame:
         """Variance-covariance matrix of the coefficients."""
@@ -153,7 +153,7 @@ class RMAResult:
 
     def _stats(self, REML: bool | None) -> FitStats:
         if REML is None:
-            REML = self.method == "REML"
+            REML = self.method == 'REML'
         return self.fit_stats_reml if REML else self.fit_stats_ml
 
     def fitstats(self, REML: bool | None = None) -> pd.Series:
@@ -161,8 +161,8 @@ class RMAResult:
         st = self._stats(REML)
         return pd.Series(
             st.as_tuple(),
-            index=["logLik", "deviance", "AIC", "BIC", "AICc"],
-            name="REML" if (REML if REML is not None else self.method == "REML") else "ML",
+            index=['logLik', 'deviance', 'AIC', 'BIC', 'AICc'],
+            name='REML' if (REML if REML is not None else self.method == 'REML') else 'ML',
         )
 
     def weights_(self) -> FloatArray:
@@ -211,7 +211,7 @@ class RMAResult:
         return _format(self, 4)
 
     def __repr__(self) -> str:
-        return f"<RMAResult {self.method} k={self.k} p={self.p}>"
+        return f'<RMAResult {self.method} k={self.k} p={self.p}>'
 
 
 def _control(control: Control | Mapping[str, Any] | None) -> Control:
@@ -222,9 +222,9 @@ def _control(control: Control | Mapping[str, Any] | None) -> Control:
     names = {f.name for f in fields(Control)}
     kwargs: dict[str, Any] = {}
     for key, value in control.items():
-        name = key.replace(".", "_")
+        name = key.replace('.', '_')
         if name not in names:
-            raise TypeError(f"unknown control argument {key!r}")
+            raise TypeError(f'unknown control argument {key!r}')
         kwargs[name] = value
     return Control(**kwargs)
 
@@ -268,14 +268,14 @@ def rma_uni(
     slab: Column | Sequence[str] | None = None,
     subset: ArrayLike | str | None = None,
     intercept: bool = True,
-    method: str | Sequence[str] = "REML",
+    method: str | Sequence[str] = 'REML',
     weighted: bool = True,
-    test: Test = "z",
+    test: Test = 'z',
     level: float = 95,
     btt: Btt = None,
     tau2: float | None = None,
     control: Control | Mapping[str, Any] | None = None,
-    na_action: NAAction = "omit",
+    na_action: NAAction = 'omit',
 ) -> RMAResult:
     """Fit an equal-, fixed-, random- or mixed-effects meta-analytic model.
 
@@ -320,9 +320,9 @@ rma = rma_uni
 def fit_rma_uni(
     md: MetaData,
     *,
-    method: str | Sequence[str] = "REML",
+    method: str | Sequence[str] = 'REML',
     weighted: bool = True,
-    test: Test = "z",
+    test: Test = 'z',
     level: float = 95,
     btt: Btt = None,
     tau2: float | None = None,
@@ -333,9 +333,9 @@ def fit_rma_uni(
     methods = [method] if isinstance(method, str) else list(method)
     for m_ in methods:
         if m_ not in ESTIMATORS:
-            raise ValueError(f"unknown tau^2 estimator {m_!r}")
-    if test not in ("z", "t", "knha", "adhoc"):
-        raise ValueError(f"unknown test {test!r}")
+            raise ValueError(f'unknown tau^2 estimator {m_!r}')
+    if test not in ('z', 't', 'knha', 'adhoc'):
+        raise ValueError(f'unknown test {test!r}')
 
     yi = md.yi.copy()
     vi = md.vi.copy()
@@ -344,23 +344,23 @@ def fit_rma_uni(
     k = md.k
     user_w = md.weights
     if k < 1:
-        raise ValueError("processing terminated since k = 0")
+        raise ValueError('processing terminated since k = 0')
 
     if np.any(vi <= 0):
         allvipos = False
         if np.any(vi < 0):
-            warnings.warn("Negative sampling variances constrained to 0.", stacklevel=2)
+            warnings.warn('Negative sampling variances constrained to 0.', stacklevel=2)
             vi[vi < 0] = 0.0
     else:
         allvipos = True
 
-    if k == 1 and test != "z":
+    if k == 1 and test != 'z':
         warnings.warn('Setting argument test="z" since k=1.', stacklevel=2)
-        test = "z"
+        test = 'z'
 
     drop = drop_redundant(X)
     if drop.any():
-        warnings.warn("Redundant predictors dropped from the model.", stacklevel=2)
+        warnings.warn('Redundant predictors dropped from the model.', stacklevel=2)
         X = X[:, ~drop]
         names = [n for n, d in zip(names, drop, strict=True) if not d]
 
@@ -368,7 +368,7 @@ def fit_rma_uni(
     int_incl = bool(is_int.any())
     if int_incl:
         X = np.column_stack([np.ones(k), X[:, ~is_int]])
-        names = ["intrcpt", *[n for n, i in zip(names, is_int, strict=True) if not i]]
+        names = ['intrcpt', *[n for n, i in zip(names, is_int, strict=True) if not i]]
     p = X.shape[1]
     int_only = p == 1 and is_intercept(X[:, 0])
 
@@ -377,20 +377,20 @@ def fit_rma_uni(
         need = p if (methods[0] in FIXED_EFFECTS or tau2_fix) else p + 1
         if need > k:
             raise ValueError(
-                "Number of parameters to be estimated is larger than the number of observations."
+                'Number of parameters to be estimated is larger than the number of observations.'
             )
 
     btt_idx = set_btt(btt, p, int_incl, names)
     m = len(btt_idx)
 
     con = _control(control)
-    if control is None or "tau2_max" not in {
-        key.replace(".", "_") for key in (control if isinstance(control, Mapping) else {})
+    if control is None or 'tau2_max' not in {
+        key.replace('.', '_') for key in (control if isinstance(control, Mapping) else {})
     }:
         con = replace(con, tau2_max=max(con.tau2_max, 10 * _mad(yi) ** 2))
 
     if not is_positive_definite(X.T @ X, tol=con.evtol):
-        raise ValueError("Model matrix not of full rank. Cannot fit model.")
+        raise ValueError('Model matrix not of full rank. Cannot fit model.')
 
     # -- heterogeneity ---------------------------------------------------
     used = methods[0]
@@ -430,7 +430,7 @@ def fit_rma_uni(
     wi = 1.0 / (vi + tau2_hat)
     beta, vb, RSS_f, s2w = _fixed_effects(yi, vi, X, tau2_hat, user_w, weighted, test)
 
-    tdist = test in ("knha", "adhoc", "t")
+    tdist = test in ('knha', 'adhoc', 't')
     ddf = k - p if tdist else None
 
     sub = np.array(btt_idx)
@@ -594,11 +594,11 @@ def _fixed_effects(
     """
     k, p = X.shape
     wi = 1.0 / (vi + tau2)
-    knha = test in ("knha", "adhoc")
+    knha = test in ('knha', 'adhoc')
     s2w = 1.0
     if weighted:
         if np.any(np.isinf(wi)) and (user_w is None or knha):
-            raise ValueError("Division by zero when computing the inverse variance weights.")
+            raise ValueError('Division by zero when computing the inverse variance weights.')
         vb = invcalc(X, wi)
         beta = vb @ (X.T @ (wi * yi))
         RSS_knha = float(np.sum(wi * (yi - X @ beta) ** 2))
@@ -616,12 +616,12 @@ def _fixed_effects(
         RSS_knha = math.nan
         if knha:
             if np.any(np.isinf(wi)):
-                raise ValueError("Division by zero when computing the inverse variance weights.")
+                raise ValueError('Division by zero when computing the inverse variance weights.')
             b_k = invcalc(X, wi) @ (X.T @ (wi * yi))
             RSS_knha = float(np.sum(wi * (yi - X @ b_k) ** 2))
     if knha:
         s2w = 0.0 if RSS_knha <= _DBL_EPS else RSS_knha / (k - p)
-    if test == "adhoc":
+    if test == 'adhoc':
         s2w = max(s2w, 1.0)
     return beta, s2w * vb, RSS_f, s2w
 
@@ -651,10 +651,10 @@ def _pseudo_r2(
             return 0.0
         w = (wi if user_w is None else user_w) if weighted else np.ones(k)
         return max(0.0, 100 * _adj_r2(yi, X, w))
-    md0 = replace(md, yi=yi, X=np.ones((k, 1)), X_names=("intrcpt",), intercept=True)
+    md0 = replace(md, yi=yi, X=np.ones((k, 1)), X_names=('intrcpt',), intercept=True)
     try:
         with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
+            warnings.simplefilter('ignore')
             res0 = fit_rma_uni(
                 md0,
                 method=methods,
@@ -692,84 +692,84 @@ def _adj_r2(y: FloatArray, X: FloatArray, w: FloatArray) -> float:
 
 
 def _format(res: RMAResult, digits: int) -> str:
-    out: list[str] = [""]
+    out: list[str] = ['']
     fe = res.method in FIXED_EFFECTS
     if fe:
         kind = (
-            "Equal-Effects"
-            if res.method == "EE"
-            else ("Fixed-Effects" if res.method == "FE" else "Common-Effects")
+            'Equal-Effects'
+            if res.method == 'EE'
+            else ('Fixed-Effects' if res.method == 'FE' else 'Common-Effects')
         )
-        out.append(f"{kind} Model (k = {res.k})")
+        out.append(f'{kind} Model (k = {res.k})')
     else:
-        kind = "Random-Effects" if res.int_only else "Mixed-Effects"
-        out.append(f"{kind} Model (k = {res.k}; tau^2 estimator: {res.method})")
-    out.append("")
+        kind = 'Random-Effects' if res.int_only else 'Mixed-Effects'
+        out.append(f'{kind} Model (k = {res.k}; tau^2 estimator: {res.method})')
+    out.append('')
 
     if not fe:
-        het = "total" if res.int_only else "residual"
+        het = 'total' if res.int_only else 'residual'
         tau2_line = fmt_num(res.tau2, digits)
         if not math.isnan(res.se_tau2):
-            tau2_line += f" (SE = {fmt_num(res.se_tau2, digits)})"
+            tau2_line += f' (SE = {fmt_num(res.se_tau2, digits)})'
         rows = [
-            (f"tau^2 (estimated amount of {het} heterogeneity):", tau2_line),
-            ("tau (square root of estimated tau^2 value):", fmt_num(math.sqrt(res.tau2), digits)),
+            (f'tau^2 (estimated amount of {het} heterogeneity):', tau2_line),
+            ('tau (square root of estimated tau^2 value):', fmt_num(math.sqrt(res.tau2), digits)),
         ]
         if not math.isnan(res.I2):
             if res.int_only:
                 rows += [
-                    ("I^2 (total heterogeneity / total variability):", f"{res.I2:.2f}%"),
-                    ("H^2 (total variability / sampling variability):", f"{res.H2:.2f}"),
+                    ('I^2 (total heterogeneity / total variability):', f'{res.I2:.2f}%'),
+                    ('H^2 (total variability / sampling variability):', f'{res.H2:.2f}'),
                 ]
             else:
                 rows += [
-                    ("I^2 (residual heterogeneity / unaccounted variability):", f"{res.I2:.2f}%"),
-                    ("H^2 (unaccounted variability / sampling variability):", f"{res.H2:.2f}"),
+                    ('I^2 (residual heterogeneity / unaccounted variability):', f'{res.I2:.2f}%'),
+                    ('H^2 (unaccounted variability / sampling variability):', f'{res.H2:.2f}'),
                 ]
         if res.R2 is not None:
-            rows.append(("R^2 (amount of heterogeneity accounted for):", f"{res.R2:.2f}%"))
+            rows.append(('R^2 (amount of heterogeneity accounted for):', f'{res.R2:.2f}%'))
         width = max(len(r[0]) for r in rows)
-        out += [f"{label.ljust(width)} {value}" for label, value in rows]
-        out.append("")
+        out += [f'{label.ljust(width)} {value}' for label, value in rows]
+        out.append('')
     elif not math.isnan(res.I2):
         rows = [
-            ("I^2 (total heterogeneity / total variability):", f"{res.I2:.2f}%"),
-            ("H^2 (total variability / sampling variability):", f"{res.H2:.2f}"),
+            ('I^2 (total heterogeneity / total variability):', f'{res.I2:.2f}%'),
+            ('H^2 (total variability / sampling variability):', f'{res.H2:.2f}'),
         ]
         width = max(len(r[0]) for r in rows)
-        out += [f"{label.ljust(width)} {value}" for label, value in rows]
-        out.append("")
+        out += [f'{label.ljust(width)} {value}' for label, value in rows]
+        out.append('')
 
     if not math.isnan(res.QE):
-        name, label = ("Q", "Heterogeneity") if res.int_only else ("QE", "Residual Heterogeneity")
-        out.append(f"Test for {label}:")
+        name, label = ('Q', 'Heterogeneity') if res.int_only else ('QE', 'Residual Heterogeneity')
+        out.append(f'Test for {label}:')
         out.append(
-            f"{name}(df = {res.k - res.p}) = {fmt_num(res.QE, digits)}, "
-            f"p-val {_pfmt(res.QEp, digits)}"
+            f'{name}(df = {res.k - res.p}) = {fmt_num(res.QE, digits)}, '
+            f'p-val {_pfmt(res.QEp, digits)}'
         )
-        out.append("")
+        out.append('')
 
     if not res.int_only:
         coefs = coef_span(res.btt)
-        out.append(f"Test of Moderators (coefficient{'s' if res.m > 1 else ''} {coefs}):")
+        out.append(f'Test of Moderators (coefficient{"s" if res.m > 1 else ""} {coefs}):')
         if res.ddf is not None:
             out.append(
-                f"F(df1 = {res.m}, df2 = {res.ddf}) = {fmt_num(res.QM, digits)}, "
-                f"p-val {_pfmt(res.QMp, digits)}"
+                f'F(df1 = {res.m}, df2 = {res.ddf}) = {fmt_num(res.QM, digits)}, '
+                f'p-val {_pfmt(res.QMp, digits)}'
             )
         else:
             out.append(
-                f"QM(df = {res.m}) = {fmt_num(res.QM, digits)}, p-val {_pfmt(res.QMp, digits)}"
+                f'QM(df = {res.m}) = {fmt_num(res.QM, digits)}, p-val {_pfmt(res.QMp, digits)}'
             )
-        out.append("")
+        out.append('')
 
-    out.append("Model Results:")
-    out.append("")
-    stat = "tval" if res.ddf is not None else "zval"
-    header = ["estimate", "se", stat]
+    out.append('Model Results:')
+    out.append('')
+    stat = 'tval' if res.ddf is not None else 'zval'
+    header = ['estimate', 'se', stat]
     if res.ddf is not None:
-        header.append("df")
-    header += ["pval", "ci.lb", "ci.ub", ""]
+        header.append('df')
+    header += ['pval', 'ci.lb', 'ci.ub', '']
     rows_: list[list[str]] = []
     for j in range(res.p):
         row = [
@@ -787,20 +787,20 @@ def _format(res: RMAResult, digits: int) -> str:
         ]
         rows_.append(row)
     out.append(fmt_table(header, rows_, row_names=None if res.int_only else list(res.coef_names)))
-    out.append("")
-    out.append("---")
+    out.append('')
+    out.append('---')
     out.append("Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1")
-    out.append("")
-    return "\n".join(out)
+    out.append('')
+    return '\n'.join(out)
 
 
 def _pfmt(p: float, digits: int) -> str:
     s = fmt_pval(p, digits)
-    return f"< {s[1:]}" if s.startswith("<") else f"= {s}"
+    return f'< {s[1:]}' if s.startswith('<') else f'= {s}'
 
 
 def coef_span(idx: Sequence[int]) -> str:
     one = [i + 1 for i in idx]
     if len(one) > 1 and one == list(range(one[0], one[-1] + 1)):
-        return f"{one[0]}:{one[-1]}"
-    return ",".join(str(i) for i in one)
+        return f'{one[0]}:{one[-1]}'
+    return ','.join(str(i) for i in one)

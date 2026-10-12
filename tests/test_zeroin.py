@@ -28,7 +28,7 @@ def test_root_at_endpoint() -> None:
 
 
 def test_same_sign_rejected() -> None:
-    with pytest.raises(ValueError, match="opposite sign"):
+    with pytest.raises(ValueError, match='opposite sign'):
         uniroot(lambda x: x * x + 1, -1, 1)
 
 

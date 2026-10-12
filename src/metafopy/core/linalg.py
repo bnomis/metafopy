@@ -6,12 +6,12 @@ import numpy as np
 from numpy.typing import NDArray
 
 __all__ = [
-    "drop_redundant",
-    "invcalc",
-    "is_intercept",
-    "is_nested",
-    "is_positive_definite",
-    "logdet",
+    'drop_redundant',
+    'invcalc',
+    'is_intercept',
+    'is_nested',
+    'is_positive_definite',
+    'logdet',
 ]
 
 FloatArray = NDArray[np.float64]

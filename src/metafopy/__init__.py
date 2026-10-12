@@ -15,24 +15,24 @@ from metafopy.methods.confint import ConfintResult, confint
 from metafopy.methods.predict import PredictResult, predict
 from metafopy.models.rma_uni import Control, FitStats, RMAResult, rma, rma_uni
 
-__version__ = version("metafopy")
+__version__ = version('metafopy')
 
 __all__ = [
-    "ConfintResult",
-    "Control",
-    "FitStats",
-    "LRTResult",
-    "MetaData",
-    "PredictResult",
-    "RMAResult",
-    "RandomTerm",
-    "WaldResult",
-    "__version__",
-    "anova",
-    "confint",
-    "datasets",
-    "parse_random",
-    "predict",
-    "rma",
-    "rma_uni",
+    'ConfintResult',
+    'Control',
+    'FitStats',
+    'LRTResult',
+    'MetaData',
+    'PredictResult',
+    'RMAResult',
+    'RandomTerm',
+    'WaldResult',
+    '__version__',
+    'anova',
+    'confint',
+    'datasets',
+    'parse_random',
+    'predict',
+    'rma',
+    'rma_uni',
 ]

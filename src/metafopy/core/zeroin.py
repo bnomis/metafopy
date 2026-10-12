@@ -17,7 +17,7 @@ import sys
 from collections.abc import Callable
 from dataclasses import dataclass
 
-__all__ = ["RootResult", "uniroot", "zeroin2"]
+__all__ = ['RootResult', 'uniroot', 'zeroin2']
 
 EPSILON = sys.float_info.epsilon
 DEFAULT_TOL = EPSILON**0.25
@@ -114,13 +114,13 @@ def uniroot(
     (R: "f() values at end points not of opposite sign").
     """
     if not lower < upper:
-        raise ValueError("lower < upper is not fulfilled")
+        raise ValueError('lower < upper is not fulfilled')
     f_lower = f(lower)
     f_upper = f(upper)
     if math.isnan(f_lower) or math.isnan(f_upper):
-        raise ValueError("f() value at an end point is NA")
+        raise ValueError('f() value at an end point is NA')
     if f_lower * f_upper > 0:
-        raise ValueError("f() values at end points not of opposite sign")
+        raise ValueError('f() values at end points not of opposite sign')
     root, iterations, prec = zeroin2(f, lower, upper, f_lower, f_upper, tol, maxiter)
     return RootResult(
         root=root,

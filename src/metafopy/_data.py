@@ -18,9 +18,9 @@ from numpy.typing import ArrayLike, NDArray
 
 from metafopy._formula import design_matrix
 
-__all__ = ["MetaData", "NAAction", "make_unique"]
+__all__ = ['MetaData', 'NAAction', 'make_unique']
 
-type NAAction = Literal["omit", "fail", "pass"]
+type NAAction = Literal['omit', 'fail', 'pass']
 type Column = ArrayLike | str
 
 type FloatArray = NDArray[np.float64]
@@ -40,7 +40,7 @@ def make_unique(labels: Sequence[str]) -> tuple[str, ...]:
         n = counts.get(label, 0)
         while True:
             n += 1
-            candidate = f"{label}.{n}"
+            candidate = f'{label}.{n}'
             if candidate not in seen:
                 break
         counts[label] = n
@@ -54,15 +54,15 @@ def _column(value: Column | None, data: pd.DataFrame | None, name: str) -> Float
         return None
     if isinstance(value, str):
         if data is None:
-            raise ValueError(f"{name}={value!r} names a column, but no data was given")
+            raise ValueError(f'{name}={value!r} names a column, but no data was given')
         if value not in data.columns:
-            raise KeyError(f"column {value!r} (for {name}) not found in data")
+            raise KeyError(f'column {value!r} (for {name}) not found in data')
         value = data[value].to_numpy()
     arr = np.asarray(value, dtype=np.float64)
     if arr.ndim == 0:
         arr = arr[None]
     if arr.ndim != 1:
-        raise ValueError(f"{name} must be one-dimensional, got shape {arr.shape}")
+        raise ValueError(f'{name} must be one-dimensional, got shape {arr.shape}')
     return arr
 
 
@@ -71,13 +71,13 @@ def _subset_mask(subset: ArrayLike | str | None, k: int, data: pd.DataFrame | No
         return np.ones(k, dtype=np.bool_)
     if isinstance(subset, str):
         if data is None:
-            raise ValueError("a string subset needs data to evaluate against")
+            raise ValueError('a string subset needs data to evaluate against')
         values = np.asarray(data.eval(subset))
     else:
         values = np.asarray(subset)
     if values.dtype == np.bool_:
         if values.shape != (k,):
-            raise ValueError(f"logical subset must have length {k}, got {values.shape}")
+            raise ValueError(f'logical subset must have length {k}, got {values.shape}')
         return values.copy()
     mask = np.zeros(k, dtype=np.bool_)
     mask[values.astype(np.intp)] = True
@@ -133,34 +133,34 @@ class MetaData:
         data: pd.DataFrame | None = None,
         slab: Column | Sequence[str] | None = None,
         subset: ArrayLike | str | None = None,
-        na_action: NAAction = "omit",
+        na_action: NAAction = 'omit',
     ) -> MetaData:
         """Build a :class:`MetaData` from ``rma``-style arguments.
 
         When ``yi`` is omitted and ``data`` has ``yi``/``vi`` columns (as
         returned by :func:`metafopy.escalc`), those columns are used.
         """
-        if yi is None and data is not None and "yi" in data.columns:
-            yi = "yi"
-            if vi is None and sei is None and "vi" in data.columns:
-                vi = "vi"
-        y = _column(yi, data, "yi")
+        if yi is None and data is not None and 'yi' in data.columns:
+            yi = 'yi'
+            if vi is None and sei is None and 'vi' in data.columns:
+                vi = 'vi'
+        y = _column(yi, data, 'yi')
         if y is None:
-            raise ValueError("yi must be given")
+            raise ValueError('yi must be given')
         k_all = y.shape[0]
 
-        v = _column(vi, data, "vi")
-        se = _column(sei, data, "sei")
+        v = _column(vi, data, 'vi')
+        se = _column(sei, data, 'sei')
         if v is None and se is not None:
             v = se**2
         if v is None:
-            raise ValueError("one of vi or sei must be given")
+            raise ValueError('one of vi or sei must be given')
 
-        w = _column(weights, data, "weights")
-        n = _column(ni, data, "ni")
-        for name, arr in (("vi", v), ("weights", w), ("ni", n)):
+        w = _column(weights, data, 'weights')
+        n = _column(ni, data, 'ni')
+        for name, arr in (('vi', v), ('weights', w), ('ni', n)):
             if arr is not None and arr.shape[0] != k_all:
-                raise ValueError(f"length of {name} ({arr.shape[0]}) differs from yi ({k_all})")
+                raise ValueError(f'length of {name} ({arr.shape[0]}) differs from yi ({k_all})')
 
         X, X_names, x_missing, has_intercept = cls._design(mods, intercept, data, k_all)
 
@@ -168,12 +168,12 @@ class MetaData:
             labels: tuple[str, ...] = tuple(str(i + 1) for i in range(k_all))
         elif isinstance(slab, str):
             if data is None:
-                raise ValueError(f"slab={slab!r} names a column, but no data was given")
+                raise ValueError(f'slab={slab!r} names a column, but no data was given')
             labels = tuple(str(s) for s in data[slab].tolist())
         else:
             labels = tuple(str(s) for s in np.asarray(slab, dtype=object).tolist())
         if len(labels) != k_all:
-            raise ValueError(f"length of slab ({len(labels)}) differs from yi ({k_all})")
+            raise ValueError(f'length of slab ({len(labels)}) differs from yi ({k_all})')
         labels = make_unique(labels)
 
         keep = _subset_mask(subset, k_all, data)
@@ -182,12 +182,12 @@ class MetaData:
             missing |= np.isnan(w)
         missing &= keep
         if missing.any():
-            if na_action == "fail":
-                raise ValueError("missing values in data")
+            if na_action == 'fail':
+                raise ValueError('missing values in data')
             keep = keep & ~missing
 
         if w is not None and np.any(w[keep] < 0):
-            raise ValueError("there are negative weights")
+            raise ValueError('there are negative weights')
 
         idx = np.flatnonzero(keep)
         return cls(
@@ -211,12 +211,12 @@ class MetaData:
         k: int,
     ) -> tuple[FloatArray, tuple[str, ...], BoolArray, bool]:
         if mods is None:
-            return np.ones((k, 1)), ("intrcpt",), np.zeros(k, dtype=np.bool_), True
+            return np.ones((k, 1)), ('intrcpt',), np.zeros(k, dtype=np.bool_), True
         if isinstance(mods, str):
             if data is None:
-                raise ValueError("a formula for mods needs data")
+                raise ValueError('a formula for mods needs data')
             X, names, missing = design_matrix(mods, data)
-            return X, names, missing, "intrcpt" in names
+            return X, names, missing, 'intrcpt' in names
         if isinstance(mods, pd.DataFrame):
             names = tuple(str(c) for c in mods.columns)
             X = mods.to_numpy(dtype=float)
@@ -224,10 +224,10 @@ class MetaData:
             X = np.asarray(mods, dtype=np.float64)
             if X.ndim == 1:
                 X = X[:, None]
-            names = tuple(f"X{j + 1}" for j in range(X.shape[1]))
+            names = tuple(f'X{j + 1}' for j in range(X.shape[1]))
         if X.shape[0] != k:
-            raise ValueError(f"mods has {X.shape[0]} rows, expected {k}")
+            raise ValueError(f'mods has {X.shape[0]} rows, expected {k}')
         if intercept:
             X = np.column_stack([np.ones(k), X])
-            names = ("intrcpt", *names)
+            names = ('intrcpt', *names)
         return X.astype(np.float64), names, np.isnan(X).any(axis=1), intercept
