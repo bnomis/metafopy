@@ -36,5 +36,5 @@ def test_parse_random_inner_outer() -> None:
 
 @pytest.mark.parametrize("bad", ["1 | study", "~ 1", "~ 1 | ", "~ x | a/b", "~ 1 | a//b"])
 def test_parse_random_rejects(bad: str) -> None:
-    with pytest.raises(ValueError, match="random effects formula|cannot also be nested"):
+    with pytest.raises(ValueError, match=r"random effects formula|cannot also be nested"):
         parse_random(bad)
