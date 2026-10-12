@@ -14,6 +14,7 @@ from scipy import stats
 
 from metafopy.models._tau2 import FIXED_EFFECTS
 from metafopy.models.rma_uni import RMAResult, level_to_alpha
+from metafopy.transf import apply_transf, is_tau2_transf
 
 __all__ = ['PredictResult', 'predict']
 
@@ -68,7 +69,8 @@ def _predict_rma_uni(
     newmods: ArrayLike | None = None,
     *,
     intercept: bool | None = None,
-    transf: Callable[[FloatArray], FloatArray] | None = None,
+    transf: Callable[..., Any] | None = None,
+    targs: Any = None,
     level: float | None = None,
 ) -> PredictResult:
     """Predict from an ``rma.uni`` fit.
@@ -76,7 +78,9 @@ def _predict_rma_uni(
     Without ``newmods`` an intercept-only model gives the pooled estimate and a
     meta-regression gives the fitted value of each study. ``newmods`` holds
     moderator values without the intercept column (it is added unless
-    ``intercept=False``) or the full set of ``p`` columns.
+    ``intercept=False``) or the full set of ``p`` columns. ``transf`` is
+    applied to each value (with ``targs`` if given; the integral and mode
+    transformations in :mod:`metafopy.transf` default to ``targs={'tau2': tau2}``).
     """
     x = model
     p = x.p
@@ -120,9 +124,13 @@ def _predict_rma_uni(
         pi_ub = np.full_like(pred, np.nan)
 
     if transf is not None:
-        pred, ci_lb, ci_ub, pi_lb, pi_ub = (np.asarray(transf(a), dtype=np.float64) for a in (pred, ci_lb, ci_ub, pi_lb, pi_ub))
+        pred, ci_lb, ci_ub, pi_lb, pi_ub = (apply_transf(a, transf, targs, x.tau2) for a in (pred, ci_lb, ci_ub, pi_lb, pi_ub))
         se = np.full_like(pred, np.nan)
         ci_lb, ci_ub = np.minimum(ci_lb, ci_ub), np.maximum(ci_lb, ci_ub)
         pi_lb, pi_ub = np.minimum(pi_lb, pi_ub), np.maximum(pi_lb, pi_ub)
+        if is_tau2_transf(transf):
+            # metafor drops the prediction interval after an integral/mode transformation
+            pi_lb = np.full_like(pred, np.nan)
+            pi_ub = np.full_like(pred, np.nan)
 
     return PredictResult(pred=pred, se=se, ci_lb=ci_lb, ci_ub=ci_ub, pi_lb=pi_lb, pi_ub=pi_ub, slab=slab)

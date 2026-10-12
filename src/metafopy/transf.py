@@ -914,3 +914,44 @@ def transf_lnortortet_digby(xi: ArrayLike) -> FloatArray:
     with np.errstate(over='ignore', invalid='ignore'):
         e = np.exp(_arr(xi)) ** (3 / 4)
         return np.asarray((e - 1) / (e + 1), np.float64)
+
+
+_TAU2_DEFAULT = frozenset(
+    {
+        'transf_exp_int',
+        'transf_ilogit_int',
+        'transf_iprobit_int',
+        'transf_ztor_int',
+        'transf_iarcsin_int',
+        'transf_iahw_int',
+        'transf_iabt_int',
+        'transf_dtocles_int',
+        'transf_exp_mode',
+        'transf_ilogit_mode',
+        'transf_iprobit_mode',
+        'transf_ztor_mode',
+        'transf_iarcsin_mode',
+        'transf_iahw_mode',
+        'transf_iabt_mode',
+    }
+)
+
+
+def is_tau2_transf(transf: Callable[..., Any]) -> bool:
+    """Whether ``transf`` is one of the integral/mode transformations that take ``tau2``."""
+    name = getattr(transf, '__name__', None)
+    return name in _TAU2_DEFAULT and transf is globals().get(name)
+
+
+def apply_transf(values: ArrayLike, transf: Callable[..., Any], targs: Any = None, tau2: float | None = None) -> FloatArray:
+    """Apply ``transf`` to each value separately, as metafor's ``sapply(x, transf, targs)``.
+
+    For the integral and mode transformations, ``targs`` defaults to
+    ``{'tau2': tau2}`` when a model's ``tau2`` is given, as in
+    ``predict.rma``/``confint.rma.uni``.
+    """
+    if targs is None and tau2 is not None and is_tau2_transf(transf):
+        targs = {'tau2': tau2}
+    vals = np.atleast_1d(np.asarray(values, dtype=np.float64))
+    out = [transf(v) if targs is None else transf(v, targs) for v in vals]
+    return np.array([float(np.asarray(o, dtype=np.float64).reshape(-1)[0]) for o in out], dtype=np.float64).reshape(vals.shape)

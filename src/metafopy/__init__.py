@@ -7,10 +7,10 @@ from __future__ import annotations
 
 from importlib.metadata import version
 
-from metafopy import datasets
+from metafopy import datasets, transf
 from metafopy._data import MetaData
 from metafopy._formula import RandomTerm, parse_random
-from metafopy.effects import cmicalc, escalc
+from metafopy.effects import cmicalc, escalc, summary_escalc
 from metafopy.methods.anova import LRTResult, WaldResult, anova
 from metafopy.methods.blup import BlupResult, blup
 from metafopy.methods.confint import ConfintResult, confint
@@ -49,5 +49,7 @@ __all__ = [
     'ranef',
     'rma',
     'rma_uni',
+    'summary_escalc',
+    'transf',
     'vif',
 ]

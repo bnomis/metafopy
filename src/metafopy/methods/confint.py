@@ -24,6 +24,7 @@ from metafopy.core.linalg import invcalc
 from metafopy.core.zeroin import DEFAULT_TOL, uniroot
 from metafopy.models._tau2 import FIXED_EFFECTS, genq_func
 from metafopy.models.rma_uni import RMAResult, fit_rma_uni, level_to_alpha
+from metafopy.transf import apply_transf
 
 __all__ = ['ConfintResult', 'confint']
 
@@ -272,13 +273,7 @@ def _confint_rma_uni(
         lb = x.beta - crit * x.se
         ub = x.beta + crit * x.se
         if transf is not None:
-
-            def tf(v: float) -> float:
-                return float(transf(v) if targs is None else transf(v, targs))
-
-            est = np.array([tf(v) for v in est])
-            lb = np.array([tf(v) for v in lb])
-            ub = np.array([tf(v) for v in ub])
+            est, lb, ub = (apply_transf(a, transf, targs, x.tau2) for a in (est, lb, ub))
         lb, ub = np.minimum(lb, ub), np.maximum(lb, ub)
         res_fixed = pd.DataFrame({'estimate': est, 'ci.lb': lb, 'ci.ub': ub}, index=list(x.coef_names))
 

@@ -17,7 +17,9 @@ from metafopy import datasets, escalc, rma
 from metafopy.methods.anova import WaldResult, anova
 from metafopy.methods.confint import confint
 from metafopy.methods.pairmat import pairmat
+from metafopy.methods.predict import predict
 from metafopy.models.rma_uni import RMAResult
+from metafopy.transf import transf_exp_int, transf_ilogit_int
 
 FIXTURE = Path(__file__).parent / 'reference' / 'extras' / 'rma_uni_help.json'
 RTOL = 1e-6
@@ -206,3 +208,16 @@ def test_hksj_alias(dat: pd.DataFrame) -> None:
     res = rma('yi', 'vi', data=dat, test='hksj')
     assert res.test == 'knha'
     _check(res, 'test_hksj')
+
+
+def test_integral_transf_defaults_to_model_tau2(re: RMAResult) -> None:
+    pr = predict(re, transf=transf_exp_int)
+    ref = _ref()['predict_exp_int']
+    for attr in ('pred', 'ci_lb', 'ci_ub', 'pi_lb', 'pi_ub'):
+        _close(getattr(pr, attr), ref[attr])
+    ci = confint(re, fixed=True, random=False, transf=transf_ilogit_int)
+    ref = _ref()['confint_ilogit_int']
+    assert ci.fixed is not None
+    _close(ci.fixed['estimate'], ref['estimate'])
+    _close(ci.fixed['ci.lb'], ref['ci_lb'])
+    _close(ci.fixed['ci.ub'], ref['ci_ub'])
