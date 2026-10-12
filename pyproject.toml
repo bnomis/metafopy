@@ -16,6 +16,7 @@ dependencies = [
     "scipy>=1.11",
     "pandas>=2.1",
     "formulaic>=1.0",
+    "matplotlib>=3.8",
 ]
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
@@ -27,9 +28,6 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Mathematics",
     "Typing :: Typed",
 ]
-
-[project.optional-dependencies]
-plot = ["matplotlib>=3.8"]
 
 [project.urls]
 Homepage = "https://github.com/bnomis/metafopy"

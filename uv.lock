@@ -439,14 +439,10 @@ version = "0.0.1"
 source = { editable = "." }
 dependencies = [
     { name = "formulaic" },
+    { name = "matplotlib" },
     { name = "numpy" },
     { name = "pandas" },
     { name = "scipy" },
-]
-
-[package.optional-dependencies]
-plot = [
-    { name = "matplotlib" },
 ]
 
 [package.dev-dependencies]
@@ -464,12 +460,11 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "formulaic", specifier = ">=1.0" },
-    { name = "matplotlib", marker = "extra == 'plot'", specifier = ">=3.8" },
+    { name = "matplotlib", specifier = ">=3.8" },
     { name = "numpy", specifier = ">=1.26" },
     { name = "pandas", specifier = ">=2.1" },
     { name = "scipy", specifier = ">=1.11" },
 ]
-provides-extras = ["plot"]
 
 [package.metadata.requires-dev]
 dev = [
