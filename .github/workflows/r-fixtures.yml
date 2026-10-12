@@ -1,0 +1,33 @@
+name: R fixtures
+
+# Regenerates the R metafor reference fixtures and fails if they differ from
+# the committed ones. Run manually to check a pinned version, or weekly to see
+# whether the latest CRAN metafor changed any results.
+
+on:
+  workflow_dispatch:
+    inputs:
+      metafor_version:
+        description: "metafor version to install (empty = latest CRAN)"
+        default: "5.2-1"
+  schedule:
+    - cron: "0 6 * * 1"
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+      - name: Install R packages
+        env:
+          METAFOR_VERSION: ${{ inputs.metafor_version }}
+        run: |
+          Rscript -e 'install.packages(c("remotes", "jsonlite", "metadat"))'
+          Rscript -e 'v <- Sys.getenv("METAFOR_VERSION"); if (nzchar(v)) remotes::install_version("metafor", version = v, upgrade = "never") else install.packages("metafor")'
+      - run: Rscript tests/r/export_datasets.R
+      - run: Rscript tests/r/generate_fixtures.R
+      - name: Fail on fixture drift
+        run: git diff --stat --exit-code -- tests/reference src/metafopy/datasets/data
