@@ -21,6 +21,7 @@ import numpy as np
 from numpy.typing import NDArray
 from scipy import stats
 
+from metafopy.core.farebrother import farebrother
 from metafopy.core.linalg import invcalc, logdet
 from metafopy.core.zeroin import uniroot
 
@@ -33,6 +34,8 @@ ESTIMATORS = (
     'DL',
     'DLIT',
     'HE',
+    'CO',
+    'VC',
     'HS',
     'HSk',
     'SJ',
@@ -44,6 +47,7 @@ ESTIMATORS = (
     'MP',
     'PMM',
     'GENQ',
+    'GENQM',
 )
 FIXED_EFFECTS = ('EE', 'FE', 'CE')
 
@@ -128,7 +132,7 @@ def estimate_tau2(
         else:
             tau2 = pick((k / (k - p) * RSS - k) / wi.sum())
 
-    if method in ('HE', 'ML', 'REML', 'EB'):
+    if method in ('HE', 'CO', 'VC', 'ML', 'REML', 'EB'):
         P = np.eye(k) - X @ invcalc(X, np.ones(k)) @ X.T
         RSS = float(ymc @ P @ ymc)
         PV = P * vi[None, :]
@@ -172,6 +176,35 @@ def estimate_tau2(
         trPV = float(np.trace(PV))
         RSS = float(ymc @ P @ ymc)
         tau2 = pick((RSS - trPV) / trP)
+
+    if method == 'GENQM':
+        if weights is None:
+            raise EstimationError("Must specify the 'weights' argument when method='GENQM'.")
+        Pg = _P(X, weights)
+        P = Pg
+        PV = Pg * vi[None, :]
+        trP = float(np.trace(Pg))
+        if fix:
+            tau2 = float(tau2_fixed)  # type: ignore[arg-type]
+        else:
+            RSS = float(ymc @ P @ ymc)
+            if genq_func(con.tau2_min, Pg, vi, RSS, 0.0, k, p, getlower=True) > 0.5:
+                tau2 = con.tau2_min
+            elif genq_func(con.tau2_max, Pg, vi, RSS, 0.0, k, p, getlower=True) < 0.5:
+                raise EstimationError("Value of 'tau2_max' too low. Try increasing 'tau2_max' or switch to another method.")
+            else:
+                try:
+                    res = uniroot(
+                        lambda t: genq_func(t, Pg, vi, RSS, 0.5, k, p, getlower=False),
+                        con.tau2_min,
+                        con.tau2_max,
+                        tol=con.tol,
+                        maxiter=con.maxiter,
+                    )
+                except ValueError as exc:
+                    raise EstimationError('Error in iterative search for tau^2 using uniroot().') from exc
+                tau2 = res.root
+                iterations = res.iterations
 
     if method == 'SJ':
         tau2_0 = con.tau2_init if con.tau2_init is not None else float(np.mean(ymc**2))
@@ -272,13 +305,13 @@ def estimate_tau2(
         se = math.sqrt(1 / wi.sum() ** 2 * (2 * (k - p) + 4 * t * np.trace(P) + 2 * t**2 * np.sum(P * P)))
         if method == 'HSk':
             se *= k / (k - p)
-    elif method == 'HE':
+    elif method in ('HE', 'CO', 'VC'):
         assert PV is not None
         se = math.sqrt(1 / (k - p) ** 2 * (2 * np.sum(PV * PV.T) + 4 * t * trPV + 2 * t**2 * (k - p)))
     elif method == 'DL':
         assert P is not None
         se = math.sqrt(1 / trP**2 * (2 * (k - p) + 4 * t * trP + 2 * t**2 * np.sum(P * P)))
-    elif method == 'GENQ':
+    elif method in ('GENQ', 'GENQM'):
         assert P is not None
         assert PV is not None
         se = math.sqrt(1 / trP**2 * (2 * np.sum(PV * PV.T) + 4 * t * np.sum(PV * P) + 2 * t**2 * np.sum(P * P)))
@@ -296,6 +329,20 @@ def estimate_tau2(
         se = math.sqrt(2 * k**2 / (k - p) / wi.sum() ** 2)
 
     return Tau2Fit(tau2=float(tau2), se_tau2=float(se), iterations=iterations)
+
+
+def genq_func(tau2: float, P: FloatArray, vi: FloatArray, Q: float, level: float, k: int, p: int, *, getlower: bool) -> float:
+    """metafor's ``.GENQ.func``: ``P(Q_gen > Q | tau^2) - level`` (or ``1 - P(...) - level``).
+
+    The generalised Q-statistic is a quadratic form whose null distribution is
+    a weighted sum of chi^2_1 variables with weights given by the non-zero
+    eigenvalues of ``S P S``, ``S = diag(sqrt(v_i + tau^2))`` (Jackson, 2013,
+    doi:10.1002/jrsm.1081; Jackson et al., 2014, doi:10.1002/sim.6131).
+    """
+    s = np.sqrt(vi + tau2)
+    lam = np.linalg.eigvalsh(s[:, None] * P * s[None, :])[::-1]
+    Qq = farebrother(Q, lam[: k - p].tolist()).Qq
+    return Qq - level if getlower else (1 - Qq) - level
 
 
 def _ll(method: str, y: FloatArray, vi: FloatArray, X: FloatArray, tau2: float) -> float:

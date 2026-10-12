@@ -15,14 +15,14 @@ import re
 import warnings
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field, fields, replace
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 import numpy as np
 import pandas as pd
 from numpy.typing import ArrayLike, NDArray
 from scipy import stats
 
-from metafopy._data import Column, MetaData, NAAction
+from metafopy._data import Column, MetaData, NAAction, _subset_mask
 from metafopy._print import fmt_num, fmt_pval, fmt_table, signif_stars
 from metafopy.core.linalg import (
     drop_redundant,
@@ -115,6 +115,7 @@ class RMAResult:
     data: MetaData = field(repr=False)
     control: Control = field(repr=False)
     iterations: int = 0
+    measure: str = 'GEN'
 
     # -- accessors ---------------------------------------------------------
 
@@ -256,61 +257,255 @@ def _mad(x: FloatArray) -> float:
     return 1.4826 * float(np.median(np.abs(x - med)))
 
 
+_ESCALC_ARGS = (
+    'ai',
+    'bi',
+    'ci',
+    'di',
+    'n1i',
+    'n2i',
+    'x1i',
+    'x2i',
+    't1i',
+    't2i',
+    'm1i',
+    'm2i',
+    'sd1i',
+    'sd2i',
+    'xi',
+    'mi',
+    'ri',
+    'ti',
+    'fi',
+    'pi',
+    'sdi',
+    'r2i',
+    'mini',
+    'maxi',
+)
+
+
 def rma_uni(
-    yi: Column | None = None,
+    yi: Column | pd.DataFrame | None = None,
     vi: Column | None = None,
     *,
     sei: Column | None = None,
     weights: Column | None = None,
+    ai: Column | None = None,
+    bi: Column | None = None,
+    ci: Column | None = None,
+    di: Column | None = None,
+    n1i: Column | None = None,
+    n2i: Column | None = None,
+    x1i: Column | None = None,
+    x2i: Column | None = None,
+    t1i: Column | None = None,
+    t2i: Column | None = None,
+    m1i: Column | None = None,
+    m2i: Column | None = None,
+    sd1i: Column | None = None,
+    sd2i: Column | None = None,
+    xi: Column | None = None,
+    mi: Column | None = None,
+    ri: Column | None = None,
+    ti: Column | None = None,
+    fi: Column | None = None,
+    pi: Column | None = None,
+    sdi: Column | None = None,
+    r2i: Column | None = None,
+    mini: Column | None = None,
+    maxi: Column | None = None,
     ni: Column | None = None,
     mods: str | ArrayLike | pd.DataFrame | None = None,
+    measure: str = 'GEN',
     data: pd.DataFrame | None = None,
     slab: Column | Sequence[str] | None = None,
     subset: ArrayLike | str | None = None,
+    add: float | None = None,
+    to: Literal['all', 'only0', 'if0all', 'none'] = 'only0',
+    drop00: bool = False,
     intercept: bool = True,
     method: str | Sequence[str] = 'REML',
     weighted: bool = True,
-    test: Test = 'z',
+    test: str = 'z',
     level: float = 95,
     btt: Btt = None,
     tau2: float | None = None,
     control: Control | Mapping[str, Any] | None = None,
     na_action: NAAction = 'omit',
+    vtype: str | Sequence[str] = 'LS',
+    correct: bool = True,
+    cutoff: float | None = None,
+    onlyo1: bool = False,
+    addyi: bool = True,
+    addvi: bool = True,
 ) -> RMAResult:
     """Fit an equal-, fixed-, random- or mixed-effects meta-analytic model.
 
-    Mirrors metafor's ``rma.uni()`` (alias ``rma``). ``method`` may be a single
-    estimator or a sequence tried in order until one succeeds. ``btt`` takes
-    0-based coefficient indices (or a regex matched against coefficient names);
-    printed output reports them 1-based, as metafor does.
+    Mirrors metafor's ``rma.uni()`` (alias ``rma``); see
+    https://wviechtb.github.io/metafor/reference/rma.uni.html. Inputs can be
+
+    - ``yi`` with ``vi`` or ``sei`` (arrays or column names in ``data``);
+    - a model formula in ``yi`` (``'yi ~ ablat + year'``), which then also
+      supplies the moderators;
+    - an :func:`~metafopy.escalc` data frame as ``yi`` or ``data``;
+    - raw data (``ai``/``bi``/``ci``/``di``, ``m1i``/``sd1i``/``n1i``, ...)
+      with ``measure=``, in which case the effect sizes are computed by
+      :func:`~metafopy.escalc` (with ``add``, ``to``, ``drop00``, ``vtype``,
+      ``correct``, ``cutoff``, ``onlyo1``, ``addyi`` and ``addvi``).
+
+    ``method`` may be a single estimator or a sequence tried in order until
+    one succeeds. ``test`` is ``'z'``, ``'t'``, ``'knha'`` (alias ``'hksj'``) or
+    ``'adhoc'``. ``btt`` takes 0-based coefficient indices (or a regex matched
+    against coefficient names); printed output reports them 1-based, as
+    metafor does.
 
     Examples
     --------
     >>> from metafopy import datasets, rma
     >>> dat = datasets.load("dat.bcg")  # doctest: +SKIP
+    >>> rma(measure="RR", ai="tpos", bi="tneg", ci="cpos", di="cneg", data=dat)  # doctest: +SKIP
     """
-    md = MetaData.from_inputs(
-        yi,
-        vi,
-        sei=sei,
-        weights=weights,
-        ni=ni,
-        mods=mods,
-        intercept=intercept,
-        data=data,
-        slab=slab,
-        subset=subset,
-        na_action=na_action,
-    )
-    return fit_rma_uni(
+    test_l = test.lower()
+    if test_l == 'hksj':
+        test_l = 'knha'
+    if test_l not in ('z', 't', 'knha', 'adhoc'):
+        raise ValueError("Unknown option specified for the 'test' argument.")
+
+    if isinstance(yi, pd.DataFrame):
+        data = yi
+        yi = None
+
+    if isinstance(yi, str) and '~' in yi:
+        if mods is not None:
+            warnings.warn("Argument 'mods' ignored when 'yi' is a model formula.", stacklevel=2)
+        if data is None:
+            raise ValueError('a model formula in yi needs data')
+        lhs, rhs = (part.strip() for part in yi.split('~', 1))
+        if not lhs:
+            raise ValueError('the model formula in yi must have a left-hand side')
+        yi = lhs if lhs in data.columns else np.asarray(data.eval(lhs), dtype=np.float64)
+        mods = '~ ' + rhs
+        intercept = False
+
+    if measure == 'GEN' and data is not None and data.attrs.get('measure'):
+        measure = str(data.attrs['measure'])
+
+    raw = {
+        name: val
+        for name, val in zip(
+            _ESCALC_ARGS,
+            (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, m1i, m2i, sd1i, sd2i, xi, mi, ri, ti, fi, pi, sdi, r2i, mini, maxi),
+            strict=True,
+        )
+        if val is not None
+    }
+
+    if yi is None and not (data is not None and 'yi' in data.columns and not raw):
+        if measure == 'GEN':
+            raise ValueError("Specify the desired outcome measure via the 'measure' argument.")
+        md = _metadata_from_escalc(
+            measure,
+            raw,
+            ni=ni,
+            data=data,
+            slab=slab,
+            subset=subset,
+            mods=mods,
+            weights=weights,
+            intercept=intercept,
+            na_action=na_action,
+            escalc_opts={
+                'add': add,
+                'to': to,
+                'drop00': drop00,
+                'vtype': vtype,
+                'correct': correct,
+                'cutoff': cutoff,
+                'onlyo1': onlyo1,
+                'addyi': addyi,
+                'addvi': addvi,
+            },
+        )
+    else:
+        md = MetaData.from_inputs(
+            yi,
+            vi,
+            sei=sei,
+            weights=weights,
+            ni=ni,
+            mods=mods,
+            intercept=intercept,
+            data=data,
+            slab=slab,
+            subset=subset,
+            na_action=na_action,
+        )
+    res = fit_rma_uni(
         md,
         method=method,
         weighted=weighted,
-        test=test,
+        test=cast(Test, test_l),
         level=level,
         btt=btt,
         tau2=tau2,
         control=control,
+    )
+    return replace(res, measure=measure)
+
+
+def _metadata_from_escalc(
+    measure: str,
+    raw: dict[str, Any],
+    *,
+    ni: Column | None,
+    data: pd.DataFrame | None,
+    slab: Column | Sequence[str] | None,
+    subset: ArrayLike | str | None,
+    mods: str | ArrayLike | pd.DataFrame | None,
+    weights: Column | None,
+    intercept: bool,
+    na_action: NAAction,
+    escalc_opts: dict[str, Any],
+) -> MetaData:
+    """Compute ``yi``/``vi`` with escalc after subsetting, as ``rma.uni`` does for raw data."""
+    from metafopy.effects import escalc
+
+    if not raw:
+        raise ValueError('Cannot compute outcomes. Check that all of the required information is specified via the appropriate arguments.')
+    if data is not None:
+        k_all = len(data)
+    else:
+        first = next(v for v in raw.values() if not isinstance(v, str))
+        k_all = int(np.atleast_1d(np.asarray(first)).shape[0])
+    mask = np.ones(k_all, dtype=np.bool_) if subset is None else _subset_mask(subset, k_all, data)
+    if ni is not None:
+        raw = {**raw, 'ni': ni}
+    es = escalc(measure, **raw, data=data, subset=mask, **escalc_opts)
+    idx = np.flatnonzero(mask)
+
+    def sub(value: Any) -> Any:
+        if value is None or isinstance(value, str):
+            return value
+        if isinstance(value, pd.DataFrame):
+            return value.iloc[idx].reset_index(drop=True)
+        arr = np.asarray(value)
+        if arr.ndim >= 1 and arr.shape[0] == k_all:
+            return arr[idx]
+        return value
+
+    data_sub = None if data is None else data.iloc[idx].reset_index(drop=True)
+    ni_es = es.attrs.get('ni')
+    return MetaData.from_inputs(
+        es['yi'].to_numpy(dtype=np.float64),
+        es['vi'].to_numpy(dtype=np.float64),
+        weights=sub(weights),
+        ni=None if ni_es is None else np.asarray(ni_es, dtype=np.float64),
+        mods=sub(mods),
+        intercept=intercept,
+        data=data_sub,
+        slab=sub(slab),
+        na_action=na_action,
     )
 
 
