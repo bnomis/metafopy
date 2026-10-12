@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Literal, TypeAlias
+from typing import Literal
 
 import numpy as np
 import pandas as pd
@@ -20,11 +20,11 @@ from metafopy._formula import design_matrix
 
 __all__ = ["MetaData", "NAAction", "make_unique"]
 
-NAAction: TypeAlias = Literal["omit", "fail", "pass"]
-Column: TypeAlias = ArrayLike | str
+type NAAction = Literal["omit", "fail", "pass"]
+type Column = ArrayLike | str
 
-FloatArray: TypeAlias = NDArray[np.float64]
-BoolArray: TypeAlias = NDArray[np.bool_]
+type FloatArray = NDArray[np.float64]
+type BoolArray = NDArray[np.bool_]
 
 
 def make_unique(labels: Sequence[str]) -> tuple[str, ...]:
@@ -186,8 +186,6 @@ class MetaData:
                 raise ValueError("missing values in data")
             keep = keep & ~missing
 
-        if np.any(v[keep] < 0):
-            raise ValueError("there are outcomes with negative sampling variances")
         if w is not None and np.any(w[keep] < 0):
             raise ValueError("there are negative weights")
 

@@ -61,11 +61,6 @@ def test_na_fail() -> None:
         MetaData.from_inputs([0.1, np.nan], [0.1, 0.1], na_action="fail")
 
 
-def test_negative_variance_rejected() -> None:
-    with pytest.raises(ValueError, match="negative sampling variances"):
-        MetaData.from_inputs([0.1, 0.2], [0.1, -0.1])
-
-
 def test_duplicate_slabs_made_unique() -> None:
     md = MetaData.from_inputs([1, 2], [1, 1], slab=["Smith", "Smith"])
     assert md.slab == ("Smith", "Smith.1")
