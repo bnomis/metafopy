@@ -203,6 +203,21 @@ class RMAResult:
 
         return anova(self, *args, **kwargs)
 
+    def blup(self, *args: Any, **kwargs: Any) -> Any:
+        from metafopy.methods.blup import blup
+
+        return blup(self, *args, **kwargs)
+
+    def ranef(self, *args: Any, **kwargs: Any) -> Any:
+        from metafopy.methods.ranef import ranef
+
+        return ranef(self, *args, **kwargs)
+
+    def vif(self, *args: Any, **kwargs: Any) -> Any:
+        from metafopy.methods.vif import vif
+
+        return vif(self, *args, **kwargs)
+
     # -- printing ----------------------------------------------------------
 
     def summary(self, digits: int = 4) -> str:
