@@ -3,7 +3,7 @@
 The test statistics of the location part are compared with their distribution under random permutations of the rows of the
 location model matrix (random sign flips of the observed effects for an intercept-only location model), those of the scale part
 under permutations of the rows of the scale model matrix; an exact test enumerates all unique permutations. See
-Viechtbauer & Lopez-Lopez (2022), doi:10.1002/jrsm.1564, and :mod:`metafopy.methods.permutest`.
+Viechtbauer & Lopez-Lopez (2022), doi:10.1002/jrsm.1562, and :mod:`metafopy.methods.permutest`.
 
 Random permutations are drawn with R's own Mersenne-Twister (:mod:`metafopy.core.rng`): each part draws
 ``int(runif(1) * 2e9)`` from the generator and seeds it with that (or with ``seed``) before permuting, as metafor does.

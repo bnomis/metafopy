@@ -457,7 +457,7 @@ def rma_uni(  # type: ignore[misc]  # the scale overload forwards the remaining 
 
     ``scale`` (a one-sided formula such as ``'~ ni100'`` or a model matrix) turns the
     model into a location-scale model (Viechtbauer & Lopez-Lopez, 2022,
-    doi:10.1002/jrsm.1564) and the result is a
+    doi:10.1002/jrsm.1562) and the result is a
     :class:`~metafopy.models.rma_ls_result.RMALSResult`; ``link`` (``'log'`` or
     ``'identity'``), ``optbeta``, ``alpha`` (fixed values of the scale coefficients),
     ``beta`` (fixed values of the location coefficients, with ``optbeta``) and ``att``

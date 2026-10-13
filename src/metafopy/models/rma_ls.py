@@ -4,7 +4,7 @@ In a location-scale model both the size of the average true effect and the amoun
 depend on moderators: ``y_i = x_i' beta + u_i + e_i`` with ``u_i ~ N(0, tau_i^2)`` and
 ``log(tau_i^2) = z_i' alpha`` (``link='log'``) or ``tau_i^2 = z_i' alpha`` (``link='identity'``).
 Viechtbauer and Lopez-Lopez (2022), Location-scale models for meta-analysis, Research Synthesis Methods,
-doi:10.1002/jrsm.1564. The model is fitted by :func:`metafopy.rma_uni` when its ``scale`` argument is given;
+doi:10.1002/jrsm.1562. The model is fitted by :func:`metafopy.rma_uni` when its ``scale`` argument is given;
 this module normalises the scale model matrix and calls :mod:`metafopy.models.rma_ls_fit`.
 """
 

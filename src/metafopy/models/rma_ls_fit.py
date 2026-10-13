@@ -2,7 +2,7 @@
 
 The model is ``y_i = x_i' beta + u_i + e_i`` with ``u_i ~ N(0, tau_i^2)`` and ``e_i ~ N(0, v_i)``,
 where ``log(tau_i^2) = z_i' alpha`` (log link) or ``tau_i^2 = z_i' alpha`` (identity link); see Viechtbauer and
-Lopez-Lopez (2022), doi:10.1002/jrsm.1564, and
+Lopez-Lopez (2022), doi:10.1002/jrsm.1562, and
 https://github.com/wviechtb/metafor/blob/master/R/rma.uni.r and
 https://github.com/wviechtb/metafor/blob/master/R/misc.func.hidden.rma.ls.r.
 

@@ -1,6 +1,6 @@
 """Confidence intervals for location-scale models (metafor's ``confint.rma.ls``).
 
-Profile-likelihood CIs for the scale coefficients (Viechtbauer & Lopez-Lopez, 2022, doi:10.1002/jrsm.1564) and Wald-type CIs
+Profile-likelihood CIs for the scale coefficients (Viechtbauer & Lopez-Lopez, 2022, doi:10.1002/jrsm.1562) and Wald-type CIs
 for the location coefficients.
 """
 

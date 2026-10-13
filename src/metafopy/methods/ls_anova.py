@@ -1,7 +1,7 @@
 """Wald tests and likelihood-ratio tests for location-scale models (metafor's ``anova.rma`` for ``rma.ls`` objects).
 
 Wald tests of subsets of the location coefficients (``btt``), of the scale coefficients (``att``) or of linear combinations
-of either (``X`` and ``Z``), and likelihood-ratio tests of nested models (Viechtbauer & Lopez-Lopez, 2022, doi:10.1002/jrsm.1564).
+of either (``X`` and ``Z``), and likelihood-ratio tests of nested models (Viechtbauer & Lopez-Lopez, 2022, doi:10.1002/jrsm.1562).
 """
 
 import collections.abc

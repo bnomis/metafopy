@@ -1,7 +1,7 @@
 """Variance inflation factors for location-scale models (metafor's ``vif.rma`` for ``rma.ls`` objects).
 
 The (generalised) variance inflation factors of the location coefficients and, when the scale model has predictors, of the
-scale coefficients (Viechtbauer & Lopez-Lopez, 2022, doi:10.1002/jrsm.1564; Fox & Monette, 1992,
+scale coefficients (Viechtbauer & Lopez-Lopez, 2022, doi:10.1002/jrsm.1562; Fox & Monette, 1992,
 doi:10.1080/01621459.1992.10475190), computed as for :func:`metafopy.vif`. ``sim`` is not available for location-scale models.
 """
 

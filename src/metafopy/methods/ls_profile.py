@@ -1,7 +1,7 @@
 """Profile likelihood for the scale coefficients of location-scale models (metafor's ``profile.rma.ls``).
 
 The model is refitted with one scale coefficient fixed at each value of a grid and the log-likelihood of each fit is recorded
-(Viechtbauer & Lopez-Lopez, 2022, doi:10.1002/jrsm.1564).
+(Viechtbauer & Lopez-Lopez, 2022, doi:10.1002/jrsm.1562).
 """
 
 import collections.abc
