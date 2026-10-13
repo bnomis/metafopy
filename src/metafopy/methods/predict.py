@@ -26,7 +26,9 @@ FloatArray = numpy.typing.NDArray[numpy.float64]
 class PredictResult:
     """Predictions with confidence (``ci``) and prediction (``pi``) intervals.
 
-    ``se`` is NaN when a transformation was applied, as in metafor.
+    ``se`` is NaN when a transformation was applied, as in metafor. ``pi_se`` is the standard error of the
+    prediction (before any transformation), ``pi_dist`` the distribution (``'norm'`` or ``'t'``) of the prediction
+    and ``pi_ddf`` its degrees of freedom (one per prediction) (used by ``forest(predstyle='shade')`` and ``'dist'``).
     """
 
     pred: FloatArray
@@ -36,6 +38,9 @@ class PredictResult:
     pi_lb: FloatArray
     pi_ub: FloatArray
     slab: tuple[str, ...] | None = None
+    pi_se: FloatArray | None = None
+    pi_dist: str | None = None
+    pi_ddf: float | FloatArray | None = None
 
     def to_frame(self) -> pandas.DataFrame:
         return pandas.DataFrame(
@@ -143,7 +148,18 @@ def predict_rma_uni(
             pi_lb = numpy.full_like(pred, numpy.nan)
             pi_ub = numpy.full_like(pred, numpy.nan)
 
-    return PredictResult(pred=pred, se=se, ci_lb=ci_lb, ci_ub=ci_ub, pi_lb=pi_lb, pi_ub=pi_ub, slab=slab)
+    return PredictResult(
+        pred=pred,
+        se=se,
+        ci_lb=ci_lb,
+        ci_ub=ci_ub,
+        pi_lb=pi_lb,
+        pi_ub=pi_ub,
+        slab=slab,
+        pi_se=pi_se,
+        pi_dist='norm' if x.ddf is None else 't',
+        pi_ddf=numpy.full(pred.shape, float(x.k - p if x.ddf is None else x.ddf)),
+    )
 
 
 def level_indices(
@@ -259,6 +275,7 @@ def predict_rma_mv(
     vpred = numpy.einsum('ij,jk,ik->i', X_new, x.vb, X_new)
     vpred = numpy.where(vpred < 0, numpy.nan, vpred)
     se = numpy.sqrt(vpred)
+    ddf_row: FloatArray | None = None
     if x.test == 'z':
         crit = numpy.full(k_new, float(scipy.stats.norm.isf(alpha / 2)))
     else:
@@ -280,8 +297,10 @@ def predict_rma_mv(
             pi_ok = False
         else:
             total = total + numpy.asarray(x.gamma2, dtype=numpy.float64)[gamma2_idx]
+    pi_se_all: FloatArray | None = None
     if pi_ok:
         pi_se = numpy.sqrt(total)
+        pi_se_all = pi_se
         pi_lb = pred - crit * pi_se
         pi_ub = pred + crit * pi_se
     else:
@@ -295,4 +314,15 @@ def predict_rma_mv(
         ci_lb, ci_ub = numpy.minimum(ci_lb, ci_ub), numpy.maximum(ci_lb, ci_ub)
         pi_lb, pi_ub = numpy.minimum(pi_lb, pi_ub), numpy.maximum(pi_lb, pi_ub)
 
-    return PredictResult(pred=pred, se=se, ci_lb=ci_lb, ci_ub=ci_ub, pi_lb=pi_lb, pi_ub=pi_ub, slab=slab)
+    return PredictResult(
+        pred=pred,
+        se=se,
+        ci_lb=ci_lb,
+        ci_ub=ci_ub,
+        pi_lb=pi_lb,
+        pi_ub=pi_ub,
+        slab=slab,
+        pi_se=pi_se_all,
+        pi_dist='norm' if x.test == 'z' else 't',
+        pi_ddf=ddf_row,
+    )

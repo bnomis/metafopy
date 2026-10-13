@@ -42,9 +42,6 @@ class LSPredictResult(metafopy.methods.predict.PredictResult):
 
     pred_type: str = 'location'
     ddf: float | None = None
-    pi_se: FloatArray | None = None
-    pi_dist: str | None = None
-    pi_ddf: float | None = None
     prob: FloatArray | None = None
     X: FloatArray | None = None
     Z: FloatArray | None = None

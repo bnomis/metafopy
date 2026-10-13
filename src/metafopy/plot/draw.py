@@ -12,12 +12,16 @@ import typing
 
 import matplotlib
 import matplotlib.axes
+import matplotlib.collections
+import matplotlib.colors
 import matplotlib.lines
 import matplotlib.patches
 import matplotlib.text
 import matplotlib.transforms
 import numpy
 import numpy.typing
+
+import metafopy.errors
 
 LTY = types.MappingProxyType(
     {
@@ -61,6 +65,74 @@ PCH: dict[int, tuple[str, bool, bool]] = {
 }
 
 FG = 'black'
+
+# R's device-independent font families (and the PostScript names it knows) -> matplotlib generic families
+FAMILIES = types.MappingProxyType(
+    {
+        'sans': 'sans-serif',
+        'serif': 'serif',
+        'mono': 'monospace',
+        'Helvetica': 'sans-serif',
+        'AvantGarde': 'sans-serif',
+        'Times': 'serif',
+        'Bookman': 'serif',
+        'NewCenturySchoolbook': 'serif',
+        'Palatino': 'serif',
+        'Courier': 'monospace',
+    }
+)
+
+type Font = tuple[str, int]
+type FontSpec = str | Font
+
+
+def mpl_family(family: str | None) -> str | None:
+    """The matplotlib font family for an R family name (``''`` is the device default, i.e. matplotlib's own default)."""
+    if not family:
+        return None
+    return FAMILIES.get(family, family)
+
+
+def parse_fonts(
+    fonts: FontSpec | collections.abc.Sequence[FontSpec] | collections.abc.Mapping[str, int] | None,
+    n: int,
+) -> list[Font]:
+    """metafor's ``fonts`` argument as ``n`` pairs ``(family, font)``.
+
+    ``fonts`` is a family name (``'sans'``, ``'serif'``, ``'mono'``, ...), a pair ``(family, font)`` with ``font`` 1 (plain), 2 (bold),
+    3 (italic) or 4 (bold italic), a mapping ``{family: font}`` (R's named vector) or a sequence of those; they are used for the study
+    labels, the annotations and (for ``n == 3``) the ``ilab`` columns. A single entry is used for all, and for ``n == 3`` two entries are
+    completed with the first for the third. ``None`` is the device default.
+
+    Raises:
+        metafopy.errors.InputError: the font specification is invalid.
+    """
+    if fonts is None:
+        return [('', 1)] * n
+    items: list[FontSpec]
+    if isinstance(fonts, str):
+        items = [fonts]
+    elif isinstance(fonts, collections.abc.Mapping):
+        items = [(str(k), int(v)) for k, v in fonts.items()]
+    elif isinstance(fonts, tuple) and len(fonts) == 2 and isinstance(fonts[0], str) and isinstance(fonts[1], int | numpy.integer):
+        items = [(fonts[0], int(fonts[1]))]
+    else:
+        items = list(fonts)
+    if not items:
+        raise metafopy.errors.InputError("Argument 'fonts' must not be empty.")
+    if len(items) == 1:
+        items = items * n
+    if n == 3 and len(items) == 2:
+        items = [*items, items[0]]
+    out: list[Font] = []
+    for it in items[:n]:
+        fam, fnt = (it, 1) if isinstance(it, str) else (it[0], int(it[1]))
+        if not isinstance(fam, str) or fnt not in (1, 2, 3, 4):
+            raise metafopy.errors.InputError("Each entry of 'fonts' must be a family name or a (family, font) pair with font 1, 2, 3 or 4.")
+        out.append((fam, fnt))
+    if len(out) < n:
+        raise metafopy.errors.InputError(f"Argument 'fonts' must have length 1 to {n}.")
+    return out
 
 
 # auditme: accept[non-alphabetical-dict-keys] order follows the R script that generates the fixtures
@@ -181,6 +253,27 @@ def rect(
     return r
 
 
+def rects(
+    ax: matplotlib.axes.Axes,
+    xl: numpy.typing.ArrayLike,
+    yb: float,
+    xr: numpy.typing.ArrayLike,
+    yt: float,
+    *,
+    cols: collections.abc.Sequence[str],
+    zorder: float = 1.0,
+) -> matplotlib.collections.PolyCollection:
+    """``rect(xl, yb, xr, yt, col = cols, border = cols)`` for many rectangles between the same ``yb`` and ``yt`` (gid ``'rects'``)."""
+    left, right = numpy.asarray(xl, dtype=float), numpy.asarray(xr, dtype=float)
+    verts = [[(a, yb), (a, yt), (b, yt), (b, yb)] for a, b in zip(left, right, strict=True)]
+    rgba = [matplotlib.colors.to_rgba(rcolor(c)) for c in cols]
+    pc = matplotlib.collections.PolyCollection(verts, facecolors=rgba, edgecolors=rgba, linewidths=1.0, zorder=zorder)
+    pc.set_gid('rects')
+    artist_meta(pc, xl=left, yb=yb, xr=right, yt=yt, cols=list(cols))
+    ax.add_collection(pc, autolim=False)
+    return pc
+
+
 def txt(
     ax: matplotlib.axes.Axes,
     x: float,
@@ -193,9 +286,16 @@ def txt(
     offset: float = 0.5,
     col: str = FG,
     family: str | None = None,
+    font: int = 1,
     rotation: float = 0.0,
 ) -> matplotlib.text.Text:
-    """``text(x, y, s, pos, cex, offset)``: ``pos`` 1/2/3/4 = below/left/above/right of the point, ``None`` = centred."""
+    """``text(x, y, s, pos, cex, offset)``: ``pos`` 1/2/3/4 = below/left/above/right of the point, ``None`` = centred.
+
+    ``family`` is an R family name (see :func:`parse_fonts`) and ``font`` the R font (1 plain, 2 bold, 3 italic, 4 bold italic;
+    ``bold=True`` is the same as ``font=2``).
+    """
+    if bold and font not in (2, 4):
+        font = 4 if font == 3 else 2
     fs = base_fontsize() * cex
     ha, va = 'center', 'center'
     dx = dy = 0.0
@@ -215,15 +315,16 @@ def txt(
         ha=ha,
         va=va if pos in (1, 3) else 'center_baseline',
         fontsize=fs,
-        fontweight='bold' if bold else 'normal',
+        fontweight='bold' if font in (2, 4) else 'normal',
+        fontstyle='italic' if font in (3, 4) else 'normal',
         color=rcolor(col),
-        family=family,
+        family=mpl_family(family),
         rotation=rotation,
         transform=ax.transData + matplotlib.transforms.ScaledTranslation(dx, dy, ax.figure.dpi_scale_trans),
         clip_on=False,
     )
     t.set_gid('text')
-    artist_meta(t, pos=pos, cex=cex, bold=bold, col=col)
+    artist_meta(t, pos=pos, cex=cex, bold=font in (2, 4), col=col, family=family or '', font=font)
     t.set_in_layout(False)
     return t
 
@@ -268,14 +369,21 @@ def pts(
     return out
 
 
-def xaxis(ax: matplotlib.axes.Axes, at: collections.abc.Sequence[float] | numpy.ndarray, labels: collections.abc.Sequence[str], *, cex: float = 1.0) -> None:
-    """R's ``axis(side = 1, at, labels)``: a line from the first to the last tick, with ticks and labels."""
+def xaxis(
+    ax: matplotlib.axes.Axes,
+    at: collections.abc.Sequence[float] | numpy.ndarray,
+    labels: collections.abc.Sequence[str],
+    *,
+    cex: float = 1.0,
+    family: str | None = None,
+) -> None:
+    """R's ``axis(side = 1, at, labels)``: a line from the first to the last tick, with ticks and labels (in the R font ``family``)."""
     at_a = numpy.asarray(at, dtype=float)
     sp = ax.spines['bottom']
     sp.set_visible(True)
     sp.set_bounds(float(at_a.min()), float(at_a.max()))
     ax.set_xticks(at_a)
-    ax.set_xticklabels(list(labels), fontsize=base_fontsize() * cex)
+    ax.set_xticklabels(list(labels), fontsize=base_fontsize() * cex, family=mpl_family(family))
     ax.xaxis.set_ticks_position('bottom')
     ax.tick_params(axis='x', length=4.0)
 
@@ -307,15 +415,38 @@ def only_xaxis(ax: matplotlib.axes.Axes) -> None:
 
 
 def xlab_below(
-    ax: matplotlib.axes.Axes, x: float, s: str, *, cex: float = 1.0, line: float = 2.5, ha: str = 'center', bold: bool = False
+    ax: matplotlib.axes.Axes,
+    x: float,
+    s: str,
+    *,
+    cex: float = 1.0,
+    line: float = 2.5,
+    ha: str = 'center',
+    bold: bool = False,
+    family: str | None = None,
+    font: int = 1,
 ) -> matplotlib.text.Text:
-    """``mtext(s, side = 1, at = x, line = line)``."""
+    """``mtext(s, side = 1, at = x, line = line)`` in the R font ``family`` and ``font`` (``bold=True`` is ``font=2``)."""
+    if bold and font not in (2, 4):
+        font = 4 if font == 3 else 2
     fs = base_fontsize() * cex
     off = line * 0.2 * (base_fontsize() / 12.0)
     tr = ax.get_xaxis_transform() + matplotlib.transforms.ScaledTranslation(0.0, -off, ax.figure.dpi_scale_trans)
-    t = ax.text(x, 0, s, ha=ha, va='top', fontsize=fs, fontweight='bold' if bold else 'normal', transform=tr, clip_on=False)
+    t = ax.text(
+        x,
+        0,
+        s,
+        ha=ha,
+        va='top',
+        fontsize=fs,
+        fontweight='bold' if font in (2, 4) else 'normal',
+        fontstyle='italic' if font in (3, 4) else 'normal',
+        family=mpl_family(family),
+        transform=tr,
+        clip_on=False,
+    )
     t.set_gid('mtext')
-    artist_meta(t, cex=cex)
+    artist_meta(t, cex=cex, family=family or '', font=font)
     t.set_in_layout(False)
     return t
 
@@ -323,7 +454,7 @@ def xlab_below(
 def collect(ax: matplotlib.axes.Axes | collections.abc.Sequence[matplotlib.axes.Axes]) -> dict[str, list[typing.Any]]:
     """The artists drawn on ``ax`` by gid (see the module docstring), in drawing order; their R-level arguments are in ``artist.meta``."""
     out: dict[str, list[typing.Any]] = {
-        g: [] for g in ('segment', 'polygon', 'rect', 'text', 'point', 'line', 'hline', 'vline', 'mtext', 'abline', 'grid', 'scatter')
+        g: [] for g in ('segment', 'polygon', 'rect', 'rects', 'text', 'point', 'line', 'hline', 'vline', 'mtext', 'abline', 'grid', 'scatter')
     }
     for one in [ax] if isinstance(ax, matplotlib.axes.Axes) else ax:
         for coll in (one.lines, one.patches, one.texts, one.collections):

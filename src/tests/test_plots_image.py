@@ -83,6 +83,38 @@ def test_image_forest_subgroups(dat: pandas.DataFrame) -> matplotlib.figure.Figu
 
 
 @MPL
+def test_image_forest_pi_shade(res: metafopy.RMAResult) -> matplotlib.figure.Figure:
+    fig = image_fig(8, 7)
+    # auditme: accept[literal-duplication] fixture inputs mirror the R calls that generate the reference
+    metafopy.plot.forest(res, ax=fig.axes[0], predstyle='shade', atransf=numpy.exp, at=numpy.log([0.1, 0.5, 1, 2, 4]), col=('black', 'darkblue', 'gray90'))
+    return fig
+
+
+@MPL
+def test_image_forest_pi_dist(res: metafopy.RMAResult) -> matplotlib.figure.Figure:
+    fig = image_fig(8, 7)
+    metafopy.plot.forest(res, ax=fig.axes[0], predstyle='dist', transf=numpy.exp, alim=(0, 5), refline=1, efac=(1, 2))
+    return fig
+
+
+@MPL
+def test_image_forest_fonts(res: metafopy.RMAResult, dat: pandas.DataFrame) -> matplotlib.figure.Figure:
+    fig = image_fig(8, 7)
+    metafopy.plot.forest(
+        res,
+        ax=fig.axes[0],
+        fonts={'serif': 3, 'mono': 1},
+        predstyle='polygon',
+        ilab=dat['year'].to_numpy(),
+        # auditme: accept[literal-duplication] fixture inputs mirror the R calls that generate the reference
+        ilab_lab=['Year'],
+        ilab_xpos=[-7.5],
+        xlim=(-14, 6),
+    )
+    return fig
+
+
+@MPL
 def test_image_funnel_contour(res: metafopy.RMAResult) -> matplotlib.figure.Figure:
     fig = image_fig()
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
