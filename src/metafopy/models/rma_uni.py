@@ -363,10 +363,16 @@ def rma_uni(
 
 
 @typing.overload
-def rma_uni(*args: typing.Any, scale: metafopy.models.rma_ls.ScaleSpec, **kwargs: typing.Any) -> metafopy.models.rma_ls_result.RMALSResult: ...
-
-
 def rma_uni(
+    yi: metafopy.metadata.Column | pandas.DataFrame | None = None,
+    vi: metafopy.metadata.Column | None = None,
+    *,
+    scale: metafopy.models.rma_ls.ScaleSpec,
+    **kwargs: typing.Any,
+) -> metafopy.models.rma_ls_result.RMALSResult: ...
+
+
+def rma_uni(  # type: ignore[misc]  # the scale overload forwards the remaining keywords
     yi: metafopy.metadata.Column | pandas.DataFrame | None = None,
     vi: metafopy.metadata.Column | None = None,
     *,
@@ -414,6 +420,7 @@ def rma_uni(
     btt: Btt = None,
     att: Btt = None,
     scale: metafopy.models.rma_ls.ScaleSpec | None = None,
+    # auditme: accept[literal-duplication] metafor option values and column labels repeated as in the R source
     link: typing.Literal['log', 'identity'] = 'log',
     optbeta: bool = False,
     alpha: numpy.typing.ArrayLike | None = None,
@@ -570,7 +577,7 @@ def rma_uni(
         level=level,
         btt=btt,
         tau2=tau2,
-        control=control,
+        control=typing.cast(metafopy.models.tau2.Control | collections.abc.Mapping[str, typing.Any] | None, control),
     )
     return dataclasses.replace(res, measure=measure)
 

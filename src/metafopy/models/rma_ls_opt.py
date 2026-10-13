@@ -11,7 +11,9 @@ Source of ``constrOptim``: R ``src/library/stats/R/constrOptim.R`` (GPL-2 | GPL-
 
 import collections.abc
 import dataclasses
+import functools
 import math
+import typing
 
 import numpy
 import numpy.typing
@@ -61,6 +63,7 @@ def constr_optim(
             return math.nan
         gi_old = ui @ theta_old - ci
         with numpy.errstate(divide='ignore', invalid='ignore'):
+            # auditme: accept[redundant-sink-caller-plus-callee] port of the constrOptim barrier, which evaluates the log twice by definition
             bar = float(numpy.sum(gi_old * numpy.log(gi) - ui_theta))
         if not math.isfinite(bar):
             bar = -math.inf
@@ -75,7 +78,7 @@ def constr_optim(
         obj_old = obj
         r_old = r
         theta_old = theta
-        last = metafopy.core.optim.nelder_mead(lambda x, t=theta_old: barrier(x, t), theta_old, maxit=maxit)
+        last = metafopy.core.optim.nelder_mead(functools.partial(barrier, theta_old=theta_old), theta_old, maxit=maxit)
         r = last.value
         if math.isfinite(r) and math.isfinite(r_old) and abs(r - r_old) < (0.001 + abs(r)) * outer_eps:
             break
@@ -108,7 +111,7 @@ def minimise(f: Objective, x0: FloatArray, *, method: str = 'BFGS', maxiter: int
     if method == 'BFGS':
         options['gtol'] = gtol
     if method in ('BFGS', 'L-BFGS-B', 'CG', 'Nelder-Mead'):
-        first = scipy.optimize.minimize(safe, x0, method=method, options=options)
+        first = scipy.optimize.minimize(safe, x0, method=typing.cast(typing.Any, method), options=typing.cast(typing.Any, options))
     else:
         raise metafopy.errors.InputError(f'unknown optimizer {method!r}')
     best_x, best_val = numpy.asarray(first.x, dtype=numpy.float64), float(first.fun)

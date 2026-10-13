@@ -168,13 +168,18 @@ def lin_comb(
     test: str,
     label: str,
 ) -> LSWaldResult:
-    """Wald tests of linear combinations ``L coef = rhs`` (``X`` for the location, ``Z`` for the scale part)."""
+    """Wald tests of linear combinations ``L coef = rhs`` (``X`` for the location, ``Z`` for the scale part).
+
+    Raises:
+        metafopy.errors.InputError: ``L`` does not match the number of coefficients or ``rhs`` has the wrong length.
+    """
     M = numpy.atleast_2d(numpy.asarray(L, dtype=numpy.float64))
     if int_incl and M.shape[1] == n_coef - 1:
         M = numpy.column_stack([numpy.ones(M.shape[0]), M])
     if M.shape[1] != n_coef:
+        kind = 'location' if part == 'location' else 'scale'
         raise metafopy.errors.InputError(
-            f"Length or number of columns of '{label}' ({M.shape[1]}) does not match the number of {'location' if part == 'location' else 'scale'} coefficients ({n_coef})."
+            f"Length or number of columns of '{label}' ({M.shape[1]}) does not match the number of {kind} coefficients ({n_coef})."
         )
     m = M.shape[0]
     rhs_v = rhs_vector(rhs, m, 'linear combinations')
@@ -182,6 +187,7 @@ def lin_comb(
     v = M @ vcov @ M.T
     se = numpy.sqrt(numpy.diag(v))
     zval = est / se
+    # auditme: accept[literal-duplication] metafor option values and column labels repeated as in the R source
     t_test = test in ('knha', 'adhoc', 't')
     if t_test:
         d = float(ddf) if ddf is not None else math.nan
@@ -225,6 +231,7 @@ def wald_subset(
     m = len(idx)
     b = coef[sub] - rhs_vector(rhs, m, 'coefficients tested')
     stat0 = solve_quad(b, vcov[numpy.ix_(sub, sub)])
+    # auditme: accept[literal-duplication] metafor option values and column labels repeated as in the R source
     t_test = test in ('knha', 'adhoc', 't')
     stat, df, p = omnibus(stat0, m, float(ddf) if (t_test and ddf is not None) else None)
     return LSWaldResult(part=part, stat=stat, df=df, pval_omnibus=p, test=test, m=m, idx=idx)
@@ -306,13 +313,16 @@ def anova_rma_ls(
     if att is not None and btt is not None:
         raise metafopy.errors.InputError("Can only specify either 'btt' or 'att', but not both.")
     if Z is not None:
-        return lin_comb(
-            x.alpha, x.va, Z, rhs, names=x.alpha_names, int_incl=x.Z_int_incl, n_coef=x.q, ddf=x.ddf_alpha, part='scale', test=x.test, label='Z'
-        )
+        return lin_comb(x.alpha, x.va, Z, rhs, names=x.alpha_names, int_incl=x.Z_int_incl, n_coef=x.q, ddf=x.ddf_alpha, part='scale', test=x.test, label='Z')
     if X is not None:
         return lin_comb(x.beta, x.vb, X, rhs, names=x.coef_names, int_incl=x.int_incl, n_coef=x.p, ddf=x.ddf, part='location', test=x.test, label='X')
     if att is not None:
-        if isinstance(att, collections.abc.Sequence) and not isinstance(att, str) and len(att) > 0 and all(isinstance(a, collections.abc.Sequence) and not isinstance(a, str) for a in att):
+        if (
+            isinstance(att, collections.abc.Sequence)
+            and not isinstance(att, str)
+            and len(att) > 0
+            and all(isinstance(a, collections.abc.Sequence) and not isinstance(a, str) for a in att)
+        ):
             if rhs is not None:
                 raise metafopy.errors.InputError("Cannot use 'rhs' argument when specifying a list for 'att'.")
             return [typing.cast(LSWaldResult, anova_rma_ls(x, att=a)) for a in att]

@@ -13,8 +13,8 @@ import numpy.typing
 import metafopy.core.linalg
 import metafopy.errors
 import metafopy.methods.blup
-import metafopy.methods.influence
 import metafopy.methods.common
+import metafopy.methods.influence
 import metafopy.methods.ranef
 import metafopy.models.rma_ls_result
 

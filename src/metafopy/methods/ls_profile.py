@@ -52,7 +52,8 @@ class LSProfileResult:
         return self.to_frame().to_string()
 
 
-@metafopy.methods.profile.profile.register
+@metafopy.methods.profile.profile.register  # type: ignore[arg-type]  # returns a result class of its own
+# auditme: accept[duplicate-call-sequence] the profile of a location-scale model follows the same steps as profile.rma in metafor
 def profile_rma_ls(
     fitted: metafopy.models.rma_ls_result.RMALSResult,
     alpha: int | None = None,

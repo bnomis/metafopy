@@ -36,6 +36,13 @@ estimators, Satterthwaite degrees of freedom and Wald tests of the R package
 `optbeta`, `vccon`, `restart`, `cvvc` or `verbose`; `robust` does not port the
 saddlepoint test or the HTA/HTB/EDF/EDT Wald tests.
 
+`rma_uni(..., scale=~ ...)` fits location-scale models (`RMALSResult`, Viechtbauer &
+Lopez-Lopez, 2022) with log or identity link, and `predict`, `confint`, `profile`,
+`anova` (Wald and likelihood-ratio tests), `vif`, `blup`, `ranef`, `rstandard` and
+`permutest` (including the exact test) work for them. Fits match metafor to about 1e-6
+(scale coefficients about 1e-4 where the likelihood is flat). `sim=` in `vif` is not
+ported.
+
 ```python
 import numpy as np
 from metafopy import datasets, rma, confint, predict

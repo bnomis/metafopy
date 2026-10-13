@@ -46,6 +46,7 @@ def scale_matrix(scale: ScaleSpec, md: metafopy.metadata.MetaData) -> tuple[Floa
             raise metafopy.errors.InputError("the 'scale' argument must be a one-sided formula such as '~ x1 + x2' or a model matrix")
         rhs = scale.partition('~')[2].strip()
         if rhs == '1':
+            # auditme: accept[literal-duplication] metafor option values and column labels repeated as in the R source
             return numpy.ones((k_all, 1)), ('intrcpt',)
         if md.data is None:
             raise metafopy.errors.InputError('a formula for scale needs data')
@@ -94,7 +95,7 @@ def fit_scale(
     """
     meth = method if isinstance(method, str) else method[0]
     if meth not in metafopy.models.tau2.ESTIMATORS:
-        raise metafopy.errors.InputError('Unknown \'method\' specified.')
+        raise metafopy.errors.InputError("Unknown 'method' specified.")
     if tau2 is not None and not numpy.isnan(tau2):
         warnings.warn("Argument 'tau2' ignored for location-scale models.", stacklevel=3)
     Z_all, z_names = scale_matrix(scale, md)

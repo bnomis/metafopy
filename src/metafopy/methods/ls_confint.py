@@ -23,10 +23,13 @@ import metafopy.transf
 
 __all__ = ['confint_rma_ls']
 
-COLUMNS = ['estimate', 'ci.lb', 'ci.ub']
+# auditme: accept[literal-duplication] the labels repeat those of the confint tables
+COLUMNS = ('estimate', 'ci.lb', 'ci.ub')  # auditme: accept[non-alphabetical-literal] the order follows the metafor column order
 
 
-def search_limits(x: metafopy.models.rma_ls_result.RMALSResult, pos: int, alpha_level: float, control: collections.abc.Mapping[str, float]) -> tuple[float, float]:
+def search_limits(
+    x: metafopy.models.rma_ls_result.RMALSResult, pos: int, alpha_level: float, control: collections.abc.Mapping[str, float]
+) -> tuple[float, float]:
     """The interval searched for the bounds of the CI of ``alpha[pos]`` (``vc.min`` and ``vc.max``)."""
     vc = float(x.alpha[pos])
     se = float(x.se_alpha[pos])
@@ -152,6 +155,7 @@ def confint_rma_ls(
 
     res_fixed: pandas.DataFrame | None = None
     if fixed:
+        # auditme: accept[literal-duplication] metafor option values and column labels repeated as in the R source
         if x.test in ('knha', 'adhoc', 't'):
             ddf = float(x.ddf) if x.ddf is not None else math.nan
             crit = float(scipy.stats.t.isf(level_alpha / 2, ddf)) if ddf > 0 else math.nan

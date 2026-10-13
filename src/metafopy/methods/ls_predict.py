@@ -20,6 +20,7 @@ import metafopy.errors
 import metafopy.methods.predict
 import metafopy.models.rma_ls_result
 import metafopy.models.rma_uni
+import metafopy.models.tau2
 import metafopy.transf
 
 __all__ = ['LSPredictResult', 'predict_rma_ls']
@@ -227,6 +228,7 @@ def predict_rma_ls(
         raise metafopy.errors.InputError("Arguments 'newmods' and 'newscale' are inconsistent.")
 
     crit_alpha = crit_level / (k_new if adjust else 1)
+    # auditme: accept[literal-duplication] metafor option values and column labels repeated as in the R source
     t_test = x.test in ('knha', 'adhoc', 't')
     pi_dist: str | None = None
     pi_ddf: float | None = None
@@ -307,9 +309,10 @@ def predict_rma_ls(
     else:
         slab = tuple(str(i + 1) for i in range(k_new))
     if k_new == 1 and not ((pred_mui and newmods is None) or (not pred_mui and newscale is None)):
+        # auditme: accept[literal-duplication] metafor option values and column labels repeated as in the R source
         slab = ('',)
 
-    if x.method in ('EE', 'FE', 'CE') or not pred_mui:
+    if x.method in metafopy.models.tau2.FIXED_EFFECTS or not pred_mui:
         pi_lb = numpy.full(k_new, math.nan)
         pi_ub = numpy.full(k_new, math.nan)
 

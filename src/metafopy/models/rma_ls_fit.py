@@ -173,7 +173,11 @@ def is_dummy(x: FloatArray, eps: float = 1e-8) -> bool:
 
 
 def start_alpha(md: metafopy.metadata.MetaData, Z: FloatArray, link: str, is_int: BoolArray) -> FloatArray:
-    """Starting values for the scale coefficients: a regression of the transformed squared residuals of a HE fit on ``Z``."""
+    """Starting values for the scale coefficients: a regression of the transformed squared residuals of a HE fit on ``Z``.
+
+    Raises:
+        metafopy.errors.EstimationError: no suitable starting values were found.
+    """
     md0 = dataclasses.replace(md, weights=None, intercept=False)
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
@@ -227,6 +231,7 @@ def location_estimates(
         vb = stXAX @ XA @ numpy.diag(vi + tau2) @ XA.T @ stXAX
         rss_f = float(numpy.sum(wi * (yi - X @ beta) ** 2))
     s2w = 1.0
+    # auditme: accept[literal-duplication] metafor option values and column labels repeated as in the R source
     if test in ('knha', 'adhoc'):
         s2w = 0.0 if rss_knha <= DBL_EPS else rss_knha / (k - p)
     if test == 'adhoc':
@@ -259,8 +264,10 @@ def fit_rma_ls(
         metafopy.errors.InputError: an argument or the data is invalid.
         metafopy.errors.EstimationError: the optimisation failed.
     """
+    # auditme: accept[literal-duplication] metafor option values and column labels repeated as in the R source
     if method not in ('ML', 'REML'):
         raise metafopy.errors.InputError('Location-scale models can only be fitted with ML or REML estimation.')
+    # auditme: accept[literal-duplication] metafor option values and column labels repeated as in the R source
     if link not in ('log', 'identity'):
         raise metafopy.errors.InputError("The 'link' argument must be either 'log' or 'identity'.")
     if optbeta and not weighted:
@@ -359,7 +366,15 @@ def fit_rma_ls(
     mZ: FloatArray | None = None
     imZ: FloatArray | None = None
     Zsave = Z
-    if not Z_int_only and Z_int_incl and con.scaleZ and math.isnan(alpha_arg[0]) and numpy.all(numpy.isinf(alpha_min)) and numpy.all(numpy.isinf(alpha_max)) and not optbeta:
+    if (
+        not Z_int_only
+        and Z_int_incl
+        and con.scaleZ
+        and math.isnan(alpha_arg[0])
+        and numpy.all(numpy.isinf(alpha_min))
+        and numpy.all(numpy.isinf(alpha_max))
+        and not optbeta
+    ):
         meanZ = Z[:, 1:].mean(axis=0)
         sdZ = Z[:, 1:].std(axis=0, ddof=1)
         is_d = numpy.array([is_dummy(Z[:, j]) for j in range(q)])
@@ -414,7 +429,9 @@ def fit_rma_ls(
         else:
             beta_init = numpy.atleast_1d(numpy.asarray(con.beta_init, dtype=numpy.float64))
             if beta_init.shape[0] != p:
-                raise metafopy.errors.InputError(f"Length of the 'beta_init' argument ({beta_init.shape[0]}) does not match the actual number of parameters ({p}).")
+                raise metafopy.errors.InputError(
+                    f"Length of the 'beta_init' argument ({beta_init.shape[0]}) does not match the actual number of parameters ({p})."
+                )
             if numpy.any(numpy.isnan(beta_init)):
                 raise metafopy.errors.InputError("No missing values allowed in 'beta_init'.")
 
@@ -491,7 +508,7 @@ def fit_rma_ls(
                 eps=con.hessian_eps,
                 r=con.hessian_r,
             )
-        except (ValueError, ArithmeticError, numpy.linalg.LinAlgError):
+        except ValueError, ArithmeticError, numpy.linalg.LinAlgError:
             warnings.warn('Error when trying to compute the Hessian.', stacklevel=3)
         if H is not None:
             inv = pos_chol_inverse(H[numpy.ix_(hest, hest)])
@@ -525,6 +542,7 @@ def fit_rma_ls(
 
     att_idx = metafopy.models.rma_uni.set_btt(att, q, Z_int_incl, znames)
     m_alpha = len(att_idx)
+    # auditme: accept[literal-duplication] metafor option values and column labels repeated as in the R source
     tdist = test in ('knha', 'adhoc', 't')
     ddf_alpha = k - q if tdist else None
     QS = quad_form(alpha_hat, va, att_idx)

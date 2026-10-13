@@ -43,7 +43,7 @@ class LSControl:
     maxiter: int = 5000
     optimizer: str = 'nlminb'
     REMLf: bool = True
-    scaleZ: bool = True
+    scaleZ: bool = True  # noqa: N815  mirrors the metafor control argument name
     tau2_max: float = numpy.inf
     tau2_min: float = 0.0
 

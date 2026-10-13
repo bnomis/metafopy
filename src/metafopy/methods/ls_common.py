@@ -16,6 +16,7 @@ import metafopy.printing
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 
+
 def center_stars(pvals: collections.abc.Iterable[float]) -> list[str]:
     """The significance codes of ``pvals`` as R prints a ``symnum`` column: centred (odd space on the right) in a common width."""
     stars = [metafopy.printing.signif_stars(float(v)) or ' ' for v in pvals]

@@ -36,7 +36,16 @@ class LSVIFResult:
         return f'\nLocation Coefficients:\n{self.beta}\nScale Coefficients:\n{self.alpha}'
 
 
-def coef_table(estimate: FloatArray, se: FloatArray, zval: FloatArray, pval: FloatArray, ci_lb: FloatArray, ci_ub: FloatArray, names: collections.abc.Sequence[str], ddf: int | None) -> pandas.DataFrame:
+def coef_table(
+    estimate: FloatArray,
+    se: FloatArray,
+    zval: FloatArray,
+    pval: FloatArray,
+    ci_lb: FloatArray,
+    ci_ub: FloatArray,
+    names: collections.abc.Sequence[str],
+    ddf: int | None,
+) -> pandas.DataFrame:
     cols: dict[str, typing.Any] = {'estimate': estimate, 'se': se}
     if ddf is not None:
         cols['tval'] = zval
@@ -91,7 +100,11 @@ def part_vif(
     table: bool,
     reestimate: bool,
 ) -> metafopy.methods.vif.VIFResult:
-    """The (G)VIFs of the location (``which='beta'``) or the scale (``which='alpha'``) coefficients."""
+    """The (G)VIFs of the location (``which='beta'``) or the scale (``which='alpha'``) coefficients.
+
+    Raises:
+        metafopy.errors.InputError: a coefficient set is invalid.
+    """
     if which == 'beta':
         n, int_incl, names, vcov, M = res.p, res.int_incl, res.coef_names, res.vb, res.X
     else:
@@ -104,7 +117,7 @@ def part_vif(
     elif isinstance(spec_arg, str | int):
         specs = [spec_arg]
     elif any(isinstance(b, str | collections.abc.Sequence) for b in spec_arg):
-        specs = list(spec_arg)  # type: ignore[arg-type]
+        specs = list(spec_arg)
     else:
         specs = [list(spec_arg)]  # type: ignore[arg-type]
     groups = [metafopy.models.rma_uni.set_btt(s, n, int_incl, names) for s in specs]
@@ -118,7 +131,12 @@ def part_vif(
         def refit_part(Mb: FloatArray) -> FloatArray | None:
             beta_arg = numpy.where(res.beta_fix, res.beta, numpy.nan) if res.optbeta and which == 'alpha' else None
             fit = metafopy.methods.ls_common.refit_ls(
-                res, alpha=mask if which == 'beta' else None, beta=beta_arg, skiphes=False, X=Mb if which == 'beta' else None, Z=Mb if which == 'alpha' else None
+                res,
+                alpha=mask if which == 'beta' else None,
+                beta=beta_arg,
+                skiphes=False,
+                X=Mb if which == 'beta' else None,
+                Z=Mb if which == 'alpha' else None,
             )
             if fit is None:
                 return None
@@ -149,7 +167,7 @@ def part_vif(
     return metafopy.methods.vif.VIFResult(vif=tuple(entries), bttspec=not missing, table=tab, test=res.test if tab is not None else None)
 
 
-@metafopy.methods.vif.vif.register
+@metafopy.methods.vif.vif.register  # type: ignore[arg-type]  # returns a result class of its own
 def vif_rma_ls(
     res: metafopy.models.rma_ls_result.RMALSResult,
     btt: metafopy.methods.vif.BttArg = None,
@@ -178,6 +196,7 @@ def vif_rma_ls(
         raise metafopy.errors.NotSupportedError("Argument 'sim' is not supported for location-scale models.")
     out_beta = part_vif(res, which='beta', spec_arg=btt, table=table, reestimate=reestimate) if loc else None
     out_alpha = part_vif(res, which='alpha', spec_arg=att, table=table, reestimate=reestimate) if scale else None
+    result: metafopy.methods.vif.VIFResult | LSVIFResult
     if out_beta is not None and out_alpha is not None:
         result = LSVIFResult(beta=out_beta, alpha=out_alpha)
     else:

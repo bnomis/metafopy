@@ -31,9 +31,14 @@ MODS3 = '~ ni100 + meta'
 SCALE3 = '~ ni100 + imag'
 
 
+any_permutest: typing.Callable[..., typing.Any] = metafopy.permutest
+any_profile: typing.Callable[..., typing.Any] = metafopy.profile
+any_vif: typing.Callable[..., typing.Any] = metafopy.vif
+
+
 def flat(value: typing.Any) -> list[float]:
     """A (possibly nested, possibly unboxed) JSON matrix as a flat float array; null is NaN."""
-    return numpy.array([numpy.nan if v is None else v for v in numpy.array(value, dtype=object).ravel()], dtype=float).tolist()
+    return typing.cast(list[float], numpy.array([numpy.nan if v is None else v for v in numpy.array(value, dtype=object).ravel()], dtype=float).tolist())
 
 
 def frame(name: str) -> pandas.DataFrame:
@@ -80,6 +85,7 @@ def bdz() -> numpy.typing.NDArray[numpy.float64]:
     return numpy.column_stack([numpy.ones(len(d)), d['ni100'], d['imag']])
 
 
+# auditme: accept[non-alphabetical-dict-keys] order follows the R script that generates the fixtures
 FITS: dict[str, Fit] = {
     'bd_int': lambda: ls(bd()),
     'bd_int_ml': lambda: ls(bd(), method='ML'),
@@ -208,6 +214,7 @@ def check_predict(pr: metafopy.PredictResult, ref: dict[str, typing.Any], what: 
         refutil.close(pr.pi_ub, ref['pi_ub'], f'{what} pi_ub', rtol=OPT, atol=1e-7)
 
 
+# auditme: accept[non-alphabetical-dict-keys] order follows the R script that generates the fixtures
 PREDICT_CASES: dict[str, tuple[str, str, dict[str, typing.Any]]] = {
     'bd_int:predict_newscale_exp': ('bd_int', 'predict_newscale_exp', {'newscale': 1, 'transf': numpy.exp}),
     'bd_int:predict_newscale': ('bd_int', 'predict_newscale', {'newscale': 1}),
@@ -287,6 +294,7 @@ def check_ci(table: pandas.DataFrame, ref: dict[str, typing.Any], what: str, rto
     refutil.close(table['ci.ub'].to_numpy(), ref['ci_ub'], f'{what} ci.ub', rtol=rtol, atol=atol)
 
 
+# auditme: accept[non-alphabetical-dict-keys] order follows the R script that generates the fixtures
 CONFINT_CASES: dict[str, tuple[str, str, int]] = {
     'bd_int': ('bd_int', 'confint_alpha', 0),
     'bd_3_t': ('bd_3_t', 'confint_alpha2', 1),
@@ -359,25 +367,25 @@ def check_profile(pf: metafopy.methods.ls_profile.LSProfileResult, ref: dict[str
 
 
 def test_profile() -> None:
-    pf = metafopy.profile(result('bd_int'), alpha=0, steps=12)
+    pf = any_profile(result('bd_int'), alpha=0, steps=12)
     assert isinstance(pf, metafopy.methods.ls_profile.LSProfileResult)
     check_profile(pf, REF['bd_int']['profile'], 'profile bd_int')
-    pf3 = metafopy.profile(result('bd_3'), alpha=1, steps=10)
+    pf3 = any_profile(result('bd_3'), alpha=1, steps=10)
     assert isinstance(pf3, metafopy.methods.ls_profile.LSProfileResult)
     check_profile(pf3, REF['bd_3']['profile'], 'profile bd_3')
     assert list(pf3.beta.columns) == list(result('bd_3').coef_names)
 
 
 def test_profile_all_and_errors() -> None:
-    allp = metafopy.profile(result('bd_3'), steps=5)
+    allp = any_profile(result('bd_3'), steps=5)
     assert isinstance(allp, list)
     assert [p.position for p in allp] == [0, 1, 2]
     with pytest.raises(metafopy.errors.InputError, match='optbeta'):
-        metafopy.profile(result('bd_optbeta'))
+        any_profile(result('bd_optbeta'))
     with pytest.raises(metafopy.errors.InputError, match='was fixed'):
-        metafopy.profile(result('bd_3_alpha'), alpha=1)
+        any_profile(result('bd_3_alpha'), alpha=1)
     with pytest.raises(metafopy.errors.InputError, match='steps'):
-        metafopy.profile(result('bd_3'), alpha=0, steps=1)
+        any_profile(result('bd_3'), alpha=0, steps=1)
 
 
 # -- anova ------------------------------------------------------------------------------------------------------------------
@@ -390,6 +398,7 @@ def check_wald(a: metafopy.methods.ls_anova.LSWaldResult, ref: dict[str, typing.
     refutil.close(a.stat, ref[key], f'{what} stat', rtol=OPT, atol=1e-7)
     refutil.close(a.pval_omnibus, ref[key + 'p'], f'{what} p', rtol=OPT, atol=1e-7)
     refutil.close(a.df[0], ref[key + 'df'][0], f'{what} df')
+    # auditme: accept[literal-duplication] metafor option values and column labels repeated as in the R source
     for mine, theirs in (('estimate', 'Xb' if a.part == 'location' else 'Za'), ('se', 'se'), ('zval', 'zval'), ('pval', 'pval')):
         if theirs in ref:
             refutil.close(getattr(a, mine), ref[theirs], f'{what} {mine}', rtol=OPT, atol=1e-7)
@@ -397,6 +406,7 @@ def check_wald(a: metafopy.methods.ls_anova.LSWaldResult, ref: dict[str, typing.
         assert refutil.r_print(str(a)) == refutil.r_print(ref['print'])
 
 
+# auditme: accept[non-alphabetical-dict-keys] order follows the R script that generates the fixtures
 WALD_CASES: dict[str, tuple[str, str, dict[str, typing.Any]]] = {
     'btt': ('bd_3', 'anova_btt', {'btt': [2]}),
     'att': ('bd_3', 'anova_att', {'att': [2]}),
@@ -505,7 +515,7 @@ def test_anova_lrt_errors() -> None:
 
 
 def test_vif() -> None:
-    v = metafopy.vif(result('bd_3'))
+    v = any_vif(result('bd_3'))
     assert isinstance(v, metafopy.methods.ls_vif.LSVIFResult)
     ref = REF['bd_3']['vif']
     refutil.close(v.beta.vifs.to_numpy(), ref['beta'], 'vif beta', rtol=OPT)
@@ -517,7 +527,7 @@ def test_vif() -> None:
 
 
 def test_vif_reestimate() -> None:
-    v = metafopy.vif(result('bd_3'), reestimate=True)
+    v = any_vif(result('bd_3'), reestimate=True)
     assert isinstance(v, metafopy.methods.ls_vif.LSVIFResult)
     ref = REF['bd_3']['vif_reest']
     refutil.close(v.beta.vifs.to_numpy(), ref['beta'], 'vif reest beta', rtol=OPT)
@@ -525,7 +535,7 @@ def test_vif_reestimate() -> None:
 
 
 def test_vif_btt_att() -> None:
-    v = metafopy.vif(result('bd_3'), btt=1, att=[[1], [1, 2]])
+    v = any_vif(result('bd_3'), btt=1, att=[[1], [1, 2]])
     assert isinstance(v, metafopy.methods.ls_vif.LSVIFResult)
     ref = REF['bd_3']['vif_att']
     refutil.close(v.beta.vifs.to_numpy(), ref['beta'], 'vif btt', rtol=OPT)
@@ -534,7 +544,7 @@ def test_vif_btt_att() -> None:
 
 
 def test_vif_table() -> None:
-    v = metafopy.vif(result('bd_3'), table=True)
+    v = any_vif(result('bd_3'), table=True)
     assert isinstance(v, metafopy.methods.ls_vif.LSVIFResult)
     assert v.beta.table is not None
     assert v.alpha.table is not None
@@ -546,29 +556,30 @@ def test_vif_table() -> None:
 
 
 def test_vif_single_part() -> None:
-    v = metafopy.vif(result('mc_factors'))
+    v = any_vif(result('mc_factors'))
     assert isinstance(v, metafopy.methods.ls_vif.LSVIFResult)
     refutil.close(v.beta.vifs.to_numpy(), REF['mc_factors']['vif']['beta'], 'vif mc', rtol=OPT)
-    only_loc = metafopy.vif(result('bd_ni_ml'))
+    only_loc = any_vif(result('bd_ni_ml'))
     assert isinstance(only_loc, metafopy.methods.ls_vif.LSVIFResult)
     loc_only = ls(bd(), MODS3, '~ 1')
-    single = metafopy.vif(loc_only)
+    single = any_vif(loc_only)
     assert isinstance(single, metafopy.VIFResult)
     scale_only = ls(bd(), None, SCALE3)
-    single_scale = metafopy.vif(scale_only)
+    single_scale = any_vif(scale_only)
     assert isinstance(single_scale, metafopy.VIFResult)
     assert list(single_scale.vifs.index) == ['ni100', 'imag']
 
 
 def test_vif_errors() -> None:
     with pytest.raises(metafopy.errors.InputError, match='intercept-only'):
-        metafopy.vif(result('bd_int'))
+        any_vif(result('bd_int'))
     with pytest.raises(metafopy.errors.NotSupportedError, match='sim'):
-        metafopy.vif(result('bd_3'), sim=True)
+        any_vif(result('bd_3'), sim=True)
 
 
 # -- blup, ranef, rstandard and the other accessors -------------------------------------------------------------------------
 
+# auditme: accept[non-alphabetical-dict-keys] order follows the R script that generates the fixtures
 DIAG_CASES = {
     'bd_int': ('bd_int', None),
     'bd_3': ('bd_3', None),
@@ -629,7 +640,7 @@ def test_accessors() -> None:
     refutil.close(res.coef('beta').to_numpy(), ref['coef']['beta'], 'coef beta', rtol=OPT)  # type: ignore[union-attr]
     refutil.close(res.coef('alpha').to_numpy(), ref['coef']['alpha'], 'coef alpha', rtol=OPT)  # type: ignore[union-attr]
     refutil.close(res.vcov('alpha').to_numpy().ravel(), flat(ref['coef']['vcov_alpha']), 'vcov alpha', rtol=OPT, atol=1e-7)  # type: ignore[union-attr]
-    assert set(res.coef()) == {'alpha', 'beta'}  # type: ignore[arg-type]
+    assert set(res.coef()) == {'alpha', 'beta'}
     fs = res.fitstats()
     refutil.close(fs.to_numpy(), list(res.fit_stats_reml.as_tuple()), 'fitstats', rtol=1e-12)
     ml = res.fitstats(REML=False)
@@ -641,13 +652,23 @@ def test_accessors() -> None:
 
 def test_unsupported_methods_raise() -> None:
     res = result('bd_3')
-    for func in (metafopy.influence, metafopy.cooks_distance, metafopy.dfbetas, metafopy.rstudent, metafopy.leave1out, metafopy.cumul, metafopy.robust, metafopy.gosh):
+    for func in (
+        metafopy.influence,
+        metafopy.cooks_distance,
+        metafopy.dfbetas,
+        metafopy.rstudent,
+        metafopy.leave1out,
+        metafopy.cumul,
+        metafopy.robust,
+        metafopy.gosh,
+    ):
         with pytest.raises(metafopy.errors.ArgumentError):
-            func(res)  # type: ignore[arg-type]
+            func(res)
 
 
 # -- permutest --------------------------------------------------------------------------------------------------------------
 
+# auditme: accept[non-alphabetical-dict-keys] order follows the R script that generates the fixtures
 PERM_CASES: dict[str, tuple[str, str, dict[str, typing.Any]]] = {
     'both': ('bcg_ablat', 'permutest', {'iter': 100, 'seed': 1234}),
     'beta': ('bcg_ablat', 'permutest_beta', {'iter': 60, 'seed': 99, 'skip_alpha': True}),
@@ -663,7 +684,7 @@ PERM_CASES: dict[str, tuple[str, str, dict[str, typing.Any]]] = {
 @pytest.mark.parametrize('case', sorted(PERM_CASES))
 def test_permutest(case: str) -> None:
     name, key, kwargs = PERM_CASES[case]
-    pt = metafopy.permutest(result(name), **kwargs)
+    pt = any_permutest(result(name), **kwargs)
     assert isinstance(pt, metafopy.methods.ls_permutest.LSPermutestResult)
     ref = REF[name][key]
     # p-values of a skipped part come from the model fit (optimizer precision), the others are proportions of permutations
@@ -695,15 +716,15 @@ def loose(text: str) -> str:
 @pytest.mark.parametrize('case', ['both', 'beta', 'alpha', 't', 'int_scale'])
 def test_permutest_print(case: str) -> None:
     name, key, kwargs = PERM_CASES[case]
-    pt = metafopy.permutest(result(name), **kwargs)
+    pt = any_permutest(result(name), **kwargs)
     assert loose(str(pt)) == loose(REF[name][key]['print'])
 
 
 def test_permutest_exact_iter_and_exact() -> None:
-    assert metafopy.permutest(result('bcg_ablat'), exact='i') == REF['bcg_ablat']['permutest_iter']
+    assert any_permutest(result('bcg_ablat'), exact='i') == REF['bcg_ablat']['permutest_iter']
     small = result('bd6_exact')
-    assert metafopy.permutest(small, exact='i') == REF['bd6_exact']['permutest_iter']
-    pt = metafopy.permutest(small, exact=True)
+    assert any_permutest(small, exact='i') == REF['bd6_exact']['permutest_iter']
+    pt = any_permutest(small, exact=True)
     assert isinstance(pt, metafopy.methods.ls_permutest.LSPermutestResult)
     ref = REF['bd6_exact']['permutest']
     assert (pt.exact_iter, pt.Z_exact_iter) == (ref['exact_iter'], ref['Z_exact_iter'])
@@ -722,12 +743,12 @@ def test_permutest_exact_iter_and_exact() -> None:
 def test_permutest_errors() -> None:
     res = result('bcg_ablat')
     with pytest.raises(metafopy.errors.InputError, match='at least one part'):
-        metafopy.permutest(res, skip_beta=True, skip_alpha=True)
+        any_permutest(res, skip_beta=True, skip_alpha=True)
     with pytest.raises(metafopy.errors.InputError, match='iter'):
-        metafopy.permutest(res, iter=1)
+        any_permutest(res, iter=1)
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter('always')
-        pt = metafopy.permutest(result('bcg_int_scale'), iter=20, seed=2)
+        pt = any_permutest(result('bcg_int_scale'), iter=20, seed=2)
     assert any('intercept-only scale model' in str(w.message) for w in caught)
     assert isinstance(pt, metafopy.methods.ls_permutest.LSPermutestResult)
     assert pt.skip_alpha

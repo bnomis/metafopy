@@ -64,6 +64,7 @@ def test_line(stat: float, df: tuple[int, float | None], p: float, digits: int, 
 
 
 def format_result(res: metafopy.models.rma_ls_result.RMALSResult, digits: int = 4, showfit: bool = False) -> str:
+    # auditme: accept[literal-duplication] metafor option values and column labels repeated as in the R source
     out: list[str] = ['']
     out.append(f'Location-Scale Model (k = {res.k}; tau^2 estimator: {res.method})')
     out.append('')

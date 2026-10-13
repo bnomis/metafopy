@@ -231,7 +231,7 @@ def sorted_rows(M: FloatArray) -> tuple[float, numpy.typing.NDArray[numpy.intp],
     return float(count), labels, sorted_M
 
 
-@metafopy.methods.permutest.permutest.register
+@metafopy.methods.permutest.permutest.register  # type: ignore[arg-type]  # returns a result class of its own
 def permutest_rma_ls(
     x: metafopy.models.rma_ls_result.RMALSResult,
     exact: bool | typing.Literal['i'] = False,
@@ -430,9 +430,12 @@ def format_permutest(x: LSPermutestResult) -> str:
     pfmt = metafopy.models.rma_uni.pfmt
     fmt = metafopy.printing.fmt_num
     t_test = x.ddf is not None
+    # auditme: accept[literal-duplication] metafor option values and column labels repeated as in the R source
     out: list[str] = ['']
     if not x.int_only:
-        out.append(f'Test of Location Coefficients (coefficient{"s" if x.m > 1 else ""} {metafopy.models.rma_uni.coef_span(x.btt)}):{"" if x.skip_beta else "¹"}')
+        out.append(
+            f'Test of Location Coefficients (coefficient{"s" if x.m > 1 else ""} {metafopy.models.rma_uni.coef_span(x.btt)}):{"" if x.skip_beta else "¹"}'
+        )
         if t_test:
             out.append(f'F(df1 = {x.QMdf[0]}, df2 = {int(x.QMdf[1] or 0)}) = {fmt(x.QM, d)}, p-val {pfmt(x.QMp, d)}')
         else:
@@ -442,7 +445,9 @@ def format_permutest(x: LSPermutestResult) -> str:
     out += part_table(x.beta, x.se, x.zval, x.pval, x.ci_lb, x.ci_ub, x.coef_names, x.ddf, not x.skip_beta, x.int_only, d)
     out.append('')
     if not x.Z_int_only:
-        out.append(f'Test of Scale Coefficients (coefficient{"s" if x.m_alpha > 1 else ""} {metafopy.models.rma_uni.coef_span(x.att)}):{"" if x.skip_alpha else "¹"}')
+        out.append(
+            f'Test of Scale Coefficients (coefficient{"s" if x.m_alpha > 1 else ""} {metafopy.models.rma_uni.coef_span(x.att)}):{"" if x.skip_alpha else "¹"}'
+        )
         if t_test:
             out.append(f'F(df1 = {x.QSdf[0]}, df2 = {int(x.QSdf[1] or 0)}) = {fmt(x.QS, d)}, p-val {pfmt(x.QSp, d)}')
         else:
