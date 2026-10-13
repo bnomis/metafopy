@@ -18,6 +18,7 @@ import pandas
 import scipy.stats
 
 import metafopy.errors
+import metafopy.models.rma_ls_result
 import metafopy.models.rma_uni
 import metafopy.models.tau2
 import metafopy.printing
@@ -122,7 +123,7 @@ def blup_rma_uni(
 
 
 def shrinkage_predictions(
-    res: metafopy.models.rma_uni.RMAResult,
+    res: metafopy.models.rma_uni.RMAResult | metafopy.models.rma_ls_result.RMALSResult,
     kind: typing.Literal['blup', 'ranef'],
     level: float | None,
     digits: int | None,
@@ -150,7 +151,7 @@ def shrinkage_predictions(
     # shrinkage factors; an infinite tau^2 means no shrinkage at all
     tau2 = res.tau2
     with numpy.errstate(invalid='ignore', divide='ignore'):
-        li = numpy.ones(res.k) if numpy.isinf(tau2) else tau2 / (tau2 + res.vi)
+        li = numpy.where(numpy.isinf(tau2), 1.0, tau2 / (tau2 + res.vi))
     xb = res.X @ res.beta
     xvx = numpy.einsum('ij,jk,ik->i', res.X, res.vb, res.X)
 

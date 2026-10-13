@@ -21,7 +21,7 @@ MODS = 'I(year - 1990)'
 
 
 def uni(**kwargs: typing.Any) -> metafopy.RMAResult:
-    return metafopy.rma_uni('yi', 'vi', data=kwargs.pop('data', KON), **kwargs)
+    return typing.cast(metafopy.RMAResult, metafopy.rma_uni('yi', 'vi', data=kwargs.pop('data', KON), **kwargs))
 
 
 def mv(mods: str | None = None, **kwargs: typing.Any) -> metafopy.RMAMVResult:

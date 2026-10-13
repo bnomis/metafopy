@@ -9,6 +9,7 @@ from metafopy.plot.labbe import LabbeResult, labbe
 from metafopy.plot.profile import plot_profile
 from metafopy.plot.qqnorm import QQNormResult, qqnorm
 from metafopy.plot.radial import RadialResult, galbraith, radial
+from metafopy.plot.selmodel import SelPlotResult, plot_selmodel
 
 __all__ = [
     'BaujatResult',
@@ -19,6 +20,7 @@ __all__ = [
     'PlotInflResult',
     'QQNormResult',
     'RadialResult',
+    'SelPlotResult',
     'addpoly',
     'baujat',
     'forest',
@@ -28,6 +30,7 @@ __all__ = [
     'plot_gosh',
     'plot_infl',
     'plot_profile',
+    'plot_selmodel',
     'qqnorm',
     'radial',
 ]
