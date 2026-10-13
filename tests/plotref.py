@@ -183,7 +183,7 @@ def check_ablines(ax: Axes | Sequence[Axes], rec: dict[str, Any], what: str) -> 
         close([a.get_xdata()[0] for a in arts['vline']], r_ablines(rec, 'v'), f'{what}: vlines')
 
 
-def check_abline_ab(ax: Axes, rec: dict[str, Any], what: str) -> None:
+def check_abline_ab(ax: Axes | Sequence[Axes], rec: dict[str, Any], what: str) -> None:
     exp = [(flat(t['a'])[0], flat(t['b'])[0]) for t in rec.get('abline', []) if t.get('a') is not None]
     act = [(a.meta['a'], a.meta['b']) for a in collect(ax)['abline']]
     assert len(act) == len(exp), f'{what}: {len(act)} ablines, expected {len(exp)}'
@@ -221,10 +221,10 @@ def check_all(ax: Axes | Sequence[Axes], rec: dict[str, Any], what: str, skip: I
     if 'abline' not in skip:
         check_ablines(ax, rec, what)
         check_abline_ab(ax, rec, what)
-    if 'axis' not in skip:
+    if 'axis' not in skip and isinstance(ax, Axes):
         check_axis(ax, rec, what)
         check_axis(ax, rec, what, side=2)
-    if 'usr' not in skip and not skip.intersection({'usr'}):
+    if 'usr' not in skip and isinstance(ax, Axes):
         usr = rec['usr']
         close(ax.get_xlim(), usr[:2], f'{what}: xlim')
         close(ax.get_ylim(), usr[2:], f'{what}: ylim')

@@ -68,7 +68,8 @@ wrappers <- list(
   },
   lines = function(x, y = NULL, ...) {
     a <- list(...)
-    rec_add("lines", x = vsum(x), y = vsum(y), lty = chr(a$lty), col = chr(a$col))
+    xy <- grDevices::xy.coords(x, y)
+    rec_add("lines", x = vsum(xy$x), y = vsum(xy$y), lty = chr(a$lty), col = first(a$col), lwd = first(a$lwd))
     graphics::lines(x, y, ...)
   },
   axis = function(side, at = NULL, labels = TRUE, ...) {
@@ -82,7 +83,7 @@ wrappers <- list(
   },
   pairs = function(x, ...) {
     a <- list(...)
-    rec_add("pairs", nr = nrow(x), nc = ncol(x), colsum = num(colSums(x)), colhead = num(x[1, ]), pch = first(a$pch), cex = first(a$cex),
+    rec_add("pairs", nr = nrow(x), nc = ncol(x), colsum = num(colSums(x, na.rm = TRUE)), nna = num(colSums(is.na(x))), colhead = as.vector(unlist(x[1, ])), pch = first(a$pch), cex = first(a$cex),
             cols = if (is.character(a$col)) unique(a$col) else NULL, ncol = length(a$col), labels = if (is.expression(a$labels)) vapply(a$labels, function(l) paste(deparse(l), collapse = ""), "") else chr(a$labels))
     graphics::pairs(x, ...)
   },
@@ -149,7 +150,7 @@ run <- function(expr) {
   rec_reset()
   plot.new()
   ret <- force(expr)
-  list(ret = if (is.null(ret)) NULL else lapply(ret, num), rec = collect())
+  list(ret = if (is.null(ret) || inherits(ret, "density")) NULL else lapply(ret, num), rec = collect())
 }
 
 ### forest -----------------------------------------------------------------------------------------------
@@ -324,6 +325,5 @@ out$gosh_pairs <- run(fplot.gosh.rma(g8m))
 out$gosh_pairs_opts <- run(fplot.gosh.rma(g8m, het = "H2", out = 2, alpha = 0.4, breaks = 7, adjust = 2, lwd = 1, trim = list(0.02, c(0.1, 0.05), 0), border = "red", hh = 0.5, labels = c("H", "a", "b")))
 
 out$meta <- list(metafor = as.character(packageVersion("metafor")), R = R.version.string)
-for (nm in names(out)) tryCatch(toJSON(out[[nm]], auto_unbox = TRUE, digits = NA), error = function(e) cat("BAD:", nm, conditionMessage(e), "\n"))
 write_json(out, "tests/reference/phase2/plots.json", auto_unbox = TRUE, digits = NA, null = "null", na = "null", pretty = TRUE)
 cat("wrote tests/reference/phase2/plots.json\n")

@@ -136,7 +136,7 @@ def poly(ax: Axes, xs: ArrayLike, ys: ArrayLike, *, col: str | None, border: str
     )
     p.set_gid('polygon')
     _meta(p, xy=verts, col=col, border=border)
-    ax.add_patch(p)
+    ax.add_artist(p)
     return p
 
 
@@ -151,7 +151,7 @@ def rect(ax: Axes, xl: float, yb: float, xr: float, yt: float, *, col: str | Non
     )
     r.set_gid('rect')
     _meta(r, xy=(xl, yb, xr, yt), col=col)
-    ax.add_patch(r)
+    ax.add_artist(r)
     return r
 
 
@@ -294,9 +294,9 @@ def xlab_below(ax: Axes, x: float, s: str, *, cex: float = 1.0, line: float = 2.
 
 def collect(ax: Axes | Sequence[Axes]) -> dict[str, list[Any]]:
     """The artists drawn on ``ax`` by gid (see the module docstring), in drawing order; their R-level arguments are in ``artist.meta``."""
-    out: dict[str, list[Any]] = {g: [] for g in ('segment', 'polygon', 'rect', 'text', 'point', 'line', 'hline', 'vline', 'mtext', 'abline', 'grid')}
+    out: dict[str, list[Any]] = {g: [] for g in ('segment', 'polygon', 'rect', 'text', 'point', 'line', 'hline', 'vline', 'mtext', 'abline', 'grid', 'scatter')}
     for one in [ax] if isinstance(ax, Axes) else ax:
-        for coll in (one.lines, one.patches, one.texts):
+        for coll in (one.lines, one.patches, one.texts, one.collections):
             for a in coll:
                 gid = a.get_gid()
                 if gid in out:
@@ -388,3 +388,20 @@ def mtext_left(ax: Axes, s: str, y: float, *, line: float, cex: float = 1.0, ha:
     _meta(t, cex=cex)
     t.set_in_layout(False)
     return t
+
+
+def scatter(ax: Axes, x: ArrayLike, y: ArrayLike, *, pch: int, cex: float, cols: Sequence[str] | str, size: float = 5.5) -> Any:
+    """Many points drawn at once (``plot(x, y, pch, cex, col)``); the collection has gid ``'scatter'`` and ``meta`` with ``x``, ``y`` and ``cols``."""
+    xs = np.asarray(x, dtype=float)
+    ys = np.asarray(y, dtype=float)
+    marker, filled, _ = PCH.get(int(pch), ('o', True, False))
+    col_list = [cols] * xs.shape[0] if isinstance(cols, str) else list(cols)
+    rgba = [mpl.colors.to_rgba(rcolor(c)) for c in col_list]
+    s = (size * cex) ** 2
+    if filled:
+        sc = ax.scatter(xs, ys, s=s, marker=marker, c=rgba, linewidths=0.0, zorder=3.0, clip_on=False)
+    else:
+        sc = ax.scatter(xs, ys, s=s, marker=marker, facecolors='none', edgecolors=rgba, linewidths=0.8, zorder=3.0, clip_on=False)
+    sc.set_gid('scatter')
+    _meta(sc, x=xs, y=ys, cols=col_list, pch=int(pch), cex=cex)
+    return sc

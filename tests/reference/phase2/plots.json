@@ -22,7 +22,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "abline": [
@@ -584,7 +590,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "abline": [
@@ -1146,7 +1158,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "abline": [
@@ -1778,7 +1796,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "rect": [
@@ -2382,7 +2406,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "rect": [
@@ -3170,7 +3200,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "abline": [
@@ -3898,7 +3934,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "abline": [
@@ -4485,7 +4527,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "abline": [
@@ -5066,7 +5114,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "abline": [
@@ -5652,7 +5706,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "abline": [
@@ -6185,7 +6245,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "abline": [
@@ -6677,7 +6743,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "abline": [
@@ -7239,7 +7311,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "abline": [
@@ -7884,7 +7962,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "abline": [
@@ -8410,7 +8494,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "rect": [
@@ -9012,7 +9102,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "abline": [
@@ -9538,7 +9634,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "abline": [
@@ -9968,7 +10070,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "rect": [
@@ -10509,7 +10617,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "abline": [
@@ -11205,7 +11319,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "abline": [
@@ -11842,7 +11962,13 @@
           "xlab": "Log Risk Ratio",
           "ylab": "Standard Error",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "rect": [
@@ -11909,7 +12035,8 @@
             "tail": [0.00160701297121635, 0.00080350648560823, 0]
           },
           "lty": "3",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         },
         {
           "x": {
@@ -11925,7 +12052,8 @@
             "tail": [0.00160701297121635, 0.00080350648560823, 0]
           },
           "lty": "3",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         }
       ],
       "segments": [
@@ -11971,7 +12099,13 @@
           "xlab": "Log Risk Ratio",
           "ylab": "Variance",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "rect": [
@@ -12038,7 +12172,8 @@
             "tail": [0.00117268554498529, 0.000586342772492587, 0]
           },
           "lty": "3",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         },
         {
           "x": {
@@ -12054,7 +12189,8 @@
             "tail": [0.00117268554498529, 0.000586342772492587, 0]
           },
           "lty": "3",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         }
       ],
       "segments": [
@@ -12100,7 +12236,13 @@
           "xlab": "Log Risk Ratio",
           "ylab": "Inverse Standard Error",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "rect": [
@@ -12167,7 +12309,8 @@
             "tail": [17.3076553881164, 17.3236406293297, 17.339625870543]
           },
           "lty": "3",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         },
         {
           "x": {
@@ -12183,7 +12326,8 @@
             "tail": [17.3076553881164, 17.3236406293297, 17.339625870543]
           },
           "lty": "3",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         }
       ],
       "segments": [
@@ -12229,7 +12373,13 @@
           "xlab": "Log Risk Ratio",
           "ylab": "Inverse Variance",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "rect": [
@@ -12296,7 +12446,8 @@
             "tail": [276.927494877265, 277.203372090123, 277.47924930298]
           },
           "lty": "3",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         },
         {
           "x": {
@@ -12312,7 +12463,8 @@
             "tail": [276.927494877265, 277.203372090123, 277.47924930298]
           },
           "lty": "3",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         }
       ],
       "segments": [
@@ -12358,7 +12510,13 @@
           "xlab": "Log Risk Ratio",
           "ylab": "Sample Size",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "rect": [
@@ -12433,7 +12591,13 @@
           "xlab": "Log Risk Ratio",
           "ylab": "Inverse Sample Size",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "rect": [
@@ -12508,7 +12672,13 @@
           "xlab": "Log Risk Ratio",
           "ylab": "Square Root Sample Size",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "rect": [
@@ -12583,7 +12753,13 @@
           "xlab": "Log Risk Ratio",
           "ylab": "Inverse Square Root Sample Size",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "rect": [
@@ -12658,7 +12834,13 @@
           "xlab": "Log Risk Ratio",
           "ylab": "Log Sample Size",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "rect": [
@@ -12733,7 +12915,13 @@
           "xlab": "Log Risk Ratio",
           "ylab": "Weight (in %)",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "rect": [
@@ -12808,7 +12996,13 @@
           "xlab": "Risk Ratio (log scale)",
           "ylab": "Standard Error",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "rect": [
@@ -12907,7 +13101,8 @@
             "tail": [0.00264264264264269, 0.00132132132132123, 0]
           },
           "lty": "3",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         },
         {
           "x": {
@@ -12923,7 +13118,8 @@
             "tail": [0.00264264264264269, 0.00132132132132123, 0]
           },
           "lty": "3",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         },
         {
           "x": {
@@ -12939,7 +13135,8 @@
             "tail": [0.00264264264264269, 0.00132132132132123, 0]
           },
           "lty": "3",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         },
         {
           "x": {
@@ -12955,7 +13152,8 @@
             "tail": [0.00264264264264269, 0.00132132132132123, 0]
           },
           "lty": "3",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         },
         {
           "x": {
@@ -12971,7 +13169,8 @@
             "tail": [0.00264264264264269, 0.00132132132132123, 0]
           },
           "lty": "3",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         },
         {
           "x": {
@@ -12987,7 +13186,8 @@
             "tail": [0.00264264264264269, 0.00132132132132123, 0]
           },
           "lty": "3",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         }
       ],
       "segments": [
@@ -13089,7 +13289,13 @@
           "xlab": "Log Risk Ratio",
           "ylab": "Inverse Standard Error",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "rect": [
@@ -13188,7 +13394,8 @@
             "tail": [17.3076553881164, 17.3236406293297, 17.339625870543]
           },
           "lty": "2",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         },
         {
           "x": {
@@ -13204,7 +13411,8 @@
             "tail": [17.3076553881164, 17.3236406293297, 17.339625870543]
           },
           "lty": "2",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         },
         {
           "x": {
@@ -13220,7 +13428,8 @@
             "tail": [17.3076553881164, 17.3236406293297, 17.339625870543]
           },
           "lty": "2",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         },
         {
           "x": {
@@ -13236,7 +13445,8 @@
             "tail": [17.3076553881164, 17.3236406293297, 17.339625870543]
           },
           "lty": "2",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         },
         {
           "x": {
@@ -13252,7 +13462,8 @@
             "tail": [17.3076553881164, 17.3236406293297, 17.339625870543]
           },
           "lty": "2",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         },
         {
           "x": {
@@ -13268,7 +13479,8 @@
             "tail": [17.3076553881164, 17.3236406293297, 17.339625870543]
           },
           "lty": "2",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         }
       ],
       "segments": [
@@ -13343,7 +13555,13 @@
           "xlab": "Effect",
           "ylab": "V",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "rect": [
@@ -13410,7 +13628,8 @@
             "tail": [0.00117268554498529, 0.000586342772492587, 0]
           },
           "lty": "3",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         },
         {
           "x": {
@@ -13426,7 +13645,8 @@
             "tail": [0.00117268554498529, 0.000586342772492587, 0]
           },
           "lty": "3",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         }
       ],
       "segments": [
@@ -13591,7 +13811,13 @@
           "xlab": "Residual Value",
           "ylab": "Inverse Standard Error",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "rect": [
@@ -13658,7 +13884,8 @@
             "tail": [4.70432616389379, 4.7077469117123, 4.71116765953082]
           },
           "lty": "3",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         },
         {
           "x": {
@@ -13674,7 +13901,8 @@
             "tail": [4.70432616389379, 4.7077469117123, 4.71116765953082]
           },
           "lty": "3",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         }
       ],
       "segments": [
@@ -13720,7 +13948,13 @@
           "xlab": "Residual Value",
           "ylab": "Standard Error",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "rect": [
@@ -13787,7 +14021,8 @@
             "tail": [0.00173238391529096, 0.000866191957645479, 0]
           },
           "lty": "3",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         },
         {
           "x": {
@@ -13803,7 +14038,8 @@
             "tail": [0.00173238391529096, 0.000866191957645479, 0]
           },
           "lty": "3",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         }
       ],
       "segments": [
@@ -13869,7 +14105,13 @@
           "xlab": "Log Risk Ratio",
           "ylab": "Inverse Variance",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "rect": [
@@ -13952,7 +14194,8 @@
             "tail": [276.927494877265, 277.203372090123, 277.47924930298]
           },
           "lty": "3",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         },
         {
           "x": {
@@ -13968,7 +14211,8 @@
             "tail": [276.927494877265, 277.203372090123, 277.47924930298]
           },
           "lty": "3",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         },
         {
           "x": {
@@ -13984,7 +14228,8 @@
             "tail": [276.927494877265, 277.203372090123, 277.47924930298]
           },
           "lty": "3",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         },
         {
           "x": {
@@ -14000,7 +14245,8 @@
             "tail": [276.927494877265, 277.203372090123, 277.47924930298]
           },
           "lty": "3",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         }
       ],
       "segments": [
@@ -14047,7 +14293,13 @@
           "xlab": "Log Risk Ratio",
           "ylab": "Standard Error",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "rect": [
@@ -14114,7 +14366,8 @@
             "tail": [0.00160701297121635, 0.00080350648560823, 0]
           },
           "lty": "3",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         },
         {
           "x": {
@@ -14130,7 +14383,8 @@
             "tail": [0.00160701297121635, 0.00080350648560823, 0]
           },
           "lty": "3",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         }
       ],
       "segments": [
@@ -14185,7 +14439,13 @@
           "xlab": "Log Risk Ratio",
           "ylab": "Inverse Standard Error",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "rect": [
@@ -14284,7 +14544,8 @@
             "tail": [17.3076553881164, 17.3236406293297, 17.339625870543]
           },
           "lty": "3",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         },
         {
           "x": {
@@ -14300,7 +14561,8 @@
             "tail": [17.3076553881164, 17.3236406293297, 17.339625870543]
           },
           "lty": "3",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         },
         {
           "x": {
@@ -14316,7 +14578,8 @@
             "tail": [17.3076553881164, 17.3236406293297, 17.339625870543]
           },
           "lty": "3",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         },
         {
           "x": {
@@ -14332,7 +14595,8 @@
             "tail": [17.3076553881164, 17.3236406293297, 17.339625870543]
           },
           "lty": "3",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         },
         {
           "x": {
@@ -14348,7 +14612,8 @@
             "tail": [17.3076553881164, 17.3236406293297, 17.339625870543]
           },
           "lty": "3",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         },
         {
           "x": {
@@ -14364,7 +14629,8 @@
             "tail": [17.3076553881164, 17.3236406293297, 17.339625870543]
           },
           "lty": "3",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         }
       ],
       "segments": [
@@ -14547,7 +14813,13 @@
           "xlab": "Log Risk Ratio",
           "ylab": "Sample Size",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "rect": [
@@ -14630,7 +14902,13 @@
           "xlab": "Log Risk Ratio",
           "ylab": "Standard Error",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "rect": [
@@ -14697,7 +14975,8 @@
             "tail": [0.00160701297121635, 0.00080350648560823, 0]
           },
           "lty": "3",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         },
         {
           "x": {
@@ -14713,7 +14992,8 @@
             "tail": [0.00160701297121635, 0.00080350648560823, 0]
           },
           "lty": "3",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         }
       ],
       "segments": [
@@ -14759,7 +15039,13 @@
           "xlab": "Log Risk Ratio",
           "ylab": "Standard Error",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "rect": [
@@ -14826,7 +15112,8 @@
             "tail": [0.00160701297121635, 0.00080350648560823, 0]
           },
           "lty": "3",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         },
         {
           "x": {
@@ -14842,7 +15129,8 @@
             "tail": [0.00160701297121635, 0.00080350648560823, 0]
           },
           "lty": "3",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         }
       ],
       "segments": [
@@ -14888,7 +15176,13 @@
           "xlab": "Observed Outcome",
           "ylab": "Inverse Standard Error",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "rect": [
@@ -14971,7 +15265,8 @@
             "tail": [17.3076553881164, 17.3236406293297, 17.339625870543]
           },
           "lty": "3",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         },
         {
           "x": {
@@ -14987,7 +15282,8 @@
             "tail": [17.3076553881164, 17.3236406293297, 17.339625870543]
           },
           "lty": "3",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         },
         {
           "x": {
@@ -15003,7 +15299,8 @@
             "tail": [17.3076553881164, 17.3236406293297, 17.339625870543]
           },
           "lty": "3",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         },
         {
           "x": {
@@ -15019,7 +15316,8 @@
             "tail": [17.3076553881164, 17.3236406293297, 17.339625870543]
           },
           "lty": "3",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         }
       ],
       "segments": [
@@ -15103,7 +15401,13 @@
           "xlab": "A",
           "ylab": "Square Root Sample Size",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "rect": [
@@ -15178,7 +15482,13 @@
           "xlab": "Log Risk Ratio",
           "ylab": "Weight (in %)",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "rect": [
@@ -15253,7 +15563,13 @@
           "xlab": "Observed Outcome",
           "ylab": "Standard Error",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "rect": [
@@ -15320,7 +15636,8 @@
             "tail": [0.00160701297121635, 0.00080350648560823, 0]
           },
           "lty": "3",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         },
         {
           "x": {
@@ -15336,7 +15653,8 @@
             "tail": [0.00160701297121635, 0.00080350648560823, 0]
           },
           "lty": "3",
-          "col": "#666666"
+          "col": "#666666",
+          "lwd": null
         }
       ],
       "segments": [
@@ -15383,7 +15701,13 @@
           "xlab": "Squared Pearson Residual",
           "ylab": "Influence on Overall Result",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "grid": [
@@ -15428,7 +15752,13 @@
           "xlab": "X",
           "ylab": "Y",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "grid": [
@@ -15473,7 +15803,13 @@
           "xlab": "Squared Pearson Residual",
           "ylab": "Influence on Fitted Value",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "points": [
@@ -15510,7 +15846,13 @@
           "xlab": "Squared Pearson Residual",
           "ylab": "Influence on Fitted Value",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "grid": [
@@ -15554,7 +15896,13 @@
           "xlab": "x[i] == 1/sqrt(v[i] + tau^2)",
           "ylab": "",
           "xlab_expr": true,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": 1,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "polygon": [
@@ -15648,13 +15996,15 @@
             "tail": [1.0588869650233, 1.11307507501824, 1.16718711884277]
           },
           "lty": null,
-          "col": null
+          "col": null,
+          "lwd": null
         },
         {
           "x": [2.51018932873996, 2.51409425295558, 2.51790772531193, 2.52162838395656, 2.5252548892889, 2.52878592519933, 2.53222020030243, 2.53555644916224, 2.53879343350753, 2.54192994343495, 2.54496479859782, 2.5478968493786, 2.55072497804268, 2.55344809987148, 2.5560651642727, 2.55857515586551, 2.56097709553869, 2.56327004147947, 2.56545309017126, 2.56752537735803, 2.56948607897345, 2.57133441203302, 2.57306963548704, 2.57469105103298, 2.57619800388523],
           "y": [-2.67811516050015, -2.60845801136189, -2.53847933654165, -2.46818585916569, -2.3975844834437, -2.32668229254181, -2.25548654623216, -2.18400467831831, -2.11224429383646, -2.04021316603281, -1.96791923311789, -1.89537059479928, -1.82257550859436, -1.74954238592573, -1.67627978800189, -1.6027964214867, -1.52910113396141, -1.45520290918377, -1.38111086214894, -1.30683423395781, -1.23238238649843, -1.15776479694708, -1.08299105209571, -1.00807084251316, -0.933013956547883],
           "lty": null,
-          "col": null
+          "col": null,
+          "lwd": null
         }
       ],
       "text": [
@@ -15702,7 +16052,13 @@
           "xlab": "x[i] == 1/sqrt(v[i])",
           "ylab": "",
           "xlab_expr": true,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": 1,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "polygon": [
@@ -15796,13 +16152,15 @@
             "tail": [18.7022814541868, 19.1247441928463, 19.5441797709534]
           },
           "lty": null,
-          "col": null
+          "col": null,
+          "lwd": null
         },
         {
           "x": [23.1219053504639, 23.1236358964974, 23.1252162996661, 23.126646467502, 23.1279263162983, 23.1290557711228, 23.1300347658301, 23.1308632430724, 23.1315411543089, 23.1320684598136, 23.1324451286818, 23.1326711388351, 23.132746477025, 23.1326711388351, 23.1324451286818, 23.1320684598136, 23.1315411543089, 23.1308632430724, 23.1300347658301, 23.1290557711228, 23.1279263162983, 23.126646467502, 23.1252162996661, 23.1236358964974, 23.1219053504639],
           "y": [-1.83532655041048, -1.68250858819674, -1.52965780052345, -1.37677716132437, -1.22386964744345, -1.07093823834571, -0.917985915827514, -0.765015663726305, -0.612030467629896, -0.459033314585351, -0.30602719280753, -0.153015091387377, 0, 0.153015091387378, 0.306027192807531, 0.459033314585351, 0.612030467629896, 0.765015663726305, 0.917985915827514, 1.07093823834571, 1.22386964744345, 1.37677716132437, 1.52965780052345, 1.68250858819674, 1.83532655041048],
           "lty": null,
-          "col": null
+          "col": null,
+          "lwd": null
         }
       ],
       "text": [
@@ -15850,7 +16208,13 @@
           "xlab": "x[i] == 1/sqrt(v[i] + tau^2)",
           "ylab": "",
           "xlab_expr": true,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": 1,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "polygon": [
@@ -15929,13 +16293,15 @@
           "x": [12.3181367108903, 12.4790406427599, 12.6340185354971, 12.7820754174813, 12.9221928515852, 13.0533433125035, 13.1745066914722, 13.2846886080225, 13.3829400575185, 13.4683777780457, 13.5402045950949, 13.5977289124309, 13.6403824763863, 13.667735559027, 13.6795087883084, 13.6755809987541, 13.6559926753019, 13.6209447999972, 13.5707931654612, 13.5060384675061, 13.4273127096777, 13.3353626263469, 13.2310309456894, 13.115236364097, 12.9889530910721, 12.8531907564945, 12.7089753627004, 12.5573318267922, 12.3992685088733],
           "y": [-5.95028637729448, -5.60499283107011, -5.246329730842, -4.87452028632763, -4.4899144653813, -4.09299747934433, -3.68439593914052, -3.26488109858181, -2.83536865625392, -2.39691468931321, -1.95070744166621, -1.49805488018307, -1.04036815497862, -0.579141337246909, -0.115928040578885, 0.347684262680188, 0.810101260399267, 1.26974909152516, 1.72510082611794, 2.17470110917471, 2.61718807053041, 3.05131178738445, 3.47594880776586, 3.89011248087622, 4.29295907247299, 4.68378985194292, 5.06204950887221, 5.42732138276614, 5.77932006769516],
           "lty": null,
-          "col": null
+          "col": null,
+          "lwd": null
         },
         {
           "x": [12.0990825801472, 12.2130254539423, 12.3241252188342, 12.4320267073226, 12.5363667079842, 12.6367763320429],
           "y": [-5.85199117555543, -5.61031275967376, -5.3618595272998, -5.1066928582417, -4.84490554737083, -4.5766236390948],
           "lty": null,
-          "col": null
+          "col": null,
+          "lwd": null
         }
       ],
       "text": [
@@ -15983,7 +16349,13 @@
           "xlab": "Precision",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": 1.1,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "polygon": [
@@ -16077,13 +16449,15 @@
             "tail": [1.0588869650233, 1.11307507501824, 1.16718711884277]
           },
           "lty": null,
-          "col": null
+          "col": null,
+          "lwd": null
         },
         {
           "x": [2.51018932873996, 2.51409425295558, 2.51790772531193, 2.52162838395656, 2.5252548892889, 2.52878592519933, 2.53222020030243, 2.53555644916224, 2.53879343350753, 2.54192994343495, 2.54496479859782, 2.5478968493786, 2.55072497804268, 2.55344809987148, 2.5560651642727, 2.55857515586551, 2.56097709553869, 2.56327004147947, 2.56545309017126, 2.56752537735803, 2.56948607897345, 2.57133441203302, 2.57306963548704, 2.57469105103298, 2.57619800388523],
           "y": [-2.67811516050015, -2.60845801136189, -2.53847933654165, -2.46818585916569, -2.3975844834437, -2.32668229254181, -2.25548654623216, -2.18400467831831, -2.11224429383646, -2.04021316603281, -1.96791923311789, -1.89537059479928, -1.82257550859436, -1.74954238592573, -1.67627978800189, -1.6027964214867, -1.52910113396141, -1.45520290918377, -1.38111086214894, -1.30683423395781, -1.23238238649843, -1.15776479694708, -1.08299105209571, -1.00807084251316, -0.933013956547883],
           "lty": null,
-          "col": null
+          "col": null,
+          "lwd": null
         }
       ],
       "text": [
@@ -16135,13 +16509,15 @@
           "x": [-1.76882503851871, -1.19837970230692, -0.869423773288886, -0.615141104595974, -0.395725295814487, -0.194028142423926, 0, 0.194028142423926, 0.395725295814487, 0.615141104595973, 0.869423773288886, 1.19837970230692, 1.76882503851871],
           "y": [-2.69969616759306, -1.92925938702113, -1.48497536747641, -1.15386955105082, -0.880817103754578, -0.644602986192501, -0.43384232722954, -0.240719963502002, -0.0581784795800615, 0.11827003502058, 0.30140847882923, 0.517540686432383, 0.892337426531919],
           "lty": "dotted",
-          "col": null
+          "col": null,
+          "lwd": null
         },
         {
           "x": [-1.76882503851871, -1.19837970230692, -0.869423773288886, -0.615141104595974, -0.395725295814487, -0.194028142423926, 0, 0.194028142423926, 0.395725295814487, 0.615141104595973, 0.869423773288886, 1.19837970230692, 1.76882503851871],
           "y": [-0.92528364327218, -0.529858184427464, -0.301830114226263, -0.109592954846306, 0.0726307111767588, 0.258098722945156, 0.454368582974426, 0.666053310779265, 0.901970076598407, 1.17685058584737, 1.51294847631094, 1.96553519978791, 2.75036977142638],
           "lty": "dotted",
-          "col": null
+          "col": null,
+          "lwd": null
         }
       ],
       "abline": [
@@ -16192,13 +16568,15 @@
           "x": [-1.76882503851871, -1.19837970230692, -0.869423773288886, -0.615141104595974, -0.395725295814487, -0.194028142423926, 0, 0.194028142423926, 0.395725295814487, 0.615141104595973, 0.869423773288886, 1.19837970230692, 1.76882503851871],
           "y": [-2.52429743000046, -1.81133328000747, -1.40019172194865, -1.09496148956551, -0.842131369243426, -0.622013522417013, -0.4236903212003, -0.236525089903821, -0.0566031720467611, 0.12027174916099, 0.306909867571232, 0.529203736980128, 0.914685468381971],
           "lty": "dotted",
-          "col": null
+          "col": null,
+          "lwd": null
         },
         {
           "x": [-1.76882503851871, -1.19837970230692, -0.869423773288886, -0.615141104595974, -0.395725295814487, -0.194028142423926, 0, 0.194028142423926, 0.395725295814487, 0.615141104595973, 0.869423773288886, 1.19837970230692, 1.76882503851871],
           "y": [-0.946804054977248, -0.549994628286433, -0.321168472099346, -0.131903500942987, 0.0443013037149927, 0.221735668396269, 0.402416293311772, 0.598808062225025, 0.815581398522147, 1.06639701071199, 1.3699560265409, 1.77937282245241, 2.48934604741193],
           "lty": "dotted",
-          "col": null
+          "col": null,
+          "lwd": null
         }
       ],
       "grid": [
@@ -16375,13 +16753,15 @@
           "x": [-1.76882503851871, -1.19837970230692, -0.869423773288886, -0.615141104595974, -0.395725295814487, -0.194028142423926, 0, 0.194028142423926, 0.395725295814487, 0.615141104595973, 0.869423773288886, 1.19837970230692, 1.76882503851871],
           "y": [-3.75055388381723, -2.98802061936215, -2.65896609222526, -2.24792379779933, -1.83135999817229, -1.71262660470861, -1.64391471129539, -1.40806217142147, -1.19171416590737, -0.650520619068054, -0.612959590399706, -0.132252421887505, 0.362639326976434],
           "lty": "solid",
-          "col": null
+          "col": null,
+          "lwd": null
         },
         {
           "x": [-1.76882503851871, -1.19837970230692, -0.869423773288886, -0.615141104595974, -0.395725295814487, -0.194028142423926, 0, 0.194028142423926, 0.395725295814487, 0.615141104595973, 0.869423773288886, 1.19837970230692, 1.76882503851871],
           "y": [-0.447480308186967, 0.115437591178738, 0.422606259707169, 0.606049596751447, 1.11308226271334, 1.28187914629759, 1.37424250085293, 1.57030916592409, 1.80988211375072, 2.31189212332936, 2.45571377856707, 2.77663413350324, 3.62083254817627],
           "lty": "solid",
-          "col": null
+          "col": null,
+          "lwd": null
         }
       ],
       "abline": [
@@ -16488,13 +16868,15 @@
           "x": [-1.76882503851871, -1.19837970230692, -0.869423773288886, -0.615141104595974, -0.395725295814487, -0.194028142423926, 0, 0.194028142423926, 0.395725295814487, 0.615141104595973, 0.869423773288886, 1.19837970230692, 1.76882503851871],
           "y": [-2.74116584487506, -1.96046548553694, -1.51026281809775, -1.17862489158322, -0.907465216623422, -0.67493618112866, -0.466881413665096, -0.273948233876487, -0.0860951565431205, 0.103689547016915, 0.310160061729187, 0.563130941925367, 1.00180994441687],
           "lty": "dotted",
-          "col": null
+          "col": null,
+          "lwd": null
         },
         {
           "x": [-1.76882503851871, -1.19837970230692, -0.869423773288886, -0.615141104595974, -0.395725295814487, -0.194028142423926, 0, 0.194028142423926, 0.395725295814487, 0.615141104595973, 0.869423773288886, 1.19837970230692, 1.76882503851871],
           "y": [-0.926623970610264, -0.529809498624801, -0.300980432992264, -0.106826607974821, 0.0736170323568029, 0.256096515816949, 0.454782266684519, 0.660826098931778, 0.895877217957399, 1.18154692431638, 1.54092155211888, 2.03122937569821, 2.88147643494378],
           "lty": "dotted",
-          "col": null
+          "col": null,
+          "lwd": null
         }
       ],
       "abline": [
@@ -16629,7 +17011,13 @@
           "xlab": "Log Proportion (Group 1)",
           "ylab": "Log Proportion (Group 2)",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "segments": [
@@ -16657,7 +17045,8 @@
             "tail": [-0.716924253147387, -0.715728300756244, -0.714532348365101]
           },
           "lty": "dashed",
-          "col": null
+          "col": null,
+          "lwd": null
         }
       ],
       "points": [
@@ -16698,7 +17087,13 @@
           "xlab": "Odds (Group 1)",
           "ylab": "Odds (Group 2)",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "polygon": [
@@ -16767,7 +17162,8 @@
             "tail": [43.8209668594401, 43.8945702934454, 43.968297354698]
           },
           "lty": "solid",
-          "col": null
+          "col": null,
+          "lwd": null
         }
       ],
       "points": [
@@ -16808,7 +17204,13 @@
           "xlab": "A",
           "ylab": "B",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "polygon": [
@@ -16854,7 +17256,8 @@
             "tail": [0.974631515164799, 0.974729007564035, 0.974826499963271]
           },
           "lty": "dashed",
-          "col": null
+          "col": null,
+          "lwd": null
         }
       ],
       "points": [
@@ -16895,7 +17298,13 @@
           "xlab": "Arcsine Transformed Proportion (Group 1)",
           "ylab": "Arcsine Transformed Proportion (Group 2)",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "polygon": [
@@ -16941,7 +17350,8 @@
             "tail": [1.51249989079789, 1.51265118617558, 1.51280248155327]
           },
           "lty": "dashed",
-          "col": null
+          "col": null,
+          "lwd": null
         }
       ],
       "points": [
@@ -16982,7 +17392,13 @@
           "xlab": "Log Incidence Rate (Group 1)",
           "ylab": "Log Incidence Rate (Group 2)",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "grid": [
@@ -17017,7 +17433,8 @@
             "tail": [-0.714379566506086, -0.71364417718985, -0.712908787873613]
           },
           "lty": "dashed",
-          "col": null
+          "col": null,
+          "lwd": null
         }
       ],
       "points": [
@@ -17058,7 +17475,13 @@
           "xlab": "Incidence Rate (Group 1)",
           "ylab": "Incidence Rate (Group 2)",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "polygon": [
@@ -17104,7 +17527,8 @@
             "tail": [-1.46774527263217, -1.467892091205, -1.46803890977784]
           },
           "lty": "dashed",
-          "col": null
+          "col": null,
+          "lwd": null
         }
       ],
       "points": [
@@ -17145,7 +17569,13 @@
           "xlab": "Transformed Square Root Transformed Incidence Rate (Group 1)",
           "ylab": "Transformed Square Root Transformed Incidence Rate (Group 2)",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "segments": [
@@ -17173,7 +17603,8 @@
             "tail": [-45.2442419208495, -45.2427417708345, -45.2412416208195]
           },
           "lty": "dashed",
-          "col": null
+          "col": null,
+          "lwd": null
         }
       ],
       "points": [
@@ -17205,7 +17636,13 @@
           "xlab": "paste(tau^2, \" Value\")",
           "ylab": "Restricted Log-Likelihood",
           "xlab_expr": true,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": [0.01, 0.0735714285714286, 0.137142857142857, 0.200714285714286, 0.264285714285714, 0.313243325980895, 0.327857142857143, 0.391428571428571, 0.455, 0.518571428571429, 0.582142857142857, 0.645714285714286, 0.709285714285714, 0.772857142857143, 0.836428571428571, 0.9],
+          "ydat": [-37.5438974735776, -16.3862161943689, -13.493316990158, -12.5639180431508, -12.2536116741338, -12.2023714154937, -12.2059747502476, -12.2867113888328, -12.4349866448708, -12.6199159855961, -12.8245767522629, -13.0391929523674, -13.2579072262155, -13.4771261804669, -13.6946185065333, -13.9089987376286],
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "abline": [
@@ -17263,7 +17700,13 @@
           "xlab": "paste(tau, \" Value\")",
           "ylab": "Restricted Log-Likelihood",
           "xlab_expr": true,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": [0.4, 0.4625, 0.525, 0.559681450452751, 0.5875, 0.65, 0.7125, 0.775, 0.8375, 0.9],
+          "ydat": [-13.0443200161487, -12.4662100443672, -12.231280506592, -12.2023714154937, -12.21859024455, -12.3531076923325, -12.5864060576906, -12.8862614122618, -13.2307135285711, -13.6045137883518],
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "abline": [
@@ -17305,7 +17748,13 @@
           "xlab": "Tau squared",
           "ylab": "L",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": [0.01, 0.0763546947056598, 0.08, 0.15, 0.22, 0.29, 0.36, 0.43, 0.5],
+          "ydat": [7.86793105365734e-05, 0.000307412500638019, 0.000307090050545329, 0.000240776450122923, 0.000162580722776937, 0.000107291181455975, 7.14015043430841e-05, 4.83650062736381e-05, 3.34228458960507e-05],
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "abline": [
@@ -17363,7 +17812,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         },
         {
           "xlim": [1, 13],
@@ -17371,7 +17826,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         },
         {
           "xlim": [1, 13],
@@ -17379,7 +17840,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         },
         {
           "xlim": [1, 13],
@@ -17387,7 +17854,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         },
         {
           "xlim": [1, 13],
@@ -17395,7 +17868,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         },
         {
           "xlim": [1, 13],
@@ -17403,7 +17882,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         },
         {
           "xlim": [1, 13],
@@ -17411,7 +17896,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         },
         {
           "xlim": [1, 13],
@@ -17419,7 +17910,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "axis": [
@@ -17575,49 +18072,57 @@
           "x": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
           "y": [-0.218142474344442, -1.29179018325719, -0.754719689785772, -1.45120007105889, 0.847710579386837, -0.117999458482776, -1.30372705919103, 1.45008026839721, 0.407613168355557, -1.12773861386972, 0.669079195292433, 1.28984097565979, 1.18790294941749],
           "lty": null,
-          "col": null
+          "col": null,
+          "lwd": null
         },
         {
           "x": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
           "y": [-0.0407075604868468, -0.343587736952733, -0.160361478497718, -0.520050612341681, 0.270745185772369, -0.0190063297986498, -0.336157530820046, 0.477459927935019, 0.141548440735901, -0.348694630442247, 0.231504482896252, 0.252619838989975, 0.354860860271421],
           "lty": null,
-          "col": null
+          "col": null,
+          "lwd": null
         },
         {
           "x": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
           "y": [0.0017165423672918, 0.113249704512703, 0.0259803248436411, 0.229481429376374, 0.076231411790572, 0.000413495499759997, 0.108741623311804, 0.199177558127151, 0.0219984167571109, 0.117017798658052, 0.0580781251117936, 0.0634333822133935, 0.122812842275046],
           "lty": null,
-          "col": null
+          "col": null,
+          "lwd": null
         },
         {
           "x": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
           "y": [1.11644891104804, 1.01019211996711, 1.06699597403483, 0.965126908803455, 1.13802315052117, 1.24071651616571, 1.00771123287369, 1.0010702600835, 1.19676202958048, 1.05052741302667, 1.18597882278208, 1.02585672309977, 1.06504038084714],
           "lty": null,
-          "col": null
+          "col": null,
+          "lwd": null
         },
         {
           "x": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
           "y": [0.336156745300306, 0.292583085554123, 0.320738056887219, 0.262758356241501, 0.327803258618395, 0.359554181152191, 0.29302586988829, 0.273183034116211, 0.349452009922899, 0.298724600913035, 0.340488265334648, 0.308162202718279, 0.303733326561131],
           "lty": null,
-          "col": null
+          "col": null,
+          "lwd": null
         },
         {
           "x": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
           "y": [151.582572747109, 145.317607670209, 150.197044457953, 96.5625949713915, 151.320008931121, 128.186664682906, 145.829638145065, 67.9858114990849, 152.205060685431, 139.827073316802, 151.465504507947, 150.786834541142, 149.788423825434],
           "lty": null,
-          "col": null
+          "col": null,
+          "lwd": null
         },
         {
           "x": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
           "y": [0.0505948307931551, 0.0636467963212659, 0.0443602776309674, 0.0969874673569736, 0.0886845628682752, 0.100957381652943, 0.0602718170294241, 0.101894386345929, 0.0874313313169806, 0.0836760724733689, 0.099250266628389, 0.0382162942284151, 0.0840285153539128],
           "lty": null,
-          "col": null
+          "col": null,
+          "lwd": null
         },
         {
           "x": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
           "y": [5.05948307931551, 6.3646796321266, 4.43602776309674, 9.69874673569736, 8.86845628682752, 10.0957381652943, 6.02718170294241, 10.1894386345929, 8.74313313169806, 8.3676072473369, 9.9250266628389, 3.82162942284151, 8.40285153539128],
           "lty": null,
-          "col": null
+          "col": null,
+          "lwd": null
         }
       ],
       "points": [
@@ -17769,7 +18274,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         },
         {
           "xlim": [1, 13],
@@ -17777,7 +18288,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         },
         {
           "xlim": [1, 13],
@@ -17785,7 +18302,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         },
         {
           "xlim": [1, 13],
@@ -17793,7 +18316,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "axis": [
@@ -17873,25 +18402,29 @@
           "x": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
           "y": [-0.218142474344442, -1.29179018325719, -0.754719689785772, -1.45120007105889, 0.847710579386837, -0.117999458482776, -1.30372705919103, 1.45008026839721, 0.407613168355557, -1.12773861386972, 0.669079195292433, 1.28984097565979, 1.18790294941749],
           "lty": null,
-          "col": null
+          "col": null,
+          "lwd": null
         },
         {
           "x": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
           "y": [0.0017165423672918, 0.113249704512703, 0.0259803248436411, 0.229481429376374, 0.076231411790572, 0.000413495499759997, 0.108741623311804, 0.199177558127151, 0.0219984167571109, 0.117017798658052, 0.0580781251117936, 0.0634333822133935, 0.122812842275046],
           "lty": null,
-          "col": null
+          "col": null,
+          "lwd": null
         },
         {
           "x": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
           "y": [1.11644891104804, 1.01019211996711, 1.06699597403483, 0.965126908803455, 1.13802315052117, 1.24071651616571, 1.00771123287369, 1.0010702600835, 1.19676202958048, 1.05052741302667, 1.18597882278208, 1.02585672309977, 1.06504038084714],
           "lty": null,
-          "col": null
+          "col": null,
+          "lwd": null
         },
         {
           "x": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
           "y": [0.0505948307931551, 0.0636467963212659, 0.0443602776309674, 0.0969874673569736, 0.0886845628682752, 0.100957381652943, 0.0602718170294241, 0.101894386345929, 0.0874313313169806, 0.0836760724733689, 0.099250266628389, 0.0382162942284151, 0.0840285153539128],
           "lty": null,
-          "col": null
+          "col": null,
+          "lwd": null
         }
       ],
       "points": [
@@ -17979,7 +18512,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         },
         {
           "xlim": [1, 13],
@@ -17987,7 +18526,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "axis": [
@@ -18057,13 +18602,15 @@
           "x": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
           "y": [0.00650233581208985, 0.140861608221609, 0.0299043835603962, 0.260337382992541, -0.0753602123006678, -0.143151238496101, -0.655069188001138, 0.43917526691317, 0.0941500383927481, 0.0561484880333383, -0.0254202701432614, 0.0623892839739765, 0.065815443634196],
           "lty": null,
-          "col": null
+          "col": null,
+          "lwd": null
         },
         {
           "x": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
           "y": [0.0223755198178633, -0.193339975003391, -0.067754210797174, -0.40368977756033, 0.0707960256884353, 0.351103975970246, 0.423004264557589, -0.342951886496995, -0.0500549834362824, -0.228968783972548, 0.0262661016414284, 0.0259521579640757, 0.134434654914357],
           "lty": null,
-          "col": null
+          "col": null,
+          "lwd": null
         }
       ],
       "points": [
@@ -18119,7 +18666,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         },
         {
           "xlim": [1, 13],
@@ -18127,7 +18680,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         },
         {
           "xlim": [1, 13],
@@ -18135,7 +18694,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "axis": [
@@ -18218,19 +18783,22 @@
           "x": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
           "y": [0.0639692435063625, -0.212666017320877, -0.100730611256779, -0.466571026793305, -0.0734088766769942, 0.538154396051004, -0.640463865009349, 0.44339606630675, 0.127368145060645, -0.415578955021098, -0.0201967890924622, 0.201107990557315, 0.42051978530229],
           "lty": null,
-          "col": null
+          "col": null,
+          "lwd": null
         },
         {
           "x": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
           "y": [0.0858875131468596, 0.0896925965151387, 0.0811182375561859, 0.0897378427582448, 0.10310158446212, 0.075964277350594, 0.0404768884992572, 0.106799378665046, 0.105034447300162, 0.0688908918052986, 0.111735625551845, 0.0747731102364349, 0.0443569879771352],
           "lty": null,
-          "col": null
+          "col": null,
+          "lwd": null
         },
         {
           "x": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
           "y": [0.0223755198178633, -0.193339975003391, -0.067754210797174, -0.40368977756033, 0.0707960256884353, 0.351103975970246, 0.423004264557589, -0.342951886496995, -0.0500549834362824, -0.228968783972548, 0.0262661016414284, 0.0259521579640757, 0.134434654914357],
           "lty": null,
-          "col": null
+          "col": null,
+          "lwd": null
         }
       ],
       "points": [
@@ -18302,7 +18870,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         },
         {
           "xlim": [1, 11],
@@ -18310,7 +18884,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         },
         {
           "xlim": [1, 11],
@@ -18318,7 +18898,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "axis": [
@@ -18401,19 +18987,22 @@
           "x": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
           "y": [0.17945833476412, -0.533282485265131, -1.10932709931536, -0.679876324326055, 1.43423695796894, 0.169170811337394, -0.0188236431428556, -1.41277306568837, -0.719465921292513, 1.46107745740116, 2.09085821437994],
           "lty": null,
-          "col": null
+          "col": null,
+          "lwd": null
         },
         {
           "x": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
           "y": [0.0417819179544695, -0.197447258781292, -0.915094824500512, -0.396771394507722, 1.03120619279386, 0.0956281527090354, -0.0208056534350481, -0.481329761331777, -0.436885766796802, 0.172715463323815, 0.497540541038888],
           "lty": null,
-          "col": null
+          "col": null,
+          "lwd": null
         },
         {
           "x": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
           "y": [21.2098078413317, 20.6439221699613, 15.839992604502, 20.4185559412224, 14.0705041828441, 20.1293780232586, 21.1926737396262, 17.684071200343, 18.3698542711234, 19.1133549308864, 16.1524732468521],
           "lty": null,
-          "col": null
+          "col": null,
+          "lwd": null
         }
       ],
       "points": [
@@ -18485,7 +19074,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         },
         {
           "xlim": [1, 13],
@@ -18493,7 +19088,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         },
         {
           "xlim": [1, 13],
@@ -18501,7 +19102,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         },
         {
           "xlim": [1, 13],
@@ -18509,7 +19116,13 @@
           "xlab": "",
           "ylab": "",
           "xlab_expr": false,
-          "ylab_expr": false
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
         }
       ],
       "axis": [
@@ -18605,49 +19218,57 @@
           "x": [1, 2, 4, 5, 6, 8, 9, 10, 11, 12, 13],
           "y": [0.17945833476412, -0.533282485265131, -1.10932709931536, -0.679876324326055, 1.43423695796894, 0.169170811337394, -0.0188236431428556, -1.41277306568837, -0.719465921292513, 1.46107745740116, 2.09085821437994],
           "lty": null,
-          "col": "#CCCCCC"
+          "col": "#CCCCCC",
+          "lwd": null
         },
         {
           "x": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
           "y": [0.17945833476412, -0.533282485265131, null, -1.10932709931536, -0.679876324326055, 1.43423695796894, null, 0.169170811337394, -0.0188236431428556, -1.41277306568837, -0.719465921292513, 1.46107745740116, 2.09085821437994],
           "lty": null,
-          "col": null
+          "col": null,
+          "lwd": null
         },
         {
           "x": [1, 2, 4, 5, 6, 8, 9, 10, 11, 12, 13],
           "y": [0.0417819179544695, -0.197447258781292, -0.915094824500512, -0.396771394507722, 1.03120619279386, 0.0956281527090354, -0.0208056534350481, -0.481329761331777, -0.436885766796802, 0.172715463323815, 0.497540541038888],
           "lty": null,
-          "col": "#CCCCCC"
+          "col": "#CCCCCC",
+          "lwd": null
         },
         {
           "x": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
           "y": [0.0417819179544695, -0.197447258781292, null, -0.915094824500512, -0.396771394507722, 1.03120619279386, null, 0.0956281527090354, -0.0208056534350481, -0.481329761331777, -0.436885766796802, 0.172715463323815, 0.497540541038888],
           "lty": null,
-          "col": null
+          "col": null,
+          "lwd": null
         },
         {
           "x": [1, 2, 4, 5, 6, 8, 9, 10, 11, 12, 13],
           "y": [21.2098078413317, 20.6439221699613, 15.839992604502, 20.4185559412224, 14.0705041828441, 20.1293780232586, 21.1926737396262, 17.684071200343, 18.3698542711234, 19.1133549308864, 16.1524732468521],
           "lty": null,
-          "col": "#CCCCCC"
+          "col": "#CCCCCC",
+          "lwd": null
         },
         {
           "x": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
           "y": [21.2098078413317, 20.6439221699613, null, 15.839992604502, 20.4185559412224, 14.0705041828441, null, 20.1293780232586, 21.1926737396262, 17.684071200343, 18.3698542711234, 19.1133549308864, 16.1524732468521],
           "lty": null,
-          "col": null
+          "col": null,
+          "lwd": null
         },
         {
           "x": [1, 2, 4, 5, 6, 8, 9, 10, 11, 12, 13],
           "y": [2.18792782727908, 3.40124590887453, 13.0304200802269, 8.65243967091694, 16.5469490940622, 17.6149279504576, 8.1916159913339, 7.00651919672322, 14.8616101971537, 1.39941992219032, 7.10692416078163],
           "lty": null,
-          "col": "#CCCCCC"
+          "col": "#CCCCCC",
+          "lwd": null
         },
         {
           "x": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
           "y": [2.18792782727908, 3.40124590887453, null, 13.0304200802269, 8.65243967091694, 16.5469490940622, null, 17.6149279504576, 8.1916159913339, 7.00651919672322, 14.8616101971537, 1.39941992219032, 7.10692416078163],
           "lty": null,
-          "col": null
+          "col": null,
+          "lwd": null
         }
       ],
       "points": [
@@ -18722,6 +19343,913 @@
         "y": [0, 5, 10, 15],
         "xl": ["2", "4", "6", "8", "10", "12"],
         "yl": ["0", "5", "10", "15"]
+      }
+    }
+  },
+  "gosh_info": {
+    "k": 255,
+    "km": 247,
+    "cols": ["k", "QE", "I2", "H2", "tau2", "tau", "intrcpt", "ablat"],
+    "est": [-0.889311333920205, -1.58538865720143, -1.34807314829969, -1.44155119002131, -0.217547322211296, -0.786115585818864, -1.62089822359839, 0.0119523335238405, -1.32500344224488, -1.090897550429, -1.5096821452168, -1.40957635348673, -1.45496363626033, -1.43725492652444, -0.349209849162478, -0.849060248559417, -0.621753413378937, -0.842294371180032, -0.788258897319318, -1.06834825188046, -0.795305515436919, -1.10383666714209, -0.540792961849346, -1.32349411140816, -1.6019344384192, -1.52558790605268, -1.45631800908462, -0.858009616867794, -1.07406504802888, -0.26025048029868, -0.727050394215248, -0.516810893474948, -0.709278818100748, -0.00452677146801441, -0.385237147070771, -0.737395260763289, -1.33023414924278, -1.42510498688925, -1.40690621875504, -1.45048985765945, -0.829262773512828, -0.622966127718403, -0.953610378295561, -0.860006202080927, -1.05272263634096, -0.958612521564553, -0.972079557781193, -0.797226681224377, -1.07842853394072, -1.07010467112889, -1.19610222687662, -1.13151688192817, -0.595484957700864, -0.784413810098715, -0.640307770467956, -0.831157782543588, -1.42951873605917, -1.32943358404817, -1.55113342891168, -1.42604695453122, -1.46744798217803, -1.45173533901985, -0.830299806119365, -1.07038586827666, -0.958849098799621, -1.0570642190583, -0.963661922825348, -1.19348458765088, -1.07950196927516, -1.19825646549218, -0.782050489677073, -0.737585523634572, -0.557975923424486, -0.868522012669791, -0.7510294198974, -0.96031116395263, -0.860923521305147, -0.0901151738919094, -0.51410196589753, -0.177723674072152, -0.549376144306271, -0.473656599037986, -0.707947625804487, -0.559710005468633, -0.731399209961493, -0.336465229677654, -0.741035624330381, -0.985555214194754, -0.875163514960578, -0.965991349585557, -0.513354968136874, -0.709203764199189, -1.42204433280306, -0.912079908445692, -1.0183653082799, -0.940777788630317, -1.0952936863767, -1.00109369559612, -1.15194781957248, -1.09747751161198, -1.2033083164723, -0.780351397096279, -0.662649186240469, -0.853276424140175, -0.84292259414603, -0.968903978967737, -0.898980943401797, -1.41653507650649, -1.43911384639308, -1.42291500325114, -1.46281299443976, -1.01260027590827, -0.912893570039248, -1.10488606302963, -1.01993712942258, -1.16481924351874, -1.09840833334209, -1.10996600688737, -0.994028389809812, -1.19015575551345, -1.15201839108018, -1.2540305287628, -1.20477427291431, -0.774926133988361, -0.951726379469948, -0.851314197576452, -0.969491076466853, -0.841978583746987, -0.935056981571625, -0.852749634746578, -1.01990138320936, -0.561337255054861, -0.33336103428686, -0.653610305001376, -0.607208413885641, -0.765154243651277, -0.679421623383039, -0.719391074138287, -0.594502174481931, -0.802271683079549, -0.754463661364106, -0.898534361513312, -0.822092056191013, -0.396679985275768, -0.563637112772975, -0.440909087665382, -0.610323376606718, -0.940900385615008, -0.844888154160295, -1.03750712100791, -0.937964382373081, -1.0942199913838, -1.02418397061765, -0.558186150641375, -0.761250380760418, -0.654224607998303, -0.767006826147662, -0.718160433043181, -0.896944765184531, -0.803622278773267, -0.900512690584525, -0.559756426693261, -1.05858524307998, -1.16447996960004, -0.835811817837889, -0.955030000705689, -0.895213169870804, -1.00567861883547, -1.43574582521769, -1.05106663885929, -1.11840284782395, -1.05985129511229, -1.18138299253346, -1.12126032265947, -1.20868602237583, -1.16452079431514, -1.25381197021237, -0.923286641437162, -0.831414400667131, -0.987701104864012, -0.954542635536103, -1.06193462591208, -1.0061783307144, -0.987381374835305, -0.667038842706716, -0.775721956587027, -0.701744285017057, -0.83930399252942, -0.793973271850517, -0.88910680559632, -0.823197112837083, -0.948243352471508, -0.59274548085392, -0.48316407453276, -0.652460424102533, -0.643771023896615, -0.759514653567131, -0.692440037326785, -0.991498959412328, -1.05123872130645, -0.989835061594977, -1.12024738508088, -0.761932951490257, -0.665762384659972, -0.83622416012167, -0.776398324696941, -0.906062231040477, -0.841041012346029, -0.876674059022521, -0.793467741685688, -0.946106056450518, -0.889851413210747, -1.00908251497871, -0.949985076711682, -0.588258040020469, -0.739626721627436, -0.649987690950087, -0.75953833226933, -0.98771769377538, -1.1392624923471, -1.21408359436134, -0.957448046635479, -1.03705126921937, -0.987349415631665, -1.08252846845062, -0.836100681267552, -0.932146937945737, -0.664873713498077, -0.768498283841392, -0.708913904933093, -0.815027829189079, -1.07969192134537, -0.825004402169282, -0.894866355352182, -0.836886413202741, -0.950348053876004, -0.921317451204025, -0.985789561398087, -0.93291950922979, -1.03759729256691, -0.742863879452726, -0.66169769169385, -0.798199050699626, -0.767990997090753, -0.870421519092318, -0.815251230243479, -1.05782504393263, -0.81542520663932, -0.934441039548225, -1.0133826196103, -0.793394576585138, -0.865149274413878, -0.815151230351422, -0.908197117107938, -0.89901414462405],
+    "I2": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16.5028616830793, 86.8630348436657, 63.4940706243113, 95.2462358250424, 0, 68.4604053540988, 0, 93.7346574617706, 82.0225155666642, 0, 0, 0, 0, 86.0755412977003, 67.0059712310669, 59.4292747947235, 92.2185836724195, 77.3294857559369, 98.8653418227403, 0, 98.2937688624909, 91.4868071905766, 0, 0, 0, 0, 71.8349323244546, 45.4253555653978, 74.3841917609554, 86.9315347468063, 89.9772751179145, 87.8337087764584, 40.7089802126882, 0, 50.1486050778783, 84.7082319584245, 86.7416265325438, 85.2591070065613, 63.9941976998844, 86.3476793677571, 69.7733926302815, 94.4708636742784, 0, 0, 0, 0, 0, 0, 70.9104493649762, 80.8024239967976, 73.5632493550529, 89.9660989801032, 37.8040495481521, 63.886100322447, 48.6769469572021, 86.9246996102358, 86.1067457694534, 83.2440633671249, 67.849168398405, 84.5744589321655, 96.3844563116114, 97.239910702778, 96.7838825512869, 30.7033339850278, 92.7098878534944, 56.6147249868783, 97.1781831007983, 95.6758666922015, 98.0208323662229, 96.777607350378, 98.4905672963614, 94.8502678813254, 82.3676092108917, 88.9092363403923, 83.6971463662748, 97.262007223484, 92.5870648959584, 98.0426478944923, 0, 63.4266068313272, 82.7744046841265, 79.7493437054354, 83.2139751885841, 33.9749765963673, 78.5119238759129, 76.4879141235824, 79.1628293046467, 75.460989358045, 55.6220034558943, 79.4591443486531, 89.9889616247991, 92.0431391021005, 90.7030404938604, 0, 0, 0, 0, 70.9111255284116, 62.6573230470446, 71.7181187139285, 82.6985985939333, 84.9469413436968, 83.1616649532679, 49.8114068893571, 31.9487519654286, 53.171766434474, 78.6111397195715, 80.8197626925528, 79.3121507493796, 74.6504326695189, 84.8510100244875, 79.1482992984666, 92.0916721051503, 77.9174173820945, 94.6875568415148, 93.8877701703917, 94.9631946110461, 87.3450368170836, 68.1893466767271, 89.4678342125838, 94.8279399014, 96.1809687588815, 95.4048590307993, 96.0397268854562, 94.1137855319501, 96.6199047546658, 97.1169327362881, 97.7059209243537, 97.3847803614803, 91.9456313174832, 96.1824340833633, 93.2619631296326, 97.4164876464951, 82.9506435129216, 77.1030392413658, 83.3561075735282, 94.7038514857355, 95.4031644567672, 94.9831885778801, 87.0391455366192, 92.0452469585727, 89.3401591763897, 96.197337251198, 96.0391341171915, 97.2136495937153, 96.6457518766682, 97.7290713259984, 96.1290562794848, 76.5130377858724, 71.5781288541612, 69.8078176961325, 87.8178583195802, 86.0393552559628, 88.4438127096227, 0, 63.7568265252426, 78.7084931416656, 76.4091840516861, 78.8597758437137, 43.0455179880454, 73.551505660979, 71.6408870691344, 74.209120438694, 77.2666579751631, 69.0909743306622, 79.24525480407, 87.8333089796563, 89.6201213827193, 88.4881372081256, 92.2134448985084, 84.6254745713575, 93.9917057832231, 92.9293072690481, 94.4146594319309, 94.4922901471651, 96.3240730201635, 95.8611136583656, 96.551107533219, 94.0646670086748, 90.6099834645166, 94.9658666298992, 96.031199330888, 96.8985324874087, 96.3769805497771, 78.4436096761544, 92.8774741813028, 92.2227003293814, 93.0607731589914, 88.031653741737, 84.3834060939624, 88.9973572645369, 93.9959118367339, 95.019838141727, 94.4290923836435, 95.4117229402449, 94.4976004815877, 95.7973743365468, 96.3456370582133, 96.8390370561297, 96.5776091190554, 93.9606639505208, 96.0933120791822, 94.9323393612742, 96.911623426192, 84.155275320807, 73.1494534755741, 67.6085641418206, 72.2610885521258, 85.6484010830823, 84.1641768376405, 86.1732021378188, 92.1370706279995, 95.0581423486184, 92.8366061811902, 95.5718483822242, 94.9143353105071, 95.8701382064285, 90.4500832040231, 85.1976816718528, 92.9330173373434, 92.1385960298935, 93.2555263678946, 93.8718928295371, 95.4521778639689, 95.0816964626036, 95.6444143496617, 94.3063078274125, 92.7627645388237, 94.8659000220718, 95.5790078908713, 96.2890702352505, 95.8853028835289, 82.2043106489388, 94.4771702120034, 91.1128086045108, 94.1737625834924, 93.0297127186969, 94.9990848657778, 94.4861882948641, 95.2540897548015, 93.9088703839641]
+  },
+  "gosh_default": {
+    "ret": [
+      1
+    ],
+    "rec": {
+      "plot": [
+        {
+          "xlim": [-1.8, 0.2],
+          "ylim": [0, 1.64705882352941],
+          "xlab": "",
+          "ylab": "",
+          "xlab_expr": false,
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
+        },
+        {
+          "xlim": [-1.8, 0.2],
+          "ylim": [0, 100],
+          "xlab": "\"Log Risk Ratio\"",
+          "ylab": "I^2",
+          "xlab_expr": true,
+          "ylab_expr": true,
+          "xdat": {
+            "n": 255,
+            "sum": -233.415663923751,
+            "head": [-0.889311333920205, -1.58538865720143, -1.34807314829969],
+            "tail": [-0.815151230351422, -0.908197117107938, -0.89901414462405]
+          },
+          "ydat": {
+            "n": 255,
+            "sum": 18370.8120408201,
+            "head": [0, 0, 0],
+            "tail": [94.4861882948641, 95.2540897548015, 93.9088703839641]
+          },
+          "pch": 16,
+          "cex": 0.5,
+          "cols": "#00000054",
+          "ncol": 1
+        },
+        {
+          "xlim": [0, 0.0419607843137255],
+          "ylim": [0, 100],
+          "xlab": "",
+          "ylab": "",
+          "xlab_expr": false,
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
+        }
+      ],
+      "rect": [
+        {
+          "xleft": [-1.8, -1.6, -1.4, -1.2, -1, -0.8, -0.6, -0.4, -0.2, 0],
+          "ybottom": 0,
+          "xright": [-1.6, -1.4, -1.2, -1, -0.8, -0.6, -0.4, -0.2, 0, 0.2],
+          "ytop": [0.0392156862745098, 0.431372549019607, 0.215686274509804, 1.01960784313726, 1.64705882352941, 1.07843137254902, 0.352941176470588, 0.137254901960784, 0.0588235294117647, 0.0196078431372549],
+          "col": "#00000080"
+        },
+        {
+          "xleft": 0,
+          "ybottom": [0, 10, 20, 30, 40, 50, 60, 70, 80, 90],
+          "xright": [0.0149019607843137, 0.000392156862745098, 0, 0.00156862745098039, 0.00196078431372549, 0.00196078431372549, 0.00549019607843137, 0.0125490196078431, 0.0192156862745098, 0.0419607843137255],
+          "ytop": [10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
+          "col": "#00000080"
+        }
+      ],
+      "lines": [
+        {
+          "x": {
+            "n": 512,
+            "sum": -411.890147859085,
+            "head": [-1.82701042893727, -1.82300832528209, -1.8190062216269],
+            "tail": [0.210060331552351, 0.214062435207538, 0.218064538862723]
+          },
+          "y": {
+            "n": 512,
+            "sum": 250.109385559919,
+            "head": [0.000423137259494392, 0.000506933445002403, 0.00060765343884914],
+            "tail": [0.000540033274554025, 0.000452605687630385, 0.000379400042141777]
+          },
+          "lty": null,
+          "col": "#000000E6",
+          "lwd": 2
+        },
+        {
+          "x": {
+            "n": 512,
+            "sum": 3.83869495396687,
+            "head": [0.00011720575409559, 0.000133899075449181, 0.000153003641610717],
+            "tail": [7.78347799935814e-05, 6.68870558325028e-05, 5.75397439430415e-05]
+          },
+          "y": {
+            "n": 512,
+            "sum": 25309.5275066215,
+            "head": [-17.1733426077759, -16.9126537094623, -16.6519648111486],
+            "tail": [115.517306633889, 115.777995532203, 116.038684430516]
+          },
+          "lty": null,
+          "col": "#000000E6",
+          "lwd": 2
+        }
+      ],
+      "usr": [-0.00167843137254902, 0.0436392156862745, -4, 104],
+      "axticks": {
+        "x": [0, 0.01, 0.02, 0.03, 0.04],
+        "y": [0, 20, 40, 60, 80, 100],
+        "xl": ["0.00", "0.01", "0.02", "0.03", "0.04"],
+        "yl": ["0", "20", "40", "60", "80", "100"]
+      }
+    }
+  },
+  "gosh_opts": {
+    "ret": [
+      1
+    ],
+    "rec": {
+      "plot": [
+        {
+          "xlim": [-1.8, 0.2],
+          "ylim": [0, 1.953125],
+          "xlab": "",
+          "ylab": "",
+          "xlab_expr": false,
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
+        },
+        {
+          "xlim": [-1.8, 0.2],
+          "ylim": [0, 1.3],
+          "xlab": "Est",
+          "ylab": "T2",
+          "xlab_expr": false,
+          "ylab_expr": false,
+          "xdat": {
+            "n": 255,
+            "sum": -233.415663923751,
+            "head": [-0.889311333920205, -1.58538865720143, -1.34807314829969],
+            "tail": [-0.815151230351422, -0.908197117107938, -0.89901414462405]
+          },
+          "ydat": {
+            "n": 255,
+            "sum": 82.0273746869352,
+            "head": [0, 0, 0],
+            "tail": [0.350995817437794, 0.407173788198772, 0.359766473672746]
+          },
+          "pch": 1,
+          "cex": 1.5,
+          "cols": ["#0000FF4D", "#FF00004D"],
+          "ncol": 255
+        },
+        {
+          "xlim": [0, 2.109375],
+          "ylim": [0, 1.3],
+          "xlab": "",
+          "ylab": "",
+          "xlab_expr": false,
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
+        }
+      ],
+      "rect": [
+        {
+          "xleft": [-1.8, -1.6, -1.4, -1.2, -1, -0.8, -0.6, -0.4, -0.2, 0],
+          "ybottom": 0,
+          "xright": [-1.6, -1.4, -1.2, -1, -0.8, -0.6, -0.4, -0.2, 0, 0.2],
+          "ytop": [0.078740157480315, 0.393700787401574, 0.15748031496063, 0.905511811023622, 1.33858267716535, 1.2992125984252, 0.47244094488189, 0.236220472440945, 0.078740157480315, 0.0393700787401575],
+          "col": "#0000FF80"
+        },
+        {
+          "xleft": [-1.8, -1.6, -1.4, -1.2, -1, -0.8, -0.6, -0.4, -0.2, 0],
+          "ybottom": 0,
+          "xright": [-1.6, -1.4, -1.2, -1, -0.8, -0.6, -0.4, -0.2, 0, 0.2],
+          "ytop": [0, 0.46875, 0.2734375, 1.1328125, 1.953125, 0.859374999999999, 0.234375, 0.0390625, 0.0390625, 0],
+          "col": "#FF000080"
+        },
+        {
+          "xleft": 0,
+          "ybottom": [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2],
+          "xright": [1.96850393700787, 1.10236220472441, 1.18110236220472, 1.65354330708661, 1.73228346456693, 1.10236220472441, 0.551181102362205, 0.236220472440945, 0.236220472440945, 0, 0.0787401574803149, 0.0787401574803149, 0.0787401574803151],
+          "ytop": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3],
+          "col": "#0000FF80"
+        },
+        {
+          "xleft": 0,
+          "ybottom": [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2],
+          "xright": [1.71875, 1.484375, 1.328125, 2.109375, 1.953125, 1.015625, 0.15625, 0.234375, 0, 0, 0, 0, 0],
+          "ytop": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3],
+          "col": "#FF000080"
+        }
+      ],
+      "lines": [
+        {
+          "x": {
+            "n": 512,
+            "sum": -411.890147859085,
+            "head": [-1.86362031047664, -1.85947491961386, -1.85532952875109],
+            "tail": [0.246383638676535, 0.250529029539311, 0.254674420402087]
+          },
+          "y": {
+            "n": 512,
+            "sum": 241.460199571955,
+            "head": [0.000756891764093934, 0.000888366324540706, 0.0010378814789721],
+            "tail": [0.000922213135284952, 0.000791438778279538, 0.000676117038034337]
+          },
+          "lty": null,
+          "col": "#0000FFCC",
+          "lwd": 1
+        },
+        {
+          "x": {
+            "n": 512,
+            "sum": -442.587418363861,
+            "head": [-1.75914844838778, -1.75564660926099, -1.7521447701342],
+            "tail": [0.0232876671503632, 0.0267895062771573, 0.0302913454039512]
+          },
+          "y": {
+            "n": 512,
+            "sum": 285.836842199427,
+            "head": [0.000749145254261095, 0.000875985470121256, 0.00102018070873698],
+            "tail": [0.000680176711658293, 0.000588651352711741, 0.000507420202417197]
+          },
+          "lty": null,
+          "col": "#FF0000CC",
+          "lwd": 1
+        }
+      ],
+      "usr": [-0.084375, 2.19375, -0.052, 1.352],
+      "axticks": {
+        "x": [0, 0.5, 1, 1.5, 2],
+        "y": [0, 0.2, 0.4, 0.6, 0.8, 1, 1.2],
+        "xl": ["0.0", "0.5", "1.0", "1.5", "2.0"],
+        "yl": ["0.0", "0.2", "0.4", "0.6", "0.8", "1.0", "1.2"]
+      }
+    }
+  },
+  "gosh_nox": {
+    "ret": [
+      1
+    ],
+    "rec": {
+      "plot": [
+        {
+          "xlim": [-1.5, 0.5],
+          "ylim": [0, 140],
+          "xlab": "\"Log Risk Ratio\"",
+          "ylab": "Q",
+          "xlab_expr": true,
+          "ylab_expr": true,
+          "xdat": {
+            "n": 211,
+            "sum": -193.351339725049,
+            "head": [-1.32500344224488, -1.090897550429, -1.40957635348673],
+            "tail": [-1.05782504393263, -0.934441039548225, -0.793394576585138]
+          },
+          "ydat": {
+            "n": 211,
+            "sum": 9358.95361672539,
+            "head": [0.931479077449156, 0.284042954031786, 0.882446325571647],
+            "tail": [30.7465474891243, 109.724232230787, 78.8325610542778]
+          },
+          "pch": 16,
+          "cex": 0.5,
+          "cols": "#0000FF57",
+          "ncol": 1
+        },
+        {
+          "xlim": [0, 0.021563981042654],
+          "ylim": [0, 140],
+          "xlab": "",
+          "ylab": "",
+          "xlab_expr": false,
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
+        }
+      ],
+      "rect": [
+        {
+          "xleft": 0,
+          "ybottom": [0, 20, 40, 60, 80, 100, 120],
+          "xright": [0.021563981042654, 0.00995260663507109, 0, 0.00639810426540284, 0.0042654028436019, 0.00402843601895735, 0.0037914691943128],
+          "ytop": [20, 40, 60, 80, 100, 120, 140],
+          "col": "#0000FF80"
+        }
+      ],
+      "lines": [
+        {
+          "x": {
+            "n": 512,
+            "sum": 2.49579919331071,
+            "head": [3.96892263393642e-05, 4.37766411200699e-05, 4.82519079716869e-05],
+            "tail": [1.89164670489586e-05, 1.71859144134628e-05, 1.56025533330196e-05]
+          },
+          "y": {
+            "n": 512,
+            "sum": 32799.9249946166,
+            "head": [-38.3901405158327, -37.9891522809171, -37.5881640460015],
+            "tail": [165.712871056222, 166.113859291138, 166.514847526054]
+          },
+          "lty": null,
+          "col": "#0000FFE6",
+          "lwd": 2
+        }
+      ],
+      "usr": [-0.000862559241706161, 0.0224265402843602, -5.6, 145.6],
+      "axticks": {
+        "x": [0, 0.005, 0.01, 0.015, 0.02],
+        "y": [0, 20, 40, 60, 80, 100, 120, 140],
+        "xl": ["0.000", "0.005", "0.010", "0.015", "0.020"],
+        "yl": ["0", "20", "40", "60", "80", "100", "120", "140"]
+      }
+    }
+  },
+  "gosh_noy": {
+    "ret": [
+      1
+    ],
+    "rec": {
+      "plot": [
+        {
+          "xlim": [-1.8, 0.2],
+          "ylim": [0, 1.64705882352941],
+          "xlab": "",
+          "ylab": "",
+          "xlab_expr": false,
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
+        },
+        {
+          "xlim": [-1.8, 0.2],
+          "ylim": [0, 90],
+          "xlab": "\"Log Risk Ratio\"",
+          "ylab": "H^2",
+          "xlab_expr": true,
+          "ylab_expr": true,
+          "xdat": {
+            "n": 255,
+            "sum": -233.415663923751,
+            "head": [-0.889311333920205, -1.58538865720143, -1.34807314829969],
+            "tail": [-0.815151230351422, -0.908197117107938, -0.89901414462405]
+          },
+          "ydat": {
+            "n": 255,
+            "sum": 3102.28479574237,
+            "head": [1, 1, 1],
+            "tail": [18.1362740238036, 21.0707735362615, 16.4173160486904]
+          },
+          "pch": 16,
+          "cex": 0.5,
+          "cols": "#00000054",
+          "ncol": 1
+        }
+      ],
+      "rect": [
+        {
+          "xleft": [-1.8, -1.6, -1.4, -1.2, -1, -0.8, -0.6, -0.4, -0.2, 0],
+          "ybottom": 0,
+          "xright": [-1.6, -1.4, -1.2, -1, -0.8, -0.6, -0.4, -0.2, 0, 0.2],
+          "ytop": [0.0392156862745098, 0.431372549019607, 0.215686274509804, 1.01960784313726, 1.64705882352941, 1.07843137254902, 0.352941176470588, 0.137254901960784, 0.0588235294117647, 0.0196078431372549],
+          "col": "#00000080"
+        }
+      ],
+      "lines": [
+        {
+          "x": {
+            "n": 512,
+            "sum": -411.890147859085,
+            "head": [-1.82701042893727, -1.82300832528209, -1.8190062216269],
+            "tail": [0.210060331552351, 0.214062435207538, 0.218064538862723]
+          },
+          "y": {
+            "n": 512,
+            "sum": 250.109385559919,
+            "head": [0.000423137259494392, 0.000506933445002403, 0.00060765343884914],
+            "tail": [0.000540033274554025, 0.000452605687630385, 0.000379400042141777]
+          },
+          "lty": null,
+          "col": "#000000E6",
+          "lwd": 2
+        }
+      ],
+      "usr": [-1.88, 0.28, -3.6, 93.6],
+      "axticks": {
+        "x": [-1.5, -1, -0.5, 0],
+        "y": [0, 20, 40, 60, 80],
+        "xl": ["-1.5", "-1.0", "-0.5", "0.0"],
+        "yl": ["0", "20", "40", "60", "80"]
+      }
+    }
+  },
+  "gosh_nohist": {
+    "ret": null,
+    "rec": {
+      "plot": [
+        {
+          "xlim": [-1.8, 0.2],
+          "ylim": [0, 100],
+          "xlab": "\"Log Risk Ratio\"",
+          "ylab": "I^2",
+          "xlab_expr": true,
+          "ylab_expr": true,
+          "xdat": {
+            "n": 255,
+            "sum": -233.415663923751,
+            "head": [-0.889311333920205, -1.58538865720143, -1.34807314829969],
+            "tail": [-0.815151230351422, -0.908197117107938, -0.89901414462405]
+          },
+          "ydat": {
+            "n": 255,
+            "sum": 18370.8120408201,
+            "head": [0, 0, 0],
+            "tail": [94.4861882948641, 95.2540897548015, 93.9088703839641]
+          },
+          "pch": 16,
+          "cex": 0.5,
+          "cols": "#00000054",
+          "ncol": 1
+        }
+      ],
+      "usr": [-1.88, 0.28, -4, 104],
+      "axticks": {
+        "x": [-1.5, -1, -0.5, 0],
+        "y": [0, 20, 40, 60, 80, 100],
+        "xl": ["-1.5", "-1.0", "-0.5", "0.0"],
+        "yl": ["0", "20", "40", "60", "80", "100"]
+      }
+    }
+  },
+  "gosh_fd": {
+    "ret": [
+      1
+    ],
+    "rec": {
+      "plot": [
+        {
+          "xlim": [-1.7, 0.1],
+          "ylim": [0, 1.953125],
+          "xlab": "",
+          "ylab": "",
+          "xlab_expr": false,
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
+        },
+        {
+          "xlim": [-1.7, 0.1],
+          "ylim": [0, 1.2],
+          "xlab": "\"Log Risk Ratio\"",
+          "ylab": "tau",
+          "xlab_expr": true,
+          "ylab_expr": true,
+          "xdat": {
+            "n": 255,
+            "sum": -233.415663923751,
+            "head": [-0.889311333920205, -1.58538865720143, -1.34807314829969],
+            "tail": [-0.815151230351422, -0.908197117107938, -0.89901414462405]
+          },
+          "ydat": {
+            "n": 255,
+            "sum": 128.859309364437,
+            "head": [0, 0, 0],
+            "tail": [0.592448999862262, 0.638101706782526, 0.599805363157705]
+          },
+          "pch": 16,
+          "cex": 0.5,
+          "cols": ["#00FF0054", "#FF000054"],
+          "ncol": 255
+        },
+        {
+          "xlim": [0, 2.51367293568757],
+          "ylim": [0, 1.2],
+          "xlab": "",
+          "ylab": "",
+          "xlab_expr": false,
+          "ylab_expr": false,
+          "xdat": null,
+          "ydat": null,
+          "pch": null,
+          "cex": null,
+          "cols": null,
+          "ncol": 0
+        }
+      ],
+      "rect": [
+        {
+          "xleft": [-1.7, -1.6, -1.5, -1.4, -1.3, -1.2, -1.1, -1, -0.9, -0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.0999999999999999, 0],
+          "ybottom": 0,
+          "xright": [-1.6, -1.5, -1.4, -1.3, -1.2, -1.1, -1, -0.9, -0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.0999999999999999, 0, 0.1],
+          "ytop": [0.0787401574803149, 0.0787401574803151, 0.629921259842519, 0.236220472440945, 0.0787401574803151, 0.393700787401574, 0.866141732283464, 1.18110236220472, 1.81102362204724, 1.65354330708661, 1.02362204724409, 0.866141732283466, 0.236220472440945, 0.393700787401574, 0.15748031496063, 0.0787401574803149, 0.15748031496063, 0.078740157480315],
+          "col": "#00FF0080"
+        },
+        {
+          "xleft": [-1.7, -1.6, -1.5, -1.4, -1.3, -1.2, -1.1, -1, -0.9, -0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.0999999999999999, 0],
+          "ybottom": 0,
+          "xright": [-1.6, -1.5, -1.4, -1.3, -1.2, -1.1, -1, -0.9, -0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.0999999999999999, 0, 0.1],
+          "ytop": [0.0781249999999999, 0.234375, 0.781249999999999, 0.15625, 0.390625, 1.015625, 1.796875, 1.953125, 1.640625, 1.328125, 0.3125, 0.3125, 0, 0, 0, 0, 0, 0],
+          "col": "#FF000080"
+        },
+        {
+          "xleft": 0,
+          "ybottom": [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1],
+          "xright": [1.73228346456693, 0.15748031496063, 0.393700787401575, 0.866141732283464, 1.18110236220472, 1.65354330708661, 1.96850393700787, 1.41732283464567, 0.393700787401575, 0.0787401574803149, 0.0787401574803149, 0.0787401574803151],
+          "ytop": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2],
+          "col": "#00FF0080"
+        },
+        {
+          "xleft": 0,
+          "ybottom": [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1],
+          "xright": [1.25, 0, 0.15625, 0.9375, 0.78125, 2.03125, 2.5, 1.796875, 0.3125, 0.15625, 0.0781249999999999, 0],
+          "ytop": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2],
+          "col": "#FF000080"
+        }
+      ],
+      "lines": [
+        {
+          "x": {
+            "n": 512,
+            "sum": -411.890147859085,
+            "head": [-1.87821336121991, -1.87401085469864, -1.86980834817738],
+            "tail": [0.26086245810283, 0.265064964624092, 0.269267471145355]
+          },
+          "y": {
+            "n": 512,
+            "sum": 238.180011980024,
+            "head": [0.000421189268678858, 0.000488633876823152, 0.000564477864584716],
+            "tail": [0.000870844322986631, 0.00075185734605175, 0.000646315245114838]
+          },
+          "lty": null,
+          "col": "#00FF00E6",
+          "lwd": 2
+        },
+        {
+          "x": {
+            "n": 512,
+            "sum": -541.705319505083,
+            "head": [-1.81257413583426, -1.80962088364766, -1.80666763146106],
+            "tail": [-0.309368772855668, -0.306415520669069, -0.303462268482471]
+          },
+          "y": {
+            "n": 512,
+            "sum": 338.931904143889,
+            "head": [0.000789972865722907, 0.000897326764066588, 0.00102227955160496],
+            "tail": [0.000791308665602904, 0.000694162248756584, 0.000610821838475449]
+          },
+          "lty": null,
+          "col": "#FF0000E6",
+          "lwd": 2
+        },
+        {
+          "x": {
+            "n": 512,
+            "sum": 323.806633933553,
+            "head": [0.00980202865169305, 0.0110111311779253, 0.0123636716762883],
+            "tail": [0.000577746772618277, 0.000513966856094848, 0.000457050579527572]
+          },
+          "y": {
+            "n": 512,
+            "sum": 282.716165553218,
+            "head": [-0.237459977763191, -0.234369410293096, -0.231278842823],
+            "tail": [1.33563886451526, 1.33872943198535, 1.34181999945545]
+          },
+          "lty": null,
+          "col": "#00FF00E6",
+          "lwd": 2
+        },
+        {
+          "x": {
+            "n": 512,
+            "sum": 349.236472241739,
+            "head": [0.00887546902944427, 0.0101538059898425, 0.0115707072088435],
+            "tail": [0.000723193017011869, 0.000634631580674193, 0.000554731367431791]
+          },
+          "y": {
+            "n": 512,
+            "sum": 277.671833525212,
+            "head": [-0.189860474854291, -0.186994767321187, -0.184129059788082],
+            "tail": [1.26878465949594, 1.27165036702905, 1.27451607456215]
+          },
+          "lty": null,
+          "col": "#FF0000E6",
+          "lwd": 2
+        }
+      ],
+      "usr": [-0.100546917427503, 2.61421985311507, -0.048, 1.248],
+      "axticks": {
+        "x": [0, 0.5, 1, 1.5, 2, 2.5],
+        "y": [0, 0.2, 0.4, 0.6, 0.8, 1, 1.2],
+        "xl": ["0.0", "0.5", "1.0", "1.5", "2.0", "2.5"],
+        "yl": ["0.0", "0.2", "0.4", "0.6", "0.8", "1.0", "1.2"]
+      }
+    }
+  },
+  "gosh_pairs": {
+    "ret": null,
+    "rec": {
+      "pairs": [
+        {
+          "nr": 247,
+          "nc": 3,
+          "colsum": [9740.60143448149, -14.0647131979307, -5.38935071995868],
+          "nna": [28, 28, 28],
+          "colhead": [null, null, null],
+          "pch": 16,
+          "cex": 0.5,
+          "cols": "#00000055",
+          "ncol": 1,
+          "labels": ["I^2", "\"intrcpt\"", "\"ablat\""]
+        }
+      ],
+      "rect": [
+        {
+          "xleft": [0, 10, 20, 30, 40, 50, 60, 70, 80, 90],
+          "ybottom": 0,
+          "xright": [10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
+          "ytop": [1, 0.075, 0.025, 0.025, 0.025, 0.2, 0.4, 0.4125, 0.4625, 0.1125],
+          "col": "#00000080"
+        },
+        {
+          "xleft": [-14, -12, -10, -8, -6, -4, -2, 0, 2],
+          "ybottom": 0,
+          "xright": [-12, -10, -8, -6, -4, -2, 0, 2, 4],
+          "ytop": [0.00900900900900901, 0, 0, 0, 0, 0.036036036036036, 0.837837837837838, 1, 0.0900900900900901],
+          "col": "#00000080"
+        },
+        {
+          "xleft": [-0.3, -0.25, -0.2, -0.15, -0.1, -0.05, 0, 0.05, 0.1, 0.15, 0.2, 0.25],
+          "ybottom": 0,
+          "xright": [-0.25, -0.2, -0.15, -0.1, -0.05, 0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3],
+          "ytop": [0.00555555555555555, 0, 0, 0, 0.0611111111111111, 1, 0.144444444444444, 0, 0, 0, 0, 0.00555555555555556],
+          "col": "#00000080"
+        }
+      ],
+      "lines": [
+        {
+          "x": {
+            "n": 512,
+            "sum": 24519.5235250458,
+            "head": [-33.7464627528005, -33.4269474606766, -33.1074321685527],
+            "tail": [128.886820938263, 129.206336230387, 129.525851522511]
+          },
+          "y": {
+            "n": 512,
+            "sum": 85.7177736133528,
+            "head": [0.0039193523481334, 0.00426845694331425, 0.00463598964092661],
+            "tail": [0.000338476816718348, 0.000308030192584804, 0.000279384824113456]
+          },
+          "lty": null,
+          "col": "#000000E6",
+          "lwd": 2
+        },
+        {
+          "x": {
+            "n": 512,
+            "sum": -2459.27962728305,
+            "head": [-13.5952470080382, -13.5608361803044, -13.5264253525705],
+            "tail": [3.91986430849609, 3.95427513622995, 3.98868596396381]
+          },
+          "y": {
+            "n": 512,
+            "sum": 114.769478689897,
+            "head": [0.00051252173506465, 0.000939517989739508, 0.00164393527974606],
+            "tail": [0.00164393528693324, 0.000939517991412455, 0.000512521735434159]
+          },
+          "lty": null,
+          "col": "#000000E6",
+          "lwd": 2
+        },
+        {
+          "x": {
+            "n": 512,
+            "sum": 2.6910421679297,
+            "head": [-0.278039129936168, -0.276930342962898, -0.275821555989629],
+            "tail": [0.286333439458104, 0.287442226431374, 0.288551013404644]
+          },
+          "y": {
+            "n": 512,
+            "sum": 54.9512034832046,
+            "head": [0.000502410364906684, 0.00143810253321344, 0.00353892801943525],
+            "tail": [0.00353892801943522, 0.0014381025332134, 0.000502410364906672]
+          },
+          "lty": null,
+          "col": "#000000E6",
+          "lwd": 2
+        }
+      ],
+      "usr": [0, 1, 0, 1],
+      "axticks": {
+        "x": [0, 0.2, 0.4, 0.6, 0.8, 1],
+        "y": [0, 0.2, 0.4, 0.6, 0.8, 1],
+        "xl": ["0.0", "0.2", "0.4", "0.6", "0.8", "1.0"],
+        "yl": ["0.0", "0.2", "0.4", "0.6", "0.8", "1.0"]
+      }
+    }
+  },
+  "gosh_pairs_opts": {
+    "ret": null,
+    "rec": {
+      "pairs": [
+        {
+          "nr": 210,
+          "nc": 3,
+          "colsum": [606.472040983261, 7.81319626244562, -4.7984689891145],
+          "nna": [28, 28, 28],
+          "colhead": [null, null, null],
+          "pch": 16,
+          "cex": 0.5,
+          "cols": ["#FF000066", "#0000FF66"],
+          "ncol": 210,
+          "labels": ["H", "a", "b"]
+        }
+      ],
+      "rect": [
+        {
+          "xleft": [0, 2, 4, 6, 8, 10],
+          "ybottom": 0,
+          "xright": [2, 4, 6, 8, 10, 12],
+          "ytop": [0.84746835443038, 0.749683544303797, 0.358544303797468, 0.325949367088608, 0.195569620253165, 0.0977848101265823],
+          "col": "#0000FF80"
+        },
+        {
+          "xleft": [0, 2, 4, 6, 8, 10],
+          "ybottom": 0,
+          "xright": [2, 4, 6, 8, 10, 12],
+          "ytop": [1, 0.9, 0.425, 0.175, 0.05, 0.025],
+          "col": "#FF000080"
+        },
+        {
+          "xleft": [-2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5],
+          "ybottom": 0,
+          "xright": [-1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2],
+          "ytop": [0, 0, 0.111111111111111, 0.622222222222222, 1, 0.0222222222222222, 0, 0],
+          "col": "#0000FF80"
+        },
+        {
+          "xleft": [-2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5],
+          "ybottom": 0,
+          "xright": [-1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2],
+          "ytop": [0.0170442286947141, 0.0681769147788565, 0.0170442286947141, 0.562459546925566, 0.954476806903991, 0.119309600862999, 0, 0.0170442286947141],
+          "col": "#FF000080"
+        },
+        {
+          "xleft": [-0.07, -0.06, -0.05, -0.04, -0.03, -0.02, -0.01, 0],
+          "ybottom": 0,
+          "xright": [-0.06, -0.05, -0.04, -0.03, -0.02, -0.01, 0, 0.01],
+          "ytop": [0, 0, 0.0554807433342311, 0.638028548343658, 0.970913008349044, 0.416105575006733, 0.110961486668462, 0],
+          "col": "#0000FF80"
+        },
+        {
+          "xleft": [-0.07, -0.06, -0.05, -0.04, -0.03, -0.02, -0.01, 0],
+          "ybottom": 0,
+          "xright": [-0.06, -0.05, -0.04, -0.03, -0.02, -0.01, 0, 0.01],
+          "ytop": [0.0212765957446809, 0, 0, 0.851063829787234, 1, 0.212765957446809, 0, 0.106382978723404],
+          "col": "#FF000080"
+        }
+      ],
+      "lines": [
+        {
+          "x": {
+            "n": 512,
+            "sum": 3143.20510413766,
+            "head": [-5.48761709372939, -5.44211145943292, -5.39660582513645],
+            "tail": [17.6747507631742, 17.7202563974707, 17.7657620317671]
+          },
+          "y": {
+            "n": 512,
+            "sum": 113.227967791094,
+            "head": [0.00367708824862563, 0.00392329202332827, 0.00417597113982083],
+            "tail": [0.000372124148788715, 0.000348883417371481, 0.000326267130305945]
+          },
+          "lty": null,
+          "col": "#0000FFE6",
+          "lwd": 1
+        },
+        {
+          "x": {
+            "n": 512,
+            "sum": 3065.12308571453,
+            "head": [-3.44025083261163, -3.40335525781946, -3.3664596830273],
+            "tail": [15.3395967365997, 15.3764923113919, 15.413387886184]
+          },
+          "y": {
+            "n": 512,
+            "sum": 139.655146280411,
+            "head": [0.00541361887503773, 0.00583471158586313, 0.00628953964004179],
+            "tail": [0.000179964988441767, 0.000167055626192785, 0.000155094807528124]
+          },
+          "lty": null,
+          "col": "#FF0000E6",
+          "lwd": 1
+        },
+        {
+          "x": {
+            "n": 512,
+            "sum": -29.7326436236364,
+            "head": [-1.51938776427432, -1.51366832711308, -1.50794888995184],
+            "tail": [1.39180575079701, 1.39752518795825, 1.40324462511949]
+          },
+          "y": {
+            "n": 512,
+            "sum": 153.605741271208,
+            "head": [0.000459315730533486, 0.000492507742921861, 0.000528306416169233],
+            "tail": [0.00105214833670791, 0.000978739524341889, 0.000910841146911104]
+          },
+          "lty": null,
+          "col": "#0000FFE6",
+          "lwd": 1
+        },
+        {
+          "x": {
+            "n": 512,
+            "sum": 92.3762357800101,
+            "head": [-2.4323084847792, -2.42208253244931, -2.41185658011942],
+            "tail": [2.77270125113508, 2.78292720346497, 2.79315315579486]
+          },
+          "y": {
+            "n": 512,
+            "sum": 85.9195016800414,
+            "head": [0.000205967574739533, 0.00022958402313098, 0.000255064125853592],
+            "tail": [0.000154723692400147, 0.000140230461777704, 0.000126707726212244]
+          },
+          "lty": null,
+          "col": "#FF0000E6",
+          "lwd": 1
+        },
+        {
+          "x": {
+            "n": 512,
+            "sum": -13.0169874353955,
+            "head": [-0.0648965457952183, -0.0647420536534944, -0.0645875615117705],
+            "tail": [0.0137399543422568, 0.0138944464839807, 0.0140489386257047]
+          },
+          "y": {
+            "n": 512,
+            "sum": 141.982979080881,
+            "head": [0.000268358389658391, 0.000289634443619961, 0.000313038974453852],
+            "tail": [0.000412587179432111, 0.000381200924111375, 0.000352731571777657]
+          },
+          "lty": null,
+          "col": "#0000FFE6",
+          "lwd": 1
+        },
+        {
+          "x": {
+            "n": 512,
+            "sum": -13.4910601504667,
+            "head": [-0.0759117059630233, -0.0757177256142693, -0.0755237452655153],
+            "tail": [0.0228242915527549, 0.0230182719015088, 0.0232122522502628]
+          },
+          "y": {
+            "n": 512,
+            "sum": 113.082539437384,
+            "head": [0.000207394757143359, 0.000234704730719341, 0.000266084247861046],
+            "tail": [0.000269837861152234, 0.000237800816497993, 0.000209966784660693]
+          },
+          "lty": null,
+          "col": "#FF0000E6",
+          "lwd": 1
+        }
+      ],
+      "usr": [0, 1, 0, 1],
+      "axticks": {
+        "x": [0, 0.2, 0.4, 0.6, 0.8, 1],
+        "y": [0, 0.2, 0.4, 0.6, 0.8, 1],
+        "xl": ["0.0", "0.2", "0.4", "0.6", "0.8", "1.0"],
+        "yl": ["0.0", "0.2", "0.4", "0.6", "0.8", "1.0"]
       }
     }
   },

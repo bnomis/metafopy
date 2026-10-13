@@ -15,10 +15,12 @@ import pandas as pd
 import pytest
 from matplotlib.axes import Axes
 
-from metafopy import RMAResult, influence, profile, rma
+from metafopy import RMAResult, gosh, influence, profile, rma
 from metafopy.bias import trimfill
-from metafopy.plot import addpoly, baujat, forest, funnel, labbe, plot_infl, plot_profile, qqnorm, radial
-from plotref import PLOTS, check_all, check_plain, flat
+from metafopy.plot import addpoly, baujat, forest, funnel, labbe, plot_gosh, plot_infl, plot_profile, qqnorm, radial
+from metafopy.plot._draw import collect as d_collect
+from metafopy.plot._rutils import usr_range
+from plotref import PLOTS, check_all, check_lines, check_plain, check_rects, flat
 from refutil import bcg, bcg_na, close
 
 
@@ -540,7 +542,7 @@ def test_plot_infl_dfbs_matches_metafor(fits: dict[str, RMAResult], ax: Axes) ->
     assert len(r.axes) == 0
     assert len(r.dfbs_axes) == 2
     check_infl(r, PLOTS['infl_dfbs'], 'infl_dfbs')
-    fig, axes = plt.subplots()
+    _fig, axes = plt.subplots()
     r = plot_infl(inf, plotinf=[2, 5], plotdfbs=2, pch=19, ax=axes)
     check_infl(r, PLOTS['infl_dfbs_only2'], 'infl_dfbs_only2')
     plt.close('all')
@@ -552,7 +554,178 @@ def test_plot_infl_missing_values_match_metafor(dat: pd.DataFrame, ax: Axes) -> 
     ids = np.flatnonzero(res.data.keep) + 1
     r = plot_infl(influence(res), plotinf=[1, 2, 6], ids=ids, ax=ax)
     check_infl(r, PLOTS['infl_na_omit'], 'infl_na_omit')
-    fig, axes = plt.subplots()
+    _fig, axes = plt.subplots()
     r = plot_infl(influence(res, na_action='exclude'), plotinf=[1, 2, 6, 8], na_action='exclude', ax=axes)
     check_infl(r, PLOTS['infl_na_exclude'], 'infl_na_exclude')
     plt.close('all')
+
+
+# -- plot_gosh ------------------------------------------------------------------------------------------
+
+
+@pytest.fixture(scope='module')
+def gosh_fits(dat: pd.DataFrame) -> dict[str, Any]:
+    d8 = dat.iloc[:8].reset_index(drop=True)
+    return {'int': gosh(_fit(d8, slab='label')), 'mods': gosh(_fit(d8, mods='~ ablat', slab='label'))}
+
+
+def test_gosh_results_match_metafor(gosh_fits: dict[str, Any]) -> None:
+    info = PLOTS['gosh_info']
+    assert len(gosh_fits['int'].res) == info['k']
+    assert len(gosh_fits['mods'].res) == info['km']
+    assert list(gosh_fits['mods'].res.columns) == info['cols']
+    close(gosh_fits['int'].res['estimate'], info['est'])
+    close(gosh_fits['int'].res['I2'], info['I2'])
+
+
+def _scatter_summary(art: Any, ref: dict[str, Any], what: str) -> None:
+    p = ref
+    m = art.meta
+    for k, key in (('x', 'xdat'), ('y', 'ydat')):
+        v = np.asarray(m[k], dtype=float)
+        e = p[key]
+        assert len(v) == e['n'], what
+        close(float(np.nansum(v)), e['sum'], f'{what}: sum {k}', rtol=1e-7)
+        close(v[:3], e['head'], f'{what}: head {k}')
+        close(v[-3:], e['tail'], f'{what}: tail {k}')
+    assert m['pch'] == p['pch'], what
+    close(m['cex'], p['cex'], f'{what}: cex')
+    assert set(m['cols']) == set(flat(p['cols'])), f'{what}: colours {set(m["cols"])}'
+
+
+def check_gosh_int(r: Any, key: str) -> None:
+    rec = PLOTS[key]['rec']
+    plots = rec['plot']
+    main = r.main
+    scat = next(p for p in plots if p.get('xdat') is not None)
+    arts = d_collect(main)['scatter']
+    assert len(arts) == 1
+    _scatter_summary(arts[0], scat, key)
+    margins = [a for a in (r.xhist, r.yhist) if a is not None]
+    check_rects(margins, rec, key)
+    check_lines(margins, rec, key)
+    assert len(margins) + 1 == len(plots), key
+    # user coordinates of the panels, in the order they were plotted
+    axes = [a for a in (r.xhist, r.main, r.yhist) if a is not None]
+    for a, p in zip(axes, plots, strict=True):
+        if p.get('xlim') is not None and a is not r.yhist:
+            close(a.get_xlim(), list(usr_range(*flat(p['xlim']))), f'{key}: xlim')
+        if p.get('ylim') is not None and a is not r.xhist:
+            close(a.get_ylim(), list(usr_range(*flat(p['ylim']))), f'{key}: ylim')
+    if r.xhist is not None:
+        close(r.xhist.get_ylim(), list(usr_range(*flat(plots[0]['ylim']))), f'{key}: xhist ylim')
+    if r.yhist is not None:
+        close(r.yhist.get_xlim(), list(usr_range(*flat(plots[-1]['xlim']))), f'{key}: yhist xlim')
+
+
+GOSH_INT: dict[str, dict[str, Any]] = {
+    'gosh_default': {},
+    'gosh_opts': {
+        'het': 'tau2',
+        'out': 2,
+        'hh': (0.2, 0.4),
+        'breaks': (6, 10),
+        'adjust': (1, 2),
+        'lwd': (1, 0),
+        'alpha': (0.3, 0.5, 0.8),
+        'cex': 1.5,
+        'pch': 1,
+        'border': ('gray', 'black'),
+        'labels': ('Est', 'T2'),
+    },
+    'gosh_nox': {'het': 'QE', 'xhist': False, 'col': 'blue', 'xlim': (-1.5, 0.5), 'trim': 0.05},
+    'gosh_noy': {'het': 'H2', 'yhist': False, 'breaks': 'Scott'},
+    'gosh_nohist': {'xhist': False, 'yhist': False, 'ylim': (0, 100)},
+    'gosh_fd': {'het': 'tau', 'breaks': ('FD', 12), 'out': 1, 'col': ('red', 'green')},
+}
+
+
+@pytest.mark.parametrize('key', list(GOSH_INT))
+def test_plot_gosh_matches_metafor(key: str, gosh_fits: dict[str, Any], ax: Axes) -> None:
+    r = plot_gosh(gosh_fits['int'], ax=ax, **GOSH_INT[key])
+    check_gosh_int(r, key)
+
+
+def check_gosh_pairs(r: Any, key: str) -> None:
+    rec = PLOTS[key]['rec']
+    pr = rec['pairs'][0]
+    nc = int(pr['nc'])
+    panels = r.panels
+    assert len(panels) == nc
+    for j in range(nc):
+        i = 1 if j == 0 else 0
+        m = d_collect(panels[i][j])['scatter'][0].meta
+        assert len(m['x']) == pr['nr']
+        close(float(np.nansum(m['x'])), flat(pr['colsum'])[j], f'{key}: column {j} sum', rtol=1e-7)
+        assert m['pch'] == pr['pch']
+        close(m['cex'], pr['cex'])
+        assert set(m['cols']) == set(flat(pr['cols'])), key
+    diag = [panels[i][i] for i in range(nc)]
+    check_rects(diag, rec, key)
+    check_lines(diag, rec, key)
+    labs = [t.get_text() for a in diag for t in a.texts if t.get_gid() == 'mtext']
+    assert len(labs) == nc
+
+
+def test_plot_gosh_pairs_matches_metafor(gosh_fits: dict[str, Any], ax: Axes) -> None:
+    r = plot_gosh(gosh_fits['mods'], ax=ax)
+    check_gosh_pairs(r, 'gosh_pairs')
+
+
+def test_plot_gosh_pairs_options_match_metafor(gosh_fits: dict[str, Any], ax: Axes) -> None:
+    r = plot_gosh(
+        gosh_fits['mods'],
+        het='H2',
+        out=1,
+        alpha=0.4,
+        breaks=7,
+        adjust=2,
+        lwd=1,
+        trim=[0.02, [0.1, 0.05], 0],
+        border='red',
+        hh=0.5,
+        labels=['H', 'a', 'b'],
+        ax=ax,
+    )
+    check_gosh_pairs(r, 'gosh_pairs_opts')
+
+
+# -- defaults and errors --------------------------------------------------------------------------------
+
+
+def test_plots_draw_on_the_current_axes_by_default(fits: dict[str, RMAResult]) -> None:
+    plt.close('all')
+    r = funnel(fits['ni'] if 'ni' in fits else fits['re'])
+    assert r.ax is plt.gca()
+    plt.close('all')
+    assert baujat(fits['re']).ax is plt.gca()
+    plt.close('all')
+
+
+def test_plots_reject_invalid_arguments(fits: dict[str, RMAResult], raw: pd.DataFrame, dat: pd.DataFrame, ax: Axes) -> None:
+    with pytest.raises(ValueError, match='yaxis'):
+        funnel(fits['re'], yaxis='bad', ax=ax)
+    with pytest.raises(ValueError, match='without moderators'):
+        radial(fits['mods'], ax=ax)
+    with pytest.raises(ValueError, match='type'):
+        qqnorm(fits['re'], type='bad', ax=ax)
+    with pytest.raises(ValueError, match='Out of range'):
+        qqnorm(fits['re'], label=99, seed=1, ax=ax)
+    with pytest.raises(ValueError, match='without moderators'):
+        labbe(fits['mods'], ax=ax)
+    with pytest.raises(ValueError, match="'measure'"):
+        labbe(rma('yi', 'vi', data=dat), ax=ax)
+    with pytest.raises(ValueError, match='not available'):
+        labbe(_arm_fit(raw, 'RR'), ax=ax)
+    with pytest.raises(ValueError, match='plotinf'):
+        plot_infl(influence(fits['re']), plotinf=[20], ax=ax)
+    with pytest.raises(ValueError, match='At least one'):
+        plot_infl(influence(fits['re']), plotinf=False, ax=ax)
+
+
+def test_plot_gosh_rejects_tau2_for_equal_effects_models(dat: pd.DataFrame, ax: Axes) -> None:
+    g = gosh(_fit(dat.iloc[:6].reset_index(drop=True), method='EE'))
+    with pytest.raises(ValueError, match='tau2'):
+        plot_gosh(g, het='tau2', ax=ax)
+    with pytest.raises(ValueError, match='het'):
+        plot_gosh(g, het='bad', ax=ax)

@@ -236,23 +236,54 @@ def qqnorm_xy(y: FloatArray) -> tuple[FloatArray, FloatArray]:
     return np.asarray(x, dtype=np.float64), y
 
 
-def hist_breaks_sturges(x: FloatArray) -> FloatArray:
-    """The ``breaks`` of ``hist(x)`` (``"Sturges"``): ``pretty(range(x), ceiling(log2(n)) + 1)``."""
+def hist_breaks(x: FloatArray, breaks: Any = 'Sturges') -> FloatArray:
+    """The ``breaks`` of ``hist(x, breaks)``: a vector (used as is), a number of classes, or ``"Sturges"``, ``"Scott"`` or ``"FD"``."""
+    x = np.asarray(x, dtype=np.float64)
     x = x[np.isfinite(x)]
-    nclass = math.ceil(math.log2(x.shape[0]) + 1)
-    return pretty(np.array([x.min(), x.max()]), nclass)
+    if isinstance(breaks, str):
+        name = breaks.lower()
+        n = x.shape[0]
+        if name == 'sturges':
+            nclass = math.ceil(math.log2(n) + 1)
+        elif name == 'scott':
+            h = 3.5 * float(np.std(x, ddof=1)) * n ** (-1 / 3)
+            nclass = math.ceil((x.max() - x.min()) / h) if h > 0 else 1
+        elif name in ('fd', 'freedman-diaconis'):
+            q1, q3 = np.quantile(x, [0.25, 0.75])
+            h = 2 * float(q3 - q1)
+            if h == 0:
+                h = 2 * 1.4826 * float(np.median(np.abs(x - np.median(x))))
+                if h == 0:
+                    h = 2 * float(np.mean(np.abs(x - x.mean())))
+            nclass = math.ceil((x.max() - x.min()) / (h * n ** (-1 / 3))) if h > 0 else 1
+        else:
+            raise ValueError("unknown 'breaks' algorithm")
+        return pretty(np.array([x.min(), x.max()]), max(int(nclass), 1), min_n=1)
+    arr = np.atleast_1d(np.asarray(breaks, dtype=np.float64))
+    if arr.shape[0] == 1:
+        return pretty(np.array([x.min(), x.max()]), int(arr[0]), min_n=1)
+    return np.sort(arr)
+
+
+def hist_breaks_sturges(x: FloatArray) -> FloatArray:
+    """The ``breaks`` of ``hist(x)`` (``"Sturges"``)."""
+    return hist_breaks(x, 'Sturges')
 
 
 def hist_density(x: FloatArray, breaks: FloatArray) -> FloatArray:
-    """Densities of ``hist(x, breaks, plot = FALSE)`` (right-closed bins, the first one including its left edge)."""
+    """Densities of ``hist(x, breaks, plot = FALSE)`` (right-closed bins, the first one including its left edge, with R's fuzz)."""
+    x = np.asarray(x, dtype=np.float64)
     x = x[np.isfinite(x)]
-    counts = np.zeros(breaks.shape[0] - 1)
-    idx = np.searchsorted(breaks, x, side='left') - 1
-    idx[x == breaks[0]] = 0
+    nb = breaks.shape[0]
+    diddle = 1e-7 * float(np.median(np.diff(breaks)))
+    fuzzy = breaks + np.concatenate([[-diddle], np.full(nb - 1, diddle)])
+    counts = np.zeros(nb - 1)
+    idx = np.searchsorted(fuzzy, x, side='left') - 1
     for i in idx:
         if 0 <= i < counts.shape[0]:
             counts[i] += 1
-    return np.asarray(counts / (x.shape[0] * np.diff(breaks)), dtype=np.float64)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        return np.asarray(counts / (x.shape[0] * np.diff(breaks)), dtype=np.float64)
 
 
 def density_r(x: FloatArray, adjust: float = 1.0, n: int = 512) -> tuple[FloatArray, FloatArray]:

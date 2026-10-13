@@ -7,7 +7,7 @@ https://wviechtb.github.io/metafor/reference/plot.infl.rma.uni.html.
 from __future__ import annotations
 
 import math
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from typing import Any
 
@@ -120,7 +120,7 @@ def plot_infl(
     bg_infl: str = 'red',
     col_na: str | None = None,
     *,
-    ids: Sequence[int | str] | None = None,
+    ids: Iterable[int | str] | None = None,
     na_action: str = 'omit',
     ax: Axes | None = None,
 ) -> PlotInflResult:

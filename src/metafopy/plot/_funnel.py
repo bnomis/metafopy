@@ -543,15 +543,15 @@ def _legend(
         for i, v in enumerate(lv):
             hi = 1.0 if i == 0 else lv[i - 1]
             labels.append(f'{v:.{nd}f} < p <= {hi:.{nd}f}')
-            handles.append(Patch(facecolor=[*shade, back][i], edgecolor=colci))
+            handles.append(Patch(facecolor=d.rcolor([*shade, back][i]), edgecolor=d.rcolor(colci)))
     elif opts['show'] == 'cis':
         for v, sc in zip(level, shade, strict=False):
             labels.append(f'{100 - 100 * v:g}% CI Region')
-            handles.append(Patch(facecolor=sc, edgecolor=colci))
+            handles.append(Patch(facecolor=d.rcolor(sc), edgecolor=d.rcolor(colci)))
     if opts['studies']:
         labels.append('Observed Studies' if trimfill else 'Studies')
-        handles.append(Line2D([], [], linestyle='None', marker='o', markerfacecolor=str(bg[0]), markeredgecolor=str(col[0])))
+        handles.append(Line2D([], [], linestyle='None', marker='o', markerfacecolor=d.rcolor(str(bg[0])), markeredgecolor=d.rcolor(str(col[0]))))
         if trimfill:
             labels.append('Imputed Studies')
-            handles.append(Line2D([], [], linestyle='None', marker='o', markerfacecolor=str(bg[1]), markeredgecolor=str(col[1])))
+            handles.append(Line2D([], [], linestyle='None', marker='o', markerfacecolor=d.rcolor(str(bg[1])), markeredgecolor=d.rcolor(str(col[1]))))
     ax.legend(handles, labels, loc=opts['x'], framealpha=1.0)

@@ -26,6 +26,7 @@ from metafopy.methods.profile import ProfileResult, profile
 from metafopy.methods.ranef import RanefResult, ranef
 from metafopy.methods.vif import VIFEntry, VIFResult, vif
 from metafopy.models.rma_uni import Control, FitStats, RMAResult, rma, rma_uni
+from metafopy.plot import addpoly, baujat, forest, funnel, labbe, plot_gosh, plot_infl, plot_profile, qqnorm, radial
 
 __version__ = version('metafopy')
 
@@ -57,7 +58,9 @@ __all__ = [
     'VIFResult',
     'WaldResult',
     '__version__',
+    'addpoly',
     'anova',
+    'baujat',
     'blup',
     'cmicalc',
     'confint',
@@ -66,16 +69,24 @@ __all__ = [
     'datasets',
     'dfbetas',
     'escalc',
+    'forest',
     'fsn',
+    'funnel',
     'gosh',
     'hc',
     'influence',
+    'labbe',
     'leave1out',
     'pairmat',
     'parse_random',
     'permutest',
+    'plot_gosh',
+    'plot_infl',
+    'plot_profile',
     'predict',
     'profile',
+    'qqnorm',
+    'radial',
     'ranef',
     'ranktest',
     'regtest',

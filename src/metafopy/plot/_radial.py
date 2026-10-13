@@ -146,6 +146,8 @@ def radial(
     cex_axis_ = 1.0 if cex_axis is None else cex_axis
 
     axx.set_box_aspect(1)
+    pos = axx.get_position()  # room for the z-axis label on the left and the arcs on the right (metafor widens the margins)
+    axx.set_position((pos.x0 + 0.2 * pos.width, pos.y0, 0.58 * pos.width, pos.height))
     plain_plot(axx, xlims, zlims, xlab, '', bty='n', xaxt=False, yaxt=False, xaxs_i=True, yaxs_i=True, cex_lab=cex_lab_)
     d.poly(axx, [0, xmax, xmax, 0], [zcrit, zcrit + xmax * beta, -zcrit + xmax * beta, -zcrit], col=back_c, border=None, zorder=0.6)
     d.seg(axx, 0, 0, xmax, xmax * beta, lty='solid')

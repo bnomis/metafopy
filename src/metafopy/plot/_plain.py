@@ -30,7 +30,7 @@ def plain_plot(
     logy: bool = False,
     xaxs_i: bool = False,
     yaxs_i: bool = False,
-    xat: Sequence[float] | None = None,
+    xat: Sequence[float] | NDArray[np.float64] | None = None,
     xlabels: Sequence[str] | None = None,
     cex_lab: float = 1.0,
     cex_axis: float = 1.0,

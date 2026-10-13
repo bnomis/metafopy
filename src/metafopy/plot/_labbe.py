@@ -306,10 +306,10 @@ def _legend(ax: Axes, legend: bool | str | dict[str, Any], intrcpt: float, lty: 
             labels.append(name)
     shown = f'{lvl:g}'
     if ci:
-        handles.append(Patch(facecolor=ci_col, edgecolor='black'))
+        handles.append(Patch(facecolor=d.rcolor(ci_col), edgecolor='black'))
         labels.append(f'{shown}% Confidence Interval')
     if pi:
-        handles.append(Patch(facecolor=pi_col, edgecolor='black'))
+        handles.append(Patch(facecolor=d.rcolor(pi_col), edgecolor='black'))
         labels.append(f'{shown}% Prediction Interval')
     if handles:
         ax.legend(handles, labels, loc=cast(Any, pos), framealpha=1.0)
