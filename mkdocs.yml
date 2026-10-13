@@ -1,0 +1,17 @@
+site_name: metafopy
+site_description: Meta-analysis in Python, a re-implementation of the R package metafor
+repo_url: https://github.com/bnomis/metafopy
+theme:
+  name: material
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+nav:
+  - Home: index.md
+  - Getting started: getting-started.md
+  - Analyses: analyses.md
+  - API reference: api.md
+  - Differences from metafor: differences.md
