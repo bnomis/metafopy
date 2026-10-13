@@ -10,9 +10,12 @@ import collections.abc
 import math
 import sys
 
+import numpy
+import numpy.typing
+
 import metafopy.errors
 
-__all__ = ['fmt_named_vector', 'fmt_num', 'fmt_pval', 'fmt_table', 'signif_stars', 'zero_below']
+__all__ = ['fmt_df', 'fmt_df_scalar', 'fmt_named_vector', 'fmt_num', 'fmt_pval', 'fmt_table', 'signif_stars', 'zero_below']
 
 
 def fmt_num(x: float, digits: int = 4) -> str:
@@ -83,3 +86,22 @@ def fmt_named_vector(names: collections.abc.Sequence[str], values: collections.a
 def zero_below(x: float, digits: int = 4, thresh: float = 10 * sys.float_info.epsilon) -> str:
     """``fmt_num`` that prints values with ``|x| < thresh`` as ``0`` (metafor's ``fmtx(x, digits, thresh=)``)."""
     return '0' if abs(x) < thresh else fmt_num(x, digits)
+
+
+def fmt_df(values: numpy.typing.NDArray[numpy.float64]) -> list[str]:
+    """A numeric column as ``data.frame`` printing does (common number of decimals); degrees of freedom are rounded to 2 decimals."""
+    rounded = [round(float(v), 2) for v in values]
+    decimals = 0
+    for v in rounded:
+        text = f'{v:.2f}'.rstrip('0').rstrip('.')
+        if '.' in text:
+            decimals = max(decimals, len(text.split('.')[1]))
+    return [f'{v:.{decimals}f}' for v in rounded]
+
+
+def fmt_df_scalar(value: float | None) -> str:
+    if value is None or math.isnan(value):
+        return 'NA'
+    if math.isinf(value):
+        return 'Inf' if value > 0 else '-Inf'
+    return str(int(value)) if float(value).is_integer() else f'{round(float(value), 2):g}'

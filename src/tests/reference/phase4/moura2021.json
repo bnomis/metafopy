@@ -1,0 +1,28 @@
+{
+  "sigma2": [0.0178705074327594, 0.0145086848192831, 0.0386333606154342, 0.0716984540710164],
+  "beta": 0.337188816784404,
+  "se": 0.0968027155547544,
+  "zval": 3.48325782858519,
+  "pval": 0.00049535105499924,
+  "ci_lb": 0.14745898069141,
+  "ci_ub": 0.526918652877398,
+  "QE": 10743.8075609914,
+  "QEp": 0,
+  "k": 1828,
+  "loglik": -163.95273633502,
+  "fit_reml": [-163.95273633502, 327.90547267004, 337.90547267004, 365.45762545193, 337.9384215992],
+  "s_nlevels": [457, 1828, 341, 341],
+  "s_names": ["study.id", "effect.size.id", "species.id", "species.id.phy"],
+  "print": "\nMultivariate Meta-Analysis Model (k = 1828; method: REML)\n\nVariance Components:\n\n            estim    sqrt  nlvls  fixed          factor    R \nsigma^2.1  0.0179  0.1337    457     no        study.id   no \nsigma^2.2  0.0145  0.1205   1828     no  effect.size.id   no \nsigma^2.3  0.0386  0.1966    341     no      species.id   no \nsigma^2.4  0.0717  0.2678    341     no  species.id.phy  yes \n\nTest for Heterogeneity:\nQ(df = 1827) = 10743.8076, p-val < .0001\n\nModel Results:\n\nestimate      se    zval    pval   ci.lb   ci.ub      \n  0.3372  0.0968  3.4833  0.0005  0.1475  0.5269  *** \n\n---\nSignif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1\n",
+  "vcv_check": {
+    "dim": [341, 341],
+    "diag_head": [29, 33, 32, 24, 23],
+    "cor_corner": [1, 0.517206547068189, 0.52522573143889, 0.517206547068189, 1, 0.707776073131163, 0.52522573143889, 0.707776073131163, 1],
+    "tips": ["Homo_sapiens_ott770315", "Megaptera_novaeangliae_ott226198", "Ovis_aries_musimon_ott540228"]
+  },
+  "meta": {
+    "metafor": "5.2.1",
+    "metadat": "1.6.0",
+    "R": "R version 4.3.3 (2024-02-29)"
+  }
+}

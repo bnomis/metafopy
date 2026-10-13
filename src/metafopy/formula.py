@@ -83,12 +83,14 @@ class RandomTerm:
 
     ``~ 1 | study`` has ``inner=None`` and ``outer=("study",)``;
     ``~ 1 | district/school`` has ``outer=("district", "school")`` and
-    ``nested=True``; ``~ outcome | study`` has ``inner="outcome"``.
+    ``nested=True``; ``~ outcome | study`` has ``inner="outcome"``. ``double_bar``
+    marks ``~ x1 + x2 || study``, which asks for ``struct="GDIAG"`` instead of ``"GEN"``.
     """
 
     inner: str | None
     outer: tuple[str, ...]
     nested: bool
+    double_bar: bool = False
 
     def __str__(self) -> str:
         lhs = '1' if self.inner is None else self.inner
@@ -106,6 +108,16 @@ def parse_random(formula: str) -> RandomTerm:
     if not text.startswith('~'):
         raise metafopy.errors.InputError(f"random effects formula must start with '~': {formula!r}")
     body = text[1:]
+    for token, hint in (
+        ('$', "cannot use '$' notation (use the 'data' argument instead)"),
+        (':', "cannot use ':' notation (use interaction() instead)"),
+        ('%in%', "cannot use '%in%' notation (use interaction() instead)"),
+    ):
+        if token in body:
+            raise metafopy.errors.InputError(f'random effects formula {formula!r}: {hint}')
+    double_bar = '||' in body
+    if double_bar:
+        body = body.replace('||', '|')
     if body.count('|') != 1:
         raise metafopy.errors.InputError(f"random effects formula needs exactly one '|': {formula!r}")
     lhs, rhs = (s.strip() for s in body.split('|'))
@@ -117,4 +129,4 @@ def parse_random(formula: str) -> RandomTerm:
     inner = None if lhs == '1' else lhs
     if inner is not None and len(outer) > 1:
         raise metafopy.errors.InputError(f"'~ inner | outer' terms cannot also be nested: {formula!r}")
-    return RandomTerm(inner=inner, outer=outer, nested=len(outer) > 1)
+    return RandomTerm(inner=inner, outer=outer, nested=len(outer) > 1, double_bar=double_bar)

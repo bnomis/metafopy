@@ -21,11 +21,18 @@ import metafopy.core.linalg
 import metafopy.core.zeroin
 import metafopy.errors
 import metafopy.metadata
+import metafopy.models.mv_result
+import metafopy.models.rma_mv
 import metafopy.models.rma_uni
 import metafopy.models.tau2
 import metafopy.transf
 
 __all__ = ['ConfintResult', 'confint']
+
+# auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
+VC_NAMES = ('sigma2', 'tau2', 'rho', 'gamma2', 'phi')
+# auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
+SPATIAL = ('SPEXP', 'SPGAU', 'SPLIN', 'SPRAT', 'SPSPH', 'PHYPL', 'PHYPD')
 
 FloatArray = numpy.typing.NDArray[numpy.float64]
 # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
@@ -47,7 +54,7 @@ class ConfintResult:
 
 
 @functools.singledispatch
-def confint(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> ConfintResult:
+def confint(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> typing.Any:
     """Confidence intervals for a fitted model.
 
     Raises:
@@ -332,3 +339,183 @@ def profile_lrt(x: metafopy.models.rma_uni.RMAResult, tau2: float) -> float:
             skip_r2=True,
         )
     return -2 * (loglik(res) - loglik(x))
+
+
+def mv_search_limits(x: metafopy.models.mv_result.RMAMVResult, comp: str, vc: float) -> tuple[float, float]:
+    """Default interval ``(vc.min, vc.max)`` searched for the bounds of a variance component's profile-likelihood CI."""
+    eps = float(numpy.finfo(float).eps)
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
+    if comp in ('sigma2', 'tau2', 'gamma2'):
+        return 0.0, max(10.0 if vc <= math.sqrt(eps) else max(10.0, vc * 100), 0.0)
+    struct = x.struct[0] if comp == 'rho' else x.struct[1]
+    lo, hi = -1.0, 1.0
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
+    if struct in ('AR', 'HAR', 'CAR'):
+        lo = min(0.0, vc)
+    if struct in SPATIAL[:5]:
+        lo, hi = 0.0, max(10.0, vc * 10)
+    if struct in SPATIAL[5:]:
+        lo, hi = 0.0, max(2.0, vc * 2)
+    return lo, hi
+
+
+def mv_refit_logLik(x: metafopy.models.mv_result.RMAMVResult, comp: str, pos: int, val: float) -> float:
+    """Log-likelihood of ``x`` refitted with one variance component fixed at ``val`` (``.profile.rma.mv``)."""
+    spec = dict(x.spec)
+    for name in VC_NAMES:
+        flags = x.vc_fix[name]
+        if flags is None:
+            continue
+        current = numpy.asarray(getattr(x, name), dtype=numpy.float64)
+        arg = numpy.where(flags, current, numpy.nan)
+        if name == comp:
+            arg[pos] = val
+        spec[name] = arg
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        return metafopy.models.rma_mv.rma_mv(**spec).logLik()
+
+
+@confint.register
+def confint_rma_mv(
+    model: metafopy.models.mv_result.RMAMVResult,
+    *,
+    fixed: bool = False,
+    sigma2: int | None = None,
+    tau2: int | None = None,
+    rho: int | None = None,
+    gamma2: int | None = None,
+    phi: int | None = None,
+    level: float | None = None,
+    transf: collections.abc.Callable[..., typing.Any] | None = None,
+    targs: typing.Any = None,
+    vc_min: float | None = None,
+    vc_max: float | None = None,
+    tol: float = metafopy.core.zeroin.DEFAULT_TOL,
+    maxiter: int = 1000,
+    eptries: int = 10,
+) -> ConfintResult | list[ConfintResult]:
+    """CIs for an ``rma.mv`` fit (metafor's ``confint.rma.mv``).
+
+    ``sigma2``, ``tau2``, ``rho``, ``gamma2`` or ``phi`` (a 0-based position; only one may be given) request a
+    profile-likelihood CI (Hardy & Thompson, 1996, doi:10.1002/(SICI)1097-0258(19960430)15:8<619::AID-SIM188>3.0.CO;2-A)
+    for that component; ``fixed=True`` gives Wald-type CIs for the coefficients. With neither, a profile-likelihood CI is
+    computed for every estimated variance/correlation component and a list is returned (a single result if there is one).
+
+    Raises:
+        metafopy.errors.InputError: an argument is invalid or the model has no such component.
+    """
+    x = model
+    alpha = metafopy.models.rma_uni.level_to_alpha(x.level if level is None else level)
+    chosen = {name: v for name, v in zip(VC_NAMES, (sigma2, tau2, rho, gamma2, phi), strict=True) if v is not None}
+    if len(chosen) > 1:
+        raise metafopy.errors.InputError("Must specify only one of the arguments 'sigma2', 'tau2', 'rho', 'gamma2', or 'phi'.")
+
+    if not fixed and not chosen:
+        results: list[ConfintResult] = []
+        for name in VC_NAMES:
+            flags = x.vc_fix[name]
+            if flags is None:
+                continue
+            for index in numpy.flatnonzero(~flags):
+                results.append(
+                    confint_rma_mv(x, level=level, **{name: int(index)}, vc_min=vc_min, vc_max=vc_max, tol=tol, maxiter=maxiter, eptries=eptries)  # type: ignore[arg-type]
+                )
+        if not results:
+            raise metafopy.errors.InputError('No components for which a CI can be obtained.')
+        return results[0] if len(results) == 1 else results
+
+    res_random: pandas.DataFrame | None = None
+    lb_sign = ub_sign = ''
+    if chosen:
+        comp, pos = next(iter(chosen.items()))
+        flags = x.vc_fix[comp]
+        if flags is None or bool(numpy.all(flags)):
+            raise metafopy.errors.InputError(f"Model does not contain any (estimated) '{comp}' components.")
+        if not 0 <= pos < len(flags):
+            raise metafopy.errors.InputError(f"No such '{comp}' component in the model.")
+        if flags[pos]:
+            raise metafopy.errors.InputError(f"Specified '{comp}' component was fixed.")
+        vc = float(numpy.asarray(getattr(x, comp), dtype=numpy.float64)[pos])
+        lo, hi = mv_search_limits(x, comp, vc)
+        lo = lo if vc_min is None else vc_min
+        hi = hi if vc_max is None else vc_max
+        if lo > vc:
+            raise metafopy.errors.InputError('Lower bound of interval to be searched must be <= estimated value of component.')
+        if hi < vc:
+            raise metafopy.errors.InputError('Upper bound of interval to be searched must be >= estimated value of component.')
+        objective = float(scipy.stats.chi2.isf(alpha, 1))
+        ll_obj = x.logLik()
+
+        def diff(val: float) -> float:
+            return -2 * (mv_refit_logLik(x, comp, pos, val) - ll_obj) - objective
+
+        struct = x.struct[0] if comp == 'rho' else x.struct[1]
+        # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
+        spatial = comp in ('rho', 'phi') and struct in SPATIAL
+        vc_lb = vc_ub = math.nan
+        lb_conv = ub_conv = False
+
+        step = abs(lo - vc) / eptries
+        for _ in range(eptries):
+            res = try_profile(diff, lo)
+            if not math.isnan(res):
+                if res < 0:
+                    vc_lb, lb_conv = lo, True
+                    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
+                    if (comp in ('sigma2', 'tau2', 'gamma2') and lo > 0) or (comp in ('rho', 'phi') and lo > -1) or (spatial and lo > 0):
+                        lb_sign = '<'
+                else:
+                    root, ok = find_root(diff, lo, vc, tol, maxiter, check_conv=True)
+                    if ok:
+                        vc_lb, lb_conv = root, True
+                break
+            lo += step
+
+        step = abs(hi - vc) / eptries
+        for _ in range(eptries):
+            res = try_profile(diff, hi)
+            if not math.isnan(res):
+                if res < 0:
+                    vc_ub, ub_conv = hi, True
+                    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
+                    if comp in ('sigma2', 'tau2', 'gamma2') or (comp in ('rho', 'phi') and hi < 1) or spatial:
+                        ub_sign = '>'
+                else:
+                    root, ok = find_root(diff, vc, hi, tol, maxiter, check_conv=True)
+                    if ok:
+                        vc_ub, ub_conv = root, True
+                break
+            hi -= step
+
+        if not lb_conv:
+            warnings.warn('Cannot obtain lower bound of profile likelihood CI due to convergence problems.', stacklevel=2)
+        if not ub_conv:
+            warnings.warn('Cannot obtain upper bound of profile likelihood CI due to convergence problems.', stacklevel=2)
+
+        values = numpy.array([vc, vc_lb, vc_ub])
+        n_comp = len(flags)
+        suffix = '' if n_comp == 1 else f'.{pos + 1}'
+        # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
+        if comp in ('sigma2', 'tau2', 'gamma2'):
+            stem = {'sigma2': ('sigma^2', 'sigma'), 'tau2': ('tau^2', 'tau'), 'gamma2': ('gamma^2', 'gamma')}[comp]
+            root_vals = numpy.sqrt(numpy.where(values >= 0, values, numpy.nan))
+            # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
+            res_random = pandas.DataFrame([values, root_vals], index=[stem[0] + suffix, stem[1] + suffix], columns=['estimate', 'ci.lb', 'ci.ub'])
+        else:
+            # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
+            res_random = pandas.DataFrame([values], index=[comp + suffix], columns=['estimate', 'ci.lb', 'ci.ub'])
+
+    res_fixed: pandas.DataFrame | None = None
+    if fixed:
+        if x.test == 'z':
+            crit = numpy.full(x.p, float(scipy.stats.norm.isf(alpha / 2)))
+        else:
+            crit = numpy.array([float(scipy.stats.t.isf(alpha / 2, d)) if d > 0 else math.nan for d in x.ddf])
+        beta, lb, ub = x.beta, x.beta - crit * x.se, x.beta + crit * x.se
+        if transf is not None:
+            beta, lb, ub = (metafopy.transf.apply_transf(a, transf, targs, 0.0) for a in (beta, lb, ub))
+        lo_b, hi_b = numpy.minimum(lb, ub), numpy.maximum(lb, ub)
+        res_fixed = pandas.DataFrame({'estimate': beta, 'ci.lb': lo_b, 'ci.ub': hi_b}, index=list(x.coef_names))
+
+    return ConfintResult(fixed=res_fixed, random=res_random, lb_sign=lb_sign, ub_sign=ub_sign)

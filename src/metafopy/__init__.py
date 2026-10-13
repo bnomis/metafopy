@@ -12,6 +12,7 @@ from metafopy.effects import cmicalc, escalc, summary_escalc
 from metafopy.formula import RandomTerm, parse_random
 from metafopy.metadata import MetaData
 from metafopy.methods.anova import LRTResult, WaldResult, anova
+from metafopy.methods.blocks import bldiag, blsplit
 from metafopy.methods.blup import BlupResult, blup
 from metafopy.methods.confint import ConfintResult, confint
 from metafopy.methods.gosh import GoshResult, gosh
@@ -22,11 +23,16 @@ from metafopy.methods.permutest import PermutestResult, permutest
 from metafopy.methods.predict import PredictResult, predict
 from metafopy.methods.profile import ProfileResult, profile
 from metafopy.methods.ranef import RanefResult, ranef
+from metafopy.methods.rcalc import RCalcResult, rcalc
+from metafopy.methods.robust import robust
+from metafopy.methods.vcalc import vcalc
 from metafopy.methods.vif import VIFEntry, VIFResult, vif
 from metafopy.models.glmm_fit import GLMMControl
 from metafopy.models.glmm_result import GLMMResult
+from metafopy.models.mv_result import RMAMVResult
 from metafopy.models.rma_glmm import rma_glmm
 from metafopy.models.rma_mh import MHResult, rma_mh
+from metafopy.models.rma_mv import MVControl, rma_mv
 from metafopy.models.rma_peto import PetoResult, rma_peto
 from metafopy.models.rma_uni import FitStats, RMAResult, rma, rma_uni
 from metafopy.models.tau2 import Control
@@ -47,11 +53,14 @@ __all__ = [
     'LRTResult',
     'Leave1outResult',
     'MHResult',
+    'MVControl',
     'MetaData',
     'PermutestResult',
     'PetoResult',
     'PredictResult',
     'ProfileResult',
+    'RCalcResult',
+    'RMAMVResult',
     'RMAResult',
     'RandomTerm',
     'RanefResult',
@@ -67,6 +76,8 @@ __all__ = [
     'addpoly',
     'anova',
     'baujat',
+    'bldiag',
+    'blsplit',
     'blup',
     'cmicalc',
     'confint',
@@ -95,12 +106,15 @@ __all__ = [
     'radial',
     'ranef',
     'ranktest',
+    'rcalc',
     'regtest',
     'rma',
     'rma_glmm',
     'rma_mh',
+    'rma_mv',
     'rma_peto',
     'rma_uni',
+    'robust',
     'rstandard',
     'rstudent',
     'set_seed',
@@ -108,5 +122,6 @@ __all__ = [
     'tes',
     'transf',
     'trimfill',
+    'vcalc',
     'vif',
 ]

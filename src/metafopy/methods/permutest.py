@@ -278,7 +278,7 @@ def permutest_rma_uni(
 
     return PermutestResult(
         pval=pval,
-        QMdf=x.QMdf,
+        QMdf=(x.QMdf[0], None if x.QMdf[1] is None else int(x.QMdf[1])),
         QMp=QMp,
         beta=x.beta,
         se=x.se,

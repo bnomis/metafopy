@@ -8,6 +8,7 @@ each dataset.
 """
 
 from metafopy.datasets.base import list_datasets, load
+from metafopy.datasets.trees import PhyloTree, load_tree
 
 # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
-__all__ = ['list_datasets', 'load']
+__all__ = ['PhyloTree', 'list_datasets', 'load', 'load_tree']
