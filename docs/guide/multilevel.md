@@ -178,7 +178,7 @@ sigma^2.2    0.1120  0.0671  0.1810
 sigma.2      0.3347  0.2590  0.4255
 ```
 
-The profile-likelihood interval for the component with 0-based index `sigma2=1` is computed. Without an index, intervals for for
+The profile-likelihood interval for the component with 0-based index `sigma2=1` is computed. Without an index, intervals for
 all components are returned.
 
 ## Known correlation matrices
