@@ -30,6 +30,7 @@ from metafopy.methods.vif import VIFEntry, VIFResult, vif
 from metafopy.models.glmm_fit import GLMMControl
 from metafopy.models.glmm_result import GLMMResult
 from metafopy.models.mv_result import RMAMVResult
+from metafopy.models.rma_ls_result import LSControl, RMALSResult
 from metafopy.models.rma_glmm import rma_glmm
 from metafopy.models.rma_mh import MHResult, rma_mh
 from metafopy.models.rma_mv import MVControl, rma_mv
@@ -51,6 +52,7 @@ __all__ = [
     'HcResult',
     'InfluenceResult',
     'LRTResult',
+    'LSControl',
     'Leave1outResult',
     'MHResult',
     'MVControl',
@@ -60,6 +62,7 @@ __all__ = [
     'PredictResult',
     'ProfileResult',
     'RCalcResult',
+    'RMALSResult',
     'RMAMVResult',
     'RMAResult',
     'RandomTerm',

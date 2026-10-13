@@ -28,6 +28,10 @@ import metafopy.models.robust_print
 import metafopy.models.tau2
 import metafopy.printing
 
+if typing.TYPE_CHECKING:
+    import metafopy.models.rma_ls
+    import metafopy.models.rma_ls_result
+
 __all__ = ['FitStats', 'RMAResult', 'rma', 'rma_uni']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
@@ -298,6 +302,7 @@ ESCALC_ARGS = (
 )
 
 
+@typing.overload
 def rma_uni(
     yi: metafopy.metadata.Column | pandas.DataFrame | None = None,
     vi: metafopy.metadata.Column | None = None,
@@ -344,6 +349,7 @@ def rma_uni(
     test: str = 'z',
     level: float = 95,
     btt: Btt = None,
+    scale: None = None,
     tau2: float | None = None,
     control: metafopy.models.tau2.Control | collections.abc.Mapping[str, typing.Any] | None = None,
     na_action: metafopy.metadata.NAAction = 'omit',
@@ -353,7 +359,75 @@ def rma_uni(
     onlyo1: bool = False,
     addyi: bool = True,
     addvi: bool = True,
-) -> RMAResult:
+) -> RMAResult: ...
+
+
+@typing.overload
+def rma_uni(*args: typing.Any, scale: metafopy.models.rma_ls.ScaleSpec, **kwargs: typing.Any) -> metafopy.models.rma_ls_result.RMALSResult: ...
+
+
+def rma_uni(
+    yi: metafopy.metadata.Column | pandas.DataFrame | None = None,
+    vi: metafopy.metadata.Column | None = None,
+    *,
+    sei: metafopy.metadata.Column | None = None,
+    weights: metafopy.metadata.Column | None = None,
+    ai: metafopy.metadata.Column | None = None,
+    bi: metafopy.metadata.Column | None = None,
+    ci: metafopy.metadata.Column | None = None,
+    di: metafopy.metadata.Column | None = None,
+    n1i: metafopy.metadata.Column | None = None,
+    n2i: metafopy.metadata.Column | None = None,
+    x1i: metafopy.metadata.Column | None = None,
+    x2i: metafopy.metadata.Column | None = None,
+    t1i: metafopy.metadata.Column | None = None,
+    t2i: metafopy.metadata.Column | None = None,
+    m1i: metafopy.metadata.Column | None = None,
+    m2i: metafopy.metadata.Column | None = None,
+    sd1i: metafopy.metadata.Column | None = None,
+    sd2i: metafopy.metadata.Column | None = None,
+    xi: metafopy.metadata.Column | None = None,
+    mi: metafopy.metadata.Column | None = None,
+    ri: metafopy.metadata.Column | None = None,
+    ti: metafopy.metadata.Column | None = None,
+    fi: metafopy.metadata.Column | None = None,
+    pi: metafopy.metadata.Column | None = None,
+    sdi: metafopy.metadata.Column | None = None,
+    r2i: metafopy.metadata.Column | None = None,
+    mini: metafopy.metadata.Column | None = None,
+    maxi: metafopy.metadata.Column | None = None,
+    ni: metafopy.metadata.Column | None = None,
+    mods: str | numpy.typing.ArrayLike | pandas.DataFrame | None = None,
+    measure: str = 'GEN',
+    data: pandas.DataFrame | None = None,
+    slab: metafopy.metadata.Column | collections.abc.Sequence[str] | None = None,
+    subset: numpy.typing.ArrayLike | str | None = None,
+    add: float | None = None,
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
+    to: typing.Literal['all', 'only0', 'if0all', 'none'] = 'only0',
+    drop00: bool = False,
+    intercept: bool = True,
+    method: str | collections.abc.Sequence[str] = 'REML',
+    weighted: bool = True,
+    test: str = 'z',
+    level: float = 95,
+    btt: Btt = None,
+    att: Btt = None,
+    scale: metafopy.models.rma_ls.ScaleSpec | None = None,
+    link: typing.Literal['log', 'identity'] = 'log',
+    optbeta: bool = False,
+    alpha: numpy.typing.ArrayLike | None = None,
+    beta: numpy.typing.ArrayLike | None = None,
+    tau2: float | None = None,
+    control: metafopy.models.tau2.Control | metafopy.models.rma_ls_result.LSControl | collections.abc.Mapping[str, typing.Any] | None = None,
+    na_action: metafopy.metadata.NAAction = 'omit',
+    vtype: str | collections.abc.Sequence[str] = 'LS',
+    correct: bool = True,
+    cutoff: float | None = None,
+    onlyo1: bool = False,
+    addyi: bool = True,
+    addvi: bool = True,
+) -> RMAResult | metafopy.models.rma_ls_result.RMALSResult:
     """Fit an equal-, fixed-, random- or mixed-effects meta-analytic model.
 
     Mirrors metafor's ``rma.uni()`` (alias ``rma``); see
@@ -373,6 +447,14 @@ def rma_uni(
     ``'adhoc'``. ``btt`` takes 0-based coefficient indices (or a regex matched
     against coefficient names); printed output reports them 1-based, as
     metafor does.
+
+    ``scale`` (a one-sided formula such as ``'~ ni100'`` or a model matrix) turns the
+    model into a location-scale model (Viechtbauer & Lopez-Lopez, 2022,
+    doi:10.1002/jrsm.1564) and the result is a
+    :class:`~metafopy.models.rma_ls_result.RMALSResult`; ``link`` (``'log'`` or
+    ``'identity'``), ``optbeta``, ``alpha`` (fixed values of the scale coefficients),
+    ``beta`` (fixed values of the location coefficients, with ``optbeta``) and ``att``
+    (the scale coefficients to test) only apply to such models.
 
     Examples
     --------
@@ -459,6 +541,27 @@ def rma_uni(
             subset=subset,
             na_action=na_action,
         )
+    if scale is not None:
+        return fit_location_scale(
+            md,
+            scale,
+            method=method,
+            weighted=weighted,
+            test=typing.cast(Test, test_l),
+            level=level,
+            btt=btt,
+            att=att,
+            tau2=tau2,
+            link=link,
+            optbeta=optbeta,
+            alpha=alpha,
+            beta=beta,
+            control=control,
+            na_action=na_action,
+            measure=measure,
+        )
+    if optbeta or att is not None:
+        warnings.warn("Arguments 'optbeta' and 'att' are only relevant for location-scale models and hence ignored.", stacklevel=2)
     res = fit_rma_uni(
         md,
         method=method,
@@ -470,6 +573,16 @@ def rma_uni(
         control=control,
     )
     return dataclasses.replace(res, measure=measure)
+
+
+def fit_location_scale(
+    md: metafopy.metadata.MetaData, scale: metafopy.models.rma_ls.ScaleSpec, **kwargs: typing.Any
+) -> metafopy.models.rma_ls_result.RMALSResult:
+    """Fit the location-scale model of ``rma_uni(..., scale=...)``; see :func:`metafopy.models.rma_ls.fit_scale`."""
+    # auditme: accept[in-function-import] metafopy.models.rma_ls imports this module, so the import is deferred to avoid a cycle
+    import metafopy.models.rma_ls
+
+    return metafopy.models.rma_ls.fit_scale(md, scale, **kwargs)
 
 
 def metadata_from_escalc(
