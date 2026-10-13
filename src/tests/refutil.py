@@ -17,7 +17,7 @@ RTOL = 1e-8
 
 @functools.cache
 def load_phase2(name: str) -> dict[str, typing.Any]:
-    data: dict[str, typing.Any] = json.loads((PHASE2_DIR / f'{name}.json').read_text())
+    data: dict[str, typing.Any] = json.loads((PHASE2_DIR / f'{name}.json').read_text(encoding='utf-8'))
     return data
 
 
