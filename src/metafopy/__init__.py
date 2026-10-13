@@ -23,6 +23,9 @@ from metafopy.methods.predict import PredictResult, predict
 from metafopy.methods.profile import ProfileResult, profile
 from metafopy.methods.ranef import RanefResult, ranef
 from metafopy.methods.vif import VIFEntry, VIFResult, vif
+from metafopy.models.glmm_fit import GLMMControl
+from metafopy.models.glmm_result import GLMMResult
+from metafopy.models.rma_glmm import rma_glmm
 from metafopy.models.rma_mh import MHResult, rma_mh
 from metafopy.models.rma_peto import PetoResult, rma_peto
 from metafopy.models.rma_uni import FitStats, RMAResult, rma, rma_uni
@@ -36,6 +39,8 @@ __all__ = [
     'CumulResult',
     'FitStats',
     'FsnResult',
+    'GLMMControl',
+    'GLMMResult',
     'GoshResult',
     'HcResult',
     'InfluenceResult',
@@ -92,6 +97,7 @@ __all__ = [
     'ranktest',
     'regtest',
     'rma',
+    'rma_glmm',
     'rma_mh',
     'rma_peto',
     'rma_uni',

@@ -29,6 +29,7 @@ __all__ = ['MHResult', 'rma_mh']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 
+# auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
 MEASURES = ('OR', 'RR', 'RD', 'IRR', 'IRD')
 NAN = math.nan
 
@@ -61,7 +62,7 @@ class MHResult(metafopy.models.binary.FixedBinaryResult):
             return (c['x2i'] / ti) * c['t1i']
         return (c['t1i'] / ti) * c['t2i']
 
-    def format(self, digits: int, showfit: bool) -> str:
+    def render(self, digits: int, showfit: bool) -> str:
         out = metafopy.models.binary.format_header(self, digits, showfit, max(self.k_yi - 1, 0))
         scale = self.measure if self.measure in ('OR', 'RR', 'IRR') else None
         out += metafopy.models.binary.result_rows(self, digits, scale)

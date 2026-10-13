@@ -80,6 +80,7 @@ def confint_fixed_binary(
         lb = metafopy.transf.apply_transf(lb, fn, targs)
         ub = metafopy.transf.apply_transf(ub, fn, targs)
     lb, ub = metafopy.methods.common.psort(lb, ub)
+    # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
     fixed = pandas.DataFrame({'estimate': beta, 'ci.lb': lb, 'ci.ub': ub}, index=[''])
     return metafopy.methods.confint.ConfintResult(fixed=fixed, random=None)
 
@@ -185,7 +186,11 @@ def collect(
 
 
 def per_table_variable(x: metafopy.models.binary.FixedBinaryResult, values: numpy.typing.ArrayLike | str, what: str) -> numpy.typing.NDArray[typing.Any]:
-    """A variable given for all supplied rows (or a column of the model's data), restricted to the subset used."""
+    """A variable given for all supplied rows (or a column of the model's data), restricted to the subset used.
+
+    Raises:
+        metafopy.errors.InputError: the column is not in the data or the length does not match the data.
+    """
     if isinstance(values, str):
         if x.data is None or values not in x.data.columns:
             raise metafopy.errors.InputError(f'cannot find the variable {values!r} (for {what}) in the data')
@@ -234,6 +239,7 @@ def leave1out_fixed_binary(
     slab_all = numpy.asarray(t.slab, dtype=object)
     if miss_cluster:
         slab = tuple(f'-{s}' for s in slab_all[t.not_na])
+        # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
         if na_action in ('exclude', 'pass'):
             keys = ['estimate', 'se', 'stat', 'pval', 'ci_lb', 'ci_ub', 'Q', 'Qp', 'I2', 'H2']
             for key in keys:

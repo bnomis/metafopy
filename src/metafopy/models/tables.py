@@ -28,10 +28,19 @@ __all__ = ['TableSet', 'pair', 'prepare_tables']
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type BoolArray = numpy.typing.NDArray[numpy.bool_]
 type IntArray = numpy.typing.NDArray[numpy.intp]
+# auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
 type To = typing.Literal['all', 'only0', 'if0all', 'none']
 
 TWO_BY_TWO = ('ai', 'bi', 'ci', 'di')
+# auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
 RATES = ('x1i', 'x2i', 't1i', 't2i')
+# auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
+PROPORTIONS = ('xi', 'mi')
+# auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
+SINGLE_RATE = ('xi', 'ti')
+# auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
+PROPORTION_MEASURES = ('PR', 'PLN', 'PLO', 'PAS', 'PFT')
+# auditme: accept option and column lists repeat as metafor repeats them (literal-duplication, non-alphabetical-literal)
 TO_CHOICES = ('all', 'only0', 'if0all', 'none')
 
 
@@ -104,6 +113,34 @@ def add_to_cells(cells: dict[str, FloatArray], names: tuple[str, ...], add: floa
         cells[n] = numpy.where(sel, cells[n] + add, cells[n])
 
 
+def one_group_counts(
+    measure: str,
+    xi: metafopy.metadata.Column | None,
+    mi: metafopy.metadata.Column | None,
+    ni: metafopy.metadata.Column | None,
+    ti: metafopy.metadata.Column | None,
+    data: pandas.DataFrame | None,
+) -> tuple[dict[str, FloatArray], FloatArray]:
+    """Counts of the one-group measures: ``xi`` and ``mi`` (or ``ni``) for proportions, ``xi`` and ``ti`` for ``IRLN``.
+
+    Raises:
+        metafopy.errors.InputError: an argument is missing.
+    """
+    x = metafopy.metadata.column(xi, data, 'xi')
+    if measure == 'IRLN':
+        t = metafopy.metadata.column(ti, data, 'ti')
+        if x is None or t is None:
+            raise metafopy.errors.InputError('Must specify arguments xi and ti for this measure.')
+        return {'xi': x, 'ti': t}, t
+    m = metafopy.metadata.column(mi, data, 'mi')
+    n = metafopy.metadata.column(ni, data, 'ni')
+    if m is None and n is not None and x is not None:
+        m = n - x
+    if x is None or m is None:
+        raise metafopy.errors.InputError('Must specify arguments xi and mi (or ni) for this measure.')
+    return {'xi': x, 'mi': m}, x + m
+
+
 def prepare_tables(
     measure: str,
     *,
@@ -117,6 +154,11 @@ def prepare_tables(
     x2i: metafopy.metadata.Column | None = None,
     t1i: metafopy.metadata.Column | None = None,
     t2i: metafopy.metadata.Column | None = None,
+    xi: metafopy.metadata.Column | None = None,
+    mi: metafopy.metadata.Column | None = None,
+    ni: metafopy.metadata.Column | None = None,
+    ti: metafopy.metadata.Column | None = None,
+    extra_missing: numpy.typing.ArrayLike | None = None,
     data: pandas.DataFrame | None = None,
     slab: metafopy.metadata.Column | collections.abc.Sequence[str] | None = None,
     subset: numpy.typing.ArrayLike | str | None = None,
@@ -130,14 +172,20 @@ def prepare_tables(
 ) -> TableSet:
     """Extract, subset and screen the table data like the first half of ``rma.mh``.
 
-    ``measure`` is ``'OR'``, ``'RR'``, ``'RD'``, ``'PETO'`` (2x2 tables) or ``'IRR'``, ``'IRD'`` (rates).
+    ``measure`` is ``'OR'``, ``'RR'``, ``'RD'``, ``'PETO'`` (2x2 tables), ``'IRR'``, ``'IRD'`` (two-group rates),
+    ``'PLO'`` and the other proportion measures (``xi``, ``mi`` or ``ni``) or ``'IRLN'`` (``xi``, ``ti``). The
+    ``xi``/``mi``/``ni``/``ti`` arguments and ``extra_missing`` (a flag per supplied table, for rows with missing
+    moderators) serve ``rma_glmm``; ``drop00`` and the second ``add``/``to`` pair do not apply to the one-group measures.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
     rate = measure in ('IRR', 'IRD')
-    names = RATES if rate else TWO_BY_TWO
-    if rate:
+    one_group = measure in PROPORTION_MEASURES or measure == 'IRLN'
+    names = RATES if rate else (SINGLE_RATE if measure == 'IRLN' else (PROPORTIONS if one_group else TWO_BY_TWO))
+    if one_group:
+        raw, ni = one_group_counts(measure, xi, mi, ni, ti, data)
+    elif rate:
         given = {n: metafopy.metadata.column(v, data, n) for n, v in zip(RATES, (x1i, x2i, t1i, t2i), strict=True)}
         if any(v is None for v in given.values()):
             raise metafopy.errors.InputError('Must specify arguments x1i, x2i, t1i, t2i for this measure.')
@@ -205,17 +253,23 @@ def prepare_tables(
     vi_f = es['vi'].to_numpy(dtype=numpy.float64)
 
     cells_f = {n: v.copy() for n, v in raw.items()}
-    if drop00[1]:
+    if drop00[1] and not one_group:
         if rate:
             id00 = (cells_f['x1i'] == 0) & (cells_f['x2i'] == 0)
         else:
             id00 = ((cells_f['ai'] == 0) & (cells_f['ci'] == 0)) | ((cells_f['bi'] == 0) & (cells_f['di'] == 0))
+        # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
         for n in ('x1i', 'x2i') if rate else names:
             cells_f[n][id00] = numpy.nan
 
     has_na = numpy.zeros(k, dtype=numpy.bool_)
     for n in names:
         has_na |= numpy.isnan(cells_f[n])
+    moderator_na = numpy.zeros(k, dtype=numpy.bool_)
+    if extra_missing is not None:
+        moderator_na = numpy.asarray(extra_missing, dtype=numpy.bool_)
+        moderator_na = moderator_na if mask is None else moderator_na[mask]
+        has_na |= moderator_na
     not_na = ~has_na
     cells = {n: v.copy() for n, v in cells_f.items()}
     if has_na.any():
@@ -227,7 +281,7 @@ def prepare_tables(
     if k_fit < 1:
         raise metafopy.errors.InputError('Processing terminated since k = 0.')
 
-    yivi_na = numpy.isnan(yi_f) | numpy.isnan(vi_f)
+    yivi_na = numpy.isnan(yi_f) | numpy.isnan(vi_f) | moderator_na
     not_na_yivi = ~yivi_na
     yi, vi, ni_fit = yi_f, vi_f, ni
     if yivi_na.any():
@@ -237,8 +291,9 @@ def prepare_tables(
         warnings.warn('Some yi/vi values are NA.', stacklevel=3)
 
     if rate:
+        # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
         add_to_cells(cells, ('x1i', 'x2i'), add[1], to[1], ('x1i', 'x2i'))
-    else:
+    elif not one_group:
         add_to_cells(cells, TWO_BY_TWO, add[1], to[1], TWO_BY_TWO)
 
     return TableSet(

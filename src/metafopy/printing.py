@@ -8,10 +8,11 @@ prints the way R users expect.
 
 import collections.abc
 import math
+import sys
 
 import metafopy.errors
 
-__all__ = ['fmt_num', 'fmt_pval', 'fmt_table', 'signif_stars']
+__all__ = ['fmt_named_vector', 'fmt_num', 'fmt_pval', 'fmt_table', 'signif_stars', 'zero_below']
 
 
 def fmt_num(x: float, digits: int = 4) -> str:
@@ -71,3 +72,14 @@ def fmt_table(
             cells = names[i].ljust(name_w) + '  ' + cells
         lines.append(cells.rstrip())
     return '\n'.join(lines)
+
+
+def fmt_named_vector(names: collections.abc.Sequence[str], values: collections.abc.Sequence[str]) -> str:
+    """A named character vector as R prints it with ``print(x, quote=FALSE, print.gap=2)``: every column has the same width."""
+    width = max(len(s) for s in [*names, *values])
+    return '  '.join(n.rjust(width) for n in names) + '\n' + '  '.join(v.rjust(width) for v in values)
+
+
+def zero_below(x: float, digits: int = 4, thresh: float = 10 * sys.float_info.epsilon) -> str:
+    """``fmt_num`` that prints values with ``|x| < thresh`` as ``0`` (metafor's ``fmtx(x, digits, thresh=)``)."""
+    return '0' if abs(x) < thresh else fmt_num(x, digits)

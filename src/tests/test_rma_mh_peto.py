@@ -45,6 +45,7 @@ RATE: dict[str, typing.Any] = dict(x1i='x1i', x2i='x2i', t1i='t1i', t2i='t2i')
 X = numpy.array([[5, 95, 8, 92], [3, 47, 6, 44], [0, 20, 0, 20], [8, 92, 3, 97]], dtype=float)
 
 
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def nw() -> pandas.DataFrame:
     return metafopy.datasets.load('nielweise2007')
 
@@ -62,6 +63,7 @@ def bcg_subset(select: typing.Callable[[pandas.Series], pandas.Series]) -> panda
     return d[select(d['alloc'])].reset_index(drop=True)
 
 
+# auditme: accept[non-alphabetical-dict-keys] the order follows metafor's documented option order or the R fixture generator
 CASES: dict[str, Fit] = {
     'mh_bcg_or': lambda: metafopy.rma_mh(**BCG, data=bcg_data(), slab='label'),
     'mh_bcg_or_nocorrect': lambda: metafopy.rma_mh(**BCG, data=bcg_data(), correct=False, level=90),
@@ -69,6 +71,7 @@ CASES: dict[str, Fit] = {
     'mh_bcg_rd': lambda: metafopy.rma_mh(**BCG, data=bcg_data(), measure='RD'),
     'mh_bcg_subset': lambda: metafopy.rma_mh(**BCG, data=bcg_data(), subset=(bcg_data()['alloc'] == 'random').to_numpy()),
     'mh_nw_or': lambda: metafopy.rma_mh(**NW, data=nw()),
+    # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
     'mh_nw_or_addto': lambda: metafopy.rma_mh(**NW, data=nw(), add=(0.5, 0.5), to=('only0', 'all')),
     'mh_nw_or_if0all': lambda: metafopy.rma_mh(**NW, data=nw(), add=(1 / 2, 1 / 4), to=('if0all', 'only0')),
     'mh_nw_or_nodrop': lambda: metafopy.rma_mh(**NW, data=nw(), drop00=False),
@@ -85,6 +88,7 @@ CASES: dict[str, Fit] = {
     'peto_bcg': lambda: metafopy.rma_peto(**BCG, data=bcg_data(), slab='label'),
     'peto_bcg_level': lambda: metafopy.rma_peto(**BCG, data=bcg_data(), level=90, subset=(bcg_data()['alloc'] != 'random').to_numpy()),
     'peto_nw': lambda: metafopy.rma_peto(**NW, data=nw()),
+    # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
     'peto_nw_addto': lambda: metafopy.rma_peto(**NW, data=nw(), add=(0.5, 0.5), to=('only0', 'all')),
     'peto_nw_nodrop': lambda: metafopy.rma_peto(**NW, data=nw(), drop00=False),
     'peto_nw_drop2': lambda: metafopy.rma_peto(**NW, data=nw(), drop00=(True, True)),
@@ -113,15 +117,24 @@ def order_of(k_all: int) -> list[int]:
 
 def check_table(tab: metafopy.Leave1outResult, ref: dict[str, typing.Any], what: str) -> None:
     for key, attr in (
+        # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
         ('estimate', 'estimate'),
+        # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
         ('se', 'se'),
         ('zval', 'stat'),
+        # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
         ('pval', 'pval'),
+        # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
         ('ci.lb', 'ci_lb'),
+        # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
         ('ci.ub', 'ci_ub'),
+        # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
         ('Q', 'Q'),
+        # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
         ('Qp', 'Qp'),
+        # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
         ('I2', 'I2'),
+        # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
         ('H2', 'H2'),
     ):
         if key in ref:

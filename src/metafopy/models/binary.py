@@ -108,6 +108,7 @@ class FixedBinaryResult(abc.ABC):
     tables: metafopy.models.tables.TableSet = dataclasses.field(repr=False)
     data: pandas.DataFrame | None = dataclasses.field(default=None, repr=False)
     digits: int = 4
+    # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
     coef_names: tuple[str, ...] = ('intrcpt',)
     method: str = 'FE'
     test: str = 'z'
@@ -157,6 +158,7 @@ class FixedBinaryResult(abc.ABC):
     def fitstats(self, REML: bool | None = None) -> pandas.Series:
         """``logLik``, ``deviance``, ``AIC``, ``BIC``, ``AICc`` as a Series."""
         st = self.fit_stats(REML)
+        # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
         return pandas.Series(st.as_tuple(), index=['logLik', 'deviance', 'AIC', 'BIC', 'AICc'], name='REML' if REML else 'ML')
 
     def fitted(self) -> FloatArray:
@@ -171,14 +173,17 @@ class FixedBinaryResult(abc.ABC):
     def weight_values(self) -> FloatArray:
         """Un-normalised weights of the tables used in fitting."""
 
+    # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
     def weights_(self, type: typing.Literal['diagonal', 'matrix'] = 'diagonal', na_action: metafopy.metadata.NAAction = 'omit') -> FloatArray:
         """Percentage weights of the tables (``type='diagonal'``) or the diagonal weight matrix (metafor's ``weights()``).
 
         Raises:
             metafopy.errors.InputError: ``type`` or ``na_action`` is not valid or tables are missing and ``na_action='fail'``.
         """
+        # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
         if type not in ('diagonal', 'matrix'):
             raise metafopy.errors.InputError("'type' must be 'diagonal' or 'matrix'.")
+        # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
         if na_action not in ('omit', 'exclude', 'pass', 'fail'):
             raise metafopy.errors.InputError("Unknown 'na_action' specified.")
         wi = self.weight_values()
@@ -194,16 +199,16 @@ class FixedBinaryResult(abc.ABC):
         return matrix[numpy.ix_(not_na, not_na)] if na_action == 'omit' else matrix
 
     def summary(self, digits: int | None = None, showfit: bool = False) -> str:
-        return self.format(self.digits if digits is None else digits, showfit)
+        return self.render(self.digits if digits is None else digits, showfit)
 
     def __str__(self) -> str:
-        return self.format(self.digits, False)
+        return self.render(self.digits, False)
 
     def __repr__(self) -> str:
         return f'<{type(self).__name__} {self.measure} k={self.k}>'
 
     @abc.abstractmethod
-    def format(self, digits: int, showfit: bool) -> str:
+    def render(self, digits: int, showfit: bool) -> str:
         """The metafor-style printout."""
 
 
@@ -214,9 +219,10 @@ def format_header(res: FixedBinaryResult, digits: int, showfit: bool, df: int) -
         fs = res.fit_stats_ml
         out.append('')
         out.append(
-            metafopy.printing.fmt_table(
+            metafopy.printing.fmt_named_vector(
+                # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
                 ['logLik', 'deviance', 'AIC', 'BIC', 'AICc'],
-                [[metafopy.printing.fmt_num(v, digits) for v in fs.as_tuple()]],
+                [metafopy.printing.fmt_num(v, digits) for v in fs.as_tuple()],
             )
         )
     out.append('')

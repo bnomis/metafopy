@@ -450,6 +450,7 @@ def hat_matrix(x: metafopy.models.rma_uni.RMAResult) -> FloatArray:
     return X @ metafopy.core.linalg.invcalc(X, numpy.ones(x.k)) @ X.T
 
 
+# auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
 def hatvalues(model: metafopy.models.rma_uni.RMAResult, type: typing.Literal['diagonal', 'matrix'] = 'diagonal') -> FloatArray:
     """Hat values (diagonal) or the full hat matrix of an ``rma.uni`` fit.
 

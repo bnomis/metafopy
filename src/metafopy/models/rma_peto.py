@@ -45,7 +45,7 @@ class PetoResult(metafopy.models.binary.FixedBinaryResult):
     def weight_values(self) -> FloatArray:
         return peto_terms(self.tables.cells)[1]
 
-    def format(self, digits: int, showfit: bool) -> str:
+    def render(self, digits: int, showfit: bool) -> str:
         k_pos = self.k_pos if self.k_pos is not None else 0
         out = metafopy.models.binary.format_header(self, digits, showfit, k_pos - 1)
         out += metafopy.models.binary.result_rows(self, digits, 'OR')

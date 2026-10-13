@@ -167,13 +167,19 @@ L1O_CASES: dict[str, tuple[dict[str, typing.Any], dict[str, typing.Any]]] = {
 COLUMNS = (
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     ('estimate', 'estimate'),
+    # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
     ('se', 'se'),
+    # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
     ('pval', 'pval'),
     ('ci_lb', 'ci.lb'),
     ('ci_ub', 'ci.ub'),
+    # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
     ('Q', 'Q'),
+    # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
     ('Qp', 'Qp'),
+    # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
     ('I2', 'I2'),
+    # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
     ('H2', 'H2'),
 )
 

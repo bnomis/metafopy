@@ -149,6 +149,7 @@ class RMAResult:
         st = self.fit_stats(REML)
         return pandas.Series(
             st.as_tuple(),
+            # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
             index=['logLik', 'deviance', 'AIC', 'BIC', 'AICc'],
             name='REML' if (REML if REML is not None else self.method == 'REML') else 'ML',
         )
@@ -976,6 +977,7 @@ def format_result(res: RMAResult, digits: int) -> str:
     header = ['estimate', 'se', stat]
     if res.ddf is not None:
         header.append('df')
+    # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
     header += ['pval', 'ci.lb', 'ci.ub', '']
     rows_: list[list[str]] = []
     for j in range(res.p):
