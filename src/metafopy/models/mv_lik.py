@@ -23,6 +23,7 @@ import metafopy.models.mv_structs
 __all__ = ['Fit', 'Layout', 'Problem', 'evaluate', 'final_fit', 'gradient', 'negative_loglik', 'quad_form']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
+type IntArray = numpy.typing.NDArray[numpy.intp]
 type Mat = FloatArray | scipy.sparse.csc_array
 
 LOG2PI = math.log(2 * math.pi)
@@ -68,6 +69,12 @@ class Problem:
     with_s: bool
     reml_full: bool
     sparse: bool
+    vccon: dict[str, IntArray] | None = None
+    optbeta: bool = False
+    beta_arg: FloatArray | None = None
+    lambda1: float = 0.0
+    lambda2: float = 0.0
+    intercept: bool = True
 
     @property
     def k(self) -> int:
@@ -76,6 +83,22 @@ class Problem:
     @property
     def p(self) -> int:
         return int(self.X.shape[1])
+
+    @property
+    def offset(self) -> int:
+        """Number of leading entries of the parameter vector that are coefficients (``optbeta=TRUE``)."""
+        return self.p if self.optbeta else 0
+
+    def fix_beta(self, beta: FloatArray) -> FloatArray:
+        """Replace the coefficients that were fixed by the user (``beta`` argument of metafor's ``rma.mv``)."""
+        return beta if self.beta_arg is None else numpy.where(numpy.isnan(self.beta_arg), beta, self.beta_arg)
+
+    def penalty(self, beta: FloatArray) -> float:
+        """The lasso/ridge penalty ``lambda1 * sum|b| + lambda2 * b'b`` (the intercept is not penalised)."""
+        if not self.optbeta or (self.lambda1 <= 0 and self.lambda2 <= 0):
+            return 0.0
+        b = beta[1:] if self.intercept else beta
+        return float(self.lambda1 * numpy.sum(numpy.abs(b)) + self.lambda2 * (b @ b))
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -147,6 +170,36 @@ def outer_cross(Z2: Mat) -> Mat:
     return scipy.sparse.csc_array(Z2 @ Z2.T) if scipy.sparse.issparse(Z2) else numpy.asarray(Z2 @ Z2.T)
 
 
+def tie_mean(values: FloatArray, codes: IntArray) -> FloatArray:
+    """Replace the entries of each group of ``codes`` by their mean (``vccon``: constraints equating variance components)."""
+    out = values.copy()
+    for code in numpy.unique(codes):
+        sel = codes == code
+        out[sel] = values[sel].mean()
+    return out
+
+
+def structure(
+    problem: Problem,
+    term: metafopy.models.mv_structs.Term,
+    names: tuple[str, str],
+    v_par: FloatArray,
+    r_par: FloatArray,
+    vctransf: bool,
+    vccov: bool,
+) -> tuple[FloatArray, FloatArray, FloatArray]:
+    """``.con.E()`` followed by the ``vccon`` constraints on the variances and correlations named ``names``."""
+    v, r, E = metafopy.models.mv_structs.con_e(v_par, r_par, term, vctransf, vccov)
+    con = problem.vccon
+    if con is None:
+        return v, r, E
+    if names[0] in con:
+        v = tie_mean(v, con[names[0]])
+    if names[1] in con:
+        r = tie_mean(r, con[names[1]])
+    return metafopy.models.mv_structs.con_e(v, r, dataclasses.replace(term, cholesky=False), False, vccov)
+
+
 @dataclasses.dataclass(slots=True)
 class Evaluated:
     M: Mat
@@ -160,7 +213,7 @@ class Evaluated:
 
 
 def evaluate(problem: Problem, par: FloatArray, vctransf: bool = True, vccov: bool = False) -> Evaluated:
-    """Assemble the marginal variance-covariance matrix ``M`` for the parameters ``par``."""
+    """Assemble the marginal variance-covariance matrix ``M`` for the parameters ``par`` (without leading coefficients)."""
     lay = problem.layout
     s_par, tau_par, rho_par, gam_par, phi_par = lay.split(par)
     M: Mat = problem.V
@@ -171,36 +224,54 @@ def evaluate(problem: Problem, par: FloatArray, vctransf: bool = True, vccov: bo
         if not vctransf:
             sigma2 = numpy.where(sigma2 < 0, 0.0, sigma2)
         sigma2 = numpy.where(sigma2 <= metafopy.models.mv_structs.EPS10, 0.0, sigma2)
+        if problem.vccon is not None and 'sigma2' in problem.vccon:
+            sigma2 = tie_mean(sigma2, problem.vccon['sigma2'])
         for j, D in enumerate(problem.D_S):
             M = M + sigma2[j] * D
     tau2 = rho = G = gamma2 = phi = H = None
     if problem.g is not None and problem.ZZ_g is not None:
-        tau2, rho, G = metafopy.models.mv_structs.con_e(tau_par, rho_par, problem.g, vctransf, vccov)
+        tau2, rho, G = structure(problem, problem.g, metafopy.models.mv_structs.G_NAMES, tau_par, rho_par, vctransf, vccov)
         M = M + hadamard(quad_form(problem.g.Z1, G, problem.sparse), problem.ZZ_g)
     if problem.h is not None and problem.ZZ_h is not None:
-        gamma2, phi, H = metafopy.models.mv_structs.con_e(gam_par, phi_par, problem.h, vctransf, vccov)
+        gamma2, phi, H = structure(problem, problem.h, metafopy.models.mv_structs.H_NAMES, gam_par, phi_par, vctransf, vccov)
         M = M + hadamard(quad_form(problem.h.Z1, H, problem.sparse), problem.ZZ_h)
     return Evaluated(M=M, sigma2=sigma2, tau2=tau2, rho=rho, G=G, gamma2=gamma2, phi=phi, H=H)
 
 
-def gls(problem: Problem, fac: Factorization, X: FloatArray | None = None) -> tuple[FloatArray, FloatArray, FloatArray, FloatArray, FloatArray]:
-    """``beta``, ``(X'WX)^-1``, ``M^-1 X``, ``M^-1 (y - X beta)`` and the residuals for the weight matrix ``W = M^-1``."""
+def gls(
+    problem: Problem,
+    fac: Factorization,
+    X: FloatArray | None = None,
+    beta_par: FloatArray | None = None,
+) -> tuple[FloatArray, FloatArray, FloatArray, FloatArray, FloatArray]:
+    """``beta``, ``(X'WX)^-1``, ``M^-1 X``, ``M^-1 (y - X beta)`` and the residuals for the weight matrix ``W = M^-1``.
+
+    ``beta`` is the generalised least-squares estimate unless ``beta_par`` gives the coefficients being optimised (``optbeta``);
+    coefficients fixed by the user replace either.
+    """
     X = problem.X if X is None else X
     MiX = fac.solve(X)
     MiY = fac.solve(problem.Y[:, None])[:, 0]
     XtWX = X.T @ MiX
     stXWX = scipy.linalg.cho_solve(scipy.linalg.cho_factor(XtWX, lower=True, check_finite=False), numpy.eye(X.shape[1]), check_finite=False)
-    beta = stXWX @ (X.T @ MiY)
+    beta = stXWX @ (X.T @ MiY) if beta_par is None else beta_par
+    beta = problem.fix_beta(beta)
     resid = problem.Y - X @ beta
     MiR = MiY - MiX @ beta
     return beta, stXWX, MiX, MiR, resid
 
 
-def loglik_parts(problem: Problem, fac: Factorization, dofit: bool, reml: bool) -> tuple[float, float, FloatArray, FloatArray, FloatArray, FloatArray]:
+def loglik_parts(
+    problem: Problem,
+    fac: Factorization,
+    dofit: bool,
+    reml: bool,
+    beta_par: FloatArray | None = None,
+) -> tuple[float, float, FloatArray, FloatArray, FloatArray, FloatArray]:
     """``(ll_ml, ll_reml, beta, stXWX, MiX, MiR)`` where unrequested log-likelihoods are NaN."""
     k, p = problem.k, problem.p
-    beta, stXWX, MiX, MiR, resid = gls(problem, fac)
-    rss = float(resid @ MiR)
+    beta, stXWX, MiX, MiR, resid = gls(problem, fac, beta_par=beta_par)
+    rss = float(resid @ MiR) + problem.penalty(beta)
     ll_ml = ll_reml = math.nan
     if dofit or not reml:
         ll_ml = -0.5 * k * LOG2PI - 0.5 * fac.logdet - 0.5 * rss
@@ -211,16 +282,21 @@ def loglik_parts(problem: Problem, fac: Factorization, dofit: bool, reml: bool) 
     return ll_ml, ll_reml, beta, stXWX, MiX, MiR
 
 
-def negative_loglik(problem: Problem, par: FloatArray, reml: bool) -> float:
-    """``-1 *`` the log-likelihood (``+inf`` when ``M`` is not positive definite), as minimised by ``rma.mv``."""
+def negative_loglik(problem: Problem, par: FloatArray, reml: bool, vctransf: bool = True, vccov: bool = False) -> float:
+    """``-1 *`` the log-likelihood (``+inf`` when ``M`` is not positive definite), as minimised by ``rma.mv``.
+
+    With ``optbeta`` the first ``p`` entries of ``par`` are the coefficients. ``vctransf=False`` takes the variances and
+    correlations (``vccov=True``: covariances) on their original scale, as metafor does for the Hessian of the variance components.
+    """
+    off = problem.offset
     with numpy.errstate(all='ignore'):
-        ev = evaluate(problem, par)
+        ev = evaluate(problem, par[off:], vctransf, vccov)
         if not numpy.all(numpy.isfinite(ev.M.data if scipy.sparse.issparse(ev.M) else ev.M)):
             return math.inf
         fac = Factorization(ev.M)
         if not fac.ok:
             return math.inf
-        ll_ml, ll_reml, *_ = loglik_parts(problem, fac, dofit=False, reml=reml)
+        ll_ml, ll_reml, *_ = loglik_parts(problem, fac, dofit=False, reml=reml, beta_par=par[:off] if problem.optbeta else None)
     val = ll_reml if reml else ll_ml
     return -val if math.isfinite(val) else math.inf
 
@@ -231,18 +307,19 @@ def final_fit(problem: Problem, par: FloatArray) -> Fit:
     Raises:
         metafopy.errors.EstimationError: the final variance-covariance matrix is not positive definite.
     """
-    ev = evaluate(problem, par)
+    off = problem.offset
+    ev = evaluate(problem, par[off:])
     fac = Factorization(ev.M)
     if not fac.ok:
         raise metafopy.errors.EstimationError('Final variance-covariance matrix is not positive definite.')
-    ll_ml, ll_reml, beta, stXWX, _, _ = loglik_parts(problem, fac, dofit=True, reml=True)
+    ll_ml, ll_reml, beta, stXWX, _, _ = loglik_parts(problem, fac, dofit=True, reml=True, beta_par=par[:off] if problem.optbeta else None)
     vb = stXWX
     if problem.A is not None:
         A = problem.A
         X = problem.X
         AX = A @ X
         stXAX = numpy.asarray(scipy.linalg.inv(numpy.asarray(X.T @ AX)), dtype=numpy.float64)
-        beta = stXAX @ (X.T @ (A @ problem.Y))
+        beta = problem.fix_beta(stXAX @ (X.T @ (A @ problem.Y)))
         resid = problem.Y - X @ beta
         MiR = fac.solve(resid[:, None])[:, 0]
         rss = float(resid @ MiR)
@@ -270,19 +347,41 @@ def final_fit(problem: Problem, par: FloatArray) -> Fit:
     )
 
 
+def numeric_gradient(problem: Problem, par: FloatArray, reml: bool, free: numpy.typing.NDArray[numpy.intp]) -> FloatArray:
+    """Central-difference gradient of ``-ll``.
+
+    With some coefficients fixed by the user (``beta``) and the rest estimated by generalised least squares the coefficients are
+    not at their conditional optimum, so the score formulas of :func:`gradient` do not apply.
+    """
+    grad = numpy.zeros(free.shape[0])
+    for n, i in enumerate(free):
+        step = 1e-6 * max(1.0, abs(par[i]))
+        up = par.copy()
+        dn = par.copy()
+        up[i] += step
+        dn[i] -= step
+        grad[n] = (negative_loglik(problem, up, reml) - negative_loglik(problem, dn, reml)) / (2 * step)
+    return grad
+
+
 def gradient(problem: Problem, par: FloatArray, reml: bool, free: numpy.typing.NDArray[numpy.intp]) -> FloatArray:
     """Gradient of ``-ll`` with respect to the free entries of the (transformed) parameter vector.
 
     For a parameter ``psi`` with ``dM = dM/dpsi`` the (RE)ML score is ``-1/2 tr(P dM) + 1/2 r' W dM W r`` with ``P = W``
     (ML) or ``P = W - W X (X'WX)^-1 X'W`` (REML) and ``r = y - X beta``. ``dM`` is obtained exactly for the variances of
-    the ``~ 1 | id`` terms and by central differences of the (small) structure matrices ``E`` for the others.
+    the ``~ 1 | id`` terms and by central differences of the (small) structure matrices ``E`` for the others. With
+    ``optbeta`` the leading entries of ``par`` are the coefficients, whose gradient is ``-X'W r`` plus that of the penalty.
     """
+    off = problem.offset
+    if not problem.optbeta and problem.beta_arg is not None and not numpy.all(numpy.isnan(problem.beta_arg)):
+        return numeric_gradient(problem, par, reml, free)
     with numpy.errstate(all='ignore'):
-        ev = evaluate(problem, par)
+        rest = par[off:]
+        ev = evaluate(problem, rest)
         fac = Factorization(ev.M)
         if not fac.ok:
             return numpy.full(free.shape[0], numpy.nan)
-        _, _, _, stXWX, MiX, MiR = loglik_parts(problem, fac, dofit=False, reml=reml)
+        _, _, beta, stXWX, MiX, MiR = loglik_parts(problem, fac, dofit=False, reml=reml, beta_par=par[:off] if problem.optbeta else None)
         k = problem.k
         W = fac.solve(numpy.eye(k))
         P = W - MiX @ stXWX @ MiX.T if reml else W
@@ -296,34 +395,55 @@ def gradient(problem: Problem, par: FloatArray, reml: bool, free: numpy.typing.N
                 dMd = dM
             return 0.5 * float(numpy.sum(P * dMd)) - 0.5 * float(MiR @ (dMd @ MiR))
 
+        if problem.optbeta:
+            grad[:off] = -(problem.X.T @ MiR)
+            if problem.lambda1 > 0 or problem.lambda2 > 0:
+                pen = 0.5 * problem.lambda1 * numpy.sign(beta) + problem.lambda2 * beta
+                if problem.intercept:
+                    pen[0] = 0.0
+                grad[:off] += pen
+
         s_end = lay.sigma2s
         g_lo, g_hi = s_end, s_end + lay.tau2s + lay.rhos
         h_lo = g_hi
         h_hi = h_lo + lay.gamma2s + lay.phis
         free_set = set(free.tolist())
-        if problem.with_s:
+        if problem.with_s and ev.sigma2 is not None:
+            tied = None if problem.vccon is None else problem.vccon.get('sigma2')
             for j in range(lay.sigma2s):
-                if j in free_set and ev.sigma2 is not None and ev.sigma2[j] > 0:
-                    grad[j] = score(ev.sigma2[j] * problem.D_S[j])
-        for lo, hi, term, zz in (
-            (g_lo, g_hi, problem.g, problem.ZZ_g),
-            (h_lo, h_hi, problem.h, problem.ZZ_h),
+                if off + j not in free_set:
+                    continue
+                if tied is None:
+                    if ev.sigma2[j] > 0:
+                        grad[off + j] = score(ev.sigma2[j] * problem.D_S[j])
+                    continue
+                own = math.exp(rest[j])
+                if own <= metafopy.models.mv_structs.EPS10:
+                    continue
+                members = numpy.flatnonzero(tied == tied[j])
+                dM: Mat = problem.D_S[int(members[0])] * 0.0
+                for m in members:
+                    dM = dM + problem.D_S[int(m)]
+                grad[off + j] = score(own / members.shape[0] * dM)
+        for lo, hi, term, zz, names in (
+            (g_lo, g_hi, problem.g, problem.ZZ_g, metafopy.models.mv_structs.G_NAMES),
+            (h_lo, h_hi, problem.h, problem.ZZ_h, metafopy.models.mv_structs.H_NAMES),
         ):
             if term is None or zz is None:
                 continue
             for i in range(lo, hi):
-                if i not in free_set:
+                if off + i not in free_set:
                     continue
-                step = 1e-6 * max(1.0, abs(par[i]))
-                up = par.copy()
-                dn = par.copy()
+                step = 1e-6 * max(1.0, abs(rest[i]))
+                up = rest.copy()
+                dn = rest.copy()
                 up[i] += step
                 dn[i] -= step
                 s_u = lay.split(up)
                 s_d = lay.split(dn)
                 idx = (1, 2) if term is problem.g else (3, 4)
-                E_up = metafopy.models.mv_structs.con_e(s_u[idx[0]], s_u[idx[1]], term, True, False)[2]
-                E_dn = metafopy.models.mv_structs.con_e(s_d[idx[0]], s_d[idx[1]], term, True, False)[2]
+                E_up = structure(problem, term, names, s_u[idx[0]], s_u[idx[1]], True, False)[2]
+                E_dn = structure(problem, term, names, s_d[idx[0]], s_d[idx[1]], True, False)[2]
                 dE = (E_up - E_dn) / (2 * step)
-                grad[i] = score(hadamard(quad_form(term.Z1, dE, problem.sparse), zz))
+                grad[off + i] = score(hadamard(quad_form(term.Z1, dE, problem.sparse), zz))
     return grad[free]

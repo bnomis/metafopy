@@ -20,9 +20,11 @@ import scipy.sparse
 import scipy.stats
 
 import metafopy.core.linalg
+import metafopy.core.numderiv
 import metafopy.errors
 import metafopy.metadata
 import metafopy.models.mv_factor
+import metafopy.models.mv_hessian
 import metafopy.models.mv_inputs
 import metafopy.models.mv_lik
 import metafopy.models.mv_opt
@@ -31,6 +33,9 @@ import metafopy.models.mv_structs
 import metafopy.models.rma_uni
 
 __all__ = ['MVControl', 'rma_mv']
+
+# auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
+CVVC_OPTIONS = ('varcor', 'varcov', 'transf')
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type BoolArray = numpy.typing.NDArray[numpy.bool_]
@@ -48,7 +53,9 @@ class MVControl:
     """Control arguments of :func:`rma_mv` (metafor's ``control`` list; the optimiser arguments of R do not apply).
 
     ``*_init`` give starting values (on the original scale), ``cholesky`` switches the Cholesky parametrisation of the
-    ``UN`` and ``GEN`` structures on or off per term, ``gtol`` and ``maxiter`` control the BFGS optimiser.
+    ``UN`` and ``GEN`` structures on or off per term, ``gtol`` and ``maxiter`` control the BFGS optimiser, and ``hessian_d``,
+    ``hessian_eps`` and ``hessian_r`` are the arguments of ``numDeriv::hessian``'s Richardson method (metafor's
+    ``hessianCtrl`` with its default ``hesspack='numDeriv'``) used for ``optbeta`` and ``cvvc``.
     """
 
     sigma2_init: numpy.typing.ArrayLike | None = None
@@ -63,6 +70,9 @@ class MVControl:
     hesstol: float = math.sqrt(EPS)
     gtol: float = 1e-7
     maxiter: int = 5000
+    hessian_d: float = 0.1
+    hessian_eps: float = 1e-4
+    hessian_r: int = 8
 
 
 def make_control(control: MVControl | collections.abc.Mapping[str, typing.Any] | None) -> MVControl:
@@ -292,6 +302,71 @@ def transform_start(
     return tau, rho
 
 
+def chk_vccon(ids: numpy.typing.ArrayLike | None, values: numpy.typing.ArrayLike | None, name: str) -> numpy.typing.ArrayLike | None:
+    """``.chkvccon()``: equate the user-supplied values of constrained components (the mean of those given within each group).
+
+    Raises:
+        metafopy.errors.InputError: ``vccon`` does not match the length of the argument.
+    """
+    if ids is None or values is None:
+        return values
+    id_arr = numpy.atleast_1d(numpy.asarray(ids)).reshape(-1)
+    vals = numpy.atleast_1d(numpy.asarray(values, dtype=numpy.float64)).reshape(-1).copy()
+    if id_arr.shape[0] != vals.shape[0]:
+        raise metafopy.errors.InputError(f"Length of 'vccon${name}' ({id_arr.shape[0]}) does not match the length of {name} ({vals.shape[0]}).")
+    original = vals.copy()
+    for ident in numpy.unique(id_arr):
+        sel = id_arr == ident
+        given = original[sel][~numpy.isnan(original[sel])]
+        vals[sel] = given.mean() if given.shape[0] else numpy.nan
+    return vals
+
+
+def prepare_vccon(vccon: collections.abc.Mapping[str, numpy.typing.ArrayLike] | None) -> dict[str, numpy.typing.NDArray[typing.Any]]:
+    """The ``vccon`` argument as a dict of arrays of group ids, keyed by ``sigma2``, ``tau2``, ``rho``, ``gamma2`` and ``phi``.
+
+    Raises:
+        metafopy.errors.InputError: an unknown component is named.
+    """
+    if vccon is None:
+        return {}
+    out: dict[str, numpy.typing.NDArray[typing.Any]] = {}
+    for key, ids in vccon.items():
+        if key not in metafopy.models.mv_structs.VC_NAMES:
+            raise metafopy.errors.InputError(f"Unknown component {key!r} in 'vccon' (must be one of {', '.join(metafopy.models.mv_structs.VC_NAMES)}).")
+        if ids is not None:
+            out[key] = numpy.atleast_1d(numpy.asarray(ids)).reshape(-1)
+    return out
+
+
+def restart_controls(
+    con: MVControl,
+    previous: metafopy.models.mv_result.RMAMVResult,
+    with_s: bool,
+    with_g: bool,
+    with_h: bool,
+    sizes: tuple[int, int, int, int, int],
+) -> MVControl:
+    """``restart=TRUE``: take the starting values from the variance components of a previous fit.
+
+    Raises:
+        metafopy.errors.InputError: the previous fit has a different number of variance components.
+    """
+    present = (with_s, with_g, with_g, with_h, with_h)
+    values = (previous.sigma2, previous.tau2, previous.rho, previous.gamma2, previous.phi)
+    for flag, vals, size in zip(present, values, sizes, strict=True):
+        if flag and (vals is None or vals.shape[0] != size):
+            raise metafopy.errors.InputError('Restarting for a different model than the initial one.')
+    return dataclasses.replace(
+        con,
+        sigma2_init=previous.sigma2 if with_s else con.sigma2_init,
+        tau2_init=previous.tau2 if with_g else con.tau2_init,
+        rho_init=previous.rho if with_g else con.rho_init,
+        gamma2_init=previous.gamma2 if with_h else con.gamma2_init,
+        phi_init=previous.phi if with_h else con.phi_init,
+    )
+
+
 def resolve_rscale(value: str | bool | int) -> str:
     """metafor's handling of ``Rscale``: a name, a logical or an integer 0 to 3.
 
@@ -335,6 +410,13 @@ def rma_mv(
     phi: numpy.typing.ArrayLike | None = None,
     sparse: bool = False,
     dist: object = 'euclidean',
+    cvvc: bool | str = False,
+    optbeta: bool = False,
+    beta: numpy.typing.ArrayLike | None = None,
+    lambda1: float = 0.0,
+    lambda2: float = 0.0,
+    vccon: collections.abc.Mapping[str, numpy.typing.ArrayLike] | None = None,
+    restart: metafopy.models.mv_result.RMAMVResult | None = None,
     control: MVControl | collections.abc.Mapping[str, typing.Any] | None = None,
     na_action: metafopy.metadata.NAAction = 'omit',
 ) -> metafopy.models.mv_result.RMAMVResult:
@@ -346,7 +428,18 @@ def rma_mv(
     ``'~ 1 | district/school'`` or ``'~ outcome | study'`` (or a list of them), ``struct`` the variance-covariance structure of
     the ``~ inner | outer`` terms and ``R`` a dict of known correlation matrices (DataFrames with dimension names) keyed by the
     grouping variable. ``sigma2``, ``tau2``, ``rho``, ``gamma2`` and ``phi`` fix the corresponding parameters (``nan`` entries are
-    estimated). ``dfs`` is ``'residual'``, ``'contain'`` or numeric. Not ported: ``optbeta``, ``vccon``, ``restart``, ``cvvc``.
+    estimated). ``dfs`` is ``'residual'``, ``'contain'`` or numeric.
+
+    ``cvvc`` (``False``, ``True``, ``'varcor'``, ``'varcov'`` or ``'transf'``) requests the Hessian of the variance components
+    and its inverse (``hessian`` and ``vvc`` of the result): variances and correlations for ``True``/``'varcor'``, variances
+    and covariances for ``'varcov'`` (``UN`` and ``GEN`` structures only), the transformed parameters for ``'transf'``. With
+    ``optbeta=True`` the coefficients are optimised together with the variance components, and their covariance matrix is
+    taken from the inverse Hessian (``lambda1`` and ``lambda2`` add a lasso and ridge penalty on the coefficients other than
+    the intercept and imply ``optbeta=True``; see https://github.com/wviechtb/metafor/blob/master/R/rma.mv.r). ``beta`` fixes
+    coefficients (``nan`` entries are estimated). ``vccon`` is a dict with the keys ``sigma2``, ``tau2``, ``rho``, ``gamma2``
+    and ``phi`` whose entries are group ids: components with the same id are constrained to be equal. ``restart`` is a
+    previous fit of the same model whose variance components are the starting values (metafor restarts from the last
+    estimates in the session). The Hessians are the Richardson extrapolation of ``numDeriv`` (``hesspack='numDeriv'``).
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
@@ -377,12 +470,32 @@ def rma_mv(
         'phi': phi,
         'sparse': sparse,
         'dist': dist,
+        'cvvc': cvvc,
+        'optbeta': optbeta,
+        'beta': beta,
+        'lambda1': lambda1,
+        'lambda2': lambda2,
+        'vccon': vccon,
         'control': control,
         'na_action': na_action,
     }
     if method not in (*FIXED_METHODS, 'ML', 'REML'):
         raise metafopy.errors.InputError("Unknown 'method' specified.")
     con = make_control(control)
+    if isinstance(cvvc, str) and cvvc not in CVVC_OPTIONS:
+        raise metafopy.errors.InputError("Argument 'cvvc' must be TRUE, FALSE, 'varcor', 'varcov' or 'transf'.")
+    cvvc_mode = 'varcor' if cvvc is True else (cvvc if isinstance(cvvc, str) else None)
+    if lambda1 < 0 or lambda2 < 0:
+        raise metafopy.errors.InputError("Arguments 'lambda1' and 'lambda2' must be non-negative.")
+    if W is not None and (optbeta or lambda1 > 0 or lambda2 > 0):
+        raise metafopy.errors.InputError("Cannot use custom weights when 'optbeta=True'.")
+    optbeta = optbeta or lambda1 > 0 or lambda2 > 0
+    vccon_ids = prepare_vccon(vccon)
+    sigma2 = chk_vccon(vccon_ids.get('sigma2'), sigma2, 'sigma2')
+    tau2 = chk_vccon(vccon_ids.get('tau2'), tau2, 'tau2')
+    rho = chk_vccon(vccon_ids.get('rho'), rho, 'rho')
+    gamma2 = chk_vccon(vccon_ids.get('gamma2'), gamma2, 'gamma2')
+    phi = chk_vccon(vccon_ids.get('phi'), phi, 'phi')
     test_l = test.lower()
     if test_l == 'hksj':
         test_l = 'knha'
@@ -548,6 +661,13 @@ def rma_mv(
     int_only = p == 1 and metafopy.core.linalg.is_intercept(X[:, 0])
     btt_t = metafopy.models.rma_uni.set_btt(btt, p, int_incl, coef_names)
     m = len(btt_t)
+    if beta is None:
+        beta_arg = numpy.full(p, numpy.nan)
+    else:
+        beta_arg = numpy.atleast_1d(numpy.asarray(beta, dtype=numpy.float64)).reshape(-1)
+        if beta_arg.shape[0] != p:
+            raise metafopy.errors.InputError(f"Length of the 'beta' argument ({beta_arg.shape[0]}) does not match the actual number of fixed effects ({p}).")
+    beta_est = numpy.isnan(beta_arg)
 
     # ~ 1 | id terms after missing values were dropped
     sinfo.factors = [f.drop_unused() for f in sinfo.factors]
@@ -606,6 +726,8 @@ def rma_mv(
             hm = 1.0 / float(numpy.mean(1.0 / vi))
         total = max(0.001 * (sigma2s + tau2s + gamma2s), float(numpy.var(res_fe, ddof=1)) - hm)
         QE = float(res_fe @ fac_v.solve(res_fe[:, None])[:, 0])
+    if restart is not None:
+        con = restart_controls(con, restart, with_s, group_g is not None, group_h is not None, (sigma2s, tau2s, rhos, gamma2s, phis))
     denom = sigma2s + tau2s + gamma2s
     sigma2_init = as_vector(con.sigma2_init)
     sigma2_init = numpy.full(sigma2s, total / denom) if sigma2_init is None else metafopy.models.mv_structs.expand1(sigma2_init, sigma2s)
@@ -641,15 +763,15 @@ def rma_mv(
             raise metafopy.errors.InputError(f"Value(s) of '{rn}.init' must be in (-1,1).")
 
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
-    chol_default = [struct_t[0] in ('UN', 'GEN'), struct_t[1] in ('UN', 'GEN')]
+    chol_default = [struct_t[0] in metafopy.models.mv_structs.UNSTRUCTURED, struct_t[1] in metafopy.models.mv_structs.UNSTRUCTURED]
     if con.cholesky is not None:
         chol_user = [bool(con.cholesky)] * 2 if isinstance(con.cholesky, bool) else [bool(c) for c in con.cholesky]
         chol_default = chol_user
     cholesky = (
         # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
-        bool(chol_default[0] and group_g is not None and struct_t[0] in ('UN', 'GEN')),
+        bool(chol_default[0] and group_g is not None and struct_t[0] in metafopy.models.mv_structs.UNSTRUCTURED),
         # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
-        bool(chol_default[1] and group_h is not None and struct_t[1] in ('UN', 'GEN')),
+        bool(chol_default[1] and group_h is not None and struct_t[1] in metafopy.models.mv_structs.UNSTRUCTURED),
     )
 
     # auditme: accept[redundant-sink-caller-plus-callee] the direct call logs the sigma2 start values, transform_start the tau2 and rho ones
@@ -663,10 +785,26 @@ def rma_mv(
     else:
         gam_start, phi_start = numpy.zeros(1), numpy.zeros(1)
     par0 = numpy.concatenate([s_start, tau_start, rho_start, gam_start, phi_start])
+    if optbeta:
+        par0 = numpy.concatenate([numpy.zeros(p), par0])
     layout = metafopy.models.mv_lik.Layout(sigma2s=sigma2s, tau2s=tau2s, rhos=rhos, gamma2s=gamma2s, phis=phis)
 
     term_g = make_term(group_g, cholesky[0]) if group_g is not None else None
     term_h = make_term(group_h, cholesky[1]) if group_h is not None else None
+    vccon_codes: dict[str, numpy.typing.NDArray[numpy.intp]] = {}
+    for name, size, used in (
+        ('sigma2', sigma2s, with_s),
+        ('tau2', tau2s, group_g is not None),
+        ('rho', rhos, group_g is not None),
+        ('gamma2', gamma2s, group_h is not None),
+        ('phi', phis, group_h is not None),
+    ):
+        if name in vccon_ids and used:
+            if vccon_ids[name].shape[0] != size:
+                raise metafopy.errors.InputError(
+                    f"Length of 'vccon${name}' ({vccon_ids[name].shape[0]}) does not match the actual number of variance components ({size})."
+                )
+            vccon_codes[name] = numpy.unique(vccon_ids[name], return_inverse=True)[1].astype(numpy.intp).reshape(-1)
     problem = metafopy.models.mv_lik.Problem(
         Y=Y,
         V=V_s,
@@ -682,12 +820,19 @@ def rma_mv(
         with_s=with_s,
         reml_full=con.REMLf,
         sparse=sparse,
+        vccon=vccon_codes if vccon is not None else None,
+        optbeta=optbeta,
+        beta_arg=beta_arg,
+        lambda1=float(lambda1),
+        lambda2=float(lambda2),
+        intercept=intercept_flag,
     )
 
-    free_list: list[int] = []
+    off = problem.offset
+    free_list: list[int] = [j for j in range(p) if beta_est[j]] if optbeta else []
     if with_s:
-        free_list += [j for j in range(sigma2s) if math.isnan(sigma2_v[j])]
-    offset = sigma2s
+        free_list += [off + j for j in range(sigma2s) if math.isnan(sigma2_v[j])]
+    offset = off + sigma2s
     for grp, chol, n_v, n_r in ((group_g, cholesky[0], tau2s, rhos), (group_h, cholesky[1], gamma2s, phis)):
         if grp is not None:
             if chol:
@@ -697,12 +842,20 @@ def rma_mv(
                 free_list += [offset + n_v + j for j in range(n_r) if math.isnan(grp.rho[j])]
         offset += n_v + n_r
     free = numpy.array(free_list, dtype=numpy.intp)
+    # which components the user fixed (taken before the saturated-model reset below, as metafor does)
+    vc_fix: dict[str, BoolArray | None] = {
+        'sigma2': ~numpy.isnan(sigma2_v) if with_s else None,
+        'tau2': ~numpy.isnan(group_g.tau2) if group_g is not None else None,
+        'rho': ~numpy.isnan(group_g.rho) if group_g is not None else None,
+        'gamma2': ~numpy.isnan(group_h.tau2) if group_h is not None else None,
+        'phi': ~numpy.isnan(group_h.rho) if group_h is not None else None,
+    }
     reml = method == 'REML'
 
     iterations = 0
     par = par0
-    if not if_fixed and free.shape[0] > 0:
-        opt = metafopy.models.mv_opt.maximise(problem, par0, free, reml, gtol=con.gtol, maxiter=con.maxiter)
+    if (optbeta or not if_fixed) and free.shape[0] > 0:
+        opt = metafopy.models.mv_opt.maximise(problem, par0, free, reml, gtol=con.gtol, maxiter=con.maxiter, nonsmooth=lambda1 > 0)
         par = opt.par
         iterations = opt.iterations
         if p == k:
@@ -718,8 +871,27 @@ def rma_mv(
             problem = dataclasses.replace(problem, g=term_g, h=term_h)
 
     fit = metafopy.models.mv_lik.final_fit(problem, par)
-    beta = fit.beta
-    vb = numpy.asarray(fit.vb, dtype=numpy.float64)
+    coef = fit.beta
+    vb = numpy.asarray(fit.vb, dtype=numpy.float64).copy()
+    hessian: FloatArray | None = None
+    vvc: FloatArray | None = None
+    vc_names: tuple[str, ...] = ()
+    hess_args = metafopy.models.mv_hessian.HessianArgs(con.hessian_d, con.hessian_eps, con.hessian_r, con.hesstol)
+    if optbeta:
+        vb = numpy.full((p, p), numpy.nan)
+        hres = metafopy.models.mv_hessian.coefficient_hessian(problem, par, reml, hess_args, int_incl)
+        hessian, vc_names = hres.hessian, hres.names
+        if hres.keep.any() and hres.hessian is not None:
+            inv = metafopy.models.mv_hessian.chol2inv(hres.hessian)
+            if inv is None:
+                warnings.warn('Error when trying to invert the Hessian.', stacklevel=2)
+            else:
+                vvc = inv
+                sel = hres.keep[:p]
+                vb[numpy.ix_(sel, sel)] = inv[: int(sel.sum()), : int(sel.sum())]
+    else:
+        vb[~beta_est, :] = numpy.nan
+        vb[:, ~beta_est] = numpy.nan
     M = fit.M
     sigma2_out = fit.sigma2 if with_s else None
     tau2_out, rho_out, G = (fit.tau2, fit.rho, fit.G) if group_g is not None else (None, None, None)
@@ -748,7 +920,7 @@ def rma_mv(
         fac_m = metafopy.models.mv_lik.Factorization(M)
         if not fac_m.ok:
             raise metafopy.errors.EstimationError('Failure when trying to compute adjustment factor for Knapp and Hartung method.')
-        resid = Y - X @ beta
+        resid = Y - X @ coef
         rss = float(resid @ fac_m.solve(resid[:, None])[:, 0])
         s2w = 0.0 if rss <= EPS else rss / (k - p)
         del dense_m
@@ -759,11 +931,13 @@ def rma_mv(
 
     idx_b = list(btt_t)
     try:
-        QM = float(beta[idx_b] @ numpy.linalg.solve(vb[numpy.ix_(idx_b, idx_b)], beta[idx_b]))
+        QM = float(coef[idx_b] @ numpy.linalg.solve(vb[numpy.ix_(idx_b, idx_b)], coef[idx_b]))
     except numpy.linalg.LinAlgError:
         QM = math.nan
+    if not numpy.all(numpy.isfinite(vb[numpy.ix_(idx_b, idx_b)])):
+        QM = math.nan
     se = numpy.sqrt(numpy.diag(vb))
-    zval = beta / se
+    zval = coef / se
     alpha = metafopy.models.rma_uni.level_to_alpha(level)
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if test_l in ('knha', 'adhoc', 't'):
@@ -778,8 +952,8 @@ def rma_mv(
         QMp = float(scipy.stats.chi2.sf(QM, m))
         pval = 2 * scipy.stats.norm.sf(numpy.abs(zval))
         crit = numpy.full(p, scipy.stats.norm.isf(alpha / 2))
-    ci_lb = beta - crit * se
-    ci_ub = beta + crit * se
+    ci_lb = coef - crit * se
+    ci_ub = coef + crit * se
 
     qedf = k - p
     if qedf > 0:
@@ -787,11 +961,32 @@ def rma_mv(
     else:
         QE, QEp = 0.0, 1.0
 
-    # fit statistics
-    parms = p + (int(numpy.isnan(sigma2_v).sum()) if with_s else 0)
-    for grp in (group_g, group_h):
-        if grp is not None:
-            parms += int(numpy.isnan(grp.tau2).sum() + numpy.isnan(grp.rho).sum())
+    # Hessian of the variance components
+    if cvvc_mode is not None and not optbeta and use_random:
+        any_fixed = any(flags is not None and bool(flags.any()) for flags in vc_fix.values())
+        vres = metafopy.models.mv_hessian.variance_hessian(problem, reml, cvvc_mode, par, fit, hess_args, struct_t, any_fixed)
+        hessian, vvc, vc_names = vres.hessian, vres.vvc, vres.names
+        if vres.hessian is not None and vres.vvc is None:
+            warnings.warn('Error when trying to invert the Hessian.', stacklevel=2)
+
+    # fit statistics (only the estimated components count towards the number of parameters)
+    p_eff = int(beta_est.sum())
+    fixed_counts = {name: 0 if flags is None else int(flags.sum()) for name, flags in vc_fix.items()}
+    present_vc = {'sigma2': with_s, 'tau2': group_g is not None, 'rho': group_g is not None, 'gamma2': group_h is not None, 'phi': group_h is not None}
+    parms = p_eff
+    if vccon is None:
+        parms += sum(
+            size - fixed_counts[name]
+            for name, size in zip(metafopy.models.mv_structs.VC_NAMES, (sigma2s, tau2s, rhos, gamma2s, phis), strict=True)
+            if present_vc[name]
+        )
+    else:
+        # metafor counts only the components named in 'vccon' (one parameter per group of equal components)
+        parms += sum(
+            int(numpy.unique(vccon_ids[name]).shape[0]) - fixed_counts[name]
+            for name in metafopy.models.mv_structs.VC_NAMES
+            if present_vc[name] and name in vccon_ids
+        )
     ll_ml, ll_reml = fit.ll_ml, fit.ll_reml
     if v0 or fac_v is None or not fac_v.ok:
         ll_qe = math.nan
@@ -806,7 +1001,7 @@ def rma_mv(
         BIC=-2 * ll_ml + parms_f * math.log(k),
         AICc=-2 * ll_ml + 2 * parms_f * max(k, parms_f + 2) / (max(k, parms_f + 2) - parms_f - 1),
     )
-    kp = k - p
+    kp = k - p_eff
     reml_stats = metafopy.models.rma_uni.FitStats(
         ll=ll_reml,
         dev=-2 * ll_reml,
@@ -815,22 +1010,12 @@ def rma_mv(
         AICc=-2 * ll_reml + 2 * parms_f * max(kp, parms_f + 2) / (max(kp, parms_f + 2) - parms_f - 1),
     )
 
-    def fixed_flags(arr: FloatArray | None) -> BoolArray | None:
-        return None if arr is None else ~numpy.isnan(arr)
-
-    vc_fix: dict[str, BoolArray | None] = {
-        'sigma2': fixed_flags(sigma2_v) if with_s else None,
-        'tau2': fixed_flags(group_g.tau2) if group_g is not None else None,
-        'rho': fixed_flags(group_g.rho) if group_g is not None else None,
-        'gamma2': fixed_flags(group_h.tau2) if group_h is not None else None,
-        'phi': fixed_flags(group_h.rho) if group_h is not None else None,
-    }
     s_names_out = tuple(replace_call_notation(n) for n in sinfo.names)
     g_names_out = tuple(replace_call_notation(n) for n in group_g.names) if group_g is not None else ()
     h_names_out = tuple(replace_call_notation(n) for n in group_h.names) if group_h is not None else ()
 
     return metafopy.models.mv_result.RMAMVResult(
-        beta=beta,
+        beta=coef,
         se=se,
         zval=zval,
         pval=pval,
@@ -904,12 +1089,19 @@ def rma_mv(
         Z_S=tuple(Z_S),
         D_S=tuple(D_S),
         problem=problem,
-        hessian=None,
-        vvc=None,
-        vc_names=(),
+        hessian=hessian,
+        vvc=vvc,
+        vc_names=vc_names,
         spec=spec,
         iterations=iterations,
         measure='GEN',
+        p_eff=p_eff,
+        optbeta=optbeta,
+        lambda1=float(lambda1),
+        lambda2=float(lambda2),
+        beta_est=tuple(bool(b) for b in beta_est),
+        vccon=None if vccon is None else {key: numpy.asarray(vccon_ids[key]) for key in vccon_ids},
+        cvvc=cvvc_mode,
     )
 
 
