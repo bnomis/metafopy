@@ -2,11 +2,21 @@ name: Docs
 
 on:
   pull_request:
-    paths: [docs/**, mkdocs.yml, src/**]
+    paths: [docs/**, mkdocs.yml, src/**, .github/workflows/docs.yml]
+  push:
+    branches: [main]
+    paths: [docs/**, mkdocs.yml, src/**, .github/workflows/docs.yml]
+  workflow_dispatch:
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
@@ -14,4 +24,12 @@ jobs:
           python-version: "3.14"
       - run: uv venv
       - run: uv pip install -e . -r docs/requirements.txt
-      - run: .venv/bin/mkdocs build --strict
+      - name: Build
+        if: github.event_name == 'pull_request'
+        run: .venv/bin/mkdocs build --strict
+      - name: Build and deploy to gh_pages
+        if: github.event_name != 'pull_request'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          .venv/bin/mkdocs gh-deploy --strict --force --no-history --remote-branch gh_pages
