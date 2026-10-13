@@ -11,18 +11,18 @@ from __future__ import annotations
 import math
 from collections.abc import Sequence
 
-__all__ = ["fmt_num", "fmt_pval", "fmt_table", "signif_stars"]
+__all__ = ['fmt_num', 'fmt_pval', 'fmt_table', 'signif_stars']
 
 
 def fmt_num(x: float, digits: int = 4) -> str:
     """Fixed-point format as R's ``formatC(x, format="f", digits=digits)``."""
     if math.isnan(x):
-        return "NA"
+        return 'NA'
     if math.isinf(x):
-        return "Inf" if x > 0 else "-Inf"
-    out = f"{x:.{digits}f}"
+        return 'Inf' if x > 0 else '-Inf'
+    out = f'{x:.{digits}f}'
     # R never prints a negative zero
-    if out.startswith("-") and float(out) == 0.0:
+    if out.startswith('-') and float(out) == 0.0:
         out = out[1:]
     return out
 
@@ -30,21 +30,21 @@ def fmt_num(x: float, digits: int = 4) -> str:
 def fmt_pval(p: float, digits: int = 4) -> str:
     """Format a p-value; values below ``10**-digits`` print as ``<.0001``."""
     if math.isnan(p):
-        return "NA"
+        return 'NA'
     threshold = 10.0**-digits
     if p < threshold:
-        return "<." + "0" * (digits - 1) + "1"
+        return '<.' + '0' * (digits - 1) + '1'
     return fmt_num(p, digits)
 
 
 def signif_stars(p: float) -> str:
     """R's default significance codes: ``***`` < .001 < ``**`` < .01 < ``*`` < .05 < ``.`` < .1."""
     if math.isnan(p):
-        return ""
-    for cut, star in ((0.001, "***"), (0.01, "**"), (0.05, "*"), (0.1, ".")):
+        return ''
+    for cut, star in ((0.001, '***'), (0.01, '**'), (0.05, '*'), (0.1, '.')):
         if p < cut:
             return star
-    return ""
+    return ''
 
 
 def fmt_table(
@@ -56,14 +56,14 @@ def fmt_table(
     columns = [list(header), *[list(r) for r in rows]]
     ncol = len(header)
     if any(len(r) != ncol for r in columns):
-        raise ValueError("every row must have as many cells as the header")
+        raise ValueError('every row must have as many cells as the header')
     widths = [max(len(r[j]) for r in columns) for j in range(ncol)]
-    names = ["", *row_names] if row_names is not None else None
+    names = ['', *row_names] if row_names is not None else None
     name_w = max(len(n) for n in names) if names else 0
     lines: list[str] = []
     for i, row in enumerate(columns):
-        cells = "  ".join(cell.rjust(widths[j]) for j, cell in enumerate(row))
+        cells = '  '.join(cell.rjust(widths[j]) for j, cell in enumerate(row))
         if names is not None:
-            cells = names[i].ljust(name_w) + "  " + cells
+            cells = names[i].ljust(name_w) + '  ' + cells
         lines.append(cells.rstrip())
-    return "\n".join(lines)
+    return '\n'.join(lines)

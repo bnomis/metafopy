@@ -7,14 +7,15 @@ from functools import cache
 from pathlib import Path
 from typing import Any
 
-REFERENCE_DIR = Path(__file__).parent / "reference"
+REFERENCE_DIR = Path(__file__).parent / 'reference'
 
 
 def case_names() -> list[str]:
-    return sorted(p.stem for p in REFERENCE_DIR.glob("*.json"))
+    return sorted(p.stem for p in REFERENCE_DIR.glob('*.json'))
 
 
 @cache
 def load_case(name: str) -> dict[str, Any]:
-    with (REFERENCE_DIR / f"{name}.json").open() as fh:
-        return json.load(fh)
+    with (REFERENCE_DIR / f'{name}.json').open() as fh:
+        data: dict[str, Any] = json.load(fh)
+    return data

@@ -10,24 +10,24 @@ readme = "README.md"
 license = "GPL-3.0-or-later"
 license-files = ["LICENSE"]
 authors = [{ name = "Simon" }]
-requires-python = ">=3.11"
+requires-python = ">=3.14.7,<3.15"
 dependencies = [
     "numpy>=1.26",
     "scipy>=1.11",
     "pandas>=2.1",
     "formulaic>=1.0",
+    "matplotlib>=3.8",
 ]
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
     "Intended Audience :: Science/Research",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: Mathematics",
     "Typing :: Typed",
 ]
-
-[project.optional-dependencies]
-plot = ["matplotlib>=3.8"]
 
 [project.urls]
 Homepage = "https://github.com/bnomis/metafopy"
@@ -39,7 +39,7 @@ dev = [
     "pytest-cov>=5",
     "hypothesis>=6.100",
     "ruff>=0.6",
-    "pyright>=1.1.380",
+    "mypy>=1.18",
     "pre-commit>=3.7",
     "pandas-stubs>=2.1",
     "scipy-stubs>=1.14",
@@ -49,28 +49,40 @@ dev = [
 packages = ["src/metafopy"]
 
 [tool.ruff]
-line-length = 100
-target-version = "py311"
+line-length = 160
+target-version = "py314"
 src = ["src", "tests"]
 
+[tool.ruff.format]
+quote-style = "single"
+
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "B", "UP", "N", "SIM", "RUF", "NPY", "PT"]
+select = ["E", "F", "W", "I", "B", "UP", "N", "SIM", "RUF", "NPY", "PT", "Q"]
 ignore = [
+    "SIM108",  # nested ternaries read worse than if/else blocks at 160 columns
     "N802",  # metafor-style names such as rma_uni / QE are intentional
     "N803",
     "N806",
 ]
 
-[tool.pyright]
-include = ["src", "tests"]
-pythonVersion = "3.11"
-typeCheckingMode = "strict"
-reportMissingTypeStubs = false
-reportUnknownMemberType = false
-reportUnknownVariableType = false
-reportUnknownArgumentType = false
-reportUnknownParameterType = false  # numpy.typing.ArrayLike is partially unknown
-reportConstantRedefinition = false  # X, V, M follow the statistical notation
+[tool.ruff.lint.flake8-quotes]
+inline-quotes = "single"
+multiline-quotes = "double"
+docstring-quotes = "double"
+
+[tool.ruff.lint.isort]
+known-local-folder = ["reference_data"]
+
+[tool.mypy]
+python_version = "3.14"
+strict = true
+files = ["src", "tests"]
+mypy_path = ["tests"]
+warn_unreachable = true
+
+[[tool.mypy.overrides]]
+module = ["formulaic", "formulaic.*"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

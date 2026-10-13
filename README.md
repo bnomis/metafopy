@@ -8,15 +8,31 @@ core (`escalc`, `rma.uni`, `rma.mh`, `rma.peto`, `rma.glmm`, `rma.mv`,
 `selmodel`, location-scale models) and its diagnostics and plots. Function and
 argument names follow metafor, with `.` replaced by `_` (`rma_uni`, `rma_mv`).
 
-**Status:** pre-alpha. Phase 0 (foundations) is in place: input handling,
-formula support, bundled datasets and the R reference harness. Model fitting
-arrives in phase 1.
+**Status:** pre-alpha. `rma_uni` (alias `rma`) is available with all of
+metafor's standard tau^2 estimators, `predict`, `confint` (Q-profile) and
+`anova`; it reproduces metafor 5.2-1 to about 1e-9 relative error across the
+reference fixtures. `escalc` arrives next.
+
+```python
+import numpy as np
+from metafopy import datasets, rma, confint, predict
+
+dat = datasets.load('dat.hackshaw1998')  # already has yi / vi columns
+res = rma(data=dat, method='REML')
+print(res)
+print(confint(res))
+print(predict(res, transf=np.exp))
+```
+
+Requires Python >= 3.14.7, < 3.15.
 
 ## Install (development)
 
 ```bash
 uv sync
 uv run pytest
+uv run mypy
+uv run ruff check .
 ```
 
 ## Validation against R
