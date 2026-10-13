@@ -39,7 +39,8 @@ RTOL_ROOT = 2e-3
 # The numerical Hessian differentiates the integrated likelihood with a step proportional to the estimate: where a selection
 # parameter is estimated very close to its bound (here 1e-4), integration noise of 1e-10 is amplified to relative errors of
 # up to a few per mille in the standard errors, in R as well as here.
-NOISY_HESSIAN = {'hack_halfnorm_less': 5e-2}
+# delta sits next to its lower bound (1.4e-4), so the numerical Hessian, and with it the SE and CI bounds, depends on the BLAS in use
+NOISY_HESSIAN = {'hack_halfnorm_less': 0.25}
 NOISY_ATOL = 2e-3
 
 ALL_CASES = sorted(k for k, v in REF['fits'].items() if 'error' not in v)
