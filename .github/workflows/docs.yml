@@ -12,5 +12,6 @@ jobs:
       - uses: astral-sh/setup-uv@v6
         with:
           python-version: "3.14"
-      - run: uv pip install --system -e . -r docs/requirements.txt
-      - run: mkdocs build --strict
+      - run: uv venv
+      - run: uv pip install -e . -r docs/requirements.txt
+      - run: .venv/bin/mkdocs build --strict
