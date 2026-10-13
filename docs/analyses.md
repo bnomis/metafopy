@@ -23,7 +23,8 @@ print(selmodel(res, type='halfnorm'))
 from metafopy import datasets, rma
 
 dat = datasets.load('dat.bangertdrowns2004')
-res = rma(yi, vi, mods=..., scale=..., data=dat)
+res = rma('yi', 'vi', mods='~ length', scale='~ length', data=dat, method='REML')
+print(res)
 ```
 
 See Viechtbauer & López-López (2022), <https://doi.org/10.1002/jrsm.1562>.

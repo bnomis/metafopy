@@ -40,6 +40,10 @@ def is_intercept(x: FloatArray, eps: float = 1e-8) -> bool:
     return bool(numpy.all(numpy.abs(x - 1.0) < eps))
 
 
+def is_dummy(x: FloatArray, eps: float = 1e-8) -> bool:
+    return bool(numpy.all((numpy.abs(x) < eps) | (numpy.abs(x - 1) < eps)))
+
+
 def drop_redundant(X: FloatArray) -> numpy.typing.NDArray[numpy.bool_]:
     """Columns that are linear combinations of earlier ones.
 

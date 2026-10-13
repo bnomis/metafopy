@@ -29,6 +29,7 @@ import scipy.special
 import scipy.stats
 
 import metafopy.core.integrate
+import metafopy.core.linalg
 import metafopy.core.numderiv
 import metafopy.errors
 import metafopy.metadata
@@ -246,10 +247,6 @@ def check_bounds(name: str, vals: FloatArray, spec: metafopy.models.sel_spec.Sel
             raise metafopy.errors.InputError(f"Value of '{name}[{j + 1}]' must be <= {ub:g} for this type of selection model.")
 
 
-def is_dummy(x: FloatArray, eps: float = 1e-08) -> bool:
-    return bool(numpy.all((numpy.abs(x) < eps) | (numpy.abs(x - 1) < eps)))
-
-
 def invert_hessian(h: FloatArray) -> FloatArray | None:
     """``chol2inv(chol(h))``, or ``None`` if ``h`` is not positive definite."""
     try:
@@ -456,7 +453,7 @@ def selmodel(
         Xrest = X[:, 1:]
         meanX = Xrest.mean(axis=0)
         sdX = Xrest.std(axis=0, ddof=1)
-        is_d = numpy.array([is_dummy(X[:, j]) for j in range(p)])
+        is_d = numpy.array([metafopy.core.linalg.is_dummy(X[:, j]) for j in range(p)])
         dummy = is_d[1:]
         mX = numpy.zeros((p, p))
         mX[0, 0] = 1.0

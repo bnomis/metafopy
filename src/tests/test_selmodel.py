@@ -59,7 +59,7 @@ def arg(value: typing.Any) -> typing.Any:
 def base_model(case: str) -> metafopy.RMAResult:
     spec = REF['specs'][case]
     kwargs: dict[str, typing.Any] = {'ni': 'ni'} if spec['data'] == 'bang' else {}
-    return metafopy.rma(data=data(spec['data']), **kwargs, **spec['rma'])
+    return typing.cast(metafopy.RMAResult, metafopy.rma(data=data(spec['data']), **kwargs, **spec['rma']))
 
 
 def sel_kwargs(case: str) -> dict[str, typing.Any]:

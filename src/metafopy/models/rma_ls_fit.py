@@ -168,10 +168,6 @@ def marginal_residuals(yi: FloatArray, vi: FloatArray, X: FloatArray, tau2: Floa
     return ei, numpy.sqrt(numpy.diag(ve))
 
 
-def is_dummy(x: FloatArray, eps: float = 1e-8) -> bool:
-    return bool(numpy.all((numpy.abs(x) < eps) | (numpy.abs(x - 1) < eps)))
-
-
 def start_alpha(md: metafopy.metadata.MetaData, Z: FloatArray, link: str, is_int: BoolArray) -> FloatArray:
     """Starting values for the scale coefficients: a regression of the transformed squared residuals of a HE fit on ``Z``.
 
@@ -377,7 +373,7 @@ def fit_rma_ls(
     ):
         meanZ = Z[:, 1:].mean(axis=0)
         sdZ = Z[:, 1:].std(axis=0, ddof=1)
-        is_d = numpy.array([is_dummy(Z[:, j]) for j in range(q)])
+        is_d = numpy.array([metafopy.core.linalg.is_dummy(Z[:, j]) for j in range(q)])
         with numpy.errstate(all='ignore'):
             top = numpy.concatenate([[1.0], -1 * numpy.where(is_d[1:], 0.0, meanZ / sdZ)])
             body = numpy.column_stack([numpy.zeros(q - 1), numpy.diag(numpy.where(is_d[1:], 1.0, 1 / sdZ))])
