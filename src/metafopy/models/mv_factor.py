@@ -23,6 +23,7 @@ __all__ = ['Factor', 'evaluate_variable', 'indicator', 'interaction', 'split_top
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type IntArray = numpy.typing.NDArray[numpy.intp]
 
+NUMERIC = re.compile(r'^(?:as\.numeric|I)\((.*)\)$')
 WRAPPERS = re.compile(r'^(?:as\.)?(?:factor|character|numeric|C)\((.*)\)$')
 CALL = re.compile(r'^(interaction|paste0?)\((.*)\)$')
 
@@ -174,6 +175,9 @@ def evaluate_variable(expr: str, data: pandas.DataFrame) -> pandas.Series:
     name = expr.strip()
     if name in data.columns:
         return data[name].reset_index(drop=True)
+    numeric = NUMERIC.match(name)
+    if numeric is not None:
+        return evaluate_variable(numeric.group(1), data).astype(float)
     wrapped = WRAPPERS.match(name)
     if wrapped is not None:
         inner = evaluate_variable(wrapped.group(1), data)

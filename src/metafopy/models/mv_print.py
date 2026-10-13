@@ -190,22 +190,16 @@ def block(res: metafopy.models.mv_result.RMAMVResult, group: metafopy.models.mv_
         out.append(table(['estim', 'sqrt', 'k.lvl', 'fixed', 'level'], rows, names_r))
         out.append('')
         n = 2 if len(cor) == 1 else group.nlevels_f[0]
-        lower = numpy.empty((n, n), dtype=object)
-        info = numpy.empty((n, n), dtype=object)
-        low_idx = lower_pairs(n)
-        comb = group.levels_comb_k if group.levels_comb_k is not None else numpy.zeros(len(low_idx))
-        del comb
-        for pos, (i, j) in enumerate(low_idx):
-            lower[i, j] = cor_s[pos]
-            info[i, j] = fixed_r[pos]
+        pairs = lower_pairs(n)
+        comb = group.levels_comb_k if group.levels_comb_k is not None else numpy.zeros(len(pairs))
+        lower = {ij: cor_s[pos] for pos, ij in enumerate(pairs)}
+        info = {ij: fixed_r[pos] for pos, ij in enumerate(pairs)}
+        counts = {ij: metafopy.printing.fmt_num(float(comb[pos]), 0) for pos, ij in enumerate(pairs)}
         cells: list[list[str]] = []
         for i in range(n):
-            row = []
-            for j in range(n):
-                row.append('1.0000'.replace('1.0000', fm(1.0)) if i == j else (lower[i, j] if j < i else ''))
+            row = [('1' if i == j else lower[i, j] if j < i else '') for j in range(n)]
             row.append('')
-            for j in range(n):
-                row.append('-' if i == j else (info[i, j] if j < i else info[j, i]))
+            row += ['-' if i == j else info[i, j] if j < i else counts[j, i] for j in range(n)]
             cells.append(row)
         ab = abbreviate(list(levels_f))
         header = [f'{r_name}.{a}' for a in ab] + [''] + ab
