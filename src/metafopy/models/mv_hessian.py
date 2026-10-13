@@ -86,7 +86,13 @@ def coefficient_hessian(
     H = richardson(problem, par, reml, args, True, False)
     first = 0 if int_incl else 1
     names = [f'beta{first + j}' for j in range(p)] + [UNNAMED] * (par.shape[0] - p)
-    keep = fixed_rows(H, args.tol)
+    lay = problem.layout
+    # components that are not in the model have no effect on the likelihood; their rows are dropped by construction rather than by the
+    # numerical test, which noise in the finite differences (platform dependent) can fail
+    present = (
+        [True] * p + [problem.with_s] * lay.sigma2s + [problem.g is not None] * (lay.tau2s + lay.rhos) + [problem.h is not None] * (lay.gamma2s + lay.phis)
+    )
+    keep = fixed_rows(H, args.tol) & numpy.array(present, dtype=numpy.bool_)
     kept = tuple(n for n, flag in zip(names, keep, strict=True) if flag)
     return HessianResult(hessian=H[numpy.ix_(keep, keep)], vvc=None, names=kept, keep=keep)
 
