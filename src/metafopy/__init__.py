@@ -28,8 +28,10 @@ from metafopy.methods.vcalc import vcalc
 from metafopy.methods.vif import VIFEntry, VIFResult, vif
 from metafopy.models.glmm_fit import GLMMControl
 from metafopy.models.glmm_result import GLMMResult
+from metafopy.models.mv_result import RMAMVResult
 from metafopy.models.rma_glmm import rma_glmm
 from metafopy.models.rma_mh import MHResult, rma_mh
+from metafopy.models.rma_mv import MVControl, rma_mv
 from metafopy.models.rma_peto import PetoResult, rma_peto
 from metafopy.models.rma_uni import FitStats, RMAResult, rma, rma_uni
 from metafopy.models.tau2 import Control
@@ -50,12 +52,14 @@ __all__ = [
     'LRTResult',
     'Leave1outResult',
     'MHResult',
+    'MVControl',
     'MetaData',
     'PermutestResult',
     'PetoResult',
     'PredictResult',
     'ProfileResult',
     'RCalcResult',
+    'RMAMVResult',
     'RMAResult',
     'RandomTerm',
     'RanefResult',
@@ -106,6 +110,7 @@ __all__ = [
     'rma',
     'rma_glmm',
     'rma_mh',
+    'rma_mv',
     'rma_peto',
     'rma_uni',
     'rstandard',
