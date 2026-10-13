@@ -3,6 +3,7 @@
 See https://www.metafor-project.org/ for the R package this mirrors.
 """
 
+import metafopy.methods.binary  # noqa: F401  registers the confint/rstandard/... methods for rma_mh and rma_peto results
 from metafopy import datasets, transf
 from metafopy.base import __version__
 from metafopy.bias import FsnResult, HcResult, RanktestResult, RegtestResult, TesResult, TrimfillResult, fsn, hc, ranktest, regtest, tes, trimfill
@@ -22,6 +23,11 @@ from metafopy.methods.predict import PredictResult, predict
 from metafopy.methods.profile import ProfileResult, profile
 from metafopy.methods.ranef import RanefResult, ranef
 from metafopy.methods.vif import VIFEntry, VIFResult, vif
+from metafopy.models.glmm_fit import GLMMControl
+from metafopy.models.glmm_result import GLMMResult
+from metafopy.models.rma_glmm import rma_glmm
+from metafopy.models.rma_mh import MHResult, rma_mh
+from metafopy.models.rma_peto import PetoResult, rma_peto
 from metafopy.models.rma_uni import FitStats, RMAResult, rma, rma_uni
 from metafopy.models.tau2 import Control
 from metafopy.plot import addpoly, baujat, forest, funnel, labbe, plot_gosh, plot_infl, plot_profile, qqnorm, radial
@@ -33,13 +39,17 @@ __all__ = [
     'CumulResult',
     'FitStats',
     'FsnResult',
+    'GLMMControl',
+    'GLMMResult',
     'GoshResult',
     'HcResult',
     'InfluenceResult',
     'LRTResult',
     'Leave1outResult',
+    'MHResult',
     'MetaData',
     'PermutestResult',
+    'PetoResult',
     'PredictResult',
     'ProfileResult',
     'RMAResult',
@@ -87,6 +97,9 @@ __all__ = [
     'ranktest',
     'regtest',
     'rma',
+    'rma_glmm',
+    'rma_mh',
+    'rma_peto',
     'rma_uni',
     'rstandard',
     'rstudent',

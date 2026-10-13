@@ -14,7 +14,15 @@ metafor's standard tau^2 estimators, `predict`, `confint` (Q-profile) and
 reference fixtures. `escalc`, the diagnostics (`influence`, `leave1out`,
 `cumul`, `permutest`, `profile`, `gosh`), the funnel-plot asymmetry tests
 (`regtest`, `ranktest`, `trimfill`, `fsn`, `hc`, `tes`) and the plots in
-`metafopy.plot` are available too.
+`metafopy.plot` are available too. For binary and count data, `rma_mh`
+(Mantel-Haenszel), `rma_peto` (Peto's method) and `rma_glmm` (generalized linear
+mixed-effects models: `UM.FS`, `UM.RS`, `CM.AL`, `CM.EL` for `OR` and `IRR`,
+and `PLO`/`IRLN` for proportions and rates) are available. `rma_mh` and
+`rma_peto` match metafor to 1e-8. `rma_glmm` matches the fixed-effects and
+`IRR` fits to machine precision and the mixed models to about 1e-3 (R's
+`lme4::glmer` stops at a loose optimiser tolerance; metafopy fits to the same or a
+slightly better optimum). `rma_glmm` does not port the experimental measures `PR`,
+`RR`, `RD` and `PLN`.
 
 ```python
 import numpy as np
