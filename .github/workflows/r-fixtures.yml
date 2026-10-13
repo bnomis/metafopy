@@ -29,12 +29,12 @@ jobs:
         run: |
           Rscript -e 'install.packages(c("remotes", "jsonlite", "metadat", "gsl", "mvtnorm", "CompQuadForm"))'
           Rscript -e 'v <- Sys.getenv("METAFOR_VERSION"); if (nzchar(v)) remotes::install_version("metafor", version = v, upgrade = "never") else install.packages("metafor")'
-      - run: Rscript tests/r/export_datasets.R
-      - run: Rscript tests/r/generate_fixtures.R
-      - run: Rscript tests/r/generate_extras.R
-      - run: Rscript tests/r/generate_escalc.R
-      - run: Rscript tests/r/generate_rma_uni_help.R
-      - run: Rscript tests/r/generate_blup_vif.R
-      - run: Rscript tests/r/generate_transf.R
+      - run: Rscript src/tests/r/export_datasets.R
+      - run: Rscript src/tests/r/generate_fixtures.R
+      - run: Rscript src/tests/r/generate_extras.R
+      - run: Rscript src/tests/r/generate_escalc.R
+      - run: Rscript src/tests/r/generate_rma_uni_help.R
+      - run: Rscript src/tests/r/generate_blup_vif.R
+      - run: Rscript src/tests/r/generate_transf.R
       - name: Fail on fixture drift
-        run: git diff --stat --exit-code -- tests/reference src/metafopy/datasets/data
+        run: git diff --stat --exit-code -- src/tests/reference src/metafopy/datasets/data

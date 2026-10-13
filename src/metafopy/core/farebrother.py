@@ -21,18 +21,18 @@ quadratic forms. *Computational Statistics & Data Analysis*, 54(4), 858-862.
 doi:10.1016/j.csda.2009.11.025
 """
 
-from __future__ import annotations
-
+import collections.abc
+import dataclasses
 import math
-from collections.abc import Sequence
-from dataclasses import dataclass
 
-from scipy.special import ndtr
+import scipy.special
+
+import metafopy.errors
 
 __all__ = ['FarebrotherResult', 'farebrother']
 
 
-@dataclass(frozen=True, slots=True)
+@dataclasses.dataclass(frozen=True, slots=True)
 class FarebrotherResult:
     """``Qq`` is ``P(Q > q)``, as ``CompQuadForm::farebrother()`` returns it."""
 
@@ -43,26 +43,30 @@ class FarebrotherResult:
 
 def farebrother(
     q: float,
-    lam: Sequence[float],
-    h: Sequence[int] | None = None,
-    delta: Sequence[float] | None = None,
+    lam: collections.abc.Sequence[float],
+    h: collections.abc.Sequence[int] | None = None,
+    delta: collections.abc.Sequence[float] | None = None,
     maxit: int = 100000,
     eps: float = 1e-10,
     mode: float = 1.0,
 ) -> FarebrotherResult:
-    """Upper tail probability of ``sum_i lam[i] * chi^2_{h[i]}(delta[i])`` at ``q``."""
+    """Upper tail probability of ``sum_i lam[i] * chi^2_{h[i]}(delta[i])`` at ``q``.
+
+    Raises:
+        metafopy.errors.InputError: an argument or the data is invalid.
+    """
     n = len(lam)
     mult = [1] * n if h is None else [int(v) for v in h]
     dlt = [0.0] * n if delta is None else [float(v) for v in delta]
     if any(d < 0 for d in dlt):
-        raise ValueError("All non centrality parameters in 'delta' should be positive!")
+        raise metafopy.errors.InputError("All non centrality parameters in 'delta' should be positive!")
     if len(mult) != n or len(dlt) != n:
-        raise ValueError('lambda, h and delta should have the same length!')
-    dnsty, ifault, res = _ruben([float(v) for v in lam], mult, dlt, n, float(q), float(mode), int(maxit), float(eps))
+        raise metafopy.errors.InputError('lambda, h and delta should have the same length!')
+    dnsty, ifault, res = ruben([float(v) for v in lam], mult, dlt, n, float(q), float(mode), int(maxit), float(eps))
     return FarebrotherResult(dnsty=dnsty, ifault=ifault, Qq=1.0 - res)
 
 
-def _ruben(lam: list[float], mult: list[int], delta: list[float], n: int, c: float, mode: float, maxit: int, eps: float) -> tuple[float, int, float]:
+def ruben(lam: list[float], mult: list[int], delta: list[float], n: int, c: float, mode: float, maxit: int, eps: float) -> tuple[float, int, float]:
     """Returns ``(dnsty, ifault, res)`` with ``res = P(Q < c)``."""
     dnsty = 0.0
     if n < 1 or c <= 0 or maxit < 1 or eps <= 0.0:
@@ -101,7 +105,7 @@ def _ruben(lam: list[float], mult: list[int], delta: list[float], n: int, c: flo
         k = k + mult[i - 1]
         theta[i - 1] = 1.0
 
-    ao = math.exp(0.5 * (_log(total) - sum1))
+    ao = math.exp(0.5 * (safe_log(total) - sum1))
     if ao <= 0.0:
         return 0.0, 1, 0.0
 
@@ -116,7 +120,7 @@ def _ruben(lam: list[float], mult: list[int], delta: list[float], n: int, c: flo
         i = 1
         lans = -0.5 * (z + math.log(z)) - 0.22579135264473
         dans = math.exp(lans)
-        pans = float(ndtr(math.sqrt(z))) - float(ndtr(-math.sqrt(z)))
+        pans = float(scipy.special.ndtr(math.sqrt(z))) - float(scipy.special.ndtr(-math.sqrt(z)))
 
     k = k - 2
     for j in range(i, k + 1, 2):
@@ -178,5 +182,5 @@ def _ruben(lam: list[float], mult: list[int], delta: list[float], n: int, c: flo
     return dnsty, ifault, prbty
 
 
-def _log(x: float) -> float:
+def safe_log(x: float) -> float:
     return math.log(x) if x > 0 else -math.inf

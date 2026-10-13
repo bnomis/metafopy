@@ -1,27 +1,26 @@
 """Predicted values, confidence and prediction intervals (metafor's ``predict.rma``)."""
 
-from __future__ import annotations
+import collections.abc
+import dataclasses
+import functools
+import typing
 
-from collections.abc import Callable
-from dataclasses import dataclass
-from functools import singledispatch
-from typing import Any
+import numpy
+import numpy.typing
+import pandas
+import scipy.stats
 
-import numpy as np
-import pandas as pd
-from numpy.typing import ArrayLike, NDArray
-from scipy import stats
-
-from metafopy.models._tau2 import FIXED_EFFECTS
-from metafopy.models.rma_uni import RMAResult, level_to_alpha
-from metafopy.transf import apply_transf, is_tau2_transf
+import metafopy.errors
+import metafopy.models.rma_uni
+import metafopy.models.tau2
+import metafopy.transf
 
 __all__ = ['PredictResult', 'predict']
 
-FloatArray = NDArray[np.float64]
+FloatArray = numpy.typing.NDArray[numpy.float64]
 
 
-@dataclass(frozen=True, slots=True)
+@dataclasses.dataclass(frozen=True, slots=True)
 class PredictResult:
     """Predictions with confidence (``ci``) and prediction (``pi``) intervals.
 
@@ -36,8 +35,8 @@ class PredictResult:
     pi_ub: FloatArray
     slab: tuple[str, ...] | None = None
 
-    def to_frame(self) -> pd.DataFrame:
-        return pd.DataFrame(
+    def to_frame(self) -> pandas.DataFrame:
+        return pandas.DataFrame(
             {
                 'pred': self.pred,
                 'se': self.se,
@@ -57,20 +56,24 @@ class PredictResult:
         return frame.round(4).to_string()
 
 
-@singledispatch
-def predict(model: Any, *args: Any, **kwargs: Any) -> PredictResult:
-    """Predicted values for a fitted model; see :func:`_predict_rma_uni`."""
-    raise TypeError(f'predict() not implemented for {type(model).__name__}')
+@functools.singledispatch
+def predict(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> PredictResult:
+    """Predicted values for a fitted model; see :func:`_predict_rma_uni`.
+
+    Raises:
+        metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
+    """
+    raise metafopy.errors.ArgumentError(f'predict() not implemented for {type(model).__name__}')
 
 
 @predict.register
-def _predict_rma_uni(
-    model: RMAResult,
-    newmods: ArrayLike | None = None,
+def predict_rma_uni(
+    model: metafopy.models.rma_uni.RMAResult,
+    newmods: numpy.typing.ArrayLike | None = None,
     *,
     intercept: bool | None = None,
-    transf: Callable[..., Any] | None = None,
-    targs: Any = None,
+    transf: collections.abc.Callable[..., typing.Any] | None = None,
+    targs: typing.Any = None,
     level: float | None = None,
 ) -> PredictResult:
     """Predict from an ``rma.uni`` fit.
@@ -81,16 +84,19 @@ def _predict_rma_uni(
     ``intercept=False``) or the full set of ``p`` columns. ``transf`` is
     applied to each value (with ``targs`` if given; the integral and mode
     transformations in :mod:`metafopy.transf` default to ``targs={'tau2': tau2}``).
+
+    Raises:
+        metafopy.errors.InputError: an argument or the data is invalid.
     """
     x = model
     p = x.p
     slab: tuple[str, ...] | None = None
     if newmods is None:
-        X_new = np.ones((1, 1)) if x.int_only else x.X
+        X_new = numpy.ones((1, 1)) if x.int_only else x.X
         if not x.int_only:
             slab = x.slab
     else:
-        arr = np.asarray(newmods, dtype=np.float64)
+        arr = numpy.asarray(newmods, dtype=numpy.float64)
         n_mods = p - 1 if x.int_incl else p
         if arr.ndim == 0:
             arr = arr.reshape(1, 1)
@@ -98,39 +104,39 @@ def _predict_rma_uni(
             arr = arr[:, None] if n_mods == 1 else arr[None, :]
         if x.int_incl and arr.shape[1] == p - 1:
             col = 1.0 if intercept is None or intercept else 0.0
-            arr = np.column_stack([np.full(arr.shape[0], col), arr])
+            arr = numpy.column_stack([numpy.full(arr.shape[0], col), arr])
         if arr.shape[1] != p:
-            raise ValueError(f'dimensions of newmods ({arr.shape[1]} columns) do not match the model ({p})')
+            raise metafopy.errors.InputError(f'dimensions of newmods ({arr.shape[1]} columns) do not match the model ({p})')
         X_new = arr
 
-    alpha = x.level if level is None else level_to_alpha(level)
+    alpha = x.level if level is None else metafopy.models.rma_uni.level_to_alpha(level)
 
     pred = X_new @ x.beta
-    vpred = np.einsum('ij,jk,ik->i', X_new, x.vb, X_new)
-    vpred = np.where(vpred < 0, np.nan, vpred)
-    se = np.sqrt(vpred)
+    vpred = numpy.einsum('ij,jk,ik->i', X_new, x.vb, X_new)
+    vpred = numpy.where(vpred < 0, numpy.nan, vpred)
+    se = numpy.sqrt(vpred)
     if x.ddf is not None:
-        crit = float(stats.t.isf(alpha / 2, x.ddf)) if x.ddf > 0 else np.nan
+        crit = float(scipy.stats.t.isf(alpha / 2, x.ddf)) if x.ddf > 0 else numpy.nan
     else:
-        crit = float(stats.norm.isf(alpha / 2))
+        crit = float(scipy.stats.norm.isf(alpha / 2))
     ci_lb = pred - crit * se
     ci_ub = pred + crit * se
-    pi_se = np.sqrt(vpred + x.tau2)
+    pi_se = numpy.sqrt(vpred + x.tau2)
     pi_lb = pred - crit * pi_se
     pi_ub = pred + crit * pi_se
-    if x.method in FIXED_EFFECTS:
+    if x.method in metafopy.models.tau2.FIXED_EFFECTS:
         # metafor drops prediction intervals for equal/fixed/common-effects models
-        pi_lb = np.full_like(pred, np.nan)
-        pi_ub = np.full_like(pred, np.nan)
+        pi_lb = numpy.full_like(pred, numpy.nan)
+        pi_ub = numpy.full_like(pred, numpy.nan)
 
     if transf is not None:
-        pred, ci_lb, ci_ub, pi_lb, pi_ub = (apply_transf(a, transf, targs, x.tau2) for a in (pred, ci_lb, ci_ub, pi_lb, pi_ub))
-        se = np.full_like(pred, np.nan)
-        ci_lb, ci_ub = np.minimum(ci_lb, ci_ub), np.maximum(ci_lb, ci_ub)
-        pi_lb, pi_ub = np.minimum(pi_lb, pi_ub), np.maximum(pi_lb, pi_ub)
-        if is_tau2_transf(transf):
+        pred, ci_lb, ci_ub, pi_lb, pi_ub = (metafopy.transf.apply_transf(a, transf, targs, x.tau2) for a in (pred, ci_lb, ci_ub, pi_lb, pi_ub))
+        se = numpy.full_like(pred, numpy.nan)
+        ci_lb, ci_ub = numpy.minimum(ci_lb, ci_ub), numpy.maximum(ci_lb, ci_ub)
+        pi_lb, pi_ub = numpy.minimum(pi_lb, pi_ub), numpy.maximum(pi_lb, pi_ub)
+        if metafopy.transf.is_tau2_transf(transf):
             # metafor drops the prediction interval after an integral/mode transformation
-            pi_lb = np.full_like(pred, np.nan)
-            pi_ub = np.full_like(pred, np.nan)
+            pi_lb = numpy.full_like(pred, numpy.nan)
+            pi_ub = numpy.full_like(pred, numpy.nan)
 
     return PredictResult(pred=pred, se=se, ci_lb=ci_lb, ci_ub=ci_ub, pi_lb=pi_lb, pi_ub=pi_ub, slab=slab)

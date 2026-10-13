@@ -51,7 +51,7 @@ packages = ["src/metafopy"]
 [tool.ruff]
 line-length = 160
 target-version = "py314"
-src = ["src", "tests"]
+src = ["src"]
 
 [tool.ruff.format]
 quote-style = "single"
@@ -76,8 +76,8 @@ known-local-folder = ["reference_data"]
 [tool.mypy]
 python_version = "3.14"
 strict = true
-files = ["src", "tests"]
-mypy_path = ["tests"]
+files = ["src"]
+mypy_path = ["src/tests"]
 warn_unreachable = true
 
 [[tool.mypy.overrides]]
@@ -85,7 +85,7 @@ module = ["formulaic", "formulaic.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["src/tests"]
 addopts = "-ra --strict-markers"
 markers = [
     "rparity: live comparison against R metafor through rpy2 (needs R installed)",

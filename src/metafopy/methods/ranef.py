@@ -8,39 +8,42 @@ models all random effects are 0. The computations follow
 https://wviechtb.github.io/metafor/reference/ranef.html.
 """
 
-from __future__ import annotations
+import dataclasses
+import functools
+import typing
 
-from dataclasses import dataclass
-from functools import singledispatch
-from typing import Any
-
-from metafopy.methods.blup import BlupResult, NAAction, Transf, shrinkage_predictions
-from metafopy.models.rma_uni import RMAResult
+import metafopy.errors
+import metafopy.methods.blup
+import metafopy.models.rma_uni
 
 __all__ = ['RanefResult', 'ranef']
 
 
-@dataclass(frozen=True, slots=True)
-class RanefResult(BlupResult):
+@dataclasses.dataclass(frozen=True, slots=True)
+class RanefResult(metafopy.methods.blup.BlupResult):
     """Predicted random effects with standard errors and prediction intervals."""
 
 
-@singledispatch
-def ranef(res: Any, *args: Any, **kwargs: Any) -> RanefResult:
-    """BLUPs of the random effects for a fitted model; see :func:`_ranef_rma_uni`."""
-    raise TypeError(f'ranef() not implemented for {type(res).__name__}')
+@functools.singledispatch
+def ranef(res: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> RanefResult:
+    """BLUPs of the random effects for a fitted model; see :func:`_ranef_rma_uni`.
+
+    Raises:
+        metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
+    """
+    raise metafopy.errors.ArgumentError(f'ranef() not implemented for {type(res).__name__}')
 
 
 @ranef.register
-def _ranef_rma_uni(
-    res: RMAResult,
+def ranef_rma_uni(
+    res: metafopy.models.rma_uni.RMAResult,
     level: float | None = None,
     digits: int | None = None,
-    transf: Transf | None = None,
-    targs: Any = None,
+    transf: metafopy.methods.blup.Transf | None = None,
+    targs: typing.Any = None,
     *,
-    na_action: NAAction = 'omit',
+    na_action: metafopy.methods.blup.NAAction = 'omit',
 ) -> RanefResult:
     """BLUPs of the random effects of an ``rma.uni`` fit (arguments as in :func:`metafopy.methods.blup.blup`)."""
-    out = shrinkage_predictions(res, 'ranef', level, digits, transf, targs, na_action)
+    out = metafopy.methods.blup.shrinkage_predictions(res, 'ranef', level, digits, transf, targs, na_action)
     return RanefResult(pred=out.pred, se=out.se, pi_lb=out.pi_lb, pi_ub=out.pi_ub, slab=out.slab, digits=out.digits, transf=out.transf)
