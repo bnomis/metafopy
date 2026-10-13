@@ -177,7 +177,18 @@ def test_experimental_measures_need_their_data() -> None:
 
 # -- predict, ranef -------------------------------------------------------------------------------------------------
 
-PREDICT_TOLERANCE = {'al': 1e-4, 'el': 1e-3, 'irln': 1e-4, 'or': 1e-3, 'pln': 1e-3, 'plo': 1e-4, 'plo_mod': 1e-4, 'rr_mod': 1e-3, 'rs': 2e-2, 'or_mod_newmods_level': 1e-5}
+PREDICT_TOLERANCE = {
+    'al': 1e-4,
+    'el': 1e-3,
+    'irln': 1e-4,
+    'or': 1e-3,
+    'pln': 1e-3,
+    'plo': 1e-4,
+    'plo_mod': 1e-4,
+    'rr_mod': 1e-3,
+    'rs': 2e-2,
+    'or_mod_newmods_level': 1e-5,
+}
 PREDICT_EXACT = 1e-6
 
 
