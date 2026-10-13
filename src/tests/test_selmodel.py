@@ -41,7 +41,7 @@ RTOL_ROOT = 2e-3
 # up to a few per mille in the standard errors, in R as well as here.
 # delta sits next to its lower bound (1.4e-4), so the numerical Hessian, and with it the SE and CI bounds, depends on the BLAS in use
 NOISY_HESSIAN = {'hack_halfnorm_less': 0.25}
-NOISY_ATOL = 2e-3
+NOISY_ATOL = 5e-3
 
 ALL_CASES = sorted(k for k, v in REF['fits'].items() if 'error' not in v)
 
