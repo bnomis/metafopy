@@ -101,6 +101,7 @@ def predict_rma_uni(
         raise metafopy.errors.InputError('predict() is not supported for fits made robust with club_sandwich=True.')
     return location_prediction(
         LocationModel(
+            k=x.k,
             p=x.p,
             int_only=x.int_only,
             int_incl=x.int_incl,
@@ -145,6 +146,7 @@ def predict_rma_glmm(
     labels = tuple(s for s, ok in zip(x.slab, x.tables.not_na, strict=True) if ok)
     return location_prediction(
         LocationModel(
+            k=x.k,
             p=x.p,
             int_only=x.int_only,
             int_incl=x.int_incl,
@@ -169,6 +171,7 @@ def predict_rma_glmm(
 class LocationModel:
     """What ``predict.rma`` needs from a model with a single ``tau2`` (``rma.uni`` or ``rma.glmm``)."""
 
+    k: int
     p: int
     int_only: bool
     int_incl: bool

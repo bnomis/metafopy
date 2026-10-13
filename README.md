@@ -21,8 +21,9 @@ and `PLO`/`IRLN` for proportions and rates) are available. `rma_mh` and
 `rma_peto` match metafor to 1e-8. `rma_glmm` matches the fixed-effects and
 `IRR` fits to machine precision and the mixed models to about 1e-3 (R's
 `lme4::glmer` stops at a loose optimiser tolerance; metafopy fits to the same or a
-slightly better optimum). `rma_glmm` does not port the experimental measures `PR`,
-`RR`, `RD` and `PLN`.
+slightly better optimum). The experimental measures `PR`, `RR`, `RD` and `PLN` are
+ported too (lme4's loose convergence means mixed fits agree with R only to 2e-3 to 1e-1);
+`predict` works for `rma_glmm` fits.
 
 `rma_mv` fits multivariate and multilevel models (all variance-covariance structures
 of metafor, known correlation matrices via `R=`, `sparse=True`, `dfs='contain'`) and
@@ -48,8 +49,8 @@ ported.
 parametric variants of metafor (`beta`, `halfnorm`, `negexp`, `logistic`, `power`, `negexppow`,
 `stepfun`, `stepcon`, `trunc`) to an `rma_uni` fit, with Wald and likelihood-ratio tests,
 `predict`, `confint`, `profile`, `anova` and `plot_selmodel`. Estimates match metafor to
-about 1e-7 and standard errors to 1e-4 (numerical Hessian); `stepcon` is not validated
-against R and `confint`/`profile` ignore metafor's parallel options.
+about 1e-7 and standard errors to 1e-4 (numerical Hessian); `stepcon` is validated against R
+(see `docs/differences.md` for the `LRT.tau2` caveat) and `profile` takes metafor's parallel options.
 
 ```python
 import numpy as np
