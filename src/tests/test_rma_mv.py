@@ -293,3 +293,84 @@ def test_errors() -> None:
         konst(sigma2=[0.1, 0.1, 0.1])
     with pytest.raises(metafopy.errors.InputError, match="cannot use ':'"):
         konst(random='~ 1 | district:school')
+
+
+def kon_predict_model(test: str = 'z') -> metafopy.RMAMVResult:
+    return metafopy.rma_mv('yi', 'vi', mods='~ I(year - 1990)', random='~ 1 | district/school', data=kon(), test=test)
+
+
+@pytest.mark.parametrize(('key', 'test', 'newmods'), [('predict_kon', 'z', [-5, 0, 5]), ('predict_kon_t', 't', [-5, 0, 5]), ('predict_kon_fitted', 'z', None)])
+def test_predict(key: str, test: str, newmods: list[int] | None) -> None:
+    ref = REF[key]
+    pr = kon_predict_model(test).predict(newmods)
+    for field in ('pred', 'se', 'ci_lb', 'ci_ub', 'pi_lb', 'pi_ub'):
+        if field in ref:
+            vector(getattr(pr, field), ref[field], f'{key} {field}', rtol=1e-5, atol=1e-8)
+
+
+def test_anova_lrt() -> None:
+    ref = REF['anova_lrt']
+    m0 = metafopy.rma_mv('yi', 'vi', random='~ 1 | district/school', data=kon(), method='ML')
+    m1 = metafopy.rma_mv('yi', 'vi', mods='~ I(year - 1990)', random='~ 1 | district/school', data=kon(), method='ML')
+    out = m0.anova(m1)
+    assert isinstance(out, metafopy.methods.anova.MVLRTResult)
+    vector(out.LRT, ref['LRT'], 'LRT', rtol=1e-5)
+    vector(out.pval, ref['pval'], 'pval', rtol=1e-4)
+    vector(out.fit_stats_full, ref['fit_stats_f'], 'fit_stats_f', rtol=1e-5)
+    vector(out.fit_stats_reduced, ref['fit_stats_r'], 'fit_stats_r', rtol=1e-5)
+    assert (out.df_full, out.df_reduced) == tuple(ref['parms'])
+    assert refutil.r_print(str(out)).strip() == refutil.r_print(ref['print']).strip()
+    assert metafopy.methods.anova.anova(m1, m0).LRT == out.LRT
+
+
+def test_anova_wald() -> None:
+    ref = REF['anova_wald']
+    out = kon_predict_model().anova(btt=[1])
+    vector(out.QM, ref['QM'], 'QM', rtol=1e-5)
+    vector(out.QMp, ref['QMp'], 'QMp', rtol=1e-5)
+    assert refutil.r_print(str(out)).strip() == refutil.r_print(ref['print']).strip()
+
+
+def test_fitstats() -> None:
+    vector(kon_predict_model().fitstats(), REF['fitstats'], 'fitstats', rtol=1e-5)
+
+
+def ci_model(name: str) -> metafopy.RMAMVResult:
+    if name == 'kon':
+        return metafopy.rma_mv('yi', 'vi', random='~ 1 | district/school', data=kon())
+    if name == 'ass':
+        return metafopy.rma_mv('yi', 'vi', random=['~ 1 | study', '~ 1 | esid'], data=ass())
+    return berkey(mods='~ 0 + outcome', random='~ outcome | trial', struct=name.removeprefix('ber_'))
+
+
+CI_CASES = {
+    'ci_kon_sigma2_1': ('kon', {'sigma2': 0}),
+    'ci_kon_sigma2_2': ('kon', {'sigma2': 1}),
+    'ci_kon_level90': ('kon', {'sigma2': 0, 'level': 90}),
+    'ci_ber_tau2_1': ('ber_UN', {'tau2': 0}),
+    'ci_ber_rho': ('ber_UN', {'rho': 0}),
+    'ci_ber_cs_tau2': ('ber_CS', {'tau2': 0}),
+    'ci_ber_cs_rho': ('ber_CS', {'rho': 0}),
+    'ci_ass_sigma2_1': ('ass', {'sigma2': 0}),
+    'ci_ass_sigma2_2': ('ass', {'sigma2': 1}),
+}
+
+
+@pytest.mark.parametrize('key', sorted(CI_CASES))
+def test_confint_random(key: str) -> None:
+    name, kwargs = CI_CASES[key]
+    out = ci_model(name).confint(**kwargs)
+    assert out.random is not None
+    vector(out.random.to_numpy(), numpy.array(REF[key]['random']).reshape(-1), key, rtol=2e-4, atol=1e-5)
+
+
+def test_confint_fixed() -> None:
+    out = ci_model('kon').confint(fixed=True)
+    assert out.fixed is not None
+    vector(out.fixed.to_numpy(), numpy.array(REF['ci_kon_fixed']['fixed']).reshape(-1), 'fixed', rtol=1e-5)
+
+
+def test_confint_all_components() -> None:
+    out = ci_model('kon').confint()
+    assert isinstance(out, list)
+    assert len(out) == 2
