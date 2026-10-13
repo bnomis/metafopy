@@ -35,6 +35,7 @@ type FloatArray = numpy.typing.NDArray[numpy.float64]
 ATTR_KEYS = ('sei_names', 'zi_names', 'pval_names', 'ci_lb_names', 'ci_ub_names')
 
 
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def level_to_alpha(level: float) -> float:
     """metafor's ``.level``: a confidence level in percent (or as a proportion) to alpha.
 

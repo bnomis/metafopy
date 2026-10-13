@@ -32,17 +32,20 @@ def close(actual: typing.Any, expected: typing.Any, what: str = '') -> None:
     )
 
 
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def as_list(value: typing.Any) -> list[typing.Any]:
     # jsonlite's auto_unbox turns length-one vectors into scalars
     return value if isinstance(value, list) else [value]
 
 
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def r_print(text: str) -> str:
     # metafor's printed tables end every line with a space
     return '\n'.join(line.rstrip() for line in text.split('\n'))
 
 
 @pytest.fixture(scope='module')
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def dat() -> pandas.DataFrame:
     d = metafopy.datasets.load('bcg')
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists

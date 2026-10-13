@@ -38,11 +38,11 @@ def fmt_pval(p: float, digits: int = 4) -> str:
 
 
 def signif_stars(p: float) -> str:
-    """R's default significance codes: ``***`` < .001 < ``**`` < .01 < ``*`` < .05 < ``.`` < .1."""
+    """R's default significance codes (``symnum`` with right-closed intervals): ``***`` <= .001 < ``**`` <= .01 < ``*`` <= .05 < ``.`` <= .1."""
     if math.isnan(p):
         return ''
     for cut, star in ((0.001, '***'), (0.01, '**'), (0.05, '*'), (0.1, '.')):
-        if p < cut:
+        if p <= cut:
             return star
     return ''
 

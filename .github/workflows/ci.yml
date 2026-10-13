@@ -29,4 +29,4 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - run: uv sync --locked
-      - run: uv run pytest --cov --cov-report=term-missing
+      - run: uv run pytest --mpl --cov --cov-report=term-missing

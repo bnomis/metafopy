@@ -14,6 +14,7 @@ import collections.abc
 import dataclasses
 import math
 import sys
+import typing
 
 import metafopy.errors
 
@@ -107,8 +108,13 @@ def uniroot(
     *,
     tol: float = DEFAULT_TOL,
     maxiter: int = 1000,
+    extend_int: typing.Literal['no', 'yes', 'downX', 'upX'] = 'no',
 ) -> RootResult:
     """Find a root of ``f`` in ``[lower, upper]`` as R's ``uniroot()`` does.
+
+    ``extend_int`` is R's ``extendInt``: the interval is widened (by steps that double
+    in size) until ``f`` changes sign, in any direction (``'yes'``) or given that ``f``
+    is increasing (``'upX'``) or decreasing (``'downX'``).
 
     Raises ``ValueError`` when ``f(lower)`` and ``f(upper)`` have the same sign
     (R: "f() values at end points not of opposite sign").
@@ -120,15 +126,68 @@ def uniroot(
         raise metafopy.errors.InputError('lower < upper is not fulfilled')
     f_lower = f(lower)
     f_upper = f(upper)
-    if math.isnan(f_lower) or math.isnan(f_upper):
-        raise metafopy.errors.InputError('f() value at an end point is NA')
-    if f_lower * f_upper > 0:
-        raise metafopy.errors.InputError('f() values at end points not of opposite sign')
-    root, iterations, prec = zeroin2(f, lower, upper, f_lower, f_upper, tol, maxiter)
+    if math.isnan(f_lower):
+        raise metafopy.errors.InputError('f.lower = f(lower) is NA')
+    if math.isnan(f_upper):
+        raise metafopy.errors.InputError('f.upper = f(upper) is NA')
+    sig = {'yes': None, 'downX': -1, 'no': 0, 'upX': 1}[extend_int]
+    big = sys.float_info.max
+    low_t = max(min(f_lower, big), -big)
+    upp_t = max(min(f_upper, big), -big)
+    do_x = low_t * upp_t > 0 if sig is None else (sig * low_t > 0 or sig * upp_t < 0)
+    it = 0
+    if do_x:
+        if sig is None:
+            delta = [0.01 * max(1e-4, abs(lower)), 0.01 * max(1e-4, abs(upper))]
+            while f_lower * f_upper > 0 and (math.isfinite(lower) or math.isfinite(upper)):
+                it += 1
+                if it > maxiter:
+                    raise metafopy.errors.InputError(f'no sign change found in {it - 1} iterations')
+                if math.isfinite(lower):
+                    old_lower, old_f = lower, f_lower
+                    lower -= delta[0]
+                    f_lower = f(lower)
+                    if math.isnan(f_lower):
+                        lower, f_lower = old_lower, old_f
+                        delta[0] /= 4
+                if math.isfinite(upper):
+                    old_upper, old_f = upper, f_upper
+                    upper += delta[1]
+                    f_upper = f(upper)
+                    if math.isnan(f_upper):
+                        upper, f_upper = old_upper, old_f
+                        delta[1] /= 4
+                delta = [2 * d for d in delta]
+        else:
+            step = 0.01 * max(1e-4, abs(lower))
+            while sig * f_lower > 0:
+                it += 1
+                if it > maxiter:
+                    raise metafopy.errors.InputError(f'no sign change found in {it - 1} iterations')
+                lower -= step
+                f_lower = f(lower)
+                step *= 2
+            step = 0.01 * max(1e-4, abs(upper))
+            while sig * f_upper < 0:
+                it += 1
+                if it > maxiter:
+                    raise metafopy.errors.InputError(f'no sign change found in {it - 1} iterations')
+                upper += step
+                f_upper = f(upper)
+                step *= 2
+    if sign(f_lower) * sign(f_upper) > 0:
+        raise metafopy.errors.InputError(
+            'did not succeed extending the interval endpoints for f(lower) * f(upper) <= 0' if do_x else 'f() values at end points not of opposite sign'
+        )
+    root, iterations, prec = zeroin2(f, lower, upper, max(min(f_lower, big), -big), max(min(f_upper, big), -big), tol, maxiter)
     return RootResult(
         root=root,
         f_root=f(root),
-        iterations=iterations,
+        iterations=iterations + it if do_x else iterations,
         estim_prec=prec,
         converged=iterations >= 0,
     )
+
+
+def sign(x: float) -> int:
+    return (x > 0) - (x < 0)

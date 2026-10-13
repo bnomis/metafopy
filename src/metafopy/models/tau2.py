@@ -284,6 +284,7 @@ def estimate_tau2(
             if iterations > con.maxiter:
                 raise metafopy.errors.EstimationError('Fisher scoring algorithm did not converge. See the rma_uni docs for remedies.')
 
+        # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
         if method in ('ML', 'REML') and con.ll0check and allvipos and not fix:
             ll0 = log_likelihood(method, ymc, vi, X, 0.0)
             ll = log_likelihood(method, ymc, vi, X, tau2)

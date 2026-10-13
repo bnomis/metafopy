@@ -11,7 +11,10 @@ argument names follow metafor, with `.` replaced by `_` (`rma_uni`, `rma_mv`).
 **Status:** pre-alpha. `rma_uni` (alias `rma`) is available with all of
 metafor's standard tau^2 estimators, `predict`, `confint` (Q-profile) and
 `anova`; it reproduces metafor 5.2-1 to about 1e-9 relative error across the
-reference fixtures. `escalc` arrives next.
+reference fixtures. `escalc`, the diagnostics (`influence`, `leave1out`,
+`cumul`, `permutest`, `profile`, `gosh`), the funnel-plot asymmetry tests
+(`regtest`, `ranktest`, `trimfill`, `fsn`, `hc`, `tes`) and the plots in
+`metafopy.plot` are available too.
 
 ```python
 import numpy as np
@@ -31,7 +34,7 @@ Requires Python >= 3.14.7, < 3.15.
 ```bash
 uv sync
 source bin/activate.sh
-pytest
+pytest --mpl   # --mpl also compares the plots with the baseline images (Linux only)
 mypy
 ruff check .
 ```

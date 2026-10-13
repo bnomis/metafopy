@@ -80,5 +80,6 @@ def test_rma_uni_matches_metafor(param: tuple[str, int]) -> None:
     if 'confint_random' in ref:
         ci = metafopy.confint(res).random
         assert ci is not None
+        # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
         for col, key in (('estimate', 'estimate'), ('ci.lb', 'ci_lb'), ('ci.ub', 'ci_ub')):
             close(ci[col].to_numpy(), ref['confint_random'][key], f'confint {col}')

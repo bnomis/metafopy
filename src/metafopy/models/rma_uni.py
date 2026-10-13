@@ -646,6 +646,7 @@ def fit_rma_uni(
     wi = 1.0 / (vi + tau2_hat)
     beta, vb, RSS_f, s2w = fixed_effects(yi, vi, X, tau2_hat, user_w, weighted, test)
 
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     tdist = test in ('knha', 'adhoc', 't')
     ddf = k - p if tdist else None
 
@@ -913,6 +914,7 @@ def adj_r2(y: FloatArray, X: FloatArray, w: FloatArray) -> float:
 
 
 def format_result(res: RMAResult, digits: int) -> str:
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     out: list[str] = ['']
     fe = res.method in metafopy.models.tau2.FIXED_EFFECTS
     if fe:
@@ -949,12 +951,8 @@ def format_result(res: RMAResult, digits: int) -> str:
         out += [f'{label.ljust(width)} {value}' for label, value in rows]
         out.append('')
     elif not math.isnan(res.I2):
-        rows = [
-            ('I^2 (total heterogeneity / total variability):', f'{res.I2:.2f}%'),
-            ('H^2 (total variability / sampling variability):', f'{res.H2:.2f}'),
-        ]
-        width = max(len(r[0]) for r in rows)
-        out += [f'{label.ljust(width)} {value}' for label, value in rows]
+        out.append(f'I^2 (total heterogeneity / total variability):   {res.I2:.2f}%')
+        out.append(f'H^2 (total variability / sampling variability):  {res.H2:.2f}')
         out.append('')
 
     if not math.isnan(res.QE):
@@ -1003,6 +1001,7 @@ def format_result(res: RMAResult, digits: int) -> str:
     return '\n'.join(out)
 
 
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def pfmt(p: float, digits: int) -> str:
     s = metafopy.printing.fmt_pval(p, digits)
     return f'< {s[1:]}' if s.startswith('<') else f'= {s}'

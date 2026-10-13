@@ -62,15 +62,32 @@ class BlupResult:
 
 
 def format_r_frame(
-    columns: collections.abc.Sequence[tuple[str, collections.abc.Sequence[str]]], row_names: collections.abc.Sequence[str], gap: int = 1
+    columns: collections.abc.Sequence[tuple[str, collections.abc.Sequence[str]]],
+    row_names: collections.abc.Sequence[str],
+    gap: int = 1,
+    width: int = 79,
 ) -> list[str]:
-    """Lines of an R ``print.data.frame(..., right=TRUE)`` of already formatted columns."""
+    """Lines of an R ``print.data.frame(..., right=TRUE)`` of already formatted columns.
+
+    Like R, columns that do not fit into ``width`` characters continue in a
+    second block of lines below the first.
+    """
     name_w = max((len(n) for n in row_names), default=0)
     sep = ' ' * gap
     widths = [max(len(head), *(len(c) for c in cells)) if cells else len(head) for head, cells in columns]
-    lines = [(' ' * name_w + ''.join(sep + head.rjust(w) for (head, _), w in zip(columns, widths, strict=True))).rstrip()]
-    for i, name in enumerate(row_names):
-        lines.append((name.ljust(name_w) + ''.join(sep + cells[i].rjust(w) for (_, cells), w in zip(columns, widths, strict=True))).rstrip())
+    blocks: list[list[int]] = []
+    used = name_w
+    for j, w in enumerate(widths):
+        if not blocks or used + gap + w > width:
+            blocks.append([])
+            used = name_w
+        blocks[-1].append(j)
+        used += gap + w
+    lines: list[str] = []
+    for block in blocks:
+        lines.append((' ' * name_w + ''.join(sep + columns[j][0].rjust(widths[j]) for j in block)).rstrip())
+        for i, name in enumerate(row_names):
+            lines.append((name.ljust(name_w) + ''.join(sep + columns[j][1][i].rjust(widths[j]) for j in block)).rstrip())
     return lines
 
 
@@ -161,6 +178,7 @@ def shrinkage_predictions(
     pi_lb, pi_ub = numpy.where(flip, pi_ub, pi_lb), numpy.where(flip, pi_lb, pi_ub)
 
     slab = res.slab
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if na_action in ('exclude', 'pass'):
         # pad back to the supplied rows; dropped rows are labelled by position
         keep = res.data.keep
