@@ -151,7 +151,9 @@ def ax_ticks(lo: float, hi: float, nint: int = 5) -> FloatArray:
             mod += 1
         if mod:
             ndiv = nu - ns
-    return numpy.linspace(ns * unit, nu * unit, ndiv + 1)
+    at = numpy.linspace(ns * unit, nu * unit, ndiv + 1)
+    at[numpy.abs(at) < abs(at[-1] - at[0]) * 1e-14] = 0.0  # as R's CreateAtVector: a tick at zero is exactly zero, not 1e-17
+    return at
 
 
 def usr_range(lo: float, hi: float) -> tuple[float, float]:

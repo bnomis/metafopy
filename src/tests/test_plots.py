@@ -18,12 +18,15 @@ import scipy.stats
 
 import metafopy
 import metafopy.bias.trimfill
+import metafopy.datasets
+import metafopy.errors
 import metafopy.plot
 import metafopy.plot.baujat
 import metafopy.plot.draw
 import metafopy.plot.forest
 import metafopy.plot.funnel
 import metafopy.plot.labbe
+import metafopy.plot.plain
 import metafopy.plot.qqnorm
 import metafopy.plot.radial
 import metafopy.plot.rutils
@@ -727,6 +730,64 @@ def test_plot_infl_missing_values_match_metafor(dat: pandas.DataFrame, ax: matpl
     _, axes = matplotlib.pyplot.subplots()
     r = metafopy.plot.plot_infl(metafopy.influence(res, na_action='exclude'), plotinf=[1, 2, 6, 8], na_action='exclude', ax=axes)
     check_infl(r, plotref.PLOTS['infl_na_exclude'], 'infl_na_exclude')
+    matplotlib.pyplot.close('all')
+
+
+def test_plot_infl_mfrow(fits: dict[str, metafopy.RMAResult], ax: matplotlib.axes.Axes) -> None:
+    r = metafopy.plot.plot_infl(metafopy.influence(fits['re']), plotinf=[1, 2, 3], mfrow=(3, 1), ax=ax)
+    assert len({round(a.get_position().x0, 6) for a in r.axes}) == 1
+    assert len({round(a.get_position().y0, 6) for a in r.axes}) == 3
+    with pytest.raises(metafopy.errors.InputError, match='too few panels'):
+        metafopy.plot.plot_infl(metafopy.influence(fits['re']), mfrow=(1, 2))
+
+
+def test_plot_infl_text_size_follows_the_layout(fits: dict[str, metafopy.RMAResult], ax: matplotlib.axes.Axes) -> None:
+    base = float(matplotlib.rcParams['font.size'])
+    r = metafopy.plot.plot_infl(metafopy.influence(fits['re']), ax=ax)
+    assert r.axes[0].title.get_fontsize() == pytest.approx(base * 0.66 * 1.2)
+    _, single = matplotlib.pyplot.subplots()
+    r = metafopy.plot.plot_infl(metafopy.influence(fits['re']), plotinf=[1], ax=single)
+    assert r.axes[0].title.get_fontsize() == pytest.approx(base * 1.2)
+    matplotlib.pyplot.close('all')
+
+
+def test_ax_ticks_zero_is_exact() -> None:
+    at = metafopy.plot.rutils.ax_ticks(-0.3, 0.5)
+    assert 0.0 in at
+    assert metafopy.plot.rutils.rformat(at) == ['-0.2', '0.0', '0.2', '0.4']
+
+
+def test_overlapping_x_labels_are_hidden(ax: matplotlib.axes.Axes) -> None:
+    n = 160
+    pos = numpy.arange(1, n + 1, dtype=float)
+    metafopy.plot.plain.plain_plot(ax, (1.0, float(n)), (0.0, 1.0), xat=pos, xlabels=[str(i) for i in range(1, n + 1)])
+    shown = [t.get_text() for t in ax.get_xticklabels()]
+    assert shown[0] == '1'
+    assert 10 < len(shown) < n / 3
+    assert len(ax.get_xticks()) == n  # the ticks stay
+    _, few = matplotlib.pyplot.subplots()
+    metafopy.plot.plain.plain_plot(few, (1.0, 13.0), (0.0, 1.0), xat=pos[:13], xlabels=[str(i) for i in range(1, 14)])
+    assert len(few.get_xticklabels()) == 13
+    matplotlib.pyplot.close('all')
+
+
+def test_addpoly_rma_mv_equals_the_numbers(ax: matplotlib.axes.Axes) -> None:
+    dat = metafopy.datasets.load('dat.assink2016')
+    v = metafopy.vcalc(vi=dat['vi'], cluster=dat['study'], obs=dat['esid'], rho=0.6)
+    res = metafopy.rma_mv(yi='yi', V=v, random='~ 1 | study/esid', data=dat)
+    pr = metafopy.predict(res)
+    _, other = matplotlib.pyplot.subplots()
+    for axes in (ax, other):
+        metafopy.plot.forest(dat['yi'], dat['vi'], ax=axes, xlim=(-4, 4))
+    metafopy.plot.addpoly(res, ax=ax, row=-1.5, predstyle='bar', mlab='Pooled')
+    metafopy.plot.addpoly(pr.pred, ci_lb=pr.ci_lb, ci_ub=pr.ci_ub, pi_lb=pr.pi_lb, pi_ub=pr.pi_ub, ax=other, rows=-1.5, predstyle='bar', mlab='Pooled')
+    a, b = (metafopy.plot.draw.collect(axes) for axes in (ax, other))
+    assert len(a['rect']) == len(b['rect'])
+    for ra, rb in zip(a['rect'][-2:], b['rect'][-2:], strict=True):
+        numpy.testing.assert_allclose(
+            [ra.get_x(), ra.get_width(), ra.get_y() + ra.get_height() / 2], [rb.get_x(), rb.get_width(), rb.get_y() + rb.get_height() / 2]
+        )
+    assert [t.get_text() for t in a['text']] == [t.get_text() for t in b['text']]
     matplotlib.pyplot.close('all')
 
 

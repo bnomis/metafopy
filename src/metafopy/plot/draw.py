@@ -6,6 +6,7 @@ plot can be read back (see :func:`collect`); this is how the tests compare the d
 """
 
 import collections.abc
+import math
 import re
 import types
 import typing
@@ -17,6 +18,7 @@ import matplotlib.colors
 import matplotlib.lines
 import matplotlib.patches
 import matplotlib.text
+import matplotlib.textpath
 import matplotlib.transforms
 import numpy
 import numpy.typing
@@ -488,6 +490,34 @@ def grid(ax: matplotlib.axes.Axes, xat: numpy.typing.ArrayLike, yat: numpy.typin
         artist_meta(ln, h=float(v))
 
 
+def overlapping_labels(
+    ax: matplotlib.axes.Axes,
+    at: numpy.ndarray,
+    labels: collections.abc.Sequence[str],
+    ux: tuple[float, float],
+    fontsize: float,
+) -> list[bool]:
+    """Which tick labels are left out because they would overlap: R's ``axis()`` skips a label that comes closer than an "m" to the previous
+    one drawn (half an "m" here; the ticks stay)."""
+    fig_width = ax.figure.bbox.width * 72.0 / ax.figure.dpi
+    points_per_unit = ax.get_position().width * fig_width / (ux[1] - ux[0])
+
+    def text_width(s: str) -> float:
+        return float(matplotlib.textpath.TextPath((0, 0), s, size=fontsize).get_extents().width) if s.strip() else 0.0
+
+    gap = text_width('M') / 2
+    hidden: list[bool] = []
+    previous_end = -math.inf
+    for x, label in zip(at, labels, strict=True):
+        half = text_width(label) / 2
+        centre = float(x) * points_per_unit
+        overlaps = centre - half < previous_end + gap
+        hidden.append(overlaps)
+        if not overlaps:
+            previous_end = centre + half
+    return hidden
+
+
 def plain_axes(
     ax: matplotlib.axes.Axes,
     ux: tuple[float, float],
@@ -499,6 +529,7 @@ def plain_axes(
     *,
     bty: str = 'o',
     cex_axis: float = 1.0,
+    thin_xlabels: bool = True,
 ) -> None:
     """The axes of R's ``plot()``: user coordinates ``ux``/``uy``, ticks at ``xat``/``yat`` (``None`` = no axis), and a box (``bty``)."""
     ax.set_xlim(ux)
@@ -520,7 +551,10 @@ def plain_axes(
         at = numpy.asarray(xat, dtype=float)
         ax.set_xticks(at)
         if xlabels is not None:
-            ax.set_xticklabels(list(xlabels), fontsize=base_fontsize() * cex_axis)
+            texts = ax.set_xticklabels(list(xlabels), fontsize=base_fontsize() * cex_axis)
+            if thin_xlabels:
+                for text, hide in zip(texts, overlapping_labels(ax, at, xlabels, ux, base_fontsize() * cex_axis), strict=True):
+                    text.set_visible(not hide)
         ax.tick_params(axis='x', length=4.0, labelsize=base_fontsize() * cex_axis)
     if yat is None:
         ax.set_yticks([])

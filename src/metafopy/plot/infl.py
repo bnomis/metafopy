@@ -39,6 +39,13 @@ class PlotInflResult:
     dfbs_axes: tuple[matplotlib.axes.Axes, ...] = ()
 
 
+def mfrow_cex(nrow: int, ncol: int) -> float:
+    """The factor by which R's ``par(mfrow = c(nrow, ncol))`` reduces the text size: 0.83 for 2 x 2 panels and 0.66 for more rows or columns."""
+    if nrow > 2 or ncol > 2:
+        return 0.66
+    return 0.83 if nrow == 2 and ncol == 2 else 1.0
+
+
 def n2mfrow(n: int) -> tuple[int, int]:
     """R's ``n2mfrow()``."""
     if n <= 3:
@@ -91,7 +98,9 @@ def panel(
     else:
         zi, infl, labs, n = zi_all, is_infl_all, ids, int(zi_all.shape[0])
     pos = numpy.arange(1, n + 1, dtype=float)
-    metafopy.plot.plain.plain_plot(ax, (1.0, float(n)), ylim, '', '', main, xaxt=True, yaxt=True, logy=logy, xat=pos, xlabels=labs)
+    metafopy.plot.plain.plain_plot(
+        ax, (1.0, float(n)), ylim, '', '', main, xaxt=True, yaxt=True, logy=logy, xat=pos, xlabels=labs, thin_xlabels=las not in (2, 3)
+    )
     if las in (2, 3):
         ax.tick_params(axis='x', labelrotation=90)
     for h, lty in hlines:
@@ -123,6 +132,7 @@ def plot_infl(
     *,
     ids: collections.abc.Iterable[int | str] | None = None,
     na_action: str = 'omit',
+    mfrow: tuple[int, int] | None = None,
     ax: matplotlib.axes.Axes | None = None,
 ) -> PlotInflResult:
     """Plot the case-deletion diagnostics returned by :func:`~metafopy.influence` (``plot.infl.rma.uni``).
@@ -133,7 +143,8 @@ def plot_infl(
     ``bg_infl``. ``slab_style`` chooses the labels of the x-axis (1 = ``ids``, 2 = study labels, 3 = abbreviated
     study labels); ``ids`` defaults to ``1..k``. ``na_action`` is ``'omit'`` (leave out studies with missing
     diagnostics) or ``'exclude'``/``'pass'`` (keep them, joining the other points with a line in ``col_na``).
-    The diagnostics are drawn into a grid of panels filling ``ax``; the DFBETAS are drawn on a new figure if the
+    The diagnostics are drawn into a grid of panels filling ``ax``, with the number of rows and columns of metafor's default
+    (``par(mfrow = ...)``) unless ``mfrow=(rows, columns)`` is given, e.g. ``(8, 1)`` for one column of panels; the DFBETAS are drawn on a new figure if the
     diagnostics are also plotted (or ``dfbsnew`` is true), as metafor starts a new page for them.
 
     Returns a :class:`PlotInflResult` with the axes.
@@ -235,12 +246,15 @@ def plot_infl(
 
     axes_inf: list[matplotlib.axes.Axes] = []
     if which_inf:
-        nr, nc = MFROW[len(which_inf)]
+        nr, nc = MFROW[len(which_inf)] if mfrow is None else mfrow
+        if nr * nc < len(which_inf):
+            raise metafopy.errors.InputError("Argument 'mfrow' has too few panels for the diagnostics.")
         grid = metafopy.plot.draw.subaxes(area, nr, nc, hspace=0.6, wspace=0.3)
         flat = [a for row in grid for a in row]
-        for a, which in zip(flat, which_inf, strict=False):
-            draw([a], which)
-            axes_inf.append(a)
+        with matplotlib.rc_context({'font.size': metafopy.plot.draw.base_fontsize() * mfrow_cex(nr, nc)}):
+            for a, which in zip(flat, which_inf, strict=False):
+                draw([a], which)
+                axes_inf.append(a)
         for a in flat[len(which_inf) :]:
             a.set_axis_off()
     axes_dfbs: list[matplotlib.axes.Axes] = []
@@ -251,19 +265,20 @@ def plot_infl(
         grid = metafopy.plot.draw.subaxes(target, nr, nc, hspace=0.6, wspace=0.3)
         flat = [a for row in grid for a in row]
         names = list(x.coef_names)
-        for a, j in zip(flat, which_dfbs, strict=False):
-            zi = numpy.asarray(x.dfbs[:, j - 1], dtype=float)
-            panel(
-                a,
-                zi,
-                infl,
-                id_list,
-                main=f'dfbs:  {names[j - 1]}',
-                ylim=(float(numpy.nanmin(zi)) * 1.05, float(numpy.nanmax(zi)) * 1.05),
-                hlines=[(0.0, 'dashed'), (1.0, 'dotted'), (-1.0, 'dotted')],
-                **common,
-            )
-            axes_dfbs.append(a)
+        with matplotlib.rc_context({'font.size': metafopy.plot.draw.base_fontsize() * mfrow_cex(nr, nc)}):
+            for a, j in zip(flat, which_dfbs, strict=False):
+                zi = numpy.asarray(x.dfbs[:, j - 1], dtype=float)
+                panel(
+                    a,
+                    zi,
+                    infl,
+                    id_list,
+                    main=f'dfbs:  {names[j - 1]}',
+                    ylim=(float(numpy.nanmin(zi)) * 1.05, float(numpy.nanmax(zi)) * 1.05),
+                    hlines=[(0.0, 'dashed'), (1.0, 'dotted'), (-1.0, 'dotted')],
+                    **common,
+                )
+                axes_dfbs.append(a)
         for a in flat[len(which_dfbs) :]:
             a.set_axis_off()
     return PlotInflResult(tuple(axes_inf), tuple(axes_dfbs))
