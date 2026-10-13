@@ -80,6 +80,12 @@ wrappers <- list(
     rec_add("mtext", text = if (is.expression(text)) paste(deparse(text[[1]]), collapse = "") else chr(text), side = side, line = line, at = first(a$at), adj = first(a$adj))
     graphics::mtext(text, side, line, ...)
   },
+  pairs = function(x, ...) {
+    a <- list(...)
+    rec_add("pairs", nr = nrow(x), nc = ncol(x), colsum = num(colSums(x)), colhead = num(x[1, ]), pch = first(a$pch), cex = first(a$cex),
+            cols = if (is.character(a$col)) unique(a$col) else NULL, ncol = length(a$col), labels = if (is.expression(a$labels)) vapply(a$labels, function(l) paste(deparse(l), collapse = ""), "") else chr(a$labels))
+    graphics::pairs(x, ...)
+  },
   grid = function(...) {
     a <- list(...)
     rec_add("grid", col = chr(a$col), x = num(axTicks(1)), y = num(axTicks(2)))
@@ -88,7 +94,10 @@ wrappers <- list(
   plot = function(x, y = NULL, ...) {
     a <- list(...)
     rec_add("plot", xlim = num(a$xlim), ylim = num(a$ylim), xlab = if (is.null(a$xlab)) NULL else if (is.expression(a$xlab)) paste(deparse(a$xlab[[1]]), collapse = "") else chr(a$xlab),
-            ylab = if (is.null(a$ylab)) NULL else if (is.expression(a$ylab)) paste(deparse(a$ylab[[1]]), collapse = "") else chr(a$ylab))
+            ylab = if (is.null(a$ylab)) NULL else if (is.expression(a$ylab)) paste(deparse(a$ylab[[1]]), collapse = "") else chr(a$ylab),
+            xlab_expr = is.expression(a$xlab), ylab_expr = is.expression(a$ylab),
+            xdat = if (is.numeric(x)) vsum(x) else NULL, ydat = if (is.numeric(y)) vsum(y) else NULL,
+            pch = first(a$pch), cex = first(a$cex), cols = if (is.character(a$col)) unique(a$col) else NULL, ncol = length(a$col))
     graphics::plot(x, y, ...)
   }
 )
@@ -124,6 +133,7 @@ fradial.rma <- instrument(metafor:::radial.rma)
 fqqnorm.rma.uni <- instrument(metafor:::qqnorm.rma.uni)
 flabbe.rma <- instrument(metafor:::labbe.rma)
 fplot.infl.rma.uni <- instrument(metafor:::plot.infl.rma.uni)
+fplot.gosh.rma <- instrument(metafor:::plot.gosh.rma)
 fplot.profile.rma <- instrument(metafor:::plot.profile.rma)
 
 dat <- escalc(measure = "RR", ai = tpos, bi = tneg, ci = cpos, di = cneg, data = dat.bcg)
@@ -233,6 +243,87 @@ out$baujat_ee <- run(fbaujat.rma(res_ee, symbol = "slab", cex = 0.6, grid = "red
 out$baujat_mods <- run(fbaujat.rma(res_mods, symbol = 16, grid = FALSE, xlim = c(0, 12), ylim = c(0, 3)))
 out$baujat_symvec <- run(fbaujat.rma(res_mods, symbol = rep(c(1, 2, 19), length.out = 13), cex = 1.2))
 
+### radial -----------------------------------------------------------------------------------------------
+
+res_ee_nl <- res_ee
+out$radial_re <- run(fradial.rma(res))
+out$radial_ee_center <- run(fradial.rma(res_ee, center = TRUE, steps = 5, digits = 3L))
+out$radial_opts <- run(fradial.rma(res, xlim = c(0, 12), zlim = c(-6, 6), atz = c(-4, 0, 4), aty = c(-1.5, -1, 0, 0.5), transf = exp, level = 90, cex = 1.2, pch = 19, arc.res = c(60, 30)))
+out$radial_labels <- run(fradial.rma(res, xlab = "Precision", zlab = "Z", back = "gray90", col = "blue", bg = "red", cex.axis = 0.8, cex.lab = 1.1))
+
+### qqnorm -----------------------------------------------------------------------------------------------
+
+out$qqnorm_re <- run(fqqnorm.rma.uni(res, seed = 1234))
+out$qqnorm_stud <- run(fqqnorm.rma.uni(res_mods, type = "rstudent", seed = 42, label = TRUE, grid = TRUE, level = 90, reps = 300, pos = 24))
+out$qqnorm_bonf <- run(fqqnorm.rma.uni(res_ee, seed = 7, bonferroni = TRUE, smooth = FALSE, label = "out", envelope = "gray85", lty = c("dashed", "solid"), pch = 19, col = "blue"))
+out$qqnorm_label <- run(fqqnorm.rma.uni(res, seed = 99, label = 3, offset = 0.5, pos = 13, bass = 2, reps = 200))
+out$qqnorm_noenv <- run(fqqnorm.rma.uni(res_mods, envelope = FALSE, label = 2, pos = 4))
+
+### labbe ------------------------------------------------------------------------------------------------
+
+raw <- dat.bcg
+raw$label <- paste(raw$author, raw$year)
+raw$x1i <- raw$tpos; raw$t1i <- (raw$tpos + raw$tneg) / 100; raw$x2i <- raw$cpos; raw$t2i <- (raw$cpos + raw$cneg) / 100
+res_rr <- rma(ai = tpos, bi = tneg, ci = cpos, di = cneg, data = raw, measure = "RR", slab = label)
+res_or <- rma(ai = tpos, bi = tneg, ci = cpos, di = cneg, data = raw, measure = "OR", slab = label)
+res_rd <- rma(ai = tpos, bi = tneg, ci = cpos, di = cneg, data = raw, measure = "RD", slab = label)
+res_as <- rma(ai = tpos, bi = tneg, ci = cpos, di = cneg, data = raw, measure = "AS", slab = label)
+res_irr <- rma(x1i = x1i, t1i = t1i, x2i = x2i, t2i = t2i, data = raw, measure = "IRR", slab = label)
+res_ird <- rma(x1i = x1i, t1i = t1i, x2i = x2i, t2i = t2i, data = raw, measure = "IRD", slab = label)
+res_irsd <- rma(x1i = x1i, t1i = t1i, x2i = x2i, t2i = t2i, data = raw, measure = "IRSD", slab = label)
+out$labbe_rr <- run(flabbe.rma(res_rr))
+out$labbe_or_ci <- run(flabbe.rma(res_or, ci = TRUE, pi = TRUE, grid = TRUE, transf = exp, flip = TRUE, pch = 19, col = "blue", lty = c("dotted", "solid")))
+out$labbe_rd <- run(flabbe.rma(res_rd, plim = c(NA, 4, 1), ci = "gray80", lim = c(0, 0.2), xlab = "A", ylab = "B", add = 0.25))
+out$labbe_as <- run(flabbe.rma(res_as, psize = 1:13 / 4, pi = TRUE, to = "all", legend = TRUE))
+out$labbe_irr <- run(flabbe.rma(res_irr, xlim = c(-8, -2), ylim = c(-8, -2), grid = "red"))
+out$labbe_ird <- run(flabbe.rma(res_ird, ci = TRUE, bg = "yellow", plim = c(1, NA, 2)))
+out$labbe_irsd <- run(flabbe.rma(res_irsd, flip = TRUE, llim = c(-0.05, 0.1), transf = function(x) x * 100))
+
+### plot.profile -----------------------------------------------------------------------------------------
+
+pf <- profile(res, plot = FALSE, steps = 15, xlim = c(0.01, 0.9))
+out$profile_re <- run(fplot.profile.rma(pf, cline = TRUE))
+pf2 <- profile(res, plot = FALSE, steps = 9, xlim = c(0.4, 0.9), sqrt = TRUE)
+out$profile_sqrt <- run(fplot.profile.rma(pf2, refline = FALSE, pch = 17, ylim = c(-14, -12), cline = 0.1))
+pf3 <- profile(res_mods, plot = FALSE, steps = 8, xlim = c(0.01, 0.5), exp = TRUE)
+out$profile_exp <- run(fplot.profile.rma(pf3, xlab = "Tau squared", ylab = "L", main = "Title", xlim = c(0, 0.6), cline = TRUE))
+
+### plot.infl --------------------------------------------------------------------------------------------
+
+inf_re <- influence(res)
+out$infl_all <- run(fplot.infl.rma.uni(inf_re))
+out$infl_sub <- run(fplot.infl.rma.uni(inf_re, plotinf = c(1, 3, 4, 7), logcov = FALSE, las = 2, bg = "blue", bg.infl = "green", slab.style = 2))
+inf_mods <- influence(res_mods)
+out$infl_dfbs <- run(fplot.infl.rma.uni(inf_mods, plotinf = FALSE, plotdfbs = TRUE))
+out$infl_dfbs_only2 <- run(fplot.infl.rma.uni(inf_mods, plotinf = c(2, 5), plotdfbs = 2, pch = 19))
+dat_na <- dat; dat_na$yi[3] <- NA; dat_na$ablat[7] <- NA
+res_na <- rma(yi, vi, mods = ~ ablat, data = dat_na, slab = label)
+inf_na <- influence(res_na)
+out$infl_na_omit <- run(fplot.infl.rma.uni(inf_na, plotinf = c(1, 2, 6)))
+options(na.action = "na.exclude")
+inf_na_ex <- influence(res_na)
+out$infl_na_exclude <- run(fplot.infl.rma.uni(inf_na_ex, plotinf = c(1, 2, 6, 8)))
+options(na.action = "na.omit")
+
+### plot.gosh --------------------------------------------------------------------------------------------
+
+dat8 <- dat[1:8, ]
+res8 <- rma(yi, vi, data = dat8, slab = label)
+res8m <- rma(yi, vi, mods = ~ ablat, data = dat8, slab = label)
+g8 <- gosh(res8, progbar = FALSE)
+g8m <- gosh(res8m, progbar = FALSE)
+out$gosh_info <- list(k = nrow(g8$res), km = nrow(g8m$res), cols = colnames(g8m$res), est = num(g8$res[, "estimate"]), I2 = num(g8$res[, "I2"]))
+out$gosh_default <- run(fplot.gosh.rma(g8))
+out$gosh_opts <- run(fplot.gosh.rma(g8, het = "tau2", out = 3, hh = c(0.2, 0.4), breaks = c(6, 10), adjust = c(1, 2), lwd = c(1, 0), alpha = c(0.3, 0.5, 0.8), cex = 1.5, pch = 1,
+                                    border = c("gray", "black"), labels = c("Est", "T2")))
+out$gosh_nox <- run(fplot.gosh.rma(g8, het = "QE", xhist = FALSE, col = "blue", xlim = c(-1.5, 0.5), trim = 0.05))
+out$gosh_noy <- run(fplot.gosh.rma(g8, het = "H2", yhist = FALSE, breaks = "Scott"))
+out$gosh_nohist <- run(fplot.gosh.rma(g8, xhist = FALSE, yhist = FALSE, ylim = c(0, 100)))
+out$gosh_fd <- run(fplot.gosh.rma(g8, het = "tau", breaks = list("FD", 12), out = 2, col = c("red", "green")))
+out$gosh_pairs <- run(fplot.gosh.rma(g8m))
+out$gosh_pairs_opts <- run(fplot.gosh.rma(g8m, het = "H2", out = 2, alpha = 0.4, breaks = 7, adjust = 2, lwd = 1, trim = list(0.02, c(0.1, 0.05), 0), border = "red", hh = 0.5, labels = c("H", "a", "b")))
+
 out$meta <- list(metafor = as.character(packageVersion("metafor")), R = R.version.string)
+for (nm in names(out)) tryCatch(toJSON(out[[nm]], auto_unbox = TRUE, digits = NA), error = function(e) cat("BAD:", nm, conditionMessage(e), "\n"))
 write_json(out, "tests/reference/phase2/plots.json", auto_unbox = TRUE, digits = NA, null = "null", na = "null", pretty = TRUE)
 cat("wrote tests/reference/phase2/plots.json\n")

@@ -15,9 +15,9 @@ import pandas as pd
 import pytest
 from matplotlib.axes import Axes
 
-from metafopy import RMAResult, rma
+from metafopy import RMAResult, influence, profile, rma
 from metafopy.bias import trimfill
-from metafopy.plot import addpoly, baujat, forest, funnel
+from metafopy.plot import addpoly, baujat, forest, funnel, labbe, plot_infl, plot_profile, qqnorm, radial
 from plotref import PLOTS, check_all, check_plain, flat
 from refutil import bcg, bcg_na, close
 
@@ -365,3 +365,194 @@ def test_baujat_moderators_and_symbols_match_metafor(fits: dict[str, RMAResult],
     ref = PLOTS['baujat_symvec']
     check_xy(r, ref, 'baujat_symvec')
     check_all(ax, ref['rec'], 'baujat_symvec', skip={'axis', 'usr', 'mtext'})
+
+
+# -- radial ---------------------------------------------------------------------------------------------
+
+RADIAL_CASES: dict[str, tuple[str, dict[str, Any]]] = {
+    'radial_re': ('re', {}),
+    'radial_ee_center': ('ee', {'center': True, 'steps': 5, 'digits': 3}),
+    'radial_opts': (
+        're',
+        {
+            'xlim': (0, 12),
+            'zlim': (-6, 6),
+            'atz': [-4, 0, 4],
+            'aty': [-1.5, -1, 0, 0.5],
+            'transf': np.exp,
+            'level': 90,
+            'cex': 1.2,
+            'pch': 19,
+            'arc_res': (60, 30),
+        },
+    ),
+    'radial_labels': ('re', {'xlab': 'Precision', 'zlab': 'Z', 'back': 'gray90', 'col': 'blue', 'bg': 'red', 'cex_axis': 0.8, 'cex_lab': 1.1}),
+}
+
+
+@pytest.mark.parametrize('key', list(RADIAL_CASES))
+def test_radial_matches_metafor(key: str, fits: dict[str, RMAResult], ax: Axes) -> None:
+    fit, kw = RADIAL_CASES[key]
+    r = radial(fits[fit], ax=ax, **kw)
+    ref = PLOTS[key]
+    check_xy(r, ref, key)
+    check_all(ax, ref['rec'], key, skip={'mtext', 'axis', 'usr'}, compare_col=True)
+    close(ax.get_xlim(), ref['rec']['usr'][:2])
+    close(ax.get_ylim(), ref['rec']['usr'][2:])
+    close(ax.get_xticks(), ref['rec']['axticks']['x'])
+    last = [a for a in ref['rec']['axis'] if a['side'] == 2][-1]
+    close(ax.get_yticks(), last['at'])
+
+
+# -- qqnorm ---------------------------------------------------------------------------------------------
+
+QQ_CASES: dict[str, tuple[str, dict[str, Any]]] = {
+    'qqnorm_re': ('re', {'seed': 1234}),
+    'qqnorm_stud': ('mods', {'type': 'rstudent', 'seed': 42, 'label': True, 'grid': True, 'level': 90, 'reps': 300, 'pos': 24}),
+    'qqnorm_bonf': (
+        'ee',
+        {'seed': 7, 'bonferroni': True, 'smooth': False, 'label': 'out', 'envelope': 'gray85', 'lty': ('dashed', 'solid'), 'pch': 19, 'col': 'blue'},
+    ),
+    'qqnorm_label': ('re', {'seed': 99, 'label': 3, 'offset': 0.5, 'pos': 13, 'bass': 2, 'reps': 200}),
+    'qqnorm_noenv': ('mods', {'envelope': False, 'label': 2, 'pos': 4}),
+}
+
+
+@pytest.mark.parametrize('key', list(QQ_CASES))
+def test_qqnorm_matches_metafor(key: str, fits: dict[str, RMAResult], ax: Axes) -> None:
+    fit, kw = QQ_CASES[key]
+    r = qqnorm(fits[fit], ax=ax, **kw)
+    ref = PLOTS[key]
+    close(r.x, ref['ret']['x'], f'{key}: x')
+    close(r.y, ref['ret']['y'], f'{key}: y')
+    check_all(ax, ref['rec'], key, skip={'mtext', 'axis', 'usr'}, compare_col=True)
+    check_plain(ax, ref['rec'], key)
+
+
+# -- labbe ----------------------------------------------------------------------------------------------
+
+
+@pytest.fixture(scope='module')
+def raw(dat: pd.DataFrame) -> pd.DataFrame:
+    out = dat.copy()
+    out['x1i'], out['x2i'] = out['tpos'], out['cpos']
+    out['t1i'], out['t2i'] = (out['tpos'] + out['tneg']) / 100, (out['cpos'] + out['cneg']) / 100
+    return out
+
+
+def _arm_fit(raw: pd.DataFrame, measure: str) -> RMAResult:
+    if measure in ('IRR', 'IRD', 'IRSD'):
+        return rma(x1i='x1i', t1i='t1i', x2i='x2i', t2i='t2i', data=raw, measure=measure, slab='label')
+    return rma(ai='tpos', bi='tneg', ci='cpos', di='cneg', data=raw, measure=measure, slab='label')
+
+
+COUNTS: dict[str, Any] = {'ai': 'tpos', 'bi': 'tneg', 'ci_counts': 'cpos', 'di': 'cneg', 'x1i': 'x1i', 'x2i': 'x2i', 't1i': 't1i', 't2i': 't2i'}
+
+LABBE_CASES: dict[str, tuple[str, dict[str, Any]]] = {
+    'labbe_rr': ('RR', {}),
+    'labbe_or_ci': ('OR', {'ci': True, 'pi': True, 'grid': True, 'transf': np.exp, 'flip': True, 'pch': 19, 'col': 'blue', 'lty': ('dotted', 'solid')}),
+    'labbe_rd': ('RD', {'plim': (np.nan, 4, 1), 'ci': 'gray80', 'lim': (0, 0.2), 'xlab': 'A', 'ylab': 'B', 'add': 0.25}),
+    'labbe_as': ('AS', {'psize': np.arange(1, 14) / 4, 'pi': True, 'to': 'all', 'legend': True}),
+    'labbe_irr': ('IRR', {'xlim': (-8, -2), 'ylim': (-8, -2), 'grid': 'red'}),
+    'labbe_ird': ('IRD', {'ci': True, 'bg': 'yellow', 'plim': (1, np.nan, 2)}),
+    'labbe_irsd': ('IRSD', {'flip': True, 'llim': (-0.05, 0.1), 'transf': lambda v: v * 100}),
+}
+
+
+@pytest.mark.parametrize('key', list(LABBE_CASES))
+def test_labbe_matches_metafor(key: str, raw: pd.DataFrame, ax: Axes) -> None:
+    measure, kw = LABBE_CASES[key]
+    r = labbe(_arm_fit(raw, measure), ax=ax, **COUNTS, **kw)
+    ref = PLOTS[key]
+    ret = ref['ret']
+    close(r.x, ret['x'], f'{key}: x')
+    close(r.y, ret['y'], f'{key}: y')
+    close(r.cex, ret['cex'], f'{key}: cex')
+    close(r.pch, ret['pch'], f'{key}: pch')
+    assert list(r.col) == [str(v) for v in flat(ret['col'])], key
+    assert list(r.ids) == [int(v) for v in flat(ret['ids'])], key
+    check_all(ax, ref['rec'], key, skip={'mtext', 'axis', 'usr'}, compare_col=True)
+    check_plain(ax, ref['rec'], key)
+
+
+# -- plot_profile ---------------------------------------------------------------------------------------
+
+
+def test_plot_profile_matches_metafor(fits: dict[str, RMAResult], ax: Axes) -> None:
+    pf = profile(fits['re'], steps=15, xlim=(0.01, 0.9))
+    assert plot_profile(pf, cline=True, ax=ax) is ax
+    ref = PLOTS['profile_re']['rec']
+    check_all(ax, ref, 'profile_re', skip={'mtext', 'axis', 'usr'})
+    check_plain(ax, ref, 'profile_re')
+
+
+def test_plot_profile_options_match_metafor(fits: dict[str, RMAResult], ax: Axes) -> None:
+    pf = profile(fits['re'], steps=9, xlim=(0.4, 0.9), sqrt=True)
+    plot_profile(pf, refline=False, pch=17, ylim=(-14, -12), cline=0.1, ax=ax)
+    ref = PLOTS['profile_sqrt']['rec']
+    check_all(ax, ref, 'profile_sqrt', skip={'mtext', 'axis', 'usr'})
+    check_plain(ax, ref, 'profile_sqrt')
+    ax.clear()
+    pf = profile(fits['mods'], steps=8, xlim=(0.01, 0.5), exp=True)
+    plot_profile(pf, xlab='Tau squared', ylab='L', main='Title', xlim=(0, 0.6), cline=True, ax=ax)
+    ref = PLOTS['profile_exp']['rec']
+    check_all(ax, ref, 'profile_exp', skip={'mtext', 'axis', 'usr'})
+    check_plain(ax, ref, 'profile_exp')
+
+
+def test_profile_plot_argument_draws(fits: dict[str, RMAResult], ax: Axes) -> None:
+    profile(fits['re'], steps=5, xlim=(0.05, 0.6), plot=True, ax=ax)
+    assert ax.get_ylabel() == 'Restricted Log-Likelihood'
+    assert len(ax.get_title()) > 0
+
+
+# -- plot_infl ------------------------------------------------------------------------------------------
+
+
+def check_infl(r: Any, ref: dict[str, Any], what: str, dfbs: bool = False) -> None:
+    axes = list(r.axes) + list(r.dfbs_axes)
+    rec = ref['rec']
+    check_all(axes, rec, what, skip={'axis', 'usr', 'mtext'}, compare_col=False)
+    tick_labels = [[t.get_text() for t in a.get_xticklabels()] for a in axes if a.get_xticks().size]
+    exp = [[str(v) for v in flat(a['labels'])] for a in rec['axis'] if a['side'] == 1]
+    assert tick_labels == exp, f'{what}: x tick labels'
+    plots = rec['plot']
+    assert len(plots) == len(axes), f'{what}: number of panels'
+    last = axes[-1]
+    close(last.get_xlim(), rec['usr'][:2], f'{what}: last xlim')
+    close(last.get_ylim(), rec['usr'][2:], f'{what}: last ylim')
+
+
+def test_plot_infl_all_matches_metafor(fits: dict[str, RMAResult], ax: Axes) -> None:
+    r = plot_infl(influence(fits['re']), ax=ax)
+    assert len(r.axes) == 8
+    check_infl(r, PLOTS['infl_all'], 'infl_all')
+
+
+def test_plot_infl_options_match_metafor(fits: dict[str, RMAResult], ax: Axes) -> None:
+    r = plot_infl(influence(fits['re']), plotinf=[1, 3, 4, 7], logcov=False, las=2, bg='blue', bg_infl='green', slab_style=2, ax=ax)
+    check_infl(r, PLOTS['infl_sub'], 'infl_sub')
+
+
+def test_plot_infl_dfbs_matches_metafor(fits: dict[str, RMAResult], ax: Axes) -> None:
+    inf = influence(fits['mods'])
+    r = plot_infl(inf, plotinf=False, plotdfbs=True, ax=ax)
+    assert len(r.axes) == 0
+    assert len(r.dfbs_axes) == 2
+    check_infl(r, PLOTS['infl_dfbs'], 'infl_dfbs')
+    fig, axes = plt.subplots()
+    r = plot_infl(inf, plotinf=[2, 5], plotdfbs=2, pch=19, ax=axes)
+    check_infl(r, PLOTS['infl_dfbs_only2'], 'infl_dfbs_only2')
+    plt.close('all')
+
+
+def test_plot_infl_missing_values_match_metafor(dat: pd.DataFrame, ax: Axes) -> None:
+    dna = bcg_na()
+    res = rma('yi', 'vi', mods='~ ablat', data=dna, slab='label')
+    ids = np.flatnonzero(res.data.keep) + 1
+    r = plot_infl(influence(res), plotinf=[1, 2, 6], ids=ids, ax=ax)
+    check_infl(r, PLOTS['infl_na_omit'], 'infl_na_omit')
+    fig, axes = plt.subplots()
+    r = plot_infl(influence(res, na_action='exclude'), plotinf=[1, 2, 6, 8], na_action='exclude', ax=axes)
+    check_infl(r, PLOTS['infl_na_exclude'], 'infl_na_exclude')
+    plt.close('all')

@@ -56,6 +56,8 @@ def r_points(rec: dict[str, Any]) -> list[dict[str, Any]]:
         xs, ys = _recycle(xs, n), _recycle(ys, n)
         pch, cex, col = _recycle(flat(t.get('pch')), n), _recycle(flat(t.get('cex')), n), _recycle(flat(t.get('col')), n)
         for i in range(n):
+            if xs[i] is None or ys[i] is None:
+                continue
             out.append({'x': xs[i], 'y': ys[i], 'pch': pch[i], 'cex': cex[i], 'col': col[i]})
     return out
 
@@ -99,7 +101,7 @@ def _same_summary(actual: NDArrayF, expected: Any, what: str) -> None:
         close(actual, expected, what)
 
 
-def check_texts(ax: Axes, rec: dict[str, Any], what: str, compare_col: bool = False) -> None:
+def check_texts(ax: Axes | Sequence[Axes], rec: dict[str, Any], what: str, compare_col: bool = False) -> None:
     exp = r_texts(rec)
     act = collect(ax)['text']
     assert len(act) == len(exp), f'{what}: {len(act)} texts, expected {len(exp)}'
@@ -117,7 +119,7 @@ def check_texts(ax: Axes, rec: dict[str, Any], what: str, compare_col: bool = Fa
             assert a.meta['col'] == e['col'], tag + ' col'
 
 
-def check_points(ax: Axes, rec: dict[str, Any], what: str, compare_col: bool = False) -> None:
+def check_points(ax: Axes | Sequence[Axes], rec: dict[str, Any], what: str, compare_col: bool = False) -> None:
     exp = r_points(rec)
     act = collect(ax)['point']
     assert len(act) == len(exp), f'{what}: {len(act)} points, expected {len(exp)}'
@@ -133,7 +135,7 @@ def check_points(ax: Axes, rec: dict[str, Any], what: str, compare_col: bool = F
             assert a.meta['col'] == e['col'], tag + ' col'
 
 
-def check_segments(ax: Axes, rec: dict[str, Any], what: str) -> None:
+def check_segments(ax: Axes | Sequence[Axes], rec: dict[str, Any], what: str) -> None:
     exp = r_segments(rec)
     act = collect(ax)['segment']
     assert len(act) == len(exp), f'{what}: {len(act)} segments, expected {len(exp)}'
@@ -142,7 +144,7 @@ def check_segments(ax: Axes, rec: dict[str, Any], what: str) -> None:
         close(got, list(e), f'{what}: segment {i}')
 
 
-def check_rects(ax: Axes, rec: dict[str, Any], what: str) -> None:
+def check_rects(ax: Axes | Sequence[Axes], rec: dict[str, Any], what: str) -> None:
     exp = r_rects(rec)
     act = collect(ax)['rect']
     assert len(act) == len(exp), f'{what}: {len(act)} rects, expected {len(exp)}'
@@ -151,7 +153,7 @@ def check_rects(ax: Axes, rec: dict[str, Any], what: str) -> None:
         close([xl, yb, xr, yt], list(e), f'{what}: rect {i}')
 
 
-def check_polygons(ax: Axes, rec: dict[str, Any], what: str, compare_col: bool = False) -> None:
+def check_polygons(ax: Axes | Sequence[Axes], rec: dict[str, Any], what: str, compare_col: bool = False) -> None:
     exp = rec.get('polygon', [])
     act = collect(ax)['polygon']
     assert len(act) == len(exp), f'{what}: {len(act)} polygons, expected {len(exp)}'
@@ -163,7 +165,7 @@ def check_polygons(ax: Axes, rec: dict[str, Any], what: str, compare_col: bool =
             assert a.meta['col'] == e['col'], f'{what}: polygon {i} col'
 
 
-def check_lines(ax: Axes, rec: dict[str, Any], what: str, gid: str = 'line') -> None:
+def check_lines(ax: Axes | Sequence[Axes], rec: dict[str, Any], what: str, gid: str = 'line') -> None:
     exp = rec.get('lines', [])
     act = collect(ax)[gid]
     assert len(act) == len(exp), f'{what}: {len(act)} lines, expected {len(exp)}'
@@ -172,7 +174,7 @@ def check_lines(ax: Axes, rec: dict[str, Any], what: str, gid: str = 'line') -> 
         _same_summary(np.asarray(a.get_ydata(), dtype=float), e['y'], f'{what}: line {i} y')
 
 
-def check_ablines(ax: Axes, rec: dict[str, Any], what: str) -> None:
+def check_ablines(ax: Axes | Sequence[Axes], rec: dict[str, Any], what: str) -> None:
     arts = collect(ax)
     close([a.get_ydata()[0] for a in arts['hline']], r_ablines(rec, 'h'), f'{what}: hlines') if r_ablines(rec, 'h') else None
     assert len(arts['hline']) == len(r_ablines(rec, 'h')), f'{what}: number of hlines'
@@ -190,7 +192,7 @@ def check_abline_ab(ax: Axes, rec: dict[str, Any], what: str) -> None:
 
 
 def check_axis(ax: Axes, rec: dict[str, Any], what: str, side: int = 1) -> None:
-    axes = [a for a in rec.get('axis', []) if a['side'] == side]
+    axes = [a for a in rec.get('axis', []) if a['side'] == side and a.get('at') is not None]
     if not axes:
         return
     last = axes[-1]
@@ -201,7 +203,7 @@ def check_axis(ax: Axes, rec: dict[str, Any], what: str, side: int = 1) -> None:
         assert labs == [str(v) for v in flat(last['labels'])], f'{what}: axis {side} labels {labs}'
 
 
-def check_all(ax: Axes, rec: dict[str, Any], what: str, skip: Iterable[str] = (), compare_col: bool = False) -> None:
+def check_all(ax: Axes | Sequence[Axes], rec: dict[str, Any], what: str, skip: Iterable[str] = (), compare_col: bool = False) -> None:
     """Compare every recorded primitive (except those in ``skip``) with the artists on ``ax``."""
     skip = set(skip)
     if 'text' not in skip:
@@ -214,11 +216,14 @@ def check_all(ax: Axes, rec: dict[str, Any], what: str, skip: Iterable[str] = ()
         check_rects(ax, rec, what)
     if 'polygon' not in skip:
         check_polygons(ax, rec, what, compare_col)
+    if 'line' not in skip:
+        check_lines(ax, rec, what)
     if 'abline' not in skip:
         check_ablines(ax, rec, what)
         check_abline_ab(ax, rec, what)
     if 'axis' not in skip:
         check_axis(ax, rec, what)
+        check_axis(ax, rec, what, side=2)
     if 'usr' not in skip and not skip.intersection({'usr'}):
         usr = rec['usr']
         close(ax.get_xlim(), usr[:2], f'{what}: xlim')
@@ -241,9 +246,9 @@ def check_plain(ax: Axes, rec: dict[str, Any], what: str, labels: bool = True, y
     plots = rec.get('plot', [])
     if plots:
         p = plots[0]
-        if isinstance(p.get('xlab'), str):
+        if isinstance(p.get('xlab'), str) and not p.get('xlab_expr'):
             assert ax.get_xlabel() == p['xlab'], f'{what}: xlab'
-        if isinstance(p.get('ylab'), str):
+        if isinstance(p.get('ylab'), str) and not p.get('ylab_expr'):
             assert ax.get_ylabel() == p['ylab'], f'{what}: ylab'
     grids = rec.get('grid', [])
     arts = collect(ax)['grid']

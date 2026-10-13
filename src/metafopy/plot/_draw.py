@@ -292,14 +292,15 @@ def xlab_below(ax: Axes, x: float, s: str, *, cex: float = 1.0, line: float = 2.
     return t
 
 
-def collect(ax: Axes) -> dict[str, list[Any]]:
+def collect(ax: Axes | Sequence[Axes]) -> dict[str, list[Any]]:
     """The artists drawn on ``ax`` by gid (see the module docstring), in drawing order; their R-level arguments are in ``artist.meta``."""
     out: dict[str, list[Any]] = {g: [] for g in ('segment', 'polygon', 'rect', 'text', 'point', 'line', 'hline', 'vline', 'mtext', 'abline', 'grid')}
-    for coll in (ax.lines, ax.patches, ax.texts):
-        for a in coll:
-            gid = a.get_gid()
-            if gid in out:
-                out[gid].append(a)
+    for one in [ax] if isinstance(ax, Axes) else ax:
+        for coll in (one.lines, one.patches, one.texts):
+            for a in coll:
+                gid = a.get_gid()
+                if gid in out:
+                    out[gid].append(a)
     return out
 
 
@@ -375,3 +376,15 @@ def subaxes(ax: Axes, nrow: int, ncol: int, **kw: Any) -> list[list[Axes]]:
     ax.set_axis_off()
     gs = fig.add_gridspec(nrow, ncol, left=pos.x0, right=pos.x1, bottom=pos.y0, top=pos.y1, **kw)
     return [[fig.add_subplot(gs[i, j]) for j in range(ncol)] for i in range(nrow)]
+
+
+def mtext_left(ax: Axes, s: str, y: float, *, line: float, cex: float = 1.0, ha: str = 'right') -> Text:
+    """``mtext(s, side = 2, line = line, at = y, las = 1)``: horizontal text left of the plot region (gid ``'mtext'``)."""
+    fs = base_fontsize() * cex
+    off = line * 0.2 * (base_fontsize() / 12.0)
+    tr = ax.get_yaxis_transform() + ScaledTranslation(-off, 0.0, ax.figure.dpi_scale_trans)
+    t = ax.text(0, y, s, ha=ha, va='center', fontsize=fs, transform=tr, clip_on=False)
+    t.set_gid('mtext')
+    _meta(t, cex=cex)
+    t.set_in_layout(False)
+    return t

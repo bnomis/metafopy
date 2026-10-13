@@ -65,7 +65,7 @@ def baujat(
     if x.k == 1:
         raise ValueError('Stopped because k = 1.')
     axx = get_ax(ax)
-    grid_col = coladj(-0.2) if grid is True else grid
+    grid_col = grid if isinstance(grid, str) else coladj(-0.2)
     k = x.k
     pred_full = x.X @ x.beta
     delpred = np.full(k, np.nan)
@@ -92,7 +92,7 @@ def baujat(
     xl = (float(np.nanmin(xhati)), float(np.nanmax(xhati))) if xlim is None else (float(xlim[0]), float(xlim[1]))
     yl = (float(np.nanmin(yhati)), float(np.nanmax(yhati))) if ylim is None else (float(ylim[0]), float(ylim[1]))
     xt, yt = plain_plot(axx, xl, yl, xlab, ylab)
-    if grid is not False:
+    if grid is not False:  # True or a colour
         assert xt is not None
         assert yt is not None
         d.grid(axx, xt, yt, grid_col)
