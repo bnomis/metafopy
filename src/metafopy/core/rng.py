@@ -16,6 +16,7 @@ from collections.abc import Sequence
 
 import numpy as np
 from numpy.typing import NDArray
+from scipy import special
 
 __all__ = ['RRandom', 'get_rng', 'set_seed']
 
@@ -50,6 +51,16 @@ class RRandom:
 
     def runif(self, n: int = 1) -> NDArray[np.float64]:
         return np.array([self.unif_rand() for _ in range(n)], dtype=np.float64)
+
+    def norm_rand(self) -> float:
+        """R's ``norm_rand()`` (inversion): a standard normal deviate."""
+        big = 134217728.0
+        u = self.unif_rand()
+        u = int(big * u) + self.unif_rand()
+        return float(special.ndtri(u / big))
+
+    def rnorm(self, n: int = 1) -> NDArray[np.float64]:
+        return np.array([self.norm_rand() for _ in range(n)], dtype=np.float64)
 
     def _rbits(self, bits: int) -> int:
         v = 0

@@ -934,12 +934,8 @@ def _format(res: RMAResult, digits: int) -> str:
         out += [f'{label.ljust(width)} {value}' for label, value in rows]
         out.append('')
     elif not math.isnan(res.I2):
-        rows = [
-            ('I^2 (total heterogeneity / total variability):', f'{res.I2:.2f}%'),
-            ('H^2 (total variability / sampling variability):', f'{res.H2:.2f}'),
-        ]
-        width = max(len(r[0]) for r in rows)
-        out += [f'{label.ljust(width)} {value}' for label, value in rows]
+        out.append(f'I^2 (total heterogeneity / total variability):   {res.I2:.2f}%')
+        out.append(f'H^2 (total variability / sampling variability):  {res.H2:.2f}')
         out.append('')
 
     if not math.isnan(res.QE):

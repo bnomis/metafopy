@@ -36,5 +36,7 @@ jobs:
       - run: Rscript tests/r/generate_rma_uni_help.R
       - run: Rscript tests/r/generate_blup_vif.R
       - run: Rscript tests/r/generate_transf.R
+      - run: Rscript tests/r/generate_diagnostics.R
+      - run: Rscript tests/r/generate_bias.R
       - name: Fail on fixture drift
         run: git diff --stat --exit-code -- tests/reference src/metafopy/datasets/data

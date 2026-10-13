@@ -10,6 +10,7 @@ from importlib.metadata import version
 from metafopy import datasets, transf
 from metafopy._data import MetaData
 from metafopy._formula import RandomTerm, parse_random
+from metafopy.bias import FsnResult, HcResult, RanktestResult, RegtestResult, TesResult, TrimfillResult, fsn, hc, ranktest, regtest, tes, trimfill
 from metafopy.core.rng import set_seed
 from metafopy.effects import cmicalc, escalc, summary_escalc
 from metafopy.methods.anova import LRTResult, WaldResult, anova
@@ -34,7 +35,9 @@ __all__ = [
     'Control',
     'CumulResult',
     'FitStats',
+    'FsnResult',
     'GoshResult',
+    'HcResult',
     'InfluenceResult',
     'LRTResult',
     'Leave1outResult',
@@ -45,7 +48,11 @@ __all__ = [
     'RMAResult',
     'RandomTerm',
     'RanefResult',
+    'RanktestResult',
+    'RegtestResult',
     'ResidualResult',
+    'TesResult',
+    'TrimfillResult',
     'VIFEntry',
     'VIFResult',
     'WaldResult',
@@ -59,7 +66,9 @@ __all__ = [
     'datasets',
     'dfbetas',
     'escalc',
+    'fsn',
     'gosh',
+    'hc',
     'influence',
     'leave1out',
     'pairmat',
@@ -68,12 +77,16 @@ __all__ = [
     'predict',
     'profile',
     'ranef',
+    'ranktest',
+    'regtest',
     'rma',
     'rma_uni',
     'rstandard',
     'rstudent',
     'set_seed',
     'summary_escalc',
+    'tes',
     'transf',
+    'trimfill',
     'vif',
 ]

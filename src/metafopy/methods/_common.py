@@ -91,13 +91,22 @@ def refit_arrays(
     btt: Any = None,
     tau2: float | Literal['same'] | None = 'same',
     method: str | None = None,
+    names: tuple[str, ...] | None = None,
+    intercept: bool | None = None,
+    skip_r2: bool = True,
 ) -> RMAResult | None:
     """Refit ``res`` with replacement ``yi`` and/or model matrix ``X`` (same studies, same settings); ``None`` if the refit fails.
 
     ``tau2='same'`` keeps ``res``'s fixed ``tau^2`` (if any), a number fixes ``tau^2`` at that value
     and ``None`` forces estimation.
     """
-    md = replace(res.data, yi=res.yi if yi is None else yi, X=res.X if X is None else X, X_names=tuple(res.coef_names), intercept=res.int_incl)
+    md = replace(
+        res.data,
+        yi=res.yi if yi is None else yi,
+        X=res.X if X is None else X,
+        X_names=tuple(res.coef_names) if names is None else names,
+        intercept=res.int_incl if intercept is None else intercept,
+    )
     if tau2 == 'same':
         tau2_arg: float | None = res.tau2 if res.tau2_fix else None
     else:
@@ -114,7 +123,7 @@ def refit_arrays(
                 btt=btt,
                 tau2=tau2_arg,
                 control=asdict(res.control),
-                _skip_r2=True,
+                _skip_r2=skip_r2,
             )
     except REFIT_ERRORS:
         return None
