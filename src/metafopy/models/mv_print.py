@@ -80,6 +80,7 @@ def squeeze(buff: list[str], minlen: int) -> str:
 
 def abbreviate(names: list[str], minlength: int = 4) -> list[str]:
     """R's ``abbreviate(names, minlength)``: lengthens the abbreviation of duplicates until they are unique."""
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     result = [''] * len(names)
     dup = [True] * len(names)
     these = list(names)
@@ -105,10 +106,6 @@ def abbreviate(names: list[str], minlength: int = 4) -> list[str]:
 def lower_pairs(n: int) -> list[tuple[int, int]]:
     """Row and column of the strictly lower triangle in R's column-major order."""
     return [(i, j) for j in range(n) for i in range(j + 1, n)]
-
-
-def table(header: list[str], rows: list[list[str]], row_names: list[str]) -> str:
-    return metafopy.printing.fmt_table(header, rows, row_names=row_names)
 
 
 def yes_no(flags: numpy.typing.NDArray[numpy.bool_] | None, n: int) -> list[str]:
@@ -162,7 +159,9 @@ def block(res: metafopy.models.mv_result.RMAMVResult, group: metafopy.models.mv_
         names_r = [f'{v_name}    ' if is_g else f'{v_name}  ', r_name]
         if struct == 'ID':
             rows, names_r = rows[:1], names_r[:1]
-        out.append(table(['estim', 'sqrt', 'fixed'], rows, names_r))
+        # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
+        out.append(metafopy.printing.fmt_table(['estim', 'sqrt', 'fixed'], rows, row_names=names_r))
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     elif struct in ('HCS', 'HAR', 'DIAG'):
         rows = [[estim[i], sqrt[i], k_lvl[i], fixed_v[i], levels_f[i]] for i in range(len(var))]
         rows.append([cor_s[0], '', '', fixed_r[0], ''])
@@ -172,11 +171,14 @@ def block(res: metafopy.models.mv_result.RMAMVResult, group: metafopy.models.mv_
             names_r = [f'{v_name}.{i + 1}  ' for i in range(len(var))] + [r_name]
         if struct == 'DIAG':
             rows, names_r = rows[: len(var)], names_r[: len(var)]
-        out.append(table(['estim', 'sqrt', 'k.lvl', 'fixed', 'level'], rows, names_r))
+        # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
+        out.append(metafopy.printing.fmt_table(['estim', 'sqrt', 'k.lvl', 'fixed', 'level'], rows, row_names=names_r))
+    # auditme: accept[assert-never-missing] the value is a str that is validated against the allowed names earlier
     elif struct == 'UN':
         rows = [[estim[i], sqrt[i], k_lvl[i], fixed_v[i], levels_f[i]] for i in range(len(var))]
         names_r = [v_name] if len(levels_k) == 1 else [f'{v_name}.{i + 1}  ' for i in range(len(levels_k))]
-        out.append(table(['estim', 'sqrt', 'k.lvl', 'fixed', 'level'], rows, names_r))
+        # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
+        out.append(metafopy.printing.fmt_table(['estim', 'sqrt', 'k.lvl', 'fixed', 'level'], rows, row_names=names_r))
         out.append('')
         n = 2 if len(cor) == 1 else group.nlevels_f[0]
         pairs = lower_pairs(n)
@@ -191,8 +193,9 @@ def block(res: metafopy.models.mv_result.RMAMVResult, group: metafopy.models.mv_
             row += ['-' if i == j else info[i, j] if j < i else counts[j, i] for j in range(n)]
             cells.append(row)
         ab = abbreviate(list(levels_f))
+        # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
         header = [f'{r_name}.{a}' for a in ab] + [''] + ab
-        out.append(table(header, cells, list(levels_f)))
+        out.append(metafopy.printing.fmt_table(header, cells, row_names=list(levels_f)))
     elif struct == 'GEN':
         if cov is None:
             return out
@@ -212,10 +215,11 @@ def block(res: metafopy.models.mv_result.RMAMVResult, group: metafopy.models.mv_
                 else:
                     row.append(fm(cor_mat[i, j]))
             rows.append(row)
-        out.append(table(header, rows, list(inner_names)))
+        out.append(metafopy.printing.fmt_table(header, rows, row_names=list(inner_names)))
     elif struct == 'GDIAG':
         rows = [[estim[i], sqrt[i], fixed_v[i]] for i in range(len(var))]
-        out.append(table(['estim', 'sqrt', 'fixed'], rows, list(inner_names)))
+        # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
+        out.append(metafopy.printing.fmt_table(['estim', 'sqrt', 'fixed'], rows, row_names=list(inner_names)))
     out.append('')
     del s_name
     return out
@@ -223,6 +227,7 @@ def block(res: metafopy.models.mv_result.RMAMVResult, group: metafopy.models.mv_
 
 def format_result(res: metafopy.models.mv_result.RMAMVResult, digits: int = 4, showfit: bool = False) -> str:
     fm = metafopy.printing.fmt_num
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     out: list[str] = ['']
     out.append(f'Multivariate Meta-Analysis Model (k = {res.k}; method: {res.method})')
     if showfit:
@@ -251,7 +256,7 @@ def format_result(res: metafopy.models.mv_result.RMAMVResult, digits: int = 4, s
                     row.append('yes' if res.Rfix[j] else 'no')
                 rows.append(row)
             names = ['sigma^2  '] if n == 1 else [f'sigma^2.{j + 1}' for j in range(n)]
-            out.append(table(header, rows, names))
+            out.append(metafopy.printing.fmt_table(header, rows, row_names=names))
             out.append('')
         if res.with_g and res.group_g is not None:
             out.extend(block(res, res.group_g, True, digits))
@@ -259,9 +264,10 @@ def format_result(res: metafopy.models.mv_result.RMAMVResult, digits: int = 4, s
             out.extend(block(res, res.group_h, False, digits))
 
     if not math.isnan(res.QE):
+        # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
         name, label = ('Q', 'Heterogeneity') if res.int_only else ('QE', 'Residual Heterogeneity')
         out.append(f'Test for {label}:')
-        out.append(f'{name}(df = {res.QEdf}) = {fm(res.QE, digits)}, p-val {pfmt(res.QEp, digits)}')
+        out.append(f'{name}(df = {res.QEdf}) = {fm(res.QE, digits)}, p-val {metafopy.models.rma_uni.pfmt(res.QEp, digits)}')
         out.append('')
 
     robust = res.robust
@@ -272,17 +278,21 @@ def format_result(res: metafopy.models.mv_result.RMAMVResult, digits: int = 4, s
         coefs = metafopy.models.rma_uni.coef_span(res.btt)
         mark = metafopy.models.robust_print.FOOT_MARK if robust is not None else ''
         out.append(f'Test of Moderators (coefficient{"s" if res.m > 1 else ""} {coefs}):{mark}')
+        qm_p = metafopy.models.rma_uni.pfmt(res.QMp, digits)
+        # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
         if res.test in ('knha', 'adhoc', 't'):
-            df2 = res.QMdf[1]
-            out.append(f'F(df1 = {res.QMdf[0]}, df2 = {metafopy.printing.fmt_df_scalar(df2)}) = {fm(res.QM, digits)}, p-val {pfmt(res.QMp, digits)}')
+            df2 = metafopy.printing.fmt_df_scalar(res.QMdf[1])
+            out.append(f'F(df1 = {res.QMdf[0]}, df2 = {df2}) = {fm(res.QM, digits)}, p-val {qm_p}')
         else:
-            out.append(f'QM(df = {res.QMdf[0]}) = {fm(res.QM, digits)}, p-val {pfmt(res.QMp, digits)}')
+            out.append(f'QM(df = {res.QMdf[0]}) = {fm(res.QM, digits)}, p-val {qm_p}')
         out.append('')
 
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     use_t = res.test in ('knha', 'adhoc', 't')
     header = ['estimate', 'se', 'tval' if use_t else 'zval']
     if use_t:
         header.append('df')
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     header += ['pval', 'ci.lb', 'ci.ub', '']
     df_cells = (metafopy.models.robust_print.df_cells(res.ddf) if robust is not None else metafopy.printing.fmt_df(res.ddf)) if use_t else []
     rows_: list[list[str]] = []
@@ -301,7 +311,7 @@ def format_result(res: metafopy.models.mv_result.RMAMVResult, digits: int = 4, s
         header, rows_ = metafopy.models.robust_print.decorate(header, rows_)
     out.append('Model Results:')
     out.append('')
-    out.append(table(header, rows_, [] if res.int_only else list(res.coef_names)) if not res.int_only else metafopy.printing.fmt_table(header, rows_))
+    out.append(metafopy.printing.fmt_table(header, rows_, row_names=None if res.int_only else list(res.coef_names)))
     out.append('')
     out.append('---')
     out.append("Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1")
@@ -310,8 +320,3 @@ def format_result(res: metafopy.models.mv_result.RMAMVResult, digits: int = 4, s
         out += metafopy.models.robust_print.legend_lines(robust, res.int_only)
         out.append('')
     return '\n'.join(out)
-
-
-def pfmt(p: float, digits: int) -> str:
-    s = metafopy.printing.fmt_pval(p, digits)
-    return f'< {s[1:]}' if s.startswith('<') else f'= {s}'

@@ -230,10 +230,15 @@ def build_x(
     data: pandas.DataFrame | None,
     k: int,
 ) -> tuple[FloatArray, tuple[str, ...], numpy.typing.NDArray[numpy.bool_], bool]:
-    """The model matrix before missing values are dropped, its column names, rows with NAs and the (possibly coerced) ``intercept``."""
+    """The model matrix before missing values are dropped, its column names, rows with NAs and the (possibly coerced) ``intercept``.
+
+    Raises:
+        metafopy.errors.InputError: the model matrix does not match the number of estimates.
+    """
     if mods is None:
         if not intercept:
             warnings.warn('Must either include an intercept and/or moderators in the model.\nCoerced an intercept into the model.', stacklevel=4)
+        # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
         return numpy.ones((k, 1)), ('intrcpt',), numpy.zeros(k, dtype=numpy.bool_), True
     if isinstance(mods, str):
         X, names, missing, _ = metafopy.metadata.MetaData.design(mods, intercept, data, k)

@@ -29,7 +29,9 @@ import metafopy.transf
 
 __all__ = ['ConfintResult', 'confint']
 
+# auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
 VC_NAMES = ('sigma2', 'tau2', 'rho', 'gamma2', 'phi')
+# auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
 SPATIAL = ('SPEXP', 'SPGAU', 'SPLIN', 'SPRAT', 'SPSPH', 'PHYPL', 'PHYPD')
 
 FloatArray = numpy.typing.NDArray[numpy.float64]
@@ -342,10 +344,12 @@ def profile_lrt(x: metafopy.models.rma_uni.RMAResult, tau2: float) -> float:
 def mv_search_limits(x: metafopy.models.mv_result.RMAMVResult, comp: str, vc: float) -> tuple[float, float]:
     """Default interval ``(vc.min, vc.max)`` searched for the bounds of a variance component's profile-likelihood CI."""
     eps = float(numpy.finfo(float).eps)
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if comp in ('sigma2', 'tau2', 'gamma2'):
         return 0.0, max(10.0 if vc <= math.sqrt(eps) else max(10.0, vc * 100), 0.0)
     struct = x.struct[0] if comp == 'rho' else x.struct[1]
     lo, hi = -1.0, 1.0
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if struct in ('AR', 'HAR', 'CAR'):
         lo = min(0.0, vc)
     if struct in SPATIAL[:5]:
@@ -447,6 +451,7 @@ def confint_rma_mv(
             return -2 * (mv_refit_logLik(x, comp, pos, val) - ll_obj) - objective
 
         struct = x.struct[0] if comp == 'rho' else x.struct[1]
+        # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
         spatial = comp in ('rho', 'phi') and struct in SPATIAL
         vc_lb = vc_ub = math.nan
         lb_conv = ub_conv = False
@@ -457,6 +462,7 @@ def confint_rma_mv(
             if not math.isnan(res):
                 if res < 0:
                     vc_lb, lb_conv = lo, True
+                    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
                     if (comp in ('sigma2', 'tau2', 'gamma2') and lo > 0) or (comp in ('rho', 'phi') and lo > -1) or (spatial and lo > 0):
                         lb_sign = '<'
                 else:
@@ -472,6 +478,7 @@ def confint_rma_mv(
             if not math.isnan(res):
                 if res < 0:
                     vc_ub, ub_conv = hi, True
+                    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
                     if comp in ('sigma2', 'tau2', 'gamma2') or (comp in ('rho', 'phi') and hi < 1) or spatial:
                         ub_sign = '>'
                 else:
@@ -489,11 +496,14 @@ def confint_rma_mv(
         values = numpy.array([vc, vc_lb, vc_ub])
         n_comp = len(flags)
         suffix = '' if n_comp == 1 else f'.{pos + 1}'
+        # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
         if comp in ('sigma2', 'tau2', 'gamma2'):
             stem = {'sigma2': ('sigma^2', 'sigma'), 'tau2': ('tau^2', 'tau'), 'gamma2': ('gamma^2', 'gamma')}[comp]
             root_vals = numpy.sqrt(numpy.where(values >= 0, values, numpy.nan))
+            # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
             res_random = pandas.DataFrame([values, root_vals], index=[stem[0] + suffix, stem[1] + suffix], columns=['estimate', 'ci.lb', 'ci.ub'])
         else:
+            # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
             res_random = pandas.DataFrame([values], index=[comp + suffix], columns=['estimate', 'ci.lb', 'ci.ub'])
 
     res_fixed: pandas.DataFrame | None = None

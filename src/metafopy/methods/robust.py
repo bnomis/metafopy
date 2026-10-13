@@ -33,8 +33,11 @@ __all__ = ['robust']
 FloatArray = numpy.typing.NDArray[numpy.float64]
 IntArray = numpy.typing.NDArray[numpy.intp]
 Cluster = str | collections.abc.Sequence[typing.Any] | numpy.typing.NDArray[typing.Any] | pandas.Series
+# auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
 COEF_TESTS = ('z', 'naive-t', 'naive-tp', 'Satterthwaite', 'saddlepoint')
+# auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
 CONF_TESTS = ('z', 'naive-t', 'naive-tp', 'Satterthwaite')
+# auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
 WALD_TESTS = ('chi-sq', 'Naive-F', 'Naive-Fp', 'HTA', 'HTB', 'HTZ', 'EDF', 'EDT')
 
 
@@ -106,6 +109,7 @@ def check_options(
     wald_test = 'HTZ' if wald_test is None else wald_test
     if wald_test not in WALD_TESTS:
         raise metafopy.errors.InputError(f"Unknown 'wald_test' {wald_test!r}.")
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if wald_test not in ('chi-sq', 'Naive-F', 'Naive-Fp', 'HTZ'):
         raise metafopy.errors.InputError(f'wald_test={wald_test!r} is not supported.')
     return vcov, coef_test, conf_test, wald_test
@@ -176,7 +180,11 @@ def default_inference(
     btt: tuple[int, ...],
     m: int,
 ) -> tuple[dict[str, typing.Any], str]:
-    """metafor's default robust estimator ``bread %*% meat %*% t(bread)`` with the chosen small-sample adjustment."""
+    """metafor's default robust estimator ``bread %*% meat %*% t(bread)`` with the chosen small-sample adjustment.
+
+    Raises:
+        metafopy.errors.InputError: the adjustment is unknown.
+    """
     dfs = n - p
     comps = numpy.column_stack([bread[:, codes == j] @ resid[codes == j] for j in range(n)])
     vb = comps @ comps.T

@@ -26,7 +26,6 @@ type FloatArray = numpy.typing.NDArray[numpy.float64]
 type Mat = FloatArray | scipy.sparse.csc_array
 
 LOG2PI = math.log(2 * math.pi)
-EPS10 = metafopy.models.mv_structs.EPS10
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -171,7 +170,7 @@ def evaluate(problem: Problem, par: FloatArray, vctransf: bool = True, vccov: bo
         sigma2 = numpy.where(numpy.isnan(problem.sigma2_arg), numpy.exp(raw) if vctransf else raw, problem.sigma2_arg)
         if not vctransf:
             sigma2 = numpy.where(sigma2 < 0, 0.0, sigma2)
-        sigma2 = numpy.where(sigma2 <= EPS10, 0.0, sigma2)
+        sigma2 = numpy.where(sigma2 <= metafopy.models.mv_structs.EPS10, 0.0, sigma2)
         for j, D in enumerate(problem.D_S):
             M = M + sigma2[j] * D
     tau2 = rho = G = gamma2 = phi = H = None

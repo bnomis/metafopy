@@ -24,6 +24,18 @@ and `PLO`/`IRLN` for proportions and rates) are available. `rma_mh` and
 slightly better optimum). `rma_glmm` does not port the experimental measures `PR`,
 `RR`, `RD` and `PLN`.
 
+`rma_mv` fits multivariate and multilevel models (all variance-covariance structures
+of metafor, known correlation matrices via `R=`, `sparse=True`, `dfs='contain'`) and
+matches metafor 5.2-1 to about 1e-5 (variance components on flat likelihoods to about
+1e-3). `predict`, `anova` and profile-likelihood `confint` work for `rma_mv`. `vcalc`,
+`rcalc`, `bldiag` and `blsplit` build the sampling variance-covariance matrices, and
+`robust` gives cluster-robust inference for `rma_uni` and `rma_mv` fits, either with
+metafor's default sandwich estimator or, with `club_sandwich=True`, with the CR0-CR3
+estimators, Satterthwaite degrees of freedom and Wald tests of the R package
+[clubSandwich](https://jepusto.github.io/clubSandwich/). `rma_mv` does not port
+`optbeta`, `vccon`, `restart`, `cvvc` or `verbose`; `robust` does not port the
+saddlepoint test or the HTA/HTB/EDF/EDT Wald tests.
+
 ```python
 import numpy as np
 from metafopy import datasets, rma, confint, predict

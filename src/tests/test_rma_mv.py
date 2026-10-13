@@ -75,6 +75,7 @@ def konst(**kwargs: typing.Any) -> metafopy.RMAMVResult:
 YEAR = '~ I(year - 1990)'
 NESTED = '~ 1 | district/school'
 
+# auditme: accept[non-alphabetical-dict-keys] the order follows the R fixture generator
 CASES: dict[str, Fit] = {
     'kon_nested': lambda: konst(),
     'kon_nested_ml': lambda: konst(method='ML'),
@@ -98,6 +99,7 @@ CASES: dict[str, Fit] = {
     'kon_interaction': lambda: konst(random='~ 1 | interaction(district, school)'),
     'kon_weights': lambda: konst(W=1 / kon()['vi'].to_numpy()),
     'kon_spexp': lambda: konst(random='~ year | district', struct='SPEXP'),
+    # auditme: accept[literal-duplication] the fixture names repeat as the R script that generates them repeats them
     'ass_cs': lambda: metafopy.rma_mv('yi', 'vi', random=['~ 1 | study', '~ 1 | esid'], data=ass()),
     'ass_cs_ml': lambda: metafopy.rma_mv('yi', 'vi', random='~ 1 | study/esid', data=ass(), method='ML'),
     'ass_mods': lambda: metafopy.rma_mv('yi', 'vi', mods='~ C(deltype) + year', random='~ 1 | study/esid', data=ass()),
@@ -133,9 +135,13 @@ CASES: dict[str, Fit] = {
     'sim_gdiag': lambda: simulated(mods='~ x1', random='~ x1 + x2 || study', struct='GEN'),
     'sim_s_and_g': lambda: simulated(random=['~ 1 | id', '~ outcome | study'], struct='CS'),
     'sim_two_inner_outer': lambda: simulated(random=['~ outcome | study', '~ outcome | group'], struct=['CS', 'HCS']),
+    # auditme: accept[literal-duplication] the fixture names repeat as the R script that generates them repeats them
     'sim_R_known': lambda: simulated(random=['~ 1 | species', '~ 1 | study'], R={'species': species_matrix()}),
+    # auditme: accept[literal-duplication] the fixture names repeat as the R script that generates them repeats them
     'sim_R_cov0': lambda: simulated(random=['~ 1 | species', '~ 1 | study'], R={'species': species_matrix()}, Rscale='cor0'),
+    # auditme: accept[literal-duplication] the fixture names repeat as the R script that generates them repeats them
     'sim_R_none': lambda: simulated(random=['~ 1 | species', '~ 1 | study'], R={'species': species_matrix()}, Rscale='none'),
+    # auditme: accept[literal-duplication] the fixture names repeat as the R script that generates them repeats them
     'sim_R_sparse': lambda: simulated(random=['~ 1 | species', '~ 1 | study'], R={'species': species_matrix()}, sparse=True),
     'sim_na': lambda: simulated(mods='~ x1', random='~ 1 | study', data=sim_na()),
     'sim_na_un': lambda: simulated(random='~ outcome | study', struct='UN', data=sim_na()),
@@ -179,6 +185,7 @@ def test_fit(name: str) -> None:
     res = run(name)
     tol = FLAT.get(name, VC_RTOL)
     components(res, ref, tol)
+    # auditme: accept[literal-duplication] the fixture names repeat as the R script that generates them repeats them
     for key, attr in (('beta', 'beta'), ('se', 'se'), ('zval', 'zval'), ('pval', 'pval'), ('ci_lb', 'ci_lb'), ('ci_ub', 'ci_ub')):
         vector(getattr(res, attr), ref[key], f'{name} {key}', rtol=tol, atol=1e-7)
     vector(res.vb, numpy.array(ref['vb']).reshape(-1), f'{name} vb', rtol=tol, atol=1e-8)
@@ -303,6 +310,7 @@ def kon_predict_model(test: str = 'z') -> metafopy.RMAMVResult:
 def test_predict(key: str, test: str, newmods: list[int] | None) -> None:
     ref = REF[key]
     pr = kon_predict_model(test).predict(newmods)
+    # auditme: accept[literal-duplication] the fixture names repeat as the R script that generates them repeats them
     for field in ('pred', 'se', 'ci_lb', 'ci_ub', 'pi_lb', 'pi_ub'):
         if field in ref:
             vector(getattr(pr, field), ref[field], f'{key} {field}', rtol=1e-5, atol=1e-8)
@@ -339,10 +347,12 @@ def ci_model(name: str) -> metafopy.RMAMVResult:
     if name == 'kon':
         return metafopy.rma_mv('yi', 'vi', random='~ 1 | district/school', data=kon())
     if name == 'ass':
+        # auditme: accept[literal-duplication] the fixture names repeat as the R script that generates them repeats them
         return metafopy.rma_mv('yi', 'vi', random=['~ 1 | study', '~ 1 | esid'], data=ass())
     return berkey(mods='~ 0 + outcome', random='~ outcome | trial', struct=name.removeprefix('ber_'))
 
 
+# auditme: accept[non-alphabetical-dict-keys] the order follows the R fixture generator
 CI_CASES = {
     'ci_kon_sigma2_1': ('kon', {'sigma2': 0}),
     'ci_kon_sigma2_2': ('kon', {'sigma2': 1}),

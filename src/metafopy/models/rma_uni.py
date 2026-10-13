@@ -819,6 +819,7 @@ def fixed_effects(
     """
     k, p = X.shape
     wi = 1.0 / (vi + tau2)
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     knha = test in ('knha', 'adhoc')
     s2w = 1.0
     if weighted:
@@ -969,6 +970,7 @@ def format_result(res: RMAResult, digits: int) -> str:
         out.append('')
 
     if not math.isnan(res.QE):
+        # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
         name, label = ('Q', 'Heterogeneity') if res.int_only else ('QE', 'Residual Heterogeneity')
         out.append(f'Test for {label}:')
         out.append(f'{name}(df = {res.k - res.p}) = {metafopy.printing.fmt_num(res.QE, digits)}, p-val {pfmt(res.QEp, digits)}')

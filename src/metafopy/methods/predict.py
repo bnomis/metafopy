@@ -152,7 +152,11 @@ def level_indices(
     k_new: int,
     what: str,
 ) -> list[int]:
-    """0-based variance-component positions from labels or 0-based integers, recycled to ``k_new``."""
+    """0-based variance-component positions from labels or 0-based integers, recycled to ``k_new``.
+
+    Raises:
+        metafopy.errors.InputError: a level does not exist or the number of levels does not match.
+    """
     seq = [levels] if isinstance(levels, str | int) else list(levels)
     out: list[int] = []
     for v in seq:

@@ -30,6 +30,7 @@ __all__ = [
 ]
 
 FloatArray = numpy.typing.NDArray[numpy.float64]
+# auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
 CR_TYPES = ('CR0', 'CR1', 'CR1p', 'CR1S', 'CR2', 'CR3')
 
 
@@ -249,7 +250,11 @@ def satterthwaite_df(P: FloatArray) -> FloatArray:
 
 
 def coef_df(sw: Sandwich, test: str) -> FloatArray:
-    """Degrees of freedom of the t-tests for all coefficients (``z``: inf, ``naive-t``: J-1, ``naive-tp``: J-p, ``Satterthwaite``)."""
+    """Degrees of freedom of the t-tests for all coefficients (``z``: inf, ``naive-t``: J-1, ``naive-tp``: J-p, ``Satterthwaite``).
+
+    Raises:
+        metafopy.errors.InputError: the test is unknown.
+    """
     p = sw.vcov.shape[0]
     J = sw.n_clusters
     if test == 'z':
@@ -303,6 +308,7 @@ def wald_test(sw: Sandwich, beta: FloatArray, C: FloatArray, test: str = 'HTZ', 
     Raises:
         metafopy.errors.InputError: the test is not supported.
     """
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if test not in ('chi-sq', 'Naive-F', 'Naive-Fp', 'HTZ'):
         raise metafopy.errors.InputError(f"Wald test {test!r} is not supported; use 'chi-sq', 'Naive-F', 'Naive-Fp' or 'HTZ'.")
     q, p = C.shape

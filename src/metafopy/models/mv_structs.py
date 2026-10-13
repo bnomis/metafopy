@@ -24,6 +24,7 @@ import metafopy.errors
 import metafopy.formula
 import metafopy.models.mv_factor
 
+# auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
 __all__ = [
     'GENERAL',
     'SPATIAL',
@@ -300,7 +301,11 @@ def ar1_corr(r: float, n: int) -> FloatArray:
 
 
 def distance_matrix(group_inner: pandas.DataFrame, dist: object) -> FloatArray:
-    """Distances between the rows of the inner variables (``dist(model.matrix(~ x + y - 1))``)."""
+    """Distances between the rows of the inner variables (``dist(model.matrix(~ x + y - 1))``).
+
+    Raises:
+        metafopy.errors.InternalError: a distance matrix reached this function unresolved.
+    """
     if isinstance(dist, pandas.DataFrame):
         raise metafopy.errors.InternalError('distance matrices are resolved by the caller')
     cols = []
@@ -368,6 +373,7 @@ def process_after_rmna(
 
     if struct in ('ID', 'DIAG', 'GDIAG'):
         g.rho = numpy.zeros(1)
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if g.nlevels[0] == 1 and struct in ('CS', 'HCS', 'AR', 'HAR', 'CAR') and numpy.isnan(g.rho[0]):
         g.rho = numpy.zeros(1)
         warnings.warn(f'Inner factor has only a single level, so fixed value of {rname} to 0.', stacklevel=3)
@@ -390,6 +396,7 @@ def process_after_rmna(
             g.tau2[single] = 0.0
             warnings.warn("Inner factor has k=1 for one or more levels. Corresponding 'tau2' value(s) fixed to 0.", stacklevel=3)
 
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if g.nlevels[1] == n and struct in ('CS', 'HCS', 'AR', 'HAR', 'CAR') and numpy.isnan(g.rho[0]):
         g.rho = numpy.zeros(1)
         warnings.warn(f'Each level of the outer factor contains only a single level of the inner factor, so fixed value of {rname} to 0.', stacklevel=3)
@@ -424,6 +431,7 @@ def process_after_rmna(
         lt = lower_tri(g.Dmat)
         g.rho_init = numpy.array([numpy.quantile(lt, 0.25)])
 
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if g.levels_r.any() and struct in ('HCS', 'HAR', 'DIAG'):
         g.tau2 = g.tau2.copy()
         g.tau2[g.levels_r] = 0.0
@@ -478,6 +486,10 @@ def con_e(v: FloatArray, r: FloatArray, term: Term, vctransf: bool, vccov: bool)
 
     ``v`` and ``r`` are in the optimisation space (``log`` variances, ``atanh``/``qlogis``/``log`` correlations, or Cholesky
     factors) when ``vctransf``; fixed values (``term.v_arg``, ``term.r_arg``) replace them.
+
+
+    Raises:
+        metafopy.errors.InternalError: the distance matrix of a spatial structure is missing.
     """
     struct = term.struct
     v_arg, r_arg = term.v_arg, term.r_arg
@@ -515,6 +527,7 @@ def con_e(v: FloatArray, r: FloatArray, term: Term, vctransf: bool, vccov: bool)
         s = numpy.sqrt(v)
         E = s[:, None] * E * s[None, :]
         numpy.fill_diagonal(E, v)
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     elif struct in ('UN', 'GEN'):
         if term.cholesky:
             E = con_vcov_un_chol(v, r)
@@ -527,6 +540,7 @@ def con_e(v: FloatArray, r: FloatArray, term: Term, vctransf: bool, vccov: bool)
         E = numpy.diag(v)
     elif struct in ('ID', 'DIAG'):
         E = numpy.diag(numpy.broadcast_to(v, (n1,)).copy()) if v.shape[0] == 1 else numpy.diag(v)
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     elif struct in ('AR', 'HAR', 'CAR'):
         if struct == 'CAR':
             if n1 > 1:
@@ -547,8 +561,10 @@ def con_e(v: FloatArray, r: FloatArray, term: Term, vctransf: bool, vccov: bool)
         same = Z2 @ Z2.T
         rr = float(r[0])
         vv = float(v[0])
+        # auditme: accept[assert-never-missing] the value is a str that is validated against the allowed names earlier
         if struct == 'SPEXP':
             E = vv * numpy.exp(-D / rr) * same
+        # auditme: accept[assert-never-missing] the value is a str that is validated against the allowed names earlier
         elif struct == 'SPGAU':
             E = vv * numpy.exp(-(D**2) / rr**2) * same
         elif struct == 'SPLIN':

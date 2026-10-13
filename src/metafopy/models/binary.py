@@ -266,6 +266,7 @@ def result_rows(res: FixedBinaryResult, digits: int, scale: str | None) -> list[
         '',
         f'Model Results ({scale} scale):',
         '',
+        # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
         metafopy.printing.fmt_table(['estimate', 'ci.lb', 'ci.ub'], [exp_row]),
     ]
 

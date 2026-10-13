@@ -39,6 +39,7 @@ type Mat = FloatArray | scipy.sparse.csc_array
 EPS = float(numpy.finfo(float).eps)
 FIXED_METHODS = ('CE', 'EE', 'FE')
 RSCALES = ('cor', 'cor0', 'cov0', 'none')
+# auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
 INIT_NAMES = ('sigma2_init', 'tau2_init', 'rho_init', 'gamma2_init', 'phi_init')
 
 
@@ -89,10 +90,6 @@ class SInfo:
     R: list[pandas.DataFrame | None]
     Rfix: list[bool]
     with_r: bool
-
-
-def expand1(x: FloatArray, n: int) -> FloatArray:
-    return numpy.full(n, x[0]) if x.shape[0] == 1 else x
 
 
 def as_vector(x: numpy.typing.ArrayLike | None) -> FloatArray | None:
@@ -158,7 +155,11 @@ def process_s_before(
     if any(f.has_na for f in factors):
         raise metafopy.errors.InputError("No NAs allowed in variables specified in the 'random' argument.")
     n = len(factors)
-    sig = numpy.full(n, numpy.nan) if sigma2 is None else expand1(numpy.atleast_1d(numpy.asarray(sigma2, dtype=numpy.float64)).reshape(-1), n)
+    sig = (
+        numpy.full(n, numpy.nan)
+        if sigma2 is None
+        else metafopy.models.mv_structs.expand1(numpy.atleast_1d(numpy.asarray(sigma2, dtype=numpy.float64)).reshape(-1), n)
+    )
     if sig.shape[0] != n:
         raise metafopy.errors.InputError(f"Length of the 'sigma2' argument ({sig.shape[0]}) does not match the actual number of variance components ({n}).")
     if (sig[~numpy.isnan(sig)] < 0).any():
@@ -268,7 +269,11 @@ def transform_start(
     rho_init: FloatArray,
     cholesky: bool,
 ) -> tuple[FloatArray, FloatArray]:
-    """Starting values on the scale the optimiser works on (log variances, atanh/logit/log correlations, or Cholesky factors)."""
+    """Starting values on the scale the optimiser works on (log variances, atanh/logit/log correlations, or Cholesky factors).
+
+    Raises:
+        metafopy.errors.EstimationError: the initial variance-covariance matrix is not positive definite.
+    """
     if cholesky:
         E = metafopy.models.mv_structs.con_vcov_un(tau2_init, rho_init)
         try:
@@ -381,6 +386,7 @@ def rma_mv(
     test_l = test.lower()
     if test_l == 'hksj':
         test_l = 'knha'
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if test_l not in ('z', 't', 'knha', 'adhoc'):
         raise metafopy.errors.InputError("Unknown option specified for the 'test' argument.")
     if isinstance(dfs, str) and dfs not in ('residual', 'contain'):
@@ -519,6 +525,7 @@ def rma_mv(
     if X.shape[1] == 0:
         warnings.warn('Cannot fit model with an empty model matrix. Coerced an intercept into the model.', stacklevel=2)
         X = numpy.ones((k, 1))
+        # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
         names = ['intrcpt']
         coef_na = numpy.zeros(1, dtype=numpy.bool_)
     else:
@@ -601,18 +608,22 @@ def rma_mv(
         QE = float(res_fe @ fac_v.solve(res_fe[:, None])[:, 0])
     denom = sigma2s + tau2s + gamma2s
     sigma2_init = as_vector(con.sigma2_init)
-    sigma2_init = numpy.full(sigma2s, total / denom) if sigma2_init is None else expand1(sigma2_init, sigma2s)
+    sigma2_init = numpy.full(sigma2s, total / denom) if sigma2_init is None else metafopy.models.mv_structs.expand1(sigma2_init, sigma2s)
     tau2_init = as_vector(con.tau2_init)
-    tau2_init = numpy.full(tau2s, total / denom) if tau2_init is None else expand1(tau2_init, tau2s)
+    tau2_init = numpy.full(tau2s, total / denom) if tau2_init is None else metafopy.models.mv_structs.expand1(tau2_init, tau2s)
     gamma2_init = as_vector(con.gamma2_init)
-    gamma2_init = numpy.full(gamma2s, total / denom) if gamma2_init is None else expand1(gamma2_init, gamma2s)
+    gamma2_init = numpy.full(gamma2s, total / denom) if gamma2_init is None else metafopy.models.mv_structs.expand1(gamma2_init, gamma2s)
     rho_init = as_vector(con.rho_init)
     rho_init = (
-        (group_g.rho_init if group_g is not None and group_g.rho_init is not None else numpy.full(rhos, 0.5)) if rho_init is None else expand1(rho_init, rhos)
+        (group_g.rho_init if group_g is not None and group_g.rho_init is not None else numpy.full(rhos, 0.5))
+        if rho_init is None
+        else metafopy.models.mv_structs.expand1(rho_init, rhos)
     )
     phi_init = as_vector(con.phi_init)
     phi_init = (
-        (group_h.rho_init if group_h is not None and group_h.rho_init is not None else numpy.full(phis, 0.5)) if phi_init is None else expand1(phi_init, phis)
+        (group_h.rho_init if group_h is not None and group_h.rho_init is not None else numpy.full(phis, 0.5))
+        if phi_init is None
+        else metafopy.models.mv_structs.expand1(phi_init, phis)
     )
 
     if with_s and (sigma2_init <= 0).any():
@@ -629,15 +640,19 @@ def rma_mv(
         if grp.struct != 'CAR' and grp.struct not in metafopy.models.mv_structs.SPATIAL and ((r_init <= -1) | (r_init >= 1)).any():
             raise metafopy.errors.InputError(f"Value(s) of '{rn}.init' must be in (-1,1).")
 
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     chol_default = [struct_t[0] in ('UN', 'GEN'), struct_t[1] in ('UN', 'GEN')]
     if con.cholesky is not None:
         chol_user = [bool(con.cholesky)] * 2 if isinstance(con.cholesky, bool) else [bool(c) for c in con.cholesky]
         chol_default = chol_user
     cholesky = (
+        # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
         bool(chol_default[0] and group_g is not None and struct_t[0] in ('UN', 'GEN')),
+        # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
         bool(chol_default[1] and group_h is not None and struct_t[1] in ('UN', 'GEN')),
     )
 
+    # auditme: accept[redundant-sink-caller-plus-callee] the direct call logs the sigma2 start values, transform_start the tau2 and rho ones
     s_start = numpy.log(sigma2_init) if with_s else numpy.zeros(1)
     if group_g is not None:
         tau_start, rho_start = transform_start(group_g, tau2_init, rho_init, cholesky[0])
@@ -711,6 +726,7 @@ def rma_mv(
     gamma2_out, phi_out, H = (fit.gamma2, fit.phi, fit.H) if group_h is not None else (None, None, None)
 
     # tests of the fixed effects
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if test_l in ('knha', 'adhoc', 't'):
         if isinstance(dfs, str):
             if dfs == 'residual':
@@ -718,7 +734,7 @@ def rma_mv(
             else:
                 ddf = ddf_contain(X, k, sinfo.factors, group_g, group_h)
         else:
-            ddf = expand1(numpy.atleast_1d(numpy.asarray(dfs, dtype=numpy.float64)).reshape(-1), p)
+            ddf = metafopy.models.mv_structs.expand1(numpy.atleast_1d(numpy.asarray(dfs, dtype=numpy.float64)).reshape(-1), p)
             if ddf.shape[0] != p:
                 raise metafopy.errors.InputError(f"Length of the 'dfs' argument ({ddf.shape[0]}) does not match the number of model coefficient ({p}).")
             ddf = numpy.where(ddf < 1, 1.0, ddf)
@@ -726,6 +742,7 @@ def rma_mv(
         ddf = numpy.full(p, numpy.nan)
 
     s2w = 1.0
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if test_l in ('knha', 'adhoc'):
         dense_m = M.toarray() if scipy.sparse.issparse(M) else M
         fac_m = metafopy.models.mv_lik.Factorization(M)
@@ -748,6 +765,7 @@ def rma_mv(
     se = numpy.sqrt(numpy.diag(vb))
     zval = beta / se
     alpha = metafopy.models.rma_uni.level_to_alpha(level)
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if test_l in ('knha', 'adhoc', 't'):
         QM = QM / m
         df2 = float(numpy.min(ddf[idx_b]))

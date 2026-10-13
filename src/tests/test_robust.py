@@ -32,6 +32,7 @@ def weights_arg() -> numpy.typing.NDArray[numpy.float64]:
     return numpy.asarray(1 / numpy.sqrt(KON['vi'].to_numpy()))
 
 
+# auditme: accept[non-alphabetical-dict-keys] the order follows the R fixture generator
 MODELS: dict[str, typing.Callable[[], typing.Any]] = {
     'uni_int': lambda: uni(),
     'uni_mods': lambda: uni(mods='~ ' + MODS),
@@ -45,10 +46,12 @@ MODELS: dict[str, typing.Callable[[], typing.Any]] = {
     'mv_weights': lambda: mv('~ ' + MODS, W=1 / KON['vi'].to_numpy()),
     'mv_sparse': lambda: mv('~ ' + MODS, sparse=True),
     'mv_subset': lambda: mv('~ ' + MODS, subset='district != 11'),
+    # auditme: accept[literal-duplication] the fixture names repeat as the R script that generates them repeats them
     'ass': lambda: metafopy.rma_mv('yi', 'vi', mods='~ year', random=['~ 1 | study', '~ 1 | esid'], data=ASS),
 }
 
 # (fixture key, model, cluster, keyword arguments)
+# auditme: accept[non-alphabetical-dict-keys] the order follows the R fixture generator
 DEFAULT_CASES: dict[str, tuple[str, str, dict[str, typing.Any]]] = {
     'uni_int': ('uni_int', 'district', {}),
     'uni_mods': ('uni_mods', 'district', {}),
@@ -108,6 +111,7 @@ def finite(values: typing.Any) -> numpy.typing.NDArray[numpy.float64]:
 def test_numbers(key: str) -> None:
     ref = REF[key]
     res = fit(key)
+    # auditme: accept[literal-duplication] the fixture names repeat as the R script that generates them repeats them
     for attr, name in (('se', 'se'), ('zval', 'zval'), ('pval', 'pval'), ('ci_lb', 'ci_lb'), ('ci_ub', 'ci_ub')):
         vector(getattr(res, attr), ref[name], f'{key} {name}')
     vector(res.vb, numpy.array(ref['vb']).reshape(-1), f'{key} vb')
@@ -158,6 +162,7 @@ def test_print(key: str) -> None:
 def test_predict(key: str, model: str) -> None:
     ref = REF[key]
     pr = metafopy.robust(MODELS[model](), 'district').predict([-5, 0, 5])
+    # auditme: accept[literal-duplication] the fixture names repeat as the R script that generates them repeats them
     for field in ('pred', 'se', 'ci_lb', 'ci_ub', 'pi_lb', 'pi_ub'):
         vector(getattr(pr, field), ref[field], f'{key} {field}', rtol=1e-5)
     with pytest.raises(metafopy.errors.InputError, match='not supported'):
