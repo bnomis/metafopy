@@ -10,12 +10,12 @@ Source: R ``src/library/stats/src/zeroin.c`` (GPL-2 | GPL-3), itself based on
 Brent (1973), *Algorithms for Minimization without Derivatives*, ch. 4.
 """
 
-from __future__ import annotations
-
+import collections.abc
+import dataclasses
 import math
 import sys
-from collections.abc import Callable
-from dataclasses import dataclass
+
+import metafopy.errors
 
 __all__ = ['RootResult', 'uniroot', 'zeroin2']
 
@@ -23,7 +23,7 @@ EPSILON = sys.float_info.epsilon
 DEFAULT_TOL = EPSILON**0.25
 
 
-@dataclass(frozen=True, slots=True)
+@dataclasses.dataclass(frozen=True, slots=True)
 class RootResult:
     root: float
     f_root: float
@@ -33,7 +33,7 @@ class RootResult:
 
 
 def zeroin2(
-    f: Callable[[float], float],
+    f: collections.abc.Callable[[float], float],
     ax: float,
     bx: float,
     fa: float,
@@ -101,7 +101,7 @@ def zeroin2(
 
 
 def uniroot(
-    f: Callable[[float], float],
+    f: collections.abc.Callable[[float], float],
     lower: float,
     upper: float,
     *,
@@ -112,15 +112,18 @@ def uniroot(
 
     Raises ``ValueError`` when ``f(lower)`` and ``f(upper)`` have the same sign
     (R: "f() values at end points not of opposite sign").
+
+    Raises:
+        metafopy.errors.InputError: an argument or the data is invalid.
     """
     if not lower < upper:
-        raise ValueError('lower < upper is not fulfilled')
+        raise metafopy.errors.InputError('lower < upper is not fulfilled')
     f_lower = f(lower)
     f_upper = f(upper)
     if math.isnan(f_lower) or math.isnan(f_upper):
-        raise ValueError('f() value at an end point is NA')
+        raise metafopy.errors.InputError('f() value at an end point is NA')
     if f_lower * f_upper > 0:
-        raise ValueError('f() values at end points not of opposite sign')
+        raise metafopy.errors.InputError('f() values at end points not of opposite sign')
     root, iterations, prec = zeroin2(f, lower, upper, f_lower, f_upper, tol, maxiter)
     return RootResult(
         root=root,

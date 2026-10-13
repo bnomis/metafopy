@@ -1,29 +1,28 @@
 """Wald tests of model coefficients and likelihood-ratio tests between models."""
 
-from __future__ import annotations
-
+import dataclasses
+import functools
 import math
+import typing
 import warnings
-from dataclasses import dataclass
-from functools import singledispatch
-from typing import Any
 
-import numpy as np
-import pandas as pd
-from numpy.typing import ArrayLike, NDArray
-from scipy import stats
+import numpy
+import numpy.typing
+import pandas
+import scipy.stats
 
-from metafopy._print import fmt_num, fmt_pval
-from metafopy.core.linalg import drop_redundant
-from metafopy.models._tau2 import FIXED_EFFECTS
-from metafopy.models.rma_uni import Btt, RMAResult, coef_span, set_btt
+import metafopy.core.linalg
+import metafopy.errors
+import metafopy.models.rma_uni
+import metafopy.models.tau2
+import metafopy.printing
 
 __all__ = ['LRTResult', 'WaldResult', 'anova']
 
-FloatArray = NDArray[np.float64]
+FloatArray = numpy.typing.NDArray[numpy.float64]
 
 
-@dataclass(frozen=True, slots=True)
+@dataclasses.dataclass(frozen=True, slots=True)
 class WaldResult:
     """Omnibus Wald test (``QM``) and, for linear combinations, individual tests."""
 
@@ -38,17 +37,21 @@ class WaldResult:
 
     def __str__(self) -> str:
         m, ddf = self.QMdf
-        head = f'Test of Moderators (coefficient{"s" if m > 1 else ""} {coef_span(self.btt)}):' if self.btt is not None else 'Omnibus Test of Hypotheses:'
-        p = fmt_pval(self.QMp)
+        head = (
+            f'Test of Moderators (coefficient{"s" if m > 1 else ""} {metafopy.models.rma_uni.coef_span(self.btt)}):'
+            if self.btt is not None
+            else 'Omnibus Test of Hypotheses:'
+        )
+        p = metafopy.printing.fmt_pval(self.QMp)
         p = f'< {p[1:]}' if p.startswith('<') else f'= {p}'
         if ddf is None:
-            body = f'QM(df = {m}) = {fmt_num(self.QM)}, p-val {p}'
+            body = f'QM(df = {m}) = {metafopy.printing.fmt_num(self.QM)}, p-val {p}'
         else:
-            body = f'F(df1 = {m}, df2 = {ddf}) = {fmt_num(self.QM)}, p-val {p}'
+            body = f'F(df1 = {m}, df2 = {ddf}) = {metafopy.printing.fmt_num(self.QM)}, p-val {p}'
         return f'{head}\n{body}'
 
 
-@dataclass(frozen=True, slots=True)
+@dataclasses.dataclass(frozen=True, slots=True)
 class LRTResult:
     """Likelihood-ratio test of a full against a reduced model."""
 
@@ -64,7 +67,7 @@ class LRTResult:
     tau2_reduced: float
     R2: float
 
-    def to_frame(self) -> pd.DataFrame:
+    def to_frame(self) -> pandas.DataFrame:
         cols = ['df', 'AIC', 'BIC', 'AICc', 'logLik', 'LRT', 'pval', 'QE', 'tau^2', 'R^2']
         full = [
             self.df_full,
@@ -90,64 +93,74 @@ class LRTResult:
             self.tau2_reduced,
             self.R2,
         ]
-        return pd.DataFrame([full, red], index=['Full', 'Reduced'], columns=cols)
+        return pandas.DataFrame([full, red], index=['Full', 'Reduced'], columns=cols)
 
     def __str__(self) -> str:
         return self.to_frame().round(4).to_string()
 
 
-@singledispatch
-def anova(model: Any, *args: Any, **kwargs: Any) -> WaldResult | LRTResult:
-    """Wald or likelihood-ratio tests for fitted models."""
-    raise TypeError(f'anova() not implemented for {type(model).__name__}')
+@functools.singledispatch
+def anova(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> WaldResult | LRTResult:
+    """Wald or likelihood-ratio tests for fitted models.
+
+    Raises:
+        metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
+    """
+    raise metafopy.errors.ArgumentError(f'anova() not implemented for {type(model).__name__}')
 
 
 @anova.register
-def _anova_rma_uni(
-    model: RMAResult,
-    model2: RMAResult | None = None,
+def anova_rma_uni(
+    model: metafopy.models.rma_uni.RMAResult,
+    model2: metafopy.models.rma_uni.RMAResult | None = None,
     *,
-    btt: Btt = None,
-    X: ArrayLike | None = None,
-    rhs: ArrayLike | float = 0.0,
+    btt: metafopy.models.rma_uni.Btt = None,
+    X: numpy.typing.ArrayLike | None = None,
+    rhs: numpy.typing.ArrayLike | float = 0.0,
 ) -> WaldResult | LRTResult:
     """Test coefficients of one model, or compare two nested models.
 
     ``anova(res, btt=...)`` tests a subset of coefficients (0-based indices);
     ``anova(res, X=L)`` tests linear combinations ``L beta = rhs``;
     ``anova(full, reduced)`` gives a likelihood-ratio test.
+
+    Raises:
+        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InternalError: an internal invariant does not hold.
     """
     x = model
     tdist = x.ddf is not None
     if model2 is not None:
-        return _lrt(x, model2)
+        return lrt(x, model2)
 
     if X is not None:
-        L = np.atleast_2d(np.asarray(X, dtype=np.float64))
+        L = numpy.atleast_2d(numpy.asarray(X, dtype=numpy.float64))
         if L.shape[1] != x.p:
-            raise ValueError(f'X must have {x.p} columns')
+            raise metafopy.errors.InputError(f'X must have {x.p} columns')
         m = L.shape[0]
-        Xb = L @ x.beta - np.broadcast_to(np.asarray(rhs, dtype=np.float64), (m,))
+        Xb = L @ x.beta - numpy.broadcast_to(numpy.asarray(rhs, dtype=numpy.float64), (m,))
         vXb = L @ x.vb @ L.T
-        se = np.sqrt(np.diag(vXb))
+        se = numpy.sqrt(numpy.diag(vXb))
         zval = Xb / se
         if tdist:
-            assert x.ddf is not None
-            pval = 2 * stats.t.sf(np.abs(zval), x.ddf)
+            if x.ddf is None:
+                raise metafopy.errors.InternalError('x.ddf must not be None')
+            pval = 2 * scipy.stats.t.sf(numpy.abs(zval), x.ddf)
         else:
-            pval = 2 * stats.norm.sf(np.abs(zval))
+            pval = 2 * scipy.stats.norm.sf(numpy.abs(zval))
         QM = QMp = math.nan
-        if np.linalg.matrix_rank(L) == m:
+        if numpy.linalg.matrix_rank(L) == m:
             try:
-                QM = float(Xb @ np.linalg.solve(vXb, Xb))
-            except np.linalg.LinAlgError:
+                QM = float(Xb @ numpy.linalg.solve(vXb, Xb))
+            except numpy.linalg.LinAlgError:
                 QM = math.nan
             if tdist:
-                assert x.ddf is not None
+                if x.ddf is None:
+                    raise metafopy.errors.InternalError('x.ddf must not be None')
                 QM /= m
-                QMp = float(stats.f.sf(QM, m, x.ddf))
+                QMp = float(scipy.stats.f.sf(QM, m, x.ddf))
             else:
-                QMp = float(stats.chi2.sf(QM, m))
+                QMp = float(scipy.stats.chi2.sf(QM, m))
         return WaldResult(
             QM=QM,
             QMdf=(m, x.ddf),
@@ -155,33 +168,34 @@ def _anova_rma_uni(
             Xb=Xb,
             se=se,
             zval=zval,
-            pval=np.asarray(pval, dtype=np.float64),
+            pval=numpy.asarray(pval, dtype=numpy.float64),
         )
 
-    idx = set_btt(btt, x.p, x.int_incl, x.coef_names) if btt is not None else x.btt
-    sub = np.array(idx)
+    idx = metafopy.models.rma_uni.set_btt(btt, x.p, x.int_incl, x.coef_names) if btt is not None else x.btt
+    sub = numpy.array(idx)
     m = len(idx)
     b = x.beta[sub]
     try:
-        QM = float(b @ np.linalg.solve(x.vb[np.ix_(sub, sub)], b))
-    except np.linalg.LinAlgError:
+        QM = float(b @ numpy.linalg.solve(x.vb[numpy.ix_(sub, sub)], b))
+    except numpy.linalg.LinAlgError:
         QM = math.nan
     if tdist:
-        assert x.ddf is not None
+        if x.ddf is None:
+            raise metafopy.errors.InternalError('x.ddf must not be None')
         QM /= m
-        QMp = float(stats.f.sf(QM, m, x.ddf)) if x.ddf > 0 else math.nan
+        QMp = float(scipy.stats.f.sf(QM, m, x.ddf)) if x.ddf > 0 else math.nan
     else:
-        QMp = float(stats.chi2.sf(QM, m))
+        QMp = float(scipy.stats.chi2.sf(QM, m))
     return WaldResult(QM=QM, QMdf=(m, x.ddf), QMp=QMp, btt=idx)
 
 
-def _lrt(a: RMAResult, b: RMAResult) -> LRTResult:
+def lrt(a: metafopy.models.rma_uni.RMAResult, b: metafopy.models.rma_uni.RMAResult) -> LRTResult:
     if a.parms == b.parms:
-        raise ValueError('models do not differ in the number of parameters')
+        raise metafopy.errors.InputError('models do not differ in the number of parameters')
     full, red = (a, b) if a.parms > b.parms else (b, a)
-    if full.k != red.k or not np.allclose(full.yi, red.yi):
-        raise ValueError('models are not fitted to the same data')
-    same_X = full.X.shape == red.X.shape and np.allclose(full.X, red.X)
+    if full.k != red.k or not numpy.allclose(full.yi, red.yi):
+        raise metafopy.errors.InputError('models are not fitted to the same data')
+    same_X = full.X.shape == red.X.shape and numpy.allclose(full.X, red.X)
     if full.method == 'REML' and not same_X:
         warnings.warn(
             "REML comparisons not meaningful for models with different fixed effects (refit both models with method='ML').",
@@ -192,11 +206,11 @@ def _lrt(a: RMAResult, b: RMAResult) -> LRTResult:
     fs_r = red.fit_stats_reml if use_reml else red.fit_stats_ml
     LRT = max(0.0, fs_r.dev - fs_f.dev)
     df = full.parms - red.parms
-    pval = float(stats.chi2.sf(LRT, df))
+    pval = float(scipy.stats.chi2.sf(LRT, df))
 
-    if full.method in FIXED_EFFECTS and red.method in FIXED_EFFECTS:
-        s2f = _sigma2(full)
-        s2r = _sigma2(red)
+    if full.method in metafopy.models.tau2.FIXED_EFFECTS and red.method in metafopy.models.tau2.FIXED_EFFECTS:
+        s2f = sigma2(full)
+        s2r = sigma2(red)
         R2 = 100 * max(0.0, (s2r - s2f) / s2r)
     elif red.tau2 == 0:
         R2 = 0.0
@@ -218,13 +232,13 @@ def _lrt(a: RMAResult, b: RMAResult) -> LRTResult:
     )
 
 
-def _sigma2(res: RMAResult) -> float:
+def sigma2(res: metafopy.models.rma_uni.RMAResult) -> float:
     """Residual variance of ``lm(yi ~ X, weights)`` as used for EE model R^2 in metafor."""
     n = res.k
-    w = (1.0 / res.vi if res.weights is None else res.weights) if res.weighted else np.ones(n)
-    Xi = np.column_stack([np.ones(n), res.X])
-    Xi = Xi[:, ~drop_redundant(Xi)]
-    sw = np.sqrt(w)
-    coef, *_ = np.linalg.lstsq(Xi * sw[:, None], res.yi * sw, rcond=None)
+    w = (1.0 / res.vi if res.weights is None else res.weights) if res.weighted else numpy.ones(n)
+    Xi = numpy.column_stack([numpy.ones(n), res.X])
+    Xi = Xi[:, ~metafopy.core.linalg.drop_redundant(Xi)]
+    sw = numpy.sqrt(w)
+    coef, *_ = numpy.linalg.lstsq(Xi * sw[:, None], res.yi * sw, rcond=None)
     e = res.yi - Xi @ coef
-    return float(np.sum(w * e**2) / (n - Xi.shape[1]))
+    return float(numpy.sum(w * e**2) / (n - Xi.shape[1]))

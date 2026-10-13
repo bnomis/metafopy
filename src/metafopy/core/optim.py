@@ -15,26 +15,26 @@ Sources (R 4.3.3, GPL-2 | GPL-3):
   differences with step ``ndeps``).
 """
 
-from __future__ import annotations
-
+import collections.abc
+import dataclasses
 import math
 import sys
-from collections.abc import Callable, Sequence
-from dataclasses import dataclass
 
-import numpy as np
-from numpy.typing import NDArray
+import numpy
+import numpy.typing
+
+import metafopy.errors
 
 __all__ = ['NelderMeadResult', 'fmin', 'nelder_mead', 'optimhess']
 
 EPSILON = sys.float_info.epsilon
 DBL_MAX = sys.float_info.max
-_BIG = 1.0e35
+BIG = 1.0e35
 
-type FloatArray = NDArray[np.float64]
+type FloatArray = numpy.typing.NDArray[numpy.float64]
 
 
-def fmin(f: Callable[[float], float], ax: float, bx: float, tol: float = EPSILON**0.25) -> float:
+def fmin(f: collections.abc.Callable[[float], float], ax: float, bx: float, tol: float = EPSILON**0.25) -> float:
     """Minimise ``f`` on ``[ax, bx]`` as R's ``optimize()`` does; returns the minimiser.
 
     Non-finite function values are replaced by ``DBL_MAX``, as R's ``fcn1`` wrapper does.
@@ -130,7 +130,7 @@ def fmin(f: Callable[[float], float], ax: float, bx: float, tol: float = EPSILON
     return x
 
 
-@dataclass(frozen=True, slots=True)
+@dataclasses.dataclass(frozen=True, slots=True)
 class NelderMeadResult:
     par: FloatArray
     value: float
@@ -139,8 +139,8 @@ class NelderMeadResult:
 
 
 def nelder_mead(
-    fn: Callable[[FloatArray], float],
-    par: Sequence[float] | FloatArray,
+    fn: collections.abc.Callable[[FloatArray], float],
+    par: collections.abc.Sequence[float] | FloatArray,
     *,
     abstol: float = -math.inf,
     reltol: float = math.sqrt(EPSILON),
@@ -149,8 +149,12 @@ def nelder_mead(
     gamma: float = 2.0,
     maxit: int = 500,
 ) -> NelderMeadResult:
-    """R's ``optim(method="Nelder-Mead")`` with its default control settings."""
-    bvec = np.array(par, dtype=np.float64)
+    """R's ``optim(method="Nelder-Mead")`` with its default control settings.
+
+    Raises:
+        metafopy.errors.InputError: an argument or the data is invalid.
+    """
+    bvec = numpy.array(par, dtype=numpy.float64)
     n = bvec.shape[0]
 
     def f_at(x: FloatArray) -> float:
@@ -163,11 +167,11 @@ def nelder_mead(
     # (vertices, then the centroid), indexed as in the C source.
     n1 = n + 1
     C = n + 2
-    P = np.zeros((n1, n + 2))
+    P = numpy.zeros((n1, n + 2))
     fail = 0
     f = f_at(bvec)
     if not math.isfinite(f):
-        raise ValueError('function cannot be evaluated at initial parameters')
+        raise metafopy.errors.InputError('function cannot be evaluated at initial parameters')
     funcount = 1
     convtol = reltol * (abs(f) + reltol)
     P[n1 - 1, 0] = f
@@ -198,7 +202,7 @@ def nelder_mead(
                     bvec = P[:n, j].copy()
                     f = f_at(bvec)
                     if not math.isfinite(f):
-                        f = _BIG
+                        f = BIG
                     funcount += 1
                     P[n1 - 1, j] = f
             calcvert = False
@@ -229,7 +233,7 @@ def nelder_mead(
             bvec[i] = (1.0 + alpha) * P[i, C - 1] - alpha * P[i, H - 1]
         f = f_at(bvec)
         if not math.isfinite(f):
-            f = _BIG
+            f = BIG
         funcount += 1
         VR = f
         if VR < VL:
@@ -240,7 +244,7 @@ def nelder_mead(
                 bvec[i] = f
             f = f_at(bvec)
             if not math.isfinite(f):
-                f = _BIG
+                f = BIG
             funcount += 1
             if f < VR:
                 P[:n, H - 1] = bvec
@@ -257,7 +261,7 @@ def nelder_mead(
                 bvec[i] = (1 - beta) * P[i, H - 1] + beta * P[i, C - 1]
             f = f_at(bvec)
             if not math.isfinite(f):
-                f = _BIG
+                f = BIG
             funcount += 1
 
             if f < P[n1 - 1, H - 1]:
@@ -285,13 +289,17 @@ def nelder_mead(
     return NelderMeadResult(P[:n, L - 1].copy(), float(P[n1 - 1, L - 1]), funcount, fail)
 
 
-def optimhess(fn: Callable[[FloatArray], float], par: Sequence[float] | FloatArray, ndeps: float = 1e-3) -> FloatArray:
-    """Numerical Hessian as computed by R's ``optim(..., hessian=TRUE)`` without a gradient."""
-    p = np.array(par, dtype=np.float64)
+def optimhess(fn: collections.abc.Callable[[FloatArray], float], par: collections.abc.Sequence[float] | FloatArray, ndeps: float = 1e-3) -> FloatArray:
+    """Numerical Hessian as computed by R's ``optim(..., hessian=TRUE)`` without a gradient.
+
+    Raises:
+        metafopy.errors.InputError: a finite-difference value is not finite.
+    """
+    p = numpy.array(par, dtype=numpy.float64)
     n = p.shape[0]
 
     def grad(x: FloatArray) -> FloatArray:
-        df = np.empty(n)
+        df = numpy.empty(n)
         for i in range(n):
             xp = x.copy()
             xp[i] = x[i] + ndeps
@@ -301,10 +309,10 @@ def optimhess(fn: Callable[[FloatArray], float], par: Sequence[float] | FloatArr
             val2 = float(fn(xm))
             df[i] = (val1 - val2) / (2 * ndeps)
             if not math.isfinite(df[i]):
-                raise ValueError(f'non-finite finite-difference value [{i + 1}]')
+                raise metafopy.errors.InputError(f'non-finite value in the finite-difference step [{i + 1}]')
         return df
 
-    ans = np.empty((n, n))
+    ans = numpy.empty((n, n))
     dpar = p.copy()
     for i in range(n):
         dpar[i] = dpar[i] + ndeps
