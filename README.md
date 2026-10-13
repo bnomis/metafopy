@@ -65,6 +65,18 @@ print(predict(res, transf=np.exp))
 
 Requires Python >= 3.14.7, < 3.15.
 
+## Documentation
+
+The user manual is in `docs/` (installation, tutorial, user guide, worked analyses, a guide for users coming from R and
+the function reference). Build and browse it with:
+
+```bash
+uv pip install -r docs/requirements.txt
+mkdocs serve
+```
+
+`pytest src/tests/test_docs_examples.py` runs every Python example in the manual.
+
 ## Install (development)
 
 ```bash
