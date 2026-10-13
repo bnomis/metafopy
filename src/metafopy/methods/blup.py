@@ -18,6 +18,7 @@ import pandas
 import scipy.stats
 
 import metafopy.errors
+import metafopy.models.glmm_result
 import metafopy.models.rma_ls_result
 import metafopy.models.rma_uni
 import metafopy.models.tau2
@@ -120,6 +121,18 @@ def blup_rma_uni(
     row per supplied study, NaN for those left out of the fit.
     """
     return shrinkage_predictions(res, 'blup', level, digits, transf, targs, na_action)
+
+
+@blup.register
+def blup_rma_glmm(res: metafopy.models.glmm_result.GLMMResult, *args: typing.Any, **kwargs: typing.Any) -> BlupResult:
+    """Not available: metafor has no ``blup`` method for ``rma.glmm`` objects (only ``blup.rma.uni``).
+
+    Raises:
+        metafopy.errors.NotSupportedError: always, as in metafor ("no applicable method for 'blup' applied to an object of class c('rma.glmm', 'rma')").
+    """
+    raise metafopy.errors.NotSupportedError(
+        "no applicable method for 'blup' applied to an object of class c('rma.glmm', 'rma'): metafor has none for rma.glmm models"
+    )
 
 
 def shrinkage_predictions(

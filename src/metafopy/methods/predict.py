@@ -12,6 +12,7 @@ import pandas
 import scipy.stats
 
 import metafopy.errors
+import metafopy.models.glmm_result
 import metafopy.models.mv_result
 import metafopy.models.rma_uni
 import metafopy.models.tau2
@@ -98,6 +99,102 @@ def predict_rma_uni(
     x = model
     if x.robust is not None and x.robust.robumethod == 'clubSandwich':
         raise metafopy.errors.InputError('predict() is not supported for fits made robust with club_sandwich=True.')
+    return location_prediction(
+        LocationModel(
+            p=x.p,
+            int_only=x.int_only,
+            int_incl=x.int_incl,
+            X=x.X,
+            slab=x.slab,
+            beta=x.beta,
+            vb=x.vb,
+            ddf=x.ddf,
+            alpha=x.level,
+            tau2=x.tau2,
+            fixed=x.method in metafopy.models.tau2.FIXED_EFFECTS,
+        ),
+        newmods,
+        intercept,
+        transf,
+        targs,
+        level,
+    )
+
+
+@predict.register
+def predict_rma_glmm(
+    model: metafopy.models.glmm_result.GLMMResult,
+    newmods: numpy.typing.ArrayLike | None = None,
+    *,
+    intercept: bool | None = None,
+    transf: collections.abc.Callable[..., typing.Any] | None = None,
+    targs: typing.Any = None,
+    level: float | None = None,
+) -> PredictResult:
+    """Predict from an ``rma.glmm`` fit (``predict.rma``; arguments as in :func:`predict_rma_uni`).
+
+    The coefficients are on the scale of the model's link (log odds ratios, log risk ratios, risk
+    differences, log odds, proportions, log proportions or log rates). Without ``newmods`` a
+    meta-regression gives the fitted value of each study that entered the model. Prediction
+    intervals add ``tau2`` and are absent for the fixed-effects methods.
+
+    Raises:
+        metafopy.errors.InputError: an argument or the data is invalid.
+    """
+    x = model
+    labels = tuple(s for s, ok in zip(x.slab, x.tables.not_na, strict=True) if ok)
+    return location_prediction(
+        LocationModel(
+            p=x.p,
+            int_only=x.int_only,
+            int_incl=x.int_incl,
+            X=x.X,
+            slab=labels,
+            beta=x.beta,
+            vb=x.vb,
+            ddf=x.ddf,
+            alpha=x.level,
+            tau2=x.tau2,
+            fixed=x.method in metafopy.models.tau2.FIXED_EFFECTS,
+        ),
+        newmods,
+        intercept,
+        transf,
+        targs,
+        level,
+    )
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class LocationModel:
+    """What ``predict.rma`` needs from a model with a single ``tau2`` (``rma.uni`` or ``rma.glmm``)."""
+
+    p: int
+    int_only: bool
+    int_incl: bool
+    X: FloatArray
+    slab: tuple[str, ...]
+    beta: FloatArray
+    vb: FloatArray
+    ddf: int | None
+    alpha: float
+    tau2: float
+    fixed: bool
+
+
+def location_prediction(
+    x: LocationModel,
+    newmods: numpy.typing.ArrayLike | None,
+    intercept: bool | None,
+    transf: collections.abc.Callable[..., typing.Any] | None,
+    targs: typing.Any,
+    level: float | None,
+) -> PredictResult:
+    """``predict.rma`` for ``rma.uni`` and ``rma.glmm`` models.
+
+    Raises:
+        metafopy.errors.InputError: ``newmods`` does not match the model.
+    """
     p = x.p
     slab: tuple[str, ...] | None = None
     if newmods is None:
@@ -118,7 +215,7 @@ def predict_rma_uni(
             raise metafopy.errors.InputError(f'dimensions of newmods ({arr.shape[1]} columns) do not match the model ({p})')
         X_new = arr
 
-    alpha = x.level if level is None else metafopy.models.rma_uni.level_to_alpha(level)
+    alpha = x.alpha if level is None else metafopy.models.rma_uni.level_to_alpha(level)
 
     pred = X_new @ x.beta
     vpred = numpy.einsum('ij,jk,ik->i', X_new, x.vb, X_new)
@@ -133,7 +230,7 @@ def predict_rma_uni(
     pi_se = numpy.sqrt(vpred + x.tau2)
     pi_lb = pred - crit * pi_se
     pi_ub = pred + crit * pi_se
-    if x.method in metafopy.models.tau2.FIXED_EFFECTS:
+    if x.fixed:
         # metafor drops prediction intervals for equal/fixed/common-effects models
         pi_lb = numpy.full_like(pred, numpy.nan)
         pi_ub = numpy.full_like(pred, numpy.nan)

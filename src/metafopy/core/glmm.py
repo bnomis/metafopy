@@ -21,12 +21,22 @@ likelihood relative to the saturated model
 (:func:`metafopy.core.glm.saturated_loglik`); the reported log-likelihood adds
 the constants of the family (binomial coefficients, factorials) back, as
 ``logLik()`` of a ``glmer`` fit does.
+
+Besides the canonical links, the binomial family is supported with the log and
+identity links (the experimental measures ``RR``, ``PLN`` and ``RD``, ``PR`` of
+``rma.glmm``). As in lme4, the Laplace determinant, the quadrature scale and
+the covariance of the fixed effects use the expected (Fisher) information
+``prior * (d mu / d eta)^2 / V(mu)``, which equals the observed information
+only for canonical links; the likelihood itself is exact. Linear predictors
+that put a mean outside the parameter space make the likelihood undefined
+(``NaN``), as in lme4, where such steps are rejected or the fit fails.
 """
 
 import collections.abc
 import dataclasses
 import math
 import typing
+import warnings
 
 import numpy
 import numpy.polynomial.hermite_e
@@ -48,6 +58,11 @@ BOUNDARY_TOL = 1e-5
 MODE_TOL = 1e-10
 MODE_MAXIT = 100
 HALVING_MAXIT = 40
+STAGE_ONE_MAX = 20.0
+HESSIAN_WARNING = (
+    'variance-covariance matrix computed from finite-difference Hessian is\n'
+    'not positive definite or contains NA values: falling back to var-cov estimated from RX'
+)
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -66,6 +81,7 @@ class GLMMProblem:
     Z: FloatArray
     family: metafopy.core.glm.Family
     structure: Structure = 'scalar'
+    link: metafopy.core.glm.Link | None = None
 
     @property
     def n_clusters(self) -> int:
@@ -113,17 +129,29 @@ def lambda_matrix(theta: FloatArray, structure: Structure) -> FloatArray:
     return numpy.array([[theta[0], 0.0], [theta[1], theta[2]]])
 
 
-def row_terms(family: metafopy.core.glm.Family, eta: FloatArray, y: FloatArray, size: FloatArray | None) -> tuple[FloatArray, FloatArray, FloatArray]:
-    """Log-likelihood contribution (without constants), score ``d ell / d eta`` and information ``-d2 ell / d eta2`` of each row.
+def row_terms(prob: GLMMProblem, eta: FloatArray, y: FloatArray, size: FloatArray | None) -> tuple[FloatArray, FloatArray, FloatArray]:
+    """Log-likelihood contribution (without constants), score ``d ell / d eta`` and Fisher information of each row.
+
+    Rows whose mean leaves the parameter space get ``NaN`` for the log-likelihood.
 
     Raises:
         metafopy.errors.InternalError: ``size`` is missing for the binomial family.
     """
-    if family == 'binomial':
+    link = prob.link or metafopy.core.glm.canonical_link(prob.family)
+    if prob.family == 'binomial':
         if size is None:
             raise metafopy.errors.InternalError('binomial models need the group sizes')
-        p = scipy.special.expit(eta)
-        return y * eta - size * numpy.logaddexp(0.0, eta), y - size * p, size * p * (1.0 - p)
+        if link == 'logit':
+            p = scipy.special.expit(eta)
+            return y * eta - size * numpy.logaddexp(0.0, eta), y - size * p, size * p * (1.0 - p)
+        mu = numpy.exp(eta) if link == 'log' else eta
+        invalid = ~((mu > 0) & (mu < 1))
+        mu_safe = numpy.where(invalid, 0.5, mu)
+        ell = scipy.special.xlogy(y, mu_safe) + scipy.special.xlogy(size - y, 1.0 - mu_safe)
+        slope = mu_safe if link == 'log' else numpy.ones_like(mu_safe)
+        score = (y - size * mu_safe) / (mu_safe * (1.0 - mu_safe)) * slope
+        info = size * slope**2 / (mu_safe * (1.0 - mu_safe))
+        return numpy.where(invalid, numpy.nan, ell), score, info
     mu = numpy.exp(eta)
     return y * eta - mu, y - mu, mu
 
@@ -168,13 +196,15 @@ def conditional_modes(prob: GLMMProblem, f: FloatArray, A: FloatArray) -> Modes:
 
     def penalised(uu: FloatArray) -> tuple[FloatArray, FloatArray]:
         eta = f + numpy.sum(A * uu[cl], axis=1)
-        ell, _, _ = row_terms(prob.family, eta, prob.y, prob.size)
+        ell, _, _ = row_terms(prob, eta, prob.y, prob.size)
         return numpy.bincount(cl, weights=ell, minlength=K) - 0.5 * numpy.sum(uu**2, axis=1), eta
 
     obj, _ = penalised(u)
+    if not numpy.all(numpy.isfinite(obj)):
+        raise metafopy.errors.EstimationError('the linear predictor is outside the parameter space')
     for _ in range(MODE_MAXIT):
         eta = f + numpy.sum(A * u[cl], axis=1)
-        _, score, w = row_terms(prob.family, eta, prob.y, prob.size)
+        _, score, w = row_terms(prob, eta, prob.y, prob.size)
         g = numpy.column_stack([numpy.bincount(cl, weights=A[:, m] * score, minlength=K) for m in range(r)]) - u
         H = information(cl, A, w, K)
         step = numpy.linalg.solve(H, g[:, :, None])[:, :, 0]
@@ -194,7 +224,7 @@ def conditional_modes(prob: GLMMProblem, f: FloatArray, A: FloatArray) -> Modes:
         if float(numpy.max(numpy.abs(t[:, None] * step))) < MODE_TOL:
             break
     eta = f + numpy.sum(A * u[cl], axis=1)
-    ell, _, w = row_terms(prob.family, eta, prob.y, prob.size)
+    ell, _, w = row_terms(prob, eta, prob.y, prob.size)
     return Modes(u=u, eta=eta, ell=ell, w=w, H=information(cl, A, w, K))
 
 
@@ -229,7 +259,7 @@ def evaluate(prob: GLMMProblem, beta: FloatArray, theta: FloatArray, nagq: int) 
     for g, (z, lw) in enumerate(zip(nodes, logw, strict=True)):
         ug = modes.u[:, 0] + z * sd
         eta = f + A[:, 0] * ug[prob.cluster]
-        ell, _, _ = row_terms(prob.family, eta, prob.y, prob.size)
+        ell, _, _ = row_terms(prob, eta, prob.y, prob.size)
         terms[:, g] = lw + numpy.bincount(prob.cluster, weights=ell, minlength=K) - 0.5 * ug**2 + 0.5 * z**2
     per_cluster = scipy.special.logsumexp(terms, axis=1) - 0.5 * logdet
     return float(per_cluster.sum()), modes, A
@@ -290,6 +320,107 @@ def starting_theta(structure: Structure) -> FloatArray:
     return {'scalar': numpy.array([1.0]), 'independent': numpy.array([1.0, 1.0]), 'correlated': numpy.array([1.0, 0.0, 1.0])}[structure]
 
 
+def joint_modes(prob: GLMMProblem, theta: FloatArray, beta0: FloatArray) -> tuple[float, FloatArray, Modes, FloatArray]:
+    """Joint penalised maximum over the fixed effects and the spherical random effects (the PIRLS of lme4's ``nAGQ = 0`` stage).
+
+    Returns the Laplace value ``sum ell - |u|^2 / 2 - log det(H) / 2``, the fixed effects, the :class:`Modes` and ``A = Z Lambda``.
+
+    Raises:
+        metafopy.errors.EstimationError: the objective is undefined at the start or becomes non-finite.
+    """
+    A = prob.Z @ lambda_matrix(theta, prob.structure)
+    X, cl = prob.X, prob.cluster
+    K, r, q = prob.n_clusters, A.shape[1], X.shape[1]
+    beta = beta0.copy()
+    u = numpy.zeros((K, r))
+
+    def objective(b: FloatArray, uu: FloatArray) -> float:
+        ell, _, _ = row_terms(prob, X @ b + prob.offset + numpy.sum(A * uu[cl], axis=1), prob.y, prob.size)
+        return float(numpy.bincount(cl, weights=ell, minlength=K).sum() - 0.5 * numpy.sum(uu**2))
+
+    obj = objective(beta, u)
+    if not math.isfinite(obj):
+        raise metafopy.errors.EstimationError('the linear predictor is outside the parameter space')
+    for _ in range(MODE_MAXIT):
+        eta = X @ beta + prob.offset + numpy.sum(A * u[cl], axis=1)
+        _, score, w = row_terms(prob, eta, prob.y, prob.size)
+        g_u = numpy.column_stack([numpy.bincount(cl, weights=A[:, m] * score, minlength=K) for m in range(r)]) - u
+        g_b = X.T @ score
+        H = information(cl, A, w, K)
+        C = numpy.zeros((K, q, r))
+        numpy.add.at(C, cl, w[:, None, None] * X[:, :, None] * A[:, None, :])
+        h_gu = numpy.linalg.solve(H, g_u[:, :, None])[:, :, 0]
+        h_ct = numpy.linalg.solve(H, numpy.transpose(C, (0, 2, 1)))
+        schur = (X * w[:, None]).T @ X - numpy.einsum('kqr,krs->qs', C, h_ct)
+        d_b = numpy.linalg.solve(schur, g_b - numpy.einsum('kqr,kr->q', C, h_gu))
+        d_u = h_gu - numpy.einsum('krq,q->kr', h_ct, d_b)
+        t = 1.0
+        new = objective(beta + d_b, u + d_u)
+        for _ in range(HALVING_MAXIT):
+            if new >= obj - 1e-12 * abs(obj):
+                break
+            t /= 2
+            new = objective(beta + t * d_b, u + t * d_u)
+        if not math.isfinite(new):
+            raise metafopy.errors.EstimationError('non-finite objective while finding the joint modes')
+        beta, u, obj = beta + t * d_b, u + t * d_u, new
+        if max(float(numpy.max(numpy.abs(t * d_b), initial=0.0)), float(numpy.max(numpy.abs(t * d_u), initial=0.0))) < MODE_TOL:
+            break
+    eta = X @ beta + prob.offset + numpy.sum(A * u[cl], axis=1)
+    ell, _, w = row_terms(prob, eta, prob.y, prob.size)
+    modes = Modes(u=u, eta=eta, ell=ell, w=w, H=information(cl, A, w, K))
+    value = obj - 0.5 * float(numpy.linalg.slogdet(modes.H)[1].sum())
+    return value, beta, modes, A
+
+
+def stage_one(prob: GLMMProblem, beta0: FloatArray) -> tuple[FloatArray, FloatArray, Modes, FloatArray]:
+    """lme4's first stage (``nAGQ = 0``) for one scalar random effect: minimise the deviance over ``theta`` with the fixed effects profiled out.
+
+    Raises:
+        metafopy.errors.EstimationError: the deviance is undefined for every ``theta``.
+    """
+    sat = metafopy.core.glm.saturated_loglik(prob.family, prob.y, prob.size)
+    cache: dict[float, tuple[float, FloatArray, Modes, FloatArray]] = {}
+
+    def deviance(t: float) -> float:
+        try:
+            value, beta, modes, A = joint_modes(prob, numpy.array([t]), beta0)
+        except numpy.linalg.LinAlgError, metafopy.errors.EstimationError, FloatingPointError:
+            return 1e300
+        cache[t] = (value, beta, modes, A)
+        return -2.0 * (value - sat) if math.isfinite(value) else 1e300
+
+    with numpy.errstate(all='ignore'):
+        grid = [0.0, *numpy.geomspace(1e-4, STAGE_ONE_MAX, 30).tolist()]
+        values = [deviance(t) for t in grid]
+        best = int(numpy.argmin(values))
+        if values[best] >= 1e299:
+            raise metafopy.errors.EstimationError('the GLMM deviance is undefined for all values of theta')
+        lo, hi = grid[max(best - 1, 0)], grid[min(best + 1, len(grid) - 1)]
+        res = scipy.optimize.minimize_scalar(deviance, bounds=(lo, hi), method='bounded', options={'xatol': 1e-10})
+        theta = float(res.x) if res.fun <= values[best] else grid[best]
+        theta = 0.0 if theta < BOUNDARY_TOL else theta
+        deviance(theta)
+    _, beta, modes, A = cache[theta]
+    return beta, numpy.array([theta]), modes, A
+
+
+def conditional_deviance(prob: GLMMProblem, eta: FloatArray) -> float:
+    """Sum of the squared deviance residuals at the linear predictor ``eta`` (what ``deviance()`` of a ``glmer`` fit returns)."""
+    mu = metafopy.core.glm.link_inv(prob.link or metafopy.core.glm.canonical_link(prob.family), eta)
+    if prob.family == 'binomial':
+        size = prob.size if prob.size is not None else numpy.ones_like(prob.y)
+        with numpy.errstate(divide='ignore', invalid='ignore'):
+            prop = numpy.where(size > 0, prob.y / size, 0.0)
+        return float(numpy.sum(metafopy.core.glm.deviance_residuals('binomial', prop, mu, size)))
+    return float(numpy.sum(metafopy.core.glm.deviance_residuals('poisson', prob.y, mu, numpy.ones_like(prob.y))))
+
+
+def two_stage(prob: GLMMProblem) -> bool:
+    """Whether lme4's staging matters: adaptive quadrature with a non-canonical link can be undefined away from the first-stage solution."""
+    return prob.structure == 'scalar' and prob.link is not None and prob.link != metafopy.core.glm.canonical_link(prob.family)
+
+
 def fit_glmm(
     prob: GLMMProblem,
     *,
@@ -304,12 +435,21 @@ def fit_glmm(
     The optimiser works on signed ``theta``; the likelihood only depends on
     ``theta`` through ``Lambda @ Lambda.T`` and the signs are normalised at the end.
 
+    For a non-canonical link and adaptive quadrature (``nagq > 1``) the fit
+    follows lme4's two stages: the first minimises the deviance over ``theta``
+    with the fixed effects profiled out (``nAGQ = 0``), the second maximises the
+    quadrature likelihood from there. When that likelihood is undefined at the
+    first-stage solution (quadrature points outside the parameter space), lme4's
+    second stage cannot move, so the first-stage estimates are returned with an
+    undefined (``-inf``) log-likelihood and the covariance from the penalised
+    least squares decomposition, as metafor ends up with.
+
     Raises:
         metafopy.errors.EstimationError: the optimiser fails to produce a finite optimum.
     """
     q = prob.X.shape[1]
     if beta0 is None:
-        start = metafopy.core.glm.glm_fit(prob.X, prob.y, family=prob.family, size=prob.size, offset=prob.offset)
+        start = metafopy.core.glm.glm_fit(prob.X, prob.y, family=prob.family, size=prob.size, offset=prob.offset, link=prob.link)
         beta0 = numpy.where(start.aliased, 0.0, start.coef)
     th0 = starting_theta(prob.structure) if theta0 is None else theta0
     count = 0
@@ -324,12 +464,20 @@ def fit_glmm(
             return 1e300
         return -2.0 * value if math.isfinite(value) else 1e300
 
+    staged = nagq > 1 and two_stage(prob)
     x0 = numpy.concatenate([beta0, th0])
+    if staged:
+        beta1, theta1, modes1, A1 = stage_one(prob, beta0)
+        x0 = numpy.concatenate([beta1, theta1])
+        if deviance(x0) >= 1e299:
+            return stage_one_result(prob, beta1, theta1, modes1, A1, count)
     with numpy.errstate(all='ignore'):
         res = scipy.optimize.minimize(deviance, x0, method='BFGS', jac='3-point', options={'gtol': gtol, 'maxiter': maxiter})
         # restarting BFGS from the solution resets its curvature estimate and removes premature stops
         res = scipy.optimize.minimize(deviance, res.x, method='BFGS', jac='3-point', options={'gtol': gtol, 'maxiter': maxiter})
     if not numpy.all(numpy.isfinite(res.x)) or res.fun >= 1e299:
+        if staged:
+            return stage_one_result(prob, beta1, theta1, modes1, A1, count)
         raise metafopy.errors.EstimationError('the GLMM likelihood could not be maximised')
     beta = res.x[:q]
     theta = normalise_theta(res.x[q:], prob.structure)
@@ -342,22 +490,30 @@ def fit_glmm(
             loglik -= metafopy.core.glm.saturated_loglik(prob.family, prob.y, prob.size)
         cov = hessian_covariance(deviance, beta, theta, prob.structure)
         if cov is None:
+            warnings.warn(HESSIAN_WARNING, stacklevel=3)
             cov = beta_covariance(prob, modes, A)
-    mu = scipy.special.expit(modes.eta) if prob.family == 'binomial' else numpy.exp(modes.eta)
-    if prob.family == 'binomial':
-        size = prob.size if prob.size is not None else numpy.ones_like(prob.y)
-        with numpy.errstate(divide='ignore', invalid='ignore'):
-            prop = numpy.where(size > 0, prob.y / size, 0.0)
-        cond_dev = float(numpy.sum(metafopy.core.glm.deviance_residuals('binomial', prop, mu, size)))
-    else:
-        cond_dev = float(numpy.sum(metafopy.core.glm.deviance_residuals('poisson', prob.y, mu, numpy.ones_like(prob.y))))
     return GLMMFit(
         beta=beta,
         theta=theta,
         loglik=loglik,
-        cond_deviance=cond_dev,
+        cond_deviance=conditional_deviance(prob, modes.eta),
         vcov=cov,
         modes=modes.u,
         converged=bool(res.success),
+        evaluations=count,
+    )
+
+
+def stage_one_result(prob: GLMMProblem, beta: FloatArray, theta: FloatArray, modes: Modes, A: FloatArray, count: int) -> GLMMFit:
+    """The first-stage estimates as the final fit (lme4 cannot improve them); the log-likelihood is undefined."""
+    warnings.warn(HESSIAN_WARNING, stacklevel=4)
+    return GLMMFit(
+        beta=beta,
+        theta=theta,
+        loglik=-math.inf,
+        cond_deviance=conditional_deviance(prob, modes.eta),
+        vcov=beta_covariance(prob, modes, A),
+        modes=modes.u,
+        converged=True,
         evaluations=count,
     )

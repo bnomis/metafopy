@@ -14,6 +14,7 @@ import typing
 
 import metafopy.errors
 import metafopy.methods.blup
+import metafopy.models.glmm_result
 import metafopy.models.rma_uni
 
 __all__ = ['RanefResult', 'ranef']
@@ -47,3 +48,15 @@ def ranef_rma_uni(
     """BLUPs of the random effects of an ``rma.uni`` fit (arguments as in :func:`metafopy.methods.blup.blup`)."""
     out = metafopy.methods.blup.shrinkage_predictions(res, 'ranef', level, digits, transf, targs, na_action)
     return RanefResult(pred=out.pred, se=out.se, pi_lb=out.pi_lb, pi_ub=out.pi_ub, slab=out.slab, digits=out.digits, transf=out.transf)
+
+
+@ranef.register
+def ranef_rma_glmm(res: metafopy.models.glmm_result.GLMMResult, *args: typing.Any, **kwargs: typing.Any) -> RanefResult:
+    """Not available: metafor has no ``ranef`` method for ``rma.glmm`` objects (only ``ranef.rma.uni`` and ``ranef.rma.mv``).
+
+    Raises:
+        metafopy.errors.NotSupportedError: always, as in metafor ("no applicable method for 'ranef' applied to an object of class c('rma.glmm', 'rma')").
+    """
+    raise metafopy.errors.NotSupportedError(
+        "no applicable method for 'ranef' applied to an object of class c('rma.glmm', 'rma'): metafor has none for rma.glmm models"
+    )
