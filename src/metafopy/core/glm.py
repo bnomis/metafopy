@@ -9,6 +9,11 @@ of ``glm.fit`` is followed step by step: the same starting values
 ``epsilon``, at most ``maxit`` iterations), the same clamps of the logit and
 log links, and the covariance matrix of the last weighted least squares fit.
 
+The binomial family is also available with the log and identity links
+(``rma.glmm`` uses them for the experimental measures ``RR``, ``PLN`` and
+``RD``, ``PR``). Those links can leave the parameter space of the family, so
+``glm.fit``'s validity checks and step halving are reproduced as well.
+
 Reference: McCullagh and Nelder (1989), *Generalized Linear Models*, 2nd ed.,
 and the R source ``src/library/stats/R/glm.R`` and ``src/library/stats/src/family.c``.
 """
@@ -17,6 +22,7 @@ import dataclasses
 import math
 import sys
 import typing
+import warnings
 
 import numpy
 import numpy.typing
@@ -25,11 +31,24 @@ import scipy.stats
 
 import metafopy.errors
 
-__all__ = ['GLMFit', 'aliased_columns', 'deviance_residuals', 'family_constant', 'glm_fit', 'saturated_loglik']
+__all__ = [
+    'GLMFit',
+    'Link',
+    'aliased_columns',
+    'canonical_link',
+    'deviance_residuals',
+    'family_constant',
+    'glm_fit',
+    'link_fun',
+    'link_inv',
+    'saturated_loglik',
+    'valid_mu',
+]
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type BoolArray = numpy.typing.NDArray[numpy.bool_]
 type Family = typing.Literal['binomial', 'poisson']
+type Link = typing.Literal['logit', 'log', 'identity']
 
 DBL_EPSILON = sys.float_info.epsilon
 LOGIT_THRESHOLD = 30.0
@@ -89,12 +108,45 @@ def expit_clamped(eta: FloatArray) -> FloatArray:
     return numpy.asarray(tmp / (1.0 + tmp), dtype=numpy.float64)
 
 
-def mu_eta(family: Family, eta: FloatArray) -> FloatArray:
-    """``d mu / d eta`` as R's ``mu.eta`` computes it for the canonical link."""
-    if family == 'binomial':
+def canonical_link(family: Family) -> Link:
+    """The canonical link of the family (``logit`` for the binomial, ``log`` for the Poisson family)."""
+    return 'logit' if family == 'binomial' else 'log'
+
+
+def link_fun(link: Link, mu: FloatArray) -> FloatArray:
+    """``linkfun(mu)`` of R's ``make.link()``."""
+    with numpy.errstate(divide='ignore', invalid='ignore'):
+        if link == 'logit':
+            return numpy.asarray(numpy.log(mu / (1.0 - mu)), dtype=numpy.float64)
+        if link == 'log':
+            return numpy.asarray(numpy.log(mu), dtype=numpy.float64)
+    return mu.astype(numpy.float64)
+
+
+def link_inv(link: Link, eta: FloatArray) -> FloatArray:
+    """``linkinv(eta)`` of R's ``make.link()`` (the logit and log links are clamped as in R)."""
+    if link == 'logit':
+        return expit_clamped(eta)
+    if link == 'log':
+        return numpy.asarray(numpy.maximum(numpy.exp(eta), DBL_EPSILON), dtype=numpy.float64)
+    return eta.astype(numpy.float64)
+
+
+def mu_eta(link: Link, eta: FloatArray) -> FloatArray:
+    """``d mu / d eta`` as R's ``mu.eta`` computes it."""
+    if link == 'logit':
         opexp = 1.0 + numpy.exp(eta)
         return numpy.where(numpy.abs(eta) > LOGIT_THRESHOLD, DBL_EPSILON, numpy.exp(eta) / (opexp * opexp))
-    return numpy.maximum(numpy.exp(eta), DBL_EPSILON)
+    if link == 'log':
+        return numpy.maximum(numpy.exp(eta), DBL_EPSILON)
+    return numpy.ones_like(eta)
+
+
+def valid_mu(family: Family, mu: FloatArray) -> bool:
+    """``family$validmu``: all means finite and inside ``(0, 1)`` (binomial) or positive (Poisson)."""
+    if not bool(numpy.all(numpy.isfinite(mu))):
+        return False
+    return bool(numpy.all((mu > 0) & (mu < 1))) if family == 'binomial' else bool(numpy.all(mu > 0))
 
 
 def ylogy(y: FloatArray, mu: FloatArray) -> FloatArray:
@@ -157,24 +209,28 @@ def glm_fit(
     family: Family,
     size: FloatArray | None = None,
     offset: FloatArray | None = None,
+    link: Link | None = None,
     epsilon: float = 1e-8,
     maxit: int = 25,
 ) -> GLMFit:
     """Fit ``glm(cbind(y, size - y) ~ 0 + X, family=binomial)`` or ``glm(y ~ 0 + X, offset=offset, family=poisson)``.
 
     ``y`` holds the event counts and, for the binomial family, ``size`` the
-    number of trials. Aliased columns get a NaN coefficient and are left out of
-    ``vcov``. The model is reported as non-converged (``converged=False``) when
-    ``maxit`` iterations are used up, as in the saturated models of tables with
-    zero cells, where R only warns.
+    number of trials. ``link`` defaults to the canonical link. Aliased columns
+    get a NaN coefficient and are left out of ``vcov``. The model is reported
+    as non-converged (``converged=False``) when ``maxit`` iterations are used
+    up, as in the saturated models of tables with zero cells, where R only
+    warns. Like ``glm.fit``, an update that leaves the parameter space is
+    halved towards the previous coefficients (with a warning).
 
     Raises:
         metafopy.errors.InputError: the arguments have inconsistent shapes or ``size`` is missing.
-        metafopy.errors.EstimationError: the iterations produce non-finite values.
+        metafopy.errors.EstimationError: no valid coefficients can be found or the iterations produce non-finite values.
     """
     n, q = X.shape
     if y.shape[0] != n:
         raise metafopy.errors.InputError('y and X must have the same number of rows')
+    lnk: Link = canonical_link(family) if link is None else link
     off = numpy.zeros(n) if offset is None else offset
     if family == 'binomial':
         if size is None:
@@ -183,26 +239,39 @@ def glm_fit(
         with numpy.errstate(divide='ignore', invalid='ignore'):
             resp = numpy.where(weights > 0, y / weights, 0.0)
         mustart = (weights * resp + 0.5) / (weights + 1.0)
-        eta = numpy.log(mustart / (1.0 - mustart))
-        mu = expit_clamped(eta)
     else:
         weights = numpy.ones(n)
         resp = y.astype(numpy.float64)
         mustart = resp + 0.1
-        eta = numpy.log(mustart)
-        mu = numpy.maximum(numpy.exp(eta), DBL_EPSILON)
+    eta = link_fun(lnk, mustart)
+    mu = link_inv(lnk, eta)
+    if not valid_mu(family, mu):
+        raise metafopy.errors.EstimationError('cannot find valid starting values: please specify some')
+
+    def deviance_of(m: FloatArray) -> float:
+        return float(numpy.sum(deviance_residuals(family, resp, m, weights)))
+
+    def predictor(coef_now: FloatArray) -> tuple[FloatArray, FloatArray]:
+        e = X @ coef_now + off
+        return e, link_inv(lnk, e)
 
     tol = min(1e-7, epsilon / 1000)
-    devold = float(numpy.sum(deviance_residuals(family, resp, mu, weights)))
+    devold = deviance_of(mu)
+    dev = devold
     coef = numpy.zeros(q)
     aliased = numpy.zeros(q, dtype=numpy.bool_)
     cov_unscaled = numpy.zeros((0, 0))
+    coefold: FloatArray | None = None
     converged = False
     iterations = 0
     for it in range(1, maxit + 1):
         iterations = it
-        slope = mu_eta(family, eta)
+        slope = mu_eta(lnk, eta)
         var = mu * (1.0 - mu) if family == 'binomial' else mu
+        if not numpy.all(numpy.isfinite(var)):
+            raise metafopy.errors.EstimationError('NAs in V(mu)')
+        if numpy.any(var == 0):
+            raise metafopy.errors.EstimationError('0s in V(mu)')
         good = (weights > 0) & (slope != 0)
         z = (eta - off)[good] + (resp - mu)[good] / slope[good]
         w = numpy.sqrt(weights * slope**2 / var)[good]
@@ -215,15 +284,37 @@ def glm_fit(
         cov_unscaled = rinv @ rinv.T
         coef = numpy.zeros(q)
         coef[keep] = coef_keep
-        eta = X @ coef + off
-        mu = expit_clamped(eta) if family == 'binomial' else numpy.maximum(numpy.exp(eta), DBL_EPSILON)
-        dev = float(numpy.sum(deviance_residuals(family, resp, mu, weights)))
+        eta, mu = predictor(coef)
+        dev = deviance_of(mu)
         if not math.isfinite(dev):
-            raise metafopy.errors.EstimationError('non-finite deviance in the GLM iterations')
+            if coefold is None:
+                raise metafopy.errors.EstimationError('no valid set of coefficients has been found: please supply starting values')
+            warnings.warn('step size truncated due to divergence', stacklevel=2)
+            for _ in range(maxit):
+                coef = (coef + coefold) / 2
+                eta, mu = predictor(coef)
+                dev = deviance_of(mu)
+                if math.isfinite(dev):
+                    break
+            else:
+                raise metafopy.errors.EstimationError('inner loop 1; cannot correct step size')
+        if not valid_mu(family, mu):
+            if coefold is None:
+                raise metafopy.errors.EstimationError('no valid set of coefficients has been found: please supply starting values')
+            warnings.warn('step size truncated: out of bounds', stacklevel=2)
+            for _ in range(maxit):
+                coef = (coef + coefold) / 2
+                eta, mu = predictor(coef)
+                if valid_mu(family, mu):
+                    break
+            else:
+                raise metafopy.errors.EstimationError('inner loop 2; cannot correct step size')
+            dev = deviance_of(mu)
         if abs(dev - devold) / (abs(dev) + 0.1) < epsilon:
             converged = True
             break
         devold = dev
+        coefold = coef.copy()
 
     full = coef.copy()
     full[aliased] = numpy.nan

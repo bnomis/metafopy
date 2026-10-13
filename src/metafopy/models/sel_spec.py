@@ -279,14 +279,19 @@ SCALAR: dict[str, Scalar] = {
 }
 
 
-def make_weight(name: str) -> Weight:
-    fn = VECTOR[name]
+@dataclasses.dataclass(frozen=True, slots=True)
+class WeightFunction:
+    """The vectorised selection function of one model type (a class rather than a closure so that fitted models can be pickled for parallel processing)."""
 
-    def weight(x: FloatArray, delta: FloatArray, yi: FloatArray, vi: FloatArray, preci: FloatArray | float, alternative: str, steps: FloatArray) -> FloatArray:
+    name: str
+
+    def __call__(
+        self, x: FloatArray, delta: FloatArray, yi: FloatArray, vi: FloatArray, preci: FloatArray | float, alternative: str, steps: FloatArray
+    ) -> FloatArray:
         with numpy.errstate(all='ignore'):
-            return numpy.asarray(fn(numpy.asarray(x, dtype=numpy.float64), numpy.asarray(delta, dtype=numpy.float64), preci, numpy.asarray(steps)))
-
-    return weight
+            return numpy.asarray(
+                VECTOR[self.name](numpy.asarray(x, dtype=numpy.float64), numpy.asarray(delta, dtype=numpy.float64), preci, numpy.asarray(steps))
+            )
 
 
 def vec(*values: float) -> FloatArray:
@@ -429,7 +434,7 @@ def build_spec(
     weight: Weight | None = None
     scalar: Scalar | None = None
     if type_ in VECTOR:
-        weight = make_weight(type_)
+        weight = WeightFunction(type_)
         scalar = SCALAR.get(type_)
 
     return SelSpec(

@@ -43,6 +43,8 @@ RTOL_ROOT = 2e-3
 NOISY_HESSIAN = {'hack_halfnorm_less': 0.25}
 NOISY_ATOL = 5e-3
 
+# auditme: accept[non-alphabetical-literal] metafor's column order
+WALD = ('se', 'zval', 'pval', 'ci_lb', 'ci_ub')
 ALL_CASES = sorted(k for k, v in REF['fits'].items() if 'error' not in v)
 
 
@@ -102,6 +104,9 @@ def same_text(actual: str, expected: str, rtol: float = 0.0, atol: float = 0.0) 
         for a, e in zip(a_tokens, e_tokens, strict=True):
             if a == e:
                 continue
+            a, e = a.rstrip(','), e.rstrip(',')
+            if a == e:
+                continue
             if not (NUMBER.match(a) and NUMBER.match(e)):
                 return False
             decimals = min(len(a.partition('.')[2]), len(e.partition('.')[2]))
@@ -156,7 +161,7 @@ def test_inference(case: str) -> None:
     res = fit(case)
     rtol = NOISY_HESSIAN.get(case, RTOL_SE)
     atol = NOISY_ATOL if case in NOISY_HESSIAN else ATOL
-    for name in ('se', 'zval', 'pval', 'ci_lb', 'ci_ub'):
+    for name in WALD:
         close(getattr(res, name), ref[name], f'{case} {name}', rtol=rtol, atol=atol)
     if ref['vb'] is not None:
         close_matrix(res.vb, ref['vb'], f'{case} vb', rtol=rtol, atol=atol)

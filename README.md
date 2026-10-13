@@ -21,8 +21,9 @@ and `PLO`/`IRLN` for proportions and rates) are available. `rma_mh` and
 `rma_peto` match metafor to 1e-8. `rma_glmm` matches the fixed-effects and
 `IRR` fits to machine precision and the mixed models to about 1e-3 (R's
 `lme4::glmer` stops at a loose optimiser tolerance; metafopy fits to the same or a
-slightly better optimum). `rma_glmm` does not port the experimental measures `PR`,
-`RR`, `RD` and `PLN`.
+slightly better optimum). The experimental measures `PR`, `RR`, `RD` and `PLN` are
+ported too (lme4's loose convergence means mixed fits agree with R only to 2e-3 to 1e-1);
+`predict` works for `rma_glmm` fits.
 
 `rma_mv` fits multivariate and multilevel models (all variance-covariance structures
 of metafor, known correlation matrices via `R=`, `sparse=True`, `dfs='contain'`) and
@@ -31,10 +32,11 @@ matches metafor 5.2-1 to about 1e-5 (variance components on flat likelihoods to 
 `rcalc`, `bldiag` and `blsplit` build the sampling variance-covariance matrices, and
 `robust` gives cluster-robust inference for `rma_uni` and `rma_mv` fits, either with
 metafor's default sandwich estimator or, with `club_sandwich=True`, with the CR0-CR3
-estimators, Satterthwaite degrees of freedom and Wald tests of the R package
-[clubSandwich](https://jepusto.github.io/clubSandwich/). `rma_mv` does not port
-`optbeta`, `vccon`, `restart`, `cvvc` or `verbose`; `robust` does not port the
-saddlepoint test or the HTA/HTB/EDF/EDT Wald tests.
+estimators, Satterthwaite or saddlepoint tests and Wald tests (chi-sq, Naive-F, HTA, HTB, HTZ, EDF, EDT) of the R package
+[clubSandwich](https://jepusto.github.io/clubSandwich/). `rma_mv` also takes `optbeta`
+(with `beta`, `lambda1` and `lambda2`), `vccon`, `cvvc` (Hessian and covariance matrix of the
+variance components, from numDeriv's Richardson method) and `restart` (from a previous fit);
+it does not port `verbose`.
 
 `rma_uni(..., scale=~ ...)` fits location-scale models (`RMALSResult`, Viechtbauer &
 Lopez-Lopez, 2022) with log or identity link, and `predict`, `confint`, `profile`,
@@ -47,8 +49,8 @@ ported.
 parametric variants of metafor (`beta`, `halfnorm`, `negexp`, `logistic`, `power`, `negexppow`,
 `stepfun`, `stepcon`, `trunc`) to an `rma_uni` fit, with Wald and likelihood-ratio tests,
 `predict`, `confint`, `profile`, `anova` and `plot_selmodel`. Estimates match metafor to
-about 1e-7 and standard errors to 1e-4 (numerical Hessian); `stepcon` is not validated
-against R and `confint`/`profile` ignore metafor's parallel options.
+about 1e-7 and standard errors to 1e-4 (numerical Hessian); `stepcon` is validated against R
+(see `docs/differences.md` for the `LRT.tau2` caveat) and `profile` takes metafor's parallel options.
 
 ```python
 import numpy as np

@@ -47,6 +47,13 @@ GENERAL = ('GDIAG', 'GEN')
 # metafor 5.2-1 also has UNR, PHYBM, PHYPL and PHYPD in the code but disables them in the argument check
 STRUCTS = ('AR', 'CAR', 'CS', 'DIAG', 'GDIAG', 'GEN', 'HAR', 'HCS', 'ID', 'SPEXP', 'SPGAU', 'SPLIN', 'SPRAT', 'SPSPH', 'UN')
 FACTOR_STRUCTS = ('AR', 'CAR', 'CS', 'DIAG', 'HAR', 'HCS', 'ID', 'UN')
+# auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
+VC_NAMES = ('sigma2', 'tau2', 'rho', 'gamma2', 'phi')
+# auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
+G_NAMES = ('tau2', 'rho')
+# auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
+H_NAMES = ('gamma2', 'phi')
+UNSTRUCTURED = ('GEN', 'UN')
 EPS10 = 10 * float(numpy.finfo(float).eps)
 
 
@@ -96,7 +103,7 @@ class Group:
 
 
 def label_vc(is_g: bool) -> tuple[str, str]:
-    return ('tau2', 'rho') if is_g else ('gamma2', 'phi')
+    return G_NAMES if is_g else H_NAMES
 
 
 def expand1(x: FloatArray, n: int) -> FloatArray:

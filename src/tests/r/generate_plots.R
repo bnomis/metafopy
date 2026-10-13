@@ -22,7 +22,11 @@ pdf(NULL, width = 7, height = 7)
 
 .rec <- new.env()
 .rec$log <- list()
-rec_reset <- function() .rec$log <- list()
+# note: forest() sets par(family, font) and does not reset them, so reset them here to keep the cases independent
+rec_reset <- function() {
+  .rec$log <- list()
+  par(family = "", font = 1)
+}
 rec_add <- function(type, ...) .rec$log[[length(.rec$log) + 1L]] <- c(list(type = type), list(...))
 
 num <- function(x) if (is.null(x)) NULL else unname(as.vector(x))
@@ -33,6 +37,19 @@ vsum <- function(v) {
 }
 first <- function(v) if (is.null(v)) NULL else num(v)[1]
 chr <- function(v) if (is.null(v)) NULL else as.character(v)
+# a long character vector (the colours of many rectangles) as a summary
+csum <- function(v) {
+  v <- chr(v)
+  if (is.null(v) || length(v) <= 40L) return(v)
+  list(n = length(v), head = v[1:3], tail = v[(length(v) - 2L):length(v)], uniq = length(unique(v)))
+}
+# the font family and font set via par(), recorded only when they differ from the defaults
+fontinfo <- function() {
+  l <- list()
+  if (nzchar(par("family"))) l$family <- par("family")
+  if (par("font") != 1) l$fontpar <- par("font")
+  l
+}
 
 wrappers <- list(
   polygon = function(x, y = NULL, ...) {
@@ -47,13 +64,14 @@ wrappers <- list(
   },
   rect = function(xleft, ybottom, xright, ytop, ...) {
     a <- list(...)
-    rec_add("rect", xleft = vsum(xleft), ybottom = vsum(ybottom), xright = vsum(xright), ytop = vsum(ytop), col = first(a$col))
+    do.call(rec_add, c(list("rect", xleft = vsum(xleft), ybottom = vsum(ybottom), xright = vsum(xright), ytop = vsum(ytop), col = first(a$col)),
+                       if (length(a$col) > 1L) list(cols = csum(a$col))))
     graphics::rect(xleft, ybottom, xright, ytop, ...)
   },
   text = function(x, y = NULL, labels = NULL, ...) {
     a <- list(...)
-    rec_add("text", x = num(x), y = num(y), labels = if (is.expression(labels)) paste(deparse(labels[[1]]), collapse = "") else chr(labels),
-            pos = num(a$pos), font = first(a$font), cex = first(a$cex), col = chr(a$col))
+    do.call(rec_add, c(list("text", x = num(x), y = num(y), labels = if (is.expression(labels)) paste(deparse(labels[[1]]), collapse = "") else chr(labels),
+                            pos = num(a$pos), font = first(a$font), cex = first(a$cex), col = chr(a$col)), fontinfo()))
     graphics::text(x, y, labels, ...)
   },
   points = function(x, y = NULL, ...) {
@@ -73,12 +91,13 @@ wrappers <- list(
     graphics::lines(x, y, ...)
   },
   axis = function(side, at = NULL, labels = TRUE, ...) {
-    rec_add("axis", side = side, at = num(at), labels = if (is.logical(labels)) NULL else chr(labels))
+    do.call(rec_add, c(list("axis", side = side, at = num(at), labels = if (is.logical(labels)) NULL else chr(labels)), fontinfo()))
     graphics::axis(side, at, labels, ...)
   },
   mtext = function(text, side = 3, line = 0, ...) {
     a <- list(...)
-    rec_add("mtext", text = if (is.expression(text)) paste(deparse(text[[1]]), collapse = "") else chr(text), side = side, line = line, at = first(a$at), adj = first(a$adj))
+    do.call(rec_add, c(list("mtext", text = if (is.expression(text)) paste(deparse(text[[1]]), collapse = "") else chr(text), side = side, line = line, at = first(a$at), adj = first(a$adj)),
+                       if (!is.null(a$font)) list(font = first(a$font)), fontinfo()))
     graphics::mtext(text, side, line, ...)
   },
   pairs = function(x, ...) {
@@ -175,6 +194,25 @@ out$forest_ee <- run(fforest.rma(res_ee, addfit = FALSE, xlab = c("Left", "Mid",
 out$forest_arrows <- run(fforest.rma(res, alim = c(-1, 1), xlim = c(-6, 4), olim = c(-1.2, 1.2), cex = 1.2, width = 7, annosym = c(" (", " to ", ")")))
 out$forest_dist <- run(fforest.rma(res, order = "prec", rowadj = c(0.1, -0.1, 0), textpos = c(-7, 5), xlim = c(-8, 6), lty = c("dashed", "dashed", "solid")))
 
+# prediction interval styles 'shade' and 'dist', and fonts
+res_knha <- rma(yi, vi, data = dat, slab = label, test = "knha")
+out$forest_pi_shade <- run(fforest.rma(res, predstyle = "shade"))
+out$forest_pi_shade_exp <- run(fforest.rma(res, predstyle = "shade", transf = exp, alim = c(0, 5), refline = 1, col = c("black", "darkblue", "gray90"), showweights = TRUE))
+out$forest_pi_shade_knha <- run(fforest.rma(res_knha, predstyle = "shade", level = 90, atransf = exp, at = log(c(0.1, 0.5, 1, 2)), xlim = c(-6, 4)))
+out$forest_pi_dist <- run(fforest.rma(res, predstyle = "dist"))
+out$forest_pi_dist_exp <- run(fforest.rma(res, predstyle = "dist", transf = exp, alim = c(0, 5), refline = 1, efac = c(1, 2)))
+out$forest_pi_dist_tail <- run(fforest.rma(res, predstyle = "dist", predtail = "<-0.5", level = 90, mlab = "RE", col = c("black", "gray40", "lightblue", "pink"),
+                                            border = c("black", "blue"), olim = c(-2.5, 1.5), alim = c(-2, 1), digits = 1L))
+out$forest_pi_dist_knha <- run(fforest.rma(res_knha, predstyle = "dist", predtail = 0.2))
+out$forest_pi_dist_predlim <- run(fforest.rma(res, predstyle = "dist", transf = exp, predlim = c(0.05, 3), alim = c(0, 3), refline = 1))
+out$forest_pi_dist_ilogit <- run(fforest.rma(res, predstyle = "dist", transf = transf.ilogit, alim = c(0, 1), refline = 0.5))
+pdxs <- seq(-3, 2, length.out = 301)
+out$forest_pi_dist_preddist <- run(fforest.rma(res, predstyle = "dist", preddist = list(pdxs, dnorm(pdxs, -0.7, 0.6), level = 90)))
+out$forest_pi_shade_preddist <- run(fforest.rma(res, predstyle = "shade", preddist = list(pdxs, dnorm(pdxs, -0.7, 0.6), pi.lb = -1.8, pi.ub = 0.4), predlim = c(-2.5, 1)))
+out$forest_fonts <- run(fforest.rma(res, fonts = c("serif", "mono"), ilab = dat$year, ilab.lab = "Year", ilab.xpos = -7, xlim = c(-10, 6)))
+out$forest_fonts_named <- run(fforest.rma(res, fonts = c(mono = 2, serif = 3, sans = 4), predstyle = "polygon", ilab = dat$year, ilab.lab = "Year", ilab.xpos = -7, xlim = c(-10, 6), xlabfont = 3))
+out$forest_fonts_one <- run(fforest.rma(res, fonts = "serif", predstyle = "dist", showweights = TRUE))
+
 # subgroups
 dat$alloc <- dat.bcg$alloc
 res_r <- rma(yi, vi, data = dat, subset = alloc == "random", slab = label)
@@ -197,6 +235,7 @@ out$forest_default_opts <- run(fforest.default(yi, sei = sqrt(vi), slab = slab, 
 out$forest_default_ci <- run(fforest.default(yi, ci.lb = yi - 0.3, ci.ub = yi + 0.5, level = 90, slab = NA, efac = c(1, 1.5), digits = c(2L, 1L, 3L), atransf = function(x) x / 2))
 yi_na <- yi; yi_na[c(3, 7)] <- NA
 out$forest_default_na <- run(fforest.default(yi_na, vi, slab = slab, subset = -1, rows = c(13:2) + 0, ylim = c(0, 17)))
+out$forest_default_fonts <- run(fforest.default(yi, vi, slab = slab, fonts = c(mono = 1, serif = 3), ilab = dat$year, ilab.xpos = -7, xlim = c(-10, 6)))
 out$forest_default_sub <- run(fforest.default(yi, vi, slab = slab, order = dat$year, subset = dat$year > 1950, shade = dat$year > 1960 & dat$year < 1970 | dat$year == 1948 | TRUE))
 
 # addpoly, numeric form
@@ -211,6 +250,25 @@ rr <- fforest.rma(res, ylim = c(-5, 17), addfit = FALSE)
 faddpoly.rma(res, row = -1.5, addpred = TRUE, mlab = "RE model", atransf = exp)
 faddpoly.rma(res, row = -3, predstyle = "bar", level = 90, annotate = TRUE, digits = 3L, col = "gray")
 out$addpoly_rma <- list(ret = lapply(rr, num), rec = collect())
+
+# addpoly with the prediction styles 'shade' and 'dist', and with fonts
+rec_reset(); plot.new()
+rr <- fforest.rma(res, ylim = c(-8, 17), addfit = FALSE, fonts = c("serif", "mono"))
+faddpoly.rma(res, row = -1.5, predstyle = "shade")
+faddpoly.rma(res, row = -4, predstyle = "dist", level = 90, predtail = ">-0.3", atransf = exp)
+faddpoly.rma(res, row = -6.5, predstyle = "polygon", fonts = c("sans", "mono"))
+out$addpoly_rma_pred <- list(ret = lapply(rr, num), rec = collect())
+rec_reset(); plot.new()
+rr <- fforest.rma(res, ylim = c(-8, 17), addfit = FALSE, transf = exp, alim = c(0, 5))
+faddpoly.rma(res, row = -1.5, predstyle = "dist", transf = exp, efac = c(1, 1.5))
+faddpoly.rma(res_knha, row = -4.5, predstyle = "shade", transf = exp)
+out$addpoly_rma_pred_exp <- list(ret = lapply(rr, num), rec = collect())
+rec_reset(); plot.new()
+rr <- fforest.default(yi, vi, slab = slab, ylim = c(-8, 17), xlim = c(-8, 6))
+faddpoly.default(0.3, ci.lb = -0.2, ci.ub = 0.9, pi.lb = structure(-0.8, level = 0.1, dist = "t", ddf = 6, se = 0.55), pi.ub = 1.4, rows = -2, predstyle = "dist", mlab = "C")
+faddpoly.default(-0.3, ci.lb = -0.7, ci.ub = 0.1, pi.lb = structure(-1.2, se = 0.5), pi.ub = 0.6, rows = -5, predstyle = "shade", annotate = FALSE, fonts = c(mono = 2, serif = 3))
+faddpoly.default(-0.3, ci.lb = -0.7, ci.ub = 0.1, pi.lb = -1.2, pi.ub = 0.6, rows = -7, predstyle = "dist", preddist = list(pdxs, dnorm(pdxs, -0.3, 0.5)), predlim = c(-2, 1))
+out$addpoly_default_pred <- list(ret = lapply(rr, num), rec = collect())
 
 ### funnel -----------------------------------------------------------------------------------------------
 

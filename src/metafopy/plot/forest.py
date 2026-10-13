@@ -13,13 +13,18 @@ doi:10.18637/jss.v036.i03.
 import collections.abc
 import dataclasses
 import math
+import re
 import typing
+import warnings
 import weakref
 
 import matplotlib.axes
+import matplotlib.colors
+import matplotlib.text
 import numpy
 import numpy.typing
 import pandas
+import scipy.special
 import scipy.stats
 
 import metafopy.errors
@@ -30,11 +35,15 @@ import metafopy.models.rma_uni
 import metafopy.plot
 import metafopy.plot.draw
 import metafopy.plot.rutils
+import metafopy.transf
 
 __all__ = ['ForestResult', 'addpoly', 'forest']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type Func = collections.abc.Callable[..., typing.Any]
+type PredStyle = typing.Literal['line', 'polygon', 'bar', 'shade', 'dist']
+type FontsArg = metafopy.plot.draw.FontSpec | collections.abc.Sequence[metafopy.plot.draw.FontSpec] | collections.abc.Mapping[str, int] | None
+type PredDist = tuple[numpy.typing.ArrayLike, numpy.typing.ArrayLike] | collections.abc.Mapping[str, typing.Any]
 
 POLYLEN = 10000
 FOREST_STATE: weakref.WeakKeyDictionary[matplotlib.axes.Axes, dict[str, typing.Any]] = weakref.WeakKeyDictionary()
@@ -290,11 +299,321 @@ def default_mlab(method: str) -> str:
     return {'FE': 'Fixed-Effect Model', 'EE': 'Equal-Effects Model', 'CE': 'Common-Effect Model'}.get(method, 'Random-Effects Model')
 
 
-def check_pred(predstyle: str) -> None:
-    if predstyle not in ('line', 'polygon', 'bar', 'shade', 'dist'):
-        raise metafopy.errors.InputError("'predstyle' should be one of 'line', 'polygon', 'bar', 'shade', 'dist'.")
-    if predstyle in ('shade', 'dist'):
-        raise metafopy.errors.NotSupportedError("predstyle='shade' and predstyle='dist' are not implemented; use 'line', 'polygon' or 'bar'.")
+# auditme: accept[passthrough-shim] sets the family and font of ``fonts``, with ``bold`` as the explicit font=2 of metafor
+def ftxt(ax: matplotlib.axes.Axes, x: float, y: float, s: str, fnt: metafopy.plot.draw.Font, *, bold: bool = False, **kw: typing.Any) -> matplotlib.text.Text:
+    """``text()`` in the font ``(family, font)`` of ``fonts``; ``bold=True`` is an explicit ``font=2``, which wins over the font in ``fnt``."""
+    return metafopy.plot.draw.txt(ax, x, y, s, family=fnt[0], font=2 if bold else fnt[1], **kw)
+
+
+def check_pred(predstyle: str) -> PredStyle:
+    """The validated ``predstyle``.
+
+    Raises:
+        metafopy.errors.InputError: the style is not one of the allowed names.
+    """
+    for name in typing.get_args(PredStyle.__value__):
+        if predstyle == name:
+            return typing.cast(PredStyle, name)
+    raise metafopy.errors.InputError("'predstyle' should be one of 'line', 'polygon', 'bar', 'shade', 'dist'.")
+
+
+# -- prediction distribution (predstyle 'shade' and 'dist') --------------------------------------------------------------
+
+PRED_POINTS = 10000
+DENSITY_STYLES = ('dist', 'shade')  # the styles that draw the predictive distribution
+type BoolArray = numpy.typing.NDArray[numpy.bool_]
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class TransfRule:
+    """How the density of a prediction is carried over to the scale of a back-transformation (the change of variables of metafor's ``funlist``)."""
+
+    functions: tuple[Func, ...]
+    inverse: Func
+    jacobian: Func
+    lo: float
+    hi: float
+
+
+def jac_exp(xs: FloatArray) -> FloatArray:
+    return xs
+
+
+def jac_tanh(xs: FloatArray) -> FloatArray:
+    return 1 - xs**2
+
+
+def jac_logit(xs: FloatArray) -> FloatArray:
+    return xs * (1 - xs)
+
+
+def jac_arcsin(xs: FloatArray) -> FloatArray:
+    return 2 * numpy.sqrt(xs * (1 - xs))
+
+
+def jac_probit(xs: FloatArray) -> FloatArray:
+    return numpy.asarray(metafopy.transf.dnorm(metafopy.transf.qnorm(xs)), dtype=float)
+
+
+def jac_ahw(xs: FloatArray) -> FloatArray:
+    return 3 * (1 - xs) ** (2 / 3)
+
+
+def jac_abt(xs: FloatArray) -> FloatArray:
+    return 1 - xs
+
+
+# the transformations metafor can draw a prediction distribution for (the order of its ``funlist``)
+TRANSF_RULES: tuple[TransfRule, ...] = (
+    TransfRule((numpy.exp, math.exp), numpy.log, jac_exp, 0.01, math.inf),
+    TransfRule((metafopy.transf.transf_ztor, numpy.tanh, math.tanh), numpy.arctanh, jac_tanh, -0.99, 0.99),
+    TransfRule((metafopy.transf.transf_ilogit, metafopy.transf.plogis, scipy.special.expit), metafopy.transf.qlogis, jac_logit, 0.01, 0.99),
+    TransfRule((metafopy.transf.transf_iarcsin,), metafopy.transf.transf_arcsin, jac_arcsin, 0.01, 0.99),
+    TransfRule(
+        (metafopy.transf.transf_iprobit, metafopy.transf.pnorm, scipy.stats.norm.cdf, scipy.special.ndtr), metafopy.transf.qnorm, jac_probit, 0.01, 0.99
+    ),
+    TransfRule((metafopy.transf.transf_iahw,), metafopy.transf.transf_ahw, jac_ahw, 0.01, 0.99),
+    TransfRule((metafopy.transf.transf_iabt,), metafopy.transf.transf_abt, jac_abt, 0.01, 0.99),
+)
+
+
+def transf_rule(transf: Func | None) -> TransfRule | None:
+    """The :class:`TransfRule` of ``transf`` (``None`` without a transformation).
+
+    Raises:
+        metafopy.errors.InputError: the transformation is not one metafor can draw a prediction distribution for.
+    """
+    if transf is None:
+        return None
+    for rule in TRANSF_RULES:
+        if any(transf is f for f in rule.functions):
+            return rule
+    raise metafopy.errors.InputError("Chosen transformation not (currently) possible with this 'predstyle'.")
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class PredCurve:
+    """The density of the predictive distribution on the plotted scale: ``xs``, ``ys``, the parts below (``l0``) and above (``g0``) ``predtail``.
+
+    ``limited`` is whether ``predlim`` was given (``'dist'`` then keeps the whole density instead of dropping the part below 0.5% of the peak).
+    """
+
+    xs: FloatArray
+    ys: FloatArray
+    l0: BoolArray
+    g0: BoolArray
+    lower_tail: bool
+    limited: bool = False
+
+
+def parse_predtail(predtail: float | str | None, pred: float) -> tuple[float, bool]:
+    """metafor's ``predtail`` (a number or a string such as ``'<2'``/``'>2'``) as ``(value, lower_tail)``.
+
+    Raises:
+        metafopy.errors.InputError: the value cannot be interpreted.
+    """
+    if predtail is None:
+        return 0.0, pred > 0
+    text = str(predtail)
+    try:
+        return float(re.sub('[<=>]', '', text)), '<' in text
+    except ValueError:
+        raise metafopy.errors.InputError(f"Cannot interpret the 'predtail' argument {predtail!r}.") from None
+
+
+def parse_preddist(preddist: PredDist | None) -> tuple[FloatArray, FloatArray, dict[str, typing.Any]] | None:
+    """A user-supplied predictive distribution as ``(xs, ys, extras)`` (``extras`` may hold ``pi_lb``, ``pi_ub`` and ``level``).
+
+    Raises:
+        metafopy.errors.InputError: the distribution is invalid.
+    """
+    if preddist is None:
+        return None
+    msg = "Argument 'preddist' must be a tuple (values, densities) or a mapping with the keys 'x' and 'y'."
+    if isinstance(preddist, collections.abc.Mapping):
+        if 'x' not in preddist or 'y' not in preddist:
+            raise metafopy.errors.InputError(msg)
+        xs, ys = preddist['x'], preddist['y']
+        extras = {k: v for k, v in preddist.items() if k in ('pi_lb', 'pi_ub', 'level') and v is not None}
+    else:
+        if len(preddist) < 2:
+            raise metafopy.errors.InputError(msg)
+        xs, ys = preddist[0], preddist[1]
+        extras = {}
+    xa, ya = numpy.atleast_1d(numpy.asarray(xs, dtype=float)), numpy.atleast_1d(numpy.asarray(ys, dtype=float))
+    if xa.shape != ya.shape:
+        raise metafopy.errors.InputError("Length of the values of 'preddist' does not match the length of its densities.")
+    return xa, ya, extras
+
+
+def pred_curve(
+    style: str,
+    pred: float,
+    pi_se: float | None,
+    pi_dist: str,
+    pi_ddf: float | None,
+    pi_level: float,
+    transf: Func | None,
+    predlim: collections.abc.Sequence[float] | None,
+    preddist: tuple[FloatArray, FloatArray] | None,
+    predtail: float | str | None,
+) -> PredCurve:
+    """The predictive distribution to draw for ``predstyle='shade'`` and ``'dist'`` (metafor's code in ``forest.rma`` and ``addpoly.default``).
+
+    ``pred`` is the (untransformed) predicted value, ``pi_se``, ``pi_dist`` (``'norm'`` or ``'t'``) and ``pi_ddf`` describe the distribution,
+    ``pi_level`` is the alpha level of the prediction interval, ``predlim`` the limits of the distribution to draw (on the plotted scale),
+    ``preddist`` a distribution supplied by the user (the values and the densities) and ``predtail`` the cut for the shading of ``'dist'``.
+
+    Raises:
+        metafopy.errors.InputError: the distribution cannot be drawn.
+    """
+    rule = transf_rule(transf)
+    if preddist is None:
+        if pi_se is None or math.isnan(pi_se):
+            raise metafopy.errors.InputError('Cannot extract the SE of the prediction interval.')
+        if pi_dist != 'norm' and (pi_ddf is None or pi_ddf <= 1):
+            raise metafopy.errors.InputError('Cannot shade/draw prediction distribution when df <= 1.')
+    if style == 'shade':
+        q_lo, q_hi = pi_level / 2, 1 - pi_level / 2
+    else:
+        q_lo, q_hi = 0.0001, 0.9999
+
+    ddf = math.inf if pi_ddf is None else pi_ddf
+
+    def density(xs: FloatArray) -> FloatArray:
+        assert pi_se is not None
+        if pi_dist == 'norm':
+            return numpy.asarray(scipy.stats.norm.pdf(xs, loc=pred, scale=pi_se), dtype=numpy.float64)
+        return numpy.asarray(scipy.stats.t.pdf((xs - pred) / pi_se, df=ddf) / pi_se, dtype=numpy.float64)
+
+    def check_lim() -> None:
+        if predlim is None or len(predlim) != 2:
+            raise metafopy.errors.InputError("Argument 'predlim' must be of length 2.")
+
+    with numpy.errstate(all='ignore'):
+        if preddist is None:
+            assert pi_se is not None
+            if predlim is None or style == 'shade':
+                if pi_dist == 'norm':
+                    lo, hi = (float(v) for v in numpy.atleast_1d(scipy.stats.norm.ppf([q_lo, q_hi], loc=pred, scale=pi_se)))
+                else:
+                    lo, hi = (float(v) * pi_se + pred for v in numpy.atleast_1d(scipy.stats.t.ppf([q_lo, q_hi], df=ddf)))
+                xs = numpy.linspace(lo, hi, PRED_POINTS)
+            else:
+                check_lim()
+                assert predlim is not None
+                xs = numpy.linspace(float(predlim[0]), float(predlim[1]), PRED_POINTS)
+                if rule is not None:
+                    xs = numpy.asarray(rule.inverse(xs), dtype=float)
+                    xs = xs[numpy.isfinite(xs)]
+            ys = density(xs)
+        else:
+            xs, ys = numpy.asarray(preddist[0], dtype=float), numpy.asarray(preddist[1], dtype=float)
+            if predlim is not None:
+                check_lim()
+                lim = numpy.asarray(predlim, dtype=float)
+                if rule is not None:
+                    lim = numpy.asarray(rule.inverse(lim), dtype=float)
+                keep = (xs > lim[0]) & (xs < lim[1])
+                xs, ys = xs[keep], ys[keep]
+        lower_tail = False
+        sel_l0 = numpy.zeros(xs.shape[0], dtype=bool)
+        sel_g0 = numpy.zeros(xs.shape[0], dtype=bool)
+        if style == 'dist':
+            tail, lower_tail = parse_predtail(predtail, pred)
+            sel_l0, sel_g0 = xs < tail, xs > tail
+        if rule is not None:
+            xs = numpy.asarray(transf(xs), dtype=numpy.float64)  # type: ignore[misc]
+            ys = ys / rule.jacobian(xs)
+            if predlim is None:
+                keep = (xs > rule.lo) & (xs < rule.hi)
+                sel_l0, sel_g0, ys, xs = sel_l0[keep], sel_g0[keep], ys[keep], xs[keep]
+    return PredCurve(xs, ys, sel_l0, sel_g0, lower_tail, predlim is not None)
+
+
+def ramp_colors(col_from: str, col_to: str, intensity: FloatArray) -> list[str]:
+    """R's ``colorRamp(c(col_from, col_to))`` applied to ``intensity`` and written with ``rgb(..., maxColorValue = 255)`` (which truncates)."""
+    c1 = numpy.array(matplotlib.colors.to_rgb(metafopy.plot.draw.rcolor(col_from)))
+    c2 = numpy.array(matplotlib.colors.to_rgb(metafopy.plot.draw.rcolor(col_to)))
+    out: list[str] = []
+    for t in intensity:
+        if math.isnan(t):
+            out.append('none')
+            continue
+        r, g, b = (int(v) for v in (c1 + (c2 - c1) * t) * 255)
+        out.append(f'#{r:02X}{g:02X}{b:02X}')
+    return out
+
+
+def draw_shade(
+    ax: matplotlib.axes.Axes,
+    curve: PredCurve,
+    row: float,
+    barheight: float,
+    alim: tuple[float, float],
+    olim: tuple[float, float] | None,
+    col_from: str | None,
+    col_to: str | None,
+) -> None:
+    """``predstyle='shade'``: rectangles along the prediction interval, shaded from ``col_from`` (the centre) to ``col_to`` (the ends).
+
+    Raises:
+        metafopy.errors.InputError: a colour is missing.
+    """
+    if col_from is None or col_to is None:
+        raise metafopy.errors.InputError("The 'col' argument needs the second and third colour for predstyle='shade'.")
+    xs, ys = curve.xs, curve.ys
+    with numpy.errstate(all='ignore'):
+        intensity = 1 - (ys - numpy.min(ys)) / (numpy.max(ys) - numpy.min(ys))
+    sel = (xs >= alim[0]) & (xs <= alim[1])
+    if olim is not None:
+        sel = sel & (xs > olim[0]) & (xs < olim[1])
+    xs, intensity = xs[sel], intensity[sel]
+    metafopy.plot.draw.rects(ax, xs[1:], row - barheight, xs[:-1], row + barheight, cols=ramp_colors(col_from, col_to, intensity)[: xs.shape[0] - 1])
+
+
+def draw_dist(
+    ax: matplotlib.axes.Axes,
+    curve: PredCurve,
+    drow: float,
+    pi_lb: float,
+    pi_ub: float,
+    alim: tuple[float, float],
+    olim: tuple[float, float] | None,
+    ef4: float,
+    col: collections.abc.Sequence[str | None],
+    border: collections.abc.Sequence[str | None],
+) -> None:
+    """``predstyle='dist'``: the predictive density, the tails beyond the interval and the parts either side of ``predtail`` shaded."""
+    xs = curve.xs
+    with numpy.errstate(all='ignore'):
+        ys = curve.ys / numpy.max(curve.ys)
+    sel = numpy.ones(ys.shape[0], dtype=bool) if curve.limited else ys > 0.005
+    ys = ys * ef4
+    sel = sel & (xs >= alim[0]) & (xs <= alim[1])
+    if olim is not None:
+        sel = sel & (xs > olim[0]) & (xs < olim[1])
+    xs_l0, xs_g0 = xs[curve.l0 & sel], xs[curve.g0 & sel]
+    ys_l0, ys_g0 = ys[curve.l0 & sel] + drow, ys[curve.g0 & sel] + drow
+    xs, ys = xs[sel], ys[sel] + drow
+
+    def fill(px: FloatArray, py: FloatArray, c: str | None) -> None:
+        metafopy.plot.draw.poly(
+            ax, numpy.concatenate([px, px[::-1]]), numpy.concatenate([py, numpy.full(py.shape[0], drow)]), col=c, border=None if c is None else border[1]
+        )
+
+    if curve.lower_tail:
+        fill(xs_g0, ys_g0, col[3])
+        fill(xs_l0, ys_l0, col[2])
+    else:
+        fill(xs_g0, ys_g0, col[2])
+        fill(xs_l0, ys_l0, col[3])
+    lo = xs <= pi_lb
+    fill(xs[lo], ys[lo], col[1])
+    hi = xs >= pi_ub
+    fill(xs[hi], ys[hi], col[1])
+    metafopy.plot.draw.line(ax, xs, numpy.full(xs.shape[0], drow), col=border[1] or metafopy.plot.draw.FG)
+    metafopy.plot.draw.line(ax, xs, ys, col=border[1] or metafopy.plot.draw.FG)
 
 
 def forest(
@@ -307,12 +626,14 @@ def forest(
     addfit: bool = True,
     addpred: bool | None = None,
     predstyle: str | None = None,
+    preddist: PredDist | None = None,
     showweights: bool = False,
     header: bool | str | collections.abc.Sequence[str] = True,
     xlim: collections.abc.Sequence[float] | None = None,
     alim: collections.abc.Sequence[float] | None = None,
     olim: collections.abc.Sequence[float] | None = None,
     ylim: collections.abc.Sequence[float] | None = None,
+    predlim: collections.abc.Sequence[float] | None = None,
     at: numpy.typing.ArrayLike | None = None,
     steps: int = 5,
     level: float | None = None,
@@ -343,18 +664,20 @@ def forest(
     shade: bool | str | numpy.typing.ArrayLike | None = None,
     colshade: str | None = None,
     lty: str | collections.abc.Sequence[str] | None = None,
+    fonts: FontsArg = None,
     cex: float | None = None,
     cex_lab: float | None = None,
     cex_axis: float | None = None,
     *,
     ax: matplotlib.axes.Axes | None = None,
+    predtail: float | str | None = None,
     annosym: collections.abc.Sequence[str] | None = None,
     textpos: collections.abc.Sequence[float] | None = None,
     rowadj: float | collections.abc.Sequence[float] | None = None,
     top: float = 3,
     at_lab: collections.abc.Sequence[str] | None = None,
     xlabadj: float | collections.abc.Sequence[float] | None = None,
-    xlabfont: int = 1,
+    xlabfont: int | collections.abc.Sequence[int] = 1,
     decreasing: bool = False,
     measure: str | None = None,
 ) -> ForestResult:
@@ -368,12 +691,19 @@ def forest(
     ``refline``, ``annotate``, ``header``, ``transf``/``atransf``, ``psize``/``plim``, ``shade`` and
     ``efac``. For a fitted model ``colout`` colours the markers and ``col``/``border`` the summary
     polygon (``col`` of the numeric form colours each study); ``addpred``/``predstyle`` add a
-    prediction interval to the summary (``'line'``, ``'polygon'`` or ``'bar'``; the ``'shade'``
-    and ``'dist'`` styles of metafor are not implemented). The remaining metafor options passed
-    through ``...`` are the keyword-only ``annosym``, ``textpos``, ``rowadj``, ``top``, ``at_lab``,
-    ``xlabadj``, ``xlabfont`` and ``decreasing``;
+    prediction interval to the summary (``'line'``, ``'polygon'``, ``'bar'``, ``'shade'`` (rectangles shaded by the
+    density of the predictive distribution) or ``'dist'`` (the density itself, with the tails beyond the interval and
+    the parts either side of ``predtail`` shaded)). ``predlim`` limits the distribution drawn by ``'dist'`` and
+    ``preddist`` supplies a distribution (a tuple of the values and densities, or a mapping with the keys
+    ``'x'``, ``'y'`` and optionally ``'pi_lb'``, ``'pi_ub'`` and ``'level'``); ``'shade'`` and ``'dist'`` need the ``transf`` to be
+    one of ``numpy.exp``, ``transf_ztor``, ``numpy.tanh``, ``transf_ilogit``, ``plogis``, ``transf_iarcsin``,
+    ``transf_iprobit``, ``pnorm``, ``transf_iahw`` or ``transf_iabt``. ``fonts`` sets the font family and font of the
+    study labels, the annotations and the ``ilab`` columns (see :func:`metafopy.plot.draw.parse_fonts`: a family such as
+    ``'serif'``, ``'sans'`` or ``'mono'``, a ``(family, font)`` pair with font 1 to 4 for plain, bold, italic, bold italic, a
+    ``{family: font}`` mapping, or a sequence of up to three of these). The remaining metafor options passed
+    through ``...`` are the keyword-only ``predtail``, ``annosym``, ``textpos``, ``rowadj``, ``top``, ``at_lab``,
+    ``xlabadj``, ``xlabfont`` (one font or two, the second for the middle one of three labels) and ``decreasing``;
     for the numeric form ``measure`` (or the ``attrs['measure']`` of a pandas Series) sets the label of the axis and header.
-    Font families (``fonts``) are not supported.
 
     Indices are 0-based where they refer to positions; ``rows`` are plot rows as in R. Vector
     arguments (``slab``, ``ilab``, ``psize``, ...) must have one entry per study of the fit (or per
@@ -784,15 +1114,18 @@ def forest(
     if math.isnan(tp[1]):
         tp[1] = xl[1]
 
+    pstyle: PredStyle
     if predstyle is None:
         pstyle = 'line'
         if addpred is None:
             addpred = False
     else:
-        check_pred(predstyle)
-        pstyle = predstyle
-        if addpred is None:
-            addpred = True
+        pstyle = check_pred(predstyle)
+        addpred = True  # specifying predstyle sets addpred=TRUE automatically
+        if is_fit and not int_only and pstyle != 'line':
+            warnings.warn("Argument 'predstyle' not relevant for meta-regression models.", stacklevel=2)
+    fnt = metafopy.plot.draw.parse_fonts(fonts, 3)
+    pdist = parse_preddist(preddist)
     fit_row = is_fit and int_only and addfit
     mrk = max(rows_a) if rows_a.size else 0.0
     if ylim is None:
@@ -874,6 +1207,15 @@ def forest(
         pr2 = metafopy.methods.predict.predict(res, level=100 * (1 - lvl))
         beta, beta_lb, beta_ub = float(pr2.pred[0]), float(pr2.ci_lb[0]), float(pr2.ci_ub[0])
         pi_lb, pi_ub = float(pr2.pi_lb[0]), float(pr2.pi_ub[0])
+        predlevel = lvl
+        if pdist is not None:
+            pdxs, pdys, pextra = pdist
+            cdf = numpy.cumsum(numpy.diff(pdxs) * (pdys[1:] + pdys[:-1]) / 2)
+            cdf = cdf / numpy.max(cdf)
+            pi_lb = float(pextra['pi_lb']) if 'pi_lb' in pextra else float(pdxs[numpy.argmin(numpy.abs(cdf - lvl / 2))])
+            pi_ub = float(pextra['pi_ub']) if 'pi_ub' in pextra else float(pdxs[numpy.argmin(numpy.abs(cdf - (1 - lvl / 2)))])
+            if 'level' in pextra:
+                predlevel = metafopy.plot.rutils.level_to_alpha(float(pextra['level']))
         if transf is not None:
             beta, beta_lb, beta_ub, pi_lb, pi_ub = (
                 float(metafopy.methods.common.apply_each(numpy.array([v]), transf, targs)[0]) for v in (beta, beta_lb, beta_ub, pi_lb, pi_ub)
@@ -882,10 +1224,26 @@ def forest(
         pi_lb, pi_ub = (float(v[0]) for v in metafopy.methods.common.psort(numpy.array([pi_lb]), numpy.array([pi_ub])))
         if ol is not None:
             beta, beta_lb, beta_ub, pi_lb, pi_ub = (float(apply_olim(numpy.array([v]), ol)[0]) for v in (beta, beta_lb, beta_ub, pi_lb, pi_ub))
-        colv = summary_cols(col, border)
+        colv = summary_cols(col, border, pstyle)
         pcol, pborder = colv
         # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
         if res.method not in ('FE', 'EE', 'CE') and addpred:
+            curve: PredCurve | None = None
+            if pstyle in DENSITY_STYLES:
+                assert pr2.pi_se is not None
+                pddf = None if pr2.pi_ddf is None else float(numpy.atleast_1d(pr2.pi_ddf)[0])
+                curve = pred_curve(
+                    pstyle,
+                    float(pr2.pred[0]),
+                    float(pr2.pi_se[0]),
+                    pr2.pi_dist or 'norm',
+                    pddf,
+                    lvl,
+                    transf,
+                    predlim,
+                    None if pdist is None else (pdist[0], pdist[1]),
+                    predtail,
+                )
             draw_pred(
                 axx,
                 pstyle,
@@ -893,29 +1251,26 @@ def forest(
                 pi_ub,
                 beta,
                 -1.0 if pstyle == 'line' else -2.0,
-                alim_t,
-                ciendheight,
-                arrowwidth,
-                arrowheight,
-                barheight,
-                pipolheight,
+                PredGeometry(alim_t, ciendheight, arrowwidth, arrowheight, barheight, pipolheight, efv[3], ol),
                 lt[1],
-                pcol[1],
-                pborder[1],
+                pcol,
+                pborder,
+                curve,
             )
         xs, ys = diamond(beta_lb, beta, beta_ub, -1.0, polheight)
         sel = (xs > alim_t[0]) & (xs < alim_t[1])
         metafopy.plot.draw.poly(axx, xs[sel], ys[sel], col=pcol[0], border=pborder[0])
         ml = [default_mlab(res.method)] if mlab is None else ([mlab] if isinstance(mlab, str) else list(mlab))
         # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
-        if len(ml) == 1 and pstyle in ('polygon', 'bar'):
-            ml.append(f'Prediction Interval{asym[0]}{metafopy.plot.rutils.rround(100 * (1 - lvl), dig[0]):g}% PI{asym[2]}')
-        metafopy.plot.draw.txt(axx, tp[0], -1 + radj[0], ml[0], pos=4, cex=cx)
+        if len(ml) == 1 and pstyle != 'line':
+            what = 'Predictive Distribution' if pstyle == 'dist' else 'Prediction Interval'
+            ml.append(f'{what}{asym[0]}{metafopy.plot.rutils.rround(100 * (1 - predlevel), dig[0]):g}% PI{asym[2]}')
+        ftxt(axx, tp[0], -1 + radj[0], ml[0], fnt[0], pos=4, cex=cx)
         # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
-        if pstyle in ('polygon', 'bar'):
-            metafopy.plot.draw.txt(axx, tp[0], -2 + radj[0], ml[1], pos=4, cex=cx)
+        if pstyle != 'line':
+            ftxt(axx, tp[0], -2 + radj[0], ml[1], fnt[0], pos=4, cex=cx)
 
-    metafopy.plot.draw.xaxis(axx, at_a, at_lab_l, cex=cex_a)
+    metafopy.plot.draw.xaxis(axx, at_a, at_lab_l, cex=cex_a, family=fnt[0][0])
     measure_r = measure
     if xlab is None:
         xlab_l = [metafopy.plot.rutils.setlab(measure_r, transf, atransf, 1)]
@@ -925,18 +1280,20 @@ def forest(
         raise metafopy.errors.InputError("Argument 'xlab' argument must be of length 1, 2, or 3.")
     amin, amax = float(at_a.min()), float(at_a.max())
     amid = amin + (amax - amin) / 2
+    # the font of the left, right and single label is xlabfont[1], that of the middle of three labels xlabfont[2] (the font set by fonts if only one is given)
+    xlf = [int(xlabfont)] if isinstance(xlabfont, int | numpy.integer) else [int(v) for v in xlabfont]
+    xlf = [xlf[0], xlf[1] if len(xlf) > 1 else (xlf[0] if len(xlab_l) != 3 else fnt[0][1])]
     ha_l = 'center' if xladj[0] is None else ('left' if xladj[0] == 0 else ('right' if xladj[0] == 1 else 'center'))
     ha_r = 'center' if xladj[1] is None else ('left' if xladj[1] == 0 else ('right' if xladj[1] == 1 else 'center'))
-    bold_x = xlabfont in (2, 4)
     if len(xlab_l) == 1:
-        metafopy.plot.draw.xlab_below(axx, amid, xlab_l[0], cex=cex_l, bold=bold_x)
+        metafopy.plot.draw.xlab_below(axx, amid, xlab_l[0], cex=cex_l, family=fnt[0][0], font=xlf[0])
     elif len(xlab_l) == 2:
-        metafopy.plot.draw.xlab_below(axx, amin, xlab_l[0], cex=cex_l, ha=ha_l, bold=bold_x)
-        metafopy.plot.draw.xlab_below(axx, amax, xlab_l[1], cex=cex_l, ha=ha_r, bold=bold_x)
+        metafopy.plot.draw.xlab_below(axx, amin, xlab_l[0], cex=cex_l, ha=ha_l, family=fnt[0][0], font=xlf[0])
+        metafopy.plot.draw.xlab_below(axx, amax, xlab_l[1], cex=cex_l, ha=ha_r, family=fnt[0][0], font=xlf[0])
     else:
-        metafopy.plot.draw.xlab_below(axx, amin, xlab_l[0], cex=cex_l, ha=ha_l, bold=bold_x)
-        metafopy.plot.draw.xlab_below(axx, amid, xlab_l[1], cex=cex_l, bold=bold_x)
-        metafopy.plot.draw.xlab_below(axx, amax, xlab_l[2], cex=cex_l, ha=ha_r, bold=bold_x)
+        metafopy.plot.draw.xlab_below(axx, amin, xlab_l[0], cex=cex_l, ha=ha_l, family=fnt[0][0], font=xlf[0])
+        metafopy.plot.draw.xlab_below(axx, amid, xlab_l[1], cex=cex_l, family=fnt[0][0], font=xlf[1])
+        metafopy.plot.draw.xlab_below(axx, amax, xlab_l[2], cex=cex_l, ha=ha_r, family=fnt[0][0], font=xlf[0])
 
     for i in range(k):
         ci_c = colci_l[i]
@@ -960,7 +1317,7 @@ def forest(
             arrow(axx, 'r', alim_t, rows_a[i], arrowwidth, arrowheight, ci_c)
 
     for i in range(k):
-        metafopy.plot.draw.txt(axx, tp[0], rows_a[i] + radj[0], astr(slab_l[i]), pos=4, cex=cx, col=colout_l[i] if not is_fit else metafopy.plot.draw.FG)
+        ftxt(axx, tp[0], rows_a[i] + radj[0], astr(slab_l[i]), fnt[0], pos=4, cex=cx, col=colout_l[i] if not is_fit else metafopy.plot.draw.FG)
 
     ilab_xpos_out: FloatArray | None = None
     ilab_pos_out: list[int] | None = None
@@ -990,15 +1347,15 @@ def forest(
             raise metafopy.errors.InputError(f"Number of 'ilab' columns ({ncol_ilab}) does not match the length of the 'ilab_lab' argument ({len(ilab_lab)}).")
         for lcol in range(ncol_ilab):
             for i in range(k):
-                metafopy.plot.draw.txt(axx, float(ixp[lcol]), rows_a[i] + radj[2], astr(ilab_m[i, lcol]), pos=ipos[lcol], cex=cx)
+                ftxt(axx, float(ixp[lcol]), rows_a[i] + radj[2], astr(ilab_m[i, lcol]), fnt[2], pos=ipos[lcol], cex=cx)
             if ilab_lab is not None:
-                metafopy.plot.draw.txt(axx, float(ixp[lcol]), yl[1] - (top - 1) + 1 + radj[2], ilab_lab[lcol], pos=ipos[lcol], cex=cx, bold=True)
+                ftxt(axx, float(ixp[lcol]), yl[1] - (top - 1) + 1 + radj[2], ilab_lab[lcol], fnt[2], pos=ipos[lcol], cex=cx, bold=True)
 
     width_out: list[int] | None = None
     if annotate:
         est_all, lb_all, ub_all = yi, ci_lb_a, ci_ub_a
         # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
-        pi_row = fit_row and pstyle in ('polygon', 'bar')
+        pi_row = fit_row and pstyle != 'line'
         wts_all: FloatArray | None = None
         pad: tuple[int, ...] = ()
         if fit_row:
@@ -1017,7 +1374,7 @@ def forest(
         if fit_row:
             ypos += [-1 + radj[1]] + ([-2 + radj[1]] if pi_row else [])
         for yy, s in zip(ypos, annotext, strict=True):
-            metafopy.plot.draw.txt(axx, tp[1], float(yy), s, pos=2, cex=cx)
+            ftxt(axx, tp[1], float(yy), s, fnt[1], pos=2, cex=cx)
 
     for i in range(k):
         if numpy.isnan(yi[i]):
@@ -1044,9 +1401,9 @@ def forest(
     if not annotate:
         hdr_right = None
     if hdr_left is not None:
-        metafopy.plot.draw.txt(axx, tp[0], yl[1] - (top - 1) + 1 + radj[0], hdr_left, pos=4, cex=cx, bold=True)
+        ftxt(axx, tp[0], yl[1] - (top - 1) + 1 + radj[0], hdr_left, fnt[0], pos=4, cex=cx, bold=True)
     if hdr_right is not None:
-        metafopy.plot.draw.txt(axx, tp[1], yl[1] - (top - 1) + 1 + radj[1], hdr_right, pos=2, cex=cx, bold=True)
+        ftxt(axx, tp[1], yl[1] - (top - 1) + 1 + radj[1], hdr_right, fnt[0], pos=2, cex=cx, bold=True)
 
     FOREST_STATE[axx] = {
         'level': lvl,
@@ -1063,6 +1420,7 @@ def forest(
         'annosym': asym,
         'cex': cx,
         'textpos': (tp[0], tp[1]),
+        'fonts': fnt[:2],
     }
     return ForestResult(
         ax=axx,
@@ -1081,15 +1439,18 @@ def forest(
     )
 
 
-def summary_cols(col: typing.Any, border: typing.Any) -> tuple[list[str | None], list[str | None]]:
+def summary_cols(col: typing.Any, border: typing.Any, predstyle: str = 'line') -> tuple[list[str | None], list[str | None]]:
+    """The colours of a summary polygon and its prediction interval: ``col`` (polygon, interval, shade end or below ``predtail``, above it) and ``border``."""
     fg = metafopy.plot.draw.FG
-    c = [fg, fg, metafopy.plot.rutils.coladj(-0.2), None]
+    col2 = metafopy.plot.rutils.coladj(-0.6) if predstyle == 'dist' else fg
+    col3 = metafopy.plot.rutils.coladj(-0.05) if predstyle == 'shade' else metafopy.plot.rutils.coladj(-0.2)
+    c: list[str | None] = [fg, col2, col3, None]
     if col is not None:
         cl = [col] if isinstance(col, str) else list(col)
         if len(cl) == 1:
-            cl = [cl[0], fg, metafopy.plot.rutils.coladj(-0.2), None]
+            cl = [cl[0], col2, col3, None]
         if len(cl) == 2:
-            cl = [*cl, metafopy.plot.rutils.coladj(-0.2), None]
+            cl = [*cl, col3, None]
         if len(cl) == 3:
             cl = [*cl, None]
         c = cl
@@ -1102,55 +1463,73 @@ def summary_cols(col: typing.Any, border: typing.Any) -> tuple[list[str | None],
     return c, b
 
 
+@dataclasses.dataclass(frozen=True, slots=True)
+class PredGeometry:
+    """The sizes and limits used to draw a prediction interval (see :func:`draw_pred`)."""
+
+    alim: tuple[float, float]
+    ciendheight: float
+    arrowwidth: float
+    arrowheight: float
+    barheight: float
+    pipolheight: float
+    ef4: float
+    olim: tuple[float, float] | None = None
+
+
 def draw_pred(
     ax: matplotlib.axes.Axes,
-    style: str,
+    style: PredStyle,
     lb: float,
     ub: float,
     mid: float,
     row: float,
-    alim: tuple[float, float],
-    ciendheight: float,
-    arrowwidth: float,
-    arrowheight: float,
-    barheight: float,
-    pipolheight: float,
+    geo: PredGeometry,
     lty: str,
-    col: str | None,
-    border: str | None,
+    col: collections.abc.Sequence[str | None],
+    border: collections.abc.Sequence[str | None],
+    curve: PredCurve | None = None,
 ) -> None:
-    """The prediction interval of a summary (``line``, ``polygon`` or ``bar``)."""
-    c = col if col is not None else metafopy.plot.draw.FG
-    # auditme: accept[assert-never-missing] the value is a str that is validated against the allowed names earlier
+    """The prediction interval of a summary (``line``, ``polygon``, ``bar``, ``shade`` or ``dist``; ``col`` and ``border`` from :func:`summary_cols`).
+
+    Raises:
+        metafopy.errors.InputError: ``shade`` is drawn without the second and third colour.
+    """
+    alim, aw, ah, bh = geo.alim, geo.arrowwidth, geo.arrowheight, geo.barheight
+    c = col[1] if col[1] is not None else metafopy.plot.draw.FG
     if style == 'line':
         metafopy.plot.draw.seg(ax, max(lb, alim[0]), row, min(ub, alim[1]), row, lty=lty, col=c)
         if lb >= alim[0]:
-            metafopy.plot.draw.seg(ax, lb, row - ciendheight, lb, row + ciendheight, col=c)
+            metafopy.plot.draw.seg(ax, lb, row - geo.ciendheight, lb, row + geo.ciendheight, col=c)
         else:
-            arrow(ax, 'l', alim, row, arrowwidth, arrowheight, c)
+            arrow(ax, 'l', alim, row, aw, ah, c)
         if ub <= alim[1]:
-            metafopy.plot.draw.seg(ax, ub, row - ciendheight, ub, row + ciendheight, col=c)
+            metafopy.plot.draw.seg(ax, ub, row - geo.ciendheight, ub, row + geo.ciendheight, col=c)
         else:
-            arrow(ax, 'r', alim, row, arrowwidth, arrowheight, c)
+            arrow(ax, 'r', alim, row, aw, ah, c)
     elif style == 'polygon':
-        xs, ys = diamond(lb, mid, ub, row, pipolheight)
+        xs, ys = diamond(lb, mid, ub, row, geo.pipolheight)
         sel = (xs > alim[0]) & (xs < alim[1])
-        metafopy.plot.draw.poly(ax, xs[sel], ys[sel], col=col, border=border)
+        metafopy.plot.draw.poly(ax, xs[sel], ys[sel], col=col[1], border=border[1])
     elif style == 'bar':
         if lb >= alim[0]:
-            metafopy.plot.draw.rect(ax, lb, row - barheight, mid, row + barheight, col=col, border=border)
+            metafopy.plot.draw.rect(ax, lb, row - bh, mid, row + bh, col=col[1], border=border[1])
         else:
-            metafopy.plot.draw.rect(ax, alim[0] + arrowwidth, row - barheight, mid, row + barheight, col=col, border=border)
-            metafopy.plot.draw.poly(
-                ax, [alim[0], alim[0] + arrowwidth, alim[0] + arrowwidth, alim[0]], [row, row + barheight, row - barheight, row], col=col, border=col
-            )
+            metafopy.plot.draw.rect(ax, alim[0] + aw, row - bh, mid, row + bh, col=col[1], border=border[1])
+            metafopy.plot.draw.poly(ax, [alim[0], alim[0] + aw, alim[0] + aw, alim[0]], [row, row + bh, row - bh, row], col=col[1], border=col[1])
         if ub <= alim[1]:
-            metafopy.plot.draw.rect(ax, ub, row - barheight, mid, row + barheight, col=col, border=border)
+            metafopy.plot.draw.rect(ax, ub, row - bh, mid, row + bh, col=col[1], border=border[1])
         else:
-            metafopy.plot.draw.rect(ax, alim[1] - arrowwidth, row - barheight, mid, row + barheight, col=col, border=border)
-            metafopy.plot.draw.poly(
-                ax, [alim[1], alim[1] - arrowwidth, alim[1] - arrowwidth, alim[1]], [row, row + barheight, row - barheight, row], col=col, border=col
-            )
+            metafopy.plot.draw.rect(ax, alim[1] - aw, row - bh, mid, row + bh, col=col[1], border=border[1])
+            metafopy.plot.draw.poly(ax, [alim[1], alim[1] - aw, alim[1] - aw, alim[1]], [row, row + bh, row - bh, row], col=col[1], border=col[1])
+    elif style == 'shade':
+        assert curve is not None
+        draw_shade(ax, curve, row, bh, alim, geo.olim, col[1], col[2])
+    elif style == 'dist':
+        assert curve is not None
+        draw_dist(ax, curve, row - 0.5, lb, ub, alim, geo.olim, geo.ef4, col, border)
+    else:
+        typing.assert_never(style)
 
 
 def per_study(values: typing.Any, keep: numpy.typing.NDArray[numpy.bool_], k: int, k_all: int, name: str) -> typing.Any:
@@ -1183,6 +1562,7 @@ def addpoly(
     annotate: bool | None = None,
     addpred: bool = False,
     predstyle: str | None = None,
+    predlim: collections.abc.Sequence[float] | None = None,
     digits: int | None = None,
     width: int | collections.abc.Sequence[int] | None = None,
     mlab: str | collections.abc.Sequence[str] | None = None,
@@ -1193,10 +1573,17 @@ def addpoly(
     col: str | collections.abc.Sequence[str] | None = None,
     border: str | collections.abc.Sequence[str] | None = None,
     lty: str | collections.abc.Sequence[str] | None = None,
+    fonts: FontsArg = None,
     cex: float | None = None,
     constarea: bool = False,
     *,
     ax: matplotlib.axes.Axes | None = None,
+    preddist: PredDist | None = None,
+    predtail: float | str | None = None,
+    pi_se: float | None = None,
+    pi_dist: str = 'norm',
+    pi_ddf: float | None = None,
+    pi_level: float | None = None,
     alim: collections.abc.Sequence[float] | None = None,
     olim: collections.abc.Sequence[float] | None = None,
     annosym: collections.abc.Sequence[str] | None = None,
@@ -1213,15 +1600,25 @@ def addpoly(
     ``transf``, ``atransf``, ``efac``, ``cex``, ``textpos``, ...) are taken from the last
     :func:`forest` call on the same axes. Returns the axes.
 
+    ``predstyle`` is ``'line'``, ``'polygon'``, ``'bar'``, ``'shade'`` or ``'dist'`` (the last two draw the predictive
+    distribution, see :func:`forest`; they need ``predlim``/``preddist``/``predtail`` as there). For numbers the predictive
+    distribution is described by the keyword-only ``pi_se`` (its standard error), ``pi_dist`` (``'norm'`` or ``'t'``),
+    ``pi_ddf`` (degrees of freedom of the ``'t'``) and ``pi_level`` (the level of the interval; the ``level`` by default),
+    which metafor reads from the attributes of ``pi.lb``, or by ``preddist``. ``fonts`` is as in :func:`forest` (the first
+    entry for the labels, the second for the annotations) and defaults to that of the last :func:`forest` call.
+
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
     axx = metafopy.plot.rutils.get_ax(ax)
     st = FOREST_STATE.get(axx) or {}
-    ps = 'line' if predstyle is None else predstyle
+    ps: PredStyle = 'line' if predstyle is None else check_pred(predstyle)
     if predstyle is not None:
-        check_pred(predstyle)
         addpred = True
+    pdist = parse_preddist(preddist)
+    if pdist is not None and isinstance(x, metafopy.models.rma_uni.RMAResult):
+        raise metafopy.errors.InputError("Can only use 'preddist' with the numeric form (estimates and intervals).")
+    fn = metafopy.plot.draw.parse_fonts(st.get('fonts') if fonts is None else fonts, 2)
     if isinstance(x, metafopy.models.rma_uni.RMAResult):
         if not x.int_only:
             raise metafopy.errors.InputError('Fitted model should not contain moderators.')
@@ -1236,6 +1633,11 @@ def addpoly(
         mlab_use: typing.Any = default_mlab(x.method) if mlab is None else mlab
         rows_use: typing.Any = row
         lvl = x.level if level is None else metafopy.plot.rutils.level_to_alpha(level)
+        if pr.pi_se is not None:
+            pi_se = float(pr.pi_se[0])
+        pi_dist = pr.pi_dist or 'norm'
+        pi_ddf = None if pr.pi_ddf is None else float(numpy.atleast_1d(pr.pi_ddf)[0])
+        pi_alpha = lvl
     else:
         yi = numpy.atleast_1d(numpy.asarray(x, dtype=float))
         lvl = st.get('level', 0.05) if level is None else metafopy.plot.rutils.level_to_alpha(level)
@@ -1247,7 +1649,28 @@ def addpoly(
             if v is None:
                 raise metafopy.errors.InputError("Must specify either 'vi', 'sei', or ('ci_lb','ci_ub').")
             cl, cu = yi - crit * numpy.sqrt(v), yi + crit * numpy.sqrt(v)
-        if pi_lb is not None and pi_ub is not None:
+        pi_alpha = lvl if pi_level is None else metafopy.plot.rutils.level_to_alpha(pi_level)
+        if pdist is not None:
+            if yi.shape[0] != 1:
+                raise metafopy.errors.InputError("Can only use 'preddist' when plotting a single estimate.")
+            pdxs, pdys, pextra = pdist
+            if 'level' in pextra:
+                pi_alpha = metafopy.plot.rutils.level_to_alpha(float(pextra['level']))
+            cdf = numpy.cumsum(numpy.diff(pdxs) * (pdys[1:] + pdys[:-1]) / 2)
+            cdf = cdf / numpy.max(cdf)
+            if 'pi_lb' in pextra:
+                pl = numpy.array([float(pextra['pi_lb'])])
+            elif pi_lb is not None:
+                pl = numpy.atleast_1d(numpy.asarray(pi_lb, dtype=float))
+            else:
+                pl = numpy.array([float(pdxs[numpy.argmin(numpy.abs(cdf - pi_alpha / 2))])])
+            if 'pi_ub' in pextra:
+                pu = numpy.array([float(pextra['pi_ub'])])
+            elif pi_ub is not None:
+                pu = numpy.atleast_1d(numpy.asarray(pi_ub, dtype=float))
+            else:
+                pu = numpy.array([float(pdxs[numpy.argmin(numpy.abs(cdf - (1 - pi_alpha / 2)))])])
+        elif pi_lb is not None and pi_ub is not None:
             pl, pu = numpy.atleast_1d(numpy.asarray(pi_lb, dtype=float)), numpy.atleast_1d(numpy.asarray(pi_ub, dtype=float))
         else:
             if ps != 'line':
@@ -1297,7 +1720,7 @@ def addpoly(
             radj = [radj[0], radj[0]]
     fg = metafopy.plot.draw.FG
     if k == 1:
-        c0, b0 = summary_cols(col, border)
+        c0, b0 = summary_cols(col, border, ps)
         col_l: list[typing.Any] = c0
         bord_l: list[typing.Any] = b0
     else:
@@ -1316,12 +1739,14 @@ def addpoly(
             ml = expand(mlab_use, k, 'mlab')
     else:
         ml = None
+        what = 'Predictive Distribution' if ps == 'dist' else 'Prediction Interval'
+        pi_text = f'{what}{asym[0]}{metafopy.plot.rutils.rround(100 * (1 - pi_alpha), dg):g}% PI{asym[2]}'
         if mlab_use is None:
-            ml = ['', f'Prediction Interval{asym[0]}{metafopy.plot.rutils.rround(100 * (1 - lvl), dg):g}% PI{asym[2]}']
+            ml = ['', pi_text]
         else:
             ml = [mlab_use] if isinstance(mlab_use, str) else list(mlab_use)
             if len(ml) == 1:
-                ml.append(f'Prediction Interval{asym[0]}{metafopy.plot.rutils.rround(100 * (1 - lvl), dg):g}% PI{asym[2]}')
+                ml.append(pi_text)
     if rows_use is None:
         rows_a = -numpy.arange(1, k + 1, dtype=float)
     elif numpy.ndim(rows_use) == 0:
@@ -1349,6 +1774,7 @@ def addpoly(
     k = int(yi.shape[0])
     if k == 0:
         raise metafopy.errors.InputError('Processing terminated since k = 0.')
+    yi_raw = yi.copy()
     if tr is not None:
         yi, cl, cu, pl, pu = (metafopy.methods.common.apply_each(v, tr, targs_) for v in (yi, cl, cu, pl, pu))
     cl, cu = metafopy.methods.common.psort(cl, cu)
@@ -1368,7 +1794,7 @@ def addpoly(
     if math.isnan(tp[1]):
         tp[1] = xlim[1]
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
-    pstyle_nonline = ps in ('polygon', 'bar')
+    pstyle_nonline = ps != 'line'
     if do_annotate:
         est_a, lb_a, ub_a = (numpy.concatenate([yi, [math.nan]]), numpy.concatenate([cl, pl]), numpy.concatenate([cu, pu])) if pstyle_nonline else (yi, cl, cu)
         raw, _ = build_annotext(est_a, lb_a, ub_a, [dg, dg, dg], asym, wd, None, False, atr, targs_)
@@ -1377,10 +1803,10 @@ def addpoly(
         annotext = [s.replace('-', asym[3]).replace(' ', asym[4]) for s in raw]
         if pstyle_nonline:
             for yy, s in zip([rows_a[0], rows_a[1]], annotext, strict=True):
-                metafopy.plot.draw.txt(axx, tp[1], float(yy + radj[1]), s, pos=2, cex=cx)
+                ftxt(axx, tp[1], float(yy + radj[1]), s, fn[1], pos=2, cex=cx)
         else:
             for yy, s in zip(rows_a, annotext, strict=True):
-                metafopy.plot.draw.txt(axx, tp[1], float(yy + radj[1]), s, pos=2, cex=cx)
+                ftxt(axx, tp[1], float(yy + radj[1]), s, fn[1], pos=2, cex=cx)
     if constarea:
         area = (cu - cl) * (height / 100) * cx * efv[0]
         area = area / numpy.nanmin(area)
@@ -1408,6 +1834,20 @@ def addpoly(
                 else:
                     arrow(axx, 'r', alim_t, rows_a[i], arrowwidth, arrowheight, lcol_l[i])
         else:
+            curve: PredCurve | None = None
+            if ps in DENSITY_STYLES:
+                curve = pred_curve(
+                    ps,
+                    float(yi_raw[i]),
+                    pi_se,
+                    pi_dist,
+                    pi_ddf,
+                    pi_alpha,
+                    tr,
+                    predlim,
+                    None if pdist is None else (pdist[0], pdist[1]),
+                    predtail,
+                )
             draw_pred(
                 axx,
                 ps,
@@ -1415,21 +1855,17 @@ def addpoly(
                 float(pu[i]),
                 float(yi[i]),
                 float(rows_a[1]),
-                alim_t,
-                ciendheight,
-                arrowwidth,
-                arrowheight,
-                barheight,
-                pipolheight,
+                PredGeometry(alim_t, ciendheight, arrowwidth, arrowheight, barheight, pipolheight, efv[3], ol),
                 lt[1],
-                col_l[1],
-                bord_l[1],
+                col_l,
+                bord_l,
+                curve,
             )
         xs, ys = diamond(cl[i], yi[i], cu[i], rows_a[i], float(polheight[i]))
         sel = (xs > alim_t[0]) & (xs < alim_t[1])
         metafopy.plot.draw.poly(axx, xs[sel], ys[sel], col=col_l[i], border=bord_l[i])
         if ml is not None:
-            metafopy.plot.draw.txt(axx, tp[0], float(rows_a[i] + radj[0]), ml[i], pos=4, cex=cx)
+            ftxt(axx, tp[0], float(rows_a[i] + radj[0]), ml[i], fn[0], pos=4, cex=cx)
             if pstyle_nonline:
-                metafopy.plot.draw.txt(axx, tp[0], float(rows_a[1] + radj[0]), ml[1], pos=4, cex=cx)
+                ftxt(axx, tp[0], float(rows_a[1] + radj[0]), ml[1], fn[0], pos=4, cex=cx)
     return axx
