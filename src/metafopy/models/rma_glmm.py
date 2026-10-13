@@ -4,7 +4,10 @@ Odds ratios (``measure='OR'``) of 2x2 tables and incidence rate ratios
 (``'IRR'``) of two-group rate data are modelled with unconditional or
 conditional models, single-group log odds (``'PLO'``) and log incidence rates
 (``'IRLN'``) with logistic and Poisson mixed-effects models, following
-Stijnen, Hamza and Ozdemir (2010), doi:10.1002/sim.3767. See
+Stijnen, Hamza and Ozdemir (2010), doi:10.1002/sim.3767. The measures that
+metafor documents as experimental (risk ratios ``'RR'`` and risk differences
+``'RD'`` of 2x2 tables, proportions ``'PR'`` and log proportions ``'PLN'``) use
+binomial models with a log or identity link and give metafor's warning. See
 https://wviechtb.github.io/metafor/reference/rma.glmm.html and the source at
 https://github.com/wviechtb/metafor/blob/master/R/rma.glmm.r.
 
@@ -41,6 +44,8 @@ type FloatArray = numpy.typing.NDArray[numpy.float64]
 SUPPORTED = ('OR', 'IRR', 'PLO', 'IRLN')
 # auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
 EXPERIMENTAL = ('PR', 'RR', 'RD', 'PLN')
+# auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
+UNCONDITIONAL_ONLY = ('RR', 'RD')
 # auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
 MODELS = ('UM.FS', 'UM.RS', 'CM.EL', 'CM.AL')
 # auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
@@ -87,16 +92,11 @@ def check_arguments(measure: str | None, model: str | None, method: str, coding:
     """Validate the argument values and return the model after the ``CM.AL``/``IRR`` and one-group adjustments.
 
     Raises:
-        metafopy.errors.InputError: an argument has an unknown value.
-        metafopy.errors.NotSupportedError: the measure is one of the experimental ones that metafopy does not port.
+        metafopy.errors.InputError: an argument has an unknown value or the measure cannot be used with the model.
     """
     if measure is None:
         raise metafopy.errors.InputError("Must specify the 'measure' argument.")
-    if measure in EXPERIMENTAL:
-        raise metafopy.errors.NotSupportedError(
-            f"measure={measure!r} is experimental in metafor's rma.glmm() and not implemented; use 'OR', 'IRR', 'PLO' or 'IRLN'."
-        )
-    if measure not in SUPPORTED:
+    if measure not in SUPPORTED and measure not in EXPERIMENTAL:
         raise metafopy.errors.InputError("Unknown 'measure' specified.")
     if method not in METHODS:
         raise metafopy.errors.InputError("Unknown 'method' specified.")
@@ -106,12 +106,13 @@ def check_arguments(measure: str | None, model: str | None, method: str, coding:
         raise metafopy.errors.InputError("Unknown option specified for the 'test' argument.")
     if model is not None and model not in MODELS:
         raise metafopy.errors.InputError("Unknown 'model' specified.")
-    # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
-    if measure in ('PLO', 'IRLN'):
-        if model is not None:
-            warnings.warn("Argument 'model' not relevant for this outcome measure.", stacklevel=3)
-        return 'UM.FS'
     resolved = model or 'UM.FS'
+    if measure in metafopy.models.glmm_fit.ONE_GROUP and model is not None:
+        warnings.warn("Argument 'model' not relevant for this outcome measure.", stacklevel=3)
+    if measure in EXPERIMENTAL:
+        warnings.warn("The use of this 'measure' is experimental - treat results with caution.", stacklevel=3)
+    if resolved in ('CM.EL', 'CM.AL') and measure in UNCONDITIONAL_ONLY:
+        raise metafopy.errors.InputError("Cannot use this measure with model='CM.EL' or model='CM.AL'.")
     return 'CM.EL' if (resolved == 'CM.AL' and measure == 'IRR') else resolved
 
 
@@ -292,10 +293,14 @@ def rma_glmm(
     ``method`` ``'ML'`` or ``'FE'`` (``'EE'``, ``'CE'``). Only the first of
     several ``add`` and ``to`` values is used.
 
-    The experimental measures ``'PR'``, ``'RR'``, ``'RD'`` and ``'PLN'`` of
-    metafor, the ``GLMMadaptive``/``glmmTMB`` back-ends, the ``clogit`` and
-    ``clogistic`` optimisers and ``link``/``family`` overrides are not
-    available.
+    The experimental measures ``'RR'`` and ``'RD'`` (arguments as for ``'OR'``,
+    unconditional models only) and ``'PR'`` and ``'PLN'`` (arguments as for
+    ``'PLO'``) are fitted as metafor does and give its warning that their use is
+    experimental; as in metafor, the log and identity links can put fitted
+    probabilities outside (0, 1), in which case fitting fails (``EstimationError``)
+    or the estimates are unreliable. The ``GLMMadaptive``/``glmmTMB`` back-ends,
+    the ``clogit`` and ``clogistic`` optimisers and ``link``/``family``
+    overrides are not available.
 
     Examples
     --------
@@ -305,7 +310,6 @@ def rma_glmm(
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
-        metafopy.errors.NotSupportedError: the measure is not implemented.
         metafopy.errors.EstimationError: a model cannot be fitted.
     """
     model_name = check_arguments(measure, model, method, coding, test)
@@ -316,8 +320,7 @@ def rma_glmm(
     if to1 not in metafopy.models.tables.TO_CHOICES:
         raise metafopy.errors.InputError("Unknown 'to' argument specified.")
     nagq = nAGQ
-    # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
-    if measure in ('OR', 'IRR') and model_name == 'UM.RS' and method == 'ML' and nagq > 1:
+    if (measure in metafopy.models.glmm_fit.TWO_GROUP_BINOMIAL or measure == 'IRR') and model_name == 'UM.RS' and method == 'ML' and nagq > 1:
         warnings.warn("Not possible to fit RE/ME model='UM.RS' with nAGQ > 1 with glmer(). nAGQ automatically set to 1.", stacklevel=2)
         nagq = 1
 
@@ -479,8 +482,9 @@ def length_of(
     Raises:
         metafopy.errors.InputError: the count arguments for the measure are missing.
     """
-    first = {'OR': ai, 'IRR': x1i}.get(measure, xi)
-    values = metafopy.metadata.column(first, data, 'ai' if measure == 'OR' else ('x1i' if measure == 'IRR' else 'xi'))
+    two_group = measure in metafopy.models.glmm_fit.TWO_GROUP_BINOMIAL
+    first = ai if two_group else (x1i if measure == 'IRR' else xi)
+    values = metafopy.metadata.column(first, data, 'ai' if two_group else ('x1i' if measure == 'IRR' else 'xi'))
     if values is None:
         raise metafopy.errors.InputError('Must specify the table or rate data arguments for this measure.')
     return int(values.shape[0])

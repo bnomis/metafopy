@@ -174,12 +174,6 @@ def test_errors() -> None:
             metafopy.rma_glmm(**{**cells, 'measure': 'OR', **kwargs})
 
 
-@pytest.mark.parametrize('measure', ['PR', 'RR', 'RD', 'PLN'])
-def test_unported_measures(measure: str) -> None:
-    with pytest.raises(metafopy.errors.NotSupportedError):
-        metafopy.rma_glmm(ai='tpos', bi='tneg', ci='cpos', di='cneg', data=glmm_cases.bcg(), measure=measure)
-
-
 def test_um_rs_warns_about_nagq() -> None:
     with pytest.warns(UserWarning, match='nAGQ'):
         glmm_cases.CASES['rs_ml']()

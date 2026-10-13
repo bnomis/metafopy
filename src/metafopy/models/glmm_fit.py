@@ -6,7 +6,10 @@ and Viechtbauer's documentation at https://wviechtb.github.io/metafor/reference/
 models with fixed or random study effects, ``CM.AL`` and ``CM.EL`` condition on
 the table margins and use the approximate (binomial) or the exact
 (non-central hypergeometric) likelihood. ``PLO`` (log odds) and ``IRLN`` (log
-rates) are one-group logistic and Poisson mixed models. This module mirrors
+rates) are one-group logistic and Poisson mixed models. The experimental
+measures use binomial models with a log link (``RR``, ``PLN``) or an identity
+link (``RD``, ``PR``); ``RR`` and ``RD`` are unconditional two-group models,
+``PR`` and ``PLN`` one-group models. This module mirrors
 the corresponding branches of
 https://github.com/wviechtb/metafor/blob/master/R/rma.glmm.r.
 """
@@ -35,6 +38,7 @@ type FloatArray = numpy.typing.NDArray[numpy.float64]
 type IntArray = numpy.typing.NDArray[numpy.intp]
 
 NAN = math.nan
+SATURATED_WARNING = "Cannot fit saturated model (set 'verbose=TRUE' to obtain further details)."
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -110,18 +114,43 @@ def empty_vcov() -> FloatArray:
     return numpy.zeros((0, 0))
 
 
+# auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
+BINOMIAL_MEASURES = ('OR', 'RR', 'RD', 'PLO', 'PR', 'PLN')
+# auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
+TWO_GROUP_BINOMIAL = ('OR', 'RR', 'RD')
+# auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
+ONE_GROUP = ('PLO', 'PR', 'PLN', 'IRLN')
+LINKS: dict[str, metafopy.core.glm.Link] = {
+    'IRLN': 'log',
+    'IRR': 'log',
+    'OR': 'logit',
+    'PLN': 'log',
+    'PLO': 'logit',
+    'PR': 'identity',
+    'RD': 'identity',
+    'RR': 'log',
+}
+
+
 def glm_family(measure: str) -> metafopy.core.glm.Family:
-    return 'binomial' if measure in ('OR', 'PLO') else 'poisson'
+    return 'binomial' if measure in BINOMIAL_MEASURES else 'poisson'
 
 
-def fixed_glm(X: FloatArray, y: FloatArray, size: FloatArray | None, offset: FloatArray, family: metafopy.core.glm.Family) -> metafopy.core.glm.GLMFit:
+def glm_link(measure: str) -> metafopy.core.glm.Link:
+    """The link of the measure's model: logit (``OR``, ``PLO``), log (``RR``, ``PLN``, ``IRR``, ``IRLN``) or identity (``RD``, ``PR``)."""
+    return LINKS[measure]
+
+
+def fixed_glm(
+    X: FloatArray, y: FloatArray, size: FloatArray | None, offset: FloatArray, family: metafopy.core.glm.Family, link: metafopy.core.glm.Link
+) -> metafopy.core.glm.GLMFit:
     """``glm()`` fit; raises the metafor-style error when it fails.
 
     Raises:
         metafopy.errors.EstimationError: the model cannot be fitted.
     """
     try:
-        return metafopy.core.glm.glm_fit(X, y, family=family, size=size, offset=offset)
+        return metafopy.core.glm.glm_fit(X, y, family=family, size=size, offset=offset, link=link)
     except (metafopy.errors.EstimationError, numpy.linalg.LinAlgError) as exc:
         raise metafopy.errors.EstimationError('Cannot fit FE model.') from exc
 
@@ -160,6 +189,7 @@ def saturated_glm(
     size: FloatArray | None,
     offset: FloatArray,
     family: metafopy.core.glm.Family,
+    link: metafopy.core.glm.Link,
     skip: int,
 ) -> tuple[float, FloatArray, FloatArray, bool, metafopy.core.glm.GLMFit | None]:
     """Log-likelihood and the coefficients/covariance beyond the first ``skip`` of the saturated model (``glm``).
@@ -167,8 +197,9 @@ def saturated_glm(
     Returns NaN values and ``False`` when the fit fails, as metafor only warns then.
     """
     try:
-        fit = metafopy.core.glm.glm_fit(X_qe, y, family=family, size=size, offset=offset)
+        fit = metafopy.core.glm.glm_fit(X_qe, y, family=family, size=size, offset=offset, link=link)
     except metafopy.errors.EstimationError, numpy.linalg.LinAlgError:
+        warnings.warn(SATURATED_WARNING, stacklevel=3)
         return NAN, numpy.zeros(0), empty_vcov(), False, None
     coef = fit.coef[~fit.aliased]
     return fit.loglik, coef[skip:], fit.vcov[skip:, skip:], True, fit
@@ -182,7 +213,7 @@ def unconditional(spec: FitSpec) -> ModelFit:
     """
     k = spec.X.shape[0]
     c = spec.cells
-    if spec.measure == 'OR':
+    if spec.measure in TWO_GROUP_BINOMIAL:
         family: metafopy.core.glm.Family = 'binomial'
         y = interleave(c['ai'], c['ci'])
         size: FloatArray | None = interleave(c['ai'] + c['bi'], c['ci'] + c['di'])
@@ -218,14 +249,15 @@ def unconditional_fixed_study(
 ) -> ModelFit:
     k, p = spec.X.shape
     dummies = study_dummies(k)
-    fe = fixed_glm(numpy.column_stack([X_fit, dummies if k > 1 else const]), y, size, offset, family)
+    link = glm_link(spec.measure)
+    fe = fixed_glm(numpy.column_stack([X_fit, dummies if k > 1 else const]), y, size, offset, family, link)
     ll_qe, b2, vb2, qe_ok = fe.loglik, numpy.zeros(0), empty_vcov(), True
     if k > 1:
         X_qe = numpy.column_stack([X_fit, dummies, dummies * group1[:, None]])
-        ll_qe, b2, vb2, qe_ok, _ = saturated_glm(X_qe, y, size, offset, family, k + p)
+        ll_qe, b2, vb2, qe_ok, _ = saturated_glm(X_qe, y, size, offset, family, link, k + p)
     if spec.method != 'ML':
         return fixed_effects_result(fe, p, p + k, p + k, 2 * k, NAN, (ll_qe, b2, vb2, qe_ok))
-    problem = metafopy.core.glmm.GLMMProblem(numpy.column_stack([X_fit, dummies]), y, size, offset, study, group[:, None], family, 'scalar')
+    problem = metafopy.core.glmm.GLMMProblem(numpy.column_stack([X_fit, dummies]), y, size, offset, study, group[:, None], family, 'scalar', link)
     ml = metafopy.core.glmm.fit_glmm(problem, nagq=spec.nagq, gtol=spec.control.gtol)
     ll_ml = ml.loglik if math.isnan(ll_qe) else ll_qe - 0.5 * ml.cond_deviance
     return ModelFit(
@@ -266,19 +298,21 @@ def unconditional_random_study(
     k, p = spec.X.shape
     nagq = 1 if spec.method == 'ML' else spec.nagq
     ones = const
-    fe_problem = metafopy.core.glmm.GLMMProblem(numpy.column_stack([X_fit, const]), y, size, offset, study, ones, family, 'scalar')
+    link = glm_link(spec.measure)
+    fe_problem = metafopy.core.glmm.GLMMProblem(numpy.column_stack([X_fit, const]), y, size, offset, study, ones, family, 'scalar', link)
     fe = metafopy.core.glmm.fit_glmm(fe_problem, nagq=nagq, gtol=spec.control.gtol)
     ll_qe, b2, vb2, qe_ok = fe.loglik, numpy.zeros(0), empty_vcov(), True
     if k > 1:
         interaction = study_dummies(k) * group1[:, None]
         X_qe = numpy.column_stack([X_fit, const, interaction])
-        probe = metafopy.core.glm.glm_fit(X_qe, y, family=family, size=size, offset=offset)
+        probe = metafopy.core.glm.glm_fit(X_qe, y, family=family, size=size, offset=offset, link=link)
         X_qe = X_qe[:, ~probe.aliased]
-        qe_problem = metafopy.core.glmm.GLMMProblem(X_qe, y, size, offset, study, ones, family, 'scalar')
+        qe_problem = metafopy.core.glmm.GLMMProblem(X_qe, y, size, offset, study, ones, family, 'scalar', link)
         try:
             qe = metafopy.core.glmm.fit_glmm(qe_problem, nagq=nagq, theta0=fe.theta, gtol=spec.control.gtol)
             ll_qe, b2, vb2 = qe.loglik, qe.beta[p + 1 :], qe.vcov[p + 1 :, p + 1 :]
         except metafopy.errors.EstimationError:
+            warnings.warn(SATURATED_WARNING, stacklevel=3)
             ll_qe, b2, vb2, qe_ok = NAN, numpy.zeros(0), empty_vcov(), False
     if spec.method != 'ML':
         return ModelFit(
@@ -304,7 +338,7 @@ def unconditional_random_study(
         )
     Z = numpy.column_stack([numpy.ones(2 * k), group])
     ml_problem = metafopy.core.glmm.GLMMProblem(
-        numpy.column_stack([X_fit, const]), y, size, offset, study, Z, family, 'correlated' if spec.cor else 'independent'
+        numpy.column_stack([X_fit, const]), y, size, offset, study, Z, family, 'correlated' if spec.cor else 'independent', link
     )
     ml = metafopy.core.glmm.fit_glmm(ml_problem, nagq=1, gtol=spec.control.gtol)
     cov = ml.covariance()
@@ -346,14 +380,14 @@ class SingleLevel:
 
 
 def single_level_data(spec: FitSpec) -> tuple[metafopy.core.glm.Family, FloatArray, FloatArray | None, FloatArray]:
-    """Counts ``y``, binomial totals, offset of the conditional (``CM.*``) and one-group (``PLO``, ``IRLN``) models."""
+    """Counts ``y``, binomial totals, offset of the conditional (``CM.*``) and one-group (``PLO``, ``PR``, ``PLN``, ``IRLN``) models."""
     c = spec.cells
     k = spec.X.shape[0]
     if spec.measure == 'OR':
         return 'binomial', c['ai'], c['ai'] + c['ci'], numpy.log((c['ai'] + c['bi']) / (c['ci'] + c['di']))
     if spec.measure == 'IRR':
         return 'binomial', c['x1i'], c['x1i'] + c['x2i'], numpy.log(c['t1i'] / c['t2i'])
-    if spec.measure == 'PLO':
+    if spec.measure in ('PLO', 'PR', 'PLN'):
         return 'binomial', c['xi'], c['xi'] + c['mi'], numpy.zeros(k)
     return 'poisson', c['xi'], None, numpy.log(c['ti'])
 
@@ -369,16 +403,17 @@ def single_level(spec: FitSpec) -> SingleLevel:
     k, p = spec.X.shape
     family, y, size, offset = single_level_data(spec)
     X = spec.X
-    fe = fixed_glm(X, y, size, offset, family)
+    link = glm_link(spec.measure) if spec.measure in ONE_GROUP else metafopy.core.glm.canonical_link(family)
+    fe = fixed_glm(X, y, size, offset, family, link)
     ll_qe, b2, vb2, qe_ok = fe.loglik, numpy.zeros(0), empty_vcov(), True
     qe_fit: metafopy.core.glm.GLMFit | None = fe
     X_qe = X
     if k > 1:
         X_qe = numpy.column_stack([X, numpy.eye(k)])
-        ll_qe, b2, vb2, qe_ok, qe_fit = saturated_glm(X_qe, y, size, offset, family, p)
+        ll_qe, b2, vb2, qe_ok, qe_fit = saturated_glm(X_qe, y, size, offset, family, link, p)
     if spec.method != 'ML':
         return SingleLevel(fixed_effects_result(fe, p, p, p, k, NAN, (ll_qe, b2, vb2, qe_ok)), fe, qe_fit, X_qe, fe.coef[:p], 0.0)
-    problem = metafopy.core.glmm.GLMMProblem(X, y, size, offset, numpy.arange(k), numpy.ones((k, 1)), family, 'scalar')
+    problem = metafopy.core.glmm.GLMMProblem(X, y, size, offset, numpy.arange(k), numpy.ones((k, 1)), family, 'scalar', link)
     ml = metafopy.core.glmm.fit_glmm(problem, nagq=spec.nagq, gtol=spec.control.gtol)
     # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
     use_qe = spec.measure in ('OR', 'IRR') and math.isnan(ll_qe)
@@ -533,7 +568,7 @@ def fit_model(spec: FitSpec) -> ModelFit:
         metafopy.errors.EstimationError: the model cannot be fitted.
     """
     # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
-    if spec.measure in ('PLO', 'IRLN'):
+    if spec.measure in ONE_GROUP:
         return single_level(spec).fit
     if spec.model in ('UM.FS', 'UM.RS'):
         return unconditional(spec)
