@@ -2,6 +2,7 @@
 
 import json
 import pathlib
+import re
 import typing
 import warnings
 
@@ -14,6 +15,7 @@ import metafopy
 import metafopy.errors
 import metafopy.methods.anova
 import metafopy.methods.ls_anova
+import metafopy.methods.ls_permutest
 import metafopy.methods.ls_predict
 import metafopy.methods.ls_profile
 import metafopy.methods.ls_vif
@@ -53,8 +55,8 @@ def bcg() -> pandas.DataFrame:
     return frame('bcg_data')
 
 
-def bcg6() -> pandas.DataFrame:
-    return bcg().iloc[[0, 2, 4, 7, 9, 11]].reset_index(drop=True)
+def bd6() -> pandas.DataFrame:
+    return frame('bd6_data')
 
 
 def mo() -> pandas.DataFrame:
@@ -113,7 +115,7 @@ FITS: dict[str, Fit] = {
     'bcg_ablat_t': lambda: ls(bcg(), '~ ablat', '~ ablat', test='t'),
     'bcg_int_scale': lambda: ls(bcg(), '~ ablat', '~ 1'),
     'bcg_year_identity': lambda: ls(bcg(), '~ ablat', '~ I(ablat/10)', link='identity', method='ML'),
-    'bcg6_exact': lambda: ls(bcg6(), '~ ablat', '~ ablat'),
+    'bd6_exact': lambda: ls(bd6(), '~ ni100', '~ ni100'),
     'mo_int': lambda: ls(mo()),
     'mo_quality': lambda: ls(mo(), '~ quality', '~ quality', method='ML'),
     'mo_design': lambda: ls(mo(), None, '~ design'),
@@ -123,7 +125,7 @@ FITS: dict[str, Fit] = {
 # The scale coefficients are optimizer output (R: nlminb, here BFGS plus a polish): they agree to about 1e-7, the quantities derived from
 # them (location estimates, Hessian-based standard errors) to 1e-4. The log-likelihood at the optimum is closed-form given the optimum.
 # Fits whose likelihood is flat in the scale coefficients (tau^2 -> 0 for some studies) only have their log-likelihood compared.
-FLAT = {'bcg6_exact', 'mo_design'}
+FLAT = {'mo_design'}
 # column names that come from formulaic's rendering of I() terms or from an unnamed matrix, not from the algorithm
 UNNAMED = {'bcg_year_identity', 'bd_matrix', 'bd_poly'}
 
@@ -563,3 +565,169 @@ def test_vif_errors() -> None:
         metafopy.vif(result('bd_int'))
     with pytest.raises(metafopy.errors.NotSupportedError, match='sim'):
         metafopy.vif(result('bd_3'), sim=True)
+
+
+# -- blup, ranef, rstandard and the other accessors -------------------------------------------------------------------------
+
+DIAG_CASES = {
+    'bd_int': ('bd_int', None),
+    'bd_3': ('bd_3', None),
+    'bd_na': ('bd_na', 'diag'),
+    'bcg_ablat': ('bcg_ablat', 'diag'),
+    'mo_int': ('mo_int', 'diag'),
+    'mc_factors': ('mc_factors', 'diag'),
+}
+
+
+def diag_ref(name: str, key: str | None) -> dict[str, typing.Any]:
+    ref = REF[name]
+    out: dict[str, typing.Any] = ref if key is None else ref[key]
+    return out
+
+
+@pytest.mark.parametrize('case', sorted(DIAG_CASES))
+def test_blup_ranef_rstandard(case: str) -> None:
+    name, key = DIAG_CASES[case]
+    res = result(name)
+    ref = diag_ref(name, key)
+    b = metafopy.blup(res)
+    refutil.close(b.pred, ref['blup']['pred'], f'{case} blup pred', rtol=OPT, atol=1e-7)
+    refutil.close(b.se, ref['blup']['se'], f'{case} blup se', rtol=OPT, atol=1e-7)
+    refutil.close(b.pi_lb, ref['blup']['pi_lb'], f'{case} blup pi_lb', rtol=OPT, atol=1e-7)
+    refutil.close(b.pi_ub, ref['blup']['pi_ub'], f'{case} blup pi_ub', rtol=OPT, atol=1e-7)
+    # metafor's slab holds the labels of all supplied studies; the BLUPs only those used in the fit
+    assert list(b.slab) == list(numpy.asarray(ref['slab'], dtype=object)[res.data.keep])
+    assert len(refutil.r_print(str(b)).split('\n')) == len(refutil.r_print(ref['blup']['print']).split('\n'))
+    r = metafopy.ranef(res)
+    refutil.close(r.pred, ref['ranef']['pred'], f'{case} ranef pred', rtol=OPT, atol=1e-7)
+    refutil.close(r.se, ref['ranef']['se'], f'{case} ranef se', rtol=OPT, atol=1e-7)
+    refutil.close(r.pi_lb, ref['ranef']['pi_lb'], f'{case} ranef pi_lb', rtol=OPT, atol=1e-7)
+    s = metafopy.rstandard(res)
+    refutil.close(s.resid, ref['rstandard']['resid'], f'{case} rstandard resid', rtol=OPT, atol=1e-7)
+    refutil.close(s.se, ref['rstandard']['se'], f'{case} rstandard se', rtol=OPT, atol=1e-7)
+    refutil.close(s.z, ref['rstandard']['z'], f'{case} rstandard z', rtol=OPT, atol=1e-6)
+
+
+def test_blup_options_and_conditional_residuals() -> None:
+    res = result('bd_na')
+    padded = metafopy.blup(res, na_action='exclude')
+    assert len(padded.pred) == 48
+    assert int(numpy.isnan(padded.pred).sum()) == 48 - res.k
+    cond = metafopy.rstandard(res, type='conditional')
+    assert len(cond.resid) == res.k
+    with pytest.raises(metafopy.errors.InputError, match='Missing values'):
+        metafopy.rstandard(res, na_action='fail')
+    with pytest.raises(metafopy.errors.InputError, match='non-standard weights'):
+        metafopy.blup(result('bd_3_weights'))
+    exp = metafopy.blup(result('bd_3'), transf=numpy.exp)
+    assert bool(numpy.all(numpy.isnan(exp.se)))
+
+
+def test_accessors() -> None:
+    res = result('bd_3')
+    ref = REF['bd_3']
+    refutil.close(res.coef('beta').to_numpy(), ref['coef']['beta'], 'coef beta', rtol=OPT)  # type: ignore[union-attr]
+    refutil.close(res.coef('alpha').to_numpy(), ref['coef']['alpha'], 'coef alpha', rtol=OPT)  # type: ignore[union-attr]
+    refutil.close(res.vcov('alpha').to_numpy().ravel(), flat(ref['coef']['vcov_alpha']), 'vcov alpha', rtol=OPT, atol=1e-7)  # type: ignore[union-attr]
+    assert set(res.coef()) == {'alpha', 'beta'}  # type: ignore[arg-type]
+    fs = res.fitstats()
+    refutil.close(fs.to_numpy(), list(res.fit_stats_reml.as_tuple()), 'fitstats', rtol=1e-12)
+    ml = res.fitstats(REML=False)
+    refutil.close(ml.to_numpy(), list(res.fit_stats_ml.as_tuple()), 'fitstats ML', rtol=1e-12)
+    refutil.close(res.hatvalues(), ref['hat'], 'hat', rtol=OPT)
+    refutil.close(result('bd_int').fitstats().to_numpy(), REF['bd_int']['fitstats'], 'fitstats int', rtol=1e-6)
+    assert repr(res).startswith('<RMALSResult')
+
+
+def test_unsupported_methods_raise() -> None:
+    res = result('bd_3')
+    for func in (metafopy.influence, metafopy.cooks_distance, metafopy.dfbetas, metafopy.rstudent, metafopy.leave1out, metafopy.cumul, metafopy.robust, metafopy.gosh):
+        with pytest.raises(metafopy.errors.ArgumentError):
+            func(res)  # type: ignore[arg-type]
+
+
+# -- permutest --------------------------------------------------------------------------------------------------------------
+
+PERM_CASES: dict[str, tuple[str, str, dict[str, typing.Any]]] = {
+    'both': ('bcg_ablat', 'permutest', {'iter': 100, 'seed': 1234}),
+    'beta': ('bcg_ablat', 'permutest_beta', {'iter': 60, 'seed': 99, 'skip_alpha': True}),
+    'alpha': ('bcg_ablat', 'permutest_alpha', {'iter': 60, 'seed': 99, 'skip_beta': True}),
+    'btt': ('bcg_ablat', 'permutest_btt', {'iter': 40, 'seed': 5, 'btt': [1], 'att': [1]}),
+    'less': ('bcg_ablat', 'permutest_less', {'iter': 50, 'seed': 7, 'control': {'alternative': 'less', 'stat': 'coef'}}),
+    'px2': ('bcg_ablat', 'permutest_px2', {'iter': 50, 'seed': 7, 'control': {'p2defn': 'px2'}}),
+    't': ('bcg_ablat_t', 'permutest', {'iter': 50, 'seed': 321}),
+    'int_scale': ('bcg_int_scale', 'permutest', {'iter': 50, 'seed': 11}),
+}
+
+
+@pytest.mark.parametrize('case', sorted(PERM_CASES))
+def test_permutest(case: str) -> None:
+    name, key, kwargs = PERM_CASES[case]
+    pt = metafopy.permutest(result(name), **kwargs)
+    assert isinstance(pt, metafopy.methods.ls_permutest.LSPermutestResult)
+    ref = REF[name][key]
+    # p-values of a skipped part come from the model fit (optimizer precision), the others are proportions of permutations
+    tol_beta = OPT if pt.skip_beta else 1e-8
+    tol_alpha = OPT if pt.skip_alpha else 1e-8
+    refutil.close(pt.pval, ref['pval'], f'{case} pval', rtol=tol_beta, atol=1e-8)
+    refutil.close(pt.QMp, ref['QMp'], f'{case} QMp', rtol=tol_beta, atol=1e-8)
+    refutil.close(pt.QM, ref['QM'], f'{case} QM', rtol=OPT, atol=1e-7)
+    assert pt.skip_beta == ref['skip_beta']
+    assert pt.skip_alpha == ref['skip_alpha']
+    refutil.close([pt.exact_iter, pt.Z_exact_iter], [ref['exact_iter'], ref['Z_exact_iter']], f'{case} exact iter')
+    if case != 'px2':
+        refutil.close(pt.pval_alpha, ref['pval_alpha'], f'{case} pval_alpha', rtol=tol_alpha, atol=1e-8)
+    if ref['QSp'] is not None:
+        refutil.close(pt.QSp, ref['QSp'], f'{case} QSp', rtol=tol_alpha, atol=1e-8)
+    if not pt.skip_beta:
+        refutil.close(pt.QM_perm, ref['QM_perm'], f'{case} QM_perm', rtol=OPT, atol=1e-6)
+        refutil.close(pt.zval_perm.to_numpy().ravel(), flat(ref['zval_perm']), f'{case} zval_perm', rtol=OPT, atol=1e-6)
+    if not pt.skip_alpha:
+        refutil.close(pt.QS_perm, ref['QS_perm'], f'{case} QS_perm', rtol=OPT, atol=1e-6)
+        refutil.close(pt.zval_alpha_perm.to_numpy().ravel(), flat(ref['zval_alpha_perm']), f'{case} zval_alpha_perm', rtol=OPT, atol=1e-6)
+
+
+def loose(text: str) -> str:
+    """Printed output with numbers rounded to three decimals (the scale part of bcg_ablat is only identified to about 1e-4)."""
+    return re.sub(r'-?\d+\.\d+', lambda m: f'{float(m.group()):.3f}', refutil.r_print(text).strip())
+
+
+@pytest.mark.parametrize('case', ['both', 'beta', 'alpha', 't', 'int_scale'])
+def test_permutest_print(case: str) -> None:
+    name, key, kwargs = PERM_CASES[case]
+    pt = metafopy.permutest(result(name), **kwargs)
+    assert loose(str(pt)) == loose(REF[name][key]['print'])
+
+
+def test_permutest_exact_iter_and_exact() -> None:
+    assert metafopy.permutest(result('bcg_ablat'), exact='i') == REF['bcg_ablat']['permutest_iter']
+    small = result('bd6_exact')
+    assert metafopy.permutest(small, exact='i') == REF['bd6_exact']['permutest_iter']
+    pt = metafopy.permutest(small, exact=True)
+    assert isinstance(pt, metafopy.methods.ls_permutest.LSPermutestResult)
+    ref = REF['bd6_exact']['permutest']
+    assert (pt.exact_iter, pt.Z_exact_iter) == (ref['exact_iter'], ref['Z_exact_iter'])
+    # metafor's optimizer fails for 11 of the 720 permuted fits (it drops them from the p-values), ours converges for all of them;
+    # where both succeed the statistics agree, so the p-values agree up to the share of dropped permutations
+    expected = numpy.array([[numpy.nan if v is None else v for v in row] for row in ref['zval_perm']])
+    ok = ~numpy.isnan(expected).any(axis=1)
+    assert int(ok.sum()) == 709
+    refutil.close(pt.zval_perm.to_numpy()[ok].ravel(), expected[ok].ravel().tolist(), 'exact zval_perm', rtol=OPT, atol=1e-6)
+    refutil.close(pt.pval, ref['pval'], 'exact pval', rtol=0, atol=11 / 720)
+    refutil.close(pt.QMp, ref['QMp'], 'exact QMp', rtol=0, atol=11 / 720)
+    refutil.close(pt.pval_alpha, ref['pval_alpha'], 'exact pval_alpha', rtol=0, atol=11 / 720)
+    refutil.close(pt.QSp, ref['QSp'], 'exact QSp', rtol=0, atol=11 / 720)
+
+
+def test_permutest_errors() -> None:
+    res = result('bcg_ablat')
+    with pytest.raises(metafopy.errors.InputError, match='at least one part'):
+        metafopy.permutest(res, skip_beta=True, skip_alpha=True)
+    with pytest.raises(metafopy.errors.InputError, match='iter'):
+        metafopy.permutest(res, iter=1)
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter('always')
+        pt = metafopy.permutest(result('bcg_int_scale'), iter=20, seed=2)
+    assert any('intercept-only scale model' in str(w.message) for w in caught)
+    assert isinstance(pt, metafopy.methods.ls_permutest.LSPermutestResult)
+    assert pt.skip_alpha

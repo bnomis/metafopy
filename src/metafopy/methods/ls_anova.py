@@ -98,11 +98,8 @@ class LSWaldResult:
             cols.append(metafopy.printing.fmt_df(self.ddf))
         header.append('pval')
         cols.append([metafopy.printing.fmt_pval(float(v), digits) for v in self.pval])
-        stars = [metafopy.printing.signif_stars(float(v)) or ' ' for v in self.pval]
-        star_w = max(len(s) for s in stars) + 1
         header.append('')
-        # symnum objects print centred, with the odd space on the right
-        cols.append([(' ' * ((star_w - len(s)) // 2) + s).ljust(star_w) for s in stars])
+        cols.append(metafopy.methods.ls_common.center_stars(float(v) for v in self.pval))
         widths = [max(len(header[j]), *(len(c) for c in cols[j])) for j in range(len(header))]
         name_w = len(names[-1]) if names else 0
         lines2 = ['', 'Results:']

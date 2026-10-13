@@ -344,9 +344,10 @@ out$bcg_int_scale <- fit(rma(yi, vi, mods = ~ ablat, scale = ~ 1, data = bc), fu
 })
 out$bcg_year_identity <- fit(rma(yi, vi, mods = ~ ablat, scale = ~ I(ablat / 10), data = bc, link = "identity", method = "ML"))
 
-# exact permutation tests on a small data set
-bc6 <- bc[c(1, 3, 5, 8, 10, 12), ]
-out$bcg6_exact <- fit(rma(yi, vi, mods = ~ ablat, scale = ~ ablat, data = bc6), function(res) {
+# exact permutation tests on a small data set (6 studies of dat.bangertdrowns2004 for which the scale model is identified)
+bd6 <- bdc[29:34, ]
+out$bd6_data <- frame_cols(bd6[, c("author", "year", "ni", "ni100", "meta", "imag", "subject", "yi", "vi")])
+out$bd6_exact <- fit(rma(yi, vi, mods = ~ ni100, scale = ~ ni100, data = bd6), function(res) {
   list(permutest = pt(permutest(res, exact = TRUE, progbar = FALSE)), permutest_iter = num(permutest(res, exact = "i", progbar = FALSE)))
 })
 
