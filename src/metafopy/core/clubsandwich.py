@@ -1,13 +1,15 @@
 """Cluster-robust variance estimation with small-sample corrections (a port of what metafor uses from ``clubSandwich``).
 
-The CR0, CR1, CR1p, CR1S, CR2 and CR3 variance estimators, Satterthwaite degrees of freedom for individual coefficients and
-the ``chi-sq``, ``Naive-F``, ``Naive-Fp`` and ``HTZ`` Wald tests, following Pustejovsky and Tipton (2018),
-doi:10.1080/07350015.2016.1247004, and the R package (https://github.com/jepusto/clubSandwich, GPL >= 2, version 0.7.0).
+The CR0, CR1, CR1p, CR1S, CR2 and CR3 variance estimators, Satterthwaite degrees of freedom and saddlepoint p-values for
+individual coefficients (Kuonen, 1999, doi:10.1093/biomet/86.4.929) and the ``chi-sq``, ``Naive-F``, ``Naive-Fp``, ``HTA``,
+``HTB``, ``HTZ``, ``EDF`` and ``EDT`` Wald tests, following Pustejovsky and Tipton (2018), doi:10.1080/07350015.2016.1247004, and
+the R package (https://github.com/jepusto/clubSandwich, GPL >= 2, version 0.7.0; ``R/saddlepoint.R`` and ``R/Wald-test.R``).
 
 Everything works on per-cluster lists: ``X_list`` (``n_j x p``), ``W_list`` (the working weight matrices ``n_j x n_j``)
 and ``theta_list`` (the target variance matrices ``n_j x n_j``).
 """
 
+import collections.abc
 import dataclasses
 import math
 
@@ -18,13 +20,18 @@ import scipy.stats
 
 import metafopy.errors
 
+# auditme: accept[non-alphabetical-literal] ruff sorts the constants first
 __all__ = [
     'CR_TYPES',
+    'WALD_TESTS',
     'Sandwich',
     'WaldResult',
     'coef_df',
     'matrix_power',
+    'saddlepoint_p',
+    'saddlepoint_pval',
     'satterthwaite_df',
+    'uniroot',
     'vcov_cr',
     'wald_test',
 ]
@@ -32,6 +39,8 @@ __all__ = [
 FloatArray = numpy.typing.NDArray[numpy.float64]
 # auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
 CR_TYPES = ('CR0', 'CR1', 'CR1p', 'CR1S', 'CR2', 'CR3')
+# auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
+WALD_TESTS = ('chi-sq', 'Naive-F', 'Naive-Fp', 'HTA', 'HTB', 'HTZ', 'EDF', 'EDT')
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -302,15 +311,29 @@ def hotelling(Q: float, q: int, nu: float) -> tuple[float, float, float, float]:
     return F, delta, df, p_val
 
 
+def f_sf(x: float, df1: float, df2: float) -> float:
+    """Upper tail of the F distribution (``df2 = inf`` gives the scaled chi-square tail, as ``pf`` in R)."""
+    if math.isinf(df2):
+        return float(scipy.stats.chi2.sf(x * df1, df1))
+    return float(scipy.stats.f.sf(x, df1, df2))
+
+
+def covariance_array(B: FloatArray) -> FloatArray:
+    """``clubSandwich:::covariance_array``: the ``q x q x q x q`` array of covariances from ``B[s, t, j, k]``."""
+    return numpy.asarray(numpy.einsum('svjk,tujk->stuv', B, B) + numpy.einsum('sujk,tvjk->stuv', B, B))
+
+
 def wald_test(sw: Sandwich, beta: FloatArray, C: FloatArray, test: str = 'HTZ', null_constant: float = 0.0) -> WaldResult:
-    """Cluster-robust Wald test of ``C beta = null_constant`` (``test``: ``chi-sq``, ``Naive-F``, ``Naive-Fp`` or ``HTZ``).
+    """Cluster-robust Wald test of ``C beta = null_constant`` (``clubSandwich:::Wald_testing``).
+
+    ``test`` is one of ``chi-sq``, ``Naive-F``, ``Naive-Fp``, ``HTA``, ``HTB``, ``HTZ`` (Tipton and Pustejovsky, 2015), ``EDF`` or
+    ``EDT`` (Pustejovsky and Tipton, 2018, doi:10.1080/07350015.2016.1247004). As in R, ``EDT`` ignores ``null_constant``.
 
     Raises:
         metafopy.errors.InputError: the test is not supported.
     """
-    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
-    if test not in ('chi-sq', 'Naive-F', 'Naive-Fp', 'HTZ'):
-        raise metafopy.errors.InputError(f"Wald test {test!r} is not supported; use 'chi-sq', 'Naive-F', 'Naive-Fp' or 'HTZ'.")
+    if test not in WALD_TESTS:
+        raise metafopy.errors.InputError(f'Wald test {test!r} is not supported; use one of {", ".join(WALD_TESTS)}.')
     q, p = C.shape
     J = sw.n_clusters
     cov = C @ sw.vcov @ C.T
@@ -323,9 +346,9 @@ def wald_test(sw: Sandwich, beta: FloatArray, C: FloatArray, test: str = 'HTZ', 
     if test == 'chi-sq':
         return WaldResult(test, Q / q, 1.0, q, math.inf, float(scipy.stats.chi2.sf(Q, q)))
     if test == 'Naive-F':
-        return WaldResult(test, Q / q, 1.0, q, float(J - 1), float(scipy.stats.f.sf(Q / q, q, J - 1)))
+        return WaldResult(test, Q / q, 1.0, q, float(J - 1), f_sf(Q / q, q, J - 1))
     if test == 'Naive-Fp':
-        return WaldResult(test, Q / q, 1.0, q, float(J - p), float(scipy.stats.f.sf(Q / q, q, J - p)))
+        return WaldResult(test, Q / q, 1.0, q, float(J - p), f_sf(Q / q, q, J - p))
     G_list, H = get_gh(sw)
     G_c = [C @ g for g in G_list]
     if H.ndim == 3:
@@ -336,10 +359,146 @@ def wald_test(sw: Sandwich, beta: FloatArray, C: FloatArray, test: str = 'HTZ', 
     omega = numpy.array([[numpy.trace(P[i, j].reshape(J, J)) for j in range(q)] for i in range(q)])
     omega_nsqrt = matrix_power((omega + omega.T) / 2, -0.5)
     B = numpy.einsum('as,stjk,tb->abjk', omega_nsqrt, P, omega_nsqrt)
-    var_mat = numpy.empty((q, q))
-    for s in range(q):
-        for t in range(s + 1):
-            var_mat[s, t] = var_mat[t, s] = float(numpy.sum(B[s, t] * B[t, s]) + numpy.sum(B[s, s] * B[t, t]))
-    nu_Z = q * (q + 1) / float(var_mat.sum())
-    F, delta, df, p_val = hotelling(Q, q, nu_Z)
-    return WaldResult(test, F, delta, q, df, p_val)
+    if test == 'HTZ':
+        var_mat = numpy.empty((q, q))
+        for s in range(q):
+            for t in range(s + 1):
+                var_mat[s, t] = var_mat[t, s] = float(numpy.sum(B[s, t] * B[t, s]) + numpy.sum(B[s, s] * B[t, t]))
+        F, delta, df, p_val = hotelling(Q, q, q * (q + 1) / float(var_mat.sum()))
+        return WaldResult(test, F, delta, q, df, p_val)
+    if test in ('HTA', 'HTB'):
+        cov_arr = covariance_array(B)
+        var_mat = numpy.einsum('abab->ab', cov_arr)
+        if test == 'HTA':
+            nu = 2 * float(var_mat.sum()) / float(numpy.sum(cov_arr**2))
+        else:
+            lower = numpy.zeros(cov_arr.shape, dtype=bool)
+            for s in range(q):
+                for t in range(s + 1):
+                    for u in range(s + 1):
+                        lower[s, t, u, : (t if u == s else u) + 1] = True
+            nu = 2 * float(var_mat[numpy.tril_indices(q)].sum()) / float(numpy.sum(cov_arr[lower] ** 2))
+        F, delta, df, p_val = hotelling(Q, q, nu)
+        return WaldResult(test, F, delta, q, df, p_val)
+    cvc = C @ sw.vcov @ C.T
+    values, vectors = numpy.linalg.eigh(omega_nsqrt @ ((cvc + cvc.T) / 2) @ omega_nsqrt.T)
+    xs = vectors.T @ omega_nsqrt
+    df_eig = 1.0 / numpy.array([float(numpy.sum(numpy.einsum('a,abjk,b->jk', x, P, x) ** 2)) for x in xs])
+    if test == 'EDF':
+        df4 = numpy.maximum(df_eig, 4.1)
+        EQ = float(numpy.sum(df4 / (df4 - 2)))
+        VQ = float(2 * numpy.sum(df4**2 * (df4 - 1) / ((df4 - 2) ** 2 * (df4 - 4))))
+        if q * VQ > 2 * EQ**2:
+            delta = (EQ**2 * (q - 2) + 2 * q * VQ) / (EQ * (VQ + EQ**2))
+            df = 4 + 2 * EQ**2 * (q + 2) / (q * VQ - 2 * EQ**2)
+        else:
+            delta = q / EQ
+            df = math.inf
+        Fstat = delta * Q / q
+        return WaldResult(test, Fstat, delta, q, df, f_sf(Fstat, q, df))
+    t_j = (vectors.T @ omega_nsqrt @ (C @ beta)) / numpy.sqrt(values)
+    a_j = df_eig - 0.5
+    b_j = 48 * a_j**2
+    c_j = numpy.sqrt(a_j * numpy.log(1 + t_j**2 / df_eig))
+    z_j = c_j + (c_j**3 + 3 * c_j) / b_j - (4 * c_j**7 + 33 * c_j**5 + 240 * c_j**3 + 855 * c_j) / (10 * b_j**2 + 8 * b_j * c_j**4 + 1000 * b_j)
+    Fstat = float(numpy.mean(z_j**2))
+    return WaldResult(test, Fstat, 1.0, q, math.inf, f_sf(Fstat, q, math.inf))
+
+
+def uniroot(
+    f: collections.abc.Callable[[float], float],
+    lower: float,
+    upper: float,
+    tol: float = numpy.finfo(float).eps ** 0.25,
+    maxiter: int = 1000,
+) -> float:
+    """Root of ``f`` in ``[lower, upper]`` by Brent's method, a port of R's ``uniroot`` (``R_zeroin2``, tolerance ``eps^0.25``).
+
+    Raises:
+        metafopy.errors.EstimationError: ``f`` does not change sign over the interval, or the iteration limit is reached.
+    """
+    big = float(numpy.finfo(float).max)
+
+    def evaluate(x: float) -> float:
+        # R's zeroin2 replaces infinite function values by the largest finite value, keeping the sign
+        return float(numpy.clip(f(x), -big, big))
+
+    fa, fb = evaluate(lower), evaluate(upper)
+    if math.isnan(fa) or math.isnan(fb):
+        raise metafopy.errors.EstimationError('f() values at the end points of the interval are not finite.')
+    if fa * fb > 0:
+        raise metafopy.errors.EstimationError('f() values at the end points are not of opposite sign.')
+    if fa == 0.0:
+        return lower
+    if fb == 0.0:
+        return upper
+    eps = float(numpy.finfo(float).eps)
+    a, b, c, fc = lower, upper, lower, fa
+    for _ in range(maxiter + 1):
+        prev_step = b - a
+        if abs(fc) < abs(fb):
+            a, b, c = b, c, b
+            fa, fb, fc = fb, fc, fb
+        tol_act = 2 * eps * abs(b) + tol / 2
+        new_step = (c - b) / 2
+        if abs(new_step) <= tol_act or fb == 0.0:
+            return b
+        if abs(prev_step) >= tol_act and abs(fa) > abs(fb):
+            cb = c - b
+            if a == c:
+                t1 = fb / fa
+                pp = cb * t1
+                qq = 1.0 - t1
+            else:
+                qq = fa / fc
+                t1 = fb / fc
+                t2 = fb / fa
+                pp = t2 * (cb * qq * (qq - t1) - (b - a) * (t1 - 1.0))
+                qq = (qq - 1.0) * (t1 - 1.0) * (t2 - 1.0)
+            if pp > 0:
+                qq = -qq
+            else:
+                pp = -pp
+            if pp < (0.75 * cb * qq - abs(tol_act * qq) / 2) and pp < abs(prev_step * qq / 2):
+                new_step = pp / qq
+        if abs(new_step) < tol_act:
+            new_step = tol_act if new_step > 0 else -tol_act
+        a, fa = b, fb
+        b += new_step
+        fb = evaluate(b)
+        if (fb > 0 and fc > 0) or (fb < 0 and fc < 0):
+            c, fc = a, fa
+    raise metafopy.errors.EstimationError('uniroot() did not converge.')
+
+
+def saddlepoint_pval(t: float, Q: FloatArray, eps: float = 1e-10) -> tuple[float, float]:
+    """``clubSandwich:::saddlepoint_pval``: the saddlepoint approximation (Kuonen, 1999) to the two-sided p-value of a t-statistic.
+
+    ``Q`` is the symmetric ``J x J`` matrix of the quadratic form in the variance estimator. Returns ``(s, p_val)`` with
+    ``s`` the root of the saddlepoint equation (NaN when ``t`` is zero).
+    """
+    if abs(t) < eps:
+        return math.nan, 1.0
+    eig = numpy.maximum(0.0, numpy.linalg.eigvalsh((Q + Q.T) / 2))
+    g = numpy.concatenate([[1.0], -(t**2) * eig / eig.sum()])
+
+    def s_eq(s: float) -> float:
+        with numpy.errstate(divide='ignore', invalid='ignore'):
+            return float(numpy.sum(g / (1 - 2 * g * s)))
+
+    s_range = (1 / (2 * float(g.min())), 0.0) if t**2 < 1 else (0.0, 1 / (2 * float(g.max())))
+    s = uniroot(s_eq, *s_range)
+    if abs(s) > 0.01:
+        r = math.copysign(1.0, s) * math.sqrt(float(numpy.sum(numpy.log(1 - 2 * g * s))))
+        q = s * math.sqrt(2 * float(numpy.sum(g**2 / (1 - 2 * g * s) ** 2)))
+        p_val = 1 - float(scipy.stats.norm.cdf(r)) - float(scipy.stats.norm.pdf(r)) * (1 / r - 1 / q)
+    else:
+        p_val = 0.5 - float(numpy.sum(g**3)) / (3 * math.sqrt(math.pi) * float(numpy.sum(g**2)) ** 1.5)
+    return s, p_val
+
+
+def saddlepoint_p(sw: Sandwich, tstat: FloatArray) -> FloatArray:
+    """Saddlepoint p-values (``coef_test(test = 'saddlepoint')``) for the t-statistics of all coefficients."""
+    G_list, H = get_gh(sw)
+    P = p_array(G_list, H)
+    return numpy.array([saddlepoint_pval(float(t), P[:, :, i])[1] for i, t in enumerate(tstat)])

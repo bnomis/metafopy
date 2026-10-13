@@ -37,8 +37,6 @@ Cluster = str | collections.abc.Sequence[typing.Any] | numpy.typing.NDArray[typi
 COEF_TESTS = ('z', 'naive-t', 'naive-tp', 'Satterthwaite', 'saddlepoint')
 # auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
 CONF_TESTS = ('z', 'naive-t', 'naive-tp', 'Satterthwaite')
-# auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
-WALD_TESTS = ('chi-sq', 'Naive-F', 'Naive-Fp', 'HTA', 'HTB', 'HTZ', 'EDF', 'EDT')
 
 
 @functools.singledispatch
@@ -100,18 +98,16 @@ def check_options(
     coef_test = 'Satterthwaite' if coef_test is None else coef_test
     if coef_test not in COEF_TESTS:
         raise metafopy.errors.InputError(f"Unknown 'coef_test' {coef_test!r}.")
-    if coef_test == 'saddlepoint':
-        raise metafopy.errors.InputError("coef_test='saddlepoint' is not supported.")
     if conf_test is None:
         conf_test = coef_test
+        if conf_test == 'saddlepoint':
+            conf_test = 'Satterthwaite'
+            warnings.warn("Cannot use 'saddlepoint' for conf_test() - using 'Satterthwaite' instead.", stacklevel=4)
     elif conf_test not in CONF_TESTS:
         raise metafopy.errors.InputError(f"Unknown 'conf_test' {conf_test!r}.")
     wald_test = 'HTZ' if wald_test is None else wald_test
-    if wald_test not in WALD_TESTS:
+    if wald_test not in metafopy.core.clubsandwich.WALD_TESTS:
         raise metafopy.errors.InputError(f"Unknown 'wald_test' {wald_test!r}.")
-    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
-    if wald_test not in ('chi-sq', 'Naive-F', 'Naive-Fp', 'HTZ'):
-        raise metafopy.errors.InputError(f'wald_test={wald_test!r} is not supported.')
     return vcov, coef_test, conf_test, wald_test
 
 
@@ -131,9 +127,13 @@ def sandwich_pieces(
     """Coefficients' standard errors, tests, intervals and omnibus test from a clubSandwich variance estimator."""
     se = numpy.sqrt(numpy.diag(sw.vcov))
     tstat = beta / se
-    df_coef = metafopy.core.clubsandwich.coef_df(sw, coef_test)
+    if coef_test == 'saddlepoint':
+        df_coef = numpy.full(len(beta), numpy.nan)
+        pval = metafopy.core.clubsandwich.saddlepoint_p(sw, tstat)
+    else:
+        df_coef = metafopy.core.clubsandwich.coef_df(sw, coef_test)
+        pval = numpy.array([2 * scipy.stats.norm.sf(abs(t)) if math.isinf(d) else 2 * scipy.stats.t.sf(abs(t), d) for t, d in zip(tstat, df_coef, strict=True)])
     df_conf = df_coef if conf_test == coef_test else metafopy.core.clubsandwich.coef_df(sw, conf_test)
-    pval = numpy.array([2 * scipy.stats.norm.sf(abs(t)) if math.isinf(d) else 2 * scipy.stats.t.sf(abs(t), d) for t, d in zip(tstat, df_coef, strict=True)])
     crit = numpy.array([scipy.stats.norm.isf(alpha / 2) if math.isinf(d) else scipy.stats.t.isf(alpha / 2, d) for d in df_conf])
     zval = numpy.where(numpy.isinf(tstat), numpy.nan, tstat)
     if int_only:
@@ -256,8 +256,9 @@ def robust_rma_uni(
     ``cluster`` is a column name of the data given to the model or a vector with one value per original row. ``adjust`` is
     ``True`` (CR1: ``n/(n-p)`` factor), ``False`` (CR0), ``'Stata1'``/``'Stata'`` or ``'Stata2'``. With ``club_sandwich=True``,
     ``vcov`` (``CR0``, ``CR1``, ``CR1p``, ``CR1S``, ``CR2``, ``CR3``; default ``CR2``), ``coef_test`` (``z``, ``naive-t``,
-    ``naive-tp``, ``Satterthwaite``), ``conf_test`` and ``wald_test`` (``chi-sq``, ``Naive-F``, ``Naive-Fp``, ``HTZ``) select the
-    method.
+    ``naive-tp``, ``Satterthwaite``, ``saddlepoint``; the latter gives p-values only, the confidence intervals then use
+    ``Satterthwaite`` unless ``conf_test`` says otherwise), ``conf_test`` (as ``coef_test`` without ``saddlepoint``) and
+    ``wald_test`` (``chi-sq``, ``Naive-F``, ``Naive-Fp``, ``HTA``, ``HTB``, ``HTZ``, ``EDF``, ``EDT``) select the method.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.

@@ -97,10 +97,12 @@ def fit(key: str) -> typing.Any:
     return metafopy.robust(MODELS[model](), cluster, **kwargs)
 
 
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture helpers
 def vector(actual: typing.Any, expected: typing.Any, what: str, rtol: float = RTOL, atol: float = 1e-10) -> None:
     refutil.close(numpy.asarray(actual, dtype=float).reshape(-1), numpy.asarray(expected, dtype=float).reshape(-1).tolist(), what, rtol=rtol, atol=atol)
 
 
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture helpers
 def finite(values: typing.Any) -> numpy.typing.NDArray[numpy.float64]:
     """R's Inf is serialised as null (NaN) in the reference file."""
     a = numpy.asarray(values, dtype=float)
@@ -147,8 +149,8 @@ def test_errors() -> None:
         metafopy.robust(fit_uni, 'district', club_sandwich=True, vcov='CR9')
     with pytest.raises(metafopy.errors.InputError, match='single cluster'):
         metafopy.robust(fit_uni, numpy.zeros(len(KON)), club_sandwich=True)
-    with pytest.raises(metafopy.errors.InputError, match='not supported'):
-        metafopy.robust(fit_uni, 'district', club_sandwich=True, coef_test='saddlepoint')
+    with pytest.raises(metafopy.errors.InputError, match='Unknown'):
+        metafopy.robust(fit_uni, 'district', club_sandwich=True, coef_test='bootstrap')
 
 
 @pytest.mark.parametrize('key', sorted(ALL_CASES))
