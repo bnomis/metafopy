@@ -27,6 +27,9 @@ class RMAMVResult:
 
     Names follow metafor with ``.`` replaced by ``_``; ``btt`` holds 0-based coefficient indices.
     ``spec`` keeps the arguments of the call, which :func:`metafopy.confint` and :func:`metafopy.profile` use to refit the model.
+    ``hessian`` and ``vvc`` are the Hessian of ``-ll`` and its inverse (``optbeta=True``, where the leading rows are the
+    coefficients, or ``cvvc``), with the row names ``vc_names``; ``p_eff`` is the number of estimated (not fixed) coefficients,
+    ``beta_est`` flags them, and ``vccon`` holds the group ids of constrained variance components.
     """
 
     beta: FloatArray
@@ -110,6 +113,13 @@ class RMAMVResult:
     iterations: int = 0
     measure: str = 'GEN'
     robust: metafopy.models.robust_info.RobustInfo | None = None
+    p_eff: int = 0
+    optbeta: bool = False
+    lambda1: float = 0.0
+    lambda2: float = 0.0
+    beta_est: tuple[bool, ...] = ()
+    vccon: dict[str, numpy.typing.NDArray[typing.Any]] | None = None
+    cvvc: str | None = None
 
     # -- accessors -------------------------------------------------------
 

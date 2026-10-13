@@ -32,8 +32,10 @@ matches metafor 5.2-1 to about 1e-5 (variance components on flat likelihoods to 
 `robust` gives cluster-robust inference for `rma_uni` and `rma_mv` fits, either with
 metafor's default sandwich estimator or, with `club_sandwich=True`, with the CR0-CR3
 estimators, Satterthwaite degrees of freedom and Wald tests of the R package
-[clubSandwich](https://jepusto.github.io/clubSandwich/). `rma_mv` does not port
-`optbeta`, `vccon`, `restart`, `cvvc` or `verbose`; `robust` does not port the
+[clubSandwich](https://jepusto.github.io/clubSandwich/). `rma_mv` also takes `optbeta`
+(with `beta`, `lambda1` and `lambda2`), `vccon`, `cvvc` (Hessian and covariance matrix of the
+variance components, from numDeriv's Richardson method) and `restart` (from a previous fit);
+it does not port `verbose`, and `robust` does not port the
 saddlepoint test or the HTA/HTB/EDF/EDT Wald tests.
 
 `rma_uni(..., scale=~ ...)` fits location-scale models (`RMALSResult`, Viechtbauer &

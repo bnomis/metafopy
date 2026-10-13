@@ -37,8 +37,12 @@ def maximise(
     reml: bool,
     gtol: float = 1e-7,
     maxiter: int = 5000,
+    nonsmooth: bool = False,
 ) -> OptResult:
     """Maximise the log-likelihood over the entries ``free`` of the parameter vector, starting from ``par0``.
+
+    ``nonsmooth`` (a lasso penalty with ``optbeta``) accepts the last iterate when the line search can no longer improve it,
+    since the gradient does not vanish at a kink.
 
     Raises:
         metafopy.errors.EstimationError: the optimiser did not converge.
@@ -77,6 +81,6 @@ def maximise(
             x, val = refined.x, float(refined.fun)
             rjac = numpy.asarray(refined.jac, dtype=numpy.float64)
             gnorm = float(numpy.max(numpy.abs(rjac))) if rjac.size else 0.0
-        if gnorm > SLACK_GRADIENT:
+        if gnorm > SLACK_GRADIENT and not nonsmooth:
             raise metafopy.errors.EstimationError(f'Optimizer (BFGS) did not achieve convergence ({res.message}).')
     return OptResult(par=expand(x), value=-val, iterations=int(res.nit))

@@ -22,6 +22,7 @@ import metafopy.core.zeroin
 import metafopy.errors
 import metafopy.metadata
 import metafopy.models.mv_result
+import metafopy.models.mv_structs
 import metafopy.models.rma_mv
 import metafopy.models.rma_uni
 import metafopy.models.tau2
@@ -29,8 +30,6 @@ import metafopy.transf
 
 __all__ = ['ConfintResult', 'confint']
 
-# auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
-VC_NAMES = ('sigma2', 'tau2', 'rho', 'gamma2', 'phi')
 # auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
 SPATIAL = ('SPEXP', 'SPGAU', 'SPLIN', 'SPRAT', 'SPSPH', 'PHYPL', 'PHYPD')
 
@@ -362,7 +361,10 @@ def mv_search_limits(x: metafopy.models.mv_result.RMAMVResult, comp: str, vc: fl
 def mv_refit_logLik(x: metafopy.models.mv_result.RMAMVResult, comp: str, pos: int, val: float) -> float:
     """Log-likelihood of ``x`` refitted with one variance component fixed at ``val`` (``.profile.rma.mv``)."""
     spec = dict(x.spec)
-    for name in VC_NAMES:
+    # metafor's .profile.rma.mv() passes 'vccon' on to the refits but not 'optbeta', 'beta', 'lambda1/2' or 'cvvc'
+    for dropped in ('optbeta', 'beta', 'lambda1', 'lambda2', 'cvvc', 'restart'):
+        spec.pop(dropped, None)
+    for name in metafopy.models.mv_structs.VC_NAMES:
         flags = x.vc_fix[name]
         if flags is None:
             continue
@@ -407,13 +409,13 @@ def confint_rma_mv(
     """
     x = model
     alpha = metafopy.models.rma_uni.level_to_alpha(x.level if level is None else level)
-    chosen = {name: v for name, v in zip(VC_NAMES, (sigma2, tau2, rho, gamma2, phi), strict=True) if v is not None}
+    chosen = {name: v for name, v in zip(metafopy.models.mv_structs.VC_NAMES, (sigma2, tau2, rho, gamma2, phi), strict=True) if v is not None}
     if len(chosen) > 1:
         raise metafopy.errors.InputError("Must specify only one of the arguments 'sigma2', 'tau2', 'rho', 'gamma2', or 'phi'.")
 
     if not fixed and not chosen:
         results: list[ConfintResult] = []
-        for name in VC_NAMES:
+        for name in metafopy.models.mv_structs.VC_NAMES:
             flags = x.vc_fix[name]
             if flags is None:
                 continue
