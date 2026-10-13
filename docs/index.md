@@ -46,6 +46,7 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     - [Diagnostics](guide/diagnostics.md)
     - [Publication bias](guide/bias.md)
     - [Plots](guide/plots.md)
+    - [Plot gallery](guide/gallery.md), the plots of the metafor documentation next to those of metafopy
     - [Datasets](guide/datasets.md)
 - [Analyses](analyses.md) for worked examples that mirror well-known metafor analyses.
 - [Coming from R](from-r.md) if you already know metafor.
