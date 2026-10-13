@@ -11,6 +11,7 @@ import numpy
 import scipy.stats
 
 import metafopy.methods.profile
+import metafopy.methods.selmodel
 import metafopy.plot
 import metafopy.plot.draw
 import metafopy.plot.plain
@@ -41,12 +42,16 @@ def plot_profile(
     axx = metafopy.plot.rutils.get_ax(ax)
     xl = x.xlim if xlim is None else (float(xlim[0]), float(xlim[1]))
     yl = x.ylim if ylim is None else (float(ylim[0]), float(ylim[1]))
+    sel = x if isinstance(x, metafopy.methods.selmodel.SelProfileResult) else None
+    sym = r'\tau^2'
+    if sel is not None and sel.comp == 'delta':
+        sym = r'\delta' if sel.deltas == 1 else rf'\delta_{{{sel.delta_pos + 1}}}'
     if xlab is None:
-        xlab = r'$\tau$ Value' if x.sqrt else r'$\tau^2$ Value'
+        xlab = rf'${sym}$ Value' if sel is not None else (r'$\tau$ Value' if x.sqrt else r'$\tau^2$ Value')
     if ylab is None:
         ylab = ('Restricted ' if x.method == 'REML' else '') + ('Likelihood' if x.exp else 'Log-Likelihood')
     if main is None:
-        main = r'Profile Plot for $\tau$' if x.sqrt else r'Profile Plot for $\tau^2$'
+        main = rf'Profile Plot for ${sym}$' if sel is not None else (r'Profile Plot for $\tau$' if x.sqrt else r'Profile Plot for $\tau^2$')
     xv, yv = numpy.asarray(x.tau2, dtype=float), numpy.asarray(x.ll, dtype=float)
     if xv.min() <= x.vc <= xv.max():
         pos = int(numpy.flatnonzero(xv >= x.vc)[0])
