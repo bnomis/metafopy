@@ -25,6 +25,8 @@ REF: dict[str, typing.Any] = json.loads((pathlib.Path(__file__).parent / 'refere
 CLOSED = 1e-6
 OPT = 1e-4
 OPT_DEFAULT = OPT
+# the scale part of bcg_ablat is only identified to about 1e-4, so permuted alpha statistics move by ~1.4e-4 with the BLAS (seen on Windows CI)
+PERM_ALPHA = 5e-4
 
 type Fit = typing.Callable[[], metafopy.RMALSResult]
 
@@ -696,7 +698,7 @@ def test_permutest(case: str) -> None:
     ref = REF[name][key]
     # p-values of a skipped part come from the model fit (optimizer precision), the others are proportions of permutations
     tol_beta = OPT if pt.skip_beta else 1e-8
-    tol_alpha = OPT if pt.skip_alpha else 1e-8
+    tol_alpha = PERM_ALPHA if pt.skip_alpha else 1e-8
     refutil.close(pt.pval, ref['pval'], f'{case} pval', rtol=tol_beta, atol=1e-8)
     refutil.close(pt.QMp, ref['QMp'], f'{case} QMp', rtol=tol_beta, atol=1e-8)
     refutil.close(pt.QM, ref['QM'], f'{case} QM', rtol=OPT, atol=1e-7)
@@ -711,8 +713,8 @@ def test_permutest(case: str) -> None:
         refutil.close(pt.QM_perm, ref['QM_perm'], f'{case} QM_perm', rtol=OPT, atol=1e-6)
         refutil.close(pt.zval_perm.to_numpy().ravel(), flat(ref['zval_perm']), f'{case} zval_perm', rtol=OPT, atol=1e-6)
     if not pt.skip_alpha:
-        refutil.close(pt.QS_perm, ref['QS_perm'], f'{case} QS_perm', rtol=OPT, atol=1e-6)
-        refutil.close(pt.zval_alpha_perm.to_numpy().ravel(), flat(ref['zval_alpha_perm']), f'{case} zval_alpha_perm', rtol=OPT, atol=1e-6)
+        refutil.close(pt.QS_perm, ref['QS_perm'], f'{case} QS_perm', rtol=PERM_ALPHA, atol=1e-6)
+        refutil.close(pt.zval_alpha_perm.to_numpy().ravel(), flat(ref['zval_alpha_perm']), f'{case} zval_alpha_perm', rtol=PERM_ALPHA, atol=1e-6)
 
 
 PRINTED_DECIMAL = re.compile(r'-?\d+\.\d+')
