@@ -12,6 +12,7 @@ from metafopy.effects import cmicalc, escalc, summary_escalc
 from metafopy.formula import RandomTerm, parse_random
 from metafopy.metadata import MetaData
 from metafopy.methods.anova import LRTResult, WaldResult, anova
+from metafopy.methods.blocks import bldiag, blsplit
 from metafopy.methods.blup import BlupResult, blup
 from metafopy.methods.confint import ConfintResult, confint
 from metafopy.methods.gosh import GoshResult, gosh
@@ -22,6 +23,8 @@ from metafopy.methods.permutest import PermutestResult, permutest
 from metafopy.methods.predict import PredictResult, predict
 from metafopy.methods.profile import ProfileResult, profile
 from metafopy.methods.ranef import RanefResult, ranef
+from metafopy.methods.rcalc import RCalcResult, rcalc
+from metafopy.methods.vcalc import vcalc
 from metafopy.methods.vif import VIFEntry, VIFResult, vif
 from metafopy.models.glmm_fit import GLMMControl
 from metafopy.models.glmm_result import GLMMResult
@@ -52,6 +55,7 @@ __all__ = [
     'PetoResult',
     'PredictResult',
     'ProfileResult',
+    'RCalcResult',
     'RMAResult',
     'RandomTerm',
     'RanefResult',
@@ -67,6 +71,8 @@ __all__ = [
     'addpoly',
     'anova',
     'baujat',
+    'bldiag',
+    'blsplit',
     'blup',
     'cmicalc',
     'confint',
@@ -95,6 +101,7 @@ __all__ = [
     'radial',
     'ranef',
     'ranktest',
+    'rcalc',
     'regtest',
     'rma',
     'rma_glmm',
@@ -108,5 +115,6 @@ __all__ = [
     'tes',
     'transf',
     'trimfill',
+    'vcalc',
     'vif',
 ]
