@@ -304,7 +304,7 @@ def find_root(f: collections.abc.Callable[[float], float], lo: float, hi: float,
     """``try(uniroot(...)$root)``: ``(root, converged)``, or ``(nan, False)`` on error."""
     try:
         res = metafopy.core.zeroin.uniroot(f, lo, hi, tol=tol, maxiter=maxiter)
-    except ValueError, ArithmeticError, numpy.linalg.LinAlgError:
+    except ValueError, ArithmeticError, numpy.linalg.LinAlgError, metafopy.errors.EstimationError:
         return math.nan, False
     if check_conv and not res.converged:
         return math.nan, False
@@ -314,7 +314,7 @@ def find_root(f: collections.abc.Callable[[float], float], lo: float, hi: float,
 def try_profile(f: collections.abc.Callable[[float], float], v: float) -> float:
     try:
         return f(v)
-    except ValueError, ArithmeticError, numpy.linalg.LinAlgError:
+    except ValueError, ArithmeticError, numpy.linalg.LinAlgError, metafopy.errors.EstimationError:
         return math.nan
 
 

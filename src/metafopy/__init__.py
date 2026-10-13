@@ -4,6 +4,7 @@ See https://www.metafor-project.org/ for the R package this mirrors.
 """
 
 import metafopy.methods.binary  # noqa: F401  registers the confint/rstandard/... methods for rma_mh and rma_peto results
+import metafopy.methods.location_scale  # noqa: F401  registers the predict/confint/... methods for location-scale models
 from metafopy import datasets, transf
 from metafopy.base import __version__
 from metafopy.bias import FsnResult, HcResult, RanktestResult, RegtestResult, TesResult, TrimfillResult, fsn, hc, ranktest, regtest, tes, trimfill

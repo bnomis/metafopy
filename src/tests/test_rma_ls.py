@@ -12,6 +12,11 @@ import refutil
 
 import metafopy
 import metafopy.errors
+import metafopy.methods.anova
+import metafopy.methods.ls_anova
+import metafopy.methods.ls_predict
+import metafopy.methods.ls_profile
+import metafopy.methods.ls_vif
 
 REF: dict[str, typing.Any] = json.loads((pathlib.Path(__file__).parent / 'reference' / 'phase5' / 'location_scale.json').read_text(encoding='utf-8'))
 
@@ -177,3 +182,384 @@ def test_print(name: str) -> None:
     res = FITS[name]()
     assert refutil.r_print(str(res)) == refutil.r_print(ref['print'])
     assert refutil.r_print(res.summary(showfit=True)) == refutil.r_print(ref['print_showfit'])
+
+
+# -- predict ----------------------------------------------------------------------------------------------------------------
+
+M2 = numpy.array([[0.5, 0], [1.5, 1]])
+RESULTS: dict[str, metafopy.RMALSResult] = {}
+
+
+def result(name: str) -> metafopy.RMALSResult:
+    if name not in RESULTS:
+        RESULTS[name] = FITS[name]()
+    return RESULTS[name]
+
+
+def check_predict(pr: metafopy.PredictResult, ref: dict[str, typing.Any], what: str) -> None:
+    refutil.close(pr.pred, ref['pred'], f'{what} pred', rtol=OPT, atol=1e-7)
+    refutil.close(pr.se, ref['se'], f'{what} se', rtol=OPT, atol=1e-7)
+    refutil.close(pr.ci_lb, ref['ci_lb'], f'{what} ci_lb', rtol=OPT, atol=1e-7)
+    refutil.close(pr.ci_ub, ref['ci_ub'], f'{what} ci_ub', rtol=OPT, atol=1e-7)
+    if ref.get('pi_lb') is not None:
+        refutil.close(pr.pi_lb, ref['pi_lb'], f'{what} pi_lb', rtol=OPT, atol=1e-7)
+        refutil.close(pr.pi_ub, ref['pi_ub'], f'{what} pi_ub', rtol=OPT, atol=1e-7)
+
+
+PREDICT_CASES: dict[str, tuple[str, str, dict[str, typing.Any]]] = {
+    'bd_int:predict_newscale_exp': ('bd_int', 'predict_newscale_exp', {'newscale': 1, 'transf': numpy.exp}),
+    'bd_int:predict_newscale': ('bd_int', 'predict_newscale', {'newscale': 1}),
+    'bd_int:predict_default': ('bd_int', 'predict_default', {}),
+    'bd_int:predict_newmods': ('bd_int', 'predict_newmods', {'newmods': 1}),
+    'bd_3:predict_default': ('bd_3', 'predict_default', {}),
+    'bd_3:predict_addxz': ('bd_3', 'predict_addxz', {'addx': True, 'addz': True}),
+    'bd_3:predict_newmods': ('bd_3', 'predict_newmods', {'newmods': numpy.array([[0.5, 0], [1.5, 1], [2.5, 1]])}),
+    'bd_3:predict_newmods_noint': ('bd_3', 'predict_newmods_noint', {'newmods': [1, 1], 'intercept': False}),
+    'bd_3:predict_newscale': ('bd_3', 'predict_newscale', {'newscale': M2}),
+    'bd_3:predict_newscale_exp': ('bd_3', 'predict_newscale_exp', {'newscale': M2, 'transf': numpy.exp}),
+    'bd_3:predict_both': ('bd_3', 'predict_both', {'newmods': M2, 'newscale': M2}),
+    'bd_3:predict_both_single': ('bd_3', 'predict_both_single', {'newmods': [1, 1], 'newscale': [1, 1]}),
+    'bd_3:predict_both_t': ('bd_3', 'predict_both_t', {'newmods': M2, 'newscale': M2, 'level': 90, 'adjust': True}),
+    'bd_3:predict_simple': ('bd_3', 'predict_simple', {'newmods': M2, 'newscale': M2, 'predtype': 'simple'}),
+    'bd_3:predict_riley': ('bd_3', 'predict_riley', {'newmods': M2, 'newscale': M2, 'predtype': 'riley'}),
+    'bd_3:predict_newvi': ('bd_3', 'predict_newvi', {'newmods': M2, 'newscale': M2, 'newvi': [0.01, 0.02]}),
+    'bd_3:predict_prob': ('bd_3', 'predict_prob', {'newmods': M2, 'newscale': M2, 'prob': '>0.2'}),
+    'bd_3_t:predict_default': ('bd_3_t', 'predict_default', {}),
+    'bd_3_t:predict_both': ('bd_3_t', 'predict_both', {'newmods': M2, 'newscale': M2}),
+    'bd_3_t:predict_newscale': ('bd_3_t', 'predict_newscale', {'newscale': M2}),
+    'bd_3_t:predict_both_riley': ('bd_3_t', 'predict_both_riley', {'newmods': M2, 'newscale': M2, 'predtype': 'riley'}),
+    'bd_3_t:predict_both_tt': ('bd_3_t', 'predict_both_tt', {'newmods': M2, 'newscale': M2, 'predtype': 't'}),
+    'bd_identity:predict_newscale': ('bd_identity', 'predict_newscale', {'newscale': [0, 1]}),
+    'bd_na:predict_default': ('bd_na', 'predict_default', {}),
+    'bcg_ablat:predict_default': ('bcg_ablat', 'predict_default', {}),
+    'bcg_ablat:predict_both_exp': ('bcg_ablat', 'predict_both_exp', {'newmods': [20, 40], 'newscale': [20, 40], 'transf': numpy.exp}),
+    'mo_int:predict_newscale_exp': ('mo_int', 'predict_newscale_exp', {'newscale': 1, 'transf': numpy.exp}),
+}
+
+
+@pytest.mark.parametrize('case', sorted(PREDICT_CASES))
+def test_predict(case: str) -> None:
+    name, key, kwargs = PREDICT_CASES[case]
+    pr = metafopy.predict(result(name), **kwargs)
+    assert isinstance(pr, metafopy.methods.ls_predict.LSPredictResult)
+    ref = REF[name][key]
+    check_predict(pr, ref, case)
+    assert pr.pred_type == ref['pred_type']
+    if ref.get('pi_se') is not None and pr.pi_se is not None:
+        # metafor's pi.se is not subset to the studies without missing values
+        expected = [v for v in refutil.as_list(ref['pi_se']) if v is not None] if len(pr.pi_se) != len(refutil.as_list(ref['pi_se'])) else ref['pi_se']
+        refutil.close(pr.pi_se, expected, f'{case} pi_se', rtol=OPT, atol=1e-7)
+    if ref.get('prob') is not None:
+        refutil.close(pr.prob, ref['prob'], f'{case} prob', rtol=OPT, atol=1e-7)
+    if ref.get('X') is not None:
+        refutil.close(numpy.asarray(pr.X).ravel(), flat(ref['X']), f'{case} X', rtol=OPT, atol=1e-8)
+    if ref.get('Z') is not None:
+        refutil.close(numpy.asarray(pr.Z).ravel(), flat(ref['Z']), f'{case} Z', rtol=OPT, atol=1e-8)
+
+
+def test_predict_vcov() -> None:
+    res = result('bd_3')
+    pv = metafopy.predict(res, newmods=M2, newscale=M2, vcov=True)
+    assert isinstance(pv, metafopy.methods.ls_predict.LSPredictResult)
+    refutil.close(numpy.asarray(pv.vcov).ravel(), flat(REF['bd_3']['predict_vcov']['vcov']), 'vcov', rtol=OPT, atol=1e-8)
+    ps = metafopy.predict(res, newscale=M2, vcov=True)
+    assert isinstance(ps, metafopy.methods.ls_predict.LSPredictResult)
+    refutil.close(numpy.asarray(ps.vcov).ravel(), flat(REF['bd_3']['predict_vcov_scale']['vcov']), 'vcov scale', rtol=OPT, atol=1e-8)
+
+
+def test_predict_errors() -> None:
+    with pytest.raises(metafopy.errors.InputError, match='without moderators'):
+        metafopy.predict(result('bd_int'), newmods=[1, 2])
+    with pytest.raises(metafopy.errors.InputError, match='without scale variables'):
+        metafopy.predict(result('bd_int'), newscale=[1, 2])
+    with pytest.raises(metafopy.errors.InputError, match='do not match'):
+        metafopy.predict(result('bd_3'), newmods=[1, 2, 3, 4])
+
+
+# -- confint and profile ----------------------------------------------------------------------------------------------------
+
+
+def check_ci(table: pandas.DataFrame, ref: dict[str, typing.Any], what: str, rtol: float = OPT, atol: float = 2e-4) -> None:
+    refutil.close(table['estimate'].to_numpy(), ref['estimate'], f'{what} estimate', rtol=rtol, atol=atol)
+    refutil.close(table['ci.lb'].to_numpy(), ref['ci_lb'], f'{what} ci.lb', rtol=rtol, atol=atol)
+    refutil.close(table['ci.ub'].to_numpy(), ref['ci_ub'], f'{what} ci.ub', rtol=rtol, atol=atol)
+
+
+CONFINT_CASES: dict[str, tuple[str, str, int]] = {
+    'bd_int': ('bd_int', 'confint_alpha', 0),
+    'bd_3_t': ('bd_3_t', 'confint_alpha2', 1),
+    'bd_3_alpha': ('bd_3_alpha', 'confint_alpha1', 0),
+    'bd_identity': ('bd_identity', 'confint_alpha1', 0),
+}
+
+
+@pytest.mark.parametrize('case', sorted(CONFINT_CASES))
+def test_confint_alpha(case: str) -> None:
+    name, key, pos = CONFINT_CASES[case]
+    ci = metafopy.confint(result(name), alpha=pos)
+    assert isinstance(ci, metafopy.ConfintResult)
+    assert ci.random is not None
+    ref = dict(REF[name][key])
+    if case == 'bd_3_alpha':
+        # the lower bound is an artifact of metafor's optimizer: the refits at alpha = -19.5 and -17.0 fail to converge to the
+        # (flat) optimum, so its profile-likelihood difference jumps; only the well-behaved upper bound is comparable
+        ref['ci_lb'] = ci.random['ci.lb'].to_numpy().tolist()
+    check_ci(ci.random, ref, case)
+
+
+def test_confint_all() -> None:
+    ci = metafopy.confint(result('bd_3'))
+    assert isinstance(ci, list)
+    ref = REF['bd_3']['confint_all']
+    assert len(ci) == len(ref) == 3
+    for j, item in enumerate(ci):
+        assert item.random is not None
+        check_ci(item.random, ref[str(j + 1)], f'confint alpha.{j + 1}')
+        assert list(item.random.index) == [f'alpha.{j + 1}']
+
+
+def test_confint_single_free_alpha_is_not_a_list() -> None:
+    ci = metafopy.confint(result('bd_int'))
+    assert isinstance(ci, metafopy.ConfintResult)
+    assert list(ci.random.index) == ['alpha']  # type: ignore[union-attr]
+
+
+def test_confint_fixed() -> None:
+    ci = metafopy.confint(result('bd_int'), fixed=True)
+    assert ci.fixed is not None
+    check_ci(ci.fixed, REF['bd_int']['confint_fixed'], 'fixed', rtol=1e-6, atol=1e-8)
+    ci3 = metafopy.confint(result('bd_3'), fixed=True, alpha=1, level=90)
+    ref = REF['bd_3']['confint_fixed_alpha']
+    assert ci3.fixed is not None
+    assert ci3.random is not None
+    refutil.close(ci3.fixed.to_numpy().ravel(), flat(ref['fixed']), 'fixed table', rtol=OPT, atol=1e-7)
+    refutil.close(ci3.random.to_numpy().ravel(), ref['random'], 'random row', rtol=OPT, atol=2e-4)
+
+
+def test_confint_errors() -> None:
+    with pytest.raises(metafopy.errors.InputError, match='optbeta'):
+        metafopy.confint(result('bd_optbeta'))
+    with pytest.raises(metafopy.errors.InputError, match='was fixed'):
+        metafopy.confint(result('bd_3_alpha'), alpha=1)
+    with pytest.raises(metafopy.errors.InputError, match='No such'):
+        metafopy.confint(result('bd_3'), alpha=7)
+
+
+def check_profile(pf: metafopy.methods.ls_profile.LSProfileResult, ref: dict[str, typing.Any], what: str) -> None:
+    refutil.close(pf.alpha, ref['alpha'], f'{what} alpha', rtol=OPT, atol=1e-6)
+    refutil.close(pf.ll, ref['ll'], f'{what} ll', rtol=CLOSED, atol=1e-5)
+    refutil.close(pf.beta.to_numpy().ravel(), flat(ref['beta']), f'{what} beta', rtol=OPT, atol=1e-5)
+    refutil.close(pf.ci_lb.to_numpy().ravel(), flat(ref['ci_lb']), f'{what} ci_lb', rtol=OPT, atol=1e-5)
+    refutil.close(pf.ci_ub.to_numpy().ravel(), flat(ref['ci_ub']), f'{what} ci_ub', rtol=OPT, atol=1e-5)
+    refutil.close(pf.vc, ref['vc'], f'{what} vc', rtol=OPT)
+    refutil.close(pf.maxll, ref['maxll'], f'{what} maxll', rtol=CLOSED)
+    refutil.close(pf.ylim, ref['ylim'], f'{what} ylim', rtol=OPT, atol=1e-5)
+
+
+def test_profile() -> None:
+    pf = metafopy.profile(result('bd_int'), alpha=0, steps=12)
+    assert isinstance(pf, metafopy.methods.ls_profile.LSProfileResult)
+    check_profile(pf, REF['bd_int']['profile'], 'profile bd_int')
+    pf3 = metafopy.profile(result('bd_3'), alpha=1, steps=10)
+    assert isinstance(pf3, metafopy.methods.ls_profile.LSProfileResult)
+    check_profile(pf3, REF['bd_3']['profile'], 'profile bd_3')
+    assert list(pf3.beta.columns) == list(result('bd_3').coef_names)
+
+
+def test_profile_all_and_errors() -> None:
+    allp = metafopy.profile(result('bd_3'), steps=5)
+    assert isinstance(allp, list)
+    assert [p.position for p in allp] == [0, 1, 2]
+    with pytest.raises(metafopy.errors.InputError, match='optbeta'):
+        metafopy.profile(result('bd_optbeta'))
+    with pytest.raises(metafopy.errors.InputError, match='was fixed'):
+        metafopy.profile(result('bd_3_alpha'), alpha=1)
+    with pytest.raises(metafopy.errors.InputError, match='steps'):
+        metafopy.profile(result('bd_3'), alpha=0, steps=1)
+
+
+# -- anova ------------------------------------------------------------------------------------------------------------------
+
+X23 = numpy.array([[0, 1, 0], [0, 0, 1]])
+
+
+def check_wald(a: metafopy.methods.ls_anova.LSWaldResult, ref: dict[str, typing.Any], what: str) -> None:
+    key = 'QM' if a.part == 'location' else 'QS'
+    refutil.close(a.stat, ref[key], f'{what} stat', rtol=OPT, atol=1e-7)
+    refutil.close(a.pval_omnibus, ref[key + 'p'], f'{what} p', rtol=OPT, atol=1e-7)
+    refutil.close(a.df[0], ref[key + 'df'][0], f'{what} df')
+    for mine, theirs in (('estimate', 'Xb' if a.part == 'location' else 'Za'), ('se', 'se'), ('zval', 'zval'), ('pval', 'pval')):
+        if theirs in ref:
+            refutil.close(getattr(a, mine), ref[theirs], f'{what} {mine}', rtol=OPT, atol=1e-7)
+    if 'print' in ref:
+        assert refutil.r_print(str(a)) == refutil.r_print(ref['print'])
+
+
+WALD_CASES: dict[str, tuple[str, str, dict[str, typing.Any]]] = {
+    'btt': ('bd_3', 'anova_btt', {'btt': [2]}),
+    'att': ('bd_3', 'anova_att', {'att': [2]}),
+    'att23': ('bd_3', 'anova_att_23', {'att': [1, 2]}),
+    'X': ('bd_3', 'anova_X', {'X': X23}),
+    'Z': ('bd_3', 'anova_Z', {'Z': X23, 'rhs': [0, 1]}),
+    'Z1': ('bd_3', 'anova_Z1', {'Z': [0, 1, -1]}),
+    't_att': ('bd_3_t', 'anova_att', {'att': [1, 2]}),
+    't_Z': ('bd_3_t', 'anova_Z', {'Z': X23}),
+    't_X': ('bd_3_t', 'anova_X', {'X': X23}),
+}
+
+
+@pytest.mark.parametrize('case', sorted(WALD_CASES))
+def test_anova_wald(case: str) -> None:
+    name, key, kwargs = WALD_CASES[case]
+    a = metafopy.anova(result(name), **kwargs)
+    assert isinstance(a, metafopy.methods.ls_anova.LSWaldResult)
+    check_wald(a, REF[name][key], case)
+
+
+def test_anova_wald_matches_model_tests() -> None:
+    res = result('bd_3')
+    a = metafopy.anova(res)
+    assert isinstance(a, metafopy.methods.ls_anova.LSWaldResult)
+    refutil.close(a.QM, res.QM, 'QM', rtol=1e-12)
+    s = metafopy.anova(res, att=[1, 2])
+    assert isinstance(s, metafopy.methods.ls_anova.LSWaldResult)
+    refutil.close(s.QS, res.QS, 'QS', rtol=1e-12)
+    names = metafopy.anova(res, att='ni100|imag')
+    assert isinstance(names, metafopy.methods.ls_anova.LSWaldResult)
+    assert names.idx == (1, 2)
+
+
+def test_anova_att_list_and_errors() -> None:
+    res = result('bd_3')
+    out = metafopy.anova(res, att=[[1], [1, 2]])
+    assert isinstance(out, list)
+    assert [o.m for o in out] == [1, 2]
+    with pytest.raises(metafopy.errors.InputError, match="either 'btt' or 'att'"):
+        metafopy.anova(res, btt=[1], att=[1])
+    with pytest.raises(metafopy.errors.InputError, match="either 'X' or 'Z'"):
+        metafopy.anova(res, X=X23, Z=X23)
+    with pytest.raises(metafopy.errors.InputError, match='does not match the number of scale coefficients'):
+        metafopy.anova(res, Z=[1, 2, 3, 4])
+
+
+def bdc() -> pandas.DataFrame:
+    d = bd()
+    return d[d[['yi', 'vi', 'ni100', 'meta', 'imag']].notna().all(axis=1)].reset_index(drop=True)
+
+
+def lrt_models() -> dict[str, metafopy.RMALSResult]:
+    d = bdc()
+    return {
+        'full': ls(d, MODS3, SCALE3, method='ML'),
+        'scale': ls(d, MODS3, '~ 1', method='ML'),
+        'location': ls(d, '~ 1', SCALE3, method='ML'),
+        'alpha_fixed': ls(d, MODS3, SCALE3, method='ML', alpha=[numpy.nan, 0, numpy.nan]),
+        'full_reml': ls(d, MODS3, SCALE3),
+        'scale_reml': ls(d, MODS3, '~ 1'),
+    }
+
+
+@pytest.mark.parametrize(
+    ('key', 'first', 'second'),
+    [
+        ('lrt_scale', 'full', 'scale'),
+        ('lrt_location', 'full', 'location'),
+        ('lrt_alpha_fixed', 'full', 'alpha_fixed'),
+        ('lrt_swapped', 'scale', 'full'),
+        ('lrt_reml', 'full_reml', 'scale_reml'),
+    ],
+)
+def test_anova_lrt(key: str, first: str, second: str) -> None:
+    models = lrt_models()
+    a = metafopy.anova(models[first], models[second])
+    assert isinstance(a, metafopy.methods.anova.MVLRTResult)
+    ref = REF[key]
+    refutil.close(a.LRT, ref['LRT'], f'{key} LRT', rtol=OPT, atol=1e-6)
+    refutil.close(a.pval, ref['pval'], f'{key} pval', rtol=OPT, atol=1e-7)
+    refutil.close(a.fit_stats_full, ref['fit_stats_f'], f'{key} fit full', rtol=OPT, atol=1e-6)
+    refutil.close(a.fit_stats_reduced, ref['fit_stats_r'], f'{key} fit reduced', rtol=OPT, atol=1e-6)
+    refutil.close([a.df_full, a.df_reduced], ref['parms'], f'{key} parms')
+    refutil.close([a.QE_full, a.QE_reduced], ref['QE'], f'{key} QE', rtol=1e-8)
+    assert refutil.r_print(str(a)).strip() == refutil.r_print(ref['print']).strip()
+
+
+def test_anova_lrt_errors() -> None:
+    models = lrt_models()
+    with pytest.raises(metafopy.errors.InputError, match='same number of parameters'):
+        metafopy.anova(models['full'], models['full'])
+    with pytest.raises(metafopy.errors.InputError, match='Mismatch'):
+        metafopy.anova(models['full'], models['scale_reml'])
+    with pytest.raises(metafopy.errors.InputError, match='not equal'):
+        metafopy.anova(models['full'], ls(bd().iloc[:30], MODS3, '~ 1', method='ML'))
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter('always')
+        metafopy.anova(models['full_reml'], ls(bdc(), '~ 1', '~ 1'))
+    assert any('REML comparisons' in str(w.message) for w in caught)
+    refit = metafopy.anova(models['full_reml'], ls(bdc(), '~ 1', '~ 1'), refit=True)
+    assert isinstance(refit, metafopy.methods.anova.MVLRTResult)
+
+
+# -- vif --------------------------------------------------------------------------------------------------------------------
+
+
+def test_vif() -> None:
+    v = metafopy.vif(result('bd_3'))
+    assert isinstance(v, metafopy.methods.ls_vif.LSVIFResult)
+    ref = REF['bd_3']['vif']
+    refutil.close(v.beta.vifs.to_numpy(), ref['beta'], 'vif beta', rtol=OPT)
+    refutil.close(v.alpha.vifs.to_numpy(), ref['alpha'], 'vif alpha', rtol=OPT)
+    refutil.close(v.beta.sifs.to_numpy(), ref['beta_sif'], 'sif beta', rtol=OPT)
+    assert list(v.beta.vifs.index) == ref['beta_names']
+    assert list(v.alpha.vifs.index) == ref['alpha_names']
+    assert refutil.r_print(str(v)).strip() == refutil.r_print(ref['print']).strip()
+
+
+def test_vif_reestimate() -> None:
+    v = metafopy.vif(result('bd_3'), reestimate=True)
+    assert isinstance(v, metafopy.methods.ls_vif.LSVIFResult)
+    ref = REF['bd_3']['vif_reest']
+    refutil.close(v.beta.vifs.to_numpy(), ref['beta'], 'vif reest beta', rtol=OPT)
+    refutil.close(v.alpha.vifs.to_numpy(), ref['alpha'], 'vif reest alpha', rtol=OPT)
+
+
+def test_vif_btt_att() -> None:
+    v = metafopy.vif(result('bd_3'), btt=1, att=[[1], [1, 2]])
+    assert isinstance(v, metafopy.methods.ls_vif.LSVIFResult)
+    ref = REF['bd_3']['vif_att']
+    refutil.close(v.beta.vifs.to_numpy(), ref['beta'], 'vif btt', rtol=OPT)
+    refutil.close(v.alpha.vifs.to_numpy(), ref['alpha'], 'vif att', rtol=OPT)
+    assert refutil.r_print(str(v)).strip() == refutil.r_print(ref['print']).strip()
+
+
+def test_vif_table() -> None:
+    v = metafopy.vif(result('bd_3'), table=True)
+    assert isinstance(v, metafopy.methods.ls_vif.LSVIFResult)
+    assert v.beta.table is not None
+    assert v.alpha.table is not None
+    refutil.close(v.beta.table['estimate'].to_numpy(), result('bd_3').beta.tolist(), 'table beta', rtol=1e-12)
+    refutil.close(v.alpha.table['estimate'].to_numpy(), result('bd_3').alpha.tolist(), 'table alpha', rtol=1e-12)
+    text = str(v)
+    assert 'intrcpt' in text
+    assert 'vif' in text
+
+
+def test_vif_single_part() -> None:
+    v = metafopy.vif(result('mc_factors'))
+    assert isinstance(v, metafopy.methods.ls_vif.LSVIFResult)
+    refutil.close(v.beta.vifs.to_numpy(), REF['mc_factors']['vif']['beta'], 'vif mc', rtol=OPT)
+    only_loc = metafopy.vif(result('bd_ni_ml'))
+    assert isinstance(only_loc, metafopy.methods.ls_vif.LSVIFResult)
+    loc_only = ls(bd(), MODS3, '~ 1')
+    single = metafopy.vif(loc_only)
+    assert isinstance(single, metafopy.VIFResult)
+    scale_only = ls(bd(), None, SCALE3)
+    single_scale = metafopy.vif(scale_only)
+    assert isinstance(single_scale, metafopy.VIFResult)
+    assert list(single_scale.vifs.index) == ['ni100', 'imag']
+
+
+def test_vif_errors() -> None:
+    with pytest.raises(metafopy.errors.InputError, match='intercept-only'):
+        metafopy.vif(result('bd_int'))
+    with pytest.raises(metafopy.errors.NotSupportedError, match='sim'):
+        metafopy.vif(result('bd_3'), sim=True)

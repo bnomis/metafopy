@@ -346,7 +346,7 @@ def fit_rma_ls(
         if optimizer == 'nlminb':
             optimizer = 'constrOptim'
         elif optimizer not in CONSTRAINED:
-            warnings.warn("Can only use optimizers 'constrOptim' or 'SLSQP' when link='identity' (resetting to 'constrOptim').", stacklevel=3)
+            warnings.warn("Can only use optimizer 'constrOptim' when link='identity' (resetting to 'constrOptim').", stacklevel=3)
             optimizer = 'constrOptim'
     elif optimizer == 'nlminb':
         optimizer = 'BFGS'
