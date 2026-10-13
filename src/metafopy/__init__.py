@@ -10,12 +10,18 @@ from importlib.metadata import version
 from metafopy import datasets, transf
 from metafopy._data import MetaData
 from metafopy._formula import RandomTerm, parse_random
+from metafopy.core.rng import set_seed
 from metafopy.effects import cmicalc, escalc, summary_escalc
 from metafopy.methods.anova import LRTResult, WaldResult, anova
 from metafopy.methods.blup import BlupResult, blup
 from metafopy.methods.confint import ConfintResult, confint
+from metafopy.methods.gosh import GoshResult, gosh
+from metafopy.methods.influence import InfluenceResult, ResidualResult, cooks_distance, dfbetas, influence, rstandard, rstudent
+from metafopy.methods.leave1out import CumulResult, Leave1outResult, cumul, leave1out
 from metafopy.methods.pairmat import pairmat
+from metafopy.methods.permutest import PermutestResult, permutest
 from metafopy.methods.predict import PredictResult, predict
+from metafopy.methods.profile import ProfileResult, profile
 from metafopy.methods.ranef import RanefResult, ranef
 from metafopy.methods.vif import VIFEntry, VIFResult, vif
 from metafopy.models.rma_uni import Control, FitStats, RMAResult, rma, rma_uni
@@ -26,13 +32,20 @@ __all__ = [
     'BlupResult',
     'ConfintResult',
     'Control',
+    'CumulResult',
     'FitStats',
+    'GoshResult',
+    'InfluenceResult',
     'LRTResult',
+    'Leave1outResult',
     'MetaData',
+    'PermutestResult',
     'PredictResult',
+    'ProfileResult',
     'RMAResult',
     'RandomTerm',
     'RanefResult',
+    'ResidualResult',
     'VIFEntry',
     'VIFResult',
     'WaldResult',
@@ -41,14 +54,25 @@ __all__ = [
     'blup',
     'cmicalc',
     'confint',
+    'cooks_distance',
+    'cumul',
     'datasets',
+    'dfbetas',
     'escalc',
+    'gosh',
+    'influence',
+    'leave1out',
     'pairmat',
     'parse_random',
+    'permutest',
     'predict',
+    'profile',
     'ranef',
     'rma',
     'rma_uni',
+    'rstandard',
+    'rstudent',
+    'set_seed',
     'summary_escalc',
     'transf',
     'vif',
