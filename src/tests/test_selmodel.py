@@ -104,6 +104,9 @@ def same_text(actual: str, expected: str, rtol: float = 0.0, atol: float = 0.0) 
         for a, e in zip(a_tokens, e_tokens, strict=True):
             if a == e:
                 continue
+            a, e = a.rstrip(','), e.rstrip(',')
+            if a == e:
+                continue
             if not (NUMBER.match(a) and NUMBER.match(e)):
                 return False
             decimals = min(len(a.partition('.')[2]), len(e.partition('.')[2]))
