@@ -12,6 +12,8 @@ import numpy.typing
 
 import metafopy.models.mv_result
 import metafopy.models.mv_structs
+import metafopy.models.rma_uni
+import metafopy.models.robust_print
 import metafopy.printing
 
 __all__ = ['abbreviate', 'format_result']

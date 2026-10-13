@@ -36,6 +36,8 @@ class PhyloTree:
         Raises:
             metafopy.errors.InputError: the edge table does not describe a tree.
         """
+        if self.edges['child'].duplicated().any():
+            raise metafopy.errors.InputError('the edge table does not describe a tree: a node has more than one parent')
         parent_of = dict(zip(self.edges['child'], self.edges['parent'], strict=True))
         length_of = dict(zip(self.edges['child'], self.edges['length'], strict=True))
         tips = sorted(set(self.edges['child']) - set(self.edges['parent']))
@@ -43,7 +45,11 @@ class PhyloTree:
         paths = numpy.zeros((len(tips), len(index)))
         for t, tip in enumerate(tips):
             node = tip
+            seen = 0
             while node in parent_of:
+                seen += 1
+                if seen > len(index):
+                    raise metafopy.errors.InputError('the edge table contains a cycle and does not describe a tree')
                 paths[t, index[node]] = 1.0
                 node = parent_of[node]
         lengths = numpy.array([length_of[c] for c in self.edges['child']], dtype=numpy.float64)
