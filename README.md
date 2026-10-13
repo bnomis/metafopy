@@ -60,7 +60,7 @@ docker run --rm -v "$PWD":/work -w /work metafopy-r Rscript src/tests/r/generate
 
 ## License
 
-GPL-3.0-or-later. metafor is licensed GPL (>= 2) and metafopy ports its
-algorithms, so it is distributed under a compatible license. The bundled
+GPL-2.0-or-later, the same as metafor (GPL >= 2). metafopy ports its
+algorithms, so it is distributed under the same license. The bundled
 datasets come from the R package
 [metadat](https://cran.r-project.org/package=metadat) (GPL >= 2).
