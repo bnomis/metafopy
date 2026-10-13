@@ -91,6 +91,8 @@ def predict_rma_uni(
         metafopy.errors.InputError: an argument or the data is invalid.
     """
     x = model
+    if x.robust is not None and x.robust.robumethod == 'clubSandwich':
+        raise metafopy.errors.InputError('predict() is not supported for fits made robust with club_sandwich=True.')
     p = x.p
     slab: tuple[str, ...] | None = None
     if newmods is None:
@@ -193,6 +195,8 @@ def predict_rma_mv(
         metafopy.errors.InputError: an argument or the data is invalid.
     """
     x = model
+    if x.robust is not None and x.robust.robumethod == 'clubSandwich':
+        raise metafopy.errors.InputError('predict() is not supported for fits made robust with club_sandwich=True.')
     p = x.p
     slab: tuple[str, ...] | None = None
     general = any(v in ('GEN', 'GDIAG') for v in x.struct)

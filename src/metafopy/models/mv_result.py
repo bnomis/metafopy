@@ -13,6 +13,7 @@ import metafopy.errors
 import metafopy.models.mv_lik
 import metafopy.models.mv_structs
 import metafopy.models.rma_uni
+import metafopy.models.robust_info
 
 __all__ = ['RMAMVResult']
 
@@ -108,6 +109,7 @@ class RMAMVResult:
     spec: dict[str, typing.Any]
     iterations: int = 0
     measure: str = 'GEN'
+    robust: metafopy.models.robust_info.RobustInfo | None = None
 
     # -- accessors -------------------------------------------------------
 

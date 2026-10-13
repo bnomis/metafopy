@@ -102,17 +102,6 @@ def abbreviate(names: list[str], minlength: int = 4) -> list[str]:
         these = [names[i] for i, d in enumerate(dup) if d]
 
 
-def fmt_df(values: FloatArray) -> list[str]:
-    """A numeric column as ``data.frame`` printing does (common number of decimals); degrees of freedom are rounded to 2 decimals."""
-    rounded = [round(float(v), 2) for v in values]
-    decimals = 0
-    for v in rounded:
-        text = f'{v:.2f}'.rstrip('0').rstrip('.')
-        if '.' in text:
-            decimals = max(decimals, len(text.split('.')[1]))
-    return [f'{v:.{decimals}f}' for v in rounded]
-
-
 def lower_pairs(n: int) -> list[tuple[int, int]]:
     """Row and column of the strictly lower triangle in R's column-major order."""
     return [(i, j) for j in range(n) for i in range(j + 1, n)]
@@ -275,12 +264,17 @@ def format_result(res: metafopy.models.mv_result.RMAMVResult, digits: int = 4, s
         out.append(f'{name}(df = {res.QEdf}) = {fm(res.QE, digits)}, p-val {pfmt(res.QEp, digits)}')
         out.append('')
 
+    robust = res.robust
+    if robust is not None:
+        out += metafopy.models.robust_print.counts_lines(robust, res.k)
+
     if res.p > 1 and not math.isnan(res.QM):
         coefs = metafopy.models.rma_uni.coef_span(res.btt)
-        out.append(f'Test of Moderators (coefficient{"s" if res.m > 1 else ""} {coefs}):')
+        mark = metafopy.models.robust_print.FOOT_MARK if robust is not None else ''
+        out.append(f'Test of Moderators (coefficient{"s" if res.m > 1 else ""} {coefs}):{mark}')
         if res.test in ('knha', 'adhoc', 't'):
             df2 = res.QMdf[1]
-            out.append(f'F(df1 = {res.QMdf[0]}, df2 = {fmt_df_scalar(df2)}) = {fm(res.QM, digits)}, p-val {pfmt(res.QMp, digits)}')
+            out.append(f'F(df1 = {res.QMdf[0]}, df2 = {metafopy.printing.fmt_df_scalar(df2)}) = {fm(res.QM, digits)}, p-val {pfmt(res.QMp, digits)}')
         else:
             out.append(f'QM(df = {res.QMdf[0]}) = {fm(res.QM, digits)}, p-val {pfmt(res.QMp, digits)}')
         out.append('')
@@ -290,7 +284,7 @@ def format_result(res: metafopy.models.mv_result.RMAMVResult, digits: int = 4, s
     if use_t:
         header.append('df')
     header += ['pval', 'ci.lb', 'ci.ub', '']
-    df_cells = fmt_df(res.ddf) if use_t else []
+    df_cells = (metafopy.models.robust_print.df_cells(res.ddf) if robust is not None else metafopy.printing.fmt_df(res.ddf)) if use_t else []
     rows_: list[list[str]] = []
     for j in range(res.p):
         row = [fm(res.beta[j], digits), fm(res.se[j], digits), fm(res.zval[j], digits)]
@@ -303,6 +297,8 @@ def format_result(res: metafopy.models.mv_result.RMAMVResult, digits: int = 4, s
             metafopy.printing.signif_stars(res.pval[j]),
         ]
         rows_.append(row)
+    if robust is not None:
+        header, rows_ = metafopy.models.robust_print.decorate(header, rows_)
     out.append('Model Results:')
     out.append('')
     out.append(table(header, rows_, [] if res.int_only else list(res.coef_names)) if not res.int_only else metafopy.printing.fmt_table(header, rows_))
@@ -310,15 +306,12 @@ def format_result(res: metafopy.models.mv_result.RMAMVResult, digits: int = 4, s
     out.append('---')
     out.append("Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1")
     out.append('')
+    if robust is not None:
+        out += metafopy.models.robust_print.legend_lines(robust, res.int_only)
+        out.append('')
     return '\n'.join(out)
 
 
 def pfmt(p: float, digits: int) -> str:
     s = metafopy.printing.fmt_pval(p, digits)
     return f'< {s[1:]}' if s.startswith('<') else f'= {s}'
-
-
-def fmt_df_scalar(value: float | None) -> str:
-    if value is None:
-        return 'NA'
-    return str(int(value)) if float(value).is_integer() else f'{round(float(value), 2):g}'

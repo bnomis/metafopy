@@ -23,6 +23,8 @@ import scipy.stats
 import metafopy.core.linalg
 import metafopy.errors
 import metafopy.metadata
+import metafopy.models.robust_info
+import metafopy.models.robust_print
 import metafopy.models.tau2
 import metafopy.printing
 
@@ -76,7 +78,7 @@ class RMAResult:
     QEp: float
     QM: float
     QMp: float
-    QMdf: tuple[int, int | None]
+    QMdf: tuple[int, float | None]
     I2: float
     H2: float
     R2: float | None
@@ -103,6 +105,7 @@ class RMAResult:
     control: metafopy.models.tau2.Control = dataclasses.field(repr=False)
     iterations: int = 0
     measure: str = 'GEN'
+    robust: metafopy.models.robust_info.RobustInfo | None = None
 
     # -- accessors ---------------------------------------------------------
 
@@ -919,8 +922,11 @@ def format_result(res: RMAResult, digits: int) -> str:
     out: list[str] = ['']
     fe = res.method in metafopy.models.tau2.FIXED_EFFECTS
     if fe:
-        kind = 'Equal-Effects' if res.method == 'EE' else ('Fixed-Effects' if res.method == 'FE' else 'Common-Effects')
-        out.append(f'{kind} Model (k = {res.k})')
+        if res.int_only:
+            kind = 'Equal-Effects' if res.method == 'EE' else ('Fixed-Effects' if res.method == 'FE' else 'Common-Effects')
+            out.append(f'{kind} Model (k = {res.k})')
+        else:
+            out.append(f'Fixed-Effects with Moderators Model (k = {res.k})')
     else:
         kind = 'Random-Effects' if res.int_only else 'Mixed-Effects'
         out.append(f'{kind} Model (k = {res.k}; tau^2 estimator: {res.method})')
@@ -952,8 +958,14 @@ def format_result(res: RMAResult, digits: int) -> str:
         out += [f'{label.ljust(width)} {value}' for label, value in rows]
         out.append('')
     elif not math.isnan(res.I2):
-        out.append(f'I^2 (total heterogeneity / total variability):   {res.I2:.2f}%')
-        out.append(f'H^2 (total variability / sampling variability):  {res.H2:.2f}')
+        if res.int_only:
+            out.append(f'I^2 (total heterogeneity / total variability):   {res.I2:.2f}%')
+            out.append(f'H^2 (total variability / sampling variability):  {res.H2:.2f}')
+        else:
+            out.append(f'I^2 (residual heterogeneity / unaccounted variability): {res.I2:.2f}%')
+            out.append(f'H^2 (unaccounted variability / sampling variability):   {res.H2:.2f}')
+            if res.R2 is not None:
+                out.append(f'R^2 (amount of heterogeneity accounted for):            {res.R2:.2f}%')
         out.append('')
 
     if not math.isnan(res.QE):
@@ -962,10 +974,18 @@ def format_result(res: RMAResult, digits: int) -> str:
         out.append(f'{name}(df = {res.k - res.p}) = {metafopy.printing.fmt_num(res.QE, digits)}, p-val {pfmt(res.QEp, digits)}')
         out.append('')
 
+    robust = res.robust
+    if robust is not None:
+        out += metafopy.models.robust_print.counts_lines(robust, res.k)
+
     if not res.int_only:
         coefs = coef_span(res.btt)
-        out.append(f'Test of Moderators (coefficient{"s" if res.m > 1 else ""} {coefs}):')
-        if res.ddf is not None:
+        mark = metafopy.models.robust_print.FOOT_MARK if robust is not None else ''
+        out.append(f'Test of Moderators (coefficient{"s" if res.m > 1 else ""} {coefs}):{mark}')
+        if robust is not None:
+            df2 = metafopy.printing.fmt_df_scalar(res.QMdf[1])
+            out.append(f'F(df1 = {res.m}, df2 = {df2}) = {metafopy.printing.fmt_num(res.QM, digits)}, p-val {pfmt(res.QMp, digits)}')
+        elif res.ddf is not None:
             out.append(f'F(df1 = {res.m}, df2 = {res.ddf}) = {metafopy.printing.fmt_num(res.QM, digits)}, p-val {pfmt(res.QMp, digits)}')
         else:
             out.append(f'QM(df = {res.m}) = {metafopy.printing.fmt_num(res.QM, digits)}, p-val {pfmt(res.QMp, digits)}')
@@ -973,9 +993,10 @@ def format_result(res: RMAResult, digits: int) -> str:
 
     out.append('Model Results:')
     out.append('')
-    stat = 'tval' if res.ddf is not None else 'zval'
+    use_t = res.ddf is not None or robust is not None
+    stat = 'tval' if use_t else 'zval'
     header = ['estimate', 'se', stat]
-    if res.ddf is not None:
+    if use_t:
         header.append('df')
     # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
     header += ['pval', 'ci.lb', 'ci.ub', '']
@@ -986,7 +1007,9 @@ def format_result(res: RMAResult, digits: int) -> str:
             metafopy.printing.fmt_num(res.se[j], digits),
             metafopy.printing.fmt_num(res.zval[j], digits),
         ]
-        if res.ddf is not None:
+        if robust is not None:
+            row.append(metafopy.printing.fmt_df_scalar(float(robust.dfs[j])))
+        elif res.ddf is not None:
             row.append(str(res.ddf))
         row += [
             metafopy.printing.fmt_pval(res.pval[j], digits),
@@ -995,11 +1018,16 @@ def format_result(res: RMAResult, digits: int) -> str:
             metafopy.printing.signif_stars(res.pval[j]),
         ]
         rows_.append(row)
+    if robust is not None:
+        header, rows_ = metafopy.models.robust_print.decorate(header, rows_)
     out.append(metafopy.printing.fmt_table(header, rows_, row_names=None if res.int_only else list(res.coef_names)))
     out.append('')
     out.append('---')
     out.append("Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1")
     out.append('')
+    if robust is not None:
+        out += metafopy.models.robust_print.legend_lines(robust, res.int_only)
+        out.append('')
     return '\n'.join(out)
 
 

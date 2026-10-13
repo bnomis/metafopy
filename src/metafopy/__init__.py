@@ -24,6 +24,7 @@ from metafopy.methods.predict import PredictResult, predict
 from metafopy.methods.profile import ProfileResult, profile
 from metafopy.methods.ranef import RanefResult, ranef
 from metafopy.methods.rcalc import RCalcResult, rcalc
+from metafopy.methods.robust import robust
 from metafopy.methods.vcalc import vcalc
 from metafopy.methods.vif import VIFEntry, VIFResult, vif
 from metafopy.models.glmm_fit import GLMMControl
@@ -113,6 +114,7 @@ __all__ = [
     'rma_mv',
     'rma_peto',
     'rma_uni',
+    'robust',
     'rstandard',
     'rstudent',
     'set_seed',
