@@ -42,7 +42,20 @@ def r_texts(rec: dict[str, typing.Any]) -> list[dict[str, typing.Any]]:
         pos, labs = recycle(flat(t.get('pos')), n), recycle(labels, n)
         cols = recycle(flat(t.get('col')), n)
         for i in range(n):
-            out.append({'x': xs[i], 'y': ys[i], 'label': labs[i], 'pos': pos[i], 'bold': t.get('font') == 2, 'cex': t.get('cex'), 'col': cols[i]})
+            font = t.get('font') if t.get('font') is not None else t.get('fontpar', 1)
+            out.append(
+                {
+                    'x': xs[i],
+                    'y': ys[i],
+                    'label': labs[i],
+                    'pos': pos[i],
+                    'bold': font in (2, 4),
+                    'font': font,
+                    'family': t.get('family', ''),
+                    'cex': t.get('cex'),
+                    'col': cols[i],
+                }
+            )
     return out
 
 
@@ -75,7 +88,7 @@ def r_rects(rec: dict[str, typing.Any]) -> list[tuple[float, float, float, float
     for t in rec.get('rect', []):
         a = [flat(t[k]) if not isinstance(t[k], dict) else t[k] for k in ('xleft', 'ybottom', 'xright', 'ytop')]
         if any(isinstance(v, dict) for v in a):
-            continue
+            continue  # many rectangles at once: see check_rects
         n = max(len(v) for v in a)
         cols = [recycle(v, n) for v in a]
         out.extend((cols[0][i], cols[1][i], cols[2][i], cols[3][i]) for i in range(n))
@@ -87,6 +100,14 @@ def r_ablines(rec: dict[str, typing.Any], key: str) -> list[float]:
     for t in rec.get('abline', []):
         out.extend(flat(t.get(key)))
     return out
+
+
+def same_colors(actual: collections.abc.Sequence[str], expected: collections.abc.Sequence[str], what: str) -> None:
+    """Hex colours equal up to one unit per channel (R truncates, so a last-bit difference in a density can move a channel by one)."""
+    assert len(actual) == len(expected), what
+    for a, e in zip(actual, expected, strict=True):
+        diff = [abs(int(a[j : j + 2], 16) - int(e[j : j + 2], 16)) for j in (1, 3, 5)]
+        assert max(diff) <= 1, f'{what}: {a} != {e}'
 
 
 def same_summary(actual: NDArrayF, expected: typing.Any, what: str) -> None:
@@ -113,6 +134,8 @@ def check_texts(
         assert a.get_text() == e['label'], tag
         assert a.meta['pos'] == (None if e['pos'] is None else int(e['pos'])), tag + ' pos'
         assert a.meta['bold'] == e['bold'], tag + ' bold'
+        assert a.meta['font'] == int(e['font']), tag + ' font'
+        assert a.meta['family'] == e['family'], tag + ' family'
         if e['cex'] is not None:
             refutil.close(a.get_fontsize() / metafopy.plot.draw.base_fontsize(), e['cex'], tag + ' cex')
         if compare_col and e['col'] is not None:
@@ -148,11 +171,26 @@ def check_segments(ax: matplotlib.axes.Axes | collections.abc.Sequence[matplotli
 
 def check_rects(ax: matplotlib.axes.Axes | collections.abc.Sequence[matplotlib.axes.Axes], rec: dict[str, typing.Any], what: str) -> None:
     exp = r_rects(rec)
-    act = metafopy.plot.draw.collect(ax)['rect']
+    arts = metafopy.plot.draw.collect(ax)
+    act = arts['rect']
     assert len(act) == len(exp), f'{what}: {len(act)} rects, expected {len(exp)}'
     for i, (a, e) in enumerate(zip(act, exp, strict=True)):
         xl, yb, xr, yt = a.meta['xy']
         refutil.close([xl, yb, xr, yt], list(e), f'{what}: rect {i}')
+    many = [t for t in rec.get('rect', []) if isinstance(t['xleft'], dict)]
+    assert len(arts['rects']) == len(many), f'{what}: {len(arts["rects"])} rect vectors, expected {len(many)}'
+    for i, (a, t) in enumerate(zip(arts['rects'], many, strict=True)):
+        m = a.meta
+        same_summary(m['xl'], t['xleft'], f'{what}: rects {i} xleft')
+        same_summary(m['xr'], t['xright'], f'{what}: rects {i} xright')
+        refutil.close(m['yb'], flat(t['ybottom'])[0], f'{what}: rects {i} ybottom')
+        refutil.close(m['yt'], flat(t['ytop'])[0], f'{what}: rects {i} ytop')
+        cols = t['cols']
+        if isinstance(cols, dict):
+            got = m['cols']
+            assert len(got) == cols['n'] - 1 or len(got) == cols['n'], f'{what}: rects {i} number of colours'
+            same_colors(got[:3], cols['head'], f'{what}: rects {i} first colours')
+            same_colors(got[-2:], cols['tail'][:2], f'{what}: rects {i} last colours')
 
 
 def check_polygons(

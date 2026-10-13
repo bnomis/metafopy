@@ -14,6 +14,7 @@ import pandas
 import plotref
 import pytest
 import refutil
+import scipy.stats
 
 import metafopy
 import metafopy.bias.trimfill
@@ -26,6 +27,7 @@ import metafopy.plot.labbe
 import metafopy.plot.qqnorm
 import metafopy.plot.radial
 import metafopy.plot.rutils
+import metafopy.transf
 
 
 @pytest.fixture(scope='module')
@@ -63,6 +65,21 @@ def check_forest(r: typing.Any, ref: dict[str, typing.Any], what: str, areas: bo
     plotref.check_all(r.ax, ref['rec'], what, skip={'mtext'})
     mt = [t.get_text() for t in r.ax.texts if t.get_gid() == 'mtext']
     assert mt == [str(m['text']) for m in ref['rec'].get('mtext', [])], f'{what}: xlab {mt}'
+    for t, m in zip([t for t in r.ax.texts if t.get_gid() == 'mtext'], ref['rec'].get('mtext', []), strict=True):
+        assert t.meta['font'] == (m['font'] if m.get('font') is not None else m.get('fontpar', 1)), f'{what}: xlab font'
+        assert t.meta['family'] == m.get('family', ''), f'{what}: xlab family'
+    check_axis_family(r.ax, ref['rec'], what)
+
+
+def check_axis_family(ax: matplotlib.axes.Axes, rec: dict[str, typing.Any], what: str) -> None:
+    """The labels of the x axis are drawn in the font family R used for them."""
+    fam = [a.get('family', '') for a in rec.get('axis', []) if a['side'] == 1 and a.get('at') is not None]
+    if fam:
+        expected = metafopy.plot.draw.mpl_family(fam[-1]) or matplotlib.rcParams['font.sans-serif'][0]
+        got = ax.get_xticklabels()[0].get_fontfamily()[0]
+        assert got == (expected if fam[-1] else got), f'{what}: axis family {got} != {expected}'
+        if fam[-1]:
+            assert got == expected
 
 
 FOREST_RMA: dict[str, tuple[dict[str, typing.Any], dict[str, typing.Any]]] = {}
@@ -79,6 +96,7 @@ def fits(dat: pandas.DataFrame) -> dict[str, metafopy.RMAResult]:
         'noslab': case_fit(dat),
         'mods': case_fit(dat, mods='~ ablat', slab='label'),
         'ee': case_fit(dat, method='EE', slab='label'),
+        'knha': case_fit(dat, slab='label', test='knha'),
     }
 
 
@@ -98,6 +116,10 @@ def case_forest_exp(dat: pandas.DataFrame) -> dict[str, typing.Any]:
         'digits': 3,
         'efac': (1, 2),
     }
+
+
+PDXS = numpy.linspace(-3, 2, 301)
+PDYS = scipy.stats.norm.pdf(PDXS, -0.7, 0.6)
 
 
 # auditme: accept[non-alphabetical-dict-keys] order follows the R script that generates the fixtures
@@ -123,6 +145,60 @@ FOREST_CASES: dict[str, tuple[str, collections.abc.Callable[[pandas.DataFrame], 
         're',
         lambda d: {'order': 'prec', 'rowadj': (0.1, -0.1, 0), 'textpos': (-7, 5), 'xlim': (-8, 6), 'lty': ('dashed', 'dashed', 'solid')},
     ),
+    'forest_pi_shade': ('re', lambda d: {'predstyle': 'shade'}),
+    'forest_pi_shade_exp': (
+        're',
+        # auditme: accept[literal-duplication] fixture inputs mirror the R calls that generate the reference
+        lambda d: {'predstyle': 'shade', 'transf': numpy.exp, 'alim': (0, 5), 'refline': 1, 'col': ('black', 'darkblue', 'gray90'), 'showweights': True},
+    ),
+    'forest_pi_shade_knha': (
+        'knha',
+        lambda d: {'predstyle': 'shade', 'level': 90, 'atransf': numpy.exp, 'at': numpy.log([0.1, 0.5, 1, 2]), 'xlim': (-6, 4)},
+    ),
+    'forest_pi_dist': ('re', lambda d: {'predstyle': 'dist'}),
+    'forest_pi_dist_exp': ('re', lambda d: {'predstyle': 'dist', 'transf': numpy.exp, 'alim': (0, 5), 'refline': 1, 'efac': (1, 2)}),
+    'forest_pi_dist_tail': (
+        're',
+        lambda d: {
+            'predstyle': 'dist',
+            'predtail': '<-0.5',
+            'level': 90,
+            'mlab': 'RE',
+            'col': ('black', 'gray40', 'lightblue', 'pink'),
+            # auditme: accept[literal-duplication] fixture inputs mirror the R calls that generate the reference
+            'border': ('black', 'blue'),
+            'olim': (-2.5, 1.5),
+            'alim': (-2, 1),
+            'digits': 1,
+        },
+    ),
+    'forest_pi_dist_knha': ('knha', lambda d: {'predstyle': 'dist', 'predtail': 0.2}),
+    'forest_pi_dist_predlim': ('re', lambda d: {'predstyle': 'dist', 'transf': numpy.exp, 'predlim': (0.05, 3), 'alim': (0, 3), 'refline': 1}),
+    'forest_pi_dist_ilogit': ('re', lambda d: {'predstyle': 'dist', 'transf': metafopy.transf.transf_ilogit, 'alim': (0, 1), 'refline': 0.5}),
+    'forest_pi_dist_preddist': ('re', lambda d: {'predstyle': 'dist', 'preddist': {'x': PDXS, 'y': PDYS, 'level': 90}}),
+    'forest_pi_shade_preddist': (
+        're',
+        lambda d: {'predstyle': 'shade', 'preddist': {'x': PDXS, 'y': PDYS, 'pi_lb': -1.8, 'pi_ub': 0.4}, 'predlim': (-2.5, 1)},
+    ),
+    'forest_fonts': (
+        're',
+        # auditme: accept[literal-duplication] fixture inputs mirror the R calls that generate the reference
+        lambda d: {'fonts': ('serif', 'mono'), 'ilab': d['year'].to_numpy(), 'ilab_lab': ['Year'], 'ilab_xpos': [-7], 'xlim': (-10, 6)},
+    ),
+    'forest_fonts_named': (
+        're',
+        lambda d: {
+            'fonts': {'mono': 2, 'serif': 3, 'sans': 4},
+            'predstyle': 'polygon',
+            'ilab': d['year'].to_numpy(),
+            # auditme: accept[literal-duplication] fixture inputs mirror the R calls that generate the reference
+            'ilab_lab': ['Year'],
+            'ilab_xpos': [-7],
+            'xlim': (-10, 6),
+            'xlabfont': 3,
+        },
+    ),
+    'forest_fonts_one': ('re', lambda d: {'fonts': 'serif', 'predstyle': 'dist', 'showweights': True}),
 }
 
 
@@ -131,6 +207,8 @@ def test_forest_rma_matches_metafor(key: str, dat: pandas.DataFrame, fits: dict[
     fit, mk = FOREST_CASES[key]
     r = metafopy.plot.forest(fits[fit], ax=ax, **mk(dat))
     check_forest(r, plotref.PLOTS[key], key)
+    if key.startswith('forest_pi_'):
+        plotref.check_polygons(ax, plotref.PLOTS[key]['rec'], key, compare_col=True)  # also the colours
 
 
 def test_forest_subgroups_matches_metafor(dat: pandas.DataFrame, ax: matplotlib.axes.Axes) -> None:
@@ -170,6 +248,7 @@ def test_forest_default_options_match_metafor(dat: pandas.DataFrame, ax: matplot
         alim=(0, 4),
         refline=1,
         ilab=dat['year'].to_numpy(),
+        # auditme: accept[literal-duplication] fixture inputs mirror the R calls that generate the reference
         ilab_lab=['Year'],
         ilab_xpos=-3,
         ilab_pos=2,
@@ -232,6 +311,56 @@ def test_addpoly_rma_matches_metafor(dat: pandas.DataFrame, fits: dict[str, meta
     plotref.check_all(ax, plotref.PLOTS['addpoly_rma']['rec'], 'addpoly_rma', skip={'mtext'})
 
 
+def test_forest_default_fonts_match_metafor(dat: pandas.DataFrame, ax: matplotlib.axes.Axes) -> None:
+    yi, vi, slab = yi_vi(dat)
+    r = metafopy.plot.forest(yi, vi, slab=slab, fonts={'mono': 1, 'serif': 3}, ilab=dat['year'].to_numpy(), ilab_xpos=[-7], xlim=(-10, 6), measure='RR', ax=ax)
+    check_forest(r, plotref.PLOTS['forest_default_fonts'], 'forest_default_fonts', areas=False)
+
+
+def test_addpoly_rma_pred_styles_match_metafor(ax: matplotlib.axes.Axes, fits: dict[str, metafopy.RMAResult]) -> None:
+    # auditme: accept[literal-duplication] fixture inputs mirror the R calls that generate the reference
+    metafopy.plot.forest(fits['re'], ylim=(-8, 17), addfit=False, fonts=('serif', 'mono'), ax=ax)
+    metafopy.plot.addpoly(fits['re'], row=-1.5, predstyle='shade', ax=ax)
+    metafopy.plot.addpoly(fits['re'], row=-4, predstyle='dist', level=90, predtail='>-0.3', atransf=numpy.exp, ax=ax)
+    metafopy.plot.addpoly(fits['re'], row=-6.5, predstyle='polygon', fonts=('sans', 'mono'), ax=ax)
+    rec = plotref.PLOTS['addpoly_rma_pred']['rec']
+    # auditme: accept[literal-duplication] fixture inputs mirror the R calls that generate the reference
+    plotref.check_all(ax, rec, 'addpoly_rma_pred', skip={'mtext'}, compare_col=True)
+
+
+def test_addpoly_rma_pred_styles_transformed_match_metafor(ax: matplotlib.axes.Axes, fits: dict[str, metafopy.RMAResult]) -> None:
+    metafopy.plot.forest(fits['re'], ylim=(-8, 17), addfit=False, transf=numpy.exp, alim=(0, 5), ax=ax)
+    metafopy.plot.addpoly(fits['re'], row=-1.5, predstyle='dist', transf=numpy.exp, efac=(1, 1.5), ax=ax)
+    metafopy.plot.addpoly(fits['knha'], row=-4.5, predstyle='shade', transf=numpy.exp, ax=ax)
+    # auditme: accept[literal-duplication] fixture inputs mirror the R calls that generate the reference
+    plotref.check_all(ax, plotref.PLOTS['addpoly_rma_pred_exp']['rec'], 'addpoly_rma_pred_exp', skip={'mtext'}, compare_col=True)
+
+
+def test_addpoly_default_pred_styles_match_metafor(dat: pandas.DataFrame, ax: matplotlib.axes.Axes) -> None:
+    yi, vi, slab = yi_vi(dat)
+    metafopy.plot.forest(yi, vi, slab=slab, ylim=(-8, 17), xlim=(-8, 6), measure='RR', ax=ax)
+    metafopy.plot.addpoly(
+        0.3, ci_lb=-0.2, ci_ub=0.9, pi_lb=-0.8, pi_ub=1.4, pi_level=90, pi_dist='t', pi_ddf=6, pi_se=0.55, rows=-2, predstyle='dist', mlab='C', ax=ax
+    )
+    metafopy.plot.addpoly(
+        -0.3, ci_lb=-0.7, ci_ub=0.1, pi_lb=-1.2, pi_ub=0.6, pi_se=0.5, rows=-5, predstyle='shade', annotate=False, fonts={'mono': 2, 'serif': 3}, ax=ax
+    )
+    metafopy.plot.addpoly(
+        -0.3,
+        ci_lb=-0.7,
+        ci_ub=0.1,
+        pi_lb=-1.2,
+        pi_ub=0.6,
+        rows=-7,
+        predstyle='dist',
+        preddist=(PDXS, scipy.stats.norm.pdf(PDXS, -0.3, 0.5)),
+        predlim=(-2, 1),
+        ax=ax,
+    )
+    # auditme: accept[literal-duplication] fixture inputs mirror the R calls that generate the reference
+    plotref.check_all(ax, plotref.PLOTS['addpoly_default_pred']['rec'], 'addpoly_default_pred', skip={'mtext'}, compare_col=True)
+
+
 def test_forest_missing_values_in_fit(dat: pandas.DataFrame, ax: matplotlib.axes.Axes) -> None:
     dna = refutil.bcg_na()
     res = metafopy.rma('yi', 'vi', mods='~ ablat', data=dna, slab='label')
@@ -241,8 +370,14 @@ def test_forest_missing_values_in_fit(dat: pandas.DataFrame, ax: matplotlib.axes
 
 
 def test_forest_rejects_unsupported_options(fits: dict[str, metafopy.RMAResult], ax: matplotlib.axes.Axes) -> None:
-    with pytest.raises(NotImplementedError):
-        metafopy.plot.forest(fits['re'], predstyle='dist', ax=ax)
+    with pytest.raises(ValueError, match='possible with this'):
+        metafopy.plot.forest(fits['re'], predstyle='dist', transf=lambda v: v + 1, ax=ax)
+    with pytest.raises(ValueError, match='one of'):
+        metafopy.plot.forest(fits['re'], predstyle='cloud', ax=ax)
+    with pytest.raises(ValueError, match='preddist'):
+        metafopy.plot.forest(fits['re'], predstyle='dist', preddist=(PDXS,), ax=ax)  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match='fonts'):
+        metafopy.plot.forest(fits['re'], fonts=('serif', 7), ax=ax)
     with pytest.raises(ValueError, match='not both'):
         metafopy.plot.forest(fits['re'], transf=numpy.exp, atransf=numpy.exp, ax=ax)
 
