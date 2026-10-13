@@ -69,7 +69,7 @@ FOREST_RMA: dict[str, tuple[dict[str, typing.Any], dict[str, typing.Any]]] = {}
 
 
 def case_fit(dat: pandas.DataFrame, **kw: typing.Any) -> metafopy.RMAResult:
-    return metafopy.rma('yi', 'vi', data=dat, measure='RR', **kw)
+    return typing.cast(metafopy.RMAResult, metafopy.rma('yi', 'vi', data=dat, measure='RR', **kw))
 
 
 @pytest.fixture(scope='module')

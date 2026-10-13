@@ -3,7 +3,8 @@
 See https://www.metafor-project.org/ for the R package this mirrors.
 """
 
-import metafopy.methods.binary  # noqa: F401  registers the confint/rstandard/... methods for rma_mh and rma_peto results
+import metafopy.methods.binary
+import metafopy.methods.location_scale  # noqa: F401  registers the predict/confint/... methods for location-scale models
 from metafopy import datasets, transf
 from metafopy.base import __version__
 from metafopy.bias import FsnResult, HcResult, RanktestResult, RegtestResult, TesResult, TrimfillResult, fsn, hc, ranktest, regtest, tes, trimfill
@@ -32,6 +33,7 @@ from metafopy.models.glmm_fit import GLMMControl
 from metafopy.models.glmm_result import GLMMResult
 from metafopy.models.mv_result import RMAMVResult
 from metafopy.models.rma_glmm import rma_glmm
+from metafopy.models.rma_ls_result import LSControl, RMALSResult
 from metafopy.models.rma_mh import MHResult, rma_mh
 from metafopy.models.rma_mv import MVControl, rma_mv
 from metafopy.models.rma_peto import PetoResult, rma_peto
@@ -54,6 +56,7 @@ __all__ = [
     'HcResult',
     'InfluenceResult',
     'LRTResult',
+    'LSControl',
     'Leave1outResult',
     'MHResult',
     'MVControl',
@@ -63,6 +66,7 @@ __all__ = [
     'PredictResult',
     'ProfileResult',
     'RCalcResult',
+    'RMALSResult',
     'RMAMVResult',
     'RMAResult',
     'RandomTerm',
