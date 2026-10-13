@@ -43,6 +43,8 @@ RTOL_ROOT = 2e-3
 NOISY_HESSIAN = {'hack_halfnorm_less': 0.25}
 NOISY_ATOL = 5e-3
 
+# auditme: accept[non-alphabetical-literal] metafor's column order
+WALD = ('se', 'zval', 'pval', 'ci_lb', 'ci_ub')
 ALL_CASES = sorted(k for k, v in REF['fits'].items() if 'error' not in v)
 
 
@@ -156,7 +158,7 @@ def test_inference(case: str) -> None:
     res = fit(case)
     rtol = NOISY_HESSIAN.get(case, RTOL_SE)
     atol = NOISY_ATOL if case in NOISY_HESSIAN else ATOL
-    for name in ('se', 'zval', 'pval', 'ci_lb', 'ci_ub'):
+    for name in WALD:
         close(getattr(res, name), ref[name], f'{case} {name}', rtol=rtol, atol=atol)
     if ref['vb'] is not None:
         close_matrix(res.vb, ref['vb'], f'{case} vb', rtol=rtol, atol=atol)
