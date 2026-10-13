@@ -3,15 +3,50 @@ site_description: Meta-analysis in Python, a re-implementation of the R package 
 repo_url: https://github.com/bnomis/metafopy
 theme:
   name: material
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences
 plugins:
   - search
   - mkdocstrings:
       handlers:
         python:
           paths: [src]
+          options:
+            docstring_style: google
+            members_order: source
 nav:
   - Home: index.md
+  - Installation: install.md
   - Getting started: getting-started.md
+  - User guide:
+      - Effect sizes: guide/effect-sizes.md
+      - Fitting models: guide/models.md
+      - Binary and count data: guide/binary.md
+      - Multilevel and multivariate models: guide/multilevel.md
+      - Selection and location-scale models: guide/advanced.md
+      - Diagnostics: guide/diagnostics.md
+      - Publication bias: guide/bias.md
+      - Plots: guide/plots.md
+      - Datasets: guide/datasets.md
   - Analyses: analyses.md
-  - API reference: api.md
+  - Coming from R: from-r.md
+  - Function reference:
+      - Overview: reference/index.md
+      - Effect sizes: reference/effects.md
+      - Models: reference/models.md
+      - Methods for fitted models: reference/methods.md
+      - Publication bias: reference/bias.md
+      - Plots: reference/plots.md
+      - Transformations: reference/transf.md
+      - Datasets: reference/datasets.md
+      - Errors: reference/errors.md
   - Differences from metafor: differences.md
