@@ -7,7 +7,9 @@ https://wviechtb.github.io/metafor/reference/confint.rma.html.
 """
 
 import collections.abc
+import concurrent.futures
 import dataclasses
+import functools
 import math
 import typing
 import warnings
@@ -17,6 +19,7 @@ import numpy.typing
 import pandas
 import scipy.stats
 
+import metafopy.core.parallel
 import metafopy.core.zeroin
 import metafopy.errors
 import metafopy.methods.anova
@@ -376,6 +379,10 @@ def profile(
     ylim: collections.abc.Sequence[float] | None = None,
     steps: int | numpy.typing.ArrayLike = 20,
     lltol: float = 0.001,
+    progbar: bool = False,
+    parallel: metafopy.core.parallel.Parallel = 'no',
+    ncpus: int = 1,
+    cl: concurrent.futures.Executor | None = None,
     plot: bool = False,
     exp: bool = False,
     ax: typing.Any = None,
@@ -386,12 +393,19 @@ def profile(
     there is just one). ``steps`` is the number of equally spaced values in ``xlim`` or the values themselves.
     ``plot=True`` draws the profile with :func:`metafopy.plot.plot_profile`.
 
+    As in metafor, ``parallel`` (``'snow'`` or ``'multicore'``) fits the models for the grid values in a process pool of ``ncpus``
+    workers, or on the :class:`concurrent.futures.Executor` given as ``cl`` (``ncpus > 1`` implies ``'snow'``); the fits are
+    independent and deterministic, so the result equals that of the serial run. ``progbar=True`` prints a progress bar to stderr.
+    (``confint`` has no such arguments in metafor: its profile-likelihood searches are sequential.)
+
     Raises:
         metafopy.errors.InputError: an argument or the model is not suitable.
         metafopy.errors.NotSupportedError: the model is a decreasing step function or a ``'stepcon'`` model.
     """
     x = fitted
     check_supported(x, 'profile')
+    parallel = metafopy.core.parallel.resolve_parallel(parallel, ncpus, cl)
+    pool: dict[str, typing.Any] = {'progbar': progbar, 'parallel': parallel, 'ncpus': ncpus, 'cl': cl}
     st = numpy.atleast_1d(numpy.asarray(steps, dtype=numpy.float64))
     if numpy.isnan(st).any():
         raise metafopy.errors.InputError("No missing values allowed in 'steps' argument.")
@@ -408,14 +422,14 @@ def profile(
             raise metafopy.errors.InputError('No components in the model for which a profile likelihood can be constructed.')
         sav: list[SelProfileResult] = []
         if has_tau2(x):
-            sav.append(profile_one(x, 'tau2', -1, xlim, ylim, st, step_seq, lltol, exp))
-        sav.extend(profile_one(x, 'delta', pos, xlim, ylim, st, step_seq, lltol, exp) for pos in range(x.deltas) if not x.delta_fix[pos])
+            sav.append(profile_one(x, 'tau2', -1, xlim, ylim, st, step_seq, lltol, exp, **pool))
+        sav.extend(profile_one(x, 'delta', pos, xlim, ylim, st, step_seq, lltol, exp, **pool) for pos in range(x.deltas) if not x.delta_fix[pos])
         if plot:
             plot_all(sav, ax)
         return sav[0] if len(sav) == 1 else sav
 
     comp, _, pos = component(x, tau2, delta)
-    out = profile_one(x, comp, pos, xlim, ylim, st, step_seq, lltol, exp)
+    out = profile_one(x, comp, pos, xlim, ylim, st, step_seq, lltol, exp, **pool)
     if plot:
         plot_all([out], ax)
     return out
@@ -429,6 +443,14 @@ def plot_all(results: list[SelProfileResult], ax: typing.Any) -> None:
         metafopy.plot.profile.plot_profile(r, ax=ax if len(results) == 1 else None)
 
 
+def profile_fit(x: Sel, comp: str, pos: int, val: float) -> tuple[float, FloatArray, FloatArray, FloatArray] | None:
+    """The log-likelihood and coefficients (estimates and CI bounds) of the model with one component fixed at ``val``."""
+    fit = refit(x, comp, val, pos, confint_=False)
+    if fit is None:
+        return None
+    return fit.logLik(), fit.beta, fit.ci_lb, fit.ci_ub
+
+
 def profile_one(
     x: Sel,
     comp: str,
@@ -439,6 +461,11 @@ def profile_one(
     step_seq: bool,
     lltol: float,
     exp: bool,
+    *,
+    progbar: bool = False,
+    parallel: metafopy.core.parallel.Parallel = 'no',
+    ncpus: int = 1,
+    cl: concurrent.futures.Executor | None = None,
 ) -> SelProfileResult:
     crit = float(scipy.stats.norm.ppf(0.995))
     if comp == 'tau2':
@@ -476,12 +503,12 @@ def profile_one(
     beta = numpy.full((len(vcs), x.p), numpy.nan)
     ci_lb = numpy.full_like(beta, numpy.nan)
     ci_ub = numpy.full_like(beta, numpy.nan)
-    for i, val in enumerate(vcs):
-        fit = refit(x, comp, float(val), pos, confint_=False)
+    one = functools.partial(profile_fit, x, comp, pos)
+    fits = metafopy.core.parallel.map_sims(one, [float(v) for v in vcs], parallel=parallel, ncpus=ncpus, cl=cl, progbar=progbar)
+    for i, fit in enumerate(fits):
         if fit is None:
             continue
-        lls[i] = fit.logLik()
-        beta[i], ci_lb[i], ci_ub[i] = fit.beta, fit.ci_lb, fit.ci_ub
+        lls[i], beta[i], ci_lb[i], ci_ub[i] = fit[0], fit[1], fit[2], fit[3]
     maxll = x.logLik()
     if numpy.any(lls >= maxll + lltol):
         warnings.warn('At least one profiled log-likelihood value is larger than the log-likelihood of the fitted model.', stacklevel=3)

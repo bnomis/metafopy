@@ -580,8 +580,8 @@ def test_vif_single_part() -> None:
 def test_vif_errors() -> None:
     with pytest.raises(metafopy.errors.InputError, match='intercept-only'):
         any_vif(result('bd_int'))
-    with pytest.raises(metafopy.errors.NotSupportedError, match='sim'):
-        any_vif(result('bd_3'), sim=True)
+    with pytest.raises(metafopy.errors.InputError, match="'sim'"):
+        any_vif(result('bd_3'), sim=1)
 
 
 # -- blup, ranef, rstandard and the other accessors -------------------------------------------------------------------------

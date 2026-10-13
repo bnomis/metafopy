@@ -16,8 +16,6 @@ import concurrent.futures
 import dataclasses
 import functools
 import math
-import multiprocessing
-import sys
 import typing
 import warnings
 
@@ -26,6 +24,7 @@ import numpy.typing
 import pandas
 
 import metafopy.core.linalg
+import metafopy.core.parallel
 import metafopy.errors
 import metafopy.methods.blup
 import metafopy.models.rma_uni
@@ -37,8 +36,6 @@ __all__ = ['VIFEntry', 'VIFResult', 'vif']
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type BttSpec = int | str | collections.abc.Sequence[int]
 type BttArg = int | str | collections.abc.Sequence[int | str | collections.abc.Sequence[int]] | None
-# auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
-type Parallel = typing.Literal['no', 'snow', 'multicore']
 
 FIT_ERRORS = (metafopy.errors.EstimationError, ValueError, ArithmeticError, numpy.linalg.LinAlgError)
 
@@ -215,7 +212,7 @@ def vif_rma_uni(
     sim: bool | int = False,
     progbar: bool = True,
     seed: int | None = None,
-    parallel: Parallel = 'no',
+    parallel: metafopy.core.parallel.Parallel = 'no',
     ncpus: int = 1,
     cl: concurrent.futures.Executor | None = None,
     digits: int | None = None,
@@ -249,17 +246,7 @@ def vif_rma_uni(
         if n_sim <= 1:
             raise metafopy.errors.InputError("Argument 'sim' must be >= 2.")
 
-    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
-    if parallel not in ('no', 'snow', 'multicore'):
-        raise metafopy.errors.InputError(f'unknown parallel option {parallel!r}')
-    if ncpus < 1:
-        raise metafopy.errors.InputError("Argument 'ncpus' must be >= 1.")
-    if parallel == 'no' and ncpus > 1:
-        parallel = 'snow'
-    if cl is not None:
-        parallel = 'snow'
-    elif parallel != 'no' and ncpus < 2:
-        parallel = 'no'
+    parallel = metafopy.core.parallel.resolve_parallel(parallel, ncpus, cl)
 
     int_incl = res.int_incl
     p = res.p
@@ -305,17 +292,7 @@ def vif_rma_uni(
     if n_sim >= 2 and not numpy.all(vifs[~numpy.isnan(vifs)] == 1):
         rngs = numpy.random.default_rng(seed).spawn(n_sim)
         one = functools.partial(vif_sim_one, res, tuple(groups), reestimate)
-        if parallel == 'no':
-            rows = list(progress(map(one, rngs), n_sim, progbar))
-        else:
-            # 'multicore' forks the workers (as R's mclapply); 'snow' starts fresh ones
-            ctx = multiprocessing.get_context('fork' if parallel == 'multicore' and 'fork' in multiprocessing.get_all_start_methods() else None)
-            pool = cl if cl is not None else concurrent.futures.ProcessPoolExecutor(max_workers=ncpus, mp_context=ctx)
-            try:
-                rows = list(progress(pool.map(one, rngs), n_sim, progbar))
-            finally:
-                if cl is None:
-                    pool.shutdown()
+        rows = metafopy.core.parallel.map_sims(one, rngs, parallel=parallel, ncpus=ncpus, cl=cl, progbar=progbar)
         sims = numpy.vstack(rows)
         with numpy.errstate(invalid='ignore', divide='ignore'):
             ok = ~numpy.isnan(sims)
@@ -423,10 +400,3 @@ def coef_table(res: metafopy.models.rma_uni.RMAResult) -> pandas.DataFrame:
         cols['zval'] = res.zval
     cols.update({'pval': res.pval, 'ci.lb': res.ci_lb, 'ci.ub': res.ci_ub})
     return pandas.DataFrame(cols, index=list(res.coef_names))
-
-
-def progress(rows: collections.abc.Iterable[FloatArray], total: int, show: bool) -> collections.abc.Iterator[FloatArray]:
-    for i, row in enumerate(rows, start=1):
-        if show:
-            print(f'\r  |{"+" * (50 * i // total):<50}| {100 * i // total:3d}%', end='' if i < total else '\n', file=sys.stderr)
-        yield row
