@@ -6,18 +6,16 @@ double-precision modifications; see Genz (2004), doi:10.1023/B:STCO.0000035304.2
 Accurate to about 1e-15, so results agree with R's to rounding error.
 """
 
-from __future__ import annotations
-
 import math
 
-from scipy.special import ndtr
+import scipy.special
 
 __all__ = ['bvn_lower', 'bvn_rect', 'bvnu']
 
-_TWOPI = 6.283185307179586
+TWOPI = 6.283185307179586
 
 # Gauss-Legendre points and weights for n = 6, 12 and 20 (half of each symmetric rule)
-_W = (
+W = (
     (0.1713244923791705, 0.3607615730481384, 0.4679139345726904),
     (0.4717533638651177e-01, 0.1069393259953183, 0.1600783285433464, 0.2031674267230659, 0.2334925365383547, 0.2491470458134029),
     (
@@ -33,7 +31,7 @@ _W = (
         0.1527533871307259,
     ),
 )
-_X = (
+X = (
     (-0.9324695142031522, -0.6612093864662647, -0.2386191860831970),
     (-0.9815606342467191, -0.9041172563704750, -0.7699026741943050, -0.5873179542866171, -0.3678314989981802, -0.1252334085114692),
     (
@@ -51,8 +49,8 @@ _X = (
 )
 
 
-def _phi(x: float) -> float:
-    return float(ndtr(x))
+def phi(x: float) -> float:
+    return float(scipy.special.ndtr(x))
 
 
 def bvnu(sh: float, sk: float, r: float) -> float:
@@ -63,8 +61,8 @@ def bvnu(sh: float, sk: float, r: float) -> float:
         ng = 1
     else:
         ng = 2
-    w = _W[ng]
-    x = _X[ng]
+    w = W[ng]
+    x = X[ng]
     h = sh
     k = sk
     hk = h * k
@@ -77,7 +75,7 @@ def bvnu(sh: float, sk: float, r: float) -> float:
             bvn += wi * math.exp((sn * hk - hs) / (1 - sn * sn))
             sn = math.sin(asr * (-xi + 1) / 2)
             bvn += wi * math.exp((sn * hk - hs) / (1 - sn * sn))
-        bvn = bvn * asr / (2 * _TWOPI) + _phi(-h) * _phi(-k)
+        bvn = bvn * asr / (2 * TWOPI) + phi(-h) * phi(-k)
     else:
         if r < 0:
             k = -k
@@ -91,7 +89,7 @@ def bvnu(sh: float, sk: float, r: float) -> float:
             bvn = a * math.exp(-(bs / as_ + hk) / 2) * (1 - c * (bs - as_) * (1 - d * bs / 5) / 3 + c * d * as_ * as_ / 5)
             if hk > -160:
                 b = math.sqrt(bs)
-                bvn = bvn - math.exp(-hk / 2) * math.sqrt(_TWOPI) * _phi(-b / a) * b * (1 - c * bs * (1 - d * bs / 5) / 3)
+                bvn = bvn - math.exp(-hk / 2) * math.sqrt(TWOPI) * phi(-b / a) * b * (1 - c * bs * (1 - d * bs / 5) / 3)
             a = a / 2
             for wi, xi in zip(w, x, strict=True):
                 xs = (a * (xi + 1)) ** 2
@@ -100,16 +98,16 @@ def bvnu(sh: float, sk: float, r: float) -> float:
                 xs = as_ * (-xi + 1) ** 2 / 4
                 rs = math.sqrt(1 - xs)
                 bvn = bvn + a * wi * math.exp(-(bs / xs + hk) / 2) * (math.exp(-hk * xs / (2 * (1 + rs) ** 2)) / rs - (1 + c * xs * (1 + d * xs)))
-            bvn = -bvn / _TWOPI
+            bvn = -bvn / TWOPI
         if r > 0:
-            bvn = bvn + _phi(-max(h, k))
+            bvn = bvn + phi(-max(h, k))
         else:
             bvn = -bvn
             if k > h:
                 if h < 0:
-                    bvn = bvn + _phi(k) - _phi(h)
+                    bvn = bvn + phi(k) - phi(h)
                 else:
-                    bvn = bvn + _phi(-h) - _phi(-k)
+                    bvn = bvn + phi(-h) - phi(-k)
     return bvn
 
 
@@ -150,7 +148,7 @@ def bvn_rect(lower: tuple[float, float], upper: tuple[float, float], r: float) -
             if inf[0] == -1 and inf[1] == -1:
                 return 1.0
             lo, up = (l2, u2) if inf[0] == -1 else (l1, u1)
-            return _phi(up) - _phi(lo)
+            return phi(up) - phi(lo)
 
 
 def bvn_lower(h: float, k: float, r: float) -> float:

@@ -14,34 +14,33 @@ R's ``set.seed(s); permutest(res)`` and ``permutest(res, seed=s)`` that of
 ``permutest(res, seed=s)``.
 """
 
-from __future__ import annotations
-
+import collections.abc
+import dataclasses
+import functools
 import math
+import typing
 import warnings
-from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
-from functools import singledispatch
-from typing import Any, Literal
 
-import numpy as np
-import pandas as pd
-from numpy.typing import NDArray
+import numpy
+import numpy.typing
+import pandas
 
-from metafopy._print import fmt_num, fmt_pval, fmt_table, signif_stars
-from metafopy.core.rng import RRandom, get_rng, set_seed
-from metafopy.core.zeroin import uniroot
-from metafopy.methods._common import refit_arrays
-from metafopy.methods.vif import _format_vector
-from metafopy.models.rma_uni import Btt, RMAResult, coef_span, set_btt
+import metafopy.core.rng
+import metafopy.core.zeroin
+import metafopy.errors
+import metafopy.methods.common
+import metafopy.methods.vif
+import metafopy.models.rma_uni
+import metafopy.printing
 
 __all__ = ['PermutestResult', 'permutest']
 
-type FloatArray = NDArray[np.float64]
+type FloatArray = numpy.typing.NDArray[numpy.float64]
 
-_EPS = float(np.finfo(float).eps)
+EPS = float(numpy.finfo(float).eps)
 
 
-@dataclass(frozen=True, slots=True)
+@dataclasses.dataclass(frozen=True, slots=True)
 class PermutestResult:
     """Permutation-based p-values (and optionally CI bounds) for the coefficients of a model.
 
@@ -74,30 +73,35 @@ class PermutestResult:
     p2defn: str
     stat: str
     QM_perm: FloatArray
-    zval_perm: pd.DataFrame
-    beta_perm: pd.DataFrame
+    zval_perm: pandas.DataFrame
+    beta_perm: pandas.DataFrame
     digits: int = 4
 
-    def to_frame(self) -> pd.DataFrame:
-        cols: dict[str, Any] = {'estimate': self.beta, 'se': self.se, ('tval' if self.ddf is not None else 'zval'): self.zval}
+    def to_frame(self) -> pandas.DataFrame:
+        cols: dict[str, typing.Any] = {'estimate': self.beta, 'se': self.se, ('tval' if self.ddf is not None else 'zval'): self.zval}
         if self.ddf is not None:
-            cols['df'] = np.full(self.p, self.ddf)
+            cols['df'] = numpy.full(self.p, self.ddf)
         cols.update({'pval': self.pval, 'ci.lb': self.ci_lb, 'ci.ub': self.ci_ub})
-        return pd.DataFrame(cols, index=list(self.coef_names))
+        return pandas.DataFrame(cols, index=list(self.coef_names))
 
     def __str__(self) -> str:
-        return _format(self)
+        return format_permutest(self)
 
 
-@singledispatch
-def permutest(x: Any, *args: Any, **kwargs: Any) -> PermutestResult | int | float:
-    """Permutation test for a fitted model; see :func:`_permutest_rma_uni`."""
-    raise TypeError(f'permutest() not implemented for {type(x).__name__}')
+@functools.singledispatch
+def permutest(x: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> PermutestResult | int | float:
+    """Permutation test for a fitted model; see :func:`_permutest_rma_uni`.
+
+    Raises:
+        metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
+    """
+    raise metafopy.errors.ArgumentError(f'permutest() not implemented for {type(x).__name__}')
 
 
-_CONTROL_DEFAULTS: dict[str, Any] = {
-    'comptol': _EPS**0.5,
-    'tol': _EPS**0.25,
+# auditme: accept[non-alphabetical-dict-keys] order follows the R script that generates the fixtures
+CONTROL_DEFAULTS: dict[str, typing.Any] = {
+    'comptol': EPS**0.5,
+    'tol': EPS**0.25,
     'maxiter': 100,
     'alternative': 'two.sided',
     'p2defn': 'abs',
@@ -108,21 +112,21 @@ _CONTROL_DEFAULTS: dict[str, Any] = {
 }
 
 
-def _unique_perms_count(X: FloatArray) -> tuple[int | float, NDArray[np.intp], FloatArray]:
+def unique_perms_count(X: FloatArray) -> tuple[int | float, numpy.typing.NDArray[numpy.intp], FloatArray]:
     """Number of distinct row permutations of ``X``, the group labels of its sorted rows, and the sorted ``X``."""
     k = X.shape[0]
-    order = np.lexsort(tuple(X[:, j] for j in range(X.shape[1] - 1, -1, -1)))
+    order = numpy.lexsort(tuple(X[:, j] for j in range(X.shape[1] - 1, -1, -1)))
     Xs = X[order]
-    new = np.ones(k, dtype=np.bool_)
-    new[1:] = np.any(Xs[1:] != Xs[:-1], axis=1) if k > 1 else True
+    new = numpy.ones(k, dtype=numpy.bool_)
+    new[1:] = numpy.any(Xs[1:] != Xs[:-1], axis=1) if k > 1 else True
     # R: X.indices is the position of the first row of each run of identical rows
     # (duplicated() flags any earlier identical row, runs are contiguous after sorting)
-    starts = np.flatnonzero(new)
-    run_len = np.diff(np.append(starts, k))
-    labels = np.repeat(starts + 1, run_len)
-    counts = np.array(run_len)
-    big = int(np.argmax(counts))
-    rest = np.delete(counts, big)
+    starts = numpy.flatnonzero(new)
+    run_len = numpy.diff(numpy.append(starts, k))
+    labels = numpy.repeat(starts + 1, run_len)
+    counts = numpy.array(run_len)
+    big = int(numpy.argmax(counts))
+    rest = numpy.delete(counts, big)
     num = math.prod(range(int(counts.max()) + 1, k + 1))
     den = math.prod(math.factorial(int(c)) for c in rest)
     total: int | float = num // den
@@ -131,7 +135,7 @@ def _unique_perms_count(X: FloatArray) -> tuple[int | float, NDArray[np.intp], F
     return total, labels, Xs
 
 
-def _multiset_perms(labels: NDArray[np.intp]) -> list[tuple[int, ...]]:
+def multiset_perms(labels: numpy.typing.NDArray[numpy.intp]) -> list[tuple[int, ...]]:
     """All distinct permutations of ``labels`` in lexicographic order (metafor's ``.genuperms``)."""
     items = sorted(labels.tolist())
     out: list[tuple[int, ...]] = []
@@ -151,40 +155,40 @@ def _multiset_perms(labels: NDArray[np.intp]) -> list[tuple[int, ...]]:
     return out
 
 
-def _control(control: Mapping[str, Any] | None) -> dict[str, Any]:
-    con = dict(_CONTROL_DEFAULTS)
+def permutest_control(control: collections.abc.Mapping[str, typing.Any] | None) -> dict[str, typing.Any]:
+    con = dict(CONTROL_DEFAULTS)
     for key, value in (control or {}).items():
         match = [name for name in con if name.startswith(key.replace('.', '_').replace('extend_int', 'extendInt'))]
         if key in con:
             match = [key]
         if len(match) != 1:
-            raise TypeError(f'unknown control argument {key!r}')
+            raise metafopy.errors.ArgumentError(f'unknown control argument {key!r}')
         con[match[0]] = value
     if con['alternative'] not in ('two.sided', 'less', 'greater'):
-        raise ValueError("control 'alternative' must be 'two.sided', 'less' or 'greater'")
+        raise metafopy.errors.InputError("control 'alternative' must be 'two.sided', 'less' or 'greater'")
     if con['p2defn'] not in ('abs', 'px2'):
-        raise ValueError("control 'p2defn' must be 'abs' or 'px2'")
+        raise metafopy.errors.InputError("control 'p2defn' must be 'abs' or 'px2'")
     if con['stat'] not in ('test', 'coef'):
-        raise ValueError("control 'stat' must be 'test' or 'coef'")
+        raise metafopy.errors.InputError("control 'stat' must be 'test' or 'coef'")
     if con['extendInt'] != 'no':
-        raise NotImplementedError("control extendInt other than 'no' is not supported")
+        raise metafopy.errors.NotSupportedError("control extendInt other than 'no' is not supported")
     return con
 
 
-def _nanmean(a: NDArray[np.bool_] | FloatArray, valid: NDArray[np.bool_]) -> float:
+def nanmean(a: numpy.typing.NDArray[numpy.bool_] | FloatArray, valid: numpy.typing.NDArray[numpy.bool_]) -> float:
     n = int(valid.sum())
-    return float(np.sum(np.asarray(a, dtype=np.float64)[valid])) / n if n else math.nan
+    return float(numpy.sum(numpy.asarray(a, dtype=numpy.float64)[valid])) / n if n else math.nan
 
 
 @permutest.register
-def _permutest_rma_uni(
-    x: RMAResult,
-    exact: bool | Literal['i'] = False,
+def permutest_rma_uni(
+    x: metafopy.models.rma_uni.RMAResult,
+    exact: bool | typing.Literal['i'] = False,
     iter: int = 1000,
-    btt: Btt = None,
-    permci: bool | Sequence[int] = False,
+    btt: metafopy.models.rma_uni.Btt = None,
+    permci: bool | collections.abc.Sequence[int] = False,
     digits: int | None = None,
-    control: Mapping[str, Any] | None = None,
+    control: collections.abc.Mapping[str, typing.Any] | None = None,
     *,
     seed: int | None = None,
     tol: float | None = None,
@@ -203,49 +207,52 @@ def _permutest_rma_uni(
     is left in the state the permutations ended in. ``control`` takes metafor's
     list (``comptol``, ``tol``, ``maxiter``, ``alternative``, ``p2defn``,
     ``stat``, ``cialt``, ``distfac``).
+
+    Raises:
+        metafopy.errors.InputError: an argument or the data is invalid.
     """
     iter = iter
     if iter <= 1:
-        raise ValueError("Argument 'iter' must be >= 2.")
+        raise metafopy.errors.InputError("Argument 'iter' must be >= 2.")
     if btt is not None:
-        bt = set_btt(btt, x.p, x.int_incl, x.coef_names) if not (fixed and isinstance(btt, str)) else _fixed_btt(btt, x)
-        refitted = refit_arrays(x, btt=list(bt))
+        bt = metafopy.models.rma_uni.set_btt(btt, x.p, x.int_incl, x.coef_names) if not (fixed and isinstance(btt, str)) else fixed_btt(btt, x)
+        refitted = metafopy.methods.common.refit_arrays(x, btt=list(bt))
         if refitted is None:
-            raise ValueError('could not refit the model with the requested btt')
+            raise metafopy.errors.InputError('could not refit the model with the requested btt')
         x = refitted
     k, p = x.k, x.p
 
     if x.int_only:
         exact_iter: int | float = 2**k
-        labels = np.arange(1, k + 1)
+        labels = numpy.arange(1, k + 1)
         Xs = x.X
     else:
-        exact_iter, labels, Xs = _unique_perms_count(x.X)
+        exact_iter, labels, Xs = unique_perms_count(x.X)
     if isinstance(exact, str) and exact == 'i':
         return exact_iter
     use_exact = bool(exact) or exact_iter <= iter
     n_iter = int(exact_iter) if use_exact else iter
     if use_exact and math.isinf(exact_iter):
-        raise ValueError('Too many iterations required for an exact permutation test.')
+        raise metafopy.errors.InputError('Too many iterations required for an exact permutation test.')
 
-    con = _control(control)
+    con = permutest_control(control)
     if tol is not None:
         con['comptol'] = tol
     digits_ = 4 if digits is None else digits
 
-    gen: RRandom | None = None
+    gen: metafopy.core.rng.RRandom | None = None
     if not use_exact:
-        seed_ = int(get_rng().unif_rand() * 2e9)
-        gen = set_seed(seed_ if seed is None else seed)
+        seed_ = int(metafopy.core.rng.get_rng().unif_rand() * 2e9)
+        gen = metafopy.core.rng.set_seed(seed_ if seed is None else seed)
 
-    zval_perm, beta_perm, QM_perm = _run_permutations(x, Xs, labels, n_iter, use_exact, gen)
+    zval_perm, beta_perm, QM_perm = run_permutations(x, Xs, labels, n_iter, use_exact, gen)
     if not use_exact:
         beta_perm[0] = x.beta
         zval_perm[0] = x.zval
         QM_perm[0] = x.QM
 
-    pval = _pvalues(x, zval_perm, beta_perm, con)
-    QMp = _nanmean(QM_perm >= x.QM - con['comptol'], ~np.isnan(QM_perm))
+    pval = pvalues(x, zval_perm, beta_perm, con)
+    QMp = nanmean(QM_perm >= x.QM - con['comptol'], ~numpy.isnan(QM_perm))
 
     ci_lb, ci_ub = x.ci_lb.copy(), x.ci_ub.copy()
     did_permci = False
@@ -262,12 +269,12 @@ def _permutest_rma_uni(
             else:
                 coefs = sorted({round(c) for c in permci})
                 if any(c < 0 or c >= p for c in coefs):
-                    raise ValueError("Non-existent coefficients specified via 'permci'.")
-            ci_lb = np.full(p, np.nan)
-            ci_ub = np.full(p, np.nan)
+                    raise metafopy.errors.InputError("Non-existent coefficients specified via 'permci'.")
+            ci_lb = numpy.full(p, numpy.nan)
+            ci_ub = numpy.full(p, numpy.nan)
             for j in coefs:
-                ci_lb[j] = _permci_bound(x, j, use_exact, n_iter, alpha, con, lower=True, base_ci=x.ci_lb[j], base_ub=x.ci_ub[j])
-                ci_ub[j] = _permci_bound(x, j, use_exact, n_iter, alpha, con, lower=False, base_ci=x.ci_lb[j], base_ub=x.ci_ub[j])
+                ci_lb[j] = permci_bound(x, j, use_exact, n_iter, alpha, con, lower=True, base_ci=x.ci_lb[j], base_ub=x.ci_ub[j])
+                ci_ub[j] = permci_bound(x, j, use_exact, n_iter, alpha, con, lower=False, base_ci=x.ci_lb[j], base_ub=x.ci_ub[j])
 
     return PermutestResult(
         pval=pval,
@@ -290,42 +297,42 @@ def _permutest_rma_uni(
         coef_names=x.coef_names,
         exact_iter=exact_iter,
         permci=did_permci,
-        alternative=con['alternative'] if not did_permci else _final_alt(con),
+        alternative=con['alternative'] if not did_permci else final_alt(con),
         p2defn=con['p2defn'],
         stat=con['stat'],
         QM_perm=QM_perm,
-        zval_perm=pd.DataFrame(zval_perm, columns=list(x.coef_names)),
-        beta_perm=pd.DataFrame(beta_perm, columns=list(x.coef_names)),
+        zval_perm=pandas.DataFrame(zval_perm, columns=list(x.coef_names)),
+        beta_perm=pandas.DataFrame(beta_perm, columns=list(x.coef_names)),
         digits=digits_,
     )
 
 
-def _final_alt(con: Mapping[str, Any]) -> str:
+def final_alt(con: collections.abc.Mapping[str, typing.Any]) -> str:
     # metafor overwrites con$alternative while searching for the CI bounds; the last search is for the upper bound
     return 'less' if con['cialt'] == 'one.sided' else 'two.sided'
 
 
-def _fixed_btt(btt: str, x: RMAResult) -> tuple[int, ...]:
+def fixed_btt(btt: str, x: metafopy.models.rma_uni.RMAResult) -> tuple[int, ...]:
     idx = tuple(i for i, n in enumerate(x.coef_names) if btt in n)
     if not idx:
-        raise ValueError("Cannot identify coefficient(s) corresponding to the specified 'btt' string.")
+        raise metafopy.errors.InputError("Cannot identify coefficient(s) corresponding to the specified 'btt' string.")
     return idx
 
 
-def _run_permutations(
-    x: RMAResult,
+def run_permutations(
+    x: metafopy.models.rma_uni.RMAResult,
     Xs: FloatArray,
-    labels: NDArray[np.intp],
+    labels: numpy.typing.NDArray[numpy.intp],
     n_iter: int,
     exact: bool,
-    gen: RRandom | None,
+    gen: metafopy.core.rng.RRandom | None,
 ) -> tuple[FloatArray, FloatArray, FloatArray]:
     k, p = x.k, x.p
-    zval = np.full((n_iter, p), np.nan)
-    beta = np.full((n_iter, p), np.nan)
-    QM = np.full(n_iter, np.nan)
+    zval = numpy.full((n_iter, p), numpy.nan)
+    beta = numpy.full((n_iter, p), numpy.nan)
+    QM = numpy.full(n_iter, numpy.nan)
 
-    def store(i: int, fit: RMAResult | None) -> bool:
+    def store(i: int, fit: metafopy.models.rma_uni.RMAResult | None) -> bool:
         if fit is None:
             return False
         beta[i] = fit.beta
@@ -334,72 +341,76 @@ def _run_permutations(
         return True
 
     if x.int_only:
-        one = np.ones((k, 1))
+        one = numpy.ones((k, 1))
         if exact:
             for i in range(n_iter):
-                signs = np.array([1.0 if not (i >> j) & 1 else -1.0 for j in range(k)])
-                store(i, refit_arrays(x, yi=signs * x.yi, X=one, btt=[0]))
+                signs = numpy.array([1.0 if not (i >> j) & 1 else -1.0 for j in range(k)])
+                store(i, metafopy.methods.common.refit_arrays(x, yi=signs * x.yi, X=one, btt=[0]))
         else:
             assert gen is not None
             i = 0
             while i < n_iter:
-                signs = np.where(gen.sample_int(2, k, replace=True) == 1, -1.0, 1.0)
-                if store(i, refit_arrays(x, yi=signs * x.yi, X=one, btt=[0])):
+                signs = numpy.where(gen.sample_int(2, k, replace=True) == 1, -1.0, 1.0)
+                if store(i, metafopy.methods.common.refit_arrays(x, yi=signs * x.yi, X=one, btt=[0])):
                     i += 1
         return zval, beta, QM
 
     btt = list(x.btt)
     if exact:
-        perms = _multiset_perms(labels)
+        perms = multiset_perms(labels)
         for i in range(n_iter):
-            store(i, refit_arrays(x, X=Xs[np.array(perms[i]) - 1], btt=btt))
+            store(i, metafopy.methods.common.refit_arrays(x, X=Xs[numpy.array(perms[i]) - 1], btt=btt))
     else:
         assert gen is not None
         i = 0
         while i < n_iter:
             perm = gen.sample_int(k) - 1
-            if store(i, refit_arrays(x, X=Xs[perm], btt=btt)):
+            if store(i, metafopy.methods.common.refit_arrays(x, X=Xs[perm], btt=btt)):
                 i += 1
     return zval, beta, QM
 
 
-def _pvalues(x: RMAResult, zval_perm: FloatArray, beta_perm: FloatArray, con: Mapping[str, Any]) -> FloatArray:
+def pvalues(x: metafopy.models.rma_uni.RMAResult, zval_perm: FloatArray, beta_perm: FloatArray, con: collections.abc.Mapping[str, typing.Any]) -> FloatArray:
     comptol = con['comptol']
     use_test = con['stat'] == 'test'
     stat_perm = zval_perm if use_test else beta_perm
     stat_obs = x.zval if use_test else x.beta
-    pval = np.full(x.p, np.nan)
+    pval = numpy.full(x.p, numpy.nan)
     for j in range(x.p):
         s = stat_perm[:, j]
-        valid = ~np.isnan(s)
+        valid = ~numpy.isnan(s)
         obs = stat_obs[j]
         if con['alternative'] == 'two.sided':
             if con['p2defn'] == 'abs':
-                pval[j] = _nanmean(np.abs(s) >= abs(obs) - comptol, valid)
-            elif obs > float(np.nanmedian(s)):
-                pval[j] = 2 * _nanmean(s >= obs - comptol, valid)
+                pval[j] = nanmean(numpy.abs(s) >= abs(obs) - comptol, valid)
+            elif obs > float(numpy.nanmedian(s)):
+                pval[j] = 2 * nanmean(s >= obs - comptol, valid)
             else:
-                pval[j] = 2 * _nanmean(s <= obs + comptol, valid)
+                pval[j] = 2 * nanmean(s <= obs + comptol, valid)
         elif con['alternative'] == 'less':
-            pval[j] = _nanmean(s <= obs + comptol, valid)
+            pval[j] = nanmean(s <= obs + comptol, valid)
         else:
-            pval[j] = _nanmean(s >= obs - comptol, valid)
-    return np.where(pval > 1, 1.0, pval)
+            pval[j] = nanmean(s >= obs - comptol, valid)
+    return numpy.where(pval > 1, 1.0, pval)
 
 
-def _permci_bound(
-    x: RMAResult,
+def permci_bound(
+    x: metafopy.models.rma_uni.RMAResult,
     j: int,
     exact: bool,
     n_iter: int,
     alpha: float,
-    con: Mapping[str, Any],
+    con: collections.abc.Mapping[str, typing.Any],
     *,
     lower: bool,
     base_ci: float,
     base_ub: float,
 ) -> float:
-    """Search for a permutation-based CI bound of coefficient ``j`` (metafor's ``.permci`` with ``uniroot``)."""
+    """Search for a permutation-based CI bound of coefficient ``j`` (metafor's ``.permci`` with ``uniroot``).
+
+    Raises:
+        metafopy.errors.InputError: the model cannot be refitted.
+    """
     c = dict(con)
     one_sided = c['cialt'] == 'one.sided'
     if lower:
@@ -410,29 +421,30 @@ def _permci_bound(
         interval = (float(x.beta[j]), base_ub + c['distfac'] * (base_ub - x.beta[j]))
 
     def f(val: float) -> float:
-        fit = refit_arrays(x, yi=x.yi - val * x.X[:, j])
+        fit = metafopy.methods.common.refit_arrays(x, yi=x.yi - val * x.X[:, j])
         if fit is None:
-            raise ValueError('refit failed')
-        res = _permutest_rma_uni(fit, exact=exact, iter=n_iter, control=c)
+            raise metafopy.errors.InputError('refit failed')
+        res = permutest_rma_uni(fit, exact=exact, iter=n_iter, control=c)
         assert isinstance(res, PermutestResult)
         diff = float(res.pval[j]) - alpha / (1 if c['alternative'] == 'two.sided' else 2)
         return diff * 10 if diff < 0 else diff
 
     try:
-        return uniroot(f, interval[0], interval[1], tol=c['tol'], maxiter=c['maxiter']).root
-    except ValueError, ArithmeticError, np.linalg.LinAlgError:
+        return metafopy.core.zeroin.uniroot(f, interval[0], interval[1], tol=c['tol'], maxiter=c['maxiter']).root
+    except ValueError, ArithmeticError, numpy.linalg.LinAlgError:
         return math.nan
 
 
-def _format(x: PermutestResult) -> str:
+def format_permutest(x: PermutestResult) -> str:
     d = x.digits
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     out: list[str] = ['']
     if not x.int_only:
-        out.append(f'Test of Moderators (coefficient{"s" if x.m > 1 else ""} {coef_span(x.btt)}):¹')
+        out.append(f'Test of Moderators (coefficient{"s" if x.m > 1 else ""} {metafopy.models.rma_uni.coef_span(x.btt)}):¹')
         if x.ddf is not None:
-            out.append(f'F(df1 = {x.QMdf[0]}, df2 = {x.QMdf[1]}) = {fmt_num(x.QM, d)}, p-val {_pfmt(x.QMp, d)}')
+            out.append(f'F(df1 = {x.QMdf[0]}, df2 = {x.QMdf[1]}) = {metafopy.printing.fmt_num(x.QM, d)}, p-val {pfmt(x.QMp, d)}')
         else:
-            out.append(f'QM(df = {x.QMdf[0]}) = {fmt_num(x.QM, d)}, p-val {_pfmt(x.QMp, d)}')
+            out.append(f'QM(df = {x.QMdf[0]}) = {metafopy.printing.fmt_num(x.QM, d)}, p-val {pfmt(x.QMp, d)}')
         out.append('')
     out.append('Model Results:')
     out.append('')
@@ -442,17 +454,22 @@ def _format(x: PermutestResult) -> str:
     header += ['pval¹', *(['ci.lb¹', 'ci.ub¹'] if x.permci else ['ci.lb', 'ci.ub']), '']
     rows: list[list[str]] = []
     for j in range(x.p):
-        row = [fmt_num(x.beta[j], d), fmt_num(x.se[j], d), fmt_num(x.zval[j], d)]
+        row = [metafopy.printing.fmt_num(x.beta[j], d), metafopy.printing.fmt_num(x.se[j], d), metafopy.printing.fmt_num(x.zval[j], d)]
         if x.ddf is not None:
             row.append(f'{x.ddf:g}')
         # metafor's .addfootsym() also appends a space to the cells of the footnoted columns
         pad = ' ' if x.permci else ''
-        row += [fmt_pval(x.pval[j], d) + ' ', fmt_num(x.ci_lb[j], d) + pad, fmt_num(x.ci_ub[j], d) + pad, signif_stars(x.pval[j])]
+        row += [
+            metafopy.printing.fmt_pval(x.pval[j], d) + ' ',
+            metafopy.printing.fmt_num(x.ci_lb[j], d) + pad,
+            metafopy.printing.fmt_num(x.ci_ub[j], d) + pad,
+            metafopy.printing.signif_stars(x.pval[j]),
+        ]
         rows.append(row)
     if x.int_only:
-        out.extend(_format_vector(header, rows[0]))
+        out.extend(metafopy.methods.vif.format_vector(header, rows[0]))
     else:
-        out.append(fmt_table(header, rows, row_names=list(x.coef_names)))
+        out.append(metafopy.printing.fmt_table(header, rows, row_names=list(x.coef_names)))
     out.append('')
     out.append('---')
     out.append("Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1")
@@ -463,6 +480,7 @@ def _format(x: PermutestResult) -> str:
     return '\n'.join(out)
 
 
-def _pfmt(p: float, digits: int) -> str:
-    s = fmt_pval(p, digits)
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
+def pfmt(p: float, digits: int) -> str:
+    s = metafopy.printing.fmt_pval(p, digits)
     return f'< {s[1:]}' if s.startswith('<') else f'= {s}'

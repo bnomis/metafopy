@@ -33,28 +33,29 @@ Requires Python >= 3.14.7, < 3.15.
 
 ```bash
 uv sync
-uv run pytest
-uv run mypy
-uv run ruff check .
+source bin/activate.sh
+pytest --mpl   # --mpl also compares the plots with the baseline images (Linux only)
+mypy
+ruff check .
 ```
 
 ## Validation against R
 
-R metafor is the numerical reference. `tests/r/` holds the R scripts that
-generate JSON fixtures in `tests/reference/` (currently metafor 5.2-1,
+R metafor is the numerical reference. `src/tests/r/` holds the R scripts that
+generate JSON fixtures in `src/tests/reference/` (currently metafor 5.2-1,
 metadat 1.6-0). The fixtures are committed, so the normal test run needs no R.
 To regenerate them:
 
 ```bash
-Rscript tests/r/export_datasets.R     # refresh bundled datasets
-Rscript tests/r/generate_fixtures.R   # refresh tests/reference/*.json
+Rscript src/tests/r/export_datasets.R     # refresh bundled datasets
+Rscript src/tests/r/generate_fixtures.R   # refresh src/tests/reference/*.json
 ```
 
-or reproducibly with the pinned image in `tests/r/Dockerfile`:
+or reproducibly with the pinned image in `src/tests/r/Dockerfile`:
 
 ```bash
-docker build -t metafopy-r tests/r
-docker run --rm -v "$PWD":/work -w /work metafopy-r Rscript tests/r/generate_fixtures.R
+docker build -t metafopy-r src/tests/r
+docker run --rm -v "$PWD":/work -w /work metafopy-r Rscript src/tests/r/generate_fixtures.R
 ```
 
 ## License

@@ -7,24 +7,25 @@ ties, a normal approximation otherwise.
 See https://wviechtb.github.io/metafor/reference/ranktest.html.
 """
 
+import dataclasses
 import math
 import warnings
-from dataclasses import dataclass
 
-import numpy as np
-import pandas as pd
-from numpy.typing import ArrayLike, NDArray
-from scipy import stats
+import numpy
+import numpy.typing
+import pandas
+import scipy.stats
 
-from metafopy.bias._inputs import data_of, fp, fx, vector_inputs
-from metafopy.models.rma_uni import RMAResult
+import metafopy.bias.inputs
+import metafopy.errors
+import metafopy.models.rma_uni
 
 __all__ = ['RanktestResult', 'kendall_test', 'ranktest']
 
-type FloatArray = NDArray[np.float64]
+type FloatArray = numpy.typing.NDArray[numpy.float64]
 
 
-@dataclass(frozen=True, slots=True)
+@dataclasses.dataclass(frozen=True, slots=True)
 class RanktestResult:
     tau: float
     pval: float
@@ -32,13 +33,15 @@ class RanktestResult:
 
     def summary(self, digits: int | None = None) -> str:
         d = self.digits if digits is None else digits
-        return f"\nRank Correlation Test for Funnel Plot Asymmetry\n\nKendall's tau = {fx(self.tau, d)}, {fp(self.pval, d, equal=True, sep=True, pname='p ')}\n"
+        tau = metafopy.bias.inputs.fx(self.tau, d)
+        pval = metafopy.bias.inputs.fp(self.pval, d, equal=True, sep=True, pname='p ')
+        return f"\nRank Correlation Test for Funnel Plot Asymmetry\n\nKendall's tau = {tau}, {pval}\n"
 
     def __str__(self) -> str:
         return self.summary()
 
 
-def _pkendall(q: int, n: int) -> float:
+def pkendall(q: int, n: int) -> float:
     """P(T <= q) for Kendall's statistic (number of concordant pairs) of ``n`` untied observations."""
     counts = [1]
     for i in range(2, n + 1):
@@ -54,68 +57,72 @@ def _pkendall(q: int, n: int) -> float:
 def kendall_test(x: FloatArray, y: FloatArray, exact: bool | None = None) -> tuple[float, float]:
     """``(tau, p-value)`` of R's two-sided ``cor.test(x, y, method='kendall', exact=exact)``; NaN p-value when undefined."""
     n = x.shape[0]
-    tau = float(stats.kendalltau(x, y).statistic) if n > 1 else math.nan
+    tau = float(scipy.stats.kendalltau(x, y).statistic) if n > 1 else math.nan
     if not math.isfinite(tau):
         return math.nan, math.nan
-    ties = min(np.unique(x).shape[0], np.unique(y).shape[0]) < n
+    ties = min(numpy.unique(x).shape[0], numpy.unique(y).shape[0]) < n
     if exact is None:
         exact = n < 50
     if exact and not ties:
         q = round((tau + 1) * n * (n - 1) / 4)
-        p = 1 - _pkendall(q - 1, n) if q > n * (n - 1) / 4 else _pkendall(q, n)
+        p = 1 - pkendall(q - 1, n) if q > n * (n - 1) / 4 else pkendall(q, n)
         return tau, min(2 * p, 1.0)
     if exact and ties:
         warnings.warn('Cannot compute exact p-value with ties', stacklevel=2)
 
     def tie_counts(v: FloatArray) -> FloatArray:
-        _, c = np.unique(v, return_counts=True)
-        return c[c > 1].astype(np.float64)
+        _, c = numpy.unique(v, return_counts=True)
+        return c[c > 1].astype(numpy.float64)
 
     xt, yt = tie_counts(x), tie_counts(y)
     t0 = n * (n - 1) / 2
-    t1 = float(np.sum(xt * (xt - 1))) / 2
-    t2 = float(np.sum(yt * (yt - 1))) / 2
+    t1 = float(numpy.sum(xt * (xt - 1))) / 2
+    t2 = float(numpy.sum(yt * (yt - 1))) / 2
     s = tau * math.sqrt((t0 - t1) * (t0 - t2))
     v0 = n * (n - 1) * (2 * n + 5)
-    vt = float(np.sum(xt * (xt - 1) * (2 * xt + 5)))
-    vu = float(np.sum(yt * (yt - 1) * (2 * yt + 5)))
-    v1 = float(np.sum(xt * (xt - 1))) * float(np.sum(yt * (yt - 1)))
-    v2 = float(np.sum(xt * (xt - 1) * (xt - 2))) * float(np.sum(yt * (yt - 1) * (yt - 2)))
+    vt = float(numpy.sum(xt * (xt - 1) * (2 * xt + 5)))
+    vu = float(numpy.sum(yt * (yt - 1) * (2 * yt + 5)))
+    v1 = float(numpy.sum(xt * (xt - 1))) * float(numpy.sum(yt * (yt - 1)))
+    v2 = float(numpy.sum(xt * (xt - 1) * (xt - 2))) * float(numpy.sum(yt * (yt - 1) * (yt - 2)))
     var_s = (v0 - vt - vu) / 18
     if n > 1:
         var_s += v1 / (2 * n * (n - 1))
     if n > 2:
         var_s += v2 / (9 * n * (n - 1) * (n - 2))
     z = s / math.sqrt(var_s)
-    return tau, float(2 * min(stats.norm.cdf(z), stats.norm.sf(z)))
+    return tau, float(2 * min(scipy.stats.norm.cdf(z), scipy.stats.norm.sf(z)))
 
 
 def ranktest(
-    x: RMAResult | ArrayLike | str,
-    vi: ArrayLike | str | None = None,
+    x: metafopy.models.rma_uni.RMAResult | numpy.typing.ArrayLike | str,
+    vi: numpy.typing.ArrayLike | str | None = None,
     *,
-    sei: ArrayLike | str | None = None,
-    subset: ArrayLike | None = None,
-    data: pd.DataFrame | None = None,
+    sei: numpy.typing.ArrayLike | str | None = None,
+    subset: numpy.typing.ArrayLike | None = None,
+    data: pandas.DataFrame | None = None,
     digits: int | None = None,
     exact: bool = True,
 ) -> RanktestResult:
-    """Rank correlation test for funnel plot asymmetry; ``x`` is a fitted model without moderators or a vector of estimates."""
-    if isinstance(x, RMAResult):
+    """Rank correlation test for funnel plot asymmetry; ``x`` is a fitted model without moderators or a vector of estimates.
+
+    Raises:
+        metafopy.errors.InputError: an argument or the data is invalid.
+    """
+    if isinstance(x, metafopy.models.rma_uni.RMAResult):
         if vi is not None or sei is not None or subset is not None:
             warnings.warn("Arguments 'vi', 'sei', and 'subset' ignored when 'x' is a model object.", stacklevel=2)
         if not x.int_only:
-            raise ValueError('Test only applicable to models without moderators.')
-        yi, v, _ = data_of(x)
+            raise metafopy.errors.InputError('Test only applicable to models without moderators.')
+        yi, v, _ = metafopy.bias.inputs.data_of(x)
     else:
-        yi, v_in, _ = vector_inputs(x, vi, sei, subset=subset, data=data, what='the test')
+        yi, v_in, _ = metafopy.bias.inputs.vector_inputs(x, vi, sei, subset=subset, data=data, what='the test')
         if v_in is None:
-            raise ValueError("Must specify the 'vi' or 'sei' argument.")
+            raise metafopy.errors.InputError("Must specify the 'vi' or 'sei' argument.")
         v = v_in
     wi = 1 / v
-    theta = float(np.sum(wi * yi) / np.sum(wi))
-    vb = 1 / float(np.sum(wi))
-    yi_star = (yi - theta) / np.sqrt(v - vb)
+    theta = float(numpy.sum(wi * yi) / numpy.sum(wi))
+    vb = 1 / float(numpy.sum(wi))
+    yi_star = (yi - theta) / numpy.sqrt(v - vb)
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
         tau, pval = kendall_test(yi_star, v, exact)

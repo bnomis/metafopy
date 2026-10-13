@@ -11,39 +11,39 @@ columns of the model matrix, so that the moderators are independent. See
 https://wviechtb.github.io/metafor/reference/vif.html.
 """
 
-from __future__ import annotations
-
+import collections.abc
+import concurrent.futures
+import dataclasses
+import functools
 import math
 import multiprocessing
 import sys
+import typing
 import warnings
-from collections.abc import Iterable, Iterator, Sequence
-from concurrent.futures import Executor, ProcessPoolExecutor
-from dataclasses import dataclass, replace
-from functools import partial, singledispatch
-from typing import Any, Literal
 
-import numpy as np
-import pandas as pd
-from numpy.typing import NDArray
+import numpy
+import numpy.typing
+import pandas
 
-from metafopy._print import fmt_num, fmt_pval
-from metafopy.core.linalg import drop_redundant
-from metafopy.methods.blup import format_r_frame
-from metafopy.models._tau2 import EstimationError
-from metafopy.models.rma_uni import RMAResult, fit_rma_uni, set_btt
+import metafopy.core.linalg
+import metafopy.errors
+import metafopy.methods.blup
+import metafopy.models.rma_uni
+import metafopy.models.tau2
+import metafopy.printing
 
 __all__ = ['VIFEntry', 'VIFResult', 'vif']
 
-type FloatArray = NDArray[np.float64]
-type BttSpec = int | str | Sequence[int]
-type BttArg = int | str | Sequence[int | str | Sequence[int]] | None
-type Parallel = Literal['no', 'snow', 'multicore']
+type FloatArray = numpy.typing.NDArray[numpy.float64]
+type BttSpec = int | str | collections.abc.Sequence[int]
+type BttArg = int | str | collections.abc.Sequence[int | str | collections.abc.Sequence[int]] | None
+# auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
+type Parallel = typing.Literal['no', 'snow', 'multicore']
 
-_FIT_ERRORS = (EstimationError, ValueError, ArithmeticError, np.linalg.LinAlgError)
+FIT_ERRORS = (metafopy.errors.EstimationError, ValueError, ArithmeticError, numpy.linalg.LinAlgError)
 
 
-@dataclass(frozen=True, slots=True)
+@dataclasses.dataclass(frozen=True, slots=True)
 class VIFEntry:
     """(G)VIF of one set of coefficients; ``coefs`` is 1-based, as metafor prints it."""
 
@@ -55,7 +55,7 @@ class VIFEntry:
     sif: float
 
 
-@dataclass(frozen=True, slots=True, eq=False)
+@dataclasses.dataclass(frozen=True, slots=True, eq=False)
 class VIFResult:
     """(G)VIFs and (G)SIFs (metafor's ``vif.rma`` object).
 
@@ -67,7 +67,7 @@ class VIFResult:
     vif: tuple[VIFEntry, ...]
     bttspec: bool
     digits: int = 4
-    table: pd.DataFrame | None = None
+    table: pandas.DataFrame | None = None
     test: str | None = None
     sim: FloatArray | None = None
     sim_type: str | None = None
@@ -78,17 +78,17 @@ class VIFResult:
         return [e.coefs if self.bttspec else e.coefname for e in self.vif]
 
     @property
-    def vifs(self) -> pd.Series:
+    def vifs(self) -> pandas.Series:
         """(G)VIFs indexed by coefficient name (or by ``coefs`` when ``btt`` was given)."""
-        return pd.Series([e.vif for e in self.vif], index=self.names, name='vif')
+        return pandas.Series([e.vif for e in self.vif], index=self.names, name='vif')
 
     @property
-    def sifs(self) -> pd.Series:
-        return pd.Series([e.sif for e in self.vif], index=self.names, name='sif')
+    def sifs(self) -> pandas.Series:
+        return pandas.Series([e.sif for e in self.vif], index=self.names, name='sif')
 
-    def to_frame(self) -> pd.DataFrame:
+    def to_frame(self) -> pandas.DataFrame:
         """As metafor's ``as.data.frame.vif.rma``."""
-        tab = pd.DataFrame(
+        tab = pandas.DataFrame(
             {
                 'spec': [e.spec for e in self.vif],
                 'coefs': [e.coefs for e in self.vif],
@@ -100,7 +100,7 @@ class VIFResult:
         )
         if self.prop is not None:
             tab['prop'] = self.prop
-        if _numeric_specs(self.vif):
+        if numeric_specs(self.vif):
             tab = tab.drop(columns='spec')
         return tab
 
@@ -110,33 +110,39 @@ class VIFResult:
             if len(self.vif) == 1:
                 e = self.vif[0]
                 if e.m == 1:
-                    head, line = f'Collinearity Diagnostics (coefficient {e.coefs}):', f'VIF = {fmt_num(e.vif, d)}, SIF = {fmt_num(e.sif, d)}'
+                    head, line = (
+                        f'Collinearity Diagnostics (coefficient {e.coefs}):',
+                        f'VIF = {metafopy.printing.fmt_num(e.vif, d)}, SIF = {metafopy.printing.fmt_num(e.sif, d)}',
+                    )
                 else:
-                    head, line = f'Collinearity Diagnostics (coefficients {e.coefs}):', f'GVIF = {fmt_num(e.vif, d)}, GSIF = {fmt_num(e.sif, d)}'
+                    head, line = (
+                        f'Collinearity Diagnostics (coefficients {e.coefs}):',
+                        f'GVIF = {metafopy.printing.fmt_num(e.vif, d)}, GSIF = {metafopy.printing.fmt_num(e.sif, d)}',
+                    )
                 if self.prop is not None:
-                    line += f', prop = {fmt_num(float(self.prop[0]), 2)}'
+                    line += f', prop = {metafopy.printing.fmt_num(float(self.prop[0]), 2)}'
                 return '\n'.join(['', head, line, ''])
             cols: list[tuple[str, list[str]]] = []
-            if not _numeric_specs(self.vif):
+            if not numeric_specs(self.vif):
                 cols.append(('spec', [e.spec for e in self.vif]))
             cols += [
                 ('coefs', [e.coefs for e in self.vif]),
                 ('m', [str(e.m) for e in self.vif]),
-                ('vif', [fmt_num(e.vif, d) for e in self.vif]),
-                ('sif', [fmt_num(e.sif, d) for e in self.vif]),
+                ('vif', [metafopy.printing.fmt_num(e.vif, d) for e in self.vif]),
+                ('sif', [metafopy.printing.fmt_num(e.sif, d) for e in self.vif]),
             ]
             if self.prop is not None:
-                cols.append(('prop', [fmt_num(float(v), 2) for v in self.prop]))
-            return '\n'.join(['', *format_r_frame(cols, [str(i + 1) for i in range(len(self.vif))]), ''])
+                cols.append(('prop', [metafopy.printing.fmt_num(float(v), 2) for v in self.prop]))
+            return '\n'.join(['', *metafopy.methods.blup.format_r_frame(cols, [str(i + 1) for i in range(len(self.vif))]), ''])
 
         vifs = [e.vif for e in self.vif]
         sifs = [e.sif for e in self.vif]
         prop = None if self.prop is None else [float(v) for v in self.prop]
         if self.table is None:
             if prop is None:
-                return '\n'.join(['', *_format_vector(self.names, [fmt_num(v, d) for v in vifs]), ''])
-            cols = [('vif', [fmt_num(v, d) for v in vifs]), ('prop', [fmt_num(v, 2) for v in prop])]
-            return '\n'.join(['', *format_r_frame(cols, self.names, gap=2), ''])
+                return '\n'.join(['', *format_vector(self.names, [metafopy.printing.fmt_num(v, d) for v in vifs]), ''])
+            cols = [('vif', [metafopy.printing.fmt_num(v, d) for v in vifs]), ('prop', [metafopy.printing.fmt_num(v, 2) for v in prop])]
+            return '\n'.join(['', *metafopy.methods.blup.format_r_frame(cols, self.names, gap=2), ''])
 
         tab = self.table
         if len(vifs) != len(tab):
@@ -145,37 +151,37 @@ class VIFResult:
             prop = None if prop is None else [math.nan, *prop]
         stat = 'tval' if 'tval' in tab.columns else 'zval'
         cols = [
-            ('estimate', [fmt_num(v, d) for v in tab['estimate']]),
-            ('se', [fmt_num(v, d) for v in tab['se']]),
-            (stat, [fmt_num(v, d) for v in tab[stat]]),
+            ('estimate', [metafopy.printing.fmt_num(v, d) for v in tab['estimate']]),
+            ('se', [metafopy.printing.fmt_num(v, d) for v in tab['se']]),
+            (stat, [metafopy.printing.fmt_num(v, d) for v in tab[stat]]),
         ]
         if 'df' in tab.columns:
             cols.append(('df', [f'{round(float(v), 2):g}' for v in tab['df']]))
         cols += [
-            ('pval', [fmt_pval(v, d) for v in tab['pval']]),
-            ('ci.lb', [fmt_num(v, d) for v in tab['ci.lb']]),
-            ('ci.ub', [fmt_num(v, d) for v in tab['ci.ub']]),
-            ('vif', [fmt_num(v, d) for v in vifs]),
-            ('sif', [fmt_num(v, d) for v in sifs]),
+            ('pval', [metafopy.printing.fmt_pval(v, d) for v in tab['pval']]),
+            ('ci.lb', [metafopy.printing.fmt_num(v, d) for v in tab['ci.lb']]),
+            ('ci.ub', [metafopy.printing.fmt_num(v, d) for v in tab['ci.ub']]),
+            ('vif', [metafopy.printing.fmt_num(v, d) for v in vifs]),
+            ('sif', [metafopy.printing.fmt_num(v, d) for v in sifs]),
         ]
         if prop is not None:
-            cols.append(('prop', [fmt_num(v, 2) for v in prop]))
-        return '\n'.join(['', *format_r_frame(cols, [str(n) for n in tab.index]), ''])
+            cols.append(('prop', [metafopy.printing.fmt_num(v, 2) for v in prop]))
+        return '\n'.join(['', *metafopy.methods.blup.format_r_frame(cols, [str(n) for n in tab.index]), ''])
 
 
-def _numeric_specs(entries: Sequence[VIFEntry]) -> bool:
+def numeric_specs(entries: collections.abc.Sequence[VIFEntry]) -> bool:
     # metafor drops the spec column when every specification starts with a digit 1-9
     return all(e.spec[:1] in '123456789' and e.spec[:1] != '' for e in entries)
 
 
-def _format_vector(names: Sequence[str], values: Sequence[str], gap: int = 2) -> list[str]:
+def format_vector(names: collections.abc.Sequence[str], values: collections.abc.Sequence[str], gap: int = 2) -> list[str]:
     """metafor's ``.print.vector``: names over values, right aligned."""
     widths = [max(len(n), len(v)) for n, v in zip(names, values, strict=True)]
     sep = ' ' * gap
     return [sep.join(n.rjust(w) for n, w in zip(names, widths, strict=True)), sep.join(v.rjust(w) for v, w in zip(values, widths, strict=True))]
 
 
-def format_btt(idx: Iterable[int]) -> str:
+def format_btt(idx: collections.abc.Iterable[int]) -> str:
     """metafor's ``.format.btt``: ``[2, 3, 4, 6]`` -> ``'2:4,6'`` (values as given)."""
     vals = sorted(idx)
     parts: list[str] = []
@@ -189,17 +195,21 @@ def format_btt(idx: Iterable[int]) -> str:
     return ','.join(parts)
 
 
-@singledispatch
-def vif(res: Any, *args: Any, **kwargs: Any) -> VIFResult:
-    """Variance inflation factors for a fitted model; see :func:`_vif_rma_uni`."""
-    raise TypeError(f'vif() not implemented for {type(res).__name__}')
+@functools.singledispatch
+def vif(res: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> VIFResult:
+    """Variance inflation factors for a fitted model; see :func:`_vif_rma_uni`.
+
+    Raises:
+        metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
+    """
+    raise metafopy.errors.ArgumentError(f'vif() not implemented for {type(res).__name__}')
 
 
 @vif.register
-def _vif_rma_uni(
-    res: RMAResult,
+def vif_rma_uni(
+    res: metafopy.models.rma_uni.RMAResult,
     btt: BttArg = None,
-    att: Any = None,
+    att: typing.Any = None,
     table: bool = False,
     reestimate: bool = False,
     sim: bool | int = False,
@@ -207,7 +217,7 @@ def _vif_rma_uni(
     seed: int | None = None,
     parallel: Parallel = 'no',
     ncpus: int = 1,
-    cl: Executor | None = None,
+    cl: concurrent.futures.Executor | None = None,
     digits: int | None = None,
 ) -> VIFResult:
     """(G)VIFs for the coefficients of an ``rma.uni`` meta-regression.
@@ -223,23 +233,27 @@ def _vif_rma_uni(
     ``parallel``. ``parallel`` (``'snow'``/``'multicore'``) runs the
     iterations in a process pool of ``ncpus`` workers, or on the
     :class:`concurrent.futures.Executor` given as ``cl``.
+
+    Raises:
+        metafopy.errors.InputError: an argument or the data is invalid.
     """
     if att is not None:
-        raise ValueError("Argument 'att' only relevant for location-scale models.")
+        raise metafopy.errors.InputError("Argument 'att' only relevant for location-scale models.")
     if res.int_only:
-        raise ValueError('VIFs not applicable to intercept-only models.')
+        raise metafopy.errors.InputError('VIFs not applicable to intercept-only models.')
 
     if isinstance(sim, bool):
         n_sim = 1000 if sim else 0
     else:
         n_sim = round(sim)
         if n_sim <= 1:
-            raise ValueError("Argument 'sim' must be >= 2.")
+            raise metafopy.errors.InputError("Argument 'sim' must be >= 2.")
 
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if parallel not in ('no', 'snow', 'multicore'):
-        raise ValueError(f'unknown parallel option {parallel!r}')
+        raise metafopy.errors.InputError(f'unknown parallel option {parallel!r}')
     if ncpus < 1:
-        raise ValueError("Argument 'ncpus' must be >= 1.")
+        raise metafopy.errors.InputError("Argument 'ncpus' must be >= 1.")
     if parallel == 'no' and ncpus > 1:
         parallel = 'snow'
     if cl is not None:
@@ -257,21 +271,21 @@ def _vif_rma_uni(
         specs = [j for j in range(1 if int_incl else 0, p)]
     elif isinstance(btt, (str, int)):
         specs = [btt]
-    elif any(isinstance(b, (str, Sequence)) for b in btt):
+    elif any(isinstance(b, (str, collections.abc.Sequence)) for b in btt):
         specs = list(btt)
     else:
         specs = [list(btt)]  # type: ignore[arg-type]
-    groups = [set_btt(s, p, int_incl, names) for s in specs]
+    groups = [metafopy.models.rma_uni.set_btt(s, p, int_incl, names) for s in specs]
     if int_incl and any(g == (0,) for g in groups):
-        raise ValueError("Cannot compute VIF(s) for the specified 'btt' argument.")
+        raise metafopy.errors.InputError("Cannot compute VIF(s) for the specified 'btt' argument.")
 
     entries: list[VIFEntry] = []
     for spec, g in zip(specs, groups, strict=True):
-        gvif, used = _compvif(g, res.vb, int_incl, res if reestimate else None)
+        gvif, used = compvif(g, res.vb, int_incl, res if reestimate else None)
         m = len(used)
         entries.append(
             VIFEntry(
-                spec=_format_spec(spec),
+                spec=format_spec(spec),
                 coefs=format_btt(i + 1 for i in used),
                 coefname=names[used[0]] if m == 1 else '',
                 m=m,
@@ -280,31 +294,31 @@ def _vif_rma_uni(
             )
         )
 
-    tab: pd.DataFrame | None = None
+    tab: pandas.DataFrame | None = None
     if table and btt_missing:
-        tab = _coef_table(res)
+        tab = coef_table(res)
 
     sims: FloatArray | None = None
     prop: FloatArray | None = None
-    vifs = np.array([e.vif for e in entries])
+    vifs = numpy.array([e.vif for e in entries])
     # simulating is pointless when every (G)VIF is already 1
-    if n_sim >= 2 and not np.all(vifs[~np.isnan(vifs)] == 1):
-        rngs = np.random.default_rng(seed).spawn(n_sim)
-        one = partial(_vif_sim_one, res, tuple(groups), reestimate)
+    if n_sim >= 2 and not numpy.all(vifs[~numpy.isnan(vifs)] == 1):
+        rngs = numpy.random.default_rng(seed).spawn(n_sim)
+        one = functools.partial(vif_sim_one, res, tuple(groups), reestimate)
         if parallel == 'no':
-            rows = list(_progress(map(one, rngs), n_sim, progbar))
+            rows = list(progress(map(one, rngs), n_sim, progbar))
         else:
             # 'multicore' forks the workers (as R's mclapply); 'snow' starts fresh ones
             ctx = multiprocessing.get_context('fork' if parallel == 'multicore' and 'fork' in multiprocessing.get_all_start_methods() else None)
-            pool = cl if cl is not None else ProcessPoolExecutor(max_workers=ncpus, mp_context=ctx)
+            pool = cl if cl is not None else concurrent.futures.ProcessPoolExecutor(max_workers=ncpus, mp_context=ctx)
             try:
-                rows = list(_progress(pool.map(one, rngs), n_sim, progbar))
+                rows = list(progress(pool.map(one, rngs), n_sim, progbar))
             finally:
                 if cl is None:
                     pool.shutdown()
-        sims = np.vstack(rows)
-        with np.errstate(invalid='ignore', divide='ignore'):
-            ok = ~np.isnan(sims)
+        sims = numpy.vstack(rows)
+        with numpy.errstate(invalid='ignore', divide='ignore'):
+            ok = ~numpy.isnan(sims)
             hits = (vifs[None, :] >= sims) & ok
             prop = hits.sum(axis=0) / ok.sum(axis=0)
 
@@ -320,7 +334,7 @@ def _vif_rma_uni(
     )
 
 
-def _format_spec(spec: BttSpec) -> str:
+def format_spec(spec: BttSpec) -> str:
     if isinstance(spec, str):
         return spec
     if isinstance(spec, int):
@@ -328,14 +342,14 @@ def _format_spec(spec: BttSpec) -> str:
     return format_btt(int(i) + 1 for i in spec)
 
 
-def _cov2cor(V: FloatArray) -> FloatArray:
-    with np.errstate(invalid='ignore', divide='ignore'):
-        d = 1 / np.sqrt(np.diag(V))
-    out: FloatArray = V * np.outer(d, d)
+def cov2cor(V: FloatArray) -> FloatArray:
+    with numpy.errstate(invalid='ignore', divide='ignore'):
+        d = 1 / numpy.sqrt(numpy.diag(V))
+    out: FloatArray = V * numpy.outer(d, d)
     return out
 
 
-def _compvif(group: Sequence[int], vb: FloatArray, int_incl: bool, fit: RMAResult | None) -> tuple[float, list[int]]:
+def compvif(group: collections.abc.Sequence[int], vb: FloatArray, int_incl: bool, fit: metafopy.models.rma_uni.RMAResult | None) -> tuple[float, list[int]]:
     """GVIF of the coefficients ``group`` (0-based) and the indices actually used.
 
     Without ``fit`` the GVIF comes from the correlation matrix of the
@@ -349,29 +363,29 @@ def _compvif(group: Sequence[int], vb: FloatArray, int_incl: bool, fit: RMAResul
         else:
             V = vb
             b = list(group)
-        rb = _cov2cor(V)
+        rb = cov2cor(V)
         rest = [i for i in range(V.shape[0]) if i not in b]
-        gvif = float(np.linalg.det(rb[np.ix_(b, b)]) * np.linalg.det(rb[np.ix_(rest, rest)]) / np.linalg.det(rb))
+        gvif = float(numpy.linalg.det(rb[numpy.ix_(b, b)]) * numpy.linalg.det(rb[numpy.ix_(rest, rest)]) / numpy.linalg.det(rb))
         return gvif, [i + 1 for i in b] if int_incl else b
 
     b = [i for i in group if i > 0] if int_incl else list(group)
     Xb = fit.X[:, b]
     if int_incl:
-        Xb = np.column_stack([np.ones(fit.k), Xb])
+        Xb = numpy.column_stack([numpy.ones(fit.k), Xb])
     try:
-        sub = _refit(fit, Xb)
-    except _FIT_ERRORS:
+        sub = refit(fit, Xb)
+    except FIT_ERRORS:
         return math.nan, b
     vb_sub = sub.vb[1:, 1:] if int_incl else sub.vb
-    return float(np.linalg.det(vb[np.ix_(b, b)]) / np.linalg.det(vb_sub)), b
+    return float(numpy.linalg.det(vb[numpy.ix_(b, b)]) / numpy.linalg.det(vb_sub)), b
 
 
-def _refit(res: RMAResult, X: FloatArray) -> RMAResult:
+def refit(res: metafopy.models.rma_uni.RMAResult, X: FloatArray) -> metafopy.models.rma_uni.RMAResult:
     """Refit ``res`` with model matrix ``X`` (metafor's ``rma.uni(..., mods=X, intercept=FALSE)``)."""
-    md = replace(res.data, yi=res.yi, vi=res.vi, X=X, X_names=tuple(f'X{j + 1}' for j in range(X.shape[1])), weights=res.weights, intercept=False)
+    md = dataclasses.replace(res.data, yi=res.yi, vi=res.vi, X=X, X_names=tuple(f'X{j + 1}' for j in range(X.shape[1])), weights=res.weights, intercept=False)
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
-        return fit_rma_uni(
+        return metafopy.models.rma_uni.fit_rma_uni(
             md,
             method=res.method,
             weighted=res.weighted,
@@ -379,39 +393,39 @@ def _refit(res: RMAResult, X: FloatArray) -> RMAResult:
             level=100 * (1 - res.level),
             tau2=res.tau2 if res.tau2_fix else None,
             control=res.control,
-            _skip_r2=True,
+            skip_r2=True,
         )
 
 
-def _vif_sim_one(res: RMAResult, groups: tuple[tuple[int, ...], ...], reestimate: bool, rng: np.random.Generator) -> FloatArray:
+def vif_sim_one(res: metafopy.models.rma_uni.RMAResult, groups: tuple[tuple[int, ...], ...], reestimate: bool, rng: numpy.random.Generator) -> FloatArray:
     """(G)VIFs after permuting each column of the model matrix independently."""
     X = res.X.copy()
     for j in range(X.shape[1]):
         X[:, j] = rng.permutation(X[:, j])
-    drop = drop_redundant(X)
+    drop = metafopy.core.linalg.drop_redundant(X)
     if drop.any():
         # a set containing a coefficient that became redundant is infinitely inflated
-        return np.array([math.inf if drop[list(g)].any() else math.nan for g in groups])
+        return numpy.array([math.inf if drop[list(g)].any() else math.nan for g in groups])
     try:
-        fit = _refit(res, X)
-    except _FIT_ERRORS:
-        return np.full(len(groups), math.nan)
-    return np.array([_compvif(g, fit.vb, res.int_incl, fit if reestimate else None)[0] for g in groups])
+        fit = refit(res, X)
+    except FIT_ERRORS:
+        return numpy.full(len(groups), math.nan)
+    return numpy.array([compvif(g, fit.vb, res.int_incl, fit if reestimate else None)[0] for g in groups])
 
 
-def _coef_table(res: RMAResult) -> pd.DataFrame:
+def coef_table(res: metafopy.models.rma_uni.RMAResult) -> pandas.DataFrame:
     """metafor's ``coef(summary(x))``."""
-    cols: dict[str, Any] = {'estimate': res.beta, 'se': res.se}
+    cols: dict[str, typing.Any] = {'estimate': res.beta, 'se': res.se}
     if res.ddf is not None:
         cols['tval'] = res.zval
-        cols['df'] = np.full(res.p, res.ddf)
+        cols['df'] = numpy.full(res.p, res.ddf)
     else:
         cols['zval'] = res.zval
     cols.update({'pval': res.pval, 'ci.lb': res.ci_lb, 'ci.ub': res.ci_ub})
-    return pd.DataFrame(cols, index=list(res.coef_names))
+    return pandas.DataFrame(cols, index=list(res.coef_names))
 
 
-def _progress(rows: Iterable[FloatArray], total: int, show: bool) -> Iterator[FloatArray]:
+def progress(rows: collections.abc.Iterable[FloatArray], total: int, show: bool) -> collections.abc.Iterator[FloatArray]:
     for i, row in enumerate(rows, start=1):
         if show:
             print(f'\r  |{"+" * (50 * i // total):<50}| {100 * i // total:3d}%', end='' if i < total else '\n', file=sys.stderr)

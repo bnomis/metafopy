@@ -5,31 +5,35 @@ at an assumed true effect (by default the weighted average); the observed number
 results is compared with the expected one. See https://wviechtb.github.io/metafor/reference/tes.html.
 """
 
+import dataclasses
 import math
 import sys
+import typing
 import warnings
-from dataclasses import dataclass
-from typing import Literal
 
-import numpy as np
-import pandas as pd
-from numpy.typing import ArrayLike, NDArray
-from scipy import integrate, stats
+import numpy
+import numpy.typing
+import pandas
+import scipy.integrate
+import scipy.stats
 
-from metafopy.bias._inputs import as_vector, fp, fx, print_vector
-from metafopy.core.zeroin import uniroot
-from metafopy.models.rma_uni import RMAResult
+import metafopy.bias.inputs
+import metafopy.core.zeroin
+import metafopy.errors
+import metafopy.models.rma_uni
 
 __all__ = ['TesResult', 'tes']
 
-type FloatArray = NDArray[np.float64]
-type Alternative = Literal['two.sided', 'greater', 'less']
+type FloatArray = numpy.typing.NDArray[numpy.float64]
+# auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
+type Alternative = typing.Literal['two.sided', 'greater', 'less']
 
-_EPS = sys.float_info.epsilon
-SCIPY_ALT: dict[str, Literal['two-sided', 'greater', 'less']] = {'two.sided': 'two-sided', 'greater': 'greater', 'less': 'less'}
+EPS = sys.float_info.epsilon
+# auditme: accept[non-alphabetical-dict-keys] order follows the R script that generates the fixtures
+SCIPY_ALT: dict[str, typing.Literal['two-sided', 'greater', 'less']] = {'two.sided': 'two-sided', 'greater': 'greater', 'less': 'less'}
 
 
-@dataclass(frozen=True, slots=True)
+@dataclasses.dataclass(frozen=True, slots=True)
 class TesResult:
     k: int
     O: int  # noqa: E741
@@ -39,7 +43,7 @@ class TesResult:
     X2: float
     pval: float
     power: FloatArray
-    sig: NDArray[np.bool_]
+    sig: numpy.typing.NDArray[numpy.bool_]
     theta: float | FloatArray
     theta_lim: tuple[float, ...] | None
     tes_alternative: str
@@ -51,35 +55,35 @@ class TesResult:
         out = ['', 'Test of Excess Significance', '']
         out += [
             f'Observed Number of Significant Findings: {self.O} (out of {self.k})',
-            f'Expected Number of Significant Findings: {fx(self.E, d)}',
-            f'Observed Number / Expected Number:       {fx(self.OEratio, d)}',
+            f'Expected Number of Significant Findings: {metafopy.bias.inputs.fx(self.E, d)}',
+            f'Observed Number / Expected Number:       {metafopy.bias.inputs.fx(self.OEratio, d)}',
             '',
         ]
-        if np.ndim(self.theta) == 0:
-            out.append(f'Estimated Power of Tests (based on theta = {fx(float(np.asarray(self.theta)), d)})')
+        if numpy.ndim(self.theta) == 0:
+            out.append(f'Estimated Power of Tests (based on theta = {metafopy.bias.inputs.fx(float(numpy.asarray(self.theta)), d)})')
         else:
             out.append('Estimated Power of Tests: ')
         out.append('')
         if self.k > 5:
-            q = np.quantile(self.power, [0, 0.25, 0.5, 0.75, 1])
+            q = numpy.quantile(self.power, [0, 0.25, 0.5, 0.75, 1])
             names = ['min', 'q1', 'median', 'q3', 'max']
-            vals = [fx(float(v), d) for v in q]
+            vals = [metafopy.bias.inputs.fx(float(v), d) for v in q]
         else:
             names = [str(i + 1) for i in range(self.k)]
-            vals = [fx(float(v), d) for v in self.power]
-        out += [print_vector(names, vals), '']
-        line = f'Test of Excess Significance: {fp(self.pval, d, equal=True, sep=True, pname="p ")}'
+            vals = [metafopy.bias.inputs.fx(float(v), d) for v in self.power]
+        out += [metafopy.bias.inputs.print_vector(names, vals), '']
+        line = f'Test of Excess Significance: {metafopy.bias.inputs.fp(self.pval, d, equal=True, sep=True, pname="p ")}'
         if self.test == 'chi2':
-            line += f' (X^2 = {fx(self.X2, d)}, df = 1)'
+            line += f' (X^2 = {metafopy.bias.inputs.fx(self.X2, d)}, df = 1)'
         elif self.test == 'binom':
             line += ' (binomial test)'
         else:
             line += ' (exact test)'
         out.append(line)
         if self.theta_lim is not None:
-            lim = 'Limit Estimate (theta_lim):  ' + ('not estimable' if math.isnan(self.theta_lim[0]) else fx(self.theta_lim[0], d))
+            lim = 'Limit Estimate (theta_lim):  ' + ('not estimable' if math.isnan(self.theta_lim[0]) else metafopy.bias.inputs.fx(self.theta_lim[0], d))
             if len(self.theta_lim) == 2:
-                lim += ', ' + ('not estimable' if math.isnan(self.theta_lim[1]) else fx(self.theta_lim[1], d))
+                lim += ', ' + ('not estimable' if math.isnan(self.theta_lim[1]) else metafopy.bias.inputs.fx(self.theta_lim[1], d))
             if any(not math.isnan(t) for t in self.theta_lim):
                 p_at = self.tes_alpha / 2 if self.tes_alternative == 'two.sided' else self.tes_alpha
                 lim += f' (where p = {p_at:.7g})'
@@ -90,51 +94,57 @@ class TesResult:
         return self.summary()
 
 
-def _power(theta: FloatArray, sei: FloatArray, h0: float, alternative: str, crit: float) -> FloatArray:
+def tes_power(theta: FloatArray, sei: FloatArray, h0: float, alternative: str, crit: float) -> FloatArray:
     mu = (theta - h0) / sei
     if alternative == 'two.sided':
-        pw = stats.norm.sf(crit, loc=mu) + stats.norm.cdf(-crit, loc=mu)
+        pw = scipy.stats.norm.sf(crit, loc=mu) + scipy.stats.norm.cdf(-crit, loc=mu)
     elif alternative == 'greater':
-        pw = stats.norm.sf(crit, loc=mu)
+        pw = scipy.stats.norm.sf(crit, loc=mu)
     else:
-        pw = stats.norm.cdf(crit, loc=mu)
-    return np.asarray(pw, dtype=np.float64)
+        pw = scipy.stats.norm.cdf(crit, loc=mu)
+    return numpy.asarray(pw, dtype=numpy.float64)
 
 
-def _poisson_binomial(p: FloatArray) -> FloatArray:
-    pmf = np.array([1.0])
+def poisson_binomial(p: FloatArray) -> FloatArray:
+    pmf = numpy.array([1.0])
     for pi in p:
-        pmf = np.concatenate([pmf * (1 - pi), [0.0]]) + np.concatenate([[0.0], pmf * pi])
+        pmf = numpy.concatenate([pmf * (1 - pi), [0.0]]) + numpy.concatenate([[0.0], pmf * pi])
     return pmf
 
 
 def tes(
-    x: RMAResult | ArrayLike | str,
-    vi: ArrayLike | str | None = None,
+    x: metafopy.models.rma_uni.RMAResult | numpy.typing.ArrayLike | str,
+    vi: numpy.typing.ArrayLike | str | None = None,
     *,
-    sei: ArrayLike | str | None = None,
-    subset: ArrayLike | None = None,
-    data: pd.DataFrame | None = None,
+    sei: numpy.typing.ArrayLike | str | None = None,
+    subset: numpy.typing.ArrayLike | None = None,
+    data: pandas.DataFrame | None = None,
     H0: float = 0.0,
     alternative: Alternative = 'two.sided',
     alpha: float = 0.05,
-    theta: ArrayLike | None = None,
+    theta: numpy.typing.ArrayLike | None = None,
     tau2: float | None = None,
-    test: Literal['chi2', 'binom', 'exact'] | None = None,
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
+    test: typing.Literal['chi2', 'binom', 'exact'] | None = None,
     tes_alternative: Alternative = 'greater',
     tes_alpha: float = 0.1,
     digits: int | None = None,
     correct: bool = False,
-    rel_tol: float = _EPS**0.25,
+    rel_tol: float = EPS**0.25,
     subdivisions: int = 100,
     tau2_lb: float = 0.0,
     find_lim: bool = True,
 ) -> TesResult:
-    """Test of excess significance for a fitted model or a vector of estimates with sampling variances."""
+    """Test of excess significance for a fitted model or a vector of estimates with sampling variances.
+
+    Raises:
+        metafopy.errors.InputError: an argument or the data is invalid.
+    """
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if alternative not in ('two.sided', 'greater', 'less') or tes_alternative not in ('two.sided', 'greater', 'less'):
-        raise ValueError("'alternative' and 'tes_alternative' must be 'two.sided', 'greater' or 'less'")
-    if isinstance(x, RMAResult):
-        th: ArrayLike = np.array([x.beta[0]]) if x.int_only else x.fitted()
+        raise metafopy.errors.InputError("'alternative' and 'tes_alternative' must be 'two.sided', 'greater' or 'less'")
+    if isinstance(x, metafopy.models.rma_uni.RMAResult):
+        th: numpy.typing.ArrayLike = numpy.array([x.beta[0]]) if x.int_only else x.fitted()
         return tes(
             x.yi,
             x.vi,
@@ -153,83 +163,83 @@ def tes(
             tau2_lb=tau2_lb,
             find_lim=find_lim,
         )
-    yi = as_vector(x, 'x', data)
-    v = as_vector(vi, 'vi', data)
-    s = as_vector(sei, 'sei', data)
+    yi = metafopy.bias.inputs.as_vector(x, 'x', data)
+    v = metafopy.bias.inputs.as_vector(vi, 'vi', data)
+    s = metafopy.bias.inputs.as_vector(sei, 'sei', data)
     if yi is None:
-        raise ValueError("Argument 'x' must be a vector with estimates or an 'rma' model object.")
+        raise metafopy.errors.InputError("Argument 'x' must be a vector with estimates or an 'rma' model object.")
     if v is None and s is not None:
         v = s**2
     if v is None:
-        raise ValueError("Must specify the 'vi' or 'sei' argument.")
+        raise metafopy.errors.InputError("Must specify the 'vi' or 'sei' argument.")
     if yi.shape != v.shape:
-        raise ValueError("Length of 'yi' and 'vi' (or 'sei') are not the same.")
+        raise metafopy.errors.InputError("Length of 'yi' and 'vi' (or 'sei') are not the same.")
     if not 0 < alpha < 1:
-        raise ValueError("Value of 'alpha' needs to be > 0 and < 1.")
+        raise metafopy.errors.InputError("Value of 'alpha' needs to be > 0 and < 1.")
     if not 0 < tes_alpha < 1:
-        raise ValueError("Value of 'tes_alpha' needs to be > 0 and < 1.")
+        raise metafopy.errors.InputError("Value of 'tes_alpha' needs to be > 0 and < 1.")
     if alternative == 'two.sided':
-        crit = float(stats.norm.isf(alpha / 2))
+        crit = float(scipy.stats.norm.isf(alpha / 2))
     elif alternative == 'greater':
-        crit = float(stats.norm.isf(alpha))
+        crit = float(scipy.stats.norm.isf(alpha))
     else:
-        crit = float(stats.norm.ppf(alpha))
+        crit = float(scipy.stats.norm.ppf(alpha))
     k_f = yi.shape[0]
     if theta is None:
         single, est_theta = True, True
-        th_arr = np.zeros(k_f)
+        th_arr = numpy.zeros(k_f)
         theta_1 = math.nan
     else:
-        arr = np.atleast_1d(np.asarray(theta, dtype=np.float64))
+        arr = numpy.atleast_1d(numpy.asarray(theta, dtype=numpy.float64))
         est_theta = False
         if arr.shape[0] == 1:
             single = True
             theta_1 = float(arr[0])
-            th_arr = np.full(k_f, theta_1)
+            th_arr = numpy.full(k_f, theta_1)
         else:
             single = False
             theta_1 = math.nan
             th_arr = arr
             if th_arr.shape[0] != k_f:
-                raise ValueError("Length of 'theta' and 'yi' are not the same.")
+                raise metafopy.errors.InputError("Length of 'theta' and 'yi' are not the same.")
     if subset is not None:
-        sub = np.asarray(subset)
-        sel = sub if sub.dtype == np.bool_ else sub.astype(int)
+        sub = numpy.asarray(subset)
+        sel = sub if sub.dtype == numpy.bool_ else sub.astype(int)
         yi, v, th_arr = yi[sel], v[sel], th_arr[sel]
-    bad = np.isnan(yi) | np.isnan(v) | np.isnan(th_arr)
+    bad = numpy.isnan(yi) | numpy.isnan(v) | numpy.isnan(th_arr)
     if bad.any():
         warnings.warn(f'{int(bad.sum())} {"studies" if bad.sum() > 1 else "study"} with NAs omitted from the test.', stacklevel=2)
         yi, v, th_arr = yi[~bad], v[~bad], th_arr[~bad]
     k = yi.shape[0]
     if k == 0:
-        raise ValueError('Stopped because k = 0.')
-    sei_ = np.sqrt(v)
+        raise metafopy.errors.InputError('Stopped because k = 0.')
+    sei_ = numpy.sqrt(v)
     zi = (yi - H0) / sei_
     use_tau2 = tau2 is not None and tau2 > tau2_lb
     wi = 1 / (v + tau2) if use_tau2 and tau2 is not None else 1 / v
     if est_theta:
-        theta_1 = float(np.sum(yi * wi) / np.sum(wi))
-        th_arr = np.full(k, theta_1)
+        theta_1 = float(numpy.sum(yi * wi) / numpy.sum(wi))
+        th_arr = numpy.full(k, theta_1)
     if not use_tau2 or tau2 is None:
-        pow_ = _power(th_arr, sei_, H0, alternative, crit)
+        pow_ = tes_power(th_arr, sei_, H0, alternative, crit)
     else:
         tau = math.sqrt(tau2)
-        pow_ = np.empty(k)
+        pow_ = numpy.empty(k)
         for i in range(k):
 
             def intfun(u: float, i: int = i) -> float:
-                return float(_power(np.array([u]), sei_[i : i + 1], H0, alternative, crit)[0] * stats.norm.pdf(u, th_arr[i], tau))
+                return float(tes_power(numpy.array([u]), sei_[i : i + 1], H0, alternative, crit)[0] * scipy.stats.norm.pdf(u, th_arr[i], tau))
 
-            val, _ = integrate.quad(intfun, th_arr[i] - 5 * tau, th_arr[i] + 5 * tau, epsabs=rel_tol, epsrel=rel_tol, limit=subdivisions)
+            val, _ = scipy.integrate.quad(intfun, th_arr[i] - 5 * tau, th_arr[i] + 5 * tau, epsabs=rel_tol, epsrel=rel_tol, limit=subdivisions)
             pow_[i] = val
     if alternative == 'two.sided':
-        sig = np.abs(zi) >= crit
+        sig = numpy.abs(zi) >= crit
     elif alternative == 'greater':
         sig = zi >= crit
     else:
         sig = zi <= crit
-    e = float(np.sum(pow_))
-    o = int(np.sum(sig))
+    e = float(numpy.sum(pow_))
+    o = int(numpy.sum(sig))
     if tes_alternative == 'two.sided':
         js = list(range(k + 1))
     elif tes_alternative == 'greater':
@@ -239,30 +249,31 @@ def tes(
     if test is None:
         tot = sum(math.comb(k, j) for j in js)
         test = 'exact' if tot <= 10**6 else 'chi2'
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     elif test not in ('chi2', 'binom', 'exact'):
-        raise ValueError(f'unknown test {test!r}')
+        raise metafopy.errors.InputError(f'unknown test {test!r}')
     x2 = math.nan
     p0 = e / k
     if test in ('chi2', 'binom') and not 0 < p0 < 1:
-        raise ValueError('The expected proportion of significant findings must be in (0, 1).')
+        raise metafopy.errors.InputError('The expected proportion of significant findings must be in (0, 1).')
     if test == 'chi2':
         yates = min(0.5, abs(o - k * p0)) if correct else 0.0
         x2 = (abs(o - k * p0) - yates) ** 2 / (k * p0 * (1 - p0))
         z = math.copysign(math.sqrt(x2), o / k - p0)
         if tes_alternative == 'two.sided':
-            pval = float(stats.chi2.sf(x2, 1))
+            pval = float(scipy.stats.chi2.sf(x2, 1))
         elif tes_alternative == 'greater':
-            pval = float(stats.norm.sf(z))
+            pval = float(scipy.stats.norm.sf(z))
         else:
-            pval = float(stats.norm.cdf(z))
+            pval = float(scipy.stats.norm.cdf(z))
     elif test == 'binom':
-        pval = float(stats.binomtest(o, k, p0, alternative=SCIPY_ALT[tes_alternative]).pvalue)
+        pval = float(scipy.stats.binomtest(o, k, p0, alternative=SCIPY_ALT[tes_alternative]).pvalue)
     else:
-        prj = _poisson_binomial(pow_)[js]
+        prj = poisson_binomial(pow_)[js]
         if tes_alternative == 'two.sided':
-            pval = float(np.sum(prj[prj <= prj[o] + _EPS**0.5]))
+            pval = float(numpy.sum(prj[prj <= prj[o] + EPS**0.5]))
         else:
-            pval = float(np.sum(prj))
+            pval = float(numpy.sum(prj))
         pval = min(pval, 1.0)
 
     theta_lim: tuple[float, ...] | None = None
@@ -290,10 +301,11 @@ def tes(
                 - tes_alpha
             )
 
-        def solve(direction: Literal['upX', 'downX'], lo_first: bool) -> float:
+        # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
+        def solve(direction: typing.Literal['upX', 'downX'], lo_first: bool) -> float:
             lo, hi = (H0, theta_1) if lo_first else (theta_1, H0)
             try:
-                return uniroot(lim_fn, lo, hi, extend_int=direction).root
+                return metafopy.core.zeroin.uniroot(lim_fn, lo, hi, extend_int=direction).root
             except ValueError, ArithmeticError:
                 return math.nan
 

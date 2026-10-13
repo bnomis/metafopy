@@ -3,31 +3,33 @@
 Henmi & Copas (2010), doi:10.1002/sim.4029. See https://wviechtb.github.io/metafor/reference/hc.html.
 """
 
+import collections.abc
+import dataclasses
 import math
 import sys
-from collections.abc import Callable
-from dataclasses import dataclass
-from typing import Any
+import typing
 
-import numpy as np
-from numpy.typing import NDArray
-from scipy import integrate, stats
+import numpy
+import numpy.typing
+import scipy.integrate
+import scipy.stats
 
-from metafopy.bias._inputs import fx
-from metafopy.core.zeroin import uniroot
-from metafopy.methods._common import psort
-from metafopy.methods.blup import format_r_frame
-from metafopy.models.rma_uni import RMAResult
-from metafopy.transf import apply_transf
+import metafopy.bias.inputs
+import metafopy.core.zeroin
+import metafopy.errors
+import metafopy.methods.blup
+import metafopy.methods.common
+import metafopy.models.rma_uni
+import metafopy.transf
 
 __all__ = ['HcResult', 'hc']
 
-type FloatArray = NDArray[np.float64]
+type FloatArray = numpy.typing.NDArray[numpy.float64]
 
-_EPS = sys.float_info.epsilon
+EPS = sys.float_info.epsilon
 
 
-@dataclass(frozen=True, slots=True)
+@dataclasses.dataclass(frozen=True, slots=True)
 class HcResult:
     beta: float
     se: float
@@ -47,13 +49,16 @@ class HcResult:
         d = self.digits if digits is None else digits
         cols: list[tuple[str, list[str]]] = [
             ('method', [self.method_rma, self.method]),
-            ('tau2', [fx(self.tau2_rma, d), fx(self.tau2, d)]),
-            ('estimate', [fx(self.beta_rma, d), fx(self.beta, d)]),
+            ('tau2', [metafopy.bias.inputs.fx(self.tau2_rma, d), metafopy.bias.inputs.fx(self.tau2, d)]),
+            ('estimate', [metafopy.bias.inputs.fx(self.beta_rma, d), metafopy.bias.inputs.fx(self.beta, d)]),
         ]
         if not math.isnan(self.se):
-            cols.append(('se', [fx(self.se_rma, d), fx(self.se, d)]))
-        cols += [('ci.lb', [fx(self.ci_lb_rma, d), fx(self.ci_lb, d)]), ('ci.ub', [fx(self.ci_ub_rma, d), fx(self.ci_ub, d)])]
-        lines = [line + ' ' for line in format_r_frame(cols, ['rma', 'hc'])]
+            cols.append(('se', [metafopy.bias.inputs.fx(self.se_rma, d), metafopy.bias.inputs.fx(self.se, d)]))
+        cols += [
+            ('ci.lb', [metafopy.bias.inputs.fx(self.ci_lb_rma, d), metafopy.bias.inputs.fx(self.ci_lb, d)]),
+            ('ci.ub', [metafopy.bias.inputs.fx(self.ci_ub_rma, d), metafopy.bias.inputs.fx(self.ci_ub, d)]),
+        ]
+        lines = [line + ' ' for line in metafopy.methods.blup.format_r_frame(cols, ['rma', 'hc'])]
         return '\n' + '\n'.join(lines) + '\n'
 
     def __str__(self) -> str:
@@ -61,32 +66,36 @@ class HcResult:
 
 
 def hc(
-    obj: RMAResult,
+    obj: metafopy.models.rma_uni.RMAResult,
     digits: int | None = None,
-    transf: Callable[..., Any] | None = None,
-    targs: Any = None,
-    control: dict[str, Any] | None = None,
+    transf: collections.abc.Callable[..., typing.Any] | None = None,
+    targs: typing.Any = None,
+    control: dict[str, typing.Any] | None = None,
 ) -> HcResult:
-    """Henmi-Copas CI for a random-effects model (no moderators); ``control`` takes ``tol`` and ``maxiter`` for the root search."""
+    """Henmi-Copas CI for a random-effects model (no moderators); ``control`` takes ``tol`` and ``maxiter`` for the root search.
+
+    Raises:
+        metafopy.errors.InputError: an argument or the data is invalid.
+    """
     x = obj
     if not x.int_only:
-        raise ValueError('Method only applicable to models without moderators.')
+        raise metafopy.errors.InputError('Method only applicable to models without moderators.')
     k = x.k
     if k == 1:
-        raise ValueError('Stopped because k = 1.')
+        raise metafopy.errors.InputError('Stopped because k = 1.')
     if not x.allvipos:
-        raise ValueError('Cannot use method when one or more sampling variances are non-positive.')
-    con = {'tol': _EPS**0.25, 'maxiter': 1000}
+        raise metafopy.errors.InputError('Cannot use method when one or more sampling variances are non-positive.')
+    con = {'tol': EPS**0.25, 'maxiter': 1000}
     con.update({key: v for key, v in (control or {}).items() if key in con})
     level = x.level
     yi, vi = x.yi, x.vi
     wi = 1 / vi
-    w1 = float(np.sum(wi))
-    w2 = float(np.sum(wi**2)) / w1
-    w3 = float(np.sum(wi**3)) / w1
-    w4 = float(np.sum(wi**4)) / w1
-    beta = float(np.sum(wi * yi)) / w1
-    q = float(np.sum(wi * (yi - beta) ** 2))
+    w1 = float(numpy.sum(wi))
+    w2 = float(numpy.sum(wi**2)) / w1
+    w3 = float(numpy.sum(wi**3)) / w1
+    w4 = float(numpy.sum(wi**4)) / w1
+    beta = float(numpy.sum(wi * yi)) / w1
+    q = float(numpy.sum(wi * (yi - beta) ** 2))
     tau2 = max(0.0, (q - (k - 1)) / (w1 - w2))
     vb = (tau2 * w2 + 1) / w1
     se = math.sqrt(vb)
@@ -115,17 +124,17 @@ def hc(
         def integrand(r: float) -> float:
             rr = sdr * r
             e, v_ = eq(rr), vq(rr)
-            with np.errstate(divide='ignore', invalid='ignore'):
-                arg = finv(float(np.float64(r) / np.float64(xx)))
-            return float(stats.gamma.cdf(arg, a=e**2 / v_, scale=v_ / e) * stats.norm.pdf(r))
+            with numpy.errstate(divide='ignore', invalid='ignore'):
+                arg = finv(float(numpy.float64(r) / numpy.float64(xx)))
+            return float(scipy.stats.gamma.cdf(arg, a=e**2 / v_, scale=v_ / e) * scipy.stats.norm.pdf(r))
 
-        val, _ = integrate.quad(integrand, xx, np.inf, epsabs=_EPS**0.25, epsrel=_EPS**0.25, limit=100)
+        val, _ = scipy.integrate.quad(integrand, xx, numpy.inf, epsabs=EPS**0.25, epsrel=EPS**0.25, limit=100)
         return float(val) - level / 2
 
     try:
-        t0 = uniroot(eqn, 0.0, 2.0, tol=con['tol'], maxiter=int(con['maxiter'])).root
+        t0 = metafopy.core.zeroin.uniroot(eqn, 0.0, 2.0, tol=con['tol'], maxiter=int(con['maxiter'])).root
     except (ValueError, ArithmeticError) as exc:
-        raise ValueError('Error in uniroot().') from exc
+        raise metafopy.errors.InputError('Error in uniroot().') from exc
     u0 = sdr * t0
     ci_lb = beta - u0 * se
     ci_ub = beta + u0 * se
@@ -133,11 +142,11 @@ def hc(
     if transf is not None:
         tz = x.tau2
         beta, ci_lb, ci_ub, beta_rma, ci_lb_rma, ci_ub_rma = (
-            float(apply_transf(a, transf, targs, tz)[0]) for a in (beta, ci_lb, ci_ub, beta_rma, ci_lb_rma, ci_ub_rma)
+            float(metafopy.transf.apply_transf(a, transf, targs, tz)[0]) for a in (beta, ci_lb, ci_ub, beta_rma, ci_lb_rma, ci_ub_rma)
         )
         se = se_rma = math.nan
-    lo, hi = psort(np.array([ci_lb]), np.array([ci_ub]))
-    lo_r, hi_r = psort(np.array([ci_lb_rma]), np.array([ci_ub_rma]))
+    lo, hi = metafopy.methods.common.psort(numpy.array([ci_lb]), numpy.array([ci_ub]))
+    lo_r, hi_r = metafopy.methods.common.psort(numpy.array([ci_lb_rma]), numpy.array([ci_ub_rma]))
     return HcResult(
         beta=beta,
         se=se,

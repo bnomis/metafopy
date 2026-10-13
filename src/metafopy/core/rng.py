@@ -8,61 +8,61 @@ The sampling routines follow R's ``src/main/RNG.c`` and ``src/main/random.c``
 (GPL-2 | GPL-3).
 """
 
-from __future__ import annotations
-
+import collections.abc
 import math
 import time
-from collections.abc import Sequence
 
-import numpy as np
-from numpy.typing import NDArray
-from scipy import special
+import numpy
+import numpy.typing
+import scipy.special
+
+import metafopy.errors
 
 __all__ = ['RRandom', 'get_rng', 'set_seed']
 
-_N = 624
-_I2_32M1 = 2.328306437080797e-10
-_MASK = 0xFFFFFFFF
+N = 624
+I2_32M1 = 2.328306437080797e-10
+MASK = 0xFFFFFFFF
 
 
 class RRandom:
     """The state of R's ``.Random.seed`` for the Mersenne-Twister with Rejection sampling."""
 
     def __init__(self, seed: int) -> None:
-        s = int(seed) & _MASK
+        s = int(seed) & MASK
         for _ in range(50):
-            s = (69069 * s + 1) & _MASK
-        key = np.empty(_N, dtype=np.uint32)
-        s = (69069 * s + 1) & _MASK  # dummy[0] (the position slot), overwritten below
-        for j in range(_N):
-            s = (69069 * s + 1) & _MASK
+            s = (69069 * s + 1) & MASK
+        key = numpy.empty(N, dtype=numpy.uint32)
+        s = (69069 * s + 1) & MASK  # dummy[0] (the position slot), overwritten below
+        for j in range(N):
+            s = (69069 * s + 1) & MASK
             key[j] = s
-        self._bg = np.random.MT19937()
-        self._bg.state = {'bit_generator': 'MT19937', 'state': {'key': key, 'pos': _N}}
+        self.bg = numpy.random.MT19937()
+        self.bg.state = {'bit_generator': 'MT19937', 'state': {'key': key, 'pos': N}}
 
     def unif_rand(self) -> float:
         """R's ``unif_rand()``: a double in the open interval (0, 1)."""
-        x = int(self._bg.random_raw()) * 2.3283064365386963e-10
+        x = int(self.bg.random_raw()) * 2.3283064365386963e-10
         if x <= 0.0:
-            return 0.5 * _I2_32M1
+            return 0.5 * I2_32M1
         if 1.0 - x <= 0.0:
-            return 1.0 - 0.5 * _I2_32M1
+            return 1.0 - 0.5 * I2_32M1
         return x
 
-    def runif(self, n: int = 1) -> NDArray[np.float64]:
-        return np.array([self.unif_rand() for _ in range(n)], dtype=np.float64)
+    def runif(self, n: int = 1) -> numpy.typing.NDArray[numpy.float64]:
+        return numpy.array([self.unif_rand() for _ in range(n)], dtype=numpy.float64)
 
     def norm_rand(self) -> float:
         """R's ``norm_rand()`` (inversion): a standard normal deviate."""
         big = 134217728.0
         u = self.unif_rand()
         u = int(big * u) + self.unif_rand()
-        return float(special.ndtri(u / big))
+        return float(scipy.special.ndtri(u / big))
 
-    def rnorm(self, n: int = 1) -> NDArray[np.float64]:
-        return np.array([self.norm_rand() for _ in range(n)], dtype=np.float64)
+    def rnorm(self, n: int = 1) -> numpy.typing.NDArray[numpy.float64]:
+        return numpy.array([self.norm_rand() for _ in range(n)], dtype=numpy.float64)
 
-    def _rbits(self, bits: int) -> int:
+    def rbits(self, bits: int) -> int:
         v = 0
         n = 0
         while n <= bits:
@@ -79,32 +79,38 @@ class RRandom:
             return 0
         bits = math.ceil(math.log2(dn))
         while True:
-            dv = self._rbits(bits)
+            dv = self.rbits(bits)
             if dv < dn:
                 return dv
 
-    def sample_int(self, n: int, size: int | None = None, replace: bool = False, prob: Sequence[float] | NDArray[np.float64] | None = None) -> NDArray[np.intp]:
-        """R's ``sample.int(n, size, replace, prob)``; returns 1-based indices as R does."""
+    def sample_int(
+        self, n: int, size: int | None = None, replace: bool = False, prob: collections.abc.Sequence[float] | numpy.typing.NDArray[numpy.float64] | None = None
+    ) -> numpy.typing.NDArray[numpy.intp]:
+        """R's ``sample.int(n, size, replace, prob)``; returns 1-based indices as R does.
+
+        Raises:
+            metafopy.errors.InputError: an argument or the data is invalid.
+        """
         k = n if size is None else size
         if prob is not None:
-            p = np.asarray(prob, dtype=np.float64).copy()
+            p = numpy.asarray(prob, dtype=numpy.float64).copy()
             if p.shape[0] != n:
-                raise ValueError('incorrect number of probabilities')
-            if not np.all(np.isfinite(p)) or np.any(p < 0) or p.sum() <= 0:
-                raise ValueError('invalid probabilities')
+                raise metafopy.errors.InputError('incorrect number of probabilities')
+            if not numpy.all(numpy.isfinite(p)) or numpy.any(p < 0) or p.sum() <= 0:
+                raise metafopy.errors.InputError('invalid probabilities')
             p = p / p.sum()
             if replace or k < 2:
-                nc = int(np.sum(n * p > 0.1))
+                nc = int(numpy.sum(n * p > 0.1))
                 if nc > 200:
-                    return self._walker(n, p, k)
-                return self._prob_sample_replace(n, p, k)
-            return self._prob_sample_no_replace(n, p, k)
+                    return self.walker(n, p, k)
+                return self.prob_sample_replace(n, p, k)
+            return self.prob_sample_no_replace(n, p, k)
         if replace or k < 2:
-            return np.array([self.unif_index(n) + 1 for _ in range(k)], dtype=np.intp)
+            return numpy.array([self.unif_index(n) + 1 for _ in range(k)], dtype=numpy.intp)
         if k > n:
-            raise ValueError("cannot take a sample larger than the population when 'replace = FALSE'")
+            raise metafopy.errors.InputError("cannot take a sample larger than the population when 'replace = FALSE'")
         x = list(range(n))
-        out = np.empty(k, dtype=np.intp)
+        out = numpy.empty(k, dtype=numpy.intp)
         m = n
         for i in range(k):
             j = self.unif_index(m)
@@ -113,12 +119,12 @@ class RRandom:
             x[j] = x[m]
         return out
 
-    def _prob_sample_replace(self, n: int, p: NDArray[np.float64], nans: int) -> NDArray[np.intp]:
-        perm = np.arange(1, n + 1)
+    def prob_sample_replace(self, n: int, p: numpy.typing.NDArray[numpy.float64], nans: int) -> numpy.typing.NDArray[numpy.intp]:
+        perm = numpy.arange(1, n + 1)
         p = p.copy()
         revsort(p, perm)
-        np.cumsum(p, out=p)
-        out = np.empty(nans, dtype=np.intp)
+        numpy.cumsum(p, out=p)
+        out = numpy.empty(nans, dtype=numpy.intp)
         for i in range(nans):
             ru = self.unif_rand()
             j = 0
@@ -129,11 +135,11 @@ class RRandom:
             out[i] = perm[j]
         return out
 
-    def _prob_sample_no_replace(self, n: int, p: NDArray[np.float64], nans: int) -> NDArray[np.intp]:
-        perm = np.arange(1, n + 1)
+    def prob_sample_no_replace(self, n: int, p: numpy.typing.NDArray[numpy.float64], nans: int) -> numpy.typing.NDArray[numpy.intp]:
+        perm = numpy.arange(1, n + 1)
         p = p.copy()
         revsort(p, perm)
-        out = np.empty(nans, dtype=np.intp)
+        out = numpy.empty(nans, dtype=numpy.intp)
         total = 1.0
         n1 = n - 1
         for i in range(nans):
@@ -153,7 +159,7 @@ class RRandom:
             n1 -= 1
         return out
 
-    def _walker(self, n: int, p: NDArray[np.float64], nans: int) -> NDArray[np.intp]:
+    def walker(self, n: int, p: numpy.typing.NDArray[numpy.float64], nans: int) -> numpy.typing.NDArray[numpy.intp]:
         q = p * n
         hl = [0] * n
         h = -1
@@ -176,8 +182,8 @@ class RRandom:
                     lo += 1
                 if lo >= n:
                     break
-        q = q + np.arange(n)
-        out = np.empty(nans, dtype=np.intp)
+        q = q + numpy.arange(n)
+        out = numpy.empty(nans, dtype=numpy.intp)
         for i in range(nans):
             ru = self.unif_rand() * n
             kk = int(ru)
@@ -185,7 +191,7 @@ class RRandom:
         return out
 
 
-def revsort(a: NDArray[np.float64], ib: NDArray[np.intp]) -> None:
+def revsort(a: numpy.typing.NDArray[numpy.float64], ib: numpy.typing.NDArray[numpy.intp]) -> None:
     """R's ``revsort()``: sort ``a`` into descending order by heapsort, carrying ``ib`` along (in place)."""
     n = a.shape[0]
     if n <= 1:
@@ -228,19 +234,19 @@ def revsort(a: NDArray[np.float64], ib: NDArray[np.intp]) -> None:
     ib[:] = B[1:]
 
 
-_GLOBAL: RRandom | None = None
+GLOBAL: RRandom | None = None
 
 
 def set_seed(seed: int) -> RRandom:
     """Seed the generator used by :func:`metafopy.permutest` and :func:`metafopy.gosh` (R's ``set.seed()``)."""
-    global _GLOBAL
-    _GLOBAL = RRandom(seed)
-    return _GLOBAL
+    global GLOBAL
+    GLOBAL = RRandom(seed)
+    return GLOBAL
 
 
 def get_rng() -> RRandom:
     """The module-level generator, seeded from the clock on first use (as R seeds from time and process id)."""
-    global _GLOBAL
-    if _GLOBAL is None:
-        _GLOBAL = RRandom(int(time.time() * 1000) % 2**31)
-    return _GLOBAL
+    global GLOBAL
+    if GLOBAL is None:
+        GLOBAL = RRandom(int(time.time() * 1000) % 2**31)
+    return GLOBAL

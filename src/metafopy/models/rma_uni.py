@@ -2,54 +2,41 @@
 
 The model is ``y_i = x_i' beta + u_i + e_i`` with ``u_i ~ N(0, tau^2)`` and
 ``e_i ~ N(0, v_i)`` for known sampling variances ``v_i``. ``tau^2`` is
-estimated by one of the estimators in :mod:`metafopy.models._tau2`; ``beta``
+estimated by one of the estimators in :mod:`metafopy.models.tau2`; ``beta``
 by weighted least squares given ``tau^2``. Inference follows Viechtbauer
 (2010), doi:10.18637/jss.v036.i03, including the Knapp & Hartung (2003)
 adjustment (doi:10.1002/sim.1482).
 """
 
-from __future__ import annotations
-
+import collections.abc
+import dataclasses
 import math
 import re
+import typing
 import warnings
-from collections.abc import Mapping, Sequence
-from dataclasses import dataclass, field, fields, replace
-from typing import Any, Literal, cast
 
-import numpy as np
-import pandas as pd
-from numpy.typing import ArrayLike, NDArray
-from scipy import stats
+import numpy
+import numpy.typing
+import pandas
+import scipy.stats
 
-from metafopy._data import Column, MetaData, NAAction, _subset_mask
-from metafopy._print import fmt_num, fmt_pval, fmt_table, signif_stars
-from metafopy.core.linalg import (
-    drop_redundant,
-    invcalc,
-    is_intercept,
-    is_nested,
-    is_positive_definite,
-    logdet,
-)
-from metafopy.models._tau2 import (
-    ESTIMATORS,
-    FIXED_EFFECTS,
-    Control,
-    EstimationError,
-    estimate_tau2,
-)
+import metafopy.core.linalg
+import metafopy.errors
+import metafopy.metadata
+import metafopy.models.tau2
+import metafopy.printing
 
-__all__ = ['Control', 'FitStats', 'RMAResult', 'rma', 'rma_uni']
+__all__ = ['FitStats', 'RMAResult', 'rma', 'rma_uni']
 
-type FloatArray = NDArray[np.float64]
-type Test = Literal['z', 't', 'knha', 'adhoc']
-type Btt = int | Sequence[int] | str | None
+type FloatArray = numpy.typing.NDArray[numpy.float64]
+# auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
+type Test = typing.Literal['z', 't', 'knha', 'adhoc']
+type Btt = int | collections.abc.Sequence[int] | str | None
 
-_DBL_EPS = np.finfo(float).eps
+DBL_EPS = numpy.finfo(float).eps
 
 
-@dataclass(frozen=True, slots=True)
+@dataclasses.dataclass(frozen=True, slots=True)
 class FitStats:
     """Log-likelihood, deviance and information criteria (metafor's ``fit.stats``)."""
 
@@ -63,7 +50,7 @@ class FitStats:
         return (self.ll, self.dev, self.AIC, self.BIC, self.AICc)
 
 
-@dataclass(frozen=True, slots=True, eq=False)
+@dataclasses.dataclass(frozen=True, slots=True, eq=False)
 class RMAResult:
     """A fitted ``rma.uni`` model.
 
@@ -112,21 +99,21 @@ class RMAResult:
     vi: FloatArray
     X: FloatArray
     slab: tuple[str, ...]
-    data: MetaData = field(repr=False)
-    control: Control = field(repr=False)
+    data: metafopy.metadata.MetaData = dataclasses.field(repr=False)
+    control: metafopy.models.tau2.Control = dataclasses.field(repr=False)
     iterations: int = 0
     measure: str = 'GEN'
 
     # -- accessors ---------------------------------------------------------
 
-    def coef(self) -> pd.Series:
+    def coef(self) -> pandas.Series:
         """Estimated coefficients, indexed by name."""
-        return pd.Series(self.beta, index=list(self.coef_names), name='estimate')
+        return pandas.Series(self.beta, index=list(self.coef_names), name='estimate')
 
-    def vcov(self) -> pd.DataFrame:
+    def vcov(self) -> pandas.DataFrame:
         """Variance-covariance matrix of the coefficients."""
         names = list(self.coef_names)
-        return pd.DataFrame(self.vb, index=names, columns=names)
+        return pandas.DataFrame(self.vb, index=names, columns=names)
 
     def fitted(self) -> FloatArray:
         """Fitted values ``X beta``."""
@@ -138,29 +125,29 @@ class RMAResult:
 
     def logLik(self, REML: bool | None = None) -> float:
         """Log-likelihood; REML unless the model was fitted with ML (as in metafor)."""
-        return self._stats(REML).ll
+        return self.fit_stats(REML).ll
 
     def deviance(self, REML: bool | None = None) -> float:
-        return self._stats(REML).dev
+        return self.fit_stats(REML).dev
 
     def AIC(self, REML: bool | None = None) -> float:
-        return self._stats(REML).AIC
+        return self.fit_stats(REML).AIC
 
     def BIC(self, REML: bool | None = None) -> float:
-        return self._stats(REML).BIC
+        return self.fit_stats(REML).BIC
 
     def AICc(self, REML: bool | None = None) -> float:
-        return self._stats(REML).AICc
+        return self.fit_stats(REML).AICc
 
-    def _stats(self, REML: bool | None) -> FitStats:
+    def fit_stats(self, REML: bool | None) -> FitStats:
         if REML is None:
             REML = self.method == 'REML'
         return self.fit_stats_reml if REML else self.fit_stats_ml
 
-    def fitstats(self, REML: bool | None = None) -> pd.Series:
+    def fitstats(self, REML: bool | None = None) -> pandas.Series:
         """``logLik``, ``deviance``, ``AIC``, ``BIC``, ``AICc`` as a Series."""
-        st = self._stats(REML)
-        return pd.Series(
+        st = self.fit_stats(REML)
+        return pandas.Series(
             st.as_tuple(),
             index=['logLik', 'deviance', 'AIC', 'BIC', 'AICc'],
             name='REML' if (REML if REML is not None else self.method == 'REML') else 'ML',
@@ -171,7 +158,7 @@ class RMAResult:
         if self.weighted:
             w = 1.0 / (self.vi + self.tau2) if self.weights is None else self.weights
         else:
-            w = np.full(self.k, 1.0 / self.k)
+            w = numpy.full(self.k, 1.0 / self.k)
         return w / w.sum() * 100
 
     def hatvalues(self) -> FloatArray:
@@ -179,73 +166,79 @@ class RMAResult:
         X = self.X
         if self.weighted:
             w = 1.0 / (self.vi + self.tau2) if self.weights is None else self.weights
-            H = X @ invcalc(X, w) @ (X.T * w)
+            H = X @ metafopy.core.linalg.invcalc(X, w) @ (X.T * w)
         else:
-            H = X @ invcalc(X, np.ones(self.k)) @ X.T
-        h = np.diag(H).copy()
-        h[h > 1 - 10 * _DBL_EPS] = 1.0
+            H = X @ metafopy.core.linalg.invcalc(X, numpy.ones(self.k)) @ X.T
+        h = numpy.diag(H).copy()
+        h[h > 1 - 10 * DBL_EPS] = 1.0
         return h
 
     # -- delegated methods (defined in metafopy.methods) ----------------------
 
-    def predict(self, *args: Any, **kwargs: Any) -> Any:
-        from metafopy.methods.predict import predict
+    def predict(self, *args: typing.Any, **kwargs: typing.Any) -> typing.Any:
+        # auditme: accept[in-function-import] metafopy.methods imports this module, so the import is deferred to avoid a cycle
+        import metafopy.methods.predict
 
-        return predict(self, *args, **kwargs)
+        return metafopy.methods.predict.predict(self, *args, **kwargs)
 
-    def confint(self, *args: Any, **kwargs: Any) -> Any:
-        from metafopy.methods.confint import confint
+    def confint(self, *args: typing.Any, **kwargs: typing.Any) -> typing.Any:
+        # auditme: accept[in-function-import] metafopy.methods imports this module, so the import is deferred to avoid a cycle
+        import metafopy.methods.confint
 
-        return confint(self, *args, **kwargs)
+        return metafopy.methods.confint.confint(self, *args, **kwargs)
 
-    def anova(self, *args: Any, **kwargs: Any) -> Any:
-        from metafopy.methods.anova import anova
+    def anova(self, *args: typing.Any, **kwargs: typing.Any) -> typing.Any:
+        # auditme: accept[in-function-import] metafopy.methods imports this module, so the import is deferred to avoid a cycle
+        import metafopy.methods.anova
 
-        return anova(self, *args, **kwargs)
+        return metafopy.methods.anova.anova(self, *args, **kwargs)
 
-    def blup(self, *args: Any, **kwargs: Any) -> Any:
-        from metafopy.methods.blup import blup
+    def blup(self, *args: typing.Any, **kwargs: typing.Any) -> typing.Any:
+        # auditme: accept[in-function-import] metafopy.methods imports this module, so the import is deferred to avoid a cycle
+        import metafopy.methods.blup
 
-        return blup(self, *args, **kwargs)
+        return metafopy.methods.blup.blup(self, *args, **kwargs)
 
-    def ranef(self, *args: Any, **kwargs: Any) -> Any:
-        from metafopy.methods.ranef import ranef
+    def ranef(self, *args: typing.Any, **kwargs: typing.Any) -> typing.Any:
+        # auditme: accept[in-function-import] metafopy.methods imports this module, so the import is deferred to avoid a cycle
+        import metafopy.methods.ranef
 
-        return ranef(self, *args, **kwargs)
+        return metafopy.methods.ranef.ranef(self, *args, **kwargs)
 
-    def vif(self, *args: Any, **kwargs: Any) -> Any:
-        from metafopy.methods.vif import vif
+    def vif(self, *args: typing.Any, **kwargs: typing.Any) -> typing.Any:
+        # auditme: accept[in-function-import] metafopy.methods imports this module, so the import is deferred to avoid a cycle
+        import metafopy.methods.vif
 
-        return vif(self, *args, **kwargs)
+        return metafopy.methods.vif.vif(self, *args, **kwargs)
 
     # -- printing ----------------------------------------------------------
 
     def summary(self, digits: int = 4) -> str:
-        return _format(self, digits)
+        return format_result(self, digits)
 
     def __str__(self) -> str:
-        return _format(self, 4)
+        return format_result(self, 4)
 
     def __repr__(self) -> str:
         return f'<RMAResult {self.method} k={self.k} p={self.p}>'
 
 
-def _control(control: Control | Mapping[str, Any] | None) -> Control:
+def make_control(control: metafopy.models.tau2.Control | collections.abc.Mapping[str, typing.Any] | None) -> metafopy.models.tau2.Control:
     if control is None:
-        return Control()
-    if isinstance(control, Control):
+        return metafopy.models.tau2.Control()
+    if isinstance(control, metafopy.models.tau2.Control):
         return control
-    names = {f.name for f in fields(Control)}
-    kwargs: dict[str, Any] = {}
+    names = {f.name for f in dataclasses.fields(metafopy.models.tau2.Control)}
+    kwargs: dict[str, typing.Any] = {}
     for key, value in control.items():
         name = key.replace('.', '_')
         if name not in names:
-            raise TypeError(f'unknown control argument {key!r}')
+            raise metafopy.errors.ArgumentError(f'unknown control argument {key!r}')
         kwargs[name] = value
-    return Control(**kwargs)
+    return metafopy.models.tau2.Control(**kwargs)
 
 
-def set_btt(btt: Btt, p: int, int_incl: bool, names: Sequence[str]) -> tuple[int, ...]:
+def set_btt(btt: Btt, p: int, int_incl: bool, names: collections.abc.Sequence[str]) -> tuple[int, ...]:
     if btt is None:
         if p > 1:
             return tuple(range(1, p)) if int_incl else tuple(range(p))
@@ -253,12 +246,12 @@ def set_btt(btt: Btt, p: int, int_incl: bool, names: Sequence[str]) -> tuple[int
     if isinstance(btt, str):
         found = tuple(i for i, n in enumerate(names) if re.search(btt, n))
         if not found:
-            raise ValueError("cannot identify coefficient(s) matching the 'btt' pattern")
+            raise metafopy.errors.InputError("cannot identify coefficient(s) matching the 'btt' pattern")
         return found
     idx = [btt] if isinstance(btt, int) else list(btt)
     out = sorted({int(i) for i in idx})
     if any(i < 0 or i >= p for i in out):
-        raise ValueError(f"'btt' indices must lie in 0..{p - 1}")
+        raise metafopy.errors.InputError(f"'btt' indices must lie in 0..{p - 1}")
     return tuple(out)
 
 
@@ -267,12 +260,13 @@ def level_to_alpha(level: float) -> float:
     return 1 - level / 100 if level > 1 else 1 - level
 
 
-def _mad(x: FloatArray) -> float:
-    med = float(np.median(x))
-    return 1.4826 * float(np.median(np.abs(x - med)))
+def mad(x: FloatArray) -> float:
+    med = float(numpy.median(x))
+    return 1.4826 * float(numpy.median(numpy.abs(x - med)))
 
 
-_ESCALC_ARGS = (
+# auditme: accept[non-alphabetical-literal] order is metafor's documented order and is meaningful
+ESCALC_ARGS = (
     'ai',
     'bi',
     'ci',
@@ -301,54 +295,55 @@ _ESCALC_ARGS = (
 
 
 def rma_uni(
-    yi: Column | pd.DataFrame | None = None,
-    vi: Column | None = None,
+    yi: metafopy.metadata.Column | pandas.DataFrame | None = None,
+    vi: metafopy.metadata.Column | None = None,
     *,
-    sei: Column | None = None,
-    weights: Column | None = None,
-    ai: Column | None = None,
-    bi: Column | None = None,
-    ci: Column | None = None,
-    di: Column | None = None,
-    n1i: Column | None = None,
-    n2i: Column | None = None,
-    x1i: Column | None = None,
-    x2i: Column | None = None,
-    t1i: Column | None = None,
-    t2i: Column | None = None,
-    m1i: Column | None = None,
-    m2i: Column | None = None,
-    sd1i: Column | None = None,
-    sd2i: Column | None = None,
-    xi: Column | None = None,
-    mi: Column | None = None,
-    ri: Column | None = None,
-    ti: Column | None = None,
-    fi: Column | None = None,
-    pi: Column | None = None,
-    sdi: Column | None = None,
-    r2i: Column | None = None,
-    mini: Column | None = None,
-    maxi: Column | None = None,
-    ni: Column | None = None,
-    mods: str | ArrayLike | pd.DataFrame | None = None,
+    sei: metafopy.metadata.Column | None = None,
+    weights: metafopy.metadata.Column | None = None,
+    ai: metafopy.metadata.Column | None = None,
+    bi: metafopy.metadata.Column | None = None,
+    ci: metafopy.metadata.Column | None = None,
+    di: metafopy.metadata.Column | None = None,
+    n1i: metafopy.metadata.Column | None = None,
+    n2i: metafopy.metadata.Column | None = None,
+    x1i: metafopy.metadata.Column | None = None,
+    x2i: metafopy.metadata.Column | None = None,
+    t1i: metafopy.metadata.Column | None = None,
+    t2i: metafopy.metadata.Column | None = None,
+    m1i: metafopy.metadata.Column | None = None,
+    m2i: metafopy.metadata.Column | None = None,
+    sd1i: metafopy.metadata.Column | None = None,
+    sd2i: metafopy.metadata.Column | None = None,
+    xi: metafopy.metadata.Column | None = None,
+    mi: metafopy.metadata.Column | None = None,
+    ri: metafopy.metadata.Column | None = None,
+    ti: metafopy.metadata.Column | None = None,
+    fi: metafopy.metadata.Column | None = None,
+    pi: metafopy.metadata.Column | None = None,
+    sdi: metafopy.metadata.Column | None = None,
+    r2i: metafopy.metadata.Column | None = None,
+    mini: metafopy.metadata.Column | None = None,
+    maxi: metafopy.metadata.Column | None = None,
+    ni: metafopy.metadata.Column | None = None,
+    mods: str | numpy.typing.ArrayLike | pandas.DataFrame | None = None,
     measure: str = 'GEN',
-    data: pd.DataFrame | None = None,
-    slab: Column | Sequence[str] | None = None,
-    subset: ArrayLike | str | None = None,
+    data: pandas.DataFrame | None = None,
+    slab: metafopy.metadata.Column | collections.abc.Sequence[str] | None = None,
+    subset: numpy.typing.ArrayLike | str | None = None,
     add: float | None = None,
-    to: Literal['all', 'only0', 'if0all', 'none'] = 'only0',
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
+    to: typing.Literal['all', 'only0', 'if0all', 'none'] = 'only0',
     drop00: bool = False,
     intercept: bool = True,
-    method: str | Sequence[str] = 'REML',
+    method: str | collections.abc.Sequence[str] = 'REML',
     weighted: bool = True,
     test: str = 'z',
     level: float = 95,
     btt: Btt = None,
     tau2: float | None = None,
-    control: Control | Mapping[str, Any] | None = None,
-    na_action: NAAction = 'omit',
-    vtype: str | Sequence[str] = 'LS',
+    control: metafopy.models.tau2.Control | collections.abc.Mapping[str, typing.Any] | None = None,
+    na_action: metafopy.metadata.NAAction = 'omit',
+    vtype: str | collections.abc.Sequence[str] = 'LS',
     correct: bool = True,
     cutoff: float | None = None,
     onlyo1: bool = False,
@@ -380,14 +375,18 @@ def rma_uni(
     >>> from metafopy import datasets, rma
     >>> dat = datasets.load("dat.bcg")  # doctest: +SKIP
     >>> rma(measure="RR", ai="tpos", bi="tneg", ci="cpos", di="cneg", data=dat)  # doctest: +SKIP
+
+    Raises:
+        metafopy.errors.InputError: an argument or the data is invalid.
     """
     test_l = test.lower()
     if test_l == 'hksj':
         test_l = 'knha'
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if test_l not in ('z', 't', 'knha', 'adhoc'):
-        raise ValueError("Unknown option specified for the 'test' argument.")
+        raise metafopy.errors.InputError("Unknown option specified for the 'test' argument.")
 
-    if isinstance(yi, pd.DataFrame):
+    if isinstance(yi, pandas.DataFrame):
         data = yi
         yi = None
 
@@ -395,11 +394,11 @@ def rma_uni(
         if mods is not None:
             warnings.warn("Argument 'mods' ignored when 'yi' is a model formula.", stacklevel=2)
         if data is None:
-            raise ValueError('a model formula in yi needs data')
+            raise metafopy.errors.InputError('a model formula in yi needs data')
         lhs, rhs = (part.strip() for part in yi.split('~', 1))
         if not lhs:
-            raise ValueError('the model formula in yi must have a left-hand side')
-        yi = lhs if lhs in data.columns else np.asarray(data.eval(lhs), dtype=np.float64)
+            raise metafopy.errors.InputError('the model formula in yi must have a left-hand side')
+        yi = lhs if lhs in data.columns else numpy.asarray(data.eval(lhs), dtype=numpy.float64)
         mods = '~ ' + rhs
         intercept = False
 
@@ -409,7 +408,7 @@ def rma_uni(
     raw = {
         name: val
         for name, val in zip(
-            _ESCALC_ARGS,
+            ESCALC_ARGS,
             (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, m1i, m2i, sd1i, sd2i, xi, mi, ri, ti, fi, pi, sdi, r2i, mini, maxi),
             strict=True,
         )
@@ -418,8 +417,8 @@ def rma_uni(
 
     if yi is None and not (data is not None and 'yi' in data.columns and not raw):
         if measure == 'GEN':
-            raise ValueError("Specify the desired outcome measure via the 'measure' argument.")
-        md = _metadata_from_escalc(
+            raise metafopy.errors.InputError("Specify the desired outcome measure via the 'measure' argument.")
+        md = metadata_from_escalc(
             measure,
             raw,
             ni=ni,
@@ -443,7 +442,7 @@ def rma_uni(
             },
         )
     else:
-        md = MetaData.from_inputs(
+        md = metafopy.metadata.MetaData.from_inputs(
             yi,
             vi,
             sei=sei,
@@ -460,62 +459,67 @@ def rma_uni(
         md,
         method=method,
         weighted=weighted,
-        test=cast(Test, test_l),
+        test=typing.cast(Test, test_l),
         level=level,
         btt=btt,
         tau2=tau2,
         control=control,
     )
-    return replace(res, measure=measure)
+    return dataclasses.replace(res, measure=measure)
 
 
-def _metadata_from_escalc(
+def metadata_from_escalc(
     measure: str,
-    raw: dict[str, Any],
+    raw: dict[str, typing.Any],
     *,
-    ni: Column | None,
-    data: pd.DataFrame | None,
-    slab: Column | Sequence[str] | None,
-    subset: ArrayLike | str | None,
-    mods: str | ArrayLike | pd.DataFrame | None,
-    weights: Column | None,
+    ni: metafopy.metadata.Column | None,
+    data: pandas.DataFrame | None,
+    slab: metafopy.metadata.Column | collections.abc.Sequence[str] | None,
+    subset: numpy.typing.ArrayLike | str | None,
+    mods: str | numpy.typing.ArrayLike | pandas.DataFrame | None,
+    weights: metafopy.metadata.Column | None,
     intercept: bool,
-    na_action: NAAction,
-    escalc_opts: dict[str, Any],
-) -> MetaData:
-    """Compute ``yi``/``vi`` with escalc after subsetting, as ``rma.uni`` does for raw data."""
-    from metafopy.effects import escalc
+    na_action: metafopy.metadata.NAAction,
+    escalc_opts: dict[str, typing.Any],
+) -> metafopy.metadata.MetaData:
+    """Compute ``yi``/``vi`` with escalc after subsetting, as ``rma.uni`` does for raw data.
+
+    Raises:
+        metafopy.errors.InputError: an argument or the data is invalid.
+    """
+    # auditme: accept[in-function-import] metafopy.methods imports this module, so the import is deferred to avoid a cycle
+    import metafopy.effects
 
     if not raw:
-        raise ValueError('Cannot compute outcomes. Check that all of the required information is specified via the appropriate arguments.')
+        raise metafopy.errors.InputError('Cannot compute outcomes. Check that all of the required information is specified via the appropriate arguments.')
     if data is not None:
         k_all = len(data)
     else:
         first = next(v for v in raw.values() if not isinstance(v, str))
-        k_all = int(np.atleast_1d(np.asarray(first)).shape[0])
-    mask = np.ones(k_all, dtype=np.bool_) if subset is None else _subset_mask(subset, k_all, data)
+        k_all = int(numpy.atleast_1d(numpy.asarray(first)).shape[0])
+    mask = numpy.ones(k_all, dtype=numpy.bool_) if subset is None else metafopy.metadata.subset_mask(subset, k_all, data)
     if ni is not None:
         raw = {**raw, 'ni': ni}
-    es = escalc(measure, **raw, data=data, subset=mask, **escalc_opts)
-    idx = np.flatnonzero(mask)
+    es = metafopy.effects.escalc(measure, **raw, data=data, subset=mask, **escalc_opts)
+    idx = numpy.flatnonzero(mask)
 
-    def sub(value: Any) -> Any:
+    def sub(value: typing.Any) -> typing.Any:
         if value is None or isinstance(value, str):
             return value
-        if isinstance(value, pd.DataFrame):
+        if isinstance(value, pandas.DataFrame):
             return value.iloc[idx].reset_index(drop=True)
-        arr = np.asarray(value)
+        arr = numpy.asarray(value)
         if arr.ndim >= 1 and arr.shape[0] == k_all:
             return arr[idx]
         return value
 
     data_sub = None if data is None else data.iloc[idx].reset_index(drop=True)
     ni_es = es.attrs.get('ni')
-    return MetaData.from_inputs(
-        es['yi'].to_numpy(dtype=np.float64),
-        es['vi'].to_numpy(dtype=np.float64),
+    return metafopy.metadata.MetaData.from_inputs(
+        es['yi'].to_numpy(dtype=numpy.float64),
+        es['vi'].to_numpy(dtype=numpy.float64),
         weights=sub(weights),
-        ni=None if ni_es is None else np.asarray(ni_es, dtype=np.float64),
+        ni=None if ni_es is None else numpy.asarray(ni_es, dtype=numpy.float64),
         mods=sub(mods),
         intercept=intercept,
         data=data_sub,
@@ -528,24 +532,30 @@ rma = rma_uni
 
 
 def fit_rma_uni(
-    md: MetaData,
+    md: metafopy.metadata.MetaData,
     *,
-    method: str | Sequence[str] = 'REML',
+    method: str | collections.abc.Sequence[str] = 'REML',
     weighted: bool = True,
     test: Test = 'z',
     level: float = 95,
     btt: Btt = None,
     tau2: float | None = None,
-    control: Control | Mapping[str, Any] | None = None,
-    _skip_r2: bool = False,
+    control: metafopy.models.tau2.Control | collections.abc.Mapping[str, typing.Any] | None = None,
+    skip_r2: bool = False,
 ) -> RMAResult:
-    """Fit ``rma.uni`` to already normalised inputs."""
+    """Fit ``rma.uni`` to already normalised inputs.
+
+    Raises:
+        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.EstimationError: every requested tau^2 estimator failed.
+    """
     methods = [method] if isinstance(method, str) else list(method)
     for m_ in methods:
-        if m_ not in ESTIMATORS:
-            raise ValueError(f'unknown tau^2 estimator {m_!r}')
+        if m_ not in metafopy.models.tau2.ESTIMATORS:
+            raise metafopy.errors.InputError(f'unknown tau^2 estimator {m_!r}')
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if test not in ('z', 't', 'knha', 'adhoc'):
-        raise ValueError(f'unknown test {test!r}')
+        raise metafopy.errors.InputError(f'unknown test {test!r}')
 
     yi = md.yi.copy()
     vi = md.vi.copy()
@@ -554,11 +564,11 @@ def fit_rma_uni(
     k = md.k
     user_w = md.weights
     if k < 1:
-        raise ValueError('processing terminated since k = 0')
+        raise metafopy.errors.InputError('processing terminated since k = 0')
 
-    if np.any(vi <= 0):
+    if numpy.any(vi <= 0):
         allvipos = False
-        if np.any(vi < 0):
+        if numpy.any(vi < 0):
             warnings.warn('Negative sampling variances constrained to 0.', stacklevel=2)
             vi[vi < 0] = 0.0
     else:
@@ -568,49 +578,49 @@ def fit_rma_uni(
         warnings.warn('Setting argument test="z" since k=1.', stacklevel=2)
         test = 'z'
 
-    drop = drop_redundant(X)
+    drop = metafopy.core.linalg.drop_redundant(X)
     if drop.any():
         warnings.warn('Redundant predictors dropped from the model.', stacklevel=2)
         X = X[:, ~drop]
         names = [n for n, d in zip(names, drop, strict=True) if not d]
 
-    is_int = np.array([is_intercept(X[:, j]) for j in range(X.shape[1])])
+    is_int = numpy.array([metafopy.core.linalg.is_intercept(X[:, j]) for j in range(X.shape[1])])
     int_incl = bool(is_int.any())
     if int_incl:
-        X = np.column_stack([np.ones(k), X[:, ~is_int]])
+        X = numpy.column_stack([numpy.ones(k), X[:, ~is_int]])
         names = ['intrcpt', *[n for n, i in zip(names, is_int, strict=True) if not i]]
     p = X.shape[1]
-    int_only = p == 1 and is_intercept(X[:, 0])
+    int_only = p == 1 and metafopy.core.linalg.is_intercept(X[:, 0])
 
-    tau2_fix = tau2 is not None and not math.isnan(tau2) and methods[0] not in FIXED_EFFECTS
+    tau2_fix = tau2 is not None and not math.isnan(tau2) and methods[0] not in metafopy.models.tau2.FIXED_EFFECTS
     if not (int_only and k == 1):
-        need = p if (methods[0] in FIXED_EFFECTS or tau2_fix) else p + 1
+        need = p if (methods[0] in metafopy.models.tau2.FIXED_EFFECTS or tau2_fix) else p + 1
         if need > k:
-            raise ValueError('Number of parameters to be estimated is larger than the number of observations.')
+            raise metafopy.errors.InputError('Number of parameters to be estimated is larger than the number of observations.')
 
     btt_idx = set_btt(btt, p, int_incl, names)
     m = len(btt_idx)
 
-    con = _control(control)
-    if control is None or 'tau2_max' not in {key.replace('.', '_') for key in (control if isinstance(control, Mapping) else {})}:
-        con = replace(con, tau2_max=max(con.tau2_max, 10 * _mad(yi) ** 2))
+    con = make_control(control)
+    if control is None or 'tau2_max' not in {key.replace('.', '_') for key in (control if isinstance(control, collections.abc.Mapping) else {})}:
+        con = dataclasses.replace(con, tau2_max=max(con.tau2_max, 10 * mad(yi) ** 2))
 
-    if not is_positive_definite(X.T @ X, tol=con.evtol):
-        raise ValueError('Model matrix not of full rank. Cannot fit model.')
+    if not metafopy.core.linalg.is_positive_definite(X.T @ X, tol=con.evtol):
+        raise metafopy.errors.InputError('Model matrix not of full rank. Cannot fit model.')
 
     # -- heterogeneity ---------------------------------------------------
     used = methods[0]
     tau2_hat = 0.0
     se_tau2 = math.nan
     iterations = 0
-    if used not in FIXED_EFFECTS:
+    if used not in metafopy.models.tau2.FIXED_EFFECTS:
         errors: list[str] = []
         for cand in methods:
             used = cand
-            if cand in FIXED_EFFECTS:
+            if cand in metafopy.models.tau2.FIXED_EFFECTS:
                 break
             try:
-                fit = estimate_tau2(
+                fit = metafopy.models.tau2.estimate_tau2(
                     cand,
                     yi,
                     vi,
@@ -620,49 +630,51 @@ def fit_rma_uni(
                     allvipos=allvipos,
                     con=con,
                 )
-            except EstimationError as exc:
+            except metafopy.errors.EstimationError as exc:
                 errors.append(str(exc))
                 continue
             tau2_hat, se_tau2, iterations = fit.tau2, fit.se_tau2, fit.iterations
             break
         else:
-            raise EstimationError(errors[-1])
-    if used in FIXED_EFFECTS:
+            raise metafopy.errors.EstimationError(errors[-1])
+    if used in metafopy.models.tau2.FIXED_EFFECTS:
         tau2_hat = 0.0
         se_tau2 = math.nan
 
     # -- fixed effects -----------------------------------------------------
     alpha = level_to_alpha(level)
     wi = 1.0 / (vi + tau2_hat)
-    beta, vb, RSS_f, s2w = _fixed_effects(yi, vi, X, tau2_hat, user_w, weighted, test)
+    beta, vb, RSS_f, s2w = fixed_effects(yi, vi, X, tau2_hat, user_w, weighted, test)
 
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     tdist = test in ('knha', 'adhoc', 't')
     ddf = k - p if tdist else None
 
-    sub = np.array(btt_idx)
+    sub = numpy.array(btt_idx)
     try:
-        vsub = vb[np.ix_(sub, sub)]
-        L = np.linalg.cholesky(vsub)
+        vsub = vb[numpy.ix_(sub, sub)]
+        L = numpy.linalg.cholesky(vsub)
         b = beta[sub]
-        z = np.linalg.solve(L, b)
+        z = numpy.linalg.solve(L, b)
         QM = float(z @ z)
-    except np.linalg.LinAlgError:
+    except numpy.linalg.LinAlgError:
         QM = math.nan
 
-    se = np.sqrt(np.diag(vb))
+    se = numpy.sqrt(numpy.diag(vb))
     zval = beta / se
     if tdist:
-        assert ddf is not None
+        if ddf is None:
+            raise metafopy.errors.InternalError('ddf must not be None')
         QM = QM / m
         QMdf: tuple[int, int | None] = (m, ddf)
-        QMp = float(stats.f.sf(QM, m, ddf)) if ddf > 0 else math.nan
-        pval = 2 * stats.t.sf(np.abs(zval), ddf) if ddf > 0 else np.full(p, math.nan)
-        crit = float(stats.t.isf(alpha / 2, ddf)) if ddf > 0 else math.nan
+        QMp = float(scipy.stats.f.sf(QM, m, ddf)) if ddf > 0 else math.nan
+        pval = 2 * scipy.stats.t.sf(numpy.abs(zval), ddf) if ddf > 0 else numpy.full(p, math.nan)
+        crit = float(scipy.stats.t.isf(alpha / 2, ddf)) if ddf > 0 else math.nan
     else:
         QMdf = (m, None)
-        QMp = float(stats.chi2.sf(QM, m))
-        pval = 2 * stats.norm.sf(np.abs(zval))
-        crit = float(stats.norm.isf(alpha / 2))
+        QMp = float(scipy.stats.chi2.sf(QM, m))
+        pval = 2 * scipy.stats.norm.sf(numpy.abs(zval))
+        crit = float(scipy.stats.norm.isf(alpha / 2))
     ci_lb = beta - crit * se
     ci_ub = beta + crit * se
 
@@ -672,12 +684,12 @@ def fit_rma_uni(
         if k > p:
             w_fe = 1.0 / vi
             WX = w_fe[:, None] * X
-            P = np.diag(w_fe) - WX @ invcalc(X, w_fe) @ WX.T
+            P = numpy.diag(w_fe) - WX @ metafopy.core.linalg.invcalc(X, w_fe) @ WX.T
             ymc = yi - yi.mean()
             QE = max(0.0, float(ymc @ P @ ymc))
-            QEp = float(stats.chi2.sf(QE, k - p))
-            vt = (k - p) / float(np.trace(P))
-            if used in FIXED_EFFECTS:
+            QEp = float(scipy.stats.chi2.sf(QE, k - p))
+            vt = (k - p) / float(numpy.trace(P))
+            if used in metafopy.models.tau2.FIXED_EFFECTS:
                 I2 = max(0.0, 100 * (QE - (k - p)) / QE)
                 H2 = QE / (k - p)
             else:
@@ -687,19 +699,19 @@ def fit_rma_uni(
             QE, QEp, I2, H2, vt = 0.0, 1.0, 0.0, 1.0, 0.0
 
     # -- fit statistics -----------------------------------------------------
-    parms = p + (0 if (used in FIXED_EFFECTS or tau2_fix) else 1)
-    lv = np.log(vi + tau2_hat)
+    parms = p + (0 if (used in metafopy.models.tau2.FIXED_EFFECTS or tau2_fix) else 1)
+    lv = numpy.log(vi + tau2_hat)
     ll_ml = -0.5 * k * math.log(2 * math.pi) - 0.5 * float(lv.sum()) - 0.5 * RSS_f
     ll_reml = (
         -0.5 * (k - p) * math.log(2 * math.pi)
-        + (0.5 * logdet(X.T @ X) if con.REMLf else 0.0)
+        + (0.5 * metafopy.core.linalg.logdet(X.T @ X) if con.REMLf else 0.0)
         - 0.5 * float(lv.sum())
-        - 0.5 * logdet((X.T * wi) @ X)
+        - 0.5 * metafopy.core.linalg.logdet((X.T * wi) @ X)
         - 0.5 * RSS_f
     )
     if k > p:
         if allvipos:
-            dev_ml = -2 * (ll_ml - float(np.sum(-0.5 * np.log(2 * math.pi * vi))))
+            dev_ml = -2 * (ll_ml - float(numpy.sum(-0.5 * numpy.log(2 * math.pi * vi))))
         else:
             dev_ml = -2 * ll_ml
     else:
@@ -709,20 +721,20 @@ def fit_rma_uni(
         dev=dev_ml,
         AIC=-2 * ll_ml + 2 * parms,
         BIC=-2 * ll_ml + parms * math.log(k),
-        AICc=_aicc(ll_ml, parms, k),
+        AICc=aicc(ll_ml, parms, k),
     )
     fs_reml = FitStats(
         ll=ll_reml,
         dev=-2 * ll_reml,
         AIC=-2 * ll_reml + 2 * parms,
         BIC=-2 * ll_reml + parms * math.log(k - p) if k > p else math.nan,
-        AICc=_aicc(ll_reml, parms, k - p),
+        AICc=aicc(ll_reml, parms, k - p),
     )
 
     # -- pseudo R^2 ----------------------------------------------------------
     R2: float | None = None
-    if not int_only and is_nested(X, np.ones((k, 1))) and not _skip_r2:
-        R2 = _pseudo_r2(
+    if not int_only and metafopy.core.linalg.is_nested(X, numpy.ones((k, 1))) and not skip_r2:
+        R2 = pseudo_r2(
             md,
             yi=yi,
             X=X,
@@ -740,7 +752,7 @@ def fit_rma_uni(
         beta=beta,
         se=se,
         zval=zval,
-        pval=np.asarray(pval, dtype=np.float64),
+        pval=numpy.asarray(pval, dtype=numpy.float64),
         ci_lb=ci_lb,
         ci_ub=ci_ub,
         vb=vb,
@@ -784,7 +796,7 @@ def fit_rma_uni(
     )
 
 
-def _fixed_effects(
+def fixed_effects(
     yi: FloatArray,
     vi: FloatArray,
     X: FloatArray,
@@ -797,48 +809,51 @@ def _fixed_effects(
 
     Follows metafor: with user weights the estimate uses them but RSS (and the
     Knapp-Hartung factor) still use inverse-variance weights.
+
+    Raises:
+        metafopy.errors.InputError: an argument or the data is invalid.
     """
     k, p = X.shape
     wi = 1.0 / (vi + tau2)
     knha = test in ('knha', 'adhoc')
     s2w = 1.0
     if weighted:
-        if np.any(np.isinf(wi)) and (user_w is None or knha):
-            raise ValueError('Division by zero when computing the inverse variance weights.')
-        vb = invcalc(X, wi)
+        if numpy.any(numpy.isinf(wi)) and (user_w is None or knha):
+            raise metafopy.errors.InputError('Division by zero when computing the inverse variance weights.')
+        vb = metafopy.core.linalg.invcalc(X, wi)
         beta = vb @ (X.T @ (wi * yi))
-        RSS_knha = float(np.sum(wi * (yi - X @ beta) ** 2))
+        RSS_knha = float(numpy.sum(wi * (yi - X @ beta) ** 2))
         if user_w is not None:
-            stXAX = invcalc(X, user_w)
+            stXAX = metafopy.core.linalg.invcalc(X, user_w)
             beta = stXAX @ (X.T @ (user_w * yi))
             XA = X.T * user_w
-            vb = stXAX @ XA @ np.diag(vi + tau2) @ XA.T @ stXAX
-        RSS_f = float(np.sum(wi * (yi - X @ beta) ** 2))
+            vb = stXAX @ XA @ numpy.diag(vi + tau2) @ XA.T @ stXAX
+        RSS_f = float(numpy.sum(wi * (yi - X @ beta) ** 2))
     else:
-        stXX = invcalc(X, np.ones(k))
+        stXX = metafopy.core.linalg.invcalc(X, numpy.ones(k))
         beta = stXX @ (X.T @ yi)
-        vb = stXX @ X.T @ np.diag(vi + tau2) @ X @ stXX
-        RSS_f = float(np.sum(wi * (yi - X @ beta) ** 2))
+        vb = stXX @ X.T @ numpy.diag(vi + tau2) @ X @ stXX
+        RSS_f = float(numpy.sum(wi * (yi - X @ beta) ** 2))
         RSS_knha = math.nan
         if knha:
-            if np.any(np.isinf(wi)):
-                raise ValueError('Division by zero when computing the inverse variance weights.')
-            b_k = invcalc(X, wi) @ (X.T @ (wi * yi))
-            RSS_knha = float(np.sum(wi * (yi - X @ b_k) ** 2))
+            if numpy.any(numpy.isinf(wi)):
+                raise metafopy.errors.InputError('Division by zero when computing the inverse variance weights.')
+            b_k = metafopy.core.linalg.invcalc(X, wi) @ (X.T @ (wi * yi))
+            RSS_knha = float(numpy.sum(wi * (yi - X @ b_k) ** 2))
     if knha:
-        s2w = 0.0 if RSS_knha <= _DBL_EPS else RSS_knha / (k - p)
+        s2w = 0.0 if RSS_knha <= DBL_EPS else RSS_knha / (k - p)
     if test == 'adhoc':
         s2w = max(s2w, 1.0)
     return beta, s2w * vb, RSS_f, s2w
 
 
-def _aicc(ll: float, parms: int, n: int) -> float:
+def aicc(ll: float, parms: int, n: int) -> float:
     big = max(n, parms + 2)
     return -2 * ll + 2 * parms * big / (big - parms - 1)
 
 
-def _pseudo_r2(
-    md: MetaData,
+def pseudo_r2(
+    md: metafopy.metadata.MetaData,
     *,
     yi: FloatArray,
     X: FloatArray,
@@ -848,16 +863,17 @@ def _pseudo_r2(
     used: str,
     methods: list[str],
     test: Test,
-    con: Control,
+    con: metafopy.models.tau2.Control,
     tau2_hat: float,
 ) -> float | None:
     k = yi.shape[0]
-    if used in FIXED_EFFECTS:
-        if np.var(yi) == 0:
+    if used in metafopy.models.tau2.FIXED_EFFECTS:
+        if numpy.var(yi) == 0:
             return 0.0
-        w = (wi if user_w is None else user_w) if weighted else np.ones(k)
-        return max(0.0, 100 * _adj_r2(yi, X, w))
-    md0 = replace(md, yi=yi, X=np.ones((k, 1)), X_names=('intrcpt',), intercept=True)
+        w = (wi if user_w is None else user_w) if weighted else numpy.ones(k)
+        return max(0.0, 100 * adj_r2(yi, X, w))
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
+    md0 = dataclasses.replace(md, yi=yi, X=numpy.ones((k, 1)), X_names=('intrcpt',), intercept=True)
     try:
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
@@ -867,9 +883,9 @@ def _pseudo_r2(
                 weighted=weighted,
                 test=test,
                 control=con,
-                _skip_r2=True,
+                skip_r2=True,
             )
-    except EstimationError, ValueError:
+    except metafopy.errors.EstimationError, ValueError:
         return math.nan
     tau2_re = res0.tau2
     if tau2_re == 0:
@@ -877,18 +893,18 @@ def _pseudo_r2(
     return max(0.0, 100 * (tau2_re - tau2_hat) / tau2_re)
 
 
-def _adj_r2(y: FloatArray, X: FloatArray, w: FloatArray) -> float:
+def adj_r2(y: FloatArray, X: FloatArray, w: FloatArray) -> float:
     """Adjusted R^2 of ``lm(y ~ X, weights=w)`` (with R's added intercept)."""
     n = y.shape[0]
-    Xi = np.column_stack([np.ones(n), X])
-    keep = ~drop_redundant(Xi)
+    Xi = numpy.column_stack([numpy.ones(n), X])
+    keep = ~metafopy.core.linalg.drop_redundant(Xi)
     Xi = Xi[:, keep]
-    sw = np.sqrt(w)
-    coef, *_ = np.linalg.lstsq(Xi * sw[:, None], y * sw, rcond=None)
+    sw = numpy.sqrt(w)
+    coef, *_ = numpy.linalg.lstsq(Xi * sw[:, None], y * sw, rcond=None)
     resid = y - Xi @ coef
-    rss = float(np.sum(w * resid**2))
-    mean = float(np.sum(w * y) / np.sum(w))
-    tss = float(np.sum(w * (y - mean) ** 2))
+    rss = float(numpy.sum(w * resid**2))
+    mean = float(numpy.sum(w * y) / numpy.sum(w))
+    tss = float(numpy.sum(w * (y - mean) ** 2))
     r2 = 1 - rss / tss
     rdf = n - Xi.shape[1]
     return float(1 - (1 - r2) * ((n - 1) / rdf))
@@ -897,9 +913,10 @@ def _adj_r2(y: FloatArray, X: FloatArray, w: FloatArray) -> float:
 # -- printing -----------------------------------------------------------------
 
 
-def _format(res: RMAResult, digits: int) -> str:
+def format_result(res: RMAResult, digits: int) -> str:
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     out: list[str] = ['']
-    fe = res.method in FIXED_EFFECTS
+    fe = res.method in metafopy.models.tau2.FIXED_EFFECTS
     if fe:
         kind = 'Equal-Effects' if res.method == 'EE' else ('Fixed-Effects' if res.method == 'FE' else 'Common-Effects')
         out.append(f'{kind} Model (k = {res.k})')
@@ -910,12 +927,12 @@ def _format(res: RMAResult, digits: int) -> str:
 
     if not fe:
         het = 'total' if res.int_only else 'residual'
-        tau2_line = fmt_num(res.tau2, digits)
+        tau2_line = metafopy.printing.fmt_num(res.tau2, digits)
         if not math.isnan(res.se_tau2):
-            tau2_line += f' (SE = {fmt_num(res.se_tau2, digits)})'
+            tau2_line += f' (SE = {metafopy.printing.fmt_num(res.se_tau2, digits)})'
         rows = [
             (f'tau^2 (estimated amount of {het} heterogeneity):', tau2_line),
-            ('tau (square root of estimated tau^2 value):', fmt_num(math.sqrt(res.tau2), digits)),
+            ('tau (square root of estimated tau^2 value):', metafopy.printing.fmt_num(math.sqrt(res.tau2), digits)),
         ]
         if not math.isnan(res.I2):
             if res.int_only:
@@ -941,16 +958,16 @@ def _format(res: RMAResult, digits: int) -> str:
     if not math.isnan(res.QE):
         name, label = ('Q', 'Heterogeneity') if res.int_only else ('QE', 'Residual Heterogeneity')
         out.append(f'Test for {label}:')
-        out.append(f'{name}(df = {res.k - res.p}) = {fmt_num(res.QE, digits)}, p-val {_pfmt(res.QEp, digits)}')
+        out.append(f'{name}(df = {res.k - res.p}) = {metafopy.printing.fmt_num(res.QE, digits)}, p-val {pfmt(res.QEp, digits)}')
         out.append('')
 
     if not res.int_only:
         coefs = coef_span(res.btt)
         out.append(f'Test of Moderators (coefficient{"s" if res.m > 1 else ""} {coefs}):')
         if res.ddf is not None:
-            out.append(f'F(df1 = {res.m}, df2 = {res.ddf}) = {fmt_num(res.QM, digits)}, p-val {_pfmt(res.QMp, digits)}')
+            out.append(f'F(df1 = {res.m}, df2 = {res.ddf}) = {metafopy.printing.fmt_num(res.QM, digits)}, p-val {pfmt(res.QMp, digits)}')
         else:
-            out.append(f'QM(df = {res.m}) = {fmt_num(res.QM, digits)}, p-val {_pfmt(res.QMp, digits)}')
+            out.append(f'QM(df = {res.m}) = {metafopy.printing.fmt_num(res.QM, digits)}, p-val {pfmt(res.QMp, digits)}')
         out.append('')
 
     out.append('Model Results:')
@@ -963,20 +980,20 @@ def _format(res: RMAResult, digits: int) -> str:
     rows_: list[list[str]] = []
     for j in range(res.p):
         row = [
-            fmt_num(res.beta[j], digits),
-            fmt_num(res.se[j], digits),
-            fmt_num(res.zval[j], digits),
+            metafopy.printing.fmt_num(res.beta[j], digits),
+            metafopy.printing.fmt_num(res.se[j], digits),
+            metafopy.printing.fmt_num(res.zval[j], digits),
         ]
         if res.ddf is not None:
             row.append(str(res.ddf))
         row += [
-            fmt_pval(res.pval[j], digits),
-            fmt_num(res.ci_lb[j], digits),
-            fmt_num(res.ci_ub[j], digits),
-            signif_stars(res.pval[j]),
+            metafopy.printing.fmt_pval(res.pval[j], digits),
+            metafopy.printing.fmt_num(res.ci_lb[j], digits),
+            metafopy.printing.fmt_num(res.ci_ub[j], digits),
+            metafopy.printing.signif_stars(res.pval[j]),
         ]
         rows_.append(row)
-    out.append(fmt_table(header, rows_, row_names=None if res.int_only else list(res.coef_names)))
+    out.append(metafopy.printing.fmt_table(header, rows_, row_names=None if res.int_only else list(res.coef_names)))
     out.append('')
     out.append('---')
     out.append("Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1")
@@ -984,12 +1001,13 @@ def _format(res: RMAResult, digits: int) -> str:
     return '\n'.join(out)
 
 
-def _pfmt(p: float, digits: int) -> str:
-    s = fmt_pval(p, digits)
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
+def pfmt(p: float, digits: int) -> str:
+    s = metafopy.printing.fmt_pval(p, digits)
     return f'< {s[1:]}' if s.startswith('<') else f'= {s}'
 
 
-def coef_span(idx: Sequence[int]) -> str:
+def coef_span(idx: collections.abc.Sequence[int]) -> str:
     one = [i + 1 for i in idx]
     if len(one) > 1 and one == list(range(one[0], one[-1] + 1)):
         return f'{one[0]}:{one[-1]}'
