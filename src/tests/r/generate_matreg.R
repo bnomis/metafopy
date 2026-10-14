@@ -100,6 +100,12 @@ res <- rma.mv(yi, tmp$V, mods = ~ 0 + var1.var2, random = ~ var1.var2 | study, s
 R <- vec2mat(coef(res))
 rownames(R) <- colnames(R) <- c("perf", "acog", "asom", "conf")
 craft <- list(R = mat(R), names = rownames(R), V = mat(vcov(res)))
+# the rcalc() -> rma.mv() pipeline itself (rcalc leaves NA rows/columns for missing correlations; .anyNAv() decides
+# which rows rma.mv() drops)
+mvfit <- function(res, tmp) list(rcalc_V = mat(tmp$V), rcalc_yi = num(tmp$dat$yi), k = res$k, k_all = res$k.all,
+                                 not_na = res$not.na, beta = num(coef(res)), vb = mat(vcov(res)), tau2 = num(res$tau2),
+                                 rho = num(res$rho), ll = as.numeric(logLik(res)))
+craft$mv <- mvfit(res, tmp)
 mr <- matreg(1, 2:4, R = R, V = vcov(res))
 craft$fit <- fit(mr)
 craft$fit$pred <- pred(predict(mr, newmods = c(0.2, 0.1, 0.3)))
@@ -113,6 +119,7 @@ res <- rma.mv(yi, tmp$V, mods = ~ 0 + var1.var2, random = ~ var1.var2 | study, s
 R <- vec2mat(coef(res))
 rownames(R) <- colnames(R) <- c("perf", "acog", "asom", "conf")
 craft$Z <- mat(R)
+craft$mv_z <- mvfit(res, tmp)
 craft$VZ <- mat(vcov(res))
 craft$fit_ztor <- fit(matreg(1, 2:4, R = R, V = vcov(res), ztor = TRUE))
 craft$fit_ztor_n <- fit(matreg(1, 2:4, R = R, n = 500, ztor = TRUE))

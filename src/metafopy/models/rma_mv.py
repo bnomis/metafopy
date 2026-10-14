@@ -587,10 +587,7 @@ def rma_mv(
     has_na = numpy.isnan(yi_s) | x_missing_s
     if not v0:
         has_na |= numpy.isnan(vi)
-        if scipy.sparse.issparse(V_s):
-            has_na |= numpy.asarray(numpy.isnan(V_s.toarray()).any(axis=1))
-        else:
-            has_na |= numpy.isnan(V_s).any(axis=1)
+        has_na |= metafopy.models.mv_inputs.any_na_v(V_s)
     if A_s is not None:
         has_na |= numpy.asarray(numpy.isnan(A_s.toarray() if scipy.sparse.issparse(A_s) else A_s).any(axis=1))
     not_na = ~has_na

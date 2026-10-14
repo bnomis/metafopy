@@ -46,9 +46,9 @@ def same_text(actual: str, expected: str) -> None:
     assert refutil.r_print(actual).strip('\n') == r_text(expected)
 
 
-def close_matrix(actual: pandas.DataFrame, expected: typing.Any, what: str, rtol: float = refutil.RTOL) -> None:
+def close_matrix(actual: pandas.DataFrame, expected: typing.Any, what: str, rtol: float = refutil.RTOL, atol: float = 1e-9) -> None:
     exp = numpy.array([[numpy.nan if v is None else v for v in row] for row in expected], dtype=float)
-    numpy.testing.assert_allclose(actual.to_numpy(dtype=float), exp, rtol=rtol, atol=1e-9, equal_nan=True, err_msg=what)
+    numpy.testing.assert_allclose(actual.to_numpy(dtype=float), exp, rtol=rtol, atol=atol, equal_nan=True, err_msg=what)
 
 
 def check_fit(res: metafopy.MatregResult, exp: dict[str, typing.Any], rtol: float = refutil.RTOL) -> None:
@@ -343,3 +343,57 @@ def test_named_series_is_matched_to_the_coefficients() -> None:
     res = cov_fit()
     named = res.predict(pandas.Series({'wt': 3, 'am': 1, 'hp': 100}))
     check_pred(named, ref()['cov_n']['pred_one'])
+
+
+# auditme: accept[non-alphabetical-literal] factor level order of the R example sets the coefficient order
+CRAFT_LEVELS = ['acog.perf', 'asom.perf', 'conf.perf', 'acog.asom', 'acog.conf', 'asom.conf']
+# iterative REML fits: the tolerances used for rma_mv fits in test_rma_mv.py (coefficients 1e-5, var-cov matrices 1e-4)
+MV_RTOL = 1e-5
+MV_VC_RTOL = 1e-4
+
+
+def craft_pipeline(rtoz: bool) -> tuple[metafopy.RCalcResult, metafopy.RMAMVResult]:
+    """The matreg help-page pipeline: rcalc() of dat.craft2003, then a multivariate model of the correlations."""
+    dat = metafopy.datasets.load('craft2003')
+    tmp = metafopy.rcalc('ri ~ var1 + var2 | study', ni='ni', data=dat, rtoz=rtoz)
+    assert isinstance(tmp, metafopy.RCalcResult)
+    assert tmp.dat is not None
+    dd = tmp.dat.copy()
+    dd['var1.var2'] = pandas.Categorical(dd['var1.var2'], categories=CRAFT_LEVELS)
+    with pytest.warns(UserWarning, match='9 rows with NAs omitted from model fitting'):
+        res = metafopy.rma_mv('yi', tmp.V, mods='~ 0 + var1.var2', random='~ var1.var2 | study', struct='UN', data=dd)
+    return tmp, res
+
+
+@pytest.mark.parametrize(
+    ('rtoz', 'mv_key', 'fit_key'),
+    [(False, 'mv', 'fit'), (True, 'mv_z', 'fit_ztor')],
+)
+def test_craft2003_pipeline(rtoz: bool, mv_key: str, fit_key: str) -> None:
+    craft = ref()['craft']
+    exp = craft[mv_key]
+    tmp, res = craft_pipeline(rtoz)
+    assert isinstance(tmp.V, numpy.ndarray)
+    close_matrix(pandas.DataFrame(tmp.V), exp['rcalc_V'], 'rcalc V')
+    refutil.close(tmp.dat['yi'] if tmp.dat is not None else [], exp['rcalc_yi'], 'rcalc yi')
+    # rcalc leaves NA covariances in rows whose correlations are present; rma.mv drops only the rows .anyNAv() flags
+    assert res.k == exp['k']
+    refutil.close(res.coef(), exp['beta'], 'beta', rtol=MV_RTOL)
+    # atol for the near-zero covariances (about 1e-5, where 1e-4 relative is below the optimiser's precision)
+    close_matrix(res.vcov(), exp['vb'], 'vb', rtol=MV_VC_RTOL, atol=1e-7)
+    refutil.close(res.tau2, exp['tau2'], 'tau2', rtol=MV_VC_RTOL)
+    refutil.close(res.rho, exp['rho'], 'rho', rtol=MV_VC_RTOL)
+    refutil.close(res.logLik(), exp['ll'], 'logLik', rtol=MV_RTOL)
+
+    names = craft['names']
+    beta = res.coef().to_numpy()
+    R = numpy.eye(4)
+    # vec2mat(): the coefficients fill the lower triangle column by column
+    rows, cols = numpy.triu_indices(4, 1)
+    R[cols, rows] = beta
+    R[rows, cols] = beta
+    mr = metafopy.matreg(0, [1, 2, 3], R=pandas.DataFrame(R, index=names, columns=names), V=res.vcov(), ztor=rtoz)
+    fit = craft[fit_key]
+    refutil.close(mr.tab['beta'], fit['beta'], 'matreg beta', rtol=MV_VC_RTOL)
+    refutil.close(mr.tab['se'], fit['se'], 'matreg se', rtol=MV_VC_RTOL)
+    refutil.close(mr.R2, fit['R2'], 'matreg R2', rtol=MV_VC_RTOL)
