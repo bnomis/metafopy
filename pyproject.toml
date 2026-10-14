@@ -90,6 +90,7 @@ testpaths = ["src/tests"]
 addopts = "-ra --strict-markers"
 markers = [
     "rparity: live comparison against R metafor through rpy2 (needs R installed)",
+    "slow: takes more than 10 seconds; skip with -m 'not slow'",
 ]
 
 [tool.coverage.run]
