@@ -406,7 +406,21 @@ def mv_refit_fixed(x: metafopy.models.mv_result.RMAMVResult, comp: str, pos: int
         spec[name] = arg
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
-        return metafopy.models.rma_mv.rma_mv(**spec)
+        fit = metafopy.models.rma_mv.rma_mv(**spec)
+        # metafor's nlminb and SciPy's BFGS can stop at different local maxima of the restricted likelihood (BFGS from the
+        # default starting values falls short on some BLAS builds); the profile is the maximum over the free components, so
+        # a second refit started at the estimates of x is tried and the higher log-likelihood is kept
+        warm = metafopy.models.rma_mv.make_control(spec.get('control'))
+        inits: dict[str, typing.Any] = {
+            f'{name}_init': numpy.asarray(getattr(x, name), dtype=numpy.float64) for name in metafopy.models.mv_structs.VC_NAMES if x.vc_fix[name] is not None
+        }
+        if not inits:
+            return fit
+        try:
+            alt = metafopy.models.rma_mv.rma_mv(**(spec | {'control': dataclasses.replace(warm, **inits)}))
+        except metafopy.errors.MetaforError:
+            return fit
+        return alt if alt.logLik() > fit.logLik() else fit
 
 
 @confint.register
