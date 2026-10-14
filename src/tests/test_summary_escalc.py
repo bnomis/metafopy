@@ -99,6 +99,7 @@ def test_var_names_from_attrs(zcor: pandas.DataFrame) -> None:
 
 def test_errors(pft: pandas.DataFrame) -> None:
     with pytest.raises(ValueError, match='length 5'):
+        # auditme: accept[literal-duplication] test cases spell out their own R arguments
         metafopy.effects.summary.summary_escalc(pft, out_names=('a', 'b'))
     with pytest.raises(ValueError, match='between 0 and 100'):
         metafopy.effects.summary.summary_escalc(pft, level=120)

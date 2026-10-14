@@ -31,6 +31,7 @@ import pandas
 import scipy.stats
 
 import metafopy.core.integrate
+import metafopy.core.linalg
 import metafopy.effects.conv
 import metafopy.effects.measures
 import metafopy.errors
@@ -48,11 +49,6 @@ METHODS2 = ('default', 'luo/wan/shi', 'qe', 'bc', 'mln', 'blue', 'hozo2005', 'wa
 
 def qnorm(p: float) -> float:
     return float(scipy.stats.norm.ppf(p))
-
-
-def rsqrt(x: float) -> float:
-    """R's ``sqrt()``: NaN for a negative value."""
-    return math.sqrt(x) if x >= 0 else math.nan
 
 
 def match_method(method: str | collections.abc.Sequence[str]) -> tuple[str, str]:
@@ -236,7 +232,9 @@ def conv_fivenum(
                     btmean = math.exp(means[i] + sds[i] ** 2 / 2) * (1 / phi1)
                     phi11 = 1 + 2.26 * sds[i] ** 2 / ni + 5.92 * s41 / ni
                     phi12 = 1 + 2.26 * sds[i] ** 2 / ni + 1.48 * s41 / ni
-                    btsd = rsqrt(math.exp(2 * means[i] + 2 * sds[i] ** 2) * (1 / phi11) - math.exp(2 * means[i] + sds[i] ** 2) * (1 / phi12))
+                    btsd = metafopy.core.linalg.rsqrt(
+                        math.exp(2 * means[i] + 2 * sds[i] ** 2) * (1 / phi11) - math.exp(2 * means[i] + sds[i] ** 2) * (1 / phi12)
+                    )
                     means[i], sds[i] = btmean, btsd
 
             if case2[i]:
@@ -262,7 +260,9 @@ def conv_fivenum(
                     btmean = math.exp(means[i] + sds[i] ** 2 / 2) * (1 / phi2)
                     phi21 = 1 + 2.28 * sds[i] ** 2 / ni + 12 * s42 / ni
                     phi22 = 1 + 2.28 * sds[i] ** 2 / ni + 3 * s42 / ni
-                    btsd = rsqrt(math.exp(2 * means[i] + 2 * sds[i] ** 2) * (1 / phi21) - math.exp(2 * means[i] + sds[i] ** 2) * (1 / phi22))
+                    btsd = metafopy.core.linalg.rsqrt(
+                        math.exp(2 * means[i] + 2 * sds[i] ** 2) * (1 / phi21) - math.exp(2 * means[i] + sds[i] ** 2) * (1 / phi22)
+                    )
                     means[i], sds[i] = btmean, btsd
 
             if case3[i]:
@@ -289,7 +289,7 @@ def conv_fivenum(
                 if m2 == 'wan2014':
                     sds[i] = 1 / 2 * ((mx - mn) / xi + (q3i - q1i) / eta)
                 if m2 == 'bland2015':
-                    sds[i] = rsqrt(
+                    sds[i] = metafopy.core.linalg.rsqrt(
                         (mn**2 + 2 * q1i**2 + 2 * md**2 + 2 * q3i**2 + mx**2) / 16
                         + (mn * q1i + q1i * md + md * q3i + q3i * mx) / 8
                         - (mn + 2 * q1i + 2 * md + 2 * q3i + mx) ** 2 / 64
@@ -300,7 +300,9 @@ def conv_fivenum(
                     btmean = math.exp(means[i] + sds[i] ** 2 / 2) * (1 / phi3)
                     phi31 = 1 + 1.62 * sds[i] ** 2 / ni + 5.04 * s43 / ni
                     phi32 = 1 + 1.62 * sds[i] ** 2 / ni + 1.26 * s43 / ni
-                    btsd = rsqrt(math.exp(2 * means[i] + 2 * sds[i] ** 2) * (1 / phi31) - math.exp(2 * means[i] + sds[i] ** 2) * (1 / phi32))
+                    btsd = metafopy.core.linalg.rsqrt(
+                        math.exp(2 * means[i] + 2 * sds[i] ** 2) * (1 / phi31) - math.exp(2 * means[i] + sds[i] ** 2) * (1 / phi32)
+                    )
                     means[i], sds[i] = btmean, btsd
 
     est: dict[str, numpy.typing.NDArray[numpy.bool_]] = {}

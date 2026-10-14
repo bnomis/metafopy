@@ -27,6 +27,7 @@ ATOL = 1e-12
 
 type Case = collections.abc.Callable[[], typing.Any]
 
+# auditme: accept[literal-duplication] test cases spell out their own R arguments
 RVARS = ('v1i', 'v2i')
 # auditme: accept[non-alphabetical-literal] the order is that of the rows and columns of the correlation matrices
 DIMNAMES = ('perf', 'acog', 'asom', 'conf')
@@ -650,6 +651,7 @@ def test_blsplit() -> None:
 
 def test_blsplit_interleaved_and_sorted() -> None:
     parts = metafopy.blsplit(v4(), [2, 1, 2, 1])
+    # auditme: accept[literal-duplication] test cases spell out their own R arguments
     assert [str(k) for k in parts] == ['2', '1']
     for key, expected in REF['blsplit_interleaved'].items():
         close(parts[int(key)], expected, key)

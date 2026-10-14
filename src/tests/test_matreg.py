@@ -22,6 +22,7 @@ COLDITZ_NAMES = ['con', 'exp']
 FIXTURE = pathlib.Path(__file__).parent / 'reference' / 'phase7' / 'matreg.json'
 
 
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 @functools.cache
 def ref() -> dict[str, typing.Any]:
     data: dict[str, typing.Any] = json.loads(FIXTURE.read_text(encoding='utf-8'))
@@ -204,6 +205,7 @@ def craft_fit(key: str) -> metafopy.MatregResult:
     Z = frame(craft['Z'], craft['names'])
     calls = {
         'fit': lambda: metafopy.matreg(0, [1, 2, 3], R=R, V=craft['V']),
+        # auditme: accept[literal-duplication] test cases spell out their own R arguments
         'fit_n': lambda: metafopy.matreg('perf', ['acog', 'asom', 'conf'], R=R, n=500),
         'fit_ztor': lambda: metafopy.matreg(0, [1, 2, 3], R=Z, V=craft['VZ'], ztor=True),
         'fit_ztor_n': lambda: metafopy.matreg(0, [1, 2, 3], R=Z, n=500, ztor=True),

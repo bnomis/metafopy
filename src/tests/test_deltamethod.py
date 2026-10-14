@@ -16,6 +16,7 @@ B = numpy.array(REF['b'])
 VB = numpy.array(REF['vb'])
 BZ = numpy.array(REF['bz'])
 VBZ = numpy.array(REF['vbz'])
+# auditme: accept[literal-duplication] test cases spell out their own R arguments
 NAMES = ['acog', 'asom', 'conf']
 
 

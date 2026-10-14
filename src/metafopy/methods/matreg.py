@@ -57,10 +57,6 @@ def chol_inverse(x: FloatArray) -> FloatArray | None:
     return numpy.asarray(Linv.T @ Linv, dtype=numpy.float64)
 
 
-def nan_sqrt(x: float) -> float:
-    return math.sqrt(x) if x >= 0 else math.nan
-
-
 def fmt(x: float, digits: int) -> str:
     return metafopy.printing.fmt_num(float(x), digits)
 
@@ -170,7 +166,7 @@ class MatregResult:
         if self.test != 't':
             warnings.warn("Model does not contain a 'sigma' estimate.", stacklevel=2)
             return None
-        return nan_sqrt(typing.cast(float, self.sigma2_reml if REML else self.sigma2_ml))
+        return metafopy.core.linalg.rsqrt(typing.cast(float, self.sigma2_reml if REML else self.sigma2_ml))
 
     def stat(self, row: str, REML: bool) -> float:
         if self.fit_stats is None:
@@ -257,7 +253,7 @@ class MatregResult:
             Fdf = typing.cast(tuple[float, float], self.Fdf)
             p_text = metafopy.printing.fmt_pval(typing.cast(float, self.Fp), d)
             df1, df2 = (metafopy.printing.fmt_df_scalar(v) for v in Fdf)
-            rse = fmt(nan_sqrt(typing.cast(float, self.sigma2_reml)), d)
+            rse = fmt(metafopy.core.linalg.rsqrt(typing.cast(float, self.sigma2_reml)), d)
             lines += [
                 f'Residual standard error: {rse} on {df2} degrees of freedom',
                 f'Multiple R-squared: {fmt(self.R2, d)},  Adjusted R-squared: {fmt(typing.cast(float, self.R2adj), d)}',

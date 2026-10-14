@@ -265,6 +265,7 @@ def result_rows(res: FixedBinaryResult, digits: int, scale: str | None) -> list[
         metafopy.printing.fmt_num(float(res.ci_lb[0]), digits),
         metafopy.printing.fmt_num(float(res.ci_ub[0]), digits),
     ]
+    # auditme: accept[literal-duplication] the column headers of metafor's printed tables
     header = ['estimate', 'se', 'zval', 'pval', 'ci.lb', 'ci.ub']
     if scale is None:
         return ['Model Results:', '', metafopy.printing.fmt_table(header, [row])]

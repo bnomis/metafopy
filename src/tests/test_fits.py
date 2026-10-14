@@ -31,6 +31,7 @@ FIXTURE = pathlib.Path(__file__).parent / 'reference' / 'phase7' / 'fits.json'
 RTOL_OPT = 1e-5
 
 
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 @functools.cache
 def ref() -> dict[str, typing.Any]:
     data: dict[str, typing.Any] = json.loads(FIXTURE.read_text(encoding='utf-8'))
@@ -45,8 +46,8 @@ SKIP_TEXT = {'mtext'}  # the texts are compared one by one
 SKIP_AXES = {'axis', 'mtext', 'usr'}  # the texts are compared one by one, the axes depend on the device size
 
 
-@pytest.fixture
 # auditme: accept[paired-sibling-helpers] each test module has its own figure fixture
+@pytest.fixture
 def ax() -> collections.abc.Iterator[matplotlib.axes.Axes]:
     fig, axes = matplotlib.pyplot.subplots(figsize=(7, 7))
     yield axes

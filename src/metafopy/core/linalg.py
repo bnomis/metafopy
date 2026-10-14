@@ -1,6 +1,7 @@
 """Small linear-algebra helpers mirroring metafor's internal utilities."""
 
 import dataclasses
+import math
 import warnings
 
 import numpy
@@ -21,6 +22,11 @@ __all__ = [
 ]
 
 FloatArray = numpy.typing.NDArray[numpy.float64]
+
+
+def rsqrt(x: float) -> float:
+    """R's ``sqrt()`` of a scalar: NaN for a negative value."""
+    return math.sqrt(x) if x >= 0 else math.nan
 
 
 def invcalc(X: FloatArray, w: FloatArray) -> FloatArray:

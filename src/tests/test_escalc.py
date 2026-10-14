@@ -25,6 +25,7 @@ def test_appends_to_data_and_keeps_existing_yi_when_not_replacing() -> None:
 
 
 def test_var_names_and_numeric_subset_are_zero_based() -> None:
+    # auditme: accept[literal-duplication] test cases spell out their own R arguments
     res = metafopy.escalc('OR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=metafopy.datasets.load('bcg'), var_names=('lor', 'vlor'), subset=[1, 4, 6])
     # R: escalc("OR", ..., var.names=c("lor","vlor"), subset=c(2,5,7))
     assert list(res['trial']) == [2, 5, 7]
@@ -36,6 +37,7 @@ def test_var_names_and_numeric_subset_are_zero_based() -> None:
 
 def test_without_data_returns_yi_vi_only() -> None:
     res = metafopy.escalc('COR', ri=[0.2, 0.3], ni=[10, 10], slab=['a', 'a'])
+    # auditme: accept[literal-duplication] test cases spell out their own R arguments
     assert list(res.columns) == ['yi', 'vi']
     assert res.attrs['slab'] == ['a.1', 'a.2']
 
