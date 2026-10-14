@@ -3,7 +3,8 @@
 The fixtures come from ``r/generate_glmm_packages.R``.
 
 GLMMadaptive is reproduced step by step (EM stage, then BFGS with R's ``optim`` scaling), so the results follow R's, including where R stops short of
-the maximum; the exceptions in ``ADAPTIVE_TOLERANCE`` are fits whose long BFGS path is chaotic or that sit on a tie of the stopping rule. glmmTMB maximises the Laplace likelihood with exact
+the maximum; the exceptions in ``ADAPTIVE_TOLERANCE`` are fits whose long BFGS path is chaotic or that sit on a tie of
+the stopping rule. glmmTMB maximises the Laplace likelihood with exact
 derivatives, so only the small optimiser differences of ``TMB_TOLERANCE`` remain. See ``docs/differences.md``.
 """
 
