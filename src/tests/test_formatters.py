@@ -1,9 +1,6 @@
 """fmtx, fmtp, fmtp2, fmtt and setmfopt/getmfopt against R (src/tests/r/generate_formatters.R)."""
 
 import collections.abc
-import functools
-import json
-import pathlib
 import typing
 
 import numpy
@@ -15,16 +12,10 @@ import metafopy
 import metafopy.errors
 import metafopy.mfopt
 
-REF = pathlib.Path(__file__).parent / 'reference' / 'phase7' / 'formatters.json'
+REF = refutil.load_phase7('formatters')
 PV = [0.0002, 0.00008, None, 0.5, 1.2, -0.1, 0.04999, 0.00010]
 PV2 = [0.0005, 0.001, 0.002, 0.0423, 0.0543, 0.0578, 0.0623, 0.5329, None, 1]
 XS = [1.0002, 2.00008, 3.00004, -1, 1, -0.00001, None, numpy.inf, -numpy.inf, 0.5, 12345.678, 2.5]
-
-
-@functools.cache
-def ref() -> dict[str, typing.Any]:
-    data: dict[str, typing.Any] = json.loads(REF.read_text(encoding='utf-8'))
-    return data
 
 
 def unbox(args: dict[str, list[typing.Any]] | list[typing.Any]) -> dict[str, typing.Any]:
@@ -42,23 +33,23 @@ def options() -> collections.abc.Iterator[None]:
 
 
 def test_fmtp() -> None:
-    for case in ref()['fmtp']:
+    for case in REF['fmtp']:
         assert metafopy.fmtp(PV, **unbox(case['args'])) == case['out'], case['args']
     assert metafopy.fmtp(0.00002) == '<.0001'
 
 
 def test_fmtp2() -> None:
-    for case in ref()['fmtp2']:
+    for case in REF['fmtp2']:
         assert metafopy.fmtp2(PV2, **unbox(case['args'])) == case['out'], case['args']
     with pytest.raises(metafopy.errors.InputError):
         metafopy.fmtp2(0.5, cutoff=[0.05])
 
 
 def test_fmtx() -> None:
-    for case in ref()['fmtx']:
+    for case in REF['fmtx']:
         assert metafopy.fmtx(XS, **unbox(case['args'])) == case['out'], case['args']
-    assert metafopy.fmtx([1.5, 2, 2.10, 0.25], digits=2, drop0ifint=True) == ref()['fmtx_drop0']
-    assert [metafopy.fmtx(1e-9, digits=4, thresh=1e-8), metafopy.fmtx(0.5, digits=4, thresh=1e-8)] == ref()['fmtx_thresh']
+    assert metafopy.fmtx([1.5, 2, 2.10, 0.25], digits=2, drop0ifint=True) == REF['fmtx_drop0']
+    assert [metafopy.fmtx(1e-9, digits=4, thresh=1e-8), metafopy.fmtx(0.5, digits=4, thresh=1e-8)] == REF['fmtx_thresh']
     with pytest.raises(metafopy.errors.InputError):
         metafopy.fmtx([1.0, 2.0], thresh=1.0)
 
@@ -85,7 +76,7 @@ def test_fmtt() -> None:
         metafopy.fmtt(8.75, 'F', df1=2, df2=35, pval=0.00083, digits=(2, 3), format=2, pname='p', sep=False),
         metafopy.fmtt(-1.5, 'z', pval=0.13, digits=3, flag=' ', sep=False),
     ]
-    assert got == ref()['fmtt']
+    assert got == REF['fmtt']
     with pytest.raises(metafopy.errors.InputError):
         metafopy.fmtt(1.0, 'z')
 
@@ -119,9 +110,9 @@ def test_mfopt_store(options: None) -> None:
 def test_mfopt_printing(options: None) -> None:
     d = refutil.bcg()
     res = metafopy.rma_uni(d['yi'], d['vi'])
-    assert refutil.r_print(str(res)) == refutil.r_print('\n'.join(ref()['print_default']))
+    assert refutil.r_print(str(res)) == refutil.r_print('\n'.join(REF['print_default']))
     metafopy.setmfopt(digits=2)
-    assert refutil.r_print(str(res)) == refutil.r_print('\n'.join(ref()['print_digits2']))
-    assert refutil.r_print(res.summary(digits=4)) == refutil.r_print('\n'.join(ref()['print_default']))
+    assert refutil.r_print(str(res)) == refutil.r_print('\n'.join(REF['print_digits2']))
+    assert refutil.r_print(res.summary(digits=4)) == refutil.r_print('\n'.join(REF['print_default']))
     metafopy.setmfopt(digits=None, space=False)
-    assert refutil.r_print(str(res)) == refutil.r_print('\n'.join(ref()['print_nospace']))
+    assert refutil.r_print(str(res)) == refutil.r_print('\n'.join(REF['print_nospace']))

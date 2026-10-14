@@ -18,8 +18,10 @@ import scipy.stats
 
 import metafopy.bias.inputs
 import metafopy.core.rng
+import metafopy.core.verbose
 import metafopy.core.zeroin
 import metafopy.errors
+import metafopy.formatters
 import metafopy.mfopt
 import metafopy.models.rma_uni
 import metafopy.models.tau2
@@ -131,6 +133,7 @@ def fsn(
     target: float | None = None,
     method: str | None = None,
     exact: bool = False,
+    verbose: bool | int = False,
     digits: int | None = None,
     pool: typing.Literal['stouffer', 'fisher'] = 'stouffer',
     mumiss: float = 0,
@@ -150,7 +153,8 @@ def fsn(
     ``mumiss`` until the model's p-value exceeds ``alpha`` (or the estimate reaches ``target``). With
     ``exact=True`` a model is refitted to data in which the file-drawer studies are random normal
     deviates, standardised to mean ``mumiss`` and the expected variance; those come from the R-compatible
-    generator (:func:`metafopy.set_seed`, or ``seed`` / ``rng`` here).
+    generator (:func:`metafopy.set_seed`, or ``seed`` / ``rng`` here). ``verbose`` passes on to the
+    random-effects fit and prints each step of the search for the fail-safe N on stdout, as metafor does.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
@@ -266,7 +270,7 @@ def fsn(
             exact = True
         wtd = (x.weighted if isinstance(x, metafopy.models.rma_uni.RMAResult) else True) if weighted is None else bool(weighted)
         try:
-            tmp = metafopy.models.rma_uni.rma_uni(yi, v, method=meth, tau2=tau2_fix, test=tst, weighted=wtd)
+            tmp = metafopy.models.rma_uni.rma_uni(yi, v, method=meth, tau2=tau2_fix, test=tst, weighted=wtd, verbose=verbose)
         except (ValueError, ArithmeticError, numpy.linalg.LinAlgError) as exc:
             raise metafopy.errors.InputError('Could not fit random-effects model.') from exc
         vt = 1 / float(numpy.mean(1 / v))
@@ -276,7 +280,27 @@ def fsn(
         meth_out = meth
 
         def gen_fn(n: float, target_: float | None, newest: bool = False) -> typing.Any:
-            return fsn_gen(n, yi, v, vt, est, tau2_out, tau2_fix, tst, wtd, target_, alpha, exact, meth, mumiss, maxint, newest, gen)
+            return fsn_gen(
+                n,
+                yi,
+                v,
+                vt,
+                est,
+                tau2_out,
+                tau2_fix,
+                tst,
+                wtd,
+                target_,
+                alpha,
+                exact,
+                meth,
+                mumiss,
+                maxint,
+                newest,
+                gen,
+                verbose=bool(verbose),
+                upperint=max(ival),
+            )
 
         # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
         def root_of(extend: typing.Literal['upX', 'downX'], target_: float | None) -> float:
@@ -345,6 +369,9 @@ def fsn_gen(
     maxint: float,
     newest: bool,
     rng: metafopy.core.rng.RRandom,
+    *,
+    verbose: bool = False,
+    upperint: float = 0.0,
 ) -> typing.Any:
     """Port of metafor's internal ``.fsn.gen``: the p-value (or estimate) minus its target after adding ``fsnum`` null studies.
 
@@ -389,6 +416,10 @@ def fsn_gen(
             pval_fsn = 1.0
     if newest:
         return {'est_fsn': est_fsn, 'tau2_fsn': tau2_fsn, 'pval_fsn': pval_fsn}
-    if target is None:
-        return 0.0 if n == maxint else pval_fsn - alpha
-    return 0.0 if n == maxint else est_fsn - target
+    diff = (0.0 if n == maxint else pval_fsn - alpha) if target is None else (0.0 if n == maxint else est_fsn - target)
+    if verbose:
+        fmtx = metafopy.formatters.fmtx
+        width = len(metafopy.formatters.r_as_character(upperint)) + 1
+        tail = f'pval = {fmtx(pval_fsn)}  alpha = {fmtx(alpha)}' if target is None else f'target = {fmtx(target)}'
+        metafopy.core.verbose.cat(f'fsnum = {n:>{width}d}  est = {fmtx(est_fsn, flag=" ")}  tau2 = {fmtx(tau2_fsn)}  {tail}  diff = {fmtx(diff, flag=" ")} \n')
+    return diff

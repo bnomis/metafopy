@@ -33,6 +33,7 @@ import metafopy.core.linalg
 import metafopy.core.numderiv
 import metafopy.errors
 import metafopy.metadata
+import metafopy.models.call
 import metafopy.models.rma_uni
 import metafopy.models.sel_lik
 import metafopy.models.sel_opt
@@ -267,6 +268,7 @@ def log_progress(prob: metafopy.models.sel_lik.Problem, par: FloatArray, digits:
     sys.stderr.write(f'll = {fmt(ev.ll, digits)}  beta = {beta}  tau2 = {fmt(ev.tau2, digits)}  delta = {delta}\n')
 
 
+@metafopy.models.call.records_call
 def selmodel(
     x: Model,
     type: str,

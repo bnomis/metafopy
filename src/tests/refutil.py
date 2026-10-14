@@ -12,12 +12,19 @@ import pandas
 import metafopy.datasets
 
 PHASE2_DIR = pathlib.Path(__file__).parent / 'reference' / 'phase2'
+PHASE7_DIR = pathlib.Path(__file__).parent / 'reference' / 'phase7'
 RTOL = 1e-8
 
 
 @functools.cache
 def load_phase2(name: str) -> dict[str, typing.Any]:
     data: dict[str, typing.Any] = json.loads((PHASE2_DIR / f'{name}.json').read_text(encoding='utf-8'))
+    return data
+
+
+@functools.cache
+def load_phase7(name: str) -> dict[str, typing.Any]:
+    data: dict[str, typing.Any] = json.loads((PHASE7_DIR / f'{name}.json').read_text(encoding='utf-8'))
     return data
 
 
@@ -47,6 +54,13 @@ def bcg() -> pandas.DataFrame:
     d['vi'] = 1 / a - 1 / (a + b) + 1 / c - 1 / (c + e)
     d['n'] = a + b + c + e
     d['label'] = d['author'] + ' ' + d['year'].astype(str)
+    return d
+
+
+def bcg_na_yi() -> pandas.DataFrame:
+    """The bcg data with ``yi`` of study 3 set to NA."""
+    d = bcg()
+    d.loc[2, 'yi'] = numpy.nan
     return d
 
 

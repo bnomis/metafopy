@@ -14,6 +14,7 @@ from metafopy.effects import cmicalc, escalc, summary_escalc
 from metafopy.formatters import fmtp, fmtp2, fmtt, fmtx
 from metafopy.formula import RandomTerm, parse_random
 from metafopy.metadata import MetaData
+from metafopy.methods.accessors import df_residual, model_matrix, nobs, se, update
 from metafopy.methods.anova import LRTResult, WaldResult, anova
 from metafopy.methods.blocks import bldiag, blsplit
 from metafopy.methods.blup import BlupResult, blup
@@ -114,6 +115,7 @@ __all__ = [
     'cooks_distance',
     'cumul',
     'datasets',
+    'df_residual',
     'dfbetas',
     'escalc',
     'fmtp',
@@ -131,6 +133,8 @@ __all__ = [
     'labbe',
     'leave1out',
     'llplot',
+    'model_matrix',
+    'nobs',
     'pairmat',
     'parse_random',
     'permutest',
@@ -159,6 +163,7 @@ __all__ = [
     'robust',
     'rstandard',
     'rstudent',
+    'se',
     'selmodel',
     'set_seed',
     'setmfopt',
@@ -166,6 +171,7 @@ __all__ = [
     'tes',
     'transf',
     'trimfill',
+    'update',
     'vcalc',
     'vif',
 ]

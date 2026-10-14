@@ -29,8 +29,10 @@ import pandas
 import scipy.stats
 
 import metafopy.core.linalg
+import metafopy.core.verbose
 import metafopy.errors
 import metafopy.metadata
+import metafopy.models.call
 import metafopy.models.glmm_fit
 import metafopy.models.glmm_result
 import metafopy.models.rma_uni
@@ -241,6 +243,7 @@ def fit_statistics(ll: float, ll_qe: float, parms: int, k_eff: int) -> metafopy.
     )
 
 
+@metafopy.models.call.records_call
 def rma_glmm(
     *,
     ai: metafopy.metadata.Column | None = None,
@@ -274,6 +277,7 @@ def rma_glmm(
     level: float = 95,
     btt: metafopy.models.rma_uni.Btt = None,
     nAGQ: int = 7,
+    verbose: bool | int = False,
     digits: int = 4,
     control: metafopy.models.glmm_fit.GLMMControl | collections.abc.Mapping[str, typing.Any] | None = None,
     na_action: metafopy.metadata.NAAction = 'omit',
@@ -302,6 +306,9 @@ def rma_glmm(
     the ``clogit`` and ``clogistic`` optimisers and ``link``/``family``
     overrides are not available.
 
+    ``verbose`` prints metafor's progress messages on stderr (``1``: the model fits; ``2``: every stage); the
+    trace output of ``glm()``/``glmer()`` and of the optimisers has no counterpart here.
+
     Examples
     --------
     >>> from metafopy import datasets, rma_glmm
@@ -313,6 +320,11 @@ def rma_glmm(
         metafopy.errors.EstimationError: a model cannot be fitted.
     """
     model_name = check_arguments(measure, model, method, coding, test)
+    vlevel = int(verbose)
+    if vlevel:
+        metafopy.core.verbose.cat('\n')
+    if vlevel > 1:
+        metafopy.core.verbose.message('Extracting the data and computing yi/vi values ...')
     if measure is None:
         raise metafopy.errors.InputError("Must specify the 'measure' argument.")
     con = make_control(control)
@@ -357,6 +369,15 @@ def rma_glmm(
         addvi=addvi,
         na_action=na_action,
     )
+    if vlevel > 1:
+        metafopy.core.verbose.message('Creating the model matrix ...')
+        metafopy.core.verbose.message('Generating/extracting the study labels ...')
+        if subset is not None:
+            metafopy.core.verbose.message('Subsetting ...')
+        if not bool(numpy.all(tab.not_na)):
+            metafopy.core.verbose.message('Handling NAs in the table data ...')
+        if not bool(numpy.all(tab.not_na_yivi)):
+            metafopy.core.verbose.message('Handling NAs in yi/vi ...')
     design = build_design(tab, mods_all, names_all)
     X, X_f, X_yi = design.X, design.X_f, design.X_yi
     k, p = X.shape
@@ -380,10 +401,19 @@ def rma_glmm(
 
     alpha = metafopy.models.rma_uni.level_to_alpha(level)
     spec = metafopy.models.glmm_fit.FitSpec(measure, model_name, method, X_fit, tab.cells, coding, cor, nagq, alpha, con)
+    if vlevel:
+        metafopy.core.verbose.message('Fitting the FE model ...')
+        if k > 1:
+            metafopy.core.verbose.message('Fitting the saturated model ...')
+        if method == 'ML':
+            metafopy.core.verbose.message('Fitting the ML model ...')
     fit = metafopy.models.glmm_fit.fit_model(spec)
     used_method = 'ML' if fit.method == 'ML' else method
 
     # -- tests and heterogeneity ----------------------------------------------
+    if vlevel > 1:
+        metafopy.core.verbose.message('Conducting the heterogeneity tests ...')
+        metafopy.core.verbose.message('Conducting the tests of the fixed effects ...')
     qe_wld, qep_wld, qe_lrt, qep_lrt, qe_df = heterogeneity_tests(fit, k, p)
     i2, h2, vt = i2_h2(tab, X_yi, fit.tau2, p, i2def)
     beta, vb = fit.beta, fit.vb
@@ -409,8 +439,11 @@ def rma_glmm(
     # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
     ll_ml = fit.ll_fe if method in ('FE', 'EE', 'CE') else fit.ll_ml
     stats_ml = fit_statistics(ll_ml, fit.ll_qe, fit.parms, fit.k_eff)
+    if vlevel > 1:
+        metafopy.core.verbose.message('Computing fit statistics and log-likelihood ...')
+        metafopy.core.verbose.message('Preparing the output ...')
     nan_stats = metafopy.models.rma_uni.FitStats(math.nan, math.nan, math.nan, math.nan, math.nan)
-    return metafopy.models.glmm_result.GLMMResult(
+    out = metafopy.models.glmm_result.GLMMResult(
         beta=beta,
         se=se,
         zval=zval,
@@ -468,6 +501,9 @@ def rma_glmm(
         se_warn=fit.se_warn,
         data=data,
     )
+    if vlevel:
+        metafopy.core.verbose.cat('\n')
+    return out
 
 
 def length_of(

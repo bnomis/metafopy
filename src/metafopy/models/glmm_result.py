@@ -12,6 +12,8 @@ import numpy.typing
 import pandas
 
 import metafopy.mfopt
+import metafopy.models.call
+import metafopy.models.fit_methods
 import metafopy.models.rma_uni
 import metafopy.models.tables
 import metafopy.printing
@@ -35,7 +37,7 @@ FIXED_METHODS = ('FE', 'EE', 'CE')
 
 
 @dataclasses.dataclass(frozen=True, slots=True, eq=False)
-class GLMMResult:
+class GLMMResult(metafopy.models.fit_methods.FitMethods):
     """A fitted ``rma.glmm`` model: a generalized linear mixed-effects model for binary or count data.
 
     ``beta``, ``se``, ``zval``, ``pval``, ``ci_lb``, ``ci_ub`` and ``vb`` hold one element per coefficient
@@ -101,6 +103,7 @@ class GLMMResult:
     fit_stats_reml: metafopy.models.rma_uni.FitStats
     se_warn: bool
     data: pandas.DataFrame | None = dataclasses.field(default=None, repr=False)
+    call: metafopy.models.call.Call | None = dataclasses.field(default=None, kw_only=True, repr=False, compare=False)
 
     # -- accessors ---------------------------------------------------------
 
@@ -123,6 +126,17 @@ class GLMMResult:
     def vcov(self) -> pandas.DataFrame:
         names = list(self.coef_names)
         return pandas.DataFrame(self.vb, index=names, columns=names)
+
+    def fitted(self) -> FloatArray:
+        """Fitted values ``X beta`` of the tables used in fitting (metafor's ``fitted.rma``)."""
+        out: FloatArray = self.X_f[self.tables.not_na] @ self.beta
+        return out
+
+    def residuals(self) -> FloatArray:
+        """Raw residuals ``yi - X beta`` of the tables used in fitting (metafor's ``residuals.rma``, ``type='response'``)."""
+        out: FloatArray = self.tables.yi_f[self.tables.not_na] - self.fitted()
+        out[numpy.abs(out) < 100 * numpy.finfo(numpy.float64).eps] = 0.0
+        return out
 
     def fit_stats(self, REML: bool | None = None) -> metafopy.models.rma_uni.FitStats:
         return self.fit_stats_reml if REML else self.fit_stats_ml

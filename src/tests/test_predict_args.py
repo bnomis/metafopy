@@ -1,10 +1,5 @@
 """predict() arguments hetvar, prob, addx, vcov and adjust against R (src/tests/r/generate_predict_args.R)."""
 
-import functools
-import json
-import pathlib
-import typing
-
 import numpy
 import pandas
 import pytest
@@ -14,21 +9,16 @@ import scipy.linalg
 import metafopy
 import metafopy.errors
 
-REF = pathlib.Path(__file__).parent / 'reference' / 'phase7' / 'predict_args.json'
+REF = refutil.load_phase7('predict_args')
 # rma.mv and rma.glmm estimates come from an optimiser, so they agree with R to its convergence tolerance only
 OPTIM = 1e-5
 # the rma.glmm variance-covariance matrix comes from a numerical Hessian in R (lme4), which agrees to about 1e-4
 GLMM = 1e-4
 
 
-@functools.cache
-def ref() -> dict[str, typing.Any]:
-    data: dict[str, typing.Any] = json.loads(REF.read_text(encoding='utf-8'))
-    return data
-
-
 def check(got: metafopy.PredictResult, key: str, rtol: float = refutil.RTOL) -> None:
-    exp = ref()[key]
+    exp = REF[key]
+    # auditme: accept[literal-duplication] the columns of predict() as in metafor
     for field in ('pred', 'se', 'ci_lb', 'ci_ub', 'pi_lb', 'pi_ub'):
         if exp[field] is None:
             assert numpy.all(numpy.isnan(getattr(got, field))), field
@@ -72,10 +62,13 @@ def test_rma_mv() -> None:
 
 def test_rma_mv_levels() -> None:
     dat = metafopy.datasets.load('berkey1998')
+    # auditme: accept[literal-duplication] the columns and levels of the berkey1998 data
     V = scipy.linalg.block_diag(*[g[['v1i', 'v2i']].to_numpy(dtype=float) for _, g in dat.groupby('trial', sort=True)])
     res = metafopy.rma_mv('yi', V, mods='~ 0 + outcome', random='~ outcome | trial', struct='UN', data=dat)
+    # auditme: accept[literal-duplication] the levels of the berkey1998 data
     check(metafopy.predict(res, numpy.eye(2), tau2_levels=['AL', 'PD'], prob='<0.2', vcov=True), 'un_levels', OPTIM)
     with pytest.warns(UserWarning, match='hetvar'):
+        # auditme: accept[literal-duplication] the levels of the berkey1998 data
         got = metafopy.predict(res, numpy.eye(2), tau2_levels=['AL', 'PD'], hetvar=[0.01, 0.02])
     check(got, 'un_hetvar', OPTIM)
 

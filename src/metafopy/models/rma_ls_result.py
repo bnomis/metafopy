@@ -10,6 +10,8 @@ import pandas
 import metafopy.core.linalg
 import metafopy.metadata
 import metafopy.mfopt
+import metafopy.models.call
+import metafopy.models.fit_methods
 import metafopy.models.rma_uni
 
 __all__ = ['LSControl', 'RMALSResult']
@@ -50,7 +52,7 @@ class LSControl:
 
 
 @dataclasses.dataclass(frozen=True, slots=True, eq=False)
-class RMALSResult:
+class RMALSResult(metafopy.models.fit_methods.FitMethods):
     """A fitted location-scale model.
 
     The location part (``beta``, ``se``, ..., ``vb``) and the scale part
@@ -126,6 +128,7 @@ class RMALSResult:
     tau2_fix: bool = False
     measure: str = 'GEN'
     formula_scale: str | None = None
+    call: metafopy.models.call.Call | None = dataclasses.field(default=None, kw_only=True, repr=False, compare=False)
 
     @property
     def alphas(self) -> int:

@@ -21,8 +21,12 @@ import scipy.stats
 
 import metafopy.core.linalg
 import metafopy.core.numderiv
+import metafopy.core.verbose
 import metafopy.errors
+import metafopy.formatters
 import metafopy.metadata
+import metafopy.mfopt
+import metafopy.models.call
 import metafopy.models.mv_factor
 import metafopy.models.mv_hessian
 import metafopy.models.mv_inputs
@@ -384,6 +388,7 @@ def resolve_rscale(value: str | bool | int) -> str:
     return value
 
 
+@metafopy.models.call.records_call
 def rma_mv(
     yi: object,
     V: object,
@@ -418,6 +423,7 @@ def rma_mv(
     vccon: collections.abc.Mapping[str, numpy.typing.ArrayLike] | None = None,
     restart: metafopy.models.mv_result.RMAMVResult | None = None,
     control: MVControl | collections.abc.Mapping[str, typing.Any] | None = None,
+    verbose: bool | int = False,
     na_action: metafopy.metadata.NAAction = 'omit',
 ) -> metafopy.models.mv_result.RMAMVResult:
     """Fit a multivariate/multilevel meta-analytic model.
@@ -440,6 +446,9 @@ def rma_mv(
     and ``phi`` whose entries are group ids: components with the same id are constrained to be equal. ``restart`` is a
     previous fit of the same model whose variance components are the starting values (metafor restarts from the last
     estimates in the session). The Hessians are the Richardson extrapolation of ``numDeriv`` (``hesspack='numDeriv'``).
+    ``verbose`` prints metafor's table of the variance components and a log line per evaluation of the log-likelihood to
+    stdout (the optimiser differs from metafor's ``nlminb``, so the sequence of evaluations differs too) and, with
+    ``verbose=2`` or more, its progress messages to stderr.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
@@ -482,6 +491,16 @@ def rma_mv(
     if method not in (*FIXED_METHODS, 'ML', 'REML'):
         raise metafopy.errors.InputError("Unknown 'method' specified.")
     con = make_control(control)
+    vlevel = int(verbose)
+    if vlevel > 1:
+        metafopy.core.verbose.cat('\n')
+        metafopy.core.verbose.message('Extracting yi/V values ...')
+        metafopy.core.verbose.message('Creating model matrix ...')
+        if random is not None and method not in FIXED_METHODS:
+            metafopy.core.verbose.message("Processing 'random' argument ...")
+        metafopy.core.verbose.message('Generating/extracting study labels ...')
+        if subset is not None:
+            metafopy.core.verbose.message('Subsetting ...')
     if isinstance(cvvc, str) and cvvc not in CVVC_OPTIONS:
         raise metafopy.errors.InputError("Argument 'cvvc' must be TRUE, FALSE, 'varcor', 'varcov' or 'transf'.")
     cvvc_mode = 'varcor' if cvvc is True else (cvvc if isinstance(cvvc, str) else None)
@@ -851,11 +870,32 @@ def rma_mv(
         'phi': ~numpy.isnan(group_h.rho) if group_h is not None else None,
     }
     reml = method == 'REML'
+    if vlevel:
+        specified = {
+            'sigma2': sigma2_v if with_s else None,
+            'tau2': group_g.tau2 if group_g is not None else None,
+            'rho': group_g.rho if group_g is not None else None,
+            'gamma2': group_h.tau2 if group_h is not None else None,
+            'phi': group_h.rho if group_h is not None else None,
+        }
+        initial = {'sigma2': sigma2_init, 'tau2': tau2_init, 'rho': rho_init, 'gamma2': gamma2_init, 'phi': phi_init}
+        metafopy.core.verbose.cat(vc_table(vc_fix, initial, specified, metafopy.mfopt.option_digits(None)))
+    if vlevel > 1:
+        metafopy.core.verbose.message('Model fitting ...\n')
 
     iterations = 0
     par = par0
     if (optbeta or not if_fixed) and free.shape[0] > 0:
-        opt = metafopy.models.mv_opt.maximise(problem, par0, free, reml, gtol=con.gtol, maxiter=con.maxiter, nonsmooth=lambda1 > 0)
+        opt = metafopy.models.mv_opt.maximise(
+            problem,
+            par0,
+            free,
+            reml,
+            gtol=con.gtol,
+            maxiter=con.maxiter,
+            nonsmooth=lambda1 > 0,
+            log=iteration_logger(problem, reml, metafopy.mfopt.option_digits(None)) if vlevel else None,
+        )
         par = opt.par
         iterations = opt.iterations
         if p == k:
@@ -929,6 +969,8 @@ def rma_mv(
         s2w = max(s2w, 1.0)
     vb = s2w * vb
 
+    if vlevel > 1:
+        metafopy.core.verbose.message(('' if vlevel > 2 else '\n') + 'Conducting tests of the fixed effects ...')
     idx_b = list(btt_t)
     try:
         QM = float(coef[idx_b] @ numpy.linalg.solve(vb[numpy.ix_(idx_b, idx_b)], coef[idx_b]))
@@ -970,6 +1012,8 @@ def rma_mv(
             warnings.warn('Error when trying to invert the Hessian.', stacklevel=2)
 
     # fit statistics (only the estimated components count towards the number of parameters)
+    if vlevel > 1:
+        metafopy.core.verbose.message('Computing fit statistics and log-likelihood ...')
     p_eff = int(beta_est.sum())
     fixed_counts = {name: 0 if flags is None else int(flags.sum()) for name, flags in vc_fix.items()}
     present_vc = {'sigma2': with_s, 'tau2': group_g is not None, 'rho': group_g is not None, 'gamma2': group_h is not None, 'phi': group_h is not None}
@@ -1014,7 +1058,9 @@ def rma_mv(
     g_names_out = tuple(replace_call_notation(n) for n in group_g.names) if group_g is not None else ()
     h_names_out = tuple(replace_call_notation(n) for n in group_h.names) if group_h is not None else ()
 
-    return metafopy.models.mv_result.RMAMVResult(
+    if vlevel > 1:
+        metafopy.core.verbose.message('Preparing output ...')
+    out = metafopy.models.mv_result.RMAMVResult(
         beta=coef,
         se=se,
         zval=zval,
@@ -1103,6 +1149,63 @@ def rma_mv(
         vccon=None if vccon is None else {key: numpy.asarray(vccon_ids[key]) for key in vccon_ids},
         cvvc=cvvc_mode,
     )
+    if vlevel:
+        metafopy.core.verbose.cat('\n')
+    return out
+
+
+def vc_table(
+    vc_fix: collections.abc.Mapping[str, BoolArray | None],
+    initial: collections.abc.Mapping[str, FloatArray],
+    specified: collections.abc.Mapping[str, FloatArray | None],
+    digits: int,
+) -> str:
+    """metafor's ``Variance Components in Model:`` table of ``rma.mv(..., verbose=TRUE)``."""
+    if all(flags is None for flags in vc_fix.values()):
+        return '\nVariance Components in Model: none\n\n'
+    header: list[str] = []
+    rows: dict[str, list[str]] = {'included': [], 'fixed': [], 'initial': [], 'specified': []}
+    for name in metafopy.models.mv_structs.VC_NAMES:
+        flags = vc_fix[name]
+        included = flags is not None
+        n = 1 if flags is None else int(flags.shape[0])
+        header += [name] if n == 1 else [f'{name}{i + 1}' for i in range(n)]
+        spec = specified[name]
+        for i in range(n):
+            rows['included'].append('Yes' if included else 'No')
+            rows['fixed'].append('---' if flags is None else ('TRUE' if bool(flags[i]) else 'FALSE'))
+            init = float(initial[name][i]) if included and i < initial[name].shape[0] else math.nan
+            rows['initial'].append('---' if math.isnan(init) else metafopy.formatters.r_as_character(round(init, digits)))
+            val = math.nan if spec is None or i >= spec.shape[0] else float(spec[i])
+            rows['specified'].append('---' if math.isnan(val) else metafopy.formatters.r_as_character(round(val, digits)))
+    widths = [max(len(header[j]), *(len(r[j]) for r in rows.values())) for j in range(len(header))]
+    name_w = max(len(n) for n in rows)
+    lines = [' ' * name_w + ' ' + ' '.join(h.rjust(w) for h, w in zip(header, widths, strict=True))]
+    lines += [n.ljust(name_w) + ' ' + ' '.join(c.rjust(w) for c, w in zip(r, widths, strict=True)) for n, r in rows.items()]
+    return '\nVariance Components in Model:\n\n' + '\n'.join(lines) + '\n\n'
+
+
+def iteration_logger(problem: metafopy.models.mv_lik.Problem, reml: bool, digits: int) -> collections.abc.Callable[[FloatArray, float], None]:
+    """A logger of each evaluation of the log-likelihood, printing metafor's ``Iteration ... ll = ... sigma2 = ...`` lines."""
+    state = {'iteration': 0}
+
+    def log(par: FloatArray, ll: float) -> None:
+        fit = metafopy.models.mv_lik.final_fit(problem, par)
+        fx = metafopy.formatters.fmtx
+        parts = [f'Iteration {state["iteration"]:<5d} ', f'll = {fx(ll, digits, flag=" ")}   ']
+        for label, values in (
+            ('sigma2', fit.sigma2 if problem.with_s else None),
+            ('tau2', fit.tau2 if problem.g is not None else None),
+            ('rho', fit.rho if problem.g is not None else None),
+            ('gamma2', fit.gamma2 if problem.h is not None else None),
+            ('phi', fit.phi if problem.h is not None else None),
+        ):
+            if values is not None:
+                parts.append(f'{label} =' + ' '.join(fx(list(numpy.atleast_1d(values)), digits, flag=' ')) + '  ')
+        metafopy.core.verbose.cat(''.join(parts) + '\n')
+        state['iteration'] += 1
+
+    return log
 
 
 def coef_slab(slab: tuple[str, ...], not_na: BoolArray) -> tuple[str, ...]:

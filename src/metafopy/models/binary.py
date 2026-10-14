@@ -20,6 +20,8 @@ import pandas
 import metafopy.errors
 import metafopy.metadata
 import metafopy.mfopt
+import metafopy.models.call
+import metafopy.models.fit_methods
 import metafopy.models.rma_uni
 import metafopy.models.tables
 import metafopy.printing
@@ -70,7 +72,7 @@ def fit_statistics(yi: FloatArray, vi: FloatArray, fit: float, k_yi: int) -> tup
 
 
 @dataclasses.dataclass(frozen=True, slots=True, eq=False)
-class FixedBinaryResult(abc.ABC):
+class FixedBinaryResult(metafopy.models.fit_methods.FitMethods, abc.ABC):
     """An intercept-only equal-effects model for 2x2 tables or rate data.
 
     ``beta``, ``se``, ``zval``, ``pval``, ``ci_lb``, ``ci_ub`` and ``vb`` hold a
@@ -115,6 +117,7 @@ class FixedBinaryResult(abc.ABC):
     test: str = 'z'
     int_only: bool = True
     weighted: bool = True
+    call: metafopy.models.call.Call | None = dataclasses.field(default=None, kw_only=True, repr=False, compare=False)
 
     # -- accessors ---------------------------------------------------------
 

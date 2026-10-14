@@ -21,9 +21,12 @@ import pandas
 import scipy.stats
 
 import metafopy.core.linalg
+import metafopy.core.verbose
 import metafopy.errors
 import metafopy.metadata
 import metafopy.mfopt
+import metafopy.models.call
+import metafopy.models.fit_methods
 import metafopy.models.robust_info
 import metafopy.models.robust_print
 import metafopy.models.tau2
@@ -58,7 +61,7 @@ class FitStats:
 
 
 @dataclasses.dataclass(frozen=True, slots=True, eq=False)
-class RMAResult:
+class RMAResult(metafopy.models.fit_methods.FitMethods):
     """A fitted ``rma.uni`` model.
 
     Array attributes follow metafor's names with ``.`` replaced by ``_``
@@ -111,6 +114,7 @@ class RMAResult:
     iterations: int = 0
     measure: str = 'GEN'
     robust: metafopy.models.robust_info.RobustInfo | None = None
+    call: metafopy.models.call.Call | None = dataclasses.field(default=None, kw_only=True, repr=False, compare=False)
 
     # -- accessors ---------------------------------------------------------
 
@@ -353,6 +357,7 @@ def rma_uni(
     scale: None = None,
     tau2: float | None = None,
     control: metafopy.models.tau2.Control | collections.abc.Mapping[str, typing.Any] | None = None,
+    verbose: bool | int = False,
     na_action: metafopy.metadata.NAAction = 'omit',
     vtype: str | collections.abc.Sequence[str] = 'LS',
     correct: bool = True,
@@ -373,7 +378,8 @@ def rma_uni(
 ) -> metafopy.models.rma_ls_result.RMALSResult: ...
 
 
-def rma_uni(  # type: ignore[misc]  # the scale overload forwards the remaining keywords
+@metafopy.models.call.records_call  # type: ignore[misc]  # the scale overload forwards the remaining keywords
+def rma_uni(
     yi: metafopy.metadata.Column | pandas.DataFrame | None = None,
     vi: metafopy.metadata.Column | None = None,
     *,
@@ -428,6 +434,7 @@ def rma_uni(  # type: ignore[misc]  # the scale overload forwards the remaining 
     beta: numpy.typing.ArrayLike | None = None,
     tau2: float | None = None,
     control: metafopy.models.tau2.Control | metafopy.models.rma_ls_result.LSControl | collections.abc.Mapping[str, typing.Any] | None = None,
+    verbose: bool | int = False,
     na_action: metafopy.metadata.NAAction = 'omit',
     vtype: str | collections.abc.Sequence[str] = 'LS',
     correct: bool = True,
@@ -464,6 +471,10 @@ def rma_uni(  # type: ignore[misc]  # the scale overload forwards the remaining 
     ``beta`` (fixed values of the location coefficients, with ``optbeta``) and ``att``
     (the scale coefficients to test) only apply to such models.
 
+    ``verbose`` prints metafor's iteration log of the tau^2 estimators to stdout
+    (and with ``verbose=2`` or more its progress messages to stderr); it has no
+    effect for location-scale models.
+
     Examples
     --------
     >>> from metafopy import datasets, rma
@@ -473,6 +484,19 @@ def rma_uni(  # type: ignore[misc]  # the scale overload forwards the remaining 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
+    vlevel = int(verbose)
+    if vlevel:
+        metafopy.core.verbose.cat('\n')
+    if vlevel > 1:
+        metafopy.core.verbose.message('Extracting/computing the yi/vi values ...')
+        if weights is not None:
+            metafopy.core.verbose.message('Extracting custom weights ...')
+        metafopy.core.verbose.message('Creating the model matrix ...')
+        if subset is not None:
+            metafopy.core.verbose.message('Subsetting ...')
+        metafopy.core.verbose.message('Generating/extracting the study labels ...')
+        if subset is not None:
+            metafopy.core.verbose.message('Subsetting ...')
     test_l = test.lower()
     if test_l == 'hksj':
         test_l = 'knha'
@@ -568,6 +592,8 @@ def rma_uni(  # type: ignore[misc]  # the scale overload forwards the remaining 
             na_action=na_action,
             measure=measure,
         )
+    if vlevel > 1 and md.na_rows is not None and md.na_rows.any():
+        metafopy.core.verbose.message('Handling NAs ...')
     if optbeta or att is not None:
         warnings.warn("Arguments 'optbeta' and 'att' are only relevant for location-scale models and hence ignored.", stacklevel=2)
     res = fit_rma_uni(
@@ -579,7 +605,10 @@ def rma_uni(  # type: ignore[misc]  # the scale overload forwards the remaining 
         btt=btt,
         tau2=tau2,
         control=typing.cast(metafopy.models.tau2.Control | collections.abc.Mapping[str, typing.Any] | None, control),
+        verbose=vlevel,
     )
+    if vlevel:
+        metafopy.core.verbose.cat('\n')
     return dataclasses.replace(res, measure=measure)
 
 
@@ -667,6 +696,7 @@ def fit_rma_uni(
     tau2: float | None = None,
     control: metafopy.models.tau2.Control | collections.abc.Mapping[str, typing.Any] | None = None,
     skip_r2: bool = False,
+    verbose: int = 0,
 ) -> RMAResult:
     """Fit ``rma.uni`` to already normalised inputs.
 
@@ -738,6 +768,8 @@ def fit_rma_uni(
     tau2_hat = 0.0
     se_tau2 = math.nan
     iterations = 0
+    if verbose > 1 and not tau2_fix and used not in metafopy.models.tau2.FIXED_EFFECTS:
+        metafopy.core.verbose.message('Estimating the tau^2 value ...\n')
     if used not in metafopy.models.tau2.FIXED_EFFECTS:
         errors: list[str] = []
         for cand in methods:
@@ -754,6 +786,8 @@ def fit_rma_uni(
                     tau2_fixed=float(tau2) if tau2_fix else None,  # type: ignore[arg-type]
                     allvipos=allvipos,
                     con=con,
+                    verbose=verbose,
+                    digits=metafopy.mfopt.option_digits(None),
                 )
             except metafopy.errors.EstimationError as exc:
                 errors.append(str(exc))
@@ -767,6 +801,8 @@ def fit_rma_uni(
         se_tau2 = math.nan
 
     # -- fixed effects -----------------------------------------------------
+    if verbose > 1:
+        metafopy.core.verbose.message('\nModel fitting ...')
     alpha = level_to_alpha(level)
     wi = 1.0 / (vi + tau2_hat)
     beta, vb, RSS_f, s2w = fixed_effects(yi, vi, X, tau2_hat, user_w, weighted, test)
@@ -775,6 +811,8 @@ def fit_rma_uni(
     tdist = test in ('knha', 'adhoc', 't')
     ddf = k - p if tdist else None
 
+    if verbose > 1:
+        metafopy.core.verbose.message('Conducting the tests of the fixed effects ...')
     sub = numpy.array(btt_idx)
     try:
         vsub = vb[numpy.ix_(sub, sub)]
@@ -804,6 +842,8 @@ def fit_rma_uni(
     ci_ub = beta + crit * se
 
     # -- heterogeneity statistics ----------------------------------------------
+    if verbose > 1:
+        metafopy.core.verbose.message('Conducting the heterogeneity test ...')
     QE = QEp = I2 = H2 = vt = math.nan
     if allvipos:
         if k > p:
@@ -824,6 +864,8 @@ def fit_rma_uni(
             QE, QEp, I2, H2, vt = 0.0, 1.0, 0.0, 1.0, 0.0
 
     # -- fit statistics -----------------------------------------------------
+    if verbose > 1:
+        metafopy.core.verbose.message('Computing fit statistics and log-likelihood ...')
     parms = p + (0 if (used in metafopy.models.tau2.FIXED_EFFECTS or tau2_fix) else 1)
     lv = numpy.log(vi + tau2_hat)
     ll_ml = -0.5 * k * math.log(2 * math.pi) - 0.5 * float(lv.sum()) - 0.5 * RSS_f
@@ -859,6 +901,8 @@ def fit_rma_uni(
     # -- pseudo R^2 ----------------------------------------------------------
     R2: float | None = None
     if not int_only and metafopy.core.linalg.is_nested(X, numpy.ones((k, 1))) and not skip_r2:
+        if verbose > 1:
+            metafopy.core.verbose.message('Computing R^2 ...')
         R2 = pseudo_r2(
             md,
             yi=yi,
@@ -871,8 +915,11 @@ def fit_rma_uni(
             test=test,
             con=con,
             tau2_hat=tau2_hat,
+            verbose=verbose,
         )
 
+    if verbose > 1:
+        metafopy.core.verbose.message('Preparing the output ...')
     return RMAResult(
         beta=beta,
         se=se,
@@ -991,6 +1038,7 @@ def pseudo_r2(
     test: Test,
     con: metafopy.models.tau2.Control,
     tau2_hat: float,
+    verbose: int = 0,
 ) -> float | None:
     k = yi.shape[0]
     if used in metafopy.models.tau2.FIXED_EFFECTS:
@@ -1000,6 +1048,9 @@ def pseudo_r2(
         return max(0.0, 100 * adj_r2(yi, X, w))
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     md0 = dataclasses.replace(md, yi=yi, X=numpy.ones((k, 1)), X_names=('intrcpt',), intercept=True)
+    if verbose:
+        # metafor refits the intercept-only model with verbose=TRUE, which logs its iterations between blank lines
+        metafopy.core.verbose.cat('\n')
     try:
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
@@ -1010,9 +1061,13 @@ def pseudo_r2(
                 test=test,
                 control=con,
                 skip_r2=True,
+                verbose=1 if verbose else 0,
             )
     except metafopy.errors.EstimationError, ValueError:
         return math.nan
+    finally:
+        if verbose:
+            metafopy.core.verbose.cat('\n')
     tau2_re = res0.tau2
     if tau2_re == 0:
         return 0.0

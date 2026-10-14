@@ -11,6 +11,8 @@ import scipy.sparse
 
 import metafopy.errors
 import metafopy.mfopt
+import metafopy.models.call
+import metafopy.models.fit_methods
 import metafopy.models.mv_lik
 import metafopy.models.mv_structs
 import metafopy.models.rma_uni
@@ -23,7 +25,7 @@ type Mat = FloatArray | scipy.sparse.csc_array
 
 
 @dataclasses.dataclass(frozen=True, slots=True, eq=False)
-class RMAMVResult:
+class RMAMVResult(metafopy.models.fit_methods.FitMethods):
     """A fitted multivariate/multilevel meta-analytic model (metafor's ``rma.mv``).
 
     Names follow metafor with ``.`` replaced by ``_``; ``btt`` holds 0-based coefficient indices.
@@ -121,6 +123,7 @@ class RMAMVResult:
     beta_est: tuple[bool, ...] = ()
     vccon: dict[str, numpy.typing.NDArray[typing.Any]] | None = None
     cvvc: str | None = None
+    call: metafopy.models.call.Call | None = dataclasses.field(default=None, kw_only=True, repr=False, compare=False)
 
     # -- accessors -------------------------------------------------------
 

@@ -21,8 +21,10 @@ import scipy.stats
 
 import metafopy.core.farebrother
 import metafopy.core.linalg
+import metafopy.core.verbose
 import metafopy.core.zeroin
 import metafopy.errors
+import metafopy.formatters
 
 FloatArray = numpy.typing.NDArray[numpy.float64]
 
@@ -51,6 +53,8 @@ ESTIMATORS = (
 )
 # auditme: accept[non-alphabetical-literal] order is metafor's documented order and is meaningful
 FIXED_EFFECTS = ('EE', 'FE', 'CE')
+# the estimators fitted by Fisher scoring
+FISHER_SCORING = ('EB', 'ML', 'REML')
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -99,8 +103,12 @@ def estimate_tau2(
     tau2_fixed: float | None,
     allvipos: bool,
     con: Control,
+    verbose: int = 0,
+    digits: int = 4,
 ) -> Tau2Fit:
     """Estimate tau^2 (and its SE) with one of metafor's estimators.
+
+    With ``verbose`` the iterative estimators print metafor's iteration log to stdout.
 
     Raises:
         metafopy.errors.EstimationError: the estimator cannot be used for these data or failed to converge.
@@ -154,6 +162,8 @@ def estimate_tau2(
         tau2 = con.tau2_init if con.tau2_init is not None else 0.0
         change = con.threshold + 1
         while change > con.threshold:
+            if verbose:
+                metafopy.core.verbose.cat(metafopy.core.verbose.iteration_line(iterations, tau2, digits))
             iterations += 1
             old = tau2
             if numpy.any(tau2 + vi < 0):
@@ -197,7 +207,7 @@ def estimate_tau2(
             else:
                 try:
                     res = metafopy.core.zeroin.uniroot(
-                        lambda t: genq_func(t, Pg, vi, RSS, 0.5, k, p, getlower=False),
+                        lambda t: log_objective(t, genq_func(t, Pg, vi, RSS, 0.5, k, p, getlower=False), '  objective =', verbose, digits),
                         con.tau2_min,
                         con.tau2_max,
                         tol=con.tol,
@@ -220,6 +230,8 @@ def estimate_tau2(
         tau2 = con.tau2_init if con.tau2_init is not None else float(numpy.mean(ymc**2))
         change = con.threshold + 1
         while change > con.threshold:
+            if verbose:
+                metafopy.core.verbose.cat(metafopy.core.verbose.iteration_line(iterations, tau2, digits))
             iterations += 1
             old = tau2
             wi = 1.0 / (vi + tau2)
@@ -243,7 +255,7 @@ def estimate_tau2(
         else:
             try:
                 res = metafopy.core.zeroin.uniroot(
-                    lambda t: qe(t, ymc, vi, X) - target,
+                    lambda t: log_objective(t, qe(t, ymc, vi, X) - target, '  RSS - objective =', verbose, digits),
                     con.tau2_min,
                     con.tau2_max,
                     tol=con.tol,
@@ -254,10 +266,12 @@ def estimate_tau2(
             tau2 = res.root
             iterations = res.iterations
 
-    if method in ('ML', 'REML', 'EB'):
+    if method in FISHER_SCORING:
         tau2 = con.tau2_init if con.tau2_init is not None else max(0.0, tau2, con.tau2_min)
         change = con.threshold + 1
         while change > con.threshold:
+            if verbose:
+                metafopy.core.verbose.cat(metafopy.core.verbose.iteration_line(iterations, tau2, digits))
             iterations += 1
             old = tau2
             if numpy.any(tau2 + vi < 0):
@@ -298,6 +312,9 @@ def estimate_tau2(
         P = projection(X, wi)
 
     tau2 = max(con.tau2_min, tau2)
+    if verbose and method in FISHER_SCORING:
+        metafopy.core.verbose.cat(metafopy.core.verbose.iteration_line(iterations, tau2, digits))
+        metafopy.core.verbose.cat(f'Fisher scoring algorithm converged after {iterations} iterations.\n')
     if numpy.any(tau2 + vi < 0):
         raise metafopy.errors.EstimationError('Some marginal variances are negative.')
 
@@ -342,6 +359,15 @@ def estimate_tau2(
         se = math.sqrt(2 * k**2 / (k - p) / wi.sum() ** 2)
 
     return Tau2Fit(tau2=float(tau2), se_tau2=float(se), iterations=iterations)
+
+
+def log_objective(tau2: float, value: float, label: str, verbose: int, digits: int) -> float:
+    """``value``, printing metafor's ``.QE.func``/``.GENQ.func`` log line when ``verbose``."""
+    if verbose:
+        tau2_text = metafopy.formatters.fmtx(tau2, digits, addwidth=4)
+        value_text = metafopy.formatters.fmtx(value, digits, flag=' ')
+        metafopy.core.verbose.cat(f'tau2 = {tau2_text} {label} {value_text} \n')
+    return value
 
 
 def genq_func(tau2: float, P: FloatArray, vi: FloatArray, Q: float, level: float, k: int, p: int, *, getlower: bool) -> float:
