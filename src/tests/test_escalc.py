@@ -98,9 +98,25 @@ def test_argument_errors(kwargs: dict[str, object], match: str) -> None:
         metafopy.escalc(**kwargs)  # type: ignore[arg-type]
 
 
-def test_reserved_measures_not_implemented() -> None:
-    with pytest.raises(NotImplementedError):
-        metafopy.escalc('HR', ai=[1])
+RESERVED = ['HD', 'HR']
+
+
+@pytest.mark.parametrize('measure', RESERVED)
+def test_reserved_measures_not_implemented(measure: str) -> None:
+    # metafor 5.2-1 accepts 'HR' and 'HD' but has no code to compute them (R fails with 'argument "vi" is missing')
+    with pytest.raises(NotImplementedError, match='reserved'):
+        metafopy.escalc(measure, ai=[1])
+
+
+@pytest.mark.parametrize('measure', RESERVED)
+def test_reserved_measures_accept_yi_and_vi(measure: str) -> None:
+    # as in metafor, given yi and vi (or sei) the values are passed through and labelled with the measure
+    dat = metafopy.escalc(measure, yi=[1.0, 2.0], sei=[0.1, 0.2])
+    numpy.testing.assert_allclose(dat['vi'], [0.01, 0.04])
+    numpy.testing.assert_allclose(dat['yi'], [1.0, 2.0])
+    assert dat.attrs['measure'] == measure
+    with pytest.raises(ValueError, match=r"Must specify the 'vi' or 'sei' argument\."):
+        metafopy.escalc(measure, yi=[1.0, 2.0])
 
 
 def test_correct_must_be_logical_for_ratio_measures() -> None:

@@ -409,9 +409,12 @@ def escalc(
         measure = 'GEN'
     if not isinstance(measure, str):
         raise metafopy.errors.ArgumentError("The 'measure' argument must be a character string.")
-    if measure in ('HR', 'HD'):
-        raise metafopy.errors.NotSupportedError(f'measure={measure!r} is reserved in metafor but not implemented there either')
-    if measure not in MEASURES:
+    # metafor 5.2-1 accepts 'HR' and 'HD' but has no code to compute them: they work only with yi and vi/sei
+    # (as for measure='GEN') and otherwise fail with an R-internal error ('argument "vi" is missing')
+    reserved = ('HR', 'HD')
+    if measure in reserved and yi is None:
+        raise metafopy.errors.NotSupportedError(f"measure={measure!r} is reserved in metafor but not computed there; supply 'yi' and 'vi' or 'sei'.")
+    if measure not in MEASURES and measure not in reserved:
         raise metafopy.errors.InputError("Unknown 'measure' specified.")
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if to not in ('all', 'only0', 'if0all', 'none'):
