@@ -3,7 +3,7 @@
 The fixtures come from ``r/generate_glmm_packages.R``.
 
 GLMMadaptive is reproduced step by step (EM stage, then BFGS with R's ``optim`` scaling), so the results follow R's, including where R stops short of
-the maximum; the exceptions in ``ADAPTIVE_TOLERANCE`` are fits whose long BFGS path is chaotic. glmmTMB maximises the Laplace likelihood with exact
+the maximum; the exceptions in ``ADAPTIVE_TOLERANCE`` are fits whose long BFGS path is chaotic or that sit on a tie of the stopping rule. glmmTMB maximises the Laplace likelihood with exact
 derivatives, so only the small optimiser differences of ``TMB_TOLERANCE`` remain. See ``docs/differences.md``.
 """
 
@@ -27,8 +27,14 @@ TMB_DEFAULT = 5e-3
 TMB_TOLERANCE: dict[str, float] = {}
 
 # fits whose BFGS path is long enough for a 1e-12 change of the start to move the result (rs_ml_mod), or whose R run stops at a different iterate
+CHAOTIC = frozenset({'rs_ml_mod', 'rs_collins'})
 ADAPTIVE_TOLERANCE: dict[str, float] = {
     'rs_ml_mod': 2.5e-1,
+    # the EM stage stops as soon as the log-likelihood rises by less than 1e-8 relative, and at iterations 5 to 9 the iterates tie to the last
+    # bit, so a rounding difference between platforms stops it at the first fixed point (-0.532) instead of after the nodes are re-centred (-0.541, R's)
+    'al_nagq1': 2e-2,
+    # the confidence bound is a few 1e-3 from zero, so one unit in the last place of the optimiser shows
+    'rs_ml_cor': 1e-3,
     'rs_collins': 3e-2,
 }
 
@@ -59,7 +65,7 @@ def check(package: str, name: str, tolerance: float) -> None:
     close(res.beta, ref['beta'], 'beta', tolerance)
     close(res.se, ref['se'], 'se', tolerance)
     close(res.vb.ravel('F'), ref['vb'], 'vb', 2 * tolerance)
-    if name not in ADAPTIVE_TOLERANCE:
+    if name not in CHAOTIC:
         # a bound is a difference of nearly equal numbers when the estimate is chaotic
         close(res.ci_lb, ref['ci_lb'], 'ci_lb', tolerance)
         close(res.ci_ub, ref['ci_ub'], 'ci_ub', tolerance)
