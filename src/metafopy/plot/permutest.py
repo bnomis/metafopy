@@ -119,7 +119,7 @@ def plot_permutest(
     use_qm = QM and not x.int_only
     n_panels = len(chosen) + int(use_qm)
     if n_panels == 0:
-        raise metafopy.errors.InputError('Must select at least one elements to plot.')
+        raise metafopy.errors.InputError('Must select at least one element to plot.')
     perm = x.zval_perm if st == 'test' else x.beta_perm
     observed = x.zval if st == 'test' else x.beta
     ddf = x.ddf
