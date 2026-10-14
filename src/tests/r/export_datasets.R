@@ -8,8 +8,9 @@ source("src/tests/r/cases.R")
 out_dir <- "src/metafopy/datasets/data"
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 
-# datasets used only by the Phase 3 (binary and count data) and Phase 4 (vcalc, rcalc) fixture scripts
-extra <- c("dat.berkey1998", "dat.collins1985a", "dat.craft2003", "dat.knapp2017", "dat.yusuf1985")
+# datasets used only by the Phase 3 (binary and count data) and Phase 4 (vcalc, rcalc) fixture scripts, and by the plot gallery
+# in the user manual (dat.damico2009, dat.pignon2000)
+extra <- c("dat.berkey1998", "dat.collins1985a", "dat.craft2003", "dat.damico2009", "dat.knapp2017", "dat.pignon2000", "dat.yusuf1985")
 
 for (name in sort(unique(c(vapply(cases, `[[`, "", "data"), extra)))) {
   dat <- get(name)

@@ -2,6 +2,8 @@
 
 ## Unreleased (1.0 candidate)
 
+- Add a plot gallery to the user manual (`docs/guide/gallery.md`) with the plots of the metafor gallery drawn by metafopy next to the R figures (`bin/gallery.py`, `src/tests/r/gallery.R`), and the datasets `dat.damico2009` and `dat.pignon2000`.
+- `plot_infl(mfrow=)` sets the layout of the panels; `addpoly()` accepts a fitted `rma_mv` model; the zero tick of a plot is exactly zero; overlapping tick labels of the categorical x axes are left out as R does.
 - Add `selmodel` (selection models for publication bias) with `predict`, `confint`, `profile`, `anova` and `plot_selmodel`.
 - Add location-scale models via `rma_uni(..., scale=...)`.
 - `rma_mv`: new arguments `optbeta` (with `beta`, `lambda1`, `lambda2`), `vccon`, `cvvc` and `restart`; `RMAMVResult` fills `hessian`, `vvc` and `vc_names`; `MVControl` gains `hessian_d`, `hessian_eps`, `hessian_r`.

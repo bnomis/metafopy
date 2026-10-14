@@ -31,6 +31,7 @@ import metafopy.errors
 import metafopy.methods.common
 import metafopy.methods.influence
 import metafopy.methods.predict
+import metafopy.models.mv_result
 import metafopy.models.rma_uni
 import metafopy.plot
 import metafopy.plot.draw
@@ -1549,7 +1550,7 @@ def per_study(values: typing.Any, keep: numpy.typing.NDArray[numpy.bool_], k: in
 
 
 def addpoly(
-    x: metafopy.models.rma_uni.RMAResult | numpy.typing.ArrayLike,
+    x: metafopy.models.rma_uni.RMAResult | metafopy.models.mv_result.RMAMVResult | numpy.typing.ArrayLike,
     vi: numpy.typing.ArrayLike | None = None,
     sei: numpy.typing.ArrayLike | None = None,
     ci_lb: numpy.typing.ArrayLike | None = None,
@@ -1616,10 +1617,10 @@ def addpoly(
     if predstyle is not None:
         addpred = True
     pdist = parse_preddist(preddist)
-    if pdist is not None and isinstance(x, metafopy.models.rma_uni.RMAResult):
+    if pdist is not None and isinstance(x, (metafopy.models.rma_uni.RMAResult, metafopy.models.mv_result.RMAMVResult)):
         raise metafopy.errors.InputError("Can only use 'preddist' with the numeric form (estimates and intervals).")
     fn = metafopy.plot.draw.parse_fonts(st.get('fonts') if fonts is None else fonts, 2)
-    if isinstance(x, metafopy.models.rma_uni.RMAResult):
+    if isinstance(x, (metafopy.models.rma_uni.RMAResult, metafopy.models.mv_result.RMAMVResult)):
         if not x.int_only:
             raise metafopy.errors.InputError('Fitted model should not contain moderators.')
         lvl_pct = None if level is None else level
@@ -1632,7 +1633,7 @@ def addpoly(
             pl = pu = numpy.array([math.nan])
         mlab_use: typing.Any = default_mlab(x.method) if mlab is None else mlab
         rows_use: typing.Any = row
-        lvl = x.level if level is None else metafopy.plot.rutils.level_to_alpha(level)
+        lvl = metafopy.plot.rutils.level_to_alpha(x.level) if level is None else metafopy.plot.rutils.level_to_alpha(level)
         if pr.pi_se is not None:
             pi_se = float(pr.pi_se[0])
         pi_dist = pr.pi_dist or 'norm'

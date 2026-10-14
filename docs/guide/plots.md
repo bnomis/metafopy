@@ -3,6 +3,8 @@
 metafopy draws plots with matplotlib. Each plot function draws on the current axes (or on an axes object passed as `ax=`)
 and returns a result object that holds what was plotted. Save and show figures with the usual matplotlib functions.
 
+The [plot gallery](gallery.md) reproduces the plots of the metafor documentation with metafopy, next to the R figures.
+
 ```python
 import matplotlib
 
@@ -26,6 +28,8 @@ from metafopy import forest
 forest(res, atransf=numpy.exp, header=True)
 matplotlib.pyplot.savefig('forest.png', dpi=150)
 ```
+
+![Forest plot of the BCG data with study information, from the gallery](../images/gallery/py/forest.png)
 
 `atransf` transforms the axis labels (here to risk ratios) while the plot stays on the log scale, and `transf` transforms the
 estimates themselves. Other common arguments are:
@@ -67,6 +71,8 @@ funnel(res, level=[90, 95, 99], shade=['white', 'gray55', 'gray75'], refline=0)
 matplotlib.pyplot.savefig('funnel-contours.png')
 ```
 
+![Contour-enhanced funnel plot of the BCG data, from the gallery](../images/gallery/py/funnel_contour.png)
+
 ## Other plots
 
 | Function | Plot |
@@ -90,6 +96,12 @@ baujat(res)
 matplotlib.pyplot.figure()
 qqnorm(res)
 ```
+
+![Radial plot of the hackshaw1998 data, from the gallery](../images/gallery/py/radial.png)
+![Baujat plot of the pignon2000 data, from the gallery](../images/gallery/py/baujat.png)
+![Normal quantile-quantile plots, from the gallery](../images/gallery/py/qqnorm.png)
+
+The gallery has more examples of each plot, and the plot of the influence diagnostics, the GOSH plot and the L'Abbe plot.
 
 ## Styling
 

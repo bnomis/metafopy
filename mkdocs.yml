@@ -36,6 +36,7 @@ nav:
       - Diagnostics: guide/diagnostics.md
       - Publication bias: guide/bias.md
       - Plots: guide/plots.md
+      - Plot gallery: guide/gallery.md
       - Datasets: guide/datasets.md
   - Analyses: analyses.md
   - Coming from R: from-r.md
