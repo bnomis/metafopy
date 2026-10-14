@@ -19,6 +19,7 @@ import metafopy.core.zeroin
 import metafopy.errors
 import metafopy.methods.blup
 import metafopy.methods.common
+import metafopy.methods.fitview
 import metafopy.mfopt
 import metafopy.models.rma_uni
 import metafopy.transf
@@ -78,6 +79,8 @@ def hc(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
+    metafopy.methods.fitview.check_method(obj, 'hc')
+    metafopy.methods.fitview.check_class(obj, must='rma.uni', notav=('rma.ls', 'rma.gen', 'rma.uni.selmodel'))
     x = obj
     if not x.int_only:
         raise metafopy.errors.InputError('Method only applicable to models without moderators.')

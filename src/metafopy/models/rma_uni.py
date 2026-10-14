@@ -200,6 +200,13 @@ class RMAResult(metafopy.models.fit_methods.FitMethods):
 
         return metafopy.methods.confint.confint(self, *args, **kwargs)
 
+    def plot(self, *args: typing.Any, **kwargs: typing.Any) -> typing.Any:
+        """Draw the forest, funnel, radial and residual plots with :func:`metafopy.plot.plot_rma`."""
+        # auditme: accept[in-function-import] metafopy.plot imports the models, so the import is deferred to avoid a cycle
+        import metafopy.plot.rma
+
+        return metafopy.plot.rma.plot_rma(self, *args, **kwargs)
+
     def anova(self, *args: typing.Any, **kwargs: typing.Any) -> typing.Any:
         # auditme: accept[in-function-import] metafopy.methods imports this module, so the import is deferred to avoid a cycle
         import metafopy.methods.anova

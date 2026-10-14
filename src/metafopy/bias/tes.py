@@ -20,6 +20,7 @@ import scipy.stats
 import metafopy.bias.inputs
 import metafopy.core.zeroin
 import metafopy.errors
+import metafopy.methods.fitview
 import metafopy.mfopt
 import metafopy.models.rma_uni
 
@@ -114,7 +115,7 @@ def poisson_binomial(p: FloatArray) -> FloatArray:
 
 
 def tes(
-    x: metafopy.models.rma_uni.RMAResult | numpy.typing.ArrayLike | str,
+    x: metafopy.methods.fitview.Fit | numpy.typing.ArrayLike | str,
     vi: numpy.typing.ArrayLike | str | None = None,
     *,
     sei: numpy.typing.ArrayLike | str | None = None,
@@ -144,16 +145,18 @@ def tes(
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if alternative not in ('two.sided', 'greater', 'less') or tes_alternative not in ('two.sided', 'greater', 'less'):
         raise metafopy.errors.InputError("'alternative' and 'tes_alternative' must be 'two.sided', 'greater' or 'less'")
-    if isinstance(x, metafopy.models.rma_uni.RMAResult):
-        th: numpy.typing.ArrayLike = numpy.array([x.beta[0]]) if x.int_only else x.fitted()
+    if metafopy.methods.fitview.is_rma(x):
+        metafopy.methods.fitview.check_class(x, notav=metafopy.methods.fitview.FIXED_UNI_ONLY)
+        view = metafopy.methods.fitview.fit_view(x)
+        th: numpy.typing.ArrayLike = numpy.array([view.beta[0]]) if view.int_only else view.fitted
         return tes(
-            x.yi,
-            x.vi,
+            view.yi,
+            view.vi,
             H0=H0,
             alternative=alternative,
             alpha=alpha,
             theta=th,
-            tau2=x.tau2,
+            tau2=view.tau2,
             test=test,
             tes_alternative=tes_alternative,
             tes_alpha=tes_alpha,

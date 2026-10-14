@@ -117,14 +117,38 @@ def prepare_yi(
 
 
 def is_symmetric(M: Mat) -> bool:
-    """``isSymmetric()``: the mean relative difference between ``M`` and its transpose is within ``100 * eps``."""
+    """``isSymmetric()``: the mean relative difference between ``M`` and its transpose is within ``100 * eps``.
+
+    As with R's ``all.equal()``, missing values must sit in mirrored positions and are otherwise ignored (``rcalc()``
+    gives NA rows and columns for correlations that are missing; ``rma.mv()`` drops them after this check).
+    """
     if scipy.sparse.issparse(M):
+        dense_na = numpy.isnan(M.data)
+        if dense_na.any():
+            return is_symmetric(numpy.asarray(M.toarray()))
         diff = abs(M - M.T).sum()
         scale = abs(M).sum()
     else:
-        diff = float(numpy.abs(M - M.T).sum())
-        scale = float(numpy.abs(M).sum())
+        na = numpy.isnan(M)
+        if bool(numpy.any(na != na.T)):
+            return False
+        keep = ~na
+        diff = float(numpy.abs(M - M.T)[keep].sum())
+        scale = float(numpy.abs(M)[keep].sum())
     return bool(diff == 0 or (scale > 0 and diff / scale <= SYMMETRY_TOL))
+
+
+def any_na_v(V: Mat) -> numpy.typing.NDArray[numpy.bool_]:
+    """metafor's ``.anyNAv()``: rows of ``V`` to drop as missing.
+
+    A row is missing when its diagonal element is NA or when it has an NA in a column whose diagonal element is not
+    NA; NAs in the columns of rows that are dropped anyway do not count (``rcalc()`` leaves such NAs for missing
+    correlations).
+    """
+    dense = numpy.asarray(V.toarray()) if scipy.sparse.issparse(V) else numpy.asarray(V)
+    na = numpy.isnan(dense)
+    na_diag = numpy.diag(na).copy()
+    return na_diag | na[:, ~na_diag].any(axis=1)
 
 
 def block_diagonal(blocks: collections.abc.Sequence[object], sparse: bool) -> Mat:

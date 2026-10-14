@@ -576,6 +576,7 @@ def rma_mv(
     sinfo = process_s_before(rand, idx, sigma2, R)
     if not with_s:
         sinfo = SInfo(names=[], factors=[], sigma2=numpy.zeros(0), R=[], Rfix=[], with_r=False)
+    s_levels_f = tuple(tuple(f.levels) for f in sinfo.factors)
     sigma2s = len(sinfo.factors) if with_s else 1
 
     group_g = group_h = None
@@ -606,10 +607,7 @@ def rma_mv(
     has_na = numpy.isnan(yi_s) | x_missing_s
     if not v0:
         has_na |= numpy.isnan(vi)
-        if scipy.sparse.issparse(V_s):
-            has_na |= numpy.asarray(numpy.isnan(V_s.toarray()).any(axis=1))
-        else:
-            has_na |= numpy.isnan(V_s).any(axis=1)
+        has_na |= metafopy.models.mv_inputs.any_na_v(V_s)
     if A_s is not None:
         has_na |= numpy.asarray(numpy.isnan(A_s.toarray() if scipy.sparse.issparse(A_s) else A_s).any(axis=1))
     not_na = ~has_na
@@ -1127,6 +1125,8 @@ def rma_mv(
         h_names=h_names_out,
         s_nlevels=s_nlevels,
         s_levels=s_levels,
+        s_levels_f=s_levels_f,
+        slab_f=slab_s,
         Rfix=tuple(sinfo.Rfix),
         Rscale=rscale,
         group_g=group_g,
@@ -1140,7 +1140,7 @@ def rma_mv(
         vc_names=vc_names,
         spec=spec,
         iterations=iterations,
-        measure='GEN',
+        measure=str(data.attrs['measure']) if data is not None and data.attrs.get('measure') else 'GEN',
         p_eff=p_eff,
         optbeta=optbeta,
         lambda1=float(lambda1),

@@ -24,6 +24,7 @@ import metafopy.core.rng
 import metafopy.errors
 import metafopy.methods.blup
 import metafopy.methods.common
+import metafopy.methods.fitview
 import metafopy.models.rma_uni
 import metafopy.models.tau2
 import metafopy.printing
@@ -96,6 +97,7 @@ def gosh(x: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> GoshResult:
     Raises:
         metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
     """
+    metafopy.methods.fitview.check_class(x, notav=metafopy.methods.fitview.FIXED_UNI_ONLY)
     raise metafopy.errors.ArgumentError(f'gosh() not implemented for {type(x).__name__}')
 
 
@@ -127,34 +129,12 @@ def gosh_rma_uni(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
+    metafopy.methods.fitview.check_class(x, notav=metafopy.methods.fitview.FIXED_UNI_ONLY)
     k, p = x.k, x.p
     parallel = metafopy.core.parallel.resolve_parallel(parallel, ncpus, cl)
     if k == 1:
         raise metafopy.errors.InputError('Stopped because k = 1.')
-    n_tot = sum(math.comb(k, m) for m in range(p, k + 1))
-    if subsets is None:
-        exact = n_tot <= 10**6
-        if not exact:
-            n_tot = 10**6
-    else:
-        subsets = round(subsets)
-        if subsets <= 1:
-            raise metafopy.errors.InputError("Argument 'subsets' must be >= 2.")
-        exact = n_tot <= subsets
-        if not exact:
-            n_tot = subsets
-
-    if exact:
-        r = numpy.arange(2**k)
-        incl_all = ((r[:, None] >> numpy.arange(k)[None, :]) & 1).astype(numpy.bool_)
-        incl = incl_all[incl_all.sum(axis=1) >= p]
-    else:
-        gen = rng if rng is not None else (metafopy.core.rng.set_seed(seed) if seed is not None else metafopy.core.rng.get_rng())
-        sizes = numpy.arange(p, k + 1)
-        j = sizes[gen.sample_int(len(sizes), n_tot, replace=True, prob=numpy.asarray(scipy.stats.binom.pmf(sizes, k, 0.5), dtype=numpy.float64)) - 1]
-        incl = numpy.zeros((n_tot, k), dtype=numpy.bool_)
-        for i, m in enumerate(j):
-            incl[i, gen.sample_int(k, int(m)) - 1] = True
+    incl = inclusion_matrix(k, p, subsets, seed, rng)
 
     model = 0
     if x.method in metafopy.models.tau2.FIXED_EFFECTS and x.weighted and x.weights is None and x.int_only:
@@ -168,19 +148,62 @@ def gosh_rma_uni(
     parts = metafopy.core.parallel.map_sims(one, blocks, parallel=parallel, ncpus=ncpus, cl=cl, progbar=progbar)
     beta = numpy.concatenate([b for b, _ in parts])
     het = numpy.concatenate([h for _, h in parts])
+    # auditme: accept[literal-duplication] R's column name for an intercept-only model
+    return assemble(beta, het, incl, ['estimate'] if x.int_only else list(x.coef_names), x.int_only, x.method, x.measure)
+
+
+def inclusion_matrix(k: int, p: int, subsets: int | None, seed: int | None, rng: metafopy.core.rng.RRandom | None) -> numpy.typing.NDArray[numpy.bool_]:
+    """The subsets of the ``k`` studies (with at least ``p`` of them) that ``gosh.rma`` fits the model to, one per row.
+
+    Raises:
+        metafopy.errors.InputError: ``subsets`` is smaller than 2.
+    """
+    n_tot = sum(math.comb(k, m) for m in range(p, k + 1))
+    if subsets is None:
+        exact = n_tot <= 10**6
+        if not exact:
+            n_tot = 10**6
+    else:
+        subsets = round(subsets)
+        if subsets <= 1:
+            raise metafopy.errors.InputError("Argument 'subsets' must be >= 2.")
+        exact = n_tot <= subsets
+        if not exact:
+            n_tot = subsets
+    if exact:
+        r = numpy.arange(2**k)
+        incl_all = ((r[:, None] >> numpy.arange(k)[None, :]) & 1).astype(numpy.bool_)
+        out: numpy.typing.NDArray[numpy.bool_] = incl_all[incl_all.sum(axis=1) >= p]
+        return out
+    gen = rng if rng is not None else (metafopy.core.rng.set_seed(seed) if seed is not None else metafopy.core.rng.get_rng())
+    sizes = numpy.arange(p, k + 1)
+    j = sizes[gen.sample_int(len(sizes), n_tot, replace=True, prob=numpy.asarray(scipy.stats.binom.pmf(sizes, k, 0.5), dtype=numpy.float64)) - 1]
+    incl = numpy.zeros((n_tot, k), dtype=numpy.bool_)
+    for i, m in enumerate(j):
+        incl[i, gen.sample_int(k, int(m)) - 1] = True
+    return incl
+
+
+def assemble(
+    beta: FloatArray, het: FloatArray, incl: numpy.typing.NDArray[numpy.bool_], names: list[str], int_only: bool, method: str, measure: str
+) -> GoshResult:
+    """The :class:`GoshResult` of the fits to the subsets in ``incl`` (``het`` holds ``k``, ``QE``, ``I2``, ``H2`` and ``tau2``).
+
+    Raises:
+        metafopy.errors.InputError: all fits failed.
+    """
     ok = ~numpy.isnan(het).any(axis=1)
     if not ok.any():
         raise metafopy.errors.InputError('All model fits failed.')
     het[:, 0] = incl.sum(axis=1)
     cols = ['k', 'QE', 'I2', 'H2', 'tau2']
     het6 = numpy.column_stack([het, numpy.sqrt(het[:, 4])])
-    names = ['estimate'] if x.int_only else list(x.coef_names)
     frame = pandas.DataFrame(numpy.column_stack([het6, beta]), columns=[*cols, 'tau', *names])
     order = numpy.argsort(frame['k'].to_numpy(), kind='stable')
     frame = frame.iloc[order].reset_index(drop=True)
     incl = incl[order]
     fit_ok = ~frame.isna().any(axis=1).to_numpy()
-    return GoshResult(res=frame, incl=incl, fit=fit_ok, k=k, int_only=x.int_only, method=x.method, measure=x.measure)
+    return GoshResult(res=frame, incl=incl, fit=fit_ok, k=incl.shape[1], int_only=int_only, method=method, measure=measure)
 
 
 def gosh_block(x: metafopy.models.rma_uni.RMAResult, model: int, incl: numpy.typing.NDArray[numpy.bool_]) -> tuple[FloatArray, FloatArray]:

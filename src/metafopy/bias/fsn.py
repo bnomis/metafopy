@@ -22,6 +22,7 @@ import metafopy.core.verbose
 import metafopy.core.zeroin
 import metafopy.errors
 import metafopy.formatters
+import metafopy.methods.fitview
 import metafopy.mfopt
 import metafopy.models.rma_uni
 import metafopy.models.tau2
@@ -162,6 +163,11 @@ def fsn(
     gen = rng if rng is not None else (metafopy.core.rng.set_seed(seed) if seed is not None else metafopy.core.rng.get_rng())
     typ: str
     method_given = method
+    if metafopy.methods.fitview.is_rma(x):
+        metafopy.methods.fitview.check_class(x, notav=metafopy.methods.fitview.FIXED_UNI_ONLY)
+        if not isinstance(x, metafopy.models.rma_uni.RMAResult):
+            # metafor 5.2-1 fails on rma.mh and rma.peto objects with an internal error ("invalid 'y' type in 'x && y'")
+            raise metafopy.errors.NotSupportedError(f'Method not available for objects of class "{metafopy.methods.fitview.r_class(x)[0]}".')
     is_model = isinstance(x, metafopy.models.rma_uni.RMAResult)
     if isinstance(x, metafopy.models.rma_uni.RMAResult):
         if not x.int_only:

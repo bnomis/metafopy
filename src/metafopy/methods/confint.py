@@ -386,6 +386,11 @@ def mv_search_limits(x: metafopy.models.mv_result.RMAMVResult, comp: str, vc: fl
 
 def mv_refit_logLik(x: metafopy.models.mv_result.RMAMVResult, comp: str, pos: int, val: float) -> float:
     """Log-likelihood of ``x`` refitted with one variance component fixed at ``val`` (``.profile.rma.mv``)."""
+    return mv_refit_fixed(x, comp, pos, val).logLik()
+
+
+def mv_refit_fixed(x: metafopy.models.mv_result.RMAMVResult, comp: str, pos: int, val: float) -> metafopy.models.mv_result.RMAMVResult:
+    """``x`` refitted with one variance component fixed at ``val`` and the others as in ``x`` (``.profile.rma.mv``)."""
     spec = dict(x.spec)
     # metafor's .profile.rma.mv() passes 'vccon' on to the refits but not 'optbeta', 'beta', 'lambda1/2' or 'cvvc'
     for dropped in ('optbeta', 'beta', 'lambda1', 'lambda2', 'cvvc', 'restart'):
@@ -401,7 +406,7 @@ def mv_refit_logLik(x: metafopy.models.mv_result.RMAMVResult, comp: str, pos: in
         spec[name] = arg
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
-        return metafopy.models.rma_mv.rma_mv(**spec).logLik()
+        return metafopy.models.rma_mv.rma_mv(**spec)
 
 
 @confint.register

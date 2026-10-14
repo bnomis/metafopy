@@ -30,11 +30,14 @@ import scipy.stats
 import metafopy.errors
 import metafopy.metadata
 import metafopy.methods.common
+import metafopy.methods.fitview
 import metafopy.methods.influence
 import metafopy.methods.leave1out
 import metafopy.methods.predict
+import metafopy.models.glmm_result
 import metafopy.models.mv_result
 import metafopy.models.rma_uni
+import metafopy.models.sel_result
 import metafopy.plot
 import metafopy.plot.cumul
 import metafopy.plot.draw
@@ -621,14 +624,14 @@ def draw_dist(
 
 
 def forest(
-    x: metafopy.models.rma_uni.RMAResult | metafopy.methods.leave1out.CumulResult | numpy.typing.ArrayLike,
+    x: metafopy.methods.fitview.Fit | metafopy.methods.leave1out.CumulResult | numpy.typing.ArrayLike,
     vi: numpy.typing.ArrayLike | None = None,
     sei: numpy.typing.ArrayLike | None = None,
     ci_lb: numpy.typing.ArrayLike | None = None,
     ci_ub: numpy.typing.ArrayLike | None = None,
     annotate: bool = True,
     addfit: bool = True,
-    addpred: bool | None = None,
+    addpred: bool | str | int | collections.abc.Sequence[str | int] | None = None,
     predstyle: str | None = None,
     preddist: PredDist | None = None,
     showweights: bool = False,
@@ -769,7 +772,18 @@ def forest(
             xlabadj=xlabadj,
             xlabfont=xlabfont,
         )
-    is_fit = isinstance(x, metafopy.models.rma_uni.RMAResult)
+    is_fit = metafopy.methods.fitview.is_rma(x)
+    pred_levels: list[str | int] | None = None
+    if addpred is not None and not isinstance(addpred, bool):
+        # the levels of the inner factor(s) of an rma.mv model with several tau^2 (and gamma^2) values
+        pred_levels = [addpred] if isinstance(addpred, str | int) else list(addpred)
+        addpred = True
+    if is_fit:
+        metafopy.methods.fitview.check_class(x, notav=('rma.ls', 'rma.gen'))
+        if showweights and isinstance(x, metafopy.models.glmm_result.GLMMResult):
+            raise metafopy.errors.InputError("Option 'showweights=TRUE' not possible for 'rma.glmm' objects.")
+        if showweights and isinstance(x, metafopy.models.sel_result.SelmodelResult):
+            raise metafopy.errors.InputError("Option 'showweights=TRUE' not possible for 'rma.uni.selmodel' objects.")
     if transf is not None and atransf is not None:
         raise metafopy.errors.InputError("Use either 'transf' or 'atransf' to specify a transformation (not both).")
     axx = metafopy.plot.rutils.get_ax(ax)
@@ -823,19 +837,18 @@ def forest(
     ci_lb_a: FloatArray
     ci_ub_a: FloatArray
     int_only = False
-    res: metafopy.models.rma_uni.RMAResult | None = None
+    res: metafopy.methods.fitview.FitView | None = None
     sort_extra: dict[str, FloatArray] = {}
     if is_fit:
-        res = x  # type: ignore[assignment]
-        assert res is not None
+        res = metafopy.methods.fitview.fit_view(x)
         lvl = res.level if level is None else metafopy.plot.rutils.level_to_alpha(level)
         yi = res.yi.copy()
         vi_a = res.vi.copy()
         X = res.X
         k = int(yi.shape[0])
-        k_all = res.data.k_all
-        keep = res.data.keep
-        na_rows = res.data.na_rows
+        k_all = res.k_all
+        keep = res.keep
+        na_rows = res.na_rows
         show_na = na_action == 'pass' and na_rows is not None and bool(na_rows.any())
         if na_action == 'fail' and na_rows is not None and na_rows.any():
             raise metafopy.errors.InputError('Missing values in results.')
@@ -845,17 +858,16 @@ def forest(
             keep = keep | na_rows
             k = int(keep.sum())
             at_fit = numpy.searchsorted(numpy.flatnonzero(keep), numpy.flatnonzero(keep_fit))
-            assert res.data.yi_all is not None
-            assert res.data.vi_all is not None
-            assert res.data.X_all is not None
-            yi, vi_a, X = res.data.yi_all[keep].copy(), res.data.vi_all[keep].copy(), res.data.X_all[keep].copy()
+            assert res.yi_all is not None
+            assert res.vi_all is not None
+            assert res.X_all is not None
+            yi, vi_a, X = res.yi_all[keep].copy(), res.vi_all[keep].copy(), res.X_all[keep].copy()
         int_only = res.int_only
         measure = res.measure
-        slab_null = False
         # slab: stored labels; metafor uses "Study <id>" when no slab was given
-        slab_l: list[typing.Any] = list(res.slab) if not show_na else [res.data.labels_all[i] for i in numpy.flatnonzero(keep)]  # type: ignore[index]
+        slab_l: list[typing.Any] = list(res.slab) if not show_na else [res.labels_all[i] for i in numpy.flatnonzero(keep)]  # type: ignore[index]
         if slab is None:
-            slab_null = all(s == str(i + 1) for s, i in zip(slab_l, numpy.flatnonzero(keep), strict=True))
+            slab_null = res.slab_null
             if slab_null:
                 slab_l = [f'Study {i + 1}' for i in numpy.flatnonzero(keep)]
         else:
@@ -868,8 +880,7 @@ def forest(
         psize_l = None if psize is None else pervec(psize, keep, k, k_all, 'psize')
         colout_l = pervec(metafopy.plot.draw.FG if colout is None else colout, keep, k, k_all, 'colout')
         colci_l = colout_l if colci is None else pervec(colci, keep, k, k_all, 'colci')
-        pr = None if int_only else metafopy.methods.predict.predict(res, level=level)
-        wts = res.weights_()
+        wts = numpy.ones(res.k) if res.weights is None else res.weights
         if show_na:
             wts = widen(wts, k, at_fit)
         if int_only:
@@ -877,23 +888,24 @@ def forest(
             pred_ci_lb = numpy.full(k, numpy.nan)
             pred_ci_ub = numpy.full(k, numpy.nan)
         else:
-            assert pr is not None
-            pred = pr.pred
             use_pi = bool(addpred)
-            pred_ci_lb = pr.pi_lb if use_pi else pr.ci_lb
-            pred_ci_ub = pr.pi_ub if use_pi else pr.ci_ub
-            if show_na:
+            if res.pred_newmods or show_na:
                 # the studies dropped for a missing estimate or variance still have a fitted value if their moderators are known
                 assert X is not None
                 known = numpy.isfinite(X).all(axis=1)
-                pr_all = metafopy.methods.predict.predict(res, X[known][:, 1:] if res.int_incl else X[known], level=level)
+                pr_all = metafopy.methods.predict.predict(res.model, X[known][:, 1:] if res.int_incl else X[known], level=level)
                 pred, pred_ci_lb, pred_ci_ub = (
                     widen(a, k, numpy.flatnonzero(known))
                     for a in (pr_all.pred, pr_all.pi_lb if use_pi else pr_all.ci_lb, pr_all.pi_ub if use_pi else pr_all.ci_ub)
                 )
+            else:
+                pr = metafopy.methods.predict.predict(res.model, level=level)
+                pred = pr.pred
+                pred_ci_lb = pr.pi_lb if use_pi else pr.ci_lb
+                pred_ci_ub = pr.pi_ub if use_pi else pr.ci_ub
         resid_z = None
         if order is not None and isinstance(order, str) and order in ('rstandard', 'abs.rstandard'):
-            resid_z = metafopy.methods.influence.rstandard(res).z
+            resid_z = metafopy.methods.influence.rstandard(res.model).z
         if resid_z is not None:
             sort_extra['z'] = resid_z
         shade_a = shade
@@ -1286,7 +1298,7 @@ def forest(
     beta = beta_lb = beta_ub = pi_lb = pi_ub = math.nan
     if fit_row:
         assert res is not None
-        pr2 = metafopy.methods.predict.predict(res, level=100 * (1 - lvl))
+        pr2 = forest_summary(res.model, 100 * (1 - lvl), bool(addpred), pred_levels)
         beta, beta_lb, beta_ub = float(pr2.pred[0]), float(pr2.ci_lb[0]), float(pr2.ci_ub[0])
         pi_lb, pi_ub = float(pr2.pi_lb[0]), float(pr2.pi_ub[0])
         predlevel = lvl
@@ -1614,6 +1626,25 @@ def draw_pred(
         typing.assert_never(style)
 
 
+def forest_summary(model: typing.Any, level: float, addpred: bool, pred_levels: list[str | int] | None) -> metafopy.methods.predict.PredictResult:
+    """The summary estimate (and prediction interval) drawn below the studies, as ``forest.rma`` computes it.
+
+    For an ``rma.mv`` model with several ``tau2`` (or ``gamma2``) values the prediction interval needs the levels of the
+    inner factor(s), given via ``addpred``; without them the first values are used (and only the CI is drawn).
+
+    Raises:
+        metafopy.errors.InputError: ``addpred=True`` for such a model without levels.
+    """
+    if isinstance(model, metafopy.models.mv_result.RMAMVResult) and model.with_g and model.tau2s > 1:
+        if pred_levels is None:
+            if addpred:
+                raise metafopy.errors.InputError("Must specify the level of the inner factor(s) via the 'addpred' argument.")
+            return metafopy.methods.predict.predict(model, level=level, tau2_levels=0, gamma2_levels=0)
+        levels = pred_levels * 2 if len(pred_levels) == 1 else pred_levels
+        return metafopy.methods.predict.predict(model, level=level, tau2_levels=levels[0], gamma2_levels=levels[1])
+    return metafopy.methods.predict.predict(model, level=level)
+
+
 def widen(a: FloatArray, k: int, at: numpy.typing.NDArray[numpy.intp]) -> FloatArray:
     """``a`` spread over ``k`` rows, at the positions ``at`` and missing elsewhere (the studies of a fit among those dropped for missing values)."""
     out = numpy.full((k, *a.shape[1:]), numpy.nan)
@@ -1638,7 +1669,7 @@ def per_study(values: typing.Any, keep: numpy.typing.NDArray[numpy.bool_], k: in
 
 
 def addpoly(
-    x: metafopy.models.rma_uni.RMAResult | metafopy.models.mv_result.RMAMVResult | numpy.typing.ArrayLike,
+    x: metafopy.methods.fitview.Fit | metafopy.methods.predict.PredictResult | numpy.typing.ArrayLike,
     vi: numpy.typing.ArrayLike | None = None,
     sei: numpy.typing.ArrayLike | None = None,
     ci_lb: numpy.typing.ArrayLike | None = None,
@@ -1696,32 +1727,82 @@ def addpoly(
     which metafor reads from the attributes of ``pi.lb``, or by ``preddist``. ``fonts`` is as in :func:`forest` (the first
     entry for the labels, the second for the annotations) and defaults to that of the last :func:`forest` call.
 
+    ``x`` can also be the result of :func:`metafopy.predict` (``addpoly.predict.rma``): its predicted values and
+    confidence intervals (and prediction intervals with ``addpred=True`` or ``predstyle``) are drawn in ``rows``, which
+    then defaults to ``row`` (``-2``). See https://github.com/wviechtb/metafor/blob/master/R/addpoly.predict.rma.r.
+
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
+    if isinstance(x, metafopy.methods.predict.PredictResult):
+        if getattr(x, 'pred_type', 'location') == 'scale':
+            raise metafopy.errors.InputError('Cannot add polygons based on predicted scale values.')
+        use_pi = addpred or predstyle is not None
+        if use_pi and bool(numpy.all(numpy.isnan(x.pi_lb))) and bool(numpy.all(numpy.isnan(x.pi_ub))):
+            warnings.warn('Could not extract prediction interval bounds.', stacklevel=2)
+        nan = numpy.full(x.pred.shape[0], math.nan)
+        return addpoly(
+            x.pred,
+            ci_lb=x.ci_lb,
+            ci_ub=x.ci_ub,
+            pi_lb=x.pi_lb if use_pi else nan,
+            pi_ub=x.pi_ub if use_pi else nan,
+            rows=row if isinstance(rows, int | float) and rows == -1 else rows,
+            level=level,
+            annotate=annotate,
+            predstyle=predstyle,
+            predlim=predlim,
+            digits=digits,
+            width=width,
+            mlab=mlab,
+            transf=transf,
+            atransf=atransf,
+            targs=targs,
+            efac=efac,
+            col=col,
+            border=border,
+            lty=lty,
+            fonts=fonts,
+            cex=cex,
+            constarea=constarea,
+            ax=ax,
+            preddist=preddist,
+            predtail=predtail,
+            pi_se=pi_se,
+            pi_dist=pi_dist,
+            pi_ddf=pi_ddf,
+            pi_level=pi_level,
+            alim=alim,
+            olim=olim,
+            annosym=annosym,
+            textpos=textpos,
+            rowadj=rowadj,
+            lcol=lcol,
+        )
     axx = metafopy.plot.rutils.get_ax(ax)
     st = FOREST_STATE.get(axx) or {}
     ps: PredStyle = 'line' if predstyle is None else check_pred(predstyle)
     if predstyle is not None:
         addpred = True
     pdist = parse_preddist(preddist)
-    if pdist is not None and isinstance(x, (metafopy.models.rma_uni.RMAResult, metafopy.models.mv_result.RMAMVResult)):
+    if pdist is not None and metafopy.methods.fitview.is_rma(x):
         raise metafopy.errors.InputError("Can only use 'preddist' with the numeric form (estimates and intervals).")
     fn = metafopy.plot.draw.parse_fonts(st.get('fonts') if fonts is None else fonts, 2)
-    if isinstance(x, (metafopy.models.rma_uni.RMAResult, metafopy.models.mv_result.RMAMVResult)):
-        if not x.int_only:
+    if metafopy.methods.fitview.is_rma(x):
+        fit = typing.cast(metafopy.methods.fitview.Fit, x)
+        if not fit.int_only:
             raise metafopy.errors.InputError('Fitted model should not contain moderators.')
         lvl_pct = None if level is None else level
-        pr = metafopy.methods.predict.predict(x, level=lvl_pct)
+        pr = metafopy.methods.predict.predict(fit, level=lvl_pct)
         yi = numpy.asarray(pr.pred, dtype=float)
         cl, cu = numpy.asarray(pr.ci_lb, dtype=float), numpy.asarray(pr.ci_ub, dtype=float)
         if addpred:
             pl, pu = numpy.asarray(pr.pi_lb, dtype=float), numpy.asarray(pr.pi_ub, dtype=float)
         else:
             pl = pu = numpy.array([math.nan])
-        mlab_use: typing.Any = default_mlab(x.method) if mlab is None else mlab
+        mlab_use: typing.Any = default_mlab(fit.method) if mlab is None else mlab
         rows_use: typing.Any = row
-        lvl = metafopy.plot.rutils.level_to_alpha(x.level) if level is None else metafopy.plot.rutils.level_to_alpha(level)
+        lvl = metafopy.plot.rutils.level_to_alpha(fit.level) if level is None else metafopy.plot.rutils.level_to_alpha(level)
         if pr.pi_se is not None:
             pi_se = float(pr.pi_se[0])
         pi_dist = pr.pi_dist or 'norm'

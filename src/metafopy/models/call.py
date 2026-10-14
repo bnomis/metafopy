@@ -11,6 +11,7 @@ import functools
 import inspect
 import re
 import typing
+import warnings
 
 import metafopy.errors
 
@@ -51,7 +52,16 @@ def records_call[**P, R](fn: collections.abc.Callable[P, R]) -> collections.abc.
 
     @functools.wraps(fn)
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-        res = fn(*args, **kwargs)
+        # the warnings of the fit are caught and issued again one frame up, so that they point at the caller of the
+        # fitting function (as their stacklevel=2 intends) rather than at this wrapper
+        caught: list[warnings.WarningMessage] = []
+        try:
+            with warnings.catch_warnings(record=True) as caught:
+                res = fn(*args, **kwargs)
+        finally:
+            # also when the fit fails, as metafor gives its warnings before an error
+            for w in caught:
+                warnings.warn(w.message, stacklevel=2)
         if hasattr(res, 'call'):
             bound = sig.bind(*args, **kwargs)
             arguments: dict[str, typing.Any] = {}

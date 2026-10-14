@@ -11,6 +11,7 @@ import numpy
 import pandas
 import pytest
 import refutil
+import test_matreg
 
 import metafopy
 import metafopy.errors
@@ -140,3 +141,12 @@ def test_update_formula_rules() -> None:
     assert uf('~ I(year - 1990) + a:b', '~ . - a:b') == '~ I(year - 1990)'
     with pytest.raises(metafopy.errors.InputError):
         uf('~ a', 'x')
+
+
+def test_matreg_accessors() -> None:
+    # R has only se.default (the square roots of the diagonal of vcov()) for matreg objects; the rma methods do not apply
+    res = test_matreg.cov_fit()
+    refutil.close(metafopy.se(res), numpy.sqrt(numpy.diag(res.vcov().to_numpy())).tolist(), 'matreg se')
+    for fn in (metafopy.nobs, metafopy.df_residual, metafopy.model_matrix, metafopy.update, metafopy.simulate):
+        with pytest.raises(metafopy.errors.ArgumentError):
+            fn(res)  # type: ignore[operator]

@@ -13,6 +13,7 @@ import pandas
 import scipy.stats
 
 import metafopy.errors
+import metafopy.models.binary
 import metafopy.models.glmm_result
 import metafopy.models.mv_result
 import metafopy.models.rma_uni
@@ -32,7 +33,8 @@ class PredictResult:
     prediction (before any transformation), ``pi_dist`` the distribution (``'norm'`` or ``'t'``) of the prediction
     and ``pi_ddf`` its degrees of freedom (one per prediction) (used by ``forest(predstyle='shade')`` and ``'dist'``).
     ``prob`` holds the probabilities requested via ``prob``, ``X`` the model matrix of the predictions (``addx=True``)
-    and ``vcov`` their variance-covariance matrix (``vcov=True`` without ``transf``).
+    and ``vcov`` their variance-covariance matrix (``vcov=True`` without ``transf``); these two are data frames for
+    ``matreg`` predictions (:class:`~metafopy.methods.matreg.MatregPredictResult`).
     """
 
     pred: FloatArray
@@ -46,8 +48,8 @@ class PredictResult:
     pi_dist: str | None = None
     pi_ddf: float | FloatArray | None = None
     prob: FloatArray | None = None
-    X: FloatArray | None = None
-    vcov: FloatArray | None = None
+    X: FloatArray | pandas.DataFrame | None = None
+    vcov: FloatArray | pandas.DataFrame | None = None
 
     def to_frame(self) -> pandas.DataFrame:
         cols: dict[str, typing.Any] = {
@@ -249,6 +251,50 @@ def predict_rma_glmm(
     )
 
 
+@predict.register
+def predict_fixed_binary(
+    model: metafopy.models.binary.FixedBinaryResult,
+    newmods: numpy.typing.ArrayLike | None = None,
+    *,
+    intercept: bool | None = None,
+    transf: collections.abc.Callable[..., typing.Any] | None = None,
+    targs: typing.Any = None,
+    level: float | None = None,
+) -> PredictResult:
+    """Predict from an ``rma.mh`` or ``rma.peto`` fit (``predict.rma``; arguments as in :func:`predict_rma_uni`).
+
+    These are equal-effects models without moderators, so the prediction is the pooled estimate with its
+    confidence interval (and no prediction interval); ``transf`` (for example ``numpy.exp``) gives the
+    odds ratio, risk ratio, ... instead of its logarithm. See
+    https://github.com/wviechtb/metafor/blob/master/R/predict.rma.r.
+
+    Raises:
+        metafopy.errors.InputError: ``newmods`` was given (the models have no moderators).
+    """
+    x = model
+    return location_prediction(
+        LocationModel(
+            k=x.k,
+            p=1,
+            int_only=True,
+            int_incl=True,
+            X=numpy.ones((x.k, 1)),
+            slab=(),
+            beta=x.beta,
+            vb=x.vb,
+            ddf=None,
+            alpha=x.level,
+            tau2=0.0,
+            fixed=True,
+        ),
+        newmods,
+        intercept,
+        transf,
+        targs,
+        level,
+    )
+
+
 @dataclasses.dataclass(frozen=True, slots=True)
 class LocationModel:
     """What ``predict.rma`` needs from a model with a single ``tau2`` (``rma.uni`` or ``rma.glmm``)."""
@@ -288,6 +334,8 @@ def location_prediction(
     """
     p = x.p
     slab: tuple[str, ...] | None = None
+    if x.int_only and newmods is not None:
+        raise metafopy.errors.InputError('Cannot specify new moderator values for models without moderators.')
     if newmods is None:
         X_new = numpy.ones((1, 1)) if x.int_only else x.X
         if not x.int_only:
