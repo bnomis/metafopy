@@ -494,22 +494,28 @@ def overlapping_labels(
     ax: matplotlib.axes.Axes,
     at: numpy.ndarray,
     labels: collections.abc.Sequence[str],
-    ux: tuple[float, float],
+    limits: tuple[float, float],
     fontsize: float,
+    *,
+    vertical: bool = False,
 ) -> list[bool]:
     """Which tick labels are left out because they would overlap: R's ``axis()`` skips a label that comes closer than an "m" to the previous
-    one drawn (half an "m" here; the ticks stay)."""
-    fig_width = ax.figure.bbox.width * 72.0 / ax.figure.dpi
-    points_per_unit = ax.get_position().width * fig_width / (ux[1] - ux[0])
+    one drawn (the ticks stay)."""
+    box = ax.get_position()
+    fig_inches = (ax.figure.bbox.height if vertical else ax.figure.bbox.width) / ax.figure.dpi
+    points_per_unit = (box.height if vertical else box.width) * fig_inches * 72.0 / (limits[1] - limits[0])
 
-    def text_width(s: str) -> float:
-        return float(matplotlib.textpath.TextPath((0, 0), s, size=fontsize).get_extents().width) if s.strip() else 0.0
+    def extent(s: str) -> float:
+        if not s.strip():
+            return 0.0
+        box = matplotlib.textpath.TextPath((0, 0), s, size=fontsize).get_extents()
+        return float(box.height if vertical else box.width)
 
-    gap = text_width('M') / 2
+    gap = float(matplotlib.textpath.TextPath((0, 0), 'M', size=fontsize).get_extents().width)
     hidden: list[bool] = []
     previous_end = -math.inf
     for x, label in zip(at, labels, strict=True):
-        half = text_width(label) / 2
+        half = extent(label) / 2
         centre = float(x) * points_per_unit
         overlaps = centre - half < previous_end + gap
         hidden.append(overlaps)
@@ -530,6 +536,7 @@ def plain_axes(
     bty: str = 'o',
     cex_axis: float = 1.0,
     thin_xlabels: bool = True,
+    thin_ylabels: bool = False,
 ) -> None:
     """The axes of R's ``plot()``: user coordinates ``ux``/``uy``, ticks at ``xat``/``yat`` (``None`` = no axis), and a box (``bty``)."""
     ax.set_xlim(ux)
@@ -562,7 +569,11 @@ def plain_axes(
         at = numpy.asarray(yat, dtype=float)
         ax.set_yticks(at)
         if ylabels is not None:
-            ax.set_yticklabels(list(ylabels), fontsize=base_fontsize() * cex_axis)
+            texts = ax.set_yticklabels(list(ylabels), fontsize=base_fontsize() * cex_axis)
+            if thin_ylabels:
+                hidden = overlapping_labels(ax, at, ylabels, uy, base_fontsize() * cex_axis, vertical=True)
+                for text, hide in zip(texts, hidden, strict=True):
+                    text.set_visible(not hide)
         ax.tick_params(axis='y', length=4.0, labelsize=base_fontsize() * cex_axis)
 
 

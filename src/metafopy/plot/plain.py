@@ -34,6 +34,7 @@ def plain_plot(
     cex_lab: float = 1.0,
     cex_axis: float = 1.0,
     thin_xlabels: bool = True,
+    thin_ylabels: bool = False,
 ) -> tuple[FloatArray | None, FloatArray | None]:
     """``plot(NA, xlim, ylim, xlab, ylab, main, bty, xaxt, yaxt)``; returns the ticks (``axTicks(1)``, ``axTicks(2)``) drawn."""
     ux = (float(xlim[0]), float(xlim[1])) if xaxs_i else metafopy.plot.rutils.usr_range(float(xlim[0]), float(xlim[1]))
@@ -60,6 +61,7 @@ def plain_plot(
         bty=bty,
         cex_axis=cex_axis,
         thin_xlabels=thin_xlabels,
+        thin_ylabels=thin_ylabels and not logy,
     )
     if logy:
         ax.yaxis.set_minor_locator(matplotlib.ticker.NullLocator())

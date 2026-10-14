@@ -46,6 +46,14 @@ def mfrow_cex(nrow: int, ncol: int) -> float:
     return 0.83 if nrow == 2 and ncol == 2 else 1.0
 
 
+def grid_hspace(area: matplotlib.axes.Axes, nrow: int, cex: float) -> float:
+    """The ``hspace`` of ``nrow`` panels: R leaves a gap of fixed height (about 1.06 in at ``cex = 1``) between its panels, whatever their number."""
+    gap = 1.06 * cex
+    height = area.get_position().height * area.figure.bbox.height / area.figure.dpi
+    panel_height = (height - (nrow - 1) * gap) / nrow
+    return gap / panel_height if panel_height > 0 else 0.6
+
+
 def n2mfrow(n: int) -> tuple[int, int]:
     """R's ``n2mfrow()``."""
     if n <= 3:
@@ -87,6 +95,7 @@ def panel(
     bg: str,
     bg_infl: str,
     col_na: str,
+    cex: float = 1.0,
     logy: bool = False,
 ) -> None:
     not_na = ~numpy.isnan(zi_all)
@@ -99,7 +108,7 @@ def panel(
         zi, infl, labs, n = zi_all, is_infl_all, ids, int(zi_all.shape[0])
     pos = numpy.arange(1, n + 1, dtype=float)
     metafopy.plot.plain.plain_plot(
-        ax, (1.0, float(n)), ylim, '', '', main, xaxt=True, yaxt=True, logy=logy, xat=pos, xlabels=labs, thin_xlabels=las not in (2, 3)
+        ax, (1.0, float(n)), ylim, '', '', main, xaxt=True, yaxt=True, logy=logy, xat=pos, xlabels=labs, thin_xlabels=las not in (2, 3), thin_ylabels=True
     )
     if las in (2, 3):
         ax.tick_params(axis='x', labelrotation=90)
@@ -111,10 +120,10 @@ def panel(
     metafopy.plot.draw.line(ax, pos, zi)
     for xp, yp in zip(pos, zi, strict=True):
         if not math.isnan(yp):
-            metafopy.plot.draw.pts(ax, float(xp), float(yp), pch=pch, bg=bg)
+            metafopy.plot.draw.pts(ax, float(xp), float(yp), pch=pch, bg=bg, cex=cex)
     for xp, yp, f in zip(pos, zi, infl, strict=True):
         if f and not math.isnan(yp):
-            metafopy.plot.draw.pts(ax, float(xp), float(yp), pch=pch, bg=bg_infl)
+            metafopy.plot.draw.pts(ax, float(xp), float(yp), pch=pch, bg=bg_infl, cex=cex)
 
 
 def plot_infl(
@@ -242,14 +251,15 @@ def plot_infl(
         else:
             yl = (0.0, zmax * 1.05)
             hl = [(100 / k, 'dashed')]
-        panel(a, zi, infl, id_list, main=name, ylim=yl, hlines=hl, logy=(which == 4 and logcov), **common)
+        panel(a, zi, infl, id_list, main=name, ylim=yl, hlines=hl, logy=(which == 4 and logcov), cex=cex_inf, **common)
 
     axes_inf: list[matplotlib.axes.Axes] = []
     if which_inf:
         nr, nc = MFROW[len(which_inf)] if mfrow is None else mfrow
         if nr * nc < len(which_inf):
             raise metafopy.errors.InputError("Argument 'mfrow' has too few panels for the diagnostics.")
-        grid = metafopy.plot.draw.subaxes(area, nr, nc, hspace=0.6, wspace=0.3)
+        cex_inf = mfrow_cex(nr, nc)
+        grid = metafopy.plot.draw.subaxes(area, nr, nc, hspace=grid_hspace(area, nr, cex_inf), wspace=0.3)
         flat = [a for row in grid for a in row]
         with matplotlib.rc_context({'font.size': metafopy.plot.draw.base_fontsize() * mfrow_cex(nr, nc)}):
             for a, which in zip(flat, which_inf, strict=False):
@@ -262,7 +272,8 @@ def plot_infl(
         nr, nc = n2mfrow(len(which_dfbs))
         # with the diagnostics also drawn (or dfbsnew) metafor starts a new page for the DFBETAS
         target = matplotlib.pyplot.figure().add_subplot(111) if (which_inf or dfbsnew) else area
-        grid = metafopy.plot.draw.subaxes(target, nr, nc, hspace=0.6, wspace=0.3)
+        cex_dfbs = mfrow_cex(nr, nc)
+        grid = metafopy.plot.draw.subaxes(target, nr, nc, hspace=grid_hspace(target, nr, cex_dfbs), wspace=0.3)
         flat = [a for row in grid for a in row]
         names = list(x.coef_names)
         with matplotlib.rc_context({'font.size': metafopy.plot.draw.base_fontsize() * mfrow_cex(nr, nc)}):
@@ -276,6 +287,7 @@ def plot_infl(
                     main=f'dfbs:  {names[j - 1]}',
                     ylim=(float(numpy.nanmin(zi)) * 1.05, float(numpy.nanmax(zi)) * 1.05),
                     hlines=[(0.0, 'dashed'), (1.0, 'dotted'), (-1.0, 'dotted')],
+                    cex=cex_dfbs,
                     **common,
                 )
                 axes_dfbs.append(a)

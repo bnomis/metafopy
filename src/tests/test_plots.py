@@ -688,7 +688,8 @@ def check_infl(r: typing.Any, ref: dict[str, typing.Any], what: str, dfbs: bool 
     rec = ref['rec']
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     plotref.check_all(axes, rec, what, skip={'axis', 'usr', 'mtext'}, compare_col=False)
-    tick_labels = [[t.get_text() for t in a.get_xticklabels()] for a in axes if a.get_xticks().size]
+    # the labels asked for, whether or not overlapping ones are hidden when drawn
+    tick_labels = [[tick.label1.get_text() for tick in a.xaxis.get_major_ticks()] for a in axes if a.get_xticks().size]
     exp = [[str(v) for v in plotref.flat(a['labels'])] for a in rec['axis'] if a['side'] == 1]
     assert tick_labels == exp, f'{what}: x tick labels'
     plots = rec['plot']
@@ -749,6 +750,17 @@ def test_plot_infl_text_size_follows_the_layout(fits: dict[str, metafopy.RMAResu
     r = metafopy.plot.plot_infl(metafopy.influence(fits['re']), plotinf=[1], ax=single)
     assert r.axes[0].title.get_fontsize() == pytest.approx(base * 1.2)
     matplotlib.pyplot.close('all')
+
+
+def test_plot_infl_one_column_layout_matches_the_gap_of_r(fits: dict[str, metafopy.RMAResult]) -> None:
+    fig, area = matplotlib.pyplot.subplots(figsize=(7, 11))
+    area.set_position((0.08, 0.04, 0.9, 0.92))
+    r = metafopy.plot.plot_infl(metafopy.influence(fits['re']), mfrow=(8, 1), ax=area)
+    gaps = [(a.get_position().y0 - b.get_position().y1) * 11 for a, b in zip(r.axes[:-1], r.axes[1:], strict=True)]
+    assert gaps == pytest.approx([1.06 * 0.66] * 7)
+    shown = [len([t for t in a.get_yticklabels() if t.get_visible()]) for a in r.axes]
+    assert all(2 <= n <= 6 for n in shown)
+    matplotlib.pyplot.close(fig)
 
 
 def test_ax_ticks_zero_is_exact() -> None:
