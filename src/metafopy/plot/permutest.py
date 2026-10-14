@@ -84,7 +84,7 @@ def plot_permutest(
     extreme permutations from the histogram, and ``lwd`` gives the widths of the dashed line at the observed value, of the theoretical
     null distribution (the density of the reference ``z``, ``t``, chi-square or ``F`` distribution), of the kernel density estimate of
     the permutation distribution (``adjust`` is its bandwidth adjustment) and of the vertical line at zero; a width of 0 leaves the element out.
-    ``alternative``, ``p2defn`` and ``stat`` default to those of the test. ``legend`` (``True`` or a location) labels the two curves.
+    ``alternative``, ``p2defn`` and ``stat`` default to those of the test. ``legend`` (``True`` or a location) labels the two curves in the first panel.
 
     Returns a :class:`PlotPermutestResult` with the axes of the panels.
 
@@ -125,10 +125,13 @@ def plot_permutest(
     ddf = x.ddf
     drawn, context = metafopy.plot.histplot.panels(axx, n_panels)
     titles: list[str] = []
+    legend_pending = [bool(legend)]
 
     def legend_for(panel: matplotlib.axes.Axes) -> None:
-        if not legend or not any(w > 0 for w in widths[1:3]):
+        # metafor's addlegend() sets legend to FALSE once drawn, so only the first panel has a legend
+        if not legend_pending[0] or not any(w > 0 for w in widths[1:3]):
             return
+        legend_pending[0] = False
         entries = [
             ('Kernel Density Estimate of\nthe Permutation Distribution', col_density_, widths[2]),
             ('Theoretical Null Distribution', col_ref_, widths[1]),

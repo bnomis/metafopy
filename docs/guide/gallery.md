@@ -49,6 +49,7 @@ from metafopy import (
     regtest,
     rma,
     rma_mv,
+    set_seed,
     trimfill,
     vcalc,
     vif,
@@ -796,7 +797,8 @@ Source: <https://wviechtb.github.io/metafor/reference/plot.permutest.rma.uni.htm
 
 ```python
 res_p = rma('yi', 'vi', mods='~ ablat + year', data=dat)
-perm = permutest(res_p, iter=1000, seed=1234)
+set_seed(1234)
+perm = permutest(res_p, iter=1000)
 fig, ax = matplotlib.pyplot.subplots(figsize=(7, 7))
 plot_permutest(perm, QM=True, lwd=(2, 1, 1, 0), legend=True, ax=ax)
 fig.savefig('permutest.png', dpi=DPI)
@@ -806,7 +808,8 @@ fig.savefig('permutest.png', dpi=DPI)
 |----------|-----------|
 | ![permutation distributions, metafopy](../images/gallery/py/permutest.png) | ![permutation distributions, R](../images/gallery/r/permutest.png) |
 
-The permutations are random, so the histograms of the two figures agree in shape and not bar for bar.
+The generator is seeded with `set_seed(1234)`, like R's `set.seed(1234)`, so both figures draw the same permutations and the histograms, axes and densities agree.
+As in metafor, the legend appears in the first panel only.
 
 ### Simulated variance inflation factors
 
@@ -814,7 +817,8 @@ Source: <https://wviechtb.github.io/metafor/reference/plot.vif.rma.html> (the he
 
 ```python
 fig, ax = matplotlib.pyplot.subplots(figsize=(7, 7))
-plot_vif(vif(res_p, btt=1, sim=500, progbar=False, seed=1234), ax=ax)
+set_seed(1234)
+plot_vif(vif(res_p, btt=1, sim=1000, progbar=False), ax=ax)
 fig.savefig('vif.png', dpi=DPI)
 ```
 
@@ -822,7 +826,7 @@ fig.savefig('vif.png', dpi=DPI)
 |----------|-----------|
 | ![simulated VIFs, metafopy](../images/gallery/py/vif.png) | ![simulated VIFs, R](../images/gallery/r/vif.png) |
 
-The simulated values are random, so the histograms agree in shape and not bar for bar.
+The generator is seeded with `set_seed(1234)`, like R's `set.seed(1234)`, so both figures show the same 1000 simulated values.
 
 ## Plots of multilevel models
 

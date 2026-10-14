@@ -90,7 +90,7 @@ class MetaData:
     Attributes hold only the rows used in fitting (``k`` of them). ``keep``
     maps them back to the ``k_all`` rows that were supplied, so that results
     can be reported on the original rows (metafor's ``na.action="na.pass"``).
-    ``na_rows`` flags the subsetted rows dropped for missing values, and ``labels_all``,
+    ``na_rows`` flags the subsetted rows dropped for missing values, ``formula_mods`` is the formula of ``mods`` (if it was one), and ``labels_all``,
     ``yi_all``, ``vi_all`` and ``X_all`` hold the label, estimate, variance and design row of every supplied row
     (``forest`` shows the flagged rows with ``na_action='pass'``).
     """
@@ -107,6 +107,7 @@ class MetaData:
     data: pandas.DataFrame | None = dataclasses.field(default=None, repr=False)
     labels_all: tuple[str, ...] | None = dataclasses.field(default=None, repr=False)
     na_rows: BoolArray | None = dataclasses.field(default=None, repr=False)
+    formula_mods: str | None = dataclasses.field(default=None, repr=False)
     yi_all: FloatArray | None = dataclasses.field(default=None, repr=False)
     vi_all: FloatArray | None = dataclasses.field(default=None, repr=False)
     X_all: FloatArray | None = dataclasses.field(default=None, repr=False)
@@ -214,6 +215,7 @@ class MetaData:
             data=data,
             labels_all=labels,
             na_rows=na_rows,
+            formula_mods=mods if isinstance(mods, str) and data is not None else None,
             yi_all=y,
             vi_all=v,
             X_all=X,

@@ -58,6 +58,25 @@ def vifs(fit: metafopy.RMAResult) -> metafopy.methods.vif.VIFResult:
     return dataclasses.replace(result, vif=(entry,), sim=sim)
 
 
+def test_seeded_permutations_are_those_of_r(fit: metafopy.RMAResult) -> None:
+    # R: set.seed(1234); permutest(res, iter = 500)
+    ref = REF['permutest']
+    metafopy.set_seed(1234)
+    result = metafopy.permutest(fit, iter=500)
+    assert isinstance(result, metafopy.methods.permutest.PermutestResult)
+    for name in ref['coef_names']:
+        numpy.testing.assert_allclose(result.zval_perm[name], ref['zval_perm'][name], rtol=1e-8, atol=1e-8)
+
+
+def test_seeded_simulated_vifs_are_those_of_r(fit: metafopy.RMAResult) -> None:
+    # R: set.seed(4321); vif(res, btt = 2, sim = TRUE); the model comes from a formula, so the variables of the data are shuffled
+    metafopy.set_seed(4321)
+    result = metafopy.vif(fit, btt=1, sim=True, progbar=False)
+    assert result.sim is not None
+    assert result.sim_type == 'data'
+    numpy.testing.assert_allclose(result.sim[:, 0], REF['vif']['sim'][0], rtol=1e-6, atol=1e-8)
+
+
 @pytest.fixture
 def ax() -> collections.abc.Iterator[matplotlib.axes.Axes]:
     fig, axes = matplotlib.pyplot.subplots(figsize=(7, 7))
@@ -141,7 +160,7 @@ def test_plot_permutest_default_draws_one_panel_per_coefficient(perm: metafopy.m
     assert out.names == ('QM', 'ablat', 'year')
     assert len(out.axes) == 3
     assert [a.get_title() for a in out.axes] == ['Omnibus Test of Coefficients', 'Coefficient: ablat', 'Coefficient: year']
-    assert all(a.get_legend() is not None for a in out.axes)
+    assert [a.get_legend() is not None for a in out.axes] == [True, False, False]
 
 
 def test_plot_permutest_rejects_bad_arguments(perm: metafopy.methods.permutest.PermutestResult, ax: matplotlib.axes.Axes) -> None:

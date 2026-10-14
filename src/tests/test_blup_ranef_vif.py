@@ -242,7 +242,7 @@ def test_format_btt() -> None:
     assert metafopy.methods.vif.format_btt([2, 4, 5]) == '2,4:5'
 
 
-# -- simulation (structural only: R's random draws cannot be reproduced) -------------------
+# -- simulation (structural only; the draws against R are in test_permutest_vif_plots.py) -------------------
 
 
 def test_vif_sim_structure(fits: dict[str, typing.Any]) -> None:
@@ -250,7 +250,7 @@ def test_vif_sim_structure(fits: dict[str, typing.Any]) -> None:
     assert out.sim is not None
     assert out.prop is not None
     assert out.sim.shape == (25, 4)
-    assert out.sim_type == 'X'
+    assert out.sim_type == ('data' if fits['bcg'].data.formula_mods is not None else 'X')
     assert numpy.all((out.prop >= 0) & (out.prop <= 1))
     # each prop is the share of simulated values the observed (G)VIF reaches
     for j, e in enumerate(out.vif):

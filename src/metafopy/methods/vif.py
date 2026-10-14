@@ -16,6 +16,7 @@ import concurrent.futures
 import dataclasses
 import functools
 import math
+import re
 import typing
 import warnings
 
@@ -25,7 +26,9 @@ import pandas
 
 import metafopy.core.linalg
 import metafopy.core.parallel
+import metafopy.core.rng
 import metafopy.errors
+import metafopy.formula
 import metafopy.methods.blup
 import metafopy.models.rma_uni
 import metafopy.models.tau2
@@ -225,9 +228,11 @@ def vif_rma_uni(
     ``btt=list(2, 3:4, 5)``). Without ``btt`` each coefficient except the
     intercept gets its own VIF. ``sim=True`` (1000 iterations) or ``sim=n``
     refits the model ``n`` times with independently permuted model-matrix
-    columns; ``seed`` seeds :func:`numpy.random.default_rng`, from which each
-    iteration gets its own spawned generator, so results do not depend on
-    ``parallel``. ``parallel`` (``'snow'``/``'multicore'``) runs the
+    columns; the permutations are those of metafor: R's generator shuffles each
+    column (or, for a model given as a formula, each variable of the data) in
+    turn, seeded with ``seed + l`` in iteration ``l`` when ``seed`` is given and
+    otherwise drawn from the stream of :func:`metafopy.set_seed`.
+    ``parallel`` (``'snow'``/``'multicore'``) runs the
     iterations in a process pool of ``ncpus`` workers, or on the
     :class:`concurrent.futures.Executor` given as ``cl``.
 
@@ -290,9 +295,15 @@ def vif_rma_uni(
     vifs = numpy.array([e.vif for e in entries])
     # simulating is pointless when every (G)VIF is already 1
     if n_sim >= 2 and not numpy.all(vifs[~numpy.isnan(vifs)] == 1):
-        rngs = numpy.random.default_rng(seed).spawn(n_sim)
+        seeds: list[int | None]
+        if seed is not None:
+            seeds = [seed + i for i in range(1, n_sim + 1)]
+        elif parallel == 'no':
+            seeds = [None] * n_sim  # each iteration continues the global stream, as in R
+        else:
+            seeds = [int(metafopy.core.rng.get_rng().unif_index(2**31 - 1)) for _ in range(n_sim)]
         one = functools.partial(vif_sim_one, res, tuple(groups), reestimate)
-        rows = metafopy.core.parallel.map_sims(one, rngs, parallel=parallel, ncpus=ncpus, cl=cl, progbar=progbar)
+        rows = metafopy.core.parallel.map_sims(one, seeds, parallel=parallel, ncpus=ncpus, cl=cl, progbar=progbar)
         sims = numpy.vstack(rows)
         with numpy.errstate(invalid='ignore', divide='ignore'):
             ok = ~numpy.isnan(sims)
@@ -306,7 +317,7 @@ def vif_rma_uni(
         table=tab,
         test=res.test if tab is not None else None,
         sim=sims,
-        sim_type='X' if sims is not None else None,
+        sim_type=('data' if res.data.formula_mods is not None else 'X') if sims is not None else None,
         prop=prop,
     )
 
@@ -374,11 +385,33 @@ def refit(res: metafopy.models.rma_uni.RMAResult, X: FloatArray) -> metafopy.mod
         )
 
 
-def vif_sim_one(res: metafopy.models.rma_uni.RMAResult, groups: tuple[tuple[int, ...], ...], reestimate: bool, rng: numpy.random.Generator) -> FloatArray:
-    """(G)VIFs after permuting each column of the model matrix independently."""
+def permuted_design(res: metafopy.models.rma_uni.RMAResult, rng: metafopy.core.rng.RRandom) -> FloatArray:
+    """The model matrix after shuffling, as metafor's ``.compvifsim`` does.
+
+    A model given as a formula has the variables of the data it uses shuffled, in order of appearance in the formula, and the model matrix is
+    rebuilt from them (``type="data"``); otherwise every column of the model matrix is shuffled (``type="X"``). Each shuffle is R's ``sample()``.
+    """
+    md = res.data
+    k = res.k
+    if md.formula_mods is not None and md.data is not None:
+        formula = md.formula_mods
+        found = [(m.start(), c) for c in md.data.columns if (m := re.search(rf'(?<![\w.]){re.escape(str(c))}(?![\w.])', formula)) is not None]
+        frame = md.data.loc[md.keep, [c for _, c in sorted(found, key=lambda t: t[0])]].reset_index(drop=True)
+        if len(frame) == k and not frame.empty:
+            shuffled = frame.apply(lambda col: col.iloc[rng.sample_int(k) - 1].reset_index(drop=True))
+            X, _, _ = metafopy.formula.design_matrix(formula, shuffled)
+            if X.shape == res.X.shape:
+                return X
     X = res.X.copy()
     for j in range(X.shape[1]):
-        X[:, j] = rng.permutation(X[:, j])
+        X[:, j] = X[rng.sample_int(k) - 1, j]
+    return X
+
+
+def vif_sim_one(res: metafopy.models.rma_uni.RMAResult, groups: tuple[tuple[int, ...], ...], reestimate: bool, seed: int | None) -> FloatArray:
+    """One iteration of metafor's ``.compvifsim``: (G)VIFs after permuting the model matrix (``seed=None`` continues the global stream)."""
+    rng = metafopy.core.rng.get_rng() if seed is None else metafopy.core.rng.RRandom(seed)
+    X = permuted_design(res, rng)
     drop = metafopy.core.linalg.drop_redundant(X)
     if drop.any():
         # a set containing a coefficient that became redundant is infinitely inflated
