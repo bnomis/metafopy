@@ -4,7 +4,10 @@ See https://www.metafor-project.org/ for the R package this mirrors.
 """
 
 import metafopy.methods.binary
-import metafopy.methods.location_scale  # noqa: F401  registers the predict/confint/... methods for location-scale models
+import metafopy.methods.location_scale  # registers the predict/confint/... methods for location-scale models
+import metafopy.methods.mv_diagnostics  # registers the diagnostics for rma.mv models
+import metafopy.methods.mv_profile  # registers profile() for rma.mv models
+import metafopy.methods.mv_ranef  # noqa: F401  registers ranef() for rma.mv models
 from metafopy import datasets, transf
 from metafopy.base import __version__
 from metafopy.bias import FsnResult, HcResult, RanktestResult, RegtestResult, TesResult, TrimfillResult, fsn, hc, ranktest, regtest, tes, trimfill
