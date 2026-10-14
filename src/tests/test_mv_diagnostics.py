@@ -143,16 +143,17 @@ def test_dfbetas_cluster_kon() -> None:
 
 @pytest.mark.parametrize('name', ['ber', 'kmod', 'kna'])
 def test_rstudent_cluster(name: str) -> None:
-    out = metafopy.rstudent(MODELS[name](), cluster=CLUSTER[name], na_action=NA[name])
+    out: object = metafopy.rstudent(MODELS[name](), cluster=CLUSTER[name], na_action=NA[name])
     assert isinstance(out, metafopy.methods.mv_diagnostics.ClusterResidualResult)
     cluster_close(out, REF[name]['rstudent_cluster'], name)
 
 
 def test_rstudent_cluster_kon() -> None:
     for key, reestimate in (('rstudent_cluster', True), ('rstudent_cluster_fixed', False)):
-        out = metafopy.rstudent(kres(), cluster='district', reestimate=reestimate)
+        out: object = metafopy.rstudent(kres(), cluster='district', reestimate=reestimate)
         assert isinstance(out, metafopy.methods.mv_diagnostics.ClusterResidualResult)
         cluster_close(out, REF['kon'][key], key)
+    assert isinstance(out, metafopy.methods.mv_diagnostics.ClusterResidualResult)
     assert '$cluster' in str(out)
     assert list(out.obs_frame().columns) == ['resid', 'se', 'z', 'cluster']
 
@@ -163,7 +164,7 @@ def test_rstudent_ber() -> None:
 
 @pytest.mark.parametrize('name', ['ber', 'kmod', 'kon'])
 def test_rstandard_cluster(name: str) -> None:
-    out = metafopy.rstandard(MODELS[name](), cluster=CLUSTER[name])
+    out: object = metafopy.rstandard(MODELS[name](), cluster=CLUSTER[name])
     assert isinstance(out, metafopy.methods.mv_diagnostics.ClusterResidualResult)
     cluster_close(out, REF[name]['rstandard_cluster'], name, rtol=CLOSED_RTOL)
 
@@ -205,7 +206,7 @@ def test_ranef_options() -> None:
     ranef_close(metafopy.ranef(kres(), expand=True), REF['kon']['ranef_expand'], 'expand')
     ranef_close(metafopy.ranef(kres(), transf=numpy.exp), REF['kon']['ranef_transf'], 'transf')
     ranef_close(metafopy.ranef(kres(), level=90), REF['kon']['ranef_level'], 'level')
-    out = metafopy.ranef(kres(), vcov=True)
+    out: object = metafopy.ranef(kres(), vcov=True)
     assert isinstance(out, dict)
     assert out['vcov']['district'].shape == (11, 11)
 
@@ -241,7 +242,7 @@ def test_profile_kon() -> None:
 
 
 def test_profile_all() -> None:
-    out = metafopy.profile(kres(), steps=4)
+    out: object = metafopy.profile(kres(), steps=4)
     assert isinstance(out, list)
     assert [(p.comp, p.comp_pos) for p in out] == [('sigma2', 0), ('sigma2', 1)]
     profile_close(out[0], REF['kon']['profile_all']['1'], 'first')
@@ -304,10 +305,10 @@ def test_errors() -> None:
 
 def test_sparse() -> None:
     fit = metafopy.rma_mv('yi', 'vi', random='~ 1 | district/school', data=kon(), sparse=True)
-    ranef = metafopy.ranef(fit)
+    ranef: object = metafopy.ranef(fit)
     assert isinstance(ranef, dict)
     frame_close(ranef['district'], REF['kon']['ranef']['district'], 'sparse ranef', rtol=CLOSED_RTOL)
-    out = metafopy.rstandard(fit, cluster='district')
+    out: object = metafopy.rstandard(fit, cluster='district')
     assert isinstance(out, metafopy.methods.mv_diagnostics.ClusterResidualResult)
     cluster_close(out, REF['kon']['rstandard_cluster'], 'sparse', rtol=CLOSED_RTOL)
 

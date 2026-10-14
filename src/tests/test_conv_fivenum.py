@@ -13,7 +13,7 @@ import metafopy.errors
 
 REF = refutil.load_phase7('conv_fivenum')
 # auditme: accept[non-alphabetical-dict-keys] order follows the argument order of the R function
-COLS = {'min': 'min', 'q1': 'q1', 'median': 'median', 'q3': 'q3', 'max': 'max', 'n': 'n'}
+COLS: dict[str, typing.Any] = {'min': 'min', 'q1': 'q1', 'median': 'median', 'q3': 'q3', 'max': 'max', 'n': 'n'}
 
 
 def check(key: str, source: str, attrs: bool = True, **kwargs: typing.Any) -> pandas.DataFrame:

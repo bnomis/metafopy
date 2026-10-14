@@ -15,9 +15,9 @@ import metafopy.errors
 TL = refutil.load_phase7('to_long')
 TT = refutil.load_phase7('to_table')
 TW = refutil.load_phase7('to_wide')
-TABLE = {'ai': 'tpos', 'bi': 'tneg', 'ci': 'cpos', 'di': 'cneg'}
+TABLE: dict[str, typing.Any] = {'ai': 'tpos', 'bi': 'tneg', 'ci': 'cpos', 'di': 'cneg'}
 # auditme: accept[non-alphabetical-dict-keys] order follows the argument order of the R function
-MEANS = {'m1i': 'm1i', 'sd1i': 'sd1i', 'n1i': 'n1i', 'm2i': 'm2i', 'sd2i': 'sd2i', 'n2i': 'n2i'}
+MEANS: dict[str, typing.Any] = {'m1i': 'm1i', 'sd1i': 'sd1i', 'n1i': 'n1i', 'm2i': 'm2i', 'sd2i': 'sd2i', 'n2i': 'n2i'}
 RI = [0.5, 0.4, 0.3, 0.2]
 
 

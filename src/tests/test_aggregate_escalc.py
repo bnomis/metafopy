@@ -67,6 +67,7 @@ def test_select_by_position(assink: pandas.DataFrame) -> None:
 
 def test_given_V(assink: pandas.DataFrame) -> None:
     V1 = metafopy.vcalc('vi', cluster='study', obs='esid', data=assink, rho=0.6)
+    assert isinstance(V1, numpy.ndarray)
     refutil.assert_frame(metafopy.aggregate_escalc(assink, cluster='study', V=V1), REF['V1'], 'V1')
     refutil.assert_frame(metafopy.aggregate_escalc(assink, cluster='study', V=numpy.array(REF['V2'])), REF['V2_agg'], 'V2')
     refutil.assert_frame(metafopy.aggregate_escalc(assink, cluster='study', V='vi'), REF['V_vector'], 'V vector')

@@ -20,7 +20,7 @@ import metafopy.transf
 C2 = refutil.load_phase7('conv_2x2')
 CD = refutil.load_phase7('conv_delta_wald')
 # auditme: accept[non-alphabetical-dict-keys] order follows the argument order of the R function
-KW = {'ri': 'phi', 'ori': 'oddsratio', 'x2i': 'chisq', 'ni': 'ni', 'n1i': 'n1i', 'n2i': 'n2i'}
+KW: dict[str, typing.Any] = {'ri': 'phi', 'ori': 'oddsratio', 'x2i': 'chisq', 'ni': 'ni', 'n1i': 'n1i', 'n2i': 'n2i'}
 
 
 @pytest.mark.parametrize(
@@ -63,7 +63,7 @@ def test_conv_2x2_diagnostic() -> None:
     refutil.assert_frame(metafopy.conv_2x2(sens=g['sens'], spec=g['spec'], npv=g['npv'], ni=g['n']), C2['ssn'], 'no ppv')
     refutil.assert_frame(metafopy.conv_2x2(sens=g['sens'], ppv=g['ppv'], npv=g['npv'], ni=g['n']), C2['spn'], 'no spec')
     refutil.assert_frame(metafopy.conv_2x2(spec=g['spec'], ppv=g['ppv'], npv=g['npv'], ni=g['n']), C2['xpn'], 'no sens')
-    two = {'spec': [g['spec']] * 2, 'ppv': [g['ppv']] * 2, 'ni': [g['n']] * 2}
+    two: dict[str, typing.Any] = {'spec': [g['spec']] * 2, 'ppv': [g['ppv']] * 2, 'ni': [g['n']] * 2}
     refutil.assert_frame(metafopy.conv_2x2(sens=[g['sens'], 1], **two), C2['drop01'], 'drop01')
     refutil.assert_frame(metafopy.conv_2x2(sens=[g['sens'], 1], drop01=False, **two), C2['drop01_false'], 'drop01=False')
 

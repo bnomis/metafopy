@@ -49,8 +49,8 @@ def test_profile_uni(parallel: typing.Literal['snow', 'multicore']) -> None:
 def test_profile_ls() -> None:
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
-        serial = metafopy.profile(ls(), steps=5)
-        pooled = metafopy.profile(ls(), steps=5, parallel='snow', ncpus=2)
+        serial: object = metafopy.profile(ls(), steps=5)
+        pooled: object = metafopy.profile(ls(), steps=5, parallel='snow', ncpus=2)
     assert isinstance(serial, list)
     assert isinstance(pooled, list)
     for a, b in zip(serial, pooled, strict=True):
@@ -76,6 +76,6 @@ def test_progbar_and_errors(capsys: pytest.CaptureFixture[str]) -> None:
     metafopy.gosh(metafopy.rma_uni('yi', 'vi', data=refutil.bcg().iloc[:5]), progbar=True)
     assert '100%' in capsys.readouterr().err
     with pytest.raises(metafopy.errors.InputError):
-        metafopy.profile(uni(), parallel='threads')  # type: ignore[arg-type]
+        metafopy.profile(uni(), parallel='threads')
     with pytest.raises(metafopy.errors.InputError):
         metafopy.gosh(uni(), ncpus=0)

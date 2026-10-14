@@ -1,5 +1,7 @@
 """vec2mat(), dfround() and replmiss() against R metafor 5.2-1 (fixtures from tests/r/generate_data_helpers.R)."""
 
+import typing
+
 import numpy
 import pandas
 import pytest
@@ -24,7 +26,7 @@ def r_matrix(rows: list[list[float | None]]) -> numpy.typing.NDArray[numpy.float
         ('v5', range(1, 7), {}),
     ],
 )
-def test_vec2mat(key: str, x: range | list[float], kwargs: dict[str, bool]) -> None:
+def test_vec2mat(key: str, x: range | list[float], kwargs: dict[str, typing.Any]) -> None:
     numpy.testing.assert_array_equal(metafopy.vec2mat(list(x), **kwargs), r_matrix(REF[key]))
 
 
@@ -91,11 +93,11 @@ def test_dfround_matrix_and_errors(cs: pandas.DataFrame) -> None:
 
 def test_replmiss() -> None:
     x = [4, 2, 7, numpy.nan, 1, numpy.nan, 5]
-    numpy.testing.assert_array_equal(metafopy.replmiss(x, 0), REF['repl1'])  # type: ignore[arg-type]
-    numpy.testing.assert_array_equal(metafopy.replmiss(x, [2, 3, 6, 5, 8, 1, 2]), REF['repl2'])  # type: ignore[arg-type]
+    numpy.testing.assert_array_equal(metafopy.replmiss(x, 0), REF['repl1'])
+    numpy.testing.assert_array_equal(metafopy.replmiss(x, [2, 3, 6, 5, 8, 1, 2]), REF['repl2'])
     dat = pandas.DataFrame({'x': [numpy.nan, 1], 'y': [5, 6]})
-    numpy.testing.assert_array_equal(metafopy.replmiss('x', 'y', data=dat), REF['repl3'])  # type: ignore[arg-type]
-    numpy.testing.assert_array_equal(metafopy.replmiss(None, [1, 2]), REF['repl4'])  # type: ignore[arg-type]
+    numpy.testing.assert_array_equal(metafopy.replmiss('x', 'y', data=dat), REF['repl3'])
+    numpy.testing.assert_array_equal(metafopy.replmiss(None, [1, 2]), REF['repl4'])
 
 
 def test_replmiss_errors() -> None:

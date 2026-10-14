@@ -149,4 +149,4 @@ def test_matreg_accessors() -> None:
     refutil.close(metafopy.se(res), numpy.sqrt(numpy.diag(res.vcov().to_numpy())).tolist(), 'matreg se')
     for fn in (metafopy.nobs, metafopy.df_residual, metafopy.model_matrix, metafopy.update, metafopy.simulate):
         with pytest.raises(metafopy.errors.ArgumentError):
-            fn(res)  # type: ignore[operator]
+            fn(typing.cast(typing.Any, res))

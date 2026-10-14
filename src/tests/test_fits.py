@@ -54,7 +54,7 @@ def ax() -> collections.abc.Iterator[matplotlib.axes.Axes]:
     matplotlib.pyplot.close(fig)
 
 
-TABLES = {'ai': 'tpos', 'bi': 'tneg', 'ci': 'cpos', 'di': 'cneg'}
+TABLES: dict[str, typing.Any] = {'ai': 'tpos', 'bi': 'tneg', 'ci': 'cpos', 'di': 'cneg'}
 
 
 @pytest.fixture(scope='module')
@@ -267,8 +267,8 @@ def test_addpoly_of_predictions_matches_metafor(key: str, fits: dict[str, typing
     polys = after['polygon'][n_before.get('polygon', 0) :]
     assert len(polys) == len(rec['polygon'])
     for p, rp in zip(polys, rec['polygon'], strict=True):
-        plotref.same_summary(p.meta['xy'][:, 0], rp['x'], key)  # type: ignore[attr-defined]
-        plotref.same_summary(p.meta['xy'][:, 1], rp['y'], key)  # type: ignore[attr-defined]
+        plotref.same_summary(p.meta['xy'][:, 0], rp['x'], key)
+        plotref.same_summary(p.meta['xy'][:, 1], rp['y'], key)
 
 
 def test_addpoly_of_scale_predictions_is_an_error(ax: matplotlib.axes.Axes) -> None:
@@ -296,14 +296,14 @@ def test_plot_rma_matches_metafor(fit: str, fits: dict[str, typing.Any]) -> None
         assert [str(i) for i in r.ids] == plotref.flat(rec['axis'][-1]['labels'])
         assert [t.get_text() for t in r.axes[3].get_xticklabels()] == plotref.flat(rec['axis'][-1]['labels'])
         hs = sorted(h for a in rec['abline'] for h in plotref.flat(a.get('h')))
-        got = sorted(float(ln.get_ydata()[0]) for a in r.axes[2:] for ln in a.lines if ln.get_gid() == 'hline')  # type: ignore[index]
+        got = sorted(float(numpy.asarray(ln.get_ydata())[0]) for a in r.axes[2:] for ln in a.lines if ln.get_gid() == 'hline')
         if fit == 'unim':
             refutil.close(r.fitted, rec['points'][0]['x'], 'fitted')
             refutil.close(r.z, rec['points'][0]['y'], 'z (fitted panel)')
             assert r.radial is None
         else:
             assert r.radial is not None
-            got = sorted(float(ln.get_ydata()[0]) for ln in r.axes[3].lines if ln.get_gid() == 'hline')  # type: ignore[index]
+            got = sorted(float(numpy.asarray(ln.get_ydata())[0]) for ln in r.axes[3].lines if ln.get_gid() == 'hline')
         refutil.close(got, hs, 'reference lines')
         for a, p in zip(r.axes[4 - len(rec['plot']) :], rec['plot'], strict=True):
             refutil.close(a.get_xlim(), list(metafopy.plot.rutils.usr_range(*p['xlim'])), 'xlim')
