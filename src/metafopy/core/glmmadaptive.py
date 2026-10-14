@@ -44,6 +44,7 @@ EPS = sys.float_info.epsilon
 LOGIT_LIMIT = 30.0
 HESSIAN_WARNING = 'Hessian matrix at convergence is not positive definite; unstable solution.'
 HESSIAN_NONFINITE = 'infinite or missing values in Hessian at convergence.'
+TIE = 1e-13
 LARGE_COEFFICIENT = 'A large coefficient value has been detected during the optimization.'
 INITIAL_SCALE = math.sqrt(1.346)
 FD_EPS = EPS**0.25
@@ -392,7 +393,8 @@ def expectation_maximisation(ctx: Context, beta: FloatArray, D: FloatArray, post
         post_b2 = numpy.einsum('ig,igc->ic', weighted, nodes.b2)
         total = lpy + nodes.log_dets
         loglik[it - 1] = float(numpy.sum(total[numpy.isfinite(total)]))
-        if it > 4 and loglik[it - 1] > loglik[it - 2]:
+        # an increase of a few units in the last place is a tie, which rounding differences between platforms would otherwise turn into a stop
+        if it > 4 and loglik[it - 1] - loglik[it - 2] > TIE * abs(loglik[it - 2]):
             before, after = params[it - 2], params[it - 1]
             check1 = float(numpy.max(numpy.abs(after - before) / (numpy.abs(before) + con.tol1))) < con.tol2
             check2 = (loglik[it - 1] - loglik[it - 2]) < con.tol3 * (abs(loglik[it - 2]) + con.tol3)

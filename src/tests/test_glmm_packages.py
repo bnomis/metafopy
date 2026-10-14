@@ -3,8 +3,8 @@
 The fixtures come from ``r/generate_glmm_packages.R``.
 
 GLMMadaptive is reproduced step by step (EM stage, then BFGS with R's ``optim`` scaling), so the results follow R's, including where R stops short of
-the maximum; the exceptions in ``ADAPTIVE_TOLERANCE`` are fits whose long BFGS path is chaotic or that sit on a tie of
-the stopping rule. glmmTMB maximises the Laplace likelihood with exact
+the maximum; the exceptions in ``ADAPTIVE_TOLERANCE`` are fits whose long BFGS path is chaotic or whose confidence bound sits next to zero.
+glmmTMB maximises the Laplace likelihood with exact
 derivatives, so only the small optimiser differences of ``TMB_TOLERANCE`` remain. See ``docs/differences.md``.
 """
 
@@ -31,9 +31,6 @@ TMB_TOLERANCE: dict[str, float] = {}
 CHAOTIC = frozenset({'rs_ml_mod', 'rs_collins'})
 ADAPTIVE_TOLERANCE: dict[str, float] = {
     'rs_ml_mod': 2.5e-1,
-    # the EM stage stops as soon as the log-likelihood rises by less than 1e-8 relative, and at iterations 5 to 9 the iterates tie to the last
-    # bit, so a rounding difference between platforms stops it at the first fixed point (-0.532) instead of after the nodes are re-centred (-0.541, R's)
-    'al_nagq1': 2e-2,
     # the confidence bound is a few 1e-3 from zero, so one unit in the last place of the optimiser shows
     'rs_ml_cor': 1e-3,
     'rs_collins': 3e-2,
