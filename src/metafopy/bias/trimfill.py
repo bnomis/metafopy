@@ -15,6 +15,7 @@ import numpy.typing
 import metafopy.bias.inputs
 import metafopy.errors
 import metafopy.metadata
+import metafopy.mfopt
 import metafopy.models.rma_uni
 
 __all__ = ['TrimfillResult', 'trimfill']
@@ -39,7 +40,8 @@ class TrimfillResult(metafopy.models.rma_uni.RMAResult):
     k0_est: str = 'L0'
     p_k0: float = math.nan
 
-    def summary(self, digits: int = 4) -> str:
+    def summary(self, digits: int | None = None) -> str:
+        digits = metafopy.mfopt.option_digits(digits)
         block = [f'Estimated number of missing studies on the {self.side} side: {self.k0} (SE = {metafopy.bias.inputs.fx(self.se_k0, digits)})']
         if self.k0_est == 'R0':
             gap = ' ' * len(str(self.k0))

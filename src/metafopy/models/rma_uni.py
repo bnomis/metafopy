@@ -23,6 +23,7 @@ import scipy.stats
 import metafopy.core.linalg
 import metafopy.errors
 import metafopy.metadata
+import metafopy.mfopt
 import metafopy.models.robust_info
 import metafopy.models.robust_print
 import metafopy.models.tau2
@@ -221,11 +222,11 @@ class RMAResult:
 
     # -- printing ----------------------------------------------------------
 
-    def summary(self, digits: int = 4) -> str:
-        return format_result(self, digits)
+    def summary(self, digits: int | None = None) -> str:
+        return metafopy.mfopt.option_space(format_result(self, metafopy.mfopt.option_digits(digits)))
 
     def __str__(self) -> str:
-        return format_result(self, 4)
+        return self.summary()
 
     def __repr__(self) -> str:
         return f'<RMAResult {self.method} k={self.k} p={self.p}>'

@@ -18,6 +18,7 @@ import scipy.stats
 
 import metafopy.bias.inputs
 import metafopy.errors
+import metafopy.mfopt
 import metafopy.models.rma_uni
 
 __all__ = ['RanktestResult', 'kendall_test', 'ranktest']
@@ -32,7 +33,7 @@ class RanktestResult:
     digits: int = 4
 
     def summary(self, digits: int | None = None) -> str:
-        d = self.digits if digits is None else digits
+        d = metafopy.mfopt.option_digits(digits, self.digits)
         tau = metafopy.bias.inputs.fx(self.tau, d)
         pval = metafopy.bias.inputs.fp(self.pval, d, equal=True, sep=True, pname='p ')
         return f"\nRank Correlation Test for Funnel Plot Asymmetry\n\nKendall's tau = {tau}, {pval}\n"

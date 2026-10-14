@@ -8,6 +8,7 @@ import numpy
 import numpy.typing
 import pandas
 
+import metafopy.mfopt
 import metafopy.models.rma_uni
 import metafopy.models.sel_spec
 import metafopy.models.tau2
@@ -252,10 +253,10 @@ class SelmodelResult:
     # -- printing -------------------------------------------------------------------
 
     def summary(self, digits: int | None = None) -> str:
-        return format_selmodel(self, self.digits if digits is None else digits)
+        return metafopy.mfopt.option_space(format_selmodel(self, metafopy.mfopt.option_digits(digits, self.digits)))
 
     def __str__(self) -> str:
-        return format_selmodel(self, self.digits)
+        return self.summary()
 
     def __repr__(self) -> str:
         return f'<SelmodelResult {self.type} {self.method} k={self.k} p={self.p}>'

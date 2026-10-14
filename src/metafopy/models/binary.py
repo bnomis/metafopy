@@ -19,6 +19,7 @@ import pandas
 
 import metafopy.errors
 import metafopy.metadata
+import metafopy.mfopt
 import metafopy.models.rma_uni
 import metafopy.models.tables
 import metafopy.printing
@@ -199,10 +200,10 @@ class FixedBinaryResult(abc.ABC):
         return matrix[numpy.ix_(not_na, not_na)] if na_action == 'omit' else matrix
 
     def summary(self, digits: int | None = None, showfit: bool = False) -> str:
-        return self.render(self.digits if digits is None else digits, showfit)
+        return metafopy.mfopt.option_space(self.render(metafopy.mfopt.option_digits(digits, self.digits), showfit))
 
     def __str__(self) -> str:
-        return self.render(self.digits, False)
+        return self.summary()
 
     def __repr__(self) -> str:
         return f'<{type(self).__name__} {self.measure} k={self.k}>'

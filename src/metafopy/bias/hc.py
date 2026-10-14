@@ -19,6 +19,7 @@ import metafopy.core.zeroin
 import metafopy.errors
 import metafopy.methods.blup
 import metafopy.methods.common
+import metafopy.mfopt
 import metafopy.models.rma_uni
 import metafopy.transf
 
@@ -46,7 +47,7 @@ class HcResult:
     digits: int = 4
 
     def summary(self, digits: int | None = None) -> str:
-        d = self.digits if digits is None else digits
+        d = metafopy.mfopt.option_digits(digits, self.digits)
         cols: list[tuple[str, list[str]]] = [
             ('method', [self.method_rma, self.method]),
             ('tau2', [metafopy.bias.inputs.fx(self.tau2_rma, d), metafopy.bias.inputs.fx(self.tau2, d)]),

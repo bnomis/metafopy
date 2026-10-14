@@ -20,6 +20,7 @@ import metafopy.bias.inputs
 import metafopy.errors
 import metafopy.metadata
 import metafopy.methods.common
+import metafopy.mfopt
 import metafopy.models.rma_uni
 import metafopy.models.tau2
 
@@ -68,7 +69,7 @@ class RegtestResult:
         return self.ddf
 
     def summary(self, digits: int | None = None, ret_fit: bool | None = None) -> str:
-        d = self.digits if digits is None else digits
+        d = metafopy.mfopt.option_digits(digits, self.digits)
         show_fit = self.ret_fit if ret_fit is None else ret_fit
         if self.model == 'lm':
             model_line = 'Model:     weighted regression with multiplicative dispersion'

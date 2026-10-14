@@ -20,6 +20,7 @@ import scipy.stats
 import metafopy.bias.inputs
 import metafopy.core.zeroin
 import metafopy.errors
+import metafopy.mfopt
 import metafopy.models.rma_uni
 
 __all__ = ['TesResult', 'tes']
@@ -51,7 +52,7 @@ class TesResult:
     digits: int = 4
 
     def summary(self, digits: int | None = None) -> str:
-        d = self.digits if digits is None else digits
+        d = metafopy.mfopt.option_digits(digits, self.digits)
         out = ['', 'Test of Excess Significance', '']
         out += [
             f'Observed Number of Significant Findings: {self.O} (out of {self.k})',

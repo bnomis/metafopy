@@ -11,6 +11,7 @@ import numpy
 import numpy.typing
 import pandas
 
+import metafopy.mfopt
 import metafopy.models.rma_uni
 import metafopy.models.tables
 import metafopy.printing
@@ -148,10 +149,10 @@ class GLMMResult:
         return pandas.Series(st.as_tuple(), index=['logLik', 'deviance', 'AIC', 'BIC', 'AICc'], name='REML' if REML else 'ML')
 
     def summary(self, digits: int | None = None, showfit: bool = False) -> str:
-        return self.render(self.digits if digits is None else digits, showfit)
+        return metafopy.mfopt.option_space(self.render(metafopy.mfopt.option_digits(digits, self.digits), showfit))
 
     def __str__(self) -> str:
-        return self.render(self.digits, False)
+        return self.summary()
 
     def __repr__(self) -> str:
         return f'<GLMMResult {self.measure} {self.model} {self.method} k={self.k}>'

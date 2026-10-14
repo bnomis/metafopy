@@ -10,6 +10,7 @@ import scipy.linalg
 import scipy.sparse
 
 import metafopy.errors
+import metafopy.mfopt
 import metafopy.models.mv_lik
 import metafopy.models.mv_structs
 import metafopy.models.rma_uni
@@ -218,11 +219,11 @@ class RMAMVResult:
 
     # -- printing -------------------------------------------------------------
 
-    def summary(self, digits: int = 4, showfit: bool = False) -> str:
+    def summary(self, digits: int | None = None, showfit: bool = False) -> str:
         # auditme: accept[in-function-import] the printing module needs this class, so the import is deferred to avoid a cycle
         import metafopy.models.mv_print
 
-        return metafopy.models.mv_print.format_result(self, digits, showfit)
+        return metafopy.mfopt.option_space(metafopy.models.mv_print.format_result(self, metafopy.mfopt.option_digits(digits), showfit))
 
     def __str__(self) -> str:
         return self.summary()

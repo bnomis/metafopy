@@ -20,6 +20,7 @@ import metafopy.bias.inputs
 import metafopy.core.rng
 import metafopy.core.zeroin
 import metafopy.errors
+import metafopy.mfopt
 import metafopy.models.rma_uni
 import metafopy.models.tau2
 
@@ -52,7 +53,7 @@ class FsnResult:
         return self.est
 
     def summary(self, digits: int | None = None) -> str:
-        d = self.digits if digits is None else digits
+        d = metafopy.mfopt.option_digits(digits, self.digits)
         lines = ['', f'Fail-safe N Calculation Using the {self.type} Approach', '']
         alpha = f'{round(self.alpha, d):.7g}'
         if self.type in ('Rosenthal', 'Binomial'):

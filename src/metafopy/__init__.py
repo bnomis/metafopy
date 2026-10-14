@@ -11,6 +11,7 @@ from metafopy.base import __version__
 from metafopy.bias import FsnResult, HcResult, RanktestResult, RegtestResult, TesResult, TrimfillResult, fsn, hc, ranktest, regtest, tes, trimfill
 from metafopy.core.rng import set_seed
 from metafopy.effects import cmicalc, escalc, summary_escalc
+from metafopy.formatters import fmtp, fmtp2, fmtt, fmtx
 from metafopy.formula import RandomTerm, parse_random
 from metafopy.metadata import MetaData
 from metafopy.methods.anova import LRTResult, WaldResult, anova
@@ -30,6 +31,7 @@ from metafopy.methods.robust import robust
 from metafopy.methods.selmodel import SelProfileResult
 from metafopy.methods.vcalc import vcalc
 from metafopy.methods.vif import VIFEntry, VIFResult, vif
+from metafopy.mfopt import getmfopt, setmfopt
 from metafopy.models.glmm_fit import GLMMControl
 from metafopy.models.glmm_result import GLMMResult
 from metafopy.models.mv_result import RMAMVResult
@@ -114,10 +116,15 @@ __all__ = [
     'datasets',
     'dfbetas',
     'escalc',
+    'fmtp',
+    'fmtp2',
+    'fmtt',
+    'fmtx',
     'forest',
     'forest_cumul',
     'fsn',
     'funnel',
+    'getmfopt',
     'gosh',
     'hc',
     'influence',
@@ -154,6 +161,7 @@ __all__ = [
     'rstudent',
     'selmodel',
     'set_seed',
+    'setmfopt',
     'summary_escalc',
     'tes',
     'transf',
