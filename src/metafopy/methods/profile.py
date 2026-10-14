@@ -8,8 +8,10 @@ https://wviechtb.github.io/metafor/reference/profile.rma.html.
 """
 
 import collections.abc
+import concurrent.futures
 import dataclasses
 import functools
+import importlib
 import math
 import typing
 import warnings
@@ -19,6 +21,7 @@ import numpy.typing
 import pandas
 import scipy.stats
 
+import metafopy.core.parallel
 import metafopy.errors
 import metafopy.methods.common
 import metafopy.methods.confint
@@ -71,6 +74,14 @@ def profile(fitted: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> Prof
     raise metafopy.errors.ArgumentError(f'profile() not implemented for {type(fitted).__name__}')
 
 
+def profile_fit(x: metafopy.models.rma_uni.RMAResult, tau2: float) -> tuple[float, FloatArray, FloatArray, FloatArray, float, float] | None:
+    """The refit of ``x`` with ``tau^2`` fixed at ``tau2``: log-likelihood, coefficients, CI bounds, I^2 and H^2 (``None`` if it fails)."""
+    fit = metafopy.methods.common.refit_arrays(x, tau2=tau2)
+    if fit is None:
+        return None
+    return fit.logLik(), fit.beta, fit.ci_lb, fit.ci_ub, fit.I2, fit.H2
+
+
 @profile.register
 def profile_rma_uni(
     fitted: metafopy.models.rma_uni.RMAResult,
@@ -83,17 +94,25 @@ def profile_rma_uni(
     sqrt: bool = False,
     exp: bool = False,
     ax: typing.Any = None,
+    progbar: bool = False,
+    parallel: metafopy.core.parallel.Parallel = 'no',
+    ncpus: int = 1,
+    cl: concurrent.futures.Executor | None = None,
 ) -> ProfileResult:
     """Profile the likelihood over ``tau^2`` (``steps`` equally spaced values in ``xlim``, or the values given as ``steps``).
 
     ``xlim`` defaults to the range spanned by the Q-profile CI for ``tau^2`` and
     the estimate (at least up to 0.1); with ``sqrt=True`` the grid is on the ``tau``
     scale. With ``plot=True`` the profile is drawn with :func:`metafopy.plot.plot_profile`.
+    As in metafor, ``parallel`` (``'snow'`` or ``'multicore'``) refits the models in a process pool of ``ncpus``
+    workers (or on the executor ``cl``) and ``progbar=True`` prints a progress bar to stderr; the result equals that
+    of the serial run.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
     x = fitted
+    parallel = metafopy.core.parallel.resolve_parallel(parallel, ncpus, cl)
     if x.method in metafopy.models.tau2.FIXED_EFFECTS:
         raise metafopy.errors.InputError('Cannot profile tau^2 parameter for equal/fixed-effects models.')
     st = numpy.atleast_1d(numpy.asarray(steps, dtype=numpy.float64))
@@ -145,14 +164,12 @@ def profile_rma_uni(
     ci_ub = numpy.full_like(beta, numpy.nan)
     I2 = numpy.full(len(tau2_grid), numpy.nan)
     H2 = numpy.full(len(tau2_grid), numpy.nan)
-    for i, t2 in enumerate(tau2_grid):
-        fit = metafopy.methods.common.refit_arrays(x, tau2=float(t2))
+    one = functools.partial(profile_fit, x)
+    fits = metafopy.core.parallel.map_sims(one, [float(t2) for t2 in tau2_grid], parallel=parallel, ncpus=ncpus, cl=cl, progbar=progbar)
+    for i, fit in enumerate(fits):
         if fit is None:
-            # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
             continue
-        lls[i] = fit.logLik()
-        beta[i], ci_lb[i], ci_ub[i] = fit.beta, fit.ci_lb, fit.ci_ub
-        I2[i], H2[i] = fit.I2, fit.H2
+        lls[i], beta[i], ci_lb[i], ci_ub[i], I2[i], H2[i] = fit
 
     vc = math.sqrt(x.tau2) if sqrt else x.tau2
     maxll = x.logLik()
@@ -195,8 +212,6 @@ def profile_rma_uni(
         sqrt=sqrt,
     )
     if plot:
-        # auditme: accept[in-function-import] metafopy.plot.profile imports this module, so the import is deferred to avoid a cycle
-        from metafopy.plot import plot_profile
-
-        plot_profile(out, ax=ax)
+        # metafopy.plot.profile imports this module, so metafopy.plot is looked up when it is needed
+        importlib.import_module('metafopy.plot').plot_profile(out, ax=ax)
     return out

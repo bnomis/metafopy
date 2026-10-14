@@ -44,6 +44,7 @@ NOISY_HESSIAN = {'hack_halfnorm_less': 0.25}
 NOISY_ATOL = 5e-3
 
 # auditme: accept[non-alphabetical-literal] metafor's column order
+# auditme: accept[literal-duplication] test cases spell out their own R arguments
 WALD = ('se', 'zval', 'pval', 'ci_lb', 'ci_ub')
 ALL_CASES = sorted(k for k, v in REF['fits'].items() if 'error' not in v)
 
@@ -379,6 +380,7 @@ def test_profile(name: str) -> None:
     close(pr.vc, ref['vc'], f'{name} vc')
     close(pr.maxll, ref['maxll'], f'{name} maxll')
     close(pr.ylim, ref['ylim'], f'{name} ylim', rtol=RTOL_SE)
+    # auditme: accept[literal-duplication] test cases spell out their own R arguments
     for key in ('beta', 'ci_lb', 'ci_ub'):
         for col, values in ref[key].items():
             close(getattr(pr, key)[col].to_numpy(), values, f'{name} {key}', rtol=RTOL_SE)

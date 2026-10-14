@@ -33,6 +33,7 @@ type Fit = collections.abc.Callable[[], metafopy.RMAMVResult]
 type Floats = numpy.typing.NDArray[numpy.float64]
 
 
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def kon() -> pandas.DataFrame:
     return metafopy.datasets.load('konstantopoulos2011')
 
@@ -137,6 +138,7 @@ def floats(value: typing.Any) -> Floats:
     return numpy.array([numpy.nan if v is None else v for v in numpy.array(value, dtype=object).ravel()], dtype=float)
 
 
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def close(actual: typing.Any, expected: typing.Any, what: str, rtol: float, atol: float = 1e-9) -> None:
     numpy.testing.assert_allclose(numpy.asarray(actual, dtype=float).reshape(-1), floats(expected), rtol=rtol, atol=atol, equal_nan=True, err_msg=what)
 

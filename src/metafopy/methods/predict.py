@@ -5,6 +5,7 @@ import dataclasses
 import functools
 import math
 import typing
+import warnings
 
 import numpy
 import numpy.typing
@@ -12,6 +13,7 @@ import pandas
 import scipy.stats
 
 import metafopy.errors
+import metafopy.models.binary
 import metafopy.models.glmm_result
 import metafopy.models.mv_result
 import metafopy.models.rma_uni
@@ -30,6 +32,9 @@ class PredictResult:
     ``se`` is NaN when a transformation was applied, as in metafor. ``pi_se`` is the standard error of the
     prediction (before any transformation), ``pi_dist`` the distribution (``'norm'`` or ``'t'``) of the prediction
     and ``pi_ddf`` its degrees of freedom (one per prediction) (used by ``forest(predstyle='shade')`` and ``'dist'``).
+    ``prob`` holds the probabilities requested via ``prob``, ``X`` the model matrix of the predictions (``addx=True``)
+    and ``vcov`` their variance-covariance matrix (``vcov=True`` without ``transf``); these two are data frames for
+    ``matreg`` predictions (:class:`~metafopy.methods.matreg.MatregPredictResult`).
     """
 
     pred: FloatArray
@@ -42,19 +47,22 @@ class PredictResult:
     pi_se: FloatArray | None = None
     pi_dist: str | None = None
     pi_ddf: float | FloatArray | None = None
+    prob: FloatArray | None = None
+    X: FloatArray | pandas.DataFrame | None = None
+    vcov: FloatArray | pandas.DataFrame | None = None
 
     def to_frame(self) -> pandas.DataFrame:
-        return pandas.DataFrame(
-            {
-                'pred': self.pred,
-                'se': self.se,
-                'ci.lb': self.ci_lb,
-                'ci.ub': self.ci_ub,
-                'pi.lb': self.pi_lb,
-                'pi.ub': self.pi_ub,
-            },
-            index=list(self.slab) if self.slab is not None else None,
-        )
+        cols: dict[str, typing.Any] = {
+            'pred': self.pred,
+            'se': self.se,
+            'ci.lb': self.ci_lb,
+            'ci.ub': self.ci_ub,
+            'pi.lb': self.pi_lb,
+            'pi.ub': self.pi_ub,
+        }
+        if self.prob is not None:
+            cols['prob'] = self.prob
+        return pandas.DataFrame(cols, index=list(self.slab) if self.slab is not None else None)
 
     def __str__(self) -> str:
         frame = self.to_frame()
@@ -62,6 +70,48 @@ class PredictResult:
             if frame[col].isna().all():
                 frame = frame.drop(columns=col)
         return frame.round(4).to_string()
+
+
+def prob_values(prob: str | float, pred: FloatArray, pi_se: FloatArray | None, pi_dist: str, pi_ddf: float | FloatArray | None) -> FloatArray | None:
+    """Probabilities that a true outcome is below/above a value (``prob='>0.2'``, ``'<0'``; a number means ``'>'``).
+
+    ``None`` when the value cannot be parsed (metafor then drops ``prob``).
+    """
+    text = str(prob)
+    lower_tail = '<' in text
+    try:
+        value = float(text.replace('<', '').replace('>', '').replace('=', ''))
+    except ValueError:
+        return None
+    if pi_se is None:
+        return numpy.full(pred.shape, math.nan)
+    z = (value - pred) / pi_se
+    if pi_dist == 'norm':
+        return numpy.asarray(scipy.stats.norm.cdf(z) if lower_tail else scipy.stats.norm.sf(z), dtype=numpy.float64)
+    df = numpy.asarray(math.nan if pi_ddf is None else pi_ddf, dtype=numpy.float64)
+    return numpy.asarray(scipy.stats.t.cdf(z, df) if lower_tail else scipy.stats.t.sf(z, df), dtype=numpy.float64)
+
+
+def expand_hetvar(hetvar: numpy.typing.ArrayLike, k_new: int) -> FloatArray:
+    """``hetvar`` recycled to ``k_new`` values (metafor's ``.expand1``).
+
+    Raises:
+        metafopy.errors.InputError: the length of ``hetvar`` does not match.
+    """
+    try:
+        hv = numpy.atleast_1d(numpy.asarray(hetvar, dtype=numpy.float64))
+    except (TypeError, ValueError) as err:
+        raise metafopy.errors.InputError("Argument 'hetvar' must be a numeric vector.") from err
+    if hv.size == 1:
+        hv = numpy.full(k_new, float(hv[0]))
+    if hv.size != k_new:
+        raise metafopy.errors.InputError(f"Length of the 'hetvar' argument ({hv.size}) does not match the number of predicted values ({k_new}).")
+    return hv
+
+
+def check_prob_adjust(prob: str | float | None, adjust: bool) -> None:
+    if prob is not None and adjust:
+        raise metafopy.errors.InputError("Cannot use 'prob' argument when adjust=True.")
 
 
 @functools.singledispatch
@@ -80,9 +130,16 @@ def predict_rma_uni(
     newmods: numpy.typing.ArrayLike | None = None,
     *,
     intercept: bool | None = None,
+    tau2_levels: collections.abc.Sequence[str | int] | str | int | None = None,
+    gamma2_levels: collections.abc.Sequence[str | int] | str | int | None = None,
+    hetvar: numpy.typing.ArrayLike | None = None,
+    prob: str | float | None = None,
+    addx: bool = False,
     transf: collections.abc.Callable[..., typing.Any] | None = None,
     targs: typing.Any = None,
     level: float | None = None,
+    adjust: bool = False,
+    vcov: bool = False,
 ) -> PredictResult:
     """Predict from an ``rma.uni`` fit.
 
@@ -92,6 +149,16 @@ def predict_rma_uni(
     ``intercept=False``) or the full set of ``p`` columns. ``transf`` is
     applied to each value (with ``targs`` if given; the integral and mode
     transformations in :mod:`metafopy.transf` default to ``targs={'tau2': tau2}``).
+
+    ``hetvar`` replaces ``tau2`` in the prediction interval; ``prob`` (such as
+    ``'>0.2'`` or ``'<0'``) adds the probability that a true outcome is above or
+    below the value; ``addx`` adds the model matrix; ``adjust`` applies a
+    Bonferroni correction to the intervals; ``vcov`` adds the
+    variance-covariance matrix of the predictions. ``tau2_levels`` and
+    ``gamma2_levels`` are accepted, as in metafor, and have no effect.
+
+    R source: https://github.com/wviechtb/metafor/blob/master/R/predict.rma.r;
+    reference page: https://wviechtb.github.io/metafor/reference/predict.rma.html.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
@@ -119,6 +186,11 @@ def predict_rma_uni(
         transf,
         targs,
         level,
+        hetvar=hetvar,
+        prob=prob,
+        addx=addx,
+        adjust=adjust,
+        vcov=vcov,
     )
 
 
@@ -128,9 +200,16 @@ def predict_rma_glmm(
     newmods: numpy.typing.ArrayLike | None = None,
     *,
     intercept: bool | None = None,
+    tau2_levels: collections.abc.Sequence[str | int] | str | int | None = None,
+    gamma2_levels: collections.abc.Sequence[str | int] | str | int | None = None,
+    hetvar: numpy.typing.ArrayLike | None = None,
+    prob: str | float | None = None,
+    addx: bool = False,
     transf: collections.abc.Callable[..., typing.Any] | None = None,
     targs: typing.Any = None,
     level: float | None = None,
+    adjust: bool = False,
+    vcov: bool = False,
 ) -> PredictResult:
     """Predict from an ``rma.glmm`` fit (``predict.rma``; arguments as in :func:`predict_rma_uni`).
 
@@ -158,6 +237,55 @@ def predict_rma_glmm(
             alpha=x.level,
             tau2=x.tau2,
             fixed=x.method in metafopy.models.tau2.FIXED_EFFECTS,
+        ),
+        newmods,
+        intercept,
+        transf,
+        targs,
+        level,
+        hetvar=hetvar,
+        prob=prob,
+        addx=addx,
+        adjust=adjust,
+        vcov=vcov,
+    )
+
+
+@predict.register
+def predict_fixed_binary(
+    model: metafopy.models.binary.FixedBinaryResult,
+    newmods: numpy.typing.ArrayLike | None = None,
+    *,
+    intercept: bool | None = None,
+    transf: collections.abc.Callable[..., typing.Any] | None = None,
+    targs: typing.Any = None,
+    level: float | None = None,
+) -> PredictResult:
+    """Predict from an ``rma.mh`` or ``rma.peto`` fit (``predict.rma``; arguments as in :func:`predict_rma_uni`).
+
+    These are equal-effects models without moderators, so the prediction is the pooled estimate with its
+    confidence interval (and no prediction interval); ``transf`` (for example ``numpy.exp``) gives the
+    odds ratio, risk ratio, ... instead of its logarithm. See
+    https://github.com/wviechtb/metafor/blob/master/R/predict.rma.r.
+
+    Raises:
+        metafopy.errors.InputError: ``newmods`` was given (the models have no moderators).
+    """
+    x = model
+    return location_prediction(
+        LocationModel(
+            k=x.k,
+            p=1,
+            int_only=True,
+            int_incl=True,
+            X=numpy.ones((x.k, 1)),
+            slab=(),
+            beta=x.beta,
+            vb=x.vb,
+            ddf=None,
+            alpha=x.level,
+            tau2=0.0,
+            fixed=True,
         ),
         newmods,
         intercept,
@@ -192,6 +320,12 @@ def location_prediction(
     transf: collections.abc.Callable[..., typing.Any] | None,
     targs: typing.Any,
     level: float | None,
+    *,
+    hetvar: numpy.typing.ArrayLike | None = None,
+    prob: str | float | None = None,
+    addx: bool = False,
+    adjust: bool = False,
+    vcov: bool = False,
 ) -> PredictResult:
     """``predict.rma`` for ``rma.uni`` and ``rma.glmm`` models.
 
@@ -200,6 +334,8 @@ def location_prediction(
     """
     p = x.p
     slab: tuple[str, ...] | None = None
+    if x.int_only and newmods is not None:
+        raise metafopy.errors.InputError('Cannot specify new moderator values for models without moderators.')
     if newmods is None:
         X_new = numpy.ones((1, 1)) if x.int_only else x.X
         if not x.int_only:
@@ -218,7 +354,11 @@ def location_prediction(
             raise metafopy.errors.InputError(f'dimensions of newmods ({arr.shape[1]} columns) do not match the model ({p})')
         X_new = arr
 
+    check_prob_adjust(prob, adjust)
     alpha = x.alpha if level is None else metafopy.models.rma_uni.level_to_alpha(level)
+    k_new = X_new.shape[0]
+    if adjust:
+        alpha = alpha / k_new
 
     pred = X_new @ x.beta
     vpred = numpy.einsum('ij,jk,ik->i', X_new, x.vb, X_new)
@@ -230,7 +370,14 @@ def location_prediction(
         crit = float(scipy.stats.norm.isf(alpha / 2))
     ci_lb = pred - crit * se
     ci_ub = pred + crit * se
-    pi_se = numpy.sqrt(vpred + x.tau2)
+    het = x.tau2 if hetvar is None else expand_hetvar(hetvar, k_new)
+    pi_se = numpy.sqrt(vpred + het)
+    pi_ddf = numpy.full(pred.shape, float(x.k - p if x.ddf is None else x.ddf))
+    pi_dist = 'norm' if x.ddf is None else 't'
+    prob_out = None if prob is None else prob_values(prob, pred, pi_se, pi_dist, pi_ddf)
+    vcov_pred = X_new @ x.vb @ X_new.T if vcov else None
+    if vcov_pred is not None:
+        vcov_pred = (vcov_pred + vcov_pred.T) / 2
     pi_lb = pred - crit * pi_se
     pi_ub = pred + crit * pi_se
     if x.fixed:
@@ -257,8 +404,11 @@ def location_prediction(
         pi_ub=pi_ub,
         slab=slab,
         pi_se=pi_se,
-        pi_dist='norm' if x.ddf is None else 't',
-        pi_ddf=numpy.full(pred.shape, float(x.k - p if x.ddf is None else x.ddf)),
+        pi_dist=pi_dist,
+        pi_ddf=pi_ddf,
+        prob=prob_out,
+        X=X_new.copy() if addx else None,
+        vcov=vcov_pred if transf is None else None,
     )
 
 
@@ -299,17 +449,25 @@ def predict_rma_mv(
     intercept: bool | None = None,
     tau2_levels: collections.abc.Sequence[str | int] | str | int | None = None,
     gamma2_levels: collections.abc.Sequence[str | int] | str | int | None = None,
+    hetvar: numpy.typing.ArrayLike | None = None,
+    prob: str | float | None = None,
+    addx: bool = False,
     transf: collections.abc.Callable[..., typing.Any] | None = None,
     targs: typing.Any = None,
     level: float | None = None,
     adjust: bool = False,
+    vcov: bool = False,
 ) -> PredictResult:
     """Predict from an ``rma.mv`` fit (``predict.rma`` for ``rma.mv`` objects).
 
     Prediction intervals add the sum of the ``sigma2`` values and, when present, the ``tau2``
     and ``gamma2`` values selected via ``tau2_levels`` and ``gamma2_levels`` (labels of the
     inner factor or 0-based positions). They are NaN when several ``tau2``/``gamma2`` values exist
-    and no levels are given.
+    and no levels are given. ``hetvar`` replaces the sum of the variance components (the levels
+    are then ignored, with a warning); ``prob``, ``addx`` and ``vcov`` are as in :func:`predict_rma_uni`.
+
+    R source: https://github.com/wviechtb/metafor/blob/master/R/predict.rma.r;
+    reference page: https://wviechtb.github.io/metafor/reference/predict.rma.html.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
@@ -317,6 +475,10 @@ def predict_rma_mv(
     x = model
     if x.robust is not None and x.robust.robumethod == 'clubSandwich':
         raise metafopy.errors.InputError('predict() is not supported for fits made robust with club_sandwich=True.')
+    check_prob_adjust(prob, adjust)
+    if hetvar is not None and (tau2_levels is not None or gamma2_levels is not None):
+        tau2_levels = gamma2_levels = None
+        warnings.warn("Arguments 'tau2.levels' and 'gamma2.levels' ignored when specifying the 'hetvar' argument.", stacklevel=2)
     p = x.p
     slab: tuple[str, ...] | None = None
     general = any(v in ('GEN', 'GDIAG') for v in x.struct)
@@ -397,6 +559,9 @@ def predict_rma_mv(
             pi_ok = False
         else:
             total = total + numpy.asarray(x.gamma2, dtype=numpy.float64)[gamma2_idx]
+    if hetvar is not None:
+        total = vpred + expand_hetvar(hetvar, k_new)
+        pi_ok = True
     pi_se_all: FloatArray | None = None
     if pi_ok:
         pi_se = numpy.sqrt(total)
@@ -406,6 +571,15 @@ def predict_rma_mv(
     else:
         pi_lb = numpy.full(k_new, numpy.nan)
         pi_ub = numpy.full(k_new, numpy.nan)
+
+    pi_dist = 'norm' if x.test == 'z' else 't'
+    prob_out = None
+    if prob is not None:
+        pi_ddf_prob = ddf_row if ddf_row is not None else numpy.full(k_new, float(x.k - p))
+        prob_out = prob_values(prob, pred, pi_se_all, pi_dist, pi_ddf_prob)
+    vcov_pred = X_new @ x.vb @ X_new.T if vcov else None
+    if vcov_pred is not None:
+        vcov_pred = (vcov_pred + vcov_pred.T) / 2
 
     if transf is not None:
         tau2_value = float(numpy.sum(x.tau2)) if x.tau2 is not None else 0.0
@@ -423,6 +597,9 @@ def predict_rma_mv(
         pi_ub=pi_ub,
         slab=slab,
         pi_se=pi_se_all,
-        pi_dist='norm' if x.test == 'z' else 't',
+        pi_dist=pi_dist,
         pi_ddf=ddf_row,
+        prob=prob_out,
+        X=X_new.copy() if addx else None,
+        vcov=vcov_pred if transf is None else None,
     )

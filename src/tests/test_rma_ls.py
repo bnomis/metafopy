@@ -669,10 +669,11 @@ def test_unsupported_methods_raise() -> None:
         metafopy.leave1out,
         metafopy.cumul,
         metafopy.robust,
-        metafopy.gosh,
     ):
         with pytest.raises(metafopy.errors.ArgumentError):
             func(res)
+    with pytest.raises(metafopy.errors.NotSupportedError, match='Method not available'):
+        metafopy.gosh(res)
 
 
 # -- permutest --------------------------------------------------------------------------------------------------------------

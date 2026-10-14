@@ -79,6 +79,7 @@ def test_measure_passthrough(dat: pandas.DataFrame) -> None:
 
 
 def test_mods_matrix_and_formulas(dat: pandas.DataFrame) -> None:
+    # auditme: accept[literal-duplication] test cases spell out their own R arguments
     check(metafopy.rma('yi', 'vi', mods=dat[['ablat', 'year']], data=dat), 'mods_cbind')
     check(metafopy.rma('yi', 'vi', mods='~ ablat + year', data=dat), 'mods_formula')
     check(metafopy.rma('yi ~ ablat + year', 'vi', data=dat), 'yi_formula')

@@ -25,6 +25,7 @@ def test_appends_to_data_and_keeps_existing_yi_when_not_replacing() -> None:
 
 
 def test_var_names_and_numeric_subset_are_zero_based() -> None:
+    # auditme: accept[literal-duplication] test cases spell out their own R arguments
     res = metafopy.escalc('OR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=metafopy.datasets.load('bcg'), var_names=('lor', 'vlor'), subset=[1, 4, 6])
     # R: escalc("OR", ..., var.names=c("lor","vlor"), subset=c(2,5,7))
     assert list(res['trial']) == [2, 5, 7]
@@ -36,6 +37,7 @@ def test_var_names_and_numeric_subset_are_zero_based() -> None:
 
 def test_without_data_returns_yi_vi_only() -> None:
     res = metafopy.escalc('COR', ri=[0.2, 0.3], ni=[10, 10], slab=['a', 'a'])
+    # auditme: accept[literal-duplication] test cases spell out their own R arguments
     assert list(res.columns) == ['yi', 'vi']
     assert res.attrs['slab'] == ['a.1', 'a.2']
 
@@ -98,9 +100,25 @@ def test_argument_errors(kwargs: dict[str, object], match: str) -> None:
         metafopy.escalc(**kwargs)  # type: ignore[arg-type]
 
 
-def test_reserved_measures_not_implemented() -> None:
-    with pytest.raises(NotImplementedError):
-        metafopy.escalc('HR', ai=[1])
+RESERVED = ['HD', 'HR']
+
+
+@pytest.mark.parametrize('measure', RESERVED)
+def test_reserved_measures_not_implemented(measure: str) -> None:
+    # metafor 5.2-1 accepts 'HR' and 'HD' but has no code to compute them (R fails with 'argument "vi" is missing')
+    with pytest.raises(NotImplementedError, match='reserved'):
+        metafopy.escalc(measure, ai=[1])
+
+
+@pytest.mark.parametrize('measure', RESERVED)
+def test_reserved_measures_accept_yi_and_vi(measure: str) -> None:
+    # as in metafor, given yi and vi (or sei) the values are passed through and labelled with the measure
+    dat = metafopy.escalc(measure, yi=[1.0, 2.0], sei=[0.1, 0.2])
+    numpy.testing.assert_allclose(dat['vi'], [0.01, 0.04])
+    numpy.testing.assert_allclose(dat['yi'], [1.0, 2.0])
+    assert dat.attrs['measure'] == measure
+    with pytest.raises(ValueError, match=r"Must specify the 'vi' or 'sei' argument\."):
+        metafopy.escalc(measure, yi=[1.0, 2.0])
 
 
 def test_correct_must_be_logical_for_ratio_measures() -> None:

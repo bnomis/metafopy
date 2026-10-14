@@ -20,6 +20,8 @@ import metafopy.bias.inputs
 import metafopy.errors
 import metafopy.metadata
 import metafopy.methods.common
+import metafopy.methods.fitview
+import metafopy.mfopt
 import metafopy.models.rma_uni
 import metafopy.models.tau2
 
@@ -68,7 +70,7 @@ class RegtestResult:
         return self.ddf
 
     def summary(self, digits: int | None = None, ret_fit: bool | None = None) -> str:
-        d = self.digits if digits is None else digits
+        d = metafopy.mfopt.option_digits(digits, self.digits)
         show_fit = self.ret_fit if ret_fit is None else ret_fit
         if self.model == 'lm':
             model_line = 'Model:     weighted regression with multiplicative dispersion'
@@ -129,7 +131,11 @@ def regtest(
     if predictor not in PREDICTOR_LABEL:
         raise metafopy.errors.InputError(f'unknown predictor {predictor!r}')
 
-    if isinstance(x, metafopy.models.rma_uni.RMAResult):
+    if metafopy.methods.fitview.is_rma(x):
+        metafopy.methods.fitview.check_class(x, notav=metafopy.methods.fitview.FIXED_UNI_ONLY)
+        if not isinstance(x, metafopy.models.rma_uni.RMAResult):
+            # rma.mh and rma.peto objects get as far as refitting the model with their tau2 (NULL), which metafor rejects
+            raise metafopy.errors.InputError("Argument 'tau2' must be a scalar.")
         if vi is not None or sei is not None or subset is not None:
             warnings.warn("Arguments 'vi', 'sei', and 'subset' ignored when 'x' is a model object.", stacklevel=2)
         yi, v, n = metafopy.bias.inputs.data_of(x)
@@ -153,7 +159,9 @@ def regtest(
         coef_names = tuple(x.coef_names)
         slab = x.slab
     else:
-        yi, v_opt, n = metafopy.bias.inputs.vector_inputs(x, vi, sei, ni=ni, subset=subset, data=data, what='the test')
+        yi, v_opt, n = metafopy.bias.inputs.vector_inputs(
+            typing.cast(numpy.typing.ArrayLike | str, x), vi, sei, ni=ni, subset=subset, data=data, what='the test'
+        )
         if v_opt is None:
             raise metafopy.errors.InputError("Must specify the 'vi' or 'sei' argument.")
         v = v_opt

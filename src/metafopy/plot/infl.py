@@ -159,8 +159,11 @@ def plot_infl(
     Returns a :class:`PlotInflResult` with the axes.
 
     Raises:
+        metafopy.errors.ArgumentError: ``x`` is not an :class:`~metafopy.InfluenceResult` (e.g. an ``rma.mv`` fit: metafor has no ``influence.rma.mv``).
         metafopy.errors.InputError: an argument or the data is invalid.
     """
+    if not isinstance(x, metafopy.methods.influence.InfluenceResult):
+        raise metafopy.errors.ArgumentError('Argument \'x\' must be an object of class "infl.rma.uni" (the result of influence()).')
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if na_action not in ('omit', 'exclude', 'pass', 'fail'):
         raise metafopy.errors.InputError("Unknown 'na_action' specified.")

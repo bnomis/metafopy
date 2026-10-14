@@ -15,9 +15,11 @@ import numpy.typing
 import pandas
 import scipy.stats
 
+import metafopy.core.verbose
 import metafopy.errors
 import metafopy.metadata
 import metafopy.models.binary
+import metafopy.models.call
 import metafopy.models.rma_uni
 import metafopy.models.tables
 
@@ -53,6 +55,7 @@ class PetoResult(metafopy.models.binary.FixedBinaryResult):
         return '\n'.join(out)
 
 
+@metafopy.models.call.records_call
 def rma_peto(
     ai: metafopy.metadata.Column | None = None,
     bi: metafopy.metadata.Column | None = None,
@@ -67,6 +70,7 @@ def rma_peto(
     to: str | collections.abc.Sequence[str] = 'only0',
     drop00: bool | collections.abc.Sequence[bool] = True,
     level: float = 95,
+    verbose: bool | int = False,
     digits: int = 4,
     na_action: metafopy.metadata.NAAction = 'omit',
 ) -> PetoResult:
@@ -84,9 +88,12 @@ def rma_peto(
     >>> dat = datasets.load("dat.bcg")  # doctest: +SKIP
     >>> rma_peto(ai="tpos", bi="tneg", ci="cpos", di="cneg", data=dat)  # doctest: +SKIP
 
+    ``verbose`` prints metafor's progress messages (to stderr).
+
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid, or one of the two outcomes never occurred.
     """
+    metafopy.core.verbose.binary_start(int(verbose), subset)
     add2, to2, drop2 = metafopy.models.binary.argument_pairs(add, to, drop00)
     tab = metafopy.models.tables.prepare_tables(
         'PETO',
@@ -130,6 +137,7 @@ def rma_peto(
         rss = float(numpy.sum((tab.yi - beta) ** 2 / tab.vi))
     ml, reml = metafopy.models.binary.fit_statistics(tab.yi, tab.vi, rss, k_yi)
 
+    metafopy.core.verbose.binary_end(int(verbose), not bool(tab.not_na.all()), not bool(tab.not_na_yivi.all()))
     return PetoResult(
         beta=numpy.array([beta]),
         se=numpy.array([se]),

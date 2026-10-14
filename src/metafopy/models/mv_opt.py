@@ -5,6 +5,7 @@ BFGS algorithm of SciPy is used with the analytic score of :func:`metafopy.model
 optimum to well within the tolerance of the parity tests (Nocedal and Wright, 2006, *Numerical Optimization*, ch. 6).
 """
 
+import collections.abc
 import dataclasses
 import math
 
@@ -38,11 +39,12 @@ def maximise(
     gtol: float = 1e-7,
     maxiter: int = 5000,
     nonsmooth: bool = False,
+    log: collections.abc.Callable[[FloatArray, float], None] | None = None,
 ) -> OptResult:
     """Maximise the log-likelihood over the entries ``free`` of the parameter vector, starting from ``par0``.
 
     ``nonsmooth`` (a lasso penalty with ``optbeta``) accepts the last iterate when the line search can no longer improve it,
-    since the gradient does not vanish at a kink.
+    since the gradient does not vanish at a kink. ``log`` is called with the parameters and the log-likelihood of each evaluation.
 
     Raises:
         metafopy.errors.EstimationError: the optimiser did not converge.
@@ -57,6 +59,9 @@ def maximise(
     def objective(x: FloatArray) -> tuple[float, FloatArray]:
         par = expand(x)
         val = metafopy.models.mv_lik.negative_loglik(problem, par, reml)
+        if log is not None and math.isfinite(val):
+            # auditme: accept[redundant-sink-caller-plus-callee] the check of the initial values is an evaluation of the trace too, as nlminb's first one in R
+            log(par, -val)
         if not math.isfinite(val):
             return HUGE, numpy.zeros(x.shape[0])
         grad = metafopy.models.mv_lik.gradient(problem, par, reml, free)

@@ -33,6 +33,9 @@ import metafopy.methods.vif
 import metafopy.models.rma_uni
 import metafopy.printing
 
+if typing.TYPE_CHECKING:
+    import metafopy.methods.ls_permutest
+
 __all__ = ['PermutestResult', 'permutest']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
@@ -89,7 +92,9 @@ class PermutestResult:
 
 
 @functools.singledispatch
-def permutest(x: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> PermutestResult | int | float:
+def permutest(
+    x: typing.Any, *args: typing.Any, **kwargs: typing.Any
+) -> PermutestResult | int | float | metafopy.methods.ls_permutest.LSPermutestResult | list[float]:
     """Permutation test for a fitted model; see :func:`_permutest_rma_uni`.
 
     Raises:

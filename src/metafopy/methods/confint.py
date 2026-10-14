@@ -18,9 +18,12 @@ import pandas
 import scipy.stats
 
 import metafopy.core.linalg
+import metafopy.core.verbose
 import metafopy.core.zeroin
 import metafopy.errors
+import metafopy.formatters
 import metafopy.metadata
+import metafopy.mfopt
 import metafopy.models.mv_result
 import metafopy.models.mv_structs
 import metafopy.models.rma_mv
@@ -85,6 +88,8 @@ def confint_rma_uni(
     tau2_max: float | None = None,
     tol: float = metafopy.core.zeroin.DEFAULT_TOL,
     maxiter: int = 1000,
+    verbose: bool | int = False,
+    digits: int | None = None,
 ) -> ConfintResult:
     """CIs for an ``rma.uni`` fit (metafor's ``confint.rma.uni``).
 
@@ -93,12 +98,15 @@ def confint_rma_uni(
     for ``method='GENQ'``/``'GENQM'`` fits), ``'pl'`` (profile likelihood),
     ``'ht'`` (Higgins & Thompson, 2002, doi:10.1002/sim.1186) or one of the
     Wald types. ``transf`` (with optional ``targs``) is applied to the fixed
-    effects and their bounds.
+    effects and their bounds. ``verbose`` prints the steps of the root finding
+    (on stdout, as metafor's ``cat()``), with ``digits`` decimals.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
     x = model
+    vlevel = int(verbose)
+    ndig = metafopy.mfopt.option_digits(digits)
     if type is None:
         # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
         type = 'genq' if x.method in ('GENQ', 'GENQM') else 'qp'
@@ -149,7 +157,7 @@ def confint_rma_uni(
                 ub_sign = '>'
                 ub_conv = True
             else:
-                tau2_ub, ub_conv = find_root(lambda t: qe(t, y, vi, X) - crit_l, lo, hi, tol, maxiter)
+                tau2_ub, ub_conv = find_root(lambda t: qe_log(t, y, vi, X, crit_l, vlevel, ndig), lo, hi, tol, maxiter)
 
             if qe_max > crit_u:
                 tau2_lb = tau2_ub = hi
@@ -161,7 +169,7 @@ def confint_rma_uni(
                 if lo > 0:
                     lb_sign = '<'
             else:
-                tau2_lb, lb_conv = find_root(lambda t: qe(t, y, vi, X) - crit_u, lo, hi, tol, maxiter)
+                tau2_lb, lb_conv = find_root(lambda t: qe_log(t, y, vi, X, crit_u, vlevel, ndig), lo, hi, tol, maxiter)
         # auditme: accept[assert-never-missing] the value is a str that is validated against the allowed names earlier
         elif type == 'genq':
             if x.weights is None:
@@ -175,6 +183,9 @@ def confint_rma_uni(
             def g(t: float, level_: float, getlower: bool) -> float:
                 return metafopy.models.tau2.genq_func(t, P, vi, Q, level_, k, p, getlower=getlower)
 
+            def g_log(t: float, getlower: bool) -> float:
+                return metafopy.models.tau2.log_objective(t, g(t, alpha / 2, getlower), '  objective =', vlevel, ndig)
+
             g_max = g(hi, 0.0, True)
             g_min = g(lo, 0.0, True)
             if g_min > 1 - alpha / 2:
@@ -187,7 +198,7 @@ def confint_rma_uni(
                 ub_conv = True
             else:
                 # metafor calls uniroot() here with its default tol and maxiter
-                tau2_ub, ub_conv = find_root(lambda t: g(t, alpha / 2, False), lo, hi, metafopy.core.zeroin.DEFAULT_TOL, 1000)
+                tau2_ub, ub_conv = find_root(lambda t: g_log(t, False), lo, hi, metafopy.core.zeroin.DEFAULT_TOL, 1000)
 
             if g_max < alpha / 2:
                 tau2_lb = tau2_ub = hi
@@ -199,7 +210,7 @@ def confint_rma_uni(
                 if lo > 0:
                     lb_sign = '<'
             else:
-                tau2_lb, lb_conv = find_root(lambda t: g(t, alpha / 2, True), lo, hi, metafopy.core.zeroin.DEFAULT_TOL, 1000)
+                tau2_lb, lb_conv = find_root(lambda t: g_log(t, True), lo, hi, metafopy.core.zeroin.DEFAULT_TOL, 1000)
         elif type == 'pl':
             if lo > x.tau2:
                 raise metafopy.errors.InputError('lower bound of interval to be searched must be <= actual value of component')
@@ -208,7 +219,17 @@ def confint_rma_uni(
             objective = float(scipy.stats.chi2.ppf(1 - alpha, 1))
 
             def prof(t: float) -> float:
-                return profile_lrt(x, t) - objective
+                try:
+                    out = profile_lrt(x, t) - objective
+                except ValueError, ArithmeticError, numpy.linalg.LinAlgError, metafopy.errors.MetaforError:
+                    if vlevel:
+                        metafopy.core.verbose.cat(f'tau2 = {metafopy.formatters.fmtx(t, ndig, addwidth=4)}   LRT - objective = NA \n')
+                    raise
+                if vlevel:
+                    metafopy.core.verbose.cat(
+                        f'tau2 = {metafopy.formatters.fmtx(t, ndig, addwidth=4)}   LRT - objective = {metafopy.formatters.fmtx(out, ndig, addwidth=4)} \n'
+                    )
+                return out
 
             val = try_profile(prof, lo)
             if not math.isnan(val):
@@ -317,6 +338,11 @@ def try_profile(f: collections.abc.Callable[[float], float], v: float) -> float:
         return math.nan
 
 
+def qe_log(tau2: float, y: FloatArray, vi: FloatArray, X: FloatArray, objective: float, verbose: int, digits: int) -> float:
+    """metafor's ``.QE.func``: ``QE(tau2) - objective``, logged when ``verbose``."""
+    return metafopy.models.tau2.log_objective(tau2, qe(tau2, y, vi, X) - objective, '  RSS - objective =', verbose, digits)
+
+
 def loglik(res: metafopy.models.rma_uni.RMAResult) -> float:
     return res.fit_stats_reml.ll if res.method == 'REML' else res.fit_stats_ml.ll
 
@@ -360,6 +386,11 @@ def mv_search_limits(x: metafopy.models.mv_result.RMAMVResult, comp: str, vc: fl
 
 def mv_refit_logLik(x: metafopy.models.mv_result.RMAMVResult, comp: str, pos: int, val: float) -> float:
     """Log-likelihood of ``x`` refitted with one variance component fixed at ``val`` (``.profile.rma.mv``)."""
+    return mv_refit_fixed(x, comp, pos, val).logLik()
+
+
+def mv_refit_fixed(x: metafopy.models.mv_result.RMAMVResult, comp: str, pos: int, val: float) -> metafopy.models.mv_result.RMAMVResult:
+    """``x`` refitted with one variance component fixed at ``val`` and the others as in ``x`` (``.profile.rma.mv``)."""
     spec = dict(x.spec)
     # metafor's .profile.rma.mv() passes 'vccon' on to the refits but not 'optbeta', 'beta', 'lambda1/2' or 'cvvc'
     for dropped in ('optbeta', 'beta', 'lambda1', 'lambda2', 'cvvc', 'restart'):
@@ -375,7 +406,21 @@ def mv_refit_logLik(x: metafopy.models.mv_result.RMAMVResult, comp: str, pos: in
         spec[name] = arg
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
-        return metafopy.models.rma_mv.rma_mv(**spec).logLik()
+        fit = metafopy.models.rma_mv.rma_mv(**spec)
+        # metafor's nlminb and SciPy's BFGS can stop at different local maxima of the restricted likelihood (BFGS from the
+        # default starting values falls short on some BLAS builds); the profile is the maximum over the free components, so
+        # a second refit started at the estimates of x is tried and the higher log-likelihood is kept
+        warm = metafopy.models.rma_mv.make_control(spec.get('control'))
+        inits: dict[str, typing.Any] = {
+            f'{name}_init': numpy.asarray(getattr(x, name), dtype=numpy.float64) for name in metafopy.models.mv_structs.VC_NAMES if x.vc_fix[name] is not None
+        }
+        if not inits:
+            return fit
+        try:
+            alt = metafopy.models.rma_mv.rma_mv(**(spec | {'control': dataclasses.replace(warm, **inits)}))
+        except metafopy.errors.MetaforError:
+            return fit
+        return alt if alt.logLik() > fit.logLik() else fit
 
 
 @confint.register
@@ -396,6 +441,8 @@ def confint_rma_mv(
     tol: float = metafopy.core.zeroin.DEFAULT_TOL,
     maxiter: int = 1000,
     eptries: int = 10,
+    verbose: bool | int = False,
+    digits: int | None = None,
 ) -> ConfintResult | list[ConfintResult]:
     """CIs for an ``rma.mv`` fit (metafor's ``confint.rma.mv``).
 
@@ -403,11 +450,14 @@ def confint_rma_mv(
     profile-likelihood CI (Hardy & Thompson, 1996, doi:10.1002/(SICI)1097-0258(19960430)15:8<619::AID-SIM188>3.0.CO;2-A)
     for that component; ``fixed=True`` gives Wald-type CIs for the coefficients. With neither, a profile-likelihood CI is
     computed for every estimated variance/correlation component and a list is returned (a single result if there is one).
+    ``verbose`` prints the profile steps of the root finding on stdout, with ``digits`` decimals.
 
     Raises:
         metafopy.errors.InputError: an argument is invalid or the model has no such component.
     """
     x = model
+    vlevel = int(verbose)
+    ndig = metafopy.mfopt.option_digits(digits)
     alpha = metafopy.models.rma_uni.level_to_alpha(x.level if level is None else level)
     chosen = {name: v for name, v in zip(metafopy.models.mv_structs.VC_NAMES, (sigma2, tau2, rho, gamma2, phi), strict=True) if v is not None}
     if len(chosen) > 1:
@@ -420,8 +470,24 @@ def confint_rma_mv(
             if flags is None:
                 continue
             for index in numpy.flatnonzero(~flags):
+                if vlevel:
+                    metafopy.core.verbose.cat(f'\nObtaining CI for {name} = {index + 1} \n')
                 results.append(
-                    confint_rma_mv(x, level=level, **{name: int(index)}, vc_min=vc_min, vc_max=vc_max, tol=tol, maxiter=maxiter, eptries=eptries)  # type: ignore[arg-type]
+                    typing.cast(
+                        ConfintResult,
+                        confint_rma_mv(
+                            x,
+                            level=level,
+                            **typing.cast(dict[str, typing.Any], {name: int(index)}),
+                            vc_min=vc_min,
+                            vc_max=vc_max,
+                            tol=tol,
+                            maxiter=maxiter,
+                            eptries=eptries,
+                            verbose=verbose,
+                            digits=digits,
+                        ),
+                    )
                 )
         if not results:
             raise metafopy.errors.InputError('No components for which a CI can be obtained.')
@@ -450,7 +516,17 @@ def confint_rma_mv(
         ll_obj = x.logLik()
 
         def diff(val: float) -> float:
-            return -2 * (mv_refit_logLik(x, comp, pos, val) - ll_obj) - objective
+            try:
+                out = -2 * (mv_refit_logLik(x, comp, pos, val) - ll_obj) - objective
+            except ValueError, ArithmeticError, numpy.linalg.LinAlgError, metafopy.errors.MetaforError:
+                if vlevel:
+                    metafopy.core.verbose.cat(f'val = {metafopy.formatters.fmtx(val, ndig, addwidth=4)}   LRT - objective = NA \n')
+                raise
+            if vlevel:
+                metafopy.core.verbose.cat(
+                    f'val = {metafopy.formatters.fmtx(val, ndig, addwidth=4)}   LRT - objective = {metafopy.formatters.fmtx(out, ndig, addwidth=4)} \n'
+                )
+            return out
 
         struct = x.struct[0] if comp == 'rho' else x.struct[1]
         # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
@@ -473,6 +549,9 @@ def confint_rma_mv(
                         vc_lb, lb_conv = root, True
                 break
             lo += step
+
+        if vlevel:
+            metafopy.core.verbose.cat('\n')
 
         step = abs(hi - vc) / eptries
         for _ in range(eptries):

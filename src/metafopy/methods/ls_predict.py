@@ -42,10 +42,7 @@ class LSPredictResult(metafopy.methods.predict.PredictResult):
 
     pred_type: str = 'location'
     ddf: float | None = None
-    prob: FloatArray | None = None
-    X: FloatArray | None = None
     Z: FloatArray | None = None
-    vcov: FloatArray | None = None
 
 
 def new_matrix(
@@ -100,20 +97,6 @@ def quad_rows(M: FloatArray, V: FloatArray) -> FloatArray:
     """``diag(M V M')`` with negative values set to NaN."""
     v = numpy.einsum('ij,jk,ik->i', M, V, M)
     return numpy.where(v < 0, numpy.nan, v)
-
-
-def prob_values(prob: str, pred: FloatArray, pi_se: FloatArray, pi_dist: str, pi_ddf: float) -> FloatArray | None:
-    """Probabilities that a true outcome is below/above a value (``prob='>0.2'``); ``None`` when the value cannot be parsed."""
-    lower_tail = '<' in prob
-    text = prob.replace('<', '').replace('>', '').replace('=', '')
-    try:
-        value = float(text)
-    except ValueError:
-        return None
-    z = (value - pred) / pi_se
-    if pi_dist == 'norm':
-        return numpy.asarray(scipy.stats.norm.cdf(z) if lower_tail else scipy.stats.norm.sf(z), dtype=numpy.float64)
-    return numpy.asarray(scipy.stats.t.cdf(z, pi_ddf) if lower_tail else scipy.stats.t.sf(z, pi_ddf), dtype=numpy.float64)
 
 
 @metafopy.methods.predict.predict.register
@@ -280,7 +263,7 @@ def predict_rma_ls(
         if prob is not None:
             if adjust:
                 raise metafopy.errors.InputError("Cannot use 'prob' argument when adjust=True.")
-            prob_out = prob_values(prob, pred, pi_se, pi_dist or 'norm', pi_ddf)
+            prob_out = metafopy.methods.predict.prob_values(prob, pred, pi_se, pi_dist or 'norm', pi_ddf)
     else:
         vcov_pred = Z_use @ x.va @ Z_use.T if vcov else None
         pi_lb = numpy.full(k_new, math.nan)

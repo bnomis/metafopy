@@ -15,6 +15,7 @@ import collections.abc
 import dataclasses
 import math
 import typing
+import warnings
 
 import matplotlib.axes
 import matplotlib.lines
@@ -26,6 +27,7 @@ import scipy.stats
 
 import metafopy.errors
 import metafopy.methods.common
+import metafopy.methods.fitview
 import metafopy.methods.influence
 import metafopy.models.rma_uni
 import metafopy.plot
@@ -102,7 +104,7 @@ def vec(v: typing.Any, n: int, name: str) -> tuple[list[typing.Any], bool]:
 
 
 def funnel(
-    x: metafopy.models.rma_uni.RMAResult | numpy.typing.ArrayLike,
+    x: metafopy.methods.fitview.Fit | numpy.typing.ArrayLike,
     vi: numpy.typing.ArrayLike | None = None,
     sei: numpy.typing.ArrayLike | None = None,
     ni: numpy.typing.ArrayLike | None = None,
@@ -170,7 +172,7 @@ def funnel(
     if type not in ('rstandard', 'rstudent'):
         raise metafopy.errors.InputError("type must be 'rstandard' or 'rstudent'")
     axx = metafopy.plot.rutils.get_ax(ax)
-    is_fit = isinstance(x, metafopy.models.rma_uni.RMAResult)
+    is_fit = metafopy.methods.fitview.is_rma(x)
     fill_all: numpy.typing.NDArray[numpy.bool_] | None = None
     fill_attr = getattr(x, 'fill', None) if is_fit else None
     if fill_attr is not None:
@@ -187,18 +189,16 @@ def funnel(
     k_in: int
     int_only = True
     if is_fit:
-        res = x
-        assert isinstance(res, metafopy.models.rma_uni.RMAResult)
+        res = metafopy.methods.fitview.fit_view(x)
+        cls = metafopy.methods.fitview.r_class(x)
         lvl_alpha = [res.level] if level is None else [metafopy.plot.rutils.level_to_alpha(v) for v in numpy.atleast_1d(level)]
         lvl2 = res.level if level2 is None else metafopy.plot.rutils.level_to_alpha(level2)
         int_only = res.int_only
         k_in = res.k
-        ni_all = res.data.ni
-        if ni_all is not None and ni_all.shape[0] == res.data.k_all:
-            ni_all = ni_all[res.data.keep] if ni_all.shape[0] != res.k else ni_all
+        ni_all = res.ni
         slab_all = list(res.slab) if slab is None else [str(s) for s in slab]
-        if slab is not None and len(slab_all) == res.data.k_all and res.data.k_all != res.k:
-            slab_all = [s for s, kp in zip(slab_all, res.data.keep, strict=True) if kp]
+        if slab is not None and len(slab_all) == res.k_all and res.k_all != res.k:
+            slab_all = [s for s, kp in zip(slab_all, res.keep, strict=True) if kp]
         if len(slab_all) != k_in:
             raise metafopy.errors.InputError(f"Length of the 'slab' argument ({len(slab_all)}) does not correspond to the size of the original dataset.")
         if int_only:
@@ -207,17 +207,30 @@ def funnel(
             ni_a = None if ni_all is None else numpy.asarray(ni_all, dtype=float)
             sei_a = numpy.sqrt(vi_a)
             xlab_c = metafopy.plot.rutils.setlab(res.measure, None, atransf, 1) if xlab is None else xlab
-            tau2 = res.tau2 if addtau2 else 0.0
+            if addtau2 and 'rma.mv' in cls:
+                warnings.warn("Argument 'addtau2' ignored for 'rma.mv' models.", stacklevel=2)
+                addtau2 = False
         else:
             ref = 0.0 if refline is None else refline
-            rr = metafopy.methods.influence.rstandard(res) if type == 'rstandard' else metafopy.methods.influence.rstudent(res)
+            if addtau2:
+                warnings.warn("Argument 'addtau2' ignored for models that contain moderators.", stacklevel=2)
+                addtau2 = False
+            rr = metafopy.methods.influence.rstandard(res.model) if type == 'rstandard' else metafopy.methods.influence.rstudent(res.model)
             ok = ~numpy.isnan(rr.resid)
             yi, sei_a = rr.resid[ok], rr.se[ok]
             vi_a = sei_a**2
             ni_a = None if ni_all is None else numpy.asarray(ni_all, dtype=float)[ok]
             slab_all = [s for s, o in zip(slab_all, ok, strict=True) if o]
             xlab_c = 'Residual Value' if xlab is None else xlab
-        weights = res.weights_() if yaxis == 'wi' else None
+        if addtau2 and 'rma.ls' in cls:
+            warnings.warn("Argument 'addtau2' ignored for 'rma.ls' models.", stacklevel=2)
+            addtau2 = False
+        tau2 = res.tau2 if addtau2 else 0.0
+        weights = None
+        if yaxis == 'wi':
+            if res.weights is None:
+                raise metafopy.errors.NotSupportedError(f'Method not available for objects of class "{cls[0]}".')
+            weights = res.weights
         # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
         if yaxis in ('ni', 'ninv', 'sqrtni', 'sqrtninv', 'lni') and ni_a is None:
             raise metafopy.errors.InputError('No sample size information stored in model object.')

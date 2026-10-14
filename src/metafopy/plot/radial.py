@@ -19,6 +19,7 @@ import scipy.stats
 
 import metafopy.errors
 import metafopy.methods.common
+import metafopy.methods.fitview
 import metafopy.models.rma_uni
 import metafopy.models.tau2
 import metafopy.plot
@@ -57,7 +58,7 @@ def arc(len_: float, at: FloatArray, asp: float) -> tuple[FloatArray, FloatArray
 
 
 def radial(
-    x: metafopy.models.rma_uni.RMAResult,
+    x: metafopy.methods.fitview.Fit,
     center: bool = False,
     xlim: collections.abc.Sequence[float] | None = None,
     zlim: collections.abc.Sequence[float] | None = None,
@@ -94,19 +95,21 @@ def radial(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
-    if not x.int_only:
+    metafopy.methods.fitview.check_class(x, notav=('robust.rma', 'rma.mv', 'rma.ls', 'rma.gen', 'rma.uni.selmodel'))
+    view = metafopy.methods.fitview.fit_view(x)
+    if not view.int_only:
         raise metafopy.errors.InputError('Radial plots only available for models without moderators.')
     axx = metafopy.plot.rutils.get_ax(ax)
     back_c = metafopy.plot.rutils.coladj(-0.1) if back is None else back
     col_c = metafopy.plot.draw.FG if col is None else col
     bg_c = metafopy.plot.rutils.coladj(-0.35) if bg is None else bg
 
-    yi = x.yi.copy()
+    yi = view.yi.copy()
     yi_c = yi.copy()
-    vi = x.vi
-    beta = float(x.beta[0])
+    vi = view.vi
+    beta = float(view.beta[0])
     ci_lb, ci_ub = float(x.ci_lb[0]), float(x.ci_ub[0])
-    tau2 = x.tau2
+    tau2 = view.tau2
     if aty is None:
         atyis_rng = (float(yi.min()), float(yi.max()))
         aty_c = None
@@ -123,7 +126,7 @@ def radial(
         if aty_a is not None:
             aty_a = aty_a - beta
         beta = 0.0
-    alpha = x.level if level is None else metafopy.plot.rutils.level_to_alpha(level)
+    alpha = view.level if level is None else metafopy.plot.rutils.level_to_alpha(level)
     zcrit = float(scipy.stats.norm.isf(alpha / 2))
     zi = yi / numpy.sqrt(vi + tau2)
     xi = 1 / numpy.sqrt(vi + tau2)
@@ -141,7 +144,7 @@ def radial(
     else:
         zlims = (float(min(zlim)), float(max(zlim)))
 
-    fixed = x.method in metafopy.models.tau2.FIXED_EFFECTS
+    fixed = view.method in metafopy.models.tau2.FIXED_EFFECTS
     if xlab is None:
         xlab = r'$x_i = 1/\sqrt{v_i}$' if fixed else r'$x_i = 1/\sqrt{v_i + \tau^2}$'
     cex_ = 1.0 if cex is None else cex
@@ -219,8 +222,8 @@ def radial(
         metafopy.plot.draw.seg(axx, float(xa), float(za), float(xb), float(zb), clip=False)
     for a_, b_ in zip(xi, zi, strict=True):
         metafopy.plot.draw.pts(axx, float(a_), float(b_), pch=pch, cex=cex_, col=col_c, bg=bg_c)
-    ids = tuple(int(i) + 1 for i in numpy.flatnonzero(x.data.keep))
-    return RadialResult(axx, numpy.asarray(xi, dtype=float), numpy.asarray(zi, dtype=float), ids, tuple(x.slab))
+    ids = tuple(int(i) + 1 for i in view.ids)
+    return RadialResult(axx, numpy.asarray(xi, dtype=float), numpy.asarray(zi, dtype=float), ids, view.slab)
 
 
 galbraith = radial

@@ -111,5 +111,5 @@ exact tolerances and the cases that differ more are in [Differences from metafor
 
 ## What is not ported
 
-`reporter()`, `emmprep`, `matreg`, `verbose` for `rma_mv`, `forest_cumul` and `addpoly` of `predict` results are not ported. See
+`reporter()` and `emmprep` are not ported, nor are `rma_glmm`'s alternative back-ends. See
 [Differences from metafor](differences.md) for details and for the places where a metafor feature behaves differently.

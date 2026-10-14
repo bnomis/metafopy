@@ -38,6 +38,7 @@ def same(a: metafopy.SelProfileResult, b: metafopy.SelProfileResult) -> None:
     assert (a.comp, a.delta_pos, a.vc, a.maxll, a.xlim, a.ylim) == (b.comp, b.delta_pos, b.vc, b.maxll, b.xlim, b.ylim)
 
 
+# auditme: accept[literal-duplication] test cases spell out their own R arguments
 @pytest.mark.parametrize(('name', 'parallel'), [('tau2', 'snow'), ('mods', 'snow'), ('delta', 'multicore'), ('delta_xlim', 'multicore')])
 def test_process_pool_equals_serial(name: str, parallel: typing.Literal['snow', 'multicore']) -> None:
     same(run(name), run(name, parallel=parallel, ncpus=2))

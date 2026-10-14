@@ -9,6 +9,7 @@ See https://wviechtb.github.io/metafor/reference/ranktest.html.
 
 import dataclasses
 import math
+import typing
 import warnings
 
 import numpy
@@ -18,6 +19,8 @@ import scipy.stats
 
 import metafopy.bias.inputs
 import metafopy.errors
+import metafopy.methods.fitview
+import metafopy.mfopt
 import metafopy.models.rma_uni
 
 __all__ = ['RanktestResult', 'kendall_test', 'ranktest']
@@ -32,7 +35,7 @@ class RanktestResult:
     digits: int = 4
 
     def summary(self, digits: int | None = None) -> str:
-        d = self.digits if digits is None else digits
+        d = metafopy.mfopt.option_digits(digits, self.digits)
         tau = metafopy.bias.inputs.fx(self.tau, d)
         pval = metafopy.bias.inputs.fp(self.pval, d, equal=True, sep=True, pname='p ')
         return f"\nRank Correlation Test for Funnel Plot Asymmetry\n\nKendall's tau = {tau}, {pval}\n"
@@ -94,7 +97,7 @@ def kendall_test(x: FloatArray, y: FloatArray, exact: bool | None = None) -> tup
 
 
 def ranktest(
-    x: metafopy.models.rma_uni.RMAResult | numpy.typing.ArrayLike | str,
+    x: metafopy.methods.fitview.Fit | numpy.typing.ArrayLike | str,
     vi: numpy.typing.ArrayLike | str | None = None,
     *,
     sei: numpy.typing.ArrayLike | str | None = None,
@@ -103,19 +106,20 @@ def ranktest(
     digits: int | None = None,
     exact: bool = True,
 ) -> RanktestResult:
-    """Rank correlation test for funnel plot asymmetry; ``x`` is a fitted model without moderators or a vector of estimates.
+    """Rank correlation test for funnel plot asymmetry; ``x`` is a fitted model (of any class) without moderators or a vector of estimates.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
-    if isinstance(x, metafopy.models.rma_uni.RMAResult):
+    if metafopy.methods.fitview.is_rma(x):
         if vi is not None or sei is not None or subset is not None:
             warnings.warn("Arguments 'vi', 'sei', and 'subset' ignored when 'x' is a model object.", stacklevel=2)
-        if not x.int_only:
+        view = metafopy.methods.fitview.fit_view(x)
+        if not view.int_only:
             raise metafopy.errors.InputError('Test only applicable to models without moderators.')
-        yi, v, _ = metafopy.bias.inputs.data_of(x)
+        yi, v = view.yi, view.vi
     else:
-        yi, v_in, _ = metafopy.bias.inputs.vector_inputs(x, vi, sei, subset=subset, data=data, what='the test')
+        yi, v_in, _ = metafopy.bias.inputs.vector_inputs(typing.cast(numpy.typing.ArrayLike | str, x), vi, sei, subset=subset, data=data, what='the test')
         if v_in is None:
             raise metafopy.errors.InputError("Must specify the 'vi' or 'sei' argument.")
         v = v_in

@@ -376,6 +376,7 @@ def escalc(
     vtype: str | collections.abc.Sequence[str] = 'LS',
     correct: bool | str = True,
     cutoff: float | None = None,
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     var_names: collections.abc.Sequence[str] = ('yi', 'vi'),
     add_measure: bool = False,
     append: bool = True,
@@ -409,9 +410,12 @@ def escalc(
         measure = 'GEN'
     if not isinstance(measure, str):
         raise metafopy.errors.ArgumentError("The 'measure' argument must be a character string.")
-    if measure in ('HR', 'HD'):
-        raise metafopy.errors.NotSupportedError(f'measure={measure!r} is reserved in metafor but not implemented there either')
-    if measure not in MEASURES:
+    # metafor 5.2-1 accepts 'HR' and 'HD' but has no code to compute them: they work only with yi and vi/sei
+    # (as for measure='GEN') and otherwise fail with an R-internal error ('argument "vi" is missing')
+    reserved = ('HR', 'HD')
+    if measure in reserved and yi is None:
+        raise metafopy.errors.NotSupportedError(f"measure={measure!r} is reserved in metafor but not computed there; supply 'yi' and 'vi' or 'sei'.")
+    if measure not in MEASURES and measure not in reserved:
         raise metafopy.errors.InputError("Unknown 'measure' specified.")
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if to not in ('all', 'only0', 'if0all', 'none'):
@@ -655,6 +659,7 @@ def compute(
 ) -> Out:
     if measure in TWO_BY_TWO:
         return two_by_two(measure, inp, data, subset, add, to, drop00, vtype, onlyo1, addyi, addvi)
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if measure in ('IRR', 'IRD', 'IRSD'):
         return two_group_rates(measure, inp, data, subset, add, to, drop00, addyi, addvi)
     if measure in MEANS_2G:
@@ -663,14 +668,17 @@ def compute(
         return cles(inp, data, subset, vtype)
     if measure in ('CLESN', 'AUCN'):
         return clesn(inp, data, subset, vtype)
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if measure in ('COR', 'UCOR', 'ZCOR'):
         return cor(measure, inp, data, subset, vtype)
     if measure in ('PCOR', 'ZPCOR', 'SPCOR', 'ZSPCOR'):
         return pcor(measure, inp, data, subset, vtype)
     if measure in ('R2', 'ZR2', 'R2F', 'ZR2F'):
         return r2(measure, inp, data, subset, vtype)
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if measure in ('PR', 'PLN', 'PLO', 'PRZ', 'PAS', 'PFT'):
         return proportions(measure, inp, data, subset, add, to, vtype, addyi, addvi)
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if measure in ('IR', 'IRLN', 'IRS', 'IRFT'):
         return rates(measure, inp, data, subset, add, to, addyi, addvi)
     if measure in ('MN', 'POMPMN', 'SMN', 'MNLN', 'SDLN', 'CVLN'):
@@ -947,6 +955,7 @@ def two_by_two(
         yi = yi / 1.65
         vi = vi / 1.65**2
 
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if measure in ('MPRD', 'MPRR', 'MPOR'):
         pi12 = bi / ni
         pi21 = ci / ni

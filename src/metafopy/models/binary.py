@@ -19,6 +19,9 @@ import pandas
 
 import metafopy.errors
 import metafopy.metadata
+import metafopy.mfopt
+import metafopy.models.call
+import metafopy.models.fit_methods
 import metafopy.models.rma_uni
 import metafopy.models.tables
 import metafopy.printing
@@ -69,7 +72,7 @@ def fit_statistics(yi: FloatArray, vi: FloatArray, fit: float, k_yi: int) -> tup
 
 
 @dataclasses.dataclass(frozen=True, slots=True, eq=False)
-class FixedBinaryResult(abc.ABC):
+class FixedBinaryResult(metafopy.models.fit_methods.FitMethods, abc.ABC):
     """An intercept-only equal-effects model for 2x2 tables or rate data.
 
     ``beta``, ``se``, ``zval``, ``pval``, ``ci_lb``, ``ci_ub`` and ``vb`` hold a
@@ -114,6 +117,7 @@ class FixedBinaryResult(abc.ABC):
     test: str = 'z'
     int_only: bool = True
     weighted: bool = True
+    call: metafopy.models.call.Call | None = dataclasses.field(default=None, kw_only=True, repr=False, compare=False)
 
     # -- accessors ---------------------------------------------------------
 
@@ -169,6 +173,13 @@ class FixedBinaryResult(abc.ABC):
         resid: FloatArray = self.tables.yi - self.beta[0]
         return resid
 
+    def plot(self, *args: typing.Any, **kwargs: typing.Any) -> typing.Any:
+        """Draw the forest, funnel, radial and residual plots with :func:`metafopy.plot.plot_rma`."""
+        # auditme: accept[in-function-import] metafopy.plot imports the models, so the import is deferred to avoid a cycle
+        import metafopy.plot.rma
+
+        return metafopy.plot.rma.plot_rma(self, *args, **kwargs)
+
     @abc.abstractmethod
     def weight_values(self) -> FloatArray:
         """Un-normalised weights of the tables used in fitting."""
@@ -199,10 +210,10 @@ class FixedBinaryResult(abc.ABC):
         return matrix[numpy.ix_(not_na, not_na)] if na_action == 'omit' else matrix
 
     def summary(self, digits: int | None = None, showfit: bool = False) -> str:
-        return self.render(self.digits if digits is None else digits, showfit)
+        return metafopy.mfopt.option_space(self.render(metafopy.mfopt.option_digits(digits, self.digits), showfit))
 
     def __str__(self) -> str:
-        return self.render(self.digits, False)
+        return self.summary()
 
     def __repr__(self) -> str:
         return f'<{type(self).__name__} {self.measure} k={self.k}>'
@@ -254,6 +265,7 @@ def result_rows(res: FixedBinaryResult, digits: int, scale: str | None) -> list[
         metafopy.printing.fmt_num(float(res.ci_lb[0]), digits),
         metafopy.printing.fmt_num(float(res.ci_ub[0]), digits),
     ]
+    # auditme: accept[literal-duplication] the column headers of metafor's printed tables
     header = ['estimate', 'se', 'zval', 'pval', 'ci.lb', 'ci.ub']
     if scale is None:
         return ['Model Results:', '', metafopy.printing.fmt_table(header, [row])]

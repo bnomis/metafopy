@@ -181,6 +181,13 @@ Functions that take a fitted model. Each is a single-dispatch function: the gene
       show_root_full_path: false
       show_source: false
 
+::: metafopy.methods.mv_profile.profile_rma_mv
+    options:
+      heading_level: 3
+      show_root_heading: true
+      show_root_full_path: false
+      show_source: false
+
 ::: metafopy.ProfileResult
     options:
       heading_level: 3
@@ -189,6 +196,13 @@ Functions that take a fitted model. Each is a single-dispatch function: the gene
       show_source: false
 
 ::: metafopy.SelProfileResult
+    options:
+      heading_level: 3
+      show_root_heading: true
+      show_root_full_path: false
+      show_source: false
+
+::: metafopy.methods.mv_profile.MVProfileResult
     options:
       heading_level: 3
       show_root_heading: true
@@ -283,6 +297,13 @@ Functions that take a fitted model. Each is a single-dispatch function: the gene
       show_root_full_path: false
       show_source: false
 
+::: metafopy.methods.mv_diagnostics.rstandard_rma_mv
+    options:
+      heading_level: 3
+      show_root_heading: true
+      show_root_full_path: false
+      show_source: false
+
 ::: metafopy.rstudent
     options:
       heading_level: 3
@@ -304,6 +325,13 @@ Functions that take a fitted model. Each is a single-dispatch function: the gene
       show_root_full_path: false
       show_source: false
 
+::: metafopy.methods.mv_diagnostics.rstudent_rma_mv
+    options:
+      heading_level: 3
+      show_root_heading: true
+      show_root_full_path: false
+      show_source: false
+
 ::: metafopy.influence
     options:
       heading_level: 3
@@ -318,6 +346,13 @@ Functions that take a fitted model. Each is a single-dispatch function: the gene
       show_root_full_path: false
       show_source: false
 
+::: metafopy.methods.mv_diagnostics.influence_rma_mv
+    options:
+      heading_level: 3
+      show_root_heading: true
+      show_root_full_path: false
+      show_source: false
+
 ::: metafopy.cooks_distance
     options:
       heading_level: 3
@@ -325,7 +360,21 @@ Functions that take a fitted model. Each is a single-dispatch function: the gene
       show_root_full_path: false
       show_source: false
 
+::: metafopy.methods.mv_diagnostics.cooks_rma_mv
+    options:
+      heading_level: 3
+      show_root_heading: true
+      show_root_full_path: false
+      show_source: false
+
 ::: metafopy.dfbetas
+    options:
+      heading_level: 3
+      show_root_heading: true
+      show_root_full_path: false
+      show_source: false
+
+::: metafopy.methods.mv_diagnostics.dfbetas_rma_mv
     options:
       heading_level: 3
       show_root_heading: true
@@ -340,6 +389,13 @@ Functions that take a fitted model. Each is a single-dispatch function: the gene
       show_source: false
 
 ::: metafopy.ResidualResult
+    options:
+      heading_level: 3
+      show_root_heading: true
+      show_root_full_path: false
+      show_source: false
+
+::: metafopy.methods.mv_diagnostics.ClusterResidualResult
     options:
       heading_level: 3
       show_root_heading: true
@@ -469,6 +525,13 @@ Functions that take a fitted model. Each is a single-dispatch function: the gene
       show_root_full_path: false
       show_source: false
 
+::: metafopy.methods.mv_ranef.ranef_rma_mv
+    options:
+      heading_level: 3
+      show_root_heading: true
+      show_root_full_path: false
+      show_source: false
+
 ::: metafopy.RanefResult
     options:
       heading_level: 3
@@ -535,6 +598,36 @@ Functions that take a fitted model. Each is a single-dispatch function: the gene
       show_source: false
 
 ::: metafopy.pairmat
+    options:
+      heading_level: 3
+      show_root_heading: true
+      show_root_full_path: false
+      show_source: false
+
+## Regression on correlation and covariance matrices
+
+::: metafopy.matreg
+    options:
+      heading_level: 3
+      show_root_heading: true
+      show_root_full_path: false
+      show_source: false
+
+::: metafopy.MatregResult
+    options:
+      heading_level: 3
+      show_root_heading: true
+      show_root_full_path: false
+      show_source: false
+
+::: metafopy.MatregConfintResult
+    options:
+      heading_level: 3
+      show_root_heading: true
+      show_root_full_path: false
+      show_source: false
+
+::: metafopy.MatregPredictResult
     options:
       heading_level: 3
       show_root_heading: true

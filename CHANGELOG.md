@@ -2,6 +2,18 @@
 
 ## Unreleased (1.0 candidate)
 
+- Fill the remaining gaps to metafor 5.2-1 found by comparing every method on every fit class in R and Python:
+  - Data helpers: `aggregate_escalc`, `conv_2x2`, `conv_delta`, `conv_fivenum`, `conv_wald`, `to_long`, `to_table`, `to_wide`, `contrmat`, `vec2mat`, `dfround`, a public `replmiss`, and `deltamethod`; datasets `dat.hasselblad1998`, `dat.ishak2007` and `dat.senn2013`.
+  - `matreg` (regression on correlation and covariance matrices) with `confint` and `predict`.
+  - `rma_mv`: `profile`, `ranef`, `cooks_distance`, `dfbetas`, `rstandard`, `rstudent`; `hatvalues(type=, na_action=)`.
+  - `forest`, `funnel`, `ranktest`, `radial`, `baujat`, `qqnorm`, `labbe`, `gosh`, `tes` and `predict` accept every fit class metafor accepts (`rma_mh`, `rma_peto`, `rma_mv`, `rma_glmm`, location-scale and selection models), and raise metafor's message where metafor refuses a class. `addpoly()` takes `predict` results. New `plot_rma` (the four-panel plot of `plot.rma`) and `.plot()` methods.
+  - Arguments: `predict(hetvar=, prob=, addx=, vcov=, adjust=, tau2_levels=)`, `anova(adjust=, refit=)` with an exact port of `p.adjust`, `parallel`/`ncpus`/`cl`/`progbar` for `profile` and `gosh`, `plot_permutest(alpha=, QS=)`, and `verbose` on the model functions, `confint`, `trimfill` and `fsn`.
+  - `simulate()` with R-exact draws, `update()`, `se()`, `nobs()`, `df_residual()`, `model_matrix()` and `.formula()`; `fitted()`/`residuals()` for `rma_glmm`; the formatters `fmtx`, `fmtp`, `fmtp2`, `fmtt` and `setmfopt`/`getmfopt`.
+- `rma_mv` accepts a `V` with missing covariances in mirrored positions and drops rows with missing values as metafor's `.anyNAv()` does (it rejected the `rcalc` output of `dat.craft2003`).
+- `escalc(measure='HR'/'HD')` passes `yi` and `vi` through as metafor does.
+- `inspect.signature(metafopy.rma_uni)` (and `help()`) no longer raises.
+- Register the `slow` pytest marker.
+
 - `vif(sim=)` of `rma_uni` models shuffles like metafor with R's generator (`seed + l` in iteration `l`, or the stream of `set_seed` without `seed`), shuffling the variables of the data for a model given as a formula (`sim_type='data'`), so `set_seed(s)` gives the simulated VIFs of R's `set.seed(s)`. The gallery figure uses `sim=1000`, the 1000 iterations R's `sim=TRUE` runs.
 - `plot_permutest(legend=...)` draws the legend in the first panel only, as metafor does. The gallery figure of the permutation distributions is seeded with `set_seed(1234)` like the R script, so its axes and histograms now match R's.
 - Add the metafor plots that were missing: `regplot` (meta-analytic scatterplot), `forest()` of a `cumul` result (`forest_cumul`), `plot_cumul` (plot of cumulative results), `llplot`, `plot_permutest` and `plot_vif`. Each is checked against the geometry R records. `cumul` results carry `measure`, `level` and `slab_null`. The gallery shows the six next to metafor's figures.

@@ -13,8 +13,12 @@ import numpy
 import numpy.typing
 
 import metafopy.bias.inputs
+import metafopy.core.verbose
 import metafopy.errors
+import metafopy.formatters
 import metafopy.metadata
+import metafopy.methods.fitview
+import metafopy.mfopt
 import metafopy.models.rma_uni
 
 __all__ = ['TrimfillResult', 'trimfill']
@@ -39,7 +43,8 @@ class TrimfillResult(metafopy.models.rma_uni.RMAResult):
     k0_est: str = 'L0'
     p_k0: float = math.nan
 
-    def summary(self, digits: int = 4) -> str:
+    def summary(self, digits: int | None = None) -> str:
+        digits = metafopy.mfopt.option_digits(digits)
         block = [f'Estimated number of missing studies on the {self.side} side: {self.k0} (SE = {metafopy.bias.inputs.fx(self.se_k0, digits)})']
         if self.k0_est == 'R0':
             gap = ' ' * len(str(self.k0))
@@ -88,16 +93,20 @@ def trimfill(
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     estimator: typing.Literal['L0', 'R0', 'Q0'] = 'L0',
     maxiter: int = 100,
+    verbose: bool = False,
     ilim: tuple[float, float] | None = None,
     **kwargs: typing.Any,
 ) -> TrimfillResult:
     """Trim-and-fill for a model without moderators.
 
     ``kwargs`` (``level``, ``test``) are passed to the model fits, as the ``...`` of metafor's ``trimfill``.
+    ``verbose`` prints metafor's iteration log (the number of missing studies and the estimate) on stdout.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
+    metafopy.methods.fitview.check_method(x, 'trimfill')
+    metafopy.methods.fitview.check_class(x, must='rma.uni', notav=('robust.rma', 'rma.ls', 'rma.gen', 'rma.uni.selmodel'))
     if not x.int_only:
         raise metafopy.errors.InputError('Trim-and-fill method only applicable to models without moderators.')
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
@@ -128,6 +137,9 @@ def trimfill(
     se_k0 = math.nan
     yi_c = yi
     beta = math.nan
+    est_digits = metafopy.mfopt.option_digits(None)
+    if verbose:
+        metafopy.core.verbose.cat('\n')
     while abs(k0 - k0_prev) > 0:
         k0_prev = k0
         iteration += 1
@@ -159,6 +171,11 @@ def trimfill(
                 se_k0 = 2 * math.sqrt(var_sr) / math.sqrt((k - 1 / 2) ** 2 - k0f * (2 * k - k0f - 1))
         k0 = max(0, round(k0f))
         se_k0 = max(0.0, se_k0)
+        if verbose:
+            it_text = metafopy.formatters.fmtx(iteration, 0, flag='-', addwidth=len(str(maxiter)))
+            k0_text = metafopy.formatters.fmtx(k0, 0, flag='-', addwidth=len(str(k)))
+            beta_text = metafopy.formatters.fmtx(-beta if side == 'right' else beta, est_digits)
+            metafopy.core.verbose.cat(f'Iteration: {it_text}  missing = {k0_text}  beta = {beta_text}\n')
 
     md = x.data
     if k0 > 0:

@@ -10,6 +10,9 @@ import scipy.linalg
 import scipy.sparse
 
 import metafopy.errors
+import metafopy.mfopt
+import metafopy.models.call
+import metafopy.models.fit_methods
 import metafopy.models.mv_lik
 import metafopy.models.mv_structs
 import metafopy.models.rma_uni
@@ -22,14 +25,16 @@ type Mat = FloatArray | scipy.sparse.csc_array
 
 
 @dataclasses.dataclass(frozen=True, slots=True, eq=False)
-class RMAMVResult:
+class RMAMVResult(metafopy.models.fit_methods.FitMethods):
     """A fitted multivariate/multilevel meta-analytic model (metafor's ``rma.mv``).
 
     Names follow metafor with ``.`` replaced by ``_``; ``btt`` holds 0-based coefficient indices.
     ``spec`` keeps the arguments of the call, which :func:`metafopy.confint` and :func:`metafopy.profile` use to refit the model.
     ``hessian`` and ``vvc`` are the Hessian of ``-ll`` and its inverse (``optbeta=True``, where the leading rows are the
     coefficients, or ``cvvc``), with the row names ``vc_names``; ``p_eff`` is the number of estimated (not fixed) coefficients,
-    ``beta_est`` flags them, and ``vccon`` holds the group ids of constrained variance components.
+    ``beta_est`` flags them, and ``vccon`` holds the group ids of constrained variance components. ``slab_f`` and
+    ``s_levels_f`` are the study labels and the levels of the ``~ 1 | id`` terms before rows with missing values were
+    dropped (metafor's ``slab`` and ``s.levels.f``), used to pad results under ``na_action='exclude'``.
     """
 
     beta: FloatArray
@@ -120,6 +125,9 @@ class RMAMVResult:
     beta_est: tuple[bool, ...] = ()
     vccon: dict[str, numpy.typing.NDArray[typing.Any]] | None = None
     cvvc: str | None = None
+    call: metafopy.models.call.Call | None = dataclasses.field(default=None, kw_only=True, repr=False, compare=False)
+    s_levels_f: tuple[tuple[str, ...], ...] = ()
+    slab_f: tuple[str, ...] = ()
 
     # -- accessors -------------------------------------------------------
 
@@ -175,11 +183,40 @@ class RMAMVResult:
         stXWX = numpy.linalg.inv(self.X.T @ W @ self.X)
         return numpy.asarray(self.X @ stXWX @ self.X.T @ W)
 
-    def hatvalues(self) -> FloatArray:
-        """Diagonal of the hat matrix."""
-        h = numpy.diag(self.hat_matrix()).copy()
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
+    def hatvalues(self, type: typing.Literal['diagonal', 'matrix'] = 'diagonal', na_action: str = 'omit') -> FloatArray:
+        """Diagonal of the hat matrix (``type='diagonal'``) or the hat matrix itself (``'matrix'``), as metafor's ``hatvalues.rma.mv``.
+
+        With ``na_action='exclude'`` or ``'pass'`` rows (and columns) left out because of missing values are NaN.
+        See https://github.com/wviechtb/metafor/blob/master/R/hatvalues.rma.mv.r.
+
+        Raises:
+            metafopy.errors.InputError: an unknown ``type`` or ``na_action``, or missing values with ``na_action='fail'``.
+        """
+        # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
+        if na_action not in ('omit', 'exclude', 'pass', 'fail'):
+            raise metafopy.errors.InputError(f'unknown na_action {na_action!r}')
+        # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
+        if type not in ('diagonal', 'matrix'):
+            raise metafopy.errors.InputError("type must be 'diagonal' or 'matrix'")
+        if na_action == 'fail' and not self.not_na.all():
+            raise metafopy.errors.InputError('Missing values in results.')
+        H = self.hat_matrix()
+        # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
+        pad = na_action in ('exclude', 'pass')
+        if type == 'matrix':
+            if not pad:
+                return H
+            full = numpy.full((self.not_na.shape[0], self.not_na.shape[0]), numpy.nan)
+            full[numpy.ix_(self.not_na, self.not_na)] = H
+            return full
+        h = numpy.diag(H).copy()
         h[h > 1 - 10 * float(numpy.finfo(float).eps)] = 1.0
-        return h
+        if not pad:
+            return h
+        out = numpy.full(self.not_na.shape[0], numpy.nan)
+        out[self.not_na] = h
+        return out
 
     def weights_(self, type: typing.Literal['diagonal', 'rowsum'] = 'diagonal') -> FloatArray:
         """Percentage weights: the diagonal of ``W`` (or its row sums for intercept-only models) scaled to sum to 100.
@@ -218,11 +255,11 @@ class RMAMVResult:
 
     # -- printing -------------------------------------------------------------
 
-    def summary(self, digits: int = 4, showfit: bool = False) -> str:
+    def summary(self, digits: int | None = None, showfit: bool = False) -> str:
         # auditme: accept[in-function-import] the printing module needs this class, so the import is deferred to avoid a cycle
         import metafopy.models.mv_print
 
-        return metafopy.models.mv_print.format_result(self, digits, showfit)
+        return metafopy.mfopt.option_space(metafopy.models.mv_print.format_result(self, metafopy.mfopt.option_digits(digits), showfit))
 
     def __str__(self) -> str:
         return self.summary()

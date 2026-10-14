@@ -19,9 +19,11 @@ import numpy.typing
 import pandas
 import scipy.stats
 
+import metafopy.core.verbose
 import metafopy.errors
 import metafopy.metadata
 import metafopy.models.binary
+import metafopy.models.call
 import metafopy.models.tables
 import metafopy.printing
 
@@ -205,6 +207,7 @@ def mh_estimate(measure: str, c: dict[str, FloatArray], correct: bool) -> tuple[
         return beta, se, extra, k_pos
 
 
+@metafopy.models.call.records_call
 def rma_mh(
     ai: metafopy.metadata.Column | None = None,
     bi: metafopy.metadata.Column | None = None,
@@ -225,6 +228,7 @@ def rma_mh(
     drop00: bool | collections.abc.Sequence[bool] = True,
     correct: bool = True,
     level: float = 95,
+    verbose: bool | int = False,
     digits: int = 4,
     na_action: metafopy.metadata.NAAction = 'omit',
     onlyo1: bool = False,
@@ -245,9 +249,12 @@ def rma_mh(
     >>> dat = datasets.load("dat.bcg")  # doctest: +SKIP
     >>> rma_mh(ai="tpos", bi="tneg", ci="cpos", di="cneg", data=dat)  # doctest: +SKIP
 
+    ``verbose`` prints metafor's progress messages (to stderr).
+
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
+    metafopy.core.verbose.binary_start(int(verbose), subset)
     if measure not in MEASURES:
         raise metafopy.errors.InputError('Mantel-Haenszel method can only be used with measures OR, RR, RD, IRR, and IRD.')
     add2, to2, drop2 = metafopy.models.binary.argument_pairs(add, to, drop00)
@@ -293,6 +300,7 @@ def rma_mh(
             qe, qep, i2, h2 = 0.0, 1.0, 0.0, 1.0
     ml, reml = metafopy.models.binary.fit_statistics(yi, vi, qe, k_yi)
 
+    metafopy.core.verbose.binary_end(int(verbose), not bool(tab.not_na.all()), not bool(tab.not_na_yivi.all()))
     return MHResult(
         beta=numpy.array([beta]),
         se=numpy.array([se]),

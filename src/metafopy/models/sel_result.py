@@ -8,6 +8,9 @@ import numpy
 import numpy.typing
 import pandas
 
+import metafopy.mfopt
+import metafopy.models.call
+import metafopy.models.fit_methods
 import metafopy.models.rma_uni
 import metafopy.models.sel_spec
 import metafopy.models.tau2
@@ -24,7 +27,7 @@ NA_FIT = metafopy.models.rma_uni.FitStats(ll=math.nan, dev=math.nan, AIC=math.na
 
 
 @dataclasses.dataclass(frozen=True, slots=True, eq=False)
-class SelmodelResult:
+class SelmodelResult(metafopy.models.fit_methods.FitMethods):
     """A selection model fitted by :func:`metafopy.selmodel` (metafor's ``rma.uni.selmodel`` object).
 
     ``base`` is the ML (or equal/fixed-effects) :class:`~metafopy.RMAResult` the selection model was fitted from; the
@@ -99,6 +102,7 @@ class SelmodelResult:
     mapfun: tuple[str | None, ...] | None
     mapinvfun: tuple[str | None, ...] | None
     digits: int = 4
+    call: metafopy.models.call.Call | None = dataclasses.field(default=None, kw_only=True, repr=False, compare=False)
 
     # -- data of the underlying model --------------------------------------------
 
@@ -252,10 +256,10 @@ class SelmodelResult:
     # -- printing -------------------------------------------------------------------
 
     def summary(self, digits: int | None = None) -> str:
-        return format_selmodel(self, self.digits if digits is None else digits)
+        return metafopy.mfopt.option_space(format_selmodel(self, metafopy.mfopt.option_digits(digits, self.digits)))
 
     def __str__(self) -> str:
-        return format_selmodel(self, self.digits)
+        return self.summary()
 
     def __repr__(self) -> str:
         return f'<SelmodelResult {self.type} {self.method} k={self.k} p={self.p}>'
