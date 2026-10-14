@@ -12,6 +12,7 @@ import pandas
 import scipy.stats
 
 import metafopy.core.linalg
+import metafopy.core.padjust
 import metafopy.errors
 import metafopy.models.mv_result
 import metafopy.models.rma_uni
@@ -118,12 +119,21 @@ def anova_rma_uni(
     btt: metafopy.models.rma_uni.Btt = None,
     X: numpy.typing.ArrayLike | None = None,
     rhs: numpy.typing.ArrayLike | float = 0.0,
-) -> WaldResult | LRTResult:
+    adjust: bool | str | None = None,
+    refit: bool = False,
+) -> WaldResult | LRTResult | list[WaldResult]:
     """Test coefficients of one model, or compare two nested models.
 
-    ``anova(res, btt=...)`` tests a subset of coefficients (0-based indices);
-    ``anova(res, X=L)`` tests linear combinations ``L beta = rhs``;
-    ``anova(full, reduced)`` gives a likelihood-ratio test.
+    ``anova(res, btt=...)`` tests a subset of coefficients (0-based indices, a
+    name pattern, or a list of these for one test each); ``anova(res, X=L)``
+    tests linear combinations ``L beta = rhs``; ``anova(full, reduced)`` gives
+    a likelihood-ratio test. ``adjust`` (``True`` for ``'bonferroni'`` or one of
+    :data:`metafopy.core.padjust.P_ADJUST_METHODS`) adjusts the p-values of
+    several tests as R's ``p.adjust``; ``refit=True`` refits REML models that
+    differ in their fixed effects with ML before the likelihood-ratio test.
+
+    R source: https://github.com/wviechtb/metafor/blob/master/R/anova.rma.r;
+    reference page: https://wviechtb.github.io/metafor/reference/anova.rma.html.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
@@ -131,8 +141,11 @@ def anova_rma_uni(
     """
     x = model
     tdist = x.ddf is not None
+    method = None if adjust is None else metafopy.core.padjust.match_adjust(adjust)
     if model2 is not None:
-        return lrt(x, model2)
+        return lrt(x, model2, refit)
+    if is_btt_list(btt):
+        return adjust_list([typing.cast(WaldResult, anova_rma_uni(x, btt=b)) for b in typing.cast(list[typing.Any], btt)], method)
 
     if X is not None:
         L = numpy.atleast_2d(numpy.asarray(X, dtype=numpy.float64))
@@ -162,6 +175,9 @@ def anova_rma_uni(
                 QMp = float(scipy.stats.f.sf(QM, m, x.ddf))
             else:
                 QMp = float(scipy.stats.chi2.sf(QM, m))
+        pval = numpy.asarray(pval, dtype=numpy.float64)
+        if method is not None:
+            pval = metafopy.core.padjust.p_adjust(pval, method)
         return WaldResult(
             QM=QM,
             QMdf=(m, x.ddf),
@@ -169,13 +185,13 @@ def anova_rma_uni(
             Xb=Xb,
             se=se,
             zval=zval,
-            pval=numpy.asarray(pval, dtype=numpy.float64),
+            pval=pval,
         )
 
     idx = metafopy.models.rma_uni.set_btt(btt, x.p, x.int_incl, x.coef_names) if btt is not None else x.btt
     sub = numpy.array(idx)
     m = len(idx)
-    b = x.beta[sub]
+    b = x.beta[sub] - btt_rhs(rhs, m)
     try:
         QM = float(b @ numpy.linalg.solve(x.vb[numpy.ix_(sub, sub)], b))
     except numpy.linalg.LinAlgError:
@@ -187,10 +203,69 @@ def anova_rma_uni(
         QMp = float(scipy.stats.f.sf(QM, m, x.ddf)) if x.ddf > 0 else math.nan
     else:
         QMp = float(scipy.stats.chi2.sf(QM, m))
+    if method is not None:
+        QMp = float(metafopy.core.padjust.p_adjust([QMp], method)[0])
     return WaldResult(QM=QM, QMdf=(m, x.ddf), QMp=QMp, btt=idx)
 
 
-def lrt(a: metafopy.models.rma_uni.RMAResult, b: metafopy.models.rma_uni.RMAResult) -> LRTResult:
+def is_btt_list(btt: typing.Any) -> bool:
+    """Whether ``btt`` asks for one test per element (metafor's list ``btt``, or a character vector of length > 1)."""
+    if not isinstance(btt, list | tuple):
+        return False
+    if all(isinstance(b, str) for b in btt):
+        return len(btt) > 1
+    return any(not isinstance(b, int | numpy.integer) for b in btt)
+
+
+def adjust_list(results: list[WaldResult], method: str | None) -> list[WaldResult]:
+    if method is None:
+        return results
+    adjusted = metafopy.core.padjust.p_adjust([r.QMp for r in results], method)
+    return [dataclasses.replace(r, QMp=float(p)) for r, p in zip(results, adjusted, strict=True)]
+
+
+def btt_rhs(rhs: numpy.typing.ArrayLike | float, m: int) -> FloatArray:
+    """``rhs`` recycled to the ``m`` tested coefficients.
+
+    Raises:
+        metafopy.errors.InputError: the length of ``rhs`` does not match.
+    """
+    r = numpy.atleast_1d(numpy.asarray(rhs, dtype=numpy.float64))
+    if r.size == 1:
+        r = numpy.full(m, float(r[0]))
+    if r.size != m:
+        raise metafopy.errors.InputError(f"Length of 'rhs' ({r.size}) does not match the number of coefficients tested ({m}).")
+    return r
+
+
+def refit_ml(res: metafopy.models.rma_uni.RMAResult) -> metafopy.models.rma_uni.RMAResult:
+    """``res`` refitted with ML, as ``anova.rma(..., refit=TRUE)`` does for ``rma.uni`` models.
+
+    Raises:
+        metafopy.errors.InputError: the refit failed.
+    """
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            out = metafopy.models.rma_uni.rma_uni(
+                yi=res.yi,
+                vi=res.vi,
+                weights=res.weights,
+                mods=res.X,
+                intercept=False,
+                method='ML',
+                weighted=res.weighted,
+                test=res.test,
+                level=res.level,
+                tau2=res.tau2 if res.tau2_fix else None,
+                control=res.control,
+            )
+    except (metafopy.errors.MetaforError, numpy.linalg.LinAlgError, ValueError) as err:
+        raise metafopy.errors.InputError('Refitting the model with ML estimation failed.') from err
+    return out
+
+
+def lrt(a: metafopy.models.rma_uni.RMAResult, b: metafopy.models.rma_uni.RMAResult, refit: bool = False) -> LRTResult:
     if a.parms == b.parms:
         raise metafopy.errors.InputError('models do not differ in the number of parameters')
     full, red = (a, b) if a.parms > b.parms else (b, a)
@@ -198,10 +273,13 @@ def lrt(a: metafopy.models.rma_uni.RMAResult, b: metafopy.models.rma_uni.RMAResu
         raise metafopy.errors.InputError('models are not fitted to the same data')
     same_X = full.X.shape == red.X.shape and numpy.allclose(full.X, red.X)
     if full.method == 'REML' and not same_X:
-        warnings.warn(
-            "REML comparisons not meaningful for models with different fixed effects (refit both models with method='ML').",
-            stacklevel=3,
-        )
+        if refit:
+            full, red = refit_ml(full), refit_ml(red)
+        else:
+            warnings.warn(
+                "REML comparisons not meaningful for models with different fixed effects (use 'refit=True' to refit both models based on ML estimation).",
+                stacklevel=3,
+            )
     use_reml = full.method == 'REML'
     fs_f = full.fit_stats_reml if use_reml else full.fit_stats_ml
     fs_r = red.fit_stats_reml if use_reml else red.fit_stats_ml
@@ -281,10 +359,10 @@ class MVLRTResult:
         return '\n'.join(lines)
 
 
-def mv_wald(x: metafopy.models.mv_result.RMAMVResult, idx: tuple[int, ...]) -> WaldResult:
+def mv_wald(x: metafopy.models.mv_result.RMAMVResult, idx: tuple[int, ...], rhs: FloatArray | None = None) -> WaldResult:
     sub = numpy.array(idx)
     m = len(idx)
-    b = x.beta[sub]
+    b = x.beta[sub] if rhs is None else x.beta[sub] - rhs
     try:
         QM = float(b @ numpy.linalg.solve(x.vb[numpy.ix_(sub, sub)], b))
     except numpy.linalg.LinAlgError:
@@ -304,13 +382,18 @@ def anova_rma_mv(
     btt: metafopy.models.rma_uni.Btt = None,
     X: numpy.typing.ArrayLike | None = None,
     rhs: numpy.typing.ArrayLike | float = 0.0,
-) -> WaldResult | MVLRTResult:
+    adjust: bool | str | None = None,
+    refit: bool = False,
+) -> WaldResult | MVLRTResult | list[WaldResult]:
     """Test coefficients of one ``rma.mv`` model, or compare two nested models by a likelihood-ratio test.
+
+    ``adjust`` and ``refit`` are as in :func:`anova_rma_uni`; the ML refit uses :func:`metafopy.update`.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
     x = model
+    method = None if adjust is None else metafopy.core.padjust.match_adjust(adjust)
     if model2 is not None:
         if x.parms == model2.parms:
             raise metafopy.errors.InputError('models do not differ in the number of parameters')
@@ -319,10 +402,14 @@ def anova_rma_mv(
             raise metafopy.errors.InputError('models are not fitted to the same data')
         use_reml = full.method == 'REML'
         if use_reml and not (full.X.shape == red.X.shape and numpy.allclose(full.X, red.X)):
-            warnings.warn(
-                "REML comparisons not meaningful for models with different fixed effects (refit both models with method='ML').",
-                stacklevel=2,
-            )
+            if refit:
+                full, red = refit_ml_mv(full), refit_ml_mv(red)
+                use_reml = False
+            else:
+                warnings.warn(
+                    "REML comparisons not meaningful for models with different fixed effects (use 'refit=True' to refit both models based on ML estimation).",
+                    stacklevel=2,
+                )
         fs_f = full.fit_stats_reml if use_reml else full.fit_stats_ml
         fs_r = red.fit_stats_reml if use_reml else red.fit_stats_ml
         LRT = max(0.0, fs_r.dev - fs_f.dev)
@@ -349,6 +436,8 @@ def anova_rma_mv(
         zval = Xb / se
         ddf = numpy.array([float(numpy.min(x.ddf[row != 0])) if numpy.any(row != 0) else math.nan for row in L])
         pval = 2 * scipy.stats.norm.sf(numpy.abs(zval)) if x.test == 'z' else 2 * scipy.stats.t.sf(numpy.abs(zval), ddf)
+        if method is not None:
+            pval = metafopy.core.padjust.p_adjust(numpy.asarray(pval, dtype=numpy.float64), method)
         QM = QMp = math.nan
         df2: int | None = None if x.test == 'z' else int(numpy.nanmin(ddf))
         if numpy.linalg.matrix_rank(L) == m:
@@ -360,5 +449,27 @@ def anova_rma_mv(
                 QMp = float(scipy.stats.f.sf(QM, m, df2))
         return WaldResult(QM=QM, QMdf=(m, df2), QMp=QMp, Xb=Xb, se=se, zval=zval, pval=numpy.asarray(pval, dtype=numpy.float64))
 
+    if is_btt_list(btt):
+        return adjust_list([typing.cast(WaldResult, anova_rma_mv(x, btt=b)) for b in typing.cast(list[typing.Any], btt)], method)
     idx = metafopy.models.rma_uni.set_btt(btt, x.p, x.int_incl, x.coef_names) if btt is not None else x.btt
-    return mv_wald(x, idx)
+    out = mv_wald(x, idx, btt_rhs(rhs, len(idx)))
+    if method is not None:
+        out = dataclasses.replace(out, QMp=float(metafopy.core.padjust.p_adjust([out.QMp], method)[0]))
+    return out
+
+
+def refit_ml_mv(res: metafopy.models.mv_result.RMAMVResult) -> metafopy.models.mv_result.RMAMVResult:
+    """``res`` refitted with ML via ``update(res, method='ML')``, as ``anova.rma(..., refit=TRUE)`` does.
+
+    Raises:
+        metafopy.errors.InputError: the model has no recorded call or the refit failed.
+    """
+    if res.call is None:
+        raise metafopy.errors.InputError('Refitting the model with ML estimation failed (no recorded call).')
+    try:
+        out = res.call(method='ML')
+    except (metafopy.errors.MetaforError, numpy.linalg.LinAlgError, ValueError) as err:
+        raise metafopy.errors.InputError('Refitting the model with ML estimation failed.') from err
+    if not isinstance(out, metafopy.models.mv_result.RMAMVResult):
+        raise metafopy.errors.InputError('Refitting the model with ML estimation failed.')
+    return out

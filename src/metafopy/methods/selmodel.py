@@ -562,8 +562,11 @@ def anova(
     btt: metafopy.models.rma_uni.Btt = None,
     X: numpy.typing.ArrayLike | None = None,
     rhs: numpy.typing.ArrayLike | float = 0.0,
-) -> metafopy.methods.anova.WaldResult | metafopy.methods.anova.LRTResult:
+    adjust: bool | str | None = None,
+) -> metafopy.methods.anova.WaldResult | metafopy.methods.anova.LRTResult | list[metafopy.methods.anova.WaldResult]:
     """Wald-type tests of the coefficients (``btt`` 0-based, or linear combinations ``X``) or, given a second model, a likelihood-ratio test.
+
+    ``adjust`` adjusts the p-values of several tests (see :func:`metafopy.methods.anova.anova_rma_uni`).
 
     The likelihood-ratio test compares the ML log-likelihoods of two nested models (selection models or ``rma_uni`` fits
     to the same data).
@@ -573,7 +576,7 @@ def anova(
     """
     if model2 is not None:
         return lrt(model, model2)
-    return metafopy.methods.anova.anova_rma_uni(as_rma(model), btt=btt, X=X, rhs=rhs)
+    return metafopy.methods.anova.anova_rma_uni(as_rma(model), btt=btt, X=X, rhs=rhs, adjust=adjust)
 
 
 def lrt(a: Sel, b: Sel | metafopy.models.rma_uni.RMAResult) -> metafopy.methods.anova.LRTResult:
