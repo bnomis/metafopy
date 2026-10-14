@@ -30,6 +30,7 @@ from metafopy.methods.ranef import RanefResult, ranef
 from metafopy.methods.rcalc import RCalcResult, rcalc
 from metafopy.methods.robust import robust
 from metafopy.methods.selmodel import SelProfileResult
+from metafopy.methods.simulate import simulate
 from metafopy.methods.vcalc import vcalc
 from metafopy.methods.vif import VIFEntry, VIFResult, vif
 from metafopy.mfopt import getmfopt, setmfopt
@@ -167,6 +168,7 @@ __all__ = [
     'selmodel',
     'set_seed',
     'setmfopt',
+    'simulate',
     'summary_escalc',
     'tes',
     'transf',

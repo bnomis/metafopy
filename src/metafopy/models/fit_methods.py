@@ -47,3 +47,10 @@ class FitMethods:
         import metafopy.methods.accessors
 
         return metafopy.methods.accessors.update(typing.cast(typing.Any, self), formula, evaluate, **kwargs)
+
+    def simulate(self, nsim: int = 1, seed: int | None = None, olim: typing.Any = None, **kwargs: typing.Any) -> typing.Any:
+        """See :func:`metafopy.methods.simulate.simulate`."""
+        # auditme: accept[in-function-import] metafopy.methods imports the result classes, so the import is deferred to avoid a cycle
+        import metafopy.methods.simulate
+
+        return metafopy.methods.simulate.simulate(typing.cast(typing.Any, self), nsim, seed, olim, **kwargs)
