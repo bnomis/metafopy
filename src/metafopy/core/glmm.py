@@ -10,7 +10,9 @@ doi:10.18637/jss.v067.i01). This module maximises the same likelihood:
   approximation), centred at the conditional mode with the curvature there as
   scale (Pinheiro and Bates 1995, doi:10.1080/10618600.1995.10474663);
 * two random effects per cluster (an intercept and a group effect, independent
-  or correlated) are handled by the Laplace approximation, as ``glmer`` requires.
+  or correlated) are handled by the Laplace approximation, as ``glmer`` requires;
+  ``GLMMadaptive`` integrates them with a tensor-product rule of ``nAGQ`` points
+  per dimension (Rizopoulos, https://drizopoulos.github.io/GLMMadaptive/).
 
 The random effects are ``b = Lambda(theta) u`` with ``u ~ N(0, I)``. Unlike
 ``glmer``, which stops its derivative-free optimiser at a loose tolerance, the
@@ -30,6 +32,16 @@ the covariance of the fixed effects use the expected (Fisher) information
 only for canonical links; the likelihood itself is exact. Linear predictors
 that put a mean outside the parameter space make the likelihood undefined
 (``NaN``), as in lme4, where such steps are rejected or the fit fails.
+
+``rma.glmm`` can also fit these models with ``GLMMadaptive::mixed_model()`` (adaptive
+quadrature) and ``glmmTMB::glmmTMB()`` (Laplace approximation with exact automatic
+derivatives, Brooks et al. 2017, doi:10.32614/RJ-2017-066). Both maximise the same
+marginal likelihood, so ``fit_glmm(..., lme4_conventions=False)`` only changes what
+is reported: the log-likelihood always includes the family constants, the covariance
+of the fixed effects is the plain inverse Hessian over all parameters without lme4's
+boundary handling and fallback, and ``GLMMProblem.observed`` selects the observed
+information for the Laplace determinant and the quadrature scale, which is what
+those packages use (it differs from the expected information for non-canonical links).
 """
 
 import collections.abc
@@ -82,6 +94,7 @@ class GLMMProblem:
     family: metafopy.core.glm.Family
     structure: Structure = 'scalar'
     link: metafopy.core.glm.Link | None = None
+    observed: bool = False
 
     @property
     def n_clusters(self) -> int:
@@ -130,7 +143,7 @@ def lambda_matrix(theta: FloatArray, structure: Structure) -> FloatArray:
 
 
 def row_terms(prob: GLMMProblem, eta: FloatArray, y: FloatArray, size: FloatArray | None) -> tuple[FloatArray, FloatArray, FloatArray]:
-    """Log-likelihood contribution (without constants), score ``d ell / d eta`` and Fisher information of each row.
+    """Log-likelihood contribution (without constants), score ``d ell / d eta`` and information of each row (Fisher, or observed when ``prob.observed``).
 
     Rows whose mean leaves the parameter space get ``NaN`` for the log-likelihood.
 
@@ -150,7 +163,10 @@ def row_terms(prob: GLMMProblem, eta: FloatArray, y: FloatArray, size: FloatArra
         ell = scipy.special.xlogy(y, mu_safe) + scipy.special.xlogy(size - y, 1.0 - mu_safe)
         slope = mu_safe if link == 'log' else numpy.ones_like(mu_safe)
         score = (y - size * mu_safe) / (mu_safe * (1.0 - mu_safe)) * slope
-        info = size * slope**2 / (mu_safe * (1.0 - mu_safe))
+        if prob.observed:
+            info = (size - y) * mu_safe / (1.0 - mu_safe) ** 2 if link == 'log' else y / mu_safe**2 + (size - y) / (1.0 - mu_safe) ** 2
+        else:
+            info = size * slope**2 / (mu_safe * (1.0 - mu_safe))
         return numpy.where(invalid, numpy.nan, ell), score, info
     mu = numpy.exp(eta)
     return y * eta - mu, y - mu, mu
@@ -236,11 +252,20 @@ def quadrature_rule(nagq: int) -> tuple[FloatArray, FloatArray]:
     return nodes, numpy.log(weights / math.sqrt(2 * math.pi))
 
 
+def tensor_rule(nagq: int, dim: int) -> tuple[FloatArray, FloatArray]:
+    """Nodes (one row each) and log-weights of the ``nagq ** dim`` point product rule for ``dim`` standard-normal variables."""
+    nodes, logw = quadrature_rule(nagq)
+    mesh = numpy.meshgrid(*([nodes] * dim), indexing='ij')
+    wmesh = numpy.meshgrid(*([logw] * dim), indexing='ij')
+    return numpy.column_stack([m.ravel() for m in mesh]), numpy.sum([w.ravel() for w in wmesh], axis=0)
+
+
 def evaluate(prob: GLMMProblem, beta: FloatArray, theta: FloatArray, nagq: int) -> tuple[float, Modes, FloatArray]:
     """Log marginal likelihood, the conditional modes and the matrix ``A = Z Lambda`` at the given parameters.
 
-    Raises:
-        metafopy.errors.InputError: ``nagq > 1`` with more than one random effect per cluster.
+    With ``nagq > 1`` the integral over the spherical random effects of each cluster is evaluated with a
+    product Gauss-Hermite rule centred at the conditional mode and scaled by the Cholesky factor of the
+    information there.
     """
     lam = lambda_matrix(theta, prob.structure)
     A = prob.Z @ lam
@@ -251,16 +276,14 @@ def evaluate(prob: GLMMProblem, beta: FloatArray, theta: FloatArray, nagq: int) 
     if nagq == 1:
         per_cluster = numpy.bincount(prob.cluster, weights=modes.ell, minlength=K) - 0.5 * numpy.sum(modes.u**2, axis=1) - 0.5 * logdet
         return float(per_cluster.sum()), modes, A
-    if prob.Z.shape[1] != 1:
-        raise metafopy.errors.InputError('nAGQ > 1 is only possible with a single random effect per cluster')
-    nodes, logw = quadrature_rule(nagq)
-    sd = 1.0 / numpy.sqrt(modes.H[:, 0, 0])
-    terms = numpy.empty((K, nodes.shape[0]))
-    for g, (z, lw) in enumerate(zip(nodes, logw, strict=True)):
-        ug = modes.u[:, 0] + z * sd
-        eta = f + A[:, 0] * ug[prob.cluster]
+    grid, logw = tensor_rule(nagq, A.shape[1])
+    scale = numpy.linalg.inv(numpy.transpose(numpy.linalg.cholesky(modes.H), (0, 2, 1)))
+    terms = numpy.empty((K, grid.shape[0]))
+    for g, (z, lw) in enumerate(zip(grid, logw, strict=True)):
+        ug = modes.u + scale @ z
+        eta = f + numpy.sum(A * ug[prob.cluster], axis=1)
         ell, _, _ = row_terms(prob, eta, prob.y, prob.size)
-        terms[:, g] = lw + numpy.bincount(prob.cluster, weights=ell, minlength=K) - 0.5 * ug**2 + 0.5 * z**2
+        terms[:, g] = lw + numpy.bincount(prob.cluster, weights=ell, minlength=K) - 0.5 * numpy.sum(ug**2, axis=1) + 0.5 * float(z @ z)
     per_cluster = scipy.special.logsumexp(terms, axis=1) - 0.5 * logdet
     return float(per_cluster.sum()), modes, A
 
@@ -279,8 +302,8 @@ def beta_covariance(prob: GLMMProblem, modes: Modes, A: FloatArray) -> FloatArra
     return numpy.asarray(numpy.linalg.inv(schur), dtype=numpy.float64)
 
 
-def normalise_theta(theta: FloatArray, structure: Structure) -> FloatArray:
-    """Make the diagonal of ``Lambda`` non-negative (the likelihood is invariant to these signs) and snap tiny values to the bound 0."""
+def normalise_theta(theta: FloatArray, structure: Structure, *, snap: bool = True) -> FloatArray:
+    """Make the diagonal of ``Lambda`` non-negative (the likelihood is invariant to these signs) and, with ``snap``, snap tiny values to the bound 0."""
     out = theta.copy()
     if structure == 'correlated':
         if out[0] < 0:
@@ -290,18 +313,25 @@ def normalise_theta(theta: FloatArray, structure: Structure) -> FloatArray:
     else:
         out = numpy.abs(out)
         diag = list(range(out.shape[0]))
-    for pos in diag:
-        if out[pos] < BOUNDARY_TOL:
-            out[pos] = 0.0
+    if snap:
+        for pos in diag:
+            if out[pos] < BOUNDARY_TOL:
+                out[pos] = 0.0
     return out
 
 
-def hessian_covariance(deviance: collections.abc.Callable[[FloatArray], float], beta: FloatArray, theta: FloatArray, structure: Structure) -> FloatArray | None:
-    """Covariance of ``beta`` as ``vcov.merMod`` derives it from the Hessian of the deviance, ``None`` if that is unusable."""
+def hessian_covariance(
+    deviance: collections.abc.Callable[[FloatArray], float], beta: FloatArray, theta: FloatArray, structure: Structure, *, bounded: bool = True
+) -> FloatArray | None:
+    """Covariance of ``beta`` as ``vcov.merMod`` derives it from the Hessian of the deviance, ``None`` if that is unusable.
+
+    ``bounded`` keeps the diagonal of ``Lambda`` non-negative in the finite differences, as lme4 does.
+    """
     q = beta.shape[0]
     x = numpy.concatenate([beta, theta])
     lower = numpy.full(x.shape[0], numpy.nan)
-    lower[q + numpy.array({'scalar': [0], 'independent': [0, 1], 'correlated': [0, 2]}[structure])] = 0.0
+    if bounded:
+        lower[q + numpy.array({'scalar': [0], 'independent': [0, 1], 'correlated': [0, 2]}[structure])] = 0.0
     H = metafopy.core.numderiv.deriv12(deviance, x, lower=lower)
     if not numpy.all(numpy.isfinite(H)):
         return None
@@ -429,6 +459,7 @@ def fit_glmm(
     theta0: FloatArray | None = None,
     gtol: float = 1e-7,
     maxiter: int = 500,
+    lme4_conventions: bool = True,
 ) -> GLMMFit:
     """Maximise the log marginal likelihood over the fixed effects and the random-effects parameters.
 
@@ -444,8 +475,12 @@ def fit_glmm(
     undefined (``-inf``) log-likelihood and the covariance from the penalised
     least squares decomposition, as metafor ends up with.
 
+    ``lme4_conventions=False`` gives the results as ``GLMMadaptive`` and ``glmmTMB`` report them (see the
+    module docstring): none of lme4's two stages, boundary snapping or covariance fallback.
+
     Raises:
-        metafopy.errors.EstimationError: the optimiser fails to produce a finite optimum.
+        metafopy.errors.EstimationError: the optimiser fails to produce a finite optimum, or without lme4's
+            conventions the Hessian cannot be inverted.
     """
     q = prob.X.shape[1]
     if beta0 is None:
@@ -464,7 +499,7 @@ def fit_glmm(
             return 1e300
         return -2.0 * value if math.isfinite(value) else 1e300
 
-    staged = nagq > 1 and two_stage(prob)
+    staged = lme4_conventions and nagq > 1 and two_stage(prob)
     x0 = numpy.concatenate([beta0, th0])
     if staged:
         beta1, theta1, modes1, A1 = stage_one(prob, beta0)
@@ -480,16 +515,18 @@ def fit_glmm(
             return stage_one_result(prob, beta1, theta1, modes1, A1, count)
         raise metafopy.errors.EstimationError('the GLMM likelihood could not be maximised')
     beta = res.x[:q]
-    theta = normalise_theta(res.x[q:], prob.structure)
+    theta = normalise_theta(res.x[q:], prob.structure, snap=lme4_conventions)
     with numpy.errstate(all='ignore'):
         loglik, modes, A = evaluate(prob, beta, theta, nagq)
         # lme4 reports the true log-likelihood for the Laplace fit but -deviance/2 for adaptive quadrature
-        if nagq == 1:
+        if nagq == 1 or not lme4_conventions:
             loglik += metafopy.core.glm.family_constant(prob.family, prob.y, prob.size)
         else:
             loglik -= metafopy.core.glm.saturated_loglik(prob.family, prob.y, prob.size)
-        cov = hessian_covariance(deviance, beta, theta, prob.structure)
+        cov = hessian_covariance(deviance, beta, theta, prob.structure, bounded=lme4_conventions)
         if cov is None:
+            if not lme4_conventions:
+                raise metafopy.errors.EstimationError('the variance-covariance matrix of the fixed effects cannot be computed')
             warnings.warn(HESSIAN_WARNING, stacklevel=3)
             cov = beta_covariance(prob, modes, A)
     return GLMMFit(

@@ -6,7 +6,9 @@ and Viechtbauer's documentation at https://wviechtb.github.io/metafor/reference/
 models with fixed or random study effects, ``CM.AL`` and ``CM.EL`` condition on
 the table margins and use the approximate (binomial) or the exact
 (non-central hypergeometric) likelihood. ``PLO`` (log odds) and ``IRLN`` (log
-rates) are one-group logistic and Poisson mixed models. The experimental
+rates) are one-group logistic and Poisson mixed models. ``metafor`` fits the mixed models with
+``lme4`` (the default), ``GLMMadaptive`` or ``glmmTMB`` (``control=list(package=...)``); here
+:func:`fit_mixed` maximises the same likelihood and reports it as the chosen package does. The experimental
 measures use binomial models with a log link (``RR``, ``PLN``) or an identity
 link (``RD``, ``PR``); ``RR`` and ``RD`` are unconditional two-group models,
 ``PR`` and ``PLN`` one-group models. This module mirrors
@@ -28,6 +30,7 @@ import scipy.stats
 
 import metafopy.core.glm
 import metafopy.core.glmm
+import metafopy.core.glmmadaptive
 import metafopy.core.nchg
 import metafopy.core.numderiv
 import metafopy.errors
@@ -38,6 +41,10 @@ type FloatArray = numpy.typing.NDArray[numpy.float64]
 type IntArray = numpy.typing.NDArray[numpy.intp]
 
 NAN = math.nan
+# auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
+PACKAGES = ('lme4', 'GLMMadaptive', 'glmmTMB')
+GLMMADAPTIVE_MAX_COEF = 12.0
+GLMMADAPTIVE_MAX_COEF_SATURATED = 50.0
 SATURATED_WARNING = "Cannot fit saturated model (set 'verbose=TRUE' to obtain further details)."
 
 
@@ -47,8 +54,10 @@ class GLMMControl:
 
     ``int_rel_tol`` and ``int_subdivisions`` are the ``rel.tol`` and ``subdivisions`` of the ``intCtrl``
     list used for the integral in the exact conditional model; ``hessian_r`` is numDeriv's ``r``.
+    ``package`` is the package that fits the mixed models: ``'lme4'``, ``'GLMMadaptive'`` or ``'glmmTMB'``.
     """
 
+    package: str = 'lme4'
     scale_x: bool = True
     evtol: float = 1e-7
     tau2tol: float = 1e-4
@@ -112,6 +121,48 @@ def study_dummies(k: int) -> FloatArray:
 
 def empty_vcov() -> FloatArray:
     return numpy.zeros((0, 0))
+
+
+def fit_mixed(
+    spec: FitSpec,
+    problem: metafopy.core.glmm.GLMMProblem,
+    *,
+    nagq: int | None = None,
+    theta0: FloatArray | None = None,
+    d0: FloatArray | None = None,
+    max_coef: float = GLMMADAPTIVE_MAX_COEF,
+) -> metafopy.core.glmm.GLMMFit:
+    """Fit a mixed model as the package chosen with ``control$package`` does.
+
+    ``lme4`` follows ``glmer()`` (start value ``theta0``), ``glmmTMB`` maximises the Laplace approximation
+    (``nAGQ`` is ignored) and ``GLMMadaptive`` repeats ``mixed_model()``'s iterations (start value ``d0`` for the
+    covariance matrix of the random effects) with adaptive quadrature in every dimension; it stops with an error
+    when a coefficient other than the first exceeds ``max_coef`` in absolute value, which metafor turns into a failed fit.
+
+    Raises:
+        metafopy.errors.EstimationError: the model cannot be fitted.
+    """
+    points = spec.nagq if nagq is None else nagq
+    package = spec.control.package
+    if package == 'lme4':
+        return metafopy.core.glmm.fit_glmm(problem, nagq=points, theta0=theta0, gtol=spec.control.gtol)
+    if package == 'GLMMadaptive':
+        control = metafopy.core.glmmadaptive.AdaptiveControl(max_coef_value=max_coef)
+        return metafopy.core.glmmadaptive.fit_adaptive(problem, nagq=points, d0=d0, control=control)
+    observed = dataclasses.replace(problem, observed=True)
+    return metafopy.core.glmm.fit_glmm(observed, nagq=1, theta0=theta0, gtol=spec.control.gtol, lme4_conventions=False)
+
+
+def ml_loglik(spec: FitSpec, ml: metafopy.core.glmm.GLMMFit, ll_qe: float, *, nan_falls_back: bool) -> float:
+    """Log-likelihood of the mixed model.
+
+    ``lme4``: the saturated model's minus half the conditional deviance, which makes it equal to the fixed-effects
+    model's for ``tau2 = 0`` and is missing when the saturated model is (``logLik()`` instead with ``nan_falls_back``).
+    ``GLMMadaptive`` and ``glmmTMB``: always ``logLik()``.
+    """
+    if spec.control.package != 'lme4' or (nan_falls_back and math.isnan(ll_qe)):
+        return ml.loglik
+    return ll_qe - 0.5 * ml.cond_deviance
 
 
 # auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
@@ -258,8 +309,8 @@ def unconditional_fixed_study(
     if spec.method != 'ML':
         return fixed_effects_result(fe, p, p + k, p + k, 2 * k, NAN, (ll_qe, b2, vb2, qe_ok))
     problem = metafopy.core.glmm.GLMMProblem(numpy.column_stack([X_fit, dummies]), y, size, offset, study, group[:, None], family, 'scalar', link)
-    ml = metafopy.core.glmm.fit_glmm(problem, nagq=spec.nagq, gtol=spec.control.gtol)
-    ll_ml = ml.loglik if math.isnan(ll_qe) else ll_qe - 0.5 * ml.cond_deviance
+    ml = fit_mixed(spec, problem)
+    ll_ml = ml_loglik(spec, ml, ll_qe, nan_falls_back=True)
     return ModelFit(
         beta=ml.beta[:p],
         vb=ml.vcov[:p, :p],
@@ -296,11 +347,11 @@ def unconditional_random_study(
     const: FloatArray,
 ) -> ModelFit:
     k, p = spec.X.shape
-    nagq = 1 if spec.method == 'ML' else spec.nagq
+    nagq = 1 if spec.method == 'ML' and spec.control.package == 'lme4' else spec.nagq
     ones = const
     link = glm_link(spec.measure)
     fe_problem = metafopy.core.glmm.GLMMProblem(numpy.column_stack([X_fit, const]), y, size, offset, study, ones, family, 'scalar', link)
-    fe = metafopy.core.glmm.fit_glmm(fe_problem, nagq=nagq, gtol=spec.control.gtol)
+    fe = fit_mixed(spec, fe_problem, nagq=nagq)
     ll_qe, b2, vb2, qe_ok = fe.loglik, numpy.zeros(0), empty_vcov(), True
     if k > 1:
         interaction = study_dummies(k) * group1[:, None]
@@ -309,7 +360,8 @@ def unconditional_random_study(
         X_qe = X_qe[:, ~probe.aliased]
         qe_problem = metafopy.core.glmm.GLMMProblem(X_qe, y, size, offset, study, ones, family, 'scalar', link)
         try:
-            qe = metafopy.core.glmm.fit_glmm(qe_problem, nagq=nagq, theta0=fe.theta, gtol=spec.control.gtol)
+            d0 = fe.covariance() if family == 'binomial' else None
+            qe = fit_mixed(spec, qe_problem, nagq=nagq, theta0=fe.theta, d0=d0, max_coef=GLMMADAPTIVE_MAX_COEF_SATURATED)
             ll_qe, b2, vb2 = qe.loglik, qe.beta[p + 1 :], qe.vcov[p + 1 :, p + 1 :]
         except metafopy.errors.EstimationError:
             warnings.warn(SATURATED_WARNING, stacklevel=3)
@@ -340,7 +392,9 @@ def unconditional_random_study(
     ml_problem = metafopy.core.glmm.GLMMProblem(
         numpy.column_stack([X_fit, const]), y, size, offset, study, Z, family, 'correlated' if spec.cor else 'independent', link
     )
-    ml = metafopy.core.glmm.fit_glmm(ml_problem, nagq=1, gtol=spec.control.gtol)
+    ml = fit_mixed(
+        spec, ml_problem, nagq=1 if spec.control.package == 'lme4' else spec.nagq, max_coef=GLMMADAPTIVE_MAX_COEF_SATURATED if k > 1 else GLMMADAPTIVE_MAX_COEF
+    )
     cov = ml.covariance()
     sigma2, tau2 = float(cov[0, 0]), float(cov[1, 1])
     rho = float(cov[0, 1] / math.sqrt(tau2 * sigma2)) if spec.cor and tau2 * sigma2 > 0 else NAN
@@ -414,10 +468,9 @@ def single_level(spec: FitSpec) -> SingleLevel:
     if spec.method != 'ML':
         return SingleLevel(fixed_effects_result(fe, p, p, p, k, NAN, (ll_qe, b2, vb2, qe_ok)), fe, qe_fit, X_qe, fe.coef[:p], 0.0)
     problem = metafopy.core.glmm.GLMMProblem(X, y, size, offset, numpy.arange(k), numpy.ones((k, 1)), family, 'scalar', link)
-    ml = metafopy.core.glmm.fit_glmm(problem, nagq=spec.nagq, gtol=spec.control.gtol)
+    ml = fit_mixed(spec, problem)
     # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
-    use_qe = spec.measure in ('OR', 'IRR') and math.isnan(ll_qe)
-    ll_ml = ml.loglik if use_qe else ll_qe - 0.5 * ml.cond_deviance
+    ll_ml = ml_loglik(spec, ml, ll_qe, nan_falls_back=spec.measure in ('OR', 'IRR'))
     tau2 = float(ml.theta[0] ** 2)
     fit = ModelFit(
         beta=ml.beta[:p],

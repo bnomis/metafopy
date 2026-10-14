@@ -116,6 +116,10 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 Mixed-model fits can differ slightly from R, because lme4 stops at a looser optimiser tolerance; see
 [Differences from metafor](../differences.md).
 
+As in metafor, `control={'package': 'GLMMadaptive'}` fits the mixed models with adaptive Gauss-Hermite quadrature
+([Pinheiro and Bates, 1995](https://doi.org/10.1007/BF00140873); [GLMMadaptive](https://drizopoulos.github.io/GLMMadaptive/)) and
+`control={'package': 'glmmTMB'}` with the Laplace approximation ([Brooks et al., 2017](https://doi.org/10.32614/RJ-2017-066)); `nAGQ` is ignored by glmmTMB.
+
 ## Rates
 
 For incidence rates, pass the event counts `x1i`, `x2i` and the person-time `t1i`, `t2i`, with `measure='IRR'`:

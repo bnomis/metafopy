@@ -23,7 +23,8 @@ and `PLO`/`IRLN` for proportions and rates) are available. `rma_mh` and
 `lme4::glmer` stops at a loose optimiser tolerance; metafopy fits to the same or a
 slightly better optimum). The experimental measures `PR`, `RR`, `RD` and `PLN` are
 ported too (lme4's loose convergence means mixed fits agree with R only to 2e-3 to 1e-1);
-`predict` works for `rma_glmm` fits.
+`predict` works for `rma_glmm` fits. `control={'package': 'GLMMadaptive'}` and `'glmmTMB'` select
+R's other back-ends (adaptive quadrature and Laplace approximation).
 
 `rma_mv` fits multivariate and multilevel models (all variance-covariance structures
 of metafor, known correlation matrices via `R=`, `sparse=True`, `dfs='contain'`) and

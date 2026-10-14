@@ -6,7 +6,8 @@ ported rather than replaced by SciPy's BFGS. Sources (R 4.3.3, GPL-2 | GPL-3):
 
 - ``src/appl/optim.c``: ``vmmin``, after Nash (1990), *Compact Numerical Methods for Computers*, 2nd ed.,
   Algorithm 21 (Fletcher's variable-metric method).
-- ``src/library/stats/src/optim.c``: ``fmingr`` (central differences with step ``ndeps``).
+- ``src/library/stats/src/optim.c``: ``fmingr`` (central differences with step ``ndeps``, or the analytic
+  gradient ``gr``, and the ``parscale`` scaling of the parameters).
 """
 
 import collections.abc
@@ -43,38 +44,51 @@ def optim_bfgs(
     fn: collections.abc.Callable[[FloatArray], float],
     par: collections.abc.Sequence[float] | FloatArray,
     *,
+    gr: collections.abc.Callable[[FloatArray], FloatArray] | None = None,
+    parscale: collections.abc.Sequence[float] | FloatArray | None = None,
     ndeps: float = 1e-3,
     maxit: int = 100,
     reltol: float = math.sqrt(sys.float_info.epsilon),
     abstol: float = -math.inf,
 ) -> BFGSResult:
-    """Minimise ``fn`` from ``par`` as ``optim(par, fn, method="BFGS", control=list(ndeps, maxit, reltol, abstol))`` does.
+    """Minimise ``fn`` from ``par`` as ``optim(par, fn, gr, method="BFGS", control=list(parscale, ndeps, maxit, reltol, abstol))`` does.
+
+    Without ``gr`` the gradient is the central difference with step ``ndeps`` (in the scaled parameters). ``parscale``
+    divides the parameters before the iterations, as ``optim()`` does.
 
     Raises:
         metafopy.errors.EstimationError: the initial value or a finite-difference gradient is not finite.
     """
+    scale = None if parscale is None else numpy.array(parscale, dtype=numpy.float64)
     b = numpy.array(par, dtype=numpy.float64)
+    if scale is not None:
+        b = b / scale
     n = b.shape[0]
 
     def fminfn(x: FloatArray) -> float:
-        return float(fn(x.copy()))
+        return float(fn(x.copy() if scale is None else x * scale))
 
     def fmingr(x: FloatArray) -> FloatArray:
+        if gr is not None:
+            return numpy.asarray(gr(x.copy() if scale is None else x * scale), dtype=numpy.float64) * (1.0 if scale is None else scale)
         df = numpy.zeros(n)
         work = x.copy()
         for i in range(n):
             work[i] = x[i] + ndeps
-            val1 = float(fn(work.copy()))
+            val1 = fminfn(work)
             work[i] = x[i] - ndeps
-            val2 = float(fn(work.copy()))
+            val2 = fminfn(work)
             df[i] = (val1 - val2) / (2 * ndeps)
             if not math.isfinite(df[i]):
                 raise metafopy.errors.EstimationError(f'non-finite value in the numerical gradient [{i + 1}]')
             work[i] = x[i]
         return df
 
+    def unscaled(x: FloatArray) -> FloatArray:
+        return x.copy() if scale is None else x * scale
+
     if maxit <= 0:
-        return BFGSResult(b, fminfn(b), 0, 0, 0)
+        return BFGSResult(unscaled(b), fminfn(b), 0, 0, 0)
 
     g = numpy.zeros(n)
     t = numpy.zeros(n)
@@ -173,4 +187,4 @@ def optim_bfgs(
         if not (count != n or ilast != gradcount):
             break
 
-    return BFGSResult(b, fmin, funcount, gradcount, 0 if it < maxit else 1)
+    return BFGSResult(unscaled(b), fmin, funcount, gradcount, 0 if it < maxit else 1)

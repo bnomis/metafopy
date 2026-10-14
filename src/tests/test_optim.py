@@ -4,6 +4,7 @@ import math
 
 import numpy
 
+import metafopy.core.bfgs
 import metafopy.core.bvn
 import metafopy.core.optim
 
@@ -41,3 +42,14 @@ def test_bvn_matches_mvtnorm() -> None:
 def test_bvn_degenerate_limits() -> None:
     assert metafopy.core.bvn.bvn_rect((-INF, -INF), (INF, INF), 0.3) == 1.0
     assert math.isclose(metafopy.core.bvn.bvn_rect((-INF, -1.0), (INF, 1.0), 0.3), 0.6826894921370859, rel_tol=1e-14)
+
+
+def test_bfgs_analytic_gradient_and_parscale() -> None:
+    """An analytic gradient and a parameter scale reach the minimum of a badly scaled quadratic."""
+    res = metafopy.core.bfgs.optim_bfgs(
+        lambda x: float((x[0] - 3) ** 2 + 1e4 * (x[1] - 0.01) ** 2),
+        numpy.array([0.0, 0.0]),
+        gr=lambda x: numpy.array([2 * (x[0] - 3), 2e4 * (x[1] - 0.01)]),
+        parscale=[1.0, 0.01],
+    )
+    assert numpy.allclose(res.par, [3.0, 0.01], atol=1e-5)
