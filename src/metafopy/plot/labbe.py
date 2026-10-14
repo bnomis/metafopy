@@ -21,7 +21,10 @@ import pandas
 import metafopy.effects
 import metafopy.errors
 import metafopy.methods.common
+import metafopy.methods.fitview
 import metafopy.methods.predict
+import metafopy.models.binary
+import metafopy.models.glmm_result
 import metafopy.models.rma_uni
 import metafopy.plot
 import metafopy.plot.draw
@@ -65,14 +68,45 @@ class LabbeResult:
         )
 
 
-def column(x: metafopy.models.rma_uni.RMAResult, name: str, value: numpy.typing.ArrayLike | str | None) -> FloatArray:
-    """The counts ``name`` for the ``k`` studies of the model (a column of the model's data, or an array).
+@dataclasses.dataclass(frozen=True, slots=True)
+class Rows:
+    """The studies a L'Abbe plot draws: ``k`` of the ``k_all`` supplied rows (``keep``), with their 1-based ``ids`` and labels.
+
+    ``counts`` holds the arm-level counts kept by an ``rma_mh``, ``rma_peto`` or ``rma_glmm`` fit (``None`` for an
+    ``rma_uni`` fit, whose counts come from its data); ``frame`` is the data the model was fitted to.
+    """
+
+    k: int
+    k_all: int
+    keep: numpy.typing.NDArray[numpy.bool_]
+    ids: tuple[int, ...]
+    slab: tuple[str, ...]
+    counts: dict[str, FloatArray] | None
+    frame: pandas.DataFrame | None
+
+
+def model_rows(x: typing.Any) -> Rows:
+    if isinstance(x, metafopy.models.rma_uni.RMAResult):
+        keep = x.data.keep
+        return Rows(x.k, x.data.k_all, keep, tuple(int(i) + 1 for i in numpy.flatnonzero(keep)), tuple(x.slab), None, x.data.data)
+    t = x.tables
+    keep = numpy.zeros(t.k_all, dtype=numpy.bool_)
+    keep[t.ids] = True
+    # a double-zero table dropped via drop00 has no contrast-based estimate, so its arm-level outcomes are not drawn either
+    counts = {n: numpy.where(numpy.isnan(t.yi_f), numpy.nan, v) for n, v in t.cells_f.items()}
+    return Rows(t.k_f, t.k_all, keep, tuple(int(i) + 1 for i in t.ids), tuple(t.slab), counts, x.data)
+
+
+def column(rows: Rows, name: str, value: numpy.typing.ArrayLike | str | None) -> FloatArray:
+    """The counts ``name`` for the studies of the model (stored in the model, a column of the model's data, or an array).
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
-    k, k_all = x.k, x.data.k_all
-    frame = x.data.data
+    k, k_all = rows.k, rows.k_all
+    frame = rows.frame
+    if rows.counts is not None and value is None:
+        return rows.counts[name]
     if value is None:
         if frame is None or name not in frame.columns:
             raise metafopy.errors.InputError(f"Information needed to construct the plot is not available in the model object (pass '{name}').")
@@ -84,27 +118,27 @@ def column(x: metafopy.models.rma_uni.RMAResult, name: str, value: numpy.typing.
     else:
         arr = numpy.atleast_1d(numpy.asarray(value, dtype=float))
     if arr.shape[0] == k_all and k_all != k:
-        arr = arr[x.data.keep]
+        arr = arr[rows.keep]
     if arr.shape[0] != k:
         raise metafopy.errors.InputError(f"Length of '{name}' ({arr.shape[0]}) does not correspond to the number of studies.")
     return numpy.asarray(arr, dtype=numpy.float64)
 
 
-def per_study(v: typing.Any, x: metafopy.models.rma_uni.RMAResult, name: str) -> list[typing.Any]:
+def per_study(v: typing.Any, rows: Rows, name: str) -> list[typing.Any]:
     if isinstance(v, str) or numpy.ndim(v) == 0:
-        return [v] * x.k
+        return [v] * rows.k
     out = list(v)
-    if len(out) == x.data.k_all and x.data.k_all != x.k:
-        out = [o for o, kp in zip(out, x.data.keep, strict=True) if kp]
-    if len(out) != x.k:
+    if len(out) == rows.k_all and rows.k_all != rows.k:
+        out = [o for o, kp in zip(out, rows.keep, strict=True) if kp]
+    if len(out) != rows.k:
         raise metafopy.errors.InputError(
-            f"Length of the '{name}' argument ({len(out)}) does not correspond to the size of the original dataset ({x.data.k_all})."
+            f"Length of the '{name}' argument ({len(out)}) does not correspond to the size of the original dataset ({rows.k_all})."
         )
     return out
 
 
 def labbe(
-    x: metafopy.models.rma_uni.RMAResult,
+    x: metafopy.models.rma_uni.RMAResult | metafopy.models.binary.FixedBinaryResult | metafopy.models.glmm_result.GLMMResult,
     xlim: collections.abc.Sequence[float] | None = None,
     ylim: collections.abc.Sequence[float] | None = None,
     lim: collections.abc.Sequence[float] | None = None,
@@ -116,7 +150,7 @@ def labbe(
     grid: bool | str = False,
     legend: bool | str | dict[str, typing.Any] = False,
     add: float | None = None,
-    to: str = 'only0',
+    to: str | None = None,
     transf: collections.abc.Callable[..., typing.Any] | None = None,
     targs: typing.Any = None,
     pch: int | collections.abc.Sequence[int] = 21,
@@ -141,6 +175,9 @@ def labbe(
 ) -> LabbeResult:
     """L'Abbe plot of a model without moderators fitted to 2x2 table data or incidence rates (``labbe.rma``).
 
+    ``x`` is an ``rma_uni``, ``rma_mh`` or ``rma_glmm`` fit (``rma_peto`` fits have ``measure='PETO'``, which has no
+    arm-level outcomes). ``rma_mh`` and ``rma_glmm`` fits keep the counts, and ``add``/``to`` default to the model's.
+
     The model's ``measure`` must be ``'RR'``, ``'OR'``, ``'RD'``, ``'AS'``, ``'IRR'``, ``'IRD'`` or ``'IRSD'``.
     A fitted :class:`~metafopy.RMAResult` does not keep the raw counts, so they are taken from the columns
     ``ai``, ``bi``, ``ci``, ``di`` (``x1i``, ``t1i``, ``x2i``, ``t2i`` for the rate measures) of the data the model
@@ -156,10 +193,21 @@ def labbe(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
+    metafopy.methods.fitview.check_class(x, notav=('rma.mv', 'rma.ls', 'rma.gen', 'rma.uni.selmodel'))
     if not x.int_only:
         raise metafopy.errors.InputError("L'Abbe plots can only be drawn for models without moderators.")
     if x.measure not in ARM_MEASURE:
         raise metafopy.errors.InputError("Argument 'measure' must have been set to one of the following: 'RR','OR','RD','AS','IRR','IRD','IRSD'.")
+    rows = model_rows(x)
+    if rows.counts is not None:
+        # the model's own add and to (the first values for rma_mh, which apply to the individual outcomes)
+        if isinstance(x, metafopy.models.binary.FixedBinaryResult):
+            add = float(x.add[0]) if add is None else add
+            to = str(x.to[0]) if to is None else to
+        elif isinstance(x, metafopy.models.glmm_result.GLMMResult):
+            add = float(x.add) if add is None else add
+            to = str(x.to) if to is None else to
+    to = 'only0' if to is None else to
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if to not in ('all', 'only0', 'if0all', 'none'):
         raise metafopy.errors.InputError("Unknown 'to' argument specified.")
@@ -171,20 +219,19 @@ def labbe(
     grid_col = grid if isinstance(grid, str) else metafopy.plot.rutils.coladj(-0.2)
     show_ci, show_pi, show_grid = bool(ci), bool(pi), bool(grid)
 
-    k = x.k
-    pch_v = per_study(pch, x, 'pch')
-    col_v = per_study(metafopy.plot.draw.FG if col is None else col, x, 'col')
-    bg_v = per_study(metafopy.plot.rutils.coladj(-0.35) if bg is None else bg, x, 'bg')
-    psize_v = None if psize is None else numpy.asarray(per_study(psize, x, 'psize'), dtype=float)
+    pch_v = per_study(pch, rows, 'pch')
+    col_v = per_study(metafopy.plot.draw.FG if col is None else col, rows, 'col')
+    bg_v = per_study(metafopy.plot.rutils.coladj(-0.35) if bg is None else bg, rows, 'bg')
+    psize_v = None if psize is None else numpy.asarray(per_study(psize, rows, 'psize'), dtype=float)
 
     measure = ARM_MEASURE[x.measure]
     if x.measure in ('RR', 'OR', 'RD', 'AS'):
-        a, b, c, dd = (column(x, n, v) for n, v in (('ai', ai), ('bi', bi), ('ci', ci_counts), ('di', di)))
+        a, b, c, dd = (column(rows, n, v) for n, v in (('ai', ai), ('bi', bi), ('ci', ci_counts), ('di', di)))
         first, second = ((a, b), (c, dd)) if flip else ((c, dd), (a, b))
         kw_x: dict[str, typing.Any] = {'xi': first[0], 'mi': first[1]}
         kw_y: dict[str, typing.Any] = {'xi': second[0], 'mi': second[1]}
     else:
-        a1, tt1, a2, tt2 = (column(x, n, v) for n, v in (('x1i', x1i), ('t1i', t1i), ('x2i', x2i), ('t2i', t2i)))
+        a1, tt1, a2, tt2 = (column(rows, n, v) for n, v in (('x1i', x1i), ('t1i', t1i), ('x2i', x2i), ('t2i', t2i)))
         first, second = ((a1, tt1), (a2, tt2)) if flip else ((a2, tt2), (a1, tt1))
         kw_x = {'xi': first[0], 'ti': first[1]}
         kw_y = {'xi': second[0], 'ti': second[1]}
@@ -195,8 +242,8 @@ def labbe(
     yy, vy = dat_y['yi'].to_numpy(dtype=float), dat_y['vi'].to_numpy(dtype=float)
     has_na = numpy.isnan(yx) | numpy.isnan(vx) | numpy.isnan(yy) | numpy.isnan(vy)
     not_na = ~has_na
-    ids = tuple(int(i) + 1 for i in numpy.flatnonzero(x.data.keep)[not_na])
-    slab = tuple(numpy.asarray(x.slab, dtype=object)[not_na].tolist())
+    ids = tuple(i for i, ok in zip(rows.ids, not_na, strict=True) if ok)
+    slab = tuple(s for s, ok in zip(rows.slab, not_na, strict=True) if ok)
     pch_v = [p for p, ok in zip(pch_v, not_na, strict=True) if ok]
     col_v = [p for p, ok in zip(col_v, not_na, strict=True) if ok]
     bg_v = [p for p, ok in zip(bg_v, not_na, strict=True) if ok]

@@ -203,7 +203,7 @@ def refit_ml(base: metafopy.models.rma_uni.RMAResult) -> metafopy.models.rma_uni
     try:
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
-            return metafopy.models.rma_uni.fit_rma_uni(
+            refit = metafopy.models.rma_uni.fit_rma_uni(
                 md,
                 method='ML',
                 weighted=base.weighted,
@@ -213,6 +213,7 @@ def refit_ml(base: metafopy.models.rma_uni.RMAResult) -> metafopy.models.rma_uni
                 control=base.control,
                 skip_r2=True,
             )
+            return dataclasses.replace(refit, measure=base.measure)
     except metafopy.errors.MetaforError as exc:
         raise metafopy.errors.InputError("Could not refit input model using method='ML'.") from exc
 
