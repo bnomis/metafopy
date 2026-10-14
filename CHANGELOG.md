@@ -2,6 +2,8 @@
 
 ## Unreleased (1.0 candidate)
 
+- `vif(sim=)` of `rma_uni` models shuffles like metafor with R's generator (`seed + l` in iteration `l`, or the stream of `set_seed` without `seed`), shuffling the variables of the data for a model given as a formula (`sim_type='data'`), so `set_seed(s)` gives the simulated VIFs of R's `set.seed(s)`. The gallery figure uses `sim=1000`, the 1000 iterations R's `sim=TRUE` runs.
+- `plot_permutest(legend=...)` draws the legend in the first panel only, as metafor does. The gallery figure of the permutation distributions is seeded with `set_seed(1234)` like the R script, so its axes and histograms now match R's.
 - Add the metafor plots that were missing: `regplot` (meta-analytic scatterplot), `forest()` of a `cumul` result (`forest_cumul`), `plot_cumul` (plot of cumulative results), `llplot`, `plot_permutest` and `plot_vif`. Each is checked against the geometry R records. `cumul` results carry `measure`, `level` and `slab_null`. The gallery shows the six next to metafor's figures.
 - Add the BMJ, RevMan and superscript forest plot styles to the gallery, drawn from `forest()` with extra annotations as on the metafor pages. `forest()` of a fitted model takes `na_action='pass'` (metafor's `options(na.action='na.pass')`) to keep the studies with missing values as rows of the plot, which the RevMan style needs; `fail` raises an error if there are any.
 - Add a plot gallery to the user manual (`docs/guide/gallery.md`) with the plots of the metafor gallery drawn by metafopy next to the R figures (`bin/gallery.py`, `src/tests/r/gallery.R`), and the datasets `dat.damico2009` and `dat.pignon2000`.

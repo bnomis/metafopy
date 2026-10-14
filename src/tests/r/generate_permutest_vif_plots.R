@@ -71,7 +71,7 @@ out$p_coef <- run(pplot, pt, beta = 2, stat = "coef", lwd = c(2, 1, 1, 0))
 out$p_freq <- run(pplot, pt, beta = 2, freq = TRUE)
 
 set.seed(4321)
-v <- vif(res, btt = 2, sim = TRUE, reps = 300, progbar = FALSE)
+v <- vif(res, btt = 2, sim = TRUE, progbar = FALSE)
 out$vif <- list(sim = lapply(seq_len(ncol(v$sim)), function(j) num(v$sim[, j])), vifs = num(v$vifs), names = names(v$vifs), m = v$vif[[1]]$m)
 vplot <- instrument(metafor:::plot.vif.rma)
 out$v_default <- run(vplot, v)

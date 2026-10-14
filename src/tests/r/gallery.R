@@ -343,7 +343,7 @@ dev.off()
 
 device("vif", 7, 7)
 set.seed(1234)
-plot(vif(res.p, btt=2, sim=TRUE, reps=500, progbar=FALSE))
+plot(vif(res.p, btt=2, sim=TRUE, progbar=FALSE))
 dev.off()
 
 ### forest_superscripts
