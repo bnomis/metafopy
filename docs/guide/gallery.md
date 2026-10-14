@@ -403,6 +403,7 @@ Source: <https://www.metafor-project.org/doku.php/plots:plot_of_influence_diagno
 ```python
 res_i = rma(ri='ri', ni='ni', measure='ZCOR', data=datasets.load('dat.mcdaniel1994'))
 fig, ax = matplotlib.pyplot.subplots(figsize=(7, 11))
+ax.set_position((0.08, 0.04, 0.9, 0.92))  # the area the panels fill
 plot_infl(influence(res_i), ax=ax, mfrow=(8, 1))
 fig.savefig('influence.png', dpi=DPI)
 ```
