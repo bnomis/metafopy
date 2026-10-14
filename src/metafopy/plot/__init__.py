@@ -8,11 +8,13 @@ from metafopy.plot.gosh import PlotGoshResult, plot_gosh
 from metafopy.plot.infl import PlotInflResult, plot_infl
 from metafopy.plot.labbe import LabbeResult, labbe
 from metafopy.plot.llplot import LlplotResult, llplot
+from metafopy.plot.permutest import PlotPermutestResult, plot_permutest
 from metafopy.plot.profile import plot_profile
 from metafopy.plot.qqnorm import QQNormResult, qqnorm
 from metafopy.plot.radial import RadialResult, galbraith, radial
 from metafopy.plot.regplot import RegplotResult, regplot
 from metafopy.plot.selmodel import SelPlotResult, plot_selmodel
+from metafopy.plot.vifplot import PlotVifResult, plot_vif
 
 __all__ = [
     'BaujatResult',
@@ -23,6 +25,8 @@ __all__ = [
     'PlotCumulResult',
     'PlotGoshResult',
     'PlotInflResult',
+    'PlotPermutestResult',
+    'PlotVifResult',
     'QQNormResult',
     'RadialResult',
     'RegplotResult',
@@ -38,8 +42,10 @@ __all__ = [
     'plot_cumul',
     'plot_gosh',
     'plot_infl',
+    'plot_permutest',
     'plot_profile',
     'plot_selmodel',
+    'plot_vif',
     'qqnorm',
     'radial',
     'regplot',
