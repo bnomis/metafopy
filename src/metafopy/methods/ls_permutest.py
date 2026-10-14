@@ -233,7 +233,7 @@ def sorted_rows(M: FloatArray) -> tuple[float, numpy.typing.NDArray[numpy.intp],
     return float(count), labels, sorted_M
 
 
-@metafopy.methods.permutest.permutest.register  # type: ignore[arg-type]  # returns a result class of its own
+@metafopy.methods.permutest.permutest.register
 def permutest_rma_ls(
     x: metafopy.models.rma_ls_result.RMALSResult,
     exact: bool | typing.Literal['i'] = False,
