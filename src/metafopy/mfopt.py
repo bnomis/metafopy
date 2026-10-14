@@ -28,10 +28,12 @@ import metafopy.errors
 
 __all__ = ['DIGIT_KEYS', 'OPTIONS', 'getmfopt', 'option_digits', 'option_space', 'setmfopt']
 
+# auditme: accept[non-alphabetical-literal] the order of metafor's digits vector
 DIGIT_KEYS = ('est', 'se', 'test', 'pval', 'ci', 'var', 'sevar', 'fit', 'het')
 
 THEMES = ('auto', 'auto2', 'custom', 'custom2', 'dark', 'dark2', 'default', 'default2', 'light', 'light2')
 
+# auditme: accept[mutable-module-level-exported] metafor's options are one process-wide store, set with setmfopt()
 OPTIONS: dict[str, typing.Any] = {'check': True, 'silent': False, 'space': True, 'theme': 'default'}
 
 
