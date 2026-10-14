@@ -165,6 +165,8 @@ def regplot(
     legend: bool | str | dict[str, typing.Any] = False,
     xvals: numpy.typing.ArrayLike | None = None,
     *,
+    bty: str = 'o',
+    las: int = 0,
     ax: matplotlib.axes.Axes | None = None,
 ) -> RegplotResult:
     """Meta-analytic scatterplot of a meta-regression model (``regplot.rma``).
@@ -179,6 +181,8 @@ def regplot(
     (``True``/``'all'``, ``'ciout'``/``'piout'`` for those outside the bands, a boolean array or 0-based indices), with
     ``offset`` the distance from the point in percent of the vertical range and ``labsize`` the text size. ``legend``
     adds a legend (``True``, a location such as ``'topright'`` or a dict with ``x`` and ``cex``).
+
+    ``bty`` (``'o'`` or ``'l'``) is the box type and ``las`` the orientation of the labels of the vertical axis (0 = parallel to it, 1 = horizontal).
 
     Returns a :class:`RegplotResult` with the plotted coordinates and the axes.
 
@@ -207,7 +211,7 @@ def regplot(
     elif not isinstance(shade, bool):
         shade_c = list(shade) if len(shade) == 2 else [shade[0], shade[0]]
     do_shade = bool(shade)
-    grid_c = metafopy.plot.rutils.coladj(-0.2) if not isinstance(grid, str) else grid
+    grid_c = [grid, grid] if isinstance(grid, str) else [metafopy.plot.rutils.coladj(-0.2), metafopy.plot.rutils.coladj(0.6)]
     do_grid = bool(grid)
     line_cols = [fgc, fgc, fgc, metafopy.plot.rutils.coladj(-0.5)] if lcol is None else list(lcol)
     if len(line_cols) == 1:
@@ -338,8 +342,12 @@ def regplot(
     else:
         yt = at_in[(at_in > uy[0]) & (at_in < uy[1])]
     yvals = metafopy.methods.common.apply_each(yt, atransf, targs) if atransf is not None else yt
-    ylabels = [metafopy.plot.rutils.fmtx1(float(v), dg, True) for v in yvals]
-    metafopy.plot.draw.plain_axes(axx, ux, uy, xt, yt, metafopy.plot.rutils.rformat(xt), ylabels, bty='o', thin_ylabels=True)
+    ylabels = [metafopy.plot.rutils.fmtx1(float(v), dg) for v in yvals]  # R: drop0trailing needs an integer `digits`, not the default double
+    metafopy.plot.draw.plain_axes(axx, ux, uy, xt, yt, metafopy.plot.rutils.rformat(xt), ylabels, bty=bty, thin_ylabels=True)
+    if las == 0:
+        axx.tick_params(axis='y', labelrotation=90)
+        for label_ in axx.get_yticklabels():
+            label_.set_verticalalignment('center')
     axx.set_xlabel(xlab_c, fontsize=metafopy.plot.draw.base_fontsize())
     axx.set_ylabel(ylab_c, fontsize=metafopy.plot.draw.base_fontsize())
 
@@ -356,7 +364,11 @@ def regplot(
         for bound in (pi_lb_t, pi_ub_t):
             metafopy.plot.draw.line(axx, xs, bound, lty=line_types[2], col=line_cols[2], lw=line_widths[2]).set_zorder(1.0)
     if do_grid:
-        metafopy.plot.draw.grid(axx, xt, yt, grid_c)
+        # R recycles the two grid colours over the lines of each axis
+        for j, v in enumerate(xt):
+            metafopy.plot.draw.grid(axx, [float(v)], [], grid_c[j % 2])
+        for j, v in enumerate(yt):
+            metafopy.plot.draw.grid(axx, [], [float(v)], grid_c[j % 2])
     if refline is not None and not math.isnan(refline):
         metafopy.plot.draw.hline(axx, refline, lty=line_types[3], col=line_cols[3], lw=line_widths[3]).set_zorder(1.0)
     if draw_pred:

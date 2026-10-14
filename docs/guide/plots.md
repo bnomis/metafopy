@@ -84,6 +84,11 @@ matplotlib.pyplot.savefig('funnel-contours.png')
 | `plot_infl` | Case deletion diagnostics, see [Diagnostics](diagnostics.md) |
 | `plot_profile` | Profile likelihood of a variance component, from `profile` |
 | `plot_gosh` | GOSH plot |
+| `regplot` | Meta-analytic scatterplot of a model with one moderator, with the regression line, confidence band and sized points |
+| `forest_cumul`, `plot_cumul` | Forest plot and plot of the results of a `cumul` analysis (`forest(cumul(res))` calls the first) |
+| `llplot` | Log-likelihoods of the studies as a function of the effect (OR or generic) |
+| `plot_permutest` | Permutation distributions of a `permutest` result |
+| `plot_vif` | Simulated (G)VIFs of a `vif(sim=True)` result |
 | `plot_selmodel` | Selection function of a `selmodel` fit |
 
 ```python

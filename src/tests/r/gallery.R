@@ -297,3 +297,51 @@ inf <- influence(res.i)
 par(mfrow=c(8,1))
 plot(inf)
 dev.off()
+
+### forest_cumul
+
+dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
+device("forest_cumul", 8, 7)
+res.c <- rma(yi, vi, data=dat, slab=paste(author, year, sep=", "))
+tmp <- cumul(res.c, order=year)
+forest(tmp, xlim=c(-4,2), at=log(c(0.125, 0.25, 0.5, 1, 2)), shade=TRUE, atransf=exp,
+       digits=c(2L,3L), cex=0.85, header="Author(s) and Year")
+dev.off()
+
+### regplot
+
+device("regplot", 7, 7)
+res.m <- rma(yi, vi, mods = ~ ablat, data=dat)
+regplot(res.m, xlim=c(10,60), predlim=c(10,60), xlab="Absolute Latitude", refline=0, atransf=exp,
+        at=log(seq(0.2,1.6,by=0.2)), digits=1, las=1, bty="l", label=c(4,7,12,13), offset=c(1.6,0.8), labsize=0.9)
+dev.off()
+
+### cumul
+
+device("cumul", 7, 7)
+res.cu <- rma(yi, vi, data=dat)
+tmp <- cumul(res.cu, order=year)
+plot(tmp, transf=exp, xlim=c(0.25,0.5), lwd=3, cex=1.3)
+dev.off()
+
+### llplot
+
+device("llplot", 7, 7)
+llplot(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, lwd=1, refline=NA, xlim=c(-4,4))
+dev.off()
+
+### permutest
+
+device("permutest", 7, 7)
+res.p <- rma(yi, vi, mods = ~ ablat + year, data=dat)
+set.seed(1234)
+perm <- permutest(res.p, iter=1000)
+plot(perm, QM=TRUE, lwd=c(2,1,1,0), legend=TRUE)
+dev.off()
+
+### vif
+
+device("vif", 7, 7)
+set.seed(1234)
+plot(vif(res.p, btt=2, sim=TRUE, reps=500, progbar=FALSE))
+dev.off()

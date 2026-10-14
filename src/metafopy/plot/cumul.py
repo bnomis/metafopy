@@ -181,6 +181,7 @@ def plot_cumul(
     cex: float = 1.0,
     lwd: float = 2.0,
     *,
+    las: int = 0,
     ax: matplotlib.axes.Axes | None = None,
 ) -> PlotCumulResult:
     """Plot of the results of a cumulative meta-analysis (``plot.cumul.rma``).
@@ -244,6 +245,10 @@ def plot_cumul(
     xlabels = [metafopy.plot.rutils.fmtx1(float(v), dig[0], True) for v in xvalues]
     ylabels = [metafopy.plot.rutils.fmtx1(float(v), dig[1], True) for v in yt]
     metafopy.plot.draw.plain_axes(axx, ux, uy, xt, yt, xlabels, ylabels, bty='o')
+    if las == 0:
+        axx.tick_params(axis='y', labelrotation=90)
+        for label_ in axx.get_yticklabels():
+            label_.set_verticalalignment('center')
     axx.set_xlabel(metafopy.plot.rutils.setlab(x.measure, transf, atransf, 2) if xlab is None else xlab, fontsize=metafopy.plot.draw.base_fontsize())
     axx.set_ylabel(YLABELS[yaxis] if ylab is None else ylab, fontsize=metafopy.plot.draw.base_fontsize())
     if grid:

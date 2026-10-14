@@ -10,8 +10,7 @@ The Python code of each figure is run by the test suite, so it cannot rot. The f
 what is drawn (positions, sizes, labels); they differ in details of the rendering such as the font, which is Helvetica or Arial
 in R and DejaVu Sans in matplotlib by default.
 
-Not yet available in metafopy: the cumulative forest plot (`forest` of a `cumul` result), the plot of cumulative results, the
-meta-analytic scatterplot (`regplot`), and the BMJ, RevMan and superscript forest plot styles.
+Not yet available in metafopy: the BMJ, RevMan and superscript forest plot styles.
 
 ```python
 import matplotlib
@@ -28,6 +27,7 @@ import scipy.stats
 from metafopy import (
     addpoly,
     baujat,
+    cumul,
     datasets,
     escalc,
     forest,
@@ -35,16 +35,23 @@ from metafopy import (
     gosh,
     influence,
     labbe,
+    llplot,
+    permutest,
+    plot_cumul,
     plot_gosh,
     plot_infl,
+    plot_permutest,
+    plot_vif,
     predict,
     qqnorm,
     radial,
+    regplot,
     regtest,
     rma,
     rma_mv,
     trimfill,
     vcalc,
+    vif,
 )
 
 matplotlib.rcParams['mathtext.default'] = 'regular'
@@ -197,6 +204,61 @@ fig.savefig('forest_multiple_cis.png', dpi=DPI)
 | metafopy | R metafor |
 |----------|-----------|
 | ![forest plot with multiple CIs, metafopy](../images/gallery/py/forest_multiple_cis.png) | ![forest plot with multiple CIs, R](../images/gallery/r/forest_multiple_cis.png) |
+
+### Cumulative forest plot
+
+Source: <https://www.metafor-project.org/doku.php/plots:cumulative_forest_plot>
+
+```python
+tmp = cumul(res, order='year')
+fig, ax = matplotlib.pyplot.subplots(figsize=(8, 7))
+forest(
+    tmp,
+    ax=ax,
+    xlim=(-4, 2),
+    at=numpy.log([0.125, 0.25, 0.5, 1, 2]),
+    shade=True,
+    atransf=numpy.exp,
+    digits=(2, 3),
+    cex=0.85,
+    header='Author(s) and Year',
+)
+fig.savefig('forest_cumul.png', dpi=DPI)
+```
+
+| metafopy | R metafor |
+|----------|-----------|
+| ![cumulative forest plot, metafopy](../images/gallery/py/forest_cumul.png) | ![cumulative forest plot, R](../images/gallery/r/forest_cumul.png) |
+
+### Meta-analytic scatterplot
+
+Source: <https://www.metafor-project.org/doku.php/plots:meta_analytic_scatterplot>
+
+```python
+res_m = rma('yi', 'vi', mods='~ ablat', data=dat)
+fig, ax = matplotlib.pyplot.subplots(figsize=(7, 7))
+regplot(
+    res_m,
+    ax=ax,
+    xlim=(10, 60),
+    predlim=(10, 60),
+    xlab='Absolute Latitude',
+    refline=0,
+    atransf=numpy.exp,
+    at=numpy.log(numpy.arange(0.2, 1.61, 0.2)),
+    digits=1,
+    label=[3, 6, 11, 12],
+    offset=(1.6, 0.8),
+    labsize=0.9,
+    las=1,
+    bty='l',
+)
+fig.savefig('regplot.png', dpi=DPI)
+```
+
+| metafopy | R metafor |
+|----------|-----------|
+| ![meta-analytic scatterplot, metafopy](../images/gallery/py/regplot.png) | ![meta-analytic scatterplot, R](../images/gallery/r/regplot.png) |
 
 ## Funnel plots
 
@@ -427,6 +489,68 @@ fig.savefig('gosh.png', dpi=DPI)
 | metafopy | R metafor |
 |----------|-----------|
 | ![GOSH plot, metafopy](../images/gallery/py/gosh.png) | ![GOSH plot, R](../images/gallery/r/gosh.png) |
+
+### Plot of cumulative results
+
+Source: <https://www.metafor-project.org/doku.php/plots:plot_of_cumulative_results>
+
+```python
+fig, ax = matplotlib.pyplot.subplots(figsize=(7, 7))
+plot_cumul(tmp, ax=ax, transf=numpy.exp, xlim=(0.25, 0.5), lwd=3, cex=1.3)
+fig.savefig('cumul.png', dpi=DPI)
+```
+
+| metafopy | R metafor |
+|----------|-----------|
+| ![plot of cumulative results, metafopy](../images/gallery/py/cumul.png) | ![plot of cumulative results, R](../images/gallery/r/cumul.png) |
+
+### Log-likelihood plot
+
+Source: <https://wviechtb.github.io/metafor/reference/llplot.html> (an example of the help page of `llplot`)
+
+```python
+fig, ax = matplotlib.pyplot.subplots(figsize=(7, 7))
+llplot(measure='OR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=datasets.load('dat.bcg'), lwd=1, refline=None, xlim=(-4, 4), ax=ax)
+fig.savefig('llplot.png', dpi=DPI)
+```
+
+| metafopy | R metafor |
+|----------|-----------|
+| ![log-likelihood plot, metafopy](../images/gallery/py/llplot.png) | ![log-likelihood plot, R](../images/gallery/r/llplot.png) |
+
+### Permutation distributions
+
+Source: <https://wviechtb.github.io/metafor/reference/plot.permutest.rma.uni.html> (the help page of `plot.permutest.rma.uni`)
+
+```python
+res_p = rma('yi', 'vi', mods='~ ablat + year', data=dat)
+perm = permutest(res_p, iter=1000, seed=1234)
+fig, ax = matplotlib.pyplot.subplots(figsize=(7, 7))
+plot_permutest(perm, QM=True, lwd=(2, 1, 1, 0), legend=True, ax=ax)
+fig.savefig('permutest.png', dpi=DPI)
+```
+
+| metafopy | R metafor |
+|----------|-----------|
+| ![permutation distributions, metafopy](../images/gallery/py/permutest.png) | ![permutation distributions, R](../images/gallery/r/permutest.png) |
+
+The permutations are random, so the histograms of the two figures agree in shape and not bar for bar.
+
+### Simulated variance inflation factors
+
+Source: <https://wviechtb.github.io/metafor/reference/plot.vif.rma.html> (the help page of `plot.vif.rma`)
+
+```python
+fig, ax = matplotlib.pyplot.subplots(figsize=(7, 7))
+plot_vif(vif(res_p, btt=1, sim=500, progbar=False, seed=1234), ax=ax)
+fig.savefig('vif.png', dpi=DPI)
+```
+
+| metafopy | R metafor |
+|----------|-----------|
+| ![simulated VIFs, metafopy](../images/gallery/py/vif.png) | ![simulated VIFs, R](../images/gallery/r/vif.png) |
+
+The simulated values are random, so the histograms agree in shape and not bar for bar.
 
 ## Plots of multilevel models
 
