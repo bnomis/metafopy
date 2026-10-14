@@ -90,6 +90,9 @@ class MetaData:
     Attributes hold only the rows used in fitting (``k`` of them). ``keep``
     maps them back to the ``k_all`` rows that were supplied, so that results
     can be reported on the original rows (metafor's ``na.action="na.pass"``).
+    ``na_rows`` flags the subsetted rows dropped for missing values, and ``labels_all``,
+    ``yi_all``, ``vi_all`` and ``X_all`` hold the label, estimate, variance and design row of every supplied row
+    (``forest`` shows the flagged rows with ``na_action='pass'``).
     """
 
     yi: FloatArray
@@ -102,6 +105,11 @@ class MetaData:
     ni: FloatArray | None = None
     intercept: bool = True
     data: pandas.DataFrame | None = dataclasses.field(default=None, repr=False)
+    labels_all: tuple[str, ...] | None = dataclasses.field(default=None, repr=False)
+    na_rows: BoolArray | None = dataclasses.field(default=None, repr=False)
+    yi_all: FloatArray | None = dataclasses.field(default=None, repr=False)
+    vi_all: FloatArray | None = dataclasses.field(default=None, repr=False)
+    X_all: FloatArray | None = dataclasses.field(default=None, repr=False)
 
     @property
     def k(self) -> int:
@@ -187,6 +195,7 @@ class MetaData:
             if na_action == 'fail':
                 raise metafopy.errors.InputError('missing values in data')
             keep = keep & ~missing
+        na_rows = missing.copy()
 
         if w is not None and numpy.any(w[keep] < 0):
             raise metafopy.errors.InputError('there are negative weights')
@@ -203,6 +212,11 @@ class MetaData:
             ni=None if n is None else n[idx],
             intercept=has_intercept,
             data=data,
+            labels_all=labels,
+            na_rows=na_rows,
+            yi_all=y,
+            vi_all=v,
+            X_all=X,
         )
 
     @staticmethod
