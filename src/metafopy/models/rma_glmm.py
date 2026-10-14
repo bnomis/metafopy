@@ -11,10 +11,15 @@ binomial models with a log or identity link and give metafor's warning. See
 https://wviechtb.github.io/metafor/reference/rma.glmm.html and the source at
 https://github.com/wviechtb/metafor/blob/master/R/rma.glmm.r.
 
-metafor calls ``lme4::glmer()`` for the mixed models; here
+metafor calls ``lme4::glmer()`` for the mixed models, or with
+``control=list(package='GLMMadaptive')`` or ``'glmmTMB'`` the functions
+``GLMMadaptive::mixed_model()`` (adaptive Gauss-Hermite quadrature, Rizopoulos
+2023, https://drizopoulos.github.io/GLMMadaptive/) and ``glmmTMB::glmmTMB()``
+(Laplace approximation, Brooks et al. 2017, doi:10.32614/RJ-2017-066). Here
 :mod:`metafopy.core.glmm` maximises the same likelihood (adaptive
-Gauss-Hermite quadrature or the Laplace approximation), so estimates agree
-with metafor's to the (loose) convergence tolerance of lme4's optimiser.
+Gauss-Hermite quadrature or the Laplace approximation) for all three, so
+estimates agree with metafor's to the (loose) convergence tolerance of the
+package's optimiser.
 """
 
 import collections.abc
@@ -80,7 +85,24 @@ def make_control(control: metafopy.models.glmm_fit.GLMMControl | collections.abc
     unknown = set(clean) - names
     if unknown:
         raise metafopy.errors.InputError(f'unknown control settings: {sorted(unknown)}')
+    if 'package' in clean:
+        clean['package'] = match_package(clean['package'])
     return metafopy.models.glmm_fit.GLMMControl(**clean)
+
+
+def match_package(value: typing.Any) -> str:
+    """The package named by ``control$package``; like ``match.arg()`` an unambiguous prefix is enough.
+
+    Raises:
+        metafopy.errors.InputError: the value names no package.
+    """
+    hits = [name for name in metafopy.models.glmm_fit.PACKAGES if isinstance(value, str) and name.startswith(value)] if value else []
+    exact = [name for name in hits if name == value]
+    if len(exact) == 1:
+        return exact[0]
+    if len(hits) != 1:
+        raise metafopy.errors.InputError('\'arg\' should be one of "lme4", "GLMMadaptive", "glmmTMB"')
+    return hits[0]
 
 
 def first_of(value: typing.Any) -> typing.Any:
@@ -302,9 +324,16 @@ def rma_glmm(
     ``'PLO'``) are fitted as metafor does and give its warning that their use is
     experimental; as in metafor, the log and identity links can put fitted
     probabilities outside (0, 1), in which case fitting fails (``EstimationError``)
-    or the estimates are unreliable. The ``GLMMadaptive``/``glmmTMB`` back-ends,
-    the ``clogit`` and ``clogistic`` optimisers and ``link``/``family``
-    overrides are not available.
+    or the estimates are unreliable. The ``clogit`` and ``clogistic`` optimisers
+    and ``link``/``family`` overrides are not available.
+
+    ``control={'package': ...}`` chooses the package that fits the mixed models, as in metafor:
+    ``'lme4'`` (the default), ``'GLMMadaptive'`` (adaptive quadrature with ``nAGQ`` points in every
+    dimension, so that ``'UM.RS'`` with ``method='ML'`` is not reduced to ``nAGQ = 1``; it fails, like
+    metafor, when a coefficient other than the first exceeds 12 in absolute value) or ``'glmmTMB'``
+    (Laplace approximation, ``nAGQ`` is ignored). They maximise the same likelihood and differ in
+    the integration, in what log-likelihood they report and in the convergence tolerances; see
+    ``docs/differences.md``.
 
     ``verbose`` prints metafor's progress messages on stderr (``1``: the model fits; ``2``: every stage); the
     trace output of ``glm()``/``glmer()`` and of the optimisers has no counterpart here.
@@ -332,7 +361,13 @@ def rma_glmm(
     if to1 not in metafopy.models.tables.TO_CHOICES:
         raise metafopy.errors.InputError("Unknown 'to' argument specified.")
     nagq = nAGQ
-    if (measure in metafopy.models.glmm_fit.TWO_GROUP_BINOMIAL or measure == 'IRR') and model_name == 'UM.RS' and method == 'ML' and nagq > 1:
+    if (
+        con.package == 'lme4'
+        and (measure in metafopy.models.glmm_fit.TWO_GROUP_BINOMIAL or measure == 'IRR')
+        and model_name == 'UM.RS'
+        and method == 'ML'
+        and nagq > 1
+    ):
         warnings.warn("Not possible to fit RE/ME model='UM.RS' with nAGQ > 1 with glmer(). nAGQ automatically set to 1.", stacklevel=2)
         nagq = 1
 
