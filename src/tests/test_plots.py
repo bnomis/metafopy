@@ -364,6 +364,36 @@ def test_addpoly_default_pred_styles_match_metafor(dat: pandas.DataFrame, ax: ma
     plotref.check_all(ax, plotref.PLOTS['addpoly_default_pred']['rec'], 'addpoly_default_pred', skip={'mtext'}, compare_col=True)
 
 
+def test_forest_na_pass_matches_metafor(dat: pandas.DataFrame, ax: matplotlib.axes.Axes) -> None:
+    dna = dat.copy()
+    dna.loc[2, 'yi'] = numpy.nan
+    res = case_fit(dna, slab='label')
+    # auditme: accept[literal-duplication] fixture inputs mirror the R calls that generate the reference
+    r = metafopy.plot.forest(
+        res, ax=ax, ilab=dna['year'].to_numpy(), ilab_lab=['Year'], ilab_xpos=[-7], xlim=(-10, 6), shade=True, showweights=True, na_action='pass'
+    )
+    check_forest(r, plotref.PLOTS['forest_na_pass'], 'forest_na_pass')
+    assert len(r.rows) == 13
+
+
+def test_forest_na_pass_with_moderator_matches_metafor(dat: pandas.DataFrame, ax: matplotlib.axes.Axes) -> None:
+    dna = dat.copy()
+    dna.loc[2, 'yi'] = numpy.nan
+    dna.loc[6, 'ablat'] = numpy.nan
+    res = case_fit(dna, mods='~ ablat', slab='label')
+    r = metafopy.plot.forest(res, ax=ax, atransf=numpy.exp, at=numpy.log([0.2, 0.5, 1, 2]), addpred=True, psize=numpy.arange(1, 14) / 8, na_action='pass')
+    check_forest(r, plotref.PLOTS['forest_na_pass_mods'], 'forest_na_pass_mods')
+
+
+def test_forest_na_action_fail_and_omit(dat: pandas.DataFrame, ax: matplotlib.axes.Axes) -> None:
+    dna = dat.copy()
+    dna.loc[2, 'yi'] = numpy.nan
+    res = case_fit(dna, slab='label')
+    assert len(metafopy.plot.forest(res, ax=ax).rows) == 12
+    with pytest.raises(metafopy.errors.InputError):
+        metafopy.plot.forest(res, ax=ax, na_action='fail')
+
+
 def test_forest_missing_values_in_fit(dat: pandas.DataFrame, ax: matplotlib.axes.Axes) -> None:
     dna = refutil.bcg_na()
     res = metafopy.rma('yi', 'vi', mods='~ ablat', data=dna, slab='label')
@@ -729,7 +759,7 @@ def test_plot_infl_missing_values_match_metafor(dat: pandas.DataFrame, ax: matpl
     r = metafopy.plot.plot_infl(metafopy.influence(res), plotinf=[1, 2, 6], ids=ids, ax=ax)
     check_infl(r, plotref.PLOTS['infl_na_omit'], 'infl_na_omit')
     _, axes = matplotlib.pyplot.subplots()
-    r = metafopy.plot.plot_infl(metafopy.influence(res, na_action='exclude'), plotinf=[1, 2, 6, 8], na_action='exclude', ax=axes)
+    r = metafopy.plot.plot_infl(metafopy.influence(res, na_action='pass'), plotinf=[1, 2, 6, 8], na_action='pass', ax=axes)
     check_infl(r, plotref.PLOTS['infl_na_exclude'], 'infl_na_exclude')
     matplotlib.pyplot.close('all')
 

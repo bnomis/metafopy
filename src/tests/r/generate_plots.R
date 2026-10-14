@@ -235,6 +235,16 @@ out$forest_default_opts <- run(fforest.default(yi, sei = sqrt(vi), slab = slab, 
 out$forest_default_ci <- run(fforest.default(yi, ci.lb = yi - 0.3, ci.ub = yi + 0.5, level = 90, slab = NA, efac = c(1, 1.5), digits = c(2L, 1L, 3L), atransf = function(x) x / 2))
 yi_na <- yi; yi_na[c(3, 7)] <- NA
 out$forest_default_na <- run(fforest.default(yi_na, vi, slab = slab, subset = -1, rows = c(13:2) + 0, ylim = c(0, 17)))
+# options(na.action = "na.pass"): the studies with missing values stay in the plot
+dat_na <- dat
+dat_na$yi[3] <- NA
+dat_na$ablat[7] <- NA
+res_na <- rma(yi, vi, data = dat_na, slab = label)
+res_na_mods <- rma(yi, vi, mods = ~ ablat, data = dat_na, slab = label)
+options(na.action = "na.pass")
+out$forest_na_pass <- run(fforest.rma(res_na, ilab = dat_na$year, ilab.lab = "Year", ilab.xpos = -7, xlim = c(-10, 6), shade = TRUE, showweights = TRUE))
+out$forest_na_pass_mods <- run(fforest.rma(res_na_mods, atransf = exp, at = log(c(0.2, 0.5, 1, 2)), addpred = TRUE, psize = 1:13 / 8))
+options(na.action = "na.omit")
 out$forest_default_fonts <- run(fforest.default(yi, vi, slab = slab, fonts = c(mono = 1, serif = 3), ilab = dat$year, ilab.xpos = -7, xlim = c(-10, 6)))
 out$forest_default_sub <- run(fforest.default(yi, vi, slab = slab, order = dat$year, subset = dat$year > 1950, shade = dat$year > 1960 & dat$year < 1970 | dat$year == 1948 | TRUE))
 

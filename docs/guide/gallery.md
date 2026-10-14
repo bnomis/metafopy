@@ -10,14 +10,14 @@ The Python code of each figure is run by the test suite, so it cannot rot. The f
 what is drawn (positions, sizes, labels); they differ in details of the rendering such as the font, which is Helvetica or Arial
 in R and DejaVu Sans in matplotlib by default.
 
-Not yet available in metafopy: the BMJ, RevMan and superscript forest plot styles.
-
 ```python
 import matplotlib
 
 matplotlib.use('Agg')
 
+import math
 import matplotlib.colors
+import matplotlib.patches
 import matplotlib.pyplot
 import numpy
 import pandas
@@ -204,6 +204,278 @@ fig.savefig('forest_multiple_cis.png', dpi=DPI)
 | metafopy | R metafor |
 |----------|-----------|
 | ![forest plot with multiple CIs, metafopy](../images/gallery/py/forest_multiple_cis.png) | ![forest plot with multiple CIs, R](../images/gallery/r/forest_multiple_cis.png) |
+
+### Forest plot with superscripts
+
+Source: <https://www.metafor-project.org/doku.php/plots:forest_plot_with_superscripts>
+
+The trial numbers are added to the study labels as superscripts, which some journals require. R writes the labels as plotmath
+expressions; in matplotlib they are strings with a mathtext part, `$^{...}$`.
+
+```python
+slab_ref = [f'{s}$^{{{t}}}$' for s, t in zip(dat['slab'], dat['trial'])]
+fig, ax = matplotlib.pyplot.subplots(figsize=(8, 7))
+forest(
+    res,
+    ax=ax,
+    atransf=numpy.exp,
+    at=numpy.log([0.05, 0.25, 1, 4]),
+    xlim=(-16, 6),
+    ilab=counts,
+    ilab_lab=['TB+', 'TB-', 'TB+', 'TB-'],
+    ilab_xpos=[-9.5, -8, -6, -4.5],
+    cex=0.75,
+    header='Author(s) and Year',
+    mlab='',
+    slab=slab_ref,
+    shade=True,
+)
+ax.text(-8.75, res.k + 2.8, 'Vaccinated', ha='center', va='center', fontsize=7.5, fontweight='bold')
+ax.text(-5.25, res.k + 2.8, 'Control', ha='center', va='center', fontsize=7.5, fontweight='bold')
+ax.text(-16, -1, fit_stats('RE Model', res), ha='left', va='center', fontsize=7.5)
+fig.savefig('forest_superscripts.png', dpi=DPI)
+```
+
+| metafopy | R metafor |
+|----------|-----------|
+| ![forest plot with superscripts, metafopy](../images/gallery/py/forest_superscripts.png) | ![forest plot with superscripts, R](../images/gallery/r/forest_superscripts.png) |
+
+### Forest plot in RevMan style
+
+Source: <https://www.metafor-project.org/doku.php/plots:forest_plot_revman>
+
+The plot mimics the forest plots of RevMan, the software of the Cochrane Collaboration: the counts, the weights and the risk of bias
+ratings of the studies next to the odds ratios. The study with no events in either group has a missing log odds ratio (`drop00=True`);
+`na_action='pass'` in `forest` keeps it in the plot (R: `options(na.action='na.pass')`). R's `par(mar=...)` becomes `subplots_adjust`, and the text that `forest` does not draw is added
+in data coordinates.
+
+```python
+FONT = 10  # R's default text size at cex = 1, in points
+
+
+def put(ax, x, y, s, pos=None, size=1.0, bold=False, offset=0.5, **kw):
+    """R's text(): pos 2 puts the text to the left of x and pos 4 to the right, with an offset of half a character."""
+    ha = {None: 'center', 2: 'right', 4: 'left'}[pos]
+    dx = {None: 0.0, 2: -1.0, 4: 1.0}[pos] * offset * size * FONT * 0.6
+    return ax.annotate(
+        s,
+        (x, y),
+        xytext=(dx, 0),
+        textcoords='offset points',
+        ha=ha,
+        va='center_baseline',
+        fontsize=size * FONT,
+        fontweight='bold' if bold else 'normal',
+        annotation_clip=False,
+        **kw,
+    )
+
+
+dat_r = pandas.DataFrame(
+    {
+        'author': ['Amore-Coffea', 'Deliciozza', 'Kahve-Paradiso', 'Mama-Kaffa', 'Morrocona', 'Norscafe', 'Oohlahlazza', 'Piazza-Allerta'],
+        'year': [2000, 2004, 2002, 1999, 1998, 1998, 1998, 2003],
+        'ai': [2, 10, 0, 12, 3, 19, 4, 8],
+        'n1i': [31, 40, 0, 53, 15, 68, 35, 35],
+        'ci': [10, 9, 0, 9, 1, 9, 2, 6],
+        'n2i': [34, 40, 0, 61, 17, 64, 37, 37],
+    }
+)
+# the risk of bias of items A to F: + is low, - is high and ? is unclear
+bias = {'A': '?+--+?+?', 'B': '??--??+?', 'C': '?????++?', 'D': '??+-+?++', 'E': '--+-+-++', 'F': '+++++-++'}
+dat_r = escalc(measure='OR', ai='ai', n1i='n1i', ci='ci', n2i='n2i', data=dat_r, drop00=True)
+dat_r['slab'] = dat_r['author'] + ' ' + dat_r['year'].astype(str)
+res_r = rma('yi', 'vi', data=dat_r, method='DL', slab=dat_r['slab'])
+pred_r = predict(res_r, transf=numpy.exp)
+k = len(dat_r)
+weights_r = [''] * k
+for i, w in zip(numpy.flatnonzero(res_r.data.keep), res_r.weights_()):
+    weights_r[i] = f'{w:.1f}%'
+
+fig = matplotlib.pyplot.figure(figsize=(9.13, 4.71))
+ax = fig.add_axes((0, 2.18 / 4.71, 1 - 0.26 / 9.13, 1 - 2.18 / 4.71 - 0.36 / 4.71))
+sav = forest(
+    res_r,
+    ax=ax,
+    na_action='pass',
+    atransf=numpy.exp,
+    at=numpy.log([0.01, 0.10, 1, 10, 100]),
+    xlim=(-30, 11),
+    xlab='',
+    efac=(0, 4),
+    textpos=(-30, -4.7),
+    lty=('solid', 'solid', 'none'),
+    refline=None,
+    ilab=numpy.column_stack([dat_r['ai'], dat_r['n1i'], dat_r['ci'], dat_r['n2i'], weights_r]),
+    ilab_xpos=[-20.6, -18.6, -16.1, -14.1, -10.8],
+    ilab_pos=2,
+    cex=0.78,
+    header=['Study or Subgroup', 'IV, Random, 95% CI'],
+    mlab='',
+    colout='#0000cc',
+    colci='black',
+)
+x0, x1 = sav.xlim
+ixp = sav.ilab_xpos
+cx = sav.cex
+ax.plot([x0 + 0.5, x1], [k + 1, k + 1], color='black', linewidth=0.8, clip_on=False)
+ax.plot([0, 0], [-2, k + 1], color='black', linewidth=0.8, clip_on=False)
+
+for x, s in zip(ixp, ['Events', 'Total', 'Events', 'Total', 'Weight']):
+    put(ax, x, k + 2, s, 2, cx, True)
+put(ax, (ixp[0] + ixp[1]) / 2, k + 3, 'Caffeine', 2, cx, True)
+put(ax, (ixp[2] + ixp[3]) / 2, k + 3, 'Decaf', 2, cx, True)
+put(ax, sav.textpos[1], k + 3, 'Odds ratio', 2, cx, True)
+put(ax, 0, k + 3, 'Odds ratio', None, cx, True)
+put(ax, x1 - 0.6, k + 3, 'Risk of Bias', 2, cx, True)
+put(ax, 0, k + 2, 'IV, Random, 95% CI', None, cx, True)
+for x, s, pos in [(x0, 'Total (95% CI)', 4), (ixp[1], str(dat_r['n1i'].sum()), 2), (ixp[3], str(dat_r['n2i'].sum()), 2), (ixp[4], '100.0%', 2)]:
+    put(ax, x, -1, s, pos, cx, True)
+put(ax, x0, -7, 'Risk of bias legend', 4, cx, True)
+
+# hide the summary estimate of forest and add it back in bold
+ax.add_patch(matplotlib.patches.Rectangle((sav.textpos[1], -1.5), ixp[4] - sav.textpos[1], 1, facecolor='white', edgecolor='none', zorder=4))
+pe, lo, hi = pred_r.pred[0], pred_r.ci_lb[0], pred_r.ci_ub[0]
+put(ax, sav.textpos[1], -1, f'{pe:.2f} [{lo:.2f},  {hi:.2f}]', 2, cx, True, zorder=5)
+
+put(ax, math.log(0.01), -4, 'Favours caffeine', 4, cx, offset=-0.5)
+put(ax, math.log(100), -4, 'Favours decaf', 2, cx, offset=-0.5)
+put(ax, sav.textpos[1], k + 1 - (numpy.flatnonzero(numpy.isnan(dat_r['yi'])) + 1)[0], 'Not estimable', 2, cx)
+put(ax, x0, -2, 'Total events:', 4, cx)
+put(ax, ixp[0], -2, str(dat_r['ai'].sum()), 2, cx)
+put(ax, ixp[2], -2, str(dat_r['ci'].sum()), 2, cx)
+put(
+    ax,
+    x0,
+    -3,
+    f'Heterogeneity: Tau$^2$ = {res_r.tau2:.2f}; Chi$^2$ = {res_r.QE:.2f}, df = {res_r.k - res_r.p} (P = {res_r.QEp:.2f}); $I^2$ = {round(res_r.I2)}%',
+    4,
+    cx,
+)
+put(ax, x0, -4, f'Test for overall effect: Z = {res_r.zval[0]:.2f} (P = {res_r.pval[0]:.2f})', 4, cx)
+put(ax, x0, -5, 'Test for subgroup differences: Not applicable', 4, cx)
+
+colors = {'+': '#00cc00', '-': '#cc0000', '?': '#eeee00'}
+for letter, xp in zip('ABCDEF', numpy.linspace(x1 - 5.5, x1 - 0.5, 6)):
+    ax.scatter([xp] * k, numpy.arange(k, 0, -1), s=130, color=[colors[c] for c in bias[letter]], clip_on=False, zorder=3)
+    for y, c in zip(range(k, 0, -1), bias[letter]):
+        put(ax, xp, y, c, None, cx, True, zorder=4)
+    put(ax, xp, k + 2, letter, None, cx, True)
+for y, s in zip(
+    range(-8, -14, -1),
+    [
+        '(A) Random sequence generation (selection bias)',
+        '(B) Allocation concealment (selection bias)',
+        '(C) Blinding of participants and personnel (performance bias)',
+        '(D) Incomplete outcome data (attrition bias)',
+        '(E) Selective reporting (reporting bias)',
+        '(F) Other bias',
+    ],
+):
+    put(ax, x0, y, s, 4, cx)
+fig.savefig('forest_revman.png', dpi=DPI)
+```
+
+| metafopy | R metafor |
+|----------|-----------|
+| ![forest plot in RevMan style, metafopy](../images/gallery/py/forest_revman.png) | ![forest plot in RevMan style, R](../images/gallery/r/forest_revman.png) |
+
+### Forest plot in BMJ style
+
+Source: <https://www.metafor-project.org/doku.php/plots:forest_plot_bmj>
+
+The plot mimics the forest plots of the BMJ, for the risk differences of the studies of Goldenberg et al. (2021),
+<https://doi.org/10.1136/bmj.m4743>: the studies are drawn as diamonds sized by their weights, with the CI lines, the vertical reference
+lines and the summary polygon in the colours of the journal. The CI lines and markers are drawn again on top of those of `forest`, as in R.
+(`put` is the helper of the RevMan plot above.)
+
+```python
+dat_b = pandas.DataFrame(
+    {
+        'author': ['Dyson', 'Jönsson', 'Morris', 'Saslow', 'Saslow', 'Sato', 'Tay', 'Yamada'],
+        'year': [2010, 2009, 2019, 2014, 2017, 2017, 2014, 2014],
+        'ai': [3, 6, 11, 8, 6, 4, 36, 2],
+        'n1i': [6, 6, 21, 9, 11, 22, 46, 12],
+        'ci': [1, 3, 0, 5, 0, 0, 30, 2],
+        'n2i': [6, 6, 12, 13, 8, 27, 47, 12],
+    }
+)
+dat_b = escalc(measure='RD', ai='ai', n1i='n1i', ci='ci', n2i='n2i', data=dat_b, addyi=False)
+dat_b['slab'] = '  ' + dat_b['author'] + ' ' + dat_b['year'].astype(str)
+res_b = rma('yi', 'vi', data=dat_b, method='DL', slab=dat_b['slab'])
+colp, coll = '#5f4c9a', '#a7a9ac'
+k = len(dat_b)
+wts = res_b.weights_()
+psize = 1.2 + (wts - wts.min()) / (wts.max() - wts.min())
+rows = numpy.arange(k, 0, -1)
+half = scipy.stats.norm.ppf(0.975) * numpy.sqrt(dat_b['vi'])
+
+fig = matplotlib.pyplot.figure(figsize=(10.51, 3.9))
+ax = fig.add_axes((3.2 / 10.51 * 0.2, 2.7 / 3.9 * 0.2, 1 - 1.3 / 10.51 * 0.2 - 3.2 / 10.51 * 0.2, 1 - 2.5 / 3.9 * 0.2 - 2.7 / 3.9 * 0.2))
+sav = forest(
+    dat_b['yi'],
+    dat_b['vi'],
+    ax=ax,
+    xlim=(-3.4, 2.1),
+    ylim=(-1, k + 3),
+    alim=(-1, 1),
+    cex=0.88,
+    header=False,
+    pch=18,
+    psize=psize,
+    efac=0,
+    refline=None,
+    lty=('solid', 'none'),
+    xlab='',
+    slab=dat_b['slab'],
+    ilab=numpy.column_stack(
+        [dat_b['ai'].astype(str) + ' / ' + dat_b['n1i'].astype(str), dat_b['ci'].astype(str) + ' / ' + dat_b['n2i'].astype(str), [f'{w:.1f}' for w in wts]]
+    ),
+    ilab_xpos=[-1.9, -1.3, 1.2],
+    annosym=(' (', ' to ', ')'),
+    rowadj=-0.07,
+)
+x0, x1 = sav.xlim
+ixp = sav.ilab_xpos
+cx = sav.cex
+ax.plot([0, 0], [-1, k + 1.6], color=coll, linewidth=1, clip_on=False)
+ax.plot([res_b.beta[0]] * 2, [0, k], color=colp, linewidth=0.8, linestyle=(0, (3, 3)))
+ax.hlines(rows, dat_b['yi'] - half, dat_b['yi'] + half, color=colp, linewidth=1.5, zorder=3)
+ax.scatter(dat_b['yi'], rows, marker='D', s=(psize * 1.15 * 6.3) ** 2 / 2, color='white', zorder=4)
+ax.scatter(dat_b['yi'], rows, marker='D', s=(psize * 6.3) ** 2 / 2, color=colp, zorder=5)
+addpoly(res_b, ax=ax, row=0, mlab='Total (95% CI)', efac=2, col=colp, border=colp)
+ax.plot([x0, x1], [k + 1.6] * 2, color=coll, linewidth=1, clip_on=False)
+ax.spines['bottom'].set_color(coll)
+ax.tick_params(axis='x', color=coll, direction='in', pad=1)
+
+put(ax, x0, k + 2.5, 'Study or\nsubgroup', 4, cx, True, offset=0.5)
+put(ax, ixp[0], k + 2.3, 'Experimental', None, cx, True)
+put(ax, ixp[1], k + 2.3, 'Control', None, cx, True)
+put(ax, (ixp[0] + ixp[1]) / 2, k + 3.4, 'No of events / total', None, cx, True)
+put(ax, 0, k + 2.7, 'Risk difference, IV,\nrandom (95% CI)', None, cx, True)
+ax.plot([ixp[0] - 0.24, ixp[1] + 0.14], [k + 2.8] * 2, color='black', linewidth=1, clip_on=False)
+put(ax, ixp[2], k + 2.7, 'Weight\n(%)', None, cx, True)
+put(ax, x1 - 0.37, k + 2.7, 'Risk difference, IV,\nrandom (95% CI)', None, cx, True)
+put(ax, -1, -2.5, 'Favors control', 4, cx, True, offset=-0.3)
+put(ax, 1, -2.5, 'Favors experimental', 2, cx, True, offset=-0.3)
+put(ax, ixp[2], 0, '100.0', None, cx)
+put(ax, ixp[0], 0, f'{dat_b["ai"].sum()} / {dat_b["n1i"].sum()}', None, cx)
+put(ax, ixp[1], 0, f'{dat_b["ci"].sum()} / {dat_b["n2i"].sum()}', None, cx)
+put(
+    ax,
+    x0,
+    -1,
+    f'Test for heterogeneity: $\\tau^2$={res_b.tau2:.2f}; $\\chi^2$={res_b.QE:.2f}, df={res_b.k - res_b.p}, P={res_b.QEp:.2f}; $I^2$={round(res_b.I2)}%',
+    4,
+    cx,
+)
+put(ax, x0, -2, f'Test for overall effect: Z={res_b.zval[0]:.2f}, P<0.001', 4, cx)
+fig.savefig('forest_bmj.png', dpi=DPI)
+```
+
+| metafopy | R metafor |
+|----------|-----------|
+| ![forest plot in BMJ style, metafopy](../images/gallery/py/forest_bmj.png) | ![forest plot in BMJ style, R](../images/gallery/r/forest_bmj.png) |
 
 ### Cumulative forest plot
 

@@ -28,6 +28,7 @@ import scipy.special
 import scipy.stats
 
 import metafopy.errors
+import metafopy.metadata
 import metafopy.methods.common
 import metafopy.methods.influence
 import metafopy.methods.leave1out
@@ -684,6 +685,7 @@ def forest(
     decreasing: bool = False,
     measure: str | None = None,
     slab_null: bool | None = None,
+    na_action: metafopy.metadata.NAAction = 'omit',
 ) -> ForestResult:
     """Forest plot of a fitted model (``forest.rma``) or of estimates with their variances (``forest.default``).
 
@@ -709,6 +711,9 @@ def forest(
     ``xlabadj``, ``xlabfont`` (one font or two, the second for the middle one of three labels) and ``decreasing``;
     for the numeric form ``measure`` (or the ``attrs['measure']`` of a pandas Series) sets the label of the axis and header and
     ``slab_null`` tells that the labels are the default ones (which gives the study labels less room).
+    ``na_action`` stands for metafor's ``options(na.action=)``: for a fitted model the studies dropped for missing values
+    are left out (``'omit'``, the default) or, with ``'pass'`` (R's ``'na.pass'`` and ``'na.exclude'``), kept as rows of the plot;
+    ``'fail'`` raises an error if there are any.
 
     Indices are 0-based where they refer to positions; ``rows`` are plot rows as in R. Vector
     arguments (``slab``, ``ilab``, ``psize``, ...) must have one entry per study of the fit (or per
@@ -830,13 +835,27 @@ def forest(
         k = int(yi.shape[0])
         k_all = res.data.k_all
         keep = res.data.keep
+        na_rows = res.data.na_rows
+        show_na = na_action == 'pass' and na_rows is not None and bool(na_rows.any())
+        if na_action == 'fail' and na_rows is not None and na_rows.any():
+            raise metafopy.errors.InputError('Missing values in results.')
+        if show_na:
+            assert na_rows is not None
+            keep_fit = keep
+            keep = keep | na_rows
+            k = int(keep.sum())
+            at_fit = numpy.searchsorted(numpy.flatnonzero(keep), numpy.flatnonzero(keep_fit))
+            assert res.data.yi_all is not None
+            assert res.data.vi_all is not None
+            assert res.data.X_all is not None
+            yi, vi_a, X = res.data.yi_all[keep].copy(), res.data.vi_all[keep].copy(), res.data.X_all[keep].copy()
         int_only = res.int_only
         measure = res.measure
         slab_null = False
         # slab: stored labels; metafor uses "Study <id>" when no slab was given
-        slab_l: list[typing.Any] = list(res.slab)
+        slab_l: list[typing.Any] = list(res.slab) if not show_na else [res.data.labels_all[i] for i in numpy.flatnonzero(keep)]  # type: ignore[index]
         if slab is None:
-            slab_null = all(s == str(i + 1) for s, i in zip(res.slab, numpy.flatnonzero(keep), strict=True))
+            slab_null = all(s == str(i + 1) for s, i in zip(slab_l, numpy.flatnonzero(keep), strict=True))
             if slab_null:
                 slab_l = [f'Study {i + 1}' for i in numpy.flatnonzero(keep)]
         else:
@@ -851,6 +870,8 @@ def forest(
         colci_l = colout_l if colci is None else pervec(colci, keep, k, k_all, 'colci')
         pr = None if int_only else metafopy.methods.predict.predict(res, level=level)
         wts = res.weights_()
+        if show_na:
+            wts = widen(wts, k, at_fit)
         if int_only:
             pred = numpy.full(k, float(res.beta[0]))
             pred_ci_lb = numpy.full(k, numpy.nan)
@@ -861,6 +882,15 @@ def forest(
             use_pi = bool(addpred)
             pred_ci_lb = pr.pi_lb if use_pi else pr.ci_lb
             pred_ci_ub = pr.pi_ub if use_pi else pr.ci_ub
+            if show_na:
+                # the studies dropped for a missing estimate or variance still have a fitted value if their moderators are known
+                assert X is not None
+                known = numpy.isfinite(X).all(axis=1)
+                pr_all = metafopy.methods.predict.predict(res, X[known][:, 1:] if res.int_incl else X[known], level=level)
+                pred, pred_ci_lb, pred_ci_ub = (
+                    widen(a, k, numpy.flatnonzero(known))
+                    for a in (pr_all.pred, pr_all.pi_lb if use_pi else pr_all.ci_lb, pr_all.pi_ub if use_pi else pr_all.ci_ub)
+                )
         resid_z = None
         if order is not None and isinstance(order, str) and order in ('rstandard', 'abs.rstandard'):
             resid_z = metafopy.methods.influence.rstandard(res).z
@@ -1049,7 +1079,9 @@ def forest(
     na_mask = numpy.isnan(yi) | numpy.isnan(vi_a)
     if X is not None:
         na_mask |= numpy.isnan(X).any(axis=1)
-    if na_mask.any():
+    if na_mask.any() and na_action == 'fail':
+        raise metafopy.errors.InputError('Missing values in results.')
+    if na_mask.any() and na_action == 'omit':
         ok = ~na_mask
         yi, vi_a = yi[ok], vi_a[ok]
         if X is not None:
@@ -1580,6 +1612,13 @@ def draw_pred(
         draw_dist(ax, curve, row - 0.5, lb, ub, alim, geo.olim, geo.ef4, col, border)
     else:
         typing.assert_never(style)
+
+
+def widen(a: FloatArray, k: int, at: numpy.typing.NDArray[numpy.intp]) -> FloatArray:
+    """``a`` spread over ``k`` rows, at the positions ``at`` and missing elsewhere (the studies of a fit among those dropped for missing values)."""
+    out = numpy.full((k, *a.shape[1:]), numpy.nan)
+    out[at] = a
+    return out
 
 
 def per_study(values: typing.Any, keep: numpy.typing.NDArray[numpy.bool_], k: int, k_all: int, name: str) -> typing.Any:

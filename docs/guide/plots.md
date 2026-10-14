@@ -39,9 +39,11 @@ estimates themselves. Other common arguments are:
 - `addpred=True`: add the prediction interval to the summary.
 - `showweights=True`: show the weights.
 - `xlim`, `alim`, `at`, `refline`, `xlab`, `digits`, `slab`.
+- `na_action='pass'`: keep the studies dropped for missing values as (empty) rows of the plot, as metafor does under `options(na.action='na.pass')`.
 
 For plots with subgroups, draw the studies with `forest(..., rows=...)` and the summaries with `addpoly`. Examples are in the
-metafor documentation: <https://www.metafor-project.org/doku.php/plots:forest_plot_with_subgroups>.
+metafor documentation: <https://www.metafor-project.org/doku.php/plots:forest_plot_with_subgroups>. The [gallery](gallery.md) also
+reproduces the BMJ, RevMan and superscript styles.
 
 ```python
 from metafopy import forest

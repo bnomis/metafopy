@@ -345,3 +345,159 @@ device("vif", 7, 7)
 set.seed(1234)
 plot(vif(res.p, btt=2, sim=TRUE, reps=500, progbar=FALSE))
 dev.off()
+
+### forest_superscripts
+
+device("forest_superscripts", 8, 7)
+dat <- dat.bcg
+dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat)
+dat$slab <- with(dat, paste(author, year, sep=", "))
+dat$slab.ref <- mapply(function(x,y) as.expression(bquote(.(x)^.(y))), dat$slab, dat$trial)
+res <- rma(yi, vi, data=dat)
+mlabfun <- function(text, x) {
+   list(bquote(paste(.(text),
+      " (Q = ", .(fmtx(x$QE, digits=2)),
+      ", df = ", .(x$k - x$p), ", ",
+      .(fmtp2(x$QEp)), "; ",
+      I^2, " = ", .(fmtx(x$I2, digits=1)), "%, ",
+      tau^2, " = ", .(fmtx(x$tau2, digits=2)), ")")))}
+forest(res, atransf=exp, at=log(c(0.05, 0.25, 1, 4)), xlim=c(-16,6),
+       ilab=cbind(tpos, tneg, cpos, cneg), ilab.lab=c("TB+","TB-","TB+","TB-"),
+       ilab.xpos=c(-9.5,-8,-6,-4.5), cex=0.75, header="Author(s) and Year",
+       mlab=mlabfun("RE Model", res), slab=slab.ref, shade=TRUE)
+text(c(-8.75,-5.25), res$k+2.8, c("Vaccinated", "Control"), cex=0.75, font=2)
+dev.off()
+
+### forest_revman
+
+png(file.path(out_dir, "forest_revman.png"), width = 9.13, height = 4.71, units = "in", res = 100, type = "cairo")
+dat <- data.frame(author = c("Amore-Coffea", "Deliciozza", "Kahve-Paradiso", "Mama-Kaffa", "Morrocona", "Norscafe", "Oohlahlazza", "Piazza-Allerta"),
+                  year   = c(2000, 2004, 2002, 1999, 1998, 1998, 1998, 2003),
+                  ai     = c(2, 10, 0, 12, 3, 19, 4, 8),
+                  n1i    = c(31, 40, 0, 53, 15, 68, 35, 35),
+                  ci     = c(10, 9, 0, 9, 1, 9, 2, 6),
+                  n2i    = c(34, 40, 0, 61, 17, 64, 37, 37),
+                  rb.a   = c("?", "+", "-", "-", "+", "?", "+", "?"),
+                  rb.b   = c("?", "?", "-", "-", "?", "?", "+", "?"),
+                  rb.c   = c("?", "?", "?", "?", "?", "+", "+", "?"),
+                  rb.d   = c("?", "?", "+", "-", "+", "?", "+", "+"),
+                  rb.e   = c("-", "-", "+", "-", "+", "-", "+", "+"),
+                  rb.f   = c("+", "+", "+", "+", "+", "-", "+", "+"))
+dat[7:12] <- lapply(dat[7:12], factor, levels=c("+", "-", "?"))
+dat <- escalc(measure="OR", ai=ai, n1i=n1i, ci=ci, n2i=n2i, data=dat,
+              slab=paste(author, year), drop00=TRUE)
+res <- rma(yi, vi, data=dat, method="DL")
+pred <- predict(res, transf=exp, digits=2)
+pred <- fmtx(c(pred$pred, pred$ci.lb, pred$ci.ub), digits=2)
+k <- nrow(dat)
+options(na.action = "na.pass")
+weights <- paste0(fmtx(weights(res), digits=1), "%")
+weights[weights == "NA%"] <- ""
+par(mar=c(10.9,0,1.8,1.3), mgp=c(3,0.2,0), tcl=-0.2)
+sav <- forest(res, atransf=exp, at=log(c(0.01, 0.10, 1, 10, 100)), xlim=c(-30,11),
+       xlab="", efac=c(0,4), textpos=c(-30,-4.7), lty=c(1,1,0), refline=NA,
+       ilab=cbind(ai, n1i, ci, n2i, weights),
+       ilab.xpos=c(-20.6,-18.6,-16.1,-14.1,-10.8), ilab.pos=2,
+       cex=0.78, header=c("Study or Subgroup","IV, Random, 95% CI"), mlab="",
+       colout="#0000cc", colci="black")
+segments(sav$xlim[1]+0.5, k+1, sav$xlim[2], k+1, lwd=0.8)
+segments(0, -2, 0, k+1, lwd=0.8)
+par(xpd=NA)
+par(cex=sav$cex, font=2)
+text(sav$ilab.xpos, k+2, pos=2, c("Events","Total","Events","Total","Weight"))
+text(c(mean(sav$ilab.xpos[1:2]),mean(sav$ilab.xpos[3:4])), k+3, pos=2, c("Caffeine","Decaf"))
+text(sav$textpos[2], k+3, "Odds ratio", pos=2)
+text(0, k+3, "Odds ratio")
+text(sav$xlim[2]-0.6, k+3, "Risk of Bias", pos=2)
+text(0, k+2, "IV, Random, 95% CI")
+text(c(sav$xlim[1],sav$ilab.xpos[c(2,4,5)]), -1, pos=c(4,2,2,2,2),
+     c("Total (95% CI)", sum(dat$n1i), sum(dat$n2i), "100.0%"))
+text(sav$xlim[1], -7, pos=4, "Risk of bias legend")
+rect(sav$textpos[2], -1.5, sav$ilab.xpos[5], -0.5, col="white", border=NA)
+text(sav$textpos[2], -1, paste0(pred[1], " [", pred[2], ",  ", pred[3], "]"), pos=2)
+par(cex=sav$cex, font=1)
+text(log(c(0.01, 100)), -4, c("Favours caffeine","Favours decaf"), pos=c(4,2), offset=-0.5)
+text(sav$textpos[2], k+1-which(is.na(dat$yi)), "Not estimable", pos=2)
+text(sav$xlim[1], -2, pos=4, "Total events:")
+text(sav$ilab.xpos[c(1,3)], -2, c(sum(dat$ai),sum(dat$ci)), pos=2)
+text(sav$xlim[1], -3, pos=4, bquote(paste("Heterogeneity: ",
+   "Tau"^2, " = ", .(fmtx(res$tau2, digits=2)), "; ",
+   "Chi"^2, " = ", .(fmtx(res$QE, digits=2)),
+   ", df = ", .(res$k - res$p),
+   " (", .(fmtp(res$QEp, digits=2, pname="P", add0=TRUE, sep=TRUE, equal=TRUE)), "); ",
+   I^2, " = ", .(round(res$I2)), "%")))
+text(sav$xlim[1], -4, pos=4, bquote(paste("Test for overall effect: ",
+   "Z = ", .(fmtx(res$zval, digits=2)),
+   " (", .(fmtp(res$pval, digits=2, pname="P", add0=TRUE, sep=TRUE, equal=TRUE)), ")")))
+text(sav$xlim[1], -5, pos=4, bquote(paste("Test for subgroup differences: Not applicable")))
+cols <- c("#00cc00", "#cc0000", "#eeee00")
+syms <- levels(dat$rb.a)
+pos  <- seq(sav$xlim[2]-5.5,sav$xlim[2]-0.5,length=6)
+for (i in 1:6) {
+   points(rep(pos[i],k), k:1, pch=19, col=cols[dat[[6+i]]], cex=2.2)
+   text(pos[i], k:1, syms[dat[[6+i]]], font=2)
+}
+text(pos, k+2, c("A","B","C","D","E","F"), font=2)
+text(sav$xlim[1], -8:-13, pos=4, c(
+   "(A) Random sequence generation (selection bias)",
+   "(B) Allocation concealment (selection bias)",
+   "(C) Blinding of participants and personnel (performance bias)",
+   "(D) Incomplete outcome data (attrition bias)",
+   "(E) Selective reporting (reporting bias)",
+   "(F) Other bias"))
+dev.off()
+options(na.action = "na.omit")
+
+### forest_bmj
+
+png(file.path(out_dir, "forest_bmj.png"), width = 10.51, height = 3.9, units = "in", res = 100, type = "cairo")
+dat <- data.frame(author = c("Dyson", "Jönsson", "Morris", "Saslow", "Saslow", "Sato", "Tay", "Yamada"),
+                  year   = c(2010, 2009, 2019, 2014, 2017, 2017, 2014, 2014),
+                  ai     = c(3, 6, 11, 8, 6, 4, 36, 2),
+                  n1i    = c(6, 6, 21, 9, 11, 22, 46, 12),
+                  ci     = c(1, 3, 0, 5, 0, 0, 30, 2),
+                  n2i    = c(6, 6, 12, 13, 8, 27, 47, 12))
+dat <- escalc(measure="RD", ai=ai, n1i=n1i, ci=ci, n2i=n2i, data=dat,
+              slab=paste(" ", author, year), addyi=FALSE)
+res <- rma(yi, vi, data=dat, method="DL")
+colp <- "#5f4c9a"
+coll <- "#a7a9ac"
+k <- nrow(dat)
+psize <- weights(res)
+psize <- 1.2 + (psize - min(psize)) / (max(psize) - min(psize))
+weights <- fmtx(weights(res), digits=1)
+par(mar=c(2.7,3.2,2.5,1.3), mgp=c(3,0,0), tcl=0.15)
+sav <- forest(dat$yi, dat$vi, xlim=c(-3.4,2.1), ylim=c(-1,k+3), alim=c(-1,1), cex=0.88,
+              header=FALSE, pch=18, psize=psize, efac=0, refline=NA, lty=c(1,0), xlab="",
+              ilab=cbind(paste(dat$ai, "/", dat$n1i), paste(dat$ci, "/", dat$n2i), weights),
+              ilab.xpos=c(-1.9,-1.3,1.2), annosym=c(" (", " to ", ")"), rowadj=-.07)
+segments(0, -1, 0, k+1.6, col=coll)
+segments(coef(res), 0, coef(res), k, col=colp, lty="33", lwd=0.8)
+segments(summary(dat)$ci.lb, k:1, summary(dat)$ci.ub, k:1, col=colp, lwd=1.5)
+points(dat$yi, k:1, pch=18, cex=psize*1.15, col="white")
+points(dat$yi, k:1, pch=18, cex=psize, col=colp)
+addpoly(res, row=0, mlab="Total (95% CI)", efac=2, col=colp, border=colp)
+abline(h=k+1.6, col=coll)
+axis(side=1, at=seq(-1,1,by=0.5), col=coll, labels=FALSE)
+par(xpd=NA)
+par(cex=sav$cex, font=2)
+text(sav$xlim[1], k+2.5, pos=4, "Study or\nsubgroup")
+text(sav$ilab.xpos[1:2], k+2.3, c("Experimental","Control"))
+text(mean(sav$ilab.xpos[1:2]), k+3.4, "No of events / total")
+text(0, k+2.7, "Risk difference, IV,\nrandom (95% CI)")
+segments(sav$ilab.xpos[1]-0.24, k+2.8, sav$ilab.xpos[2]+0.14, k+2.8)
+text(c(sav$ilab.xpos[3],sav$xlim[2]-0.37), k+2.7, c("Weight\n(%)","Risk difference, IV,\nrandom (95% CI)"))
+text(c(-1,1), -2.5, c("Favors control","Favors experimental"), pos=c(4,2), offset=-0.3)
+par(cex=sav$cex, font=1)
+text(sav$ilab.xpos[3], 0, "100.0")
+text(sav$ilab.xpos[1:2], 0, c(paste(sum(dat$ai), "/", sum(dat$n1i)), paste(sum(dat$ci), "/", sum(dat$n2i))))
+text(sav$xlim[1], -1, pos=4, bquote(paste("Test for heterogeneity: ",
+   tau^2, "=", .(fmtx(res$tau2, digits=2)), "; ",
+   chi^2, "=", .(fmtx(res$QE, digits=2)),
+   ", df=", .(res$k - res$p), ", ",
+   .(fmtp(res$QEp, digits=2, pname="P", add0=TRUE, equal=TRUE)), "; ",
+   I^2, "=", .(round(res$I2)), "%")))
+text(sav$xlim[1], -2, pos=4, bquote(paste("Test for overall effect: ",
+   "Z=", .(fmtx(res$zval, digits=2)), ", ",
+   .(fmtp(res$pval, digits=3, pname="P", add0=TRUE, equal=TRUE)))))
+dev.off()
