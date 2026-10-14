@@ -17,6 +17,7 @@ import numpy.typing
 import scipy.stats
 
 import metafopy.errors
+import metafopy.methods.ls_permutest
 import metafopy.methods.permutest
 import metafopy.plot.draw
 import metafopy.plot.histplot
@@ -35,13 +36,30 @@ class PlotPermutestResult:
     names: tuple[str, ...]
 
 
-def select_coefficients(x: metafopy.methods.permutest.PermutestResult, beta: collections.abc.Sequence[int | str] | int | str | None) -> list[int]:
-    """The 0-based positions of the coefficients to plot (all but the intercept by default)."""
-    names = list(x.coef_names)
+def select_coefficients(
+    x: typing.Any,
+    beta: collections.abc.Sequence[int | str] | int | str | None,
+    *,
+    names: collections.abc.Sequence[str] | None = None,
+    p: int | None = None,
+    int_only: bool | None = None,
+    int_incl: bool | None = None,
+) -> list[int]:
+    """The 0-based positions of the coefficients to plot (all but the intercept by default).
+
+    ``names``, ``p``, ``int_only`` and ``int_incl`` default to those of the location coefficients of ``x``.
+
+    Raises:
+        metafopy.errors.InputError: a name or position does not match a coefficient.
+    """
+    names = list(x.coef_names if names is None else names)
+    p = x.p if p is None else p
+    int_only = x.int_only if int_only is None else int_only
+    int_incl = x.int_incl if int_incl is None else int_incl
     if beta is None:
-        if x.int_only:
+        if int_only:
             return [0]
-        return list(range(1, x.p)) if x.int_incl else list(range(x.p))
+        return list(range(1, p)) if int_incl else list(range(p))
     items = [beta] if isinstance(beta, int | str) else list(beta)
     out: list[int] = []
     for item in items:
@@ -50,16 +68,18 @@ def select_coefficients(x: metafopy.methods.permutest.PermutestResult, beta: col
                 raise metafopy.errors.InputError(f"Could not find the coefficient '{item}'.")
             out.append(names.index(item))
         else:
-            if item < 0 or item >= x.p:
+            if item < 0 or item >= p:
                 raise metafopy.errors.InputError('Coefficient positions must be between 0 and the number of coefficients minus one.')
             out.append(int(item))
     return out
 
 
 def plot_permutest(
-    x: metafopy.methods.permutest.PermutestResult,
+    x: metafopy.methods.permutest.PermutestResult | metafopy.methods.ls_permutest.LSPermutestResult,
     beta: collections.abc.Sequence[int | str] | int | str | None = None,
+    alpha: collections.abc.Sequence[int | str] | int | str | None = None,
     QM: bool = False,
+    QS: bool = False,
     breaks: object = 'Scott',
     freq: bool = False,
     col: str | None = None,
@@ -79,7 +99,10 @@ def plot_permutest(
 ) -> PlotPermutestResult:
     """Plot the permutation distributions of a :func:`~metafopy.permutest` result (``plot.permutest.rma.uni``).
 
-    ``beta`` selects the coefficients (names or 0-based positions; all but the intercept by default) and ``QM=True`` adds the omnibus test.
+    ``beta`` selects the coefficients (names or 0-based positions; all but the intercept by default; ``[]`` for none) and ``QM=True`` adds the
+    omnibus test. For a location-scale permutation test (:class:`~metafopy.methods.ls_permutest.LSPermutestResult`) ``alpha`` selects the
+    scale coefficients in the same way and ``QS=True`` adds the omnibus test of the scale coefficients; the panels are, as in metafor, the
+    location omnibus test, the location coefficients, the scale omnibus test and the scale coefficients.
     ``breaks`` is the ``breaks`` argument of ``hist()``, ``freq`` draws counts instead of densities, ``trim`` drops that fraction of the most
     extreme permutations from the histogram, and ``lwd`` gives the widths of the dashed line at the observed value, of the theoretical
     null distribution (the density of the reference ``z``, ``t``, chi-square or ``F`` distribution), of the kernel density estimate of
@@ -96,10 +119,13 @@ def plot_permutest(
     alt = x.alternative if alternative is None else alternative
     p2 = x.p2defn if p2defn is None else p2defn
     st = x.stat if stat is None else stat
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if alt not in ('two.sided', 'less', 'greater'):
         raise metafopy.errors.InputError("alternative must be 'two.sided', 'less' or 'greater'.")
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if p2 not in ('abs', 'px2'):
         raise metafopy.errors.InputError("p2defn must be 'abs' or 'px2'.")
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if st not in ('test', 'coef'):
         raise metafopy.errors.InputError("stat must be 'test' or 'coef'.")
     widths = [float(lwd)] * 3 + [4.0] if isinstance(lwd, int | float) else [float(v) for v in lwd]
@@ -115,14 +141,21 @@ def plot_permutest(
     col_out_ = metafopy.plot.histplot.COL_OUT if col_out is None else col_out
     col_ref_ = metafopy.plot.histplot.COL_REF if col_ref is None else col_ref
     col_density_ = metafopy.plot.histplot.COL_DENSITY if col_density is None else col_density
-    chosen = select_coefficients(x, beta)
-    use_qm = QM and not x.int_only
-    n_panels = len(chosen) + int(use_qm)
+    is_ls = isinstance(x, metafopy.methods.ls_permutest.LSPermutestResult)
+    skip_beta = is_ls and typing.cast(metafopy.methods.ls_permutest.LSPermutestResult, x).skip_beta
+    chosen = [] if skip_beta else select_coefficients(x, beta)
+    use_qm = QM and not x.int_only and not skip_beta
+    chosen_alpha: list[int] = []
+    use_qs = False
+    ls = typing.cast(metafopy.methods.ls_permutest.LSPermutestResult, x)
+    if is_ls and not ls.skip_alpha:
+        chosen_alpha = select_coefficients(ls, alpha, names=ls.alpha_names, p=ls.q, int_only=ls.Z_int_only, int_incl=ls.Z_int_incl)
+        use_qs = QS
+    n_panels = len(chosen) + int(use_qm) + len(chosen_alpha) + int(use_qs)
     if n_panels == 0:
         raise metafopy.errors.InputError('Must select at least one element to plot.')
     perm = x.zval_perm if st == 'test' else x.beta_perm
     observed = x.zval if st == 'test' else x.beta
-    ddf = x.ddf
     drawn, context = metafopy.plot.histplot.panels(axx, n_panels)
     titles: list[str] = []
     legend_pending = [bool(legend)]
@@ -163,62 +196,78 @@ def plot_permutest(
             ylim = (0.0, float(max(float(ys.max()) if widths[1] > 0 else 0.0, float(dy.max()) if widths[2] > 0 else 0.0, float(plain.density.max()))))
         return metafopy.plot.histplot.draw_histogram(panel, shown, breaks, col=col_, border=border_, main=main, xlab=xlab, freq=freq, ylim=ylim)
 
+    def omnibus(panel: matplotlib.axes.Axes, pdist: FloatArray, obs: float, df1: int, df2: int | None, main: str) -> None:
+        top = max(float(scipy.stats.chi2.ppf(0.995, df1) if df2 is None else scipy.stats.f.ppf(0.995, df1, df2)), float(numpy.nanmax(pdist)))
+        xs, ys, dx, dy = reference_and_density(pdist, 0.0, top, scipy.stats.chi2(df1).pdf if df2 is None else scipy.stats.f(df1, df2).pdf)
+        shown = metafopy.plot.histplot.apply_trim(pdist, trim, two_sided=False)
+        h = histogram(panel, shown, ys, dy, main, 'Value of Test Statistic')
+        tail_bars(panel, h, obs, 'upper')
+        if widths[0] > 0:
+            metafopy.plot.draw.vline(panel, obs, lty='dashed', lw=widths[0])
+        if widths[1] > 0:
+            metafopy.plot.draw.line(panel, xs, ys, col=col_ref_, lw=widths[1])
+        if widths[2] > 0:
+            metafopy.plot.draw.line(panel, dx, dy, col=col_density_, lw=widths[2])
+        legend_for(panel)
+
+    def coefficient(panel: matplotlib.axes.Axes, pdist: FloatArray, obs: float, ddf: int | None, main: str) -> None:
+        finite = pdist[numpy.isfinite(pdist)]
+        crit = float(scipy.stats.norm.ppf(0.995) if ddf is None else scipy.stats.t.ppf(0.995, ddf))
+        xs, ys, dx, dy = reference_and_density(
+            pdist, min(-crit, float(finite.min())), max(crit, float(finite.max())), scipy.stats.norm.pdf if ddf is None else scipy.stats.t(ddf).pdf
+        )
+        shown = metafopy.plot.histplot.apply_trim(pdist, trim, two_sided=True)
+        xlab = 'Value of Test Statistic' if st == 'test' else 'Value of Coefficient'
+        h = histogram(panel, shown, ys, dy, '' if n_panels == 1 else main, xlab)
+        if alt == 'two.sided':
+            if p2 == 'abs':
+                tail_bars(panel, h, -abs(obs), 'lower')
+                tail_bars(panel, h, abs(obs), 'upper')
+                if widths[0] > 0:
+                    for v in (-obs, obs):
+                        metafopy.plot.draw.vline(panel, v, lty='dashed', lw=widths[0])
+            elif obs > float(numpy.median(finite)):
+                tail_bars(panel, h, abs(obs), 'upper', 2.0)
+                if widths[0] > 0:
+                    metafopy.plot.draw.vline(panel, obs, lty='dashed', lw=widths[0])
+            else:
+                tail_bars(panel, h, -abs(obs), 'lower', 2.0)
+                if widths[0] > 0:
+                    metafopy.plot.draw.vline(panel, -abs(obs), lty='dashed', lw=widths[0])
+        else:
+            tail_bars(panel, h, obs, 'lower' if alt == 'less' else 'upper')
+            if widths[0] > 0:
+                metafopy.plot.draw.vline(panel, obs, lty='dashed', lw=widths[0])
+        if widths[1] > 0:
+            metafopy.plot.draw.line(panel, xs, ys, col=col_ref_, lw=widths[1])
+        if widths[2] > 0:
+            metafopy.plot.draw.line(panel, dx, dy, col=col_density_, lw=widths[2])
+        if widths[3] > 0:
+            metafopy.plot.draw.vline(panel, 0.0, lw=widths[3])
+        legend_for(panel)
+
+    location = 'Location Coefficient: ' if is_ls else 'Coefficient: '
     with context:
         panel_iter = iter(drawn)
         if use_qm:
-            panel = next(panel_iter)
-            pdist = x.QM_perm
-            df1 = len(x.btt)
-            top = max(float(scipy.stats.chi2.ppf(0.995, df1) if ddf is None else scipy.stats.f.ppf(0.995, df1, ddf)), float(numpy.nanmax(pdist)))
-            xs, ys, dx, dy = reference_and_density(pdist, 0.0, top, scipy.stats.chi2(df1).pdf if ddf is None else scipy.stats.f(df1, ddf).pdf)
-            shown = metafopy.plot.histplot.apply_trim(pdist, trim, two_sided=False)
-            h = histogram(panel, shown, ys, dy, 'Omnibus Test of Coefficients', 'Value of Test Statistic')
-            tail_bars(panel, h, float(x.QM), 'upper')
-            if widths[0] > 0:
-                metafopy.plot.draw.vline(panel, float(x.QM), lty='dashed', lw=widths[0])
-            if widths[1] > 0:
-                metafopy.plot.draw.line(panel, xs, ys, col=col_ref_, lw=widths[1])
-            if widths[2] > 0:
-                metafopy.plot.draw.line(panel, dx, dy, col=col_density_, lw=widths[2])
-            legend_for(panel)
+            omnibus(
+                next(panel_iter),
+                x.QM_perm,
+                float(x.QM),
+                len(x.btt),
+                x.ddf,
+                'Omnibus Test of Location Coefficients' if is_ls else 'Omnibus Test of Coefficients',
+            )
             titles.append('QM')
         for j in chosen:
-            panel = next(panel_iter)
-            pdist = numpy.asarray(perm.iloc[:, j], dtype=float)
-            obs = float(observed[j])
-            finite = pdist[numpy.isfinite(pdist)]
-            crit = float(scipy.stats.norm.ppf(0.995) if ddf is None else scipy.stats.t.ppf(0.995, ddf))
-            xs, ys, dx, dy = reference_and_density(
-                pdist, min(-crit, float(finite.min())), max(crit, float(finite.max())), scipy.stats.norm.pdf if ddf is None else scipy.stats.t(ddf).pdf
-            )
-            shown = metafopy.plot.histplot.apply_trim(pdist, trim, two_sided=True)
-            xlab = 'Value of Test Statistic' if st == 'test' else 'Value of Coefficient'
-            h = histogram(panel, shown, ys, dy, '' if n_panels == 1 else f'Coefficient: {x.coef_names[j]}', xlab)
-            if alt == 'two.sided':
-                if p2 == 'abs':
-                    tail_bars(panel, h, -abs(obs), 'lower')
-                    tail_bars(panel, h, abs(obs), 'upper')
-                    if widths[0] > 0:
-                        for v in (-obs, obs):
-                            metafopy.plot.draw.vline(panel, v, lty='dashed', lw=widths[0])
-                elif obs > float(numpy.median(finite)):
-                    tail_bars(panel, h, abs(obs), 'upper', 2.0)
-                    if widths[0] > 0:
-                        metafopy.plot.draw.vline(panel, obs, lty='dashed', lw=widths[0])
-                else:
-                    tail_bars(panel, h, -abs(obs), 'lower', 2.0)
-                    if widths[0] > 0:
-                        metafopy.plot.draw.vline(panel, -abs(obs), lty='dashed', lw=widths[0])
-            else:
-                tail_bars(panel, h, obs, 'lower' if alt == 'less' else 'upper')
-                if widths[0] > 0:
-                    metafopy.plot.draw.vline(panel, obs, lty='dashed', lw=widths[0])
-            if widths[1] > 0:
-                metafopy.plot.draw.line(panel, xs, ys, col=col_ref_, lw=widths[1])
-            if widths[2] > 0:
-                metafopy.plot.draw.line(panel, dx, dy, col=col_density_, lw=widths[2])
-            if widths[3] > 0:
-                metafopy.plot.draw.vline(panel, 0.0, lw=widths[3])
-            legend_for(panel)
+            coefficient(next(panel_iter), numpy.asarray(perm.iloc[:, j], dtype=float), float(observed[j]), x.ddf, f'{location}{x.coef_names[j]}')
             titles.append(x.coef_names[j])
+        if use_qs:
+            omnibus(next(panel_iter), ls.QS_perm, float(ls.QS), len(ls.att), ls.ddf_alpha, 'Omnibus Test of Scale Coefficients')
+            titles.append('QS')
+        for j in chosen_alpha:
+            perm2 = ls.zval_alpha_perm if st == 'test' else ls.alpha_perm
+            obs2 = ls.zval_alpha if st == 'test' else ls.alpha
+            coefficient(next(panel_iter), numpy.asarray(perm2.iloc[:, j], dtype=float), float(obs2[j]), ls.ddf_alpha, f'Scale Coefficient: {ls.alpha_names[j]}')
+            titles.append(ls.alpha_names[j])
     return PlotPermutestResult(tuple(drawn), tuple(titles))

@@ -88,6 +88,8 @@ class LSPermutestResult:
     zval_alpha_perm: pandas.DataFrame
     alpha_perm: pandas.DataFrame
     digits: int = 4
+    int_incl: bool = True
+    Z_int_incl: bool = True
 
     def __str__(self) -> str:
         return format_permutest(self)
@@ -342,6 +344,8 @@ def permutest_rma_ls(
         alpha_perm = pandas.DataFrame(av, columns=list(x.alpha_names))
 
     return LSPermutestResult(
+        int_incl=x.int_incl,
+        Z_int_incl=x.Z_int_incl,
         pval=pval,
         QMdf=x.QMdf,
         QMp=QMp,
