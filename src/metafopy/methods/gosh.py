@@ -8,6 +8,7 @@ https://wviechtb.github.io/metafor/reference/gosh.rma.html.
 """
 
 import collections.abc
+import concurrent.futures
 import dataclasses
 import functools
 import math
@@ -18,6 +19,7 @@ import numpy.typing
 import pandas
 import scipy.stats
 
+import metafopy.core.parallel
 import metafopy.core.rng
 import metafopy.errors
 import metafopy.methods.blup
@@ -29,6 +31,9 @@ import metafopy.printing
 __all__ = ['GoshResult', 'gosh']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
+
+# subsets fitted per task (and per step of the progress bar)
+CHUNK = 1000
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -96,7 +101,15 @@ def gosh(x: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> GoshResult:
 
 @gosh.register
 def gosh_rma_uni(
-    x: metafopy.models.rma_uni.RMAResult, subsets: int | None = None, *, seed: int | None = None, rng: metafopy.core.rng.RRandom | None = None
+    x: metafopy.models.rma_uni.RMAResult,
+    subsets: int | None = None,
+    *,
+    seed: int | None = None,
+    rng: metafopy.core.rng.RRandom | None = None,
+    progbar: bool = False,
+    parallel: metafopy.core.parallel.Parallel = 'no',
+    ncpus: int = 1,
+    cl: concurrent.futures.Executor | None = None,
 ) -> GoshResult:
     """Fit the model to subsets of the studies.
 
@@ -106,12 +119,16 @@ def gosh_rma_uni(
     ``gosh(res, seed=s)`` draws the same subset sizes and study indices as
     R's ``set.seed(s)`` does, apart from the sampling probabilities being computed by SciPy
     rather than R's ``dbinom``, which can reorder tied sizes); without it the module's global
-    generator is used (:func:`metafopy.set_seed`).
+    generator is used (:func:`metafopy.set_seed`). As in metafor, ``parallel`` (``'snow'`` or ``'multicore'``) fits the
+    subsets in a process pool of ``ncpus`` workers (or on the executor ``cl``), in blocks of ``CHUNK`` subsets, and
+    ``progbar=True`` prints a progress bar (per block) to stderr; the subsets are drawn before the fits, so the result
+    equals that of the serial run.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
     k, p = x.k, x.p
+    parallel = metafopy.core.parallel.resolve_parallel(parallel, ncpus, cl)
     if k == 1:
         raise metafopy.errors.InputError('Stopped because k = 1.')
     n_tot = sum(math.comb(k, m) for m in range(p, k + 1))
@@ -146,19 +163,11 @@ def gosh_rma_uni(
         model = 2
 
     n = incl.shape[0]
-    beta = numpy.full((n, p), numpy.nan)
-    het = numpy.full((n, 5), numpy.nan)
-    for i in range(n):
-        mask = incl[i]
-        if model:
-            b, h = closed_form(x, mask, model)
-            beta[i], het[i] = b, h
-            continue
-        fit = metafopy.methods.common.refit(x, mask)
-        if fit is None:
-            continue
-        beta[i] = fit.beta
-        het[i] = (fit.k, fit.QE, fit.I2, fit.H2, fit.tau2)
+    blocks = [incl[i : i + CHUNK] for i in range(0, n, CHUNK)]
+    one = functools.partial(gosh_block, x, model)
+    parts = metafopy.core.parallel.map_sims(one, blocks, parallel=parallel, ncpus=ncpus, cl=cl, progbar=progbar)
+    beta = numpy.concatenate([b for b, _ in parts])
+    het = numpy.concatenate([h for _, h in parts])
     ok = ~numpy.isnan(het).any(axis=1)
     if not ok.any():
         raise metafopy.errors.InputError('All model fits failed.')
@@ -172,6 +181,24 @@ def gosh_rma_uni(
     incl = incl[order]
     fit_ok = ~frame.isna().any(axis=1).to_numpy()
     return GoshResult(res=frame, incl=incl, fit=fit_ok, k=k, int_only=x.int_only, method=x.method, measure=x.measure)
+
+
+def gosh_block(x: metafopy.models.rma_uni.RMAResult, model: int, incl: numpy.typing.NDArray[numpy.bool_]) -> tuple[FloatArray, FloatArray]:
+    """The coefficients and heterogeneity statistics (k, QE, I2, H2, tau2) of the fits to the subsets in the rows of ``incl``."""
+    n = incl.shape[0]
+    beta = numpy.full((n, x.p), numpy.nan)
+    het = numpy.full((n, 5), numpy.nan)
+    for i in range(n):
+        mask = incl[i]
+        if model:
+            beta[i], het[i] = closed_form(x, mask, model)
+            continue
+        fit = metafopy.methods.common.refit(x, mask)
+        if fit is None:
+            continue
+        beta[i] = fit.beta
+        het[i] = (fit.k, fit.QE, fit.I2, fit.H2, fit.tau2)
+    return beta, het
 
 
 def closed_form(x: metafopy.models.rma_uni.RMAResult, mask: numpy.typing.NDArray[numpy.bool_], model: int) -> tuple[FloatArray, FloatArray]:

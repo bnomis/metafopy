@@ -5,7 +5,9 @@ The model is refitted with one scale coefficient fixed at each value of a grid a
 """
 
 import collections.abc
+import concurrent.futures
 import dataclasses
+import functools
 import math
 import warnings
 
@@ -14,6 +16,7 @@ import numpy.typing
 import pandas
 import scipy.stats
 
+import metafopy.core.parallel
 import metafopy.errors
 import metafopy.methods.ls_common
 import metafopy.methods.profile
@@ -52,6 +55,16 @@ class LSProfileResult:
         return self.to_frame().to_string()
 
 
+def profile_fit(x: metafopy.models.rma_ls_result.RMALSResult, pos: int, val: float) -> tuple[float, FloatArray, FloatArray, FloatArray] | None:
+    """The refit of ``x`` with scale coefficient ``pos`` fixed at ``val``: log-likelihood, coefficients and CI bounds (``None`` if it fails)."""
+    arg = numpy.where(x.alpha_fix, x.alpha, numpy.nan)
+    arg[pos] = val
+    fit = metafopy.methods.ls_common.refit_ls(x, alpha=arg)
+    if fit is None:
+        return None
+    return fit.logLik(), fit.beta, fit.ci_lb, fit.ci_ub
+
+
 @metafopy.methods.profile.profile.register  # type: ignore[arg-type]  # returns a result class of its own
 # auditme: accept[duplicate-call-sequence] the profile of a location-scale model follows the same steps as profile.rma in metafor
 def profile_rma_ls(
@@ -63,17 +76,24 @@ def profile_rma_ls(
     lltol: float = 0.001,
     *,
     exp: bool = False,
+    progbar: bool = False,
+    parallel: metafopy.core.parallel.Parallel = 'no',
+    ncpus: int = 1,
+    cl: concurrent.futures.Executor | None = None,
 ) -> LSProfileResult | list[LSProfileResult]:
     """Profile the likelihood over a scale coefficient (``alpha``, a 0-based position) on ``steps`` equally spaced values in ``xlim``.
 
     ``steps`` may also be the vector of values. Without ``alpha`` every estimated scale coefficient is profiled and a list is
     returned (a single result if there is one). ``xlim`` defaults to the estimate plus and minus 2.576 standard errors,
-    limited by ``alpha_min`` and ``alpha_max`` of the control settings.
+    limited by ``alpha_min`` and ``alpha_max`` of the control settings. As in metafor, ``parallel`` (``'snow'`` or
+    ``'multicore'``) refits the models in a process pool of ``ncpus`` workers (or on the executor ``cl``) and
+    ``progbar=True`` prints a progress bar to stderr; the result equals that of the serial run.
 
     Raises:
         metafopy.errors.InputError: an argument is invalid or the model has no such coefficient.
     """
     x = fitted
+    parallel = metafopy.core.parallel.resolve_parallel(parallel, ncpus, cl)
     if x.optbeta:
         raise metafopy.errors.InputError("Profiling not yet implemented for models fitted with 'optbeta=True'.")
     st = numpy.atleast_1d(numpy.asarray(steps, dtype=numpy.float64))
@@ -90,7 +110,7 @@ def profile_rma_ls(
         free = numpy.flatnonzero(~x.alpha_fix)
         if free.size == 0:
             raise metafopy.errors.InputError('No components in the model for which a profile likelihood can be constructed.')
-        results = [profile_rma_ls(x, int(pos), xlim, ylim, steps, lltol, exp=exp) for pos in free]
+        results = [profile_rma_ls(x, int(pos), xlim, ylim, steps, lltol, exp=exp, progbar=progbar, parallel=parallel, ncpus=ncpus, cl=cl) for pos in free]
         out = [r for r in results if isinstance(r, LSProfileResult)]
         return out[0] if len(out) == 1 else out
 
@@ -130,15 +150,12 @@ def profile_rma_ls(
     beta = numpy.full((len(vcs), x.p), numpy.nan)
     ci_lb = numpy.full_like(beta, numpy.nan)
     ci_ub = numpy.full_like(beta, numpy.nan)
-    base = numpy.where(x.alpha_fix, x.alpha, numpy.nan)
-    for i, val in enumerate(vcs):
-        arg = base.copy()
-        arg[alpha] = val
-        fit = metafopy.methods.ls_common.refit_ls(x, alpha=arg)
+    one = functools.partial(profile_fit, x, alpha)
+    fits = metafopy.core.parallel.map_sims(one, [float(v) for v in vcs], parallel=parallel, ncpus=ncpus, cl=cl, progbar=progbar)
+    for i, fit in enumerate(fits):
         if fit is None:
             continue
-        lls[i] = fit.logLik()
-        beta[i], ci_lb[i], ci_ub[i] = fit.beta, fit.ci_lb, fit.ci_ub
+        lls[i], beta[i], ci_lb[i], ci_ub[i] = fit
 
     maxll = x.logLik()
     if numpy.any(lls >= maxll + lltol):
