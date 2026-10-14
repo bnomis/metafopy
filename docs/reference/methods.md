@@ -541,6 +541,36 @@ Functions that take a fitted model. Each is a single-dispatch function: the gene
       show_root_full_path: false
       show_source: false
 
+## Regression on correlation and covariance matrices
+
+::: metafopy.matreg
+    options:
+      heading_level: 3
+      show_root_heading: true
+      show_root_full_path: false
+      show_source: false
+
+::: metafopy.MatregResult
+    options:
+      heading_level: 3
+      show_root_heading: true
+      show_root_full_path: false
+      show_source: false
+
+::: metafopy.MatregConfintResult
+    options:
+      heading_level: 3
+      show_root_heading: true
+      show_root_full_path: false
+      show_source: false
+
+::: metafopy.MatregPredictResult
+    options:
+      heading_level: 3
+      show_root_heading: true
+      show_root_full_path: false
+      show_source: false
+
 ## Random number generator
 
 ::: metafopy.set_seed

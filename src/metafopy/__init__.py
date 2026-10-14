@@ -19,6 +19,7 @@ from metafopy.methods.confint import ConfintResult, confint
 from metafopy.methods.gosh import GoshResult, gosh
 from metafopy.methods.influence import InfluenceResult, ResidualResult, cooks_distance, dfbetas, influence, rstandard, rstudent
 from metafopy.methods.leave1out import CumulResult, Leave1outResult, cumul, leave1out
+from metafopy.methods.matreg import MatregConfintResult, MatregPredictResult, MatregResult, matreg
 from metafopy.methods.pairmat import pairmat
 from metafopy.methods.permutest import PermutestResult, permutest
 from metafopy.methods.predict import PredictResult, predict
@@ -78,6 +79,9 @@ __all__ = [
     'Leave1outResult',
     'MHResult',
     'MVControl',
+    'MatregConfintResult',
+    'MatregPredictResult',
+    'MatregResult',
     'MetaData',
     'PermutestResult',
     'PetoResult',
@@ -123,6 +127,7 @@ __all__ = [
     'labbe',
     'leave1out',
     'llplot',
+    'matreg',
     'pairmat',
     'parse_random',
     'permutest',
