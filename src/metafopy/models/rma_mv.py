@@ -557,6 +557,7 @@ def rma_mv(
     sinfo = process_s_before(rand, idx, sigma2, R)
     if not with_s:
         sinfo = SInfo(names=[], factors=[], sigma2=numpy.zeros(0), R=[], Rfix=[], with_r=False)
+    s_levels_f = tuple(tuple(f.levels) for f in sinfo.factors)
     sigma2s = len(sinfo.factors) if with_s else 1
 
     group_g = group_h = None
@@ -1078,6 +1079,8 @@ def rma_mv(
         h_names=h_names_out,
         s_nlevels=s_nlevels,
         s_levels=s_levels,
+        s_levels_f=s_levels_f,
+        slab_f=slab_s,
         Rfix=tuple(sinfo.Rfix),
         Rscale=rscale,
         group_g=group_g,

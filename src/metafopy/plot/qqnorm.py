@@ -16,6 +16,7 @@ import pandas
 import metafopy.core.rng
 import metafopy.errors
 import metafopy.methods.influence
+import metafopy.models.mv_result
 import metafopy.models.rma_uni
 import metafopy.plot
 import metafopy.plot.draw
@@ -42,7 +43,7 @@ class QQNormResult:
 
 
 def qqnorm(
-    y: metafopy.models.rma_uni.RMAResult,
+    y: metafopy.models.rma_uni.RMAResult | metafopy.models.mv_result.RMAMVResult,
     type: str = 'rstandard',
     pch: int = 21,
     col: str | None = None,
@@ -77,7 +78,10 @@ def qqnorm(
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.NotSupportedError: ``y`` is an ``rma.mv`` fit (``qqnorm.rma.mv`` only stops in metafor).
     """
+    if isinstance(y, metafopy.models.mv_result.RMAMVResult):
+        raise metafopy.errors.NotSupportedError('Method not available for objects of class "rma.mv".')
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if type not in ('rstandard', 'rstudent'):
         raise metafopy.errors.InputError("type must be 'rstandard' or 'rstudent'")

@@ -201,5 +201,18 @@ See the `R` argument of [`rma_mv`](../reference/models.md#metafopy.rma_mv).
 
 ## What works on an rma_mv fit
 
-`predict`, `anova`, `confint` (profile-likelihood intervals for the variance components) and `robust` accept an `rma_mv`
-fit. The leave-one-out and influence diagnostics are only available for `rma_uni` fits, see [Diagnostics](diagnostics.md).
+`predict`, `anova`, `confint` (profile-likelihood intervals for the variance components), `profile`, `ranef`, `robust`,
+`cooks_distance`, `dfbetas`, `rstandard` and `rstudent` accept an `rma_mv` fit, as does its `hatvalues()` method. The
+case-deletion diagnostics refit the model without each observation, or without each cluster given as `cluster=`:
+
+```python
+from metafopy import cooks_distance, ranef, rstudent
+
+dat = datasets.load('dat.konstantopoulos2011')
+res = rma_mv(yi='yi', V='vi', random='~ 1 | district/school', data=dat)
+print(cooks_distance(res, cluster='district'))
+print(rstudent(res, cluster='district'))
+print(ranef(res)['district'])
+```
+
+As in metafor, `influence`, `leave1out` and `qqnorm` are not available for `rma_mv` fits, see [Diagnostics](diagnostics.md).
