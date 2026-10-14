@@ -35,7 +35,9 @@ class Leave1outResult:
     """One row per left-out study with the re-estimated pooled effect and heterogeneity statistics.
 
     ``se`` is NaN when a transformation was applied, as in metafor. ``tau2`` is
-    ``None`` for equal/fixed/common-effects models.
+    ``None`` for equal/fixed/common-effects models. ``measure``, ``level`` (the alpha of the
+    confidence intervals) and ``slab_null`` (the studies carry no labels of their own) are used by
+    the plots of cumulative results.
     """
 
     estimate: FloatArray
@@ -55,6 +57,9 @@ class Leave1outResult:
     transf: bool = False
     k: FloatArray | None = None
     order: numpy.typing.NDArray[typing.Any] | None = None
+    measure: str = 'GEN'
+    level: float = 0.05
+    slab_null: bool = False
 
     def to_frame(self) -> pandas.DataFrame:
         """Table with metafor's column names (``estimate``, ``se``, ``zval``/``tval``, ``pval``, ``ci.lb``, ...)."""
@@ -314,6 +319,9 @@ def cumul_rma_uni(
         transf=transf is not None,
         k=col['k'],
         order=uor,
+        measure=x.measure,
+        level=x.level,
+        slab_null=bool(numpy.all([lab == str(i + 1) for lab, i in zip(x.slab, numpy.flatnonzero(x.data.keep), strict=True)])) and not collapse,
     )
 
 

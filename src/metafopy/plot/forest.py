@@ -30,10 +30,12 @@ import scipy.stats
 import metafopy.errors
 import metafopy.methods.common
 import metafopy.methods.influence
+import metafopy.methods.leave1out
 import metafopy.methods.predict
 import metafopy.models.mv_result
 import metafopy.models.rma_uni
 import metafopy.plot
+import metafopy.plot.cumul
 import metafopy.plot.draw
 import metafopy.plot.rutils
 import metafopy.transf
@@ -618,7 +620,7 @@ def draw_dist(
 
 
 def forest(
-    x: metafopy.models.rma_uni.RMAResult | numpy.typing.ArrayLike,
+    x: metafopy.models.rma_uni.RMAResult | metafopy.methods.leave1out.CumulResult | numpy.typing.ArrayLike,
     vi: numpy.typing.ArrayLike | None = None,
     sei: numpy.typing.ArrayLike | None = None,
     ci_lb: numpy.typing.ArrayLike | None = None,
@@ -681,6 +683,7 @@ def forest(
     xlabfont: int | collections.abc.Sequence[int] = 1,
     decreasing: bool = False,
     measure: str | None = None,
+    slab_null: bool | None = None,
 ) -> ForestResult:
     """Forest plot of a fitted model (``forest.rma``) or of estimates with their variances (``forest.default``).
 
@@ -704,7 +707,8 @@ def forest(
     ``{family: font}`` mapping, or a sequence of up to three of these). The remaining metafor options passed
     through ``...`` are the keyword-only ``predtail``, ``annosym``, ``textpos``, ``rowadj``, ``top``, ``at_lab``,
     ``xlabadj``, ``xlabfont`` (one font or two, the second for the middle one of three labels) and ``decreasing``;
-    for the numeric form ``measure`` (or the ``attrs['measure']`` of a pandas Series) sets the label of the axis and header.
+    for the numeric form ``measure`` (or the ``attrs['measure']`` of a pandas Series) sets the label of the axis and header and
+    ``slab_null`` tells that the labels are the default ones (which gives the study labels less room).
 
     Indices are 0-based where they refer to positions; ``rows`` are plot rows as in R. Vector
     arguments (``slab``, ``ilab``, ``psize``, ...) must have one entry per study of the fit (or per
@@ -716,6 +720,50 @@ def forest(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
+    if isinstance(x, metafopy.methods.leave1out.CumulResult):
+        return metafopy.plot.cumul.forest_cumul(
+            x,
+            annotate=annotate,
+            header=header,
+            xlim=xlim,
+            alim=alim,
+            olim=olim,
+            ylim=ylim,
+            at=at,
+            steps=steps,
+            refline=refline,
+            digits=digits,
+            width=width,
+            xlab=xlab,
+            ilab=ilab,
+            ilab_lab=ilab_lab,
+            ilab_xpos=ilab_xpos,
+            ilab_pos=ilab_pos,
+            transf=transf,
+            atransf=atransf,
+            targs=targs,
+            rows=rows,
+            efac=efac,
+            pch=pch,
+            psize=1 if psize is None else psize,
+            col=col,
+            colci=colci,
+            shade=shade,
+            colshade=colshade,
+            lty=lty,
+            fonts=fonts,
+            cex=cex,
+            cex_lab=cex_lab,
+            cex_axis=cex_axis,
+            ax=ax,
+            annosym=annosym,
+            textpos=textpos,
+            rowadj=rowadj,
+            top=top,
+            at_lab=at_lab,
+            xlabadj=xlabadj,
+            xlabfont=xlabfont,
+        )
     is_fit = isinstance(x, metafopy.models.rma_uni.RMAResult)
     if transf is not None and atransf is not None:
         raise metafopy.errors.InputError("Use either 'transf' or 'atransf' to specify a transformation (not both).")
@@ -855,17 +903,18 @@ def forest(
         attrs = getattr(x, 'attrs', {})
         if measure is None:
             measure = str(attrs['measure']) if isinstance(attrs, dict) and attrs.get('measure') else 'GEN'
-        slab_null = False
+        label_null = False
         if slab is None:
             slab_l = [f'Study {i + 1}' for i in range(k)]
-            slab_null = True
+            label_null = True
         else:
             if numpy.ndim(slab) == 0 and not isinstance(slab, str) and math.isnan(float(slab)):  # type: ignore[arg-type]
                 # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
                 slab_l = [''] * k  # slab=NA in R: no study labels
-                slab_null = True
+                label_null = True
             else:
                 slab_l = list(slab)  # type: ignore[arg-type]
+        slab_null = label_null if slab_null is None else slab_null
         if len(slab_l) != k:
             raise metafopy.errors.InputError(f"Length of the 'slab' argument ({len(slab_l)}) does not correspond to the number of outcomes ({k}).")
         ilab_m = ilab_matrix(ilab)

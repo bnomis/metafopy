@@ -156,6 +156,17 @@ def ax_ticks(lo: float, hi: float, nint: int = 5) -> FloatArray:
     return at
 
 
+def color_ramp(c1: str, c2: str, n: int) -> list[str]:
+    """``colorRampPalette(c(c1, c2))(n)`` for hex colours (linear interpolation of the colour channels, which R truncates to integers)."""
+    a = numpy.array([int(c1[i : i + 2], 16) for i in (1, 3, 5)], dtype=float) / 255
+    b = numpy.array([int(c2[i : i + 2], 16) for i in (1, 3, 5)], dtype=float) / 255
+    out: list[str] = []
+    for t in numpy.linspace(0, 1, n):
+        r, g, bl = (math.floor(v * 255) for v in (b if t == 1 else a + (b - a) * t))
+        out.append(f'#{r:02X}{g:02X}{bl:02X}')
+    return out
+
+
 def usr_range(lo: float, hi: float) -> tuple[float, float]:
     """The user coordinates R uses for data range ``[lo, hi]`` with the default ``xaxs = "r"`` (4% extension)."""
     d = hi - lo

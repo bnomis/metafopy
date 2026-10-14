@@ -2,6 +2,7 @@
 
 ## Unreleased (1.0 candidate)
 
+- Add the metafor plots that were missing: `regplot` (meta-analytic scatterplot), `forest()` of a `cumul` result (`forest_cumul`), `plot_cumul` (plot of cumulative results), `llplot`, `plot_permutest` and `plot_vif`. Each is checked against the geometry R records. `cumul` results carry `measure`, `level` and `slab_null`. The BMJ, RevMan and superscript forest styles are still missing. The gallery shows the six next to metafor's figures.
 - Add a plot gallery to the user manual (`docs/guide/gallery.md`) with the plots of the metafor gallery drawn by metafopy next to the R figures (`bin/gallery.py`, `src/tests/r/gallery.R`), and the datasets `dat.damico2009` and `dat.pignon2000`.
 - `plot_infl(mfrow=)` sets the layout of the panels; `addpoly()` accepts a fitted `rma_mv` model; the zero tick of a plot is exactly zero; overlapping tick labels of the categorical x axes are left out as R does.
 - Add `selmodel` (selection models for publication bias) with `predict`, `confint`, `profile`, `anova` and `plot_selmodel`.

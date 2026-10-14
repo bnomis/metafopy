@@ -41,7 +41,25 @@ from metafopy.models.rma_uni import FitStats, RMAResult, rma, rma_uni
 from metafopy.models.sel_result import SelmodelResult
 from metafopy.models.selmodel import selmodel
 from metafopy.models.tau2 import Control
-from metafopy.plot import addpoly, baujat, forest, funnel, labbe, plot_gosh, plot_infl, plot_profile, plot_selmodel, qqnorm, radial
+from metafopy.plot import (
+    addpoly,
+    baujat,
+    forest,
+    forest_cumul,
+    funnel,
+    labbe,
+    llplot,
+    plot_cumul,
+    plot_gosh,
+    plot_infl,
+    plot_permutest,
+    plot_profile,
+    plot_selmodel,
+    plot_vif,
+    qqnorm,
+    radial,
+    regplot,
+)
 
 __all__ = [
     'BlupResult',
@@ -96,6 +114,7 @@ __all__ = [
     'dfbetas',
     'escalc',
     'forest',
+    'forest_cumul',
     'fsn',
     'funnel',
     'gosh',
@@ -103,13 +122,17 @@ __all__ = [
     'influence',
     'labbe',
     'leave1out',
+    'llplot',
     'pairmat',
     'parse_random',
     'permutest',
+    'plot_cumul',
     'plot_gosh',
     'plot_infl',
+    'plot_permutest',
     'plot_profile',
     'plot_selmodel',
+    'plot_vif',
     'predict',
     'profile',
     'qqnorm',
@@ -117,6 +140,7 @@ __all__ = [
     'ranef',
     'ranktest',
     'rcalc',
+    'regplot',
     'regtest',
     'rma',
     'rma_glmm',

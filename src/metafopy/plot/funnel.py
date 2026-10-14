@@ -75,18 +75,6 @@ class FunnelResult:
         return out
 
 
-def color_ramp(c1: str, c2: str, n: int) -> list[str]:
-    """``colorRampPalette(c(c1, c2))(n)`` for hex colours (linear interpolation in RGB)."""
-    a = numpy.array([int(c1[i : i + 2], 16) for i in (1, 3, 5)], dtype=float)
-    b = numpy.array([int(c2[i : i + 2], 16) for i in (1, 3, 5)], dtype=float)
-    out: list[str] = []
-    for t in numpy.linspace(0, 1, n):
-        v = a + (b - a) * t
-        r, g, bl = (math.floor(x + 0.5) for x in v)
-        out.append(f'#{r:02X}{g:02X}{bl:02X}')
-    return out
-
-
 def yvalues(yaxis: str, sei: FloatArray, vi: FloatArray, ni: FloatArray | None, weights: FloatArray | None) -> FloatArray:
     """The values plotted on the vertical axis."""
     if yaxis == 'sei':
@@ -322,7 +310,7 @@ def funnel(
     else:
         shade_c = [shade] if isinstance(shade, str) else list(shade)
     if len(lvl_alpha) > 1 and len(shade_c) == 1:
-        shade_c = color_ramp(shade_c[0], metafopy.plot.rutils.coladj(-0.5), len(lvl_alpha))
+        shade_c = metafopy.plot.rutils.color_ramp(shade_c[0], metafopy.plot.rutils.coladj(-0.5), len(lvl_alpha))
         shade_c = [shade_c[0], *shade_c[:0:-1]] if len(shade_c) > 1 else shade_c
 
     dg = [2, 3] if digits is None else ([digits, digits] if isinstance(digits, int) else list(digits))
