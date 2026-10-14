@@ -1094,7 +1094,7 @@ def rma_mv(
         vc_names=vc_names,
         spec=spec,
         iterations=iterations,
-        measure='GEN',
+        measure=str(data.attrs['measure']) if data is not None and data.attrs.get('measure') else 'GEN',
         p_eff=p_eff,
         optbeta=optbeta,
         lambda1=float(lambda1),

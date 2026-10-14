@@ -15,6 +15,7 @@ import numpy.typing
 import metafopy.bias.inputs
 import metafopy.errors
 import metafopy.metadata
+import metafopy.methods.fitview
 import metafopy.models.rma_uni
 
 __all__ = ['TrimfillResult', 'trimfill']
@@ -98,6 +99,8 @@ def trimfill(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
+    metafopy.methods.fitview.check_method(x, 'trimfill')
+    metafopy.methods.fitview.check_class(x, must='rma.uni', notav=('robust.rma', 'rma.ls', 'rma.gen', 'rma.uni.selmodel'))
     if not x.int_only:
         raise metafopy.errors.InputError('Trim-and-fill method only applicable to models without moderators.')
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists

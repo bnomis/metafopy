@@ -1,7 +1,7 @@
-"""Confidence intervals, residuals, leave-one-out and cumulative analyses for ``rma_mh`` and ``rma_peto`` fits.
+"""Confidence intervals, residuals, leave-one-out, cumulative and GOSH analyses for ``rma_mh`` and ``rma_peto`` fits.
 
 These mirror metafor's ``confint.rma.mh``, ``rstandard.rma.mh``,
-``rstudent.rma.mh``, ``leave1out.rma.mh`` and ``cumul.rma.mh`` (and their
+``rstudent.rma.mh``, ``leave1out.rma.mh``, ``cumul.rma.mh`` and ``gosh.rma`` (and their
 ``rma.peto`` counterparts); the diagnostics refit the model with the
 corresponding tables left out.
 """
@@ -15,9 +15,11 @@ import numpy.typing
 import pandas
 import scipy.stats
 
+import metafopy.core.rng
 import metafopy.errors
 import metafopy.methods.common
 import metafopy.methods.confint
+import metafopy.methods.gosh
 import metafopy.methods.influence
 import metafopy.methods.leave1out
 import metafopy.models.binary
@@ -339,3 +341,36 @@ def cumul_fixed_binary(
         k=col['k'][show],
         order=uor[show],
     )
+
+
+@metafopy.methods.gosh.gosh.register
+def gosh_fixed_binary(
+    x: metafopy.models.binary.FixedBinaryResult,
+    subsets: int | None = None,
+    *,
+    seed: int | None = None,
+    rng: metafopy.core.rng.RRandom | None = None,
+) -> metafopy.methods.gosh.GoshResult:
+    """Fit the Mantel-Haenszel or Peto model to subsets of the tables (``gosh.rma``; arguments as in :func:`metafopy.methods.gosh.gosh_rma_uni`).
+
+    The subsets are drawn from the ``k`` tables with complete counts; each one is refitted with the
+    settings of ``x``. See https://github.com/wviechtb/metafor/blob/master/R/gosh.rma.r.
+
+    Raises:
+        metafopy.errors.InputError: ``k = 1``, ``subsets`` is invalid or all fits failed.
+    """
+    t = x.tables
+    if t.k == 1:
+        raise metafopy.errors.InputError('Stopped because k = 1.')
+    incl = metafopy.methods.gosh.inclusion_matrix(t.k, 1, subsets, seed, rng)
+    n = incl.shape[0]
+    beta = numpy.full((n, 1), numpy.nan)
+    het = numpy.full((n, 5), numpy.nan)
+    for i in range(n):
+        fit = refit_tables(x, t.cells, incl[i])
+        if fit is None:
+            continue
+        beta[i, 0] = fit.beta[0]
+        het[i] = (fit.k, fit.QE, fit.I2, fit.H2, fit.tau2)
+    # auditme: accept[literal-duplication] R's column name for an intercept-only model
+    return metafopy.methods.gosh.assemble(beta, het, incl, ['estimate'], True, x.method, x.measure)

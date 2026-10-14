@@ -15,8 +15,12 @@ import pandas
 
 import metafopy.core.rng
 import metafopy.errors
+import metafopy.methods.fitview
 import metafopy.methods.influence
+import metafopy.methods.ls_resid
+import metafopy.models.binary
 import metafopy.models.mv_result
+import metafopy.models.rma_ls_result
 import metafopy.models.rma_uni
 import metafopy.plot
 import metafopy.plot.draw
@@ -43,7 +47,10 @@ class QQNormResult:
 
 
 def qqnorm(
-    y: metafopy.models.rma_uni.RMAResult | metafopy.models.mv_result.RMAMVResult,
+    y: metafopy.models.rma_uni.RMAResult
+    | metafopy.models.mv_result.RMAMVResult
+    | metafopy.models.rma_ls_result.RMALSResult
+    | metafopy.models.binary.FixedBinaryResult,
     type: str = 'rstandard',
     pch: int = 21,
     col: str | None = None,
@@ -64,7 +71,7 @@ def qqnorm(
     rng: metafopy.core.rng.RRandom | None = None,
     ax: matplotlib.axes.Axes | None = None,
 ) -> QQNormResult:
-    """Normal Q-Q plot of the residuals of a model (``qqnorm.rma.uni``).
+    """Normal Q-Q plot of the residuals of a model (``qqnorm.rma.uni``, ``qqnorm.rma.mh`` and ``qqnorm.rma.peto``).
 
     ``type`` selects ``'rstandard'`` or ``'rstudent'`` residuals. ``envelope`` draws the simulated pseudo CI
     (a colour string sets its colour; ``level`` its confidence level, ``bonferroni`` applies a Bonferroni
@@ -73,6 +80,7 @@ def qqnorm(
     ``label`` (``True``/``'all'``, a number of the most deviating points or ``'out'`` for the points outside the
     envelope) labels points with the study labels at position ``pos`` (1-4, or 13/24 to place them depending on
     the side of the line). ``grid`` adds a grid, ``lty`` the line types of the line of equality and the envelope.
+    For ``rma_mh`` and ``rma_peto`` fits no envelope is drawn (so ``label='out'`` labels nothing), as in metafor.
 
     Returns a :class:`QQNormResult`.
 
@@ -85,8 +93,14 @@ def qqnorm(
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if type not in ('rstandard', 'rstudent'):
         raise metafopy.errors.InputError("type must be 'rstandard' or 'rstudent'")
+    metafopy.methods.fitview.check_class(y, notav=('rma.mv', 'rma.glmm', 'rma.gen', 'rma.uni.selmodel'))
     if y.k == 1:
         raise metafopy.errors.InputError('Stopped because k = 1.')
+    if isinstance(y, metafopy.models.binary.FixedBinaryResult):
+        # qqnorm.rma.mh and qqnorm.rma.peto draw no envelope
+        envelope = False
+        if label == 'out':
+            label = False
     axx = metafopy.plot.rutils.get_ax(ax)
     k = y.k
     env_col = metafopy.plot.rutils.coladj(-0.15)
@@ -123,7 +137,12 @@ def qqnorm(
         alpha = y.level if level is None else metafopy.plot.rutils.level_to_alpha(level)
         gen = rng if rng is not None else (metafopy.core.rng.set_seed(seed) if seed is not None else metafopy.core.rng.get_rng())
         dat = gen.rnorm(k * reps).reshape((k, reps), order='F')
-        h = metafopy.methods.influence.hatvalues(y, type='matrix')
+        if isinstance(y, metafopy.models.rma_ls_result.RMALSResult):
+            h = metafopy.methods.ls_resid.hat_matrix(y)
+        elif isinstance(y, metafopy.models.rma_uni.RMAResult):
+            h = metafopy.methods.influence.hatvalues(y, type='matrix')
+        else:
+            raise metafopy.errors.InternalError('no envelope for this model class')
         ei = (numpy.eye(k) - h) @ dat
         ei = numpy.sort(ei, axis=0)
         p_lo, p_hi = (alpha / 2 / k, 1 - alpha / 2 / k) if bonferroni else (alpha / 2, 1 - alpha / 2)
