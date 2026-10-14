@@ -66,7 +66,7 @@ def check(package: str, name: str, tolerance: float) -> None:
     close(res.beta, ref['beta'], 'beta', tolerance)
     close(res.se, ref['se'], 'se', tolerance)
     close(res.vb.ravel('F'), ref['vb'], 'vb', 2 * tolerance)
-    if name not in CHAOTIC:
+    if package != 'GLMMadaptive' or name not in CHAOTIC:
         # a bound is a difference of nearly equal numbers when the estimate is chaotic
         close(res.ci_lb, ref['ci_lb'], 'ci_lb', tolerance)
         close(res.ci_ub, ref['ci_ub'], 'ci_ub', tolerance)
