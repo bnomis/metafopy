@@ -184,15 +184,17 @@ def refit_arrays(
 
 
 def pad_to_supplied(res: metafopy.models.rma_uni.RMAResult, *arrays: FloatArray) -> tuple[list[FloatArray], tuple[str, ...]]:
-    """Pad per-study results to one row per supplied study (NaN where left out), as ``na.exclude``/``na.pass`` do."""
-    keep = res.data.keep
-    idx = numpy.flatnonzero(keep)
+    """Pad per-study results to one row per study of the subset (NaN where left out), as ``na.exclude``/``na.pass`` do."""
+    md = res.data
+    subset = md.keep if md.na_rows is None else md.keep | md.na_rows
+    rows = numpy.flatnonzero(subset)
+    idx = numpy.flatnonzero(md.keep[subset])
     out: list[FloatArray] = []
     for arr in arrays:
-        full = numpy.full((keep.shape[0], *arr.shape[1:]), numpy.nan)
+        full = numpy.full((rows.shape[0], *arr.shape[1:]), numpy.nan)
         full[idx] = arr
         out.append(full)
-    labels = [str(i + 1) for i in range(keep.shape[0])]
+    labels = [str(i + 1) for i in rows] if md.labels_all is None else [md.labels_all[i] for i in rows]
     for pos, i in enumerate(idx):
         labels[i] = res.slab[pos]
     return out, tuple(labels)

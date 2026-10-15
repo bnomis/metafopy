@@ -92,7 +92,8 @@ def table_layout(x: metafopy.models.binary.FixedBinaryResult | metafopy.models.g
 
 def layout_of(x: typing.Any) -> Layout:
     if isinstance(x, metafopy.models.sel_result.SelmodelResult):
-        return uni_layout(x.base, x.beta, x.tau2)
+        lay = uni_layout(x.base, x.beta, x.tau2)
+        return dataclasses.replace(lay, response_f=lay.used, not_na=numpy.ones(lay.used.shape[0], dtype=numpy.bool_))
     if isinstance(x, metafopy.models.rma_uni.RMAResult | metafopy.models.rma_ls_result.RMALSResult):
         return uni_layout(x, x.beta, x.tau2)
     if isinstance(x, metafopy.models.mv_result.RMAMVResult):
@@ -108,7 +109,7 @@ def standardised(x: typing.Any, kind: str, na_action: metafopy.methods.common.NA
     elif kind == 'rstandard':
         notav = ('robust.rma', 'rma.gen', 'rma.uni.selmodel')
     else:
-        notav = ('rma.ls', 'rma.gen', 'rma.uni.selmodel')
+        notav = ('robust.rma', 'rma.ls', 'rma.gen', 'rma.uni.selmodel')
     metafopy.methods.fitview.check_class(x, notav=notav)
     fn = metafopy.methods.influence.rstandard if kind == 'rstandard' else metafopy.methods.influence.rstudent
     return numpy.asarray(fn(x, na_action=na_action).z, dtype=numpy.float64)
@@ -119,11 +120,11 @@ def residuals(x: typing.Any, type: metafopy.models.rma_uni.ResidualType = 'respo
 
     ``type`` is ``'response'`` (``y - X b``), ``'rstandard'``, ``'rstudent'``, ``'pearson'`` or ``'cholesky'``; partial matching is allowed.
     ``na_action`` is ``'omit'`` (only the studies used in fitting), ``'exclude'`` or ``'pass'`` (one value per study of the subset, NaN for
-    those not used) or ``'fail'`` (stop if studies were left out). Which types are available follows R: ``'rstandard'`` and ``'rstudent'``
-    for ``rma_uni``, ``rma_mv``, ``rma_mh`` and ``rma_peto`` fits (``'rstudent'`` not for location-scale models, neither for selection
-    models; ``'rstandard'`` not for robust fits), ``'pearson'`` for all but ``rma_glmm`` (it is ``'rstandard'`` for ``rma_mh`` and
-    ``rma_peto``), ``'cholesky'`` for all but ``rma_mh``, ``rma_peto`` and ``rma_glmm``. For ``rma_mv`` fits the ``'pass'`` residuals of
-    studies not used are NaN, as for ``'exclude'``.
+    those not used) or ``'fail'`` (stop if studies were left out). Which types are available follows R. ``'rstandard'`` and ``'rstudent'``
+    exist for ``rma_uni``, ``rma_mv``, ``rma_mh`` and ``rma_peto`` fits, but not for selection models and robust fits, and ``'rstudent'`` not
+    for location-scale models; ``rma_glmm`` fits have neither. ``'pearson'`` is available for all fits but ``rma_glmm`` (for ``rma_mh`` and
+    ``rma_peto`` it is ``'rstandard'``) and ``'cholesky'`` for all but ``rma_mh``, ``rma_peto`` and ``rma_glmm``. For ``rma_mv`` fits the
+    ``'pass'`` residuals of studies not used are NaN, as for ``'exclude'``.
 
     Raises:
         metafopy.errors.ArgumentError: ``x`` is not a fitted model, or ``rstandard``/``rstudent`` has no method for it.
