@@ -11,11 +11,15 @@ rates) are one-group logistic and Poisson mixed models. ``metafor`` fits the mix
 :func:`fit_mixed` maximises the same likelihood and reports it as the chosen package does. The experimental
 measures use binomial models with a log link (``RR``, ``PLN``) or an identity
 link (``RD``, ``PR``); ``RR`` and ``RD`` are unconditional two-group models,
-``PR`` and ``PLN`` one-group models. This module mirrors
+``PR`` and ``PLN`` one-group models. ``control=list(optimizer='clogit')`` and ``'clogistic'`` fit
+``CM.EL`` with :mod:`metafopy.core.clogit` (``survival::clogit`` and ``Epi::clogistic``), and the
+``link`` and ``family`` arguments replace the default logit or log links of the unconditional and
+one-group models. This module mirrors
 the corresponding branches of
 https://github.com/wviechtb/metafor/blob/master/R/rma.glmm.r.
 """
 
+import collections.abc
 import dataclasses
 import math
 import sys
@@ -28,6 +32,7 @@ import scipy.integrate
 import scipy.optimize
 import scipy.stats
 
+import metafopy.core.clogit
 import metafopy.core.glm
 import metafopy.core.glmm
 import metafopy.core.glmmadaptive
@@ -43,6 +48,8 @@ type IntArray = numpy.typing.NDArray[numpy.intp]
 NAN = math.nan
 # auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
 PACKAGES = ('lme4', 'GLMMadaptive', 'glmmTMB')
+# auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
+OPTIMIZERS = ('nlminb', 'clogit', 'clogistic')
 GLMMADAPTIVE_MAX_COEF = 12.0
 GLMMADAPTIVE_MAX_COEF_SATURATED = 50.0
 SATURATED_WARNING = "Cannot fit saturated model (set 'verbose=TRUE' to obtain further details)."
@@ -55,6 +62,10 @@ class GLMMControl:
     ``int_rel_tol`` and ``int_subdivisions`` are the ``rel.tol`` and ``subdivisions`` of the ``intCtrl``
     list used for the integral in the exact conditional model; ``hessian_r`` is numDeriv's ``r``.
     ``package`` is the package that fits the mixed models: ``'lme4'``, ``'GLMMadaptive'`` or ``'glmmTMB'``.
+    ``optimizer`` is ``'nlminb'`` (the default: a quasi-Newton maximisation of the exact likelihood of ``model='CM.EL'``),
+    ``'clogit'`` or ``'clogistic'`` (``survival::clogit()`` / ``Epi::clogistic()``, only for the fixed-effects methods);
+    ``clogit_ctrl`` and ``clogistic_ctrl`` are metafor's ``clogitCtrl`` and ``clogisticCtrl`` lists (see :func:`clogit_settings`
+    and :func:`clogistic_settings` for the entries).
     """
 
     package: str = 'lme4'
@@ -65,6 +76,9 @@ class GLMMControl:
     int_subdivisions: int = 100
     hessian_r: int = 16
     gtol: float = 1e-7
+    optimizer: str = 'nlminb'
+    clogit_ctrl: collections.abc.Mapping[str, typing.Any] = dataclasses.field(default_factory=dict)
+    clogistic_ctrl: collections.abc.Mapping[str, typing.Any] = dataclasses.field(default_factory=dict)
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -81,6 +95,7 @@ class FitSpec:
     nagq: int
     alpha: float
     control: GLMMControl
+    family: metafopy.core.glm.GLMFamily | None = None
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -192,6 +207,20 @@ def glm_link(measure: str) -> metafopy.core.glm.Link:
     return LINKS[measure]
 
 
+def family_and_link(spec: FitSpec) -> tuple[metafopy.core.glm.Family, metafopy.core.glm.Link]:
+    """Family and link of the unconditional and one-group models: the ``family`` of the spec (metafor's ``family`` or ``link`` argument) or the measure's own.
+
+    Raises:
+        metafopy.errors.InputError: the family does not fit the data of the measure (binomial counts or Poisson counts).
+    """
+    own = glm_family(spec.measure)
+    if spec.family is None:
+        return own, glm_link(spec.measure)
+    if spec.family.name != own:
+        raise metafopy.errors.InputError(f"The family must be '{own}' for measure='{spec.measure}'.")
+    return spec.family.name, spec.family.link
+
+
 def fixed_glm(
     X: FloatArray, y: FloatArray, size: FloatArray | None, offset: FloatArray, family: metafopy.core.glm.Family, link: metafopy.core.glm.Link
 ) -> metafopy.core.glm.GLMFit:
@@ -264,13 +293,12 @@ def unconditional(spec: FitSpec) -> ModelFit:
     """
     k = spec.X.shape[0]
     c = spec.cells
+    family, link = family_and_link(spec)
     if spec.measure in TWO_GROUP_BINOMIAL:
-        family: metafopy.core.glm.Family = 'binomial'
         y = interleave(c['ai'], c['ci'])
         size: FloatArray | None = interleave(c['ai'] + c['bi'], c['ci'] + c['di'])
         offset = numpy.zeros(2 * k)
     else:
-        family = 'poisson'
         y = interleave(c['x1i'], c['x2i'])
         size = None
         offset = numpy.log(interleave(c['t1i'], c['t2i']))
@@ -282,13 +310,13 @@ def unconditional(spec: FitSpec) -> ModelFit:
     const = numpy.ones((2 * k, 1))
     X_fit = group1[:, None] * spec.X[study]
     if spec.model == 'UM.FS':
-        return unconditional_fixed_study(spec, family, y, size, offset, X_fit, group1, group, study, const)
-    return unconditional_random_study(spec, family, y, size, offset, X_fit, group1, group, study, const)
+        return unconditional_fixed_study(spec, (family, link), y, size, offset, X_fit, group1, group, study, const)
+    return unconditional_random_study(spec, (family, link), y, size, offset, X_fit, group1, group, study, const)
 
 
 def unconditional_fixed_study(
     spec: FitSpec,
-    family: metafopy.core.glm.Family,
+    family_link: tuple[metafopy.core.glm.Family, metafopy.core.glm.Link],
     y: FloatArray,
     size: FloatArray | None,
     offset: FloatArray,
@@ -299,8 +327,8 @@ def unconditional_fixed_study(
     const: FloatArray,
 ) -> ModelFit:
     k, p = spec.X.shape
+    family, link = family_link
     dummies = study_dummies(k)
-    link = glm_link(spec.measure)
     fe = fixed_glm(numpy.column_stack([X_fit, dummies if k > 1 else const]), y, size, offset, family, link)
     ll_qe, b2, vb2, qe_ok = fe.loglik, numpy.zeros(0), empty_vcov(), True
     if k > 1:
@@ -336,7 +364,7 @@ def unconditional_fixed_study(
 
 def unconditional_random_study(
     spec: FitSpec,
-    family: metafopy.core.glm.Family,
+    family_link: tuple[metafopy.core.glm.Family, metafopy.core.glm.Link],
     y: FloatArray,
     size: FloatArray | None,
     offset: FloatArray,
@@ -347,9 +375,9 @@ def unconditional_random_study(
     const: FloatArray,
 ) -> ModelFit:
     k, p = spec.X.shape
+    family, link = family_link
     nagq = 1 if spec.method == 'ML' and spec.control.package == 'lme4' else spec.nagq
     ones = const
-    link = glm_link(spec.measure)
     fe_problem = metafopy.core.glmm.GLMMProblem(numpy.column_stack([X_fit, const]), y, size, offset, study, ones, family, 'scalar', link)
     fe = fit_mixed(spec, fe_problem, nagq=nagq)
     ll_qe, b2, vb2, qe_ok = fe.loglik, numpy.zeros(0), empty_vcov(), True
@@ -457,7 +485,10 @@ def single_level(spec: FitSpec) -> SingleLevel:
     k, p = spec.X.shape
     family, y, size, offset = single_level_data(spec)
     X = spec.X
-    link = glm_link(spec.measure) if spec.measure in ONE_GROUP else metafopy.core.glm.canonical_link(family)
+    if spec.measure in ONE_GROUP:
+        family, link = family_and_link(spec)
+    else:
+        link = metafopy.core.glm.canonical_link(family)
     fe = fixed_glm(X, y, size, offset, family, link)
     ll_qe, b2, vb2, qe_ok = fe.loglik, numpy.zeros(0), empty_vcov(), True
     qe_fit: metafopy.core.glm.GLMFit | None = fe
@@ -548,12 +579,65 @@ def saturated_wald(par: FloatArray, hessian: FloatArray, p: int) -> float:
     return float(b2 @ ivb2 @ b2)
 
 
+def conditional_logistic(spec: FitSpec, base: SingleLevel) -> ModelFit:
+    """``CM.EL`` for odds ratios fitted with ``survival::clogit()`` or ``Epi::clogistic()`` (``control$optimizer``), fixed-effects methods only.
+
+    The heterogeneity tests use the coefficients and covariance matrix of the saturated fit (as for the other
+    conditional models of ``rma.glmm``) and the log-likelihoods are those of the non-central hypergeometric
+    distribution at the estimates. The warnings of ``clogit()`` for the saturated model are suppressed as in metafor,
+    those of ``clogistic()`` are not.
+
+    Raises:
+        metafopy.errors.InputError: ``method='ML'`` or a single study.
+        metafopy.errors.EstimationError: a model cannot be fitted.
+    """
+    k, p = spec.X.shape
+    ctl = spec.control
+    optimizer = ctl.optimizer
+    if spec.method == 'ML':
+        raise metafopy.errors.InputError("Cannot use 'clogit' or 'clogistic' with method='ML'.")
+    if k == 1:
+        raise metafopy.errors.InputError(f"Cannot use '{optimizer}' optimizer when k=1.")
+    c = spec.cells
+    strata = metafopy.core.clogit.Strata.from_counts(c['ai'], c['bi'], c['ci'], c['di'])
+    integ = metafopy.core.nchg.IntegrationControl(ctl.int_rel_tol, ctl.int_subdivisions)
+    settings = metafopy.core.clogit.clogit_settings(ctl.clogit_ctrl) if optimizer == 'clogit' else metafopy.core.clogit.clogistic_settings(ctl.clogistic_ctrl)
+
+    def fit(X: FloatArray, what: str) -> metafopy.core.clogit.ConditionalFit:
+        try:
+            if optimizer == 'clogit':
+                return metafopy.core.clogit.clogit(strata, X, **settings)
+            return metafopy.core.clogit.clogistic(strata, X, **settings)
+        except (metafopy.errors.EstimationError, numpy.linalg.LinAlgError) as exc:
+            raise metafopy.errors.EstimationError(f'Cannot fit {what} model.') from exc
+
+    def loglik(res: metafopy.core.clogit.ConditionalFit, X: FloatArray) -> float:
+        return -metafopy.core.nchg.neg_loglik(res.coef, strata.tables, X, False, integ)
+
+    res_fe = fit(spec.X, 'FE')
+    for message in res_fe.warnings:
+        warnings.warn(message, stacklevel=4)
+    ll_fe = loglik(res_fe, spec.X)
+    ll_qe, b2, vb2, qe_ok = NAN, numpy.zeros(0), empty_vcov(), False
+    if base.fit.qe_converged and base.qe is not None:
+        X_qe = base.X_qe[:, ~base.qe.aliased]
+        res_qe = fit(X_qe, 'saturated')
+        if optimizer == 'clogistic':
+            for message in res_qe.warnings:
+                warnings.warn(message, stacklevel=4)
+        ll_qe = loglik(res_qe, X_qe)
+        b2, vb2, qe_ok = res_qe.coef[p:], res_qe.vcov[p:, p:], True
+    return ModelFit(res_fe.coef[:p], res_fe.vcov[:p, :p], 0.0, NAN, NAN, NAN, NAN, NAN, ll_fe, ll_qe, NAN, b2, vb2, None, qe_ok, p, p, k, 'FE')
+
+
 def exact_conditional(spec: FitSpec, base: SingleLevel) -> ModelFit:
     """``CM.EL`` for odds ratios: maximise the non-central hypergeometric likelihood started from the ``CM.AL`` fit.
 
     Raises:
         metafopy.errors.EstimationError: an optimisation fails or the Hessian cannot be inverted.
     """
+    if spec.control.optimizer != 'nlminb':
+        return conditional_logistic(spec, base)
     c = spec.cells
     k, p = spec.X.shape
     ctl = spec.control

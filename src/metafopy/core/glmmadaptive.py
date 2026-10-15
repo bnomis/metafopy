@@ -75,7 +75,9 @@ def link_inverse(link: metafopy.core.glm.Link, eta: FloatArray) -> FloatArray:
         return numpy.asarray(tmp / (1.0 + tmp), dtype=numpy.float64)
     if link == 'log':
         return numpy.maximum(numpy.exp(eta), EPS)
-    return numpy.asarray(eta, dtype=numpy.float64)
+    if link == 'identity':
+        return numpy.asarray(eta, dtype=numpy.float64)
+    return metafopy.core.glm.link_inv(link, eta)
 
 
 def mean_derivative(link: metafopy.core.glm.Link, eta: FloatArray) -> FloatArray:
@@ -85,7 +87,9 @@ def mean_derivative(link: metafopy.core.glm.Link, eta: FloatArray) -> FloatArray
         return numpy.where(numpy.abs(eta) > LOGIT_LIMIT, EPS, opexp / (1.0 + opexp) ** 2)
     if link == 'log':
         return numpy.maximum(numpy.exp(eta), EPS)
-    return numpy.ones_like(eta)
+    if link == 'identity':
+        return numpy.ones_like(eta)
+    return metafopy.core.glm.mu_eta(link, eta)
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
