@@ -167,7 +167,7 @@ def beta_permutations(
         one = numpy.ones((k, 1))
 
         def fit_signs(signs: FloatArray) -> metafopy.models.rma_ls_result.RMALSResult | None:
-            return metafopy.methods.ls_common.refit_ls(x, yi=signs * x.yi, X=one, btt=[0], alpha=alpha_arg, beta=beta_arg, skiphes=True)
+            return metafopy.methods.ls_common.refit_ls(x, yi=signs * x.yi, X=one, btt=[0], alpha=alpha_arg, beta=beta_arg, skiphes=True, polish_converged=False)
 
         if gen is None:
             for i in range(n_iter):
@@ -181,7 +181,9 @@ def beta_permutations(
         return zval, beta, QM
 
     def fit_rows(rows: numpy.typing.NDArray[numpy.intp]) -> metafopy.models.rma_ls_result.RMALSResult | None:
-        return metafopy.methods.ls_common.refit_ls(x, X=Xs[rows], btt=list(x.btt), alpha=alpha_arg, beta=beta_arg, skiphes=skiphes, hessian_r=HESSIAN_R)
+        return metafopy.methods.ls_common.refit_ls(
+            x, X=Xs[rows], btt=list(x.btt), alpha=alpha_arg, beta=beta_arg, skiphes=skiphes, hessian_r=HESSIAN_R, polish_converged=False
+        )
 
     if gen is None:
         perms = metafopy.methods.permutest.multiset_perms(labels)
@@ -221,7 +223,9 @@ def alpha_permutations(
         return True
 
     def fit_rows(rows: numpy.typing.NDArray[numpy.intp]) -> metafopy.models.rma_ls_result.RMALSResult | None:
-        return metafopy.methods.ls_common.refit_ls(x, Z=Zs[rows], att=list(x.att), alpha=alpha_arg, beta=beta_arg, skiphes=False, hessian_r=HESSIAN_R)
+        return metafopy.methods.ls_common.refit_ls(
+            x, Z=Zs[rows], att=list(x.att), alpha=alpha_arg, beta=beta_arg, skiphes=False, hessian_r=HESSIAN_R, polish_converged=False
+        )
 
     if gen is None:
         perms = metafopy.methods.permutest.multiset_perms(labels)

@@ -27,6 +27,7 @@ DBL_EPS = numpy.finfo(float).eps
 class LSControl:
     """Control settings for location-scale models (names follow metafor with ``.`` -> ``_``).
 
+    ``polish_converged=False`` skips the Nelder-Mead polish after a converged BFGS run (used by the permutation test).
     ``optimizer`` is ``'nlminb'`` (the default, mapped to SciPy's BFGS or, for the
     identity link, SLSQP), ``'BFGS'``, ``'L-BFGS-B'``, ``'Nelder-Mead'``,
     ``'constrOptim'`` or ``'SLSQP'``; ``hessian_d``, ``hessian_eps`` and
@@ -47,6 +48,7 @@ class LSControl:
     hessian_r: int = 4
     maxiter: int = 5000
     optimizer: str = 'nlminb'
+    polish_converged: bool = True
     REMLf: bool = True
     scaleZ: bool = True  # noqa: N815  mirrors the metafor control argument name
     tau2_max: float = numpy.inf
