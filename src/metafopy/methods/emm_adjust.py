@@ -21,11 +21,12 @@ import metafopy.core.tukey
 import metafopy.core.zeroin
 import metafopy.errors
 
-__all__ = ['Adjustment', 'Family', 'critical_values', 'p_values']
+__all__ = ['Adjustment', 'Family', 'critical_values', 'p_values', 'parse_side']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 
 # auditme: accept[non-alphabetical-literal] the order in which emmeans matches abbreviations
+TWO_SIDED_ONLY = ('tukey', 'scheffe', 'dunnettx')
 P_METHODS = ('sidak', 'tukey', 'scheffe', 'dunnettx', 'mvt', *metafopy.core.padjust.P_ADJUST_METHODS)
 MVT_SEED = 20260101
 MVT_MAXPTS = 20000
@@ -33,7 +34,10 @@ MVT_MAXPTS = 20000
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class Family:
-    """What the adjustments need to know about the estimates being summarised (emmeans' ``fam.info``, ``by.rows``, ``sch.rank``, ``corrmat``)."""
+    """What the adjustments need to know about the estimates being summarised (emmeans' ``fam.info``, ``by.rows``, ``sch.rank``, ``corrmat``).
+
+    ``ragged`` is set when the ``by`` groups differ in size (or in Scheffe rank), when emmeans shows ``(varies)`` for the family size.
+    """
 
     fam_size: float
     n_contr: int
@@ -41,6 +45,7 @@ class Family:
     by_rows: tuple[tuple[int, ...], ...]
     sch_rank: tuple[int, ...]
     corr: FloatArray | None
+    ragged: bool = False
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -59,6 +64,26 @@ def match_method(adjust: str, methods: collections.abc.Sequence[str]) -> str | N
         return adjust
     hits = [m for m in methods if m.startswith(adjust)] if adjust else []
     return hits[0] if len(hits) == 1 else None
+
+
+# auditme: accept R's pmatch is positional; the order maps each name to its code in SIDE_CODES
+SIDE_OPTIONS = ('left', 'both', 'right', 'two-sided', 'noninferiority', 'nonsuperiority', 'equivalence', 'superiority', 'inferiority')
+# auditme: accept positional, paired with SIDE_CODES
+SIDE_SYMBOLS = ('0', '2', '-1', '1', '+1', '<', '>', '!=', '=')
+SIDE_CODES = (1, 2, 3, 2, 3, 1, 2, 3, 1, 2, 2, 1, 3, 3, 1, 3, 2, 2)
+
+
+def parse_side(side: int | float | str) -> int:
+    """The tail of the tests and intervals, -1 (left), 0 (both) or 1 (right), from emmeans' ``side`` argument.
+
+    ``side`` is a number (``-1``, ``0``, ``1``), a symbol (``'<'``, ``'>'``, ``'!='``), or a possibly abbreviated word
+    (``'left'``, ``'right'``, ``'both'``, ``'two-sided'``, ``'noninferiority'``, ``'nonsuperiority'``, ``'equivalence'``,
+    ``'superiority'``, ``'inferiority'``); anything else means both sides, as in emmeans.
+    """
+    options = (*SIDE_OPTIONS, *SIDE_SYMBOLS)
+    text = str(int(side)) if isinstance(side, int | float) and float(side).is_integer() else str(side)
+    found = match_method(text, options)
+    return 0 if found is None else SIDE_CODES[options.index(found)] - 2
 
 
 def pf_sf(x: float, df1: float, df2: float) -> float:
@@ -122,6 +147,23 @@ def pmvt_both(x: float, df: float, corr: FloatArray) -> float:
     return float(dist.cdf(upper, lower_limit=lower, random_state=numpy.random.default_rng(MVT_SEED), maxpts=MVT_MAXPTS))
 
 
+def pmvt_lower(x: float, df: float, corr: FloatArray) -> float:
+    """P(T_i <= x for all i) for a multivariate t with correlation ``corr``."""
+    k = corr.shape[0]
+    if k == 1:
+        return 1 - pt_sf(x, df)
+    upper = numpy.full(k, x)
+    if math.isinf(df):
+        return float(scipy.stats.multivariate_normal.cdf(upper, cov=corr, allow_singular=True, maxpts=MVT_MAXPTS, rng=numpy.random.default_rng(MVT_SEED)))
+    dist = scipy.stats.multivariate_t(shape=corr, df=int(df), allow_singular=True)
+    return float(dist.cdf(upper, random_state=numpy.random.default_rng(MVT_SEED), maxpts=MVT_MAXPTS))
+
+
+def qmvt_lower(p: float, df: float, corr: FloatArray) -> float:
+    """The ``c`` with P(T_i <= c for all i) = ``p`` for a multivariate t with correlation ``corr``."""
+    return float(scipy.optimize.brentq(lambda c: pmvt_lower(c, df, corr) - p, -100.0, 100.0, xtol=1e-6))
+
+
 def qmvt_both(p: float, df: float, corr: FloatArray) -> float:
     """The ``c`` with P(|T_i| <= c for all i) = ``p`` for a multivariate t with correlation ``corr``."""
     return float(scipy.optimize.brentq(lambda c: pmvt_both(c, df, corr) - p, 1e-6, 100.0, xtol=1e-6))
@@ -143,34 +185,45 @@ def change(adjust: str, new: str, reason: str) -> tuple[str, str]:
     return new, f'Note: adjust = "{adjust}" was changed to "{new}" because "{adjust}" is {reason}'
 
 
-def critical_values(est: FloatArray, level: float, df: FloatArray, adjust: str, fam: Family) -> Adjustment:
-    """Multipliers of the standard errors for two-sided intervals (emmeans' ``.adj.critval``)."""
+def critical_values(est: FloatArray, level: float, df: FloatArray, adjust: str, fam: Family, tail: int = 0) -> Adjustment:
+    """Multipliers of the standard errors for the intervals (emmeans' ``.adj.critval``); ``tail`` is -1, 0 or 1 for one-sided intervals.
+
+    Raises:
+        metafopy.errors.InputError: the adjustment is not known, or ``mvt`` is asked for without the correlations of the estimates.
+    """
     methods = ('sidak', 'tukey', 'scheffe', 'dunnettx', 'mvt', 'bonferroni', 'none')
     n_contr = fam.n_contr
     notes: list[str] = []
-    method = tidy_method(adjust, methods, 'bonferroni') if not (n_contr == 1 and not adjust.lower().startswith('sch')) else 'none'
+    scheffe = adjust.lower().startswith('sch')
+    method = 'none' if (n_contr == 1 and not fam.ragged and not scheffe) else tidy_method(adjust, methods, 'bonferroni')
+    adaptive = bool(numpy.any(numpy.isnan(est)))
+    ragged = fam.ragged or adaptive or method == 'mvt'
+    if tail != 0 and method in TWO_SIDED_ONLY:
+        method, note = change(method, 'sidak', 'not appropriate for one-sided inferences')
+        notes.append(note)
     if fam.est_type != 3 and method == 'tukey':
         method, note = change(method, 'sidak', 'only appropriate for one set of pairwise comparisons')
         notes.append(note)
     df = numpy.where(numpy.isnan(df), numpy.inf, df)
-    ragged = method == 'mvt'
     by_rows = fam.by_rows
+    divisor = 1 if tail != 0 else 2
     cv = numpy.zeros(est.shape[0])
     fam_size = fam.fam_size
     for jj, rows in enumerate(by_rows):
-        d = df[list(rows)]
+        idx = list(rows)
+        d = df[idx]
         if ragged:
-            n_contr = max(1, int(numpy.sum(~numpy.isnan(est[list(rows)]))))
+            n_contr = max(1, int(numpy.sum(~numpy.isnan(est[idx]))))
             fam_size = (1 + math.sqrt(1 + 8 * n_contr)) / 2
         for pos, row in enumerate(rows):
             dfi = float(d[pos])
             match method:
                 case 'none':
-                    value = -qt((1 - level) / 2, dfi)
+                    value = -qt((1 - level) / divisor, dfi)
                 case 'sidak':
-                    value = -qt((1 - level ** (1 / n_contr)) / 2, dfi)
+                    value = -qt((1 - level ** (1 / n_contr)) / divisor, dfi)
                 case 'bonferroni':
-                    value = -qt((1 - level) / n_contr / 2, dfi)
+                    value = -qt((1 - level) / n_contr / divisor, dfi)
                 case 'tukey':
                     value = metafopy.core.tukey.qtukey(level, fam_size, dfi) / math.sqrt(2)
                 case 'scheffe':
@@ -178,44 +231,65 @@ def critical_values(est: FloatArray, level: float, df: FloatArray, adjust: str, 
                 case 'dunnettx':
                     value = qdunnx(level, n_contr, dfi)
                 case _:
-                    assert fam.corr is not None
-                    idx = list(rows)
-                    value = qmvt_both(level, dfi, fam.corr[numpy.ix_(idx, idx)])
+                    if fam.corr is None:
+                        raise metafopy.errors.InputError("The 'mvt' adjustment needs the correlations of the estimates.")
+                    sub = fam.corr[numpy.ix_(idx, idx)]
+                    value = qmvt_both(level, dfi, sub) if tail == 0 else qmvt_lower(level, dfi, sub)
             cv[row] = value
-    ragged_sizes = (max(len(r) for r in by_rows) if ragged else n_contr, (1 + math.sqrt(1 + 8 * max(len(r) for r in by_rows))) / 2 if ragged else fam.fam_size)
-    shown_n, shown_fam = ragged_sizes
+    if ragged:
+        size = max(len(r) for r in by_rows)
+        shown_fam = (1 + math.sqrt(1 + 8 * size)) / 2
+        scheffe_dim = '(varies)'
+    else:
+        shown_fam = fam.fam_size
+        scheffe_dim = str(fam.sch_rank[0])
     chk = {'none': 1, 'tukey': 2, 'scheffe': 3}.get(method, 99)
     message = None
     if chk > 1 and not (shown_fam < 3 and chk < 10):
-        if method == 'tukey':
+        if adaptive and len(by_rows) > 1:
+            xtra = {'tukey': 'for varying family sizes', 'scheffe': 'with varying rank'}.get(method, 'for varying numbers of estimates')
+        elif method == 'tukey':
             xtra = f'for comparing a family of {fmt_num(fam_size)} estimates'
         elif method == 'scheffe':
-            xtra = f'with rank {fam.sch_rank[0]}'
+            xtra = f'with rank {scheffe_dim}'
         else:
-            xtra = f'for {shown_n} estimates'
+            xtra = f'for {n_contr} estimates'
         message = f'Conf-level adjustment: {method} method {xtra}'
     return Adjustment(cv, message, method, tuple(notes))
 
 
 def fmt_num(x: float) -> str:
-    return f'{x:g}'
+    return f'{x:.15g}'
 
 
-def p_values(t: FloatArray, df: FloatArray, adjust: str, fam: Family) -> Adjustment:
-    """Two-sided p-values for the t (or z) ratios (emmeans' ``.adj.p.value``)."""
+def p_values(t: FloatArray, df: FloatArray, adjust: str, fam: Family, tail: int = 0) -> Adjustment:
+    """The p-values for the t (or z) ratios (emmeans' ``.adj.p.value``); ``tail`` is -1 (left-sided), 0 (two-sided) or 1 (right-sided).
+
+    Raises:
+        metafopy.errors.InputError: the adjustment is not known, or ``mvt`` is asked for without the correlations of the estimates.
+    """
     methods = ('sidak', 'tukey', 'scheffe', 'dunnettx', 'mvt', *metafopy.core.padjust.P_ADJUST_METHODS)
     n_contr = fam.n_contr
     notes: list[str] = []
-    method = 'none' if (n_contr == 1 and not adjust.lower().startswith('sch')) else tidy_method(adjust, methods, None)
+    scheffe = adjust.lower().startswith('sch')
+    method = 'none' if (n_contr == 1 and not fam.ragged and not scheffe) else tidy_method(adjust, methods, None)
+    adaptive = method != 'none' and bool(numpy.any(numpy.isnan(t)))
+    if tail != 0 and method in TWO_SIDED_ONLY:
+        method, note = change(method, 'sidak', 'not appropriate for one-sided inferences')
+        notes.append(note)
     if fam.est_type != 3 and method == 'tukey':
         method, note = change(method, 'sidak', 'only appropriate for one set of pairwise comparisons')
         notes.append(note)
     df = numpy.where(numpy.isnan(df), numpy.inf, df)
-    ragged = method == 'mvt' or method in metafopy.core.padjust.P_ADJUST_METHODS
-    p_unadj = numpy.array([2 * pt_sf(abs(ti), float(di)) for ti, di in zip(t, df, strict=True)])
+    ragged = fam.ragged or method == 'mvt' or method in metafopy.core.padjust.P_ADJUST_METHODS or adaptive
+    if tail == 0:
+        p_unadj = numpy.array([2 * pt_sf(abs(ti), float(di)) for ti, di in zip(t, df, strict=True)])
+    else:
+        p_unadj = numpy.array([pt_sf(-ti if tail < 0 else ti, float(di)) for ti, di in zip(t, df, strict=True)])
     pval = numpy.zeros(t.shape[0])
     fam_size = fam.fam_size
-    for jj, rows in enumerate(fam.by_rows):
+    by_rows = fam.by_rows if ragged else (tuple(range(t.shape[0])),)
+    for jj, rows in enumerate(by_rows):
         idx = list(rows)
         unadj = p_unadj[idx]
         abst = numpy.abs(t[idx])
@@ -241,21 +315,30 @@ def p_values(t: FloatArray, df: FloatArray, adjust: str, fam: Family) -> Adjustm
                 case 'dunnettx':
                     pval[row] = 1 - pdunnx(abst[pos], n_contr, dfi)
                 case _:
-                    assert fam.corr is not None
-                    pval[row] = 1 - pmvt_both(abst[pos], dfi, fam.corr[numpy.ix_(idx, idx)])
+                    if fam.corr is None:
+                        raise metafopy.errors.InputError("The 'mvt' adjustment needs the correlations of the estimates.")
+                    sub = fam.corr[numpy.ix_(idx, idx)]
+                    if tail == 0:
+                        pval[row] = 1 - pmvt_both(abst[pos], dfi, sub)
+                    else:
+                        pval[row] = 1 - pmvt_lower(t[row] if tail > 0 else -t[row], dfi, sub)
     if ragged:
         nc = max(len(r) for r in fam.by_rows)
         fs = (1 + math.sqrt(1 + 8 * nc)) / 2
+        scheffe_dim = '(varies)'
     else:
         nc, fs = n_contr, fam.fam_size
+        scheffe_dim = str(fam.sch_rank[0])
     chk = {'none': 1, 'tukey': 2, 'scheffe': 3}.get(method, 99)
     message = None
     if chk > 1 and not (fs < 3 and chk < 10):
-        if method == 'tukey':
+        if adaptive and len(fam.by_rows) > 1:
+            xtra = {'tukey': 'for varying family sizes', 'scheffe': 'with varying rank'}.get(method, 'for varying numbers of tests')
+        elif method == 'tukey':
             xtra = f'for comparing a family of {fmt_num(fam_size)} estimates'
         elif method == 'scheffe':
-            xtra = f'with rank {fam.sch_rank[0]}'
+            xtra = f'with rank {scheffe_dim}'
         else:
-            xtra = f'for {nc} tests'
+            xtra = f'for {n_contr} tests'
         message = f'P value adjustment: {method} method {xtra}'
     return Adjustment(pval, message, method, tuple(notes))

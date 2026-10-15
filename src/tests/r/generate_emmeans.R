@@ -208,5 +208,136 @@ add("ls_resp", els, infer = TRUE, type = "response")
 resrob <- robust(res, cluster = trial)
 add("robust", emmeans(emmprep(resrob), ~alloc), infer = TRUE)
 
+# one-sided, equivalence and non-inferiority tests (side, delta)
+set.seed(1)
+add("side_left", e, infer = TRUE, side = "left")
+add("side_right", e, infer = TRUE, side = ">")
+add("side_left_null", e, infer = TRUE, side = "<", null = -0.5)
+add("side_right_resp", e, infer = TRUE, side = ">", type = "response")
+add("side_level90", e, infer = TRUE, side = "right", level = 0.9)
+add("side_both", e, infer = TRUE, side = "two-sided")
+add("side_pairs_left", pairs(e), infer = TRUE, side = "<")
+add("side_pairs_right_bonf", pairs(e), infer = TRUE, side = ">", adjust = "bonferroni")
+add("side_pairs_right_holm", pairs(e), infer = TRUE, side = ">", adjust = "holm")
+add("side_pairs_sidak", pairs(e), infer = TRUE, side = "left", adjust = "sidak")
+add("side_pairs_scheffe", pairs(e), infer = TRUE, side = "left", adjust = "scheffe")
+add("side_pairs_none", pairs(e), infer = TRUE, side = "right", adjust = "none")
+add("side_pairs_resp", pairs(e), infer = TRUE, side = "left", type = "response")
+set.seed(1)
+add("side_pairs_mvt", pairs(e), infer = TRUE, side = "left", adjust = "mvt")
+add("side_dunnett", contrast(e, "trt.vs.ctrl"), infer = TRUE, side = ">")
+add("side_eff", contrast(e, "eff"), infer = TRUE, side = "<")
+add("side_by_pairs", pairs(emmeans(g3, ~alloc | lat)), infer = TRUE, side = ">")
+add("side_knha_pairs", pairs(ek), infer = TRUE, side = "<")
+add("delta_equiv", pairs(e), infer = TRUE, delta = 0.5)
+add("delta_equiv_none", pairs(e), infer = TRUE, delta = 0.5, adjust = "none")
+add("delta_equiv_bonf", pairs(e), infer = TRUE, delta = 0.8, adjust = "bonferroni")
+add("delta_nonsup", pairs(e), infer = TRUE, delta = 0.3, side = "<", adjust = "none")
+add("delta_noninf", pairs(e), infer = TRUE, delta = 0.3, side = ">", adjust = "none")
+add("delta_noninf_holm", pairs(e), infer = TRUE, delta = 0.3, side = "noninferiority", adjust = "holm")
+add("delta_equiv_word", pairs(e), infer = TRUE, delta = 0.5, side = "equivalence", adjust = "none")
+add("delta_emm", e, infer = TRUE, delta = 0.4, null = -0.8)
+add("delta_emm_right", e, infer = TRUE, delta = 0.4, null = -0.8, side = ">")
+add("delta_emm_resp", e, infer = TRUE, delta = 0.4, type = "response")
+add("delta_trt", contrast(e, "trt.vs.ctrl"), infer = TRUE, delta = 0.5)
+add("delta_knha", pairs(ek), infer = TRUE, delta = 0.5)
+add("stored_pairs_side", pairs(e, side = ">"), infer = TRUE)
+add("stored_emm_delta", emmeans(g, ~alloc, delta = 0.3, null = -0.8), infer = TRUE)
+add("stored_contrast_reset", contrast(emmeans(g, ~alloc, side = ">"), "pairwise"), infer = TRUE)
+add("stored_override", pairs(e, side = ">"), infer = TRUE, side = "<")
+
+# matrix weights
+mw <- matrix(c(1, 2, 3, 3, 2, 1), nrow = 2, byrow = TRUE)
+add("mw_lat", emmeans(g3, ~lat, weights = mw), infer = TRUE)
+add("mw_lat_pairs", pairs(emmeans(g3, ~lat, weights = mw)), infer = TRUE)
+add("mw_alloc_one_row", emmeans(g3, ~alloc, weights = matrix(c(1, 3), nrow = 1)), infer = TRUE)
+add("mw_alloc_cycle", emmeans(g3, ~alloc, weights = matrix(c(1, 3, 3, 1), nrow = 2, byrow = TRUE)), infer = TRUE)
+add("mw_overall", emmeans(g3, ~1, weights = matrix(1:6, nrow = 1)), infer = TRUE)
+add("mw_extra_rows", emmeans(g3, ~lat, weights = matrix(1:9, nrow = 3, byrow = TRUE)), infer = TRUE)
+add("mw_by", emmeans(g3, ~alloc | lat, weights = matrix(c(1, 3, 3, 1), nrow = 2, byrow = TRUE)), infer = TRUE)
+add("mw_int", emmeans(g4, ~alloc, weights = matrix(c(1, 3, 3, 1, 1, 1), nrow = 3, byrow = TRUE)), infer = TRUE)
+add("mw_resp", emmeans(g3, ~lat, weights = mw), infer = TRUE, type = "response")
+
+# nested factors: grp is nested in lat (lat + lat:grp), a ragged design with an explicit nesting, and a nested factor next to a crossed one
+dat$grp <- factor(rep(c("a", "b"), length.out = nrow(dat)))
+dat$grp3 <- factor(ifelse(dat$lat == "high", c("a", "b", "c")[(seq_len(nrow(dat)) %% 3) + 1], c("a", "b")[(seq_len(nrow(dat)) %% 2) + 1]))
+dat4 <- dat
+dat4$grp <- dat4$sub <- NA_character_
+for (l in c("high", "low")) {
+  idx <- which(dat4$lat == l)
+  dat4$grp[idx] <- c("a", "a", "b", "b")[(seq_along(idx) - 1) %% 4 + 1]
+  dat4$sub[idx] <- c("x", "y", "x", "y")[(seq_along(idx) - 1) %% 4 + 1]
+}
+dat4$grp <- factor(dat4$grp)
+dat4$sub <- factor(dat4$sub)
+
+nest_add <- function(key, expr, ...) {
+  r <- try(quiet(S(expr, ...)), silent = TRUE)
+  if (inherits(r, "try-error")) {
+    cat("skipped", key, ":", conditionMessage(attr(r, "condition")), "\n")
+    return(invisible())
+  }
+  out[[key]] <<- r
+}
+nest_suite <- function(pre, g, specs, weights = c("proportional", "outer", "cells", "flat")) {
+  for (nm in names(specs)) {
+    f <- as.formula(specs[[nm]])
+    k <- paste0(pre, "_", nm)
+    em <- emmeans(g, f)
+    nest_add(paste0(k, "_emm"), em, infer = TRUE)
+    nest_add(paste0(k, "_emm_resp"), em, infer = TRUE, type = "response")
+    for (w in weights) nest_add(paste0(k, "_w_", w), emmeans(g, f, weights = w), infer = TRUE)
+    if (nrow(em@grid) > 1) {
+      nest_add(paste0(k, "_pairs"), pairs(em), infer = TRUE)
+      nest_add(paste0(k, "_pairs_resp"), pairs(em), infer = TRUE, type = "response")
+      nest_add(paste0(k, "_pairs_bonf"), pairs(em), infer = TRUE, adjust = "bonferroni")
+      nest_add(paste0(k, "_pairs_sidak"), pairs(em), infer = TRUE, adjust = "sidak")
+      nest_add(paste0(k, "_pairs_none"), pairs(em), infer = TRUE, adjust = "none")
+      nest_add(paste0(k, "_pairs_scheffe"), pairs(em), infer = TRUE, adjust = "scheffe")
+      nest_add(paste0(k, "_revpairs"), pairs(em, reverse = TRUE), infer = TRUE)
+      nest_add(paste0(k, "_eff"), contrast(em, "eff"), infer = TRUE)
+      nest_add(paste0(k, "_trt"), contrast(em, "trt.vs.ctrl"), infer = TRUE)
+      nest_add(paste0(k, "_trt_ref2"), contrast(em, "trt.vs.ctrl", ref = 2), infer = TRUE)
+      nest_add(paste0(k, "_consec"), contrast(em, "consec"), infer = TRUE)
+      nest_add(paste0(k, "_dunnett_resp"), contrast(em, "dunnett"), infer = TRUE, type = "response")
+      nest_add(paste0(k, "_pairs_side"), pairs(em), infer = TRUE, side = "<", adjust = "holm")
+      nest_add(paste0(k, "_pairs_delta"), pairs(em), infer = TRUE, delta = 0.3, adjust = "none")
+      nest_add(paste0(k, "_regrid_pairs"), pairs(regrid(em)), infer = TRUE)
+      for (by in c("grp", "lat"))
+        if (by %in% names(em@levels) && length(setdiff(names(em@levels), by)) > 0)
+          nest_add(paste0(k, "_pairs_by_", by), pairs(em, by = by), infer = TRUE)
+    }
+    nest_add(paste0(k, "_regrid"), regrid(em), infer = TRUE)
+  }
+}
+specs <- c(grp = "~grp", grpby = "~grp | lat", lat = "~lat", both = "~lat * grp", one = "~1", latby = "~lat | grp")
+
+resn1 <- rma(yi, vi, mods = ~ lat + lat:grp, data = dat)
+gn1 <- quiet(emmprep(resn1))
+nest_suite("n1", gn1, specs)
+add("n1_off_grp", emmeans(quiet(emmprep(resn1, nesting = NULL)), ~grp), infer = TRUE)
+add("n1_off_pairs", pairs(emmeans(quiet(emmprep(resn1, nesting = NULL)), ~lat * grp)), infer = TRUE)
+add("n1_at_grp", emmeans(quiet(emmprep(resn1, at = list(grp = "a"))), ~lat), infer = TRUE)
+
+resn2 <- rma(yi, vi, mods = ~ lat + grp3, data = dat)
+gn2 <- quiet(emmprep(resn2, nesting = "grp3 %in% lat"))
+specs2 <- c(grp = "~grp3", grpby = "~grp3 | lat", lat = "~lat", both = "~lat * grp3", one = "~1", latby = "~lat | grp3")
+nest_suite("n2", gn2, specs2)
+gn2l <- quiet(emmprep(resn2, nesting = list(grp3 = "lat")))
+add("n2_list_grp", emmeans(gn2l, ~grp3), infer = TRUE)
+add("n2_off_grp", emmeans(quiet(emmprep(resn2)), ~grp3), infer = TRUE)
+add("n2_off_lat", emmeans(quiet(emmprep(resn2)), ~lat), infer = TRUE)
+nest_add("n2_w_vector", emmeans(gn2, ~lat, weights = c(1, 1, 1)), infer = TRUE)
+
+resn3 <- rma(yi, vi, mods = ~ alloc + lat + lat:grp + ablat, data = dat)
+gn3 <- quiet(emmprep(resn3))
+specs3 <- c(alloc = "~alloc", grp = "~grp", allocgrp = "~alloc * grp", allocby = "~alloc | grp", grpby = "~grp | alloc", lat = "~lat", all = "~alloc * lat * grp", one = "~1")
+nest_suite("n3", gn3, specs3, weights = c("proportional", "cells"))
+
+resn4 <- rma(yi, vi, mods = ~ lat + lat:grp + lat:grp:sub, data = dat4)
+gn4 <- quiet(emmprep(resn4))
+specs4 <- c(sub = "~sub", subby = "~sub | grp * lat", grp = "~grp", lat = "~lat", all = "~lat * grp * sub", one = "~1")
+nest_suite("n4", gn4, specs4, weights = c("proportional"))
+
 write(toJSON(out, auto_unbox = TRUE, digits = NA, na = "null", null = "null"), file.path(out_dir, "emmeans.json"))
 cat("wrote", length(out), "cases\n")
