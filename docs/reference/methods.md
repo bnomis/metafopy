@@ -634,6 +634,57 @@ Functions that take a fitted model. Each is a single-dispatch function: the gene
       show_root_full_path: false
       show_source: false
 
+## Estimated marginal means
+
+::: metafopy.emmprep
+    options:
+      heading_level: 3
+      show_root_heading: true
+      show_root_full_path: false
+      show_source: false
+
+::: metafopy.emmeans
+    options:
+      heading_level: 3
+      show_root_heading: true
+      show_root_full_path: false
+      show_source: false
+
+::: metafopy.contrast
+    options:
+      heading_level: 3
+      show_root_heading: true
+      show_root_full_path: false
+      show_source: false
+
+::: metafopy.pairs
+    options:
+      heading_level: 3
+      show_root_heading: true
+      show_root_full_path: false
+      show_source: false
+
+::: metafopy.regrid
+    options:
+      heading_level: 3
+      show_root_heading: true
+      show_root_full_path: false
+      show_source: false
+
+::: metafopy.EmmGrid
+    options:
+      heading_level: 3
+      show_root_heading: true
+      show_root_full_path: false
+      show_source: false
+
+::: metafopy.EmmSummary
+    options:
+      heading_level: 3
+      show_root_heading: true
+      show_root_full_path: false
+      show_source: false
+
 ## Random number generator
 
 ::: metafopy.set_seed

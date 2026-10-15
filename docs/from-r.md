@@ -111,5 +111,5 @@ exact tolerances and the cases that differ more are in [Differences from metafor
 
 ## What is not ported
 
-`reporter()` and `emmprep` are not ported, nor are `rma_glmm`'s alternative back-ends. See
+`reporter()` is not ported. `emmprep` and emmeans' reference grid, marginal means and contrasts are ported natively; see the [guide](guide/emmeans.md). See
 [Differences from metafor](differences.md) for details and for the places where a metafor feature behaves differently.

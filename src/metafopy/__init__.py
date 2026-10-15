@@ -40,6 +40,8 @@ from metafopy.methods.blocks import bldiag, blsplit
 from metafopy.methods.blup import BlupResult, blup
 from metafopy.methods.confint import ConfintResult, confint
 from metafopy.methods.deltamethod import DeltaMethodResult, deltamethod
+from metafopy.methods.emm_grid import EmmGrid, contrast, emmeans, emmprep, pairs, regrid
+from metafopy.methods.emm_summary import EmmSummary
 from metafopy.methods.gosh import GoshResult, gosh
 from metafopy.methods.influence import InfluenceResult, ResidualResult, cooks_distance, dfbetas, influence, rstandard, rstudent
 from metafopy.methods.leave1out import CumulResult, Leave1outResult, cumul, leave1out
@@ -95,6 +97,8 @@ __all__ = [
     'Control',
     'CumulResult',
     'DeltaMethodResult',
+    'EmmGrid',
+    'EmmSummary',
     'FitStats',
     'FsnResult',
     'GLMMControl',
@@ -142,6 +146,7 @@ __all__ = [
     'blup',
     'cmicalc',
     'confint',
+    'contrast',
     'contrmat',
     'conv_2x2',
     'conv_delta',
@@ -154,6 +159,8 @@ __all__ = [
     'df_residual',
     'dfbetas',
     'dfround',
+    'emmeans',
+    'emmprep',
     'escalc',
     'fmtp',
     'fmtp2',
@@ -174,6 +181,7 @@ __all__ = [
     'model_matrix',
     'nobs',
     'pairmat',
+    'pairs',
     'parse_random',
     'permutest',
     'plot_cumul',
@@ -192,6 +200,7 @@ __all__ = [
     'ranktest',
     'rcalc',
     'regplot',
+    'regrid',
     'regtest',
     'replmiss',
     'rma',

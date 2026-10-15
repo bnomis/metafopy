@@ -2,6 +2,7 @@
 
 ## Unreleased (1.0 candidate)
 
+- Add a native port of emmeans for `rma` fits: `emmprep`, `emmeans`, `contrast`, `pairs`, `regrid`, with the contrast families and multiplicity adjustments of emmeans (`tukey`, `dunnettx`, `sidak`, `scheffe`, `mvt`, `p_adjust` methods), back-transformation with optional bias adjustment, and an exact port of R's `ptukey`/`qtukey` (`metafopy.core.tukey`). Checked against emmeans and metafor on R fixtures (`src/tests/r/generate_emmeans.R`).
 - `rma_glmm(control={'package': 'GLMMadaptive'})` and `{'package': 'glmmTMB'}`: the two other back-ends of metafor 5.2-1, checked against R fixtures (`src/tests/r/generate_glmm_packages.R`); GLMMadaptive reproduces `mixed_fit`'s EM and BFGS iterations. `optim_bfgs` takes `gr` and `parscale`.
 - Fill the remaining gaps to metafor 5.2-1 found by comparing every method on every fit class in R and Python:
   - Data helpers: `aggregate_escalc`, `conv_2x2`, `conv_delta`, `conv_fivenum`, `conv_wald`, `to_long`, `to_table`, `to_wide`, `contrmat`, `vec2mat`, `dfround`, a public `replmiss`, and `deltamethod`; datasets `dat.hasselblad1998`, `dat.ishak2007` and `dat.senn2013`.
