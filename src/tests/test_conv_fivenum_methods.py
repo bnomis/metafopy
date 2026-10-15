@@ -131,6 +131,10 @@ def test_errors() -> None:
     assert errors['mixed'].startswith('Must use the same')
 
 
-def test_blue_singular() -> None:
-    with pytest.raises(metafopy.errors.EstimationError):
-        metafopy.effects.fivenum_estimators.blue_s([1.0, 2.0, 3.0], 2, 'S1')
+def test_blue_singular(monkeypatch: pytest.MonkeyPatch) -> None:
+    def singular(_: typing.Any) -> typing.NoReturn:
+        raise numpy.linalg.LinAlgError('Singular matrix')
+
+    monkeypatch.setattr(numpy.linalg, 'inv', singular)
+    with pytest.raises(metafopy.errors.EstimationError, match='singular'):
+        metafopy.effects.fivenum_estimators.blue_s([1.0, 2.0, 3.0], 20, 'S1')
