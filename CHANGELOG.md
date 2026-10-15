@@ -2,6 +2,7 @@
 
 ## Unreleased (1.0 candidate)
 
+- `conv_fivenum`: the `qe`, `bc`, `mln` (estmeansd) and `blue` (metaBLUE) methods, with `seed` and `verbose` arguments. `bc`, `mln` and `blue` reproduce R to 1e-9 relative, `qe` to about 1e-6 (`src/tests/r/generate_fivenum_methods.R`).
 - Add a native port of emmeans for `rma` fits: `emmprep`, `emmeans`, `contrast`, `pairs`, `regrid`, with the contrast families and multiplicity adjustments of emmeans (`tukey`, `dunnettx`, `sidak`, `scheffe`, `mvt`, `p_adjust` methods), back-transformation with optional bias adjustment, and an exact port of R's `ptukey`/`qtukey` (`metafopy.core.tukey`). Checked against emmeans and metafor on R fixtures (`src/tests/r/generate_emmeans.R`).
 - `rma_glmm(control={'package': 'GLMMadaptive'})` and `{'package': 'glmmTMB'}`: the two other back-ends of metafor 5.2-1, checked against R fixtures (`src/tests/r/generate_glmm_packages.R`); GLMMadaptive reproduces `mixed_fit`'s EM and BFGS iterations. `optim_bfgs` takes `gr` and `parscale`.
 - Fill the remaining gaps to metafor 5.2-1 found by comparing every method on every fit class in R and Python:

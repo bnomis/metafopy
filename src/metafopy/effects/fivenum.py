@@ -11,10 +11,13 @@ test for skewness (Shi et al. 2023, doi:10.1177/09622802221139233):
 - SDs: Wan et al. (2014), Shi et al. (2020), doi:10.1002/jrsm.1429 (``'shi2020'``), Hozo et al.
   (2005), Bland (2015) and Walter and Yao (2007);
 - ``dist='lnorm'`` assumes log-normal data and back-transforms (Shi et al. 2020,
-  doi:10.1177/0962280220913853).
+  doi:10.1177/0962280220913853);
+- ``'qe'`` (McGrath et al. 2020, doi:10.1177/0962280219889080), ``'bc'`` and ``'mln'`` (McGrath et al. 2023,
+  doi:10.1002/jrsm.1664) from the R package estmeansd, and ``'blue'`` (Yang et al. 2022,
+  doi:10.1080/02664763.2021.1967890) from metaBLUE, in :mod:`metafopy.effects.fivenum_estimators`. ``'bc'`` and
+  ``'mln'`` simulate with R's random number generator, so ``seed`` gives R's results exactly.
 
-The ``'qe'``, ``'bc'``, ``'mln'`` (R package estmeansd) and ``'blue'`` (metaBLUE) methods are not
-available. The skewness test results are kept in ``DataFrame.attrs`` (``tval``, ``crit``, ``sig``,
+The skewness test results are kept in ``DataFrame.attrs`` (``tval``, ``crit``, ``sig``,
 ``dist``); ``attrs['est']`` maps each existing output column to which of its values were estimated.
 """
 
@@ -32,7 +35,9 @@ import scipy.stats
 
 import metafopy.core.integrate
 import metafopy.core.linalg
+import metafopy.core.rng
 import metafopy.effects.conv
+import metafopy.effects.fivenum_estimators
 import metafopy.effects.measures
 import metafopy.errors
 
@@ -47,6 +52,10 @@ METHODS1 = ('default', 'luo/wan/shi', 'qe', 'bc', 'mln', 'blue', 'hozo2005', 'wa
 METHODS2 = ('default', 'luo/wan/shi', 'qe', 'bc', 'mln', 'blue', 'hozo2005', 'wan2014', 'bland2015', 'shi2020', 'walter2007')
 
 
+EXTERNAL = ('bc', 'blue', 'mln', 'qe')
+SCENARIOS = {(True, False): 'S1', (False, True): 'S2', (True, True): 'S3'}
+
+
 def qnorm(p: float) -> float:
     return float(scipy.stats.norm.ppf(p))
 
@@ -55,8 +64,7 @@ def match_method(method: str | collections.abc.Sequence[str]) -> tuple[str, str]
     """The methods for the means and the SDs (R: the first option that starts with the given string).
 
     Raises:
-        metafopy.errors.InputError: a method is unknown.
-        metafopy.errors.NotSupportedError: the method needs an R package metafopy does not port.
+        metafopy.errors.InputError: a method is unknown or ``'qe'``, ``'bc'``, ``'mln'`` or ``'blue'`` is not used for both.
     """
     given = [method] if isinstance(method, str) else list(method)
     given = [m.lower() for m in given]
@@ -68,11 +76,8 @@ def match_method(method: str | collections.abc.Sequence[str]) -> tuple[str, str]
         if not hits:
             raise metafopy.errors.InputError("Unknown 'method' specified.")
         out.append('luo/wan/shi' if hits[0] == 'default' else hits[0])
-    for m in out:
-        if m in ('qe', 'bc', 'mln', 'blue'):
-            raise metafopy.errors.NotSupportedError(
-                f"method='{m}' needs the R package {'metaBLUE' if m == 'blue' else 'estmeansd'}, which metafopy does not port."
-            )
+    if out[0] in EXTERNAL and out[0] != out[1]:
+        raise metafopy.errors.InputError("Must use the same 'method' for estimating means and SDs.")
     return out[0], out[1]
 
 
@@ -126,6 +131,8 @@ def conv_fivenum(
     var_names: collections.abc.Sequence[str] = ('mean', 'sd'),
     append: bool = True,
     replace: metafopy.effects.conv.Replace = 'ifna',
+    seed: int | None = None,
+    verbose: bool = False,
 ) -> pandas.DataFrame:
     """Estimate means and SDs from the minimum, first quartile, median, third quartile and maximum.
 
@@ -134,9 +141,16 @@ def conv_fivenum(
     log-normal data. With ``test=True`` no estimates are computed when the test for skewness is
     significant. Studies with ``n < 5`` are skipped.
 
+    The ``'qe'``, ``'bc'`` and ``'mln'`` methods (estmeansd) never skip a study after the test for skewness, except that
+    ``'qe'`` tests studies with negative values when ``test=True``; they need the same method for the means and SDs. ``'bc'``
+    and ``'mln'`` simulate with R's random number generator: ``seed`` is R's ``set.seed()`` argument and reproduces R's
+    results exactly, otherwise the module-level generator (see :func:`metafopy.set_seed`) is used. ``verbose=True`` lets
+    the warnings of these methods through. The ``dist`` entry of ``attrs`` holds the distribution selected by ``'qe'``
+    (``'normal'``, ``'lnorm'``, ``'gamma'``, ``'weibull'`` or ``'beta'``, ``None`` when the fit failed).
+
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
-        metafopy.errors.NotSupportedError: the method needs an R package metafopy does not port.
+        metafopy.errors.EstimationError: ``'blue'`` met a singular covariance matrix.
     """
     if min is None and q1 is None and median is None and q3 is None and max is None:
         raise metafopy.errors.InputError("Must specify at least some of these arguments: 'min', 'q1', 'median', 'q3', 'max'.")
@@ -169,16 +183,39 @@ def conv_fivenum(
         m1 = m2 = 'luo/wan/shi'
         warnings.warn("Switching to method='luo/wan/shi' (since dist='lnorm' for one or more studies).", stacklevel=2)
 
+    if seed is not None:
+        metafopy.core.rng.set_seed(seed)
+    test_now = False if m1 in ('bc', 'mln', 'qe') else test
+
     means = numpy.full(k, numpy.nan)
     sds = numpy.full(k, numpy.nan)
     tval = numpy.full(k, numpy.nan)
     crit = numpy.full(k, numpy.nan)
     sig: list[bool | None] = [None] * k
-    dists = ['norm'] * k
+    dists: list[str | None] = ['norm'] * k
+
+    def apply_external(i: int, quants: list[float], scenario: str, ni: float) -> None:
+        with warnings.catch_warnings():
+            if not verbose:
+                warnings.simplefilter('ignore')
+            try:
+                est = metafopy.effects.fivenum_estimators.estimate(m1, numpy.array(quants), ni, scenario)
+            except metafopy.errors.InputError, metafopy.errors.EstimationError, ArithmeticError, ValueError:
+                if m1 == 'blue':
+                    raise
+                est = None
+        if m1 == 'qe':
+            dists[i] = None if est is None else est.dist
+        if est is not None:
+            means[i], sds[i] = est.mean, est.sd
 
     for i in range(k):
         vals = [lo[i], a1[i], med[i], a3[i], hi[i]]
         present = [val for val in vals if not math.isnan(val)]
+        if m1 in ('bc', 'mln') and any(val <= 0 for val in present):
+            raise metafopy.errors.InputError(f'Cannot use method with non-positive values (found in row {i}).')
+        if m1 == 'qe' and test and any(val < 0 for val in present):
+            test_now = True
         if any(b < a for a, b in itertools.pairwise(present)):
             raise metafopy.errors.InputError(f"Found 'min <= q1 <= median <= q3 <= max' not true in row {i}.")
         mn, q1i, md, q3i, mx, ni = lo[i], a1[i], med[i], a3[i], hi[i], nn[i]
@@ -194,7 +231,7 @@ def conv_fivenum(
                 tval[i] = abs((mn + mx - 2 * md) / (mx - mn))
                 crit[i] = 1 / math.log(ni + 9) + 2.5 / (ni + 1)
                 sig[i] = bool(tval[i] >= crit[i])
-                if test and sig[i]:
+                if test_now and sig[i]:
                     continue
                 # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
                 if m1 in ('luo/wan/shi', 'luo2016'):
@@ -206,6 +243,8 @@ def conv_fivenum(
                     means[i] = (mn + 2 * md + mx) / 4
                 if m1 == 'walter2007':
                     means[i] = md
+                if m1 in EXTERNAL:
+                    apply_external(i, [mn, md, mx], 'S1', ni)
                 xi = 2 * qnorm((ni - 0.375) / (ni + 0.25))
                 # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
                 if m2 in ('luo/wan/shi', 'wan2014'):
@@ -241,7 +280,7 @@ def conv_fivenum(
                 tval[i] = abs((q1i + q3i - 2 * md) / (q3i - q1i))
                 crit[i] = 2.65 / math.sqrt(ni) - 6 / ni**2
                 sig[i] = bool(tval[i] >= crit[i])
-                if test and sig[i]:
+                if test_now and sig[i]:
                     continue
                 # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
                 if m1 in ('luo/wan/shi', 'luo2016'):
@@ -249,6 +288,8 @@ def conv_fivenum(
                     means[i] = weight * (q1i + q3i) / 2 + (1 - weight) * md
                 if m1 == 'wan2014':
                     means[i] = (q1i + md + q3i) / 3
+                if m1 in EXTERNAL:
+                    apply_external(i, [q1i, md, q3i], 'S2', ni)
                 eta = 2 * qnorm((0.75 * ni - 0.125) / (ni + 0.25))
                 # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
                 if m2 in ('luo/wan/shi', 'wan2014'):
@@ -271,7 +312,7 @@ def conv_fivenum(
                 )
                 crit[i] = 3 / math.sqrt(ni) - 40 / ni**3
                 sig[i] = bool(tval[i] >= crit[i])
-                if test and sig[i]:
+                if test_now and sig[i]:
                     continue
                 # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
                 if m1 in ('luo/wan/shi', 'luo2016'):
@@ -280,6 +321,8 @@ def conv_fivenum(
                     means[i] = weight1 * (mn + mx) / 2 + weight2 * (q1i + q3i) / 2 + (1 - weight1 - weight2) * md
                 if m1 in ('wan2014', 'bland2015'):
                     means[i] = (mn + 2 * q1i + 2 * md + 2 * q3i + mx) / 8
+                if m1 in EXTERNAL:
+                    apply_external(i, [mn, q1i, md, q3i, mx], 'S3', ni)
                 xi = 2 * qnorm((ni - 0.375) / (ni + 0.25))
                 eta = 2 * qnorm((0.75 * ni - 0.125) / (ni + 0.25))
                 weight = 1 / (1 + 0.07 * ni**0.6)
@@ -305,6 +348,9 @@ def conv_fivenum(
                     )
                     means[i], sds[i] = btmean, btsd
 
+        if m1 == 'qe':
+            test_now = False
+
     est: dict[str, numpy.typing.NDArray[numpy.bool_]] = {}
     if x is not None and append:
         for name, values in zip(var_names, (means, sds), strict=True):
@@ -318,7 +364,7 @@ def conv_fivenum(
     out.attrs['tval'] = tval
     out.attrs['crit'] = crit
     out.attrs['sig'] = pandas.array(sig, dtype='boolean')
-    out.attrs['dist'] = dists
+    out.attrs['dist'] = ['lnorm' if d == 'log-normal' else d for d in dists]
     if est:
         out.attrs['est'] = est
     return out
