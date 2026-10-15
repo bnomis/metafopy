@@ -91,9 +91,43 @@ Carlo routine and so agrees with R to about 1e-3 only. See [Differences from met
 
 ## Other options
 
-- `weights` sets how the other factors are averaged: `'equal'`, `'proportional'`, `'outer'`, `'cells'`, `'flat'` or a
-  numeric vector.
+- `weights` sets how the other factors are averaged: `'equal'`, `'proportional'`, `'outer'`, `'cells'`, `'flat'`, a numeric
+  vector with one weight per combination of the averaged factors, or a matrix with one row per row of the result (the rows
+  are recycled and each is scaled to sum to one, as in emmeans).
 - `summary(bias_adjust=True, sigma=...)` applies the second-order bias adjustment of the back-transformation (emmeans'
   `bias.adjust`); `sigma` defaults to the estimate of tau (0 for `rma_mv` and location-scale fits).
 - `regrid(grid)` re-expresses a grid on the response scale with the delta method (`bias_adjust=True, sigma=...` for the bias adjustment).
 - `summary(by=..., cross_adjust=...)` adjusts the p-values within each `by` group and across the groups.
+
+## One-sided, equivalence and non-inferiority tests
+
+`summary`, `emmeans`, `contrast` and `pairs` take `null`, `delta` and `side`, as in emmeans. `side` is `'<'`, `'>'`, `'!='`, `'='`
+(or `-1`, `1`, `0` and the words `'left'`, `'right'`, `'both'`, `'equivalence'`, `'noninferiority'`, `'nonsuperiority'`,
+`'inferiority'`, `'superiority'`), and `delta` is the threshold. A one-sided test has a one-sided interval, with an infinite
+limit; `tukey`, `scheffe` and `dunnettx` adjustments change to `sidak`, as emmeans does. With `delta > 0` and no `side`, the
+test is the equivalence test of Schuirmann (1987, <https://doi.org/10.1007/BF01068419>): the p-value is that of the
+larger of the two one-sided tests. Values given to `emmeans`, `contrast` or `pairs` are stored in the result and used by its
+`summary` unless overridden there.
+
+```python
+print(pairs(means).summary(side='>', adjust='none'))
+print(pairs(means).summary(delta=0.5, adjust='none'))
+```
+
+## Nested factors
+
+A factor B is nested in A when each level of B occurs with one level of A only (or when the model has `A:B` without a main
+effect of B). `emmprep` finds such nesting from the data and the model terms (`nesting='auto'`), hides the combinations that
+cannot occur, and `emmeans` averages B within A. `contrast` and `pairs` then work within each level of A, and the groups can
+differ in size, so the multiplicity adjustment is that of the largest family ("(varies)" in the message of R). Give the
+structure yourself with `nesting='B %in% A'` (or `{'B': 'A'}`), or turn the detection off with `nesting=None`. See the emmeans
+vignette on [nesting](https://rvlenth.github.io/emmeans/articles/sophisticated.html#nesting) and Chambers and Hastie (1992),
+*Statistical Models in S*, chapter 2.
+
+```python
+# docs: skip
+res = rma('yi', 'vi', mods='~ lat + lat:grp', data=dat)  # grp is nested in lat
+grid = emmprep(res)  # nesting={'grp': ('lat',)} is detected
+print(emmeans(grid, 'grp').summary())
+print(pairs(emmeans(grid, 'grp')).summary())  # comparisons within each level of lat
+```
