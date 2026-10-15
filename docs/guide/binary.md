@@ -123,6 +123,9 @@ As in metafor, `control={'package': 'GLMMadaptive'}` fits the mixed models with 
 For the conditional model `CM.EL` with `method='FE'`, `control={'optimizer': 'clogit'}` or `'clogistic'` fit it with the partial likelihood of
 `survival::clogit` or `Epi::clogistic`. `link=` and `family=` change the link function or the family of the unconditional models.
 
+The other optimisers of `rma.glmm` are available for `CM.EL` too (`control={'optimizer': 'BFGS'}`, `'Nelder-Mead'`, or `'optim'` with `optmethod=`, `optCtrl={'maxit': ...}`, and `'CG'`, `'L-BFGS-B'`, `'nlm'`, `'bobyqa'`, ...). `optim`'s BFGS and Nelder-Mead are exact ports of R's routines; the rest use the closest SciPy method.
+See [differences from metafor](../differences.md) for what can differ.
+
 ## Rates
 
 For incidence rates, pass the event counts `x1i`, `x2i` and the person-time `t1i`, `t2i`, with `measure='IRR'`:

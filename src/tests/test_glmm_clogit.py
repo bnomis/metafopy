@@ -242,7 +242,7 @@ def test_unknown_optimizer() -> None:
     with pytest.raises(metafopy.errors.InputError, match='optimizer'):
         bcg_fit(bcg_small(), method='FE', control={'optimizer': 'bogus'})
     with pytest.raises(metafopy.errors.InputError, match='optimizer'):
-        bcg_fit(bcg_small(), method='FE', control={'optimizer': 'BFGS'})
+        bcg_fit(bcg_small(), method='FE', control={'optimizer': 'bogus2'})
 
 
 def test_unknown_control_entries() -> None:
