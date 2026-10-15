@@ -20,6 +20,7 @@ import numpy.typing
 import scipy.optimize
 
 import metafopy.core.optim
+import metafopy.core.stationarity
 import metafopy.errors
 
 __all__ = ['OptResult', 'constr_optim', 'minimise']
@@ -116,16 +117,19 @@ def minimise(f: Objective, x0: FloatArray, *, method: str = 'BFGS', maxiter: int
         raise metafopy.errors.InputError(f'unknown optimizer {method!r}')
     best_x, best_val = numpy.asarray(first.x, dtype=numpy.float64), float(first.fun)
     nit = int(first.nit)
-    # a final simplex search guards against a premature stop of the quasi-Newton iterations
-    polish = scipy.optimize.minimize(
-        safe,
-        best_x,
-        method='Nelder-Mead',
-        options={'maxiter': maxiter * 4, 'xatol': 1e-10, 'fatol': 1e-13, 'adaptive': True},
-    )
-    if float(polish.fun) < best_val:
-        best_x, best_val = numpy.asarray(polish.x, dtype=numpy.float64), float(polish.fun)
-        nit += int(polish.nit)
+    # a final simplex search guards against a premature stop of the quasi-Newton iterations; after a converged run it is skipped, as it
+    # would only walk further down a likelihood that is flat towards a boundary (a log-variance heading to minus infinity), where
+    # nlminb stops once the relative change of the objective is below 1e-10
+    if not first.success and metafopy.core.stationarity.newton_decrement(first) > metafopy.core.stationarity.REL_TOL * (1 + abs(best_val)):
+        polish = scipy.optimize.minimize(
+            safe,
+            best_x,
+            method='Nelder-Mead',
+            options={'maxiter': maxiter * 4, 'xatol': 1e-10, 'fatol': 1e-13, 'adaptive': True},
+        )
+        if float(polish.fun) < best_val:
+            best_x, best_val = numpy.asarray(polish.x, dtype=numpy.float64), float(polish.fun)
+            nit += int(polish.nit)
     if best_val >= HUGE:
         raise metafopy.errors.EstimationError('Optimizer did not achieve convergence.')
     return OptResult(par=best_x, value=best_val, iterations=nit)

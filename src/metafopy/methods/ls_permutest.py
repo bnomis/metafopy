@@ -5,6 +5,9 @@ location model matrix (random sign flips of the observed effects for an intercep
 under permutations of the rows of the scale model matrix; an exact test enumerates all unique permutations. See
 Viechtbauer & Lopez-Lopez (2022), doi:10.1002/jrsm.1562, and :mod:`metafopy.methods.permutest`.
 
+The permuted fits use the Richardson depth ``r = 8`` of ``numDeriv::hessian`` whatever ``hessian_r`` the fit has, and the
+optimiser stops like ``nlminb`` on a likelihood that is flat towards a boundary (see :func:`metafopy.models.rma_ls_opt.minimise`).
+
 Random permutations are drawn with R's own Mersenne-Twister (:mod:`metafopy.core.rng`): each part draws
 ``int(runif(1) * 2e9)`` from the generator and seeds it with that (or with ``seed``) before permuting, as metafor does.
 """
@@ -31,6 +34,11 @@ import metafopy.printing
 __all__ = ['LSPermutestResult', 'permutest_rma_ls']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
+
+# Richardson depth of the Hessian in the permuted fits: metafor's numDeriv default. Where a permuted scale fit runs to the boundary, the depth
+# decides whether the Hessian is still positive definite (a huge standard error, z near 0) or not (undefined), so the 4 of an ordinary fit
+# (``LSControl.hessian_r``) would give 13 undefined standard errors for 50 permutations of the bcg example where R has 3.
+HESSIAN_R = 8
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -173,7 +181,7 @@ def beta_permutations(
         return zval, beta, QM
 
     def fit_rows(rows: numpy.typing.NDArray[numpy.intp]) -> metafopy.models.rma_ls_result.RMALSResult | None:
-        return metafopy.methods.ls_common.refit_ls(x, X=Xs[rows], btt=list(x.btt), alpha=alpha_arg, beta=beta_arg, skiphes=skiphes)
+        return metafopy.methods.ls_common.refit_ls(x, X=Xs[rows], btt=list(x.btt), alpha=alpha_arg, beta=beta_arg, skiphes=skiphes, hessian_r=HESSIAN_R)
 
     if gen is None:
         perms = metafopy.methods.permutest.multiset_perms(labels)
@@ -213,7 +221,7 @@ def alpha_permutations(
         return True
 
     def fit_rows(rows: numpy.typing.NDArray[numpy.intp]) -> metafopy.models.rma_ls_result.RMALSResult | None:
-        return metafopy.methods.ls_common.refit_ls(x, Z=Zs[rows], att=list(x.att), alpha=alpha_arg, beta=beta_arg, skiphes=False)
+        return metafopy.methods.ls_common.refit_ls(x, Z=Zs[rows], att=list(x.att), alpha=alpha_arg, beta=beta_arg, skiphes=False, hessian_r=HESSIAN_R)
 
     if gen is None:
         perms = metafopy.methods.permutest.multiset_perms(labels)
