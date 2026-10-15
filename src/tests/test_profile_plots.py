@@ -152,28 +152,29 @@ def test_panel_label_lengths_are_checked(prof: dict[str, typing.Any], fig: matpl
     with pytest.raises(metafopy.errors.InputError, match="'xlab'"):
         metafopy.plot.plot_profile(prof['mv'], xlab=['a', 'b', 'c'], ax=fig.add_subplot(111))
     with pytest.raises(metafopy.errors.InputError, match="'main'"):
-        metafopy.plot.plot_profile(prof['ls_single'], main=['a', 'b'], ax=fig.add_subplot(111))  # type: ignore[call-overload]
+        metafopy.plot.plot_profile(prof['ls_single'], main=['a', 'b'], ax=fig.add_subplot(111))
 
 
 def test_plot_argument_draws_the_grid(fig: matplotlib.figure.Figure) -> None:
     bd = bangertdrowns()
     ls = metafopy.rma_uni('yi', 'vi', mods='~ ni100', scale='~ ni100', data=bd)
     ax = fig.add_subplot(111)
-    res = metafopy.profile(ls, steps=4, plot=True, ax=ax)
+    res: typing.Any = metafopy.profile(ls, steps=4, plot=True, ax=ax)
     assert isinstance(res, list)
     assert sum(1 for a in fig.axes if a.get_xlabel()) == 2
-    ax2 = matplotlib.pyplot.figure().add_subplot(111)
-    single = metafopy.profile(ls, alpha=1, steps=4, plot=True, ax=ax2)
+    fig2 = matplotlib.pyplot.figure()
+    ax2 = fig2.add_subplot(111)
+    single: typing.Any = metafopy.profile(ls, alpha=1, steps=4, plot=True, ax=ax2)
     assert not isinstance(single, list)
     assert ax2.get_xlabel() == r'$\alpha_{2}$ Value'
-    matplotlib.pyplot.close(ax2.figure)
+    matplotlib.pyplot.close(fig2)
 
 
 def test_pipeline_through_figure_without_axes() -> None:
     kon = metafopy.datasets.load('konstantopoulos2011')
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
-        res = metafopy.profile(metafopy.rma_mv('yi', 'vi', random='~ 1 | district/school', data=kon), steps=4, plot=True)
+        res: typing.Any = metafopy.profile(metafopy.rma_mv('yi', 'vi', random='~ 1 | district/school', data=kon), steps=4, plot=True)
     assert isinstance(res, list)
     assert sum(1 for a in matplotlib.pyplot.gcf().axes if a.get_xlabel()) == 2
     matplotlib.pyplot.close('all')
