@@ -22,3 +22,17 @@ Calculation of effect sizes and sampling variances, see the [user guide](../guid
       show_root_heading: true
       show_root_full_path: false
       show_source: false
+
+::: metafopy.cbind_escalc
+    options:
+      heading_level: 3
+      show_root_heading: true
+      show_root_full_path: false
+      show_source: false
+
+::: metafopy.rbind_escalc
+    options:
+      heading_level: 3
+      show_root_heading: true
+      show_root_full_path: false
+      show_source: false

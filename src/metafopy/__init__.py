@@ -16,6 +16,7 @@ from metafopy.core.rng import set_seed
 from metafopy.effects import (
     TableArray,
     aggregate_escalc,
+    cbind_escalc,
     cmicalc,
     contrmat,
     conv_2x2,
@@ -24,6 +25,7 @@ from metafopy.effects import (
     conv_wald,
     dfround,
     escalc,
+    rbind_escalc,
     replmiss,
     summary_escalc,
     to_long,
@@ -38,6 +40,7 @@ from metafopy.methods.accessors import df_residual, model_matrix, nobs, se, upda
 from metafopy.methods.anova import LRTResult, WaldResult, anova
 from metafopy.methods.blocks import bldiag, blsplit
 from metafopy.methods.blup import BlupResult, blup
+from metafopy.methods.coef_summary import coef_summary
 from metafopy.methods.confint import ConfintResult, confint
 from metafopy.methods.deltamethod import DeltaMethodResult, deltamethod
 from metafopy.methods.emm_grid import EmmGrid, contrast, emmeans, emmprep, pairs, regrid
@@ -58,6 +61,7 @@ from metafopy.methods.robust import robust
 from metafopy.methods.selmodel import SelProfileResult
 from metafopy.methods.simulate import simulate
 from metafopy.methods.vcalc import vcalc
+from metafopy.methods.vcov import vcov
 from metafopy.methods.vif import VIFEntry, VIFResult, vif
 from metafopy.mfopt import getmfopt, setmfopt
 from metafopy.models.glmm_fit import GLMMControl
@@ -147,7 +151,9 @@ __all__ = [
     'bldiag',
     'blsplit',
     'blup',
+    'cbind_escalc',
     'cmicalc',
+    'coef_summary',
     'confint',
     'contrast',
     'contrmat',
@@ -202,6 +208,7 @@ __all__ = [
     'radial',
     'ranef',
     'ranktest',
+    'rbind_escalc',
     'rcalc',
     'regplot',
     'regrid',
@@ -231,6 +238,7 @@ __all__ = [
     'trimfill',
     'update',
     'vcalc',
+    'vcov',
     'vec2mat',
     'vif',
 ]

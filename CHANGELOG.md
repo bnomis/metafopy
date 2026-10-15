@@ -3,6 +3,10 @@
 ## Unreleased (1.0 candidate)
 
 - Optimiser agreement with R (`src/tests/r/generate_audit4_numerics.R`): `rma_mv(struct='GEN')` on a flat ridge of the likelihood (konstantopoulos2011) no longer fails with 'precision loss'; `permutest()` of location-scale fits with permuted scale fits on the boundary reproduces R's p-values and undefined standard errors; the identity-link scale standard errors are documented to the digit (see `docs/differences.md`).
+- Close the vcov gaps of the fourth audit (`src/tests/r/generate_audit4_vcov.R`):
+  - `vcov(res, type=, na_action=)` with `'obs'`/`'marginal'`, `'fitted'` and `'resid'` for `rma_uni`, `rma_mv`, `rma_mh`, `rma_peto`, `rma_glmm`, location-scale, selection, robust and `trimfill` fits, with R's refusals; `SelmodelResult.vcov()` defaults to `'fixed'` (both matrices) and no longer returns the `beta` matrix for every other type.
+  - Result fields `M` (the marginal var-cov matrix of `rma_uni`, location-scale, selection, robust and `trimfill` fits), `b` (alias of `beta`), `k_eff` (`rma_mv`, `rma_mh`, `rma_peto`), `p_eff` and `ni` (`rma_mh`, `rma_peto`), and `I2`, `H2`, `vt`, `QE`, `QEp` of selection models (`nan`, as R stores `NA`).
+  - `coef_summary()` (`coef(summary(res))`) as a data frame, and `cbind_escalc()` / `rbind_escalc()` that keep the `escalc` attributes.
 - Close the gaps of the third audit against metafor 5.2-1 (`src/tests/r/generate_audit3.R`, fixtures from R 4.5.1):
   - `rma_uni(yi, vi, data=escalc_frame)` stores the sample sizes of `escalc` frames, so `funnel(yaxis='ni')`, `regtest(predictor='ni')` and `selmodel(prec='ninv')` work; results have `ni`, `k_all`, `k_eff`, `p_eff`, `formula_yi` and `formula_mods`, robust fits keep `robust.meat`.
   - `hatvalues(type='matrix')` for `rma_uni` (also `trimfill` and robust fits) and location-scale fits; `summary()` adds the fit-statistics table to `print()` for every fit class; `fitstats()`, `AIC()` and `BIC()` take several fits (`correct=` for AICc).

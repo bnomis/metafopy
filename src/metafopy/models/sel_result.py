@@ -127,6 +127,36 @@ class SelmodelResult(metafopy.models.fit_methods.FitMethods):
         return self.base.ni
 
     @property
+    def M(self) -> FloatArray:
+        """The marginal variance-covariance matrix of the observed effects, ``diag(vi + tau2)`` with the ``tau2`` of the selection model."""
+        return numpy.diag(self.base.vi + self.tau2)
+
+    @property
+    def I2(self) -> float:
+        """Not computed for selection models (``NaN``, as metafor stores ``NA``)."""
+        return math.nan
+
+    @property
+    def H2(self) -> float:
+        """Not computed for selection models (``NaN``, as metafor stores ``NA``)."""
+        return math.nan
+
+    @property
+    def vt(self) -> float:
+        """Not computed for selection models (``NaN``, as metafor stores ``NA``)."""
+        return math.nan
+
+    @property
+    def QE(self) -> float:
+        """Not computed for selection models (``NaN``, as metafor stores ``NA``)."""
+        return math.nan
+
+    @property
+    def QEp(self) -> float:
+        """Not computed for selection models (``NaN``, as metafor stores ``NA``)."""
+        return math.nan
+
+    @property
     def yi(self) -> FloatArray:
         return self.base.yi
 
@@ -202,13 +232,27 @@ class SelmodelResult(metafopy.models.fit_methods.FitMethods):
             return pandas.concat([beta, delta])
         return beta
 
-    def vcov(self, type: typing.Literal['beta', 'delta'] = 'beta') -> pandas.DataFrame:
-        """The variance-covariance matrix of the coefficients (``'beta'``) or of the selection parameters (``'delta'``)."""
-        if type == 'delta':
-            names = list(self.delta_names)
-            return pandas.DataFrame(self.vd, index=names, columns=names)
-        names = list(self.coef_names)
-        return pandas.DataFrame(self.vb, index=names, columns=names)
+    @typing.overload
+    def vcov(
+        self,
+        type: typing.Literal['beta', 'alpha', 'delta', 'obs', 'marginal', 'fitted', 'resid'],
+        *,
+        na_action: metafopy.models.rma_uni.NAActionAll = 'omit',
+    ) -> pandas.DataFrame: ...
+
+    @typing.overload
+    def vcov(
+        self, type: metafopy.models.rma_uni.VcovType = 'fixed', *, na_action: metafopy.models.rma_uni.NAActionAll = 'omit'
+    ) -> pandas.DataFrame | dict[str, pandas.DataFrame]: ...
+
+    def vcov(
+        self, type: metafopy.models.rma_uni.VcovType = 'fixed', *, na_action: metafopy.models.rma_uni.NAActionAll = 'omit'
+    ) -> pandas.DataFrame | dict[str, pandas.DataFrame]:
+        """Variance-covariance matrices; ``'fixed'`` (the default) gives ``{'beta': ..., 'delta': ...}``, the other types follow :func:`metafopy.vcov`."""
+        # auditme: accept[in-function-import] metafopy.methods imports this module, so the import is deferred to avoid a cycle
+        import metafopy.methods.vcov
+
+        return metafopy.methods.vcov.vcov(self, type, na_action=na_action)
 
     def fitted(self) -> FloatArray:
         return self.X @ self.beta

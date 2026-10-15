@@ -611,6 +611,7 @@ def rma_mv(
     if A_s is not None:
         has_na |= numpy.asarray(numpy.isnan(A_s.toarray() if scipy.sparse.issparse(A_s) else A_s).any(axis=1))
     not_na = ~has_na
+    X_sub = X_s
     if has_na.any():
         if na_action == 'fail':
             raise metafopy.errors.InputError('Missing values in data.')
@@ -671,6 +672,7 @@ def rma_mv(
         X = numpy.column_stack([numpy.ones(k), X[:, keep_cols]])
         names = ['intrcpt', *(names[j] for j in keep_cols)]
         intercept_flag = True
+    X_f = model_matrix_all_rows(X_sub, coef_na, is_int, int_incl)
     if not metafopy.core.linalg.is_positive_definite(numpy.asarray(X.T @ X), tol=con.evtol):
         raise metafopy.errors.InputError('Model matrix not of full rank. Cannot fit model.')
     p = int(X.shape[1])
@@ -1127,6 +1129,7 @@ def rma_mv(
         s_levels=s_levels,
         s_levels_f=s_levels_f,
         slab_f=slab_s,
+        X_f=X_f,
         Rfix=tuple(sinfo.Rfix),
         Rscale=rscale,
         group_g=group_g,
@@ -1206,6 +1209,17 @@ def iteration_logger(problem: metafopy.models.mv_lik.Problem, reml: bool, digits
         state['iteration'] += 1
 
     return log
+
+
+def model_matrix_all_rows(X_sub: FloatArray, coef_na: BoolArray, is_int: list[bool], int_incl: bool) -> FloatArray:
+    """``X.f``: the model matrix of every row of the subset (rows with missing values included), built as ``X`` is."""
+    if X_sub.shape[1] == 0:
+        return numpy.ones((X_sub.shape[0], 1))
+    X_f = X_sub[:, ~coef_na] if coef_na.any() else X_sub
+    if int_incl:
+        keep_cols = [j for j, flag in enumerate(is_int) if not flag]
+        return numpy.column_stack([numpy.ones(X_f.shape[0]), X_f[:, keep_cols]])
+    return X_f
 
 
 def coef_slab(slab: tuple[str, ...], not_na: BoolArray) -> tuple[str, ...]:

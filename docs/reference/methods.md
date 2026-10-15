@@ -281,6 +281,22 @@ Functions that take a fitted model. Each is a single-dispatch function: the gene
       show_root_full_path: false
       show_source: false
 
+## Variance-covariance matrices and coefficient tables
+
+::: metafopy.vcov
+    options:
+      heading_level: 3
+      show_root_heading: true
+      show_root_full_path: false
+      show_source: false
+
+::: metafopy.coef_summary
+    options:
+      heading_level: 3
+      show_root_heading: true
+      show_root_full_path: false
+      show_source: false
+
 ## Residuals and influence
 
 ::: metafopy.rstandard

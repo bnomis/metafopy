@@ -123,9 +123,12 @@ class GLMMResult(metafopy.models.fit_methods.FitMethods):
         """Estimated coefficients, indexed by name."""
         return pandas.Series(self.beta, index=list(self.coef_names), name='estimate')
 
-    def vcov(self) -> pandas.DataFrame:
-        names = list(self.coef_names)
-        return pandas.DataFrame(self.vb, index=names, columns=names)
+    def vcov(self, type: metafopy.models.rma_uni.VcovType = 'fixed', *, na_action: metafopy.models.rma_uni.NAActionAll = 'omit') -> pandas.DataFrame:
+        """Variance-covariance matrix of the coefficients, or with ``type='fitted'`` of the fitted values; see :func:`metafopy.vcov`."""
+        # auditme: accept[in-function-import] metafopy.methods imports this module, so the import is deferred to avoid a cycle
+        import metafopy.methods.vcov
+
+        return metafopy.methods.vcov.vcov_frame(self, type, na_action)
 
     def fitted(self) -> FloatArray:
         """Fitted values ``X beta`` of the tables used in fitting (metafor's ``fitted.rma``)."""
