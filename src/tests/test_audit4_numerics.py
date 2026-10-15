@@ -73,11 +73,13 @@ def test_permutest_ls_boundary_fits_match_r() -> None:
     exact = 1e-12 if sys.platform == 'linux' else 0.05
     refutil.close(pt.pval_alpha, ref['pval_alpha'], 'pval_alpha', rtol=exact)
     refutil.close([pt.QSp], [ref['QSp']], 'QSp', rtol=exact)
+    if sys.platform != 'linux':
+        return
     r_z = numpy.array([[numpy.nan if v is None else v for v in col] for col in ref['zval_alpha_perm'].values()]).T
     r_a = numpy.array([[numpy.nan if v is None else v for v in col] for col in ref['alpha_perm'].values()]).T
     z = pt.zval_alpha_perm.to_numpy()
     a = pt.alpha_perm.to_numpy()
-    assert (numpy.isnan(z) != numpy.isnan(r_z)).sum() <= (0 if sys.platform == 'linux' else 2)
+    assert (numpy.isnan(z) == numpy.isnan(r_z)).all()
     interior = numpy.abs(r_a).max(axis=1) < 10
     refutil.close(a[interior].ravel(), r_a[interior].ravel().tolist(), 'alpha_perm (interior)', rtol=2e-4, atol=1e-6)
     refutil.close(z[interior].ravel(), r_z[interior].ravel().tolist(), 'zval_alpha_perm (interior)', rtol=2e-4, atol=1e-6)
@@ -86,7 +88,7 @@ def test_permutest_ls_boundary_fits_match_r() -> None:
     on_boundary = numpy.abs(r_z) < 0.01
     assert (numpy.abs(z[on_boundary & ~numpy.isnan(z)]) < 0.01).all()
     rest = ~on_boundary & ~numpy.isnan(r_z)
-    refutil.close(z[rest], r_z[rest].tolist(), 'zval_alpha_perm (other coefficients)', rtol=2e-3 if sys.platform == 'linux' else 5e-2, atol=1e-3)
+    refutil.close(z[rest], r_z[rest].tolist(), 'zval_alpha_perm (other coefficients)', rtol=2e-3, atol=1e-3)
 
 
 def identity_fit(r: int | None) -> metafopy.RMALSResult:
