@@ -163,9 +163,12 @@ class RMALSResult(metafopy.models.fit_methods.FitMethods):
         """Fitted location values ``X beta`` and scale values ``Z alpha`` (the latter on the link scale)."""
         return {'location': self.X @ self.beta, 'scale': self.Z @ self.alpha}
 
-    def residuals(self) -> FloatArray:
-        """Raw residuals ``y - X beta``."""
-        return self.yi - self.X @ self.beta
+    def residuals(self, type: metafopy.models.rma_uni.ResidualType = 'response', *, na_action: metafopy.models.rma_uni.NAActionAll = 'omit') -> FloatArray:
+        """Residuals; see :func:`metafopy.residuals` (``type`` is ``'response'``, ``'rstandard'``, ``'rstudent'``, ``'pearson'`` or ``'cholesky'``)."""
+        # auditme: accept[in-function-import] metafopy.methods imports this module, so the import is deferred to avoid a cycle
+        import metafopy.methods.residuals
+
+        return metafopy.methods.residuals.residuals(self, type, na_action=na_action)
 
     def logLik(self, REML: bool | None = None) -> float:
         """Log-likelihood; REML unless the model was fitted with ML (as in metafor)."""
@@ -198,13 +201,15 @@ class RMALSResult(metafopy.models.fit_methods.FitMethods):
             name='REML' if (REML if REML is not None else self.method == 'REML') else 'ML',
         )
 
-    def weights_(self) -> FloatArray:
-        """Percentage weight of each estimate in the model fit (metafor ``weights()``)."""
-        if self.weighted:
-            w = 1.0 / (self.vi + self.tau2) if self.weights is None else self.weights
-        else:
-            w = numpy.full(self.k, 1.0 / self.k)
-        return w / w.sum() * 100
+    def weights_(self, type: typing.Literal['diagonal', 'matrix'] = 'diagonal', na_action: metafopy.models.rma_uni.NAActionAll = 'omit') -> FloatArray:
+        """Percentage weights of the estimates in the model fit (``type='diagonal'``) or the weight matrix (``'matrix'``), metafor's ``weights()``.
+
+        ``na_action`` is ``'omit'``, ``'exclude'``, ``'pass'`` or ``'fail'`` as in :func:`metafopy.residuals`.
+        """
+        # auditme: accept[in-function-import] metafopy.methods imports this module, so the import is deferred to avoid a cycle
+        import metafopy.methods.weights
+
+        return metafopy.methods.weights.weights_uni(self, type, na_action)
 
     def hatvalues(self) -> FloatArray:
         """Diagonal of the hat matrix."""

@@ -23,6 +23,7 @@ import metafopy.core.parallel
 import metafopy.core.zeroin
 import metafopy.errors
 import metafopy.methods.anova
+import metafopy.methods.common
 import metafopy.methods.confint
 import metafopy.methods.predict
 import metafopy.methods.profile
@@ -558,6 +559,7 @@ def anova(
     model: Sel,
     model2: Sel | metafopy.models.rma_uni.RMAResult | None = None,
     *,
+    object2: Sel | metafopy.models.rma_uni.RMAResult | None = None,
     btt: metafopy.models.rma_uni.Btt = None,
     X: numpy.typing.ArrayLike | None = None,
     rhs: numpy.typing.ArrayLike | float = 0.0,
@@ -565,7 +567,7 @@ def anova(
 ) -> metafopy.methods.anova.WaldResult | metafopy.methods.anova.LRTResult | list[metafopy.methods.anova.WaldResult]:
     """Wald-type tests of the coefficients (``btt`` 0-based, or linear combinations ``X``) or, given a second model, a likelihood-ratio test.
 
-    ``adjust`` adjusts the p-values of several tests (see :func:`metafopy.methods.anova.anova_rma_uni`).
+    ``adjust`` adjusts the p-values of several tests (see :func:`metafopy.methods.anova.anova_rma_uni`). ``object2`` is R's name for ``model2``.
 
     The likelihood-ratio test compares the ML log-likelihoods of two nested models (selection models or ``rma_uni`` fits
     to the same data).
@@ -573,6 +575,7 @@ def anova(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
+    model2 = typing.cast(Sel | metafopy.models.rma_uni.RMAResult | None, metafopy.methods.common.resolve_alias(model2, object2, 'model2', 'object2'))
     if model2 is not None:
         return lrt(model, model2)
     return metafopy.methods.anova.anova_rma_uni(as_rma(model), btt=btt, X=X, rhs=rhs, adjust=adjust)

@@ -132,11 +132,23 @@ class GLMMResult(metafopy.models.fit_methods.FitMethods):
         out: FloatArray = self.X_f[self.tables.not_na] @ self.beta
         return out
 
-    def residuals(self) -> FloatArray:
-        """Raw residuals ``yi - X beta`` of the tables used in fitting (metafor's ``residuals.rma``, ``type='response'``)."""
-        out: FloatArray = self.tables.yi_f[self.tables.not_na] - self.fitted()
-        out[numpy.abs(out) < 100 * numpy.finfo(numpy.float64).eps] = 0.0
-        return out
+    def weights_(self, type: str = 'diagonal', na_action: str = 'omit') -> FloatArray:
+        """Not available (metafor's ``weights()`` stops for this class).
+
+        Raises:
+            metafopy.errors.NotSupportedError: always.
+        """
+        # auditme: accept[in-function-import] metafopy.methods imports this module, so the import is deferred to avoid a cycle
+        import metafopy.methods.weights
+
+        metafopy.methods.weights.weights_unsupported(self)
+
+    def residuals(self, type: metafopy.models.rma_uni.ResidualType = 'response', *, na_action: metafopy.models.rma_uni.NAActionAll = 'omit') -> FloatArray:
+        """Residuals; see :func:`metafopy.residuals` (``type`` is ``'response'``, ``'rstandard'``, ``'rstudent'``, ``'pearson'`` or ``'cholesky'``)."""
+        # auditme: accept[in-function-import] metafopy.methods imports this module, so the import is deferred to avoid a cycle
+        import metafopy.methods.residuals
+
+        return metafopy.methods.residuals.residuals(self, type, na_action=na_action)
 
     def fit_stats(self, REML: bool | None = None) -> metafopy.models.rma_uni.FitStats:
         return self.fit_stats_reml if REML else self.fit_stats_ml

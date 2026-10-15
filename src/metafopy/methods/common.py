@@ -30,6 +30,59 @@ def check_na_action(na_action: str) -> None:
         raise metafopy.errors.InputError(f'unknown na_action {na_action!r}')
 
 
+def resolve_alias[T](value: T | None, alias: T | None, name: str, alias_name: str) -> T | None:
+    """The value of an argument that may also be given under its R spelling ``alias_name``.
+
+    Raises:
+        metafopy.errors.InputError: both are given and differ.
+    """
+    same = value is alias or (isinstance(value, bool | int | float | str) and value == alias)
+    if value is not None and alias is not None and not same:
+        raise metafopy.errors.InputError(f"Arguments '{name}' and '{alias_name}' are the same argument but were given different values.")
+    return alias if value is None else value
+
+
+def match_arg(value: str, choices: tuple[str, ...], name: str = 'type') -> str:
+    """R's ``match.arg``: ``value`` or the one choice it is a unique prefix of.
+
+    Raises:
+        metafopy.errors.InputError: ``value`` matches none or several of the choices.
+    """
+    if value in choices:
+        return value
+    hits = [c for c in choices if value and c.startswith(value)]
+    if len(hits) == 1:
+        return hits[0]
+    shown = ', '.join(repr(c) for c in choices)
+    raise metafopy.errors.InputError(f"'{name}' should be one of {shown}")
+
+
+def uni_not_na(res: typing.Any) -> BoolArray:
+    """``not.na`` of an ``rma.uni``-like fit: which of the rows of the subset (``k.f`` of them) were used in fitting."""
+    md = res.data
+    subset = md.keep if md.na_rows is None else md.keep | md.na_rows
+    return numpy.asarray(md.keep[subset], dtype=numpy.bool_)
+
+
+def apply_na_action(full: FloatArray, not_na: BoolArray, na_action: NAAction, what: str = 'results') -> FloatArray:
+    """The ``na.action`` step of metafor's accessor functions on a vector (or square matrix) over all ``k.f`` rows.
+
+    ``'omit'`` keeps the rows used in fitting, ``'exclude'`` and ``'pass'`` keep all rows (``'exclude'`` sets the unused ones to NaN)
+    and ``'fail'`` stops if any row was not used.
+
+    Raises:
+        metafopy.errors.InputError: ``na_action='fail'`` and rows are missing.
+    """
+    if na_action == 'fail' and not not_na.all():
+        raise metafopy.errors.InputError(f'Missing values in {what}.')
+    if na_action == 'omit':
+        return full[not_na] if full.ndim == 1 else full[numpy.ix_(not_na, not_na)]
+    out = full.copy()
+    if na_action == 'exclude' and full.ndim == 1:
+        out[~not_na] = numpy.nan
+    return out
+
+
 def subset_metadata(res: metafopy.models.rma_uni.RMAResult, idx: numpy.typing.NDArray[numpy.intp] | BoolArray) -> metafopy.metadata.MetaData:
     """The model inputs of ``res`` restricted to the studies in ``idx`` (positions among the ``k`` studies used)."""
     md = res.data
@@ -131,15 +184,17 @@ def refit_arrays(
 
 
 def pad_to_supplied(res: metafopy.models.rma_uni.RMAResult, *arrays: FloatArray) -> tuple[list[FloatArray], tuple[str, ...]]:
-    """Pad per-study results to one row per supplied study (NaN where left out), as ``na.exclude``/``na.pass`` do."""
-    keep = res.data.keep
-    idx = numpy.flatnonzero(keep)
+    """Pad per-study results to one row per study of the subset (NaN where left out), as ``na.exclude``/``na.pass`` do."""
+    md = res.data
+    subset = md.keep if md.na_rows is None else md.keep | md.na_rows
+    rows = numpy.flatnonzero(subset)
+    idx = numpy.flatnonzero(md.keep[subset])
     out: list[FloatArray] = []
     for arr in arrays:
-        full = numpy.full((keep.shape[0], *arr.shape[1:]), numpy.nan)
+        full = numpy.full((rows.shape[0], *arr.shape[1:]), numpy.nan)
         full[idx] = arr
         out.append(full)
-    labels = [str(i + 1) for i in range(keep.shape[0])]
+    labels = [str(i + 1) for i in rows] if md.labels_all is None else [md.labels_all[i] for i in rows]
     for pos, i in enumerate(idx):
         labels[i] = res.slab[pos]
     return out, tuple(labels)

@@ -14,6 +14,7 @@ import scipy.stats
 import metafopy.core.linalg
 import metafopy.core.padjust
 import metafopy.errors
+import metafopy.methods.common
 import metafopy.models.mv_result
 import metafopy.models.rma_uni
 import metafopy.models.tau2
@@ -116,6 +117,7 @@ def anova_rma_uni(
     model: metafopy.models.rma_uni.RMAResult,
     model2: metafopy.models.rma_uni.RMAResult | None = None,
     *,
+    object2: metafopy.models.rma_uni.RMAResult | None = None,
     btt: metafopy.models.rma_uni.Btt = None,
     X: numpy.typing.ArrayLike | None = None,
     rhs: numpy.typing.ArrayLike | float = 0.0,
@@ -130,7 +132,7 @@ def anova_rma_uni(
     a likelihood-ratio test. ``adjust`` (``True`` for ``'bonferroni'`` or one of
     :data:`metafopy.core.padjust.P_ADJUST_METHODS`) adjusts the p-values of
     several tests as R's ``p.adjust``; ``refit=True`` refits REML models that
-    differ in their fixed effects with ML before the likelihood-ratio test.
+    differ in their fixed effects with ML before the likelihood-ratio test. ``object2`` is R's name for ``model2``.
 
     R source: https://github.com/wviechtb/metafor/blob/master/R/anova.rma.r;
     reference page: https://wviechtb.github.io/metafor/reference/anova.rma.html.
@@ -142,6 +144,7 @@ def anova_rma_uni(
     x = model
     tdist = x.ddf is not None
     method = None if adjust is None else metafopy.core.padjust.match_adjust(adjust)
+    model2 = metafopy.methods.common.resolve_alias(model2, object2, 'model2', 'object2')
     if model2 is not None:
         return lrt(x, model2, refit)
     if is_btt_list(btt):
@@ -379,6 +382,7 @@ def anova_rma_mv(
     model: metafopy.models.mv_result.RMAMVResult,
     model2: metafopy.models.mv_result.RMAMVResult | None = None,
     *,
+    object2: metafopy.models.mv_result.RMAMVResult | None = None,
     btt: metafopy.models.rma_uni.Btt = None,
     X: numpy.typing.ArrayLike | None = None,
     rhs: numpy.typing.ArrayLike | float = 0.0,
@@ -387,13 +391,14 @@ def anova_rma_mv(
 ) -> WaldResult | MVLRTResult | list[WaldResult]:
     """Test coefficients of one ``rma.mv`` model, or compare two nested models by a likelihood-ratio test.
 
-    ``adjust`` and ``refit`` are as in :func:`anova_rma_uni`; the ML refit uses :func:`metafopy.update`.
+    ``adjust`` and ``refit`` are as in :func:`anova_rma_uni`; the ML refit uses :func:`metafopy.update`. ``object2`` is R's name for ``model2``.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
     x = model
     method = None if adjust is None else metafopy.core.padjust.match_adjust(adjust)
+    model2 = metafopy.methods.common.resolve_alias(model2, object2, 'model2', 'object2')
     if model2 is not None:
         if x.parms == model2.parms:
             raise metafopy.errors.InputError('models do not differ in the number of parameters')

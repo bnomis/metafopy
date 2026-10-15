@@ -53,6 +53,7 @@ from metafopy.methods.predict import PredictResult, predict
 from metafopy.methods.profile import ProfileResult, profile
 from metafopy.methods.ranef import RanefResult, ranef
 from metafopy.methods.rcalc import RCalcResult, rcalc
+from metafopy.methods.residuals import residuals
 from metafopy.methods.robust import robust
 from metafopy.methods.selmodel import SelProfileResult
 from metafopy.methods.simulate import simulate
@@ -206,6 +207,7 @@ __all__ = [
     'regrid',
     'regtest',
     'replmiss',
+    'residuals',
     'rma',
     'rma_glmm',
     'rma_mh',
