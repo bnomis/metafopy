@@ -55,6 +55,7 @@ import numpy.polynomial.hermite_e
 import numpy.typing
 import scipy.optimize
 import scipy.special
+import scipy.stats
 
 import metafopy.core.glm
 import metafopy.core.numderiv
@@ -142,6 +143,81 @@ def lambda_matrix(theta: FloatArray, structure: Structure) -> FloatArray:
     return numpy.array([[theta[0], 0.0], [theta[1], theta[2]]])
 
 
+@dataclasses.dataclass(frozen=True, slots=True)
+class LinkTerms:
+    """The mean ``mu = g^-1(eta)``, its first two derivatives, ``log(mu)`` and ``log(1 - mu)`` for a link (no clamping); ``valid`` flags usable rows."""
+
+    mu: FloatArray
+    d1: FloatArray
+    d2: FloatArray
+    log_mu: FloatArray
+    log_1m: FloatArray
+    valid: numpy.typing.NDArray[numpy.bool_]
+
+
+def link_terms(link: metafopy.core.glm.Link, eta: FloatArray) -> LinkTerms:
+    """The :class:`LinkTerms` of the link at the linear predictor ``eta``; the logarithms are evaluated stably in the tails."""
+    with numpy.errstate(all='ignore'):
+        ones = numpy.ones_like(eta)
+        if link == 'probit':
+            pdf = numpy.exp(-0.5 * eta**2) / math.sqrt(2 * math.pi)
+            return LinkTerms(scipy.special.ndtr(eta), pdf, -eta * pdf, scipy.special.log_ndtr(eta), scipy.special.log_ndtr(-eta), ones > 0)
+        if link == 'cauchit':
+            d1 = 1.0 / (math.pi * (1.0 + eta**2))
+            return LinkTerms(
+                0.5 + numpy.arctan(eta) / math.pi, d1, -2.0 * eta * math.pi * d1**2, scipy.stats.cauchy.logcdf(eta), scipy.stats.cauchy.logsf(eta), ones > 0
+            )
+        if link == 'cloglog':
+            e = numpy.exp(eta)
+            d1 = e * numpy.exp(-e)
+            return LinkTerms(-numpy.expm1(-e), d1, d1 * (1.0 - e), numpy.log(-numpy.expm1(-e)), -e, ones > 0)
+        if link == 'sqrt':
+            mu = eta**2
+            return LinkTerms(mu, 2.0 * eta, 2.0 * ones, 2.0 * numpy.log(eta), numpy.log1p(-mu), eta > 0)
+        if link == 'log':
+            mu = numpy.exp(eta)
+            return LinkTerms(mu, mu, mu, eta, numpy.log1p(-mu), ones > 0)
+        if link == 'identity':
+            return LinkTerms(eta, ones, 0.0 * ones, numpy.log(eta), numpy.log1p(-eta), ones > 0)
+        mu = scipy.special.expit(eta)
+        return LinkTerms(mu, mu * (1.0 - mu), mu * (1.0 - mu) * (1.0 - 2.0 * mu), -numpy.logaddexp(0.0, -eta), -numpy.logaddexp(0.0, eta), ones > 0)
+
+
+def general_row_terms(
+    prob: GLMMProblem, link: metafopy.core.glm.Link, eta: FloatArray, y: FloatArray, size: FloatArray | None
+) -> tuple[FloatArray, FloatArray, FloatArray]:
+    """:func:`row_terms` for any link of the binomial or Poisson family, from the chain rule through ``mu = g^-1(eta)``.
+
+    The score is ``(d ell / d mu) * mu'``, the expected information ``mu'^2 / V(mu)`` (times the size) and the observed information
+    its negative derivative. ``mu`` is kept inside ``[eps, 1 - eps]`` (binomial) or above ``eps`` (Poisson) where it enters a denominator,
+    as R's links do.
+
+    Raises:
+        metafopy.errors.InternalError: ``size`` is missing for the binomial family.
+    """
+    terms = link_terms(link, eta)
+    eps = metafopy.core.glm.DBL_EPSILON
+    with numpy.errstate(all='ignore'):
+        if prob.family == 'binomial':
+            if size is None:
+                raise metafopy.errors.InternalError('binomial models need the group sizes')
+            valid = terms.valid & (terms.mu >= 0) & (terms.mu <= 1) if link in ('log', 'identity', 'sqrt') else terms.valid
+            mu = numpy.clip(terms.mu, eps, 1.0 - eps)
+            ell = numpy.where(y > 0, y * terms.log_mu, 0.0) + numpy.where(size - y > 0, (size - y) * terms.log_1m, 0.0)
+            score = (y - size * mu) / (mu * (1.0 - mu)) * terms.d1
+            if prob.observed:
+                info = (y / mu**2 + (size - y) / (1.0 - mu) ** 2) * terms.d1**2 - (y / mu - (size - y) / (1.0 - mu)) * terms.d2
+            else:
+                info = size * terms.d1**2 / (mu * (1.0 - mu))
+        else:
+            valid = terms.valid & (terms.mu > 0) if link != 'log' else terms.valid
+            mu = numpy.maximum(terms.mu, eps)
+            ell = numpy.where(y > 0, y * terms.log_mu, 0.0) - terms.mu
+            score = (y / mu - 1.0) * terms.d1
+            info = y * terms.d1**2 / mu**2 - (y / mu - 1.0) * terms.d2 if prob.observed else terms.d1**2 / mu
+    return numpy.where(valid, ell, numpy.nan), numpy.where(valid, score, 0.0), numpy.where(valid, info, 1.0)
+
+
 def row_terms(prob: GLMMProblem, eta: FloatArray, y: FloatArray, size: FloatArray | None) -> tuple[FloatArray, FloatArray, FloatArray]:
     """Log-likelihood contribution (without constants), score ``d ell / d eta`` and information of each row (Fisher, or observed when ``prob.observed``).
 
@@ -157,17 +233,21 @@ def row_terms(prob: GLMMProblem, eta: FloatArray, y: FloatArray, size: FloatArra
         if link == 'logit':
             p = scipy.special.expit(eta)
             return y * eta - size * numpy.logaddexp(0.0, eta), y - size * p, size * p * (1.0 - p)
-        mu = numpy.exp(eta) if link == 'log' else eta
-        invalid = ~((mu > 0) & (mu < 1))
-        mu_safe = numpy.where(invalid, 0.5, mu)
-        ell = scipy.special.xlogy(y, mu_safe) + scipy.special.xlogy(size - y, 1.0 - mu_safe)
-        slope = mu_safe if link == 'log' else numpy.ones_like(mu_safe)
-        score = (y - size * mu_safe) / (mu_safe * (1.0 - mu_safe)) * slope
-        if prob.observed:
-            info = (size - y) * mu_safe / (1.0 - mu_safe) ** 2 if link == 'log' else y / mu_safe**2 + (size - y) / (1.0 - mu_safe) ** 2
-        else:
-            info = size * slope**2 / (mu_safe * (1.0 - mu_safe))
-        return numpy.where(invalid, numpy.nan, ell), score, info
+        if link in ('log', 'identity'):
+            mu = numpy.exp(eta) if link == 'log' else eta
+            invalid = ~((mu > 0) & (mu < 1))
+            mu_safe = numpy.where(invalid, 0.5, mu)
+            ell = scipy.special.xlogy(y, mu_safe) + scipy.special.xlogy(size - y, 1.0 - mu_safe)
+            slope = mu_safe if link == 'log' else numpy.ones_like(mu_safe)
+            score = (y - size * mu_safe) / (mu_safe * (1.0 - mu_safe)) * slope
+            if prob.observed:
+                info = (size - y) * mu_safe / (1.0 - mu_safe) ** 2 if link == 'log' else y / mu_safe**2 + (size - y) / (1.0 - mu_safe) ** 2
+            else:
+                info = size * slope**2 / (mu_safe * (1.0 - mu_safe))
+            return numpy.where(invalid, numpy.nan, ell), score, info
+        return general_row_terms(prob, link, eta, y, size)
+    if link != 'log':
+        return general_row_terms(prob, link, eta, y, size)
     mu = numpy.exp(eta)
     return y * eta - mu, y - mu, mu
 

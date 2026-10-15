@@ -13,6 +13,7 @@ import metafopy.datasets
 
 PHASE2_DIR = pathlib.Path(__file__).parent / 'reference' / 'phase2'
 PHASE7_DIR = pathlib.Path(__file__).parent / 'reference' / 'phase7'
+PHASE9_DIR = pathlib.Path(__file__).parent / 'reference' / 'phase9'
 RTOL = 1e-8
 
 
@@ -25,6 +26,12 @@ def load_phase2(name: str) -> dict[str, typing.Any]:
 @functools.cache
 def load_phase7(name: str) -> dict[str, typing.Any]:
     data: dict[str, typing.Any] = json.loads((PHASE7_DIR / f'{name}.json').read_text(encoding='utf-8'))
+    return data
+
+
+@functools.cache
+def load_phase9(name: str) -> dict[str, typing.Any]:
+    data: dict[str, typing.Any] = json.loads((PHASE9_DIR / f'{name}.json').read_text(encoding='utf-8'))
     return data
 
 

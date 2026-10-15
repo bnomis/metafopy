@@ -141,8 +141,12 @@ class RMAMVResult(metafopy.models.fit_methods.FitMethods):
     def fitted(self) -> FloatArray:
         return numpy.asarray(self.X @ self.beta)
 
-    def residuals(self) -> FloatArray:
-        return numpy.asarray(self.yi - self.fitted())
+    def residuals(self, type: metafopy.models.rma_uni.ResidualType = 'response', *, na_action: metafopy.models.rma_uni.NAActionAll = 'omit') -> FloatArray:
+        """Residuals; see :func:`metafopy.residuals` (``type`` is ``'response'``, ``'rstandard'``, ``'rstudent'``, ``'pearson'`` or ``'cholesky'``)."""
+        # auditme: accept[in-function-import] metafopy.methods imports this module, so the import is deferred to avoid a cycle
+        import metafopy.methods.residuals
+
+        return metafopy.methods.residuals.residuals(self, type, na_action=na_action)
 
     def fit_stats(self, REML: bool | None) -> metafopy.models.rma_uni.FitStats:
         if REML is None:
@@ -218,20 +222,18 @@ class RMAMVResult(metafopy.models.fit_methods.FitMethods):
         out[self.not_na] = h
         return out
 
-    def weights_(self, type: typing.Literal['diagonal', 'rowsum'] = 'diagonal') -> FloatArray:
-        """Percentage weights: the diagonal of ``W`` (or its row sums for intercept-only models) scaled to sum to 100.
+    def weights_(
+        self, type: typing.Literal['diagonal', 'matrix', 'rowsum'] = 'diagonal', na_action: metafopy.models.rma_uni.NAActionAll = 'omit'
+    ) -> FloatArray:
+        """Percentage weights (``'diagonal'``), the weight matrix ``W`` (``'matrix'``) or the percentage row sums of ``W`` (``'rowsum'``, intercept-only).
 
         Raises:
-            metafopy.errors.InputError: ``type='rowsum'`` for a model with moderators.
+            metafopy.errors.InputError: ``type='rowsum'`` for a model with moderators, an invalid argument, or ``na_action='fail'`` with rows left out.
         """
-        W = self.weight_matrix()
-        if type == 'rowsum':
-            if not self.int_only:
-                raise metafopy.errors.InputError('Row-sum weights are only meaningful for intercept-only models.')
-            wi = W.sum(axis=1)
-        else:
-            wi = numpy.diag(W)
-        return numpy.asarray(wi / wi.sum() * 100)
+        # auditme: accept[in-function-import] metafopy.methods imports this module, so the import is deferred to avoid a cycle
+        import metafopy.methods.weights
+
+        return metafopy.methods.weights.weights_mv(self, type, na_action)
 
     # -- delegated methods ----------------------------------------------------
 

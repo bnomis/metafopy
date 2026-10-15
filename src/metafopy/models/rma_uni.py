@@ -42,6 +42,8 @@ type FloatArray = numpy.typing.NDArray[numpy.float64]
 # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
 type Test = typing.Literal['z', 't', 'knha', 'adhoc']
 type Btt = int | collections.abc.Sequence[int] | str | None
+type ResidualType = typing.Literal['response', 'rstandard', 'rstudent', 'pearson', 'cholesky']
+type NAActionAll = typing.Literal['omit', 'exclude', 'pass', 'fail']
 
 DBL_EPS = numpy.finfo(float).eps
 
@@ -131,9 +133,12 @@ class RMAResult(metafopy.models.fit_methods.FitMethods):
         """Fitted values ``X beta``."""
         return self.X @ self.beta
 
-    def residuals(self) -> FloatArray:
-        """Raw residuals ``y - X beta``."""
-        return self.yi - self.fitted()
+    def residuals(self, type: ResidualType = 'response', *, na_action: NAActionAll = 'omit') -> FloatArray:
+        """Residuals; see :func:`metafopy.residuals` (``type`` is ``'response'``, ``'rstandard'``, ``'rstudent'``, ``'pearson'`` or ``'cholesky'``)."""
+        # auditme: accept[in-function-import] metafopy.methods imports this module, so the import is deferred to avoid a cycle
+        import metafopy.methods.residuals
+
+        return metafopy.methods.residuals.residuals(self, type, na_action=na_action)
 
     def logLik(self, REML: bool | None = None) -> float:
         """Log-likelihood; REML unless the model was fitted with ML (as in metafor)."""
@@ -166,13 +171,15 @@ class RMAResult(metafopy.models.fit_methods.FitMethods):
             name='REML' if (REML if REML is not None else self.method == 'REML') else 'ML',
         )
 
-    def weights_(self) -> FloatArray:
-        """Percentage weight of each estimate in the model fit (metafor ``weights()``)."""
-        if self.weighted:
-            w = 1.0 / (self.vi + self.tau2) if self.weights is None else self.weights
-        else:
-            w = numpy.full(self.k, 1.0 / self.k)
-        return w / w.sum() * 100
+    def weights_(self, type: typing.Literal['diagonal', 'matrix'] = 'diagonal', na_action: NAActionAll = 'omit') -> FloatArray:
+        """Percentage weights of the estimates in the model fit (``type='diagonal'``) or the weight matrix (``'matrix'``), metafor's ``weights()``.
+
+        ``na_action`` is ``'omit'``, ``'exclude'``, ``'pass'`` or ``'fail'`` as in :func:`metafopy.residuals`.
+        """
+        # auditme: accept[in-function-import] metafopy.methods imports this module, so the import is deferred to avoid a cycle
+        import metafopy.methods.weights
+
+        return metafopy.methods.weights.weights_uni(self, type, na_action)
 
     def hatvalues(self) -> FloatArray:
         """Diagonal of the hat matrix."""

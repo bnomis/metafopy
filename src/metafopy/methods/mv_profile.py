@@ -272,27 +272,9 @@ def profile_rma_mv(
 def plot_all(results: list[MVProfileResult], ax: typing.Any) -> None:
     """Draw each profile; several profiles go into a grid of panels (metafor's ``par(mfrow = n2mfrow(comps))``)."""
     # auditme: accept[in-function-import] metafopy.plot imports the methods, so the import is deferred to avoid a cycle
-    import matplotlib.pyplot
-
-    # auditme: accept[in-function-import] metafopy.plot imports the methods, so the import is deferred to avoid a cycle
-    import metafopy.plot.infl
-
-    # auditme: accept[in-function-import] metafopy.plot imports the methods, so the import is deferred to avoid a cycle
     import metafopy.plot.profile
 
-    if len(results) == 1:
-        metafopy.plot.profile.plot_profile(results[0], ax=ax)
-        return
-    nrow, ncol = metafopy.plot.infl.n2mfrow(len(results))
-    fig = ax.figure if ax is not None else matplotlib.pyplot.figure()
-    if ax is not None:
-        ax.remove()
-    axes = fig.subplots(nrow, ncol, squeeze=False).reshape(-1)
-    for r, a in zip(results, axes, strict=False):
-        metafopy.plot.profile.plot_profile(r, ax=a)
-    for a in axes[len(results) :]:
-        a.set_axis_off()
-    fig.tight_layout()
+    metafopy.plot.profile.plot_profile(results[0] if len(results) == 1 else results, ax=ax)
 
 
 metafopy.methods.profile.profile.register(metafopy.models.mv_result.RMAMVResult, profile_rma_mv)  # type: ignore[arg-type]

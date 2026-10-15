@@ -16,6 +16,7 @@ import scipy.stats
 
 import metafopy.errors
 import metafopy.methods.anova
+import metafopy.methods.common
 import metafopy.methods.ls_common
 import metafopy.models.rma_ls_result
 import metafopy.models.rma_uni
@@ -286,6 +287,7 @@ def anova_rma_ls(
     model: metafopy.models.rma_ls_result.RMALSResult,
     model2: metafopy.models.rma_ls_result.RMALSResult | None = None,
     *,
+    object2: metafopy.models.rma_ls_result.RMALSResult | None = None,
     btt: metafopy.models.rma_uni.Btt = None,
     X: numpy.typing.ArrayLike | None = None,
     att: metafopy.models.rma_uni.Btt | Sequences = None,
@@ -298,12 +300,13 @@ def anova_rma_ls(
     ``btt`` and ``att`` (0-based indices or a regular expression matching coefficient names) test subsets of the location and scale coefficients; ``X`` and
     ``Z`` test linear combinations of the location and scale coefficients against ``rhs``; ``att`` may also be a list of
     subsets, which returns a list of tests. With ``model2`` the model with more parameters is the full model; ``refit=True``
-    refits REML fits with ML when their location models differ.
+    refits REML fits with ML when their location models differ. ``object2`` is R's name for ``model2``.
 
     Raises:
         metafopy.errors.InputError: an argument is invalid.
     """
     x = model
+    model2 = metafopy.methods.common.resolve_alias(model2, object2, 'model2', 'object2')
     if model2 is not None:
         if not isinstance(model2, metafopy.models.rma_ls_result.RMALSResult):
             raise metafopy.errors.InputError("Class of 'object' must be the same as class of 'object2'.")

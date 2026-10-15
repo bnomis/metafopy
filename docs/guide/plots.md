@@ -84,7 +84,7 @@ matplotlib.pyplot.savefig('funnel-contours.png')
 | `baujat` | Baujat plot, which studies drive the heterogeneity |
 | `qqnorm` | Normal quantile-quantile plot of the residuals, with a simulated envelope |
 | `plot_infl` | Case deletion diagnostics, see [Diagnostics](diagnostics.md) |
-| `plot_profile` | Profile likelihood of a variance component, from `profile` |
+| `plot_profile` | Profile likelihood of a variance component, from `profile`; given the list `profile` returns for `rma_mv`, location-scale and selection models it draws one panel per component |
 | `plot_gosh` | GOSH plot |
 | `regplot` | Meta-analytic scatterplot of a model with one moderator, with the regression line, confidence band and sized points |
 | `forest_cumul`, `plot_cumul` | Forest plot and plot of the results of a `cumul` analysis (`forest(cumul(res))` calls the first) |

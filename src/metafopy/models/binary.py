@@ -169,9 +169,12 @@ class FixedBinaryResult(metafopy.models.fit_methods.FitMethods, abc.ABC):
         """The pooled estimate repeated for each table used in fitting."""
         return numpy.full(self.tables.yi.shape[0], self.beta[0])
 
-    def residuals(self) -> FloatArray:
-        resid: FloatArray = self.tables.yi - self.beta[0]
-        return resid
+    def residuals(self, type: metafopy.models.rma_uni.ResidualType = 'response', *, na_action: metafopy.models.rma_uni.NAActionAll = 'omit') -> FloatArray:
+        """Residuals; see :func:`metafopy.residuals` (``type`` is ``'response'``, ``'rstandard'``, ``'rstudent'``, ``'pearson'`` or ``'cholesky'``)."""
+        # auditme: accept[in-function-import] metafopy.methods imports this module, so the import is deferred to avoid a cycle
+        import metafopy.methods.residuals
+
+        return metafopy.methods.residuals.residuals(self, type, na_action=na_action)
 
     def plot(self, *args: typing.Any, **kwargs: typing.Any) -> typing.Any:
         """Draw the forest, funnel, radial and residual plots with :func:`metafopy.plot.plot_rma`."""

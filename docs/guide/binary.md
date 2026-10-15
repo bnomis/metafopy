@@ -120,6 +120,9 @@ As in metafor, `control={'package': 'GLMMadaptive'}` fits the mixed models with 
 ([Pinheiro and Bates, 1995](https://doi.org/10.1007/BF00140873); [GLMMadaptive](https://drizopoulos.github.io/GLMMadaptive/)) and
 `control={'package': 'glmmTMB'}` with the Laplace approximation ([Brooks et al., 2017](https://doi.org/10.32614/RJ-2017-066)); `nAGQ` is ignored by glmmTMB.
 
+For the conditional model `CM.EL` with `method='FE'`, `control={'optimizer': 'clogit'}` or `'clogistic'` fit it with the partial likelihood of
+`survival::clogit` or `Epi::clogistic`. `link=` and `family=` change the link function or the family of the unconditional models.
+
 ## Rates
 
 For incidence rates, pass the event counts `x1i`, `x2i` and the person-time `t1i`, `t2i`, with `measure='IRR'`:

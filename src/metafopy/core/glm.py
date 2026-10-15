@@ -11,8 +11,11 @@ log links, and the covariance matrix of the last weighted least squares fit.
 
 The binomial family is also available with the log and identity links
 (``rma.glmm`` uses them for the experimental measures ``RR``, ``PLN`` and
-``RD``, ``PR``). Those links can leave the parameter space of the family, so
-``glm.fit``'s validity checks and step halving are reproduced as well.
+``RD``, ``PR``) and, like the Poisson family, with the probit, cauchit,
+complementary log-log and square root links that ``make.link()`` provides
+(``rma.glmm(link=...)`` and ``rma.glmm(family=...)`` pass them on). Those links can leave the
+parameter space of the family, so ``glm.fit``'s validity checks and step
+halving are reproduced as well.
 
 Reference: McCullagh and Nelder (1989), *Generalized Linear Models*, 2nd ed.,
 and the R source ``src/library/stats/R/glm.R`` and ``src/library/stats/src/family.c``.
@@ -32,26 +35,75 @@ import scipy.stats
 import metafopy.errors
 
 __all__ = [
+    'GLMFamily',
     'GLMFit',
     'Link',
     'aliased_columns',
+    'binomial',
     'canonical_link',
+    'check_link',
     'deviance_residuals',
     'family_constant',
     'glm_fit',
     'link_fun',
     'link_inv',
+    'poisson',
     'saturated_loglik',
+    'valid_eta',
     'valid_mu',
 ]
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type BoolArray = numpy.typing.NDArray[numpy.bool_]
 type Family = typing.Literal['binomial', 'poisson']
-type Link = typing.Literal['logit', 'log', 'identity']
+type Link = typing.Literal['cauchit', 'cloglog', 'identity', 'log', 'logit', 'probit', 'sqrt']
 
 DBL_EPSILON = sys.float_info.epsilon
 LOGIT_THRESHOLD = 30.0
+# auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
+LINKS: tuple[Link, ...] = ('logit', 'probit', 'cauchit', 'cloglog', 'log', 'identity', 'sqrt')
+# auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
+FAMILIES: tuple[Family, ...] = ('binomial', 'poisson')
+PROBIT_THRESHOLD = float(-scipy.stats.norm.ppf(DBL_EPSILON))
+CAUCHIT_THRESHOLD = float(-scipy.stats.cauchy.ppf(DBL_EPSILON))
+CLOGLOG_ETA_MAX = 700.0
+
+
+def check_link(link: str) -> Link:
+    """The link named by ``link`` (``make.link()``'s names for the links usable with the binomial and Poisson families).
+
+    Raises:
+        metafopy.errors.InputError: the link is not one of ``'logit'``, ``'probit'``, ``'cauchit'``, ``'cloglog'``, ``'log'``, ``'identity'``, ``'sqrt'``.
+    """
+    if link not in LINKS:
+        raise metafopy.errors.InputError(f'Unknown link {link!r}; use one of {", ".join(repr(name) for name in LINKS)}.')
+    return link
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class GLMFamily:
+    """A family with its link, the equivalent of R's ``binomial(link=...)`` and ``poisson(link=...)`` objects."""
+
+    name: Family
+    link: Link
+
+    def __post_init__(self) -> None:
+        if self.name not in FAMILIES:
+            raise metafopy.errors.InputError(f'Unknown family {self.name!r}; use one of {", ".join(repr(name) for name in FAMILIES)}.')
+        check_link(self.link)
+
+    def __str__(self) -> str:
+        return f'{self.name}(link = "{self.link}")'
+
+
+def binomial(link: str = 'logit') -> GLMFamily:
+    """R's ``binomial(link)``: the family with the given link (default ``'logit'``)."""
+    return GLMFamily('binomial', check_link(link))
+
+
+def poisson(link: str = 'log') -> GLMFamily:
+    """R's ``poisson(link)``: the family with the given link (default ``'log'``)."""
+    return GLMFamily('poisson', check_link(link))
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -120,6 +172,14 @@ def link_fun(link: Link, mu: FloatArray) -> FloatArray:
             return numpy.asarray(numpy.log(mu / (1.0 - mu)), dtype=numpy.float64)
         if link == 'log':
             return numpy.asarray(numpy.log(mu), dtype=numpy.float64)
+        if link == 'probit':
+            return numpy.asarray(scipy.stats.norm.ppf(mu), dtype=numpy.float64)
+        if link == 'cauchit':
+            return numpy.asarray(scipy.stats.cauchy.ppf(mu), dtype=numpy.float64)
+        if link == 'cloglog':
+            return numpy.asarray(numpy.log(-numpy.log(1.0 - mu)), dtype=numpy.float64)
+        if link == 'sqrt':
+            return numpy.asarray(numpy.sqrt(mu), dtype=numpy.float64)
     return mu.astype(numpy.float64)
 
 
@@ -129,6 +189,14 @@ def link_inv(link: Link, eta: FloatArray) -> FloatArray:
         return expit_clamped(eta)
     if link == 'log':
         return numpy.asarray(numpy.maximum(numpy.exp(eta), DBL_EPSILON), dtype=numpy.float64)
+    if link == 'probit':
+        return numpy.asarray(scipy.stats.norm.cdf(numpy.clip(eta, -PROBIT_THRESHOLD, PROBIT_THRESHOLD)), dtype=numpy.float64)
+    if link == 'cauchit':
+        return numpy.asarray(scipy.stats.cauchy.cdf(numpy.clip(eta, -CAUCHIT_THRESHOLD, CAUCHIT_THRESHOLD)), dtype=numpy.float64)
+    if link == 'cloglog':
+        return numpy.asarray(numpy.clip(-numpy.expm1(-numpy.exp(eta)), DBL_EPSILON, 1.0 - DBL_EPSILON), dtype=numpy.float64)
+    if link == 'sqrt':
+        return numpy.asarray(eta**2, dtype=numpy.float64)
     return eta.astype(numpy.float64)
 
 
@@ -139,7 +207,23 @@ def mu_eta(link: Link, eta: FloatArray) -> FloatArray:
         return numpy.where(numpy.abs(eta) > LOGIT_THRESHOLD, DBL_EPSILON, numpy.exp(eta) / (opexp * opexp))
     if link == 'log':
         return numpy.maximum(numpy.exp(eta), DBL_EPSILON)
+    if link == 'probit':
+        return numpy.maximum(scipy.stats.norm.pdf(eta), DBL_EPSILON)
+    if link == 'cauchit':
+        return numpy.maximum(scipy.stats.cauchy.pdf(eta), DBL_EPSILON)
+    if link == 'cloglog':
+        capped = numpy.minimum(eta, CLOGLOG_ETA_MAX)
+        return numpy.asarray(numpy.maximum(numpy.exp(capped) * numpy.exp(-numpy.exp(capped)), DBL_EPSILON), dtype=numpy.float64)
+    if link == 'sqrt':
+        return 2.0 * eta
     return numpy.ones_like(eta)
+
+
+def valid_eta(link: Link, eta: FloatArray) -> bool:
+    """``family$valideta``: the square root link needs a finite, positive linear predictor, the other links accept any."""
+    if link != 'sqrt':
+        return True
+    return bool(numpy.all(numpy.isfinite(eta)) and numpy.all(eta > 0))
 
 
 def valid_mu(family: Family, mu: FloatArray) -> bool:
@@ -245,7 +329,7 @@ def glm_fit(
         mustart = resp + 0.1
     eta = link_fun(lnk, mustart)
     mu = link_inv(lnk, eta)
-    if not valid_mu(family, mu):
+    if not (valid_mu(family, mu) and valid_eta(lnk, eta)):
         raise metafopy.errors.EstimationError('cannot find valid starting values: please specify some')
 
     def deviance_of(m: FloatArray) -> float:
@@ -298,14 +382,14 @@ def glm_fit(
                     break
             else:
                 raise metafopy.errors.EstimationError('inner loop 1; cannot correct step size')
-        if not valid_mu(family, mu):
+        if not (valid_mu(family, mu) and valid_eta(lnk, eta)):
             if coefold is None:
                 raise metafopy.errors.EstimationError('no valid set of coefficients has been found: please supply starting values')
             warnings.warn('step size truncated: out of bounds', stacklevel=2)
             for _ in range(maxit):
                 coef = (coef + coefold) / 2
                 eta, mu = predictor(coef)
-                if valid_mu(family, mu):
+                if valid_mu(family, mu) and valid_eta(lnk, eta):
                     break
             else:
                 raise metafopy.errors.EstimationError('inner loop 2; cannot correct step size')

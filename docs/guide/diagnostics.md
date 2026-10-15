@@ -54,6 +54,19 @@ print(rstudent(res))
 `rstandard` gives internally standardized residuals and `rstudent` externally studentized residuals (the residual of each
 study from a model fitted without it). Studies with absolute values above about 2 or 3 deserve a look.
 
+`residuals` takes a `type`: `'response'` (the default, the raw residuals), `'rstandard'`, `'rstudent'`, `'pearson'` (the raw residuals
+divided by the square root of the sampling variance plus tau^2) and `'cholesky'` (the residuals decorrelated with the Cholesky factor of
+the marginal variance-covariance matrix). Which types a fit class allows follows metafor. `na_action` stands in for R's
+`options(na.action=)`. `weights_(type='matrix')` returns the weight matrix.
+
+```python
+from metafopy import residuals
+
+print(residuals(res, 'pearson'))
+print(res.residuals('rstudent', na_action='exclude'))
+print(res.weights_('matrix').shape)
+```
+
 ## Influence
 
 `influence` computes the case deletion diagnostics of Viechtbauer and Cheung (2010),
@@ -130,6 +143,39 @@ baujat(res)
 set_seed(1234)
 plot_gosh(gosh(res, subsets=200))
 ```
+
+## Heteroscedastic heterogeneity
+
+The random-effects model assumes the same amount of heterogeneity, tau^2, for every study. `hettest` (new in metafor 5.2-1) tests
+this assumption, H0: tau^2_1 = ... = tau^2_k, for a model without moderators or for a vector of estimates with their sampling
+variances (`vi=`) or standard errors (`sei=`). The default is a score test; `test='lrt'` and `test='wald'` give a likelihood
+ratio and a Wald-type test, and `'ksn'`, `'ksx2'`, `'adn'` and `'adx2'` check the Pearson residuals with Kolmogorov-Smirnov and
+Anderson-Darling goodness-of-fit tests. The p-values come from a parametric bootstrap (`boot=1000` samples unless you set
+`boot=` to another count), which draws from R's random number generator, so `seed=` gives the results of `set.seed()` in R.
+`boot=False` uses the chi-squared reference distribution of the three model-based tests instead.
+
+```python
+from metafopy import hettest
+
+print(hettest(res, seed=1234))
+print(hettest(res, test=['lrt', 'ksn'], boot=200, seed=1234))
+```
+
+```text
+
+Test for Heteroscedastic Heterogeneity
+
+Estimation method: Restricted maximum likelihood
+Test type:         Score test
+Bootstrapping:     Yes (1000/1000 iterations)
+
+X^2(df = 12) = 2.8884, p = 0.9920
+
+```
+
+The result holds the statistics (`statistic`), p-values (`pval`), the estimated study-specific variances (`tau2i`) and the
+bootstrapped statistics (`statistic_boot`). Fitted models of the classes `rma_mv`, `rma_glmm`, `selmodel` and location-scale
+models are not accepted, as in metafor.
 
 ## Variance inflation factors
 
