@@ -44,6 +44,8 @@ type Test = typing.Literal['z', 't', 'knha', 'adhoc']
 type Btt = int | collections.abc.Sequence[int] | str | None
 type ResidualType = typing.Literal['response', 'rstandard', 'rstudent', 'pearson', 'cholesky']
 type NAActionAll = typing.Literal['omit', 'exclude', 'pass', 'fail']
+# auditme: accept[non-alphabetical-literal] order is metafor's documented order and is meaningful
+type VcovType = typing.Literal['fixed', 'beta', 'alpha', 'delta', 'obs', 'marginal', 'fitted', 'resid']
 
 DBL_EPS = numpy.finfo(float).eps
 
@@ -124,10 +126,12 @@ class RMAResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_meth
         """Estimated coefficients, indexed by name."""
         return pandas.Series(self.beta, index=list(self.coef_names), name='estimate')
 
-    def vcov(self) -> pandas.DataFrame:
-        """Variance-covariance matrix of the coefficients."""
-        names = list(self.coef_names)
-        return pandas.DataFrame(self.vb, index=names, columns=names)
+    def vcov(self, type: VcovType = 'fixed', *, na_action: NAActionAll = 'omit') -> pandas.DataFrame:
+        """Variance-covariance matrix of the coefficients, or with ``type`` of the observed effects; see :func:`metafopy.vcov`."""
+        # auditme: accept[in-function-import] metafopy.methods imports this module, so the import is deferred to avoid a cycle
+        import metafopy.methods.vcov
+
+        return metafopy.methods.vcov.vcov_frame(self, type, na_action)
 
     def fitted(self) -> FloatArray:
         """Fitted values ``X beta``."""

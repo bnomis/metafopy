@@ -149,17 +149,27 @@ class RMALSResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_me
             return alpha
         return {'beta': beta, 'alpha': alpha}
 
-    def vcov(self, type: typing.Literal['alpha', 'beta', 'fixed'] = 'fixed') -> pandas.DataFrame | dict[str, pandas.DataFrame]:
-        """Variance-covariance matrix of the location and/or scale coefficients."""
-        names = list(self.coef_names)
-        anames = list(self.alpha_names)
-        vb = pandas.DataFrame(self.vb, index=names, columns=names)
-        va = pandas.DataFrame(self.va, index=anames, columns=anames)
-        if type == 'beta':
-            return vb
-        if type == 'alpha':
-            return va
-        return {'beta': vb, 'alpha': va}
+    @typing.overload
+    def vcov(
+        self,
+        type: typing.Literal['beta', 'alpha', 'obs', 'marginal', 'fitted', 'resid'],
+        *,
+        na_action: metafopy.models.rma_uni.NAActionAll = 'omit',
+    ) -> pandas.DataFrame: ...
+
+    @typing.overload
+    def vcov(
+        self, type: metafopy.models.rma_uni.VcovType = 'fixed', *, na_action: metafopy.models.rma_uni.NAActionAll = 'omit'
+    ) -> pandas.DataFrame | dict[str, pandas.DataFrame]: ...
+
+    def vcov(
+        self, type: metafopy.models.rma_uni.VcovType = 'fixed', *, na_action: metafopy.models.rma_uni.NAActionAll = 'omit'
+    ) -> pandas.DataFrame | dict[str, pandas.DataFrame]:
+        """Variance-covariance matrices; ``'fixed'`` (the default) gives ``{'beta': ..., 'alpha': ...}``, the other types follow :func:`metafopy.vcov`."""
+        # auditme: accept[in-function-import] metafopy.methods imports this module, so the import is deferred to avoid a cycle
+        import metafopy.methods.vcov
+
+        return metafopy.methods.vcov.vcov(self, type, na_action=na_action)
 
     def fitted(self) -> dict[str, FloatArray]:
         """Fitted location values ``X beta`` and scale values ``Z alpha`` (the latter on the link scale)."""

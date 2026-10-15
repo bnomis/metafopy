@@ -128,15 +128,24 @@ class RMAMVResult(metafopy.models.fit_methods.FitMethods):
     call: metafopy.models.call.Call | None = dataclasses.field(default=None, kw_only=True, repr=False, compare=False)
     s_levels_f: tuple[tuple[str, ...], ...] = ()
     slab_f: tuple[str, ...] = ()
+    X_f: FloatArray | None = None
 
     # -- accessors -------------------------------------------------------
 
     def coef(self) -> pandas.Series:
         return pandas.Series(self.beta, index=list(self.coef_names), name='estimate')
 
-    def vcov(self) -> pandas.DataFrame:
-        names = list(self.coef_names)
-        return pandas.DataFrame(self.vb, index=names, columns=names)
+    @property
+    def k_eff(self) -> int:
+        """Number of effective observations (the rows used in the fit), metafor's ``k.eff``."""
+        return self.k
+
+    def vcov(self, type: metafopy.models.rma_uni.VcovType = 'fixed', *, na_action: metafopy.models.rma_uni.NAActionAll = 'omit') -> pandas.DataFrame:
+        """Variance-covariance matrix of the coefficients, or with ``type`` of the observed effects; see :func:`metafopy.vcov`."""
+        # auditme: accept[in-function-import] metafopy.methods imports this module, so the import is deferred to avoid a cycle
+        import metafopy.methods.vcov
+
+        return metafopy.methods.vcov.vcov_frame(self, type, na_action)
 
     def fitted(self) -> FloatArray:
         return numpy.asarray(self.X @ self.beta)
