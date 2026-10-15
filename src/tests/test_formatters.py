@@ -113,6 +113,6 @@ def test_mfopt_printing(options: None) -> None:
     assert refutil.r_print(str(res)) == refutil.r_print('\n'.join(REF['print_default']))
     metafopy.setmfopt(digits=2)
     assert refutil.r_print(str(res)) == refutil.r_print('\n'.join(REF['print_digits2']))
-    assert refutil.r_print(res.summary(digits=4)) == refutil.r_print('\n'.join(REF['print_default']))
+    assert refutil.r_print(res.summary(digits=4, showfit=False)) == refutil.r_print('\n'.join(REF['print_default']))
     metafopy.setmfopt(digits=None, space=False)
     assert refutil.r_print(str(res)) == refutil.r_print('\n'.join(REF['print_nospace']))

@@ -19,6 +19,7 @@ import metafopy.formatters
 import metafopy.metadata
 import metafopy.methods.fitview
 import metafopy.mfopt
+import metafopy.models.call
 import metafopy.models.rma_uni
 
 __all__ = ['TrimfillResult', 'trimfill']
@@ -43,17 +44,17 @@ class TrimfillResult(metafopy.models.rma_uni.RMAResult):
     k0_est: str = 'L0'
     p_k0: float = math.nan
 
-    def summary(self, digits: int | None = None) -> str:
+    def summary(self, digits: int | None = None, showfit: bool = True) -> str:
         digits = metafopy.mfopt.option_digits(digits)
         block = [f'Estimated number of missing studies on the {self.side} side: {self.k0} (SE = {metafopy.bias.inputs.fx(self.se_k0, digits)})']
         if self.k0_est == 'R0':
             gap = ' ' * len(str(self.k0))
             p_text = metafopy.bias.inputs.fp(self.p_k0, digits, equal=True, sep=True, pname='p-val ')
             block.append(f'Test of H0: no missing studies on the {self.side} side:     {gap}{p_text}')
-        return '\n' + '\n'.join(block) + '\n' + super().summary(digits)
+        return '\n' + '\n'.join(block) + '\n' + super().summary(digits, showfit)
 
     def __str__(self) -> str:
-        return self.summary()
+        return self.summary(showfit=False)
 
 
 def trimfill_fit(
@@ -203,7 +204,9 @@ def trimfill(
             intercept=True,
         )
         res = metafopy.models.rma_uni.fit_rma_uni(mdf, method=x.method, weighted=x.weighted, **kw)
-        res = dataclasses.replace(res, measure=x.measure)
+        refit = {'yi': yi_fill, 'vi': vi_fill, 'weights': wi_fill, 'ni': ni_fill}
+        arguments = {name: value for name, value in refit.items() if value is not None} | {'method': x.method, 'weighted': x.weighted, **kw}
+        res = dataclasses.replace(res, measure=x.measure, call=metafopy.models.call.Call(function=metafopy.models.rma_uni.rma_uni, arguments=arguments))
         fill = numpy.concatenate([numpy.zeros(x.k, dtype=numpy.bool_), numpy.ones(k0, dtype=numpy.bool_)])
     else:
         res = x

@@ -153,27 +153,6 @@ class RMAMVResult(metafopy.models.fit_methods.FitMethods):
             REML = self.method == 'REML'
         return self.fit_stats_reml if REML else self.fit_stats_ml
 
-    def logLik(self, REML: bool | None = None) -> float:
-        return self.fit_stats(REML).ll
-
-    def deviance(self, REML: bool | None = None) -> float:
-        return self.fit_stats(REML).dev
-
-    def AIC(self, REML: bool | None = None) -> float:
-        return self.fit_stats(REML).AIC
-
-    def BIC(self, REML: bool | None = None) -> float:
-        return self.fit_stats(REML).BIC
-
-    def AICc(self, REML: bool | None = None) -> float:
-        return self.fit_stats(REML).AICc
-
-    def fitstats(self, REML: bool | None = None) -> pandas.Series:
-        st = self.fit_stats(REML)
-        label = 'REML' if (REML if REML is not None else self.method == 'REML') else 'ML'
-        # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
-        return pandas.Series(st.as_tuple(), index=['logLik', 'deviance', 'AIC', 'BIC', 'AICc'], name=label)
-
     def weight_matrix(self) -> FloatArray:
         """``W``: the user-supplied weight matrix or ``M^-1``."""
         if self.W is not None:
@@ -257,14 +236,15 @@ class RMAMVResult(metafopy.models.fit_methods.FitMethods):
 
     # -- printing -------------------------------------------------------------
 
-    def summary(self, digits: int | None = None, showfit: bool = False) -> str:
+    def summary(self, digits: int | None = None, showfit: bool = True) -> str:
+        """The printout with the fit statistics table, as metafor's ``summary()``; ``str(res)`` leaves it out like ``print()``."""
         # auditme: accept[in-function-import] the printing module needs this class, so the import is deferred to avoid a cycle
         import metafopy.models.mv_print
 
         return metafopy.mfopt.option_space(metafopy.models.mv_print.format_result(self, metafopy.mfopt.option_digits(digits), showfit))
 
     def __str__(self) -> str:
-        return self.summary()
+        return self.summary(showfit=False)
 
     def __repr__(self) -> str:
         return f'<RMAMVResult {self.method} k={self.k} p={self.p}>'

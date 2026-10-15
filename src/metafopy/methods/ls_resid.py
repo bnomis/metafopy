@@ -54,15 +54,6 @@ def ranef_rma_ls(
     return metafopy.methods.ranef.RanefResult(pred=out.pred, se=out.se, pi_lb=out.pi_lb, pi_ub=out.pi_ub, slab=out.slab, digits=out.digits, transf=out.transf)
 
 
-def hat_matrix(x: metafopy.models.rma_ls_result.RMALSResult) -> FloatArray:
-    """The full hat matrix of the location part (metafor's ``hatvalues(x, type="matrix")``)."""
-    X = x.X
-    if x.weighted:
-        w = 1.0 / (x.vi + x.tau2) if x.weights is None else x.weights
-        return X @ metafopy.core.linalg.invcalc(X, w) @ (X.T * w)
-    return X @ metafopy.core.linalg.invcalc(X, numpy.ones(x.k)) @ X.T
-
-
 @metafopy.methods.influence.rstandard.register
 def rstandard_rma_ls(
     model: metafopy.models.rma_ls_result.RMALSResult,
@@ -84,7 +75,7 @@ def rstandard_rma_ls(
         raise metafopy.errors.InputError("type must be 'marginal' or 'conditional'")
     if type == 'conditional' and (x.weights is not None or not x.weighted):
         raise metafopy.errors.InputError('Extraction of conditional residuals not available for models with non-standard weights.')
-    H = hat_matrix(x)
+    H = x.hat_matrix()
     ImH = numpy.eye(x.k) - H
     if type == 'marginal':
         ei = x.yi - x.X @ x.beta

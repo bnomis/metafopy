@@ -17,7 +17,7 @@ import pandas
 import metafopy.errors
 import metafopy.formula
 
-__all__ = ['MetaData', 'NAAction', 'make_unique']
+__all__ = ['MetaData', 'NAAction', 'escalc_ni', 'make_unique']
 
 type NAAction = typing.Literal['omit', 'fail', 'pass']
 type Column = numpy.typing.ArrayLike | str
@@ -81,6 +81,20 @@ def subset_mask(subset: numpy.typing.ArrayLike | str | None, k: int, data: panda
     mask = numpy.zeros(k, dtype=numpy.bool_)
     mask[values.astype(numpy.intp)] = True
     return mask
+
+
+def escalc_ni(yi: Column | None, data: pandas.DataFrame | None, k_all: int) -> FloatArray | None:
+    """Sample sizes stored with ``yi`` by ``escalc``, which ``rma.uni`` picks up from ``attr(yi, "ni")``."""
+    attrs: dict[typing.Any, typing.Any] | None = None
+    if isinstance(yi, str) and data is not None and yi in data.columns:
+        attrs = data.attrs
+    elif isinstance(yi, pandas.Series):
+        attrs = yi.attrs
+    stored = None if attrs is None else attrs.get('ni')
+    if stored is None:
+        return None
+    arr = numpy.asarray(stored, dtype=numpy.float64)
+    return arr if arr.ndim == 1 and arr.shape[0] == k_all else None
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -169,6 +183,8 @@ class MetaData:
 
         w = column(weights, data, 'weights')
         n = column(ni, data, 'ni')
+        if n is None:
+            n = escalc_ni(yi, data, k_all)
         for name, arr in (('vi', v), ('weights', w), ('ni', n)):
             if arr is not None and arr.shape[0] != k_all:
                 raise metafopy.errors.InputError(f'length of {name} ({arr.shape[0]}) differs from yi ({k_all})')

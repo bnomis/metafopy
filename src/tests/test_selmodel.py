@@ -258,7 +258,7 @@ def test_accessors() -> None:
     close(res.fitted(), res.X @ res.beta, 'fitted')
     close(res.residuals(), res.yi - res.X @ res.beta, 'residuals')
     assert repr(res).startswith('<SelmodelResult stepfun')
-    assert res.summary() == str(res)
+    assert res.summary(showfit=False) == str(res)
 
 
 # -- predict --------------------------------------------------------------------------------------------

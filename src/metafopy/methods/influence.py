@@ -22,6 +22,7 @@ import metafopy.core.linalg
 import metafopy.errors
 import metafopy.methods.blup
 import metafopy.methods.common
+import metafopy.methods.fitview
 import metafopy.models.rma_uni
 import metafopy.printing
 
@@ -165,6 +166,18 @@ def influence_rma_uni(
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
+    """
+    metafopy.methods.fitview.check_class(model, notav=metafopy.methods.fitview.NOT_ROBUST)
+    return influence_fit(model, digits, btt=btt, na_action=na_action)
+
+
+def influence_fit(
+    model: metafopy.models.rma_uni.RMAResult, digits: int = 4, *, btt: metafopy.models.rma_uni.Btt = None, na_action: metafopy.methods.common.NAAction = 'omit'
+) -> InfluenceResult:
+    """The leave-one-out diagnostics of :func:`influence_rma_uni` without the check for fits made robust (which ``cooks.distance`` allows).
+
+    Raises:
+        metafopy.errors.InputError: ``na_action`` is unknown, there is a single study or values are missing with ``na_action='fail'``.
     """
     metafopy.methods.common.check_na_action(na_action)
     x = model
@@ -336,6 +349,7 @@ def rstudent_rma_uni(model: metafopy.models.rma_uni.RMAResult, digits: int = 4, 
         metafopy.errors.InputError: an argument or the data is invalid.
     """
     metafopy.methods.common.check_na_action(na_action)
+    metafopy.methods.fitview.check_class(model, notav=metafopy.methods.fitview.NOT_ROBUST)
     if model.k == 1:
         raise metafopy.errors.InputError('Stopped because k = 1.')
     core = influence_core(model, None)
@@ -366,7 +380,7 @@ def cooks_rma_uni(
     model: metafopy.models.rma_uni.RMAResult, *, btt: metafopy.models.rma_uni.Btt = None, na_action: metafopy.methods.common.NAAction = 'omit'
 ) -> pandas.Series:
     """Cook's distance of each study (metafor's ``cooks.distance``), indexed by study label."""
-    res = influence_rma_uni(model, btt=btt, na_action=na_action)
+    res = influence_fit(model, btt=btt, na_action=na_action)
     return pandas.Series(res.cook_d, index=list(res.slab), name='cook.d')
 
 
@@ -412,13 +426,14 @@ def rstandard_rma_uni(
     """
     metafopy.methods.common.check_na_action(na_action)
     x = model
+    metafopy.methods.fitview.check_class(x, notav=metafopy.methods.fitview.NOT_ROBUST)
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if type not in ('marginal', 'conditional'):
         raise metafopy.errors.InputError("type must be 'marginal' or 'conditional'")
     if type == 'conditional' and (x.weights is not None or not x.weighted):
         raise metafopy.errors.InputError('Extraction of conditional residuals not available for models with non-standard weights.')
     k = x.k
-    H = hat_matrix(x)
+    H = x.hat_matrix()
     ImH = numpy.eye(k) - H
     if type == 'marginal':
         ei = metafopy.methods.common.tzero(x.yi - x.X @ x.beta)
@@ -437,28 +452,3 @@ def rstandard_rma_uni(
     if na_action in ('exclude', 'pass'):
         (ei, sei, z), slab = metafopy.methods.common.pad_to_supplied(x, ei, sei, z)
     return ResidualResult(resid=ei, se=sei, z=z, slab=slab, digits=digits)
-
-
-def hat_matrix(x: metafopy.models.rma_uni.RMAResult) -> FloatArray:
-    """The full hat matrix (metafor's ``hatvalues(x, type="matrix")``)."""
-    X = x.X
-    if x.weighted:
-        if x.weights is None:
-            w = 1.0 / (x.vi + x.tau2)
-            return X @ metafopy.core.linalg.invcalc(X, w) @ (X.T * w)
-        return X @ metafopy.core.linalg.invcalc(X, x.weights) @ (X.T * x.weights)
-    return X @ metafopy.core.linalg.invcalc(X, numpy.ones(x.k)) @ X.T
-
-
-# auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
-def hatvalues(model: metafopy.models.rma_uni.RMAResult, type: typing.Literal['diagonal', 'matrix'] = 'diagonal') -> FloatArray:
-    """Hat values (diagonal) or the full hat matrix of an ``rma.uni`` fit.
-
-    Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
-    """
-    if type == 'diagonal':
-        return model.hatvalues()
-    if type == 'matrix':
-        return hat_matrix(model)
-    raise metafopy.errors.InputError("type must be 'diagonal' or 'matrix'")

@@ -15,6 +15,7 @@ import metafopy.core.linalg
 import metafopy.core.padjust
 import metafopy.errors
 import metafopy.methods.common
+import metafopy.mfopt
 import metafopy.models.mv_result
 import metafopy.models.rma_uni
 import metafopy.models.tau2
@@ -99,7 +100,20 @@ class LRTResult:
         return pandas.DataFrame([full, red], index=['Full', 'Reduced'], columns=cols)
 
     def __str__(self) -> str:
-        return self.to_frame().round(4).to_string()
+        frame = self.to_frame()
+        digits = metafopy.mfopt.option_digits(None)
+
+        def cell(column: str, value: float) -> str:
+            if math.isnan(value):
+                return ''
+            if column == 'df':
+                return str(int(value))
+            if column == 'pval':
+                return metafopy.printing.fmt_pval(value, digits)
+            return metafopy.printing.fmt_num(value, digits) + ('%' if column == 'R^2' else '')
+
+        rows = [[cell(c, float(v)) for c, v in zip(frame.columns, row, strict=True)] for row in frame.to_numpy()]
+        return metafopy.printing.fmt_wrapped_table([str(c) for c in frame.columns], rows, [str(i) for i in frame.index])
 
 
 @functools.singledispatch

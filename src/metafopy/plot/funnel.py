@@ -190,6 +190,9 @@ def funnel(
     int_only = True
     if is_fit:
         res = metafopy.methods.fitview.fit_view(x)
+        if not res.int_only:
+            # funnel.rma only refuses robust fits through rstandard()/rstudent(), which it calls for models with moderators
+            metafopy.methods.fitview.check_class(x, notav=metafopy.methods.fitview.NOT_ROBUST)
         cls = metafopy.methods.fitview.r_class(x)
         lvl_alpha = [res.level] if level is None else [metafopy.plot.rutils.level_to_alpha(v) for v in numpy.atleast_1d(level)]
         lvl2 = res.level if level2 is None else metafopy.plot.rutils.level_to_alpha(level2)

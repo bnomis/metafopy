@@ -93,7 +93,7 @@ def qqnorm(
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if type not in ('rstandard', 'rstudent'):
         raise metafopy.errors.InputError("type must be 'rstandard' or 'rstudent'")
-    metafopy.methods.fitview.check_class(y, notav=('rma.mv', 'rma.glmm', 'rma.gen', 'rma.uni.selmodel'))
+    metafopy.methods.fitview.check_class(y, notav=('robust.rma', 'rma.mv', 'rma.glmm', 'rma.gen', 'rma.uni.selmodel'))
     if y.k == 1:
         raise metafopy.errors.InputError('Stopped because k = 1.')
     if isinstance(y, metafopy.models.binary.FixedBinaryResult):
@@ -137,10 +137,8 @@ def qqnorm(
         alpha = y.level if level is None else metafopy.plot.rutils.level_to_alpha(level)
         gen = rng if rng is not None else (metafopy.core.rng.set_seed(seed) if seed is not None else metafopy.core.rng.get_rng())
         dat = gen.rnorm(k * reps).reshape((k, reps), order='F')
-        if isinstance(y, metafopy.models.rma_ls_result.RMALSResult):
-            h = metafopy.methods.ls_resid.hat_matrix(y)
-        elif isinstance(y, metafopy.models.rma_uni.RMAResult):
-            h = metafopy.methods.influence.hatvalues(y, type='matrix')
+        if isinstance(y, metafopy.models.rma_ls_result.RMALSResult | metafopy.models.rma_uni.RMAResult):
+            h = y.hat_matrix()
         else:
             raise metafopy.errors.InternalError('no envelope for this model class')
         ei = (numpy.eye(k) - h) @ dat

@@ -12,11 +12,13 @@ import numpy.typing
 import pandas
 import scipy.stats
 
+import metafopy.core.clubsandwich
 import metafopy.errors
 import metafopy.models.binary
 import metafopy.models.glmm_result
 import metafopy.models.mv_result
 import metafopy.models.rma_uni
+import metafopy.models.robust_info
 import metafopy.models.tau2
 import metafopy.transf
 
@@ -50,6 +52,16 @@ class PredictResult:
     prob: FloatArray | None = None
     X: FloatArray | pandas.DataFrame | None = None
     vcov: FloatArray | pandas.DataFrame | None = None
+
+    @property
+    def cr_lb(self) -> FloatArray:
+        """Alias of ``pi_lb`` (metafor keeps ``cr.lb`` for old code)."""
+        return self.pi_lb
+
+    @property
+    def cr_ub(self) -> FloatArray:
+        """Alias of ``pi_ub`` (metafor keeps ``cr.ub`` for old code)."""
+        return self.pi_ub
 
     def to_frame(self) -> pandas.DataFrame:
         cols: dict[str, typing.Any] = {
@@ -164,8 +176,6 @@ def predict_rma_uni(
         metafopy.errors.InputError: an argument or the data is invalid.
     """
     x = model
-    if x.robust is not None and x.robust.robumethod == 'clubSandwich':
-        raise metafopy.errors.InputError('predict() is not supported for fits made robust with club_sandwich=True.')
     return location_prediction(
         LocationModel(
             k=x.k,
@@ -180,6 +190,8 @@ def predict_rma_uni(
             alpha=x.level,
             tau2=x.tau2,
             fixed=x.method in metafopy.models.tau2.FIXED_EFFECTS,
+            sandwich=club_sandwich_of(x.robust),
+            coef_test=None if x.robust is None else x.robust.coef_test,
         ),
         newmods,
         intercept,
@@ -192,6 +204,24 @@ def predict_rma_uni(
         adjust=adjust,
         vcov=vcov,
     )
+
+
+def club_sandwich_of(info: metafopy.models.robust_info.RobustInfo | None) -> metafopy.core.clubsandwich.Sandwich | None:
+    """The ``clubSandwich`` variance estimator of a fit made robust with ``club_sandwich=True``, else ``None``.
+
+    Raises:
+        metafopy.errors.InputError: the fit used the saddlepoint test, which has no confidence intervals.
+    """
+    if info is None or info.robumethod != 'clubSandwich' or info.sandwich is None:
+        return None
+    if info.coef_test == 'saddlepoint':
+        raise metafopy.errors.InputError('Cannot use method when saddlepoint correction was used.')
+    return info.sandwich
+
+
+def contrast_ddf(sandwich: metafopy.core.clubsandwich.Sandwich, X_new: FloatArray, coef_test: str | None) -> FloatArray:
+    """Degrees of freedom of the predicted values of a ``clubSandwich`` fit (``clubSandwich::linear_contrast``)."""
+    return metafopy.core.clubsandwich.contrast_df(sandwich, X_new, coef_test or 'Satterthwaite')
 
 
 @predict.register
@@ -311,6 +341,8 @@ class LocationModel:
     alpha: float
     tau2: float
     fixed: bool
+    sandwich: metafopy.core.clubsandwich.Sandwich | None = None
+    coef_test: str | None = None
 
 
 def location_prediction(
@@ -364,7 +396,12 @@ def location_prediction(
     vpred = numpy.einsum('ij,jk,ik->i', X_new, x.vb, X_new)
     vpred = numpy.where(vpred < 0, numpy.nan, vpred)
     se = numpy.sqrt(vpred)
-    if x.ddf is not None:
+    crit: float | FloatArray
+    ddf_rows: FloatArray | None = None
+    if x.sandwich is not None:
+        ddf_rows = contrast_ddf(x.sandwich, X_new, x.coef_test)
+        crit = numpy.array([float(scipy.stats.t.isf(alpha / 2, d)) if d > 0 else numpy.nan for d in ddf_rows])
+    elif x.ddf is not None:
         crit = float(scipy.stats.t.isf(alpha / 2, x.ddf)) if x.ddf > 0 else numpy.nan
     else:
         crit = float(scipy.stats.norm.isf(alpha / 2))
@@ -372,8 +409,8 @@ def location_prediction(
     ci_ub = pred + crit * se
     het = x.tau2 if hetvar is None else expand_hetvar(hetvar, k_new)
     pi_se = numpy.sqrt(vpred + het)
-    pi_ddf = numpy.full(pred.shape, float(x.k - p if x.ddf is None else x.ddf))
-    pi_dist = 'norm' if x.ddf is None else 't'
+    pi_ddf = ddf_rows if ddf_rows is not None else numpy.full(pred.shape, float(x.k - p if x.ddf is None else x.ddf))
+    pi_dist = 'norm' if x.ddf is None and ddf_rows is None else 't'
     prob_out = None if prob is None else prob_values(prob, pred, pi_se, pi_dist, pi_ddf)
     vcov_pred = X_new @ x.vb @ X_new.T if vcov else None
     if vcov_pred is not None:
@@ -473,8 +510,6 @@ def predict_rma_mv(
         metafopy.errors.InputError: an argument or the data is invalid.
     """
     x = model
-    if x.robust is not None and x.robust.robumethod == 'clubSandwich':
-        raise metafopy.errors.InputError('predict() is not supported for fits made robust with club_sandwich=True.')
     check_prob_adjust(prob, adjust)
     if hetvar is not None and (tau2_levels is not None or gamma2_levels is not None):
         tau2_levels = gamma2_levels = None
@@ -538,7 +573,11 @@ def predict_rma_mv(
     vpred = numpy.where(vpred < 0, numpy.nan, vpred)
     se = numpy.sqrt(vpred)
     ddf_row: FloatArray | None = None
-    if x.test == 'z':
+    sandwich = club_sandwich_of(x.robust)
+    if sandwich is not None:
+        ddf_row = contrast_ddf(sandwich, X_new, x.robust.coef_test if x.robust is not None else None)
+        crit = numpy.array([float(scipy.stats.t.isf(alpha / 2, d)) if d > 0 else math.nan for d in ddf_row])
+    elif x.test == 'z':
         crit = numpy.full(k_new, float(scipy.stats.norm.isf(alpha / 2)))
     else:
         ddf_coef = numpy.where(numpy.isnan(x.ddf), x.k - p, x.ddf)

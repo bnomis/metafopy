@@ -157,7 +157,7 @@ def test_errors() -> None:
 def test_print(key: str) -> None:
     if key == 'uni_cs_btt':
         pytest.skip('coefficient label of the squared term follows the formula engine (** instead of ^)')
-    assert refutil.r_print(fit(key).summary(digits=4)).strip() == refutil.r_print(REF[key]['print']).strip()
+    assert refutil.r_print(fit(key).summary(digits=4, showfit=False)).strip() == refutil.r_print(REF[key]['print']).strip()
 
 
 @pytest.mark.parametrize(('key', 'model'), [('predict_uni', 'uni_mods'), ('predict_mv', 'mv_mods')])
@@ -167,5 +167,5 @@ def test_predict(key: str, model: str) -> None:
     # auditme: accept[literal-duplication] the fixture names repeat as the R script that generates them repeats them
     for field in ('pred', 'se', 'ci_lb', 'ci_ub', 'pi_lb', 'pi_ub'):
         vector(getattr(pr, field), ref[field], f'{key} {field}', rtol=1e-5)
-    with pytest.raises(metafopy.errors.InputError, match='not supported'):
-        metafopy.robust(MODELS[model](), 'district', club_sandwich=True).predict([0])
+    cs = metafopy.robust(MODELS[model](), 'district', club_sandwich=True).predict([0])
+    assert cs.pred.shape == (1,)

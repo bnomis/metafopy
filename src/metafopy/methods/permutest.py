@@ -29,6 +29,7 @@ import metafopy.core.rng
 import metafopy.core.zeroin
 import metafopy.errors
 import metafopy.methods.common
+import metafopy.methods.fitview
 import metafopy.methods.vif
 import metafopy.models.rma_uni
 import metafopy.printing
@@ -216,6 +217,7 @@ def permutest_rma_uni(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
+    metafopy.methods.fitview.check_class(x, notav=metafopy.methods.fitview.NOT_ROBUST)
     iter = iter
     if iter <= 1:
         raise metafopy.errors.InputError("Argument 'iter' must be >= 2.")

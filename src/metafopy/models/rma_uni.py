@@ -63,7 +63,7 @@ class FitStats:
 
 
 @dataclasses.dataclass(frozen=True, slots=True, eq=False)
-class RMAResult(metafopy.models.fit_methods.FitMethods):
+class RMAResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_methods.FitMethods):
     """A fitted ``rma.uni`` model.
 
     Array attributes follow metafor's names with ``.`` replaced by ``_``
@@ -140,36 +140,10 @@ class RMAResult(metafopy.models.fit_methods.FitMethods):
 
         return metafopy.methods.residuals.residuals(self, type, na_action=na_action)
 
-    def logLik(self, REML: bool | None = None) -> float:
-        """Log-likelihood; REML unless the model was fitted with ML (as in metafor)."""
-        return self.fit_stats(REML).ll
-
-    def deviance(self, REML: bool | None = None) -> float:
-        return self.fit_stats(REML).dev
-
-    def AIC(self, REML: bool | None = None) -> float:
-        return self.fit_stats(REML).AIC
-
-    def BIC(self, REML: bool | None = None) -> float:
-        return self.fit_stats(REML).BIC
-
-    def AICc(self, REML: bool | None = None) -> float:
-        return self.fit_stats(REML).AICc
-
     def fit_stats(self, REML: bool | None) -> FitStats:
         if REML is None:
             REML = self.method == 'REML'
         return self.fit_stats_reml if REML else self.fit_stats_ml
-
-    def fitstats(self, REML: bool | None = None) -> pandas.Series:
-        """``logLik``, ``deviance``, ``AIC``, ``BIC``, ``AICc`` as a Series."""
-        st = self.fit_stats(REML)
-        return pandas.Series(
-            st.as_tuple(),
-            # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
-            index=['logLik', 'deviance', 'AIC', 'BIC', 'AICc'],
-            name='REML' if (REML if REML is not None else self.method == 'REML') else 'ML',
-        )
 
     def weights_(self, type: typing.Literal['diagonal', 'matrix'] = 'diagonal', na_action: NAActionAll = 'omit') -> FloatArray:
         """Percentage weights of the estimates in the model fit (``type='diagonal'``) or the weight matrix (``'matrix'``), metafor's ``weights()``.
@@ -181,14 +155,27 @@ class RMAResult(metafopy.models.fit_methods.FitMethods):
 
         return metafopy.methods.weights.weights_uni(self, type, na_action)
 
-    def hatvalues(self) -> FloatArray:
-        """Diagonal of the hat matrix."""
+    def hat_matrix(self) -> FloatArray:
+        """The full hat matrix ``X (X'WX)^-1 X'W``."""
         X = self.X
         if self.weighted:
             w = 1.0 / (self.vi + self.tau2) if self.weights is None else self.weights
-            H = X @ metafopy.core.linalg.invcalc(X, w) @ (X.T * w)
-        else:
-            H = X @ metafopy.core.linalg.invcalc(X, numpy.ones(self.k)) @ X.T
+            return X @ metafopy.core.linalg.invcalc(X, w) @ (X.T * w)
+        return X @ metafopy.core.linalg.invcalc(X, numpy.ones(self.k)) @ X.T
+
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
+    def hatvalues(self, type: typing.Literal['diagonal', 'matrix'] = 'diagonal') -> FloatArray:
+        """Diagonal of the hat matrix (``type='diagonal'``) or the hat matrix itself (``'matrix'``), as metafor's ``hatvalues()``.
+
+        Raises:
+            metafopy.errors.InputError: ``type`` is not ``'diagonal'`` or ``'matrix'``.
+        """
+        # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
+        if type not in ('diagonal', 'matrix'):
+            raise metafopy.errors.InputError("type must be 'diagonal' or 'matrix'")
+        H = self.hat_matrix()
+        if type == 'matrix':
+            return H
         h = numpy.diag(H).copy()
         h[h > 1 - 10 * DBL_EPS] = 1.0
         return h
@@ -240,11 +227,12 @@ class RMAResult(metafopy.models.fit_methods.FitMethods):
 
     # -- printing ----------------------------------------------------------
 
-    def summary(self, digits: int | None = None) -> str:
-        return metafopy.mfopt.option_space(format_result(self, metafopy.mfopt.option_digits(digits)))
+    def summary(self, digits: int | None = None, showfit: bool = True) -> str:
+        """The printout with the fit statistics table, as metafor's ``summary()``; ``str(res)`` leaves it out like ``print()``."""
+        return metafopy.mfopt.option_space(format_result(self, metafopy.mfopt.option_digits(digits), showfit))
 
     def __str__(self) -> str:
-        return self.summary()
+        return self.summary(showfit=False)
 
     def __repr__(self) -> str:
         return f'<RMAResult {self.method} k={self.k} p={self.p}>'
@@ -1108,7 +1096,7 @@ def adj_r2(y: FloatArray, X: FloatArray, w: FloatArray) -> float:
 # -- printing -----------------------------------------------------------------
 
 
-def format_result(res: RMAResult, digits: int) -> str:
+def format_result(res: RMAResult, digits: int, showfit: bool = False) -> str:
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     out: list[str] = ['']
     fe = res.method in metafopy.models.tau2.FIXED_EFFECTS
@@ -1120,17 +1108,28 @@ def format_result(res: RMAResult, digits: int) -> str:
             out.append(f'Fixed-Effects with Moderators Model (k = {res.k})')
     else:
         kind = 'Random-Effects' if res.int_only else 'Mixed-Effects'
-        out.append(f'{kind} Model (k = {res.k}; tau^2 estimator: {res.method})')
+        how = 'user-specified tau^2 value' if res.tau2_fix else f'tau^2 estimator: {res.method}'
+        out.append(f'{kind} Model (k = {res.k}; {how})')
     out.append('')
+    if showfit:
+        out.append(
+            metafopy.printing.fmt_named_vector(
+                # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
+                ['logLik', 'deviance', 'AIC', 'BIC', 'AICc'],
+                [metafopy.printing.fmt_num(v, digits) for v in res.fit_stats(None).as_tuple()],
+            )
+        )
+        out.append('')
 
     if not fe:
         het = 'total' if res.int_only else 'residual'
         tau2_line = metafopy.printing.fmt_num(res.tau2, digits)
         if not math.isnan(res.se_tau2):
             tau2_line += f' (SE = {metafopy.printing.fmt_num(res.se_tau2, digits)})'
+        est = 'specified' if res.tau2_fix else 'estimated'
         rows = [
-            (f'tau^2 (estimated amount of {het} heterogeneity):', tau2_line),
-            ('tau (square root of estimated tau^2 value):', metafopy.printing.fmt_num(math.sqrt(res.tau2), digits)),
+            (f'tau^2 ({est} amount of {het} heterogeneity):', tau2_line),
+            (f'tau (square root of {est} tau^2 value):', metafopy.printing.fmt_num(math.sqrt(res.tau2), digits)),
         ]
         if not math.isnan(res.I2):
             if res.int_only:

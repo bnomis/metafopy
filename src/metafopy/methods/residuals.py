@@ -105,7 +105,7 @@ def standardised(x: typing.Any, kind: str, na_action: metafopy.methods.common.NA
     """The ``z`` values of ``rstandard(x)`` or ``rstudent(x)``, with R's refusals for the classes those are not available for."""
     metafopy.methods.fitview.check_method(x, kind, UNI_CLASSES)
     if 'rma.mv' in metafopy.methods.fitview.r_class(x):
-        notav: tuple[str, ...] = ('robust.rma',)
+        notav: tuple[str, ...] = metafopy.methods.fitview.NOT_ROBUST
     elif kind == 'rstandard':
         notav = ('robust.rma', 'rma.gen', 'rma.uni.selmodel')
     else:

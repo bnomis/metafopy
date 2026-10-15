@@ -6,9 +6,9 @@ import numpy
 import pandas
 import pytest
 import refutil
-import scipy.stats
 
 import metafopy
+import metafopy.core.dbinom
 import metafopy.methods.influence
 import metafopy.transf
 
@@ -133,8 +133,8 @@ def test_rstudent_cooks_dfbetas(dat: pandas.DataFrame) -> None:
 
 def test_hatvalues(dat: pandas.DataFrame) -> None:
     mres = metafopy.rma('yi', 'vi', mods='~ ablat + year', data=dat)
-    refutil.close(metafopy.methods.influence.hatvalues(mres), REF['hat_matrix']['diag'])
-    full = metafopy.methods.influence.hatvalues(mres, type='matrix')
+    refutil.close(mres.hatvalues(), REF['hat_matrix']['diag'])
+    full = mres.hatvalues(type='matrix')
     for i, row in enumerate(REF['hat_matrix']['full']):
         refutil.close(full[i], row)
 
@@ -440,18 +440,21 @@ def test_gosh_exact_matches_metafor(gosh_fits: dict[str, typing.Any], key: str) 
         ('gosh_random_mods', 'r13m', {'subsets': 200, 'seed': 7}),
     ],
 )
-def test_gosh_random_subsets(fits: dict[str, typing.Any], monkeypatch: pytest.MonkeyPatch, key: str, fit: str, kw: dict[str, typing.Any]) -> None:
-    # Subset sizes and study indices are drawn with R's generator. SciPy's binomial pmf differs from R's dbinom in the
-    # last bit, which reorders tied sizes inside R's sampler, so feed R's probabilities (as 17 digit strings) to compare
-    # the rest of the pipeline.
-    ref = REF[key]
-    monkeypatch.setattr(scipy.stats.binom, 'pmf', lambda *a, **k: numpy.array([float(v) for v in ref['dbinom']]))
-    check_gosh(metafopy.gosh(fits[fit], **kw), ref, key)
+def test_gosh_random_subsets(fits: dict[str, typing.Any], key: str, fit: str, kw: dict[str, typing.Any]) -> None:
+    # Subset sizes and study indices are drawn with R's generator and R's dbinom (SciPy's binomial pmf differs in the last bit,
+    # which reorders tied sizes inside R's sampler).
+    check_gosh(metafopy.gosh(fits[fit], **kw), REF[key], key)
 
 
-def test_gosh_random_subsets_global_seed(fits: dict[str, typing.Any], monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.parametrize('case', refutil.load_phase12('audit3')['gosh']['dbinom_k'], ids=lambda c: str(c['k']))
+def test_dbinom_bits_match_r(case: dict[str, typing.Any]) -> None:
+    """R 4.5.1's probabilities of the subset sizes, to the last bit (the fixture holds them as hexadecimal floats)."""
+    expected = [float.fromhex(v) for v in case['hex']]
+    assert metafopy.core.dbinom.dbinom(case['x'], case['k'], 0.5).tolist() == expected
+
+
+def test_gosh_random_subsets_global_seed(fits: dict[str, typing.Any]) -> None:
     ref = REF['gosh_random_global']
-    monkeypatch.setattr(scipy.stats.binom, 'pmf', lambda *a, **k: numpy.array([float(v) for v in ref['dbinom']]))
     metafopy.set_seed(99)
     check_gosh(metafopy.gosh(fits['r13'], subsets=100), ref, 'global seed')
 
