@@ -66,7 +66,7 @@ def qnorm(p: float) -> float:
 
 
 def sum_stat_index(n: float, kind: str) -> list[int]:
-    """The ranks (1-based) of the order statistics a scenario (or ``'tertiles'``, ...) reports."""
+    """The ranks (1-based) of the order statistics a scenario reports."""
     if kind == 'S1':
         return [1, math.floor(n / 2) + 1, int(n)]
     if kind == 'S2':
