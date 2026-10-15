@@ -368,3 +368,14 @@ def test_errors_and_printing(dat: pandas.DataFrame, alloc: metafopy.EmmGrid) -> 
     assert 'Results are averaged over the levels of: lat' in str(metafopy.emmeans(two, 'alloc'))
     assert metafopy.pairs(alloc).confint().frame.shape[1] == 6
     assert 'p.value' in metafopy.pairs(alloc).test().frame.columns
+
+
+def test_regrid_of_log_contrast_labels_as_ratios(alloc: metafopy.EmmGrid) -> None:
+    pairs = metafopy.pairs(alloc)
+    labels = metafopy.regrid(pairs).grid['contrast'].tolist()
+    assert labels == metafopy.pairs(alloc).summary(type='response').frame['contrast'].tolist()
+    assert all(' / ' in label for label in labels)
+
+
+def test_r2_to_z_link_name() -> None:
+    assert metafopy.methods.emm_links.make_link('r2-to-z').name == 'r2-to-z'

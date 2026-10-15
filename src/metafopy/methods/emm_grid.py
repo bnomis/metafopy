@@ -699,7 +699,7 @@ def regrid(object: EmmGrid, *, bias_adjust: bool = False, sigma: float | None = 
         if object.inv_label is not None:
             est_name = object.inv_label if object.est_name == 'prediction' else est_name
             if object.log_contrast:
-                grid = grid.apply(lambda col: col.str.replace(' - ', '/') if col.dtype == object or pandas.api.types.is_string_dtype(col) else col)
+                grid = grid.apply(lambda col: col.str.replace(' - ', ' / ') if pandas.api.types.is_string_dtype(col) else col)
     n = est.shape[0]
     return dataclasses.replace(
         object,
