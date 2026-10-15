@@ -24,6 +24,7 @@ import scipy.stats
 import metafopy.core.clubsandwich
 import metafopy.core.linalg
 import metafopy.errors
+import metafopy.methods.common
 import metafopy.models.mv_result
 import metafopy.models.rma_uni
 import metafopy.models.robust_info
@@ -245,11 +246,12 @@ def robust_rma_uni(
     cluster: Cluster,
     *,
     adjust: bool | str = True,
-    club_sandwich: bool = False,
+    club_sandwich: bool | None = None,
     vcov: str | None = None,
     coef_test: str | None = None,
     conf_test: str | None = None,
     wald_test: str | None = None,
+    clubSandwich: bool | None = None,
 ) -> metafopy.models.rma_uni.RMAResult:
     """Cluster-robust inference for an ``rma.uni`` fit.
 
@@ -259,10 +261,12 @@ def robust_rma_uni(
     ``naive-tp``, ``Satterthwaite``, ``saddlepoint``; the latter gives p-values only, the confidence intervals then use
     ``Satterthwaite`` unless ``conf_test`` says otherwise), ``conf_test`` (as ``coef_test`` without ``saddlepoint``) and
     ``wald_test`` (``chi-sq``, ``Naive-F``, ``Naive-Fp``, ``HTA``, ``HTB``, ``HTZ``, ``EDF``, ``EDT``) select the method.
+    ``clubSandwich`` is R's spelling of ``club_sandwich``; giving both with different values is an error.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
+    club_sandwich = bool(metafopy.methods.common.resolve_alias(club_sandwich, clubSandwich, 'club_sandwich', 'clubSandwich'))
     x = model
     if x.data.data is None and isinstance(cluster, str):
         raise metafopy.errors.InputError("Cannot find the 'cluster' variable: the model was fitted without 'data'.")
@@ -352,19 +356,21 @@ def robust_rma_mv(
     cluster: Cluster,
     *,
     adjust: bool | str = True,
-    club_sandwich: bool = False,
+    club_sandwich: bool | None = None,
     vcov: str | None = None,
     coef_test: str | None = None,
     conf_test: str | None = None,
     wald_test: str | None = None,
+    clubSandwich: bool | None = None,
 ) -> metafopy.models.mv_result.RMAMVResult:
     """Cluster-robust inference for an ``rma.mv`` fit; the arguments are those of the ``rma.uni`` method.
 
-    With ``club_sandwich=True`` the random effects must be nested within the clusters and ``R=`` matrices are not allowed.
+    With ``club_sandwich=True`` (or R's spelling ``clubSandwich``) the random effects must be nested within the clusters and ``R=`` matrices are not allowed.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
+    club_sandwich = bool(metafopy.methods.common.resolve_alias(club_sandwich, clubSandwich, 'club_sandwich', 'clubSandwich'))
     x = model
     data = x.spec.get('data')
     used = numpy.zeros(x.k_all, dtype=numpy.bool_)
