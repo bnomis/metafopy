@@ -84,7 +84,7 @@ def maximise(
     if not res.success and gnorm > SLACK_GRADIENT:
         decrement = metafopy.core.stationarity.newton_decrement(res)
         refined = scipy.optimize.minimize(objective, x, jac=True, method='L-BFGS-B', options={'maxiter': maxiter, 'ftol': 1e-14, 'gtol': gtol})
-        improved = refined.fun < val
+        improved = refined.fun < val - metafopy.core.stationarity.REL_TOL * (1 + abs(val))
         if refined.fun <= val:
             x, val = refined.x, float(refined.fun)
             rjac = numpy.asarray(refined.jac, dtype=numpy.float64)
