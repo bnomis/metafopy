@@ -12,7 +12,7 @@ from metafopy.plot.permutest import PlotPermutestResult, plot_permutest
 from metafopy.plot.profile import plot_profile
 from metafopy.plot.qqnorm import QQNormResult, qqnorm
 from metafopy.plot.radial import RadialResult, galbraith, radial
-from metafopy.plot.regplot import RegplotResult, regplot
+from metafopy.plot.regplot import RegplotResult, points_regplot, regplot
 from metafopy.plot.rma import PlotRmaResult, plot_rma
 from metafopy.plot.selmodel import SelPlotResult, plot_selmodel
 from metafopy.plot.vifplot import PlotVifResult, plot_vif
@@ -49,6 +49,7 @@ __all__ = [
     'plot_rma',
     'plot_selmodel',
     'plot_vif',
+    'points_regplot',
     'qqnorm',
     'radial',
     'regplot',

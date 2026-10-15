@@ -8,6 +8,7 @@ import metafopy.methods.location_scale  # registers the predict/confint/... meth
 import metafopy.methods.mv_diagnostics  # registers the diagnostics for rma.mv models
 import metafopy.methods.mv_profile  # registers profile() for rma.mv models
 import metafopy.methods.mv_ranef
+import metafopy.methods.vif_mv  # registers vif() for rma.mv and selmodel fits
 import metafopy.models.rma_ls  # noqa: F401  loaded so the annotations of rma_uni resolve under inspect.signature
 from metafopy import datasets, transf
 from metafopy.base import __version__
@@ -88,6 +89,7 @@ from metafopy.plot import (
     plot_rma,
     plot_selmodel,
     plot_vif,
+    points_regplot,
     qqnorm,
     radial,
     regplot,
@@ -196,6 +198,7 @@ __all__ = [
     'plot_rma',
     'plot_selmodel',
     'plot_vif',
+    'points_regplot',
     'predict',
     'profile',
     'qqnorm',

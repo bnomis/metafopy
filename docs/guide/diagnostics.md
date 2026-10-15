@@ -192,6 +192,10 @@ print(vif(rma('yi', 'vi', mods='~ ablat + year', data=dat)))
 1.5391  1.5391
 ```
 
+`vif` also takes `rma_mv`, location-scale and `selmodel` fits with moderators. The options are those of metafor: `btt` (and `att`
+for the scale part), `table=True` for the coefficient table, `intercept=True` to include the intercept, `fixed=True` to match a
+string `btt` literally, and, except for `selmodel` fits, `reestimate=True` and `sim`.
+
 ## Best linear unbiased predictions
 
 `blup` gives the shrunken estimate of the true effect of each study, which combines its observed effect and the model

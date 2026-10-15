@@ -234,6 +234,12 @@ class RMAMVResult(metafopy.models.fit_methods.FitMethods):
 
         return metafopy.methods.anova.anova(self, *args, **kwargs)
 
+    def vif(self, *args: typing.Any, **kwargs: typing.Any) -> typing.Any:
+        # auditme: accept[in-function-import] metafopy.methods imports this module, so the import is deferred to avoid a cycle
+        import metafopy.methods.vif
+
+        return metafopy.methods.vif.vif(self, *args, **kwargs)
+
     # -- printing -------------------------------------------------------------
 
     def summary(self, digits: int | None = None, showfit: bool = True) -> str:

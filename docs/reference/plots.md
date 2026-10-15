@@ -93,6 +93,13 @@ Plot functions, see [Plots](../guide/plots.md). They draw with matplotlib.
       show_root_full_path: false
       show_source: false
 
+::: metafopy.points_regplot
+    options:
+      heading_level: 3
+      show_root_heading: true
+      show_root_full_path: false
+      show_source: false
+
 ::: metafopy.forest_cumul
     options:
       heading_level: 3

@@ -272,7 +272,8 @@ def fit_view(x: typing.Any) -> FitView:
         return uni_view(x, x)
     if isinstance(x, metafopy.models.sel_result.SelmodelResult):
         base = uni_view(x.base, x)
-        return dataclasses.replace(base, beta=x.beta, tau2=float(x.tau2), weights=None, pred_newmods=not x.int_only)
+        # metafor's selmodel() objects have slab.null = FALSE: the default labels are the row numbers and get the room of real labels
+        return dataclasses.replace(base, beta=x.beta, tau2=float(x.tau2), weights=None, pred_newmods=not x.int_only, slab_null=False)
     if isinstance(x, metafopy.models.mv_result.RMAMVResult):
         return mv_view(x)
     if isinstance(x, metafopy.models.binary.FixedBinaryResult):

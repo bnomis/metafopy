@@ -253,13 +253,13 @@ def make_control(control: metafopy.models.tau2.Control | collections.abc.Mapping
     return metafopy.models.tau2.Control(**kwargs)
 
 
-def set_btt(btt: Btt, p: int, int_incl: bool, names: collections.abc.Sequence[str]) -> tuple[int, ...]:
+def set_btt(btt: Btt, p: int, int_incl: bool, names: collections.abc.Sequence[str], fixed: bool = False) -> tuple[int, ...]:
     if btt is None:
         if p > 1:
             return tuple(range(1, p)) if int_incl else tuple(range(p))
         return (0,)
     if isinstance(btt, str):
-        found = tuple(i for i, n in enumerate(names) if re.search(btt, n))
+        found = tuple(i for i, n in enumerate(names) if (btt in n if fixed else re.search(btt, n)))
         if not found:
             raise metafopy.errors.InputError("cannot identify coefficient(s) matching the 'btt' pattern")
         return found
