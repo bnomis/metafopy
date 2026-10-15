@@ -127,7 +127,7 @@ vignette on [nesting](https://rvlenth.github.io/emmeans/articles/sophisticated.h
 ```python
 # docs: skip
 res = rma('yi', 'vi', mods='~ lat + lat:grp', data=dat)  # grp is nested in lat
-grid = emmprep(res)                                        # nesting={'grp': ('lat',)} is detected
+grid = emmprep(res)  # nesting={'grp': ('lat',)} is detected
 print(emmeans(grid, 'grp').summary())
-print(pairs(emmeans(grid, 'grp')).summary())               # comparisons within each level of lat
+print(pairs(emmeans(grid, 'grp')).summary())  # comparisons within each level of lat
 ```
