@@ -105,6 +105,6 @@ def test_identity_link_scale_se_depth_4() -> None:
 def test_identity_link_scale_se_depth_8() -> None:
     """At depth 8 the steps for the coefficient -3.8e-5 are 3e-8 and the second differences are rounding error: R's and our noise differ (5e-4)."""
     ref = REF['identity']['r8']
-    res = identity_fit(None)
+    res = identity_fit(8)
     refutil.close(res.alpha, ref['alpha'], 'alpha', rtol=1e-6)
     refutil.close(res.se_alpha, ref['se_alpha'], 'se_alpha', rtol=2e-3)
