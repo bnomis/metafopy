@@ -2,6 +2,11 @@
 
 ## Unreleased (1.0 candidate)
 
+- `hettest` (metafor 5.2-1): score, likelihood ratio and Wald-type tests of heteroscedastic heterogeneity, and Kolmogorov-Smirnov and Anderson-Darling tests of the Pearson residuals, with parametric bootstrap p-values from R's generator (`src/tests/r/generate_hettest.R`).
+- `residuals(type=, na_action=)` with `'response'`, `'rstandard'`, `'rstudent'`, `'pearson'` and `'cholesky'` residuals (as `res.residuals(...)` and `metafopy.residuals(res, ...)`), following metafor's rules for which fit classes allow which types; `weights_(type='matrix', na_action=)` for `rma_uni` and location-scale fits, and `'matrix'` for `rma_mv`; `rma_glmm` and selection-model fits refuse `weights_` as in metafor. The `exclude` and `pass` actions pad to the rows of `subset`, like R.
+- `plot_profile` draws the list that `profile()` returns for `rma_mv`, location-scale and selection models (one panel per component) and single location-scale profiles; `profile()` of location-scale fits takes `plot=` and `ax=`.
+- `rma_glmm`: the `clogit` and `clogistic` optimisers of `CM.EL` (`src/metafopy/core/clogit.py`) and the `link` and `family` overrides.
+- `anova(object2=)` and `robust(clubSandwich=)` accept R's argument names.
 - `emmeans`: nested factors (`emmprep(nesting=)`, detected from the data and the model terms like emmeans' `.find_nests`, with `contrast`/`pairs` within groups of different size), the `side`, `delta` and `null` arguments (one-sided, equivalence and non-inferiority tests and intervals), and matrix `weights`. Checked against emmeans 2.0.4 on R fixtures (`src/tests/r/generate_emmeans.R`).
 - `conv_fivenum`: the `qe`, `bc`, `mln` (estmeansd) and `blue` (metaBLUE) methods, with `seed` and `verbose` arguments. `bc`, `mln` and `blue` reproduce R to 1e-9 relative, `qe` to about 1e-6 (`src/tests/r/generate_fivenum_methods.R`).
 - Add a native port of emmeans for `rma` fits: `emmprep`, `emmeans`, `contrast`, `pairs`, `regrid`, with the contrast families and multiplicity adjustments of emmeans (`tukey`, `dunnettx`, `sidak`, `scheffe`, `mvt`, `p_adjust` methods), back-transformation with optional bias adjustment, and an exact port of R's `ptukey`/`qtukey` (`metafopy.core.tukey`). Checked against emmeans and metafor on R fixtures (`src/tests/r/generate_emmeans.R`).
