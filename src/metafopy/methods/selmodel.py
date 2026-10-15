@@ -25,6 +25,7 @@ import metafopy.errors
 import metafopy.methods.anova
 import metafopy.methods.common
 import metafopy.methods.confint
+import metafopy.methods.fitted
 import metafopy.methods.predict
 import metafopy.methods.profile
 import metafopy.models.rma_uni
@@ -66,16 +67,44 @@ def predict(
     newmods: numpy.typing.ArrayLike | None = None,
     *,
     intercept: bool | None = None,
+    tau2_levels: collections.abc.Sequence[str | int] | str | int | None = None,
+    gamma2_levels: collections.abc.Sequence[str | int] | str | int | None = None,
+    hetvar: numpy.typing.ArrayLike | None = None,
+    prob: str | float | None = None,
+    addx: bool = False,
     transf: collections.abc.Callable[..., typing.Any] | None = None,
     targs: typing.Any = None,
     level: float | None = None,
+    adjust: bool = False,
+    vcov: bool = False,
+    predtype: str | None = None,
+    pi_type: str | None = None,
+    newvi: numpy.typing.ArrayLike | None = None,
+    na_action: metafopy.methods.common.NAAction = 'omit',
 ) -> metafopy.methods.predict.PredictResult:
     """Predicted values under the selection model (metafor's ``predict.rma``); the arguments are those of :func:`metafopy.predict`.
 
     The coefficients, their covariance matrix and ``tau^2`` are the estimates of the selection model; intervals use the
-    normal distribution.
+    normal distribution. The selection model is fitted to the studies without missing values, so ``na_action`` makes no difference to the fitted values.
     """
-    return metafopy.methods.predict.predict_rma_uni(as_rma(model), newmods, intercept=intercept, transf=transf, targs=targs, level=level)
+    base = dataclasses.replace(as_rma(model), parms=model.parms)
+    return metafopy.methods.predict.location_prediction(
+        metafopy.methods.predict.uni_location_model(base, metafopy.methods.fitted.rows_of(model)),
+        newmods,
+        intercept,
+        transf,
+        targs,
+        level,
+        hetvar=hetvar,
+        prob=prob,
+        addx=addx,
+        adjust=adjust,
+        vcov=vcov,
+        predtype=predtype,
+        pi_type=pi_type,
+        newvi=newvi,
+        na_action=na_action,
+    )
 
 
 # -- refits ----------------------------------------------------------------------------------------------

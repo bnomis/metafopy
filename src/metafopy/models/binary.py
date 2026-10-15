@@ -144,9 +144,12 @@ class FixedBinaryResult(metafopy.models.fit_methods.FitMethods, abc.ABC):
     def fit_stats(self, REML: bool | None = None) -> metafopy.models.rma_uni.FitStats:
         return self.fit_stats_reml if REML else self.fit_stats_ml
 
-    def fitted(self) -> FloatArray:
-        """The pooled estimate repeated for each table used in fitting."""
-        return numpy.full(self.tables.yi.shape[0], self.beta[0])
+    def fitted(self, *, na_action: metafopy.models.rma_uni.NAActionAll = 'omit') -> FloatArray:
+        """The pooled estimate repeated for each table used in fitting (``'exclude'`` and ``'pass'``: for each table supplied)."""
+        # auditme: accept[in-function-import] metafopy.methods imports this module, so the import is deferred to avoid a cycle
+        import metafopy.methods.fitted
+
+        return metafopy.methods.fitted.fitted_values(self, na_action)
 
     def residuals(self, type: metafopy.models.rma_uni.ResidualType = 'response', *, na_action: metafopy.models.rma_uni.NAActionAll = 'omit') -> FloatArray:
         """Residuals; see :func:`metafopy.residuals` (``type`` is ``'response'``, ``'rstandard'``, ``'rstudent'``, ``'pearson'`` or ``'cholesky'``)."""

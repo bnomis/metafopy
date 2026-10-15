@@ -127,10 +127,12 @@ class GLMMResult(metafopy.models.fit_methods.FitMethods):
         names = list(self.coef_names)
         return pandas.DataFrame(self.vb, index=names, columns=names)
 
-    def fitted(self) -> FloatArray:
-        """Fitted values ``X beta`` of the tables used in fitting (metafor's ``fitted.rma``)."""
-        out: FloatArray = self.X_f[self.tables.not_na] @ self.beta
-        return out
+    def fitted(self, *, na_action: metafopy.models.rma_uni.NAActionAll = 'omit') -> FloatArray:
+        """Fitted values ``X beta`` of the tables used in fitting (metafor's ``fitted.rma``; ``na_action`` as for ``rma_uni`` fits)."""
+        # auditme: accept[in-function-import] metafopy.methods imports this module, so the import is deferred to avoid a cycle
+        import metafopy.methods.fitted
+
+        return metafopy.methods.fitted.fitted_values(self, na_action)
 
     def weights_(self, type: str = 'diagonal', na_action: str = 'omit') -> FloatArray:
         """Not available (metafor's ``weights()`` stops for this class).

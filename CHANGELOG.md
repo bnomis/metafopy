@@ -2,6 +2,11 @@
 
 ## Unreleased (1.0 candidate)
 
+- Close the `predict`/missing-value gaps of the fourth audit (`src/tests/r/generate_audit4_predict.R`, fixtures from R 4.3.3 with metafor 5.2-1):
+  - `predict(predtype=, pi_type=, newvi=)` for `rma_uni`, `rma_mv`, `rma_mh`, `rma_peto`, `rma_glmm`, robust and selection-model fits (the `'riley'` interval uses `k - parms` degrees of freedom), also `hetvar`, `prob`, `adjust`, `vcov` and `addx` for `rma_mh`, `rma_peto` and selection models; `forest()` and `addpoly()` pass `predtype`/`pi_type` on.
+  - Behaviour change: `predict(newmods=)` of an `rma_mv` fit without moderators raises metafor's "Cannot specify new moderator values for models without moderators." (it returned the intercept times `newmods`).
+  - `na_action` (`'omit'`, `'exclude'`, `'pass'`, `'fail'`) for `fitted()` and `predict()` of every fit class and `hatvalues()` of `rma_uni` and location-scale fits, padding the studies left out with NaN as R does.
+  - Location-scale fits whose scale model has a missing value: the studies dropped for it are rows of the subset, so `residuals()` and `weights_()` with `na_action='pass'` return one value per study as R does (study 5 of bcg keeps its residual).
 - Close the gaps of the third audit against metafor 5.2-1 (`src/tests/r/generate_audit3.R`, fixtures from R 4.5.1):
   - `rma_uni(yi, vi, data=escalc_frame)` stores the sample sizes of `escalc` frames, so `funnel(yaxis='ni')`, `regtest(predictor='ni')` and `selmodel(prec='ninv')` work; results have `ni`, `k_all`, `k_eff`, `p_eff`, `formula_yi` and `formula_mods`, robust fits keep `robust.meat`.
   - `hatvalues(type='matrix')` for `rma_uni` (also `trimfill` and robust fits) and location-scale fits; `summary()` adds the fit-statistics table to `print()` for every fit class; `fitstats()`, `AIC()` and `BIC()` take several fits (`correct=` for AICc).

@@ -35,6 +35,8 @@ class RMAMVResult(metafopy.models.fit_methods.FitMethods):
     ``beta_est`` flags them, and ``vccon`` holds the group ids of constrained variance components. ``slab_f`` and
     ``s_levels_f`` are the study labels and the levels of the ``~ 1 | id`` terms before rows with missing values were
     dropped (metafor's ``slab`` and ``s.levels.f``), used to pad results under ``na_action='exclude'``.
+    ``X_f`` is the model matrix before rows with missing values were dropped (metafor's ``X.f``; NaN where a moderator value is missing),
+    used by ``fitted()`` and ``predict()`` under ``na_action='pass'``.
     """
 
     beta: FloatArray
@@ -128,6 +130,7 @@ class RMAMVResult(metafopy.models.fit_methods.FitMethods):
     call: metafopy.models.call.Call | None = dataclasses.field(default=None, kw_only=True, repr=False, compare=False)
     s_levels_f: tuple[tuple[str, ...], ...] = ()
     slab_f: tuple[str, ...] = ()
+    X_f: FloatArray | None = dataclasses.field(default=None, repr=False)
 
     # -- accessors -------------------------------------------------------
 
@@ -138,8 +141,15 @@ class RMAMVResult(metafopy.models.fit_methods.FitMethods):
         names = list(self.coef_names)
         return pandas.DataFrame(self.vb, index=names, columns=names)
 
-    def fitted(self) -> FloatArray:
-        return numpy.asarray(self.X @ self.beta)
+    def fitted(self, *, na_action: metafopy.models.rma_uni.NAActionAll = 'omit') -> FloatArray:
+        """Fitted values ``X beta``.
+
+        ``na_action`` is ``'omit'`` (the rows used in fitting), ``'exclude'``, ``'pass'`` or ``'fail'``, as in :func:`metafopy.residuals`.
+        """
+        # auditme: accept[in-function-import] metafopy.methods imports this module, so the import is deferred to avoid a cycle
+        import metafopy.methods.fitted
+
+        return metafopy.methods.fitted.fitted_values(self, na_action)
 
     def residuals(self, type: metafopy.models.rma_uni.ResidualType = 'response', *, na_action: metafopy.models.rma_uni.NAActionAll = 'omit') -> FloatArray:
         """Residuals; see :func:`metafopy.residuals` (``type`` is ``'response'``, ``'rstandard'``, ``'rstudent'``, ``'pearson'`` or ``'cholesky'``)."""

@@ -14,9 +14,12 @@ import scipy.stats
 
 import metafopy.core.clubsandwich
 import metafopy.errors
+import metafopy.methods.common
+import metafopy.methods.fitted
 import metafopy.models.binary
 import metafopy.models.glmm_result
 import metafopy.models.mv_result
+import metafopy.models.mv_structs
 import metafopy.models.rma_uni
 import metafopy.models.robust_info
 import metafopy.models.tau2
@@ -126,6 +129,127 @@ def check_prob_adjust(prob: str | float | None, adjust: bool) -> None:
         raise metafopy.errors.InputError("Cannot use 'prob' argument when adjust=True.")
 
 
+PREDTYPES = ('default', 'simple', 'riley', 't')
+"""The values of ``predtype`` (partial matching is allowed, as in R)."""
+
+ROW_FIELDS = ('pred', 'se', 'ci_lb', 'ci_ub', 'pi_lb', 'pi_ub', 'prob')
+SIDE_FIELDS = ('pi_se', 'X', 'Z')
+NO_MODERATORS = 'Cannot specify new moderator values for models without moderators.'
+
+
+def resolve_predtype(predtype: str | None, pi_type: str | None) -> str:
+    """The prediction interval type: ``predtype``, else its old spelling ``pi_type``, else ``'default'`` (R: ``ddd$predtype``, ``ddd$pi.type``).
+
+    Raises:
+        metafopy.errors.InputError: the value is not one of ``'default'``, ``'simple'``, ``'riley'`` and ``'t'`` (or a prefix of one).
+    """
+    chosen = predtype if predtype is not None else pi_type if pi_type is not None else 'default'
+    return metafopy.methods.common.match_arg(chosen.lower(), PREDTYPES, 'predtype')
+
+
+def expand_newvi(newvi: numpy.typing.ArrayLike | None, k_new: int) -> FloatArray:
+    """``newvi`` (sampling variances of new studies) recycled to ``k_new`` values; 0 when not given.
+
+    Raises:
+        metafopy.errors.InputError: the length of ``newvi`` does not match.
+    """
+    if newvi is None:
+        return numpy.zeros(k_new)
+    try:
+        nv = numpy.atleast_1d(numpy.asarray(newvi, dtype=numpy.float64)).reshape(-1)
+    except (TypeError, ValueError) as err:
+        raise metafopy.errors.InputError("Argument 'newvi' must be a numeric vector.") from err
+    if nv.size == 1:
+        nv = numpy.full(k_new, float(nv[0]))
+    if nv.size != k_new:
+        raise metafopy.errors.InputError(f"Length of the 'newvi' argument ({nv.size}) does not match the number of predicted values ({k_new}).")
+    return nv
+
+
+def interval_setup(
+    predtype: str,
+    vpred: FloatArray,
+    crit: float | FloatArray,
+    pi_dist: str,
+    ddf: FloatArray,
+    parms: int,
+    p: int,
+    alpha: float,
+) -> tuple[FloatArray, float | FloatArray, str, FloatArray]:
+    """The variance of the predicted values, critical value(s), distribution and degrees of freedom the prediction interval uses for ``predtype``.
+
+    ``'simple'`` ignores the uncertainty of the predicted value and uses the normal distribution; ``'riley'`` uses a t distribution with
+    ``ddf - parms + p`` degrees of freedom (Riley et al., 2011, doi:10.1111/j.1467-985X.2010.00696.x) and ``'t'`` one with ``ddf``; the
+    degrees of freedom are at least 1 (``predict.rma``).
+    """
+    pi_ddf = ddf
+    if predtype == 'simple':
+        crit = float(scipy.stats.norm.isf(alpha / 2))
+        vpred = numpy.zeros_like(vpred)
+        pi_dist = 'norm'
+    if predtype in ('riley', 't'):
+        pi_ddf = ddf - parms + p if predtype == 'riley' else ddf
+        pi_ddf = numpy.where(pi_ddf < 1, 1.0, pi_ddf)
+        crit = numpy.array([float(scipy.stats.t.isf(alpha / 2, d)) if d > 0 else math.nan for d in pi_ddf])
+        pi_dist = 't'
+    return vpred, crit, pi_dist, pi_ddf
+
+
+def restrict_rows(res: PredictResult, keep: numpy.typing.NDArray[numpy.bool_], blank: numpy.typing.NDArray[numpy.bool_] | None) -> PredictResult:
+    """Keep the rows ``keep`` of a prediction and set the rows ``blank`` to NaN: the ``na.action`` step of ``predict.rma``.
+
+    ``blank`` flags (before ``keep`` is applied) the studies left out of the fit under ``na.exclude``; the variance-covariance matrix of the
+    predictions loses the same rows and columns.
+    """
+    k_new = keep.shape[0]
+    changes: dict[str, typing.Any] = {}
+    for name in ROW_FIELDS + SIDE_FIELDS:
+        value = getattr(res, name, None)
+        if isinstance(value, numpy.ndarray) and value.ndim >= 1 and value.shape[0] == k_new:
+            new = value[keep]
+            if blank is not None and name in ROW_FIELDS:
+                new = numpy.where(blank[keep], math.nan, new)
+            changes[name] = new
+    pi_ddf = res.pi_ddf
+    if isinstance(pi_ddf, numpy.ndarray) and pi_ddf.ndim >= 1 and pi_ddf.shape[0] == k_new:
+        changes['pi_ddf'] = pi_ddf[keep]
+    if res.slab is not None and len(res.slab) == k_new:
+        changes['slab'] = tuple(s for s, ok in zip(res.slab, keep, strict=True) if ok)
+    vcov = res.vcov
+    if isinstance(vcov, numpy.ndarray) and vcov.shape == (k_new, k_new):
+        new_vcov = vcov[numpy.ix_(keep, keep)]
+        if blank is not None:
+            drop = blank[keep]
+            new_vcov = new_vcov.copy()
+            new_vcov[drop, :] = math.nan
+            new_vcov[:, drop] = math.nan
+        changes['vcov'] = new_vcov
+    return dataclasses.replace(res, **changes)
+
+
+def rows_to_keep(
+    pred: FloatArray, not_na: numpy.typing.NDArray[numpy.bool_] | None, fitted_rows: bool, na_action: metafopy.methods.common.NAAction
+) -> tuple[numpy.typing.NDArray[numpy.bool_], numpy.typing.NDArray[numpy.bool_] | None]:
+    """The rows ``predict.rma`` returns and those it blanks.
+
+    Under ``'omit'`` the fitted values keep the studies used in fitting and the predictions for ``newmods`` the rows that are not NaN; under
+    ``'exclude'`` and ``'pass'`` all rows are kept, and ``'exclude'`` blanks the fitted values of the studies left out of the fit.
+
+    Raises:
+        metafopy.errors.InputError: ``na_action='fail'`` and studies were left out of the fit.
+    """
+    k_new = pred.shape[0]
+    if na_action == 'fail' and not_na is not None and not not_na.all():
+        raise metafopy.errors.InputError('Missing values in results.')
+    keep = numpy.ones(k_new, dtype=numpy.bool_)
+    blank: numpy.typing.NDArray[numpy.bool_] | None = None
+    if na_action == 'omit':
+        keep = not_na if fitted_rows and not_na is not None else ~numpy.isnan(pred)
+    elif na_action == 'exclude' and fitted_rows and not_na is not None:
+        blank = ~not_na
+    return keep, blank
+
+
 @functools.singledispatch
 def predict(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> PredictResult:
     """Predicted values for a fitted model; see :func:`_predict_rma_uni`.
@@ -134,6 +258,30 @@ def predict(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> Predi
         metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
     """
     raise metafopy.errors.ArgumentError(f'predict() not implemented for {type(model).__name__}')
+
+
+def uni_location_model(x: metafopy.models.rma_uni.RMAResult, rows: metafopy.methods.fitted.Rows) -> LocationModel:
+    """What ``predict.rma`` needs from an ``rma.uni`` fit, with the rows of its subset ``rows``."""
+    return LocationModel(
+        k=x.k,
+        p=x.p,
+        parms=x.parms,
+        int_only=x.int_only,
+        int_incl=x.int_incl,
+        X=x.X,
+        slab=x.slab,
+        beta=x.beta,
+        vb=x.vb,
+        ddf=x.ddf,
+        alpha=x.level,
+        tau2=x.tau2,
+        fixed=x.method in metafopy.models.tau2.FIXED_EFFECTS,
+        sandwich=club_sandwich_of(x.robust),
+        coef_test=None if x.robust is None else x.robust.coef_test,
+        X_f=rows.X_f,
+        not_na=rows.not_na,
+        slab_f=rows.slab,
+    )
 
 
 @predict.register
@@ -152,6 +300,10 @@ def predict_rma_uni(
     level: float | None = None,
     adjust: bool = False,
     vcov: bool = False,
+    predtype: str | None = None,
+    pi_type: str | None = None,
+    newvi: numpy.typing.ArrayLike | None = None,
+    na_action: metafopy.methods.common.NAAction = 'omit',
 ) -> PredictResult:
     """Predict from an ``rma.uni`` fit.
 
@@ -162,11 +314,16 @@ def predict_rma_uni(
     applied to each value (with ``targs`` if given; the integral and mode
     transformations in :mod:`metafopy.transf` default to ``targs={'tau2': tau2}``).
 
-    ``hetvar`` replaces ``tau2`` in the prediction interval; ``prob`` (such as
+    ``hetvar`` replaces ``tau2`` in the prediction interval; ``newvi`` adds the sampling variances of new studies to it; ``prob`` (such as
     ``'>0.2'`` or ``'<0'``) adds the probability that a true outcome is above or
     below the value; ``addx`` adds the model matrix; ``adjust`` applies a
     Bonferroni correction to the intervals; ``vcov`` adds the
-    variance-covariance matrix of the predictions. ``tau2_levels`` and
+    variance-covariance matrix of the predictions. ``predtype`` (``pi_type`` is its old spelling) is ``'default'``, ``'simple'`` (the
+    interval ignores the uncertainty of the predicted value, normal distribution), ``'riley'`` (t distribution with ``k - parms`` degrees of
+    freedom, Riley et al., 2011, doi:10.1111/j.1467-985X.2010.00696.x) or ``'t'`` (t distribution with the degrees of freedom of the test).
+    ``na_action`` stands for R's ``na.action`` option: for the fitted values of a meta-regression ``'omit'`` returns the studies used in
+    fitting, ``'exclude'`` one row per study with NaN for those left out and ``'pass'`` one row per study computed from the moderator values it
+    has; predictions for ``newmods`` drop (``'omit'``) or keep (the others) the rows that are NaN. ``tau2_levels`` and
     ``gamma2_levels`` are accepted, as in metafor, and have no effect.
 
     R source: https://github.com/wviechtb/metafor/blob/master/R/predict.rma.r;
@@ -175,24 +332,8 @@ def predict_rma_uni(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
-    x = model
     return location_prediction(
-        LocationModel(
-            k=x.k,
-            p=x.p,
-            int_only=x.int_only,
-            int_incl=x.int_incl,
-            X=x.X,
-            slab=x.slab,
-            beta=x.beta,
-            vb=x.vb,
-            ddf=x.ddf,
-            alpha=x.level,
-            tau2=x.tau2,
-            fixed=x.method in metafopy.models.tau2.FIXED_EFFECTS,
-            sandwich=club_sandwich_of(x.robust),
-            coef_test=None if x.robust is None else x.robust.coef_test,
-        ),
+        uni_location_model(model, metafopy.methods.fitted.rows_of(model)),
         newmods,
         intercept,
         transf,
@@ -203,6 +344,10 @@ def predict_rma_uni(
         addx=addx,
         adjust=adjust,
         vcov=vcov,
+        predtype=predtype,
+        pi_type=pi_type,
+        newvi=newvi,
+        na_action=na_action,
     )
 
 
@@ -220,8 +365,12 @@ def club_sandwich_of(info: metafopy.models.robust_info.RobustInfo | None) -> met
 
 
 def contrast_ddf(sandwich: metafopy.core.clubsandwich.Sandwich, X_new: FloatArray, coef_test: str | None) -> FloatArray:
-    """Degrees of freedom of the predicted values of a ``clubSandwich`` fit (``clubSandwich::linear_contrast``)."""
-    return metafopy.core.clubsandwich.contrast_df(sandwich, X_new, coef_test or 'Satterthwaite')
+    """Degrees of freedom of the predicted values of a ``clubSandwich`` fit (``clubSandwich::linear_contrast``); NaN for rows with missing values."""
+    out = numpy.full(X_new.shape[0], math.nan)
+    ok = numpy.isfinite(X_new).all(axis=1)
+    if ok.any():
+        out[ok] = metafopy.core.clubsandwich.contrast_df(sandwich, X_new[ok], coef_test or 'Satterthwaite')
+    return out
 
 
 @predict.register
@@ -240,6 +389,10 @@ def predict_rma_glmm(
     level: float | None = None,
     adjust: bool = False,
     vcov: bool = False,
+    predtype: str | None = None,
+    pi_type: str | None = None,
+    newvi: numpy.typing.ArrayLike | None = None,
+    na_action: metafopy.methods.common.NAAction = 'omit',
 ) -> PredictResult:
     """Predict from an ``rma.glmm`` fit (``predict.rma``; arguments as in :func:`predict_rma_uni`).
 
@@ -252,21 +405,25 @@ def predict_rma_glmm(
         metafopy.errors.InputError: an argument or the data is invalid.
     """
     x = model
-    labels = tuple(s for s, ok in zip(x.slab, x.tables.not_na, strict=True) if ok)
+    rows = metafopy.methods.fitted.rows_of(x)
     return location_prediction(
         LocationModel(
             k=x.k,
             p=x.p,
+            parms=x.parms,
             int_only=x.int_only,
             int_incl=x.int_incl,
             X=x.X,
-            slab=labels,
+            slab=tuple(s for s, ok in zip(x.slab, x.tables.not_na, strict=True) if ok),
             beta=x.beta,
             vb=x.vb,
             ddf=x.ddf,
             alpha=x.level,
             tau2=x.tau2,
             fixed=x.method in metafopy.models.tau2.FIXED_EFFECTS,
+            X_f=rows.X_f,
+            not_na=rows.not_na,
+            slab_f=rows.slab,
         ),
         newmods,
         intercept,
@@ -278,6 +435,10 @@ def predict_rma_glmm(
         addx=addx,
         adjust=adjust,
         vcov=vcov,
+        predtype=predtype,
+        pi_type=pi_type,
+        newvi=newvi,
+        na_action=na_action,
     )
 
 
@@ -287,9 +448,20 @@ def predict_fixed_binary(
     newmods: numpy.typing.ArrayLike | None = None,
     *,
     intercept: bool | None = None,
+    tau2_levels: collections.abc.Sequence[str | int] | str | int | None = None,
+    gamma2_levels: collections.abc.Sequence[str | int] | str | int | None = None,
+    hetvar: numpy.typing.ArrayLike | None = None,
+    prob: str | float | None = None,
+    addx: bool = False,
     transf: collections.abc.Callable[..., typing.Any] | None = None,
     targs: typing.Any = None,
     level: float | None = None,
+    adjust: bool = False,
+    vcov: bool = False,
+    predtype: str | None = None,
+    pi_type: str | None = None,
+    newvi: numpy.typing.ArrayLike | None = None,
+    na_action: metafopy.methods.common.NAAction = 'omit',
 ) -> PredictResult:
     """Predict from an ``rma.mh`` or ``rma.peto`` fit (``predict.rma``; arguments as in :func:`predict_rma_uni`).
 
@@ -306,6 +478,7 @@ def predict_fixed_binary(
         LocationModel(
             k=x.k,
             p=1,
+            parms=x.parms,
             int_only=True,
             int_incl=True,
             X=numpy.ones((x.k, 1)),
@@ -316,21 +489,36 @@ def predict_fixed_binary(
             alpha=x.level,
             tau2=0.0,
             fixed=True,
+            not_na=x.tables.not_na,
         ),
         newmods,
         intercept,
         transf,
         targs,
         level,
+        hetvar=hetvar,
+        prob=prob,
+        addx=addx,
+        adjust=adjust,
+        vcov=vcov,
+        predtype=predtype,
+        pi_type=pi_type,
+        newvi=newvi,
+        na_action=na_action,
     )
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class LocationModel:
-    """What ``predict.rma`` needs from a model with a single ``tau2`` (``rma.uni`` or ``rma.glmm``)."""
+    """What ``predict.rma`` needs from a model with a single ``tau2`` (``rma.uni``, ``rma.glmm``, ``rma.mh`` or ``rma.peto``).
+
+    ``X_f``, ``not_na`` and ``slab_f`` are the model matrix, the flags of the studies used in fitting and the labels over all rows of the subset
+    (metafor's ``X.f``, ``not.na`` and ``slab``); without them the rows used in fitting are all there is.
+    """
 
     k: int
     p: int
+    parms: int
     int_only: bool
     int_incl: bool
     X: FloatArray
@@ -343,6 +531,29 @@ class LocationModel:
     fixed: bool
     sandwich: metafopy.core.clubsandwich.Sandwich | None = None
     coef_test: str | None = None
+    X_f: FloatArray | None = None
+    not_na: numpy.typing.NDArray[numpy.bool_] | None = None
+    slab_f: tuple[str, ...] | None = None
+
+
+def new_moderators(x_p: int, int_incl: bool, newmods: numpy.typing.ArrayLike, intercept: bool | None) -> FloatArray:
+    """The model matrix for new moderator values (with the intercept column added unless ``intercept=False``).
+
+    Raises:
+        metafopy.errors.InputError: the dimensions do not match the model.
+    """
+    arr = numpy.asarray(newmods, dtype=numpy.float64)
+    n_mods = x_p - 1 if int_incl else x_p
+    if arr.ndim == 0:
+        arr = arr.reshape(1, 1)
+    elif arr.ndim == 1:
+        arr = arr[:, None] if n_mods == 1 else arr[None, :]
+    if int_incl and arr.shape[1] == x_p - 1:
+        col = 1.0 if intercept is None or intercept else 0.0
+        arr = numpy.column_stack([numpy.full(arr.shape[0], col), arr])
+    if arr.shape[1] != x_p:
+        raise metafopy.errors.InputError(f'dimensions of newmods ({arr.shape[1]} columns) do not match the model ({x_p})')
+    return arr
 
 
 def location_prediction(
@@ -358,33 +569,29 @@ def location_prediction(
     addx: bool = False,
     adjust: bool = False,
     vcov: bool = False,
+    predtype: str | None = None,
+    pi_type: str | None = None,
+    newvi: numpy.typing.ArrayLike | None = None,
+    na_action: metafopy.methods.common.NAAction = 'omit',
 ) -> PredictResult:
-    """``predict.rma`` for ``rma.uni`` and ``rma.glmm`` models.
+    """``predict.rma`` for models with a single ``tau2`` (``rma.uni``, ``rma.glmm``, ``rma.mh``, ``rma.peto`` and selection models).
 
     Raises:
-        metafopy.errors.InputError: ``newmods`` does not match the model.
+        metafopy.errors.InputError: ``newmods`` or another argument does not match the model.
     """
+    metafopy.methods.common.check_na_action(na_action)
+    ptype = resolve_predtype(predtype, pi_type)
     p = x.p
     slab: tuple[str, ...] | None = None
     if x.int_only and newmods is not None:
-        raise metafopy.errors.InputError('Cannot specify new moderator values for models without moderators.')
+        raise metafopy.errors.InputError(NO_MODERATORS)
+    fitted_rows = newmods is None and not x.int_only
     if newmods is None:
-        X_new = numpy.ones((1, 1)) if x.int_only else x.X
+        X_new = numpy.ones((1, 1)) if x.int_only else (x.X if x.X_f is None else x.X_f)
         if not x.int_only:
-            slab = x.slab
+            slab = x.slab if x.slab_f is None else x.slab_f
     else:
-        arr = numpy.asarray(newmods, dtype=numpy.float64)
-        n_mods = p - 1 if x.int_incl else p
-        if arr.ndim == 0:
-            arr = arr.reshape(1, 1)
-        elif arr.ndim == 1:
-            arr = arr[:, None] if n_mods == 1 else arr[None, :]
-        if x.int_incl and arr.shape[1] == p - 1:
-            col = 1.0 if intercept is None or intercept else 0.0
-            arr = numpy.column_stack([numpy.full(arr.shape[0], col), arr])
-        if arr.shape[1] != p:
-            raise metafopy.errors.InputError(f'dimensions of newmods ({arr.shape[1]} columns) do not match the model ({p})')
-        X_new = arr
+        X_new = new_moderators(p, x.int_incl, newmods, intercept)
 
     check_prob_adjust(prob, adjust)
     alpha = x.alpha if level is None else metafopy.models.rma_uni.level_to_alpha(level)
@@ -407,16 +614,17 @@ def location_prediction(
         crit = float(scipy.stats.norm.isf(alpha / 2))
     ci_lb = pred - crit * se
     ci_ub = pred + crit * se
-    het = x.tau2 if hetvar is None else expand_hetvar(hetvar, k_new)
-    pi_se = numpy.sqrt(vpred + het)
-    pi_ddf = ddf_rows if ddf_rows is not None else numpy.full(pred.shape, float(x.k - p if x.ddf is None else x.ddf))
+    ddf_base = ddf_rows if ddf_rows is not None else numpy.full(pred.shape, float(x.k - p if x.ddf is None else x.ddf))
     pi_dist = 'norm' if x.ddf is None and ddf_rows is None else 't'
-    prob_out = None if prob is None else prob_values(prob, pred, pi_se, pi_dist, pi_ddf)
     vcov_pred = X_new @ x.vb @ X_new.T if vcov else None
     if vcov_pred is not None:
         vcov_pred = (vcov_pred + vcov_pred.T) / 2
-    pi_lb = pred - crit * pi_se
-    pi_ub = pred + crit * pi_se
+    vpred_pi, crit_pi, pi_dist, pi_ddf = interval_setup(ptype, vpred, crit, pi_dist, ddf_base, x.parms, p, alpha)
+    het = x.tau2 if hetvar is None else expand_hetvar(hetvar, k_new)
+    pi_se = numpy.sqrt(vpred_pi + het + expand_newvi(newvi, k_new))
+    prob_out = None if prob is None else prob_values(prob, pred, pi_se, pi_dist, pi_ddf)
+    pi_lb = pred - crit_pi * pi_se
+    pi_ub = pred + crit_pi * pi_se
     if x.fixed:
         # metafor drops prediction intervals for equal/fixed/common-effects models
         pi_lb = numpy.full_like(pred, numpy.nan)
@@ -432,7 +640,7 @@ def location_prediction(
             pi_lb = numpy.full_like(pred, numpy.nan)
             pi_ub = numpy.full_like(pred, numpy.nan)
 
-    return PredictResult(
+    out = PredictResult(
         pred=pred,
         se=se,
         ci_lb=ci_lb,
@@ -447,6 +655,8 @@ def location_prediction(
         X=X_new.copy() if addx else None,
         vcov=vcov_pred if transf is None else None,
     )
+    keep, blank = rows_to_keep(pred, x.not_na, fitted_rows, na_action)
+    return out if keep.all() and blank is None else restrict_rows(out, keep, blank)
 
 
 def level_indices(
@@ -478,6 +688,35 @@ def level_indices(
     return out
 
 
+def mv_ddf_rows(x: metafopy.models.mv_result.RMAMVResult, X_new: FloatArray) -> FloatArray:
+    """The degrees of freedom of each predicted value of an ``rma.mv`` fit: the smallest of the coefficients it involves (``k - p`` where unknown)."""
+    d = numpy.atleast_1d(numpy.asarray(x.ddf, dtype=numpy.float64))
+    k_new = X_new.shape[0]
+    if d.size == 1:
+        rows = numpy.full(k_new, float(d[0]))
+    else:
+        rows = numpy.array([float(numpy.min(d[X_new[i] != 0])) if numpy.any(X_new[i] != 0) else math.inf for i in range(k_new)])
+    return numpy.where(numpy.isnan(rows), float(x.k - x.p), rows)
+
+
+def component_variances(values: FloatArray | None, idx: numpy.typing.NDArray[numpy.intp] | None) -> FloatArray | None:
+    """The variance components ``values`` picked by the 0-based positions ``idx`` (NaN where the position is unknown, -1)."""
+    if idx is None or values is None:
+        return None
+    vals = numpy.asarray(values, dtype=numpy.float64)
+    return numpy.where(idx >= 0, vals[numpy.maximum(idx, 0)], math.nan)
+
+
+def fitted_levels(group: metafopy.models.mv_structs.Group | None, n_comp: int, not_na: numpy.typing.NDArray[numpy.bool_]) -> numpy.typing.NDArray[numpy.intp]:
+    """The positions of the variance components of the studies of a fit, over all rows of its subset (-1 for rows left out whose level is lost)."""
+    k_f = not_na.shape[0]
+    if n_comp == 1 or group is None or group.inner_factor is None:
+        return numpy.zeros(k_f, dtype=numpy.intp)
+    out = numpy.full(k_f, -1, dtype=numpy.intp)
+    out[not_na] = [int(c) for c in group.inner_factor.codes]
+    return out
+
+
 @predict.register
 def predict_rma_mv(
     model: metafopy.models.mv_result.RMAMVResult,
@@ -494,6 +733,10 @@ def predict_rma_mv(
     level: float | None = None,
     adjust: bool = False,
     vcov: bool = False,
+    predtype: str | None = None,
+    pi_type: str | None = None,
+    newvi: numpy.typing.ArrayLike | None = None,
+    na_action: metafopy.methods.common.NAAction = 'omit',
 ) -> PredictResult:
     """Predict from an ``rma.mv`` fit (``predict.rma`` for ``rma.mv`` objects).
 
@@ -501,7 +744,9 @@ def predict_rma_mv(
     and ``gamma2`` values selected via ``tau2_levels`` and ``gamma2_levels`` (labels of the
     inner factor or 0-based positions). They are NaN when several ``tau2``/``gamma2`` values exist
     and no levels are given. ``hetvar`` replaces the sum of the variance components (the levels
-    are then ignored, with a warning); ``prob``, ``addx`` and ``vcov`` are as in :func:`predict_rma_uni`.
+    are then ignored, with a warning); ``prob``, ``addx``, ``vcov``, ``predtype``, ``newvi`` and ``na_action`` are as in :func:`predict_rma_uni`.
+    A model without moderators cannot be given ``newmods``. For the fitted values of studies left out of the fit (``na_action='pass'``), the
+    ``tau2`` and ``gamma2`` value of a study whose inner level is lost is NaN when the model has several of them.
 
     R source: https://github.com/wviechtb/metafor/blob/master/R/predict.rma.r;
     reference page: https://wviechtb.github.io/metafor/reference/predict.rma.html.
@@ -510,17 +755,23 @@ def predict_rma_mv(
         metafopy.errors.InputError: an argument or the data is invalid.
     """
     x = model
+    metafopy.methods.common.check_na_action(na_action)
+    ptype = resolve_predtype(predtype, pi_type)
     check_prob_adjust(prob, adjust)
     if hetvar is not None and (tau2_levels is not None or gamma2_levels is not None):
         tau2_levels = gamma2_levels = None
         warnings.warn("Arguments 'tau2.levels' and 'gamma2.levels' ignored when specifying the 'hetvar' argument.", stacklevel=2)
+    if x.int_only and newmods is not None:
+        raise metafopy.errors.InputError(NO_MODERATORS)
     p = x.p
     slab: tuple[str, ...] | None = None
     general = any(v in ('GEN', 'GDIAG') for v in x.struct)
     g_labels = list(x.group_g.levels_f[0]) if x.group_g is not None else []
     h_labels = list(x.group_h.levels_f[0]) if x.group_h is not None else []
-    tau2_idx: list[int] | None = None
-    gamma2_idx: list[int] | None = None
+    tau2_idx: numpy.typing.NDArray[numpy.intp] | None = None
+    gamma2_idx: numpy.typing.NDArray[numpy.intp] | None = None
+    fitted_rows = newmods is None and not x.int_only
+    not_na: numpy.typing.NDArray[numpy.bool_] | None = x.not_na
     if newmods is None:
         if x.int_only and not general:
             counts = [
@@ -529,40 +780,34 @@ def predict_rma_mv(
             X_new = numpy.ones((max(counts, default=1), 1))
             k_new = X_new.shape[0]
             if x.with_g:
-                tau2_idx = [0] * k_new if x.tau2s == 1 else (None if tau2_levels is None else level_indices(tau2_levels, g_labels, k_new, 'tau2_levels'))
+                tau2_idx = numpy.zeros(k_new, dtype=numpy.intp) if x.tau2s == 1 else level_array(tau2_levels, g_labels, k_new, 'tau2_levels')
             if x.with_h:
-                gamma2_idx = (
-                    [0] * k_new if x.gamma2s == 1 else (None if gamma2_levels is None else level_indices(gamma2_levels, h_labels, k_new, 'gamma2_levels'))
-                )
+                gamma2_idx = numpy.zeros(k_new, dtype=numpy.intp) if x.gamma2s == 1 else level_array(gamma2_levels, h_labels, k_new, 'gamma2_levels')
+        elif x.int_only:
+            X_new = numpy.ones((1, 1))
+            k_new = 1
+            if x.with_g:
+                tau2_idx = numpy.zeros(1, dtype=numpy.intp) if x.tau2s == 1 else level_array(tau2_levels, g_labels, 1, 'tau2_levels')
+            if x.with_h:
+                gamma2_idx = numpy.zeros(1, dtype=numpy.intp) if x.gamma2s == 1 else level_array(gamma2_levels, h_labels, 1, 'gamma2_levels')
         else:
-            X_new = numpy.ones((1, 1)) if x.int_only else x.X
-            if not x.int_only:
-                slab = x.slab
+            if tau2_levels is not None or gamma2_levels is not None:
+                warnings.warn("Arguments 'tau2.levels' and 'gamma2.levels' ignored when obtaining fitted values.", stacklevel=2)
+            rows = metafopy.methods.fitted.rows_of(x)
+            X_new = rows.X_f
+            slab = rows.slab
             k_new = X_new.shape[0]
-            if x.with_g and x.group_g is not None:
-                factor = x.group_g.inner_factor
-                tau2_idx = [0] * k_new if x.tau2s == 1 or factor is None else [int(c) for c in factor.codes]
-            if x.with_h and x.group_h is not None:
-                factor = x.group_h.inner_factor
-                gamma2_idx = [0] * k_new if x.gamma2s == 1 or factor is None else [int(c) for c in factor.codes]
+            if x.with_g:
+                tau2_idx = fitted_levels(x.group_g, x.tau2s, rows.not_na)
+            if x.with_h:
+                gamma2_idx = fitted_levels(x.group_h, x.gamma2s, rows.not_na)
     else:
-        arr = numpy.asarray(newmods, dtype=numpy.float64)
-        n_mods = p - 1 if x.int_incl else p
-        if arr.ndim == 0:
-            arr = arr.reshape(1, 1)
-        elif arr.ndim == 1:
-            arr = arr[:, None] if n_mods == 1 else arr[None, :]
-        if x.int_incl and arr.shape[1] == p - 1:
-            col = 1.0 if intercept is None or intercept else 0.0
-            arr = numpy.column_stack([numpy.full(arr.shape[0], col), arr])
-        if arr.shape[1] != p:
-            raise metafopy.errors.InputError(f'dimensions of newmods ({arr.shape[1]} columns) do not match the model ({p})')
-        X_new = arr
+        X_new = new_moderators(p, x.int_incl, newmods, intercept)
         k_new = X_new.shape[0]
         if x.with_g:
-            tau2_idx = [0] * k_new if x.tau2s == 1 else (None if tau2_levels is None else level_indices(tau2_levels, g_labels, k_new, 'tau2_levels'))
+            tau2_idx = numpy.zeros(k_new, dtype=numpy.intp) if x.tau2s == 1 else level_array(tau2_levels, g_labels, k_new, 'tau2_levels')
         if x.with_h:
-            gamma2_idx = [0] * k_new if x.gamma2s == 1 else (None if gamma2_levels is None else level_indices(gamma2_levels, h_labels, k_new, 'gamma2_levels'))
+            gamma2_idx = numpy.zeros(k_new, dtype=numpy.intp) if x.gamma2s == 1 else level_array(gamma2_levels, h_labels, k_new, 'gamma2_levels')
 
     k_new = X_new.shape[0]
     alpha = metafopy.models.rma_uni.level_to_alpha(x.level if level is None else level)
@@ -572,53 +817,54 @@ def predict_rma_mv(
     vpred = numpy.einsum('ij,jk,ik->i', X_new, x.vb, X_new)
     vpred = numpy.where(vpred < 0, numpy.nan, vpred)
     se = numpy.sqrt(vpred)
-    ddf_row: FloatArray | None = None
     sandwich = club_sandwich_of(x.robust)
+    ddf_row: FloatArray
     if sandwich is not None:
         ddf_row = contrast_ddf(sandwich, X_new, x.robust.coef_test if x.robust is not None else None)
         crit = numpy.array([float(scipy.stats.t.isf(alpha / 2, d)) if d > 0 else math.nan for d in ddf_row])
-    elif x.test == 'z':
-        crit = numpy.full(k_new, float(scipy.stats.norm.isf(alpha / 2)))
+        pi_dist = 't'
     else:
-        ddf_coef = numpy.where(numpy.isnan(x.ddf), x.k - p, x.ddf)
-        ddf_row = numpy.array([float(numpy.min(ddf_coef[X_new[i] != 0])) if numpy.any(X_new[i] != 0) else math.nan for i in range(k_new)])
-        crit = numpy.array([float(scipy.stats.t.isf(alpha / 2, d)) if d > 0 else math.nan for d in ddf_row])
+        ddf_row = mv_ddf_rows(x, X_new)
+        if x.test == 'z':
+            crit = numpy.full(k_new, float(scipy.stats.norm.isf(alpha / 2)))
+            pi_dist = 'norm'
+        else:
+            crit = numpy.array([float(scipy.stats.t.isf(alpha / 2, d)) if d > 0 else math.nan for d in ddf_row])
+            pi_dist = 't'
     ci_lb = pred - crit * se
     ci_ub = pred + crit * se
-
-    total = vpred + float(numpy.sum(x.sigma2)) if x.sigma2 is not None else vpred.copy()
-    pi_ok = True
-    if x.with_g:
-        if tau2_idx is None:
-            pi_ok = False
-        else:
-            total = total + numpy.asarray(x.tau2, dtype=numpy.float64)[tau2_idx]
-    if x.with_h:
-        if gamma2_idx is None:
-            pi_ok = False
-        else:
-            total = total + numpy.asarray(x.gamma2, dtype=numpy.float64)[gamma2_idx]
-    if hetvar is not None:
-        total = vpred + expand_hetvar(hetvar, k_new)
-        pi_ok = True
-    pi_se_all: FloatArray | None = None
-    if pi_ok:
-        pi_se = numpy.sqrt(total)
-        pi_se_all = pi_se
-        pi_lb = pred - crit * pi_se
-        pi_ub = pred + crit * pi_se
-    else:
-        pi_lb = numpy.full(k_new, numpy.nan)
-        pi_ub = numpy.full(k_new, numpy.nan)
-
-    pi_dist = 'norm' if x.test == 'z' else 't'
-    prob_out = None
-    if prob is not None:
-        pi_ddf_prob = ddf_row if ddf_row is not None else numpy.full(k_new, float(x.k - p))
-        prob_out = prob_values(prob, pred, pi_se_all, pi_dist, pi_ddf_prob)
     vcov_pred = X_new @ x.vb @ X_new.T if vcov else None
     if vcov_pred is not None:
         vcov_pred = (vcov_pred + vcov_pred.T) / 2
+    vpred_pi, crit_pi, pi_dist, pi_ddf = interval_setup(ptype, vpred, crit, pi_dist, ddf_row, x.parms, p, alpha)
+    nv = expand_newvi(newvi, k_new)
+
+    pi_ok = True
+    if hetvar is not None:
+        extra: FloatArray = expand_hetvar(hetvar, k_new)
+    else:
+        extra = numpy.full(k_new, float(numpy.sum(x.sigma2)) if x.sigma2 is not None else 0.0)
+        if x.with_g:
+            tau2_vals = component_variances(x.tau2, tau2_idx)
+            if tau2_vals is None:
+                pi_ok = False
+            else:
+                extra = extra + tau2_vals
+        if x.with_h:
+            gamma2_vals = component_variances(x.gamma2, gamma2_idx)
+            if gamma2_vals is None:
+                pi_ok = False
+            else:
+                extra = extra + gamma2_vals
+    pi_se_all: FloatArray | None = None
+    if pi_ok:
+        pi_se_all = numpy.sqrt(vpred_pi + extra + nv)
+        pi_lb = pred - crit_pi * pi_se_all
+        pi_ub = pred + crit_pi * pi_se_all
+    else:
+        pi_lb = numpy.full(k_new, numpy.nan)
+        pi_ub = numpy.full(k_new, numpy.nan)
+    prob_out = None if prob is None else prob_values(prob, pred, pi_se_all, pi_dist, pi_ddf)
 
     if transf is not None:
         tau2_value = float(numpy.sum(x.tau2)) if x.tau2 is not None else 0.0
@@ -627,7 +873,7 @@ def predict_rma_mv(
         ci_lb, ci_ub = numpy.minimum(ci_lb, ci_ub), numpy.maximum(ci_lb, ci_ub)
         pi_lb, pi_ub = numpy.minimum(pi_lb, pi_ub), numpy.maximum(pi_lb, pi_ub)
 
-    return PredictResult(
+    out = PredictResult(
         pred=pred,
         se=se,
         ci_lb=ci_lb,
@@ -637,8 +883,19 @@ def predict_rma_mv(
         slab=slab,
         pi_se=pi_se_all,
         pi_dist=pi_dist,
-        pi_ddf=ddf_row,
+        pi_ddf=pi_ddf if pi_dist == 't' else None,
         prob=prob_out,
         X=X_new.copy() if addx else None,
         vcov=vcov_pred if transf is None else None,
     )
+    keep, blank = rows_to_keep(pred, not_na, fitted_rows, na_action)
+    return out if keep.all() and blank is None else restrict_rows(out, keep, blank)
+
+
+def level_array(
+    levels: collections.abc.Sequence[str | int] | str | int | None, labels: collections.abc.Sequence[str], k_new: int, what: str
+) -> numpy.typing.NDArray[numpy.intp] | None:
+    """:func:`level_indices` as an array, ``None`` when no levels were given."""
+    if levels is None:
+        return None
+    return numpy.asarray(level_indices(levels, labels, k_new, what), dtype=numpy.intp)

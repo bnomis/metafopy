@@ -565,6 +565,7 @@ def rma_mv(
     V_s = metafopy.models.mv_inputs.take_square(V_mat, idx)
     A_s = None if A_mat is None else metafopy.models.mv_inputs.take_square(A_mat, idx)
     X_s = X_all[idx]
+    X_f_rows = X_s
     x_missing_s = x_missing[idx]
     slab_s = metafopy.metadata.make_unique([slab_all[i] for i in idx])
     k = int(idx.shape[0])
@@ -1127,6 +1128,7 @@ def rma_mv(
         s_levels=s_levels,
         s_levels_f=s_levels_f,
         slab_f=slab_s,
+        X_f=X_f_rows,
         Rfix=tuple(sinfo.Rfix),
         Rscale=rscale,
         group_g=group_g,

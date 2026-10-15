@@ -689,6 +689,8 @@ def forest(
     measure: str | None = None,
     slab_null: bool | None = None,
     na_action: metafopy.metadata.NAAction = 'omit',
+    predtype: str | None = None,
+    pi_type: str | None = None,
 ) -> ForestResult:
     """Forest plot of a fitted model (``forest.rma``) or of estimates with their variances (``forest.default``).
 
@@ -716,7 +718,8 @@ def forest(
     ``slab_null`` tells that the labels are the default ones (which gives the study labels less room).
     ``na_action`` stands for metafor's ``options(na.action=)``: for a fitted model the studies dropped for missing values
     are left out (``'omit'``, the default) or, with ``'pass'`` (R's ``'na.pass'`` and ``'na.exclude'``), kept as rows of the plot;
-    ``'fail'`` raises an error if there are any.
+    ``'fail'`` raises an error if there are any. ``predtype`` (``pi_type`` is its old spelling) is passed on to
+    :func:`metafopy.predict` for the prediction interval (``'default'``, ``'simple'``, ``'riley'`` or ``'t'``).
 
     Indices are 0-based where they refer to positions; ``rows`` are plot rows as in R. Vector
     arguments (``slab``, ``ilab``, ``psize``, ...) must have one entry per study of the fit (or per
@@ -893,13 +896,15 @@ def forest(
                 # the studies dropped for a missing estimate or variance still have a fitted value if their moderators are known
                 assert X is not None
                 known = numpy.isfinite(X).all(axis=1)
-                pr_all = metafopy.methods.predict.predict(res.model, X[known][:, 1:] if res.int_incl else X[known], level=level)
+                pr_all = metafopy.methods.predict.predict(
+                    res.model, X[known][:, 1:] if res.int_incl else X[known], level=level, predtype=predtype, pi_type=pi_type
+                )
                 pred, pred_ci_lb, pred_ci_ub = (
                     widen(a, k, numpy.flatnonzero(known))
                     for a in (pr_all.pred, pr_all.pi_lb if use_pi else pr_all.ci_lb, pr_all.pi_ub if use_pi else pr_all.ci_ub)
                 )
             else:
-                pr = metafopy.methods.predict.predict(res.model, level=level)
+                pr = metafopy.methods.predict.predict(res.model, level=level, predtype=predtype, pi_type=pi_type)
                 pred = pr.pred
                 pred_ci_lb = pr.pi_lb if use_pi else pr.ci_lb
                 pred_ci_ub = pr.pi_ub if use_pi else pr.ci_ub
@@ -1298,7 +1303,7 @@ def forest(
     beta = beta_lb = beta_ub = pi_lb = pi_ub = math.nan
     if fit_row:
         assert res is not None
-        pr2 = forest_summary(res.model, 100 * (1 - lvl), bool(addpred), pred_levels)
+        pr2 = forest_summary(res.model, 100 * (1 - lvl), bool(addpred), pred_levels, predtype, pi_type)
         beta, beta_lb, beta_ub = float(pr2.pred[0]), float(pr2.ci_lb[0]), float(pr2.ci_ub[0])
         pi_lb, pi_ub = float(pr2.pi_lb[0]), float(pr2.pi_ub[0])
         predlevel = lvl
@@ -1626,7 +1631,9 @@ def draw_pred(
         typing.assert_never(style)
 
 
-def forest_summary(model: typing.Any, level: float, addpred: bool, pred_levels: list[str | int] | None) -> metafopy.methods.predict.PredictResult:
+def forest_summary(
+    model: typing.Any, level: float, addpred: bool, pred_levels: list[str | int] | None, predtype: str | None = None, pi_type: str | None = None
+) -> metafopy.methods.predict.PredictResult:
     """The summary estimate (and prediction interval) drawn below the studies, as ``forest.rma`` computes it.
 
     For an ``rma.mv`` model with several ``tau2`` (or ``gamma2``) values the prediction interval needs the levels of the
@@ -1639,10 +1646,10 @@ def forest_summary(model: typing.Any, level: float, addpred: bool, pred_levels: 
         if pred_levels is None:
             if addpred:
                 raise metafopy.errors.InputError("Must specify the level of the inner factor(s) via the 'addpred' argument.")
-            return metafopy.methods.predict.predict(model, level=level, tau2_levels=0, gamma2_levels=0)
+            return metafopy.methods.predict.predict(model, level=level, tau2_levels=0, gamma2_levels=0, predtype=predtype, pi_type=pi_type)
         levels = pred_levels * 2 if len(pred_levels) == 1 else pred_levels
-        return metafopy.methods.predict.predict(model, level=level, tau2_levels=levels[0], gamma2_levels=levels[1])
-    return metafopy.methods.predict.predict(model, level=level)
+        return metafopy.methods.predict.predict(model, level=level, tau2_levels=levels[0], gamma2_levels=levels[1], predtype=predtype, pi_type=pi_type)
+    return metafopy.methods.predict.predict(model, level=level, predtype=predtype, pi_type=pi_type)
 
 
 def widen(a: FloatArray, k: int, at: numpy.typing.NDArray[numpy.intp]) -> FloatArray:
@@ -1710,6 +1717,8 @@ def addpoly(
     textpos: collections.abc.Sequence[float] | None = None,
     rowadj: float | collections.abc.Sequence[float] | None = None,
     lcol: str | collections.abc.Sequence[str] | None = None,
+    predtype: str | None = None,
+    pi_type: str | None = None,
 ) -> matplotlib.axes.Axes:
     """Add polygons (summary estimates) to a forest plot (``addpoly.rma`` and ``addpoly.default``).
 
@@ -1718,7 +1727,8 @@ def addpoly(
     give the estimates ``x`` with ``vi``/``sei`` or ``ci_lb``/``ci_ub`` (and ``pi_lb``/``pi_ub``)
     and the ``rows`` to draw them in. Unspecified options (``alim``, ``digits``, ``annotate``,
     ``transf``, ``atransf``, ``efac``, ``cex``, ``textpos``, ...) are taken from the last
-    :func:`forest` call on the same axes. Returns the axes.
+    :func:`forest` call on the same axes. Returns the axes. ``predtype`` (``pi_type`` is its old spelling) is passed on to
+    :func:`metafopy.predict` for a fitted model.
 
     ``predstyle`` is ``'line'``, ``'polygon'``, ``'bar'``, ``'shade'`` or ``'dist'`` (the last two draw the predictive
     distribution, see :func:`forest`; they need ``predlim``/``preddist``/``predtail`` as there). For numbers the predictive
@@ -1793,7 +1803,7 @@ def addpoly(
         if not fit.int_only:
             raise metafopy.errors.InputError('Fitted model should not contain moderators.')
         lvl_pct = None if level is None else level
-        pr = metafopy.methods.predict.predict(fit, level=lvl_pct)
+        pr = metafopy.methods.predict.predict(fit, level=lvl_pct, predtype=predtype, pi_type=pi_type)
         yi = numpy.asarray(pr.pred, dtype=float)
         cl, cu = numpy.asarray(pr.ci_lb, dtype=float), numpy.asarray(pr.ci_ub, dtype=float)
         if addpred:
