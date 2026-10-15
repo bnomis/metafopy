@@ -54,6 +54,19 @@ print(rstudent(res))
 `rstandard` gives internally standardized residuals and `rstudent` externally studentized residuals (the residual of each
 study from a model fitted without it). Studies with absolute values above about 2 or 3 deserve a look.
 
+`residuals` takes a `type`: `'response'` (the default, the raw residuals), `'rstandard'`, `'rstudent'`, `'pearson'` (the raw residuals
+divided by the square root of the sampling variance plus tau^2) and `'cholesky'` (the residuals decorrelated with the Cholesky factor of
+the marginal variance-covariance matrix). Which types a fit class allows follows metafor. `na_action` stands in for R's
+`options(na.action=)`. `weights_(type='matrix')` returns the weight matrix.
+
+```python
+from metafopy import residuals
+
+print(residuals(res, 'pearson'))
+print(res.residuals('rstudent', na_action='exclude'))
+print(res.weights_('matrix').shape)
+```
+
 ## Influence
 
 `influence` computes the case deletion diagnostics of Viechtbauer and Cheung (2010),
