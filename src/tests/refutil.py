@@ -4,10 +4,12 @@ import functools
 import json
 import pathlib
 import re
+import sys
 import typing
 
 import numpy
 import pandas
+import pytest
 
 import metafopy.datasets
 
@@ -118,3 +120,8 @@ def same_print(actual: str, expected: str) -> bool:
         return '\n'.join(' '.join(re.sub(r'-(0\.0+)(?![0-9])', r'\1', line).split()) for line in text.split('\n'))
 
     return norm(a) == norm(e)
+
+
+# R's dbinom() rounds in the last bit with the C library's log, exp and pow; the reference values come from Linux (glibc), where R's tied sizes
+# in gosh()'s sample(prob=) are ordered as in the fixtures. Other C libraries (macOS, Windows) round differently.
+linux_only = pytest.mark.skipif(not sys.platform.startswith('linux'), reason="the last bit of R's dbinom() depends on the C library")

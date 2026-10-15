@@ -66,6 +66,7 @@ GOSH_CASES = {
 }
 
 
+@refutil.linux_only
 @pytest.mark.parametrize('key', sorted(GOSH_CASES))
 def test_gosh_seeded(escalc_frame: pandas.DataFrame, hack: pandas.DataFrame, key: str) -> None:
     """The subsets of a seeded gosh() are those of R, which orders the tied probabilities of the subset sizes by their last bit."""

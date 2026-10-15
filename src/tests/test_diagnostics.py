@@ -432,6 +432,7 @@ def test_gosh_exact_matches_metafor(gosh_fits: dict[str, typing.Any], key: str) 
     assert refutil.same_print(str(out), REF[ref_key]['print']), str(out)
 
 
+@refutil.linux_only
 @pytest.mark.parametrize(
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     ('key', 'fit', 'kw'),
@@ -446,6 +447,7 @@ def test_gosh_random_subsets(fits: dict[str, typing.Any], key: str, fit: str, kw
     check_gosh(metafopy.gosh(fits[fit], **kw), REF[key], key)
 
 
+@refutil.linux_only
 @pytest.mark.parametrize('case', refutil.load_phase12('audit3')['gosh']['dbinom_k'], ids=lambda c: str(c['k']))
 def test_dbinom_bits_match_r(case: dict[str, typing.Any]) -> None:
     """R 4.5.1's probabilities of the subset sizes, to the last bit (the fixture holds them as hexadecimal floats)."""
@@ -453,6 +455,7 @@ def test_dbinom_bits_match_r(case: dict[str, typing.Any]) -> None:
     assert metafopy.core.dbinom.dbinom(case['x'], case['k'], 0.5).tolist() == expected
 
 
+@refutil.linux_only
 def test_gosh_random_subsets_global_seed(fits: dict[str, typing.Any]) -> None:
     ref = REF['gosh_random_global']
     metafopy.set_seed(99)
