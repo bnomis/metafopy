@@ -144,27 +144,6 @@ class FixedBinaryResult(metafopy.models.fit_methods.FitMethods, abc.ABC):
     def fit_stats(self, REML: bool | None = None) -> metafopy.models.rma_uni.FitStats:
         return self.fit_stats_reml if REML else self.fit_stats_ml
 
-    def logLik(self, REML: bool | None = None) -> float:
-        return self.fit_stats(REML).ll
-
-    def deviance(self, REML: bool | None = None) -> float:
-        return self.fit_stats(REML).dev
-
-    def AIC(self, REML: bool | None = None) -> float:
-        return self.fit_stats(REML).AIC
-
-    def BIC(self, REML: bool | None = None) -> float:
-        return self.fit_stats(REML).BIC
-
-    def AICc(self, REML: bool | None = None) -> float:
-        return self.fit_stats(REML).AICc
-
-    def fitstats(self, REML: bool | None = None) -> pandas.Series:
-        """``logLik``, ``deviance``, ``AIC``, ``BIC``, ``AICc`` as a Series."""
-        st = self.fit_stats(REML)
-        # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
-        return pandas.Series(st.as_tuple(), index=['logLik', 'deviance', 'AIC', 'BIC', 'AICc'], name='REML' if REML else 'ML')
-
     def fitted(self) -> FloatArray:
         """The pooled estimate repeated for each table used in fitting."""
         return numpy.full(self.tables.yi.shape[0], self.beta[0])
@@ -212,11 +191,12 @@ class FixedBinaryResult(metafopy.models.fit_methods.FitMethods, abc.ABC):
         matrix[numpy.ix_(not_na, not_na)] = numpy.diag(wi)
         return matrix[numpy.ix_(not_na, not_na)] if na_action == 'omit' else matrix
 
-    def summary(self, digits: int | None = None, showfit: bool = False) -> str:
+    def summary(self, digits: int | None = None, showfit: bool = True) -> str:
+        """The printout with the fit statistics table, as metafor's ``summary()``; ``str(res)`` leaves it out like ``print()``."""
         return metafopy.mfopt.option_space(self.render(metafopy.mfopt.option_digits(digits, self.digits), showfit))
 
     def __str__(self) -> str:
-        return self.summary()
+        return self.summary(showfit=False)
 
     def __repr__(self) -> str:
         return f'<{type(self).__name__} {self.measure} k={self.k}>'

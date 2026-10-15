@@ -8,6 +8,7 @@ import numpy.typing
 import pandas
 
 import metafopy.core.linalg
+import metafopy.errors
 import metafopy.metadata
 import metafopy.mfopt
 import metafopy.models.call
@@ -30,7 +31,8 @@ class LSControl:
     identity link, SLSQP), ``'BFGS'``, ``'L-BFGS-B'``, ``'Nelder-Mead'``,
     ``'constrOptim'`` or ``'SLSQP'``; ``hessian_d``, ``hessian_eps`` and
     ``hessian_r`` are the arguments of ``numDeriv::hessian``'s Richardson method
-    (metafor sets ``r = 8``).
+    (metafor sets ``r = 8``, whose eight Richardson steps amplify round-off in the log-likelihood to a relative 1e-4 or more in the standard errors; metafopy
+    defaults to ``r = 4``, which agrees with metafor's values to about 1e-5, see ``docs/differences.md``).
     """
 
     alpha_init: numpy.typing.ArrayLike | None = None
@@ -42,7 +44,7 @@ class LSControl:
     hes_beta_fix: bool = False
     hessian_d: float = 0.1
     hessian_eps: float = 1e-4
-    hessian_r: int = 8
+    hessian_r: int = 4
     maxiter: int = 5000
     optimizer: str = 'nlminb'
     REMLf: bool = True
@@ -52,7 +54,7 @@ class LSControl:
 
 
 @dataclasses.dataclass(frozen=True, slots=True, eq=False)
-class RMALSResult(metafopy.models.fit_methods.FitMethods):
+class RMALSResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_methods.FitMethods):
     """A fitted location-scale model.
 
     The location part (``beta``, ``se``, ..., ``vb``) and the scale part
@@ -170,36 +172,10 @@ class RMALSResult(metafopy.models.fit_methods.FitMethods):
 
         return metafopy.methods.residuals.residuals(self, type, na_action=na_action)
 
-    def logLik(self, REML: bool | None = None) -> float:
-        """Log-likelihood; REML unless the model was fitted with ML (as in metafor)."""
-        return self.fit_stats(REML).ll
-
-    def deviance(self, REML: bool | None = None) -> float:
-        return self.fit_stats(REML).dev
-
-    def AIC(self, REML: bool | None = None) -> float:
-        return self.fit_stats(REML).AIC
-
-    def BIC(self, REML: bool | None = None) -> float:
-        return self.fit_stats(REML).BIC
-
-    def AICc(self, REML: bool | None = None) -> float:
-        return self.fit_stats(REML).AICc
-
     def fit_stats(self, REML: bool | None) -> metafopy.models.rma_uni.FitStats:
         if REML is None:
             REML = self.method == 'REML'
         return self.fit_stats_reml if REML else self.fit_stats_ml
-
-    def fitstats(self, REML: bool | None = None) -> pandas.Series:
-        """``logLik``, ``deviance``, ``AIC``, ``BIC``, ``AICc`` as a Series."""
-        st = self.fit_stats(REML)
-        return pandas.Series(
-            st.as_tuple(),
-            # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
-            index=['logLik', 'deviance', 'AIC', 'BIC', 'AICc'],
-            name='REML' if (REML if REML is not None else self.method == 'REML') else 'ML',
-        )
 
     def weights_(self, type: typing.Literal['diagonal', 'matrix'] = 'diagonal', na_action: metafopy.models.rma_uni.NAActionAll = 'omit') -> FloatArray:
         """Percentage weights of the estimates in the model fit (``type='diagonal'``) or the weight matrix (``'matrix'``), metafor's ``weights()``.
@@ -211,14 +187,27 @@ class RMALSResult(metafopy.models.fit_methods.FitMethods):
 
         return metafopy.methods.weights.weights_uni(self, type, na_action)
 
-    def hatvalues(self) -> FloatArray:
-        """Diagonal of the hat matrix."""
+    def hat_matrix(self) -> FloatArray:
+        """The full hat matrix ``X (X'WX)^-1 X'W``."""
         X = self.X
         if self.weighted:
             w = 1.0 / (self.vi + self.tau2) if self.weights is None else self.weights
-            H = X @ metafopy.core.linalg.invcalc(X, w) @ (X.T * w)
-        else:
-            H = X @ metafopy.core.linalg.invcalc(X, numpy.ones(self.k)) @ X.T
+            return X @ metafopy.core.linalg.invcalc(X, w) @ (X.T * w)
+        return X @ metafopy.core.linalg.invcalc(X, numpy.ones(self.k)) @ X.T
+
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
+    def hatvalues(self, type: typing.Literal['diagonal', 'matrix'] = 'diagonal') -> FloatArray:
+        """Diagonal of the hat matrix (``type='diagonal'``) or the hat matrix itself (``'matrix'``), as metafor's ``hatvalues()``.
+
+        Raises:
+            metafopy.errors.InputError: ``type`` is not ``'diagonal'`` or ``'matrix'``.
+        """
+        # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
+        if type not in ('diagonal', 'matrix'):
+            raise metafopy.errors.InputError("type must be 'diagonal' or 'matrix'")
+        H = self.hat_matrix()
+        if type == 'matrix':
+            return H
         h = numpy.diag(H).copy()
         h[h > 1 - 10 * DBL_EPS] = 1.0
         return h
@@ -275,14 +264,15 @@ class RMALSResult(metafopy.models.fit_methods.FitMethods):
 
     # -- printing ----------------------------------------------------------
 
-    def summary(self, digits: int | None = None, showfit: bool = False) -> str:
+    def summary(self, digits: int | None = None, showfit: bool = True) -> str:
+        """The printout with the fit statistics table, as metafor's ``summary()``; ``str(res)`` leaves it out like ``print()``."""
         # auditme: accept[in-function-import] the printer imports this module for its type
         import metafopy.models.rma_ls_print
 
         return metafopy.mfopt.option_space(metafopy.models.rma_ls_print.format_result(self, metafopy.mfopt.option_digits(digits), showfit))
 
     def __str__(self) -> str:
-        return self.summary()
+        return self.summary(showfit=False)
 
     def __repr__(self) -> str:
         return f'<RMALSResult {self.method} k={self.k} p={self.p} q={self.q}>'

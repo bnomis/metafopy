@@ -20,6 +20,7 @@ import pandas
 import metafopy.errors
 import metafopy.methods.blup
 import metafopy.methods.common
+import metafopy.methods.fitview
 import metafopy.models.rma_uni
 import metafopy.models.tau2
 import metafopy.printing
@@ -179,6 +180,7 @@ def leave1out_rma_uni(
         metafopy.errors.InputError: an argument or the data is invalid.
     """
     metafopy.methods.common.check_na_action(na_action)
+    metafopy.methods.fitview.check_class(x, notav=metafopy.methods.fitview.NOT_ROBUST)
     if not x.int_only:
         raise metafopy.errors.InputError('Method only applicable to models without moderators.')
     if x.k == 1:
@@ -277,6 +279,7 @@ def cumul_rma_uni(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
+    metafopy.methods.fitview.check_class(x, notav=metafopy.methods.fitview.NOT_ROBUST)
     if not x.int_only:
         raise metafopy.errors.InputError('Method only applicable to models without moderators.')
     k = x.k

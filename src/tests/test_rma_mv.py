@@ -262,7 +262,7 @@ def test_print(name: str) -> None:
         pytest.skip('coefficient labels follow the formula engine, not R')
     ref = REF[name]
     res = run(name)
-    assert refutil.r_print(res.summary()).strip() == refutil.r_print(ref['print']).strip()
+    assert refutil.r_print(res.summary(showfit=False)).strip() == refutil.r_print(ref['print']).strip()
     assert refutil.r_print(res.summary(showfit=True)).strip() == refutil.r_print(ref['print_showfit']).strip()
 
 

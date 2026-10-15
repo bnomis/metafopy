@@ -296,7 +296,7 @@ def robust_rma_uni(
         sw = metafopy.core.clubsandwich.vcov_cr(X, resid, codes, W_list, theta, bread, float(k), vcov_t, inverse_var, w_scale)
         pieces = sandwich_pieces(X, resid, x.beta, vcov_t, coef_t, conf_t, wald_t, x.level, x.btt, x.int_only, sw)
         vbest = vcov_t
-        extra = {'coef_test': coef_t, 'conf_test': conf_t, 'wald_test': wald_t}
+        extra: dict[str, typing.Any] = {'coef_test': coef_t, 'conf_test': conf_t, 'wald_test': wald_t, 'sandwich': sw}
     else:
         if x.weighted:
             if x.weights is None:
@@ -307,7 +307,7 @@ def robust_rma_uni(
         else:
             bread = metafopy.core.linalg.invcalc(X, numpy.ones(k)) @ X.T
         pieces, vbest = default_inference(bread, resid, codes, n, p, k, adjust, x.level, x.beta, x.btt, x.m)
-        extra = {}
+        extra = {'meat': meat_matrix(resid, codes)}
     info = metafopy.models.robust_info.RobustInfo(
         n=n,
         tcl=cluster_counts(codes, n),
@@ -334,6 +334,11 @@ def robust_rma_uni(
         s2w=1.0,
         robust=info,
     )
+
+
+def meat_matrix(resid: FloatArray, codes: IntArray) -> FloatArray:
+    """The block diagonal matrix of the outer products of the residuals within each cluster (``meat`` of metafor's ``robust()``)."""
+    return numpy.where(codes[:, None] == codes[None, :], numpy.outer(resid, resid), 0.0)
 
 
 def nested_in_cluster(x: metafopy.models.mv_result.RMAMVResult, codes: IntArray) -> bool:
@@ -404,7 +409,7 @@ def robust_rma_mv(
         sw = metafopy.core.clubsandwich.vcov_cr(X, resid, codes, W_list, M_list, bread, float(k), vcov_t, A is None, 1.0)
         pieces = sandwich_pieces(X, resid, x.beta, vcov_t, coef_t, conf_t, wald_t, alpha, x.btt, x.int_only, sw)
         vbest = vcov_t
-        extra = {'coef_test': coef_t, 'conf_test': conf_t, 'wald_test': wald_t}
+        extra: dict[str, typing.Any] = {'coef_test': coef_t, 'conf_test': conf_t, 'wald_test': wald_t, 'sandwich': sw}
     else:
         if A is None:
             try:
@@ -414,7 +419,7 @@ def robust_rma_mv(
         else:
             bread = metafopy.core.clubsandwich.chol2inv(X.T @ A @ X) @ (X.T @ A)
         pieces, vbest = default_inference(bread, resid, codes, n, p, k, adjust, alpha, x.beta, x.btt, x.m)
-        extra = {}
+        extra = {'meat': meat_matrix(resid, codes)}
     info = metafopy.models.robust_info.RobustInfo(
         n=n,
         tcl=cluster_counts(codes, n),

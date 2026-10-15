@@ -4,16 +4,19 @@ import functools
 import json
 import pathlib
 import re
+import sys
 import typing
 
 import numpy
 import pandas
+import pytest
 
 import metafopy.datasets
 
 PHASE2_DIR = pathlib.Path(__file__).parent / 'reference' / 'phase2'
 PHASE7_DIR = pathlib.Path(__file__).parent / 'reference' / 'phase7'
 PHASE9_DIR = pathlib.Path(__file__).parent / 'reference' / 'phase9'
+PHASE12_DIR = pathlib.Path(__file__).parent / 'reference' / 'phase12'
 RTOL = 1e-8
 
 
@@ -32,6 +35,12 @@ def load_phase7(name: str) -> dict[str, typing.Any]:
 @functools.cache
 def load_phase9(name: str) -> dict[str, typing.Any]:
     data: dict[str, typing.Any] = json.loads((PHASE9_DIR / f'{name}.json').read_text(encoding='utf-8'))
+    return data
+
+
+@functools.cache
+def load_phase12(name: str) -> dict[str, typing.Any]:
+    data: dict[str, typing.Any] = json.loads((PHASE12_DIR / f'{name}.json').read_text(encoding='utf-8'))
     return data
 
 
@@ -111,3 +120,8 @@ def same_print(actual: str, expected: str) -> bool:
         return '\n'.join(' '.join(re.sub(r'-(0\.0+)(?![0-9])', r'\1', line).split()) for line in text.split('\n'))
 
     return norm(a) == norm(e)
+
+
+# R's dbinom() rounds in the last bit with the C library's log, exp and pow; the reference values come from Linux (glibc), where R's tied sizes
+# in gosh()'s sample(prob=) are ordered as in the fixtures. Other C libraries (macOS, Windows) round differently.
+linux_only = pytest.mark.skipif(not sys.platform.startswith('linux'), reason="the last bit of R's dbinom() depends on the C library")

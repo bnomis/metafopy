@@ -88,7 +88,7 @@ The printed output is the same as metafor's.
 | `TRUE` / `FALSE`, `NULL`, `NA` | `True` / `False`, `None`, `numpy.nan` |
 | `control = list(tau2.max = 10)` | `control={'tau2_max': 10}`, or a `Control` / `MVControl` instance |
 | `set.seed(1234)` | `set_seed(1234)` (R's generator, so permutation tests reproduce R) |
-| `summary(res)` | `print(res)`: the fit is its own summary |
+| `summary(res)` | `res.summary()`: `print(res)` plus the fit-statistics table (`str(res)` is `print(res)`) |
 | `plot(res)` family, `forest(res)` | functions on matplotlib axes: `forest`, `funnel`, `plot_infl`... |
 
 Names that metafor writes with `.` in the middle of a word also lose it in prefixed functions: `plot.gosh` is `plot_gosh`,

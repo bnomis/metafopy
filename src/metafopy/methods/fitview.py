@@ -38,6 +38,8 @@ type Fit = (
     | metafopy.models.sel_result.SelmodelResult
     | metafopy.models.glmm_result.GLMMResult
 )
+# the class metafor's rstandard(), influence(), leave1out(), permutest() and friends refuse
+NOT_ROBUST = ('robust.rma',)
 FIXED_UNI_ONLY = ('rma.gen', 'rma.glmm', 'rma.ls', 'rma.mv', 'rma.uni.selmodel', 'robust.rma')
 """The classes the functions written for plain ``rma.uni``, ``rma.mh`` and ``rma.peto`` fits are not available for."""
 type BoolArray = numpy.typing.NDArray[numpy.bool_]
@@ -46,7 +48,7 @@ type IntArray = numpy.typing.NDArray[numpy.intp]
 
 def r_class(x: typing.Any) -> tuple[str, ...]:
     """The class vector metafor gives the corresponding R object (empty for anything that is not a fitted model)."""
-    robust = ('robust.rma',) if getattr(x, 'robust', None) is not None else ()
+    robust = NOT_ROBUST if getattr(x, 'robust', None) is not None else ()
     if isinstance(x, metafopy.models.rma_uni.RMAResult):
         return (*robust, 'rma.uni', 'rma')
     if isinstance(x, metafopy.models.mv_result.RMAMVResult):

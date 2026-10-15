@@ -5,6 +5,8 @@ import dataclasses
 import numpy
 import numpy.typing
 
+import metafopy.core.clubsandwich
+
 __all__ = ['RobustInfo']
 
 FloatArray = numpy.typing.NDArray[numpy.float64]
@@ -17,7 +19,9 @@ class RobustInfo:
 
     ``robumethod`` is ``'default'`` (the sandwich estimator of metafor) or ``'clubSandwich'``; ``vbest`` names the
     variance estimator (``CR0``, ``CR1``, ``CR1.S1``, ``CR2``, ...); ``dfs`` holds the degrees of freedom used for
-    each coefficient and ``tcl`` the number of estimates in each cluster.
+    each coefficient and ``tcl`` the number of estimates in each cluster. A ``clubSandwich`` fit also keeps the variance estimator
+    (``sandwich``) that ``predict()`` needs for the Satterthwaite degrees of freedom of linear contrasts. ``meat`` is the block diagonal
+    matrix of the outer products of the residuals within the clusters (``None`` for ``clubSandwich`` fits, where metafor stores NA).
     """
 
     n: int
@@ -29,3 +33,5 @@ class RobustInfo:
     coef_test: str | None = None
     conf_test: str | None = None
     wald_test: str | None = None
+    sandwich: metafopy.core.clubsandwich.Sandwich | None = None
+    meat: FloatArray | None = None

@@ -29,6 +29,7 @@ import metafopy.models.mv_structs
 import metafopy.models.rma_mv
 import metafopy.models.rma_uni
 import metafopy.models.tau2
+import metafopy.printing
 import metafopy.transf
 
 __all__ = ['ConfintResult', 'confint']
@@ -49,9 +50,18 @@ class ConfintResult:
     random: pandas.DataFrame | None
     lb_sign: str = ''
     ub_sign: str = ''
+    digits: int | None = None
 
     def __str__(self) -> str:
-        parts = [t.round(4).to_string() for t in (self.fixed, self.random) if t is not None]
+        digits = metafopy.mfopt.option_digits(self.digits)
+        parts = []
+        for table, lb_sign, ub_sign in ((self.fixed, '', ''), (self.random, self.lb_sign, self.ub_sign)):
+            if table is not None:
+                cells = [[metafopy.printing.fmt_num(float(v), digits) for v in row] for row in table.to_numpy()]
+                for row in cells:
+                    row[1], row[2] = lb_sign + row[1], ub_sign + row[2]
+                # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
+                parts.append(metafopy.printing.fmt_table(['estimate', 'ci.lb', 'ci.ub'], cells, [str(n) for n in table.index], gap=1))
         return '\n\n'.join(parts)
 
 
@@ -90,6 +100,7 @@ def confint_rma_uni(
     maxiter: int = 1000,
     verbose: bool | int = False,
     digits: int | None = None,
+    control: collections.abc.Mapping[str, typing.Any] | None = None,
 ) -> ConfintResult:
     """CIs for an ``rma.uni`` fit (metafor's ``confint.rma.uni``).
 
@@ -99,7 +110,8 @@ def confint_rma_uni(
     ``'ht'`` (Higgins & Thompson, 2002, doi:10.1002/sim.1186) or one of the
     Wald types. ``transf`` (with optional ``targs``) is applied to the fixed
     effects and their bounds. ``verbose`` prints the steps of the root finding
-    (on stdout, as metafor's ``cat()``), with ``digits`` decimals.
+    (on stdout, as metafor's ``cat()``), with ``digits`` decimals. ``control`` is metafor's list of root finding settings
+    (``tau2_min``, ``tau2_max``, ``tol`` and ``maxiter``, written with ``.`` or ``_``); its entries replace the keyword arguments of the same name.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
@@ -107,6 +119,8 @@ def confint_rma_uni(
     x = model
     vlevel = int(verbose)
     ndig = metafopy.mfopt.option_digits(digits)
+    con = control_values(control, {'tau2_min': tau2_min, 'tau2_max': tau2_max, 'tol': tol, 'maxiter': maxiter})
+    tau2_min, tau2_max, tol, maxiter = con['tau2_min'], con['tau2_max'], con['tol'], con['maxiter']
     if type is None:
         # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
         type = 'genq' if x.method in ('GENQ', 'GENQM') else 'qp'
@@ -317,7 +331,22 @@ def confint_rma_uni(
         lb, ub = numpy.minimum(lb, ub), numpy.maximum(lb, ub)
         res_fixed = pandas.DataFrame({'estimate': est, 'ci.lb': lb, 'ci.ub': ub}, index=list(x.coef_names))
 
-    return ConfintResult(fixed=res_fixed, random=res_random, lb_sign=lb_sign, ub_sign=ub_sign)
+    return ConfintResult(fixed=res_fixed, random=res_random, lb_sign=lb_sign, ub_sign=ub_sign, digits=ndig)
+
+
+def control_values(control: collections.abc.Mapping[str, typing.Any] | None, current: dict[str, typing.Any]) -> dict[str, typing.Any]:
+    """The settings in ``current`` with the entries of metafor's ``control`` list applied (``tau2.min`` and ``tau2_min`` both work).
+
+    Raises:
+        metafopy.errors.InputError: ``control`` has an entry that is not one of the settings.
+    """
+    out = dict(current)
+    for key, value in (control or {}).items():
+        name = key.replace('.', '_')
+        if name not in out:
+            raise metafopy.errors.InputError(f'unknown control parameter {key!r}; the settings are {", ".join(out)}')
+        out[name] = value
+    return out
 
 
 def find_root(f: collections.abc.Callable[[float], float], lo: float, hi: float, tol: float, maxiter: int, *, check_conv: bool = False) -> tuple[float, bool]:
@@ -443,6 +472,7 @@ def confint_rma_mv(
     eptries: int = 10,
     verbose: bool | int = False,
     digits: int | None = None,
+    control: collections.abc.Mapping[str, typing.Any] | None = None,
 ) -> ConfintResult | list[ConfintResult]:
     """CIs for an ``rma.mv`` fit (metafor's ``confint.rma.mv``).
 
@@ -450,7 +480,8 @@ def confint_rma_mv(
     profile-likelihood CI (Hardy & Thompson, 1996, doi:10.1002/(SICI)1097-0258(19960430)15:8<619::AID-SIM188>3.0.CO;2-A)
     for that component; ``fixed=True`` gives Wald-type CIs for the coefficients. With neither, a profile-likelihood CI is
     computed for every estimated variance/correlation component and a list is returned (a single result if there is one).
-    ``verbose`` prints the profile steps of the root finding on stdout, with ``digits`` decimals.
+    ``verbose`` prints the profile steps of the root finding on stdout, with ``digits`` decimals. ``control`` is metafor's list of settings
+    (``vc_min``, ``vc_max``, ``tol``, ``maxiter`` and ``eptries``, written with ``.`` or ``_``); its entries replace the keyword arguments of the same name.
 
     Raises:
         metafopy.errors.InputError: an argument is invalid or the model has no such component.
@@ -458,6 +489,8 @@ def confint_rma_mv(
     x = model
     vlevel = int(verbose)
     ndig = metafopy.mfopt.option_digits(digits)
+    con = control_values(control, {'vc_min': vc_min, 'vc_max': vc_max, 'tol': tol, 'maxiter': maxiter, 'eptries': eptries})
+    vc_min, vc_max, tol, maxiter, eptries = con['vc_min'], con['vc_max'], con['tol'], con['maxiter'], con['eptries']
     alpha = metafopy.models.rma_uni.level_to_alpha(x.level if level is None else level)
     chosen = {name: v for name, v in zip(metafopy.models.mv_structs.VC_NAMES, (sigma2, tau2, rho, gamma2, phi), strict=True) if v is not None}
     if len(chosen) > 1:
@@ -599,4 +632,4 @@ def confint_rma_mv(
         lo_b, hi_b = numpy.minimum(lb, ub), numpy.maximum(lb, ub)
         res_fixed = pandas.DataFrame({'estimate': beta, 'ci.lb': lo_b, 'ci.ub': hi_b}, index=list(x.coef_names))
 
-    return ConfintResult(fixed=res_fixed, random=res_random, lb_sign=lb_sign, ub_sign=ub_sign)
+    return ConfintResult(fixed=res_fixed, random=res_random, lb_sign=lb_sign, ub_sign=ub_sign, digits=ndig)

@@ -107,6 +107,26 @@ class SelmodelResult(metafopy.models.fit_methods.FitMethods):
     # -- data of the underlying model --------------------------------------------
 
     @property
+    def k_all(self) -> int:
+        """Number of rows supplied, including those dropped for missing values."""
+        return self.base.k_all
+
+    @property
+    def k_eff(self) -> int:
+        """Number of effective observations."""
+        return self.base.k_eff
+
+    @property
+    def p_eff(self) -> int:
+        """Number of effective model coefficients."""
+        return self.base.p_eff
+
+    @property
+    def ni(self) -> FloatArray | None:
+        """Sample sizes of the studies used in the fit (``None`` when unknown)."""
+        return self.base.ni
+
+    @property
     def yi(self) -> FloatArray:
         return self.base.yi
 
@@ -214,27 +234,6 @@ class SelmodelResult(metafopy.models.fit_methods.FitMethods):
     def fit_stats(self, REML: bool | None = None) -> metafopy.models.rma_uni.FitStats:
         return self.fit_stats_reml if REML else self.fit_stats_ml
 
-    def logLik(self, REML: bool | None = None) -> float:
-        return self.fit_stats(REML).ll
-
-    def deviance(self, REML: bool | None = None) -> float:
-        return self.fit_stats(REML).dev
-
-    def AIC(self, REML: bool | None = None) -> float:
-        return self.fit_stats(REML).AIC
-
-    def BIC(self, REML: bool | None = None) -> float:
-        return self.fit_stats(REML).BIC
-
-    def AICc(self, REML: bool | None = None) -> float:
-        return self.fit_stats(REML).AICc
-
-    def fitstats(self, REML: bool | None = None) -> pandas.Series:
-        """``logLik``, ``deviance``, ``AIC``, ``BIC`` and ``AICc`` (the ML column; the REML one is ``NaN``, as in metafor)."""
-        st = self.fit_stats(REML)
-        # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
-        return pandas.Series(st.as_tuple(), index=['logLik', 'deviance', 'AIC', 'BIC', 'AICc'], name='REML' if REML else 'ML')
-
     # -- delegated methods (defined in metafopy.methods.selmodel) ------------------
 
     def predict(self, *args: typing.Any, **kwargs: typing.Any) -> typing.Any:
@@ -270,11 +269,12 @@ class SelmodelResult(metafopy.models.fit_methods.FitMethods):
 
     # -- printing -------------------------------------------------------------------
 
-    def summary(self, digits: int | None = None) -> str:
-        return metafopy.mfopt.option_space(format_selmodel(self, metafopy.mfopt.option_digits(digits, self.digits)))
+    def summary(self, digits: int | None = None, showfit: bool = True) -> str:
+        """The printout with the fit statistics table, as metafor's ``summary()``; ``str(res)`` leaves it out like ``print()``."""
+        return metafopy.mfopt.option_space(format_selmodel(self, metafopy.mfopt.option_digits(digits, self.digits), showfit))
 
     def __str__(self) -> str:
-        return self.summary()
+        return self.summary(showfit=False)
 
     def __repr__(self) -> str:
         return f'<SelmodelResult {self.type} {self.method} k={self.k} p={self.p}>'
@@ -310,7 +310,7 @@ def delta_table(res: SelmodelResult, digits: int) -> tuple[list[str], list[list[
     return header, rows, names
 
 
-def format_selmodel(res: SelmodelResult, digits: int = 4) -> str:
+def format_selmodel(res: SelmodelResult, digits: int = 4, showfit: bool = False) -> str:
     """The output of metafor's ``print.rma.uni`` for a selection model."""
     fmt = metafopy.printing.fmt_num
     pfmt = metafopy.models.rma_uni.pfmt
@@ -328,6 +328,15 @@ def format_selmodel(res: SelmodelResult, digits: int = 4) -> str:
         how = 'user-specified tau^2 value' if res.tau2_fix else f'tau^2 estimator: {res.method}'
         out.append(f'{kind} Model (k = {res.k}; {how})')
     out.append('')
+    if showfit:
+        out.append(
+            metafopy.printing.fmt_named_vector(
+                # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
+                ['logLik', 'deviance', 'AIC', 'BIC', 'AICc'],
+                [metafopy.printing.fmt_num(v, digits) for v in res.fit_stats_ml.as_tuple()],
+            )
+        )
+        out.append('')
 
     if not fe:
         het = 'total' if res.int_only else 'residual'

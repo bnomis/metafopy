@@ -27,6 +27,7 @@ __all__ = [
     'Sandwich',
     'WaldResult',
     'coef_df',
+    'contrast_df',
     'matrix_power',
     'saddlepoint_p',
     'saddlepoint_pval',
@@ -264,17 +265,28 @@ def coef_df(sw: Sandwich, test: str) -> FloatArray:
     Raises:
         metafopy.errors.InputError: the test is unknown.
     """
-    p = sw.vcov.shape[0]
+    return contrast_df(sw, numpy.eye(sw.vcov.shape[0]), test)
+
+
+def contrast_df(sw: Sandwich, C: FloatArray, test: str) -> FloatArray:
+    """Degrees of freedom of the t-tests of the linear contrasts in the rows of ``C`` (``clubSandwich::linear_contrast``).
+
+    Raises:
+        metafopy.errors.InputError: the test is unknown.
+    """
+    q = C.shape[0]
     J = sw.n_clusters
     if test == 'z':
-        return numpy.full(p, numpy.inf)
+        return numpy.full(q, numpy.inf)
     if test == 'naive-t':
-        return numpy.full(p, float(J - 1))
+        return numpy.full(q, float(J - 1))
     if test == 'naive-tp':
-        return numpy.full(p, float(J - p))
+        return numpy.full(q, float(J - C.shape[1]))
     if test == 'Satterthwaite':
         G_list, H = get_gh(sw)
-        return satterthwaite_df(p_array(G_list, H))
+        G_c = [C @ g for g in G_list]
+        H_c = numpy.einsum('qp,puj->quj', C, H) if H.ndim == 3 else numpy.stack([numpy.einsum('qp,puj->quj', C, H[i]) for i in range(3)], axis=0)
+        return satterthwaite_df(p_array(G_c, H_c))
     raise metafopy.errors.InputError(f"Unknown test {test!r}; use 'z', 'naive-t', 'naive-tp' or 'Satterthwaite'.")
 
 

@@ -17,8 +17,8 @@ import typing
 import numpy
 import numpy.typing
 import pandas
-import scipy.stats
 
+import metafopy.core.dbinom
 import metafopy.core.parallel
 import metafopy.core.rng
 import metafopy.errors
@@ -119,8 +119,8 @@ def gosh_rma_uni(
     at most ``10**6`` of them, otherwise ``10**6`` random subsets; ``subsets``
     sets that number. ``seed`` seeds the R-compatible generator (so that
     ``gosh(res, seed=s)`` draws the same subset sizes and study indices as
-    R's ``set.seed(s)`` does, apart from the sampling probabilities being computed by SciPy
-    rather than R's ``dbinom``, which can reorder tied sizes); without it the module's global
+    R's ``set.seed(s)`` does, with the sampling probabilities computed as R's ``dbinom`` computes them,
+    see :mod:`metafopy.core.dbinom`); without it the module's global
     generator is used (:func:`metafopy.set_seed`). As in metafor, ``parallel`` (``'snow'`` or ``'multicore'``) fits the
     subsets in a process pool of ``ncpus`` workers (or on the executor ``cl``), in blocks of ``CHUNK`` subsets, and
     ``progbar=True`` prints a progress bar (per block) to stderr; the subsets are drawn before the fits, so the result
@@ -177,7 +177,7 @@ def inclusion_matrix(k: int, p: int, subsets: int | None, seed: int | None, rng:
         return out
     gen = rng if rng is not None else (metafopy.core.rng.set_seed(seed) if seed is not None else metafopy.core.rng.get_rng())
     sizes = numpy.arange(p, k + 1)
-    j = sizes[gen.sample_int(len(sizes), n_tot, replace=True, prob=numpy.asarray(scipy.stats.binom.pmf(sizes, k, 0.5), dtype=numpy.float64)) - 1]
+    j = sizes[gen.sample_int(len(sizes), n_tot, replace=True, prob=metafopy.core.dbinom.dbinom(sizes, k, 0.5)) - 1]
     incl = numpy.zeros((n_tot, k), dtype=numpy.bool_)
     for i, m in enumerate(j):
         incl[i, gen.sample_int(k, int(m)) - 1] = True

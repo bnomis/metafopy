@@ -83,8 +83,6 @@ def simulate(
         raise metafopy.errors.InputError(f'Method not available for objects of class {type(fit).__name__}.')
     if not isinstance(fit, (metafopy.models.rma_uni.RMAResult, metafopy.models.rma_ls_result.RMALSResult, metafopy.models.mv_result.RMAMVResult)):
         raise metafopy.errors.ArgumentError(f'simulate() is not available for {type(fit).__name__}')
-    if getattr(fit, 'robust', None) is not None:
-        raise metafopy.errors.InputError('Method not available for objects made robust with robust().')
     if nsim <= 0:
         raise metafopy.errors.InputError("Argument 'nsim' must be >= 1.")
     gen = metafopy.core.rng.RRandom(seed) if seed is not None else (rng if rng is not None else metafopy.core.rng.get_rng())

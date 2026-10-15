@@ -15,7 +15,7 @@ import numpy.typing
 
 import metafopy.errors
 
-__all__ = ['fmt_df', 'fmt_df_scalar', 'fmt_named_vector', 'fmt_num', 'fmt_pval', 'fmt_table', 'signif_stars', 'zero_below']
+__all__ = ['fmt_df', 'fmt_df_scalar', 'fmt_named_vector', 'fmt_num', 'fmt_pval', 'fmt_table', 'fmt_wrapped_table', 'signif_stars', 'zero_below']
 
 
 def fmt_num(x: float, digits: int = 4) -> str:
@@ -55,8 +55,9 @@ def fmt_table(
     header: collections.abc.Sequence[str],
     rows: collections.abc.Sequence[collections.abc.Sequence[str]],
     row_names: collections.abc.Sequence[str] | None = None,
+    gap: int = 2,
 ) -> str:
-    """Lay out a right-aligned text table, with optional left-aligned row names.
+    """Lay out a right-aligned text table, with optional left-aligned row names; ``gap`` spaces separate the columns.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
@@ -70,11 +71,37 @@ def fmt_table(
     name_w = max(len(n) for n in names) if names else 0
     lines: list[str] = []
     for i, row in enumerate(columns):
-        cells = '  '.join(cell.rjust(widths[j]) for j, cell in enumerate(row))
+        cells = (' ' * gap).join(cell.rjust(widths[j]) for j, cell in enumerate(row))
         if names is not None:
-            cells = names[i].ljust(name_w) + '  ' + cells
+            cells = names[i].ljust(name_w) + ' ' * gap + cells
         lines.append(cells.rstrip())
     return '\n'.join(lines)
+
+
+def fmt_wrapped_table(
+    header: collections.abc.Sequence[str],
+    rows: collections.abc.Sequence[collections.abc.Sequence[str]],
+    row_names: collections.abc.Sequence[str],
+    width: int = 80,
+) -> str:
+    """A right-aligned character matrix as R prints it: one space between columns, left-aligned row names and columns that do not fit
+    in ``width`` characters continued in a further block below."""
+    ncol = len(header)
+    widths = [max(len(header[j]), *(len(r[j]) for r in rows)) for j in range(ncol)]
+    name_w = max(len(n) for n in row_names)
+    blocks: list[list[int]] = []
+    used = name_w
+    for j in range(ncol):
+        if not blocks or used + 1 + widths[j] > width:
+            blocks.append([])
+            used = name_w
+        blocks[-1].append(j)
+        used += 1 + widths[j]
+    out: list[str] = []
+    for block in blocks:
+        out.append(' ' * name_w + ''.join(' ' + header[j].rjust(widths[j]) for j in block))
+        out += [name.ljust(name_w) + ''.join(' ' + row[j].rjust(widths[j]) for j in block) for name, row in zip(row_names, rows, strict=True)]
+    return '\n'.join(line.rstrip() for line in out)
 
 
 def fmt_named_vector(names: collections.abc.Sequence[str], values: collections.abc.Sequence[str]) -> str:
