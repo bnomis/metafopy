@@ -76,4 +76,4 @@ errs <- list(
 )
 out$errors <- lapply(errs, function(e) tryCatch({ suppressWarnings(eval(e)); "no error" }, error = function(err) conditionMessage(err)))
 
-writeLines(toJSON(out, auto_unbox = TRUE, digits = NA, na = "null"), "src/tests/reference/phase11/hettest.json")
+write_json(out, "src/tests/reference/phase11/hettest.json", auto_unbox = TRUE, digits = NA, null = "null", na = "null")

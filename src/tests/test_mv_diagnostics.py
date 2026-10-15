@@ -271,7 +271,7 @@ def test_profile_plot() -> None:
     matplotlib.pyplot.close(fig)
     fig = matplotlib.pyplot.figure()
     metafopy.profile(kres(), steps=3, plot=True, ax=fig.gca())
-    assert [a.get_title() for a in fig.axes] == [r'Profile Plot for $\sigma_{1}^2$', r'Profile Plot for $\sigma_{2}^2$']
+    assert [a.get_title() for a in fig.axes if a.get_title()] == [r'Profile Plot for $\sigma_{1}^2$', r'Profile Plot for $\sigma_{2}^2$']
     matplotlib.pyplot.close(fig)
 
 

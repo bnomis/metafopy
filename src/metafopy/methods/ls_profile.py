@@ -11,6 +11,7 @@ import functools
 import math
 import warnings
 
+import matplotlib.axes
 import numpy
 import numpy.typing
 import pandas
@@ -47,6 +48,13 @@ class LSProfileResult:
     maxll: float
     position: int
     exp: bool = False
+    alphas: int = 1
+
+    @property
+    def xlim(self) -> tuple[float, float]:
+        """The range of the grid, which is the horizontal range metafor's ``plot.profile.rma`` draws (the object has no ``xlim`` element)."""
+        grid = self.alpha[numpy.isfinite(self.alpha)]
+        return float(grid.min()), float(grid.max())
 
     def to_frame(self) -> pandas.DataFrame:
         return pandas.DataFrame({'alpha': self.alpha, 'll': self.ll})
@@ -80,6 +88,8 @@ def profile_rma_ls(
     parallel: metafopy.core.parallel.Parallel = 'no',
     ncpus: int = 1,
     cl: concurrent.futures.Executor | None = None,
+    plot: bool = False,
+    ax: matplotlib.axes.Axes | None = None,
 ) -> LSProfileResult | list[LSProfileResult]:
     """Profile the likelihood over a scale coefficient (``alpha``, a 0-based position) on ``steps`` equally spaced values in ``xlim``.
 
@@ -87,7 +97,8 @@ def profile_rma_ls(
     returned (a single result if there is one). ``xlim`` defaults to the estimate plus and minus 2.576 standard errors,
     limited by ``alpha_min`` and ``alpha_max`` of the control settings. As in metafor, ``parallel`` (``'snow'`` or
     ``'multicore'``) refits the models in a process pool of ``ncpus`` workers (or on the executor ``cl``) and
-    ``progbar=True`` prints a progress bar to stderr; the result equals that of the serial run.
+    ``progbar=True`` prints a progress bar to stderr; the result equals that of the serial run. ``plot=True`` draws the profile(s) with
+    :func:`metafopy.plot.plot_profile` (metafor's default is ``plot=TRUE``), several in a grid of panels.
 
     Raises:
         metafopy.errors.InputError: an argument is invalid or the model has no such coefficient.
@@ -112,6 +123,8 @@ def profile_rma_ls(
             raise metafopy.errors.InputError('No components in the model for which a profile likelihood can be constructed.')
         results = [profile_rma_ls(x, int(pos), xlim, ylim, steps, lltol, exp=exp, progbar=progbar, parallel=parallel, ncpus=ncpus, cl=cl) for pos in free]
         out = [r for r in results if isinstance(r, LSProfileResult)]
+        if plot and out:
+            plot_all(out, ax)
         return out[0] if len(out) == 1 else out
 
     if bool(numpy.all(x.alpha_fix)):
@@ -179,7 +192,7 @@ def profile_rma_ls(
             raise metafopy.errors.InputError("Argument 'ylim' should be a vector of length 2.")
         yl = (float(min(ylim)), float(max(ylim)))
 
-    return LSProfileResult(
+    result = LSProfileResult(
         alpha=vcs,
         ll=lls,
         beta=pandas.DataFrame(beta, columns=names),
@@ -191,4 +204,15 @@ def profile_rma_ls(
         maxll=maxll,
         position=alpha,
         exp=exp,
+        alphas=x.q,
     )
+    if plot:
+        plot_all([result], ax)
+    return result
+
+
+def plot_all(results: list[LSProfileResult], ax: matplotlib.axes.Axes | None) -> None:
+    # auditme: accept[in-function-import] metafopy.plot.profile imports the methods, so the import is deferred to avoid a cycle
+    import metafopy.plot.profile
+
+    metafopy.plot.profile.plot_profile(results[0] if len(results) == 1 else results, ax=ax)

@@ -439,8 +439,7 @@ def plot_all(results: list[SelProfileResult], ax: typing.Any) -> None:
     # auditme: accept[in-function-import] metafopy.plot.profile imports the methods, so the import is deferred to avoid a cycle
     import metafopy.plot.profile
 
-    for r in results:
-        metafopy.plot.profile.plot_profile(r, ax=ax if len(results) == 1 else None)
+    metafopy.plot.profile.plot_profile(results[0] if len(results) == 1 else results, ax=ax)
 
 
 def profile_fit(x: Sel, comp: str, pos: int, val: float) -> tuple[float, FloatArray, FloatArray, FloatArray] | None:
