@@ -33,6 +33,7 @@ import numpy.typing
 import pandas
 import scipy.stats
 
+import metafopy.core.glm
 import metafopy.core.linalg
 import metafopy.core.verbose
 import metafopy.errors
@@ -81,12 +82,17 @@ def make_control(control: metafopy.models.glmm_fit.GLMMControl | collections.abc
     if isinstance(control, metafopy.models.glmm_fit.GLMMControl):
         return control
     names = {f.name for f in dataclasses.fields(metafopy.models.glmm_fit.GLMMControl)}
-    clean = {str(key).replace('.', '_').replace('scaleX', 'scale_x'): value for key, value in control.items()}
+    clean = {
+        str(key).replace('.', '_').replace('scaleX', 'scale_x').replace('clogitCtrl', 'clogit_ctrl').replace('clogisticCtrl', 'clogistic_ctrl'): value
+        for key, value in control.items()
+    }
     unknown = set(clean) - names
     if unknown:
         raise metafopy.errors.InputError(f'unknown control settings: {sorted(unknown)}')
     if 'package' in clean:
         clean['package'] = match_package(clean['package'])
+    if 'optimizer' in clean:
+        clean['optimizer'] = match_optimizer(clean['optimizer'])
     return metafopy.models.glmm_fit.GLMMControl(**clean)
 
 
@@ -103,6 +109,43 @@ def match_package(value: typing.Any) -> str:
     if len(hits) != 1:
         raise metafopy.errors.InputError('\'arg\' should be one of "lme4", "GLMMadaptive", "glmmTMB"')
     return hits[0]
+
+
+def match_optimizer(value: typing.Any) -> str:
+    """The optimizer named by ``control$optimizer`` (an exact name, or an unambiguous prefix as in ``match.arg()``).
+
+    Raises:
+        metafopy.errors.InputError: the value names none of ``'nlminb'``, ``'clogit'`` and ``'clogistic'``.
+    """
+    names = metafopy.models.glmm_fit.OPTIMIZERS
+    if isinstance(value, str) and value in names:
+        return value
+    hits = [name for name in names if isinstance(value, str) and value and name.startswith(value)]
+    if len(hits) != 1:
+        raise metafopy.errors.InputError(f"'optimizer' should be one of {', '.join(repr(n) for n in names)}")
+    return hits[0]
+
+
+def resolve_family(measure: str, link: str | None, family: metafopy.core.glm.GLMFamily | str | None) -> metafopy.core.glm.GLMFamily | None:
+    """The family override of ``rma.glmm``'s ``family`` and ``link`` arguments (``None`` for the measure's own).
+
+    As in metafor a ``family`` replaces the family and link of the model (a name stands for the family with its default
+    link, like R's ``family = binomial``) and ``link`` changes only the link of the measure's family.
+
+    Raises:
+        metafopy.errors.InputError: the family or the link is unknown.
+    """
+    if family is not None:
+        if isinstance(family, metafopy.core.glm.GLMFamily):
+            return family
+        if family == 'binomial':
+            return metafopy.core.glm.binomial()
+        if family == 'poisson':
+            return metafopy.core.glm.poisson()
+        raise metafopy.errors.InputError("Unknown 'family' specified; use 'binomial', 'poisson' or a metafopy.core.glm.GLMFamily.")
+    if link is None:
+        return None
+    return metafopy.core.glm.GLMFamily(metafopy.models.glmm_fit.glm_family(measure), metafopy.core.glm.check_link(link))
 
 
 def first_of(value: typing.Any) -> typing.Any:
@@ -307,6 +350,8 @@ def rma_glmm(
     onlyo1: bool = False,
     addyi: bool = True,
     addvi: bool = True,
+    link: str | None = None,
+    family: metafopy.core.glm.GLMFamily | str | None = None,
 ) -> metafopy.models.glmm_result.GLMMResult:
     """Fit a generalized linear mixed-effects model to binary or count data.
 
@@ -324,8 +369,21 @@ def rma_glmm(
     ``'PLO'``) are fitted as metafor does and give its warning that their use is
     experimental; as in metafor, the log and identity links can put fitted
     probabilities outside (0, 1), in which case fitting fails (``EstimationError``)
-    or the estimates are unreliable. The ``clogit`` and ``clogistic`` optimisers
-    and ``link``/``family`` overrides are not available.
+    or the estimates are unreliable.
+
+    ``link`` (one of ``'logit'``, ``'probit'``, ``'cauchit'``, ``'cloglog'``, ``'log'``, ``'identity'``, ``'sqrt'``) replaces the
+    link of the model and ``family`` (``'binomial'``, ``'poisson'`` or :func:`metafopy.core.glm.binomial` /
+    :func:`metafopy.core.glm.poisson`, which carry a link) replaces family and link, like metafor's ``link`` and ``family``
+    arguments passed through ``...``. They apply to the unconditional models (``'UM.FS'``, ``'UM.RS'``) and the one-group
+    measures, the models that metafor fits with ``glm()`` and ``glmer()``; the conditional models ignore them as in metafor.
+    The family must match the data (binomial for ``'OR'``, ``'RR'``, ``'RD'``, ``'PLO'``, ``'PR'``, ``'PLN'``, Poisson for
+    ``'IRR'`` and ``'IRLN'``).
+
+    ``control={'optimizer': 'clogit'}`` or ``'clogistic'`` fits the fixed-effects (``method='FE'``) conditional model
+    ``'CM.EL'`` for ``'OR'`` with ``survival::clogit()`` or ``Epi::clogistic()`` (implemented in :mod:`metafopy.core.clogit`,
+    without building the individual patient data); ``clogitCtrl`` and ``clogisticCtrl`` entries of ``control`` are passed on
+    as in metafor (see :func:`metafopy.core.clogit.clogit_settings` and :func:`metafopy.core.clogit.clogistic_settings`).
+    The default ``'nlminb'`` maximises the exact likelihood numerically. Other optimisers of metafor are not available.
 
     ``control={'package': ...}`` chooses the package that fits the mixed models, as in metafor:
     ``'lme4'`` (the default), ``'GLMMadaptive'`` (adaptive quadrature with ``nAGQ`` points in every
@@ -424,6 +482,8 @@ def rma_glmm(
         raise metafopy.errors.InputError('Number of parameters to be estimated is larger than the number of observations.')
     btt_idx = metafopy.models.rma_uni.set_btt(btt, p, int_incl, names)
     m = len(btt_idx)
+    if con.optimizer in ('clogit', 'clogistic') and method == 'ML':
+        raise metafopy.errors.InputError("Cannot use 'clogit' or 'clogistic' with method='ML'.")
     if not metafopy.core.linalg.is_positive_definite(X.T @ X, tol=con.evtol):
         raise metafopy.errors.InputError('Model matrix not of full rank. Cannot fit model.')
 
@@ -435,7 +495,7 @@ def rma_glmm(
         X_fit, mean_x, sd_x, is_d = scale_design(X)
 
     alpha = metafopy.models.rma_uni.level_to_alpha(level)
-    spec = metafopy.models.glmm_fit.FitSpec(measure, model_name, method, X_fit, tab.cells, coding, cor, nagq, alpha, con)
+    spec = metafopy.models.glmm_fit.FitSpec(measure, model_name, method, X_fit, tab.cells, coding, cor, nagq, alpha, con, resolve_family(measure, link, family))
     if vlevel:
         metafopy.core.verbose.message('Fitting the FE model ...')
         if k > 1:
