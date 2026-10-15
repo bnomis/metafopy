@@ -244,6 +244,20 @@ Functions that take a fitted model. Each is a single-dispatch function: the gene
       show_root_full_path: false
       show_source: false
 
+::: metafopy.methods.vif_mv.vif_rma_mv
+    options:
+      heading_level: 3
+      show_root_heading: true
+      show_root_full_path: false
+      show_source: false
+
+::: metafopy.methods.vif_mv.vif_selmodel
+    options:
+      heading_level: 3
+      show_root_heading: true
+      show_root_full_path: false
+      show_source: false
+
 ::: metafopy.VIFResult
     options:
       heading_level: 3

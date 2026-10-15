@@ -221,16 +221,28 @@ def diamond(xlo: float, mid: float, xhi: float, row: float, height: float) -> tu
     return xs, ys
 
 
-def anno_symbol(annosym: collections.abc.Sequence[str] | None) -> list[str]:
+# annosym for fonts with tabular figures, by metafor's tabfig = 1, 2 or 3 (thin space, minus or en dash, en or figure space)
+TABFIG_ANNOSYM = {
+    1: ['\u2009[', ',\u2009', ']', '\u2212', '\u2002'],
+    2: ['\u2009[', ',\u2009', ']', '\u2013', '\u2002'],
+    3: ['\u2009[', ',\u2009', ']', '\u2212', '\u2007'],
+}
+
+
+def anno_symbol(annosym: collections.abc.Sequence[str] | None, tabfig: int | None = None) -> list[str]:
+    """The five symbols of the annotations (opening, separator, closing, minus, space); ``tabfig`` 1 to 3 replaces them with those for tabular figures."""
     if annosym is None:
-        return [' [', ', ', ']', '-', ' ']
-    a = list(annosym)
-    if len(a) == 3:
-        a += ['-', ' ']
-    if len(a) == 4:
-        a += [' ']
-    if len(a) != 5:
-        raise metafopy.errors.InputError("Argument 'annosym' must be a vector of length 3 (or 4 or 5).")
+        a = [' [', ', ', ']', '-', ' ']
+    else:
+        a = list(annosym)
+        if len(a) == 3:
+            a += ['-', ' ']
+        if len(a) == 4:
+            a += [' ']
+        if len(a) != 5:
+            raise metafopy.errors.InputError("Argument 'annosym' must be a vector of length 3 (or 4 or 5).")
+    if tabfig in TABFIG_ANNOSYM:
+        return list(TABFIG_ANNOSYM[tabfig])
     return a
 
 
@@ -679,6 +691,7 @@ def forest(
     ax: matplotlib.axes.Axes | None = None,
     predtail: float | str | None = None,
     annosym: collections.abc.Sequence[str] | None = None,
+    tabfig: int | None = None,
     textpos: collections.abc.Sequence[float] | None = None,
     rowadj: float | collections.abc.Sequence[float] | None = None,
     top: float = 3,
@@ -710,7 +723,8 @@ def forest(
     study labels, the annotations and the ``ilab`` columns (see :func:`metafopy.plot.draw.parse_fonts`: a family such as
     ``'serif'``, ``'sans'`` or ``'mono'``, a ``(family, font)`` pair with font 1 to 4 for plain, bold, italic, bold italic, a
     ``{family: font}`` mapping, or a sequence of up to three of these). The remaining metafor options passed
-    through ``...`` are the keyword-only ``predtail``, ``annosym``, ``textpos``, ``rowadj``, ``top``, ``at_lab``,
+    through ``...`` are the keyword-only ``predtail``, ``annosym``, ``tabfig`` (1, 2 or 3 sets ``annosym`` for fonts with tabular
+    figures: thin spaces around the interval, a minus sign or en dash, an en or figure space), ``textpos``, ``rowadj``, ``top``, ``at_lab``,
     ``xlabadj``, ``xlabfont`` (one font or two, the second for the middle one of three labels) and ``decreasing``;
     for the numeric form ``measure`` (or the ``attrs['measure']`` of a pandas Series) sets the label of the axis and header and
     ``slab_null`` tells that the labels are the default ones (which gives the study labels less room).
@@ -765,6 +779,7 @@ def forest(
             cex_axis=cex_axis,
             ax=ax,
             annosym=annosym,
+            tabfig=tabfig,
             textpos=textpos,
             rowadj=rowadj,
             top=top,
@@ -807,7 +822,7 @@ def forest(
         if len(ef) == 3:
             ef = [*ef, ef[2]]
     efv = [math.nan if v == 0 else v for v in ef]
-    asym = anno_symbol(annosym)
+    asym = anno_symbol(annosym, tabfig)
     ol: tuple[float, float] | None = None
     if olim is not None:
         if len(olim) != 2:

@@ -1,14 +1,17 @@
-"""Meta-analytic scatterplot (metafor's ``regplot.rma``).
+"""Meta-analytic scatterplot (metafor's ``regplot.rma``) and its ``points`` method (``points.regplot``).
 
 Plots the observed effects against one moderator of a meta-regression model, with the size of each point given by its
 weight (or a precision), the fitted regression line and, optionally, the pointwise confidence and prediction bands.
-See https://wviechtb.github.io/metafor/reference/regplot.html and Thompson & Higgins (2002), doi:10.1002/sim.1187.
+See https://wviechtb.github.io/metafor/reference/regplot.html, https://github.com/wviechtb/metafor/blob/master/R/regplot.rma.r,
+https://github.com/wviechtb/metafor/blob/master/R/points.regplot.r and Thompson & Higgins (2002), doi:10.1002/sim.1187.
 """
 
 import collections.abc
 import dataclasses
 import math
+import re
 import typing
+import warnings
 
 import matplotlib.axes
 import matplotlib.lines
@@ -19,13 +22,14 @@ import pandas
 
 import metafopy.errors
 import metafopy.methods.common
+import metafopy.methods.fitview
 import metafopy.methods.predict
 import metafopy.models.rma_uni
 import metafopy.plot
 import metafopy.plot.draw
 import metafopy.plot.rutils
 
-__all__ = ['RegplotResult', 'regplot']
+__all__ = ['RegplotResult', 'points_regplot', 'regplot']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type Func = collections.abc.Callable[..., typing.Any]
@@ -39,7 +43,9 @@ class RegplotResult:
 
     ``xi`` and ``yi`` are the coordinates of the studies drawn (``yi`` after any transformation), ``psize`` the
     symbol sizes (the ``cex`` of the points), ``label`` which studies were labelled, ``pred`` the fitted values and
-    ``order`` the order in which the points were drawn (largest symbols first).
+    ``order`` the order in which the points were drawn (largest symbols first). ``ids`` are the 0-based positions of the studies among
+    the rows supplied, ``pch``, ``col`` and ``bg`` the symbols and colours of the points, and ``offset`` and ``labsize`` those of the
+    labels, so that :func:`points_regplot` can redraw the points and labels (metafor's ``points()`` of a ``regplot`` object).
     """
 
     ax: matplotlib.axes.Axes
@@ -50,15 +56,35 @@ class RegplotResult:
     label: numpy.typing.NDArray[numpy.bool_]
     slab: tuple[str, ...]
     order: numpy.typing.NDArray[numpy.intp]
-    offset: tuple[float, float, float]
+    offset: tuple[float, ...]
     labsize: float
+    ids: numpy.typing.NDArray[numpy.intp]
+    pch: tuple[int, ...]
+    col: tuple[typing.Any, ...]
+    bg: tuple[typing.Any, ...]
 
     def to_frame(self) -> pandas.DataFrame:
-        out = pandas.DataFrame({'slab': list(self.slab), 'xi': self.xi, 'yi': self.yi, 'psize': self.psize, 'label': self.label})
+        out = pandas.DataFrame(
+            {
+                'slab': list(self.slab),
+                'ids': self.ids,
+                'xi': self.xi,
+                'yi': self.yi,
+                'pch': list(self.pch),
+                'psize': self.psize,
+                'col': list(self.col),
+                'bg': list(self.bg),
+                'label': self.label,
+            }
+        )
         if self.pred is not None:
             out['pred'] = self.pred
         out['order'] = self.order
         return out
+
+    def points(self, ax: matplotlib.axes.Axes | None = None) -> None:
+        """Redraw the points and labels; see :func:`points_regplot`."""
+        points_regplot(self, ax=ax)
 
 
 def expand(v: typing.Any, n: int, name: str) -> list[typing.Any]:
@@ -71,24 +97,33 @@ def expand(v: typing.Any, n: int, name: str) -> list[typing.Any]:
     return out
 
 
-def find_moderator(x: metafopy.models.rma_uni.RMAResult, mod: str | int | None) -> int:
-    """The 0-based position of the moderator among the coefficients."""
+def find_moderator(
+    x: metafopy.methods.fitview.FitView, names: collections.abc.Sequence[str], mod: str | int | None, grep: bool = False, fixed: bool = False
+) -> int:
+    """The 0-based position of the moderator among the coefficients (metafor's ``mod``, with its ``grep`` and ``fixed`` arguments).
+
+    A string is matched against the coefficient names by ``charmatch()`` (exactly, or as the start of a single name); with ``grep=True`` it is
+    searched for in the names as a regular expression (``fixed=True``: as a literal string) and must be found in exactly one.
+    """
+    p = x.X.shape[1]
     if mod is None:
-        if x.p == 2 and x.int_incl:
+        if p == 2 and x.int_incl:
             return 1
-        if x.p == 1:
+        if p == 1:
             return 0
         raise metafopy.errors.InputError("Must specify the 'mod' argument for models with multiple predictors.")
     if isinstance(mod, str):
-        names = list(x.coef_names)
-        if mod in names:
-            return names.index(mod)
-        found = [i for i, name in enumerate(names) if name.startswith(mod)]
+        if grep:
+            found = [i for i, name in enumerate(names) if (mod in name if fixed else re.search(mod, name))]
+        elif mod in names:
+            found = [list(names).index(mod)]
+        else:
+            found = [i for i, name in enumerate(names) if name.startswith(mod)]
         if len(found) != 1:
             raise metafopy.errors.InputError("Could not find or uniquely identify the moderator variable specified via the 'mod' argument.")
         return found[0]
     pos = int(mod)
-    if pos < 0 or pos >= x.p:
+    if pos < 0 or pos >= p:
         raise metafopy.errors.InputError("Specified position of 'mod' variable does not exist in the model.")
     return pos
 
@@ -130,7 +165,7 @@ def sorted_pair(lb: FloatArray, ub: FloatArray) -> tuple[FloatArray, FloatArray]
 
 
 def regplot(
-    x: metafopy.models.rma_uni.RMAResult,
+    x: metafopy.methods.fitview.Fit,
     mod: str | int | None = None,
     pred: bool | metafopy.methods.predict.PredictResult = True,
     ci: bool = True,
@@ -167,6 +202,8 @@ def regplot(
     *,
     bty: str = 'o',
     las: int = 0,
+    grep: bool = False,
+    fixed: bool = False,
     ax: matplotlib.axes.Axes | None = None,
 ) -> RegplotResult:
     """Meta-analytic scatterplot of a meta-regression model (``regplot.rma``).
@@ -183,26 +220,34 @@ def regplot(
     adds a legend (``True``, a location such as ``'topright'`` or a dict with ``x`` and ``cex``).
 
     ``bty`` (``'o'`` or ``'l'``) is the box type and ``las`` the orientation of the labels of the vertical axis (0 = parallel to it, 1 = horizontal).
+    ``grep=True`` makes a string ``mod`` a regular expression searched for in the coefficient names (which must find exactly one) and
+    ``fixed=True`` a literal string instead (the ``grep`` and ``fixed`` arguments metafor reads through ``...``).
 
-    Returns a :class:`RegplotResult` with the plotted coordinates and the axes.
+    ``x`` is a fit of :func:`metafopy.rma`, including location-scale models, of :func:`metafopy.selmodel`, of :func:`metafopy.rma_mv`
+    or of :func:`metafopy.rma_glmm`; the bands are the predictions of the model, so no prediction interval is drawn where
+    :func:`metafopy.predict` gives none (location-scale models). The sizes of the points are equal for the models without weights
+    (``selmodel`` and ``rma_glmm`` fits).
+
+    Returns a :class:`RegplotResult` with the plotted coordinates and the axes; :func:`points_regplot` redraws its points.
 
     Raises:
         metafopy.errors.InputError: the model has no moderator or an argument is invalid.
     """
-    if not isinstance(x, metafopy.models.rma_uni.RMAResult):
-        raise metafopy.errors.InputError('regplot() is only available for rma_uni fits.')
-    if x.int_only:
+    metafopy.methods.fitview.check_class(x, notav=('rma.mh', 'rma.peto'))
+    view = metafopy.methods.fitview.fit_view(x)
+    if view.int_only:
         raise metafopy.errors.InputError('Cannot draw plot for intercept-only models.')
     if transf is not None and atransf is not None:
         raise metafopy.errors.InputError("Use either 'transf' or 'atransf' to specify a transformation (not both).")
     axx = metafopy.plot.rutils.get_ax(ax)
-    k = x.k
-    lvl = x.level if level is None else metafopy.plot.rutils.level_to_alpha(level)
+    k = view.k
+    names = view.model.coef_names
+    lvl = view.level if level is None else metafopy.plot.rutils.level_to_alpha(level)
     fgc = metafopy.plot.draw.FG
     col_l = expand(fgc if col is None else col, k, 'col')
     bg_l = expand(metafopy.plot.rutils.coladj(-0.35) if bg is None else bg, k, 'bg')
     pch_l = [int(v) for v in expand(pch, k, 'pch')]
-    slab_l = [str(s) for s in (x.slab if slab is None else slab)]
+    slab_l = [str(s) for s in (view.slab if slab is None else slab)]
     if len(slab_l) != k:
         raise metafopy.errors.InputError(f"Length of the 'slab' argument ({len(slab_l)}) does not correspond to the number of studies ({k}).")
     shade_c = [metafopy.plot.rutils.coladj(-0.15), metafopy.plot.rutils.coladj(-0.05)]
@@ -232,19 +277,20 @@ def regplot(
         line_widths = [*line_widths, 2.0]
     dg = digits if isinstance(digits, int) else int(digits[0])
 
-    pos = find_moderator(x, mod)
-    xmat = x.X
+    pos = find_moderator(view, names, mod, grep, fixed)
+    xmat = view.X
     xi = xmat[:, pos].copy()
-    yi = x.yi.copy()
-    vi = x.vi
-    weights = x.weights_()
+    yi = view.yi.copy()
+    vi = view.vi
+    # metafor uses equal weights where weights() does not work (selmodel and rma.glmm fits)
+    weights = numpy.ones(k) if view.weights is None else view.weights
 
     def predict_at(values: FloatArray) -> metafopy.methods.predict.PredictResult:
         newx = numpy.tile(xmat.mean(axis=0), (values.shape[0], 1))
         newx[:, pos] = values
-        if x.int_incl:
+        if view.int_incl:
             newx = newx[:, 1:]
-        return metafopy.methods.predict.predict(x, newmods=newx, level=100 * (1 - lvl))
+        return metafopy.methods.predict.predict(view.model, newmods=newx, level=100 * (1 - lvl))
 
     ref_pred = isinstance(pred, metafopy.methods.predict.PredictResult)
     draw_pred = True if ref_pred else bool(pred)
@@ -263,10 +309,13 @@ def regplot(
         fit, ci_lb, ci_ub = pred.pred, pred.ci_lb, pred.ci_ub
         if numpy.any(numpy.isnan(pred.pi_lb)):
             pi_lb, pi_ub = ci_lb, ci_ub
+            if pi:
+                warnings.warn("Object passed to 'pred' argument does not contain prediction interval information.", stacklevel=2)
             pi = False
         else:
             pi_lb, pi_ub = pred.pi_lb, pred.pi_ub
         if label_mode in ('ciout', 'piout'):
+            warnings.warn("Cannot label points based on the confidence/prediction interval when passing an object to 'pred'.", stacklevel=2)
             label_mode = None
             label = False
         at_obs = None
@@ -288,11 +337,17 @@ def regplot(
         fit, ci_lb, ci_ub = band.pred, band.ci_lb, band.ci_ub
         if numpy.any(numpy.isnan(band.pi_lb)):
             pi_lb, pi_ub = ci_lb, ci_ub
+            if pi:
+                warnings.warn('Cannot draw prediction interval for the given model.', stacklevel=2)
             pi = False
         else:
             pi_lb, pi_ub = band.pi_lb, band.pi_ub
         obs = predict_at(xi)
         has_pi = not numpy.any(numpy.isnan(obs.pi_lb))
+        if not has_pi and label_mode == 'piout':
+            warnings.warn('Cannot label points based on the prediction interval for the given model.', stacklevel=2)
+            label_mode = None
+            label = False
         at_obs = (obs.pred, obs.ci_lb, obs.ci_ub, obs.pi_lb if has_pi else obs.ci_lb, obs.pi_ub if has_pi else obs.ci_ub)
 
     def tr(v: FloatArray) -> FloatArray:
@@ -316,8 +371,8 @@ def regplot(
 
     sizes = symbol_sizes(psize, weights, vi, plim)
 
-    xlab_c = (x.coef_names[pos] or 'Moderator') if xlab is None else xlab
-    ylab_c = metafopy.plot.rutils.setlab(x.measure, transf, atransf, 1) if ylab is None else ylab
+    xlab_c = (names[pos] or 'Moderator') if xlab is None else xlab
+    ylab_c = metafopy.plot.rutils.setlab(view.measure, transf, atransf, 1) if ylab is None else ylab
     xl = (float(xi.min()), float(xi.max())) if xlim is None else (float(xlim[0]), float(xlim[1]))
     if ylim is None:
         if pi:
@@ -375,8 +430,7 @@ def regplot(
         metafopy.plot.draw.line(axx, xs, fit_t, lty=line_types[0], col=line_cols[0], lw=line_widths[0]).set_zorder(1.1)
 
     order = numpy.argsort(-sizes, kind='stable')
-    for i in order:
-        metafopy.plot.draw.pts(axx, float(xi[i]), float(yi_t[i]), pch=pch_l[i], cex=float(sizes[i]), col=col_l[i], bg=bg_l[i])
+    draw_points(axx, xi, yi_t, pch_l, sizes, col_l, bg_l, order)
 
     flags = numpy.zeros(k, dtype=bool)
     if label_mode == 'all' or (isinstance(label, bool) and label):
@@ -395,17 +449,71 @@ def regplot(
         else:
             flags[sel.astype(numpy.intp)] = True
     yrange = ylim_c[1] - ylim_c[0]
-    if isinstance(offset, int | float):
-        off3 = (0.0, float(offset) / 100 * yrange, 1.0)
+    off = (float(offset),) if isinstance(offset, int | float) else tuple(float(v) for v in offset)
+    if label is False:
+        # as in metafor, the offset is only converted (to units of the vertical axis) when labels were requested
+        off3 = off
+    elif len(off) == 2:
+        off3 = (off[0] / 100 * yrange, off[1] / 100 * yrange, 1.0)
+    elif len(off) == 1:
+        off3 = (0.0, off[0] / 100 * yrange, 1.0)
     else:
-        off3 = (float(offset[0]) / 100 * yrange, float(offset[1]) / 100 * yrange, 1.0)
-    for i in numpy.flatnonzero(flags):
-        above = yi_pred_t is not None and bool(yi_t[i] > yi_pred_t[i])
-        dy = off3[0] + off3[1] * float(sizes[i]) ** off3[2]
-        metafopy.plot.draw.txt(axx, float(xi[i]), float(yi_t[i]) + (dy if above else -dy), slab_l[i], cex=labsize)
+        off3 = off
+    if flags.any():
+        draw_labels(axx, xi, yi_t, yi_pred_t, sizes, flags, slab_l, off3, labsize)
 
     regplot_legend(axx, legend, draw_pred, ci, pi, lvl, dg, line_types, line_cols, line_widths, shade_c, col_l, bg_l, pch_l)
-    return RegplotResult(axx, xi, yi_t, sizes, yi_pred_t, flags, tuple(slab_l), order, off3, labsize)
+    return RegplotResult(axx, xi, yi_t, sizes, yi_pred_t, flags, tuple(slab_l), order, off3, labsize, view.ids, tuple(pch_l), tuple(col_l), tuple(bg_l))
+
+
+def draw_points(
+    ax: matplotlib.axes.Axes,
+    xi: FloatArray,
+    yi: FloatArray,
+    pch: collections.abc.Sequence[int],
+    psize: FloatArray,
+    col: collections.abc.Sequence[typing.Any],
+    bg: collections.abc.Sequence[typing.Any],
+    order: numpy.typing.NDArray[numpy.intp],
+) -> None:
+    """Draw the points in ``order`` (the largest symbols first, so that the small ones are on top)."""
+    for i in order:
+        metafopy.plot.draw.pts(ax, float(xi[i]), float(yi[i]), pch=pch[i], cex=float(psize[i]), col=col[i], bg=bg[i])
+
+
+def draw_labels(
+    ax: matplotlib.axes.Axes,
+    xi: FloatArray,
+    yi: FloatArray,
+    pred: FloatArray | None,
+    psize: FloatArray,
+    flags: numpy.typing.NDArray[numpy.bool_],
+    slab: collections.abc.Sequence[str],
+    offset: collections.abc.Sequence[float],
+    labsize: float,
+) -> None:
+    """Label the flagged points above the point where the observed value is above the fitted one and below otherwise."""
+    for i in numpy.flatnonzero(flags):
+        above = pred is not None and bool(yi[i] > pred[i])
+        dy = offset[0] + offset[1] * float(psize[i]) ** offset[2]
+        metafopy.plot.draw.txt(ax, float(xi[i]), float(yi[i]) + (dy if above else -dy), slab[int(i)], cex=labsize)
+
+
+def points_regplot(x: RegplotResult, ax: matplotlib.axes.Axes | None = None) -> None:
+    """Redraw the points (and the labels, if there were any) of a :func:`regplot` (metafor's ``points.regplot``).
+
+    The points are drawn on ``ax`` (default: the axes of the plot) in the order of ``x.order``, which puts the points with the
+    smallest symbols on top again after other elements were added to the plot.
+
+    Raises:
+        metafopy.errors.InputError: ``x`` is not the result of :func:`regplot`.
+    """
+    if not isinstance(x, RegplotResult):
+        raise metafopy.errors.InputError('Argument \'x\' must be an object of class "regplot".')
+    axx = x.ax if ax is None else ax
+    draw_points(axx, x.xi, x.yi, x.pch, x.psize, x.col, x.bg, x.order)
+    if bool(x.label.any()):
+        draw_labels(axx, x.xi, x.yi, x.pred, x.psize, x.label, x.slab, x.offset, x.labsize)
 
 
 def dash(name: str) -> typing.Any:

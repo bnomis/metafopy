@@ -219,6 +219,8 @@ def vif_rma_uni(
     ncpus: int = 1,
     cl: concurrent.futures.Executor | None = None,
     digits: int | None = None,
+    intercept: bool = False,
+    fixed: bool = False,
 ) -> VIFResult:
     """(G)VIFs for the coefficients of an ``rma.uni`` meta-regression.
 
@@ -234,7 +236,11 @@ def vif_rma_uni(
     otherwise drawn from the stream of :func:`metafopy.set_seed`.
     ``parallel`` (``'snow'``/``'multicore'``) runs the
     iterations in a process pool of ``ncpus`` workers, or on the
-    :class:`concurrent.futures.Executor` given as ``cl``.
+    :class:`concurrent.futures.Executor` given as ``cl``. ``intercept=True``
+    includes the intercept among the coefficients (it is left out by default)
+    and ``fixed=True`` matches a string ``btt`` literally instead of as a
+    regular expression (the ``intercept`` and ``fixed`` arguments metafor reads
+    through ``...``).
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
@@ -260,20 +266,20 @@ def vif_rma_uni(
     btt_missing = btt is None
     specs: list[BttSpec]
     if btt is None:
-        specs = [j for j in range(1 if int_incl else 0, p)]
+        specs = [j for j in range(1 if int_incl and not intercept else 0, p)]
     elif isinstance(btt, (str, int)):
         specs = [btt]
     elif any(isinstance(b, (str, collections.abc.Sequence)) for b in btt):
         specs = list(btt)
     else:
         specs = [list(btt)]  # type: ignore[arg-type]
-    groups = [metafopy.models.rma_uni.set_btt(s, p, int_incl, names) for s in specs]
-    if int_incl and any(g == (0,) for g in groups):
+    groups = [metafopy.models.rma_uni.set_btt(s, p, int_incl, names, fixed) for s in specs]
+    if int_incl and not intercept and any(g == (0,) for g in groups):
         raise metafopy.errors.InputError("Cannot compute VIF(s) for the specified 'btt' argument.")
 
     entries: list[VIFEntry] = []
     for spec, g in zip(specs, groups, strict=True):
-        gvif, used = compvif(g, res.vb, int_incl, res if reestimate else None)
+        gvif, used = compvif(g, res.vb, int_incl, res if reestimate else None, intercept)
         m = len(used)
         entries.append(
             VIFEntry(
@@ -302,7 +308,7 @@ def vif_rma_uni(
             seeds = [None] * n_sim  # each iteration continues the global stream, as in R
         else:
             seeds = [int(metafopy.core.rng.get_rng().unif_index(2**31 - 1)) for _ in range(n_sim)]
-        one = functools.partial(vif_sim_one, res, tuple(groups), reestimate)
+        one = functools.partial(vif_sim_one, res, tuple(groups), reestimate, intercept)
         rows = metafopy.core.parallel.map_sims(one, seeds, parallel=parallel, ncpus=ncpus, cl=cl, progbar=progbar)
         sims = numpy.vstack(rows)
         with numpy.errstate(invalid='ignore', divide='ignore'):
@@ -337,35 +343,66 @@ def cov2cor(V: FloatArray) -> FloatArray:
     return out
 
 
-def compvif(group: collections.abc.Sequence[int], vb: FloatArray, int_incl: bool, fit: metafopy.models.rma_uni.RMAResult | None) -> tuple[float, list[int]]:
+def compvif(
+    group: collections.abc.Sequence[int],
+    vb: FloatArray,
+    int_incl: bool,
+    fit: metafopy.models.rma_uni.RMAResult | None,
+    intercept: bool = False,
+) -> tuple[float, list[int]]:
     """GVIF of the coefficients ``group`` (0-based) and the indices actually used.
 
     Without ``fit`` the GVIF comes from the correlation matrix of the
     estimates; with ``fit`` the model is refitted with only those coefficients
     (plus the intercept) and the variance-covariance blocks are compared.
+    With ``intercept=True`` the intercept is treated as any other coefficient.
     """
     if fit is None:
-        if int_incl:
-            V = vb[1:, 1:]
-            b = [i - 1 for i in group if i > 0]
-        else:
-            V = vb
-            b = list(group)
+        return compvif_matrix(group, vb, int_incl, None, None, intercept)
+
+    def refit_with(Xb: FloatArray) -> FloatArray | None:
+        try:
+            return refit(fit, Xb).vb
+        except FIT_ERRORS:
+            return None
+
+    return compvif_matrix(group, vb, int_incl, refit_with, fit.X, intercept)
+
+
+def compvif_matrix(
+    group: collections.abc.Sequence[int],
+    vb: FloatArray,
+    int_incl: bool,
+    refit_with: collections.abc.Callable[[FloatArray], FloatArray | None] | None,
+    X: FloatArray | None,
+    intercept: bool = False,
+) -> tuple[float, list[int]]:
+    """metafor's ``.compvif``: the GVIF of ``group`` (0-based) from ``vb`` and the indices actually used.
+
+    ``refit_with`` (given together with ``X``, the model matrix) returns the variance-covariance matrix of the model refitted
+    with a replacement model matrix, or ``None`` if the refit fails (the GVIF is then ``nan``). ``intercept=True`` keeps the intercept in.
+    """
+    drop = int_incl and not intercept
+    if refit_with is None or X is None:
+        V = vb[1:, 1:] if drop else vb
+        b = [i - 1 for i in group if i > 0] if drop else list(group)
         rb = cov2cor(V)
         rest = [i for i in range(V.shape[0]) if i not in b]
-        gvif = float(numpy.linalg.det(rb[numpy.ix_(b, b)]) * numpy.linalg.det(rb[numpy.ix_(rest, rest)]) / numpy.linalg.det(rb))
-        return gvif, [i + 1 for i in b] if int_incl else b
+        with numpy.errstate(invalid='ignore', divide='ignore'):
+            gvif = float(numpy.linalg.det(rb[numpy.ix_(b, b)]) * numpy.linalg.det(rb[numpy.ix_(rest, rest)]) / numpy.linalg.det(rb))
+        return gvif, [i + 1 for i in b] if drop else b
 
-    b = [i for i in group if i > 0] if int_incl else list(group)
-    Xb = fit.X[:, b]
-    if int_incl:
-        Xb = numpy.column_stack([numpy.ones(fit.k), Xb])
-    try:
-        sub = refit(fit, Xb)
-    except FIT_ERRORS:
+    b = [i for i in group if i > 0] if drop else list(group)
+    Xb = X[:, b]
+    if drop:
+        Xb = numpy.column_stack([numpy.ones(X.shape[0]), Xb])
+    vb_sub = refit_with(Xb)
+    if vb_sub is None:
         return math.nan, b
-    vb_sub = sub.vb[1:, 1:] if int_incl else sub.vb
-    return float(numpy.linalg.det(vb[numpy.ix_(b, b)]) / numpy.linalg.det(vb_sub)), b
+    if drop:
+        vb_sub = vb_sub[1:, 1:]
+    with numpy.errstate(invalid='ignore', divide='ignore'):
+        return float(numpy.linalg.det(vb[numpy.ix_(b, b)]) / numpy.linalg.det(vb_sub)), b
 
 
 def refit(res: metafopy.models.rma_uni.RMAResult, X: FloatArray) -> metafopy.models.rma_uni.RMAResult:
@@ -392,23 +429,28 @@ def permuted_design(res: metafopy.models.rma_uni.RMAResult, rng: metafopy.core.r
     rebuilt from them (``type="data"``); otherwise every column of the model matrix is shuffled (``type="X"``). Each shuffle is R's ``sample()``.
     """
     md = res.data
-    k = res.k
-    if md.formula_mods is not None and md.data is not None:
-        formula = md.formula_mods
-        found = [(m.start(), c) for c in md.data.columns if (m := re.search(rf'(?<![\w.]){re.escape(str(c))}(?![\w.])', formula)) is not None]
-        frame = md.data.loc[md.keep, [c for _, c in sorted(found, key=lambda t: t[0])]].reset_index(drop=True)
+    rows = md.data.loc[md.keep] if md.formula_mods is not None and md.data is not None else None
+    return permute_design(md.formula_mods, rows, res.X, rng)
+
+
+def permute_design(formula: str | None, rows: pandas.DataFrame | None, X: FloatArray, rng: metafopy.core.rng.RRandom) -> FloatArray:
+    """Shuffle the variables of ``formula`` found in ``rows`` (the data rows used in the fit) and rebuild the model matrix, or else the columns of ``X``."""
+    k = X.shape[0]
+    if formula is not None and rows is not None:
+        found = [(m.start(), c) for c in rows.columns if (m := re.search(rf'(?<![\w.]){re.escape(str(c))}(?![\w.])', formula)) is not None]
+        frame = rows[[c for _, c in sorted(found, key=lambda t: t[0])]].reset_index(drop=True)
         if len(frame) == k and not frame.empty:
             shuffled = frame.apply(lambda col: col.iloc[rng.sample_int(k) - 1].reset_index(drop=True))
-            X, _, _ = metafopy.formula.design_matrix(formula, shuffled)
-            if X.shape == res.X.shape:
-                return X
-    X = res.X.copy()
-    for j in range(X.shape[1]):
-        X[:, j] = X[rng.sample_int(k) - 1, j]
-    return X
+            Xnew, _, _ = metafopy.formula.design_matrix(formula, shuffled)
+            if Xnew.shape == X.shape:
+                return Xnew
+    Xs = X.copy()
+    for j in range(Xs.shape[1]):
+        Xs[:, j] = Xs[rng.sample_int(k) - 1, j]
+    return Xs
 
 
-def vif_sim_one(res: metafopy.models.rma_uni.RMAResult, groups: tuple[tuple[int, ...], ...], reestimate: bool, seed: int | None) -> FloatArray:
+def vif_sim_one(res: metafopy.models.rma_uni.RMAResult, groups: tuple[tuple[int, ...], ...], reestimate: bool, intercept: bool, seed: int | None) -> FloatArray:
     """One iteration of metafor's ``.compvifsim``: (G)VIFs after permuting the model matrix (``seed=None`` continues the global stream)."""
     rng = metafopy.core.rng.get_rng() if seed is None else metafopy.core.rng.RRandom(seed)
     X = permuted_design(res, rng)
@@ -420,7 +462,7 @@ def vif_sim_one(res: metafopy.models.rma_uni.RMAResult, groups: tuple[tuple[int,
         fit = refit(res, X)
     except FIT_ERRORS:
         return numpy.full(len(groups), math.nan)
-    return numpy.array([compvif(g, fit.vb, res.int_incl, fit if reestimate else None)[0] for g in groups])
+    return numpy.array([compvif(g, fit.vb, res.int_incl, fit if reestimate else None, intercept)[0] for g in groups])
 
 
 def coef_table(res: metafopy.models.rma_uni.RMAResult) -> pandas.DataFrame:
