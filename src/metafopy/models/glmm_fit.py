@@ -39,6 +39,7 @@ import metafopy.core.glmmadaptive
 import metafopy.core.nchg
 import metafopy.core.numderiv
 import metafopy.errors
+import metafopy.models.sel_opt
 
 __all__ = ['FitSpec', 'GLMMControl', 'ModelFit', 'fit_model']
 
@@ -49,7 +50,35 @@ NAN = math.nan
 # auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
 PACKAGES = ('lme4', 'GLMMadaptive', 'glmmTMB')
 # auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
-OPTIMIZERS = ('nlminb', 'clogit', 'clogistic')
+OPTIMIZERS = (
+    'optim',
+    'nlminb',
+    'uobyqa',
+    'newuoa',
+    'bobyqa',
+    'nloptr',
+    'nlm',
+    'hjk',
+    'nmk',
+    'mads',
+    'ucminf',
+    'lbfgsb3c',
+    'subplex',
+    'BBoptim',
+    'optimParallel',
+    'clogit',
+    'clogistic',
+    'Nelder-Mead',
+    'BFGS',
+    'CG',
+    'L-BFGS-B',
+    'SANN',
+    'Brent',
+    'Rcgmin',
+    'Rvmmin',
+)
+# auditme: accept[non-alphabetical-literal] the order is that of optim()'s documentation
+OPTMETHODS = ('Nelder-Mead', 'BFGS', 'CG', 'L-BFGS-B', 'SANN', 'Brent')
 GLMMADAPTIVE_MAX_COEF = 12.0
 GLMMADAPTIVE_MAX_COEF_SATURATED = 50.0
 SATURATED_WARNING = "Cannot fit saturated model (set 'verbose=TRUE' to obtain further details)."
@@ -63,7 +92,10 @@ class GLMMControl:
     list used for the integral in the exact conditional model; ``hessian_r`` is numDeriv's ``r``.
     ``package`` is the package that fits the mixed models: ``'lme4'``, ``'GLMMadaptive'`` or ``'glmmTMB'``.
     ``optimizer`` is ``'nlminb'`` (the default: a quasi-Newton maximisation of the exact likelihood of ``model='CM.EL'``),
-    ``'clogit'`` or ``'clogistic'`` (``survival::clogit()`` / ``Epi::clogistic()``, only for the fixed-effects methods);
+    ``'clogit'`` or ``'clogistic'`` (``survival::clogit()`` / ``Epi::clogistic()``, only for the fixed-effects methods) or one of the
+    other optimisers of ``rma.glmm`` (``'optim'`` with ``optmethod``, ``'Nelder-Mead'``, ``'BFGS'``, ``'bobyqa'``, ``'nlm'``, ...) that
+    :mod:`metafopy.models.sel_opt` provides: ``optim`` with ``BFGS`` and ``Nelder-Mead`` are ports of R's routines, the others stand in
+    for them with the closest SciPy method. ``opt_ctrl`` is metafor's ``optCtrl`` list (``maxit``, ``reltol``, ``abstol``, ``ndeps``);
     ``clogit_ctrl`` and ``clogistic_ctrl`` are metafor's ``clogitCtrl`` and ``clogisticCtrl`` lists (see :func:`clogit_settings`
     and :func:`clogistic_settings` for the entries).
     """
@@ -77,6 +109,8 @@ class GLMMControl:
     hessian_r: int = 16
     gtol: float = 1e-7
     optimizer: str = 'nlminb'
+    optmethod: str = 'BFGS'
+    opt_ctrl: collections.abc.Mapping[str, typing.Any] = dataclasses.field(default_factory=dict)
     clogit_ctrl: collections.abc.Mapping[str, typing.Any] = dataclasses.field(default_factory=dict)
     clogistic_ctrl: collections.abc.Mapping[str, typing.Any] = dataclasses.field(default_factory=dict)
 
@@ -630,13 +664,39 @@ def conditional_logistic(spec: FitSpec, base: SingleLevel) -> ModelFit:
     return ModelFit(res_fe.coef[:p], res_fe.vcov[:p, :p], 0.0, NAN, NAN, NAN, NAN, NAN, ll_fe, ll_qe, NAN, b2, vb2, None, qe_ok, p, p, k, 'FE')
 
 
+def search(spec: FitSpec, func: typing.Callable[[FloatArray], float], x0: FloatArray, what: str, *, dummy: bool) -> tuple[FloatArray, float]:
+    """Minimise ``func`` from ``x0`` with the optimiser of ``control$optimizer``: ``(estimates, minimum)``.
+
+    ``rma.glmm`` hands the optimiser one more parameter than the fixed-effects models use (``c(coef, 0)``, ``dummy=True``), which
+    changes the path of the simplex of ``Nelder-Mead``, so it is added here as well.
+
+    Raises:
+        metafopy.errors.EstimationError: the optimiser does not converge.
+    """
+    ctl = spec.control
+    if ctl.optimizer == 'nlminb':
+        res = minimise(func, x0, ctl.gtol)
+        return res.x, float(res.fun)
+    n = x0.shape[0]
+    fn = (lambda z: func(z[:n])) if dummy else func
+    par0 = numpy.append(x0, 0.0) if dummy else x0
+    # NLOPT_LN_BOBYQA is the default algorithm of metafor's nloptr call
+    choice = metafopy.models.sel_opt.OptimizerChoice('bobyqa' if ctl.optimizer == 'nloptr' else ctl.optimizer, ctl.optmethod)
+    try:
+        par = metafopy.models.sel_opt.minimize(fn, par0, choice, ctl.opt_ctrl)
+    except (metafopy.errors.EstimationError, ValueError, ArithmeticError, numpy.linalg.LinAlgError) as err:
+        raise metafopy.errors.EstimationError(f'Cannot fit {what} model. {err}') from err
+    est = numpy.asarray(par[:n], dtype=numpy.float64)
+    return est, func(est)
+
+
 def exact_conditional(spec: FitSpec, base: SingleLevel) -> ModelFit:
     """``CM.EL`` for odds ratios: maximise the non-central hypergeometric likelihood started from the ``CM.AL`` fit.
 
     Raises:
         metafopy.errors.EstimationError: an optimisation fails or the Hessian cannot be inverted.
     """
-    if spec.control.optimizer != 'nlminb':
+    if spec.control.optimizer in ('clogit', 'clogistic'):
         return conditional_logistic(spec, base)
     c = spec.cells
     k, p = spec.X.shape
@@ -651,9 +711,9 @@ def exact_conditional(spec: FitSpec, base: SingleLevel) -> ModelFit:
         return metafopy.core.numderiv.hessian(func, x, r=ctl.hessian_r)
 
     f_fe = fixed_objective(spec.X)
-    res_fe = minimise(f_fe, base.fe.coef[:p], ctl.gtol)
-    h_fe = hess(f_fe, res_fe.x)
-    ll_fe = -float(res_fe.fun)
+    x_fe, fun_fe = search(spec, f_fe, base.fe.coef[:p], 'FE', dummy=True)
+    h_fe = hess(f_fe, x_fe)
+    ll_fe = -fun_fe
 
     ll_qe, b2, vb2 = NAN, numpy.zeros(0), empty_vcov()
     qe_wld: float | None = None
@@ -663,28 +723,35 @@ def exact_conditional(spec: FitSpec, base: SingleLevel) -> ModelFit:
             keep = ~base.qe.aliased
             X_qe = base.X_qe[:, keep]
             f_qe = fixed_objective(X_qe)
-            res_qe = minimise(f_qe, base.qe.coef[keep], ctl.gtol)
-            h_qe = hess(f_qe, res_qe.x)
-            ll_qe = -float(res_qe.fun)
-            qe_wld = saturated_wald(res_qe.x, h_qe, p)
+            try:
+                x_qe, fun_qe = search(spec, f_qe, base.qe.coef[keep], 'saturated', dummy=True)
+            except metafopy.errors.EstimationError as err:
+                if ctl.optimizer == 'nlminb':
+                    raise
+                warnings.warn(str(err), stacklevel=3)
+            else:
+                h_qe = hess(f_qe, x_qe)
+                ll_qe = -fun_qe
+                qe_wld = saturated_wald(x_qe, h_qe, p)
+                qe_ok = True
         else:
             ll_qe = ll_fe
-        qe_ok = True
+            qe_ok = True
 
     if spec.method != 'ML':
         vb = invert_hessian(h_fe, spec.method)
-        return ModelFit(res_fe.x, vb, 0.0, NAN, NAN, NAN, NAN, NAN, ll_fe, ll_qe, NAN, b2, vb2, qe_wld, qe_ok, p, p, k, 'FE')
+        return ModelFit(x_fe, vb, 0.0, NAN, NAN, NAN, NAN, NAN, ll_fe, ll_qe, NAN, b2, vb2, qe_wld, qe_ok, p, p, k, 'FE')
 
     def f_ml(par: FloatArray) -> float:
         return metafopy.core.nchg.neg_loglik(par, tables, spec.X, True, integ)
 
-    res_ml = minimise(f_ml, numpy.append(base.ml_beta, math.log(base.ml_tau2 + 0.01)), ctl.gtol)
-    ll_ml = -float(res_ml.fun)
-    tau2 = math.exp(float(res_ml.x[p]))
+    x_ml, fun_ml = search(spec, f_ml, numpy.append(base.ml_beta, math.log(base.ml_tau2 + 0.01)), 'ML', dummy=False)
+    ll_ml = -fun_ml
+    tau2 = math.exp(float(x_ml[p]))
     if tau2 < ctl.tau2tol:
         vb = invert_hessian(h_fe, 'ML')
-        return ModelFit(res_fe.x, vb, tau2, NAN, NAN, 0.0, NAN, NAN, ll_fe, ll_qe, ll_ml, b2, vb2, qe_wld, qe_ok, p + 1, p, k, 'ML')
-    h_ml = hess(f_ml, res_ml.x)
+        return ModelFit(x_fe, vb, tau2, NAN, NAN, 0.0, NAN, NAN, ll_fe, ll_qe, ll_ml, b2, vb2, qe_wld, qe_ok, p + 1, p, k, 'ML')
+    h_ml = hess(f_ml, x_ml)
     vb_full = invert_hessian(h_ml, 'ML')
     vb = vb_full[:p, :p]
     if numpy.any(numpy.diag(vb) <= 0):
@@ -693,9 +760,9 @@ def exact_conditional(spec: FitSpec, base: SingleLevel) -> ModelFit:
     if vb_full[p, p] >= 0:
         se_tau2 = math.sqrt(float(vb_full[p, p])) * tau2
         crit = float(scipy.stats.norm.isf(spec.alpha / 2))
-        ci_lb = math.exp(float(res_ml.x[p]) - crit * math.sqrt(float(vb_full[p, p])))
-        ci_ub = math.exp(float(res_ml.x[p]) + crit * math.sqrt(float(vb_full[p, p])))
-    return ModelFit(res_ml.x[:p], vb, tau2, NAN, NAN, se_tau2, ci_lb, ci_ub, ll_fe, ll_qe, ll_ml, b2, vb2, qe_wld, qe_ok, p + 1, p, k, 'ML')
+        ci_lb = math.exp(float(x_ml[p]) - crit * math.sqrt(float(vb_full[p, p])))
+        ci_ub = math.exp(float(x_ml[p]) + crit * math.sqrt(float(vb_full[p, p])))
+    return ModelFit(x_ml[:p], vb, tau2, NAN, NAN, se_tau2, ci_lb, ci_ub, ll_fe, ll_qe, ll_ml, b2, vb2, qe_wld, qe_ok, p + 1, p, k, 'ML')
 
 
 def fit_model(spec: FitSpec) -> ModelFit:
