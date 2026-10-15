@@ -209,7 +209,11 @@ print(predict(rma('yi', 'vi', data=dat), transf=numpy.exp))
 ```
 
 `transf=` applies a transformation to the predictions and their bounds. Prediction intervals (`pi.lb`, `pi.ub`) include the
-heterogeneity.
+heterogeneity. `predtype=` (`pi_type=` is its old spelling) chooses how the interval is built: `'default'`, `'simple'` (no uncertainty
+of the predicted value, normal distribution), `'riley'` (a t distribution with `k - parms` degrees of freedom, Riley et al., 2011,
+<https://doi.org/10.1111/j.1467-985X.2010.00696.x>) or `'t'`; `newvi=` adds the sampling variances of new studies. Both work for every
+fit class. `na_action=` (`'omit'`, `'exclude'`, `'pass'` or `'fail'`, standing for R's `options(na.action=)`) decides whether the fitted
+values of `fitted()`, `predict()` and `hatvalues()` cover the studies used in fitting or one value for each study of the data.
 
 ### confint
 

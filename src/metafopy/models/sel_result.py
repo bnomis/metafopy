@@ -254,8 +254,12 @@ class SelmodelResult(metafopy.models.fit_methods.FitMethods):
 
         return metafopy.methods.vcov.vcov(self, type, na_action=na_action)
 
-    def fitted(self) -> FloatArray:
-        return self.X @ self.beta
+    def fitted(self, *, na_action: metafopy.models.rma_uni.NAActionAll = 'omit') -> FloatArray:
+        """Fitted values ``X beta`` (``na_action`` is accepted for symmetry: the selection model was fitted to the studies without missing values)."""
+        # auditme: accept[in-function-import] metafopy.methods imports this module, so the import is deferred to avoid a cycle
+        import metafopy.methods.fitted
+
+        return metafopy.methods.fitted.fitted_values(self, na_action)
 
     def weights_(self, type: str = 'diagonal', na_action: str = 'omit') -> FloatArray:
         """Not available (metafor's ``weights()`` stops for this class).
