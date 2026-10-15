@@ -33,6 +33,10 @@ type FloatArray = numpy.typing.NDArray[numpy.float64]
 
 TESTS = ('adn', 'adx2', 'ksn', 'ksx2', 'lrt', 'score', 'wald')
 GOODNESS_OF_FIT = ('adn', 'adx2', 'ksn', 'ksx2')
+MODEL_TESTS = ('lrt', 'score', 'wald')
+TAU2I_TESTS = ('lrt', 'wald')
+ESTIMATION_METHODS = ('ML', 'REML')
+# auditme: accept[non-alphabetical-dict-keys] order follows metafor's print method
 TEST_LABEL = {
     'lrt': 'Likelihood ratio test',
     'wald': 'Wald-type test',
@@ -76,7 +80,7 @@ class HettestResult:
                 boot = f'Yes ({done}/{self.iter} iterations)'
             pval = metafopy.bias.inputs.fp(float(self.pval[j]), d, equal=True, sep=True, pname='p ')
             stat = metafopy.bias.inputs.fx(float(self.statistic[j]), d)
-            result = f'X^2(df = {int(self.df[j])}) = {stat}, {pval}' if test in ('lrt', 'wald', 'score') else f'statistic = {stat}, {pval}'
+            result = f'X^2(df = {int(self.df[j])}) = {stat}, {pval}' if test in MODEL_TESTS else f'statistic = {stat}, {pval}'
             out += (
                 '\nTest for Heteroscedastic Heterogeneity\n\n'
                 f'Estimation method: {method}\n'
@@ -278,7 +282,11 @@ def run_test(
 
 
 def expand_boot(boot: bool | int | collections.abc.Sequence[bool], tests: tuple[str, ...]) -> tuple[list[bool], int]:
-    """The per-test bootstrap flags and the number of iterations; a number is the iteration count (bootstrapping all tests)."""
+    """The per-test bootstrap flags and the number of iterations; a number is the iteration count (bootstrapping all tests).
+
+    Raises:
+        metafopy.errors.InputError: ``boot`` has neither one entry nor one per test.
+    """
     ntest = len(tests)
     if not isinstance(boot, bool) and isinstance(boot, int | float):
         return [True] * ntest, max(1, round(boot))
@@ -321,7 +329,7 @@ def hettest(
     tests = (test.lower(),) if isinstance(test, str) else tuple(t.lower() for t in test)
     if not tests or any(t not in TESTS for t in tests):
         raise metafopy.errors.InputError("Unknown option specified for the 'test' argument.")
-    if method is not None and method not in ('ML', 'REML'):
+    if method is not None and method not in ESTIMATION_METHODS:
         raise metafopy.errors.InputError('Test must be based on ML/REML estimation.')
     unknown = {key.replace('.', '_') for key in control or {}} - {'maxiter', 'tau2i_init', 'threshold'}
     if unknown:
@@ -340,7 +348,7 @@ def hettest(
         if method is not None:
             warnings.warn("Argument 'method' ignored when 'x' is a model object.", stacklevel=2)
         yi, v = view.yi, view.vi
-        if view.method in ('ML', 'REML'):
+        if view.method in ESTIMATION_METHODS:
             fit_method = view.method
             model = typing.cast(metafopy.models.rma_uni.RMAResult, x)
         else:
@@ -392,7 +400,7 @@ def hettest(
         sim[:, 0] = yi
 
     tau2i = est_tau2i(yi, v, fit_method, res0, mom, init, threshold, maxiter)
-    if tau2i is None and any(t in ('lrt', 'wald') for t in tests):
+    if tau2i is None and any(t in TAU2I_TESTS for t in tests):
         raise metafopy.errors.InputError('Could not estimate the tau^2_i values.')
 
     ntest = len(tests)
@@ -417,7 +425,7 @@ def hettest(
                 return None
             ri_boot = (sb - res0_boot.beta) / numpy.sqrt(v + res0_boot.tau2)
             tau2i_boot: FloatArray | None = None
-            if any(t in ('lrt', 'wald') for t in tests):
+            if any(t in TAU2I_TESTS for t in tests):
                 tau2i_boot = est_tau2i(sb, v, fit_method, res0_boot, mom, init, threshold, maxiter)
                 if tau2i_boot is None:
                     return None

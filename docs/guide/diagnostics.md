@@ -131,6 +131,39 @@ set_seed(1234)
 plot_gosh(gosh(res, subsets=200))
 ```
 
+## Heteroscedastic heterogeneity
+
+The random-effects model assumes the same amount of heterogeneity, tau^2, for every study. `hettest` (new in metafor 5.2-1) tests
+this assumption, H0: tau^2_1 = ... = tau^2_k, for a model without moderators or for a vector of estimates with their sampling
+variances (`vi=`) or standard errors (`sei=`). The default is a score test; `test='lrt'` and `test='wald'` give a likelihood
+ratio and a Wald-type test, and `'ksn'`, `'ksx2'`, `'adn'` and `'adx2'` check the Pearson residuals with Kolmogorov-Smirnov and
+Anderson-Darling goodness-of-fit tests. The p-values come from a parametric bootstrap (`boot=1000` samples unless you set
+`boot=` to another count), which draws from R's random number generator, so `seed=` gives the results of `set.seed()` in R.
+`boot=False` uses the chi-squared reference distribution of the three model-based tests instead.
+
+```python
+from metafopy import hettest
+
+print(hettest(res, seed=1234))
+print(hettest(res, test=['lrt', 'ksn'], boot=200, seed=1234))
+```
+
+```text
+
+Test for Heteroscedastic Heterogeneity
+
+Estimation method: Restricted maximum likelihood
+Test type:         Score test
+Bootstrapping:     Yes (1000/1000 iterations)
+
+X^2(df = 12) = 2.8884, p = 0.9920
+
+```
+
+The result holds the statistics (`statistic`), p-values (`pval`), the estimated study-specific variances (`tau2i`) and the
+bootstrapped statistics (`statistic_boot`). Fitted models of the classes `rma_mv`, `rma_glmm`, `selmodel` and location-scale
+models are not accepted, as in metafor.
+
 ## Variance inflation factors
 
 For meta-regression, `vif` reports collinearity among the moderators:

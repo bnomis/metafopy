@@ -25,7 +25,7 @@ import metafopy.errors
 import metafopy.plot
 
 REF: dict[str, typing.Any] = json.loads((pathlib.Path(__file__).parent / 'reference' / 'phase11' / 'profile_plots.json').read_text(encoding='utf-8'))
-SKIP = {'mtext', 'axis', 'usr'}
+SKIP = ['axis', 'mtext', 'usr']
 
 
 @pytest.fixture

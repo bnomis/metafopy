@@ -95,7 +95,11 @@ def draw_one(
 
 
 def per_panel(value: str | collections.abc.Sequence[str] | None, n: int, what: str) -> list[str | None]:
-    """metafor's ``.expand1()``: one value for every panel, or one per panel."""
+    """metafor's ``.expand1()``: one value for every panel, or one per panel.
+
+    Raises:
+        metafopy.errors.InputError: ``value`` has neither one entry nor one per panel.
+    """
     if value is None or isinstance(value, str):
         return [value] * n
     if len(value) == 1:
