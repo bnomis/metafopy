@@ -43,6 +43,7 @@ from metafopy.methods.deltamethod import DeltaMethodResult, deltamethod
 from metafopy.methods.emm_grid import EmmGrid, contrast, emmeans, emmprep, pairs, regrid
 from metafopy.methods.emm_summary import EmmSummary
 from metafopy.methods.gosh import GoshResult, gosh
+from metafopy.methods.hettest import HettestResult, hettest
 from metafopy.methods.influence import InfluenceResult, ResidualResult, cooks_distance, dfbetas, influence, rstandard, rstudent
 from metafopy.methods.leave1out import CumulResult, Leave1outResult, cumul, leave1out
 from metafopy.methods.matreg import MatregConfintResult, MatregPredictResult, MatregResult, matreg
@@ -105,6 +106,7 @@ __all__ = [
     'GLMMResult',
     'GoshResult',
     'HcResult',
+    'HettestResult',
     'InfluenceResult',
     'LRTResult',
     'LSControl',
@@ -173,6 +175,7 @@ __all__ = [
     'getmfopt',
     'gosh',
     'hc',
+    'hettest',
     'influence',
     'labbe',
     'leave1out',
