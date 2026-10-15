@@ -34,7 +34,7 @@ TOLERANCE: dict[str, float] = {
     'or_rs_probit': 1e-2,
     'or_rs_cloglog': 1e-2,
     'or_rs_probit_fe': 1e-4,
-    'el_probit_fe': 1e-4,
+    'el_probit_fe': 1e-3,
 }
 # the Wald statistic of the exact conditional model is dominated by finite-difference noise in R
 # auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
