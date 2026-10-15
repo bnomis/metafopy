@@ -35,6 +35,7 @@ nav:
       - Selection and location-scale models: guide/advanced.md
       - Diagnostics: guide/diagnostics.md
       - Publication bias: guide/bias.md
+      - Estimated marginal means: guide/emmeans.md
       - Plots: guide/plots.md
       - Plot gallery: guide/gallery.md
       - Datasets: guide/datasets.md
