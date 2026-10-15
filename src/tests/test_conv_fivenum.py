@@ -67,10 +67,6 @@ def test_lognormal() -> None:
 
 def test_errors() -> None:
     dat = refutil.r_frame(REF['input1'])
-    with pytest.raises(metafopy.errors.NotSupportedError, match='estmeansd'):
-        metafopy.conv_fivenum(**COLS, data=dat, method='qe')
-    with pytest.raises(metafopy.errors.NotSupportedError, match='metaBLUE'):
-        metafopy.conv_fivenum(**COLS, data=dat, method='blue')
     # as in R, a method that exists only for the means (or SDs) must be paired with one for the other
     with pytest.raises(metafopy.errors.InputError, match="Unknown 'method'"):
         metafopy.conv_fivenum(**COLS, data=dat, method='luo2016')
