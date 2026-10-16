@@ -121,9 +121,7 @@ def run_script(script: Json, nse: set[str], timeout: float) -> tuple[list[Json],
 def run_shard(job: tuple[str, str, list[str], float]) -> str:
     """Process entry point: (R results of the shard, output path, names of the functions with a ``data`` argument, timeout) -> output path."""
     r_path, out_path, nse_names, timeout = job
-    import resource
-
-    resource.setrlimit(resource.RLIMIT_AS, (audit.config.MEMORY_LIMIT, audit.config.MEMORY_LIMIT))
+    audit.config.limit_memory()
     audit.rlib.METAFOR_FUNCTIONS.update(json.loads(pathlib.Path(out_path + '.functions').read_text()))
     doc = json.loads(pathlib.Path(r_path).read_text())
     findings: list[Json] = []

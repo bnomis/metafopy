@@ -22,3 +22,12 @@ DRIFT_RTOL = 1e-4
 CASE_TIMEOUT = 120.0
 SEED = 1234
 MEMORY_LIMIT = 4 * 1024**3
+
+
+def limit_memory() -> None:
+    """Cap the address space of this process; the harness runs on Linux and macOS, and on Windows (no ``resource`` module) this does nothing."""
+    try:
+        import resource
+    except ImportError:
+        return
+    resource.setrlimit(resource.RLIMIT_AS, (MEMORY_LIMIT, MEMORY_LIMIT))

@@ -4,7 +4,6 @@ import contextlib
 import io
 import json
 import pathlib
-import resource
 import signal
 import time
 import typing
@@ -161,7 +160,7 @@ def classify(r: Json, py: Json, value: object) -> list[Json]:
 def run_shard(job: tuple[str, str, str, str, float]) -> str:
     """Process entry point: (fixtures.json, cases.json, r-results.json, out.json, timeout) -> out path."""
     fixtures_path, cases_path, r_path, out_path, timeout = job
-    resource.setrlimit(resource.RLIMIT_AS, (audit.config.MEMORY_LIMIT, audit.config.MEMORY_LIMIT))
+    audit.config.limit_memory()
     fixtures = json.loads(pathlib.Path(fixtures_path).read_text())
     cases = json.loads(pathlib.Path(cases_path).read_text())
     r_doc = json.loads(pathlib.Path(r_path).read_text())

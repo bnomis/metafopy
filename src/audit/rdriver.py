@@ -2,7 +2,6 @@
 
 import os
 import pathlib
-import resource
 import subprocess
 
 import audit.config
@@ -29,7 +28,7 @@ def run(script: pathlib.Path, *args: str) -> subprocess.CompletedProcess[str]:
 
 
 def limit_memory() -> None:
-    resource.setrlimit(resource.RLIMIT_AS, (audit.config.MEMORY_LIMIT, audit.config.MEMORY_LIMIT))
+    audit.config.limit_memory()
 
 
 def start(script: pathlib.Path, log: pathlib.Path, *args: str) -> subprocess.Popen[bytes]:
