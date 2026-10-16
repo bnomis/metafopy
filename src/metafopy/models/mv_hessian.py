@@ -6,8 +6,10 @@ metafor obtains the covariance matrix of the coefficients when they are optimise
 https://github.com/wviechtb/metafor/blob/master/R/rma.mv.r; the numerical derivative is :func:`metafopy.core.numderiv.hessian`.
 """
 
+import collections.abc
 import dataclasses
 import math
+import typing
 import warnings
 
 import numpy
@@ -27,11 +29,10 @@ type BoolArray = numpy.typing.NDArray[numpy.bool_]
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class HessianArgs:
-    """``hessianCtrl`` of metafor's ``numDeriv`` branch and the tolerance below which a row of the Hessian counts as fixed."""
+    """``hesspack`` and ``hessianCtrl`` of metafor and the tolerance below which a row of the Hessian counts as fixed."""
 
-    d: float
-    eps: float
-    r: int
+    hesspack: str
+    ctrl: collections.abc.Mapping[str, typing.Any]
     tol: float
 
 
@@ -65,7 +66,7 @@ def richardson(problem: metafopy.models.mv_lik.Problem, x: FloatArray, reml: boo
         return metafopy.models.mv_lik.negative_loglik(problem, par, reml, vctransf, vccov)
 
     with numpy.errstate(all='ignore'):
-        return metafopy.core.numderiv.hessian(func, x, d=args.d, eps=args.eps, r=args.r)
+        return metafopy.core.numderiv.hessian_by_package(func, x, args.hesspack, args.ctrl)
 
 
 def fixed_rows(hessian: FloatArray, tol: float) -> BoolArray:

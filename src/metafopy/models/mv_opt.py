@@ -2,12 +2,16 @@
 
 metafor minimises ``-ll`` with ``nlminb`` (a derivative-free-start quasi-Newton routine from the PORT library). Here the
 BFGS algorithm of SciPy is used with the analytic score of :func:`metafopy.models.mv_lik.gradient`, which reaches the same
-optimum to well within the tolerance of the parity tests (Nocedal and Wright, 2006, *Numerical Optimization*, ch. 6).
+optimum to well within the tolerance of the parity tests (Nocedal and Wright, 2006, *Numerical Optimization*, ch. 6). The other
+optimisers of metafor's ``control$optimizer`` (``optim`` with ``optmethod``, ``nlm``, ``bobyqa``, ``hjk``, ...) are run through
+:func:`metafopy.models.sel_opt.minimize`, which ports ``optim``'s BFGS and Nelder-Mead and maps the others to SciPy methods;
+``mfmaxit`` limits the number of likelihood evaluations as in metafor.
 """
 
 import collections.abc
 import dataclasses
 import math
+import typing
 
 import numpy
 import numpy.typing
@@ -16,6 +20,7 @@ import scipy.optimize
 import metafopy.core.stationarity
 import metafopy.errors
 import metafopy.models.mv_lik
+import metafopy.models.sel_opt
 
 __all__ = ['OptResult', 'maximise']
 
@@ -41,16 +46,31 @@ def maximise(
     maxiter: int = 5000,
     nonsmooth: bool = False,
     log: collections.abc.Callable[[FloatArray, float], None] | None = None,
+    choice: metafopy.models.sel_opt.OptimizerChoice | None = None,
+    opt_ctrl: collections.abc.Mapping[str, typing.Any] | None = None,
+    mfmaxit: float = math.inf,
 ) -> OptResult:
     """Maximise the log-likelihood over the entries ``free`` of the parameter vector, starting from ``par0``.
 
     ``nonsmooth`` (a lasso penalty with ``optbeta``) accepts the last iterate when the line search can no longer improve it,
     since the gradient does not vanish at a kink. ``log`` is called with the parameters and the log-likelihood of each evaluation.
 
+    ``choice`` names an optimiser of metafor other than the default ``nlminb`` and ``opt_ctrl`` its settings; ``mfmaxit`` is the
+    most evaluations of the log-likelihood allowed.
+
     Raises:
-        metafopy.errors.EstimationError: the optimiser did not converge.
+        metafopy.errors.EstimationError: the optimiser did not converge or ``mfmaxit`` was reached.
     """
     base = par0.copy()
+    evaluations = 0
+
+    def count() -> None:
+        nonlocal evaluations
+        if evaluations > mfmaxit:
+            raise metafopy.errors.EstimationError(
+                f'Error during the optimization (maximum number of iterations, mfmaxit={mfmaxit}, reached). Use verbose=True to see the progress.'
+            )
+        evaluations += 1
 
     def expand(x: FloatArray) -> FloatArray:
         par = base.copy()
@@ -58,6 +78,7 @@ def maximise(
         return par
 
     def objective(x: FloatArray) -> tuple[float, FloatArray]:
+        count()
         par = expand(x)
         val = metafopy.models.mv_lik.negative_loglik(problem, par, reml)
         if log is not None and math.isfinite(val):
@@ -71,6 +92,8 @@ def maximise(
         return val, grad
 
     x0 = par0[free].copy()
+    if choice is not None:
+        return maximise_other(problem, par0, free, reml, choice, opt_ctrl or {}, expand, count, log)
     if objective(x0)[0] >= HUGE:
         raise metafopy.errors.EstimationError(
             'Cannot evaluate the log-likelihood at the initial values (the marginal variance-covariance matrix is not positive definite).'
@@ -92,3 +115,43 @@ def maximise(
         if gnorm > SLACK_GRADIENT and not nonsmooth and (improved or decrement > metafopy.core.stationarity.REL_TOL * (1 + abs(val))):
             raise metafopy.errors.EstimationError(f'Optimizer (BFGS) did not achieve convergence ({res.message}).')
     return OptResult(par=expand(x), value=-val, iterations=int(res.nit))
+
+
+def maximise_other(
+    problem: metafopy.models.mv_lik.Problem,
+    par0: FloatArray,
+    free: numpy.typing.NDArray[numpy.intp],
+    reml: bool,
+    choice: metafopy.models.sel_opt.OptimizerChoice,
+    opt_ctrl: collections.abc.Mapping[str, typing.Any],
+    expand: collections.abc.Callable[[FloatArray], FloatArray],
+    count: collections.abc.Callable[[], None],
+    log: collections.abc.Callable[[FloatArray, float], None] | None,
+) -> OptResult:
+    """Maximise with an optimiser of metafor that has no analytic-gradient counterpart: it sees only the negative log-likelihood.
+
+    Raises:
+        metafopy.errors.EstimationError: the log-likelihood cannot be evaluated at the initial values or the optimiser failed.
+    """
+
+    def objective(x: FloatArray) -> float:
+        count()
+        par = expand(x)
+        val = metafopy.models.mv_lik.negative_loglik(problem, par, reml)
+        if log is not None and math.isfinite(val):
+            log(par, -val)
+        return val
+
+    x0 = par0[free].copy()
+    if not math.isfinite(objective(x0)):
+        raise metafopy.errors.EstimationError(
+            'Cannot evaluate the log-likelihood at the initial values (the marginal variance-covariance matrix is not positive definite).'
+        )
+    try:
+        x = metafopy.models.sel_opt.minimize(objective, x0, choice, opt_ctrl)
+    except metafopy.errors.EstimationError:
+        raise
+    except (ValueError, ArithmeticError, numpy.linalg.LinAlgError) as err:
+        raise metafopy.errors.EstimationError(f'Error during the optimization: {err}') from err
+    val = objective(x)
+    return OptResult(par=expand(x), value=-val, iterations=0)

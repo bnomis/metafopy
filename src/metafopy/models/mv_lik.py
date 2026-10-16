@@ -10,6 +10,7 @@ which replaces the derivative-free ``nlminb`` search of metafor.
 
 import dataclasses
 import math
+import warnings
 
 import numpy
 import numpy.typing
@@ -17,6 +18,7 @@ import scipy.linalg
 import scipy.sparse
 import scipy.sparse.linalg
 
+import metafopy.core.linalg
 import metafopy.errors
 import metafopy.models.mv_structs
 
@@ -75,6 +77,7 @@ class Problem:
     lambda1: float = 0.0
     lambda2: float = 0.0
     intercept: bool = True
+    nearpd: bool = False
 
     @property
     def k(self) -> int:
@@ -235,6 +238,9 @@ def evaluate(problem: Problem, par: FloatArray, vctransf: bool = True, vccov: bo
     if problem.h is not None and problem.ZZ_h is not None:
         gamma2, phi, H = structure(problem, problem.h, metafopy.models.mv_structs.H_NAMES, gam_par, phi_par, vctransf, vccov)
         M = M + hadamard(quad_form(problem.h.Z1, H, problem.sparse), problem.ZZ_h)
+    if problem.nearpd:
+        dense = M.toarray() if scipy.sparse.issparse(M) else numpy.asarray(M)
+        M = numpy.asarray(metafopy.core.linalg.near_pd(dense).mat, dtype=numpy.float64)
     return Evaluated(M=M, sigma2=sigma2, tau2=tau2, rho=rho, G=G, gamma2=gamma2, phi=phi, H=H)
 
 
@@ -289,7 +295,9 @@ def negative_loglik(problem: Problem, par: FloatArray, reml: bool, vctransf: boo
     correlations (``vccov=True``: covariances) on their original scale, as metafor does for the Hessian of the variance components.
     """
     off = problem.offset
-    with numpy.errstate(all='ignore'):
+    with numpy.errstate(all='ignore'), warnings.catch_warnings():
+        if problem.nearpd:
+            warnings.simplefilter('ignore')
         ev = evaluate(problem, par[off:], vctransf, vccov)
         if not numpy.all(numpy.isfinite(ev.M.data if scipy.sparse.issparse(ev.M) else ev.M)):
             return math.inf
@@ -373,7 +381,7 @@ def gradient(problem: Problem, par: FloatArray, reml: bool, free: numpy.typing.N
     ``optbeta`` the leading entries of ``par`` are the coefficients, whose gradient is ``-X'W r`` plus that of the penalty.
     """
     off = problem.offset
-    if not problem.optbeta and problem.beta_arg is not None and not numpy.all(numpy.isnan(problem.beta_arg)):
+    if problem.nearpd or (not problem.optbeta and problem.beta_arg is not None and not numpy.all(numpy.isnan(problem.beta_arg))):
         return numeric_gradient(problem, par, reml, free)
     with numpy.errstate(all='ignore'):
         rest = par[off:]
