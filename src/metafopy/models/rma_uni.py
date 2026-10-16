@@ -609,8 +609,10 @@ def rma_uni(
             na_action=na_action,
             measure=measure,
         )
-    if vlevel > 1 and md.na_rows is not None and md.na_rows.any():
-        metafopy.core.verbose.message('Handling NAs ...')
+    if md.na_rows is not None and md.na_rows.any():
+        if vlevel > 1:
+            metafopy.core.verbose.message('Handling NAs ...')
+        warn_na_omitted(int(md.na_rows.sum()))
     if optbeta or att is not None:
         warnings.warn("Arguments 'optbeta' and 'att' are only relevant for location-scale models and hence ignored.", stacklevel=2)
     res = fit_rma_uni(
@@ -627,6 +629,11 @@ def rma_uni(
     if vlevel:
         metafopy.core.verbose.cat('\n')
     return dataclasses.replace(res, measure=measure)
+
+
+def warn_na_omitted(n: int) -> None:
+    """metafor's warning that ``n`` studies were left out of the model fit because of missing values."""
+    warnings.warn(f'{n} {"studies" if n > 1 else "study"} with NAs omitted from model fitting.', stacklevel=3)
 
 
 def fit_location_scale(
@@ -686,7 +693,11 @@ def metadata_from_escalc(
 
     data_sub = None if data is None else data.iloc[idx].reset_index(drop=True)
     ni_es = es.attrs.get('ni')
-    return metafopy.metadata.MetaData.from_inputs(
+    count_names = ('ai', 'bi', 'ci', 'di', 'x1i', 'x2i', 't1i', 't2i')
+    counts_all = {
+        name: arr[idx] for name in count_names if name in raw and (arr := metafopy.metadata.column(raw[name], data, name)) is not None and arr.shape[0] == k_all
+    }
+    md = metafopy.metadata.MetaData.from_inputs(
         es['yi'].to_numpy(dtype=numpy.float64),
         es['vi'].to_numpy(dtype=numpy.float64),
         weights=sub(weights),
@@ -694,9 +705,10 @@ def metadata_from_escalc(
         mods=sub(mods),
         intercept=intercept,
         data=data_sub,
-        slab=sub(slab),
+        slab=[str(i + 1) for i in idx] if slab is None else sub(slab),
         na_action=na_action,
     )
+    return dataclasses.replace(md, counts_all=counts_all or None)
 
 
 rma = rma_uni

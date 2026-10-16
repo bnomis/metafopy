@@ -540,8 +540,9 @@ def rma_mv(
     A_mat = metafopy.models.mv_inputs.prepare_w(W, data_frame, k_all, sparse)
     X_all, x_names, x_missing, intercept_flag = metafopy.models.mv_inputs.build_x(mods_in, intercept_in, data_frame, k_all)
 
+    stored_slab = metafopy.metadata.escalc_attr(yi if isinstance(yi, str) else None, data, k_all, 'slab') if slab is None else None
     if slab is None:
-        slab_all = tuple(str(i + 1) for i in range(k_all))
+        slab_all = tuple(str(i + 1) for i in range(k_all)) if stored_slab is None else tuple(str(s) for s in stored_slab.tolist())
     elif isinstance(slab, str):
         if data_frame is None or slab not in data_frame.columns:
             raise metafopy.errors.InputError(f'slab={slab!r} names a column, but it is not in the data')

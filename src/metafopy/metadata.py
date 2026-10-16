@@ -83,18 +83,49 @@ def subset_mask(subset: numpy.typing.ArrayLike | str | None, k: int, data: panda
     return mask
 
 
+ROWS_KEY = 'rows'
+
+
+def frame_attr(frame: pandas.DataFrame | pandas.Series | None, key: str) -> numpy.typing.NDArray[typing.Any] | None:
+    """The row-wise attribute ``key`` (``'ni'`` or ``'slab'``) of an ``escalc`` frame, restricted to the rows that are left in ``frame``.
+
+    R subsets the ``ni`` and ``slab`` attributes of the ``yi`` variable with the rows (``[.escalc``). pandas copies ``attrs`` unchanged when
+    rows are selected, so ``escalc`` also stores the row labels it was created with (``attrs['rows']``) and the attribute is matched on them.
+    Without a match (including a frame renumbered from 0, whose rows cannot be told apart from the first ones) the attribute is used when it has one
+    value per row and dropped otherwise.
+    """
+    if frame is None:
+        return None
+    value = frame.attrs.get(key)
+    if value is None:
+        return None
+    arr = numpy.asarray(value).reshape(-1)
+    rows = frame.attrs.get(ROWS_KEY)
+    if rows is not None and len(rows) == arr.shape[0]:
+        ref = pandas.Index(rows)
+        index = frame.index
+        default_index = isinstance(index, pandas.RangeIndex) and index.start == 0 and index.step == 1
+        if not default_index and not index.equals(ref) and ref.is_unique and index.isin(ref).all():
+            aligned: numpy.typing.NDArray[typing.Any] = arr[ref.get_indexer(index)]
+            return aligned
+    return arr if arr.shape[0] == frame.shape[0] else None
+
+
+def escalc_attr(yi: Column | None, data: pandas.DataFrame | None, k_all: int, key: str) -> numpy.typing.NDArray[typing.Any] | None:
+    """The ``ni`` or ``slab`` stored with ``yi`` by ``escalc``, which ``rma.uni`` picks up from ``attr(yi, "ni")`` and ``attr(yi, "slab")``."""
+    if isinstance(yi, str) and data is not None and yi in data.columns:
+        arr = frame_attr(data, key)
+    elif isinstance(yi, pandas.Series):
+        arr = frame_attr(yi, key)
+    else:
+        return None
+    return arr if arr is not None and arr.shape[0] == k_all else None
+
+
 def escalc_ni(yi: Column | None, data: pandas.DataFrame | None, k_all: int) -> FloatArray | None:
     """Sample sizes stored with ``yi`` by ``escalc``, which ``rma.uni`` picks up from ``attr(yi, "ni")``."""
-    attrs: dict[typing.Any, typing.Any] | None = None
-    if isinstance(yi, str) and data is not None and yi in data.columns:
-        attrs = data.attrs
-    elif isinstance(yi, pandas.Series):
-        attrs = yi.attrs
-    stored = None if attrs is None else attrs.get('ni')
-    if stored is None:
-        return None
-    arr = numpy.asarray(stored, dtype=numpy.float64)
-    return arr if arr.ndim == 1 and arr.shape[0] == k_all else None
+    arr = escalc_attr(yi, data, k_all, 'ni')
+    return None if arr is None else arr.astype(numpy.float64)
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -106,7 +137,8 @@ class MetaData:
     can be reported on the original rows (metafor's ``na.action="na.pass"``).
     ``na_rows`` flags the subsetted rows dropped for missing values, ``formula_mods`` is the formula of ``mods`` (if it was one), and ``labels_all``,
     ``yi_all``, ``vi_all`` and ``X_all`` hold the label, estimate, variance and design row of every supplied row
-    (``forest`` shows the flagged rows with ``na_action='pass'``).
+    (``forest`` shows the flagged rows with ``na_action='pass'``). ``counts_all`` holds the 2x2 table or person-time counts of the ``k_all`` rows
+    when the effects were computed from them (metafor's ``outdat.f``, which ``labbe`` needs).
     """
 
     yi: FloatArray
@@ -125,6 +157,7 @@ class MetaData:
     yi_all: FloatArray | None = dataclasses.field(default=None, repr=False)
     vi_all: FloatArray | None = dataclasses.field(default=None, repr=False)
     X_all: FloatArray | None = dataclasses.field(default=None, repr=False)
+    counts_all: dict[str, FloatArray] | None = dataclasses.field(default=None, repr=False)
 
     @property
     def k(self) -> int:
@@ -183,6 +216,10 @@ class MetaData:
 
         w = column(weights, data, 'weights')
         n = column(ni, data, 'ni')
+        if v.shape[0] == 1 and k_all != 1:
+            v = numpy.repeat(v, k_all)
+        if w is not None and w.shape[0] == 1 and k_all != 1:
+            w = numpy.repeat(w, k_all)
         if n is None:
             n = escalc_ni(yi, data, k_all)
         for name, arr in (('vi', v), ('weights', w), ('ni', n)):
@@ -192,7 +229,10 @@ class MetaData:
         X, X_names, x_missing, has_intercept = cls.design(mods, intercept, data, k_all)
 
         if slab is None:
-            labels: tuple[str, ...] = tuple(str(i + 1) for i in range(k_all))
+            stored = escalc_attr(yi, data, k_all, 'slab')
+            if stored is not None and any(s is None or (isinstance(s, float) and numpy.isnan(s)) for s in stored.tolist()):
+                raise metafopy.errors.InputError('NAs in study labels.')
+            labels: tuple[str, ...] = tuple(str(i + 1) for i in range(k_all)) if stored is None else tuple(str(s) for s in stored.tolist())
         elif isinstance(slab, str):
             if data is None:
                 raise metafopy.errors.InputError(f'slab={slab!r} names a column, but no data was given')

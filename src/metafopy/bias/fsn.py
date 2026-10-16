@@ -191,7 +191,10 @@ def fsn(
         elif typ == 'Orwin' and weighted is None and vi is None and sei is None:
             v_in = 1.0
         if isinstance(v_in, float) and v_in == 1.0:
-            ones = numpy.ones(numpy.atleast_1d(numpy.asarray(x, dtype=numpy.float64)).shape[0])
+            x_vec = metafopy.bias.inputs.as_vector(x, 'x', data)
+            if x_vec is None:
+                raise metafopy.errors.InputError("Argument 'x' must be a vector with estimates or an 'rma' model object.")
+            ones = numpy.ones(x_vec.shape[0])
             yi, v_opt, _ = metafopy.bias.inputs.vector_inputs(x, ones, None, subset=subset, data=data, what='the calculation')
         else:
             yi, v_opt, _ = metafopy.bias.inputs.vector_inputs(

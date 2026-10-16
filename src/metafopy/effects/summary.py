@@ -126,7 +126,11 @@ def summary_escalc(
         raise metafopy.errors.InputError("Argument 'out_names' must be of length 5.")
     out_names = list(out_names)
 
-    attrs = object.attrs
+    # R's `[.escalc` keeps only the names of variables that are still in the data frame
+    attrs = {
+        key: ([n for n in names(value) if n in object.columns] or None) if isinstance(key, str) and key.endswith('_names') else value
+        for key, value in object.attrs.items()
+    }
     if var_names is None:
         if attrs.get('yi_names'):
             yi_name = names(attrs['yi_names'])[0]
@@ -209,7 +213,7 @@ def summary_escalc(
     # the escalc attributes stay with an untransformed yi (in R they are attributes of the yi vector)
     new_attrs: dict[str, typing.Any] = {}
     if transf is None:
-        new_attrs.update({key: attrs[key] for key in ('measure', 'slab', 'ni') if key in attrs})
+        new_attrs.update({key: attrs[key] for key in ('measure', 'slab', 'ni', 'rows') if key in attrs})
     new_attrs['digits'] = digits if digits is not None else attrs.get('digits')
     new_attrs['yi_names'] = union(yi_name, attrs.get('yi_names'))
     new_attrs['vi_names'] = union(vi_name, attrs.get('vi_names'))

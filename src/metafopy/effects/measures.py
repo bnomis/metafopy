@@ -517,6 +517,7 @@ def escalc(
     yv[numpy.isnan(yv)] = math.nan
     vv[numpy.isnan(vv)] = math.nan
 
+    yi_repl = numpy.ones(k, dtype=numpy.bool_)
     if has_data and append:
         if data is None:
             raise metafopy.errors.InternalError('data must not be None')
@@ -534,6 +535,8 @@ def escalc(
             col = dat[name].to_numpy(dtype=numpy.float64, copy=True)
             col[inc & repl] = values[inc & repl]
             dat[name] = col
+            if name == var_names[0]:
+                yi_repl = repl
         if add_measure:
             mname = var_names[2]
             if replace or mname not in dat.columns:
@@ -555,10 +558,25 @@ def escalc(
         dat[var_names[2]] = dat[var_names[2]].where(dat[var_names[2]].notna(), '')
 
     prev_attrs = dict(data.attrs) if has_data and data is not None else {}
+    prev_ni = prev_slab = None
+    if has_data and append and data is not None:
+        prev_ni = metafopy.metadata.frame_attr(data, 'ni')
+        prev_slab = metafopy.metadata.frame_attr(data, 'slab')
+        prev_ni = None if prev_ni is None else prev_ni.astype(numpy.float64)[sub]
+        prev_slab = None if prev_slab is None else prev_slab[sub]
+    ni_attr: FloatArray | None
+    if ni_u is None:
+        ni_attr = prev_ni
+    elif prev_ni is None:
+        ni_attr = numpy.where(inc, ni_u, metafopy.effects.na.NA)
+    else:
+        ni_attr = prev_ni.copy()
+        ni_attr[inc & yi_repl] = ni_u[inc & yi_repl]
     dat.attrs = {}
     dat.attrs['measure'] = measure
-    dat.attrs['slab'] = labels
-    dat.attrs['ni'] = None if ni_u is None else numpy.where(inc, ni_u, metafopy.effects.na.NA)
+    dat.attrs['slab'] = labels if labels is not None or prev_slab is None else [str(s) for s in prev_slab.tolist()]
+    dat.attrs['ni'] = ni_attr
+    dat.attrs[metafopy.metadata.ROWS_KEY] = list(dat.index)
     dat.attrs['digits'] = digits
     yi_names = [var_names[0], *[n for n in prev_attrs.get('yi_names', []) if n != var_names[0]]]
     vi_names = [var_names[1], *[n for n in prev_attrs.get('vi_names', []) if n != var_names[1]]]

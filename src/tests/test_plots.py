@@ -990,7 +990,7 @@ def test_plots_reject_invalid_arguments(fits: dict[str, metafopy.RMAResult], raw
     with pytest.raises(ValueError, match="'measure'"):
         metafopy.plot.labbe(metafopy.rma('yi', 'vi', data=dat), ax=ax)
     with pytest.raises(ValueError, match='not available'):
-        metafopy.plot.labbe(arm_fit(raw, 'RR'), ax=ax)
+        metafopy.plot.labbe(metafopy.rma('yi', 'vi', data=dat, measure='RR'), ax=ax)
     with pytest.raises(ValueError, match='plotinf'):
         metafopy.plot.plot_infl(metafopy.influence(fits['re']), plotinf=[20], ax=ax)
     with pytest.raises(ValueError, match='At least one'):

@@ -26,6 +26,7 @@ import pandas
 import scipy.stats
 
 import metafopy.errors
+import metafopy.metadata
 import metafopy.methods.common
 import metafopy.methods.fitview
 import metafopy.methods.influence
@@ -266,7 +267,8 @@ def funnel(
         mes = measure if measure is not None else (str(attrs['measure']) if isinstance(attrs, dict) and attrs.get('measure') else None)
         ni_a = None if ni is None else numpy.atleast_1d(numpy.asarray(ni, dtype=float))
         if ni_a is None and isinstance(attrs, dict) and attrs.get('ni') is not None:
-            ni_a = numpy.asarray(attrs['ni'], dtype=float)
+            stored = metafopy.metadata.frame_attr(x, 'ni') if isinstance(x, pandas.Series) else numpy.asarray(attrs['ni'], dtype=float)
+            ni_a = None if stored is None else numpy.asarray(stored, dtype=float)
         if vi is None and sei is not None:
             vi_in: FloatArray | None = numpy.asarray(sei, dtype=float) ** 2
         else:

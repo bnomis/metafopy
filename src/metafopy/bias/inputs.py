@@ -9,6 +9,7 @@ import numpy.typing
 import pandas
 
 import metafopy.errors
+import metafopy.metadata
 import metafopy.models.rma_uni
 import metafopy.printing
 
@@ -38,8 +39,11 @@ def vector_inputs(
     data: pandas.DataFrame | None = None,
     what: str = 'the test',
     vi_required: bool = True,
+    attr_ni: bool = False,
 ) -> tuple[FloatArray, FloatArray | None, FloatArray | None]:
     """``(yi, vi, ni)`` of a vector-of-estimates call, with the subset applied and rows with NAs omitted (with a warning, as metafor does).
+
+    With ``attr_ni`` the sample sizes stored with ``x`` by ``escalc`` are used when ``ni`` is not given (as ``regtest`` does).
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
@@ -58,6 +62,9 @@ def vector_inputs(
         raise metafopy.errors.InputError("Length of 'yi' and 'vi' (or 'sei') are not the same.")
     if n is not None and n.shape != yi.shape:
         raise metafopy.errors.InputError("Length of 'yi' and 'ni' are not the same.")
+    if n is None and attr_ni:
+        stored = metafopy.metadata.escalc_ni(x, data, yi.shape[0])
+        n = None if stored is None else stored
     if subset is not None:
         sub = numpy.asarray(subset)
         sel = sub if sub.dtype == numpy.bool_ else sub.astype(int)

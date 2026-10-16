@@ -72,8 +72,8 @@ class LabbeResult:
 class Rows:
     """The studies a L'Abbe plot draws: ``k`` of the ``k_all`` supplied rows (``keep``), with their 1-based ``ids`` and labels.
 
-    ``counts`` holds the arm-level counts kept by an ``rma_mh``, ``rma_peto`` or ``rma_glmm`` fit (``None`` for an
-    ``rma_uni`` fit, whose counts come from its data); ``frame`` is the data the model was fitted to.
+    ``counts`` holds the arm-level counts kept by an ``rma_mh``, ``rma_peto`` or ``rma_glmm`` fit, or by an ``rma_uni`` fit computed from counts
+    (``None`` for an ``rma_uni`` fit of ``yi`` and ``vi``, whose counts come from its data); ``frame`` is the data the model was fitted to.
     """
 
     k: int
@@ -88,7 +88,9 @@ class Rows:
 def model_rows(x: typing.Any) -> Rows:
     if isinstance(x, metafopy.models.rma_uni.RMAResult):
         keep = x.data.keep
-        return Rows(x.k, x.data.k_all, keep, tuple(int(i) + 1 for i in numpy.flatnonzero(keep)), tuple(x.slab), None, x.data.data)
+        stored = x.data.counts_all
+        counts = None if stored is None else {n: v[keep] for n, v in stored.items()}
+        return Rows(x.k, x.data.k_all, keep, tuple(int(i) + 1 for i in numpy.flatnonzero(keep)), tuple(x.slab), counts, x.data.data)
     t = x.tables
     keep = numpy.zeros(t.k_all, dtype=numpy.bool_)
     keep[t.ids] = True
@@ -105,7 +107,7 @@ def column(rows: Rows, name: str, value: numpy.typing.ArrayLike | str | None) ->
     """
     k, k_all = rows.k, rows.k_all
     frame = rows.frame
-    if rows.counts is not None and value is None:
+    if rows.counts is not None and value is None and name in rows.counts:
         return rows.counts[name]
     if value is None:
         if frame is None or name not in frame.columns:

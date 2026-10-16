@@ -19,12 +19,13 @@ import pandas
 
 import metafopy.effects.measures
 import metafopy.errors
+import metafopy.metadata
 
 __all__ = ['cbind_escalc', 'rbind_escalc']
 
 # auditme: accept[non-alphabetical-literal] order is metafor's documented order and is meaningful
 NAME_KEYS = ('yi_names', 'vi_names', 'sei_names', 'zi_names', 'pval_names', 'ci_lb_names', 'ci_ub_names')
-YI_KEYS = ('measure', 'slab', 'ni')
+YI_KEYS = ('measure', 'slab', 'ni', metafopy.metadata.ROWS_KEY)
 
 
 def as_names(value: typing.Any) -> list[str]:
@@ -150,12 +151,13 @@ def rbind_escalc(*args: pandas.DataFrame) -> pandas.DataFrame:
         dat.index = pandas.Index(make_unique_row_names(list(dat.index)))
 
     attrs = dict(first.attrs)
-    sizes = [p.attrs.get('ni') for p in args]
+    attrs.pop(metafopy.metadata.ROWS_KEY, None)
+    sizes = [metafopy.metadata.frame_attr(p, 'ni') for p in args]
     attrs['ni'] = None if any(v is None for v in sizes) else numpy.concatenate([numpy.asarray(v, dtype=numpy.float64).reshape(-1) for v in sizes])
     labels: list[str] = []
     complete = True
     for p in args:
-        stored = p.attrs.get('slab')
+        stored = metafopy.metadata.frame_attr(p, 'slab')
         if stored is None:
             complete = False
             break
