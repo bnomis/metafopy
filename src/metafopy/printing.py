@@ -15,7 +15,22 @@ import numpy.typing
 
 import metafopy.errors
 
-__all__ = ['fmt_df', 'fmt_df_scalar', 'fmt_named_vector', 'fmt_num', 'fmt_pval', 'fmt_table', 'fmt_wrapped_table', 'signif_stars', 'zero_below']
+__all__ = [
+    'SIGNIF_LEGEND',
+    'drop_stars',
+    'fmt_df',
+    'fmt_df_scalar',
+    'fmt_named_vector',
+    'fmt_num',
+    'fmt_pval',
+    'fmt_table',
+    'fmt_wrapped_table',
+    'signif_footer',
+    'signif_stars',
+    'zero_below',
+]
+
+SIGNIF_LEGEND = "Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1"
 
 
 def fmt_num(x: float, digits: int = 4) -> str:
@@ -49,6 +64,24 @@ def signif_stars(p: float) -> str:
         if p <= cut:
             return star
     return ''
+
+
+def drop_stars(header: list[str], rows: list[list[str]], signif_stars: bool) -> tuple[list[str], list[list[str]]]:
+    """Without ``signif_stars`` the last column (the significance stars, header ``''``) of a coefficient table is left out."""
+    if signif_stars:
+        return header, rows
+    return header[:-1], [row[:-1] for row in rows]
+
+
+def signif_footer(signif_legend: bool, extra: collections.abc.Sequence[str] = ()) -> list[str]:
+    """The lines after a coefficient table as ``print.rma.uni`` writes them: ``---`` and the ``Signif. codes`` legend when ``signif_legend``,
+    then the further legend lines ``extra`` (the cluster-robust footnote); the table is followed by one blank line only when there is no legend."""
+    out: list[str] = ['', '---'] if signif_legend or extra else []
+    if signif_legend:
+        out.append(SIGNIF_LEGEND)
+        if extra:
+            out.append('')
+    return [*out, *extra, '']
 
 
 def fmt_table(
@@ -116,14 +149,24 @@ def zero_below(x: float, digits: int = 4, thresh: float = 10 * sys.float_info.ep
 
 
 def fmt_df(values: numpy.typing.NDArray[numpy.float64]) -> list[str]:
-    """A numeric column as ``data.frame`` printing does (common number of decimals); degrees of freedom are rounded to 2 decimals."""
-    rounded = [round(float(v), 2) for v in values]
+    """A numeric column as ``data.frame`` printing does (common number of decimals); degrees of freedom are rounded to 2 decimals.
+    Infinite and missing values print as ``Inf``, ``-Inf`` and ``NA``."""
+    finite = [round(float(v), 2) for v in values if math.isfinite(float(v))]
     decimals = 0
-    for v in rounded:
+    for v in finite:
         text = f'{v:.2f}'.rstrip('0').rstrip('.')
         if '.' in text:
             decimals = max(decimals, len(text.split('.')[1]))
-    return [f'{v:.{decimals}f}' for v in rounded]
+    out: list[str] = []
+    for v in values:
+        x = float(v)
+        if math.isnan(x):
+            out.append('NA')
+        elif math.isinf(x):
+            out.append('Inf' if x > 0 else '-Inf')
+        else:
+            out.append(f'{round(x, 2):.{decimals}f}')
+    return out
 
 
 def fmt_df_scalar(value: float | None) -> str:

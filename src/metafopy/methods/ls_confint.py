@@ -74,7 +74,7 @@ def confint_rma_ls(
     tol: float = metafopy.core.zeroin.DEFAULT_TOL,
     maxiter: int = 1000,
     eptries: int = 10,
-) -> metafopy.methods.confint.ConfintResult | list[metafopy.methods.confint.ConfintResult]:
+) -> metafopy.methods.confint.ConfintResult | metafopy.methods.confint.ConfintList:
     """CIs for a location-scale fit (``confint.rma.ls``).
 
     ``alpha`` (a 0-based position) requests a profile-likelihood CI for that scale coefficient; ``fixed=True`` gives Wald-type
@@ -97,7 +97,7 @@ def confint_rma_ls(
             raise metafopy.errors.InputError('No components for which a CI can be obtained.')
         results = [confint_rma_ls(x, alpha=int(pos), level=level, control=control, tol=tol, maxiter=maxiter, eptries=eptries) for pos in free]
         out = [r for r in results if isinstance(r, metafopy.methods.confint.ConfintResult)]
-        return out[0] if len(out) == 1 else out
+        return out[0] if len(out) == 1 else metafopy.methods.confint.ConfintList(out)
 
     res_random: pandas.DataFrame | None = None
     lb_sign = ub_sign = ''

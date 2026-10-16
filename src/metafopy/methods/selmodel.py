@@ -192,7 +192,7 @@ def confint(
     control: collections.abc.Mapping[str, typing.Any] | None = None,
     xlim: collections.abc.Sequence[float] | None = None,
     extint: bool = False,
-) -> metafopy.methods.confint.ConfintResult | list[metafopy.methods.confint.ConfintResult]:
+) -> metafopy.methods.confint.ConfintResult | metafopy.methods.confint.ConfintList:
     """Confidence intervals for the coefficients (``fixed=True``, Wald-type) and for ``tau^2`` or a selection parameter (profile likelihood).
 
     Without ``fixed``, ``tau2`` and ``delta`` the intervals of every estimated variance and selection parameter are
@@ -229,7 +229,7 @@ def confint(
             if verbose:
                 print(f'\nObtaining CI for delta = {pos + 1}\n')
             out.append(confint_one(x, False, None, pos, alpha, ctrl, transf, targs, verbose, extint))
-        return out[0] if len(out) == 1 else out
+        return out[0] if len(out) == 1 else metafopy.methods.confint.ConfintList(out)
     return confint_one(x, fixed, tau2, delta, alpha, ctrl, transf, targs, verbose, extint)
 
 
@@ -593,7 +593,7 @@ def anova(
     X: numpy.typing.ArrayLike | None = None,
     rhs: numpy.typing.ArrayLike | float = 0.0,
     adjust: bool | str | None = None,
-) -> metafopy.methods.anova.WaldResult | metafopy.methods.anova.LRTResult | list[metafopy.methods.anova.WaldResult]:
+) -> metafopy.methods.anova.WaldResult | metafopy.methods.anova.LRTResult | metafopy.methods.anova.ListAnovaResult:
     """Wald-type tests of the coefficients (``btt`` 0-based, or linear combinations ``X``) or, given a second model, a likelihood-ratio test.
 
     ``adjust`` adjusts the p-values of several tests (see :func:`metafopy.methods.anova.anova_rma_uni`). ``object2`` is R's name for ``model2``.

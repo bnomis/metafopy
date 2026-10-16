@@ -1,5 +1,6 @@
 """The fitted ``rma.mv`` model (:class:`RMAMVResult`)."""
 
+import collections.abc
 import dataclasses
 import typing
 
@@ -131,6 +132,7 @@ class RMAMVResult(metafopy.models.fit_methods.FitMethods):
     s_levels_f: tuple[tuple[str, ...], ...] = ()
     slab_f: tuple[str, ...] = ()
     X_f: FloatArray | None = None
+    digits: int = 4
 
     # -- accessors -------------------------------------------------------
 
@@ -260,12 +262,26 @@ class RMAMVResult(metafopy.models.fit_methods.FitMethods):
 
     # -- printing -------------------------------------------------------------
 
-    def summary(self, digits: int | None = None, showfit: bool = True) -> str:
-        """The printout with the fit statistics table, as metafor's ``summary()``; ``str(res)`` leaves it out like ``print()``."""
+    def summary(
+        self,
+        digits: int | collections.abc.Mapping[str, int] | None = None,
+        showfit: bool = True,
+        *,
+        signif_stars: bool | None = None,
+        signif_legend: bool | None = None,
+    ) -> str:
+        """The printout with the fit statistics table, as metafor's ``summary()``; ``str(res)`` leaves it out like ``print()``.
+
+        ``digits`` defaults to the ``digits`` option, else to the ``digits`` the model was fitted with; ``signif_stars`` and ``signif_legend``
+        as for :meth:`metafopy.models.rma_uni.RMAResult.summary`.
+        """
         # auditme: accept[in-function-import] the printing module needs this class, so the import is deferred to avoid a cycle
         import metafopy.models.mv_print
 
-        return metafopy.mfopt.option_space(metafopy.models.mv_print.format_result(self, metafopy.mfopt.option_digits(digits), showfit))
+        stars, legend = metafopy.mfopt.option_signif(signif_stars, signif_legend)
+        return metafopy.mfopt.option_space(
+            metafopy.models.mv_print.format_result(self, metafopy.mfopt.option_digits(digits, self.digits), showfit, stars, legend)
+        )
 
     def __str__(self) -> str:
         return self.summary(showfit=False)

@@ -1,5 +1,6 @@
 """Result of a location-scale model (metafor's class ``rma.ls``, fitted by ``rma.uni(..., scale=)``)."""
 
+import collections.abc
 import dataclasses
 import typing
 
@@ -133,6 +134,7 @@ class RMALSResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_me
     measure: str = 'GEN'
     formula_scale: str | None = None
     Z_f: FloatArray | None = dataclasses.field(default=None, repr=False)
+    digits: int = 4
     call: metafopy.models.call.Call | None = dataclasses.field(default=None, kw_only=True, repr=False, compare=False)
 
     @property
@@ -285,12 +287,26 @@ class RMALSResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_me
 
     # -- printing ----------------------------------------------------------
 
-    def summary(self, digits: int | None = None, showfit: bool = True) -> str:
-        """The printout with the fit statistics table, as metafor's ``summary()``; ``str(res)`` leaves it out like ``print()``."""
+    def summary(
+        self,
+        digits: int | collections.abc.Mapping[str, int] | None = None,
+        showfit: bool = True,
+        *,
+        signif_stars: bool | None = None,
+        signif_legend: bool | None = None,
+    ) -> str:
+        """The printout with the fit statistics table, as metafor's ``summary()``; ``str(res)`` leaves it out like ``print()``.
+
+        ``digits`` defaults to the ``digits`` option, else to the ``digits`` the model was fitted with; ``signif_stars`` and ``signif_legend``
+        as for :meth:`metafopy.models.rma_uni.RMAResult.summary`.
+        """
         # auditme: accept[in-function-import] the printer imports this module for its type
         import metafopy.models.rma_ls_print
 
-        return metafopy.mfopt.option_space(metafopy.models.rma_ls_print.format_result(self, metafopy.mfopt.option_digits(digits), showfit))
+        stars, legend = metafopy.mfopt.option_signif(signif_stars, signif_legend)
+        return metafopy.mfopt.option_space(
+            metafopy.models.rma_ls_print.format_result(self, metafopy.mfopt.option_digits(digits, self.digits), showfit, stars, legend)
+        )
 
     def __str__(self) -> str:
         return self.summary(showfit=False)

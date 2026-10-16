@@ -32,7 +32,7 @@ import metafopy.models.tau2
 import metafopy.printing
 import metafopy.transf
 
-__all__ = ['ConfintResult', 'confint']
+__all__ = ['ConfintList', 'ConfintResult', 'confint']
 
 # auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
 SPATIAL = ('SPEXP', 'SPGAU', 'SPLIN', 'SPRAT', 'SPSPH', 'PHYPL', 'PHYPD')
@@ -52,17 +52,53 @@ class ConfintResult:
     ub_sign: str = ''
     digits: int | None = None
 
-    def __str__(self) -> str:
-        digits = metafopy.mfopt.option_digits(self.digits)
+    def to_frame(self) -> pandas.DataFrame:
+        """The ``fixed`` and ``random`` tables stacked into one data frame (the columns are ``estimate``, ``ci.lb`` and ``ci.ub``)."""
+        tables = [t for t in (self.fixed, self.random) if t is not None]
+        if not tables:
+            return pandas.DataFrame(columns=ci_columns())
+        return pandas.concat(tables)
+
+    def summary(self, digits: int | collections.abc.Mapping[str, int] | None = None) -> str:
+        """The printout of metafor's ``print.confint.rma``: the table of the coefficients, then that of the variance components."""
+        d = metafopy.mfopt.option_digits(digits, 4 if self.digits is None else self.digits)
         parts = []
         for table, lb_sign, ub_sign in ((self.fixed, '', ''), (self.random, self.lb_sign, self.ub_sign)):
             if table is not None:
-                cells = [[metafopy.printing.fmt_num(float(v), digits) for v in row] for row in table.to_numpy()]
+                cells = [[metafopy.printing.fmt_num(float(v), d) for v in row] for row in table.to_numpy()]
                 for row in cells:
                     row[1], row[2] = lb_sign + row[1], ub_sign + row[2]
-                # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
-                parts.append(metafopy.printing.fmt_table(['estimate', 'ci.lb', 'ci.ub'], cells, [str(n) for n in table.index], gap=1))
+                parts.append(metafopy.printing.fmt_table(ci_columns(), cells, [str(n) for n in table.index], gap=1))
         return '\n\n'.join(parts)
+
+    def __str__(self) -> str:
+        return self.summary()
+
+
+def ci_columns() -> list[str]:
+    # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
+    return ['estimate', 'ci.lb', 'ci.ub']
+
+
+class ConfintList(list[ConfintResult]):
+    """The confidence intervals of several variance components of an ``rma.mv`` fit (metafor's ``list.confint.rma``): one :class:`ConfintResult`
+    per component, in the order of ``sigma2``, ``tau2``, ``rho``, ``gamma2`` and ``phi``."""
+
+    def __init__(self, results: collections.abc.Iterable[ConfintResult], digits: int | None = None) -> None:
+        super().__init__(results)
+        self.digits = digits
+
+    def to_frame(self) -> pandas.DataFrame:
+        """The tables of all components stacked into one data frame (the columns are ``estimate``, ``ci.lb`` and ``ci.ub``)."""
+        return pandas.concat([r.to_frame() for r in self])
+
+    def summary(self, digits: int | collections.abc.Mapping[str, int] | None = None) -> str:
+        """The printout of metafor's ``print.list.confint.rma``: the tables of the components, separated by blank lines."""
+        d = metafopy.mfopt.option_digits(digits, 4 if self.digits is None else self.digits)
+        return '\n\n'.join(r.summary(d) for r in self)
+
+    def __str__(self) -> str:
+        return self.summary()
 
 
 @functools.singledispatch
@@ -118,7 +154,7 @@ def confint_rma_uni(
     """
     x = model
     vlevel = int(verbose)
-    ndig = metafopy.mfopt.option_digits(digits)
+    ndig = metafopy.mfopt.option_digits(digits, x.digits)
     con = control_values(control, {'tau2_min': tau2_min, 'tau2_max': tau2_max, 'tol': tol, 'maxiter': maxiter})
     tau2_min, tau2_max, tol, maxiter = con['tau2_min'], con['tau2_max'], con['tol'], con['maxiter']
     if type is None:
@@ -473,13 +509,13 @@ def confint_rma_mv(
     verbose: bool | int = False,
     digits: int | None = None,
     control: collections.abc.Mapping[str, typing.Any] | None = None,
-) -> ConfintResult | list[ConfintResult]:
+) -> ConfintResult | ConfintList:
     """CIs for an ``rma.mv`` fit (metafor's ``confint.rma.mv``).
 
     ``sigma2``, ``tau2``, ``rho``, ``gamma2`` or ``phi`` (a 0-based position; only one may be given) request a
     profile-likelihood CI (Hardy & Thompson, 1996, doi:10.1002/(SICI)1097-0258(19960430)15:8<619::AID-SIM188>3.0.CO;2-A)
     for that component; ``fixed=True`` gives Wald-type CIs for the coefficients. With neither, a profile-likelihood CI is
-    computed for every estimated variance/correlation component and a list is returned (a single result if there is one).
+    computed for every estimated variance/correlation component and a :class:`ConfintList` (a list of results) is returned (a single result if there is one).
     ``verbose`` prints the profile steps of the root finding on stdout, with ``digits`` decimals. ``control`` is metafor's list of settings
     (``vc_min``, ``vc_max``, ``tol``, ``maxiter`` and ``eptries``, written with ``.`` or ``_``); its entries replace the keyword arguments of the same name.
 
@@ -488,7 +524,7 @@ def confint_rma_mv(
     """
     x = model
     vlevel = int(verbose)
-    ndig = metafopy.mfopt.option_digits(digits)
+    ndig = metafopy.mfopt.option_digits(digits, x.digits)
     con = control_values(control, {'vc_min': vc_min, 'vc_max': vc_max, 'tol': tol, 'maxiter': maxiter, 'eptries': eptries})
     vc_min, vc_max, tol, maxiter, eptries = con['vc_min'], con['vc_max'], con['tol'], con['maxiter'], con['eptries']
     alpha = metafopy.models.rma_uni.level_to_alpha(x.level if level is None else level)
@@ -524,7 +560,7 @@ def confint_rma_mv(
                 )
         if not results:
             raise metafopy.errors.InputError('No components for which a CI can be obtained.')
-        return results[0] if len(results) == 1 else results
+        return results[0] if len(results) == 1 else ConfintList(results, ndig)
 
     res_random: pandas.DataFrame | None = None
     lb_sign = ub_sign = ''

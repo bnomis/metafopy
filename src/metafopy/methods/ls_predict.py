@@ -118,6 +118,7 @@ def predict_rma_ls(
     pi_type: str | None = None,
     newvi: numpy.typing.ArrayLike | None = None,
     na_action: metafopy.methods.common.NAAction = 'omit',
+    digits: int | collections.abc.Mapping[str, int] | None = None,
 ) -> LSPredictResult:
     """Predict from a location-scale model (``predict.rma.ls``).
 
@@ -315,4 +316,4 @@ def predict_rma_ls(
     fitted_rows = newmods is None and newscale is None
     keep, blank = metafopy.methods.predict.rows_to_keep(pred, rows.not_na, fitted_rows, na_action)
     result = out if keep.all() and blank is None else metafopy.methods.predict.restrict_rows(out, keep, blank)
-    return typing.cast(LSPredictResult, result)
+    return metafopy.methods.predict.with_digits(typing.cast(LSPredictResult, result), digits, model.digits)
