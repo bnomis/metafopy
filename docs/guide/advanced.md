@@ -136,6 +136,12 @@ The location part (the average effect) and the scale part (the log of tau^2, by 
 `link='identity'` to model tau^2 itself. The result is an `RMALSResult`, and `predict`, `confint`, `anova` (Wald and
 likelihood ratio tests), `profile`, `vif`, `blup`, `ranef`, `rstandard` and `permutest` work on it.
 
+`control={'optimizer': ...}` accepts the optimisers of `rma.uni` (`'optim'` with `optmethod`, `'nlm'`, `'bobyqa'`, `'hjk'`, ..., and with
+`link='identity'` also `'constrOptim'`, `'solnp'`, `'nloptr'`, `'constrOptim.nl'`/`'alabama'` and `'auglag'`; any other optimiser is reset to
+`'constrOptim'` with a warning there, and the barrier optimisers cannot be used with the log link). They are mapped as for `selmodel`; `ncpus`
+above 1 selects `'optimParallel'`, but the likelihood is evaluated serially. `confint(res, control={'vc.min': ..., 'vc.max': ...})` sets the
+interval searched for the bounds (`vc_min` and `vc_max` work too).
+
 ```python
 from metafopy import predict
 
