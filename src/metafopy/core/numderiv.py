@@ -8,16 +8,26 @@ https://cran.r-project.org/package=numDeriv, Gilbert and Varadhan) and lme4's
 Both are ported step by step so that they inherit the same truncation errors.
 ``conv.delta()`` differentiates a transformation with ``numDeriv::grad()``
 (:func:`grad_scalar`, the same Richardson scheme for first derivatives).
+
+The other ``hesspack`` choices of metafor's ``control`` lists are ported as well:
+``pracma::hessian`` (:func:`hessian_pracma`, https://cran.r-project.org/package=pracma) and
+``calculus::hessian`` (:func:`hessian_calculus`, https://cran.r-project.org/package=calculus);
+:func:`hessian_by_package` dispatches on the name of the package.
 """
 
 import collections.abc
 import math
 import sys
+import typing
 
 import numpy
 import numpy.typing
 
-__all__ = ['deriv12', 'grad_scalar', 'hessian']
+import metafopy.errors
+
+__all__ = ['HESSPACKS', 'deriv12', 'grad_scalar', 'hessian', 'hessian_by_package', 'hessian_calculus', 'hessian_pracma']
+
+HESSPACKS = ('calculus', 'numDeriv', 'pracma')
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type Objective = collections.abc.Callable[[FloatArray], float]
@@ -51,11 +61,20 @@ def grad_scalar(func: collections.abc.Callable[[float], float], x: float, *, d: 
     return extrapolate(approx, r)
 
 
-def hessian(func: Objective, x: FloatArray, *, d: float = 0.1, eps: float = 1e-4, r: int = 4) -> FloatArray:
-    """``numDeriv::hessian(func, x, method.args=list(d=d, eps=eps, r=r))`` for the default Richardson method (``v = 2``)."""
+def hessian(
+    func: Objective,
+    x: FloatArray,
+    *,
+    d: float = 0.1,
+    eps: float = 1e-4,
+    r: int = 4,
+    v: float = 2.0,
+    zero_tol: float = ZERO_TOL,
+) -> FloatArray:
+    """``numDeriv::hessian(func, x, method.args=list(d=d, eps=eps, r=r, v=v, zero.tol=zero_tol))`` for the Richardson method."""
     n = x.shape[0]
     f0 = func(x)
-    h0 = numpy.abs(d * x) + eps * (numpy.abs(x) < ZERO_TOL)
+    h0 = numpy.abs(d * x) + eps * (numpy.abs(x) < zero_tol)
     hdiag = numpy.zeros(n)
     unit = numpy.eye(n)
     for i in range(n):
@@ -65,7 +84,7 @@ def hessian(func: Objective, x: FloatArray, *, d: float = 0.1, eps: float = 1e-4
             f1 = func(x + unit[i] * h)
             f2 = func(x - unit[i] * h)
             haprox[k] = (f1 - 2 * f0 + f2) / h[i] ** 2
-            h = h / 2.0
+            h = h / v
         hdiag[i] = extrapolate(haprox, r)
     H = numpy.zeros((n, n))
     for i in range(n):
@@ -78,9 +97,108 @@ def hessian(func: Objective, x: FloatArray, *, d: float = 0.1, eps: float = 1e-4
                 f1 = func(x + shift)
                 f2 = func(x - shift)
                 daprox[k] = (f1 - 2 * f0 + f2 - hdiag[i] * h[i] ** 2 - hdiag[j] * h[j] ** 2) / (2 * h[i] * h[j])
-                h = h / 2.0
+                h = h / v
             H[i, j] = H[j, i] = extrapolate(daprox, r)
     return H
+
+
+def hessian_pracma(func: Objective, x: FloatArray, *, h: float = sys.float_info.epsilon**0.25) -> FloatArray:
+    """``pracma::hessian(func, x, h)``: central differences with the step ``h`` for all parameters.
+
+    Source: https://github.com/cran/pracma/blob/master/R/hessian.R (a single parameter uses ``fderiv(f, x, n=2, h=h)``).
+    """
+    n = x.shape[0]
+    if n == 1:
+        return numpy.array([[(func(x + h) - 2 * func(x) + func(x - h)) / h**2]])
+    out = numpy.full((n, n), numpy.nan)
+    hh = numpy.eye(n) * h
+    f0 = func(x)
+    for i in range(n - 1):
+        hi = hh[i]
+        out[i, i] = (func(x - hi) - 2 * f0 + func(x + hi)) / h**2
+        for j in range(i + 1, n):
+            hj = hh[j]
+            out[i, j] = out[j, i] = (func(x + hi + hj) - func(x + hi - hj) - func(x - hi + hj) + func(x - hi - hj)) / (4 * h**2)
+    hi = hh[n - 1]
+    out[n - 1, n - 1] = (func(x - hi) - 2 * f0 + func(x + hi)) / h**2
+    return out
+
+
+def stencil_weights(points: numpy.ndarray, order: int) -> FloatArray:
+    """Weights ``w`` with ``sum_j w_j points_j^k = delta(k, order)`` (``calculus``'s ``C.i()``)."""
+    count = points.shape[0]
+    vander = points[None, :] ** numpy.arange(count)[:, None]
+    rhs = numpy.zeros(count)
+    rhs[order] = 1.0
+    return numpy.asarray(numpy.linalg.solve(vander, rhs), dtype=numpy.float64)
+
+
+def hessian_calculus(func: Objective, x: FloatArray, *, accuracy: int = 4, stepsize: float | None = None) -> FloatArray:
+    """``calculus::hessian(func, x, accuracy=accuracy, stepsize=stepsize)``: finite differences with a stencil of ``accuracy + 1`` points.
+
+    Source: ``hessian()`` and ``D.num()`` in https://github.com/cran/calculus/blob/master/R (``operators.R``, ``derivative.R``). The
+    second derivatives use the one-dimensional stencil of order 2, the mixed ones the tensor product of two stencils of order 1.
+    """
+    n = x.shape[0]
+    eps = sys.float_info.epsilon
+    if stepsize is None:
+        base = (eps ** (1 / 3)) ** (1 / 2)
+        h_second_vec = h_cross_vec = numpy.abs(base * x) + base * (numpy.abs(x) < eps ** (2 / 3))
+    else:
+        h_second_vec = h_cross_vec = numpy.full(n, float(stepsize))
+    imax2 = (2 + accuracy - 1) // 2
+    pts2 = numpy.arange(-imax2, imax2 + 1, dtype=numpy.float64)
+    w2 = stencil_weights(pts2, 2)
+    out = numpy.zeros((n, n))
+    for i in range(n):
+        total = 0.0
+        for off, w in zip(pts2, w2, strict=True):
+            z = x.copy()
+            z[i] = z[i] + off * h_second_vec[i]
+            total += w * func(z)
+        out[i, i] = 2.0 * total / h_second_vec[i] ** 2
+    if n > 1:
+        imax1 = (1 + accuracy - 1) // 2
+        pts1 = numpy.arange(-imax1, imax1 + 1, dtype=numpy.float64)
+        w1 = stencil_weights(pts1, 1)
+        for j in range(n - 1):
+            for i in range(j + 1, n):
+                total = 0.0
+                for oi, wi in zip(pts1, w1, strict=True):
+                    for oj, wj in zip(pts1, w1, strict=True):
+                        z = x.copy()
+                        z[i] = z[i] + oi * h_cross_vec[i]
+                        z[j] = z[j] + oj * h_cross_vec[j]
+                        total += wi * wj * func(z)
+                out[i, j] = out[j, i] = total / (h_cross_vec[i] * h_cross_vec[j])
+    return out
+
+
+def hessian_by_package(func: Objective, x: FloatArray, hesspack: str, ctrl: collections.abc.Mapping[str, typing.Any]) -> FloatArray:
+    """The Hessian as metafor's ``hesspack`` and ``hessianCtrl`` control entries ask for it.
+
+    ``numDeriv`` reads ``d``, ``eps``, ``r``, ``v`` and ``zero.tol`` from ``ctrl`` (``zero_tol`` is accepted too), ``pracma`` reads ``h`` and
+    ``calculus`` reads ``accuracy`` and ``stepsize``; entries a package does not use are ignored, as R passes them on silently.
+
+    Raises:
+        metafopy.errors.InputError: ``hesspack`` is not one of :data:`HESSPACKS`.
+    """
+    if hesspack == 'numDeriv':
+        return hessian(
+            func,
+            x,
+            d=float(ctrl.get('d', 0.1)),
+            eps=float(ctrl.get('eps', 1e-4)),
+            r=int(ctrl.get('r', 4)),
+            v=float(ctrl.get('v', 2.0)),
+            zero_tol=float(ctrl.get('zero.tol', ctrl.get('zero_tol', ZERO_TOL))),
+        )
+    if hesspack == 'pracma':
+        return hessian_pracma(func, x, h=float(ctrl.get('h', sys.float_info.epsilon**0.25)))
+    if hesspack == 'calculus':
+        step = ctrl.get('stepsize')
+        return hessian_calculus(func, x, accuracy=int(ctrl.get('accuracy', 4)), stepsize=None if step is None else float(step))
+    raise metafopy.errors.InputError(f"'hesspack' should be one of {', '.join(repr(h) for h in HESSPACKS)}")
 
 
 def deriv12(

@@ -35,6 +35,7 @@ import scipy.stats
 
 import metafopy.core.glm
 import metafopy.core.linalg
+import metafopy.core.nchg
 import metafopy.core.verbose
 import metafopy.errors
 import metafopy.metadata
@@ -88,7 +89,8 @@ def make_control(control: metafopy.models.glmm_fit.GLMMControl | collections.abc
         .replace('scaleX', 'scale_x')
         .replace('clogitCtrl', 'clogit_ctrl')
         .replace('clogisticCtrl', 'clogistic_ctrl')
-        .replace('optCtrl', 'opt_ctrl'): value
+        .replace('optCtrl', 'opt_ctrl')
+        .replace('hessianCtrl', 'hessian_ctrl'): value
         for key, value in control.items()
     }
     unknown = set(clean) - names
@@ -96,6 +98,12 @@ def make_control(control: metafopy.models.glmm_fit.GLMMControl | collections.abc
         raise metafopy.errors.InputError(f'unknown control settings: {sorted(unknown)}')
     if 'package' in clean:
         clean['package'] = match_package(clean['package'])
+    if 'hesspack' in clean:
+        clean['hesspack'] = match_choice(clean['hesspack'], ('numDeriv', 'pracma', 'calculus'), 'hesspack')
+    if 'dnchgcalc' in clean and clean['dnchgcalc'] not in metafopy.core.nchg.DNCHG_CALCS:
+        raise metafopy.errors.InputError('Unknown dnchgcalc method specified.')
+    if 'hessian_ctrl' in clean:
+        clean['hessian_ctrl'] = dict(clean['hessian_ctrl'] or {})
     if 'optmethod' in clean:
         clean['optmethod'] = match_optmethod(clean['optmethod'])
     if 'optimizer' in clean:
@@ -412,6 +420,10 @@ def rma_glmm(
     ``'bobyqa'``, ...) maximise it as :mod:`metafopy.models.sel_opt` minimises: ``optim`` with BFGS or Nelder-Mead is R's routine
     (``optCtrl`` takes ``maxit``, ``reltol``, ``abstol`` and ``ndeps``), the others stand in with the closest SciPy method. The Wald test
     of the saturated model (``QE_Wld``) of ``'CM.EL'`` is ill-conditioned and differs between optimisers in R as well.
+    The Hessian of ``'CM.EL'`` is computed as ``control={'hesspack': ..., 'hessianCtrl': {...}}`` asks (``'numDeriv'`` with ``r = 16``
+    unless ``hessianCtrl`` gives ``r``, ``'pracma'`` with ``h``, ``'calculus'`` with ``accuracy`` and ``stepsize``); it uses the density of
+    ``BiasedUrn::dFNCHypergeo`` with precision ``dnchgprec`` (1e-10), a port of its algorithm including the truncation of the tails
+    that makes R's finite-difference standard errors noisy, or with ``dnchgcalc='dnoncenhypergeom'`` the untruncated density.
 
     ``control={'package': ...}`` chooses the package that fits the mixed models, as in metafor:
     ``'lme4'`` (the default), ``'GLMMadaptive'`` (adaptive quadrature with ``nAGQ`` points in every

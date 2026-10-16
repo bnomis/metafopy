@@ -32,7 +32,7 @@ import metafopy.core.bfgs
 import metafopy.core.optim
 import metafopy.errors
 
-__all__ = ['OPTIMIZERS', 'OptimizerChoice', 'choose_optimizer', 'minimize']
+__all__ = ['OPTIMIZERS', 'OPTIMIZERS_MV', 'OptimizerChoice', 'choose_optimizer', 'minimize']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 
@@ -68,6 +68,8 @@ OPTIMIZERS = (
     'Rcgmin',
     'Rvmmin',
 )
+# the optimisers of rma.mv: those of selmodel without the constrained ones
+OPTIMIZERS_MV = tuple(name for name in OPTIMIZERS if name not in ('alabama', 'auglag', 'constrOptim.nl', 'solnp'))
 # auditme: accept[non-alphabetical-literal] the order is that of optim()'s documentation
 OPTMETHODS = ('Nelder-Mead', 'BFGS', 'CG', 'L-BFGS-B', 'SANN', 'Brent')
 # auditme: accept[non-alphabetical-dict-keys] grouped by the SciPy method each optimiser maps to
@@ -90,6 +92,14 @@ SCIPY = {
     'mads': 'Nelder-Mead',
     'subplex': 'Nelder-Mead',
     'BBoptim': 'Nelder-Mead',
+}
+# SciPy's default tolerances (1e-4 for Nelder-Mead and Powell) stop 0.1 to 1 % short of the optimum on a log-likelihood; metafor's optimisers
+# (dfoptim's hjk and nmk, minqa's bobyqa, ucminf, nlm, ...) converge to about 1e-6 or better, so the stand-ins are run to a tight tolerance
+TIGHT: dict[str, dict[str, float]] = {
+    'L-BFGS-B': {'ftol': 1e-14, 'gtol': 1e-9},
+    'Nelder-Mead': {'fatol': 1e-12, 'xatol': 1e-9},
+    'Powell': {'ftol': 1e-13, 'xtol': 1e-9},
+    'SLSQP': {'ftol': 1e-10},
 }
 CONSTRAINED = ('auglag', 'constrOptim.nl', 'nloptr', 'solnp')
 
@@ -192,12 +202,18 @@ def minimize(
     if method == 'SLSQP' and ineq is not None:
         constraints.append({'type': 'ineq', 'fun': ineq})
     options: dict[str, typing.Any] = {'maxiter': int(control.get('maxit', 1000))}
-    if method == 'SLSQP':
-        options['ftol'] = 1e-10
+    options.update(TIGHT.get(method, {}))
+    if method == 'Nelder-Mead':
+        options['maxfev'] = 20 * options['maxiter']
+        options['maxiter'] = options['maxfev']
     sp_kwargs: dict[str, typing.Any] = {'method': method, 'options': options, 'tol': control.get('tol', None)}
     if constraints:
         sp_kwargs['constraints'] = constraints
     res_sp = scipy.optimize.minimize(objective, par0, **sp_kwargs)
+    if not res_sp.success and method != 'Powell' and TIGHT.get(method):
+        loose = dict(sp_kwargs)
+        loose['options'] = {'maxiter': options['maxiter']} if method != 'Nelder-Mead' else {'maxfev': options['maxfev'], 'maxiter': options['maxiter']}
+        res_sp = scipy.optimize.minimize(objective, res_sp.x, **loose)
     if not res_sp.success and method != 'Powell':
         raise metafopy.errors.EstimationError(f'Optimizer ({opt}) did not achieve convergence ({res_sp.message}).')
     return numpy.asarray(res_sp.x, dtype=numpy.float64)

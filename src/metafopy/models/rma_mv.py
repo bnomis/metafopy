@@ -35,11 +35,13 @@ import metafopy.models.mv_opt
 import metafopy.models.mv_result
 import metafopy.models.mv_structs
 import metafopy.models.rma_uni
+import metafopy.models.sel_opt
 
 __all__ = ['MVControl', 'rma_mv']
 
 # auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
 CVVC_OPTIONS = ('varcor', 'varcov', 'transf')
+OPTIMIZER_SETTINGS = ('abstol', 'maxit', 'ndeps', 'reltol', 'tol')
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type BoolArray = numpy.typing.NDArray[numpy.bool_]
@@ -54,12 +56,23 @@ INIT_NAMES = ('sigma2_init', 'tau2_init', 'rho_init', 'gamma2_init', 'phi_init')
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class MVControl:
-    """Control arguments of :func:`rma_mv` (metafor's ``control`` list; the optimiser arguments of R do not apply).
+    """Control arguments of :func:`rma_mv` (metafor's ``control`` list).
 
     ``*_init`` give starting values (on the original scale), ``cholesky`` switches the Cholesky parametrisation of the
-    ``UN`` and ``GEN`` structures on or off per term, ``gtol`` and ``maxiter`` control the BFGS optimiser, and ``hessian_d``,
+    ``UN`` and ``GEN`` structures on or off per term, ``gtol`` and ``maxiter`` control the default BFGS optimiser, and ``hessian_d``,
     ``hessian_eps`` and ``hessian_r`` are the arguments of ``numDeriv::hessian``'s Richardson method (metafor's
     ``hessianCtrl`` with its default ``hesspack='numDeriv'``) used for ``optbeta`` and ``cvvc``.
+
+    ``optimizer`` (default ``'nlminb'``, here BFGS with the analytic score) may be any other optimiser of metafor's ``rma.mv``
+    (``'optim'`` with ``optmethod``, ``'BFGS'``, ``'Nelder-Mead'``, ``'nlm'``, ``'bobyqa'``, ``'hjk'``, ...); they are run as
+    :mod:`metafopy.models.sel_opt` describes (``optim`` with BFGS or Nelder-Mead is R's routine, the others are SciPy stand-ins), on
+    the log-likelihood alone. ``opt_ctrl`` holds optimiser settings given in ``control`` (``maxit``, ``reltol``, ``abstol``, ``ndeps``,
+    ``tol``); ``ncpus`` above 1 selects ``'optimParallel'`` but the likelihood is evaluated serially (``parallel`` and ``cl`` are
+    accepted and ignored). ``nearpd`` forces ``G``, ``H`` (``UN`` and ``GEN`` structures) and ``M`` to be positive definite with
+    ``nearPD`` (:func:`metafopy.core.linalg.near_pd`); the score is then taken by finite differences. ``hesspack``
+    (``'numDeriv'``, ``'pracma'`` or ``'calculus'``) and ``hessian_ctrl`` (metafor's ``hessianCtrl``: ``d``, ``eps``, ``r``, ``v`` and
+    ``zero.tol`` of numDeriv, ``h`` of pracma, ``accuracy`` and ``stepsize`` of calculus) choose the Hessian. ``mfmaxit`` is the
+    number of likelihood evaluations after which the optimisation stops with an error.
     """
 
     sigma2_init: numpy.typing.ArrayLike | None = None
@@ -77,6 +90,16 @@ class MVControl:
     hessian_d: float = 0.1
     hessian_eps: float = 1e-4
     hessian_r: int = 8
+    optimizer: str = 'nlminb'
+    optmethod: str = 'BFGS'
+    opt_ctrl: collections.abc.Mapping[str, typing.Any] = dataclasses.field(default_factory=dict)
+    ncpus: int = 1
+    cl: typing.Any = None
+    parallel: collections.abc.Mapping[str, typing.Any] = dataclasses.field(default_factory=dict)
+    nearpd: bool = False
+    hesspack: str = 'numDeriv'
+    hessian_ctrl: collections.abc.Mapping[str, typing.Any] = dataclasses.field(default_factory=dict)
+    mfmaxit: float = math.inf
 
 
 def make_control(control: MVControl | collections.abc.Mapping[str, typing.Any] | None) -> MVControl:
@@ -86,12 +109,43 @@ def make_control(control: MVControl | collections.abc.Mapping[str, typing.Any] |
         return control
     names = {f.name for f in dataclasses.fields(MVControl)}
     kwargs: dict[str, typing.Any] = {}
+    opt_ctrl: dict[str, typing.Any] = {}
     for key, value in control.items():
-        name = key.replace('.', '_')
-        if name not in names:
+        name = key.replace('.', '_').replace('hessianCtrl', 'hessian_ctrl')
+        if name in OPTIMIZER_SETTINGS:
+            opt_ctrl[name] = value
+        elif name not in names:
             raise metafopy.errors.ArgumentError(f'unknown control argument {key!r}')
-        kwargs[name] = value
-    return MVControl(**kwargs)
+        else:
+            kwargs[name] = value
+    if opt_ctrl:
+        kwargs['opt_ctrl'] = {**dict(kwargs.get('opt_ctrl', {})), **opt_ctrl}
+    con = MVControl(**kwargs)
+    return dataclasses.replace(con, hesspack=metafopy.models.sel_opt.partial_match(con.hesspack, metafopy.core.numderiv.HESSPACKS, 'hesspack'))
+
+
+def hessian_settings(con: MVControl) -> tuple[str, dict[str, typing.Any]]:
+    """The package and the ``hessianCtrl`` list of the Hessians: numDeriv uses ``r = 8`` unless the control gives ``r``."""
+    if con.hesspack == 'numDeriv':
+        return 'numDeriv', {'d': con.hessian_d, 'eps': con.hessian_eps, 'r': con.hessian_r, **con.hessian_ctrl}
+    return con.hesspack, dict(con.hessian_ctrl)
+
+
+def resolve_optimizer(con: MVControl) -> metafopy.models.sel_opt.OptimizerChoice | None:
+    """metafor's optimiser bookkeeping for ``rma.mv``; ``None`` for the default ``nlminb`` (BFGS with the analytic score here).
+
+    Raises:
+        metafopy.errors.InputError: the optimiser is unknown.
+    """
+    optimizer = metafopy.models.sel_opt.partial_match(con.optimizer, metafopy.models.sel_opt.OPTIMIZERS_MV, 'optimizer')
+    optmethod = metafopy.models.sel_opt.partial_match(con.optmethod, metafopy.models.sel_opt.OPTMETHODS, 'optmethod')
+    if optimizer in metafopy.models.sel_opt.OPTMETHODS:
+        optmethod, optimizer = optimizer, 'optim'
+    if con.ncpus > 1:
+        if int(con.ncpus) < 1:
+            raise metafopy.errors.InputError("Control argument 'ncpus' must be >= 1.")
+        optimizer = 'optimParallel'
+    return None if optimizer == 'nlminb' else metafopy.models.sel_opt.OptimizerChoice(optimizer, optmethod)
 
 
 @dataclasses.dataclass(slots=True)
@@ -263,6 +317,7 @@ def ddf_contain(
 def make_term(
     g: metafopy.models.mv_structs.Group,
     cholesky: bool,
+    nearpd: bool = False,
 ) -> metafopy.models.mv_structs.Term:
     return metafopy.models.mv_structs.Term(
         struct=g.struct,
@@ -274,6 +329,7 @@ def make_term(
         v_arg=g.tau2,
         r_arg=g.rho,
         cholesky=cholesky,
+        nearpd=nearpd,
     )
 
 
@@ -813,8 +869,8 @@ def rma_mv(
         par0 = numpy.concatenate([numpy.zeros(p), par0])
     layout = metafopy.models.mv_lik.Layout(sigma2s=sigma2s, tau2s=tau2s, rhos=rhos, gamma2s=gamma2s, phis=phis)
 
-    term_g = make_term(group_g, cholesky[0]) if group_g is not None else None
-    term_h = make_term(group_h, cholesky[1]) if group_h is not None else None
+    term_g = make_term(group_g, cholesky[0], con.nearpd) if group_g is not None else None
+    term_h = make_term(group_h, cholesky[1], con.nearpd) if group_h is not None else None
     vccon_codes: dict[str, numpy.typing.NDArray[numpy.intp]] = {}
     for name, size, used in (
         ('sigma2', sigma2s, with_s),
@@ -850,6 +906,7 @@ def rma_mv(
         lambda1=float(lambda1),
         lambda2=float(lambda2),
         intercept=intercept_flag,
+        nearpd=con.nearpd,
     )
 
     off = problem.offset
@@ -900,6 +957,9 @@ def rma_mv(
             maxiter=con.maxiter,
             nonsmooth=lambda1 > 0,
             log=iteration_logger(problem, reml, metafopy.mfopt.option_digits(None)) if vlevel else None,
+            choice=resolve_optimizer(con),
+            opt_ctrl={'maxit': con.maxiter, **con.opt_ctrl},
+            mfmaxit=con.mfmaxit,
         )
         par = opt.par
         iterations = opt.iterations
@@ -911,8 +971,8 @@ def rma_mv(
                 if grp is not None:
                     grp.tau2 = numpy.where(numpy.isnan(grp.tau2), 0.0, grp.tau2)
                     grp.rho = numpy.where(numpy.isnan(grp.rho), 0.0, grp.rho)
-            term_g = make_term(group_g, cholesky[0]) if group_g is not None else None
-            term_h = make_term(group_h, cholesky[1]) if group_h is not None else None
+            term_g = make_term(group_g, cholesky[0], con.nearpd) if group_g is not None else None
+            term_h = make_term(group_h, cholesky[1], con.nearpd) if group_h is not None else None
             problem = dataclasses.replace(problem, g=term_g, h=term_h)
 
     fit = metafopy.models.mv_lik.final_fit(problem, par)
@@ -921,7 +981,8 @@ def rma_mv(
     hessian: FloatArray | None = None
     vvc: FloatArray | None = None
     vc_names: tuple[str, ...] = ()
-    hess_args = metafopy.models.mv_hessian.HessianArgs(con.hessian_d, con.hessian_eps, con.hessian_r, con.hesstol)
+    hesspack, hessian_ctrl = hessian_settings(con)
+    hess_args = metafopy.models.mv_hessian.HessianArgs(hesspack, hessian_ctrl, con.hesstol)
     if optbeta:
         vb = numpy.full((p, p), numpy.nan)
         hres = metafopy.models.mv_hessian.coefficient_hessian(problem, par, reml, hess_args, int_incl)

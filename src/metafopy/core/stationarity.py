@@ -23,4 +23,5 @@ def newton_decrement(res: scipy.optimize.OptimizeResult) -> float:
     if hess_inv is None or jac is None:
         return math.inf
     g = numpy.asarray(jac, dtype=numpy.float64)
-    return float(0.5 * g @ numpy.asarray(hess_inv, dtype=numpy.float64) @ g)
+    dense = hess_inv.todense() if hasattr(hess_inv, 'todense') else hess_inv
+    return float(0.5 * g @ numpy.asarray(dense, dtype=numpy.float64) @ g)
