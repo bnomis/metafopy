@@ -64,6 +64,8 @@ def plot_selmodel(
     draw: bool = True,
     *,
     ax: matplotlib.axes.Axes | None = None,
+    bty: str = 'o',
+    col: str | None = None,
 ) -> SelPlotResult:
     """Draw the selection function of a selection model against the p-value.
 
@@ -72,7 +74,8 @@ def plot_selmodel(
     simulates ``reps`` parameter vectors from their estimated multivariate normal distribution (with NumPy's generator seeded by
     ``seed``, so the bounds agree with metafor only up to simulation error). ``scale`` rescales the curve to the unit interval,
     ``shade`` fills the region, ``rug`` marks the observed p-values and ``add`` draws into existing axes. ``draw=False`` only
-    computes the curve. The curve is returned as :class:`SelPlotResult`.
+    computes the curve. ``bty`` (the type of box around the plot) and ``col`` (the colour of the lines) are passed on to ``plot()`` and ``lines()`` by
+    metafor. The curve is returned as :class:`SelPlotResult`.
 
     Raises:
         metafopy.errors.InputError: an argument is invalid or the model has no selection function.
@@ -173,11 +176,12 @@ def plot_selmodel(
 
     axx = metafopy.plot.rutils.get_ax(ax)
     if not add:
-        metafopy.plot.plain.plain_plot(axx, xl, yl, 'p-value', 'Relative Likelihood of Selection', '')
+        metafopy.plot.plain.plain_plot(axx, xl, yl, 'p-value', 'Relative Likelihood of Selection', '', bty=bty)
+    line_col = metafopy.plot.draw.FG if col is None else col
     style: typing.Literal['steps-post', 'default'] = 'steps-post' if stepwise else 'default'
     if do_ci:
         if shade:
-            col = shade if isinstance(shade, str) else metafopy.plot.rutils.coladj(-0.1)
+            shade_col = shade if isinstance(shade, str) else metafopy.plot.rutils.coladj(-0.1)
             xs_poly = numpy.concatenate([ps, ps[::-1]])
             ys_poly = numpy.concatenate([ys_lb, ys_ub[::-1]])
             if stepwise:
@@ -187,14 +191,14 @@ def plot_selmodel(
                 xs_poly = numpy.concatenate([xs_poly, xs_poly[::-1]])
                 ys_poly = numpy.concatenate([lb_s, ub_s[::-1]])
             ok = numpy.isfinite(ys_poly)
-            metafopy.plot.draw.poly(axx, xs_poly[ok], ys_poly[ok], col=col)
+            metafopy.plot.draw.poly(axx, xs_poly[ok], ys_poly[ok], col=shade_col)
         for bound in (ys_lb, ys_ub):
-            ln = metafopy.plot.draw.line(axx, ps, bound, lty=lty[1], lw=float(lwd[1]))
+            ln = metafopy.plot.draw.line(axx, ps, bound, lty=lty[1], lw=float(lwd[1]), col=line_col)
             ln.set_drawstyle(style)
     if rug and not add:
         y0, y1 = axx.get_ylim()
         for pv in x.pvals:
             metafopy.plot.draw.seg(axx, float(pv), y0, float(pv), y0 + 0.03 * (y1 - y0))
-    ln = metafopy.plot.draw.line(axx, ps, ys, lty=lty[0], lw=float(lwd[0]))
+    ln = metafopy.plot.draw.line(axx, ps, ys, lty=lty[0], lw=float(lwd[0]), col=line_col)
     ln.set_drawstyle(style)
     return SelPlotResult(xs=ps, ys=ys, ys_lb=ys_lb, ys_ub=ys_ub, ax=axx)

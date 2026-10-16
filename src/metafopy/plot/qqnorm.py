@@ -70,6 +70,7 @@ def qqnorm(
     seed: int | None = None,
     rng: metafopy.core.rng.RRandom | None = None,
     ax: matplotlib.axes.Axes | None = None,
+    main: str = 'Normal Q-Q Plot',
 ) -> QQNormResult:
     """Normal Q-Q plot of the residuals of a model (``qqnorm.rma.uni``, ``qqnorm.rma.mh`` and ``qqnorm.rma.peto``).
 
@@ -80,7 +81,7 @@ def qqnorm(
     ``label`` (``True``/``'all'``, a number of the most deviating points or ``'out'`` for the points outside the
     envelope) labels points with the study labels at position ``pos`` (1-4, or 13/24 to place them depending on
     the side of the line). ``grid`` adds a grid, ``lty`` the line types of the line of equality and the envelope.
-    For ``rma_mh`` and ``rma_peto`` fits no envelope is drawn (so ``label='out'`` labels nothing), as in metafor.
+    ``main`` is the title of the plot. For ``rma_mh`` and ``rma_peto`` fits no envelope is drawn (so ``label='out'`` labels nothing), as in metafor.
 
     Returns a :class:`QQNormResult`.
 
@@ -128,7 +129,7 @@ def qqnorm(
         (float(yq.min()), float(yq.max())),
         'Theoretical Quantiles',
         'Sample Quantiles',
-        'Normal Q-Q Plot',
+        main,
         bty='l',
     )
     lb_y = ub_y = None

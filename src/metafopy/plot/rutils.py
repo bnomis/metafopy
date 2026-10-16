@@ -2,16 +2,21 @@
 
 import collections.abc
 import math
+import types
 import typing
 
 import matplotlib.axes
+import matplotlib.colors
 import matplotlib.pyplot
 import numpy
 import numpy.typing
+import scipy.special
 import scipy.stats
 
 import metafopy.errors
+import metafopy.plot.draw
 import metafopy.plot.setlab_table
+import metafopy.transf
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 
@@ -157,9 +162,10 @@ def ax_ticks(lo: float, hi: float, nint: int = 5) -> FloatArray:
 
 
 def color_ramp(c1: str, c2: str, n: int) -> list[str]:
-    """``colorRampPalette(c(c1, c2))(n)`` for hex colours (linear interpolation of the colour channels, which R truncates to integers)."""
-    a = numpy.array([int(c1[i : i + 2], 16) for i in (1, 3, 5)], dtype=float) / 255
-    b = numpy.array([int(c2[i : i + 2], 16) for i in (1, 3, 5)], dtype=float) / 255
+    """``colorRampPalette(c(c1, c2))(n)`` for colours given as hex codes or by name (linear interpolation of the colour channels, which R truncates to
+    integers)."""
+    a = numpy.array(matplotlib.colors.to_rgb(metafopy.plot.draw.rcolor(c1)), dtype=float)
+    b = numpy.array(matplotlib.colors.to_rgb(metafopy.plot.draw.rcolor(c2)), dtype=float)
     out: list[str] = []
     for t in numpy.linspace(0, 1, n):
         r, g, bl = (math.floor(v * 255) for v in (b if t == 1 else a + (b - a) * t))
@@ -206,14 +212,50 @@ def rround(x: float, digits: int = 0) -> float:
 # -- labels -----------------------------------------------------------------------------------------------------------
 
 
+# the functions .setlab() recognises (R's ``funlist``), by the name of the group: the labels differ per group, not per function
+LABEL_GROUPS: tuple[tuple[str, tuple[typing.Any, ...]], ...] = (
+    ('exp', (numpy.exp, math.exp, metafopy.transf.transf_exp_int)),
+    ('iabt', (metafopy.transf.transf_iabt, metafopy.transf.transf_iabt_int)),
+    ('iahw', (metafopy.transf.transf_iahw, metafopy.transf.transf_iahw_int)),
+    ('iarcsin', (metafopy.transf.transf_iarcsin, metafopy.transf.transf_iarcsin_int)),
+    ('ilogit', (metafopy.transf.transf_ilogit, metafopy.transf.transf_ilogit_int, metafopy.transf.plogis, scipy.special.expit)),
+    ('ipft.hm', (metafopy.transf.transf_ipft_hm,)),
+    (
+        'iprobit',
+        (metafopy.transf.transf_iprobit, metafopy.transf.transf_iprobit_int, metafopy.transf.pnorm, scipy.stats.norm.cdf, scipy.special.ndtr),
+    ),
+    ('isqrt', (metafopy.transf.transf_isqrt,)),
+    ('tanh', (metafopy.transf.transf_ztor, metafopy.transf.transf_ztor_int, numpy.tanh, math.tanh)),
+    ('ztor2', (metafopy.transf.transf_ztor2,)),
+)
+
+# (long, short) labels of the recognised groups that the probed table of setlab_table lacks, keyed '<a|t>:<group>' (``atransf`` or ``transf``)
+GROUP_LABELS: types.MappingProxyType[str, dict[str, tuple[str, str]]] = types.MappingProxyType(
+    {
+        'ABT': {'a:iabt': ("Cronbach's alpha", 'Alpha'), 't:iabt': ("Cronbach's alpha", 'Alpha')},
+        'AHW': {'a:iahw': ("Cronbach's alpha", 'Alpha'), 't:iahw': ("Cronbach's alpha", 'Alpha')},
+        'IRS': {
+            'a:isqrt': ('Incidence Rate (square root scale)', 'Rate'),
+            't:isqrt': ('Incidence Rate', 'Rate'),
+        },
+        'PAS': {'a:iarcsin': ('Proportion (arcsine scale)', 'Proportion'), 't:iarcsin': ('Proportion', 'Proportion')},
+        'PFT': {'a:ipft.hm': ('Proportion', 'Proportion'), 't:ipft.hm': ('Proportion', 'Proportion')},
+        'PLO': {'a:ilogit': ('Proportion (logit scale)', 'Proportion'), 't:ilogit': ('Proportion', 'Proportion')},
+        'PRZ': {'a:iprobit': ('Proportion (probit scale)', 'Proportion'), 't:iprobit': ('Proportion', 'Proportion')},
+        'ZR2': {'a:ztor2': ('Coefficient of Determination', '$R^2$'), 't:ztor2': ('Coefficient of Determination', '$R^2$')},
+        'ZR2F': {'a:ztor2': ('Coefficient of Determination', '$R^2$'), 't:ztor2': ('Coefficient of Determination', '$R^2$')},
+    }
+)
+
+
 def r_func_name(fn: collections.abc.Callable[..., typing.Any] | bool | None) -> str:
-    """The name of the R function a transformation corresponds to (``'FALSE'`` for no transformation)."""
+    """The name of the group of functions ``.setlab()`` matches ``fn`` to (``'FALSE'`` for no transformation, ``'other'`` for an unrecognised one)."""
     if fn is None or fn is False:
         return 'FALSE'
-    name = getattr(fn, '__name__', '')
-    if name.startswith('transf_'):
-        return name.replace('_', '.')
-    return str(name) if name in ('exp', 'tanh', 'sqrt') else 'other'
+    for name, functions in LABEL_GROUPS:
+        if any(fn is f for f in functions):
+            return name
+    return 'other'
 
 
 def setlab(
@@ -223,7 +265,13 @@ def setlab(
     gentype: int,
     short: bool = False,
 ) -> str:
-    """metafor's internal ``.setlab()``: axis label for a measure and transformation (``gentype`` 1: outcome, 2: overall, 3: estimate)."""
+    """metafor's internal ``.setlab()``: axis label for a measure and transformation (``gentype`` 1: outcome, 2: overall, 3: estimate).
+
+    A transformation is recognised by its identity, like the ``funlist`` of
+    `.setlab <https://github.com/wviechtb/metafor/blob/master/R/misc.func.hidden.r>`_: ``numpy.exp``, ``transf_exp_int``, ``transf_ztor``, ``numpy.tanh``,
+    ``transf_ilogit``, ``plogis``, ``transf_iarcsin``, ``transf_iprobit``, ``pnorm``, ``transf_ipft_hm``, ``transf_ztor2``, ``transf_iahw``, ``transf_iabt``,
+    ``transf_isqrt`` and the ``_int`` variants.
+    """
     base = {1: 'Observed Outcome', 2: 'Overall Estimate', 3: 'Estimate'}[gentype]
     if measure is None or measure not in metafopy.plot.setlab_table.SETLAB:
         return base
@@ -231,12 +279,21 @@ def setlab(
     tn, an = r_func_name(transf), r_func_name(atransf)
     if tn == 'FALSE' and an == 'FALSE':
         return str(ent['none'])
+    extra = GROUP_LABELS.get(measure, {})
+    which = 0 if not short else 1
+
+    def lookup(key: str) -> str | None:
+        if key in ent['ex']:
+            return str(ent['ex'][key])
+        if key in extra:
+            return extra[key][which]
+        return None
+
     lab = str(ent['t'] if tn != 'FALSE' else ent['a'])
-    # the order of the checks in .setlab: atransf matches first, then transf (which wins)
-    if an != 'FALSE':
-        lab = str(ent['ex'].get(f'a:{an}', ent['a']))
-    if tn != 'FALSE':
-        lab = str(ent['ex'].get(f't:{tn}', ent['t'])) if f't:{tn}' in ent['ex'] else (lab if an != 'FALSE' and f'a:{an}' in ent['ex'] else str(ent['t']))
+    for key in (f'a:{an}', f't:{tn}'):
+        found = lookup(key)
+        if found is not None:
+            lab = found
     return lab
 
 

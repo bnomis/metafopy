@@ -147,6 +147,7 @@ def funnel(
     colbox: str | None = None,
     at_lab: collections.abc.Sequence[str] | None = None,
     measure: str | None = None,
+    main: str | None = None,
 ) -> FunnelResult:
     """Funnel plot of a fitted model (``funnel.rma``) or of estimates with their variances (``funnel.default``).
 
@@ -160,7 +161,7 @@ def funnel(
     most extreme studies) labels points with ``slab``, and ``type`` selects the residuals plotted
     for models with moderators (``'rstandard'`` or ``'rstudent'``). Pass ``ni`` (or fit the model with
     ``ni``) for the sample-size axes. For a trim-and-fill result the imputed studies are drawn
-    with symbol ``pch_fill`` (open by default). ``legend`` is only approximated (a matplotlib legend).
+    with symbol ``pch_fill`` (open by default). ``main`` is the title of the plot. ``legend`` is only approximated (a matplotlib legend).
 
     Returns a :class:`FunnelResult` with the plotted coordinates and the axes.
 
@@ -414,6 +415,8 @@ def funnel(
     axx.set_autoscale_on(False)
     axx.set_xlabel(xlab_c)
     axx.set_ylabel(ylab_c)
+    if main:
+        axx.set_title(main, fontsize=metafopy.plot.draw.base_fontsize() * 1.2, fontweight='bold')
     for name in ('top', 'right'):
         axx.spines[name].set_visible(False)
     for name in ('left', 'bottom'):
@@ -550,12 +553,14 @@ def funnel_legend(
         opts.update(legend)
         on = True
     elif isinstance(legend, str):
-        opts['x'] = {'topright': 'upper right', 'topleft': 'upper left', 'bottomright': 'lower right', 'bottomleft': 'lower left'}.get(legend, legend)
+        opts['x'] = legend
         on = True
     else:
         on = bool(legend)
     if not on:
         return
+    if isinstance(opts['x'], str):
+        opts['x'] = metafopy.plot.draw.LEGEND_POSITIONS.get(opts['x'], opts['x'])
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if yaxis not in ('sei', 'vi', 'seinv', 'vinv'):
         opts['show'] = None

@@ -55,6 +55,8 @@ def baujat(
     grid: bool | str = True,
     *,
     ax: matplotlib.axes.Axes | None = None,
+    bty: str = 'o',
+    las: int | None = None,
 ) -> BaujatResult:
     """Baujat plot of a fitted ``rma_uni``, ``rma_mh`` or ``rma_peto`` model (``baujat.rma``).
 
@@ -62,6 +64,8 @@ def baujat(
     (a number, or one per study); ``grid`` adds a grid (a colour string sets its colour). Each study is
     left out in turn and the model refitted; the x-axis shows the study's squared Pearson residual and the y-axis
     the squared change in its fitted value, standardised by the variance of the prediction without the study.
+    ``bty`` (the type of box around the plot: ``'o'``, ``'l'``, ``'7'``, ``'c'``, ``'u'``, ``']'`` or ``'n'``) and ``las`` (the
+    orientation of the tick labels, 0 to 3) are passed on to ``plot()`` by metafor.
 
     Returns a :class:`BaujatResult`.
 
@@ -94,7 +98,7 @@ def baujat(
         ylab = 'Influence on Overall Result' if int_only else 'Influence on Fitted Value'
     xl = (float(numpy.nanmin(xhati)), float(numpy.nanmax(xhati))) if xlim is None else (float(xlim[0]), float(xlim[1]))
     yl = (float(numpy.nanmin(yhati)), float(numpy.nanmax(yhati))) if ylim is None else (float(ylim[0]), float(ylim[1]))
-    xt, yt = metafopy.plot.plain.plain_plot(axx, xl, yl, xlab, ylab)
+    xt, yt = metafopy.plot.plain.plain_plot(axx, xl, yl, xlab, ylab, bty=bty, las=las)
     if grid is not False:  # True or a colour
         assert xt is not None
         assert yt is not None

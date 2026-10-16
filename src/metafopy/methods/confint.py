@@ -101,6 +101,7 @@ def confint_rma_uni(
     verbose: bool | int = False,
     digits: int | None = None,
     control: collections.abc.Mapping[str, typing.Any] | None = None,
+    xlim: float | collections.abc.Sequence[float] | None = None,
 ) -> ConfintResult:
     """CIs for an ``rma.uni`` fit (metafor's ``confint.rma.uni``).
 
@@ -112,6 +113,8 @@ def confint_rma_uni(
     effects and their bounds. ``verbose`` prints the steps of the root finding
     (on stdout, as metafor's ``cat()``), with ``digits`` decimals. ``control`` is metafor's list of root finding settings
     (``tau2_min``, ``tau2_max``, ``tol`` and ``maxiter``, written with ``.`` or ``_``); its entries replace the keyword arguments of the same name.
+    ``xlim`` (metafor's ``...`` argument) is the interval ``(tau2_min, tau2_max)`` searched for the bounds (a single value is the upper
+    limit and the lower one is 0) and wins over ``control``.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
@@ -121,6 +124,13 @@ def confint_rma_uni(
     ndig = metafopy.mfopt.option_digits(digits)
     con = control_values(control, {'tau2_min': tau2_min, 'tau2_max': tau2_max, 'tol': tol, 'maxiter': maxiter})
     tau2_min, tau2_max, tol, maxiter = con['tau2_min'], con['tau2_max'], con['tol'], con['maxiter']
+    if xlim is not None:
+        limits = [float(v) for v in numpy.atleast_1d(numpy.asarray(xlim, dtype=numpy.float64))]
+        if len(limits) == 1:
+            limits = [0.0, limits[0]]
+        if len(limits) != 2:
+            raise metafopy.errors.InputError("Argument 'xlim' should be a vector of length 1 or 2.")
+        tau2_min, tau2_max = limits
     if type is None:
         # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
         type = 'genq' if x.method in ('GENQ', 'GENQM') else 'qp'
@@ -473,6 +483,7 @@ def confint_rma_mv(
     verbose: bool | int = False,
     digits: int | None = None,
     control: collections.abc.Mapping[str, typing.Any] | None = None,
+    xlim: collections.abc.Sequence[float] | None = None,
 ) -> ConfintResult | list[ConfintResult]:
     """CIs for an ``rma.mv`` fit (metafor's ``confint.rma.mv``).
 
@@ -482,6 +493,7 @@ def confint_rma_mv(
     computed for every estimated variance/correlation component and a list is returned (a single result if there is one).
     ``verbose`` prints the profile steps of the root finding on stdout, with ``digits`` decimals. ``control`` is metafor's list of settings
     (``vc_min``, ``vc_max``, ``tol``, ``maxiter`` and ``eptries``, written with ``.`` or ``_``); its entries replace the keyword arguments of the same name.
+    ``xlim`` (metafor's ``...`` argument) is the interval ``(vc_min, vc_max)`` searched for the bounds and wins over ``control``.
 
     Raises:
         metafopy.errors.InputError: an argument is invalid or the model has no such component.
@@ -491,6 +503,10 @@ def confint_rma_mv(
     ndig = metafopy.mfopt.option_digits(digits)
     con = control_values(control, {'vc_min': vc_min, 'vc_max': vc_max, 'tol': tol, 'maxiter': maxiter, 'eptries': eptries})
     vc_min, vc_max, tol, maxiter, eptries = con['vc_min'], con['vc_max'], con['tol'], con['maxiter'], con['eptries']
+    if xlim is not None:
+        if len(xlim) != 2:
+            raise metafopy.errors.InputError("Argument 'xlim' should be a vector of length 2.")
+        vc_min, vc_max = float(xlim[0]), float(xlim[1])
     alpha = metafopy.models.rma_uni.level_to_alpha(x.level if level is None else level)
     chosen = {name: v for name, v in zip(metafopy.models.mv_structs.VC_NAMES, (sigma2, tau2, rho, gamma2, phi), strict=True) if v is not None}
     if len(chosen) > 1:
