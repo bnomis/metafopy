@@ -10,7 +10,7 @@ dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 
 # datasets used only by the Phase 3 (binary and count data) and Phase 4 (vcalc, rcalc) fixture scripts, and by the plot gallery
 # in the user manual (dat.damico2009, dat.pignon2000), and the data-preparation helpers (dat.hasselblad1998, dat.ishak2007, dat.senn2013)
-extra <- c("dat.berkey1998", "dat.collins1985a", "dat.craft2003", "dat.damico2009", "dat.hasselblad1998", "dat.ishak2007", "dat.knapp2017", "dat.pignon2000", "dat.senn2013", "dat.yusuf1985")
+extra <- c("dat.berkey1998", "dat.collins1985a", "dat.craft2003", "dat.damico2009", "dat.hasselblad1998", "dat.ishak2007", "dat.knapp2017", "dat.pignon2000", "dat.senn2013", "dat.yusuf1985", "dat.aloe2013", "dat.baskerville2012", "dat.bonett2010", "dat.collins1985b", "dat.furukawa2003", "dat.hahn2001", "dat.kalaian1996", "dat.lehmann2018", "dat.nielweise2008", "dat.viechtbauer2021")
 
 for (name in sort(unique(c(vapply(cases, `[[`, "", "data"), extra)))) {
   dat <- get(name)
