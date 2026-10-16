@@ -426,6 +426,16 @@ def hessian_covariance(
     return numpy.asarray(cov, dtype=numpy.float64)
 
 
+def on_boundary(theta: FloatArray, structure: Structure) -> bool:
+    """Whether a diagonal element of ``Lambda`` is at its lower bound of zero: the finite-difference Hessian is undefined there.
+
+    metafor's reference fits of such models (a variance estimated as zero) give no warning, so the fall back to the covariance matrix
+    from ``RX`` is made silently.
+    """
+    diagonal = numpy.array({'scalar': [0], 'independent': [0, 1], 'correlated': [0, 2]}[structure])
+    return bool(numpy.any(theta[diagonal] <= 0.0))
+
+
 def starting_theta(structure: Structure) -> FloatArray:
     return {'scalar': numpy.array([1.0]), 'independent': numpy.array([1.0, 1.0]), 'correlated': numpy.array([1.0, 0.0, 1.0])}[structure]
 
@@ -607,7 +617,8 @@ def fit_glmm(
         if cov is None:
             if not lme4_conventions:
                 raise metafopy.errors.EstimationError('the variance-covariance matrix of the fixed effects cannot be computed')
-            warnings.warn(HESSIAN_WARNING, stacklevel=3)
+            if not on_boundary(theta, prob.structure):
+                warnings.warn(HESSIAN_WARNING, stacklevel=3)
             cov = beta_covariance(prob, modes, A)
     return GLMMFit(
         beta=beta,
