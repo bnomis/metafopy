@@ -134,13 +134,17 @@ def rstudent_fixed_binary(
     digits: int | None = None,
     *,
     na_action: metafopy.methods.common.NAAction = 'omit',
+    progbar: bool = False,
 ) -> metafopy.methods.influence.ResidualResult:
-    """Externally standardised residuals: each table is compared with the pooled estimate from the other tables."""
+    """Externally standardised residuals: each table is compared with the pooled estimate from the other tables.
+
+    ``progbar=True`` prints a progress bar to stderr.
+    """
     metafopy.methods.common.check_na_action(na_action)
     t = model.tables
     delpred = numpy.full(t.k_f, numpy.nan)
     vdelpred = numpy.full(t.k_f, numpy.nan)
-    for i in range(t.k_f):
+    for i in metafopy.core.parallel.progress(range(t.k_f), t.k_f, progbar):
         if not t.not_na[i]:
             continue
         keep = numpy.ones(t.k_f, dtype=numpy.bool_)
@@ -217,8 +221,9 @@ def leave1out_fixed_binary(
     targs: typing.Any = None,
     *,
     na_action: metafopy.methods.common.NAAction = 'omit',
+    progbar: bool = False,
 ) -> metafopy.methods.leave1out.Leave1outResult:
-    """Refit the model leaving out each table (or each ``cluster`` of tables) in turn.
+    """Refit the model leaving out each table (or each ``cluster`` of tables) in turn; ``progbar=True`` prints a progress bar to stderr.
 
     Raises:
         metafopy.errors.InputError: the data are not suitable (``k = 1``) or ``cluster`` is invalid.
@@ -238,7 +243,7 @@ def leave1out_fixed_binary(
     ids = list(dict.fromkeys(cluster_k.tolist()))
     if not miss_cluster:
         ids = sorted(ids)
-    fits = [refit_tables(x, t.cells, cluster_k != cid) for cid in ids]
+    fits = [refit_tables(x, t.cells, cluster_k != cid) for cid in metafopy.core.parallel.progress(ids, len(ids), progbar)]
     fn = resolve_transf(x, transf)
     col = collect(fits, x, fn, targs)
     slab_all = numpy.asarray(t.slab, dtype=object)
@@ -284,8 +289,9 @@ def cumul_fixed_binary(
     *,
     decreasing: bool = False,
     na_action: metafopy.methods.common.NAAction = 'omit',
+    progbar: bool = False,
 ) -> metafopy.methods.leave1out.CumulResult:
-    """Fit the model to the first ``i`` tables for ``i = 1, ..., k`` (tables with missing counts are skipped).
+    """Fit the model to the first ``i`` tables for ``i = 1, ..., k`` (tables with missing counts are skipped); ``progbar=True`` prints a progress bar to stderr.
 
     Raises:
         metafopy.errors.InputError: ``order`` is invalid or tables are missing and ``na_action='fail'``.
@@ -309,7 +315,7 @@ def cumul_fixed_binary(
     n = len(uor)
     fits: list[metafopy.models.binary.FixedBinaryResult | None] = [None] * n
     show = numpy.ones(n, dtype=numpy.bool_)
-    for i in range(n):
+    for i in metafopy.core.parallel.progress(range(n), n, progbar):
         if collapse:
             members = numpy.isin(ov, uor[: i + 1])
             if not not_na_o[numpy.isin(ov, uor[i : i + 1])].any():
