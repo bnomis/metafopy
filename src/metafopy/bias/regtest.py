@@ -180,7 +180,7 @@ def regtest(
         # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
         coef_names = ('intrcpt',)
         slab = tuple(str(i + 1) for i in range(yi.shape[0]))
-    d = 4 if digits is None else digits
+    d = metafopy.mfopt.stored_digits(digits, 4)
 
     if predictor == 'sei':
         extra = numpy.sqrt(v)

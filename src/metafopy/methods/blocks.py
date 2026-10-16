@@ -97,14 +97,14 @@ def blsplit(
     x: FloatArray | scipy.sparse.sparray | scipy.sparse.spmatrix,
     cluster: numpy.typing.ArrayLike,
     fun: collections.abc.Callable[..., typing.Any] | None = None,
-    args: collections.abc.Sequence[typing.Any] | None = None,
+    args: typing.Any = None,
     sort: bool = False,
 ) -> dict[typing.Any, typing.Any]:
     """Split a block diagonal matrix into a dict of sub-matrices, one per unique ``cluster`` value (metafor's ``blsplit``).
 
     The keys are the unique cluster values in order of appearance (sorted if ``sort``). ``fun``, if
     given, is applied to each sub-matrix with ``args`` as additional positional arguments, i.e.
-    ``fun(block, *args)`` (R: ``blsplit(V, cluster, round, 4)``). A scipy sparse ``x`` gives sparse
+    ``fun(block, *args)`` (R: ``blsplit(V, cluster, round, 4)``; a single value is the one argument). A scipy sparse ``x`` gives sparse
     sub-matrices.
 
     Raises:
@@ -148,6 +148,6 @@ def blsplit(
         else:
             raise metafopy.errors.InternalError('blsplit() has neither a dense nor a sparse matrix')
         if fun is not None:
-            block = fun(block, *args) if args is not None else fun(block)
+            block = fun(block) if args is None else fun(block, *(args if isinstance(args, list | tuple) else numpy.atleast_1d(args).tolist()))
         res[python_scalar(value)] = block
     return res

@@ -979,7 +979,10 @@ def forest(
         if measure is None:
             measure = str(attrs['measure']) if isinstance(attrs, dict) and attrs.get('measure') else 'GEN'
         label_null = False
-        if slab is None:
+        stored_slab = metafopy.metadata.frame_attr(x, 'slab') if isinstance(x, pandas.Series) and slab is None else None
+        if slab is None and stored_slab is not None and len(stored_slab) == k:
+            slab_l = [str(s) for s in stored_slab]
+        elif slab is None:
             slab_l = [f'Study {i + 1}' for i in range(k)]
             label_null = True
         else:

@@ -649,6 +649,20 @@ def named_newmods(newmods: typing.Any) -> tuple[numpy.typing.ArrayLike, list[str
     return newmods, None
 
 
+def prediction_slab(newmods: typing.Any, k_new: int, x_p: int, int_incl: bool) -> tuple[str, ...] | None:
+    """The row labels of predictions for ``newmods`` (metafor's ``rnames``): the names of a vector holding one value per prediction (a model
+    with one moderator), the row names of a data frame, else none; a single unnamed prediction has the empty label."""
+    labels: list[str] | None = None
+    one_mod = x_p == (2 if int_incl else 1)
+    if isinstance(newmods, pandas.DataFrame):
+        labels = string_names(list(newmods.index))
+    elif isinstance(newmods, pandas.Series | collections.abc.Mapping) and one_mod:
+        labels = string_names(list(newmods.index if isinstance(newmods, pandas.Series) else newmods))
+    if labels is not None and len(labels) == k_new:
+        return tuple(labels)
+    return ('',) if k_new == 1 else None
+
+
 def match_names(names: list[str], coef_names: collections.abc.Sequence[str]) -> list[int]:
     """The position in ``coef_names`` of each name; a name may be shortened to any subsequence of the name it stands for (as in metafor).
 
@@ -704,7 +718,11 @@ def new_moderators(
         arr = arr[:, None] if n_mods == 1 else arr[None, :]
     if names is not None and coef_names is not None and n_mods > 1 and len(names) == arr.shape[1] and all(names):
         mod_names = list(coef_names)[1:] if int_incl else list(coef_names)
+        if int_incl and len(names) == x_p and list(names) == list(coef_names):
+            mod_names = list(coef_names)
         arr = arr[:, numpy.argsort(match_names(names, mod_names), kind='stable')]
+    if int_incl and arr.shape[1] == x_p and intercept is not None:
+        warnings.warn("Arguments 'intercept' ignored when 'newmods' includes 'p' columns.", stacklevel=4)
     if int_incl and arr.shape[1] == x_p - 1:
         col = 1.0 if intercept is None or intercept else 0.0
         arr = numpy.column_stack([numpy.full(arr.shape[0], col), arr])
@@ -749,6 +767,10 @@ def location_prediction(
             slab = x.slab if x.slab_f is None else x.slab_f
     else:
         X_new = new_moderators(p, x.int_incl, newmods, intercept, x.coef_names)
+        slab = prediction_slab(newmods, X_new.shape[0], p, x.int_incl)
+
+    if slab is None and X_new.shape[0] == 1:
+        slab = ('',)
 
     check_prob_adjust(prob, adjust)
     alpha = x.alpha if level is None else metafopy.models.rma_uni.level_to_alpha(level)
@@ -963,12 +985,15 @@ def predict_rma_mv(
     else:
         X_new = new_moderators(p, x.int_incl, newmods, intercept, x.coef_names)
         k_new = X_new.shape[0]
+        slab = prediction_slab(newmods, k_new, p, x.int_incl)
         if x.with_g:
             tau2_idx = numpy.zeros(k_new, dtype=numpy.intp) if x.tau2s == 1 else level_array(tau2_levels, g_labels, k_new, 'tau2_levels')
         if x.with_h:
             gamma2_idx = numpy.zeros(k_new, dtype=numpy.intp) if x.gamma2s == 1 else level_array(gamma2_levels, h_labels, k_new, 'gamma2_levels')
 
     k_new = X_new.shape[0]
+    if slab is None and k_new == 1:
+        slab = ('',)
     alpha = metafopy.models.rma_uni.level_to_alpha(x.level if level is None else level)
     if adjust:
         alpha = alpha / k_new

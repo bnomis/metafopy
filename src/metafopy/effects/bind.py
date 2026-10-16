@@ -153,7 +153,7 @@ def rbind_escalc(*args: pandas.DataFrame) -> pandas.DataFrame:
     attrs = dict(first.attrs)
     attrs.pop(metafopy.metadata.ROWS_KEY, None)
     sizes = [metafopy.metadata.frame_attr(p, 'ni') for p in args]
-    attrs['ni'] = None if any(v is None for v in sizes) else numpy.concatenate([numpy.asarray(v, dtype=numpy.float64).reshape(-1) for v in sizes])
+    attrs['ni'] = None if any(v is None for v in sizes) else numpy.concatenate([numpy.asarray(v, dtype=numpy.float64).reshape(-1) for v in sizes]).tolist()
     labels: list[str] = []
     complete = True
     for p in args:

@@ -19,6 +19,7 @@ import pandas
 import scipy.stats
 
 import metafopy.errors
+import metafopy.mfopt
 import metafopy.models.glmm_result
 import metafopy.models.rma_ls_result
 import metafopy.models.rma_uni
@@ -237,6 +238,6 @@ def shrinkage_predictions(
         pi_lb=pi_lb,
         pi_ub=pi_ub,
         slab=slab,
-        digits=4 if digits is None else digits,
+        digits=metafopy.mfopt.stored_digits(digits, res.digits),
         transf=transf is not None,
     )

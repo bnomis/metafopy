@@ -88,6 +88,9 @@ def coef_summary(object: typing.Any, type: typing.Literal['beta', 'alpha', 'delt
     Raises:
         metafopy.errors.ArgumentError: ``object`` is not a fitted model.
     """
+    if object.__class__.__name__ in ('PermutestResult', 'LSPermutestResult'):
+        tables = object.to_frame()
+        return typing.cast('pandas.DataFrame | dict[str, pandas.DataFrame]', tables[type] if isinstance(tables, dict) and type is not None else tables)
     metafopy.methods.fitview.check_class(object)
     beta = beta_table(object)
     if type == 'beta':

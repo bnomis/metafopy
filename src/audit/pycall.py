@@ -112,19 +112,40 @@ def setitem(x: typing.Any, name: str, value: typing.Any) -> typing.Any:
 
 
 def print_call(x: typing.Any, **kwargs: typing.Any) -> list[str]:
-    """``print(x, ...)`` as text: metafopy results print through ``str()``, which takes no arguments."""
+    """``print(x, ...)`` as text: metafopy results print through ``str()``, which takes no arguments; the arguments of R's ``print`` go to ``summary()``."""
     if kwargs:
-        raise MissingArgumentError(f'print() of {type(x).__name__} takes no argument; R was given {sorted(kwargs)}')
+        summary: typing.Any = getattr(x, 'summary', None)
+        accepted = inspect.signature(summary).parameters if callable(summary) else {}
+        missing = sorted(k for k in kwargs if k not in accepted)
+        if missing:
+            raise MissingArgumentError(f'print() of {type(x).__name__} takes no argument {missing}; R was given {sorted(kwargs)}')
+        return str(summary(**kwargs)).split('\n')
     return str(x).split('\n')
 
 
 HELPERS: dict[str, typing.Callable[..., typing.Any]] = {'identity': lambda x: x, '[': getitem, '$<-': setitem, 'print': print_call}
 
 
+# R's plot() is one generic; metafopy has one function per class of the object that is drawn
+PLOT_FUNCTIONS = {
+    'CumulResult': 'plot_cumul',
+    'GoshResult': 'plot_gosh',
+    'InfluenceResult': 'plot_infl',
+    'LSPermutestResult': 'plot_permutest',
+    'PermutestResult': 'plot_permutest',
+    'SelmodelResult': 'plot_selmodel',
+    'VIFResult': 'plot_vif',
+}
+
+
 def resolve_function(name: str, target: typing.Any) -> typing.Callable[..., typing.Any]:
     """The callable for an R function name; a method found on the target comes back already bound to it (call it without the target)."""
     if name in HELPERS:
         return HELPERS[name]
+    if name == 'plot' and target is not None:
+        shown = target[0] if isinstance(target, list) and target else target
+        kind = type(shown).__name__
+        name = 'plot_profile' if kind.endswith('ProfileResult') else PLOT_FUNCTIONS.get(kind, 'plot_rma')
     for spelling in candidates(name):
         for module in (metafopy, metafopy.transf):
             fn = getattr(module, spelling, None)

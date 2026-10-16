@@ -24,6 +24,7 @@ reference page: https://wviechtb.github.io/metafor/reference/mfopt.html.
 """
 
 import collections.abc
+import math
 import typing
 
 import metafopy.errors
@@ -96,7 +97,14 @@ def reduce_digits(value: typing.Any, stored: int = 4) -> int:
         value = value.get('est', next(iter(value.values()), stored))
     elif isinstance(value, collections.abc.Sequence) and not isinstance(value, str):
         value = value[0] if value else stored
+    if value is None or (isinstance(value, float) and math.isnan(value)):
+        return stored
     return int(value)
+
+
+def stored_digits(digits: typing.Any, stored: int = 4) -> int:
+    """The ``digits`` a result keeps: the explicit ``digits`` reduced to one number of decimals, else ``stored`` (the ``digits`` of the fit)."""
+    return stored if digits is None else reduce_digits(digits, stored)
 
 
 def option_digits(digits: typing.Any, stored: int = 4) -> int:

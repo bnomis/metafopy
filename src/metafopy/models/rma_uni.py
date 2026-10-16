@@ -732,6 +732,11 @@ def metadata_from_escalc(
     counts_all = {
         name: arr[idx] for name in count_names if name in raw and (arr := metafopy.metadata.column(raw[name], data, name)) is not None and arr.shape[0] == k_all
     }
+    for count, group_size, other in (('bi', 'n1i', 'ai'), ('di', 'n2i', 'ci')):
+        if count not in counts_all and other in counts_all and group_size in raw:
+            sizes = metafopy.metadata.column(raw[group_size], data, group_size)
+            if sizes is not None and sizes.shape[0] == k_all:
+                counts_all[count] = sizes[idx] - counts_all[other]
     md = metafopy.metadata.MetaData.from_inputs(
         es['yi'].to_numpy(dtype=numpy.float64),
         es['vi'].to_numpy(dtype=numpy.float64),

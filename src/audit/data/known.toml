@@ -67,3 +67,24 @@ match = "*"
 kind = "accepts-where-R-refuses"
 detail = "R: *did not achieve convergence*"
 reason = "R's optimiser stops without convergence on this case and R refuses the fit; metafopy's optimiser converges."
+
+[[known]]
+match = "*"
+kind = "refused-where-R-works"
+detail = "*ontrol*optimizer*"
+reason = "R silently ignores control entries a function does not use (here 'optimizer'); metafopy raises for unknown control entries so a misspelt setting is not lost."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "refused-where-R-works"
+detail = "*unexpected arguments:*"
+reason = "Plot '...' arguments are explicit keywords; R passes unknown graphical parameters to par() or ignores them."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "refused-where-R-works"
+detail = "*unknown dataset*"
+reason = "The data sets that are lists of data frames (not tables) are not bundled."
+ref = "docs/differences.md"

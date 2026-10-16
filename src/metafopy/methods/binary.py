@@ -25,6 +25,7 @@ import metafopy.methods.confint
 import metafopy.methods.gosh
 import metafopy.methods.influence
 import metafopy.methods.leave1out
+import metafopy.mfopt
 import metafopy.models.binary
 import metafopy.models.rma_mh
 import metafopy.models.rma_peto
@@ -125,7 +126,7 @@ def rstandard_fixed_binary(
     with numpy.errstate(all='ignore'):
         resid = t.yi_f - model.beta[0]
         se = numpy.sqrt(t.vi_f)
-    return residual_result(model, resid, se, model.digits if digits is None else digits, na_action)
+    return residual_result(model, resid, se, metafopy.mfopt.stored_digits(digits, model.digits), na_action)
 
 
 @metafopy.methods.influence.rstudent.register
@@ -157,7 +158,7 @@ def rstudent_fixed_binary(
     with numpy.errstate(all='ignore'):
         resid = t.yi_f - delpred
         se = numpy.sqrt(t.vi_f + vdelpred)
-    return residual_result(model, resid, se, model.digits if digits is None else digits, na_action)
+    return residual_result(model, resid, se, metafopy.mfopt.stored_digits(digits, model.digits), na_action)
 
 
 # -- leave-one-out / cumulative -----------------------------------------------------------------------
@@ -273,7 +274,7 @@ def leave1out_fixed_binary(
         H2=col['H2'],
         slab=slab,
         stat_name='zval',
-        digits=x.digits if digits is None else digits,
+        digits=metafopy.mfopt.stored_digits(digits, x.digits),
         transf=fn is not None or transf is True,
     )
 
@@ -345,7 +346,7 @@ def cumul_fixed_binary(
         H2=col['H2'][show],
         slab=slab,
         stat_name='zval',
-        digits=x.digits if digits is None else digits,
+        digits=metafopy.mfopt.stored_digits(digits, x.digits),
         transf=fn is not None or transf is True,
         k=col['k'][show],
         order=uor[show],

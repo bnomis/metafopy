@@ -33,6 +33,7 @@ import metafopy.core.linalg
 import metafopy.core.numderiv
 import metafopy.errors
 import metafopy.metadata
+import metafopy.mfopt
 import metafopy.models.call
 import metafopy.models.rma_uni
 import metafopy.models.sel_lik
@@ -622,7 +623,7 @@ def selmodel(
         int_subdivisions=int(int_ctrl['subdivisions']),
         int_rel_tol=float(int_ctrl['rel.tol']),
     )
-    digits_out = 4 if digits is None else int(digits)
+    digits_out = metafopy.mfopt.stored_digits(digits, x.digits)
     par0 = numpy.concatenate([beta_init, [tau2_init], delta_init])
 
     def fn(par: FloatArray) -> float:

@@ -1,0 +1,7 @@
+"study","year","intv.n","placebo.n","iv.iron","size","followup","baseline.age","baseline.lvef","baseline.hgb","baseline.ft","baseline.tsat","total.n","total.logrr","total.se","female.n","female.logrr","female.se","male.n","male.logrr","male.se","sex.logrrr","sex.se"
+"FAIR-HF",2009,304,155,"carboxymaltose","small",6,67,33,11.9,56,17,459,-0.7761,0.4867,244,-0.668,0.7028,215,-0.8409,0.6558,0.3908,0.6558
+"CONFIRM-HF",2015,150,151,"carboxymaltose","small",12,70,37,12.4,57,19,301,-0.666,0.3146,141,-0.1418,0.5238,160,-0.939,0.3895,0.7999,0.3895
+"AFFIRM-AHF",2020,558,550,"carboxymaltose","large",12,71,33,12.2,86,15,1108,-0.2784,0.1188,494,-1e-04,0.1783,614,-0.4513,0.1576,0.4473,0.1576
+"IRONMAN",2022,569,568,"derisomaltose","large",32,74,35,12.1,50,15,1137,-0.1985,0.1111,300,-0.1508,0.2441,837,-0.2107,0.1254,0.0599,0.2745
+"HEART-FID",2023,1533,1532,"carboxymaltose","large",25,69,31,12.6,57,24,3065,-0.0458,0.0785,1037,0.0708,0.1436,2028,-0.1145,0.0879,0.2044,0.1683
+"FAIR-HF2",2025,558,547,"carboxymaltose","large",17,70,34,12.5,73,19,1105,-0.227,0.1312,368,0.0379,0.2972,737,-0.2302,0.1439,0.3365,0.3332

@@ -12,6 +12,9 @@ __all__ = ['list_datasets', 'load']
 
 PACKAGE = 'metafopy.datasets.data'
 
+# character (or factor) columns of metadat whose values look like numbers, which must not be read as numbers (yusuf1985 `id` is "5.10")
+TEXT_COLUMNS = {'dat.bauer2002': ['threshold'], 'dat.yusuf1985': ['id']}
+
 
 def list_datasets() -> list[str]:
     """Names of the bundled datasets, e.g. ``"dat.bcg"``."""
@@ -25,7 +28,7 @@ def read(name: str) -> pandas.DataFrame:
     if not path.is_file():
         raise metafopy.errors.NotFoundError(f'unknown dataset {name!r}; see metafopy.datasets.list_datasets()')
     with path.open('rb') as fh:
-        return pandas.read_csv(fh)
+        return pandas.read_csv(fh, dtype={column: str for column in TEXT_COLUMNS.get(name, [])})
 
 
 def load(name: str) -> pandas.DataFrame:

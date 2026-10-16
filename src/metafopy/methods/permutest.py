@@ -32,6 +32,7 @@ import metafopy.errors
 import metafopy.methods.common
 import metafopy.methods.fitview
 import metafopy.methods.vif
+import metafopy.mfopt
 import metafopy.models.rma_uni
 import metafopy.printing
 
@@ -251,7 +252,7 @@ def permutest_rma_uni(
     con = permutest_control(control)
     if tol is not None:
         con['comptol'] = tol
-    digits_ = 4 if digits is None else digits
+    digits_ = metafopy.mfopt.stored_digits(digits, 4)
 
     gen: metafopy.core.rng.RRandom | None = None
     if not use_exact:

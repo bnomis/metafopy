@@ -28,6 +28,7 @@ import metafopy.errors
 import metafopy.methods.ls_common
 import metafopy.methods.permutest
 import metafopy.methods.vif
+import metafopy.mfopt
 import metafopy.models.rma_ls_result
 import metafopy.models.rma_uni
 import metafopy.printing
@@ -99,6 +100,32 @@ class LSPermutestResult:
     digits: int = 4
     int_incl: bool = True
     Z_int_incl: bool = True
+
+    def to_frame(self) -> dict[str, pandas.DataFrame]:
+        """The tables of the location (``'beta'``) and scale (``'alpha'``) coefficients with the permutation p-values (``coef.permutest.rma.uni``)."""
+        t_test = self.ddf is not None
+
+        def table(
+            names: tuple[str, ...], est: FloatArray, se: FloatArray, z: FloatArray, ddf: int | None, pval: FloatArray, lb: FloatArray, ub: FloatArray
+        ) -> pandas.DataFrame:
+            cols: dict[str, typing.Any] = {'estimate': est, 'se': se, ('tval' if t_test else 'zval'): z}
+            if t_test:
+                cols['df'] = numpy.full(len(names), numpy.nan if ddf is None else ddf)
+            cols.update({'pval': pval, 'ci.lb': lb, 'ci.ub': ub})
+            return pandas.DataFrame(cols, index=list(names))
+
+        return {
+            'beta': table(self.coef_names, self.beta, self.se, self.zval, self.ddf, self.pval, self.ci_lb, self.ci_ub),
+            'alpha': table(self.alpha_names, self.alpha, self.se_alpha, self.zval_alpha, self.ddf_alpha, self.pval_alpha, self.ci_lb_alpha, self.ci_ub_alpha),
+        }
+
+    def coef(self, type: typing.Literal['alpha', 'beta'] | None = None) -> pandas.Series | dict[str, pandas.Series]:
+        """The estimated coefficients, indexed by name: ``{'beta': ..., 'alpha': ...}``, or one of them with ``type``."""
+        both = {
+            'beta': pandas.Series(self.beta, index=list(self.coef_names), name='estimate'),
+            'alpha': pandas.Series(self.alpha, index=list(self.alpha_names), name='estimate'),
+        }
+        return both if type is None else both[type]
 
     def __str__(self) -> str:
         return format_permutest(self)
@@ -321,7 +348,7 @@ def permutest_rma_ls(
     if isinstance(exact, str) and exact == 'i':
         return [x_exact_iter, z_exact_iter]
 
-    digits_ = 4 if digits is None else digits
+    digits_ = metafopy.mfopt.stored_digits(digits, 4)
     comptol = float(con['comptol'])
     n_col = 1 if x.int_only else x.p
 
