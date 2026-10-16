@@ -19,3 +19,8 @@ Development follows the rules, commands and skills in <https://github.com/bnomis
 - Imports use full module paths (`import numpy`, not `import numpy as np`); no `from __future__`; no leading-underscore names. See `claude/rules/`.
 - Domain errors live in `metafopy.errors`.
 - Link the R source and papers in docstrings.
+
+## Audit
+
+`bin/metafor-audit.sh` runs the whole audit against R metafor in one command and writes `wrong-or-missing.md`; `bin/metafor-audit.sh --recall` checks that it
+reproduces what earlier audits found. See `src/audit/README.md`. Fix a miss of the recall check in the harness (`src/audit/data/`), not in a report.
