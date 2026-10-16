@@ -146,6 +146,7 @@ def anova_rma_uni(
     test: str | None = None,
     df: int | None = None,
     verbose: bool = False,
+    abbrev: bool = False,
 ) -> WaldResult | LRTResult | list[WaldResult]:
     """Test coefficients of one model, or compare two nested models.
 
@@ -160,7 +161,8 @@ def anova_rma_uni(
     ``L`` is the old spelling of ``X`` and ``fixed=True`` matches a character ``btt`` literally instead of as a regular expression. For two
     models, ``test='Wald'`` tests the coefficients that only the full model has (with the Wald test of that model) instead of the
     likelihood-ratio test, and ``df`` replaces the difference in the number of parameters in the likelihood-ratio test. ``verbose`` adds
-    the reason to the error of a cluster-robust test that fails.
+    the reason to the error of a cluster-robust test that fails. ``abbrev=True`` (metafor's undocumented argument) removes ``factor(`` and
+    ``)`` from the text of the hypotheses of a test of linear combinations.
 
     For a model made robust with ``club_sandwich=True`` the omnibus test is the cluster-robust Wald test with the small-sample
     approximation chosen by ``wald_test`` of :func:`metafopy.robust` (``HTZ`` by default: an F test with df1 and df2 from
@@ -174,6 +176,8 @@ def anova_rma_uni(
         metafopy.errors.InputError: an argument or the data is invalid.
         metafopy.errors.InternalError: an internal invariant does not hold.
     """
+    if abbrev:
+        return abbreviate_hyp(anova_rma_uni(**{**locals(), 'abbrev': False}), True)
     x = model
     tdist = x.ddf is not None
     method = None if adjust is None else metafopy.core.padjust.match_adjust(adjust)
@@ -261,6 +265,18 @@ def anova_rma_uni(
     if method is not None:
         QMp = float(metafopy.core.padjust.p_adjust([QMp], method)[0])
     return WaldResult(QM=QM, QMdf=(m, x.ddf), QMp=QMp, btt=idx)
+
+
+def abbreviate_hyp[T](result: T, abbrev: bool) -> T:
+    """``anova(..., abbrev=TRUE)``: ``factor(`` and ``)`` are removed from the text of the hypotheses of a test of linear combinations."""
+    if not abbrev:
+        return result
+    if isinstance(result, list):
+        return typing.cast(T, [abbreviate_hyp(item, abbrev) for item in result])
+    hyp = getattr(result, 'hyp', None)
+    if hyp is None:
+        return result
+    return typing.cast(T, dataclasses.replace(typing.cast(typing.Any, result), hyp=tuple(h.replace('factor(', '').replace(')', '') for h in hyp)))
 
 
 def merge_x(X: numpy.typing.ArrayLike | None, L: numpy.typing.ArrayLike | None) -> numpy.typing.ArrayLike | None:
@@ -432,6 +448,35 @@ def btt_rhs(rhs: numpy.typing.ArrayLike | float, m: int) -> FloatArray:
     return r
 
 
+def check_lrt_models(
+    full: metafopy.models.rma_uni.RMAResult | metafopy.models.mv_result.RMAMVResult,
+    red: metafopy.models.rma_uni.RMAResult | metafopy.models.mv_result.RMAMVResult,
+) -> None:
+    """The checks ``anova.rma`` makes before a likelihood-ratio test of ``full`` against ``red`` (stops or warns as R does).
+
+    Raises:
+        metafopy.errors.InputError: the full model is a fixed-effects and the reduced a random/mixed-effects model, or one model was fitted with
+            ML and the other with REML.
+    """
+    if full.method in metafopy.models.tau2.FIXED_EFFECTS and red.method not in metafopy.models.tau2.FIXED_EFFECTS:
+        raise metafopy.errors.InputError('Full model uses a fixed- and reduced model uses a random/mixed-effects model.')
+    if {full.method, red.method} == {'ML', 'REML'}:
+        raise metafopy.errors.InputError(f'Mismatch between the use of {full.method} and {red.method} estimation in the full versus reduced model.')
+    lrt_methods = (*metafopy.models.tau2.FIXED_EFFECTS, 'ML', 'REML')
+    if full.method not in lrt_methods or red.method not in lrt_methods:
+        warnings.warn('LRTs should be based on ML/REML estimation.', stacklevel=4)
+
+
+def warn_not_nested(
+    full: metafopy.models.rma_uni.RMAResult | metafopy.models.mv_result.RMAMVResult,
+    red: metafopy.models.rma_uni.RMAResult | metafopy.models.mv_result.RMAMVResult,
+) -> None:
+    """The warning of ``anova.rma`` when the fixed effects differ and the model matrices are not nested."""
+    same_X = full.X.shape == red.X.shape and numpy.allclose(full.X, red.X)
+    if not same_X and not metafopy.core.linalg.is_nested(full.X, red.X):
+        warnings.warn('The models being compared appear not to be nested.', stacklevel=4)
+
+
 def refit_ml(res: metafopy.models.rma_uni.RMAResult) -> metafopy.models.rma_uni.RMAResult:
     """``res`` refitted with ML, as ``anova.rma(..., refit=TRUE)`` does for ``rma.uni`` models.
 
@@ -463,8 +508,9 @@ def lrt(a: metafopy.models.rma_uni.RMAResult, b: metafopy.models.rma_uni.RMAResu
     if df_given is None and a.parms == b.parms:
         raise metafopy.errors.InputError('models do not differ in the number of parameters')
     full, red = (a, b) if df_given is not None or a.parms > b.parms else (b, a)
-    if full.k != red.k or not numpy.allclose(full.yi, red.yi):
-        raise metafopy.errors.InputError('models are not fitted to the same data')
+    if full.k != red.k or not numpy.allclose(full.yi, red.yi) or not numpy.allclose(full.vi, red.vi):
+        raise metafopy.errors.InputError('The observed outcomes and/or sampling variances are not equal in the full and reduced model.')
+    check_lrt_models(full, red)
     same_X = full.X.shape == red.X.shape and numpy.allclose(full.X, red.X)
     if full.method == 'REML' and not same_X:
         if refit:
@@ -474,6 +520,7 @@ def lrt(a: metafopy.models.rma_uni.RMAResult, b: metafopy.models.rma_uni.RMAResu
                 "REML comparisons not meaningful for models with different fixed effects (use 'refit=True' to refit both models based on ML estimation).",
                 stacklevel=3,
             )
+    warn_not_nested(full, red)
     use_reml = full.method == 'REML'
     fs_f = full.fit_stats_reml if use_reml else full.fit_stats_ml
     fs_r = red.fit_stats_reml if use_reml else red.fit_stats_ml
@@ -585,6 +632,7 @@ def anova_rma_mv(
     test: str | None = None,
     df: int | None = None,
     verbose: bool = False,
+    abbrev: bool = False,
 ) -> WaldResult | MVLRTResult | list[WaldResult]:
     """Test coefficients of one ``rma.mv`` model, or compare two nested models by a likelihood-ratio test.
 
@@ -594,6 +642,8 @@ def anova_rma_mv(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
+    if abbrev:
+        return abbreviate_hyp(anova_rma_mv(**{**locals(), 'abbrev': False}), True)
     x = model
     method = None if adjust is None else metafopy.core.padjust.match_adjust(adjust)
     model2 = metafopy.methods.common.resolve_alias(model2, object2, 'model2', 'object2')
@@ -608,7 +658,8 @@ def anova_rma_mv(
             raise metafopy.errors.InputError('models do not differ in the number of parameters')
         full, red = (x, model2) if df is not None or x.parms > model2.parms else (model2, x)
         if full.k != red.k or not numpy.allclose(full.yi, red.yi):
-            raise metafopy.errors.InputError('models are not fitted to the same data')
+            raise metafopy.errors.InputError('The observed outcomes are not equal in the full and reduced model.')
+        check_lrt_models(full, red)
         use_reml = full.method == 'REML'
         if use_reml and not (full.X.shape == red.X.shape and numpy.allclose(full.X, red.X)):
             if refit:
@@ -619,6 +670,7 @@ def anova_rma_mv(
                     "REML comparisons not meaningful for models with different fixed effects (use 'refit=True' to refit both models based on ML estimation).",
                     stacklevel=2,
                 )
+        warn_not_nested(full, red)
         fs_f = full.fit_stats_reml if use_reml else full.fit_stats_ml
         fs_r = red.fit_stats_reml if use_reml else red.fit_stats_ml
         LRT = max(0.0, fs_r.dev - fs_f.dev)
