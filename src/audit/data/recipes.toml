@@ -1,0 +1,204 @@
+# How each function is called when the audit builds its baseline cases.
+#
+# [generics.NAME]  base:  arguments every call of the generic gets (small iteration counts and seeds for the slow ones)
+#                  extra: further argument sets, each its own case
+# fit_functions:   functions that are not S3 generics but take a fitted model first; they are called on every fit
+# [standalone.NAME] base: the call of a function that takes no model; the option sweep varies one argument at a time
+# unprobed:        exported functions the audit does not call, each with the reason
+
+fit_functions = ["deltamethod", "dfround", "emmprep", "fsn", "hettest", "llplot", "ranktest", "regtest", "tes"]
+
+[generics.addpoly]
+base = { }
+pre = [{ fn = "forest", target = { "$ref" = "uni_reml" } }]
+
+[generics.points]
+base = { }
+pre = [{ fn = "regplot", target = { "$ref" = "uni_mods" }, args = { mod = "ablat" } }]
+
+[generics.deltamethod]
+base = { fun = { "$lambda" = { args = "x1", body = "x1 * 2" } } }
+
+[generics.deltamethod.by_fit.uni_mods]
+fun = { "$lambda" = { args = "x1, x2", body = "x1/x2" } }
+
+[generics.deltamethod.by_fit.robust_bcg]
+fun = { "$lambda" = { args = "x1, x2", body = "x1/x2" } }
+
+[generics.deltamethod.by_fit.robust_cs_bcg]
+fun = { "$lambda" = { args = "x1, x2", body = "x1/x2" } }
+
+[generics.deltamethod.by_fit.uni_mods_na]
+fun = { "$lambda" = { args = "x1, x2", body = "x1/x2" } }
+
+[generics.head]
+base = { n = 3 }
+
+[generics.tail]
+base = { n = 3 }
+
+[generics."["]
+base = { i = { "$idx" = [1, 2, 3] } }
+
+[generics."$<-"]
+base = { name = "zz", value = 1 }
+
+[generics.aggregate]
+base = { cluster = { "$col" = ["es_bcg", "trial"] } }
+
+[generics.cbind]
+base = { w = { "$ref" = "bcg_na" } }
+
+[generics.rbind]
+base = { w = { "$ref" = "es_bcg" } }
+
+[generics.regplot.by_fit.mv_ks_mods]
+mod = "year"
+
+[generics.regplot.by_fit.mv_ks]
+mod = "year"
+
+[generics.anova]
+extra = [{ object2 = { "$ref" = "uni_reml" } }, { object2 = { "$ref" = "uni_fe" } }]
+
+[generics.funnel]
+extra = [{ shade = "white", level = [90, 95, 99] }, { shade = ["white", "gray"], level = [90, 95, 99] }]
+
+[generics.robust]
+base = { cluster = { "$col" = ["es_bcg", "trial"] } }
+
+[generics.robust.by_fit.mv_ks]
+cluster = { "$col" = ["ks_dat", "district"] }
+
+[generics.robust.by_fit.mv_ks_mods]
+cluster = { "$col" = ["ks_dat", "district"] }
+
+# plot of a selection model after the diagnostic plot of a model left the layout of the device changed
+[generics.plot.by_fit.sel_bcg]
+pre = [{ fn = "plot", target = { "$ref" = "uni_reml" }, args = { qqplot = true } }]
+
+[generics.gosh]
+base = { subsets = 20, seed = 1 }
+
+[generics.permutest]
+base = { iter = 20, exact = false, seed = 1 }
+
+[generics.profile]
+base = { steps = 5 }
+
+[generics.regplot]
+base = { mod = "ablat" }
+
+[generics.predict]
+extra = [{ newmods = 30 }, { transf = { "$fn" = "exp" } }, { newmods = { "$matrix" = [[1, 30]] }, intercept = false }]
+
+[generics.summary]
+extra = [{ "signif.stars" = false }]
+
+[generics.trimfill]
+extra = [{ side = "left" }, { estimator = "R0", side = "left" }, { estimator = "Q0", side = "left" }]
+
+# Families of functions sharing a recipe: each takes the arguments it has from this set.
+[patterns."transf.*"]
+args = { xi = [0.1, 0.3, 0.5, 0.7, 0.9], ni = [20, 30, 40, 50, 60], ti = [20, 30, 40, 50, 60], n1i = [20, 30, 40, 50, 60], n2i = [25, 35, 45, 55, 65], pc = 0.3, pi = [0.4, 0.4, 0.5, 0.5, 0.6], targs = { tau2 = 0.1 } }
+
+[standalone.blsplit]
+base = { x = { "$matrix" = [[1, 0.5, 0, 0], [0.5, 1, 0, 0], [0, 0, 1, 0.5], [0, 0, 0.5, 1]] }, cluster = [1, 1, 2, 2] }
+
+[standalone.cmicalc]
+base = { mi = [4, 10, 20] }
+
+[standalone.contrmat]
+base = { data = { "$data" = "dat.hasselblad1998" }, grp1 = { "$sym" = "trt1" }, grp2 = { "$sym" = "trt2" } }
+
+[standalone."conv.2x2"]
+base = { ori = [2, 3], ri = [0.4, 0.5], n1i = [50, 60], n2i = [50, 60] }
+
+[standalone."conv.delta"]
+base = { yi = [0.2, 0.3], vi = [0.01, 0.02] }
+
+[standalone."conv.fivenum"]
+base = { min = [1, 2], q1 = [3, 4], median = [5, 6], q3 = [7, 8], max = [9, 10], n = [20, 30] }
+
+[standalone."conv.wald"]
+base = { out = [0.5, 0.7], "ci.lb" = [0.1, 0.2], "ci.ub" = [0.9, 1.2], n = [30, 40] }
+
+[standalone.deltamethod]
+base = { x = [1, 2], vcov = { "$matrix" = [[0.1, 0.02], [0.02, 0.2]] }, fun = { "$lambda" = { args = "x1, x2", body = "x1/x2" } } }
+
+[standalone.fmtp]
+base = { p = [0.0123, 0.5, 0.00001] }
+
+[standalone.fmtp2]
+base = { p = [0.0123, 0.5, 0.00001] }
+
+[standalone.fmtt]
+base = { val = [2.1, -3.2], tname = "t", df = 10, pval = [0.04, 0.001] }
+when = { call = { val = 2.1, pval = 0.04 } }
+
+# Functions that take a model first are also called on the columns of a data frame (x is a column name, vi and data follow); R and Python
+# resolve the names differently
+[standalone."fsn.data"]
+fn = "fsn"
+base = { x = { "$sym" = "yi" }, vi = { "$sym" = "vi" }, data = { "$ref" = "es_bcg" } }
+
+[standalone."regtest.data"]
+fn = "regtest"
+base = { x = { "$sym" = "yi" }, vi = { "$sym" = "vi" }, data = { "$ref" = "es_bcg" } }
+
+[standalone."ranktest.data"]
+fn = "ranktest"
+base = { x = { "$sym" = "yi" }, vi = { "$sym" = "vi" }, data = { "$ref" = "es_bcg" } }
+
+[standalone."tes.data"]
+fn = "tes"
+base = { x = { "$sym" = "yi" }, vi = { "$sym" = "vi" }, data = { "$ref" = "es_bcg" } }
+
+[standalone."hettest.data"]
+fn = "hettest"
+base = { x = { "$sym" = "yi" }, vi = { "$sym" = "vi" }, data = { "$ref" = "es_bcg" } }
+
+[standalone.dfround]
+base = { x = { "$ref" = "es_bcg" }, digits = 2 }
+
+[standalone."forest.series"]
+fn = "forest"
+base = { x = { "$ref" = "slab_vec" }, vi = { "$col" = ["es_slab", "vi"] } }
+
+[standalone.fmtx]
+base = { x = [1.2345, 2.5, -0.001] }
+
+[standalone.getmfopt]
+base = { x = "digits" }
+
+[standalone.matreg]
+base = { y = { "$idx" = 1 }, x = { "$idx" = [2, 3] }, R = { "$matrix" = [[1, 0.3, 0.2], [0.3, 1, 0.4], [0.2, 0.4, 1]] }, n = 100 }
+
+[standalone.pairmat]
+base = { x = { "$matrix" = [[1, 0.3, 0.2], [0.3, 1, 0.4], [0.2, 0.4, 1]] }, btt = { "$idx" = [1, 2] } }
+
+[standalone.rcalc]
+base = { x = { "$formula" = "ri ~ var1 + var2 | study" }, ni = { "$sym" = "ni" }, data = { "$data" = "dat.craft2003" } }
+
+[standalone.replmiss]
+base = { x = [1, { "$na" = true }, 3], y = 0 }
+
+[standalone."to.long"]
+base = { measure = "OR", data = { "$data" = "dat.bcg" }, ai = { "$sym" = "tpos" }, bi = { "$sym" = "tneg" }, ci = { "$sym" = "cpos" }, di = { "$sym" = "cneg" } }
+
+[standalone."to.table"]
+base = { measure = "OR", data = { "$data" = "dat.bcg" }, ai = { "$sym" = "tpos" }, bi = { "$sym" = "tneg" }, ci = { "$sym" = "cpos" }, di = { "$sym" = "cneg" } }
+
+[standalone."to.wide"]
+base = { data = { "$ref" = "long_bcg" }, study = { "$sym" = "study" }, grp = { "$sym" = "group" }, ref = "2", grpvars = [5, 6] }
+
+[standalone.vcalc]
+base = { vi = { "$sym" = "vi" }, cluster = { "$sym" = "district" }, obs = { "$sym" = "school" }, data = { "$data" = "dat.konstantopoulos2011" }, rho = 0.6 }
+
+[standalone.vec2mat]
+base = { x = [1, 2, 3] }
+
+[unprobed]
+bldiag = "takes unnamed matrices through `...`; the case format passes named arguments only"
+setmfopt = "mutates global option state, which would leak into every other case; getmfopt reads it"
+"metafor.news" = "prints the package NEWS file; it takes no argument"

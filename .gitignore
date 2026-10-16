@@ -10,3 +10,5 @@ dist/
 htmlcov/
 .hypothesis/
 .Rhistory
+.audit/
+Rplots.pdf
