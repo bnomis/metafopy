@@ -313,6 +313,7 @@ def hettest(
     control: collections.abc.Mapping[str, typing.Any] | None = None,
     seed: int | None = None,
     mom: bool = False,
+    model: metafopy.models.rma_uni.RMAResult | None = None,
 ) -> HettestResult:
     """Test for heteroscedastic heterogeneity in a random-effects model; ``x`` is a vector of estimates (with ``vi`` or ``sei``) or a model without moderators.
 
@@ -320,6 +321,8 @@ def hettest(
     ``'adn'`` and ``'adx2'``. The p-values come from a parametric bootstrap (``boot=True`` uses 1000 samples, a number sets the count; the
     goodness-of-fit tests always bootstrap), the first sample being the data. ``method`` is ``'REML'`` (default) or ``'ML'``; for a model it is that of the
     model. ``control`` takes ``tau2i_init``, ``threshold`` (1e-8) and ``maxiter`` (1000) and ``mom=True`` estimates the tau^2_i by the method of moments.
+    ``model`` is metafor's undocumented argument for a vector ``x``: an intercept-only model already fitted to the same data, used as the null model
+    instead of fitting it again (its ``beta`` and ``tau2`` and the log-likelihood of the ``method`` are used).
     Unlike metafor, ``progbar`` is off by default. Without ``seed`` the bootstrap uses the generator of :func:`metafopy.set_seed`.
 
     Raises:
@@ -337,8 +340,10 @@ def hettest(
     con = {key.replace('.', '_'): value for key, value in (control or {}).items()}
     threshold = float(con.get('threshold', 1e-8))
     maxiter = int(con.get('maxiter', 1000))
-    model: metafopy.models.rma_uni.RMAResult | None = None
     if metafopy.methods.fitview.is_rma(x):
+        if model is not None:
+            warnings.warn("Argument 'model' ignored when 'x' is a model object.", stacklevel=2)
+        model = None
         metafopy.methods.fitview.check_class(x, notav=('rma.glmm', 'rma.mv', 'robust.rma', 'rma.ls', 'rma.gen', 'rma.uni.selmodel'))
         view = metafopy.methods.fitview.fit_view(x)
         if not view.int_only:
@@ -362,6 +367,8 @@ def hettest(
             raise metafopy.errors.InputError("Must specify the 'vi' or 'sei' argument.")
         v = v_in
         stored_digits = 4
+        if model is not None and (not isinstance(model, metafopy.models.rma_uni.RMAResult) or model.k != yi.shape[0]):
+            raise metafopy.errors.InputError("Argument 'model' must be a model fitted to the same estimates as 'x'.")
     k = yi.shape[0]
     if k <= 1:
         raise metafopy.errors.InputError('Stopped because k <= 1.')

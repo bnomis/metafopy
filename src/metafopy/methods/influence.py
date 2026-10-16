@@ -144,7 +144,7 @@ def format_influence(res: InfluenceResult, infonly: bool) -> str:
 
 
 @functools.singledispatch
-def influence(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> InfluenceResult:
+def influence(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> typing.Any:
     """Case-deletion diagnostics for a fitted model; see :func:`_influence_rma_uni`.
 
     Raises:
@@ -155,8 +155,13 @@ def influence(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> Inf
 
 @influence.register
 def influence_rma_uni(
-    model: metafopy.models.rma_uni.RMAResult, digits: int = 4, *, btt: metafopy.models.rma_uni.Btt = None, na_action: metafopy.methods.common.NAAction = 'omit'
-) -> InfluenceResult:
+    model: metafopy.models.rma_uni.RMAResult,
+    digits: int = 4,
+    *,
+    btt: metafopy.models.rma_uni.Btt = None,
+    na_action: metafopy.methods.common.NAAction = 'omit',
+    measure: str = 'all',
+) -> InfluenceResult | pandas.Series | pandas.DataFrame | ResidualResult:
     """Leave-one-out diagnostics for an ``rma.uni`` fit (metafor's ``influence()``).
 
     ``btt`` (0-based coefficient indices, default all coefficients) selects the
@@ -164,11 +169,23 @@ def influence_rma_uni(
     ``na_action='exclude'`` or ``'pass'`` the result has one row per supplied
     study. Studies whose refit fails (or loses a coefficient) get NaN.
 
+    ``measure`` is metafor's undocumented argument that restricts the result: ``'cooks.distance'`` gives the Cook's distances (as
+    :func:`cooks_distance`, also allowed for a model made robust), ``'dfbetas'`` the DFBETAS (as :func:`dfbetas`) and ``'rstudent'`` the
+    deleted residuals with their standard errors and z-values (as :func:`rstudent`); any other value gives the full result, as in R.
+
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
+    if measure == 'cooks.distance':
+        res = influence_fit(model, digits, btt=btt, na_action=na_action)
+        return pandas.Series(res.cook_d, index=list(res.slab), name='cook.d')
     metafopy.methods.fitview.check_class(model, notav=metafopy.methods.fitview.NOT_ROBUST)
-    return influence_fit(model, digits, btt=btt, na_action=na_action)
+    if measure == 'rstudent':
+        return rstudent_rma_uni(model, digits, na_action=na_action)
+    res = influence_fit(model, digits, btt=btt, na_action=na_action)
+    if measure == 'dfbetas':
+        return res.dfbs_frame()
+    return res
 
 
 def influence_fit(
@@ -397,7 +414,8 @@ def dfbetas(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> panda
 @dfbetas.register
 def dfbetas_rma_uni(model: metafopy.models.rma_uni.RMAResult, *, na_action: metafopy.methods.common.NAAction = 'omit') -> pandas.DataFrame:
     """Standardised change in each coefficient when a study is left out (one column per coefficient)."""
-    return influence_rma_uni(model, na_action=na_action).dfbs_frame()
+    metafopy.methods.fitview.check_class(model, notav=metafopy.methods.fitview.NOT_ROBUST)
+    return influence_fit(model, na_action=na_action).dfbs_frame()
 
 
 @functools.singledispatch
