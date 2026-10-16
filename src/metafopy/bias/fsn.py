@@ -210,7 +210,7 @@ def fsn(
     k = yi.shape[0]
     if k == 1:
         raise metafopy.errors.InputError('Stopped because k = 1.')
-    d = 4 if digits is None else digits
+    d = metafopy.mfopt.stored_digits(digits, 4)
     ival = (0.0, k * 50.0) if interval is None else interval
 
     est = tau2_out = pval = est_fsn = tau2_fsn = pval_fsn = math.nan

@@ -12,6 +12,7 @@ variance structures they imply are built by the model code.
 import collections.abc
 import dataclasses
 import inspect
+import math
 import re
 import typing
 
@@ -22,8 +23,10 @@ import pandas
 
 import metafopy.errors
 
-__all__ = ['RandomTerm', 'design_matrix', 'parse_random', 'r_column_name', 'r_factor', 'r_relevel', 'r_scale']
+__all__ = ['RandomTerm', 'design_matrix', 'formula_context', 'parse_random', 'r_column_name', 'r_factor', 'r_relevel', 'r_scale']
 
+KEYWORD = re.compile(r'(?<=[(,] )(\w+)=(?!=)')
+POLY_TERM = re.compile(r'^(poly\(.*\))\[(\d+)\]$')
 LEVEL = re.compile(r'\[(?:T\.)?(.*?)\]')
 CWRAP = re.compile(r'^C\((.*?)(?:,.*)?\)$')
 
@@ -39,6 +42,10 @@ def r_column_name(name: str) -> str:
     """
     if name == 'Intercept':
         return 'intrcpt'
+    name = KEYWORD.sub(r'\1 = ', name.replace(' ** ', '^').replace(' / ', '/'))
+    poly = POLY_TERM.match(name)
+    if poly is not None:
+        return f'{poly.group(1)}{int(poly.group(2)) + 1}'
     parts: list[str] = []
     for part in name.split(':'):
         level = LEVEL.search(part)
@@ -50,6 +57,11 @@ def r_column_name(name: str) -> str:
             part = f'{var}{level.group(1)}'
         parts.append(part)
     return ':'.join(parts)
+
+
+def r_number(value: float) -> str:
+    """R's ``as.character`` of a number: ``8`` for 8.0, 15 significant digits otherwise."""
+    return str(int(value)) if math.isfinite(value) and value == int(value) and abs(value) < 1e15 else f'{value:.15g}'
 
 
 def r_factor(
@@ -64,6 +76,8 @@ def r_factor(
     """
     values = pandas.Series(x)
     cat = pandas.Categorical(values, categories=None if levels is None else list(levels))
+    if pandas.api.types.is_float_dtype(cat.categories.dtype):
+        cat = cat.rename_categories(dict(zip(cat.categories, [r_number(v) for v in cat.categories], strict=True)))
     if labels is not None:
         if len(labels) != len(cat.categories):
             raise metafopy.errors.InputError("invalid 'labels': the length must equal the number of levels")
@@ -120,18 +134,53 @@ def r_scale(x: typing.Any, center: bool | float = True, scale: bool | float = Tr
     return arr
 
 
+def r_power(rhs: str) -> str:
+    """Read ``^`` inside a function call of a formula as the power it is in R (``I(x^2)``); outside a call it stays formula algebra."""
+    out: list[str] = []
+    calls: list[bool] = []
+    for i, ch in enumerate(rhs):
+        if ch == '(':
+            calls.append((i > 0 and (rhs[i - 1].isalnum() or rhs[i - 1] in '_.')) or any(calls))
+        elif ch == ')' and calls:
+            calls.pop()
+        out.append('**' if ch == '^' and any(calls) else ch)
+    return ''.join(out)
+
+
+R_FORMULA_FUNCTIONS: dict[str, typing.Any] = {
+    'FALSE': False,
+    'TRUE': True,
+    'abs': numpy.abs,
+    'factor': r_factor,
+    'mean': lambda x: float(numpy.mean(numpy.asarray(x, dtype=numpy.float64))),
+    'median': lambda x: float(numpy.median(numpy.asarray(x, dtype=numpy.float64))),
+    'relevel': r_relevel,
+    'scale': r_scale,
+    'sqrt': numpy.sqrt,
+}
+
+
 def caller_namespace() -> dict[str, typing.Any]:
     """The variables of the code that called into metafopy (the environment R evaluates a formula in), without metafopy's own frames."""
     frame = inspect.currentframe()
     try:
         while frame is not None:
             module = str(frame.f_globals.get('__name__', ''))
-            if module != 'metafopy' and not module.startswith('metafopy.'):
+            if module != 'metafopy' and not module.startswith('metafopy.') and module != 'functools':
                 return {**frame.f_globals, **frame.f_locals}
             frame = frame.f_back
     finally:
         del frame
     return {}
+
+
+def formula_context() -> dict[str, typing.Any]:
+    """The names a formula can use: R's functions (``factor``, ``sqrt``, ...) and the variables of the code that called into metafopy."""
+    context: dict[str, typing.Any] = dict(R_FORMULA_FUNCTIONS)
+    for name, value in caller_namespace().items():
+        if name not in context or callable(value):
+            context[name] = value
+    return context
 
 
 def design_matrix(formula: str, data: pandas.DataFrame) -> tuple[numpy.typing.NDArray[numpy.float64], tuple[str, ...], numpy.typing.NDArray[numpy.bool_]]:
@@ -150,12 +199,8 @@ def design_matrix(formula: str, data: pandas.DataFrame) -> tuple[numpy.typing.ND
         lhs, _, rhs = rhs.partition('~')
         if lhs.strip():
             raise metafopy.errors.InputError(f'expected a one-sided formula, got {formula!r}')
-    context: dict[str, typing.Any] = {'factor': r_factor, 'relevel': r_relevel, 'scale': r_scale}
-    for name, value in caller_namespace().items():
-        if name not in context or callable(value):
-            context[name] = value
-    mm = formulaic.model_matrix(rhs, data, na_action='ignore', context=context)
-    X = numpy.asarray(mm.to_numpy(dtype=float), dtype=numpy.float64)
+    mm = formulaic.model_matrix(r_power(rhs), data, na_action='ignore', context=formula_context())
+    X = numpy.array(mm.to_numpy(dtype=float), dtype=numpy.float64)
     if X.ndim == 1:
         X = X[:, None]
     names = tuple(r_column_name(str(c)) for c in mm.columns)

@@ -1,0 +1,43 @@
+"study","type","phase","population","start","end","treatment","control","weeks","treat.total","treat.infarction","treat.death","cont.total","cont.infarction","cont.death"
+"49653/011","original registration","III","type 2 DM","1996-09","1997-09","rosiglitazone","placebo",24,357,2,1,176,0,0
+"49653/020","original registration","III","type 2 DM","1996-10","1998-05","rosiglitazone","glyburide",52,391,2,0,207,1,0
+"49653/024","original registration","III","type 2 DM","1997-01","1998-02","rosiglitazone","placebo",26,774,1,0,185,1,0
+"49653/093","original registration","III","type 2 DM poorly controlled on Met","1997-06","1998-04","rosiglitazone with or without metformin","metformin",26,213,0,0,109,1,0
+"49653/094","original registration","III","type 2 DM poorly controlled on Met","1997-04","1998-03","rosiglitazone and metformin","metformin",26,232,1,1,116,0,0
+"100684","additional phase II-IV","IV","Korean patients with type 2 DM","2003-12","2005-07","rosiglitazone and glyburide","glyburide",52,43,0,0,47,1,0
+"49653/143","additional phase II-IV","IV","type 2 DM poorly controlled on Gly","2000-07","2003-01","rosiglitazone and glyburide","glyburide",24,121,1,0,124,0,0
+"49653/211","additional phase II-IV","IV","type 2 DM with CHF","2001-07","2003-11","rosiglitazone and usual care","usual care",52,110,5,3,114,2,2
+"49653/284","additional phase II-IV","IV","type 2 DM","2001-06","2003-02","rosiglitazone and metformin","metformin",24,382,1,0,384,0,0
+"712753/008","additional phase II-IV","IV","type 2 DM poorly controlled on Met","2003-06","2005-12","rosiglitazone and metformin","metformin",48,284,1,0,135,0,0
+"AVM100264","additional phase II-IV","IV","overweight patients with type 2 DM poorly controlled on Met","2004-07","2006-01","rosiglitazone and metformin","metformin and sulfonylurea",52,294,0,2,302,1,1
+"BRL 49653C/185","additional phase II-IV","IV","type 2 DM","2000-05","2002-05","rosiglitazone with or without metformin","usual care with or without metformin",32,563,2,0,142,0,0
+"BRL 49653/334","additional phase II-IV","IV","type 2 DM or insulin resistance syndrome","2002-03","2004-11","rosiglitazone","placebo",52,278,2,0,279,1,1
+"BRL 49653/347","additional phase II-IV","IV","type 2 DM poorly controlled on insulin","2002-11","2004-04","rosiglitazone and insulin","insulin",24,418,2,0,212,0,0
+"49653/015","additional phase II-IV","III","type 2 DM","1996-08","1998-03","rosiglitazone and sulfonylurea","sulfonylurea",24,395,2,2,198,1,0
+"49653/079","additional phase II-IV","III","type 2 DM poorly controlled on maximum dose of Gly","1997-04","1998-03","rosiglitazone with or without glyburide","glyburide",26,203,1,1,106,1,1
+"49653/080","additional phase II-IV","III","type 2 DM","1996-11","2000-05","rosiglitazone","glyburide",156,104,1,0,99,2,0
+"49653/082","additional phase II-IV","III","type 2 DM poorly controlled on insulin","1997-07","1998-08","rosiglitazone and insulin","insulin",26,212,2,1,107,0,0
+"49653/085","additional phase II-IV","III","type 2 DM","2000-05","2001-06","rosiglitazone and insulin","insulin",26,138,3,1,139,1,0
+"49653/095","additional phase II-IV","III","type 2 DM poorly controlled on insulin","1997-08","1998-12","rosiglitazone and insulin","insulin",26,196,0,1,96,0,0
+"49653/097","additional phase II-IV","III","type 2 DM","1997-08","2001-01","rosiglitazone","glyburide",156,122,0,0,120,1,0
+"49653/125","additional phase II-IV","III","type 2 DM","1999-05","2000-08","rosiglitazone and sulfonylurea","sulfonylurea",26,175,0,0,173,1,0
+"49653/127","additional phase II-IV","III","type 2 DM poorly controlled on Gly","1999-01","1999-12","rosiglitazone and glyburide","glyburide",26,56,1,0,58,0,0
+"49653/128","additional phase II-IV","III","type 2 DM on concurrent Su","1999-05","2000-06","rosiglitazone","placebo",28,39,1,0,38,0,0
+"49653/134","additional phase II-IV","III","type 2 DM on Gly and Met","1999-03","2000-08","rosiglitazone","placebo",28,561,0,1,276,2,0
+"49653/135","additional phase II-IV","III","elderly patients with type 2 DM","1999-05","2002-10","rosiglitazone and glipizide","glipizide",104,116,2,2,111,3,1
+"49653/136","additional phase II-IV","III","type 2 DM with chronic renal failure on Su, insulin, or both","1999-07","2001-06","rosiglitazone","placebo",26,148,1,2,143,0,0
+"49653/145","additional phase II-IV","III","type 2 DM","1999-10","2000-11","rosiglitazone and gliclazide","glyclazide",26,231,1,1,242,0,0
+"49653/147","additional phase II-IV","III","Indo-Asian patients with type 2 DM","1999-07","2000-08","rosiglitazone and sufonylruea","sulfonylurea",26,89,1,0,88,0,0
+"49653/162","additional phase II-IV","III","type 2 DM","2000-11","2002-04","rosiglitazone and glyburide","glyburide",26,168,1,1,172,0,0
+"49653/234","additional phase II-IV","III","type 2 DM","2001-01","2002-02","rosiglitazone and glimepiride","glimepiride",26,116,0,0,61,0,0
+"49653/330","additional phase II-IV","III","chronic psoriasis","2003-01","2004-10","rosiglitazone","placebo",52,1172,1,1,377,0,0
+"49653/331","additional phase II-IV","III","chronic psoriasis","2003-01","2004-10","rosiglitazone","placebo",52,706,0,1,325,0,0
+"49653/137","additional phase II-IV","III","type 2 DM","2000-04","2004-03","rosiglitazone and metformin","glyburide and metformin",32,204,1,0,185,2,1
+"SB-712753/002","additional phase II-IV","III","type 2 DM poorly controlled","2003-07","2004-06","rosiglitazone and metformin","metformin",24,288,1,1,280,0,0
+"SB-712753/003","additional phase II-IV","III","mild type 2 DM","2003-06","2004-12","rosiglitazone and metformin","metformin",32,254,1,0,272,0,0
+"SB-712753/007","additional phase II-IV","III","type 2 DM w/o previous drug therapy","2003-10","2004-12","rosiglitazone with or without metformin","metformin",32,314,1,0,154,0,0
+"SB-712753/009","additional phase II-IV","III","type 2 DM with insulin","2003-10","2004-11","rosiglitazone, metformin and isulin","insulin",24,162,0,0,160,0,0
+"49653/132","additional phase II-IV","II","patients in China with type 2 DM","1999-04","2000-02","rosiglitazone and sulfonylurea","sulfonylurea",24,442,1,1,112,0,0
+"AVA100193","additional phase II-IV","II","mild-to-moderate Alzheimer's disease","2004-01","2005-05","rosiglitazone","placebo",24,394,1,1,124,0,0
+"DREAM","recent randomized","III","impaired glucose tolerance or fasting glucose","2001-07","2003-08","rosiglitazone","placebo",156,2635,15,12,2634,9,10
+"ADOPT","recent randomized","III","recently diagnosed type 2 DM","2000-04","2002-06","rosiglitazone","metformin or glyburide",208,1456,27,2,2895,41,5

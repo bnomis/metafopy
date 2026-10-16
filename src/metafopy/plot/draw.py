@@ -579,10 +579,12 @@ def plain_axes(
         at = numpy.asarray(xat, dtype=float)
         ax.set_xticks(at)
         if xlabels is not None:
-            texts = ax.set_xticklabels(list(xlabels), fontsize=base_fontsize() * cex_axis)
+            ax.set_xticklabels(list(xlabels), fontsize=base_fontsize() * cex_axis)
+            texts = ax.get_xticklabels()
             if thin_xlabels:
-                for text, hide in zip(texts, overlapping_labels(ax, at, xlabels, ux, base_fontsize() * cex_axis), strict=True):
-                    text.set_visible(not hide)
+                hidden_x = overlapping_labels(ax, at, xlabels, ux, base_fontsize() * cex_axis)
+                for text in texts:
+                    text.set_visible(not hidden_x[int(numpy.argmin(numpy.abs(at - text.get_position()[0])))])
         ax.tick_params(axis='x', length=4.0, labelsize=base_fontsize() * cex_axis)
     if yat is None:
         ax.set_yticks([])
@@ -590,11 +592,12 @@ def plain_axes(
         at = numpy.asarray(yat, dtype=float)
         ax.set_yticks(at)
         if ylabels is not None:
-            texts = ax.set_yticklabels(list(ylabels), fontsize=base_fontsize() * cex_axis)
+            ax.set_yticklabels(list(ylabels), fontsize=base_fontsize() * cex_axis)
+            texts = ax.get_yticklabels()
             if thin_ylabels:
-                hidden = overlapping_labels(ax, at, ylabels, uy, base_fontsize() * cex_axis, vertical=True)
-                for text, hide in zip(texts, hidden, strict=True):
-                    text.set_visible(not hide)
+                hidden_y = overlapping_labels(ax, at, ylabels, uy, base_fontsize() * cex_axis, vertical=True)
+                for text in texts:
+                    text.set_visible(not hidden_y[int(numpy.argmin(numpy.abs(at - text.get_position()[1])))])
         ax.tick_params(axis='y', length=4.0, labelsize=base_fontsize() * cex_axis)
 
 

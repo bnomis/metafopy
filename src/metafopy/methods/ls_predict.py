@@ -56,16 +56,23 @@ def new_matrix(
     force_intercept: bool,
     what: str,
     model_part: str,
+    coef_names: collections.abc.Sequence[str] | None = None,
 ) -> FloatArray:
     """The model matrix for new moderator (or scale) values, with the intercept column added where metafor adds it.
 
     Raises:
         metafopy.errors.InputError: the dimensions do not match the model.
     """
+    values, names = metafopy.methods.predict.named_newmods(newvals)
     try:
-        arr = numpy.asarray(newvals, dtype=numpy.float64)
+        arr = numpy.asarray(values, dtype=numpy.float64)
     except (TypeError, ValueError) as err:
         raise metafopy.errors.InputError(f"Argument '{what}' should only contain numeric variables.") from err
+    n_vars = p - 1 if int_incl else p
+    if names is not None and coef_names is not None and n_vars > 1 and arr.ndim <= 2 and len(names) == (arr.shape[-1] if arr.ndim else 1) and all(names):
+        var_names = list(coef_names)[1:] if int_incl else list(coef_names)
+        order = numpy.argsort(metafopy.methods.predict.match_names(names, var_names), kind='stable')
+        arr = arr[..., order]
     if arr.ndim > 2:
         raise metafopy.errors.InputError(f"Argument '{what}' should be a vector or matrix.")
     ncol1 = arr.ndim < 2 or arr.shape[1] == 1
@@ -159,6 +166,7 @@ def predict_rma_ls(
             force_intercept=False,
             what='newmods',
             model_part='model',
+            coef_names=x.coef_names,
         )
     if newscale is not None:
         Z_new = new_matrix(
@@ -171,6 +179,7 @@ def predict_rma_ls(
             force_intercept=newmods is not None,
             what='newscale',
             model_part='scale model',
+            coef_names=x.alpha_names,
         )
 
     pred_mui = True

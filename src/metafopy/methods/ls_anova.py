@@ -14,10 +14,12 @@ import numpy
 import numpy.typing
 import scipy.stats
 
+import metafopy.core.padjust
 import metafopy.errors
 import metafopy.methods.anova
 import metafopy.methods.common
 import metafopy.methods.ls_common
+import metafopy.mfopt
 import metafopy.models.rma_ls_result
 import metafopy.models.rma_uni
 import metafopy.printing
@@ -51,6 +53,7 @@ class LSWaldResult:
     zval: FloatArray | None = None
     pval: FloatArray | None = None
     ddf: FloatArray | None = None
+    digits: int = 4
 
     @property
     def QM(self) -> float:
@@ -76,7 +79,7 @@ class LSWaldResult:
         return f'{name}(df = {self.df[0]}) = {metafopy.printing.fmt_num(self.stat, digits)}, p-val {p}'
 
     def __str__(self) -> str:
-        digits = 4
+        digits = metafopy.mfopt.option_digits(None, self.digits)
         plural = 's' if self.m > 1 else ''
         if self.idx is not None:
             what = 'Location' if self.part == 'location' else 'Scale'
@@ -282,6 +285,13 @@ def lrt(a: metafopy.models.rma_ls_result.RMALSResult, b: metafopy.models.rma_ls_
     )
 
 
+def adjust_individual(res: LSWaldResult, method: str | None, digits: int) -> LSWaldResult:
+    """Apply ``p.adjust`` to the individual tests of a linear-combination result and store ``digits``."""
+    if method is not None and res.pval is not None:
+        res = dataclasses.replace(res, pval=numpy.asarray(metafopy.core.padjust.p_adjust(res.pval, method), dtype=numpy.float64))
+    return dataclasses.replace(res, digits=digits)
+
+
 @metafopy.methods.anova.anova.register
 def anova_rma_ls(
     model: metafopy.models.rma_ls_result.RMALSResult,
@@ -293,6 +303,8 @@ def anova_rma_ls(
     att: metafopy.models.rma_uni.Btt | Sequences = None,
     Z: numpy.typing.ArrayLike | None = None,
     rhs: numpy.typing.ArrayLike | float | None = None,
+    adjust: bool | str | None = None,
+    digits: int | collections.abc.Mapping[str, int] | None = None,
     refit: bool = False,
     abbrev: bool = False,
 ) -> LSWaldResult | metafopy.methods.anova.MVLRTResult | list[LSWaldResult]:
@@ -302,7 +314,9 @@ def anova_rma_ls(
     ``Z`` test linear combinations of the location and scale coefficients against ``rhs``; ``att`` may also be a list of
     subsets, which returns a list of tests. With ``model2`` the model with more parameters is the full model; ``refit=True``
     refits REML fits with ML when their location models differ. ``object2`` is R's name for ``model2``. ``abbrev=True`` removes ``factor(`` and ``)`` from
-    the text of the hypotheses of ``X`` and ``Z``.
+    the text of the hypotheses of ``X`` and ``Z``. ``adjust`` (``True`` for ``'bonferroni'`` or a method of
+    :data:`metafopy.core.padjust.P_ADJUST_METHODS`) adjusts the p-values of the individual tests (``X``, ``Z``) or of a list of
+    tests (``att``); ``digits`` is the number of decimals of the printout.
 
     Raises:
         metafopy.errors.InputError: an argument is invalid.
@@ -310,6 +324,8 @@ def anova_rma_ls(
     if abbrev:
         return metafopy.methods.anova.abbreviate_hyp(anova_rma_ls(**{**locals(), 'abbrev': False}), True)
     x = model
+    d = metafopy.mfopt.option_digits(digits, x.digits)
+    method = None if adjust is None else metafopy.core.padjust.match_adjust(adjust)
     model2 = metafopy.methods.common.resolve_alias(model2, object2, 'model2', 'object2')
     if model2 is not None:
         if not isinstance(model2, metafopy.models.rma_ls_result.RMALSResult):
@@ -320,9 +336,11 @@ def anova_rma_ls(
     if att is not None and btt is not None:
         raise metafopy.errors.InputError("Can only specify either 'btt' or 'att', but not both.")
     if Z is not None:
-        return lin_comb(x.alpha, x.va, Z, rhs, names=x.alpha_names, int_incl=x.Z_int_incl, n_coef=x.q, ddf=x.ddf_alpha, part='scale', test=x.test, label='Z')
+        res = lin_comb(x.alpha, x.va, Z, rhs, names=x.alpha_names, int_incl=x.Z_int_incl, n_coef=x.q, ddf=x.ddf_alpha, part='scale', test=x.test, label='Z')
+        return adjust_individual(res, method, d)
     if X is not None:
-        return lin_comb(x.beta, x.vb, X, rhs, names=x.coef_names, int_incl=x.int_incl, n_coef=x.p, ddf=x.ddf, part='location', test=x.test, label='X')
+        res = lin_comb(x.beta, x.vb, X, rhs, names=x.coef_names, int_incl=x.int_incl, n_coef=x.p, ddf=x.ddf, part='location', test=x.test, label='X')
+        return adjust_individual(res, method, d)
     if att is not None:
         if (
             isinstance(att, collections.abc.Sequence)
@@ -332,8 +350,12 @@ def anova_rma_ls(
         ):
             if rhs is not None:
                 raise metafopy.errors.InputError("Cannot use 'rhs' argument when specifying a list for 'att'.")
-            return [typing.cast(LSWaldResult, anova_rma_ls(x, att=a)) for a in att]
+            tests = [typing.cast(LSWaldResult, anova_rma_ls(x, att=a, digits=d)) for a in att]
+            if method is None:
+                return tests
+            adjusted = metafopy.core.padjust.p_adjust([t.pval_omnibus for t in tests], method)
+            return [dataclasses.replace(t, pval_omnibus=float(p)) for t, p in zip(tests, adjusted, strict=True)]
         idx = metafopy.models.rma_uni.set_btt(att, x.q, x.Z_int_incl, x.alpha_names)
-        return wald_subset(x.alpha, x.va, idx, rhs, ddf=x.ddf_alpha, part='scale', test=x.test)
+        return dataclasses.replace(wald_subset(x.alpha, x.va, idx, rhs, ddf=x.ddf_alpha, part='scale', test=x.test), digits=d)
     idx = metafopy.models.rma_uni.set_btt(btt, x.p, x.int_incl, x.coef_names) if btt is not None else x.btt
-    return wald_subset(x.beta, x.vb, idx, rhs, ddf=x.ddf, part='location', test=x.test)
+    return dataclasses.replace(wald_subset(x.beta, x.vb, idx, rhs, ddf=x.ddf, part='location', test=x.test), digits=d)

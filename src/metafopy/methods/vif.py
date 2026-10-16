@@ -30,6 +30,7 @@ import metafopy.core.rng
 import metafopy.errors
 import metafopy.formula
 import metafopy.methods.blup
+import metafopy.mfopt
 import metafopy.models.rma_uni
 import metafopy.models.tau2
 import metafopy.printing
@@ -319,7 +320,7 @@ def vif_rma_uni(
     return VIFResult(
         vif=tuple(entries),
         bttspec=not btt_missing,
-        digits=4 if digits is None else digits,
+        digits=metafopy.mfopt.stored_digits(digits, 4),
         table=tab,
         test=res.test if tab is not None else None,
         sim=sims,

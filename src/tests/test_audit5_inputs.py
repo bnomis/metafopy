@@ -87,7 +87,8 @@ def test_rbind_escalc_of_row_subsets_has_one_ni_per_row() -> None:
     dat = bcg()
     out = metafopy.rbind_escalc(dat.iloc[3:8], dat[dat['ablat'] > 40])
     assert len(out.attrs['ni']) == out.shape[0]
-    expected = [*dat.attrs['ni'][3:8], *dat.attrs['ni'][(dat['ablat'] > 40).to_numpy()]]
+    ni = numpy.asarray(dat.attrs['ni'])
+    expected = [*ni[3:8], *ni[(dat['ablat'] > 40).to_numpy()]]
     numpy.testing.assert_array_equal(out.attrs['ni'], expected)
     assert len(out.attrs['slab']) == out.shape[0]
 

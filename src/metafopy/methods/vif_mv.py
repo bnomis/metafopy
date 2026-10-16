@@ -24,6 +24,7 @@ import metafopy.core.rng
 import metafopy.errors
 import metafopy.methods.mv_diagnostics
 import metafopy.methods.vif
+import metafopy.mfopt
 import metafopy.models.mv_result
 import metafopy.models.mv_structs
 import metafopy.models.rma_mv
@@ -169,7 +170,7 @@ def vif_coefficients(
         )
     tab = coef_table(res) if table and btt_missing else None
     result = metafopy.methods.vif.VIFResult(
-        vif=tuple(entries), bttspec=not btt_missing, digits=4 if digits is None else digits, table=tab, test=res.test if tab is not None else None
+        vif=tuple(entries), bttspec=not btt_missing, digits=metafopy.mfopt.stored_digits(digits, 4), table=tab, test=res.test if tab is not None else None
     )
     return result, groups
 

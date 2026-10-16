@@ -28,6 +28,7 @@ import pandas
 
 import metafopy.core.verbose
 import metafopy.errors
+import metafopy.formula
 import metafopy.methods.accessors
 import metafopy.methods.emm_adjust
 import metafopy.methods.emm_contrasts
@@ -326,7 +327,8 @@ def reference_grid(
 ) -> EmmGrid:
     rhs = info.formula.split('~', 1)[1].strip() if '~' in info.formula else info.formula.strip()
     data = info.data
-    model_matrix = formulaic.model_matrix(rhs, data)
+    context = metafopy.formula.formula_context()
+    model_matrix = formulaic.model_matrix(metafopy.formula.r_power(rhs), data, na_action='ignore', context=context)
     spec = model_matrix.model_spec
     required = [] if spec is None else [v for v in spec.required_variables if v in data.columns]
     variables = appearance(rhs, required)
@@ -367,7 +369,11 @@ def reference_grid(
     for var in variables:
         if var not in covariates:
             pred[var] = pandas.Categorical(pred[var], categories=raw[var])
-    X = numpy.asarray(spec.get_model_matrix(pred).to_numpy(dtype=float), dtype=numpy.float64) if spec is not None else numpy.ones((len(rows), 1))
+    X = (
+        numpy.asarray(spec.get_model_matrix(pred, context=context).to_numpy(dtype=float), dtype=numpy.float64)
+        if spec is not None
+        else numpy.ones((len(rows), 1))
+    )
     fit_X = numpy.asarray(model_matrix.to_numpy(dtype=float), dtype=numpy.float64)
     if not info.data_given and (fit_X.shape != info.X.shape or not numpy.allclose(fit_X, info.X, rtol=1e-8, atol=1e-10)):
         raise metafopy.errors.InputError('Cannot match the model matrix of the fit with that rebuilt from the formula and the data; the fit is not supported.')

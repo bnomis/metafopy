@@ -166,7 +166,7 @@ def tes(
             tes_alternative=tes_alternative,
             tes_alpha=tes_alpha,
             progbar=progbar,
-            digits=4 if digits is None else digits,
+            digits=metafopy.mfopt.stored_digits(digits, 4),
             correct=correct,
             rel_tol=rel_tol,
             subdivisions=subdivisions,
@@ -365,5 +365,5 @@ def tes(
         theta_lim=theta_lim,
         tes_alternative=tes_alternative,
         tes_alpha=tes_alpha,
-        digits=4 if digits is None else digits,
+        digits=metafopy.mfopt.stored_digits(digits, 4),
     )

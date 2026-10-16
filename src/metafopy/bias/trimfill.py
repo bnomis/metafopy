@@ -9,6 +9,7 @@ import collections.abc
 import dataclasses
 import math
 import typing
+import warnings
 
 import numpy
 import numpy.typing
@@ -95,6 +96,14 @@ def trimfill_fit(
     )
 
 
+def sqrt_nan(x: float) -> float:
+    """R's ``sqrt``: NaN with a warning for a negative number."""
+    if x < 0:
+        warnings.warn('NaNs produced', stacklevel=3)
+        return math.nan
+    return math.sqrt(x)
+
+
 def trimfill(
     x: metafopy.models.rma_uni.RMAResult,
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
@@ -175,11 +184,11 @@ def trimfill(
                 k0f = k - 1 / 2 - math.sqrt(2 * k**2 - 4 * sr + 1 / 4)
             var_sr = 1 / 24 * (k * (k + 1) * (2 * k + 1) + 10 * k0f**3 + 27 * k0f**2 + 17 * k0f - 18 * k * k0f**2 - 18 * k * k0f + 6 * k**2 * k0f)
             if estimator == 'L0':
-                se_k0 = 4 * math.sqrt(var_sr) / (2 * k - 1)
+                se_k0 = 4 * sqrt_nan(var_sr) / (2 * k - 1)
             else:
-                se_k0 = 2 * math.sqrt(var_sr) / math.sqrt((k - 1 / 2) ** 2 - k0f * (2 * k - k0f - 1))
+                se_k0 = 2 * sqrt_nan(var_sr) / sqrt_nan((k - 1 / 2) ** 2 - k0f * (2 * k - k0f - 1))
         k0 = max(0, round(k0f))
-        se_k0 = max(0.0, se_k0)
+        se_k0 = se_k0 if math.isnan(se_k0) else max(0.0, se_k0)
         if verbose:
             it_text = metafopy.formatters.fmtx(iteration, 0, flag='-', addwidth=len(str(maxiter)))
             k0_text = metafopy.formatters.fmtx(k0, 0, flag='-', addwidth=len(str(k)))

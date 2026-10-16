@@ -8,14 +8,21 @@ source("src/tests/r/cases.R")
 out_dir <- "src/metafopy/datasets/data"
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 
-# datasets used only by the Phase 3 (binary and count data) and Phase 4 (vcalc, rcalc) fixture scripts, and by the plot gallery
-# in the user manual (dat.damico2009, dat.pignon2000), and the data-preparation helpers (dat.hasselblad1998, dat.ishak2007, dat.senn2013)
-extra <- c("dat.berkey1998", "dat.collins1985a", "dat.craft2003", "dat.damico2009", "dat.hasselblad1998", "dat.ishak2007", "dat.knapp2017", "dat.pignon2000", "dat.senn2013", "dat.yusuf1985", "dat.aloe2013", "dat.baskerville2012", "dat.bonett2010", "dat.collins1985b", "dat.furukawa2003", "dat.hahn2001", "dat.kalaian1996", "dat.lehmann2018", "dat.nielweise2008", "dat.viechtbauer2021")
+# every data frame of metadat (lists such as dat.moura2021, dat.lim2014, dat.maire2019 and dat.metap need their own export)
+metadat_names <- data(package = "metadat")$results[, "Item"]
+frames <- Filter(function(name) is.data.frame(get(name)), metadat_names)
 
-for (name in sort(unique(c(vapply(cases, `[[`, "", "data"), extra)))) {
+for (name in sort(unique(c(vapply(cases, `[[`, "", "data"), frames)))) {
   dat <- get(name)
   write.csv(dat, file.path(out_dir, paste0(name, ".csv")), row.names = FALSE, na = "")
   cat(sprintf("%-28s %4d rows\n", name, nrow(dat)))
+}
+
+# character columns that read as numbers (dat.yusuf1985 `id` is "5.10"): pandas must keep them as text
+for (name in frames) {
+  chr <- names(Filter(function(col) is.character(col) || is.factor(col), get(name)))
+  numeric_like <- Filter(function(col) all(grepl("^[-+]?[0-9.]+([eE][-+]?[0-9]+)?$", as.character(get(name)[[col]])[!is.na(get(name)[[col]])])) && any(!is.na(get(name)[[col]])), chr)
+  if (length(numeric_like)) cat(sprintf("TEXT %s: %s\n", name, paste(numeric_like, collapse = ", ")))
 }
 
 # dat.moura2021 is a list with the data frame `dat` and the phylogenetic tree `tree` (class "phylo"); the data go to

@@ -575,7 +575,7 @@ def escalc(
     dat.attrs = {}
     dat.attrs['measure'] = measure
     dat.attrs['slab'] = labels if labels is not None or prev_slab is None else [str(s) for s in prev_slab.tolist()]
-    dat.attrs['ni'] = ni_attr
+    dat.attrs['ni'] = None if ni_attr is None else numpy.asarray(ni_attr, dtype=numpy.float64).tolist()
     dat.attrs[metafopy.metadata.ROWS_KEY] = list(dat.index)
     dat.attrs['digits'] = digits
     yi_names = [var_names[0], *[n for n in prev_attrs.get('yi_names', []) if n != var_names[0]]]

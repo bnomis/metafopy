@@ -141,7 +141,7 @@ def run(u: universe.Universe, env: pycall.Env, doms: domains.Domains, derived: f
             continue
         for generic in u.generics():
             method = u.method_for(generic, classes)
-            if method is None or generic == 'print' or (fixture in derived and method['class'].startswith('rma')):
+            if method is None or generic == 'print' or (fixture in derived and method['class'].startswith('rma')) or u.refuses(generic, classes):
                 continue
             findings += compare_function(f'api/{generic}/{fixture}', method, obj, generic, aliases, True)
     return findings

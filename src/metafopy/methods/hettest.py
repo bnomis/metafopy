@@ -462,7 +462,7 @@ def hettest(
         test=tests,
         boot=tuple(boot_flags),
         iter=iterations,
-        digits=stored_digits if digits is None else digits,
+        digits=metafopy.mfopt.stored_digits(digits, stored_digits),
         tau2i=tau2i,
         se_tau2i=se_tau2i,
         statistic_boot=statistic_boot,

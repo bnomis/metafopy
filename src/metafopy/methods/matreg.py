@@ -31,6 +31,7 @@ import metafopy.methods.blup
 import metafopy.methods.common
 import metafopy.methods.confint
 import metafopy.methods.predict
+import metafopy.mfopt
 import metafopy.models.rma_uni
 import metafopy.printing
 
@@ -246,7 +247,7 @@ class MatregResult:
 
     def summary(self, digits: int | None = None, signif_stars: bool = True, signif_legend: bool | None = None) -> str:
         """``print(summary(x))``: the coefficient table followed by the fit statistics."""
-        d = self.digits if digits is None else digits
+        d = metafopy.mfopt.stored_digits(digits, self.digits)
         lines = self.table_lines(d, signif_stars, signif_stars if signif_legend is None else signif_legend)
         if self.test == 't':
             F = typing.cast(tuple[float, float, float], self.F)
@@ -488,9 +489,11 @@ def matreg(
         has_means = True
 
     if Vm is None:
-        if numpy.ndim(typing.cast(typing.Any, n)) != 0:
+        if numpy.size(typing.cast(typing.Any, n)) != 1:
             raise metafopy.errors.InputError("Argument 'n' should be a single number.")
-        return fit_with_n(float(typing.cast(float, n)), b, Rxy, Rxx, invRxx, S, xs, yi, sdy, sdx, mvec, has_means, cov, rnames, alpha, digits)
+        return fit_with_n(
+            float(numpy.asarray(n, dtype=numpy.float64).reshape(-1)[0]), b, Rxy, Rxx, invRxx, S, xs, yi, sdy, sdx, mvec, has_means, cov, rnames, alpha, digits
+        )
     return fit_with_v(Vm, b, Rxy, invRxx, S, xs, yi, sdy, sdx, mvec, has_means, cov, rnames, p, s, alpha, digits)
 
 
@@ -716,7 +719,7 @@ def confint_matreg(model: MatregResult, parm: typing.Any = None, level: float | 
     beta = model.tab['beta'].to_numpy(dtype=numpy.float64)
     se = model.tab['se'].to_numpy(dtype=numpy.float64)
     tab = pandas.DataFrame({'estimate': beta, 'ci.lb': beta - crit * se, 'ci.ub': beta + crit * se}, index=list(model.tab.index))
-    return MatregConfintResult(tab=tab, digits=model.digits if digits is None else digits)
+    return MatregConfintResult(tab=tab, digits=metafopy.mfopt.stored_digits(digits, model.digits))
 
 
 def subsequence_distance(name: str, target: str) -> float:
@@ -831,7 +834,7 @@ def predict_matreg(
     if intercept is None:
         intercept = x.intercept
     alpha = x.level if level is None else metafopy.models.rma_uni.level_to_alpha(level)
-    digits = x.digits if digits is None else digits
+    digits = metafopy.mfopt.stored_digits(digits, x.digits)
     model_names = list(x.tab.index)
     p = len(model_names)
 
