@@ -18,6 +18,7 @@ import scipy.integrate
 import scipy.stats
 
 import metafopy.bias.inputs
+import metafopy.core.parallel
 import metafopy.core.zeroin
 import metafopy.errors
 import metafopy.methods.fitview
@@ -107,9 +108,9 @@ def tes_power(theta: FloatArray, sei: FloatArray, h0: float, alternative: str, c
     return numpy.asarray(pw, dtype=numpy.float64)
 
 
-def poisson_binomial(p: FloatArray) -> FloatArray:
+def poisson_binomial(p: FloatArray, progbar: bool = False) -> FloatArray:
     pmf = numpy.array([1.0])
-    for pi in p:
+    for pi in metafopy.core.parallel.progress(p, p.shape[0], progbar):
         pmf = numpy.concatenate([pmf * (1 - pi), [0.0]]) + numpy.concatenate([[0.0], pmf * pi])
     return pmf
 
@@ -130,6 +131,7 @@ def tes(
     test: typing.Literal['chi2', 'binom', 'exact'] | None = None,
     tes_alternative: Alternative = 'greater',
     tes_alpha: float = 0.1,
+    progbar: bool = False,
     digits: int | None = None,
     correct: bool = False,
     rel_tol: float = EPS**0.25,
@@ -138,6 +140,9 @@ def tes(
     find_lim: bool = True,
 ) -> TesResult:
     """Test of excess significance for a fitted model or a vector of estimates with sampling variances.
+
+    ``progbar=True`` prints a progress bar to stderr while the exact test is computed (one step per study; metafor's default is ``TRUE`` for
+    the exact test, here it is ``False``).
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
@@ -160,6 +165,7 @@ def tes(
             test=test,
             tes_alternative=tes_alternative,
             tes_alpha=tes_alpha,
+            progbar=progbar,
             digits=4 if digits is None else digits,
             correct=correct,
             rel_tol=rel_tol,
@@ -273,7 +279,7 @@ def tes(
     elif test == 'binom':
         pval = float(scipy.stats.binomtest(o, k, p0, alternative=SCIPY_ALT[tes_alternative]).pvalue)
     else:
-        prj = poisson_binomial(pow_)[js]
+        prj = poisson_binomial(pow_, progbar)[js]
         if tes_alternative == 'two.sided':
             pval = float(numpy.sum(prj[prj <= prj[o] + EPS**0.5]))
         else:

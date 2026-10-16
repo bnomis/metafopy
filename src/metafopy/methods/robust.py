@@ -25,6 +25,7 @@ import metafopy.core.clubsandwich
 import metafopy.core.linalg
 import metafopy.errors
 import metafopy.methods.common
+import metafopy.mfopt
 import metafopy.models.mv_result
 import metafopy.models.rma_uni
 import metafopy.models.robust_info
@@ -252,8 +253,11 @@ def robust_rma_uni(
     conf_test: str | None = None,
     wald_test: str | None = None,
     clubSandwich: bool | None = None,
+    digits: int | collections.abc.Mapping[str, int] | None = None,
 ) -> metafopy.models.rma_uni.RMAResult:
     """Cluster-robust inference for an ``rma.uni`` fit.
+
+    ``digits`` is the number of decimals the printout of the result uses (default: the ``digits`` option, else that of ``model``).
 
     ``cluster`` is a column name of the data given to the model or a vector with one value per original row. ``adjust`` is
     ``True`` (CR1: ``n/(n-p)`` factor), ``False`` (CR0), ``'Stata1'``/``'Stata'`` or ``'Stata2'``. With ``club_sandwich=True``,
@@ -333,6 +337,7 @@ def robust_rma_uni(
         test='t',
         s2w=1.0,
         robust=info,
+        digits=metafopy.mfopt.option_digits(digits, x.digits),
     )
 
 
@@ -367,8 +372,9 @@ def robust_rma_mv(
     conf_test: str | None = None,
     wald_test: str | None = None,
     clubSandwich: bool | None = None,
+    digits: int | collections.abc.Mapping[str, int] | None = None,
 ) -> metafopy.models.mv_result.RMAMVResult:
-    """Cluster-robust inference for an ``rma.mv`` fit; the arguments are those of the ``rma.uni`` method.
+    """Cluster-robust inference for an ``rma.mv`` fit; the arguments (``digits`` too) are those of the ``rma.uni`` method.
 
     With ``club_sandwich=True`` (or R's spelling ``clubSandwich``) the random effects must be nested within the clusters and ``R=`` matrices are not allowed.
 
@@ -445,4 +451,5 @@ def robust_rma_mv(
         test='t',
         s2w=1.0,
         robust=info,
+        digits=metafopy.mfopt.option_digits(digits, x.digits),
     )

@@ -405,6 +405,7 @@ def rma_mv(
     test: str = 'z',
     dfs: str | float | collections.abc.Sequence[float] = 'residual',
     level: float = 95,
+    digits: int | collections.abc.Mapping[str, int] | None = None,
     btt: metafopy.models.rma_uni.Btt = None,
     R: collections.abc.Mapping[str, object] | None = None,
     Rscale: str | bool | int = 'cor',
@@ -434,7 +435,9 @@ def rma_mv(
     ``'~ 1 | district/school'`` or ``'~ outcome | study'`` (or a list of them), ``struct`` the variance-covariance structure of
     the ``~ inner | outer`` terms and ``R`` a dict of known correlation matrices (DataFrames with dimension names) keyed by the
     grouping variable. ``sigma2``, ``tau2``, ``rho``, ``gamma2`` and ``phi`` fix the corresponding parameters (``nan`` entries are
-    estimated). ``dfs`` is ``'residual'``, ``'contain'`` or numeric.
+    estimated). ``dfs`` is ``'residual'``, ``'contain'`` or numeric. ``digits`` (a number of decimals, or a mapping with the keys ``est``, ``se``,
+    ... of which ``est`` is used) is stored in the result and used by its printout unless ``digits`` is passed to ``summary()`` or set with
+    :func:`metafopy.setmfopt`.
 
     ``cvvc`` (``False``, ``True``, ``'varcor'``, ``'varcov'`` or ``'transf'``) requests the Hessian of the variance components
     and its inverse (``hessian`` and ``vvc`` of the result): variances and correlations for ``True``/``'varcor'``, variances
@@ -468,6 +471,7 @@ def rma_mv(
         'method': method,
         'test': test,
         'dfs': dfs,
+        'digits': digits,
         'level': level,
         'btt': btt,
         'R': R,
@@ -880,7 +884,7 @@ def rma_mv(
             'phi': group_h.rho if group_h is not None else None,
         }
         initial = {'sigma2': sigma2_init, 'tau2': tau2_init, 'rho': rho_init, 'gamma2': gamma2_init, 'phi': phi_init}
-        metafopy.core.verbose.cat(vc_table(vc_fix, initial, specified, metafopy.mfopt.option_digits(None)))
+        metafopy.core.verbose.cat(vc_table(vc_fix, initial, specified, metafopy.mfopt.option_digits(digits)))
     if vlevel > 1:
         metafopy.core.verbose.message('Model fitting ...\n')
 
@@ -1143,6 +1147,7 @@ def rma_mv(
         vvc=vvc,
         vc_names=vc_names,
         spec=spec,
+        digits=metafopy.mfopt.reduce_digits(digits) if digits is not None else 4,
         iterations=iterations,
         measure=str(data.attrs['measure']) if data is not None and data.attrs.get('measure') else 'GEN',
         p_eff=p_eff,

@@ -5,6 +5,7 @@ doi:10.1080/01621459.2000.10473905. See
 https://wviechtb.github.io/metafor/reference/trimfill.html.
 """
 
+import collections.abc
 import dataclasses
 import math
 import typing
@@ -44,14 +45,21 @@ class TrimfillResult(metafopy.models.rma_uni.RMAResult):
     k0_est: str = 'L0'
     p_k0: float = math.nan
 
-    def summary(self, digits: int | None = None, showfit: bool = True) -> str:
-        digits = metafopy.mfopt.option_digits(digits)
+    def summary(
+        self,
+        digits: int | collections.abc.Mapping[str, int] | None = None,
+        showfit: bool = True,
+        *,
+        signif_stars: bool | None = None,
+        signif_legend: bool | None = None,
+    ) -> str:
+        digits = metafopy.mfopt.option_digits(digits, self.digits)
         block = [f'Estimated number of missing studies on the {self.side} side: {self.k0} (SE = {metafopy.bias.inputs.fx(self.se_k0, digits)})']
         if self.k0_est == 'R0':
             gap = ' ' * len(str(self.k0))
             p_text = metafopy.bias.inputs.fp(self.p_k0, digits, equal=True, sep=True, pname='p-val ')
             block.append(f'Test of H0: no missing studies on the {self.side} side:     {gap}{p_text}')
-        return '\n' + '\n'.join(block) + '\n' + super().summary(digits, showfit)
+        return '\n' + '\n'.join(block) + '\n' + super().summary(digits, showfit, signif_stars=signif_stars, signif_legend=signif_legend)
 
     def __str__(self) -> str:
         return self.summary(showfit=False)

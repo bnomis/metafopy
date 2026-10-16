@@ -25,6 +25,7 @@ import numpy
 import numpy.typing
 import pandas
 
+import metafopy.core.parallel
 import metafopy.core.rng
 import metafopy.core.zeroin
 import metafopy.errors
@@ -203,6 +204,7 @@ def permutest_rma_uni(
     seed: int | None = None,
     tol: float | None = None,
     fixed: bool = False,
+    progbar: bool = False,
 ) -> PermutestResult | int | float:
     """Permutation test for an ``rma.uni`` fit.
 
@@ -216,7 +218,7 @@ def permutest_rma_uni(
     generator (see :func:`metafopy.set_seed`), which like R's global generator
     is left in the state the permutations ended in. ``control`` takes metafor's
     list (``comptol``, ``tol``, ``maxiter``, ``alternative``, ``p2defn``,
-    ``stat``, ``cialt``, ``distfac``).
+    ``stat``, ``cialt``, ``distfac``). ``progbar=True`` prints a progress bar to stderr while the permutations are run (metafor's default is ``TRUE``).
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
@@ -256,7 +258,7 @@ def permutest_rma_uni(
         seed_ = int(metafopy.core.rng.get_rng().unif_rand() * 2e9)
         gen = metafopy.core.rng.set_seed(seed_ if seed is None else seed)
 
-    zval_perm, beta_perm, QM_perm = run_permutations(x, Xs, labels, n_iter, use_exact, gen)
+    zval_perm, beta_perm, QM_perm = run_permutations(x, Xs, labels, n_iter, use_exact, gen, progbar)
     if not use_exact:
         beta_perm[0] = x.beta
         zval_perm[0] = x.zval
@@ -337,6 +339,7 @@ def run_permutations(
     n_iter: int,
     exact: bool,
     gen: metafopy.core.rng.RRandom | None,
+    progbar: bool = False,
 ) -> tuple[FloatArray, FloatArray, FloatArray]:
     k, p = x.k, x.p
     zval = numpy.full((n_iter, p), numpy.nan)
@@ -354,7 +357,7 @@ def run_permutations(
     if x.int_only:
         one = numpy.ones((k, 1))
         if exact:
-            for i in range(n_iter):
+            for i in metafopy.core.parallel.progress(range(n_iter), n_iter, progbar):
                 signs = numpy.array([1.0 if not (i >> j) & 1 else -1.0 for j in range(k)])
                 store(i, metafopy.methods.common.refit_arrays(x, yi=signs * x.yi, X=one, btt=[0]))
         else:
@@ -364,12 +367,13 @@ def run_permutations(
                 signs = numpy.where(gen.sample_int(2, k, replace=True) == 1, -1.0, 1.0)
                 if store(i, metafopy.methods.common.refit_arrays(x, yi=signs * x.yi, X=one, btt=[0])):
                     i += 1
+                    metafopy.core.parallel.tick(i, n_iter, progbar)
         return zval, beta, QM
 
     btt = list(x.btt)
     if exact:
         perms = multiset_perms(labels)
-        for i in range(n_iter):
+        for i in metafopy.core.parallel.progress(range(n_iter), n_iter, progbar):
             store(i, metafopy.methods.common.refit_arrays(x, X=Xs[numpy.array(perms[i]) - 1], btt=btt))
     else:
         assert gen is not None
@@ -378,6 +382,7 @@ def run_permutations(
             perm = gen.sample_int(k) - 1
             if store(i, metafopy.methods.common.refit_arrays(x, X=Xs[perm], btt=btt)):
                 i += 1
+                metafopy.core.parallel.tick(i, n_iter, progbar)
     return zval, beta, QM
 
 

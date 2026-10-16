@@ -19,10 +19,12 @@ import pandas
 import scipy.stats
 
 import metafopy.core.linalg
+import metafopy.core.parallel
 import metafopy.errors
 import metafopy.methods.blup
 import metafopy.methods.common
 import metafopy.methods.fitview
+import metafopy.mfopt
 import metafopy.models.rma_uni
 import metafopy.printing
 
@@ -156,18 +158,20 @@ def influence(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> typ
 @influence.register
 def influence_rma_uni(
     model: metafopy.models.rma_uni.RMAResult,
-    digits: int = 4,
+    digits: int | None = None,
     *,
     btt: metafopy.models.rma_uni.Btt = None,
     na_action: metafopy.methods.common.NAAction = 'omit',
     measure: str = 'all',
+    progbar: bool = False,
 ) -> InfluenceResult | pandas.Series | pandas.DataFrame | ResidualResult:
     """Leave-one-out diagnostics for an ``rma.uni`` fit (metafor's ``influence()``).
 
     ``btt`` (0-based coefficient indices, default all coefficients) selects the
     coefficients Cook's distance and the covariance ratio refer to. With
     ``na_action='exclude'`` or ``'pass'`` the result has one row per supplied
-    study. Studies whose refit fails (or loses a coefficient) get NaN.
+    study. Studies whose refit fails (or loses a coefficient) get NaN. ``digits`` defaults to the ``digits`` option, else to that of the model;
+    ``progbar=True`` prints a progress bar to stderr while the studies are left out in turn.
 
     ``measure`` is metafor's undocumented argument that restricts the result: ``'cooks.distance'`` gives the Cook's distances (as
     :func:`cooks_distance`, also allowed for a model made robust), ``'dfbetas'`` the DFBETAS (as :func:`dfbetas`) and ``'rstudent'`` the
@@ -182,14 +186,19 @@ def influence_rma_uni(
     metafopy.methods.fitview.check_class(model, notav=metafopy.methods.fitview.NOT_ROBUST)
     if measure == 'rstudent':
         return rstudent_rma_uni(model, digits, na_action=na_action)
-    res = influence_fit(model, digits, btt=btt, na_action=na_action)
+    res = influence_fit(model, digits, btt=btt, na_action=na_action, progbar=progbar)
     if measure == 'dfbetas':
         return res.dfbs_frame()
     return res
 
 
 def influence_fit(
-    model: metafopy.models.rma_uni.RMAResult, digits: int = 4, *, btt: metafopy.models.rma_uni.Btt = None, na_action: metafopy.methods.common.NAAction = 'omit'
+    model: metafopy.models.rma_uni.RMAResult,
+    digits: int | None = None,
+    *,
+    btt: metafopy.models.rma_uni.Btt = None,
+    na_action: metafopy.methods.common.NAAction = 'omit',
+    progbar: bool = False,
 ) -> InfluenceResult:
     """The leave-one-out diagnostics of :func:`influence_rma_uni` without the check for fits made robust (which ``cooks.distance`` allows).
 
@@ -200,7 +209,7 @@ def influence_fit(
     x = model
     if x.k == 1:
         raise metafopy.errors.InputError('Stopped because k = 1.')
-    core = influence_core(x, btt)
+    core = influence_core(x, btt, progbar)
     inf = core.inf
     if na_action == 'fail' and not x.data.keep.all():
         raise metafopy.errors.InputError('Missing values in results.')
@@ -242,7 +251,7 @@ def influence_fit(
         k=x.k,
         p=x.p,
         m=core.m,
-        digits=digits,
+        digits=metafopy.mfopt.option_digits(digits, x.digits),
     )
 
 
@@ -268,7 +277,7 @@ class Core:
     seresid: FloatArray
 
 
-def influence_core(x: metafopy.models.rma_uni.RMAResult, btt: metafopy.models.rma_uni.Btt) -> Core:
+def influence_core(x: metafopy.models.rma_uni.RMAResult, btt: metafopy.models.rma_uni.Btt, progbar: bool = False) -> Core:
     k, p = x.k, x.p
     sub = numpy.array(metafopy.models.rma_uni.set_btt(btt, p, False, x.coef_names), dtype=numpy.intp)
     m = len(sub)
@@ -300,7 +309,7 @@ def influence_core(x: metafopy.models.rma_uni.RMAResult, btt: metafopy.models.rm
     cov_r = numpy.full(k, numpy.nan)
 
     all_idx = numpy.arange(k)
-    for i in range(k):
+    for i in metafopy.core.parallel.progress(range(k), k, progbar):
         res = metafopy.methods.common.refit(x, all_idx != i)
         if res is None:
             continue
@@ -359,8 +368,16 @@ def rstudent(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> Resi
 
 
 @rstudent.register
-def rstudent_rma_uni(model: metafopy.models.rma_uni.RMAResult, digits: int = 4, *, na_action: metafopy.methods.common.NAAction = 'omit') -> ResidualResult:
+def rstudent_rma_uni(
+    model: metafopy.models.rma_uni.RMAResult,
+    digits: int | None = None,
+    *,
+    na_action: metafopy.methods.common.NAAction = 'omit',
+    progbar: bool = False,
+) -> ResidualResult:
     """Deleted residuals ``y_i - x_i' beta_(-i)`` with their standard errors and z-values.
+
+    ``progbar=True`` prints a progress bar to stderr while the studies are left out in turn.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
@@ -369,7 +386,7 @@ def rstudent_rma_uni(model: metafopy.models.rma_uni.RMAResult, digits: int = 4, 
     metafopy.methods.fitview.check_class(model, notav=metafopy.methods.fitview.NOT_ROBUST)
     if model.k == 1:
         raise metafopy.errors.InputError('Stopped because k = 1.')
-    core = influence_core(model, None)
+    core = influence_core(model, None, progbar)
     if na_action == 'fail' and not model.data.keep.all():
         raise metafopy.errors.InputError('Missing values in results.')
     z = core.inf['rstudent']
@@ -379,7 +396,7 @@ def rstudent_rma_uni(model: metafopy.models.rma_uni.RMAResult, digits: int = 4, 
         (resid, se, z), slab = metafopy.methods.common.pad_to_supplied(model, core.resid, core.seresid, z)
     else:
         resid, se = core.resid, core.seresid
-    return ResidualResult(resid=resid, se=se, z=z, slab=slab, digits=digits)
+    return ResidualResult(resid=resid, se=se, z=z, slab=slab, digits=metafopy.mfopt.option_digits(digits, model.digits))
 
 
 @functools.singledispatch
@@ -394,10 +411,14 @@ def cooks_distance(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -
 
 @cooks_distance.register
 def cooks_rma_uni(
-    model: metafopy.models.rma_uni.RMAResult, *, btt: metafopy.models.rma_uni.Btt = None, na_action: metafopy.methods.common.NAAction = 'omit'
+    model: metafopy.models.rma_uni.RMAResult,
+    *,
+    btt: metafopy.models.rma_uni.Btt = None,
+    na_action: metafopy.methods.common.NAAction = 'omit',
+    progbar: bool = False,
 ) -> pandas.Series:
-    """Cook's distance of each study (metafor's ``cooks.distance``), indexed by study label."""
-    res = influence_fit(model, btt=btt, na_action=na_action)
+    """Cook's distance of each study (metafor's ``cooks.distance``), indexed by study label; ``progbar=True`` prints a progress bar to stderr."""
+    res = influence_fit(model, btt=btt, na_action=na_action, progbar=progbar)
     return pandas.Series(res.cook_d, index=list(res.slab), name='cook.d')
 
 
@@ -412,10 +433,12 @@ def dfbetas(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> panda
 
 
 @dfbetas.register
-def dfbetas_rma_uni(model: metafopy.models.rma_uni.RMAResult, *, na_action: metafopy.methods.common.NAAction = 'omit') -> pandas.DataFrame:
-    """Standardised change in each coefficient when a study is left out (one column per coefficient)."""
+def dfbetas_rma_uni(
+    model: metafopy.models.rma_uni.RMAResult, *, na_action: metafopy.methods.common.NAAction = 'omit', progbar: bool = False
+) -> pandas.DataFrame:
+    """Standardised change in each coefficient when a study is left out (one column per coefficient); ``progbar=True`` prints a progress bar to stderr."""
     metafopy.methods.fitview.check_class(model, notav=metafopy.methods.fitview.NOT_ROBUST)
-    return influence_fit(model, na_action=na_action).dfbs_frame()
+    return influence_fit(model, na_action=na_action, progbar=progbar).dfbs_frame()
 
 
 @functools.singledispatch
@@ -431,7 +454,7 @@ def rstandard(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> Res
 @rstandard.register
 def rstandard_rma_uni(
     model: metafopy.models.rma_uni.RMAResult,
-    digits: int = 4,
+    digits: int | None = None,
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     type: typing.Literal['marginal', 'conditional'] = 'marginal',
     *,
@@ -469,4 +492,4 @@ def rstandard_rma_uni(
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if na_action in ('exclude', 'pass'):
         (ei, sei, z), slab = metafopy.methods.common.pad_to_supplied(x, ei, sei, z)
-    return ResidualResult(resid=ei, se=sei, z=z, slab=slab, digits=digits)
+    return ResidualResult(resid=ei, se=sei, z=z, slab=slab, digits=metafopy.mfopt.option_digits(digits, x.digits))

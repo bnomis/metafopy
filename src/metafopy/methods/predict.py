@@ -18,6 +18,7 @@ import metafopy.core.clubsandwich
 import metafopy.errors
 import metafopy.methods.common
 import metafopy.methods.fitted
+import metafopy.mfopt
 import metafopy.models.binary
 import metafopy.models.glmm_result
 import metafopy.models.mv_result
@@ -25,6 +26,7 @@ import metafopy.models.mv_structs
 import metafopy.models.rma_uni
 import metafopy.models.robust_info
 import metafopy.models.tau2
+import metafopy.printing
 import metafopy.transf
 
 __all__ = ['PredictResult', 'predict']
@@ -59,6 +61,7 @@ class PredictResult:
     X: FloatArray | pandas.DataFrame | None = None
     vcov: FloatArray | pandas.DataFrame | None = None
     x_names: tuple[str, ...] | None = None
+    digits: int = 4
 
     @property
     def cr_lb(self) -> FloatArray:
@@ -90,11 +93,21 @@ class PredictResult:
         return pandas.DataFrame(cols, index=list(self.slab) if self.slab is not None else None)
 
     def __str__(self) -> str:
+        """The predictions as ``print.list.rma`` shows them: fixed decimals (``digits``), one row per prediction."""
+        digits = metafopy.mfopt.option_digits(None, self.digits)
         frame = self.to_frame()
         for col in ('se', 'pi.lb', 'pi.ub'):
             if frame[col].isna().all():
                 frame = frame.drop(columns=col)
-        return frame.round(4).to_string()
+        rows = [[metafopy.printing.fmt_num(float(v), digits) for v in row] for row in frame.to_numpy()]
+        return metafopy.mfopt.option_space(
+            '\n' + metafopy.printing.fmt_table([str(c) for c in frame.columns], rows, [str(i) for i in frame.index], gap=1) + '\n'
+        )
+
+
+def with_digits[R: PredictResult](result: R, digits: typing.Any, stored: int) -> R:
+    """``result`` with the ``digits`` of its printout (R's ``out$digits``): ``digits``, else the ``digits`` option, else that of the model."""
+    return dataclasses.replace(result, digits=metafopy.mfopt.option_digits(digits, stored))
 
 
 CUTOFF_FUNCTIONS: dict[str, collections.abc.Callable[[float], float]] = {
@@ -371,6 +384,7 @@ def predict_rma_uni(
     pi_type: str | None = None,
     newvi: numpy.typing.ArrayLike | None = None,
     na_action: metafopy.methods.common.NAAction = 'omit',
+    digits: int | collections.abc.Mapping[str, int] | None = None,
 ) -> PredictResult:
     """Predict from an ``rma.uni`` fit.
 
@@ -399,22 +413,26 @@ def predict_rma_uni(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
-    return location_prediction(
-        uni_location_model(model, metafopy.methods.fitted.rows_of(model)),
-        newmods,
-        intercept,
-        transf,
-        targs,
-        level,
-        hetvar=hetvar,
-        prob=prob,
-        addx=addx,
-        adjust=adjust,
-        vcov=vcov,
-        predtype=predtype,
-        pi_type=pi_type,
-        newvi=newvi,
-        na_action=na_action,
+    return with_digits(
+        location_prediction(
+            uni_location_model(model, metafopy.methods.fitted.rows_of(model)),
+            newmods,
+            intercept,
+            transf,
+            targs,
+            level,
+            hetvar=hetvar,
+            prob=prob,
+            addx=addx,
+            adjust=adjust,
+            vcov=vcov,
+            predtype=predtype,
+            pi_type=pi_type,
+            newvi=newvi,
+            na_action=na_action,
+        ),
+        digits,
+        model.digits,
     )
 
 
@@ -460,6 +478,7 @@ def predict_rma_glmm(
     pi_type: str | None = None,
     newvi: numpy.typing.ArrayLike | None = None,
     na_action: metafopy.methods.common.NAAction = 'omit',
+    digits: int | collections.abc.Mapping[str, int] | None = None,
 ) -> PredictResult:
     """Predict from an ``rma.glmm`` fit (``predict.rma``; arguments as in :func:`predict_rma_uni`).
 
@@ -473,40 +492,44 @@ def predict_rma_glmm(
     """
     x = model
     rows = metafopy.methods.fitted.rows_of(x)
-    return location_prediction(
-        LocationModel(
-            k=x.k,
-            p=x.p,
-            parms=x.parms,
-            int_only=x.int_only,
-            int_incl=x.int_incl,
-            X=x.X,
-            slab=tuple(s for s, ok in zip(x.slab, x.tables.not_na, strict=True) if ok),
-            beta=x.beta,
-            vb=x.vb,
-            ddf=x.ddf,
-            alpha=x.level,
-            tau2=x.tau2,
-            fixed=x.method in metafopy.models.tau2.FIXED_EFFECTS,
-            X_f=rows.X_f,
-            not_na=rows.not_na,
-            slab_f=rows.slab,
-            coef_names=x.coef_names,
+    return with_digits(
+        location_prediction(
+            LocationModel(
+                k=x.k,
+                p=x.p,
+                parms=x.parms,
+                int_only=x.int_only,
+                int_incl=x.int_incl,
+                X=x.X,
+                slab=tuple(s for s, ok in zip(x.slab, x.tables.not_na, strict=True) if ok),
+                beta=x.beta,
+                vb=x.vb,
+                ddf=x.ddf,
+                alpha=x.level,
+                tau2=x.tau2,
+                fixed=x.method in metafopy.models.tau2.FIXED_EFFECTS,
+                X_f=rows.X_f,
+                not_na=rows.not_na,
+                slab_f=rows.slab,
+                coef_names=x.coef_names,
+            ),
+            newmods,
+            intercept,
+            transf,
+            targs,
+            level,
+            hetvar=hetvar,
+            prob=prob,
+            addx=addx,
+            adjust=adjust,
+            vcov=vcov,
+            predtype=predtype,
+            pi_type=pi_type,
+            newvi=newvi,
+            na_action=na_action,
         ),
-        newmods,
-        intercept,
-        transf,
-        targs,
-        level,
-        hetvar=hetvar,
-        prob=prob,
-        addx=addx,
-        adjust=adjust,
-        vcov=vcov,
-        predtype=predtype,
-        pi_type=pi_type,
-        newvi=newvi,
-        na_action=na_action,
+        digits,
+        x.digits,
     )
 
 
@@ -530,6 +553,7 @@ def predict_fixed_binary(
     pi_type: str | None = None,
     newvi: numpy.typing.ArrayLike | None = None,
     na_action: metafopy.methods.common.NAAction = 'omit',
+    digits: int | collections.abc.Mapping[str, int] | None = None,
 ) -> PredictResult:
     """Predict from an ``rma.mh`` or ``rma.peto`` fit (``predict.rma``; arguments as in :func:`predict_rma_uni`).
 
@@ -542,37 +566,41 @@ def predict_fixed_binary(
         metafopy.errors.InputError: ``newmods`` was given (the models have no moderators).
     """
     x = model
-    return location_prediction(
-        LocationModel(
-            k=x.k,
-            p=1,
-            parms=x.parms,
-            int_only=True,
-            int_incl=True,
-            X=numpy.ones((x.k, 1)),
-            slab=(),
-            beta=x.beta,
-            vb=x.vb,
-            ddf=None,
-            alpha=x.level,
-            tau2=0.0,
-            fixed=True,
-            not_na=x.tables.not_na,
+    return with_digits(
+        location_prediction(
+            LocationModel(
+                k=x.k,
+                p=1,
+                parms=x.parms,
+                int_only=True,
+                int_incl=True,
+                X=numpy.ones((x.k, 1)),
+                slab=(),
+                beta=x.beta,
+                vb=x.vb,
+                ddf=None,
+                alpha=x.level,
+                tau2=0.0,
+                fixed=True,
+                not_na=x.tables.not_na,
+            ),
+            newmods,
+            intercept,
+            transf,
+            targs,
+            level,
+            hetvar=hetvar,
+            prob=prob,
+            addx=addx,
+            adjust=adjust,
+            vcov=vcov,
+            predtype=predtype,
+            pi_type=pi_type,
+            newvi=newvi,
+            na_action=na_action,
         ),
-        newmods,
-        intercept,
-        transf,
-        targs,
-        level,
-        hetvar=hetvar,
-        prob=prob,
-        addx=addx,
-        adjust=adjust,
-        vcov=vcov,
-        predtype=predtype,
-        pi_type=pi_type,
-        newvi=newvi,
-        na_action=na_action,
+        digits,
+        x.digits,
     )
 
 
@@ -867,6 +895,7 @@ def predict_rma_mv(
     pi_type: str | None = None,
     newvi: numpy.typing.ArrayLike | None = None,
     na_action: metafopy.methods.common.NAAction = 'omit',
+    digits: int | collections.abc.Mapping[str, int] | None = None,
 ) -> PredictResult:
     """Predict from an ``rma.mv`` fit (``predict.rma`` for ``rma.mv`` objects).
 
@@ -1020,7 +1049,7 @@ def predict_rma_mv(
         vcov=vcov_pred if transf is None else None,
     )
     keep, blank = rows_to_keep(pred, not_na, fitted_rows, na_action)
-    return out if keep.all() and blank is None else restrict_rows(out, keep, blank)
+    return with_digits(out if keep.all() and blank is None else restrict_rows(out, keep, blank), digits, model.digits)
 
 
 def level_array(

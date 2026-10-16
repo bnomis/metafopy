@@ -118,6 +118,7 @@ class RMAResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_meth
     iterations: int = 0
     measure: str = 'GEN'
     robust: metafopy.models.robust_info.RobustInfo | None = None
+    digits: int = 4
     call: metafopy.models.call.Call | None = dataclasses.field(default=None, kw_only=True, repr=False, compare=False)
 
     # -- accessors ---------------------------------------------------------
@@ -255,9 +256,21 @@ class RMAResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_meth
 
     # -- printing ----------------------------------------------------------
 
-    def summary(self, digits: int | None = None, showfit: bool = True) -> str:
-        """The printout with the fit statistics table, as metafor's ``summary()``; ``str(res)`` leaves it out like ``print()``."""
-        return metafopy.mfopt.option_space(format_result(self, metafopy.mfopt.option_digits(digits), showfit))
+    def summary(
+        self,
+        digits: int | collections.abc.Mapping[str, int] | None = None,
+        showfit: bool = True,
+        *,
+        signif_stars: bool | None = None,
+        signif_legend: bool | None = None,
+    ) -> str:
+        """The printout with the fit statistics table, as metafor's ``summary()``; ``str(res)`` leaves it out like ``print()``.
+
+        ``digits`` defaults to the ``digits`` option, else to the ``digits`` the model was fitted with. ``signif_stars`` (default: the
+        ``signif_stars`` option, ``True``) adds the significance stars and ``signif_legend`` (default: ``signif_stars``) the legend of the codes.
+        """
+        stars, legend = metafopy.mfopt.option_signif(signif_stars, signif_legend)
+        return metafopy.mfopt.option_space(format_result(self, metafopy.mfopt.option_digits(digits, self.digits), showfit, stars, legend))
 
     def __str__(self) -> str:
         return self.summary(showfit=False)
@@ -383,6 +396,7 @@ def rma_uni(
     weighted: bool = True,
     test: str = 'z',
     level: float = 95,
+    digits: int | collections.abc.Mapping[str, int] | None = None,
     btt: Btt = None,
     scale: None = None,
     tau2: float | None = None,
@@ -454,6 +468,7 @@ def rma_uni(
     weighted: bool = True,
     test: str = 'z',
     level: float = 95,
+    digits: int | collections.abc.Mapping[str, int] | None = None,
     btt: Btt = None,
     att: Btt = None,
     scale: metafopy.models.rma_ls.ScaleSpec | None = None,
@@ -500,6 +515,9 @@ def rma_uni(
     ``'identity'``), ``optbeta``, ``alpha`` (fixed values of the scale coefficients),
     ``beta`` (fixed values of the location coefficients, with ``optbeta``) and ``att``
     (the scale coefficients to test) only apply to such models.
+
+    ``digits`` (a number of decimals, or a mapping with the keys ``est``, ``se``, ... of which ``est`` is used) is stored in the result
+    and used by its printout unless ``digits`` is passed to ``summary()`` or set with :func:`metafopy.setmfopt`.
 
     ``verbose`` prints metafor's iteration log of the tau^2 estimators to stdout
     (and with ``verbose=2`` or more its progress messages to stderr); it has no
@@ -603,24 +621,28 @@ def rma_uni(
             subset=subset,
             na_action=na_action,
         )
+    digits_ = metafopy.mfopt.reduce_digits(digits) if digits is not None else 4
     if scale is not None:
-        return fit_location_scale(
-            md,
-            scale,
-            method=method,
-            weighted=weighted,
-            test=typing.cast(Test, test_l),
-            level=level,
-            btt=btt,
-            att=att,
-            tau2=tau2,
-            link=link,
-            optbeta=optbeta,
-            alpha=alpha,
-            beta=beta,
-            control=control,
-            na_action=na_action,
-            measure=measure,
+        return dataclasses.replace(
+            fit_location_scale(
+                md,
+                scale,
+                method=method,
+                weighted=weighted,
+                test=typing.cast(Test, test_l),
+                level=level,
+                btt=btt,
+                att=att,
+                tau2=tau2,
+                link=link,
+                optbeta=optbeta,
+                alpha=alpha,
+                beta=beta,
+                control=control,
+                na_action=na_action,
+                measure=measure,
+            ),
+            digits=digits_,
         )
     if md.na_rows is not None and md.na_rows.any():
         if vlevel > 1:
@@ -641,7 +663,7 @@ def rma_uni(
     )
     if vlevel:
         metafopy.core.verbose.cat('\n')
-    return dataclasses.replace(res, measure=measure)
+    return dataclasses.replace(res, measure=measure, digits=digits_)
 
 
 def warn_na_omitted(n: int) -> None:
@@ -1136,7 +1158,7 @@ def adj_r2(y: FloatArray, X: FloatArray, w: FloatArray) -> float:
 # -- printing -----------------------------------------------------------------
 
 
-def format_result(res: RMAResult, digits: int, showfit: bool = False) -> str:
+def format_result(res: RMAResult, digits: int, showfit: bool = False, signif_stars: bool = True, signif_legend: bool = True) -> str:
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     out: list[str] = ['']
     fe = res.method in metafopy.models.tau2.FIXED_EFFECTS
@@ -1251,14 +1273,9 @@ def format_result(res: RMAResult, digits: int, showfit: bool = False) -> str:
         rows_.append(row)
     if robust is not None:
         header, rows_ = metafopy.models.robust_print.decorate(header, rows_)
+    header, rows_ = metafopy.printing.drop_stars(header, rows_, signif_stars)
     out.append(metafopy.printing.fmt_table(header, rows_, row_names=None if res.int_only else list(res.coef_names)))
-    out.append('')
-    out.append('---')
-    out.append("Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1")
-    out.append('')
-    if robust is not None:
-        out += metafopy.models.robust_print.legend_lines(robust, res.int_only)
-        out.append('')
+    out += metafopy.printing.signif_footer(signif_legend, metafopy.models.robust_print.legend_lines(robust, res.int_only) if robust is not None else ())
     return '\n'.join(out)
 
 

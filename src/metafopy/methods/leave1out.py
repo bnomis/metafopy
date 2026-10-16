@@ -17,10 +17,12 @@ import numpy
 import numpy.typing
 import pandas
 
+import metafopy.core.parallel
 import metafopy.errors
 import metafopy.methods.blup
 import metafopy.methods.common
 import metafopy.methods.fitview
+import metafopy.mfopt
 import metafopy.models.rma_uni
 import metafopy.models.tau2
 import metafopy.printing
@@ -161,11 +163,12 @@ def collect(
 def leave1out_rma_uni(
     x: metafopy.models.rma_uni.RMAResult,
     cluster: numpy.typing.ArrayLike | str | None = None,
-    digits: int = 4,
+    digits: int | None = None,
     transf: collections.abc.Callable[..., typing.Any] | None = None,
     targs: typing.Any = None,
     *,
     na_action: metafopy.methods.common.NAAction = 'omit',
+    progbar: bool = False,
 ) -> Leave1outResult:
     """Refit an intercept-only ``rma.uni`` model leaving out each study (or each ``cluster`` of studies).
 
@@ -174,7 +177,8 @@ def leave1out_rma_uni(
     then NaN. ``cluster`` gives one value per study supplied (or a column name
     in the data the model was fitted to) and leaves out all studies of one
     cluster at a time. With ``na_action='exclude'``/``'pass'`` (and no
-    ``cluster``) the output has one row per supplied study.
+    ``cluster``) the output has one row per supplied study. ``digits`` defaults to the ``digits`` option, else to that of the model;
+    ``progbar=True`` prints a progress bar to stderr while the refits are made.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
@@ -193,7 +197,7 @@ def leave1out_rma_uni(
     ids = list(dict.fromkeys(labels_k.tolist()))
     if not miss_cluster:
         ids = sorted(ids)
-    fits = [metafopy.methods.common.refit(x, labels_k != cid) for cid in ids]
+    fits = [metafopy.methods.common.refit(x, labels_k != cid) for cid in metafopy.core.parallel.progress(ids, len(ids), progbar)]
     col = collect(fits, x, transf, targs)
     slab: tuple[str, ...]
     if miss_cluster:
@@ -224,7 +228,7 @@ def leave1out_rma_uni(
         slab=slab,
         # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
         stat_name='tval' if x.test in ('knha', 'adhoc', 't') else 'zval',
-        digits=digits,
+        digits=metafopy.mfopt.option_digits(digits, x.digits),
         transf=transf is not None,
     )
 
@@ -261,12 +265,13 @@ def cumul(x: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> CumulResult
 def cumul_rma_uni(
     x: metafopy.models.rma_uni.RMAResult,
     order: numpy.typing.ArrayLike | str | None = None,
-    digits: int = 4,
+    digits: int | None = None,
     transf: collections.abc.Callable[..., typing.Any] | None = None,
     targs: typing.Any = None,
     collapse: bool = False,
     *,
     decreasing: bool = False,
+    progbar: bool = False,
 ) -> CumulResult:
     """Fit the intercept-only model to the first ``i`` studies for ``i = 1, ..., k``.
 
@@ -274,7 +279,8 @@ def cumul_rma_uni(
     the model's data) giving the order in which studies are added; without it
     the original order is used. With ``collapse=True`` studies sharing the same
     value of ``order`` are added together. Studies dropped for missing values
-    in the fit are skipped (the ``na.omit`` behaviour).
+    in the fit are skipped (the ``na.omit`` behaviour). ``digits`` defaults to the ``digits`` option, else to that of the model; ``progbar=True``
+    prints a progress bar to stderr while the refits are made.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
@@ -295,7 +301,7 @@ def cumul_rma_uni(
     uor = numpy.array(list(dict.fromkeys(ov.tolist())), dtype=ov.dtype) if collapse else ov
     n = len(uor)
     fits: list[metafopy.models.rma_uni.RMAResult | None] = []
-    for i in range(n):
+    for i in metafopy.core.parallel.progress(range(n), n, progbar):
         incl = srt[numpy.isin(ov, uor[: i + 1])] if collapse else srt[: i + 1]
         mask = numpy.zeros(k, dtype=numpy.bool_)
         mask[incl] = True
@@ -318,7 +324,7 @@ def cumul_rma_uni(
         slab=slab,
         # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
         stat_name='tval' if x.test in ('knha', 'adhoc', 't') else 'zval',
-        digits=digits,
+        digits=metafopy.mfopt.option_digits(digits, x.digits),
         transf=transf is not None,
         k=col['k'],
         order=uor,

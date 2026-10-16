@@ -22,6 +22,7 @@ import numpy
 import numpy.typing
 import pandas
 
+import metafopy.core.parallel
 import metafopy.core.rng
 import metafopy.errors
 import metafopy.methods.ls_common
@@ -142,6 +143,7 @@ def beta_permutations(
     labels: numpy.typing.NDArray[numpy.intp],
     Xs: FloatArray,
     seed: int | None,
+    progbar: bool = False,
 ) -> tuple[FloatArray, FloatArray, FloatArray]:
     """Statistics (``zval``, ``beta``, ``QM``) of the location part for every permutation."""
     k, p = x.k, x.p
@@ -170,7 +172,7 @@ def beta_permutations(
             return metafopy.methods.ls_common.refit_ls(x, yi=signs * x.yi, X=one, btt=[0], alpha=alpha_arg, beta=beta_arg, skiphes=True, polish_converged=False)
 
         if gen is None:
-            for i in range(n_iter):
+            for i in metafopy.core.parallel.progress(range(n_iter), n_iter, progbar):
                 store(i, fit_signs(numpy.array([1.0 if not (i >> j) & 1 else -1.0 for j in range(k)])))
         else:
             i = 0
@@ -178,6 +180,7 @@ def beta_permutations(
                 signs = numpy.where(gen.sample_int(2, k, replace=True) == 1, -1.0, 1.0)
                 if store(i, fit_signs(signs)):
                     i += 1
+                    metafopy.core.parallel.tick(i, n_iter, progbar)
         return zval, beta, QM
 
     def fit_rows(rows: numpy.typing.NDArray[numpy.intp]) -> metafopy.models.rma_ls_result.RMALSResult | None:
@@ -187,13 +190,14 @@ def beta_permutations(
 
     if gen is None:
         perms = metafopy.methods.permutest.multiset_perms(labels)
-        for i in range(n_iter):
+        for i in metafopy.core.parallel.progress(range(n_iter), n_iter, progbar):
             store(i, fit_rows(numpy.array(perms[i]) - 1))
     else:
         i = 0
         while i < n_iter:
             if store(i, fit_rows(gen.sample_int(k) - 1)):
                 i += 1
+                metafopy.core.parallel.tick(i, n_iter, progbar)
     return zval, beta, QM
 
 
@@ -204,6 +208,7 @@ def alpha_permutations(
     labels: numpy.typing.NDArray[numpy.intp],
     Zs: FloatArray,
     seed: int | None,
+    progbar: bool = False,
 ) -> tuple[FloatArray, FloatArray, FloatArray]:
     """Statistics (``zval_alpha``, ``alpha``, ``QS``) of the scale part for every permutation."""
     k, q = x.k, x.q
@@ -229,13 +234,14 @@ def alpha_permutations(
 
     if gen is None:
         perms = metafopy.methods.permutest.multiset_perms(labels)
-        for i in range(n_iter):
+        for i in metafopy.core.parallel.progress(range(n_iter), n_iter, progbar):
             store(i, fit_rows(numpy.array(perms[i]) - 1))
     else:
         i = 0
         while i < n_iter:
             if store(i, fit_rows(gen.sample_int(k) - 1)):
                 i += 1
+                metafopy.core.parallel.tick(i, n_iter, progbar)
     return zval, alpha, QS
 
 
@@ -259,6 +265,7 @@ def permutest_rma_ls(
     tol: float | None = None,
     skip_beta: bool = False,
     skip_alpha: bool = False,
+    progbar: bool = False,
 ) -> LSPermutestResult | list[float]:
     """Permutation tests for the location and scale coefficients of a location-scale fit.
 
@@ -266,7 +273,8 @@ def permutest_rma_ls(
     number of iterations an exact test needs for the location and the scale part. ``btt`` and ``att`` (0-based) change the
     coefficients the omnibus tests refer to; ``skip_beta`` and ``skip_alpha`` skip a part. ``seed`` seeds the generator for each
     approximate part; without it the seeds are drawn from the module's R-compatible generator (see :func:`metafopy.set_seed`).
-    ``control`` takes ``comptol``, ``alternative``, ``p2defn`` and ``stat`` as in :func:`metafopy.permutest`.
+    ``control`` takes ``comptol``, ``alternative``, ``p2defn`` and ``stat`` as in :func:`metafopy.permutest`. ``progbar=True`` prints a progress bar
+    to stderr for each part (metafor's default is ``TRUE``).
 
     The scale part with ``control={'p2defn': 'px2'}`` uses the observed test statistics; metafor 5.2-1 has a typo there that
     makes these p-values ``NaN``.
@@ -327,7 +335,7 @@ def permutest_rma_ls(
         n_iter = int(x_exact_iter) if use_exact else iter
         if use_exact and math.isinf(x_exact_iter):
             raise metafopy.errors.InputError('Too many iterations required for an exact permutation test of the location model.')
-        zv, bv, QM_perm = beta_permutations(x, n_iter, use_exact, labels, Xs, seed)
+        zv, bv, QM_perm = beta_permutations(x, n_iter, use_exact, labels, Xs, seed, progbar)
         if not use_exact:
             zv[0], bv[0], QM_perm[0] = x.zval[:n_col], x.beta[:n_col], x.QM
         pval = perm_pvalues(x.zval if con['stat'] == 'test' else x.beta, zv if con['stat'] == 'test' else bv, con)
@@ -346,7 +354,7 @@ def permutest_rma_ls(
         n_iter = int(z_exact_iter) if use_exact else iter
         if use_exact and math.isinf(z_exact_iter):
             raise metafopy.errors.InputError('Too many iterations required for an exact permutation test of the scale model.')
-        za, av, QS_perm = alpha_permutations(x, n_iter, use_exact, z_labels, Zs, seed)
+        za, av, QS_perm = alpha_permutations(x, n_iter, use_exact, z_labels, Zs, seed, progbar)
         if not use_exact:
             za[0], av[0], QS_perm[0] = x.zval_alpha, x.alpha, x.QS
         pval_alpha = perm_pvalues(x.zval_alpha if con['stat'] == 'test' else x.alpha, za if con['stat'] == 'test' else av, con)
