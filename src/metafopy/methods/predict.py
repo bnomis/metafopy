@@ -1,5 +1,6 @@
 """Predicted values, confidence and prediction intervals (metafor's ``predict.rma``)."""
 
+import ast
 import collections.abc
 import dataclasses
 import functools
@@ -10,6 +11,7 @@ import warnings
 import numpy
 import numpy.typing
 import pandas
+import scipy.special
 import scipy.stats
 
 import metafopy.core.clubsandwich
@@ -28,6 +30,7 @@ import metafopy.transf
 __all__ = ['PredictResult', 'predict']
 
 FloatArray = numpy.typing.NDArray[numpy.float64]
+type NewMods = numpy.typing.ArrayLike | collections.abc.Mapping[str, float] | pandas.Series | pandas.DataFrame
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -55,6 +58,7 @@ class PredictResult:
     prob: FloatArray | None = None
     X: FloatArray | pandas.DataFrame | None = None
     vcov: FloatArray | pandas.DataFrame | None = None
+    x_names: tuple[str, ...] | None = None
 
     @property
     def cr_lb(self) -> FloatArray:
@@ -77,6 +81,12 @@ class PredictResult:
         }
         if self.prob is not None:
             cols['prob'] = self.prob
+        if self.X is not None:
+            names = list(self.X.columns) if isinstance(self.X, pandas.DataFrame) else self.x_names
+            mat = self.X.to_numpy(dtype=numpy.float64) if isinstance(self.X, pandas.DataFrame) else self.X
+            if names is not None and mat.shape[0] == self.pred.shape[0]:
+                for j, name in enumerate(names):
+                    cols[f'X.{name}'] = mat[:, j]
         return pandas.DataFrame(cols, index=list(self.slab) if self.slab is not None else None)
 
     def __str__(self) -> str:
@@ -87,16 +97,72 @@ class PredictResult:
         return frame.round(4).to_string()
 
 
+CUTOFF_FUNCTIONS: dict[str, collections.abc.Callable[[float], float]] = {
+    'abs': abs,
+    'atanh': math.atanh,
+    'cos': math.cos,
+    'exp': math.exp,
+    'log': math.log,
+    'log10': math.log10,
+    'log1p': math.log1p,
+    'log2': math.log2,
+    'plogis': scipy.special.expit,
+    'qlogis': scipy.special.logit,
+    'sin': math.sin,
+    'sqrt': math.sqrt,
+    'tan': math.tan,
+    'tanh': math.tanh,
+}
+CUTOFF_CONSTANTS = {'Inf': math.inf, 'pi': math.pi}
+
+
+def evaluate_cutoff(text: str) -> float | None:
+    """The number an R expression such as ``'log(0.8)'`` or ``'-0.5^2'`` evaluates to, ``None`` when it is not a number.
+
+    metafor evaluates the cutoff of ``prob`` with ``eval(parse(text=))``; only arithmetic and a few common functions are supported here.
+    """
+    try:
+        tree = ast.parse(text.strip().replace('^', '**'), mode='eval')
+        return float(evaluate_node(tree.body))
+    except SyntaxError, ValueError, TypeError, ArithmeticError, KeyError:
+        return None
+
+
+def evaluate_node(node: ast.expr) -> float:
+    if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)) and not isinstance(node.value, bool):
+        return float(node.value)
+    if isinstance(node, ast.Name):
+        return CUTOFF_CONSTANTS[node.id]
+    if isinstance(node, ast.UnaryOp) and isinstance(node.op, (ast.UAdd, ast.USub)):
+        val = evaluate_node(node.operand)
+        return -val if isinstance(node.op, ast.USub) else val
+    if isinstance(node, ast.BinOp):
+        left = evaluate_node(node.left)
+        right = evaluate_node(node.right)
+        if isinstance(node.op, ast.Add):
+            return left + right
+        if isinstance(node.op, ast.Sub):
+            return left - right
+        if isinstance(node.op, ast.Mult):
+            return left * right
+        if isinstance(node.op, ast.Div):
+            return left / right
+        if isinstance(node.op, ast.Pow):
+            return float(left**right)
+    if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and len(node.args) == 1 and not node.keywords:
+        return float(CUTOFF_FUNCTIONS[node.func.id](evaluate_node(node.args[0])))
+    raise ValueError('unsupported expression')
+
+
 def prob_values(prob: str | float, pred: FloatArray, pi_se: FloatArray | None, pi_dist: str, pi_ddf: float | FloatArray | None) -> FloatArray | None:
-    """Probabilities that a true outcome is below/above a value (``prob='>0.2'``, ``'<0'``; a number means ``'>'``).
+    """Probabilities that a true outcome is below/above a value (``prob='>0.2'``, ``'<0'``, ``'>log(0.8)'``; a number means ``'>'``).
 
     ``None`` when the value cannot be parsed (metafor then drops ``prob``).
     """
     text = str(prob)
     lower_tail = '<' in text
-    try:
-        value = float(text.replace('<', '').replace('>', '').replace('=', ''))
-    except ValueError:
+    value = evaluate_cutoff(text.replace('<', '').replace('>', '').replace('=', ''))
+    if value is None:
         return None
     if pi_se is None:
         return numpy.full(pred.shape, math.nan)
@@ -281,13 +347,14 @@ def uni_location_model(x: metafopy.models.rma_uni.RMAResult, rows: metafopy.meth
         X_f=rows.X_f,
         not_na=rows.not_na,
         slab_f=rows.slab,
+        coef_names=x.coef_names,
     )
 
 
 @predict.register
 def predict_rma_uni(
     model: metafopy.models.rma_uni.RMAResult,
-    newmods: numpy.typing.ArrayLike | None = None,
+    newmods: NewMods | None = None,
     *,
     intercept: bool | None = None,
     tau2_levels: collections.abc.Sequence[str | int] | str | int | None = None,
@@ -376,7 +443,7 @@ def contrast_ddf(sandwich: metafopy.core.clubsandwich.Sandwich, X_new: FloatArra
 @predict.register
 def predict_rma_glmm(
     model: metafopy.models.glmm_result.GLMMResult,
-    newmods: numpy.typing.ArrayLike | None = None,
+    newmods: NewMods | None = None,
     *,
     intercept: bool | None = None,
     tau2_levels: collections.abc.Sequence[str | int] | str | int | None = None,
@@ -424,6 +491,7 @@ def predict_rma_glmm(
             X_f=rows.X_f,
             not_na=rows.not_na,
             slab_f=rows.slab,
+            coef_names=x.coef_names,
         ),
         newmods,
         intercept,
@@ -445,7 +513,7 @@ def predict_rma_glmm(
 @predict.register
 def predict_fixed_binary(
     model: metafopy.models.binary.FixedBinaryResult,
-    newmods: numpy.typing.ArrayLike | None = None,
+    newmods: NewMods | None = None,
     *,
     intercept: bool | None = None,
     tau2_levels: collections.abc.Sequence[str | int] | str | int | None = None,
@@ -534,20 +602,81 @@ class LocationModel:
     X_f: FloatArray | None = None
     not_na: numpy.typing.NDArray[numpy.bool_] | None = None
     slab_f: tuple[str, ...] | None = None
+    coef_names: tuple[str, ...] | None = None
 
 
-def new_moderators(x_p: int, int_incl: bool, newmods: numpy.typing.ArrayLike, intercept: bool | None) -> FloatArray:
-    """The model matrix for new moderator values (with the intercept column added unless ``intercept=False``).
+def string_names(labels: list[typing.Any]) -> list[str] | None:
+    """The labels as names, or ``None`` when they are not all strings (an index of row numbers carries no names)."""
+    return labels if all(isinstance(label, str) for label in labels) else None
+
+
+def named_newmods(newmods: typing.Any) -> tuple[numpy.typing.ArrayLike, list[str] | None]:
+    """The values of ``newmods`` and the names of its entries (a dict, a ``pandas.Series`` or a ``pandas.DataFrame``) or columns, if it has any."""
+    if isinstance(newmods, collections.abc.Mapping):
+        return list(newmods.values()), [str(name) for name in newmods]
+    if isinstance(newmods, pandas.Series):
+        return newmods.to_numpy(), string_names(list(newmods.index))
+    if isinstance(newmods, pandas.DataFrame):
+        return newmods.to_numpy(), string_names(list(newmods.columns))
+    return newmods, None
+
+
+def match_names(names: list[str], coef_names: collections.abc.Sequence[str]) -> list[int]:
+    """The position in ``coef_names`` of each name; a name may be shortened to any subsequence of the name it stands for (as in metafor).
 
     Raises:
-        metafopy.errors.InputError: the dimensions do not match the model.
+        metafopy.errors.InputError: a name is not found, matches several variables or the same variable is given twice, or a variable is missing.
     """
-    arr = numpy.asarray(newmods, dtype=numpy.float64)
+    pos: list[int] = []
+    for name in names:
+        dists = [len(target) - len(name) if is_subsequence(name, target) else math.inf for target in coef_names]
+        best = min(dists, default=math.inf)
+        if math.isinf(best):
+            raise metafopy.errors.InputError(f"Could not find variable '{name}' in the model.")
+        if dists.count(best) > 1:
+            raise metafopy.errors.InputError(f"Could not match up variable '{name}' uniquely to a variable in the model.")
+        pos.append(dists.index(best))
+    if len(set(pos)) != len(pos):
+        dups = ', '.join(dict.fromkeys(name for i, name in enumerate(names) if pos[i] in pos[:i]))
+        raise metafopy.errors.InputError(f'Found multiple matches for the same variable name ({dups}).')
+    if len(pos) != len(coef_names):
+        missing = [name for i, name in enumerate(coef_names) if i not in pos]
+        listed = ', '.join(missing[:3]) + (', ...' if len(missing) > 3 else '')
+        what = 'this variable' if len(missing) == 1 else 'these variables'
+        raise metafopy.errors.InputError(f"Argument 'newmods' does not specify values for {what}: {listed}")
+    return pos
+
+
+def is_subsequence(short: str, long: str) -> bool:
+    chars = iter(long)
+    return all(ch in chars for ch in short)
+
+
+def new_moderators(
+    x_p: int,
+    int_incl: bool,
+    newmods: typing.Any,
+    intercept: bool | None,
+    coef_names: collections.abc.Sequence[str] | None = None,
+) -> FloatArray:
+    """The model matrix for new moderator values (with the intercept column added unless ``intercept=False``).
+
+    A ``pandas.Series``, ``dict`` or ``pandas.DataFrame`` with names is matched to the moderators of the model by name when the model has
+    more than one moderator (``coef_names``), also by partial names (any subsequence of a name stands for it), as in metafor's ``predict()``.
+
+    Raises:
+        metafopy.errors.InputError: the dimensions do not match the model or the names cannot be matched to the moderators.
+    """
+    values, names = named_newmods(newmods)
+    arr = numpy.asarray(values, dtype=numpy.float64)
     n_mods = x_p - 1 if int_incl else x_p
     if arr.ndim == 0:
         arr = arr.reshape(1, 1)
     elif arr.ndim == 1:
         arr = arr[:, None] if n_mods == 1 else arr[None, :]
+    if names is not None and coef_names is not None and n_mods > 1 and len(names) == arr.shape[1] and all(names):
+        mod_names = list(coef_names)[1:] if int_incl else list(coef_names)
+        arr = arr[:, numpy.argsort(match_names(names, mod_names), kind='stable')]
     if int_incl and arr.shape[1] == x_p - 1:
         col = 1.0 if intercept is None or intercept else 0.0
         arr = numpy.column_stack([numpy.full(arr.shape[0], col), arr])
@@ -558,7 +687,7 @@ def new_moderators(x_p: int, int_incl: bool, newmods: numpy.typing.ArrayLike, in
 
 def location_prediction(
     x: LocationModel,
-    newmods: numpy.typing.ArrayLike | None,
+    newmods: NewMods | None,
     intercept: bool | None,
     transf: collections.abc.Callable[..., typing.Any] | None,
     targs: typing.Any,
@@ -591,7 +720,7 @@ def location_prediction(
         if not x.int_only:
             slab = x.slab if x.slab_f is None else x.slab_f
     else:
-        X_new = new_moderators(p, x.int_incl, newmods, intercept)
+        X_new = new_moderators(p, x.int_incl, newmods, intercept, x.coef_names)
 
     check_prob_adjust(prob, adjust)
     alpha = x.alpha if level is None else metafopy.models.rma_uni.level_to_alpha(level)
@@ -653,6 +782,7 @@ def location_prediction(
         pi_ddf=pi_ddf,
         prob=prob_out,
         X=X_new.copy() if addx else None,
+        x_names=tuple(x.coef_names) if addx and x.coef_names is not None else None,
         vcov=vcov_pred if transf is None else None,
     )
     keep, blank = rows_to_keep(pred, x.not_na, fitted_rows, na_action)
@@ -720,7 +850,7 @@ def fitted_levels(group: metafopy.models.mv_structs.Group | None, n_comp: int, n
 @predict.register
 def predict_rma_mv(
     model: metafopy.models.mv_result.RMAMVResult,
-    newmods: numpy.typing.ArrayLike | None = None,
+    newmods: NewMods | None = None,
     *,
     intercept: bool | None = None,
     tau2_levels: collections.abc.Sequence[str | int] | str | int | None = None,
@@ -802,7 +932,7 @@ def predict_rma_mv(
             if x.with_h:
                 gamma2_idx = fitted_levels(x.group_h, x.gamma2s, rows.not_na)
     else:
-        X_new = new_moderators(p, x.int_incl, newmods, intercept)
+        X_new = new_moderators(p, x.int_incl, newmods, intercept, x.coef_names)
         k_new = X_new.shape[0]
         if x.with_g:
             tau2_idx = numpy.zeros(k_new, dtype=numpy.intp) if x.tau2s == 1 else level_array(tau2_levels, g_labels, k_new, 'tau2_levels')
@@ -886,6 +1016,7 @@ def predict_rma_mv(
         pi_ddf=pi_ddf if pi_dist == 't' else None,
         prob=prob_out,
         X=X_new.copy() if addx else None,
+        x_names=tuple(x.coef_names) if addx and x.coef_names is not None else None,
         vcov=vcov_pred if transf is None else None,
     )
     keep, blank = rows_to_keep(pred, not_na, fitted_rows, na_action)

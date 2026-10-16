@@ -138,6 +138,91 @@ class RMAMVResult(metafopy.models.fit_methods.FitMethods):
         return pandas.Series(self.beta, index=list(self.coef_names), name='estimate')
 
     @property
+    def g_nlevels(self) -> tuple[int, int] | None:
+        """Number of levels of the inner and outer factor of the ``tau2``/``rho`` term in the fit (metafor's ``g.nlevels``), ``None`` without one."""
+        return None if self.group_g is None else self.group_g.nlevels
+
+    @property
+    def g_nlevels_f(self) -> tuple[int, int] | None:
+        """As :attr:`g_nlevels` before the rows with missing values were dropped (metafor's ``g.nlevels.f``)."""
+        return None if self.group_g is None else self.group_g.nlevels_f
+
+    @property
+    def g_levels_f(self) -> tuple[list[str], list[str]] | None:
+        """The levels of the inner and outer factor of the ``tau2``/``rho`` term before the rows with missing values were dropped (``g.levels.f``)."""
+        return None if self.group_g is None else self.group_g.levels_f
+
+    @property
+    def g_levels_k(self) -> FloatArray | None:
+        """Number of observations at each level of the inner factor of the ``tau2``/``rho`` term (metafor's ``g.levels.k``)."""
+        return None if self.group_g is None else self.group_g.levels_k
+
+    @property
+    def g_levels_comb_k(self) -> FloatArray | None:
+        """Number of observations at each combination of inner levels of the ``tau2``/``rho`` term (metafor's ``g.levels.comb.k``)."""
+        return None if self.group_g is None else self.group_g.levels_comb_k
+
+    @property
+    def h_nlevels(self) -> tuple[int, int] | None:
+        """As :attr:`g_nlevels` for the ``gamma2``/``phi`` term (metafor's ``h.nlevels``)."""
+        return None if self.group_h is None else self.group_h.nlevels
+
+    @property
+    def h_nlevels_f(self) -> tuple[int, int] | None:
+        """As :attr:`g_nlevels_f` for the ``gamma2``/``phi`` term (metafor's ``h.nlevels.f``)."""
+        return None if self.group_h is None else self.group_h.nlevels_f
+
+    @property
+    def h_levels_f(self) -> tuple[list[str], list[str]] | None:
+        """As :attr:`g_levels_f` for the ``gamma2``/``phi`` term (metafor's ``h.levels.f``)."""
+        return None if self.group_h is None else self.group_h.levels_f
+
+    @property
+    def h_levels_k(self) -> FloatArray | None:
+        """As :attr:`g_levels_k` for the ``gamma2``/``phi`` term (metafor's ``h.levels.k``)."""
+        return None if self.group_h is None else self.group_h.levels_k
+
+    @property
+    def h_levels_comb_k(self) -> FloatArray | None:
+        """As :attr:`g_levels_comb_k` for the ``gamma2``/``phi`` term (metafor's ``h.levels.comb.k``)."""
+        return None if self.group_h is None else self.group_h.levels_comb_k
+
+    def dimnames_of(self, group: metafopy.models.mv_structs.Group | None, struct: str, names: tuple[str, ...], size: int) -> tuple[str, ...]:
+        if group is None:
+            return ()
+        if struct in metafopy.models.mv_structs.SPATIAL:
+            return tuple(str(i + 1) for i in range(size))
+        if struct in metafopy.models.mv_structs.GENERAL:
+            return names[:-1]
+        return tuple(group.levels_f[0])
+
+    @property
+    def G_dimnames(self) -> tuple[str, ...]:
+        """The row and column names of ``G`` (the levels of the inner factor, or the inner variables for ``GEN``/``GDIAG``), as metafor sets them."""
+        return self.dimnames_of(self.group_g, self.struct[0], self.g_names, 0 if self.G is None else self.G.shape[0])
+
+    @property
+    def H_dimnames(self) -> tuple[str, ...]:
+        """The row and column names of ``H``, as :attr:`G_dimnames`."""
+        return self.dimnames_of(self.group_h, self.struct[1], self.h_names, 0 if self.H is None else self.H.shape[0])
+
+    @property
+    def G_frame(self) -> pandas.DataFrame | None:
+        """``G`` as a data frame with its row and column names, ``None`` without a ``tau2``/``rho`` term."""
+        if self.G is None:
+            return None
+        names = list(self.G_dimnames)
+        return pandas.DataFrame(self.G, index=names, columns=names)
+
+    @property
+    def H_frame(self) -> pandas.DataFrame | None:
+        """``H`` as a data frame with its row and column names, ``None`` without a ``gamma2``/``phi`` term."""
+        if self.H is None:
+            return None
+        names = list(self.H_dimnames)
+        return pandas.DataFrame(self.H, index=names, columns=names)
+
+    @property
     def k_eff(self) -> int:
         """Number of effective observations (the rows used in the fit), metafor's ``k.eff``."""
         return self.k

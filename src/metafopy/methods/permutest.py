@@ -88,6 +88,10 @@ class PermutestResult:
         cols.update({'pval': self.pval, 'ci.lb': self.ci_lb, 'ci.ub': self.ci_ub})
         return pandas.DataFrame(cols, index=list(self.coef_names))
 
+    def coef(self) -> pandas.Series:
+        """The estimated coefficients, indexed by name (``coef.permutest.rma.uni``)."""
+        return pandas.Series(self.beta, index=list(self.coef_names), name='estimate')
+
     def __str__(self) -> str:
         return format_permutest(self)
 

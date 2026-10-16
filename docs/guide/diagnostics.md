@@ -98,7 +98,8 @@ print(inf)
 ```
 
 The last column, `inf`, is empty unless a study is flagged as influential (as in metafor, by the usual cutoffs). The individual diagnostics are also available as
-`cooks_distance` and `dfbetas`. `plot_infl` plots them all:
+`cooks_distance` and `dfbetas`; `influence(res, measure='cooks.distance')`, `measure='dfbetas'` and `measure='rstudent'` return the same
+objects as those functions and `rstudent`, as in metafor. `plot_infl` plots them all:
 
 ```python
 import matplotlib.pyplot

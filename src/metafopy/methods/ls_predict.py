@@ -309,6 +309,7 @@ def predict_rma_ls(
         pi_ddf=pi_ddf if pi_dist == 't' else None,
         prob=prob_out,
         X=X_use if addx else None,
+        x_names=tuple(x.coef_names) if addx and X_use is not None and X_use.shape[1] == len(x.coef_names) else None,
         Z=Z_use if addz else None,
         vcov=vcov_pred if (vcov and not do_transf) else None,
     )
