@@ -524,6 +524,35 @@ def overlapping_labels(
     return hidden
 
 
+# R's keywords for the position of a legend as matplotlib's ``loc``
+LEGEND_POSITIONS: types.MappingProxyType[str, str] = types.MappingProxyType(
+    {
+        'bottom': 'lower center',
+        'bottomleft': 'lower left',
+        'bottomright': 'lower right',
+        'center': 'center',
+        'left': 'center left',
+        'right': 'center right',
+        'top': 'upper center',
+        'topleft': 'upper left',
+        'topright': 'upper right',
+    }
+)
+
+
+# the sides of the box drawn by R's ``bty`` (``"n"`` and unknown values draw none)
+BOX_SIDES: types.MappingProxyType[str, tuple[str, ...]] = types.MappingProxyType(
+    {
+        ']': ('top', 'right', 'bottom'),
+        '7': ('top', 'right'),
+        'c': ('top', 'left', 'bottom'),
+        'l': ('left', 'bottom'),
+        'o': ('top', 'right', 'left', 'bottom'),
+        'u': ('left', 'bottom', 'right'),
+    }
+)
+
+
 def plain_axes(
     ax: matplotlib.axes.Axes,
     ux: tuple[float, float],
@@ -542,16 +571,8 @@ def plain_axes(
     ax.set_xlim(ux)
     ax.set_ylim(uy)
     ax.set_autoscale_on(False)
-    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     for name in ('top', 'right', 'left', 'bottom'):
-        ax.spines[name].set_visible(False)
-    if bty == 'o':
-        # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
-        for name in ('top', 'right', 'left', 'bottom'):
-            ax.spines[name].set_visible(True)
-    elif bty == 'l':
-        ax.spines['left'].set_visible(True)
-        ax.spines['bottom'].set_visible(True)
+        ax.spines[name].set_visible(name in BOX_SIDES.get(bty, ()))
     if xat is None:
         ax.set_xticks([])
     else:

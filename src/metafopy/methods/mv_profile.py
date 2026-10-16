@@ -225,6 +225,7 @@ def profile_rma_mv(
     *,
     exp: bool = False,
     ax: typing.Any = None,
+    **plot_args: typing.Any,
 ) -> MVProfileResult | list[MVProfileResult]:
     """Profile the likelihood over one variance or correlation component of an ``rma.mv`` fit.
 
@@ -234,7 +235,9 @@ def profile_rma_mv(
     metafor's range around the estimate (a quarter to four times a variance, at least up to 0.1; the estimate +- 0.5 for a
     correlation). ``parallel`` (``'snow'`` or ``'multicore'``), ``ncpus`` and ``cl`` fit the models of the grid in a process
     pool, as for :func:`metafopy.profile` of selection models, and ``progbar=True`` prints a progress bar. ``plot=True``
-    draws the profiles with :func:`metafopy.plot.plot_profile` (metafor's defaults are ``plot=TRUE`` and ``progbar=TRUE``).
+    draws the profiles with :func:`metafopy.plot.plot_profile` (metafor's defaults are ``plot=TRUE`` and ``progbar=TRUE``). Further keyword arguments
+    (``pch``, ``cline``, ``refline``, ``xlab``, ``ylab``, ``main``, ``log``, ``cex``, ``lwd``) are passed on to :func:`metafopy.plot.plot_profile`, as
+    metafor's ``...`` is to ``plot.profile.rma``.
 
     Raises:
         metafopy.errors.InputError: an argument is invalid or the model has no such (estimated) component.
@@ -259,22 +262,22 @@ def profile_rma_mv(
             raise metafopy.errors.InputError('No components in the model for which a profile likelihood can be constructed.')
         sav = [profile_one(x, comp, pos, xlim, ylim, st, step_seq, lltol, exp, pool) for comp, pos in todo]
         if plot:
-            plot_all(sav, ax)
+            plot_all(sav, ax, plot_args)
         return sav[0] if len(sav) == 1 else sav
 
     comp, pos = component(x, chosen)
     out = profile_one(x, comp, pos, xlim, ylim, st, step_seq, lltol, exp, pool)
     if plot:
-        plot_all([out], ax)
+        plot_all([out], ax, plot_args)
     return out
 
 
-def plot_all(results: list[MVProfileResult], ax: typing.Any) -> None:
+def plot_all(results: list[MVProfileResult], ax: typing.Any, plot_args: collections.abc.Mapping[str, typing.Any]) -> None:
     """Draw each profile; several profiles go into a grid of panels (metafor's ``par(mfrow = n2mfrow(comps))``)."""
     # auditme: accept[in-function-import] metafopy.plot imports the methods, so the import is deferred to avoid a cycle
     import metafopy.plot.profile
 
-    metafopy.plot.profile.plot_profile(results[0] if len(results) == 1 else results, ax=ax)
+    metafopy.plot.profile.plot_profile(results[0] if len(results) == 1 else results, ax=ax, **plot_args)
 
 
 metafopy.methods.profile.profile.register(metafopy.models.mv_result.RMAMVResult, profile_rma_mv)  # type: ignore[arg-type]

@@ -8,6 +8,7 @@ import collections.abc
 import dataclasses
 import math
 import typing
+import warnings
 
 import matplotlib.axes
 import matplotlib.pyplot
@@ -143,6 +144,7 @@ def plot_infl(
     na_action: str = 'omit',
     mfrow: tuple[int, int] | None = None,
     ax: matplotlib.axes.Axes | None = None,
+    layout: object = None,
 ) -> PlotInflResult:
     """Plot the case-deletion diagnostics returned by :func:`~metafopy.influence` (``plot.infl.rma.uni``).
 
@@ -154,7 +156,8 @@ def plot_infl(
     diagnostics) or ``'exclude'``/``'pass'`` (keep them, joining the other points with a line in ``col_na``).
     The diagnostics are drawn into a grid of panels filling ``ax``, with the number of rows and columns of metafor's default
     (``par(mfrow = ...)``) unless ``mfrow=(rows, columns)`` is given, e.g. ``(8, 1)`` for one column of panels; the DFBETAS are drawn on a new figure if the
-    diagnostics are also plotted (or ``dfbsnew`` is true), as metafor starts a new page for them.
+    diagnostics are also plotted (or ``dfbsnew`` is true), as metafor starts a new page for them. ``layout`` is accepted for old code
+    and ignored with a warning, as metafor does.
 
     Returns a :class:`PlotInflResult` with the axes.
 
@@ -162,6 +165,8 @@ def plot_infl(
         metafopy.errors.ArgumentError: ``x`` is not an :class:`~metafopy.InfluenceResult` (e.g. an ``rma.mv`` fit: metafor has no ``influence.rma.mv``).
         metafopy.errors.InputError: an argument or the data is invalid.
     """
+    if layout is not None:
+        warnings.warn("Argument 'layout' has been deprecated.", stacklevel=2)
     if not isinstance(x, metafopy.methods.influence.InfluenceResult):
         raise metafopy.errors.ArgumentError('Argument \'x\' must be an object of class "infl.rma.uni" (the result of influence()).')
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists

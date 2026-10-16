@@ -1,5 +1,6 @@
 """Histograms drawn the way R's ``hist()`` does, with the tail shading of metafor's ``.coltail()`` (shared by the permutest and VIF plots)."""
 
+import collections.abc
 import contextlib
 import dataclasses
 import typing
@@ -66,11 +67,12 @@ def draw_histogram(
     freq: bool,
     ylim: tuple[float, float] | None = None,
     xaxis: bool = True,
+    xlim: collections.abc.Sequence[float] | None = None,
 ) -> Hist:
-    """``hist(values, breaks, col, border, main, xlab, freq, ylim)``: bars with R's axes (an axis line from the first to the last tick, no box)."""
+    """``hist(values, breaks, col, border, main, xlab, freq, ylim, xlim)``: bars with R's axes (an axis line from the first to the last tick, no box)."""
     h = histogram(values, breaks)
     height = h.counts if freq else h.density
-    xl = (float(h.breaks[0]), float(h.breaks[-1]))
+    xl = (float(h.breaks[0]), float(h.breaks[-1])) if xlim is None else (float(xlim[0]), float(xlim[1]))
     yl = (0.0, float(numpy.nanmax(height))) if ylim is None else ylim
     ux = metafopy.plot.rutils.usr_range(*xl)
     uy = metafopy.plot.rutils.usr_range(*yl)

@@ -9,6 +9,7 @@ doi:10.1111/j.0006-341X.1999.00151.x.
 import collections.abc
 import dataclasses
 import typing
+import warnings
 
 import matplotlib.axes
 import matplotlib.lines
@@ -96,6 +97,8 @@ def plot_permutest(
     p2defn: str | None = None,
     stat: str | None = None,
     ax: matplotlib.axes.Axes | None = None,
+    xlim: collections.abc.Sequence[float] | None = None,
+    layout: object = None,
 ) -> PlotPermutestResult:
     """Plot the permutation distributions of a :func:`~metafopy.permutest` result (``plot.permutest.rma.uni``).
 
@@ -108,12 +111,16 @@ def plot_permutest(
     null distribution (the density of the reference ``z``, ``t``, chi-square or ``F`` distribution), of the kernel density estimate of
     the permutation distribution (``adjust`` is its bandwidth adjustment) and of the vertical line at zero; a width of 0 leaves the element out.
     ``alternative``, ``p2defn`` and ``stat`` default to those of the test. ``legend`` (``True`` or a location) labels the two curves in the first panel.
+    ``xlim`` sets the limits of the horizontal axis of every panel (``hist()``'s ``xlim``, which metafor passes on through ``...``).
+    ``layout`` is accepted for old code and ignored with a warning, as metafor does.
 
     Returns a :class:`PlotPermutestResult` with the axes of the panels.
 
     Raises:
         metafopy.errors.InputError: an argument is invalid.
     """
+    if layout is not None:
+        warnings.warn("Argument 'layout' has been deprecated.", stacklevel=2)
     if trim >= 0.5:
         raise metafopy.errors.InputError("The value of 'trim' must be < 0.5.")
     alt = x.alternative if alternative is None else alternative
@@ -171,11 +178,10 @@ def plot_permutest(
         ]
         shown = [(label, color, width) for label, color, width in entries if width > 0]
         handles = [matplotlib.lines.Line2D([], [], color=metafopy.plot.draw.rcolor(color), linewidth=width) for _, color, width in shown]
-        location = {'topright': 'upper right', 'topleft': 'upper left', 'bottomright': 'lower right', 'bottomleft': 'lower left'}
         panel.legend(
             handles,
             [label for label, _, _ in shown],
-            loc=typing.cast(typing.Any, location.get(legend, legend) if isinstance(legend, str) else 'upper right'),
+            loc=typing.cast(typing.Any, metafopy.plot.draw.LEGEND_POSITIONS.get(legend, legend) if isinstance(legend, str) else 'upper right'),
             framealpha=1.0,
         )
 
@@ -194,7 +200,7 @@ def plot_permutest(
         if widths[1] > 0 or widths[2] > 0:
             plain = metafopy.plot.histplot.histogram(shown, breaks)
             ylim = (0.0, float(max(float(ys.max()) if widths[1] > 0 else 0.0, float(dy.max()) if widths[2] > 0 else 0.0, float(plain.density.max()))))
-        return metafopy.plot.histplot.draw_histogram(panel, shown, breaks, col=col_, border=border_, main=main, xlab=xlab, freq=freq, ylim=ylim)
+        return metafopy.plot.histplot.draw_histogram(panel, shown, breaks, col=col_, border=border_, main=main, xlab=xlab, freq=freq, ylim=ylim, xlim=xlim)
 
     def omnibus(panel: matplotlib.axes.Axes, pdist: FloatArray, obs: float, df1: int, df2: int | None, main: str) -> None:
         top = max(float(scipy.stats.chi2.ppf(0.995, df1) if df2 is None else scipy.stats.f.ppf(0.995, df1, df2)), float(numpy.nanmax(pdist)))

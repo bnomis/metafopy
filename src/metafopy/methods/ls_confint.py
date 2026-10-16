@@ -74,13 +74,15 @@ def confint_rma_ls(
     tol: float = metafopy.core.zeroin.DEFAULT_TOL,
     maxiter: int = 1000,
     eptries: int = 10,
+    xlim: collections.abc.Sequence[float] | None = None,
 ) -> metafopy.methods.confint.ConfintResult | list[metafopy.methods.confint.ConfintResult]:
     """CIs for a location-scale fit (``confint.rma.ls``).
 
     ``alpha`` (a 0-based position) requests a profile-likelihood CI for that scale coefficient; ``fixed=True`` gives Wald-type
     CIs for the location coefficients (``transf`` and ``targs`` apply to these). With neither, a profile-likelihood CI is
     computed for every estimated scale coefficient and a list is returned (a single result if there is one). ``control`` may
-    hold ``vc_min`` and ``vc_max``, the interval searched for the bounds.
+    hold ``vc_min`` and ``vc_max``, the interval searched for the bounds; ``xlim`` (metafor's ``...`` argument) is that interval
+    as ``(vc_min, vc_max)`` and wins over ``control``.
 
     Raises:
         metafopy.errors.InputError: an argument is invalid or the model has no such coefficient.
@@ -90,12 +92,16 @@ def confint_rma_ls(
         raise metafopy.errors.InputError("CI calculation not yet implemented for models fitted with 'optbeta=True'.")
     level_alpha = x.level if level is None else metafopy.models.rma_uni.level_to_alpha(level)
     con = {} if control is None else dict(control)
+    if xlim is not None:
+        if len(xlim) != 2:
+            raise metafopy.errors.InputError("Argument 'xlim' should be a vector of length 2.")
+        con['vc_min'], con['vc_max'] = float(xlim[0]), float(xlim[1])
 
     if not fixed and alpha is None:
         free = numpy.flatnonzero(~x.alpha_fix)
         if free.size == 0:
             raise metafopy.errors.InputError('No components for which a CI can be obtained.')
-        results = [confint_rma_ls(x, alpha=int(pos), level=level, control=control, tol=tol, maxiter=maxiter, eptries=eptries) for pos in free]
+        results = [confint_rma_ls(x, alpha=int(pos), level=level, control=control, tol=tol, maxiter=maxiter, eptries=eptries, xlim=xlim) for pos in free]
         out = [r for r in results if isinstance(r, metafopy.methods.confint.ConfintResult)]
         return out[0] if len(out) == 1 else out
 

@@ -416,12 +416,15 @@ def profile(
     plot: bool = False,
     exp: bool = False,
     ax: typing.Any = None,
+    **plot_args: typing.Any,
 ) -> SelProfileResult | list[SelProfileResult]:
     """Profile the likelihood of ``tau^2`` (``tau2=True``) or of a selection parameter (``delta=j``, 0-based).
 
     Without ``tau2`` and ``delta`` every estimated component is profiled and a list is returned (a single result if
     there is just one). ``steps`` is the number of equally spaced values in ``xlim`` or the values themselves.
-    ``plot=True`` draws the profile with :func:`metafopy.plot.plot_profile`.
+    ``plot=True`` draws the profile with :func:`metafopy.plot.plot_profile`. Further keyword arguments (``pch``, ``cline``, ``refline``, ``xlab``,
+    ``ylab``, ``main``, ``log``, ``cex``, ``lwd``) are passed on to :func:`metafopy.plot.plot_profile`, as metafor's ``...`` is to
+    ``plot.profile.rma``.
 
     As in metafor, ``parallel`` (``'snow'`` or ``'multicore'``) fits the models for the grid values in a process pool of ``ncpus``
     workers, or on the :class:`concurrent.futures.Executor` given as ``cl`` (``ncpus > 1`` implies ``'snow'``); the fits are
@@ -455,21 +458,21 @@ def profile(
             sav.append(profile_one(x, 'tau2', -1, xlim, ylim, st, step_seq, lltol, exp, **pool))
         sav.extend(profile_one(x, 'delta', pos, xlim, ylim, st, step_seq, lltol, exp, **pool) for pos in range(x.deltas) if not x.delta_fix[pos])
         if plot:
-            plot_all(sav, ax)
+            plot_all(sav, ax, plot_args)
         return sav[0] if len(sav) == 1 else sav
 
     comp, _, pos = component(x, tau2, delta)
     out = profile_one(x, comp, pos, xlim, ylim, st, step_seq, lltol, exp, **pool)
     if plot:
-        plot_all([out], ax)
+        plot_all([out], ax, plot_args)
     return out
 
 
-def plot_all(results: list[SelProfileResult], ax: typing.Any) -> None:
+def plot_all(results: list[SelProfileResult], ax: typing.Any, plot_args: collections.abc.Mapping[str, typing.Any]) -> None:
     # auditme: accept[in-function-import] metafopy.plot.profile imports the methods, so the import is deferred to avoid a cycle
     import metafopy.plot.profile
 
-    metafopy.plot.profile.plot_profile(results[0] if len(results) == 1 else results, ax=ax)
+    metafopy.plot.profile.plot_profile(results[0] if len(results) == 1 else results, ax=ax, **plot_args)
 
 
 def profile_fit(x: Sel, comp: str, pos: int, val: float) -> tuple[float, FloatArray, FloatArray, FloatArray] | None:

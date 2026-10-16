@@ -98,12 +98,15 @@ def profile_rma_uni(
     parallel: metafopy.core.parallel.Parallel = 'no',
     ncpus: int = 1,
     cl: concurrent.futures.Executor | None = None,
+    **plot_args: typing.Any,
 ) -> ProfileResult:
     """Profile the likelihood over ``tau^2`` (``steps`` equally spaced values in ``xlim``, or the values given as ``steps``).
 
     ``xlim`` defaults to the range spanned by the Q-profile CI for ``tau^2`` and
     the estimate (at least up to 0.1); with ``sqrt=True`` the grid is on the ``tau``
-    scale. With ``plot=True`` the profile is drawn with :func:`metafopy.plot.plot_profile`.
+    scale. With ``plot=True`` the profile is drawn with :func:`metafopy.plot.plot_profile`. Further keyword arguments (``pch``, ``cline``,
+    ``refline``, ``xlab``, ``ylab``, ``main``, ``log``, ``cex``, ``lwd``) are passed on to :func:`metafopy.plot.plot_profile`, as metafor's ``...`` is
+    to ``plot.profile.rma``.
     As in metafor, ``parallel`` (``'snow'`` or ``'multicore'``) refits the models in a process pool of ``ncpus``
     workers (or on the executor ``cl``) and ``progbar=True`` prints a progress bar to stderr; the result equals that
     of the serial run.
@@ -213,5 +216,5 @@ def profile_rma_uni(
     )
     if plot:
         # metafopy.plot.profile imports this module, so metafopy.plot is looked up when it is needed
-        importlib.import_module('metafopy.plot').plot_profile(out, ax=ax)
+        importlib.import_module('metafopy.plot').plot_profile(out, ax=ax, **plot_args)
     return out
