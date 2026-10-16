@@ -222,15 +222,26 @@ class SelmodelResult(metafopy.models.fit_methods.FitMethods):
 
     # -- accessors ----------------------------------------------------------------
 
-    def coef(self, type: typing.Literal['beta', 'delta', 'all'] = 'beta') -> pandas.Series:
-        """The coefficients (``'beta'``, the default), the selection parameters (``'delta'``) or both."""
+    @typing.overload
+    def coef(self, type: typing.Literal['beta', 'delta', 'all']) -> pandas.Series: ...
+
+    @typing.overload
+    def coef(self, type: None = None) -> dict[str, pandas.Series]: ...
+
+    def coef(self, type: typing.Literal['beta', 'delta', 'all'] | None = None) -> pandas.Series | dict[str, pandas.Series]:
+        """The coefficients and selection parameters as ``{'beta': ..., 'delta': ...}`` (as R's ``coef()``), or one of them with ``type``.
+
+        ``type='beta'`` or ``'delta'`` gives that part as a series and ``'all'`` both concatenated into one series.
+        """
         beta = pandas.Series(self.beta, index=list(self.coef_names), name='estimate')
         delta = pandas.Series(self.delta, index=list(self.delta_names), name='estimate')
+        if type == 'beta':
+            return beta
         if type == 'delta':
             return delta
         if type == 'all':
             return pandas.concat([beta, delta])
-        return beta
+        return {'beta': beta, 'delta': delta}
 
     @typing.overload
     def vcov(

@@ -122,6 +122,19 @@ class RMAResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_meth
 
     # -- accessors ---------------------------------------------------------
 
+    @property
+    def dfs(self) -> float | tuple[float, ...] | None:
+        """The degrees of freedom of a model made robust with :func:`metafopy.robust` (metafor's ``dfs``), ``None`` otherwise.
+
+        A single number (the number of clusters minus ``p``) for the default method and one value per coefficient for ``club_sandwich=True``,
+        for which ``ddf`` stays ``None`` because it holds a single number.
+        """
+        if self.robust is None:
+            return None
+        if self.robust.robumethod == 'clubSandwich':
+            return tuple(float(v) for v in self.robust.dfs)
+        return float(self.robust.dfs[0])
+
     def coef(self) -> pandas.Series:
         """Estimated coefficients, indexed by name."""
         return pandas.Series(self.beta, index=list(self.coef_names), name='estimate')
