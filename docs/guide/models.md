@@ -215,6 +215,12 @@ of the predicted value, normal distribution), `'riley'` (a t distribution with `
 fit class. `na_action=` (`'omit'`, `'exclude'`, `'pass'` or `'fail'`, standing for R's `options(na.action=)`) decides whether the fitted
 values of `fitted()`, `predict()` and `hatvalues()` cover the studies used in fitting or one value for each study of the data.
 
+`newmods=` may also be a `pandas.Series`, a `dict` or a one- or multi-row `pandas.DataFrame` with names. With more than one moderator the values
+are then matched to the moderators by name, in any order and also by partial names (a name is accepted when its letters occur in order in the
+moderator's name and only one moderator fits, so `{'yr': 1960, 'abl': 30}` matches `year` and `ablat`), as in R. `prob='>log(0.8)'` evaluates the
+cutoff (arithmetic and common functions such as `log`, `exp` and `sqrt`), and `addx=True` adds the model matrix as columns `X.intrcpt`, `X.ablat`, ... to the
+printed result and to `to_frame()`.
+
 ### confint
 
 For a random-effects model, `confint` gives intervals for tau^2, tau, I^2 and H^2. The default is the Q-profile method of
@@ -310,6 +316,9 @@ print(profile(rma('yi', 'vi', data=dat)).tau2[:3])
 ```text
 [0.11969531 0.17189484 0.22409436]
 ```
+
+`profile(..., pred=True, newmods=...)` adds the predicted values and their interval bounds at each grid value (`pred`, `pred_ci_lb`, `pred_ci_ub`,
+`pred_pi_lb`, `pred_pi_ub`) and `blup=True` the BLUPs (`blup`, `blup_se`, `blup_pi_lb`, `blup_pi_ub`) to the result.
 
 ### Residuals and BLUPs
 
