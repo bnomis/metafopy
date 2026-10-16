@@ -13,6 +13,7 @@ import numpy
 import numpy.typing
 import pandas
 
+import metafopy.core.parallel
 import metafopy.errors
 import metafopy.methods.binary
 import metafopy.methods.common
@@ -53,15 +54,21 @@ def baujat(
     cex: float | None = None,
     symbol: str | int | collections.abc.Sequence[int] = 'ids',
     grid: bool | str = True,
+    progbar: bool = False,
     *,
     ax: matplotlib.axes.Axes | None = None,
+    bty: str = 'o',
+    las: int | None = None,
 ) -> BaujatResult:
     """Baujat plot of a fitted ``rma_uni``, ``rma_mh`` or ``rma_peto`` model (``baujat.rma``).
 
     ``symbol`` is ``'ids'`` (the 1-based study numbers), ``'slab'`` (the study labels) or one plotting symbol
-    (a number, or one per study); ``grid`` adds a grid (a colour string sets its colour). Each study is
+    (a number, or one per study); ``grid`` adds a grid (a colour string sets its colour). ``progbar=True`` prints a progress bar to
+    stderr while the studies are left out in turn. Each study is
     left out in turn and the model refitted; the x-axis shows the study's squared Pearson residual and the y-axis
     the squared change in its fitted value, standardised by the variance of the prediction without the study.
+    ``bty`` (the type of box around the plot: ``'o'``, ``'l'``, ``'7'``, ``'c'``, ``'u'``, ``']'`` or ``'n'``) and ``las`` (the
+    orientation of the tick labels, 0 to 3) are passed on to ``plot()`` by metafor.
 
     Returns a :class:`BaujatResult`.
 
@@ -74,9 +81,9 @@ def baujat(
     axx = metafopy.plot.rutils.get_ax(ax)
     grid_col = grid if isinstance(grid, str) else metafopy.plot.rutils.coladj(-0.2)
     if isinstance(x, metafopy.models.binary.FixedBinaryResult):
-        xhati, yhati, rows, k_all = binary_coordinates(x)
+        xhati, yhati, rows, k_all = binary_coordinates(x, progbar)
     else:
-        xhati, yhati, rows, k_all = uni_coordinates(x)
+        xhati, yhati, rows, k_all = uni_coordinates(x, progbar)
     k = int(rows.shape[0])
     int_only = x.int_only
     ids = tuple(int(i) + 1 for i in rows)
@@ -94,7 +101,7 @@ def baujat(
         ylab = 'Influence on Overall Result' if int_only else 'Influence on Fitted Value'
     xl = (float(numpy.nanmin(xhati)), float(numpy.nanmax(xhati))) if xlim is None else (float(xlim[0]), float(xlim[1]))
     yl = (float(numpy.nanmin(yhati)), float(numpy.nanmax(yhati))) if ylim is None else (float(ylim[0]), float(ylim[1]))
-    xt, yt = metafopy.plot.plain.plain_plot(axx, xl, yl, xlab, ylab)
+    xt, yt = metafopy.plot.plain.plain_plot(axx, xl, yl, xlab, ylab, bty=bty, las=las)
     if grid is not False:  # True or a colour
         assert xt is not None
         assert yt is not None
@@ -120,13 +127,13 @@ def baujat(
     return BaujatResult(axx, xhati, yhati, ids, slab)
 
 
-def uni_coordinates(x: metafopy.models.rma_uni.RMAResult) -> tuple[FloatArray, FloatArray, numpy.typing.NDArray[numpy.intp], int]:
+def uni_coordinates(x: metafopy.models.rma_uni.RMAResult, progbar: bool = False) -> tuple[FloatArray, FloatArray, numpy.typing.NDArray[numpy.intp], int]:
     """The squared Pearson residuals, the influence values, the 0-based rows of the studies and ``k_all`` of an ``rma_uni`` fit."""
     k = x.k
     pred_full = x.X @ x.beta
     delpred = numpy.full(k, numpy.nan)
     vdelpred = numpy.full(k, numpy.nan)
-    for i in range(k):
+    for i in metafopy.core.parallel.progress(range(k), k, progbar):
         res = metafopy.methods.common.refit(x, numpy.delete(numpy.arange(k), i))
         if res is None:
             continue
@@ -139,13 +146,16 @@ def uni_coordinates(x: metafopy.models.rma_uni.RMAResult) -> tuple[FloatArray, F
     return xhati, yhati, numpy.flatnonzero(x.data.keep), x.data.k_all
 
 
-def binary_coordinates(x: metafopy.models.binary.FixedBinaryResult) -> tuple[FloatArray, FloatArray, numpy.typing.NDArray[numpy.intp], int]:
+def binary_coordinates(
+    x: metafopy.models.binary.FixedBinaryResult, progbar: bool = False
+) -> tuple[FloatArray, FloatArray, numpy.typing.NDArray[numpy.intp], int]:
     """As :func:`uni_coordinates` for an ``rma_mh`` or ``rma_peto`` fit: each table with complete counts is left out in turn (``baujat.rma``)."""
     t = x.tables
     beta = float(x.beta[0])
     delpred = numpy.full(t.k_f, numpy.nan)
     vdelpred = numpy.full(t.k_f, numpy.nan)
-    for i in numpy.flatnonzero(t.not_na):
+    todo = numpy.flatnonzero(t.not_na)
+    for i in metafopy.core.parallel.progress(todo, todo.shape[0], progbar):
         sub = numpy.ones(t.k_f, dtype=numpy.bool_)
         sub[i] = False
         res = metafopy.methods.binary.refit_tables(x, t.cells_f, sub)

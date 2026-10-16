@@ -23,8 +23,10 @@ import scipy.stats
 
 import metafopy.core.parallel
 import metafopy.errors
+import metafopy.methods.blup
 import metafopy.methods.common
 import metafopy.methods.confint
+import metafopy.methods.predict
 import metafopy.models.rma_uni
 import metafopy.models.tau2
 
@@ -39,7 +41,9 @@ class ProfileResult:
 
     ``tau2`` holds the grid (``tau`` values for ``sqrt=True``), ``ll`` the
     (log-)likelihoods, ``beta``/``ci_lb``/``ci_ub`` the coefficient estimates and CI bounds
-    at each grid value, ``vc`` the model's own estimate and ``maxll`` its log-likelihood.
+    at each grid value, ``vc`` the model's own estimate and ``maxll`` its log-likelihood. With ``pred=True`` the predicted values and their
+    interval bounds at each grid value are in ``pred``, ``pred_ci_lb``, ``pred_ci_ub``, ``pred_pi_lb`` and ``pred_pi_ub`` and with ``blup=True``
+    the BLUPs in ``blup``, ``blup_se``, ``blup_pi_lb`` and ``blup_pi_ub`` (one row per prediction or study and one column per grid value).
     """
 
     tau2: FloatArray
@@ -56,6 +60,15 @@ class ProfileResult:
     H2: FloatArray
     exp: bool = False
     sqrt: bool = False
+    pred: pandas.DataFrame | None = None
+    pred_ci_lb: pandas.DataFrame | None = None
+    pred_ci_ub: pandas.DataFrame | None = None
+    pred_pi_lb: pandas.DataFrame | None = None
+    pred_pi_ub: pandas.DataFrame | None = None
+    blup: pandas.DataFrame | None = None
+    blup_se: pandas.DataFrame | None = None
+    blup_pi_lb: pandas.DataFrame | None = None
+    blup_pi_ub: pandas.DataFrame | None = None
 
     def to_frame(self) -> pandas.DataFrame:
         return pandas.DataFrame({'tau' if self.sqrt else 'tau2': self.tau2, 'll': self.ll})
@@ -74,12 +87,39 @@ def profile(fitted: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> Prof
     raise metafopy.errors.ArgumentError(f'profile() not implemented for {type(fitted).__name__}')
 
 
-def profile_fit(x: metafopy.models.rma_uni.RMAResult, tau2: float) -> tuple[float, FloatArray, FloatArray, FloatArray, float, float] | None:
-    """The refit of ``x`` with ``tau^2`` fixed at ``tau2``: log-likelihood, coefficients, CI bounds, I^2 and H^2 (``None`` if it fails)."""
+type Extras = tuple[dict[str, FloatArray], dict[str, FloatArray]]
+type FitResult = tuple[float, FloatArray, FloatArray, FloatArray, float, float, Extras]
+
+PRED_KEYS = ('pred', 'ci_lb', 'ci_ub', 'pi_lb', 'pi_ub')
+BLUP_KEYS = ('pred', 'se', 'pi_lb', 'pi_ub')
+
+
+def profile_fit(x: metafopy.models.rma_uni.RMAResult, tau2: float, pred: bool = False, blup: bool = False, newmods: typing.Any = None) -> FitResult | None:
+    """The refit of ``x`` with ``tau^2`` fixed at ``tau2``: log-likelihood, coefficients, CI bounds, I^2, H^2 and, if asked, predictions and BLUPs.
+
+    ``None`` if the refit fails.
+    """
     fit = metafopy.methods.common.refit_arrays(x, tau2=tau2)
     if fit is None:
         return None
-    return fit.logLik(), fit.beta, fit.ci_lb, fit.ci_ub, fit.I2, fit.H2
+    pred_out: dict[str, FloatArray] = {}
+    blup_out: dict[str, FloatArray] = {}
+    if pred:
+        predres = metafopy.methods.predict.predict(fit, newmods=newmods)
+        pred_out = {key: getattr(predres, key) for key in PRED_KEYS}
+    if blup:
+        blupres = metafopy.methods.blup.blup(fit)
+        blup_out = {key: getattr(blupres, key) for key in BLUP_KEYS}
+    return fit.logLik(), fit.beta, fit.ci_lb, fit.ci_ub, fit.I2, fit.H2, (pred_out, blup_out)
+
+
+def grid_frame(columns: list[FloatArray | None], labels: collections.abc.Sequence[str]) -> pandas.DataFrame:
+    """One column per grid value (NaN where the refit failed), one row per label."""
+    out = numpy.full((len(labels), len(columns)), numpy.nan)
+    for j, col in enumerate(columns):
+        if col is not None:
+            out[:, j] = col
+    return pandas.DataFrame(out, index=list(labels))
 
 
 @profile.register
@@ -98,15 +138,22 @@ def profile_rma_uni(
     parallel: metafopy.core.parallel.Parallel = 'no',
     ncpus: int = 1,
     cl: concurrent.futures.Executor | None = None,
+    pred: bool = False,
+    blup: bool = False,
+    newmods: numpy.typing.ArrayLike | collections.abc.Mapping[str, float] | pandas.Series | pandas.DataFrame | None = None,
+    **plot_args: typing.Any,
 ) -> ProfileResult:
     """Profile the likelihood over ``tau^2`` (``steps`` equally spaced values in ``xlim``, or the values given as ``steps``).
 
     ``xlim`` defaults to the range spanned by the Q-profile CI for ``tau^2`` and
     the estimate (at least up to 0.1); with ``sqrt=True`` the grid is on the ``tau``
-    scale. With ``plot=True`` the profile is drawn with :func:`metafopy.plot.plot_profile`.
+    scale. With ``plot=True`` the profile is drawn with :func:`metafopy.plot.plot_profile`. Further keyword arguments (``pch``, ``cline``,
+    ``refline``, ``xlab``, ``ylab``, ``main``, ``log``, ``cex``, ``lwd``) are passed on to :func:`metafopy.plot.plot_profile`, as metafor's ``...`` is
+    to ``plot.profile.rma``.
     As in metafor, ``parallel`` (``'snow'`` or ``'multicore'``) refits the models in a process pool of ``ncpus``
     workers (or on the executor ``cl``) and ``progbar=True`` prints a progress bar to stderr; the result equals that
-    of the serial run.
+    of the serial run. ``pred=True`` adds the predicted values (for ``newmods``, or the fitted values without it, as :func:`metafopy.predict`) and
+    ``blup=True`` the BLUPs (:func:`metafopy.blup`) of each refit to the result, as metafor's undocumented ``pred``, ``blup`` and ``newmods`` arguments.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
@@ -115,6 +162,13 @@ def profile_rma_uni(
     parallel = metafopy.core.parallel.resolve_parallel(parallel, ncpus, cl)
     if x.method in metafopy.models.tau2.FIXED_EFFECTS:
         raise metafopy.errors.InputError('Cannot profile tau^2 parameter for equal/fixed-effects models.')
+    pred_slab: tuple[str, ...] | None = None
+    if pred:
+        predres = metafopy.methods.predict.predict(x, newmods=newmods)
+        if predres.pred.shape[0] == 0:
+            raise metafopy.errors.InputError('Cannot compute predicted values.')
+        n_pred = predres.pred.shape[0]
+        pred_slab = predres.slab if predres.slab is not None else tuple(str(i + 1) if n_pred > 1 else '' for i in range(n_pred))
     st = numpy.atleast_1d(numpy.asarray(steps, dtype=numpy.float64))
     if numpy.isnan(st).any():
         raise metafopy.errors.InputError("No missing values allowed in 'steps' argument.")
@@ -164,12 +218,18 @@ def profile_rma_uni(
     ci_ub = numpy.full_like(beta, numpy.nan)
     I2 = numpy.full(len(tau2_grid), numpy.nan)
     H2 = numpy.full(len(tau2_grid), numpy.nan)
-    one = functools.partial(profile_fit, x)
+    one = functools.partial(profile_fit, x, pred=pred, blup=blup, newmods=newmods)
     fits = metafopy.core.parallel.map_sims(one, [float(t2) for t2 in tau2_grid], parallel=parallel, ncpus=ncpus, cl=cl, progbar=progbar)
+    pred_cols: list[dict[str, FloatArray] | None] = []
+    blup_cols: list[dict[str, FloatArray] | None] = []
     for i, fit in enumerate(fits):
         if fit is None:
+            pred_cols.append(None)
+            blup_cols.append(None)
             continue
-        lls[i], beta[i], ci_lb[i], ci_ub[i], I2[i], H2[i] = fit
+        lls[i], beta[i], ci_lb[i], ci_ub[i], I2[i], H2[i], (pred_i, blup_i) = fit
+        pred_cols.append(pred_i)
+        blup_cols.append(blup_i)
 
     vc = math.sqrt(x.tau2) if sqrt else x.tau2
     maxll = x.logLik()
@@ -195,6 +255,14 @@ def profile_rma_uni(
             raise metafopy.errors.InputError("Argument 'ylim' should be a vector of length 2.")
         yl = (float(min(ylim)), float(max(ylim)))
 
+    extra: dict[str, pandas.DataFrame] = {}
+    if pred and pred_slab is not None:
+        for key in PRED_KEYS:
+            extra['pred' if key == 'pred' else f'pred_{key}'] = grid_frame([None if c is None else c[key] for c in pred_cols], pred_slab)
+    if blup:
+        for key in BLUP_KEYS:
+            extra['blup' if key == 'pred' else f'blup_{key}'] = grid_frame([None if c is None else c[key] for c in blup_cols], x.slab)
+
     out = ProfileResult(
         tau2=vcs,
         ll=lls,
@@ -210,8 +278,9 @@ def profile_rma_uni(
         H2=H2,
         exp=exp,
         sqrt=sqrt,
+        **extra,
     )
     if plot:
         # metafopy.plot.profile imports this module, so metafopy.plot is looked up when it is needed
-        importlib.import_module('metafopy.plot').plot_profile(out, ax=ax)
+        importlib.import_module('metafopy.plot').plot_profile(out, ax=ax, **plot_args)
     return out

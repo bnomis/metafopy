@@ -28,6 +28,7 @@ def coef_table(
     ddf: int | None,
     fixed: FloatArray | None,
     digits: int,
+    signif_stars: bool = True,
 ) -> str:
     """A coefficient table; the entries of fixed coefficients (``fixed``) other than the estimate print as ``---``."""
     tdist = ddf is not None
@@ -54,6 +55,7 @@ def coef_table(
             row = [row[0], *['---' if cell == 'NA' else cell for cell in row[1:]]]
         row.append(metafopy.printing.signif_stars(float(pval[j])))
         rows.append(row)
+    header, rows = metafopy.printing.drop_stars(header, rows, signif_stars)
     return metafopy.printing.fmt_table(header, rows, row_names=None if estimate.shape[0] == 1 else list(names))
 
 
@@ -63,7 +65,9 @@ def test_line(stat: float, df: tuple[int, float | None], p: float, digits: int, 
     return f'{name}(df = {df[0]}) = {metafopy.printing.fmt_num(stat, digits)}, p-val {metafopy.models.rma_uni.pfmt(p, digits)}'
 
 
-def format_result(res: metafopy.models.rma_ls_result.RMALSResult, digits: int = 4, showfit: bool = False) -> str:
+def format_result(
+    res: metafopy.models.rma_ls_result.RMALSResult, digits: int = 4, showfit: bool = False, signif_stars: bool = True, signif_legend: bool = True
+) -> str:
     # auditme: accept[literal-duplication] metafor option values and column labels repeated as in the R source
     out: list[str] = ['']
     out.append(f'Location-Scale Model (k = {res.k}; tau^2 estimator: {res.method})')
@@ -90,7 +94,7 @@ def format_result(res: metafopy.models.rma_ls_result.RMALSResult, digits: int = 
 
     out.append('Model Results (Location):')
     out.append('')
-    out.append(coef_table(res.beta, res.se, res.zval, res.pval, res.ci_lb, res.ci_ub, res.coef_names, res.ddf, None, digits))
+    out.append(coef_table(res.beta, res.se, res.zval, res.pval, res.ci_lb, res.ci_ub, res.coef_names, res.ddf, None, digits, signif_stars))
     out.append('')
 
     if res.q > 1 and not math.isnan(res.QS):
@@ -103,10 +107,19 @@ def format_result(res: metafopy.models.rma_ls_result.RMALSResult, digits: int = 
     out.append('')
     fixed = numpy.where(res.alpha_fix, res.alpha, math.nan)
     out.append(
-        coef_table(res.alpha, res.se_alpha, res.zval_alpha, res.pval_alpha, res.ci_lb_alpha, res.ci_ub_alpha, res.alpha_names, res.ddf_alpha, fixed, digits)
+        coef_table(
+            res.alpha,
+            res.se_alpha,
+            res.zval_alpha,
+            res.pval_alpha,
+            res.ci_lb_alpha,
+            res.ci_ub_alpha,
+            res.alpha_names,
+            res.ddf_alpha,
+            fixed,
+            digits,
+            signif_stars,
+        )
     )
-    out.append('')
-    out.append('---')
-    out.append("Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1")
-    out.append('')
+    out += metafopy.printing.signif_footer(signif_legend)
     return '\n'.join(out)

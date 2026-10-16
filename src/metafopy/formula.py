@@ -9,8 +9,11 @@ Random-effects formulas for ``rma.mv`` (``~ 1 | study``, ``~ 1 | a/b``,
 variance structures they imply are built by the model code.
 """
 
+import collections.abc
 import dataclasses
+import inspect
 import re
+import typing
 
 import formulaic.model_matrix
 import numpy
@@ -19,10 +22,12 @@ import pandas
 
 import metafopy.errors
 
-__all__ = ['RandomTerm', 'design_matrix', 'parse_random', 'r_column_name']
+__all__ = ['RandomTerm', 'design_matrix', 'parse_random', 'r_column_name', 'r_factor', 'r_relevel', 'r_scale']
 
 LEVEL = re.compile(r'\[(?:T\.)?(.*?)\]')
 CWRAP = re.compile(r'^C\((.*?)(?:,.*)?\)$')
+
+type FloatArray = numpy.typing.NDArray[numpy.float64]
 
 
 def r_column_name(name: str) -> str:
@@ -47,6 +52,88 @@ def r_column_name(name: str) -> str:
     return ':'.join(parts)
 
 
+def r_factor(
+    x: typing.Any, levels: collections.abc.Sequence[typing.Any] | None = None, labels: collections.abc.Sequence[typing.Any] | None = None
+) -> pandas.Categorical:
+    """R's ``factor(x, levels, labels)``: sorted unique non-missing values are the levels unless ``levels`` is given.
+
+    See https://stat.ethz.ch/R-manual/R-devel/library/base/html/factor.html.
+
+    Raises:
+        metafopy.errors.InputError: ``labels`` does not match the levels.
+    """
+    values = pandas.Series(x)
+    cat = pandas.Categorical(values, categories=None if levels is None else list(levels))
+    if labels is not None:
+        if len(labels) != len(cat.categories):
+            raise metafopy.errors.InputError("invalid 'labels': the length must equal the number of levels")
+        cat = cat.rename_categories(dict(zip(cat.categories, labels, strict=True)))
+    return cat
+
+
+def r_relevel(x: typing.Any, ref: typing.Any) -> pandas.Categorical:
+    """R's ``relevel(x, ref)``: move the level ``ref`` (a level or its 1-based position) to the front of the levels of the factor ``x``.
+
+    See https://stat.ethz.ch/R-manual/R-devel/library/stats/html/relevel.html.
+
+    Raises:
+        metafopy.errors.InputError: ``ref`` is not a level of ``x``.
+    """
+    cat = (
+        x
+        if isinstance(x, pandas.Categorical)
+        else pandas.Categorical(x)
+        if isinstance(x, pandas.Series) and isinstance(x.dtype, pandas.CategoricalDtype)
+        else None
+    )
+    if cat is None:
+        raise metafopy.errors.InputError("'relevel' only for (unordered) factors")
+    levels = list(cat.categories)
+    if ref in levels:
+        pos = levels.index(ref)
+    elif isinstance(ref, int) and not isinstance(ref, bool) and 1 <= ref <= len(levels):
+        pos = ref - 1
+    else:
+        raise metafopy.errors.InputError(f"'ref' must be an existing level, got {ref!r}")
+    return typing.cast(pandas.Categorical, cat.reorder_categories([levels[pos], *levels[:pos], *levels[pos + 1 :]]))
+
+
+def r_scale(x: typing.Any, center: bool | float = True, scale: bool | float = True) -> FloatArray:
+    """R's ``scale(x, center, scale)`` for a vector: centre and scale ignoring missing values.
+
+    ``center=True`` subtracts the mean; ``scale=True`` divides by the root mean square of the centred values with ``n - 1`` degrees of freedom (the
+    standard deviation when centred). Numeric values are used as the centre and the scale. See
+    https://stat.ethz.ch/R-manual/R-devel/library/base/html/scale.html.
+    """
+    arr = numpy.asarray(x, dtype=numpy.float64).copy()
+    ok = ~numpy.isnan(arr)
+    if not isinstance(center, bool):
+        arr = arr - float(center)
+    elif center and ok.any():
+        arr = arr - arr[ok].mean()
+    if not isinstance(scale, bool):
+        arr = arr / float(scale)
+    elif scale and ok.any():
+        n = int(ok.sum())
+        with numpy.errstate(invalid='ignore', divide='ignore'):
+            arr = arr / numpy.sqrt(float((arr[ok] ** 2).sum()) / (n - 1))
+    return arr
+
+
+def caller_namespace() -> dict[str, typing.Any]:
+    """The variables of the code that called into metafopy (the environment R evaluates a formula in), without metafopy's own frames."""
+    frame = inspect.currentframe()
+    try:
+        while frame is not None:
+            module = str(frame.f_globals.get('__name__', ''))
+            if module != 'metafopy' and not module.startswith('metafopy.'):
+                return {**frame.f_globals, **frame.f_locals}
+            frame = frame.f_back
+    finally:
+        del frame
+    return {}
+
+
 def design_matrix(formula: str, data: pandas.DataFrame) -> tuple[numpy.typing.NDArray[numpy.float64], tuple[str, ...], numpy.typing.NDArray[numpy.bool_]]:
     """Build a model matrix from a one-sided formula.
 
@@ -63,7 +150,11 @@ def design_matrix(formula: str, data: pandas.DataFrame) -> tuple[numpy.typing.ND
         lhs, _, rhs = rhs.partition('~')
         if lhs.strip():
             raise metafopy.errors.InputError(f'expected a one-sided formula, got {formula!r}')
-    mm = formulaic.model_matrix(rhs, data, na_action='ignore')
+    context: dict[str, typing.Any] = {'factor': r_factor, 'relevel': r_relevel, 'scale': r_scale}
+    for name, value in caller_namespace().items():
+        if name not in context or callable(value):
+            context[name] = value
+    mm = formulaic.model_matrix(rhs, data, na_action='ignore', context=context)
     X = numpy.asarray(mm.to_numpy(dtype=float), dtype=numpy.float64)
     if X.ndim == 1:
         X = X[:, None]

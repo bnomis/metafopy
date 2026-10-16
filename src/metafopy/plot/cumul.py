@@ -66,7 +66,7 @@ def forest_cumul(
     width: int | collections.abc.Sequence[int] | None = None,
     xlab: str | collections.abc.Sequence[str] | None = None,
     ilab: typing.Any = None,
-    ilab_lab: collections.abc.Sequence[str] | None = None,
+    ilab_lab: str | collections.abc.Sequence[str] | None = None,
     ilab_xpos: numpy.typing.ArrayLike | None = None,
     ilab_pos: int | collections.abc.Sequence[int] | None = None,
     transf: Func | None = None,
@@ -185,13 +185,15 @@ def plot_cumul(
     *,
     las: int = 0,
     ax: matplotlib.axes.Axes | None = None,
+    addgrid: bool | str | None = None,
 ) -> PlotCumulResult:
     """Plot of the results of a cumulative meta-analysis (``plot.cumul.rma``).
 
     The pooled estimates (horizontal axis) are plotted against the amount of heterogeneity (``yaxis`` ``'tau2'``, ``'tau'``, ``'I2'`` or
     ``'H2'``; ``'tau2'`` unless the model is a fixed-effects one), joined in order by a line whose colour runs from the first of ``cols`` to
     the last (light to dark by default). ``transf`` transforms the estimates, ``atransf`` only the labels of the horizontal axis,
-    ``digits`` are the digits of the labels of the two axes and ``grid`` draws the dotted grid.
+    ``digits`` are the digits of the labels of the two axes and ``grid`` draws the dotted grid (a colour for the lines of the grid; ``addgrid`` is the
+    old spelling that metafor reads from ``...`` and wins).
 
     Returns a :class:`PlotCumulResult` with the plotted values and their colours.
 
@@ -209,6 +211,8 @@ def plot_cumul(
             raise metafopy.errors.InputError(f'yaxis must be one of {YAXES}')
         if x.tau2 is None:
             raise metafopy.errors.InputError(f'Cannot use yaxis="{yaxis}" for equal/fixed-effects models.')
+    if addgrid is not None:
+        grid = addgrid
     axx = metafopy.plot.rutils.get_ax(ax)
     cols_c = [metafopy.plot.rutils.coladj(-0.2), metafopy.plot.rutils.coladj(-0.8)] if cols is None else list(cols)
     if digits is None:

@@ -89,7 +89,12 @@ class GLMMControl:
     """Control settings of ``rma_glmm`` (names follow metafor's ``control`` list with ``.`` replaced by ``_``).
 
     ``int_rel_tol`` and ``int_subdivisions`` are the ``rel.tol`` and ``subdivisions`` of the ``intCtrl``
-    list used for the integral in the exact conditional model; ``hessian_r`` is numDeriv's ``r``.
+    list used for the integral in the exact conditional model; ``hessian_r`` is numDeriv's ``r``. ``hesspack`` (``'numDeriv'``,
+    ``'pracma'`` or ``'calculus'``) and ``hessian_ctrl`` (metafor's ``hessianCtrl``: ``d``, ``eps``, ``r``, ``v`` for numDeriv, ``h`` for
+    pracma, ``accuracy`` and ``stepsize`` for calculus) choose the numerical Hessian of the exact conditional model; ``dnchgcalc``
+    (``'dFNCHypergeo'`` or ``'dnoncenhypergeom'``) and ``dnchgprec`` (the precision of ``BiasedUrn::dFNCHypergeo``, 1e-10 in
+    metafor) its density. Without either entry the Hessian uses the untruncated density; with ``dnchgcalc='dFNCHypergeo'`` or a
+    ``dnchgprec`` it uses :func:`metafopy.core.nchg.fisher_log_probability`, the port of BiasedUrn's truncating algorithm.
     ``package`` is the package that fits the mixed models: ``'lme4'``, ``'GLMMadaptive'`` or ``'glmmTMB'``.
     ``optimizer`` is ``'nlminb'`` (the default: a quasi-Newton maximisation of the exact likelihood of ``model='CM.EL'``),
     ``'clogit'`` or ``'clogistic'`` (``survival::clogit()`` / ``Epi::clogistic()``, only for the fixed-effects methods) or one of the
@@ -107,6 +112,10 @@ class GLMMControl:
     int_rel_tol: float = sys.float_info.epsilon**0.25
     int_subdivisions: int = 100
     hessian_r: int = 16
+    hesspack: str = 'numDeriv'
+    hessian_ctrl: collections.abc.Mapping[str, typing.Any] = dataclasses.field(default_factory=dict)
+    dnchgcalc: str | None = None
+    dnchgprec: float | None = None
     gtol: float = 1e-7
     optimizer: str = 'nlminb'
     optmethod: str = 'BFGS'
@@ -634,7 +643,7 @@ def conditional_logistic(spec: FitSpec, base: SingleLevel) -> ModelFit:
         raise metafopy.errors.InputError(f"Cannot use '{optimizer}' optimizer when k=1.")
     c = spec.cells
     strata = metafopy.core.clogit.Strata.from_counts(c['ai'], c['bi'], c['ci'], c['di'])
-    integ = metafopy.core.nchg.IntegrationControl(ctl.int_rel_tol, ctl.int_subdivisions)
+    integ = metafopy.core.nchg.IntegrationControl(ctl.int_rel_tol, ctl.int_subdivisions, 'dnoncenhypergeom')
     settings = metafopy.core.clogit.clogit_settings(ctl.clogit_ctrl) if optimizer == 'clogit' else metafopy.core.clogit.clogistic_settings(ctl.clogistic_ctrl)
 
     def fit(X: FloatArray, what: str) -> metafopy.core.clogit.ConditionalFit:
@@ -664,8 +673,21 @@ def conditional_logistic(spec: FitSpec, base: SingleLevel) -> ModelFit:
     return ModelFit(res_fe.coef[:p], res_fe.vcov[:p, :p], 0.0, NAN, NAN, NAN, NAN, NAN, ll_fe, ll_qe, NAN, b2, vb2, None, qe_ok, p, p, k, 'FE')
 
 
-def search(spec: FitSpec, func: typing.Callable[[FloatArray], float], x0: FloatArray, what: str, *, dummy: bool) -> tuple[FloatArray, float]:
+def search(
+    spec: FitSpec,
+    func: typing.Callable[[FloatArray], float],
+    x0: FloatArray,
+    what: str,
+    *,
+    dummy: bool,
+    precise: typing.Callable[[FloatArray], float] | None = None,
+) -> tuple[FloatArray, float]:
     """Minimise ``func`` from ``x0`` with the optimiser of ``control$optimizer``: ``(estimates, minimum)``.
+
+    ``precise`` is ``func`` with a tight integration tolerance. The integral of the random-effects likelihood is only accurate to about 1e-3
+    away from the optimum (``integrate()`` accepts an error of ``rel.tol = 1.2e-4`` after one pass), and the derivative-free SciPy stand-ins
+    for metafor's optimisers stop at spurious lower values of that rough surface, so they search ``precise``; the ports of ``optim()`` follow
+    R's path on ``func`` itself. The minimum is always ``func`` at the estimates.
 
     ``rma.glmm`` hands the optimiser one more parameter than the fixed-effects models use (``c(coef, 0)``, ``dummy=True``), which
     changes the path of the simplex of ``Nelder-Mead``, so it is added here as well.
@@ -678,7 +700,8 @@ def search(spec: FitSpec, func: typing.Callable[[FloatArray], float], x0: FloatA
         res = minimise(func, x0, ctl.gtol)
         return res.x, float(res.fun)
     n = x0.shape[0]
-    fn = (lambda z: func(z[:n])) if dummy else func
+    target = precise if precise is not None and ctl.optimizer != 'optim' else func
+    fn = (lambda z: target(z[:n])) if dummy else target
     par0 = numpy.append(x0, 0.0) if dummy else x0
     # NLOPT_LN_BOBYQA is the default algorithm of metafor's nloptr call
     choice = metafopy.models.sel_opt.OptimizerChoice('bobyqa' if ctl.optimizer == 'nloptr' else ctl.optimizer, ctl.optmethod)
@@ -702,17 +725,27 @@ def exact_conditional(spec: FitSpec, base: SingleLevel) -> ModelFit:
     k, p = spec.X.shape
     ctl = spec.control
     tables = metafopy.core.nchg.Tables.from_counts(c['ai'], c['bi'], c['ci'], c['di'])
-    integ = metafopy.core.nchg.IntegrationControl(ctl.int_rel_tol, ctl.int_subdivisions)
+    truncating = ctl.dnchgcalc == 'dFNCHypergeo' or (ctl.dnchgcalc is None and ctl.dnchgprec is not None)
+    integ = metafopy.core.nchg.IntegrationControl(
+        ctl.int_rel_tol,
+        ctl.int_subdivisions,
+        'dFNCHypergeo' if truncating else 'dnoncenhypergeom',
+        1e-10 if ctl.dnchgprec is None else ctl.dnchgprec,
+    )
+    # the truncation of BiasedUrn's density (about 1e-11) matters only to the finite differences of the Hessian, not to the search
+    smooth = dataclasses.replace(integ, calc='dnoncenhypergeom')
+    tight = dataclasses.replace(smooth, rel_tol=min(smooth.rel_tol, 1e-10))
+    hessian_ctrl = {'r': ctl.hessian_r, **ctl.hessian_ctrl} if ctl.hesspack == 'numDeriv' else dict(ctl.hessian_ctrl)
 
-    def fixed_objective(X: FloatArray) -> typing.Callable[[FloatArray], float]:
-        return lambda b: metafopy.core.nchg.neg_loglik(b, tables, X, False, integ)
+    def fixed_objective(X: FloatArray, control: metafopy.core.nchg.IntegrationControl) -> typing.Callable[[FloatArray], float]:
+        return lambda b: metafopy.core.nchg.neg_loglik(b, tables, X, False, control)
 
     def hess(func: typing.Callable[[FloatArray], float], x: FloatArray) -> FloatArray:
-        return metafopy.core.numderiv.hessian(func, x, r=ctl.hessian_r)
+        return metafopy.core.numderiv.hessian_by_package(func, x, ctl.hesspack, hessian_ctrl)
 
-    f_fe = fixed_objective(spec.X)
+    f_fe = fixed_objective(spec.X, smooth)
     x_fe, fun_fe = search(spec, f_fe, base.fe.coef[:p], 'FE', dummy=True)
-    h_fe = hess(f_fe, x_fe)
+    h_fe = hess(fixed_objective(spec.X, integ), x_fe)
     ll_fe = -fun_fe
 
     ll_qe, b2, vb2 = NAN, numpy.zeros(0), empty_vcov()
@@ -722,7 +755,7 @@ def exact_conditional(spec: FitSpec, base: SingleLevel) -> ModelFit:
         if k > 1:
             keep = ~base.qe.aliased
             X_qe = base.X_qe[:, keep]
-            f_qe = fixed_objective(X_qe)
+            f_qe = fixed_objective(X_qe, smooth)
             try:
                 x_qe, fun_qe = search(spec, f_qe, base.qe.coef[keep], 'saturated', dummy=True)
             except metafopy.errors.EstimationError as err:
@@ -730,7 +763,7 @@ def exact_conditional(spec: FitSpec, base: SingleLevel) -> ModelFit:
                     raise
                 warnings.warn(str(err), stacklevel=3)
             else:
-                h_qe = hess(f_qe, x_qe)
+                h_qe = hess(fixed_objective(X_qe, integ), x_qe)
                 ll_qe = -fun_qe
                 qe_wld = saturated_wald(x_qe, h_qe, p)
                 qe_ok = True
@@ -743,15 +776,21 @@ def exact_conditional(spec: FitSpec, base: SingleLevel) -> ModelFit:
         return ModelFit(x_fe, vb, 0.0, NAN, NAN, NAN, NAN, NAN, ll_fe, ll_qe, NAN, b2, vb2, qe_wld, qe_ok, p, p, k, 'FE')
 
     def f_ml(par: FloatArray) -> float:
+        return metafopy.core.nchg.neg_loglik(par, tables, spec.X, True, smooth)
+
+    def f_ml_hessian(par: FloatArray) -> float:
         return metafopy.core.nchg.neg_loglik(par, tables, spec.X, True, integ)
 
-    x_ml, fun_ml = search(spec, f_ml, numpy.append(base.ml_beta, math.log(base.ml_tau2 + 0.01)), 'ML', dummy=False)
+    def f_ml_tight(par: FloatArray) -> float:
+        return metafopy.core.nchg.neg_loglik(par, tables, spec.X, True, tight)
+
+    x_ml, fun_ml = search(spec, f_ml, numpy.append(base.ml_beta, math.log(base.ml_tau2 + 0.01)), 'ML', dummy=False, precise=f_ml_tight)
     ll_ml = -fun_ml
     tau2 = math.exp(float(x_ml[p]))
     if tau2 < ctl.tau2tol:
         vb = invert_hessian(h_fe, 'ML')
         return ModelFit(x_fe, vb, tau2, NAN, NAN, 0.0, NAN, NAN, ll_fe, ll_qe, ll_ml, b2, vb2, qe_wld, qe_ok, p + 1, p, k, 'ML')
-    h_ml = hess(f_ml, x_ml)
+    h_ml = hess(f_ml_hessian, x_ml)
     vb_full = invert_hessian(h_ml, 'ML')
     vb = vb_full[:p, :p]
     if numpy.any(numpy.diag(vb) <= 0):

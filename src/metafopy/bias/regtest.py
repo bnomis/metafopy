@@ -140,7 +140,9 @@ def regtest(
             warnings.warn("Arguments 'vi', 'sei', and 'subset' ignored when 'x' is a model object.", stacklevel=2)
         yi, v, n = metafopy.bias.inputs.data_of(x)
         if ni is not None:
-            n_full = numpy.asarray(ni, dtype=numpy.float64)
+            n_full = metafopy.bias.inputs.as_vector(ni, 'ni', data)
+            if n_full is None:
+                raise metafopy.errors.InternalError('ni must not be None')
             if n_full.shape[0] != x.data.k_all:
                 raise metafopy.errors.InputError(
                     f"Length of the variable specified via 'ni' ({n_full.shape[0]}) does not correspond to the size of the original dataset ({x.data.k_all})."
@@ -160,7 +162,7 @@ def regtest(
         slab = x.slab
     else:
         yi, v_opt, n = metafopy.bias.inputs.vector_inputs(
-            typing.cast(numpy.typing.ArrayLike | str, x), vi, sei, ni=ni, subset=subset, data=data, what='the test'
+            typing.cast(numpy.typing.ArrayLike | str, x), vi, sei, ni=ni, subset=subset, data=data, what='the test', attr_ni=True
         )
         if v_opt is None:
             raise metafopy.errors.InputError("Must specify the 'vi' or 'sei' argument.")

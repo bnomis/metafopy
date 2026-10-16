@@ -190,4 +190,4 @@ def uniroot(
 
 
 def sign(x: float) -> int:
-    return (x > 0) - (x < 0)
+    return int(x > 0) - int(x < 0)

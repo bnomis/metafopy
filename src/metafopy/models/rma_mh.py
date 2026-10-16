@@ -106,6 +106,17 @@ def sum_is_zero(x: FloatArray) -> bool:
     return bool(numpy.sum(x) == 0)
 
 
+def fdiv(a: float, b: float) -> float:
+    """``a / b`` as R computes it: a zero divisor gives ``Inf`` or ``NaN`` instead of an error."""
+    with numpy.errstate(all='ignore'):
+        return float(numpy.float64(a) / numpy.float64(b))
+
+
+def fsqrt(x: float) -> float:
+    """Square root that is ``NaN`` for negative values (R's ``sqrt``, which warns)."""
+    return math.sqrt(x) if x >= 0 else NAN
+
+
 def mh_estimate(measure: str, c: dict[str, FloatArray], correct: bool) -> tuple[float, float, dict[str, float], int | None]:
     """Pooled estimate (``NaN`` when not defined), its standard error and the extra test statistics."""
     extra: dict[str, float] = {'CO': NAN, 'COp': NAN, 'MH': NAN, 'MHp': NAN, 'BD': NAN, 'BDp': NAN, 'TA': NAN, 'TAp': NAN}
@@ -126,7 +137,7 @@ def mh_estimate(measure: str, c: dict[str, FloatArray], correct: bool) -> tuple[
             else:
                 beta_exp = r / s
                 beta = math.log(beta_exp)
-                se = math.sqrt(0.5 * (float((pi * ri).sum()) / r**2 + float((pi * si + qi * ri).sum()) / (r * s) + float((qi * si).sum()) / s**2))
+                se = fsqrt(0.5 * (float((pi * ri).sum()) / r**2 + float((pi * si + qi * ri).sum()) / (r * s) + float((qi * si).sum()) / s**2))
             xt = ai + ci
             yt = bi + di
             if sum_is_zero(xt) or sum_is_zero(yt):
@@ -171,7 +182,7 @@ def mh_estimate(measure: str, c: dict[str, FloatArray], correct: bool) -> tuple[
             if sum_is_zero(ai) or sum_is_zero(ci):
                 return NAN, NAN, extra, k_pos
             beta = math.log(r / s)
-            se = math.sqrt(float(((n1i / ni) * (n2i / ni) * (ai + ci) - (ai / ni) * ci).sum()) / (r * s))
+            se = fsqrt(fdiv(float(((n1i / ni) * (n2i / ni) * (ai + ci) - (ai / ni) * ci).sum()), r * s))
             return beta, se, extra, k_pos
 
         if measure == 'RD':
@@ -179,11 +190,11 @@ def mh_estimate(measure: str, c: dict[str, FloatArray], correct: bool) -> tuple[
             n1i, n2i = ai + bi, ci + di
             ni = ai + bi + ci + di
             denom = float((n1i * (n2i / ni)).sum())
-            beta = float((ai * (n2i / ni) - ci * (n1i / ni)).sum()) / denom
+            beta = fdiv(float((ai * (n2i / ni) - ci * (n1i / ni)).sum()), denom)
             num = beta * float((ci * (n1i / ni) ** 2 - ai * (n2i / ni) ** 2 + (n1i / ni) * (n2i / ni) * (n2i - n1i) / 2).sum()) + float(
                 (ai * (n2i - ci) / ni + ci * (n1i - ai) / ni).sum() / 2
             )
-            return beta, math.sqrt(num / denom**2), extra, k_pos
+            return beta, fsqrt(fdiv(num, denom**2)), extra, k_pos
 
         x1i, x2i, t1i, t2i = c['x1i'], c['x2i'], c['t1i'], c['t2i']
         ti = t1i + t2i
@@ -194,7 +205,7 @@ def mh_estimate(measure: str, c: dict[str, FloatArray], correct: bool) -> tuple[
                 beta, se = NAN, NAN
             else:
                 beta = math.log(r / s)
-                se = math.sqrt(float(((t1i / ti) * (t2i / ti) * (x1i + x2i)).sum()) / (r * s))
+                se = fsqrt(fdiv(float(((t1i / ti) * (t2i / ti) * (x1i + x2i)).sum()), r * s))
             xt = x1i + x2i
             if not sum_is_zero(xt):
                 mh = (abs(float((x1i - xt * (t1i / ti)).sum())) - cc) ** 2 / float((xt * (t1i / ti) * (t2i / ti)).sum())
@@ -202,8 +213,8 @@ def mh_estimate(measure: str, c: dict[str, FloatArray], correct: bool) -> tuple[
             return beta, se, extra, k_pos
 
         denom = float(((t1i / ti) * t2i).sum())
-        beta = float(((x1i * t2i - x2i * t1i) / ti).sum()) / denom
-        se = math.sqrt(float((((t1i / ti) * t2i) ** 2 * (x1i / t1i**2 + x2i / t2i**2)).sum())) / denom
+        beta = fdiv(float(((x1i * t2i - x2i * t1i) / ti).sum()), denom)
+        se = fdiv(fsqrt(float((((t1i / ti) * t2i) ** 2 * (x1i / t1i**2 + x2i / t2i**2)).sum())), denom)
         return beta, se, extra, k_pos
 
 
@@ -285,7 +296,7 @@ def rma_mh(
     beta, se, extra, k_pos = mh_estimate(measure, tab.cells, correct)
     crit = float(scipy.stats.norm.isf(alpha / 2))
     with numpy.errstate(all='ignore'):
-        zval = beta / se
+        zval = float(numpy.float64(beta) / numpy.float64(se))
     pval = 2 * float(scipy.stats.norm.sf(abs(zval))) if not math.isnan(zval) else NAN
 
     yi, vi, k_yi = tab.yi, tab.vi, tab.k_yi

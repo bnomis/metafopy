@@ -61,6 +61,9 @@ def draw_one(
     refline: bool,
     cline: bool | float,
     ax: matplotlib.axes.Axes,
+    log: str | None = None,
+    cex: float = 1.0,
+    lwd: float = 1.0,
 ) -> matplotlib.axes.Axes:
     xl = x.xlim if xlim is None else (float(xlim[0]), float(xlim[1]))
     yl = x.ylim if ylim is None else (float(ylim[0]), float(ylim[1]))
@@ -77,7 +80,7 @@ def draw_one(
         pos = int(numpy.flatnonzero(xv >= x.vc)[0])
         xv = numpy.concatenate([xv[:pos], [x.vc], xv[pos:]])
         yv = numpy.concatenate([yv[:pos], [x.maxll], yv[pos:]])
-    metafopy.plot.plain.plain_plot(ax, xl, yl, xlab, ylab, main, bty='l')
+    metafopy.plot.plain.plain_plot(ax, xl, yl, xlab, ylab, main, bty='l', logx='x' in (log or ''), logy='y' in (log or ''))
     if refline:
         metafopy.plot.draw.vline(ax, x.vc, lty='dotted')
         metafopy.plot.draw.hline(ax, x.maxll, lty='dotted')
@@ -87,10 +90,10 @@ def draw_one(
         hval = math.exp(math.log(x.maxll) - crit) if x.exp else x.maxll - crit
         metafopy.plot.draw.hline(ax, hval, lty='dotted')
     ok = numpy.isfinite(xv) & numpy.isfinite(yv)
-    metafopy.plot.draw.line(ax, xv[ok], yv[ok], gid='oline')
+    metafopy.plot.draw.line(ax, xv[ok], yv[ok], gid='oline', lw=lwd)
     for a, b in zip(xv, yv, strict=True):
         if math.isfinite(a) and math.isfinite(b):
-            metafopy.plot.draw.pts(ax, float(a), float(b), pch=pch, col=metafopy.plot.draw.FG)
+            metafopy.plot.draw.pts(ax, float(a), float(b), pch=pch, cex=cex, col=metafopy.plot.draw.FG)
     return ax
 
 
@@ -122,6 +125,9 @@ def plot_profile(
     cline: bool | float = False,
     *,
     ax: matplotlib.axes.Axes | None = None,
+    log: str | None = None,
+    cex: float = 1.0,
+    lwd: float = 1.0,
 ) -> matplotlib.axes.Axes: ...
 
 
@@ -138,6 +144,9 @@ def plot_profile(
     cline: bool | float = False,
     *,
     ax: matplotlib.axes.Axes | None = None,
+    log: str | None = None,
+    cex: float = 1.0,
+    lwd: float = 1.0,
 ) -> list[matplotlib.axes.Axes]: ...
 
 
@@ -153,6 +162,9 @@ def plot_profile(
     cline: bool | float = False,
     *,
     ax: matplotlib.axes.Axes | None = None,
+    log: str | None = None,
+    cex: float = 1.0,
+    lwd: float = 1.0,
 ) -> matplotlib.axes.Axes | list[matplotlib.axes.Axes]:
     """Plot the profile (log-)likelihood computed by :func:`~metafopy.profile` (``plot.profile.rma``).
 
@@ -164,7 +176,8 @@ def plot_profile(
     components (``rma_mv``, location-scale and selection models): one panel per component is drawn in a grid, as
     ``par(mfrow = n2mfrow(comps))`` makes it (inside ``ax`` if given), and the list of axes is returned. ``xlab``,
     ``ylab`` and ``main`` are then one string for all panels or one per panel. Unlike metafor, ``refline`` also applies to
-    the panels of a list.
+    the panels of a list. ``log`` (``'x'``, ``'y'`` or ``'xy'``) draws logarithmic axes, ``cex`` is the size of the points and ``lwd`` the
+    width of the line, which metafor passes on through ``...``.
 
     Raises:
         metafopy.errors.InputError: ``xlab``, ``ylab`` or ``main`` does not have one entry per profile.
@@ -175,8 +188,8 @@ def plot_profile(
         panels, context = metafopy.plot.histplot.panels(metafopy.plot.rutils.get_ax(ax), n)
         with context:
             for j, (r, a) in enumerate(zip(x, panels, strict=True)):
-                draw_one(r, xlim, ylim, pch, xlabs[j], ylabs[j], mains[j], refline, cline, a)
+                draw_one(r, xlim, ylim, pch, xlabs[j], ylabs[j], mains[j], refline, cline, a, log, cex, lwd)
         return panels
     if not (xlab is None or isinstance(xlab, str)) or not (ylab is None or isinstance(ylab, str)) or not (main is None or isinstance(main, str)):
         raise metafopy.errors.InputError("Arguments 'xlab', 'ylab' and 'main' must be single strings for a single profile.")
-    return draw_one(x, xlim, ylim, pch, xlab, ylab, main, refline, cline, metafopy.plot.rutils.get_ax(ax))
+    return draw_one(x, xlim, ylim, pch, xlab, ylab, main, refline, cline, metafopy.plot.rutils.get_ax(ax), log, cex, lwd)

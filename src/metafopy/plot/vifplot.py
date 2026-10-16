@@ -7,6 +7,7 @@ See https://wviechtb.github.io/metafor/reference/plot.vif.rma.html and Beisbart 
 
 import collections.abc
 import dataclasses
+import warnings
 
 import matplotlib.axes
 import numpy
@@ -45,19 +46,24 @@ def plot_vif(
     *,
     tail: str = 'upper',
     ax: matplotlib.axes.Axes | None = None,
+    xlim: collections.abc.Sequence[float] | None = None,
+    layout: object = None,
 ) -> PlotVifResult:
     """Plot the simulated (G)VIFs of a :func:`~metafopy.vif` result obtained with ``sim=True`` (``plot.vif.rma``).
 
     ``breaks`` is the ``breaks`` argument of ``hist()``, ``freq`` draws counts instead of densities, ``trim`` drops that fraction of the
     largest simulated values from the histogram and ``lwd`` gives the widths of the dashed line at the observed (G)VIF and of the kernel
     density estimate (of bandwidth adjustment ``adjust``); a width of 0 leaves the element out. A (G)VIF beyond the right edge of the
-    plot is shown at the edge, with an arrow.
+    plot is shown at the edge, with an arrow. ``xlim`` sets the limits of the horizontal axis of every panel (``hist()``'s ``xlim``, which
+    metafor passes on through ``...``); ``layout`` is accepted for old code and ignored with a warning, as metafor does.
 
     Returns a :class:`PlotVifResult` with the axes of the panels.
 
     Raises:
         metafopy.errors.InputError: the result has no simulated values (``sim=True`` was not used) or an argument is invalid.
     """
+    if layout is not None:
+        warnings.warn("Argument 'layout' has been deprecated.", stacklevel=2)
     if x.sim is None:
         raise metafopy.errors.InputError("Can only plot 'vif' objects when 'sim=True' was used.")
     if trim >= 0.5:
@@ -84,7 +90,9 @@ def plot_vif(
             plain = metafopy.plot.histplot.histogram(shown, breaks)
             ylim = (0.0, float(max(float(dy.max()) if widths[1] > 0 else 0.0, float(plain.density.max()))))
             main = f'Coefficient{"s" if entry.m > 1 else ""}: {x.names[i]}'
-            h = metafopy.plot.histplot.draw_histogram(panel, shown, breaks, col=col_, border=border_, main=main, xlab='Value of VIF', freq=freq, ylim=ylim)
+            h = metafopy.plot.histplot.draw_histogram(
+                panel, shown, breaks, col=col_, border=border_, main=main, xlab='Value of VIF', freq=freq, ylim=ylim, xlim=xlim
+            )
             metafopy.plot.histplot.draw_tail(panel, h, float(entry.vif), tail=tail, col=col_out_, border=border_, freq=freq)
             lo, hi = panel.get_xlim()
             ylo, yhi = panel.get_ylim()

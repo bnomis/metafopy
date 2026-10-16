@@ -443,10 +443,10 @@ def selmodel(
     con.setdefault('htransf', False)
     con.setdefault('hesspack', 'numDeriv')
     con.setdefault('scaleX', not betaspec)
-    if con['hesspack'] != 'numDeriv':
-        raise metafopy.errors.NotSupportedError("Only hesspack='numDeriv' is available.")
+    hesspack = metafopy.models.sel_opt.partial_match(str(con['hesspack']), metafopy.core.numderiv.HESSPACKS, 'hesspack')
     hessian_ctrl = dict(con.get('hessianCtrl') or {})
-    hessian_ctrl.setdefault('r', 6)
+    if hesspack == 'numDeriv':
+        hessian_ctrl.setdefault('r', 6)
     choice = metafopy.models.sel_opt.choose_optimizer(str(con['optimizer']), str(con['optmethod']), type_, int(con['ncpus']))
 
     scale_x = (not base.int_only) and base.int_incl and bool(con['scaleX'])
@@ -685,9 +685,7 @@ def selmodel(
             return metafopy.models.sel_lik.negative_loglik(prob_h, par, delta_transf=dt, tau2_transf=tt)
 
         try:
-            H = metafopy.core.numderiv.hessian(
-                hess_fn, hx, d=float(hessian_ctrl.get('d', 0.1)), eps=float(hessian_ctrl.get('eps', 1e-4)), r=int(hessian_ctrl['r'])
-            )
+            H = metafopy.core.numderiv.hessian_by_package(hess_fn, hx, hesspack, hessian_ctrl)
         except metafopy.errors.MetaforError, ArithmeticError, ValueError:
             H = None
             warnings.warn('Error when trying to compute the Hessian.', stacklevel=2)

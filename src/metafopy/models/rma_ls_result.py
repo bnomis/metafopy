@@ -1,5 +1,6 @@
 """Result of a location-scale model (metafor's class ``rma.ls``, fitted by ``rma.uni(..., scale=)``)."""
 
+import collections.abc
 import dataclasses
 import typing
 
@@ -28,9 +29,14 @@ class LSControl:
     """Control settings for location-scale models (names follow metafor with ``.`` -> ``_``).
 
     ``polish_converged=False`` skips the Nelder-Mead polish after a converged BFGS run (used by the permutation test).
-    ``optimizer`` is ``'nlminb'`` (the default, mapped to SciPy's BFGS or, for the
-    identity link, SLSQP), ``'BFGS'``, ``'L-BFGS-B'``, ``'Nelder-Mead'``,
-    ``'constrOptim'`` or ``'SLSQP'``; ``hessian_d``, ``hessian_eps`` and
+    ``optimizer`` is ``'nlminb'`` (the default, mapped to SciPy's BFGS or, for the identity link, ``constrOptim``), any other
+    optimiser of metafor's ``rma.uni`` (``'optim'`` with ``optmethod``, ``'BFGS'``, ``'CG'``, ``'L-BFGS-B'``, ``'Nelder-Mead'``,
+    ``'nlm'``, ``'uobyqa'``, ``'newuoa'``, ``'bobyqa'``, ``'nloptr'``, ``'hjk'``, ``'nmk'``, ``'mads'``, ``'ucminf'``, ``'lbfgsb3c'``,
+    ``'subplex'``, ``'BBoptim'``, ``'optimParallel'``, ``'Rcgmin'``, ``'Rvmmin'``, and for the identity link ``'constrOptim'``,
+    ``'solnp'``, ``'constrOptim.nl'``/``'alabama'`` and ``'auglag'``), mapped as :mod:`metafopy.models.sel_opt` maps them. ``opt_ctrl``
+    holds the optimiser settings given in ``control`` (``maxit``, ``reltol``, ``abstol``, ``ndeps``, ``tol``). ``ncpus`` larger than 1
+    selects ``'optimParallel'`` as in metafor, but the likelihood is evaluated serially (``parallel`` and ``cl`` are accepted and
+    ignored). ``hessian_d``, ``hessian_eps`` and
     ``hessian_r`` are the arguments of ``numDeriv::hessian``'s Richardson method
     (metafor sets ``r = 8``, whose eight Richardson steps amplify round-off in the log-likelihood to a relative 1e-4 or more in the standard errors; metafopy
     defaults to ``r = 4``, which agrees with metafor's values to about 1e-5, see ``docs/differences.md``).
@@ -48,6 +54,11 @@ class LSControl:
     hessian_r: int = 4
     maxiter: int = 5000
     optimizer: str = 'nlminb'
+    optmethod: str = 'BFGS'
+    opt_ctrl: collections.abc.Mapping[str, typing.Any] = dataclasses.field(default_factory=dict)
+    ncpus: int = 1
+    cl: typing.Any = None
+    parallel: collections.abc.Mapping[str, typing.Any] = dataclasses.field(default_factory=dict)
     polish_converged: bool = True
     REMLf: bool = True
     scaleZ: bool = True  # noqa: N815  mirrors the metafor control argument name
@@ -133,6 +144,7 @@ class RMALSResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_me
     measure: str = 'GEN'
     formula_scale: str | None = None
     Z_f: FloatArray | None = dataclasses.field(default=None, repr=False)
+    digits: int = 4
     call: metafopy.models.call.Call | None = dataclasses.field(default=None, kw_only=True, repr=False, compare=False)
 
     @property
@@ -285,12 +297,26 @@ class RMALSResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_me
 
     # -- printing ----------------------------------------------------------
 
-    def summary(self, digits: int | None = None, showfit: bool = True) -> str:
-        """The printout with the fit statistics table, as metafor's ``summary()``; ``str(res)`` leaves it out like ``print()``."""
+    def summary(
+        self,
+        digits: int | collections.abc.Mapping[str, int] | None = None,
+        showfit: bool = True,
+        *,
+        signif_stars: bool | None = None,
+        signif_legend: bool | None = None,
+    ) -> str:
+        """The printout with the fit statistics table, as metafor's ``summary()``; ``str(res)`` leaves it out like ``print()``.
+
+        ``digits`` defaults to the ``digits`` option, else to the ``digits`` the model was fitted with; ``signif_stars`` and ``signif_legend``
+        as for :meth:`metafopy.models.rma_uni.RMAResult.summary`.
+        """
         # auditme: accept[in-function-import] the printer imports this module for its type
         import metafopy.models.rma_ls_print
 
-        return metafopy.mfopt.option_space(metafopy.models.rma_ls_print.format_result(self, metafopy.mfopt.option_digits(digits), showfit))
+        stars, legend = metafopy.mfopt.option_signif(signif_stars, signif_legend)
+        return metafopy.mfopt.option_space(
+            metafopy.models.rma_ls_print.format_result(self, metafopy.mfopt.option_digits(digits, self.digits), showfit, stars, legend)
+        )
 
     def __str__(self) -> str:
         return self.summary(showfit=False)

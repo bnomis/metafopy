@@ -20,6 +20,7 @@ import scipy.sparse
 import scipy.spatial.distance
 import scipy.special
 
+import metafopy.core.linalg
 import metafopy.errors
 import metafopy.formula
 import metafopy.models.mv_factor
@@ -70,6 +71,7 @@ class Term:
     v_arg: FloatArray
     r_arg: FloatArray
     cholesky: bool
+    nearpd: bool = False
 
 
 @dataclasses.dataclass(slots=True)
@@ -543,6 +545,10 @@ def con_e(v: FloatArray, r: FloatArray, term: Term, vctransf: bool, vccov: bool)
             v = numpy.where(numpy.isnan(v_arg), v, v_arg)
             r = numpy.where(numpy.isnan(r_arg), r, r_arg)
         E = con_vcov_un(v, r, vccov)
+        if term.nearpd:
+            E = numpy.asarray(metafopy.core.linalg.near_pd(E).mat, dtype=numpy.float64)
+            v = numpy.diag(E).copy()
+            r = lower_tri(cov2cor(E))
     elif struct == 'GDIAG':
         E = numpy.diag(v)
     elif struct in ('ID', 'DIAG'):

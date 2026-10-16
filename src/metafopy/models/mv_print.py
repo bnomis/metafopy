@@ -227,7 +227,9 @@ def block(res: metafopy.models.mv_result.RMAMVResult, group: metafopy.models.mv_
     return out
 
 
-def format_result(res: metafopy.models.mv_result.RMAMVResult, digits: int = 4, showfit: bool = False) -> str:
+def format_result(
+    res: metafopy.models.mv_result.RMAMVResult, digits: int = 4, showfit: bool = False, signif_stars: bool = True, signif_legend: bool = True
+) -> str:
     fm = metafopy.printing.fmt_num
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     out: list[str] = ['']
@@ -311,14 +313,9 @@ def format_result(res: metafopy.models.mv_result.RMAMVResult, digits: int = 4, s
         rows_.append(row)
     if robust is not None:
         header, rows_ = metafopy.models.robust_print.decorate(header, rows_)
+    header, rows_ = metafopy.printing.drop_stars(header, rows_, signif_stars)
     out.append('Model Results:')
     out.append('')
     out.append(metafopy.printing.fmt_table(header, rows_, row_names=None if res.int_only else list(res.coef_names)))
-    out.append('')
-    out.append('---')
-    out.append("Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1")
-    out.append('')
-    if robust is not None:
-        out += metafopy.models.robust_print.legend_lines(robust, res.int_only)
-        out.append('')
+    out += metafopy.printing.signif_footer(signif_legend, metafopy.models.robust_print.legend_lines(robust, res.int_only) if robust is not None else ())
     return '\n'.join(out)

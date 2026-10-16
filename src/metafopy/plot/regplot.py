@@ -205,6 +205,7 @@ def regplot(
     grep: bool = False,
     fixed: bool = False,
     ax: matplotlib.axes.Axes | None = None,
+    xaxt: str = 's',
 ) -> RegplotResult:
     """Meta-analytic scatterplot of a meta-regression model (``regplot.rma``).
 
@@ -220,6 +221,7 @@ def regplot(
     adds a legend (``True``, a location such as ``'topright'`` or a dict with ``x`` and ``cex``).
 
     ``bty`` (``'o'`` or ``'l'``) is the box type and ``las`` the orientation of the labels of the vertical axis (0 = parallel to it, 1 = horizontal).
+    ``xaxt='n'`` leaves out the horizontal axis.
     ``grep=True`` makes a string ``mod`` a regular expression searched for in the coefficient names (which must find exactly one) and
     ``fixed=True`` a literal string instead (the ``grep`` and ``fixed`` arguments metafor reads through ``...``).
 
@@ -398,7 +400,9 @@ def regplot(
         yt = at_in[(at_in > uy[0]) & (at_in < uy[1])]
     yvals = metafopy.methods.common.apply_each(yt, atransf, targs) if atransf is not None else yt
     ylabels = [metafopy.plot.rutils.fmtx1(float(v), dg) for v in yvals]  # R: drop0trailing needs an integer `digits`, not the default double
-    metafopy.plot.draw.plain_axes(axx, ux, uy, xt, yt, metafopy.plot.rutils.rformat(xt), ylabels, bty=bty, thin_ylabels=True)
+    metafopy.plot.draw.plain_axes(
+        axx, ux, uy, None if xaxt == 'n' else xt, yt, None if xaxt == 'n' else metafopy.plot.rutils.rformat(xt), ylabels, bty=bty, thin_ylabels=True
+    )
     if las == 0:
         axx.tick_params(axis='y', labelrotation=90)
         for label_ in axx.get_yticklabels():

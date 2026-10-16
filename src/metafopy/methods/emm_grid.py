@@ -151,31 +151,34 @@ class FitInfo:
     measure: str
     sigma: float
     X: FloatArray
+    data_given: bool = False
 
 
 def fit_frame(x: Fit, data: pandas.DataFrame | None) -> pandas.DataFrame:
-    """The rows of the data the model was fitted to (after ``subset`` and removal of missing values).
+    """The rows of the data the model was fitted to (after ``subset`` and removal of missing values), or ``data`` as given.
 
     Raises:
         metafopy.errors.InputError: the fit does not hold its data and none was given.
     """
+    if data is not None:
+        return pandas.DataFrame(data).reset_index(drop=True).copy()
     if isinstance(x, metafopy.models.sel_result.SelmodelResult):
         return fit_frame(x.base, data)
     if isinstance(x, metafopy.models.binary.FixedBinaryResult):
-        return data if data is not None else pandas.DataFrame(index=range(x.k))
+        return pandas.DataFrame(index=range(x.k))
     if isinstance(x, metafopy.models.mv_result.RMAMVResult):
-        frame = data if data is not None else metafopy.methods.accessors.call_arguments(x).get('data')
+        frame = metafopy.methods.accessors.call_arguments(x).get('data')
         if frame is None:
             if x.int_only:
                 return pandas.DataFrame(index=range(x.k))
             raise metafopy.errors.InputError('Cannot use function when the model object does not contain the original data.')
-        return (
+        return pandas.DataFrame(
             frame.iloc[list(x.ids)].loc[x.not_na.tolist()].reset_index(drop=True)
             if len(x.ids) != len(frame) or not x.not_na.all()
             else frame.reset_index(drop=True)
         )
     if isinstance(x, metafopy.models.glmm_result.GLMMResult):
-        frame = data if data is not None else x.data
+        frame = x.data
         if frame is None:
             if x.int_only:
                 return pandas.DataFrame(index=range(x.k))
@@ -185,7 +188,7 @@ def fit_frame(x: Fit, data: pandas.DataFrame | None) -> pandas.DataFrame:
             frame = frame[numpy.asarray(tab.subset)]
         return pandas.DataFrame(frame.loc[numpy.asarray(tab.not_na).tolist()].reset_index(drop=True))
     meta = x.data
-    frame = data if data is not None else meta.data
+    frame = meta.data
     if frame is None:
         if x.int_only:
             return pandas.DataFrame(index=range(x.k))
@@ -219,7 +222,7 @@ def fit_info(x: Fit, data: pandas.DataFrame | None) -> FitInfo:
     sigma = 0.0 if no_sigma or not isinstance(tau2, float) or math.isnan(tau2) else math.sqrt(tau2)
     frame = fit_frame(x, data)
     X = numpy.ones((base.k, 1)) if isinstance(base, metafopy.models.binary.FixedBinaryResult) else numpy.asarray(base.X, dtype=numpy.float64)
-    return FitInfo(formula, beta, vb, names, fit_ddf(x), frame, getattr(x, 'measure', 'GEN'), sigma, X)
+    return FitInfo(formula, beta, vb, names, fit_ddf(x), frame, getattr(x, 'measure', 'GEN'), sigma, X, data is not None)
 
 
 def appearance(formula: str, variables: collections.abc.Iterable[str]) -> list[str]:
@@ -327,6 +330,8 @@ def reference_grid(
     spec = model_matrix.model_spec
     required = [] if spec is None else [v for v in spec.required_variables if v in data.columns]
     variables = appearance(rhs, required)
+    if info.data_given:
+        data = data.dropna(subset=required).reset_index(drop=True)
     at = {} if at is None else dict(at)
     unknown = [k for k in at if k not in variables]
     if unknown:
@@ -364,7 +369,7 @@ def reference_grid(
             pred[var] = pandas.Categorical(pred[var], categories=raw[var])
     X = numpy.asarray(spec.get_model_matrix(pred).to_numpy(dtype=float), dtype=numpy.float64) if spec is not None else numpy.ones((len(rows), 1))
     fit_X = numpy.asarray(model_matrix.to_numpy(dtype=float), dtype=numpy.float64)
-    if fit_X.shape != info.X.shape or not numpy.allclose(fit_X, info.X, rtol=1e-8, atol=1e-10):
+    if not info.data_given and (fit_X.shape != info.X.shape or not numpy.allclose(fit_X, info.X, rtol=1e-8, atol=1e-10)):
         raise metafopy.errors.InputError('Cannot match the model matrix of the fit with that rebuilt from the formula and the data; the fit is not supported.')
     if X.shape[1] != info.beta.shape[0]:
         raise metafopy.errors.InputError('The number of coefficients does not match the model formula.')

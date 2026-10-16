@@ -294,17 +294,21 @@ def anova_rma_ls(
     Z: numpy.typing.ArrayLike | None = None,
     rhs: numpy.typing.ArrayLike | float | None = None,
     refit: bool = False,
+    abbrev: bool = False,
 ) -> LSWaldResult | metafopy.methods.anova.MVLRTResult | list[LSWaldResult]:
     """Wald tests (``btt``, ``att``, ``X``, ``Z``) or, given a second model, a likelihood-ratio test.
 
     ``btt`` and ``att`` (0-based indices or a regular expression matching coefficient names) test subsets of the location and scale coefficients; ``X`` and
     ``Z`` test linear combinations of the location and scale coefficients against ``rhs``; ``att`` may also be a list of
     subsets, which returns a list of tests. With ``model2`` the model with more parameters is the full model; ``refit=True``
-    refits REML fits with ML when their location models differ. ``object2`` is R's name for ``model2``.
+    refits REML fits with ML when their location models differ. ``object2`` is R's name for ``model2``. ``abbrev=True`` removes ``factor(`` and ``)`` from
+    the text of the hypotheses of ``X`` and ``Z``.
 
     Raises:
         metafopy.errors.InputError: an argument is invalid.
     """
+    if abbrev:
+        return metafopy.methods.anova.abbreviate_hyp(anova_rma_ls(**{**locals(), 'abbrev': False}), True)
     x = model
     model2 = metafopy.methods.common.resolve_alias(model2, object2, 'model2', 'object2')
     if model2 is not None:

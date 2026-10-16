@@ -39,6 +39,7 @@ import metafopy.effects.datatools
 import metafopy.effects.measures
 import metafopy.effects.summary
 import metafopy.errors
+import metafopy.metadata
 
 __all__ = ['conv_2x2', 'conv_delta', 'conv_wald']
 
@@ -138,11 +139,10 @@ def attr_ni(x: pandas.DataFrame | None, yi_name: str) -> FloatArray | None:
     if x is None:
         return None
     names = metafopy.effects.summary.names(x.attrs.get('yi_names'))
-    ni = x.attrs.get('ni')
+    ni = metafopy.metadata.frame_attr(x, 'ni')
     if ni is None or not names or names[0] != yi_name:
         return None
-    arr = numpy.asarray(ni, dtype=numpy.float64).reshape(-1)
-    return arr if arr.shape[0] == x.shape[0] else None
+    return numpy.asarray(ni, dtype=numpy.float64)
 
 
 def attr_measure(x: pandas.DataFrame | None, yi_name: str) -> str:

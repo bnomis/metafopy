@@ -179,12 +179,13 @@ def r_round(x: float, digits: int) -> float:
 
 def dfround(
     x: pandas.DataFrame | numpy.typing.ArrayLike,
-    digits: int | collections.abc.Sequence[int] = 0,
+    digits: int | float | collections.abc.Sequence[int | float | None] = 0,
     drop0: bool | collections.abc.Sequence[bool] = True,
 ) -> pandas.DataFrame:
     """Round the numeric columns of a data frame (a 2-d array is turned into one first).
 
-    ``digits`` and ``drop0`` have one value for all columns or one per column. Columns with ``drop0=False``
+    ``digits`` and ``drop0`` have one value for all columns or one per column; a column whose ``digits`` is missing (``None`` or NaN) is left as
+    it is (the behaviour of metafor 5.2-1, checked against R). Columns with ``drop0=False``
     become strings formatted with exactly ``digits`` decimals (R's ``formatC(format="f")``); non-numeric
     columns are left alone.
 
@@ -200,7 +201,11 @@ def dfround(
             raise metafopy.errors.ArgumentError('Argument \'x\' must be an object of class "data.frame".')
         out = pandas.DataFrame(arr)
     p = out.shape[1]
-    dig = [int(digits)] * p if isinstance(digits, int | numpy.integer) else [int(d) for d in digits]
+    dig: list[int | None] = (
+        [int(digits)] * p
+        if isinstance(digits, int | numpy.integer)
+        else [None if d is None or math.isnan(d) else int(d) for d in ([digits] if isinstance(digits, float) else digits)]
+    )
     drop = [bool(drop0)] * p if isinstance(drop0, bool | numpy.bool_) else [bool(d) for d in drop0]
     if len(dig) == 1:
         dig = dig * p
@@ -214,11 +219,14 @@ def dfround(
         col = out.iloc[:, j]
         if not pandas.api.types.is_numeric_dtype(col) or pandas.api.types.is_bool_dtype(col):
             continue
+        digits_j = dig[j]
+        if digits_j is None:
+            continue
         vals = col.to_numpy(dtype=numpy.float64)
         if drop[j]:
-            out[out.columns[j]] = [r_round(float(v), dig[j]) for v in vals]
+            out[out.columns[j]] = [r_round(float(v), digits_j) for v in vals]
         else:
-            out[out.columns[j]] = ['NA' if math.isnan(v) else f'{v:.{dig[j]}f}' for v in vals]
+            out[out.columns[j]] = ['NA' if math.isnan(v) else f'{v:.{digits_j}f}' for v in vals]
     return out
 
 

@@ -118,9 +118,23 @@ class RMAResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_meth
     iterations: int = 0
     measure: str = 'GEN'
     robust: metafopy.models.robust_info.RobustInfo | None = None
+    digits: int = 4
     call: metafopy.models.call.Call | None = dataclasses.field(default=None, kw_only=True, repr=False, compare=False)
 
     # -- accessors ---------------------------------------------------------
+
+    @property
+    def dfs(self) -> float | tuple[float, ...] | None:
+        """The degrees of freedom of a model made robust with :func:`metafopy.robust` (metafor's ``dfs``), ``None`` otherwise.
+
+        A single number (the number of clusters minus ``p``) for the default method and one value per coefficient for ``club_sandwich=True``,
+        for which ``ddf`` stays ``None`` because it holds a single number.
+        """
+        if self.robust is None:
+            return None
+        if self.robust.robumethod == 'clubSandwich':
+            return tuple(float(v) for v in self.robust.dfs)
+        return float(self.robust.dfs[0])
 
     def coef(self) -> pandas.Series:
         """Estimated coefficients, indexed by name."""
@@ -242,9 +256,21 @@ class RMAResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_meth
 
     # -- printing ----------------------------------------------------------
 
-    def summary(self, digits: int | None = None, showfit: bool = True) -> str:
-        """The printout with the fit statistics table, as metafor's ``summary()``; ``str(res)`` leaves it out like ``print()``."""
-        return metafopy.mfopt.option_space(format_result(self, metafopy.mfopt.option_digits(digits), showfit))
+    def summary(
+        self,
+        digits: int | collections.abc.Mapping[str, int] | None = None,
+        showfit: bool = True,
+        *,
+        signif_stars: bool | None = None,
+        signif_legend: bool | None = None,
+    ) -> str:
+        """The printout with the fit statistics table, as metafor's ``summary()``; ``str(res)`` leaves it out like ``print()``.
+
+        ``digits`` defaults to the ``digits`` option, else to the ``digits`` the model was fitted with. ``signif_stars`` (default: the
+        ``signif_stars`` option, ``True``) adds the significance stars and ``signif_legend`` (default: ``signif_stars``) the legend of the codes.
+        """
+        stars, legend = metafopy.mfopt.option_signif(signif_stars, signif_legend)
+        return metafopy.mfopt.option_space(format_result(self, metafopy.mfopt.option_digits(digits, self.digits), showfit, stars, legend))
 
     def __str__(self) -> str:
         return self.summary(showfit=False)
@@ -370,6 +396,7 @@ def rma_uni(
     weighted: bool = True,
     test: str = 'z',
     level: float = 95,
+    digits: int | collections.abc.Mapping[str, int] | None = None,
     btt: Btt = None,
     scale: None = None,
     tau2: float | None = None,
@@ -441,6 +468,7 @@ def rma_uni(
     weighted: bool = True,
     test: str = 'z',
     level: float = 95,
+    digits: int | collections.abc.Mapping[str, int] | None = None,
     btt: Btt = None,
     att: Btt = None,
     scale: metafopy.models.rma_ls.ScaleSpec | None = None,
@@ -487,6 +515,9 @@ def rma_uni(
     ``'identity'``), ``optbeta``, ``alpha`` (fixed values of the scale coefficients),
     ``beta`` (fixed values of the location coefficients, with ``optbeta``) and ``att``
     (the scale coefficients to test) only apply to such models.
+
+    ``digits`` (a number of decimals, or a mapping with the keys ``est``, ``se``, ... of which ``est`` is used) is stored in the result
+    and used by its printout unless ``digits`` is passed to ``summary()`` or set with :func:`metafopy.setmfopt`.
 
     ``verbose`` prints metafor's iteration log of the tau^2 estimators to stdout
     (and with ``verbose=2`` or more its progress messages to stderr); it has no
@@ -590,27 +621,33 @@ def rma_uni(
             subset=subset,
             na_action=na_action,
         )
+    digits_ = metafopy.mfopt.reduce_digits(digits) if digits is not None else 4
     if scale is not None:
-        return fit_location_scale(
-            md,
-            scale,
-            method=method,
-            weighted=weighted,
-            test=typing.cast(Test, test_l),
-            level=level,
-            btt=btt,
-            att=att,
-            tau2=tau2,
-            link=link,
-            optbeta=optbeta,
-            alpha=alpha,
-            beta=beta,
-            control=control,
-            na_action=na_action,
-            measure=measure,
+        return dataclasses.replace(
+            fit_location_scale(
+                md,
+                scale,
+                method=method,
+                weighted=weighted,
+                test=typing.cast(Test, test_l),
+                level=level,
+                btt=btt,
+                att=att,
+                tau2=tau2,
+                link=link,
+                optbeta=optbeta,
+                alpha=alpha,
+                beta=beta,
+                control=control,
+                na_action=na_action,
+                measure=measure,
+            ),
+            digits=digits_,
         )
-    if vlevel > 1 and md.na_rows is not None and md.na_rows.any():
-        metafopy.core.verbose.message('Handling NAs ...')
+    if md.na_rows is not None and md.na_rows.any():
+        if vlevel > 1:
+            metafopy.core.verbose.message('Handling NAs ...')
+        warn_na_omitted(int(md.na_rows.sum()))
     if optbeta or att is not None:
         warnings.warn("Arguments 'optbeta' and 'att' are only relevant for location-scale models and hence ignored.", stacklevel=2)
     res = fit_rma_uni(
@@ -626,7 +663,12 @@ def rma_uni(
     )
     if vlevel:
         metafopy.core.verbose.cat('\n')
-    return dataclasses.replace(res, measure=measure)
+    return dataclasses.replace(res, measure=measure, digits=digits_)
+
+
+def warn_na_omitted(n: int) -> None:
+    """metafor's warning that ``n`` studies were left out of the model fit because of missing values."""
+    warnings.warn(f'{n} {"studies" if n > 1 else "study"} with NAs omitted from model fitting.', stacklevel=3)
 
 
 def fit_location_scale(
@@ -686,7 +728,11 @@ def metadata_from_escalc(
 
     data_sub = None if data is None else data.iloc[idx].reset_index(drop=True)
     ni_es = es.attrs.get('ni')
-    return metafopy.metadata.MetaData.from_inputs(
+    count_names = ('ai', 'bi', 'ci', 'di', 'x1i', 'x2i', 't1i', 't2i')
+    counts_all = {
+        name: arr[idx] for name in count_names if name in raw and (arr := metafopy.metadata.column(raw[name], data, name)) is not None and arr.shape[0] == k_all
+    }
+    md = metafopy.metadata.MetaData.from_inputs(
         es['yi'].to_numpy(dtype=numpy.float64),
         es['vi'].to_numpy(dtype=numpy.float64),
         weights=sub(weights),
@@ -694,9 +740,10 @@ def metadata_from_escalc(
         mods=sub(mods),
         intercept=intercept,
         data=data_sub,
-        slab=sub(slab),
+        slab=[str(i + 1) for i in idx] if slab is None else sub(slab),
         na_action=na_action,
     )
+    return dataclasses.replace(md, counts_all=counts_all or None)
 
 
 rma = rma_uni
@@ -1111,7 +1158,7 @@ def adj_r2(y: FloatArray, X: FloatArray, w: FloatArray) -> float:
 # -- printing -----------------------------------------------------------------
 
 
-def format_result(res: RMAResult, digits: int, showfit: bool = False) -> str:
+def format_result(res: RMAResult, digits: int, showfit: bool = False, signif_stars: bool = True, signif_legend: bool = True) -> str:
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     out: list[str] = ['']
     fe = res.method in metafopy.models.tau2.FIXED_EFFECTS
@@ -1226,14 +1273,9 @@ def format_result(res: RMAResult, digits: int, showfit: bool = False) -> str:
         rows_.append(row)
     if robust is not None:
         header, rows_ = metafopy.models.robust_print.decorate(header, rows_)
+    header, rows_ = metafopy.printing.drop_stars(header, rows_, signif_stars)
     out.append(metafopy.printing.fmt_table(header, rows_, row_names=None if res.int_only else list(res.coef_names)))
-    out.append('')
-    out.append('---')
-    out.append("Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1")
-    out.append('')
-    if robust is not None:
-        out += metafopy.models.robust_print.legend_lines(robust, res.int_only)
-        out.append('')
+    out += metafopy.printing.signif_footer(signif_legend, metafopy.models.robust_print.legend_lines(robust, res.int_only) if robust is not None else ())
     return '\n'.join(out)
 
 

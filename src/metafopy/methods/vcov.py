@@ -21,7 +21,9 @@ import scipy.sparse
 
 import metafopy.errors
 import metafopy.methods.common
+import metafopy.methods.deltamethod
 import metafopy.methods.fitview
+import metafopy.methods.matreg
 import metafopy.models.binary
 import metafopy.models.glmm_result
 import metafopy.models.mv_result
@@ -148,6 +150,8 @@ def vcov(
     row and column per study of the subset: ``na_action='omit'`` keeps the studies used in fitting, ``'exclude'`` and ``'pass'`` all of them (NaN
     for those not used) and ``'fail'`` stops if any study was left out (``'fitted'`` gives the whole matrix, as in R).
 
+    A ``deltamethod`` or ``matreg`` result gives its own variance-covariance matrix (``vcov.deltamethod``, ``vcov.matreg``).
+
     Raises:
         metafopy.errors.ArgumentError: ``object`` is not a fitted model, or ``type='resid'`` for a fit without ``hatvalues()`` (``rma_mh``,
             ``rma_peto``, ``rma_glmm``).
@@ -155,6 +159,8 @@ def vcov(
             model that is not a selection model, or studies are missing and ``na_action='fail'`` for ``'obs'``.
         metafopy.errors.NotSupportedError: ``'obs'`` for ``rma_mh``, ``rma_peto`` and ``rma_glmm``; ``'resid'`` for robust and selection-model fits.
     """
+    if isinstance(object, (metafopy.methods.deltamethod.DeltaMethodResult, metafopy.methods.matreg.MatregResult)):
+        return object.vcov()
     metafopy.methods.fitview.check_class(object)
     metafopy.methods.common.check_na_action(na_action)
     kind = metafopy.methods.common.match_arg(type, VCOV_TYPES)

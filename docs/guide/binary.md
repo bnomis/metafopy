@@ -124,6 +124,9 @@ For the conditional model `CM.EL` with `method='FE'`, `control={'optimizer': 'cl
 `survival::clogit` or `Epi::clogistic`. `link=` and `family=` change the link function or the family of the unconditional models.
 
 The other optimisers of `rma.glmm` are available for `CM.EL` too (`control={'optimizer': 'BFGS'}`, `'Nelder-Mead'`, or `'optim'` with `optmethod=`, `optCtrl={'maxit': ...}`, and `'CG'`, `'L-BFGS-B'`, `'nlm'`, `'bobyqa'`, ...). `optim`'s BFGS and Nelder-Mead are exact ports of R's routines; the rest use the closest SciPy method.
+`control={'hesspack': 'pracma'}` or `'calculus'` (default `'numDeriv'`) and `control={'hessianCtrl': {...}}` choose how the Hessian of `CM.EL` is computed.
+`control={'dnchgcalc': 'dnoncenhypergeom'}` or `'dFNCHypergeo'` and `control={'dnchgprec': 1e-10}` choose the density of the non-central
+hypergeometric distribution; naming `'dFNCHypergeo'` or a precision uses a port of BiasedUrn's algorithm, including the truncation of its tails.
 See [differences from metafor](../differences.md) for what can differ.
 
 ## Rates

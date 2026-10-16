@@ -50,7 +50,8 @@ def scale_matrix(scale: ScaleSpec, md: metafopy.metadata.MetaData) -> tuple[Floa
             return numpy.ones((k_all, 1)), ('intrcpt',)
         if md.data is None:
             raise metafopy.errors.InputError('a formula for scale needs data')
-        Z, names, _ = metafopy.formula.design_matrix(scale, md.data)
+        Z, names, z_missing = metafopy.formula.design_matrix(scale, md.data)
+        Z[z_missing] = numpy.nan
     elif isinstance(scale, pandas.DataFrame):
         names = tuple(str(c) for c in scale.columns)
         Z = scale.to_numpy(dtype=float)
@@ -123,6 +124,8 @@ def fit_scale(
             ni=None if md.ni is None else md.ni[sel],
         )
         Z = Z[sel]
+    if md.na_rows is not None and md.na_rows.any():
+        metafopy.models.rma_uni.warn_na_omitted(int(md.na_rows.sum()))
     res = metafopy.models.rma_ls_fit.fit_rma_ls(
         md,
         Z,

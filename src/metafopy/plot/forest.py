@@ -325,14 +325,18 @@ def ftxt(ax: matplotlib.axes.Axes, x: float, y: float, s: str, fnt: metafopy.plo
 
 
 def check_pred(predstyle: str) -> PredStyle:
-    """The validated ``predstyle``.
+    """The validated ``predstyle``; like R's ``match.arg()`` an unambiguous abbreviation (``'l'``, ``'p'``, ``'b'``, ``'s'``, ``'d'``) is accepted.
 
     Raises:
         metafopy.errors.InputError: the style is not one of the allowed names.
     """
-    for name in typing.get_args(PredStyle.__value__):
+    names = typing.get_args(PredStyle.__value__)
+    for name in names:
         if predstyle == name:
             return typing.cast(PredStyle, name)
+    partial = [name for name in names if predstyle != '' and name.startswith(predstyle)]
+    if len(partial) == 1:
+        return typing.cast(PredStyle, partial[0])
     raise metafopy.errors.InputError("'predstyle' should be one of 'line', 'polygon', 'bar', 'shade', 'dist'.")
 
 
@@ -663,7 +667,7 @@ def forest(
     slab: collections.abc.Sequence[typing.Any] | float | None = None,
     mlab: str | collections.abc.Sequence[str] | None = None,
     ilab: typing.Any = None,
-    ilab_lab: collections.abc.Sequence[str] | None = None,
+    ilab_lab: str | collections.abc.Sequence[str] | None = None,
     ilab_xpos: numpy.typing.ArrayLike | None = None,
     ilab_pos: int | collections.abc.Sequence[int] | None = None,
     order: str | numpy.typing.ArrayLike | None = None,
@@ -704,6 +708,8 @@ def forest(
     na_action: metafopy.metadata.NAAction = 'omit',
     predtype: str | None = None,
     pi_type: str | None = None,
+    addcred: bool | str | int | collections.abc.Sequence[str | int] | None = None,
+    clim: collections.abc.Sequence[float] | None = None,
 ) -> ForestResult:
     """Forest plot of a fitted model (``forest.rma``) or of estimates with their variances (``forest.default``).
 
@@ -734,6 +740,7 @@ def forest(
     are left out (``'omit'``, the default) or, with ``'pass'`` (R's ``'na.pass'`` and ``'na.exclude'``), kept as rows of the plot;
     ``'fail'`` raises an error if there are any. ``predtype`` (``pi_type`` is its old spelling) is passed on to
     :func:`metafopy.predict` for the prediction interval (``'default'``, ``'simple'``, ``'riley'`` or ``'t'``).
+    ``addcred`` and ``clim`` are the old spellings (read from ``...`` by metafor) of ``addpred`` and ``olim`` and win over them.
 
     Indices are 0-based where they refer to positions; ``rows`` are plot rows as in R. Vector
     arguments (``slab``, ``ilab``, ``psize``, ...) must have one entry per study of the fit (or per
@@ -745,6 +752,12 @@ def forest(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
+    if isinstance(ilab_lab, str):
+        ilab_lab = [ilab_lab]
+    if addcred is not None:
+        addpred = addcred
+    if clim is not None:
+        olim = clim
     if isinstance(x, metafopy.methods.leave1out.CumulResult):
         return metafopy.plot.cumul.forest_cumul(
             x,
@@ -1734,6 +1747,7 @@ def addpoly(
     lcol: str | collections.abc.Sequence[str] | None = None,
     predtype: str | None = None,
     pi_type: str | None = None,
+    addcred: bool | None = None,
 ) -> matplotlib.axes.Axes:
     """Add polygons (summary estimates) to a forest plot (``addpoly.rma`` and ``addpoly.default``).
 
@@ -1743,7 +1757,8 @@ def addpoly(
     and the ``rows`` to draw them in. Unspecified options (``alim``, ``digits``, ``annotate``,
     ``transf``, ``atransf``, ``efac``, ``cex``, ``textpos``, ...) are taken from the last
     :func:`forest` call on the same axes. Returns the axes. ``predtype`` (``pi_type`` is its old spelling) is passed on to
-    :func:`metafopy.predict` for a fitted model.
+    :func:`metafopy.predict` for a fitted model. ``addcred`` is the old spelling of ``addpred`` (read from ``...`` by
+    ``addpoly.rma``) and wins over it for a fitted model.
 
     ``predstyle`` is ``'line'``, ``'polygon'``, ``'bar'``, ``'shade'`` or ``'dist'`` (the last two draw the predictive
     distribution, see :func:`forest`; they need ``predlim``/``preddist``/``predtail`` as there). For numbers the predictive
@@ -1759,6 +1774,8 @@ def addpoly(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
+    if addcred is not None and metafopy.methods.fitview.is_rma(x):
+        addpred = addcred
     if isinstance(x, metafopy.methods.predict.PredictResult):
         if getattr(x, 'pred_type', 'location') == 'scale':
             raise metafopy.errors.InputError('Cannot add polygons based on predicted scale values.')
@@ -1766,6 +1783,12 @@ def addpoly(
         if use_pi and bool(numpy.all(numpy.isnan(x.pi_lb))) and bool(numpy.all(numpy.isnan(x.pi_ub))):
             warnings.warn('Could not extract prediction interval bounds.', stacklevel=2)
         nan = numpy.full(x.pred.shape[0], math.nan)
+        if pi_se is None and x.pi_se is not None:
+            pi_se = float(numpy.atleast_1d(x.pi_se)[0])
+        if x.pi_dist is not None and pi_dist == 'norm':
+            pi_dist = x.pi_dist
+        if pi_ddf is None and x.pi_ddf is not None:
+            pi_ddf = float(numpy.atleast_1d(x.pi_ddf)[0])
         return addpoly(
             x.pred,
             ci_lb=x.ci_lb,

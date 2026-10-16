@@ -9,6 +9,8 @@ metafopy:
   sets the number of decimals the fitted-model printouts use when ``digits`` is
   not passed to ``summary()``. metafopy's printouts use one number of decimals,
   so a mapping is reduced to its ``est`` element (or its first element).
+- ``signif_stars``: honoured, metafopy's counterpart of R's ``getOption("show.signif.stars")``. ``False`` drops the significance stars (and,
+  unless ``signif_legend`` is passed, the legend) of the coefficient tables when ``signif_stars`` is not passed to ``summary()``.
 - ``space``: honoured by the fitted-model printouts (``rma_uni``, ``rma_mv``,
   location-scale, ``selmodel``, ``rma_mh``, ``rma_peto`` and ``rma_glmm``
   results): ``False`` drops the blank line printed before and after the output.
@@ -26,7 +28,7 @@ import typing
 
 import metafopy.errors
 
-__all__ = ['DIGIT_KEYS', 'OPTIONS', 'getmfopt', 'option_digits', 'option_space', 'setmfopt']
+__all__ = ['DIGIT_KEYS', 'OPTIONS', 'getmfopt', 'option_digits', 'option_signif', 'option_space', 'reduce_digits', 'setmfopt']
 
 # auditme: accept[non-alphabetical-literal] the order of metafor's digits vector
 DIGIT_KEYS = ('est', 'se', 'test', 'pval', 'ci', 'var', 'sevar', 'fit', 'het')
@@ -34,7 +36,7 @@ DIGIT_KEYS = ('est', 'se', 'test', 'pval', 'ci', 'var', 'sevar', 'fit', 'het')
 THEMES = ('auto', 'auto2', 'custom', 'custom2', 'dark', 'dark2', 'default', 'default2', 'light', 'light2')
 
 # auditme: accept[mutable-module-level-exported] metafor's options are one process-wide store, set with setmfopt()
-OPTIONS: dict[str, typing.Any] = {'check': True, 'silent': False, 'space': True, 'theme': 'default'}
+OPTIONS: dict[str, typing.Any] = {'check': True, 'signif_stars': True, 'silent': False, 'space': True, 'theme': 'default'}
 
 
 def setmfopt(**kwargs: typing.Any) -> None:
@@ -55,6 +57,8 @@ def setmfopt(**kwargs: typing.Any) -> None:
 def check_option(opt: str, value: typing.Any) -> None:
     if opt == 'space' and not isinstance(value, bool):
         raise metafopy.errors.InputError("'space' must be a logical.")
+    if opt == 'signif_stars' and not isinstance(value, bool):
+        raise metafopy.errors.InputError("'signif_stars' must be a logical.")
     if opt == 'digits' and not is_numeric_vector(value):
         raise metafopy.errors.InputError("'digits' must be a numeric vector.")
     if opt == 'style' and not isinstance(value, bool | collections.abc.Mapping):
@@ -85,20 +89,31 @@ def getmfopt(x: str | None = None, default: typing.Any = None) -> typing.Any:
     return default if value is None else value
 
 
-def option_digits(digits: int | None, stored: int = 4) -> int:
-    """The number of decimals a printout uses: an explicit ``digits``, else the ``digits`` option, else ``stored``."""
+def reduce_digits(value: typing.Any, stored: int = 4) -> int:
+    """A ``digits`` value (a scalar, or a mapping or sequence as metafor's named vector) as the one number of decimals the printouts use:
+    the ``est`` element of a mapping (else its first), the first element of a sequence."""
+    if isinstance(value, collections.abc.Mapping):
+        value = value.get('est', next(iter(value.values()), stored))
+    elif isinstance(value, collections.abc.Sequence) and not isinstance(value, str):
+        value = value[0] if value else stored
+    return int(value)
+
+
+def option_digits(digits: typing.Any, stored: int = 4) -> int:
+    """The number of decimals a printout uses (metafor's ``.get.digits``): an explicit ``digits``, else the ``digits`` option, else ``stored``
+    (the ``digits`` the model was fitted with)."""
     if digits is not None:
-        return digits
+        return reduce_digits(digits, stored)
     opt = OPTIONS.get('digits')
     if opt is None:
         return stored
-    if isinstance(opt, collections.abc.Mapping):
-        value = opt.get('est', next(iter(opt.values()), stored))
-    elif isinstance(opt, collections.abc.Sequence):
-        value = opt[0] if opt else stored
-    else:
-        value = opt
-    return int(value)
+    return reduce_digits(opt, stored)
+
+
+def option_signif(signif_stars: bool | None, signif_legend: bool | None) -> tuple[bool, bool]:
+    """``signif_stars`` (default: the ``signif_stars`` option, ``True``) and ``signif_legend`` (default: ``signif_stars``) of a printout."""
+    stars = bool(OPTIONS.get('signif_stars', True)) if signif_stars is None else signif_stars
+    return stars, stars if signif_legend is None else signif_legend
 
 
 def option_space(text: str) -> str:

@@ -28,7 +28,7 @@ COLUMNS = ('estimate', 'ci.lb', 'ci.ub')  # auditme: accept[non-alphabetical-lit
 
 
 def search_limits(
-    x: metafopy.models.rma_ls_result.RMALSResult, pos: int, alpha_level: float, control: collections.abc.Mapping[str, float]
+    x: metafopy.models.rma_ls_result.RMALSResult, pos: int, alpha_level: float, control: collections.abc.Mapping[str, typing.Any]
 ) -> tuple[float, float]:
     """The interval searched for the bounds of the CI of ``alpha[pos]`` (``vc.min`` and ``vc.max``)."""
     vc = float(x.alpha[pos])
@@ -42,8 +42,10 @@ def search_limits(
     amax = numpy.broadcast_to(numpy.asarray(x.control.alpha_max, dtype=numpy.float64), (x.q,))
     lo = max(lo, float(amin[pos]))
     hi = min(hi, float(amax[pos]))
-    lo = float(control.get('vc_min', lo))
-    hi = float(control.get('vc_max', hi))
+    if control.get('vc_min') is not None:
+        lo = float(control['vc_min'])
+    if control.get('vc_max') is not None:
+        hi = float(control['vc_max'])
     return lo, hi
 
 
@@ -70,34 +72,45 @@ def confint_rma_ls(
     level: float | None = None,
     transf: collections.abc.Callable[..., typing.Any] | None = None,
     targs: typing.Any = None,
-    control: collections.abc.Mapping[str, float] | None = None,
+    control: collections.abc.Mapping[str, typing.Any] | None = None,
     tol: float = metafopy.core.zeroin.DEFAULT_TOL,
     maxiter: int = 1000,
     eptries: int = 10,
-) -> metafopy.methods.confint.ConfintResult | list[metafopy.methods.confint.ConfintResult]:
+    xlim: collections.abc.Sequence[float] | None = None,
+) -> metafopy.methods.confint.ConfintResult | metafopy.methods.confint.ConfintList:
     """CIs for a location-scale fit (``confint.rma.ls``).
 
     ``alpha`` (a 0-based position) requests a profile-likelihood CI for that scale coefficient; ``fixed=True`` gives Wald-type
     CIs for the location coefficients (``transf`` and ``targs`` apply to these). With neither, a profile-likelihood CI is
     computed for every estimated scale coefficient and a list is returned (a single result if there is one). ``control`` may
-    hold ``vc_min`` and ``vc_max``, the interval searched for the bounds.
+    hold ``vc_min`` and ``vc_max`` (also written ``vc.min`` and ``vc.max``), the interval searched for the bounds, and ``tol``,
+    ``maxiter``, ``eptries`` and ``verbose``; its entries replace the keyword arguments of the same name. ``xlim`` (metafor's ``...`` argument) is the interval
+    ``(vc_min, vc_max)`` and wins over ``control``.
 
     Raises:
-        metafopy.errors.InputError: an argument is invalid or the model has no such coefficient.
+        metafopy.errors.InputError: an argument is invalid, ``control`` has an unknown entry or the model has no such coefficient.
     """
     x = model
+    settings = metafopy.methods.confint.control_values(
+        control, {'vc_min': None, 'vc_max': None, 'tol': tol, 'maxiter': maxiter, 'eptries': eptries, 'verbose': False}
+    )
+    tol, maxiter, eptries = settings['tol'], settings['maxiter'], settings['eptries']
     if x.optbeta:
         raise metafopy.errors.InputError("CI calculation not yet implemented for models fitted with 'optbeta=True'.")
     level_alpha = x.level if level is None else metafopy.models.rma_uni.level_to_alpha(level)
-    con = {} if control is None else dict(control)
+    con = {key: value for key, value in settings.items() if key in ('vc_min', 'vc_max')}
+    if xlim is not None:
+        if len(xlim) != 2:
+            raise metafopy.errors.InputError("Argument 'xlim' should be a vector of length 2.")
+        con['vc_min'], con['vc_max'] = float(xlim[0]), float(xlim[1])
 
     if not fixed and alpha is None:
         free = numpy.flatnonzero(~x.alpha_fix)
         if free.size == 0:
             raise metafopy.errors.InputError('No components for which a CI can be obtained.')
-        results = [confint_rma_ls(x, alpha=int(pos), level=level, control=control, tol=tol, maxiter=maxiter, eptries=eptries) for pos in free]
+        results = [confint_rma_ls(x, alpha=int(pos), level=level, control=settings, tol=tol, maxiter=maxiter, eptries=eptries, xlim=xlim) for pos in free]
         out = [r for r in results if isinstance(r, metafopy.methods.confint.ConfintResult)]
-        return out[0] if len(out) == 1 else out
+        return out[0] if len(out) == 1 else metafopy.methods.confint.ConfintList(out)
 
     res_random: pandas.DataFrame | None = None
     lb_sign = ub_sign = ''

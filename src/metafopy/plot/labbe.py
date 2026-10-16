@@ -72,8 +72,8 @@ class LabbeResult:
 class Rows:
     """The studies a L'Abbe plot draws: ``k`` of the ``k_all`` supplied rows (``keep``), with their 1-based ``ids`` and labels.
 
-    ``counts`` holds the arm-level counts kept by an ``rma_mh``, ``rma_peto`` or ``rma_glmm`` fit (``None`` for an
-    ``rma_uni`` fit, whose counts come from its data); ``frame`` is the data the model was fitted to.
+    ``counts`` holds the arm-level counts kept by an ``rma_mh``, ``rma_peto`` or ``rma_glmm`` fit, or by an ``rma_uni`` fit computed from counts
+    (``None`` for an ``rma_uni`` fit of ``yi`` and ``vi``, whose counts come from its data); ``frame`` is the data the model was fitted to.
     """
 
     k: int
@@ -88,7 +88,9 @@ class Rows:
 def model_rows(x: typing.Any) -> Rows:
     if isinstance(x, metafopy.models.rma_uni.RMAResult):
         keep = x.data.keep
-        return Rows(x.k, x.data.k_all, keep, tuple(int(i) + 1 for i in numpy.flatnonzero(keep)), tuple(x.slab), None, x.data.data)
+        stored = x.data.counts_all
+        counts = None if stored is None else {n: v[keep] for n, v in stored.items()}
+        return Rows(x.k, x.data.k_all, keep, tuple(int(i) + 1 for i in numpy.flatnonzero(keep)), tuple(x.slab), counts, x.data.data)
     t = x.tables
     keep = numpy.zeros(t.k_all, dtype=numpy.bool_)
     keep[t.ids] = True
@@ -105,7 +107,7 @@ def column(rows: Rows, name: str, value: numpy.typing.ArrayLike | str | None) ->
     """
     k, k_all = rows.k, rows.k_all
     frame = rows.frame
-    if rows.counts is not None and value is None:
+    if rows.counts is not None and value is None and name in rows.counts:
         return rows.counts[name]
     if value is None:
         if frame is None or name not in frame.columns:
@@ -172,6 +174,7 @@ def labbe(
     addyi: bool = True,
     addvi: bool = True,
     ax: matplotlib.axes.Axes | None = None,
+    bty: str = 'o',
 ) -> LabbeResult:
     """L'Abbe plot of a model without moderators fitted to 2x2 table data or incidence rates (``labbe.rma``).
 
@@ -186,7 +189,9 @@ def labbe(
     arrays). ``ci`` and ``pi`` shade the confidence and prediction interval of the line of the estimated effect
     (a colour string sets the colour), ``flip`` swaps the groups, ``psize``/``plim`` set the point sizes (default:
     proportional to the precision between ``plim``), ``transf`` is applied to the arm-level outcomes, and
-    ``add``, ``to`` (defaults 1/2, 0 for ``'AS'`` and ``'IRSD'``, and ``'only0'``), ``lim``/``llim`` as in metafor.
+    ``add``, ``to`` (defaults 1/2, 0 for ``'AS'`` and ``'IRSD'``, and ``'only0'``), ``lim``/``llim`` as in metafor. ``bty`` is the type of box around
+    the plot (``'o'``, ``'l'``, ``'7'``, ``'c'``, ``'u'``, ``']'`` or ``'n'``),
+    which metafor passes on to ``plot()``.
 
     Returns a :class:`LabbeResult`.
 
@@ -320,7 +325,7 @@ def labbe(
         xlab = metafopy.plot.rutils.setlab(measure, transf, None, 1) + ' (Group 1)'
     if ylab is None:
         ylab = metafopy.plot.rutils.setlab(measure, transf, None, 1) + ' (Group 2)'
-    xt, yt = metafopy.plot.plain.plain_plot(axx, xl, yl, xlab, ylab)
+    xt, yt = metafopy.plot.plain.plain_plot(axx, xl, yl, xlab, ylab, bty=bty)
     if show_pi and pi_lb is not None and pi_ub is not None:
         metafopy.plot.draw.poly(axx, numpy.concatenate([x_vals, x_vals[::-1]]), numpy.concatenate([pi_lb, pi_ub[::-1]]), col=pi_col, border=None, zorder=0.6)
     if show_ci and ci_lb is not None and ci_ub is not None:
@@ -362,8 +367,9 @@ def labbe_legend(
     pos = 'lower right' if intrcpt > 0 else 'upper left'
     if isinstance(legend, dict):
         pos = str(legend.get('x', pos))
+        pos = metafopy.plot.draw.LEGEND_POSITIONS.get(pos, pos)
     elif isinstance(legend, str):
-        pos = {'topright': 'upper right', 'topleft': 'upper left', 'bottomright': 'lower right', 'bottomleft': 'lower left'}.get(legend, legend)
+        pos = metafopy.plot.draw.LEGEND_POSITIONS.get(legend, legend)
     elif not legend:
         return
     handles: list[typing.Any] = []

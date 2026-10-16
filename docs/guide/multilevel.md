@@ -181,6 +181,15 @@ sigma.2      0.3347  0.2590  0.4255
 The profile-likelihood interval for the component with 0-based index `sigma2=1` is computed. Without an index, intervals for
 all components are returned.
 
+## Optimiser and Hessian settings
+
+`control=` of `rma_mv` takes the arguments of metafor: `optimizer` (`'nlminb'` by default, here BFGS with the analytic score; `'optim'` with
+`optmethod`, `'nlm'`, `'bobyqa'`, `'hjk'` and the others of `rma.mv` are run on the log-likelihood alone, `optim`'s BFGS and Nelder-Mead
+as exact ports and the rest with the closest SciPy method), `ncpus`, `parallel` and `cl` (accepted, but the likelihood is always evaluated
+serially), `mfmaxit` (the number of likelihood evaluations after which the fit stops with an error), `nearpd` (force the `G`, `H` and
+`M` matrices to be positive definite, which the `cvvc` example of `?matreg` needs to obtain `res.vvc`) and `hesspack`
+(`'numDeriv'`, `'pracma'` or `'calculus'`) with `hessianCtrl` for the Hessians of `optbeta` and `cvvc`.
+
 ## Known correlation matrices
 
 For phylogenetic and other known structures, give the correlation matrix as `R={'species.id': matrix}`: a dict of

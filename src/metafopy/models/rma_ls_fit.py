@@ -10,6 +10,7 @@ The (restricted) log-likelihood is maximised over ``alpha`` (and over ``beta`` w
 covariance matrix of the scale coefficients comes from the numerical Hessian of ``numDeriv::hessian``.
 """
 
+import collections.abc
 import dataclasses
 import math
 import warnings
@@ -25,6 +26,7 @@ import metafopy.metadata
 import metafopy.models.rma_ls_opt
 import metafopy.models.rma_ls_result
 import metafopy.models.rma_uni
+import metafopy.models.sel_opt
 
 __all__ = ['LSProblem', 'fit_rma_ls', 'make_ls_control']
 
@@ -34,6 +36,11 @@ type BoolArray = numpy.typing.NDArray[numpy.bool_]
 DBL_EPS = float(numpy.finfo(float).eps)
 SCIPY_METHODS = ('BFGS', 'CG', 'L-BFGS-B', 'Nelder-Mead')
 CONSTRAINED = ('constrOptim',)
+# identity link: the optimisers metafor accepts for the constraint tau_i^2 >= 0; solnp and nloptr are also allowed with the log link
+INEQUALITY = ('auglag', 'constrOptim', 'constrOptim.nl', 'nloptr', 'solnp')
+NO_LOG_LINK = ('auglag', 'constrOptim', 'constrOptim.nl')
+OPTIMIZERS = (*metafopy.models.sel_opt.OPTIMIZERS, 'constrOptim')
+OPTIMIZER_SETTINGS = ('abstol', 'maxit', 'ndeps', 'reltol', 'tol')
 
 
 def make_ls_control(
@@ -50,12 +57,76 @@ def make_ls_control(
         return control
     names = {f.name for f in dataclasses.fields(metafopy.models.rma_ls_result.LSControl)}
     kwargs: dict[str, object] = {}
+    opt_ctrl: dict[str, object] = {}
     for key, value in control.items():
         name = key.replace('.', '_')
-        if name not in names:
+        if name in OPTIMIZER_SETTINGS:
+            opt_ctrl[name] = value
+        elif name not in names:
             raise metafopy.errors.ArgumentError(f'unknown control argument {key!r}')
-        kwargs[name] = value
+        else:
+            kwargs[name] = value
+    if opt_ctrl:
+        kwargs['opt_ctrl'] = {**dict(kwargs.get('opt_ctrl', {})), **opt_ctrl}  # type: ignore[call-overload]
     return metafopy.models.rma_ls_result.LSControl(**kwargs)  # type: ignore[arg-type]
+
+
+def resolve_optimizer(con: metafopy.models.rma_ls_result.LSControl, link: str) -> str:
+    """metafor's optimiser bookkeeping of ``rma.uni`` for location-scale models; returns the name of the optimiser to run.
+
+    ``optim`` stands for ``optmethod`` (``BFGS`` unless the control says otherwise); ``ncpus > 1`` selects ``optimParallel`` and
+    ``alabama`` is ``constrOptim.nl``. With the identity link the default ``nlminb`` becomes ``constrOptim`` and an optimiser that
+    cannot honour the constraint is reset to it with a warning.
+
+    Raises:
+        metafopy.errors.InputError: the optimiser is unknown or cannot be used with the log link.
+    """
+    optimizer = metafopy.models.sel_opt.partial_match(con.optimizer, OPTIMIZERS, 'optimizer')
+    optmethod = metafopy.models.sel_opt.partial_match(con.optmethod, metafopy.models.sel_opt.OPTMETHODS, 'optmethod')
+    if optimizer in metafopy.models.sel_opt.OPTMETHODS:
+        optmethod, optimizer = optimizer, 'optim'
+    if con.ncpus > 1:
+        optimizer = 'optimParallel'
+    if optimizer == 'alabama':
+        optimizer = 'constrOptim.nl'
+    if link == 'identity':
+        if optimizer == 'nlminb':
+            optimizer = 'constrOptim'
+        elif optimizer not in INEQUALITY:
+            warnings.warn(
+                "Can only use optimizers 'constrOptim', 'solnp', 'nloptr', 'constrOptim.nl', or 'auglag' when link='identity' (resetting to 'constrOptim').",
+                stacklevel=4,
+            )
+            optimizer = 'constrOptim'
+    elif optimizer in NO_LOG_LINK:
+        raise metafopy.errors.InputError(f"Cannot use '{optimizer}' optimizer when using a log link.")
+    elif optimizer == 'nlminb':
+        optimizer = 'BFGS'
+    if optimizer == 'optim':
+        if optmethod not in SCIPY_METHODS:
+            raise metafopy.errors.NotSupportedError(f"optim(method='{optmethod}') is not available for location-scale models.")
+        optimizer = optmethod
+    return optimizer
+
+
+def minimise_standin(
+    objective: collections.abc.Callable[[FloatArray], float],
+    start: FloatArray,
+    choice: metafopy.models.sel_opt.OptimizerChoice,
+    con: metafopy.models.rma_ls_result.LSControl,
+    ui: FloatArray | None,
+) -> FloatArray:
+    """Run an optimiser of metafor that has no exact counterpart here as :func:`metafopy.models.sel_opt.minimize` maps it.
+
+    ``ui`` (the matrix of ``constrOptim``) turns ``ui @ x >= 0`` into the inequality constraint of the constrained optimisers.
+
+    Raises:
+        metafopy.errors.EstimationError: the optimiser did not converge or could not start.
+    """
+    if not math.isfinite(objective(start)):
+        raise metafopy.errors.EstimationError('Cannot evaluate the log-likelihood at the initial values.')
+    ineq = None if ui is None else (lambda x: numpy.asarray(ui @ x, dtype=numpy.float64))
+    return metafopy.models.sel_opt.minimize(objective, start, choice, {'maxit': con.maxiter, **con.opt_ctrl}, ineq)
 
 
 def mapfun(x: FloatArray, lb: FloatArray, ub: FloatArray) -> FloatArray:
@@ -344,19 +415,7 @@ def fit_rma_ls(
     if link == 'identity' and (numpy.any(alpha_min != -numpy.inf) or numpy.any(alpha_max != numpy.inf)):
         raise metafopy.errors.InputError('Cannot use constraints on scale coefficients when using an identity link.')
 
-    optimizer = con.optimizer
-    if link == 'identity':
-        if optimizer == 'nlminb':
-            optimizer = 'constrOptim'
-        elif optimizer not in CONSTRAINED:
-            warnings.warn("Can only use optimizer 'constrOptim' when link='identity' (resetting to 'constrOptim').", stacklevel=3)
-            optimizer = 'constrOptim'
-    elif optimizer == 'nlminb':
-        optimizer = 'BFGS'
-    elif optimizer in CONSTRAINED:
-        raise metafopy.errors.InputError(f"Cannot use '{optimizer}' optimizer when using a log link.")
-    elif optimizer not in SCIPY_METHODS:
-        raise metafopy.errors.InputError(f'unknown optimizer {optimizer!r}')
+    optimizer = resolve_optimizer(con, link)
 
     # -- rescale Z (as metafor does for models with scale moderators) -----------
     mZ: FloatArray | None = None
@@ -459,19 +518,26 @@ def fit_rma_ls(
         par[free] = x
         return problem.negloglik(par, alpha_arg, beta_arg, alpha_transf=True)
 
-    if optimizer == 'constrOptim':
+    if optimizer in INEQUALITY and link == 'identity':
         ui = numpy.column_stack([numpy.zeros((k, p)), Z]) if optbeta else Z
-        res = metafopy.models.rma_ls_opt.constr_optim(
-            par0,
-            lambda x: problem.negloglik(x, alpha_arg, beta_arg, alpha_transf=True),
-            ui,
-            numpy.zeros(k),
-        )
-        par_opt = res.par.copy()
-    else:
+
+        def full_objective(x: FloatArray) -> float:
+            return problem.negloglik(x, alpha_arg, beta_arg, alpha_transf=True)
+
+        if optimizer == 'constrOptim':
+            res = metafopy.models.rma_ls_opt.constr_optim(par0, full_objective, ui, numpy.zeros(k))
+            par_opt = res.par.copy()
+        else:
+            choice = metafopy.models.sel_opt.OptimizerChoice(optimizer, 'BFGS')
+            par_opt = minimise_standin(full_objective, par0, choice, con, ui)
+    elif optimizer in SCIPY_METHODS:
         res = metafopy.models.rma_ls_opt.minimise(objective, par0[free], method=optimizer, maxiter=con.maxiter, polish_converged=con.polish_converged)
         par_opt = par0.copy()
         par_opt[free] = res.par
+    else:
+        choice = metafopy.models.sel_opt.OptimizerChoice(optimizer, 'BFGS')
+        par_opt = par0.copy()
+        par_opt[free] = minimise_standin(objective, par0[free], choice, con, None)
 
     pos_beta = numpy.arange(p) if optbeta else numpy.arange(0)
     pos_alpha = numpy.arange(p, p + q) if optbeta else numpy.arange(q)

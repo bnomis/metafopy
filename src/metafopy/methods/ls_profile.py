@@ -9,6 +9,7 @@ import concurrent.futures
 import dataclasses
 import functools
 import math
+import typing
 import warnings
 
 import matplotlib.axes
@@ -90,6 +91,7 @@ def profile_rma_ls(
     cl: concurrent.futures.Executor | None = None,
     plot: bool = False,
     ax: matplotlib.axes.Axes | None = None,
+    **plot_args: typing.Any,
 ) -> LSProfileResult | list[LSProfileResult]:
     """Profile the likelihood over a scale coefficient (``alpha``, a 0-based position) on ``steps`` equally spaced values in ``xlim``.
 
@@ -98,7 +100,9 @@ def profile_rma_ls(
     limited by ``alpha_min`` and ``alpha_max`` of the control settings. As in metafor, ``parallel`` (``'snow'`` or
     ``'multicore'``) refits the models in a process pool of ``ncpus`` workers (or on the executor ``cl``) and
     ``progbar=True`` prints a progress bar to stderr; the result equals that of the serial run. ``plot=True`` draws the profile(s) with
-    :func:`metafopy.plot.plot_profile` (metafor's default is ``plot=TRUE``), several in a grid of panels.
+    :func:`metafopy.plot.plot_profile` (metafor's default is ``plot=TRUE``), several in a grid of panels. Further keyword arguments (``pch``,
+    ``cline``, ``refline``, ``xlab``, ``ylab``, ``main``, ``log``, ``cex``, ``lwd``) are passed on to :func:`metafopy.plot.plot_profile`, as metafor's
+    ``...`` is to ``plot.profile.rma``.
 
     Raises:
         metafopy.errors.InputError: an argument is invalid or the model has no such coefficient.
@@ -124,7 +128,7 @@ def profile_rma_ls(
         results = [profile_rma_ls(x, int(pos), xlim, ylim, steps, lltol, exp=exp, progbar=progbar, parallel=parallel, ncpus=ncpus, cl=cl) for pos in free]
         out = [r for r in results if isinstance(r, LSProfileResult)]
         if plot and out:
-            plot_all(out, ax)
+            plot_all(out, ax, plot_args)
         return out[0] if len(out) == 1 else out
 
     if bool(numpy.all(x.alpha_fix)):
@@ -207,12 +211,12 @@ def profile_rma_ls(
         alphas=x.q,
     )
     if plot:
-        plot_all([result], ax)
+        plot_all([result], ax, plot_args)
     return result
 
 
-def plot_all(results: list[LSProfileResult], ax: matplotlib.axes.Axes | None) -> None:
+def plot_all(results: list[LSProfileResult], ax: matplotlib.axes.Axes | None, plot_args: collections.abc.Mapping[str, typing.Any]) -> None:
     # auditme: accept[in-function-import] metafopy.plot.profile imports the methods, so the import is deferred to avoid a cycle
     import metafopy.plot.profile
 
-    metafopy.plot.profile.plot_profile(results[0] if len(results) == 1 else results, ax=ax)
+    metafopy.plot.profile.plot_profile(results[0] if len(results) == 1 else results, ax=ax, **plot_args)

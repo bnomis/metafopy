@@ -15,7 +15,7 @@ import typing
 
 import metafopy.errors
 
-__all__ = ['Parallel', 'map_sims', 'progress', 'resolve_parallel']
+__all__ = ['Parallel', 'map_sims', 'progress', 'resolve_parallel', 'tick']
 
 # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
 type Parallel = typing.Literal['no', 'snow', 'multicore']
@@ -66,8 +66,14 @@ def map_sims[T, V](
             pool.shutdown()
 
 
+def tick(done: int, total: int, show: bool) -> None:
+    """The progress bar after ``done`` of ``total`` steps, written to stderr (for loops that :func:`progress` cannot wrap); a no-op unless ``show``."""
+    if show and total > 0:
+        print(f'\r  |{"+" * (50 * done // total):<50}| {100 * done // total:3d}%', end='' if done < total else '\n', file=sys.stderr)
+
+
 def progress[V](rows: collections.abc.Iterable[V], total: int, show: bool) -> collections.abc.Iterator[V]:
+    """``rows`` as they come, with a progress bar on stderr (``show``) that counts them against ``total``."""
     for i, row in enumerate(rows, start=1):
-        if show:
-            print(f'\r  |{"+" * (50 * i // total):<50}| {100 * i // total:3d}%', end='' if i < total else '\n', file=sys.stderr)
+        tick(i, total, show)
         yield row
