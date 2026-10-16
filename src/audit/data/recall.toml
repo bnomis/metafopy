@@ -1,0 +1,1105 @@
+# The recall corpus: every item the audits of 2026-10-15 and 2026-10-16 found by hand, with the finding the harness must produce for it.
+#
+# `bin/metafor-audit.sh --recall` runs the harness against metafopy as it was when each audit looked (the commit under [audit.N]) with the ledger
+# switched off and reports, per audit, which items it reproduced. An item is reproduced when some finding matches a `find` entry: globs on `id`, `kind`,
+# `path` and `detail` (default `*`). `hint` lists substrings of case ids (or script topics) that are enough to re-run only the cases involved.
+# `reach = "none"` marks an item no probe can see by design, with the reason in `why`; those count as missed in the totals, never as hits.
+# Items from the audit reports themselves are quoted in `text`.
+
+[audit.4]
+commit = "9f165e1"
+report = "/mnt/project-files/reviews/audit4-wrong-or-missing.md"
+
+[audit.5]
+commit = "f4ce32f"
+report = "/mnt/project-files/reviews/audit5-wrong-or-missing.md"
+
+[audit.6]
+commit = "9f61ddf"
+report = "/mnt/project-files/reviews/audit6-wrong-or-missing.md"
+
+# ---------------------------------------------------------------- audit 4: missing
+
+[[item]]
+id = "a4-vcov-type"
+audit = 4
+text = "vcov(type='obs'/'fitted'/'resid') on every fit class"
+find = [{ id = "options/vcov/*/type=*" }]
+
+[[item]]
+id = "a4-predict-predtype"
+audit = 4
+text = "predict(predtype='Riley') on every fit class except location-scale"
+find = [{ id = "options/predict/*/predtype=*" }]
+
+[[item]]
+id = "a4-predict-newvi"
+audit = 4
+text = "predict(newvi=) on every fit class except location-scale"
+find = [{ id = "options/predict/*/newvi=*" }]
+
+[[item]]
+id = "a4-vif-mv"
+audit = 4
+text = "vif() for rma_mv fits with moderators"
+find = [{ id = "matrix/vif/mv_ks_mods" }]
+
+[[item]]
+id = "a4-vif-selmodel"
+audit = 4
+text = "vif() for selmodel fits with moderators"
+find = [{ id = "matrix/vif/sel_mods_bcg" }]
+
+[[item]]
+id = "a4-regplot-mv"
+audit = 4
+text = "regplot() for rma_mv fits"
+find = [{ id = "matrix/regplot/mv_ks_mods" }]
+
+[[item]]
+id = "a4-regplot-ls"
+audit = 4
+text = "regplot() for location-scale fits"
+find = [{ id = "matrix/regplot/ls_bcg" }]
+
+[[item]]
+id = "a4-regplot-selmodel"
+audit = 4
+text = "regplot() for selmodel fits"
+find = [{ id = "matrix/regplot/sel_mods_bcg" }]
+
+[[item]]
+id = "a4-na-action-fitted"
+audit = 4
+text = "fitted() has no na_action"
+find = [{ id = "options/fitted/uni_na/option:na.action=*" }]
+
+[[item]]
+id = "a4-na-action-predict"
+audit = 4
+text = "predict() has no na_action"
+find = [{ id = "options/predict/uni_na/option:na.action=*" }]
+
+[[item]]
+id = "a4-na-action-hatvalues"
+audit = 4
+text = "hatvalues() has no na_action"
+find = [{ id = "options/hatvalues/uni_na/option:na.action=*" }]
+
+[[item]]
+id = "a4-forest-tabfig"
+audit = 4
+text = "forest(tabfig=)"
+find = [{ id = "options/forest/*/tabfig=*" }]
+
+[[item]]
+id = "a4-glmm-cmel-optimizers"
+audit = 4
+text = "rma_glmm with CM.EL accepts only nlminb, clogit and clogistic"
+find = [{ id = "construct/glmm_cm/control=*" }]
+
+[[item]]
+id = "a4-coef-summary"
+audit = 4
+text = "coef(summary(res))"
+find = [{ id = "matrix/coef/summary_reml" }]
+
+[[item]]
+id = "a4-cbind-escalc"
+audit = 4
+text = "cbind of escalc frames"
+find = [{ id = "matrix/cbind/es_bcg" }]
+
+[[item]]
+id = "a4-rbind-escalc"
+audit = 4
+text = "rbind of escalc frames"
+find = [{ id = "matrix/rbind/es_bcg" }]
+
+[[item]]
+id = "a4-points-regplot"
+audit = 4
+text = "points.regplot"
+find = [{ id = "matrix/points/regplot_mods" }]
+
+[[item]]
+id = "a4-field-k-eff-mv"
+audit = 4
+text = "k_eff on rma_mv fits"
+find = [{ id = "matrix/print/mv_ks", path = "*k.eff" }]
+
+[[item]]
+id = "a4-field-k-eff-mh"
+audit = 4
+text = "k_eff on rma_mh fits"
+find = [{ id = "matrix/print/mh_bcg", path = "*k.eff" }]
+
+[[item]]
+id = "a4-field-k-eff-peto"
+audit = 4
+text = "k_eff on rma_peto fits"
+find = [{ id = "matrix/print/peto_bcg", path = "*k.eff" }]
+
+[[item]]
+id = "a4-field-selmodel-het"
+audit = 4
+text = "I2, H2 and QE on selmodel fits"
+find = [{ id = "matrix/print/sel_bcg", path = "*[IHQ]*" }]
+
+[[item]]
+id = "a4-field-M"
+audit = 4
+text = "the M field of fits"
+find = [{ id = "matrix/print/*", path = "$M" }]
+
+[[item]]
+id = "a4-mv-gen"
+audit = 4
+text = "rma_mv(struct='GEN') fails to converge where R converges"
+find = [{ id = "construct/mv_gen*" }]
+
+# ---------------------------------------------------------------- audit 4: wrong
+
+[[item]]
+id = "a4-anova-clubsandwich"
+audit = 4
+text = "anova() of a club_sandwich fit uses chi-square instead of R's F test"
+find = [{ id = "matrix/anova/robust_cs_bcg", kind = "value-diff" }]
+
+[[item]]
+id = "a4-predict-mv-newmods-nomods"
+audit = 4
+text = "predict(newmods=30) on an rma_mv fit without moderators returns a value; R refuses"
+find = [{ id = "options/predict/mv_ks/newmods=*", kind = "accepts-where-R-refuses" }]
+
+[[item]]
+id = "a4-selmodel-vcov-type"
+audit = 4
+text = "SelmodelResult.vcov(type=) returns the beta matrix for any type except delta"
+find = [{ id = "options/vcov/sel_bcg/type=*" }]
+
+[[item]]
+id = "a4-ls-na-action-pass"
+audit = 4
+text = "location-scale na_action='pass' returns one value too few when only a scale covariate is missing"
+find = [{ id = "options/*/ls_na/option:na.action=*" }]
+
+[[item]]
+id = "a4-blup-clubsandwich"
+audit = 4
+text = "blup() of club_sandwich fits uses z intervals where R uses t"
+find = [{ id = "matrix/blup/robust_cs_bcg", kind = "value-diff" }]
+
+[[item]]
+id = "a4-ranef-clubsandwich"
+audit = 4
+text = "ranef() of club_sandwich fits uses z intervals where R uses t"
+find = [{ id = "matrix/ranef/robust_cs_bcg", kind = "value-diff" }]
+
+[[item]]
+id = "a4-ls-permutest"
+audit = 4
+text = "location-scale permutest scale p-values differ from R"
+find = [{ id = "matrix/permutest/ls_bcg", kind = "value-diff" }, { id = "matrix/permutest/ls_bangert", kind = "value-diff" }, { id = "scripts/misc_rma_ls*" }]
+
+[[item]]
+id = "a4-ls-identity-se"
+audit = 4
+text = "location-scale identity-link scale standard errors are off by 5e-4"
+find = [{ id = "construct/ls_bcg/link=*identity*", kind = "value-diff" }, { id = "construct/ls_bangert/link=*identity*", kind = "value-diff" }, { id = "scripts/misc_rma_ls*" }]
+
+[[item]]
+id = "a4-forest-selmodel-layout"
+audit = 4
+text = "forest() of selmodel fits uses a different layout from R"
+find = [{ id = "matrix/forest/sel_*", kind = "value-diff" }, { id = "options/forest/sel_*", kind = "value-diff" }]
+
+# ---------------------------------------------------------------- audit 5: wrong
+
+[[item]]
+id = "a5-escalc-slab"
+audit = 5
+text = "rma() ignores the slab of an escalc frame"
+find = [{ id = "matrix/print/uni_slab", path = "*slab*" }]
+
+[[item]]
+id = "a5-escalc-slab-mv"
+audit = 5
+text = "rma_mv ignores the slab of an escalc frame"
+find = [{ id = "construct/mv_slab*" }]
+
+[[item]]
+id = "a5-na-omitted-warning"
+audit = 5
+text = "rma_uni drops studies with missing values without R's warning"
+find = [{ id = "construct/uni_na", kind = "warning-missing" }]
+
+[[item]]
+id = "a5-predict-named-newmods"
+audit = 5
+text = "predict(newmods=) with names uses the values by position"
+find = [{ id = "options/predict/uni_mods_year/newmods=*named*" }]
+
+[[item]]
+id = "a5-anova-lrt-checks"
+audit = 5
+text = "anova(full, reduced) LRT skips R's checks (ML against REML, FE against RE)"
+find = [{ id = "options/anova/*/object2=*", kind = "accepts-where-R-refuses" }]
+
+[[item]]
+id = "a5-rma-mh-zero-division"
+audit = 5
+text = "rma_mh(measure='RD') crashes with ZeroDivisionError when an outcome never occurs"
+find = [{ id = "scripts/*zeros*", kind = "crash" }, { id = "scripts/rma.mh/*", kind = "crash" }]
+hint = ["zeros", "rma.mh"]
+
+[[item]]
+id = "a5-ls-na-factor-scale"
+audit = 5
+text = "rma(scale=~0+C(meta)) with NA in the factor keeps the NA studies as zero rows of Z"
+find = [{ id = "construct/ls_na*" }]
+
+[[item]]
+id = "a5-confint-ls-control"
+audit = 5
+text = "confint() of location-scale fits ignores control={'vc.min'} and accepts unknown entries"
+find = [{ id = "options/confint/ls_bcg/control=*" }]
+
+[[item]]
+id = "a5-emmprep-data"
+audit = 5
+text = "emmprep(res, data=...) applies the fit's subset and NA mask to the user's data"
+find = [{ id = "options/emmprep/uni_reml/data=*" }]
+
+[[item]]
+id = "a5-regtest-predictor-ni"
+audit = 5
+text = "regtest(predictor='ni') cannot find the frame's ni"
+find = [{ id = "options/regtest/*/predictor=*" }]
+
+[[item]]
+id = "a5-fsn-columns"
+audit = 5
+text = "fsn('yi', data=dat, type='Orwin') does not resolve the column name"
+find = [{ id = "standalone/fsn*" }]
+
+[[item]]
+id = "a5-escalc-include-ni"
+audit = 5
+text = "escalc(include=, data=escalc_frame) a second time wipes ni outside include"
+find = [{ id = "construct/es_include*" }]
+
+[[item]]
+id = "a5-glmm-cmel-se"
+audit = 5
+text = "rma_glmm(model='CM.EL') standard errors are 0.2 to 0.5 % off"
+find = [{ id = "construct/glmm_cm", kind = "value-diff" }]
+
+[[item]]
+id = "a5-selmodel-beta-nlminb"
+audit = 5
+text = "selmodel(type='beta', control=list(optimizer='nlminb')) differs by 9e-4 on baskerville2012"
+find = [{ id = "datasets/dat.baskerville2012" }]
+
+[[item]]
+id = "a5-forest-transf-labels"
+audit = 5
+text = "forest() labels for transf_* back-transformations"
+find = []
+reach = "none"
+why = "the label is text drawn on a plot; the audit compares what forest() returns, not the pixels or the strings of the figure"
+
+[[item]]
+id = "a5-forest-ilab-lab"
+audit = 5
+text = "forest(ilab_lab='Latitude'): a single string is split into characters"
+find = [{ id = "options/forest/*/ilab.lab=*" }]
+
+[[item]]
+id = "a5-addpoly-predstyle"
+audit = 5
+text = "addpoly(predict_result, predstyle='shade'/'dist') fails"
+find = [{ id = "options/addpoly/predict_*/predstyle=*" }]
+
+[[item]]
+id = "a5-named-colours"
+audit = 5
+text = "named colours in colour ramps raise ValueError (funnel(shade='white', level=[90, 95, 99]))"
+find = [{ id = "options/funnel/*/shade=*" }]
+
+[[item]]
+id = "a5-funnel-legend"
+audit = 5
+text = "funnel(legend={'x': 'topright'}) does not map R's position names"
+find = [{ id = "options/funnel/*/legend=*" }]
+
+[[item]]
+id = "a5-predict-prob"
+audit = 5
+text = "predict(prob='>log(0.8)') returns prob = None silently"
+find = [{ id = "options/predict/*/prob=*" }]
+
+[[item]]
+id = "a5-dfround-na-digits"
+audit = 5
+text = "dfround() with NA entries in digits raises a raw TypeError"
+find = [{ id = "standalone/dfround/digits=*" }]
+
+[[item]]
+id = "a5-glmm-mods-warning"
+audit = 5
+text = "rma_glmm(measure='OR', mods=~ablat) gives an lme4 'falling back to RX' warning R does not give"
+find = [{ id = "construct/glmm_bcg/mods=*", kind = "warning-extra" }]
+
+# ---------------------------------------------------------------- audit 5: missing
+
+[[item]]
+id = "a5-mv-control"
+audit = 5
+text = "rma_mv(control=): optimizer, optmethod, nearpd, hesspack, hessianCtrl, mfmaxit, parallel/ncpus/cl all raise"
+find = [{ id = "construct/mv_ks/control=*" }]
+
+[[item]]
+id = "a5-ls-optimisers"
+audit = 5
+text = "location-scale optimisers other than nlminb, BFGS, CG, L-BFGS-B, Nelder-Mead raise 'unknown optimizer'"
+find = [{ id = "construct/ls_bcg/control=*" }]
+
+[[item]]
+id = "a5-glmm-control"
+audit = 5
+text = "rma_glmm(control=): hessianCtrl, hesspack, dnchgcalc, dnchgprec"
+find = [{ id = "construct/glmm_bcg/control=*" }]
+
+[[item]]
+id = "a5-digits-rma"
+audit = 5
+text = "digits= on rma/rma_uni"
+find = [{ id = "construct/uni_reml/digits=*" }]
+
+[[item]]
+id = "a5-digits-rma-mv"
+audit = 5
+text = "digits= on rma_mv"
+find = [{ id = "construct/mv_ks/digits=*" }]
+
+[[item]]
+id = "a5-digits-predict"
+audit = 5
+text = "digits= on predict"
+find = [{ id = "options/predict/*/digits=*" }]
+
+[[item]]
+id = "a5-digits-anova"
+audit = 5
+text = "digits= on anova"
+find = [{ id = "options/anova/*/digits=*" }]
+
+[[item]]
+id = "a5-digits-robust"
+audit = 5
+text = "digits= on robust"
+find = [{ id = "options/robust/*/digits=*" }]
+
+[[item]]
+id = "a5-progbar"
+audit = 5
+text = "progbar= on tes, baujat, permutest, cooks_distance, leave1out, cumul, rstudent, influence, dfbetas"
+find = [{ id = "api/*/progbar" }]
+
+[[item]]
+id = "a5-signif-stars"
+audit = 5
+text = "signif_stars/signif_legend of the printouts"
+find = [{ id = "options/print/*/signif.stars=*" }]
+
+[[item]]
+id = "a5-scalar-vi"
+audit = 5
+text = "rma(yi, 0): vi of length 1 raises a length error"
+find = [{ id = "construct/uni_reml/vi=*" }]
+
+[[item]]
+id = "a5-scalar-weights"
+audit = 5
+text = "rma(weights=1) raises a length error"
+find = [{ id = "construct/uni_reml/weights=*" }]
+
+[[item]]
+id = "a5-anova-X-print"
+audit = 5
+text = "printed anova(res, X=) has no Hypotheses lines and no Results table"
+find = [{ id = "options/anova/uni_mods/X=*", kind = "print-diff" }]
+
+[[item]]
+id = "a5-wald-to-frame"
+audit = 5
+text = "WaldResult has no to_frame()"
+find = [{ id = "matrix/as.data.frame/anova_mods" }]
+
+[[item]]
+id = "a5-confint-mv-plain-lists"
+audit = 5
+text = "confint() of multi-component rma_mv fits return plain lists with no table"
+find = [{ id = "matrix/print/confint_mv" }]
+
+[[item]]
+id = "a5-confint-to-frame"
+audit = 5
+text = "ConfintResult has no to_frame()"
+find = [{ id = "matrix/as.data.frame/confint_reml" }]
+
+[[item]]
+id = "a5-robust-dfs"
+audit = 5
+text = "robust() of rma_uni fits has no dfs, and ddf is None for club_sandwich"
+find = [{ id = "matrix/print/robust_*", path = "*dfs*" }, { id = "matrix/print/robust_*", path = "*ddf*" }]
+
+[[item]]
+id = "a5-selmodel-coef"
+audit = 5
+text = "SelmodelResult.coef() returns only beta"
+find = [{ id = "matrix/coef/sel_bcg" }]
+
+[[item]]
+id = "a5-permutest-coef"
+audit = 5
+text = "PermutestResult has no coef()"
+find = [{ id = "matrix/coef/permutest_mods" }]
+
+[[item]]
+id = "a5-vcov-deltamethod"
+audit = 5
+text = "top-level vcov() refuses deltamethod results"
+find = [{ id = "matrix/vcov/deltamethod_xy" }]
+
+[[item]]
+id = "a5-vcov-matreg"
+audit = 5
+text = "top-level vcov() refuses matreg results"
+find = [{ id = "matrix/vcov/matreg_cor" }]
+
+[[item]]
+id = "a5-predict-addx"
+audit = 5
+text = "predict(addx=True) stores X but neither prints nor returns it"
+find = [{ id = "options/predict/uni_mods/addx=*" }]
+
+[[item]]
+id = "a5-mv-g-levels"
+audit = 5
+text = "rma_mv result fields g.levels.k, g.levels.comb.k, g.nlevels, g.levels.f and the h.* ones"
+find = [{ id = "matrix/print/mv_ks", path = "*g.levels*" }]
+
+[[item]]
+id = "a5-labbe-from-counts"
+audit = 5
+text = "labbe(res) of an rma_uni fit from counts fails unless the counts are passed again"
+find = [{ id = "matrix/labbe/uni_counts" }]
+
+[[item]]
+id = "a5-formula-factor"
+audit = 5
+text = "factor()/relevel() in mods (only C())"
+find = [{ id = "construct/uni_reml/mods=*factor*" }]
+
+[[item]]
+id = "a5-formula-scale-na"
+audit = 5
+text = "scale(x) in mods does not skip NA (fit stops with k = 0)"
+find = [{ id = "construct/uni_na/mods=*scale*" }]
+
+[[item]]
+id = "a5-dots-anova-abbrev"
+audit = 5
+text = "anova(abbrev=)"
+find = [{ id = "api/anova/*/abbrev" }]
+
+[[item]]
+id = "a5-dots-influence-measure"
+audit = 5
+text = "influence(measure=)"
+find = [{ id = "api/influence/*/measure" }]
+
+[[item]]
+id = "a5-dots-profile"
+audit = 5
+text = "profile(pred=, blup=, newmods=)"
+find = [{ id = "api/profile/*/pred" }, { id = "options/profile/*/pred=*" }]
+
+[[item]]
+id = "a5-dots-confint-xlim"
+audit = 5
+text = "confint(xlim=)"
+find = [{ id = "options/confint/*/xlim=*" }, { id = "api/confint/*/xlim" }]
+
+[[item]]
+id = "a5-dots-hettest-model"
+audit = 5
+text = "hettest(model=)"
+find = [{ id = "api/hettest*/model" }, { id = "options/hettest/*/model=*" }]
+
+[[item]]
+id = "a5-dots-forest-addcred"
+audit = 5
+text = "forest(addcred=, clim=)"
+find = [{ id = "options/forest/*/addcred=*" }]
+
+[[item]]
+id = "a5-dots-addpoly-addcred"
+audit = 5
+text = "addpoly(addcred=)"
+find = [{ id = "options/addpoly/*/addcred=*" }]
+
+[[item]]
+id = "a5-dots-cumul-addgrid"
+audit = 5
+text = "plot_cumul(addgrid=)"
+find = [{ id = "options/plot/cumul_reml/addgrid=*" }]
+
+[[item]]
+id = "a5-dots-layout"
+audit = 5
+text = "layout of plot_infl/plot_permutest/plot_vif"
+find = [{ id = "options/plot/infl_reml/layout=*" }, { id = "options/plot/permutest_mods/layout=*" }, { id = "options/plot/vif_*/layout=*" }]
+
+[[item]]
+id = "a5-graphics-profile"
+audit = 5
+text = "profile(cline=, pch=, ...)"
+find = [{ id = "options/profile/*/cline=*" }]
+
+[[item]]
+id = "a5-graphics-labbe-bty"
+audit = 5
+text = "labbe(bty=)"
+find = [{ id = "options/labbe/*/bty=*" }]
+
+[[item]]
+id = "a5-graphics-baujat-bty"
+audit = 5
+text = "baujat(bty=, las=)"
+find = [{ id = "options/baujat/*/bty=*" }, { id = "options/baujat/*/las=*" }]
+
+[[item]]
+id = "a5-graphics-qqnorm-main"
+audit = 5
+text = "qqnorm(main=)"
+find = [{ id = "options/qqnorm/*/main=*" }]
+
+[[item]]
+id = "a5-graphics-funnel-main"
+audit = 5
+text = "funnel(main=)"
+find = [{ id = "options/funnel/*/main=*" }]
+
+[[item]]
+id = "a5-graphics-regplot-xaxt"
+audit = 5
+text = "regplot(xaxt=)"
+find = [{ id = "options/regplot/*/xaxt=*" }]
+
+[[item]]
+id = "a5-graphics-permutest-xlim"
+audit = 5
+text = "plot_permutest(xlim=)"
+find = [{ id = "options/plot/permutest_mods/xlim=*" }]
+
+[[item]]
+id = "a5-graphics-vif-xlim"
+audit = 5
+text = "plot_vif(xlim=)"
+find = [{ id = "options/plot/vif_*/xlim=*" }]
+
+[[item]]
+id = "a5-predstyle-abbreviated"
+audit = 5
+text = "abbreviated predstyle values are refused"
+find = [{ id = "options/addpoly/predict_*/predstyle=*" }]
+
+[[item]]
+id = "a5-datasets"
+audit = 5
+text = "datasets: 38 of metadat's 114 are bundled"
+find = [{ id = "datasets/dat.aloe2013" }]
+
+# ---------------------------------------------------------------- audit 6: wrong
+
+[[item]]
+id = "a6-formula-caret"
+audit = 6
+text = "^ inside I() is silently Python XOR"
+find = [{ id = "construct/uni_reml/mods=*I(ablat^2)*" }]
+
+[[item]]
+id = "a6-formula-sqrt"
+audit = 6
+text = "sqrt() is not defined in formulas"
+find = [{ id = "construct/uni_reml/mods=*sqrt*" }]
+
+[[item]]
+id = "a6-formula-namespace"
+audit = 6
+text = "refits lose the caller's namespace (user function in a formula)"
+find = []
+reach = "none"
+why = "needs a user-defined R function and its Python counterpart in a formula; cases carry data, not code, except through the $lambda tag"
+
+[[item]]
+id = "a6-emmprep-factor"
+audit = 6
+text = "emmprep() fails on fits that use factor()"
+find = [{ id = "matrix/emmprep/uni_factor" }]
+
+[[item]]
+id = "a6-label-factor-float"
+audit = 6
+text = "factor() of a float column gives levels 1.0 and 2.0 where R gives 1 and 2"
+find = [{ id = "construct/uni_reml/mods=*factor*", path = "*" }]
+
+[[item]]
+id = "a6-label-I-inverse"
+audit = 6
+text = "I(1/ni) is labelled I(1 / ni)"
+find = [{ id = "construct/uni_reml/mods=*I(1|*", kind = "label-diff" }]
+
+[[item]]
+id = "a6-label-poly-raw"
+audit = 6
+text = "poly(x, 2, raw=True) terms are numbered 0, 1 where R uses 1, 2"
+find = [{ id = "construct/uni_reml/mods=*poly*" }]
+
+[[item]]
+id = "a6-ls-single-scale"
+audit = 6
+text = "location-scale with a single-column no-intercept scale formula crashes"
+find = [{ id = "construct/ls_bcg/scale=*0 + ablat*", kind = "crash" }]
+
+[[item]]
+id = "a6-ls-predict-named"
+audit = 6
+text = "predict() of location-scale fits uses named newmods/newscale by position"
+find = [{ id = "options/predict/ls_year/newmods=*named*" }, { id = "options/predict/ls_year/newscale=*named*" }]
+
+[[item]]
+id = "a6-predict-pairmat"
+audit = 6
+text = "predict(newmods=pairmat(res, btt='alloc')) on a model with an intercept fails"
+find = [{ id = "options/predict/uni_factor/newmods=*pairmat*" }]
+
+[[item]]
+id = "a6-predict-rownames"
+audit = 6
+text = "predict() ignores the row names of newmods"
+find = [{ id = "options/predict/*/newmods=*at10*" }]
+
+[[item]]
+id = "a6-predict-intercept-warning"
+audit = 6
+text = "predict(newmods, intercept=False) does not give R's warning"
+find = [{ id = "matrix/predict/*", kind = "warning-missing" }]
+
+[[item]]
+id = "a6-predict-mv-na-columns"
+audit = 6
+text = "predict() of rma_mv drops pi.lb, pi.ub and tau2.level columns when they are NA"
+find = [{ id = "matrix/predict/mv_ks*", kind = "print-diff" }]
+
+[[item]]
+id = "a6-trimfill-l0-left"
+audit = 6
+text = "trimfill(FE, estimator='L0', side='left') raises ValueError from math.sqrt"
+find = [{ id = "matrix/trimfill/*", kind = "crash" }]
+
+[[item]]
+id = "a6-labbe-n1i"
+audit = 6
+text = "labbe() of a fit given n1i/n2i instead of bi/di raises"
+find = [{ id = "scripts/labbe/*" }]
+hint = ["labbe"]
+
+[[item]]
+id = "a6-matreg-length1"
+audit = 6
+text = "matreg(n=res.g_levels_comb_k) refuses the length-1 array"
+find = [{ id = "scripts/matreg/*" }]
+hint = ["matreg"]
+
+[[item]]
+id = "a6-permutest-coef"
+audit = 6
+text = "PermutestResult.coef() returns only the estimates"
+find = [{ id = "matrix/coef/permutest_mods" }]
+
+[[item]]
+id = "a6-selmodel-digits"
+audit = 6
+text = "selmodel() does not inherit digits from the fit"
+find = [{ id = "matrix/print/sel_mods_bcg", path = "*digits*" }, { id = "matrix/print/sel_bcg", path = "*digits*" }]
+
+[[item]]
+id = "a6-blup-digits"
+audit = 6
+text = "blup()/ranef() of rma_uni ignore the fit's digits"
+find = [{ id = "matrix/blup/uni_digits" }]
+
+[[item]]
+id = "a6-escalc-attrs-concat"
+audit = 6
+text = "escalc frames: attrs['ni'] is a numpy array, so astype, merge and concat of two escalc frames raise"
+find = [{ id = "matrix/rbind/es_bcg" }, { id = "matrix/cbind/es_bcg" }]
+
+[[item]]
+id = "a6-blsplit-args"
+audit = 6
+text = "blsplit(V, cluster, fun, args=3) needs args=[3]"
+find = [{ id = "standalone/blsplit/args=*" }]
+
+[[item]]
+id = "a6-forest-series-slab"
+audit = 6
+text = "forest(yi_series, vi_series) ignores attrs['slab']"
+find = [{ id = "standalone/forest*" }, { id = "matrix/forest/slab_vec" }]
+
+[[item]]
+id = "a6-plot-selmodel-after-qq"
+audit = 6
+text = "plot_selmodel() after plot_rma(qqplot=True) raises ValueError"
+find = [{ id = "scripts/selmodel/*", kind = "crash" }, { id = "matrix/plot/sel_bcg", kind = "crash" }]
+hint = ["selmodel", "matrix/plot/sel_bcg"]
+
+[[item]]
+id = "a6-optim-mv-bfgs"
+audit = 6
+text = "rma_mv konstantopoulos2011: sigma2 off by 4e-5 with BFGS"
+find = [{ id = "construct/mv_ks/control=*BFGS*", kind = "value-diff" }]
+
+[[item]]
+id = "a6-optim-mv-nm"
+audit = 6
+text = "rma_mv konstantopoulos2011: sigma2 off by 1.2e-4 with Nelder-Mead"
+find = [{ id = "construct/mv_ks/control=*Nelder-Mead*", kind = "value-diff" }]
+
+[[item]]
+id = "a6-optim-ls-bfgs"
+audit = 6
+text = "location-scale: BFGS converges where R reports non-convergence"
+find = [{ id = "construct/ls_bcg/control=*BFGS*" }]
+
+[[item]]
+id = "a6-mv-spsph"
+audit = 6
+text = "rma_mv(struct='SPSPH') stops at a worse point"
+find = [{ id = "construct/mv_sp/struct=*SPSPH*", kind = "value-diff" }]
+
+[[item]]
+id = "a6-glmm-um-rs"
+audit = 6
+text = "rma_glmm(measure='OR', model='UM.RS') on bcg: se 0.18214 where R gives 0.18147"
+find = [{ id = "construct/glmm_rs", kind = "value-diff" }]
+
+[[item]]
+id = "a6-ls-na-se-alpha"
+audit = 6
+text = "location-scale fit with NAs: se_alpha off by 3e-4"
+find = [{ id = "construct/ls_na", path = "*.alpha*" }]
+
+[[item]]
+id = "a6-print-tau2-zero"
+audit = 6
+text = "a fit with tau2 = 0 prints 0.0000 where R prints 0"
+find = [{ id = "matrix/print/uni_tau0", kind = "print-diff" }, { id = "matrix/print/uni_fe", kind = "print-diff" }]
+
+[[item]]
+id = "a6-print-coef-wrap"
+audit = 6
+text = "the coefficient table of rma/rma_mv prints is not wrapped at 80 columns"
+find = [{ id = "matrix/print/*_wide", kind = "print-diff" }]
+
+[[item]]
+id = "a6-print-profile-mv"
+audit = 6
+text = "print(profile(rma_mv)) shows the reprs of raw dataclasses"
+find = [{ id = "matrix/print/profile_mv" }]
+
+[[item]]
+id = "a6-print-ranef-mv"
+audit = 6
+text = "ranef(rma_mv) prints as a plain dict"
+find = [{ id = "matrix/ranef/mv_ks", kind = "print-diff" }]
+
+[[item]]
+id = "a6-emmeans-printing"
+audit = 6
+text = "emmeans summaries use 4 significant digits and right-aligned labels where R uses 3 and left-aligned"
+find = []
+reach = "none"
+why = "emmeans output belongs to the emmeans package, not to metafor, and is outside the universe the audit enumerates"
+
+# ---------------------------------------------------------------- audit 6: missing
+
+[[item]]
+id = "a6-print-escalc"
+audit = 6
+text = "no escalc printer"
+find = [{ id = "matrix/print/es_bcg", kind = "print-diff" }]
+
+[[item]]
+id = "a6-print-vcovmat"
+audit = 6
+text = "no vcovmat printer"
+find = [{ id = "matrix/print/vcalc_ks", kind = "print-diff" }]
+
+[[item]]
+id = "a6-list-head"
+audit = 6
+text = "no head on list results"
+find = [{ id = "matrix/head/rstudent_reml" }]
+
+[[item]]
+id = "a6-list-tail"
+audit = 6
+text = "no tail on list results"
+find = [{ id = "matrix/tail/rstudent_reml" }]
+
+[[item]]
+id = "a6-list-subset"
+audit = 6
+text = "no [ on list results"
+find = [{ id = "matrix/[/rstudent_reml" }]
+
+[[item]]
+id = "a6-print-num-legend"
+audit = 6
+text = "print(res, num=, legend=) is not available"
+find = [{ id = "options/print/*/num=*" }, { id = "options/print/*/legend=*" }]
+
+[[item]]
+id = "a6-digits-confint"
+audit = 6
+text = "digits= on confint of mh/peto, location-scale and selmodel fits"
+find = [{ id = "options/confint/mh_bcg/digits=*" }, { id = "options/confint/ls_bcg/digits=*" }, { id = "options/confint/sel_bcg/digits=*" }]
+
+[[item]]
+id = "a6-digits-predict-selmodel"
+audit = 6
+text = "digits= on predict of selmodel fits"
+find = [{ id = "options/predict/sel_bcg/digits=*" }]
+
+[[item]]
+id = "a6-digits-anova-ls"
+audit = 6
+text = "digits= on anova of location-scale fits"
+find = [{ id = "options/anova/ls_bcg/digits=*" }]
+
+[[item]]
+id = "a6-digits-printouts"
+audit = 6
+text = "digits= on the printouts of permutest, list results, gosh and vif"
+find = [{ id = "options/print/permutest_mods/digits=*" }, { id = "options/print/gosh_fe/digits=*" }, { id = "options/print/vif_mods2/digits=*" }]
+
+[[item]]
+id = "a6-glmm-signif-stars"
+audit = 6
+text = "rma_glmm summary(signif_stars=) raises TypeError"
+find = [{ id = "matrix/summary/glmm_bcg*" }]
+
+[[item]]
+id = "a6-anova-ls-args"
+audit = 6
+text = "anova() of location-scale fits lacks adjust, test, fixed, L, df and verbose"
+find = [{ id = "options/anova/ls_bcg/adjust=*" }, { id = "options/anova/ls_bcg/test=*" }, { id = "options/anova/ls_bcg/L=*" }]
+
+[[item]]
+id = "a6-anova-sel-args"
+audit = 6
+text = "anova() of selmodel fits lacks test, refit, L, fixed, df and verbose"
+find = [{ id = "options/anova/sel_bcg/test=*" }, { id = "options/anova/sel_bcg/L=*" }]
+
+[[item]]
+id = "a6-coef-ls-permutest"
+audit = 6
+text = "location-scale permutest results have no coef() or to_frame()"
+find = [{ id = "matrix/coef/permutest_ls*" }]
+
+[[item]]
+id = "a6-coef-type-beta"
+audit = 6
+text = "coef(type='beta') is missing for the uni, mh/peto, glmm and mv classes"
+find = [{ id = "options/coef/*/type=*" }]
+
+[[item]]
+id = "a6-confint-extint"
+audit = 6
+text = "confint(extint=) for uni, mv and location-scale fits"
+find = [{ id = "options/confint/*/extint=*" }]
+
+[[item]]
+id = "a6-confint-parm"
+audit = 6
+text = "confint(parm=): R warns that it is ignored"
+find = [{ id = "options/confint/*/parm=*" }]
+
+[[item]]
+id = "a6-permutest-permci-control"
+audit = 6
+text = "permutest(permci=True, control={'extendInt': 'yes', 'distfac': ...})"
+find = [{ id = "options/permutest/*/permci=*" }, { id = "options/permutest/*/control=*" }]
+
+[[item]]
+id = "a6-permutest-fixed-verbose"
+audit = 6
+text = "permutest(fixed=, verbose=)"
+find = [{ id = "options/permutest/*/fixed=*" }, { id = "api/permutest*/verbose" }]
+
+[[item]]
+id = "a6-uni-dots"
+audit = 6
+text = "rma_uni: dfs, knha, i2def, r2def, randhet/omega2, skipr2"
+find = [{ id = "construct/uni_reml/dfs=*" }, { id = "api/rma.uni/*" }, { id = "api/rma*/dfs" }]
+
+[[item]]
+id = "a6-mv-dots"
+audit = 6
+text = "rma_mv: tdist, cutoff"
+find = [{ id = "construct/mv_ks/tdist=*" }, { id = "api/rma.mv*/tdist" }]
+
+[[item]]
+id = "a6-glmm-dots"
+audit = 6
+text = "rma_glmm: tdist, vtype, skiphet, retdat, retfit"
+find = [{ id = "construct/glmm_bcg/tdist=*" }, { id = "api/rma.glmm*/tdist" }]
+
+[[item]]
+id = "a6-dev-switches"
+audit = 6
+text = "developer switches (outlist, retopt, skiphes, abbrev, time) across the fit functions"
+find = [{ id = "api/rma*/outlist" }, { id = "construct/uni_reml/outlist=*" }]
+
+[[item]]
+id = "a6-verbose-robust"
+audit = 6
+text = "verbose= on robust, hettest and predict"
+find = [{ id = "api/robust*/verbose" }, { id = "api/hettest*/verbose" }, { id = "api/predict*/verbose" }]
+
+[[item]]
+id = "a6-addpoly-cr"
+audit = 6
+text = "addpoly(cr_lb=, cr_ub=)"
+find = [{ id = "options/addpoly/*/cr.lb=*" }, { id = "api/addpoly*/cr.lb" }]
+
+[[item]]
+id = "a6-plot-cumul-at-lab"
+audit = 6
+text = "plot_cumul(at_lab=)"
+find = [{ id = "options/plot/cumul_reml/at.lab=*" }, { id = "api/plot/cumul_reml/at.lab" }]
+
+[[item]]
+id = "a6-pairmat-fixed"
+audit = 6
+text = "pairmat(fixed=)"
+find = [{ id = "api/pairmat/fixed" }]
+
+[[item]]
+id = "a6-funnel-cex"
+audit = 6
+text = "funnel(cex=)"
+find = [{ id = "options/funnel/*/cex=*" }]
+
+[[item]]
+id = "a6-nearpd-spelling"
+audit = 6
+text = "nearPD is spelt nearpd in matreg/vcalc"
+find = [{ id = "api/matreg/nearPD" }, { id = "api/vcalc/nearPD" }]
+
+[[item]]
+id = "a6-cumul-na-action"
+audit = 6
+text = "cumul() of rma_uni fits has no na_action"
+find = [{ id = "options/cumul/uni_na/option:na.action=*" }]
+
+[[item]]
+id = "a6-regtest-ret-fit"
+audit = 6
+text = "regtest(model='lm', ret_fit=True) returns no fit"
+find = [{ id = "options/regtest/*/ret.fit=*" }]
+
+[[item]]
+id = "a6-fmtt-call"
+audit = 6
+text = "fmtt(call=True) is refused"
+find = [{ id = "standalone/fmtt/call=*" }]
+
+[[item]]
+id = "a6-metafor-news"
+audit = 6
+text = "metafor.news() has no counterpart"
+find = [{ id = "api/metafor.news" }]
+
+[[item]]
+id = "a6-field-G-dimnames"
+audit = 6
+text = "res.G and vvc of rma_mv have no dimnames"
+find = [{ id = "matrix/print/mv_*", path = "*$G*" }, { id = "matrix/print/mv_*", path = "*$vvc*" }]
+
+[[item]]
+id = "a6-fields-uni"
+audit = 6
+text = "rma_uni result fields ids, not_na, subset, intercept, model, add, to, drop00, yi.f, vi.f, X.f"
+find = [{ id = "matrix/print/uni_reml", path = "*$ids*" }, { id = "matrix/print/uni_reml", path = "*yi.f*" }]
+
+[[item]]
+id = "a6-fields-mv"
+audit = 6
+text = "rma_mv result fields random, sparse, dist, R, control, data, formulas"
+find = [{ id = "matrix/print/mv_ks", path = "*$random*" }, { id = "matrix/print/mv_ks", path = "*$formulas*" }]
+
+[[item]]
+id = "a6-fields-mh-peto"
+audit = 6
+text = "rma_mh/rma_peto result fields ddf, btt, m"
+find = [{ id = "matrix/print/mh_bcg", path = "*$ddf*" }, { id = "matrix/print/peto_bcg", path = "*$btt*" }]
+
+[[item]]
+id = "a6-fields-selmodel"
+audit = 6
+text = "selmodel result fields measure, QMdf, weighted, dfs, allvipos, weights"
+find = [{ id = "matrix/print/sel_bcg", path = "*$QMdf*" }, { id = "matrix/print/sel_bcg", path = "*$weighted*" }]
+
+[[item]]
+id = "a6-fields-predict"
+audit = 6
+text = "predict result fields method and pred.type"
+find = [{ id = "matrix/print/predict_reml", path = "*$method*" }, { id = "matrix/predict/*", path = "*$pred.type*" }]
+
+[[item]]
+id = "a6-fields-confint"
+audit = 6
+text = "confint result fields ci.null and tau2.min"
+find = [{ id = "matrix/print/confint_reml", path = "*ci.null*" }, { id = "matrix/confint/*", path = "*ci.null*" }]
+
+[[item]]
+id = "a6-fields-wald-anova"
+audit = 6
+text = "Wald anova fields k, p, m, test"
+find = [{ id = "matrix/print/anova_mods", path = "*$k*" }]
+
+[[item]]
+id = "a6-fields-lrt-anova"
+audit = 6
+text = "LRT anova fields parms.f, parms.r, method"
+find = [{ id = "matrix/print/anova_lrt", path = "*parms*" }]
+
+# ---------------------------------------------------------------- audit 6: accepted where R refuses
+
+[[item]]
+id = "a6-deltamethod-clubsandwich"
+audit = 6
+text = "deltamethod() of a club_sandwich fit is accepted where R refuses"
+find = [{ id = "matrix/deltamethod/robust_cs_bcg", kind = "accepts-where-R-refuses" }]
+
+[[item]]
+id = "a6-emmprep-trimfill"
+audit = 6
+text = "emmprep() of a trimfill result is accepted where R refuses"
+find = [{ id = "matrix/emmprep/trimfill_bcg", kind = "accepts-where-R-refuses" }]

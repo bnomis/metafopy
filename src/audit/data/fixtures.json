@@ -1,0 +1,1299 @@
+[
+ {
+  "name": "bcg_na",
+  "op": "setna",
+  "from": "dat.bcg",
+  "cells": [
+   [
+    3,
+    "tpos"
+   ],
+   [
+    7,
+    "cpos"
+   ],
+   [
+    5,
+    "ablat"
+   ]
+  ],
+  "meta": {}
+ },
+ {
+  "name": "es_bcg",
+  "fn": "escalc",
+  "args": {
+   "measure": "RR",
+   "data": {
+    "$data": "dat.bcg"
+   },
+   "ai": {
+    "$sym": "tpos"
+   },
+   "bi": {
+    "$sym": "tneg"
+   },
+   "ci": {
+    "$sym": "cpos"
+   },
+   "di": {
+    "$sym": "cneg"
+   }
+  },
+  "meta": {
+   "kind": "data"
+  }
+ },
+ {
+  "name": "es_bcg_na",
+  "fn": "escalc",
+  "args": {
+   "measure": "RR",
+   "data": {
+    "$ref": "bcg_na"
+   },
+   "ai": {
+    "$sym": "tpos"
+   },
+   "bi": {
+    "$sym": "tneg"
+   },
+   "ci": {
+    "$sym": "cpos"
+   },
+   "di": {
+    "$sym": "cneg"
+   }
+  },
+  "meta": {
+   "kind": "data"
+  }
+ },
+ {
+  "name": "uni_reml",
+  "fn": "rma",
+  "args": {
+   "data": {
+    "$ref": "es_bcg"
+   },
+   "yi": {
+    "$sym": "yi"
+   },
+   "vi": {
+    "$sym": "vi"
+   }
+  },
+  "meta": {
+   "primary": "rma.uni",
+   "sweep": true
+  }
+ },
+ {
+  "name": "uni_fe",
+  "fn": "rma",
+  "args": {
+   "data": {
+    "$ref": "es_bcg"
+   },
+   "method": "FE",
+   "yi": {
+    "$sym": "yi"
+   },
+   "vi": {
+    "$sym": "vi"
+   }
+  },
+  "meta": {}
+ },
+ {
+  "name": "uni_dl",
+  "fn": "rma",
+  "args": {
+   "data": {
+    "$ref": "es_bcg"
+   },
+   "method": "DL",
+   "yi": {
+    "$sym": "yi"
+   },
+   "vi": {
+    "$sym": "vi"
+   }
+  },
+  "meta": {}
+ },
+ {
+  "name": "uni_ml",
+  "fn": "rma",
+  "args": {
+   "data": {
+    "$ref": "es_bcg"
+   },
+   "method": "ML",
+   "yi": {
+    "$sym": "yi"
+   },
+   "vi": {
+    "$sym": "vi"
+   }
+  },
+  "meta": {}
+ },
+ {
+  "name": "uni_mods",
+  "fn": "rma",
+  "args": {
+   "data": {
+    "$ref": "es_bcg"
+   },
+   "mods": {
+    "$formula": "~ ablat"
+   },
+   "yi": {
+    "$sym": "yi"
+   },
+   "vi": {
+    "$sym": "vi"
+   }
+  },
+  "meta": {
+   "sweep": true
+  }
+ },
+ {
+  "name": "uni_mods2",
+  "fn": "rma",
+  "args": {
+   "data": {
+    "$ref": "es_bcg"
+   },
+   "mods": {
+    "$formula": "~ ablat + alloc"
+   },
+   "yi": {
+    "$sym": "yi"
+   },
+   "vi": {
+    "$sym": "vi"
+   }
+  },
+  "meta": {}
+ },
+ {
+  "name": "uni_na",
+  "fn": "rma",
+  "args": {
+   "data": {
+    "$ref": "es_bcg_na"
+   },
+   "yi": {
+    "$sym": "yi"
+   },
+   "vi": {
+    "$sym": "vi"
+   }
+  },
+  "meta": {
+   "sweep": true
+  }
+ },
+ {
+  "name": "uni_mods_na",
+  "fn": "rma",
+  "args": {
+   "data": {
+    "$ref": "es_bcg_na"
+   },
+   "mods": {
+    "$formula": "~ ablat"
+   },
+   "yi": {
+    "$sym": "yi"
+   },
+   "vi": {
+    "$sym": "vi"
+   }
+  },
+  "meta": {
+   "sweep": true
+  }
+ },
+ {
+  "name": "mv_ks",
+  "fn": "rma.mv",
+  "args": {
+   "random": {
+    "$formula": "~ 1 | district/school"
+   },
+   "yi": {
+    "$sym": "yi"
+   },
+   "data": {
+    "$data": "dat.konstantopoulos2011"
+   },
+   "V": {
+    "$sym": "vi"
+   }
+  },
+  "meta": {
+   "primary": "rma.mv",
+   "sweep": true
+  }
+ },
+ {
+  "name": "mv_ks_mods",
+  "fn": "rma.mv",
+  "args": {
+   "random": {
+    "$formula": "~ 1 | district/school"
+   },
+   "mods": {
+    "$formula": "~ year"
+   },
+   "yi": {
+    "$sym": "yi"
+   },
+   "data": {
+    "$data": "dat.konstantopoulos2011"
+   },
+   "V": {
+    "$sym": "vi"
+   }
+  },
+  "meta": {}
+ },
+ {
+  "name": "mh_bcg",
+  "fn": "rma.mh",
+  "args": {
+   "data": {
+    "$data": "dat.bcg"
+   },
+   "ai": {
+    "$sym": "tpos"
+   },
+   "bi": {
+    "$sym": "tneg"
+   },
+   "ci": {
+    "$sym": "cpos"
+   },
+   "di": {
+    "$sym": "cneg"
+   }
+  },
+  "meta": {
+   "primary": "rma.mh",
+   "sweep": true
+  }
+ },
+ {
+  "name": "peto_bcg",
+  "fn": "rma.peto",
+  "args": {
+   "data": {
+    "$data": "dat.bcg"
+   },
+   "ai": {
+    "$sym": "tpos"
+   },
+   "bi": {
+    "$sym": "tneg"
+   },
+   "ci": {
+    "$sym": "cpos"
+   },
+   "di": {
+    "$sym": "cneg"
+   }
+  },
+  "meta": {
+   "primary": "rma.peto",
+   "sweep": true
+  }
+ },
+ {
+  "name": "glmm_bcg",
+  "fn": "rma.glmm",
+  "args": {
+   "data": {
+    "$data": "dat.bcg"
+   },
+   "measure": "OR",
+   "model": "UM.FS",
+   "ai": {
+    "$sym": "tpos"
+   },
+   "bi": {
+    "$sym": "tneg"
+   },
+   "ci": {
+    "$sym": "cpos"
+   },
+   "di": {
+    "$sym": "cneg"
+   }
+  },
+  "meta": {
+   "primary": "rma.glmm",
+   "sweep": true
+  }
+ },
+ {
+  "name": "ls_bcg",
+  "fn": "rma",
+  "args": {
+   "data": {
+    "$ref": "es_bcg"
+   },
+   "mods": {
+    "$formula": "~ ablat"
+   },
+   "scale": {
+    "$formula": "~ alloc"
+   },
+   "yi": {
+    "$sym": "yi"
+   },
+   "vi": {
+    "$sym": "vi"
+   }
+  },
+  "meta": {
+   "primary": "rma.ls",
+   "sweep": true
+  }
+ },
+ {
+  "name": "sel_bcg",
+  "fn": "selmodel",
+  "args": {
+   "type": "stepfun",
+   "steps": [
+    0.025,
+    0.1,
+    0.5,
+    1
+   ]
+  },
+  "target": {
+   "$ref": "uni_reml"
+  },
+  "meta": {
+   "primary": "selmodel",
+   "sweep": true
+  }
+ },
+ {
+  "name": "robust_bcg",
+  "fn": "robust",
+  "args": {
+   "cluster": {
+    "$col": [
+     "es_bcg",
+     "trial"
+    ]
+   }
+  },
+  "target": {
+   "$ref": "uni_mods"
+  },
+  "meta": {
+   "primary": "robust.rma",
+   "sweep": true
+  }
+ },
+ {
+  "name": "robust_cs_bcg",
+  "fn": "robust",
+  "args": {
+   "cluster": {
+    "$col": [
+     "es_bcg",
+     "trial"
+    ]
+   },
+   "clubSandwich": true
+  },
+  "target": {
+   "$ref": "uni_mods"
+  },
+  "meta": {}
+ },
+ {
+  "name": "trimfill_bcg",
+  "fn": "trimfill",
+  "args": {},
+  "target": {
+   "$ref": "uni_fe"
+  },
+  "meta": {
+   "primary": "trimfill",
+   "sweep": true
+  }
+ },
+ {
+  "name": "long_bcg",
+  "fn": "to.long",
+  "args": {
+   "measure": "OR",
+   "data": {
+    "$data": "dat.bcg"
+   },
+   "ai": {
+    "$sym": "tpos"
+   },
+   "bi": {
+    "$sym": "tneg"
+   },
+   "ci": {
+    "$sym": "cpos"
+   },
+   "di": {
+    "$sym": "cneg"
+   }
+  },
+  "meta": {
+   "kind": "data"
+  }
+ },
+ {
+  "name": "infl_reml",
+  "fn": "influence",
+  "args": {},
+  "meta": {
+   "derived": true,
+   "sweep": true
+  },
+  "target": {
+   "$ref": "uni_reml"
+  }
+ },
+ {
+  "name": "infl_mods",
+  "fn": "influence",
+  "args": {},
+  "meta": {
+   "derived": true
+  },
+  "target": {
+   "$ref": "uni_mods"
+  }
+ },
+ {
+  "name": "cumul_reml",
+  "fn": "cumul",
+  "args": {},
+  "meta": {
+   "derived": true,
+   "sweep": true
+  },
+  "target": {
+   "$ref": "uni_reml"
+  }
+ },
+ {
+  "name": "leave1out_reml",
+  "fn": "leave1out",
+  "args": {},
+  "meta": {
+   "derived": true
+  },
+  "target": {
+   "$ref": "uni_reml"
+  }
+ },
+ {
+  "name": "rstudent_reml",
+  "fn": "rstudent",
+  "args": {},
+  "meta": {
+   "derived": true
+  },
+  "target": {
+   "$ref": "uni_reml"
+  }
+ },
+ {
+  "name": "rstandard_reml",
+  "fn": "rstandard",
+  "args": {},
+  "meta": {
+   "derived": true
+  },
+  "target": {
+   "$ref": "uni_reml"
+  }
+ },
+ {
+  "name": "anova_mods",
+  "fn": "anova",
+  "args": {},
+  "meta": {
+   "derived": true
+  },
+  "target": {
+   "$ref": "uni_mods"
+  }
+ },
+ {
+  "name": "anova_lrt",
+  "fn": "anova",
+  "args": {
+   "object2": {
+    "$ref": "uni_reml"
+   }
+  },
+  "meta": {
+   "derived": true
+  },
+  "target": {
+   "$ref": "uni_mods"
+  }
+ },
+ {
+  "name": "confint_reml",
+  "fn": "confint",
+  "args": {},
+  "meta": {
+   "derived": true
+  },
+  "target": {
+   "$ref": "uni_reml"
+  }
+ },
+ {
+  "name": "confint_mv",
+  "fn": "confint",
+  "args": {},
+  "meta": {
+   "derived": true
+  },
+  "target": {
+   "$ref": "mv_ks"
+  }
+ },
+ {
+  "name": "vif_mods2",
+  "fn": "vif",
+  "args": {},
+  "meta": {
+   "derived": true,
+   "sweep": true
+  },
+  "target": {
+   "$ref": "uni_mods2"
+  }
+ },
+ {
+  "name": "profile_reml",
+  "fn": "profile",
+  "args": {
+   "steps": 5
+  },
+  "meta": {
+   "derived": true
+  },
+  "target": {
+   "$ref": "uni_reml"
+  }
+ },
+ {
+  "name": "gosh_fe",
+  "fn": "gosh",
+  "args": {
+   "subsets": 20,
+   "seed": 1
+  },
+  "meta": {
+   "derived": true
+  },
+  "target": {
+   "$ref": "uni_fe"
+  }
+ },
+ {
+  "name": "permutest_mods",
+  "fn": "permutest",
+  "args": {
+   "iter": 20,
+   "exact": false,
+   "seed": 1
+  },
+  "meta": {
+   "derived": true,
+   "sweep": true
+  },
+  "target": {
+   "$ref": "uni_mods"
+  }
+ },
+ {
+  "name": "regtest_reml",
+  "fn": "regtest",
+  "args": {},
+  "meta": {
+   "derived": true
+  },
+  "target": {
+   "$ref": "uni_reml"
+  }
+ },
+ {
+  "name": "ranktest_reml",
+  "fn": "ranktest",
+  "args": {},
+  "meta": {
+   "derived": true
+  },
+  "target": {
+   "$ref": "uni_reml"
+  }
+ },
+ {
+  "name": "fsn_reml",
+  "fn": "fsn",
+  "args": {},
+  "meta": {
+   "derived": true
+  },
+  "target": {
+   "$ref": "uni_reml"
+  }
+ },
+ {
+  "name": "hc_reml",
+  "fn": "hc",
+  "args": {},
+  "meta": {
+   "derived": true
+  },
+  "target": {
+   "$ref": "uni_reml"
+  }
+ },
+ {
+  "name": "hettest_reml",
+  "fn": "hettest",
+  "args": {},
+  "meta": {
+   "derived": true
+  },
+  "target": {
+   "$ref": "uni_reml"
+  }
+ },
+ {
+  "name": "predict_reml",
+  "fn": "predict",
+  "args": {},
+  "meta": {
+   "derived": true,
+   "sweep": true
+  },
+  "target": {
+   "$ref": "uni_reml"
+  }
+ },
+ {
+  "name": "predict_mods",
+  "fn": "predict",
+  "args": {
+   "newmods": 30
+  },
+  "meta": {
+   "derived": true,
+   "sweep": true
+  },
+  "target": {
+   "$ref": "uni_mods"
+  }
+ },
+ {
+  "name": "regplot_mods",
+  "fn": "regplot",
+  "args": {
+   "mod": "ablat"
+  },
+  "meta": {
+   "derived": true
+  },
+  "target": {
+   "$ref": "uni_mods"
+  }
+ },
+ {
+  "name": "matreg_cor",
+  "fn": "matreg",
+  "args": {
+   "y": {
+    "$idx": 1
+   },
+   "x": {
+    "$idx": [
+     2,
+     3
+    ]
+   },
+   "R": {
+    "$matrix": [
+     [
+      1,
+      0.3,
+      0.2
+     ],
+     [
+      0.3,
+      1,
+      0.4
+     ],
+     [
+      0.2,
+      0.4,
+      1
+     ]
+    ]
+   },
+   "n": 100
+  },
+  "meta": {
+   "derived": true
+  }
+ },
+ {
+  "name": "deltamethod_xy",
+  "fn": "deltamethod",
+  "args": {
+   "x": [
+    1,
+    2
+   ],
+   "vcov": {
+    "$matrix": [
+     [
+      0.1,
+      0.02
+     ],
+     [
+      0.02,
+      0.2
+     ]
+    ]
+   },
+   "fun": {
+    "$lambda": {
+     "args": "x1, x2",
+     "body": "x1/x2"
+    }
+   }
+  },
+  "meta": {
+   "derived": true
+  }
+ },
+ {
+  "name": "vcalc_ks",
+  "fn": "vcalc",
+  "args": {
+   "vi": {
+    "$sym": "vi"
+   },
+   "cluster": {
+    "$sym": "district"
+   },
+   "obs": {
+    "$sym": "school"
+   },
+   "data": {
+    "$data": "dat.konstantopoulos2011"
+   },
+   "rho": 0.6
+  },
+  "meta": {
+   "derived": true
+  }
+ },
+ {
+  "name": "es_slab",
+  "fn": "escalc",
+  "args": {
+   "measure": "RR",
+   "data": {
+    "$data": "dat.bcg"
+   },
+   "ai": {
+    "$sym": "tpos"
+   },
+   "bi": {
+    "$sym": "tneg"
+   },
+   "ci": {
+    "$sym": "cpos"
+   },
+   "di": {
+    "$sym": "cneg"
+   },
+   "slab": {
+    "$sym": "author"
+   }
+  },
+  "meta": {
+   "kind": "data"
+  }
+ },
+ {
+  "name": "uni_slab",
+  "fn": "rma",
+  "args": {
+   "data": {
+    "$ref": "es_slab"
+   },
+   "yi": {
+    "$sym": "yi"
+   },
+   "vi": {
+    "$sym": "vi"
+   }
+  },
+  "meta": {}
+ },
+ {
+  "name": "uni_mods_year",
+  "fn": "rma",
+  "args": {
+   "data": {
+    "$ref": "es_bcg"
+   },
+   "mods": {
+    "$formula": "~ ablat + year"
+   },
+   "yi": {
+    "$sym": "yi"
+   },
+   "vi": {
+    "$sym": "vi"
+   }
+  },
+  "meta": {
+   "sweep": true
+  }
+ },
+ {
+  "name": "uni_factor",
+  "fn": "rma",
+  "args": {
+   "data": {
+    "$ref": "es_bcg"
+   },
+   "mods": {
+    "$formula": "~ factor(alloc)"
+   },
+   "yi": {
+    "$sym": "yi"
+   },
+   "vi": {
+    "$sym": "vi"
+   }
+  },
+  "meta": {
+   "sweep": true
+  }
+ },
+ {
+  "name": "uni_counts",
+  "fn": "rma",
+  "args": {
+   "measure": "OR",
+   "data": {
+    "$data": "dat.bcg"
+   },
+   "ai": {
+    "$sym": "tpos"
+   },
+   "bi": {
+    "$sym": "tneg"
+   },
+   "ci": {
+    "$sym": "cpos"
+   },
+   "di": {
+    "$sym": "cneg"
+   }
+  },
+  "meta": {
+   "sweep": true
+  }
+ },
+ {
+  "name": "uni_digits",
+  "fn": "rma",
+  "args": {
+   "data": {
+    "$ref": "es_bcg"
+   },
+   "yi": {
+    "$sym": "yi"
+   },
+   "vi": {
+    "$sym": "vi"
+   },
+   "digits": 2
+  },
+  "meta": {}
+ },
+ {
+  "name": "uni_tau0",
+  "fn": "rma",
+  "args": {
+   "data": {
+    "$ref": "es_bcg"
+   },
+   "yi": {
+    "$sym": "yi"
+   },
+   "vi": {
+    "$sym": "vi"
+   },
+   "tau2": 0
+  },
+  "meta": {}
+ },
+ {
+  "name": "ls_year",
+  "fn": "rma",
+  "args": {
+   "data": {
+    "$ref": "es_bcg"
+   },
+   "mods": {
+    "$formula": "~ ablat + year"
+   },
+   "scale": {
+    "$formula": "~ ablat + year"
+   },
+   "yi": {
+    "$sym": "yi"
+   },
+   "vi": {
+    "$sym": "vi"
+   }
+  },
+  "meta": {
+   "sweep": true
+  }
+ },
+ {
+  "name": "ls_na",
+  "fn": "rma",
+  "args": {
+   "data": {
+    "$ref": "es_bcg_na"
+   },
+   "mods": {
+    "$formula": "~ year"
+   },
+   "scale": {
+    "$formula": "~ ablat"
+   },
+   "yi": {
+    "$sym": "yi"
+   },
+   "vi": {
+    "$sym": "vi"
+   }
+  },
+  "meta": {
+   "sweep": true
+  }
+ },
+ {
+  "name": "sel_mods_bcg",
+  "fn": "selmodel",
+  "args": {
+   "type": "stepfun",
+   "steps": [
+    0.025,
+    0.5,
+    1
+   ]
+  },
+  "target": {
+   "$ref": "uni_mods"
+  },
+  "meta": {}
+ },
+ {
+  "name": "mv_sp",
+  "fn": "rma.mv",
+  "args": {
+   "random": {
+    "$formula": "~ year | district"
+   },
+   "struct": "SPEXP",
+   "yi": {
+    "$sym": "yi"
+   },
+   "data": {
+    "$data": "dat.konstantopoulos2011"
+   },
+   "V": {
+    "$sym": "vi"
+   }
+  },
+  "meta": {
+   "sweep": true
+  }
+ },
+ {
+  "name": "glmm_cm",
+  "fn": "rma.glmm",
+  "args": {
+   "data": {
+    "$data": "dat.bcg"
+   },
+   "measure": "OR",
+   "model": "CM.EL",
+   "ai": {
+    "$sym": "tpos"
+   },
+   "bi": {
+    "$sym": "tneg"
+   },
+   "ci": {
+    "$sym": "cpos"
+   },
+   "di": {
+    "$sym": "cneg"
+   }
+  },
+  "meta": {
+   "sweep": true
+  }
+ },
+ {
+  "name": "glmm_rs",
+  "fn": "rma.glmm",
+  "args": {
+   "data": {
+    "$data": "dat.bcg"
+   },
+   "measure": "OR",
+   "model": "UM.RS",
+   "ai": {
+    "$sym": "tpos"
+   },
+   "bi": {
+    "$sym": "tneg"
+   },
+   "ci": {
+    "$sym": "cpos"
+   },
+   "di": {
+    "$sym": "cneg"
+   }
+  },
+  "meta": {}
+ },
+ {
+  "name": "summary_reml",
+  "fn": "summary",
+  "args": {},
+  "target": {
+   "$ref": "uni_reml"
+  },
+  "meta": {
+   "derived": true
+  }
+ },
+ {
+  "name": "profile_mv",
+  "fn": "profile",
+  "args": {
+   "steps": 5
+  },
+  "target": {
+   "$ref": "mv_ks"
+  },
+  "meta": {
+   "derived": true
+  }
+ },
+ {
+  "name": "slab_vec",
+  "fn": "identity",
+  "args": {
+   "x": {
+    "$col": [
+     "es_slab",
+     "yi"
+    ]
+   }
+  },
+  "meta": {
+   "derived": true
+  }
+ },
+ {
+  "name": "es_include",
+  "fn": "escalc",
+  "args": {
+   "measure": "RR",
+   "data": {
+    "$ref": "es_bcg"
+   },
+   "ai": {
+    "$sym": "tpos"
+   },
+   "bi": {
+    "$sym": "tneg"
+   },
+   "ci": {
+    "$sym": "cpos"
+   },
+   "di": {
+    "$sym": "cneg"
+   },
+   "include": {
+    "$idx": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8
+    ]
+   }
+  },
+  "meta": {
+   "kind": "data"
+  }
+ },
+ {
+  "name": "mv_slab",
+  "fn": "rma.mv",
+  "args": {
+   "yi": {
+    "$sym": "yi"
+   },
+   "V": {
+    "$sym": "vi"
+   },
+   "random": {
+    "$formula": "~ 1 | trial"
+   },
+   "data": {
+    "$ref": "es_slab"
+   }
+  },
+  "meta": {}
+ },
+ {
+  "name": "mv_gen",
+  "fn": "rma.mv",
+  "args": {
+   "yi": {
+    "$sym": "yi"
+   },
+   "V": {
+    "$sym": "vi"
+   },
+   "random": {
+    "$formula": "~ year + ablat | alloc"
+   },
+   "struct": "GEN",
+   "data": {
+    "$ref": "es_bcg"
+   }
+  },
+  "meta": {}
+ },
+ {
+  "name": "permutest_ls",
+  "fn": "permutest",
+  "args": {
+   "iter": 20,
+   "exact": false,
+   "seed": 1
+  },
+  "target": {
+   "$ref": "ls_bcg"
+  },
+  "meta": {
+   "derived": true
+  }
+ },
+ {
+  "name": "ls_bangert",
+  "fn": "rma",
+  "args": {
+   "data": {
+    "$data": "dat.bangertdrowns2004"
+   },
+   "mods": {
+    "$formula": "~ I(ni/100) + meta"
+   },
+   "scale": {
+    "$formula": "~ I(ni/100) + imag"
+   },
+   "yi": {
+    "$sym": "yi"
+   },
+   "vi": {
+    "$sym": "vi"
+   }
+  },
+  "meta": {
+   "sweep": true
+  }
+ },
+ {
+  "name": "ks_dat",
+  "fn": "identity",
+  "args": {
+   "x": {
+    "$data": "dat.konstantopoulos2011"
+   }
+  },
+  "meta": {}
+ },
+ {
+  "name": "mv_wide",
+  "fn": "rma.mv",
+  "args": {
+   "random": {
+    "$formula": "~ 1 | district/school"
+   },
+   "mods": {
+    "$formula": "~ log(year - 1900 + 1000)"
+   },
+   "yi": {
+    "$sym": "yi"
+   },
+   "data": {
+    "$data": "dat.konstantopoulos2011"
+   },
+   "V": {
+    "$sym": "vi"
+   }
+  },
+  "meta": {}
+ },
+ {
+  "name": "vif_sim",
+  "fn": "vif",
+  "args": {
+   "sim": 50,
+   "seed": 1,
+   "progbar": false
+  },
+  "meta": {
+   "derived": true,
+   "sweep": true
+  },
+  "target": {
+   "$ref": "uni_mods2"
+  }
+ }
+]

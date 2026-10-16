@@ -1,0 +1,69 @@
+# Differences that are accepted, each with its reason and where docs/differences.md records it. A finding that matches an entry is left out of the
+# report; an entry that matches nothing in a full run is stale and is reported, so this file cannot outlive the difference it records.
+# `match` is a glob on the case id, `kind` and `path` are globs (default `*`).
+
+[[known]]
+match = "matrix/summary/*"
+kind = "missing-field"
+reason = "summary() returns the printed text; the fields of R's summary object are the fields of the fit, which the fit cases compare."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/glmm_bcg"
+kind = "value-diff"
+path = "$[pQ]*"
+reason = "rma_glmm(measure='OR', model='UM.FS') zval -4.2436 against R's -4.2434; untraced."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/glmm_bcg"
+kind = "print-diff"
+reason = "rma_glmm mixed-model fits agree with R to between 2e-3 and 1e-1 relative; see the rma_glmm entries."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/gosh/*"
+reason = "gosh(seed=) is bit-exact with R only where dbinom ties break the same way (R 4.5.1 on Linux); this oracle is R 4.3.3."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/reporter*"
+reason = "reporter() writes an R Markdown report; Jupyter notebooks are the Python equivalent."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "missing-field"
+path = "*$chksum*"
+reason = "R keeps checksums of the data to detect changes between refits (chksumX, chksumyi, chksumvi, chksumV); metafopy keeps the arrays themselves."
+
+[[known]]
+match = "*"
+kind = "missing-field"
+path = "*$version"
+reason = "R stores packageVersion('metafor') in every fit; metafopy has no R package version to store."
+
+[[known]]
+match = "*"
+kind = "missing-field"
+path = "*$time"
+reason = "R stores the system time the fit took; not a result of the analysis."
+
+[[known]]
+match = "*"
+kind = "missing-field"
+path = "*$verbose"
+reason = "R stores the verbose setting the fit was called with; metafopy does not keep it."
+
+[[known]]
+match = "*"
+kind = "accepts-where-R-refuses"
+detail = "R: object 'out' not found*"
+reason = "metafor 5.2-1 stops with the internal error \"object 'out' not found\" when options(na.action='na.fail') is set; metafopy gives the result."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "accepts-where-R-refuses"
+detail = "R: *did not achieve convergence*"
+reason = "R's optimiser stops without convergence on this case and R refuses the fit; metafopy's optimiser converges."
