@@ -469,7 +469,7 @@ def fit_rma_ls(
         )
         par_opt = res.par.copy()
     else:
-        res = metafopy.models.rma_ls_opt.minimise(objective, par0[free], method=optimizer, maxiter=con.maxiter)
+        res = metafopy.models.rma_ls_opt.minimise(objective, par0[free], method=optimizer, maxiter=con.maxiter, polish_converged=con.polish_converged)
         par_opt = par0.copy()
         par_opt[free] = res.par
 

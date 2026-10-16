@@ -27,6 +27,7 @@ DBL_EPS = numpy.finfo(float).eps
 class LSControl:
     """Control settings for location-scale models (names follow metafor with ``.`` -> ``_``).
 
+    ``polish_converged=False`` skips the Nelder-Mead polish after a converged BFGS run (used by the permutation test).
     ``optimizer`` is ``'nlminb'`` (the default, mapped to SciPy's BFGS or, for the
     identity link, SLSQP), ``'BFGS'``, ``'L-BFGS-B'``, ``'Nelder-Mead'``,
     ``'constrOptim'`` or ``'SLSQP'``; ``hessian_d``, ``hessian_eps`` and
@@ -47,6 +48,7 @@ class LSControl:
     hessian_r: int = 4
     maxiter: int = 5000
     optimizer: str = 'nlminb'
+    polish_converged: bool = True
     REMLf: bool = True
     scaleZ: bool = True  # noqa: N815  mirrors the metafor control argument name
     tau2_max: float = numpy.inf
@@ -130,6 +132,7 @@ class RMALSResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_me
     tau2_fix: bool = False
     measure: str = 'GEN'
     formula_scale: str | None = None
+    Z_f: FloatArray | None = dataclasses.field(default=None, repr=False)
     call: metafopy.models.call.Call | None = dataclasses.field(default=None, kw_only=True, repr=False, compare=False)
 
     @property
@@ -149,21 +152,34 @@ class RMALSResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_me
             return alpha
         return {'beta': beta, 'alpha': alpha}
 
-    def vcov(self, type: typing.Literal['alpha', 'beta', 'fixed'] = 'fixed') -> pandas.DataFrame | dict[str, pandas.DataFrame]:
-        """Variance-covariance matrix of the location and/or scale coefficients."""
-        names = list(self.coef_names)
-        anames = list(self.alpha_names)
-        vb = pandas.DataFrame(self.vb, index=names, columns=names)
-        va = pandas.DataFrame(self.va, index=anames, columns=anames)
-        if type == 'beta':
-            return vb
-        if type == 'alpha':
-            return va
-        return {'beta': vb, 'alpha': va}
+    @typing.overload
+    def vcov(
+        self,
+        type: typing.Literal['beta', 'alpha', 'obs', 'marginal', 'fitted', 'resid'],
+        *,
+        na_action: metafopy.models.rma_uni.NAActionAll = 'omit',
+    ) -> pandas.DataFrame: ...
 
-    def fitted(self) -> dict[str, FloatArray]:
-        """Fitted location values ``X beta`` and scale values ``Z alpha`` (the latter on the link scale)."""
-        return {'location': self.X @ self.beta, 'scale': self.Z @ self.alpha}
+    @typing.overload
+    def vcov(
+        self, type: metafopy.models.rma_uni.VcovType = 'fixed', *, na_action: metafopy.models.rma_uni.NAActionAll = 'omit'
+    ) -> pandas.DataFrame | dict[str, pandas.DataFrame]: ...
+
+    def vcov(
+        self, type: metafopy.models.rma_uni.VcovType = 'fixed', *, na_action: metafopy.models.rma_uni.NAActionAll = 'omit'
+    ) -> pandas.DataFrame | dict[str, pandas.DataFrame]:
+        """Variance-covariance matrices; ``'fixed'`` (the default) gives ``{'beta': ..., 'alpha': ...}``, the other types follow :func:`metafopy.vcov`."""
+        # auditme: accept[in-function-import] metafopy.methods imports this module, so the import is deferred to avoid a cycle
+        import metafopy.methods.vcov
+
+        return metafopy.methods.vcov.vcov(self, type, na_action=na_action)
+
+    def fitted(self, *, na_action: metafopy.models.rma_uni.NAActionAll = 'omit') -> dict[str, FloatArray]:
+        """Fitted location values ``X beta`` and scale values ``Z alpha`` (the latter on the link scale); ``na_action`` is as for ``rma_uni`` fits."""
+        # auditme: accept[in-function-import] metafopy.methods imports this module, so the import is deferred to avoid a cycle
+        import metafopy.methods.fitted
+
+        return {'location': metafopy.methods.fitted.fitted_values(self, na_action), 'scale': metafopy.methods.fitted.scale_values(self, na_action)}
 
     def residuals(self, type: metafopy.models.rma_uni.ResidualType = 'response', *, na_action: metafopy.models.rma_uni.NAActionAll = 'omit') -> FloatArray:
         """Residuals; see :func:`metafopy.residuals` (``type`` is ``'response'``, ``'rstandard'``, ``'rstudent'``, ``'pearson'`` or ``'cholesky'``)."""
@@ -196,21 +212,26 @@ class RMALSResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_me
         return X @ metafopy.core.linalg.invcalc(X, numpy.ones(self.k)) @ X.T
 
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
-    def hatvalues(self, type: typing.Literal['diagonal', 'matrix'] = 'diagonal') -> FloatArray:
+    def hatvalues(self, type: typing.Literal['diagonal', 'matrix'] = 'diagonal', *, na_action: metafopy.models.rma_uni.NAActionAll = 'omit') -> FloatArray:
         """Diagonal of the hat matrix (``type='diagonal'``) or the hat matrix itself (``'matrix'``), as metafor's ``hatvalues()``.
 
+        With ``na_action='exclude'`` or ``'pass'`` the studies left out because of missing values are NaN rows (and columns); ``'fail'`` stops if any were.
+
         Raises:
-            metafopy.errors.InputError: ``type`` is not ``'diagonal'`` or ``'matrix'``.
+            metafopy.errors.InputError: ``type`` is not ``'diagonal'`` or ``'matrix'``, ``na_action`` is unknown, or studies are missing with ``'fail'``.
         """
+        # auditme: accept[in-function-import] metafopy.methods imports this module, so the import is deferred to avoid a cycle
+        import metafopy.methods.fitted
+
         # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
         if type not in ('diagonal', 'matrix'):
             raise metafopy.errors.InputError("type must be 'diagonal' or 'matrix'")
         H = self.hat_matrix()
         if type == 'matrix':
-            return H
+            return metafopy.methods.fitted.hat_values(self, H, na_action)
         h = numpy.diag(H).copy()
         h[h > 1 - 10 * DBL_EPS] = 1.0
-        return h
+        return metafopy.methods.fitted.hat_values(self, h, na_action)
 
     # -- delegated methods (defined in metafopy.methods) ----------------------
 

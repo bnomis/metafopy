@@ -17,6 +17,8 @@ import numpy.typing
 import scipy.stats
 
 import metafopy.errors
+import metafopy.methods.common
+import metafopy.methods.fitted
 import metafopy.methods.predict
 import metafopy.models.rma_ls_result
 import metafopy.models.rma_uni
@@ -26,8 +28,6 @@ import metafopy.transf
 __all__ = ['LSPredictResult', 'predict_rma_ls']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
-
-PREDTYPES = ('default', 'riley', 'simple', 't')
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -114,26 +114,28 @@ def predict_rma_ls(
     transf: collections.abc.Callable[..., typing.Any] | None = None,
     targs: typing.Any = None,
     vcov: bool = False,
-    predtype: str = 'default',
+    predtype: str | None = None,
     pi_type: str | None = None,
     newvi: numpy.typing.ArrayLike | None = None,
+    na_action: metafopy.methods.common.NAAction = 'omit',
 ) -> LSPredictResult:
     """Predict from a location-scale model (``predict.rma.ls``).
 
     ``newmods`` and ``newscale`` give the moderator and scale variable values without the intercept column (the
     intercept is added unless ``intercept=False``, or the full ``p`` or ``q`` columns). With the identity link negative
     predicted ``tau^2`` values are constrained to 0. ``predtype`` is ``'default'``, ``'simple'``, ``'riley'`` or ``'t'``
-    (``pi_type`` is an alias); ``newvi`` adds sampling variances of new studies to the prediction interval; ``prob``
-    (``'<0.2'`` or ``'>0.2'``) adds the probability that a true outcome falls on that side of the value.
+    (``pi_type`` is its old spelling); ``newvi`` adds sampling variances of new studies to the prediction interval; ``prob``
+    (``'<0.2'`` or ``'>0.2'``) adds the probability that a true outcome falls on that side of the value. ``na_action`` stands for R's
+    ``na.action`` option: for the fitted values (no ``newmods`` and ``newscale``) ``'omit'`` returns the studies used in fitting, ``'exclude'`` one
+    row per study with NaN for those left out and ``'pass'`` one row per study computed from the values it has; predictions for ``newmods`` or
+    ``newscale`` drop (``'omit'``) or keep (the others) the rows that are NaN.
 
     Raises:
-        metafopy.errors.InputError: an argument is invalid or the dimensions do not match the model.
-        metafopy.errors.ArgumentError: ``predtype`` is unknown.
+        metafopy.errors.InputError: an argument is invalid, ``predtype`` is unknown or the dimensions do not match the model.
     """
     x = model
-    ptype = (pi_type if pi_type is not None else predtype).lower()
-    if ptype not in PREDTYPES:
-        raise metafopy.errors.ArgumentError(f"'predtype' must be one of {PREDTYPES}, not {ptype!r}")
+    metafopy.methods.common.check_na_action(na_action)
+    ptype = metafopy.methods.predict.resolve_predtype(predtype, pi_type)
     int_spec = intercept is not None
     icpt = True if intercept is None else intercept
     crit_level = x.level if level is None else metafopy.models.rma_uni.level_to_alpha(level)
@@ -171,9 +173,12 @@ def predict_rma_ls(
         )
 
     pred_mui = True
+    rows = metafopy.methods.fitted.rows_of(x)
     if newmods is None and newscale is None:
-        X_use, Z_use, tau2_f = x.X, x.Z, x.tau2
-        k_new = x.k
+        X_use, Z_use = rows.X_f, metafopy.methods.fitted.scale_rows(x)
+        k_new = X_use.shape[0]
+        tau2_f = numpy.full(k_new, math.nan)
+        tau2_f[rows.not_na] = x.tau2
     elif X_new is None and Z_new is not None:
         Z_use = Z_new
         X_use = numpy.empty((0, x.p))
@@ -249,14 +254,7 @@ def predict_rma_ls(
             pi_ddf = max(pi_ddf, 1.0)
             crit = float(scipy.stats.t.isf(crit_alpha / 2, pi_ddf))
             pi_dist = 't'
-        if newvi is None:
-            nv = numpy.zeros(k_new)
-        else:
-            nv = numpy.asarray(newvi, dtype=numpy.float64).reshape(-1)
-            if nv.shape[0] == 1:
-                nv = numpy.full(k_new, nv[0])
-            if nv.shape[0] != k_new:
-                raise metafopy.errors.InputError(f"Length of the 'newvi' argument ({nv.shape[0]}) does not match the number of predicted values ({k_new}).")
+        nv = metafopy.methods.predict.expand_newvi(newvi, k_new)
         pi_se = numpy.sqrt(vpred_pi + tau2_f + nv)
         pi_lb = pred - crit * pi_se
         pi_ub = pred + crit * pi_se
@@ -285,7 +283,7 @@ def predict_rma_ls(
 
     slab: tuple[str, ...]
     if (pred_mui and newmods is None) or (not pred_mui and newscale is None):
-        slab = x.slab
+        slab = rows.slab
     else:
         slab = tuple(str(i + 1) for i in range(k_new))
     if k_new == 1 and not ((pred_mui and newmods is None) or (not pred_mui and newscale is None)):
@@ -296,7 +294,7 @@ def predict_rma_ls(
         pi_lb = numpy.full(k_new, math.nan)
         pi_ub = numpy.full(k_new, math.nan)
 
-    return LSPredictResult(
+    out = LSPredictResult(
         pred=pred,
         se=se,
         ci_lb=ci_lb,
@@ -314,3 +312,7 @@ def predict_rma_ls(
         Z=Z_use if addz else None,
         vcov=vcov_pred if (vcov and not do_transf) else None,
     )
+    fitted_rows = newmods is None and newscale is None
+    keep, blank = metafopy.methods.predict.rows_to_keep(pred, rows.not_na, fitted_rows, na_action)
+    result = out if keep.all() and blank is None else metafopy.methods.predict.restrict_rows(out, keep, blank)
+    return typing.cast(LSPredictResult, result)

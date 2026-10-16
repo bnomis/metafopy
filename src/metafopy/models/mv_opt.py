@@ -13,6 +13,7 @@ import numpy
 import numpy.typing
 import scipy.optimize
 
+import metafopy.core.stationarity
 import metafopy.errors
 import metafopy.models.mv_lik
 
@@ -81,11 +82,13 @@ def maximise(
     jac = numpy.asarray(res.jac, dtype=numpy.float64)
     gnorm = float(numpy.max(numpy.abs(jac))) if jac.size else 0.0
     if not res.success and gnorm > SLACK_GRADIENT:
+        decrement = metafopy.core.stationarity.newton_decrement(res)
         refined = scipy.optimize.minimize(objective, x, jac=True, method='L-BFGS-B', options={'maxiter': maxiter, 'ftol': 1e-14, 'gtol': gtol})
+        improved = refined.fun < val - metafopy.core.stationarity.REL_TOL * (1 + abs(val))
         if refined.fun <= val:
             x, val = refined.x, float(refined.fun)
             rjac = numpy.asarray(refined.jac, dtype=numpy.float64)
             gnorm = float(numpy.max(numpy.abs(rjac))) if rjac.size else 0.0
-        if gnorm > SLACK_GRADIENT and not nonsmooth:
+        if gnorm > SLACK_GRADIENT and not nonsmooth and (improved or decrement > metafopy.core.stationarity.REL_TOL * (1 + abs(val))):
             raise metafopy.errors.EstimationError(f'Optimizer (BFGS) did not achieve convergence ({res.message}).')
     return OptResult(par=expand(x), value=-val, iterations=int(res.nit))

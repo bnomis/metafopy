@@ -100,6 +100,7 @@ def fit_scale(
         warnings.warn("Argument 'tau2' ignored for location-scale models.", stacklevel=3)
     Z_all, z_names = scale_matrix(scale, md)
     Z = Z_all[md.keep]
+    Z_f = Z_all[md.keep if md.na_rows is None else md.keep | md.na_rows]
     missing = numpy.isnan(Z).any(axis=1)
     if missing.any():
         if na_action == 'fail':
@@ -107,8 +108,12 @@ def fit_scale(
         sel = ~missing
         keep = md.keep.copy()
         keep[numpy.flatnonzero(md.keep)[missing]] = False
+        # the rows left out for a missing scale value are rows of the subset (R's k.f) too, so that na_action='pass' returns them
+        na_rows = numpy.zeros_like(md.keep) if md.na_rows is None else md.na_rows.copy()
+        na_rows[numpy.flatnonzero(md.keep)[missing]] = True
         md = dataclasses.replace(
             md,
+            na_rows=na_rows,
             yi=md.yi[sel],
             vi=md.vi[sel],
             X=md.X[sel],
@@ -135,4 +140,4 @@ def fit_scale(
         control=metafopy.models.rma_ls_fit.make_ls_control(control),  # type: ignore[arg-type]
         formula_scale=scale if isinstance(scale, str) else None,
     )
-    return dataclasses.replace(res, measure=measure)
+    return dataclasses.replace(res, measure=measure, Z_f=Z_f)

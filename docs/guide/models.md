@@ -209,7 +209,11 @@ print(predict(rma('yi', 'vi', data=dat), transf=numpy.exp))
 ```
 
 `transf=` applies a transformation to the predictions and their bounds. Prediction intervals (`pi.lb`, `pi.ub`) include the
-heterogeneity.
+heterogeneity. `predtype=` (`pi_type=` is its old spelling) chooses how the interval is built: `'default'`, `'simple'` (no uncertainty
+of the predicted value, normal distribution), `'riley'` (a t distribution with `k - parms` degrees of freedom, Riley et al., 2011,
+<https://doi.org/10.1111/j.1467-985X.2010.00696.x>) or `'t'`; `newvi=` adds the sampling variances of new studies. Both work for every
+fit class. `na_action=` (`'omit'`, `'exclude'`, `'pass'` or `'fail'`, standing for R's `options(na.action=)`) decides whether the fitted
+values of `fitted()`, `predict()` and `hatvalues()` cover the studies used in fitting or one value for each study of the data.
 
 ### confint
 
@@ -257,6 +261,12 @@ Reduced   2  29.3302  30.4601  30.5302 -12.6651  9.9588  0.0016  152.2330  0.280
 Test of Moderators (coefficient 2):
 QM(df = 1) = 16.3571, p-val < .0001
 ```
+
+For a fit made robust with `robust(res, cluster, club_sandwich=True)`, `anova` runs the cluster-robust Wald test with the small-sample
+approximation of the fit's `wald_test` (`HTZ` by default), which gives an F test with an estimated denominator degrees of freedom
+(`F(df1 = 1, df2 = 1.52) = 41.6109, p-val = 0.0440` for `btt` on the bcg data with `cluster='alloc'`); `anova(res, X=...)` uses the
+degrees of freedom of the fit's `coef_test` for each linear combination. `L` is R's old spelling of `X`, `fixed=True` matches a
+character `btt` literally, and `anova(full, reduced, test='Wald')` tests the extra coefficients of the full model with its Wald test.
 
 ### Permutation test
 

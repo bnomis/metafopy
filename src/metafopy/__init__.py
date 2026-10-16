@@ -8,6 +8,7 @@ import metafopy.methods.location_scale  # registers the predict/confint/... meth
 import metafopy.methods.mv_diagnostics  # registers the diagnostics for rma.mv models
 import metafopy.methods.mv_profile  # registers profile() for rma.mv models
 import metafopy.methods.mv_ranef
+import metafopy.methods.vif_mv  # registers vif() for rma.mv and selmodel fits
 import metafopy.models.rma_ls  # noqa: F401  loaded so the annotations of rma_uni resolve under inspect.signature
 from metafopy import datasets, transf
 from metafopy.base import __version__
@@ -16,6 +17,7 @@ from metafopy.core.rng import set_seed
 from metafopy.effects import (
     TableArray,
     aggregate_escalc,
+    cbind_escalc,
     cmicalc,
     contrmat,
     conv_2x2,
@@ -24,6 +26,7 @@ from metafopy.effects import (
     conv_wald,
     dfround,
     escalc,
+    rbind_escalc,
     replmiss,
     summary_escalc,
     to_long,
@@ -38,6 +41,7 @@ from metafopy.methods.accessors import df_residual, model_matrix, nobs, se, upda
 from metafopy.methods.anova import LRTResult, WaldResult, anova
 from metafopy.methods.blocks import bldiag, blsplit
 from metafopy.methods.blup import BlupResult, blup
+from metafopy.methods.coef_summary import coef_summary
 from metafopy.methods.confint import ConfintResult, confint
 from metafopy.methods.deltamethod import DeltaMethodResult, deltamethod
 from metafopy.methods.emm_grid import EmmGrid, contrast, emmeans, emmprep, pairs, regrid
@@ -58,6 +62,7 @@ from metafopy.methods.robust import robust
 from metafopy.methods.selmodel import SelProfileResult
 from metafopy.methods.simulate import simulate
 from metafopy.methods.vcalc import vcalc
+from metafopy.methods.vcov import vcov
 from metafopy.methods.vif import VIFEntry, VIFResult, vif
 from metafopy.mfopt import getmfopt, setmfopt
 from metafopy.models.glmm_fit import GLMMControl
@@ -88,6 +93,7 @@ from metafopy.plot import (
     plot_rma,
     plot_selmodel,
     plot_vif,
+    points_regplot,
     qqnorm,
     radial,
     regplot,
@@ -147,7 +153,9 @@ __all__ = [
     'bldiag',
     'blsplit',
     'blup',
+    'cbind_escalc',
     'cmicalc',
+    'coef_summary',
     'confint',
     'contrast',
     'contrmat',
@@ -196,12 +204,14 @@ __all__ = [
     'plot_rma',
     'plot_selmodel',
     'plot_vif',
+    'points_regplot',
     'predict',
     'profile',
     'qqnorm',
     'radial',
     'ranef',
     'ranktest',
+    'rbind_escalc',
     'rcalc',
     'regplot',
     'regrid',
@@ -231,6 +241,7 @@ __all__ = [
     'trimfill',
     'update',
     'vcalc',
+    'vcov',
     'vec2mat',
     'vif',
 ]

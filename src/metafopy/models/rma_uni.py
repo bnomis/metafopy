@@ -44,6 +44,8 @@ type Test = typing.Literal['z', 't', 'knha', 'adhoc']
 type Btt = int | collections.abc.Sequence[int] | str | None
 type ResidualType = typing.Literal['response', 'rstandard', 'rstudent', 'pearson', 'cholesky']
 type NAActionAll = typing.Literal['omit', 'exclude', 'pass', 'fail']
+# auditme: accept[non-alphabetical-literal] order is metafor's documented order and is meaningful
+type VcovType = typing.Literal['fixed', 'beta', 'alpha', 'delta', 'obs', 'marginal', 'fitted', 'resid']
 
 DBL_EPS = numpy.finfo(float).eps
 
@@ -124,14 +126,22 @@ class RMAResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_meth
         """Estimated coefficients, indexed by name."""
         return pandas.Series(self.beta, index=list(self.coef_names), name='estimate')
 
-    def vcov(self) -> pandas.DataFrame:
-        """Variance-covariance matrix of the coefficients."""
-        names = list(self.coef_names)
-        return pandas.DataFrame(self.vb, index=names, columns=names)
+    def vcov(self, type: VcovType = 'fixed', *, na_action: NAActionAll = 'omit') -> pandas.DataFrame:
+        """Variance-covariance matrix of the coefficients, or with ``type`` of the observed effects; see :func:`metafopy.vcov`."""
+        # auditme: accept[in-function-import] metafopy.methods imports this module, so the import is deferred to avoid a cycle
+        import metafopy.methods.vcov
 
-    def fitted(self) -> FloatArray:
-        """Fitted values ``X beta``."""
-        return self.X @ self.beta
+        return metafopy.methods.vcov.vcov_frame(self, type, na_action)
+
+    def fitted(self, *, na_action: NAActionAll = 'omit') -> FloatArray:
+        """Fitted values ``X beta``.
+
+        ``na_action`` is ``'omit'`` (the studies used in fitting), ``'exclude'``, ``'pass'`` or ``'fail'``, as in :func:`metafopy.residuals`.
+        """
+        # auditme: accept[in-function-import] metafopy.methods imports this module, so the import is deferred to avoid a cycle
+        import metafopy.methods.fitted
+
+        return metafopy.methods.fitted.fitted_values(self, na_action)
 
     def residuals(self, type: ResidualType = 'response', *, na_action: NAActionAll = 'omit') -> FloatArray:
         """Residuals; see :func:`metafopy.residuals` (``type`` is ``'response'``, ``'rstandard'``, ``'rstudent'``, ``'pearson'`` or ``'cholesky'``)."""
@@ -164,21 +174,26 @@ class RMAResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_meth
         return X @ metafopy.core.linalg.invcalc(X, numpy.ones(self.k)) @ X.T
 
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
-    def hatvalues(self, type: typing.Literal['diagonal', 'matrix'] = 'diagonal') -> FloatArray:
+    def hatvalues(self, type: typing.Literal['diagonal', 'matrix'] = 'diagonal', *, na_action: NAActionAll = 'omit') -> FloatArray:
         """Diagonal of the hat matrix (``type='diagonal'``) or the hat matrix itself (``'matrix'``), as metafor's ``hatvalues()``.
 
+        With ``na_action='exclude'`` or ``'pass'`` the studies left out because of missing values are NaN rows (and columns); ``'fail'`` stops if any were.
+
         Raises:
-            metafopy.errors.InputError: ``type`` is not ``'diagonal'`` or ``'matrix'``.
+            metafopy.errors.InputError: ``type`` is not ``'diagonal'`` or ``'matrix'``, ``na_action`` is unknown, or studies are missing with ``'fail'``.
         """
+        # auditme: accept[in-function-import] metafopy.methods imports this module, so the import is deferred to avoid a cycle
+        import metafopy.methods.fitted
+
         # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
         if type not in ('diagonal', 'matrix'):
             raise metafopy.errors.InputError("type must be 'diagonal' or 'matrix'")
         H = self.hat_matrix()
         if type == 'matrix':
-            return H
+            return metafopy.methods.fitted.hat_values(self, H, na_action)
         h = numpy.diag(H).copy()
         h[h > 1 - 10 * DBL_EPS] = 1.0
-        return h
+        return metafopy.methods.fitted.hat_values(self, h, na_action)
 
     # -- delegated methods (defined in metafopy.methods) ----------------------
 
@@ -253,13 +268,13 @@ def make_control(control: metafopy.models.tau2.Control | collections.abc.Mapping
     return metafopy.models.tau2.Control(**kwargs)
 
 
-def set_btt(btt: Btt, p: int, int_incl: bool, names: collections.abc.Sequence[str]) -> tuple[int, ...]:
+def set_btt(btt: Btt, p: int, int_incl: bool, names: collections.abc.Sequence[str], fixed: bool = False) -> tuple[int, ...]:
     if btt is None:
         if p > 1:
             return tuple(range(1, p)) if int_incl else tuple(range(p))
         return (0,)
     if isinstance(btt, str):
-        found = tuple(i for i, n in enumerate(names) if re.search(btt, n))
+        found = tuple(i for i, n in enumerate(names) if (btt in n if fixed else re.search(btt, n)))
         if not found:
             raise metafopy.errors.InputError("cannot identify coefficient(s) matching the 'btt' pattern")
         return found

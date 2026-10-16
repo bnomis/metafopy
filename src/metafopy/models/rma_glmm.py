@@ -83,7 +83,12 @@ def make_control(control: metafopy.models.glmm_fit.GLMMControl | collections.abc
         return control
     names = {f.name for f in dataclasses.fields(metafopy.models.glmm_fit.GLMMControl)}
     clean = {
-        str(key).replace('.', '_').replace('scaleX', 'scale_x').replace('clogitCtrl', 'clogit_ctrl').replace('clogisticCtrl', 'clogistic_ctrl'): value
+        str(key)
+        .replace('.', '_')
+        .replace('scaleX', 'scale_x')
+        .replace('clogitCtrl', 'clogit_ctrl')
+        .replace('clogisticCtrl', 'clogistic_ctrl')
+        .replace('optCtrl', 'opt_ctrl'): value
         for key, value in control.items()
     }
     unknown = set(clean) - names
@@ -91,8 +96,15 @@ def make_control(control: metafopy.models.glmm_fit.GLMMControl | collections.abc
         raise metafopy.errors.InputError(f'unknown control settings: {sorted(unknown)}')
     if 'package' in clean:
         clean['package'] = match_package(clean['package'])
+    if 'optmethod' in clean:
+        clean['optmethod'] = match_optmethod(clean['optmethod'])
     if 'optimizer' in clean:
-        clean['optimizer'] = match_optimizer(clean['optimizer'])
+        optimizer = match_optimizer(clean['optimizer'])
+        if optimizer in metafopy.models.glmm_fit.OPTMETHODS:
+            # as metafor: optimizer='BFGS' stands for optimizer='optim' with optmethod='BFGS'
+            clean['optmethod'] = optimizer
+            optimizer = 'optim'
+        clean['optimizer'] = optimizer
     return metafopy.models.glmm_fit.GLMMControl(**clean)
 
 
@@ -115,14 +127,26 @@ def match_optimizer(value: typing.Any) -> str:
     """The optimizer named by ``control$optimizer`` (an exact name, or an unambiguous prefix as in ``match.arg()``).
 
     Raises:
-        metafopy.errors.InputError: the value names none of ``'nlminb'``, ``'clogit'`` and ``'clogistic'``.
+        metafopy.errors.InputError: the value names none of the optimisers in :data:`metafopy.models.glmm_fit.OPTIMIZERS`.
     """
-    names = metafopy.models.glmm_fit.OPTIMIZERS
+    return match_choice(value, metafopy.models.glmm_fit.OPTIMIZERS, 'optimizer')
+
+
+def match_optmethod(value: typing.Any) -> str:
+    """The ``optim()`` method named by ``control$optmethod`` (like ``match.arg()``).
+
+    Raises:
+        metafopy.errors.InputError: the value names none of the methods in :data:`metafopy.models.glmm_fit.OPTMETHODS`.
+    """
+    return match_choice(value, metafopy.models.glmm_fit.OPTMETHODS, 'optmethod')
+
+
+def match_choice(value: typing.Any, names: tuple[str, ...], what: str) -> str:
     if isinstance(value, str) and value in names:
         return value
     hits = [name for name in names if isinstance(value, str) and value and name.startswith(value)]
     if len(hits) != 1:
-        raise metafopy.errors.InputError(f"'optimizer' should be one of {', '.join(repr(n) for n in names)}")
+        raise metafopy.errors.InputError(f"'{what}' should be one of {', '.join(repr(n) for n in names)}")
     return hits[0]
 
 
@@ -383,7 +407,11 @@ def rma_glmm(
     ``'CM.EL'`` for ``'OR'`` with ``survival::clogit()`` or ``Epi::clogistic()`` (implemented in :mod:`metafopy.core.clogit`,
     without building the individual patient data); ``clogitCtrl`` and ``clogisticCtrl`` entries of ``control`` are passed on
     as in metafor (see :func:`metafopy.core.clogit.clogit_settings` and :func:`metafopy.core.clogit.clogistic_settings`).
-    The default ``'nlminb'`` maximises the exact likelihood numerically. Other optimisers of metafor are not available.
+    The default ``'nlminb'`` maximises the exact likelihood numerically. The other optimisers of metafor's ``control$optimizer``
+    (``'optim'`` with ``optmethod``, ``'Nelder-Mead'``, ``'BFGS'``, ``'CG'``, ``'L-BFGS-B'``, ``'nlm'``, ``'uobyqa'``, ``'newuoa'``,
+    ``'bobyqa'``, ...) maximise it as :mod:`metafopy.models.sel_opt` minimises: ``optim`` with BFGS or Nelder-Mead is R's routine
+    (``optCtrl`` takes ``maxit``, ``reltol``, ``abstol`` and ``ndeps``), the others stand in with the closest SciPy method. The Wald test
+    of the saturated model (``QE_Wld``) of ``'CM.EL'`` is ill-conditioned and differs between optimisers in R as well.
 
     ``control={'package': ...}`` chooses the package that fits the mixed models, as in metafor:
     ``'lme4'`` (the default), ``'GLMMadaptive'`` (adaptive quadrature with ``nAGQ`` points in every

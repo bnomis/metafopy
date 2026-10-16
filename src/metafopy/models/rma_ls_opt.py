@@ -20,6 +20,7 @@ import numpy.typing
 import scipy.optimize
 
 import metafopy.core.optim
+import metafopy.core.stationarity
 import metafopy.errors
 
 __all__ = ['OptResult', 'constr_optim', 'minimise']
@@ -90,7 +91,7 @@ def constr_optim(
     return OptResult(par=last.par, value=f(last.par), iterations=total)
 
 
-def minimise(f: Objective, x0: FloatArray, *, method: str = 'BFGS', maxiter: int = 5000, gtol: float = 1e-9) -> OptResult:
+def minimise(f: Objective, x0: FloatArray, *, method: str = 'BFGS', maxiter: int = 5000, gtol: float = 1e-9, polish_converged: bool = True) -> OptResult:
     """Minimise ``f`` with a gradient-free start: SciPy's quasi-Newton method, then a Nelder-Mead polish.
 
     Non-finite values of ``f`` count as a very large value.
@@ -116,16 +117,20 @@ def minimise(f: Objective, x0: FloatArray, *, method: str = 'BFGS', maxiter: int
         raise metafopy.errors.InputError(f'unknown optimizer {method!r}')
     best_x, best_val = numpy.asarray(first.x, dtype=numpy.float64), float(first.fun)
     nit = int(first.nit)
-    # a final simplex search guards against a premature stop of the quasi-Newton iterations
-    polish = scipy.optimize.minimize(
-        safe,
-        best_x,
-        method='Nelder-Mead',
-        options={'maxiter': maxiter * 4, 'xatol': 1e-10, 'fatol': 1e-13, 'adaptive': True},
-    )
-    if float(polish.fun) < best_val:
-        best_x, best_val = numpy.asarray(polish.x, dtype=numpy.float64), float(polish.fun)
-        nit += int(polish.nit)
+    # a final simplex search guards against a premature stop of the quasi-Newton iterations; with polish_converged=False it is skipped after a
+    # converged run or a stop with a negligible predicted decrease, as it would only walk further down a likelihood that is flat towards a
+    # boundary (a log-variance heading to minus infinity), where nlminb stops once the relative change of the objective is below 1e-10
+    decrement = metafopy.core.stationarity.newton_decrement(first)
+    if polish_converged or (not first.success and decrement > metafopy.core.stationarity.REL_TOL * (1 + abs(best_val))):
+        polish = scipy.optimize.minimize(
+            safe,
+            best_x,
+            method='Nelder-Mead',
+            options={'maxiter': maxiter * 4, 'xatol': 1e-10, 'fatol': 1e-13, 'adaptive': True},
+        )
+        if float(polish.fun) < best_val:
+            best_x, best_val = numpy.asarray(polish.x, dtype=numpy.float64), float(polish.fun)
+            nit += int(polish.nit)
     if best_val >= HUGE:
         raise metafopy.errors.EstimationError('Optimizer did not achieve convergence.')
     return OptResult(par=best_x, value=best_val, iterations=nit)

@@ -11,6 +11,7 @@ import collections.abc
 import dataclasses
 import functools
 import typing
+import warnings
 
 import numpy
 import numpy.typing
@@ -135,6 +136,21 @@ def blup_rma_glmm(res: metafopy.models.glmm_result.GLMMResult, *args: typing.Any
     )
 
 
+def recycle_crit(crit: FloatArray, keep: numpy.typing.NDArray[numpy.bool_]) -> FloatArray:
+    """The critical values of a ``clubSandwich`` fit recycled over the studies as R does.
+
+    ``blup.rma.uni`` computes ``qt(level/2, df = x$ddf)`` with one degree of freedom per coefficient and multiplies it with the vector
+    of the standard errors, so the critical values repeat over the studies (``k.f`` of them, those left out of the fit included) and
+    R warns when the number of studies is not a multiple of the number of coefficients. This is probably a bug of R; metafopy follows
+    it (see ``docs/differences.md``).
+    """
+    n_all = keep.shape[0]
+    if n_all % crit.size != 0:
+        for _ in range(2):  # R warns for the lower and for the upper bound
+            warnings.warn('longer object length is not a multiple of shorter object length', stacklevel=4)
+    return numpy.resize(crit, n_all)[keep]
+
+
 def shrinkage_predictions(
     res: metafopy.models.rma_uni.RMAResult | metafopy.models.rma_ls_result.RMALSResult,
     kind: typing.Literal['blup', 'ranef'],
@@ -156,7 +172,13 @@ def shrinkage_predictions(
         raise metafopy.errors.InputError('Extraction of random effects not available for models with non-standard weights.')
 
     alpha = res.level if level is None else metafopy.models.rma_uni.level_to_alpha(level)
-    if res.ddf is not None:
+    club = res.robust if isinstance(res, metafopy.models.rma_uni.RMAResult) and res.robust is not None and res.robust.robumethod == 'clubSandwich' else None
+    crit: FloatArray | float
+    if club is not None:
+        # R takes qt(level/2, df = x$ddf) with the vector of Satterthwaite dfs of the coefficients (see recycle_crit)
+        with numpy.errstate(invalid='ignore'):
+            crit = numpy.where(club.dfs > 0, scipy.stats.t.isf(alpha / 2, numpy.where(club.dfs > 0, club.dfs, 1.0)), numpy.nan)
+    elif res.ddf is not None:
         crit = float(scipy.stats.t.isf(alpha / 2, res.ddf)) if res.ddf > 0 else numpy.nan
     else:
         crit = float(scipy.stats.norm.isf(alpha / 2))
@@ -180,8 +202,9 @@ def shrinkage_predictions(
 
     with numpy.errstate(invalid='ignore'):
         se = numpy.sqrt(vpred)
-    pi_lb = pred - crit * se
-    pi_ub = pred + crit * se
+    crit_k = recycle_crit(crit, res.data.keep) if isinstance(crit, numpy.ndarray) and crit.size > 1 else crit
+    pi_lb = pred - crit_k * se
+    pi_ub = pred + crit_k * se
 
     if transf is not None:
         pred, pi_lb, pi_ub = (numpy.asarray(transf(a) if targs is None else transf(a, targs), dtype=numpy.float64) for a in (pred, pi_lb, pi_ub))

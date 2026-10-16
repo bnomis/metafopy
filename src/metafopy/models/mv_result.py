@@ -35,6 +35,8 @@ class RMAMVResult(metafopy.models.fit_methods.FitMethods):
     ``beta_est`` flags them, and ``vccon`` holds the group ids of constrained variance components. ``slab_f`` and
     ``s_levels_f`` are the study labels and the levels of the ``~ 1 | id`` terms before rows with missing values were
     dropped (metafor's ``slab`` and ``s.levels.f``), used to pad results under ``na_action='exclude'``.
+    ``X_f`` is the model matrix before rows with missing values were dropped (metafor's ``X.f``; NaN where a moderator value is missing),
+    used by ``fitted()`` and ``predict()`` under ``na_action='pass'``.
     """
 
     beta: FloatArray
@@ -128,18 +130,34 @@ class RMAMVResult(metafopy.models.fit_methods.FitMethods):
     call: metafopy.models.call.Call | None = dataclasses.field(default=None, kw_only=True, repr=False, compare=False)
     s_levels_f: tuple[tuple[str, ...], ...] = ()
     slab_f: tuple[str, ...] = ()
+    X_f: FloatArray | None = None
 
     # -- accessors -------------------------------------------------------
 
     def coef(self) -> pandas.Series:
         return pandas.Series(self.beta, index=list(self.coef_names), name='estimate')
 
-    def vcov(self) -> pandas.DataFrame:
-        names = list(self.coef_names)
-        return pandas.DataFrame(self.vb, index=names, columns=names)
+    @property
+    def k_eff(self) -> int:
+        """Number of effective observations (the rows used in the fit), metafor's ``k.eff``."""
+        return self.k
 
-    def fitted(self) -> FloatArray:
-        return numpy.asarray(self.X @ self.beta)
+    def vcov(self, type: metafopy.models.rma_uni.VcovType = 'fixed', *, na_action: metafopy.models.rma_uni.NAActionAll = 'omit') -> pandas.DataFrame:
+        """Variance-covariance matrix of the coefficients, or with ``type`` of the observed effects; see :func:`metafopy.vcov`."""
+        # auditme: accept[in-function-import] metafopy.methods imports this module, so the import is deferred to avoid a cycle
+        import metafopy.methods.vcov
+
+        return metafopy.methods.vcov.vcov_frame(self, type, na_action)
+
+    def fitted(self, *, na_action: metafopy.models.rma_uni.NAActionAll = 'omit') -> FloatArray:
+        """Fitted values ``X beta``.
+
+        ``na_action`` is ``'omit'`` (the rows used in fitting), ``'exclude'``, ``'pass'`` or ``'fail'``, as in :func:`metafopy.residuals`.
+        """
+        # auditme: accept[in-function-import] metafopy.methods imports this module, so the import is deferred to avoid a cycle
+        import metafopy.methods.fitted
+
+        return metafopy.methods.fitted.fitted_values(self, na_action)
 
     def residuals(self, type: metafopy.models.rma_uni.ResidualType = 'response', *, na_action: metafopy.models.rma_uni.NAActionAll = 'omit') -> FloatArray:
         """Residuals; see :func:`metafopy.residuals` (``type`` is ``'response'``, ``'rstandard'``, ``'rstudent'``, ``'pearson'`` or ``'cholesky'``)."""
@@ -233,6 +251,12 @@ class RMAMVResult(metafopy.models.fit_methods.FitMethods):
         import metafopy.methods.anova
 
         return metafopy.methods.anova.anova(self, *args, **kwargs)
+
+    def vif(self, *args: typing.Any, **kwargs: typing.Any) -> typing.Any:
+        # auditme: accept[in-function-import] metafopy.methods imports this module, so the import is deferred to avoid a cycle
+        import metafopy.methods.vif
+
+        return metafopy.methods.vif.vif(self, *args, **kwargs)
 
     # -- printing -------------------------------------------------------------
 

@@ -648,7 +648,7 @@ def test_accessors() -> None:
     ref = REF['bd_3']
     refutil.close(res.coef('beta').to_numpy(), ref['coef']['beta'], 'coef beta', rtol=OPT)  # type: ignore[union-attr]
     refutil.close(res.coef('alpha').to_numpy(), ref['coef']['alpha'], 'coef alpha', rtol=OPT)  # type: ignore[union-attr]
-    refutil.close(res.vcov('alpha').to_numpy().ravel(), flat(ref['coef']['vcov_alpha']), 'vcov alpha', rtol=OPT, atol=1e-7)  # type: ignore[union-attr]
+    refutil.close(res.vcov('alpha').to_numpy().ravel(), flat(ref['coef']['vcov_alpha']), 'vcov alpha', rtol=OPT, atol=1e-7)
     assert set(res.coef()) == {'alpha', 'beta'}
     fs = res.fitstats()
     refutil.close(fs.to_numpy(), list(res.fit_stats_reml.as_tuple()), 'fitstats', rtol=1e-12)

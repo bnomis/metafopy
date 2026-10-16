@@ -137,16 +137,37 @@ class FixedBinaryResult(metafopy.models.fit_methods.FitMethods, abc.ABC):
         """Estimated coefficient, indexed by name."""
         return pandas.Series(self.beta, index=list(self.coef_names), name='estimate')
 
-    def vcov(self) -> pandas.DataFrame:
-        names = list(self.coef_names)
-        return pandas.DataFrame(self.vb, index=names, columns=names)
+    @property
+    def k_eff(self) -> int:
+        """Number of effective observations (the tables used in the fit), metafor's ``k.eff``."""
+        return int(self.k)
+
+    @property
+    def p_eff(self) -> int:
+        """Number of effective model coefficients, metafor's ``p.eff`` (always 1)."""
+        return 1
+
+    @property
+    def ni(self) -> FloatArray:
+        """Sample sizes of the tables used in the fit (``ai + bi + ci + di``, or the person-times of rate data), metafor's ``ni``."""
+        return self.tables.ni
+
+    def vcov(self, type: metafopy.models.rma_uni.VcovType = 'fixed', *, na_action: metafopy.models.rma_uni.NAActionAll = 'omit') -> pandas.DataFrame:
+        """Variance-covariance matrix of the pooled estimate, or with ``type='fitted'`` of the fitted values; see :func:`metafopy.vcov`."""
+        # auditme: accept[in-function-import] metafopy.methods imports this module, so the import is deferred to avoid a cycle
+        import metafopy.methods.vcov
+
+        return metafopy.methods.vcov.vcov_frame(self, type, na_action)
 
     def fit_stats(self, REML: bool | None = None) -> metafopy.models.rma_uni.FitStats:
         return self.fit_stats_reml if REML else self.fit_stats_ml
 
-    def fitted(self) -> FloatArray:
-        """The pooled estimate repeated for each table used in fitting."""
-        return numpy.full(self.tables.yi.shape[0], self.beta[0])
+    def fitted(self, *, na_action: metafopy.models.rma_uni.NAActionAll = 'omit') -> FloatArray:
+        """The pooled estimate repeated for each table used in fitting (``'exclude'`` and ``'pass'``: for each table supplied)."""
+        # auditme: accept[in-function-import] metafopy.methods imports this module, so the import is deferred to avoid a cycle
+        import metafopy.methods.fitted
+
+        return metafopy.methods.fitted.fitted_values(self, na_action)
 
     def residuals(self, type: metafopy.models.rma_uni.ResidualType = 'response', *, na_action: metafopy.models.rma_uni.NAActionAll = 'omit') -> FloatArray:
         """Residuals; see :func:`metafopy.residuals` (``type`` is ``'response'``, ``'rstandard'``, ``'rstudent'``, ``'pearson'`` or ``'cholesky'``)."""

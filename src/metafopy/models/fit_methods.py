@@ -64,11 +64,22 @@ class DataFields:
         """Sample sizes of the studies used in the fit (``None`` when unknown), as metafor's ``ni``."""
         return typing.cast(numpy.typing.NDArray[numpy.float64] | None, typing.cast(typing.Any, self).data.ni)
 
+    @property
+    def M(self) -> numpy.typing.NDArray[numpy.float64]:
+        """The marginal variance-covariance matrix of the observed effects, ``diag(vi + tau2)``, metafor's ``M``."""
+        fit = typing.cast(typing.Any, self)
+        return numpy.diag(numpy.asarray(fit.vi, dtype=numpy.float64) + numpy.asarray(fit.tau2, dtype=numpy.float64))
+
 
 class FitMethods:
     """Mixin of the generic accessors of metafor fits (``nobs()``, ``df.residual()``, ``formula()``, ...)."""
 
     __slots__ = ()
+
+    @property
+    def b(self) -> numpy.typing.NDArray[numpy.float64]:
+        """The estimated coefficients, an old alias of ``beta`` (metafor's ``b``)."""
+        return typing.cast(numpy.typing.NDArray[numpy.float64], typing.cast(typing.Any, self).beta)
 
     def use_reml(self, REML: bool | None) -> bool:
         """``REML`` as given, else whether the model was fitted with REML (as in metafor)."""
@@ -130,6 +141,13 @@ class FitMethods:
             return pandas.Series(columns[0], index=STAT_NAMES, name='REML' if reml else 'ML')
         warn_if_different_data(fits)
         return pandas.DataFrame(dict(zip(default_names(fits, names), columns, strict=True)), index=STAT_NAMES)
+
+    def coef_summary(self, type: typing.Literal['beta', 'alpha', 'delta'] | None = None) -> typing.Any:
+        """See :func:`metafopy.methods.coef_summary.coef_summary`."""
+        # auditme: accept[in-function-import] metafopy.methods imports the result classes, so the import is deferred to avoid a cycle
+        import metafopy.methods.coef_summary
+
+        return metafopy.methods.coef_summary.coef_summary(typing.cast(typing.Any, self), type)
 
     def nobs(self, all: bool = False) -> typing.Any:
         """See :func:`metafopy.methods.accessors.nobs`."""

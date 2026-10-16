@@ -69,6 +69,7 @@ def compvif_ls(
     int_incl: bool,
     refit: collections.abc.Callable[[FloatArray], FloatArray | None] | None,
     X: FloatArray,
+    intercept: bool = False,
 ) -> tuple[float, list[int]]:
     """GVIF of the coefficients ``group`` (0-based) of one part of the model and the indices actually used.
 
@@ -76,28 +77,7 @@ def compvif_ls(
     variance-covariance matrix of the part after refitting the model with a given model matrix) the model is refitted with
     only those coefficients (plus the intercept) and the variance-covariance blocks are compared.
     """
-    if refit is None:
-        if int_incl:
-            V = vcov[1:, 1:]
-            b = [i - 1 for i in group if i > 0]
-        else:
-            V = vcov
-            b = list(group)
-        rb = metafopy.methods.vif.cov2cor(V)
-        rest = [i for i in range(V.shape[0]) if i not in b]
-        with numpy.errstate(invalid='ignore', divide='ignore'):
-            gvif = float(numpy.linalg.det(rb[numpy.ix_(b, b)]) * numpy.linalg.det(rb[numpy.ix_(rest, rest)]) / numpy.linalg.det(rb))
-        return gvif, [i + 1 for i in b] if int_incl else b
-
-    b = [i for i in group if i > 0] if int_incl else list(group)
-    Xb = X[:, b]
-    if int_incl:
-        Xb = numpy.column_stack([numpy.ones(X.shape[0]), Xb])
-    v_sub = refit(Xb)
-    if v_sub is None:
-        return math.nan, b
-    v_sub = v_sub[1:, 1:] if int_incl else v_sub
-    return float(numpy.linalg.det(vcov[numpy.ix_(b, b)]) / numpy.linalg.det(v_sub)), b
+    return metafopy.methods.vif.compvif_matrix(group, vcov, int_incl, refit, X, intercept)
 
 
 def part_vif(
@@ -107,6 +87,8 @@ def part_vif(
     spec_arg: metafopy.methods.vif.BttArg,
     table: bool,
     reestimate: bool,
+    intercept: bool = False,
+    fixed: bool = False,
     sim: int = 0,
     seed: int | None = None,
     parallel: metafopy.core.parallel.Parallel = 'no',
@@ -129,22 +111,22 @@ def part_vif(
     missing = spec_arg is None
     specs: list[metafopy.methods.vif.BttSpec]
     if spec_arg is None:
-        specs = [j for j in range(1 if int_incl else 0, n)]
+        specs = [j for j in range(1 if int_incl and not intercept else 0, n)]
     elif isinstance(spec_arg, str | int):
         specs = [spec_arg]
     elif any(isinstance(b, str | collections.abc.Sequence) for b in spec_arg):
         specs = list(spec_arg)
     else:
         specs = [list(spec_arg)]  # type: ignore[arg-type]
-    groups = [metafopy.models.rma_uni.set_btt(s, n, int_incl, names) for s in specs]
-    if int_incl and any(g == (0,) for g in groups):
+    groups = [metafopy.models.rma_uni.set_btt(s, n, int_incl, names, fixed) for s in specs]
+    if int_incl and not intercept and any(g == (0,) for g in groups):
         raise metafopy.errors.InputError(f"Cannot compute VIF(s) for the specified '{arg}' argument.")
 
     refit = make_refit(res, which) if reestimate else None
 
     entries: list[metafopy.methods.vif.VIFEntry] = []
     for spec, g in zip(specs, groups, strict=True):
-        gvif, used = compvif_ls(g, vcov, int_incl, refit, M)
+        gvif, used = compvif_ls(g, vcov, int_incl, refit, M, intercept)
         m = len(used)
         entries.append(
             metafopy.methods.vif.VIFEntry(
@@ -168,7 +150,7 @@ def part_vif(
     # simulating is pointless when every (G)VIF is already 1
     if sim >= 2 and not numpy.all(vifs[~numpy.isnan(vifs)] == 1):
         seeds = [seed + i for i in range(1, sim + 1)] if seed is not None else [int(metafopy.core.rng.get_rng().unif_index(2**31 - 1)) for _ in range(sim)]
-        one = functools.partial(sim_one, res, which, tuple(groups), reestimate)
+        one = functools.partial(sim_one, res, which, tuple(groups), reestimate, intercept)
         rows = metafopy.core.parallel.map_sims(one, seeds, parallel=parallel, ncpus=ncpus, cl=cl, progbar=progbar)
         sims = numpy.vstack(rows)
         with numpy.errstate(invalid='ignore', divide='ignore'):
@@ -207,7 +189,9 @@ def make_refit(fit: metafopy.models.rma_ls_result.RMALSResult, which: str) -> co
     return refit_part
 
 
-def sim_one(res: metafopy.models.rma_ls_result.RMALSResult, which: str, groups: tuple[tuple[int, ...], ...], reestimate: bool, seed: int) -> FloatArray:
+def sim_one(
+    res: metafopy.models.rma_ls_result.RMALSResult, which: str, groups: tuple[tuple[int, ...], ...], reestimate: bool, intercept: bool, seed: int
+) -> FloatArray:
     """One iteration of metafor's ``.compvifsim``: (G)VIFs after permuting every column of the model matrix of one part.
 
     The generator is R's, seeded with ``seed`` (metafor calls ``set.seed(seed + l)`` for iteration ``l``), and each column is shuffled
@@ -235,7 +219,7 @@ def sim_one(res: metafopy.models.rma_ls_result.RMALSResult, which: str, groups: 
     refit = make_refit(fit, which) if reestimate else None
     try:
         with numpy.errstate(invalid='ignore'):
-            return numpy.array([compvif_ls(g, vcov, int_incl, refit, perm)[0] for g in groups])
+            return numpy.array([compvif_ls(g, vcov, int_incl, refit, perm, intercept)[0] for g in groups])
     except ValueError, ArithmeticError, numpy.linalg.LinAlgError:
         return numpy.full(len(groups), math.nan)
 
@@ -254,6 +238,8 @@ def vif_rma_ls(
     ncpus: int = 1,
     cl: concurrent.futures.Executor | None = None,
     digits: int | None = None,
+    intercept: bool = False,
+    fixed: bool = False,
 ) -> metafopy.methods.vif.VIFResult | LSVIFResult:
     """(G)VIFs for the location and, if the scale model has predictors, the scale coefficients of a location-scale model.
 
@@ -268,6 +254,8 @@ def vif_rma_ls(
     without ``seed`` the seeds are drawn from :func:`metafopy.core.rng.get_rng`. Unlike metafor, a model given by formulas has its model
     matrix columns permuted (``sim_type == 'X'``), not the underlying data variables. ``parallel`` (``'snow'``/``'multicore'``) runs the
     iterations in a process pool of ``ncpus`` workers, or on the :class:`concurrent.futures.Executor` given as ``cl``.
+
+    ``intercept=True`` includes the intercepts and ``fixed=True`` matches string ``btt``/``att`` literally (metafor's ``...`` arguments).
 
     Raises:
         metafopy.errors.InputError: an argument is invalid or the model has no predictors.
@@ -284,8 +272,8 @@ def vif_rma_ls(
             raise metafopy.errors.InputError("Argument 'sim' must be >= 2.")
     parallel = metafopy.core.parallel.resolve_parallel(parallel, ncpus, cl)
     sim_args: dict[str, typing.Any] = {'sim': n_sim, 'seed': seed, 'parallel': parallel, 'ncpus': ncpus, 'cl': cl, 'progbar': progbar}
-    out_beta = part_vif(res, which='beta', spec_arg=btt, table=table, reestimate=reestimate, **sim_args) if loc else None
-    out_alpha = part_vif(res, which='alpha', spec_arg=att, table=table, reestimate=reestimate, **sim_args) if scale else None
+    out_beta = part_vif(res, which='beta', spec_arg=btt, table=table, reestimate=reestimate, intercept=intercept, fixed=fixed, **sim_args) if loc else None
+    out_alpha = part_vif(res, which='alpha', spec_arg=att, table=table, reestimate=reestimate, intercept=intercept, fixed=fixed, **sim_args) if scale else None
     result: metafopy.methods.vif.VIFResult | LSVIFResult
     if out_beta is not None and out_alpha is not None:
         result = LSVIFResult(beta=out_beta, alpha=out_alpha)
