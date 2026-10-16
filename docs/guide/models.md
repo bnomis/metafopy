@@ -109,6 +109,8 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Moderators are given as a formula in `mods`, evaluated on `data` with [formulaic](https://matthewwardrop.github.io/formulaic/)
 (R-style syntax: `'~ ablat + year'`, `'~ C(alloc)'`, `'~ ablat * year'`).
+As in R, `factor()`, `relevel(x, ref)` and `scale()` (which skips missing values) can be used in the formula, as can functions defined in the
+calling code (they are looked up where `rma` is called). The same goes for the `scale` formula of location-scale models.
 
 ```python
 res = rma('yi', 'vi', mods='~ ablat + year', data=dat)
