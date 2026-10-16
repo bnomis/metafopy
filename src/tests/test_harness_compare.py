@@ -1,7 +1,12 @@
 """The comparison rules of the audit harness (``src/audit``): value trees, printed output, tolerances and the recall matcher."""
 
+import pathlib
+
 import audit.printdiff
 import audit.recall
+import audit.report
+import audit.steps
+import audit.universe
 import audit.valuetree as valuetree
 
 
@@ -110,3 +115,16 @@ def test_positions_as_row_names_are_not_labels() -> None:
 def test_printed_zero_must_have_the_same_decimals() -> None:
     assert audit.printdiff.first_difference('tau^2: 0 (SE = 0.0061)', 'tau^2: 0.0000 (SE = 0.0061)') is not None
     assert audit.printdiff.first_difference('tau^2: 0.1446', 'tau^2: 0.1447') is None
+
+
+def test_every_new_finding_is_rendered_in_the_report(tmp_path: pathlib.Path) -> None:
+    findings = [audit.steps.Finding('matrix', 'matrix/x/y', kind, 'p', 'd') for kind in ('default-diff', 'value-diff', 'a-kind-nobody-listed')]
+    ctx = audit.steps.Context(
+        work=tmp_path, jobs=1, timeout=0.0, quick=False, only=None, no_ledger=True, universe=audit.universe.Universe.load(audit.universe.snapshot_path())
+    )
+    outcome = audit.steps.Outcome()
+    outcome.findings.extend(findings)
+    text = audit.report.write(ctx, {'matrix': outcome}, tmp_path).read_text()
+    assert 'Different defaults (1)' in text
+    assert 'Other (1)' in text
+    assert 'Wrong values (1)' in text

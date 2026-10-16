@@ -1,6 +1,6 @@
 # Shared helpers of the audit's R side: JSON in, canonical value trees out.
 #
-# A value tree is the language-neutral form both sides compare (src/audit/flatten.py is the Python side):
+# A value tree is the language-neutral form both sides compare (src/audit/valuetree.py is the Python side):
 #   {"k": "num"|"str"|"lgl", "v": [...], "n": [names] | null, "d": [dims] | null}
 #   {"k": "df", "cols": [{"name": ..., "node": ...}], "rn": [...]}
 #   {"k": "list", "items": [{"name": ..., "node": ...}], "cls": [...]}

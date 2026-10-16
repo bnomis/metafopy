@@ -15,6 +15,7 @@ import audit.universe
 
 SECTIONS: list[tuple[str, tuple[str, ...]]] = [
     ('Missing functions and arguments', ('missing-function', 'missing-arg')),
+    ('Different defaults', ('default-diff',)),
     ('Missing fields of results', ('missing-field',)),
     ('Crashes', ('crash', 'timeout', 'fixture-error', 'runner-error')),
     ('Refused by metafopy where R works', ('refused-where-R-works',)),
@@ -113,6 +114,8 @@ def write(ctx: audit.steps.Context, outcomes: dict[str, audit.steps.Outcome], ou
     for f in new:
         causes[cause_key(f)].append(f)
 
+    listed = {kind for _, kinds in SECTIONS for kind in kinds}
+
     def render(limit: int | None) -> list[str]:
         out_lines = [
             '# metafopy vs metafor: what is wrong or missing',
@@ -125,7 +128,7 @@ def write(ctx: audit.steps.Context, outcomes: dict[str, audit.steps.Outcome], ou
         for title, kinds in SECTIONS:
             rows = []
             for (kind, key), items in causes.items():
-                if kind not in kinds:
+                if kind not in kinds and not (title == 'Other' and kind not in listed):
                     continue
                 functions = sorted({function_of(i, fixture_function) for i in items if i.step != 'scripts'}) or ['the examples and tests of metafor']
                 rows.append((-len(functions), -len({i.id for i in items}), kind, key, items, functions))
