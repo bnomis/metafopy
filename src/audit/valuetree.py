@@ -280,6 +280,10 @@ def counting(names: list[typing.Any]) -> bool:
 
 def compare_vector(r: Node, py: Node, path: str, out: list[Diff]) -> None:
     rv, pv = r['v'], py['v']
+    if len(rv) != len(pv) and r['k'] == 'str' and py['k'] == 'str':
+        # printed lines: R puts blank lines around and inside its tables, metafopy does not always, and the tests of metafor never compare them
+        rv, pv = [x for x in rv if x is None or str(x).strip()], [x for x in pv if x is None or str(x).strip()]
+        r, py = {**r, 'v': rv}, {**py, 'v': pv}
     if len(rv) != len(pv):
         out.append(Diff(path, 'shape-diff', f'length R {len(rv)}, Python {len(pv)}'))
         return

@@ -88,6 +88,19 @@ path = "$alpha*"
 reason = "The scale model ~ alloc of ls_bcg is degenerate (alpha estimates of the simulated and re-estimated fits run off to the boundary, R's VIFs are 1e8 or 1e-8); the values cannot be compared."
 
 [[known]]
+match = "scripts/misc_anova/*"
+kind = "shape-diff"
+path = "$QMdf"
+reason = "anova(X=) of linear combinations that are not of full rank: R's QMdf is the single NA, metafopy keeps the pair (m, ddf) and gives NaN for QM and QMp."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/misc_escalc/*"
+detail = "*attr(dat$y?, \"measure\")*"
+reason = "The attributes of an escalc result (measure, ni, slab) are kept once for the data frame in DataFrame.attrs, not per variable as R keeps them on each yi column, so a second escalc() with other var_names or a cbind() changes them for all."
+ref = "docs/differences.md"
+
+[[known]]
 match = "*/reporter*"
 reason = "reporter() writes an R Markdown report; Jupyter notebooks are the Python equivalent."
 ref = "docs/differences.md"

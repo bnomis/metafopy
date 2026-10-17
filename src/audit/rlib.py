@@ -1012,7 +1012,7 @@ def rfor(env: Env, var: str, seq: Value, body: typing.Callable[[], Value]) -> Va
 
 # -- calls --------------------------------------------------------------------------------------------------------------------------------------
 
-INDEX_ARGUMENTS = frozenset({'btt', 'att', 'subset', 'which'})
+INDEX_ARGUMENTS = frozenset({'btt', 'att', 'subset', 'which', 'include'})
 
 
 def shift_arguments(kwargs: dict[str, Value]) -> dict[str, Value]:
