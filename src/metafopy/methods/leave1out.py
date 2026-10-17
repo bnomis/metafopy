@@ -290,7 +290,8 @@ def cumul_rma_uni(
         raise metafopy.errors.InputError('Method only applicable to models without moderators.')
     k = x.k
     if order is None:
-        orvar = pandas.Series(numpy.arange(k))
+        # metafor orders by the position among all rows supplied, so `order` holds the positions of the studies used
+        orvar = pandas.Series(numpy.flatnonzero(x.data.keep))
         collapse = False
     else:
         orvar = pandas.Series(cluster_values(x, order))

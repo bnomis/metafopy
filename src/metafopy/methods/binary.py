@@ -350,6 +350,9 @@ def cumul_fixed_binary(
         transf=fn is not None or transf is True,
         k=col['k'][show],
         order=uor[show],
+        measure=x.measure,
+        level=x.level,
+        slab_null=t.slab_null and not collapse,
     )
 
 
