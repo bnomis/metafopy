@@ -130,6 +130,7 @@ def regtest(
         metafopy.errors.InputError: an argument or the data is invalid, or studies are missing and ``na_action='fail'``.
     """
     metafopy.methods.common.check_na_action(na_action)
+    vec_measure: str | None = None
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if model not in ('lm', 'rma'):
         raise metafopy.errors.InputError(f'unknown model {model!r}')
@@ -186,6 +187,9 @@ def regtest(
         slab = x.slab
     else:
         yi, v_opt, n = metafopy.bias.inputs.vector_inputs(x, vi, sei, ni=ni, subset=subset, data=data, what='the test', attr_ni=True, na_action=na_action)
+        if isinstance(x, str) and data is not None and data.attrs.get('measure'):
+            # metafor takes the measure from the attribute of the yi column of the escalc object
+            vec_measure = str(data.attrs['measure'])
         if v_opt is None:
             raise metafopy.errors.InputError("Must specify the 'vi' or 'sei' argument.")
         v = v_opt
@@ -229,6 +233,8 @@ def regtest(
                 fit = fit_vectors(yi, v, Xn, names, n, slab, meth, tst, alpha, weighted, weights, tau2 if tau2_fix else None, control)
         else:
             fit = fit_vectors(yi, v, Xn, names, n, slab, meth, tst, alpha, weighted, weights, None, control)
+            if vec_measure is not None:
+                fit = dataclasses.replace(fit, measure=vec_measure)
         if isinstance(x, metafopy.models.rma_uni.RMAResult):
             fit = metafopy.models.rma_uni.as_refit_on_used(fit, dropped=x.data.na_rows is not None and bool(x.data.na_rows.any()), measure=x.measure)
         zval = float(fit.zval[p])
