@@ -207,6 +207,13 @@ def vif(res: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> VIFResult:
     raise metafopy.errors.ArgumentError(f'vif() not implemented for {type(res).__name__}')
 
 
+def join_labels(join: typing.Any) -> tuple[typing.Any, ...] | None:
+    """The labels of ``joinb`` or ``joina``; metafor reads them only for the simulation, so a value that is no vector (``joinb = TRUE``) is ignored."""
+    if join is None or isinstance(join, bool | int | float | str):
+        return None
+    return tuple(join)
+
+
 @vif.register
 @metafopy.core.timing.timed
 def vif_rma_uni(
@@ -273,7 +280,7 @@ def vif_rma_uni(
         raise metafopy.errors.InputError("Cannot use 'restimate=TRUE' with models of class 'robust.rma'.")
 
     parallel = metafopy.core.parallel.resolve_parallel(parallel, ncpus, cl)
-    join = None if joinb is None else tuple(joinb)
+    join = join_labels(joinb)
 
     int_incl = res.int_incl
     p = res.p

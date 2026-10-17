@@ -260,6 +260,8 @@ def influence_fit(
             core.dfbs,
         )
         is_infl = flag(x, df, ck, ht, dfbs, core.m)
+    # metafor trims ids and not.na to the studies used under na.omit (influence.rma.uni.r)
+    ids, not_na = (x.ids[x.not_na], x.not_na[x.not_na]) if na_action == 'omit' else (x.ids, x.not_na)
     return InfluenceResult(
         rstudent=rs,
         dffits=df,
@@ -279,8 +281,8 @@ def influence_fit(
         p=x.p,
         m=core.m,
         digits=metafopy.mfopt.option_digits(digits, x.digits),
-        ids=x.ids[x.not_na],
-        not_na=numpy.ones(int(x.not_na.sum()), dtype=numpy.bool_),
+        ids=ids,
+        not_na=not_na,
     )
 
 

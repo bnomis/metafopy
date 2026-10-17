@@ -224,8 +224,16 @@ def trimfill(
         )
         res = metafopy.models.rma_uni.fit_rma_uni(mdf, method=x.method, weighted=x.weighted, **kw)
         refit = {'yi': yi_fill, 'vi': vi_fill, 'weights': wi_fill, 'ni': ni_fill}
-        arguments = {name: value for name, value in refit.items() if value is not None} | {'method': x.method, 'weighted': x.weighted, **kw}
-        res = dataclasses.replace(res, measure=x.measure, call=metafopy.models.call.Call(function=metafopy.models.rma_uni.rma_uni, arguments=arguments))
+        # in metafor the measure travels as an attribute of the yi in the call
+        arguments = {name: value for name, value in refit.items() if value is not None} | {
+            'measure': x.measure,
+            'method': x.method,
+            'weighted': x.weighted,
+            **kw,
+        }
+        res = dataclasses.replace(
+            res, measure=x.measure, digits=x.digits, call=metafopy.models.call.Call(function=metafopy.models.rma_uni.rma_uni, arguments=arguments)
+        )
         fill = numpy.concatenate([numpy.zeros(x.k, dtype=numpy.bool_), numpy.ones(k0, dtype=numpy.bool_)])
     else:
         res = x

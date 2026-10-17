@@ -1,6 +1,7 @@
 """Regression tests for the crashes of audit 8; expected values come from R metafor 5.2-1 (the R call is quoted with each test)."""
 
 import time
+import typing
 import warnings
 
 import matplotlib
@@ -11,6 +12,7 @@ import refutil
 import metafopy
 import metafopy.core.parallel
 import metafopy.methods.blocks
+import metafopy.methods.permutest
 import metafopy.models.rma_mv
 import metafopy.models.sel_result
 import metafopy.transf
@@ -207,3 +209,51 @@ def test_ls_permutest_iter_double() -> None:
     res = metafopy.rma_uni('yi', 'vi', mods='~ ablat', scale='~ ablat', data=refutil.bcg())
     out = metafopy.permutest(res, iter=numpy.float64(20.0), progbar=False)
     assert out is not None
+
+
+def test_summary_without_stars_of_glmm_selmodel_permutest() -> None:
+    # R: summary(res, signif.stars = FALSE) / print(res, signif.stars = FALSE) leave out the stars column and the legend
+    data = refutil.bcg()
+    glmm = metafopy.rma_glmm(ai='tpos', bi='tneg', ci='cpos', di='cneg', data=data, measure='OR', model='UM.FS')
+    assert 'Signif. codes' in glmm.summary()
+    assert 'Signif. codes' not in glmm.summary(signif_stars=False)
+    sel = metafopy.selmodel(metafopy.rma_uni('yi', 'vi', data=data), type='halfnorm')
+    assert isinstance(sel, metafopy.models.sel_result.SelmodelResult)
+    assert 'Signif. codes' not in sel.summary(signif_stars=False)
+    res = metafopy.rma_uni('yi', 'vi', mods='~ ablat', data=data)
+    perm = metafopy.permutest(res, iter=20, progbar=False, seed=1)
+    assert isinstance(perm, metafopy.methods.permutest.PermutestResult)
+    assert 'Signif. codes' in perm.summary()
+    assert 'Signif. codes' not in perm.summary(signif_stars=False)
+    assert str(perm) == perm.summary()
+
+
+def test_na_action_of_baujat_labbe_rcalc_cumul_plot() -> None:
+    # R: baujat(), labbe(), rcalc() and plot() of cumul() read options(na.action) and stop on an unknown value
+    data = refutil.bcg()
+    res = metafopy.rma_uni('yi', 'vi', data=data, method='FE')
+    with pytest.raises(metafopy.errors.InputError, match=r'na\.action'):
+        metafopy.baujat(res, na_action='bogus')  # type: ignore[arg-type]
+    with pytest.raises(metafopy.errors.InputError, match=r'na\.action'):
+        metafopy.rcalc(numpy.eye(2), 10, na_action='bogus')  # type: ignore[arg-type]
+    metafopy.baujat(res, na_action='exclude')
+    matplotlib.pyplot.close('all')
+
+
+def test_fsn_pool_is_case_insensitive() -> None:
+    # R: fsn(yi, vi, data = dat.raudenbush1985, pool = "Fisher") (the argument is lower-cased before match.arg)
+    data = metafopy.datasets.load('raudenbush1985')
+    assert str(metafopy.fsn('yi', 'vi', data=data, pool=typing.cast(typing.Any, 'Fisher'))) == str(metafopy.fsn('yi', 'vi', data=data, pool='fisher'))
+
+
+def test_vif_joinb_true_is_ignored_without_simulation() -> None:
+    # R: vif(res, joinb = TRUE) reads joinb only for the simulation
+    res = metafopy.rma_uni('yi', 'vi', mods='~ ablat + year', data=refutil.bcg())
+    assert metafopy.vif(res, joinb=typing.cast(typing.Any, True)) is not None
+
+
+def test_predict_ls_adjust_must_be_logical() -> None:
+    # R: predict(res, adjust = "holm") stops with "Argument 'adjust' must be a logical."
+    res = metafopy.rma_uni('yi', 'vi', mods='~ ablat', scale='~ ablat', data=refutil.bcg())
+    with pytest.raises(metafopy.errors.InputError, match='logical'):
+        metafopy.predict(res, adjust=typing.cast(typing.Any, 'holm'))

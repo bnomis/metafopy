@@ -172,9 +172,14 @@ class GLMMResult(metafopy.models.fit_methods.TableFields, metafopy.models.fit_me
     def fit_stats_for(self, REML: bool | None = None) -> metafopy.models.rma_uni.FitStats:
         return self.fit_stats_reml if REML else self.fit_stats_ml
 
-    def summary(self, digits: int | None = None, showfit: bool = True) -> str:
-        """The printout with the fit statistics table, as metafor's ``summary()``; ``str(res)`` leaves it out like ``print()``."""
-        return metafopy.mfopt.option_space(self.render(metafopy.mfopt.option_digits(digits, self.digits), showfit))
+    def summary(self, digits: int | None = None, showfit: bool = True, *, signif_stars: bool | None = None, signif_legend: bool | None = None) -> str:
+        """The printout with the fit statistics table, as metafor's ``summary()``; ``str(res)`` leaves it out like ``print()``.
+
+        ``signif_stars`` (default: the ``signif_stars`` option, ``True``) adds the significance stars, ``signif_legend`` (default: ``signif_stars``)
+        their legend.
+        """
+        stars, legend = metafopy.mfopt.option_signif(signif_stars, signif_legend)
+        return metafopy.mfopt.option_space(self.render(metafopy.mfopt.option_digits(digits, self.digits), showfit, stars, legend))
 
     def __str__(self) -> str:
         return self.summary(showfit=False)
@@ -246,7 +251,7 @@ class GLMMResult(metafopy.models.fit_methods.TableFields, metafopy.models.fit_me
             out.append('')
         return out
 
-    def render(self, digits: int, showfit: bool) -> str:
+    def render(self, digits: int, showfit: bool, stars: bool = True, legend: bool = True) -> str:
         out = self.title_lines(digits, showfit)
         out += self.heterogeneity_lines(digits)
         if self.p > 1 and not math.isnan(self.QM):
@@ -283,11 +288,9 @@ class GLMMResult(metafopy.models.fit_methods.TableFields, metafopy.models.fit_me
                 metafopy.printing.signif_stars(float(self.pval[j])),
             ]
             rows.append(row)
+        header, rows = metafopy.printing.drop_stars(header, rows, stars)
         out.append(
             metafopy.printing.fmt_table(header, rows, row_names=None if self.int_only else list(self.coef_names), width=metafopy.printing.console_width())
         )
-        out.append('')
-        out.append('---')
-        out.append("Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1")
-        out.append('')
+        out += metafopy.printing.signif_footer(legend)
         return '\n'.join(out)

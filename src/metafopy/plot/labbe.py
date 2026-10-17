@@ -175,6 +175,7 @@ def labbe(
     addvi: bool = True,
     ax: matplotlib.axes.Axes | None = None,
     bty: str = 'o',
+    na_action: metafopy.methods.common.NAAction = 'omit',
 ) -> LabbeResult:
     """L'Abbe plot of a model without moderators fitted to 2x2 table data or incidence rates (``labbe.rma``).
 
@@ -191,12 +192,14 @@ def labbe(
     proportional to the precision between ``plim``), ``transf`` is applied to the arm-level outcomes, and
     ``add``, ``to`` (defaults 1/2, 0 for ``'AS'`` and ``'IRSD'``, and ``'only0'``), ``lim``/``llim`` as in metafor. ``bty`` is the type of box around
     the plot (``'o'``, ``'l'``, ``'7'``, ``'c'``, ``'u'``, ``']'`` or ``'n'``),
-    which metafor passes on to ``plot()``.
+    which metafor passes on to ``plot()``. ``na_action`` stands for R's ``options(na.action=)``: an unknown value raises, the others
+    give the same result (metafor sets ``na.pass`` while it computes).
 
     Returns a :class:`LabbeResult`.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
+    metafopy.methods.common.check_na_action(na_action)
     """
     metafopy.methods.fitview.check_class(x, notav=('rma.mv', 'rma.ls', 'rma.gen', 'rma.uni.selmodel'))
     if not x.int_only:

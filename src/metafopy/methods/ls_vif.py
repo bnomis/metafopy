@@ -283,7 +283,7 @@ def vif_rma_ls(
         if n_sim <= 1:
             raise metafopy.errors.InputError("Argument 'sim' must be >= 2.")
     parallel = metafopy.core.parallel.resolve_parallel(parallel, ncpus, cl)
-    joins = {'beta': None if joinb is None else tuple(joinb), 'alpha': None if joina is None else tuple(joina)}
+    joins = {'beta': metafopy.methods.vif.join_labels(joinb), 'alpha': metafopy.methods.vif.join_labels(joina)}
     sim_args: dict[str, typing.Any] = {'sim': n_sim, 'seed': seed, 'parallel': parallel, 'ncpus': ncpus, 'cl': cl, 'progbar': progbar}
     out_beta = (
         part_vif(res, which='beta', spec_arg=btt, table=table, reestimate=reestimate, intercept=intercept, fixed=fixed, join=joins['beta'], **sim_args)

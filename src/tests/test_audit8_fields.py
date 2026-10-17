@@ -131,12 +131,15 @@ def test_lrt_and_wald_fields(dat: pandas.DataFrame) -> None:
 
 def test_influence_keeps_ids_and_not_na(dat_na: pandas.DataFrame) -> None:
     res = metafopy.rma('yi', 'vi', mods='~ ablat', data=dat_na)
+    # R 5.2-1: ids and not.na are trimmed to the studies used under na.omit and keep all 13 under na.exclude and na.pass
     infl = metafopy.influence(res)
-    # metafor's influence() keeps the studies used in the fit only
     assert len(infl.ids) == 11
     assert infl.ids[2] == 3
-    assert infl.not_na is not None
-    assert bool(infl.not_na.all())
+    assert len(infl.not_na) == 11
+    assert int(infl.not_na.sum()) == 11
+    full = metafopy.influence(res, na_action='exclude')
+    assert len(full.ids) == 13
+    assert int(full.not_na.sum()) == 11
 
 
 def test_permutest_aliases(dat: pandas.DataFrame) -> None:
@@ -249,7 +252,7 @@ def test_round2_regtest_refit_is_self_contained(dat_na: pandas.DataFrame) -> Non
     assert fit.k_all == 11
     assert len(fit.ids) == 11
     assert fit.measure == res.measure
-    assert fit.slab_null is False
+    assert fit.slab_null is True  # studies were dropped, so R's refit has no slab attribute
 
 
 def test_round2_slab_null_follows_r() -> None:

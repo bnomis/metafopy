@@ -1,8 +1,8 @@
 """The ledger of known differences: findings that are accepted, each with its reason, matched mechanically.
 
-``data/known.toml`` holds ``[[known]]`` entries: ``match`` (a glob on the case id), ``kind`` and ``path`` (globs, default ``*``), ``reason`` and,
-optionally, ``ref``. A finding that matches an entry is known; any other is new. An entry that matches no finding of a full run is stale and is
-reported, so the ledger cannot outlive the difference it records.
+``data/known.toml`` holds ``[[known]]`` entries: ``match`` (a glob on the case id), ``kind``, ``path`` and ``detail`` (globs, default ``*``; ``path`` may be
+a list of globs, any of which matches), ``reason`` and, optionally, ``ref``. A finding that matches an entry is known; any other is new. An entry that
+matches no finding of a full run is stale and is reported, so the ledger cannot outlive the difference it records.
 """
 
 import dataclasses
@@ -19,7 +19,7 @@ Json = dict[str, typing.Any]
 class Entry:
     match: str
     kind: str
-    path: str
+    path: str | list[str]
     detail: str
     reason: str
     ref: str
@@ -29,7 +29,7 @@ class Entry:
         return (
             fnmatch.fnmatchcase(case_id, self.match)
             and fnmatch.fnmatchcase(finding['kind'], self.kind)
-            and fnmatch.fnmatchcase(finding.get('path', ''), self.path)
+            and any(fnmatch.fnmatchcase(finding.get('path', ''), glob) for glob in ([self.path] if isinstance(self.path, str) else self.path))
             and fnmatch.fnmatchcase(finding.get('detail', ''), self.detail)
         )
 

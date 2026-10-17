@@ -377,6 +377,50 @@ def set_btt(btt: Btt, p: int, int_incl: bool, names: collections.abc.Sequence[st
     return tuple(out)
 
 
+ZERO_ADD_MEASURES = frozenset({'AS', 'PHI', 'ZPHI', 'RTET', 'ZTET', 'IRSD', 'PAS', 'PFT', 'IRS', 'IRFT'})
+
+
+def default_add(measure: str, add: float | None) -> float:
+    """The ``add`` that ``rma.uni`` stores: 1/2 unless given, and 0 unless given for the measures whose transformation has no use for it.
+
+    See https://github.com/wviechtb/metafor/blob/master/R/rma.uni.r ("for certain measures, set 'add=0' by default").
+    """
+    if add is not None:
+        return float(add)
+    return 0.0 if measure in ZERO_ADD_MEASURES else 0.5
+
+
+def as_refit_on_used(fit: RMAResult, *, dropped: bool, measure: str) -> RMAResult:
+    """``fit`` as metafor returns a model that it fitted again to the estimates of the studies used (``regtest()`` and ``selmodel()``).
+
+    The estimates carry the measure of the first model; the fit has the studies used only (``k.all``, ``k.f`` and ``ids`` refer to them, the labels are 1
+    to k unless labels were given and no study was dropped) and no counts. R keeps a ``slab`` attribute on the estimates unless studies with missing values
+    were dropped, so ``slab.null`` is true only then.
+    """
+    k = fit.k
+    kept = fit.data.slab_given and not dropped
+    labels = tuple(fit.slab) if kept else tuple(str(i + 1) for i in range(k))
+    data = dataclasses.replace(
+        fit.data,
+        slab=labels,
+        keep=numpy.ones(k, dtype=numpy.bool_),
+        labels_all=None,
+        na_rows=None,
+        data=None,
+        counts_all=None,
+        supplied=None,
+        yi_all=None,
+        vi_all=None,
+        X_all=None,
+        ni_all=None,
+        weights_all=None,
+        ids_all=None,
+        subset_arg=None,
+        slab_given=not dropped,
+    )
+    return dataclasses.replace(fit, measure=measure, slab=labels, data=data)
+
+
 def level_to_alpha(level: float) -> float:
     """metafor's ``.level()``: 95 (or 0.95) -> 0.05; a value up to 0.5 is already an alpha, so 0.05 stays 0.05 and 0 gives 1.
 
@@ -747,7 +791,7 @@ def rma_uni(
                 skiphes=skiphes,
             ),
             digits=digits_,
-            add=0.5 if add is None else float(add),
+            add=default_add(measure, add),
             to=str(to),
             drop00=bool(drop00),
         )
@@ -779,7 +823,7 @@ def rma_uni(
         res,
         measure=measure,
         digits=digits_,
-        add=0.5 if add is None else float(add),
+        add=default_add(measure, add),
         to=str(to),
         drop00=bool(drop00),
     )
@@ -847,7 +891,8 @@ def metadata_from_escalc(
 
     data_sub = None if data is None else data.iloc[idx].reset_index(drop=True)
     ni_es = es.attrs.get('ni')
-    count_names = ('ai', 'bi', 'ci', 'di', 'x1i', 'x2i', 't1i', 't2i')
+    # the relative excess heterozygosity is computed from the first three cells, so metafor keeps no fourth one
+    count_names = ('ai', 'bi', 'ci', 'x1i', 'x2i', 't1i', 't2i') if measure == 'REH' else ('ai', 'bi', 'ci', 'di', 'x1i', 'x2i', 't1i', 't2i')
     counts_all = {
         name: arr[idx] for name in count_names if name in raw and (arr := metafopy.metadata.column(raw[name], data, name)) is not None and arr.shape[0] == k_all
     }

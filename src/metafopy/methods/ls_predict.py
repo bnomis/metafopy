@@ -145,6 +145,7 @@ def predict_rma_ls(
     """
     newmods = metafopy.methods.pairmat.resolve(newmods, model)
     x = model
+    metafopy.methods.predict.check_prob_adjust(prob, adjust, vcov)
     metafopy.methods.common.check_na_action(na_action)
     ptype = metafopy.methods.predict.resolve_predtype(predtype, pi_type)
     int_spec = intercept is not None
@@ -297,6 +298,8 @@ def predict_rma_ls(
     slab: tuple[str, ...]
     if (pred_mui and newmods is None) or (not pred_mui and newscale is None):
         slab = rows.slab
+    elif pred_mui:
+        slab = metafopy.methods.predict.prediction_slab(newmods, k_new, x.p, x.int_incl)
     else:
         slab = tuple(str(i + 1) for i in range(k_new))
     if k_new == 1 and not ((pred_mui and newmods is None) or (not pred_mui and newscale is None)):

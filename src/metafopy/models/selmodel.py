@@ -315,6 +315,10 @@ def selmodel(
         base = x
         if base.robust is not None:
             raise metafopy.errors.ArgumentError('selmodel() cannot be applied to objects of class robust.rma.')
+        dropped = x.data.na_rows is not None and bool(x.data.na_rows.any())
+        # metafor fits a model that was not fitted by ML or an equal-effects method again (by ML, to the estimates of the studies used) and keeps the others
+        if x.method not in metafopy.models.tau2.FIXED_EFFECTS and x.method != 'ML':
+            base = metafopy.models.rma_uni.as_refit_on_used(x, dropped=dropped, measure=x.measure)
     else:
         raise metafopy.errors.ArgumentError(f'selmodel() not implemented for {x.__class__.__name__}')
     if not base.allvipos:

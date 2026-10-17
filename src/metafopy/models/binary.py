@@ -252,8 +252,11 @@ class FixedBinaryResult(metafopy.models.fit_methods.TableFields, metafopy.models
         matrix[numpy.ix_(not_na, not_na)] = numpy.diag(wi)
         return matrix[numpy.ix_(not_na, not_na)] if na_action == 'omit' else matrix
 
-    def summary(self, digits: int | None = None, showfit: bool = True) -> str:
-        """The printout with the fit statistics table, as metafor's ``summary()``; ``str(res)`` leaves it out like ``print()``."""
+    def summary(self, digits: int | None = None, showfit: bool = True, *, signif_stars: bool | None = None, signif_legend: bool | None = None) -> str:
+        """The printout with the fit statistics table, as metafor's ``summary()``; ``str(res)`` leaves it out like ``print()``.
+
+        ``signif_stars`` and ``signif_legend`` are accepted as in metafor, whose table for these models has no significance stars.
+        """
         return metafopy.mfopt.option_space(self.render(metafopy.mfopt.option_digits(digits, self.digits), showfit))
 
     def __str__(self) -> str:

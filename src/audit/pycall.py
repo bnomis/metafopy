@@ -126,15 +126,29 @@ def setitem(x: typing.Any, name: str, value: typing.Any) -> typing.Any:
     return out
 
 
+UNDOCUMENTED_PRINT_ARGUMENTS = frozenset({'legend', 'num'})
+
+
 def print_call(x: typing.Any, **kwargs: typing.Any) -> list[str]:
     """``print(x, ...)`` as text: metafopy results print through ``str()``, which takes no arguments; the arguments of R's ``print`` go to ``summary()``."""
     if kwargs:
         summary: typing.Any = getattr(x, 'summary', None)
         accepted = inspect.signature(summary).parameters if callable(summary) else {}
+        # ``legend`` and ``num`` are read from ``...`` by print.rma.uni and are not documented; R's other print methods ignore them
+        kwargs = {k: v for k, v in kwargs.items() if k in accepted or k not in UNDOCUMENTED_PRINT_ARGUMENTS}
+        if not kwargs:
+            return str(x).split('\n')
+        if 'digits' in kwargs and 'digits' not in accepted and dataclasses.is_dataclass(x) and 'digits' in {f.name for f in dataclasses.fields(x)}:
+            # print(x, digits = ) of a result that prints through str(): the digits of the result are the ones it prints with
+            rest = {k: v for k, v in kwargs.items() if k != 'digits'}
+            if not rest:
+                return str(dataclasses.replace(typing.cast(typing.Any, x), digits=int(kwargs['digits']))).split('\n')
         missing = sorted(k for k in kwargs if k not in accepted)
         if missing:
             raise MissingArgumentError(f'print() of {type(x).__name__} takes no argument {missing}; R was given {sorted(kwargs)}')
-        return str(summary(**kwargs)).split('\n')
+        # R's print() has no fit statistics block; the summary() that takes its arguments shows it unless told not to
+        shown = {'showfit': False, **kwargs} if 'showfit' in accepted else kwargs
+        return str(summary(**shown)).split('\n')
     return str(x).split('\n')
 
 

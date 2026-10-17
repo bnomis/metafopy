@@ -164,7 +164,7 @@ def fsn(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid, or studies are missing and ``na_action='fail'``.
     """
-    pools = [name for name in ('stouffer', 'fisher') if isinstance(pool, str) and len(pool) > 0 and name.startswith(pool)]
+    pools = [name for name in ('stouffer', 'fisher') if isinstance(pool, str) and len(pool) > 0 and name.startswith(pool.lower())]
     if len(pools) != 1:
         raise metafopy.errors.InputError("'arg' should be one of 'stouffer', 'fisher'")
     pool = typing.cast(typing.Literal['stouffer', 'fisher'], pools[0])
@@ -229,7 +229,7 @@ def fsn(
     k = yi.shape[0]
     if k == 1:
         raise metafopy.errors.InputError('Stopped because k = 1.')
-    d = metafopy.mfopt.stored_digits(digits, 4)
+    d = metafopy.mfopt.stored_digits(digits, metafopy.mfopt.model_digits(x))
     ival = (0.0, k * 50.0) if interval is None else interval
 
     est = tau2_out = pval = est_fsn = tau2_fsn = pval_fsn = math.nan

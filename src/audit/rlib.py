@@ -181,7 +181,8 @@ def r_rep(x: Value, times: Value = 1, each: Value = 1, length_out: Value = None,
 
 def r_seq(*args: Value, **kw: Value) -> Value:
     by = kw.get('by')
-    length_out = kw.get('length.out', kw.get('length_out'))
+    # R matches argument names partially: seq(0, 1, length = 101) is length.out = 101
+    length_out = kw.get('length.out', kw.get('length_out', kw.get('length', kw.get('len'))))
     if 'along.with' in kw:
         return numpy.arange(1, len(kw['along.with']) + 1)
     if len(args) == 1:
@@ -608,8 +609,8 @@ def r_invisible(x: Value = None) -> Value:
 
 def r_structure(x: Value, **kw: Value) -> Value:
     """``structure(list(...), class = "data.frame")`` is a data frame and ``structure(c(...), dim = , dimnames = )`` a matrix with its names."""
-    if kw.get('class') == 'data.frame' and isinstance(x, dict):
-        return pandas.DataFrame({k: numpy.asarray(v) for k, v in x.items()})
+    if isinstance(kw.get('class'), str) and kw['class'] == 'data.frame' and isinstance(x, dict):
+        return pandas.DataFrame({k: numpy.atleast_1d(numpy.asarray(v)) for k, v in x.items()})
     dim = kw.get('dim')
     if dim is not None and not isinstance(x, (dict, pandas.DataFrame)):
         shape = tuple(int(d) for d in numpy.atleast_1d(numpy.asarray(dim)))
@@ -1102,7 +1103,7 @@ def rfor(env: Env, var: str, seq: Value, body: typing.Callable[[], Value]) -> Va
 
 # -- calls --------------------------------------------------------------------------------------------------------------------------------------
 
-INDEX_ARGUMENTS = frozenset({'btt', 'btt2', 'att', 'subset', 'which', 'include'})
+INDEX_ARGUMENTS = frozenset({'btt', 'btt2', 'att', 'subset', 'which', 'include', 'label'})
 # indices of one function only (elsewhere `x`, `y` and `out` are data)
 FUNCTION_INDEX_ARGUMENTS: dict[str, tuple[str, ...]] = {
     'matreg': ('y', 'x'),
@@ -1145,9 +1146,9 @@ def shift_function_arguments(name: str, args: tuple[Value, ...], kwargs: dict[st
 
 
 # profile() and confint() of rma.mv and location-scale fits take the position of the component to profile (``tau2 = 1`` is the first one)
-POSITION_ARGUMENTS = frozenset({'sigma2', 'tau2', 'rho', 'gamma2', 'phi', 'alpha'})
-POSITION_FUNCTIONS = frozenset({'profile', 'confint'})
-POSITION_FITS = frozenset({'RMAMVResult', 'RMALSResult'})
+POSITION_ARGUMENTS = frozenset({'sigma2', 'tau2', 'rho', 'gamma2', 'phi', 'alpha', 'beta'})
+POSITION_FUNCTIONS = frozenset({'profile', 'confint', 'plot'})
+POSITION_FITS = frozenset({'RMAMVResult', 'RMALSResult', 'LSPermutestResult', 'PermutestResult'})
 
 
 def shift_arguments(kwargs: dict[str, Value], positions: bool = False, args: tuple[Value, ...] = ()) -> dict[str, Value]:
@@ -1242,6 +1243,7 @@ def rcall(env: Env, name: str, *args: Value, **kwargs: Value) -> Value:
     kwargs = formula_data(env, fn, kwargs)
     mapped = {pycall.arg_name(k): v for k, v in kwargs.items()}
     pycall.check_arguments(fn, list(mapped))
+    mapped = pycall.integral_arguments(fn, mapped, first)
     setting = SETTINGS.get('na.action')
     if isinstance(setting, str) and 'na_action' not in mapped and accepts(fn, 'na_action', first):
         mapped['na_action'] = pycall.option_value('na.action', setting)
