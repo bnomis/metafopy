@@ -88,3 +88,28 @@ kind = "refused-where-R-works"
 detail = "*unknown dataset*"
 reason = "The data sets that are lists of data frames (not tables) are not bundled."
 ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/permutest/ls_year"
+kind = "timeout"
+reason = "The fit of ls_year (mods and scale ~ ablat + year) ends on a boundary (log-variance of -151); the SciPy fit takes 20 to 40 s where R's nlminb takes 0.2 s, so the 1000 refits of permutest() and vif(sim=TRUE) run beyond the case time limit."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/permutest/ls_year/*"
+kind = "timeout"
+reason = "Same as matrix/permutest/ls_year: every refit of the boundary fit takes seconds."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/vif/ls_*/sim=true"
+kind = "timeout"
+reason = "vif(sim=TRUE) refits the location-scale model 1000 times; each refit takes seconds in metafopy (see matrix/permutest/ls_year)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/$<-/*"
+kind = "missing-field"
+detail = "*has no field zz"
+reason = "A result is an immutable dataclass: x$zz <- 1 (a new element) has no counterpart; the elements that exist are replaced with dataclasses.replace."
+ref = "docs/differences.md"
