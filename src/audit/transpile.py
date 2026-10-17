@@ -188,28 +188,35 @@ def tr_assign(lhs: Node, rhs_code: str, c: Context) -> str:
         c.assigned.add(name)
         return f'E.set({name!r}, {rhs_code})'
     if lhs['t'] == 'call' and lhs['f']['t'] == 'sym':
-        head = lhs['f']['v']
-        args = lhs['args']
-        target = args[0]['v']
-        if target['t'] != 'sym':
-            raise UntranslatableError('assignment into a nested expression')
-        name = target['v']
-        cur = tr(target, c)
-        if head in {'[', '[['}:
-            idx = ', '.join(tr(a['v'], c) for a in args[1:])
-            new = f'rassign_index({cur}, {rhs_code}, {idx})'
-        elif head == '$':
-            new = f'rassign_dollar({cur}, {args[1]["v"]["v"]!r}, {rhs_code})'
-        elif head in {'names', 'colnames'}:
-            new = f'rassign_names({cur}, {rhs_code})'
-        else:
-            raise UntranslatableError(f'replacement function {head}<-')
+        name, new = replacement(lhs, 'RHS_VALUE', c)
         if c.in_function:
             c.params.add(name)
-            return f'({local_name(name)} := {new})'
+            return f'({local_name(name)} := {new.replace("RHS_VALUE", rhs_code)})'
         c.assigned.add(name)
-        return f'E.set({name!r}, {new})'
+        return f'E.replace({name!r}, lambda RHS_VALUE: {new}, {rhs_code})'
     raise UntranslatableError('assignment target')
+
+
+def replacement(lhs: Node, value: str, c: Context) -> tuple[str, str]:
+    """The variable that ``f(x)[i] <- value`` changes and the code of its new value; a nested target (``dat$yi[1:2] <- NA``) changes its root."""
+    head = lhs['f']['v']
+    args = lhs['args']
+    target = args[0]['v']
+    cur = tr(target, c)
+    if head in {'[', '[['}:
+        idx = ', '.join(tr(a['v'], c) for a in args[1:])
+        new = f'rassign_index({cur}, {value}, {idx})'
+    elif head == '$':
+        new = f'rassign_dollar({cur}, {args[1]["v"]["v"]!r}, {value})'
+    elif head in {'names', 'colnames'}:
+        new = f'rassign_names({cur}, {value})'
+    else:
+        raise UntranslatableError(f'replacement function {head}<-')
+    if target['t'] == 'sym':
+        return str(target['v']), new
+    if target['t'] == 'call' and target['f']['t'] == 'sym':
+        return replacement(target, new, c)
+    raise UntranslatableError('assignment into a nested expression')
 
 
 def tr_function(n: Node, c: Context) -> str:

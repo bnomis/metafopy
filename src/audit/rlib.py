@@ -7,6 +7,7 @@ difference between the packages.
 
 import contextlib
 import functools
+import inspect
 import io
 import math
 import typing
@@ -70,6 +71,11 @@ class Env:
 
     def set(self, name: str, value: Value) -> Value:
         self.vars[name] = value
+        return value
+
+    def replace(self, name: str, make: typing.Callable[[Value], Value], value: Value) -> Value:
+        """``x$a <- value``: the variable becomes the changed object, the value of the expression is ``value``, as in R."""
+        self.vars[name] = make(value)
         return value
 
 
@@ -659,8 +665,16 @@ def r_abs(x: Value) -> Value:
     return numpy.abs(as_array(x).astype(float))
 
 
+SETTINGS: dict[str, Value] = {}
+DEFAULT_SETTINGS: dict[str, Value] = {'na.action': 'na.omit'}
+
+
 def r_options(*args: Value, **kw: Value) -> Value:
-    return None
+    """``options(na.action = ...)``: the setting is passed as ``na_action`` to the functions that take it (R reads it with ``getOption``)."""
+    old = {name: SETTINGS.get(name, DEFAULT_SETTINGS.get(name)) for name in kw}
+    for name, value in kw.items():
+        SETTINGS[name] = value
+    return old
 
 
 def r_apply(x: Value, margin: Value, fun: typing.Callable[..., Value], *args: Value) -> Value:
@@ -1029,6 +1043,18 @@ def run_settings(env: Env) -> None:
     env.vars['.vistest'] = lambda *a, **k: True
 
 
+def accepts(fn: typing.Callable[..., Value], name: str, first: Value = None) -> bool:
+    """Whether the call takes the argument; for a ``functools.singledispatch`` function the implementation for the type of the first argument decides."""
+    target = fn.func if isinstance(fn, functools.partial) else fn
+    dispatch = getattr(target, 'dispatch', None)
+    if callable(dispatch) and first is not None:
+        target = dispatch(type(first))
+    try:
+        return name in inspect.signature(target).parameters
+    except TypeError, ValueError:
+        return False
+
+
 def rcall(env: Env, name: str, *args: Value, **kwargs: Value) -> Value:
     if name == 'source':
         run_settings(env)
@@ -1047,6 +1073,9 @@ def rcall(env: Env, name: str, *args: Value, **kwargs: Value) -> Value:
         raise UnsupportedError(f'R function {name} is not available in the harness') from e
     mapped = {pycall.arg_name(k): v for k, v in kwargs.items()}
     pycall.check_arguments(fn, list(mapped))
+    setting = SETTINGS.get('na.action')
+    if isinstance(setting, str) and 'na_action' not in mapped and accepts(fn, 'na_action', first):
+        mapped['na_action'] = pycall.option_value('na.action', setting)
     if isinstance(fn, functools.partial):
         return fn(*args[1:], **mapped)
     return fn(*args, **mapped)
