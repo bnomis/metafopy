@@ -210,6 +210,13 @@ def design_matrix(formula: str, data: pandas.DataFrame) -> tuple[numpy.typing.ND
     required = spec.required_variables if spec is not None else set(data.columns)
     used = [v for v in required if v in data.columns]
     missing = numpy.isnan(X).any(axis=1) | data[used].isna().any(axis=1).to_numpy()
+    # R's model matrix of a missing value is missing in the columns that variable makes (the intercept stays 1)
+    for var in used:
+        gone = data[var].isna().to_numpy()
+        if gone.any():
+            cols = [j for j, name in enumerate(names) if re.search(rf'(?<![\w.]){re.escape(var)}(?![\w.])|^{re.escape(var)}', name)]
+            if cols:
+                X[numpy.ix_(gone, cols)] = numpy.nan
     return X, names, missing
 
 

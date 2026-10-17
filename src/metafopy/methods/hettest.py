@@ -325,6 +325,7 @@ def hettest(
     ``'adn'`` and ``'adx2'``. The p-values come from a parametric bootstrap (``boot=True`` uses 1000 samples, a number sets the count; the
     goodness-of-fit tests always bootstrap), the first sample being the data. ``method`` is ``'REML'`` (default) or ``'ML'``; for a model it is that of the
     model. ``control`` takes ``tau2i_init``, ``threshold`` (1e-8) and ``maxiter`` (1000) and ``mom=True`` estimates the tau^2_i by the method of moments.
+    For a model, ``control`` is not used (as in metafor, which does not pass it on).
     ``model`` is metafor's undocumented argument for a vector ``x``: an intercept-only model already fitted to the same data, used as the null model
     instead of fitting it again (its ``beta`` and ``tau2`` and the log-likelihood of the ``method`` are used).
     ``verbose`` is read by metafor and has no effect there either. Unlike metafor, ``progbar`` is off by default.
@@ -353,6 +354,9 @@ def hettest(
         if model is not None:
             warnings.warn("Argument 'model' ignored when 'x' is a model object.", stacklevel=2)
         model = None
+        # metafor does not hand `control` on when it calls itself with the estimates of a model, so the settings are the defaults
+        threshold, maxiter = 1e-8, 1000
+        con = {}
         metafopy.methods.fitview.check_class(x, notav=('rma.glmm', 'rma.mv', 'robust.rma', 'rma.ls', 'rma.gen', 'rma.uni.selmodel'))
         view = metafopy.methods.fitview.fit_view(x)
         if not view.int_only:

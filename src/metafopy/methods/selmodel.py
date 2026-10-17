@@ -243,7 +243,7 @@ def confint(
             if verbose:
                 print(f'\nObtaining CI for delta = {pos + 1}\n')
             out.append(confint_one(x, False, None, pos, alpha, ctrl, transf, targs, verbose, extint, ndig))
-        return out[0] if len(out) == 1 else metafopy.methods.confint.ConfintList(out)
+        return out[0] if len(out) == 1 else metafopy.methods.confint.ConfintList(out, ndig)
     return confint_one(x, fixed, tau2, delta, alpha, ctrl, transf, targs, verbose, extint, ndig)
 
 

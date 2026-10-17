@@ -202,7 +202,7 @@ def regtest(
         # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
         coef_names = ('intrcpt',)
         slab = tuple(str(i + 1) for i in range(yi.shape[0]))
-    d = metafopy.mfopt.stored_digits(digits, 4)
+    d = metafopy.mfopt.stored_digits(digits, metafopy.mfopt.model_digits(x))
 
     if predictor == 'sei':
         extra = numpy.sqrt(v)
@@ -229,6 +229,8 @@ def regtest(
                 fit = fit_vectors(yi, v, Xn, names, n, slab, meth, tst, alpha, weighted, weights, tau2 if tau2_fix else None, control)
         else:
             fit = fit_vectors(yi, v, Xn, names, n, slab, meth, tst, alpha, weighted, weights, None, control)
+        if isinstance(x, metafopy.models.rma_uni.RMAResult):
+            fit = metafopy.models.rma_uni.as_refit_on_used(fit, dropped=x.data.na_rows is not None and bool(x.data.na_rows.any()), measure=x.measure)
         zval = float(fit.zval[p])
         pval = float(fit.pval[p])
         ddf = fit.ddf

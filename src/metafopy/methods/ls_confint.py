@@ -122,7 +122,7 @@ def confint_rma_ls(
             for pos in free
         ]
         out = [r for r in results if isinstance(r, metafopy.methods.confint.ConfintResult)]
-        return out[0] if len(out) == 1 else metafopy.methods.confint.ConfintList(out)
+        return out[0] if len(out) == 1 else metafopy.methods.confint.ConfintList(out, metafopy.mfopt.option_digits(digits, x.digits))
 
     res_random: pandas.DataFrame | None = None
     lb_sign = ub_sign = ''

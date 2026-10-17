@@ -181,7 +181,8 @@ def r_rep(x: Value, times: Value = 1, each: Value = 1, length_out: Value = None,
 
 def r_seq(*args: Value, **kw: Value) -> Value:
     by = kw.get('by')
-    length_out = kw.get('length.out', kw.get('length_out'))
+    # R matches argument names partially: seq(0, 1, length = 101) is length.out = 101
+    length_out = kw.get('length.out', kw.get('length_out', kw.get('length', kw.get('len'))))
     if 'along.with' in kw:
         return numpy.arange(1, len(kw['along.with']) + 1)
     if len(args) == 1:

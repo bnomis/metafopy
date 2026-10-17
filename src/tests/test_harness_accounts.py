@@ -68,3 +68,12 @@ def test_recall_corpus_is_well_formed() -> None:
             assert item.why
         for detector in item.find:
             assert set(detector) <= {'id', 'kind', 'path', 'detail', 'step'}
+
+
+def test_a_ledger_entry_takes_a_list_of_paths_and_a_detail_glob() -> None:
+    entry = audit.ledger.Entry('options/x/*', 'value-diff', ['$a', '$b$*'], '*(relative 0.00*', 'why', '')
+    finding = {'kind': 'value-diff', 'path': '$b$c', 'detail': 'element 1: R 1, Python 1.001 (relative 0.001)'}
+    assert entry.matches('options/x/y', finding)
+    assert not entry.matches('options/x/y', {**finding, 'path': '$digits'})
+    assert not entry.matches('options/x/y', {**finding, 'detail': 'element 1: R 1, Python 2 (relative 0.5)'})
+    assert not entry.matches('matrix/x/y', finding)

@@ -129,9 +129,14 @@ def test_lrt_and_wald_fields(dat: pandas.DataFrame) -> None:
 
 def test_influence_keeps_ids_and_not_na(dat_na: pandas.DataFrame) -> None:
     res = metafopy.rma('yi', 'vi', mods='~ ablat', data=dat_na)
+    # R 5.2-1: ids and not.na are trimmed to the studies used under na.omit and keep all 13 under na.exclude and na.pass
     infl = metafopy.influence(res)
-    assert len(infl.ids) == 13
+    assert len(infl.ids) == 11
+    assert len(infl.not_na) == 11
     assert int(infl.not_na.sum()) == 11
+    full = metafopy.influence(res, na_action='exclude')
+    assert len(full.ids) == 13
+    assert int(full.not_na.sum()) == 11
 
 
 def test_permutest_aliases(dat: pandas.DataFrame) -> None:

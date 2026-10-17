@@ -705,7 +705,7 @@ def forest(
     decreasing: bool = False,
     measure: str | None = None,
     slab_null: bool | None = None,
-    na_action: metafopy.metadata.NAAction = 'omit',
+    na_action: metafopy.methods.common.NAAction = 'omit',
     predtype: str | None = None,
     pi_type: str | None = None,
     addcred: bool | str | int | collections.abc.Sequence[str | int] | None = None,
@@ -737,7 +737,7 @@ def forest(
     for the numeric form ``measure`` (or the ``attrs['measure']`` of a pandas Series) sets the label of the axis and header and
     ``slab_null`` tells that the labels are the default ones (which gives the study labels less room).
     ``na_action`` stands for metafor's ``options(na.action=)``: for a fitted model the studies dropped for missing values
-    are left out (``'omit'``, the default) or, with ``'pass'`` (R's ``'na.pass'`` and ``'na.exclude'``), kept as rows of the plot;
+    are left out (``'omit'``, the default) or, with ``'pass'`` or ``'exclude'`` (R's ``'na.pass'`` and ``'na.exclude'``), kept as rows of the plot;
     ``'fail'`` raises an error if there are any. ``predtype`` (``pi_type`` is its old spelling) is passed on to
     :func:`metafopy.predict` for the prediction interval (``'default'``, ``'simple'``, ``'riley'`` or ``'t'``).
     ``addcred`` and ``clim`` are the old spellings (read from ``...`` by metafor) of ``addpred`` and ``olim`` and win over them.
@@ -898,7 +898,7 @@ def forest(
         k_all = res.k_all
         keep = res.keep
         na_rows = res.na_rows
-        show_na = na_action == 'pass' and na_rows is not None and bool(na_rows.any())
+        show_na = na_action in ('pass', 'exclude') and na_rows is not None and bool(na_rows.any())
         if na_action == 'omit' and na_rows is not None and rows is not None and numpy.ndim(rows) > 0:
             # metafor takes `rows` for all outcomes, those with missing values included, and drops theirs afterwards
             show_na = len(numpy.atleast_1d(rows)) == int((keep | na_rows).sum()) != k
@@ -1470,8 +1470,9 @@ def forest(
     for i in range(k):
         ftxt(axx, tp[0], rows_a[i] + radj[0], astr(slab_l[i]), fnt[0], pos=4, cex=cx, col=colout_l[i] if not is_fit else metafopy.plot.draw.FG)
 
-    ilab_xpos_out: FloatArray | None = None
-    ilab_pos_out: list[int] | None = None
+    # without ilab, metafor hands ilab.xpos and ilab.pos back as they were given
+    ilab_xpos_out: FloatArray | None = None if ilab_xpos is None else numpy.atleast_1d(numpy.asarray(ilab_xpos, dtype=float))
+    ilab_pos_out: list[int] | None = None if ilab_pos is None else [int(v) for v in numpy.atleast_1d(ilab_pos)]
     if ilab_m is not None:
         if ilab_xpos is None:
             dist = float(numpy.nanmin(ci_lb_a)) - xl[0]

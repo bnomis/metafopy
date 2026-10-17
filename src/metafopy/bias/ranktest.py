@@ -139,4 +139,4 @@ def ranktest(
         tau, pval = kendall_test(yi_star, v, exact)
         if math.isnan(pval):
             tau, pval = kendall_test(yi_star, v, False)
-    return RanktestResult(tau=tau, pval=pval, digits=metafopy.mfopt.stored_digits(digits, 4))
+    return RanktestResult(tau=tau, pval=pval, digits=metafopy.mfopt.stored_digits(digits, metafopy.mfopt.model_digits(x)))

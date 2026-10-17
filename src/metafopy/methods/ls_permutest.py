@@ -368,7 +368,7 @@ def permutest_rma_ls(
     if isinstance(exact, str) and exact == 'i':
         return [x_exact_iter, z_exact_iter]
 
-    digits_ = metafopy.mfopt.stored_digits(digits, 4)
+    digits_ = metafopy.mfopt.stored_digits(digits, x.digits)
     comptol = float(con['comptol'])
     n_col = 1 if x.int_only else x.p
 
