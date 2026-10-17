@@ -33,7 +33,8 @@ dots_names <- function(body) {
       }
       if ((identical(head, as.name("$")) || identical(head, as.name("[["))) && length(e) == 3L && is.name(e[[2]]) && as.character(e[[2]]) %in% holders) {
         nm <- e[[3]]
-        found <<- c(found, if (is.name(nm)) as.character(nm) else if (is.character(nm)) nm else character())
+        # x$name reads an argument called name; x[[i]] with a variable index (bldiag's loop over `mlist`) reads none
+        found <<- c(found, if (is.name(nm) && identical(head, as.name("$"))) as.character(nm) else if (is.character(nm)) nm else character())
       }
       if (is.name(head) && as.character(head) == ".chkdots" && length(e) >= 3L) {
         found <<- c(found, if (is.character(e[[3]])) e[[3]] else character())
