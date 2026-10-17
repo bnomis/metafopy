@@ -297,6 +297,8 @@ def predict_rma_ls(
     slab: tuple[str, ...]
     if (pred_mui and newmods is None) or (not pred_mui and newscale is None):
         slab = rows.slab
+    elif pred_mui:
+        slab = metafopy.methods.predict.prediction_slab(newmods, k_new, x.p, x.int_incl)
     else:
         slab = tuple(str(i + 1) for i in range(k_new))
     if k_new == 1 and not ((pred_mui and newmods is None) or (not pred_mui and newscale is None)):

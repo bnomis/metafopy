@@ -146,3 +146,16 @@ def test_confint_list_of_location_scale_and_selection_fits_has_digits() -> None:
         ls = metafopy.rma(yi='yi', vi='vi', mods='~ ablat', scale='~ alloc', data=data)
         assert metafopy.confint(ls, digits=2).digits == 2
         assert metafopy.confint(ls).digits == 4
+
+
+def test_location_scale_predict_labels_follow_the_names_of_newmods() -> None:
+    # R 4.3.3, metafor 5.2-1: predict(rma(yi, vi, mods = ~ year, scale = ~ ablat), newmods = c(ablat = 30, year = 1960))$slab is c("ablat", "year")
+    frame = metafopy.datasets.load('dat.bcg')
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        data = metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=frame)
+        res = metafopy.rma(yi='yi', vi='vi', mods='~ year', scale='~ ablat', data=data)
+        named = metafopy.predict(res, newmods={'ablat': 30, 'year': 1960})
+        plain = metafopy.predict(res, newmods=[10, 60])
+    assert named.slab == ('ablat', 'year')
+    assert plain.slab == ('1', '2')
