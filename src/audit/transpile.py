@@ -195,20 +195,22 @@ def tr_assign(lhs: Node, rhs_code: str, c: Context) -> str:
             raise UntranslatableError('assignment into a nested expression')
         name = target['v']
         cur = tr(target, c)
+        # the value of ``x[i] <- v`` is ``v``, not ``x`` (``a[i] <- b[j] <- 0`` assigns 0 to both)
+        value = '\x00VALUE\x00'
         if head in {'[', '[['}:
             idx = ', '.join(tr(a['v'], c) for a in args[1:])
-            new = f'rassign_index({cur}, {rhs_code}, {idx})'
+            new = f'rassign_index({cur}, {value}, {idx})'
         elif head == '$':
-            new = f'rassign_dollar({cur}, {args[1]["v"]["v"]!r}, {rhs_code})'
+            new = f'rassign_dollar({cur}, {args[1]["v"]["v"]!r}, {value})'
         elif head in {'names', 'colnames'}:
-            new = f'rassign_names({cur}, {rhs_code})'
+            new = f'rassign_names({cur}, {value})'
         else:
             raise UntranslatableError(f'replacement function {head}<-')
         if c.in_function:
             c.params.add(name)
-            return f'({local_name(name)} := {new})'
+            return f'({local_name(name)} := {new.replace(value, rhs_code)})'
         c.assigned.add(name)
-        return f'E.set({name!r}, {new})'
+        return f'(lambda _v: (E.set({name!r}, {new.replace(value, "_v")}), _v)[1])({rhs_code})'
     raise UntranslatableError('assignment target')
 
 

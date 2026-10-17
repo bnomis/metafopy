@@ -6,6 +6,7 @@ difference between the packages.
 """
 
 import contextlib
+import dataclasses
 import functools
 import io
 import math
@@ -330,6 +331,8 @@ def r_cbind(*xs: Value, **named: Value) -> Value:
                 cols[f'V{len(cols) + 1}'] = a
     for k, v in named.items():
         cols[k] = numpy.asarray(v)
+    longest = max((numpy.atleast_1d(v).shape[0] for v in cols.values()), default=0)
+    cols = {k: numpy.resize(numpy.atleast_1d(v), longest) if numpy.atleast_1d(v).shape[0] != longest else v for k, v in cols.items()}  # R recycles
     if frame:
         return pandas.DataFrame(cols)
     return numpy.column_stack(list(cols.values()))
@@ -427,11 +430,21 @@ def r_rev(x: Value) -> Value:
     return numpy.asarray(x)[::-1]
 
 
+def r_diff(x: Value, lag: Value = 1, **kw: Value) -> Value:
+    return (
+        numpy.diff(numpy.asarray(x, dtype=float), n=1)
+        if int(lag) == 1
+        else numpy.asarray(x, dtype=float)[int(lag) :] - numpy.asarray(x, dtype=float)[: -int(lag)]
+    )
+
+
 def r_cumsum(x: Value) -> Value:
     return numpy.cumsum(as_array(x).astype(float))
 
 
 def r_as_numeric(x: Value) -> Value:
+    if isinstance(x, pandas.Categorical) or (isinstance(x, pandas.Series) and isinstance(x.dtype, pandas.CategoricalDtype)):
+        return numpy.asarray(pandas.Categorical(x).codes, dtype=float) + 1  # the integer codes of a factor, counted from 1
     a = as_array(x)
     return a.astype(float) if a.dtype.kind != 'U' else numpy.array([float(v) for v in a])
 
@@ -461,11 +474,15 @@ def r_factor(x: Value, levels: Value = None, labels: Value = None, **kw: Value) 
 
 def r_head(x: Value, n: Value = 6, **kw: Value) -> Value:
     n = int(n)
+    if dataclasses.is_dataclass(x) and hasattr(x, '__getitem__'):  # head() of a list.rma
+        return typing.cast(typing.Any, x)[:n]
     return x.head(n) if isinstance(x, pandas.DataFrame) else numpy.asarray(x)[:n]
 
 
 def r_tail(x: Value, n: Value = 6, **kw: Value) -> Value:
     n = int(n)
+    if dataclasses.is_dataclass(x) and hasattr(x, '__getitem__'):  # tail() of a list.rma
+        return typing.cast(typing.Any, x)[-n:]
     return x.tail(n) if isinstance(x, pandas.DataFrame) else numpy.asarray(x)[-n:]
 
 
@@ -730,6 +747,7 @@ BASE: dict[str, typing.Callable[..., Value]] = {
     'data.frame': r_dataframe,
     'dev.off': r_noop,
     'diag': r_diag,
+    'diff': r_diff,
     'dim': r_dim,
     'exp': r_exp,
     'factor': r_factor,
@@ -810,7 +828,7 @@ def to_positions(index: Value, size: int) -> Value:
     """An R subscript as 0-based positions (or a boolean mask)."""
     if isinstance(index, Empty):
         return slice(None)
-    arr = numpy.asarray(index)
+    arr = numpy.atleast_1d(numpy.asarray(index))
     if arr.dtype == bool:
         return arr
     if arr.dtype.kind in 'US' or arr.dtype == object:
@@ -829,22 +847,22 @@ def r_index(x: Value, *idx: Value, **kw: Value) -> Value:
             sel = idx[0]
             if isinstance(sel, Empty):
                 return x
-            arr = numpy.asarray(sel)
+            arr = numpy.atleast_1d(numpy.asarray(sel))
             if arr.dtype.kind in 'US' or arr.dtype == object:
                 return x[list(arr)]
             return x.iloc[:, to_positions(sel, x.shape[1])]
         rows, cols = idx
         out: typing.Any = x
         if not isinstance(rows, Empty):
-            out = (
-                out.loc[numpy.asarray(rows)]
-                if (numpy.asarray(rows).dtype == bool and False)
-                else out.iloc[to_positions(rows, x.shape[0])]
-                if numpy.asarray(rows).dtype != bool
-                else out[numpy.asarray(rows)]
-            )
+            sel_rows = numpy.atleast_1d(numpy.asarray(rows))
+            if sel_rows.dtype.kind in 'US' or sel_rows.dtype == object:
+                out = out.loc[list(sel_rows)]
+            elif sel_rows.dtype == bool:
+                out = out[sel_rows]
+            else:
+                out = out.iloc[to_positions(rows, x.shape[0])]
         if not isinstance(cols, Empty):
-            arr = numpy.asarray(cols)
+            arr = numpy.atleast_1d(numpy.asarray(cols))
             if arr.dtype.kind in 'US' or arr.dtype == object:
                 out = out[list(arr)]
             else:
@@ -945,10 +963,14 @@ def r_assign_dollar(x: Value, name: str, value: Value) -> Value:
         out.attrs = dict(x.attrs)
         out[name] = value
         return out
-    if isinstance(x, dict):
-        out2 = dict(x)
+    if isinstance(x, dict) or (isinstance(x, list) and not x):  # list() is an empty named list in R
+        out2 = dict(x) if isinstance(x, dict) else {}
         out2[name] = value
         return out2
+    if dataclasses.is_dataclass(x) and not isinstance(x, type):
+        if py_name(name) not in {f.name for f in dataclasses.fields(x)}:
+            raise AttributeError(f'{type(x).__name__} has no field {name}')
+        return dataclasses.replace(x, **{py_name(name): value})  # results are frozen: R's modified copy is a replaced one
     setattr(x, py_name(name), value)
     return x
 
@@ -1003,7 +1025,7 @@ def rfor(env: Env, var: str, seq: Value, body: typing.Callable[[], Value]) -> Va
 
 # -- calls --------------------------------------------------------------------------------------------------------------------------------------
 
-INDEX_ARGUMENTS = frozenset({'btt', 'att', 'subset', 'which'})
+INDEX_ARGUMENTS = frozenset({'btt', 'att', 'subset', 'which', 'label'})
 
 
 def shift_arguments(kwargs: dict[str, Value]) -> dict[str, Value]:
@@ -1047,9 +1069,14 @@ def rcall(env: Env, name: str, *args: Value, **kwargs: Value) -> Value:
         raise UnsupportedError(f'R function {name} is not available in the harness') from e
     mapped = {pycall.arg_name(k): v for k, v in kwargs.items()}
     pycall.check_arguments(fn, list(mapped))
+    mapped = pycall.integral_arguments(fn, mapped, first)
     if isinstance(fn, functools.partial):
         return fn(*args[1:], **mapped)
+    args, mapped = pycall.match_positional(fn, args, mapped)
     return fn(*args, **mapped)
+
+
+FUNCTION_ARGUMENTS = frozenset({'transf', 'atransf', 'fun', 'FUN', 'vcov'})
 
 
 def rnse(env: Env, name: str, data: typing.Callable[[], Value], args: list[typing.Callable[[], Value]], kwargs: dict[str, typing.Callable[[], Value]]) -> Value:
@@ -1061,6 +1088,10 @@ def rnse(env: Env, name: str, data: typing.Callable[[], Value], args: list[typin
         named = {k: v() for k, v in kwargs.items()}
     finally:
         env.scopes.pop()
+    # a bare name that is no column of the data and names an R function (``transf = log``) is that function, not a column name;
+    # only the arguments that take a function are looked at, so that ``test = "t"`` stays a string
+    columns = set(map(str, frame.columns)) if isinstance(frame, pandas.DataFrame) else set()
+    named = {k: BASE[v] if k in FUNCTION_ARGUMENTS and isinstance(v, str) and v in BASE and v not in columns else v for k, v in named.items()}
     named['data'] = frame
     return rcall(env, name, *values, **named)
 

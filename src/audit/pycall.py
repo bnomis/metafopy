@@ -4,6 +4,7 @@ A call spec is ``{'fn': name, 'target': value, 'args': {...}}`` in the R spellin
 and the function is looked up on ``metafopy``, then ``metafopy.transf``, then as a method of the target. See ``r/common.R`` for the value tags.
 """
 
+import dataclasses
 import functools
 import inspect
 import tomllib
@@ -102,10 +103,24 @@ def candidates(name: str) -> list[str]:
 
 
 def getitem(x: typing.Any, i: typing.Any = None, j: typing.Any = None) -> typing.Any:
-    return x[i] if j is None else x[i, j]
+    """R's ``x[i]`` and ``x[i, j]``: a single subscript picks the columns of a data frame and the elements (down the columns) of a matrix."""
+    if j is not None:
+        return x[i, j]
+    if isinstance(x, pandas.DataFrame):
+        return x.iloc[:, i]
+    if isinstance(x, pandas.Series):
+        return x.iloc[i]
+    if isinstance(x, numpy.ndarray) and x.ndim == 2:
+        return x.ravel(order='F')[i]
+    return x[i]
 
 
 def setitem(x: typing.Any, name: str, value: typing.Any) -> typing.Any:
+    """``x$name <- value``: the copy of a data frame or list, or of a result (a frozen dataclass, which has no element ``name`` unless it is a field)."""
+    if dataclasses.is_dataclass(x) and not isinstance(x, type):
+        if name not in {f.name for f in dataclasses.fields(x)}:
+            raise AttributeError(f'{type(x).__name__} has no field {name}')
+        return dataclasses.replace(x, **{name: value})
     out = x.copy()
     out[name] = value
     return out
@@ -173,6 +188,43 @@ def check_arguments(fn: typing.Callable[..., typing.Any], names: list[str]) -> N
     unknown = [n for n in names if n not in params]
     if unknown:
         raise MissingArgumentError(', '.join(unknown))
+
+
+def match_positional(
+    fn: typing.Callable[..., typing.Any], args: tuple[typing.Any, ...], kwargs: dict[str, typing.Any]
+) -> tuple[tuple[typing.Any, ...], dict[str, typing.Any]]:
+    """R matches the named arguments first and gives the positional ones to the formals left over, in order: ``blsplit(V, cluster = x, cov2cor)``
+    passes ``cov2cor`` as ``fun``. Python fills the positions first, so a positional argument that would land on a named one is named."""
+    try:
+        params = inspect.signature(fn).parameters
+    except TypeError, ValueError:
+        return args, kwargs
+    positional = [n for n, p in params.items() if p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD)]
+    if not any(n in kwargs for n in positional[: len(args)]) or any(p.kind is p.VAR_POSITIONAL for p in params.values()):
+        return args, kwargs
+    free = [n for n in positional if n not in kwargs]
+    if len(args) > len(free):
+        return args, kwargs
+    return (), {**dict(zip(free, args, strict=False)), **kwargs}
+
+
+def integral_arguments(fn: typing.Callable[..., typing.Any], kwargs: dict[str, typing.Any], dispatch: typing.Any = None) -> dict[str, typing.Any]:
+    """R has one number type: ``iter = 50`` is a double that is whole. The arguments metafopy types as an ``int`` (not as a ``float``) get an ``int``."""
+    if dispatch is not None and hasattr(fn, 'dispatch'):
+        fn = fn.dispatch(type(dispatch))
+    try:
+        params = inspect.signature(fn.func if isinstance(fn, functools.partial) else fn).parameters
+    except TypeError, ValueError:
+        return kwargs
+    out = dict(kwargs)
+    for name, value in kwargs.items():
+        param = params.get(name)
+        if param is None or not isinstance(value, float) or not value.is_integer():
+            continue
+        text = str(param.annotation)
+        if 'int' in text and 'float' not in text:
+            out[name] = int(value)
+    return out
 
 
 def option_value(name: str, value: typing.Any) -> typing.Any:
