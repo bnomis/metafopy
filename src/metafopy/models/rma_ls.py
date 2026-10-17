@@ -113,6 +113,9 @@ def fit_scale(
     control: metafopy.models.rma_ls_result.LSControl | collections.abc.Mapping[str, typing.Any] | None,
     na_action: metafopy.metadata.NAAction,
     measure: str,
+    dfs: float | collections.abc.Sequence[float] | None = None,
+    abbrev: bool = False,
+    skiphes: bool = False,
 ) -> metafopy.models.rma_ls_result.RMALSResult:
     """Fit a location-scale model to the inputs ``md`` with scale model ``scale``.
 
@@ -173,5 +176,8 @@ def fit_scale(
         beta=beta,
         control=metafopy.models.rma_ls_fit.make_ls_control(control),  # type: ignore[arg-type]
         formula_scale=scale if isinstance(scale, str) else None,
+        dfs=dfs,
+        abbrev=abbrev,
+        skiphes=skiphes,
     )
     return dataclasses.replace(res, measure=measure, Z_f=align_z_f(Z_f, Z_fit))

@@ -15,6 +15,8 @@ import numpy.typing
 import scipy.stats
 
 import metafopy.errors
+import metafopy.methods.common
+import metafopy.methods.fitted
 import metafopy.methods.fitview
 import metafopy.methods.influence
 import metafopy.models.binary
@@ -101,6 +103,7 @@ def plot_rma(
     *,
     seed: int | None = None,
     ax: matplotlib.axes.Axes | None = None,
+    na_action: metafopy.methods.common.NAAction = 'omit',
     **kwargs: typing.Any,
 ) -> PlotRmaResult | metafopy.plot.selmodel.SelPlotResult:
     """Draw the forest, funnel, radial and residual plots of a model (metafor's ``plot()`` of an ``rma.uni``, ``rma.mh`` or ``rma.peto`` fit).
@@ -111,10 +114,13 @@ def plot_rma(
     residuals against the fitted values. ``qqplot=True`` draws :func:`~metafopy.qqnorm` (with ``seed`` for its envelope)
     instead of the last panel. The panels fill ``ax`` (default: the current axes) in a 2 x 2 grid, as
     ``par(mfrow = c(2, 2))`` does. A selection model (``rma.uni.selmodel``) is drawn by :func:`~metafopy.plot_selmodel`,
-    which gets ``kwargs``, as R's ``plot()`` dispatches to ``plot.rma.uni.selmodel``.
+    which gets ``kwargs``, as R's ``plot()`` dispatches to ``plot.rma.uni.selmodel``. ``na_action`` stands for R's ``options(na.action=)``: with
+    ``'omit'`` (default) the last panel and the third panel of a meta-regression show the studies used in fitting, with ``'exclude'`` and ``'pass'`` every
+    study of the subset (a gap where a value is missing), and ``'fail'`` stops when studies were left out of the fit.
 
     Raises:
         metafopy.errors.ArgumentError: ``kwargs`` are given for a model that is not a selection model.
+        metafopy.errors.InputError: ``na_action`` is unknown, or ``'fail'`` and studies were left out of the fit.
         metafopy.errors.NotSupportedError: the model is an ``rma_mv``, ``rma_glmm``, location-scale or robust fit (metafor has no such method).
     """
     if isinstance(x, metafopy.models.sel_result.SelmodelResult):
@@ -122,7 +128,11 @@ def plot_rma(
     if kwargs:
         raise metafopy.errors.ArgumentError(f'unexpected arguments: {", ".join(sorted(kwargs))}')
     metafopy.methods.fitview.check_class(x, notav=('rma.mv', 'rma.glmm', 'robust.rma', 'rma.ls', 'rma.gen'))
+    metafopy.methods.common.check_na_action(na_action)
     view = metafopy.methods.fitview.fit_view(x)
+    if na_action == 'fail' and view.na_rows is not None and view.na_rows.any():
+        raise metafopy.errors.InputError('Missing values in results.')
+    every_row = na_action in ('exclude', 'pass')
     area = metafopy.plot.rutils.get_ax(ax)
     cex = metafopy.plot.infl.mfrow_cex(2, 2)
     grid = metafopy.plot.draw.subaxes(area, 2, 2, hspace=metafopy.plot.infl.grid_hspace(area, 2, cex), wspace=0.3)
@@ -138,18 +148,23 @@ def plot_rma(
         title(axes[0], 'Forest Plot')
         fu = metafopy.plot.funnel(x, ax=axes[1])
         title(axes[1], 'Funnel Plot' if view.int_only else 'Residual Funnel Plot')
-        z_all = numpy.asarray(metafopy.methods.influence.rstandard(x).z, dtype=numpy.float64)
+        z_all = numpy.asarray(metafopy.methods.influence.rstandard(x, na_action='pass' if every_row else 'omit').z, dtype=numpy.float64)
         if view.int_only:
             radial = metafopy.plot.radial(x, ax=axes[2])
             title(axes[2], 'Radial Plot')
         else:
-            fitted = view.fitted
+            fitted = metafopy.methods.fitted.fitted_values(x, 'pass') if every_row else view.fitted
             fitted_panel(axes[2], fitted, z_all)
         if qqplot:
-            qq = metafopy.plot.qqnorm(model, seed=seed, ax=axes[3])
+            qq = metafopy.plot.qqnorm(model, seed=seed, ax=axes[3], na_action=na_action)
         else:
-            ok = ~numpy.isnan(z_all)
-            z = z_all[ok]
-            ids = tuple(int(i) + 1 for i, o in zip(view.ids, ok, strict=True) if o)
+            if every_row:
+                subset = view.keep if view.na_rows is None else view.keep | view.na_rows
+                z = z_all
+                ids = tuple(int(i) + 1 for i in numpy.flatnonzero(subset))
+            else:
+                ok = ~numpy.isnan(z_all)
+                z = z_all[ok]
+                ids = tuple(int(i) + 1 for i, o in zip(view.ids, ok, strict=True) if o)
             residual_panel(axes[3], z, ids)
     return PlotRmaResult(axes=axes, forest=fr, funnel=fu, radial=radial, qqnorm=qq, z=z, ids=ids, fitted=fitted)

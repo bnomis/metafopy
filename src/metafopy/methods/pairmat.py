@@ -22,21 +22,29 @@ class PairmatSpec:
 
     btt: metafopy.models.rma_uni.Btt
     btt2: metafopy.models.rma_uni.Btt = None
+    fixed: bool = False
 
 
 @typing.overload
-def pairmat(x: metafopy.models.rma_uni.RMAResult, btt: metafopy.models.rma_uni.Btt, btt2: metafopy.models.rma_uni.Btt = None) -> pandas.DataFrame: ...
+def pairmat(
+    x: metafopy.models.rma_uni.RMAResult, btt: metafopy.models.rma_uni.Btt, btt2: metafopy.models.rma_uni.Btt = None, *, fixed: bool = False
+) -> pandas.DataFrame: ...
 
 
 @typing.overload
-def pairmat(x: metafopy.models.rma_uni.Btt = None, btt: metafopy.models.rma_uni.Btt = None, btt2: metafopy.models.rma_uni.Btt = None) -> PairmatSpec: ...
+def pairmat(
+    x: metafopy.models.rma_uni.Btt = None, btt: metafopy.models.rma_uni.Btt = None, btt2: metafopy.models.rma_uni.Btt = None, *, fixed: bool = False
+) -> PairmatSpec: ...
 
 
-def pairmat(x: typing.Any = None, btt: metafopy.models.rma_uni.Btt = None, btt2: metafopy.models.rma_uni.Btt = None) -> pandas.DataFrame | PairmatSpec:
+def pairmat(
+    x: typing.Any = None, btt: metafopy.models.rma_uni.Btt = None, btt2: metafopy.models.rma_uni.Btt = None, *, fixed: bool = False
+) -> pandas.DataFrame | PairmatSpec:
     """Rows contrast each pair of the coefficients picked by ``btt`` (0-based, or a regex).
 
     For use as ``anova(res, X=pairmat(res, btt='alloc'))``, or without the model, ``anova(res, X=pairmat(btt='alloc'))``, as in metafor, where the
     model is that of the ``anova()`` or ``predict()`` call. Rows for the coefficients picked by ``btt2`` themselves are placed first.
+    ``fixed=True`` matches a string ``btt`` or ``btt2`` literally instead of as a regular expression (metafor's ``...`` argument).
     See https://wviechtb.github.io/metafor/reference/pairmat.html.
 
     Raises:
@@ -47,18 +55,20 @@ def pairmat(x: typing.Any = None, btt: metafopy.models.rma_uni.Btt = None, btt2:
             btt = x
         if btt is None:
             raise metafopy.errors.InputError("Need to specify the 'btt' argument.")
-        return PairmatSpec(btt, btt2)
-    return contrasts(x, btt, btt2)
+        return PairmatSpec(btt, btt2, fixed)
+    return contrasts(x, btt, btt2, fixed)
 
 
 def resolve[T](value: T | PairmatSpec, model: typing.Any) -> T | pandas.DataFrame:
     """``value`` with a :class:`PairmatSpec` completed with ``model``."""
     if isinstance(value, PairmatSpec):
-        return contrasts(model, value.btt, value.btt2)
+        return contrasts(model, value.btt, value.btt2, value.fixed)
     return value
 
 
-def contrasts(x: metafopy.models.rma_uni.RMAResult, btt: metafopy.models.rma_uni.Btt, btt2: metafopy.models.rma_uni.Btt) -> pandas.DataFrame:
+def contrasts(
+    x: metafopy.models.rma_uni.RMAResult, btt: metafopy.models.rma_uni.Btt, btt2: metafopy.models.rma_uni.Btt, fixed: bool = False
+) -> pandas.DataFrame:
     """The pairwise contrasts of the coefficients ``btt`` of the fit ``x``.
 
     Raises:
@@ -69,7 +79,7 @@ def contrasts(x: metafopy.models.rma_uni.RMAResult, btt: metafopy.models.rma_uni
     if btt is None:
         raise metafopy.errors.InputError("Need to specify the 'btt' argument.")
     names = list(x.coef_names)
-    idx = metafopy.models.rma_uni.set_btt(btt, x.p, x.int_incl, names)
+    idx = metafopy.models.rma_uni.set_btt(btt, x.p, x.int_incl, names, fixed)
     p = len(idx)
     if p == 1:
         raise metafopy.errors.InputError("Need to specify multiple coefficients via argument 'btt' for pairwise comparisons.")
@@ -83,7 +93,7 @@ def contrasts(x: metafopy.models.rma_uni.RMAResult, btt: metafopy.models.rma_uni
             rows.append(row)
             labels.append(f'{names[idx[i]]}-{names[idx[j]]}')
     if btt2 is not None:
-        idx2 = metafopy.models.rma_uni.set_btt(btt2, x.p, x.int_incl, names)
+        idx2 = metafopy.models.rma_uni.set_btt(btt2, x.p, x.int_incl, names, fixed)
         add = [numpy.eye(x.p)[b] for b in idx2]
         rows = add + rows
         labels = [names[b] for b in idx2] + labels

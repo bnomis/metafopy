@@ -39,7 +39,7 @@ def grid_of(x: Profile) -> numpy.typing.NDArray[numpy.float64]:
 def symbol_of(x: Profile) -> str | None:
     """The mathtext symbol of the profiled component (``None`` for ``tau^2`` or ``tau`` of an ``rma.uni`` fit)."""
     if isinstance(x, metafopy.methods.ls_profile.LSProfileResult):
-        return r'\alpha' if x.alphas == 1 else rf'\alpha_{{{x.position + 1}}}'
+        return r'\alpha' if x.alphas == 1 else rf'\alpha_{{{x.position + 1 - int(x.sub1)}}}'
     if isinstance(x, metafopy.methods.selmodel.SelProfileResult):
         if x.comp == 'delta':
             return r'\delta' if x.deltas == 1 else rf'\delta_{{{x.delta_pos + 1}}}'

@@ -322,4 +322,111 @@ match = "scripts/*"
 kind = "value-diff"
 detail = "*rma.mv(*control = list(optimizer*"
 reason = "rma.mv fitted with each of R's optimisers in the tests (BFGS, L-BFGS-B, Nelder-Mead, uobyqa ...): they stop at different points of a flat REML surface, 3e-4 apart in the marginal variances, and Python's optimiser is not R's."
+
+[[known]]
+match = "api/*/code[1-4]"
+kind = "missing-arg"
+reason = "code1 to code4 are undocumented switches R reads from '...' to debug a computation (ddd$code1); they have no stated behaviour to match."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/*/progbar"
+kind = "default-diff"
+reason = "progbar defaults to False: a text progress bar has no use outside a console and would pollute notebook output."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/plot/*"
+kind = "missing-arg"
+reason = "plot_rma and its relatives take the graphical parameters of R's par() and plot() as explicit keywords, so the ones that have no matplotlib counterpart are refused."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/*/nearPD"
+kind = "missing-arg"
+reason = "R documents the formal as nearpd and reads the old spelling nearPD from '...' only to be compatible; Python has nearpd."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/*/formula."
+kind = "missing-arg"
+reason = "update(formula.=) is the stats::update.default spelling of a formula edit; update takes formula as a keyword."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/metafor.news"
+kind = "missing-function"
+reason = "metafor.news() opens the R package's NEWS file; the Python changelog is the repository's."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/*/*/progbar"
+kind = "missing-arg"
+reason = "R refuses cooks.distance, dfbetas, rstudent and influence for location-scale and selection fits (.chkclass inside influence.rma.uni), so the reads of progbar and digits there are unreachable."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/*/*/digits"
+kind = "missing-arg"
+reason = "R refuses rstudent for location-scale and selection fits (.chkclass inside influence.rma.uni), so its digits are unreachable."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/hettest/method"
+kind = "default-diff"
+reason = "R's method = NULL resolves to the model's own method and Python's None does the same."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/robust/*/clubSandwich"
+kind = "default-diff"
+reason = "clubSandwich is the camelCase alias of club_sandwich that R reads from '...'; None means 'not given'."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/addpoly/*"
+kind = "default-diff"
+reason = "R's rows = NULL and Python's None both fall back to row = -2."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/forest/*/addpred"
+kind = "default-diff"
+reason = "None stands for R's FALSE and also admits the cumulative-result forms of addpred (names or positions)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/forest/*/predstyle"
+kind = "default-diff"
+reason = "None stands for R's 'line'."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/rma*/*"
+kind = "missing-arg"
+reason = "outlist, retopt, randhet, omega2, pleasedonotreportI2thankyouverymuch, retdat, retfit, skiphet, tdist, cutoff and vtype: undocumented or experimental internals of R's fitting functions (arbitrary R lists, optimiser output, R-specific switches), see docs/differences.md."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/vif/*"
+kind = "missing-arg"
+reason = "R's vif() of rma.mh, rma.peto and rma.glmm fits stops (VIFs are not applicable to intercept-only models), so none of its arguments is reachable; Python raises ArgumentError."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/reporter/*"
+kind = "missing-function"
+reason = "reporter() writes an R Markdown report; Jupyter notebooks are the Python equivalent."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/profile/*/plot"
+kind = "default-diff"
+reason = "plot defaults to False in every Python profile method (R: TRUE); a profile is drawn with plot_profile or plot=True."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/rma.glmm/model"
+kind = "default-diff"
+reason = "model=None is R's default 'UM.FS'; None lets rma_glmm tell a model that was passed (and is irrelevant for one-group measures, which warns as in R) from the default."
 ref = "docs/differences.md"

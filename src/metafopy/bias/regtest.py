@@ -115,16 +115,20 @@ def regtest(
     level: float | None = None,
     method: str | None = None,
     test: str | None = None,
+    na_action: metafopy.methods.common.NAAction = 'omit',
 ) -> RegtestResult:
     """Regression test for funnel plot asymmetry.
 
     ``x`` is a fitted model or a vector of estimates (with ``vi`` or ``sei``). ``level`` is a
     confidence level in percent (default 95). With ``model='lm'`` (weighted regression with
-    multiplicative dispersion, the classical Egger test) ``ret_fit`` prints nothing extra.
+    multiplicative dispersion, the classical Egger test) ``ret_fit`` prints nothing extra. ``na_action`` stands for R's ``options(na.action=)``:
+    for a vector of estimates the studies with missing values are omitted with a warning, except for ``'fail'``, which stops; it has no effect
+    on a fitted model.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InputError: an argument or the data is invalid, or studies are missing and ``na_action='fail'``.
     """
+    metafopy.methods.common.check_na_action(na_action)
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if model not in ('lm', 'rma'):
         raise metafopy.errors.InputError(f'unknown model {model!r}')
@@ -162,7 +166,7 @@ def regtest(
         slab = x.slab
     else:
         yi, v_opt, n = metafopy.bias.inputs.vector_inputs(
-            typing.cast(numpy.typing.ArrayLike | str, x), vi, sei, ni=ni, subset=subset, data=data, what='the test', attr_ni=True
+            typing.cast(numpy.typing.ArrayLike | str, x), vi, sei, ni=ni, subset=subset, data=data, what='the test', attr_ni=True, na_action=na_action
         )
         if v_opt is None:
             raise metafopy.errors.InputError("Must specify the 'vi' or 'sei' argument.")

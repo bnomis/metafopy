@@ -76,6 +76,7 @@ def simulate(
     Raises:
         metafopy.errors.InputError: the model type is not supported or an argument is invalid.
     """
+    metafopy.methods.common.check_na_action(na_action)
     # R's simulate.rma also receives fits it rejects, so the type is checked at run time
     fit: typing.Any = object
     unsupported = (

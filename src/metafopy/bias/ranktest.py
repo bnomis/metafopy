@@ -19,6 +19,7 @@ import scipy.stats
 
 import metafopy.bias.inputs
 import metafopy.errors
+import metafopy.methods.common
 import metafopy.methods.fitview
 import metafopy.mfopt
 import metafopy.models.rma_uni
@@ -105,12 +106,16 @@ def ranktest(
     data: pandas.DataFrame | None = None,
     digits: int | None = None,
     exact: bool = True,
+    na_action: metafopy.methods.common.NAAction = 'omit',
 ) -> RanktestResult:
     """Rank correlation test for funnel plot asymmetry; ``x`` is a fitted model (of any class) without moderators or a vector of estimates.
+    ``na_action`` stands for R's ``options(na.action=)``: studies with missing values in a vector of estimates are omitted with a warning, except for
+    ``'fail'``, which stops; it has no effect on a fitted model.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InputError: an argument or the data is invalid, or studies are missing and ``na_action='fail'``.
     """
+    metafopy.methods.common.check_na_action(na_action)
     if metafopy.methods.fitview.is_rma(x):
         if vi is not None or sei is not None or subset is not None:
             warnings.warn("Arguments 'vi', 'sei', and 'subset' ignored when 'x' is a model object.", stacklevel=2)
@@ -119,7 +124,9 @@ def ranktest(
             raise metafopy.errors.InputError('Test only applicable to models without moderators.')
         yi, v = view.yi, view.vi
     else:
-        yi, v_in, _ = metafopy.bias.inputs.vector_inputs(typing.cast(numpy.typing.ArrayLike | str, x), vi, sei, subset=subset, data=data, what='the test')
+        yi, v_in, _ = metafopy.bias.inputs.vector_inputs(
+            typing.cast(numpy.typing.ArrayLike | str, x), vi, sei, subset=subset, data=data, what='the test', na_action=na_action
+        )
         if v_in is None:
             raise metafopy.errors.InputError("Must specify the 'vi' or 'sei' argument.")
         v = v_in

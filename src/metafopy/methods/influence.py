@@ -20,6 +20,7 @@ import scipy.stats
 
 import metafopy.core.linalg
 import metafopy.core.parallel
+import metafopy.core.timing
 import metafopy.errors
 import metafopy.methods.blup
 import metafopy.methods.common
@@ -161,6 +162,7 @@ def influence(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> typ
 
 
 @influence.register
+@metafopy.core.timing.timed
 def influence_rma_uni(
     model: metafopy.models.rma_uni.RMAResult,
     digits: int | None = None,

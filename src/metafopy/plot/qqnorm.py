@@ -15,6 +15,7 @@ import pandas
 
 import metafopy.core.rng
 import metafopy.errors
+import metafopy.methods.common
 import metafopy.methods.fitview
 import metafopy.methods.influence
 import metafopy.methods.ls_resid
@@ -71,6 +72,7 @@ def qqnorm(
     rng: metafopy.core.rng.RRandom | None = None,
     ax: matplotlib.axes.Axes | None = None,
     main: str = 'Normal Q-Q Plot',
+    na_action: metafopy.methods.common.NAAction = 'omit',
 ) -> QQNormResult:
     """Normal Q-Q plot of the residuals of a model (``qqnorm.rma.uni``, ``qqnorm.rma.mh`` and ``qqnorm.rma.peto``).
 
@@ -81,7 +83,8 @@ def qqnorm(
     ``label`` (``True``/``'all'``, a number of the most deviating points or ``'out'`` for the points outside the
     envelope) labels points with the study labels at position ``pos`` (1-4, or 13/24 to place them depending on
     the side of the line). ``grid`` adds a grid, ``lty`` the line types of the line of equality and the envelope.
-    ``main`` is the title of the plot. For ``rma_mh`` and ``rma_peto`` fits no envelope is drawn (so ``label='out'`` labels nothing), as in metafor.
+    ``main`` is the title of the plot. ``na_action`` stands for R's ``options(na.action=)``: ``'fail'`` stops when studies were left out of the fit, the other
+    choices give the same plot. For ``rma_mh`` and ``rma_peto`` fits no envelope is drawn (so ``label='out'`` labels nothing), as in metafor.
 
     Returns a :class:`QQNormResult`.
 
@@ -115,7 +118,8 @@ def qqnorm(
     grid_col = grid if isinstance(grid, str) else metafopy.plot.rutils.coladj(-0.2)
     ltys = ['solid', 'dotted'] if lty is None else ([lty, lty] if isinstance(lty, str | int) else list(lty))
 
-    res = metafopy.methods.influence.rstandard(y) if type == 'rstandard' else metafopy.methods.influence.rstudent(y)
+    resid = metafopy.methods.influence.rstandard if type == 'rstandard' else metafopy.methods.influence.rstudent
+    res = resid(y, na_action=na_action)
     not_na = ~numpy.isnan(res.z)
     zi = res.z[not_na]
     slab = numpy.asarray(res.slab, dtype=object)[not_na]

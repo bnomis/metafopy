@@ -127,6 +127,7 @@ def predict_rma_ls(
     newvi: numpy.typing.ArrayLike | None = None,
     na_action: metafopy.methods.common.NAAction = 'omit',
     digits: int | collections.abc.Mapping[str, int] | None = None,
+    verbose: bool = False,
 ) -> LSPredictResult:
     """Predict from a location-scale model (``predict.rma.ls``).
 

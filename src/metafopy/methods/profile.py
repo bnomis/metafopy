@@ -22,6 +22,7 @@ import pandas
 import scipy.stats
 
 import metafopy.core.parallel
+import metafopy.core.timing
 import metafopy.errors
 import metafopy.methods.blup
 import metafopy.methods.common
@@ -123,6 +124,7 @@ def grid_frame(columns: list[FloatArray | None], labels: collections.abc.Sequenc
 
 
 @profile.register
+@metafopy.core.timing.timed
 def profile_rma_uni(
     fitted: metafopy.models.rma_uni.RMAResult,
     xlim: collections.abc.Sequence[float] | None = None,
@@ -141,9 +143,11 @@ def profile_rma_uni(
     pred: bool = False,
     blup: bool = False,
     newmods: numpy.typing.ArrayLike | collections.abc.Mapping[str, float] | pandas.Series | pandas.DataFrame | None = None,
+    LB: bool = False,
     **plot_args: typing.Any,
 ) -> ProfileResult:
     """Profile the likelihood over ``tau^2`` (``steps`` equally spaced values in ``xlim``, or the values given as ``steps``).
+    ``LB`` is accepted as in metafor, where it picks ``parLapplyLB`` and changes no result.
 
     ``xlim`` defaults to the range spanned by the Q-profile CI for ``tau^2`` and
     the estimate (at least up to 0.1); with ``sqrt=True`` the grid is on the ``tau``

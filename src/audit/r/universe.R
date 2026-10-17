@@ -33,7 +33,8 @@ dots_names <- function(body) {
       }
       if ((identical(head, as.name("$")) || identical(head, as.name("[["))) && length(e) == 3L && is.name(e[[2]]) && as.character(e[[2]]) %in% holders) {
         nm <- e[[3]]
-        found <<- c(found, if (is.name(nm)) as.character(nm) else if (is.character(nm)) nm else character())
+        # x$name reads an argument called name; x[[i]] with a variable index (bldiag's loop over `mlist`) reads none
+        found <<- c(found, if (is.name(nm) && identical(head, as.name("$"))) as.character(nm) else if (is.character(nm)) nm else character())
       }
       if (is.name(head) && as.character(head) == ".chkdots" && length(e) >= 3L) {
         found <<- c(found, if (is.character(e[[3]])) e[[3]] else character())
@@ -75,6 +76,19 @@ dots_all <- function(f, seen = character()) {
 }
 
 graphics_calls <- c("plot", "par", "segments", "polygon", "lines", "points", "abline", "legend", "mtext", "axis", "rect", "arrows", "text", "title")
+
+# the functions the body calls (a variable called legend, or mstyle$legend, is not a call of legend())
+called_names <- function(body) {
+  found <- character()
+  walk <- function(e) {
+    if (is.call(e)) {
+      if (is.name(e[[1]])) found <<- c(found, as.character(e[[1]]))
+      for (i in seq_along(e)) try(walk(e[[i]]), silent = TRUE)
+    }
+  }
+  walk(body)
+  unique(found)
+}
 
 # .chkclass(class(x), must = "rma", notav = c("rma.glmm"), notap = ...): metafor's own declaration of the fit classes a function accepts.
 chkclass_calls <- function(body) {
@@ -145,7 +159,7 @@ options_read <- function(body) {
 describe <- function(f) {
   fm <- formals(f)
   list(
-    draws = any(graphics_calls %in% all.names(body(f))),
+    draws = any(graphics_calls %in% called_names(body(f))),
     formals = lapply(names(fm), function(n) {
       miss <- identical(fm[[n]], quote(expr = ))
       list(name = n,

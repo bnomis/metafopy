@@ -391,6 +391,7 @@ def predict_rma_uni(
     newvi: numpy.typing.ArrayLike | None = None,
     na_action: metafopy.methods.common.NAAction = 'omit',
     digits: int | collections.abc.Mapping[str, int] | None = None,
+    verbose: bool = False,
 ) -> PredictResult:
     """Predict from an ``rma.uni`` fit.
 
@@ -411,7 +412,8 @@ def predict_rma_uni(
     ``na_action`` stands for R's ``na.action`` option: for the fitted values of a meta-regression ``'omit'`` returns the studies used in
     fitting, ``'exclude'`` one row per study with NaN for those left out and ``'pass'`` one row per study computed from the moderator values it
     has; predictions for ``newmods`` drop (``'omit'``) or keep (the others) the rows that are NaN. ``tau2_levels`` and
-    ``gamma2_levels`` are accepted, as in metafor, and have no effect.
+    ``gamma2_levels`` are accepted, as in metafor, and have no effect. ``verbose`` is accepted for metafor's printing of the details of a failing
+    ``clubSandwich`` contrast and has no effect here.
 
     R source: https://github.com/wviechtb/metafor/blob/master/R/predict.rma.r;
     reference page: https://wviechtb.github.io/metafor/reference/predict.rma.html.
@@ -486,6 +488,7 @@ def predict_rma_glmm(
     newvi: numpy.typing.ArrayLike | None = None,
     na_action: metafopy.methods.common.NAAction = 'omit',
     digits: int | collections.abc.Mapping[str, int] | None = None,
+    verbose: bool = False,
 ) -> PredictResult:
     """Predict from an ``rma.glmm`` fit (``predict.rma``; arguments as in :func:`predict_rma_uni`).
 
@@ -562,6 +565,7 @@ def predict_fixed_binary(
     newvi: numpy.typing.ArrayLike | None = None,
     na_action: metafopy.methods.common.NAAction = 'omit',
     digits: int | collections.abc.Mapping[str, int] | None = None,
+    verbose: bool = False,
 ) -> PredictResult:
     """Predict from an ``rma.mh`` or ``rma.peto`` fit (``predict.rma``; arguments as in :func:`predict_rma_uni`).
 
@@ -927,6 +931,7 @@ def predict_rma_mv(
     newvi: numpy.typing.ArrayLike | None = None,
     na_action: metafopy.methods.common.NAAction = 'omit',
     digits: int | collections.abc.Mapping[str, int] | None = None,
+    verbose: bool = False,
 ) -> PredictResult:
     """Predict from an ``rma.mv`` fit (``predict.rma`` for ``rma.mv`` objects).
 

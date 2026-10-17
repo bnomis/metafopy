@@ -138,7 +138,77 @@ def print_call(x: typing.Any, **kwargs: typing.Any) -> list[str]:
     return str(x).split('\n')
 
 
-HELPERS: dict[str, typing.Callable[..., typing.Any]] = {'identity': lambda x: x, '[': getitem, '$<-': setitem, 'print': print_call}
+class SummaryText(str):
+    """``summary()`` of a fit is its printed text in metafopy; the object keeps the fit for ``coef()``, which R applies to the summary."""
+
+    fit: typing.Any
+
+
+def summary_for(x: typing.Any) -> typing.Callable[..., typing.Any]:
+    """R's ``summary`` of ``x``: ``summary_escalc`` for a data frame of effect sizes, the ``summary`` method of the result otherwise."""
+    if isinstance(x, pandas.DataFrame):
+        return functools.partial(metafopy.summary_escalc, x)
+    method = getattr(x, 'summary', None)
+    if method is None:
+        raise MissingFunctionError('summary')
+
+    @functools.wraps(method)
+    def call(*args: typing.Any, **kwargs: typing.Any) -> SummaryText:
+        text = SummaryText(method(*args, **kwargs))
+        text.fit = x
+        return text
+
+    return functools.partial(call)
+
+
+def coef_for(x: typing.Any) -> typing.Callable[..., typing.Any]:
+    """R's ``coef`` of ``x``: ``coef_summary`` of the fit for a summary, the ``coef`` method of the result otherwise."""
+    if isinstance(x, SummaryText):
+        return functools.partial(metafopy.coef_summary, x.fit)
+    attr = getattr(x, 'coef', None)
+    if attr is None:
+        raise MissingFunctionError('coef')
+    return functools.partial(attr if callable(attr) else lambda: attr)
+
+
+def frame_of(x: typing.Any) -> typing.Any:
+    """The data frame of a result: R's lists of results (``list.rma``, ``anova.rma``, ...) are data frames in Python through ``to_frame()``."""
+    to_frame = getattr(x, 'to_frame', None)
+    return to_frame() if callable(to_frame) else x
+
+
+def as_data_frame(x: typing.Any) -> typing.Any:
+    return frame_of(x)
+
+
+def as_matrix(x: typing.Any) -> typing.Any:
+    return frame_of(x)
+
+
+def head(x: typing.Any, n: int = 6) -> typing.Any:
+    return frame_of(x).head(n)
+
+
+def tail(x: typing.Any, n: int = 6) -> typing.Any:
+    return frame_of(x).tail(n)
+
+
+HELPERS: dict[str, typing.Callable[..., typing.Any]] = {
+    'identity': lambda x: x,
+    '[': getitem,
+    '$<-': setitem,
+    'print': print_call,
+    'as.data.frame': as_data_frame,
+    'as.matrix': as_matrix,
+    'head': head,
+    'tail': tail,
+}
+
+# generics whose Python callable depends on the object they are applied to
+TARGET_FUNCTIONS: dict[str, typing.Callable[[typing.Any], typing.Callable[..., typing.Any]]] = {'summary': summary_for, 'coef': coef_for}
+
+# R functions that are operators or base methods of data frames and matrices; Python uses pandas and numpy for them, so there are no formals to compare
+NATIVE = frozenset({'[', '$<-', 'as.data.frame', 'as.matrix', 'head', 'tail'})
 
 
 # R's plot() is one generic; metafopy has one function per class of the object that is drawn
@@ -157,6 +227,8 @@ def resolve_function(name: str, target: typing.Any) -> typing.Callable[..., typi
     """The callable for an R function name; a method found on the target comes back already bound to it (call it without the target)."""
     if name in HELPERS:
         return HELPERS[name]
+    if target is not None and name in TARGET_FUNCTIONS:
+        return TARGET_FUNCTIONS[name](target)
     if name == 'plot' and target is not None:
         shown = target[0] if isinstance(target, list) and target else target
         kind = type(shown).__name__
@@ -166,6 +238,11 @@ def resolve_function(name: str, target: typing.Any) -> typing.Callable[..., typi
             fn = getattr(module, spelling, None)
             if callable(fn):
                 return typing.cast(typing.Callable[..., typing.Any], fn)
+    if isinstance(target, pandas.DataFrame):
+        for spelling in candidates(name):
+            fn = getattr(metafopy, f'{spelling}_escalc', None)
+            if callable(fn):
+                return functools.partial(fn, target)
     if target is not None:
         for spelling in candidates(name):
             fn = getattr(target, spelling, None)
