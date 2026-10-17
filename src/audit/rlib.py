@@ -1052,6 +1052,22 @@ def rcall(env: Env, name: str, *args: Value, **kwargs: Value) -> Value:
     return fn(*args, **mapped)
 
 
+def r_symbol(env: Env, name: str) -> Value:
+    """A bare name in an argument of a model function: a column of the data (passed as its name), else the variable, function or constant of that name.
+
+    ``rma(yi, vi, data = dat, ...)`` takes ``yi`` as a column, ``conv.delta(..., transf = transf.logit)`` takes ``transf.logit`` as the function.
+    """
+    for scope in reversed(env.scopes):
+        if isinstance(scope, pandas.DataFrame) and name in scope.columns:
+            return name
+        if isinstance(scope, dict) and name in scope:
+            return name
+    try:
+        return env[name]
+    except UnsupportedError:
+        return name
+
+
 def rnse(env: Env, name: str, data: typing.Callable[[], Value], args: list[typing.Callable[[], Value]], kwargs: dict[str, typing.Callable[[], Value]]) -> Value:
     """A call whose arguments are evaluated with the columns of ``data`` in scope, as metafor's model functions do."""
     frame = data()
