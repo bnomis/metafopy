@@ -364,6 +364,14 @@ def test_structure_with_a_vector_class_is_not_a_factor() -> None:
     assert out.shape == (1, 1)
 
 
+def test_regtest_of_a_trimfill_object_numbers_the_studies() -> None:
+    # R 4.3.3, metafor 5.2-1: regtest(trimfill(rma(yi, vi, data = dat, slab = author)))$fit$slab is 1:14, as the yi of trimfill() has no slab
+    data = bcg_frame()
+    filled = metafopy.trimfill(metafopy.rma(yi='yi', vi='vi', data=data))
+    out: typing.Any = metafopy.regtest(filled)
+    assert list(out.fit.slab) == [str(i) for i in range(1, 15)]
+
+
 def test_summary_digits_are_those_it_printed_with() -> None:
     # R 4.3.3, metafor 5.2-1: summary(rma(yi, vi, data = dat), digits = 2)$digits is 2 for every element (4 for the fit itself)
     fit = metafopy.rma(yi='yi', vi='vi', data=bcg_frame())
