@@ -8,6 +8,7 @@ import pandas
 import pytest
 
 import audit.rlib
+import audit.valuetree
 import metafopy
 import metafopy.datasets
 
@@ -370,6 +371,46 @@ def test_regtest_of_a_trimfill_object_numbers_the_studies() -> None:
     filled = metafopy.trimfill(metafopy.rma(yi='yi', vi='vi', data=data))
     out: typing.Any = metafopy.regtest(filled)
     assert list(out.fit.slab) == [str(i) for i in range(1, 15)]
+
+
+def test_predict_vcov_is_a_list_of_the_predictions_and_the_matrix() -> None:
+    # R: predict(res, vcov = TRUE) is list(pred = <predict.rma>, vcov = <matrix>), so $pred$pred are the numbers
+    out = metafopy.predict(metafopy.rma(yi='yi', vi='vi', data=bcg_frame()), vcov=True)
+    found, inner = audit.valuetree.lookup(out, 'pred')
+    assert found
+    found, numbers = audit.valuetree.lookup(inner, 'pred')
+    assert found
+    assert isinstance(numbers, numpy.ndarray)
+    assert audit.valuetree.lookup(out, 'vcov')[1] is out.vcov
+
+
+def test_assigning_c_of_yi_removes_the_escalc_attributes() -> None:
+    # R 4.3.3, metafor 5.2-1: after dat$yi <- c(dat$yi), regtest(yi, vi, ni = nitotal, data = dat)$fit$measure is "GEN"
+    data = bcg_frame()
+    plain = audit.rlib.r_assign_dollar(data, 'yi', audit.rlib.r_c(data['yi']))
+    assert 'measure' not in plain.attrs
+    assert data.attrs['measure'] == 'RR'
+    kept = audit.rlib.r_assign_dollar(data, 'yi', data['yi'].to_numpy() * 2)
+    assert kept.attrs['measure'] == 'RR'
+
+
+def test_cumul_na_exclude_keeps_a_row_for_each_study_left_out() -> None:
+    # R 4.3.3, metafor 5.2-1: options(na.action = "na.exclude"); cumul(rma(yi, vi, data = dat)) with studies 3 and 7 missing has 13 rows, NA at 3 and 7
+    data = bcg_frame()
+    data.loc[[2, 6], ['yi', 'vi']] = numpy.nan
+    fit = metafopy.rma(yi='yi', vi='vi', data=data)
+    out = metafopy.cumul(fit, na_action='exclude')
+    assert out.order is not None
+    assert len(out.estimate) == len(out.slab) == len(out.order) == 13
+    assert numpy.flatnonzero(numpy.isnan(out.estimate)).tolist() == [2, 6]
+    assert numpy.round(out.estimate[[0, 1, 3, 12]], 3).tolist() == [-0.889, -1.325, -1.425, -0.622]
+    assert len(metafopy.cumul(fit).estimate) == 11
+    year = data['year'].to_numpy()
+    ordered = metafopy.cumul(fit, order=year, na_action='exclude')
+    assert numpy.flatnonzero(numpy.isnan(ordered.estimate)).tolist() == [3, 8]
+    grouped = metafopy.cumul(fit, order=year, collapse=True, na_action='exclude')
+    assert len(grouped.estimate) == 12
+    assert numpy.flatnonzero(numpy.isnan(grouped.estimate)).tolist() == [3]
 
 
 def test_summary_digits_are_those_it_printed_with() -> None:

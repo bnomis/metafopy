@@ -124,9 +124,17 @@ def lookup(value: typing.Any, name: str) -> tuple[bool, typing.Any]:
         if inputs.labels_all is not None:
             rows = inputs.keep if inputs.na_rows is None else inputs.keep | inputs.na_rows
             return True, [label for label, used in zip(inputs.labels_all, rows, strict=True) if used]
-    if name == 'pred' and getattr(value, 'vcov', None) is not None and hasattr(value, 'ci_lb') and not callable(value.vcov):
+    if (
+        name == 'pred'
+        and dataclasses.is_dataclass(value)
+        and not isinstance(value, type)
+        and getattr(value, 'vcov', None) is not None
+        and hasattr(value, 'ci_lb')
+        and not callable(getattr(value, 'vcov', None))
+    ):
         # predict(vcov=TRUE) is list(pred = <the predictions>, vcov = <matrix>) in R; metafopy returns the predictions with the matrix in `vcov`
-        return True, value
+        # without the matrix, so that `pred` of these predictions (the numbers) is not taken for the list again
+        return True, dataclasses.replace(value, vcov=None)
     if name == 'vcov' and callable(getattr(value, 'vcov', None)) and hasattr(value, 'vb'):
         # R keeps the matrix in `vcov`; in metafopy `vcov()` is the accessor and the matrix is `vb`
         return True, value.vb

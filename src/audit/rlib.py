@@ -157,7 +157,14 @@ def r_c(*args: Value, **named: Value) -> Value:
         for a in args:
             merged.update(a if isinstance(a, dict) else {str(i): v for i, v in enumerate(a)})
         return merged
-    return vector(list(args))
+    out_c = vector(list(args))
+    if len(args) == 1 and isinstance(args[0], (pandas.Series, numpy.ndarray)) and isinstance(out_c, numpy.ndarray):
+        return out_c.view(WithoutAttributes)
+    return out_c
+
+
+class WithoutAttributes(numpy.ndarray):
+    """The vector ``c(x)`` makes of ``x``: R's ``c()`` removes the attributes, so assigned to ``dat$yi`` it takes away those of an escalc object."""
 
 
 def r_c_pairs(items: list[tuple[str, Value]]) -> Value:
@@ -1100,6 +1107,11 @@ def r_assign_dollar(x: Value, name: str, value: Value) -> Value:
         out.attrs = dict(x.attrs)
         if value is None:  # x$name <- NULL removes the column
             return out.drop(columns=[c for c in (name, py_name(name)) if c in out.columns])
+        if isinstance(value, WithoutAttributes):
+            value = value.view(numpy.ndarray)
+            if name == 'yi':
+                # the measure and the sample sizes of an escalc object are attributes of its yi column
+                out.attrs = {k: v for k, v in out.attrs.items() if k not in ('measure', 'ni')}
         out[name] = value
         return out
     if isinstance(x, dict) or (isinstance(x, list) and not x):  # list() is an empty named list in R

@@ -27,8 +27,9 @@ reason = "gosh(seed=) is bit-exact with R only where dbinom ties break the same 
 ref = "docs/differences.md"
 
 [[known]]
-match = "matrix/plot/gosh_*"
+match = ["matrix/plot/gosh_*", "scripts/plots_gosh/*"]
 kind = "type-diff"
+detail = "*PlotGoshResult*"
 reason = "plot() of a gosh result returns the value of R's last graphics call (a number); metafopy returns the axes drawn (PlotGoshResult)."
 ref = "docs/differences.md"
 
@@ -1279,7 +1280,7 @@ ref = "docs/differences.md"
 [[known]]
 match = ["matrix/predict/uni_mods_na*", "matrix/predict/ls_na*", "matrix/predict/ls_bangert*", "options/predict/uni_mods_na/*", "options/predict/ls_na/*", "options/predict/ls_bangert/*", "scripts/misc_rma_ls/test/146"]
 kind = "shape-diff"
-path = ["$pi.se", "$pi.ddf"]
+path = ["$pi.se", "$pi.ddf", "$pred$pi.se", "$pred$pi.ddf"]
 detail = "length R *, Python *"
 reason = "predict() of a model fitted to data with missing moderator values and na.action = 'omit': R keeps pi.se and pi.ddf at one value per study of the subset (NA for the omitted ones) while pred and the intervals have the rows that are returned; metafopy gives them for the rows it returns."
 ref = "docs/differences.md"
@@ -1493,4 +1494,12 @@ kind = "print-diff"
 path = ""
 detail = "*QM(df = 1) = 88.56*"
 reason = "Printed QM of the GEN rma_mv fit mv_gen with correlations on the boundary (rho = -1, 1, -1): the log-likelihood is -11.577364393 in both, tau2 of the first level is 76.8913 in R and 76.8863 in metafopy, the coefficient -0.43638375 and -0.43638546, so QM is 88.5618 and 88.5624."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/print/robust_bcg/legend=*"
+kind = "shape-diff"
+path = ""
+detail = "length R 19, Python 21"
+reason = "print.rma.uni() reads legend from ... as a logical (isTRUE(ddd$legend)); the sweep passes list(x = 'topright'), the legend of a plot, for which R drops the footnote on the cluster-robust inference of a robust fit and metafopy, whose print() has no such argument, prints it."
 ref = "docs/differences.md"
