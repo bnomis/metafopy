@@ -20,6 +20,7 @@ https://wviechtb.github.io/metafor/reference/update.rma.html.
 """
 
 import dataclasses
+import re
 import typing
 
 import numpy
@@ -160,7 +161,7 @@ def df_residual(obj: Fit) -> int:
 
 
 def formula_of(obj: Fit, type: str = 'mods') -> str | None:
-    """The model formula, as metafor's ``formula.rma``: ``type='mods'`` (``'~ x'``), ``'yi'`` (``'yi ~ x'``) or ``'scale'``.
+    """The model formula, as metafor's ``formula.rma``: ``type='mods'`` (``'~x'``), ``'yi'`` (``'yi ~ x'``) or ``'scale'``.
 
     ``None`` when the model was not specified by a formula (or for ``rma_mh`` and ``rma_peto`` fits).
 
@@ -185,9 +186,15 @@ def formula_of(obj: Fit, type: str = 'mods') -> str | None:
     if type == 'yi':
         return yi_formula
     if yi_formula is not None:
-        return '~ ' + yi_formula.split('~', 1)[1].strip()
+        return deparse_rhs(yi_formula.split('~', 1)[1])
     mods = args.get('mods')
-    return mods if isinstance(mods, str) and '~' in mods else None
+    return deparse_rhs(mods.split('~', 1)[1]) if isinstance(mods, str) and '~' in mods else None
+
+
+def deparse_rhs(rhs: str) -> str:
+    """R's deparse of a one-sided formula: ``~ablat + year`` (no space after the tilde, one space around ``+`` and ``*``)."""
+    text = re.sub(r'\s*([+*])\s*', r' \1 ', rhs.strip())
+    return '~' + re.sub(r'\s+', ' ', text)
 
 
 def model_matrix(obj: Fit, asdf: bool = False, *, na_action: metafopy.methods.common.NAAction = 'omit') -> typing.Any:

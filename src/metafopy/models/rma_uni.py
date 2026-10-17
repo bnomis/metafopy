@@ -348,14 +348,16 @@ def make_control(control: metafopy.models.tau2.Control | collections.abc.Mapping
         return control
     names = {f.name for f in dataclasses.fields(metafopy.models.tau2.Control)}
     kwargs: dict[str, typing.Any] = {}
+    ignored: dict[str, typing.Any] = {}
     for key, value in control.items():
         name = key.replace('.', '_')
         if name not in names:
             if metafopy.models.control_names.read_elsewhere(key):
+                ignored[key] = value
                 continue
             raise metafopy.errors.ArgumentError(f'unknown control argument {key!r}')
         kwargs[name] = value
-    return metafopy.models.tau2.Control(**kwargs)
+    return metafopy.models.tau2.Control(**{**kwargs, 'ignored': {**kwargs.get('ignored', {}), **ignored}})
 
 
 def set_btt(btt: Btt, p: int, int_incl: bool, names: collections.abc.Sequence[str], fixed: bool = False) -> tuple[int, ...]:

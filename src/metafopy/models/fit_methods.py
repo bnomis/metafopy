@@ -15,7 +15,7 @@ import pandas
 
 import metafopy.errors
 
-__all__ = ['COUNT_NAMES', 'DataFields', 'FitMethods', 'TableFields']
+__all__ = ['COUNT_NAMES', 'DataFields', 'FitMethods', 'LogLik', 'TableFields']
 
 COUNT_NAMES = ('ai', 'bi', 'ci', 'di', 'x1i', 'x2i', 't1i', 't2i')  # auditme: accept[non-alphabetical-literal] metafor's order
 # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
@@ -40,6 +40,20 @@ def warn_if_different_data(fits: collections.abc.Sequence[typing.Any]) -> None:
     arrays = [numpy.asarray(y) for y in yis]
     if any(a.shape != arrays[0].shape or not numpy.array_equal(a, arrays[0], equal_nan=True) for a in arrays[1:]):
         warnings.warn('Models not all fitted to the same data.', stacklevel=3)
+
+
+class LogLik(float):
+    """A log-likelihood (R's ``logLik`` object): a float with the number of parameters as ``df``, printed as R prints it."""
+
+    df: int
+
+    def __new__(cls, value: float, df: int) -> typing.Self:
+        out = super().__new__(cls, value)
+        out.df = df
+        return out
+
+    def __str__(self) -> str:
+        return f"'log Lik.' {float(self):.7g} (df={self.df})"
 
 
 class DataFields:
@@ -217,9 +231,10 @@ class FitMethods:
         """``REML`` as given, else whether the model was fitted with REML (as in metafor)."""
         return bool(REML) if REML is not None else getattr(self, 'method', None) == 'REML'
 
-    def logLik(self, REML: bool | None = None) -> float:
-        """Log-likelihood; REML unless the model was fitted with ML (as in metafor)."""
-        return float(typing.cast(typing.Any, self).fit_stats_for(self.use_reml(REML)).ll)
+    def logLik(self, REML: bool | None = None) -> LogLik:
+        """Log-likelihood; REML unless the model was fitted with ML (as in metafor). A number whose ``df`` is the number of parameters."""
+        model = typing.cast(typing.Any, self)
+        return LogLik(model.fit_stats_for(self.use_reml(REML)).ll, int(model.parms))
 
     def deviance(self, REML: bool | None = None) -> float:
         return float(typing.cast(typing.Any, self).fit_stats_for(self.use_reml(REML)).dev)

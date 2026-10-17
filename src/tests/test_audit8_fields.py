@@ -9,6 +9,7 @@ import pytest
 
 import metafopy
 import metafopy.datasets
+import metafopy.methods.accessors
 import metafopy.methods.permutest
 import metafopy.printing
 
@@ -191,3 +192,24 @@ def test_glmm_outdat_f_has_all_names(dat: pandas.DataFrame) -> None:
     res = metafopy.rma_glmm(ai='tpos', bi='tneg', ci='cpos', di='cneg', data=dat, measure='OR', model='UM.FS')
     assert list(res.outdat_f) == ['ai', 'bi', 'ci', 'di', 'x1i', 'x2i', 't1i', 't2i', 'xi', 'mi', 'ni', 'ti']
     assert res.outdat_f['x1i'] is None
+
+
+def test_round2_influence_frames_and_cumul_ids(dat: pandas.DataFrame) -> None:
+    res = metafopy.rma('yi', 'vi', data=dat)
+    infl = metafopy.influence(res)
+    assert isinstance(infl.inf, pandas.DataFrame)
+    assert isinstance(infl.dfbs, pandas.DataFrame)
+    assert infl.dfbs.shape == (13, 1)
+    assert len(metafopy.cumul(res).ids) == 13
+
+
+def test_round2_loglik_prints_like_r(dat: pandas.DataFrame) -> None:
+    ll = metafopy.rma('yi', 'vi', data=dat, method='ML').logLik()
+    assert math.isfinite(float(ll))
+    assert str(ll).startswith("'log Lik.'")
+    assert str(ll).endswith('(df=2)')
+
+
+def test_round2_formula_deparse(dat: pandas.DataFrame) -> None:
+    res = metafopy.rma('yi', 'vi', mods='~ ablat+year', data=dat)
+    assert metafopy.methods.accessors.formula_of(res) == '~ablat + year'

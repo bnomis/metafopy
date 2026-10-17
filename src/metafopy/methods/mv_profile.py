@@ -55,6 +55,41 @@ class MVProfileResult(metafopy.methods.profile.ProfileResult):
     def grid(self) -> FloatArray:
         return self.tau2
 
+    def component_grid(self, name: str) -> FloatArray:
+        if self.comp != name:
+            raise AttributeError(f'this profile is of {self.comp}, not {name}')
+        return self.tau2
+
+    @property
+    def sigma2(self) -> FloatArray:
+        """The grid of a ``sigma2`` profile (metafor stores it under the name of the component)."""
+        return self.component_grid('sigma2')
+
+    @property
+    def rho(self) -> FloatArray:
+        """The grid of a ``rho`` profile."""
+        return self.component_grid('rho')
+
+    @property
+    def gamma2(self) -> FloatArray:
+        """The grid of a ``gamma2`` profile."""
+        return self.component_grid('gamma2')
+
+    @property
+    def phi(self) -> FloatArray:
+        """The grid of a ``phi`` profile."""
+        return self.component_grid('phi')
+
+    @property
+    def xlab(self) -> str:
+        """The label of the x axis of the profile plot."""
+        return f'{self.comp} Value'
+
+    @property
+    def title(self) -> str:
+        """The title of the profile plot."""
+        return f'Profile Plot for {self.comp}'
+
     def to_frame(self) -> pandas.DataFrame:
         return pandas.DataFrame({self.comp: self.tau2, 'll': self.ll})
 
@@ -163,7 +198,7 @@ def profile_one(
         if fit is None:
             continue
         lls[i], beta[i], ci_lb[i], ci_ub[i] = fit[0], fit[1], fit[2], fit[3]
-    maxll = x.logLik()
+    maxll = float(x.logLik())
     if numpy.any(lls >= maxll + lltol):
         warnings.warn('At least one profiled log-likelihood value is larger than the log-likelihood of the fitted model.', stacklevel=3)
     if numpy.all(numpy.isnan(lls)):

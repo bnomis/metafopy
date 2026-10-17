@@ -357,9 +357,11 @@ class MetaData:
             X = mods.to_numpy(dtype=float)
         else:
             X = numpy.asarray(mods, dtype=numpy.float64)
-            if X.ndim == 1:
+            vector = X.ndim == 1
+            if vector:
                 X = X[:, None]
-            names = tuple(f'X{j + 1}' for j in range(X.shape[1]))
+            # metafor names the column of a vector 'mods' and those of a matrix without column names X1, X2, ...
+            names = ('mods',) if vector else tuple(f'X{j + 1}' for j in range(X.shape[1]))
         if X.shape[0] != k:
             raise metafopy.errors.InputError(f'mods has {X.shape[0]} rows, expected {k}')
         if intercept:

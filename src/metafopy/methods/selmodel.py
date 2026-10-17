@@ -561,7 +561,7 @@ def profile_one(
         if fit is None:
             continue
         lls[i], beta[i], ci_lb[i], ci_ub[i] = fit[0], fit[1], fit[2], fit[3]
-    maxll = x.logLik()
+    maxll = float(x.logLik())
     if numpy.any(lls >= maxll + lltol):
         warnings.warn('At least one profiled log-likelihood value is larger than the log-likelihood of the fitted model.', stacklevel=3)
     if numpy.all(numpy.isnan(lls)):

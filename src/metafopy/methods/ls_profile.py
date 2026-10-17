@@ -182,7 +182,7 @@ def profile_rma_ls(
             continue
         lls[i], beta[i], ci_lb[i], ci_ub[i] = fit
 
-    maxll = x.logLik()
+    maxll = float(x.logLik())
     if numpy.any(lls >= maxll + lltol):
         warnings.warn('At least one profiled log-likelihood value is larger than the log-likelihood of the fitted model.', stacklevel=2)
     if numpy.all(numpy.isnan(lls)):

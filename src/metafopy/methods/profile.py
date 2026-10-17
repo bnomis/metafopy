@@ -251,7 +251,7 @@ def profile_rma_uni(
         blup_cols.append(blup_i)
 
     vc = math.sqrt(x.tau2) if sqrt else x.tau2
-    maxll = x.logLik()
+    maxll = float(x.logLik())
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if x.method in ('ML', 'REML') and numpy.any(lls >= maxll + lltol):
         warnings.warn('At least one profiled log-likelihood value is larger than the log-likelihood of the fitted model.', stacklevel=2)

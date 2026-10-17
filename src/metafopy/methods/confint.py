@@ -53,6 +53,7 @@ class ConfintResult:
     lb_sign: str = ''
     ub_sign: str = ''
     digits: int | None = None
+    tau2_min: float | None = None
 
     @property
     def ci_null(self) -> bool:
@@ -397,7 +398,14 @@ def confint_rma_uni(
         lb, ub = numpy.minimum(lb, ub), numpy.maximum(lb, ub)
         res_fixed = pandas.DataFrame({'estimate': est, 'ci.lb': lb, 'ci.ub': ub}, index=list(x.coef_names))
 
-    return ConfintResult(fixed=res_fixed, random=res_random, lb_sign=lb_sign, ub_sign=ub_sign, digits=ndig)
+    return ConfintResult(
+        fixed=res_fixed,
+        random=res_random,
+        lb_sign=lb_sign,
+        ub_sign=ub_sign,
+        digits=ndig,
+        tau2_min=None if not random else (min(0.0, x.tau2) if tau2_min is None else float(tau2_min)),
+    )
 
 
 def warn_parm(parm: typing.Any) -> None:

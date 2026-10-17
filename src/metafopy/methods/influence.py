@@ -79,7 +79,7 @@ class InfluenceResult:
     QE_del: FloatArray
     hat: FloatArray
     weight: FloatArray
-    dfbs: FloatArray
+    dfbs_array: FloatArray
     is_infl: numpy.typing.NDArray[numpy.bool_]
     slab: tuple[str, ...]
     coef_names: tuple[str, ...]
@@ -93,13 +93,24 @@ class InfluenceResult:
     not_na: numpy.typing.NDArray[numpy.bool_] | None = None
 
     @property
-    def inf(self) -> tuple[str, ...]:
+    def marks(self) -> tuple[str, ...]:
         """``'*'`` for each influential study, ``''`` otherwise."""
         return tuple('*' if v else '' for v in self.is_infl)
 
+    @property
+    def inf(self) -> pandas.DataFrame:
+        """The influence table (metafor's ``inf``): ``rstudent``, ``dffits``, ``cook.d``, ``cov.r``, ``tau2.del``, ``QE.del``, ``hat``, ``weight`` and
+        ``inf`` (``'*'`` for the influential studies), one row per study; ``attrs`` holds ``slab`` and ``digits``."""
+        return self.to_frame()
+
+    @property
+    def dfbs(self) -> pandas.DataFrame:
+        """The DFBETAS (metafor's ``dfbs``), one column per coefficient; ``attrs`` holds ``slab`` and ``digits``."""
+        return self.dfbs_frame()
+
     def to_frame(self) -> pandas.DataFrame:
         """The influence table, one row per study."""
-        return pandas.DataFrame(
+        out = pandas.DataFrame(
             {
                 'rstudent': self.rstudent,
                 'dffits': self.dffits,
@@ -109,14 +120,18 @@ class InfluenceResult:
                 'QE.del': self.QE_del,
                 'hat': self.hat,
                 'weight': self.weight,
-                'inf': self.inf,
+                'inf': self.marks,
             },
             index=list(self.slab),
         )
+        out.attrs.update(slab=list(self.slab), digits=self.digits)
+        return out
 
     def dfbs_frame(self) -> pandas.DataFrame:
         """The DFBETAS, one column per coefficient."""
-        return pandas.DataFrame(self.dfbs, columns=list(self.coef_names), index=list(self.slab))
+        out = pandas.DataFrame(self.dfbs_array, columns=list(self.coef_names), index=list(self.slab))
+        out.attrs.update(slab=list(self.slab), digits=self.digits)
+        return out
 
     def summary(self, infonly: bool = False) -> str:
         return format_influence(self, infonly)
@@ -134,7 +149,7 @@ def format_influence(res: InfluenceResult, infonly: bool) -> str:
     def col(name: str, vals: FloatArray) -> tuple[str, list[str]]:
         return name, [metafopy.printing.fmt_num(float(v), res.digits) for v, keep in zip(vals, sel, strict=True) if keep]
 
-    inf = [m for m, keep in zip(res.inf, sel, strict=True) if keep]
+    inf = [m for m, keep in zip(res.marks, sel, strict=True) if keep]
     base = [
         col('rstudent', res.rstudent),
         col('dffits', res.dffits),
@@ -146,8 +161,8 @@ def format_influence(res: InfluenceResult, infonly: bool) -> str:
         col('weight', res.weight),
     ]
     if res.p == 1:
-        return '\n'.join(['', *metafopy.methods.blup.format_r_frame([*base, col('dfbs', res.dfbs[:, 0]), ('inf', inf)], slab), ''])
-    dfbs = [col(name, res.dfbs[:, j]) for j, name in enumerate(res.coef_names)]
+        return '\n'.join(['', *metafopy.methods.blup.format_r_frame([*base, col('dfbs', res.dfbs_array[:, 0]), ('inf', inf)], slab), ''])
+    dfbs = [col(name, res.dfbs_array[:, j]) for j, name in enumerate(res.coef_names)]
     first = metafopy.methods.blup.format_r_frame([*base, ('inf', inf)], slab)
     second = metafopy.methods.blup.format_r_frame(dfbs, slab)
     return '\n'.join(['$inf', '', *first, '', '$dfbs', '', *second, ''])
@@ -251,7 +266,7 @@ def influence_fit(
         QE_del=qd,
         hat=ht,
         weight=wt,
-        dfbs=dfbs,
+        dfbs_array=dfbs,
         is_infl=is_infl,
         slab=slab,
         coef_names=x.coef_names,

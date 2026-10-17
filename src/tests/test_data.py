@@ -32,9 +32,9 @@ def test_escalc_style_frame_is_picked_up() -> None:
 
 def test_matrix_mods_get_intercept_unless_disabled() -> None:
     x = numpy.array([1.0, 2.0, 3.0])
-    assert metafopy.MetaData.from_inputs([1, 2, 3], [1, 1, 1], mods=x).X_names == ('intrcpt', 'X1')
+    assert metafopy.MetaData.from_inputs([1, 2, 3], [1, 1, 1], mods=x).X_names == ('intrcpt', 'mods')
     md = metafopy.MetaData.from_inputs([1, 2, 3], [1, 1, 1], mods=x, intercept=False)
-    assert md.X_names == ('X1',)
+    assert md.X_names == ('mods',)
     assert not md.intercept
 
 

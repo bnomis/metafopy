@@ -43,9 +43,11 @@ def r_column_name(name: str) -> str:
     if name == 'Intercept':
         return 'intrcpt'
     name = KEYWORD.sub(r'\1 = ', name.replace(' ** ', '^').replace(' / ', '/'))
+    name = re.sub(r"'([^']*)'", r'"\1"', name) if '(' in name else name
     poly = POLY_TERM.match(name)
     if poly is not None:
-        return f'{poly.group(1)}{int(poly.group(2)) + 1}'
+        # formulaic counts raw polynomial terms from 0 and orthogonal ones from 1; R counts both from 1
+        return f'{poly.group(1)}{int(poly.group(2)) + (1 if "raw = True" in poly.group(1) or "raw=True" in poly.group(1) else 0)}'
     parts: list[str] = []
     for part in name.split(':'):
         level = LEVEL.search(part)

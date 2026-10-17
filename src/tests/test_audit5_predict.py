@@ -306,7 +306,7 @@ def test_influence_measure(re_model: metafopy.RMAResult) -> None:
     assert list(cooks.index) == list(full.slab)
     dfbs = metafopy.influence(re_model, measure='dfbetas')
     assert isinstance(dfbs, pandas.DataFrame)
-    numpy.testing.assert_allclose(dfbs.to_numpy(), full.dfbs)
+    numpy.testing.assert_allclose(dfbs.to_numpy(), full.dfbs_array)
     rst = metafopy.influence(re_model, measure='rstudent')
     expected = metafopy.rstudent(re_model)
     numpy.testing.assert_allclose(rst.resid, expected.resid)

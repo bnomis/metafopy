@@ -65,6 +65,7 @@ class Leave1outResult:
     measure: str = 'GEN'
     level: float = 0.05
     slab_null: bool = False
+    ids: numpy.typing.NDArray[numpy.intp] | None = None
 
     @property
     def zval(self) -> FloatArray:
@@ -251,6 +252,7 @@ def leave1out_rma_uni(
         stat_name='tval' if x.test in ('knha', 'adhoc', 't') else 'zval',
         digits=metafopy.mfopt.option_digits(digits, x.digits),
         transf=transf is not None,
+        ids=x.ids[x.not_na] if len(slab) == int(x.not_na.sum()) else x.ids,
     )
 
 
@@ -353,6 +355,7 @@ def cumul_rma_uni(
         order=uor,
         measure=x.measure,
         level=x.level,
+        ids=None if collapse else x.ids[x.not_na][srt],
         slab_null=bool(numpy.all([lab == str(i + 1) for lab, i in zip(x.slab, numpy.flatnonzero(x.data.keep), strict=True)])) and not collapse,
     )
 
