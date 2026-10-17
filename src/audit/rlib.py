@@ -8,6 +8,7 @@ difference between the packages.
 import contextlib
 import dataclasses
 import functools
+import inspect
 import io
 import math
 import typing
@@ -698,7 +699,15 @@ def r_abs(x: Value) -> Value:
     return numpy.abs(as_array(x).astype(float))
 
 
+# The settings a script makes with ``options()`` that a Python argument stands for; ``run_script`` clears them for each script.
+OPTIONS: dict[str, Value] = {}
+
+
 def r_options(*args: Value, **kw: Value) -> Value:
+    """``options(na.action = "na.pass")`` is kept and handed to the functions that take ``na_action`` (see ``rcall``); other settings are ignored."""
+    for key, value in kw.items():
+        if key == 'na.action' or key == 'na_action':
+            OPTIONS['na.action'] = value
     return None
 
 
@@ -1060,7 +1069,14 @@ def shift_arguments(kwargs: dict[str, Value]) -> dict[str, Value]:
         elif k in INDEX_ARGUMENTS and v is not None and not isinstance(v, (str, bool)):
             arr = numpy.asarray(v)
             if arr.dtype.kind in 'if' and arr.dtype != bool:
-                v = (arr.astype(int) - 1).tolist() if arr.ndim else int(arr) - 1
+                data = kwargs.get('data')
+                if arr.size and (arr < 0).all() and isinstance(data, pandas.DataFrame):
+                    # R's negative indices leave rows out (subset = -2); the Python argument takes the rows to keep as a mask
+                    keep = numpy.ones(len(data), dtype=bool)
+                    keep[(-numpy.atleast_1d(arr)).astype(int) - 1] = False
+                    v = keep.tolist()
+                else:
+                    v = (arr.astype(int) - 1).tolist() if arr.ndim else int(arr) - 1
         out[k] = v
     return out
 
@@ -1096,13 +1112,74 @@ def rcall(env: Env, name: str, *args: Value, **kwargs: Value) -> Value:
     mapped = {pycall.arg_name(k): v for k, v in kwargs.items()}
     pycall.check_arguments(fn, list(mapped))
     mapped = pycall.integral_arguments(fn, mapped, first)
+    if 'na.action' in OPTIONS and 'na_action' not in mapped and accepts(fn, 'na_action'):
+        mapped['na_action'] = pycall.option_value('na.action', OPTIONS['na.action'])
+    elif 'na.action' in OPTIONS and 'na_action' not in mapped and accepts_any_keyword(fn) and name in NA_ACTION_GENERICS:
+        # a generic such as blup() hands its keywords to the method for the class of the model
+        with contextlib.suppress(TypeError):
+            return call_with(fn, args, {**mapped, 'na_action': pycall.option_value('na.action', OPTIONS['na.action'])})
+    return call_with(fn, args, mapped)
+
+
+def call_with(fn: typing.Callable[..., Value], args: tuple[Value, ...], mapped: dict[str, Value]) -> Value:
     if isinstance(fn, functools.partial):
         return fn(*args[1:], **mapped)
     args, mapped = pycall.match_positional(fn, args, mapped)
     return fn(*args, **mapped)
 
 
-FUNCTION_ARGUMENTS = frozenset({'transf', 'atransf', 'fun', 'FUN', 'vcov'})
+# R functions that read ``getOption("na.action")`` and whose Python generic passes keywords on to the method (from metafor's sources)
+NA_ACTION_GENERICS = frozenset(
+    {
+        'blup',
+        'cooks.distance',
+        'dfbetas',
+        'fitted',
+        'hatvalues',
+        'influence',
+        'leave1out',
+        'ranef',
+        'residuals',
+        'resid',
+        'rstandard',
+        'rstudent',
+        'weights',
+        'predict',
+        'simulate',
+        'vcov',
+    }
+)
+
+
+def accepts_any_keyword(fn: typing.Callable[..., Value]) -> bool:
+    try:
+        params = inspect.signature(fn.func if isinstance(fn, functools.partial) else fn).parameters
+    except TypeError, ValueError:
+        return False
+    return any(p.kind is inspect.Parameter.VAR_KEYWORD for p in params.values())
+
+
+def accepts(fn: typing.Callable[..., Value], name: str) -> bool:
+    try:
+        return name in inspect.signature(fn.func if isinstance(fn, functools.partial) else fn).parameters
+    except TypeError, ValueError:
+        return False
+
+
+def r_symbol(env: Env, name: str) -> Value:
+    """A bare name in an argument of a model function: a column of the data (passed as its name), else the variable, function or constant of that name.
+
+    ``rma(yi, vi, data = dat, ...)`` takes ``yi`` as a column, ``conv.delta(..., transf = transf.logit)`` takes ``transf.logit`` as the function.
+    """
+    for scope in reversed(env.scopes):
+        if isinstance(scope, pandas.DataFrame) and name in scope.columns:
+            return name
+        if isinstance(scope, dict) and name in scope:
+            return name
+    try:
+        return env[name]
+    except UnsupportedError:
+        return name
 
 
 def rnse(env: Env, name: str, data: typing.Callable[[], Value], args: list[typing.Callable[[], Value]], kwargs: dict[str, typing.Callable[[], Value]]) -> Value:
@@ -1114,10 +1191,6 @@ def rnse(env: Env, name: str, data: typing.Callable[[], Value], args: list[typin
         named = {k: v() for k, v in kwargs.items()}
     finally:
         env.scopes.pop()
-    # a bare name that is no column of the data and names an R function (``transf = log``) is that function, not a column name;
-    # only the arguments that take a function are looked at, so that ``test = "t"`` stays a string
-    columns = set(map(str, frame.columns)) if isinstance(frame, pandas.DataFrame) else set()
-    named = {k: BASE[v] if k in FUNCTION_ARGUMENTS and isinstance(v, str) and v in BASE and v not in columns else v for k, v in named.items()}
     named['data'] = frame
     return rcall(env, name, *values, **named)
 

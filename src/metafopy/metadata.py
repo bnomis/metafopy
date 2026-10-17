@@ -158,6 +158,8 @@ class MetaData:
     vi_all: FloatArray | None = dataclasses.field(default=None, repr=False)
     X_all: FloatArray | None = dataclasses.field(default=None, repr=False)
     counts_all: dict[str, FloatArray] | None = dataclasses.field(default=None, repr=False)
+    supplied: int | None = dataclasses.field(default=None, repr=False)
+    """Rows supplied when the effects came from counts after subsetting (R's ``k.all``); ``k_all`` stays the length of ``keep``."""
 
     @property
     def k(self) -> int:

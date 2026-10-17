@@ -94,4 +94,136 @@ match = "matrix/$<-/*"
 kind = "missing-field"
 detail = "*has no field zz"
 reason = "A result is an immutable dataclass: x$zz <- 1 (a new element) has no counterpart; the elements that exist are replaced with dataclasses.replace."
+
+# Audit 8: optimiser and flat-likelihood differences, each checked against R (the log-likelihoods at the two optima agree or Python's is higher).
+
+[[known]]
+match = "*/ls_year"
+kind = "value-diff"
+reason = "Location-scale fit ~ ablat + year with scale ~ ablat + year: the scale intercept is -151 (tau2 is 0 to machine precision), so the likelihood is flat in the scale coefficients. Log-likelihood -7.602255955 in R and Python, scale coefficients agree to 1e-6, the Wald statistics of the scale part (QS, se.alpha, va) differ by up to 2e-4; R's nlminb itself does not converge when its tolerance is tightened."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/ls_year/*"
+kind = "value-diff"
+reason = "Same fit as ls_year above (flat scale intercept); every option variant refits it."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/ls_na"
+kind = "value-diff"
+reason = "Location-scale fit ~ year with scale ~ ablat on data with missing values: scale intercept -10.4 and a boundary tau2, log-likelihood -4.194072548 in R and Python, scale coefficients agree to 1e-5, QS and the Wald statistics of the scale part to 2e-4; R's nlminb does not converge when its tolerance is tightened."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/ls_na/*"
+kind = "value-diff"
+reason = "Same fit as ls_na above (flat scale intercept); every option variant refits it."
+ref = "docs/differences.md"
+
+[[known]]
+match = "construct/ls_*/control=*"
+kind = "value-diff"
+reason = "Each R optimiser (nlminb, Nelder-Mead, BFGS, nmk, nloptr, BBoptim, Rcgmin, Rvmmin, lbfgsb3c) stops at a different point of a flat likelihood: for ls_year and ls_na the log-likelihoods of R's optimisers agree to 1e-6 (-7.6022559 and -4.1940725) and Python's is as high, but the coefficients differ between R's own optimisers by as much as they differ from Python's."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/ls_*"
+kind = "value-diff"
+path = "[]*"
+reason = "profile() of the flat location-scale fits ls_na, ls_year and ls_bcg: at grid points far from the estimate the refits are on a flat or degenerate surface (scale factors of exp(-100)); R's and Python's optimisers end at different local points (R's log-likelihood is 36 lower at one grid point of ls_na, Python's 25 lower at another)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/permutest/ls_*"
+kind = "value-diff"
+reason = "permutest() of location-scale fits refits the model for every permutation, on the flat likelihood of ls_na, ls_bcg and ls_bangert (see above); the permutation distribution of the scale coefficients inherits the optimiser noise."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/permutest_ls*"
+kind = "value-diff"
+reason = "Same as permutest/ls_*: refits of a flat location-scale likelihood."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/mv_sp*"
+kind = "value-diff"
+reason = "rma_mv with the spatial structure SPEXP (~ year | district) on dat.konstantopoulos2011: the range rho is flat. REML log-likelihood -31.91350753 and tau2 0.0812804 agree in R and Python to 1e-8, but rho is 0.05592 (R nlminb), 0.05596 (Python) and 0.03527 (R Nelder-Mead) at that same log-likelihood; with year as moderator Python's rho is 0.0437 against R's 0.0549 at log-likelihood -31.2005931 in both."
+ref = "docs/differences.md"
+
+[[known]]
+match = "construct/mv_ks/control=*"
+kind = "value-diff"
+reason = "rma_mv ~ 1 | district/school fitted with another optimiser: sigma2 of the school level agrees to 1e-3 at equal REML log-likelihood; the derivative-free optimisers stop on rel.tol, and R's own optimisers differ from each other by the same amount."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/dfbetas/mv_ks_mods"
+kind = "value-diff"
+reason = "dfbetas() of an rma_mv fit refits the model without each cluster; the values are 6e-4 and differ by 2e-7 (absolute), the noise of the refits' optimum."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/*/mv_wide"
+kind = "value-diff"
+reason = "mv_wide has variance components at the boundary (around 1e-5), so the BLUPs and predictions are 1e-3 relative different in values of the order 1e-5 to 1e-3 (absolute differences 1e-8 to 6e-7)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/*/mv_gen"
+kind = "value-diff"
+reason = "confint() and profile() of the unstructured (GEN) rma_mv fit: the confidence limits of the variance components run to a flat part of the likelihood (6900 against 7700) and the profile likelihood is evaluated at points where the optimisers end differently."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/glmm_bcg*"
+kind = "value-diff"
+reason = "rma_glmm(model='UM.FS') (and mods) fitted by lme4 in R and by the port in Python: the objective is the same (at R's coefficients Python's deviance is 4e-6 above its own optimum) but the surface is flat. For the intercept of ~ alloc at nAGQ = 7 R's bobyqa gives -0.61510, R's Nelder-Mead -0.61554 and Python -0.61456; coefficients agree to 1e-3 and standard errors to 2e-3."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/glmm_rs*"
+kind = "value-diff"
+reason = "rma_glmm(model='UM.RS'): R log-likelihood -126.2962883, Python -126.2962773 (higher); coefficients differ by 1e-4 and standard errors by 4e-3 relative because R's glmer stops early on a flat surface."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/glmm_cm*"
+kind = "value-diff"
+reason = "rma_glmm(model='CM.EL'): R's Hessian is a finite-difference one of a noisy objective, see docs/differences.md."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/*"
+kind = "value-diff"
+detail = "*rma.glmm*"
+reason = "rma.glmm calls in R's own examples and tests: lme4 or the noisy CM.EL objective of R stops at a different point of a flat surface, see the rma_glmm entries."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/forest/*"
+kind = "value-diff"
+path = "$cex*"
+reason = "forest() of a model with many studies lowers cex to fit the figure height: R divides by strheight('O') on its 7 x 7 inch pdf device (0.6399 for the 56 studies of dat.konstantopoulos2011) and metafopy by the height of the matplotlib axes, which depends on the figure the caller made (0.5309 for the default figure)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/[/vcalc_ks"
+kind = "shape-diff"
+reason = "x[i] with one index on a matrix: R indexes the elements (3 values for c(1,2,3)), numpy selects rows; metafopy keeps numpy's meaning."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/*"
+kind = "value-diff"
+detail = "*scale = ~*"
+reason = "Location-scale fits of R's tests with several scale terms (scale = ~grade + meta + sqrt(ni)): the likelihood is flat in the scale coefficients; they agree with R to 1e-3 and the Wald statistics of the scale part to 2e-3."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/*"
+kind = "value-diff"
+detail = "*rma.mv(*control = list(optimizer*"
+reason = "rma.mv fitted with each of R's optimisers in the tests (BFGS, L-BFGS-B, Nelder-Mead, uobyqa ...): they stop at different points of a flat REML surface, 3e-4 apart in the marginal variances, and Python's optimiser is not R's."
 ref = "docs/differences.md"

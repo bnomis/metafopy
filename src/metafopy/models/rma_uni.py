@@ -125,13 +125,13 @@ class RMAResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_meth
 
     @property
     def dfs(self) -> float | tuple[float, ...] | None:
-        """The degrees of freedom of a model made robust with :func:`metafopy.robust` (metafor's ``dfs``), ``None`` otherwise.
+        """The degrees of freedom of the tests (metafor's ``dfs``): ``ddf`` for ``test='t'`` or ``'knha'``, those of :func:`metafopy.robust` for a robust fit.
 
-        A single number (the number of clusters minus ``p``) for the default method and one value per coefficient for ``club_sandwich=True``,
-        for which ``ddf`` stays ``None`` because it holds a single number.
+        A model made robust has a single number (the number of clusters minus ``p``) for the default method and one value per coefficient for
+        ``club_sandwich=True``, for which ``ddf`` stays ``None`` because it holds a single number.
         """
         if self.robust is None:
-            return None
+            return None if self.ddf is None else float(self.ddf)
         if self.robust.robumethod == 'clubSandwich':
             return tuple(float(v) for v in self.robust.dfs)
         return float(self.robust.dfs[0])
@@ -312,8 +312,15 @@ def set_btt(btt: Btt, p: int, int_incl: bool, names: collections.abc.Sequence[st
 
 
 def level_to_alpha(level: float) -> float:
-    """metafor's ``.level()``: 95 (or 0.95) -> 0.05."""
-    return 1 - level / 100 if level > 1 else 1 - level
+    """metafor's ``.level()``: 95 (or 0.95) -> 0.05; a value up to 0.5 is already an alpha, so 0.05 stays 0.05 and 0 gives 1.
+
+    See `.level <https://github.com/wviechtb/metafor/blob/master/R/misc.func.hidden.R>`_.
+    """
+    if level == 0:
+        return 1.0
+    if level >= 1:
+        return (100 - level) / 100
+    return 1 - level if level > 0.5 else level
 
 
 def mad(x: FloatArray) -> float:
@@ -748,7 +755,7 @@ def metadata_from_escalc(
         slab=[str(i + 1) for i in idx] if slab is None else sub(slab),
         na_action=na_action,
     )
-    return dataclasses.replace(md, counts_all=counts_all or None)
+    return dataclasses.replace(md, counts_all=counts_all or None, supplied=k_all)
 
 
 rma = rma_uni

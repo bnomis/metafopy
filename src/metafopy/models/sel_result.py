@@ -79,7 +79,7 @@ class SelmodelResult(metafopy.models.fit_methods.FitMethods):
     steps: FloatArray
     decreasing: bool
     stepsspec: bool
-    pgrp: numpy.typing.NDArray[numpy.intp]
+    pgrp: numpy.typing.NDArray[numpy.intp] | None
     ptable: pandas.DataFrame | None
     subset: BoolArray
     k0: int
@@ -108,8 +108,8 @@ class SelmodelResult(metafopy.models.fit_methods.FitMethods):
 
     @property
     def k_all(self) -> int:
-        """Number of rows supplied, including those dropped for missing values."""
-        return self.base.k_all
+        """Number of studies in the fit: metafor refits the model without the studies with missing values, so its ``k.all`` is the number left."""
+        return self.base.k
 
     @property
     def k_eff(self) -> int:

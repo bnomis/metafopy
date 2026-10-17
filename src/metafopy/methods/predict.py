@@ -658,9 +658,9 @@ def named_newmods(newmods: typing.Any) -> tuple[numpy.typing.ArrayLike, list[str
     return newmods, None
 
 
-def prediction_slab(newmods: typing.Any, k_new: int, x_p: int, int_incl: bool) -> tuple[str, ...] | None:
+def prediction_slab(newmods: typing.Any, k_new: int, x_p: int, int_incl: bool) -> tuple[str, ...]:
     """The row labels of predictions for ``newmods`` (metafor's ``rnames``): the names of a vector holding one value per prediction (a model
-    with one moderator), the row names of a data frame, else none; a single unnamed prediction has the empty label."""
+    with one moderator), the row names of a data frame, else the positions 1, 2, ...; a single unnamed prediction has the empty label."""
     labels: list[str] | None = None
     one_mod = x_p == (2 if int_incl else 1)
     if isinstance(newmods, pandas.DataFrame):
@@ -669,7 +669,7 @@ def prediction_slab(newmods: typing.Any, k_new: int, x_p: int, int_incl: bool) -
         labels = string_names(list(newmods.index if isinstance(newmods, pandas.Series) else newmods))
     if labels is not None and len(labels) == k_new:
         return tuple(labels)
-    return ('',) if k_new == 1 else None
+    return ('',) if k_new == 1 else tuple(str(i + 1) for i in range(k_new))
 
 
 def match_names(names: list[str], coef_names: collections.abc.Sequence[str]) -> list[int]:
@@ -1004,7 +1004,7 @@ def predict_rma_mv(
     k_new = X_new.shape[0]
     if slab is None and k_new == 1:
         slab = ('',)
-    alpha = metafopy.models.rma_uni.level_to_alpha(x.level if level is None else level)
+    alpha = x.level if level is None else metafopy.models.rma_uni.level_to_alpha(level)
     if adjust:
         alpha = alpha / k_new
     pred = X_new @ x.beta

@@ -543,7 +543,7 @@ def confint_rma_mv(
         if len(xlim) != 2:
             raise metafopy.errors.InputError("Argument 'xlim' should be a vector of length 2.")
         vc_min, vc_max = float(xlim[0]), float(xlim[1])
-    alpha = metafopy.models.rma_uni.level_to_alpha(x.level if level is None else level)
+    alpha = x.level if level is None else metafopy.models.rma_uni.level_to_alpha(level)
     chosen = {name: v for name, v in zip(metafopy.models.mv_structs.VC_NAMES, (sigma2, tau2, rho, gamma2, phi), strict=True) if v is not None}
     if len(chosen) > 1:
         raise metafopy.errors.InputError("Must specify only one of the arguments 'sigma2', 'tau2', 'rho', 'gamma2', or 'phi'.")
