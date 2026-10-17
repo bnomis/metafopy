@@ -258,7 +258,9 @@ class FixedBinaryResult(metafopy.models.fit_methods.TableFields, metafopy.models
         ``signif_stars`` and ``signif_legend`` are accepted as in metafor, whose table for these models has no significance stars.
         """
         return metafopy.models.fit_methods.SummaryText(
-            metafopy.mfopt.option_space(self.render(metafopy.mfopt.option_digits(digits, self.digits), showfit)), self
+            metafopy.mfopt.option_space(self.render(metafopy.mfopt.option_digits(digits, self.digits), showfit)),
+            self,
+            metafopy.mfopt.option_digits(digits, self.digits),
         )
 
     def __str__(self) -> str:

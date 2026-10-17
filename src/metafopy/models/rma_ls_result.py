@@ -388,6 +388,7 @@ class RMALSResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_me
                 metafopy.models.rma_ls_print.format_result(self, metafopy.mfopt.option_digits(digits, self.digits), showfit, stars, legend)
             ),
             self,
+            metafopy.mfopt.option_digits(digits, self.digits),
         )
 
     def __str__(self) -> str:

@@ -218,10 +218,14 @@ class SummaryText(str):
     """The text of ``summary()`` of a fit; as in R, where ``summary()`` returns the fit with another print method, its attributes are those of the fit."""
 
     fit: typing.Any
+    digits: typing.Any
 
-    def __new__(cls, text: str, fit: typing.Any) -> typing.Self:
+    def __new__(cls, text: str, fit: typing.Any, digits: int | None = None) -> typing.Self:
         obj = super().__new__(cls, text)
         obj.fit = fit
+        if digits is not None:
+            # summary.rma() sets ``object$digits`` to the digits it prints with (https://github.com/wviechtb/metafor/blob/master/R/summary.rma.r)
+            obj.digits = digits
         return obj
 
     def __getattr__(self, name: str) -> typing.Any:

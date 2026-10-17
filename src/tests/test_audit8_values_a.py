@@ -364,6 +364,16 @@ def test_structure_with_a_vector_class_is_not_a_factor() -> None:
     assert out.shape == (1, 1)
 
 
+def test_summary_digits_are_those_it_printed_with() -> None:
+    # R 4.3.3, metafor 5.2-1: summary(rma(yi, vi, data = dat), digits = 2)$digits is 2 for every element (4 for the fit itself)
+    fit = metafopy.rma(yi='yi', vi='vi', data=bcg_frame())
+    shown: typing.Any = fit.summary(digits=2)
+    assert shown.digits == 2
+    plain: typing.Any = fit.summary()
+    assert plain.digits == 4
+    assert fit.digits == 4
+
+
 def test_formula_names_outside_the_data_are_found_in_the_script() -> None:
     # R: rma(yi, vi, mods = ~ alloc.random + year, data = dat) finds alloc.random in the calling environment
     data = bcg_frame()
