@@ -18,6 +18,7 @@ import metafopy.core.clubsandwich
 import metafopy.errors
 import metafopy.methods.common
 import metafopy.methods.fitted
+import metafopy.methods.listrma
 import metafopy.methods.pairmat
 import metafopy.mfopt
 import metafopy.models.binary
@@ -73,6 +74,10 @@ class PredictResult:
     def cr_ub(self) -> FloatArray:
         """Alias of ``pi_ub`` (metafor keeps ``cr.ub`` for old code)."""
         return self.pi_ub
+
+    def __getitem__(self, index: typing.Any) -> typing.Self:
+        """The rows ``index`` (metafor's ``[.list.rma``; a NumPy index, 0-based)."""
+        return metafopy.methods.listrma.rows(self, index, self.pred.shape[0])
 
     def to_frame(self) -> pandas.DataFrame:
         cols: dict[str, typing.Any] = {

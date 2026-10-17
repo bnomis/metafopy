@@ -19,6 +19,7 @@ import pandas
 import scipy.stats
 
 import metafopy.errors
+import metafopy.methods.listrma
 import metafopy.mfopt
 import metafopy.models.glmm_result
 import metafopy.models.rma_ls_result
@@ -48,6 +49,10 @@ class BlupResult:
     slab: tuple[str, ...]
     digits: int = 4
     transf: bool = False
+
+    def __getitem__(self, index: typing.Any) -> typing.Self:
+        """The rows ``index`` (metafor's ``[.list.rma``; a NumPy index, 0-based)."""
+        return metafopy.methods.listrma.rows(self, index, self.pred.shape[0])
 
     def to_frame(self) -> pandas.DataFrame:
         return pandas.DataFrame(

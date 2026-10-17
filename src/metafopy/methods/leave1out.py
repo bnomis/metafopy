@@ -22,6 +22,7 @@ import metafopy.errors
 import metafopy.methods.blup
 import metafopy.methods.common
 import metafopy.methods.fitview
+import metafopy.methods.listrma
 import metafopy.mfopt
 import metafopy.models.rma_uni
 import metafopy.models.tau2
@@ -63,6 +64,10 @@ class Leave1outResult:
     measure: str = 'GEN'
     level: float = 0.05
     slab_null: bool = False
+
+    def __getitem__(self, index: typing.Any) -> typing.Self:
+        """The rows ``index`` (metafor's ``[.list.rma``; a NumPy index, 0-based)."""
+        return metafopy.methods.listrma.rows(self, index, self.estimate.shape[0])
 
     def to_frame(self) -> pandas.DataFrame:
         """Table with metafor's column names (``estimate``, ``se``, ``zval``/``tval``, ``pval``, ``ci.lb``, ...)."""
