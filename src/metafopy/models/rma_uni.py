@@ -755,7 +755,7 @@ def metadata_from_escalc(
         slab=[str(i + 1) for i in idx] if slab is None else sub(slab),
         na_action=na_action,
     )
-    return dataclasses.replace(md, counts_all=counts_all or None)
+    return dataclasses.replace(md, counts_all=counts_all or None, supplied=k_all)
 
 
 rma = rma_uni
