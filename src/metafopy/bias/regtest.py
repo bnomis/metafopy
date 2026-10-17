@@ -187,7 +187,7 @@ def regtest(
         slab = x.slab
     else:
         yi, v_opt, n = metafopy.bias.inputs.vector_inputs(x, vi, sei, ni=ni, subset=subset, data=data, what='the test', attr_ni=True, na_action=na_action)
-        if isinstance(x, str) and data is not None and data.attrs.get('measure'):
+        if isinstance(x, str) and data is not None and subset is None and data.attrs.get('measure'):
             # metafor takes the measure from the attribute of the yi column of the escalc object
             vec_measure = str(data.attrs['measure'])
         if v_opt is None:
