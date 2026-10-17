@@ -159,3 +159,13 @@ def test_location_scale_predict_labels_follow_the_names_of_newmods() -> None:
         plain = metafopy.predict(res, newmods=[10, 60])
     assert named.slab == ('ablat', 'year')
     assert plain.slab == ('1', '2')
+
+
+def test_reh_fit_keeps_three_cells_in_outdat_f() -> None:
+    # R 4.3.3, metafor 5.2-1: rma(measure = "REH", ai, bi, ci, di, data = dat.bcg)$outdat.f has ai, bi and ci (13 values) and NA for di
+    frame = metafopy.datasets.load('dat.bcg')
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        res = metafopy.rma(measure='REH', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=frame)
+    assert len(res.outdat_f['ci']) == 13  # type: ignore[arg-type]
+    assert res.outdat_f['di'] is None

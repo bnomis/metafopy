@@ -889,7 +889,8 @@ def metadata_from_escalc(
 
     data_sub = None if data is None else data.iloc[idx].reset_index(drop=True)
     ni_es = es.attrs.get('ni')
-    count_names = ('ai', 'bi', 'ci', 'di', 'x1i', 'x2i', 't1i', 't2i')
+    # the relative excess heterozygosity is computed from the first three cells, so metafor keeps no fourth one
+    count_names = ('ai', 'bi', 'ci', 'x1i', 'x2i', 't1i', 't2i') if measure == 'REH' else ('ai', 'bi', 'ci', 'di', 'x1i', 'x2i', 't1i', 't2i')
     counts_all = {
         name: arr[idx] for name in count_names if name in raw and (arr := metafopy.metadata.column(raw[name], data, name)) is not None and arr.shape[0] == k_all
     }
