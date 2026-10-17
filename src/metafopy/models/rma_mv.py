@@ -667,7 +667,9 @@ def rma_mv(
     k = int(idx.shape[0])
     vi = numpy.asarray(V_s.diagonal() if scipy.sparse.issparse(V_s) else numpy.diag(V_s), dtype=numpy.float64).copy()
     k_f = k
-    ni_all = metafopy.metadata.escalc_ni(yi if isinstance(yi, str) else None, data, k_all)
+    # with a formula `yi ~ mods` the sample sizes are those stored with the response
+    response = yi.split('~', 1)[0].strip() if isinstance(yi, str) and '~' in yi else yi
+    ni_all = metafopy.metadata.escalc_ni(response if isinstance(response, str) else None, data, k_all)
     ni_f = None if ni_all is None else ni_all[idx]
     yi_f = yi_s.copy()
     vi_f = vi.copy()

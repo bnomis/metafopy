@@ -208,3 +208,14 @@ def test_hettest_of_a_model_does_not_use_control() -> None:
     assert limited.tau2i is not None
     assert limited.tau2i.tolist() == plain.tau2i.tolist()  # type: ignore[union-attr]
     assert limited.pval == plain.pval
+
+
+def test_rma_mv_formula_response_takes_ni_from_escalc() -> None:
+    # R 4.3.3, metafor 5.2-1: rma.mv(yi ~ ablat, vi, random = ~ 1 | trial, data = escalc(...))$ni is the sample sizes (34767 for the last trial)
+    frame = metafopy.datasets.load('dat.bcg')
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        data = metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=frame)
+        res = metafopy.rma_mv('yi ~ ablat', 'vi', random='~ 1 | trial', data=data)
+    assert res.ni is not None
+    assert res.ni[-1] == 34767
