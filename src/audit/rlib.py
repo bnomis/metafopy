@@ -546,11 +546,33 @@ def r_noop(*args: Value, **kw: Value) -> Value:
     return None
 
 
+def r_par(*args: Value, **kw: Value) -> Value:
+    """``par("usr")`` is the limits of the current axes; any other query or setting does nothing."""
+    if args == ('usr',):
+        import matplotlib.pyplot
+
+        left, right = matplotlib.pyplot.gca().get_xlim()
+        bottom, top = matplotlib.pyplot.gca().get_ylim()
+        return numpy.array([left, right, bottom, top])
+    return None
+
+
 def r_invisible(x: Value = None) -> Value:
     return x
 
 
 def r_structure(x: Value, **kw: Value) -> Value:
+    """``structure(list(...), class = "data.frame")`` is a data frame and ``structure(c(...), dim = , dimnames = )`` a matrix with its names."""
+    if kw.get('class') == 'data.frame' and isinstance(x, dict):
+        return pandas.DataFrame({k: numpy.asarray(v) for k, v in x.items()})
+    dim = kw.get('dim')
+    if dim is not None and not isinstance(x, (dict, pandas.DataFrame)):
+        shape = tuple(int(d) for d in numpy.atleast_1d(numpy.asarray(dim)))
+        out = numpy.asarray(x).reshape(shape, order='F')
+        names = kw.get('dimnames')
+        if isinstance(names, list) and len(names) == 2 and out.ndim == 2 and all(n is not None for n in names):
+            return pandas.DataFrame(out, index=list(numpy.asarray(names[0])), columns=list(numpy.asarray(names[1])))
+        return out
     return x
 
 
@@ -777,7 +799,7 @@ BASE: dict[str, typing.Callable[..., Value]] = {
     'nrow': r_nrow,
     'options': r_options,
     'order': r_order,
-    'par': r_noop,
+    'par': r_par,
     'paste': r_paste,
     'paste0': r_paste0,
     'png': r_noop,
@@ -842,6 +864,8 @@ def to_positions(index: Value, size: int) -> Value:
 
 
 def r_index(x: Value, *idx: Value, **kw: Value) -> Value:
+    if dataclasses.is_dataclass(x) and not hasattr(x, '__getitem__') and hasattr(x, 'to_frame'):  # a result R returns as a data frame
+        x = typing.cast(typing.Any, x).to_frame()
     if isinstance(x, pandas.DataFrame):
         if len(idx) == 1:
             sel = idx[0]
@@ -1031,7 +1055,9 @@ INDEX_ARGUMENTS = frozenset({'btt', 'att', 'subset', 'which', 'label'})
 def shift_arguments(kwargs: dict[str, Value]) -> dict[str, Value]:
     out: dict[str, Value] = {}
     for k, v in kwargs.items():
-        if k in INDEX_ARGUMENTS and v is not None and not isinstance(v, (str, bool)):
+        if k in INDEX_ARGUMENTS and isinstance(v, list) and any(not numpy.isscalar(e) for e in v):  # a list of index vectors (``btt = list(2, 3, 4:5)``)
+            v = [e if isinstance(e, str) else shift_arguments({k: e})[k] for e in v]
+        elif k in INDEX_ARGUMENTS and v is not None and not isinstance(v, (str, bool)):
             arr = numpy.asarray(v)
             if arr.dtype.kind in 'if' and arr.dtype != bool:
                 v = (arr.astype(int) - 1).tolist() if arr.ndim else int(arr) - 1

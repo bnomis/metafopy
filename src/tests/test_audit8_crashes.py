@@ -1,5 +1,6 @@
 """Regression tests for the crashes of audit 8; expected values come from R metafor 5.2-1 (the R call is quoted with each test)."""
 
+import time
 import warnings
 
 import matplotlib
@@ -183,3 +184,12 @@ def test_transf_pft_matrix_keeps_shape() -> None:
     grid = numpy.array([[0.1, 0.2], [0.3, 0.4]])
     assert metafopy.transf.transf_pft(grid, 10).shape == (2, 2)
     assert metafopy.transf.transf_pft(0.2, numpy.array([[10, 20], [30, 40]])).shape == (2, 2)
+
+
+def test_ls_fit_on_a_ridge_is_fast() -> None:
+    # R: rma(yi, vi, mods = ~ ablat + year, scale = ~ ablat + year, data = dat) takes 0.24 s; the simplex polish used to spin for 20 s on this ridge
+    start = time.perf_counter()
+    res = metafopy.rma_uni('yi', 'vi', mods='~ ablat + year', scale='~ ablat + year', data=refutil.bcg())
+    metafopy.vif(res, sim=3, seed=1)
+    assert time.perf_counter() - start < 10
+    assert res.fit_stats_reml.ll == pytest.approx(-7.602256, abs=1e-5)
