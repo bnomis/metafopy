@@ -1,5 +1,6 @@
 """The translation of R scripts into Python (``src/audit/transpile.py``): assignments into nested expressions and the variables a unit changes."""
 
+import inspect
 import typing
 
 import numpy
@@ -25,9 +26,9 @@ def call(name: str, *args: Node) -> Node:
     return {'t': 'call', 'f': sym(name), 'args': [{'v': a} for a in args]}
 
 
-def run(ast: Node, env: audit.rlib.Env) -> None:
+def run(ast: Node, env: audit.rlib.Env) -> typing.Any:
     code = audit.transpile.translate_unit(ast, set(), set())
-    eval(code, audit.scripts.namespace(env))
+    return eval(code, audit.scripts.namespace(env))
 
 
 def test_assignment_into_an_element_of_a_column_changes_the_column() -> None:
@@ -58,3 +59,16 @@ def test_assignment_targets_and_reads() -> None:
     plain = call('<-', sym('res'), call('rma', sym('yi'), sym('vi')))
     assert audit.transpile.assignment_targets(plain) == {'res'}
     assert 'res' not in audit.transpile.symbols(plain)
+
+
+def test_value_of_a_replacement_is_the_assigned_value() -> None:
+    env = audit.rlib.Env()
+    env.set('dat', pandas.DataFrame({'yi': [1.0, 2.0, 3.0]}))
+    # dat$yi[2] <- 7 evaluates to 7, as in R (the data frame is not the value)
+    assert run(call('<-', call('[', call('$', sym('dat'), sym('yi')), num(2)), num(7)), env) == 7
+    assert env['dat']['yi'].to_numpy()[1] == 7
+
+
+def test_transformation_as_a_value_has_the_signature_of_the_function() -> None:
+    fn = audit.rlib.function_value(audit.rlib.Env(), 'transf.dtorpb')
+    assert 'n1i' in inspect.signature(fn).parameters

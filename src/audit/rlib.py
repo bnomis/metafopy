@@ -66,11 +66,16 @@ class Env:
             except metafopy.errors.NotFoundError as e:
                 raise UnsupportedError(f'dataset {name} is not bundled with metafopy') from e
         if name in BASE or name in METAFOR_FUNCTIONS:
-            return lambda *a, **k: rcall(self, name, *a, **k)
+            return function_value(self, name)
         raise UnsupportedError(f'object {name} not found')
 
     def set(self, name: str, value: Value) -> Value:
         self.vars[name] = value
+        return value
+
+    def replace(self, name: str, make: typing.Callable[[Value], Value], value: Value) -> Value:
+        """``x$a <- value``: the variable becomes the changed object, the value of the expression is ``value``, as in R."""
+        self.vars[name] = make(value)
         return value
 
 
@@ -1054,6 +1059,17 @@ def accepts(fn: typing.Callable[..., Value], name: str, first: Value = None) -> 
         return name in inspect.signature(target).parameters
     except TypeError, ValueError:
         return False
+
+
+def function_value(env: Env, name: str) -> typing.Callable[..., Value]:
+    """The function ``name`` as a value (``transf = transf.dtorpb``), with the signature of the metafopy function (``conv.delta`` reads the argument names)."""
+
+    def call(*a: Value, **k: Value) -> Value:
+        return rcall(env, name, *a, **k)
+
+    with contextlib.suppress(pycall.MissingFunctionError, TypeError, ValueError):
+        call.__signature__ = inspect.signature(pycall.resolve_function(name, None))  # type: ignore[attr-defined]
+    return call
 
 
 def rcall(env: Env, name: str, *args: Value, **kwargs: Value) -> Value:
