@@ -171,3 +171,87 @@ kind = "label-diff"
 path = "*[$]hessian"
 reason = "Matrices are numpy arrays without dimnames; the names of the rows and columns are in coef_names, alpha_names, slab and the like."
 ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/print/mv_*"
+kind = "value-diff"
+path = "$level"
+reason = "rma_mv keeps level in percent (95) where R stores the alpha (0.05); the functions that read it convert with level_to_alpha, which takes values up to 1 as proportions."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/print/mv_*"
+kind = "value-diff"
+path = "$tau2"
+reason = "rma_mv stores None for the tau2, rho, gamma2 and phi of a model without that term, where R stores 0."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/print/mv_*"
+kind = "value-diff"
+path = "$rho"
+reason = "rma_mv stores None for the tau2, rho, gamma2 and phi of a model without that term, where R stores 0."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/print/mv_*"
+kind = "value-diff"
+path = "$gamma2"
+reason = "rma_mv stores None for the tau2, rho, gamma2 and phi of a model without that term, where R stores 0."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/print/mv_*"
+kind = "value-diff"
+path = "$phi"
+reason = "rma_mv stores None for the tau2, rho, gamma2 and phi of a model without that term, where R stores 0."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/print/mv_*"
+kind = "value-diff"
+path = "$measure"
+reason = "The bundled data sets are plain frames; the copies in metadat carry the measure of yi as an attribute, which rma_mv reads."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/print/cumul_*"
+kind = "missing-field"
+path = "$[id][ad]*"
+reason = "cumul() and leave1out() results do not keep the ids and the data frame of the studies (R: ids, data)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/print/vif_*"
+kind = "missing-field"
+path = "$vif$*"
+reason = "vif() gives a table of the vifs by coefficient, where R keeps a list with one entry per coefficient."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/print/confint_*"
+kind = "missing-field"
+path = "*tau2.min"
+reason = "The search limits of confint() are not kept in the result (R: tau2.min)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/print/profile_mv"
+kind = "missing-field"
+path = "*"
+reason = "The mv profile results do not keep the plot labels and the component counts (R: comps, xlab, title, sigma2)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/print/anova_*"
+kind = "missing-field"
+path = "$class"
+reason = "The class of the anova result is the class of the Python object."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/print/robust_*"
+kind = "missing-field"
+path = "$sandwiches"
+reason = "The sandwich matrices of the club-sandwich estimator are kept in the robust result, not on the fit."
+ref = "docs/differences.md"
