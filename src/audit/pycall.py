@@ -134,7 +134,9 @@ def print_call(x: typing.Any, **kwargs: typing.Any) -> list[str]:
         missing = sorted(k for k in kwargs if k not in accepted)
         if missing:
             raise MissingArgumentError(f'print() of {type(x).__name__} takes no argument {missing}; R was given {sorted(kwargs)}')
-        return str(summary(**kwargs)).split('\n')
+        # R's print() has no fit statistics block; the summary() that takes its arguments shows it unless told not to
+        shown = {'showfit': False, **kwargs} if 'showfit' in accepted else kwargs
+        return str(summary(**shown)).split('\n')
     return str(x).split('\n')
 
 
