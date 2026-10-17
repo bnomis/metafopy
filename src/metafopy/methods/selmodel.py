@@ -59,7 +59,7 @@ def has_tau2(x: Sel) -> bool:
 
 def as_rma(x: Sel) -> metafopy.models.rma_uni.RMAResult:
     """The underlying model with the estimates of the selection model (normal-theory tests), for the methods that only need those."""
-    return dataclasses.replace(x.base, beta=x.beta, se=x.se, vb=x.vb, tau2=x.tau2, test='z', ddf=None, robust=None)
+    return dataclasses.replace(x.base, beta=x.beta, se=x.se, vb=x.vb, tau2=x.tau2, test='z', ddf=None, robust=None, digits=x.digits)
 
 
 # -- predict ---------------------------------------------------------------------------------------------
