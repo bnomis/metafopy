@@ -341,27 +341,28 @@ def r_diag(x: Value, **kw: Value) -> Value:
     return numpy.diag(a)
 
 
-def r_cbind(*xs: Value, **named: Value) -> Value:
-    cols: dict[str, Value] = {}
+def r_cbind(*xs: Value, deparse_names: list[str] | None = None, **named: Value) -> Value:
+    entries: list[tuple[str | None, Value]] = []
     frame = any(isinstance(x, pandas.DataFrame) for x in list(xs) + list(named.values()))
-    for x in xs:
+    deparsed = deparse_names is not None
+    for position, x in enumerate(xs):
+        given = deparse_names[position] if deparse_names is not None and position < len(deparse_names) else ''
         if isinstance(x, pandas.DataFrame):
-            for c in x.columns:
-                cols[str(c)] = x[c].to_numpy()
+            entries.extend((str(c), x[c].to_numpy()) for c in x.columns)
+            continue
+        a = numpy.asarray(x)
+        if a.ndim == 2:
+            entries.extend((None, a[:, j]) for j in range(a.shape[1]))
         else:
-            a = numpy.asarray(x)
-            if a.ndim == 2:
-                for j in range(a.shape[1]):
-                    cols[f'V{len(cols) + 1}'] = a[:, j]
-            else:
-                cols[f'V{len(cols) + 1}'] = a
-    for k, v in named.items():
-        cols[k] = numpy.asarray(v)
-    longest = max((numpy.atleast_1d(v).shape[0] for v in cols.values()), default=0)
-    cols = {k: numpy.resize(numpy.atleast_1d(v), longest) if numpy.atleast_1d(v).shape[0] != longest else v for k, v in cols.items()}  # R recycles
-    if frame:
-        return pandas.DataFrame(cols)
-    return numpy.column_stack(list(cols.values()))
+            entries.append((given or None, a))
+    entries.extend((k, numpy.asarray(v)) for k, v in named.items())
+    longest = max((numpy.atleast_1d(v).shape[0] for _, v in entries), default=0)
+    arrays = [numpy.resize(numpy.atleast_1d(v), longest) if numpy.atleast_1d(v).shape[0] != longest else numpy.atleast_1d(v) for _, v in entries]  # R recycles
+    if frame or deparsed:
+        # a column R names by a symbol keeps the name; the others have the empty name R gives them (V1, V2, ... when no symbol named any)
+        labels = ['' if name is None and deparsed else f'V{n + 1}' if name is None else name for n, (name, _) in enumerate(entries)]
+        return pandas.DataFrame(dict(enumerate(arrays))).set_axis(labels, axis=1)
+    return numpy.column_stack(arrays)
 
 
 def r_rbind(*xs: Value, **named: Value) -> Value:
@@ -486,11 +487,38 @@ def r_as_vector(x: Value, mode: Value = 'any') -> Value:
     return as_array(x).ravel(order='F') if isinstance(x, (numpy.ndarray, pandas.DataFrame)) else x
 
 
+class Named(numpy.ndarray):
+    """A matrix with the names of its rows and columns (R's dimnames), which the value tree reads as the labels."""
+
+    rownames: tuple[str, ...] | None
+    colnames: tuple[str, ...] | None
+
+    def __new__(cls, data: Value, rownames: list[Value] | None = None, colnames: list[Value] | None = None) -> Named:
+        obj = numpy.asarray(data).view(cls)
+        obj.rownames = None if rownames is None else tuple(str(n) for n in rownames)
+        obj.colnames = None if colnames is None else tuple(str(n) for n in colnames)
+        return obj
+
+    def __array_finalize__(self, obj: Value) -> None:
+        shape_kept = getattr(obj, 'shape', None) == self.shape
+        self.rownames = getattr(obj, 'rownames', None) if shape_kept else None
+        self.colnames = getattr(obj, 'colnames', None) if shape_kept else None
+
+    def __array_wrap__(self, array: numpy.ndarray, context: Value = None, return_scalar: bool = False) -> Value:
+        if return_scalar or array.ndim != 2:
+            return array[()] if array.ndim == 0 else numpy.asarray(array)
+        return super().__array_wrap__(array, context, return_scalar)
+
+
 def r_as_matrix(x: Value) -> Value:
     if not isinstance(x, pandas.DataFrame) and hasattr(x, 'to_frame') and dataclasses.is_dataclass(x):  # as.matrix.list.rma
         x = typing.cast(typing.Any, x).to_frame()
     if isinstance(x, pandas.DataFrame):
-        return x.to_numpy()
+        # a data frame whose row names are 1, 2, ... has none as a matrix; the others keep theirs (counted from 1, as R does)
+        index = x.index
+        automatic = pandas.api.types.is_integer_dtype(index) and bool((numpy.asarray(index) == numpy.arange(len(index))).all())
+        rows = None if automatic else [str(int(v) + 1) if pandas.api.types.is_integer_dtype(index) else str(v) for v in index]
+        return Named(x.to_numpy(), rows, [str(c) for c in x.columns])
     a = numpy.asarray(x)
     return a.reshape(-1, 1) if a.ndim < 2 else a
 
@@ -621,15 +649,33 @@ def r_noop(*args: Value, **kw: Value) -> Value:
     return None
 
 
+PAR_STATE: dict[str, Value] = {
+    'mar': numpy.array([5.1, 4.1, 4.1, 2.1]),
+    'mfrow': numpy.array([1.0, 1.0]),
+    'mgp': numpy.array([3.0, 1.0, 0.0]),
+    'cex': 1.0,
+    'tck': math.nan,
+    'xpd': False,
+}
+
+
 def r_par(*args: Value, **kw: Value) -> Value:
-    """``par("usr")`` is the limits of the current axes; any other query or setting does nothing."""
+    """``par("usr")`` is the limits of the current axes; ``par(name = value)`` sets graphical parameters and returns the old values as a list, as R does."""
     if args == ('usr',):
         import matplotlib.pyplot
 
         left, right = matplotlib.pyplot.gca().get_xlim()
         bottom, top = matplotlib.pyplot.gca().get_ylim()
         return numpy.array([left, right, bottom, top])
-    return None
+    settings: dict[str, Value] = dict(kw)
+    for arg in args:
+        if isinstance(arg, dict):
+            settings.update(arg)
+    if not settings:
+        return None
+    old = {name: PAR_STATE.get(name) for name in settings}
+    PAR_STATE.update({name: value for name, value in settings.items() if value is not None})
+    return old
 
 
 def r_invisible(x: Value = None) -> Value:
@@ -641,7 +687,8 @@ def r_structure(x: Value, **kw: Value) -> Value:
     if isinstance(kw.get('class'), str) and kw['class'] == 'data.frame' and isinstance(x, dict):
         return pandas.DataFrame({k: numpy.atleast_1d(numpy.asarray(v)) for k, v in x.items()})
     levels = kw.get('levels')
-    if kw.get('class') == 'factor' and levels is not None and not isinstance(x, (dict, pandas.DataFrame)):
+    classes = [] if kw.get('class') is None else numpy.atleast_1d(numpy.asarray(kw['class'])).tolist()
+    if classes == ['factor'] and levels is not None and not isinstance(x, (dict, pandas.DataFrame)):
         # a factor stored as its integer codes: the harness compares a factor by its labels
         labels = [str(v) for v in numpy.atleast_1d(numpy.asarray(levels))]
         return numpy.array([None if numpy.isnan(float(c)) else labels[int(c) - 1] for c in numpy.atleast_1d(numpy.asarray(x, dtype=float))], dtype=object)
@@ -999,8 +1046,11 @@ def r_index(x: Value, *idx: Value, **kw: Value) -> Value:
             return x[list(arr)]
         return x.iloc[to_positions(sel, len(x))]
     if isinstance(x, dict):
-        key = idx[0]
-        return {k: x[k] for k in numpy.atleast_1d(key).tolist()}
+        key = numpy.atleast_1d(numpy.asarray(idx[0]))
+        if key.dtype.kind in 'biuf':  # R's x[1:2] selects by position, keeps the names
+            names = list(x)
+            return {names[i]: x[names[i]] for i in to_positions(idx[0], len(names))}
+        return {k: x[k] for k in key.tolist()}
     if dataclasses.is_dataclass(x) and not isinstance(x, type) and hasattr(x, '__getitem__') and hasattr(x, 'to_frame'):
         # `[.list.rma(x, i, ...)` selects rows, ignores a column subscript and returns NULL for rows outside the result
         rows_of_x = typing.cast(typing.Any, x)
@@ -1017,6 +1067,13 @@ def r_index(x: Value, *idx: Value, **kw: Value) -> Value:
     out = a2[rows][:, cols] if not isinstance(rows, slice) or not isinstance(cols, slice) else a2
     if kw.get('drop', True) and 1 in out.shape:
         return out.ravel()
+    given_rows, given_cols = getattr(x, 'rownames', None), getattr(x, 'colnames', None)
+    if a.ndim == 2 and (given_rows is not None or given_cols is not None):
+        return Named(
+            out,
+            None if given_rows is None else list(numpy.asarray(given_rows, dtype=object)[rows]),
+            None if given_cols is None else list(numpy.asarray(given_cols, dtype=object)[cols]),
+        )
     return out
 
 
@@ -1301,6 +1358,18 @@ def formula_data(env: Env, fn: typing.Callable[..., typing.Any], kwargs: dict[st
         parameters = inspect.signature(fn.func if isinstance(fn, functools.partial) else fn).parameters
     except TypeError, ValueError:
         return kwargs
+    given = kwargs.get('data')
+    if isinstance(given, pandas.DataFrame) and 'data' in parameters:
+        # variables of the script that a formula names besides the columns of its data frame (alloc.random <- ifelse(dat$alloc == "random", 1, 0))
+        wanted = {name for v in kwargs.values() if isinstance(v, str) and v.lstrip().startswith('~') for name in re.findall(r'[A-Za-z_.][A-Za-z0-9_.]*', v)}
+        extra = {
+            name: numpy.asarray(env.vars[name])
+            for name in sorted(wanted - set(map(str, given.columns)))
+            if isinstance(env.vars.get(name), (list, tuple, numpy.ndarray, pandas.Series))
+            and numpy.ndim(env.vars[name]) == 1
+            and numpy.shape(env.vars[name])[0] == len(given)
+        }
+        return {**kwargs, 'data': given.assign(**extra)} if extra else kwargs
     if 'data' in kwargs or 'data' not in parameters:
         return kwargs
     names = {name for v in kwargs.values() if isinstance(v, str) and v.lstrip().startswith('~') for name in re.findall(r'[A-Za-z_.][A-Za-z0-9_.]*', v)}

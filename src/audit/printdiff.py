@@ -2,6 +2,9 @@
 
 import re
 
+import audit.config
+
+DECIMAL = re.compile(r'[-+]?(?:\d+\.\d*|\.\d+)(?:[eE][-+]?\d+)?')
 NUMBER = re.compile(r'^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$')
 
 
@@ -17,12 +20,28 @@ def decimals(token: str) -> int:
     return len(mantissa.split('.')[1]) if '.' in mantissa else 0
 
 
+def close_numbers(a: str, b: str) -> bool:
+    """Two printed numbers with the same decimals agree to the last printed digit or to the relative difference the value comparison calls drift."""
+    places = decimals(a)
+    if places != decimals(b):
+        return False
+    x, y = float(a), float(b)
+    return abs(x - y) <= 1.01 * 10.0**-places or abs(x - y) <= audit.config.DRIFT_RTOL * max(abs(x), abs(y))
+
+
 def same_token(a: str, b: str) -> bool:
     if a == b:
         return True
     if NUMBER.match(a) and NUMBER.match(b):
-        places = decimals(a)
-        return places == decimals(b) and abs(float(a) - float(b)) <= 1.01 * 10.0**-places
+        return close_numbers(a, b)
+    # numbers inside a token (``QM(df = 2) = 15.6105,`` has the number and a comma): the rest must be the same
+    if DECIMAL.search(a) and DECIMAL.search(b):
+        numbers_a, numbers_b = DECIMAL.findall(a), DECIMAL.findall(b)
+        return (
+            len(numbers_a) == len(numbers_b)
+            and DECIMAL.split(a) == DECIMAL.split(b)
+            and all(x == y or close_numbers(x, y) for x, y in zip(numbers_a, numbers_b, strict=True))
+        )
     return False
 
 
