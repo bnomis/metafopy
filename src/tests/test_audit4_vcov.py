@@ -123,7 +123,7 @@ def test_vcov_function_and_partial_matching(fits: dict[str, typing.Any]) -> None
     numpy.testing.assert_array_equal(partial(fits['uni'], 'm').to_numpy(), metafopy.vcov(fits['uni'], 'obs').to_numpy())
     with pytest.raises(metafopy.errors.InputError, match='type'):
         partial(fits['uni'], 'f')
-    with pytest.raises(metafopy.errors.InputError, match='na.action'):
+    with pytest.raises(metafopy.errors.InputError, match=r'na\.action'):
         metafopy.vcov(fits['uni'], 'obs', na_action='drop')  # type: ignore[call-overload]
     with pytest.raises(metafopy.errors.ArgumentError):
         metafopy.vcov(numpy.eye(2))
