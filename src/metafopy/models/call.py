@@ -13,6 +13,7 @@ import re
 import typing
 import warnings
 
+import metafopy.core.timing
 import metafopy.errors
 
 __all__ = ['Call', 'records_call', 'update_formula']
@@ -74,10 +75,12 @@ def records_call[**P, R](fn: collections.abc.Callable[P, R]) -> collections.abc.
                         raise metafopy.errors.InternalError(f'{fn.__name__}() takes no extra positional arguments')
                 else:
                     arguments[name] = value
-            object.__setattr__(res, 'call', Call(function=wrapper, arguments=arguments))
+            object.__setattr__(res, 'call', Call(function=outer, arguments=arguments))
         return res
 
-    return wrapper
+    # the Call keeps the function that is exported (module attribute), so that it can be pickled by reference
+    outer = metafopy.core.timing.timed(wrapper)
+    return outer
 
 
 def split_terms(rhs: str) -> list[tuple[str, str]]:

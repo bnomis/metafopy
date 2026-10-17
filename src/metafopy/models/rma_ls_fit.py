@@ -324,6 +324,8 @@ def fit_rma_ls(
     control: metafopy.models.rma_ls_result.LSControl,
     skiphes: bool = False,
     formula_scale: str | None = None,
+    dfs: float | collections.abc.Sequence[float] | None = None,
+    abbrev: bool = False,
 ) -> metafopy.models.rma_ls_result.RMALSResult:
     """Fit a location-scale model to normalised inputs: ``md`` (``yi``, ``vi``, ``X``) and the scale model matrix ``Z``.
 
@@ -383,6 +385,8 @@ def fit_rma_ls(
         raise metafopy.errors.InputError('Number of parameters to be estimated is larger than the number of observations.')
     btt_idx = metafopy.models.rma_uni.set_btt(btt, p, int_incl, names)
     m = len(btt_idx)
+    if abbrev:
+        names = metafopy.models.rma_uni.abbreviate_names(names)
 
     if not metafopy.core.linalg.is_positive_definite(X.T @ X, tol=con.evtol):
         raise metafopy.errors.InputError('Model matrix not of full rank. Cannot fit model.')
@@ -603,6 +607,8 @@ def fit_rma_ls(
         Z = Zsave
 
     att_idx = metafopy.models.rma_uni.set_btt(att, q, Z_int_incl, znames)
+    if abbrev:
+        znames = metafopy.models.rma_uni.abbreviate_names(znames)
     m_alpha = len(att_idx)
     # auditme: accept[literal-duplication] metafor option values and column labels repeated as in the R source
     tdist = test in ('knha', 'adhoc', 't')
@@ -633,7 +639,7 @@ def fit_rma_ls(
     # -- location coefficients ----------------------------------------------------
     opt_loc = (beta_hat.copy(), vb_opt.copy()) if (optbeta and vb_opt is not None) else None
     beta_out, vb, rss_f, s2w = location_estimates(yi, vi, X, tau2, user_w, weighted, test, opt_loc)
-    ddf = k - p if tdist else None
+    ddf = (k - p if dfs is None else metafopy.models.rma_uni.first_df(dfs)) if tdist else None
 
     QM = quad_form(beta_out, vb, btt_idx)
     with numpy.errstate(invalid='ignore'):
