@@ -109,8 +109,8 @@ class SelmodelResult(metafopy.models.fit_methods.FitMethods):
 
     @property
     def k_all(self) -> int:
-        """Number of studies in the fit: metafor refits the model without the studies with missing values, so its ``k.all`` is the number left."""
-        return self.base.k
+        """Number of studies supplied to the model the fit holds (a model that metafor refits has only the studies used, so this is their number)."""
+        return self.base.k_all
 
     @property
     def k_eff(self) -> int:

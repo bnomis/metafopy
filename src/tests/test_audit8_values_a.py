@@ -243,3 +243,19 @@ def test_all_rows_model_matrix_is_missing_where_a_factor_is_missing() -> None:
         res = metafopy.rma(yi='yi', vi='vi', mods='~ factor(type) + factor(struct)', data=data)
     assert res.X_f is not None
     assert numpy.flatnonzero(numpy.isnan(res.X_f.T.ravel()))[:6].tolist() == [272, 282, 284, 432, 442, 444]
+
+
+def test_selmodel_keeps_an_equal_effects_model_as_it_is() -> None:
+    # R 4.3.3, metafor 5.2-1: selmodel() refits models fitted by neither ML nor an equal-effects method, and keeps the others: with three studies
+    # lost to drop00 an EE model has k = 9 but k.f = k.all = 12 (ids 1 to 12) after selmodel(res, type = "halfnorm", alternative = "less")
+    ai = [4, 0, 34, 7, 6, 1, 0, 11, 2, 0, 0, 33]
+    n1i = [19, 18, 341, 71, 45, 94, 22, 88, 82, 33, 15, 221]
+    ci = [5, 0, 50, 16, 5, 8, 0, 12, 7, 0, 1, 43]
+    n2i = [19, 18, 334, 69, 44, 96, 22, 82, 84, 30, 20, 218]
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        data = metafopy.escalc('OR', ai=ai, n1i=n1i, ci=ci, n2i=n2i, drop00=True)
+        res = metafopy.rma(yi='yi', vi='vi', data=data, method='EE')
+        sel: typing.Any = metafopy.selmodel(res, type='halfnorm', alternative='less')
+    assert (sel.k, sel.k_f, sel.k_all) == (9, 12, 12)
+    assert sel.ids.tolist() == list(range(12))
