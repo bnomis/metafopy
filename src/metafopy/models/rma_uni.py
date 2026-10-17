@@ -713,6 +713,7 @@ def rma_uni(
     if measure not in (*metafopy.effects.measures.MEASURES, 'HR', 'HD'):
         raise metafopy.errors.InputError("Unknown 'measure' specified.")
 
+    add_measure = measure  # rma.uni decides on the default of 'add' before it reads the measure of an escalc object
     if measure == 'GEN' and data is not None and data.attrs.get('measure'):
         measure = str(data.attrs['measure'])
 
@@ -791,7 +792,7 @@ def rma_uni(
                 skiphes=skiphes,
             ),
             digits=digits_,
-            add=default_add(measure, add),
+            add=default_add(add_measure, add),
             to=str(to),
             drop00=bool(drop00),
         )
@@ -823,7 +824,7 @@ def rma_uni(
         res,
         measure=measure,
         digits=digits_,
-        add=default_add(measure, add),
+        add=default_add(add_measure, add),
         to=str(to),
         drop00=bool(drop00),
     )
