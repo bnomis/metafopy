@@ -1505,6 +1505,30 @@ reason = "print.rma.uni() reads legend from ... as a logical (isTRUE(ddd$legend)
 ref = "docs/differences.md"
 
 [[known]]
+match = "options/permutest/uni_factor/exact=true"
+kind = "value-diff"
+path = ["$QM.perm", "$zval.perm$*", "$beta.perm$*"]
+detail = "*element 19512: R None*"
+reason = "Not reproduced on its own: permutest(exact = TRUE) of ~ factor(alloc) gives 25740 permutations in R and in metafopy, both with NA at permutations 981 and 14361 and QMp 0.4611858. In the audit run the R vector had a further missing value at 19512 (the case takes 162 s in R, longer than the time limit when the machine is busy)."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["scripts/analysis_example_konstantopoulos2011/test/92", "scripts/analysis_example_konstantopoulos2011/test/93"]
+kind = "value-diff"
+path = ""
+detail = "*element 0: R True, Python False*expect_error(res <- rma.mv*"
+reason = "Iteration limits are those of different optimizers: with control = list(maxiter = 4) (R: nlminb) rma.mv() stops without convergence in R (it also does with iter.max = 4, 'convergence = 1'), where the BFGS of metafopy converges in 4 iterations (it stops with an error at 1 and 2 iterations)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/print/permutest_mods/legend=*"
+kind = "shape-diff"
+path = ""
+detail = "length R 8, Python 9"
+reason = "print.permutest.rma.uni() reads legend from ... as a logical (isTRUE(ddd$legend)); the sweep passes list(x = 'topright'), the legend of a plot, for which R leaves out the footnote on the permutation p-values and metafopy, whose print() has no such argument, prints it."
+ref = "docs/differences.md"
+
+[[known]]
 match = "options/print/ls_bcg/*"
 kind = "value-diff"
 path = ""

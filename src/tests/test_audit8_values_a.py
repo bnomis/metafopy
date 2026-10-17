@@ -434,6 +434,34 @@ def test_permutest_print_keeps_the_footnote_without_the_codes() -> None:
         assert not any(line.startswith('Signif. codes') for line in lines)
 
 
+def test_sapply_simplifies_to_a_matrix_with_a_column_per_element() -> None:
+    # R: t(sapply(list(1, 2, 3, 4, 5), function(x) c(x, 2 * x, 3 * x, 4 * x, 5 * x, 6 * x))) has 5 rows and 6 columns
+    out = audit.rlib.r_sapply([1, 2, 3, 4, 5], lambda x: numpy.arange(1, 7) * x)
+    assert out.shape == (6, 5)
+    assert audit.rlib.r_t(out).shape == (5, 6)
+    assert audit.rlib.r_sapply([1, 2, 3], lambda x: x * 2).shape == (3,)
+
+
+def test_print_arguments_reach_the_summary_and_unlist_reads_a_data_frame(capsys: pytest.CaptureFixture[str]) -> None:
+    # R: print(influence(res), infonly = TRUE) prints the influential studies only; unlist() of a data frame is its values
+    fit = metafopy.rma(yi='yi', vi='vi', data=bcg_frame(), method='EE')
+    inf = metafopy.influence(fit)
+    audit.rlib.r_print(inf)
+    everyone = capsys.readouterr().out.strip().split('\n')
+    audit.rlib.r_print(inf, infonly=True)
+    only = capsys.readouterr().out.strip().split('\n')
+    assert len(everyone) == 14
+    assert len(only) < len(everyone)
+    assert audit.rlib.r_unlist(pandas.DataFrame({'a': [1.0], 'b': [2.0]})).tolist() == [1.0, 2.0]
+
+
+def test_factor_of_numbers_has_labels_without_decimals() -> None:
+    # R: levels(factor(c(1, 0, NA, 1))) is "0" "1", not "0.0" "1.0"
+    out = audit.rlib.r_factor(numpy.array([1.0, 0.0, numpy.nan, 1.0]))
+    assert list(out.categories) == ['0', '1']
+    assert out.tolist()[:2] == ['1', '0']
+
+
 def test_round_of_a_data_frame_and_its_dotted_columns() -> None:
     # R: round(dat2[, c("or", "ci.lb")], digits = 2) is a data frame and dat2[c("yi", "ci.lb")] <- ... replaces the column that metafopy calls ci_lb
     frame = pandas.DataFrame({'or': [1.234, 2.345], 'ci_lb': [0.1234, 0.5678]})

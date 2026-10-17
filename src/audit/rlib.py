@@ -427,9 +427,13 @@ def r_sapply(x: Value, fun: typing.Callable[..., Value], *args: Value, **kw: Val
         items = [x[c] for c in x.columns]
     out = [fun(item, *args) for item in items]
     try:
-        return numpy.array(out, dtype=float)
+        simplified = numpy.array(out, dtype=float)
     except TypeError, ValueError:
         return out
+    # sapply() simplifies results of length m to a matrix with one column per element of x
+    if simplified.ndim == 2:
+        return simplified.T if simplified.shape[1] > 1 else simplified.ravel()
+    return simplified
 
 
 def r_lapply(x: Value, fun: typing.Callable[..., Value], *args: Value, **kw: Value) -> Value:
@@ -553,8 +557,6 @@ def r_factor(x: Value, levels: Value = None, labels: Value = None, **kw: Value) 
         if len(names) == 1 and len(categories) > 1:
             names = [f'{names[0]}{i + 1}' for i in range(len(categories))]
         return pandas.Categorical.from_codes(codes, categories=pandas.Index(names))
-    if values.dtype.kind in 'fiub':
-        return pandas.Categorical(values, categories=categories)
     return pandas.Categorical.from_codes(codes, categories=pandas.Index(keys))
 
 
@@ -624,6 +626,19 @@ def r_capture_output(thunk: typing.Callable[[], Value], **kw: Value) -> Value:
 
 
 def r_print(x: Value, *args: Value, **kw: Value) -> Value:
+    """``print(x, ...)``: the arguments the ``summary()`` of the result takes (``infonly`` of an influence result) go to it, the others are ignored."""
+    summary = getattr(x, 'summary', None)
+    if kw and callable(summary):
+        try:
+            accepted: typing.Any = inspect.signature(summary).parameters
+        except TypeError, ValueError:
+            accepted = {}
+        used = {pycall.arg_name(k): v for k, v in kw.items() if pycall.arg_name(k) in accepted}
+        if used:
+            if 'showfit' in accepted and 'showfit' not in used:
+                used['showfit'] = False  # print() has no fit statistics block, summary() has
+            print(summary(**used))
+            return x
     print(x)
     return x
 
@@ -717,7 +732,12 @@ def r_log(x: Value, base: Value = None) -> Value:
 
 def r_attr(x: Value, which: Value, **kw: Value) -> Value:
     attrs = getattr(x, 'attrs', None)
-    return attrs.get(str(which)) if isinstance(attrs, dict) else None
+    if not isinstance(attrs, dict):
+        return None
+    for key in (str(which), py_name(str(which))):  # `yi.names` is `yi_names` in metafopy
+        if key in attrs:
+            return attrs[key]
+    return None
 
 
 def r_levels(x: Value) -> Value:
@@ -767,6 +787,9 @@ def r_range(*xs: Value, **kw: Value) -> Value:
 def r_unlist(x: Value, **kw: Value) -> Value:
     if isinstance(x, dict):
         return vector(list(x.values()))
+    if isinstance(x, pandas.DataFrame):
+        # a data frame is a list of columns: its values column by column
+        return vector([v for column in x.columns for v in x[column].tolist()])
     return vector(list(x))
 
 
