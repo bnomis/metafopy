@@ -169,3 +169,28 @@ def test_reh_fit_keeps_three_cells_in_outdat_f() -> None:
         res = metafopy.rma(measure='REH', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=frame)
     assert len(res.outdat_f['ci']) == 13  # type: ignore[arg-type]
     assert res.outdat_f['di'] is None
+
+
+def test_subsetting_a_cumulative_analysis_keeps_its_order() -> None:
+    # R 4.3.3, metafor 5.2-1: length(cumul(res)[1:3]$order) is 13 and length(cumul(res)[1:3]$estimate) is 3
+    frame = metafopy.datasets.load('dat.bcg')
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        data = metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=frame)
+        res = metafopy.rma(yi='yi', vi='vi', data=data)
+        first = metafopy.cumul(res)[:3]
+    assert len(first.estimate) == 3
+    assert first.order is not None
+    assert len(first.order) == 13
+
+
+def test_update_of_trimfill_keeps_the_measure() -> None:
+    # R 4.3.3, metafor 5.2-1: update(trimfill(rma(yi, vi, data = escalc("RR", ...))))$measure is "RR" (14 studies)
+    frame = metafopy.datasets.load('dat.bcg')
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        data = metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=frame)
+        filled = metafopy.trimfill(metafopy.rma(yi='yi', vi='vi', data=data))
+        again = metafopy.update(filled, method='ML')
+    assert again.measure == 'RR'
+    assert again.k == 14

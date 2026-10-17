@@ -24,6 +24,8 @@ def rows[R](result: R, index: typing.Any, size: int) -> R:
     changes: dict[str, typing.Any] = {}
     for field in dataclasses.fields(typing.cast(typing.Any, result)):
         value = getattr(result, field.name)
+        if field.name == 'order':
+            continue  # metafor's `[.list.rma` leaves the order of a cumulative meta-analysis as it was
         if isinstance(value, numpy.ndarray) and value.ndim >= 1 and value.shape[0] == size:
             changes[field.name] = value[take]
         elif isinstance(value, pandas.DataFrame) and value.shape[0] == size:
