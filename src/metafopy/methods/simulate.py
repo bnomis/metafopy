@@ -16,6 +16,8 @@ import scipy.sparse
 
 import metafopy.core.rng
 import metafopy.errors
+import metafopy.methods.common
+import metafopy.methods.vcov
 import metafopy.models.binary
 import metafopy.models.glmm_result
 import metafopy.models.mv_result
@@ -57,6 +59,7 @@ def simulate(
     olim: collections.abc.Sequence[float] | None = None,
     *,
     withvb: bool = False,
+    na_action: metafopy.methods.common.NAAction = 'omit',
     rng: metafopy.core.rng.RRandom | None = None,
 ) -> pandas.DataFrame:
     """Simulate ``nsim`` sets of outcomes from a fitted model, as metafor's ``simulate.rma``.
@@ -67,7 +70,8 @@ def simulate(
     With ``seed`` a generator seeded with it is used, leaving the global one (:func:`metafopy.set_seed`)
     untouched, as R restores ``.Random.seed``; without it the global generator (or ``rng``) advances. The rows are
     the studies used in the fit (R's default ``na.action = "na.omit"``), the columns ``sim_1``, ``sim_2``, ...;
-    ``attrs['seed']`` holds ``seed``.
+    ``attrs['seed']`` holds ``seed``. ``na_action`` stands for R's ``options(na.action=)``: with ``'exclude'``, ``'pass'`` or ``'fail'`` the rows are
+    all ``k.f`` studies of the subset and those left out of the fit are NaN (R draws the values for the studies used only).
 
     Raises:
         metafopy.errors.InputError: the model type is not supported or an argument is invalid.
@@ -83,6 +87,8 @@ def simulate(
         raise metafopy.errors.InputError(f'Method not available for objects of class {type(fit).__name__}.')
     if not isinstance(fit, (metafopy.models.rma_uni.RMAResult, metafopy.models.rma_ls_result.RMALSResult, metafopy.models.mv_result.RMAMVResult)):
         raise metafopy.errors.ArgumentError(f'simulate() is not available for {type(fit).__name__}')
+    if na_action not in ('omit', 'exclude', 'pass', 'fail'):
+        raise metafopy.errors.InputError("Unknown 'na.action' specified under options().")
     if nsim <= 0:
         raise metafopy.errors.InputError("Argument 'nsim' must be >= 1.")
     gen = metafopy.core.rng.RRandom(seed) if seed is not None else (rng if rng is not None else metafopy.core.rng.get_rng())
@@ -100,6 +106,11 @@ def simulate(
         val = numpy.clip(val, lo, hi)
     slab = list(fit.slab)
     index = slab if len(slab) == val.shape[0] else None
+    if na_action != 'omit':
+        rows = metafopy.methods.vcov.rows_of(fit)
+        full = numpy.full((rows.not_na.shape[0], nsim), numpy.nan)
+        full[rows.not_na] = val
+        val, index = full, list(rows.labels)
     out = pandas.DataFrame(val, index=index, columns=[f'sim_{j + 1}' for j in range(nsim)])
     out.attrs['seed'] = seed
     return out
