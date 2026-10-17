@@ -242,37 +242,16 @@ reason = "R names coef.na 'X' (a quirk of the code); metafopy names it with the 
 ref = "docs/differences.md"
 
 [[known]]
-match = "matrix/print/infl_*"
-kind = "missing-field"
-path = "$inf$*"
-reason = "influence() keeps the table in to_frame() and the DFBETAS in dfbs_frame() (inf is the tuple of asterisks)."
-ref = "docs/differences.md"
-
-[[known]]
-match = "matrix/print/infl_*"
-kind = "missing-field"
-path = "$dfbs$*"
-reason = "influence() keeps the table in to_frame() and the DFBETAS in dfbs_frame() (inf is the tuple of asterisks)."
-ref = "docs/differences.md"
-
-[[known]]
 match = "matrix/print/summary_*"
 kind = "missing-field"
 reason = "summary() returns the printed text; the fields of R's summary object are the fields of the fit, which the fit cases compare."
 ref = "docs/differences.md"
 
 [[known]]
-match = "matrix/print/*"
-kind = "label-diff"
-path = "*[$]hessian"
-reason = "Matrices are numpy arrays without dimnames; the names of the rows and columns are in coef_names, alpha_names, slab and the like."
-ref = "docs/differences.md"
-
-[[known]]
-match = "matrix/print/cumul_*"
+match = "*"
 kind = "missing-field"
-path = "$[id][ad]*"
-reason = "cumul() and leave1out() results do not keep the ids and the data frame of the studies (R: ids, data)."
+path = "$data"
+reason = "cumul(), leave1out() and the results of mv fits do not keep a data frame of the studies (R: data); the vectors and matrices are fields of the fit."
 ref = "docs/differences.md"
 
 [[known]]
@@ -280,20 +259,6 @@ match = "matrix/print/vif_*"
 kind = "missing-field"
 path = "$vif$*"
 reason = "vif() gives a table of the vifs by coefficient, where R keeps a list with one entry per coefficient."
-ref = "docs/differences.md"
-
-[[known]]
-match = "matrix/print/confint_*"
-kind = "missing-field"
-path = "*tau2.min"
-reason = "The search limits of confint() are not kept in the result (R: tau2.min)."
-ref = "docs/differences.md"
-
-[[known]]
-match = "matrix/print/profile_mv"
-kind = "missing-field"
-path = "*"
-reason = "The mv profile results do not keep the plot labels and the component counts (R: comps, xlab, title, sigma2)."
 ref = "docs/differences.md"
 
 [[known]]
@@ -610,4 +575,24 @@ ref = "docs/differences.md"
 match = "api/rma.glmm/model"
 kind = "default-diff"
 reason = "model=None is R's default 'UM.FS'; None lets rma_glmm tell a model that was passed (and is irrelevant for one-group measures, which warns as in R) from the default."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "label-diff"
+detail = "*Python has none*"
+reason = "Matrices and vectors are numpy arrays, which carry no dimnames; the names of the rows and columns are in coef_names, alpha_names, slab and the like (a pandas frame is used where a result is a table)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/summary/*"
+kind = "missing-field"
+reason = "summary() returns the printed text; the fields of R's summary object are the fields of the fit, which the fit cases compare."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/summary/*#*"
+kind = "print-diff"
+detail = "*'***'*"
+reason = "R's summary() passes signif.stars=FALSE on to nothing and still prints the stars; metafopy honours the argument."
 ref = "docs/differences.md"

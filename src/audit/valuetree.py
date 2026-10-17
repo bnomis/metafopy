@@ -127,6 +127,8 @@ def lookup(value: typing.Any, name: str) -> tuple[bool, typing.Any]:
         for spelling in spellings:
             if spelling in value.columns:
                 return True, value[spelling].to_numpy()
+            if spelling in value.attrs:
+                return True, value.attrs[spelling]
         return False, None
     if isinstance(value, dict):
         for spelling in spellings:

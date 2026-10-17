@@ -186,10 +186,15 @@ def as_matrix(x: typing.Any) -> typing.Any:
 
 
 def head(x: typing.Any, n: int = 6) -> typing.Any:
+    """``head.list.rma`` keeps the other fields of the result, so a result that can select rows is cut with ``x[:n]``."""
+    if hasattr(type(x), '__getitem__') and hasattr(x, 'to_frame'):
+        return x[:n]
     return frame_of(x).head(n)
 
 
 def tail(x: typing.Any, n: int = 6) -> typing.Any:
+    if hasattr(type(x), '__getitem__') and hasattr(x, 'to_frame'):
+        return x[-n:]
     return frame_of(x).tail(n)
 
 

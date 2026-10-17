@@ -11,11 +11,13 @@ import warnings
 
 import matplotlib
 import matplotlib.pyplot
+import numpy
+import pandas
 
 import audit.config
 import metafopy
 import metafopy.errors
-from audit import printdiff, pycall, valuetree
+from audit import printdiff, pycall, rprint, valuetree
 
 matplotlib.use('Agg')
 
@@ -61,6 +63,15 @@ def build_env(fixtures: list[Json]) -> tuple[pycall.Env, dict[str, str]]:
 
 
 def print_text(value: object) -> str:
+    """What a Python user sees when printing ``value``, with plain pandas and numpy values in R's layout (see :mod:`audit.rprint`)."""
+    if isinstance(value, pandas.DataFrame):
+        return rprint.frame_text(value) + '\n'
+    if isinstance(value, pandas.Series):
+        return rprint.vector_text(value) + '\n'
+    if isinstance(value, numpy.ndarray) and value.dtype.kind in 'fiub' and value.ndim <= 2:
+        return rprint.matrix_text(value) + '\n'
+    if isinstance(value, dict) and value and all(isinstance(k, str) for k in value):
+        return ''.join(f'${k}\n{print_text(v)}\n' for k, v in value.items())
     buf = io.StringIO()
     with contextlib.redirect_stdout(buf):
         print(value)
