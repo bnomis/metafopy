@@ -30,10 +30,23 @@ def parameters(fn: typing.Callable[..., typing.Any], drop_first: bool) -> tuple[
     return names, any(p.kind is inspect.Parameter.VAR_KEYWORD for p in params)
 
 
-def callables_for(name: str, obj: typing.Any) -> list[tuple[typing.Callable[..., typing.Any], bool]]:
+def spellings_for(name: str, obj: typing.Any, cls: str) -> list[str]:
+    """The names metafopy may give R's ``name``: the plain name, and for an S3 method the name with the class (``summary_escalc``, ``coef_summary``)."""
+    out = pycall.candidates(name)
+    stem = cls.split('.')[0]
+    if name == 'plot' and obj is not None:
+        shown = obj[0] if isinstance(obj, list) and obj else obj
+        kind = type(shown).__name__
+        out.append('plot_profile' if kind.endswith('ProfileResult') else pycall.PLOT_FUNCTIONS.get(kind, 'plot_rma'))
+    elif stem and stem not in ('default', 'rma'):
+        out.append(f'{valuetree.py_name(name)}_{stem}')
+    return out
+
+
+def callables_for(name: str, obj: typing.Any, cls: str = '') -> list[tuple[typing.Callable[..., typing.Any], bool]]:
     """Every Python callable that handles R's ``name`` for ``obj``: (callable, takes the object as its first parameter)."""
     found: list[tuple[typing.Callable[..., typing.Any], bool]] = []
-    for spelling in pycall.candidates(name):
+    for spelling in spellings_for(name, obj, cls):
         method = getattr(obj, spelling, None) if obj is not None else None
         if callable(method):
             found.append((method, False))
@@ -94,7 +107,7 @@ def compare_function(
     skip_first: bool,
 ) -> list[Finding]:
     out: list[Finding] = []
-    candidates = callables_for(name, obj)
+    candidates = callables_for(name, obj, str(entry.get('class', '')))
     if not candidates:
         return [(case_id, 'missing-function', '', f'no Python callable for {name}')]
     have: set[str] = set()
@@ -141,7 +154,13 @@ def run(u: universe.Universe, env: pycall.Env, doms: domains.Domains, derived: f
             continue
         for generic in u.generics():
             method = u.method_for(generic, classes)
-            if method is None or generic == 'print' or (fixture in derived and method['class'].startswith('rma')) or u.refuses(generic, classes):
+            if (
+                method is None
+                or generic == 'print'
+                or generic in pycall.NATIVE
+                or (fixture in derived and method['class'].startswith('rma'))
+                or u.refuses(generic, classes)
+            ):
                 continue
             findings += compare_function(f'api/{generic}/{fixture}', method, obj, generic, aliases, True)
     return findings

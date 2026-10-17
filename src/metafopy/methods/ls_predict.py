@@ -19,6 +19,7 @@ import scipy.stats
 import metafopy.errors
 import metafopy.methods.common
 import metafopy.methods.fitted
+import metafopy.methods.pairmat
 import metafopy.methods.predict
 import metafopy.models.rma_ls_result
 import metafopy.models.rma_uni
@@ -109,7 +110,7 @@ def quad_rows(M: FloatArray, V: FloatArray) -> FloatArray:
 @metafopy.methods.predict.predict.register
 def predict_rma_ls(
     model: metafopy.models.rma_ls_result.RMALSResult,
-    newmods: numpy.typing.ArrayLike | None = None,
+    newmods: numpy.typing.ArrayLike | metafopy.methods.pairmat.PairmatSpec | None = None,
     *,
     intercept: bool | None = None,
     addx: bool = False,
@@ -126,6 +127,7 @@ def predict_rma_ls(
     newvi: numpy.typing.ArrayLike | None = None,
     na_action: metafopy.methods.common.NAAction = 'omit',
     digits: int | collections.abc.Mapping[str, int] | None = None,
+    verbose: bool = False,
 ) -> LSPredictResult:
     """Predict from a location-scale model (``predict.rma.ls``).
 
@@ -141,7 +143,9 @@ def predict_rma_ls(
     Raises:
         metafopy.errors.InputError: an argument is invalid, ``predtype`` is unknown or the dimensions do not match the model.
     """
+    newmods = metafopy.methods.pairmat.resolve(newmods, model)
     x = model
+    metafopy.methods.predict.check_prob_adjust(prob, adjust, vcov)
     metafopy.methods.common.check_na_action(na_action)
     ptype = metafopy.methods.predict.resolve_predtype(predtype, pi_type)
     int_spec = intercept is not None
@@ -294,11 +298,10 @@ def predict_rma_ls(
     slab: tuple[str, ...]
     if (pred_mui and newmods is None) or (not pred_mui and newscale is None):
         slab = rows.slab
+    elif pred_mui:
+        slab = metafopy.methods.predict.prediction_slab(newmods, k_new, x.p, x.int_incl)
     else:
-        slab = tuple(str(i + 1) for i in range(k_new))
-    if k_new == 1 and not ((pred_mui and newmods is None) or (not pred_mui and newscale is None)):
-        # auditme: accept[literal-duplication] metafor option values and column labels repeated as in the R source
-        slab = ('',)
+        slab = ('',) if k_new == 1 else tuple(str(i + 1) for i in range(k_new))
 
     if x.method in metafopy.models.tau2.FIXED_EFFECTS or not pred_mui:
         pi_lb = numpy.full(k_new, math.nan)
@@ -322,6 +325,8 @@ def predict_rma_ls(
         x_names=tuple(x.coef_names) if addx and X_use is not None and X_use.shape[1] == len(x.coef_names) else None,
         Z=Z_use if addz else None,
         vcov=vcov_pred if (vcov and not do_transf) else None,
+        method=x.method,
+        transf=do_transf,
     )
     fitted_rows = newmods is None and newscale is None
     keep, blank = metafopy.methods.predict.rows_to_keep(pred, rows.not_na, fitted_rows, na_action)

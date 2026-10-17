@@ -17,6 +17,7 @@ import numpy
 import numpy.typing
 import pandas
 
+import metafopy.core.linalg
 import metafopy.errors
 import metafopy.formula
 import metafopy.metadata
@@ -32,7 +33,22 @@ type FloatArray = numpy.typing.NDArray[numpy.float64]
 
 
 def scale_matrix(scale: ScaleSpec, md: metafopy.metadata.MetaData) -> tuple[FloatArray, tuple[str, ...]]:
-    """The model matrix of the scale part for all ``k_all`` supplied rows and its column names.
+    """The model matrix of the scale part for all ``k_all`` supplied rows and its column names; a row with a missing value is missing throughout.
+
+    A string is a one-sided formula (``'~ ni100 + imag'``); other inputs are used as given (without
+    adding an intercept), as in metafor.
+
+    Raises:
+        metafopy.errors.InputError: the formula needs data, or the matrix has the wrong number of rows.
+    """
+    Z, names, z_missing = scale_matrix_parts(scale, md)
+    Z = Z.copy()
+    Z[z_missing] = numpy.nan
+    return Z, names
+
+
+def scale_matrix_parts(scale: ScaleSpec, md: metafopy.metadata.MetaData) -> tuple[FloatArray, tuple[str, ...], numpy.typing.NDArray[numpy.bool_]]:
+    """The model matrix as ``model.matrix()`` with ``na.pass`` gives it (R's ``Z.f``: only the cells of a missing value are missing) and the incomplete rows.
 
     A string is a one-sided formula (``'~ ni100 + imag'``); other inputs are used as given (without
     adding an intercept), as in metafor.
@@ -47,24 +63,36 @@ def scale_matrix(scale: ScaleSpec, md: metafopy.metadata.MetaData) -> tuple[Floa
         rhs = scale.partition('~')[2].strip()
         if rhs == '1':
             # auditme: accept[literal-duplication] metafor option values and column labels repeated as in the R source
-            return numpy.ones((k_all, 1)), ('intrcpt',)
+            return numpy.ones((k_all, 1)), ('intrcpt',), numpy.zeros(k_all, dtype=bool)
         if md.data is None:
             raise metafopy.errors.InputError('a formula for scale needs data')
         Z, names, z_missing = metafopy.formula.design_matrix(scale, md.data)
-        Z[z_missing] = numpy.nan
     elif isinstance(scale, pandas.DataFrame):
         names = tuple(str(c) for c in scale.columns)
         Z = scale.to_numpy(dtype=float)
+        z_missing = numpy.isnan(Z).any(axis=1)
     else:
         Z = numpy.asarray(scale, dtype=numpy.float64)
         if Z.ndim == 1:
             Z = Z[:, None]
         names = tuple(f'Z{j + 1}' for j in range(Z.shape[1]))
+        z_missing = numpy.isnan(Z).any(axis=1)
     if Z.shape[0] != k_all:
         raise metafopy.errors.InputError(
             f"Number of rows in the model matrix specified via the 'scale' argument ({Z.shape[0]}) does not match the length of the outcome vector ({k_all})."
         )
-    return Z.astype(numpy.float64), metafopy.metadata.make_unique(names)
+    return Z.astype(numpy.float64), metafopy.metadata.make_unique(names), z_missing
+
+
+def align_z_f(Z_f: FloatArray, Z: FloatArray) -> FloatArray:
+    """``Z.f`` with the columns of the scale model matrix the fit uses: redundant predictors dropped and an intercept put first, as ``fit_rma_ls`` does."""
+    drop = metafopy.core.linalg.drop_redundant(Z)
+    kept = Z[:, ~drop]
+    out = Z_f[:, ~drop]
+    is_int = numpy.array([metafopy.core.linalg.is_intercept(kept[:, j]) for j in range(kept.shape[1])], dtype=numpy.bool_)
+    if is_int.any():
+        out = numpy.column_stack([numpy.ones(out.shape[0]), out[:, ~is_int]])
+    return out
 
 
 def fit_scale(
@@ -85,6 +113,9 @@ def fit_scale(
     control: metafopy.models.rma_ls_result.LSControl | collections.abc.Mapping[str, typing.Any] | None,
     na_action: metafopy.metadata.NAAction,
     measure: str,
+    dfs: float | collections.abc.Sequence[float] | None = None,
+    abbrev: bool = False,
+    skiphes: bool = False,
 ) -> metafopy.models.rma_ls_result.RMALSResult:
     """Fit a location-scale model to the inputs ``md`` with scale model ``scale``.
 
@@ -99,9 +130,11 @@ def fit_scale(
         raise metafopy.errors.InputError("Unknown 'method' specified.")
     if tau2 is not None and not numpy.isnan(tau2):
         warnings.warn("Argument 'tau2' ignored for location-scale models.", stacklevel=3)
-    Z_all, z_names = scale_matrix(scale, md)
+    Z_raw, z_names, z_missing = scale_matrix_parts(scale, md)
+    Z_all = Z_raw.copy()
+    Z_all[z_missing] = numpy.nan
     Z = Z_all[md.keep]
-    Z_f = Z_all[md.keep if md.na_rows is None else md.keep | md.na_rows]
+    Z_f = Z_raw[md.keep if md.na_rows is None else md.keep | md.na_rows]
     missing = numpy.isnan(Z).any(axis=1)
     if missing.any():
         if na_action == 'fail':
@@ -126,6 +159,7 @@ def fit_scale(
         Z = Z[sel]
     if md.na_rows is not None and md.na_rows.any():
         metafopy.models.rma_uni.warn_na_omitted(int(md.na_rows.sum()))
+    Z_fit = Z
     res = metafopy.models.rma_ls_fit.fit_rma_ls(
         md,
         Z,
@@ -142,5 +176,8 @@ def fit_scale(
         beta=beta,
         control=metafopy.models.rma_ls_fit.make_ls_control(control),  # type: ignore[arg-type]
         formula_scale=scale if isinstance(scale, str) else None,
+        dfs=dfs,
+        abbrev=abbrev,
+        skiphes=skiphes,
     )
-    return dataclasses.replace(res, measure=measure, Z_f=Z_f)
+    return dataclasses.replace(res, measure=measure, Z_f=align_z_f(Z_f, Z_fit))

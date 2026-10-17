@@ -18,6 +18,8 @@ import metafopy.core.clubsandwich
 import metafopy.errors
 import metafopy.methods.common
 import metafopy.methods.fitted
+import metafopy.methods.listrma
+import metafopy.methods.pairmat
 import metafopy.mfopt
 import metafopy.models.binary
 import metafopy.models.glmm_result
@@ -57,11 +59,16 @@ class PredictResult:
     pi_se: FloatArray | None = None
     pi_dist: str | None = None
     pi_ddf: float | FloatArray | None = None
+    ddf: float | FloatArray | None = None
+    has_pi: bool = True
     prob: FloatArray | None = None
     X: FloatArray | pandas.DataFrame | None = None
     vcov: FloatArray | pandas.DataFrame | None = None
     x_names: tuple[str, ...] | None = None
     digits: int = 4
+    method: str | None = None
+    transf: bool = False
+    pred_type: str = 'location'
 
     @property
     def cr_lb(self) -> FloatArray:
@@ -72,6 +79,10 @@ class PredictResult:
     def cr_ub(self) -> FloatArray:
         """Alias of ``pi_ub`` (metafor keeps ``cr.ub`` for old code)."""
         return self.pi_ub
+
+    def __getitem__(self, index: typing.Any) -> typing.Self:
+        """The rows ``index`` (metafor's ``[.list.rma``; a NumPy index, 0-based)."""
+        return metafopy.methods.listrma.rows(self, index, self.pred.shape[0])
 
     def to_frame(self) -> pandas.DataFrame:
         cols: dict[str, typing.Any] = {
@@ -96,9 +107,9 @@ class PredictResult:
         """The predictions as ``print.list.rma`` shows them: fixed decimals (``digits``), one row per prediction."""
         digits = metafopy.mfopt.option_digits(None, self.digits)
         frame = self.to_frame()
-        for col in ('se', 'pi.lb', 'pi.ub'):
-            if frame[col].isna().all():
-                frame = frame.drop(columns=col)
+        # print.list.rma leaves out `se` after a transformation and the prediction interval of the models that have none
+        drop = (['se'] if self.transf else []) + ([] if self.has_pi else ['pi.lb', 'pi.ub'])
+        frame = frame.drop(columns=drop)
         rows = [[metafopy.printing.fmt_num(float(v), digits) for v in row] for row in frame.to_numpy()]
         return metafopy.mfopt.option_space(
             '\n' + metafopy.printing.fmt_table([str(c) for c in frame.columns], rows, [str(i) for i in frame.index], gap=1) + '\n'
@@ -192,6 +203,8 @@ def expand_hetvar(hetvar: numpy.typing.ArrayLike, k_new: int) -> FloatArray:
     Raises:
         metafopy.errors.InputError: the length of ``hetvar`` does not match.
     """
+    if numpy.asarray(hetvar).dtype == numpy.bool_:
+        raise metafopy.errors.InputError("Argument 'hetvar' must be a numeric vector.")
     try:
         hv = numpy.atleast_1d(numpy.asarray(hetvar, dtype=numpy.float64))
     except (TypeError, ValueError) as err:
@@ -203,7 +216,16 @@ def expand_hetvar(hetvar: numpy.typing.ArrayLike, k_new: int) -> FloatArray:
     return hv
 
 
-def check_prob_adjust(prob: str | float | None, adjust: bool) -> None:
+def check_prob_adjust(prob: str | float | None, adjust: bool, vcov: bool = False) -> None:
+    """Validate ``adjust`` and ``vcov`` (logicals) and the combination of ``adjust`` with ``prob``.
+
+    Raises:
+        metafopy.errors.InputError: ``adjust`` or ``vcov`` is not a logical, or ``prob`` is given with ``adjust=True``.
+    """
+    if not isinstance(adjust, bool | numpy.bool_):
+        raise metafopy.errors.InputError("Argument 'adjust' must be a logical.")
+    if not isinstance(vcov, bool | numpy.bool_):
+        raise metafopy.errors.InputError("Argument 'vcov' must be a logical.")
     if prob is not None and adjust:
         raise metafopy.errors.InputError("Cannot use 'prob' argument when adjust=True.")
 
@@ -292,6 +314,9 @@ def restrict_rows(res: PredictResult, keep: numpy.typing.NDArray[numpy.bool_], b
     pi_ddf = res.pi_ddf
     if isinstance(pi_ddf, numpy.ndarray) and pi_ddf.ndim >= 1 and pi_ddf.shape[0] == k_new:
         changes['pi_ddf'] = pi_ddf[keep]
+    ddf = res.ddf
+    if isinstance(ddf, numpy.ndarray) and ddf.ndim >= 1 and ddf.shape[0] == k_new:
+        changes['ddf'] = ddf[keep]
     if res.slab is not None and len(res.slab) == k_new:
         changes['slab'] = tuple(s for s, ok in zip(res.slab, keep, strict=True) if ok)
     vcov = res.vcov
@@ -355,6 +380,7 @@ def uni_location_model(x: metafopy.models.rma_uni.RMAResult, rows: metafopy.meth
         alpha=x.level,
         tau2=x.tau2,
         fixed=x.method in metafopy.models.tau2.FIXED_EFFECTS,
+        method=x.method,
         sandwich=club_sandwich_of(x.robust),
         coef_test=None if x.robust is None else x.robust.coef_test,
         X_f=rows.X_f,
@@ -367,7 +393,7 @@ def uni_location_model(x: metafopy.models.rma_uni.RMAResult, rows: metafopy.meth
 @predict.register
 def predict_rma_uni(
     model: metafopy.models.rma_uni.RMAResult,
-    newmods: NewMods | None = None,
+    newmods: NewMods | metafopy.methods.pairmat.PairmatSpec | None = None,
     *,
     intercept: bool | None = None,
     tau2_levels: collections.abc.Sequence[str | int] | str | int | None = None,
@@ -385,6 +411,7 @@ def predict_rma_uni(
     newvi: numpy.typing.ArrayLike | None = None,
     na_action: metafopy.methods.common.NAAction = 'omit',
     digits: int | collections.abc.Mapping[str, int] | None = None,
+    verbose: bool = False,
 ) -> PredictResult:
     """Predict from an ``rma.uni`` fit.
 
@@ -405,7 +432,8 @@ def predict_rma_uni(
     ``na_action`` stands for R's ``na.action`` option: for the fitted values of a meta-regression ``'omit'`` returns the studies used in
     fitting, ``'exclude'`` one row per study with NaN for those left out and ``'pass'`` one row per study computed from the moderator values it
     has; predictions for ``newmods`` drop (``'omit'``) or keep (the others) the rows that are NaN. ``tau2_levels`` and
-    ``gamma2_levels`` are accepted, as in metafor, and have no effect.
+    ``gamma2_levels`` are accepted, as in metafor, and have no effect. ``verbose`` is accepted for metafor's printing of the details of a failing
+    ``clubSandwich`` contrast and has no effect here.
 
     R source: https://github.com/wviechtb/metafor/blob/master/R/predict.rma.r;
     reference page: https://wviechtb.github.io/metafor/reference/predict.rma.html.
@@ -413,6 +441,7 @@ def predict_rma_uni(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
+    newmods = metafopy.methods.pairmat.resolve(newmods, model)
     return with_digits(
         location_prediction(
             uni_location_model(model, metafopy.methods.fitted.rows_of(model)),
@@ -461,7 +490,7 @@ def contrast_ddf(sandwich: metafopy.core.clubsandwich.Sandwich, X_new: FloatArra
 @predict.register
 def predict_rma_glmm(
     model: metafopy.models.glmm_result.GLMMResult,
-    newmods: NewMods | None = None,
+    newmods: NewMods | metafopy.methods.pairmat.PairmatSpec | None = None,
     *,
     intercept: bool | None = None,
     tau2_levels: collections.abc.Sequence[str | int] | str | int | None = None,
@@ -479,6 +508,7 @@ def predict_rma_glmm(
     newvi: numpy.typing.ArrayLike | None = None,
     na_action: metafopy.methods.common.NAAction = 'omit',
     digits: int | collections.abc.Mapping[str, int] | None = None,
+    verbose: bool = False,
 ) -> PredictResult:
     """Predict from an ``rma.glmm`` fit (``predict.rma``; arguments as in :func:`predict_rma_uni`).
 
@@ -490,43 +520,48 @@ def predict_rma_glmm(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
+    newmods = metafopy.methods.pairmat.resolve(newmods, model)
     x = model
     rows = metafopy.methods.fitted.rows_of(x)
     return with_digits(
-        location_prediction(
-            LocationModel(
-                k=x.k,
-                p=x.p,
-                parms=x.parms,
-                int_only=x.int_only,
-                int_incl=x.int_incl,
-                X=x.X,
-                slab=tuple(s for s, ok in zip(x.slab, x.tables.not_na, strict=True) if ok),
-                beta=x.beta,
-                vb=x.vb,
-                ddf=x.ddf,
-                alpha=x.level,
-                tau2=x.tau2,
-                fixed=x.method in metafopy.models.tau2.FIXED_EFFECTS,
-                X_f=rows.X_f,
-                not_na=rows.not_na,
-                slab_f=rows.slab,
-                coef_names=x.coef_names,
+        dataclasses.replace(
+            location_prediction(
+                LocationModel(
+                    k=x.k,
+                    p=x.p,
+                    parms=x.parms,
+                    int_only=x.int_only,
+                    int_incl=x.int_incl,
+                    X=x.X,
+                    slab=tuple(s for s, ok in zip(x.slab, x.tables.not_na, strict=True) if ok),
+                    beta=x.beta,
+                    vb=x.vb,
+                    ddf=x.ddf,
+                    alpha=x.level,
+                    tau2=x.tau2,
+                    fixed=x.method in metafopy.models.tau2.FIXED_EFFECTS,
+                    X_f=rows.X_f,
+                    not_na=rows.not_na,
+                    slab_f=rows.slab,
+                    coef_names=x.coef_names,
+                    method=x.method,
+                ),
+                newmods,
+                intercept,
+                transf,
+                targs,
+                level,
+                hetvar=hetvar,
+                prob=prob,
+                addx=addx,
+                adjust=adjust,
+                vcov=vcov,
+                predtype=predtype,
+                pi_type=pi_type,
+                newvi=newvi,
+                na_action=na_action,
             ),
-            newmods,
-            intercept,
-            transf,
-            targs,
-            level,
-            hetvar=hetvar,
-            prob=prob,
-            addx=addx,
-            adjust=adjust,
-            vcov=vcov,
-            predtype=predtype,
-            pi_type=pi_type,
-            newvi=newvi,
-            na_action=na_action,
+            has_pi=False,
         ),
         digits,
         x.digits,
@@ -536,7 +571,7 @@ def predict_rma_glmm(
 @predict.register
 def predict_fixed_binary(
     model: metafopy.models.binary.FixedBinaryResult,
-    newmods: NewMods | None = None,
+    newmods: NewMods | metafopy.methods.pairmat.PairmatSpec | None = None,
     *,
     intercept: bool | None = None,
     tau2_levels: collections.abc.Sequence[str | int] | str | int | None = None,
@@ -554,6 +589,7 @@ def predict_fixed_binary(
     newvi: numpy.typing.ArrayLike | None = None,
     na_action: metafopy.methods.common.NAAction = 'omit',
     digits: int | collections.abc.Mapping[str, int] | None = None,
+    verbose: bool = False,
 ) -> PredictResult:
     """Predict from an ``rma.mh`` or ``rma.peto`` fit (``predict.rma``; arguments as in :func:`predict_rma_uni`).
 
@@ -565,39 +601,44 @@ def predict_fixed_binary(
     Raises:
         metafopy.errors.InputError: ``newmods`` was given (the models have no moderators).
     """
+    newmods = metafopy.methods.pairmat.resolve(newmods, model)
     x = model
     return with_digits(
-        location_prediction(
-            LocationModel(
-                k=x.k,
-                p=1,
-                parms=x.parms,
-                int_only=True,
-                int_incl=True,
-                X=numpy.ones((x.k, 1)),
-                slab=(),
-                beta=x.beta,
-                vb=x.vb,
-                ddf=None,
-                alpha=x.level,
-                tau2=0.0,
-                fixed=True,
-                not_na=x.tables.not_na,
+        dataclasses.replace(
+            location_prediction(
+                LocationModel(
+                    k=x.k,
+                    p=1,
+                    parms=x.parms,
+                    int_only=True,
+                    int_incl=True,
+                    X=numpy.ones((x.k, 1)),
+                    slab=(),
+                    beta=x.beta,
+                    vb=x.vb,
+                    ddf=None,
+                    alpha=x.level,
+                    tau2=0.0,
+                    fixed=True,
+                    not_na=x.tables.not_na,
+                ),
+                newmods,
+                intercept,
+                transf,
+                targs,
+                level,
+                hetvar=hetvar,
+                prob=prob,
+                addx=addx,
+                adjust=adjust,
+                vcov=vcov,
+                predtype=predtype,
+                pi_type=pi_type,
+                newvi=newvi,
+                na_action=na_action,
             ),
-            newmods,
-            intercept,
-            transf,
-            targs,
-            level,
-            hetvar=hetvar,
-            prob=prob,
-            addx=addx,
-            adjust=adjust,
-            vcov=vcov,
-            predtype=predtype,
-            pi_type=pi_type,
-            newvi=newvi,
-            na_action=na_action,
+            method='FE',
+            has_pi=False,
         ),
         digits,
         x.digits,
@@ -631,6 +672,7 @@ class LocationModel:
     not_na: numpy.typing.NDArray[numpy.bool_] | None = None
     slab_f: tuple[str, ...] | None = None
     coef_names: tuple[str, ...] | None = None
+    method: str | None = None
 
 
 def string_names(labels: list[typing.Any]) -> list[str] | None:
@@ -649,9 +691,9 @@ def named_newmods(newmods: typing.Any) -> tuple[numpy.typing.ArrayLike, list[str
     return newmods, None
 
 
-def prediction_slab(newmods: typing.Any, k_new: int, x_p: int, int_incl: bool) -> tuple[str, ...] | None:
+def prediction_slab(newmods: typing.Any, k_new: int, x_p: int, int_incl: bool) -> tuple[str, ...]:
     """The row labels of predictions for ``newmods`` (metafor's ``rnames``): the names of a vector holding one value per prediction (a model
-    with one moderator), the row names of a data frame, else none; a single unnamed prediction has the empty label."""
+    with one moderator), the row names of a data frame, else the positions 1, 2, ...; a single unnamed prediction has the empty label."""
     labels: list[str] | None = None
     one_mod = x_p == (2 if int_incl else 1)
     if isinstance(newmods, pandas.DataFrame):
@@ -660,7 +702,7 @@ def prediction_slab(newmods: typing.Any, k_new: int, x_p: int, int_incl: bool) -
         labels = string_names(list(newmods.index if isinstance(newmods, pandas.Series) else newmods))
     if labels is not None and len(labels) == k_new:
         return tuple(labels)
-    return ('',) if k_new == 1 else None
+    return ('',) if k_new == 1 else tuple(str(i + 1) for i in range(k_new))
 
 
 def match_names(names: list[str], coef_names: collections.abc.Sequence[str]) -> list[int]:
@@ -772,7 +814,7 @@ def location_prediction(
     if slab is None and X_new.shape[0] == 1:
         slab = ('',)
 
-    check_prob_adjust(prob, adjust)
+    check_prob_adjust(prob, adjust, vcov)
     alpha = x.alpha if level is None else metafopy.models.rma_uni.level_to_alpha(level)
     k_new = X_new.shape[0]
     if adjust:
@@ -829,11 +871,14 @@ def location_prediction(
         slab=slab,
         pi_se=pi_se,
         pi_dist=pi_dist,
-        pi_ddf=pi_ddf,
+        pi_ddf=pi_ddf if pi_dist == 't' else None,
+        ddf=(ddf_rows if ddf_rows is not None else None if x.ddf is None else numpy.full(pred.shape, float(x.ddf))),
         prob=prob_out,
         X=X_new.copy() if addx else None,
         x_names=tuple(x.coef_names) if addx and x.coef_names is not None else None,
         vcov=vcov_pred if transf is None else None,
+        method=x.method,
+        transf=transf is not None,
     )
     keep, blank = rows_to_keep(pred, x.not_na, fitted_rows, na_action)
     return out if keep.all() and blank is None else restrict_rows(out, keep, blank)
@@ -900,7 +945,7 @@ def fitted_levels(group: metafopy.models.mv_structs.Group | None, n_comp: int, n
 @predict.register
 def predict_rma_mv(
     model: metafopy.models.mv_result.RMAMVResult,
-    newmods: NewMods | None = None,
+    newmods: NewMods | metafopy.methods.pairmat.PairmatSpec | None = None,
     *,
     intercept: bool | None = None,
     tau2_levels: collections.abc.Sequence[str | int] | str | int | None = None,
@@ -918,6 +963,7 @@ def predict_rma_mv(
     newvi: numpy.typing.ArrayLike | None = None,
     na_action: metafopy.methods.common.NAAction = 'omit',
     digits: int | collections.abc.Mapping[str, int] | None = None,
+    verbose: bool = False,
 ) -> PredictResult:
     """Predict from an ``rma.mv`` fit (``predict.rma`` for ``rma.mv`` objects).
 
@@ -935,10 +981,11 @@ def predict_rma_mv(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
+    newmods = metafopy.methods.pairmat.resolve(newmods, model)
     x = model
     metafopy.methods.common.check_na_action(na_action)
     ptype = resolve_predtype(predtype, pi_type)
-    check_prob_adjust(prob, adjust)
+    check_prob_adjust(prob, adjust, vcov)
     if hetvar is not None and (tau2_levels is not None or gamma2_levels is not None):
         tau2_levels = gamma2_levels = None
         warnings.warn("Arguments 'tau2.levels' and 'gamma2.levels' ignored when specifying the 'hetvar' argument.", stacklevel=2)
@@ -994,7 +1041,7 @@ def predict_rma_mv(
     k_new = X_new.shape[0]
     if slab is None and k_new == 1:
         slab = ('',)
-    alpha = metafopy.models.rma_uni.level_to_alpha(x.level if level is None else level)
+    alpha = x.level if level is None else metafopy.models.rma_uni.level_to_alpha(level)
     if adjust:
         alpha = alpha / k_new
     pred = X_new @ x.beta
@@ -1068,10 +1115,13 @@ def predict_rma_mv(
         pi_se=pi_se_all,
         pi_dist=pi_dist,
         pi_ddf=pi_ddf if pi_dist == 't' else None,
+        ddf=ddf_row if pi_dist == 't' else None,
         prob=prob_out,
         X=X_new.copy() if addx else None,
         x_names=tuple(x.coef_names) if addx and x.coef_names is not None else None,
         vcov=vcov_pred if transf is None else None,
+        method=x.method,
+        transf=transf is not None,
     )
     keep, blank = rows_to_keep(pred, not_na, fitted_rows, na_action)
     return with_digits(out if keep.all() and blank is None else restrict_rows(out, keep, blank), digits, model.digits)

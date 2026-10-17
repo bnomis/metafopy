@@ -15,6 +15,7 @@ import pandas
 import scipy.sparse
 import scipy.stats
 
+import metafopy.core.labelled
 import metafopy.effects.measures
 import metafopy.errors
 import metafopy.methods.common
@@ -33,6 +34,10 @@ type Transf = collections.abc.Callable[..., typing.Any]
 EPS = float(numpy.finfo(float).eps)
 # auditme: accept[non-alphabetical-literal] the column order of metafor's data frames
 COLUMNS = ['intrcpt', 'se', 'pi.lb', 'pi.ub']
+
+
+class RanefList(metafopy.core.labelled.NamedList):
+    """The list of data frames ``ranef()`` returns for an ``rma.mv`` fit (a dict by term); it prints as R prints a list: ``$term`` above each frame."""
 
 
 def term_crit(x: MV, alpha: float, nlevels: int) -> float:
@@ -133,13 +138,13 @@ def ranef_rma_mv(
     """
     x = object
     metafopy.methods.common.check_na_action(na_action)
-    alpha = metafopy.models.rma_uni.level_to_alpha(x.level if level is None else level)
+    alpha = x.level if level is None else metafopy.models.rma_uni.level_to_alpha(level)
     if x.W is not None:
         raise metafopy.errors.InputError('Extraction of random effects not available for models with non-standard weights.')
     W = x.weight_matrix()
     ImH = numpy.eye(x.k) - x.hat_matrix()
     ei = x.yi - x.X @ x.beta
-    out: dict[str, pandas.DataFrame] = {}
+    out: RanefList = RanefList()
     vc: dict[str, FloatArray] = {}
 
     if x.with_s and x.sigma2 is not None:

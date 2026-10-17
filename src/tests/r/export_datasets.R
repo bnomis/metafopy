@@ -25,6 +25,16 @@ for (name in frames) {
   if (length(numeric_like)) cat(sprintf("TEXT %s: %s\n", name, paste(numeric_like, collapse = ", ")))
 }
 
+# character columns with strings that pandas reads as missing ("", "NA", "None", ...): list them in MISSING_STRINGS of src/metafopy/datasets/base.py
+# (write.csv(na = "") makes R's NA an empty field, so the column must be listed there to keep the strings apart from R's NA)
+pandas_na <- c("", "#N/A", "#N/A N/A", "#NA", "-1.#IND", "-1.#QNAN", "-NaN", "-nan", "1.#IND", "1.#QNAN", "<NA>", "N/A", "NA", "NULL", "NaN", "None", "n/a", "nan", "null")
+for (name in frames) {
+  for (col in names(get(name))) {
+    x <- as.character(get(name)[[col]])
+    if (any(!is.na(x) & x %in% pandas_na)) cat(sprintf("MISSING_STRINGS %s: %s\n", name, col))
+  }
+}
+
 # dat.moura2021 is a list with the data frame `dat` and the phylogenetic tree `tree` (class "phylo"); the data go to
 # dat.moura2021.csv and the tree to dat.moura2021.tree.csv, one row per edge with the label of its child node
 moura <- dat.moura2021

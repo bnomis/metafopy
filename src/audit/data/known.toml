@@ -27,7 +27,98 @@ reason = "gosh(seed=) is bit-exact with R only where dbinom ties break the same 
 ref = "docs/differences.md"
 
 [[known]]
+match = "matrix/plot/gosh_*"
+kind = "type-diff"
+reason = "plot() of a gosh result returns the value of R's last graphics call (a number); metafopy returns the axes drawn (PlotGoshResult)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/glmm_cm*"
+kind = "print-diff"
+reason = "Same as the value-diff entry: the printed Wald test of the saturated model (QE_Wld) of CM.EL differs."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/glmm_cm*"
+kind = "warning-missing"
+detail = "Cannot invert the Hessian for the saturated model.*"
+reason = "R cannot invert the noisy Hessian of the saturated CM.EL model and gives NA for QE_Wld, QE_LRT and QE_df; metafopy's Hessian inverts."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/glmm_rs*"
+kind = "print-diff"
+reason = "Same as the value-diff entry: the printed tests of the UM.RS fit differ in the third decimal."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/cooks.distance/mv_wide"
+kind = "value-diff"
+reason = "R's leave-one-out refit of study 18 does not converge and cooks.distance() gives NA there; metafopy's refit converges (value 0.0025)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "standalone/fmtx/drop0ifint=*"
+kind = "value-diff"
+reason = "fmtx(drop0ifint=TRUE) drops trailing zeros in R only when digits is an R integer (2L, not 2 or the default); Python has no such distinction, so drop0ifint=True always drops."
+ref = "docs/differences.md"
+
+[[known]]
+match = "construct/ls_year/optbeta=*"
+kind = "value-diff"
+path = "$vcovmat"
+reason = "The location-scale fit of ls_year has a scale intercept near -151 (tau2 on the boundary): the numerical Hessian is singular in metafopy and just invertible in R; the matrix is noise."
+
+[[known]]
+match = "options/vif/ls_bcg/*"
+kind = "value-diff"
+path = "$alpha*"
+reason = "The scale model ~ alloc of ls_bcg is degenerate (alpha estimates of the simulated and re-estimated fits run off to the boundary, R's VIFs are 1e8 or 1e-8); the values cannot be compared."
+
+[[known]]
+match = "scripts/misc_anova/*"
+kind = "shape-diff"
+path = "$QMdf"
+reason = "anova(X=) of linear combinations that are not of full rank: R's QMdf is the single NA, metafopy keeps the pair (m, ddf) and gives NaN for QM and QMp."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/misc_escalc/*"
+detail = "*attr(dat$y?, \"measure\")*"
+reason = "The attributes of an escalc result (measure, ni, slab) are kept once for the data frame in DataFrame.attrs, not per variable as R keeps them on each yi column, so a second escalc() with other var_names or a cbind() changes them for all."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/misc_selmodel/*"
+kind = "value-diff"
+detail = "*optimizer = \"mads\"*"
+reason = "selmodel(type='truncest', control=list(optimizer='mads')) on hackshaw1998: R stops at log-likelihood -5.08477, metafopy at -5.08452 (higher), so the estimates differ by 0.5 %; the derivative-free search ends at different points of a flat likelihood."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/misc_selmodel/*"
+kind = "value-diff"
+path = "$*"
+detail = "*sav <- selmodel(res, type = \"beta\")*"
+reason = "selmodel(type='beta') on baskerville2012 (ML, tau2 near 0): R's PORT stops at log-likelihood -2.792404, metafopy at -2.792399 (higher), so tau2 of 2.4e-6 differs by 2.6 % (absolute 6e-8) and the other estimates by 1e-5 relative."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/misc_coef_se/*"
+kind = "value-diff"
+detail = "*sel <- selmodel(res, type = \"beta\")*"
+reason = "Same as the selmodel(type='beta') entry of misc_selmodel: tau2 near 0 on baskerville2012, the log-likelihood is higher in metafopy."
+ref = "docs/differences.md"
+
+[[known]]
 match = "*/reporter*"
+reason = "reporter() writes an R Markdown report; Jupyter notebooks are the Python equivalent."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/*"
+kind = "crash"
+detail = "MissingRFunctionError: reporter*"
 reason = "reporter() writes an R Markdown report; Jupyter notebooks are the Python equivalent."
 ref = "docs/differences.md"
 
@@ -71,8 +162,15 @@ reason = "R's optimiser stops without convergence on this case and R refuses the
 [[known]]
 match = "*"
 kind = "refused-where-R-works"
-detail = "*ontrol*optimizer*"
-reason = "R silently ignores control entries a function does not use (here 'optimizer'); metafopy raises for unknown control entries so a misspelt setting is not lost."
+detail = "*unknownentry*"
+reason = "Reproduced in R: rma() and rma.mv() silently ignore a control entry that no function of metafor reads (the sweep's 'unknownentry'; selmodel() only warns 'unknown names in control'); metafopy raises for it so that a misspelt setting is not lost. Entries that another function of metafor reads (threshold, stepadj, optimizer, ...) are ignored as in R."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "refused-where-R-works"
+detail = "*control*'sparse'*"
+reason = "Reproduced in R: rma() and rma.mv() silently ignore a control entry that no function of metafor reads ('sparse' is an argument of rma.mv, not a control setting); metafopy raises for it so that a misspelt setting is not lost. Entries that another function of metafor reads (threshold, stepadj, optimizer, ...) are ignored as in R."
 ref = "docs/differences.md"
 
 [[known]]
@@ -87,4 +185,1282 @@ match = "*"
 kind = "refused-where-R-works"
 detail = "*unknown dataset*"
 reason = "The data sets that are lists of data frames (not tables) are not bundled."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "missing-field"
+path = "*$data$*"
+reason = "res.data is the MetaData of the fit (vectors and matrices used), not the data frame the caller passed."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "shape-diff"
+path = "*$data$*"
+reason = "res.data holds the studies used in the fit; R's data keeps those with missing values."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/print/*"
+kind = "shape-diff"
+path = "$slab"
+reason = "slab of the fit has the studies used; R keeps the studies with missing values in slab (the _f fields hold them in metafopy)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "missing-field"
+path = "*$mf.*"
+reason = "R keeps the model frames of the random-effects terms (mf.g, mf.h, mf.r, mf.s, ...); metafopy keeps the factors in group."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "missing-field"
+path = "*$opt.res"
+reason = "R keeps the raw return value of its optimiser; the SciPy result has other fields."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "missing-field"
+path = "*$class.f"
+reason = "R stores the class of the full model in an anova result; the class of the Python object says so."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "label-diff"
+path = "*$coef.na"
+reason = "R names coef.na 'X' (a quirk of the code); metafopy names it with the coefficients."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/print/summary_*"
+kind = "missing-field"
+reason = "summary() returns the printed text; the fields of R's summary object are the fields of the fit, which the fit cases compare."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "missing-field"
+path = "$data"
+reason = "cumul(), leave1out() and the results of mv fits do not keep a data frame of the studies (R: data); the vectors and matrices are fields of the fit."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/print/vif_*"
+kind = "missing-field"
+path = "$vif$*"
+reason = "vif() gives a table of the vifs by coefficient, where R keeps a list with one entry per coefficient."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/print/anova_*"
+kind = "missing-field"
+path = "$class"
+reason = "The class of the anova result is the class of the Python object."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/print/robust_*"
+kind = "missing-field"
+path = "$sandwiches"
+reason = "The sandwich matrices of the club-sandwich estimator are kept in the robust result, not on the fit."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "refused-where-R-works"
+detail = "InputError: Unknown 'adjust' value 'holm'."
+reason = "R applies no small-sample adjustment for any string other than 'Stata', 'Stata1' and 'Stata2' (so 'holm' silently does nothing); metafopy refuses it."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "refused-where-R-works"
+detail = "*Length of 'yi' (56) and the length/dimensions of 'V' (13)*"
+reason = "R recycles a vector V through diag(V, nrow = k) and fits; metafopy requires V to match yi."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "refused-where-R-works"
+detail = "*'sigma2' argument*does not match the actual number*"
+reason = "R ignores a sigma2 vector for a model without sigma2 components; metafopy checks the length."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "refused-where-R-works"
+detail = "*must be a *named* list*"
+reason = "R ignores R=NA when the model has no component that uses it; metafopy checks the type."
+ref = "docs/differences.md"
+
+[[known]]
+match = "standalone/fmtt/*"
+kind = "refused-where-R-works"
+detail = "*plotmath*"
+reason = "fmtt(call=TRUE) returns an R plotmath call, which has no Python counterpart."
+ref = "docs/differences.md"
+
+[[known]]
+match = "construct/glmm_cm/*"
+kind = "refused-where-R-works"
+detail = "EstimationError: Cannot compute var-cov matrix of the fixed effects."
+reason = "R's CM.EL Hessian is noise here (standard errors of 1e-4, tau2 2e-4, warning 'unusually small'; the ~ablat fit does not converge in R); metafopy refuses to report them."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "refused-where-R-works"
+detail = "InputError: Could not fit the null model."
+reason = "R's hettest() does not pass control on when x is a model object (the recursive call drops it), so maxiter has no effect there; metafopy applies it."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/anova/*"
+kind = "accepts-where-R-refuses"
+detail = "R: Class of*"
+reason = "The anova() method of selection-model fits is an extension: it compares a selection model with a plain fit, where R stops with 'Class of object must be the same'."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/$<-/*"
+kind = "missing-field"
+detail = "*has no field zz"
+reason = "A result is an immutable dataclass: x$zz <- 1 (a new element) has no counterpart; the elements that exist are replaced with dataclasses.replace."
+
+# Audit 8: optimiser and flat-likelihood differences, each checked against R (the log-likelihoods at the two optima agree or Python's is higher).
+
+[[known]]
+match = "*/ls_*"
+kind = "value-diff"
+path = "[]*"
+reason = "profile() of the flat location-scale fits ls_na, ls_year and ls_bcg: at grid points far from the estimate the refits are on a flat or degenerate surface (scale factors of exp(-100)); R's and Python's optimisers end at different local points (R's log-likelihood is 36 lower at one grid point of ls_na, Python's 25 lower at another)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/dfbetas/mv_ks_mods"
+kind = "value-diff"
+reason = "dfbetas() of an rma_mv fit refits the model without each cluster; the values are 6e-4 and differ by 2e-7 (absolute), the noise of the refits' optimum."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/*/mv_gen"
+kind = "value-diff"
+reason = "confint() and profile() of the unstructured (GEN) rma_mv fit: the confidence limits of the variance components run to a flat part of the likelihood (6900 against 7700) and the profile likelihood is evaluated at points where the optimisers end differently."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/glmm_rs*"
+kind = "value-diff"
+reason = "rma_glmm(model='UM.RS'): R log-likelihood -126.2962883, Python -126.2962773 (higher); coefficients differ by 1e-4 and standard errors by 4e-3 relative because R's glmer stops early on a flat surface."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/glmm_cm*"
+kind = "value-diff"
+reason = "rma_glmm(model='CM.EL'): R's Hessian is a finite-difference one of a noisy objective, see docs/differences.md."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/[/vcalc_ks"
+kind = "shape-diff"
+reason = "x[i] with one index on a matrix: R indexes the elements (3 values for c(1,2,3)), numpy selects rows; metafopy keeps numpy's meaning."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/*"
+kind = "value-diff"
+detail = "*rma.mv(*control = list(optimizer*"
+reason = "rma.mv fitted with each of R's optimisers in the tests (BFGS, L-BFGS-B, Nelder-Mead, uobyqa ...): they stop at different points of a flat REML surface, 3e-4 apart in the marginal variances, and Python's optimiser is not R's."
+
+[[known]]
+match = "api/*/code[1-4]"
+kind = "missing-arg"
+reason = "code1 to code4 are undocumented switches R reads from '...' to debug a computation (ddd$code1); they have no stated behaviour to match."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/*/outlist"
+kind = "missing-arg"
+reason = "outlist is an undocumented switch R reads from '...' (not in the Rd files, an internal or debugging aid); no stated behaviour to match."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/*/retopt"
+kind = "missing-arg"
+reason = "retopt is an undocumented switch R reads from '...' (not in the Rd files, an internal or debugging aid); no stated behaviour to match."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/*/tdist"
+kind = "missing-arg"
+reason = "tdist is an undocumented switch R reads from '...' (not in the Rd files, an internal or debugging aid); no stated behaviour to match."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/*/abbrev"
+kind = "missing-arg"
+reason = "abbrev is an undocumented switch R reads from '...' (not in the Rd files, an internal or debugging aid); no stated behaviour to match."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/*/skiphet"
+kind = "missing-arg"
+reason = "skiphet is an undocumented switch R reads from '...' (not in the Rd files, an internal or debugging aid); no stated behaviour to match."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/*/retdat"
+kind = "missing-arg"
+reason = "retdat is an undocumented switch R reads from '...' (not in the Rd files, an internal or debugging aid); no stated behaviour to match."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/*/retfit"
+kind = "missing-arg"
+reason = "retfit is an undocumented switch R reads from '...' (not in the Rd files, an internal or debugging aid); no stated behaviour to match."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/*/omega2"
+kind = "missing-arg"
+reason = "omega2 is an undocumented switch R reads from '...' (not in the Rd files, an internal or debugging aid); no stated behaviour to match."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/*/randhet"
+kind = "missing-arg"
+reason = "randhet is an undocumented switch R reads from '...' (not in the Rd files, an internal or debugging aid); no stated behaviour to match."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/*/progbar"
+kind = "default-diff"
+reason = "progbar defaults to False: a text progress bar has no use outside a console and would pollute notebook output."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/plot/*"
+kind = "missing-arg"
+reason = "plot_rma and its relatives take the graphical parameters of R's par() and plot() as explicit keywords, so the ones that have no matplotlib counterpart are refused."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/*/nearPD"
+kind = "missing-arg"
+reason = "R documents the formal as nearpd and reads the old spelling nearPD from '...' only to be compatible; Python has nearpd."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/metafor.news"
+kind = "missing-function"
+reason = "metafor.news() opens the R package's NEWS file; the Python changelog is the repository's."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/*/*/progbar"
+kind = "missing-arg"
+reason = "R refuses cooks.distance, dfbetas, rstudent and influence for location-scale and selection fits (.chkclass inside influence.rma.uni), so the reads of progbar and digits there are unreachable."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/*/*/digits"
+kind = "missing-arg"
+reason = "R refuses rstudent for location-scale and selection fits (.chkclass inside influence.rma.uni), so its digits are unreachable."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/hettest/method"
+kind = "default-diff"
+reason = "R's method = NULL resolves to the model's own method and Python's None does the same."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/robust/*/clubSandwich"
+kind = "default-diff"
+reason = "clubSandwich is the camelCase alias of club_sandwich that R reads from '...'; None means 'not given'."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/addpoly/*"
+kind = "default-diff"
+reason = "R's rows = NULL and Python's None both fall back to row = -2."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/forest/*/addpred"
+kind = "default-diff"
+reason = "None stands for R's FALSE and also admits the cumulative-result forms of addpred (names or positions)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/forest/*/predstyle"
+kind = "default-diff"
+reason = "None stands for R's 'line'."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/rma*/*"
+kind = "missing-arg"
+reason = "outlist, retopt, randhet, omega2, pleasedonotreportI2thankyouverymuch, retdat, retfit, skiphet, tdist, cutoff and vtype: undocumented or experimental internals of R's fitting functions (arbitrary R lists, optimiser output, R-specific switches), see docs/differences.md."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/vif/*"
+kind = "missing-arg"
+reason = "R's vif() of rma.mh, rma.peto and rma.glmm fits stops (VIFs are not applicable to intercept-only models), so none of its arguments is reachable; Python raises ArgumentError."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/reporter/*"
+kind = "missing-function"
+reason = "reporter() writes an R Markdown report; Jupyter notebooks are the Python equivalent."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/profile/*/plot"
+kind = "default-diff"
+reason = "plot defaults to False in every Python profile method (R: TRUE); a profile is drawn with plot_profile or plot=True."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/rma.glmm/model"
+kind = "default-diff"
+reason = "model=None is R's default 'UM.FS'; None lets rma_glmm tell a model that was passed (and is irrelevant for one-group measures, which warns as in R) from the default."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "yaxt"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "addgrid"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "layout"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "xaxt"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "lwd"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "las"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "main"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "legend"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "bty"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "bg"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "cex"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/*"
+kind = "missing-arg"
+detail = "cex*"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "ylab"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "ylim"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "pch"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "xlab"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "xlim"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "col"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "lty"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "mainadd"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "setmfrow"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "at_lab"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/forest/*"
+kind = "default-diff"
+detail = "R default *, Python None"
+reason = "addfit (TRUE) and showweights (FALSE) are None in the signature and take their defaults from the fit (a model without a fit has none to add); the effective defaults are R's."
+
+[[known]]
+match = "api/rma.mv/struct"
+kind = "default-diff"
+reason = "struct is None in the signature and means \"CS\" as in R."
+
+[[known]]
+match = "matrix/rbind/*"
+kind = "missing-arg"
+detail = "w"
+reason = "Not an argument of rbind.escalc: the recipe passes a weight vector that R takes from '...' and ignores."
+
+[[known]]
+match = "construct/mv_*/cutoff=*"
+kind = "missing-arg"
+reason = "rma.mv reads cutoff from '...' but its only use (.chkyisize) is commented out in metafor 5.2-1, so the argument has no effect."
+
+[[known]]
+match = "*/forest/sel_*"
+kind = "accepts-where-R-refuses"
+detail = "R: 'from' must be a finite number*"
+reason = "Reproduced in R: selmodel(type = 'stepfun', steps = c(0.025, 0.1, 0.5, 1)) on dat.bcg warns 'Error when trying to invert the Hessian', so the confidence interval of the estimate is NA and forest() stops in seq() with this error, which comes from metafor's own code and is not a check of an argument. The likelihood is flat in the selection parameters and metafopy's finite-difference Hessian inverts, so it returns a result."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/plot/sel_bcg/*"
+kind = "accepts-where-R-refuses"
+detail = "R: the condition has length > 1*"
+reason = "R stops with the error 'the condition has length > 1', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/forest/sel_bcg/*"
+kind = "accepts-where-R-refuses"
+detail = "R: missing value where TRUE/FALSE needed*"
+reason = "R stops with the error 'missing value where TRUE/FALSE needed', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/emmprep/*"
+kind = "accepts-where-R-refuses"
+detail = "R: object of type 'environment' is not subsettable*"
+reason = "R stops with the error 'object of type 'environment' is not subsettable', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/plot/*"
+kind = "accepts-where-R-refuses"
+detail = "R: object 'ids' not found*"
+reason = "R stops with the error 'object 'ids' not found', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/plot/*"
+kind = "accepts-where-R-refuses"
+detail = "R: object 'len.ids' not found*"
+reason = "R stops with the error 'object 'len.ids' not found', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
+ref = "docs/differences.md"
+
+[[known]]
+match = "standalone/to.wide*"
+kind = "accepts-where-R-refuses"
+detail = "R: object 'study' not found*"
+reason = "R stops with the error 'object 'study' not found', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
+ref = "docs/differences.md"
+
+[[known]]
+match = "construct/*"
+kind = "accepts-where-R-refuses"
+detail = "R: object 'vt' not found*"
+reason = "R stops with the error 'object 'vt' not found', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
+ref = "docs/differences.md"
+
+[[known]]
+match = "construct/*"
+kind = "accepts-where-R-refuses"
+detail = "R: object 'addtxt' not found*"
+reason = "A bug of metafor 5.2-1 (reproduced in R for rma.uni and location-scale models): .chkyisize() reads addtxt, which it sets only when cutoff is NULL, so rma(yi, vi, cutoff = ) stops with this error whenever an abs(yi) exceeds the cutoff (and not when the same yi were checked before). metafopy does not check the size of yi in rma() and cutoff has no effect."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/plot/uni_mods_na*"
+kind = "accepts-where-R-refuses"
+detail = "R: need finite 'xlim' values*"
+reason = "R stops with the error 'need finite 'xlim' values', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
+ref = "docs/differences.md"
+
+[[known]]
+match = "construct/ls_*"
+kind = "accepts-where-R-refuses"
+detail = "R: Error during the optimization*"
+reason = "control = list(mfmaxit = 5) is the iteration limit of the randhet loop of location-scale models, which metafopy does not have (see randhet)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "standalone/pairmat*"
+kind = "accepts-where-R-refuses"
+detail = "R: Need to specify the 'x' argument*"
+reason = "pairmat() without a model returns a spec that anova() and predict() complete with the model of the call (see docs/differences.md)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/hettest/*"
+kind = "accepts-where-R-refuses"
+detail = "R: $ operator is invalid for atomic vectors*"
+reason = "R stops with the error '$ operator is invalid for atomic vectors', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
+ref = "docs/differences.md"
+
+[[known]]
+match = "construct/*"
+kind = "accepts-where-R-refuses"
+detail = "R: missing values are not allowed in 'poly'*"
+reason = "R stops with the error 'missing values are not allowed in 'poly'', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/robust/*"
+kind = "accepts-where-R-refuses"
+detail = "R: Could not obtain the cluster-robust*"
+reason = "R stops with the error 'Could not obtain the cluster-robust', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/qqnorm/*"
+kind = "accepts-where-R-refuses"
+detail = "R: formal argument \"lty\" matched by multiple*"
+reason = "R stops with the error 'formal argument \"lty\" matched by multiple', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/profile/*"
+kind = "accepts-where-R-refuses"
+detail = "R: No such '*' component in the model.*"
+reason = "R stops with the error 'No such '*' component in the model.', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/deltamethod/*"
+kind = "accepts-where-R-refuses"
+detail = "R: no applicable method for 'isSymmetric'*"
+reason = "R stops with the error 'no applicable method for 'isSymmetric'', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/labbe/*"
+kind = "accepts-where-R-refuses"
+detail = "R: 'x' and 'y' lengths differ*"
+reason = "R stops with the error ''x' and 'y' lengths differ', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/anova/*"
+kind = "accepts-where-R-refuses"
+detail = "R: Class of 'object' must be the same*"
+reason = "R stops with the error 'Class of 'object' must be the same', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/permutest/*"
+kind = "accepts-where-R-refuses"
+detail = "R: R did not return within*"
+reason = "permutest(exact = TRUE) of a trimfill fit enumerates every permutation of the filled data; in R the 13 studies of dat.bcg already take 162 s (see options/permutest/uni_factor/exact=true) and the filled data have more studies, so R does not finish within the case time limit."
+ref = "docs/differences.md"
+
+[[known]]
+match = "construct/mv_sp/*"
+kind = "accepts-where-R-refuses"
+detail = "R: object 'year' not found*"
+reason = "R stops with the error 'object 'year' not found', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
+ref = "docs/differences.md"
+
+[[known]]
+match = "construct/glmm_cm/*"
+kind = "accepts-where-R-refuses"
+detail = "R: error in evaluating the argument 'obj'*"
+reason = "R stops with the error 'error in evaluating the argument 'obj'', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
+ref = "docs/differences.md"
+
+[[known]]
+match = "standalone/transf.ipft.hm/*"
+kind = "accepts-where-R-refuses"
+detail = "R: object 'ni' not found*"
+reason = "R stops with the error 'object 'ni' not found', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "warning-missing"
+detail = "*is not a graphical parameter*"
+reason = "R's graphics functions warn about a base-graphics parameter they do not know when it reaches plot() through '...'; metafopy has no such pass-through."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/confint/ls_na*"
+kind = "warning-missing"
+detail = "Cannot obtain lower bound of profile likelihood CI*"
+reason = "confint() of the flat fit ls_na (see */ls_na above): the likelihood profile is flat towards the boundary, R reports that its root search did not converge and metafopy finds the bound."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/forest/*"
+kind = "warning-missing"
+detail = "number of rows of result is not a multiple of vector length*"
+reason = "R warns from inside forest() (a cbind of vectors of unequal length) with these predstyle values; the plot is drawn and no value differs."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/[/*"
+kind = "warning-missing"
+detail = "named arguments other than 'drop' are discouraged*"
+reason = "R warns about the named argument that the recipe gives to x[i, j]; the rows and columns selected agree."
+ref = "docs/differences.md"
+
+[[known]]
+match = "construct/ls_bcg/*"
+kind = "warning-extra"
+detail = "Error when trying to invert the Hessian.*"
+reason = "The scale model is degenerate (alpha runs to -20 or -23 along a flat ridge with the same log-likelihood, -7.899524 in R and metafopy); R inverts its numerical Hessian and reports se.alpha of 34115, metafopy reports that the Hessian cannot be inverted."
+ref = "docs/differences.md"
+
+[[known]]
+match = "construct/glmm_*"
+kind = "warning-missing"
+detail = "Model failed to converge*"
+reason = "lme4 warnings of R's glmer(); metafopy fits the model with its own optimiser."
+ref = "docs/differences.md"
+
+[[known]]
+match = "construct/glmm_*"
+kind = "warning-missing"
+detail = "Model is nearly unidentifiable*"
+reason = "lme4 warnings of R's glmer(); metafopy fits the model with its own optimiser."
+ref = "docs/differences.md"
+
+[[known]]
+match = "construct/glmm_*"
+kind = "warning-missing"
+detail = "Cannot fit saturated model*"
+reason = "R's rma.glmm() warns when the saturated model does not converge with that optimiser; metafopy's saturated fit converges."
+ref = "docs/differences.md"
+
+[[known]]
+match = "construct/mv_*"
+kind = "warning-extra"
+detail = "Use of the Knapp and Hartung method*"
+reason = "metafor issues this warning once per session, so only the first rma.mv(test = 'knha') in a harness run has it; metafopy warns every time."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/glmm_cm*"
+kind = "value-diff"
+path = ["$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$H2", "$I2", "$tau2", "$tau2.f", "$se.tau2", "$ci.lb.tau2", "$ci.ub.tau2", "$QE.Wld", "$QEp.Wld", "$QE.LRT", "$QEp.LRT", "$QE.df", "$fit.stats$*", "$tab$*", "$pi.*", "$cr.*", "$vcov", ""]
+reason = "rma_glmm(model='CM.EL') takes its Hessian from a noisy finite-difference objective: se, zval, pval and the tau2 interval agree to about 1e-3, QE_Wld (the saturated model's Wald test) is ill-conditioned and differs more."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/glmm_rs*"
+kind = "value-diff"
+path = ["$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$H2", "$I2", "$tau2", "$tau2.f", "$se.tau2", "$ci.lb.tau2", "$ci.ub.tau2", "$QE.Wld", "$QEp.Wld", "$QE.LRT", "$QEp.LRT", "$QE.df", "$fit.stats$*", "$tab$*", "$pi.*", "$cr.*", "$vcov", ""]
+reason = "rma_glmm(model='UM.RS') agrees with R's lme4 fit to between 2e-3 and 1e-1 relative (optimiser stopping rules)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/ls_year"
+kind = "value-diff"
+path = ["$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$M", "$H", "$H2", "$I2", "$tau2", "$tau2.f", "$fit.stats$*", "$alpha", "$alpha$*", "$alpha.perm$*", "$va", "$se.alpha", "$zval.alpha", "$pval.alpha", "$ci.lb.alpha", "$ci.ub.alpha", "$zval.alpha.perm$*", "$QS", "$QSp", "$QS.perm", "[]*", "$x", "$y", "$resid", "$z", "$pred", "$pi.*", "$cr.*", "$scale", "$vcov", ""]
+reason = "Location-scale fit ~ ablat + year with scale ~ ablat + year: the scale intercept is -151 (tau2 is 0 to machine precision), so the likelihood is flat in the scale coefficients. Log-likelihood -7.602255955 in R and Python, scale coefficients agree to 1e-6, the Wald statistics of the scale part (QS, se.alpha, va) differ by up to 2e-4; R's nlminb itself does not converge when its tolerance is tightened."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/ls_year/*"
+kind = "value-diff"
+path = ["$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$M", "$H", "$H2", "$I2", "$tau2", "$tau2.f", "$fit.stats$*", "$alpha", "$alpha$*", "$alpha.perm$*", "$va", "$se.alpha", "$zval.alpha", "$pval.alpha", "$ci.lb.alpha", "$ci.ub.alpha", "$zval.alpha.perm$*", "$QS", "$QSp", "$QS.perm", "[]*", "$x", "$y", "$resid", "$z", "$pred", "$pi.*", "$cr.*", "$scale", "$vcov", ""]
+reason = "Same fit as ls_year above (flat scale intercept); every option variant refits it."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/ls_na"
+kind = "value-diff"
+path = ["$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$M", "$H", "$H2", "$I2", "$tau2", "$tau2.f", "$fit.stats$*", "$alpha", "$alpha$*", "$alpha.perm$*", "$va", "$se.alpha", "$zval.alpha", "$pval.alpha", "$ci.lb.alpha", "$ci.ub.alpha", "$zval.alpha.perm$*", "$QS", "$QSp", "$QS.perm", "[]*", "$x", "$y", "$resid", "$z", "$pred", "$pi.*", "$cr.*", "$scale", "$vcov", ""]
+reason = "Location-scale fit ~ year with scale ~ ablat on data with missing values: scale intercept -10.4 and a boundary tau2, log-likelihood -4.194072548 in R and Python, scale coefficients agree to 1e-5, QS and the Wald statistics of the scale part to 2e-4; R's nlminb does not converge when its tolerance is tightened."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/ls_na/*"
+kind = "value-diff"
+path = ["$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$M", "$H", "$H2", "$I2", "$tau2", "$tau2.f", "$fit.stats$*", "$alpha", "$alpha$*", "$alpha.perm$*", "$va", "$se.alpha", "$zval.alpha", "$pval.alpha", "$ci.lb.alpha", "$ci.ub.alpha", "$zval.alpha.perm$*", "$QS", "$QSp", "$QS.perm", "[]*", "$x", "$y", "$resid", "$z", "$pred", "$pi.*", "$cr.*", "$scale", "$vcov", ""]
+reason = "Same fit as ls_na above (flat scale intercept); every option variant refits it."
+ref = "docs/differences.md"
+
+[[known]]
+match = "construct/ls_*/control=*"
+kind = "value-diff"
+path = ["$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$M", "$H", "$H2", "$I2", "$tau2", "$tau2.f", "$fit.stats$*", "$alpha", "$alpha$*", "$alpha.perm$*", "$va", "$se.alpha", "$zval.alpha", "$pval.alpha", "$ci.lb.alpha", "$ci.ub.alpha", "$zval.alpha.perm$*", "$QS", "$QSp", "$QS.perm"]
+reason = "Each R optimiser (nlminb, Nelder-Mead, BFGS, nmk, nloptr, BBoptim, Rcgmin, Rvmmin, lbfgsb3c) stops at a different point of a flat likelihood: for ls_year and ls_na the log-likelihoods of R's optimisers agree to 1e-6 (-7.6022559 and -4.1940725) and Python's is as high, but the coefficients differ between R's own optimisers by as much as they differ from Python's."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/permutest/ls_*"
+kind = "value-diff"
+path = ["$alpha", "$alpha$*", "$alpha.perm$*", "$va", "$se.alpha", "$zval.alpha", "$pval.alpha", "$ci.lb.alpha", "$ci.ub.alpha", "$zval.alpha.perm$*", "$QS", "$QSp", "$QS.perm", "$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$M", "$H", "$H2", "$I2", "$tau2", "$tau2.f", "$fit.stats$*"]
+reason = "permutest() of location-scale fits refits the model for every permutation, on the flat likelihood of ls_na, ls_bcg and ls_bangert (see above); the permutation distribution of the scale coefficients inherits the optimiser noise."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/permutest_ls*"
+kind = "value-diff"
+path = ["$alpha", "$alpha$*", "$alpha.perm$*", "$va", "$se.alpha", "$zval.alpha", "$pval.alpha", "$ci.lb.alpha", "$ci.ub.alpha", "$zval.alpha.perm$*", "$QS", "$QSp", "$QS.perm", "$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$M", "$H", "$H2", "$I2", "$tau2", "$tau2.f", "$fit.stats$*"]
+reason = "Same as permutest/ls_*: refits of a flat location-scale likelihood."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/mv_sp*"
+kind = "value-diff"
+path = ["$rho", "$tau2", "$sigma2", "$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$G", "$M", "$vvc", "$hessian", "$fit.stats$*", "[]*", ""]
+reason = "rma_mv with the spatial structure SPEXP (~ year | district) on dat.konstantopoulos2011: the range rho is flat. REML log-likelihood -31.91350753 and tau2 0.0812804 agree in R and Python to 1e-8, but rho is 0.05592 (R nlminb), 0.05596 (Python) and 0.03527 (R Nelder-Mead) at that same log-likelihood; with year as moderator Python's rho is 0.0437 against R's 0.0549 at log-likelihood -31.2005931 in both."
+ref = "docs/differences.md"
+
+[[known]]
+match = "construct/mv_ks/control=*"
+kind = "value-diff"
+path = ["$rho", "$tau2", "$sigma2", "$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$G", "$M", "$vvc", "$hessian", "$fit.stats$*", "[]*", ""]
+reason = "rma_mv ~ 1 | district/school fitted with another optimiser: sigma2 of the school level agrees to 1e-3 at equal REML log-likelihood; the derivative-free optimisers stop on rel.tol, and R's own optimisers differ from each other by the same amount."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/*/mv_wide"
+kind = "value-diff"
+path = ["$intrcpt", "$district*", "$pred", "$se", "$pi.lb", "$pi.ub", "$ci.lb", "$ci.ub", "$cex*", "$resid", "$z", "$hat", ""]
+reason = "mv_wide has variance components at the boundary (around 1e-5), so the BLUPs and predictions are 1e-3 relative different in values of the order 1e-5 to 1e-3 (absolute differences 1e-8 to 6e-7)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/glmm_bcg*"
+kind = "value-diff"
+path = ["$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$H2", "$I2", "$tau2", "$tau2.f", "$se.tau2", "$ci.lb.tau2", "$ci.ub.tau2", "$QE.Wld", "$QEp.Wld", "$QE.LRT", "$QEp.LRT", "$QE.df", "$fit.stats$*", "$tab$*", "$pi.*", "$cr.*", "$vcov", ""]
+reason = "rma_glmm(model='UM.FS') (and mods) fitted by lme4 in R and by the port in Python: the objective is the same (at R's coefficients Python's deviance is 4e-6 above its own optimum) but the surface is flat. For the intercept of ~ alloc at nAGQ = 7 R's bobyqa gives -0.61510, R's Nelder-Mead -0.61554 and Python -0.61456; coefficients agree to 1e-3 and standard errors to 2e-3."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/*"
+kind = "value-diff"
+detail = "*rma.glmm*"
+path = ["$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$H2", "$I2", "$tau2", "$tau2.f", "$se.tau2", "$ci.lb.tau2", "$ci.ub.tau2", "$QE.Wld", "$QEp.Wld", "$QE.LRT", "$QEp.LRT", "$QE.df", "$fit.stats$*", "$tab$*", "$pi.*", "$cr.*", "$vcov", ""]
+reason = "rma.glmm calls in R's own examples and tests: lme4 or the noisy CM.EL objective of R stops at a different point of a flat surface, see the rma_glmm entries."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/forest/mv_*"
+kind = "value-diff"
+path = "$cex*"
+reason = "forest() of a model with many studies lowers cex to fit the figure height: R divides by strheight('O') on its 7 x 7 inch pdf device (0.6399 for the 56 studies of dat.konstantopoulos2011) and metafopy by the height of the matplotlib axes, which depends on the figure the caller made (0.5309 for the default figure)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/*"
+kind = "value-diff"
+detail = "*scale = ~*"
+path = ["$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$M", "$H", "$H2", "$I2", "$tau2", "$tau2.f", "$fit.stats$*", "$alpha", "$alpha$*", "$alpha.perm$*", "$va", "$se.alpha", "$zval.alpha", "$pval.alpha", "$ci.lb.alpha", "$ci.ub.alpha", "$zval.alpha.perm$*", "$QS", "$QSp", "$QS.perm", "[]*", "$x", "$y", "$resid", "$z", "$pred", "$pi.*", "$cr.*", "$scale", "$vcov"]
+reason = "Location-scale fits of R's tests with several scale terms (scale = ~grade + meta + sqrt(ni)): the likelihood is flat in the scale coefficients; they agree with R to 1e-3 and the Wald statistics of the scale part to 2e-3."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/misc_funnel/*"
+kind = "value-diff"
+path = "$cex"
+detail = "*par(mfrow = c(5, 2), mar = c(5, 4, 1, 1), cex = 0.5)*"
+reason = "par(cex = 0.5) returns the old value of cex of the device: 1 on R's pdf device, the matplotlib default size of the text on the figure metafopy draws on."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/plots_forest_plot_with_subgroups/*"
+kind = "value-diff"
+path = "$cex"
+detail = "*par(*"
+reason = "par(cex = ) and par(op) return the old and the restored value of cex of the device: 1 on R's pdf device, the matplotlib default size of the text on the figure metafopy draws on."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/robust/*/clubSandwich=true"
+kind = "value-diff"
+path = "$ddf"
+detail = "element * Python None"
+reason = "robust(clubSandwich=TRUE) of an rma.uni fit: R's ddf holds the Satterthwaite degrees of freedom of the coefficients; metafopy keeps them in dfs and leaves ddf unset, since ddf is a single number."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/robust_cs_bcg"
+kind = "value-diff"
+path = "$ddf"
+detail = "element * Python None"
+reason = "Same as the robust(clubSandwich=TRUE) entry: the coefficients' degrees of freedom are in dfs, not in ddf."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/*"
+kind = "shape-diff"
+path = "$QMdf"
+detail = "length R 1, Python 2 *anova(*X = *"
+reason = "anova(X=) of linear combinations that are not of full rank: R's QMdf is the single NA, metafopy keeps the pair (m, ddf) and gives NaN for QM and QMp."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/selmodel/*"
+kind = "value-diff"
+path = ["$vd", "$pval", "$se.delta", "$zval.delta", "$ci.lb.delta", "$ci.ub.delta", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$LRTp.tau2"]
+detail = "*(relative 0.00*"
+reason = "selmodel() with type negexp1, trunc, truncest or beta on uni_factor, uni_mods, uni_mods_year and trimfill_bcg: the log-likelihood and the estimates agree to 1e-9 (uni_factor negexp1: -11.6783857826 in both) and the standard errors of the selection parameters, which come from a finite-difference Hessian of a surface that is flat in delta, differ by 1e-4 to 5e-4 relative."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/selmodel/*"
+kind = "value-diff"
+path = "$hessian"
+detail = "*R *e-0[5-9], Python *e-0[5-9]*"
+reason = "selmodel() Hessian: entries that are zero to about 1e-8 (the cross derivatives with a flat selection parameter) have different finite-difference noise in R and in metafopy."
+ref = "docs/differences.md"
+
+[[known]]
+match = "construct/ls_bcg/*"
+kind = "value-diff"
+path = ["$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$M", "$H", "$H2", "$I2", "$tau2", "$tau2.f", "$fit.stats$*", "$alpha", "$alpha$*", "$va", "$se.alpha", "$zval.alpha", "$pval.alpha", "$ci.lb.alpha", "$ci.ub.alpha", "$QS", "$QSp"]
+reason = "rma(mods=, scale = ~ alloc) of dat.bcg with extra or changed moderators, vi=0.1 and optbeta: the three-level scale model is degenerate (alpha of 18 to 31 on the boundary, tau2 of 1e-6, the Hessian of the scale part 1e8 or singular); the log-likelihood is equal and the boundary estimates differ. The default fit and optbeta=TRUE agree to 1e-9 in the log-likelihood and 1e-6 in the estimates."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/gosh/trimfill_bcg/*"
+reason = "gosh(seed=) is bit-exact with R only where dbinom ties break the same way (R 4.5.1 on Linux); this oracle is R 4.3.3."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/trimfill/*"
+kind = "value-diff"
+path = ["$measure", "$ni", "$ni.f", "$slab.null"]
+detail = "*[rma(yi, vi, data = filled)]*"
+reason = "rma(yi, vi, data = filled) where filled comes from data.frame(yi = taf$yi, ...): R drops the measure and ni attributes of yi when it builds the data frame (measure GEN, no ni); metafopy keeps them in the vector. Estimates agree."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/regtest/*"
+kind = "value-diff"
+path = "$measure"
+detail = "*[res <- rma(yi, vi*data = dat)]*"
+reason = "dat$yi <- c(dat$yi) in the script: c() drops the measure attribute in R (measure GEN); metafopy keeps it in the vector. Estimates agree."
+
+[[known]]
+match = "options/summary/*"
+kind = "missing-field"
+reason = "summary() returns the printed text; the fields of R's summary object are the fields of the fit, which the fit cases compare."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/summary/*#*"
+kind = "print-diff"
+detail = "*'***'*"
+reason = "R's summary() passes signif.stars=FALSE on to nothing and still prints the stars; metafopy honours the argument."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "missing-field"
+path = "$chksum*"
+reason = "R keeps checksums of yi, vi, X and V to compare two fits in anova(); metafopy compares the data itself."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "missing-field"
+path = "$time"
+reason = "R stores the elapsed time of the fit; metafopy does not time its fits."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "missing-field"
+path = "$version"
+reason = "R stores the version of metafor that made the fit; metafopy has its own version."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "missing-field"
+path = "$verbose"
+reason = "R echoes the verbose argument in the fit; metafopy does not store it."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "missing-field"
+path = "$mf.*"
+reason = "R's model frames (mf.g, mf.g.f, mf.h, mf.h.f, mf.r, mf.s) are internal bookkeeping of rma.mv; metafopy keeps the factors in group_g and group_h."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "missing-field"
+path = "$opt.res"
+reason = "R's optimiser output is the output of optim/nlminb; the scipy optimisers give a different structure and it is not stored."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "missing-field"
+path = "$fit$*"
+reason = "regtest(model='lm') returns R's lm object (qr, effects, terms, ...); metafopy returns the coefficients in est, zval and pval and has no fit."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "label-diff"
+path = "*coef.na*"
+reason = "R names coef.na with the prefix X (coef.na.Z with Z), a quirk of how it builds the vector; metafopy names the flags by the coefficients."
+
+[[known]]
+match = "options/permutest/uni_factor/exact=true"
+kind = "accepts-where-R-refuses"
+detail = "R: reached elapsed time limit*"
+reason = "Reproduced in R: permutest(exact = TRUE) of a model with 3 allocation groups on the 13 studies of dat.bcg takes 162 s (it enumerates all the permutations), more than the time limit of a case; metafopy takes 43 s."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/profile/sel_bcg/ncpus=2"
+kind = "accepts-where-R-refuses"
+detail = "R: reached elapsed time limit*"
+reason = "Reproduced in R: profile() of a selmodel() fit with ncpus = 2 stops with the error 'argument \"withcrayon\" is missing, with no default' from the snow workers (and hangs the case runner); a bug of metafor 5.2-1 that metafopy has no counterpart of, it profiles in one process."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/confint/mv_sp/extint=true"
+kind = "warning-missing"
+detail = "Cannot obtain lower bound of profile likelihood CI*"
+reason = "Reproduced in R: confint() of the spatial rma.mv fit (SPEXP, ~ year | district) with extint = TRUE warns that neither bound of rho can be obtained and gives NA, because the likelihood is flat in rho (the default call gives <0.0056 and >10, as metafopy does with and without extint); metafopy's root search of the extended interval ends at the same bounds."
+ref = "docs/differences.md"
+
+[[known]]
+match = "construct/ls_year/optbeta=true"
+kind = "warning-extra"
+detail = "Error when trying to invert the Hessian.*"
+reason = "Reproduced in R: the fit of ls_year with optbeta = TRUE inverts a Hessian of the boundary solution (tau2 near 0), but its standard errors are noise (se of the intercept 80.35 against 40.67 without optbeta at the same log-likelihood); metafopy's Hessian is singular there and it warns."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/permutest/uni_factor/exact=true"
+kind = "timeout"
+reason = "Reproduced in R: the exact permutation test of 3 allocation groups on 13 studies takes 162 s in R and 43 s in metafopy, both more than the time limit of a case when the machine is busy."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["construct/glmm_bcg/control=*", "scripts/misc_rma_glmm/*"]
+kind = "value-diff"
+path = "$control$optimizer"
+reason = "rma.glmm(control = list(optimizer = 'BFGS')) or another optim() method: R keeps the name that was given in control$optimizer; metafopy turns it into optimizer 'optim' with optmethod = that method and keeps the pair."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["scripts/misc_rma_glmm/*", "scripts/analysis_example_vanhouwelingen1993/*", "scripts/analysis_example_stijnen2010/*", "scripts/analysis_example_rothman2008/*", "scripts/misc_update/test/29"]
+kind = "value-diff"
+path = ["", "$ci.lb", "$ci.ub", "$pi.se", "$pi.lb", "$pi.ub", "$cr.lb", "$cr.ub", "$pval", "$QMp"]
+detail = "*(relative 0.*"
+reason = "rma.glmm of the tests and examples of metafor (UM.FS, UM.RS, CM.AL, CM.EL with the optimisers and nAGQ settings of the tests): R fits the mixed models with lme4 (adaptive quadrature or Laplace, its optimiser) and its own estimates differ in the third or fourth digit with the control (the expected values of the tests differ between the variants); metafopy maximises the exact likelihood and gives one value, which agrees with R to 1e-3 to 1e-2 in the estimates, standard errors and test statistics, and more where the likelihood is flat (CM.EL with method = 'EE', QE.Wld)."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["scripts/misc_rma_glmm/*", "scripts/analysis_example_vanhouwelingen1993/*", "scripts/analysis_example_stijnen2010/*", "scripts/analysis_example_rothman2008/*"]
+kind = "value-diff"
+path = ""
+detail = "*[out <- capture.output(print(res))]*"
+reason = "Printed rma.glmm summaries differ in the last digit where the estimates differ in the fourth digit (see the entry for the expect_equivalent() lines of these tests)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/robust/mv_ks_mods"
+kind = "shape-diff"
+path = "$ddf"
+detail = "length R 1, Python 2"
+reason = "robust(rma.mv(mods = ~ year), cluster) without clubSandwich: R's ddf is the single number dfs (k - p of the clusters); metafopy keeps one value per coefficient in ddf (the same number) and the single value in dfs."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["matrix/predict/uni_mods_na*", "matrix/predict/ls_na*", "matrix/predict/ls_bangert*", "options/predict/uni_mods_na/*", "options/predict/ls_na/*", "options/predict/ls_bangert/*", "scripts/misc_rma_ls/test/146"]
+kind = "shape-diff"
+path = ["$pi.se", "$pi.ddf"]
+detail = "length R *, Python *"
+reason = "predict() of a model fitted to data with missing moderator values and na.action = 'omit': R keeps pi.se and pi.ddf at one value per study of the subset (NA for the omitted ones) while pred and the intervals have the rows that are returned; metafopy gives them for the rows it returns."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["construct/uni_mods/scale=*", "construct/uni_mods_na/scale=*", "construct/uni_mods_year/scale=*"]
+kind = "value-diff"
+path = ["$alpha", "$va", "$se.alpha", "$zval.alpha", "$pval.alpha", "$ci.lb.alpha", "$ci.ub.alpha", "$QS", "$QSp", "$H", "$I2", "$tau2", "$tau2.f"]
+reason = "rma(mods = ~ ablat + year or ~ ablat, scale = ~ ablat or ~ alloc) of dat.bcg: the log-likelihood is equal to 1e-10 (uni_mods_year, scale ~ ablat: -8.02339884345 in R and metafopy; scale ~ alloc: -7.84205789279) and R's own default and optbeta = TRUE fits differ by 2e-6 in alpha; the scale coefficients differ by 1e-5 relative and the statistics built from them (QS, the Hessian) by 1e-3; with scale ~ alloc on data with missing values alpha is on the boundary (-22 and -26)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/funnel/ls_year*"
+kind = "value-diff"
+path = "$x"
+reason = "funnel() of the flat location-scale fit ls_year: the x values are the residual-based estimates of the fit, which differ by 3e-4 relative where alpha differs."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/misc_rma_ls/*"
+kind = "value-diff"
+path = ["", "$b", "$beta", "$zval", "$alpha.perm$*", "$QS.perm", "$zval.alpha.perm$*"]
+detail = "*[expect_equivalent(*"
+reason = "Location-scale fits of the tests of metafor with different optimisers and settings: R's own expected values differ between the variants in the third digit (alpha) and the permutation tests draw R's random numbers in a different order."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/misc_rma_ls/test/128"
+kind = "*"
+path = ["$QS.perm", "$alpha.perm$*", "$zval.alpha.perm$*"]
+reason = "permutest() of a location-scale model with iter = 100 and no seed: the permutations are random in R and in metafopy."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["scripts/misc_rma_mv/test/34", "scripts/misc_rma_mv/test/50"]
+kind = "value-diff"
+path = ""
+detail = "*[expect_equivalent(res$sigma2,*"
+reason = "rma.mv(random = ~ 1 | trial) fitted with Nelder-Mead or nmk: R's own expected value of sigma2 depends on the optimiser in the fourth digit (0.3133 and 0.3131); metafopy gives the likelihood optimum."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/misc_rma_mv/test/19"
+kind = "*"
+path = "$R$phylogeny"
+reason = "The phylogenetic correlation matrix of the test is built in R with ape::vcv(); the harness has no ape and builds it from the tree it parses, in another order of the species."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["scripts/deltamethod/rd/5", "scripts/deltamethod/rd/6", "scripts/deltamethod/rd/19", "scripts/deltamethod/rd/20", "scripts/misc_matreg/test/67"]
+kind = "value-diff"
+path = ["$M", "$vb"]
+reason = "rma.mv(random = ~ var1.var2 | study, struct = 'UN') with 6 variances and 15 correlations on dat.craft2003: the log-likelihood is 20.2567944 in both, the estimates agree to 1e-6 and the covariances of near zero of M and vb differ in the fourth digit relative."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/misc_selmodel/*"
+kind = "value-diff"
+path = ["", "$ys.lb", "$ys.ub", "$hessian"]
+detail = "*(relative *"
+reason = "selmodel() of the tests of metafor with a flat likelihood in the selection parameter (type = 'truncest': R's own expected delta is 0.2337 with the default optimiser and 0.1802 with mads) or with tau2 at about 2e-6 on the boundary (2.45e-6 in R and 2.39e-6 in metafopy): the estimates, the profile limits of the selection function that start from them and the finite-difference Hessian entries of about 1e-8 differ."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/misc_selmodel/test/41"
+kind = "value-diff"
+path = ""
+detail = "*[out <- capture.output(print(sav))]*"
+reason = "Printed selection-model table: the lower limit of delta.2 differs in the last digit (0.1803 and 0.1804) where delta is flat."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/conv.delta/rd/31"
+kind = "value-diff"
+path = ["$ni", "$ni.f"]
+reason = "A data frame built over several escalc() and conv.delta() calls: R keeps the ni attribute of the yi column from the earlier call while a later escalc() adds the ni of another column; metafopy keeps one ni for the data frame, that of the last escalc() call."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/misc_influence/test/75"
+kind = "value-diff"
+path = ""
+detail = "*length(sav$rstudent)*"
+reason = "print(inf, infonly = TRUE) returns the object cut to the influential studies in R; metafopy prints the cut table and returns None."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/*"
+kind = "value-diff"
+path = ["$col", "$bg"]
+detail = "*R gray95, Python black*"
+reason = "regplot() and labbe() after setmfopt(theme = 'dark') in the same test file: the colours of par() that the plot leaves are those of the dark theme in R; the Python device keeps the defaults."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/*"
+kind = "value-diff"
+path = ["$col", "$bg"]
+detail = "*R #737373, Python #A6A6A6*"
+reason = "regplot() and labbe() after setmfopt(theme = 'dark') in the same test file: the colours of par() that the plot leaves are those of the dark theme in R; the Python device keeps the defaults."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/*"
+kind = "value-diff"
+path = ""
+detail = "*par(\"usr\")*"
+reason = "par('usr') is the user coordinates of the device of R after the plot; metafopy has no R graphics device."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/print/hettest_reml"
+kind = "value-diff"
+path = "$statistic.boot"
+reason = "hettest(res, test = 'boot'): the bootstrap statistics are random; R and metafopy do not use the same random number stream unless a seed is given."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/vif/ls_bangert/sim=true"
+kind = "*"
+path = ["$beta$sim", "$beta$prop", "$alpha$sim", "$alpha$prop"]
+reason = "vif(sim = TRUE) simulates random data sets; R and metafopy do not draw the same random numbers."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/permutest/ls_bangert/seed=42"
+kind = "value-diff"
+path = "$zval.perm$*"
+detail = "*(relative 0.0001*"
+reason = "permutest() of the location-scale model ls_bangert with seed = 42: the z-value of the coefficient I(ni/100) differs by 1e-4 relative, as the estimates of the flat location-scale fit do."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/vif/rd/14"
+kind = "value-diff"
+path = "$H"
+reason = "The location-scale fit has tau2 of about 1e-8 at a boundary in R and slightly negative H in the last digits in metafopy (1.4e-8 and -9e-11)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/selmodel/*"
+kind = "value-diff"
+path = "$hessian"
+detail = "*(relative 0.00*"
+reason = "selmodel() Hessian from finite differences of a surface that is flat in the selection parameters (type logistic2, beta, power, ...): the entries differ by up to 1e-2 relative while the log-likelihood and the estimates agree to 1e-9."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/robust/robust_cs_bcg"
+kind = "value-diff"
+path = ["$coef_test", "$conf_test", "$wald_test"]
+reason = "robust() of a model that robust(clubSandwich = TRUE) has already changed: R keeps the coef_test, conf_test and wald_test of the earlier call in the object; metafopy has them only on the fit that used clubSandwich."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["options/influence/uni_na/option:na.action=*", "options/influence/uni_mods_na/option:na.action=*", "scripts/misc_influence/test/63"]
+kind = "value-diff"
+path = "$is.infl"
+detail = "*R None, Python False*"
+reason = "influence() with na.action 'exclude' or 'pass': is.infl is NA in R for the studies with missing values; is_infl of metafopy is a logical array (False there) that the influence plot also reads."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/predict/ls_na/newscale=*"
+kind = "value-diff"
+path = "$slab"
+reason = "predict() of a location-scale model with newscale a named vector of two values for a model with one scale variable: R labels the prediction with the first name ('ablat'); metafopy labels a single prediction with the empty label."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/regplot/mv_ks_mods"
+kind = "value-diff"
+path = "$order"
+reason = "regplot() draws the points by decreasing symbol size; the largest sizes are equal to 3 up to the last bit (2.9999999999999996 and 3.0) and R and metafopy round them differently, so the nearly tied points are drawn in another order."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/misc_to_long_table_wide/test/30"
+kind = "value-diff"
+path = "$study"
+reason = "to.long() of a data frame that already has a column study: the result has two columns named study and R's $study is the first one, metafopy's the column of the same position in a different order of the columns (inferred; the columns by position agree in the other to.long tests)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/aggregate.escalc/rd/8"
+kind = "shape-diff"
+path = ""
+detail = "*[class(dat)]*"
+reason = "class() of the result of aggregate() on an escalc object that was cut with a subscript: R gives data.frame only, metafopy keeps the measure and the class escalc."
 ref = "docs/differences.md"

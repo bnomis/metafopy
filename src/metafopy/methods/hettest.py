@@ -23,8 +23,10 @@ import metafopy.bias.inputs
 import metafopy.core.parallel
 import metafopy.core.rng
 import metafopy.errors
+import metafopy.methods.common
 import metafopy.methods.fitview
 import metafopy.mfopt
+import metafopy.models.control_names
 import metafopy.models.rma_uni
 
 __all__ = ['HettestResult', 'hettest']
@@ -314,6 +316,8 @@ def hettest(
     seed: int | None = None,
     mom: bool = False,
     model: metafopy.models.rma_uni.RMAResult | None = None,
+    na_action: metafopy.methods.common.NAAction = 'omit',
+    verbose: bool = False,
 ) -> HettestResult:
     """Test for heteroscedastic heterogeneity in a random-effects model; ``x`` is a vector of estimates (with ``vi`` or ``sei``) or a model without moderators.
 
@@ -321,20 +325,26 @@ def hettest(
     ``'adn'`` and ``'adx2'``. The p-values come from a parametric bootstrap (``boot=True`` uses 1000 samples, a number sets the count; the
     goodness-of-fit tests always bootstrap), the first sample being the data. ``method`` is ``'REML'`` (default) or ``'ML'``; for a model it is that of the
     model. ``control`` takes ``tau2i_init``, ``threshold`` (1e-8) and ``maxiter`` (1000) and ``mom=True`` estimates the tau^2_i by the method of moments.
+    For a model, ``control`` is not used (as in metafor, which does not pass it on).
     ``model`` is metafor's undocumented argument for a vector ``x``: an intercept-only model already fitted to the same data, used as the null model
     instead of fitting it again (its ``beta`` and ``tau2`` and the log-likelihood of the ``method`` are used).
-    Unlike metafor, ``progbar`` is off by default. Without ``seed`` the bootstrap uses the generator of :func:`metafopy.set_seed`.
+    ``verbose`` is read by metafor and has no effect there either. Unlike metafor, ``progbar`` is off by default.
+    Without ``seed`` the bootstrap uses the generator of :func:`metafopy.set_seed`.
+    ``na_action`` stands for R's ``options(na.action=)``: studies with missing values in a vector of estimates are omitted with a warning, except for
+    ``'fail'``, which stops; it has no effect on a fitted model.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid, or the null model or the tau^2_i could not be estimated.
+        metafopy.errors.InputError: an argument or the data is invalid, the null model or the tau^2_i could not be estimated, or studies are missing
+            and ``na_action='fail'``.
         metafopy.errors.NotSupportedError: ``x`` is a model of a class the test is not available for.
     """
+    metafopy.methods.common.check_na_action(na_action)
     tests = (test.lower(),) if isinstance(test, str) else tuple(t.lower() for t in test)
     if not tests or any(t not in TESTS for t in tests):
         raise metafopy.errors.InputError("Unknown option specified for the 'test' argument.")
     if method is not None and method not in ESTIMATION_METHODS:
         raise metafopy.errors.InputError('Test must be based on ML/REML estimation.')
-    unknown = {key.replace('.', '_') for key in control or {}} - {'maxiter', 'tau2i_init', 'threshold'}
+    unknown = {key.replace('.', '_') for key in control or {} if not metafopy.models.control_names.read_elsewhere(key)} - {'maxiter', 'tau2i_init', 'threshold'}
     if unknown:
         raise metafopy.errors.InputError(f'Unknown control argument {sorted(unknown)[0]!r}.')
     con = {key.replace('.', '_'): value for key, value in (control or {}).items()}
@@ -344,6 +354,9 @@ def hettest(
         if model is not None:
             warnings.warn("Argument 'model' ignored when 'x' is a model object.", stacklevel=2)
         model = None
+        # metafor does not hand `control` on when it calls itself with the estimates of a model, so the settings are the defaults
+        threshold, maxiter = 1e-8, 1000
+        con = {}
         metafopy.methods.fitview.check_class(x, notav=('rma.glmm', 'rma.mv', 'robust.rma', 'rma.ls', 'rma.gen', 'rma.uni.selmodel'))
         view = metafopy.methods.fitview.fit_view(x)
         if not view.int_only:
@@ -362,7 +375,9 @@ def hettest(
         stored_digits = getattr(x, 'digits', 4)
     else:
         fit_method = 'REML' if method is None else method
-        yi, v_in, _ = metafopy.bias.inputs.vector_inputs(typing.cast(numpy.typing.ArrayLike | str, x), vi, sei, subset=subset, data=data, what='the test')
+        yi, v_in, _ = metafopy.bias.inputs.vector_inputs(
+            typing.cast(numpy.typing.ArrayLike | str, x), vi, sei, subset=subset, data=data, what='the test', na_action=na_action
+        )
         if v_in is None:
             raise metafopy.errors.InputError("Must specify the 'vi' or 'sei' argument.")
         v = v_in
@@ -382,7 +397,7 @@ def hettest(
     else:
         beta = float(model.beta[0])
         wi = 1 / (v + model.tau2)
-        res0 = NullFit(beta=beta, tau2=float(model.tau2), ll=model.fit_stats(fit_method == 'REML').ll, ei=yi - beta, hi=wi / float(numpy.sum(wi)))
+        res0 = NullFit(beta=beta, tau2=float(model.tau2), ll=model.fit_stats_for(fit_method == 'REML').ll, ei=yi - beta, hi=wi / float(numpy.sum(wi)))
 
     init = numpy.full(k, max(res0.tau2, 0.01))
     if con.get('tau2i_init') is not None:

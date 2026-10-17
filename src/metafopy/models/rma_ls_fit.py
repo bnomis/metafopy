@@ -23,6 +23,7 @@ import metafopy.core.linalg
 import metafopy.core.numderiv
 import metafopy.errors
 import metafopy.metadata
+import metafopy.models.control_names
 import metafopy.models.rma_ls_opt
 import metafopy.models.rma_ls_result
 import metafopy.models.rma_uni
@@ -58,14 +59,21 @@ def make_ls_control(
     names = {f.name for f in dataclasses.fields(metafopy.models.rma_ls_result.LSControl)}
     kwargs: dict[str, object] = {}
     opt_ctrl: dict[str, object] = {}
+    ignored: dict[str, object] = {}
     for key, value in control.items():
         name = key.replace('.', '_')
         if name in OPTIMIZER_SETTINGS:
             opt_ctrl[name] = value
+            ignored[key] = value
         elif name not in names:
+            if metafopy.models.control_names.read_elsewhere(key):
+                ignored[key] = value
+                continue
             raise metafopy.errors.ArgumentError(f'unknown control argument {key!r}')
         else:
             kwargs[name] = value
+    if ignored:
+        kwargs['ignored'] = ignored
     if opt_ctrl:
         kwargs['opt_ctrl'] = {**dict(kwargs.get('opt_ctrl', {})), **opt_ctrl}  # type: ignore[call-overload]
     return metafopy.models.rma_ls_result.LSControl(**kwargs)  # type: ignore[arg-type]
@@ -324,6 +332,9 @@ def fit_rma_ls(
     control: metafopy.models.rma_ls_result.LSControl,
     skiphes: bool = False,
     formula_scale: str | None = None,
+    Z_f: FloatArray | None = None,
+    dfs: float | collections.abc.Sequence[float] | None = None,
+    abbrev: bool = False,
 ) -> metafopy.models.rma_ls_result.RMALSResult:
     """Fit a location-scale model to normalised inputs: ``md`` (``yi``, ``vi``, ``X``) and the scale model matrix ``Z``.
 
@@ -368,14 +379,17 @@ def fit_rma_ls(
         test = 'z'
 
     drop = metafopy.core.linalg.drop_redundant(X)
+    X_f = md.X_all[md.rows_f] if md.X_all is not None and md.X_all.shape[1] == drop.shape[0] else X
     if drop.any():
         warnings.warn('Redundant predictors dropped from the model.', stacklevel=3)
         X = X[:, ~drop]
+        X_f = X_f[:, ~drop]
         names = [n for n, d in zip(names, drop, strict=True) if not d]
     is_int_x = numpy.array([metafopy.core.linalg.is_intercept(X[:, j]) for j in range(X.shape[1])])
     int_incl = bool(is_int_x.any())
     if int_incl:
         X = numpy.column_stack([numpy.ones(k), X[:, ~is_int_x]])
+        X_f = numpy.column_stack([numpy.ones(X_f.shape[0]), X_f[:, ~is_int_x]])
         names = ['intrcpt', *[n for n, i in zip(names, is_int_x, strict=True) if not i]]
     p = X.shape[1]
     int_only = p == 1 and metafopy.core.linalg.is_intercept(X[:, 0])
@@ -383,6 +397,8 @@ def fit_rma_ls(
         raise metafopy.errors.InputError('Number of parameters to be estimated is larger than the number of observations.')
     btt_idx = metafopy.models.rma_uni.set_btt(btt, p, int_incl, names)
     m = len(btt_idx)
+    if abbrev:
+        names = metafopy.models.rma_uni.abbreviate_names(names)
 
     if not metafopy.core.linalg.is_positive_definite(X.T @ X, tol=con.evtol):
         raise metafopy.errors.InputError('Model matrix not of full rank. Cannot fit model.')
@@ -390,14 +406,17 @@ def fit_rma_ls(
     # -- scale model matrix ---------------------------------------------------
     znames = list(z_names)
     drop_z = metafopy.core.linalg.drop_redundant(Z)
+    Z_full = Z_f if Z_f is not None and Z_f.shape[1] == drop_z.shape[0] else None
     if drop_z.any():
         warnings.warn('Redundant predictors dropped from the scale model.', stacklevel=3)
         Z = Z[:, ~drop_z]
+        Z_full = None if Z_full is None else Z_full[:, ~drop_z]
         znames = [n for n, d in zip(znames, drop_z, strict=True) if not d]
     is_int_z = numpy.array([metafopy.core.linalg.is_intercept(Z[:, j]) for j in range(Z.shape[1])])
     Z_int_incl = bool(is_int_z.any())
     if Z_int_incl:
         Z = numpy.column_stack([numpy.ones(k), Z[:, ~is_int_z]])
+        Z_full = None if Z_full is None else numpy.column_stack([numpy.ones(Z_full.shape[0]), Z_full[:, ~is_int_z]])
         znames = ['intrcpt', *[n for n, i in zip(znames, is_int_z, strict=True) if not i]]
     q = Z.shape[1]
     if not metafopy.core.linalg.is_positive_definite(Z.T @ Z, tol=con.evtol):
@@ -603,6 +622,8 @@ def fit_rma_ls(
         Z = Zsave
 
     att_idx = metafopy.models.rma_uni.set_btt(att, q, Z_int_incl, znames)
+    if abbrev:
+        znames = metafopy.models.rma_uni.abbreviate_names(znames)
     m_alpha = len(att_idx)
     # auditme: accept[literal-duplication] metafor option values and column labels repeated as in the R source
     tdist = test in ('knha', 'adhoc', 't')
@@ -633,7 +654,7 @@ def fit_rma_ls(
     # -- location coefficients ----------------------------------------------------
     opt_loc = (beta_hat.copy(), vb_opt.copy()) if (optbeta and vb_opt is not None) else None
     beta_out, vb, rss_f, s2w = location_estimates(yi, vi, X, tau2, user_w, weighted, test, opt_loc)
-    ddf = k - p if tdist else None
+    ddf = (k - p if dfs is None else metafopy.models.rma_uni.first_df(dfs)) if tdist else None
 
     QM = quad_form(beta_out, vb, btt_idx)
     with numpy.errstate(invalid='ignore'):
@@ -772,6 +793,10 @@ def fit_rma_ls(
         vcovmat=vcovmat if optbeta else None,
         H=H,
         formula_scale=formula_scale,
+        Z_f=Z_full,
+        coef_na=tuple(bool(d) for d in drop),
+        coef_na_Z=tuple(bool(d) for d in drop_z),
+        X_f=X_f,
     )
 
 

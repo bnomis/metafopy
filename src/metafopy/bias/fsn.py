@@ -22,6 +22,7 @@ import metafopy.core.verbose
 import metafopy.core.zeroin
 import metafopy.errors
 import metafopy.formatters
+import metafopy.methods.common
 import metafopy.methods.fitview
 import metafopy.mfopt
 import metafopy.models.rma_uni
@@ -147,6 +148,7 @@ def fsn(
     weighted: bool | None = None,
     seed: int | None = None,
     rng: metafopy.core.rng.RRandom | None = None,
+    na_action: metafopy.methods.common.NAAction = 'omit',
 ) -> FsnResult:
     """Fail-safe N calculation.
 
@@ -156,10 +158,17 @@ def fsn(
     deviates, standardised to mean ``mumiss`` and the expected variance; those come from the R-compatible
     generator (:func:`metafopy.set_seed`, or ``seed`` / ``rng`` here). ``verbose`` passes on to the
     random-effects fit and prints each step of the search for the fail-safe N on stdout, as metafor does.
+    ``na_action`` stands for R's ``options(na.action=)``: studies with missing values in a vector of estimates are omitted with a warning, except for
+    ``'fail'``, which stops; it has no effect on a fitted model.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InputError: an argument or the data is invalid, or studies are missing and ``na_action='fail'``.
     """
+    pools = [name for name in ('stouffer', 'fisher') if isinstance(pool, str) and len(pool) > 0 and name.startswith(pool.lower())]
+    if len(pools) != 1:
+        raise metafopy.errors.InputError("'arg' should be one of 'stouffer', 'fisher'")
+    pool = typing.cast(typing.Literal['stouffer', 'fisher'], pools[0])
+    metafopy.methods.common.check_na_action(na_action)
     gen = rng if rng is not None else (metafopy.core.rng.set_seed(seed) if seed is not None else metafopy.core.rng.get_rng())
     typ: str
     method_given = method
@@ -177,6 +186,8 @@ def fsn(
         typ = 'General'
         if x.weights is not None:
             raise metafopy.errors.InputError('Cannot use function on models with custom weights.')
+        if vi is not None or sei is not None or subset is not None:
+            warnings.warn("Arguments 'vi', 'sei', and 'subset' ignored when 'x' is a model object.", stacklevel=2)
         yi, v, _ = metafopy.bias.inputs.data_of(x)
     else:
         typ_in = 'Rosenthal' if type is None else type
@@ -195,10 +206,18 @@ def fsn(
             if x_vec is None:
                 raise metafopy.errors.InputError("Argument 'x' must be a vector with estimates or an 'rma' model object.")
             ones = numpy.ones(x_vec.shape[0])
-            yi, v_opt, _ = metafopy.bias.inputs.vector_inputs(x, ones, None, subset=subset, data=data, what='the calculation')
+            yi, v_opt, _ = metafopy.bias.inputs.vector_inputs(x, ones, None, subset=subset, data=data, what='the calculation', na_action=na_action)
         else:
             yi, v_opt, _ = metafopy.bias.inputs.vector_inputs(
-                x, v_in, sei, subset=subset, data=data, what='the calculation', vi_required=typ in ('Rosenthal', 'Rosenberg', 'General')
+                x,
+                v_in,
+                sei,
+                subset=subset,
+                data=data,
+                what='the calculation',
+                vi_required=typ in ('Rosenthal', 'Rosenberg', 'General'),
+                na_action=na_action,
+                expand_vi=True,
             )
         if v_opt is None:
             if typ != 'Binomial':
@@ -210,7 +229,7 @@ def fsn(
     k = yi.shape[0]
     if k == 1:
         raise metafopy.errors.InputError('Stopped because k = 1.')
-    d = metafopy.mfopt.stored_digits(digits, 4)
+    d = metafopy.mfopt.stored_digits(digits, metafopy.mfopt.model_digits(x))
     ival = (0.0, k * 50.0) if interval is None else interval
 
     est = tau2_out = pval = est_fsn = tau2_fsn = pval_fsn = math.nan

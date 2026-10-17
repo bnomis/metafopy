@@ -12,10 +12,23 @@ import numpy
 import pandas
 
 import audit.config
+import metafopy.effects.reshape
+import metafopy.metadata
+import metafopy.methods.accessors
 
 Node = dict[str, typing.Any]
+Labels = list[str] | tuple[list[str], list[str]] | None
 
 MAX_DEPTH = 6
+
+# results that wrap the array R returns: the class name and the attribute that holds the array (llplot() returns the likelihoods, to.table() the tables)
+ARRAY_RESULTS = {'LlplotResult': 'lls', 'TableArray': 'values'}
+
+
+SCALE_FIELDS = frozenset({'alpha', 'se.alpha', 'zval.alpha', 'pval.alpha', 'ci.lb.alpha', 'ci.ub.alpha', 'va', 'H', 'Z', 'Z.f'})
+
+
+STRUCTURE_FIELDS = ('G', 'H', 'hessian', 'vvc', 'V', 'M', 'W', 'V.f', 'W.f')
 
 
 def py_name(name: str) -> str:
@@ -36,32 +49,36 @@ def num_cell(x: object) -> float | str | None:
     return value
 
 
-def label_fields(guide: Node, labels: list[str] | None, shape: list[int] | None, length: int) -> Node:
+def label_fields(guide: Node, labels: Labels, shape: list[int] | None, length: int) -> Node:
     """The names of a vector or the row and column names of a matrix, when Python has labels of the length R's names have."""
     out: Node = {}
     if not labels:
         return out
     if shape and len(shape) == 2:
-        if guide.get('rn') and shape[0] == len(labels):
-            out['rn'] = list(labels)
-        if guide.get('cn') and shape[1] == len(labels):
-            out['cn'] = list(labels)
-    elif length == len(labels):
+        rows, cols = labels if isinstance(labels, tuple) else (labels, labels)
+        if guide.get('rn') and rows and shape[0] == len(rows):
+            out['rn'] = list(rows)
+        if guide.get('cn') and cols and shape[1] == len(cols):
+            out['cn'] = list(cols)
+    elif isinstance(labels, list) and length == len(labels):
         for key in ('n', 'rn'):
             if guide.get(key):
                 out[key] = list(labels)
     return out
 
 
-def vector_node(values: typing.Any, guide: Node, labels: list[str] | None = None) -> Node:
+def vector_node(values: typing.Any, guide: Node, labels: Labels = None) -> Node:
     kind = guide['k']
     arr = numpy.asarray(values)
     dims = guide.get('d')
     if arr.ndim == 0:
         arr = arr.reshape(1)
-    if dims and len(dims) == 2 and arr.ndim == 2:
+    if dims and len(dims) >= 2 and arr.ndim == len(dims):
         flat = arr.ravel(order='F')
         shape = list(arr.shape)
+    elif dims and len(dims) == 3 and arr.ndim == 3:
+        flat = arr.ravel(order='F')
+        shape = None
     else:
         flat = arr.ravel()
         shape = None
@@ -95,17 +112,49 @@ def lookup(value: typing.Any, name: str) -> tuple[bool, typing.Any]:
         if isinstance(attrs, dict) and name[1:] in attrs:
             return True, attrs[name[1:]]
         return False, None
-    spellings = [name, py_name(name)]
+    spellings = [name, py_name(name), py_name(name) + '_']
+    if name == '' and isinstance(value, (tuple, list)):
+        return True, value  # a data frame column R leaves unnamed (the `hyp` of an anova)
+    inputs = getattr(value, 'data', None)
+    if isinstance(inputs, metafopy.metadata.MetaData) and name in ('data', 'slab'):
+        # R's `data` is the data frame the model was given and its `slab` has one label for every row of it; in metafopy `data` holds the model
+        # inputs of the studies used (`MetaData`) and `slab` the labels of those, so the frame and all labels are looked up in the inputs
+        if name == 'data':
+            return True, inputs.data
+        if inputs.labels_all is not None:
+            rows = inputs.keep if inputs.na_rows is None else inputs.keep | inputs.na_rows
+            return True, [label for label, used in zip(inputs.labels_all, rows, strict=True) if used]
+    if name == 'pred' and getattr(value, 'vcov', None) is not None and hasattr(value, 'ci_lb') and not callable(value.vcov):
+        # predict(vcov=TRUE) is list(pred = <the predictions>, vcov = <matrix>) in R; metafopy returns the predictions with the matrix in `vcov`
+        return True, value
+    if name == 'vcov' and callable(getattr(value, 'vcov', None)) and hasattr(value, 'vb'):
+        # R keeps the matrix in `vcov`; in metafopy `vcov()` is the accessor and the matrix is `vb`
+        return True, value.vb
+    slab_f = getattr(value, 'slab_f', None)
+    if name == 'slab' and slab_f is not None and len(slab_f) != len(getattr(value, 'slab', slab_f)):
+        # rma.mv keeps the labels of all rows of the subset in `slab` in R; metafopy has the labels of the studies used in `slab` and all of them in `slab_f`
+        return True, list(slab_f)
     if isinstance(value, pandas.DataFrame):
         for spelling in spellings:
             if spelling in value.columns:
-                return True, value[spelling].to_numpy()
+                # R's `$` takes the first of several columns with one name
+                return True, numpy.asarray(value.iloc[:, list(value.columns).index(spelling)])
+            if spelling in value.attrs:
+                return True, value.attrs[spelling]
         return False, None
     if isinstance(value, dict):
         for spelling in spellings:
             if spelling in value:
                 return True, value[spelling]
+        for key, item in value.items():
+            if not isinstance(key, str) and str(key) == name:
+                return True, item  # R names a list by strings; metafopy keys it by the values (cluster numbers) as they are
         return False, None
+    if isinstance(value, tuple) and not hasattr(value, '_fields'):
+        # a list R names by its entries (the ``vif`` of ``vif()``): metafopy keeps a tuple of entries that carry their own name
+        for item in value:
+            if name in (getattr(item, 'coefname', None), getattr(item, 'coefs', None)):
+                return True, item
     for spelling in spellings:
         try:
             return True, getattr(value, spelling)
@@ -116,7 +165,26 @@ def lookup(value: typing.Any, name: str) -> tuple[bool, typing.Any]:
     return False, None
 
 
-def to_node(value: typing.Any, guide: Node, path: str, missing: list[str], depth: int = 0, labels: list[str] | None = None) -> Node:
+def named_vector(value: typing.Any, guide: Node, path: str) -> typing.Any:
+    """A mapping stands for the named vector with its entries (names R's vector lacks are NA); a number for the ``digits`` of a model.
+
+    R keeps ``digits`` as a named vector of nine numbers (``est``, ``se``, ``test``, ...) and returns summaries such as ``precis`` as named
+    vectors; metafopy keeps one number for ``digits``, which stands for the vector in which every element is that number, and mappings.
+    """
+    if isinstance(value, bool) or value is None:
+        return value
+    if path.endswith('$digits') and isinstance(value, (int, float)):
+        return [value] * len(guide['v'])
+    if isinstance(value, metafopy.methods.accessors.NobsAll):
+        return list(dataclasses.asdict(value).values())
+    if isinstance(value, metafopy.effects.reshape.TableArray):
+        return value.values
+    if isinstance(value, dict) and guide.get('n') and set(value) <= set(guide['n']):
+        return [value.get(name) for name in guide['n']]
+    return value
+
+
+def to_node(value: typing.Any, guide: Node, path: str, missing: list[str], depth: int = 0, labels: Labels = None) -> Node:
     """The tree of ``value`` in the shape of the R tree ``guide``; fields R has and ``value`` lacks are appended to ``missing``."""
     kind = guide['k']
     if kind in ('opaque', 'null'):
@@ -124,16 +192,24 @@ def to_node(value: typing.Any, guide: Node, path: str, missing: list[str], depth
     if depth > MAX_DEPTH:
         return {'k': 'opaque'}
     if kind in ('num', 'str', 'lgl'):
+        if type(value).__name__ in ARRAY_RESULTS:
+            value = getattr(value, ARRAY_RESULTS[type(value).__name__])
         if value is None:
             return {'k': kind, 'v': [None] * len(guide['v']), 'd': None}
+        value = named_vector(value, guide, path)
         if isinstance(value, dict):
             return {'k': 'type', 'got': type(value).__name__}
+        if isinstance(value, numpy.ndarray) and value.ndim == 2 and hasattr(value, 'rownames'):
+            # a matrix with names of its own is compared by those (the coefficient names stand in only for a plain array)
+            labels = ([str(n) for n in getattr(value, 'rownames', None) or ()], [str(n) for n in getattr(value, 'colnames', None) or ()])
         if isinstance(value, pandas.Series):
             labels = [str(i) for i in value.index]
+        if isinstance(value, pandas.DataFrame):
+            labels = ([str(i) for i in value.index], [str(c) for c in value.columns])
         if isinstance(value, (pandas.DataFrame, pandas.Series)):
             value = value.to_numpy()
         try:
-            return vector_node(value, guide, labels)
+            return vector_node(value, guide, None if kind == 'str' else labels)
         except TypeError, ValueError:
             return {'k': 'type', 'got': type(value).__name__}
     if kind == 'df':
@@ -151,6 +227,8 @@ def to_node(value: typing.Any, guide: Node, path: str, missing: list[str], depth
         items = []
         coef_names = getattr(value, 'coef_names', None)
         labels = [str(n) for n in coef_names] if coef_names is not None and not isinstance(coef_names, str) else None
+        alpha_names = getattr(value, 'alpha_names', None)
+        alpha_labels = [str(n) for n in alpha_names] if alpha_names is not None and not isinstance(alpha_names, str) else None
         for i, item in enumerate(guide['items']):
             name = item.get('name')
             if name is None:
@@ -165,7 +243,13 @@ def to_node(value: typing.Any, guide: Node, path: str, missing: list[str], depth
                 missing.append(f'{path}${name}')
                 items.append({'name': name, 'node': {'k': 'missing'}})
                 continue
-            items.append({'name': name, 'node': to_node(sub, item['node'], f'{path}${name}', missing, depth + 1, labels)})
+            # the scale part of a location-scale model is labelled with the names of the scale coefficients
+            item_labels = alpha_labels if alpha_labels is not None and name in SCALE_FIELDS else labels
+            if name in STRUCTURE_FIELDS and (name != 'H' or hasattr(value, 'H_dimnames') or hasattr(sub, 'rownames')):
+                # the matrices of the random effects are not indexed by the coefficients: they carry their own names or none (a plain array has none)
+                rownames = getattr(sub, 'rownames', None)
+                item_labels = [str(n) for n in rownames] if rownames else None
+            items.append({'name': name, 'node': to_node(sub, item['node'], f'{path}${name}', missing, depth + 1, item_labels)})
         return {'k': 'list', 'items': items}
     return {'k': 'missing'}
 
@@ -177,6 +261,11 @@ class Diff:
     detail: str
 
 
+def straight(text: str) -> str:
+    """The text with curly single quotes replaced by straight ones."""
+    return text.replace('\u2018', "'").replace('\u2019', "'")
+
+
 def cell_equal(a: typing.Any, b: typing.Any) -> tuple[str, float]:
     """Compare two cells: ('same'|'drift'|'diff', relative difference)."""
     if a is None and b is None:
@@ -184,7 +273,9 @@ def cell_equal(a: typing.Any, b: typing.Any) -> tuple[str, float]:
     if a is None or b is None:
         return 'diff', math.inf
     if isinstance(a, str) and isinstance(b, str):
-        return ('same', 0.0) if a == b else ('diff', math.inf)
+        # printed lines (capture.output(print(x))) end in padding that R's print methods add and the tests of metafor never compare
+        # and R prints the quotes of the significance codes as curly quotes in a UTF-8 locale
+        return ('same', 0.0) if straight(a).rstrip() == straight(b).rstrip() else ('diff', math.inf)
     if isinstance(a, bool) or isinstance(b, bool):
         return ('same', 0.0) if bool(a) == bool(b) else ('diff', math.inf)
     if isinstance(a, str) or isinstance(b, str):
@@ -234,6 +325,10 @@ def counting(names: list[typing.Any]) -> bool:
 
 def compare_vector(r: Node, py: Node, path: str, out: list[Diff]) -> None:
     rv, pv = r['v'], py['v']
+    if len(rv) != len(pv) and r['k'] == 'str' and py['k'] == 'str':
+        # printed lines: R puts blank lines around and inside its tables, metafopy does not always, and the tests of metafor never compare them
+        rv, pv = [x for x in rv if x is None or str(x).strip()], [x for x in pv if x is None or str(x).strip()]
+        r, py = {**r, 'v': rv}, {**py, 'v': pv}
     if len(rv) != len(pv):
         out.append(Diff(path, 'shape-diff', f'length R {len(rv)}, Python {len(pv)}'))
         return

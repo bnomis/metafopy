@@ -14,6 +14,7 @@ Veroniki et al. (2016), doi:10.1002/jrsm.1164.
 
 import dataclasses
 import math
+import typing
 
 import numpy
 import numpy.typing
@@ -71,6 +72,15 @@ class Control:
     stepadj: float = 1.0
     evtol: float = 1e-7
     REMLf: bool = True
+    ignored: dict[str, typing.Any] = dataclasses.field(default_factory=dict, compare=False, repr=False)
+    """The entries other functions of metafor read (``optimizer``, ``vc.min``, ...), kept as R keeps them in ``res$control``; read them as attributes."""
+
+    def __getattr__(self, name: str) -> typing.Any:
+        ignored = object.__getattribute__(self, 'ignored')
+        for key, value in ignored.items():
+            if key.replace('.', '_') == name:
+                return value
+        raise AttributeError(name)
 
 
 @dataclasses.dataclass(frozen=True, slots=True)

@@ -9,6 +9,7 @@ or a matrix (in which case an intercept is added unless ``intercept=False``).
 import collections.abc
 import dataclasses
 import typing
+import warnings
 
 import numpy
 import numpy.typing
@@ -158,6 +159,13 @@ class MetaData:
     vi_all: FloatArray | None = dataclasses.field(default=None, repr=False)
     X_all: FloatArray | None = dataclasses.field(default=None, repr=False)
     counts_all: dict[str, FloatArray] | None = dataclasses.field(default=None, repr=False)
+    ni_all: FloatArray | None = dataclasses.field(default=None, repr=False)
+    weights_all: FloatArray | None = dataclasses.field(default=None, repr=False)
+    ids_all: numpy.typing.NDArray[numpy.intp] | None = dataclasses.field(default=None, repr=False)
+    subset_arg: BoolArray | None = dataclasses.field(default=None, repr=False)
+    slab_given: bool = dataclasses.field(default=False, repr=False)
+    supplied: int | None = dataclasses.field(default=None, repr=False)
+    """Rows supplied when the effects came from counts after subsetting (R's ``k.all``); ``k_all`` stays the length of ``keep``."""
 
     @property
     def k(self) -> int:
@@ -168,6 +176,72 @@ class MetaData:
     def k_all(self) -> int:
         """Number of rows supplied before subsetting and NA removal."""
         return int(self.keep.shape[0])
+
+    @property
+    def rows_f(self) -> BoolArray:
+        """The rows left after subsetting but before the removal of missing values (those of metafor's ``yi.f``), as a mask over the rows of ``yi_all``."""
+        return self.keep if self.na_rows is None else self.keep | self.na_rows
+
+    @property
+    def names_all(self) -> tuple[str, ...]:
+        """The row names of the rows supplied, as R names them: the row names of ``data`` (integer labels counted from 1 as in R) or the numbers from 1."""
+        if self.data is not None and self.data.shape[0] == self.k_all:
+            index = self.data.index
+            if pandas.api.types.is_integer_dtype(index):
+                return tuple(str(int(v) + 1) for v in index)  # the row labels are 0-based here and 1-based in R
+            return tuple(str(v) for v in index)
+        return tuple(str(i + 1) for i in range(self.k_all))
+
+    @property
+    def rownames(self) -> tuple[str, ...]:
+        """The row names of the rows used in the fit (those of metafor's ``X``)."""
+        names = self.names_all
+        return tuple(names[i] for i in numpy.flatnonzero(self.keep))
+
+    @property
+    def rownames_f(self) -> tuple[str, ...]:
+        """The row names of the rows after subsetting (those of metafor's ``X.f``)."""
+        names = self.names_all
+        return tuple(names[i] for i in numpy.flatnonzero(self.rows_f))
+
+    @property
+    def k_f(self) -> int:
+        """Number of rows after subsetting and before the removal of missing values, metafor's ``k.f``."""
+        return int(self.rows_f.sum())
+
+    @property
+    def not_na(self) -> BoolArray:
+        """Whether each row of ``yi_f`` is complete and used in the fit, metafor's ``not.na``."""
+        return self.keep[self.rows_f]
+
+    @property
+    def ids(self) -> numpy.typing.NDArray[numpy.intp]:
+        """The 0-based positions among the rows supplied of the rows after subsetting (also those dropped for missing values), metafor's ``ids``."""
+        return numpy.flatnonzero(self.rows_f) if self.ids_all is None else self.ids_all
+
+    @property
+    def yi_f(self) -> FloatArray:
+        """The observed effects of the rows after subsetting, with ``NaN`` for the missing ones, metafor's ``yi.f``."""
+        return self.yi if self.yi_all is None else self.yi_all[self.rows_f]
+
+    @property
+    def vi_f(self) -> FloatArray:
+        """The sampling variances of the rows after subsetting, with ``NaN`` for the missing ones, metafor's ``vi.f``."""
+        return self.vi if self.vi_all is None else self.vi_all[self.rows_f]
+
+    @property
+    def ni_f(self) -> FloatArray | None:
+        """The sample sizes of the rows after subsetting (``None`` when unknown), metafor's ``ni.f``."""
+        if self.ni_all is None:
+            return self.ni if self.yi_all is None else None
+        return self.ni_all[self.rows_f]
+
+    @property
+    def weights_f(self) -> FloatArray | None:
+        """The user weights of the rows after subsetting (``None`` without weights), metafor's ``weights.f``."""
+        if self.weights_all is None:
+            return self.weights if self.yi_all is None else None
+        return self.weights_all[self.rows_f]
 
     @property
     def p(self) -> int:
@@ -222,12 +296,15 @@ class MetaData:
             w = numpy.repeat(w, k_all)
         if n is None:
             n = escalc_ni(yi, data, k_all)
-        for name, arr in (('vi', v), ('weights', w), ('ni', n)):
+        if n is not None and n.shape[0] != k_all:
+            n = None  # as metafor: sample sizes of the wrong length 'cannot be trusted' and are dropped
+        for name, arr in (('vi', v), ('weights', w)):
             if arr is not None and arr.shape[0] != k_all:
                 raise metafopy.errors.InputError(f'length of {name} ({arr.shape[0]}) differs from yi ({k_all})')
 
         X, X_names, x_missing, has_intercept = cls.design(mods, intercept, data, k_all)
 
+        stored = None
         if slab is None:
             stored = escalc_attr(yi, data, k_all, 'slab')
             if stored is not None and any(s is None or (isinstance(s, float) and numpy.isnan(s)) for s in stored.tolist()):
@@ -275,6 +352,10 @@ class MetaData:
             yi_all=y,
             vi_all=v,
             X_all=X,
+            ni_all=n,
+            weights_all=w,
+            subset_arg=None if subset is None else subset_mask(subset, k_all, data),
+            slab_given=slab is not None or stored is not None,
         )
 
     @staticmethod
@@ -285,6 +366,8 @@ class MetaData:
         k: int,
     ) -> tuple[FloatArray, tuple[str, ...], BoolArray, bool]:
         if mods is None:
+            if not intercept:
+                warnings.warn('Must either include an intercept and/or moderators in the model.\nCoerced an intercept into the model.', stacklevel=4)
             # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
             return numpy.ones((k, 1)), ('intrcpt',), numpy.zeros(k, dtype=numpy.bool_), True
         if isinstance(mods, str):
@@ -297,9 +380,11 @@ class MetaData:
             X = mods.to_numpy(dtype=float)
         else:
             X = numpy.asarray(mods, dtype=numpy.float64)
-            if X.ndim == 1:
+            vector = X.ndim == 1
+            if vector:
                 X = X[:, None]
-            names = tuple(f'X{j + 1}' for j in range(X.shape[1]))
+            # metafor names the column of a vector 'mods' and those of a matrix without column names X1, X2, ...
+            names = ('mods',) if vector else tuple(f'X{j + 1}' for j in range(X.shape[1]))
         if X.shape[0] != k:
             raise metafopy.errors.InputError(f'mods has {X.shape[0]} rows, expected {k}')
         if intercept:

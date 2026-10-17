@@ -21,6 +21,7 @@ import metafopy.bias.inputs
 import metafopy.core.parallel
 import metafopy.core.zeroin
 import metafopy.errors
+import metafopy.methods.common
 import metafopy.methods.fitview
 import metafopy.mfopt
 import metafopy.models.rma_uni
@@ -138,15 +139,18 @@ def tes(
     subdivisions: int = 100,
     tau2_lb: float = 0.0,
     find_lim: bool = True,
+    na_action: metafopy.methods.common.NAAction = 'omit',
 ) -> TesResult:
     """Test of excess significance for a fitted model or a vector of estimates with sampling variances.
 
     ``progbar=True`` prints a progress bar to stderr while the exact test is computed (one step per study; metafor's default is ``TRUE`` for
-    the exact test, here it is ``False``).
+    the exact test, here it is ``False``). ``na_action`` stands for R's ``options(na.action=)``: studies with missing values in a vector of
+    estimates are omitted with a warning, except for ``'fail'``, which stops; it has no effect on a fitted model.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InputError: an argument or the data is invalid, or studies are missing and ``na_action='fail'``.
     """
+    metafopy.methods.common.check_na_action(na_action)
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if alternative not in ('two.sided', 'greater', 'less') or tes_alternative not in ('two.sided', 'greater', 'less'):
         raise metafopy.errors.InputError("'alternative' and 'tes_alternative' must be 'two.sided', 'greater' or 'less'")
@@ -166,12 +170,13 @@ def tes(
             tes_alternative=tes_alternative,
             tes_alpha=tes_alpha,
             progbar=progbar,
-            digits=metafopy.mfopt.stored_digits(digits, 4),
+            digits=metafopy.mfopt.stored_digits(digits, metafopy.mfopt.model_digits(x)),
             correct=correct,
             rel_tol=rel_tol,
             subdivisions=subdivisions,
             tau2_lb=tau2_lb,
             find_lim=find_lim,
+            na_action=na_action,
         )
     yi = metafopy.bias.inputs.as_vector(x, 'x', data)
     v = metafopy.bias.inputs.as_vector(vi, 'vi', data)
@@ -218,6 +223,8 @@ def tes(
         yi, v, th_arr = yi[sel], v[sel], th_arr[sel]
     bad = numpy.isnan(yi) | numpy.isnan(v) | numpy.isnan(th_arr)
     if bad.any():
+        if na_action == 'fail':
+            raise metafopy.errors.InputError('Missing values in data.')
         warnings.warn(f'{int(bad.sum())} {"studies" if bad.sum() > 1 else "study"} with NAs omitted from the test.', stacklevel=2)
         yi, v, th_arr = yi[~bad], v[~bad], th_arr[~bad]
     k = yi.shape[0]

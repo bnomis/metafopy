@@ -39,7 +39,9 @@ import metafopy.core.nchg
 import metafopy.core.verbose
 import metafopy.errors
 import metafopy.metadata
+import metafopy.mfopt
 import metafopy.models.call
+import metafopy.models.control_names
 import metafopy.models.glmm_fit
 import metafopy.models.glmm_result
 import metafopy.models.rma_uni
@@ -93,9 +95,14 @@ def make_control(control: metafopy.models.glmm_fit.GLMMControl | collections.abc
         .replace('hessianCtrl', 'hessian_ctrl'): value
         for key, value in control.items()
     }
-    unknown = set(clean) - names
+    unknown = {name for name in set(clean) - names if not metafopy.models.control_names.read_elsewhere(name)}
     if unknown:
         raise metafopy.errors.InputError(f'unknown control settings: {sorted(unknown)}')
+    ignored = {name: value for name, value in clean.items() if name not in names}
+    ignored.update({str(key): value for key, value in control.items() if str(key).replace('.', '_') not in names and str(key) not in ignored})
+    clean = {name: value for name, value in clean.items() if name in names}
+    if ignored:
+        clean['ignored'] = ignored
     if 'package' in clean:
         clean['package'] = match_package(clean['package'])
     if 'hesspack' in clean:
@@ -626,7 +633,7 @@ def rma_glmm(
         ddf=ddf,
         btt=btt_idx,
         m=m,
-        digits=digits,
+        digits=metafopy.mfopt.reduce_digits(digits),
         level=alpha,
         add=add1,
         to=to1,
@@ -635,6 +642,7 @@ def rma_glmm(
         fit_stats_reml=nan_stats,
         se_warn=fit.se_warn,
         data=data,
+        control=con,
     )
     if vlevel:
         metafopy.core.verbose.cat('\n')

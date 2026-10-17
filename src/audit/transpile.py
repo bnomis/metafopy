@@ -14,6 +14,8 @@ LAZY = frozenset({'capture.output', 'expect_error', 'suppressMessages', 'suppres
 UNARY_OR_BINARY = frozenset({'+', '-'})
 BINARY = frozenset({'*', '/', '^', '%%', '%/%', '==', '!=', '<', '>', '<=', '>=', '&', '|', ':', '%in%', '%*%'})
 ASSIGN = frozenset({'<-', '=', '<<-'})
+# bare names that are functions passed as arguments (`transf = log`), not columns of the data
+FUNCTION_SYMBOLS = frozenset({'abs', 'exp', 'identity', 'log', 'log10', 'log2', 'sqrt'})
 CONSTANT_SYMBOLS = {
     'T': 'True',
     'F': 'False',
@@ -179,37 +181,67 @@ def callee_name(f: Node) -> str | None:
     return None
 
 
+def replacement(head: str, current: str, args: list[Node], value_code: str, c: Context) -> str:
+    """The code of the new value of ``current`` after ``head(current, args...) <- value``."""
+    if head in {'[', '[['}:
+        idx = ', '.join(tr(a['v'], c) for a in args)
+        return f'rassign_index({current}, {value_code}, {idx})'
+    if head == '$':
+        return f'rassign_dollar({current}, {args[0]["v"]["v"]!r}, {value_code})'
+    if head in {'names', 'colnames'}:
+        return f'rassign_names({current}, {value_code})'
+    raise UntranslatableError(f'replacement function {head}<-')
+
+
 def tr_assign(lhs: Node, rhs_code: str, c: Context) -> str:
-    if lhs['t'] == 'sym' or lhs['t'] == 'str':
-        name = lhs['v']
-        if c.in_function:
-            c.params.add(name)
-            return f'({local_name(name)} := {rhs_code})'
-        c.assigned.add(name)
-        return f'E.set({name!r}, {rhs_code})'
-    if lhs['t'] == 'call' and lhs['f']['t'] == 'sym':
-        head = lhs['f']['v']
+    """``x <- v``, and ``f(g(x, a), b) <- v``, which R evaluates as ``x <- `g<-`(x, a, `f<-`(g(x, a), b, v))``."""
+    plain = lhs['t'] == 'sym' or lhs['t'] == 'str'
+    value_code = rhs_code if plain else 'RHS_VALUE'
+    while not (lhs['t'] == 'sym' or lhs['t'] == 'str'):
+        if not (lhs['t'] == 'call' and lhs['f']['t'] == 'sym'):
+            raise UntranslatableError('assignment target')
         args = lhs['args']
         target = args[0]['v']
-        if target['t'] != 'sym':
-            raise UntranslatableError('assignment into a nested expression')
-        name = target['v']
-        cur = tr(target, c)
-        if head in {'[', '[['}:
-            idx = ', '.join(tr(a['v'], c) for a in args[1:])
-            new = f'rassign_index({cur}, {rhs_code}, {idx})'
-        elif head == '$':
-            new = f'rassign_dollar({cur}, {args[1]["v"]["v"]!r}, {rhs_code})'
-        elif head in {'names', 'colnames'}:
-            new = f'rassign_names({cur}, {rhs_code})'
-        else:
-            raise UntranslatableError(f'replacement function {head}<-')
-        if c.in_function:
-            c.params.add(name)
-            return f'({local_name(name)} := {new})'
-        c.assigned.add(name)
-        return f'E.set({name!r}, {new})'
-    raise UntranslatableError('assignment target')
+        value_code = replacement(lhs['f']['v'], tr(target, c), args[1:], value_code, c)
+        lhs = target
+    name = lhs['v']
+    if c.in_function:
+        c.params.add(name)
+        return f'({local_name(name)} := {value_code.replace("RHS_VALUE", rhs_code)})'
+    c.assigned.add(name)
+    if plain:
+        return f'E.set({name!r}, {value_code})'
+    # the value of ``x$a <- v`` is ``v``, not the changed ``x``
+    return f'E.replace({name!r}, lambda RHS_VALUE: {value_code}, {rhs_code})'
+
+
+def walk(n: Node) -> typing.Iterator[Node]:
+    """Every node of a parse tree, except the plain names on the left of an assignment (``x`` in ``x <- v``, which are written and not read)."""
+    yield n
+    if n.get('t') == 'call':
+        yield from walk(n['f'])
+        plain = n['f'].get('t') == 'sym' and n['f']['v'] in ASSIGN and len(n['args']) == 2 and n['args'][0]['v'].get('t') in {'sym', 'str'}
+        for i, a in enumerate(n['args']):
+            if not (plain and i == 0):
+                yield from walk(a['v'])
+
+
+def symbols(ast: Node) -> set[str]:
+    """The names a unit reads."""
+    return {str(n['v']) for n in walk(ast) if n.get('t') == 'sym'}
+
+
+def assignment_targets(ast: Node) -> set[str]:
+    """The variables a unit assigns to: the base name of the left side of every ``<-``, ``=`` and ``<<-`` in it."""
+    out: set[str] = set()
+    for n in walk(ast):
+        if n.get('t') == 'call' and n['f'].get('t') == 'sym' and n['f']['v'] in ASSIGN and len(n['args']) == 2:
+            lhs = n['args'][0]['v']
+            while lhs.get('t') == 'call' and lhs['args']:
+                lhs = lhs['args'][0]['v']
+            if lhs.get('t') in {'sym', 'str'}:
+                out.add(str(lhs['v']))
+    return out
 
 
 def tr_function(n: Node, c: Context) -> str:
@@ -252,6 +284,9 @@ def tr_call(n: Node, c: Context) -> str:
         return tr_function(n, c)
     if name == '~':
         return repr(unparse(n))
+    if name == 'c' and len({a['name'] for a in args if a.get('name')}) < len([a for a in args if a.get('name')]):
+        # c(a = 1, a = 2) keeps both elements, which keyword arguments cannot
+        return 'rc_pairs([' + ', '.join(f'({a.get("name", "")!r}, {tr(a["v"], c)})' for a in args) + '])'
     if name == '[':
         return f'rindex({args_code(args, c)})'
     if name == '[[':
@@ -275,11 +310,22 @@ def tr_call(n: Node, c: Context) -> str:
         first = f'lambda: {tr(args[0]["v"], c)}'
         rest = args_code(args[1:], c)
         return f'rcall(E, {name!r}, {first}' + (f', {rest}' if rest else '') + ')'
+    if name in {'anova', 'predict'} and args and not args[0].get('name'):
+        args = [with_model(a, args[0]['v']) for a in args]
     if name in c.params:
         return f'{local_name(name)}({args_code(args, c)})'
     if name in c.nse and any(a.get('name') == 'data' for a in args):
         return tr_nse(name, args, c)
     return f'rcall(E, {name!r}' + (f', {args_code(args, c)}' if args else '') + ')'
+
+
+def with_model(arg: Node, model: Node) -> Node:
+    """`anova(res, X = pairmat(btt = 1:3))`: metafor's pairmat() finds the model of the call it is an argument of, so it is passed the model."""
+    value = arg['v']
+    is_pairmat = value['t'] == 'call' and value['f'].get('v') == 'pairmat'
+    if arg.get('name') and is_pairmat and not any(a.get('name') in {None, 'x'} for a in value['args']):
+        return {**arg, 'v': {**value, 'args': [{'v': model}, *value['args']]}}
+    return arg
 
 
 def tr_nse(name: str, args: list[Node], c: Context) -> str:
@@ -288,7 +334,7 @@ def tr_nse(name: str, args: list[Node], c: Context) -> str:
 
     def thunk(node: Node) -> str:
         if node['t'] == 'sym' and node['v'] not in c.assigned and node['v'] not in c.params and node['v'] not in CONSTANT_SYMBOLS:
-            return repr(node['v'])
+            return f'lambda: rsym(E, {node["v"]!r})'
         if node['t'] == 'call' and node['f'].get('v') == '~':
             return repr(unparse(node))
         return f'lambda: {tr(node, c)}'
@@ -297,8 +343,18 @@ def tr_nse(name: str, args: list[Node], c: Context) -> str:
         code = thunk(node)
         return code if code.startswith('lambda') else f'(lambda: {code})'
 
+    def column_names(node: Node) -> str | None:
+        """metafor takes `rvars = c(v1i, v2i)` as the names of columns of the data, not as the values of the variables."""
+        if node['t'] == 'call' and node['f'].get('v') == 'c' and node['args'] and all(a['v']['t'] == 'sym' and not a.get('name') for a in node['args']):
+            return repr([a['v']['v'] for a in node['args']])
+        return None
+
     positional = [deferred(a['v']) for a in args if not a.get('name')]
-    named = [f'{a["name"]!r}: {deferred(a["v"])}' for a in args if a.get('name') and a['name'] != 'data']
+    named = [
+        f'{a["name"]!r}: ' + (f'(lambda: {names})' if a['name'] == 'rvars' and (names := column_names(a['v'])) is not None else deferred(a['v']))
+        for a in args
+        if a.get('name') and a['name'] != 'data'
+    ]
     return f'rnse(E, {name!r}, lambda: {tr(data, c)}, [{", ".join(positional)}], {{{", ".join(named)}}})'
 
 

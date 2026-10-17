@@ -18,10 +18,12 @@ import numpy.typing
 import pandas
 
 import metafopy.core.parallel
+import metafopy.core.timing
 import metafopy.errors
 import metafopy.methods.blup
 import metafopy.methods.common
 import metafopy.methods.fitview
+import metafopy.methods.listrma
 import metafopy.mfopt
 import metafopy.models.rma_uni
 import metafopy.models.tau2
@@ -63,6 +65,26 @@ class Leave1outResult:
     measure: str = 'GEN'
     level: float = 0.05
     slab_null: bool = False
+    ids: numpy.typing.NDArray[numpy.intp] | None = None
+
+    @property
+    def zval(self) -> FloatArray:
+        """The test statistics of the pooled effects, metafor's ``zval`` (``tval`` for the t-based tests, see :attr:`stat_name`)."""
+        return self.stat
+
+    @property
+    def tval(self) -> FloatArray:
+        """The test statistics of the pooled effects, metafor's ``tval`` for the t-based tests (the same array as :attr:`zval`)."""
+        return self.stat
+
+    @property
+    def test(self) -> str:
+        """``'t'`` for the t-based tests and ``'z'`` otherwise (metafor stores the model's ``test``, so ``'knha'`` and ``'adhoc'`` read ``'t'`` here)."""
+        return 't' if self.stat_name == 'tval' else 'z'
+
+    def __getitem__(self, index: typing.Any) -> typing.Self:
+        """The rows ``index`` (metafor's ``[.list.rma``; a NumPy index, 0-based)."""
+        return metafopy.methods.listrma.rows(self, index, self.estimate.shape[0])
 
     def to_frame(self) -> pandas.DataFrame:
         """Table with metafor's column names (``estimate``, ``se``, ``zval``/``tval``, ``pval``, ``ci.lb``, ...)."""
@@ -160,6 +182,7 @@ def collect(
 
 
 @leave1out.register
+@metafopy.core.timing.timed
 def leave1out_rma_uni(
     x: metafopy.models.rma_uni.RMAResult,
     cluster: numpy.typing.ArrayLike | str | None = None,
@@ -204,8 +227,7 @@ def leave1out_rma_uni(
         slab = tuple(f'-{s}' for s in x.slab)
     else:
         slab = tuple(f'-{cid}' for cid in ids)
-    if na_action == 'fail' and not x.data.keep.all():
-        raise metafopy.errors.InputError('Missing values in results.')
+    # na.fail does not stop metafor here (the fit has already dropped the studies with missing values); the labels are those of 'omit'
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if miss_cluster and na_action in ('exclude', 'pass'):
         keys = ['estimate', 'se', 'stat', 'pval', 'ci_lb', 'ci_ub', 'Q', 'Qp', 'tau2', 'I2', 'H2']
@@ -230,6 +252,7 @@ def leave1out_rma_uni(
         stat_name='tval' if x.test in ('knha', 'adhoc', 't') else 'zval',
         digits=metafopy.mfopt.option_digits(digits, x.digits),
         transf=transf is not None,
+        ids=x.ids[x.not_na] if len(slab) == int(x.not_na.sum()) else x.ids,
     )
 
 
@@ -262,6 +285,7 @@ def cumul(x: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> CumulResult
 
 
 @cumul.register
+@metafopy.core.timing.timed
 def cumul_rma_uni(
     x: metafopy.models.rma_uni.RMAResult,
     order: numpy.typing.ArrayLike | str | None = None,
@@ -271,6 +295,7 @@ def cumul_rma_uni(
     collapse: bool = False,
     *,
     decreasing: bool = False,
+    na_action: metafopy.methods.common.NAAction = 'omit',
     progbar: bool = False,
 ) -> CumulResult:
     """Fit the intercept-only model to the first ``i`` studies for ``i = 1, ..., k``.
@@ -279,18 +304,25 @@ def cumul_rma_uni(
     the model's data) giving the order in which studies are added; without it
     the original order is used. With ``collapse=True`` studies sharing the same
     value of ``order`` are added together. Studies dropped for missing values
-    in the fit are skipped (the ``na.omit`` behaviour). ``digits`` defaults to the ``digits`` option, else to that of the model; ``progbar=True``
+    in the fit are skipped (the ``na.omit`` behaviour).
+    ``na_action`` stands for R's ``options(na.action=)``: ``'fail'`` stops when studies were left out; ``'exclude'`` and ``'pass'`` give the rows of
+    ``'omit'``, where metafor keeps a row of missing values for each study left out.
+    ``digits`` defaults to the ``digits`` option, else to that of the model; ``progbar=True``
     prints a progress bar to stderr while the refits are made.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
     metafopy.methods.fitview.check_class(x, notav=metafopy.methods.fitview.NOT_ROBUST)
+    metafopy.methods.common.check_na_action(na_action)
+    if na_action == 'fail' and not metafopy.methods.common.uni_not_na(x).all():
+        raise metafopy.errors.InputError('Missing values in data.')
     if not x.int_only:
         raise metafopy.errors.InputError('Method only applicable to models without moderators.')
     k = x.k
     if order is None:
-        orvar = pandas.Series(numpy.arange(k))
+        # metafor orders by the position among all rows supplied, so `order` holds the positions of the studies used
+        orvar = pandas.Series(numpy.flatnonzero(x.data.keep))
         collapse = False
     else:
         orvar = pandas.Series(cluster_values(x, order))
@@ -330,6 +362,7 @@ def cumul_rma_uni(
         order=uor,
         measure=x.measure,
         level=x.level,
+        ids=None if collapse else x.ids[x.not_na][srt],
         slab_null=bool(numpy.all([lab == str(i + 1) for lab, i in zip(x.slab, numpy.flatnonzero(x.data.keep), strict=True)])) and not collapse,
     )
 

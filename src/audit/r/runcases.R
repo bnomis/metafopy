@@ -13,6 +13,8 @@ cases <- read_json(args[2])
 
 env <- new.env()
 fixture_errors <- list()
+# the Python side seeds 1234 before it builds the fixtures, so fixtures that draw random numbers (hettest(), permutest()) must start from the same state
+set.seed(1234)
 for (fx in fixtures) {
   res <- tryCatch(run_call(fx, env), error = function(e) e)
   if (inherits(res, "error")) {
@@ -28,6 +30,8 @@ run_case <- function(case) {
   out <- list(id = case$id, status = "ok")
   t0 <- Sys.time()
   set.seed(1234)
+  # a case must not see the options that another one left behind (forest(), funnel() and baujat() set na.action and put it back on exit)
+  options(na.action = "na.omit")
   value <- withCallingHandlers(
     tryCatch({
       setTimeLimit(elapsed = limit, transient = TRUE)
@@ -42,6 +46,10 @@ run_case <- function(case) {
     },
     message = function(m) invokeRestart("muffleMessage"))
   out$secs <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
+  if (!identical(getOption("na.action"), "na.omit")) {
+    warns <- c(warns, paste0("options(na.action) was left at ", getOption("na.action"), " by this case"))
+    options(na.action = "na.omit")
+  }
   out$warnings <- as.list(unique(warns))
   if (inherits(value, "error")) {
     out$status <- "error"

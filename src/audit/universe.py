@@ -68,7 +68,7 @@ class Universe:
         return any(m.get('draws') for m in self.methods if m['generic'] == generic)
 
     def refuses(self, generic: str, classes: list[str]) -> bool:
-        """True when R's own class checks (``.chkclass``) reject a fit of these classes for this generic."""
+        """True when R's own class checks (``.chkclass``: ``must``, ``notav``, ``notap``) reject a fit of these classes for this generic."""
         method = self.method_for(generic, classes)
         if method is None:
             return True
@@ -76,7 +76,7 @@ class Universe:
             must = check.get('must', [])
             if must and not any(c in classes for c in must):
                 return True
-            if any(c in classes for c in check.get('notav', [])):
+            if any(c in classes for c in [*check.get('notav', []), *check.get('notap', [])]):
                 return True
         return False
 

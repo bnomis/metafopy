@@ -164,5 +164,5 @@ def hc(
         method_rma=x.method,
         tau2=tau2,
         tau2_rma=x.tau2,
-        digits=metafopy.mfopt.stored_digits(digits, 4),
+        digits=metafopy.mfopt.stored_digits(digits, x.digits),
     )

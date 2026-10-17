@@ -3,9 +3,11 @@
 import contextlib
 import io
 import json
+import os
 import pathlib
 import signal
 import time
+import traceback
 import typing
 import warnings
 
@@ -61,6 +63,7 @@ def build_env(fixtures: list[Json]) -> tuple[pycall.Env, dict[str, str]]:
 
 
 def print_text(value: object) -> str:
+    """What a Python user sees when printing ``value``; nothing is laid out in R's format here (a result R prints with its own method needs a printer)."""
     buf = io.StringIO()
     with contextlib.redirect_stdout(buf):
         print(value)
@@ -83,6 +86,10 @@ def run_guarded(call: typing.Callable[[], object], timeout: float) -> tuple[Json
         raise
     except BaseException as e:
         record.update(status='error', error_class=type(e).__name__, error=str(e)[:300])
+        trace_file = os.environ.get('METAFOPY_AUDIT_TRACE')  # a file to append the traceback of every failing case to, for debugging the harness
+        if trace_file:
+            with open(trace_file, 'a') as handle:
+                handle.write(''.join(traceback.format_exception(e)) + '\n')
     finally:
         signal.setitimer(signal.ITIMER_REAL, 0)
         matplotlib.pyplot.close('all')

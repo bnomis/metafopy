@@ -29,7 +29,7 @@ import typing
 
 import metafopy.errors
 
-__all__ = ['DIGIT_KEYS', 'OPTIONS', 'getmfopt', 'option_digits', 'option_signif', 'option_space', 'reduce_digits', 'setmfopt']
+__all__ = ['DIGIT_KEYS', 'OPTIONS', 'getmfopt', 'model_digits', 'option_digits', 'option_signif', 'option_space', 'reduce_digits', 'setmfopt']
 
 # auditme: accept[non-alphabetical-literal] the order of metafor's digits vector
 DIGIT_KEYS = ('est', 'se', 'test', 'pval', 'ci', 'var', 'sevar', 'fit', 'het')
@@ -40,12 +40,15 @@ THEMES = ('auto', 'auto2', 'custom', 'custom2', 'dark', 'dark2', 'default', 'def
 OPTIONS: dict[str, typing.Any] = {'check': True, 'signif_stars': True, 'silent': False, 'space': True, 'theme': 'default'}
 
 
-def setmfopt(**kwargs: typing.Any) -> None:
+def setmfopt(**kwargs: typing.Any) -> dict[str, dict[str, typing.Any]]:
     """Set package options, as metafor's ``setmfopt(...)``; an option set to ``None`` is removed.
+
+    Returns the options as they were before, as ``{'metafor': options}`` (what ``options(metafor = ...)`` returns in R).
 
     Raises:
         metafopy.errors.InputError: an option has a value of the wrong type.
     """
+    previous = dict(OPTIONS)
     for opt, value in kwargs.items():
         if value is not None:
             check_option(opt, value)
@@ -53,6 +56,7 @@ def setmfopt(**kwargs: typing.Any) -> None:
             OPTIONS.pop(opt, None)
         else:
             OPTIONS[opt] = value
+    return {'metafor': previous}
 
 
 def check_option(opt: str, value: typing.Any) -> None:
@@ -105,6 +109,12 @@ def reduce_digits(value: typing.Any, stored: int = 4) -> int:
 def stored_digits(digits: typing.Any, stored: int = 4) -> int:
     """The ``digits`` a result keeps: the explicit ``digits`` reduced to one number of decimals, else ``stored`` (the ``digits`` of the fit)."""
     return stored if digits is None else reduce_digits(digits, stored)
+
+
+def model_digits(x: typing.Any) -> int:
+    """The ``digits`` a model was fitted with (metafor's ``x$digits``), else 4 for a vector of estimates."""
+    stored = getattr(x, 'digits', None)
+    return stored if isinstance(stored, int) and not isinstance(stored, bool) else 4
 
 
 def option_digits(digits: typing.Any, stored: int = 4) -> int:

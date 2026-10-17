@@ -19,14 +19,19 @@ https://wviechtb.github.io/metafor/reference/model.matrix.rma.html,
 https://wviechtb.github.io/metafor/reference/update.rma.html.
 """
 
+import collections.abc
 import dataclasses
+import re
 import typing
 
 import numpy
 import numpy.typing
 import pandas
 
+import metafopy.core.labelled
 import metafopy.errors
+import metafopy.methods.common
+import metafopy.methods.fitted
 import metafopy.models.binary
 import metafopy.models.call
 import metafopy.models.glmm_result
@@ -158,7 +163,7 @@ def df_residual(obj: Fit) -> int:
 
 
 def formula_of(obj: Fit, type: str = 'mods') -> str | None:
-    """The model formula, as metafor's ``formula.rma``: ``type='mods'`` (``'~ x'``), ``'yi'`` (``'yi ~ x'``) or ``'scale'``.
+    """The model formula, as metafor's ``formula.rma``: ``type='mods'`` (``'~x'``), ``'yi'`` (``'yi ~ x'``) or ``'scale'``.
 
     ``None`` when the model was not specified by a formula (or for ``rma_mh`` and ``rma_peto`` fits).
 
@@ -183,39 +188,61 @@ def formula_of(obj: Fit, type: str = 'mods') -> str | None:
     if type == 'yi':
         return yi_formula
     if yi_formula is not None:
-        return '~ ' + yi_formula.split('~', 1)[1].strip()
+        return deparse_rhs(yi_formula.split('~', 1)[1])
     mods = args.get('mods')
-    return mods if isinstance(mods, str) and '~' in mods else None
+    return deparse_rhs(mods.split('~', 1)[1]) if isinstance(mods, str) and '~' in mods else None
 
 
-def model_matrix(obj: Fit, asdf: bool = False) -> typing.Any:
+def deparse_rhs(rhs: str) -> str:
+    """R's deparse of a one-sided formula: ``~ablat + year`` (no space after the tilde, one space around ``+`` and ``*``)."""
+    text = re.sub(r'\s*(\*\*|[+*])\s*', lambda m: m.group(1) if m.group(1) == '**' else f' {m.group(1)} ', rhs.strip())
+    return '~' + re.sub(r'\s+', ' ', text)
+
+
+def model_matrix(obj: Fit, asdf: bool = False, *, na_action: metafopy.methods.common.NAAction = 'omit') -> typing.Any:
     """The model matrix of the studies used in fitting, as metafor's ``model.matrix.rma``.
 
     A ``numpy`` array, or with ``asdf=True`` a data frame with the coefficient names.
-    A location-scale model gives ``{'location': X, 'scale': Z}``.
+    A location-scale model gives ``{'location': X, 'scale': Z}``. ``na_action`` stands for R's ``options(na.action=)``: ``'omit'`` (default) gives the rows
+    of the studies used in fitting, ``'exclude'`` and ``'pass'`` one row for every study of the subset (NaN where a value is missing), ``'fail'``
+    stops when studies were left out.
 
     Raises:
         metafopy.errors.ArgumentError: the object is not a model fit.
+        metafopy.errors.InputError: ``na_action`` is unknown, or ``'fail'`` and studies were left out.
     """
     check_fit(obj, 'model_matrix')
+    metafopy.methods.common.check_na_action(na_action)
+    rows = metafopy.methods.fitted.rows_of(obj)
+    if na_action == 'fail' and not rows.not_na.all():
+        raise metafopy.errors.InputError('Missing values in results.')
+    full = na_action in ('exclude', 'pass')
     if isinstance(obj, metafopy.models.binary.FixedBinaryResult):
-        X = numpy.ones((obj.k, 1))
+        fixed = True
+        X = rows.X_f if full else numpy.ones((obj.k, 1))
     else:
-        X = numpy.asarray(obj.X, dtype=numpy.float64)
-    names = list(obj.coef_names)
+        fixed = False
+        X = numpy.asarray(rows.X_f if full else obj.X, dtype=numpy.float64)
+    names = None if fixed else list(obj.coef_names)
+    row_names = getattr(getattr(obj, 'X_f' if full else 'X', None), 'rownames', None)
 
-    def wrap(M: FloatArray, cols: list[str]) -> typing.Any:
-        return pandas.DataFrame(M, columns=cols) if asdf else M.copy()
+    def wrap(M: FloatArray, cols: list[str] | None, rownames: collections.abc.Sequence[str] | None) -> typing.Any:
+        if asdf:
+            return pandas.DataFrame(
+                M, index=None if rownames is None else list(rownames), columns=cols if cols is not None else [f'V{j + 1}' for j in range(M.shape[1])]
+            )
+        return metafopy.core.labelled.design_matrix(M.copy(), rownames, cols)
 
     if isinstance(obj, metafopy.models.rma_ls_result.RMALSResult):
-        return {'location': wrap(X, names), 'scale': wrap(numpy.asarray(obj.Z, dtype=numpy.float64), list(obj.alpha_names))}
-    return wrap(X, names)
+        Z = metafopy.methods.fitted.scale_rows(obj) if full else numpy.asarray(obj.Z, dtype=numpy.float64)
+        return {'location': wrap(X, names, row_names), 'scale': wrap(Z, list(obj.alpha_names), row_names)}
+    return wrap(X, names, row_names)
 
 
-def update(obj: Fit, formula: str | None = None, evaluate: bool = True, **kwargs: typing.Any) -> typing.Any:
+def update(obj: Fit, formula_: str | None = None, evaluate: bool = True, **kwargs: typing.Any) -> typing.Any:
     """Refit a model with changed arguments, as metafor's ``update.rma(object, formula., ..., evaluate=TRUE)``.
 
-    ``formula`` updates the ``mods`` formula (or ``yi`` when the model was specified by
+    ``formula_`` (metafor's ``formula.``) updates the ``mods`` formula (or ``yi`` when the model was specified by
     ``yi='y ~ x'``) with R's ``update.formula`` rules (``'~ . + x'``, ``'~ . - x'``).
     With ``evaluate=False`` the updated :class:`~metafopy.models.call.Call` is returned.
 
@@ -229,15 +256,19 @@ def update(obj: Fit, formula: str | None = None, evaluate: bool = True, **kwargs
     if call is None:
         raise metafopy.errors.InputError('Need an object with call component.')
     args = dict(call.arguments)
-    if formula is not None:
+    if formula_ is not None and call.name not in ('rma_mh', 'rma_peto'):  # metafor ignores formula. for these
         yi = args.get('yi')
         if isinstance(yi, str) and '~' in yi:
-            args['yi'] = metafopy.models.call.update_formula(yi, formula)
+            args['yi'] = metafopy.models.call.update_formula(yi, formula_)
         else:
             mods = args.get('mods')
             if mods is not None and not (isinstance(mods, str) and '~' in mods):
                 raise metafopy.errors.InputError("The 'mods' argument in 'object' must be a formula for updating to work.")
-            args['mods'] = metafopy.models.call.update_formula(mods, formula)
+            if mods is None and call.name == 'rma_glmm':
+                raise metafopy.errors.InputError('formula expected')  # R: update.formula(NULL, formula.)
+            if formula_.split('~', 1)[0].strip() and type(obj).__name__ != 'SelmodelResult':
+                raise metafopy.errors.InputError(f"The formula '{formula_}' updates 'mods' and must be one-sided.")  # R: object '.' not found
+            args['mods'] = metafopy.models.call.update_formula(mods, formula_)
     args.update(kwargs)
     new_call = metafopy.models.call.Call(function=call.function, arguments=args)
     return new_call() if evaluate else new_call

@@ -59,8 +59,8 @@ def test_influence_matches_metafor(dat: pandas.DataFrame, key: str) -> None:
     ):
         refutil.close(getattr(out, attr), ref[name], f'{key}: {name}')
     for j, name in enumerate(res.coef_names):
-        refutil.close(out.dfbs[:, j], ref['dfbs'][name], f'{key}: dfbs {name}')
-    assert list(out.inf) == ['*' if v == '*' else '' for v in refutil.as_list(ref['inf'])]
+        refutil.close(out.dfbs_array[:, j], ref['dfbs'][name], f'{key}: dfbs {name}')
+    assert list(out.marks) == ['*' if v == '*' else '' for v in refutil.as_list(ref['inf'])]
     assert out.m == ref['m']
     assert out.is_infl.tolist() == [bool(v) for v in refutil.as_list(ref['is.infl'])]
     assert refutil.same_print(str(out), ref['print'])
@@ -78,7 +78,7 @@ def test_influence_na_handling(dat: pandas.DataFrame, dna: pandas.DataFrame) -> 
     assert len(out_x.rstudent) == 13
     refutil.close(out_x.rstudent, ref_x['rstudent'])
     refutil.close(out_x.hat, ref_x['hat'])
-    refutil.close(out_x.dfbs[:, 1], ref_x['dfbs']['ablat'])
+    refutil.close(out_x.dfbs_array[:, 1], ref_x['dfbs']['ablat'])
     assert out_x.is_infl.tolist() == [bool(v) for v in refutil.as_list(ref_x['is.infl'])]
 
 

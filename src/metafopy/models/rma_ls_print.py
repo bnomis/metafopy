@@ -56,7 +56,7 @@ def coef_table(
         row.append(metafopy.printing.signif_stars(float(pval[j])))
         rows.append(row)
     header, rows = metafopy.printing.drop_stars(header, rows, signif_stars)
-    return metafopy.printing.fmt_table(header, rows, row_names=None if estimate.shape[0] == 1 else list(names))
+    return metafopy.printing.fmt_table(header, rows, row_names=None if estimate.shape[0] == 1 else list(names), width=metafopy.printing.console_width())
 
 
 def test_line(stat: float, df: tuple[int, float | None], p: float, digits: int, name: str) -> str:
@@ -73,7 +73,7 @@ def format_result(
     out.append(f'Location-Scale Model (k = {res.k}; tau^2 estimator: {res.method})')
     out.append('')
     if showfit:
-        st = res.fit_stats(None)
+        st = res.fit_stats_for(None)
         cells = [metafopy.printing.fmt_num(v, digits) for v in st.as_tuple()]
         # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
         out.append(metafopy.printing.fmt_named_vector(['logLik', 'deviance', 'AIC', 'BIC', 'AICc'], cells))

@@ -15,8 +15,11 @@ import pandas
 
 import metafopy.errors
 
-__all__ = ['DataFields', 'FitMethods']
+__all__ = ['COUNT_NAMES', 'DataFields', 'FitMethods', 'LogLik', 'TableFields']
 
+COUNT_NAMES = ('ai', 'bi', 'ci', 'di', 'x1i', 'x2i', 't1i', 't2i')  # auditme: accept[non-alphabetical-literal] metafor's order
+# auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
+FIT_STAT_ROWS = ['ll', 'dev', 'AIC', 'BIC', 'AICc']  # auditme: accept[non-alphabetical-literal] metafor's order
 # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
 STAT_NAMES = ['logLik', 'deviance', 'AIC', 'BIC', 'AICc']  # auditme: accept[non-alphabetical-literal] metafor's order
 
@@ -39,6 +42,23 @@ def warn_if_different_data(fits: collections.abc.Sequence[typing.Any]) -> None:
         warnings.warn('Models not all fitted to the same data.', stacklevel=3)
 
 
+class LogLik(float):
+    """A log-likelihood (R's ``logLik`` object): a float with the number of parameters as ``df``, printed as R prints it."""
+
+    df: int
+
+    def __new__(cls, value: float, df: int) -> typing.Self:
+        out = super().__new__(cls, value)
+        out.df = df
+        return out
+
+    def __reduce__(self) -> tuple[typing.Any, ...]:
+        return (LogLik, (float(self), self.df))
+
+    def __str__(self) -> str:
+        return f"'log Lik.' {float(self):.7g} (df={self.df})"
+
+
 class DataFields:
     """The data summaries metafor stores in an ``rma.uni`` object: ``k_all``, ``k_eff``, ``p_eff`` and ``ni`` (``fit.data`` holds the data)."""
 
@@ -46,8 +66,9 @@ class DataFields:
 
     @property
     def k_all(self) -> int:
-        """Number of rows supplied, including those dropped for missing values."""
-        return int(typing.cast(typing.Any, self).data.k_all)
+        """Number of rows supplied before subsetting, including those dropped for missing values (``k.all`` of ``rma.uni``)."""
+        md = typing.cast(typing.Any, self).data
+        return int(md.k_all if md.supplied is None else md.supplied)
 
     @property
     def k_eff(self) -> int:
@@ -70,6 +91,200 @@ class DataFields:
         fit = typing.cast(typing.Any, self)
         return numpy.diag(numpy.asarray(fit.vi, dtype=numpy.float64) + numpy.asarray(fit.tau2, dtype=numpy.float64))
 
+    @property
+    def yi_f(self) -> numpy.typing.NDArray[numpy.float64]:
+        """The observed effects of the studies after subsetting, with ``NaN`` for those left out of the fit, metafor's ``yi.f``."""
+        return typing.cast(numpy.typing.NDArray[numpy.float64], typing.cast(typing.Any, self).data.yi_f)
+
+    @property
+    def vi_f(self) -> numpy.typing.NDArray[numpy.float64]:
+        """The sampling variances of the studies after subsetting, with ``NaN`` for those left out of the fit, metafor's ``vi.f``."""
+        return typing.cast(numpy.typing.NDArray[numpy.float64], typing.cast(typing.Any, self).data.vi_f)
+
+    @property
+    def ni_f(self) -> numpy.typing.NDArray[numpy.float64] | None:
+        """The sample sizes of the studies after subsetting (``None`` when unknown), metafor's ``ni.f``."""
+        return typing.cast(numpy.typing.NDArray[numpy.float64] | None, typing.cast(typing.Any, self).data.ni_f)
+
+    @property
+    def weights_f(self) -> numpy.typing.NDArray[numpy.float64] | None:
+        """The user-specified weights of the studies after subsetting (``None`` without weights), metafor's ``weights.f``."""
+        return typing.cast(numpy.typing.NDArray[numpy.float64] | None, typing.cast(typing.Any, self).data.weights_f)
+
+    @property
+    def k_f(self) -> int:
+        """Number of studies after subsetting, including those with missing values, metafor's ``k.f``."""
+        return int(typing.cast(typing.Any, self).data.k_f)
+
+    @property
+    def ids(self) -> numpy.typing.NDArray[numpy.intp]:
+        """The positions (0-based) of the studies used in the fit among the studies supplied, metafor's ``ids``."""
+        return typing.cast(numpy.typing.NDArray[numpy.intp], typing.cast(typing.Any, self).data.ids)
+
+    @property
+    def not_na(self) -> numpy.typing.NDArray[numpy.bool_]:
+        """Whether each study after subsetting was used in the fit (no missing values), metafor's ``not.na``."""
+        return typing.cast(numpy.typing.NDArray[numpy.bool_], typing.cast(typing.Any, self).data.not_na)
+
+    @property
+    def subset(self) -> numpy.typing.NDArray[numpy.bool_] | None:
+        """The ``subset`` argument as a logical vector over the studies supplied (``None`` when none was given), metafor's ``subset``."""
+        return typing.cast(numpy.typing.NDArray[numpy.bool_] | None, typing.cast(typing.Any, self).data.subset_arg)
+
+    @property
+    def slab_null(self) -> bool:
+        """Whether no study labels were given (``slab`` holds the numbers 1 to k), metafor's ``slab.null``."""
+        return not bool(typing.cast(typing.Any, self).data.slab_given)
+
+    @property
+    def outdat_f(self) -> dict[str, numpy.typing.NDArray[numpy.float64] | None]:
+        """The counts (``ai`` ... ``t2i``) of the studies after subsetting that the effects were computed from, ``None`` for those not given.
+
+        This is metafor's ``outdat.f``.
+        """
+        counts = typing.cast(typing.Any, self).data.counts_all or {}
+        return {name: counts.get(name) for name in COUNT_NAMES}
+
+    @property
+    def intercept(self) -> bool:
+        """Whether the model has an intercept, metafor's ``intercept``."""
+        return bool(typing.cast(typing.Any, self).int_incl)
+
+
+class TableFields:
+    """The fields of the table-based fits (``rma_mh``, ``rma_peto``, ``rma_glmm``) that metafor keeps from the data handling: ``yi_f``, ``ids``, ``outdat``, ...
+
+    They are read from ``tables`` (:class:`metafopy.models.tables.TableSet`) of the fit.
+    """
+
+    __slots__ = ()
+
+    outdat_names: typing.ClassVar[tuple[str, ...]] = COUNT_NAMES
+
+    @property
+    def yi_f(self) -> numpy.typing.NDArray[numpy.float64]:
+        """The effects of the tables after subsetting, including those with missing counts, metafor's ``yi.f``."""
+        return typing.cast(numpy.typing.NDArray[numpy.float64], typing.cast(typing.Any, self).tables.yi_f)
+
+    @property
+    def vi_f(self) -> numpy.typing.NDArray[numpy.float64]:
+        """The sampling variances of the tables after subsetting, including those with missing counts, metafor's ``vi.f``."""
+        return typing.cast(numpy.typing.NDArray[numpy.float64], typing.cast(typing.Any, self).tables.vi_f)
+
+    @property
+    def ni_f(self) -> numpy.typing.NDArray[numpy.float64]:
+        """The sample sizes of the tables after subsetting, including those with missing counts, metafor's ``ni.f``."""
+        return typing.cast(numpy.typing.NDArray[numpy.float64], typing.cast(typing.Any, self).tables.ni_f)
+
+    @property
+    def ids(self) -> numpy.typing.NDArray[numpy.intp]:
+        """The positions (0-based) of the tables after subsetting among the tables supplied, metafor's ``ids``."""
+        return typing.cast(numpy.typing.NDArray[numpy.intp], typing.cast(typing.Any, self).tables.ids)
+
+    @property
+    def not_na(self) -> numpy.typing.NDArray[numpy.bool_]:
+        """Whether each table after subsetting has complete counts, metafor's ``not.na``."""
+        return typing.cast(numpy.typing.NDArray[numpy.bool_], typing.cast(typing.Any, self).tables.not_na)
+
+    @property
+    def not_na_yivi(self) -> numpy.typing.NDArray[numpy.bool_]:
+        """Whether each table after subsetting has a computable effect and variance, metafor's ``not.na.yivi``."""
+        return typing.cast(numpy.typing.NDArray[numpy.bool_], typing.cast(typing.Any, self).tables.not_na_yivi)
+
+    @property
+    def slab_null(self) -> bool:
+        """Whether no study labels were given, metafor's ``slab.null``."""
+        return bool(typing.cast(typing.Any, self).tables.slab_null)
+
+    @property
+    def subset(self) -> numpy.typing.NDArray[numpy.bool_] | None:
+        """The ``subset`` argument as a logical vector over the tables supplied (``None`` when none was given), metafor's ``subset``."""
+        return typing.cast(numpy.typing.NDArray[numpy.bool_] | None, typing.cast(typing.Any, self).tables.subset)
+
+    @property
+    def outdat_f(self) -> dict[str, numpy.typing.NDArray[numpy.float64] | None]:
+        """The counts of the tables after subsetting, including those with missing counts, ``None`` for those not used, metafor's ``outdat.f``."""
+        cells = typing.cast(typing.Any, self).tables.cells_f
+        return {name: cells.get(name) for name in self.outdat_names}
+
+    @property
+    def outdat(self) -> dict[str, numpy.typing.NDArray[numpy.float64] | None]:
+        """The counts used in the model, ``None`` for those the measure does not use, metafor's ``outdat``."""
+        cells = typing.cast(typing.Any, self).tables.cells
+        return {name: cells.get(name) for name in self.outdat_names}
+
+
+class SummaryText(str):
+    """The text of ``summary()`` of a fit; as in R, where ``summary()`` returns the fit with another print method, its attributes are those of the fit."""
+
+    fit: typing.Any
+
+    def __new__(cls, text: str, fit: typing.Any) -> typing.Self:
+        obj = super().__new__(cls, text)
+        obj.fit = fit
+        return obj
+
+    def __getattr__(self, name: str) -> typing.Any:
+        if name == 'fit':
+            raise AttributeError(name)
+        return getattr(self.fit, name)
+
+
+class RobustFields:
+    """The fields metafor adds to a model made robust by ``robust()`` (``cluster``, ``n``, ``tcl``, ``vbest``, ``robumethod``, ``meat``, ...); they are
+    read from ``robust`` (:class:`metafopy.models.robust_info.RobustInfo`) of the fit and are ``None`` for a model that is not robust."""
+
+    __slots__ = ()
+
+    @property
+    def robust_info(self) -> typing.Any:
+        return typing.cast(typing.Any, self).robust
+
+    @property
+    def cluster(self) -> numpy.typing.NDArray[numpy.object_] | None:
+        """The cluster of each study of a model made robust with :func:`metafopy.robust` (metafor's ``cluster``), ``None`` otherwise."""
+        return None if self.robust_info is None else self.robust_info.cluster
+
+    @property
+    def n(self) -> int | None:
+        """The number of clusters of a robust model (metafor's ``n``), ``None`` otherwise."""
+        return None if self.robust_info is None else self.robust_info.n
+
+    @property
+    def tcl(self) -> numpy.typing.NDArray[numpy.intp] | None:
+        """The number of studies in each cluster of a robust model (metafor's ``tcl``), ``None`` otherwise."""
+        return None if self.robust_info is None else self.robust_info.tcl
+
+    @property
+    def vbest(self) -> str | None:
+        """The variance estimator of a robust model (``'CR0'``, ``'CR1'``, ..., metafor's ``vbest``), ``None`` otherwise."""
+        return None if self.robust_info is None else self.robust_info.vbest
+
+    @property
+    def robumethod(self) -> str | None:
+        """``'default'`` or ``'clubSandwich'`` for a robust model (metafor's ``robumethod``), ``None`` otherwise."""
+        return None if self.robust_info is None else self.robust_info.robumethod
+
+    @property
+    def meat(self) -> numpy.typing.NDArray[numpy.float64] | None:
+        """The block-diagonal matrix of residual cross-products of a robust model (metafor's ``meat``), ``None`` without one (``clubSandwich`` fits too)."""
+        return None if self.robust_info is None else self.robust_info.meat
+
+    @property
+    def coef_test(self) -> str | None:
+        """The test of the coefficients of a ``club_sandwich`` model (metafor's ``coef_test``), ``None`` otherwise."""
+        return None if self.robust_info is None else self.robust_info.coef_test
+
+    @property
+    def conf_test(self) -> str | None:
+        """The test behind the confidence intervals of a ``club_sandwich`` model (metafor's ``conf_test``), ``None`` otherwise."""
+        return None if self.robust_info is None else self.robust_info.conf_test
+
+    @property
+    def wald_test(self) -> str | None:
+        """The Wald-type test of a ``club_sandwich`` model (metafor's ``wald_test``), ``None`` otherwise."""
+        return None if self.robust_info is None else self.robust_info.wald_test
+
 
 class FitMethods:
     """Mixin of the generic accessors of metafor fits (``nobs()``, ``df.residual()``, ``formula()``, ...)."""
@@ -81,19 +296,26 @@ class FitMethods:
         """The estimated coefficients, an old alias of ``beta`` (metafor's ``b``)."""
         return typing.cast(numpy.typing.NDArray[numpy.float64], typing.cast(typing.Any, self).beta)
 
+    @property
+    def fit_stats(self) -> pandas.DataFrame:
+        """The log-likelihood, deviance, AIC, BIC and AICc (rows) under ML and REML (columns), metafor's ``fit.stats``."""
+        fit = typing.cast(typing.Any, self)
+        return pandas.DataFrame({'ML': list(fit.fit_stats_ml.as_tuple()), 'REML': list(fit.fit_stats_reml.as_tuple())}, index=FIT_STAT_ROWS)
+
     def use_reml(self, REML: bool | None) -> bool:
         """``REML`` as given, else whether the model was fitted with REML (as in metafor)."""
         return bool(REML) if REML is not None else getattr(self, 'method', None) == 'REML'
 
-    def logLik(self, REML: bool | None = None) -> float:
-        """Log-likelihood; REML unless the model was fitted with ML (as in metafor)."""
-        return float(typing.cast(typing.Any, self).fit_stats(self.use_reml(REML)).ll)
+    def logLik(self, REML: bool | None = None) -> LogLik:
+        """Log-likelihood; REML unless the model was fitted with ML (as in metafor). A number whose ``df`` is the number of parameters."""
+        model = typing.cast(typing.Any, self)
+        return LogLik(model.fit_stats_for(self.use_reml(REML)).ll, int(model.parms))
 
     def deviance(self, REML: bool | None = None) -> float:
-        return float(typing.cast(typing.Any, self).fit_stats(self.use_reml(REML)).dev)
+        return float(typing.cast(typing.Any, self).fit_stats_for(self.use_reml(REML)).dev)
 
     def AICc(self, REML: bool | None = None) -> float:
-        return float(typing.cast(typing.Any, self).fit_stats(self.use_reml(REML)).AICc)
+        return float(typing.cast(typing.Any, self).fit_stats_for(self.use_reml(REML)).AICc)
 
     def AIC(
         self,
@@ -113,7 +335,7 @@ class FitMethods:
         reml = self.use_reml(REML)
         row = 'AICc' if correct else 'AIC'
         fits = [self, *others]
-        values = [float(getattr(typing.cast(typing.Any, f).fit_stats(reml), row)) for f in fits]
+        values = [float(getattr(typing.cast(typing.Any, f).fit_stats_for(reml), row)) for f in fits]
         if not others:
             return values[0]
         warn_if_different_data(fits)
@@ -123,7 +345,7 @@ class FitMethods:
         """BIC of this fit, as metafor's ``BIC()``; with further fits in ``others`` a frame with the columns ``df`` and ``BIC`` (see :meth:`AIC`)."""
         reml = self.use_reml(REML)
         fits = [self, *others]
-        values = [float(typing.cast(typing.Any, f).fit_stats(reml).BIC) for f in fits]
+        values = [float(typing.cast(typing.Any, f).fit_stats_for(reml).BIC) for f in fits]
         if not others:
             return values[0]
         warn_if_different_data(fits)
@@ -136,7 +358,7 @@ class FitMethods:
         """
         reml = self.use_reml(REML)
         fits = [self, *others]
-        columns = [list(typing.cast(typing.Any, f).fit_stats(reml).as_tuple()) for f in fits]
+        columns = [list(typing.cast(typing.Any, f).fit_stats_for(reml).as_tuple()) for f in fits]
         if not others:
             return pandas.Series(columns[0], index=STAT_NAMES, name='REML' if reml else 'ML')
         warn_if_different_data(fits)
@@ -187,12 +409,12 @@ class FitMethods:
 
         return metafopy.methods.accessors.model_matrix(typing.cast(typing.Any, self), asdf)
 
-    def update(self, formula: str | None = None, evaluate: bool = True, **kwargs: typing.Any) -> typing.Any:
+    def update(self, formula_: str | None = None, evaluate: bool = True, **kwargs: typing.Any) -> typing.Any:
         """See :func:`metafopy.methods.accessors.update`."""
         # auditme: accept[in-function-import] metafopy.methods imports the result classes, so the import is deferred to avoid a cycle
         import metafopy.methods.accessors
 
-        return metafopy.methods.accessors.update(typing.cast(typing.Any, self), formula, evaluate, **kwargs)
+        return metafopy.methods.accessors.update(typing.cast(typing.Any, self), formula_, evaluate, **kwargs)
 
     def simulate(self, nsim: int = 1, seed: int | None = None, olim: typing.Any = None, **kwargs: typing.Any) -> typing.Any:
         """See :func:`metafopy.methods.simulate.simulate`."""

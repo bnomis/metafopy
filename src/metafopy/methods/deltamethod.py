@@ -34,6 +34,7 @@ import metafopy.effects.summary
 import metafopy.errors
 import metafopy.methods.ls_common
 import metafopy.methods.vif
+import metafopy.mfopt
 import metafopy.printing
 
 __all__ = ['DeltaMethodResult', 'deltamethod']
@@ -41,7 +42,7 @@ __all__ = ['DeltaMethodResult', 'deltamethod']
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 
 # auditme: accept[non-alphabetical-literal] order is metafor's documented order and is meaningful
-DIGIT_KEYS = ('est', 'se', 'test', 'pval', 'ci')
+DIGIT_KEYS = metafopy.mfopt.DIGIT_KEYS
 
 
 @dataclasses.dataclass(frozen=True)
@@ -68,7 +69,12 @@ class DeltaMethodResult:
         names = list(self.tab.index)
         return pandas.DataFrame(self.vb, index=names, columns=names)
 
-    def summary(self, digits: int | collections.abc.Mapping[str, int] | None = None, signif_stars: bool = True, signif_legend: bool | None = None) -> str:
+    def summary(
+        self,
+        digits: int | collections.abc.Sequence[float] | collections.abc.Mapping[str, int] | None = None,
+        signif_stars: bool = True,
+        signif_legend: bool | None = None,
+    ) -> str:
         """The table as ``print.deltamethod`` shows it."""
         return format_result(
             self, self.digits if digits is None else get_digits(digits), signif_stars, signif_stars if signif_legend is None else signif_legend
@@ -78,15 +84,17 @@ class DeltaMethodResult:
         return self.summary()
 
 
-def get_digits(digits: int | collections.abc.Mapping[str, int] | None, default: collections.abc.Mapping[str, int] | None = None) -> dict[str, int]:
+def get_digits(
+    digits: int | collections.abc.Sequence[float] | collections.abc.Mapping[str, int] | None, default: collections.abc.Mapping[str, int] | None = None
+) -> dict[str, int]:
     """metafor's ``.get.digits()`` for the keys used here (missing keys keep their defaults)."""
-    out = dict(default) if default is not None else dict.fromkeys(DIGIT_KEYS, 4)
+    out = dict(default) if default is not None else dict.fromkeys(DIGIT_KEYS[:5], 4)
     if digits is None:
         return out
     if isinstance(digits, collections.abc.Mapping):
         out.update({key: int(val) for key, val in digits.items() if key in out})
         return out
-    return dict.fromkeys(DIGIT_KEYS, int(digits))
+    return dict.fromkeys(out, metafopy.mfopt.reduce_digits(digits))
 
 
 def arity(fun: collections.abc.Callable[..., typing.Any]) -> int:
@@ -179,7 +187,7 @@ def deltamethod(
     order: int = 1,
     level: float | None = None,
     H0: numpy.typing.ArrayLike = 0,
-    digits: int | collections.abc.Mapping[str, int] | None = None,
+    digits: int | collections.abc.Sequence[float] | collections.abc.Mapping[str, int] | None = None,
 ) -> DeltaMethodResult:
     """Apply the (multivariate) delta method to a function of a set of coefficients.
 
@@ -203,7 +211,7 @@ def deltamethod(
     if level is None:
         model_level = None if is_vector(x) else getattr(x, 'level', None)
         level = 95.0 if model_level is None else float(model_level)
-    digit_map = get_digits(digits)
+    digit_map = get_digits(digits, None if is_vector(x) else dict.fromkeys(DIGIT_KEYS, metafopy.mfopt.model_digits(x)))
     p = coef.shape[0]
     vb = check_vcov(vcov_in, p)
 

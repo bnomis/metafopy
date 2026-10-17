@@ -71,9 +71,10 @@ def cbind_escalc(*args: pandas.DataFrame | pandas.Series, **columns: typing.Any)
     """Combine data frames (and further columns) side by side and keep the ``escalc`` attributes, as metafor's ``cbind()`` of ``escalc`` frames.
 
     ``args`` are data frames (usually from :func:`metafopy.escalc` or :func:`metafopy.summary_escalc`) or named Series; ``columns`` add vectors
-    under the names of the keywords. The result has the columns of all arguments in order (names are not made unique, like
-    ``data.frame(..., check.names = FALSE)``). The names of the effect sizes, sampling variances, standard errors, test statistics, p-values and
-    confidence interval bounds of all arguments are collected (those of later arguments first, as in R), ``digits`` is that of the last argument
+    under the names of the keywords (a data frame given as a keyword has its columns prefixed ``name.``, unless it has just one column).
+    The result has the columns of all arguments in order (names are not made unique, like ``data.frame(..., check.names = FALSE)``).
+    The names of the effect sizes, sampling variances, standard errors, test statistics, p-values and confidence interval bounds of all
+    arguments are collected (those of later arguments first, as in R), ``digits`` is that of the last argument
     and ``measure``, ``slab`` and ``ni`` come from the first argument that has them.
 
     Raises:
@@ -82,7 +83,14 @@ def cbind_escalc(*args: pandas.DataFrame | pandas.Series, **columns: typing.Any)
     """
     parts: list[pandas.DataFrame | pandas.Series] = [*args]
     for name, values in columns.items():
-        parts.append(pandas.Series(numpy.asarray(values), name=name))
+        if isinstance(values, pandas.DataFrame):
+            # data.frame(w = df): a data frame argument keeps its column names, prefixed 'w.' unless it has a single column
+            frame = values.reset_index(drop=True)
+            if frame.shape[1] > 1:
+                frame.columns = pandas.Index([f'{name}.{c}' for c in frame.columns])
+            parts.append(frame)
+        else:
+            parts.append(pandas.Series(numpy.asarray(values), name=name))
     if not parts:
         raise metafopy.errors.InputError('At least one argument is needed.')
     for part in parts:
