@@ -8,6 +8,7 @@ import numpy
 import numpy.typing
 import pandas
 
+import metafopy.core.labelled
 import metafopy.metadata
 import metafopy.mfopt
 import metafopy.models.call
@@ -157,6 +158,12 @@ class SelmodelResult(metafopy.models.fit_methods.FitMethods):
     def QEp(self) -> float:
         """Not computed for selection models (``NaN``, as metafor stores ``NA``)."""
         return math.nan
+
+    def __post_init__(self) -> None:
+        # R names the rows and columns of the Hessian by the coefficients, tau2 and the selection parameters
+        if self.hessian is not None:
+            names = [*self.base.coef_names, 'tau2', *[f'delta.{i + 1}' for i in range(self.deltas)]]
+            object.__setattr__(self, 'hessian', metafopy.core.labelled.design_matrix(self.hessian, names, names))
 
     @property
     def yi(self) -> FloatArray:
@@ -459,7 +466,9 @@ class SelmodelResult(metafopy.models.fit_methods.FitMethods):
         their legend.
         """
         stars, legend = metafopy.mfopt.option_signif(signif_stars, signif_legend)
-        return metafopy.mfopt.option_space(format_selmodel(self, metafopy.mfopt.option_digits(digits, self.digits), showfit, stars, legend))
+        return metafopy.models.fit_methods.SummaryText(
+            metafopy.mfopt.option_space(format_selmodel(self, metafopy.mfopt.option_digits(digits, self.digits), showfit, stars, legend)), self
+        )
 
     def __str__(self) -> str:
         return self.summary(showfit=False)

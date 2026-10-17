@@ -12,6 +12,7 @@ import numpy
 import numpy.typing
 import pandas
 
+import metafopy.core.labelled
 import metafopy.mfopt
 import metafopy.models.call
 import metafopy.models.fit_methods
@@ -109,6 +110,13 @@ class GLMMResult(metafopy.models.fit_methods.TableFields, metafopy.models.fit_me
 
     outdat_names: typing.ClassVar[tuple[str, ...]] = (*metafopy.models.fit_methods.COUNT_NAMES, 'xi', 'mi', 'ni', 'ti')
 
+    def __post_init__(self) -> None:
+        # R names the rows of the model matrices by the rows of the data and their columns by the coefficients
+        names = [str(int(i) + 1) for i in self.tables.ids]
+        used = [n for n, flag in zip(names, self.tables.not_na, strict=True) if flag]
+        object.__setattr__(self, 'X', metafopy.core.labelled.design_matrix(self.X, used, self.coef_names))
+        object.__setattr__(self, 'X_f', metafopy.core.labelled.design_matrix(self.X_f, names, self.coef_names))
+
     # -- accessors ---------------------------------------------------------
 
     @property
@@ -190,7 +198,9 @@ class GLMMResult(metafopy.models.fit_methods.TableFields, metafopy.models.fit_me
         their legend.
         """
         stars, legend = metafopy.mfopt.option_signif(signif_stars, signif_legend)
-        return metafopy.mfopt.option_space(self.render(metafopy.mfopt.option_digits(digits, self.digits), showfit, stars, legend))
+        return metafopy.models.fit_methods.SummaryText(
+            metafopy.mfopt.option_space(self.render(metafopy.mfopt.option_digits(digits, self.digits), showfit, stars, legend)), self
+        )
 
     def __str__(self) -> str:
         return self.summary(showfit=False)

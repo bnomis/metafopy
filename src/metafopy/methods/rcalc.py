@@ -18,6 +18,7 @@ import numpy.typing
 import pandas
 import scipy.sparse
 
+import metafopy.core.labelled
 import metafopy.errors
 import metafopy.methods.blocks
 import metafopy.methods.common
@@ -43,6 +44,12 @@ class RCalcResult:
 
     dat: pandas.DataFrame | None
     V: FloatArray | scipy.sparse.csr_array | None
+
+    def __post_init__(self) -> None:
+        # R names the rows and columns of V by var1.var2 and gives it the class vcovmat
+        if isinstance(self.V, numpy.ndarray) and self.dat is not None and 'var1.var2' in self.dat.columns and self.V.shape[0] == self.dat.shape[0]:
+            names = [str(n) for n in self.dat['var1.var2']]
+            object.__setattr__(self, 'V', metafopy.core.labelled.VCovMat(self.V, names, names))
 
 
 def match_nfun(nfun: str) -> str:

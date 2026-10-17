@@ -30,6 +30,7 @@ import scipy.integrate
 import scipy.special
 import scipy.stats
 
+import metafopy.core.labelled
 import metafopy.effects.na
 import metafopy.effects.rtet
 import metafopy.errors
@@ -590,7 +591,9 @@ def escalc(
     vi_names = [var_names[1], *[n for n in prev_attrs.get('vi_names', []) if n != var_names[1]]]
     dat.attrs['yi_names'] = [n for n in yi_names if n in dat.columns]
     dat.attrs['vi_names'] = [n for n in vi_names if n in dat.columns]
-    return dat
+    frame = metafopy.core.labelled.EscalcFrame(dat)
+    frame.attrs = dict(dat.attrs)
+    return frame
 
 
 def make_unique_dot1(labels: collections.abc.Sequence[str]) -> tuple[str, ...]:

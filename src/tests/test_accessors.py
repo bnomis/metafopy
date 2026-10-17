@@ -79,7 +79,9 @@ def test_accessors(key: str) -> None:
     else:
         refutil.close(se, exp['se'], f'{key}.se', rtol=rtol)
         numpy.testing.assert_allclose(metafopy.model_matrix(res), numpy.array(exp['model_matrix'], dtype=float).reshape(res.k, -1))
-        assert list(metafopy.model_matrix(res, asdf=True).columns) == list(res.coef_names)
+        # metafor's mh and peto fits have a model matrix without column names, which as.data.frame() names V1
+        expected = ['V1'] if key in ('mh', 'peto') else list(res.coef_names)
+        assert list(metafopy.model_matrix(res, asdf=True).columns) == expected
 
 
 def test_formula_types() -> None:

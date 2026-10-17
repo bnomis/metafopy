@@ -59,6 +59,21 @@ class LSProfileResult:
         grid = self.alpha[numpy.isfinite(self.alpha)]
         return float(grid.min()), float(grid.max())
 
+    @property
+    def comps(self) -> int:
+        """metafor's ``comps``: the number of components profiled in this profile (one)."""
+        return 1
+
+    @property
+    def xlab(self) -> str:
+        """The label of the x axis of the profile plot."""
+        return f'alpha[{self.position + (0 if self.sub1 else 1)}] Value'
+
+    @property
+    def title(self) -> str:
+        """The title of the profile plot."""
+        return f'Profile Plot for alpha[{self.position + (0 if self.sub1 else 1)}]'
+
     def to_frame(self) -> pandas.DataFrame:
         return pandas.DataFrame({'alpha': self.alpha, 'll': self.ll})
 
@@ -137,7 +152,7 @@ def profile_rma_ls(
         out = [r for r in results if isinstance(r, LSProfileResult)]
         if plot and out:
             plot_all(out, ax, plot_args)
-        return out[0] if len(out) == 1 else out
+        return out[0] if len(out) == 1 else metafopy.methods.profile.ProfileList(out)
 
     if bool(numpy.all(x.alpha_fix)):
         raise metafopy.errors.InputError("Model does not contain any estimated 'alpha' components.")

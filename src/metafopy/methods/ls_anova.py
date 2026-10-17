@@ -61,6 +61,28 @@ class LSWaldResult:
     class_: tuple[str, ...] | None = None
 
     @property
+    def Xb(self) -> FloatArray:
+        """The estimates of the linear combinations of the location coefficients (``X``), metafor's ``Xb``.
+
+        Raises:
+            AttributeError: the test is not of linear combinations of the location coefficients.
+        """
+        if self.part != 'location' or self.idx is not None or self.estimate is None:
+            raise AttributeError('Xb')
+        return self.estimate
+
+    @property
+    def Za(self) -> FloatArray:
+        """The estimates of the linear combinations of the scale coefficients (``Z``), metafor's ``Za``.
+
+        Raises:
+            AttributeError: the test is not of linear combinations of the scale coefficients.
+        """
+        if self.part != 'scale' or self.idx is not None or self.estimate is None:
+            raise AttributeError('Za')
+        return self.estimate
+
+    @property
     def type(self) -> str:
         """The kind of test: ``'Wald.btt'`` or ``'Wald.Xb'`` (location part), ``'Wald.att'`` or ``'Wald.Za'`` (scale part), metafor's ``type``."""
         suffix = ('btt' if self.part == 'location' else 'att') if self.idx is not None else ('Xb' if self.part == 'location' else 'Za')

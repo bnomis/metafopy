@@ -14,6 +14,7 @@ import numpy.typing
 import pandas
 import scipy.sparse
 
+import metafopy.core.labelled
 import metafopy.core.linalg
 import metafopy.errors
 
@@ -142,13 +143,16 @@ def blsplit(
     unique = list(pandas.unique(groups))
     if sort:
         unique = sorted(unique)
-    res: dict[typing.Any, typing.Any] = {}
+    res: dict[typing.Any, typing.Any] = metafopy.core.labelled.NamedList()
     for value in unique:
         idx = numpy.flatnonzero(groups == value)
         if sparse_x is not None:
             block: typing.Any = sparse_x[idx][:, idx]
         elif dense is not None:
             block = dense[numpy.ix_(idx, idx)]
+            if isinstance(x, metafopy.core.labelled.LabelledMatrix):
+                kind = type(x)
+                block = kind(block, None if x.rownames is None else [x.rownames[i] for i in idx], None if x.colnames is None else [x.colnames[i] for i in idx])
         else:
             raise metafopy.errors.InternalError('blsplit() has neither a dense nor a sparse matrix')
         if fun is not None:

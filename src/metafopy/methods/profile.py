@@ -31,9 +31,18 @@ import metafopy.methods.predict
 import metafopy.models.rma_uni
 import metafopy.models.tau2
 
-__all__ = ['ProfileResult', 'profile']
+__all__ = ['ProfileList', 'ProfileResult', 'profile']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
+
+
+class ProfileList(list[typing.Any]):
+    """The profiles of several components (metafor returns a list of profiles with the number of components in ``comps``)."""
+
+    @property
+    def comps(self) -> int:
+        """The number of components profiled."""
+        return len(self)
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -85,6 +94,17 @@ class ProfileResult:
     def title(self) -> str:
         """The title of the profile plot."""
         return 'Profile Plot for tau' if self.sqrt else 'Profile Plot for tau^2'
+
+    @property
+    def tau(self) -> FloatArray:
+        """The grid of ``tau`` values (metafor names the grid ``tau`` for ``sqrt=TRUE``).
+
+        Raises:
+            AttributeError: the profile is of ``tau^2``.
+        """
+        if not self.sqrt:
+            raise AttributeError('tau')
+        return self.tau2
 
     def to_frame(self) -> pandas.DataFrame:
         return pandas.DataFrame({'tau' if self.sqrt else 'tau2': self.tau2, 'll': self.ll})

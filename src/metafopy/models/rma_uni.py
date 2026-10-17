@@ -20,6 +20,7 @@ import numpy.typing
 import pandas
 import scipy.stats
 
+import metafopy.core.labelled
 import metafopy.core.linalg
 import metafopy.core.verbose
 import metafopy.effects.measures
@@ -67,7 +68,7 @@ class FitStats:
 
 
 @dataclasses.dataclass(frozen=True, slots=True, eq=False)
-class RMAResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_methods.FitMethods):
+class RMAResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_methods.RobustFields, metafopy.models.fit_methods.FitMethods):
     """A fitted ``rma.uni`` model.
 
     Array attributes follow metafor's names with ``.`` replaced by ``_``
@@ -128,6 +129,11 @@ class RMAResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_meth
     to: str = 'only0'
     drop00: bool = False
 
+    def __post_init__(self) -> None:
+        # R names the rows of the model matrices by the rows of the data and their columns by the coefficients
+        object.__setattr__(self, 'X', metafopy.core.labelled.design_matrix(self.X, self.data.rownames, self.coef_names))
+        object.__setattr__(self, 'X_f', metafopy.core.labelled.design_matrix(self.X_f, self.data.rownames_f, self.coef_names))
+
     # -- accessors ---------------------------------------------------------
 
     @property
@@ -139,51 +145,6 @@ class RMAResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_meth
     def tau2_f(self) -> float:
         """The amount of heterogeneity, metafor's ``tau2.f`` (the same number as ``tau2`` here)."""
         return self.tau2
-
-    @property
-    def cluster(self) -> numpy.typing.NDArray[numpy.object_] | None:
-        """The cluster of each study of a model made robust with :func:`metafopy.robust` (metafor's ``cluster``), ``None`` otherwise."""
-        return None if self.robust is None else self.robust.cluster
-
-    @property
-    def n(self) -> int | None:
-        """The number of clusters of a robust model (metafor's ``n``), ``None`` otherwise."""
-        return None if self.robust is None else self.robust.n
-
-    @property
-    def tcl(self) -> numpy.typing.NDArray[numpy.intp] | None:
-        """The number of studies in each cluster of a robust model (metafor's ``tcl``), ``None`` otherwise."""
-        return None if self.robust is None else self.robust.tcl
-
-    @property
-    def vbest(self) -> str | None:
-        """The variance estimator of a robust model (``'CR0'``, ``'CR1'``, ..., metafor's ``vbest``), ``None`` otherwise."""
-        return None if self.robust is None else self.robust.vbest
-
-    @property
-    def robumethod(self) -> str | None:
-        """``'default'`` or ``'clubSandwich'`` for a robust model (metafor's ``robumethod``), ``None`` otherwise."""
-        return None if self.robust is None else self.robust.robumethod
-
-    @property
-    def meat(self) -> FloatArray | None:
-        """The block-diagonal matrix of residual cross-products of a robust model (metafor's ``meat``), ``None`` without one (``clubSandwich`` fits too)."""
-        return None if self.robust is None else self.robust.meat
-
-    @property
-    def coef_test(self) -> str | None:
-        """The test of the coefficients of a ``club_sandwich`` model (metafor's ``coef_test``), ``None`` otherwise."""
-        return None if self.robust is None else self.robust.coef_test
-
-    @property
-    def conf_test(self) -> str | None:
-        """The test behind the confidence intervals of a ``club_sandwich`` model (metafor's ``conf_test``), ``None`` otherwise."""
-        return None if self.robust is None else self.robust.conf_test
-
-    @property
-    def wald_test(self) -> str | None:
-        """The Wald-type test of a ``club_sandwich`` model (metafor's ``wald_test``), ``None`` otherwise."""
-        return None if self.robust is None else self.robust.wald_test
 
     @property
     def dfs(self) -> float | tuple[float, ...] | None:
@@ -332,7 +293,9 @@ class RMAResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_meth
         ``signif_stars`` option, ``True``) adds the significance stars and ``signif_legend`` (default: ``signif_stars``) the legend of the codes.
         """
         stars, legend = metafopy.mfopt.option_signif(signif_stars, signif_legend)
-        return metafopy.mfopt.option_space(format_result(self, metafopy.mfopt.option_digits(digits, self.digits), showfit, stars, legend))
+        return metafopy.models.fit_methods.SummaryText(
+            metafopy.mfopt.option_space(format_result(self, metafopy.mfopt.option_digits(digits, self.digits), showfit, stars, legend)), self
+        )
 
     def __str__(self) -> str:
         return self.summary(showfit=False)

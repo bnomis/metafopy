@@ -124,6 +124,9 @@ def lookup(value: typing.Any, name: str) -> tuple[bool, typing.Any]:
         if inputs.labels_all is not None:
             rows = inputs.keep if inputs.na_rows is None else inputs.keep | inputs.na_rows
             return True, [label for label, used in zip(inputs.labels_all, rows, strict=True) if used]
+    if name == 'pred' and getattr(value, 'vcov', None) is not None and hasattr(value, 'ci_lb') and not callable(value.vcov):
+        # predict(vcov=TRUE) is list(pred = <the predictions>, vcov = <matrix>) in R; metafopy returns the predictions with the matrix in `vcov`
+        return True, value
     if name == 'vcov' and callable(getattr(value, 'vcov', None)) and hasattr(value, 'vb'):
         # R keeps the matrix in `vcov`; in metafopy `vcov()` is the accessor and the matrix is `vb`
         return True, value.vb
@@ -143,6 +146,9 @@ def lookup(value: typing.Any, name: str) -> tuple[bool, typing.Any]:
         for spelling in spellings:
             if spelling in value:
                 return True, value[spelling]
+        for key, item in value.items():
+            if not isinstance(key, str) and str(key) == name:
+                return True, item  # R names a list by strings; metafopy keys it by the values (cluster numbers) as they are
         return False, None
     if isinstance(value, tuple) and not hasattr(value, '_fields'):
         # a list R names by its entries (the ``vif`` of ``vif()``): metafopy keeps a tuple of entries that carry their own name
@@ -193,6 +199,9 @@ def to_node(value: typing.Any, guide: Node, path: str, missing: list[str], depth
         value = named_vector(value, guide, path)
         if isinstance(value, dict):
             return {'k': 'type', 'got': type(value).__name__}
+        if isinstance(value, numpy.ndarray) and value.ndim == 2 and hasattr(value, 'rownames'):
+            # a matrix with names of its own is compared by those (the coefficient names stand in only for a plain array)
+            labels = ([str(n) for n in getattr(value, 'rownames', None) or ()], [str(n) for n in getattr(value, 'colnames', None) or ()])
         if isinstance(value, pandas.Series):
             labels = [str(i) for i in value.index]
         if isinstance(value, pandas.DataFrame):
@@ -236,10 +245,10 @@ def to_node(value: typing.Any, guide: Node, path: str, missing: list[str], depth
                 continue
             # the scale part of a location-scale model is labelled with the names of the scale coefficients
             item_labels = alpha_labels if alpha_labels is not None and name in SCALE_FIELDS else labels
-            if name in STRUCTURE_FIELDS and (name != 'H' or hasattr(value, 'H_dimnames')):
-                # the matrices of the random effects are not indexed by the coefficients: G and H by the levels of the inner factor, the rest unnamed
-                dim = getattr(value, f'{name}_dimnames', None)
-                item_labels = [str(n) for n in dim] if dim else None
+            if name in STRUCTURE_FIELDS and (name != 'H' or hasattr(value, 'H_dimnames') or hasattr(sub, 'rownames')):
+                # the matrices of the random effects are not indexed by the coefficients: they carry their own names or none (a plain array has none)
+                rownames = getattr(sub, 'rownames', None)
+                item_labels = [str(n) for n in rownames] if rownames else None
             items.append({'name': name, 'node': to_node(sub, item['node'], f'{path}${name}', missing, depth + 1, item_labels)})
         return {'k': 'list', 'items': items}
     return {'k': 'missing'}

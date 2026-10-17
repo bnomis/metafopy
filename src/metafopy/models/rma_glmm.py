@@ -99,6 +99,7 @@ def make_control(control: metafopy.models.glmm_fit.GLMMControl | collections.abc
     if unknown:
         raise metafopy.errors.InputError(f'unknown control settings: {sorted(unknown)}')
     ignored = {name: value for name, value in clean.items() if name not in names}
+    ignored.update({str(key): value for key, value in control.items() if str(key).replace('.', '_') not in names and str(key) not in ignored})
     clean = {name: value for name, value in clean.items() if name in names}
     if ignored:
         clean['ignored'] = ignored

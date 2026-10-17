@@ -22,6 +22,7 @@ import metafopy.core.dbinom
 import metafopy.core.parallel
 import metafopy.core.rng
 import metafopy.core.timing
+import metafopy.effects.datatools
 import metafopy.errors
 import metafopy.methods.blup
 import metafopy.methods.common
@@ -206,7 +207,9 @@ def assemble(
     het[:, 0] = incl.sum(axis=1)
     cols = ['k', 'QE', 'I2', 'H2', 'tau2']
     het6 = numpy.column_stack([het, numpy.sqrt(het[:, 4])])
-    frame = pandas.DataFrame(numpy.column_stack([het6, beta]), columns=[*cols, 'tau', *names])
+    frame = pandas.DataFrame(
+        numpy.column_stack([het6, beta]), columns=metafopy.effects.datatools.make_names([*cols, 'tau', *[str(n) for n in names]], unique=True)
+    )
     order = numpy.argsort(frame['k'].to_numpy(), kind='stable')
     frame = frame.iloc[order].reset_index(drop=True)
     incl = incl[order]

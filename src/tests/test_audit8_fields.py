@@ -287,3 +287,155 @@ def test_round2_mv_control_and_level_counts() -> None:
     un = metafopy.rma_mv('yi', 'v1i', mods='~ 0 + outcome', random='~ outcome | trial', struct='UN', data=berkey)
     assert un.g_levels_k is not None
     assert list(un.g_levels_k.index) == ['AL', 'PD']
+
+
+def test_round3_escalc_prints_like_r() -> None:
+    x = metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=metafopy.datasets.load('dat.bcg').iloc[:3], digits=3)
+    assert isinstance(x, pandas.DataFrame)
+    lines = [ln.split() for ln in str(x).splitlines() if ln.strip()]
+    assert lines[0][-2:] == ['yi', 'vi']
+    assert lines[1] == ['1', '1', 'Aronson', '1948', '4', '119', '11', '128', '44', 'random', '-0.889', '0.326']
+    assert lines[3][-2:] == ['-1.348', '0.415']
+    assert x.iloc[:2].attrs['digits'] == 3
+
+
+def test_round3_vcalc_prints_like_vcovmat() -> None:
+    k = metafopy.datasets.load('dat.konstantopoulos2011')
+    v = metafopy.vcalc('vi', cluster='district', obs='school', data=k, rho=0.6)
+    assert isinstance(v, numpy.ndarray)
+    assert v.shape == (56, 56)
+    rows = [ln.split() for ln in str(v).splitlines() if ln.strip()]
+    assert rows[1][:5] == ['1', '0.1180', '0.0708', '0.0782', '0.0782']
+    assert float(v[0, 1]) == pytest.approx(0.0708, abs=1e-4)
+
+
+def test_round3_mv_matrices_have_dimnames() -> None:
+    k = metafopy.datasets.load('dat.konstantopoulos2011')
+    res = metafopy.rma_mv('yi', 'vi', random='~ 1 | district/school', data=k, cvvc=True)
+    vvc = typing.cast(typing.Any, res.vvc)
+    hessian = typing.cast(typing.Any, res.hessian)
+    assert vvc.dimnames == (('sigma^2.1', 'sigma^2.2'), ('sigma^2.1', 'sigma^2.2'))
+    assert hessian.rownames == ('sigma^2.1', 'sigma^2.2')
+    berkey = metafopy.datasets.load('dat.berkey1998')
+    un = metafopy.rma_mv('yi', 'v1i', mods='~ 0 + outcome', random='~ outcome | trial', struct='UN', data=berkey)
+    assert typing.cast(typing.Any, un.G).colnames == ('AL', 'PD')
+
+
+def test_round3_ranef_mv_prints_a_list_by_term() -> None:
+    k = metafopy.datasets.load('dat.konstantopoulos2011')
+    res = metafopy.rma_mv('yi', 'vi', random='~ 1 | district/school', data=k)
+    out = typing.cast(typing.Any, metafopy.ranef(res))
+    assert isinstance(out, dict)
+    text = str(out)
+    assert '$district\n' in text
+    assert '$`district/school`\n' in text
+    assert 'intrcpt' in text
+
+
+def test_round3_design_matrices_carry_the_names_of_r() -> None:
+    raw = metafopy.datasets.load('dat.bcg')
+    frame = metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=raw)
+    frame.loc[2, 'yi'] = numpy.nan
+    res = typing.cast(typing.Any, metafopy.rma('yi', 'vi', mods='~ ablat', data=frame))
+    assert res.X.rownames[:4] == ('1', '2', '4', '5')
+    assert res.X.colnames == ('intrcpt', 'ablat')
+    assert res.X_f.rownames[:4] == ('1', '2', '3', '4')
+    assert res.X.T.rownames == ('intrcpt', 'ablat')
+    assert isinstance(res.X @ res.beta, numpy.ndarray)
+    mm = typing.cast(typing.Any, metafopy.model_matrix(res))
+    assert mm.rownames == res.X.rownames
+    assert list(metafopy.model_matrix(res, asdf=True).index[:3]) == ['1', '2', '4']
+    ls = typing.cast(typing.Any, metafopy.rma('yi', 'vi', mods='~ ablat', scale='~ ablat', data=frame))
+    assert ls.Z.colnames == ('intrcpt', 'ablat')
+    assert ls.H.rownames == ('intrcpt', 'ablat')
+    sel = typing.cast(typing.Any, metafopy.selmodel(metafopy.rma('yi', 'vi', data=frame, method='ML'), type='beta'))
+    assert sel.hessian.rownames == ('intrcpt', 'tau2', 'delta.1', 'delta.2')
+
+
+def test_round3_summary_and_options_return_what_r_returns() -> None:
+    raw = metafopy.datasets.load('dat.bcg')
+    frame = metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=raw)
+    res = metafopy.rma('yi', 'vi', data=frame)
+    text = res.summary()
+    assert isinstance(text, str)
+    summary = typing.cast(typing.Any, text)
+    assert summary.k == 13
+    assert summary.tau2 == res.tau2
+    old = metafopy.setmfopt(space=True)
+    assert old['metafor']['theme'] == 'default'
+
+
+def test_round3_control_keeps_what_r_keeps() -> None:
+    raw = metafopy.datasets.load('dat.bcg')
+    frame = metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=raw)
+    ls = metafopy.rma('yi', 'vi', scale='~ ablat', data=frame, control={'vc.min': 0, 'threshold': 1e-6, 'tol': 1e-6})
+    control = typing.cast(typing.Any, ls.control)
+    assert control.vc_min == 0
+    assert control.threshold == 1e-6
+    assert control.tol == 1e-6
+    k = metafopy.datasets.load('dat.konstantopoulos2011')
+    mv = metafopy.rma_mv('yi', 'vi', random='~ 1 | district/school', data=k, control={'hessianCtrl': {'r': 4}, 'tol': 1e-6})
+    assert typing.cast(typing.Any, mv.control).hessianCtrl == {'r': 4}
+    assert typing.cast(typing.Any, mv.control).tol == 1e-6
+
+
+def test_round3_robust_mv_and_vif_fields() -> None:
+    k = metafopy.datasets.load('dat.konstantopoulos2011')
+    mv = metafopy.rma_mv('yi', 'vi', random='~ 1 | district/school', data=k)
+    robust = typing.cast(typing.Any, metafopy.robust(mv, cluster=k['district']))
+    assert robust.n == 11
+    assert robust.robumethod == 'default'
+    assert list(robust.tcl)[:3] == [4, 4, 3]
+    assert robust.cluster is not None
+    assert robust.meat.shape == (56, 56)
+    raw = metafopy.datasets.load('dat.bcg')
+    frame = metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=raw)
+    ls = metafopy.rma('yi', 'vi', mods='~ ablat', scale='~ ablat + year', data=frame)
+    vifs = typing.cast(typing.Any, metafopy.vif(ls))
+    assert vifs.alpha.attspec is False
+    assert vifs.beta.attspec is None
+
+
+def test_round3_profile_lists_and_ls_anova_fields() -> None:
+    raw = metafopy.datasets.load('dat.bcg')
+    frame = metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=raw)
+    uni = metafopy.rma('yi', 'vi', data=frame)
+    prof = typing.cast(typing.Any, metafopy.profile(uni, steps=4, sqrt=True))
+    assert list(prof.tau) == list(prof.tau2)
+    ls = metafopy.rma('yi', 'vi', mods='~ ablat', scale='~ ablat', data=frame)
+    profs = typing.cast(typing.Any, metafopy.profile(ls, steps=4))
+    assert profs.comps == 2
+    assert profs[0].comps == 1
+    assert profs[0].title == 'Profile Plot for alpha[1]'
+    wald = typing.cast(typing.Any, metafopy.anova(ls, X=[1, 40]))
+    assert wald.Xb.shape == (1,)
+    assert typing.cast(typing.Any, metafopy.anova(ls, Z=[1, 40])).Za.shape == (1,)
+
+
+def test_round3_blsplit_and_rcalc_print_like_r() -> None:
+    k = metafopy.datasets.load('dat.konstantopoulos2011')
+    v = typing.cast(typing.Any, metafopy.vcalc('vi', cluster='district', obs='school', data=k, rho=0.6))
+    blocks = metafopy.blsplit(v, k['district'])
+    text = str(blocks)
+    assert text.startswith('$`11`\n')
+    assert '0.1180 0.0708 0.0782 0.0782' in text
+    assert str(metafopy.blsplit(v, k['district'], numpy.sum)).splitlines()[1] == '[1] 1.464096'
+    craft = metafopy.datasets.load('dat.craft2003')
+    out = typing.cast(typing.Any, metafopy.rcalc('ri ~ var1 + var2 | study', ni='ni', data=craft, rtoz=True))
+    assert out.V.rownames[0] == out.dat['var1.var2'].iloc[0]
+
+
+def test_round3_gosh_names_are_syntactic() -> None:
+    raw = metafopy.datasets.load('dat.bcg')
+    frame = metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=raw)
+    res = metafopy.rma('yi', 'vi', mods='~ factor(alloc)', data=frame)
+    g = typing.cast(typing.Any, metafopy.gosh(res, subsets=10))
+    assert 'factor.alloc.random' in g.res.columns
+
+
+def test_round3_sparse_vcalc_prints_like_a_dgcmatrix() -> None:
+    k = metafopy.datasets.load('dat.konstantopoulos2011')
+    v = metafopy.vcalc('vi', cluster='district', obs='school', data=k, rho=0.6, sparse=True)
+    text = str(v)
+    assert text.startswith('56 x 56 sparse Matrix of class "dgCMatrix"')
+    assert '0.11800000 0.07080000' in text

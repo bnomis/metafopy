@@ -40,12 +40,15 @@ THEMES = ('auto', 'auto2', 'custom', 'custom2', 'dark', 'dark2', 'default', 'def
 OPTIONS: dict[str, typing.Any] = {'check': True, 'signif_stars': True, 'silent': False, 'space': True, 'theme': 'default'}
 
 
-def setmfopt(**kwargs: typing.Any) -> None:
+def setmfopt(**kwargs: typing.Any) -> dict[str, dict[str, typing.Any]]:
     """Set package options, as metafor's ``setmfopt(...)``; an option set to ``None`` is removed.
+
+    Returns the options as they were before, as ``{'metafor': options}`` (what ``options(metafor = ...)`` returns in R).
 
     Raises:
         metafopy.errors.InputError: an option has a value of the wrong type.
     """
+    previous = dict(OPTIONS)
     for opt, value in kwargs.items():
         if value is not None:
             check_option(opt, value)
@@ -53,6 +56,7 @@ def setmfopt(**kwargs: typing.Any) -> None:
             OPTIONS.pop(opt, None)
         else:
             OPTIONS[opt] = value
+    return {'metafor': previous}
 
 
 def check_option(opt: str, value: typing.Any) -> None:
