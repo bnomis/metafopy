@@ -106,7 +106,12 @@ def lookup(value: typing.Any, name: str) -> tuple[bool, typing.Any]:
         if name == 'data':
             return True, inputs.data
         if inputs.labels_all is not None:
-            return True, list(inputs.labels_all)
+            rows = inputs.keep if inputs.na_rows is None else inputs.keep | inputs.na_rows
+            return True, [label for label, used in zip(inputs.labels_all, rows, strict=True) if used]
+    slab_f = getattr(value, 'slab_f', None)
+    if name == 'slab' and slab_f is not None and len(slab_f) != len(getattr(value, 'slab', slab_f)):
+        # rma.mv keeps the labels of all rows of the subset in `slab` in R; metafopy has the labels of the studies used in `slab` and all of them in `slab_f`
+        return True, list(slab_f)
     if isinstance(value, pandas.DataFrame):
         for spelling in spellings:
             if spelling in value.columns:

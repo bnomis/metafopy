@@ -1065,9 +1065,48 @@ def rcall(env: Env, name: str, *args: Value, **kwargs: Value) -> Value:
     pycall.check_arguments(fn, list(mapped))
     if 'na.action' in OPTIONS and 'na_action' not in mapped and accepts(fn, 'na_action'):
         mapped['na_action'] = pycall.option_value('na.action', OPTIONS['na.action'])
+    elif 'na.action' in OPTIONS and 'na_action' not in mapped and accepts_any_keyword(fn) and name in NA_ACTION_GENERICS:
+        # a generic such as blup() hands its keywords to the method for the class of the model
+        with contextlib.suppress(TypeError):
+            return call_with(fn, args, {**mapped, 'na_action': pycall.option_value('na.action', OPTIONS['na.action'])})
+    return call_with(fn, args, mapped)
+
+
+def call_with(fn: typing.Callable[..., Value], args: tuple[Value, ...], mapped: dict[str, Value]) -> Value:
     if isinstance(fn, functools.partial):
         return fn(*args[1:], **mapped)
     return fn(*args, **mapped)
+
+
+# R functions that read ``getOption("na.action")`` and whose Python generic passes keywords on to the method (from metafor's sources)
+NA_ACTION_GENERICS = frozenset(
+    {
+        'blup',
+        'cooks.distance',
+        'dfbetas',
+        'fitted',
+        'hatvalues',
+        'influence',
+        'leave1out',
+        'ranef',
+        'residuals',
+        'resid',
+        'rstandard',
+        'rstudent',
+        'weights',
+        'predict',
+        'simulate',
+        'vcov',
+    }
+)
+
+
+def accepts_any_keyword(fn: typing.Callable[..., Value]) -> bool:
+    try:
+        params = inspect.signature(fn.func if isinstance(fn, functools.partial) else fn).parameters
+    except TypeError, ValueError:
+        return False
+    return any(p.kind is inspect.Parameter.VAR_KEYWORD for p in params.values())
 
 
 def accepts(fn: typing.Callable[..., Value], name: str) -> bool:
