@@ -306,6 +306,8 @@ def element_text(value: typing.Any) -> str:
     """One element of a list as R prints it: a data frame or matrix in its layout, a number as ``[1] x``."""
     if isinstance(value, pandas.DataFrame):
         return frame_text(value)
+    if isinstance(value, pandas.Series):
+        return vector_text(value)
     if isinstance(value, LabelledMatrix):
         return str(value).strip('\n') if isinstance(value, VCovMat) else matrix_text(value, value.rownames, value.colnames)
     if isinstance(value, numpy.ndarray) and value.ndim == 2:

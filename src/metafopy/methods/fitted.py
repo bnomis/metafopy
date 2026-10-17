@@ -17,6 +17,7 @@ import typing
 import numpy
 import numpy.typing
 
+import metafopy.core.labelled
 import metafopy.errors
 import metafopy.methods.common
 import metafopy.models.binary
@@ -75,6 +76,18 @@ def rows_of(x: typing.Any) -> Rows:
     raise metafopy.errors.ArgumentError(f'{type(x).__name__} is not a fitted model')
 
 
+def label_square(x: typing.Any, out: FloatArray) -> FloatArray:
+    """``out``, a square matrix over the rows used (``'omit'``) or over all rows of the subset, with those rows' labels as its dimnames.
+
+    metafor names the rows and columns of the weight and hat matrices by ``slab``.
+    """
+    rows = rows_of(x)
+    if out.ndim != 2 or out.shape[0] not in (rows.not_na.shape[0], int(rows.not_na.sum())):
+        return out
+    labels = rows.slab if out.shape[0] == rows.not_na.shape[0] else tuple(name for name, used in zip(rows.slab, rows.not_na, strict=True) if used)
+    return metafopy.core.labelled.LabelledMatrix(out, labels, labels)
+
+
 def fitted_values(x: typing.Any, na_action: metafopy.methods.common.NAAction = 'omit') -> FloatArray:
     """Fitted values ``X.f beta`` over the rows of the subset, handled as ``na_action`` says (``'omit'``, ``'exclude'``, ``'pass'`` or ``'fail'``).
 
@@ -124,4 +137,4 @@ def hat_values(
     else:
         full = numpy.full((not_na.shape[0], not_na.shape[0]), numpy.nan)
         full[numpy.ix_(not_na, not_na)] = hat
-    return metafopy.methods.common.apply_na_action(full, not_na, na_action)
+    return label_square(x, metafopy.methods.common.apply_na_action(full, not_na, na_action))

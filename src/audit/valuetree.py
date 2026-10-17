@@ -105,14 +105,17 @@ def vector_node(values: typing.Any, guide: Node, labels: Labels = None) -> Node:
     return {'k': kind, 'v': cells, 'd': shape, **label_fields(guide, labels, shape, len(cells))}
 
 
-def lookup(value: typing.Any, name: str) -> tuple[bool, typing.Any]:
-    """Find the field of ``value`` that corresponds to the R name ``name``."""
+def lookup(value: typing.Any, name: str, as_list: bool = True) -> tuple[bool, typing.Any]:
+    """Find the field of ``value`` that corresponds to the R name ``name`` (``as_list``: the R element is a list, not a vector)."""
     if name.startswith('@'):
         attrs = getattr(value, 'attrs', None)
         if isinstance(attrs, dict) and name[1:] in attrs:
             return True, attrs[name[1:]]
         return False, None
     spellings = [name, py_name(name), py_name(name) + '_']
+    given = getattr(value, 'names', None)
+    if isinstance(value, list) and isinstance(given, tuple) and name in given and len(given) == len(value):
+        return True, value[given.index(name)]  # the list of tests of anova(btt = list(...)) is named by its specifications
     if name == '' and isinstance(value, (tuple, list)):
         return True, value  # a data frame column R leaves unnamed (the `hyp` of an anova)
     inputs = getattr(value, 'data', None)
@@ -126,6 +129,7 @@ def lookup(value: typing.Any, name: str) -> tuple[bool, typing.Any]:
             return True, [label for label, used in zip(inputs.labels_all, rows, strict=True) if used]
     if (
         name == 'pred'
+        and as_list
         and dataclasses.is_dataclass(value)
         and not isinstance(value, type)
         and getattr(value, 'vcov', None) is not None
@@ -250,7 +254,7 @@ def to_node(value: typing.Any, guide: Node, path: str, missing: list[str], depth
                     missing.append(f'{path}[{i}]')
                     items.append({'name': None, 'node': {'k': 'missing'}})
                 continue
-            found, sub = lookup(value, name)
+            found, sub = lookup(value, name, item['node'].get('k') == 'list')
             if not found:
                 missing.append(f'{path}${name}')
                 items.append({'name': name, 'node': {'k': 'missing'}})

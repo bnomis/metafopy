@@ -22,6 +22,7 @@ import numpy
 import numpy.typing
 import pandas
 
+import metafopy.core.labelled
 import metafopy.core.parallel
 import metafopy.core.rng
 import metafopy.core.timing
@@ -125,17 +126,23 @@ class LSPermutestResult:
             cols.update({'pval': pval, 'ci.lb': lb, 'ci.ub': ub})
             return pandas.DataFrame(cols, index=list(names))
 
-        return {
-            'beta': table(self.coef_names, self.beta, self.se, self.zval, self.ddf, self.pval, self.ci_lb, self.ci_ub),
-            'alpha': table(self.alpha_names, self.alpha, self.se_alpha, self.zval_alpha, self.ddf_alpha, self.pval_alpha, self.ci_lb_alpha, self.ci_ub_alpha),
-        }
+        return metafopy.core.labelled.NamedList(
+            {
+                'beta': table(self.coef_names, self.beta, self.se, self.zval, self.ddf, self.pval, self.ci_lb, self.ci_ub),
+                'alpha': table(
+                    self.alpha_names, self.alpha, self.se_alpha, self.zval_alpha, self.ddf_alpha, self.pval_alpha, self.ci_lb_alpha, self.ci_ub_alpha
+                ),
+            }
+        )
 
     def coef(self, type: typing.Literal['alpha', 'beta'] | None = None) -> pandas.Series | dict[str, pandas.Series]:
         """The estimated coefficients, indexed by name: ``{'beta': ..., 'alpha': ...}``, or one of them with ``type``."""
-        both = {
-            'beta': pandas.Series(self.beta, index=list(self.coef_names), name='estimate'),
-            'alpha': pandas.Series(self.alpha, index=list(self.alpha_names), name='estimate'),
-        }
+        both = metafopy.core.labelled.NamedList(
+            {
+                'beta': pandas.Series(self.beta, index=list(self.coef_names), name='estimate'),
+                'alpha': pandas.Series(self.alpha, index=list(self.alpha_names), name='estimate'),
+            }
+        )
         return both if type is None else both[type]
 
     def __str__(self) -> str:

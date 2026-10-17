@@ -72,10 +72,11 @@ def scale_matrix_parts(scale: ScaleSpec, md: metafopy.metadata.MetaData) -> tupl
         Z = scale.to_numpy(dtype=float)
         z_missing = numpy.isnan(Z).any(axis=1)
     else:
+        given = getattr(scale, 'colnames', None)
         Z = numpy.asarray(scale, dtype=numpy.float64)
         if Z.ndim == 1:
             Z = Z[:, None]
-        names = tuple(f'Z{j + 1}' for j in range(Z.shape[1]))
+        names = tuple(given) if given is not None and len(given) == Z.shape[1] else tuple(f'Z{j + 1}' for j in range(Z.shape[1]))
         z_missing = numpy.isnan(Z).any(axis=1)
     if Z.shape[0] != k_all:
         raise metafopy.errors.InputError(

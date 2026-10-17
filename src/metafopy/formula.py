@@ -26,6 +26,7 @@ import metafopy.errors
 __all__ = ['RandomTerm', 'design_matrix', 'formula_context', 'parse_random', 'r_column_name', 'r_factor', 'r_relevel', 'r_scale']
 
 KEYWORD = re.compile(r'(?<=[(,] )(\w+)=(?!=)')
+RAW_TRUE = re.compile(r'raw\s*=\s*(True|TRUE|T)\b')
 POLY_TERM = re.compile(r'^(poly\(.*\))\[(\d+)\]$')
 LEVEL = re.compile(r'\[(?:T\.)?(.*?)\]')
 CWRAP = re.compile(r'^C\((.*?)(?:,.*)?\)$')
@@ -47,7 +48,7 @@ def r_column_name(name: str) -> str:
     poly = POLY_TERM.match(name)
     if poly is not None:
         # formulaic counts raw polynomial terms from 0 and orthogonal ones from 1; R counts both from 1
-        return f'{poly.group(1)}{int(poly.group(2)) + (1 if "raw = True" in poly.group(1) or "raw=True" in poly.group(1) else 0)}'
+        return f'{poly.group(1)}{int(poly.group(2)) + (1 if RAW_TRUE.search(poly.group(1)) else 0)}'
     parts: list[str] = []
     for part in name.split(':'):
         level = LEVEL.search(part)

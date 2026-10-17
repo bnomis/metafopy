@@ -15,6 +15,7 @@ import scipy.special
 import scipy.stats
 
 import metafopy.core.clubsandwich
+import metafopy.core.labelled
 import metafopy.errors
 import metafopy.methods.common
 import metafopy.methods.fitted
@@ -70,6 +71,16 @@ class PredictResult:
     transf: bool = False
     pred_type: str = 'location'
 
+    def __post_init__(self) -> None:
+        """Give the model matrix its column names and ``vcov`` the prediction labels as its dimnames, as metafor's ``predict`` does."""
+        names = self.x_names
+        if isinstance(self.X, numpy.ndarray) and names is not None and self.X.ndim == 2 and len(names) == self.X.shape[1]:
+            object.__setattr__(self, 'X', metafopy.core.labelled.LabelledMatrix(self.X, None, names))
+        slab = self.slab
+        vcov = self.vcov
+        if isinstance(vcov, numpy.ndarray) and slab is not None and vcov.ndim == 2 and vcov.shape == (len(slab), len(slab)) and all(slab):
+            object.__setattr__(self, 'vcov', metafopy.core.labelled.VCovMat(vcov, slab, slab))
+
     @property
     def cr_lb(self) -> FloatArray:
         """Alias of ``pi_lb`` (metafor keeps ``cr.lb`` for old code)."""
@@ -101,6 +112,11 @@ class PredictResult:
             if names is not None and mat.shape[0] == self.pred.shape[0]:
                 for j, name in enumerate(names):
                     cols[f'X.{name}'] = mat[:, j]
+        z_values = getattr(self, 'Z', None)
+        z_names = getattr(self, 'z_names', None)
+        if isinstance(z_values, numpy.ndarray) and z_names is not None and z_values.ndim == 2 and z_values.shape[0] == self.pred.shape[0]:
+            for j, name in enumerate(z_names):
+                cols[f'Z.{name}'] = numpy.asarray(z_values)[:, j]
         return pandas.DataFrame(cols, index=list(self.slab) if self.slab is not None else None)
 
     def __str__(self) -> str:
@@ -110,10 +126,28 @@ class PredictResult:
         # print.list.rma leaves out `se` after a transformation and the prediction interval of the models that have none
         drop = (['se'] if self.transf else []) + ([] if self.has_pi else ['pi.lb', 'pi.ub'])
         frame = frame.drop(columns=drop)
-        rows = [[metafopy.printing.fmt_num(float(v), digits) for v in row] for row in frame.to_numpy()]
+        # the model matrices (X.*, Z.*) are printed as the columns of a numeric data frame, the other columns with the digits
+        columns = [
+            r_numeric_column(frame[name].to_numpy(dtype=numpy.float64))
+            if str(name).startswith(('X.', 'Z.'))
+            else [metafopy.printing.fmt_num(float(v), digits) for v in frame[name]]
+            for name in frame.columns
+        ]
+        rows = [list(row) for row in zip(*columns, strict=True)]
         return metafopy.mfopt.option_space(
             '\n' + metafopy.printing.fmt_table([str(c) for c in frame.columns], rows, [str(i) for i in frame.index], gap=1) + '\n'
         )
+
+
+def r_numeric_column(values: FloatArray) -> list[str]:
+    """A numeric column as ``print.data.frame`` shows it: 7 significant digits and a common number of decimals."""
+    decimals = 0
+    for v in values:
+        if math.isfinite(v):
+            text = f'{v:.7g}'
+            if 'e' not in text and '.' in text:
+                decimals = max(decimals, len(text.split('.')[1]))
+    return ['NA' if math.isnan(v) else f'{v:.{decimals}f}' for v in values]
 
 
 def with_digits[R: PredictResult](result: R, digits: typing.Any, stored: int) -> R:
@@ -524,44 +558,41 @@ def predict_rma_glmm(
     x = model
     rows = metafopy.methods.fitted.rows_of(x)
     return with_digits(
-        dataclasses.replace(
-            location_prediction(
-                LocationModel(
-                    k=x.k,
-                    p=x.p,
-                    parms=x.parms,
-                    int_only=x.int_only,
-                    int_incl=x.int_incl,
-                    X=x.X,
-                    slab=tuple(s for s, ok in zip(x.slab, x.tables.not_na, strict=True) if ok),
-                    beta=x.beta,
-                    vb=x.vb,
-                    ddf=x.ddf,
-                    alpha=x.level,
-                    tau2=x.tau2,
-                    fixed=x.method in metafopy.models.tau2.FIXED_EFFECTS,
-                    X_f=rows.X_f,
-                    not_na=rows.not_na,
-                    slab_f=rows.slab,
-                    coef_names=x.coef_names,
-                    method=x.method,
-                ),
-                newmods,
-                intercept,
-                transf,
-                targs,
-                level,
-                hetvar=hetvar,
-                prob=prob,
-                addx=addx,
-                adjust=adjust,
-                vcov=vcov,
-                predtype=predtype,
-                pi_type=pi_type,
-                newvi=newvi,
-                na_action=na_action,
+        location_prediction(
+            LocationModel(
+                k=x.k,
+                p=x.p,
+                parms=x.parms,
+                int_only=x.int_only,
+                int_incl=x.int_incl,
+                X=x.X,
+                slab=tuple(s for s, ok in zip(x.slab, x.tables.not_na, strict=True) if ok),
+                beta=x.beta,
+                vb=x.vb,
+                ddf=x.ddf,
+                alpha=x.level,
+                tau2=x.tau2,
+                fixed=x.method in metafopy.models.tau2.FIXED_EFFECTS,
+                X_f=rows.X_f,
+                not_na=rows.not_na,
+                slab_f=rows.slab,
+                coef_names=x.coef_names,
+                method=x.method,
             ),
-            has_pi=False,
+            newmods,
+            intercept,
+            transf,
+            targs,
+            level,
+            hetvar=hetvar,
+            prob=prob,
+            addx=addx,
+            adjust=adjust,
+            vcov=vcov,
+            predtype=predtype,
+            pi_type=pi_type,
+            newvi=newvi,
+            na_action=na_action,
         ),
         digits,
         x.digits,
@@ -879,6 +910,7 @@ def location_prediction(
         vcov=vcov_pred if transf is None else None,
         method=x.method,
         transf=transf is not None,
+        has_pi=not (x.fixed or (transf is not None and metafopy.transf.is_tau2_transf(transf))),
     )
     keep, blank = rows_to_keep(pred, x.not_na, fitted_rows, na_action)
     return out if keep.all() and blank is None else restrict_rows(out, keep, blank)
@@ -1122,6 +1154,11 @@ def predict_rma_mv(
         vcov=vcov_pred if transf is None else None,
         method=x.method,
         transf=transf is not None,
+        has_pi=not (
+            x.method in metafopy.models.tau2.FIXED_EFFECTS
+            or any(g is not None and g.struct in ('GEN', 'GDIAG') for g in (x.group_g, x.group_h))
+            or (transf is not None and metafopy.transf.is_tau2_transf(transf))
+        ),
     )
     keep, blank = rows_to_keep(pred, not_na, fitted_rows, na_action)
     return with_digits(out if keep.all() and blank is None else restrict_rows(out, keep, blank), digits, model.digits)

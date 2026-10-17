@@ -164,6 +164,8 @@ class MetaData:
     ids_all: numpy.typing.NDArray[numpy.intp] | None = dataclasses.field(default=None, repr=False)
     subset_arg: BoolArray | None = dataclasses.field(default=None, repr=False)
     slab_given: bool = dataclasses.field(default=False, repr=False)
+    row_names: tuple[str, ...] | None = dataclasses.field(default=None, repr=False)
+    """The row names of the rows supplied when they cannot be read from ``data`` (a model fitted again to the estimates of the studies used)."""
     supplied: int | None = dataclasses.field(default=None, repr=False)
     """Rows supplied when the effects came from counts after subsetting (R's ``k.all``); ``k_all`` stays the length of ``keep``."""
 
@@ -185,6 +187,8 @@ class MetaData:
     @property
     def names_all(self) -> tuple[str, ...]:
         """The row names of the rows supplied, as R names them: the row names of ``data`` (integer labels counted from 1 as in R) or the numbers from 1."""
+        if self.row_names is not None and len(self.row_names) == self.k_all:
+            return self.row_names
         if self.data is not None and self.data.shape[0] == self.k_all:
             index = self.data.index
             if pandas.api.types.is_integer_dtype(index):
@@ -379,12 +383,13 @@ class MetaData:
             names = tuple(str(c) for c in mods.columns)
             X = mods.to_numpy(dtype=float)
         else:
+            given = getattr(mods, 'colnames', None)
             X = numpy.asarray(mods, dtype=numpy.float64)
             vector = X.ndim == 1
             if vector:
                 X = X[:, None]
             # metafor names the column of a vector 'mods' and those of a matrix without column names X1, X2, ...
-            names = ('mods',) if vector else tuple(f'X{j + 1}' for j in range(X.shape[1]))
+            names = ('mods',) if vector else tuple(given) if given is not None and len(given) == X.shape[1] else tuple(f'X{j + 1}' for j in range(X.shape[1]))
         if X.shape[0] != k:
             raise metafopy.errors.InputError(f'mods has {X.shape[0]} rows, expected {k}')
         if intercept:

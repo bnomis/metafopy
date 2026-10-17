@@ -16,6 +16,7 @@ import numpy.typing
 
 import metafopy.errors
 import metafopy.methods.common
+import metafopy.methods.fitted
 import metafopy.methods.fitview
 import metafopy.models.mv_result
 import metafopy.models.rma_ls_result
@@ -35,10 +36,10 @@ def percent(wi: FloatArray, not_na: numpy.typing.NDArray[numpy.bool_], na_action
     return metafopy.methods.common.apply_na_action(full, not_na, na_action, 'weights')
 
 
-def matrix(W: FloatArray, not_na: numpy.typing.NDArray[numpy.bool_], na_action: metafopy.methods.common.NAAction) -> FloatArray:
+def matrix(x: typing.Any, W: FloatArray, not_na: numpy.typing.NDArray[numpy.bool_], na_action: metafopy.methods.common.NAAction) -> FloatArray:
     full = numpy.full((not_na.shape[0], not_na.shape[0]), numpy.nan)
     full[numpy.ix_(not_na, not_na)] = W
-    return metafopy.methods.common.apply_na_action(full, not_na, na_action)
+    return metafopy.methods.fitted.label_square(x, metafopy.methods.common.apply_na_action(full, not_na, na_action))
 
 
 def weights_uni(
@@ -56,7 +57,7 @@ def weights_uni(
     not_na = metafopy.methods.common.uni_not_na(x)
     if kind == 'diagonal':
         return percent(wi, not_na, na_action)
-    return matrix(numpy.diag(wi), not_na, na_action)
+    return matrix(x, numpy.diag(wi), not_na, na_action)
 
 
 def weights_mv(
@@ -69,7 +70,7 @@ def weights_mv(
     kind = metafopy.methods.common.match_arg(type, MV_TYPES)
     W = x.weight_matrix()
     if kind == 'matrix':
-        return matrix(W, x.not_na, na_action)
+        return matrix(x, W, x.not_na, na_action)
     if kind == 'rowsum':
         if not x.int_only:
             raise metafopy.errors.InputError('Row-sum weights are only meaningful for intercept-only models.')

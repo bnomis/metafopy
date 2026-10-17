@@ -16,6 +16,7 @@ import numpy
 import numpy.typing
 import scipy.stats
 
+import metafopy.core.labelled
 import metafopy.errors
 import metafopy.methods.common
 import metafopy.methods.fitted
@@ -44,6 +45,13 @@ class LSPredictResult(metafopy.methods.predict.PredictResult):
     pred_type: str = 'location'
     ddf: float | None = None
     Z: FloatArray | None = None
+    z_names: tuple[str, ...] | None = None
+
+    def __post_init__(self) -> None:
+        """As :class:`~metafopy.methods.predict.PredictResult`, and the scale model matrix gets its column names."""
+        metafopy.methods.predict.PredictResult.__post_init__(self)
+        if isinstance(self.Z, numpy.ndarray) and self.z_names is not None and self.Z.ndim == 2 and len(self.z_names) == self.Z.shape[1]:
+            object.__setattr__(self, 'Z', metafopy.core.labelled.LabelledMatrix(self.Z, None, self.z_names))
 
 
 def new_matrix(
@@ -324,6 +332,7 @@ def predict_rma_ls(
         X=X_use if addx else None,
         x_names=tuple(x.coef_names) if addx and X_use is not None and X_use.shape[1] == len(x.coef_names) else None,
         Z=Z_use if addz else None,
+        z_names=tuple(x.alpha_names) if addz and Z_use is not None and Z_use.shape[1] == len(x.alpha_names) else None,
         vcov=vcov_pred if (vcov and not do_transf) else None,
         method=x.method,
         transf=do_transf,

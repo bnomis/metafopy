@@ -314,6 +314,14 @@ def tr_call(n: Node, c: Context) -> str:
         args = [with_model(a, args[0]['v']) for a in args]
     if name in c.params:
         return f'{local_name(name)}({args_code(args, c)})'
+    if name == 'cbind' and args:
+        # cbind() names a column by the symbol it was given (deparse.level = 1), which its values no longer tell
+        symbols_given = [a['v']['v'] if not a.get('name') and a['v']['t'] == 'sym' else '' for a in args if not a.get('name')]
+        if any(symbols_given):
+            return f'rcall(E, {name!r}, {args_code(args, c)}, deparse_names={symbols_given!r})'
+    if name == 'fitstats' and len(args) > 1 and all(not a.get('name') and a['v']['t'] == 'sym' for a in args):
+        # fitstats() labels its columns by the arguments it was given (deparse.level = 1)
+        return f'rcall(E, {name!r}, {args_code(args, c)}, names={[a["v"]["v"] for a in args]!r})'
     if name in c.nse and any(a.get('name') == 'data' for a in args):
         return tr_nse(name, args, c)
     return f'rcall(E, {name!r}' + (f', {args_code(args, c)}' if args else '') + ')'

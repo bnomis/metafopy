@@ -105,7 +105,7 @@ def write(ctx: audit.steps.Context, outcomes: dict[str, audit.steps.Outcome], ou
                 new.append(f)
             else:
                 known.append((f, entry))
-    ran_all = ctx.only is None and not ctx.quick
+    ran_all = ctx.only is None and not ctx.quick and {s.name for s in audit.steps.STEPS} <= set(outcomes)
 
     fixtures = audit.cases.load_fixtures()
     fixture_function = {fx['name']: fx['fn'] for fx in fixtures if 'fn' in fx}

@@ -190,23 +190,9 @@ ref = "docs/differences.md"
 
 [[known]]
 match = "*"
-kind = "missing-field"
-path = "*$data$*"
-reason = "res.data is the MetaData of the fit (vectors and matrices used), not the data frame the caller passed."
-ref = "docs/differences.md"
-
-[[known]]
-match = "*"
 kind = "shape-diff"
 path = "*$data$*"
 reason = "res.data holds the studies used in the fit; R's data keeps those with missing values."
-ref = "docs/differences.md"
-
-[[known]]
-match = "matrix/print/*"
-kind = "shape-diff"
-path = "$slab"
-reason = "slab of the fit has the studies used; R keeps the studies with missing values in slab (the _f fields hold them in metafopy)."
 ref = "docs/differences.md"
 
 [[known]]
@@ -248,20 +234,6 @@ match = "*"
 kind = "missing-field"
 path = "$data"
 reason = "cumul(), leave1out() and the results of mv fits do not keep a data frame of the studies (R: data); the vectors and matrices are fields of the fit."
-ref = "docs/differences.md"
-
-[[known]]
-match = "matrix/print/vif_*"
-kind = "missing-field"
-path = "$vif$*"
-reason = "vif() gives a table of the vifs by coefficient, where R keeps a list with one entry per coefficient."
-ref = "docs/differences.md"
-
-[[known]]
-match = "matrix/print/anova_*"
-kind = "missing-field"
-path = "$class"
-reason = "The class of the anova result is the class of the Python object."
 ref = "docs/differences.md"
 
 [[known]]
@@ -314,13 +286,6 @@ reason = "R's CM.EL Hessian is noise here (standard errors of 1e-4, tau2 2e-4, w
 ref = "docs/differences.md"
 
 [[known]]
-match = "*"
-kind = "refused-where-R-works"
-detail = "InputError: Could not fit the null model."
-reason = "R's hettest() does not pass control on when x is a model object (the recursive call drops it), so maxiter has no effect there; metafopy applies it."
-ref = "docs/differences.md"
-
-[[known]]
 match = "matrix/anova/*"
 kind = "accepts-where-R-refuses"
 detail = "R: Class of*"
@@ -364,12 +329,6 @@ ref = "docs/differences.md"
 match = "*/glmm_cm*"
 kind = "value-diff"
 reason = "rma_glmm(model='CM.EL'): R's Hessian is a finite-difference one of a noisy objective, see docs/differences.md."
-ref = "docs/differences.md"
-
-[[known]]
-match = "matrix/[/vcalc_ks"
-kind = "shape-diff"
-reason = "x[i] with one index on a matrix: R indexes the elements (3 values for c(1,2,3)), numpy selects rows; metafopy keeps numpy's meaning."
 ref = "docs/differences.md"
 
 [[known]]
@@ -809,13 +768,6 @@ reason = "R stops with the error 'missing values are not allowed in 'poly'', whi
 ref = "docs/differences.md"
 
 [[known]]
-match = "options/robust/*"
-kind = "accepts-where-R-refuses"
-detail = "R: Could not obtain the cluster-robust*"
-reason = "R stops with the error 'Could not obtain the cluster-robust', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
-ref = "docs/differences.md"
-
-[[known]]
 match = "options/qqnorm/*"
 kind = "accepts-where-R-refuses"
 detail = "R: formal argument \"lty\" matched by multiple*"
@@ -848,13 +800,6 @@ match = "options/anova/*"
 kind = "accepts-where-R-refuses"
 detail = "R: Class of 'object' must be the same*"
 reason = "R stops with the error 'Class of 'object' must be the same', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
-ref = "docs/differences.md"
-
-[[known]]
-match = "options/permutest/*"
-kind = "accepts-where-R-refuses"
-detail = "R: R did not return within*"
-reason = "permutest(exact = TRUE) of a trimfill fit enumerates every permutation of the filled data; in R the 13 studies of dat.bcg already take 162 s (see options/permutest/uni_factor/exact=true) and the filled data have more studies, so R does not finish within the case time limit."
 ref = "docs/differences.md"
 
 [[known]]
@@ -939,20 +884,6 @@ match = "construct/mv_*"
 kind = "warning-extra"
 detail = "Use of the Knapp and Hartung method*"
 reason = "metafor issues this warning once per session, so only the first rma.mv(test = 'knha') in a harness run has it; metafopy warns every time."
-ref = "docs/differences.md"
-
-[[known]]
-match = "*/glmm_cm*"
-kind = "value-diff"
-path = ["$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$H2", "$I2", "$tau2", "$tau2.f", "$se.tau2", "$ci.lb.tau2", "$ci.ub.tau2", "$QE.Wld", "$QEp.Wld", "$QE.LRT", "$QEp.LRT", "$QE.df", "$fit.stats$*", "$tab$*", "$pi.*", "$cr.*", "$vcov", ""]
-reason = "rma_glmm(model='CM.EL') takes its Hessian from a noisy finite-difference objective: se, zval, pval and the tau2 interval agree to about 1e-3, QE_Wld (the saturated model's Wald test) is ill-conditioned and differs more."
-ref = "docs/differences.md"
-
-[[known]]
-match = "*/glmm_rs*"
-kind = "value-diff"
-path = ["$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$H2", "$I2", "$tau2", "$tau2.f", "$se.tau2", "$ci.lb.tau2", "$ci.ub.tau2", "$QE.Wld", "$QEp.Wld", "$QE.LRT", "$QEp.LRT", "$QE.df", "$fit.stats$*", "$tab$*", "$pi.*", "$cr.*", "$vcov", ""]
-reason = "rma_glmm(model='UM.RS') agrees with R's lme4 fit to between 2e-3 and 1e-1 relative (optimiser stopping rules)."
 ref = "docs/differences.md"
 
 [[known]]
@@ -1056,22 +987,6 @@ reason = "Location-scale fits of R's tests with several scale terms (scale = ~gr
 ref = "docs/differences.md"
 
 [[known]]
-match = "scripts/misc_funnel/*"
-kind = "value-diff"
-path = "$cex"
-detail = "*par(mfrow = c(5, 2), mar = c(5, 4, 1, 1), cex = 0.5)*"
-reason = "par(cex = 0.5) returns the old value of cex of the device: 1 on R's pdf device, the matplotlib default size of the text on the figure metafopy draws on."
-ref = "docs/differences.md"
-
-[[known]]
-match = "scripts/plots_forest_plot_with_subgroups/*"
-kind = "value-diff"
-path = "$cex"
-detail = "*par(*"
-reason = "par(cex = ) and par(op) return the old and the restored value of cex of the device: 1 on R's pdf device, the matplotlib default size of the text on the figure metafopy draws on."
-ref = "docs/differences.md"
-
-[[known]]
 match = "options/robust/*/clubSandwich=true"
 kind = "value-diff"
 path = "$ddf"
@@ -1154,48 +1069,6 @@ ref = "docs/differences.md"
 [[known]]
 match = "*"
 kind = "missing-field"
-path = "$chksum*"
-reason = "R keeps checksums of yi, vi, X and V to compare two fits in anova(); metafopy compares the data itself."
-ref = "docs/differences.md"
-
-[[known]]
-match = "*"
-kind = "missing-field"
-path = "$time"
-reason = "R stores the elapsed time of the fit; metafopy does not time its fits."
-ref = "docs/differences.md"
-
-[[known]]
-match = "*"
-kind = "missing-field"
-path = "$version"
-reason = "R stores the version of metafor that made the fit; metafopy has its own version."
-ref = "docs/differences.md"
-
-[[known]]
-match = "*"
-kind = "missing-field"
-path = "$verbose"
-reason = "R echoes the verbose argument in the fit; metafopy does not store it."
-ref = "docs/differences.md"
-
-[[known]]
-match = "*"
-kind = "missing-field"
-path = "$mf.*"
-reason = "R's model frames (mf.g, mf.g.f, mf.h, mf.h.f, mf.r, mf.s) are internal bookkeeping of rma.mv; metafopy keeps the factors in group_g and group_h."
-ref = "docs/differences.md"
-
-[[known]]
-match = "*"
-kind = "missing-field"
-path = "$opt.res"
-reason = "R's optimiser output is the output of optim/nlminb; the scipy optimisers give a different structure and it is not stored."
-ref = "docs/differences.md"
-
-[[known]]
-match = "*"
-kind = "missing-field"
 path = "$fit$*"
 reason = "regtest(model='lm') returns R's lm object (qr, effects, terms, ...); metafopy returns the coefficients in est, zval and pval and has no fit."
 ref = "docs/differences.md"
@@ -1205,20 +1078,6 @@ match = "*"
 kind = "label-diff"
 path = "*coef.na*"
 reason = "R names coef.na with the prefix X (coef.na.Z with Z), a quirk of how it builds the vector; metafopy names the flags by the coefficients."
-
-[[known]]
-match = "options/permutest/uni_factor/exact=true"
-kind = "accepts-where-R-refuses"
-detail = "R: reached elapsed time limit*"
-reason = "Reproduced in R: permutest(exact = TRUE) of a model with 3 allocation groups on the 13 studies of dat.bcg takes 162 s (it enumerates all the permutations), more than the time limit of a case; metafopy takes 43 s."
-ref = "docs/differences.md"
-
-[[known]]
-match = "options/profile/sel_bcg/ncpus=2"
-kind = "accepts-where-R-refuses"
-detail = "R: reached elapsed time limit*"
-reason = "Reproduced in R: profile() of a selmodel() fit with ncpus = 2 stops with the error 'argument \"withcrayon\" is missing, with no default' from the snow workers (and hangs the case runner); a bug of metafor 5.2-1 that metafopy has no counterpart of, it profiles in one process."
-ref = "docs/differences.md"
 
 [[known]]
 match = "options/confint/mv_sp/extint=true"
@@ -1238,12 +1097,6 @@ ref = "docs/differences.md"
 match = "options/vif/ls_*/sim=true"
 kind = "timeout"
 reason = "Reproduced in R: vif(sim = TRUE) of a location-scale model refits it 1000 times; for the bcg fit with ablat + year in the location and the scale part it takes 105 s in R and 115 s in metafopy, more than the time limit of a case."
-ref = "docs/differences.md"
-
-[[known]]
-match = "options/permutest/uni_factor/exact=true"
-kind = "timeout"
-reason = "Reproduced in R: the exact permutation test of 3 allocation groups on 13 studies takes 162 s in R and 43 s in metafopy, both more than the time limit of a case when the machine is busy."
 ref = "docs/differences.md"
 
 [[known]]
@@ -1396,13 +1249,6 @@ match = "matrix/print/hettest_reml"
 kind = "value-diff"
 path = "$statistic.boot"
 reason = "hettest(res, test = 'boot'): the bootstrap statistics are random; R and metafopy do not use the same random number stream unless a seed is given."
-ref = "docs/differences.md"
-
-[[known]]
-match = "options/vif/ls_bangert/sim=true"
-kind = "*"
-path = ["$beta$sim", "$beta$prop", "$alpha$sim", "$alpha$prop"]
-reason = "vif(sim = TRUE) simulates random data sets; R and metafopy do not draw the same random numbers."
 ref = "docs/differences.md"
 
 [[known]]
