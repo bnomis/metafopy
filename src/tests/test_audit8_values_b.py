@@ -48,3 +48,22 @@ def test_simulate_na_action_unknown() -> None:
         res = metafopy.rma_uni('yi', 'vi', data=na_data())
     with pytest.raises(metafopy.errors.InputError, match=r'na\.action'):
         metafopy.simulate(res, na_action='bogus')  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize(
+    ('name', 'column', 'missing', 'empty', 'na', 'none'),
+    [
+        ('michael2013', 'Compensation', 0, 0, 0, 1),
+        ('bakdash2021', 'DTIC.link', 501, 0, 18, 0),
+        ('axfors2021', 'blinding_exact', 0, 0, 0, 16),
+        ('stowe2010', 't3', 0, 28, 0, 0),
+        ('linde2015', 'treatment3', 0, 58, 0, 0),
+    ],
+)
+def test_dataset_strings_that_look_missing(name: str, column: str, missing: int, empty: int, na: int, none: int) -> None:
+    """The strings "", "NA" and "None" of metadat's text columns are values, not missing (counts from R)."""
+    col = metafopy.datasets.load(name)[column]
+    assert int(col.isna().sum()) == missing
+    assert int((col == '').sum()) == empty
+    assert int((col == 'NA').sum()) == na
+    assert int((col == 'None').sum()) == none
