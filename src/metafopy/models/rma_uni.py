@@ -392,10 +392,12 @@ def as_refit_on_used(fit: RMAResult, *, dropped: bool, measure: str) -> RMAResul
     """``fit`` as metafor returns a model that it fitted again to the estimates of the studies used (``regtest()`` and ``selmodel()``).
 
     The estimates carry the measure of the first model; the fit has the studies used only (``k.all``, ``k.f`` and ``ids`` refer to them, the labels are 1
-    to k) and no counts. R keeps a ``slab`` attribute on the estimates unless studies with missing values were dropped, so ``slab.null`` is true only then.
+    to k unless labels were given and no study was dropped) and no counts. R keeps a ``slab`` attribute on the estimates unless studies with missing values
+    were dropped, so ``slab.null`` is true only then.
     """
     k = fit.k
-    labels = tuple(str(i + 1) for i in range(k))
+    kept = fit.data.slab_given and not dropped
+    labels = tuple(fit.slab) if kept else tuple(str(i + 1) for i in range(k))
     data = dataclasses.replace(
         fit.data,
         slab=labels,
