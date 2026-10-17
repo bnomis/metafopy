@@ -242,6 +242,10 @@ def r_length(x: Value) -> Value:
 
 
 def r_round(x: Value, digits: Value = 0) -> Value:
+    if isinstance(x, pandas.DataFrame):  # round() of a data frame is a data frame
+        out = x.round(int(digits))
+        out.attrs = dict(x.attrs)
+        return out
     return numpy.round(as_array(x).astype(float) if not isinstance(x, (int, float)) else x, int(digits))
 
 
@@ -1008,7 +1012,12 @@ def r_index(x: Value, *idx: Value, **kw: Value) -> Value:
         return x.iloc[to_positions(sel, len(x))]
     if isinstance(x, dict):
         key = idx[0]
-        return {k: x[k] for k in numpy.atleast_1d(key).tolist()}
+        wanted = numpy.atleast_1d(numpy.asarray(key))
+        if wanted.dtype.kind in 'iuf':
+            # a number subscripts a list by position (blsplit(...)[1:2] is the first two blocks, whatever they are called)
+            items = list(x.items())
+            return dict(items[int(i) - 1] for i in wanted.tolist() if 1 <= int(i) <= len(items))
+        return {k: x[k] for k in wanted.tolist()}
     if dataclasses.is_dataclass(x) and not isinstance(x, type) and hasattr(x, '__getitem__') and hasattr(x, 'to_frame'):
         # `[.list.rma(x, i, ...)` selects rows, ignores a column subscript and returns NULL for rows outside the result
         rows_of_x = typing.cast(typing.Any, x)
@@ -1092,7 +1101,9 @@ def r_assign_index(x: Value, value: Value, *idx: Value) -> Value:
             names = [str(n) for n in sel]
             source = value if isinstance(value, pandas.DataFrame) else pandas.DataFrame({n: value for n in names})
             for position, name in enumerate(names):
-                out[name] = source.iloc[:, position].to_numpy() if isinstance(source, pandas.DataFrame) else source
+                # a column R names `ci.lb` is `ci_lb` in a frame metafopy made
+                target = name if name in out.columns or py_name(name) not in out.columns else py_name(name)
+                out[target] = source.iloc[:, position].to_numpy() if isinstance(source, pandas.DataFrame) else source
         return out
     is_text = isinstance(x, (list, dict)) or numpy.asarray(x).dtype.kind in 'USO' or isinstance(value, str)
     a = numpy.array(x, dtype=object if is_text else float, copy=True)
@@ -1411,6 +1422,8 @@ def r_symbol(env: Env, name: str) -> Value:
     for scope in reversed(env.scopes):
         if isinstance(scope, pandas.DataFrame) and name in scope.columns:
             return name
+        if isinstance(scope, pandas.DataFrame) and py_name(name) in scope.columns and name not in env.vars:
+            return py_name(name)  # the column R calls `ci.lb` is `ci_lb` in a frame metafopy made
         if isinstance(scope, dict) and name in scope:
             return name
     try:

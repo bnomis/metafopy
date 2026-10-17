@@ -135,6 +135,10 @@ def lookup(value: typing.Any, name: str) -> tuple[bool, typing.Any]:
         # predict(vcov=TRUE) is list(pred = <the predictions>, vcov = <matrix>) in R; metafopy returns the predictions with the matrix in `vcov`
         # without the matrix, so that `pred` of these predictions (the numbers) is not taken for the list again
         return True, dataclasses.replace(value, vcov=None)
+    robust_info = getattr(value, 'robust', None)
+    if name == 'ddf' and getattr(robust_info, 'robumethod', None) == 'clubSandwich':
+        # robust.rma.uni() sets ddf to dfs: one value per coefficient for the club sandwich estimator, which metafopy keeps in `dfs` (its `ddf` is one number)
+        return True, value.dfs
     if name == 'vcov' and callable(getattr(value, 'vcov', None)) and hasattr(value, 'vb'):
         # R keeps the matrix in `vcov`; in metafopy `vcov()` is the accessor and the matrix is `vb`
         return True, value.vb

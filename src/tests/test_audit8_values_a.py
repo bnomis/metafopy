@@ -413,6 +413,49 @@ def test_cumul_na_exclude_keeps_a_row_for_each_study_left_out() -> None:
     assert numpy.flatnonzero(numpy.isnan(grouped.estimate)).tolist() == [3]
 
 
+def test_print_num_numbers_the_coefficient_rows() -> None:
+    # R 4.3.3, metafor 5.2-1: print(rma(yi, vi, mods = ~ ablat, data = dat), num = TRUE) has the rows "1) intrcpt" and "2) ablat"
+    fit = metafopy.rma(yi='yi', vi='vi', mods='~ ablat', data=bcg_frame())
+    shown = fit.summary(showfit=False, num=True).split('\n')
+    assert any(line.startswith('1) intrcpt') for line in shown)
+    assert any(line.startswith('2) ablat') for line in shown)
+    assert not any(line.startswith('1) intrcpt') for line in fit.summary(showfit=False).split('\n'))
+    permuted: typing.Any = metafopy.permutest(fit, iter=20, seed=1)
+    assert any(line.startswith('2) ablat') for line in permuted.summary(num=True).split('\n'))
+
+
+def test_permutest_print_keeps_the_footnote_without_the_codes() -> None:
+    # R 4.3.3, metafor 5.2-1: print(permutest(res), signif.stars = FALSE) ends "---", "1) p-values based on permutation testing" and no codes
+    fit = metafopy.rma(yi='yi', vi='vi', mods='~ ablat', data=bcg_frame())
+    permuted: typing.Any = metafopy.permutest(fit, iter=20, seed=1)
+    for kwargs in ({'signif_stars': False}, {'signif_legend': False}):
+        lines = permuted.summary(**kwargs).split('\n')
+        assert lines[-4:] == ['', '---', '1) p-values based on permutation testing', '']
+        assert not any(line.startswith('Signif. codes') for line in lines)
+
+
+def test_round_of_a_data_frame_and_its_dotted_columns() -> None:
+    # R: round(dat2[, c("or", "ci.lb")], digits = 2) is a data frame and dat2[c("yi", "ci.lb")] <- ... replaces the column that metafopy calls ci_lb
+    frame = pandas.DataFrame({'or': [1.234, 2.345], 'ci_lb': [0.1234, 0.5678]})
+    assert isinstance(audit.rlib.r_round(frame, 2), pandas.DataFrame)
+    assigned = audit.rlib.r_assign_index(frame, pandas.DataFrame({'ci.lb': [7.0, 8.0]}), numpy.array(['ci.lb'], dtype=object))
+    assert list(assigned.columns) == ['or', 'ci_lb']
+    assert assigned['ci_lb'].tolist() == [7.0, 8.0]
+    scope = audit.rlib.Env()
+    scope.scopes.append(frame)
+    assert audit.rlib.r_symbol(scope, 'ci.lb') == 'ci_lb'
+
+
+def test_club_sandwich_ddf_is_read_from_dfs() -> None:
+    # R 4.3.3, metafor 5.2-1: robust(rma(yi, vi, mods = ~ ablat), cluster = trial, clubSandwich = TRUE)$ddf is c(3.705255, 5.212865), as dfs
+    data = bcg_frame()
+    fit = metafopy.rma(yi='yi', vi='vi', mods='~ ablat', data=data)
+    robust = metafopy.robust(fit, cluster=data['trial'], clubSandwich=True)
+    found, ddf = audit.valuetree.lookup(robust, 'ddf')
+    assert found
+    assert numpy.round(ddf, 6).tolist() == [3.705255, 5.212865]
+
+
 def test_summary_digits_are_those_it_printed_with() -> None:
     # R 4.3.3, metafor 5.2-1: summary(rma(yi, vi, data = dat), digits = 2)$digits is 2 for every element (4 for the fit itself)
     fit = metafopy.rma(yi='yi', vi='vi', data=bcg_frame())

@@ -956,7 +956,7 @@ reason = "rma_glmm(model='UM.RS') agrees with R's lme4 fit to between 2e-3 and 1
 ref = "docs/differences.md"
 
 [[known]]
-match = "*/ls_year"
+match = ["*/ls_year", "*/ls_year#*"]
 kind = "value-diff"
 path = ["$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$M", "$H", "$H2", "$I2", "$tau2", "$tau2.f", "$fit.stats$*", "$alpha", "$alpha$*", "$alpha.perm$*", "$va", "$se.alpha", "$zval.alpha", "$pval.alpha", "$ci.lb.alpha", "$ci.ub.alpha", "$zval.alpha.perm$*", "$QS", "$QSp", "$QS.perm", "[]*", "$x", "$y", "$resid", "$z", "$pred", "$pi.*", "$cr.*", "$scale", "$vcov", ""]
 reason = "Location-scale fit ~ ablat + year with scale ~ ablat + year: the scale intercept is -151 (tau2 is 0 to machine precision), so the likelihood is flat in the scale coefficients. Log-likelihood -7.602255955 in R and Python, scale coefficients agree to 1e-6, the Wald statistics of the scale part (QS, se.alpha, va) differ by up to 2e-4; R's nlminb itself does not converge when its tolerance is tightened."
@@ -1502,4 +1502,28 @@ kind = "shape-diff"
 path = ""
 detail = "length R 19, Python 21"
 reason = "print.rma.uni() reads legend from ... as a logical (isTRUE(ddd$legend)); the sweep passes list(x = 'topright'), the legend of a plot, for which R drops the footnote on the cluster-robust inference of a robust fit and metafopy, whose print() has no such argument, prints it."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/print/ls_bcg/*"
+kind = "value-diff"
+path = ""
+detail = "*allocsystematic*"
+reason = "Printed scale coefficient allocsystematic of the location-scale fit ls_bcg (scale ~ alloc, degenerate: tau2 is 0 for two of the three allocations): the se is 2.4846 in R and 2.4847 in metafopy, and the interval -3.6795 and -3.6796, where the log-likelihood is the same."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/misc_rma_ls/test/178"
+kind = "value-diff"
+path = ["$b", "$beta", "$zval"]
+detail = "*(relative 0.0001*"
+reason = "Location-scale model with 6 location and 6 scale coefficients on 46 studies (R warns about convergence): the log-likelihood is -8.47080642716 in R and -8.47080642714 in metafopy, the scale coefficients agree to 5e-6 and the small coefficient of grade 3 (-0.0004271) to 1.2e-4 relative."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["scripts/misc_rma_ls/test/128", "scripts/misc_rma_ls/test/129"]
+kind = "value-diff"
+path = ["$pval.alpha", "$QSp", "$ci.lb.alpha", ""]
+detail = "*"
+reason = "permutest(iter = 100) of a location-scale model: the p-values are shares of the permutations whose refit worked (4/100 in R, 4/98 in metafopy: two refits fail in metafopy), the permutation distribution of the scale coefficients inherits the optimiser noise of the flat likelihood (see permutest above)."
 ref = "docs/differences.md"
