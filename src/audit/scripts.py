@@ -80,22 +80,11 @@ def namespace(env: audit.rlib.Env) -> dict[str, object]:
         'rfor': audit.rlib.rfor,
         'rindex': audit.rlib.r_index,
         'rindex2': audit.rlib.r_index2,
+        'rsym': audit.rlib.r_symbol,
         'rnse': audit.rlib.rnse,
         'rwith': audit.rlib.r_with,
         'truth': audit.rlib.truth,
     }
-
-
-def forget(ast: Json, env: audit.rlib.Env) -> None:
-    """A unit that assigns and did not run in Python leaves its variable out, so that later units do not compare R's new value with Python's old one."""
-    node = ast
-    if not (node['t'] == 'call' and node['f']['t'] == 'sym' and node['f']['v'] in audit.transpile.ASSIGN and len(node['args']) == 2):
-        return
-    node = node['args'][0]['v']
-    while node['t'] == 'call' and node['args']:
-        node = node['args'][0]['v']
-    if node['t'] in ('sym', 'str'):
-        env.vars.pop(str(node['v']), None)
 
 
 def run_script(script: Json, nse: set[str], timeout: float) -> tuple[list[Json], collections.Counter[str]]:
@@ -103,21 +92,30 @@ def run_script(script: Json, nse: set[str], timeout: float) -> tuple[list[Json],
     audit.rlib.SETTINGS.clear()
     ns = namespace(env)
     assigned: set[str] = set()
+    stale: set[str] = set()
     findings: list[Json] = []
     tally: collections.Counter[str] = collections.Counter()
     for i, unit in enumerate(script['units']):
         case_id = f'scripts/{script["topic"]}/{script["kind"]}/{i}'
         tally['units'] += 1
         metafopy.set_seed(1234)
+        targets = audit.transpile.assignment_targets(unit['ast'])
         try:
             code = audit.transpile.translate_unit(unit['ast'], assigned, nse)
         except audit.transpile.UntranslatableError as e:
             tally[f'untranslated: {e}'] += 1
-            forget(unit['ast'], env)
+            stale |= targets
             continue
+        if audit.transpile.symbols(unit['ast']) & stale:
+            # it reads a variable that an earlier unit changed in R but not in Python (a unit that could not be translated or that failed)
+            tally['skipped: reads a variable that differs between R and Python'] += 1
+            stale |= targets
+            continue
+        stale -= targets
         py, value = audit.pyrun.run_guarded(functools.partial(eval, code, ns), timeout)
-        if py['status'] != 'ok':
-            forget(unit['ast'], env)
+        if unit['status'] != 'ok' or py.get('error') is not None:
+            # the two sides no longer hold the same value in what the unit assigns to
+            stale |= targets
         if unit['status'] != 'ok':
             tally['R failed (skipped)'] += 1
             if not ENVIRONMENT_ERRORS.search(unit.get('error', '')):

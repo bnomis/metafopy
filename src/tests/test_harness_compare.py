@@ -128,3 +128,15 @@ def test_every_new_finding_is_rendered_in_the_report(tmp_path: pathlib.Path) -> 
     assert 'Different defaults (1)' in text
     assert 'Other (1)' in text
     assert 'Wrong values (1)' in text
+
+
+def test_digits_number_stands_for_the_vector_of_nine() -> None:
+    guide: valuetree.Node = {'k': 'list', 'items': [{'name': 'digits', 'node': vector([4.0] * 9)}], 'cls': ['list']}
+    missing: list[str] = []
+    py = valuetree.to_node({'digits': 4}, guide, '', missing)
+    out: list[valuetree.Diff] = []
+    valuetree.compare(guide, py, '', out)
+    assert out == []
+    other = valuetree.to_node({'digits': 2}, guide, '', missing)
+    valuetree.compare(guide, other, '', out)
+    assert [d.kind for d in out] == ['value-diff']

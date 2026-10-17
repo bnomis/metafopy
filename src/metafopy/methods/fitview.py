@@ -251,7 +251,7 @@ def mv_view(x: metafopy.models.mv_result.RMAMVResult) -> FitView:
         keep=keep,
         k_all=x.k_all,
         beta=x.beta,
-        level=metafopy.models.rma_uni.level_to_alpha(x.level),  # rma_mv keeps the level in percent
+        level=x.level,
         method=x.method,
         measure=x.measure,
         int_only=x.int_only,
