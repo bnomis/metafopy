@@ -58,3 +58,18 @@ def test_assignment_targets_and_reads() -> None:
     plain = call('<-', sym('res'), call('rma', sym('yi'), sym('vi')))
     assert audit.transpile.assignment_targets(plain) == {'res'}
     assert 'res' not in audit.transpile.symbols(plain)
+
+
+def test_nested_assignment_has_the_value_on_the_right() -> None:
+    env = audit.rlib.Env()
+    env.set('dat', pandas.DataFrame({'yi': [1.0, 2.0, 3.0]}))
+    code = audit.transpile.translate_unit(call('<-', call('[', call('$', sym('dat'), sym('yi')), num(2)), num(9)), set(), set())
+    assert eval(code, audit.scripts.namespace(env)) == 9
+    assert env['dat']['yi'].to_list() == [1.0, 9.0, 3.0]
+
+
+def test_negative_subset_leaves_rows_out() -> None:
+    frame = pandas.DataFrame({'yi': [1.0, 2.0, 3.0, 4.0]})
+    out = audit.rlib.shift_arguments({'subset': numpy.array([-2.0]), 'data': frame, 'btt': numpy.array([1.0, 3.0])})
+    assert out['subset'] == [True, False, True, True]
+    assert out['btt'] == [0, 2]

@@ -7,6 +7,7 @@ difference between the packages.
 
 import contextlib
 import functools
+import inspect
 import io
 import math
 import typing
@@ -659,7 +660,15 @@ def r_abs(x: Value) -> Value:
     return numpy.abs(as_array(x).astype(float))
 
 
+# The settings a script makes with ``options()`` that a Python argument stands for; ``run_script`` clears them for each script.
+OPTIONS: dict[str, Value] = {}
+
+
 def r_options(*args: Value, **kw: Value) -> Value:
+    """``options(na.action = "na.pass")`` is kept and handed to the functions that take ``na_action`` (see ``rcall``); other settings are ignored."""
+    for key, value in kw.items():
+        if key == 'na.action' or key == 'na_action':
+            OPTIONS['na.action'] = value
     return None
 
 
@@ -1012,7 +1021,14 @@ def shift_arguments(kwargs: dict[str, Value]) -> dict[str, Value]:
         if k in INDEX_ARGUMENTS and v is not None and not isinstance(v, (str, bool)):
             arr = numpy.asarray(v)
             if arr.dtype.kind in 'if' and arr.dtype != bool:
-                v = (arr.astype(int) - 1).tolist() if arr.ndim else int(arr) - 1
+                data = kwargs.get('data')
+                if arr.size and (arr < 0).all() and isinstance(data, pandas.DataFrame):
+                    # R's negative indices leave rows out (subset = -2); the Python argument takes the rows to keep as a mask
+                    keep = numpy.ones(len(data), dtype=bool)
+                    keep[(-numpy.atleast_1d(arr)).astype(int) - 1] = False
+                    v = keep.tolist()
+                else:
+                    v = (arr.astype(int) - 1).tolist() if arr.ndim else int(arr) - 1
         out[k] = v
     return out
 
@@ -1047,9 +1063,18 @@ def rcall(env: Env, name: str, *args: Value, **kwargs: Value) -> Value:
         raise UnsupportedError(f'R function {name} is not available in the harness') from e
     mapped = {pycall.arg_name(k): v for k, v in kwargs.items()}
     pycall.check_arguments(fn, list(mapped))
+    if 'na.action' in OPTIONS and 'na_action' not in mapped and accepts(fn, 'na_action'):
+        mapped['na_action'] = pycall.option_value('na.action', OPTIONS['na.action'])
     if isinstance(fn, functools.partial):
         return fn(*args[1:], **mapped)
     return fn(*args, **mapped)
+
+
+def accepts(fn: typing.Callable[..., Value], name: str) -> bool:
+    try:
+        return name in inspect.signature(fn.func if isinstance(fn, functools.partial) else fn).parameters
+    except TypeError, ValueError:
+        return False
 
 
 def r_symbol(env: Env, name: str) -> Value:

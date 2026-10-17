@@ -89,6 +89,7 @@ def namespace(env: audit.rlib.Env) -> dict[str, object]:
 
 def run_script(script: Json, nse: set[str], timeout: float) -> tuple[list[Json], collections.Counter[str]]:
     env = audit.rlib.Env()
+    audit.rlib.OPTIONS.clear()
     ns = namespace(env)
     assigned: set[str] = set()
     stale: set[str] = set()

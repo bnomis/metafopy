@@ -193,7 +193,8 @@ def replacement(head: str, current: str, args: list[Node], value_code: str, c: C
 
 def tr_assign(lhs: Node, rhs_code: str, c: Context) -> str:
     """``x <- v``, and ``f(g(x, a), b) <- v``, which R evaluates as ``x <- `g<-`(x, a, `f<-`(g(x, a), b, v))``."""
-    value_code = rhs_code
+    nested = not (lhs['t'] == 'sym' or lhs['t'] == 'str')
+    value_code = 'rhs_value' if nested and not c.in_function else rhs_code
     while not (lhs['t'] == 'sym' or lhs['t'] == 'str'):
         if not (lhs['t'] == 'call' and lhs['f']['t'] == 'sym'):
             raise UntranslatableError('assignment target')
@@ -206,6 +207,9 @@ def tr_assign(lhs: Node, rhs_code: str, c: Context) -> str:
         c.params.add(name)
         return f'({local_name(name)} := {value_code})'
     c.assigned.add(name)
+    if nested:
+        # the value of `dat$yi[1] <- NA` is the value on the right, not the changed object
+        return f'(rhs_value := {rhs_code}, E.set({name!r}, {value_code}), rhs_value)[2]'
     return f'E.set({name!r}, {value_code})'
 
 
