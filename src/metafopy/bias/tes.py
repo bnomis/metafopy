@@ -170,7 +170,7 @@ def tes(
             tes_alternative=tes_alternative,
             tes_alpha=tes_alpha,
             progbar=progbar,
-            digits=metafopy.mfopt.stored_digits(digits, 4),
+            digits=metafopy.mfopt.stored_digits(digits, metafopy.mfopt.model_digits(x)),
             correct=correct,
             rel_tol=rel_tol,
             subdivisions=subdivisions,

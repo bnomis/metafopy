@@ -267,7 +267,7 @@ def permutest_rma_uni(
     con = permutest_control(control)
     if tol is not None:
         con['comptol'] = tol
-    digits_ = metafopy.mfopt.stored_digits(digits, 4)
+    digits_ = metafopy.mfopt.stored_digits(digits, x.digits)
 
     gen: metafopy.core.rng.RRandom | None = None
     if not use_exact:

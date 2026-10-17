@@ -29,7 +29,7 @@ import typing
 
 import metafopy.errors
 
-__all__ = ['DIGIT_KEYS', 'OPTIONS', 'getmfopt', 'option_digits', 'option_signif', 'option_space', 'reduce_digits', 'setmfopt']
+__all__ = ['DIGIT_KEYS', 'OPTIONS', 'getmfopt', 'model_digits', 'option_digits', 'option_signif', 'option_space', 'reduce_digits', 'setmfopt']
 
 # auditme: accept[non-alphabetical-literal] the order of metafor's digits vector
 DIGIT_KEYS = ('est', 'se', 'test', 'pval', 'ci', 'var', 'sevar', 'fit', 'het')
@@ -105,6 +105,12 @@ def reduce_digits(value: typing.Any, stored: int = 4) -> int:
 def stored_digits(digits: typing.Any, stored: int = 4) -> int:
     """The ``digits`` a result keeps: the explicit ``digits`` reduced to one number of decimals, else ``stored`` (the ``digits`` of the fit)."""
     return stored if digits is None else reduce_digits(digits, stored)
+
+
+def model_digits(x: typing.Any) -> int:
+    """The ``digits`` a model was fitted with (metafor's ``x$digits``), else 4 for a vector of estimates."""
+    stored = getattr(x, 'digits', None)
+    return stored if isinstance(stored, int) and not isinstance(stored, bool) else 4
 
 
 def option_digits(digits: typing.Any, stored: int = 4) -> int:

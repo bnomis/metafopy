@@ -231,7 +231,9 @@ def trimfill(
             'weighted': x.weighted,
             **kw,
         }
-        res = dataclasses.replace(res, measure=x.measure, call=metafopy.models.call.Call(function=metafopy.models.rma_uni.rma_uni, arguments=arguments))
+        res = dataclasses.replace(
+            res, measure=x.measure, digits=x.digits, call=metafopy.models.call.Call(function=metafopy.models.rma_uni.rma_uni, arguments=arguments)
+        )
         fill = numpy.concatenate([numpy.zeros(x.k, dtype=numpy.bool_), numpy.ones(k0, dtype=numpy.bool_)])
     else:
         res = x

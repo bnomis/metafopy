@@ -259,3 +259,15 @@ def test_selmodel_keeps_an_equal_effects_model_as_it_is() -> None:
         sel: typing.Any = metafopy.selmodel(res, type='halfnorm', alternative='less')
     assert (sel.k, sel.k_f, sel.k_all) == (9, 12, 12)
     assert sel.ids.tolist() == list(range(12))
+
+
+@pytest.mark.parametrize('name', ['hc', 'permutest', 'trimfill', 'fsn', 'ranktest', 'regtest', 'tes'])
+def test_bias_functions_inherit_the_digits_of_the_model(name: str) -> None:
+    # R 4.3.3, metafor 5.2-1: hc(), permutest(), trimfill(), fsn(), ranktest(), regtest() and tes() of rma(..., digits = 2) have digits 2
+    frame = metafopy.datasets.load('dat.bcg')
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        data = metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=frame)
+        res = metafopy.rma(yi='yi', vi='vi', data=data, digits=2)
+        out = getattr(metafopy, name)(res)
+    assert out.digits == 2
