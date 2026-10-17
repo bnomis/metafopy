@@ -219,3 +219,15 @@ def test_rma_mv_formula_response_takes_ni_from_escalc() -> None:
         res = metafopy.rma_mv('yi ~ ablat', 'vi', random='~ 1 | trial', data=data)
     assert res.ni is not None
     assert res.ni[-1] == 34767
+
+
+def test_rma_mv_p_counts_the_coefficients_estimated() -> None:
+    # R 4.3.3, metafor 5.2-1: rma.mv(..., mods = ~ factor(study %% 2), beta = c(0.1, NA))$p is 1, with both coefficients fixed it is 0 and otherwise 2
+    frame = metafopy.datasets.load('dat.assink2016').iloc[:30].copy()
+    frame['g'] = (frame['study'] % 2).astype(str)
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        free = metafopy.rma_mv('yi', 'vi', mods='~ g', random='~ 1 | study', data=frame)
+        half = metafopy.rma_mv('yi', 'vi', mods='~ g', random='~ 1 | study', data=frame, beta=[0.1, numpy.nan])
+        fixed = metafopy.rma_mv('yi', 'vi', mods='~ g', random='~ 1 | study', data=frame, beta=[0.1, 0.2])
+    assert (free.p, half.p, fixed.p) == (2, 1, 0)

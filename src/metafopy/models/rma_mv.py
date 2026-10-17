@@ -1204,7 +1204,7 @@ def rma_mv(
         k=k,
         k_f=k_f,
         k_all=k_all,
-        p=p,
+        p=p_eff,
         m=m,
         btt=btt_t,
         parms=parms,
