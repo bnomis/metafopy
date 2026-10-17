@@ -1103,11 +1103,11 @@ reason = "selmodel() with type negexp1, trunc, truncest or beta on uni_factor, u
 ref = "docs/differences.md"
 
 [[known]]
-match = "options/selmodel/*"
+match = ["options/selmodel/*", "*/sel_bcg", "*/sel_bcg/*", "*/sel_digits", "*/sel_digits/*"]
 kind = "value-diff"
 path = "$hessian"
 detail = "*R *e-0[5-9], Python *e-0[5-9]*"
-reason = "selmodel() Hessian: entries that are zero to about 1e-8 (the cross derivatives with a flat selection parameter) have different finite-difference noise in R and in metafopy."
+reason = "selmodel() Hessian (stepfun and the other types): entries that are zero to about 1e-8 (the cross derivatives with a flat selection parameter) have different finite-difference noise in R and in metafopy."
 ref = "docs/differences.md"
 
 [[known]]
@@ -1463,4 +1463,28 @@ kind = "shape-diff"
 path = ""
 detail = "*[class(dat)]*"
 reason = "class() of the result of aggregate() on an escalc object that was cut with a subscript: R gives data.frame only, metafopy keeps the measure and the class escalc."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["*/ls_year", "*/ls_year/*", "*/permutest/ls_year", "*/permutest/ls_year/*", "*/permutest_ls*"]
+kind = "print-diff"
+path = ""
+detail = "*QM(df = 2) = 15.610[45]*"
+reason = "Printed QM of the flat location-scale fit ls_year: 15.6105 in R and 15.6104 in metafopy (relative 5e-6) where the scale coefficients differ by 1e-5; the log-likelihood is -7.602255955 in both."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["*/permutest/ls_*", "*/permutest/ls_*/*", "*/permutest_ls*"]
+kind = "print-diff"
+path = ""
+detail = "*QS(df = *"
+reason = "Printed QS line of permutest() of a location-scale fit with a degenerate scale part (ls_bcg, ls_year): the permutation p-value is the share of permuted statistics among those whose refit worked, and the refits fail for different permutations (permutest(ls_bcg, seed = 1234): 71 of 1000 permuted QS are NA in R and 170 in metafopy), so 0.7895 and 0.7647 come from the same QS = 0.5365."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/anova/mv_gen"
+kind = "print-diff"
+path = ""
+detail = "*QM(df = 1) = 88.56*"
+reason = "Printed QM of the GEN rma_mv fit mv_gen with correlations on the boundary (rho = -1, 1, -1): the log-likelihood is -11.577364393 in both, tau2 of the first level is 76.8913 in R and 76.8863 in metafopy, the coefficient -0.43638375 and -0.43638546, so QM is 88.5618 and 88.5624."
 ref = "docs/differences.md"
