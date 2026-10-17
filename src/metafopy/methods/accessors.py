@@ -27,6 +27,8 @@ import numpy.typing
 import pandas
 
 import metafopy.errors
+import metafopy.methods.common
+import metafopy.methods.fitted
 import metafopy.models.binary
 import metafopy.models.call
 import metafopy.models.glmm_result
@@ -188,27 +190,36 @@ def formula_of(obj: Fit, type: str = 'mods') -> str | None:
     return mods if isinstance(mods, str) and '~' in mods else None
 
 
-def model_matrix(obj: Fit, asdf: bool = False) -> typing.Any:
+def model_matrix(obj: Fit, asdf: bool = False, *, na_action: metafopy.methods.common.NAAction = 'omit') -> typing.Any:
     """The model matrix of the studies used in fitting, as metafor's ``model.matrix.rma``.
 
     A ``numpy`` array, or with ``asdf=True`` a data frame with the coefficient names.
-    A location-scale model gives ``{'location': X, 'scale': Z}``.
+    A location-scale model gives ``{'location': X, 'scale': Z}``. ``na_action`` stands for R's ``options(na.action=)``: ``'omit'`` (default) gives the rows
+    of the studies used in fitting, ``'exclude'`` and ``'pass'`` one row for every study of the subset (NaN where a value is missing), ``'fail'``
+    stops when studies were left out.
 
     Raises:
         metafopy.errors.ArgumentError: the object is not a model fit.
+        metafopy.errors.InputError: ``na_action`` is unknown, or ``'fail'`` and studies were left out.
     """
     check_fit(obj, 'model_matrix')
+    metafopy.methods.common.check_na_action(na_action)
+    rows = metafopy.methods.fitted.rows_of(obj)
+    if na_action == 'fail' and not rows.not_na.all():
+        raise metafopy.errors.InputError('Missing values in results.')
+    full = na_action in ('exclude', 'pass')
     if isinstance(obj, metafopy.models.binary.FixedBinaryResult):
-        X = numpy.ones((obj.k, 1))
+        X = rows.X_f if full else numpy.ones((obj.k, 1))
     else:
-        X = numpy.asarray(obj.X, dtype=numpy.float64)
+        X = numpy.asarray(rows.X_f if full else obj.X, dtype=numpy.float64)
     names = list(obj.coef_names)
 
     def wrap(M: FloatArray, cols: list[str]) -> typing.Any:
         return pandas.DataFrame(M, columns=cols) if asdf else M.copy()
 
     if isinstance(obj, metafopy.models.rma_ls_result.RMALSResult):
-        return {'location': wrap(X, names), 'scale': wrap(numpy.asarray(obj.Z, dtype=numpy.float64), list(obj.alpha_names))}
+        Z = metafopy.methods.fitted.scale_rows(obj) if full else numpy.asarray(obj.Z, dtype=numpy.float64)
+        return {'location': wrap(X, names), 'scale': wrap(Z, list(obj.alpha_names))}
     return wrap(X, names)
 
 

@@ -148,6 +148,8 @@ def funnel(
     at_lab: collections.abc.Sequence[str] | None = None,
     measure: str | None = None,
     main: str | None = None,
+    na_action: metafopy.methods.common.NAAction = 'omit',
+    transf: typing.Any = None,
 ) -> FunnelResult:
     """Funnel plot of a fitted model (``funnel.rma``) or of estimates with their variances (``funnel.default``).
 
@@ -162,12 +164,18 @@ def funnel(
     for models with moderators (``'rstandard'`` or ``'rstudent'``). Pass ``ni`` (or fit the model with
     ``ni``) for the sample-size axes. For a trim-and-fill result the imputed studies are drawn
     with symbol ``pch_fill`` (open by default). ``main`` is the title of the plot. ``legend`` is only approximated (a matplotlib legend).
+    ``transf`` only warns, as in metafor (use ``atransf``).
+    ``na_action`` stands for R's ``options(na.action=)``: estimates with missing values are left out, except for ``'fail'``, which stops; it has no effect
+    on a fitted model.
 
     Returns a :class:`FunnelResult` with the plotted coordinates and the axes.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InputError: an argument or the data is invalid, or values are missing and ``na_action='fail'``.
     """
+    metafopy.methods.common.check_na_action(na_action)
+    if transf is not None:
+        warnings.warn("Function does not have a 'transf' argument (use 'atransf' instead).", stacklevel=2)
     if yaxis not in YAXES:
         raise metafopy.errors.InputError(f'yaxis must be one of {YAXES}')
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
@@ -307,6 +315,8 @@ def funnel(
                 raise metafopy.errors.InputError('No sample size information was specified (ni).')
             has_na |= numpy.isnan(ni_a)
         if has_na.any():
+            if na_action == 'fail':
+                raise metafopy.errors.InputError('Missing values in data.')
             ok = ~has_na
             yi, vi_a, sei_a = yi[ok], vi_a[ok], sei_a[ok]
             if ni_a is not None:
@@ -332,7 +342,7 @@ def funnel(
         shade_c = metafopy.plot.rutils.color_ramp(shade_c[0], metafopy.plot.rutils.coladj(-0.5), len(lvl_alpha))
         shade_c = [shade_c[0], *shade_c[:0:-1]] if len(shade_c) > 1 else shade_c
 
-    dg = [2, 3] if digits is None else ([digits, digits] if isinstance(digits, int) else list(digits))
+    dg = [2, 3] if digits is None else ([int(d) for d in numpy.atleast_1d(digits)] * 2)[: max(2, numpy.size(digits))]
     if digits is None:
         dg = {'ni': [2, 0], 'wi': [2, 2]}.get(yaxis, [2, 3])
     drop0 = all(isinstance(v, int | numpy.integer) for v in dg)
@@ -446,7 +456,12 @@ def funnel(
             ci_left = ref - zc * numpy.sqrt(vvals + tau2)
             ci_right = ref + zc * numpy.sqrt(vvals + tau2)
             metafopy.plot.draw.poly(
-                axx, numpy.concatenate([ci_left, ci_right[::-1]]), numpy.concatenate([yvals, yvals[::-1]]), col=shade_c[m], border=None, zorder=0.6
+                axx,
+                numpy.concatenate([ci_left, ci_right[::-1]]),
+                numpy.concatenate([yvals, yvals[::-1]]),
+                col=shade_c[m] if m < len(shade_c) else None,
+                border=None,
+                zorder=0.6,
             )
             metafopy.plot.draw.line(axx, ci_left, yvals, lty=lt[0], col=colci_c).set_zorder(0.7)
             metafopy.plot.draw.line(axx, ci_right, yvals, lty=lt[0], col=colci_c).set_zorder(0.7)
@@ -574,10 +589,11 @@ def funnel_legend(
         lv = [*level, 0.0]
         nd = max(len(f'{v:.8g}'.rstrip('0')) for v in lv) - 2
         nd = max(0, nd)
+        fills = [*shade, back]
         for i, v in enumerate(lv):
             hi = 1.0 if i == 0 else lv[i - 1]
             labels.append(f'{v:.{nd}f} < p <= {hi:.{nd}f}')
-            handles.append(matplotlib.patches.Patch(facecolor=metafopy.plot.draw.rcolor([*shade, back][i]), edgecolor=metafopy.plot.draw.rcolor(colci)))
+            handles.append(matplotlib.patches.Patch(facecolor=metafopy.plot.draw.rcolor(fills[i % len(fills)]), edgecolor=metafopy.plot.draw.rcolor(colci)))
     elif opts['show'] == 'cis':
         for v, sc in zip(level, shade, strict=False):
             labels.append(f'{100 - 100 * v:g}% CI Region')

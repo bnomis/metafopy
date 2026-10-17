@@ -133,7 +133,7 @@ def ranef_rma_mv(
     """
     x = object
     metafopy.methods.common.check_na_action(na_action)
-    alpha = metafopy.models.rma_uni.level_to_alpha(x.level if level is None else level)
+    alpha = x.level if level is None else metafopy.models.rma_uni.level_to_alpha(level)
     if x.W is not None:
         raise metafopy.errors.InputError('Extraction of random effects not available for models with non-standard weights.')
     W = x.weight_matrix()

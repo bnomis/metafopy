@@ -18,6 +18,8 @@ import metafopy.core.clubsandwich
 import metafopy.errors
 import metafopy.methods.common
 import metafopy.methods.fitted
+import metafopy.methods.listrma
+import metafopy.methods.pairmat
 import metafopy.mfopt
 import metafopy.models.binary
 import metafopy.models.glmm_result
@@ -72,6 +74,10 @@ class PredictResult:
     def cr_ub(self) -> FloatArray:
         """Alias of ``pi_ub`` (metafor keeps ``cr.ub`` for old code)."""
         return self.pi_ub
+
+    def __getitem__(self, index: typing.Any) -> typing.Self:
+        """The rows ``index`` (metafor's ``[.list.rma``; a NumPy index, 0-based)."""
+        return metafopy.methods.listrma.rows(self, index, self.pred.shape[0])
 
     def to_frame(self) -> pandas.DataFrame:
         cols: dict[str, typing.Any] = {
@@ -378,7 +384,7 @@ def uni_location_model(x: metafopy.models.rma_uni.RMAResult, rows: metafopy.meth
 @predict.register
 def predict_rma_uni(
     model: metafopy.models.rma_uni.RMAResult,
-    newmods: NewMods | None = None,
+    newmods: NewMods | metafopy.methods.pairmat.PairmatSpec | None = None,
     *,
     intercept: bool | None = None,
     tau2_levels: collections.abc.Sequence[str | int] | str | int | None = None,
@@ -396,6 +402,7 @@ def predict_rma_uni(
     newvi: numpy.typing.ArrayLike | None = None,
     na_action: metafopy.methods.common.NAAction = 'omit',
     digits: int | collections.abc.Mapping[str, int] | None = None,
+    verbose: bool = False,
 ) -> PredictResult:
     """Predict from an ``rma.uni`` fit.
 
@@ -416,7 +423,8 @@ def predict_rma_uni(
     ``na_action`` stands for R's ``na.action`` option: for the fitted values of a meta-regression ``'omit'`` returns the studies used in
     fitting, ``'exclude'`` one row per study with NaN for those left out and ``'pass'`` one row per study computed from the moderator values it
     has; predictions for ``newmods`` drop (``'omit'``) or keep (the others) the rows that are NaN. ``tau2_levels`` and
-    ``gamma2_levels`` are accepted, as in metafor, and have no effect.
+    ``gamma2_levels`` are accepted, as in metafor, and have no effect. ``verbose`` is accepted for metafor's printing of the details of a failing
+    ``clubSandwich`` contrast and has no effect here.
 
     R source: https://github.com/wviechtb/metafor/blob/master/R/predict.rma.r;
     reference page: https://wviechtb.github.io/metafor/reference/predict.rma.html.
@@ -424,6 +432,7 @@ def predict_rma_uni(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
+    newmods = metafopy.methods.pairmat.resolve(newmods, model)
     return with_digits(
         location_prediction(
             uni_location_model(model, metafopy.methods.fitted.rows_of(model)),
@@ -472,7 +481,7 @@ def contrast_ddf(sandwich: metafopy.core.clubsandwich.Sandwich, X_new: FloatArra
 @predict.register
 def predict_rma_glmm(
     model: metafopy.models.glmm_result.GLMMResult,
-    newmods: NewMods | None = None,
+    newmods: NewMods | metafopy.methods.pairmat.PairmatSpec | None = None,
     *,
     intercept: bool | None = None,
     tau2_levels: collections.abc.Sequence[str | int] | str | int | None = None,
@@ -490,6 +499,7 @@ def predict_rma_glmm(
     newvi: numpy.typing.ArrayLike | None = None,
     na_action: metafopy.methods.common.NAAction = 'omit',
     digits: int | collections.abc.Mapping[str, int] | None = None,
+    verbose: bool = False,
 ) -> PredictResult:
     """Predict from an ``rma.glmm`` fit (``predict.rma``; arguments as in :func:`predict_rma_uni`).
 
@@ -501,6 +511,7 @@ def predict_rma_glmm(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
+    newmods = metafopy.methods.pairmat.resolve(newmods, model)
     x = model
     rows = metafopy.methods.fitted.rows_of(x)
     return with_digits(
@@ -547,7 +558,7 @@ def predict_rma_glmm(
 @predict.register
 def predict_fixed_binary(
     model: metafopy.models.binary.FixedBinaryResult,
-    newmods: NewMods | None = None,
+    newmods: NewMods | metafopy.methods.pairmat.PairmatSpec | None = None,
     *,
     intercept: bool | None = None,
     tau2_levels: collections.abc.Sequence[str | int] | str | int | None = None,
@@ -565,6 +576,7 @@ def predict_fixed_binary(
     newvi: numpy.typing.ArrayLike | None = None,
     na_action: metafopy.methods.common.NAAction = 'omit',
     digits: int | collections.abc.Mapping[str, int] | None = None,
+    verbose: bool = False,
 ) -> PredictResult:
     """Predict from an ``rma.mh`` or ``rma.peto`` fit (``predict.rma``; arguments as in :func:`predict_rma_uni`).
 
@@ -576,6 +588,7 @@ def predict_fixed_binary(
     Raises:
         metafopy.errors.InputError: ``newmods`` was given (the models have no moderators).
     """
+    newmods = metafopy.methods.pairmat.resolve(newmods, model)
     x = model
     return with_digits(
         location_prediction(
@@ -660,9 +673,9 @@ def named_newmods(newmods: typing.Any) -> tuple[numpy.typing.ArrayLike, list[str
     return newmods, None
 
 
-def prediction_slab(newmods: typing.Any, k_new: int, x_p: int, int_incl: bool) -> tuple[str, ...] | None:
+def prediction_slab(newmods: typing.Any, k_new: int, x_p: int, int_incl: bool) -> tuple[str, ...]:
     """The row labels of predictions for ``newmods`` (metafor's ``rnames``): the names of a vector holding one value per prediction (a model
-    with one moderator), the row names of a data frame, else none; a single unnamed prediction has the empty label."""
+    with one moderator), the row names of a data frame, else the positions 1, 2, ...; a single unnamed prediction has the empty label."""
     labels: list[str] | None = None
     one_mod = x_p == (2 if int_incl else 1)
     if isinstance(newmods, pandas.DataFrame):
@@ -671,7 +684,7 @@ def prediction_slab(newmods: typing.Any, k_new: int, x_p: int, int_incl: bool) -
         labels = string_names(list(newmods.index if isinstance(newmods, pandas.Series) else newmods))
     if labels is not None and len(labels) == k_new:
         return tuple(labels)
-    return ('',) if k_new == 1 else None
+    return ('',) if k_new == 1 else tuple(str(i + 1) for i in range(k_new))
 
 
 def match_names(names: list[str], coef_names: collections.abc.Sequence[str]) -> list[int]:
@@ -911,7 +924,7 @@ def fitted_levels(group: metafopy.models.mv_structs.Group | None, n_comp: int, n
 @predict.register
 def predict_rma_mv(
     model: metafopy.models.mv_result.RMAMVResult,
-    newmods: NewMods | None = None,
+    newmods: NewMods | metafopy.methods.pairmat.PairmatSpec | None = None,
     *,
     intercept: bool | None = None,
     tau2_levels: collections.abc.Sequence[str | int] | str | int | None = None,
@@ -929,6 +942,7 @@ def predict_rma_mv(
     newvi: numpy.typing.ArrayLike | None = None,
     na_action: metafopy.methods.common.NAAction = 'omit',
     digits: int | collections.abc.Mapping[str, int] | None = None,
+    verbose: bool = False,
 ) -> PredictResult:
     """Predict from an ``rma.mv`` fit (``predict.rma`` for ``rma.mv`` objects).
 
@@ -946,6 +960,7 @@ def predict_rma_mv(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
+    newmods = metafopy.methods.pairmat.resolve(newmods, model)
     x = model
     metafopy.methods.common.check_na_action(na_action)
     ptype = resolve_predtype(predtype, pi_type)
@@ -1005,7 +1020,7 @@ def predict_rma_mv(
     k_new = X_new.shape[0]
     if slab is None and k_new == 1:
         slab = ('',)
-    alpha = metafopy.models.rma_uni.level_to_alpha(x.level if level is None else level)
+    alpha = x.level if level is None else metafopy.models.rma_uni.level_to_alpha(level)
     if adjust:
         alpha = alpha / k_new
     pred = X_new @ x.beta

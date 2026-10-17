@@ -181,40 +181,67 @@ def callee_name(f: Node) -> str | None:
     return None
 
 
+def replacement(head: str, current: str, args: list[Node], value_code: str, c: Context) -> str:
+    """The code of the new value of ``current`` after ``head(current, args...) <- value``."""
+    if head in {'[', '[['}:
+        idx = ', '.join(tr(a['v'], c) for a in args)
+        return f'rassign_index({current}, {value_code}, {idx})'
+    if head == '$':
+        return f'rassign_dollar({current}, {args[0]["v"]["v"]!r}, {value_code})'
+    if head in {'names', 'colnames'}:
+        return f'rassign_names({current}, {value_code})'
+    raise UntranslatableError(f'replacement function {head}<-')
+
+
 def tr_assign(lhs: Node, rhs_code: str, c: Context) -> str:
-    if lhs['t'] == 'sym' or lhs['t'] == 'str':
-        name = lhs['v']
-        if c.in_function:
-            c.params.add(name)
-            return f'({local_name(name)} := {rhs_code})'
-        c.assigned.add(name)
-        return f'E.set({name!r}, {rhs_code})'
-    if lhs['t'] == 'call' and lhs['f']['t'] == 'sym':
-        head = lhs['f']['v']
+    """``x <- v``, and ``f(g(x, a), b) <- v``, which R evaluates as ``x <- `g<-`(x, a, `f<-`(g(x, a), b, v))``."""
+    plain = lhs['t'] == 'sym' or lhs['t'] == 'str'
+    value_code = rhs_code if plain else 'RHS_VALUE'
+    while not (lhs['t'] == 'sym' or lhs['t'] == 'str'):
+        if not (lhs['t'] == 'call' and lhs['f']['t'] == 'sym'):
+            raise UntranslatableError('assignment target')
         args = lhs['args']
         target = args[0]['v']
-        if target['t'] != 'sym':
-            raise UntranslatableError('assignment into a nested expression')
-        name = target['v']
-        cur = tr(target, c)
-        idx = ', '.join(tr(a['v'], c) for a in args[1:]) if head in {'[', '[['} else ''
+        value_code = replacement(lhs['f']['v'], tr(target, c), args[1:], value_code, c)
+        lhs = target
+    name = lhs['v']
+    if c.in_function:
+        c.params.add(name)
+        return f'({local_name(name)} := {value_code.replace("RHS_VALUE", rhs_code)})'
+    c.assigned.add(name)
+    if plain:
+        return f'E.set({name!r}, {value_code})'
+    # the value of ``x$a <- v`` is ``v``, not the changed ``x``
+    return f'E.replace({name!r}, lambda RHS_VALUE: {value_code}, {rhs_code})'
 
-        def updated(rhs: str) -> str:
-            if head in {'[', '[['}:
-                return f'rassign_index({cur}, {rhs}, {idx})'
-            if head == '$':
-                return f'rassign_dollar({cur}, {args[1]["v"]["v"]!r}, {rhs})'
-            if head in {'names', 'colnames'}:
-                return f'rassign_names({cur}, {rhs})'
-            raise UntranslatableError(f'replacement function {head}<-')
 
-        if c.in_function:
-            c.params.add(name)
-            return f'({local_name(name)} := {updated(rhs_code)})'
-        c.assigned.add(name)
-        # the value of `x[i] <- v` is v, which `a[i] <- b[j] <- v` relies on
-        return f'rassign_into(E, {name!r}, lambda value: {updated("value")}, {rhs_code})'
-    raise UntranslatableError('assignment target')
+def walk(n: Node) -> typing.Iterator[Node]:
+    """Every node of a parse tree, except the plain names on the left of an assignment (``x`` in ``x <- v``, which are written and not read)."""
+    yield n
+    if n.get('t') == 'call':
+        yield from walk(n['f'])
+        plain = n['f'].get('t') == 'sym' and n['f']['v'] in ASSIGN and len(n['args']) == 2 and n['args'][0]['v'].get('t') in {'sym', 'str'}
+        for i, a in enumerate(n['args']):
+            if not (plain and i == 0):
+                yield from walk(a['v'])
+
+
+def symbols(ast: Node) -> set[str]:
+    """The names a unit reads."""
+    return {str(n['v']) for n in walk(ast) if n.get('t') == 'sym'}
+
+
+def assignment_targets(ast: Node) -> set[str]:
+    """The variables a unit assigns to: the base name of the left side of every ``<-``, ``=`` and ``<<-`` in it."""
+    out: set[str] = set()
+    for n in walk(ast):
+        if n.get('t') == 'call' and n['f'].get('t') == 'sym' and n['f']['v'] in ASSIGN and len(n['args']) == 2:
+            lhs = n['args'][0]['v']
+            while lhs.get('t') == 'call' and lhs['args']:
+                lhs = lhs['args'][0]['v']
+            if lhs.get('t') in {'sym', 'str'}:
+                out.add(str(lhs['v']))
+    return out
 
 
 def tr_function(n: Node, c: Context) -> str:
@@ -303,9 +330,8 @@ def tr_nse(name: str, args: list[Node], c: Context) -> str:
     data = next(a['v'] for a in args if a.get('name') == 'data')
 
     def thunk(node: Node) -> str:
-        is_function = node['t'] == 'sym' and (node['v'] in FUNCTION_SYMBOLS or str(node['v']).startswith('transf.'))
-        if node['t'] == 'sym' and not is_function and node['v'] not in c.assigned and node['v'] not in c.params and node['v'] not in CONSTANT_SYMBOLS:
-            return repr(node['v'])
+        if node['t'] == 'sym' and node['v'] not in c.assigned and node['v'] not in c.params and node['v'] not in CONSTANT_SYMBOLS:
+            return f'lambda: rsym(E, {node["v"]!r})'
         if node['t'] == 'call' and node['f'].get('v') == '~':
             return repr(unparse(node))
         return f'lambda: {tr(node, c)}'
@@ -331,35 +357,3 @@ def tr_nse(name: str, args: list[Node], c: Context) -> str:
 
 def translate_unit(ast: Node, assigned: set[str], nse: set[str]) -> str:
     return tr(ast, Context(assigned, nse))
-
-
-def symbols(node: object) -> set[str]:
-    """The names a parse tree mentions."""
-    found: set[str] = set()
-    if isinstance(node, dict):
-        if node.get('t') == 'sym':
-            found.add(str(node['v']))
-        for value in node.values():
-            found |= symbols(value)
-    elif isinstance(node, list):
-        for item in node:
-            found |= symbols(item)
-    return found
-
-
-def assignment_targets(node: object) -> set[str]:
-    """The variables a parse tree assigns to (``x <- ...``, ``x$a <- ...``, ``names(x) <- ...``, ``x[i] <- ...``)."""
-    found: set[str] = set()
-    if isinstance(node, dict):
-        if node.get('t') == 'call' and node['f'].get('t') == 'sym' and node['f']['v'] in ASSIGN and len(node['args']) == 2:
-            lhs = node['args'][0]['v']
-            while lhs.get('t') == 'call' and lhs['args']:
-                lhs = lhs['args'][0]['v']
-            if lhs.get('t') in {'sym', 'str'}:
-                found.add(str(lhs['v']))
-        for value in node.values():
-            found |= assignment_targets(value)
-    elif isinstance(node, list):
-        for item in node:
-            found |= assignment_targets(item)
-    return found

@@ -21,9 +21,11 @@ import pandas
 import metafopy.core.linalg
 import metafopy.core.parallel
 import metafopy.core.rng
+import metafopy.core.timing
 import metafopy.errors
 import metafopy.methods.ls_common
 import metafopy.methods.vif
+import metafopy.mfopt
 import metafopy.models.rma_ls_result
 import metafopy.models.rma_uni
 
@@ -89,6 +91,7 @@ def part_vif(
     reestimate: bool,
     intercept: bool = False,
     fixed: bool = False,
+    join: tuple[typing.Any, ...] | None = None,
     sim: int = 0,
     seed: int | None = None,
     parallel: metafopy.core.parallel.Parallel = 'no',
@@ -150,7 +153,7 @@ def part_vif(
     # simulating is pointless when every (G)VIF is already 1
     if sim >= 2 and not numpy.all(vifs[~numpy.isnan(vifs)] == 1):
         seeds = [seed + i for i in range(1, sim + 1)] if seed is not None else [int(metafopy.core.rng.get_rng().unif_index(2**31 - 1)) for _ in range(sim)]
-        one = functools.partial(sim_one, res, which, tuple(groups), reestimate, intercept)
+        one = functools.partial(sim_one, res, which, tuple(groups), reestimate, intercept, join)
         rows = metafopy.core.parallel.map_sims(one, seeds, parallel=parallel, ncpus=ncpus, cl=cl, progbar=progbar)
         sims = numpy.vstack(rows)
         with numpy.errstate(invalid='ignore', divide='ignore'):
@@ -190,7 +193,13 @@ def make_refit(fit: metafopy.models.rma_ls_result.RMALSResult, which: str) -> co
 
 
 def sim_one(
-    res: metafopy.models.rma_ls_result.RMALSResult, which: str, groups: tuple[tuple[int, ...], ...], reestimate: bool, intercept: bool, seed: int
+    res: metafopy.models.rma_ls_result.RMALSResult,
+    which: str,
+    groups: tuple[tuple[int, ...], ...],
+    reestimate: bool,
+    intercept: bool,
+    join: tuple[typing.Any, ...] | None,
+    seed: int,
 ) -> FloatArray:
     """One iteration of metafor's ``.compvifsim``: (G)VIFs after permuting every column of the model matrix of one part.
 
@@ -199,10 +208,7 @@ def sim_one(
     """
     rng = metafopy.core.rng.RRandom(seed)
     M = res.X if which == 'beta' else res.Z
-    perm = M.copy()
-    n = perm.shape[0]
-    for j in range(perm.shape[1]):
-        perm[:, j] = perm[rng.sample_int(n) - 1, j]
+    perm = metafopy.methods.vif.permute_joined(M, rng, join) if join is not None else metafopy.methods.vif.permute_design(None, None, M, rng)
     drop = metafopy.core.linalg.drop_redundant(perm)
     if drop.any():
         # a set containing a coefficient that became redundant is infinitely inflated
@@ -225,6 +231,7 @@ def sim_one(
 
 
 @metafopy.methods.vif.vif.register  # type: ignore[arg-type]  # returns a result class of its own
+@metafopy.core.timing.timed
 def vif_rma_ls(
     res: metafopy.models.rma_ls_result.RMALSResult,
     btt: metafopy.methods.vif.BttArg = None,
@@ -240,6 +247,9 @@ def vif_rma_ls(
     digits: int | None = None,
     intercept: bool = False,
     fixed: bool = False,
+    joinb: collections.abc.Sequence[typing.Any] | None = None,
+    joina: collections.abc.Sequence[typing.Any] | None = None,
+    LB: bool = False,
 ) -> metafopy.methods.vif.VIFResult | LSVIFResult:
     """(G)VIFs for the location and, if the scale model has predictors, the scale coefficients of a location-scale model.
 
@@ -256,6 +266,8 @@ def vif_rma_ls(
     iterations in a process pool of ``ncpus`` workers, or on the :class:`concurrent.futures.Executor` given as ``cl``.
 
     ``intercept=True`` includes the intercepts and ``fixed=True`` matches string ``btt``/``att`` literally (metafor's ``...`` arguments).
+    ``joinb`` and ``joina`` give one label per column of the location and scale model matrix; with ``sim`` the columns that share a label are
+    permuted together. ``LB`` is accepted as in metafor and changes nothing.
 
     Raises:
         metafopy.errors.InputError: an argument is invalid or the model has no predictors.
@@ -271,9 +283,18 @@ def vif_rma_ls(
         if n_sim <= 1:
             raise metafopy.errors.InputError("Argument 'sim' must be >= 2.")
     parallel = metafopy.core.parallel.resolve_parallel(parallel, ncpus, cl)
+    joins = {'beta': None if joinb is None else tuple(joinb), 'alpha': None if joina is None else tuple(joina)}
     sim_args: dict[str, typing.Any] = {'sim': n_sim, 'seed': seed, 'parallel': parallel, 'ncpus': ncpus, 'cl': cl, 'progbar': progbar}
-    out_beta = part_vif(res, which='beta', spec_arg=btt, table=table, reestimate=reestimate, intercept=intercept, fixed=fixed, **sim_args) if loc else None
-    out_alpha = part_vif(res, which='alpha', spec_arg=att, table=table, reestimate=reestimate, intercept=intercept, fixed=fixed, **sim_args) if scale else None
+    out_beta = (
+        part_vif(res, which='beta', spec_arg=btt, table=table, reestimate=reestimate, intercept=intercept, fixed=fixed, join=joins['beta'], **sim_args)
+        if loc
+        else None
+    )
+    out_alpha = (
+        part_vif(res, which='alpha', spec_arg=att, table=table, reestimate=reestimate, intercept=intercept, fixed=fixed, join=joins['alpha'], **sim_args)
+        if scale
+        else None
+    )
     result: metafopy.methods.vif.VIFResult | LSVIFResult
     if out_beta is not None and out_alpha is not None:
         result = LSVIFResult(beta=out_beta, alpha=out_alpha)
@@ -288,6 +309,7 @@ def vif_rma_ls(
 
 
 def apply_digits(result: metafopy.methods.vif.VIFResult | LSVIFResult, digits: int) -> metafopy.methods.vif.VIFResult | LSVIFResult:
+    digits = metafopy.mfopt.reduce_digits(digits)
     if isinstance(result, LSVIFResult):
         return LSVIFResult(beta=dataclasses.replace(result.beta, digits=digits), alpha=dataclasses.replace(result.alpha, digits=digits))
     return dataclasses.replace(result, digits=digits)

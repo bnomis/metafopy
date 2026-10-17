@@ -21,6 +21,7 @@ import pandas
 
 import metafopy.core.parallel
 import metafopy.core.rng
+import metafopy.core.timing
 import metafopy.errors
 import metafopy.methods.mv_diagnostics
 import metafopy.methods.vif
@@ -86,11 +87,18 @@ def make_refit(fit: MV) -> Refit:
 
 
 def sim_one(
-    x: MV, groups: tuple[tuple[int, ...], ...], reestimate: bool, intercept: bool, formula: str | None, rows: pandas.DataFrame | None, seed: int | None
+    x: MV,
+    groups: tuple[tuple[int, ...], ...],
+    reestimate: bool,
+    intercept: bool,
+    formula: str | None,
+    rows: pandas.DataFrame | None,
+    join: tuple[typing.Any, ...] | None,
+    seed: int | None,
 ) -> FloatArray:
     """One iteration of metafor's ``.compvifsim``: (G)VIFs after permuting the moderators (``seed=None`` continues the global stream)."""
     rng = metafopy.core.rng.get_rng() if seed is None else metafopy.core.rng.RRandom(seed)
-    perm = metafopy.methods.vif.permute_design(formula, rows, x.X, rng)
+    perm = metafopy.methods.vif.permute_design(formula, rows, x.X, rng, join)
     fit = refit_mods(x, perm)
     if fit is None:
         return numpy.full(len(groups), math.nan)
@@ -176,6 +184,7 @@ def vif_coefficients(
 
 
 @metafopy.methods.vif.vif.register
+@metafopy.core.timing.timed
 def vif_rma_mv(
     res: metafopy.models.mv_result.RMAMVResult,
     btt: metafopy.methods.vif.BttArg = None,
@@ -191,8 +200,12 @@ def vif_rma_mv(
     digits: int | None = None,
     intercept: bool = False,
     fixed: bool = False,
+    joinb: collections.abc.Sequence[typing.Any] | None = None,
+    LB: bool = False,
+    joina: collections.abc.Sequence[typing.Any] | None = None,
 ) -> metafopy.methods.vif.VIFResult:
     """(G)VIFs for the coefficients of an ``rma.mv`` meta-regression, as :func:`metafopy.vif` for ``rma.uni`` fits.
+    ``joina`` is accepted and unused, as in metafor.
 
     ``btt`` (0-based; an int, a regular expression, a list of ints or a list of sets) selects sets of coefficients, ``table=True``
     adds the coefficient table, ``intercept=True`` includes the intercept and ``fixed=True`` matches a string ``btt`` literally.
@@ -201,7 +214,8 @@ def vif_rma_mv(
     of the data when the moderators were given as a formula, otherwise the columns of the model matrix) with R's generator seeded
     with ``seed + l`` in iteration ``l`` (otherwise from the stream of :func:`metafopy.set_seed`), giving ``sim`` and ``prop``.
     ``parallel`` (``'snow'``/``'multicore'``) runs the iterations in a process pool of ``ncpus`` workers, or on the
-    :class:`concurrent.futures.Executor` given as ``cl``.
+    :class:`concurrent.futures.Executor` given as ``cl``. ``joinb`` gives one label per column of the model matrix and the columns that share
+    a label are permuted together (the columns, not the variables of the data, are then permuted); ``LB`` is accepted as in metafor and changes nothing.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
@@ -225,9 +239,9 @@ def vif_rma_mv(
         formula = res.formula_mods
         data = res.spec.get('data')
         rows = None
-        if formula is not None and isinstance(data, pandas.DataFrame):
+        if formula is not None and joinb is None and isinstance(data, pandas.DataFrame):
             rows = data.reset_index(drop=True).iloc[numpy.array(res.ids, dtype=numpy.intp)[res.not_na]]
-        one = functools.partial(sim_one, res, tuple(groups), reestimate, intercept, formula, rows)
+        one = functools.partial(sim_one, res, tuple(groups), reestimate, intercept, formula, rows, None if joinb is None else tuple(joinb))
         sims = numpy.vstack(metafopy.core.parallel.map_sims(one, seeds, parallel=parallel, ncpus=ncpus, cl=cl, progbar=progbar))
         with numpy.errstate(invalid='ignore', divide='ignore'):
             ok = ~numpy.isnan(sims)
@@ -237,6 +251,7 @@ def vif_rma_mv(
 
 
 @metafopy.methods.vif.vif.register
+@metafopy.core.timing.timed
 def vif_selmodel(
     res: metafopy.models.sel_result.SelmodelResult,
     btt: metafopy.methods.vif.BttArg = None,
@@ -252,11 +267,15 @@ def vif_selmodel(
     digits: int | None = None,
     intercept: bool = False,
     fixed: bool = False,
+    joinb: collections.abc.Sequence[typing.Any] | None = None,
+    LB: bool = False,
+    joina: collections.abc.Sequence[typing.Any] | None = None,
 ) -> metafopy.methods.vif.VIFResult:
     """(G)VIFs for the coefficients of a ``selmodel`` fit with moderators, from the variance-covariance matrix of the coefficients.
+    ``joina`` is accepted and unused.
 
     The arguments are those of :func:`metafopy.vif`; as in metafor, ``sim`` and ``reestimate`` are not available for these fits
-    (``progbar``, ``seed``, ``parallel``, ``ncpus`` and ``cl`` are accepted and unused).
+    (``progbar``, ``seed``, ``parallel``, ``ncpus``, ``cl``, ``joinb`` and ``LB`` are accepted and unused).
 
     Raises:
         metafopy.errors.InputError: an argument is invalid or ``sim`` or ``reestimate`` was requested.

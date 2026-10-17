@@ -20,6 +20,7 @@ import pandas
 import scipy.stats
 
 import metafopy.core.parallel
+import metafopy.core.timing
 import metafopy.core.zeroin
 import metafopy.errors
 import metafopy.methods.anova
@@ -82,6 +83,8 @@ def predict(
     pi_type: str | None = None,
     newvi: numpy.typing.ArrayLike | None = None,
     na_action: metafopy.methods.common.NAAction = 'omit',
+    digits: int | collections.abc.Mapping[str, int] | None = None,
+    verbose: bool = False,
 ) -> metafopy.methods.predict.PredictResult:
     """Predicted values under the selection model (metafor's ``predict.rma``); the arguments are those of :func:`metafopy.predict`.
 
@@ -89,22 +92,26 @@ def predict(
     normal distribution. The selection model is fitted to the studies without missing values, so ``na_action`` makes no difference to the fitted values.
     """
     base = dataclasses.replace(as_rma(model), parms=model.parms)
-    return metafopy.methods.predict.location_prediction(
-        metafopy.methods.predict.uni_location_model(base, metafopy.methods.fitted.rows_of(model)),
-        newmods,
-        intercept,
-        transf,
-        targs,
-        level,
-        hetvar=hetvar,
-        prob=prob,
-        addx=addx,
-        adjust=adjust,
-        vcov=vcov,
-        predtype=predtype,
-        pi_type=pi_type,
-        newvi=newvi,
-        na_action=na_action,
+    return metafopy.methods.predict.with_digits(
+        metafopy.methods.predict.location_prediction(
+            metafopy.methods.predict.uni_location_model(base, metafopy.methods.fitted.rows_of(model)),
+            newmods,
+            intercept,
+            transf,
+            targs,
+            level,
+            hetvar=hetvar,
+            prob=prob,
+            addx=addx,
+            adjust=adjust,
+            vcov=vcov,
+            predtype=predtype,
+            pi_type=pi_type,
+            newvi=newvi,
+            na_action=na_action,
+        ),
+        digits,
+        model.digits,
     )
 
 
@@ -180,6 +187,7 @@ CI_COLUMNS = ['estimate', 'ci.lb', 'ci.ub']  # auditme: accept[non-alphabetical-
 TAU2_NAME = 'tau^2'
 
 
+@metafopy.core.timing.timed
 def confint(
     model: Sel,
     *,
@@ -193,21 +201,26 @@ def confint(
     control: collections.abc.Mapping[str, typing.Any] | None = None,
     xlim: collections.abc.Sequence[float] | None = None,
     extint: bool = False,
+    digits: int | None = None,
+    parm: typing.Any = None,
 ) -> metafopy.methods.confint.ConfintResult | metafopy.methods.confint.ConfintList:
     """Confidence intervals for the coefficients (``fixed=True``, Wald-type) and for ``tau^2`` or a selection parameter (profile likelihood).
 
     Without ``fixed``, ``tau2`` and ``delta`` the intervals of every estimated variance and selection parameter are
     returned as a list (a single result if there is just one). ``tau2=True`` or ``delta=j`` (0-based) select one
     component. ``control`` takes ``tol``, ``maxiter``, ``verbose``, ``eptries``, ``vc_min`` and ``vc_max``; ``xlim`` sets
-    the interval searched and ``extint`` lets the search interval grow (R's ``extendInt``).
+    the interval searched and ``extint`` lets the search interval grow (R's ``extendInt``). ``digits`` is the number of decimals of the printout and
+    ``parm`` is ignored with a warning, as in metafor.
 
     Raises:
         metafopy.errors.InputError: an argument or the model is not suitable.
         metafopy.errors.NotSupportedError: the model is a decreasing step function or a ``'stepcon'`` model.
     """
+    metafopy.methods.confint.warn_parm(parm)
     x = model
     check_supported(x, 'obtain confidence intervals')
     alpha = x.level if level is None else metafopy.models.rma_uni.level_to_alpha(level)
+    ndig = metafopy.mfopt.option_digits(digits, x.digits)
     ctrl = dict(control or {})
     if xlim is not None:
         if len(xlim) != 2:
@@ -223,15 +236,15 @@ def confint(
         if has_tau2(x):
             if verbose:
                 print('\nObtaining CI for tau2\n')
-            out.append(confint_one(x, False, True, None, alpha, ctrl, transf, targs, verbose, extint))
+            out.append(confint_one(x, False, True, None, alpha, ctrl, transf, targs, verbose, extint, ndig))
         for pos in range(x.deltas):
             if x.delta_fix[pos]:
                 continue
             if verbose:
                 print(f'\nObtaining CI for delta = {pos + 1}\n')
-            out.append(confint_one(x, False, None, pos, alpha, ctrl, transf, targs, verbose, extint))
+            out.append(confint_one(x, False, None, pos, alpha, ctrl, transf, targs, verbose, extint, ndig))
         return out[0] if len(out) == 1 else metafopy.methods.confint.ConfintList(out)
-    return confint_one(x, fixed, tau2, delta, alpha, ctrl, transf, targs, verbose, extint)
+    return confint_one(x, fixed, tau2, delta, alpha, ctrl, transf, targs, verbose, extint, ndig)
 
 
 def confint_one(
@@ -245,6 +258,7 @@ def confint_one(
     targs: typing.Any,
     verbose: bool,
     extint: bool,
+    ndig: int,
 ) -> metafopy.methods.confint.ConfintResult:
     res_random: pandas.DataFrame | None = None
     lb_sign = ub_sign = ''
@@ -259,7 +273,7 @@ def confint_one(
             est, lb, ub = (metafopy.transf.apply_transf(a, transf, targs, x.tau2) for a in (est, lb, ub))
         lb, ub = numpy.minimum(lb, ub), numpy.maximum(lb, ub)
         res_fixed = pandas.DataFrame({'estimate': est, 'ci.lb': lb, 'ci.ub': ub}, index=list(x.coef_names))
-    return metafopy.methods.confint.ConfintResult(fixed=res_fixed, random=res_random, lb_sign=lb_sign, ub_sign=ub_sign)
+    return metafopy.methods.confint.ConfintResult(fixed=res_fixed, random=res_random, lb_sign=lb_sign, ub_sign=ub_sign, digits=ndig)
 
 
 def profile_ci(
@@ -403,6 +417,7 @@ class SelProfileResult(metafopy.methods.profile.ProfileResult):
         return pandas.DataFrame({self.comp: self.tau2, 'll': self.ll})
 
 
+@metafopy.core.timing.timed
 def profile(
     fitted: Sel,
     *,
@@ -419,9 +434,11 @@ def profile(
     plot: bool = False,
     exp: bool = False,
     ax: typing.Any = None,
+    LB: bool = False,
     **plot_args: typing.Any,
 ) -> SelProfileResult | list[SelProfileResult]:
     """Profile the likelihood of ``tau^2`` (``tau2=True``) or of a selection parameter (``delta=j``, 0-based).
+    ``LB`` is accepted as in metafor and changes no result.
 
     Without ``tau2`` and ``delta`` every estimated component is profiled and a list is returned (a single result if
     there is just one). ``steps`` is the number of equally spaced values in ``xlim`` or the values themselves.
@@ -599,10 +616,22 @@ def anova(
     X: numpy.typing.ArrayLike | None = None,
     rhs: numpy.typing.ArrayLike | float = 0.0,
     adjust: bool | str | None = None,
+    refit: bool = False,
+    L: numpy.typing.ArrayLike | None = None,
+    fixed: bool = False,
+    test: str | None = None,
+    df: int | None = None,
+    verbose: bool = False,
+    abbrev: bool = False,
+    digits: int | collections.abc.Mapping[str, int] | None = None,
+    att: typing.Any = None,
+    Z: typing.Any = None,
 ) -> metafopy.methods.anova.WaldResult | metafopy.methods.anova.LRTResult | metafopy.methods.anova.ListAnovaResult:
     """Wald-type tests of the coefficients (``btt`` 0-based, or linear combinations ``X``) or, given a second model, a likelihood-ratio test.
 
     ``adjust`` adjusts the p-values of several tests (see :func:`metafopy.methods.anova.anova_rma_uni`). ``object2`` is R's name for ``model2``.
+    ``L``, ``fixed``, ``verbose``, ``abbrev`` and ``digits`` are those of that function; for the likelihood-ratio test of two models ``df`` replaces the
+    difference in the number of parameters; ``refit`` and ``test`` are accepted, but the models are compared as fitted (selection models are fitted by ML).
 
     The likelihood-ratio test compares the ML log-likelihoods of two nested models (selection models or ``rma_uni`` fits
     to the same data).
@@ -612,26 +641,28 @@ def anova(
     """
     model2 = typing.cast(Sel | metafopy.models.rma_uni.RMAResult | None, metafopy.methods.common.resolve_alias(model2, object2, 'model2', 'object2'))
     if model2 is not None:
-        return lrt(model, model2)
-    return metafopy.methods.anova.anova_rma_uni(as_rma(model), btt=btt, X=X, rhs=rhs, adjust=adjust)
+        return lrt(model, model2, df)
+    return metafopy.methods.anova.anova_rma_uni(
+        as_rma(model), btt=btt, X=X, rhs=rhs, adjust=adjust, L=L, fixed=fixed, verbose=verbose, abbrev=abbrev, digits=digits, att=att, Z=Z
+    )
 
 
-def lrt(a: Sel, b: Sel | metafopy.models.rma_uni.RMAResult) -> metafopy.methods.anova.LRTResult:
+def lrt(a: Sel, b: Sel | metafopy.models.rma_uni.RMAResult, df_given: int | None = None) -> metafopy.methods.anova.LRTResult:
     """The likelihood-ratio test of two nested models fitted by ML (metafor's ``anova.rma`` with two models).
 
     Raises:
         metafopy.errors.InputError: the models are not nested fits to the same data.
     """
-    if a.parms == b.parms:
+    if df_given is None and a.parms == b.parms:
         raise metafopy.errors.InputError('models do not differ in the number of parameters')
-    full, red = (a, b) if a.parms > b.parms else (b, a)
+    full, red = (a, b) if df_given is not None or a.parms > b.parms else (b, a)
     if full.k != red.k or not numpy.allclose(full.yi, red.yi):
         raise metafopy.errors.InputError('models are not fitted to the same data')
     fs_f, fs_r = full.fit_stats_ml, red.fit_stats_ml
     if math.isnan(fs_f.dev) or math.isnan(fs_r.dev):
         raise metafopy.errors.InputError('models must be fitted by ML to be compared')
     LRT = max(0.0, fs_r.dev - fs_f.dev)
-    df = full.parms - red.parms
+    df = full.parms - red.parms if df_given is None else df_given
     # metafor stores QE = NA in a selection model
     qe_f = math.nan if isinstance(full, metafopy.models.sel_result.SelmodelResult) else full.QE
     qe_r = math.nan if isinstance(red, metafopy.models.sel_result.SelmodelResult) else red.QE
@@ -644,7 +675,7 @@ def lrt(a: Sel, b: Sel | metafopy.models.rma_uni.RMAResult) -> metafopy.methods.
     else:
         R2 = 100 * max(0.0, (red.tau2 - full.tau2) / red.tau2)
     return metafopy.methods.anova.LRTResult(
-        df_full=full.parms,
+        df_full=full.parms + (0 if df_given is None else df_given),
         df_reduced=red.parms,
         LRT=LRT,
         pval=float(scipy.stats.chi2.sf(LRT, df)),

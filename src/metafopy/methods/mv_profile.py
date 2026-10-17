@@ -19,6 +19,7 @@ import numpy.typing
 import pandas
 
 import metafopy.core.parallel
+import metafopy.core.timing
 import metafopy.errors
 import metafopy.methods.confint
 import metafopy.methods.mv_diagnostics
@@ -206,6 +207,7 @@ def profile_one(
 
 
 # auditme: accept[duplicate-call-sequence] mirrors profile.rma.mv, which repeats the steps of the other profile methods
+@metafopy.core.timing.timed
 def profile_rma_mv(
     fitted: MV,
     sigma2: int | None = None,
@@ -225,6 +227,8 @@ def profile_rma_mv(
     *,
     exp: bool = False,
     ax: typing.Any = None,
+    startmethod: typing.Any = None,
+    LB: bool = False,
     **plot_args: typing.Any,
 ) -> MVProfileResult | list[MVProfileResult]:
     """Profile the likelihood over one variance or correlation component of an ``rma.mv`` fit.
@@ -237,11 +241,13 @@ def profile_rma_mv(
     pool, as for :func:`metafopy.profile` of selection models, and ``progbar=True`` prints a progress bar. ``plot=True``
     draws the profiles with :func:`metafopy.plot.plot_profile` (metafor's defaults are ``plot=TRUE`` and ``progbar=TRUE``). Further keyword arguments
     (``pch``, ``cline``, ``refline``, ``xlab``, ``ylab``, ``main``, ``log``, ``cex``, ``lwd``) are passed on to :func:`metafopy.plot.plot_profile`, as
-    metafor's ``...`` is to ``plot.profile.rma``.
+    metafor's ``...`` is to ``plot.profile.rma``. ``startmethod`` is deprecated in metafor and only warns; ``LB`` is accepted as in metafor and changes nothing.
 
     Raises:
         metafopy.errors.InputError: an argument is invalid or the model has no such (estimated) component.
     """
+    if startmethod is not None:
+        warnings.warn("Argument 'startmethod' has been deprecated.", stacklevel=2)
     x = fitted
     if plot_args.pop('startmethod', None) is not None:
         warnings.warn("Argument 'startmethod' has been deprecated.", stacklevel=2)

@@ -50,7 +50,7 @@ The harness removes the sampling.
 | `construct` | The fixtures themselves (values and warnings), then one argument at a time on every fitting function. |
 | `standalone` | Functions that take no model (`transf.*`, `conv.*`, `fmt*`, `vcalc`, ...). |
 | `datasets` | Every dataset of metafor and metadat loads in Python and equals R's. |
-| `scripts` | Every help-page example and every `tests/testthat` file of metafor, run in R expression by expression and translated to Python (`transpile.py`, `rlib.py`). Units that cannot be translated are counted, not dropped. |
+| `scripts` | Every help-page example and every `tests/testthat` file of metafor, run in R expression by expression and translated to Python (`transpile.py`, `rlib.py`). Units that cannot be translated are counted, not dropped; a variable whose assignment did not run in Python is removed, so that later units are counted as unsupported and not compared with its old value. `options(na.action=)` is passed as `na_action` to the functions that take it. `x$a <- v` has the value `v`, as in R. |
 | `api` | Formals of every function and method against the Python callable for the same class. |
 
 ## Reading a finding
@@ -59,7 +59,7 @@ The harness removes the sampling.
 `refused-where-R-works`, `accepts-where-R-refuses`, `value-diff`, `shape-diff`, `type-diff`, `label-diff` (names, row and column names such as the coefficient labels), `print-diff`, `warning-missing`, `warning-extra`.
 Numbers agree within `RTOL = 1e-6` (`ATOL = 1e-8`); up to `DRIFT_RTOL = 1e-4` a difference is counted as drift and not listed (optimiser stopping
 rules). Integer vectors that differ by exactly one are indices (R counts from 1). Printed output is compared token by token, tolerating the last
-digit, but the number of decimals must be the same (R prints `0` where Python printed `0.0000`).
+digit, but the number of decimals must be the same (R prints `0` where Python printed `0.0000`). Printed lines held in a character vector (`capture.output(print(x))`) are compared without their trailing spaces.
 
 ## What is in `data/`
 

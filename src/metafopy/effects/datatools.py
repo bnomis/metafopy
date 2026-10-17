@@ -184,8 +184,8 @@ def dfround(
 ) -> pandas.DataFrame:
     """Round the numeric columns of a data frame (a 2-d array is turned into one first).
 
-    ``digits`` and ``drop0`` have one value for all columns or one per column; a column whose ``digits`` is missing (``None`` or NaN) is left as
-    it is (the behaviour of metafor 5.2-1, checked against R). Columns with ``drop0=False``
+    ``digits`` and ``drop0`` have one value for all columns or one per column; a numeric column whose ``digits`` is missing (``None`` or NaN)
+    becomes all missing, as ``round(x, NA)`` does in R (give any value for the columns that are not numeric). Columns with ``drop0=False``
     become strings formatted with exactly ``digits`` decimals (R's ``formatC(format="f")``); non-numeric
     columns are left alone.
 
@@ -220,9 +220,12 @@ def dfround(
         if not pandas.api.types.is_numeric_dtype(col) or pandas.api.types.is_bool_dtype(col):
             continue
         digits_j = dig[j]
-        if digits_j is None:
-            continue
         vals = col.to_numpy(dtype=numpy.float64)
+        if digits_j is None:
+            if not drop[j]:
+                raise metafopy.errors.InputError('missing value where TRUE/FALSE needed')
+            out[out.columns[j]] = numpy.full(len(vals), numpy.nan)
+            continue
         if drop[j]:
             out[out.columns[j]] = [r_round(float(v), digits_j) for v in vals]
         else:

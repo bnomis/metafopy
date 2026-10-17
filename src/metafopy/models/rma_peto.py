@@ -18,6 +18,7 @@ import scipy.stats
 import metafopy.core.verbose
 import metafopy.errors
 import metafopy.metadata
+import metafopy.mfopt
 import metafopy.models.binary
 import metafopy.models.call
 import metafopy.models.rma_uni
@@ -167,5 +168,5 @@ def rma_peto(
         fit_stats_reml=reml,
         tables=tab,
         data=data,
-        digits=digits,
+        digits=metafopy.mfopt.reduce_digits(digits),
     )

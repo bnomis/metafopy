@@ -10,6 +10,7 @@ import pandas
 
 import metafopy.errors
 import metafopy.metadata
+import metafopy.methods.common
 import metafopy.models.rma_uni
 import metafopy.printing
 
@@ -41,15 +42,18 @@ def vector_inputs(
     vi_required: bool = True,
     attr_ni: bool = False,
     expand_vi: bool = False,
+    na_action: metafopy.methods.common.NAAction = 'omit',
 ) -> tuple[FloatArray, FloatArray | None, FloatArray | None]:
     """``(yi, vi, ni)`` of a vector-of-estimates call, with the subset applied and rows with NAs omitted (with a warning, as metafor does).
 
     With ``attr_ni`` the sample sizes stored with ``x`` by ``escalc`` are used when ``ni`` is not given (as ``regtest`` does). With ``expand_vi`` a single
-    variance is repeated for every estimate (metafor's ``.expand1()``, which ``fsn`` applies).
+    variance is repeated for every estimate (metafor's ``.expand1()``, which ``fsn`` applies). ``na_action`` stands for
+    R's ``options(na.action=)``: ``'omit'``, ``'exclude'`` and ``'pass'`` omit the rows with a warning, ``'fail'`` stops.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InputError: an argument or the data is invalid, or rows are missing and ``na_action='fail'``.
     """
+    metafopy.methods.common.check_na_action(na_action)
     yi = as_vector(x, 'x', data)
     if yi is None:
         raise metafopy.errors.InputError("Argument 'x' must be a vector with estimates or an 'rma' model object.")
@@ -81,6 +85,8 @@ def vector_inputs(
     if n is not None:
         bad |= numpy.isnan(n)
     if bad.any():
+        if na_action == 'fail':
+            raise metafopy.errors.InputError('Missing values in data.')
         warnings.warn(f'{int(bad.sum())} {"studies" if bad.sum() > 1 else "study"} with NAs omitted from {what}.', stacklevel=3)
         yi = yi[~bad]
         v = None if v is None else v[~bad]

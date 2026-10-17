@@ -191,7 +191,7 @@ def fmtx1(x: float, digits: int, drop0ifint: bool = False) -> str:
         return 'NA'
     if math.isinf(x):
         return 'Inf' if x > 0 else '-Inf'
-    out = f'{x:.{digits}f}'
+    out = f'{x:.{int(digits)}f}'
     if drop0ifint and '.' in out:
         out = out.rstrip('0').rstrip('.')
     return out

@@ -402,9 +402,37 @@ def prepare_vccon(vccon: collections.abc.Mapping[str, numpy.typing.ArrayLike] | 
     return out
 
 
+LAST_EVALUATED: dict[str, typing.Any] = {}
+
+
+def remember_evaluations(
+    problem: metafopy.models.mv_lik.Problem, log: collections.abc.Callable[[FloatArray, float], None] | None
+) -> collections.abc.Callable[[FloatArray, float], None]:
+    """``log`` that also keeps the last parameters tried, which ``restart=True`` starts from (metafor keeps them in its package environment)."""
+
+    def remember(par: FloatArray, ll: float) -> None:
+        LAST_EVALUATED['state'] = (problem, par.copy())
+        if log is not None:
+            log(par, ll)
+
+    return remember
+
+
+def last_evaluated() -> metafopy.models.mv_lik.Evaluated:
+    """The variance components of the last evaluation of any ``rma_mv`` fit of the session.
+
+    Raises:
+        metafopy.errors.InputError: no model has been fitted yet.
+    """
+    if 'state' not in LAST_EVALUATED:
+        raise metafopy.errors.InputError('Restarting for a different model than the initial one.')
+    problem, par = LAST_EVALUATED['state']
+    return metafopy.models.mv_lik.evaluate(problem, par[problem.offset :])
+
+
 def restart_controls(
     con: MVControl,
-    previous: metafopy.models.mv_result.RMAMVResult,
+    previous: metafopy.models.mv_result.RMAMVResult | metafopy.models.mv_lik.Evaluated,
     with_s: bool,
     with_g: bool,
     with_h: bool,
@@ -481,7 +509,7 @@ def rma_mv(
     lambda1: float = 0.0,
     lambda2: float = 0.0,
     vccon: collections.abc.Mapping[str, numpy.typing.ArrayLike] | None = None,
-    restart: metafopy.models.mv_result.RMAMVResult | None = None,
+    restart: metafopy.models.mv_result.RMAMVResult | bool | None = None,
     control: MVControl | collections.abc.Mapping[str, typing.Any] | None = None,
     verbose: bool | int = False,
     na_action: metafopy.metadata.NAAction = 'omit',
@@ -506,8 +534,9 @@ def rma_mv(
     the intercept and imply ``optbeta=True``; see https://github.com/wviechtb/metafor/blob/master/R/rma.mv.r). ``beta`` fixes
     coefficients (``nan`` entries are estimated). ``vccon`` is a dict with the keys ``sigma2``, ``tau2``, ``rho``, ``gamma2``
     and ``phi`` whose entries are group ids: components with the same id are constrained to be equal. ``restart`` is a
-    previous fit of the same model whose variance components are the starting values (metafor restarts from the last
-    estimates in the session). The Hessians are the Richardson extrapolation of ``numDeriv`` (``hesspack='numDeriv'``).
+    previous fit of the same model whose variance components are the starting values, or ``True`` for the last values the optimiser tried in
+    this session, as metafor's ``restart=TRUE`` (also after a fit that did not converge).
+    The Hessians are the Richardson extrapolation of ``numDeriv`` (``hesspack='numDeriv'``).
     ``verbose`` prints metafor's table of the variance components and a log line per evaluation of the log-likelihood to
     stdout (the optimiser differs from metafor's ``nlminb``, so the sequence of evaluations differs too) and, with
     ``verbose=2`` or more, its progress messages to stderr.
@@ -813,8 +842,10 @@ def rma_mv(
             hm = 1.0 / float(numpy.mean(1.0 / vi))
         total = max(0.001 * (sigma2s + tau2s + gamma2s), float(numpy.var(res_fe, ddof=1)) - hm)
         QE = float(res_fe @ fac_v.solve(res_fe[:, None])[:, 0])
-    if restart is not None:
-        con = restart_controls(con, restart, with_s, group_g is not None, group_h is not None, (sigma2s, tau2s, rhos, gamma2s, phis))
+    if restart is not None and restart is not False:
+        con = restart_controls(
+            con, last_evaluated() if restart is True else restart, with_s, group_g is not None, group_h is not None, (sigma2s, tau2s, rhos, gamma2s, phis)
+        )
     denom = sigma2s + tau2s + gamma2s
     sigma2_init = as_vector(con.sigma2_init)
     sigma2_init = numpy.full(sigma2s, total / denom) if sigma2_init is None else metafopy.models.mv_structs.expand1(sigma2_init, sigma2s)
@@ -963,7 +994,7 @@ def rma_mv(
             gtol=con.gtol,
             maxiter=con.maxiter,
             nonsmooth=lambda1 > 0,
-            log=iteration_logger(problem, reml, metafopy.mfopt.option_digits(None)) if vlevel else None,
+            log=remember_evaluations(problem, iteration_logger(problem, reml, metafopy.mfopt.option_digits(None)) if vlevel else None),
             choice=resolve_optimizer(con),
             opt_ctrl={'maxit': con.maxiter, **con.opt_ctrl},
             mfmaxit=con.mfmaxit,
@@ -1006,9 +1037,9 @@ def rma_mv(
         vb[~beta_est, :] = numpy.nan
         vb[:, ~beta_est] = numpy.nan
     M = fit.M
-    sigma2_out = fit.sigma2 if with_s else None
-    tau2_out, rho_out, G = (fit.tau2, fit.rho, fit.G) if group_g is not None else (None, None, None)
-    gamma2_out, phi_out, H = (fit.gamma2, fit.phi, fit.H) if group_h is not None else (None, None, None)
+    sigma2_out = fit.sigma2 if with_s else numpy.zeros(1)  # metafor stores a 0 for a component the model does not have
+    tau2_out, rho_out, G = (fit.tau2, fit.rho, fit.G) if group_g is not None else (numpy.zeros(1), numpy.zeros(1), None)
+    gamma2_out, phi_out, H = (fit.gamma2, fit.phi, fit.H) if group_h is not None else (numpy.zeros(1), numpy.zeros(1), None)
 
     # tests of the fixed effects
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
@@ -1176,7 +1207,7 @@ def rma_mv(
         dfs=dfs if isinstance(dfs, str) else tuple(float(d) for d in numpy.atleast_1d(dfs)),
         ddf=ddf,
         s2w=s2w,
-        level=level,
+        level=alpha,
         int_only=int_only,
         int_incl=int_incl,
         intercept=intercept_flag,
@@ -1203,7 +1234,7 @@ def rma_mv(
         s_levels_f=s_levels_f,
         slab_f=slab_s,
         X_f=X_f,
-        Rfix=tuple(sinfo.Rfix),
+        Rfix=tuple(sinfo.Rfix) if sinfo.Rfix else (False,),
         Rscale=rscale,
         group_g=group_g,
         group_h=group_h,

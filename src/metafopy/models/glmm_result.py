@@ -119,8 +119,8 @@ class GLMMResult(metafopy.models.fit_methods.FitMethods):
     def slab(self) -> tuple[str, ...]:
         return self.tables.slab
 
-    def coef(self) -> pandas.Series:
-        """Estimated coefficients, indexed by name."""
+    def coef(self, type: str = 'beta') -> pandas.Series:
+        """Estimated coefficients, indexed by name; ``type`` is accepted for metafor's ``coef(x, type=)`` and only location-scale fits use it."""
         return pandas.Series(self.beta, index=list(self.coef_names), name='estimate')
 
     def vcov(self, type: metafopy.models.rma_uni.VcovType = 'fixed', *, na_action: metafopy.models.rma_uni.NAActionAll = 'omit') -> pandas.DataFrame:

@@ -844,7 +844,7 @@ def selmodel(
         steps=steps_arr,
         decreasing=decreasing,
         stepsspec=stepsspec,
-        pgrp=pgrp,
+        pgrp=pgrp if type_ != 'trunc' and stepsspec else None,
         ptable=ptable_out,
         subset=subset_mask,
         k0=int((~subset_mask).sum()),

@@ -127,19 +127,19 @@ class RMAResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_meth
 
     @property
     def dfs(self) -> float | tuple[float, ...] | None:
-        """The degrees of freedom of a model made robust with :func:`metafopy.robust` (metafor's ``dfs``), ``None`` otherwise.
+        """The degrees of freedom of the tests (metafor's ``dfs``): ``ddf`` for ``test='t'`` or ``'knha'``, those of :func:`metafopy.robust` for a robust fit.
 
-        A single number (the number of clusters minus ``p``) for the default method and one value per coefficient for ``club_sandwich=True``,
-        for which ``ddf`` stays ``None`` because it holds a single number.
+        A model made robust has a single number (the number of clusters minus ``p``) for the default method and one value per coefficient for
+        ``club_sandwich=True``, for which ``ddf`` stays ``None`` because it holds a single number.
         """
         if self.robust is None:
-            return None
+            return None if self.ddf is None else float(self.ddf)
         if self.robust.robumethod == 'clubSandwich':
             return tuple(float(v) for v in self.robust.dfs)
         return float(self.robust.dfs[0])
 
-    def coef(self) -> pandas.Series:
-        """Estimated coefficients, indexed by name."""
+    def coef(self, type: str = 'beta') -> pandas.Series:
+        """Estimated coefficients, indexed by name; ``type`` is accepted for metafor's ``coef(x, type=)`` and only location-scale fits use it."""
         return pandas.Series(self.beta, index=list(self.coef_names), name='estimate')
 
     def vcov(self, type: VcovType = 'fixed', *, na_action: NAActionAll = 'omit') -> pandas.DataFrame:
@@ -308,7 +308,7 @@ def set_btt(btt: Btt, p: int, int_incl: bool, names: collections.abc.Sequence[st
         if not found:
             raise metafopy.errors.InputError("cannot identify coefficient(s) matching the 'btt' pattern")
         return found
-    idx = [btt] if isinstance(btt, int) else list(btt)
+    idx = numpy.atleast_1d(numpy.asarray(btt))  # R has one number type: ``btt = 2`` is a double
     out = sorted({int(i) for i in idx})
     if any(i < 0 or i >= p for i in out):
         raise metafopy.errors.InputError(f"'btt' indices must lie in 0..{p - 1}")
@@ -316,8 +316,15 @@ def set_btt(btt: Btt, p: int, int_incl: bool, names: collections.abc.Sequence[st
 
 
 def level_to_alpha(level: float) -> float:
-    """metafor's ``.level()``: 95 (or 0.95) -> 0.05."""
-    return 1 - level / 100 if level > 1 else 1 - level
+    """metafor's ``.level()``: 95 (or 0.95) -> 0.05; a value up to 0.5 is already an alpha, so 0.05 stays 0.05 and 0 gives 1.
+
+    See `.level <https://github.com/wviechtb/metafor/blob/master/R/misc.func.hidden.R>`_.
+    """
+    if level == 0:
+        return 1.0
+    if level >= 1:
+        return (100 - level) / 100
+    return 1 - level if level > 0.5 else level
 
 
 def mad(x: FloatArray) -> float:
@@ -413,6 +420,13 @@ def rma_uni(
     onlyo1: bool = False,
     addyi: bool = True,
     addvi: bool = True,
+    knha: bool | None = None,
+    dfs: float | collections.abc.Sequence[float] | None = None,
+    i2def: typing.Literal['1', '2'] = '1',
+    r2def: str = '1',
+    skipr2: bool = False,
+    abbrev: bool = False,
+    time: bool = False,
 ) -> RMAResult: ...
 
 
@@ -491,6 +505,13 @@ def rma_uni(
     onlyo1: bool = False,
     addyi: bool = True,
     addvi: bool = True,
+    knha: bool | None = None,
+    dfs: float | collections.abc.Sequence[float] | None = None,
+    i2def: typing.Literal['1', '2'] = '1',
+    r2def: str = '1',
+    skipr2: bool = False,
+    abbrev: bool = False,
+    skiphes: bool = False,
 ) -> RMAResult | metafopy.models.rma_ls_result.RMALSResult:
     """Fit an equal-, fixed-, random- or mixed-effects meta-analytic model.
 
@@ -523,6 +544,13 @@ def rma_uni(
     ``digits`` (a number of decimals, or a mapping with the keys ``est``, ``se``, ... of which ``est`` is used) is stored in the result
     and used by its printout unless ``digits`` is passed to ``summary()`` or set with :func:`metafopy.setmfopt`.
 
+    The arguments metafor reads through ``...`` are ``knha`` (``True`` for ``test='knha'`` and ``False`` for ``test='z'``), ``dfs`` (the degrees of
+    freedom of the t and F tests, whose first value is used, instead of ``k - p``), ``i2def`` (``'1'``, or ``'2'`` for the typical sampling variance
+    ``1 / mean(1 / vi)`` in ``I^2`` and ``H^2``), ``r2def`` (the definition of ``R^2`` of a model with moderators: ``'1'``, ``'1v'``, ``'2'``, ``'2v'``,
+    ``'3'``, ``'3v'``, ``'4'``, ``'4w'``, ``'5'``, ``'6'``, ``'7'`` or ``'8'``), ``skipr2`` (skip the computation of ``R^2``), ``abbrev`` (shorten
+    the names of the coefficients of ``factor()``, ``poly()``, ``relevel()`` and ``I()`` terms) and ``skiphes`` (for location-scale models: skip the
+    Hessian, so that the standard errors are missing). ``time=True`` prints the processing time.
+
     ``verbose`` prints metafor's iteration log of the tau^2 estimators to stdout
     (and with ``verbose=2`` or more its progress messages to stderr); it has no
     effect for location-scale models.
@@ -549,6 +577,10 @@ def rma_uni(
         metafopy.core.verbose.message('Generating/extracting the study labels ...')
         if subset is not None:
             metafopy.core.verbose.message('Subsetting ...')
+    if knha is True:
+        test = 'knha'
+    elif knha is False:
+        test = 'z'
     test_l = test.lower()
     if test_l == 'hksj':
         test_l = 'knha'
@@ -648,6 +680,9 @@ def rma_uni(
                 control=control,
                 na_action=na_action,
                 measure=measure,
+                dfs=dfs,
+                abbrev=abbrev,
+                skiphes=skiphes,
             ),
             digits=digits_,
         )
@@ -667,6 +702,11 @@ def rma_uni(
         tau2=tau2,
         control=typing.cast(metafopy.models.tau2.Control | collections.abc.Mapping[str, typing.Any] | None, control),
         verbose=vlevel,
+        skip_r2=skipr2,
+        i2def=i2def,
+        r2def=r2def,
+        dfs=dfs,
+        abbrev=abbrev,
     )
     if vlevel:
         metafopy.core.verbose.cat('\n')
@@ -755,7 +795,7 @@ def metadata_from_escalc(
         slab=[str(i + 1) for i in idx] if slab is None else sub(slab),
         na_action=na_action,
     )
-    return dataclasses.replace(md, counts_all=counts_all or None)
+    return dataclasses.replace(md, counts_all=counts_all or None, supplied=k_all)
 
 
 rma = rma_uni
@@ -773,6 +813,10 @@ def fit_rma_uni(
     control: metafopy.models.tau2.Control | collections.abc.Mapping[str, typing.Any] | None = None,
     skip_r2: bool = False,
     verbose: int = 0,
+    i2def: str = '1',
+    r2def: str = '1',
+    dfs: float | collections.abc.Sequence[float] | None = None,
+    abbrev: bool = False,
 ) -> RMAResult:
     """Fit ``rma.uni`` to already normalised inputs.
 
@@ -831,6 +875,10 @@ def fit_rma_uni(
 
     btt_idx = set_btt(btt, p, int_incl, names)
     m = len(btt_idx)
+    if abbrev:
+        names = abbreviate_names(names)
+    if i2def not in ('1', '2'):
+        raise metafopy.errors.InputError("Argument 'i2def' must be '1' or '2'.")
 
     con = make_control(control)
     if control is None or 'tau2_max' not in {key.replace('.', '_') for key in (control if isinstance(control, collections.abc.Mapping) else {})}:
@@ -885,7 +933,7 @@ def fit_rma_uni(
 
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     tdist = test in ('knha', 'adhoc', 't')
-    ddf = k - p if tdist else None
+    ddf = (k - p if dfs is None else first_df(dfs)) if tdist else None
 
     if verbose > 1:
         metafopy.core.verbose.message('Conducting the tests of the fixed effects ...')
@@ -929,7 +977,7 @@ def fit_rma_uni(
             ymc = yi - yi.mean()
             QE = max(0.0, float(ymc @ P @ ymc))
             QEp = float(scipy.stats.chi2.sf(QE, k - p))
-            vt = (k - p) / float(numpy.trace(P))
+            vt = (k - p) / float(numpy.trace(P)) if i2def == '1' else float(1 / numpy.mean(1 / vi))
             if used in metafopy.models.tau2.FIXED_EFFECTS:
                 I2 = max(0.0, 100 * (QE - (k - p)) / QE)
                 H2 = QE / (k - p)
@@ -992,6 +1040,10 @@ def fit_rma_uni(
             con=con,
             tau2_hat=tau2_hat,
             verbose=verbose,
+            r2def=r2def,
+            beta=beta,
+            vi=vi,
+            fs=fs_ml if used == 'ML' else fs_reml,
         )
 
     if verbose > 1:
@@ -1115,8 +1167,14 @@ def pseudo_r2(
     con: metafopy.models.tau2.Control,
     tau2_hat: float,
     verbose: int = 0,
+    r2def: str = '1',
+    beta: FloatArray | None = None,
+    vi: FloatArray | None = None,
+    fs: FitStats | None = None,
 ) -> float | None:
     k = yi.shape[0]
+    if r2def not in R2_DEFINITIONS:
+        raise metafopy.errors.InputError(f"Argument 'r2def' must be one of {', '.join(R2_DEFINITIONS)}.")
     if used in metafopy.models.tau2.FIXED_EFFECTS:
         if numpy.var(yi) == 0:
             return 0.0
@@ -1124,6 +1182,8 @@ def pseudo_r2(
         return max(0.0, 100 * adj_r2(yi, X, w))
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     md0 = dataclasses.replace(md, yi=yi, X=numpy.ones((k, 1)), X_names=('intrcpt',), intercept=True)
+    if r2def in ('2', '2v', '4', '4w'):
+        return alternative_r2(r2def, None, tau2_hat, X, yi, beta, vi, user_w, fs)
     if verbose:
         # metafor refits the intercept-only model with verbose=TRUE, which logs its iterations between blank lines
         metafopy.core.verbose.cat('\n')
@@ -1145,9 +1205,103 @@ def pseudo_r2(
         if verbose:
             metafopy.core.verbose.cat('\n')
     tau2_re = res0.tau2
-    if tau2_re == 0:
-        return 0.0
-    return max(0.0, 100 * (tau2_re - tau2_hat) / tau2_re)
+    if r2def == '1':
+        if tau2_re == 0:
+            return 0.0
+        return max(0.0, 100 * (tau2_re - tau2_hat) / tau2_re)
+    return alternative_r2(r2def, res0, tau2_hat, X, yi, beta, vi, user_w, fs)
+
+
+R2_DEFINITIONS = ('1', '1v', '2', '2v', '3', '3v', '4', '4w', '5', '6', '7', '8')
+
+
+def alternative_r2(
+    r2def: str,
+    res0: RMAResult | None,
+    tau2: float,
+    X: FloatArray,
+    yi: FloatArray,
+    beta: FloatArray | None,
+    vi: FloatArray | None,
+    weights: FloatArray | None,
+    fs: FitStats | None,
+) -> float:
+    """The definitions of ``R^2`` of metafor's ``r2def`` argument other than the default (the proportional reduction of ``tau^2``).
+
+    ``res0`` is the fit of the intercept-only model (needed by the definitions that compare with it). The result is in percent and at least 0.
+    R source: https://github.com/wviechtb/metafor/blob/master/R/rma.uni.r.
+    """
+    if beta is None or vi is None:
+        raise metafopy.errors.InternalError('beta and vi are needed for R^2')
+    fitted = X @ beta
+    k = yi.shape[0]
+    vtyp = 1 / float(numpy.mean(1 / vi))
+    var_fit = float(numpy.var(fitted, ddof=1))
+    with numpy.errstate(divide='ignore', invalid='ignore'):
+        if r2def == '2':
+            r2 = var_fit / (var_fit + tau2)
+        elif r2def == '2v':
+            r2 = var_fit / (var_fit + tau2 + vtyp)
+        elif r2def == '4':
+            r2 = float(numpy.corrcoef(yi, fitted)[0, 1]) ** 2
+        elif r2def == '4w':
+            w = 1 / (vi + tau2) if weights is None else weights
+            r2 = weighted_cor(yi, fitted, w) ** 2
+        else:
+            if res0 is None or fs is None:
+                raise metafopy.errors.InternalError('the intercept-only fit is needed for R^2')
+            tau2_re = res0.tau2
+            if tau2_re == 0 and r2def in ('1', '3'):
+                return 0.0
+            reml = res0.method != 'ML'
+            ll0 = res0.fit_stats_reml.ll if reml else res0.fit_stats_ml.ll
+            ll1 = fs.ll
+            lls = (fs.dev + 2 * ll1) / 2
+            if r2def == '1v':
+                r2 = (tau2_re - tau2) / (tau2_re + vtyp)
+            elif r2def == '3':
+                r2 = var_fit / tau2_re
+            elif r2def == '3v':
+                r2 = var_fit / (tau2_re + vtyp)
+            elif r2def == '5':
+                r2 = 1 - ll1 / ll0
+            elif r2def == '6':
+                r2 = 1 - (math.exp(ll0) / math.exp(ll1)) ** (2 / k)
+            elif r2def == '7':
+                r2 = (1 - (math.exp(ll0) / math.exp(ll1)) ** (2 / k)) / (1 - math.exp(ll0) ** (2 / k))
+            else:
+                r2 = (ll1 - ll0) / (lls - ll0)
+    return max(0.0, 100 * float(r2))
+
+
+def weighted_cor(x: FloatArray, y: FloatArray, w: FloatArray) -> float:
+    """The weighted correlation of ``cov.wt(cbind(x, y), wt = w, cor = TRUE)``."""
+    w = w / w.sum()
+    mx, my = float(w @ x), float(w @ y)
+    sxy = float(w @ ((x - mx) * (y - my)))
+    return sxy / math.sqrt(float(w @ (x - mx) ** 2) * float(w @ (y - my) ** 2))
+
+
+def first_df(dfs: float | collections.abc.Sequence[float]) -> int:
+    """The degrees of freedom of a ``dfs`` argument: its first value (metafor's ``ddd$dfs[[1]]``)."""
+    first = dfs if isinstance(dfs, int | float) else dfs[0]
+    # the degrees of freedom are stored as given, so that a fractional value (a Satterthwaite-type correction) is kept
+    return int(first) if float(first).is_integer() else typing.cast(int, float(first))
+
+
+def abbreviate_names(names: collections.abc.Sequence[str]) -> list[str]:
+    """metafor's ``abbrev=TRUE``: the names of the coefficients of ``relevel()``, ``factor()``, ``poly()``, ``rcs()`` and ``I()`` terms made shorter."""
+    out = []
+    for name in names:
+        name = name.replace('relevel(factor(', '')
+        name = re.sub(r'\), ref = ["\'][A-Za-z0-9]*["\']\)', '', name)
+        name = name.replace('poly(', '')
+        name = re.sub(r', degree = [0-9], raw = (?:TRUE|True)\)', '^', name)
+        name = re.sub(r', degree = [0-9]\)', '^', name)
+        name = re.sub(r'rcs\([A-Za-z0-9]*, [0-9]\)', '', name)
+        name = name.replace('factor(', '').replace('I(', '').replace(')', '')
+        out.append(name)
+    return out
 
 
 def adj_r2(y: FloatArray, X: FloatArray, w: FloatArray) -> float:
