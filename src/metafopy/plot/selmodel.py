@@ -58,8 +58,8 @@ def plot_selmodel(
     shade: bool | str = True,
     rug: bool = True,
     add: bool = False,
-    lty: collections.abc.Sequence[str] = LINE_STYLES,
-    lwd: collections.abc.Sequence[float] = (2.0, 1.0),
+    lty: str | int | collections.abc.Sequence[str | int] = LINE_STYLES,
+    lwd: float | collections.abc.Sequence[float] = (2.0, 1.0),
     seed: int | None = None,
     draw: bool = True,
     *,
@@ -82,6 +82,13 @@ def plot_selmodel(
     """
     if x.type in metafopy.models.sel_spec.TRUNCATED or x.spec.weight is None:
         raise metafopy.errors.InputError('Cannot draw the selection function for this type of selection model.')
+    # R indexes lty[1:2] and lwd[1:2]: a single value serves the curve, and the bounds (drawn only with ci) need a second one
+    lty = [lty] if isinstance(lty, str | int) else list(lty)
+    lwd = [lwd] if isinstance(lwd, int | float) else list(lwd)
+    if len(lty) < 2:
+        lty = [*lty, DOTTED]
+    if len(lwd) < 2:
+        lwd = [*lwd, 1.0]
     citype = 'boot'
     do_ci = bool(ci)
     if isinstance(ci, str):

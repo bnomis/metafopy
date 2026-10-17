@@ -194,9 +194,9 @@ def regplot(
     label: bool | str | collections.abc.Sequence[typing.Any] = False,
     offset: float | collections.abc.Sequence[float] = (1.0, 1.0),
     labsize: float = 1.0,
-    lcol: collections.abc.Sequence[str] | None = None,
-    lwd: collections.abc.Sequence[float] | None = None,
-    lty: collections.abc.Sequence[str] | None = None,
+    lcol: str | collections.abc.Sequence[str] | None = None,
+    lwd: float | collections.abc.Sequence[float] | None = None,
+    lty: str | int | collections.abc.Sequence[str | int] | None = None,
     legend: bool | str | dict[str, typing.Any] = False,
     xvals: numpy.typing.ArrayLike | None = None,
     *,
@@ -260,20 +260,25 @@ def regplot(
     do_shade = bool(shade)
     grid_c = [grid, grid] if isinstance(grid, str) else [metafopy.plot.rutils.coladj(-0.2), metafopy.plot.rutils.coladj(0.6)]
     do_grid = bool(grid)
-    line_cols = [fgc, fgc, fgc, metafopy.plot.rutils.coladj(-0.5)] if lcol is None else list(lcol)
+    # R: .expand1(x, 4) repeats a single value for all four lines
+    line_cols = [fgc, fgc, fgc, metafopy.plot.rutils.coladj(-0.5)] if lcol is None else ([lcol] if isinstance(lcol, str) else list(lcol))
     if len(line_cols) == 1:
-        line_cols = [line_cols[0]] * 3 + [metafopy.plot.rutils.coladj(-0.5)]
+        line_cols = line_cols * 4
     elif len(line_cols) == 2:
         line_cols = [line_cols[0], line_cols[1], line_cols[1], metafopy.plot.rutils.coladj(-0.5)]
     elif len(line_cols) == 3:
         line_cols = [*line_cols, metafopy.plot.rutils.coladj(-0.5)]
-    line_types = ['solid', 'dashed', 'dotted', 'solid'] if lty is None else list(lty)
-    if len(line_types) == 2:
+    line_types: list[typing.Any] = ['solid', 'dashed', 'dotted', 'solid'] if lty is None else ([lty] if isinstance(lty, str | int) else list(lty))
+    if len(line_types) == 1:
+        line_types = line_types * 4
+    elif len(line_types) == 2:
         line_types = [line_types[0], line_types[1], line_types[1], 'solid']
     elif len(line_types) == 3:
         line_types = [*line_types, 'solid']
-    line_widths = [3.0, 1.0, 1.0, 2.0] if lwd is None else [float(v) for v in lwd]
-    if len(line_widths) == 2:
+    line_widths = [3.0, 1.0, 1.0, 2.0] if lwd is None else ([float(lwd)] if isinstance(lwd, int | float) else [float(v) for v in lwd])
+    if len(line_widths) == 1:
+        line_widths = line_widths * 4
+    elif len(line_widths) == 2:
         line_widths = [line_widths[0], line_widths[1], line_widths[1], 2.0]
     elif len(line_widths) == 3:
         line_widths = [*line_widths, 2.0]
