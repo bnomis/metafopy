@@ -5,6 +5,8 @@ Meta-analysis in Python: a re-implementation of the R package
 
 **Status:** work in progress.
 
+[Documentation](https://bnomis.github.io/metafopy/)
+
 ## Example
 
 ```python
