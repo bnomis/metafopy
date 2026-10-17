@@ -5,6 +5,7 @@ import pathlib
 import audit.printdiff
 import audit.recall
 import audit.report
+import audit.rlib
 import audit.steps
 import audit.universe
 import audit.valuetree as valuetree
@@ -152,3 +153,9 @@ def test_printed_lines_ignore_blank_lines() -> None:
     py = vector(['QM = 1'], 'str')
     assert diffs(r, py) == []
     assert [d.kind for d in diffs(vector(['a', 'b'], 'str'), vector(['a'], 'str'))] == ['shape-diff']
+
+
+def test_profile_positions_of_mv_fits_are_zero_based() -> None:
+    assert audit.rlib.shift_arguments({'tau2': 1}, True) == {'tau2': 0}
+    assert audit.rlib.shift_arguments({'tau2': 1}, False) == {'tau2': 1}
+    assert audit.rlib.shift_arguments({'include': [1, 3]}) == {'include': [0, 2]}

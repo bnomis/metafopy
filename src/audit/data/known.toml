@@ -101,6 +101,28 @@ reason = "The attributes of an escalc result (measure, ni, slab) are kept once f
 ref = "docs/differences.md"
 
 [[known]]
+match = "scripts/misc_selmodel/*"
+kind = "value-diff"
+detail = "*optimizer = \"mads\"*"
+reason = "selmodel(type='truncest', control=list(optimizer='mads')) on hackshaw1998: R stops at log-likelihood -5.08477, metafopy at -5.08452 (higher), so the estimates differ by 0.5 %; the derivative-free search ends at different points of a flat likelihood."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/misc_selmodel/*"
+kind = "value-diff"
+path = "$*"
+detail = "*sav <- selmodel(res, type = \"beta\")*"
+reason = "selmodel(type='beta') on baskerville2012 (ML, tau2 near 0): R's PORT stops at log-likelihood -2.792404, metafopy at -2.792399 (higher), so tau2 of 2.4e-6 differs by 2.6 % (absolute 6e-8) and the other estimates by 1e-5 relative."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/misc_coef_se/*"
+kind = "value-diff"
+detail = "*sel <- selmodel(res, type = \"beta\")*"
+reason = "Same as the selmodel(type='beta') entry of misc_selmodel: tau2 near 0 on baskerville2012, the log-likelihood is higher in metafopy."
+ref = "docs/differences.md"
+
+[[known]]
 match = "*/reporter*"
 reason = "reporter() writes an R Markdown report; Jupyter notebooks are the Python equivalent."
 ref = "docs/differences.md"

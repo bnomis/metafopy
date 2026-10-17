@@ -1015,10 +1015,16 @@ def rfor(env: Env, var: str, seq: Value, body: typing.Callable[[], Value]) -> Va
 INDEX_ARGUMENTS = frozenset({'btt', 'att', 'subset', 'which', 'include'})
 
 
-def shift_arguments(kwargs: dict[str, Value]) -> dict[str, Value]:
+# profile() and confint() of rma.mv and location-scale fits take the position of the component to profile (``tau2 = 1`` is the first one)
+POSITION_ARGUMENTS = frozenset({'sigma2', 'tau2', 'rho', 'gamma2', 'phi', 'alpha'})
+POSITION_FUNCTIONS = frozenset({'profile', 'confint'})
+POSITION_FITS = frozenset({'RMAMVResult', 'RMALSResult'})
+
+
+def shift_arguments(kwargs: dict[str, Value], positions: bool = False) -> dict[str, Value]:
     out: dict[str, Value] = {}
     for k, v in kwargs.items():
-        if k in INDEX_ARGUMENTS and v is not None and not isinstance(v, (str, bool)):
+        if (k in INDEX_ARGUMENTS or (positions and k in POSITION_ARGUMENTS)) and v is not None and not isinstance(v, (str, bool)):
             arr = numpy.asarray(v)
             if arr.dtype.kind in 'if' and arr.dtype != bool:
                 v = (arr.astype(int) - 1).tolist() if arr.ndim else int(arr) - 1
@@ -1059,7 +1065,7 @@ def rcall(env: Env, name: str, *args: Value, **kwargs: Value) -> Value:
     if name in BASE:
         return BASE[name](*args, **kwargs)
     first = args[0] if args else None
-    kwargs = shift_arguments(kwargs)
+    kwargs = shift_arguments(kwargs, name in POSITION_FUNCTIONS and type(first).__name__ in POSITION_FITS)
     try:
         fn = pycall.resolve_function(name, first)
     except pycall.MissingFunctionError as e:
