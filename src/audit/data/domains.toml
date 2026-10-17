@@ -393,6 +393,23 @@ names = ["bty", "las", "xaxt", "yaxt", "cex", "lwd", "lty", "col", "pch", "bg", 
 # R argument names that metafopy spells differently (beyond dots to underscores)
 clubSandwich = "club_sandwich"
 
+# In profile() and confint() of rma.mv and rma.ls fits the variance component arguments name the component to profile (1 is the first), not a value
+[fns.profile.args]
+sigma2 = [{ "$idx" = 1 }]
+tau2 = [{ "$idx" = 1 }]
+rho = [{ "$idx" = 1 }]
+gamma2 = [{ "$idx" = 1 }]
+phi = [{ "$idx" = 1 }]
+alpha = [{ "$idx" = 1 }]
+
+[fns.confint.args]
+sigma2 = [{ "$idx" = 1 }]
+tau2 = [{ "$idx" = 1 }]
+rho = [{ "$idx" = 1 }]
+gamma2 = [{ "$idx" = 1 }]
+phi = [{ "$idx" = 1 }]
+alpha = [{ "$idx" = 1 }]
+
 [fns.dfround.args]
 # one digits value per column of a data frame, with missing entries
 digits = [2, [2, { "$na" = true }, 1, 0, 3, { "$na" = true }, 2, 2, 2, 2, 2, 2, 2]]

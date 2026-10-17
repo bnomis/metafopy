@@ -71,8 +71,15 @@ reason = "R's optimiser stops without convergence on this case and R refuses the
 [[known]]
 match = "*"
 kind = "refused-where-R-works"
-detail = "*ontrol*optimizer*"
-reason = "R silently ignores control entries a function does not use (here 'optimizer'); metafopy raises for unknown control entries so a misspelt setting is not lost."
+detail = "*unknownentry*"
+reason = "R silently ignores a control entry that no function of metafor reads (the sweep's 'unknownentry'); metafopy raises for it so that a misspelt setting is not lost. Entries that another function of metafor reads (threshold, stepadj, optimizer, ...) are ignored as in R."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "refused-where-R-works"
+detail = "*control*'sparse'*"
+reason = "R silently ignores a control entry that no function of metafor reads ('sparse' is an argument of rma.mv, not a control setting); metafopy raises for it so that a misspelt setting is not lost. Entries that another function of metafor reads (threshold, stepadj, optimizer, ...) are ignored as in R."
 ref = "docs/differences.md"
 
 [[known]]
@@ -87,4 +94,60 @@ match = "*"
 kind = "refused-where-R-works"
 detail = "*unknown dataset*"
 reason = "The data sets that are lists of data frames (not tables) are not bundled."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "refused-where-R-works"
+detail = "InputError: Unknown 'adjust' value 'holm'."
+reason = "R applies no small-sample adjustment for any string other than 'Stata', 'Stata1' and 'Stata2' (so 'holm' silently does nothing); metafopy refuses it."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "refused-where-R-works"
+detail = "*Length of 'yi' (56) and the length/dimensions of 'V' (13)*"
+reason = "R recycles a vector V through diag(V, nrow = k) and fits; metafopy requires V to match yi."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "refused-where-R-works"
+detail = "*'sigma2' argument*does not match the actual number*"
+reason = "R ignores a sigma2 vector for a model without sigma2 components; metafopy checks the length."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "refused-where-R-works"
+detail = "*must be a *named* list*"
+reason = "R ignores R=NA when the model has no component that uses it; metafopy checks the type."
+ref = "docs/differences.md"
+
+[[known]]
+match = "standalone/fmtt/*"
+kind = "refused-where-R-works"
+detail = "*plotmath*"
+reason = "fmtt(call=TRUE) returns an R plotmath call, which has no Python counterpart."
+ref = "docs/differences.md"
+
+[[known]]
+match = "construct/glmm_cm/*"
+kind = "refused-where-R-works"
+detail = "EstimationError: Cannot compute var-cov matrix of the fixed effects."
+reason = "R's CM.EL Hessian is noise here (standard errors of 1e-4, tau2 2e-4, warning 'unusually small'; the ~ablat fit does not converge in R); metafopy refuses to report them."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "refused-where-R-works"
+detail = "InputError: Could not fit the null model."
+reason = "R's hettest() does not pass control on when x is a model object (the recursive call drops it), so maxiter has no effect there; metafopy applies it."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/anova/*"
+kind = "accepts-where-R-refuses"
+detail = "R: Class of*"
+reason = "The anova() method of selection-model fits is an extension: it compares a selection model with a plain fit, where R stops with 'Class of object must be the same'."
 ref = "docs/differences.md"
