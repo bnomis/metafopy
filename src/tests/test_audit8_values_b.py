@@ -78,3 +78,9 @@ def test_ls_z_f_drops_redundant_scale_predictors() -> None:
     assert res.Z_f is not None
     assert res.alpha_names == ('intrcpt', 'allocrandom')
     numpy.testing.assert_array_equal(res.Z_f, [[1, 1], [1, 1], [1, 1], [1, 1], [1, 0], [1, 0], [1, 1], [1, 1]])
+
+
+def test_dfround_missing_digits_with_drop0_false_refuses() -> None:
+    dat = pandas.DataFrame({'a': [1.234, 2.345], 'b': [1.234, numpy.nan]})
+    with pytest.raises(metafopy.errors.InputError):
+        metafopy.dfround(dat, [1, numpy.nan], drop0=False)  # R: formatC() stops with "missing value where TRUE/FALSE needed"

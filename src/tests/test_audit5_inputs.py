@@ -287,13 +287,13 @@ def test_fsn_general_with_a_numpy_target() -> None:
 # -- dfround -------------------------------------------------------------------------------------------------------------------------------------
 
 
-def test_dfround_leaves_columns_with_missing_digits() -> None:
+def test_dfround_makes_numeric_columns_with_missing_digits_missing() -> None:
     dat = pandas.DataFrame({'a': [1.234, 2.345], 'b': [1.234, 2.345], 'c': ['x', 'y']})
     out = metafopy.dfround(dat, [1, numpy.nan, None])
     assert out['a'].tolist() == [1.2, 2.3]
-    assert out['b'].tolist() == [1.234, 2.345]
+    assert out['b'].isna().all()  # R: round(x, NA) is NA (dfround(dat, c(1, NA, NA)))
     assert out['c'].tolist() == ['x', 'y']
-    assert metafopy.dfround(dat, numpy.nan)['a'].tolist() == [1.234, 2.345]
+    assert metafopy.dfround(dat, numpy.nan)['a'].isna().all()
 
 
 # -- rma_mh without events -----------------------------------------------------------------------------------------------------------------------
