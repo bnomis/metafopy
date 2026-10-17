@@ -61,6 +61,7 @@ import collections.abc
 import math
 import sys
 import typing
+import warnings
 
 import numpy
 import numpy.typing
@@ -561,10 +562,20 @@ def transf_iprobit_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> Floa
 # Freeman-Tukey and square root
 
 
+def recycle_pair(x: FloatArray, n: FloatArray) -> tuple[FloatArray, FloatArray]:
+    """``x`` and ``n`` recycled to the length of the longer as R does, with its warning when the longer is not a multiple of the shorter."""
+    size = max(x.size, n.size)
+    if x.size == 0 or n.size == 0:
+        return x[:0], n[:0]
+    if size % x.size != 0 or size % n.size != 0:
+        warnings.warn('longer object length is not a multiple of shorter object length', stacklevel=4)
+    return (x if x.size == size else numpy.resize(x, size)), (n if n.size == size else numpy.resize(n, size))
+
+
 def transf_pft(xi: numpy.typing.ArrayLike, ni: numpy.typing.ArrayLike) -> FloatArray:
     """Freeman-Tukey double arcsine transformation of proportions ``xi`` with sample sizes ``ni``."""
-    n = numpy.asarray(ni, numpy.float64)
-    x = arr(xi) * n
+    xi_, n = recycle_pair(arr(xi), arr(ni))
+    x = xi_ * n
     with numpy.errstate(invalid='ignore'):
         return numpy.asarray(1 / 2 * (numpy.arcsin(numpy.sqrt(x / (n + 1))) + numpy.arcsin(numpy.sqrt((x + 1) / (n + 1)))), numpy.float64)
 
@@ -580,7 +591,7 @@ def ipft(x: FloatArray, n: FloatArray) -> FloatArray:
 
 def transf_ipft(xi: numpy.typing.ArrayLike, ni: numpy.typing.ArrayLike) -> FloatArray:
     """Inverse of the Freeman-Tukey transformation (Miller, 1978), 0 and 1 outside the attainable range."""
-    return ipft(arr(xi), numpy.asarray(ni, numpy.float64))
+    return ipft(*recycle_pair(arr(xi), arr(ni)))
 
 
 def transf_ipft_hm(xi: numpy.typing.ArrayLike, targs: Targs) -> FloatArray:
