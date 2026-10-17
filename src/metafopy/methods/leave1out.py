@@ -256,8 +256,10 @@ def leave1out_rma_uni(
     )
 
 
-def cluster_values(x: metafopy.models.rma_uni.RMAResult, values: numpy.typing.ArrayLike | str | None) -> numpy.typing.NDArray[typing.Any]:
-    """Resolve a per-study variable (array over the supplied rows or a column of the model's data) to the studies used.
+def cluster_values(
+    x: metafopy.models.rma_uni.RMAResult, values: numpy.typing.ArrayLike | str | None, rows: numpy.typing.NDArray[numpy.bool_] | None = None
+) -> numpy.typing.NDArray[typing.Any]:
+    """Resolve a per-study variable (array over the supplied rows or a column of the model's data) to the studies used, or to ``rows``.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
@@ -271,7 +273,7 @@ def cluster_values(x: metafopy.models.rma_uni.RMAResult, values: numpy.typing.Ar
     keep = x.data.keep
     if arr.shape[0] != keep.shape[0]:
         raise metafopy.errors.InputError(f'Length of the variable ({arr.shape[0]}) does not match the length of the data ({keep.shape[0]}).')
-    return arr[keep]
+    return arr[keep if rows is None else rows]
 
 
 @functools.singledispatch
@@ -305,8 +307,9 @@ def cumul_rma_uni(
     the original order is used. With ``collapse=True`` studies sharing the same
     value of ``order`` are added together. Studies dropped for missing values
     in the fit are skipped (the ``na.omit`` behaviour).
-    ``na_action`` stands for R's ``options(na.action=)``: ``'fail'`` stops when studies were left out; ``'exclude'`` and ``'pass'`` give the rows of
-    ``'omit'``, where metafor keeps a row of missing values for each study left out.
+    ``na_action`` stands for R's ``options(na.action=)``: ``'fail'`` stops when studies were left out; ``'exclude'`` and ``'pass'`` keep a row of
+    missing values for each study left out (``'omit'`` has no row for it), as in metafor (see
+    https://github.com/wviechtb/metafor/blob/master/R/cumul.rma.uni.r).
     ``digits`` defaults to the ``digits`` option, else to that of the model; ``progbar=True``
     prints a progress bar to stderr while the refits are made.
 
@@ -320,12 +323,18 @@ def cumul_rma_uni(
     if not x.int_only:
         raise metafopy.errors.InputError('Method only applicable to models without moderators.')
     k = x.k
+    na_rows = x.data.na_rows
+    # na.exclude and na.pass keep a row of missing values for each study left out of the fit (the rows `sel` are those of the subset)
+    fill = na_action in ('exclude', 'pass') and na_rows is not None and bool(na_rows.any())
+    sel = (x.data.keep | na_rows) if fill and na_rows is not None else x.data.keep
+    not_na = x.data.keep[sel]
+    used_pos = numpy.cumsum(not_na) - 1
     if order is None:
         # metafor orders by the position among all rows supplied, so `order` holds the positions of the studies used
-        orvar = pandas.Series(numpy.flatnonzero(x.data.keep))
+        orvar = pandas.Series(numpy.flatnonzero(sel))
         collapse = False
     else:
-        orvar = pandas.Series(cluster_values(x, order))
+        orvar = pandas.Series(cluster_values(x, order, sel))
     # R: order(orvar, decreasing=, na.last=NA); the radix sort is stable in both directions
     sub = orvar.dropna().sort_values(ascending=not decreasing, kind='stable')
     srt = sub.index.to_numpy()
@@ -334,12 +343,24 @@ def cumul_rma_uni(
     n = len(uor)
     fits: list[metafopy.models.rma_uni.RMAResult | None] = []
     for i in metafopy.core.parallel.progress(range(n), n, progbar):
+        added = srt[numpy.isin(ov, uor[i : i + 1])] if collapse else srt[i : i + 1]
+        if not not_na[added].any():
+            fits.append(None)  # a study (or all studies of a group) without data is not added, its row stays missing
+            continue
         incl = srt[numpy.isin(ov, uor[: i + 1])] if collapse else srt[: i + 1]
+        incl = incl[not_na[incl]]
         mask = numpy.zeros(k, dtype=numpy.bool_)
-        mask[incl] = True
+        mask[used_pos[incl]] = True
         fits.append(metafopy.methods.common.refit(x, mask))
     col = collect(fits, x, transf, targs)
-    slab = tuple(label(u) for u in uor) if collapse else tuple(numpy.asarray(x.slab, dtype=object)[srt].tolist())
+    if fill:
+        labels_all = x.data.labels_all
+        labels = (
+            numpy.asarray(labels_all, dtype=object)[sel] if labels_all is not None else numpy.array([str(i + 1) for i in numpy.flatnonzero(sel)], dtype=object)
+        )
+    else:
+        labels = numpy.asarray(x.slab, dtype=object)
+    slab = tuple(label(u) for u in uor) if collapse else tuple(labels[srt].tolist())
     fe = x.method in metafopy.models.tau2.FIXED_EFFECTS
     return CumulResult(
         estimate=col['estimate'],
@@ -362,7 +383,7 @@ def cumul_rma_uni(
         order=uor,
         measure=x.measure,
         level=x.level,
-        ids=None if collapse else x.ids[x.not_na][srt],
+        ids=None if collapse else (x.ids if fill else x.ids[x.not_na])[srt],
         slab_null=bool(numpy.all([lab == str(i + 1) for lab, i in zip(x.slab, numpy.flatnonzero(x.data.keep), strict=True)])) and not collapse,
     )
 
