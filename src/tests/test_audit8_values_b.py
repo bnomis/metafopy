@@ -84,3 +84,15 @@ def test_dfround_missing_digits_with_drop0_false_refuses() -> None:
     dat = pandas.DataFrame({'a': [1.234, 2.345], 'b': [1.234, numpy.nan]})
     with pytest.raises(metafopy.errors.InputError):
         metafopy.dfround(dat, [1, numpy.nan], drop0=False)  # R: formatC() stops with "missing value where TRUE/FALSE needed"
+
+
+def test_ls_z_f_keeps_the_cells_that_are_not_missing() -> None:
+    dat = metafopy.datasets.load('bangertdrowns2004')
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        res = metafopy.rma(yi='yi', vi='vi', data=dat, scale='~ grade + meta + sqrt(ni)')
+    # R: res$Z.f[19, ] is 1, 4, NA, 6.78233 (only the cell of the missing meta is NA)
+    assert res.Z_f is not None
+    assert res.Z_f[18, [0, 1, 3]].tolist() == pytest.approx([1.0, 4.0, 46**0.5])
+    assert numpy.isnan(res.Z_f[18, 2])
+    assert res.Z.shape[0] == 46
