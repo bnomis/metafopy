@@ -646,11 +646,11 @@ def forest(
     ci_lb: numpy.typing.ArrayLike | None = None,
     ci_ub: numpy.typing.ArrayLike | None = None,
     annotate: bool = True,
-    addfit: bool = True,
+    addfit: bool | None = None,
     addpred: bool | str | int | collections.abc.Sequence[str | int] | None = None,
     predstyle: str | None = None,
     preddist: PredDist | None = None,
-    showweights: bool = False,
+    showweights: bool | None = None,
     header: bool | str | collections.abc.Sequence[str] = True,
     xlim: collections.abc.Sequence[float] | None = None,
     alim: collections.abc.Sequence[float] | None = None,
@@ -759,6 +759,21 @@ def forest(
     if clim is not None:
         olim = clim
     if isinstance(x, metafopy.methods.leave1out.CumulResult):
+        for name, given in (
+            ('slab', slab),
+            ('mlab', mlab),
+            ('order', order),
+            ('addfit', addfit),
+            ('addpred', addpred),
+            ('predstyle', predstyle),
+            ('showweights', showweights),
+            ('predlim', predlim),
+            ('colout', colout),
+            ('border', border),
+        ):
+            if given is not None:
+                article = 'an' if name[0] in 'aeiou' else 'a'
+                warnings.warn(f"The forest.cumul.rma() function does not have {article} '{name}' argument.", stacklevel=2)
         return metafopy.plot.cumul.forest_cumul(
             x,
             annotate=annotate,
@@ -803,6 +818,8 @@ def forest(
             xlabadj=xlabadj,
             xlabfont=xlabfont,
         )
+    addfit = True if addfit is None else addfit
+    showweights = False if showweights is None else showweights
     is_fit = metafopy.methods.fitview.is_rma(x)
     pred_levels: list[str | int] | None = None
     if addpred is not None and not isinstance(addpred, bool):
@@ -881,6 +898,9 @@ def forest(
         keep = res.keep
         na_rows = res.na_rows
         show_na = na_action == 'pass' and na_rows is not None and bool(na_rows.any())
+        if na_action == 'omit' and na_rows is not None and rows is not None and numpy.ndim(rows) > 0:
+            # metafor takes `rows` for all outcomes, those with missing values included, and drops theirs afterwards
+            show_na = len(numpy.atleast_1d(rows)) == int((keep | na_rows).sum()) != k
         if na_action == 'fail' and na_rows is not None and na_rows.any():
             raise metafopy.errors.InputError('Missing values in results.')
         if show_na:
@@ -1849,6 +1869,11 @@ def addpoly(
         cl, cu = numpy.asarray(pr.ci_lb, dtype=float), numpy.asarray(pr.ci_ub, dtype=float)
         if addpred:
             pl, pu = numpy.asarray(pr.pi_lb, dtype=float), numpy.asarray(pr.pi_ub, dtype=float)
+            if bool(numpy.all(numpy.isnan(pl))) and bool(numpy.all(numpy.isnan(pu))):
+                # metafor: the model has no prediction interval (FE, MH and Peto models); only predstyle='line' goes on without it
+                warnings.warn('Could not extract prediction interval bounds.', stacklevel=2)
+                if ps != 'line':
+                    raise metafopy.errors.InputError('Cannot draw prediction interval if pi_lb and pi_ub are unspecified.')
         else:
             pl = pu = numpy.array([math.nan])
         mlab_use: typing.Any = default_mlab(fit.method) if mlab is None else mlab

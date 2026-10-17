@@ -43,4 +43,5 @@ def pairmat(x: metafopy.models.rma_uni.RMAResult, btt: metafopy.models.rma_uni.B
         add = [numpy.eye(x.p)[b] for b in idx2]
         rows = add + rows
         labels = [names[b] for b in idx2] + labels
-    return pandas.DataFrame(numpy.vstack(rows), index=labels, columns=names)
+    # as in metafor, the rows are named but the columns are not, so that predict() takes them by position
+    return pandas.DataFrame(numpy.vstack(rows), index=labels)

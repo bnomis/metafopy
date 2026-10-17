@@ -234,6 +234,8 @@ def fmtt(
     """
     if format not in (1, 2):
         raise metafopy.errors.InputError("Argument 'format' can only be equal to 1 or 2.")
+    if numpy.size(val) != 1:
+        raise metafopy.errors.InputError("Argument 'val' must be a scalar.")
     if pval is None:
         raise metafopy.errors.InputError("Must specify the 'pval' argument.")
     if call:

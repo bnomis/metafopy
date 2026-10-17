@@ -9,6 +9,7 @@ or a matrix (in which case an intercept is added unless ``intercept=False``).
 import collections.abc
 import dataclasses
 import typing
+import warnings
 
 import numpy
 import numpy.typing
@@ -222,7 +223,9 @@ class MetaData:
             w = numpy.repeat(w, k_all)
         if n is None:
             n = escalc_ni(yi, data, k_all)
-        for name, arr in (('vi', v), ('weights', w), ('ni', n)):
+        if n is not None and n.shape[0] != k_all:
+            n = None  # as metafor: sample sizes of the wrong length 'cannot be trusted' and are dropped
+        for name, arr in (('vi', v), ('weights', w)):
             if arr is not None and arr.shape[0] != k_all:
                 raise metafopy.errors.InputError(f'length of {name} ({arr.shape[0]}) differs from yi ({k_all})')
 
@@ -285,6 +288,8 @@ class MetaData:
         k: int,
     ) -> tuple[FloatArray, tuple[str, ...], BoolArray, bool]:
         if mods is None:
+            if not intercept:
+                warnings.warn('Must either include an intercept and/or moderators in the model.\nCoerced an intercept into the model.', stacklevel=4)
             # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
             return numpy.ones((k, 1)), ('intrcpt',), numpy.zeros(k, dtype=numpy.bool_), True
         if isinstance(mods, str):

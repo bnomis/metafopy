@@ -40,10 +40,12 @@ def vector_inputs(
     what: str = 'the test',
     vi_required: bool = True,
     attr_ni: bool = False,
+    expand_vi: bool = False,
 ) -> tuple[FloatArray, FloatArray | None, FloatArray | None]:
     """``(yi, vi, ni)`` of a vector-of-estimates call, with the subset applied and rows with NAs omitted (with a warning, as metafor does).
 
-    With ``attr_ni`` the sample sizes stored with ``x`` by ``escalc`` are used when ``ni`` is not given (as ``regtest`` does).
+    With ``attr_ni`` the sample sizes stored with ``x`` by ``escalc`` are used when ``ni`` is not given (as ``regtest`` does). With ``expand_vi`` a single
+    variance is repeated for every estimate (metafor's ``.expand1()``, which ``fsn`` applies).
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
@@ -58,6 +60,8 @@ def vector_inputs(
         v = s**2
     if v is None and vi_required:
         raise metafopy.errors.InputError("Must specify the 'vi' or 'sei' argument.")
+    if expand_vi and v is not None and v.shape[0] == 1:
+        v = numpy.full(yi.shape, v[0])
     if v is not None and v.shape != yi.shape:
         raise metafopy.errors.InputError("Length of 'yi' and 'vi' (or 'sei') are not the same.")
     if n is not None and n.shape != yi.shape:

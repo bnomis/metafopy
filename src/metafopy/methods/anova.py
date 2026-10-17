@@ -18,6 +18,7 @@ import metafopy.core.padjust
 import metafopy.errors
 import metafopy.formatters
 import metafopy.methods.common
+import metafopy.methods.fitview
 import metafopy.methods.vif
 import metafopy.mfopt
 import metafopy.models.mv_result
@@ -305,6 +306,7 @@ def anova_rma_uni(
     rhs_given = rhs is not None
     rhs = 0.0 if rhs is None else rhs
     if model2 is not None:
+        check_same_class(x, model2)
         if check_test(test) == 'Wald':
             return dataclasses.replace(wald_between(x, model2, df), digits=d)
         return dataclasses.replace(lrt(x, model2, refit, df), digits=d)
@@ -524,6 +526,16 @@ def club_wald_x(
     )
 
 
+def check_same_class(a: object, b: object) -> None:
+    """R's ``identical(class(object), class(object2))``: a robust, selection model or plain fit is not compared with a fit of another class.
+
+    Raises:
+        metafopy.errors.InputError: the classes differ.
+    """
+    if metafopy.methods.fitview.r_class(a) != metafopy.methods.fitview.r_class(b):
+        raise metafopy.errors.InputError("Class of 'object' must be the same as class of 'object2'.")
+
+
 def wald_between(
     a: metafopy.models.rma_uni.RMAResult | metafopy.models.mv_result.RMAMVResult,
     b: metafopy.models.rma_uni.RMAResult | metafopy.models.mv_result.RMAMVResult,
@@ -534,8 +546,7 @@ def wald_between(
     Raises:
         metafopy.errors.InputError: the models cannot be compared.
     """
-    if type(a) is not type(b):
-        raise metafopy.errors.InputError("Class of 'object' must be the same as class of 'object2'.")
+    check_same_class(a, b)
     if df is None and a.parms == b.parms:
         raise metafopy.errors.InputError('Models have the same number of parameters.')
     full, red = (a, b) if df is not None or a.parms > b.parms else (b, a)
@@ -815,6 +826,7 @@ def anova_rma_mv(
     rhs = 0.0 if rhs is None else rhs
     club = club_info(x.robust)
     if model2 is not None:
+        check_same_class(x, model2)
         if check_test(test) == 'Wald':
             return dataclasses.replace(wald_between(x, model2, df), digits=d)
         if df is None and x.parms == model2.parms:

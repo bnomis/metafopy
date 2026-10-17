@@ -250,6 +250,9 @@ def regplot(
     bg_l = expand(metafopy.plot.rutils.coladj(-0.35) if bg is None else bg, k, 'bg')
     pch_l = [int(v) for v in expand(pch, k, 'pch')]
     slab_l = [str(s) for s in (view.slab if slab is None else slab)]
+    if slab is not None and len(slab_l) == view.k_all != k:
+        # metafor takes one label per row of the original dataset and drops those of the studies left out of the fit
+        slab_l = [slab_l[i] for i in numpy.flatnonzero(view.keep)]
     if len(slab_l) != k:
         raise metafopy.errors.InputError(f"Length of the 'slab' argument ({len(slab_l)}) does not correspond to the number of studies ({k}).")
     shade_c = [metafopy.plot.rutils.coladj(-0.15), metafopy.plot.rutils.coladj(-0.05)]

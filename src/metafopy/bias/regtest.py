@@ -22,6 +22,7 @@ import metafopy.metadata
 import metafopy.methods.common
 import metafopy.methods.fitview
 import metafopy.mfopt
+import metafopy.models.binary
 import metafopy.models.rma_uni
 import metafopy.models.tau2
 
@@ -100,7 +101,7 @@ class RegtestResult:
 
 
 def regtest(
-    x: metafopy.models.rma_uni.RMAResult | numpy.typing.ArrayLike | str,
+    x: metafopy.models.rma_uni.RMAResult | metafopy.models.binary.FixedBinaryResult | numpy.typing.ArrayLike | str,
     vi: numpy.typing.ArrayLike | str | None = None,
     *,
     sei: numpy.typing.ArrayLike | str | None = None,
@@ -133,11 +134,30 @@ def regtest(
 
     if metafopy.methods.fitview.is_rma(x):
         metafopy.methods.fitview.check_class(x, notav=metafopy.methods.fitview.FIXED_UNI_ONLY)
-        if not isinstance(x, metafopy.models.rma_uni.RMAResult):
+        if model == 'rma' and not isinstance(x, metafopy.models.rma_uni.RMAResult):
             # rma.mh and rma.peto objects get as far as refitting the model with their tau2 (NULL), which metafor rejects
             raise metafopy.errors.InputError("Argument 'tau2' must be a scalar.")
         if vi is not None or sei is not None or subset is not None:
             warnings.warn("Arguments 'vi', 'sei', and 'subset' ignored when 'x' is a model object.", stacklevel=2)
+    if isinstance(x, metafopy.models.binary.FixedBinaryResult):
+        # model='lm' of an rma.mh or rma.peto fit: the weighted regression of the estimates on the predictor, with no model to refit
+        view = metafopy.methods.fitview.fit_view(x)
+        yi, v, n = view.yi, view.vi, view.ni
+        if ni is not None:
+            n = metafopy.bias.inputs.as_vector(ni, 'ni', data)
+            if n is None or n.shape[0] != view.k_all:
+                size = 0 if n is None else n.shape[0]
+                raise metafopy.errors.InputError(
+                    f"Length of the variable specified via 'ni' ({size}) does not correspond to the size of the original dataset ({view.k_all})."
+                )
+            n = n[view.keep]
+        X = view.X
+        p = X.shape[1]
+        alpha = view.level if level is None else metafopy.models.rma_uni.level_to_alpha(level)
+        meth, tst, weighted, tau2_fix, tau2, control, weights = view.method, 'z', True, False, math.nan, None, None
+        coef_names: tuple[str, ...] = ('intrcpt',)
+        slab = view.slab
+    elif isinstance(x, metafopy.models.rma_uni.RMAResult):
         yi, v, n = metafopy.bias.inputs.data_of(x)
         if ni is not None:
             n_full = metafopy.bias.inputs.as_vector(ni, 'ni', data)
@@ -161,9 +181,7 @@ def regtest(
         coef_names = tuple(x.coef_names)
         slab = x.slab
     else:
-        yi, v_opt, n = metafopy.bias.inputs.vector_inputs(
-            typing.cast(numpy.typing.ArrayLike | str, x), vi, sei, ni=ni, subset=subset, data=data, what='the test', attr_ni=True
-        )
+        yi, v_opt, n = metafopy.bias.inputs.vector_inputs(x, vi, sei, ni=ni, subset=subset, data=data, what='the test', attr_ni=True)
         if v_opt is None:
             raise metafopy.errors.InputError("Must specify the 'vi' or 'sei' argument.")
         v = v_opt

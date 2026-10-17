@@ -192,6 +192,8 @@ def expand_hetvar(hetvar: numpy.typing.ArrayLike, k_new: int) -> FloatArray:
     Raises:
         metafopy.errors.InputError: the length of ``hetvar`` does not match.
     """
+    if numpy.asarray(hetvar).dtype == numpy.bool_:
+        raise metafopy.errors.InputError("Argument 'hetvar' must be a numeric vector.")
     try:
         hv = numpy.atleast_1d(numpy.asarray(hetvar, dtype=numpy.float64))
     except (TypeError, ValueError) as err:
@@ -203,7 +205,16 @@ def expand_hetvar(hetvar: numpy.typing.ArrayLike, k_new: int) -> FloatArray:
     return hv
 
 
-def check_prob_adjust(prob: str | float | None, adjust: bool) -> None:
+def check_prob_adjust(prob: str | float | None, adjust: bool, vcov: bool = False) -> None:
+    """Validate ``adjust`` and ``vcov`` (logicals) and the combination of ``adjust`` with ``prob``.
+
+    Raises:
+        metafopy.errors.InputError: ``adjust`` or ``vcov`` is not a logical, or ``prob`` is given with ``adjust=True``.
+    """
+    if not isinstance(adjust, bool | numpy.bool_):
+        raise metafopy.errors.InputError("Argument 'adjust' must be a logical.")
+    if not isinstance(vcov, bool | numpy.bool_):
+        raise metafopy.errors.InputError("Argument 'vcov' must be a logical.")
     if prob is not None and adjust:
         raise metafopy.errors.InputError("Cannot use 'prob' argument when adjust=True.")
 
@@ -772,7 +783,7 @@ def location_prediction(
     if slab is None and X_new.shape[0] == 1:
         slab = ('',)
 
-    check_prob_adjust(prob, adjust)
+    check_prob_adjust(prob, adjust, vcov)
     alpha = x.alpha if level is None else metafopy.models.rma_uni.level_to_alpha(level)
     k_new = X_new.shape[0]
     if adjust:
@@ -938,7 +949,7 @@ def predict_rma_mv(
     x = model
     metafopy.methods.common.check_na_action(na_action)
     ptype = resolve_predtype(predtype, pi_type)
-    check_prob_adjust(prob, adjust)
+    check_prob_adjust(prob, adjust, vcov)
     if hetvar is not None and (tau2_levels is not None or gamma2_levels is not None):
         tau2_levels = gamma2_levels = None
         warnings.warn("Arguments 'tau2.levels' and 'gamma2.levels' ignored when specifying the 'hetvar' argument.", stacklevel=2)

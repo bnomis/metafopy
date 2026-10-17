@@ -258,6 +258,11 @@ def vif_rma_uni(
         if n_sim <= 1:
             raise metafopy.errors.InputError("Argument 'sim' must be >= 2.")
 
+    if res.robust is not None and n_sim >= 2:
+        raise metafopy.errors.InputError("Cannot use 'sim' with models of class 'robust.rma'.")
+    if res.robust is not None and reestimate:
+        raise metafopy.errors.InputError("Cannot use 'restimate=TRUE' with models of class 'robust.rma'.")
+
     parallel = metafopy.core.parallel.resolve_parallel(parallel, ncpus, cl)
 
     int_incl = res.int_incl

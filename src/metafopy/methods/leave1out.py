@@ -204,8 +204,7 @@ def leave1out_rma_uni(
         slab = tuple(f'-{s}' for s in x.slab)
     else:
         slab = tuple(f'-{cid}' for cid in ids)
-    if na_action == 'fail' and not x.data.keep.all():
-        raise metafopy.errors.InputError('Missing values in results.')
+    # na.fail does not stop metafor here (the fit has already dropped the studies with missing values); the labels are those of 'omit'
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if miss_cluster and na_action in ('exclude', 'pass'):
         keys = ['estimate', 'se', 'stat', 'pval', 'ci_lb', 'ci_ub', 'Q', 'Qp', 'tau2', 'I2', 'H2']

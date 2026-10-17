@@ -160,6 +160,10 @@ def fsn(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
+    pools = [name for name in ('stouffer', 'fisher') if isinstance(pool, str) and len(pool) > 0 and name.startswith(pool)]
+    if len(pools) != 1:
+        raise metafopy.errors.InputError("'arg' should be one of 'stouffer', 'fisher'")
+    pool = typing.cast(typing.Literal['stouffer', 'fisher'], pools[0])
     gen = rng if rng is not None else (metafopy.core.rng.set_seed(seed) if seed is not None else metafopy.core.rng.get_rng())
     typ: str
     method_given = method
@@ -177,6 +181,8 @@ def fsn(
         typ = 'General'
         if x.weights is not None:
             raise metafopy.errors.InputError('Cannot use function on models with custom weights.')
+        if vi is not None or sei is not None or subset is not None:
+            warnings.warn("Arguments 'vi', 'sei', and 'subset' ignored when 'x' is a model object.", stacklevel=2)
         yi, v, _ = metafopy.bias.inputs.data_of(x)
     else:
         typ_in = 'Rosenthal' if type is None else type
@@ -198,7 +204,7 @@ def fsn(
             yi, v_opt, _ = metafopy.bias.inputs.vector_inputs(x, ones, None, subset=subset, data=data, what='the calculation')
         else:
             yi, v_opt, _ = metafopy.bias.inputs.vector_inputs(
-                x, v_in, sei, subset=subset, data=data, what='the calculation', vi_required=typ in ('Rosenthal', 'Rosenberg', 'General')
+                x, v_in, sei, subset=subset, data=data, what='the calculation', vi_required=typ in ('Rosenthal', 'Rosenberg', 'General'), expand_vi=True
             )
         if v_opt is None:
             if typ != 'Binomial':
