@@ -872,7 +872,7 @@ def location_prediction(
         pi_se=pi_se,
         pi_dist=pi_dist,
         pi_ddf=pi_ddf if pi_dist == 't' else None,
-        ddf=(ddf_rows if ddf_rows is not None else x.ddf),
+        ddf=(ddf_rows if ddf_rows is not None else None if x.ddf is None else numpy.full(pred.shape, float(x.ddf))),
         prob=prob_out,
         X=X_new.copy() if addx else None,
         x_names=tuple(x.coef_names) if addx and x.coef_names is not None else None,
