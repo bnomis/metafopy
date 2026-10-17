@@ -83,6 +83,8 @@ class InfluenceResult:
     p: int
     m: int
     digits: int = 4
+    ids: numpy.typing.NDArray[numpy.intp] | None = None
+    not_na: numpy.typing.NDArray[numpy.bool_] | None = None
 
     @property
     def inf(self) -> tuple[str, ...]:
@@ -252,6 +254,8 @@ def influence_fit(
         p=x.p,
         m=core.m,
         digits=metafopy.mfopt.option_digits(digits, x.digits),
+        ids=x.ids,
+        not_na=x.not_na,
     )
 
 

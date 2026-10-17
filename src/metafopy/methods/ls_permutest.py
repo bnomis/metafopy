@@ -101,6 +101,16 @@ class LSPermutestResult:
     int_incl: bool = True
     Z_int_incl: bool = True
 
+    @property
+    def dfs(self) -> int | None:
+        """R's ``dfs``: the residual degrees of freedom (``ddf``) of the location test."""
+        return self.ddf
+
+    @property
+    def permci(self) -> bool:
+        """R's ``permci``: permutation CIs are not computed for location-scale models."""
+        return False
+
     def to_frame(self) -> dict[str, pandas.DataFrame]:
         """The tables of the location (``'beta'``) and scale (``'alpha'``) coefficients with the permutation p-values (``coef.permutest.rma.uni``)."""
         t_test = self.ddf is not None

@@ -90,6 +90,16 @@ class PermutestResult:
         cols.update({'pval': self.pval, 'ci.lb': self.ci_lb, 'ci.ub': self.ci_ub})
         return pandas.DataFrame(cols, index=list(self.coef_names))
 
+    @property
+    def dfs(self) -> int | None:
+        """R's ``dfs``: the residual degrees of freedom (``ddf``) of the test."""
+        return self.ddf
+
+    @property
+    def skip_beta(self) -> bool:
+        """R's ``skip.beta``: the plain model never skips the coefficients."""
+        return False
+
     def coef(self) -> pandas.Series:
         """The estimated coefficients, indexed by name (``coef.permutest.rma.uni``)."""
         return pandas.Series(self.beta, index=list(self.coef_names), name='estimate')

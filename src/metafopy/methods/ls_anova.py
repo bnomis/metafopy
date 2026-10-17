@@ -54,6 +54,35 @@ class LSWaldResult:
     pval: FloatArray | None = None
     ddf: FloatArray | None = None
     digits: int = 4
+    k: int | None = None
+    p: int | None = None
+    q: int | None = None
+
+    @property
+    def type(self) -> str:
+        """The kind of test: ``'Wald.btt'`` or ``'Wald.Xb'`` (location part), ``'Wald.att'`` or ``'Wald.Za'`` (scale part), metafor's ``type``."""
+        suffix = ('btt' if self.part == 'location' else 'att') if self.idx is not None else ('Xb' if self.part == 'location' else 'Za')
+        return f'Wald.{suffix}'
+
+    @property
+    def QMdf(self) -> tuple[int, float | None]:
+        """The degrees of freedom of the test of the location coefficients, metafor's ``QMdf``."""
+        return self.df
+
+    @property
+    def QSdf(self) -> tuple[int, float | None]:
+        """The degrees of freedom of the test of the scale coefficients, metafor's ``QSdf``."""
+        return self.df
+
+    @property
+    def btt(self) -> tuple[int, ...] | None:
+        """The location coefficients tested (0-based), metafor's ``btt``."""
+        return self.idx if self.part == 'location' else None
+
+    @property
+    def att(self) -> tuple[int, ...] | None:
+        """The scale coefficients tested (0-based), metafor's ``att``."""
+        return self.idx if self.part == 'scale' else None
 
     @property
     def QM(self) -> float:
@@ -293,6 +322,7 @@ def adjust_individual(res: LSWaldResult, method: str | None, digits: int) -> LSW
 
 
 @metafopy.methods.anova.anova.register
+@metafopy.methods.anova.with_model_info
 def anova_rma_ls(
     model: metafopy.models.rma_ls_result.RMALSResult,
     model2: metafopy.models.rma_ls_result.RMALSResult | None = None,

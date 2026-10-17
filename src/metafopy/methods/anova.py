@@ -61,6 +61,19 @@ class WaldResult:
     ddf: FloatArray | None = None
     hyp: tuple[str, ...] | None = None
     digits: int = 4
+    k: int | None = None
+    p: int | None = None
+    test: str | None = None
+
+    @property
+    def m(self) -> int:
+        """The number of coefficients or linear combinations tested, metafor's ``m``."""
+        return self.QMdf[0]
+
+    @property
+    def type(self) -> str:
+        """The kind of test, ``'Wald.btt'`` (coefficients) or ``'Wald.Xb'`` (linear combinations), metafor's ``type``."""
+        return 'Wald.btt' if self.Xb is None else 'Wald.Xb'
 
     def to_frame(self) -> pandas.DataFrame:
         """The test as a data frame (metafor's ``as.data.frame.anova.rma``).
@@ -190,6 +203,52 @@ class LRTResult:
     tau2_reduced: float
     R2: float
     digits: int = 4
+    method: str | None = None
+
+    @property
+    def type(self) -> str:
+        """The kind of test, ``'LRT'`` (metafor's ``type``)."""
+        return 'LRT'
+
+    @property
+    def fit_stats_f(self) -> tuple[float, float, float, float, float]:
+        """The fit statistics of the full model, metafor's ``fit.stats.f``."""
+        return self.fit_stats_full
+
+    @property
+    def fit_stats_r(self) -> tuple[float, float, float, float, float]:
+        """The fit statistics of the reduced model, metafor's ``fit.stats.r``."""
+        return self.fit_stats_reduced
+
+    @property
+    def parms_f(self) -> int:
+        """The number of parameters of the full model, metafor's ``parms.f``."""
+        return self.df_full
+
+    @property
+    def parms_r(self) -> int:
+        """The number of parameters of the reduced model, metafor's ``parms.r``."""
+        return self.df_reduced
+
+    @property
+    def QE_f(self) -> float:
+        """The test statistic for residual heterogeneity of the full model, metafor's ``QE.f``."""
+        return self.QE_full
+
+    @property
+    def QE_r(self) -> float:
+        """The test statistic for residual heterogeneity of the reduced model, metafor's ``QE.r``."""
+        return self.QE_reduced
+
+    @property
+    def tau2_f(self) -> float:
+        """The amount of heterogeneity of the full model, metafor's ``tau2.f``."""
+        return self.tau2_full
+
+    @property
+    def tau2_r(self) -> float:
+        """The amount of heterogeneity of the reduced model, metafor's ``tau2.r``."""
+        return self.tau2_reduced
 
     def to_frame(self) -> pandas.DataFrame:
         cols = ['df', 'AIC', 'BIC', 'AICc', 'logLik', 'LRT', 'pval', 'QE', 'tau^2', 'R^2']
@@ -246,7 +305,34 @@ def anova(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> typing.
     raise metafopy.errors.ArgumentError(f'anova() not implemented for {type(model).__name__}')
 
 
+def with_model_info[F: collections.abc.Callable[..., typing.Any]](function: F) -> F:
+    """Record ``k``, ``p`` and ``test`` of the model in the Wald tests ``function`` returns (the fields metafor's ``anova.rma`` object has)."""
+
+    @functools.wraps(function)
+    def wrapper(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> typing.Any:
+        result = function(model, *args, **kwargs)
+        return add_model_info(result, model)
+
+    return typing.cast(F, wrapper)
+
+
+def add_model_info(result: typing.Any, model: typing.Any) -> typing.Any:
+    """``result`` with the ``k``, ``p``, ``q`` and ``test`` of ``model`` filled in where it has such fields (lists of tests element by element)."""
+    if isinstance(result, ListAnovaResult):
+        return ListAnovaResult([add_model_info(item, model) for item in result], result.names)
+    if isinstance(result, list):
+        return [add_model_info(item, model) for item in result]
+    if not dataclasses.is_dataclass(result) or isinstance(result, type):
+        return result
+    names = {f.name for f in dataclasses.fields(result)}
+    changes: dict[str, typing.Any] = {name: int(getattr(model, name)) for name in ('k', 'p', 'q') if name in names and hasattr(model, name)}
+    if 'test' in names and typing.cast(typing.Any, result).test is None:
+        changes['test'] = str(model.test)
+    return dataclasses.replace(result, **changes) if changes else result
+
+
 @anova.register
+@with_model_info
 def anova_rma_uni(
     model: metafopy.models.rma_uni.RMAResult,
     model2: metafopy.models.rma_uni.RMAResult | None = None,
@@ -706,6 +792,7 @@ def lrt(a: metafopy.models.rma_uni.RMAResult, b: metafopy.models.rma_uni.RMAResu
         tau2_full=full.tau2,
         tau2_reduced=red.tau2,
         R2=R2,
+        method=full.method,
     )
 
 
@@ -778,6 +865,7 @@ def mv_wald(x: metafopy.models.mv_result.RMAMVResult, idx: tuple[int, ...], rhs:
 
 
 @anova.register
+@with_model_info
 def anova_rma_mv(
     model: metafopy.models.mv_result.RMAMVResult,
     model2: metafopy.models.mv_result.RMAMVResult | None = None,

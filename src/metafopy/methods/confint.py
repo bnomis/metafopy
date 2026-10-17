@@ -52,6 +52,13 @@ class ConfintResult:
     ub_sign: str = ''
     digits: int | None = None
 
+    @property
+    def ci_null(self) -> bool:
+        """metafor's ``ci.null``: the whole interval of the variance component lies at or below the lower limit of the search (that limit is zero or less)."""
+        if self.random is None or self.lb_sign != '<' or self.ub_sign != '<':
+            return False
+        return bool((self.random['ci.ub'].to_numpy(dtype=float) <= 0).all())
+
     def to_frame(self) -> pandas.DataFrame:
         """The ``fixed`` and ``random`` tables stacked into one data frame (the columns are ``estimate``, ``ci.lb`` and ``ci.ub``)."""
         tables = [t for t in (self.fixed, self.random) if t is not None]
