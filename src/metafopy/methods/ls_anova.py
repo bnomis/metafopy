@@ -19,6 +19,7 @@ import metafopy.errors
 import metafopy.methods.anova
 import metafopy.methods.common
 import metafopy.methods.ls_common
+import metafopy.methods.pairmat
 import metafopy.mfopt
 import metafopy.models.rma_ls_result
 import metafopy.models.rma_uni
@@ -299,7 +300,7 @@ def anova_rma_ls(
     *,
     object2: metafopy.models.rma_ls_result.RMALSResult | None = None,
     btt: metafopy.models.rma_uni.Btt = None,
-    X: numpy.typing.ArrayLike | None = None,
+    X: numpy.typing.ArrayLike | metafopy.methods.pairmat.PairmatSpec | None = None,
     att: metafopy.models.rma_uni.Btt | Sequences = None,
     Z: numpy.typing.ArrayLike | None = None,
     rhs: numpy.typing.ArrayLike | float | None = None,
@@ -321,6 +322,7 @@ def anova_rma_ls(
     Raises:
         metafopy.errors.InputError: an argument is invalid.
     """
+    X = metafopy.methods.pairmat.resolve(X, model)
     if abbrev:
         return metafopy.methods.anova.abbreviate_hyp(anova_rma_ls(**{**locals(), 'abbrev': False}), True)
     x = model

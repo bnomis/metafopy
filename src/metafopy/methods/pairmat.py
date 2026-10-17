@@ -1,21 +1,65 @@
 """Contrast matrices for all pairwise differences between coefficients (metafor's ``pairmat``)."""
 
+import dataclasses
+import typing
+
 import numpy
 import pandas
 
 import metafopy.errors
 import metafopy.models.rma_uni
 
-__all__ = ['pairmat']
+__all__ = ['PairmatSpec', 'pairmat', 'resolve']
 
 
-def pairmat(x: metafopy.models.rma_uni.RMAResult, btt: metafopy.models.rma_uni.Btt, btt2: metafopy.models.rma_uni.Btt = None) -> pandas.DataFrame:
+@dataclasses.dataclass(frozen=True, slots=True)
+class PairmatSpec:
+    """``pairmat(btt=...)`` without the model, which :func:`metafopy.anova` and :func:`metafopy.predict` complete with the model they are called on.
+
+    metafor's ``pairmat()`` finds the model in the call of ``anova()`` or ``predict()`` it is an argument of; the arguments are evaluated before the call
+    here, so the call is kept until the model is known.
+    """
+
+    btt: metafopy.models.rma_uni.Btt
+    btt2: metafopy.models.rma_uni.Btt = None
+
+
+@typing.overload
+def pairmat(x: metafopy.models.rma_uni.RMAResult, btt: metafopy.models.rma_uni.Btt, btt2: metafopy.models.rma_uni.Btt = None) -> pandas.DataFrame: ...
+
+
+@typing.overload
+def pairmat(x: metafopy.models.rma_uni.Btt = None, btt: metafopy.models.rma_uni.Btt = None, btt2: metafopy.models.rma_uni.Btt = None) -> PairmatSpec: ...
+
+
+def pairmat(x: typing.Any = None, btt: metafopy.models.rma_uni.Btt = None, btt2: metafopy.models.rma_uni.Btt = None) -> pandas.DataFrame | PairmatSpec:
     """Rows contrast each pair of the coefficients picked by ``btt`` (0-based, or a regex).
 
-    For use as ``anova(res, X=pairmat(res, btt='alloc'))``. Rows for the
-    coefficients picked by ``btt2`` themselves are placed first. metafor's
-    ``pairmat()`` can omit ``x`` inside ``anova()``; here the model is always
-    passed explicitly. See https://wviechtb.github.io/metafor/reference/pairmat.html.
+    For use as ``anova(res, X=pairmat(res, btt='alloc'))``, or without the model, ``anova(res, X=pairmat(btt='alloc'))``, as in metafor, where the
+    model is that of the ``anova()`` or ``predict()`` call. Rows for the coefficients picked by ``btt2`` themselves are placed first.
+    See https://wviechtb.github.io/metafor/reference/pairmat.html.
+
+    Raises:
+        metafopy.errors.InputError: an argument or the data is invalid.
+    """
+    if not hasattr(x, 'coef_names'):  # metafor: an atomic first argument is btt and the model comes from the call this is an argument of
+        if x is not None:
+            btt = x
+        if btt is None:
+            raise metafopy.errors.InputError("Need to specify the 'btt' argument.")
+        return PairmatSpec(btt, btt2)
+    return contrasts(x, btt, btt2)
+
+
+def resolve[T](value: T | PairmatSpec, model: typing.Any) -> T | pandas.DataFrame:
+    """``value`` with a :class:`PairmatSpec` completed with ``model``."""
+    if isinstance(value, PairmatSpec):
+        return contrasts(model, value.btt, value.btt2)
+    return value
+
+
+def contrasts(x: metafopy.models.rma_uni.RMAResult, btt: metafopy.models.rma_uni.Btt, btt2: metafopy.models.rma_uni.Btt) -> pandas.DataFrame:
+    """The pairwise contrasts of the coefficients ``btt`` of the fit ``x``.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.

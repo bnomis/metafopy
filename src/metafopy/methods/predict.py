@@ -18,6 +18,7 @@ import metafopy.core.clubsandwich
 import metafopy.errors
 import metafopy.methods.common
 import metafopy.methods.fitted
+import metafopy.methods.pairmat
 import metafopy.mfopt
 import metafopy.models.binary
 import metafopy.models.glmm_result
@@ -367,7 +368,7 @@ def uni_location_model(x: metafopy.models.rma_uni.RMAResult, rows: metafopy.meth
 @predict.register
 def predict_rma_uni(
     model: metafopy.models.rma_uni.RMAResult,
-    newmods: NewMods | None = None,
+    newmods: NewMods | metafopy.methods.pairmat.PairmatSpec | None = None,
     *,
     intercept: bool | None = None,
     tau2_levels: collections.abc.Sequence[str | int] | str | int | None = None,
@@ -413,6 +414,7 @@ def predict_rma_uni(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
+    newmods = metafopy.methods.pairmat.resolve(newmods, model)
     return with_digits(
         location_prediction(
             uni_location_model(model, metafopy.methods.fitted.rows_of(model)),
@@ -461,7 +463,7 @@ def contrast_ddf(sandwich: metafopy.core.clubsandwich.Sandwich, X_new: FloatArra
 @predict.register
 def predict_rma_glmm(
     model: metafopy.models.glmm_result.GLMMResult,
-    newmods: NewMods | None = None,
+    newmods: NewMods | metafopy.methods.pairmat.PairmatSpec | None = None,
     *,
     intercept: bool | None = None,
     tau2_levels: collections.abc.Sequence[str | int] | str | int | None = None,
@@ -490,6 +492,7 @@ def predict_rma_glmm(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
+    newmods = metafopy.methods.pairmat.resolve(newmods, model)
     x = model
     rows = metafopy.methods.fitted.rows_of(x)
     return with_digits(
@@ -536,7 +539,7 @@ def predict_rma_glmm(
 @predict.register
 def predict_fixed_binary(
     model: metafopy.models.binary.FixedBinaryResult,
-    newmods: NewMods | None = None,
+    newmods: NewMods | metafopy.methods.pairmat.PairmatSpec | None = None,
     *,
     intercept: bool | None = None,
     tau2_levels: collections.abc.Sequence[str | int] | str | int | None = None,
@@ -565,6 +568,7 @@ def predict_fixed_binary(
     Raises:
         metafopy.errors.InputError: ``newmods`` was given (the models have no moderators).
     """
+    newmods = metafopy.methods.pairmat.resolve(newmods, model)
     x = model
     return with_digits(
         location_prediction(
@@ -900,7 +904,7 @@ def fitted_levels(group: metafopy.models.mv_structs.Group | None, n_comp: int, n
 @predict.register
 def predict_rma_mv(
     model: metafopy.models.mv_result.RMAMVResult,
-    newmods: NewMods | None = None,
+    newmods: NewMods | metafopy.methods.pairmat.PairmatSpec | None = None,
     *,
     intercept: bool | None = None,
     tau2_levels: collections.abc.Sequence[str | int] | str | int | None = None,
@@ -935,6 +939,7 @@ def predict_rma_mv(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
+    newmods = metafopy.methods.pairmat.resolve(newmods, model)
     x = model
     metafopy.methods.common.check_na_action(na_action)
     ptype = resolve_predtype(predtype, pi_type)

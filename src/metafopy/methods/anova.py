@@ -18,6 +18,7 @@ import metafopy.core.padjust
 import metafopy.errors
 import metafopy.formatters
 import metafopy.methods.common
+import metafopy.methods.pairmat
 import metafopy.methods.vif
 import metafopy.mfopt
 import metafopy.models.mv_result
@@ -253,7 +254,7 @@ def anova_rma_uni(
     *,
     object2: metafopy.models.rma_uni.RMAResult | None = None,
     btt: metafopy.models.rma_uni.Btt = None,
-    X: numpy.typing.ArrayLike | None = None,
+    X: numpy.typing.ArrayLike | metafopy.methods.pairmat.PairmatSpec | None = None,
     rhs: numpy.typing.ArrayLike | float | None = None,
     adjust: bool | str | None = None,
     refit: bool = False,
@@ -294,6 +295,7 @@ def anova_rma_uni(
         metafopy.errors.InputError: an argument or the data is invalid.
         metafopy.errors.InternalError: an internal invariant does not hold.
     """
+    X = metafopy.methods.pairmat.resolve(X, model)
     if abbrev:
         return abbreviate_hyp(anova_rma_uni(**{**locals(), 'abbrev': False}), True)
     x = model
@@ -784,7 +786,7 @@ def anova_rma_mv(
     *,
     object2: metafopy.models.mv_result.RMAMVResult | None = None,
     btt: metafopy.models.rma_uni.Btt = None,
-    X: numpy.typing.ArrayLike | None = None,
+    X: numpy.typing.ArrayLike | metafopy.methods.pairmat.PairmatSpec | None = None,
     rhs: numpy.typing.ArrayLike | float | None = None,
     adjust: bool | str | None = None,
     refit: bool = False,
@@ -804,6 +806,7 @@ def anova_rma_mv(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
+    X = metafopy.methods.pairmat.resolve(X, model)
     if abbrev:
         return abbreviate_hyp(anova_rma_mv(**{**locals(), 'abbrev': False}), True)
     x = model
