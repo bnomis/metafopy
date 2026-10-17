@@ -694,3 +694,19 @@ ref = "docs/differences.md"
 match = "options/gosh/trimfill_bcg/*"
 reason = "gosh(seed=) is bit-exact with R only where dbinom ties break the same way (R 4.5.1 on Linux); this oracle is R 4.3.3."
 ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/trimfill/*"
+kind = "value-diff"
+path = ["$measure", "$ni", "$ni.f", "$slab.null"]
+detail = "*[rma(yi, vi, data = filled)]*"
+reason = "rma(yi, vi, data = filled) where filled comes from data.frame(yi = taf$yi, ...): R drops the measure and ni attributes of yi when it builds the data frame (measure GEN, no ni); metafopy keeps them in the vector. Estimates agree."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/regtest/*"
+kind = "value-diff"
+path = "$measure"
+detail = "*[res <- rma(yi, vi*data = dat)]*"
+reason = "dat$yi <- c(dat$yi) in the script: c() drops the measure attribute in R (measure GEN); metafopy keeps it in the vector. Estimates agree."
+ref = "docs/differences.md"
