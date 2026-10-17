@@ -67,3 +67,14 @@ def test_dataset_strings_that_look_missing(name: str, column: str, missing: int,
     assert int((col == '').sum()) == empty
     assert int((col == 'NA').sum()) == na
     assert int((col == 'None').sum()) == none
+
+
+def test_ls_z_f_drops_redundant_scale_predictors() -> None:
+    """Z.f has the columns of Z: R drops 'allocsystematic' (all 0 in the first 8 studies) from both."""
+    dat = metafopy.escalc(measure='RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=metafopy.datasets.load('bcg'))
+    with pytest.warns(UserWarning, match='Redundant predictors dropped from the scale model'):
+        res = metafopy.rma_uni('yi', 'vi', mods='~ ablat', scale='~ alloc', data=dat, subset=list(range(8)))
+    assert res.Z.shape == (8, 2)
+    assert res.Z_f is not None
+    assert res.alpha_names == ('intrcpt', 'allocrandom')
+    numpy.testing.assert_array_equal(res.Z_f, [[1, 1], [1, 1], [1, 1], [1, 1], [1, 0], [1, 0], [1, 1], [1, 1]])

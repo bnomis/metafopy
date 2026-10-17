@@ -17,6 +17,7 @@ import numpy
 import numpy.typing
 import pandas
 
+import metafopy.core.linalg
 import metafopy.errors
 import metafopy.formula
 import metafopy.metadata
@@ -65,6 +66,17 @@ def scale_matrix(scale: ScaleSpec, md: metafopy.metadata.MetaData) -> tuple[Floa
             f"Number of rows in the model matrix specified via the 'scale' argument ({Z.shape[0]}) does not match the length of the outcome vector ({k_all})."
         )
     return Z.astype(numpy.float64), metafopy.metadata.make_unique(names)
+
+
+def align_z_f(Z_f: FloatArray, Z: FloatArray) -> FloatArray:
+    """``Z.f`` with the columns of the scale model matrix the fit uses: redundant predictors dropped and an intercept put first, as ``fit_rma_ls`` does."""
+    drop = metafopy.core.linalg.drop_redundant(Z)
+    kept = Z[:, ~drop]
+    out = Z_f[:, ~drop]
+    is_int = numpy.array([metafopy.core.linalg.is_intercept(kept[:, j]) for j in range(kept.shape[1])], dtype=numpy.bool_)
+    if is_int.any():
+        out = numpy.column_stack([numpy.ones(out.shape[0]), out[:, ~is_int]])
+    return out
 
 
 def fit_scale(
@@ -126,6 +138,7 @@ def fit_scale(
         Z = Z[sel]
     if md.na_rows is not None and md.na_rows.any():
         metafopy.models.rma_uni.warn_na_omitted(int(md.na_rows.sum()))
+    Z_fit = Z
     res = metafopy.models.rma_ls_fit.fit_rma_ls(
         md,
         Z,
@@ -143,4 +156,4 @@ def fit_scale(
         control=metafopy.models.rma_ls_fit.make_ls_control(control),  # type: ignore[arg-type]
         formula_scale=scale if isinstance(scale, str) else None,
     )
-    return dataclasses.replace(res, measure=measure, Z_f=Z_f)
+    return dataclasses.replace(res, measure=measure, Z_f=align_z_f(Z_f, Z_fit))
