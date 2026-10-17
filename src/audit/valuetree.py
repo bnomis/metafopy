@@ -12,6 +12,9 @@ import numpy
 import pandas
 
 import audit.config
+import metafopy.effects.reshape
+import metafopy.metadata
+import metafopy.methods.accessors
 
 Node = dict[str, typing.Any]
 
@@ -59,7 +62,7 @@ def vector_node(values: typing.Any, guide: Node, labels: list[str] | None = None
     dims = guide.get('d')
     if arr.ndim == 0:
         arr = arr.reshape(1)
-    if dims and len(dims) == 2 and arr.ndim == 2:
+    if dims and len(dims) >= 2 and arr.ndim == len(dims):
         flat = arr.ravel(order='F')
         shape = list(arr.shape)
     else:
@@ -96,6 +99,14 @@ def lookup(value: typing.Any, name: str) -> tuple[bool, typing.Any]:
             return True, attrs[name[1:]]
         return False, None
     spellings = [name, py_name(name)]
+    inputs = getattr(value, 'data', None)
+    if isinstance(inputs, metafopy.metadata.MetaData) and name in ('data', 'slab'):
+        # R's `data` is the data frame the model was given and its `slab` has one label for every row of it; in metafopy `data` holds the model
+        # inputs of the studies used (`MetaData`) and `slab` the labels of those, so the frame and all labels are looked up in the inputs
+        if name == 'data':
+            return True, inputs.data
+        if inputs.labels_all is not None:
+            return True, list(inputs.labels_all)
     if isinstance(value, pandas.DataFrame):
         for spelling in spellings:
             if spelling in value.columns:
@@ -116,6 +127,25 @@ def lookup(value: typing.Any, name: str) -> tuple[bool, typing.Any]:
     return False, None
 
 
+def named_vector(value: typing.Any, guide: Node, path: str) -> typing.Any:
+    """A mapping stands for the named vector with its entries (names R's vector lacks are NA); a number for the ``digits`` of a model.
+
+    R keeps ``digits`` as a named vector of nine numbers (``est``, ``se``, ``test``, ...) and returns summaries such as ``precis`` as named
+    vectors; metafopy keeps one number for ``digits``, which stands for the vector in which every element is that number, and mappings.
+    """
+    if isinstance(value, bool) or value is None:
+        return value
+    if path.endswith('$digits') and isinstance(value, (int, float)):
+        return [value] * len(guide['v'])
+    if isinstance(value, metafopy.methods.accessors.NobsAll):
+        return list(dataclasses.asdict(value).values())
+    if isinstance(value, metafopy.effects.reshape.TableArray):
+        return value.values
+    if isinstance(value, dict) and guide.get('n') and set(value) <= set(guide['n']):
+        return [value.get(name) for name in guide['n']]
+    return value
+
+
 def to_node(value: typing.Any, guide: Node, path: str, missing: list[str], depth: int = 0, labels: list[str] | None = None) -> Node:
     """The tree of ``value`` in the shape of the R tree ``guide``; fields R has and ``value`` lacks are appended to ``missing``."""
     kind = guide['k']
@@ -126,6 +156,7 @@ def to_node(value: typing.Any, guide: Node, path: str, missing: list[str], depth
     if kind in ('num', 'str', 'lgl'):
         if value is None:
             return {'k': kind, 'v': [None] * len(guide['v']), 'd': None}
+        value = named_vector(value, guide, path)
         if isinstance(value, dict):
             return {'k': 'type', 'got': type(value).__name__}
         if isinstance(value, pandas.Series):
