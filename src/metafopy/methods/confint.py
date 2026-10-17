@@ -18,12 +18,14 @@ import pandas
 import scipy.stats
 
 import metafopy.core.linalg
+import metafopy.core.timing
 import metafopy.core.verbose
 import metafopy.core.zeroin
 import metafopy.errors
 import metafopy.formatters
 import metafopy.metadata
 import metafopy.mfopt
+import metafopy.models.control_names
 import metafopy.models.mv_result
 import metafopy.models.mv_structs
 import metafopy.models.rma_mv
@@ -51,6 +53,14 @@ class ConfintResult:
     lb_sign: str = ''
     ub_sign: str = ''
     digits: int | None = None
+    tau2_min: float | None = None
+
+    @property
+    def ci_null(self) -> bool:
+        """metafor's ``ci.null``: the whole interval of the variance component lies at or below the lower limit of the search (that limit is zero or less)."""
+        if self.random is None or self.lb_sign != '<' or self.ub_sign != '<':
+            return False
+        return bool((self.random['ci.ub'].to_numpy(dtype=float) <= 0).all())
 
     def to_frame(self) -> pandas.DataFrame:
         """The ``fixed`` and ``random`` tables stacked into one data frame (the columns are ``estimate``, ``ci.lb`` and ``ci.ub``)."""
@@ -121,6 +131,7 @@ def qe(tau2: float, y: FloatArray, vi: FloatArray, X: FloatArray) -> float:
 
 
 @confint.register
+@metafopy.core.timing.timed
 def confint_rma_uni(
     model: metafopy.models.rma_uni.RMAResult,
     *,
@@ -138,6 +149,8 @@ def confint_rma_uni(
     digits: int | None = None,
     control: collections.abc.Mapping[str, typing.Any] | None = None,
     xlim: float | collections.abc.Sequence[float] | None = None,
+    extint: bool = False,
+    parm: typing.Any = None,
 ) -> ConfintResult:
     """CIs for an ``rma.uni`` fit (metafor's ``confint.rma.uni``).
 
@@ -150,11 +163,13 @@ def confint_rma_uni(
     (on stdout, as metafor's ``cat()``), with ``digits`` decimals. ``control`` is metafor's list of root finding settings
     (``tau2_min``, ``tau2_max``, ``tol`` and ``maxiter``, written with ``.`` or ``_``); its entries replace the keyword arguments of the same name.
     ``xlim`` (metafor's ``...`` argument) is the interval ``(tau2_min, tau2_max)`` searched for the bounds (a single value is the upper
-    limit and the lower one is 0) and wins over ``control``.
+    limit and the lower one is 0) and wins over ``control``. ``extint=True`` lets the search for a profile-likelihood bound widen the interval
+    (R's ``extendInt``; metafor's ``...`` argument). ``parm`` is ignored with a warning, as in metafor.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
+    warn_parm(parm)
     x = model
     vlevel = int(verbose)
     ndig = metafopy.mfopt.option_digits(digits, x.digits)
@@ -175,6 +190,8 @@ def confint_rma_uni(
         # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
         if type not in ('qp', 'genq', 'pl', 'ht', 'wald', 'wald.log', 'wald.sqrt'):
             raise metafopy.errors.InputError(f'unknown CI type {type!r}')
+    if not isinstance(fixed, bool | numpy.bool_) or not isinstance(random, bool | numpy.bool_):
+        raise metafopy.errors.InputError("Arguments 'fixed' and 'random' must be logicals.")
     if not fixed and not random:
         raise metafopy.errors.InputError("at least one of 'fixed' and 'random' must be True")
     alpha = x.level if level is None else metafopy.models.rma_uni.level_to_alpha(level)
@@ -206,7 +223,11 @@ def confint_rma_uni(
             crit_u = float(scipy.stats.chi2.isf(alpha / 2, k - p))
             crit_l = float(scipy.stats.chi2.ppf(alpha / 2, k - p))
             qe_max = qe(hi, y, vi, X)
-            qe_min = qe(lo, y, vi, X)
+            # as metafor: try(.QE.func(tau2.min)); a try-error compares as false with a number, so the roots are searched (and fail)
+            try:
+                qe_min = qe(lo, y, vi, X)
+            except metafopy.errors.InputError:
+                qe_min = math.nan
 
             if qe_min < crit_l:
                 tau2_lb = tau2_ub = lo
@@ -299,15 +320,15 @@ def confint_rma_uni(
                     if lo > 0:
                         lb_sign = '<'
                 else:
-                    tau2_lb, lb_conv = find_root(prof, lo, x.tau2, tol, maxiter, check_conv=True)
+                    tau2_lb, lb_conv = find_root(prof, lo, x.tau2, tol, maxiter, check_conv=True, extend_int='downX' if extint else 'no')
             val = try_profile(prof, hi)
             if not math.isnan(val):
-                if val < 0:
+                if not extint and val < 0:
                     tau2_ub = hi
                     ub_conv = True
                     ub_sign = '>'
                 else:
-                    tau2_ub, ub_conv = find_root(prof, x.tau2, hi, tol, maxiter, check_conv=True)
+                    tau2_ub, ub_conv = find_root(prof, x.tau2, hi, tol, maxiter, check_conv=True, extend_int='upX' if extint else 'no')
         elif type == 'ht':
             if not x.int_only:
                 raise metafopy.errors.InputError('method only applicable to models without moderators')
@@ -377,7 +398,20 @@ def confint_rma_uni(
         lb, ub = numpy.minimum(lb, ub), numpy.maximum(lb, ub)
         res_fixed = pandas.DataFrame({'estimate': est, 'ci.lb': lb, 'ci.ub': ub}, index=list(x.coef_names))
 
-    return ConfintResult(fixed=res_fixed, random=res_random, lb_sign=lb_sign, ub_sign=ub_sign, digits=ndig)
+    return ConfintResult(
+        fixed=res_fixed,
+        random=res_random,
+        lb_sign=lb_sign,
+        ub_sign=ub_sign,
+        digits=ndig,
+        tau2_min=None if not random else (min(0.0, x.tau2) if tau2_min is None else float(tau2_min)),
+    )
+
+
+def warn_parm(parm: typing.Any) -> None:
+    """metafor's ``confint()`` methods ignore ``parm`` with a warning."""
+    if parm is not None:
+        warnings.warn("Argument 'parm' (currently) ignored.", stacklevel=3)
 
 
 def control_values(control: collections.abc.Mapping[str, typing.Any] | None, current: dict[str, typing.Any]) -> dict[str, typing.Any]:
@@ -390,15 +424,26 @@ def control_values(control: collections.abc.Mapping[str, typing.Any] | None, cur
     for key, value in (control or {}).items():
         name = key.replace('.', '_')
         if name not in out:
+            if metafopy.models.control_names.read_elsewhere(key):
+                continue
             raise metafopy.errors.InputError(f'unknown control parameter {key!r}; the settings are {", ".join(out)}')
         out[name] = value
     return out
 
 
-def find_root(f: collections.abc.Callable[[float], float], lo: float, hi: float, tol: float, maxiter: int, *, check_conv: bool = False) -> tuple[float, bool]:
+def find_root(
+    f: collections.abc.Callable[[float], float],
+    lo: float,
+    hi: float,
+    tol: float,
+    maxiter: int,
+    *,
+    check_conv: bool = False,
+    extend_int: typing.Literal['no', 'downX', 'upX'] = 'no',
+) -> tuple[float, bool]:
     """``try(uniroot(...)$root)``: ``(root, converged)``, or ``(nan, False)`` on error."""
     try:
-        res = metafopy.core.zeroin.uniroot(f, lo, hi, tol=tol, maxiter=maxiter)
+        res = metafopy.core.zeroin.uniroot(f, lo, hi, tol=tol, maxiter=maxiter, extend_int=extend_int)
     except ValueError, ArithmeticError, numpy.linalg.LinAlgError, metafopy.errors.EstimationError:
         return math.nan, False
     if check_conv and not res.converged:
@@ -499,6 +544,7 @@ def mv_refit_fixed(x: metafopy.models.mv_result.RMAMVResult, comp: str, pos: int
 
 
 @confint.register
+@metafopy.core.timing.timed
 def confint_rma_mv(
     model: metafopy.models.mv_result.RMAMVResult,
     *,
@@ -520,6 +566,8 @@ def confint_rma_mv(
     digits: int | None = None,
     control: collections.abc.Mapping[str, typing.Any] | None = None,
     xlim: collections.abc.Sequence[float] | None = None,
+    extint: bool = False,
+    parm: typing.Any = None,
 ) -> ConfintResult | ConfintList:
     """CIs for an ``rma.mv`` fit (metafor's ``confint.rma.mv``).
 
@@ -534,6 +582,7 @@ def confint_rma_mv(
     Raises:
         metafopy.errors.InputError: an argument is invalid or the model has no such component.
     """
+    warn_parm(parm)
     x = model
     vlevel = int(verbose)
     ndig = metafopy.mfopt.option_digits(digits, x.digits)
@@ -543,7 +592,7 @@ def confint_rma_mv(
         if len(xlim) != 2:
             raise metafopy.errors.InputError("Argument 'xlim' should be a vector of length 2.")
         vc_min, vc_max = float(xlim[0]), float(xlim[1])
-    alpha = metafopy.models.rma_uni.level_to_alpha(x.level if level is None else level)
+    alpha = x.level if level is None else metafopy.models.rma_uni.level_to_alpha(level)
     chosen = {name: v for name, v in zip(metafopy.models.mv_structs.VC_NAMES, (sigma2, tau2, rho, gamma2, phi), strict=True) if v is not None}
     if len(chosen) > 1:
         raise metafopy.errors.InputError("Must specify only one of the arguments 'sigma2', 'tau2', 'rho', 'gamma2', or 'phi'.")
@@ -623,13 +672,13 @@ def confint_rma_mv(
         for _ in range(eptries):
             res = try_profile(diff, lo)
             if not math.isnan(res):
-                if res < 0:
+                if not extint and res < 0:
                     vc_lb, lb_conv = lo, True
                     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
                     if (comp in ('sigma2', 'tau2', 'gamma2') and lo > 0) or (comp in ('rho', 'phi') and lo > -1) or (spatial and lo > 0):
                         lb_sign = '<'
                 else:
-                    root, ok = find_root(diff, lo, vc, tol, maxiter, check_conv=True)
+                    root, ok = find_root(diff, lo, vc, tol, maxiter, check_conv=True, extend_int='downX' if extint else 'no')
                     if ok:
                         vc_lb, lb_conv = root, True
                 break
@@ -642,13 +691,13 @@ def confint_rma_mv(
         for _ in range(eptries):
             res = try_profile(diff, hi)
             if not math.isnan(res):
-                if res < 0:
+                if not extint and res < 0:
                     vc_ub, ub_conv = hi, True
                     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
                     if comp in ('sigma2', 'tau2', 'gamma2') or (comp in ('rho', 'phi') and hi < 1) or spatial:
                         ub_sign = '>'
                 else:
-                    root, ok = find_root(diff, vc, hi, tol, maxiter, check_conv=True)
+                    root, ok = find_root(diff, vc, hi, tol, maxiter, check_conv=True, extend_int='upX' if extint else 'no')
                     if ok:
                         vc_ub, ub_conv = root, True
                 break

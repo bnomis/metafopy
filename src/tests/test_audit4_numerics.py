@@ -4,6 +4,7 @@
 scale standard errors of an identity-link location-scale fit at two Richardson depths.
 """
 
+import sys
 import typing
 import warnings
 
@@ -36,7 +37,7 @@ def test_gen_converges_to_the_end_of_the_ridge() -> None:
     """R's default run stops at logLik -31.47369 on the ridge; the fit here reaches its end, where R started there stays (-30.98466)."""
     ref = REF['gen']
     res = gen_fit(mods='~ year')
-    ll = res.fit_stats(True).as_tuple()[0]
+    ll = res.fit_stats_for(True).as_tuple()[0]
     assert ll >= ref['default_ll']
     refutil.close([ll], [ref['hot_ll']], 'GEN logLik', rtol=1e-7)
     refutil.close(res.tau2, ref['hot_tau2'], 'GEN tau2', rtol=1e-5)
@@ -47,7 +48,7 @@ def test_gen_converges_to_the_end_of_the_ridge() -> None:
 
 def test_gen_without_moderators_converges() -> None:
     ref = REF['gen']
-    ll = gen_fit().fit_stats(True).as_tuple()[0]
+    ll = gen_fit().fit_stats_for(True).as_tuple()[0]
     assert ll >= ref['nomods_default_ll']
     assert ll == pytest.approx(ref['nomods_hot_ll'], abs=1e-3)
 
@@ -69,8 +70,10 @@ def test_permutest_ls_boundary_fits_match_r() -> None:
     refutil.close([pt.QMp], [ref['QMp']], 'QMp', rtol=1e-12)
     # where a permuted scale fit runs to the boundary the stopping point depends on the platform's libm and BLAS, so the number of permutations
     # with an undefined standard error, and with it the p-values, is only reproducible to a few percent across machines
-    refutil.close(pt.pval_alpha, ref['pval_alpha'], 'pval_alpha', rtol=0.1)
-    refutil.close([pt.QSp], [ref['QSp']], 'QSp', rtol=0.1)
+    # (on Windows the permuted boundary fits end differently still: 5 undefined fits of 40 against 5 of 47 give 0.125 for R's 0.106)
+    p_rtol = 0.25 if sys.platform == 'win32' else 0.1
+    refutil.close(pt.pval_alpha, ref['pval_alpha'], 'pval_alpha', rtol=p_rtol)
+    refutil.close([pt.QSp], [ref['QSp']], 'QSp', rtol=p_rtol)
     r_z = numpy.array([[numpy.nan if v is None else v for v in col] for col in ref['zval_alpha_perm'].values()]).T
     r_a = numpy.array([[numpy.nan if v is None else v for v in col] for col in ref['alpha_perm'].values()]).T
     z = pt.zval_alpha_perm.to_numpy()

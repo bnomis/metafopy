@@ -422,7 +422,7 @@ def test_unsupported_classes_raise_metafors_error(key: str, fits: dict[str, typi
 
 
 def test_class_names(fits: dict[str, typing.Any]) -> None:
-    assert metafopy.methods.fitview.r_class(fits['robust']) == ('robust.rma', 'rma.uni', 'rma')
+    assert metafopy.methods.fitview.r_class(fits['robust']) == ('robust.rma', 'rma', 'rma.uni')
     assert metafopy.methods.fitview.r_class(fits['sel']) == ('rma.uni.selmodel', 'rma.uni', 'rma')
     assert metafopy.methods.fitview.r_class(numpy.zeros(2)) == ()
     with pytest.raises(metafopy.errors.ArgumentError, match=re.escape('must be an object of class "rma.uni"')):

@@ -27,7 +27,7 @@ REFIT_ERRORS = (metafopy.errors.EstimationError, ValueError, ArithmeticError, nu
 def check_na_action(na_action: str) -> None:
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if na_action not in ('omit', 'exclude', 'pass', 'fail'):
-        raise metafopy.errors.InputError(f'unknown na_action {na_action!r}')
+        raise metafopy.errors.InputError(f"Unknown 'na.action' specified under options(): {na_action!r}.")
 
 
 def resolve_alias[T](value: T | None, alias: T | None, name: str, alias_name: str) -> T | None:

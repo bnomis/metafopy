@@ -21,6 +21,8 @@ import pandas
 import metafopy.core.dbinom
 import metafopy.core.parallel
 import metafopy.core.rng
+import metafopy.core.timing
+import metafopy.effects.datatools
 import metafopy.errors
 import metafopy.methods.blup
 import metafopy.methods.common
@@ -102,6 +104,7 @@ def gosh(x: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> GoshResult:
 
 
 @gosh.register
+@metafopy.core.timing.timed
 def gosh_rma_uni(
     x: metafopy.models.rma_uni.RMAResult,
     subsets: int | None = None,
@@ -112,8 +115,13 @@ def gosh_rma_uni(
     parallel: metafopy.core.parallel.Parallel = 'no',
     ncpus: int = 1,
     cl: concurrent.futures.Executor | None = None,
+    LB: bool = False,
+    na_action: metafopy.methods.common.NAAction = 'omit',
 ) -> GoshResult:
     """Fit the model to subsets of the studies.
+
+    ``na_action`` stands for R's ``options(na.action=)``; metafor only checks that it is known.
+    ``LB`` is accepted as in metafor, where it picks ``parLapplyLB`` (load-balanced scheduling) and changes no result.
 
     By default all subsets (with at least ``p`` studies) are used if there are
     at most ``10**6`` of them, otherwise ``10**6`` random subsets; ``subsets``
@@ -129,6 +137,7 @@ def gosh_rma_uni(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
+    metafopy.methods.common.check_na_action(na_action)
     metafopy.methods.fitview.check_class(x, notav=metafopy.methods.fitview.FIXED_UNI_ONLY)
     k, p = x.k, x.p
     parallel = metafopy.core.parallel.resolve_parallel(parallel, ncpus, cl)
@@ -198,7 +207,9 @@ def assemble(
     het[:, 0] = incl.sum(axis=1)
     cols = ['k', 'QE', 'I2', 'H2', 'tau2']
     het6 = numpy.column_stack([het, numpy.sqrt(het[:, 4])])
-    frame = pandas.DataFrame(numpy.column_stack([het6, beta]), columns=[*cols, 'tau', *names])
+    frame = pandas.DataFrame(
+        numpy.column_stack([het6, beta]), columns=metafopy.effects.datatools.make_names([*cols, 'tau', *[str(n) for n in names]], unique=True)
+    )
     order = numpy.argsort(frame['k'].to_numpy(), kind='stable')
     frame = frame.iloc[order].reset_index(drop=True)
     incl = incl[order]

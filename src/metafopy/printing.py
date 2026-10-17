@@ -16,7 +16,9 @@ import numpy.typing
 import metafopy.errors
 
 __all__ = [
+    'SETTINGS',
     'SIGNIF_LEGEND',
+    'console_width',
     'drop_stars',
     'fmt_df',
     'fmt_df_scalar',
@@ -84,13 +86,26 @@ def signif_footer(signif_legend: bool, extra: collections.abc.Sequence[str] = ()
     return [*out, *extra, '']
 
 
+# the line width of R's console (``getOption('width')``) at which wide tables wrap; tests that compare with printouts made at another width change it
+SETTINGS: dict[str, int] = {'width': 80}
+
+
+def console_width(extra: int = 0) -> int:
+    """The width at which tables wrap (R's ``getOption('width')``), ``extra`` characters wider for tables whose cells carry their own padding."""
+    return SETTINGS['width'] + extra
+
+
 def fmt_table(
     header: collections.abc.Sequence[str],
     rows: collections.abc.Sequence[collections.abc.Sequence[str]],
     row_names: collections.abc.Sequence[str] | None = None,
     gap: int = 2,
+    width: int | None = None,
 ) -> str:
     """Lay out a right-aligned text table, with optional left-aligned row names; ``gap`` spaces separate the columns.
+
+    With ``width`` the columns that do not fit in that many characters continue in further blocks below, each with the row names,
+    as R prints a wide matrix.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
@@ -102,12 +117,28 @@ def fmt_table(
     widths = [max(len(r[j]) for r in columns) for j in range(ncol)]
     names = ['', *row_names] if row_names is not None else None
     name_w = max(len(n) for n in names) if names else 0
+    # R puts one more blank after the row names than the table shows here, so a line of ``width`` characters already wraps
+    start = name_w + gap if names is not None else 0
+    limit = None if width is None else width - 1
+    blocks: list[list[int]] = [[]]
+    used = start
+    for j in range(ncol):
+        # the column of significance stars (no header) is as wide as '***' for R, which pads it
+        w_j = max(widths[j], 3) if header[j] == '' else widths[j]
+        need = w_j + ((1 if header[j] == '' else gap) if blocks[-1] else 0)
+        if limit is not None and blocks[-1] and used + need > limit:
+            blocks.append([])
+            used = start
+            need = w_j
+        blocks[-1].append(j)
+        used += need
     lines: list[str] = []
-    for i, row in enumerate(columns):
-        cells = (' ' * gap).join(cell.rjust(widths[j]) for j, cell in enumerate(row))
-        if names is not None:
-            cells = names[i].ljust(name_w) + ' ' * gap + cells
-        lines.append(cells.rstrip())
+    for block in blocks:
+        for i, row in enumerate(columns):
+            cells = (' ' * gap).join(row[j].rjust(widths[j]) for j in block)
+            if names is not None:
+                cells = names[i].ljust(name_w) + ' ' * gap + cells
+            lines.append(cells.rstrip())
     return '\n'.join(lines)
 
 

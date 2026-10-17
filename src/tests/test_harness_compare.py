@@ -5,6 +5,7 @@ import pathlib
 import audit.printdiff
 import audit.recall
 import audit.report
+import audit.rlib
 import audit.steps
 import audit.universe
 import audit.valuetree as valuetree
@@ -128,3 +129,33 @@ def test_every_new_finding_is_rendered_in_the_report(tmp_path: pathlib.Path) -> 
     assert 'Different defaults (1)' in text
     assert 'Other (1)' in text
     assert 'Wrong values (1)' in text
+
+
+def test_digits_number_stands_for_the_vector_of_nine() -> None:
+    guide: valuetree.Node = {'k': 'list', 'items': [{'name': 'digits', 'node': vector([4.0] * 9)}], 'cls': ['list']}
+    missing: list[str] = []
+    py = valuetree.to_node({'digits': 4}, guide, '', missing)
+    out: list[valuetree.Diff] = []
+    valuetree.compare(guide, py, '', out)
+    assert out == []
+    other = valuetree.to_node({'digits': 2}, guide, '', missing)
+    valuetree.compare(guide, other, '', out)
+    assert [d.kind for d in out] == ['value-diff']
+
+
+def test_printed_lines_ignore_curly_quotes_and_trailing_spaces() -> None:
+    assert valuetree.cell_equal("Signif. codes:  0 '***' 0.001  ", 'Signif. codes:  0 \u2018***\u2019 0.001')[0] == 'same'
+    assert valuetree.cell_equal("a 'b'", "a 'c'")[0] == 'diff'
+
+
+def test_printed_lines_ignore_blank_lines() -> None:
+    r = vector(['', 'QM = 1', ''], 'str')
+    py = vector(['QM = 1'], 'str')
+    assert diffs(r, py) == []
+    assert [d.kind for d in diffs(vector(['a', 'b'], 'str'), vector(['a'], 'str'))] == ['shape-diff']
+
+
+def test_profile_positions_of_mv_fits_are_zero_based() -> None:
+    assert audit.rlib.shift_arguments({'tau2': 1}, True) == {'tau2': 0}
+    assert audit.rlib.shift_arguments({'tau2': 1}, False) == {'tau2': 1}
+    assert audit.rlib.shift_arguments({'include': [1, 3]}) == {'include': [0, 2]}

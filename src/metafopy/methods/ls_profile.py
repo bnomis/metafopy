@@ -19,6 +19,7 @@ import pandas
 import scipy.stats
 
 import metafopy.core.parallel
+import metafopy.core.timing
 import metafopy.errors
 import metafopy.methods.ls_common
 import metafopy.methods.profile
@@ -50,12 +51,28 @@ class LSProfileResult:
     position: int
     exp: bool = False
     alphas: int = 1
+    sub1: bool = False
 
     @property
     def xlim(self) -> tuple[float, float]:
         """The range of the grid, which is the horizontal range metafor's ``plot.profile.rma`` draws (the object has no ``xlim`` element)."""
         grid = self.alpha[numpy.isfinite(self.alpha)]
         return float(grid.min()), float(grid.max())
+
+    @property
+    def comps(self) -> int:
+        """metafor's ``comps``: the number of components profiled in this profile (one)."""
+        return 1
+
+    @property
+    def xlab(self) -> str:
+        """The label of the x axis of the profile plot."""
+        return f'alpha[{self.position + (0 if self.sub1 else 1)}] Value'
+
+    @property
+    def title(self) -> str:
+        """The title of the profile plot."""
+        return f'Profile Plot for alpha[{self.position + (0 if self.sub1 else 1)}]'
 
     def to_frame(self) -> pandas.DataFrame:
         return pandas.DataFrame({'alpha': self.alpha, 'll': self.ll})
@@ -76,6 +93,7 @@ def profile_fit(x: metafopy.models.rma_ls_result.RMALSResult, pos: int, val: flo
 
 @metafopy.methods.profile.profile.register  # type: ignore[arg-type]  # returns a result class of its own
 # auditme: accept[duplicate-call-sequence] the profile of a location-scale model follows the same steps as profile.rma in metafor
+@metafopy.core.timing.timed
 def profile_rma_ls(
     fitted: metafopy.models.rma_ls_result.RMALSResult,
     alpha: int | None = None,
@@ -91,6 +109,8 @@ def profile_rma_ls(
     cl: concurrent.futures.Executor | None = None,
     plot: bool = False,
     ax: matplotlib.axes.Axes | None = None,
+    sub1: bool = False,
+    LB: bool = False,
     **plot_args: typing.Any,
 ) -> LSProfileResult | list[LSProfileResult]:
     """Profile the likelihood over a scale coefficient (``alpha``, a 0-based position) on ``steps`` equally spaced values in ``xlim``.
@@ -102,7 +122,8 @@ def profile_rma_ls(
     ``progbar=True`` prints a progress bar to stderr; the result equals that of the serial run. ``plot=True`` draws the profile(s) with
     :func:`metafopy.plot.plot_profile` (metafor's default is ``plot=TRUE``), several in a grid of panels. Further keyword arguments (``pch``,
     ``cline``, ``refline``, ``xlab``, ``ylab``, ``main``, ``log``, ``cex``, ``lwd``) are passed on to :func:`metafopy.plot.plot_profile`, as metafor's
-    ``...`` is to ``plot.profile.rma``.
+    ``...`` is to ``plot.profile.rma``. ``sub1=True`` labels the profile of the scale coefficients one lower in the plots (so that the
+    intercept is ``alpha_0``); ``LB`` is accepted as in metafor and changes nothing.
 
     Raises:
         metafopy.errors.InputError: an argument is invalid or the model has no such coefficient.
@@ -125,11 +146,13 @@ def profile_rma_ls(
         free = numpy.flatnonzero(~x.alpha_fix)
         if free.size == 0:
             raise metafopy.errors.InputError('No components in the model for which a profile likelihood can be constructed.')
-        results = [profile_rma_ls(x, int(pos), xlim, ylim, steps, lltol, exp=exp, progbar=progbar, parallel=parallel, ncpus=ncpus, cl=cl) for pos in free]
+        results = [
+            profile_rma_ls(x, int(pos), xlim, ylim, steps, lltol, exp=exp, progbar=progbar, parallel=parallel, ncpus=ncpus, cl=cl, sub1=sub1) for pos in free
+        ]
         out = [r for r in results if isinstance(r, LSProfileResult)]
         if plot and out:
             plot_all(out, ax, plot_args)
-        return out[0] if len(out) == 1 else out
+        return out[0] if len(out) == 1 else metafopy.methods.profile.ProfileList(out)
 
     if bool(numpy.all(x.alpha_fix)):
         raise metafopy.errors.InputError("Model does not contain any estimated 'alpha' components.")
@@ -174,7 +197,7 @@ def profile_rma_ls(
             continue
         lls[i], beta[i], ci_lb[i], ci_ub[i] = fit
 
-    maxll = x.logLik()
+    maxll = float(x.logLik())
     if numpy.any(lls >= maxll + lltol):
         warnings.warn('At least one profiled log-likelihood value is larger than the log-likelihood of the fitted model.', stacklevel=2)
     if numpy.all(numpy.isnan(lls)):
@@ -209,6 +232,7 @@ def profile_rma_ls(
         position=alpha,
         exp=exp,
         alphas=x.q,
+        sub1=sub1,
     )
     if plot:
         plot_all([result], ax, plot_args)

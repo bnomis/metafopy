@@ -8,6 +8,8 @@ import numpy
 import numpy.typing
 import pandas
 
+import metafopy.core.labelled
+import metafopy.metadata
 import metafopy.mfopt
 import metafopy.models.call
 import metafopy.models.fit_methods
@@ -79,7 +81,7 @@ class SelmodelResult(metafopy.models.fit_methods.FitMethods):
     steps: FloatArray
     decreasing: bool
     stepsspec: bool
-    pgrp: numpy.typing.NDArray[numpy.intp]
+    pgrp: numpy.typing.NDArray[numpy.intp] | None
     ptable: pandas.DataFrame | None
     subset: BoolArray
     k0: int
@@ -103,12 +105,13 @@ class SelmodelResult(metafopy.models.fit_methods.FitMethods):
     mapinvfun: tuple[str | None, ...] | None
     digits: int = 4
     call: metafopy.models.call.Call | None = dataclasses.field(default=None, kw_only=True, repr=False, compare=False)
+    trimfill_info: dict[str, typing.Any] = dataclasses.field(default_factory=dict, kw_only=True, repr=False, compare=False)
 
     # -- data of the underlying model --------------------------------------------
 
     @property
     def k_all(self) -> int:
-        """Number of rows supplied, including those dropped for missing values."""
+        """Number of studies supplied to the model the fit holds (a model that metafor refits has only the studies used, so this is their number)."""
         return self.base.k_all
 
     @property
@@ -155,6 +158,12 @@ class SelmodelResult(metafopy.models.fit_methods.FitMethods):
     def QEp(self) -> float:
         """Not computed for selection models (``NaN``, as metafor stores ``NA``)."""
         return math.nan
+
+    def __post_init__(self) -> None:
+        # R names the rows and columns of the Hessian by the coefficients, tau2 and the selection parameters
+        if self.hessian is not None:
+            names = [*self.base.coef_names, 'tau2', *[f'delta.{i + 1}' for i in range(self.deltas)]]
+            object.__setattr__(self, 'hessian', metafopy.core.labelled.design_matrix(self.hessian, names, names))
 
     @property
     def yi(self) -> FloatArray:
@@ -215,6 +224,122 @@ class SelmodelResult(metafopy.models.fit_methods.FitMethods):
     @property
     def ddf(self) -> None:
         return None
+
+    @property
+    def model(self) -> str:
+        """The kind of model, ``'rma.uni.selmodel'`` (metafor's ``model``)."""
+        return 'rma.uni.selmodel'
+
+    @property
+    def measure(self) -> str:
+        return self.base.measure
+
+    @property
+    def weighted(self) -> bool:
+        return self.base.weighted
+
+    @property
+    def weights(self) -> FloatArray | None:
+        return self.base.weights
+
+    @property
+    def s2w(self) -> float:
+        return self.base.s2w
+
+    @property
+    def allvipos(self) -> bool:
+        return self.base.allvipos
+
+    @property
+    def QMdf(self) -> tuple[int, None]:
+        """Degrees of freedom of the test of the moderators: ``(m, None)``, as the test is a chi-square test (metafor's ``QMdf``)."""
+        return (self.base.m, None)
+
+    @property
+    def dfs(self) -> None:
+        return None
+
+    @property
+    def tau2_f(self) -> float:
+        """The amount of heterogeneity, metafor's ``tau2.f`` (the same number as ``tau2`` here)."""
+        return self.tau2
+
+    @property
+    def intercept(self) -> bool:
+        return self.base.intercept
+
+    @property
+    def coef_na(self) -> tuple[bool, ...]:
+        return self.base.coef_na
+
+    @property
+    def X_f(self) -> FloatArray:
+        return self.base.X_f
+
+    @property
+    def yi_f(self) -> FloatArray:
+        return self.base.yi_f
+
+    @property
+    def vi_f(self) -> FloatArray:
+        return self.base.vi_f
+
+    @property
+    def ni_f(self) -> FloatArray | None:
+        return self.base.ni_f
+
+    @property
+    def weights_f(self) -> FloatArray | None:
+        return self.base.weights_f
+
+    @property
+    def k_f(self) -> int:
+        return self.base.k_f
+
+    def __getattr__(self, name: str) -> typing.Any:
+        """The trim-and-fill details (``fill``, ``k0``, ...) of a trimfill fit the selection model was fitted to, which metafor keeps in the result."""
+        trimfill = object.__getattribute__(self, 'trimfill_info')
+        if name in trimfill:
+            return trimfill[name]
+        raise AttributeError(name)
+
+    @property
+    def ids(self) -> numpy.typing.NDArray[numpy.intp]:
+        return self.base.ids
+
+    @property
+    def not_na(self) -> numpy.typing.NDArray[numpy.bool_]:
+        return self.base.not_na
+
+    @property
+    def slab_null(self) -> bool:
+        return self.base.slab_null
+
+    @property
+    def outdat_f(self) -> dict[str, FloatArray | None]:
+        return self.base.outdat_f
+
+    @property
+    def add(self) -> float:
+        return self.base.add
+
+    @property
+    def to(self) -> str:
+        return self.base.to
+
+    @property
+    def drop00(self) -> bool:
+        return self.base.drop00
+
+    @property
+    def data(self) -> metafopy.metadata.MetaData:
+        """The data of the underlying model (metafor keeps the data frame the model was fitted to)."""
+        return self.base.data
+
+    @property
+    def wi_fun(self) -> metafopy.models.sel_spec.Weight | None:
+        """The selection function of the model (metafor's ``wi.fun``), vectorised over the studies."""
+        return self.spec.weight
 
     @property
     def delta_names(self) -> tuple[str, ...]:
@@ -290,7 +415,7 @@ class SelmodelResult(metafopy.models.fit_methods.FitMethods):
 
         return metafopy.methods.residuals.residuals(self, type, na_action=na_action)
 
-    def fit_stats(self, REML: bool | None = None) -> metafopy.models.rma_uni.FitStats:
+    def fit_stats_for(self, REML: bool | None = None) -> metafopy.models.rma_uni.FitStats:
         return self.fit_stats_reml if REML else self.fit_stats_ml
 
     # -- delegated methods (defined in metafopy.methods.selmodel) ------------------
@@ -334,9 +459,16 @@ class SelmodelResult(metafopy.models.fit_methods.FitMethods):
 
     # -- printing -------------------------------------------------------------------
 
-    def summary(self, digits: int | None = None, showfit: bool = True) -> str:
-        """The printout with the fit statistics table, as metafor's ``summary()``; ``str(res)`` leaves it out like ``print()``."""
-        return metafopy.mfopt.option_space(format_selmodel(self, metafopy.mfopt.option_digits(digits, self.digits), showfit))
+    def summary(self, digits: int | None = None, showfit: bool = True, *, signif_stars: bool | None = None, signif_legend: bool | None = None) -> str:
+        """The printout with the fit statistics table, as metafor's ``summary()``; ``str(res)`` leaves it out like ``print()``.
+
+        ``signif_stars`` (default: the ``signif_stars`` option, ``True``) adds the significance stars, ``signif_legend`` (default: ``signif_stars``)
+        their legend.
+        """
+        stars, legend = metafopy.mfopt.option_signif(signif_stars, signif_legend)
+        return metafopy.models.fit_methods.SummaryText(
+            metafopy.mfopt.option_space(format_selmodel(self, metafopy.mfopt.option_digits(digits, self.digits), showfit, stars, legend)), self
+        )
 
     def __str__(self) -> str:
         return self.summary(showfit=False)
@@ -375,7 +507,7 @@ def delta_table(res: SelmodelResult, digits: int) -> tuple[list[str], list[list[
     return header, rows, names
 
 
-def format_selmodel(res: SelmodelResult, digits: int = 4, showfit: bool = False) -> str:
+def format_selmodel(res: SelmodelResult, digits: int = 4, showfit: bool = False, stars: bool = True, legend: bool = True) -> str:
     """The output of metafor's ``print.rma.uni`` for a selection model."""
     fmt = metafopy.printing.fmt_num
     pfmt = metafopy.models.rma_uni.pfmt
@@ -444,7 +576,8 @@ def format_selmodel(res: SelmodelResult, digits: int = 4, showfit: bool = False)
                 metafopy.printing.signif_stars(res.pval[j]),
             ]
         )
-    out.append(metafopy.printing.fmt_table(header, rows_, row_names=None if res.int_only else list(res.coef_names)))
+    header, rows_ = metafopy.printing.drop_stars(header, rows_, stars)
+    out.append(metafopy.printing.fmt_table(header, rows_, row_names=None if res.int_only else list(res.coef_names), width=metafopy.printing.console_width()))
 
     if not math.isnan(res.LRT):
         out.append('')
@@ -455,9 +588,7 @@ def format_selmodel(res: SelmodelResult, digits: int = 4, showfit: bool = False)
     out.append('Selection Model Results:' if res.k == res.k1 else f'Selection Model Results (k_subset = {res.k1}):')
     out.append('')
     dheader, drows, dnames = delta_table(res, digits)
+    dheader, drows = metafopy.printing.drop_stars(dheader, drows, stars)
     out.append(metafopy.printing.fmt_table(dheader, drows, row_names=dnames))
-    out.append('')
-    out.append('---')
-    out.append("Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1")
-    out.append('')
+    out += metafopy.printing.signif_footer(legend)
     return '\n'.join(out)

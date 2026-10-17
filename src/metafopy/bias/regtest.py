@@ -22,6 +22,7 @@ import metafopy.metadata
 import metafopy.methods.common
 import metafopy.methods.fitview
 import metafopy.mfopt
+import metafopy.models.binary
 import metafopy.models.rma_uni
 import metafopy.models.tau2
 
@@ -100,7 +101,7 @@ class RegtestResult:
 
 
 def regtest(
-    x: metafopy.models.rma_uni.RMAResult | numpy.typing.ArrayLike | str,
+    x: metafopy.models.rma_uni.RMAResult | metafopy.models.binary.FixedBinaryResult | numpy.typing.ArrayLike | str,
     vi: numpy.typing.ArrayLike | str | None = None,
     *,
     sei: numpy.typing.ArrayLike | str | None = None,
@@ -115,16 +116,21 @@ def regtest(
     level: float | None = None,
     method: str | None = None,
     test: str | None = None,
+    na_action: metafopy.methods.common.NAAction = 'omit',
 ) -> RegtestResult:
     """Regression test for funnel plot asymmetry.
 
     ``x`` is a fitted model or a vector of estimates (with ``vi`` or ``sei``). ``level`` is a
     confidence level in percent (default 95). With ``model='lm'`` (weighted regression with
-    multiplicative dispersion, the classical Egger test) ``ret_fit`` prints nothing extra.
+    multiplicative dispersion, the classical Egger test) ``ret_fit`` prints nothing extra. ``na_action`` stands for R's ``options(na.action=)``:
+    for a vector of estimates the studies with missing values are omitted with a warning, except for ``'fail'``, which stops; it has no effect
+    on a fitted model.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InputError: an argument or the data is invalid, or studies are missing and ``na_action='fail'``.
     """
+    metafopy.methods.common.check_na_action(na_action)
+    vec_measure: str | None = None
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if model not in ('lm', 'rma'):
         raise metafopy.errors.InputError(f'unknown model {model!r}')
@@ -133,11 +139,30 @@ def regtest(
 
     if metafopy.methods.fitview.is_rma(x):
         metafopy.methods.fitview.check_class(x, notav=metafopy.methods.fitview.FIXED_UNI_ONLY)
-        if not isinstance(x, metafopy.models.rma_uni.RMAResult):
+        if model == 'rma' and not isinstance(x, metafopy.models.rma_uni.RMAResult):
             # rma.mh and rma.peto objects get as far as refitting the model with their tau2 (NULL), which metafor rejects
             raise metafopy.errors.InputError("Argument 'tau2' must be a scalar.")
         if vi is not None or sei is not None or subset is not None:
             warnings.warn("Arguments 'vi', 'sei', and 'subset' ignored when 'x' is a model object.", stacklevel=2)
+    if isinstance(x, metafopy.models.binary.FixedBinaryResult):
+        # model='lm' of an rma.mh or rma.peto fit: the weighted regression of the estimates on the predictor, with no model to refit
+        view = metafopy.methods.fitview.fit_view(x)
+        yi, v, n = view.yi, view.vi, view.ni
+        if ni is not None:
+            n = metafopy.bias.inputs.as_vector(ni, 'ni', data)
+            if n is None or n.shape[0] != view.k_all:
+                size = 0 if n is None else n.shape[0]
+                raise metafopy.errors.InputError(
+                    f"Length of the variable specified via 'ni' ({size}) does not correspond to the size of the original dataset ({view.k_all})."
+                )
+            n = n[view.keep]
+        X = view.X
+        p = X.shape[1]
+        alpha = view.level if level is None else metafopy.models.rma_uni.level_to_alpha(level)
+        meth, tst, weighted, tau2_fix, tau2, control, weights = view.method, 'z', True, False, math.nan, None, None
+        coef_names: tuple[str, ...] = ('intrcpt',)
+        slab = view.slab
+    elif isinstance(x, metafopy.models.rma_uni.RMAResult):
         yi, v, n = metafopy.bias.inputs.data_of(x)
         if ni is not None:
             n_full = metafopy.bias.inputs.as_vector(ni, 'ni', data)
@@ -161,9 +186,10 @@ def regtest(
         coef_names = tuple(x.coef_names)
         slab = x.slab
     else:
-        yi, v_opt, n = metafopy.bias.inputs.vector_inputs(
-            typing.cast(numpy.typing.ArrayLike | str, x), vi, sei, ni=ni, subset=subset, data=data, what='the test', attr_ni=True
-        )
+        yi, v_opt, n = metafopy.bias.inputs.vector_inputs(x, vi, sei, ni=ni, subset=subset, data=data, what='the test', attr_ni=True, na_action=na_action)
+        if isinstance(x, str) and data is not None and subset is None and data.attrs.get('measure'):
+            # metafor takes the measure from the attribute of the yi column of the escalc object
+            vec_measure = str(data.attrs['measure'])
         if v_opt is None:
             raise metafopy.errors.InputError("Must specify the 'vi' or 'sei' argument.")
         v = v_opt
@@ -180,7 +206,7 @@ def regtest(
         # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
         coef_names = ('intrcpt',)
         slab = tuple(str(i + 1) for i in range(yi.shape[0]))
-    d = metafopy.mfopt.stored_digits(digits, 4)
+    d = metafopy.mfopt.stored_digits(digits, metafopy.mfopt.model_digits(x))
 
     if predictor == 'sei':
         extra = numpy.sqrt(v)
@@ -192,7 +218,7 @@ def regtest(
         extra = {'ni': n, 'ninv': 1 / n, 'sqrtni': numpy.sqrt(n), 'sqrtninv': 1 / numpy.sqrt(n)}[predictor]
     Xn = numpy.column_stack([X, extra])
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
-    names = (*coef_names, predictor if predictor in ('sei', 'vi') else 'ni')
+    names = (*coef_names, predictor if predictor in ('sei', 'vi', 'ninv') else 'ni')
 
     if numpy.linalg.matrix_rank(Xn) < Xn.shape[1]:
         raise metafopy.errors.InputError('Model matrix no longer of full rank after addition of predictor. Cannot fit model.')
@@ -207,6 +233,10 @@ def regtest(
                 fit = fit_vectors(yi, v, Xn, names, n, slab, meth, tst, alpha, weighted, weights, tau2 if tau2_fix else None, control)
         else:
             fit = fit_vectors(yi, v, Xn, names, n, slab, meth, tst, alpha, weighted, weights, None, control)
+            if vec_measure is not None:
+                fit = dataclasses.replace(fit, measure=vec_measure)
+        if isinstance(x, metafopy.models.rma_uni.RMAResult):
+            fit = metafopy.models.rma_uni.as_refit_on_used(fit, dropped=x.data.na_rows is not None and bool(x.data.na_rows.any()), measure=x.measure)
         zval = float(fit.zval[p])
         pval = float(fit.pval[p])
         ddf = fit.ddf

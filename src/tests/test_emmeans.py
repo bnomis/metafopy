@@ -314,8 +314,9 @@ def test_binary_and_selection_fits() -> None:
 
 
 def test_errors_and_printing(dat: pandas.DataFrame, alloc: metafopy.EmmGrid) -> None:
-    with pytest.raises(metafopy.errors.InputError, match='Unknown transformation'):
-        metafopy.emmprep(metafopy.rma_uni('yi', 'vi', mods='~ alloc', data=dat), tran='nonsense')
+    # emmeans takes an unknown name for the identity link carrying that name; '+.sqrt' (which needs an offset) is not supported
+    with pytest.raises(metafopy.errors.NotSupportedError, match=r'\+\.sqrt'):
+        metafopy.emmprep(metafopy.rma_uni('yi', 'vi', mods='~ alloc', data=dat), tran='+.sqrt')
     with pytest.raises(metafopy.errors.InputError, match='not found'):
         metafopy.contrast(alloc, 'nonsense')
     with pytest.raises(metafopy.errors.InputError, match="'type' must be"):

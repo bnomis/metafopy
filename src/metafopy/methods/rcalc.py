@@ -18,8 +18,10 @@ import numpy.typing
 import pandas
 import scipy.sparse
 
+import metafopy.core.labelled
 import metafopy.errors
 import metafopy.methods.blocks
+import metafopy.methods.common
 import metafopy.methods.vcalc
 
 __all__ = ['RCalcResult', 'rcalc']
@@ -42,6 +44,12 @@ class RCalcResult:
 
     dat: pandas.DataFrame | None
     V: FloatArray | scipy.sparse.csr_array | None
+
+    def __post_init__(self) -> None:
+        # R names the rows and columns of V by var1.var2 and gives it the class vcovmat
+        if isinstance(self.V, numpy.ndarray) and self.dat is not None and 'var1.var2' in self.dat.columns and self.V.shape[0] == self.dat.shape[0]:
+            names = [str(n) for n in self.dat['var1.var2']]
+            object.__setattr__(self, 'V', metafopy.core.labelled.VCovMat(self.V, names, names))
 
 
 def match_nfun(nfun: str) -> str:
@@ -301,8 +309,16 @@ def rcalc(
     sparse: bool = False,
     upper: bool = False,
     simplify: bool = True,
+    *,
+    rowid: collections.abc.Sequence[str] | None = None,
+    vnames: collections.abc.Sequence[str] | None = None,
+    noid: bool | None = None,
+    na_action: metafopy.methods.common.NAAction = 'omit',
 ) -> RCalcResult | dict[str, RCalcResult]:
     """Variance-covariance matrix of correlation coefficients from the same samples (metafor's ``rcalc``).
+
+    ``na_action`` stands for R's ``options(na.action=)``: an unknown value raises, the others
+    give the same result (metafor sets ``na.pass`` while it computes).
 
     ``x`` is a formula string such as ``'ri ~ var1 + var2 | study'`` (the study part may be left
     out for a single study; ``ni`` is a column of ``data`` or an array), a correlation matrix, or a
@@ -315,14 +331,16 @@ def rcalc(
     consists of strings (the names of the list, or the ids converted to character). ``nfun`` is
     ``'min'``, ``'harmonic'``, ``'mean'`` or a function of the sample sizes of a study.
 
-    Differences from R: the ``rowid``, ``vnames`` and ``noid`` arguments, which R passes on
-    internally, are not exposed; the row and column names of ``V`` are in ``dat['var1.var2']``.
+    For a list of matrices with ``simplify=True``, ``rowid`` (values of ``'id.var1.var2'``) puts the rows of ``dat`` and ``V`` in that
+    order, ``vnames`` (four names) renames the ``dat`` columns and ``noid=True`` drops the study identifier, as in metafor, which
+    passes these on internally for a formula. The row and column names of ``V`` are in ``dat['var1.var2']``.
 
     Raises:
         metafopy.errors.ArgumentError: ``x`` is not a formula, a matrix or a list of matrices.
         metafopy.errors.InputError: an argument or the data is invalid (R stops with an error here).
         metafopy.errors.NotFoundError: a variable of the formula is not in ``data``.
     """
+    metafopy.methods.common.check_na_action(na_action)
     if not isinstance(x, str | numpy.ndarray | pandas.DataFrame | list | tuple | dict):
         raise metafopy.errors.ArgumentError("Argument 'x' must be either a formula, a matrix, or a list of matrices.")
     if ni is None:
@@ -336,7 +354,7 @@ def rcalc(
     if isinstance(x, list | tuple | dict):
         mapping = dict(x) if isinstance(x, dict) else {str(i + 1): m for i, m in enumerate(x)}
         ni_arr = numpy.atleast_1d(numpy.asarray(ni, dtype=numpy.float64))
-        return rcalc_list({str(k): m for k, m in mapping.items()}, ni_arr, rtoz, sparse, upper, simplify)
+        return rcalc_list({str(k): m for k, m in mapping.items()}, ni_arr, rtoz, sparse, upper, simplify, rowid, vnames, bool(noid))
     scalar = numpy.atleast_1d(numpy.asarray(ni, dtype=numpy.float64))
     if scalar.size != 1:
         raise metafopy.errors.ArgumentError("Argument 'ni' must be a single sample size when 'x' is a matrix.")

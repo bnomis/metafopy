@@ -307,6 +307,7 @@ def selmodel(
         metafopy.errors.NotSupportedError: a requested option is not available.
     """
     prev: metafopy.models.sel_result.SelmodelResult | None = None
+    source = x
     if isinstance(x, metafopy.models.sel_result.SelmodelResult):
         prev = x
         base = x.base
@@ -314,6 +315,10 @@ def selmodel(
         base = x
         if base.robust is not None:
             raise metafopy.errors.ArgumentError('selmodel() cannot be applied to objects of class robust.rma.')
+        dropped = x.data.na_rows is not None and bool(x.data.na_rows.any())
+        # metafor fits a model that was not fitted by ML or an equal-effects method again (by ML, to the estimates of the studies used) and keeps the others
+        if x.method not in metafopy.models.tau2.FIXED_EFFECTS and x.method != 'ML':
+            base = metafopy.models.rma_uni.as_refit_on_used(x, dropped=dropped, measure=x.measure)
     else:
         raise metafopy.errors.ArgumentError(f'selmodel() not implemented for {x.__class__.__name__}')
     if not base.allvipos:
@@ -800,7 +805,13 @@ def selmodel(
     )
 
     ptable_out = ptable
+    trimfill_info = (
+        dict(source.trimfill_info)
+        if isinstance(source, metafopy.models.sel_result.SelmodelResult)
+        else {name: getattr(source, name) for name in ('fill', 'k0', 'se_k0', 'side', 'k0_est', 'p_k0') if hasattr(source, name)}
+    )
     return metafopy.models.sel_result.SelmodelResult(
+        trimfill_info=trimfill_info,
         base=base,
         beta=numpy.asarray(beta, dtype=numpy.float64),
         se=se,
@@ -844,7 +855,7 @@ def selmodel(
         steps=steps_arr,
         decreasing=decreasing,
         stepsspec=stepsspec,
-        pgrp=pgrp,
+        pgrp=pgrp if type_ != 'trunc' and stepsspec else None,
         ptable=ptable_out,
         subset=subset_mask,
         k0=int((~subset_mask).sum()),

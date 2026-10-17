@@ -62,7 +62,7 @@ def forest_cumul(
     at: numpy.typing.ArrayLike | None = None,
     steps: int = 5,
     refline: float | None = 0,
-    digits: int | collections.abc.Sequence[int] = 2,
+    digits: int | collections.abc.Sequence[float] | numpy.typing.NDArray[numpy.floating] = 2,
     width: int | collections.abc.Sequence[int] | None = None,
     xlab: str | collections.abc.Sequence[str] | None = None,
     ilab: typing.Any = None,
@@ -186,6 +186,7 @@ def plot_cumul(
     las: int = 0,
     ax: matplotlib.axes.Axes | None = None,
     addgrid: bool | str | None = None,
+    na_action: metafopy.methods.common.NAAction = 'omit',
 ) -> PlotCumulResult:
     """Plot of the results of a cumulative meta-analysis (``plot.cumul.rma``).
 
@@ -195,11 +196,15 @@ def plot_cumul(
     ``digits`` are the digits of the labels of the two axes and ``grid`` draws the dotted grid (a colour for the lines of the grid; ``addgrid`` is the
     old spelling that metafor reads from ``...`` and wins).
 
+    ``na_action`` stands for R's ``options(na.action=)``: an unknown value raises, the others
+    give the same result (metafor sets ``na.pass`` while it computes). With ``'fail'`` missing values in the results stop the plot.
+
     Returns a :class:`PlotCumulResult` with the plotted values and their colours.
 
     Raises:
         metafopy.errors.InputError: an argument is invalid.
     """
+    metafopy.methods.common.check_na_action(na_action)
     if not isinstance(x, metafopy.methods.leave1out.CumulResult):
         raise metafopy.errors.InputError('plot_cumul() needs the result of cumul().')
     if transf is not None and atransf is not None:
@@ -217,8 +222,8 @@ def plot_cumul(
     cols_c = [metafopy.plot.rutils.coladj(-0.2), metafopy.plot.rutils.coladj(-0.8)] if cols is None else list(cols)
     if digits is None:
         dig = (2, 3) if yaxis in ('tau2', 'tau') else (2, 1)
-    elif isinstance(digits, int):
-        dig = (digits, digits)
+    elif isinstance(digits, int | float):
+        dig = (int(digits), int(digits))
     else:
         dig = (int(digits[0]), int(digits[1]))
     yvalue: FloatArray
@@ -234,6 +239,8 @@ def plot_cumul(
         yvalue = x.H2
     estim = x.estimate.copy()
     keep = ~(numpy.isnan(estim) | numpy.isnan(yvalue))
+    if na_action == 'fail' and not keep.all():
+        raise metafopy.errors.InputError('Missing values in results.')
     estim, yvalue = estim[keep], yvalue[keep]
     k = int(estim.shape[0])
     if transf is not None:

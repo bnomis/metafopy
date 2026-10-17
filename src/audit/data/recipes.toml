@@ -132,9 +132,9 @@ base = { p = [0.0123, 0.5, 0.00001] }
 [standalone.fmtp2]
 base = { p = [0.0123, 0.5, 0.00001] }
 
+# fmtt() takes one test statistic per call ("Argument 'val' must be a scalar."); only pval and df may be vectors in R
 [standalone.fmtt]
-base = { val = [2.1, -3.2], tname = "t", df = 10, pval = [0.04, 0.001] }
-when = { call = { val = 2.1, pval = 0.04 } }
+base = { val = 2.1, tname = "t", df = 10, pval = 0.04 }
 
 # Functions that take a model first are also called on the columns of a data frame (x is a column name, vi and data follow); R and Python
 # resolve the names differently

@@ -2,12 +2,14 @@
 
 import collections.abc
 import dataclasses
+import math
 import typing
 
 import numpy
 import numpy.typing
 import pandas
 
+import metafopy.core.labelled
 import metafopy.core.linalg
 import metafopy.errors
 import metafopy.metadata
@@ -64,6 +66,16 @@ class LSControl:
     scaleZ: bool = True  # noqa: N815  mirrors the metafor control argument name
     tau2_max: float = numpy.inf
     tau2_min: float = 0.0
+    ignored: dict[str, typing.Any] = dataclasses.field(default_factory=dict, compare=False, repr=False)
+    """The entries other functions of metafor read (``vc.min``, ``stepadj``, ...) and those given under another name (``tol`` is in ``opt_ctrl``),
+    kept as R keeps them in ``res$control``; read them as attributes."""
+
+    def __getattr__(self, name: str) -> typing.Any:
+        ignored = object.__getattribute__(self, 'ignored')
+        for key, value in ignored.items():
+            if key.replace('.', '_') == name:
+                return value
+        raise AttributeError(name)
 
 
 @dataclasses.dataclass(frozen=True, slots=True, eq=False)
@@ -146,11 +158,68 @@ class RMALSResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_me
     Z_f: FloatArray | None = dataclasses.field(default=None, repr=False)
     digits: int = 4
     call: metafopy.models.call.Call | None = dataclasses.field(default=None, kw_only=True, repr=False, compare=False)
+    coef_na: tuple[bool, ...] = ()
+    coef_na_Z: tuple[bool, ...] = ()  # noqa: N815  mirrors metafor's name
+    X_f: FloatArray = dataclasses.field(default_factory=lambda: numpy.empty((0, 0)), repr=False)
+    add: float = 0.5
+    to: str = 'only0'
+    drop00: bool = False
+
+    def __post_init__(self) -> None:
+        # R names the rows of the model matrices by the rows of the data, their columns by the coefficients and the Hessian by both sets
+        rows, rows_f = self.data.rownames, self.data.rownames_f
+        design = metafopy.core.labelled.design_matrix
+        object.__setattr__(self, 'X', design(self.X, rows, self.coef_names))
+        object.__setattr__(self, 'Z', design(self.Z, rows, self.alpha_names))
+        object.__setattr__(self, 'X_f', design(self.X_f, rows_f, self.coef_names))
+        if self.Z_f is not None:
+            object.__setattr__(self, 'Z_f', design(self.Z_f, rows_f, self.alpha_names))
+        if self.H is not None:
+            both = [*('X' + n for n in self.coef_names), *('Z' + n for n in self.alpha_names)]
+            names = both if self.H.shape[0] == len(both) else list(self.alpha_names)
+            object.__setattr__(self, 'H', design(self.H, names, names))
 
     @property
     def alphas(self) -> int:
         """Number of scale coefficients (metafor's ``alphas``)."""
         return self.q
+
+    @property
+    def model(self) -> str:
+        """The kind of model, ``'rma.ls'`` (metafor's ``model``)."""
+        return 'rma.ls'
+
+    @property
+    def se_tau2(self) -> float:
+        """Not available for location-scale models (``NaN``, as metafor stores ``NA``)."""
+        return math.nan
+
+    @property
+    def R2(self) -> None:
+        """Not available for location-scale models (``None``, as metafor stores ``NULL``)."""
+        return None
+
+    @property
+    def randhet(self) -> bool:
+        """Whether random heterogeneity is modelled (always ``False`` here, metafor's ``randhet``)."""
+        return False
+
+    @property
+    def Z_intercept(self) -> bool:
+        """Whether the scale model has an intercept, metafor's ``Z.intercept``."""
+        return self.Z_int_incl
+
+    @property
+    def dfs(self) -> int | None:
+        """The degrees of freedom of the tests of the location coefficients (``None`` for the z-test), metafor's ``dfs``."""
+        return self.ddf
+
+    @property
+    def tau2_f(self) -> FloatArray:
+        """The amount of residual heterogeneity of each study after subsetting, ``NaN`` for those left out of the fit, metafor's ``tau2.f``."""
+        out = numpy.full(self.data.k_f, math.nan)
+        out[self.data.not_na] = self.tau2
+        return out
 
     # -- accessors ---------------------------------------------------------
 
@@ -200,7 +269,7 @@ class RMALSResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_me
 
         return metafopy.methods.residuals.residuals(self, type, na_action=na_action)
 
-    def fit_stats(self, REML: bool | None) -> metafopy.models.rma_uni.FitStats:
+    def fit_stats_for(self, REML: bool | None) -> metafopy.models.rma_uni.FitStats:
         if REML is None:
             REML = self.method == 'REML'
         return self.fit_stats_reml if REML else self.fit_stats_ml
@@ -314,8 +383,11 @@ class RMALSResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_me
         import metafopy.models.rma_ls_print
 
         stars, legend = metafopy.mfopt.option_signif(signif_stars, signif_legend)
-        return metafopy.mfopt.option_space(
-            metafopy.models.rma_ls_print.format_result(self, metafopy.mfopt.option_digits(digits, self.digits), showfit, stars, legend)
+        return metafopy.models.fit_methods.SummaryText(
+            metafopy.mfopt.option_space(
+                metafopy.models.rma_ls_print.format_result(self, metafopy.mfopt.option_digits(digits, self.digits), showfit, stars, legend)
+            ),
+            self,
         )
 
     def __str__(self) -> str:

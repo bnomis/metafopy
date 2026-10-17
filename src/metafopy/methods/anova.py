@@ -18,6 +18,8 @@ import metafopy.core.padjust
 import metafopy.errors
 import metafopy.formatters
 import metafopy.methods.common
+import metafopy.methods.fitview
+import metafopy.methods.pairmat
 import metafopy.methods.vif
 import metafopy.mfopt
 import metafopy.models.mv_result
@@ -61,6 +63,21 @@ class WaldResult:
     ddf: FloatArray | None = None
     hyp: tuple[str, ...] | None = None
     digits: int = 4
+    k: int | None = None
+    p: int | None = None
+    test: str | None = None
+    class_: tuple[str, ...] | None = None
+    """The class vector of the model a test of moderators was made for (the ``class`` element of metafor's result), e.g. ``('rma.uni', 'rma')``."""
+
+    @property
+    def m(self) -> int:
+        """The number of coefficients or linear combinations tested, metafor's ``m``."""
+        return self.QMdf[0]
+
+    @property
+    def type(self) -> str:
+        """The kind of test, ``'Wald.btt'`` (coefficients) or ``'Wald.Xb'`` (linear combinations), metafor's ``type``."""
+        return 'Wald.btt' if self.Xb is None else 'Wald.Xb'
 
     def to_frame(self) -> pandas.DataFrame:
         """The test as a data frame (metafor's ``as.data.frame.anova.rma``).
@@ -190,6 +207,54 @@ class LRTResult:
     tau2_reduced: float
     R2: float
     digits: int = 4
+    method: str | None = None
+    class_f: tuple[str, ...] | None = None
+    """The class vector of the full model (metafor's ``class.f``)."""
+
+    @property
+    def type(self) -> str:
+        """The kind of test, ``'LRT'`` (metafor's ``type``)."""
+        return 'LRT'
+
+    @property
+    def fit_stats_f(self) -> tuple[float, float, float, float, float]:
+        """The fit statistics of the full model, metafor's ``fit.stats.f``."""
+        return self.fit_stats_full
+
+    @property
+    def fit_stats_r(self) -> tuple[float, float, float, float, float]:
+        """The fit statistics of the reduced model, metafor's ``fit.stats.r``."""
+        return self.fit_stats_reduced
+
+    @property
+    def parms_f(self) -> int:
+        """The number of parameters of the full model, metafor's ``parms.f``."""
+        return self.df_full
+
+    @property
+    def parms_r(self) -> int:
+        """The number of parameters of the reduced model, metafor's ``parms.r``."""
+        return self.df_reduced
+
+    @property
+    def QE_f(self) -> float:
+        """The test statistic for residual heterogeneity of the full model, metafor's ``QE.f``."""
+        return self.QE_full
+
+    @property
+    def QE_r(self) -> float:
+        """The test statistic for residual heterogeneity of the reduced model, metafor's ``QE.r``."""
+        return self.QE_reduced
+
+    @property
+    def tau2_f(self) -> float:
+        """The amount of heterogeneity of the full model, metafor's ``tau2.f``."""
+        return self.tau2_full
+
+    @property
+    def tau2_r(self) -> float:
+        """The amount of heterogeneity of the reduced model, metafor's ``tau2.r``."""
+        return self.tau2_reduced
 
     def to_frame(self) -> pandas.DataFrame:
         cols = ['df', 'AIC', 'BIC', 'AICc', 'logLik', 'LRT', 'pval', 'QE', 'tau^2', 'R^2']
@@ -246,14 +311,43 @@ def anova(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> typing.
     raise metafopy.errors.ArgumentError(f'anova() not implemented for {type(model).__name__}')
 
 
+def with_model_info[F: collections.abc.Callable[..., typing.Any]](function: F) -> F:
+    """Record ``k``, ``p`` and ``test`` of the model in the Wald tests ``function`` returns (the fields metafor's ``anova.rma`` object has)."""
+
+    @functools.wraps(function)
+    def wrapper(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> typing.Any:
+        result = function(model, *args, **kwargs)
+        return add_model_info(result, model)
+
+    return typing.cast(F, wrapper)
+
+
+def add_model_info(result: typing.Any, model: typing.Any) -> typing.Any:
+    """``result`` with the ``k``, ``p``, ``q`` and ``test`` of ``model`` filled in where it has such fields (lists of tests element by element)."""
+    if isinstance(result, ListAnovaResult):
+        return ListAnovaResult([add_model_info(item, model) for item in result], result.names)
+    if isinstance(result, list):
+        return [add_model_info(item, model) for item in result]
+    if not dataclasses.is_dataclass(result) or isinstance(result, type):
+        return result
+    names = {f.name for f in dataclasses.fields(result)}
+    changes: dict[str, typing.Any] = {name: int(getattr(model, name)) for name in ('k', 'p', 'q') if name in names and hasattr(model, name)}
+    if 'test' in names and typing.cast(typing.Any, result).test is None:
+        changes['test'] = str(model.test)
+    if 'class_' in names and typing.cast(typing.Any, result).hyp is None and typing.cast(typing.Any, result).class_ is None:
+        changes['class_'] = metafopy.methods.fitview.r_class(model)
+    return dataclasses.replace(result, **changes) if changes else result
+
+
 @anova.register
+@with_model_info
 def anova_rma_uni(
     model: metafopy.models.rma_uni.RMAResult,
     model2: metafopy.models.rma_uni.RMAResult | None = None,
     *,
     object2: metafopy.models.rma_uni.RMAResult | None = None,
     btt: metafopy.models.rma_uni.Btt = None,
-    X: numpy.typing.ArrayLike | None = None,
+    X: numpy.typing.ArrayLike | metafopy.methods.pairmat.PairmatSpec | None = None,
     rhs: numpy.typing.ArrayLike | float | None = None,
     adjust: bool | str | None = None,
     refit: bool = False,
@@ -264,6 +358,8 @@ def anova_rma_uni(
     verbose: bool = False,
     abbrev: bool = False,
     digits: int | collections.abc.Mapping[str, int] | None = None,
+    att: typing.Any = None,
+    Z: typing.Any = None,
 ) -> WaldResult | LRTResult | ListAnovaResult:
     """Test coefficients of one model, or compare two nested models.
 
@@ -294,6 +390,8 @@ def anova_rma_uni(
         metafopy.errors.InputError: an argument or the data is invalid.
         metafopy.errors.InternalError: an internal invariant does not hold.
     """
+    X = metafopy.methods.pairmat.resolve(X, model)
+    check_scale_arguments(att, Z)
     if abbrev:
         return abbreviate_hyp(anova_rma_uni(**{**locals(), 'abbrev': False}), True)
     x = model
@@ -305,6 +403,7 @@ def anova_rma_uni(
     rhs_given = rhs is not None
     rhs = 0.0 if rhs is None else rhs
     if model2 is not None:
+        check_same_class(x, model2)
         if check_test(test) == 'Wald':
             return dataclasses.replace(wald_between(x, model2, df), digits=d)
         return dataclasses.replace(lrt(x, model2, refit, df), digits=d)
@@ -524,6 +623,16 @@ def club_wald_x(
     )
 
 
+def check_same_class(a: object, b: object) -> None:
+    """R's ``identical(class(object), class(object2))``: a robust, selection model or plain fit is not compared with a fit of another class.
+
+    Raises:
+        metafopy.errors.InputError: the classes differ.
+    """
+    if metafopy.methods.fitview.r_class(a) != metafopy.methods.fitview.r_class(b):
+        raise metafopy.errors.InputError("Class of 'object' must be the same as class of 'object2'.")
+
+
 def wald_between(
     a: metafopy.models.rma_uni.RMAResult | metafopy.models.mv_result.RMAMVResult,
     b: metafopy.models.rma_uni.RMAResult | metafopy.models.mv_result.RMAMVResult,
@@ -534,8 +643,7 @@ def wald_between(
     Raises:
         metafopy.errors.InputError: the models cannot be compared.
     """
-    if type(a) is not type(b):
-        raise metafopy.errors.InputError("Class of 'object' must be the same as class of 'object2'.")
+    check_same_class(a, b)
     if df is None and a.parms == b.parms:
         raise metafopy.errors.InputError('Models have the same number of parameters.')
     full, red = (a, b) if df is not None or a.parms > b.parms else (b, a)
@@ -573,6 +681,18 @@ def make_list(results: list[WaldResult], specs: collections.abc.Sequence[typing.
     """The results of a list ``btt`` as metafor's ``list.anova.rma``, named by the specifications (``.format.btt``, 1-based like R)."""
     names = [metafopy.methods.vif.format_spec(spec) for spec in specs]
     return ListAnovaResult(adjust_list(results, method), names)
+
+
+def check_scale_arguments(att: typing.Any, Z: typing.Any) -> None:
+    """``att`` and ``Z`` are for location-scale models; metafor stops when they are given for any other model.
+
+    Raises:
+        metafopy.errors.InputError: ``att`` or ``Z`` is given.
+    """
+    if att is not None:
+        raise metafopy.errors.InputError("Can only specify 'att' for location-scale models.")
+    if Z is not None:
+        raise metafopy.errors.InputError("Can only specify 'Z' for location-scale models.")
 
 
 def hypotheses(L: FloatArray, names: collections.abc.Sequence[str], rhs: FloatArray, digits: int) -> tuple[str, ...]:
@@ -706,6 +826,8 @@ def lrt(a: metafopy.models.rma_uni.RMAResult, b: metafopy.models.rma_uni.RMAResu
         tau2_full=full.tau2,
         tau2_reduced=red.tau2,
         R2=R2,
+        method=full.method,
+        class_f=metafopy.methods.fitview.r_class(full),
     )
 
 
@@ -778,13 +900,14 @@ def mv_wald(x: metafopy.models.mv_result.RMAMVResult, idx: tuple[int, ...], rhs:
 
 
 @anova.register
+@with_model_info
 def anova_rma_mv(
     model: metafopy.models.mv_result.RMAMVResult,
     model2: metafopy.models.mv_result.RMAMVResult | None = None,
     *,
     object2: metafopy.models.mv_result.RMAMVResult | None = None,
     btt: metafopy.models.rma_uni.Btt = None,
-    X: numpy.typing.ArrayLike | None = None,
+    X: numpy.typing.ArrayLike | metafopy.methods.pairmat.PairmatSpec | None = None,
     rhs: numpy.typing.ArrayLike | float | None = None,
     adjust: bool | str | None = None,
     refit: bool = False,
@@ -795,6 +918,8 @@ def anova_rma_mv(
     verbose: bool = False,
     abbrev: bool = False,
     digits: int | collections.abc.Mapping[str, int] | None = None,
+    att: typing.Any = None,
+    Z: typing.Any = None,
 ) -> WaldResult | MVLRTResult | ListAnovaResult:
     """Test coefficients of one ``rma.mv`` model, or compare two nested models by a likelihood-ratio test.
 
@@ -804,6 +929,8 @@ def anova_rma_mv(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
+    X = metafopy.methods.pairmat.resolve(X, model)
+    check_scale_arguments(att, Z)
     if abbrev:
         return abbreviate_hyp(anova_rma_mv(**{**locals(), 'abbrev': False}), True)
     x = model
@@ -815,6 +942,7 @@ def anova_rma_mv(
     rhs = 0.0 if rhs is None else rhs
     club = club_info(x.robust)
     if model2 is not None:
+        check_same_class(x, model2)
         if check_test(test) == 'Wald':
             return dataclasses.replace(wald_between(x, model2, df), digits=d)
         if df is None and x.parms == model2.parms:

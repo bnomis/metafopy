@@ -237,7 +237,7 @@ def test_permutest_coef(re_model: metafopy.RMAResult) -> None:
     assert isinstance(perm, metafopy.methods.permutest.PermutestResult)
     coef = perm.coef()
     assert list(coef.index) == list(re_model.coef_names)
-    numpy.testing.assert_allclose(coef.to_numpy(), re_model.beta)
+    numpy.testing.assert_allclose(coef.iloc[:, 0].to_numpy(), re_model.beta)
 
 
 def test_top_level_vcov_of_deltamethod_and_matreg(re_model: metafopy.RMAResult) -> None:
@@ -306,7 +306,7 @@ def test_influence_measure(re_model: metafopy.RMAResult) -> None:
     assert list(cooks.index) == list(full.slab)
     dfbs = metafopy.influence(re_model, measure='dfbetas')
     assert isinstance(dfbs, pandas.DataFrame)
-    numpy.testing.assert_allclose(dfbs.to_numpy(), full.dfbs)
+    numpy.testing.assert_allclose(dfbs.to_numpy(), full.dfbs_array)
     rst = metafopy.influence(re_model, measure='rstudent')
     expected = metafopy.rstudent(re_model)
     numpy.testing.assert_allclose(rst.resid, expected.resid)

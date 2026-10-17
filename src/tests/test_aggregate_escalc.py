@@ -33,8 +33,8 @@ def test_id_structure_with_addk() -> None:
     out = metafopy.aggregate_escalc(metafopy.datasets.load('konstantopoulos2011'), cluster='district', struct='ID', addk=True)
     refutil.assert_frame(out, REF['id_addk'], 'ID')
     assert out.attrs['yi_names'] == ['yi']
-    assert out.attrs['measure'] == 'GEN'
-    assert out.attrs['digits'] == 4
+    assert out.attrs['measure'] == 'SMD'
+    assert out.attrs['digits'] == 3
 
 
 @pytest.mark.parametrize(

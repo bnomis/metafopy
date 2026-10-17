@@ -14,6 +14,7 @@ import numpy.typing
 import pandas
 import scipy.sparse
 
+import metafopy.core.labelled
 import metafopy.core.linalg
 import metafopy.errors
 
@@ -45,11 +46,13 @@ def to_matrix(value: Block) -> FloatArray:
     return numpy.diag(numpy.atleast_1d(arr))
 
 
-def bldiag(*mlist: Block, order: numpy.typing.ArrayLike | None = None, order_is_permutation: bool = False) -> FloatArray:
+def bldiag(
+    *mlist: Block | collections.abc.Mapping[typing.Any, Block], order: numpy.typing.ArrayLike | None = None, order_is_permutation: bool = False
+) -> FloatArray:
     """Block diagonal matrix from matrices (metafor's ``bldiag``).
 
     Accepts matrices (arrays, data frames or scipy sparse arrays), vectors and scalars (turned into
-    diagonal matrices, so ``bldiag(numpy.ones((3, 3)), 2)`` works) or a single list or tuple of these.
+    diagonal matrices, so ``bldiag(numpy.ones((3, 3)), 2)`` works) or a single list, tuple or dict (R's named list) of these.
     Matrices with zero rows or columns are dropped; if none are left the result is 0 x 0.
 
     ``order`` is the clustering variable according to which the rows and columns of the result are
@@ -60,10 +63,12 @@ def bldiag(*mlist: Block, order: numpy.typing.ArrayLike | None = None, order_is_
         metafopy.errors.InputError: ``order`` is used with a non-square result or has the wrong length.
         metafopy.errors.ArgumentError: an element is neither a matrix, a vector nor a scalar.
     """
-    items: list[Block] = list(mlist)
+    items: list[typing.Any] = list(mlist)
     if len(items) == 1:
         only = items[0]
-        if isinstance(only, list | tuple) and not all(is_number(v) for v in only):
+        if isinstance(only, collections.abc.Mapping):  # a named list, as ``split()`` returns
+            items = list(only.values())
+        elif isinstance(only, list | tuple) and not all(is_number(v) for v in only):
             items = list(only)
     mats = [to_matrix(m) for m in items]
     mats = [m for m in mats if m.shape[0] != 0 and m.shape[1] != 0]
@@ -138,13 +143,16 @@ def blsplit(
     unique = list(pandas.unique(groups))
     if sort:
         unique = sorted(unique)
-    res: dict[typing.Any, typing.Any] = {}
+    res: dict[typing.Any, typing.Any] = metafopy.core.labelled.NamedList()
     for value in unique:
         idx = numpy.flatnonzero(groups == value)
         if sparse_x is not None:
             block: typing.Any = sparse_x[idx][:, idx]
         elif dense is not None:
             block = dense[numpy.ix_(idx, idx)]
+            if isinstance(x, metafopy.core.labelled.LabelledMatrix):
+                kind = type(x)
+                block = kind(block, None if x.rownames is None else [x.rownames[i] for i in idx], None if x.colnames is None else [x.colnames[i] for i in idx])
         else:
             raise metafopy.errors.InternalError('blsplit() has neither a dense nor a sparse matrix')
         if fun is not None:

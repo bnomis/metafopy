@@ -329,9 +329,17 @@ def distance_matrix(group_inner: pandas.DataFrame, dist: object) -> FloatArray:
     if callable(dist):
         out = numpy.asarray(dist(cmat), dtype=numpy.float64)
         return out
-    metric: typing.Any = {'euclidean': 'euclidean', 'maximum': 'chebyshev', 'manhattan': 'cityblock'}.get(str(dist))
-    if metric is None:
-        raise metafopy.errors.NotSupportedError(f'dist={dist!r} is not supported (use "euclidean", "maximum", "manhattan", a function or a matrix)')
+    methods = ('euclidean', 'maximum', 'manhattan', 'gcd')
+    given = str(dist)
+    # R's charmatch(): an exact match wins, otherwise the name may be abbreviated if that is unambiguous
+    matched = [m for m in methods if m == given] or [m for m in methods if m.startswith(given)]
+    if len(matched) != 1 or not given:
+        raise metafopy.errors.InputError("Argument 'dist' must be one of 'euclidean', 'maximum', 'manhattan', or 'gcd'.")
+    if matched[0] == 'gcd':
+        raise metafopy.errors.NotSupportedError(
+            'dist=\'gcd\' (great-circle distance) is not supported (use "euclidean", "maximum", "manhattan", a function or a matrix)'
+        )
+    metric: typing.Any = {'euclidean': 'euclidean', 'maximum': 'chebyshev', 'manhattan': 'cityblock'}[matched[0]]
     return scipy.spatial.distance.squareform(scipy.spatial.distance.pdist(cmat, metric=metric))
 
 

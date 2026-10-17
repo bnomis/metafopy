@@ -343,7 +343,7 @@ def test_na_action_fail(dna: pandas.DataFrame) -> None:
             metafopy.predict(fit, na_action='fail')
         with pytest.raises(metafopy.errors.InputError, match='Missing values in results'):
             fit.hatvalues(na_action='fail')
-        with pytest.raises(metafopy.errors.InputError, match='na_action'):
+        with pytest.raises(metafopy.errors.InputError, match=r'na\.action'):
             fit.fitted(na_action='drop')  # type: ignore[arg-type]
     complete = uni(dna.dropna())
     assert len(complete.fitted(na_action='fail')) == 11

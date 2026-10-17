@@ -30,6 +30,7 @@ import scipy.integrate
 import scipy.special
 import scipy.stats
 
+import metafopy.core.labelled
 import metafopy.effects.na
 import metafopy.effects.rtet
 import metafopy.errors
@@ -286,7 +287,12 @@ def chksubset(x: numpy.typing.ArrayLike | str | None, k: int, data: pandas.DataF
     return mask
 
 
+YICHECKS: list[bytes] = []
+"""Signatures of the ``yi`` vectors already warned about; metafor keeps the last 100 (``yichecks``) and warns once per vector per session."""
+
+
 def chkyisize(yi: FloatArray, measure: str, cutoff: float | None) -> None:
+    """Port of ``.chkyisize`` (https://github.com/wviechtb/metafor/blob/master/R/misc.func.hidden.escalc.r)."""
     addtxt = None
     if cutoff is None:
         cut = math.nan
@@ -295,7 +301,10 @@ def chkyisize(yi: FloatArray, measure: str, cutoff: float | None) -> None:
             addtxt = 'Maybe SEs were used in place of SDs to compute them?'
     else:
         cut = abs(float(cutoff))
-    if not math.isnan(cut) and anyna(numpy.abs(yi) > cut, yi):
+    sig = numpy.ascontiguousarray(yi, dtype=numpy.float64).tobytes()
+    if sig not in YICHECKS and not math.isnan(cut) and anyna(numpy.abs(yi) > cut, yi):
+        YICHECKS.insert(0, sig)
+        del YICHECKS[100:]
         txt = f'One or more {measure} values are unusually large (i.e., abs(yi) > {cut:g}).'
         if addtxt:
             txt += f'\n{addtxt}'
@@ -582,7 +591,9 @@ def escalc(
     vi_names = [var_names[1], *[n for n in prev_attrs.get('vi_names', []) if n != var_names[1]]]
     dat.attrs['yi_names'] = [n for n in yi_names if n in dat.columns]
     dat.attrs['vi_names'] = [n for n in vi_names if n in dat.columns]
-    return dat
+    frame = metafopy.core.labelled.EscalcFrame(dat)
+    frame.attrs = dict(dat.attrs)
+    return frame
 
 
 def make_unique_dot1(labels: collections.abc.Sequence[str]) -> tuple[str, ...]:

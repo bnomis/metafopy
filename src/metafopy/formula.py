@@ -43,9 +43,11 @@ def r_column_name(name: str) -> str:
     if name == 'Intercept':
         return 'intrcpt'
     name = KEYWORD.sub(r'\1 = ', name.replace(' ** ', '^').replace(' / ', '/'))
+    name = re.sub(r"'([^']*)'", r'"\1"', name) if '(' in name else name
     poly = POLY_TERM.match(name)
     if poly is not None:
-        return f'{poly.group(1)}{int(poly.group(2)) + 1}'
+        # formulaic counts raw polynomial terms from 0 and orthogonal ones from 1; R counts both from 1
+        return f'{poly.group(1)}{int(poly.group(2)) + (1 if "raw = True" in poly.group(1) or "raw=True" in poly.group(1) else 0)}'
     parts: list[str] = []
     for part in name.split(':'):
         level = LEVEL.search(part)
@@ -199,6 +201,8 @@ def design_matrix(formula: str, data: pandas.DataFrame) -> tuple[numpy.typing.ND
         lhs, _, rhs = rhs.partition('~')
         if lhs.strip():
             raise metafopy.errors.InputError(f'expected a one-sided formula, got {formula!r}')
+    if type(data) is not pandas.DataFrame:
+        data = pandas.DataFrame(data)  # formulaic evaluates the variables of a data frame subclass (the result of escalc) differently
     mm = formulaic.model_matrix(r_power(rhs), data, na_action='ignore', context=formula_context())
     X = numpy.array(mm.to_numpy(dtype=float), dtype=numpy.float64)
     if X.ndim == 1:
@@ -210,6 +214,13 @@ def design_matrix(formula: str, data: pandas.DataFrame) -> tuple[numpy.typing.ND
     required = spec.required_variables if spec is not None else set(data.columns)
     used = [v for v in required if v in data.columns]
     missing = numpy.isnan(X).any(axis=1) | data[used].isna().any(axis=1).to_numpy()
+    # R's model matrix of a missing value is missing in the columns that variable makes (the intercept stays 1)
+    for var in used:
+        gone = data[var].isna().to_numpy()
+        if gone.any():
+            cols = [j for j, name in enumerate(names) if re.search(rf'(?<![\w.]){re.escape(var)}(?![\w.])|^{re.escape(var)}', name)]
+            if cols:
+                X[numpy.ix_(gone, cols)] = numpy.nan
     return X, names, missing
 
 

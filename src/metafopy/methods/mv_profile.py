@@ -19,6 +19,7 @@ import numpy.typing
 import pandas
 
 import metafopy.core.parallel
+import metafopy.core.timing
 import metafopy.errors
 import metafopy.methods.confint
 import metafopy.methods.mv_diagnostics
@@ -53,6 +54,41 @@ class MVProfileResult(metafopy.methods.profile.ProfileResult):
     @property
     def grid(self) -> FloatArray:
         return self.tau2
+
+    def component_grid(self, name: str) -> FloatArray:
+        if self.comp != name:
+            raise AttributeError(f'this profile is of {self.comp}, not {name}')
+        return self.tau2
+
+    @property
+    def sigma2(self) -> FloatArray:
+        """The grid of a ``sigma2`` profile (metafor stores it under the name of the component)."""
+        return self.component_grid('sigma2')
+
+    @property
+    def rho(self) -> FloatArray:
+        """The grid of a ``rho`` profile."""
+        return self.component_grid('rho')
+
+    @property
+    def gamma2(self) -> FloatArray:
+        """The grid of a ``gamma2`` profile."""
+        return self.component_grid('gamma2')
+
+    @property
+    def phi(self) -> FloatArray:
+        """The grid of a ``phi`` profile."""
+        return self.component_grid('phi')
+
+    @property
+    def xlab(self) -> str:
+        """The label of the x axis of the profile plot."""
+        return f'{self.comp} Value'
+
+    @property
+    def title(self) -> str:
+        """The title of the profile plot."""
+        return f'Profile Plot for {self.comp}'
 
     def to_frame(self) -> pandas.DataFrame:
         return pandas.DataFrame({self.comp: self.tau2, 'll': self.ll})
@@ -162,7 +198,7 @@ def profile_one(
         if fit is None:
             continue
         lls[i], beta[i], ci_lb[i], ci_ub[i] = fit[0], fit[1], fit[2], fit[3]
-    maxll = x.logLik()
+    maxll = float(x.logLik())
     if numpy.any(lls >= maxll + lltol):
         warnings.warn('At least one profiled log-likelihood value is larger than the log-likelihood of the fitted model.', stacklevel=3)
     if numpy.all(numpy.isnan(lls)):
@@ -206,6 +242,7 @@ def profile_one(
 
 
 # auditme: accept[duplicate-call-sequence] mirrors profile.rma.mv, which repeats the steps of the other profile methods
+@metafopy.core.timing.timed
 def profile_rma_mv(
     fitted: MV,
     sigma2: int | None = None,
@@ -225,6 +262,8 @@ def profile_rma_mv(
     *,
     exp: bool = False,
     ax: typing.Any = None,
+    startmethod: typing.Any = None,
+    LB: bool = False,
     **plot_args: typing.Any,
 ) -> MVProfileResult | list[MVProfileResult]:
     """Profile the likelihood over one variance or correlation component of an ``rma.mv`` fit.
@@ -237,12 +276,16 @@ def profile_rma_mv(
     pool, as for :func:`metafopy.profile` of selection models, and ``progbar=True`` prints a progress bar. ``plot=True``
     draws the profiles with :func:`metafopy.plot.plot_profile` (metafor's defaults are ``plot=TRUE`` and ``progbar=TRUE``). Further keyword arguments
     (``pch``, ``cline``, ``refline``, ``xlab``, ``ylab``, ``main``, ``log``, ``cex``, ``lwd``) are passed on to :func:`metafopy.plot.plot_profile`, as
-    metafor's ``...`` is to ``plot.profile.rma``.
+    metafor's ``...`` is to ``plot.profile.rma``. ``startmethod`` is deprecated in metafor and only warns; ``LB`` is accepted as in metafor and changes nothing.
 
     Raises:
         metafopy.errors.InputError: an argument is invalid or the model has no such (estimated) component.
     """
+    if startmethod is not None:
+        warnings.warn("Argument 'startmethod' has been deprecated.", stacklevel=2)
     x = fitted
+    if plot_args.pop('startmethod', None) is not None:
+        warnings.warn("Argument 'startmethod' has been deprecated.", stacklevel=2)
     mode = metafopy.core.parallel.resolve_parallel(parallel, ncpus, cl)
     pool: dict[str, typing.Any] = {'progbar': progbar, 'parallel': mode, 'ncpus': ncpus, 'cl': cl}
     st = numpy.atleast_1d(numpy.asarray(steps, dtype=numpy.float64))
@@ -263,7 +306,7 @@ def profile_rma_mv(
         sav = [profile_one(x, comp, pos, xlim, ylim, st, step_seq, lltol, exp, pool) for comp, pos in todo]
         if plot:
             plot_all(sav, ax, plot_args)
-        return sav[0] if len(sav) == 1 else sav
+        return sav[0] if len(sav) == 1 else metafopy.methods.profile.ProfileList(sav)
 
     comp, pos = component(x, chosen)
     out = profile_one(x, comp, pos, xlim, ylim, st, step_seq, lltol, exp, pool)

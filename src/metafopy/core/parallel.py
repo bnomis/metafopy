@@ -32,7 +32,7 @@ def resolve_parallel(parallel: str, ncpus: int, cl: concurrent.futures.Executor 
         raise metafopy.errors.InputError(f'unknown parallel option {parallel!r}')
     if ncpus < 1:
         raise metafopy.errors.InputError("Argument 'ncpus' must be >= 1.")
-    if cl is not None:
+    if isinstance(cl, concurrent.futures.Executor):  # as R, which only takes a SOCKcluster for ``cl`` and ignores any other value
         return 'snow'
     if parallel == 'no' and ncpus > 1:
         return 'snow'
@@ -58,12 +58,10 @@ def map_sims[T, V](
         return list(progress(map(one, items), len(items), progbar))
     # 'multicore' forks the workers (as R's mclapply); 'snow' starts fresh ones
     ctx = multiprocessing.get_context('fork' if parallel == 'multicore' and 'fork' in multiprocessing.get_all_start_methods() else None)
-    pool = cl if cl is not None else concurrent.futures.ProcessPoolExecutor(max_workers=ncpus, mp_context=ctx)
-    try:
+    if isinstance(cl, concurrent.futures.Executor):
+        return list(progress(cl.map(one, items), len(items), progbar))
+    with concurrent.futures.ProcessPoolExecutor(max_workers=ncpus, mp_context=ctx) as pool:
         return list(progress(pool.map(one, items), len(items), progbar))
-    finally:
-        if cl is None:
-            pool.shutdown()
 
 
 def tick(done: int, total: int, show: bool) -> None:

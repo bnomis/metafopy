@@ -15,6 +15,7 @@ import dataclasses
 import math
 import sys
 import typing
+import warnings
 
 import metafopy.errors
 
@@ -180,12 +181,16 @@ def uniroot(
             'did not succeed extending the interval endpoints for f(lower) * f(upper) <= 0' if do_x else 'f() values at end points not of opposite sign'
         )
     root, iterations, prec = zeroin2(f, lower, upper, max(min(f_lower, big), -big), max(min(f_upper, big), -big), tol, maxiter)
+    converged = iterations >= 0
+    if not converged:
+        warnings.warn(f'_NOT_ converged in {maxiter} iteration{"" if maxiter == 1 else "s"}', stacklevel=2)
+        iterations = maxiter
     return RootResult(
         root=root,
         f_root=f(root),
         iterations=iterations + it if do_x else iterations,
         estim_prec=prec,
-        converged=iterations >= 0,
+        converged=converged,
     )
 
 

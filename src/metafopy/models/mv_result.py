@@ -10,6 +10,7 @@ import pandas
 import scipy.linalg
 import scipy.sparse
 
+import metafopy.core.labelled
 import metafopy.errors
 import metafopy.mfopt
 import metafopy.models.call
@@ -25,8 +26,24 @@ type FloatArray = numpy.typing.NDArray[numpy.float64]
 type Mat = FloatArray | scipy.sparse.csc_array
 
 
+def formula_text(group: metafopy.models.mv_structs.Group | None) -> str | None:
+    """The ``~ inner | outer`` formula of a random-effects term as text, ``None`` without a term."""
+    if group is None:
+        return None
+    outer = '/'.join(group.formula.outer)
+    return f'~ {group.formula.inner} | {outer}' if group.formula.inner is not None else f'~ 1 | {outer}'
+
+
+def named_counts(group: metafopy.models.mv_structs.Group | None) -> pandas.Series[float] | None:
+    """The observations per level of the inner factor as a series named by the levels."""
+    if group is None or group.levels_k is None:
+        return None
+    levels = group.levels_f[0] if group.levels_f is not None and len(group.levels_f[0]) == len(group.levels_k) else None
+    return pandas.Series(group.levels_k, index=levels)
+
+
 @dataclasses.dataclass(frozen=True, slots=True, eq=False)
-class RMAMVResult(metafopy.models.fit_methods.FitMethods):
+class RMAMVResult(metafopy.models.fit_methods.RobustFields, metafopy.models.fit_methods.FitMethods):
     """A fitted multivariate/multilevel meta-analytic model (metafor's ``rma.mv``).
 
     Names follow metafor with ``.`` replaced by ``_``; ``btt`` holds 0-based coefficient indices.
@@ -133,10 +150,34 @@ class RMAMVResult(metafopy.models.fit_methods.FitMethods):
     slab_f: tuple[str, ...] = ()
     X_f: FloatArray | None = None
     digits: int = 4
+    yi_f: FloatArray = dataclasses.field(default_factory=lambda: numpy.empty(0), repr=False)
+    vi_f: FloatArray = dataclasses.field(default_factory=lambda: numpy.empty(0), repr=False)
+    V_f: Mat | None = dataclasses.field(default=None, repr=False)
+    W_f: Mat | None = dataclasses.field(default=None, repr=False)
+    ni: FloatArray | None = dataclasses.field(default=None, repr=False)
+    ni_f: FloatArray | None = dataclasses.field(default=None, repr=False)
+    subset: numpy.typing.NDArray[numpy.bool_] | None = dataclasses.field(default=None, repr=False)
+    slab_null: bool = True
+    control: typing.Any = dataclasses.field(default=None, repr=False)
+
+    def __post_init__(self) -> None:
+        # R names the rows of the model matrices by the rows of the data and their columns by the coefficients
+        row_names = [str(int(i) + 1) for i in self.ids]
+        if len(row_names) == self.not_na.shape[0]:
+            used = [n for n, flag in zip(row_names, self.not_na, strict=True) if flag]
+            object.__setattr__(self, 'X', metafopy.core.labelled.design_matrix(self.X, used, self.coef_names))
+            if self.X_f is not None:
+                object.__setattr__(self, 'X_f', metafopy.core.labelled.design_matrix(self.X_f, row_names, self.coef_names))
+        # R sets the dimnames of G and H (levels of the inner factor) and of hessian and vvc (the names of the variance components)
+        for name, names in (('G', self.G_dimnames), ('H', self.H_dimnames), ('hessian', self.vc_names), ('vvc', self.vc_names)):
+            value = getattr(self, name)
+            if value is not None and not isinstance(value, metafopy.core.labelled.LabelledMatrix) and len(names) == value.shape[0]:
+                object.__setattr__(self, name, metafopy.core.labelled.LabelledMatrix(value, names, names))
 
     # -- accessors -------------------------------------------------------
 
-    def coef(self) -> pandas.Series:
+    def coef(self, type: str = 'beta') -> pandas.Series:
+        """Estimated coefficients, indexed by name; ``type`` is accepted for metafor's ``coef(x, type=)`` and only location-scale fits use it."""
         return pandas.Series(self.beta, index=list(self.coef_names), name='estimate')
 
     @property
@@ -155,9 +196,9 @@ class RMAMVResult(metafopy.models.fit_methods.FitMethods):
         return None if self.group_g is None else self.group_g.levels_f
 
     @property
-    def g_levels_k(self) -> FloatArray | None:
-        """Number of observations at each level of the inner factor of the ``tau2``/``rho`` term (metafor's ``g.levels.k``)."""
-        return None if self.group_g is None else self.group_g.levels_k
+    def g_levels_k(self) -> pandas.Series[float] | None:
+        """Number of observations at each level of the inner factor of the ``tau2``/``rho`` term, named by the levels (metafor's ``g.levels.k``)."""
+        return named_counts(self.group_g)
 
     @property
     def g_levels_comb_k(self) -> FloatArray | None:
@@ -180,9 +221,9 @@ class RMAMVResult(metafopy.models.fit_methods.FitMethods):
         return None if self.group_h is None else self.group_h.levels_f
 
     @property
-    def h_levels_k(self) -> FloatArray | None:
+    def h_levels_k(self) -> pandas.Series[float] | None:
         """As :attr:`g_levels_k` for the ``gamma2``/``phi`` term (metafor's ``h.levels.k``)."""
-        return None if self.group_h is None else self.group_h.levels_k
+        return named_counts(self.group_h)
 
     @property
     def h_levels_comb_k(self) -> FloatArray | None:
@@ -225,6 +266,99 @@ class RMAMVResult(metafopy.models.fit_methods.FitMethods):
         return pandas.DataFrame(self.H, index=names, columns=names)
 
     @property
+    def weighted(self) -> bool:
+        """Whether the model is fitted by weighting (always ``True`` for ``rma_mv``), metafor's ``weighted``."""
+        return True
+
+    @property
+    def data(self) -> pandas.DataFrame | None:
+        """The data frame the model was fitted to (``None`` if the model was fitted to vectors), metafor's ``data``."""
+        data = self.spec.get('data')
+        return data if isinstance(data, pandas.DataFrame) else None
+
+    @property
+    def sparse(self) -> bool:
+        """Whether sparse matrices were used, metafor's ``sparse``."""
+        return bool(self.spec.get('sparse', False))
+
+    @property
+    def dist(self) -> tuple[typing.Any, typing.Any]:
+        """The distance measures of the ``'SP'`` structures (the ``dist`` argument, two entries), metafor's ``dist``."""
+        dist = self.spec.get('dist', 'euclidean')
+        pair = (dist[0], dist[-1]) if isinstance(dist, list | tuple) else (dist, dist)
+        methods = ('euclidean', 'maximum', 'manhattan', 'gcd')
+
+        def full(value: typing.Any) -> typing.Any:
+            """A name given in short is kept in full, as ``match.arg`` does in ``rma.mv``."""
+            hits = [m for m in methods if isinstance(value, str) and m.startswith(value)] if isinstance(value, str) else []
+            return hits[0] if len(hits) == 1 else value
+
+        return (full(pair[0]), full(pair[1]))
+
+    @property
+    def random(self) -> list[str] | None:
+        """The ``random`` formulas as given (``None`` without any), metafor's ``random``."""
+        random = self.spec.get('random')
+        if random is None:
+            return None
+        return [random] if isinstance(random, str) else [str(f) for f in random]
+
+    @property
+    def R(self) -> typing.Any:
+        """The known correlation matrices given as ``R`` (``None`` without any), metafor's ``R``."""
+        return self.spec.get('R')
+
+    @property
+    def formulas(self) -> tuple[str | None, str | None]:
+        """The two ``~ inner | outer`` formulas of the model (``None`` for a missing one), metafor's ``formulas``."""
+        return (formula_text(self.group_g), formula_text(self.group_h))
+
+    @property
+    def withS(self) -> bool:
+        """Whether the model has ``~ 1 | id`` terms, metafor's ``withS``."""
+        return self.with_s
+
+    @property
+    def withG(self) -> bool:
+        """Whether the model has a first ``~ inner | outer`` term, metafor's ``withG``."""
+        return self.with_g
+
+    @property
+    def withH(self) -> bool:
+        """Whether the model has a second ``~ inner | outer`` term, metafor's ``withH``."""
+        return self.with_h
+
+    @property
+    def withR(self) -> bool:
+        """Whether known correlation matrices were given, metafor's ``withR``."""
+        return self.with_r
+
+    @property
+    def s_nlevels_f(self) -> tuple[int, ...]:
+        """The number of levels of each ``~ 1 | id`` factor before the removal of studies with missing values, metafor's ``s.nlevels.f``."""
+        return tuple(len(levels) for levels in self.s_levels_f)
+
+    @property
+    def Z_G1(self) -> Mat | None:
+        """The design matrix of the outer factor of the first ``~ inner | outer`` term, metafor's ``Z.G1``."""
+        return None if self.group_g is None else self.group_g.Z1
+
+    @property
+    def Z_G2(self) -> Mat | None:
+        """The design matrix of the inner factor of the first ``~ inner | outer`` term, metafor's ``Z.G2``."""
+        return None if self.group_g is None else self.group_g.Z2
+
+    @property
+    def Z_H1(self) -> Mat | None:
+        """The design matrix of the outer factor of the second ``~ inner | outer`` term, metafor's ``Z.H1``."""
+        return None if self.group_h is None else self.group_h.Z1
+
+    @property
+    def Z_H2(self) -> Mat | None:
+        """The design matrix of the inner factor of the second ``~ inner | outer`` term, metafor's ``Z.H2``."""
+        return None if self.group_h is None else self.group_h.Z2
+
+    @property
     def k_eff(self) -> int:
         """Number of effective observations (the rows used in the fit), metafor's ``k.eff``."""
         return self.k
@@ -253,7 +387,7 @@ class RMAMVResult(metafopy.models.fit_methods.FitMethods):
 
         return metafopy.methods.residuals.residuals(self, type, na_action=na_action)
 
-    def fit_stats(self, REML: bool | None) -> metafopy.models.rma_uni.FitStats:
+    def fit_stats_for(self, REML: bool | None) -> metafopy.models.rma_uni.FitStats:
         if REML is None:
             REML = self.method == 'REML'
         return self.fit_stats_reml if REML else self.fit_stats_ml
@@ -364,8 +498,11 @@ class RMAMVResult(metafopy.models.fit_methods.FitMethods):
         import metafopy.models.mv_print
 
         stars, legend = metafopy.mfopt.option_signif(signif_stars, signif_legend)
-        return metafopy.mfopt.option_space(
-            metafopy.models.mv_print.format_result(self, metafopy.mfopt.option_digits(digits, self.digits), showfit, stars, legend)
+        return metafopy.models.fit_methods.SummaryText(
+            metafopy.mfopt.option_space(
+                metafopy.models.mv_print.format_result(self, metafopy.mfopt.option_digits(digits, self.digits), showfit, stars, legend)
+            ),
+            self,
         )
 
     def __str__(self) -> str:

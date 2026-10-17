@@ -6,11 +6,13 @@ https://github.com/wviechtb/metafor/blob/master/R/print.rma.glmm.r.
 
 import dataclasses
 import math
+import typing
 
 import numpy
 import numpy.typing
 import pandas
 
+import metafopy.core.labelled
 import metafopy.mfopt
 import metafopy.models.call
 import metafopy.models.fit_methods
@@ -37,7 +39,7 @@ FIXED_METHODS = ('FE', 'EE', 'CE')
 
 
 @dataclasses.dataclass(frozen=True, slots=True, eq=False)
-class GLMMResult(metafopy.models.fit_methods.FitMethods):
+class GLMMResult(metafopy.models.fit_methods.TableFields, metafopy.models.fit_methods.FitMethods):
     """A fitted ``rma.glmm`` model: a generalized linear mixed-effects model for binary or count data.
 
     ``beta``, ``se``, ``zval``, ``pval``, ``ci_lb``, ``ci_ub`` and ``vb`` hold one element per coefficient
@@ -104,8 +106,39 @@ class GLMMResult(metafopy.models.fit_methods.FitMethods):
     se_warn: bool
     data: pandas.DataFrame | None = dataclasses.field(default=None, repr=False)
     call: metafopy.models.call.Call | None = dataclasses.field(default=None, kw_only=True, repr=False, compare=False)
+    control: typing.Any = dataclasses.field(default=None, kw_only=True, repr=False, compare=False)
+
+    outdat_names: typing.ClassVar[tuple[str, ...]] = (*metafopy.models.fit_methods.COUNT_NAMES, 'xi', 'mi', 'ni', 'ti')
+
+    def __post_init__(self) -> None:
+        # R names the rows of the model matrices by the rows of the data and their columns by the coefficients
+        names = [str(int(i) + 1) for i in self.tables.ids]
+        used = [n for n, flag in zip(names, self.tables.not_na, strict=True) if flag]
+        object.__setattr__(self, 'X', metafopy.core.labelled.design_matrix(self.X, used, self.coef_names))
+        object.__setattr__(self, 'X_f', metafopy.core.labelled.design_matrix(self.X_f, names, self.coef_names))
 
     # -- accessors ---------------------------------------------------------
+
+    @property
+    def outdat_f(self) -> dict[str, FloatArray | None]:
+        """The counts of the tables after subsetting; ``ni`` holds the sample sizes of those tables, as in metafor's ``outdat.f``.
+
+        See ``rma.glmm`` in <https://github.com/wviechtb/metafor/blob/master/R/rma.glmm.r>.
+        """
+        cells = self.tables.cells_f
+        out: dict[str, FloatArray | None] = {name: cells.get(name) for name in self.outdat_names}
+        out['ni'] = self.tables.ni_f
+        return out
+
+    @property
+    def dfs(self) -> int | None:
+        """The degrees of freedom of the tests of the coefficients (``None`` for the z-test), metafor's ``dfs``."""
+        return self.ddf
+
+    @property
+    def ni(self) -> FloatArray:
+        """Sample sizes of the tables used in the fit, metafor's ``ni``."""
+        return self.tables.ni
 
     @property
     def yi(self) -> FloatArray:
@@ -119,8 +152,8 @@ class GLMMResult(metafopy.models.fit_methods.FitMethods):
     def slab(self) -> tuple[str, ...]:
         return self.tables.slab
 
-    def coef(self) -> pandas.Series:
-        """Estimated coefficients, indexed by name."""
+    def coef(self, type: str = 'beta') -> pandas.Series:
+        """Estimated coefficients, indexed by name; ``type`` is accepted for metafor's ``coef(x, type=)`` and only location-scale fits use it."""
         return pandas.Series(self.beta, index=list(self.coef_names), name='estimate')
 
     def vcov(self, type: metafopy.models.rma_uni.VcovType = 'fixed', *, na_action: metafopy.models.rma_uni.NAActionAll = 'omit') -> pandas.DataFrame:
@@ -155,12 +188,19 @@ class GLMMResult(metafopy.models.fit_methods.FitMethods):
 
         return metafopy.methods.residuals.residuals(self, type, na_action=na_action)
 
-    def fit_stats(self, REML: bool | None = None) -> metafopy.models.rma_uni.FitStats:
+    def fit_stats_for(self, REML: bool | None = None) -> metafopy.models.rma_uni.FitStats:
         return self.fit_stats_reml if REML else self.fit_stats_ml
 
-    def summary(self, digits: int | None = None, showfit: bool = True) -> str:
-        """The printout with the fit statistics table, as metafor's ``summary()``; ``str(res)`` leaves it out like ``print()``."""
-        return metafopy.mfopt.option_space(self.render(metafopy.mfopt.option_digits(digits, self.digits), showfit))
+    def summary(self, digits: int | None = None, showfit: bool = True, *, signif_stars: bool | None = None, signif_legend: bool | None = None) -> str:
+        """The printout with the fit statistics table, as metafor's ``summary()``; ``str(res)`` leaves it out like ``print()``.
+
+        ``signif_stars`` (default: the ``signif_stars`` option, ``True``) adds the significance stars, ``signif_legend`` (default: ``signif_stars``)
+        their legend.
+        """
+        stars, legend = metafopy.mfopt.option_signif(signif_stars, signif_legend)
+        return metafopy.models.fit_methods.SummaryText(
+            metafopy.mfopt.option_space(self.render(metafopy.mfopt.option_digits(digits, self.digits), showfit, stars, legend)), self
+        )
 
     def __str__(self) -> str:
         return self.summary(showfit=False)
@@ -232,7 +272,7 @@ class GLMMResult(metafopy.models.fit_methods.FitMethods):
             out.append('')
         return out
 
-    def render(self, digits: int, showfit: bool) -> str:
+    def render(self, digits: int, showfit: bool, stars: bool = True, legend: bool = True) -> str:
         out = self.title_lines(digits, showfit)
         out += self.heterogeneity_lines(digits)
         if self.p > 1 and not math.isnan(self.QM):
@@ -269,9 +309,9 @@ class GLMMResult(metafopy.models.fit_methods.FitMethods):
                 metafopy.printing.signif_stars(float(self.pval[j])),
             ]
             rows.append(row)
-        out.append(metafopy.printing.fmt_table(header, rows, row_names=None if self.int_only else list(self.coef_names)))
-        out.append('')
-        out.append('---')
-        out.append("Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1")
-        out.append('')
+        header, rows = metafopy.printing.drop_stars(header, rows, stars)
+        out.append(
+            metafopy.printing.fmt_table(header, rows, row_names=None if self.int_only else list(self.coef_names), width=metafopy.printing.console_width())
+        )
+        out += metafopy.printing.signif_footer(legend)
         return '\n'.join(out)

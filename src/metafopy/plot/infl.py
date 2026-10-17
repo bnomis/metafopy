@@ -185,7 +185,7 @@ def plot_infl(
         'hat': x.hat,
         'weight': x.weight,
     }
-    any_na = any(numpy.isnan(v).any() for v in values.values()) or numpy.isnan(x.dfbs).any()
+    any_na = any(numpy.isnan(v).any() for v in values.values()) or numpy.isnan(x.dfbs_array).any()
     if any_na and na_action == 'fail':
         raise metafopy.errors.InputError('Missing values in results.')
     if na_action == 'fail':
@@ -286,7 +286,7 @@ def plot_infl(
         names = list(x.coef_names)
         with matplotlib.rc_context({'font.size': metafopy.plot.draw.base_fontsize() * mfrow_cex(nr, nc)}):
             for a, j in zip(flat, which_dfbs, strict=False):
-                zi = numpy.asarray(x.dfbs[:, j - 1], dtype=float)
+                zi = numpy.asarray(x.dfbs_array[:, j - 1], dtype=float)
                 panel(
                     a,
                     zi,

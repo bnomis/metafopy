@@ -106,7 +106,7 @@ def yi_vi_names(x: pandas.DataFrame | None, var_names: collections.abc.Sequence[
         metafopy.errors.InputError: the names cannot be determined.
     """
     if var_names is not None:
-        if len(var_names) != 2:
+        if isinstance(var_names, str) or len(var_names) != 2:
             raise metafopy.errors.InputError("Argument 'var_names' must be of length 2.")
         return var_names[0], var_names[1]
     if x is None or not ('yi_names' in x.attrs or 'vi_names' in x.attrs):
@@ -285,7 +285,7 @@ def conv_2x2(
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if method not in ('simple', 'optim', 'search'):
         raise metafopy.errors.InputError('\'arg\' should be one of "simple", "optim", "search"')
-    if len(var_names) != 4:
+    if isinstance(var_names, str) or len(var_names) != 4:
         raise metafopy.errors.InputError("Argument 'var_names' must be of length 4.")
     x = as_frame(data)
     inp = metafopy.effects.measures.Inputs(x, dict(ori=ori, ri=ri, x2i=x2i, sens=sens, spec=spec, ppv=ppv, npv=npv, ni=ni, n1i=n1i, n2i=n2i))
