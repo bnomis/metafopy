@@ -16,6 +16,7 @@ import metafopy.methods.blup
 import metafopy.methods.common
 import metafopy.methods.influence
 import metafopy.methods.ranef
+import metafopy.mfopt
 import metafopy.models.rma_ls_result
 
 __all__ = ['blup_rma_ls', 'ranef_rma_ls', 'rstandard_rma_ls']
@@ -103,4 +104,4 @@ def rstandard_rma_ls(
         for pos, i in enumerate(idx):
             labels[i] = x.slab[pos]
         slab = tuple(labels)
-    return metafopy.methods.influence.ResidualResult(resid=ei, se=sei, z=z, slab=slab, digits=digits)
+    return metafopy.methods.influence.ResidualResult(resid=ei, se=sei, z=z, slab=slab, digits=metafopy.mfopt.reduce_digits(digits))

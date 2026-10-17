@@ -39,6 +39,7 @@ import metafopy.core.nchg
 import metafopy.core.verbose
 import metafopy.errors
 import metafopy.metadata
+import metafopy.mfopt
 import metafopy.models.call
 import metafopy.models.glmm_fit
 import metafopy.models.glmm_result
@@ -626,7 +627,7 @@ def rma_glmm(
         ddf=ddf,
         btt=btt_idx,
         m=m,
-        digits=digits,
+        digits=metafopy.mfopt.reduce_digits(digits),
         level=alpha,
         add=add1,
         to=to1,

@@ -28,6 +28,7 @@ import metafopy.errors
 import metafopy.methods.blup
 import metafopy.methods.common
 import metafopy.methods.influence
+import metafopy.mfopt
 import metafopy.models.mv_factor
 import metafopy.models.mv_result
 import metafopy.models.mv_structs
@@ -381,6 +382,7 @@ def cluster_result(
     digits: int,
 ) -> metafopy.methods.influence.ResidualResult | ClusterResidualResult:
     """metafor's arrangement of (deleted) residuals: per observation, and per cluster when ``cluster`` was given."""
+    digits = metafopy.mfopt.reduce_digits(digits)
     k_f = x.not_na.shape[0]
     resid_f = numpy.full(k_f, numpy.nan)
     se_f = numpy.full(k_f, numpy.nan)

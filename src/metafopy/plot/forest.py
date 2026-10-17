@@ -1721,7 +1721,7 @@ def addpoly(
     addpred: bool = False,
     predstyle: str | None = None,
     predlim: collections.abc.Sequence[float] | None = None,
-    digits: int | None = None,
+    digits: int | collections.abc.Sequence[float] | None = None,
     width: int | collections.abc.Sequence[int] | None = None,
     mlab: str | collections.abc.Sequence[str] | None = None,
     transf: Func | None = None,
@@ -1906,7 +1906,7 @@ def addpoly(
         alim_t = (float(xl0[0]), float(xl0[1]))
     ol = st.get('olim') if olim is None else (float(min(olim)), float(max(olim)))
     do_annotate = st.get('annotate', True) if annotate is None else annotate
-    dg = st.get('digits', 2) if digits is None else digits
+    dg = st.get('digits', 2) if digits is None else (digits if isinstance(digits, int) else int(digits[0]))  # R: digits[[1]]
     wd = st.get('width') if width is None else width
     tr = st.get('transf') if transf is None else transf
     atr = st.get('atransf') if atransf is None else atransf

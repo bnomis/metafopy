@@ -24,6 +24,7 @@ import metafopy.core.rng
 import metafopy.errors
 import metafopy.methods.ls_common
 import metafopy.methods.vif
+import metafopy.mfopt
 import metafopy.models.rma_ls_result
 import metafopy.models.rma_uni
 
@@ -288,6 +289,7 @@ def vif_rma_ls(
 
 
 def apply_digits(result: metafopy.methods.vif.VIFResult | LSVIFResult, digits: int) -> metafopy.methods.vif.VIFResult | LSVIFResult:
+    digits = metafopy.mfopt.reduce_digits(digits)
     if isinstance(result, LSVIFResult):
         return LSVIFResult(beta=dataclasses.replace(result.beta, digits=digits), alpha=dataclasses.replace(result.alpha, digits=digits))
     return dataclasses.replace(result, digits=digits)
