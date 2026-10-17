@@ -35,6 +35,7 @@ ref = "docs/differences.md"
 [[known]]
 match = "*/glmm_cm*"
 kind = "value-diff"
+path = ["$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$H2", "$I2", "$tau2", "$tau2.f", "$se.tau2", "$ci.lb.tau2", "$ci.ub.tau2", "$QE.Wld", "$QEp.Wld", "$QE.LRT", "$QEp.LRT", "$QE.df", "$fit.stats$*", "$tab$*", "$pi.*", "$cr.*", "$vcov", ""]
 reason = "rma_glmm(model='CM.EL') takes its Hessian from a noisy finite-difference objective: se, zval, pval and the tau2 interval agree to about 1e-3, QE_Wld (the saturated model's Wald test) is ill-conditioned and differs more."
 ref = "docs/differences.md"
 
@@ -54,6 +55,7 @@ ref = "docs/differences.md"
 [[known]]
 match = "*/glmm_rs*"
 kind = "value-diff"
+path = ["$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$H2", "$I2", "$tau2", "$tau2.f", "$se.tau2", "$ci.lb.tau2", "$ci.ub.tau2", "$QE.Wld", "$QEp.Wld", "$QE.LRT", "$QEp.LRT", "$QE.df", "$fit.stats$*", "$tab$*", "$pi.*", "$cr.*", "$vcov", ""]
 reason = "rma_glmm(model='UM.RS') agrees with R's lme4 fit to between 2e-3 and 1e-1 relative (optimiser stopping rules)."
 ref = "docs/differences.md"
 
@@ -377,30 +379,35 @@ reason = "A result is an immutable dataclass: x$zz <- 1 (a new element) has no c
 [[known]]
 match = "*/ls_year"
 kind = "value-diff"
+path = ["$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$M", "$H", "$H2", "$I2", "$tau2", "$tau2.f", "$fit.stats$*", "$alpha", "$alpha$*", "$alpha.perm$*", "$va", "$se.alpha", "$zval.alpha", "$pval.alpha", "$ci.lb.alpha", "$ci.ub.alpha", "$zval.alpha.perm$*", "$QS", "$QSp", "$QS.perm", "[]*", "$x", "$y", "$resid", "$z", "$pred", "$pi.*", "$cr.*", "$scale", "$vcov", ""]
 reason = "Location-scale fit ~ ablat + year with scale ~ ablat + year: the scale intercept is -151 (tau2 is 0 to machine precision), so the likelihood is flat in the scale coefficients. Log-likelihood -7.602255955 in R and Python, scale coefficients agree to 1e-6, the Wald statistics of the scale part (QS, se.alpha, va) differ by up to 2e-4; R's nlminb itself does not converge when its tolerance is tightened."
 ref = "docs/differences.md"
 
 [[known]]
 match = "*/ls_year/*"
 kind = "value-diff"
+path = ["$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$M", "$H", "$H2", "$I2", "$tau2", "$tau2.f", "$fit.stats$*", "$alpha", "$alpha$*", "$alpha.perm$*", "$va", "$se.alpha", "$zval.alpha", "$pval.alpha", "$ci.lb.alpha", "$ci.ub.alpha", "$zval.alpha.perm$*", "$QS", "$QSp", "$QS.perm", "[]*", "$x", "$y", "$resid", "$z", "$pred", "$pi.*", "$cr.*", "$scale", "$vcov", ""]
 reason = "Same fit as ls_year above (flat scale intercept); every option variant refits it."
 ref = "docs/differences.md"
 
 [[known]]
 match = "*/ls_na"
 kind = "value-diff"
+path = ["$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$M", "$H", "$H2", "$I2", "$tau2", "$tau2.f", "$fit.stats$*", "$alpha", "$alpha$*", "$alpha.perm$*", "$va", "$se.alpha", "$zval.alpha", "$pval.alpha", "$ci.lb.alpha", "$ci.ub.alpha", "$zval.alpha.perm$*", "$QS", "$QSp", "$QS.perm", "[]*", "$x", "$y", "$resid", "$z", "$pred", "$pi.*", "$cr.*", "$scale", "$vcov", ""]
 reason = "Location-scale fit ~ year with scale ~ ablat on data with missing values: scale intercept -10.4 and a boundary tau2, log-likelihood -4.194072548 in R and Python, scale coefficients agree to 1e-5, QS and the Wald statistics of the scale part to 2e-4; R's nlminb does not converge when its tolerance is tightened."
 ref = "docs/differences.md"
 
 [[known]]
 match = "*/ls_na/*"
 kind = "value-diff"
+path = ["$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$M", "$H", "$H2", "$I2", "$tau2", "$tau2.f", "$fit.stats$*", "$alpha", "$alpha$*", "$alpha.perm$*", "$va", "$se.alpha", "$zval.alpha", "$pval.alpha", "$ci.lb.alpha", "$ci.ub.alpha", "$zval.alpha.perm$*", "$QS", "$QSp", "$QS.perm", "[]*", "$x", "$y", "$resid", "$z", "$pred", "$pi.*", "$cr.*", "$scale", "$vcov", ""]
 reason = "Same fit as ls_na above (flat scale intercept); every option variant refits it."
 ref = "docs/differences.md"
 
 [[known]]
 match = "construct/ls_*/control=*"
 kind = "value-diff"
+path = ["$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$M", "$H", "$H2", "$I2", "$tau2", "$tau2.f", "$fit.stats$*", "$alpha", "$alpha$*", "$alpha.perm$*", "$va", "$se.alpha", "$zval.alpha", "$pval.alpha", "$ci.lb.alpha", "$ci.ub.alpha", "$zval.alpha.perm$*", "$QS", "$QSp", "$QS.perm"]
 reason = "Each R optimiser (nlminb, Nelder-Mead, BFGS, nmk, nloptr, BBoptim, Rcgmin, Rvmmin, lbfgsb3c) stops at a different point of a flat likelihood: for ls_year and ls_na the log-likelihoods of R's optimisers agree to 1e-6 (-7.6022559 and -4.1940725) and Python's is as high, but the coefficients differ between R's own optimisers by as much as they differ from Python's."
 ref = "docs/differences.md"
 
@@ -414,12 +421,14 @@ ref = "docs/differences.md"
 [[known]]
 match = "*/permutest/ls_*"
 kind = "value-diff"
+path = ["$alpha", "$alpha$*", "$alpha.perm$*", "$va", "$se.alpha", "$zval.alpha", "$pval.alpha", "$ci.lb.alpha", "$ci.ub.alpha", "$zval.alpha.perm$*", "$QS", "$QSp", "$QS.perm", "$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$M", "$H", "$H2", "$I2", "$tau2", "$tau2.f", "$fit.stats$*"]
 reason = "permutest() of location-scale fits refits the model for every permutation, on the flat likelihood of ls_na, ls_bcg and ls_bangert (see above); the permutation distribution of the scale coefficients inherits the optimiser noise."
 ref = "docs/differences.md"
 
 [[known]]
 match = "*/permutest_ls*"
 kind = "value-diff"
+path = ["$alpha", "$alpha$*", "$alpha.perm$*", "$va", "$se.alpha", "$zval.alpha", "$pval.alpha", "$ci.lb.alpha", "$ci.ub.alpha", "$zval.alpha.perm$*", "$QS", "$QSp", "$QS.perm", "$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$M", "$H", "$H2", "$I2", "$tau2", "$tau2.f", "$fit.stats$*"]
 reason = "Same as permutest/ls_*: refits of a flat location-scale likelihood."
 ref = "docs/differences.md"
 
@@ -456,6 +465,7 @@ ref = "docs/differences.md"
 [[known]]
 match = "*/glmm_bcg*"
 kind = "value-diff"
+path = ["$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$H2", "$I2", "$tau2", "$tau2.f", "$se.tau2", "$ci.lb.tau2", "$ci.ub.tau2", "$QE.Wld", "$QEp.Wld", "$QE.LRT", "$QEp.LRT", "$QE.df", "$fit.stats$*", "$tab$*", "$pi.*", "$cr.*", "$vcov", ""]
 reason = "rma_glmm(model='UM.FS') (and mods) fitted by lme4 in R and by the port in Python: the objective is the same (at R's coefficients Python's deviance is 4e-6 above its own optimum) but the surface is flat. For the intercept of ~ alloc at nAGQ = 7 R's bobyqa gives -0.61510, R's Nelder-Mead -0.61554 and Python -0.61456; coefficients agree to 1e-3 and standard errors to 2e-3."
 ref = "docs/differences.md"
 
@@ -475,11 +485,12 @@ ref = "docs/differences.md"
 match = "scripts/*"
 kind = "value-diff"
 detail = "*rma.glmm*"
+path = ["$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$H2", "$I2", "$tau2", "$tau2.f", "$se.tau2", "$ci.lb.tau2", "$ci.ub.tau2", "$QE.Wld", "$QEp.Wld", "$QE.LRT", "$QEp.LRT", "$QE.df", "$fit.stats$*", "$tab$*", "$pi.*", "$cr.*", "$vcov", ""]
 reason = "rma.glmm calls in R's own examples and tests: lme4 or the noisy CM.EL objective of R stops at a different point of a flat surface, see the rma_glmm entries."
 ref = "docs/differences.md"
 
 [[known]]
-match = "options/forest/*"
+match = "*/forest/mv_*"
 kind = "value-diff"
 path = "$cex*"
 reason = "forest() of a model with many studies lowers cex to fit the figure height: R divides by strheight('O') on its 7 x 7 inch pdf device (0.6399 for the 56 studies of dat.konstantopoulos2011) and metafopy by the height of the matplotlib axes, which depends on the figure the caller made (0.5309 for the default figure)."
@@ -495,6 +506,7 @@ ref = "docs/differences.md"
 match = "scripts/*"
 kind = "value-diff"
 detail = "*scale = ~*"
+path = ["$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$M", "$H", "$H2", "$I2", "$tau2", "$tau2.f", "$fit.stats$*", "$alpha", "$alpha$*", "$alpha.perm$*", "$va", "$se.alpha", "$zval.alpha", "$pval.alpha", "$ci.lb.alpha", "$ci.ub.alpha", "$zval.alpha.perm$*", "$QS", "$QSp", "$QS.perm", "[]*", "$x", "$y", "$resid", "$z", "$pred", "$pi.*", "$cr.*", "$scale", "$vcov"]
 reason = "Location-scale fits of R's tests with several scale terms (scale = ~grade + meta + sqrt(ni)): the likelihood is flat in the scale coefficients; they agree with R to 1e-3 and the Wald statistics of the scale part to 2e-3."
 ref = "docs/differences.md"
 
@@ -610,4 +622,72 @@ ref = "docs/differences.md"
 match = "api/rma.glmm/model"
 kind = "default-diff"
 reason = "model=None is R's default 'UM.FS'; None lets rma_glmm tell a model that was passed (and is irrelevant for one-group measures, which warns as in R) from the default."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/misc_funnel/*"
+kind = "value-diff"
+path = "$cex"
+detail = "*par(mfrow = c(5, 2), mar = c(5, 4, 1, 1), cex = 0.5)*"
+reason = "par(cex = 0.5) returns the old value of cex of the device: 1 on R's pdf device, the matplotlib default size of the text on the figure metafopy draws on."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/plots_forest_plot_with_subgroups/*"
+kind = "value-diff"
+path = "$cex"
+detail = "*par(*"
+reason = "par(cex = ) and par(op) return the old and the restored value of cex of the device: 1 on R's pdf device, the matplotlib default size of the text on the figure metafopy draws on."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/robust/*/clubSandwich=true"
+kind = "value-diff"
+path = "$ddf"
+detail = "element * Python None"
+reason = "robust(clubSandwich=TRUE) of an rma.uni fit: R's ddf holds the Satterthwaite degrees of freedom of the coefficients; metafopy keeps them in dfs and leaves ddf unset, since ddf is a single number."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/robust_cs_bcg"
+kind = "value-diff"
+path = "$ddf"
+detail = "element * Python None"
+reason = "Same as the robust(clubSandwich=TRUE) entry: the coefficients' degrees of freedom are in dfs, not in ddf."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/*"
+kind = "shape-diff"
+path = "$QMdf"
+detail = "length R 1, Python 2 *anova(*X = *"
+reason = "anova(X=) of linear combinations that are not of full rank: R's QMdf is the single NA, metafopy keeps the pair (m, ddf) and gives NaN for QM and QMp."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/selmodel/*"
+kind = "value-diff"
+path = ["$vd", "$pval", "$se.delta", "$zval.delta", "$ci.lb.delta", "$ci.ub.delta", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$LRTp.tau2"]
+detail = "*(relative 0.00*"
+reason = "selmodel() with type negexp1, trunc, truncest or beta on uni_factor, uni_mods, uni_mods_year and trimfill_bcg: the log-likelihood and the estimates agree to 1e-9 (uni_factor negexp1: -11.6783857826 in both) and the standard errors of the selection parameters, which come from a finite-difference Hessian of a surface that is flat in delta, differ by 1e-4 to 5e-4 relative."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/selmodel/*"
+kind = "value-diff"
+path = "$hessian"
+detail = "*R *e-0[5-9], Python *e-0[5-9]*"
+reason = "selmodel() Hessian: entries that are zero to about 1e-8 (the cross derivatives with a flat selection parameter) have different finite-difference noise in R and in metafopy."
+ref = "docs/differences.md"
+
+[[known]]
+match = "construct/ls_bcg/*"
+kind = "value-diff"
+path = ["$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$M", "$H", "$H2", "$I2", "$tau2", "$tau2.f", "$fit.stats$*", "$alpha", "$alpha$*", "$va", "$se.alpha", "$zval.alpha", "$pval.alpha", "$ci.lb.alpha", "$ci.ub.alpha", "$QS", "$QSp"]
+reason = "rma(mods=, scale = ~ alloc) of dat.bcg with extra or changed moderators, vi=0.1 and optbeta: the three-level scale model is degenerate (alpha of 18 to 31 on the boundary, tau2 of 1e-6, the Hessian of the scale part 1e8 or singular); the log-likelihood is equal and the boundary estimates differ. The default fit and optbeta=TRUE agree to 1e-9 in the log-likelihood and 1e-6 in the estimates."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/gosh/trimfill_bcg/*"
+reason = "gosh(seed=) is bit-exact with R only where dbinom ties break the same way (R 4.5.1 on Linux); this oracle is R 4.3.3."
 ref = "docs/differences.md"
