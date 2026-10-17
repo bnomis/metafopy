@@ -324,6 +324,7 @@ def fit_rma_ls(
     control: metafopy.models.rma_ls_result.LSControl,
     skiphes: bool = False,
     formula_scale: str | None = None,
+    Z_f: FloatArray | None = None,
 ) -> metafopy.models.rma_ls_result.RMALSResult:
     """Fit a location-scale model to normalised inputs: ``md`` (``yi``, ``vi``, ``X``) and the scale model matrix ``Z``.
 
@@ -368,14 +369,17 @@ def fit_rma_ls(
         test = 'z'
 
     drop = metafopy.core.linalg.drop_redundant(X)
+    X_f = md.X_all[md.rows_f] if md.X_all is not None and md.X_all.shape[1] == drop.shape[0] else X
     if drop.any():
         warnings.warn('Redundant predictors dropped from the model.', stacklevel=3)
         X = X[:, ~drop]
+        X_f = X_f[:, ~drop]
         names = [n for n, d in zip(names, drop, strict=True) if not d]
     is_int_x = numpy.array([metafopy.core.linalg.is_intercept(X[:, j]) for j in range(X.shape[1])])
     int_incl = bool(is_int_x.any())
     if int_incl:
         X = numpy.column_stack([numpy.ones(k), X[:, ~is_int_x]])
+        X_f = numpy.column_stack([numpy.ones(X_f.shape[0]), X_f[:, ~is_int_x]])
         names = ['intrcpt', *[n for n, i in zip(names, is_int_x, strict=True) if not i]]
     p = X.shape[1]
     int_only = p == 1 and metafopy.core.linalg.is_intercept(X[:, 0])
@@ -390,14 +394,17 @@ def fit_rma_ls(
     # -- scale model matrix ---------------------------------------------------
     znames = list(z_names)
     drop_z = metafopy.core.linalg.drop_redundant(Z)
+    Z_full = Z_f if Z_f is not None and Z_f.shape[1] == drop_z.shape[0] else None
     if drop_z.any():
         warnings.warn('Redundant predictors dropped from the scale model.', stacklevel=3)
         Z = Z[:, ~drop_z]
+        Z_full = None if Z_full is None else Z_full[:, ~drop_z]
         znames = [n for n, d in zip(znames, drop_z, strict=True) if not d]
     is_int_z = numpy.array([metafopy.core.linalg.is_intercept(Z[:, j]) for j in range(Z.shape[1])])
     Z_int_incl = bool(is_int_z.any())
     if Z_int_incl:
         Z = numpy.column_stack([numpy.ones(k), Z[:, ~is_int_z]])
+        Z_full = None if Z_full is None else numpy.column_stack([numpy.ones(Z_full.shape[0]), Z_full[:, ~is_int_z]])
         znames = ['intrcpt', *[n for n, i in zip(znames, is_int_z, strict=True) if not i]]
     q = Z.shape[1]
     if not metafopy.core.linalg.is_positive_definite(Z.T @ Z, tol=con.evtol):
@@ -772,6 +779,10 @@ def fit_rma_ls(
         vcovmat=vcovmat if optbeta else None,
         H=H,
         formula_scale=formula_scale,
+        Z_f=Z_full,
+        coef_na=tuple(bool(d) for d in drop),
+        coef_na_Z=tuple(bool(d) for d in drop_z),
+        X_f=X_f,
     )
 
 

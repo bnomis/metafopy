@@ -635,6 +635,7 @@ def rma_glmm(
         fit_stats_reml=nan_stats,
         se_warn=fit.se_warn,
         data=data,
+        control=con,
     )
     if vlevel:
         metafopy.core.verbose.cat('\n')

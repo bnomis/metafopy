@@ -158,6 +158,12 @@ class MetaData:
     vi_all: FloatArray | None = dataclasses.field(default=None, repr=False)
     X_all: FloatArray | None = dataclasses.field(default=None, repr=False)
     counts_all: dict[str, FloatArray] | None = dataclasses.field(default=None, repr=False)
+    ni_all: FloatArray | None = dataclasses.field(default=None, repr=False)
+    weights_all: FloatArray | None = dataclasses.field(default=None, repr=False)
+    ids_all: numpy.typing.NDArray[numpy.intp] | None = dataclasses.field(default=None, repr=False)
+    subset_arg: BoolArray | None = dataclasses.field(default=None, repr=False)
+    slab_given: bool = dataclasses.field(default=False, repr=False)
+    k_supplied: int | None = dataclasses.field(default=None, repr=False)
 
     @property
     def k(self) -> int:
@@ -167,7 +173,51 @@ class MetaData:
     @property
     def k_all(self) -> int:
         """Number of rows supplied before subsetting and NA removal."""
-        return int(self.keep.shape[0])
+        return int(self.keep.shape[0]) if self.k_supplied is None else self.k_supplied
+
+    @property
+    def rows_f(self) -> BoolArray:
+        """The rows left after subsetting but before the removal of missing values (those of metafor's ``yi.f``), as a mask over the rows of ``yi_all``."""
+        return self.keep if self.na_rows is None else self.keep | self.na_rows
+
+    @property
+    def k_f(self) -> int:
+        """Number of rows after subsetting and before the removal of missing values, metafor's ``k.f``."""
+        return int(self.rows_f.sum())
+
+    @property
+    def not_na(self) -> BoolArray:
+        """Whether each row of ``yi_f`` is complete and used in the fit, metafor's ``not.na``."""
+        return self.keep[self.rows_f]
+
+    @property
+    def ids(self) -> numpy.typing.NDArray[numpy.intp]:
+        """The 0-based positions among the rows supplied of the rows after subsetting (also those dropped for missing values), metafor's ``ids``."""
+        return numpy.flatnonzero(self.rows_f) if self.ids_all is None else self.ids_all
+
+    @property
+    def yi_f(self) -> FloatArray:
+        """The observed effects of the rows after subsetting, with ``NaN`` for the missing ones, metafor's ``yi.f``."""
+        return self.yi if self.yi_all is None else self.yi_all[self.rows_f]
+
+    @property
+    def vi_f(self) -> FloatArray:
+        """The sampling variances of the rows after subsetting, with ``NaN`` for the missing ones, metafor's ``vi.f``."""
+        return self.vi if self.vi_all is None else self.vi_all[self.rows_f]
+
+    @property
+    def ni_f(self) -> FloatArray | None:
+        """The sample sizes of the rows after subsetting (``None`` when unknown), metafor's ``ni.f``."""
+        if self.ni_all is None:
+            return self.ni if self.yi_all is None else None
+        return self.ni_all[self.rows_f]
+
+    @property
+    def weights_f(self) -> FloatArray | None:
+        """The user weights of the rows after subsetting (``None`` without weights), metafor's ``weights.f``."""
+        if self.weights_all is None:
+            return self.weights if self.yi_all is None else None
+        return self.weights_all[self.rows_f]
 
     @property
     def p(self) -> int:
@@ -275,6 +325,10 @@ class MetaData:
             yi_all=y,
             vi_all=v,
             X_all=X,
+            ni_all=n,
+            weights_all=w,
+            subset_arg=None if subset is None else subset_mask(subset, k_all, data),
+            slab_given=slab is not None,
         )
 
     @staticmethod

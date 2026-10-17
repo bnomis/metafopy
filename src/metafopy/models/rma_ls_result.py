@@ -2,6 +2,7 @@
 
 import collections.abc
 import dataclasses
+import math
 import typing
 
 import numpy
@@ -146,11 +147,54 @@ class RMALSResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_me
     Z_f: FloatArray | None = dataclasses.field(default=None, repr=False)
     digits: int = 4
     call: metafopy.models.call.Call | None = dataclasses.field(default=None, kw_only=True, repr=False, compare=False)
+    coef_na: tuple[bool, ...] = ()
+    coef_na_Z: tuple[bool, ...] = ()  # noqa: N815  mirrors metafor's name
+    X_f: FloatArray = dataclasses.field(default_factory=lambda: numpy.empty((0, 0)), repr=False)
+    add: float = 0.5
+    to: str = 'only0'
+    drop00: bool = False
 
     @property
     def alphas(self) -> int:
         """Number of scale coefficients (metafor's ``alphas``)."""
         return self.q
+
+    @property
+    def model(self) -> str:
+        """The kind of model, ``'rma.ls'`` (metafor's ``model``)."""
+        return 'rma.ls'
+
+    @property
+    def se_tau2(self) -> float:
+        """Not available for location-scale models (``NaN``, as metafor stores ``NA``)."""
+        return math.nan
+
+    @property
+    def R2(self) -> None:
+        """Not available for location-scale models (``None``, as metafor stores ``NULL``)."""
+        return None
+
+    @property
+    def randhet(self) -> bool:
+        """Whether random heterogeneity is modelled (always ``False`` here, metafor's ``randhet``)."""
+        return False
+
+    @property
+    def Z_intercept(self) -> bool:
+        """Whether the scale model has an intercept, metafor's ``Z.intercept``."""
+        return self.Z_int_incl
+
+    @property
+    def dfs(self) -> int | None:
+        """The degrees of freedom of the tests of the location coefficients (``None`` for the z-test), metafor's ``dfs``."""
+        return self.ddf
+
+    @property
+    def tau2_f(self) -> FloatArray:
+        """The amount of residual heterogeneity of each study after subsetting, ``NaN`` for those left out of the fit, metafor's ``tau2.f``."""
+        out = numpy.full(self.data.k_f, math.nan)
+        out[self.data.not_na] = self.tau2
+        return out
 
     # -- accessors ---------------------------------------------------------
 
@@ -200,7 +244,7 @@ class RMALSResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_me
 
         return metafopy.methods.residuals.residuals(self, type, na_action=na_action)
 
-    def fit_stats(self, REML: bool | None) -> metafopy.models.rma_uni.FitStats:
+    def fit_stats_for(self, REML: bool | None) -> metafopy.models.rma_uni.FitStats:
         if REML is None:
             REML = self.method == 'REML'
         return self.fit_stats_reml if REML else self.fit_stats_ml

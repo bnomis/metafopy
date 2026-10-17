@@ -8,6 +8,7 @@ import numpy
 import numpy.typing
 import pandas
 
+import metafopy.metadata
 import metafopy.mfopt
 import metafopy.models.call
 import metafopy.models.fit_methods
@@ -217,6 +218,115 @@ class SelmodelResult(metafopy.models.fit_methods.FitMethods):
         return None
 
     @property
+    def model(self) -> str:
+        """The kind of model, ``'rma.uni.selmodel'`` (metafor's ``model``)."""
+        return 'rma.uni.selmodel'
+
+    @property
+    def measure(self) -> str:
+        return self.base.measure
+
+    @property
+    def weighted(self) -> bool:
+        return self.base.weighted
+
+    @property
+    def weights(self) -> FloatArray | None:
+        return self.base.weights
+
+    @property
+    def s2w(self) -> float:
+        return self.base.s2w
+
+    @property
+    def allvipos(self) -> bool:
+        return self.base.allvipos
+
+    @property
+    def QMdf(self) -> tuple[int, None]:
+        """Degrees of freedom of the test of the moderators: ``(m, None)``, as the test is a chi-square test (metafor's ``QMdf``)."""
+        return (self.base.m, None)
+
+    @property
+    def dfs(self) -> None:
+        return None
+
+    @property
+    def tau2_f(self) -> float:
+        """The amount of heterogeneity, metafor's ``tau2.f`` (the same number as ``tau2`` here)."""
+        return self.tau2
+
+    @property
+    def intercept(self) -> bool:
+        return self.base.intercept
+
+    @property
+    def coef_na(self) -> tuple[bool, ...]:
+        return self.base.coef_na
+
+    @property
+    def X_f(self) -> FloatArray:
+        return self.base.X_f
+
+    @property
+    def yi_f(self) -> FloatArray:
+        return self.base.yi_f
+
+    @property
+    def vi_f(self) -> FloatArray:
+        return self.base.vi_f
+
+    @property
+    def ni_f(self) -> FloatArray | None:
+        return self.base.ni_f
+
+    @property
+    def weights_f(self) -> FloatArray | None:
+        return self.base.weights_f
+
+    @property
+    def k_f(self) -> int:
+        return self.base.k_f
+
+    @property
+    def ids(self) -> numpy.typing.NDArray[numpy.intp]:
+        return self.base.ids
+
+    @property
+    def not_na(self) -> numpy.typing.NDArray[numpy.bool_]:
+        return self.base.not_na
+
+    @property
+    def slab_null(self) -> bool:
+        return self.base.slab_null
+
+    @property
+    def outdat_f(self) -> dict[str, FloatArray | None]:
+        return self.base.outdat_f
+
+    @property
+    def add(self) -> float:
+        return self.base.add
+
+    @property
+    def to(self) -> str:
+        return self.base.to
+
+    @property
+    def drop00(self) -> bool:
+        return self.base.drop00
+
+    @property
+    def data(self) -> metafopy.metadata.MetaData:
+        """The data of the underlying model (metafor keeps the data frame the model was fitted to)."""
+        return self.base.data
+
+    @property
+    def wi_fun(self) -> metafopy.models.sel_spec.Weight | None:
+        """The selection function of the model (metafor's ``wi.fun``), vectorised over the studies."""
+        return self.spec.weight
+
+    @property
     def delta_names(self) -> tuple[str, ...]:
         return ('delta',) if self.deltas == 1 else tuple(f'delta.{j + 1}' for j in range(self.deltas))
 
@@ -290,7 +400,7 @@ class SelmodelResult(metafopy.models.fit_methods.FitMethods):
 
         return metafopy.methods.residuals.residuals(self, type, na_action=na_action)
 
-    def fit_stats(self, REML: bool | None = None) -> metafopy.models.rma_uni.FitStats:
+    def fit_stats_for(self, REML: bool | None = None) -> metafopy.models.rma_uni.FitStats:
         return self.fit_stats_reml if REML else self.fit_stats_ml
 
     # -- delegated methods (defined in metafopy.methods.selmodel) ------------------

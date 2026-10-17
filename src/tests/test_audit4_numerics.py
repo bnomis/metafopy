@@ -36,7 +36,7 @@ def test_gen_converges_to_the_end_of_the_ridge() -> None:
     """R's default run stops at logLik -31.47369 on the ridge; the fit here reaches its end, where R started there stays (-30.98466)."""
     ref = REF['gen']
     res = gen_fit(mods='~ year')
-    ll = res.fit_stats(True).as_tuple()[0]
+    ll = res.fit_stats_for(True).as_tuple()[0]
     assert ll >= ref['default_ll']
     refutil.close([ll], [ref['hot_ll']], 'GEN logLik', rtol=1e-7)
     refutil.close(res.tau2, ref['hot_tau2'], 'GEN tau2', rtol=1e-5)
@@ -47,7 +47,7 @@ def test_gen_converges_to_the_end_of_the_ridge() -> None:
 
 def test_gen_without_moderators_converges() -> None:
     ref = REF['gen']
-    ll = gen_fit().fit_stats(True).as_tuple()[0]
+    ll = gen_fit().fit_stats_for(True).as_tuple()[0]
     assert ll >= ref['nomods_default_ll']
     assert ll == pytest.approx(ref['nomods_hot_ll'], abs=1e-3)
 

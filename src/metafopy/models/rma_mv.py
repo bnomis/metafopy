@@ -631,12 +631,18 @@ def rma_mv(
     k = int(idx.shape[0])
     vi = numpy.asarray(V_s.diagonal() if scipy.sparse.issparse(V_s) else numpy.diag(V_s), dtype=numpy.float64).copy()
     k_f = k
+    ni_all = metafopy.metadata.escalc_ni(yi if isinstance(yi, str) else None, data, k_all)
+    ni_f = None if ni_all is None else ni_all[idx]
+    yi_f = yi_s.copy()
+    vi_f = vi.copy()
+    V_f = V_s
+    W_f = A_s
 
     with_s, with_g, with_h = rand.with_s, rand.with_g, rand.with_h
     struct_t = rand.struct
     sinfo = process_s_before(rand, idx, sigma2, R)
     if not with_s:
-        sinfo = SInfo(names=[], factors=[], sigma2=numpy.zeros(0), R=[], Rfix=[], with_r=False)
+        sinfo = SInfo(names=[], factors=[], sigma2=numpy.zeros(0), R=[], Rfix=[False], with_r=False)
     s_levels_f = tuple(tuple(f.levels) for f in sinfo.factors)
     sigma2s = len(sinfo.factors) if with_s else 1
 
@@ -1218,6 +1224,15 @@ def rma_mv(
         beta_est=tuple(bool(b) for b in beta_est),
         vccon=None if vccon is None else {key: numpy.asarray(vccon_ids[key]) for key in vccon_ids},
         cvvc=cvvc_mode,
+        yi_f=yi_f,
+        vi_f=vi_f,
+        V_f=V_f,
+        W_f=W_f,
+        ni_f=ni_f,
+        ni=None if ni_f is None else ni_f[not_na],
+        subset=None if subset is None else mask,
+        slab_null=slab is None and stored_slab is None,
+        control=con,
     )
     if vlevel:
         metafopy.core.verbose.cat('\n')

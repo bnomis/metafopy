@@ -72,7 +72,7 @@ def fit_statistics(yi: FloatArray, vi: FloatArray, fit: float, k_yi: int) -> tup
 
 
 @dataclasses.dataclass(frozen=True, slots=True, eq=False)
-class FixedBinaryResult(metafopy.models.fit_methods.FitMethods, abc.ABC):
+class FixedBinaryResult(metafopy.models.fit_methods.TableFields, metafopy.models.fit_methods.FitMethods, abc.ABC):
     """An intercept-only equal-effects model for 2x2 tables or rate data.
 
     ``beta``, ``se``, ``zval``, ``pval``, ``ci_lb``, ``ci_ub`` and ``vb`` hold a
@@ -148,6 +148,46 @@ class FixedBinaryResult(metafopy.models.fit_methods.FitMethods, abc.ABC):
         return 1
 
     @property
+    def X_f(self) -> FloatArray:
+        """The model matrix of the tables after subsetting, a column of ones, metafor's ``X.f``."""
+        return numpy.ones((self.k_f, 1))
+
+    @property
+    def tau2_f(self) -> float:
+        """The amount of heterogeneity, metafor's ``tau2.f`` (always 0 for these equal-effects models)."""
+        return 0.0
+
+    @property
+    def intercept(self) -> bool:
+        """Whether the model has an intercept (always ``True``), metafor's ``intercept``."""
+        return True
+
+    @property
+    def coef_na(self) -> tuple[bool, ...]:
+        """Whether the coefficient could not be estimated (always ``(False,)``), metafor's ``coef.na``."""
+        return (False,)
+
+    @property
+    def btt(self) -> tuple[int, ...]:
+        """The coefficients tested (the only one, 0-based), metafor's ``btt``."""
+        return (0,)
+
+    @property
+    def m(self) -> int:
+        """The number of coefficients tested (1), metafor's ``m``."""
+        return 1
+
+    @property
+    def ddf(self) -> None:
+        """The degrees of freedom of the test (``None``: a z-test), metafor's ``ddf``."""
+        return None
+
+    @property
+    def dfs(self) -> None:
+        """The degrees of freedom of the test (``None``: a z-test), metafor's ``dfs``."""
+        return None
+
+    @property
     def ni(self) -> FloatArray:
         """Sample sizes of the tables used in the fit (``ai + bi + ci + di``, or the person-times of rate data), metafor's ``ni``."""
         return self.tables.ni
@@ -159,7 +199,7 @@ class FixedBinaryResult(metafopy.models.fit_methods.FitMethods, abc.ABC):
 
         return metafopy.methods.vcov.vcov_frame(self, type, na_action)
 
-    def fit_stats(self, REML: bool | None = None) -> metafopy.models.rma_uni.FitStats:
+    def fit_stats_for(self, REML: bool | None = None) -> metafopy.models.rma_uni.FitStats:
         return self.fit_stats_reml if REML else self.fit_stats_ml
 
     def fitted(self, *, na_action: metafopy.models.rma_uni.NAActionAll = 'omit') -> FloatArray:

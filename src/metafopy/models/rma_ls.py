@@ -142,5 +142,6 @@ def fit_scale(
         beta=beta,
         control=metafopy.models.rma_ls_fit.make_ls_control(control),  # type: ignore[arg-type]
         formula_scale=scale if isinstance(scale, str) else None,
+        Z_f=Z_f,
     )
-    return dataclasses.replace(res, measure=measure, Z_f=Z_f)
+    return dataclasses.replace(res, measure=measure)

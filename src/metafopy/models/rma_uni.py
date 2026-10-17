@@ -120,18 +120,79 @@ class RMAResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_meth
     robust: metafopy.models.robust_info.RobustInfo | None = None
     digits: int = 4
     call: metafopy.models.call.Call | None = dataclasses.field(default=None, kw_only=True, repr=False, compare=False)
+    coef_na: tuple[bool, ...] = ()
+    X_f: FloatArray = dataclasses.field(default_factory=lambda: numpy.empty((0, 0)), repr=False)
+    add: float = 0.5
+    to: str = 'only0'
+    drop00: bool = False
 
     # -- accessors ---------------------------------------------------------
 
     @property
+    def model(self) -> str:
+        """The kind of model, ``'rma.uni'`` (metafor's ``model``)."""
+        return 'rma.uni'
+
+    @property
+    def tau2_f(self) -> float:
+        """The amount of heterogeneity, metafor's ``tau2.f`` (the same number as ``tau2`` here)."""
+        return self.tau2
+
+    @property
+    def cluster(self) -> numpy.typing.NDArray[numpy.object_] | None:
+        """The cluster of each study of a model made robust with :func:`metafopy.robust` (metafor's ``cluster``), ``None`` otherwise."""
+        return None if self.robust is None else self.robust.cluster
+
+    @property
+    def n(self) -> int | None:
+        """The number of clusters of a robust model (metafor's ``n``), ``None`` otherwise."""
+        return None if self.robust is None else self.robust.n
+
+    @property
+    def tcl(self) -> numpy.typing.NDArray[numpy.intp] | None:
+        """The number of studies in each cluster of a robust model (metafor's ``tcl``), ``None`` otherwise."""
+        return None if self.robust is None else self.robust.tcl
+
+    @property
+    def vbest(self) -> str | None:
+        """The variance estimator of a robust model (``'CR0'``, ``'CR1'``, ..., metafor's ``vbest``), ``None`` otherwise."""
+        return None if self.robust is None else self.robust.vbest
+
+    @property
+    def robumethod(self) -> str | None:
+        """``'default'`` or ``'clubSandwich'`` for a robust model (metafor's ``robumethod``), ``None`` otherwise."""
+        return None if self.robust is None else self.robust.robumethod
+
+    @property
+    def meat(self) -> FloatArray | None:
+        """The block-diagonal matrix of residual cross-products of a robust model (metafor's ``meat``), ``None`` without one (``clubSandwich`` fits too)."""
+        return None if self.robust is None else self.robust.meat
+
+    @property
+    def coef_test(self) -> str | None:
+        """The test of the coefficients of a ``club_sandwich`` model (metafor's ``coef_test``), ``None`` otherwise."""
+        return None if self.robust is None else self.robust.coef_test
+
+    @property
+    def conf_test(self) -> str | None:
+        """The test behind the confidence intervals of a ``club_sandwich`` model (metafor's ``conf_test``), ``None`` otherwise."""
+        return None if self.robust is None else self.robust.conf_test
+
+    @property
+    def wald_test(self) -> str | None:
+        """The Wald-type test of a ``club_sandwich`` model (metafor's ``wald_test``), ``None`` otherwise."""
+        return None if self.robust is None else self.robust.wald_test
+
+    @property
     def dfs(self) -> float | tuple[float, ...] | None:
-        """The degrees of freedom of a model made robust with :func:`metafopy.robust` (metafor's ``dfs``), ``None`` otherwise.
+        """The degrees of freedom of the tests (metafor's ``dfs``): ``ddf`` (``None`` for the z-test), or for a model made robust with
+        :func:`metafopy.robust` those of the robust tests.
 
         A single number (the number of clusters minus ``p``) for the default method and one value per coefficient for ``club_sandwich=True``,
         for which ``ddf`` stays ``None`` because it holds a single number.
         """
         if self.robust is None:
-            return None
+            return self.ddf
         if self.robust.robumethod == 'clubSandwich':
             return tuple(float(v) for v in self.robust.dfs)
         return float(self.robust.dfs[0])
@@ -164,7 +225,7 @@ class RMAResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_meth
 
         return metafopy.methods.residuals.residuals(self, type, na_action=na_action)
 
-    def fit_stats(self, REML: bool | None) -> FitStats:
+    def fit_stats_for(self, REML: bool | None) -> FitStats:
         if REML is None:
             REML = self.method == 'REML'
         return self.fit_stats_reml if REML else self.fit_stats_ml
@@ -643,6 +704,9 @@ def rma_uni(
                 measure=measure,
             ),
             digits=digits_,
+            add=0.5 if add is None else float(add),
+            to=str(to),
+            drop00=bool(drop00),
         )
     if md.na_rows is not None and md.na_rows.any():
         if vlevel > 1:
@@ -663,7 +727,14 @@ def rma_uni(
     )
     if vlevel:
         metafopy.core.verbose.cat('\n')
-    return dataclasses.replace(res, measure=measure, digits=digits_)
+    return dataclasses.replace(
+        res,
+        measure=measure,
+        digits=digits_,
+        add=0.5 if add is None else float(add),
+        to=str(to),
+        drop00=bool(drop00),
+    )
 
 
 def warn_na_omitted(n: int) -> None:
@@ -748,7 +819,14 @@ def metadata_from_escalc(
         slab=[str(i + 1) for i in idx] if slab is None else sub(slab),
         na_action=na_action,
     )
-    return dataclasses.replace(md, counts_all=counts_all or None)
+    return dataclasses.replace(
+        md,
+        counts_all=counts_all or None,
+        ids_all=idx.astype(numpy.intp),
+        subset_arg=None if subset is None else mask,
+        slab_given=slab is not None,
+        k_supplied=k_all,
+    )
 
 
 rma = rma_uni
@@ -803,15 +881,18 @@ def fit_rma_uni(
         test = 'z'
 
     drop = metafopy.core.linalg.drop_redundant(X)
+    X_f = md.X_all[md.rows_f] if md.X_all is not None and md.X_all.shape[1] == drop.shape[0] else X
     if drop.any():
         warnings.warn('Redundant predictors dropped from the model.', stacklevel=2)
         X = X[:, ~drop]
+        X_f = X_f[:, ~drop]
         names = [n for n, d in zip(names, drop, strict=True) if not d]
 
     is_int = numpy.array([metafopy.core.linalg.is_intercept(X[:, j]) for j in range(X.shape[1])])
     int_incl = bool(is_int.any())
     if int_incl:
         X = numpy.column_stack([numpy.ones(k), X[:, ~is_int]])
+        X_f = numpy.column_stack([numpy.ones(X_f.shape[0]), X_f[:, ~is_int]])
         names = ['intrcpt', *[n for n, i in zip(names, is_int, strict=True) if not i]]
     p = X.shape[1]
     int_only = p == 1 and metafopy.core.linalg.is_intercept(X[:, 0])
@@ -1034,6 +1115,8 @@ def fit_rma_uni(
         data=md,
         control=con,
         iterations=iterations,
+        coef_na=tuple(bool(d) for d in drop),
+        X_f=X_f,
     )
 
 
@@ -1183,7 +1266,7 @@ def format_result(res: RMAResult, digits: int, showfit: bool = False, signif_sta
             metafopy.printing.fmt_named_vector(
                 # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
                 ['logLik', 'deviance', 'AIC', 'BIC', 'AICc'],
-                [metafopy.printing.fmt_num(v, digits) for v in res.fit_stats(None).as_tuple()],
+                [metafopy.printing.fmt_num(v, digits) for v in res.fit_stats_for(None).as_tuple()],
             )
         )
         out.append('')

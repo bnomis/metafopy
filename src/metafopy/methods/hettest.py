@@ -382,7 +382,7 @@ def hettest(
     else:
         beta = float(model.beta[0])
         wi = 1 / (v + model.tau2)
-        res0 = NullFit(beta=beta, tau2=float(model.tau2), ll=model.fit_stats(fit_method == 'REML').ll, ei=yi - beta, hi=wi / float(numpy.sum(wi)))
+        res0 = NullFit(beta=beta, tau2=float(model.tau2), ll=model.fit_stats_for(fit_method == 'REML').ll, ei=yi - beta, hi=wi / float(numpy.sum(wi)))
 
     init = numpy.full(k, max(res0.tau2, 0.01))
     if con.get('tau2i_init') is not None:

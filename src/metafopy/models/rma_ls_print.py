@@ -73,7 +73,7 @@ def format_result(
     out.append(f'Location-Scale Model (k = {res.k}; tau^2 estimator: {res.method})')
     out.append('')
     if showfit:
-        st = res.fit_stats(None)
+        st = res.fit_stats_for(None)
         cells = [metafopy.printing.fmt_num(v, digits) for v in st.as_tuple()]
         # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
         out.append(metafopy.printing.fmt_named_vector(['logLik', 'deviance', 'AIC', 'BIC', 'AICc'], cells))

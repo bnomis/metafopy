@@ -6,6 +6,7 @@ https://github.com/wviechtb/metafor/blob/master/R/print.rma.glmm.r.
 
 import dataclasses
 import math
+import typing
 
 import numpy
 import numpy.typing
@@ -37,7 +38,7 @@ FIXED_METHODS = ('FE', 'EE', 'CE')
 
 
 @dataclasses.dataclass(frozen=True, slots=True, eq=False)
-class GLMMResult(metafopy.models.fit_methods.FitMethods):
+class GLMMResult(metafopy.models.fit_methods.TableFields, metafopy.models.fit_methods.FitMethods):
     """A fitted ``rma.glmm`` model: a generalized linear mixed-effects model for binary or count data.
 
     ``beta``, ``se``, ``zval``, ``pval``, ``ci_lb``, ``ci_ub`` and ``vb`` hold one element per coefficient
@@ -104,8 +105,21 @@ class GLMMResult(metafopy.models.fit_methods.FitMethods):
     se_warn: bool
     data: pandas.DataFrame | None = dataclasses.field(default=None, repr=False)
     call: metafopy.models.call.Call | None = dataclasses.field(default=None, kw_only=True, repr=False, compare=False)
+    control: typing.Any = dataclasses.field(default=None, kw_only=True, repr=False, compare=False)
+
+    outdat_names: typing.ClassVar[tuple[str, ...]] = (*metafopy.models.fit_methods.COUNT_NAMES, 'xi', 'mi', 'ti')
 
     # -- accessors ---------------------------------------------------------
+
+    @property
+    def dfs(self) -> int | None:
+        """The degrees of freedom of the tests of the coefficients (``None`` for the z-test), metafor's ``dfs``."""
+        return self.ddf
+
+    @property
+    def ni(self) -> FloatArray:
+        """Sample sizes of the tables used in the fit, metafor's ``ni``."""
+        return self.tables.ni
 
     @property
     def yi(self) -> FloatArray:
@@ -155,7 +169,7 @@ class GLMMResult(metafopy.models.fit_methods.FitMethods):
 
         return metafopy.methods.residuals.residuals(self, type, na_action=na_action)
 
-    def fit_stats(self, REML: bool | None = None) -> metafopy.models.rma_uni.FitStats:
+    def fit_stats_for(self, REML: bool | None = None) -> metafopy.models.rma_uni.FitStats:
         return self.fit_stats_reml if REML else self.fit_stats_ml
 
     def summary(self, digits: int | None = None, showfit: bool = True) -> str:
