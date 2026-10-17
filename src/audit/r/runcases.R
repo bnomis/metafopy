@@ -13,6 +13,8 @@ cases <- read_json(args[2])
 
 env <- new.env()
 fixture_errors <- list()
+# the Python side seeds 1234 before it builds the fixtures, so fixtures that draw random numbers (hettest(), permutest()) must start from the same state
+set.seed(1234)
 for (fx in fixtures) {
   res <- tryCatch(run_call(fx, env), error = function(e) e)
   if (inherits(res, "error")) {
