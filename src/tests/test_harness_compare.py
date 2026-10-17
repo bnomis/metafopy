@@ -140,3 +140,8 @@ def test_digits_number_stands_for_the_vector_of_nine() -> None:
     other = valuetree.to_node({'digits': 2}, guide, '', missing)
     valuetree.compare(guide, other, '', out)
     assert [d.kind for d in out] == ['value-diff']
+
+
+def test_printed_lines_ignore_curly_quotes_and_trailing_spaces() -> None:
+    assert valuetree.cell_equal("Signif. codes:  0 '***' 0.001  ", 'Signif. codes:  0 \u2018***\u2019 0.001')[0] == 'same'
+    assert valuetree.cell_equal("a 'b'", "a 'c'")[0] == 'diff'

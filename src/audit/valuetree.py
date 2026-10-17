@@ -216,6 +216,11 @@ class Diff:
     detail: str
 
 
+def straight(text: str) -> str:
+    """The text with curly single quotes replaced by straight ones."""
+    return text.replace('\u2018', "'").replace('\u2019', "'")
+
+
 def cell_equal(a: typing.Any, b: typing.Any) -> tuple[str, float]:
     """Compare two cells: ('same'|'drift'|'diff', relative difference)."""
     if a is None and b is None:
@@ -224,7 +229,8 @@ def cell_equal(a: typing.Any, b: typing.Any) -> tuple[str, float]:
         return 'diff', math.inf
     if isinstance(a, str) and isinstance(b, str):
         # printed lines (capture.output(print(x))) end in padding that R's print methods add and the tests of metafor never compare
-        return ('same', 0.0) if a.rstrip() == b.rstrip() else ('diff', math.inf)
+        # and R prints the quotes of the significance codes as curly quotes in a UTF-8 locale
+        return ('same', 0.0) if straight(a).rstrip() == straight(b).rstrip() else ('diff', math.inf)
     if isinstance(a, bool) or isinstance(b, bool):
         return ('same', 0.0) if bool(a) == bool(b) else ('diff', math.inf)
     if isinstance(a, str) or isinstance(b, str):
