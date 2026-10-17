@@ -1,5 +1,6 @@
 """Values that audit 8 found different from R metafor 5.2-1 (checked against R 4.3.3, metafor 5.2-1)."""
 
+import typing
 import warnings
 
 import numpy
@@ -75,7 +76,7 @@ def test_regtest_and_selmodel_refit_the_studies_used(which: int) -> None:
         warnings.simplefilter('ignore')
         data = metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=frame)
         res = metafopy.rma(yi='yi', vi='vi', mods=mods, data=data)
-        views = [metafopy.regtest(res).fit, metafopy.selmodel(res, type='beta')]
+        views: list[typing.Any] = [metafopy.regtest(res).fit, metafopy.selmodel(res, type='beta')]
     for view in views:
         assert view is not None
         assert view.measure == 'RR'
@@ -85,3 +86,17 @@ def test_regtest_and_selmodel_refit_the_studies_used(which: int) -> None:
         assert len(view.not_na) == k
         assert view.ids.tolist() == list(range(k))
         assert all(value is None for value in view.outdat_f.values())
+
+
+@pytest.mark.parametrize(('measure', 'add'), [('ZTET', 0.0), ('PFT', 0.0), ('IRSD', 0.0), ('RR', 0.5), ('PLO', 0.5)])
+def test_default_add_is_zero_for_measures_that_need_none(measure: str, add: float) -> None:
+    # R 4.3.3, metafor 5.2-1: rma(yi, vi, measure = "ZTET")$add is 0, and 1/2 for RR and PLO
+    assert metafopy.models.rma_uni.default_add(measure, None) == add
+    assert metafopy.models.rma_uni.default_add(measure, 0.25) == 0.25
+
+
+def test_predict_of_mantel_haenszel_fit_carries_a_method() -> None:
+    # R: predict(rma.mh(ai, bi, ci, di, data = dat.bcg))$method is "FE"
+    data = metafopy.datasets.load('dat.bcg')
+    fit = metafopy.rma_mh(ai='tpos', bi='tneg', ci='cpos', di='cneg', data=data)
+    assert metafopy.predict(fit).method == 'FE'

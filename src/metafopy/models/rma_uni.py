@@ -375,6 +375,19 @@ def set_btt(btt: Btt, p: int, int_incl: bool, names: collections.abc.Sequence[st
     return tuple(out)
 
 
+ZERO_ADD_MEASURES = frozenset({'AS', 'PHI', 'ZPHI', 'RTET', 'ZTET', 'IRSD', 'PAS', 'PFT', 'IRS', 'IRFT'})
+
+
+def default_add(measure: str, add: float | None) -> float:
+    """The ``add`` that ``rma.uni`` stores: 1/2 unless given, and 0 unless given for the measures whose transformation has no use for it.
+
+    See https://github.com/wviechtb/metafor/blob/master/R/rma.uni.r ("for certain measures, set 'add=0' by default").
+    """
+    if add is not None:
+        return float(add)
+    return 0.0 if measure in ZERO_ADD_MEASURES else 0.5
+
+
 def as_refit_on_used(fit: RMAResult, *, dropped: bool, measure: str) -> RMAResult:
     """``fit`` as metafor returns a model that it fitted again to the estimates of the studies used (``regtest()`` and ``selmodel()``).
 
@@ -774,7 +787,7 @@ def rma_uni(
                 skiphes=skiphes,
             ),
             digits=digits_,
-            add=0.5 if add is None else float(add),
+            add=default_add(measure, add),
             to=str(to),
             drop00=bool(drop00),
         )
@@ -806,7 +819,7 @@ def rma_uni(
         res,
         measure=measure,
         digits=digits_,
-        add=0.5 if add is None else float(add),
+        add=default_add(measure, add),
         to=str(to),
         drop00=bool(drop00),
     )

@@ -42,7 +42,7 @@ __all__ = ['DeltaMethodResult', 'deltamethod']
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 
 # auditme: accept[non-alphabetical-literal] order is metafor's documented order and is meaningful
-DIGIT_KEYS = ('est', 'se', 'test', 'pval', 'ci')
+DIGIT_KEYS = metafopy.mfopt.DIGIT_KEYS
 
 
 @dataclasses.dataclass(frozen=True)
