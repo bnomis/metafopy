@@ -316,6 +316,10 @@ def format_result(
     header, rows_ = metafopy.printing.drop_stars(header, rows_, signif_stars)
     out.append('Model Results:')
     out.append('')
-    out.append(metafopy.printing.fmt_table(header, rows_, row_names=None if res.int_only else list(res.coef_names), width=80))
+    out.append(
+        metafopy.printing.fmt_table(
+            header, rows_, row_names=None if res.int_only else list(res.coef_names), width=metafopy.printing.console_width(1 if robust is not None else 0)
+        )
+    )
     out += metafopy.printing.signif_footer(signif_legend, metafopy.models.robust_print.legend_lines(robust, res.int_only) if robust is not None else ())
     return '\n'.join(out)

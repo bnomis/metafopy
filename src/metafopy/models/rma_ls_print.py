@@ -56,7 +56,7 @@ def coef_table(
         row.append(metafopy.printing.signif_stars(float(pval[j])))
         rows.append(row)
     header, rows = metafopy.printing.drop_stars(header, rows, signif_stars)
-    return metafopy.printing.fmt_table(header, rows, row_names=None if estimate.shape[0] == 1 else list(names), width=80)
+    return metafopy.printing.fmt_table(header, rows, row_names=None if estimate.shape[0] == 1 else list(names), width=metafopy.printing.console_width())
 
 
 def test_line(stat: float, df: tuple[int, float | None], p: float, digits: int, name: str) -> str:

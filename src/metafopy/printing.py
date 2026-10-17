@@ -16,7 +16,9 @@ import numpy.typing
 import metafopy.errors
 
 __all__ = [
+    'SETTINGS',
     'SIGNIF_LEGEND',
+    'console_width',
     'drop_stars',
     'fmt_df',
     'fmt_df_scalar',
@@ -84,6 +86,15 @@ def signif_footer(signif_legend: bool, extra: collections.abc.Sequence[str] = ()
     return [*out, *extra, '']
 
 
+# the line width of R's console (``getOption('width')``) at which wide tables wrap; tests that compare with printouts made at another width change it
+SETTINGS: dict[str, int] = {'width': 80}
+
+
+def console_width(extra: int = 0) -> int:
+    """The width at which tables wrap (R's ``getOption('width')``), ``extra`` characters wider for tables whose cells carry their own padding."""
+    return SETTINGS['width'] + extra
+
+
 def fmt_table(
     header: collections.abc.Sequence[str],
     rows: collections.abc.Sequence[collections.abc.Sequence[str]],
@@ -114,7 +125,7 @@ def fmt_table(
     for j in range(ncol):
         # the column of significance stars (no header) is as wide as '***' for R, which pads it
         w_j = max(widths[j], 3) if header[j] == '' else widths[j]
-        need = w_j + (gap if blocks[-1] else 0)
+        need = w_j + ((1 if header[j] == '' else gap) if blocks[-1] else 0)
         if limit is not None and blocks[-1] and used + need > limit:
             blocks.append([])
             used = start

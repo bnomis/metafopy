@@ -107,7 +107,7 @@ class GLMMResult(metafopy.models.fit_methods.TableFields, metafopy.models.fit_me
     call: metafopy.models.call.Call | None = dataclasses.field(default=None, kw_only=True, repr=False, compare=False)
     control: typing.Any = dataclasses.field(default=None, kw_only=True, repr=False, compare=False)
 
-    outdat_names: typing.ClassVar[tuple[str, ...]] = (*metafopy.models.fit_methods.COUNT_NAMES, 'xi', 'mi', 'ti')
+    outdat_names: typing.ClassVar[tuple[str, ...]] = (*metafopy.models.fit_methods.COUNT_NAMES, 'xi', 'mi', 'ni', 'ti')
 
     # -- accessors ---------------------------------------------------------
 
@@ -283,7 +283,9 @@ class GLMMResult(metafopy.models.fit_methods.TableFields, metafopy.models.fit_me
                 metafopy.printing.signif_stars(float(self.pval[j])),
             ]
             rows.append(row)
-        out.append(metafopy.printing.fmt_table(header, rows, row_names=None if self.int_only else list(self.coef_names), width=80))
+        out.append(
+            metafopy.printing.fmt_table(header, rows, row_names=None if self.int_only else list(self.coef_names), width=metafopy.printing.console_width())
+        )
         out.append('')
         out.append('---')
         out.append("Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1")
