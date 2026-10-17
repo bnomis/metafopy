@@ -167,8 +167,11 @@ def summary_for(x: typing.Any) -> typing.Callable[..., typing.Any]:
         raise MissingFunctionError('summary')
 
     @functools.wraps(method)
-    def call(*args: typing.Any, **kwargs: typing.Any) -> SummaryText:
-        text = SummaryText(method(*args, **kwargs))
+    def call(*args: typing.Any, **kwargs: typing.Any) -> str:
+        result = method(*args, **kwargs)
+        if getattr(result, 'fit', None) is not None:
+            return typing.cast(str, result)  # the text already carries the fit
+        text = SummaryText(result)
         text.fit = x
         return text
 
@@ -177,8 +180,9 @@ def summary_for(x: typing.Any) -> typing.Callable[..., typing.Any]:
 
 def coef_for(x: typing.Any) -> typing.Callable[..., typing.Any]:
     """R's ``coef`` of ``x``: ``coef_summary`` of the fit for a summary, the ``coef`` method of the result otherwise."""
-    if isinstance(x, SummaryText):
-        return functools.partial(metafopy.coef_summary, x.fit)
+    fit = getattr(x, 'fit', None) if isinstance(x, str) else None
+    if fit is not None:
+        return functools.partial(metafopy.coef_summary, fit)
     attr = getattr(x, 'coef', None)
     if attr is None:
         raise MissingFunctionError('coef')
