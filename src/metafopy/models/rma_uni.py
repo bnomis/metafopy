@@ -1273,13 +1273,13 @@ def format_result(res: RMAResult, digits: int, showfit: bool = False, signif_sta
 
     if not fe:
         het = 'total' if res.int_only else 'residual'
-        tau2_line = metafopy.printing.fmt_num(res.tau2, digits)
+        tau2_line = metafopy.printing.zero_below(res.tau2, digits)
         if not math.isnan(res.se_tau2):
             tau2_line += f' (SE = {metafopy.printing.fmt_num(res.se_tau2, digits)})'
         est = 'specified' if res.tau2_fix else 'estimated'
         rows = [
             (f'tau^2 ({est} amount of {het} heterogeneity):', tau2_line),
-            (f'tau (square root of {est} tau^2 value):', metafopy.printing.fmt_num(math.sqrt(res.tau2), digits)),
+            (f'tau (square root of {est} tau^2 value):', metafopy.printing.zero_below(math.sqrt(res.tau2), digits)),
         ]
         if not math.isnan(res.I2):
             if res.int_only:
@@ -1362,7 +1362,7 @@ def format_result(res: RMAResult, digits: int, showfit: bool = False, signif_sta
     if robust is not None:
         header, rows_ = metafopy.models.robust_print.decorate(header, rows_)
     header, rows_ = metafopy.printing.drop_stars(header, rows_, signif_stars)
-    out.append(metafopy.printing.fmt_table(header, rows_, row_names=None if res.int_only else list(res.coef_names)))
+    out.append(metafopy.printing.fmt_table(header, rows_, row_names=None if res.int_only else list(res.coef_names), width=80))
     out += metafopy.printing.signif_footer(signif_legend, metafopy.models.robust_print.legend_lines(robust, res.int_only) if robust is not None else ())
     return '\n'.join(out)
 

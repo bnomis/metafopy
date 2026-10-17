@@ -554,7 +554,7 @@ def format_selmodel(res: SelmodelResult, digits: int = 4, showfit: bool = False)
                 metafopy.printing.signif_stars(res.pval[j]),
             ]
         )
-    out.append(metafopy.printing.fmt_table(header, rows_, row_names=None if res.int_only else list(res.coef_names)))
+    out.append(metafopy.printing.fmt_table(header, rows_, row_names=None if res.int_only else list(res.coef_names), width=80))
 
     if not math.isnan(res.LRT):
         out.append('')
