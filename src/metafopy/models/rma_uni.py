@@ -379,6 +379,7 @@ def as_refit_on_used(fit: RMAResult, *, dropped: bool, measure: str) -> RMAResul
         weights_all=None,
         ids_all=None,
         subset_arg=None,
+        row_names=fit.data.rownames if dropped else None,
         slab_given=not dropped,
     )
     return dataclasses.replace(fit, measure=measure, slab=labels, data=data)
@@ -1490,7 +1491,7 @@ def format_result(res: RMAResult, digits: int, showfit: bool = False, signif_sta
     if robust is not None:
         out += metafopy.models.robust_print.counts_lines(robust, res.k)
 
-    if not res.int_only:
+    if res.p > 1 and not res.int_only and not math.isnan(res.QM):
         coefs = coef_span(res.btt)
         mark = metafopy.models.robust_print.FOOT_MARK if robust is not None else ''
         out.append(f'Test of Moderators (coefficient{"s" if res.m > 1 else ""} {coefs}):{mark}')
