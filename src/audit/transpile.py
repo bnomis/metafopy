@@ -193,8 +193,8 @@ def replacement(head: str, current: str, args: list[Node], value_code: str, c: C
 
 def tr_assign(lhs: Node, rhs_code: str, c: Context) -> str:
     """``x <- v``, and ``f(g(x, a), b) <- v``, which R evaluates as ``x <- `g<-`(x, a, `f<-`(g(x, a), b, v))``."""
-    nested = not (lhs['t'] == 'sym' or lhs['t'] == 'str')
-    value_code = 'rhs_value' if nested and not c.in_function else rhs_code
+    plain = lhs['t'] == 'sym' or lhs['t'] == 'str'
+    value_code = rhs_code if plain else 'RHS_VALUE'
     while not (lhs['t'] == 'sym' or lhs['t'] == 'str'):
         if not (lhs['t'] == 'call' and lhs['f']['t'] == 'sym'):
             raise UntranslatableError('assignment target')
@@ -205,12 +205,12 @@ def tr_assign(lhs: Node, rhs_code: str, c: Context) -> str:
     name = lhs['v']
     if c.in_function:
         c.params.add(name)
-        return f'({local_name(name)} := {value_code})'
+        return f'({local_name(name)} := {value_code.replace("RHS_VALUE", rhs_code)})'
     c.assigned.add(name)
-    if nested:
-        # the value of `dat$yi[1] <- NA` is the value on the right, not the changed object
-        return f'(rhs_value := {rhs_code}, E.set({name!r}, {value_code}), rhs_value)[2]'
-    return f'E.set({name!r}, {value_code})'
+    if plain:
+        return f'E.set({name!r}, {value_code})'
+    # the value of ``x$a <- v`` is ``v``, not the changed ``x``
+    return f'E.replace({name!r}, lambda RHS_VALUE: {value_code}, {rhs_code})'
 
 
 def walk(n: Node) -> typing.Iterator[Node]:

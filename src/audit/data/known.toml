@@ -27,6 +27,102 @@ reason = "gosh(seed=) is bit-exact with R only where dbinom ties break the same 
 ref = "docs/differences.md"
 
 [[known]]
+match = "matrix/plot/gosh_*"
+kind = "type-diff"
+reason = "plot() of a gosh result returns the value of R's last graphics call (a number); metafopy returns the axes drawn (PlotGoshResult)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/glmm_cm*"
+kind = "value-diff"
+reason = "rma_glmm(model='CM.EL') takes its Hessian from a noisy finite-difference objective: se, zval, pval and the tau2 interval agree to about 1e-3, QE_Wld (the saturated model's Wald test) is ill-conditioned and differs more."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/glmm_cm*"
+kind = "print-diff"
+reason = "Same as the value-diff entry: the printed Wald test of the saturated model (QE_Wld) of CM.EL differs."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/glmm_cm*"
+kind = "warning-missing"
+detail = "Cannot invert the Hessian for the saturated model.*"
+reason = "R cannot invert the noisy Hessian of the saturated CM.EL model and gives NA for QE_Wld, QE_LRT and QE_df; metafopy's Hessian inverts."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/glmm_rs*"
+kind = "value-diff"
+reason = "rma_glmm(model='UM.RS') agrees with R's lme4 fit to between 2e-3 and 1e-1 relative (optimiser stopping rules)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/glmm_rs*"
+kind = "print-diff"
+reason = "Same as the value-diff entry: the printed tests of the UM.RS fit differ in the third decimal."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/cooks.distance/mv_wide"
+kind = "value-diff"
+reason = "R's leave-one-out refit of study 18 does not converge and cooks.distance() gives NA there; metafopy's refit converges (value 0.0025)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "standalone/fmtx/drop0ifint=*"
+kind = "value-diff"
+reason = "fmtx(drop0ifint=TRUE) drops trailing zeros in R only when digits is an R integer (2L, not 2 or the default); Python has no such distinction, so drop0ifint=True always drops."
+ref = "docs/differences.md"
+
+[[known]]
+match = "construct/ls_year/optbeta=*"
+kind = "value-diff"
+path = "$vcovmat"
+reason = "The location-scale fit of ls_year has a scale intercept near -151 (tau2 on the boundary): the numerical Hessian is singular in metafopy and just invertible in R; the matrix is noise."
+
+[[known]]
+match = "options/vif/ls_bcg/*"
+kind = "value-diff"
+path = "$alpha*"
+reason = "The scale model ~ alloc of ls_bcg is degenerate (alpha estimates of the simulated and re-estimated fits run off to the boundary, R's VIFs are 1e8 or 1e-8); the values cannot be compared."
+
+[[known]]
+match = "scripts/misc_anova/*"
+kind = "shape-diff"
+path = "$QMdf"
+reason = "anova(X=) of linear combinations that are not of full rank: R's QMdf is the single NA, metafopy keeps the pair (m, ddf) and gives NaN for QM and QMp."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/misc_escalc/*"
+detail = "*attr(dat$y?, \"measure\")*"
+reason = "The attributes of an escalc result (measure, ni, slab) are kept once for the data frame in DataFrame.attrs, not per variable as R keeps them on each yi column, so a second escalc() with other var_names or a cbind() changes them for all."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/misc_selmodel/*"
+kind = "value-diff"
+detail = "*optimizer = \"mads\"*"
+reason = "selmodel(type='truncest', control=list(optimizer='mads')) on hackshaw1998: R stops at log-likelihood -5.08477, metafopy at -5.08452 (higher), so the estimates differ by 0.5 %; the derivative-free search ends at different points of a flat likelihood."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/misc_selmodel/*"
+kind = "value-diff"
+path = "$*"
+detail = "*sav <- selmodel(res, type = \"beta\")*"
+reason = "selmodel(type='beta') on baskerville2012 (ML, tau2 near 0): R's PORT stops at log-likelihood -2.792404, metafopy at -2.792399 (higher), so tau2 of 2.4e-6 differs by 2.6 % (absolute 6e-8) and the other estimates by 1e-5 relative."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/misc_coef_se/*"
+kind = "value-diff"
+detail = "*sel <- selmodel(res, type = \"beta\")*"
+reason = "Same as the selmodel(type='beta') entry of misc_selmodel: tau2 near 0 on baskerville2012, the log-likelihood is higher in metafopy."
+ref = "docs/differences.md"
+
+[[known]]
 match = "*/reporter*"
 reason = "reporter() writes an R Markdown report; Jupyter notebooks are the Python equivalent."
 ref = "docs/differences.md"

@@ -20,6 +20,9 @@ Node = dict[str, typing.Any]
 
 MAX_DEPTH = 6
 
+# results that wrap the array R returns: the class name and the attribute that holds the array (llplot() returns the likelihoods, to.table() the tables)
+ARRAY_RESULTS = {'LlplotResult': 'lls', 'TableArray': 'values'}
+
 
 def py_name(name: str) -> str:
     """The Python spelling of an R name: dots become underscores."""
@@ -65,6 +68,9 @@ def vector_node(values: typing.Any, guide: Node, labels: list[str] | None = None
     if dims and len(dims) >= 2 and arr.ndim == len(dims):
         flat = arr.ravel(order='F')
         shape = list(arr.shape)
+    elif dims and len(dims) == 3 and arr.ndim == 3:
+        flat = arr.ravel(order='F')
+        shape = None
     else:
         flat = arr.ravel()
         shape = None
@@ -159,6 +165,8 @@ def to_node(value: typing.Any, guide: Node, path: str, missing: list[str], depth
     if depth > MAX_DEPTH:
         return {'k': 'opaque'}
     if kind in ('num', 'str', 'lgl'):
+        if type(value).__name__ in ARRAY_RESULTS:
+            value = getattr(value, ARRAY_RESULTS[type(value).__name__])
         if value is None:
             return {'k': kind, 'v': [None] * len(guide['v']), 'd': None}
         value = named_vector(value, guide, path)
@@ -213,6 +221,11 @@ class Diff:
     detail: str
 
 
+def straight(text: str) -> str:
+    """The text with curly single quotes replaced by straight ones."""
+    return text.replace('\u2018', "'").replace('\u2019', "'")
+
+
 def cell_equal(a: typing.Any, b: typing.Any) -> tuple[str, float]:
     """Compare two cells: ('same'|'drift'|'diff', relative difference)."""
     if a is None and b is None:
@@ -220,7 +233,9 @@ def cell_equal(a: typing.Any, b: typing.Any) -> tuple[str, float]:
     if a is None or b is None:
         return 'diff', math.inf
     if isinstance(a, str) and isinstance(b, str):
-        return ('same', 0.0) if a == b else ('diff', math.inf)
+        # printed lines (capture.output(print(x))) end in padding that R's print methods add and the tests of metafor never compare
+        # and R prints the quotes of the significance codes as curly quotes in a UTF-8 locale
+        return ('same', 0.0) if straight(a).rstrip() == straight(b).rstrip() else ('diff', math.inf)
     if isinstance(a, bool) or isinstance(b, bool):
         return ('same', 0.0) if bool(a) == bool(b) else ('diff', math.inf)
     if isinstance(a, str) or isinstance(b, str):
@@ -270,6 +285,10 @@ def counting(names: list[typing.Any]) -> bool:
 
 def compare_vector(r: Node, py: Node, path: str, out: list[Diff]) -> None:
     rv, pv = r['v'], py['v']
+    if len(rv) != len(pv) and r['k'] == 'str' and py['k'] == 'str':
+        # printed lines: R puts blank lines around and inside its tables, metafopy does not always, and the tests of metafor never compare them
+        rv, pv = [x for x in rv if x is None or str(x).strip()], [x for x in pv if x is None or str(x).strip()]
+        r, py = {**r, 'v': rv}, {**py, 'v': pv}
     if len(rv) != len(pv):
         out.append(Diff(path, 'shape-diff', f'length R {len(rv)}, Python {len(pv)}'))
         return

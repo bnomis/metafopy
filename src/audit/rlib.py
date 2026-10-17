@@ -67,11 +67,16 @@ class Env:
             except metafopy.errors.NotFoundError as e:
                 raise UnsupportedError(f'dataset {name} is not bundled with metafopy') from e
         if name in BASE or name in METAFOR_FUNCTIONS:
-            return lambda *a, **k: rcall(self, name, *a, **k)
+            return function_value(self, name)
         raise UnsupportedError(f'object {name} not found')
 
     def set(self, name: str, value: Value) -> Value:
         self.vars[name] = value
+        return value
+
+    def replace(self, name: str, make: typing.Callable[[Value], Value], value: Value) -> Value:
+        """``x$a <- value``: the variable becomes the changed object, the value of the expression is ``value``, as in R."""
+        self.vars[name] = make(value)
         return value
 
 
@@ -699,16 +704,16 @@ def r_abs(x: Value) -> Value:
     return numpy.abs(as_array(x).astype(float))
 
 
-# The settings a script makes with ``options()`` that a Python argument stands for; ``run_script`` clears them for each script.
-OPTIONS: dict[str, Value] = {}
+SETTINGS: dict[str, Value] = {}
+DEFAULT_SETTINGS: dict[str, Value] = {'na.action': 'na.omit'}
 
 
 def r_options(*args: Value, **kw: Value) -> Value:
-    """``options(na.action = "na.pass")`` is kept and handed to the functions that take ``na_action`` (see ``rcall``); other settings are ignored."""
-    for key, value in kw.items():
-        if key == 'na.action' or key == 'na_action':
-            OPTIONS['na.action'] = value
-    return None
+    """``options(na.action = ...)``: the setting is passed as ``na_action`` to the functions that take it (R reads it with ``getOption``)."""
+    old = {name: SETTINGS.get(name, DEFAULT_SETTINGS.get(name)) for name in kw}
+    for name, value in kw.items():
+        SETTINGS[name] = value
+    return old
 
 
 def r_apply(x: Value, margin: Value, fun: typing.Callable[..., Value], *args: Value) -> Value:
@@ -1058,15 +1063,19 @@ def rfor(env: Env, var: str, seq: Value, body: typing.Callable[[], Value]) -> Va
 
 # -- calls --------------------------------------------------------------------------------------------------------------------------------------
 
-INDEX_ARGUMENTS = frozenset({'btt', 'att', 'subset', 'which', 'label'})
+INDEX_ARGUMENTS = frozenset({'btt', 'att', 'subset', 'which', 'include'})
 
 
-def shift_arguments(kwargs: dict[str, Value]) -> dict[str, Value]:
+# profile() and confint() of rma.mv and location-scale fits take the position of the component to profile (``tau2 = 1`` is the first one)
+POSITION_ARGUMENTS = frozenset({'sigma2', 'tau2', 'rho', 'gamma2', 'phi', 'alpha'})
+POSITION_FUNCTIONS = frozenset({'profile', 'confint'})
+POSITION_FITS = frozenset({'RMAMVResult', 'RMALSResult'})
+
+
+def shift_arguments(kwargs: dict[str, Value], positions: bool = False) -> dict[str, Value]:
     out: dict[str, Value] = {}
     for k, v in kwargs.items():
-        if k in INDEX_ARGUMENTS and isinstance(v, list) and any(not numpy.isscalar(e) for e in v):  # a list of index vectors (``btt = list(2, 3, 4:5)``)
-            v = [e if isinstance(e, str) else shift_arguments({k: e})[k] for e in v]
-        elif k in INDEX_ARGUMENTS and v is not None and not isinstance(v, (str, bool)):
+        if (k in INDEX_ARGUMENTS or (positions and k in POSITION_ARGUMENTS)) and v is not None and not isinstance(v, (str, bool)):
             arr = numpy.asarray(v)
             if arr.dtype.kind in 'if' and arr.dtype != bool:
                 data = kwargs.get('data')
@@ -1093,6 +1102,29 @@ def run_settings(env: Env) -> None:
     env.vars['.vistest'] = lambda *a, **k: True
 
 
+def accepts(fn: typing.Callable[..., Value], name: str, first: Value = None) -> bool:
+    """Whether the call takes the argument; for a ``functools.singledispatch`` function the implementation for the type of the first argument decides."""
+    target = fn.func if isinstance(fn, functools.partial) else fn
+    dispatch = getattr(target, 'dispatch', None)
+    if callable(dispatch) and first is not None:
+        target = dispatch(type(first))
+    try:
+        return name in inspect.signature(target).parameters
+    except TypeError, ValueError:
+        return False
+
+
+def function_value(env: Env, name: str) -> typing.Callable[..., Value]:
+    """The function ``name`` as a value (``transf = transf.dtorpb``), with the signature of the metafopy function (``conv.delta`` reads the argument names)."""
+
+    def call(*a: Value, **k: Value) -> Value:
+        return rcall(env, name, *a, **k)
+
+    with contextlib.suppress(pycall.MissingFunctionError, TypeError, ValueError):
+        call.__signature__ = inspect.signature(pycall.resolve_function(name, None))  # type: ignore[attr-defined]
+    return call
+
+
 def rcall(env: Env, name: str, *args: Value, **kwargs: Value) -> Value:
     if name == 'source':
         run_settings(env)
@@ -1102,7 +1134,7 @@ def rcall(env: Env, name: str, *args: Value, **kwargs: Value) -> Value:
     if name in BASE:
         return BASE[name](*args, **kwargs)
     first = args[0] if args else None
-    kwargs = shift_arguments(kwargs)
+    kwargs = shift_arguments(kwargs, name in POSITION_FUNCTIONS and type(first).__name__ in POSITION_FITS)
     try:
         fn = pycall.resolve_function(name, first)
     except pycall.MissingFunctionError as e:
@@ -1111,59 +1143,13 @@ def rcall(env: Env, name: str, *args: Value, **kwargs: Value) -> Value:
         raise UnsupportedError(f'R function {name} is not available in the harness') from e
     mapped = {pycall.arg_name(k): v for k, v in kwargs.items()}
     pycall.check_arguments(fn, list(mapped))
-    mapped = pycall.integral_arguments(fn, mapped, first)
-    if 'na.action' in OPTIONS and 'na_action' not in mapped and accepts(fn, 'na_action'):
-        mapped['na_action'] = pycall.option_value('na.action', OPTIONS['na.action'])
-    elif 'na.action' in OPTIONS and 'na_action' not in mapped and accepts_any_keyword(fn) and name in NA_ACTION_GENERICS:
-        # a generic such as blup() hands its keywords to the method for the class of the model
-        with contextlib.suppress(TypeError):
-            return call_with(fn, args, {**mapped, 'na_action': pycall.option_value('na.action', OPTIONS['na.action'])})
-    return call_with(fn, args, mapped)
-
-
-def call_with(fn: typing.Callable[..., Value], args: tuple[Value, ...], mapped: dict[str, Value]) -> Value:
+    setting = SETTINGS.get('na.action')
+    if isinstance(setting, str) and 'na_action' not in mapped and accepts(fn, 'na_action', first):
+        mapped['na_action'] = pycall.option_value('na.action', setting)
     if isinstance(fn, functools.partial):
         return fn(*args[1:], **mapped)
     args, mapped = pycall.match_positional(fn, args, mapped)
     return fn(*args, **mapped)
-
-
-# R functions that read ``getOption("na.action")`` and whose Python generic passes keywords on to the method (from metafor's sources)
-NA_ACTION_GENERICS = frozenset(
-    {
-        'blup',
-        'cooks.distance',
-        'dfbetas',
-        'fitted',
-        'hatvalues',
-        'influence',
-        'leave1out',
-        'ranef',
-        'residuals',
-        'resid',
-        'rstandard',
-        'rstudent',
-        'weights',
-        'predict',
-        'simulate',
-        'vcov',
-    }
-)
-
-
-def accepts_any_keyword(fn: typing.Callable[..., Value]) -> bool:
-    try:
-        params = inspect.signature(fn.func if isinstance(fn, functools.partial) else fn).parameters
-    except TypeError, ValueError:
-        return False
-    return any(p.kind is inspect.Parameter.VAR_KEYWORD for p in params.values())
-
-
-def accepts(fn: typing.Callable[..., Value], name: str) -> bool:
-    try:
-        return name in inspect.signature(fn.func if isinstance(fn, functools.partial) else fn).parameters
-    except TypeError, ValueError:
-        return False
 
 
 def r_symbol(env: Env, name: str) -> Value:
