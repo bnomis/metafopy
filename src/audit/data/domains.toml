@@ -87,7 +87,7 @@ subdivisions = [50]
 efac = [2]
 offset = [0.5]
 pos = [1]
-rows = [{ "$idx" = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13] }]
+rows = [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]]  # the y coordinates of the rows of the plot, not positions of studies
 row = [-2]
 top = [2]
 width = [5]

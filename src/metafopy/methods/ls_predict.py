@@ -301,10 +301,7 @@ def predict_rma_ls(
     elif pred_mui:
         slab = metafopy.methods.predict.prediction_slab(newmods, k_new, x.p, x.int_incl)
     else:
-        slab = tuple(str(i + 1) for i in range(k_new))
-    if k_new == 1 and not ((pred_mui and newmods is None) or (not pred_mui and newscale is None)):
-        # auditme: accept[literal-duplication] metafor option values and column labels repeated as in the R source
-        slab = ('',)
+        slab = ('',) if k_new == 1 else tuple(str(i + 1) for i in range(k_new))
 
     if x.method in metafopy.models.tau2.FIXED_EFFECTS or not pred_mui:
         pi_lb = numpy.full(k_new, math.nan)

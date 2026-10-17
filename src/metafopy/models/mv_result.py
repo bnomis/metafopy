@@ -270,7 +270,15 @@ class RMAMVResult(metafopy.models.fit_methods.FitMethods):
     def dist(self) -> tuple[typing.Any, typing.Any]:
         """The distance measures of the ``'SP'`` structures (the ``dist`` argument, two entries), metafor's ``dist``."""
         dist = self.spec.get('dist', 'euclidean')
-        return (dist[0], dist[-1]) if isinstance(dist, list | tuple) else (dist, dist)
+        pair = (dist[0], dist[-1]) if isinstance(dist, list | tuple) else (dist, dist)
+        methods = ('euclidean', 'maximum', 'manhattan', 'gcd')
+
+        def full(value: typing.Any) -> typing.Any:
+            """A name given in short is kept in full, as ``match.arg`` does in ``rma.mv``."""
+            hits = [m for m in methods if isinstance(value, str) and m.startswith(value)] if isinstance(value, str) else []
+            return hits[0] if len(hits) == 1 else value
+
+        return (full(pair[0]), full(pair[1]))
 
     @property
     def random(self) -> list[str] | None:

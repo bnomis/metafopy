@@ -271,3 +271,87 @@ def test_bias_functions_inherit_the_digits_of_the_model(name: str) -> None:
         res = metafopy.rma(yi='yi', vi='vi', data=data, digits=2)
         out = getattr(metafopy, name)(res)
     assert out.digits == 2
+
+
+def bcg_frame() -> pandas.DataFrame:
+    frame = metafopy.datasets.load('dat.bcg')
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        return metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=frame)
+
+
+def test_glmm_outdat_f_has_the_sample_sizes() -> None:
+    # R 4.3.3, metafor 5.2-1: rma.glmm(measure = "OR", ...)$outdat.f$ni is ai + bi + ci + di (262, 609, ...)
+    frame = metafopy.datasets.load('dat.bcg')
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        res: typing.Any = metafopy.rma_glmm(measure='OR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=frame, model='UM.FS')
+    ni = res.outdat_f['ni']
+    assert ni is not None
+    assert ni[:3].tolist() == [262.0, 609.0, 451.0]
+    assert ni[-1] == 34767.0
+
+
+def test_cumul_of_a_mantel_haenszel_fit_has_ids() -> None:
+    # R 4.3.3, metafor 5.2-1: cumul(rma.mh(...))$ids is 1:13; with order = ablat the ids follow the order (5 8 11 7 9 12 13 3 10 1 6 4 2)
+    frame = metafopy.datasets.load('dat.bcg')
+    res = metafopy.rma_mh(measure='OR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=frame)
+    plain: typing.Any = metafopy.cumul(res)
+    assert plain.ids.tolist() == list(range(13))
+    ordered: typing.Any = metafopy.cumul(res, order=frame['ablat'].to_numpy())
+    assert (ordered.ids + 1).tolist() == [5, 8, 11, 7, 9, 12, 13, 3, 10, 1, 6, 4, 2]
+
+
+def test_predict_ddf_has_one_value_per_prediction() -> None:
+    # R 4.3.3, metafor 5.2-1: predict(robust(rma(yi, vi, mods = ~ ablat), cluster = trial))$ddf is 11 for each of the 13 predictions
+    data = bcg_frame()
+    res = metafopy.robust(metafopy.rma(yi='yi', vi='vi', mods='~ ablat', data=data), cluster=data['trial'].to_numpy())
+    pred: typing.Any = metafopy.predict(res)
+    assert numpy.asarray(pred.ddf).tolist() == [11.0] * 13
+    assert numpy.asarray(metafopy.predict(res, newmods=[30, 40]).ddf).tolist() == [11.0, 11.0]
+
+
+def test_mv_dist_is_kept_in_full() -> None:
+    # R 4.3.3, metafor 5.2-1: rma.mv(..., dist = "euclid")$dist is "euclidean"
+    prop = typing.cast(property, metafopy.models.mv_result.RMAMVResult.dist)
+    holder = typing.cast(typing.Any, type('Holder', (), {'spec': {'dist': 'euclid'}}))()
+    assert prop.fget is not None
+    assert prop.fget(holder) == ('euclidean', 'euclidean')
+
+
+def test_deltamethod_inherits_the_digits_of_the_model() -> None:
+    # R 4.3.3, metafor 5.2-1: deltamethod(rma(..., digits = 2), fun)$digits has the nine entries 2; for estimates it has est, se, test, pval and ci
+    data = bcg_frame()
+    res = metafopy.rma(yi='yi', vi='vi', data=data, digits=2)
+    out = metafopy.deltamethod(res, fun=numpy.exp)
+    assert set(out.digits.values()) == {2}
+    assert len(out.digits) == 9
+    plain = metafopy.deltamethod(numpy.array([1.0, 2.0]), vcov=numpy.eye(2), fun=lambda x: x[0] * x[1])
+    assert list(plain.digits) == ['est', 'se', 'test', 'pval', 'ci']
+
+
+def test_anova_of_a_selection_model_uses_its_digits() -> None:
+    # R 4.3.3, metafor 5.2-1: anova(selmodel(rma(..., digits = 2), type = "stepfun", steps = c(.05, 1)))$digits is 2
+    data = bcg_frame()
+    res = metafopy.rma(yi='yi', vi='vi', data=data, digits=2)
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        sel = metafopy.selmodel(res, type='stepfun', steps=[0.05, 1])
+        out: typing.Any = metafopy.anova(sel)
+    assert out.digits == 2
+
+
+def test_add_follows_the_measure_argument_not_the_measure_of_the_data() -> None:
+    # R 4.3.3, metafor 5.2-1: rma(yi, vi, data = escalc(measure = "PFT", ...))$add is 0.5; rma(measure = "PFT", ...)$add is 0
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        data = metafopy.escalc('PFT', xi=[3, 5, 8], ni=[20, 30, 40])
+        assert metafopy.rma(yi='yi', vi='vi', data=data, method='EE').add == 0.5
+        assert metafopy.rma(yi='yi', vi='vi', data=data, method='EE', measure='PFT').add == 0.0
+
+
+def test_regtest_of_estimates_in_an_escalc_frame_keeps_the_measure() -> None:
+    # R 4.3.3, metafor 5.2-1: regtest(yi, vi, data = dat)$fit$measure is "RR" for an escalc object
+    data = bcg_frame()
+    out: typing.Any = metafopy.regtest('yi', vi='vi', data=data)
+    assert out.fit.measure == 'RR'

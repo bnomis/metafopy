@@ -363,6 +363,7 @@ def cumul_fixed_binary(
         order=uor[show],
         measure=x.measure,
         level=x.level,
+        ids=None if collapse else t.ids[srt][show],
         slab_null=t.slab_null and not collapse,
     )
 

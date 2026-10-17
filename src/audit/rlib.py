@@ -368,7 +368,10 @@ def r_rbind(*xs: Value, **named: Value) -> Value:
     parts = list(xs) + list(named.values())
     if any(isinstance(p, pandas.DataFrame) for p in parts):
         return pandas.concat([p if isinstance(p, pandas.DataFrame) else pandas.DataFrame([numpy.asarray(p)]) for p in parts], ignore_index=True)
-    return numpy.vstack([numpy.atleast_2d(numpy.asarray(p, dtype=float)) for p in parts])
+    stacked = numpy.vstack([numpy.atleast_2d(numpy.asarray(p, dtype=float)) for p in parts])
+    if named and not xs and stacked.shape[0] == len(named):
+        return pandas.DataFrame(stacked, index=list(named))  # rbind(a = c(...), b = c(...)) is a matrix with row names
+    return stacked
 
 
 def r_dataframe(*xs: Value, **named: Value) -> Value:
@@ -428,6 +431,10 @@ def r_lapply(x: Value, fun: typing.Callable[..., Value], *args: Value, **kw: Val
 
 def r_split(x: Value, f: Value) -> Value:
     keys = numpy.asarray(f)
+    if isinstance(x, numpy.ndarray) and x.ndim == 2:
+        # split.default() treats a matrix as the vector of its columns and recycles the grouping
+        x = x.ravel(order='F')
+        keys = numpy.resize(keys, x.size)
     levels = sorted(set(keys.tolist()), key=lambda v: (str(type(v)), v))
     out: dict[str, Value] = {}
     for level in levels:
@@ -633,6 +640,11 @@ def r_structure(x: Value, **kw: Value) -> Value:
     """``structure(list(...), class = "data.frame")`` is a data frame and ``structure(c(...), dim = , dimnames = )`` a matrix with its names."""
     if isinstance(kw.get('class'), str) and kw['class'] == 'data.frame' and isinstance(x, dict):
         return pandas.DataFrame({k: numpy.atleast_1d(numpy.asarray(v)) for k, v in x.items()})
+    levels = kw.get('levels')
+    if kw.get('class') == 'factor' and levels is not None and not isinstance(x, (dict, pandas.DataFrame)):
+        # a factor stored as its integer codes: the harness compares a factor by its labels
+        labels = [str(v) for v in numpy.atleast_1d(numpy.asarray(levels))]
+        return numpy.array([None if numpy.isnan(float(c)) else labels[int(c) - 1] for c in numpy.atleast_1d(numpy.asarray(x, dtype=float))], dtype=object)
     dim = kw.get('dim')
     if dim is not None and not isinstance(x, (dict, pandas.DataFrame)):
         shape = tuple(int(d) for d in numpy.atleast_1d(numpy.asarray(dim)))
@@ -747,10 +759,14 @@ def r_unlist(x: Value, **kw: Value) -> Value:
 
 
 def r_class(x: Value) -> Value:
+    if isinstance(x, pandas.DataFrame):
+        return numpy.array(['escalc', 'data.frame'] if x.attrs.get('measure') else ['data.frame'], dtype=object)  # an escalc object has its measure
     return numpy.array([type(x).__name__], dtype=object)
 
 
 def r_inherits(x: Value, what: Value) -> Value:
+    if isinstance(x, pandas.DataFrame):
+        return bool(set(r_class(x).tolist()) & set(numpy.atleast_1d(what).tolist()))
     return type(x).__name__ in set(numpy.atleast_1d(what).tolist())
 
 
@@ -1118,6 +1134,30 @@ def r_assign_dimnames(x: Value, which: str, value: Value) -> Value:
     return x
 
 
+def is_text(x: Value) -> bool:
+    arr = numpy.asarray(x)
+    return arr.dtype.kind in 'USO' and arr.size > 0 and all(isinstance(v, str) for v in arr.ravel().tolist() if v is not None)
+
+
+def as_text(x: Value) -> Value:
+    """``as.character`` of numbers: whole numbers without a decimal point."""
+    arr = numpy.asarray(x)
+    return numpy.array([None if v is None else str(int(v)) if float(v).is_integer() else repr(float(v)) for v in arr.ravel().tolist()], dtype=object).reshape(
+        arr.shape
+    )
+
+
+def r_equal(a: Value, b: Value) -> Value:
+    """``==``: a number compared with text is compared as text, as R coerces it."""
+    if is_text(a) != is_text(b):
+        a, b = (a, as_text(b)) if is_text(a) else (as_text(a), b)
+    return numpy.equal(a, b)
+
+
+def r_not_equal(a: Value, b: Value) -> Value:
+    return numpy.logical_not(r_equal(a, b))
+
+
 def recycled(a: Value, b: Value) -> tuple[Value, Value]:
     """R recycles the shorter operand; pandas does not broadcast a Series of length one, so a Series of another length is made an array."""
     if isinstance(a, pandas.Series) and not isinstance(b, (int, float)) and numpy.size(b) != len(a):
@@ -1146,8 +1186,8 @@ OPERATORS: dict[str, typing.Callable[..., Value]] = {
     '^': null_safe(numpy.power),
     '%%': null_safe(numpy.mod),
     '%/%': null_safe(numpy.floor_divide),
-    '==': null_safe(numpy.equal, True),
-    '!=': null_safe(numpy.not_equal, True),
+    '==': null_safe(r_equal, True),
+    '!=': null_safe(r_not_equal, True),
     '<': null_safe(numpy.less, True),
     '>': null_safe(numpy.greater, True),
     '<=': null_safe(numpy.less_equal, True),
@@ -1175,6 +1215,7 @@ INDEX_ARGUMENTS = frozenset({'btt', 'btt2', 'att', 'subset', 'which', 'include',
 FUNCTION_INDEX_ARGUMENTS: dict[str, tuple[str, ...]] = {
     'matreg': ('y', 'x'),
     'plot': ('out',),
+    'regplot': ('mod',),
     'to.wide': ('grpvars',),
 }
 

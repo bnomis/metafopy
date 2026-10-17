@@ -134,7 +134,8 @@ def lookup(value: typing.Any, name: str) -> tuple[bool, typing.Any]:
     if isinstance(value, pandas.DataFrame):
         for spelling in spellings:
             if spelling in value.columns:
-                return True, value[spelling].to_numpy()
+                # R's `$` takes the first of several columns with one name
+                return True, numpy.asarray(value.iloc[:, list(value.columns).index(spelling)])
             if spelling in value.attrs:
                 return True, value.attrs[spelling]
         return False, None
