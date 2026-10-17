@@ -39,6 +39,29 @@ The harness removes the sampling.
 5. **The harness is checked against the audits.** `--recall` runs it on the commits the earlier audits used and reports which of their items it
    reproduced (`data/recall.toml`). An item it misses is a hole in the harness, fixed by widening the domains, never by a note in a report.
 
+## What audit 7 could not see (audit 8)
+
+The second run of the harness, on the same code plus the fixes of audit 7, found different things again. The cause was in the harness, not in the sampling:
+a comparison that reports nothing can be wrong in two ways, a difference that is hidden and a difference that is invented, and audit 7 had both.
+
+| Hole in the harness | Effect |
+|---|---|
+| `scripts`: a nested assignment (`dat$yi[2] <- NA`) was translated wrongly, a unit that failed or could not be translated left its variables stale, `options(na.action=)` did nothing, a negative `subset` was shifted | later units compared different data in R and Python: invented differences, and real ones hidden behind them |
+| `pycall`/`apidiff`: `summary`, `cbind`, `rbind`, `aggregate`, `as.data.frame`, `as.matrix`, `head`, `tail` and `coef` of a summary resolved to no Python callable | reported as missing functions, so their results were never compared |
+| `universe.R`: print methods counted as drawing functions; a loop index (`bldiag(i)`) counted as an argument | a graphics sweep over print methods, an argument that does not exist |
+| `valuetree`: R's `digits` is a vector of 9, scalars were not broadcast, dicts were not read as named vectors, scale fields were labelled with the location coefficient names, data frame row and column names were not compared | 6523 `$digits` cases, wrong `label-diff`, label differences of data frames not seen |
+| `runcases.R`: `update.rma` leaves `na.action` at `na.pass` for the later cases of a shard, fixtures were unseeded | `R length 13, Python 11` and `$statistic.boot` differences that only existed in some shards |
+| index arguments (`include`, `label`, `alpha`, `tau2`, `out`, `grpvars`, `regplot(mod=)`, `forest(rows=)`) not shifted to 0-based | the wrong coefficient profiled, wrong rows plotted, in both directions |
+| `known.toml`: globs such as `*/ls_*` or `Python has none` that matched more than the reason says | real differences hidden (the recall check found four items of audit 6 swallowed this way) |
+
+Rules that follow, each checked by a test or by `--recall`:
+
+- A shortcut that makes both sides print the same (an R-layout printer in the harness) hides the gap in the library; the harness prints the object the way the library does.
+- A `known.toml` entry names the fixture and the path it is about. `path` can be a list, `match` can be a list. A reason that says what R does has been reproduced in R.
+- A step that cannot translate a unit forgets the variables it would have defined (`stale` in `scripts.py`), it does not carry on with stale state.
+- Cases are deterministic: options are reset before each case and fixtures are seeded, so two runs of the same code give the same findings.
+- `--recall` is run after every change of the harness, not only after a change of the library: it caught the swallowed items above.
+
 ## The steps
 
 | Step | What it does |
