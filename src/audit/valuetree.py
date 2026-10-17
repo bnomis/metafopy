@@ -17,6 +17,9 @@ Node = dict[str, typing.Any]
 
 MAX_DEPTH = 6
 
+# results that wrap the array R returns: the class name and the attribute that holds the array (llplot() returns the likelihoods, to.table() the tables)
+ARRAY_RESULTS = {'LlplotResult': 'lls', 'TableArray': 'values'}
+
 
 def py_name(name: str) -> str:
     """The Python spelling of an R name: dots become underscores."""
@@ -62,6 +65,9 @@ def vector_node(values: typing.Any, guide: Node, labels: list[str] | None = None
     if dims and len(dims) == 2 and arr.ndim == 2:
         flat = arr.ravel(order='F')
         shape = list(arr.shape)
+    elif dims and len(dims) == 3 and arr.ndim == 3:
+        flat = arr.ravel(order='F')
+        shape = None
     else:
         flat = arr.ravel()
         shape = None
@@ -124,6 +130,8 @@ def to_node(value: typing.Any, guide: Node, path: str, missing: list[str], depth
     if depth > MAX_DEPTH:
         return {'k': 'opaque'}
     if kind in ('num', 'str', 'lgl'):
+        if type(value).__name__ in ARRAY_RESULTS:
+            value = getattr(value, ARRAY_RESULTS[type(value).__name__])
         if value is None:
             return {'k': kind, 'v': [None] * len(guide['v']), 'd': None}
         if isinstance(value, dict):
@@ -184,7 +192,8 @@ def cell_equal(a: typing.Any, b: typing.Any) -> tuple[str, float]:
     if a is None or b is None:
         return 'diff', math.inf
     if isinstance(a, str) and isinstance(b, str):
-        return ('same', 0.0) if a == b else ('diff', math.inf)
+        # printed lines (capture.output(print(x))) end in padding that R's print methods add and the tests of metafor never compare
+        return ('same', 0.0) if a.rstrip() == b.rstrip() else ('diff', math.inf)
     if isinstance(a, bool) or isinstance(b, bool):
         return ('same', 0.0) if bool(a) == bool(b) else ('diff', math.inf)
     if isinstance(a, str) or isinstance(b, str):

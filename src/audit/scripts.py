@@ -86,6 +86,18 @@ def namespace(env: audit.rlib.Env) -> dict[str, object]:
     }
 
 
+def forget(ast: Json, env: audit.rlib.Env) -> None:
+    """A unit that assigns and did not run in Python leaves its variable out, so that later units do not compare R's new value with Python's old one."""
+    node = ast
+    if not (node['t'] == 'call' and node['f']['t'] == 'sym' and node['f']['v'] in audit.transpile.ASSIGN and len(node['args']) == 2):
+        return
+    node = node['args'][0]['v']
+    while node['t'] == 'call' and node['args']:
+        node = node['args'][0]['v']
+    if node['t'] in ('sym', 'str'):
+        env.vars.pop(str(node['v']), None)
+
+
 def run_script(script: Json, nse: set[str], timeout: float) -> tuple[list[Json], collections.Counter[str]]:
     env = audit.rlib.Env()
     audit.rlib.SETTINGS.clear()
@@ -101,8 +113,11 @@ def run_script(script: Json, nse: set[str], timeout: float) -> tuple[list[Json],
             code = audit.transpile.translate_unit(unit['ast'], assigned, nse)
         except audit.transpile.UntranslatableError as e:
             tally[f'untranslated: {e}'] += 1
+            forget(unit['ast'], env)
             continue
         py, value = audit.pyrun.run_guarded(functools.partial(eval, code, ns), timeout)
+        if py['status'] != 'ok':
+            forget(unit['ast'], env)
         if unit['status'] != 'ok':
             tally['R failed (skipped)'] += 1
             if not ENVIRONMENT_ERRORS.search(unit.get('error', '')):
