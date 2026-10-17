@@ -231,3 +231,15 @@ def test_rma_mv_p_counts_the_coefficients_estimated() -> None:
         half = metafopy.rma_mv('yi', 'vi', mods='~ g', random='~ 1 | study', data=frame, beta=[0.1, numpy.nan])
         fixed = metafopy.rma_mv('yi', 'vi', mods='~ g', random='~ 1 | study', data=frame, beta=[0.1, 0.2])
     assert (free.p, half.p, fixed.p) == (2, 1, 0)
+
+
+def test_all_rows_model_matrix_is_missing_where_a_factor_is_missing() -> None:
+    # R 4.3.3, metafor 5.2-1: rma(yi, vi, mods = ~ factor(type) + factor(struct), data = escalc("ZCOR", ..., data = dat.mcdaniel1994))$X.f is NA in
+    # the columns of a factor at the rows where that factor is missing (positions 273, 283, 285, 433 ... counting from 1), not zero
+    frame = metafopy.datasets.load('dat.mcdaniel1994')
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        data = metafopy.escalc('ZCOR', ri='ri', ni='ni', data=frame)
+        res = metafopy.rma(yi='yi', vi='vi', mods='~ factor(type) + factor(struct)', data=data)
+    assert res.X_f is not None
+    assert numpy.flatnonzero(numpy.isnan(res.X_f.T.ravel()))[:6].tolist() == [272, 282, 284, 432, 442, 444]
