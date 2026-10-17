@@ -1197,3 +1197,229 @@ match = "*"
 kind = "label-diff"
 path = "*coef.na*"
 reason = "R names coef.na with the prefix X (coef.na.Z with Z), a quirk of how it builds the vector; metafopy names the flags by the coefficients."
+
+[[known]]
+match = ["construct/glmm_bcg/control=*", "scripts/misc_rma_glmm/*"]
+kind = "value-diff"
+path = "$control$optimizer"
+reason = "rma.glmm(control = list(optimizer = 'BFGS')) or another optim() method: R keeps the name that was given in control$optimizer; metafopy turns it into optimizer 'optim' with optmethod = that method and keeps the pair."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["scripts/misc_rma_glmm/*", "scripts/analysis_example_vanhouwelingen1993/*", "scripts/analysis_example_stijnen2010/*", "scripts/analysis_example_rothman2008/*", "scripts/misc_update/test/29"]
+kind = "value-diff"
+path = ["", "$ci.lb", "$ci.ub", "$pi.se", "$pi.lb", "$pi.ub", "$cr.lb", "$cr.ub", "$pval", "$QMp"]
+detail = "*(relative 0.*"
+reason = "rma.glmm of the tests and examples of metafor (UM.FS, UM.RS, CM.AL, CM.EL with the optimisers and nAGQ settings of the tests): R fits the mixed models with lme4 (adaptive quadrature or Laplace, its optimiser) and its own estimates differ in the third or fourth digit with the control (the expected values of the tests differ between the variants); metafopy maximises the exact likelihood and gives one value, which agrees with R to 1e-3 to 1e-2 in the estimates, standard errors and test statistics, and more where the likelihood is flat (CM.EL with method = 'EE', QE.Wld)."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["scripts/misc_rma_glmm/*", "scripts/analysis_example_vanhouwelingen1993/*", "scripts/analysis_example_stijnen2010/*", "scripts/analysis_example_rothman2008/*"]
+kind = "value-diff"
+path = ""
+detail = "*[out <- capture.output(print(res))]*"
+reason = "Printed rma.glmm summaries differ in the last digit where the estimates differ in the fourth digit (see the entry for the expect_equivalent() lines of these tests)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/robust/mv_ks_mods"
+kind = "shape-diff"
+path = "$ddf"
+detail = "length R 1, Python 2"
+reason = "robust(rma.mv(mods = ~ year), cluster) without clubSandwich: R's ddf is the single number dfs (k - p of the clusters); metafopy keeps one value per coefficient in ddf (the same number) and the single value in dfs."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["matrix/predict/uni_mods_na*", "matrix/predict/ls_na*", "matrix/predict/ls_bangert*", "options/predict/uni_mods_na/*", "options/predict/ls_na/*", "options/predict/ls_bangert/*", "scripts/misc_rma_ls/test/146"]
+kind = "shape-diff"
+path = ["$pi.se", "$pi.ddf"]
+detail = "length R *, Python *"
+reason = "predict() of a model fitted to data with missing moderator values and na.action = 'omit': R keeps pi.se and pi.ddf at one value per study of the subset (NA for the omitted ones) while pred and the intervals have the rows that are returned; metafopy gives them for the rows it returns."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["construct/uni_mods/scale=*", "construct/uni_mods_na/scale=*", "construct/uni_mods_year/scale=*"]
+kind = "value-diff"
+path = ["$alpha", "$va", "$se.alpha", "$zval.alpha", "$pval.alpha", "$ci.lb.alpha", "$ci.ub.alpha", "$QS", "$QSp", "$H", "$I2", "$tau2", "$tau2.f"]
+reason = "rma(mods = ~ ablat + year or ~ ablat, scale = ~ ablat or ~ alloc) of dat.bcg: the log-likelihood is equal to 1e-10 (uni_mods_year, scale ~ ablat: -8.02339884345 in R and metafopy; scale ~ alloc: -7.84205789279) and R's own default and optbeta = TRUE fits differ by 2e-6 in alpha; the scale coefficients differ by 1e-5 relative and the statistics built from them (QS, the Hessian) by 1e-3; with scale ~ alloc on data with missing values alpha is on the boundary (-22 and -26)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/funnel/ls_year*"
+kind = "value-diff"
+path = "$x"
+reason = "funnel() of the flat location-scale fit ls_year: the x values are the residual-based estimates of the fit, which differ by 3e-4 relative where alpha differs."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/misc_rma_ls/*"
+kind = "value-diff"
+path = ["", "$b", "$beta", "$zval", "$alpha.perm$*", "$QS.perm", "$zval.alpha.perm$*"]
+detail = "*[expect_equivalent(*"
+reason = "Location-scale fits of the tests of metafor with different optimisers and settings: R's own expected values differ between the variants in the third digit (alpha) and the permutation tests draw R's random numbers in a different order."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/misc_rma_ls/test/128"
+kind = "*"
+path = ["$QS.perm", "$alpha.perm$*", "$zval.alpha.perm$*"]
+reason = "permutest() of a location-scale model with iter = 100 and no seed: the permutations are random in R and in metafopy."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["scripts/misc_rma_mv/test/34", "scripts/misc_rma_mv/test/50"]
+kind = "value-diff"
+path = ""
+detail = "*[expect_equivalent(res$sigma2,*"
+reason = "rma.mv(random = ~ 1 | trial) fitted with Nelder-Mead or nmk: R's own expected value of sigma2 depends on the optimiser in the fourth digit (0.3133 and 0.3131); metafopy gives the likelihood optimum."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/misc_rma_mv/test/19"
+kind = "*"
+path = "$R$phylogeny"
+reason = "The phylogenetic correlation matrix of the test is built in R with ape::vcv(); the harness has no ape and builds it from the tree it parses, in another order of the species."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["scripts/deltamethod/rd/5", "scripts/deltamethod/rd/6", "scripts/deltamethod/rd/19", "scripts/deltamethod/rd/20", "scripts/misc_matreg/test/67"]
+kind = "value-diff"
+path = ["$M", "$vb"]
+reason = "rma.mv(random = ~ var1.var2 | study, struct = 'UN') with 6 variances and 15 correlations on dat.craft2003: the log-likelihood is 20.2567944 in both, the estimates agree to 1e-6 and the covariances of near zero of M and vb differ in the fourth digit relative."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/misc_selmodel/*"
+kind = "value-diff"
+path = ["", "$ys.lb", "$ys.ub", "$hessian"]
+detail = "*(relative *"
+reason = "selmodel() of the tests of metafor with a flat likelihood in the selection parameter (type = 'truncest': R's own expected delta is 0.2337 with the default optimiser and 0.1802 with mads) or with tau2 at about 2e-6 on the boundary (2.45e-6 in R and 2.39e-6 in metafopy): the estimates, the profile limits of the selection function that start from them and the finite-difference Hessian entries of about 1e-8 differ."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/misc_selmodel/test/41"
+kind = "value-diff"
+path = ""
+detail = "*[out <- capture.output(print(sav))]*"
+reason = "Printed selection-model table: the lower limit of delta.2 differs in the last digit (0.1803 and 0.1804) where delta is flat."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/conv.delta/rd/31"
+kind = "value-diff"
+path = ["$ni", "$ni.f"]
+reason = "A data frame built over several escalc() and conv.delta() calls: R keeps the ni attribute of the yi column from the earlier call while a later escalc() adds the ni of another column; metafopy keeps one ni for the data frame, that of the last escalc() call."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/misc_influence/test/75"
+kind = "value-diff"
+path = ""
+detail = "*length(sav$rstudent)*"
+reason = "print(inf, infonly = TRUE) returns the object cut to the influential studies in R; metafopy prints the cut table and returns None."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/*"
+kind = "value-diff"
+path = ["$col", "$bg"]
+detail = "*R gray95, Python black*"
+reason = "regplot() and labbe() after setmfopt(theme = 'dark') in the same test file: the colours of par() that the plot leaves are those of the dark theme in R; the Python device keeps the defaults."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/*"
+kind = "value-diff"
+path = ["$col", "$bg"]
+detail = "*R #737373, Python #A6A6A6*"
+reason = "regplot() and labbe() after setmfopt(theme = 'dark') in the same test file: the colours of par() that the plot leaves are those of the dark theme in R; the Python device keeps the defaults."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/*"
+kind = "value-diff"
+path = ""
+detail = "*par(\"usr\")*"
+reason = "par('usr') is the user coordinates of the device of R after the plot; metafopy has no R graphics device."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/print/hettest_reml"
+kind = "value-diff"
+path = "$statistic.boot"
+reason = "hettest(res, test = 'boot'): the bootstrap statistics are random; R and metafopy do not use the same random number stream unless a seed is given."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/vif/ls_bangert/sim=true"
+kind = "*"
+path = ["$beta$sim", "$beta$prop", "$alpha$sim", "$alpha$prop"]
+reason = "vif(sim = TRUE) simulates random data sets; R and metafopy do not draw the same random numbers."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/permutest/ls_bangert/seed=42"
+kind = "value-diff"
+path = "$zval.perm$*"
+detail = "*(relative 0.0001*"
+reason = "permutest() of the location-scale model ls_bangert with seed = 42: the z-value of the coefficient I(ni/100) differs by 1e-4 relative, as the estimates of the flat location-scale fit do."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/vif/rd/14"
+kind = "value-diff"
+path = "$H"
+reason = "The location-scale fit has tau2 of about 1e-8 at a boundary in R and slightly negative H in the last digits in metafopy (1.4e-8 and -9e-11)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/selmodel/*"
+kind = "value-diff"
+path = "$hessian"
+detail = "*(relative 0.00*"
+reason = "selmodel() Hessian from finite differences of a surface that is flat in the selection parameters (type logistic2, beta, power, ...): the entries differ by up to 1e-2 relative while the log-likelihood and the estimates agree to 1e-9."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/robust/robust_cs_bcg"
+kind = "value-diff"
+path = ["$coef_test", "$conf_test", "$wald_test"]
+reason = "robust() of a model that robust(clubSandwich = TRUE) has already changed: R keeps the coef_test, conf_test and wald_test of the earlier call in the object; metafopy has them only on the fit that used clubSandwich."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["options/influence/uni_na/option:na.action=*", "options/influence/uni_mods_na/option:na.action=*", "scripts/misc_influence/test/63"]
+kind = "value-diff"
+path = "$is.infl"
+detail = "*R None, Python False*"
+reason = "influence() with na.action 'exclude' or 'pass': is.infl is NA in R for the studies with missing values; is_infl of metafopy is a logical array (False there) that the influence plot also reads."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/predict/ls_na/newscale=*"
+kind = "value-diff"
+path = "$slab"
+reason = "predict() of a location-scale model with newscale a named vector of two values for a model with one scale variable: R labels the prediction with the first name ('ablat'); metafopy labels a single prediction with the empty label."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/regplot/mv_ks_mods"
+kind = "value-diff"
+path = "$order"
+reason = "regplot() draws the points by decreasing symbol size; the largest sizes are equal to 3 up to the last bit (2.9999999999999996 and 3.0) and R and metafopy round them differently, so the nearly tied points are drawn in another order."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/misc_to_long_table_wide/test/30"
+kind = "value-diff"
+path = "$study"
+reason = "to.long() of a data frame that already has a column study: the result has two columns named study and R's $study is the first one, metafopy's the column of the same position in a different order of the columns (inferred; the columns by position agree in the other to.long tests)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/aggregate.escalc/rd/8"
+kind = "shape-diff"
+path = ""
+detail = "*[class(dat)]*"
+reason = "class() of the result of aggregate() on an escalc object that was cut with a subscript: R gives data.frame only, metafopy keeps the measure and the class escalc."
+ref = "docs/differences.md"
