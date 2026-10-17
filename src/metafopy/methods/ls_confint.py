@@ -13,10 +13,12 @@ import numpy
 import pandas
 import scipy.stats
 
+import metafopy.core.timing
 import metafopy.core.zeroin
 import metafopy.errors
 import metafopy.methods.confint
 import metafopy.methods.ls_common
+import metafopy.mfopt
 import metafopy.models.rma_ls_result
 import metafopy.models.rma_uni
 import metafopy.transf
@@ -64,6 +66,7 @@ def profile_lrt(x: metafopy.models.rma_ls_result.RMALSResult, pos: int, val: flo
 
 
 @metafopy.methods.confint.confint.register
+@metafopy.core.timing.timed
 def confint_rma_ls(
     model: metafopy.models.rma_ls_result.RMALSResult,
     *,
@@ -77,6 +80,10 @@ def confint_rma_ls(
     maxiter: int = 1000,
     eptries: int = 10,
     xlim: collections.abc.Sequence[float] | None = None,
+    extint: bool = False,
+    parm: typing.Any = None,
+    digits: int | None = None,
+    verbose: bool = False,
 ) -> metafopy.methods.confint.ConfintResult | metafopy.methods.confint.ConfintList:
     """CIs for a location-scale fit (``confint.rma.ls``).
 
@@ -85,11 +92,13 @@ def confint_rma_ls(
     computed for every estimated scale coefficient and a list is returned (a single result if there is one). ``control`` may
     hold ``vc_min`` and ``vc_max`` (also written ``vc.min`` and ``vc.max``), the interval searched for the bounds, and ``tol``,
     ``maxiter``, ``eptries`` and ``verbose``; its entries replace the keyword arguments of the same name. ``xlim`` (metafor's ``...`` argument) is the interval
-    ``(vc_min, vc_max)`` and wins over ``control``.
+    ``(vc_min, vc_max)`` and wins over ``control``. ``extint=True`` lets the search for a bound widen the interval (R's ``extendInt``), ``digits`` is the
+    number of decimals of the printout and ``parm`` is ignored with a warning, as in metafor.
 
     Raises:
         metafopy.errors.InputError: an argument is invalid, ``control`` has an unknown entry or the model has no such coefficient.
     """
+    metafopy.methods.confint.warn_parm(parm)
     x = model
     settings = metafopy.methods.confint.control_values(
         control, {'vc_min': None, 'vc_max': None, 'tol': tol, 'maxiter': maxiter, 'eptries': eptries, 'verbose': False}
@@ -108,7 +117,10 @@ def confint_rma_ls(
         free = numpy.flatnonzero(~x.alpha_fix)
         if free.size == 0:
             raise metafopy.errors.InputError('No components for which a CI can be obtained.')
-        results = [confint_rma_ls(x, alpha=int(pos), level=level, control=settings, tol=tol, maxiter=maxiter, eptries=eptries, xlim=xlim) for pos in free]
+        results = [
+            confint_rma_ls(x, alpha=int(pos), level=level, control=settings, tol=tol, maxiter=maxiter, eptries=eptries, xlim=xlim, extint=extint, digits=digits)
+            for pos in free
+        ]
         out = [r for r in results if isinstance(r, metafopy.methods.confint.ConfintResult)]
         return out[0] if len(out) == 1 else metafopy.methods.confint.ConfintList(out)
 
@@ -139,10 +151,10 @@ def confint_rma_ls(
         for _ in range(eptries):
             res = metafopy.methods.confint.try_profile(diff, lo)
             if not math.isnan(res):
-                if res < 0:
+                if not extint and res < 0:
                     vc_lb, lb_conv, lb_sign = lo, True, '<'
                 else:
-                    root, ok = metafopy.methods.confint.find_root(diff, lo, vc, tol, maxiter, check_conv=True)
+                    root, ok = metafopy.methods.confint.find_root(diff, lo, vc, tol, maxiter, check_conv=True, extend_int='downX' if extint else 'no')
                     if ok:
                         vc_lb, lb_conv = root, True
                 break
@@ -151,10 +163,10 @@ def confint_rma_ls(
         for _ in range(eptries):
             res = metafopy.methods.confint.try_profile(diff, hi)
             if not math.isnan(res):
-                if res < 0:
+                if not extint and res < 0:
                     vc_ub, ub_conv, ub_sign = hi, True, '>'
                 else:
-                    root, ok = metafopy.methods.confint.find_root(diff, vc, hi, tol, maxiter, check_conv=True)
+                    root, ok = metafopy.methods.confint.find_root(diff, vc, hi, tol, maxiter, check_conv=True, extend_int='upX' if extint else 'no')
                     if ok:
                         vc_ub, ub_conv = root, True
                 break
@@ -179,4 +191,6 @@ def confint_rma_ls(
             beta, lb, ub = (metafopy.transf.apply_transf(a, transf, targs) for a in (beta, lb, ub))
         res_fixed = pandas.DataFrame({'estimate': beta, 'ci.lb': numpy.minimum(lb, ub), 'ci.ub': numpy.maximum(lb, ub)}, index=list(x.coef_names))
 
-    return metafopy.methods.confint.ConfintResult(fixed=res_fixed, random=res_random, lb_sign=lb_sign, ub_sign=ub_sign)
+    return metafopy.methods.confint.ConfintResult(
+        fixed=res_fixed, random=res_random, lb_sign=lb_sign, ub_sign=ub_sign, digits=metafopy.mfopt.option_digits(digits, x.digits)
+    )

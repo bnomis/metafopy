@@ -22,6 +22,7 @@ import scipy.stats
 import metafopy.core.verbose
 import metafopy.errors
 import metafopy.metadata
+import metafopy.mfopt
 import metafopy.models.binary
 import metafopy.models.call
 import metafopy.models.tables
@@ -341,7 +342,7 @@ def rma_mh(
         fit_stats_reml=reml,
         tables=tab,
         data=data,
-        digits=digits,
+        digits=metafopy.mfopt.reduce_digits(digits),
         CO=extra['CO'],
         COp=extra['COp'],
         MH=extra['MH'],

@@ -34,6 +34,7 @@ import metafopy.effects.summary
 import metafopy.errors
 import metafopy.methods.ls_common
 import metafopy.methods.vif
+import metafopy.mfopt
 import metafopy.printing
 
 __all__ = ['DeltaMethodResult', 'deltamethod']
@@ -68,7 +69,12 @@ class DeltaMethodResult:
         names = list(self.tab.index)
         return pandas.DataFrame(self.vb, index=names, columns=names)
 
-    def summary(self, digits: int | collections.abc.Mapping[str, int] | None = None, signif_stars: bool = True, signif_legend: bool | None = None) -> str:
+    def summary(
+        self,
+        digits: int | collections.abc.Sequence[float] | collections.abc.Mapping[str, int] | None = None,
+        signif_stars: bool = True,
+        signif_legend: bool | None = None,
+    ) -> str:
         """The table as ``print.deltamethod`` shows it."""
         return format_result(
             self, self.digits if digits is None else get_digits(digits), signif_stars, signif_stars if signif_legend is None else signif_legend
@@ -78,7 +84,9 @@ class DeltaMethodResult:
         return self.summary()
 
 
-def get_digits(digits: int | collections.abc.Mapping[str, int] | None, default: collections.abc.Mapping[str, int] | None = None) -> dict[str, int]:
+def get_digits(
+    digits: int | collections.abc.Sequence[float] | collections.abc.Mapping[str, int] | None, default: collections.abc.Mapping[str, int] | None = None
+) -> dict[str, int]:
     """metafor's ``.get.digits()`` for the keys used here (missing keys keep their defaults)."""
     out = dict(default) if default is not None else dict.fromkeys(DIGIT_KEYS, 4)
     if digits is None:
@@ -86,7 +94,7 @@ def get_digits(digits: int | collections.abc.Mapping[str, int] | None, default: 
     if isinstance(digits, collections.abc.Mapping):
         out.update({key: int(val) for key, val in digits.items() if key in out})
         return out
-    return dict.fromkeys(DIGIT_KEYS, int(digits))
+    return dict.fromkeys(DIGIT_KEYS, metafopy.mfopt.reduce_digits(digits))
 
 
 def arity(fun: collections.abc.Callable[..., typing.Any]) -> int:
@@ -179,7 +187,7 @@ def deltamethod(
     order: int = 1,
     level: float | None = None,
     H0: numpy.typing.ArrayLike = 0,
-    digits: int | collections.abc.Mapping[str, int] | None = None,
+    digits: int | collections.abc.Sequence[float] | collections.abc.Mapping[str, int] | None = None,
 ) -> DeltaMethodResult:
     """Apply the (multivariate) delta method to a function of a set of coefficients.
 

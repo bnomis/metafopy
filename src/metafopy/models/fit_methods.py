@@ -49,8 +49,9 @@ class DataFields:
 
     @property
     def k_all(self) -> int:
-        """Number of rows supplied, including those dropped for missing values."""
-        return int(typing.cast(typing.Any, self).data.k_all)
+        """Number of rows supplied before subsetting, including those dropped for missing values (``k.all`` of ``rma.uni``)."""
+        md = typing.cast(typing.Any, self).data
+        return int(md.k_all if md.supplied is None else md.supplied)
 
     @property
     def k_eff(self) -> int:

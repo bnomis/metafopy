@@ -141,9 +141,9 @@ def test_partial_type() -> None:
 
 
 def test_invalid_na_action() -> None:
-    with pytest.raises(metafopy.errors.InputError, match='na_action'):
+    with pytest.raises(metafopy.errors.InputError, match='na.action'):
         fits()['uni_mods'].residuals(na_action='nope')
-    with pytest.raises(metafopy.errors.InputError, match='na_action'):
+    with pytest.raises(metafopy.errors.InputError, match='na.action'):
         fits()['uni_mods'].weights_(na_action='nope')
 
 

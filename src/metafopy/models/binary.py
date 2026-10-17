@@ -133,8 +133,8 @@ class FixedBinaryResult(metafopy.models.fit_methods.TableFields, metafopy.models
     def slab(self) -> tuple[str, ...]:
         return self.tables.slab
 
-    def coef(self) -> pandas.Series:
-        """Estimated coefficient, indexed by name."""
+    def coef(self, type: str = 'beta') -> pandas.Series:
+        """Estimated coefficient, indexed by name; ``type`` is accepted for metafor's ``coef(x, type=)`` and only location-scale fits use it."""
         return pandas.Series(self.beta, index=list(self.coef_names), name='estimate')
 
     @property

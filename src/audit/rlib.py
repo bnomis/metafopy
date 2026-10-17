@@ -6,9 +6,12 @@ difference between the packages.
 """
 
 import contextlib
+import dataclasses
 import functools
+import inspect
 import io
 import math
+import re
 import typing
 import warnings
 
@@ -64,12 +67,23 @@ class Env:
                 return metafopy.datasets.load(name).copy()
             except metafopy.errors.NotFoundError as e:
                 raise UnsupportedError(f'dataset {name} is not bundled with metafopy') from e
+        if name.startswith('transf.'):
+            # the function itself, so that predict() and confint() recognise the integral and mode transformations that take tau2
+            try:
+                return pycall.resolve_function(name, None)
+            except pycall.MissingFunctionError:
+                pass
         if name in BASE or name in METAFOR_FUNCTIONS:
-            return lambda *a, **k: rcall(self, name, *a, **k)
+            return function_value(self, name)
         raise UnsupportedError(f'object {name} not found')
 
     def set(self, name: str, value: Value) -> Value:
         self.vars[name] = value
+        return value
+
+    def replace(self, name: str, make: typing.Callable[[Value], Value], value: Value) -> Value:
+        """``x$a <- value``: the variable becomes the changed object, the value of the expression is ``value``, as in R."""
+        self.vars[name] = make(value)
         return value
 
 
@@ -330,6 +344,8 @@ def r_cbind(*xs: Value, **named: Value) -> Value:
                 cols[f'V{len(cols) + 1}'] = a
     for k, v in named.items():
         cols[k] = numpy.asarray(v)
+    longest = max((numpy.atleast_1d(v).shape[0] for v in cols.values()), default=0)
+    cols = {k: numpy.resize(numpy.atleast_1d(v), longest) if numpy.atleast_1d(v).shape[0] != longest else v for k, v in cols.items()}  # R recycles
     if frame:
         return pandas.DataFrame(cols)
     return numpy.column_stack(list(cols.values()))
@@ -427,11 +443,21 @@ def r_rev(x: Value) -> Value:
     return numpy.asarray(x)[::-1]
 
 
+def r_diff(x: Value, lag: Value = 1, **kw: Value) -> Value:
+    return (
+        numpy.diff(numpy.asarray(x, dtype=float), n=1)
+        if int(lag) == 1
+        else numpy.asarray(x, dtype=float)[int(lag) :] - numpy.asarray(x, dtype=float)[: -int(lag)]
+    )
+
+
 def r_cumsum(x: Value) -> Value:
     return numpy.cumsum(as_array(x).astype(float))
 
 
 def r_as_numeric(x: Value) -> Value:
+    if isinstance(x, pandas.Categorical) or (isinstance(x, pandas.Series) and isinstance(x.dtype, pandas.CategoricalDtype)):
+        return numpy.asarray(pandas.Categorical(x).codes, dtype=float) + 1  # the integer codes of a factor, counted from 1
     a = as_array(x)
     return a.astype(float) if a.dtype.kind != 'U' else numpy.array([float(v) for v in a])
 
@@ -452,20 +478,56 @@ def r_as_dataframe(x: Value, **kw: Value) -> Value:
         return x
     if hasattr(x, 'to_frame'):
         return x.to_frame()
+    if isinstance(getattr(x, 'frame', None), pandas.DataFrame):
+        return x.frame  # the summary of an emmeans result
     return pandas.DataFrame(x)
 
 
+def r_assign_into(env: Env, name: str, update: typing.Callable[[Value], Value], value: Value) -> Value:
+    """``name[i] <- value`` and the like: the variable becomes ``update(value)``, the expression has the value ``value``."""
+    env.vars[name] = update(value)
+    return value
+
+
+def as_character(v: Value) -> str:
+    """``as.character()`` of one value: integral numbers have no decimal point."""
+    if isinstance(v, float | numpy.floating) and math.isfinite(v) and v == int(v):
+        return str(int(v))
+    return str(v)
+
+
 def r_factor(x: Value, levels: Value = None, labels: Value = None, **kw: Value) -> Value:
-    return pandas.Categorical(numpy.asarray(x), categories=None if levels is None else list(numpy.asarray(levels)))
+    """``factor(x, levels, labels)``: ``as.character(x)`` is matched to ``as.character(levels)``, then the levels are renamed to the labels."""
+    values = numpy.asarray(x)
+    if levels is None:
+        present = pandas.unique(values[~pandas.isna(values)])
+        categories = sorted(present.tolist())
+    else:
+        categories = list(numpy.atleast_1d(numpy.asarray(levels)))
+    keys = [as_character(c) for c in categories]
+    codes = numpy.array([keys.index(as_character(v)) if not pandas.isna(v) and as_character(v) in keys else -1 for v in values], dtype=numpy.intp)
+    names = keys
+    if labels is not None:
+        names = [str(v) for v in numpy.atleast_1d(numpy.asarray(labels))]
+        if len(names) == 1 and len(categories) > 1:
+            names = [f'{names[0]}{i + 1}' for i in range(len(categories))]
+        return pandas.Categorical.from_codes(codes, categories=pandas.Index(names))
+    if values.dtype.kind in 'fiub':
+        return pandas.Categorical(values, categories=categories)
+    return pandas.Categorical.from_codes(codes, categories=pandas.Index(keys))
 
 
 def r_head(x: Value, n: Value = 6, **kw: Value) -> Value:
     n = int(n)
+    if dataclasses.is_dataclass(x) and hasattr(x, '__getitem__'):  # head() of a list.rma
+        return typing.cast(typing.Any, x)[:n]
     return x.head(n) if isinstance(x, pandas.DataFrame) else numpy.asarray(x)[:n]
 
 
 def r_tail(x: Value, n: Value = 6, **kw: Value) -> Value:
     n = int(n)
+    if dataclasses.is_dataclass(x) and hasattr(x, '__getitem__'):  # tail() of a list.rma
+        return typing.cast(typing.Any, x)[-n:]
     return x.tail(n) if isinstance(x, pandas.DataFrame) else numpy.asarray(x)[-n:]
 
 
@@ -529,11 +591,33 @@ def r_noop(*args: Value, **kw: Value) -> Value:
     return None
 
 
+def r_par(*args: Value, **kw: Value) -> Value:
+    """``par("usr")`` is the limits of the current axes; any other query or setting does nothing."""
+    if args == ('usr',):
+        import matplotlib.pyplot
+
+        left, right = matplotlib.pyplot.gca().get_xlim()
+        bottom, top = matplotlib.pyplot.gca().get_ylim()
+        return numpy.array([left, right, bottom, top])
+    return None
+
+
 def r_invisible(x: Value = None) -> Value:
     return x
 
 
 def r_structure(x: Value, **kw: Value) -> Value:
+    """``structure(list(...), class = "data.frame")`` is a data frame and ``structure(c(...), dim = , dimnames = )`` a matrix with its names."""
+    if kw.get('class') == 'data.frame' and isinstance(x, dict):
+        return pandas.DataFrame({k: numpy.asarray(v) for k, v in x.items()})
+    dim = kw.get('dim')
+    if dim is not None and not isinstance(x, (dict, pandas.DataFrame)):
+        shape = tuple(int(d) for d in numpy.atleast_1d(numpy.asarray(dim)))
+        out = numpy.asarray(x).reshape(shape, order='F')
+        names = kw.get('dimnames')
+        if isinstance(names, list) and len(names) == 2 and out.ndim == 2 and all(n is not None for n in names):
+            return pandas.DataFrame(out, index=list(numpy.asarray(names[0])), columns=list(numpy.asarray(names[1])))
+        return out
     return x
 
 
@@ -659,8 +743,16 @@ def r_abs(x: Value) -> Value:
     return numpy.abs(as_array(x).astype(float))
 
 
+SETTINGS: dict[str, Value] = {}
+DEFAULT_SETTINGS: dict[str, Value] = {'na.action': 'na.omit'}
+
+
 def r_options(*args: Value, **kw: Value) -> Value:
-    return None
+    """``options(na.action = ...)``: the setting is passed as ``na_action`` to the functions that take it (R reads it with ``getOption``)."""
+    old = {name: SETTINGS.get(name, DEFAULT_SETTINGS.get(name)) for name in kw}
+    for name, value in kw.items():
+        SETTINGS[name] = value
+    return old
 
 
 def r_apply(x: Value, margin: Value, fun: typing.Callable[..., Value], *args: Value) -> Value:
@@ -730,6 +822,7 @@ BASE: dict[str, typing.Callable[..., Value]] = {
     'data.frame': r_dataframe,
     'dev.off': r_noop,
     'diag': r_diag,
+    'diff': r_diff,
     'dim': r_dim,
     'exp': r_exp,
     'factor': r_factor,
@@ -759,7 +852,7 @@ BASE: dict[str, typing.Callable[..., Value]] = {
     'nrow': r_nrow,
     'options': r_options,
     'order': r_order,
-    'par': r_noop,
+    'par': r_par,
     'paste': r_paste,
     'paste0': r_paste0,
     'png': r_noop,
@@ -810,7 +903,7 @@ def to_positions(index: Value, size: int) -> Value:
     """An R subscript as 0-based positions (or a boolean mask)."""
     if isinstance(index, Empty):
         return slice(None)
-    arr = numpy.asarray(index)
+    arr = numpy.atleast_1d(numpy.asarray(index))
     if arr.dtype == bool:
         return arr
     if arr.dtype.kind in 'US' or arr.dtype == object:
@@ -824,27 +917,29 @@ def to_positions(index: Value, size: int) -> Value:
 
 
 def r_index(x: Value, *idx: Value, **kw: Value) -> Value:
+    if dataclasses.is_dataclass(x) and not hasattr(x, '__getitem__') and hasattr(x, 'to_frame'):  # a result R returns as a data frame
+        x = typing.cast(typing.Any, x).to_frame()
     if isinstance(x, pandas.DataFrame):
         if len(idx) == 1:
             sel = idx[0]
             if isinstance(sel, Empty):
                 return x
-            arr = numpy.asarray(sel)
+            arr = numpy.atleast_1d(numpy.asarray(sel))
             if arr.dtype.kind in 'US' or arr.dtype == object:
                 return x[list(arr)]
             return x.iloc[:, to_positions(sel, x.shape[1])]
         rows, cols = idx
         out: typing.Any = x
         if not isinstance(rows, Empty):
-            out = (
-                out.loc[numpy.asarray(rows)]
-                if (numpy.asarray(rows).dtype == bool and False)
-                else out.iloc[to_positions(rows, x.shape[0])]
-                if numpy.asarray(rows).dtype != bool
-                else out[numpy.asarray(rows)]
-            )
+            sel_rows = numpy.atleast_1d(numpy.asarray(rows))
+            if sel_rows.dtype.kind in 'US' or sel_rows.dtype == object:
+                out = out.loc[list(sel_rows)]
+            elif sel_rows.dtype == bool:
+                out = out[sel_rows]
+            else:
+                out = out.iloc[to_positions(rows, x.shape[0])]
         if not isinstance(cols, Empty):
-            arr = numpy.asarray(cols)
+            arr = numpy.atleast_1d(numpy.asarray(cols))
             if arr.dtype.kind in 'US' or arr.dtype == object:
                 out = out[list(arr)]
             else:
@@ -945,10 +1040,14 @@ def r_assign_dollar(x: Value, name: str, value: Value) -> Value:
         out.attrs = dict(x.attrs)
         out[name] = value
         return out
-    if isinstance(x, dict):
-        out2 = dict(x)
+    if isinstance(x, dict) or (isinstance(x, list) and not x):  # list() is an empty named list in R
+        out2 = dict(x) if isinstance(x, dict) else {}
         out2[name] = value
         return out2
+    if dataclasses.is_dataclass(x) and not isinstance(x, type):
+        if py_name(name) not in {f.name for f in dataclasses.fields(x)}:
+            raise AttributeError(f'{type(x).__name__} has no field {name}')
+        return dataclasses.replace(x, **{py_name(name): value})  # results are frozen: R's modified copy is a replaced one
     setattr(x, py_name(name), value)
     return x
 
@@ -1003,16 +1102,68 @@ def rfor(env: Env, var: str, seq: Value, body: typing.Callable[[], Value]) -> Va
 
 # -- calls --------------------------------------------------------------------------------------------------------------------------------------
 
-INDEX_ARGUMENTS = frozenset({'btt', 'att', 'subset', 'which'})
+INDEX_ARGUMENTS = frozenset({'btt', 'btt2', 'att', 'subset', 'which', 'include'})
+# indices of one function only (elsewhere `x`, `y` and `out` are data)
+FUNCTION_INDEX_ARGUMENTS: dict[str, tuple[str, ...]] = {
+    'matreg': ('y', 'x'),
+    'plot': ('out',),
+    'to.wide': ('grpvars',),
+}
 
 
-def shift_arguments(kwargs: dict[str, Value]) -> dict[str, Value]:
+def row_count(args: tuple[Value, ...], kwargs: dict[str, Value]) -> int | None:
+    """The number of rows the index arguments of a call refer to: the rows of ``data``, else the length of the first vector argument."""
+    data = kwargs.get('data')
+    if isinstance(data, pandas.DataFrame):
+        return len(data)
+    first = args[0] if args else None
+    if isinstance(first, (list, tuple, numpy.ndarray, pandas.Series)):
+        return len(first)
+    return None
+
+
+def shift_index(v: Value) -> Value:
+    """An index written for R (from 1) as metafopy takes it (from 0); names stay as they are."""
+    if v is None or isinstance(v, (str, bool)):
+        return v
+    arr = numpy.asarray(v)
+    if arr.dtype.kind in 'if' and arr.dtype != bool:
+        return (arr.astype(int) - 1).tolist() if arr.ndim else int(arr) - 1
+    return v
+
+
+def shift_function_arguments(name: str, args: tuple[Value, ...], kwargs: dict[str, Value]) -> tuple[tuple[Value, ...], dict[str, Value]]:
+    """The indices of the functions whose ``x``, ``y`` or ``out`` are positions (``matreg(1, 2:4, ...)``) shifted to count from 0."""
+    names = FUNCTION_INDEX_ARGUMENTS.get(name)
+    if names is None:
+        return args, kwargs
+    positional = list(args)
+    if name == 'matreg':
+        for i in range(min(2, len(positional))):
+            positional[i] = shift_index(positional[i])
+    return tuple(positional), {k: shift_index(v) if k in names else v for k, v in kwargs.items()}
+
+
+# profile() and confint() of rma.mv and location-scale fits take the position of the component to profile (``tau2 = 1`` is the first one)
+POSITION_ARGUMENTS = frozenset({'sigma2', 'tau2', 'rho', 'gamma2', 'phi', 'alpha'})
+POSITION_FUNCTIONS = frozenset({'profile', 'confint'})
+POSITION_FITS = frozenset({'RMAMVResult', 'RMALSResult'})
+
+
+def shift_arguments(kwargs: dict[str, Value], positions: bool = False, args: tuple[Value, ...] = ()) -> dict[str, Value]:
+    """Index arguments count from 1 in R and from 0 in metafopy; a vector of negative indices (R: leave these out) becomes a logical vector."""
     out: dict[str, Value] = {}
     for k, v in kwargs.items():
-        if k in INDEX_ARGUMENTS and v is not None and not isinstance(v, (str, bool)):
+        if (k in INDEX_ARGUMENTS or (positions and k in POSITION_ARGUMENTS)) and v is not None and not isinstance(v, (str, bool)):
             arr = numpy.asarray(v)
             if arr.dtype.kind in 'if' and arr.dtype != bool:
-                v = (arr.astype(int) - 1).tolist() if arr.ndim else int(arr) - 1
+                rows = row_count(args, kwargs)
+                if arr.size and rows is not None and bool(numpy.all(arr < 0)):
+                    keep = numpy.ones(rows, dtype=bool)
+                    keep[(-arr.astype(int) - 1).ravel()] = False
+                    v = keep.tolist()
+                else:
+                    v = (arr.astype(int) - 1).tolist() if arr.ndim else int(arr) - 1
         out[k] = v
     return out
 
@@ -1029,6 +1180,48 @@ def run_settings(env: Env) -> None:
     env.vars['.vistest'] = lambda *a, **k: True
 
 
+def formula_data(env: Env, fn: typing.Callable[..., typing.Any], kwargs: dict[str, Value]) -> dict[str, Value]:
+    """R evaluates a formula in the calling environment; metafopy needs ``data``, so the variables of the script that the formulas name are collected in one."""
+    try:
+        parameters = inspect.signature(fn.func if isinstance(fn, functools.partial) else fn).parameters
+    except TypeError, ValueError:
+        return kwargs
+    if 'data' in kwargs or 'data' not in parameters:
+        return kwargs
+    names = {name for v in kwargs.values() if isinstance(v, str) and v.lstrip().startswith('~') for name in re.findall(r'[A-Za-z_.][A-Za-z0-9_.]*', v)}
+    columns: dict[str, Value] = {}
+    for name in sorted(names):
+        value = env.vars.get(name)
+        if isinstance(value, (list, tuple, numpy.ndarray, pandas.Series)) and numpy.ndim(value) == 1:
+            columns[name] = numpy.asarray(value)
+    if not columns or len({len(v) for v in columns.values()}) != 1:
+        return kwargs
+    return {**kwargs, 'data': pandas.DataFrame(columns)}
+
+
+def accepts(fn: typing.Callable[..., Value], name: str, first: Value = None) -> bool:
+    """Whether the call takes the argument; for a ``functools.singledispatch`` function the implementation for the type of the first argument decides."""
+    target = fn.func if isinstance(fn, functools.partial) else fn
+    dispatch = getattr(target, 'dispatch', None)
+    if callable(dispatch) and first is not None:
+        target = dispatch(type(first))
+    try:
+        return name in inspect.signature(target).parameters
+    except TypeError, ValueError:
+        return False
+
+
+def function_value(env: Env, name: str) -> typing.Callable[..., Value]:
+    """The function ``name`` as a value (``transf = transf.dtorpb``), with the signature of the metafopy function (``conv.delta`` reads the argument names)."""
+
+    def call(*a: Value, **k: Value) -> Value:
+        return rcall(env, name, *a, **k)
+
+    with contextlib.suppress(pycall.MissingFunctionError, TypeError, ValueError):
+        call.__signature__ = inspect.signature(pycall.resolve_function(name, None))  # type: ignore[attr-defined]
+    return call
+
+
 def rcall(env: Env, name: str, *args: Value, **kwargs: Value) -> Value:
     if name == 'source':
         run_settings(env)
@@ -1037,19 +1230,41 @@ def rcall(env: Env, name: str, *args: Value, **kwargs: Value) -> Value:
         return OPERATORS[name](*args)
     if name in BASE:
         return BASE[name](*args, **kwargs)
+    args, kwargs = shift_function_arguments(name, args, kwargs)
     first = args[0] if args else None
-    kwargs = shift_arguments(kwargs)
+    kwargs = shift_arguments(kwargs, name in POSITION_FUNCTIONS and type(first).__name__ in POSITION_FITS, args)
     try:
         fn = pycall.resolve_function(name, first)
     except pycall.MissingFunctionError as e:
         if name in METAFOR_FUNCTIONS:
             raise MissingRFunctionError(name) from e
         raise UnsupportedError(f'R function {name} is not available in the harness') from e
+    kwargs = formula_data(env, fn, kwargs)
     mapped = {pycall.arg_name(k): v for k, v in kwargs.items()}
     pycall.check_arguments(fn, list(mapped))
+    setting = SETTINGS.get('na.action')
+    if isinstance(setting, str) and 'na_action' not in mapped and accepts(fn, 'na_action', first):
+        mapped['na_action'] = pycall.option_value('na.action', setting)
     if isinstance(fn, functools.partial):
         return fn(*args[1:], **mapped)
+    args, mapped = pycall.match_positional(fn, args, mapped)
     return fn(*args, **mapped)
+
+
+def r_symbol(env: Env, name: str) -> Value:
+    """A bare name in an argument of a model function: a column of the data (passed as its name), else the variable, function or constant of that name.
+
+    ``rma(yi, vi, data = dat, ...)`` takes ``yi`` as a column, ``conv.delta(..., transf = transf.logit)`` takes ``transf.logit`` as the function.
+    """
+    for scope in reversed(env.scopes):
+        if isinstance(scope, pandas.DataFrame) and name in scope.columns:
+            return name
+        if isinstance(scope, dict) and name in scope:
+            return name
+    try:
+        return env[name]
+    except UnsupportedError:
+        return name
 
 
 def rnse(env: Env, name: str, data: typing.Callable[[], Value], args: list[typing.Callable[[], Value]], kwargs: dict[str, typing.Callable[[], Value]]) -> Value:

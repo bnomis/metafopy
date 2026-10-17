@@ -646,11 +646,11 @@ def forest(
     ci_lb: numpy.typing.ArrayLike | None = None,
     ci_ub: numpy.typing.ArrayLike | None = None,
     annotate: bool = True,
-    addfit: bool = True,
+    addfit: bool | None = None,
     addpred: bool | str | int | collections.abc.Sequence[str | int] | None = None,
     predstyle: str | None = None,
     preddist: PredDist | None = None,
-    showweights: bool = False,
+    showweights: bool | None = None,
     header: bool | str | collections.abc.Sequence[str] = True,
     xlim: collections.abc.Sequence[float] | None = None,
     alim: collections.abc.Sequence[float] | None = None,
@@ -661,7 +661,7 @@ def forest(
     steps: int = 5,
     level: float | None = None,
     refline: float | None = 0,
-    digits: int | collections.abc.Sequence[int] = 2,
+    digits: int | collections.abc.Sequence[float] | numpy.typing.NDArray[numpy.floating] = 2,
     width: int | collections.abc.Sequence[int] | None = None,
     xlab: str | collections.abc.Sequence[str] | None = None,
     slab: collections.abc.Sequence[typing.Any] | float | None = None,
@@ -759,6 +759,21 @@ def forest(
     if clim is not None:
         olim = clim
     if isinstance(x, metafopy.methods.leave1out.CumulResult):
+        for name, given in (
+            ('slab', slab),
+            ('mlab', mlab),
+            ('order', order),
+            ('addfit', addfit),
+            ('addpred', addpred),
+            ('predstyle', predstyle),
+            ('showweights', showweights),
+            ('predlim', predlim),
+            ('colout', colout),
+            ('border', border),
+        ):
+            if given is not None:
+                article = 'an' if name[0] in 'aeiou' else 'a'
+                warnings.warn(f"The forest.cumul.rma() function does not have {article} '{name}' argument.", stacklevel=2)
         return metafopy.plot.cumul.forest_cumul(
             x,
             annotate=annotate,
@@ -803,6 +818,8 @@ def forest(
             xlabadj=xlabadj,
             xlabfont=xlabfont,
         )
+    addfit = True if addfit is None else addfit
+    showweights = False if showweights is None else showweights
     is_fit = metafopy.methods.fitview.is_rma(x)
     pred_levels: list[str | int] | None = None
     if addpred is not None and not isinstance(addpred, bool):
@@ -820,6 +837,7 @@ def forest(
     axx = metafopy.plot.rutils.get_ax(ax)
     dig = [digits] * 3 if isinstance(digits, int) else list(digits)
     drop0 = all(isinstance(v, int | numpy.integer) for v in dig)  # R: drop trailing zeros of the axis labels only if digits is an integer (2L)
+    dig = [int(v) for v in dig]
     if len(dig) == 1:
         dig = dig * 3
     if len(dig) == 2:
@@ -881,6 +899,9 @@ def forest(
         keep = res.keep
         na_rows = res.na_rows
         show_na = na_action == 'pass' and na_rows is not None and bool(na_rows.any())
+        if na_action == 'omit' and na_rows is not None and rows is not None and numpy.ndim(rows) > 0:
+            # metafor takes `rows` for all outcomes, those with missing values included, and drops theirs afterwards
+            show_na = len(numpy.atleast_1d(rows)) == int((keep | na_rows).sum()) != k
         if na_action == 'fail' and na_rows is not None and na_rows.any():
             raise metafopy.errors.InputError('Missing values in results.')
         if show_na:
@@ -1721,7 +1742,7 @@ def addpoly(
     addpred: bool = False,
     predstyle: str | None = None,
     predlim: collections.abc.Sequence[float] | None = None,
-    digits: int | None = None,
+    digits: int | collections.abc.Sequence[float] | None = None,
     width: int | collections.abc.Sequence[int] | None = None,
     mlab: str | collections.abc.Sequence[str] | None = None,
     transf: Func | None = None,
@@ -1751,6 +1772,8 @@ def addpoly(
     predtype: str | None = None,
     pi_type: str | None = None,
     addcred: bool | None = None,
+    cr_lb: numpy.typing.ArrayLike | None = None,
+    cr_ub: numpy.typing.ArrayLike | None = None,
 ) -> matplotlib.axes.Axes:
     """Add polygons (summary estimates) to a forest plot (``addpoly.rma`` and ``addpoly.default``).
 
@@ -1761,7 +1784,7 @@ def addpoly(
     ``transf``, ``atransf``, ``efac``, ``cex``, ``textpos``, ...) are taken from the last
     :func:`forest` call on the same axes. Returns the axes. ``predtype`` (``pi_type`` is its old spelling) is passed on to
     :func:`metafopy.predict` for a fitted model. ``addcred`` is the old spelling of ``addpred`` (read from ``...`` by
-    ``addpoly.rma``) and wins over it for a fitted model.
+    ``addpoly.rma``) and wins over it for a fitted model. ``cr_lb`` and ``cr_ub`` are the old spellings of ``pi_lb`` and ``pi_ub`` and win over them.
 
     ``predstyle`` is ``'line'``, ``'polygon'``, ``'bar'``, ``'shade'`` or ``'dist'`` (the last two draw the predictive
     distribution, see :func:`forest`; they need ``predlim``/``preddist``/``predtail`` as there). For numbers the predictive
@@ -1777,6 +1800,10 @@ def addpoly(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
+    if cr_lb is not None:
+        pi_lb = cr_lb
+    if cr_ub is not None:
+        pi_ub = cr_ub
     if addcred is not None and metafopy.methods.fitview.is_rma(x):
         addpred = addcred
     if isinstance(x, metafopy.methods.predict.PredictResult):
@@ -1849,6 +1876,11 @@ def addpoly(
         cl, cu = numpy.asarray(pr.ci_lb, dtype=float), numpy.asarray(pr.ci_ub, dtype=float)
         if addpred:
             pl, pu = numpy.asarray(pr.pi_lb, dtype=float), numpy.asarray(pr.pi_ub, dtype=float)
+            if bool(numpy.all(numpy.isnan(pl))) and bool(numpy.all(numpy.isnan(pu))):
+                # metafor: the model has no prediction interval (FE, MH and Peto models); only predstyle='line' goes on without it
+                warnings.warn('Could not extract prediction interval bounds.', stacklevel=2)
+                if ps != 'line':
+                    raise metafopy.errors.InputError('Cannot draw prediction interval if pi_lb and pi_ub are unspecified.')
         else:
             pl = pu = numpy.array([math.nan])
         mlab_use: typing.Any = default_mlab(fit.method) if mlab is None else mlab
@@ -1906,7 +1938,7 @@ def addpoly(
         alim_t = (float(xl0[0]), float(xl0[1]))
     ol = st.get('olim') if olim is None else (float(min(olim)), float(max(olim)))
     do_annotate = st.get('annotate', True) if annotate is None else annotate
-    dg = st.get('digits', 2) if digits is None else digits
+    dg = st.get('digits', 2) if digits is None else int(numpy.atleast_1d(digits)[0])  # R: digits[[1]]; R's 2 is a double
     wd = st.get('width') if width is None else width
     tr = st.get('transf') if transf is None else transf
     atr = st.get('atransf') if atransf is None else atransf

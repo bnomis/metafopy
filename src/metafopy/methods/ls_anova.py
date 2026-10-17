@@ -19,6 +19,7 @@ import metafopy.errors
 import metafopy.methods.anova
 import metafopy.methods.common
 import metafopy.methods.ls_common
+import metafopy.methods.pairmat
 import metafopy.mfopt
 import metafopy.models.rma_ls_result
 import metafopy.models.rma_uni
@@ -270,14 +271,16 @@ def wald_subset(
     return LSWaldResult(part=part, stat=stat, df=df, pval_omnibus=p, test=test, m=m, idx=idx)
 
 
-def lrt(a: metafopy.models.rma_ls_result.RMALSResult, b: metafopy.models.rma_ls_result.RMALSResult, refit: bool) -> metafopy.methods.anova.MVLRTResult:
+def lrt(
+    a: metafopy.models.rma_ls_result.RMALSResult, b: metafopy.models.rma_ls_result.RMALSResult, refit: bool, df_given: int | None = None
+) -> metafopy.methods.anova.MVLRTResult:
     """Likelihood-ratio test of two nested location-scale models (the one with more parameters is the full model).
 
     Raises:
         metafopy.errors.InputError: the models cannot be compared.
     """
-    full, red = (a, b) if a.parms >= b.parms else (b, a)
-    if full.parms == red.parms:
+    full, red = (a, b) if df_given is not None or a.parms >= b.parms else (b, a)
+    if df_given is None and full.parms == red.parms:
         raise metafopy.errors.InputError('Models have the same number of parameters.')
     if full.k != red.k or not numpy.array_equal(full.yi, red.yi) or not numpy.array_equal(full.vi, red.vi):
         raise metafopy.errors.InputError('The observed outcomes and/or sampling variances are not equal in the full and reduced model.')
@@ -303,15 +306,35 @@ def lrt(a: metafopy.models.rma_ls_result.RMALSResult, b: metafopy.models.rma_ls_
     fs_r = red.fit_stats_reml if use_reml else red.fit_stats_ml
     stat = max(0.0, fs_r.dev - fs_f.dev)
     return metafopy.methods.anova.MVLRTResult(
-        df_full=full.parms,
+        df_full=full.parms + (0 if df_given is None else df_given),
         df_reduced=red.parms,
         LRT=stat,
-        pval=float(scipy.stats.chi2.sf(stat, full.parms - red.parms)),
+        pval=float(scipy.stats.chi2.sf(stat, full.parms - red.parms if df_given is None else df_given)),
         fit_stats_full=fs_f.as_tuple(),
         fit_stats_reduced=fs_r.as_tuple(),
         QE_full=full.QE,
         QE_reduced=red.QE,
     )
+
+
+def wald_between(a: metafopy.models.rma_ls_result.RMALSResult, b: metafopy.models.rma_ls_result.RMALSResult, df: int | None, digits: int) -> LSWaldResult:
+    """``anova(full, reduced, test='Wald')``: the Wald test of the location coefficients that only the full model has.
+
+    Raises:
+        metafopy.errors.InputError: the models cannot be compared.
+    """
+    if df is None and a.parms == b.parms:
+        raise metafopy.errors.InputError('Models have the same number of parameters.')
+    full, red = (a, b) if df is not None or a.parms > b.parms else (b, a)
+    if full.k != red.k or not numpy.array_equal(full.yi, red.yi) or not numpy.array_equal(full.vi, red.vi):
+        raise metafopy.errors.InputError('The observed outcomes and/or sampling variances are not equal in the full and reduced model.')
+    if full.method != red.method:
+        raise metafopy.errors.InputError("Full and reduced model must use the same 'method' for the model fitting.")
+    extra = [n for n in full.coef_names if n not in red.coef_names]
+    if not extra:
+        raise metafopy.errors.InputError('Full and reduced models appear to contain the same moderators.')
+    idx = tuple(full.coef_names.index(n) for n in extra)
+    return dataclasses.replace(wald_subset(full.beta, full.vb, idx, None, ddf=full.ddf, part='location', test=full.test), digits=digits)
 
 
 def adjust_individual(res: LSWaldResult, method: str | None, digits: int) -> LSWaldResult:
@@ -329,7 +352,7 @@ def anova_rma_ls(
     *,
     object2: metafopy.models.rma_ls_result.RMALSResult | None = None,
     btt: metafopy.models.rma_uni.Btt = None,
-    X: numpy.typing.ArrayLike | None = None,
+    X: numpy.typing.ArrayLike | metafopy.methods.pairmat.PairmatSpec | None = None,
     att: metafopy.models.rma_uni.Btt | Sequences = None,
     Z: numpy.typing.ArrayLike | None = None,
     rhs: numpy.typing.ArrayLike | float | None = None,
@@ -337,6 +360,11 @@ def anova_rma_ls(
     digits: int | collections.abc.Mapping[str, int] | None = None,
     refit: bool = False,
     abbrev: bool = False,
+    L: numpy.typing.ArrayLike | None = None,
+    fixed: bool = False,
+    test: str | None = None,
+    df: int | None = None,
+    verbose: bool = False,
 ) -> LSWaldResult | metafopy.methods.anova.MVLRTResult | list[LSWaldResult]:
     """Wald tests (``btt``, ``att``, ``X``, ``Z``) or, given a second model, a likelihood-ratio test.
 
@@ -346,21 +374,29 @@ def anova_rma_ls(
     refits REML fits with ML when their location models differ. ``object2`` is R's name for ``model2``. ``abbrev=True`` removes ``factor(`` and ``)`` from
     the text of the hypotheses of ``X`` and ``Z``. ``adjust`` (``True`` for ``'bonferroni'`` or a method of
     :data:`metafopy.core.padjust.P_ADJUST_METHODS`) adjusts the p-values of the individual tests (``X``, ``Z``) or of a list of
-    tests (``att``); ``digits`` is the number of decimals of the printout.
+    tests (``att``); ``digits`` is the number of decimals of the printout. ``L`` is another name for ``X`` and ``fixed=True`` matches a string
+    ``btt`` or ``att`` literally rather than as a regular expression. With ``model2``, ``test='Wald'`` tests the location coefficients that only
+    the full model has instead of the likelihood-ratio test, and ``df`` replaces the difference in the number of parameters of the
+    likelihood-ratio test. ``verbose`` is accepted for metafor's cluster-robust tests, which location-scale models do not have.
 
     Raises:
         metafopy.errors.InputError: an argument is invalid.
     """
+    X = metafopy.methods.pairmat.resolve(X, model)
     if abbrev:
         return metafopy.methods.anova.abbreviate_hyp(anova_rma_ls(**{**locals(), 'abbrev': False}), True)
     x = model
+    if L is not None:
+        X = L
     d = metafopy.mfopt.option_digits(digits, x.digits)
     method = None if adjust is None else metafopy.core.padjust.match_adjust(adjust)
     model2 = metafopy.methods.common.resolve_alias(model2, object2, 'model2', 'object2')
     if model2 is not None:
         if not isinstance(model2, metafopy.models.rma_ls_result.RMALSResult):
             raise metafopy.errors.InputError("Class of 'object' must be the same as class of 'object2'.")
-        return lrt(x, model2, refit)
+        if metafopy.methods.anova.check_test(test) == 'Wald':
+            return wald_between(x, model2, df, d)
+        return lrt(x, model2, refit, df)
     if X is not None and Z is not None:
         raise metafopy.errors.InputError("Can only specify either 'X' or 'Z', but not both.")
     if att is not None and btt is not None:
@@ -380,12 +416,12 @@ def anova_rma_ls(
         ):
             if rhs is not None:
                 raise metafopy.errors.InputError("Cannot use 'rhs' argument when specifying a list for 'att'.")
-            tests = [typing.cast(LSWaldResult, anova_rma_ls(x, att=a, digits=d)) for a in att]
+            tests = [typing.cast(LSWaldResult, anova_rma_ls(x, att=a, digits=d, fixed=fixed)) for a in att]
             if method is None:
                 return tests
             adjusted = metafopy.core.padjust.p_adjust([t.pval_omnibus for t in tests], method)
             return [dataclasses.replace(t, pval_omnibus=float(p)) for t, p in zip(tests, adjusted, strict=True)]
-        idx = metafopy.models.rma_uni.set_btt(att, x.q, x.Z_int_incl, x.alpha_names)
+        idx = metafopy.models.rma_uni.set_btt(att, x.q, x.Z_int_incl, x.alpha_names, fixed)
         return dataclasses.replace(wald_subset(x.alpha, x.va, idx, rhs, ddf=x.ddf_alpha, part='scale', test=x.test), digits=d)
-    idx = metafopy.models.rma_uni.set_btt(btt, x.p, x.int_incl, x.coef_names) if btt is not None else x.btt
+    idx = metafopy.models.rma_uni.set_btt(btt, x.p, x.int_incl, x.coef_names, fixed) if btt is not None else x.btt
     return dataclasses.replace(wald_subset(x.beta, x.vb, idx, rhs, ddf=x.ddf, part='location', test=x.test), digits=d)

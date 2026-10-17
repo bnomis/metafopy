@@ -9,6 +9,7 @@ or a matrix (in which case an intercept is added unless ``intercept=False``).
 import collections.abc
 import dataclasses
 import typing
+import warnings
 
 import numpy
 import numpy.typing
@@ -163,7 +164,8 @@ class MetaData:
     ids_all: numpy.typing.NDArray[numpy.intp] | None = dataclasses.field(default=None, repr=False)
     subset_arg: BoolArray | None = dataclasses.field(default=None, repr=False)
     slab_given: bool = dataclasses.field(default=False, repr=False)
-    k_supplied: int | None = dataclasses.field(default=None, repr=False)
+    supplied: int | None = dataclasses.field(default=None, repr=False)
+    """Rows supplied when the effects came from counts after subsetting (R's ``k.all``); ``k_all`` stays the length of ``keep``."""
 
     @property
     def k(self) -> int:
@@ -173,7 +175,7 @@ class MetaData:
     @property
     def k_all(self) -> int:
         """Number of rows supplied before subsetting and NA removal."""
-        return int(self.keep.shape[0]) if self.k_supplied is None else self.k_supplied
+        return int(self.keep.shape[0])
 
     @property
     def rows_f(self) -> BoolArray:
@@ -272,7 +274,9 @@ class MetaData:
             w = numpy.repeat(w, k_all)
         if n is None:
             n = escalc_ni(yi, data, k_all)
-        for name, arr in (('vi', v), ('weights', w), ('ni', n)):
+        if n is not None and n.shape[0] != k_all:
+            n = None  # as metafor: sample sizes of the wrong length 'cannot be trusted' and are dropped
+        for name, arr in (('vi', v), ('weights', w)):
             if arr is not None and arr.shape[0] != k_all:
                 raise metafopy.errors.InputError(f'length of {name} ({arr.shape[0]}) differs from yi ({k_all})')
 
@@ -339,6 +343,8 @@ class MetaData:
         k: int,
     ) -> tuple[FloatArray, tuple[str, ...], BoolArray, bool]:
         if mods is None:
+            if not intercept:
+                warnings.warn('Must either include an intercept and/or moderators in the model.\nCoerced an intercept into the model.', stacklevel=4)
             # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
             return numpy.ones((k, 1)), ('intrcpt',), numpy.zeros(k, dtype=numpy.bool_), True
         if isinstance(mods, str):

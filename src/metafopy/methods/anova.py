@@ -18,6 +18,8 @@ import metafopy.core.padjust
 import metafopy.errors
 import metafopy.formatters
 import metafopy.methods.common
+import metafopy.methods.fitview
+import metafopy.methods.pairmat
 import metafopy.methods.vif
 import metafopy.mfopt
 import metafopy.models.mv_result
@@ -339,7 +341,7 @@ def anova_rma_uni(
     *,
     object2: metafopy.models.rma_uni.RMAResult | None = None,
     btt: metafopy.models.rma_uni.Btt = None,
-    X: numpy.typing.ArrayLike | None = None,
+    X: numpy.typing.ArrayLike | metafopy.methods.pairmat.PairmatSpec | None = None,
     rhs: numpy.typing.ArrayLike | float | None = None,
     adjust: bool | str | None = None,
     refit: bool = False,
@@ -350,6 +352,8 @@ def anova_rma_uni(
     verbose: bool = False,
     abbrev: bool = False,
     digits: int | collections.abc.Mapping[str, int] | None = None,
+    att: typing.Any = None,
+    Z: typing.Any = None,
 ) -> WaldResult | LRTResult | ListAnovaResult:
     """Test coefficients of one model, or compare two nested models.
 
@@ -380,6 +384,8 @@ def anova_rma_uni(
         metafopy.errors.InputError: an argument or the data is invalid.
         metafopy.errors.InternalError: an internal invariant does not hold.
     """
+    X = metafopy.methods.pairmat.resolve(X, model)
+    check_scale_arguments(att, Z)
     if abbrev:
         return abbreviate_hyp(anova_rma_uni(**{**locals(), 'abbrev': False}), True)
     x = model
@@ -391,6 +397,7 @@ def anova_rma_uni(
     rhs_given = rhs is not None
     rhs = 0.0 if rhs is None else rhs
     if model2 is not None:
+        check_same_class(x, model2)
         if check_test(test) == 'Wald':
             return dataclasses.replace(wald_between(x, model2, df), digits=d)
         return dataclasses.replace(lrt(x, model2, refit, df), digits=d)
@@ -610,6 +617,16 @@ def club_wald_x(
     )
 
 
+def check_same_class(a: object, b: object) -> None:
+    """R's ``identical(class(object), class(object2))``: a robust, selection model or plain fit is not compared with a fit of another class.
+
+    Raises:
+        metafopy.errors.InputError: the classes differ.
+    """
+    if metafopy.methods.fitview.r_class(a) != metafopy.methods.fitview.r_class(b):
+        raise metafopy.errors.InputError("Class of 'object' must be the same as class of 'object2'.")
+
+
 def wald_between(
     a: metafopy.models.rma_uni.RMAResult | metafopy.models.mv_result.RMAMVResult,
     b: metafopy.models.rma_uni.RMAResult | metafopy.models.mv_result.RMAMVResult,
@@ -620,8 +637,7 @@ def wald_between(
     Raises:
         metafopy.errors.InputError: the models cannot be compared.
     """
-    if type(a) is not type(b):
-        raise metafopy.errors.InputError("Class of 'object' must be the same as class of 'object2'.")
+    check_same_class(a, b)
     if df is None and a.parms == b.parms:
         raise metafopy.errors.InputError('Models have the same number of parameters.')
     full, red = (a, b) if df is not None or a.parms > b.parms else (b, a)
@@ -659,6 +675,18 @@ def make_list(results: list[WaldResult], specs: collections.abc.Sequence[typing.
     """The results of a list ``btt`` as metafor's ``list.anova.rma``, named by the specifications (``.format.btt``, 1-based like R)."""
     names = [metafopy.methods.vif.format_spec(spec) for spec in specs]
     return ListAnovaResult(adjust_list(results, method), names)
+
+
+def check_scale_arguments(att: typing.Any, Z: typing.Any) -> None:
+    """``att`` and ``Z`` are for location-scale models; metafor stops when they are given for any other model.
+
+    Raises:
+        metafopy.errors.InputError: ``att`` or ``Z`` is given.
+    """
+    if att is not None:
+        raise metafopy.errors.InputError("Can only specify 'att' for location-scale models.")
+    if Z is not None:
+        raise metafopy.errors.InputError("Can only specify 'Z' for location-scale models.")
 
 
 def hypotheses(L: FloatArray, names: collections.abc.Sequence[str], rhs: FloatArray, digits: int) -> tuple[str, ...]:
@@ -872,7 +900,7 @@ def anova_rma_mv(
     *,
     object2: metafopy.models.mv_result.RMAMVResult | None = None,
     btt: metafopy.models.rma_uni.Btt = None,
-    X: numpy.typing.ArrayLike | None = None,
+    X: numpy.typing.ArrayLike | metafopy.methods.pairmat.PairmatSpec | None = None,
     rhs: numpy.typing.ArrayLike | float | None = None,
     adjust: bool | str | None = None,
     refit: bool = False,
@@ -883,6 +911,8 @@ def anova_rma_mv(
     verbose: bool = False,
     abbrev: bool = False,
     digits: int | collections.abc.Mapping[str, int] | None = None,
+    att: typing.Any = None,
+    Z: typing.Any = None,
 ) -> WaldResult | MVLRTResult | ListAnovaResult:
     """Test coefficients of one ``rma.mv`` model, or compare two nested models by a likelihood-ratio test.
 
@@ -892,6 +922,8 @@ def anova_rma_mv(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
+    X = metafopy.methods.pairmat.resolve(X, model)
+    check_scale_arguments(att, Z)
     if abbrev:
         return abbreviate_hyp(anova_rma_mv(**{**locals(), 'abbrev': False}), True)
     x = model
@@ -903,6 +935,7 @@ def anova_rma_mv(
     rhs = 0.0 if rhs is None else rhs
     club = club_info(x.robust)
     if model2 is not None:
+        check_same_class(x, model2)
         if check_test(test) == 'Wald':
             return dataclasses.replace(wald_between(x, model2, df), digits=d)
         if df is None and x.parms == model2.parms:

@@ -14,6 +14,7 @@ import sys
 import numpy
 import numpy.typing
 import scipy.special
+import scipy.stats
 
 import metafopy.errors
 import metafopy.transf
@@ -26,6 +27,7 @@ type Func = collections.abc.Callable[[FloatArray], FloatArray]
 EPS = sys.float_info.epsilon
 THRESH = 30.0
 PROBIT_THRESH = -float(scipy.special.ndtri(EPS))
+CAUCHY_THRESH = -float(scipy.stats.cauchy.ppf(EPS))
 LOG_LIKE = ('log', 'log2', 'log10')
 LOG_MEASURES = (
     'CVLN',
@@ -91,7 +93,7 @@ def asin_sqrt(alpha: float) -> Link:
 
 
 def make_links() -> dict[str, Link]:
-    return {
+    links = {
         'identity': Link('identity', metafopy.transf.arr, metafopy.transf.arr, numpy.ones_like),
         'log': Link(
             'log',
@@ -134,6 +136,46 @@ def make_links() -> dict[str, Link]:
             lambda eta: metafopy.transf.arr(-1 / (2 * numpy.maximum(0, eta) ** 1.5)),
         ),
         'asin.sqrt': asin_sqrt(1.0),
+        'asin.sqrt./': asin_sqrt(100.0),
+        'asinh.sqrt': Link(
+            'asinh(sqrt(mu))',
+            lambda mu: metafopy.transf.arr(numpy.arcsinh(numpy.sqrt(mu))),
+            lambda eta: metafopy.transf.arr(numpy.sinh(eta) ** 2),
+            lambda eta: metafopy.transf.arr(numpy.sinh(2 * eta)),
+        ),
+        'atanh': Link(
+            'atanh',
+            lambda mu: metafopy.transf.arr(numpy.arctanh(mu)),
+            lambda eta: metafopy.transf.arr(numpy.tanh(eta)),
+            lambda eta: metafopy.transf.arr(1 / numpy.cosh(eta) ** 2),
+        ),
+        'cauchit': Link(
+            'cauchit',
+            lambda mu: metafopy.transf.arr(scipy.stats.cauchy.ppf(mu)),
+            lambda eta: metafopy.transf.arr(scipy.stats.cauchy.cdf(numpy.clip(eta, -CAUCHY_THRESH, CAUCHY_THRESH))),
+            lambda eta: metafopy.transf.arr(numpy.maximum(scipy.stats.cauchy.pdf(eta), EPS)),
+        ),
+        'cloglog': Link(
+            'cloglog',
+            lambda mu: metafopy.transf.arr(numpy.log(-numpy.log1p(-mu))),
+            lambda eta: metafopy.transf.arr(numpy.maximum(numpy.minimum(-numpy.expm1(-numpy.exp(eta)), 1 - EPS), EPS)),
+            lambda eta: metafopy.transf.arr(numpy.maximum(numpy.exp(numpy.minimum(eta, 700)) * numpy.exp(-numpy.exp(numpy.minimum(eta, 700))), EPS)),
+        ),
+        'exp': Link(
+            'exp', lambda mu: metafopy.transf.arr(numpy.exp(mu)), lambda eta: metafopy.transf.arr(numpy.log(eta)), lambda eta: metafopy.transf.arr(1 / eta)
+        ),
+        'log.o.r.': Link(
+            'log odds ratio',
+            lambda mu: metafopy.transf.arr(numpy.log(mu)),
+            lambda eta: metafopy.transf.arr(numpy.maximum(numpy.exp(eta), EPS)),
+            lambda eta: metafopy.transf.arr(numpy.maximum(numpy.exp(eta), EPS)),
+        ),
+        'log1p': Link(
+            'log1p',
+            lambda mu: metafopy.transf.arr(numpy.log1p(mu)),
+            lambda eta: metafopy.transf.arr(numpy.expm1(eta)),
+            lambda eta: metafopy.transf.arr(numpy.exp(eta)),
+        ),
         'r-to-z': Link('r-to-z', metafopy.transf.transf_rtoz, metafopy.transf.transf_ztor, lambda eta: metafopy.transf.arr(1 / numpy.cosh(eta) ** 2)),
         'r2-to-z': Link(
             'r2-to-z', metafopy.transf.transf_r2toz, metafopy.transf.transf_ztor2, lambda eta: metafopy.transf.arr(2 * numpy.sinh(eta) / numpy.cosh(eta) ** 3)
@@ -141,19 +183,25 @@ def make_links() -> dict[str, Link]:
         'ahw': Link('ahw', metafopy.transf.transf_ahw, metafopy.transf.transf_iahw, lambda eta: metafopy.transf.arr(3 * (1 - eta) ** 2)),
         'abt': Link('abt', metafopy.transf.transf_abt, metafopy.transf.transf_iabt, lambda eta: metafopy.transf.arr(1 / (1 - eta))),
     }
+    links['/'] = links['reciprocal'] = links['inverse']
+    return links
 
 
 LINKS = make_links()
 
 
 def make_link(name: str) -> Link:
-    """The link called ``name`` (``'log'``, ``'logit'``, ``'probit'``, ``'sqrt'``, ``'asin.sqrt'``, ``'r-to-z'``, ...).
+    """The link called ``name`` (``'log'``, ``'logit'``, ``'probit'``, ``'sqrt'``, ``'asin.sqrt'``, ``'r-to-z'``, ``'exp'``, ...).
+
+    As emmeans' ``.make.link``, a name that is no transformation gives the identity link carrying that name.
 
     Raises:
-        metafopy.errors.InputError: the transformation is unknown.
+        metafopy.errors.NotSupportedError: ``name`` is ``'+.sqrt'``.
     """
+    if name == '+.sqrt':
+        raise metafopy.errors.NotSupportedError("The transformation '+.sqrt' (emmeans' sqrt link with a multiplier) is not supported.")
     if name not in LINKS:
-        raise metafopy.errors.InputError(f'Unknown transformation {name!r}; use one of {", ".join(sorted(LINKS))}.')
+        return dataclasses.replace(LINKS['identity'], name=name)
     return LINKS[name]
 
 

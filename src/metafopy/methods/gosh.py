@@ -21,6 +21,7 @@ import pandas
 import metafopy.core.dbinom
 import metafopy.core.parallel
 import metafopy.core.rng
+import metafopy.core.timing
 import metafopy.errors
 import metafopy.methods.blup
 import metafopy.methods.common
@@ -102,6 +103,7 @@ def gosh(x: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> GoshResult:
 
 
 @gosh.register
+@metafopy.core.timing.timed
 def gosh_rma_uni(
     x: metafopy.models.rma_uni.RMAResult,
     subsets: int | None = None,
@@ -112,8 +114,11 @@ def gosh_rma_uni(
     parallel: metafopy.core.parallel.Parallel = 'no',
     ncpus: int = 1,
     cl: concurrent.futures.Executor | None = None,
+    LB: bool = False,
 ) -> GoshResult:
     """Fit the model to subsets of the studies.
+
+    ``LB`` is accepted as in metafor, where it picks ``parLapplyLB`` (load-balanced scheduling) and changes no result.
 
     By default all subsets (with at least ``p`` studies) are used if there are
     at most ``10**6`` of them, otherwise ``10**6`` random subsets; ``subsets``

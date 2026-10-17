@@ -29,6 +29,7 @@ type FloatArray = numpy.typing.NDArray[numpy.float64]
 type Objective = collections.abc.Callable[[FloatArray], float]
 
 HUGE = 1e100
+POLISH_ITERATIONS = 2000  # the simplex polish is capped: it converges within a few hundred iterations when it improves at all, and spins on a ridge
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -111,8 +112,11 @@ def minimise(f: Objective, x0: FloatArray, *, method: str = 'BFGS', maxiter: int
     options: dict[str, float | int] = {'maxiter': maxiter}
     if method == 'BFGS':
         options['gtol'] = gtol
+    # a central-difference gradient (what nlminb's numerical gradient approximates) lets BFGS reach the optimum of a ridge where the forward
+    # difference stops short of it with 'precision loss', after which the simplex polish needs tens of thousands of evaluations
+    jac: typing.Literal['3-point'] | None = '3-point' if method in ('BFGS', 'L-BFGS-B') else None
     if method in ('BFGS', 'L-BFGS-B', 'CG', 'Nelder-Mead'):
-        first = scipy.optimize.minimize(safe, x0, method=typing.cast(typing.Any, method), options=typing.cast(typing.Any, options))
+        first = scipy.optimize.minimize(safe, x0, method=typing.cast(typing.Any, method), jac=jac, options=typing.cast(typing.Any, options))
     else:
         raise metafopy.errors.InputError(f'unknown optimizer {method!r}')
     best_x, best_val = numpy.asarray(first.x, dtype=numpy.float64), float(first.fun)
@@ -121,12 +125,12 @@ def minimise(f: Objective, x0: FloatArray, *, method: str = 'BFGS', maxiter: int
     # converged run or a stop with a negligible predicted decrease, as it would only walk further down a likelihood that is flat towards a
     # boundary (a log-variance heading to minus infinity), where nlminb stops once the relative change of the objective is below 1e-10
     decrement = metafopy.core.stationarity.newton_decrement(first)
-    if polish_converged or (not first.success and decrement > metafopy.core.stationarity.REL_TOL * (1 + abs(best_val))):
+    if decrement > metafopy.core.stationarity.REL_TOL * (1 + abs(best_val)) and (polish_converged or not first.success):
         polish = scipy.optimize.minimize(
             safe,
             best_x,
             method='Nelder-Mead',
-            options={'maxiter': maxiter * 4, 'xatol': 1e-10, 'fatol': 1e-13, 'adaptive': True},
+            options={'maxiter': max(POLISH_ITERATIONS, 400 * x0.shape[0]), 'xatol': 1e-10, 'fatol': 1e-13, 'adaptive': True},
         )
         if float(polish.fun) < best_val:
             best_x, best_val = numpy.asarray(polish.x, dtype=numpy.float64), float(polish.fun)

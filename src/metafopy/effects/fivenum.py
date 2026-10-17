@@ -155,8 +155,10 @@ def conv_fivenum(
     if min is None and q1 is None and median is None and q3 is None and max is None:
         raise metafopy.errors.InputError("Must specify at least some of these arguments: 'min', 'q1', 'median', 'q3', 'max'.")
     repl = metafopy.effects.conv.match_replace(replace)
-    if len(var_names) != 2:
+    if isinstance(var_names, str) or len(var_names) != 2:
         raise metafopy.errors.InputError("Argument 'var_names' must be of length 2.")
+    if not isinstance(test, bool | numpy.bool_):
+        raise metafopy.errors.InputError("Argument 'test' must be a logical.")
     x = metafopy.effects.conv.as_frame(data)
     inp = metafopy.effects.measures.Inputs(x, dict(min=min, q1=q1, median=median, q3=q3, max=max, n=n))
     names = ('min', 'q1', 'median', 'q3', 'max', 'n')

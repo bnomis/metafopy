@@ -27,12 +27,14 @@ import pandas
 
 import metafopy.core.parallel
 import metafopy.core.rng
+import metafopy.core.timing
 import metafopy.core.zeroin
 import metafopy.errors
 import metafopy.methods.common
 import metafopy.methods.fitview
 import metafopy.methods.vif
 import metafopy.mfopt
+import metafopy.models.control_names
 import metafopy.models.rma_uni
 import metafopy.printing
 
@@ -184,6 +186,8 @@ def permutest_control(control: collections.abc.Mapping[str, typing.Any] | None) 
         if key in con:
             match = [key]
         if len(match) != 1:
+            if metafopy.models.control_names.read_elsewhere(key):
+                continue
             raise metafopy.errors.ArgumentError(f'unknown control argument {key!r}')
         con[match[0]] = value
     if con['alternative'] not in ('two.sided', 'less', 'greater'):
@@ -192,8 +196,6 @@ def permutest_control(control: collections.abc.Mapping[str, typing.Any] | None) 
         raise metafopy.errors.InputError("control 'p2defn' must be 'abs' or 'px2'")
     if con['stat'] not in ('test', 'coef'):
         raise metafopy.errors.InputError("control 'stat' must be 'test' or 'coef'")
-    if con['extendInt'] != 'no':
-        raise metafopy.errors.NotSupportedError("control extendInt other than 'no' is not supported")
     return con
 
 
@@ -203,6 +205,7 @@ def nanmean(a: numpy.typing.NDArray[numpy.bool_] | FloatArray, valid: numpy.typi
 
 
 @permutest.register
+@metafopy.core.timing.timed
 def permutest_rma_uni(
     x: metafopy.models.rma_uni.RMAResult,
     exact: bool | typing.Literal['i'] = False,
@@ -216,6 +219,7 @@ def permutest_rma_uni(
     tol: float | None = None,
     fixed: bool = False,
     progbar: bool = False,
+    verbose: bool = False,
 ) -> PermutestResult | int | float:
     """Permutation test for an ``rma.uni`` fit.
 
@@ -230,6 +234,7 @@ def permutest_rma_uni(
     is left in the state the permutations ended in. ``control`` takes metafor's
     list (``comptol``, ``tol``, ``maxiter``, ``alternative``, ``p2defn``,
     ``stat``, ``cialt``, ``distfac``). ``progbar=True`` prints a progress bar to stderr while the permutations are run (metafor's default is ``TRUE``).
+    ``verbose`` is accepted for metafor's messages about refits that fail during the permutations, which are not raised here.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
@@ -457,7 +462,9 @@ def permci_bound(
         return diff * 10 if diff < 0 else diff
 
     try:
-        return metafopy.core.zeroin.uniroot(f, interval[0], interval[1], tol=c['tol'], maxiter=c['maxiter']).root
+        # as metafor: any extendInt other than 'no' extends the interval upwards for the lower bound and downwards for the upper bound
+        extend_int: typing.Literal['no', 'upX', 'downX'] = 'no' if c['extendInt'] == 'no' else 'upX' if lower else 'downX'
+        return metafopy.core.zeroin.uniroot(f, interval[0], interval[1], tol=c['tol'], maxiter=c['maxiter'], extend_int=extend_int).root
     except ValueError, ArithmeticError, numpy.linalg.LinAlgError:
         return math.nan
 

@@ -18,10 +18,12 @@ import numpy.typing
 import pandas
 
 import metafopy.core.parallel
+import metafopy.core.timing
 import metafopy.errors
 import metafopy.methods.blup
 import metafopy.methods.common
 import metafopy.methods.fitview
+import metafopy.methods.listrma
 import metafopy.mfopt
 import metafopy.models.rma_uni
 import metafopy.models.tau2
@@ -78,6 +80,10 @@ class Leave1outResult:
     def test(self) -> str:
         """``'t'`` for the t-based tests and ``'z'`` otherwise (metafor stores the model's ``test``, so ``'knha'`` and ``'adhoc'`` read ``'t'`` here)."""
         return 't' if self.stat_name == 'tval' else 'z'
+
+    def __getitem__(self, index: typing.Any) -> typing.Self:
+        """The rows ``index`` (metafor's ``[.list.rma``; a NumPy index, 0-based)."""
+        return metafopy.methods.listrma.rows(self, index, self.estimate.shape[0])
 
     def to_frame(self) -> pandas.DataFrame:
         """Table with metafor's column names (``estimate``, ``se``, ``zval``/``tval``, ``pval``, ``ci.lb``, ...)."""
@@ -175,6 +181,7 @@ def collect(
 
 
 @leave1out.register
+@metafopy.core.timing.timed
 def leave1out_rma_uni(
     x: metafopy.models.rma_uni.RMAResult,
     cluster: numpy.typing.ArrayLike | str | None = None,
@@ -219,8 +226,7 @@ def leave1out_rma_uni(
         slab = tuple(f'-{s}' for s in x.slab)
     else:
         slab = tuple(f'-{cid}' for cid in ids)
-    if na_action == 'fail' and not x.data.keep.all():
-        raise metafopy.errors.InputError('Missing values in results.')
+    # na.fail does not stop metafor here (the fit has already dropped the studies with missing values); the labels are those of 'omit'
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if miss_cluster and na_action in ('exclude', 'pass'):
         keys = ['estimate', 'se', 'stat', 'pval', 'ci_lb', 'ci_ub', 'Q', 'Qp', 'tau2', 'I2', 'H2']
@@ -277,6 +283,7 @@ def cumul(x: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> CumulResult
 
 
 @cumul.register
+@metafopy.core.timing.timed
 def cumul_rma_uni(
     x: metafopy.models.rma_uni.RMAResult,
     order: numpy.typing.ArrayLike | str | None = None,
@@ -305,7 +312,8 @@ def cumul_rma_uni(
         raise metafopy.errors.InputError('Method only applicable to models without moderators.')
     k = x.k
     if order is None:
-        orvar = pandas.Series(numpy.arange(k))
+        # metafor orders by the position among all rows supplied, so `order` holds the positions of the studies used
+        orvar = pandas.Series(numpy.flatnonzero(x.data.keep))
         collapse = False
     else:
         orvar = pandas.Series(cluster_values(x, order))

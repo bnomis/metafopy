@@ -286,7 +286,12 @@ def chksubset(x: numpy.typing.ArrayLike | str | None, k: int, data: pandas.DataF
     return mask
 
 
+YICHECKS: list[bytes] = []
+"""Signatures of the ``yi`` vectors already warned about; metafor keeps the last 100 (``yichecks``) and warns once per vector per session."""
+
+
 def chkyisize(yi: FloatArray, measure: str, cutoff: float | None) -> None:
+    """Port of ``.chkyisize`` (https://github.com/wviechtb/metafor/blob/master/R/misc.func.hidden.escalc.r)."""
     addtxt = None
     if cutoff is None:
         cut = math.nan
@@ -295,7 +300,10 @@ def chkyisize(yi: FloatArray, measure: str, cutoff: float | None) -> None:
             addtxt = 'Maybe SEs were used in place of SDs to compute them?'
     else:
         cut = abs(float(cutoff))
-    if not math.isnan(cut) and anyna(numpy.abs(yi) > cut, yi):
+    sig = numpy.ascontiguousarray(yi, dtype=numpy.float64).tobytes()
+    if sig not in YICHECKS and not math.isnan(cut) and anyna(numpy.abs(yi) > cut, yi):
+        YICHECKS.insert(0, sig)
+        del YICHECKS[100:]
         txt = f'One or more {measure} values are unusually large (i.e., abs(yi) > {cut:g}).'
         if addtxt:
             txt += f'\n{addtxt}'

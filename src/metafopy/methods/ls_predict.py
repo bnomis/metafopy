@@ -19,6 +19,7 @@ import scipy.stats
 import metafopy.errors
 import metafopy.methods.common
 import metafopy.methods.fitted
+import metafopy.methods.pairmat
 import metafopy.methods.predict
 import metafopy.models.rma_ls_result
 import metafopy.models.rma_uni
@@ -109,7 +110,7 @@ def quad_rows(M: FloatArray, V: FloatArray) -> FloatArray:
 @metafopy.methods.predict.predict.register
 def predict_rma_ls(
     model: metafopy.models.rma_ls_result.RMALSResult,
-    newmods: numpy.typing.ArrayLike | None = None,
+    newmods: numpy.typing.ArrayLike | metafopy.methods.pairmat.PairmatSpec | None = None,
     *,
     intercept: bool | None = None,
     addx: bool = False,
@@ -126,6 +127,7 @@ def predict_rma_ls(
     newvi: numpy.typing.ArrayLike | None = None,
     na_action: metafopy.methods.common.NAAction = 'omit',
     digits: int | collections.abc.Mapping[str, int] | None = None,
+    verbose: bool = False,
 ) -> LSPredictResult:
     """Predict from a location-scale model (``predict.rma.ls``).
 
@@ -141,6 +143,7 @@ def predict_rma_ls(
     Raises:
         metafopy.errors.InputError: an argument is invalid, ``predtype`` is unknown or the dimensions do not match the model.
     """
+    newmods = metafopy.methods.pairmat.resolve(newmods, model)
     x = model
     metafopy.methods.common.check_na_action(na_action)
     ptype = metafopy.methods.predict.resolve_predtype(predtype, pi_type)

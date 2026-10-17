@@ -62,7 +62,7 @@ def forest_cumul(
     at: numpy.typing.ArrayLike | None = None,
     steps: int = 5,
     refline: float | None = 0,
-    digits: int | collections.abc.Sequence[int] = 2,
+    digits: int | collections.abc.Sequence[float] | numpy.typing.NDArray[numpy.floating] = 2,
     width: int | collections.abc.Sequence[int] | None = None,
     xlab: str | collections.abc.Sequence[str] | None = None,
     ilab: typing.Any = None,
