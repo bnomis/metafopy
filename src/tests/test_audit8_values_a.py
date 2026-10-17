@@ -135,3 +135,14 @@ def test_regtest_and_selmodel_refit_keeps_given_labels() -> None:
     for view in views:
         assert view.slab[:2] == ('Aronson 1948', 'Ferguson & Simes 1949')
         assert view.slab_null is False
+
+
+def test_confint_list_of_location_scale_and_selection_fits_has_digits() -> None:
+    # R 4.3.3, metafor 5.2-1: confint(rma(yi, vi, mods = ~ ablat, scale = ~ alloc))$digits is 4 for every one of the nine entries
+    frame = metafopy.datasets.load('dat.bcg')
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        data = metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=frame)
+        ls = metafopy.rma(yi='yi', vi='vi', mods='~ ablat', scale='~ alloc', data=data)
+        assert metafopy.confint(ls, digits=2).digits == 2
+        assert metafopy.confint(ls).digits == 4
