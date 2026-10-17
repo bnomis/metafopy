@@ -101,6 +101,15 @@ class MVControl:
     hesspack: str = 'numDeriv'
     hessian_ctrl: collections.abc.Mapping[str, typing.Any] = dataclasses.field(default_factory=dict)
     mfmaxit: float = math.inf
+    ignored: dict[str, typing.Any] = dataclasses.field(default_factory=dict, compare=False, repr=False)
+    """The entries other functions of metafor read (``vc.min``, ``stepadj``, ...), kept as R keeps them in ``res$control``; read them as attributes."""
+
+    def __getattr__(self, name: str) -> typing.Any:
+        ignored = object.__getattribute__(self, 'ignored')
+        for key, value in ignored.items():
+            if key.replace('.', '_') == name:
+                return value
+        raise AttributeError(name)
 
 
 def make_control(control: MVControl | collections.abc.Mapping[str, typing.Any] | None) -> MVControl:
@@ -111,16 +120,19 @@ def make_control(control: MVControl | collections.abc.Mapping[str, typing.Any] |
     names = {f.name for f in dataclasses.fields(MVControl)}
     kwargs: dict[str, typing.Any] = {}
     opt_ctrl: dict[str, typing.Any] = {}
+    ignored: dict[str, typing.Any] = {}
     for key, value in control.items():
         name = key.replace('.', '_').replace('hessianCtrl', 'hessian_ctrl')
         if name in OPTIMIZER_SETTINGS:
             opt_ctrl[name] = value
         elif name not in names:
             if metafopy.models.control_names.read_elsewhere(key):
+                ignored[key] = value
                 continue
             raise metafopy.errors.ArgumentError(f'unknown control argument {key!r}')
         else:
             kwargs[name] = value
+    kwargs['ignored'] = {**dict(kwargs.get('ignored', {})), **ignored}
     if opt_ctrl:
         kwargs['opt_ctrl'] = {**dict(kwargs.get('opt_ctrl', {})), **opt_ctrl}
     con = MVControl(**kwargs)

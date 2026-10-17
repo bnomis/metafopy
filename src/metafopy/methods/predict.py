@@ -59,6 +59,8 @@ class PredictResult:
     pi_se: FloatArray | None = None
     pi_dist: str | None = None
     pi_ddf: float | FloatArray | None = None
+    ddf: float | FloatArray | None = None
+    has_pi: bool = True
     prob: FloatArray | None = None
     X: FloatArray | pandas.DataFrame | None = None
     vcov: FloatArray | pandas.DataFrame | None = None
@@ -105,9 +107,9 @@ class PredictResult:
         """The predictions as ``print.list.rma`` shows them: fixed decimals (``digits``), one row per prediction."""
         digits = metafopy.mfopt.option_digits(None, self.digits)
         frame = self.to_frame()
-        for col in ('se', 'pi.lb', 'pi.ub'):
-            if frame[col].isna().all():
-                frame = frame.drop(columns=col)
+        # print.list.rma leaves out `se` after a transformation and the prediction interval of the models that have none
+        drop = (['se'] if self.transf else []) + ([] if self.has_pi else ['pi.lb', 'pi.ub'])
+        frame = frame.drop(columns=drop)
         rows = [[metafopy.printing.fmt_num(float(v), digits) for v in row] for row in frame.to_numpy()]
         return metafopy.mfopt.option_space(
             '\n' + metafopy.printing.fmt_table([str(c) for c in frame.columns], rows, [str(i) for i in frame.index], gap=1) + '\n'
@@ -312,6 +314,9 @@ def restrict_rows(res: PredictResult, keep: numpy.typing.NDArray[numpy.bool_], b
     pi_ddf = res.pi_ddf
     if isinstance(pi_ddf, numpy.ndarray) and pi_ddf.ndim >= 1 and pi_ddf.shape[0] == k_new:
         changes['pi_ddf'] = pi_ddf[keep]
+    ddf = res.ddf
+    if isinstance(ddf, numpy.ndarray) and ddf.ndim >= 1 and ddf.shape[0] == k_new:
+        changes['ddf'] = ddf[keep]
     if res.slab is not None and len(res.slab) == k_new:
         changes['slab'] = tuple(s for s, ok in zip(res.slab, keep, strict=True) if ok)
     vcov = res.vcov
@@ -519,40 +524,44 @@ def predict_rma_glmm(
     x = model
     rows = metafopy.methods.fitted.rows_of(x)
     return with_digits(
-        location_prediction(
-            LocationModel(
-                k=x.k,
-                p=x.p,
-                parms=x.parms,
-                int_only=x.int_only,
-                int_incl=x.int_incl,
-                X=x.X,
-                slab=tuple(s for s, ok in zip(x.slab, x.tables.not_na, strict=True) if ok),
-                beta=x.beta,
-                vb=x.vb,
-                ddf=x.ddf,
-                alpha=x.level,
-                tau2=x.tau2,
-                fixed=x.method in metafopy.models.tau2.FIXED_EFFECTS,
-                X_f=rows.X_f,
-                not_na=rows.not_na,
-                slab_f=rows.slab,
-                coef_names=x.coef_names,
+        dataclasses.replace(
+            location_prediction(
+                LocationModel(
+                    k=x.k,
+                    p=x.p,
+                    parms=x.parms,
+                    int_only=x.int_only,
+                    int_incl=x.int_incl,
+                    X=x.X,
+                    slab=tuple(s for s, ok in zip(x.slab, x.tables.not_na, strict=True) if ok),
+                    beta=x.beta,
+                    vb=x.vb,
+                    ddf=x.ddf,
+                    alpha=x.level,
+                    tau2=x.tau2,
+                    fixed=x.method in metafopy.models.tau2.FIXED_EFFECTS,
+                    X_f=rows.X_f,
+                    not_na=rows.not_na,
+                    slab_f=rows.slab,
+                    coef_names=x.coef_names,
+                    method=x.method,
+                ),
+                newmods,
+                intercept,
+                transf,
+                targs,
+                level,
+                hetvar=hetvar,
+                prob=prob,
+                addx=addx,
+                adjust=adjust,
+                vcov=vcov,
+                predtype=predtype,
+                pi_type=pi_type,
+                newvi=newvi,
+                na_action=na_action,
             ),
-            newmods,
-            intercept,
-            transf,
-            targs,
-            level,
-            hetvar=hetvar,
-            prob=prob,
-            addx=addx,
-            adjust=adjust,
-            vcov=vcov,
-            predtype=predtype,
-            pi_type=pi_type,
-            newvi=newvi,
-            na_action=na_action,
+            has_pi=False,
         ),
         digits,
         x.digits,
@@ -595,37 +604,41 @@ def predict_fixed_binary(
     newmods = metafopy.methods.pairmat.resolve(newmods, model)
     x = model
     return with_digits(
-        location_prediction(
-            LocationModel(
-                k=x.k,
-                p=1,
-                parms=x.parms,
-                int_only=True,
-                int_incl=True,
-                X=numpy.ones((x.k, 1)),
-                slab=(),
-                beta=x.beta,
-                vb=x.vb,
-                ddf=None,
-                alpha=x.level,
-                tau2=0.0,
-                fixed=True,
-                not_na=x.tables.not_na,
+        dataclasses.replace(
+            location_prediction(
+                LocationModel(
+                    k=x.k,
+                    p=1,
+                    parms=x.parms,
+                    int_only=True,
+                    int_incl=True,
+                    X=numpy.ones((x.k, 1)),
+                    slab=(),
+                    beta=x.beta,
+                    vb=x.vb,
+                    ddf=None,
+                    alpha=x.level,
+                    tau2=0.0,
+                    fixed=True,
+                    not_na=x.tables.not_na,
+                ),
+                newmods,
+                intercept,
+                transf,
+                targs,
+                level,
+                hetvar=hetvar,
+                prob=prob,
+                addx=addx,
+                adjust=adjust,
+                vcov=vcov,
+                predtype=predtype,
+                pi_type=pi_type,
+                newvi=newvi,
+                na_action=na_action,
             ),
-            newmods,
-            intercept,
-            transf,
-            targs,
-            level,
-            hetvar=hetvar,
-            prob=prob,
-            addx=addx,
-            adjust=adjust,
-            vcov=vcov,
-            predtype=predtype,
-            pi_type=pi_type,
-            newvi=newvi,
-            na_action=na_action,
+            method='FE',
+            has_pi=False,
         ),
         digits,
         x.digits,
@@ -858,7 +871,8 @@ def location_prediction(
         slab=slab,
         pi_se=pi_se,
         pi_dist=pi_dist,
-        pi_ddf=pi_ddf,
+        pi_ddf=pi_ddf if pi_dist == 't' else None,
+        ddf=(ddf_rows if ddf_rows is not None else x.ddf),
         prob=prob_out,
         X=X_new.copy() if addx else None,
         x_names=tuple(x.coef_names) if addx and x.coef_names is not None else None,
@@ -1101,6 +1115,7 @@ def predict_rma_mv(
         pi_se=pi_se_all,
         pi_dist=pi_dist,
         pi_ddf=pi_ddf if pi_dist == 't' else None,
+        ddf=ddf_row if pi_dist == 't' else None,
         prob=prob_out,
         X=X_new.copy() if addx else None,
         x_names=tuple(x.coef_names) if addx and x.coef_names is not None else None,

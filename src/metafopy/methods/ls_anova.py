@@ -58,6 +58,7 @@ class LSWaldResult:
     k: int | None = None
     p: int | None = None
     q: int | None = None
+    class_: tuple[str, ...] | None = None
 
     @property
     def type(self) -> str:

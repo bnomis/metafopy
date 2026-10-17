@@ -2,6 +2,7 @@
 the audit found different. The expected printouts are those of R metafor 5.2-1 (the ``matrix/print`` cases of the audit)."""
 
 import math
+import typing
 
 import numpy
 import pandas
@@ -131,8 +132,11 @@ def test_lrt_and_wald_fields(dat: pandas.DataFrame) -> None:
 def test_influence_keeps_ids_and_not_na(dat_na: pandas.DataFrame) -> None:
     res = metafopy.rma('yi', 'vi', mods='~ ablat', data=dat_na)
     infl = metafopy.influence(res)
-    assert len(infl.ids) == 13
-    assert int(infl.not_na.sum()) == 11
+    # metafor's influence() keeps the studies used in the fit only
+    assert len(infl.ids) == 11
+    assert infl.ids[2] == 3
+    assert infl.not_na is not None
+    assert bool(infl.not_na.all())
 
 
 def test_permutest_aliases(dat: pandas.DataFrame) -> None:
@@ -215,3 +219,68 @@ def test_round2_loglik_prints_like_r(dat: pandas.DataFrame) -> None:
 def test_round2_formula_deparse(dat: pandas.DataFrame) -> None:
     res = metafopy.rma('yi', 'vi', mods='~ ablat+year', data=dat)
     assert metafopy.methods.accessors.formula_of(res) == '~ablat + year'
+
+
+def test_round2_predict_ddf_only_for_t_tests(dat: pandas.DataFrame) -> None:
+    z = metafopy.predict(metafopy.rma('yi', 'vi', data=dat))
+    assert z.ddf is None
+    assert z.pi_ddf is None
+    t = metafopy.predict(metafopy.rma('yi', 'vi', data=dat, test='knha'))
+    assert t.ddf == 12
+    assert numpy.all(numpy.asarray(t.pi_ddf) == 12)
+
+
+def test_round2_predict_print_keeps_na_columns_like_r(dat: pandas.DataFrame) -> None:
+    res = metafopy.rma('yi', 'vi', mods='~ ablat', scale='~ ablat', data=dat)
+    assert str(metafopy.predict(res, newmods=30)).split('\n')[1].split() == ['pred', 'se', 'ci.lb', 'ci.ub', 'pi.lb', 'pi.ub']
+    mh = metafopy.rma_mh(ai='tpos', bi='tneg', ci='cpos', di='cneg', data=metafopy.datasets.load('dat.bcg'))
+    out = metafopy.predict(mh)
+    assert out.method == 'FE'
+    assert str(out).split('\n')[1].split() == ['pred', 'se', 'ci.lb', 'ci.ub']
+
+
+def test_round2_regtest_refit_is_self_contained(dat_na: pandas.DataFrame) -> None:
+    dd = dat_na.copy()
+    dd['ni'] = dd['tpos'] + dd['tneg'] + dd['cpos'] + dd['cneg']
+    res = metafopy.rma('yi', 'vi', data=dd)
+    fit = metafopy.regtest(res, predictor='ninv', ni=dd['ni']).fit
+    assert fit is not None
+    assert tuple(fit.coef_names) == ('intrcpt', 'ninv')
+    assert fit.k_all == 11
+    assert len(fit.ids) == 11
+    assert fit.measure == res.measure
+    assert fit.slab_null is False
+
+
+def test_round2_slab_null_follows_r() -> None:
+    raw = metafopy.datasets.load('dat.bcg')
+    labelled = metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=raw, slab=raw['author'])
+    res = metafopy.rma('yi', 'vi', data=labelled)
+    assert res.slab_null is False
+    sel = typing.cast(typing.Any, metafopy.selmodel(res, type='stepfun', steps=[0.025, 0.1, 0.5, 1]))
+    assert sel.slab_null is False
+
+
+def test_round2_anova_class_and_trimfill_fields(dat: pandas.DataFrame) -> None:
+    res = metafopy.rma('yi', 'vi', mods='~ ablat + year', data=dat)
+    assert metafopy.anova(res, btt=[1]).class_ == ('rma.uni', 'rma')
+    assert metafopy.anova(metafopy.rma('yi', 'vi', data=dat), res).class_f == ('rma.uni', 'rma')
+    robust = metafopy.robust(res, cluster=dat['trial'])
+    assert metafopy.anova(robust, btt=[1]).class_ == ('robust.rma', 'rma', 'rma.uni')
+    tf = metafopy.trimfill(metafopy.rma('yi', 'vi', data=dat))
+    sel_tf = typing.cast(typing.Any, metafopy.selmodel(tf, type='beta'))
+    assert list(sel_tf.fill) == list(tf.fill)
+
+
+def test_round2_mv_control_and_level_counts() -> None:
+    k = metafopy.datasets.load('dat.konstantopoulos2011')
+    res = metafopy.rma_mv('yi', 'vi', random='~ 1 | district/school', data=k, control={'vc.min': 0, 'optimizer': 'nlm'})
+    assert res.control.vc_min == 0
+    assert res.control.optimizer == 'nlm'
+    raw = metafopy.datasets.load('dat.bcg')
+    glmm = metafopy.rma_glmm(measure='OR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=raw, model='UM.FS', control={'nearpd': True})
+    assert glmm.control.nearpd is True
+    berkey = metafopy.datasets.load('dat.berkey1998')
+    un = metafopy.rma_mv('yi', 'v1i', mods='~ 0 + outcome', random='~ outcome | trial', struct='UN', data=berkey)
+    assert un.g_levels_k is not None
+    assert list(un.g_levels_k.index) == ['AL', 'PD']

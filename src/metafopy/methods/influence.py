@@ -21,6 +21,7 @@ import scipy.stats
 import metafopy.core.linalg
 import metafopy.core.parallel
 import metafopy.core.timing
+import metafopy.effects.datatools
 import metafopy.errors
 import metafopy.methods.blup
 import metafopy.methods.common
@@ -129,7 +130,9 @@ class InfluenceResult:
 
     def dfbs_frame(self) -> pandas.DataFrame:
         """The DFBETAS, one column per coefficient."""
-        out = pandas.DataFrame(self.dfbs_array, columns=list(self.coef_names), index=list(self.slab))
+        # R builds a data frame, which turns the coefficient names into syntactic names (factor(alloc)random becomes factor.alloc.random)
+        names = metafopy.effects.datatools.make_names([str(n) for n in self.coef_names], unique=True)
+        out = pandas.DataFrame(self.dfbs_array, columns=names, index=list(self.slab))
         out.attrs.update(slab=list(self.slab), digits=self.digits)
         return out
 
@@ -276,8 +279,8 @@ def influence_fit(
         p=x.p,
         m=core.m,
         digits=metafopy.mfopt.option_digits(digits, x.digits),
-        ids=x.ids,
-        not_na=x.not_na,
+        ids=x.ids[x.not_na],
+        not_na=numpy.ones(int(x.not_na.sum()), dtype=numpy.bool_),
     )
 
 

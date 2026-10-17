@@ -214,7 +214,7 @@ def regtest(
         extra = {'ni': n, 'ninv': 1 / n, 'sqrtni': numpy.sqrt(n), 'sqrtninv': 1 / numpy.sqrt(n)}[predictor]
     Xn = numpy.column_stack([X, extra])
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
-    names = (*coef_names, predictor if predictor in ('sei', 'vi') else 'ni')
+    names = (*coef_names, predictor if predictor in ('sei', 'vi', 'ninv') else 'ni')
 
     if numpy.linalg.matrix_rank(Xn) < Xn.shape[1]:
         raise metafopy.errors.InputError('Model matrix no longer of full rank after addition of predictor. Cannot fit model.')
@@ -225,10 +225,32 @@ def regtest(
             fit = metafopy.methods.common.refit_arrays(x, X=Xn, names=names, intercept=True, tau2='same', method=meth, skip_r2=False)
             if fit is not None and (tst != x.test or alpha != x.level):
                 fit = None
+            elif fit is not None:
+                # metafor refits from the vectors of the studies used: the studies left out of the original fit are not part of the new model
+                compact = dataclasses.replace(
+                    fit.data,
+                    keep=numpy.ones(fit.data.k, dtype=numpy.bool_),
+                    labels_all=None,
+                    na_rows=None,
+                    yi_all=None,
+                    vi_all=None,
+                    X_all=None,
+                    counts_all=None,
+                    ni_all=None,
+                    weights_all=None,
+                    ids_all=None,
+                    subset_arg=None,
+                    supplied=None,
+                    data=None,
+                    slab_given=True,
+                )
+                fit = dataclasses.replace(fit, data=compact)
             if fit is None:
                 fit = fit_vectors(yi, v, Xn, names, n, slab, meth, tst, alpha, weighted, weights, tau2 if tau2_fix else None, control)
         else:
             fit = fit_vectors(yi, v, Xn, names, n, slab, meth, tst, alpha, weighted, weights, None, control)
+        if isinstance(x, metafopy.models.rma_uni.RMAResult) and getattr(x, 'measure', None) is not None:
+            fit = dataclasses.replace(fit, measure=x.measure)
         zval = float(fit.zval[p])
         pval = float(fit.pval[p])
         ddf = fit.ddf
@@ -302,6 +324,7 @@ def fit_vectors(
         X=X,
         X_names=tuple(names),
         slab=tuple(slab),
+        slab_given=True,
         keep=numpy.ones(yi.shape[0], dtype=numpy.bool_),
         weights=weights,
         ni=ni,

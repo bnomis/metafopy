@@ -33,6 +33,14 @@ def formula_text(group: metafopy.models.mv_structs.Group | None) -> str | None:
     return f'~ {group.formula.inner} | {outer}' if group.formula.inner is not None else f'~ 1 | {outer}'
 
 
+def named_counts(group: metafopy.models.mv_structs.Group | None) -> pandas.Series[float] | None:
+    """The observations per level of the inner factor as a series named by the levels."""
+    if group is None or group.levels_k is None:
+        return None
+    levels = group.levels_f[0] if group.levels_f is not None and len(group.levels_f[0]) == len(group.levels_k) else None
+    return pandas.Series(group.levels_k, index=levels)
+
+
 @dataclasses.dataclass(frozen=True, slots=True, eq=False)
 class RMAMVResult(metafopy.models.fit_methods.FitMethods):
     """A fitted multivariate/multilevel meta-analytic model (metafor's ``rma.mv``).
@@ -173,9 +181,9 @@ class RMAMVResult(metafopy.models.fit_methods.FitMethods):
         return None if self.group_g is None else self.group_g.levels_f
 
     @property
-    def g_levels_k(self) -> FloatArray | None:
-        """Number of observations at each level of the inner factor of the ``tau2``/``rho`` term (metafor's ``g.levels.k``)."""
-        return None if self.group_g is None else self.group_g.levels_k
+    def g_levels_k(self) -> pandas.Series[float] | None:
+        """Number of observations at each level of the inner factor of the ``tau2``/``rho`` term, named by the levels (metafor's ``g.levels.k``)."""
+        return named_counts(self.group_g)
 
     @property
     def g_levels_comb_k(self) -> FloatArray | None:
@@ -198,9 +206,9 @@ class RMAMVResult(metafopy.models.fit_methods.FitMethods):
         return None if self.group_h is None else self.group_h.levels_f
 
     @property
-    def h_levels_k(self) -> FloatArray | None:
+    def h_levels_k(self) -> pandas.Series[float] | None:
         """As :attr:`g_levels_k` for the ``gamma2``/``phi`` term (metafor's ``h.levels.k``)."""
-        return None if self.group_h is None else self.group_h.levels_k
+        return named_counts(self.group_h)
 
     @property
     def h_levels_comb_k(self) -> FloatArray | None:

@@ -50,9 +50,12 @@ def r_class(x: typing.Any) -> tuple[str, ...]:
     """The class vector metafor gives the corresponding R object (empty for anything that is not a fitted model)."""
     robust = NOT_ROBUST if getattr(x, 'robust', None) is not None else ()
     if isinstance(x, metafopy.models.rma_uni.RMAResult):
-        return (*robust, 'rma.uni', 'rma')
+        # metafor puts 'rma' before the model class in the class vector of a robust fit
+        if robust:
+            return (*robust, 'rma', 'rma.uni')
+        return ('rma.uni.trimfill', 'rma.uni', 'rma') if hasattr(x, 'fill') and hasattr(x, 'k0') else ('rma.uni', 'rma')
     if isinstance(x, metafopy.models.mv_result.RMAMVResult):
-        return (*robust, 'rma.mv', 'rma')
+        return (*robust, 'rma', 'rma.mv') if robust else ('rma.mv', 'rma')
     if isinstance(x, metafopy.models.rma_mh.MHResult):
         return ('rma.mh', 'rma')
     if isinstance(x, metafopy.models.rma_peto.PetoResult):

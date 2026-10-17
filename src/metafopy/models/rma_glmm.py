@@ -98,7 +98,10 @@ def make_control(control: metafopy.models.glmm_fit.GLMMControl | collections.abc
     unknown = {name for name in set(clean) - names if not metafopy.models.control_names.read_elsewhere(name)}
     if unknown:
         raise metafopy.errors.InputError(f'unknown control settings: {sorted(unknown)}')
+    ignored = {name: value for name, value in clean.items() if name not in names}
     clean = {name: value for name, value in clean.items() if name in names}
+    if ignored:
+        clean['ignored'] = ignored
     if 'package' in clean:
         clean['package'] = match_package(clean['package'])
     if 'hesspack' in clean:

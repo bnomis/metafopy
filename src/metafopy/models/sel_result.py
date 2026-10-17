@@ -104,6 +104,7 @@ class SelmodelResult(metafopy.models.fit_methods.FitMethods):
     mapinvfun: tuple[str | None, ...] | None
     digits: int = 4
     call: metafopy.models.call.Call | None = dataclasses.field(default=None, kw_only=True, repr=False, compare=False)
+    trimfill_info: dict[str, typing.Any] = dataclasses.field(default_factory=dict, kw_only=True, repr=False, compare=False)
 
     # -- data of the underlying model --------------------------------------------
 
@@ -288,6 +289,13 @@ class SelmodelResult(metafopy.models.fit_methods.FitMethods):
     def k_f(self) -> int:
         return self.base.k_f
 
+    def __getattr__(self, name: str) -> typing.Any:
+        """The trim-and-fill details (``fill``, ``k0``, ...) of a trimfill fit the selection model was fitted to, which metafor keeps in the result."""
+        trimfill = object.__getattribute__(self, 'trimfill_info')
+        if name in trimfill:
+            return trimfill[name]
+        raise AttributeError(name)
+
     @property
     def ids(self) -> numpy.typing.NDArray[numpy.intp]:
         return self.base.ids
@@ -298,7 +306,8 @@ class SelmodelResult(metafopy.models.fit_methods.FitMethods):
 
     @property
     def slab_null(self) -> bool:
-        return self.base.slab_null
+        """``False`` as in metafor, whose ``selmodel`` hands the labels on explicitly."""
+        return False
 
     @property
     def outdat_f(self) -> dict[str, FloatArray | None]:

@@ -307,6 +307,7 @@ def selmodel(
         metafopy.errors.NotSupportedError: a requested option is not available.
     """
     prev: metafopy.models.sel_result.SelmodelResult | None = None
+    source = x
     if isinstance(x, metafopy.models.sel_result.SelmodelResult):
         prev = x
         base = x.base
@@ -800,7 +801,13 @@ def selmodel(
     )
 
     ptable_out = ptable
+    trimfill_info = (
+        dict(source.trimfill_info)
+        if isinstance(source, metafopy.models.sel_result.SelmodelResult)
+        else {name: getattr(source, name) for name in ('fill', 'k0', 'se_k0', 'side', 'k0_est', 'p_k0') if hasattr(source, name)}
+    )
     return metafopy.models.sel_result.SelmodelResult(
+        trimfill_info=trimfill_info,
         base=base,
         beta=numpy.asarray(beta, dtype=numpy.float64),
         se=se,

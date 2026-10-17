@@ -66,6 +66,8 @@ class WaldResult:
     k: int | None = None
     p: int | None = None
     test: str | None = None
+    class_: tuple[str, ...] | None = None
+    """The class vector of the model a test of moderators was made for (the ``class`` element of metafor's result), e.g. ``('rma.uni', 'rma')``."""
 
     @property
     def m(self) -> int:
@@ -206,6 +208,8 @@ class LRTResult:
     R2: float
     digits: int = 4
     method: str | None = None
+    class_f: tuple[str, ...] | None = None
+    """The class vector of the full model (metafor's ``class.f``)."""
 
     @property
     def type(self) -> str:
@@ -330,6 +334,8 @@ def add_model_info(result: typing.Any, model: typing.Any) -> typing.Any:
     changes: dict[str, typing.Any] = {name: int(getattr(model, name)) for name in ('k', 'p', 'q') if name in names and hasattr(model, name)}
     if 'test' in names and typing.cast(typing.Any, result).test is None:
         changes['test'] = str(model.test)
+    if 'class_' in names and typing.cast(typing.Any, result).hyp is None and typing.cast(typing.Any, result).class_ is None:
+        changes['class_'] = metafopy.methods.fitview.r_class(model)
     return dataclasses.replace(result, **changes) if changes else result
 
 
@@ -821,6 +827,7 @@ def lrt(a: metafopy.models.rma_uni.RMAResult, b: metafopy.models.rma_uni.RMAResu
         tau2_reduced=red.tau2,
         R2=R2,
         method=full.method,
+        class_f=metafopy.methods.fitview.r_class(full),
     )
 
 

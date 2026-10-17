@@ -282,6 +282,7 @@ class MetaData:
 
         X, X_names, x_missing, has_intercept = cls.design(mods, intercept, data, k_all)
 
+        stored = None
         if slab is None:
             stored = escalc_attr(yi, data, k_all, 'slab')
             if stored is not None and any(s is None or (isinstance(s, float) and numpy.isnan(s)) for s in stored.tolist()):
@@ -332,7 +333,7 @@ class MetaData:
             ni_all=n,
             weights_all=w,
             subset_arg=None if subset is None else subset_mask(subset, k_all, data),
-            slab_given=slab is not None,
+            slab_given=slab is not None or stored is not None,
         )
 
     @staticmethod

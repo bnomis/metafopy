@@ -27,6 +27,7 @@ import metafopy.methods.anova
 import metafopy.methods.common
 import metafopy.methods.confint
 import metafopy.methods.fitted
+import metafopy.methods.fitview
 import metafopy.methods.predict
 import metafopy.methods.profile
 import metafopy.models.control_names
@@ -642,9 +643,12 @@ def anova(
     model2 = typing.cast(Sel | metafopy.models.rma_uni.RMAResult | None, metafopy.methods.common.resolve_alias(model2, object2, 'model2', 'object2'))
     if model2 is not None:
         return lrt(model, model2, df)
-    return metafopy.methods.anova.anova_rma_uni(
+    out = metafopy.methods.anova.anova_rma_uni(
         as_rma(model), btt=btt, X=X, rhs=rhs, adjust=adjust, L=L, fixed=fixed, verbose=verbose, abbrev=abbrev, digits=digits, att=att, Z=Z
     )
+    if isinstance(out, metafopy.methods.anova.WaldResult) and out.class_ is not None:
+        out = dataclasses.replace(out, class_=metafopy.methods.fitview.r_class(model))
+    return out
 
 
 def lrt(a: Sel, b: Sel | metafopy.models.rma_uni.RMAResult, df_given: int | None = None) -> metafopy.methods.anova.LRTResult:
@@ -686,6 +690,7 @@ def lrt(a: Sel, b: Sel | metafopy.models.rma_uni.RMAResult, df_given: int | None
         tau2_full=full.tau2,
         tau2_reduced=red.tau2,
         R2=R2,
+        class_f=metafopy.methods.fitview.r_class(full),
     )
 
 
