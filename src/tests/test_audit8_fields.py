@@ -13,6 +13,11 @@ import metafopy.methods.permutest
 import metafopy.printing
 
 
+@pytest.fixture(autouse=True)
+def console_80() -> None:
+    metafopy.printing.SETTINGS['width'] = 80
+
+
 @pytest.fixture(scope='module')
 def dat() -> pandas.DataFrame:
     return metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=metafopy.datasets.load('dat.bcg'))
@@ -158,3 +163,31 @@ def test_fmt_table_wraps_wide_tables_like_r() -> None:
     assert out[4].startswith('intrcpt')
     assert out[4].rstrip().endswith('100.3912')
     assert metafopy.printing.fmt_table(header[:3], [r[:3] for r in rows], row_names=names, width=80).count('\n') == 2
+
+
+def test_predict_cumul_profile_fields(dat: pandas.DataFrame) -> None:
+    res = metafopy.rma('yi', 'vi', mods='~ ablat', data=dat)
+    pred = metafopy.predict(res, newmods=[10, 20], transf=numpy.exp)
+    assert pred.method == 'REML'
+    assert pred.transf is True
+    assert pred.pred_type == 'location'
+    plain = metafopy.rma('yi', 'vi', data=dat)
+    cum = metafopy.cumul(plain)
+    assert numpy.array_equal(cum.zval, cum.stat)
+    assert cum.test == 'z'
+    prof = metafopy.profile(plain, steps=5)
+    assert prof.comps == 1
+
+
+def test_trimfill_marks_slab_and_ids(dat: pandas.DataFrame) -> None:
+    res = metafopy.rma('yi', 'vi', data=dat, method='FE')
+    tf = metafopy.trimfill(res)
+    assert tf.slab_null is False
+    assert len(tf.ids) == res.k + tf.k0
+    assert list(tf.ids[res.k :]) == list(range(res.k, res.k + tf.k0))
+
+
+def test_glmm_outdat_f_has_all_names(dat: pandas.DataFrame) -> None:
+    res = metafopy.rma_glmm(ai='tpos', bi='tneg', ci='cpos', di='cneg', data=dat, measure='OR', model='UM.FS')
+    assert list(res.outdat_f) == ['ai', 'bi', 'ci', 'di', 'x1i', 'x2i', 't1i', 't2i', 'xi', 'mi', 'ni', 'ti']
+    assert res.outdat_f['x1i'] is None

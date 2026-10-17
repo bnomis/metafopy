@@ -184,9 +184,10 @@ class TableFields:
         return typing.cast(numpy.typing.NDArray[numpy.bool_] | None, typing.cast(typing.Any, self).tables.subset)
 
     @property
-    def outdat_f(self) -> dict[str, numpy.typing.NDArray[numpy.float64]]:
-        """The counts of the tables after subsetting, including those with missing counts, metafor's ``outdat.f``."""
-        return dict(typing.cast(typing.Any, self).tables.cells_f)
+    def outdat_f(self) -> dict[str, numpy.typing.NDArray[numpy.float64] | None]:
+        """The counts of the tables after subsetting, including those with missing counts, ``None`` for those not used, metafor's ``outdat.f``."""
+        cells = typing.cast(typing.Any, self).tables.cells_f
+        return {name: cells.get(name) for name in self.outdat_names}
 
     @property
     def outdat(self) -> dict[str, numpy.typing.NDArray[numpy.float64] | None]:

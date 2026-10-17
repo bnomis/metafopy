@@ -219,6 +219,8 @@ def trimfill(
             weights=wi_fill,
             ni=ni_fill,
             intercept=True,
+            slab_given=True,
+            ids_all=numpy.concatenate([x.ids, int(x.ids.max()) + 1 + numpy.arange(k0)]).astype(numpy.intp),
         )
         res = metafopy.models.rma_uni.fit_rma_uni(mdf, method=x.method, weighted=x.weighted, **kw)
         refit = {'yi': yi_fill, 'vi': vi_fill, 'weights': wi_fill, 'ni': ni_fill}

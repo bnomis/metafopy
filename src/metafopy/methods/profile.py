@@ -70,6 +70,21 @@ class ProfileResult:
     blup_pi_lb: pandas.DataFrame | None = None
     blup_pi_ub: pandas.DataFrame | None = None
 
+    @property
+    def comps(self) -> int:
+        """metafor's ``comps``: the number of variance components profiled (one)."""
+        return 1
+
+    @property
+    def xlab(self) -> str:
+        """The label of the x axis of the profile plot."""
+        return 'tau Value' if self.sqrt else 'tau^2 Value'
+
+    @property
+    def title(self) -> str:
+        """The title of the profile plot."""
+        return 'Profile Plot for tau' if self.sqrt else 'Profile Plot for tau^2'
+
     def to_frame(self) -> pandas.DataFrame:
         return pandas.DataFrame({'tau' if self.sqrt else 'tau2': self.tau2, 'll': self.ll})
 

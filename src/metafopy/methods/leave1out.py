@@ -64,6 +64,21 @@ class Leave1outResult:
     level: float = 0.05
     slab_null: bool = False
 
+    @property
+    def zval(self) -> FloatArray:
+        """The test statistics of the pooled effects, metafor's ``zval`` (``tval`` for the t-based tests, see :attr:`stat_name`)."""
+        return self.stat
+
+    @property
+    def tval(self) -> FloatArray:
+        """The test statistics of the pooled effects, metafor's ``tval`` for the t-based tests (the same array as :attr:`zval`)."""
+        return self.stat
+
+    @property
+    def test(self) -> str:
+        """``'t'`` for the t-based tests and ``'z'`` otherwise (metafor stores the model's ``test``, so ``'knha'`` and ``'adhoc'`` read ``'t'`` here)."""
+        return 't' if self.stat_name == 'tval' else 'z'
+
     def to_frame(self) -> pandas.DataFrame:
         """Table with metafor's column names (``estimate``, ``se``, ``zval``/``tval``, ``pval``, ``ci.lb``, ...)."""
         cols: dict[str, typing.Any] = {}

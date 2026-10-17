@@ -322,6 +322,8 @@ def predict_rma_ls(
         x_names=tuple(x.coef_names) if addx and X_use is not None and X_use.shape[1] == len(x.coef_names) else None,
         Z=Z_use if addz else None,
         vcov=vcov_pred if (vcov and not do_transf) else None,
+        method=x.method,
+        transf=do_transf,
     )
     fitted_rows = newmods is None and newscale is None
     keep, blank = metafopy.methods.predict.rows_to_keep(pred, rows.not_na, fitted_rows, na_action)

@@ -62,6 +62,9 @@ class PredictResult:
     vcov: FloatArray | pandas.DataFrame | None = None
     x_names: tuple[str, ...] | None = None
     digits: int = 4
+    method: str | None = None
+    transf: bool = False
+    pred_type: str = 'location'
 
     @property
     def cr_lb(self) -> FloatArray:
@@ -355,6 +358,7 @@ def uni_location_model(x: metafopy.models.rma_uni.RMAResult, rows: metafopy.meth
         alpha=x.level,
         tau2=x.tau2,
         fixed=x.method in metafopy.models.tau2.FIXED_EFFECTS,
+        method=x.method,
         sandwich=club_sandwich_of(x.robust),
         coef_test=None if x.robust is None else x.robust.coef_test,
         X_f=rows.X_f,
@@ -631,6 +635,7 @@ class LocationModel:
     not_na: numpy.typing.NDArray[numpy.bool_] | None = None
     slab_f: tuple[str, ...] | None = None
     coef_names: tuple[str, ...] | None = None
+    method: str | None = None
 
 
 def string_names(labels: list[typing.Any]) -> list[str] | None:
@@ -834,6 +839,8 @@ def location_prediction(
         X=X_new.copy() if addx else None,
         x_names=tuple(x.coef_names) if addx and x.coef_names is not None else None,
         vcov=vcov_pred if transf is None else None,
+        method=x.method,
+        transf=transf is not None,
     )
     keep, blank = rows_to_keep(pred, x.not_na, fitted_rows, na_action)
     return out if keep.all() and blank is None else restrict_rows(out, keep, blank)
@@ -1072,6 +1079,8 @@ def predict_rma_mv(
         X=X_new.copy() if addx else None,
         x_names=tuple(x.coef_names) if addx and x.coef_names is not None else None,
         vcov=vcov_pred if transf is None else None,
+        method=x.method,
+        transf=transf is not None,
     )
     keep, blank = rows_to_keep(pred, not_na, fitted_rows, na_action)
     return with_digits(out if keep.all() and blank is None else restrict_rows(out, keep, blank), digits, model.digits)
