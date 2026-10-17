@@ -395,7 +395,7 @@ def robust_rma_mv(
         raise metafopy.errors.InputError(f'Number of clusters ({n}) must be larger than the number of fixed effects ({p}).')
     X = x.X
     resid = x.yi - X @ x.beta
-    alpha = metafopy.models.rma_uni.level_to_alpha(x.level)
+    alpha = x.level
     M = numpy.asarray(x.M.toarray() if scipy.sparse.issparse(x.M) else x.M, dtype=numpy.float64)
     A = None if x.W is None else numpy.asarray(x.W.toarray() if scipy.sparse.issparse(x.W) else x.W, dtype=numpy.float64)
     if club_sandwich:

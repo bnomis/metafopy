@@ -169,7 +169,7 @@ def components(res: metafopy.RMAMVResult, ref: dict[str, typing.Any], rtol: floa
         if present:
             vector(actual, ref[key], key, rtol=rtol, atol=VC_ATOL)
         else:
-            assert actual is None, key
+            vector(actual, [0.0], key, rtol=rtol, atol=VC_ATOL)  # metafor stores a 0 for a component the model does not have
 
 
 # Flat likelihoods: the log-likelihood agrees with R to ~1e-9 but the maximiser lands a hair away along a ridge.

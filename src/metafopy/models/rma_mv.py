@@ -999,9 +999,9 @@ def rma_mv(
         vb[~beta_est, :] = numpy.nan
         vb[:, ~beta_est] = numpy.nan
     M = fit.M
-    sigma2_out = fit.sigma2 if with_s else None
-    tau2_out, rho_out, G = (fit.tau2, fit.rho, fit.G) if group_g is not None else (None, None, None)
-    gamma2_out, phi_out, H = (fit.gamma2, fit.phi, fit.H) if group_h is not None else (None, None, None)
+    sigma2_out = fit.sigma2 if with_s else numpy.zeros(1)  # metafor stores a 0 for a component the model does not have
+    tau2_out, rho_out, G = (fit.tau2, fit.rho, fit.G) if group_g is not None else (numpy.zeros(1), numpy.zeros(1), None)
+    gamma2_out, phi_out, H = (fit.gamma2, fit.phi, fit.H) if group_h is not None else (numpy.zeros(1), numpy.zeros(1), None)
 
     # tests of the fixed effects
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
@@ -1169,7 +1169,7 @@ def rma_mv(
         dfs=dfs if isinstance(dfs, str) else tuple(float(d) for d in numpy.atleast_1d(dfs)),
         ddf=ddf,
         s2w=s2w,
-        level=level,
+        level=alpha,
         int_only=int_only,
         int_incl=int_incl,
         intercept=intercept_flag,
@@ -1196,7 +1196,7 @@ def rma_mv(
         s_levels_f=s_levels_f,
         slab_f=slab_s,
         X_f=X_f,
-        Rfix=tuple(sinfo.Rfix),
+        Rfix=tuple(sinfo.Rfix) if sinfo.Rfix else (False,),
         Rscale=rscale,
         group_g=group_g,
         group_h=group_h,
