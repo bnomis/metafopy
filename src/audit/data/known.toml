@@ -435,12 +435,14 @@ ref = "docs/differences.md"
 [[known]]
 match = "*/mv_sp*"
 kind = "value-diff"
+path = ["$rho", "$tau2", "$sigma2", "$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$G", "$M", "$vvc", "$hessian", "$fit.stats$*", "[]*", ""]
 reason = "rma_mv with the spatial structure SPEXP (~ year | district) on dat.konstantopoulos2011: the range rho is flat. REML log-likelihood -31.91350753 and tau2 0.0812804 agree in R and Python to 1e-8, but rho is 0.05592 (R nlminb), 0.05596 (Python) and 0.03527 (R Nelder-Mead) at that same log-likelihood; with year as moderator Python's rho is 0.0437 against R's 0.0549 at log-likelihood -31.2005931 in both."
 ref = "docs/differences.md"
 
 [[known]]
 match = "construct/mv_ks/control=*"
 kind = "value-diff"
+path = ["$rho", "$tau2", "$sigma2", "$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$G", "$M", "$vvc", "$hessian", "$fit.stats$*", "[]*", ""]
 reason = "rma_mv ~ 1 | district/school fitted with another optimiser: sigma2 of the school level agrees to 1e-3 at equal REML log-likelihood; the derivative-free optimisers stop on rel.tol, and R's own optimisers differ from each other by the same amount."
 ref = "docs/differences.md"
 
@@ -453,6 +455,7 @@ ref = "docs/differences.md"
 [[known]]
 match = "matrix/*/mv_wide"
 kind = "value-diff"
+path = ["$intrcpt", "$district*", "$pred", "$se", "$pi.lb", "$pi.ub", "$ci.lb", "$ci.ub", "$cex*", "$resid", "$z", "$hat", ""]
 reason = "mv_wide has variance components at the boundary (around 1e-5), so the BLUPs and predictions are 1e-3 relative different in values of the order 1e-5 to 1e-3 (absolute differences 1e-8 to 6e-7)."
 ref = "docs/differences.md"
 
