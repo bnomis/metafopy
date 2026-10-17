@@ -104,7 +104,7 @@ def candidates(name: str) -> list[str]:
 
 def getitem(x: typing.Any, i: typing.Any = None, j: typing.Any = None) -> typing.Any:
     """R's ``x[i]`` and ``x[i, j]``: a single subscript picks the columns of a data frame and the elements (down the columns) of a matrix."""
-    if j is not None:
+    if j is not None and not (dataclasses.is_dataclass(x) and not isinstance(x, type)):  # `[.list.rma` has no j: x[i, j] selects the rows i and ignores j
         return x[i, j]
     if isinstance(x, pandas.DataFrame):
         return x.iloc[:, i]
@@ -112,6 +112,11 @@ def getitem(x: typing.Any, i: typing.Any = None, j: typing.Any = None) -> typing
         return x.iloc[i]
     if isinstance(x, numpy.ndarray) and x.ndim == 2:
         return x.ravel(order='F')[i]
+    if dataclasses.is_dataclass(x) and not isinstance(x, type):
+        try:
+            return typing.cast(typing.Any, x)[i]
+        except IndexError:
+            return None  # `[.list.rma` returns NULL when i selects rows outside the result; the library raises IndexError
     return x[i]
 
 
@@ -142,7 +147,7 @@ def print_call(x: typing.Any, **kwargs: typing.Any) -> list[str]:
             # print(x, digits = ) of a result that prints through str(): the digits of the result are the ones it prints with
             rest = {k: v for k, v in kwargs.items() if k != 'digits'}
             if not rest:
-                return str(dataclasses.replace(typing.cast(typing.Any, x), digits=int(kwargs['digits']))).split('\n')
+                return str(dataclasses.replace(typing.cast(typing.Any, x), digits=int(numpy.atleast_1d(kwargs['digits'])[0]))).split('\n')
         missing = sorted(k for k in kwargs if k not in accepted)
         if missing:
             raise MissingArgumentError(f'print() of {type(x).__name__} takes no argument {missing}; R was given {sorted(kwargs)}')

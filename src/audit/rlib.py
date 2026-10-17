@@ -22,6 +22,7 @@ import metafopy
 import metafopy.core.rng
 import metafopy.datasets
 import metafopy.errors
+import metafopy.transf
 from audit import pycall
 from audit.valuetree import py_name
 
@@ -73,6 +74,8 @@ class Env:
                 return pycall.resolve_function(name, None)
             except pycall.MissingFunctionError:
                 pass
+        if name in SAME_FUNCTIONS:
+            return SAME_FUNCTIONS[name]  # forest() and addpoly() recognise the transformations they can draw a distribution for by identity
         if name in BASE or name in METAFOR_FUNCTIONS:
             return function_value(self, name)
         raise UnsupportedError(f'object {name} not found')
@@ -155,6 +158,15 @@ def r_c(*args: Value, **named: Value) -> Value:
             merged.update(a if isinstance(a, dict) else {str(i): v for i, v in enumerate(a)})
         return merged
     return vector(list(args))
+
+
+def r_c_pairs(items: list[tuple[str, Value]]) -> Value:
+    """``c(a = 1, a = 2)``: a named vector whose names repeat."""
+    out = vector([v for _, v in items])
+    names: list[str] = []
+    for k, v in items:
+        names.extend([k] * len(numpy.atleast_1d(numpy.asarray(v))))
+    return pandas.Series(out, index=names)
 
 
 def r_list(*args: Value, **named: Value) -> Value:
@@ -468,10 +480,17 @@ def r_as_vector(x: Value, mode: Value = 'any') -> Value:
 
 
 def r_as_matrix(x: Value) -> Value:
+    if not isinstance(x, pandas.DataFrame) and hasattr(x, 'to_frame') and dataclasses.is_dataclass(x):  # as.matrix.list.rma
+        x = typing.cast(typing.Any, x).to_frame()
     if isinstance(x, pandas.DataFrame):
         return x.to_numpy()
     a = numpy.asarray(x)
     return a.reshape(-1, 1) if a.ndim < 2 else a
+
+
+def as_frame_of_summary(summary: typing.Any) -> pandas.DataFrame:
+    """The data frame of an emmeans summary."""
+    return typing.cast(pandas.DataFrame, summary.frame)
 
 
 def r_as_dataframe(x: Value, **kw: Value) -> Value:
@@ -481,6 +500,9 @@ def r_as_dataframe(x: Value, **kw: Value) -> Value:
         return x.to_frame()
     if isinstance(getattr(x, 'frame', None), pandas.DataFrame):
         return x.frame  # the summary of an emmeans result
+    summary = getattr(x, 'summary', None)
+    if callable(summary) and type(x).__name__ == 'EmmGrid':  # as.data.frame(emmeans(...)) is the summary of the grid
+        return as_frame_of_summary(summary())
     return pandas.DataFrame(x)
 
 
@@ -906,7 +928,7 @@ def to_positions(index: Value, size: int) -> Value:
         return slice(None)
     arr = numpy.atleast_1d(numpy.asarray(index))
     if arr.dtype == bool:
-        return arr
+        return arr if arr.size else numpy.zeros(0, dtype=int)  # x[logical(0)] selects nothing
     if arr.dtype.kind in 'US' or arr.dtype == object:
         return arr
     pos = arr.astype(int)
@@ -915,6 +937,12 @@ def to_positions(index: Value, size: int) -> Value:
         keep[(-pos) - 1] = False
         return keep
     return pos - 1
+
+
+def column_names(frame: pandas.DataFrame, names: typing.Any) -> list[str]:
+    """The columns of ``frame`` for R names: ``ci.lb`` is the column ``ci_lb`` of a metafopy result."""
+    present = set(frame.columns)
+    return [str(n) if str(n) in present else py_name(str(n)) for n in numpy.atleast_1d(names)]
 
 
 def r_index(x: Value, *idx: Value, **kw: Value) -> Value:
@@ -927,7 +955,7 @@ def r_index(x: Value, *idx: Value, **kw: Value) -> Value:
                 return x
             arr = numpy.atleast_1d(numpy.asarray(sel))
             if arr.dtype.kind in 'US' or arr.dtype == object:
-                return x[list(arr)]
+                return x[column_names(x, arr)]
             return x.iloc[:, to_positions(sel, x.shape[1])]
         rows, cols = idx
         out: typing.Any = x
@@ -942,7 +970,7 @@ def r_index(x: Value, *idx: Value, **kw: Value) -> Value:
         if not isinstance(cols, Empty):
             arr = numpy.atleast_1d(numpy.asarray(cols))
             if arr.dtype.kind in 'US' or arr.dtype == object:
-                out = out[list(arr)]
+                out = out[column_names(x, arr)]
             else:
                 out = out.iloc[:, to_positions(cols, x.shape[1])]
         if kw.get('drop', True) and out.shape[1] == 1:
@@ -957,6 +985,13 @@ def r_index(x: Value, *idx: Value, **kw: Value) -> Value:
     if isinstance(x, dict):
         key = idx[0]
         return {k: x[k] for k in numpy.atleast_1d(key).tolist()}
+    if dataclasses.is_dataclass(x) and not isinstance(x, type) and hasattr(x, '__getitem__') and hasattr(x, 'to_frame'):
+        # `[.list.rma(x, i, ...)` selects rows, ignores a column subscript and returns NULL for rows outside the result
+        rows_of_x = typing.cast(typing.Any, x)
+        try:
+            return rows_of_x[to_positions(idx[0], int(rows_of_x.to_frame().shape[0]))]
+        except IndexError:
+            return None
     a = numpy.asarray(x)
     if len(idx) == 1:
         return a.ravel()[to_positions(idx[0], a.size)] if a.ndim < 2 else a.ravel(order='F')[to_positions(idx[0], a.size)]
@@ -1022,14 +1057,21 @@ def r_assign_index(x: Value, value: Value, *idx: Value) -> Value:
             rows, cols = idx
             r = to_positions(rows, out.shape[0])
             c = to_positions(cols, out.shape[1])
-            cname = list(numpy.asarray(cols)) if numpy.asarray(cols).dtype.kind in 'US' or numpy.asarray(cols).dtype == object else None
+            cname = column_names(out, cols) if numpy.asarray(cols).dtype.kind in 'US' or numpy.asarray(cols).dtype == object else None
             if cname is not None:
                 out.loc[out.index[r], cname] = value
             else:
                 out.iloc[r, c] = value
             return out
+        sel = numpy.atleast_1d(numpy.asarray(idx[0]))
+        if sel.dtype.kind in 'US' or sel.dtype == object:  # dat[c("a", "b")] <- other[c("a", "b")]: the columns are replaced one by one
+            names = [str(n) for n in sel]
+            source = value if isinstance(value, pandas.DataFrame) else pandas.DataFrame({n: value for n in names})
+            for position, name in enumerate(names):
+                out[name] = source.iloc[:, position].to_numpy() if isinstance(source, pandas.DataFrame) else source
         return out
-    a = numpy.array(x, dtype=float if not isinstance(x, (list, dict)) else object, copy=True)
+    is_text = isinstance(x, (list, dict)) or numpy.asarray(x).dtype.kind in 'USO' or isinstance(value, str)
+    a = numpy.array(x, dtype=object if is_text else float, copy=True)
     pos = to_positions(idx[0], a.size)
     a[pos] = value
     return a
@@ -1039,11 +1081,16 @@ def r_assign_dollar(x: Value, name: str, value: Value) -> Value:
     if isinstance(x, pandas.DataFrame):
         out = x.copy()
         out.attrs = dict(x.attrs)
+        if value is None:  # x$name <- NULL removes the column
+            return out.drop(columns=[c for c in (name, py_name(name)) if c in out.columns])
         out[name] = value
         return out
     if isinstance(x, dict) or (isinstance(x, list) and not x):  # list() is an empty named list in R
         out2 = dict(x) if isinstance(x, dict) else {}
-        out2[name] = value
+        if value is None:
+            out2.pop(name, None)
+        else:
+            out2[name] = value
         return out2
     if dataclasses.is_dataclass(x) and not isinstance(x, type):
         if py_name(name) not in {f.name for f in dataclasses.fields(x)}:
@@ -1071,20 +1118,40 @@ def r_assign_dimnames(x: Value, which: str, value: Value) -> Value:
     return x
 
 
+def recycled(a: Value, b: Value) -> tuple[Value, Value]:
+    """R recycles the shorter operand; pandas does not broadcast a Series of length one, so a Series of another length is made an array."""
+    if isinstance(a, pandas.Series) and not isinstance(b, (int, float)) and numpy.size(b) != len(a):
+        a = a.to_numpy()
+    if isinstance(b, pandas.Series) and not isinstance(a, (int, float)) and numpy.size(a) != len(b):
+        b = b.to_numpy()
+    return a, b
+
+
+def null_safe(op: typing.Callable[..., Value], logical: bool = False) -> typing.Callable[..., Value]:
+    """R's binary operators on NULL (a missing column) give a vector of length zero: ``dat$nope == "a"`` is ``logical(0)``; the shorter operand is recycled."""
+
+    def apply(a: Value, b: Value) -> Value:
+        if a is None or b is None:
+            return numpy.zeros(0, dtype=bool if logical else float)
+        return op(*recycled(a, b))
+
+    return apply
+
+
 OPERATORS: dict[str, typing.Callable[..., Value]] = {
-    '+': lambda a, b=None: numpy.add(a, b) if b is not None else numpy.asarray(a),
-    '-': lambda a, b=None: numpy.subtract(a, b) if b is not None else numpy.negative(a),
-    '*': numpy.multiply,
-    '/': numpy.true_divide,
-    '^': numpy.power,
-    '%%': numpy.mod,
-    '%/%': numpy.floor_divide,
-    '==': numpy.equal,
-    '!=': numpy.not_equal,
-    '<': numpy.less,
-    '>': numpy.greater,
-    '<=': numpy.less_equal,
-    '>=': numpy.greater_equal,
+    '+': lambda a, b=None: numpy.add(*recycled(a, b)) if b is not None else numpy.asarray(a),
+    '-': lambda a, b=None: numpy.subtract(*recycled(a, b)) if b is not None else numpy.negative(a),
+    '*': null_safe(numpy.multiply),
+    '/': null_safe(numpy.true_divide),
+    '^': null_safe(numpy.power),
+    '%%': null_safe(numpy.mod),
+    '%/%': null_safe(numpy.floor_divide),
+    '==': null_safe(numpy.equal, True),
+    '!=': null_safe(numpy.not_equal, True),
+    '<': null_safe(numpy.less, True),
+    '>': null_safe(numpy.greater, True),
+    '<=': null_safe(numpy.less_equal, True),
+    '>=': null_safe(numpy.greater_equal, True),
     '&': numpy.logical_and,
     '|': numpy.logical_or,
     '!': numpy.logical_not,
@@ -1127,6 +1194,8 @@ def shift_index(v: Value) -> Value:
     """An index written for R (from 1) as metafopy takes it (from 0); names stay as they are."""
     if v is None or isinstance(v, (str, bool)):
         return v
+    if isinstance(v, list):
+        return [shift_index(e) for e in v]  # btt = list(2, 3, 4:5): one test for each element
     arr = numpy.asarray(v)
     if arr.dtype.kind in 'if' and arr.dtype != bool:
         return (arr.astype(int) - 1).tolist() if arr.ndim else int(arr) - 1
@@ -1155,6 +1224,10 @@ def shift_arguments(kwargs: dict[str, Value], positions: bool = False, args: tup
     """Index arguments count from 1 in R and from 0 in metafopy; a vector of negative indices (R: leave these out) becomes a logical vector."""
     out: dict[str, Value] = {}
     for k, v in kwargs.items():
+        if isinstance(v, list) and k == 'btt' and v:
+            # btt = list(2, 3, 4:5) or list("a", "b"): a list of subscripts, each one a test, shifted one by one
+            out[k] = [e if isinstance(e, str) else numpy.atleast_1d(shift_index(e)).tolist() for e in v]
+            continue
         if (k in INDEX_ARGUMENTS or (positions and k in POSITION_ARGUMENTS)) and v is not None and not isinstance(v, (str, bool)):
             arr = numpy.asarray(v)
             if arr.dtype.kind in 'if' and arr.dtype != bool:
@@ -1210,6 +1283,14 @@ def accepts(fn: typing.Callable[..., Value], name: str, first: Value = None) -> 
         return name in inspect.signature(target).parameters
     except TypeError, ValueError:
         return False
+
+
+SAME_FUNCTIONS: dict[str, typing.Callable[..., Value]] = {
+    'exp': numpy.exp,
+    'tanh': numpy.tanh,
+    'plogis': metafopy.transf.plogis,
+    'pnorm': metafopy.transf.pnorm,
+}
 
 
 def function_value(env: Env, name: str) -> typing.Callable[..., Value]:

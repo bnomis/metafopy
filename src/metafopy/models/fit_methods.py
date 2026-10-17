@@ -337,12 +337,12 @@ class FitMethods:
 
         return metafopy.methods.accessors.model_matrix(typing.cast(typing.Any, self), asdf)
 
-    def update(self, formula: str | None = None, evaluate: bool = True, **kwargs: typing.Any) -> typing.Any:
+    def update(self, formula_: str | None = None, evaluate: bool = True, **kwargs: typing.Any) -> typing.Any:
         """See :func:`metafopy.methods.accessors.update`."""
         # auditme: accept[in-function-import] metafopy.methods imports the result classes, so the import is deferred to avoid a cycle
         import metafopy.methods.accessors
 
-        return metafopy.methods.accessors.update(typing.cast(typing.Any, self), formula, evaluate, **kwargs)
+        return metafopy.methods.accessors.update(typing.cast(typing.Any, self), formula_, evaluate, **kwargs)
 
     def simulate(self, nsim: int = 1, seed: int | None = None, olim: typing.Any = None, **kwargs: typing.Any) -> typing.Any:
         """See :func:`metafopy.methods.simulate.simulate`."""

@@ -72,6 +72,7 @@ def namespace(env: audit.rlib.Env) -> dict[str, object]:
         'block': audit.rlib.block,
         'math': math,
         'numpy': numpy,
+        'rc_pairs': audit.rlib.r_c_pairs,
         'rassign_dollar': audit.rlib.r_assign_dollar,
         'rassign_into': audit.rlib.r_assign_into,
         'rassign_index': audit.rlib.r_assign_index,

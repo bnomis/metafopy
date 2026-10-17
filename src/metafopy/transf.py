@@ -140,6 +140,7 @@ EPSILON = sys.float_info.epsilon
 DBL_MAX = sys.float_info.max
 TOL = EPSILON**0.25  # R's integrate() rel.tol and abs.tol
 M_1_SQRT_2PI = 0.398942280401432677939946059934
+M_LN_SQRT_2PI = 0.918938533204672741780329736406
 HALF_PI = math.pi / 2
 # x beyond which R's dnorm() returns 0: sqrt(-2*M_LN2*(DBL_MIN_EXP + 1 - DBL_MANT_DIG))
 DNORM_UFLOW = math.sqrt(-2 * math.log(2) * (-1021 + 1 - 53))
@@ -153,11 +154,26 @@ def arr(x: numpy.typing.ArrayLike) -> FloatArray:
     return numpy.atleast_1d(numpy.asarray(x, dtype=numpy.float64))
 
 
-def dnorm(x: numpy.typing.ArrayLike, mean: numpy.typing.ArrayLike = 0.0, sd: numpy.typing.ArrayLike = 1.0) -> FloatArray:
-    """R's ``dnorm()`` (``dnorm4`` in ``nmath/dnorm.c``), including its accurate tail branch."""
+def dnorm(x: numpy.typing.ArrayLike, mean: numpy.typing.ArrayLike = 0.0, sd: numpy.typing.ArrayLike = 1.0, log: bool = False) -> FloatArray:
+    """R's ``dnorm()`` (``dnorm4`` in ``nmath/dnorm.c``), including its accurate tail branch; ``log=True`` gives the log density."""
     xb, mu, sigma = numpy.broadcast_arrays(numpy.asarray(x, numpy.float64), numpy.asarray(mean, numpy.float64), numpy.asarray(sd, numpy.float64))
     with numpy.errstate(all='ignore'):
         z = numpy.abs((xb - mu) / sigma)
+        if log:
+            log_body = -(M_LN_SQRT_2PI + 0.5 * z * z + numpy.log(sigma))
+            out_log: FloatArray = numpy.select(
+                [
+                    numpy.isnan(xb) | numpy.isnan(mu) | numpy.isnan(sigma),
+                    sigma < 0,
+                    ~numpy.isfinite(sigma),
+                    ~numpy.isfinite(xb) & (mu == xb),
+                    sigma == 0,
+                    ~numpy.isfinite(z),
+                ],
+                [xb + mu + sigma, numpy.nan, -numpy.inf, numpy.nan, numpy.where(xb == mu, numpy.inf, -numpy.inf), -numpy.inf],
+                log_body,
+            )
+            return out_log
         x1 = numpy.ldexp(numpy.rint(numpy.ldexp(z, 16)), -16)
         x2 = z - x1
         body = numpy.where(
@@ -581,7 +597,7 @@ def transf_pft(xi: numpy.typing.ArrayLike, ni: numpy.typing.ArrayLike) -> FloatA
         return numpy.asarray(1 / 2 * (numpy.arcsin(numpy.sqrt(x / (n + 1))) + numpy.arcsin(numpy.sqrt((x + 1) / (n + 1)))), numpy.float64)
 
 
-def ipft(x: FloatArray, n: FloatArray) -> FloatArray:
+def inverse_pft(x: FloatArray, n: FloatArray) -> FloatArray:
     with numpy.errstate(all='ignore'):
         s = numpy.sin(2 * x)
         zi = 1 / 2 * (1 - numpy.sign(numpy.cos(2 * x)) * numpy.sqrt(1 - (s + (s - 1 / s) / n) ** 2))
@@ -592,7 +608,7 @@ def ipft(x: FloatArray, n: FloatArray) -> FloatArray:
 
 def transf_ipft(xi: numpy.typing.ArrayLike, ni: numpy.typing.ArrayLike) -> FloatArray:
     """Inverse of the Freeman-Tukey transformation (Miller, 1978), 0 and 1 outside the attainable range."""
-    return ipft(*recycle_pair(arr(xi), arr(ni)))
+    return inverse_pft(*recycle_pair(arr(xi), arr(ni)))
 
 
 def transf_ipft_hm(xi: numpy.typing.ArrayLike, targs: Targs) -> FloatArray:
@@ -605,7 +621,7 @@ def transf_ipft_hm(xi: numpy.typing.ArrayLike, targs: Targs) -> FloatArray:
         raise metafopy.errors.InputError("Must specify the sample sizes via the 'targs' argument.")
     ni = arr(targs['ni'] if isinstance(targs, collections.abc.Mapping) else targs)
     nhm = 1 / numpy.nanmean(1 / ni)
-    return ipft(arr(xi), numpy.asarray(nhm, numpy.float64))
+    return inverse_pft(arr(xi), numpy.asarray(nhm, numpy.float64))
 
 
 def transf_isqrt(xi: numpy.typing.ArrayLike) -> FloatArray:

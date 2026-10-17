@@ -115,9 +115,11 @@ def gosh_rma_uni(
     ncpus: int = 1,
     cl: concurrent.futures.Executor | None = None,
     LB: bool = False,
+    na_action: metafopy.methods.common.NAAction = 'omit',
 ) -> GoshResult:
     """Fit the model to subsets of the studies.
 
+    ``na_action`` stands for R's ``options(na.action=)``; metafor only checks that it is known.
     ``LB`` is accepted as in metafor, where it picks ``parLapplyLB`` (load-balanced scheduling) and changes no result.
 
     By default all subsets (with at least ``p`` studies) are used if there are
@@ -134,6 +136,7 @@ def gosh_rma_uni(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
+    metafopy.methods.common.check_na_action(na_action)
     metafopy.methods.fitview.check_class(x, notav=metafopy.methods.fitview.FIXED_UNI_ONLY)
     k, p = x.k, x.p
     parallel = metafopy.core.parallel.resolve_parallel(parallel, ncpus, cl)

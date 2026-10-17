@@ -222,8 +222,8 @@ def plot_cumul(
     cols_c = [metafopy.plot.rutils.coladj(-0.2), metafopy.plot.rutils.coladj(-0.8)] if cols is None else list(cols)
     if digits is None:
         dig = (2, 3) if yaxis in ('tau2', 'tau') else (2, 1)
-    elif isinstance(digits, int):
-        dig = (digits, digits)
+    elif isinstance(digits, int | float):
+        dig = (int(digits), int(digits))
     else:
         dig = (int(digits[0]), int(digits[1]))
     yvalue: FloatArray

@@ -257,3 +257,77 @@ def test_predict_ls_adjust_must_be_logical() -> None:
     res = metafopy.rma_uni('yi', 'vi', mods='~ ablat', scale='~ ablat', data=refutil.bcg())
     with pytest.raises(metafopy.errors.InputError, match='logical'):
         metafopy.predict(res, adjust=typing.cast(typing.Any, 'holm'))
+
+
+def test_cumul_and_gosh_na_action() -> None:
+    # R: options(na.action = "na.fail"); cumul(res) stops with "Missing values in data."; an unknown na.action is refused
+    res = metafopy.rma_uni('yi', 'vi', data=refutil.bcg())
+    with pytest.raises(metafopy.errors.InputError):
+        metafopy.cumul(res, na_action='bogus')
+    assert len(metafopy.cumul(res, na_action='exclude').estimate) == res.k
+
+
+def test_update_formula_dot_is_ignored_for_mh_and_peto() -> None:
+    # R: update(rma.mh(...), . ~ . + ablat) and update(rma.peto(...), . ~ . + ablat) refit without the formula (update.rma only edits rma.uni, rma.mv, rma.glmm)
+    dat = refutil.bcg()
+    mh = metafopy.rma_mh(ai=dat['tpos'], bi=dat['tneg'], ci=dat['cpos'], di=dat['cneg'])
+    peto = metafopy.rma_peto(ai=dat['tpos'], bi=dat['tneg'], ci=dat['cpos'], di=dat['cneg'])
+    assert metafopy.update(mh, formula_='. ~ . + ablat').k == 13
+    assert metafopy.update(peto, formula_='. ~ . + ablat').k == 13
+    uni = metafopy.rma_uni('yi', 'vi', data=dat)
+    assert metafopy.update(uni, formula_='~ . + ablat').k == 13
+
+
+def test_cbind_with_a_data_frame_keyword() -> None:
+    # R: names(cbind(escalc(...), w = dat[1:3])) ends with "w.trial", "w.author", "w.year"; a one-column data frame keeps its own name
+    dat = refutil.bcg()
+    es = metafopy.escalc(measure='RR', ai=dat['tpos'], bi=dat['tneg'], ci=dat['cpos'], di=dat['cneg'], data=dat)
+    out = metafopy.cbind_escalc(es, w=dat[['trial', 'author', 'year']])
+    assert list(out.columns[-3:]) == ['w.trial', 'w.author', 'w.year']
+    assert list(metafopy.cbind_escalc(es, w=dat[['trial']]).columns)[-1] == 'trial'
+
+
+def test_update_formula_for_mods_must_be_one_sided() -> None:
+    # R: update(rma(yi, vi, data = dat), . ~ . + ablat) stops with "object '.' not found"; update(rma.glmm(...), ~ . + ablat) stops with "formula expected"
+    dat = refutil.bcg()
+    uni = metafopy.rma_uni('yi', 'vi', data=dat)
+    with pytest.raises(metafopy.errors.InputError):
+        metafopy.update(uni, formula_='. ~ . + ablat')
+    glmm = metafopy.rma_glmm(measure='OR', ai=dat['tpos'], bi=dat['tneg'], ci=dat['cpos'], di=dat['cneg'], model='UM.FS')
+    with pytest.raises(metafopy.errors.InputError):
+        metafopy.update(glmm, formula_='~ . + ablat')
+
+
+def test_dnorm_log_and_the_ipft_helper_name() -> None:
+    # R: dnorm(c(-1, 0, 2.5), 0.5, 2, log = TRUE) is log(dnorm(c(-1, 0, 2.5), 0.5, 2)); dnorm(0, 0, 0, log = TRUE) is Inf
+    out = metafopy.transf.dnorm([-1.0, 0.0, 2.5], 0.5, 2.0, log=True)
+    numpy.testing.assert_allclose(out, numpy.log(metafopy.transf.dnorm([-1.0, 0.0, 2.5], 0.5, 2.0)), rtol=1e-12)
+    assert float(metafopy.transf.dnorm(0.0, 0.0, 0.0, log=True)) == numpy.inf
+    # the helper behind transf_ipft must not be called like the R function (the script harness resolves transf.ipft to such a name)
+    assert not hasattr(metafopy.transf, 'ipft')
+
+
+def test_fmtx_refuses_several_digits_for_a_vector() -> None:
+    # R: fmtx(c(1.234, 2), digits = c(2, NA, 1)) stops with "the condition has length > 1" (formatC), also for a scalar x
+    with pytest.raises(metafopy.errors.InputError):
+        metafopy.fmtx([1.234, 2.0], digits=typing.cast(typing.Any, DIGITS))
+    assert metafopy.fmtx([1.234, 2.0], digits=typing.cast(typing.Any, 2.0)) == ['1.23', '2.00']  # R has one number type: digits = 2 is a double
+
+
+def test_forest_accepts_digits_as_a_float() -> None:
+    # R: forest(yi, ci.lb = , ci.ub = , digits = 3) where 3 is a double
+    metafopy.forest(numpy.array([0.1, 0.4, 0.6]), ci_lb=numpy.array([0.0, 0.2, 0.3]), ci_ub=numpy.array([0.2, 0.6, 0.9]), digits=typing.cast(typing.Any, 3.0))
+    matplotlib.pyplot.close('all')
+
+
+def test_baujat_fail_stops_on_missing_values() -> None:
+    # R: options(na.action = "na.fail"); baujat(res) of a model with a missing yi stops with "need finite 'ylim' values"; the other settings draw
+    dat = refutil.bcg().copy()
+    dat.loc[2, 'yi'] = numpy.nan
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        res = metafopy.rma_uni('yi', 'vi', data=dat)
+    with pytest.raises(metafopy.errors.InputError):
+        metafopy.baujat(res, na_action='fail')
+    metafopy.baujat(res, na_action='exclude')
+    matplotlib.pyplot.close('all')

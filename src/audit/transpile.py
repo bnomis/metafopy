@@ -284,6 +284,9 @@ def tr_call(n: Node, c: Context) -> str:
         return tr_function(n, c)
     if name == '~':
         return repr(unparse(n))
+    if name == 'c' and len({a['name'] for a in args if a.get('name')}) < len([a for a in args if a.get('name')]):
+        # c(a = 1, a = 2) keeps both elements, which keyword arguments cannot
+        return 'rc_pairs([' + ', '.join(f'({a.get("name", "")!r}, {tr(a["v"], c)})' for a in args) + '])'
     if name == '[':
         return f'rindex({args_code(args, c)})'
     if name == '[[':

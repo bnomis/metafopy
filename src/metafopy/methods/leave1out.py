@@ -295,6 +295,7 @@ def cumul_rma_uni(
     collapse: bool = False,
     *,
     decreasing: bool = False,
+    na_action: metafopy.methods.common.NAAction = 'omit',
     progbar: bool = False,
 ) -> CumulResult:
     """Fit the intercept-only model to the first ``i`` studies for ``i = 1, ..., k``.
@@ -303,13 +304,19 @@ def cumul_rma_uni(
     the model's data) giving the order in which studies are added; without it
     the original order is used. With ``collapse=True`` studies sharing the same
     value of ``order`` are added together. Studies dropped for missing values
-    in the fit are skipped (the ``na.omit`` behaviour). ``digits`` defaults to the ``digits`` option, else to that of the model; ``progbar=True``
+    in the fit are skipped (the ``na.omit`` behaviour).
+    ``na_action`` stands for R's ``options(na.action=)``: ``'fail'`` stops when studies were left out; ``'exclude'`` and ``'pass'`` give the rows of
+    ``'omit'``, where metafor keeps a row of missing values for each study left out.
+    ``digits`` defaults to the ``digits`` option, else to that of the model; ``progbar=True``
     prints a progress bar to stderr while the refits are made.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
     metafopy.methods.fitview.check_class(x, notav=metafopy.methods.fitview.NOT_ROBUST)
+    metafopy.methods.common.check_na_action(na_action)
+    if na_action == 'fail' and not metafopy.methods.common.uni_not_na(x).all():
+        raise metafopy.errors.InputError('Missing values in data.')
     if not x.int_only:
         raise metafopy.errors.InputError('Method only applicable to models without moderators.')
     k = x.k

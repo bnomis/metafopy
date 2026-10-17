@@ -835,7 +835,7 @@ def forest(
     if transf is not None and atransf is not None:
         raise metafopy.errors.InputError("Use either 'transf' or 'atransf' to specify a transformation (not both).")
     axx = metafopy.plot.rutils.get_ax(ax)
-    dig = [digits] * 3 if isinstance(digits, int) else list(digits)
+    dig = [digits] * 3 if isinstance(digits, int | float) else list(digits)
     drop0 = all(isinstance(v, int | numpy.integer) for v in dig)  # R: drop trailing zeros of the axis labels only if digits is an integer (2L)
     dig = [int(v) for v in dig]
     if len(dig) == 1:

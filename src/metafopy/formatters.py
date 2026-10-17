@@ -86,7 +86,7 @@ def fmtx(
     if two_d:
         frame = x if isinstance(x, pandas.DataFrame) else pandas.DataFrame(numpy.asarray(x))
         ncol = frame.shape[1]
-        dig = [int(digits)] * ncol if isinstance(digits, int) else [int(d) for d in digits]
+        dig = [int(digits)] * ncol if isinstance(digits, int | float) else [int(d) for d in digits]
         if len(dig) == 1:
             dig = dig * ncol
         out = pandas.DataFrame(
@@ -98,7 +98,9 @@ def fmtx(
         )
         return out if isinstance(x, pandas.DataFrame) else out.to_numpy(dtype=str)
     values, scalar = as_list(typing.cast(Numbers, x))
-    d = int(digits) if isinstance(digits, int) else int(next(iter(digits)))
+    if not isinstance(digits, int | float) and len(list(digits)) > 1:
+        raise metafopy.errors.InputError('the condition has length > 1')  # R: formatC() cannot take several digits for a vector
+    d = int(digits) if isinstance(digits, int | float) else int(next(iter(digits)))
     if thresh is not None:
         if not scalar:
             raise metafopy.errors.InputError("Can only use 'thresh' when 'x' is a scalar.")
@@ -244,8 +246,8 @@ def fmtt(
         if 'test' not in digits or 'pval' not in digits:
             raise metafopy.errors.InputError("Argument 'digits' must have a 'test' and a 'pval' element.")
         dt, dp = int(digits['test']), int(digits['pval'])
-    elif isinstance(digits, int):
-        dt = dp = digits
+    elif isinstance(digits, int | float):
+        dt = dp = int(digits)
     else:
         dl = list(digits)
         if len(dl) == 1:

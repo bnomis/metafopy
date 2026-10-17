@@ -381,6 +381,15 @@ dir = "writes a file; reporter() is not ported (Jupyter instead)"
 forest = "reporter() only, which is not ported"
 funnel = "reporter() only, which is not ported"
 
+[fns."rma.glmm".skip]
+vtype = "undocumented switch read from '...' (the type of sampling variances of the yi/vi of the tables, passed on to escalc); not in rma.glmm.Rd, not ported"
+
+[fns.matreg.skip]
+nearPD = "the old spelling of nearpd that R reads from '...' to stay compatible; Python has nearpd"
+
+[fns.vcalc.skip]
+nearPD = "the old spelling of nearpd that R reads from '...' to stay compatible; Python has nearpd"
+
 [fns.rma.args]
 # the undocumented link of location-scale models; the global `link` is the one of rma_glmm
 link = ["identity", "log"]
@@ -396,7 +405,7 @@ browser = "the browser that opens help pages"
 
 [graphics]
 # Arguments the plotting functions pass to R's graphics functions through `...`; a function that draws and has `...` is also swept with these.
-names = ["bty", "las", "xaxt", "yaxt", "cex", "lwd", "lty", "col", "pch", "bg", "main", "xlab", "ylab", "xlim", "ylim", "cline", "addgrid", "layout", "legend"]
+names = ["bty", "las", "xaxt", "yaxt", "cex", "lwd", "lty", "col", "pch", "bg", "main", "xlab", "ylab", "xlim", "ylim", "addgrid", "layout", "legend"]
 
 [alias]
 # R argument names that metafopy spells differently (beyond dots to underscores)

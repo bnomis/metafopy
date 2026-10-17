@@ -199,7 +199,9 @@ def fmtx1(x: float, digits: int, drop0ifint: bool = False) -> str:
 
 def fmtx(x: numpy.typing.ArrayLike, digits: int | collections.abc.Sequence[int], drop0ifint: bool = False) -> list[str]:
     arr = numpy.atleast_1d(numpy.asarray(x, dtype=numpy.float64))
-    return [fmtx1(float(v), digits if isinstance(digits, int) else digits[0], drop0ifint) for v in arr]
+    if arr.size and not isinstance(digits, int | float) and len(digits) > 1:
+        raise metafopy.errors.InputError('the condition has length > 1')  # R: formatC() cannot take several digits for a vector
+    return [fmtx1(float(v), int(digits) if isinstance(digits, int | float) else digits[0], drop0ifint) for v in arr]
 
 
 def rround(x: float, digits: int = 0) -> float:

@@ -230,10 +230,10 @@ def model_matrix(obj: Fit, asdf: bool = False, *, na_action: metafopy.methods.co
     return wrap(X, names)
 
 
-def update(obj: Fit, formula: str | None = None, evaluate: bool = True, **kwargs: typing.Any) -> typing.Any:
+def update(obj: Fit, formula_: str | None = None, evaluate: bool = True, **kwargs: typing.Any) -> typing.Any:
     """Refit a model with changed arguments, as metafor's ``update.rma(object, formula., ..., evaluate=TRUE)``.
 
-    ``formula`` updates the ``mods`` formula (or ``yi`` when the model was specified by
+    ``formula_`` (metafor's ``formula.``) updates the ``mods`` formula (or ``yi`` when the model was specified by
     ``yi='y ~ x'``) with R's ``update.formula`` rules (``'~ . + x'``, ``'~ . - x'``).
     With ``evaluate=False`` the updated :class:`~metafopy.models.call.Call` is returned.
 
@@ -247,15 +247,19 @@ def update(obj: Fit, formula: str | None = None, evaluate: bool = True, **kwargs
     if call is None:
         raise metafopy.errors.InputError('Need an object with call component.')
     args = dict(call.arguments)
-    if formula is not None:
+    if formula_ is not None and call.name not in ('rma_mh', 'rma_peto'):  # metafor ignores formula. for these
         yi = args.get('yi')
         if isinstance(yi, str) and '~' in yi:
-            args['yi'] = metafopy.models.call.update_formula(yi, formula)
+            args['yi'] = metafopy.models.call.update_formula(yi, formula_)
         else:
             mods = args.get('mods')
             if mods is not None and not (isinstance(mods, str) and '~' in mods):
                 raise metafopy.errors.InputError("The 'mods' argument in 'object' must be a formula for updating to work.")
-            args['mods'] = metafopy.models.call.update_formula(mods, formula)
+            if mods is None and call.name == 'rma_glmm':
+                raise metafopy.errors.InputError('formula expected')  # R: update.formula(NULL, formula.)
+            if formula_.split('~', 1)[0].strip() and type(obj).__name__ != 'SelmodelResult':
+                raise metafopy.errors.InputError(f"The formula '{formula_}' updates 'mods' and must be one-sided.")  # R: object '.' not found
+            args['mods'] = metafopy.models.call.update_formula(mods, formula_)
     args.update(kwargs)
     new_call = metafopy.models.call.Call(function=call.function, arguments=args)
     return new_call() if evaluate else new_call

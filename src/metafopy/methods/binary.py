@@ -396,6 +396,7 @@ def gosh_fixed_binary(
     ncpus: int = 1,
     cl: concurrent.futures.Executor | None = None,
     LB: bool = False,
+    na_action: metafopy.methods.common.NAAction = 'omit',
 ) -> metafopy.methods.gosh.GoshResult:
     """Fit the Mantel-Haenszel or Peto model to subsets of the tables (``gosh.rma``; arguments as in :func:`metafopy.methods.gosh.gosh_rma_uni`).
 
@@ -406,6 +407,7 @@ def gosh_fixed_binary(
     Raises:
         metafopy.errors.InputError: ``k = 1``, ``subsets`` is invalid or all fits failed.
     """
+    metafopy.methods.common.check_na_action(na_action)
     t = x.tables
     parallel = metafopy.core.parallel.resolve_parallel(parallel, ncpus, cl)
     if t.k == 1:

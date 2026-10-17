@@ -116,6 +116,13 @@ reason = "reporter() writes an R Markdown report; Jupyter notebooks are the Pyth
 ref = "docs/differences.md"
 
 [[known]]
+match = "scripts/*"
+kind = "crash"
+detail = "MissingRFunctionError: reporter*"
+reason = "reporter() writes an R Markdown report; Jupyter notebooks are the Python equivalent."
+ref = "docs/differences.md"
+
+[[known]]
 match = "*"
 kind = "missing-field"
 path = "*$chksum*"
@@ -156,14 +163,14 @@ reason = "R's optimiser stops without convergence on this case and R refuses the
 match = "*"
 kind = "refused-where-R-works"
 detail = "*unknownentry*"
-reason = "R silently ignores a control entry that no function of metafor reads (the sweep's 'unknownentry'); metafopy raises for it so that a misspelt setting is not lost. Entries that another function of metafor reads (threshold, stepadj, optimizer, ...) are ignored as in R."
+reason = "Reproduced in R: rma() and rma.mv() silently ignore a control entry that no function of metafor reads (the sweep's 'unknownentry'; selmodel() only warns 'unknown names in control'); metafopy raises for it so that a misspelt setting is not lost. Entries that another function of metafor reads (threshold, stepadj, optimizer, ...) are ignored as in R."
 ref = "docs/differences.md"
 
 [[known]]
 match = "*"
 kind = "refused-where-R-works"
 detail = "*control*'sparse'*"
-reason = "R silently ignores a control entry that no function of metafor reads ('sparse' is an argument of rma.mv, not a control setting); metafopy raises for it so that a misspelt setting is not lost. Entries that another function of metafor reads (threshold, stepadj, optimizer, ...) are ignored as in R."
+reason = "Reproduced in R: rma() and rma.mv() silently ignore a control entry that no function of metafor reads ('sparse' is an argument of rma.mv, not a control setting); metafopy raises for it so that a misspelt setting is not lost. Entries that another function of metafor reads (threshold, stepadj, optimizer, ...) are ignored as in R."
 ref = "docs/differences.md"
 
 [[known]]
@@ -449,12 +456,6 @@ reason = "R documents the formal as nearpd and reads the old spelling nearPD fro
 ref = "docs/differences.md"
 
 [[known]]
-match = "api/*/formula."
-kind = "missing-arg"
-reason = "update(formula.=) is the stats::update.default spelling of a formula edit; update takes formula as a keyword."
-ref = "docs/differences.md"
-
-[[known]]
 match = "api/metafor.news"
 kind = "missing-function"
 reason = "metafor.news() opens the R package's NEWS file; the Python changelog is the repository's."
@@ -611,6 +612,13 @@ reason = "R's base-graphics parameters are read through '...' and handed to plot
 ref = "docs/differences.md"
 
 [[known]]
+match = "scripts/*"
+kind = "missing-arg"
+detail = "cex*"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
 match = "options/*"
 kind = "missing-arg"
 detail = "ylab"
@@ -703,10 +711,10 @@ kind = "missing-arg"
 reason = "rma.mv reads cutoff from '...' but its only use (.chkyisize) is commented out in metafor 5.2-1, so the argument has no effect."
 
 [[known]]
-match = "*/forest/sel_bcg*"
+match = "*/forest/sel_*"
 kind = "accepts-where-R-refuses"
 detail = "R: 'from' must be a finite number*"
-reason = "R stops with the error ''from' must be a finite number', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
+reason = "Reproduced in R: selmodel(type = 'stepfun', steps = c(0.025, 0.1, 0.5, 1)) on dat.bcg warns 'Error when trying to invert the Hessian', so the confidence interval of the estimate is NA and forest() stops in seq() with this error, which comes from metafor's own code and is not a check of an argument. The likelihood is flat in the selection parameters and metafopy's finite-difference Hessian inverts, so it returns a result."
 ref = "docs/differences.md"
 
 [[known]]
@@ -759,10 +767,10 @@ reason = "R stops with the error 'object 'vt' not found', which comes from metaf
 ref = "docs/differences.md"
 
 [[known]]
-match = "construct/ls_*"
+match = "construct/*"
 kind = "accepts-where-R-refuses"
 detail = "R: object 'addtxt' not found*"
-reason = "rma(cutoff = ) of a location-scale model stops in R with an internal error (addtxt is not defined); cutoff has no effect in metafopy."
+reason = "A bug of metafor 5.2-1 (reproduced in R for rma.uni and location-scale models): .chkyisize() reads addtxt, which it sets only when cutoff is NULL, so rma(yi, vi, cutoff = ) stops with this error whenever an abs(yi) exceeds the cutoff (and not when the same yi were checked before). metafopy does not check the size of yi in rma() and cutoff has no effect."
 ref = "docs/differences.md"
 
 [[known]]
@@ -846,7 +854,7 @@ ref = "docs/differences.md"
 match = "options/permutest/*"
 kind = "accepts-where-R-refuses"
 detail = "R: R did not return within*"
-reason = "permutest(exact = TRUE) of a trimfill fit enumerates every permutation of the filled data, which R does not finish within the case time limit."
+reason = "permutest(exact = TRUE) of a trimfill fit enumerates every permutation of the filled data; in R the 13 studies of dat.bcg already take 162 s (see options/permutest/uni_factor/exact=true) and the filled data have more studies, so R does not finish within the case time limit."
 ref = "docs/differences.md"
 
 [[known]]
@@ -1197,3 +1205,37 @@ match = "*"
 kind = "label-diff"
 path = "*coef.na*"
 reason = "R names coef.na with the prefix X (coef.na.Z with Z), a quirk of how it builds the vector; metafopy names the flags by the coefficients."
+
+[[known]]
+match = "options/permutest/uni_factor/exact=true"
+kind = "accepts-where-R-refuses"
+detail = "R: reached elapsed time limit*"
+reason = "Reproduced in R: permutest(exact = TRUE) of a model with 3 allocation groups on the 13 studies of dat.bcg takes 162 s (it enumerates all the permutations), more than the time limit of a case; metafopy takes 43 s."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/profile/sel_bcg/ncpus=2"
+kind = "accepts-where-R-refuses"
+detail = "R: reached elapsed time limit*"
+reason = "Reproduced in R: profile() of a selmodel() fit with ncpus = 2 stops with the error 'argument \"withcrayon\" is missing, with no default' from the snow workers (and hangs the case runner); a bug of metafor 5.2-1 that metafopy has no counterpart of, it profiles in one process."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/confint/mv_sp/extint=true"
+kind = "warning-missing"
+detail = "Cannot obtain lower bound of profile likelihood CI*"
+reason = "Reproduced in R: confint() of the spatial rma.mv fit (SPEXP, ~ year | district) with extint = TRUE warns that neither bound of rho can be obtained and gives NA, because the likelihood is flat in rho (the default call gives <0.0056 and >10, as metafopy does with and without extint); metafopy's root search of the extended interval ends at the same bounds."
+ref = "docs/differences.md"
+
+[[known]]
+match = "construct/ls_year/optbeta=true"
+kind = "warning-extra"
+detail = "Error when trying to invert the Hessian.*"
+reason = "Reproduced in R: the fit of ls_year with optbeta = TRUE inverts a Hessian of the boundary solution (tau2 near 0), but its standard errors are noise (se of the intercept 80.35 against 40.67 without optbeta at the same log-likelihood); metafopy's Hessian is singular there and it warns."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/permutest/uni_factor/exact=true"
+kind = "timeout"
+reason = "Reproduced in R: the exact permutation test of 3 allocation groups on 13 studies takes 162 s in R and 43 s in metafopy, both more than the time limit of a case when the machine is busy."
+ref = "docs/differences.md"
