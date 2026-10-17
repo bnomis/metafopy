@@ -33,6 +33,7 @@ import metafopy.methods.common
 import metafopy.methods.fitview
 import metafopy.methods.vif
 import metafopy.mfopt
+import metafopy.models.control_names
 import metafopy.models.rma_uni
 import metafopy.printing
 
@@ -174,6 +175,8 @@ def permutest_control(control: collections.abc.Mapping[str, typing.Any] | None) 
         if key in con:
             match = [key]
         if len(match) != 1:
+            if metafopy.models.control_names.read_elsewhere(key):
+                continue
             raise metafopy.errors.ArgumentError(f'unknown control argument {key!r}')
         con[match[0]] = value
     if con['alternative'] not in ('two.sided', 'less', 'greater'):
@@ -182,8 +185,6 @@ def permutest_control(control: collections.abc.Mapping[str, typing.Any] | None) 
         raise metafopy.errors.InputError("control 'p2defn' must be 'abs' or 'px2'")
     if con['stat'] not in ('test', 'coef'):
         raise metafopy.errors.InputError("control 'stat' must be 'test' or 'coef'")
-    if con['extendInt'] != 'no':
-        raise metafopy.errors.NotSupportedError("control extendInt other than 'no' is not supported")
     return con
 
 
@@ -447,7 +448,9 @@ def permci_bound(
         return diff * 10 if diff < 0 else diff
 
     try:
-        return metafopy.core.zeroin.uniroot(f, interval[0], interval[1], tol=c['tol'], maxiter=c['maxiter']).root
+        # as metafor: any extendInt other than 'no' extends the interval upwards for the lower bound and downwards for the upper bound
+        extend_int: typing.Literal['no', 'upX', 'downX'] = 'no' if c['extendInt'] == 'no' else 'upX' if lower else 'downX'
+        return metafopy.core.zeroin.uniroot(f, interval[0], interval[1], tol=c['tol'], maxiter=c['maxiter'], extend_int=extend_int).root
     except ValueError, ArithmeticError, numpy.linalg.LinAlgError:
         return math.nan
 

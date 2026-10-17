@@ -27,6 +27,7 @@ import metafopy.formatters
 import metafopy.metadata
 import metafopy.mfopt
 import metafopy.models.call
+import metafopy.models.control_names
 import metafopy.models.mv_factor
 import metafopy.models.mv_hessian
 import metafopy.models.mv_inputs
@@ -115,6 +116,8 @@ def make_control(control: MVControl | collections.abc.Mapping[str, typing.Any] |
         if name in OPTIMIZER_SETTINGS:
             opt_ctrl[name] = value
         elif name not in names:
+            if metafopy.models.control_names.read_elsewhere(key):
+                continue
             raise metafopy.errors.ArgumentError(f'unknown control argument {key!r}')
         else:
             kwargs[name] = value
@@ -455,7 +458,7 @@ def rma_mv(
     slab: object = None,
     subset: numpy.typing.ArrayLike | str | None = None,
     random: str | collections.abc.Sequence[str] | None = None,
-    struct: str | collections.abc.Sequence[str] = 'CS',
+    struct: str | collections.abc.Sequence[str] | None = None,
     intercept: bool = True,
     method: str = 'REML',
     test: str = 'z',
@@ -488,7 +491,7 @@ def rma_mv(
     Mirrors metafor's ``rma.mv()`` (https://wviechtb.github.io/metafor/reference/rma.mv.html). ``yi`` is a vector, a column
     of ``data`` or a model formula (``'yi ~ x1 + x2'``); ``V`` is a vector of sampling variances, a ``k x k`` matrix, a list of
     block matrices (see :func:`metafopy.bldiag`), a column name or ``0``. ``random`` is a formula such as ``'~ 1 | study'``,
-    ``'~ 1 | district/school'`` or ``'~ outcome | study'`` (or a list of them), ``struct`` the variance-covariance structure of
+    ``'~ 1 | district/school'`` or ``'~ outcome | study'`` (or a list of them), ``struct`` (default ``'CS'``) the variance-covariance structure of
     the ``~ inner | outer`` terms and ``R`` a dict of known correlation matrices (DataFrames with dimension names) keyed by the
     grouping variable. ``sigma2``, ``tau2``, ``rho``, ``gamma2`` and ``phi`` fix the corresponding parameters (``nan`` entries are
     estimated). ``dfs`` is ``'residual'``, ``'contain'`` or numeric. ``digits`` (a number of decimals, or a mapping with the keys ``est``, ``se``,
@@ -617,7 +620,11 @@ def rma_mv(
         warnings.warn(f'The \'random\' argument is disregaded when method="{method}".', stacklevel=2)
     if use_random and data_frame is None:
         raise metafopy.errors.InputError("The 'random' argument needs 'data' to evaluate its variables in.")
-    rand = metafopy.models.mv_inputs.extract_random(random if use_random else None, struct, data_frame if data_frame is not None else pandas.DataFrame())
+    rand = metafopy.models.mv_inputs.extract_random(
+        random if use_random else None, 'CS' if struct is None else struct, data_frame if data_frame is not None else pandas.DataFrame()
+    )
+    if struct is not None and not rand.with_g:
+        warnings.warn("Model does not contain an '~ inner | outer' term, so 'struct' argument is disregaded.", stacklevel=2)
 
     mask = metafopy.metadata.subset_mask(subset, k_all, data_frame)
     idx = numpy.flatnonzero(mask)

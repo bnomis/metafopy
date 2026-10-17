@@ -40,6 +40,7 @@ import metafopy.core.verbose
 import metafopy.errors
 import metafopy.metadata
 import metafopy.models.call
+import metafopy.models.control_names
 import metafopy.models.glmm_fit
 import metafopy.models.glmm_result
 import metafopy.models.rma_uni
@@ -93,9 +94,10 @@ def make_control(control: metafopy.models.glmm_fit.GLMMControl | collections.abc
         .replace('hessianCtrl', 'hessian_ctrl'): value
         for key, value in control.items()
     }
-    unknown = set(clean) - names
+    unknown = {name for name in set(clean) - names if not metafopy.models.control_names.read_elsewhere(name)}
     if unknown:
         raise metafopy.errors.InputError(f'unknown control settings: {sorted(unknown)}')
+    clean = {name: value for name, value in clean.items() if name in names}
     if 'package' in clean:
         clean['package'] = match_package(clean['package'])
     if 'hesspack' in clean:

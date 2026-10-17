@@ -22,10 +22,12 @@ import scipy.stats
 
 import metafopy.core.linalg
 import metafopy.core.verbose
+import metafopy.effects.measures
 import metafopy.errors
 import metafopy.metadata
 import metafopy.mfopt
 import metafopy.models.call
+import metafopy.models.control_names
 import metafopy.models.fit_methods
 import metafopy.models.robust_info
 import metafopy.models.robust_print
@@ -289,6 +291,8 @@ def make_control(control: metafopy.models.tau2.Control | collections.abc.Mapping
     for key, value in control.items():
         name = key.replace('.', '_')
         if name not in names:
+            if metafopy.models.control_names.read_elsewhere(key):
+                continue
             raise metafopy.errors.ArgumentError(f'unknown control argument {key!r}')
         kwargs[name] = value
     return metafopy.models.tau2.Control(**kwargs)
@@ -567,6 +571,9 @@ def rma_uni(
         yi = lhs if lhs in data.columns else numpy.asarray(data.eval(lhs), dtype=numpy.float64)
         mods = '~ ' + rhs
         intercept = False
+
+    if measure not in (*metafopy.effects.measures.MEASURES, 'HR', 'HD'):
+        raise metafopy.errors.InputError("Unknown 'measure' specified.")
 
     if measure == 'GEN' and data is not None and data.attrs.get('measure'):
         measure = str(data.attrs['measure'])

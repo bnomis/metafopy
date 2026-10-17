@@ -23,6 +23,7 @@ import metafopy.core.linalg
 import metafopy.core.numderiv
 import metafopy.errors
 import metafopy.metadata
+import metafopy.models.control_names
 import metafopy.models.rma_ls_opt
 import metafopy.models.rma_ls_result
 import metafopy.models.rma_uni
@@ -63,6 +64,8 @@ def make_ls_control(
         if name in OPTIMIZER_SETTINGS:
             opt_ctrl[name] = value
         elif name not in names:
+            if metafopy.models.control_names.read_elsewhere(key):
+                continue
             raise metafopy.errors.ArgumentError(f'unknown control argument {key!r}')
         else:
             kwargs[name] = value

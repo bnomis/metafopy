@@ -25,6 +25,7 @@ import metafopy.core.rng
 import metafopy.errors
 import metafopy.methods.fitview
 import metafopy.mfopt
+import metafopy.models.control_names
 import metafopy.models.rma_uni
 
 __all__ = ['HettestResult', 'hettest']
@@ -334,7 +335,7 @@ def hettest(
         raise metafopy.errors.InputError("Unknown option specified for the 'test' argument.")
     if method is not None and method not in ESTIMATION_METHODS:
         raise metafopy.errors.InputError('Test must be based on ML/REML estimation.')
-    unknown = {key.replace('.', '_') for key in control or {}} - {'maxiter', 'tau2i_init', 'threshold'}
+    unknown = {key.replace('.', '_') for key in control or {} if not metafopy.models.control_names.read_elsewhere(key)} - {'maxiter', 'tau2i_init', 'threshold'}
     if unknown:
         raise metafopy.errors.InputError(f'Unknown control argument {sorted(unknown)[0]!r}.')
     con = {key.replace('.', '_'): value for key, value in (control or {}).items()}

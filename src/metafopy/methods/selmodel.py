@@ -28,6 +28,7 @@ import metafopy.methods.confint
 import metafopy.methods.fitted
 import metafopy.methods.predict
 import metafopy.methods.profile
+import metafopy.models.control_names
 import metafopy.models.rma_uni
 import metafopy.models.sel_result
 import metafopy.models.selmodel
@@ -288,6 +289,8 @@ def profile_ci(
     for key, value in control.items():
         name = key.replace('.', '_')
         if name not in CONFINT_CONTROL:
+            if metafopy.models.control_names.read_elsewhere(key):
+                continue
             raise metafopy.errors.InputError(f'unknown control element {key!r}')
         con[name] = value
     if verbose:

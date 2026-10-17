@@ -243,6 +243,8 @@ def profile_rma_mv(
         metafopy.errors.InputError: an argument is invalid or the model has no such (estimated) component.
     """
     x = fitted
+    if plot_args.pop('startmethod', None) is not None:
+        warnings.warn("Argument 'startmethod' has been deprecated.", stacklevel=2)
     mode = metafopy.core.parallel.resolve_parallel(parallel, ncpus, cl)
     pool: dict[str, typing.Any] = {'progbar': progbar, 'parallel': mode, 'ncpus': ncpus, 'cl': cl}
     st = numpy.atleast_1d(numpy.asarray(steps, dtype=numpy.float64))

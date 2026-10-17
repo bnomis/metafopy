@@ -24,6 +24,7 @@ import metafopy.errors
 import metafopy.formatters
 import metafopy.metadata
 import metafopy.mfopt
+import metafopy.models.control_names
 import metafopy.models.mv_result
 import metafopy.models.mv_structs
 import metafopy.models.rma_mv
@@ -175,6 +176,8 @@ def confint_rma_uni(
         # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
         if type not in ('qp', 'genq', 'pl', 'ht', 'wald', 'wald.log', 'wald.sqrt'):
             raise metafopy.errors.InputError(f'unknown CI type {type!r}')
+    if not isinstance(fixed, bool | numpy.bool_) or not isinstance(random, bool | numpy.bool_):
+        raise metafopy.errors.InputError("Arguments 'fixed' and 'random' must be logicals.")
     if not fixed and not random:
         raise metafopy.errors.InputError("at least one of 'fixed' and 'random' must be True")
     alpha = x.level if level is None else metafopy.models.rma_uni.level_to_alpha(level)
@@ -206,7 +209,11 @@ def confint_rma_uni(
             crit_u = float(scipy.stats.chi2.isf(alpha / 2, k - p))
             crit_l = float(scipy.stats.chi2.ppf(alpha / 2, k - p))
             qe_max = qe(hi, y, vi, X)
-            qe_min = qe(lo, y, vi, X)
+            # as metafor: try(.QE.func(tau2.min)); a try-error compares as false with a number, so the roots are searched (and fail)
+            try:
+                qe_min = qe(lo, y, vi, X)
+            except metafopy.errors.InputError:
+                qe_min = math.nan
 
             if qe_min < crit_l:
                 tau2_lb = tau2_ub = lo
@@ -390,6 +397,8 @@ def control_values(control: collections.abc.Mapping[str, typing.Any] | None, cur
     for key, value in (control or {}).items():
         name = key.replace('.', '_')
         if name not in out:
+            if metafopy.models.control_names.read_elsewhere(key):
+                continue
             raise metafopy.errors.InputError(f'unknown control parameter {key!r}; the settings are {", ".join(out)}')
         out[name] = value
     return out
