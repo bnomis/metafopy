@@ -194,3 +194,17 @@ def test_update_of_trimfill_keeps_the_measure() -> None:
         again = metafopy.update(filled, method='ML')
     assert again.measure == 'RR'
     assert again.k == 14
+
+
+def test_hettest_of_a_model_does_not_use_control() -> None:
+    # R 4.3.3, metafor 5.2-1: hettest(res, control = list(maxiter = 5)) finds the tau2i values and all 1000 bootstrap samples like the default
+    frame = metafopy.datasets.load('dat.bcg')
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        data = metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=frame)
+        res = metafopy.rma(yi='yi', vi='vi', data=data)
+        plain = metafopy.hettest(res, boot=20, seed=1)
+        limited = metafopy.hettest(res, boot=20, seed=1, control={'maxiter': 5, 'threshold': 1e-3})
+    assert limited.tau2i is not None
+    assert limited.tau2i.tolist() == plain.tau2i.tolist()  # type: ignore[union-attr]
+    assert limited.pval == plain.pval
