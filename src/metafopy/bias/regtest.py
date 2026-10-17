@@ -236,7 +236,9 @@ def regtest(
             if vec_measure is not None:
                 fit = dataclasses.replace(fit, measure=vec_measure)
         if isinstance(x, metafopy.models.rma_uni.RMAResult):
-            fit = metafopy.models.rma_uni.as_refit_on_used(fit, dropped=x.data.na_rows is not None and bool(x.data.na_rows.any()), measure=x.measure)
+            # the yi of a trimfill() object keeps ``ni`` but not ``slab``, so metafor numbers the studies of the refit 1, 2, ... as when studies were dropped
+            no_slab = hasattr(x, 'k0') or (x.data.na_rows is not None and bool(x.data.na_rows.any()))
+            fit = metafopy.models.rma_uni.as_refit_on_used(fit, dropped=no_slab, measure=x.measure)
         zval = float(fit.zval[p])
         pval = float(fit.pval[p])
         ddf = fit.ddf

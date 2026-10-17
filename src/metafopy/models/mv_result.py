@@ -503,6 +503,7 @@ class RMAMVResult(metafopy.models.fit_methods.RobustFields, metafopy.models.fit_
                 metafopy.models.mv_print.format_result(self, metafopy.mfopt.option_digits(digits, self.digits), showfit, stars, legend)
             ),
             self,
+            metafopy.mfopt.option_digits(digits, self.digits),
         )
 
     def __str__(self) -> str:

@@ -75,6 +75,12 @@ def drop_stars(header: list[str], rows: list[list[str]], signif_stars: bool) -> 
     return header[:-1], [row[:-1] for row in rows]
 
 
+def number_rows(names: collections.abc.Sequence[str]) -> list[str]:
+    """The row names with their numbers in front, as ``print(x, num = TRUE)`` writes them (``1) intrcpt``, right-aligned numbers)."""
+    width = len(str(len(names)))
+    return [f'{i:>{width}}) {name}' for i, name in enumerate(names, start=1)]
+
+
 def signif_footer(signif_legend: bool, extra: collections.abc.Sequence[str] = ()) -> list[str]:
     """The lines after a coefficient table as ``print.rma.uni`` writes them: ``---`` and the ``Signif. codes`` legend when ``signif_legend``,
     then the further legend lines ``extra`` (the cluster-robust footnote); the table is followed by one blank line only when there is no legend."""

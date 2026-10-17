@@ -286,15 +286,19 @@ class RMAResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_meth
         *,
         signif_stars: bool | None = None,
         signif_legend: bool | None = None,
+        num: bool = False,
     ) -> str:
         """The printout with the fit statistics table, as metafor's ``summary()``; ``str(res)`` leaves it out like ``print()``.
 
         ``digits`` defaults to the ``digits`` option, else to the ``digits`` the model was fitted with. ``signif_stars`` (default: the
         ``signif_stars`` option, ``True``) adds the significance stars and ``signif_legend`` (default: ``signif_stars``) the legend of the codes.
+        ``num`` numbers the rows of the table of coefficients (``print(x, num = TRUE)`` in metafor).
         """
         stars, legend = metafopy.mfopt.option_signif(signif_stars, signif_legend)
         return metafopy.models.fit_methods.SummaryText(
-            metafopy.mfopt.option_space(format_result(self, metafopy.mfopt.option_digits(digits, self.digits), showfit, stars, legend)), self
+            metafopy.mfopt.option_space(format_result(self, metafopy.mfopt.option_digits(digits, self.digits), showfit, stars, legend, num)),
+            self,
+            metafopy.mfopt.option_digits(digits, self.digits),
         )
 
     def __str__(self) -> str:
@@ -1417,7 +1421,7 @@ def adj_r2(y: FloatArray, X: FloatArray, w: FloatArray) -> float:
 # -- printing -----------------------------------------------------------------
 
 
-def format_result(res: RMAResult, digits: int, showfit: bool = False, signif_stars: bool = True, signif_legend: bool = True) -> str:
+def format_result(res: RMAResult, digits: int, showfit: bool = False, signif_stars: bool = True, signif_legend: bool = True, num: bool = False) -> str:
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     out: list[str] = ['']
     fe = res.method in metafopy.models.tau2.FIXED_EFFECTS
@@ -1533,11 +1537,8 @@ def format_result(res: RMAResult, digits: int, showfit: bool = False, signif_sta
     if robust is not None:
         header, rows_ = metafopy.models.robust_print.decorate(header, rows_)
     header, rows_ = metafopy.printing.drop_stars(header, rows_, signif_stars)
-    out.append(
-        metafopy.printing.fmt_table(
-            header, rows_, row_names=None if res.int_only else list(res.coef_names), width=metafopy.printing.console_width(1 if robust is not None else 0)
-        )
-    )
+    row_names = None if res.int_only else metafopy.printing.number_rows(res.coef_names) if num else list(res.coef_names)
+    out.append(metafopy.printing.fmt_table(header, rows_, row_names=row_names, width=metafopy.printing.console_width(1 if robust is not None else 0)))
     out += metafopy.printing.signif_footer(signif_legend, metafopy.models.robust_print.legend_lines(robust, res.int_only) if robust is not None else ())
     return '\n'.join(out)
 

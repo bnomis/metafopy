@@ -107,10 +107,11 @@ class PermutestResult:
         metafor's ``coef.permutest.rma.uni`` (``tval`` and ``df`` for the t-test)."""
         return self.to_frame()
 
-    def summary(self, digits: int | None = None, *, signif_stars: bool | None = None, signif_legend: bool | None = None) -> str:
-        """The printout of ``print(x, digits=, signif.stars=, signif.legend=)``: ``digits`` default to those of the fit."""
+    def summary(self, digits: int | None = None, *, signif_stars: bool | None = None, signif_legend: bool | None = None, num: bool = False) -> str:
+        """The printout of ``print(x, digits=, signif.stars=, signif.legend=, num=)``: ``digits`` default to those of the fit; ``num`` numbers the rows
+        of the coefficient table."""
         stars, legend = metafopy.mfopt.option_signif(signif_stars, signif_legend)
-        return format_permutest(self, self.digits if digits is None else metafopy.mfopt.option_digits(digits, self.digits), stars, legend)
+        return format_permutest(self, self.digits if digits is None else metafopy.mfopt.option_digits(digits, self.digits), stars, legend, num)
 
     def __str__(self) -> str:
         return format_permutest(self)
@@ -475,7 +476,7 @@ def permci_bound(
         return math.nan
 
 
-def format_permutest(x: PermutestResult, d: int | None = None, stars: bool = True, legend: bool = True) -> str:
+def format_permutest(x: PermutestResult, d: int | None = None, stars: bool = True, legend: bool = True, num: bool = False) -> str:
     d = x.digits if d is None else d
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     out: list[str] = ['']
@@ -510,11 +511,9 @@ def format_permutest(x: PermutestResult, d: int | None = None, stars: bool = Tru
     if x.int_only:
         out.extend(metafopy.methods.vif.format_vector(header, rows[0]))
     else:
-        out.append(metafopy.printing.fmt_table(header, rows, row_names=list(x.coef_names)))
-    out += metafopy.printing.signif_footer(legend)
+        out.append(metafopy.printing.fmt_table(header, rows, row_names=metafopy.printing.number_rows(x.coef_names) if num else list(x.coef_names)))
     what = f'p-value{"" if x.int_only else "s"}{" and CI bounds" if x.permci else ""}'
-    out.append(f'1) {what} based on permutation testing')
-    out.append('')
+    out += metafopy.printing.signif_footer(legend, (f'1) {what} based on permutation testing',))
     return '\n'.join(out)
 
 

@@ -199,7 +199,9 @@ class GLMMResult(metafopy.models.fit_methods.TableFields, metafopy.models.fit_me
         """
         stars, legend = metafopy.mfopt.option_signif(signif_stars, signif_legend)
         return metafopy.models.fit_methods.SummaryText(
-            metafopy.mfopt.option_space(self.render(metafopy.mfopt.option_digits(digits, self.digits), showfit, stars, legend)), self
+            metafopy.mfopt.option_space(self.render(metafopy.mfopt.option_digits(digits, self.digits), showfit, stars, legend)),
+            self,
+            metafopy.mfopt.option_digits(digits, self.digits),
         )
 
     def __str__(self) -> str:
