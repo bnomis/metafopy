@@ -596,3 +596,59 @@ kind = "print-diff"
 detail = "*'***'*"
 reason = "R's summary() passes signif.stars=FALSE on to nothing and still prints the stars; metafopy honours the argument."
 ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "missing-field"
+path = "$chksum*"
+reason = "R keeps checksums of yi, vi, X and V to compare two fits in anova(); metafopy compares the data itself."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "missing-field"
+path = "$time"
+reason = "R stores the elapsed time of the fit; metafopy does not time its fits."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "missing-field"
+path = "$version"
+reason = "R stores the version of metafor that made the fit; metafopy has its own version."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "missing-field"
+path = "$verbose"
+reason = "R echoes the verbose argument in the fit; metafopy does not store it."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "missing-field"
+path = "$mf.*"
+reason = "R's model frames (mf.g, mf.g.f, mf.h, mf.h.f, mf.r, mf.s) are internal bookkeeping of rma.mv; metafopy keeps the factors in group_g and group_h."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "missing-field"
+path = "$opt.res"
+reason = "R's optimiser output is the output of optim/nlminb; the scipy optimisers give a different structure and it is not stored."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "missing-field"
+path = "$fit$*"
+reason = "regtest(model='lm') returns R's lm object (qr, effects, terms, ...); metafopy returns the coefficients in est, zval and pval and has no fit."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "label-diff"
+path = "*coef.na*"
+reason = "R names coef.na with the prefix X (coef.na.Z with Z), a quirk of how it builds the vector; metafopy names the flags by the coefficients."
+ref = "docs/differences.md"

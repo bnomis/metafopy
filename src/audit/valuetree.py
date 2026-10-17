@@ -28,6 +28,9 @@ ARRAY_RESULTS = {'LlplotResult': 'lls', 'TableArray': 'values'}
 SCALE_FIELDS = frozenset({'alpha', 'se.alpha', 'zval.alpha', 'pval.alpha', 'ci.lb.alpha', 'ci.ub.alpha', 'va', 'H', 'Z', 'Z.f'})
 
 
+STRUCTURE_FIELDS = ('G', 'H', 'hessian', 'vvc', 'V', 'M', 'W', 'V.f', 'W.f')
+
+
 def py_name(name: str) -> str:
     """The Python spelling of an R name: dots become underscores."""
     return name.replace('.', '_')
@@ -109,7 +112,9 @@ def lookup(value: typing.Any, name: str) -> tuple[bool, typing.Any]:
         if isinstance(attrs, dict) and name[1:] in attrs:
             return True, attrs[name[1:]]
         return False, None
-    spellings = [name, py_name(name)]
+    spellings = [name, py_name(name), py_name(name) + '_']
+    if name == '' and isinstance(value, (tuple, list)):
+        return True, value  # a data frame column R leaves unnamed (the `hyp` of an anova)
     inputs = getattr(value, 'data', None)
     if isinstance(inputs, metafopy.metadata.MetaData) and name in ('data', 'slab'):
         # R's `data` is the data frame the model was given and its `slab` has one label for every row of it; in metafopy `data` holds the model
@@ -135,6 +140,11 @@ def lookup(value: typing.Any, name: str) -> tuple[bool, typing.Any]:
             if spelling in value:
                 return True, value[spelling]
         return False, None
+    if isinstance(value, tuple) and not hasattr(value, '_fields'):
+        # a list R names by its entries (the ``vif`` of ``vif()``): metafopy keeps a tuple of entries that carry their own name
+        for item in value:
+            if name in (getattr(item, 'coefname', None), getattr(item, 'coefs', None)):
+                return True, item
     for spelling in spellings:
         try:
             return True, getattr(value, spelling)
@@ -222,6 +232,10 @@ def to_node(value: typing.Any, guide: Node, path: str, missing: list[str], depth
                 continue
             # the scale part of a location-scale model is labelled with the names of the scale coefficients
             item_labels = alpha_labels if alpha_labels is not None and name in SCALE_FIELDS else labels
+            if name in STRUCTURE_FIELDS and (name != 'H' or hasattr(value, 'H_dimnames')):
+                # the matrices of the random effects are not indexed by the coefficients: G and H by the levels of the inner factor, the rest unnamed
+                dim = getattr(value, f'{name}_dimnames', None)
+                item_labels = [str(n) for n in dim] if dim else None
             items.append({'name': name, 'node': to_node(sub, item['node'], f'{path}${name}', missing, depth + 1, item_labels)})
         return {'k': 'list', 'items': items}
     return {'k': 'missing'}
