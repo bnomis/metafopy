@@ -201,6 +201,8 @@ def design_matrix(formula: str, data: pandas.DataFrame) -> tuple[numpy.typing.ND
         lhs, _, rhs = rhs.partition('~')
         if lhs.strip():
             raise metafopy.errors.InputError(f'expected a one-sided formula, got {formula!r}')
+    if type(data) is not pandas.DataFrame:
+        data = pandas.DataFrame(data)  # formulaic evaluates the variables of a data frame subclass (the result of escalc) differently
     mm = formulaic.model_matrix(r_power(rhs), data, na_action='ignore', context=formula_context())
     X = numpy.array(mm.to_numpy(dtype=float), dtype=numpy.float64)
     if X.ndim == 1:

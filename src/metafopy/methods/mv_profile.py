@@ -306,7 +306,7 @@ def profile_rma_mv(
         sav = [profile_one(x, comp, pos, xlim, ylim, st, step_seq, lltol, exp, pool) for comp, pos in todo]
         if plot:
             plot_all(sav, ax, plot_args)
-        return sav[0] if len(sav) == 1 else sav
+        return sav[0] if len(sav) == 1 else metafopy.methods.profile.ProfileList(sav)
 
     comp, pos = component(x, chosen)
     out = profile_one(x, comp, pos, xlim, ylim, st, step_seq, lltol, exp, pool)

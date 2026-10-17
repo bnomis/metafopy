@@ -125,6 +125,7 @@ def make_control(control: MVControl | collections.abc.Mapping[str, typing.Any] |
         name = key.replace('.', '_').replace('hessianCtrl', 'hessian_ctrl')
         if name in OPTIMIZER_SETTINGS:
             opt_ctrl[name] = value
+            ignored[key] = value
         elif name not in names:
             if metafopy.models.control_names.read_elsewhere(key):
                 ignored[key] = value
@@ -132,6 +133,8 @@ def make_control(control: MVControl | collections.abc.Mapping[str, typing.Any] |
             raise metafopy.errors.ArgumentError(f'unknown control argument {key!r}')
         else:
             kwargs[name] = value
+            if key != name:
+                ignored[key] = value
     kwargs['ignored'] = {**dict(kwargs.get('ignored', {})), **ignored}
     if opt_ctrl:
         kwargs['opt_ctrl'] = {**dict(kwargs.get('opt_ctrl', {})), **opt_ctrl}

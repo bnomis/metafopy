@@ -102,9 +102,10 @@ class PermutestResult:
         """R's ``skip.beta``: the plain model never skips the coefficients."""
         return False
 
-    def coef(self) -> pandas.Series:
-        """The estimated coefficients, indexed by name (``coef.permutest.rma.uni``)."""
-        return pandas.Series(self.beta, index=list(self.coef_names), name='estimate')
+    def coef(self) -> pandas.DataFrame:
+        """The table of the coefficients with the permutation p-values (``estimate``, ``se``, ``zval``, ``pval``, ``ci.lb``, ``ci.ub``), as
+        metafor's ``coef.permutest.rma.uni`` (``tval`` and ``df`` for the t-test)."""
+        return self.to_frame()
 
     def summary(self, digits: int | None = None, *, signif_stars: bool | None = None, signif_legend: bool | None = None) -> str:
         """The printout of ``print(x, digits=, signif.stars=, signif.legend=)``: ``digits`` default to those of the fit."""

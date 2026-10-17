@@ -7,7 +7,6 @@ https://wviechtb.github.io/metafor/reference/ranef.html.
 """
 
 import collections.abc
-import re
 import typing
 
 import numpy
@@ -37,18 +36,8 @@ EPS = float(numpy.finfo(float).eps)
 COLUMNS = ['intrcpt', 'se', 'pi.lb', 'pi.ub']
 
 
-class RanefList(dict[str, pandas.DataFrame]):
+class RanefList(metafopy.core.labelled.NamedList):
     """The list of data frames ``ranef()`` returns for an ``rma.mv`` fit (a dict by term); it prints as R prints a list: ``$term`` above each frame."""
-
-    def __str__(self) -> str:
-        blocks = []
-        for name, frame in self.items():
-            label = name if re.fullmatch(r'[A-Za-z.][A-Za-z0-9._]*', name) else f'`{name}`'
-            blocks.append(f'${label}\n{metafopy.core.labelled.frame_text(frame)}\n')
-        return '\n'.join(blocks)
-
-    def __repr__(self) -> str:
-        return self.__str__()
 
 
 def term_crit(x: MV, alpha: float, nlevels: int) -> float:

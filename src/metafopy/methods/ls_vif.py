@@ -168,6 +168,7 @@ def part_vif(
         sim=sims,
         sim_type='X' if sims is not None else None,
         prop=prop,
+        attspec=None if which == 'beta' else not missing,
     )
 
 

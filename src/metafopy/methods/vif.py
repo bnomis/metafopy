@@ -74,6 +74,8 @@ class VIFResult:
     sim: FloatArray | None = None
     sim_type: str | None = None
     prop: FloatArray | None = None
+    attspec: bool | None = None
+    """``not alpha_missing`` of the scale part of a location-scale model; metafor stores it as ``attspec`` there (and ``bttspec`` for the location part)."""
 
     @property
     def names(self) -> list[str]:

@@ -43,7 +43,7 @@ def named_counts(group: metafopy.models.mv_structs.Group | None) -> pandas.Serie
 
 
 @dataclasses.dataclass(frozen=True, slots=True, eq=False)
-class RMAMVResult(metafopy.models.fit_methods.FitMethods):
+class RMAMVResult(metafopy.models.fit_methods.RobustFields, metafopy.models.fit_methods.FitMethods):
     """A fitted multivariate/multilevel meta-analytic model (metafor's ``rma.mv``).
 
     Names follow metafor with ``.`` replaced by ``_``; ``btt`` holds 0-based coefficient indices.
@@ -161,6 +161,13 @@ class RMAMVResult(metafopy.models.fit_methods.FitMethods):
     control: typing.Any = dataclasses.field(default=None, repr=False)
 
     def __post_init__(self) -> None:
+        # R names the rows of the model matrices by the rows of the data and their columns by the coefficients
+        row_names = [str(int(i) + 1) for i in self.ids]
+        if len(row_names) == self.not_na.shape[0]:
+            used = [n for n, flag in zip(row_names, self.not_na, strict=True) if flag]
+            object.__setattr__(self, 'X', metafopy.core.labelled.design_matrix(self.X, used, self.coef_names))
+            if self.X_f is not None:
+                object.__setattr__(self, 'X_f', metafopy.core.labelled.design_matrix(self.X_f, row_names, self.coef_names))
         # R sets the dimnames of G and H (levels of the inner factor) and of hessian and vvc (the names of the variance components)
         for name, names in (('G', self.G_dimnames), ('H', self.H_dimnames), ('hessian', self.vc_names), ('vvc', self.vc_names)):
             value = getattr(self, name)
@@ -483,8 +490,11 @@ class RMAMVResult(metafopy.models.fit_methods.FitMethods):
         import metafopy.models.mv_print
 
         stars, legend = metafopy.mfopt.option_signif(signif_stars, signif_legend)
-        return metafopy.mfopt.option_space(
-            metafopy.models.mv_print.format_result(self, metafopy.mfopt.option_digits(digits, self.digits), showfit, stars, legend)
+        return metafopy.models.fit_methods.SummaryText(
+            metafopy.mfopt.option_space(
+                metafopy.models.mv_print.format_result(self, metafopy.mfopt.option_digits(digits, self.digits), showfit, stars, legend)
+            ),
+            self,
         )
 
     def __str__(self) -> str:

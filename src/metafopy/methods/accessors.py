@@ -19,6 +19,7 @@ https://wviechtb.github.io/metafor/reference/model.matrix.rma.html,
 https://wviechtb.github.io/metafor/reference/update.rma.html.
 """
 
+import collections.abc
 import dataclasses
 import re
 import typing
@@ -27,6 +28,7 @@ import numpy
 import numpy.typing
 import pandas
 
+import metafopy.core.labelled
 import metafopy.errors
 import metafopy.methods.common
 import metafopy.methods.fitted
@@ -216,18 +218,25 @@ def model_matrix(obj: Fit, asdf: bool = False, *, na_action: metafopy.methods.co
         raise metafopy.errors.InputError('Missing values in results.')
     full = na_action in ('exclude', 'pass')
     if isinstance(obj, metafopy.models.binary.FixedBinaryResult):
+        fixed = True
         X = rows.X_f if full else numpy.ones((obj.k, 1))
     else:
+        fixed = False
         X = numpy.asarray(rows.X_f if full else obj.X, dtype=numpy.float64)
-    names = list(obj.coef_names)
+    names = None if fixed else list(obj.coef_names)
+    row_names = getattr(getattr(obj, 'X_f' if full else 'X', None), 'rownames', None)
 
-    def wrap(M: FloatArray, cols: list[str]) -> typing.Any:
-        return pandas.DataFrame(M, columns=cols) if asdf else M.copy()
+    def wrap(M: FloatArray, cols: list[str] | None, rownames: collections.abc.Sequence[str] | None) -> typing.Any:
+        if asdf:
+            return pandas.DataFrame(
+                M, index=None if rownames is None else list(rownames), columns=cols if cols is not None else [f'V{j + 1}' for j in range(M.shape[1])]
+            )
+        return metafopy.core.labelled.design_matrix(M.copy(), rownames, cols)
 
     if isinstance(obj, metafopy.models.rma_ls_result.RMALSResult):
         Z = metafopy.methods.fitted.scale_rows(obj) if full else numpy.asarray(obj.Z, dtype=numpy.float64)
-        return {'location': wrap(X, names), 'scale': wrap(Z, list(obj.alpha_names))}
-    return wrap(X, names)
+        return {'location': wrap(X, names, row_names), 'scale': wrap(Z, list(obj.alpha_names), row_names)}
+    return wrap(X, names, row_names)
 
 
 def update(obj: Fit, formula: str | None = None, evaluate: bool = True, **kwargs: typing.Any) -> typing.Any:

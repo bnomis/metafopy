@@ -9,6 +9,7 @@ import numpy
 import numpy.typing
 import pandas
 
+import metafopy.core.labelled
 import metafopy.core.linalg
 import metafopy.errors
 import metafopy.metadata
@@ -65,6 +66,16 @@ class LSControl:
     scaleZ: bool = True  # noqa: N815  mirrors the metafor control argument name
     tau2_max: float = numpy.inf
     tau2_min: float = 0.0
+    ignored: dict[str, typing.Any] = dataclasses.field(default_factory=dict, compare=False, repr=False)
+    """The entries other functions of metafor read (``vc.min``, ``stepadj``, ...) and those given under another name (``tol`` is in ``opt_ctrl``),
+    kept as R keeps them in ``res$control``; read them as attributes."""
+
+    def __getattr__(self, name: str) -> typing.Any:
+        ignored = object.__getattribute__(self, 'ignored')
+        for key, value in ignored.items():
+            if key.replace('.', '_') == name:
+                return value
+        raise AttributeError(name)
 
 
 @dataclasses.dataclass(frozen=True, slots=True, eq=False)
@@ -153,6 +164,20 @@ class RMALSResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_me
     add: float = 0.5
     to: str = 'only0'
     drop00: bool = False
+
+    def __post_init__(self) -> None:
+        # R names the rows of the model matrices by the rows of the data, their columns by the coefficients and the Hessian by both sets
+        rows, rows_f = self.data.rownames, self.data.rownames_f
+        design = metafopy.core.labelled.design_matrix
+        object.__setattr__(self, 'X', design(self.X, rows, self.coef_names))
+        object.__setattr__(self, 'Z', design(self.Z, rows, self.alpha_names))
+        object.__setattr__(self, 'X_f', design(self.X_f, rows_f, self.coef_names))
+        if self.Z_f is not None:
+            object.__setattr__(self, 'Z_f', design(self.Z_f, rows_f, self.alpha_names))
+        if self.H is not None:
+            both = [*('X' + n for n in self.coef_names), *('Z' + n for n in self.alpha_names)]
+            names = both if self.H.shape[0] == len(both) else list(self.alpha_names)
+            object.__setattr__(self, 'H', design(self.H, names, names))
 
     @property
     def alphas(self) -> int:
@@ -358,8 +383,11 @@ class RMALSResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_me
         import metafopy.models.rma_ls_print
 
         stars, legend = metafopy.mfopt.option_signif(signif_stars, signif_legend)
-        return metafopy.mfopt.option_space(
-            metafopy.models.rma_ls_print.format_result(self, metafopy.mfopt.option_digits(digits, self.digits), showfit, stars, legend)
+        return metafopy.models.fit_methods.SummaryText(
+            metafopy.mfopt.option_space(
+                metafopy.models.rma_ls_print.format_result(self, metafopy.mfopt.option_digits(digits, self.digits), showfit, stars, legend)
+            ),
+            self,
         )
 
     def __str__(self) -> str:

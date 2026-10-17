@@ -59,16 +59,21 @@ def make_ls_control(
     names = {f.name for f in dataclasses.fields(metafopy.models.rma_ls_result.LSControl)}
     kwargs: dict[str, object] = {}
     opt_ctrl: dict[str, object] = {}
+    ignored: dict[str, object] = {}
     for key, value in control.items():
         name = key.replace('.', '_')
         if name in OPTIMIZER_SETTINGS:
             opt_ctrl[name] = value
+            ignored[key] = value
         elif name not in names:
             if metafopy.models.control_names.read_elsewhere(key):
+                ignored[key] = value
                 continue
             raise metafopy.errors.ArgumentError(f'unknown control argument {key!r}')
         else:
             kwargs[name] = value
+    if ignored:
+        kwargs['ignored'] = ignored
     if opt_ctrl:
         kwargs['opt_ctrl'] = {**dict(kwargs.get('opt_ctrl', {})), **opt_ctrl}  # type: ignore[call-overload]
     return metafopy.models.rma_ls_result.LSControl(**kwargs)  # type: ignore[arg-type]

@@ -514,6 +514,7 @@ def vcalc(
         vals = numpy.concatenate([block.ravel() for _, block in scaled])
         result = scipy.sparse.csr_array((vals, (rows, cols)), shape=(k, k))
         result.eliminate_zeros()
+        result = metafopy.core.labelled.SparseVCovMat(result)
     else:
         result = numpy.zeros((k, k))
         for idx, block in scaled:

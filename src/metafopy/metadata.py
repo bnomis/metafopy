@@ -183,6 +183,28 @@ class MetaData:
         return self.keep if self.na_rows is None else self.keep | self.na_rows
 
     @property
+    def names_all(self) -> tuple[str, ...]:
+        """The row names of the rows supplied, as R names them: the row names of ``data`` (integer labels counted from 1 as in R) or the numbers from 1."""
+        if self.data is not None and self.data.shape[0] == self.k_all:
+            index = self.data.index
+            if pandas.api.types.is_integer_dtype(index):
+                return tuple(str(int(v) + 1) for v in index)  # the row labels are 0-based here and 1-based in R
+            return tuple(str(v) for v in index)
+        return tuple(str(i + 1) for i in range(self.k_all))
+
+    @property
+    def rownames(self) -> tuple[str, ...]:
+        """The row names of the rows used in the fit (those of metafor's ``X``)."""
+        names = self.names_all
+        return tuple(names[i] for i in numpy.flatnonzero(self.keep))
+
+    @property
+    def rownames_f(self) -> tuple[str, ...]:
+        """The row names of the rows after subsetting (those of metafor's ``X.f``)."""
+        names = self.names_all
+        return tuple(names[i] for i in numpy.flatnonzero(self.rows_f))
+
+    @property
     def k_f(self) -> int:
         """Number of rows after subsetting and before the removal of missing values, metafor's ``k.f``."""
         return int(self.rows_f.sum())

@@ -414,6 +414,17 @@ class SelProfileResult(metafopy.methods.profile.ProfileResult):
     def grid(self) -> FloatArray:
         return self.tau2
 
+    @property
+    def delta(self) -> FloatArray:
+        """The grid of a selection parameter profile.
+
+        Raises:
+            AttributeError: the profile is of ``tau^2``.
+        """
+        if self.comp != 'delta':
+            raise AttributeError('delta')
+        return self.tau2
+
     def to_frame(self) -> pandas.DataFrame:
         return pandas.DataFrame({self.comp: self.tau2, 'll': self.ll})
 
@@ -480,7 +491,7 @@ def profile(
         sav.extend(profile_one(x, 'delta', pos, xlim, ylim, st, step_seq, lltol, exp, **pool) for pos in range(x.deltas) if not x.delta_fix[pos])
         if plot:
             plot_all(sav, ax, plot_args)
-        return sav[0] if len(sav) == 1 else sav
+        return sav[0] if len(sav) == 1 else metafopy.methods.profile.ProfileList(sav)
 
     comp, _, pos = component(x, tau2, delta)
     out = profile_one(x, comp, pos, xlim, ylim, st, step_seq, lltol, exp, **pool)

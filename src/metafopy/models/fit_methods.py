@@ -214,6 +214,78 @@ class TableFields:
         return {name: cells.get(name) for name in self.outdat_names}
 
 
+class SummaryText(str):
+    """The text of ``summary()`` of a fit; as in R, where ``summary()`` returns the fit with another print method, its attributes are those of the fit."""
+
+    fit: typing.Any
+
+    def __new__(cls, text: str, fit: typing.Any) -> typing.Self:
+        obj = super().__new__(cls, text)
+        obj.fit = fit
+        return obj
+
+    def __getattr__(self, name: str) -> typing.Any:
+        if name == 'fit':
+            raise AttributeError(name)
+        return getattr(self.fit, name)
+
+
+class RobustFields:
+    """The fields metafor adds to a model made robust by ``robust()`` (``cluster``, ``n``, ``tcl``, ``vbest``, ``robumethod``, ``meat``, ...); they are
+    read from ``robust`` (:class:`metafopy.models.robust_info.RobustInfo`) of the fit and are ``None`` for a model that is not robust."""
+
+    __slots__ = ()
+
+    @property
+    def robust_info(self) -> typing.Any:
+        return typing.cast(typing.Any, self).robust
+
+    @property
+    def cluster(self) -> numpy.typing.NDArray[numpy.object_] | None:
+        """The cluster of each study of a model made robust with :func:`metafopy.robust` (metafor's ``cluster``), ``None`` otherwise."""
+        return None if self.robust_info is None else self.robust_info.cluster
+
+    @property
+    def n(self) -> int | None:
+        """The number of clusters of a robust model (metafor's ``n``), ``None`` otherwise."""
+        return None if self.robust_info is None else self.robust_info.n
+
+    @property
+    def tcl(self) -> numpy.typing.NDArray[numpy.intp] | None:
+        """The number of studies in each cluster of a robust model (metafor's ``tcl``), ``None`` otherwise."""
+        return None if self.robust_info is None else self.robust_info.tcl
+
+    @property
+    def vbest(self) -> str | None:
+        """The variance estimator of a robust model (``'CR0'``, ``'CR1'``, ..., metafor's ``vbest``), ``None`` otherwise."""
+        return None if self.robust_info is None else self.robust_info.vbest
+
+    @property
+    def robumethod(self) -> str | None:
+        """``'default'`` or ``'clubSandwich'`` for a robust model (metafor's ``robumethod``), ``None`` otherwise."""
+        return None if self.robust_info is None else self.robust_info.robumethod
+
+    @property
+    def meat(self) -> numpy.typing.NDArray[numpy.float64] | None:
+        """The block-diagonal matrix of residual cross-products of a robust model (metafor's ``meat``), ``None`` without one (``clubSandwich`` fits too)."""
+        return None if self.robust_info is None else self.robust_info.meat
+
+    @property
+    def coef_test(self) -> str | None:
+        """The test of the coefficients of a ``club_sandwich`` model (metafor's ``coef_test``), ``None`` otherwise."""
+        return None if self.robust_info is None else self.robust_info.coef_test
+
+    @property
+    def conf_test(self) -> str | None:
+        """The test behind the confidence intervals of a ``club_sandwich`` model (metafor's ``conf_test``), ``None`` otherwise."""
+        return None if self.robust_info is None else self.robust_info.conf_test
+
+    @property
+    def wald_test(self) -> str | None:
+        """The Wald-type test of a ``club_sandwich`` model (metafor's ``wald_test``), ``None`` otherwise."""
+        return None if self.robust_info is None else self.robust_info.wald_test
+
+
 class FitMethods:
     """Mixin of the generic accessors of metafor fits (``nobs()``, ``df.residual()``, ``formula()``, ...)."""
 
