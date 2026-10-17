@@ -52,6 +52,9 @@ class LogLik(float):
         out.df = df
         return out
 
+    def __reduce__(self) -> tuple[typing.Any, ...]:
+        return (LogLik, (float(self), self.df))
+
     def __str__(self) -> str:
         return f"'log Lik.' {float(self):.7g} (df={self.df})"
 

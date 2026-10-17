@@ -193,7 +193,7 @@ def formula_of(obj: Fit, type: str = 'mods') -> str | None:
 
 def deparse_rhs(rhs: str) -> str:
     """R's deparse of a one-sided formula: ``~ablat + year`` (no space after the tilde, one space around ``+`` and ``*``)."""
-    text = re.sub(r'\s*([+*])\s*', r' \1 ', rhs.strip())
+    text = re.sub(r'\s*(\*\*|[+*])\s*', lambda m: m.group(1) if m.group(1) == '**' else f' {m.group(1)} ', rhs.strip())
     return '~' + re.sub(r'\s+', ' ', text)
 
 

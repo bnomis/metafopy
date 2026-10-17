@@ -200,7 +200,9 @@ def test_round2_influence_frames_and_cumul_ids(dat: pandas.DataFrame) -> None:
     assert isinstance(infl.inf, pandas.DataFrame)
     assert isinstance(infl.dfbs, pandas.DataFrame)
     assert infl.dfbs.shape == (13, 1)
-    assert len(metafopy.cumul(res).ids) == 13
+    ids = metafopy.cumul(res).ids
+    assert ids is not None
+    assert len(ids) == 13
 
 
 def test_round2_loglik_prints_like_r(dat: pandas.DataFrame) -> None:
