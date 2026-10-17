@@ -735,7 +735,8 @@ find = [{ id = "matrix/coef/permutest_mods" }]
 id = "a6-selmodel-digits"
 audit = 6
 text = "selmodel() does not inherit digits from the fit"
-find = [{ id = "matrix/print/sel_mods_bcg", path = "*digits*" }, { id = "matrix/print/sel_bcg", path = "*digits*" }]
+find = [{ id = "matrix/print/sel_digits", path = "*digits*" }]
+hint = ["matrix/print/sel_digits"]
 
 [[item]]
 id = "a6-blup-digits"

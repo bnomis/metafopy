@@ -942,6 +942,23 @@
   "meta": {}
  },
  {
+  "name": "sel_digits",
+  "fn": "selmodel",
+  "args": {
+   "type": "stepfun",
+   "steps": [
+    0.025,
+    0.1,
+    0.5,
+    1
+   ]
+  },
+  "target": {
+   "$ref": "uni_digits"
+  },
+  "meta": {}
+ },
+ {
   "name": "uni_tau0",
   "fn": "rma",
   "args": {
