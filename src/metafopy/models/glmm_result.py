@@ -112,6 +112,17 @@ class GLMMResult(metafopy.models.fit_methods.TableFields, metafopy.models.fit_me
     # -- accessors ---------------------------------------------------------
 
     @property
+    def outdat_f(self) -> dict[str, FloatArray | None]:
+        """The counts of the tables after subsetting; ``ni`` holds the sample sizes of those tables, as in metafor's ``outdat.f``.
+
+        See ``rma.glmm`` in <https://github.com/wviechtb/metafor/blob/master/R/rma.glmm.r>.
+        """
+        cells = self.tables.cells_f
+        out: dict[str, FloatArray | None] = {name: cells.get(name) for name in self.outdat_names}
+        out['ni'] = self.tables.ni_f
+        return out
+
+    @property
     def dfs(self) -> int | None:
         """The degrees of freedom of the tests of the coefficients (``None`` for the z-test), metafor's ``dfs``."""
         return self.ddf
