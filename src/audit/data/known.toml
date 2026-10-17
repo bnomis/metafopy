@@ -88,3 +88,39 @@ kind = "refused-where-R-works"
 detail = "*unknown dataset*"
 reason = "The data sets that are lists of data frames (not tables) are not bundled."
 ref = "docs/differences.md"
+
+[[known]]
+match = "api/*/code[1-4]"
+kind = "missing-arg"
+reason = "code1 to code4 are undocumented switches R reads from '...' to debug a computation (ddd$code1); they have no stated behaviour to match."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/*/progbar"
+kind = "default-diff"
+reason = "progbar defaults to False: a text progress bar has no use outside a console and would pollute notebook output."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/plot/*"
+kind = "missing-arg"
+reason = "plot_rma and its relatives take the graphical parameters of R's par() and plot() as explicit keywords, so the ones that have no matplotlib counterpart are refused."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/*/nearPD"
+kind = "missing-arg"
+reason = "R documents the formal as nearpd and reads the old spelling nearPD from '...' only to be compatible; Python has nearpd."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/*/formula."
+kind = "missing-arg"
+reason = "update(formula.=) is the stats::update.default spelling of a formula edit; update takes formula as a keyword."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/metafor.news"
+kind = "missing-function"
+reason = "metafor.news() opens the R package's NEWS file; the Python changelog is the repository's."
+ref = "docs/differences.md"
