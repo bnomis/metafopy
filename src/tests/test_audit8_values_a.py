@@ -7,6 +7,7 @@ import numpy
 import pandas
 import pytest
 
+import audit.rlib
 import metafopy
 import metafopy.datasets
 
@@ -355,3 +356,20 @@ def test_regtest_of_estimates_in_an_escalc_frame_keeps_the_measure() -> None:
     data = bcg_frame()
     out: typing.Any = metafopy.regtest('yi', vi='vi', data=data)
     assert out.fit.measure == 'RR'
+
+
+def test_structure_with_a_vector_class_is_not_a_factor() -> None:
+    # structure(14.3, dim = c(1L, 1L), class = c('vcovmat', 'matrix')) crashed on the comparison of the class vector with 'factor'
+    out = audit.rlib.r_structure(numpy.array([14.3]), dim=numpy.array([1, 1]), **{'class': numpy.array(['vcovmat', 'matrix'], dtype=object)})
+    assert out.shape == (1, 1)
+
+
+def test_formula_names_outside_the_data_are_found_in_the_script() -> None:
+    # R: rma(yi, vi, mods = ~ alloc.random + year, data = dat) finds alloc.random in the calling environment
+    data = bcg_frame()
+    env = audit.rlib.Env()
+    env.vars['alloc.random'] = (data['alloc'] == 'random').to_numpy().astype(float)
+    out = audit.rlib.formula_data(env, metafopy.rma, {'mods': '~ alloc.random + year', 'data': data})
+    assert 'alloc.random' in out['data'].columns
+    assert out['data'].attrs == data.attrs
+    assert 'alloc.random' not in data.columns

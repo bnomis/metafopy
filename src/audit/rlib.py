@@ -641,7 +641,8 @@ def r_structure(x: Value, **kw: Value) -> Value:
     if isinstance(kw.get('class'), str) and kw['class'] == 'data.frame' and isinstance(x, dict):
         return pandas.DataFrame({k: numpy.atleast_1d(numpy.asarray(v)) for k, v in x.items()})
     levels = kw.get('levels')
-    if kw.get('class') == 'factor' and levels is not None and not isinstance(x, (dict, pandas.DataFrame)):
+    classes = [str(c) for c in numpy.atleast_1d(numpy.asarray(kw['class']))] if kw.get('class') is not None else []
+    if 'factor' in classes and levels is not None and not isinstance(x, (dict, pandas.DataFrame)):
         # a factor stored as its integer codes: the harness compares a factor by its labels
         labels = [str(v) for v in numpy.atleast_1d(numpy.asarray(levels))]
         return numpy.array([None if numpy.isnan(float(c)) else labels[int(c) - 1] for c in numpy.atleast_1d(numpy.asarray(x, dtype=float))], dtype=object)
@@ -1301,14 +1302,29 @@ def formula_data(env: Env, fn: typing.Callable[..., typing.Any], kwargs: dict[st
         parameters = inspect.signature(fn.func if isinstance(fn, functools.partial) else fn).parameters
     except TypeError, ValueError:
         return kwargs
-    if 'data' in kwargs or 'data' not in parameters:
+    if 'data' not in parameters:
+        return kwargs
+    given = kwargs.get('data')
+    if 'data' in kwargs and not isinstance(given, pandas.DataFrame):
         return kwargs
     names = {name for v in kwargs.values() if isinstance(v, str) and v.lstrip().startswith('~') for name in re.findall(r'[A-Za-z_.][A-Za-z0-9_.]*', v)}
     columns: dict[str, Value] = {}
     for name in sorted(names):
         value = env.vars.get(name)
+        if isinstance(given, pandas.DataFrame) and name in given.columns:
+            continue
         if isinstance(value, (list, tuple, numpy.ndarray, pandas.Series)) and numpy.ndim(value) == 1:
             columns[name] = numpy.asarray(value)
+    if isinstance(given, pandas.DataFrame):
+        # R looks a name up in the data first and then in the calling environment: the script's variables of the rows of the data are added
+        extra = {k: v for k, v in columns.items() if len(v) == len(given)}
+        if not extra:
+            return kwargs
+        frame = given.copy()
+        frame.attrs = dict(given.attrs)
+        for k, v in extra.items():
+            frame[k] = v
+        return {**kwargs, 'data': frame}
     if not columns or len({len(v) for v in columns.values()}) != 1:
         return kwargs
     return {**kwargs, 'data': pandas.DataFrame(columns)}
