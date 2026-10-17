@@ -100,3 +100,38 @@ def test_predict_of_mantel_haenszel_fit_carries_a_method() -> None:
     data = metafopy.datasets.load('dat.bcg')
     fit = metafopy.rma_mh(ai='tpos', bi='tneg', ci='cpos', di='cneg', data=data)
     assert metafopy.predict(fit).method == 'FE'
+
+
+def test_forest_keeps_missing_rows_under_exclude_and_returns_ilab_arguments() -> None:
+    # R 4.3.3, metafor 5.2-1, 2 studies with missing values: forest() has 11 rows and ylim c(-2, 14) under na.omit and
+    # 13 rows and c(-2, 16) under na.exclude and na.pass; without ilab, ilab.xpos = -5 and ilab.pos = 4 come back as given
+    frame = metafopy.datasets.load('dat.bcg').copy()
+    frame.loc[2, 'tpos'] = numpy.nan
+    frame.loc[6, 'cpos'] = numpy.nan
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        data = metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=frame)
+        res = metafopy.rma(yi='yi', vi='vi', data=data)
+        omit = metafopy.forest(res, na_action='omit')
+        exclude = metafopy.forest(res, na_action='exclude')
+        keep = metafopy.forest(res, na_action='pass')
+        given = metafopy.forest(res, ilab_xpos=-5, ilab_pos=4)
+    assert [len(f.rows) for f in (omit, exclude, keep)] == [11, 13, 13]
+    assert [f.ylim for f in (omit, exclude, keep)] == [(-2, 14), (-2, 16), (-2, 16)]
+    assert given.ilab_xpos is not None
+    assert given.ilab_xpos.tolist() == [-5]
+    assert given.ilab_pos == [4]
+
+
+def test_regtest_and_selmodel_refit_keeps_given_labels() -> None:
+    # R 4.3.3, metafor 5.2-1: with slab = paste(author, year) and no missing values the refit keeps the labels (and slab.null is FALSE)
+    frame = metafopy.datasets.load('dat.bcg')
+    labels = [f'{a} {y}' for a, y in zip(frame['author'], frame['year'], strict=True)]
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        data = metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=frame)
+        res = metafopy.rma(yi=data['yi'], vi=data['vi'], slab=labels)
+        views: list[typing.Any] = [metafopy.regtest(res).fit, metafopy.selmodel(res, type='beta')]
+    for view in views:
+        assert view.slab[:2] == ('Aronson 1948', 'Ferguson & Simes 1949')
+        assert view.slab_null is False
