@@ -53,6 +53,7 @@ class TrimfillResult(metafopy.models.rma_uni.RMAResult):
         *,
         signif_stars: bool | None = None,
         signif_legend: bool | None = None,
+        num: bool = False,
     ) -> str:
         digits = metafopy.mfopt.option_digits(digits, self.digits)
         block = [f'Estimated number of missing studies on the {self.side} side: {self.k0} (SE = {metafopy.bias.inputs.fx(self.se_k0, digits)})']
@@ -60,7 +61,7 @@ class TrimfillResult(metafopy.models.rma_uni.RMAResult):
             gap = ' ' * len(str(self.k0))
             p_text = metafopy.bias.inputs.fp(self.p_k0, digits, equal=True, sep=True, pname='p-val ')
             block.append(f'Test of H0: no missing studies on the {self.side} side:     {gap}{p_text}')
-        return '\n' + '\n'.join(block) + '\n' + super().summary(digits, showfit, signif_stars=signif_stars, signif_legend=signif_legend)
+        return '\n' + '\n'.join(block) + '\n' + super().summary(digits, showfit, signif_stars=signif_stars, signif_legend=signif_legend, num=num)
 
     def __str__(self) -> str:
         return self.summary(showfit=False)
