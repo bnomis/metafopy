@@ -446,7 +446,12 @@ def funnel(
             ci_left = ref - zc * numpy.sqrt(vvals + tau2)
             ci_right = ref + zc * numpy.sqrt(vvals + tau2)
             metafopy.plot.draw.poly(
-                axx, numpy.concatenate([ci_left, ci_right[::-1]]), numpy.concatenate([yvals, yvals[::-1]]), col=shade_c[m], border=None, zorder=0.6
+                axx,
+                numpy.concatenate([ci_left, ci_right[::-1]]),
+                numpy.concatenate([yvals, yvals[::-1]]),
+                col=shade_c[m] if m < len(shade_c) else None,
+                border=None,
+                zorder=0.6,
             )
             metafopy.plot.draw.line(axx, ci_left, yvals, lty=lt[0], col=colci_c).set_zorder(0.7)
             metafopy.plot.draw.line(axx, ci_right, yvals, lty=lt[0], col=colci_c).set_zorder(0.7)
@@ -574,10 +579,11 @@ def funnel_legend(
         lv = [*level, 0.0]
         nd = max(len(f'{v:.8g}'.rstrip('0')) for v in lv) - 2
         nd = max(0, nd)
+        fills = [*shade, back]
         for i, v in enumerate(lv):
             hi = 1.0 if i == 0 else lv[i - 1]
             labels.append(f'{v:.{nd}f} < p <= {hi:.{nd}f}')
-            handles.append(matplotlib.patches.Patch(facecolor=metafopy.plot.draw.rcolor([*shade, back][i]), edgecolor=metafopy.plot.draw.rcolor(colci)))
+            handles.append(matplotlib.patches.Patch(facecolor=metafopy.plot.draw.rcolor(fills[i % len(fills)]), edgecolor=metafopy.plot.draw.rcolor(colci)))
     elif opts['show'] == 'cis':
         for v, sc in zip(level, shade, strict=False):
             labels.append(f'{100 - 100 * v:g}% CI Region')
