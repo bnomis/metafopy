@@ -206,6 +206,7 @@ def regplot(
     fixed: bool = False,
     ax: matplotlib.axes.Axes | None = None,
     xaxt: str = 's',
+    na_action: metafopy.methods.common.NAAction = 'omit',
 ) -> RegplotResult:
     """Meta-analytic scatterplot of a meta-regression model (``regplot.rma``).
 
@@ -224,6 +225,8 @@ def regplot(
     ``xaxt='n'`` leaves out the horizontal axis.
     ``grep=True`` makes a string ``mod`` a regular expression searched for in the coefficient names (which must find exactly one) and
     ``fixed=True`` a literal string instead (the ``grep`` and ``fixed`` arguments metafor reads through ``...``).
+    ``na_action`` stands for R's ``options(na.action=)``: ``'fail'`` stops when the regression line is drawn (``pred=True``) and studies were left out of the
+    fit, the other choices give the same plot.
 
     ``x`` is a fit of :func:`metafopy.rma`, including location-scale models, of :func:`metafopy.selmodel`, of :func:`metafopy.rma_mv`
     or of :func:`metafopy.rma_glmm`; the bands are the predictions of the model, so no prediction interval is drawn where
@@ -233,10 +236,13 @@ def regplot(
     Returns a :class:`RegplotResult` with the plotted coordinates and the axes; :func:`points_regplot` redraws its points.
 
     Raises:
-        metafopy.errors.InputError: the model has no moderator or an argument is invalid.
+        metafopy.errors.InputError: the model has no moderator or an argument is invalid, or ``na_action='fail'`` and studies were left out.
     """
     metafopy.methods.fitview.check_class(x, notav=('rma.mh', 'rma.peto'))
+    metafopy.methods.common.check_na_action(na_action)
     view = metafopy.methods.fitview.fit_view(x)
+    if na_action == 'fail' and pred is True and view.na_rows is not None and view.na_rows.any():
+        raise metafopy.errors.InputError('Missing values in results.')
     if view.int_only:
         raise metafopy.errors.InputError('Cannot draw plot for intercept-only models.')
     if transf is not None and atransf is not None:

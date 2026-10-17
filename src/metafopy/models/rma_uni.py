@@ -136,8 +136,8 @@ class RMAResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_meth
             return tuple(float(v) for v in self.robust.dfs)
         return float(self.robust.dfs[0])
 
-    def coef(self) -> pandas.Series:
-        """Estimated coefficients, indexed by name."""
+    def coef(self, type: str = 'beta') -> pandas.Series:
+        """Estimated coefficients, indexed by name; ``type`` is accepted for metafor's ``coef(x, type=)`` and only location-scale fits use it."""
         return pandas.Series(self.beta, index=list(self.coef_names), name='estimate')
 
     def vcov(self, type: VcovType = 'fixed', *, na_action: NAActionAll = 'omit') -> pandas.DataFrame:

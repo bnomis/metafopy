@@ -148,6 +148,7 @@ def funnel(
     at_lab: collections.abc.Sequence[str] | None = None,
     measure: str | None = None,
     main: str | None = None,
+    na_action: metafopy.methods.common.NAAction = 'omit',
 ) -> FunnelResult:
     """Funnel plot of a fitted model (``funnel.rma``) or of estimates with their variances (``funnel.default``).
 
@@ -162,12 +163,15 @@ def funnel(
     for models with moderators (``'rstandard'`` or ``'rstudent'``). Pass ``ni`` (or fit the model with
     ``ni``) for the sample-size axes. For a trim-and-fill result the imputed studies are drawn
     with symbol ``pch_fill`` (open by default). ``main`` is the title of the plot. ``legend`` is only approximated (a matplotlib legend).
+    ``na_action`` stands for R's ``options(na.action=)``: estimates with missing values are left out, except for ``'fail'``, which stops; it has no effect
+    on a fitted model.
 
     Returns a :class:`FunnelResult` with the plotted coordinates and the axes.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InputError: an argument or the data is invalid, or values are missing and ``na_action='fail'``.
     """
+    metafopy.methods.common.check_na_action(na_action)
     if yaxis not in YAXES:
         raise metafopy.errors.InputError(f'yaxis must be one of {YAXES}')
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
@@ -307,6 +311,8 @@ def funnel(
                 raise metafopy.errors.InputError('No sample size information was specified (ni).')
             has_na |= numpy.isnan(ni_a)
         if has_na.any():
+            if na_action == 'fail':
+                raise metafopy.errors.InputError('Missing values in data.')
             ok = ~has_na
             yi, vi_a, sei_a = yi[ok], vi_a[ok], sei_a[ok]
             if ni_a is not None:

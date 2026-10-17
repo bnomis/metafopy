@@ -16,6 +16,8 @@ import scipy.sparse
 
 import metafopy.core.rng
 import metafopy.errors
+import metafopy.methods.common
+import metafopy.methods.fitted
 import metafopy.models.binary
 import metafopy.models.glmm_result
 import metafopy.models.mv_result
@@ -58,6 +60,7 @@ def simulate(
     *,
     withvb: bool = False,
     rng: metafopy.core.rng.RRandom | None = None,
+    na_action: metafopy.methods.common.NAAction = 'omit',
 ) -> pandas.DataFrame:
     """Simulate ``nsim`` sets of outcomes from a fitted model, as metafor's ``simulate.rma``.
 
@@ -65,13 +68,14 @@ def simulate(
     matrix (``diag(vi + tau2)`` for ``rma_uni`` and location-scale fits, ``M`` for ``rma_mv``); ``withvb=True``
     adds ``X vb X'`` (metafor's ``withvb`` passed through ``...``). ``olim`` clamps the values to an interval.
     With ``seed`` a generator seeded with it is used, leaving the global one (:func:`metafopy.set_seed`)
-    untouched, as R restores ``.Random.seed``; without it the global generator (or ``rng``) advances. The rows are
-    the studies used in the fit (R's default ``na.action = "na.omit"``), the columns ``sim_1``, ``sim_2``, ...;
-    ``attrs['seed']`` holds ``seed``.
+    untouched, as R restores ``.Random.seed``; without it the global generator (or ``rng``) advances. The columns are ``sim_1``, ``sim_2``, ...;
+    ``attrs['seed']`` holds ``seed``. ``na_action`` stands for R's ``options(na.action=)``: with ``'omit'`` (default) the rows are the studies used in the
+    fit, with ``'exclude'``, ``'pass'`` and ``'fail'`` (which R does not enforce here) one row for every study of the subset, NaN for the studies left out.
 
     Raises:
         metafopy.errors.InputError: the model type is not supported or an argument is invalid.
     """
+    metafopy.methods.common.check_na_action(na_action)
     # R's simulate.rma also receives fits it rejects, so the type is checked at run time
     fit: typing.Any = object
     unsupported = (
@@ -99,6 +103,11 @@ def simulate(
         lo, hi = sorted(float(v) for v in olim)
         val = numpy.clip(val, lo, hi)
     slab = list(fit.slab)
+    if na_action != 'omit':
+        rows = metafopy.methods.fitted.rows_of(fit)
+        padded = numpy.full((rows.not_na.shape[0], nsim), numpy.nan)
+        padded[rows.not_na] = val
+        val, slab = padded, list(rows.slab)
     index = slab if len(slab) == val.shape[0] else None
     out = pandas.DataFrame(val, index=index, columns=[f'sim_{j + 1}' for j in range(nsim)])
     out.attrs['seed'] = seed

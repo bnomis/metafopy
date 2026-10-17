@@ -23,6 +23,7 @@ import metafopy.bias.inputs
 import metafopy.core.parallel
 import metafopy.core.rng
 import metafopy.errors
+import metafopy.methods.common
 import metafopy.methods.fitview
 import metafopy.mfopt
 import metafopy.models.rma_uni
@@ -314,6 +315,7 @@ def hettest(
     seed: int | None = None,
     mom: bool = False,
     model: metafopy.models.rma_uni.RMAResult | None = None,
+    na_action: metafopy.methods.common.NAAction = 'omit',
 ) -> HettestResult:
     """Test for heteroscedastic heterogeneity in a random-effects model; ``x`` is a vector of estimates (with ``vi`` or ``sei``) or a model without moderators.
 
@@ -324,11 +326,15 @@ def hettest(
     ``model`` is metafor's undocumented argument for a vector ``x``: an intercept-only model already fitted to the same data, used as the null model
     instead of fitting it again (its ``beta`` and ``tau2`` and the log-likelihood of the ``method`` are used).
     Unlike metafor, ``progbar`` is off by default. Without ``seed`` the bootstrap uses the generator of :func:`metafopy.set_seed`.
+    ``na_action`` stands for R's ``options(na.action=)``: studies with missing values in a vector of estimates are omitted with a warning, except for
+    ``'fail'``, which stops; it has no effect on a fitted model.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid, or the null model or the tau^2_i could not be estimated.
+        metafopy.errors.InputError: an argument or the data is invalid, the null model or the tau^2_i could not be estimated, or studies are missing
+            and ``na_action='fail'``.
         metafopy.errors.NotSupportedError: ``x`` is a model of a class the test is not available for.
     """
+    metafopy.methods.common.check_na_action(na_action)
     tests = (test.lower(),) if isinstance(test, str) else tuple(t.lower() for t in test)
     if not tests or any(t not in TESTS for t in tests):
         raise metafopy.errors.InputError("Unknown option specified for the 'test' argument.")
@@ -362,7 +368,9 @@ def hettest(
         stored_digits = getattr(x, 'digits', 4)
     else:
         fit_method = 'REML' if method is None else method
-        yi, v_in, _ = metafopy.bias.inputs.vector_inputs(typing.cast(numpy.typing.ArrayLike | str, x), vi, sei, subset=subset, data=data, what='the test')
+        yi, v_in, _ = metafopy.bias.inputs.vector_inputs(
+            typing.cast(numpy.typing.ArrayLike | str, x), vi, sei, subset=subset, data=data, what='the test', na_action=na_action
+        )
         if v_in is None:
             raise metafopy.errors.InputError("Must specify the 'vi' or 'sei' argument.")
         v = v_in
