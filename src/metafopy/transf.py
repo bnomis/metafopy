@@ -569,7 +569,8 @@ def recycle_pair(x: FloatArray, n: FloatArray) -> tuple[FloatArray, FloatArray]:
         return x[:0], n[:0]
     if size % x.size != 0 or size % n.size != 0:
         warnings.warn('longer object length is not a multiple of shorter object length', stacklevel=4)
-    return (x if x.size == size else numpy.resize(x, size)), (n if n.size == size else numpy.resize(n, size))
+    shape = x.shape if x.size == size else n.shape
+    return numpy.resize(x, size).reshape(shape), numpy.resize(n, size).reshape(shape)
 
 
 def transf_pft(xi: numpy.typing.ArrayLike, ni: numpy.typing.ArrayLike) -> FloatArray:

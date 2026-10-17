@@ -661,7 +661,7 @@ def forest(
     steps: int = 5,
     level: float | None = None,
     refline: float | None = 0,
-    digits: int | collections.abc.Sequence[int] = 2,
+    digits: int | collections.abc.Sequence[float] | numpy.typing.NDArray[numpy.floating] = 2,
     width: int | collections.abc.Sequence[int] | None = None,
     xlab: str | collections.abc.Sequence[str] | None = None,
     slab: collections.abc.Sequence[typing.Any] | float | None = None,
@@ -820,6 +820,7 @@ def forest(
     axx = metafopy.plot.rutils.get_ax(ax)
     dig = [digits] * 3 if isinstance(digits, int) else list(digits)
     drop0 = all(isinstance(v, int | numpy.integer) for v in dig)  # R: drop trailing zeros of the axis labels only if digits is an integer (2L)
+    dig = [int(v) for v in dig]
     if len(dig) == 1:
         dig = dig * 3
     if len(dig) == 2:

@@ -304,7 +304,7 @@ def set_btt(btt: Btt, p: int, int_incl: bool, names: collections.abc.Sequence[st
         if not found:
             raise metafopy.errors.InputError("cannot identify coefficient(s) matching the 'btt' pattern")
         return found
-    idx = [btt] if isinstance(btt, int) else list(btt)
+    idx = numpy.atleast_1d(numpy.asarray(btt))  # R has one number type: ``btt = 2`` is a double
     out = sorted({int(i) for i in idx})
     if any(i < 0 or i >= p for i in out):
         raise metafopy.errors.InputError(f"'btt' indices must lie in 0..{p - 1}")
