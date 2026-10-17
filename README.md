@@ -20,9 +20,21 @@ print(confint(res))
 print(predict(res, transf=np.exp))
 ```
 
+## Building
+
 Requires Python >= 3.14.7, < 3.15.
 
-## Documentation
+```bash
+git clone https://github.com/bnomis/metafopy
+cd metafopy
+uv sync
+source bin/activate.sh
+pytest --mpl   # --mpl also compares the plots with the baseline images (Linux only)
+mypy
+ruff check .
+```
+
+## Building the docs
 
 The user manual is in `docs/` (installation, tutorial, user guide, worked analyses, a guide for users coming from R and the function reference).
 
@@ -34,16 +46,6 @@ mkdocs serve
 ```
 
 `pytest src/tests/test_docs_examples.py` runs every Python example in the manual.
-
-## Install (development)
-
-```bash
-uv sync
-source bin/activate.sh
-pytest --mpl   # --mpl also compares the plots with the baseline images (Linux only)
-mypy
-ruff check .
-```
 
 ## Validation against R
 
@@ -65,4 +67,6 @@ docker run --rm -v "$PWD":/work -w /work metafopy-r Rscript src/tests/r/generate
 
 ## License
 
-GPL-2.0-or-later, the same as metafor (GPL >= 2). metafopy ports its algorithms, so it is distributed under the same license. The bundled datasets come from the R package [metadat](https://cran.r-project.org/package=metadat) (GPL >= 2).
+GPL-2.0-or-later, the same as metafor (GPL >= 2).
+
+The bundled datasets come from the R package [metadat](https://cran.r-project.org/package=metadat) (GPL >= 2).
