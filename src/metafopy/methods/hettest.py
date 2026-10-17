@@ -316,6 +316,7 @@ def hettest(
     mom: bool = False,
     model: metafopy.models.rma_uni.RMAResult | None = None,
     na_action: metafopy.methods.common.NAAction = 'omit',
+    verbose: bool = False,
 ) -> HettestResult:
     """Test for heteroscedastic heterogeneity in a random-effects model; ``x`` is a vector of estimates (with ``vi`` or ``sei``) or a model without moderators.
 
@@ -325,7 +326,8 @@ def hettest(
     model. ``control`` takes ``tau2i_init``, ``threshold`` (1e-8) and ``maxiter`` (1000) and ``mom=True`` estimates the tau^2_i by the method of moments.
     ``model`` is metafor's undocumented argument for a vector ``x``: an intercept-only model already fitted to the same data, used as the null model
     instead of fitting it again (its ``beta`` and ``tau2`` and the log-likelihood of the ``method`` are used).
-    Unlike metafor, ``progbar`` is off by default. Without ``seed`` the bootstrap uses the generator of :func:`metafopy.set_seed`.
+    ``verbose`` is read by metafor and has no effect there either. Unlike metafor, ``progbar`` is off by default.
+    Without ``seed`` the bootstrap uses the generator of :func:`metafopy.set_seed`.
     ``na_action`` stands for R's ``options(na.action=)``: studies with missing values in a vector of estimates are omitted with a warning, except for
     ``'fail'``, which stops; it has no effect on a fitted model.
 

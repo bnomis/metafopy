@@ -207,6 +207,8 @@ def regplot(
     ax: matplotlib.axes.Axes | None = None,
     xaxt: str = 's',
     na_action: metafopy.methods.common.NAAction = 'omit',
+    at_lab: collections.abc.Sequence[str] | None = None,
+    box_lty: str = 'solid',
 ) -> RegplotResult:
     """Meta-analytic scatterplot of a meta-regression model (``regplot.rma``).
 
@@ -219,7 +221,9 @@ def regplot(
     ``'seinv'`` or ``'vinv'`` to scale the inverse standard errors or variances instead). ``label`` labels the studies
     (``True``/``'all'``, ``'ciout'``/``'piout'`` for those outside the bands, a boolean array or 0-based indices), with
     ``offset`` the distance from the point in percent of the vertical range and ``labsize`` the text size. ``legend``
-    adds a legend (``True``, a location such as ``'topright'`` or a dict with ``x`` and ``cex``).
+    adds a legend (``True``, a location such as ``'topright'`` or a dict with ``x`` and ``cex``);
+    ``box_lty`` is the line type of its frame (``'blank'`` for none). ``at_lab`` gives the labels of the ticks ``at`` of the vertical axis
+    (one per value of ``at``, or per tick when ``at`` is not given) instead of the formatted values.
 
     ``bty`` (``'o'`` or ``'l'``) is the box type and ``las`` the orientation of the labels of the vertical axis (0 = parallel to it, 1 = horizontal).
     ``xaxt='n'`` leaves out the horizontal axis.
@@ -406,6 +410,13 @@ def regplot(
         yt = at_in[(at_in > uy[0]) & (at_in < uy[1])]
     yvals = metafopy.methods.common.apply_each(yt, atransf, targs) if atransf is not None else yt
     ylabels = [metafopy.plot.rutils.fmtx1(float(v), dg) for v in yvals]  # R: drop0trailing needs an integer `digits`, not the default double
+    if at_lab is not None:
+        labels_given = [str(v) for v in at_lab]
+        if at_in is not None and len(labels_given) == at_in.shape[0]:
+            labels_given = [lab for lab, v in zip(labels_given, at_in, strict=True) if uy[0] < v < uy[1]]
+        if len(labels_given) != len(yt):
+            raise metafopy.errors.InputError(f"Length of the 'at_lab' argument ({len(labels_given)}) does not match the number of ticks ({len(yt)}).")
+        ylabels = labels_given
     metafopy.plot.draw.plain_axes(
         axx, ux, uy, None if xaxt == 'n' else xt, yt, None if xaxt == 'n' else metafopy.plot.rutils.rformat(xt), ylabels, bty=bty, thin_ylabels=True
     )
@@ -472,7 +483,7 @@ def regplot(
     if flags.any():
         draw_labels(axx, xi, yi_t, yi_pred_t, sizes, flags, slab_l, off3, labsize)
 
-    regplot_legend(axx, legend, draw_pred, ci, pi, lvl, dg, line_types, line_cols, line_widths, shade_c, col_l, bg_l, pch_l)
+    regplot_legend(axx, legend, draw_pred, ci, pi, lvl, dg, line_types, line_cols, line_widths, shade_c, col_l, bg_l, pch_l, box_lty)
     return RegplotResult(axx, xi, yi_t, sizes, yi_pred_t, flags, tuple(slab_l), order, off3, labsize, view.ids, tuple(pch_l), tuple(col_l), tuple(bg_l))
 
 
@@ -545,6 +556,7 @@ def regplot_legend(
     col: list[typing.Any],
     bg: list[typing.Any],
     pch: list[int],
+    box_lty: str = 'solid',
 ) -> None:
     """The legend of ``regplot()``: studies, regression line and the confidence and prediction intervals."""
     opts: dict[str, typing.Any] = {'x': 'topright', 'cex': 1.0}
@@ -596,10 +608,14 @@ def regplot_legend(
         )
         labels.append(f'{percent} Prediction Interval')
     if handles:
-        ax.legend(
+        box = ax.legend(
             handles,
             labels,
             loc=typing.cast(typing.Any, LEGEND_LOC.get(str(opts['x']), str(opts['x']))),
             fontsize=metafopy.plot.draw.base_fontsize() * cex,
             framealpha=1.0,
         )
+        if box_lty == 'blank':
+            box.get_frame().set_edgecolor('none')
+        else:
+            box.get_frame().set_linestyle(dash(box_lty))

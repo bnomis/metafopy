@@ -24,6 +24,7 @@ import pandas
 
 import metafopy.core.parallel
 import metafopy.core.rng
+import metafopy.core.timing
 import metafopy.errors
 import metafopy.methods.ls_common
 import metafopy.methods.permutest
@@ -279,6 +280,7 @@ def sorted_rows(M: FloatArray) -> tuple[float, numpy.typing.NDArray[numpy.intp],
 
 
 @metafopy.methods.permutest.permutest.register
+@metafopy.core.timing.timed
 def permutest_rma_ls(
     x: metafopy.models.rma_ls_result.RMALSResult,
     exact: bool | typing.Literal['i'] = False,
@@ -293,6 +295,9 @@ def permutest_rma_ls(
     skip_beta: bool = False,
     skip_alpha: bool = False,
     progbar: bool = False,
+    permci: bool = False,
+    fixed: bool = False,
+    verbose: bool = False,
 ) -> LSPermutestResult | list[float]:
     """Permutation tests for the location and scale coefficients of a location-scale fit.
 
@@ -301,7 +306,9 @@ def permutest_rma_ls(
     coefficients the omnibus tests refer to; ``skip_beta`` and ``skip_alpha`` skip a part. ``seed`` seeds the generator for each
     approximate part; without it the seeds are drawn from the module's R-compatible generator (see :func:`metafopy.set_seed`).
     ``control`` takes ``comptol``, ``alternative``, ``p2defn`` and ``stat`` as in :func:`metafopy.permutest`. ``progbar=True`` prints a progress bar
-    to stderr for each part (metafor's default is ``TRUE``).
+    to stderr for each part (metafor's default is ``TRUE``). ``permci=True`` only warns, as permutation-based confidence intervals are not available
+    for location-scale models in metafor either. ``fixed=True`` matches a string ``btt`` or ``att`` literally instead of as a regular expression.
+    ``verbose`` is accepted for metafor's messages about refits that fail during the permutations, which are not raised here.
 
     The scale part with ``control={'p2defn': 'px2'}`` uses the observed test statistics; metafor 5.2-1 has a typo there that
     makes these p-values ``NaN``.
@@ -319,14 +326,16 @@ def permutest_rma_ls(
     con = metafopy.methods.permutest.permutest_control(control)
     if tol is not None:
         con['comptol'] = tol
+    if permci is True:
+        warnings.warn('Permutation-based CIs for location-scale models not currently available.', stacklevel=2)
     if isinstance(exact, str) and exact == 'i':
         skip_beta = skip_alpha = True
 
     if btt is not None or att is not None:
         refitted = metafopy.methods.ls_common.refit_ls(
             x,
-            btt=metafopy.models.rma_uni.set_btt(btt, x.p, x.int_incl, x.coef_names) if btt is not None else list(x.btt),
-            att=metafopy.models.rma_uni.set_btt(att, x.q, x.Z_int_incl, x.alpha_names) if att is not None else list(x.att),
+            btt=metafopy.models.rma_uni.set_btt(btt, x.p, x.int_incl, x.coef_names, fixed) if btt is not None else list(x.btt),
+            att=metafopy.models.rma_uni.set_btt(att, x.q, x.Z_int_incl, x.alpha_names, fixed) if att is not None else list(x.att),
             alpha=numpy.where(x.alpha_fix, x.alpha, numpy.nan),
             beta=numpy.where(x.beta_fix, x.beta, numpy.nan) if x.optbeta else None,
             skiphes=False,

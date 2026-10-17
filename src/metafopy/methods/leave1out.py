@@ -18,6 +18,7 @@ import numpy.typing
 import pandas
 
 import metafopy.core.parallel
+import metafopy.core.timing
 import metafopy.errors
 import metafopy.methods.blup
 import metafopy.methods.common
@@ -160,6 +161,7 @@ def collect(
 
 
 @leave1out.register
+@metafopy.core.timing.timed
 def leave1out_rma_uni(
     x: metafopy.models.rma_uni.RMAResult,
     cluster: numpy.typing.ArrayLike | str | None = None,
@@ -262,6 +264,7 @@ def cumul(x: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> CumulResult
 
 
 @cumul.register
+@metafopy.core.timing.timed
 def cumul_rma_uni(
     x: metafopy.models.rma_uni.RMAResult,
     order: numpy.typing.ArrayLike | str | None = None,

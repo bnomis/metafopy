@@ -1751,6 +1751,8 @@ def addpoly(
     predtype: str | None = None,
     pi_type: str | None = None,
     addcred: bool | None = None,
+    cr_lb: numpy.typing.ArrayLike | None = None,
+    cr_ub: numpy.typing.ArrayLike | None = None,
 ) -> matplotlib.axes.Axes:
     """Add polygons (summary estimates) to a forest plot (``addpoly.rma`` and ``addpoly.default``).
 
@@ -1761,7 +1763,7 @@ def addpoly(
     ``transf``, ``atransf``, ``efac``, ``cex``, ``textpos``, ...) are taken from the last
     :func:`forest` call on the same axes. Returns the axes. ``predtype`` (``pi_type`` is its old spelling) is passed on to
     :func:`metafopy.predict` for a fitted model. ``addcred`` is the old spelling of ``addpred`` (read from ``...`` by
-    ``addpoly.rma``) and wins over it for a fitted model.
+    ``addpoly.rma``) and wins over it for a fitted model. ``cr_lb`` and ``cr_ub`` are the old spellings of ``pi_lb`` and ``pi_ub`` and win over them.
 
     ``predstyle`` is ``'line'``, ``'polygon'``, ``'bar'``, ``'shade'`` or ``'dist'`` (the last two draw the predictive
     distribution, see :func:`forest`; they need ``predlim``/``preddist``/``predtail`` as there). For numbers the predictive
@@ -1777,6 +1779,10 @@ def addpoly(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
+    if cr_lb is not None:
+        pi_lb = cr_lb
+    if cr_ub is not None:
+        pi_ub = cr_ub
     if addcred is not None and metafopy.methods.fitview.is_rma(x):
         addpred = addcred
     if isinstance(x, metafopy.methods.predict.PredictResult):

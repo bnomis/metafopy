@@ -27,6 +27,7 @@ import pandas
 
 import metafopy.core.parallel
 import metafopy.core.rng
+import metafopy.core.timing
 import metafopy.core.zeroin
 import metafopy.errors
 import metafopy.methods.common
@@ -193,6 +194,7 @@ def nanmean(a: numpy.typing.NDArray[numpy.bool_] | FloatArray, valid: numpy.typi
 
 
 @permutest.register
+@metafopy.core.timing.timed
 def permutest_rma_uni(
     x: metafopy.models.rma_uni.RMAResult,
     exact: bool | typing.Literal['i'] = False,
@@ -206,6 +208,7 @@ def permutest_rma_uni(
     tol: float | None = None,
     fixed: bool = False,
     progbar: bool = False,
+    verbose: bool = False,
 ) -> PermutestResult | int | float:
     """Permutation test for an ``rma.uni`` fit.
 
@@ -220,6 +223,7 @@ def permutest_rma_uni(
     is left in the state the permutations ended in. ``control`` takes metafor's
     list (``comptol``, ``tol``, ``maxiter``, ``alternative``, ``p2defn``,
     ``stat``, ``cialt``, ``distfac``). ``progbar=True`` prints a progress bar to stderr while the permutations are run (metafor's default is ``TRUE``).
+    ``verbose`` is accepted for metafor's messages about refits that fail during the permutations, which are not raised here.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.

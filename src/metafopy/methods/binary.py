@@ -19,6 +19,7 @@ import scipy.stats
 
 import metafopy.core.parallel
 import metafopy.core.rng
+import metafopy.core.timing
 import metafopy.errors
 import metafopy.methods.common
 import metafopy.methods.confint
@@ -67,14 +68,21 @@ def resolve_transf(x: metafopy.models.binary.FixedBinaryResult, transf: Transf) 
 
 
 @metafopy.methods.confint.confint.register
+@metafopy.core.timing.timed
 def confint_fixed_binary(
     model: metafopy.models.binary.FixedBinaryResult,
     *,
     level: float | None = None,
     transf: Transf = None,
     targs: typing.Any = None,
+    digits: int | None = None,
+    parm: typing.Any = None,
 ) -> metafopy.methods.confint.ConfintResult:
-    """Wald-type confidence interval of the pooled effect (``confint.rma.mh`` / ``confint.rma.peto``); ``transf=True`` exponentiates."""
+    """Wald-type confidence interval of the pooled effect (``confint.rma.mh`` / ``confint.rma.peto``); ``transf=True`` exponentiates.
+
+    ``digits`` is the number of decimals of the printout; ``parm`` is ignored with a warning, as in metafor.
+    """
+    metafopy.methods.confint.warn_parm(parm)
     alpha = model.level if level is None else metafopy.models.rma_uni.level_to_alpha(level)
     crit = float(scipy.stats.norm.isf(alpha / 2))
     beta = model.beta
@@ -88,7 +96,7 @@ def confint_fixed_binary(
     lb, ub = metafopy.methods.common.psort(lb, ub)
     # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
     fixed = pandas.DataFrame({'estimate': beta, 'ci.lb': lb, 'ci.ub': ub}, index=[''])
-    return metafopy.methods.confint.ConfintResult(fixed=fixed, random=None)
+    return metafopy.methods.confint.ConfintResult(fixed=fixed, random=None, digits=metafopy.mfopt.option_digits(digits, model.digits))
 
 
 # -- residuals --------------------------------------------------------------------------------------
@@ -130,6 +138,7 @@ def rstandard_fixed_binary(
 
 
 @metafopy.methods.influence.rstudent.register
+@metafopy.core.timing.timed
 def rstudent_fixed_binary(
     model: metafopy.models.binary.FixedBinaryResult,
     digits: int | None = None,
@@ -214,6 +223,7 @@ def per_table_variable(x: metafopy.models.binary.FixedBinaryResult, values: nump
 
 
 @metafopy.methods.leave1out.leave1out.register
+@metafopy.core.timing.timed
 def leave1out_fixed_binary(
     x: metafopy.models.binary.FixedBinaryResult,
     cluster: numpy.typing.ArrayLike | str | None = None,
@@ -280,6 +290,7 @@ def leave1out_fixed_binary(
 
 
 @metafopy.methods.leave1out.cumul.register
+@metafopy.core.timing.timed
 def cumul_fixed_binary(
     x: metafopy.models.binary.FixedBinaryResult,
     order: numpy.typing.ArrayLike | str | None = None,
@@ -370,6 +381,7 @@ def gosh_binary_block(
 
 
 @metafopy.methods.gosh.gosh.register
+@metafopy.core.timing.timed
 def gosh_fixed_binary(
     x: metafopy.models.binary.FixedBinaryResult,
     subsets: int | None = None,
@@ -380,6 +392,7 @@ def gosh_fixed_binary(
     parallel: metafopy.core.parallel.Parallel = 'no',
     ncpus: int = 1,
     cl: concurrent.futures.Executor | None = None,
+    LB: bool = False,
 ) -> metafopy.methods.gosh.GoshResult:
     """Fit the Mantel-Haenszel or Peto model to subsets of the tables (``gosh.rma``; arguments as in :func:`metafopy.methods.gosh.gosh_rma_uni`).
 

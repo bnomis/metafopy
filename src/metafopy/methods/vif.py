@@ -27,6 +27,7 @@ import pandas
 import metafopy.core.linalg
 import metafopy.core.parallel
 import metafopy.core.rng
+import metafopy.core.timing
 import metafopy.errors
 import metafopy.formula
 import metafopy.methods.blup
@@ -207,6 +208,7 @@ def vif(res: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> VIFResult:
 
 
 @vif.register
+@metafopy.core.timing.timed
 def vif_rma_uni(
     res: metafopy.models.rma_uni.RMAResult,
     btt: BttArg = None,
@@ -222,8 +224,13 @@ def vif_rma_uni(
     digits: int | None = None,
     intercept: bool = False,
     fixed: bool = False,
+    joinb: collections.abc.Sequence[typing.Any] | None = None,
+    LB: bool = False,
+    joina: collections.abc.Sequence[typing.Any] | None = None,
 ) -> VIFResult:
     """(G)VIFs for the coefficients of an ``rma.uni`` meta-regression.
+
+    ``joina`` is accepted as in metafor, which reads it for every fit but uses it for location-scale models only.
 
     ``btt`` takes 0-based indices: an int, a regex or a list of ints gives one
     set of coefficients (one GVIF); a list whose elements include lists or
@@ -241,7 +248,9 @@ def vif_rma_uni(
     includes the intercept among the coefficients (it is left out by default)
     and ``fixed=True`` matches a string ``btt`` literally instead of as a
     regular expression (the ``intercept`` and ``fixed`` arguments metafor reads
-    through ``...``).
+    through ``...``). ``joinb`` gives one label per column of the model matrix; with ``sim`` the columns that share a label are permuted
+    together (metafor's ``joinb``; the columns of the model matrix are then permuted rather than the variables of the data). ``LB=True``
+    asks metafor to balance the load of a ``'snow'`` cluster; the pool here hands out the iterations in order either way, so it changes nothing.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
@@ -259,6 +268,7 @@ def vif_rma_uni(
             raise metafopy.errors.InputError("Argument 'sim' must be >= 2.")
 
     parallel = metafopy.core.parallel.resolve_parallel(parallel, ncpus, cl)
+    join = None if joinb is None else tuple(joinb)
 
     int_incl = res.int_incl
     p = res.p
@@ -309,7 +319,7 @@ def vif_rma_uni(
             seeds = [None] * n_sim  # each iteration continues the global stream, as in R
         else:
             seeds = [int(metafopy.core.rng.get_rng().unif_index(2**31 - 1)) for _ in range(n_sim)]
-        one = functools.partial(vif_sim_one, res, tuple(groups), reestimate, intercept)
+        one = functools.partial(vif_sim_one, res, tuple(groups), reestimate, intercept, join)
         rows = metafopy.core.parallel.map_sims(one, seeds, parallel=parallel, ncpus=ncpus, cl=cl, progbar=progbar)
         sims = numpy.vstack(rows)
         with numpy.errstate(invalid='ignore', divide='ignore'):
@@ -324,7 +334,7 @@ def vif_rma_uni(
         table=tab,
         test=res.test if tab is not None else None,
         sim=sims,
-        sim_type=('data' if res.data.formula_mods is not None else 'X') if sims is not None else None,
+        sim_type=('data' if res.data.formula_mods is not None and join is None else 'X') if sims is not None else None,
         prop=prop,
     )
 
@@ -423,7 +433,7 @@ def refit(res: metafopy.models.rma_uni.RMAResult, X: FloatArray) -> metafopy.mod
         )
 
 
-def permuted_design(res: metafopy.models.rma_uni.RMAResult, rng: metafopy.core.rng.RRandom) -> FloatArray:
+def permuted_design(res: metafopy.models.rma_uni.RMAResult, rng: metafopy.core.rng.RRandom, join: tuple[typing.Any, ...] | None = None) -> FloatArray:
     """The model matrix after shuffling, as metafor's ``.compvifsim`` does.
 
     A model given as a formula has the variables of the data it uses shuffled, in order of appearance in the formula, and the model matrix is
@@ -431,12 +441,16 @@ def permuted_design(res: metafopy.models.rma_uni.RMAResult, rng: metafopy.core.r
     """
     md = res.data
     rows = md.data.loc[md.keep] if md.formula_mods is not None and md.data is not None else None
-    return permute_design(md.formula_mods, rows, res.X, rng)
+    return permute_design(md.formula_mods, rows, res.X, rng, join)
 
 
-def permute_design(formula: str | None, rows: pandas.DataFrame | None, X: FloatArray, rng: metafopy.core.rng.RRandom) -> FloatArray:
+def permute_design(
+    formula: str | None, rows: pandas.DataFrame | None, X: FloatArray, rng: metafopy.core.rng.RRandom, join: collections.abc.Sequence[typing.Any] | None = None
+) -> FloatArray:
     """Shuffle the variables of ``formula`` found in ``rows`` (the data rows used in the fit) and rebuild the model matrix, or else the columns of ``X``."""
     k = X.shape[0]
+    if join is not None:
+        return permute_joined(X, rng, join)
     if formula is not None and rows is not None:
         found = [(m.start(), c) for c in rows.columns if (m := re.search(rf'(?<![\w.]){re.escape(str(c))}(?![\w.])', formula)) is not None]
         frame = rows[[c for _, c in sorted(found, key=lambda t: t[0])]].reset_index(drop=True)
@@ -451,10 +465,34 @@ def permute_design(formula: str | None, rows: pandas.DataFrame | None, X: FloatA
     return Xs
 
 
-def vif_sim_one(res: metafopy.models.rma_uni.RMAResult, groups: tuple[tuple[int, ...], ...], reestimate: bool, intercept: bool, seed: int | None) -> FloatArray:
+def permute_joined(X: FloatArray, rng: metafopy.core.rng.RRandom, join: collections.abc.Sequence[typing.Any]) -> FloatArray:
+    """metafor's ``.permXvif``: the columns of ``X`` with the same label in ``join`` are shuffled together, the labels in order of first appearance.
+
+    Raises:
+        metafopy.errors.InputError: ``join`` does not have one label per column.
+    """
+    if len(join) != X.shape[1]:
+        raise metafopy.errors.InputError(
+            f"Length of the 'join' argument ({len(join)}) does not match the number of columns of the model matrix ({X.shape[1]})."
+        )
+    Xs = X.copy()
+    for label in dict.fromkeys(join):
+        pos = [j for j, b in enumerate(join) if b == label]
+        Xs[:, pos] = X[rng.sample_int(X.shape[0]) - 1][:, pos]
+    return Xs
+
+
+def vif_sim_one(
+    res: metafopy.models.rma_uni.RMAResult,
+    groups: tuple[tuple[int, ...], ...],
+    reestimate: bool,
+    intercept: bool,
+    join: tuple[typing.Any, ...] | None,
+    seed: int | None,
+) -> FloatArray:
     """One iteration of metafor's ``.compvifsim``: (G)VIFs after permuting the model matrix (``seed=None`` continues the global stream)."""
     rng = metafopy.core.rng.get_rng() if seed is None else metafopy.core.rng.RRandom(seed)
-    X = permuted_design(res, rng)
+    X = permuted_design(res, rng, join)
     drop = metafopy.core.linalg.drop_redundant(X)
     if drop.any():
         # a set containing a coefficient that became redundant is infinitely inflated

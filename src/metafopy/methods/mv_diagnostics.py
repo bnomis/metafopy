@@ -24,6 +24,7 @@ import scipy.sparse
 
 import metafopy.core.linalg
 import metafopy.core.parallel
+import metafopy.core.timing
 import metafopy.errors
 import metafopy.methods.blup
 import metafopy.methods.common
@@ -301,6 +302,7 @@ def per_cluster(
     return full[order], [id_label(ids_f[j]) for j in order]
 
 
+@metafopy.core.timing.timed
 def cooks_rma_mv(
     model: MV,
     progbar: bool = False,
@@ -309,6 +311,7 @@ def cooks_rma_mv(
     parallel: metafopy.core.parallel.Parallel = 'no',
     ncpus: int = 1,
     cl: concurrent.futures.Executor | None = None,
+    LB: bool = False,
     *,
     btt: metafopy.models.rma_uni.Btt = None,
     na_action: metafopy.methods.common.NAAction = 'omit',
@@ -318,7 +321,8 @@ def cooks_rma_mv(
     ``cluster`` (a column of the data or a vector for the rows of the original data) deletes whole clusters; the result is
     then indexed by the sorted cluster ids. ``btt`` (0-based) selects the coefficients the distance refers to. With
     ``reestimate=False`` the variance components are not re-estimated in the refits. ``parallel``, ``ncpus`` and ``cl``
-    run the refits in a process pool (see :mod:`metafopy.core.parallel`); ``progbar=True`` prints a progress bar.
+    run the refits in a process pool (see :mod:`metafopy.core.parallel`); ``progbar=True`` prints a progress bar. ``LB`` is accepted as in
+    metafor (load balancing of a cluster) and changes nothing.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
@@ -337,6 +341,7 @@ def cooks_rma_mv(
     return pandas.Series(values, index=labels, name='cook.d')
 
 
+@metafopy.core.timing.timed
 def dfbetas_rma_mv(
     model: MV,
     progbar: bool = False,
@@ -345,6 +350,7 @@ def dfbetas_rma_mv(
     parallel: metafopy.core.parallel.Parallel = 'no',
     ncpus: int = 1,
     cl: concurrent.futures.Executor | None = None,
+    LB: bool = False,
     *,
     na_action: metafopy.methods.common.NAAction = 'omit',
 ) -> pandas.DataFrame:
@@ -412,6 +418,7 @@ def cluster_result(
     )
 
 
+@metafopy.core.timing.timed
 def rstudent_rma_mv(
     model: MV,
     digits: int = 4,
@@ -421,6 +428,7 @@ def rstudent_rma_mv(
     parallel: metafopy.core.parallel.Parallel = 'no',
     ncpus: int = 1,
     cl: concurrent.futures.Executor | None = None,
+    LB: bool = False,
     *,
     na_action: metafopy.methods.common.NAAction = 'omit',
 ) -> metafopy.methods.influence.ResidualResult | ClusterResidualResult:

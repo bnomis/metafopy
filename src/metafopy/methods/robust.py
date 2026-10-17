@@ -254,6 +254,7 @@ def robust_rma_uni(
     wald_test: str | None = None,
     clubSandwich: bool | None = None,
     digits: int | collections.abc.Mapping[str, int] | None = None,
+    verbose: bool = False,
 ) -> metafopy.models.rma_uni.RMAResult:
     """Cluster-robust inference for an ``rma.uni`` fit.
 
@@ -265,7 +266,8 @@ def robust_rma_uni(
     ``naive-tp``, ``Satterthwaite``, ``saddlepoint``; the latter gives p-values only, the confidence intervals then use
     ``Satterthwaite`` unless ``conf_test`` says otherwise), ``conf_test`` (as ``coef_test`` without ``saddlepoint``) and
     ``wald_test`` (``chi-sq``, ``Naive-F``, ``Naive-Fp``, ``HTA``, ``HTB``, ``HTZ``, ``EDF``, ``EDT``) select the method.
-    ``clubSandwich`` is R's spelling of ``club_sandwich``; giving both with different values is an error.
+    ``clubSandwich`` is R's spelling of ``club_sandwich``; giving both with different values is an error. ``verbose`` is accepted for metafor's printing of
+    the details of a failing ``clubSandwich`` computation and has no effect here.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
@@ -373,6 +375,7 @@ def robust_rma_mv(
     wald_test: str | None = None,
     clubSandwich: bool | None = None,
     digits: int | collections.abc.Mapping[str, int] | None = None,
+    verbose: bool = False,
 ) -> metafopy.models.mv_result.RMAMVResult:
     """Cluster-robust inference for an ``rma.mv`` fit; the arguments (``digits`` too) are those of the ``rma.uni`` method.
 

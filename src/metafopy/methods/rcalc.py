@@ -301,6 +301,10 @@ def rcalc(
     sparse: bool = False,
     upper: bool = False,
     simplify: bool = True,
+    *,
+    rowid: collections.abc.Sequence[str] | None = None,
+    vnames: collections.abc.Sequence[str] | None = None,
+    noid: bool | None = None,
 ) -> RCalcResult | dict[str, RCalcResult]:
     """Variance-covariance matrix of correlation coefficients from the same samples (metafor's ``rcalc``).
 
@@ -315,8 +319,9 @@ def rcalc(
     consists of strings (the names of the list, or the ids converted to character). ``nfun`` is
     ``'min'``, ``'harmonic'``, ``'mean'`` or a function of the sample sizes of a study.
 
-    Differences from R: the ``rowid``, ``vnames`` and ``noid`` arguments, which R passes on
-    internally, are not exposed; the row and column names of ``V`` are in ``dat['var1.var2']``.
+    For a list of matrices with ``simplify=True``, ``rowid`` (values of ``'id.var1.var2'``) puts the rows of ``dat`` and ``V`` in that
+    order, ``vnames`` (four names) renames the ``dat`` columns and ``noid=True`` drops the study identifier, as in metafor, which
+    passes these on internally for a formula. The row and column names of ``V`` are in ``dat['var1.var2']``.
 
     Raises:
         metafopy.errors.ArgumentError: ``x`` is not a formula, a matrix or a list of matrices.
@@ -336,7 +341,7 @@ def rcalc(
     if isinstance(x, list | tuple | dict):
         mapping = dict(x) if isinstance(x, dict) else {str(i + 1): m for i, m in enumerate(x)}
         ni_arr = numpy.atleast_1d(numpy.asarray(ni, dtype=numpy.float64))
-        return rcalc_list({str(k): m for k, m in mapping.items()}, ni_arr, rtoz, sparse, upper, simplify)
+        return rcalc_list({str(k): m for k, m in mapping.items()}, ni_arr, rtoz, sparse, upper, simplify, rowid, vnames, bool(noid))
     scalar = numpy.atleast_1d(numpy.asarray(ni, dtype=numpy.float64))
     if scalar.size != 1:
         raise metafopy.errors.ArgumentError("Argument 'ni' must be a single sample size when 'x' is a matrix.")
