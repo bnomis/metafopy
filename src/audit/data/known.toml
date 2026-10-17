@@ -88,3 +88,86 @@ kind = "refused-where-R-works"
 detail = "*unknown dataset*"
 reason = "The data sets that are lists of data frames (not tables) are not bundled."
 ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/print/*"
+kind = "shape-diff"
+path = "*$digits"
+reason = "R keeps digits as a vector of nine named values; metafopy keeps the single number of its est element."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "missing-field"
+path = "*$data$*"
+reason = "res.data is the MetaData of the fit (vectors and matrices used), not the data frame the caller passed."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "shape-diff"
+path = "*$data$*"
+reason = "res.data holds the studies used in the fit; R's data keeps those with missing values."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/print/*"
+kind = "shape-diff"
+path = "$slab"
+reason = "slab of the fit has the studies used; R keeps the studies with missing values in slab (the _f fields hold them in metafopy)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "missing-field"
+path = "*$mf.*"
+reason = "R keeps the model frames of the random-effects terms (mf.g, mf.h, mf.r, mf.s, ...); metafopy keeps the factors in group."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "missing-field"
+path = "*$opt.res"
+reason = "R keeps the raw return value of its optimiser; the SciPy result has other fields."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "missing-field"
+path = "*$class.f"
+reason = "R stores the class of the full model in an anova result; the class of the Python object says so."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*"
+kind = "label-diff"
+path = "*$coef.na"
+reason = "R names coef.na 'X' (a quirk of the code); metafopy names it with the coefficients."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/print/infl_*"
+kind = "missing-field"
+path = "$inf$*"
+reason = "influence() keeps the table in to_frame() and the DFBETAS in dfbs_frame() (inf is the tuple of asterisks)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/print/infl_*"
+kind = "missing-field"
+path = "$dfbs$*"
+reason = "influence() keeps the table in to_frame() and the DFBETAS in dfbs_frame() (inf is the tuple of asterisks)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/print/summary_*"
+kind = "missing-field"
+reason = "summary() returns the printed text; the fields of R's summary object are the fields of the fit, which the fit cases compare."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/print/*"
+kind = "label-diff"
+path = "*[$]hessian"
+reason = "Matrices are numpy arrays without dimnames; the names of the rows and columns are in coef_names, alpha_names, slab and the like."
+ref = "docs/differences.md"

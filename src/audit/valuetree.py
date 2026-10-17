@@ -14,8 +14,12 @@ import pandas
 import audit.config
 
 Node = dict[str, typing.Any]
+Labels = list[str] | tuple[list[str], list[str]] | None
 
 MAX_DEPTH = 6
+
+
+SCALE_FIELDS = frozenset({'alpha', 'se.alpha', 'zval.alpha', 'pval.alpha', 'ci.lb.alpha', 'ci.ub.alpha', 'va', 'H', 'Z', 'Z.f'})
 
 
 def py_name(name: str) -> str:
@@ -36,24 +40,25 @@ def num_cell(x: object) -> float | str | None:
     return value
 
 
-def label_fields(guide: Node, labels: list[str] | None, shape: list[int] | None, length: int) -> Node:
+def label_fields(guide: Node, labels: Labels, shape: list[int] | None, length: int) -> Node:
     """The names of a vector or the row and column names of a matrix, when Python has labels of the length R's names have."""
     out: Node = {}
     if not labels:
         return out
     if shape and len(shape) == 2:
-        if guide.get('rn') and shape[0] == len(labels):
-            out['rn'] = list(labels)
-        if guide.get('cn') and shape[1] == len(labels):
-            out['cn'] = list(labels)
-    elif length == len(labels):
+        rows, cols = labels if isinstance(labels, tuple) else (labels, labels)
+        if guide.get('rn') and rows and shape[0] == len(rows):
+            out['rn'] = list(rows)
+        if guide.get('cn') and cols and shape[1] == len(cols):
+            out['cn'] = list(cols)
+    elif isinstance(labels, list) and length == len(labels):
         for key in ('n', 'rn'):
             if guide.get(key):
                 out[key] = list(labels)
     return out
 
 
-def vector_node(values: typing.Any, guide: Node, labels: list[str] | None = None) -> Node:
+def vector_node(values: typing.Any, guide: Node, labels: Labels = None) -> Node:
     kind = guide['k']
     arr = numpy.asarray(values)
     dims = guide.get('d')
@@ -116,7 +121,7 @@ def lookup(value: typing.Any, name: str) -> tuple[bool, typing.Any]:
     return False, None
 
 
-def to_node(value: typing.Any, guide: Node, path: str, missing: list[str], depth: int = 0, labels: list[str] | None = None) -> Node:
+def to_node(value: typing.Any, guide: Node, path: str, missing: list[str], depth: int = 0, labels: Labels = None) -> Node:
     """The tree of ``value`` in the shape of the R tree ``guide``; fields R has and ``value`` lacks are appended to ``missing``."""
     kind = guide['k']
     if kind in ('opaque', 'null'):
@@ -126,14 +131,19 @@ def to_node(value: typing.Any, guide: Node, path: str, missing: list[str], depth
     if kind in ('num', 'str', 'lgl'):
         if value is None:
             return {'k': kind, 'v': [None] * len(guide['v']), 'd': None}
+        if isinstance(value, dict) and value and all(isinstance(v, (int, float, str, bool)) for v in value.values()):
+            # a dict of scalars is the Python spelling of an R named vector (precis, vcov labels, ...)
+            value = pandas.Series(value)
         if isinstance(value, dict):
             return {'k': 'type', 'got': type(value).__name__}
         if isinstance(value, pandas.Series):
             labels = [str(i) for i in value.index]
+        if isinstance(value, pandas.DataFrame):
+            labels = ([str(i) for i in value.index], [str(c) for c in value.columns])
         if isinstance(value, (pandas.DataFrame, pandas.Series)):
             value = value.to_numpy()
         try:
-            return vector_node(value, guide, labels)
+            return vector_node(value, guide, None if kind == 'str' else labels)
         except TypeError, ValueError:
             return {'k': 'type', 'got': type(value).__name__}
     if kind == 'df':
@@ -151,6 +161,8 @@ def to_node(value: typing.Any, guide: Node, path: str, missing: list[str], depth
         items = []
         coef_names = getattr(value, 'coef_names', None)
         labels = [str(n) for n in coef_names] if coef_names is not None and not isinstance(coef_names, str) else None
+        alpha_names = getattr(value, 'alpha_names', None)
+        alpha_labels = [str(n) for n in alpha_names] if alpha_names is not None and not isinstance(alpha_names, str) else None
         for i, item in enumerate(guide['items']):
             name = item.get('name')
             if name is None:
@@ -165,7 +177,9 @@ def to_node(value: typing.Any, guide: Node, path: str, missing: list[str], depth
                 missing.append(f'{path}${name}')
                 items.append({'name': name, 'node': {'k': 'missing'}})
                 continue
-            items.append({'name': name, 'node': to_node(sub, item['node'], f'{path}${name}', missing, depth + 1, labels)})
+            # the scale part of a location-scale model is labelled with the names of the scale coefficients
+            item_labels = alpha_labels if alpha_labels is not None and name in SCALE_FIELDS else labels
+            items.append({'name': name, 'node': to_node(sub, item['node'], f'{path}${name}', missing, depth + 1, item_labels)})
         return {'k': 'list', 'items': items}
     return {'k': 'missing'}
 
