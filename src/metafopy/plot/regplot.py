@@ -178,7 +178,7 @@ def regplot(
     xlab: str | None = None,
     ylab: str | None = None,
     at: numpy.typing.ArrayLike | None = None,
-    digits: int | collections.abc.Sequence[int] = 2,
+    digits: float | collections.abc.Sequence[float] = 2,
     transf: Func | None = None,
     atransf: Func | None = None,
     targs: typing.Any = None,
@@ -282,7 +282,7 @@ def regplot(
         line_widths = [line_widths[0], line_widths[1], line_widths[1], 2.0]
     elif len(line_widths) == 3:
         line_widths = [*line_widths, 2.0]
-    dg = digits if isinstance(digits, int) else int(digits[0])
+    dg = int(numpy.atleast_1d(digits)[0])  # R: digits[[1]]; R's 1 is a double
 
     pos = find_moderator(view, names, mod, grep, fixed)
     xmat = view.X

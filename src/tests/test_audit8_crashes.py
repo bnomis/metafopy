@@ -193,3 +193,17 @@ def test_ls_fit_on_a_ridge_is_fast() -> None:
     metafopy.vif(res, sim=3, seed=1)
     assert time.perf_counter() - start < 10
     assert res.fit_stats_reml.ll == pytest.approx(-7.602256, abs=1e-5)
+
+
+def test_regplot_digits_double() -> None:
+    # R: regplot(res, digits = 1) where 1 is a double
+    res = metafopy.rma_uni('yi', 'vi', mods='~ ablat', data=refutil.bcg())
+    metafopy.regplot(res, digits=numpy.float64(1.0))
+    matplotlib.pyplot.close('all')
+
+
+def test_ls_permutest_iter_double() -> None:
+    # R: permutest(res, iter = 20) where 20 is a double
+    res = metafopy.rma_uni('yi', 'vi', mods='~ ablat', scale='~ ablat', data=refutil.bcg())
+    out = metafopy.permutest(res, iter=numpy.float64(20.0), progbar=False)
+    assert out is not None

@@ -332,7 +332,7 @@ def funnel(
         shade_c = metafopy.plot.rutils.color_ramp(shade_c[0], metafopy.plot.rutils.coladj(-0.5), len(lvl_alpha))
         shade_c = [shade_c[0], *shade_c[:0:-1]] if len(shade_c) > 1 else shade_c
 
-    dg = [2, 3] if digits is None else ([digits, digits] if isinstance(digits, int) else list(digits))
+    dg = [2, 3] if digits is None else ([int(d) for d in numpy.atleast_1d(digits)] * 2)[: max(2, numpy.size(digits))]
     if digits is None:
         dg = {'ni': [2, 0], 'wi': [2, 2]}.get(yaxis, [2, 3])
     drop0 = all(isinstance(v, int | numpy.integer) for v in dg)

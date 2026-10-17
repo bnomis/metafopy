@@ -1907,7 +1907,7 @@ def addpoly(
         alim_t = (float(xl0[0]), float(xl0[1]))
     ol = st.get('olim') if olim is None else (float(min(olim)), float(max(olim)))
     do_annotate = st.get('annotate', True) if annotate is None else annotate
-    dg = st.get('digits', 2) if digits is None else (digits if isinstance(digits, int) else int(digits[0]))  # R: digits[[1]]
+    dg = st.get('digits', 2) if digits is None else int(numpy.atleast_1d(digits)[0])  # R: digits[[1]]; R's 2 is a double
     wd = st.get('width') if width is None else width
     tr = st.get('transf') if transf is None else transf
     atr = st.get('atransf') if atransf is None else atransf

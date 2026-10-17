@@ -309,6 +309,7 @@ def permutest_rma_ls(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
+    iter = int(iter)  # R has one number type: iter = 100 is a double
     if iter <= 1:
         raise metafopy.errors.InputError("Argument 'iter' must be >= 2.")
     if x.Z_int_only:
