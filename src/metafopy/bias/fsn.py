@@ -164,7 +164,7 @@ def fsn(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid, or studies are missing and ``na_action='fail'``.
     """
-    pools = [name for name in ('stouffer', 'fisher') if isinstance(pool, str) and len(pool) > 0 and name.startswith(pool)]
+    pools = [name for name in ('stouffer', 'fisher') if isinstance(pool, str) and len(pool) > 0 and name.startswith(pool.lower())]
     if len(pools) != 1:
         raise metafopy.errors.InputError("'arg' should be one of 'stouffer', 'fisher'")
     pool = typing.cast(typing.Literal['stouffer', 'fisher'], pools[0])

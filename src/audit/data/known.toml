@@ -511,6 +511,60 @@ reason = "code1 to code4 are undocumented switches R reads from '...' to debug a
 ref = "docs/differences.md"
 
 [[known]]
+match = "api/*/outlist"
+kind = "missing-arg"
+reason = "outlist is an undocumented switch R reads from '...' (not in the Rd files, an internal or debugging aid); no stated behaviour to match."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/*/retopt"
+kind = "missing-arg"
+reason = "retopt is an undocumented switch R reads from '...' (not in the Rd files, an internal or debugging aid); no stated behaviour to match."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/*/tdist"
+kind = "missing-arg"
+reason = "tdist is an undocumented switch R reads from '...' (not in the Rd files, an internal or debugging aid); no stated behaviour to match."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/*/abbrev"
+kind = "missing-arg"
+reason = "abbrev is an undocumented switch R reads from '...' (not in the Rd files, an internal or debugging aid); no stated behaviour to match."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/*/skiphet"
+kind = "missing-arg"
+reason = "skiphet is an undocumented switch R reads from '...' (not in the Rd files, an internal or debugging aid); no stated behaviour to match."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/*/retdat"
+kind = "missing-arg"
+reason = "retdat is an undocumented switch R reads from '...' (not in the Rd files, an internal or debugging aid); no stated behaviour to match."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/*/retfit"
+kind = "missing-arg"
+reason = "retfit is an undocumented switch R reads from '...' (not in the Rd files, an internal or debugging aid); no stated behaviour to match."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/*/omega2"
+kind = "missing-arg"
+reason = "omega2 is an undocumented switch R reads from '...' (not in the Rd files, an internal or debugging aid); no stated behaviour to match."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/*/randhet"
+kind = "missing-arg"
+reason = "randhet is an undocumented switch R reads from '...' (not in the Rd files, an internal or debugging aid); no stated behaviour to match."
+ref = "docs/differences.md"
+
+[[known]]
 match = "api/*/progbar"
 kind = "default-diff"
 reason = "progbar defaults to False: a text progress bar has no use outside a console and would pollute notebook output."
@@ -610,4 +664,417 @@ ref = "docs/differences.md"
 match = "api/rma.glmm/model"
 kind = "default-diff"
 reason = "model=None is R's default 'UM.FS'; None lets rma_glmm tell a model that was passed (and is irrelevant for one-group measures, which warns as in R) from the default."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "cline"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "yaxt"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "addgrid"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "layout"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "xaxt"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "lwd"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "las"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "main"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "legend"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "bty"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "bg"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "cex"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "ylab"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "ylim"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "pch"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "xlab"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "xlim"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "col"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "lty"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "mainadd"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "setmfrow"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "missing-arg"
+detail = "at_lab"
+reason = "R's base-graphics parameters are read through '...' and handed to plot(); metafopy draws on a matplotlib Axes (ax=) that the caller styles, so a function takes only the ones that metafor itself interprets."
+ref = "docs/differences.md"
+
+[[known]]
+match = "api/forest/*"
+kind = "default-diff"
+detail = "R default *, Python None"
+reason = "addfit (TRUE) and showweights (FALSE) are None in the signature and take their defaults from the fit (a model without a fit has none to add); the effective defaults are R's."
+
+[[known]]
+match = "api/rma.mv/struct"
+kind = "default-diff"
+reason = "struct is None in the signature and means \"CS\" as in R."
+
+[[known]]
+match = "api/*/nearPD"
+kind = "missing-arg"
+reason = "nearPD is the undocumented spelling of nearpd (documented, accepted) that metafor reads from '...'."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/rbind/*"
+kind = "missing-arg"
+detail = "w"
+reason = "Not an argument of rbind.escalc: the recipe passes a weight vector that R takes from '...' and ignores."
+
+[[known]]
+match = "construct/mv_*/cutoff=*"
+kind = "missing-arg"
+reason = "rma.mv reads cutoff from '...' but its only use (.chkyisize) is commented out in metafor 5.2-1, so the argument has no effect."
+
+[[known]]
+match = "*/forest/sel_bcg*"
+kind = "accepts-where-R-refuses"
+detail = "R: 'from' must be a finite number*"
+reason = "R stops with the error ''from' must be a finite number', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/plot/sel_bcg/*"
+kind = "accepts-where-R-refuses"
+detail = "R: the condition has length > 1*"
+reason = "R stops with the error 'the condition has length > 1', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/forest/sel_bcg/*"
+kind = "accepts-where-R-refuses"
+detail = "R: missing value where TRUE/FALSE needed*"
+reason = "R stops with the error 'missing value where TRUE/FALSE needed', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/emmprep/*"
+kind = "accepts-where-R-refuses"
+detail = "R: object of type 'environment' is not subsettable*"
+reason = "R stops with the error 'object of type 'environment' is not subsettable', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/plot/*"
+kind = "accepts-where-R-refuses"
+detail = "R: object 'ids' not found*"
+reason = "R stops with the error 'object 'ids' not found', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/plot/*"
+kind = "accepts-where-R-refuses"
+detail = "R: object 'len.ids' not found*"
+reason = "R stops with the error 'object 'len.ids' not found', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
+ref = "docs/differences.md"
+
+[[known]]
+match = "standalone/to.wide*"
+kind = "accepts-where-R-refuses"
+detail = "R: object 'study' not found*"
+reason = "R stops with the error 'object 'study' not found', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
+ref = "docs/differences.md"
+
+[[known]]
+match = "construct/*"
+kind = "accepts-where-R-refuses"
+detail = "R: object 'vt' not found*"
+reason = "R stops with the error 'object 'vt' not found', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
+ref = "docs/differences.md"
+
+[[known]]
+match = "construct/ls_*"
+kind = "accepts-where-R-refuses"
+detail = "R: object 'addtxt' not found*"
+reason = "rma(cutoff = ) of a location-scale model stops in R with an internal error (addtxt is not defined); cutoff has no effect in metafopy."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/plot/uni_mods_na*"
+kind = "accepts-where-R-refuses"
+detail = "R: need finite 'xlim' values*"
+reason = "R stops with the error 'need finite 'xlim' values', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
+ref = "docs/differences.md"
+
+[[known]]
+match = "construct/ls_*"
+kind = "accepts-where-R-refuses"
+detail = "R: Error during the optimization*"
+reason = "control = list(mfmaxit = 5) is the iteration limit of the randhet loop of location-scale models, which metafopy does not have (see randhet)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "standalone/pairmat*"
+kind = "accepts-where-R-refuses"
+detail = "R: Need to specify the 'x' argument*"
+reason = "pairmat() without a model returns a spec that anova() and predict() complete with the model of the call (see docs/differences.md)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/hettest/*"
+kind = "accepts-where-R-refuses"
+detail = "R: $ operator is invalid for atomic vectors*"
+reason = "R stops with the error '$ operator is invalid for atomic vectors', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
+ref = "docs/differences.md"
+
+[[known]]
+match = "construct/*"
+kind = "accepts-where-R-refuses"
+detail = "R: missing values are not allowed in 'poly'*"
+reason = "R stops with the error 'missing values are not allowed in 'poly'', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/robust/*"
+kind = "accepts-where-R-refuses"
+detail = "R: Could not obtain the cluster-robust*"
+reason = "R stops with the error 'Could not obtain the cluster-robust', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/qqnorm/*"
+kind = "accepts-where-R-refuses"
+detail = "R: formal argument \"lty\" matched by multiple*"
+reason = "R stops with the error 'formal argument \"lty\" matched by multiple', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/profile/*"
+kind = "accepts-where-R-refuses"
+detail = "R: No such '*' component in the model.*"
+reason = "R stops with the error 'No such '*' component in the model.', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/deltamethod/*"
+kind = "accepts-where-R-refuses"
+detail = "R: no applicable method for 'isSymmetric'*"
+reason = "R stops with the error 'no applicable method for 'isSymmetric'', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/labbe/*"
+kind = "accepts-where-R-refuses"
+detail = "R: 'x' and 'y' lengths differ*"
+reason = "R stops with the error ''x' and 'y' lengths differ', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/anova/*"
+kind = "accepts-where-R-refuses"
+detail = "R: Class of 'object' must be the same*"
+reason = "R stops with the error 'Class of 'object' must be the same', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/permutest/*"
+kind = "accepts-where-R-refuses"
+detail = "R: R did not return within*"
+reason = "permutest(exact = TRUE) of a trimfill fit enumerates every permutation of the filled data, which R does not finish within the case time limit."
+ref = "docs/differences.md"
+
+[[known]]
+match = "construct/mv_sp/*"
+kind = "accepts-where-R-refuses"
+detail = "R: object 'year' not found*"
+reason = "R stops with the error 'object 'year' not found', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
+ref = "docs/differences.md"
+
+[[known]]
+match = "construct/glmm_cm/*"
+kind = "accepts-where-R-refuses"
+detail = "R: error in evaluating the argument 'obj'*"
+reason = "R stops with the error 'error in evaluating the argument 'obj'', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
+ref = "docs/differences.md"
+
+[[known]]
+match = "standalone/transf.ipft.hm/*"
+kind = "accepts-where-R-refuses"
+detail = "R: object 'ni' not found*"
+reason = "R stops with the error 'object 'ni' not found', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/*"
+kind = "warning-missing"
+detail = "*is not a graphical parameter*"
+reason = "R's graphics functions warn about a base-graphics parameter they do not know when it reaches plot() through '...'; metafopy has no such pass-through."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/confint/ls_na*"
+kind = "warning-missing"
+detail = "Cannot obtain lower bound of profile likelihood CI*"
+reason = "confint() of the flat fit ls_na (see */ls_na above): the likelihood profile is flat towards the boundary, R reports that its root search did not converge and metafopy finds the bound."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/forest/*"
+kind = "warning-missing"
+detail = "number of rows of result is not a multiple of vector length*"
+reason = "R warns from inside forest() (a cbind of vectors of unequal length) with these predstyle values; the plot is drawn and no value differs."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/[/*"
+kind = "warning-missing"
+detail = "named arguments other than 'drop' are discouraged*"
+reason = "R warns about the named argument that the recipe gives to x[i, j]; the rows and columns selected agree."
+ref = "docs/differences.md"
+
+[[known]]
+match = "construct/ls_bcg/*"
+kind = "warning-extra"
+detail = "Error when trying to invert the Hessian.*"
+reason = "The scale model is degenerate (alpha runs to -20 or -23 along a flat ridge with the same log-likelihood, -7.899524 in R and metafopy); R inverts its numerical Hessian and reports se.alpha of 34115, metafopy reports that the Hessian cannot be inverted."
+ref = "docs/differences.md"
+
+[[known]]
+match = "construct/glmm_*"
+kind = "warning-missing"
+detail = "Model failed to converge*"
+reason = "lme4 warnings of R's glmer(); metafopy fits the model with its own optimiser."
+ref = "docs/differences.md"
+
+[[known]]
+match = "construct/glmm_*"
+kind = "warning-missing"
+detail = "Model is nearly unidentifiable*"
+reason = "lme4 warnings of R's glmer(); metafopy fits the model with its own optimiser."
+ref = "docs/differences.md"
+
+[[known]]
+match = "construct/glmm_*"
+kind = "warning-missing"
+detail = "Cannot fit saturated model*"
+reason = "R's rma.glmm() warns when the saturated model does not converge with that optimiser; metafopy's saturated fit converges."
+ref = "docs/differences.md"
+
+[[known]]
+match = "construct/mv_*"
+kind = "warning-extra"
+detail = "Use of the Knapp and Hartung method*"
+reason = "metafor issues this warning once per session, so only the first rma.mv(test = 'knha') in a harness run has it; metafopy warns every time."
 ref = "docs/differences.md"

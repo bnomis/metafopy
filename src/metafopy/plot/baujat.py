@@ -59,6 +59,7 @@ def baujat(
     ax: matplotlib.axes.Axes | None = None,
     bty: str = 'o',
     las: int | None = None,
+    na_action: metafopy.methods.common.NAAction = 'omit',
 ) -> BaujatResult:
     """Baujat plot of a fitted ``rma_uni``, ``rma_mh`` or ``rma_peto`` model (``baujat.rma``).
 
@@ -69,12 +70,14 @@ def baujat(
     the squared change in its fitted value, standardised by the variance of the prediction without the study.
     ``bty`` (the type of box around the plot: ``'o'``, ``'l'``, ``'7'``, ``'c'``, ``'u'``, ``']'`` or ``'n'``) and ``las`` (the
     orientation of the tick labels, 0 to 3) are passed on to ``plot()`` by metafor.
+    ``na_action`` stands for R's ``options(na.action=)``: an unknown value raises, the others give the same result (metafor sets ``na.pass`` while it computes).
 
     Returns a :class:`BaujatResult`.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
     """
+    metafopy.methods.common.check_na_action(na_action)
     metafopy.methods.fitview.check_class(x, notav=metafopy.methods.fitview.FIXED_UNI_ONLY)
     if x.k == 1:
         raise metafopy.errors.InputError('Stopped because k = 1.')

@@ -135,7 +135,7 @@ def plot_selmodel(
             na = numpy.isnan(numpy.diag(vd))
             vd[na, :] = 0
             vd[:, na] = 0
-            dsim = numpy.random.default_rng(seed).multivariate_normal(delta, vd, size=reps)
+            dsim = numpy.random.default_rng(None if seed is None else int(seed)).multivariate_normal(delta, vd, size=reps)
             dsim = numpy.clip(dsim, x.delta_min, x.delta_max)
             sims = numpy.array([curve(d) for d in dsim])
             lo, hi = numpy.quantile(sims, [x.level / 2, 1 - x.level / 2], axis=0)

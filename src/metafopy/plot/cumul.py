@@ -186,6 +186,7 @@ def plot_cumul(
     las: int = 0,
     ax: matplotlib.axes.Axes | None = None,
     addgrid: bool | str | None = None,
+    na_action: metafopy.methods.common.NAAction = 'omit',
 ) -> PlotCumulResult:
     """Plot of the results of a cumulative meta-analysis (``plot.cumul.rma``).
 
@@ -195,11 +196,15 @@ def plot_cumul(
     ``digits`` are the digits of the labels of the two axes and ``grid`` draws the dotted grid (a colour for the lines of the grid; ``addgrid`` is the
     old spelling that metafor reads from ``...`` and wins).
 
+    ``na_action`` stands for R's ``options(na.action=)``: an unknown value raises, the others
+    give the same result (metafor sets ``na.pass`` while it computes). With ``'fail'`` missing values in the results stop the plot.
+
     Returns a :class:`PlotCumulResult` with the plotted values and their colours.
 
     Raises:
         metafopy.errors.InputError: an argument is invalid.
     """
+    metafopy.methods.common.check_na_action(na_action)
     if not isinstance(x, metafopy.methods.leave1out.CumulResult):
         raise metafopy.errors.InputError('plot_cumul() needs the result of cumul().')
     if transf is not None and atransf is not None:
@@ -234,6 +239,8 @@ def plot_cumul(
         yvalue = x.H2
     estim = x.estimate.copy()
     keep = ~(numpy.isnan(estim) | numpy.isnan(yvalue))
+    if na_action == 'fail' and not keep.all():
+        raise metafopy.errors.InputError('Missing values in results.')
     estim, yvalue = estim[keep], yvalue[keep]
     k = int(estim.shape[0])
     if transf is not None:

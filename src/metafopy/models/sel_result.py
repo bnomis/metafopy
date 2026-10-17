@@ -444,9 +444,14 @@ class SelmodelResult(metafopy.models.fit_methods.FitMethods):
 
     # -- printing -------------------------------------------------------------------
 
-    def summary(self, digits: int | None = None, showfit: bool = True) -> str:
-        """The printout with the fit statistics table, as metafor's ``summary()``; ``str(res)`` leaves it out like ``print()``."""
-        return metafopy.mfopt.option_space(format_selmodel(self, metafopy.mfopt.option_digits(digits, self.digits), showfit))
+    def summary(self, digits: int | None = None, showfit: bool = True, *, signif_stars: bool | None = None, signif_legend: bool | None = None) -> str:
+        """The printout with the fit statistics table, as metafor's ``summary()``; ``str(res)`` leaves it out like ``print()``.
+
+        ``signif_stars`` (default: the ``signif_stars`` option, ``True``) adds the significance stars, ``signif_legend`` (default: ``signif_stars``)
+        their legend.
+        """
+        stars, legend = metafopy.mfopt.option_signif(signif_stars, signif_legend)
+        return metafopy.mfopt.option_space(format_selmodel(self, metafopy.mfopt.option_digits(digits, self.digits), showfit, stars, legend))
 
     def __str__(self) -> str:
         return self.summary(showfit=False)
@@ -485,7 +490,7 @@ def delta_table(res: SelmodelResult, digits: int) -> tuple[list[str], list[list[
     return header, rows, names
 
 
-def format_selmodel(res: SelmodelResult, digits: int = 4, showfit: bool = False) -> str:
+def format_selmodel(res: SelmodelResult, digits: int = 4, showfit: bool = False, stars: bool = True, legend: bool = True) -> str:
     """The output of metafor's ``print.rma.uni`` for a selection model."""
     fmt = metafopy.printing.fmt_num
     pfmt = metafopy.models.rma_uni.pfmt
@@ -554,6 +559,7 @@ def format_selmodel(res: SelmodelResult, digits: int = 4, showfit: bool = False)
                 metafopy.printing.signif_stars(res.pval[j]),
             ]
         )
+    header, rows_ = metafopy.printing.drop_stars(header, rows_, stars)
     out.append(metafopy.printing.fmt_table(header, rows_, row_names=None if res.int_only else list(res.coef_names), width=metafopy.printing.console_width()))
 
     if not math.isnan(res.LRT):
@@ -565,9 +571,7 @@ def format_selmodel(res: SelmodelResult, digits: int = 4, showfit: bool = False)
     out.append('Selection Model Results:' if res.k == res.k1 else f'Selection Model Results (k_subset = {res.k1}):')
     out.append('')
     dheader, drows, dnames = delta_table(res, digits)
+    dheader, drows = metafopy.printing.drop_stars(dheader, drows, stars)
     out.append(metafopy.printing.fmt_table(dheader, drows, row_names=dnames))
-    out.append('')
-    out.append('---')
-    out.append("Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1")
-    out.append('')
+    out += metafopy.printing.signif_footer(legend)
     return '\n'.join(out)

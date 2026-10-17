@@ -106,6 +106,11 @@ class PermutestResult:
         """The estimated coefficients, indexed by name (``coef.permutest.rma.uni``)."""
         return pandas.Series(self.beta, index=list(self.coef_names), name='estimate')
 
+    def summary(self, digits: int | None = None, *, signif_stars: bool | None = None, signif_legend: bool | None = None) -> str:
+        """The printout of ``print(x, digits=, signif.stars=, signif.legend=)``: ``digits`` default to those of the fit."""
+        stars, legend = metafopy.mfopt.option_signif(signif_stars, signif_legend)
+        return format_permutest(self, self.digits if digits is None else metafopy.mfopt.option_digits(digits, self.digits), stars, legend)
+
     def __str__(self) -> str:
         return format_permutest(self)
 
@@ -469,8 +474,8 @@ def permci_bound(
         return math.nan
 
 
-def format_permutest(x: PermutestResult) -> str:
-    d = x.digits
+def format_permutest(x: PermutestResult, d: int | None = None, stars: bool = True, legend: bool = True) -> str:
+    d = x.digits if d is None else d
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     out: list[str] = ['']
     if not x.int_only:
@@ -500,14 +505,12 @@ def format_permutest(x: PermutestResult) -> str:
             metafopy.printing.signif_stars(x.pval[j]),
         ]
         rows.append(row)
+    header, rows = metafopy.printing.drop_stars(header, rows, stars)
     if x.int_only:
         out.extend(metafopy.methods.vif.format_vector(header, rows[0]))
     else:
         out.append(metafopy.printing.fmt_table(header, rows, row_names=list(x.coef_names)))
-    out.append('')
-    out.append('---')
-    out.append("Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1")
-    out.append('')
+    out += metafopy.printing.signif_footer(legend)
     what = f'p-value{"" if x.int_only else "s"}{" and CI bounds" if x.permci else ""}'
     out.append(f'1) {what} based on permutation testing')
     out.append('')

@@ -20,6 +20,7 @@ import scipy.sparse
 
 import metafopy.errors
 import metafopy.methods.blocks
+import metafopy.methods.common
 import metafopy.methods.vcalc
 
 __all__ = ['RCalcResult', 'rcalc']
@@ -305,8 +306,12 @@ def rcalc(
     rowid: collections.abc.Sequence[str] | None = None,
     vnames: collections.abc.Sequence[str] | None = None,
     noid: bool | None = None,
+    na_action: metafopy.methods.common.NAAction = 'omit',
 ) -> RCalcResult | dict[str, RCalcResult]:
     """Variance-covariance matrix of correlation coefficients from the same samples (metafor's ``rcalc``).
+
+    ``na_action`` stands for R's ``options(na.action=)``: an unknown value raises, the others
+    give the same result (metafor sets ``na.pass`` while it computes).
 
     ``x`` is a formula string such as ``'ri ~ var1 + var2 | study'`` (the study part may be left
     out for a single study; ``ni`` is a column of ``data`` or an array), a correlation matrix, or a
@@ -328,6 +333,7 @@ def rcalc(
         metafopy.errors.InputError: an argument or the data is invalid (R stops with an error here).
         metafopy.errors.NotFoundError: a variable of the formula is not in ``data``.
     """
+    metafopy.methods.common.check_na_action(na_action)
     if not isinstance(x, str | numpy.ndarray | pandas.DataFrame | list | tuple | dict):
         raise metafopy.errors.ArgumentError("Argument 'x' must be either a formula, a matrix, or a list of matrices.")
     if ni is None:

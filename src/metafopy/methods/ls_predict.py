@@ -145,6 +145,7 @@ def predict_rma_ls(
     """
     newmods = metafopy.methods.pairmat.resolve(newmods, model)
     x = model
+    metafopy.methods.predict.check_prob_adjust(prob, adjust, vcov)
     metafopy.methods.common.check_na_action(na_action)
     ptype = metafopy.methods.predict.resolve_predtype(predtype, pi_type)
     int_spec = intercept is not None
