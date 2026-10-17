@@ -76,7 +76,7 @@ class EmmGrid:
     (``type='response'`` of :meth:`summary` back-transforms them), ``inv_label`` the name of the back-transformed estimate and
     ``sigma`` the error SD used for the bias adjustment. ``nesting`` maps each nested factor to the factors it is nested in, and
     ``display`` marks the rows of the grid that occur (the others are hidden from summaries and left out of the averages).
-    ``null``, ``delta`` and ``side`` are the defaults of the tests of :meth:`summary`.
+    ``null``, ``delta`` and ``side`` are the defaults of the tests of :meth:`summary`, ``summary_type`` the default ``type``.
     """
 
     grid: pandas.DataFrame
@@ -109,6 +109,7 @@ class EmmGrid:
     null: float = 0.0
     delta: float = 0.0
     side: int = 0
+    summary_type: str | None = None
 
     @property
     def estimate(self) -> FloatArray:
@@ -449,6 +450,7 @@ def emmeans(
     null: float | None = None,
     delta: float | None = None,
     side: Side | None = None,
+    type: str | None = None,
     **prep: typing.Any,
 ) -> EmmGrid:
     """Estimated marginal means: the reference grid averaged over the variables not named in ``specs`` (and ``by``).
@@ -463,7 +465,8 @@ def emmeans(
 
     With nested factors (see :func:`emmprep`) the means of a nested factor are given within the groups it is nested in, and
     the other factors are averaged over the combinations that occur in the data. ``null``, ``delta`` and ``side`` set the
-    defaults of the tests of :meth:`EmmGrid.summary`.
+    defaults of the tests of :meth:`EmmGrid.summary`; so does ``type`` (``'response'`` shows the back-transformed means by default, as
+    ``emmeans(..., type='response')``).
 
     Raises:
         metafopy.errors.InputError: a variable is not in the grid or the weights do not fit.
@@ -475,7 +478,9 @@ def emmeans(
     else:
         rg = emmprep(object, at=at, cov_reduce=cov_reduce, **prep)
     names, by_vars = parse_specs(specs, by)
-    return with_tests(emmeans_of(rg, names, by_vars, weights), null, delta, side)
+    if type not in (None, 'link', 'response'):
+        raise metafopy.errors.InputError("'type' must be 'link' or 'response'.")
+    return dataclasses.replace(with_tests(emmeans_of(rg, names, by_vars, weights), null, delta, side), summary_type=type)
 
 
 # auditme: accept sets the stored null, delta and side with validation, not a plain pass-through

@@ -126,7 +126,7 @@ def summary(
     Raises:
         metafopy.errors.InputError: an argument is invalid.
     """
-    chosen = 'link' if type is None else type
+    chosen = (object.summary_type or 'link') if type is None else type
     if chosen not in ('link', 'response'):
         raise metafopy.errors.InputError("'type' must be 'link' or 'response'.")
     lev = object.level if level is None else level
