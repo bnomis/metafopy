@@ -77,3 +77,10 @@ def test_a_ledger_entry_takes_a_list_of_paths_and_a_detail_glob() -> None:
     assert not entry.matches('options/x/y', {**finding, 'path': '$digits'})
     assert not entry.matches('options/x/y', {**finding, 'detail': 'element 1: R 1, Python 2 (relative 0.5)'})
     assert not entry.matches('matrix/x/y', finding)
+
+
+def test_a_ledger_entry_takes_a_list_of_case_globs() -> None:
+    entry = audit.ledger.Entry(['scripts/a/*', 'scripts/b/*'], 'value-diff', '*', '*', 'why', '')
+    finding = {'kind': 'value-diff', 'path': '', 'detail': 'x'}
+    assert entry.matches('scripts/b/3', finding)
+    assert not entry.matches('scripts/c/3', finding)
