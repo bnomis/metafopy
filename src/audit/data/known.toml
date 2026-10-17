@@ -1234,6 +1234,12 @@ reason = "Reproduced in R: the fit of ls_year with optbeta = TRUE inverts a Hess
 ref = "docs/differences.md"
 
 [[known]]
+match = "options/vif/ls_*/sim=true"
+kind = "timeout"
+reason = "Reproduced in R: vif(sim = TRUE) of a location-scale model refits it 1000 times; for the bcg fit with ablat + year in the location and the scale part it takes 105 s in R and 115 s in metafopy, more than the time limit of a case."
+ref = "docs/differences.md"
+
+[[known]]
 match = "options/permutest/uni_factor/exact=true"
 kind = "timeout"
 reason = "Reproduced in R: the exact permutation test of 3 allocation groups on 13 studies takes 162 s in R and 43 s in metafopy, both more than the time limit of a case when the machine is busy."
