@@ -229,6 +229,8 @@ def regtest(
                 fit = fit_vectors(yi, v, Xn, names, n, slab, meth, tst, alpha, weighted, weights, tau2 if tau2_fix else None, control)
         else:
             fit = fit_vectors(yi, v, Xn, names, n, slab, meth, tst, alpha, weighted, weights, None, control)
+        if isinstance(x, metafopy.models.rma_uni.RMAResult):
+            fit = metafopy.models.rma_uni.as_refit_on_used(fit, dropped=x.data.na_rows is not None and bool(x.data.na_rows.any()), measure=x.measure)
         zval = float(fit.zval[p])
         pval = float(fit.pval[p])
         ddf = fit.ddf

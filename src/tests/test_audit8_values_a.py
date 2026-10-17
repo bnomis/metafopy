@@ -51,3 +51,37 @@ def test_simulate_pads_to_the_subset_unless_na_omit() -> None:
         sim = metafopy.simulate(res, seed=1234, na_action=action)
         assert len(sim) == 7
         assert sim['sim_1'].isna().to_list() == [True, True, False, False, False, False, False]
+
+
+def refit_fixtures() -> list[tuple[pandas.DataFrame, str | None]]:
+    plain = metafopy.datasets.load('dat.bcg')
+    missing = plain.copy()
+    missing.loc[2, 'tpos'] = numpy.nan
+    missing.loc[6, 'cpos'] = numpy.nan
+    missing.loc[4, 'ablat'] = numpy.nan
+    return [(plain, None), (missing, None), (missing, '~ ablat')]
+
+
+# R 4.3.3, metafor 5.2-1: regtest(r)$fit and selmodel(r, type = "beta") on rma(yi, vi, [mods = ~ ablat,] data = escalc("RR", ...)) give
+# measure "RR", slab 1..k, k = k.f = k.all and slab.null TRUE exactly when studies with missing values were dropped
+EXPECTED_REFIT = [(13, False), (11, True), (10, True)]
+
+
+@pytest.mark.parametrize('which', [0, 1, 2])
+def test_regtest_and_selmodel_refit_the_studies_used(which: int) -> None:
+    frame, mods = refit_fixtures()[which]
+    k, slab_null = EXPECTED_REFIT[which]
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        data = metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=frame)
+        res = metafopy.rma(yi='yi', vi='vi', mods=mods, data=data)
+        views = [metafopy.regtest(res).fit, metafopy.selmodel(res, type='beta')]
+    for view in views:
+        assert view is not None
+        assert view.measure == 'RR'
+        assert (view.k, view.k_f, view.k_all) == (k, k, k)
+        assert view.slab[:3] == ('1', '2', '3')
+        assert view.slab_null is slab_null
+        assert len(view.not_na) == k
+        assert view.ids.tolist() == list(range(k))
+        assert all(value is None for value in view.outdat_f.values())

@@ -375,6 +375,35 @@ def set_btt(btt: Btt, p: int, int_incl: bool, names: collections.abc.Sequence[st
     return tuple(out)
 
 
+def as_refit_on_used(fit: RMAResult, *, dropped: bool, measure: str) -> RMAResult:
+    """``fit`` as metafor returns a model that it fitted again to the estimates of the studies used (``regtest()`` and ``selmodel()``).
+
+    The estimates carry the measure of the first model; the fit has the studies used only (``k.all``, ``k.f`` and ``ids`` refer to them, the labels are 1
+    to k) and no counts. R keeps a ``slab`` attribute on the estimates unless studies with missing values were dropped, so ``slab.null`` is true only then.
+    """
+    k = fit.k
+    labels = tuple(str(i + 1) for i in range(k))
+    data = dataclasses.replace(
+        fit.data,
+        slab=labels,
+        keep=numpy.ones(k, dtype=numpy.bool_),
+        labels_all=None,
+        na_rows=None,
+        data=None,
+        counts_all=None,
+        supplied=None,
+        yi_all=None,
+        vi_all=None,
+        X_all=None,
+        ni_all=None,
+        weights_all=None,
+        ids_all=None,
+        subset_arg=None,
+        slab_given=not dropped,
+    )
+    return dataclasses.replace(fit, measure=measure, slab=labels, data=data)
+
+
 def level_to_alpha(level: float) -> float:
     """metafor's ``.level()``: 95 (or 0.95) -> 0.05; a value up to 0.5 is already an alpha, so 0.05 stays 0.05 and 0 gives 1.
 
