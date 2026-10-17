@@ -236,9 +236,9 @@ def to_node(value: typing.Any, guide: Node, path: str, missing: list[str], depth
             # the scale part of a location-scale model is labelled with the names of the scale coefficients
             item_labels = alpha_labels if alpha_labels is not None and name in SCALE_FIELDS else labels
             if name in STRUCTURE_FIELDS and (name != 'H' or hasattr(value, 'H_dimnames')):
-                # the matrices of the random effects are not indexed by the coefficients: G and H by the levels of the inner factor, the rest unnamed
-                dim = getattr(value, f'{name}_dimnames', None)
-                item_labels = [str(n) for n in dim] if dim else None
+                # the matrices of the random effects are not indexed by the coefficients: they carry their own names or none (a plain array has none)
+                rownames = getattr(sub, 'rownames', None)
+                item_labels = [str(n) for n in rownames] if rownames else None
             items.append({'name': name, 'node': to_node(sub, item['node'], f'{path}${name}', missing, depth + 1, item_labels)})
         return {'k': 'list', 'items': items}
     return {'k': 'missing'}

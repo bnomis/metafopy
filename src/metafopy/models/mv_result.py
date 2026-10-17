@@ -10,6 +10,7 @@ import pandas
 import scipy.linalg
 import scipy.sparse
 
+import metafopy.core.labelled
 import metafopy.errors
 import metafopy.mfopt
 import metafopy.models.call
@@ -158,6 +159,13 @@ class RMAMVResult(metafopy.models.fit_methods.FitMethods):
     subset: numpy.typing.NDArray[numpy.bool_] | None = dataclasses.field(default=None, repr=False)
     slab_null: bool = True
     control: typing.Any = dataclasses.field(default=None, repr=False)
+
+    def __post_init__(self) -> None:
+        # R sets the dimnames of G and H (levels of the inner factor) and of hessian and vvc (the names of the variance components)
+        for name, names in (('G', self.G_dimnames), ('H', self.H_dimnames), ('hessian', self.vc_names), ('vvc', self.vc_names)):
+            value = getattr(self, name)
+            if value is not None and not isinstance(value, metafopy.core.labelled.LabelledMatrix) and len(names) == value.shape[0]:
+                object.__setattr__(self, name, metafopy.core.labelled.LabelledMatrix(value, names, names))
 
     # -- accessors -------------------------------------------------------
 

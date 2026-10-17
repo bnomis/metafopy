@@ -7,6 +7,7 @@ https://wviechtb.github.io/metafor/reference/ranef.html.
 """
 
 import collections.abc
+import re
 import typing
 
 import numpy
@@ -15,6 +16,7 @@ import pandas
 import scipy.sparse
 import scipy.stats
 
+import metafopy.core.labelled
 import metafopy.effects.measures
 import metafopy.errors
 import metafopy.methods.common
@@ -33,6 +35,20 @@ type Transf = collections.abc.Callable[..., typing.Any]
 EPS = float(numpy.finfo(float).eps)
 # auditme: accept[non-alphabetical-literal] the column order of metafor's data frames
 COLUMNS = ['intrcpt', 'se', 'pi.lb', 'pi.ub']
+
+
+class RanefList(dict[str, pandas.DataFrame]):
+    """The list of data frames ``ranef()`` returns for an ``rma.mv`` fit (a dict by term); it prints as R prints a list: ``$term`` above each frame."""
+
+    def __str__(self) -> str:
+        blocks = []
+        for name, frame in self.items():
+            label = name if re.fullmatch(r'[A-Za-z.][A-Za-z0-9._]*', name) else f'`{name}`'
+            blocks.append(f'${label}\n{metafopy.core.labelled.frame_text(frame)}\n')
+        return '\n'.join(blocks)
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
 
 def term_crit(x: MV, alpha: float, nlevels: int) -> float:
@@ -139,7 +155,7 @@ def ranef_rma_mv(
     W = x.weight_matrix()
     ImH = numpy.eye(x.k) - x.hat_matrix()
     ei = x.yi - x.X @ x.beta
-    out: dict[str, pandas.DataFrame] = {}
+    out: RanefList = RanefList()
     vc: dict[str, FloatArray] = {}
 
     if x.with_s and x.sigma2 is not None:

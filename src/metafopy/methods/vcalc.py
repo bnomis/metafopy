@@ -17,6 +17,7 @@ import numpy.typing
 import pandas
 import scipy.sparse
 
+import metafopy.core.labelled
 import metafopy.core.linalg
 import metafopy.errors
 
@@ -313,7 +314,8 @@ def vcalc(
     variance-covariance matrices of the clusters are read from those columns instead, and ``vi`` is
     typically 1.
 
-    The result is a dense ``numpy.ndarray``; ``sparse=True`` gives a ``scipy.sparse.csr_array`` and
+    The result is a dense ``numpy.ndarray`` (a :class:`metafopy.core.labelled.VCovMat`, which prints like
+    metafor's ``print.vcovmat``); ``sparse=True`` gives a ``scipy.sparse.csr_array`` and
     ``retdat=True`` a data frame of the variables used with the matrix in columns ``V.1``, ``V.2``, ....
     ``checkpd`` warns about clusters whose correlation matrix is not positive definite and ``nearpd``
     replaces such a matrix by the nearest correlation matrix (``Matrix::nearPD(corr=TRUE)``).
@@ -521,6 +523,7 @@ def vcalc(
             other = codes != codes[i]
             result[i, other] = numpy.nan
             result[other, i] = numpy.nan
+        result = metafopy.core.labelled.VCovMat(result)
     if not retdat:
         return result
     dense = result.toarray() if isinstance(result, scipy.sparse.csr_array) else result

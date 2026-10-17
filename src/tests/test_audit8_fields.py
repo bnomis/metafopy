@@ -287,3 +287,46 @@ def test_round2_mv_control_and_level_counts() -> None:
     un = metafopy.rma_mv('yi', 'v1i', mods='~ 0 + outcome', random='~ outcome | trial', struct='UN', data=berkey)
     assert un.g_levels_k is not None
     assert list(un.g_levels_k.index) == ['AL', 'PD']
+
+
+def test_round3_escalc_prints_like_r() -> None:
+    x = metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=metafopy.datasets.load('dat.bcg').iloc[:3], digits=3)
+    assert isinstance(x, pandas.DataFrame)
+    lines = [ln.split() for ln in str(x).splitlines() if ln.strip()]
+    assert lines[0][-2:] == ['yi', 'vi']
+    assert lines[1] == ['1', '1', 'Aronson', '1948', '4', '119', '11', '128', '44', 'random', '-0.889', '0.326']
+    assert lines[3][-2:] == ['-1.348', '0.415']
+    assert x.iloc[:2].attrs['digits'] == 3
+
+
+def test_round3_vcalc_prints_like_vcovmat() -> None:
+    k = metafopy.datasets.load('dat.konstantopoulos2011')
+    v = metafopy.vcalc('vi', cluster='district', obs='school', data=k, rho=0.6)
+    assert isinstance(v, numpy.ndarray)
+    assert v.shape == (56, 56)
+    rows = [ln.split() for ln in str(v).splitlines() if ln.strip()]
+    assert rows[1][:5] == ['1', '0.1180', '0.0708', '0.0782', '0.0782']
+    assert float(v[0, 1]) == pytest.approx(0.0708, abs=1e-4)
+
+
+def test_round3_mv_matrices_have_dimnames() -> None:
+    k = metafopy.datasets.load('dat.konstantopoulos2011')
+    res = metafopy.rma_mv('yi', 'vi', random='~ 1 | district/school', data=k, cvvc=True)
+    vvc = typing.cast(typing.Any, res.vvc)
+    hessian = typing.cast(typing.Any, res.hessian)
+    assert vvc.dimnames == (('sigma^2.1', 'sigma^2.2'), ('sigma^2.1', 'sigma^2.2'))
+    assert hessian.rownames == ('sigma^2.1', 'sigma^2.2')
+    berkey = metafopy.datasets.load('dat.berkey1998')
+    un = metafopy.rma_mv('yi', 'v1i', mods='~ 0 + outcome', random='~ outcome | trial', struct='UN', data=berkey)
+    assert typing.cast(typing.Any, un.G).colnames == ('AL', 'PD')
+
+
+def test_round3_ranef_mv_prints_a_list_by_term() -> None:
+    k = metafopy.datasets.load('dat.konstantopoulos2011')
+    res = metafopy.rma_mv('yi', 'vi', random='~ 1 | district/school', data=k)
+    out = typing.cast(typing.Any, metafopy.ranef(res))
+    assert isinstance(out, dict)
+    text = str(out)
+    assert '$district\n' in text
+    assert '$`district/school`\n' in text
+    assert 'intrcpt' in text
