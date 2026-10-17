@@ -7,8 +7,10 @@ difference between the packages.
 
 import contextlib
 import functools
+import inspect
 import io
 import math
+import re
 import typing
 import warnings
 
@@ -64,6 +66,12 @@ class Env:
                 return metafopy.datasets.load(name).copy()
             except metafopy.errors.NotFoundError as e:
                 raise UnsupportedError(f'dataset {name} is not bundled with metafopy') from e
+        if name.startswith('transf.'):
+            # the function itself, so that predict() and confint() recognise the integral and mode transformations that take tau2
+            try:
+                return pycall.resolve_function(name, None)
+            except pycall.MissingFunctionError:
+                pass
         if name in BASE or name in METAFOR_FUNCTIONS:
             return lambda *a, **k: rcall(self, name, *a, **k)
         raise UnsupportedError(f'object {name} not found')
@@ -330,6 +338,9 @@ def r_cbind(*xs: Value, **named: Value) -> Value:
                 cols[f'V{len(cols) + 1}'] = a
     for k, v in named.items():
         cols[k] = numpy.asarray(v)
+    longest = max((numpy.size(v) for v in cols.values()), default=0)
+    # R recycles a shorter vector (cbind(1, x))
+    cols = {k: numpy.resize(numpy.asarray(v), longest) if 0 < numpy.size(v) < longest else v for k, v in cols.items()}
     if frame:
         return pandas.DataFrame(cols)
     return numpy.column_stack(list(cols.values()))
@@ -452,11 +463,43 @@ def r_as_dataframe(x: Value, **kw: Value) -> Value:
         return x
     if hasattr(x, 'to_frame'):
         return x.to_frame()
+    if isinstance(getattr(x, 'frame', None), pandas.DataFrame):
+        return x.frame  # the summary of an emmeans result
     return pandas.DataFrame(x)
 
 
+def r_assign_into(env: Env, name: str, update: typing.Callable[[Value], Value], value: Value) -> Value:
+    """``name[i] <- value`` and the like: the variable becomes ``update(value)``, the expression has the value ``value``."""
+    env.vars[name] = update(value)
+    return value
+
+
+def as_character(v: Value) -> str:
+    """``as.character()`` of one value: integral numbers have no decimal point."""
+    if isinstance(v, float | numpy.floating) and math.isfinite(v) and v == int(v):
+        return str(int(v))
+    return str(v)
+
+
 def r_factor(x: Value, levels: Value = None, labels: Value = None, **kw: Value) -> Value:
-    return pandas.Categorical(numpy.asarray(x), categories=None if levels is None else list(numpy.asarray(levels)))
+    """``factor(x, levels, labels)``: ``as.character(x)`` is matched to ``as.character(levels)``, then the levels are renamed to the labels."""
+    values = numpy.asarray(x)
+    if levels is None:
+        present = pandas.unique(values[~pandas.isna(values)])
+        categories = sorted(present.tolist())
+    else:
+        categories = list(numpy.atleast_1d(numpy.asarray(levels)))
+    keys = [as_character(c) for c in categories]
+    codes = numpy.array([keys.index(as_character(v)) if not pandas.isna(v) and as_character(v) in keys else -1 for v in values], dtype=numpy.intp)
+    names = keys
+    if labels is not None:
+        names = [str(v) for v in numpy.atleast_1d(numpy.asarray(labels))]
+        if len(names) == 1 and len(categories) > 1:
+            names = [f'{names[0]}{i + 1}' for i in range(len(categories))]
+        return pandas.Categorical.from_codes(codes, categories=pandas.Index(names))
+    if values.dtype.kind in 'fiub':
+        return pandas.Categorical(values, categories=categories)
+    return pandas.Categorical.from_codes(codes, categories=pandas.Index(keys))
 
 
 def r_head(x: Value, n: Value = 6, **kw: Value) -> Value:
@@ -1003,16 +1046,65 @@ def rfor(env: Env, var: str, seq: Value, body: typing.Callable[[], Value]) -> Va
 
 # -- calls --------------------------------------------------------------------------------------------------------------------------------------
 
-INDEX_ARGUMENTS = frozenset({'btt', 'att', 'subset', 'which'})
+INDEX_ARGUMENTS = frozenset({'btt', 'btt2', 'att', 'subset', 'which'})
+# indices of one function only (elsewhere `x`, `y` and `out` are data), with the positions they take when passed without a name
+COMPONENT_ARGUMENTS = ('alpha', 'gamma2', 'phi', 'rho', 'sigma2', 'tau2')
+FUNCTION_INDEX_ARGUMENTS: dict[str, tuple[str, ...]] = {
+    'confint': COMPONENT_ARGUMENTS,
+    'matreg': ('y', 'x'),
+    'plot': ('out',),
+    'profile': COMPONENT_ARGUMENTS,
+    'to.wide': ('grpvars',),
+}
 
 
-def shift_arguments(kwargs: dict[str, Value]) -> dict[str, Value]:
+def row_count(args: tuple[Value, ...], kwargs: dict[str, Value]) -> int | None:
+    """The number of rows the index arguments of a call refer to: the rows of ``data``, else the length of the first vector argument."""
+    data = kwargs.get('data')
+    if isinstance(data, pandas.DataFrame):
+        return len(data)
+    first = args[0] if args else None
+    if isinstance(first, (list, tuple, numpy.ndarray, pandas.Series)):
+        return len(first)
+    return None
+
+
+def shift_index(v: Value) -> Value:
+    """An index written for R (from 1) as metafopy takes it (from 0); names stay as they are."""
+    if v is None or isinstance(v, (str, bool)):
+        return v
+    arr = numpy.asarray(v)
+    if arr.dtype.kind in 'if' and arr.dtype != bool:
+        return (arr.astype(int) - 1).tolist() if arr.ndim else int(arr) - 1
+    return v
+
+
+def shift_function_arguments(name: str, args: tuple[Value, ...], kwargs: dict[str, Value]) -> tuple[tuple[Value, ...], dict[str, Value]]:
+    """The indices of the functions whose ``x``, ``y`` or ``out`` are positions (``matreg(1, 2:4, ...)``) shifted to count from 0."""
+    names = FUNCTION_INDEX_ARGUMENTS.get(name)
+    if names is None:
+        return args, kwargs
+    positional = list(args)
+    if name == 'matreg':
+        for i in range(min(2, len(positional))):
+            positional[i] = shift_index(positional[i])
+    return tuple(positional), {k: shift_index(v) if k in names else v for k, v in kwargs.items()}
+
+
+def shift_arguments(kwargs: dict[str, Value], args: tuple[Value, ...] = ()) -> dict[str, Value]:
+    """Index arguments count from 1 in R and from 0 in metafopy; a vector of negative indices (R: leave these out) becomes a logical vector."""
     out: dict[str, Value] = {}
     for k, v in kwargs.items():
         if k in INDEX_ARGUMENTS and v is not None and not isinstance(v, (str, bool)):
             arr = numpy.asarray(v)
             if arr.dtype.kind in 'if' and arr.dtype != bool:
-                v = (arr.astype(int) - 1).tolist() if arr.ndim else int(arr) - 1
+                rows = row_count(args, kwargs)
+                if arr.size and rows is not None and bool(numpy.all(arr < 0)):
+                    keep = numpy.ones(rows, dtype=bool)
+                    keep[(-arr.astype(int) - 1).ravel()] = False
+                    v = keep.tolist()
+                else:
+                    v = (arr.astype(int) - 1).tolist() if arr.ndim else int(arr) - 1
         out[k] = v
     return out
 
@@ -1029,6 +1121,25 @@ def run_settings(env: Env) -> None:
     env.vars['.vistest'] = lambda *a, **k: True
 
 
+def formula_data(env: Env, fn: typing.Callable[..., typing.Any], kwargs: dict[str, Value]) -> dict[str, Value]:
+    """R evaluates a formula in the calling environment; metafopy needs ``data``, so the variables of the script that the formulas name are collected in one."""
+    try:
+        parameters = inspect.signature(fn.func if isinstance(fn, functools.partial) else fn).parameters
+    except TypeError, ValueError:
+        return kwargs
+    if 'data' in kwargs or 'data' not in parameters:
+        return kwargs
+    names = {name for v in kwargs.values() if isinstance(v, str) and v.lstrip().startswith('~') for name in re.findall(r'[A-Za-z_.][A-Za-z0-9_.]*', v)}
+    columns: dict[str, Value] = {}
+    for name in sorted(names):
+        value = env.vars.get(name)
+        if isinstance(value, (list, tuple, numpy.ndarray, pandas.Series)) and numpy.ndim(value) == 1:
+            columns[name] = numpy.asarray(value)
+    if not columns or len({len(v) for v in columns.values()}) != 1:
+        return kwargs
+    return {**kwargs, 'data': pandas.DataFrame(columns)}
+
+
 def rcall(env: Env, name: str, *args: Value, **kwargs: Value) -> Value:
     if name == 'source':
         run_settings(env)
@@ -1037,14 +1148,16 @@ def rcall(env: Env, name: str, *args: Value, **kwargs: Value) -> Value:
         return OPERATORS[name](*args)
     if name in BASE:
         return BASE[name](*args, **kwargs)
+    args, kwargs = shift_function_arguments(name, args, kwargs)
     first = args[0] if args else None
-    kwargs = shift_arguments(kwargs)
+    kwargs = shift_arguments(kwargs, args)
     try:
         fn = pycall.resolve_function(name, first)
     except pycall.MissingFunctionError as e:
         if name in METAFOR_FUNCTIONS:
             raise MissingRFunctionError(name) from e
         raise UnsupportedError(f'R function {name} is not available in the harness') from e
+    kwargs = formula_data(env, fn, kwargs)
     mapped = {pycall.arg_name(k): v for k, v in kwargs.items()}
     pycall.check_arguments(fn, list(mapped))
     if isinstance(fn, functools.partial):

@@ -14,6 +14,8 @@ LAZY = frozenset({'capture.output', 'expect_error', 'suppressMessages', 'suppres
 UNARY_OR_BINARY = frozenset({'+', '-'})
 BINARY = frozenset({'*', '/', '^', '%%', '%/%', '==', '!=', '<', '>', '<=', '>=', '&', '|', ':', '%in%', '%*%'})
 ASSIGN = frozenset({'<-', '=', '<<-'})
+# bare names that are functions passed as arguments (`transf = log`), not columns of the data
+FUNCTION_SYMBOLS = frozenset({'abs', 'exp', 'identity', 'log', 'log10', 'log2', 'sqrt'})
 CONSTANT_SYMBOLS = {
     'T': 'True',
     'F': 'False',
@@ -195,20 +197,23 @@ def tr_assign(lhs: Node, rhs_code: str, c: Context) -> str:
             raise UntranslatableError('assignment into a nested expression')
         name = target['v']
         cur = tr(target, c)
-        if head in {'[', '[['}:
-            idx = ', '.join(tr(a['v'], c) for a in args[1:])
-            new = f'rassign_index({cur}, {rhs_code}, {idx})'
-        elif head == '$':
-            new = f'rassign_dollar({cur}, {args[1]["v"]["v"]!r}, {rhs_code})'
-        elif head in {'names', 'colnames'}:
-            new = f'rassign_names({cur}, {rhs_code})'
-        else:
+        idx = ', '.join(tr(a['v'], c) for a in args[1:]) if head in {'[', '[['} else ''
+
+        def updated(rhs: str) -> str:
+            if head in {'[', '[['}:
+                return f'rassign_index({cur}, {rhs}, {idx})'
+            if head == '$':
+                return f'rassign_dollar({cur}, {args[1]["v"]["v"]!r}, {rhs})'
+            if head in {'names', 'colnames'}:
+                return f'rassign_names({cur}, {rhs})'
             raise UntranslatableError(f'replacement function {head}<-')
+
         if c.in_function:
             c.params.add(name)
-            return f'({local_name(name)} := {new})'
+            return f'({local_name(name)} := {updated(rhs_code)})'
         c.assigned.add(name)
-        return f'E.set({name!r}, {new})'
+        # the value of `x[i] <- v` is v, which `a[i] <- b[j] <- v` relies on
+        return f'rassign_into(E, {name!r}, lambda value: {updated("value")}, {rhs_code})'
     raise UntranslatableError('assignment target')
 
 
@@ -275,6 +280,8 @@ def tr_call(n: Node, c: Context) -> str:
         first = f'lambda: {tr(args[0]["v"], c)}'
         rest = args_code(args[1:], c)
         return f'rcall(E, {name!r}, {first}' + (f', {rest}' if rest else '') + ')'
+    if name in {'anova', 'predict'} and args and not args[0].get('name'):
+        args = [with_model(a, args[0]['v']) for a in args]
     if name in c.params:
         return f'{local_name(name)}({args_code(args, c)})'
     if name in c.nse and any(a.get('name') == 'data' for a in args):
@@ -282,12 +289,22 @@ def tr_call(n: Node, c: Context) -> str:
     return f'rcall(E, {name!r}' + (f', {args_code(args, c)}' if args else '') + ')'
 
 
+def with_model(arg: Node, model: Node) -> Node:
+    """`anova(res, X = pairmat(btt = 1:3))`: metafor's pairmat() finds the model of the call it is an argument of, so it is passed the model."""
+    value = arg['v']
+    is_pairmat = value['t'] == 'call' and value['f'].get('v') == 'pairmat'
+    if arg.get('name') and is_pairmat and not any(a.get('name') in {None, 'x'} for a in value['args']):
+        return {**arg, 'v': {**value, 'args': [{'v': model}, *value['args']]}}
+    return arg
+
+
 def tr_nse(name: str, args: list[Node], c: Context) -> str:
     """A model-function call: bare names that are not variables of the script are column names; other arguments see the data's columns."""
     data = next(a['v'] for a in args if a.get('name') == 'data')
 
     def thunk(node: Node) -> str:
-        if node['t'] == 'sym' and node['v'] not in c.assigned and node['v'] not in c.params and node['v'] not in CONSTANT_SYMBOLS:
+        is_function = node['t'] == 'sym' and (node['v'] in FUNCTION_SYMBOLS or str(node['v']).startswith('transf.'))
+        if node['t'] == 'sym' and not is_function and node['v'] not in c.assigned and node['v'] not in c.params and node['v'] not in CONSTANT_SYMBOLS:
             return repr(node['v'])
         if node['t'] == 'call' and node['f'].get('v') == '~':
             return repr(unparse(node))
@@ -297,10 +314,52 @@ def tr_nse(name: str, args: list[Node], c: Context) -> str:
         code = thunk(node)
         return code if code.startswith('lambda') else f'(lambda: {code})'
 
+    def column_names(node: Node) -> str | None:
+        """metafor takes `rvars = c(v1i, v2i)` as the names of columns of the data, not as the values of the variables."""
+        if node['t'] == 'call' and node['f'].get('v') == 'c' and node['args'] and all(a['v']['t'] == 'sym' and not a.get('name') for a in node['args']):
+            return repr([a['v']['v'] for a in node['args']])
+        return None
+
     positional = [deferred(a['v']) for a in args if not a.get('name')]
-    named = [f'{a["name"]!r}: {deferred(a["v"])}' for a in args if a.get('name') and a['name'] != 'data']
+    named = [
+        f'{a["name"]!r}: ' + (f'(lambda: {names})' if a['name'] == 'rvars' and (names := column_names(a['v'])) is not None else deferred(a['v']))
+        for a in args
+        if a.get('name') and a['name'] != 'data'
+    ]
     return f'rnse(E, {name!r}, lambda: {tr(data, c)}, [{", ".join(positional)}], {{{", ".join(named)}}})'
 
 
 def translate_unit(ast: Node, assigned: set[str], nse: set[str]) -> str:
     return tr(ast, Context(assigned, nse))
+
+
+def symbols(node: object) -> set[str]:
+    """The names a parse tree mentions."""
+    found: set[str] = set()
+    if isinstance(node, dict):
+        if node.get('t') == 'sym':
+            found.add(str(node['v']))
+        for value in node.values():
+            found |= symbols(value)
+    elif isinstance(node, list):
+        for item in node:
+            found |= symbols(item)
+    return found
+
+
+def assignment_targets(node: object) -> set[str]:
+    """The variables a parse tree assigns to (``x <- ...``, ``x$a <- ...``, ``names(x) <- ...``, ``x[i] <- ...``)."""
+    found: set[str] = set()
+    if isinstance(node, dict):
+        if node.get('t') == 'call' and node['f'].get('t') == 'sym' and node['f']['v'] in ASSIGN and len(node['args']) == 2:
+            lhs = node['args'][0]['v']
+            while lhs.get('t') == 'call' and lhs['args']:
+                lhs = lhs['args'][0]['v']
+            if lhs.get('t') in {'sym', 'str'}:
+                found.add(str(lhs['v']))
+        for value in node.values():
+            found |= assignment_targets(value)
+    elif isinstance(node, list):
+        for item in node:
+            found |= assignment_targets(item)
+    return found

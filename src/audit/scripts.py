@@ -73,6 +73,7 @@ def namespace(env: audit.rlib.Env) -> dict[str, object]:
         'math': math,
         'numpy': numpy,
         'rassign_dollar': audit.rlib.r_assign_dollar,
+        'rassign_into': audit.rlib.r_assign_into,
         'rassign_index': audit.rlib.r_assign_index,
         'rassign_names': audit.rlib.r_assign_names,
         'rcall': audit.rlib.rcall,
@@ -90,16 +91,24 @@ def run_script(script: Json, nse: set[str], timeout: float) -> tuple[list[Json],
     env = audit.rlib.Env()
     ns = namespace(env)
     assigned: set[str] = set()
+    lost: set[str] = set()
     findings: list[Json] = []
     tally: collections.Counter[str] = collections.Counter()
     for i, unit in enumerate(script['units']):
         case_id = f'scripts/{script["topic"]}/{script["kind"]}/{i}'
         tally['units'] += 1
         metafopy.set_seed(1234)
+        targets = audit.transpile.assignment_targets(unit['ast'])
+        if audit.transpile.symbols(unit['ast']) & lost:
+            # a variable it reads was not (or not correctly) made in Python, so a difference here says nothing about metafopy
+            tally['skipped: reads a variable of a unit that did not run in Python'] += 1
+            lost |= targets
+            continue
         try:
             code = audit.transpile.translate_unit(unit['ast'], assigned, nse)
         except audit.transpile.UntranslatableError as e:
             tally[f'untranslated: {e}'] += 1
+            lost |= targets
             continue
         py, value = audit.pyrun.run_guarded(functools.partial(eval, code, ns), timeout)
         if unit['status'] != 'ok':
@@ -110,7 +119,12 @@ def run_script(script: Json, nse: set[str], timeout: float) -> tuple[list[Json],
         cls = py.get('error_class', '')
         if cls == 'UnsupportedError':
             tally[f'unsupported: {py["error"][:70]}'] += 1
+            lost |= targets
             continue
+        if py['status'] != 'ok':
+            lost |= targets
+        else:
+            lost -= targets
         tally['compared'] += 1
         for f in audit.pyrun.classify(unit, py, value):
             snippet = unit['src'].replace('\n', ' ')[:90]
