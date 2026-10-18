@@ -98,6 +98,9 @@ resolve_value <- function(x, env) {
   }
   if (is.list(x)) {
     out <- lapply(x, resolve_value, env = env)
+    # c(1, NA, 3) is a numeric vector in R; the $na tag keeps it from being simplified before it is resolved
+    has_na <- is.null(names(x)) && any(vapply(x, function(e) is.list(e) && identical(names(e), "$na"), logical(1)))
+    if (has_na && all(vapply(out, function(e) is.atomic(e) && length(e) == 1L, logical(1)))) return(unlist(out))
     return(out)
   }
   x
