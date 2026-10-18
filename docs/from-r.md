@@ -93,7 +93,8 @@ The printed output is the same as metafor's.
 
 Names that metafor writes with `.` in the middle of a word also lose it in prefixed functions: `plot.gosh` is `plot_gosh`,
 `plot.infl.rma.uni` is `plot_infl`, `plot.profile.rma` is `plot_profile`, `plot.selmodel` is `plot_selmodel`, and
-`transf.ilogit` is `transf_ilogit`.
+`transf.ilogit` is `transf_ilogit`. The transformations are also a module: `transf.ilogit` is `metafopy.transf.ilogit`
+(the same function as `metafopy.transf_ilogit`), so `from metafopy import transf` keeps metafor's spelling.
 
 ## Classes and generic functions
 

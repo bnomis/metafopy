@@ -95,18 +95,18 @@ def test_conv_delta_logit(proportions: pandas.DataFrame) -> None:
     dat = proportions
     plo = metafopy.escalc('PLO', xi=[5, 12], ni=[40, 80])
     refutil.assert_frame(plo, CD['plo'], 'PLO')
-    out = metafopy.conv_delta(dat['yi'], dat['vi'], transf=metafopy.transf.transf_logit)
+    out = metafopy.conv_delta(dat['yi'], dat['vi'], transf=metafopy.transf.logit)
     refutil.assert_frame(out, CD['logit_vec'], 'vectors')
     # the delta method reproduces the analytic variances of PLO
     numpy.testing.assert_allclose(out['vi'], plo['vi'], rtol=1e-7)
     # auditme: accept[literal-duplication] each test case spells out its own R arguments
-    refutil.assert_frame(metafopy.conv_delta('yi', 'vi', data=dat, transf=metafopy.transf.transf_logit, var_names=['yi.t', 'vi.t']), CD['logit_names'], 'names')
-    refutil.assert_frame(metafopy.conv_delta('yi', 'vi', data=dat, transf=metafopy.transf.transf_logit, replace='all'), CD['logit_all'], 'all')
+    refutil.assert_frame(metafopy.conv_delta('yi', 'vi', data=dat, transf=metafopy.transf.logit, var_names=['yi.t', 'vi.t']), CD['logit_names'], 'names')
+    refutil.assert_frame(metafopy.conv_delta('yi', 'vi', data=dat, transf=metafopy.transf.logit, replace='all'), CD['logit_all'], 'all')
     # auditme: accept[literal-duplication] each test case spells out its own R arguments
-    out = metafopy.conv_delta('yi', 'vi', data=dat, transf=metafopy.transf.transf_logit, var_names=['yi.t', 'vi.t'], append=False)
+    out = metafopy.conv_delta('yi', 'vi', data=dat, transf=metafopy.transf.logit, var_names=['yi.t', 'vi.t'], append=False)
     refutil.assert_frame(out, CD['logit_noappend'], 'no append')
-    refutil.assert_frame(metafopy.conv_delta(dat['yi'], dat['vi'], transf=metafopy.transf.transf_logit, include=[False, True]), CD['logit_include'], 'include')
-    out = metafopy.conv_delta(dat['yi'], dat['vi'], transf=metafopy.transf.transf_logit, ni=[40, 80])
+    refutil.assert_frame(metafopy.conv_delta(dat['yi'], dat['vi'], transf=metafopy.transf.logit, include=[False, True]), CD['logit_include'], 'include')
+    out = metafopy.conv_delta(dat['yi'], dat['vi'], transf=metafopy.transf.logit, ni=[40, 80])
     refutil.close(out.attrs['ni'], CD['logit_ni'], 'ni')
 
 
@@ -117,8 +117,8 @@ def test_conv_delta_smd() -> None:
             'SMD', m1i='m1i', sd1i='sd1i', n1i='n1i', m2i='m2i', sd2i='sd2i', n2i='n2i', data=metafopy.datasets.load('normand1999'), correct=False
         )
     refutil.assert_frame(dat, CD['smd'], 'SMD')
-    refutil.assert_frame(metafopy.conv_delta('yi', 'vi', data=dat, transf=metafopy.transf.transf_dtolnor_norm, replace='all'), CD['dtolnor'], 'dtolnor')
-    out = metafopy.conv_delta('yi', 'vi', data=dat, transf=metafopy.transf.transf_dtorpb, n1i='n1i', n2i='n2i', replace='all')
+    refutil.assert_frame(metafopy.conv_delta('yi', 'vi', data=dat, transf=metafopy.transf.dtolnor_norm, replace='all'), CD['dtolnor'], 'dtolnor')
+    out = metafopy.conv_delta('yi', 'vi', data=dat, transf=metafopy.transf.dtorpb, n1i='n1i', n2i='n2i', replace='all')
     refutil.assert_frame(out, CD['dtorpb'], 'dtorpb')
 
 
@@ -128,13 +128,13 @@ def test_smd_preparation_example() -> None:
     dat = metafopy.conv_wald(out='or', ci_lb='lower', ci_ub='upper', data=dat, transf=numpy.log, var_names=['lnor', 'vlnor'])
     refutil.assert_frame(dat, CD['smd_step3'], 'conv_wald')
     # auditme: accept[literal-duplication] each test case spells out its own R arguments
-    dat = metafopy.conv_delta('lnor', 'vlnor', data=dat, transf=metafopy.transf.transf_lnortod_norm, var_names=['yi', 'vi'])
+    dat = metafopy.conv_delta('lnor', 'vlnor', data=dat, transf=metafopy.transf.lnortod_norm, var_names=['yi', 'vi'])
     refutil.assert_frame(dat, CD['smd_step4'], 'conv_delta lnor')
     # auditme: accept[literal-duplication] each test case spells out its own R arguments
     dat = dat.drop(columns=['lnor', 'vlnor'])
     dat = metafopy.escalc('COR', ri='corr', ni='ntot', data=dat, var_names=['ri', 'vri'])
     # auditme: accept[literal-duplication] each test case spells out its own R arguments
-    dat = metafopy.conv_delta('ri', 'vri', data=dat, transf=metafopy.transf.transf_rtod, var_names=['yi', 'vi'])
+    dat = metafopy.conv_delta('ri', 'vri', data=dat, transf=metafopy.transf.rtod, var_names=['yi', 'vi'])
     refutil.assert_frame(dat, CD['smd_step5'], 'conv_delta ri')
 
 
@@ -151,7 +151,7 @@ def test_correlation_preparation_example() -> None:
     # auditme: accept[literal-duplication] each test case spells out its own R arguments
     dat = metafopy.conv_wald(out='or', ci_lb='lower', ci_ub='upper', data=dat, transf=numpy.log, var_names=['lnor', 'vlnor'])
     # auditme: accept[literal-duplication] each test case spells out its own R arguments
-    dat = metafopy.conv_delta('lnor', 'vlnor', data=dat, transf=metafopy.transf.transf_lnortortet_pearson, var_names=['yi', 'vi'])
+    dat = metafopy.conv_delta('lnor', 'vlnor', data=dat, transf=metafopy.transf.lnortortet_pearson, var_names=['yi', 'vi'])
     refutil.assert_frame(dat, CD['cor_step6'], 'conv_delta')
 
 

@@ -216,19 +216,19 @@ def rround(x: float, digits: int = 0) -> float:
 
 # the functions .setlab() recognises (R's ``funlist``), by the name of the group: the labels differ per group, not per function
 LABEL_GROUPS: tuple[tuple[str, tuple[typing.Any, ...]], ...] = (
-    ('exp', (numpy.exp, math.exp, metafopy.transf.transf_exp_int)),
-    ('iabt', (metafopy.transf.transf_iabt, metafopy.transf.transf_iabt_int)),
-    ('iahw', (metafopy.transf.transf_iahw, metafopy.transf.transf_iahw_int)),
-    ('iarcsin', (metafopy.transf.transf_iarcsin, metafopy.transf.transf_iarcsin_int)),
-    ('ilogit', (metafopy.transf.transf_ilogit, metafopy.transf.transf_ilogit_int, metafopy.transf.plogis, scipy.special.expit)),
-    ('ipft.hm', (metafopy.transf.transf_ipft_hm,)),
+    ('exp', (numpy.exp, math.exp, metafopy.transf.exp_int)),
+    ('iabt', (metafopy.transf.iabt, metafopy.transf.iabt_int)),
+    ('iahw', (metafopy.transf.iahw, metafopy.transf.iahw_int)),
+    ('iarcsin', (metafopy.transf.iarcsin, metafopy.transf.iarcsin_int)),
+    ('ilogit', (metafopy.transf.ilogit, metafopy.transf.ilogit_int, metafopy.transf.plogis, scipy.special.expit)),
+    ('ipft.hm', (metafopy.transf.ipft_hm,)),
     (
         'iprobit',
-        (metafopy.transf.transf_iprobit, metafopy.transf.transf_iprobit_int, metafopy.transf.pnorm, scipy.stats.norm.cdf, scipy.special.ndtr),
+        (metafopy.transf.iprobit, metafopy.transf.iprobit_int, metafopy.transf.pnorm, scipy.stats.norm.cdf, scipy.special.ndtr),
     ),
-    ('isqrt', (metafopy.transf.transf_isqrt,)),
-    ('tanh', (metafopy.transf.transf_ztor, metafopy.transf.transf_ztor_int, numpy.tanh, math.tanh)),
-    ('ztor2', (metafopy.transf.transf_ztor2,)),
+    ('isqrt', (metafopy.transf.isqrt,)),
+    ('tanh', (metafopy.transf.ztor, metafopy.transf.ztor_int, numpy.tanh, math.tanh)),
+    ('ztor2', (metafopy.transf.ztor2,)),
 )
 
 # (long, short) labels of the recognised groups that the probed table of setlab_table lacks, keyed '<a|t>:<group>' (``atransf`` or ``transf``)

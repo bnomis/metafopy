@@ -54,29 +54,29 @@ def texts(a: matplotlib.axes.Axes) -> list[str]:
 # -- labels of the back-transformations -------------------------------------------------------------------------------
 
 LABELS: list[tuple[str, typing.Any, typing.Any, int, bool, str]] = [
-    ('ZCOR', metafopy.transf.transf_ztor, None, 1, False, 'Correlation Coefficient'),
-    ('ZCOR', None, metafopy.transf.transf_ztor, 1, False, 'Correlation Coefficient'),
-    ('ZCOR', metafopy.transf.transf_ztor_int, None, 1, False, 'Correlation Coefficient'),
+    ('ZCOR', metafopy.transf.ztor, None, 1, False, 'Correlation Coefficient'),
+    ('ZCOR', None, metafopy.transf.ztor, 1, False, 'Correlation Coefficient'),
+    ('ZCOR', metafopy.transf.ztor_int, None, 1, False, 'Correlation Coefficient'),
     ('ZCOR', numpy.tanh, None, 2, False, 'Correlation Coefficient'),
     ('ZCOR', None, None, 1, False, "Fisher's z Transformed Correlation Coefficient"),
-    ('ZCOR', metafopy.transf.transf_ztor, None, 3, True, 'Correlation'),
-    ('PLO', metafopy.transf.transf_ilogit, None, 1, False, 'Proportion'),
-    ('PLO', None, metafopy.transf.transf_ilogit, 1, False, 'Proportion (logit scale)'),
+    ('ZCOR', metafopy.transf.ztor, None, 3, True, 'Correlation'),
+    ('PLO', metafopy.transf.ilogit, None, 1, False, 'Proportion'),
+    ('PLO', None, metafopy.transf.ilogit, 1, False, 'Proportion (logit scale)'),
     ('PLO', metafopy.transf.plogis, None, 1, True, 'Proportion'),
     ('PLO', numpy.exp, None, 1, False, 'Odds'),
     ('PLO', None, numpy.exp, 1, False, 'Odds (log scale)'),
-    ('PAS', metafopy.transf.transf_iarcsin, None, 1, False, 'Proportion'),
-    ('PAS', None, metafopy.transf.transf_iarcsin, 1, False, 'Proportion (arcsine scale)'),
-    ('PRZ', metafopy.transf.transf_iprobit, None, 1, False, 'Proportion'),
+    ('PAS', metafopy.transf.iarcsin, None, 1, False, 'Proportion'),
+    ('PAS', None, metafopy.transf.iarcsin, 1, False, 'Proportion (arcsine scale)'),
+    ('PRZ', metafopy.transf.iprobit, None, 1, False, 'Proportion'),
     ('PRZ', None, metafopy.transf.pnorm, 1, False, 'Proportion (probit scale)'),
-    ('PFT', metafopy.transf.transf_ipft_hm, None, 1, False, 'Proportion'),
-    ('ZR2', metafopy.transf.transf_ztor2, None, 1, False, 'Coefficient of Determination'),
-    ('AHW', metafopy.transf.transf_iahw, None, 1, False, "Cronbach's alpha"),
-    ('ABT', metafopy.transf.transf_iabt, None, 1, True, 'Alpha'),
-    ('IRS', metafopy.transf.transf_isqrt, None, 1, False, 'Incidence Rate'),
-    ('IRS', None, metafopy.transf.transf_isqrt, 1, False, 'Incidence Rate (square root scale)'),
+    ('PFT', metafopy.transf.ipft_hm, None, 1, False, 'Proportion'),
+    ('ZR2', metafopy.transf.ztor2, None, 1, False, 'Coefficient of Determination'),
+    ('AHW', metafopy.transf.iahw, None, 1, False, "Cronbach's alpha"),
+    ('ABT', metafopy.transf.iabt, None, 1, True, 'Alpha'),
+    ('IRS', metafopy.transf.isqrt, None, 1, False, 'Incidence Rate'),
+    ('IRS', None, metafopy.transf.isqrt, 1, False, 'Incidence Rate (square root scale)'),
     ('RR', numpy.exp, None, 1, False, 'Risk Ratio'),
-    ('RR', metafopy.transf.transf_ilogit, None, 1, False, 'Transformed Log Risk Ratio'),
+    ('RR', metafopy.transf.ilogit, None, 1, False, 'Transformed Log Risk Ratio'),
     ('RR', lambda v: v, None, 1, False, 'Transformed Log Risk Ratio'),
 ]
 
@@ -89,7 +89,7 @@ def test_setlab_recognises_the_back_transformations(measure: str, transf: typing
 def test_forest_label_of_a_correlation_back_transformation(ax: matplotlib.axes.Axes) -> None:
     mol = metafopy.escalc('ZCOR', ri='ri', ni='ni', data=metafopy.datasets.load('dat.molloy2014'))
     fit = metafopy.rma('yi', 'vi', data=mol)
-    metafopy.forest(fit, transf=metafopy.transf.transf_ztor, ax=ax)
+    metafopy.forest(fit, transf=metafopy.transf.ztor, ax=ax)
     found = texts(ax)
     assert 'Correlation Coefficient' in found
     assert not any(t.startswith('Transformed') for t in found)

@@ -291,7 +291,7 @@ HC_CASES: dict[str, collections.abc.Callable[[dict[str, typing.Any]], typing.Any
     'hc_exp': lambda m: metafopy.bias.hc(m['res'], transf=math.exp),
     'hc_ee': lambda m: metafopy.bias.hc(m['ee']),
     'hc_sim': lambda m: metafopy.bias.hc(m['sim']),
-    'hc_intexp': lambda m: metafopy.bias.hc(m['res'], transf=metafopy.transf.transf_exp_int),
+    'hc_intexp': lambda m: metafopy.bias.hc(m['res'], transf=metafopy.transf.exp_int),
 }
 
 

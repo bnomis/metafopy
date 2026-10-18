@@ -1,15 +1,17 @@
 """Transformation functions (metafor's ``transf.*``).
 
 A port of ``R/transf.r`` from metafor 5.2-1. metafor's ``transf.rtoz`` is
-``transf_rtoz`` here, ``transf.ipft.hm`` is ``transf_ipft_hm``, and so on
-(``.`` becomes ``_``); argument names and defaults are metafor's. The functions
+``metafopy.transf.rtoz`` here, ``transf.ipft.hm`` is ``metafopy.transf.ipft_hm``,
+and so on (the remaining ``.`` becomes ``_``); the same functions are also
+``metafopy.transf_rtoz``, ``metafopy.transf_ipft_hm``, ..., the mechanical
+translation of the R names. Argument names and defaults are metafor's. The functions
 are documented on metafor's help page, ``?transf``
 (https://wviechtb.github.io/metafor/reference/transf.html). Sources cited there:
 
 - Fisher (1921), r-to-z, https://hdl.handle.net/2440/15169;
 - Freeman & Tukey (1950), double arcsine and incidence-rate transformations,
   doi:10.1214/aoms/1177729756, inverted as in Miller (1978),
-  doi:10.1080/00031305.1978.10479283 (``transf_ipft_hm`` uses the harmonic
+  doi:10.1080/00031305.1978.10479283 (``ipft_hm`` uses the harmonic
   mean of the sample sizes; see Barendregt et al. 2013,
   doi:10.1136/jech-2013-203104, on back-transforming pooled proportions);
 - Hakstian & Whalen (1976), doi:10.1007/BF02291840, and Bonett (2002),
@@ -34,16 +36,16 @@ The ``*_int`` functions integrate with SciPy's QUADPACK ``qags``/``qagi``,
 the routines behind R's ``integrate()``, using R's defaults (``rel.tol =
 abs.tol = .Machine$double.eps^0.25``, 100 subdivisions); where R's
 ``integrate()`` stops with an error, metafor returns NA and so do these.
-``transf_ilogit_mode`` uses the line-for-line port of R's ``uniroot()`` and
+``ilogit_mode`` uses the line-for-line port of R's ``uniroot()`` and
 the other ``*_mode`` functions the port of R's ``optimize()``.
 
 Behaviour kept from R, including its quirks:
 
-- ``transf_iarcsin_int``, ``transf_iahw_int`` and ``transf_iabt_int`` bound
+- ``iarcsin_int``, ``iahw_int`` and ``iabt_int`` bound
   the integral by ``max(0, xi - 10*tau)`` (and ``min(...)``) taken over *all*
   ``xi``, so a vector call can differ from elementwise calls, and one NaN in
   ``xi`` makes every value NaN;
-- ``transf_ztor_mode(NaN)`` and similar return a number, as R's
+- ``ztor_mode(NaN)`` and similar return a number, as R's
   ``optimize()`` replaces non-finite values by the largest double.
 
 Differences from R:
@@ -53,7 +55,7 @@ Differences from R:
   times);
 - ``targs`` is a mapping with metafor's list names (``tau2``, ``lower``,
   ``upper``, ``ni``, ``sd``) or, as in R, a scalar or a positional vector;
-  ``transf_ipft_hm`` also accepts the sample sizes directly (R errors);
+  ``ipft_hm`` also accepts the sample sizes directly (R errors);
 - R's NA and NaN are both NaN.
 """
 
@@ -73,64 +75,64 @@ import metafopy.core.zeroin
 import metafopy.errors
 
 __all__ = [
-    'transf_abt',
-    'transf_ahw',
-    'transf_arcsin',
-    'transf_clestod',
-    'transf_dtobesd',
-    'transf_dtocles',
-    'transf_dtocles_int',
-    'transf_dtocliffd',
-    'transf_dtolnor_logis',
-    'transf_dtolnor_norm',
-    'transf_dtomd',
-    'transf_dtoovl',
-    'transf_dtorbis',
-    'transf_dtorpb',
-    'transf_dtou1',
-    'transf_dtou2',
-    'transf_dtou3',
-    'transf_exp_int',
-    'transf_exp_mode',
-    'transf_iabt',
-    'transf_iabt_int',
-    'transf_iabt_mode',
-    'transf_iahw',
-    'transf_iahw_int',
-    'transf_iahw_mode',
-    'transf_iarcsin',
-    'transf_iarcsin_int',
-    'transf_iarcsin_mode',
-    'transf_iirft',
-    'transf_ilogit',
-    'transf_ilogit_int',
-    'transf_ilogit_mode',
-    'transf_ipft',
-    'transf_ipft_hm',
-    'transf_iprobit',
-    'transf_iprobit_int',
-    'transf_iprobit_mode',
-    'transf_irft',
-    'transf_isqrt',
-    'transf_lnortod_logis',
-    'transf_lnortod_norm',
-    'transf_lnortord',
-    'transf_lnortorr',
-    'transf_lnortortet_digby',
-    'transf_lnortortet_pearson',
-    'transf_logit',
-    'transf_pft',
-    'transf_probit',
-    'transf_r2toz',
-    'transf_rpbtod',
-    'transf_rpbtorbis',
-    'transf_rtod',
-    'transf_rtorpb',
-    'transf_rtoz',
-    'transf_ztor',
-    'transf_ztor2',
-    'transf_ztor_int',
-    'transf_ztor_mode',
+    'abt',
+    'ahw',
+    'arcsin',
+    'clestod',
+    'dtobesd',
+    'dtocles',
+    'dtocles_int',
+    'dtocliffd',
+    'dtolnor_logis',
+    'dtolnor_norm',
+    'dtomd',
+    'dtoovl',
+    'dtorbis',
+    'dtorpb',
+    'dtou1',
+    'dtou2',
+    'dtou3',
+    'exp_int',
+    'exp_mode',
+    'iabt',
+    'iabt_int',
+    'iabt_mode',
+    'iahw',
+    'iahw_int',
+    'iahw_mode',
+    'iarcsin',
+    'iarcsin_int',
+    'iarcsin_mode',
+    'iirft',
+    'ilogit',
+    'ilogit_int',
+    'ilogit_mode',
+    'ipft',
+    'ipft_hm',
+    'iprobit',
+    'iprobit_int',
+    'iprobit_mode',
+    'irft',
+    'isqrt',
+    'lnortod_logis',
+    'lnortod_norm',
+    'lnortord',
+    'lnortorr',
+    'lnortortet_digby',
+    'lnortortet_pearson',
+    'logit',
+    'pft',
+    'probit',
+    'r2toz',
+    'rpbtod',
+    'rpbtorbis',
+    'rtod',
+    'rtorpb',
+    'rtoz',
+    'ztor',
+    'ztor2',
+    'ztor_int',
+    'ztor_mode',
 ]
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
@@ -362,18 +364,18 @@ def expand_p(xi: FloatArray, p: numpy.typing.ArrayLike, name: str) -> FloatArray
 # correlations
 
 
-def transf_rtoz(xi: numpy.typing.ArrayLike) -> FloatArray:
+def rtoz(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Fisher's r-to-z transformation, ``atanh(xi)``, with ``xi`` truncated to [-1, 1]."""
     with numpy.errstate(divide='ignore'):
         return numpy.arctanh(numpy.clip(arr(xi), -1, 1))
 
 
-def transf_ztor(xi: numpy.typing.ArrayLike) -> FloatArray:
+def ztor(xi: numpy.typing.ArrayLike) -> FloatArray:
     """The z-to-r transformation, ``tanh(xi)``."""
     return numpy.tanh(arr(xi))
 
 
-def transf_ztor_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
+def ztor_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     """Integral transformation for z-to-r: E[tanh(Z)] for Z ~ N(xi, tau2), ``targs = {'tau2', 'lower', 'upper'}``."""
     t = chktargsint(targs)
     x = arr(xi)
@@ -386,7 +388,7 @@ def transf_ztor_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArr
     return mapint(lambda z, m: math.tanh(z) * d1(z, m, tau), x, lower, upper)
 
 
-def transf_ztor_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
+def ztor_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     """Mode of an atanh-normal variable (``targs`` = ``tau2`` or ``{'tau2': ...}``)."""
     tau2 = mode_tau2(targs)
     x = arr(xi)
@@ -396,14 +398,14 @@ def transf_ztor_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatAr
     return mapmode(lambda r, mu: d1(math.atanh(r), mu, tau) / (1 - r**2), x, -0.9999, 0.9999)
 
 
-def transf_r2toz(xi: numpy.typing.ArrayLike) -> FloatArray:
+def r2toz(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Variance-stabilising transformation for R-squared, ``atanh(sqrt(xi))``, with ``xi`` truncated to [0, 1]."""
     with numpy.errstate(divide='ignore'):
         return numpy.arctanh(numpy.sqrt(numpy.clip(arr(xi), 0, 1)))
 
 
-def transf_ztor2(xi: numpy.typing.ArrayLike) -> FloatArray:
-    """Inverse of :func:`transf_r2toz`, ``tanh(xi)^2``."""
+def ztor2(xi: numpy.typing.ArrayLike) -> FloatArray:
+    """Inverse of :func:`r2toz`, ``tanh(xi)^2``."""
     return numpy.tanh(arr(xi)) ** 2
 
 
@@ -411,28 +413,28 @@ def transf_ztor2(xi: numpy.typing.ArrayLike) -> FloatArray:
 # exponential, logit, arcsine and probit
 
 
-def transf_exp_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
+def exp_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     """Integral transformation for ``exp``: the log-normal mean ``exp(xi + tau2/2)``."""
     t = chktargsint(targs)
     return numpy.exp(arr(xi) + t['tau2'] / 2)
 
 
-def transf_exp_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
+def exp_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     """Mode of a log-normal variable, ``exp(xi - tau2)``."""
     return numpy.exp(arr(xi) - mode_tau2(targs))
 
 
-def transf_logit(xi: numpy.typing.ArrayLike) -> FloatArray:
+def logit(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Logit transformation, ``qlogis(xi)``."""
     return qlogis(arr(xi))
 
 
-def transf_ilogit(xi: numpy.typing.ArrayLike) -> FloatArray:
+def ilogit(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Inverse logit transformation, ``plogis(xi)``."""
     return plogis(arr(xi))
 
 
-def transf_ilogit_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
+def ilogit_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     """Integral transformation for the inverse logit (mean of a logit-normal variable)."""
     t = chktargsint(targs)
     x = arr(xi)
@@ -448,7 +450,7 @@ def transf_ilogit_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatA
 XS = numpy.concatenate(([0.0], numpy.arange(1, 10**5 - 1) * (1 / (10**5 - 1)), [1.0]))  # seq(0, 1, length=10^5)
 
 
-def transf_ilogit_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
+def ilogit_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     """Mode of a logit-normal variable; NaN when the density is bimodal (as in metafor).
 
     Raises:
@@ -486,13 +488,13 @@ def transf_ilogit_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> Float
     return out
 
 
-def transf_arcsin(xi: numpy.typing.ArrayLike) -> FloatArray:
+def arcsin(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Arcsine square root transformation, ``asin(sqrt(xi))``."""
     with numpy.errstate(invalid='ignore'):
         return numpy.arcsin(numpy.sqrt(arr(xi)))
 
 
-def transf_iarcsin(xi: numpy.typing.ArrayLike) -> FloatArray:
+def iarcsin(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Inverse arcsine square root transformation, ``sin(xi)^2``, giving 0 below 0 and 1 above pi/2."""
     x = arr(xi)
     with numpy.errstate(invalid='ignore'):
@@ -502,7 +504,7 @@ def transf_iarcsin(xi: numpy.typing.ArrayLike) -> FloatArray:
     return zi
 
 
-def transf_iarcsin_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
+def iarcsin_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     """Integral transformation for the inverse arcsine, with the normal truncated to [0, pi/2].
 
     The default bounds are ``max(0, xi - 10*tau)`` and ``min(pi/2, xi + 10*tau)`` taken over all ``xi``, as in metafor.
@@ -511,23 +513,23 @@ def transf_iarcsin_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> Float
     x = arr(xi)
     tau2 = t['tau2'] if t['tau2'] >= EPSILON else 0.0
     if tau2 == 0:
-        return transf_iarcsin(x)
+        return iarcsin(x)
     tau = math.sqrt(t['tau2'])
     lower = t.get('lower', float(numpy.max(numpy.append(0.0, x - 10 * tau))))
     upper = t.get('upper', float(numpy.min(numpy.append(HALF_PI, x + 10 * tau))))
 
     def toint(z: float, m: float) -> float:
-        return float(transf_iarcsin(z)[0]) * d1(z, m, tau) / (p1((HALF_PI - m) / tau) - p1(-m / tau))
+        return float(iarcsin(z)[0]) * d1(z, m, tau) / (p1((HALF_PI - m) / tau) - p1(-m / tau))
 
     return mapint(toint, x, lower, upper)
 
 
-def transf_iarcsin_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
+def iarcsin_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     """Mode of an arcsine-square-root-normal variable."""
     tau2 = mode_tau2(targs)
     x = arr(xi)
     if tau2 == 0:
-        return transf_iarcsin(x)
+        return iarcsin(x)
     tau = math.sqrt(tau2)
 
     def dfun(p: float, mu: float) -> float:
@@ -536,17 +538,17 @@ def transf_iarcsin_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> Floa
     return mapmode(dfun, x, 0.0, 1.0)
 
 
-def transf_probit(xi: numpy.typing.ArrayLike) -> FloatArray:
+def probit(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Probit transformation, ``qnorm(xi)``."""
     return qnorm(arr(xi))
 
 
-def transf_iprobit(xi: numpy.typing.ArrayLike) -> FloatArray:
+def iprobit(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Inverse probit transformation, ``pnorm(xi)``."""
     return pnorm(arr(xi))
 
 
-def transf_iprobit_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
+def iprobit_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     """Integral transformation for the inverse probit."""
     t = chktargsint(targs)
     x = arr(xi)
@@ -559,7 +561,7 @@ def transf_iprobit_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> Float
     return mapint(lambda z, m: p1(z) * d1(z, m, tau), x, lower, upper)
 
 
-def transf_iprobit_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
+def iprobit_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     """Mode of a probit-normal variable."""
     tau2 = mode_tau2(targs)
     x = arr(xi)
@@ -589,7 +591,7 @@ def recycle_pair(x: FloatArray, n: FloatArray) -> tuple[FloatArray, FloatArray]:
     return numpy.resize(x, size).reshape(shape), numpy.resize(n, size).reshape(shape)
 
 
-def transf_pft(xi: numpy.typing.ArrayLike, ni: numpy.typing.ArrayLike) -> FloatArray:
+def pft(xi: numpy.typing.ArrayLike, ni: numpy.typing.ArrayLike) -> FloatArray:
     """Freeman-Tukey double arcsine transformation of proportions ``xi`` with sample sizes ``ni``."""
     xi_, n = recycle_pair(arr(xi), arr(ni))
     x = xi_ * n
@@ -601,17 +603,17 @@ def inverse_pft(x: FloatArray, n: FloatArray) -> FloatArray:
     with numpy.errstate(all='ignore'):
         s = numpy.sin(2 * x)
         zi = 1 / 2 * (1 - numpy.sign(numpy.cos(2 * x)) * numpy.sqrt(1 - (s + (s - 1 / s) / n) ** 2))
-        zi = numpy.where(x > transf_pft(1, n), 1.0, zi)
-        zi = numpy.where(x < transf_pft(0, n), 0.0, zi)
+        zi = numpy.where(x > pft(1, n), 1.0, zi)
+        zi = numpy.where(x < pft(0, n), 0.0, zi)
     return numpy.atleast_1d(numpy.asarray(zi, numpy.float64))
 
 
-def transf_ipft(xi: numpy.typing.ArrayLike, ni: numpy.typing.ArrayLike) -> FloatArray:
+def ipft(xi: numpy.typing.ArrayLike, ni: numpy.typing.ArrayLike) -> FloatArray:
     """Inverse of the Freeman-Tukey transformation (Miller, 1978), 0 and 1 outside the attainable range."""
     return inverse_pft(*recycle_pair(arr(xi), arr(ni)))
 
 
-def transf_ipft_hm(xi: numpy.typing.ArrayLike, targs: Targs) -> FloatArray:
+def ipft_hm(xi: numpy.typing.ArrayLike, targs: Targs) -> FloatArray:
     """Inverse Freeman-Tukey transformation using the harmonic mean of ``targs['ni']``.
 
     Raises:
@@ -624,7 +626,7 @@ def transf_ipft_hm(xi: numpy.typing.ArrayLike, targs: Targs) -> FloatArray:
     return inverse_pft(arr(xi), numpy.asarray(nhm, numpy.float64))
 
 
-def transf_isqrt(xi: numpy.typing.ArrayLike) -> FloatArray:
+def isqrt(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Inverse of the square root transformation (``xi^2``, 0 for negative ``xi``)."""
     x = arr(xi)
     zi = x * x
@@ -632,19 +634,19 @@ def transf_isqrt(xi: numpy.typing.ArrayLike) -> FloatArray:
     return zi
 
 
-def transf_irft(xi: numpy.typing.ArrayLike, ti: numpy.typing.ArrayLike) -> FloatArray:
+def irft(xi: numpy.typing.ArrayLike, ti: numpy.typing.ArrayLike) -> FloatArray:
     """Freeman-Tukey transformation of incidence rates ``xi`` with person-times ``ti``."""
     with numpy.errstate(invalid='ignore'):
         return numpy.atleast_1d(numpy.asarray(1 / 2 * (numpy.sqrt(arr(xi)) + numpy.sqrt(arr(xi) + 1 / numpy.asarray(ti, numpy.float64))), numpy.float64))
 
 
-def transf_iirft(xi: numpy.typing.ArrayLike, ti: numpy.typing.ArrayLike) -> FloatArray:
-    """Inverse of :func:`transf_irft`, 0 below the attainable range."""
+def iirft(xi: numpy.typing.ArrayLike, ti: numpy.typing.ArrayLike) -> FloatArray:
+    """Inverse of :func:`irft`, 0 below the attainable range."""
     x = arr(xi)
     t = numpy.asarray(ti, numpy.float64)
     with numpy.errstate(all='ignore'):
         zi = (1 / t - 8 * x**2 + 16 * t * x**4) / (16 * x**2 * t)
-        zi = numpy.where(x < transf_irft(0, t), 0.0, zi)
+        zi = numpy.where(x < irft(0, t), 0.0, zi)
         zi = numpy.where(zi <= EPSILON, 0.0, zi)  # metafor: avoid finite-precision errors in back-transformed zeros
     return numpy.atleast_1d(numpy.asarray(zi, numpy.float64))
 
@@ -653,15 +655,15 @@ def transf_iirft(xi: numpy.typing.ArrayLike, ti: numpy.typing.ArrayLike) -> Floa
 # coefficient alpha
 
 
-def transf_ahw(xi: numpy.typing.ArrayLike) -> FloatArray:
+def ahw(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Hakstian-Whalen transformation of alpha, ``1 - (1-xi)^(1/3)``."""
     base = 1 - arr(xi)
     with numpy.errstate(invalid='ignore'):
         return numpy.where(base < 0, numpy.nan, 1 - base ** (1 / 3))  # R's (-Inf)^(1/3) is NaN, C's pow() gives Inf
 
 
-def transf_iahw(xi: numpy.typing.ArrayLike) -> FloatArray:
-    """Inverse of :func:`transf_ahw`, ``1 - (1-xi)^3``, truncated to [0, 1]."""
+def iahw(xi: numpy.typing.ArrayLike) -> FloatArray:
+    """Inverse of :func:`ahw`, ``1 - (1-xi)^3``, truncated to [0, 1]."""
     x = arr(xi)
     zi = 1 - (1 - x) ** 3
     zi[x > 1] = 1
@@ -669,29 +671,29 @@ def transf_iahw(xi: numpy.typing.ArrayLike) -> FloatArray:
     return zi
 
 
-def transf_iahw_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
-    """Integral transformation for :func:`transf_iahw` (normal truncated to [0, 1]; bounds over all ``xi``)."""
+def iahw_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
+    """Integral transformation for :func:`iahw` (normal truncated to [0, 1]; bounds over all ``xi``)."""
     t = chktargsint(targs)
     x = arr(xi)
     tau2 = t['tau2'] if t['tau2'] >= EPSILON else 0.0
     if tau2 == 0:
-        return transf_iahw(x)
+        return iahw(x)
     tau = math.sqrt(tau2)
     lower = t.get('lower', float(numpy.max(numpy.append(0.0, x - 10 * tau))))
     upper = t.get('upper', float(numpy.min(numpy.append(1.0, x + 10 * tau))))
 
     def toint(z: float, m: float) -> float:
-        return float(transf_iahw(z)[0]) * d1(z, m, tau) / (p1((1 - m) / tau) - p1(-m / tau))
+        return float(iahw(z)[0]) * d1(z, m, tau) / (p1((1 - m) / tau) - p1(-m / tau))
 
     return mapint(toint, x, lower, upper)
 
 
-def transf_iahw_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
-    """Mode of a :func:`transf_ahw`-normal variable."""
+def iahw_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
+    """Mode of a :func:`ahw`-normal variable."""
     tau2 = mode_tau2(targs)
     x = arr(xi)
     if tau2 == 0:
-        return transf_iahw(x)
+        return iahw(x)
     tau = math.sqrt(tau2)
 
     def dfun(p: float, mu: float) -> float:
@@ -700,14 +702,14 @@ def transf_iahw_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatAr
     return mapmode(dfun, x, 0.0, 1.0)
 
 
-def transf_abt(xi: numpy.typing.ArrayLike) -> FloatArray:
+def abt(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Bonett transformation of alpha, ``-log(1-xi)``."""
     with numpy.errstate(divide='ignore', invalid='ignore'):
         return -numpy.log(1 - arr(xi))
 
 
-def transf_iabt(xi: numpy.typing.ArrayLike) -> FloatArray:
-    """Inverse of :func:`transf_abt`, ``1 - exp(-xi)``, 0 for negative ``xi``."""
+def iabt(xi: numpy.typing.ArrayLike) -> FloatArray:
+    """Inverse of :func:`abt`, ``1 - exp(-xi)``, 0 for negative ``xi``."""
     x = arr(xi)
     with numpy.errstate(over='ignore'):
         zi = 1 - numpy.exp(-x)
@@ -715,29 +717,29 @@ def transf_iabt(xi: numpy.typing.ArrayLike) -> FloatArray:
     return zi
 
 
-def transf_iabt_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
-    """Integral transformation for :func:`transf_iabt` (normal truncated to [0, Inf); lower bound over all ``xi``)."""
+def iabt_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
+    """Integral transformation for :func:`iabt` (normal truncated to [0, Inf); lower bound over all ``xi``)."""
     t = chktargsint(targs)
     x = arr(xi)
     tau2 = t['tau2'] if t['tau2'] >= EPSILON else 0.0
     if tau2 == 0:
-        return transf_iabt(x)
+        return iabt(x)
     tau = math.sqrt(tau2)
     lower = t.get('lower', float(numpy.max(numpy.append(0.0, x - 10 * tau))))
     upper = t.get('upper', x + 10 * tau)
 
     def toint(z: float, m: float) -> float:
-        return float(transf_iabt(z)[0]) * d1(z, m, tau) / p1(m / tau)
+        return float(iabt(z)[0]) * d1(z, m, tau) / p1(m / tau)
 
     return mapint(toint, x, lower, upper)
 
 
-def transf_iabt_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
-    """Mode of a :func:`transf_abt`-normal variable."""
+def iabt_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
+    """Mode of a :func:`abt`-normal variable."""
     tau2 = mode_tau2(targs)
     x = arr(xi)
     if tau2 == 0:
-        return transf_iabt(x)
+        return iabt(x)
     tau = math.sqrt(tau2)
 
     def dfun(p: float, mu: float) -> float:
@@ -750,56 +752,56 @@ def transf_iabt_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatAr
 # standardised mean differences
 
 
-def transf_dtou1(xi: numpy.typing.ArrayLike) -> FloatArray:
+def dtou1(xi: numpy.typing.ArrayLike) -> FloatArray:
     """SMD to Cohen's U1 (proportion of non-overlap)."""
     u2i = pnorm(numpy.abs(arr(xi)) / 2)
     return (2 * u2i - 1) / u2i
 
 
-def transf_dtou2(xi: numpy.typing.ArrayLike) -> FloatArray:
+def dtou2(xi: numpy.typing.ArrayLike) -> FloatArray:
     """SMD to Cohen's U2, ``pnorm(xi/2)``."""
     return pnorm(arr(xi) / 2)
 
 
-def transf_dtou3(xi: numpy.typing.ArrayLike) -> FloatArray:
+def dtou3(xi: numpy.typing.ArrayLike) -> FloatArray:
     """SMD to Cohen's U3, ``pnorm(xi)``."""
     return pnorm(arr(xi))
 
 
-def transf_dtoovl(xi: numpy.typing.ArrayLike) -> FloatArray:
+def dtoovl(xi: numpy.typing.ArrayLike) -> FloatArray:
     """SMD to the overlapping coefficient, ``2*pnorm(-|xi|/2)``."""
     return 2 * pnorm(-numpy.abs(arr(xi)) / 2)
 
 
-def transf_dtocles(xi: numpy.typing.ArrayLike) -> FloatArray:
+def dtocles(xi: numpy.typing.ArrayLike) -> FloatArray:
     """SMD to the common language effect size, ``pnorm(xi/sqrt(2))``."""
     return pnorm(arr(xi) / math.sqrt(2))
 
 
-def transf_clestod(xi: numpy.typing.ArrayLike) -> FloatArray:
-    """Inverse of :func:`transf_dtocles`, ``qnorm(xi)*sqrt(2)``."""
+def clestod(xi: numpy.typing.ArrayLike) -> FloatArray:
+    """Inverse of :func:`dtocles`, ``qnorm(xi)*sqrt(2)``."""
     return qnorm(arr(xi)) * math.sqrt(2)
 
 
-def transf_dtocles_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
-    """Integral transformation for :func:`transf_dtocles`."""
+def dtocles_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
+    """Integral transformation for :func:`dtocles`."""
     t = chktargsint(targs)
     x = arr(xi)
     tau2 = t['tau2'] if t['tau2'] >= EPSILON else 0.0
     tau = math.sqrt(tau2)
     if tau2 == 0:
-        return transf_dtocles(x)
+        return dtocles(x)
     lower = t.get('lower', x - 10 * tau)
     upper = t.get('upper', x + 10 * tau)
     return mapint(lambda z, m: p1(z / math.sqrt(2)) * d1(z, m, tau), x, lower, upper)
 
 
-def transf_dtocliffd(xi: numpy.typing.ArrayLike) -> FloatArray:
+def dtocliffd(xi: numpy.typing.ArrayLike) -> FloatArray:
     """SMD to Cliff's delta, ``2*pnorm(xi/sqrt(2)) - 1``."""
     return 2 * pnorm(arr(xi) / math.sqrt(2)) - 1
 
 
-def transf_dtobesd(xi: numpy.typing.ArrayLike) -> FloatArray:
+def dtobesd(xi: numpy.typing.ArrayLike) -> FloatArray:
     """SMD to the binomial effect size display (proportion above the median in the first group)."""
     x = arr(xi)
     with numpy.errstate(invalid='ignore'):
@@ -807,7 +809,7 @@ def transf_dtobesd(xi: numpy.typing.ArrayLike) -> FloatArray:
     return 0.50 + rpbi / 2
 
 
-def transf_dtomd(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
+def dtomd(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     """SMD to mean difference given a known standard deviation (``targs`` = ``sd`` or ``{'sd': ...}``).
 
     Raises:
@@ -821,7 +823,7 @@ def transf_dtomd(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     return arr(xi) * float(sd[0])
 
 
-def transf_dtorpb(xi: numpy.typing.ArrayLike, n1i: numpy.typing.ArrayLike | None = None, n2i: numpy.typing.ArrayLike | None = None) -> FloatArray:
+def dtorpb(xi: numpy.typing.ArrayLike, n1i: numpy.typing.ArrayLike | None = None, n2i: numpy.typing.ArrayLike | None = None) -> FloatArray:
     """SMD to point-biserial correlation; exact when ``n1i``/``n2i`` are given, else assumes equal groups."""
     x = arr(xi)
     if n1i is None or n2i is None:
@@ -834,7 +836,7 @@ def transf_dtorpb(xi: numpy.typing.ArrayLike, n1i: numpy.typing.ArrayLike | None
         return numpy.asarray(x / numpy.sqrt(x**2 + hi), numpy.float64)
 
 
-def transf_dtorbis(xi: numpy.typing.ArrayLike, n1i: numpy.typing.ArrayLike | None = None, n2i: numpy.typing.ArrayLike | None = None) -> FloatArray:
+def dtorbis(xi: numpy.typing.ArrayLike, n1i: numpy.typing.ArrayLike | None = None, n2i: numpy.typing.ArrayLike | None = None) -> FloatArray:
     """SMD to biserial correlation (via the point-biserial correlation)."""
     x = arr(xi)
     if n1i is None or n2i is None:
@@ -859,7 +861,7 @@ def pi_check(x: FloatArray, pi: numpy.typing.ArrayLike | None) -> FloatArray:
     return p
 
 
-def transf_rpbtorbis(xi: numpy.typing.ArrayLike, pi: numpy.typing.ArrayLike | None = None) -> FloatArray:
+def rpbtorbis(xi: numpy.typing.ArrayLike, pi: numpy.typing.ArrayLike | None = None) -> FloatArray:
     """Point-biserial to biserial correlation; ``pi`` is the proportion in the first group (default 0.5)."""
     x = arr(xi)
     p = pi_check(x, pi)
@@ -867,7 +869,7 @@ def transf_rpbtorbis(xi: numpy.typing.ArrayLike, pi: numpy.typing.ArrayLike | No
         return numpy.asarray(numpy.sqrt(p * (1 - p)) / dnorm(qnorm(p)) * x, numpy.float64)
 
 
-def transf_rtorpb(xi: numpy.typing.ArrayLike, pi: numpy.typing.ArrayLike | None = None) -> FloatArray:
+def rtorpb(xi: numpy.typing.ArrayLike, pi: numpy.typing.ArrayLike | None = None) -> FloatArray:
     """Pearson correlation to the point-biserial correlation after dichotomising at proportion ``pi``."""
     x = arr(xi)
     p = pi_check(x, pi)
@@ -875,8 +877,8 @@ def transf_rtorpb(xi: numpy.typing.ArrayLike, pi: numpy.typing.ArrayLike | None 
         return numpy.asarray(x * dnorm(qnorm(p)) / numpy.sqrt(p * (1 - p)), numpy.float64)
 
 
-def transf_rtod(xi: numpy.typing.ArrayLike, n1i: numpy.typing.ArrayLike | None = None, n2i: numpy.typing.ArrayLike | None = None) -> FloatArray:
-    """Pearson correlation to SMD for a dichotomised variable (inverse of :func:`transf_dtorbis`).
+def rtod(xi: numpy.typing.ArrayLike, n1i: numpy.typing.ArrayLike | None = None, n2i: numpy.typing.ArrayLike | None = None) -> FloatArray:
+    """Pearson correlation to SMD for a dichotomised variable (inverse of :func:`dtorbis`).
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
@@ -897,8 +899,8 @@ def transf_rtod(xi: numpy.typing.ArrayLike, n1i: numpy.typing.ArrayLike | None =
         return numpy.asarray(numpy.sqrt(hi) * rpbi / numpy.sqrt(1 - rpbi**2), numpy.float64)
 
 
-def transf_rpbtod(xi: numpy.typing.ArrayLike, n1i: numpy.typing.ArrayLike | None = None, n2i: numpy.typing.ArrayLike | None = None) -> FloatArray:
-    """Point-biserial correlation to SMD (inverse of :func:`transf_dtorpb`)."""
+def rpbtod(xi: numpy.typing.ArrayLike, n1i: numpy.typing.ArrayLike | None = None, n2i: numpy.typing.ArrayLike | None = None) -> FloatArray:
+    """Point-biserial correlation to SMD (inverse of :func:`dtorpb`)."""
     x = arr(xi)
     if n1i is None or n2i is None:
         hi: FloatArray | float = 4.0
@@ -921,7 +923,7 @@ def pc_check(x: FloatArray, pc: numpy.typing.ArrayLike) -> FloatArray:
     return p
 
 
-def transf_lnortord(xi: numpy.typing.ArrayLike, pc: numpy.typing.ArrayLike) -> FloatArray:
+def lnortord(xi: numpy.typing.ArrayLike, pc: numpy.typing.ArrayLike) -> FloatArray:
     """Log odds ratio to risk difference for control group risk ``pc``."""
     x = arr(xi)
     p = pc_check(x, pc)
@@ -930,7 +932,7 @@ def transf_lnortord(xi: numpy.typing.ArrayLike, pc: numpy.typing.ArrayLike) -> F
         return numpy.asarray(e * p / (1 - p + p * e) - p, numpy.float64)
 
 
-def transf_lnortorr(xi: numpy.typing.ArrayLike, pc: numpy.typing.ArrayLike) -> FloatArray:
+def lnortorr(xi: numpy.typing.ArrayLike, pc: numpy.typing.ArrayLike) -> FloatArray:
     """Log odds ratio to risk ratio (not log risk ratio) for control group risk ``pc``."""
     x = arr(xi)
     p = pc_check(x, pc)
@@ -939,33 +941,33 @@ def transf_lnortorr(xi: numpy.typing.ArrayLike, pc: numpy.typing.ArrayLike) -> F
         return numpy.asarray(e / (p * (e - 1) + 1), numpy.float64)
 
 
-def transf_lnortod_norm(xi: numpy.typing.ArrayLike) -> FloatArray:
+def lnortod_norm(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Log odds ratio to SMD assuming normal distributions (Cox & Snell), ``xi/1.65``."""
     return arr(xi) / 1.65
 
 
-def transf_lnortod_logis(xi: numpy.typing.ArrayLike) -> FloatArray:
+def lnortod_logis(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Log odds ratio to SMD assuming logistic distributions (Chinn), ``sqrt(3)/pi*xi``."""
     return math.sqrt(3) / math.pi * arr(xi)
 
 
-def transf_dtolnor_norm(xi: numpy.typing.ArrayLike) -> FloatArray:
+def dtolnor_norm(xi: numpy.typing.ArrayLike) -> FloatArray:
     """SMD to log odds ratio assuming normal distributions, ``xi*1.65``."""
     return arr(xi) * 1.65
 
 
-def transf_dtolnor_logis(xi: numpy.typing.ArrayLike) -> FloatArray:
+def dtolnor_logis(xi: numpy.typing.ArrayLike) -> FloatArray:
     """SMD to log odds ratio assuming logistic distributions, ``xi/sqrt(3)*pi``."""
     return arr(xi) / math.sqrt(3) * math.pi
 
 
-def transf_lnortortet_pearson(xi: numpy.typing.ArrayLike) -> FloatArray:
+def lnortortet_pearson(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Log odds ratio to tetrachoric correlation (Pearson, 1900), ``cos(pi/(1+sqrt(exp(xi))))``."""
     with numpy.errstate(over='ignore'):
         return numpy.cos(math.pi / (1 + numpy.sqrt(numpy.exp(arr(xi)))))
 
 
-def transf_lnortortet_digby(xi: numpy.typing.ArrayLike) -> FloatArray:
+def lnortortet_digby(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Log odds ratio to tetrachoric correlation (Digby, 1983), ``(OR^(3/4) - 1)/(OR^(3/4) + 1)``."""
     with numpy.errstate(over='ignore', invalid='ignore'):
         e = numpy.exp(arr(xi)) ** (3 / 4)
@@ -975,21 +977,21 @@ def transf_lnortortet_digby(xi: numpy.typing.ArrayLike) -> FloatArray:
 # auditme: accept[non-alphabetical-literal] order is metafor's documented order and is meaningful
 TAU2_DEFAULT = frozenset(
     {
-        'transf_exp_int',
-        'transf_ilogit_int',
-        'transf_iprobit_int',
-        'transf_ztor_int',
-        'transf_iarcsin_int',
-        'transf_iahw_int',
-        'transf_iabt_int',
-        'transf_dtocles_int',
-        'transf_exp_mode',
-        'transf_ilogit_mode',
-        'transf_iprobit_mode',
-        'transf_ztor_mode',
-        'transf_iarcsin_mode',
-        'transf_iahw_mode',
-        'transf_iabt_mode',
+        'exp_int',
+        'ilogit_int',
+        'iprobit_int',
+        'ztor_int',
+        'iarcsin_int',
+        'iahw_int',
+        'iabt_int',
+        'dtocles_int',
+        'exp_mode',
+        'ilogit_mode',
+        'iprobit_mode',
+        'ztor_mode',
+        'iarcsin_mode',
+        'iahw_mode',
+        'iabt_mode',
     }
 )
 

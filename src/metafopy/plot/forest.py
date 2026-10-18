@@ -389,14 +389,12 @@ def jac_abt(xs: FloatArray) -> FloatArray:
 # the transformations metafor can draw a prediction distribution for (the order of its ``funlist``)
 TRANSF_RULES: tuple[TransfRule, ...] = (
     TransfRule((numpy.exp, math.exp), numpy.log, jac_exp, 0.01, math.inf),
-    TransfRule((metafopy.transf.transf_ztor, numpy.tanh, math.tanh), numpy.arctanh, jac_tanh, -0.99, 0.99),
-    TransfRule((metafopy.transf.transf_ilogit, metafopy.transf.plogis, scipy.special.expit), metafopy.transf.qlogis, jac_logit, 0.01, 0.99),
-    TransfRule((metafopy.transf.transf_iarcsin,), metafopy.transf.transf_arcsin, jac_arcsin, 0.01, 0.99),
-    TransfRule(
-        (metafopy.transf.transf_iprobit, metafopy.transf.pnorm, scipy.stats.norm.cdf, scipy.special.ndtr), metafopy.transf.qnorm, jac_probit, 0.01, 0.99
-    ),
-    TransfRule((metafopy.transf.transf_iahw,), metafopy.transf.transf_ahw, jac_ahw, 0.01, 0.99),
-    TransfRule((metafopy.transf.transf_iabt,), metafopy.transf.transf_abt, jac_abt, 0.01, 0.99),
+    TransfRule((metafopy.transf.ztor, numpy.tanh, math.tanh), numpy.arctanh, jac_tanh, -0.99, 0.99),
+    TransfRule((metafopy.transf.ilogit, metafopy.transf.plogis, scipy.special.expit), metafopy.transf.qlogis, jac_logit, 0.01, 0.99),
+    TransfRule((metafopy.transf.iarcsin,), metafopy.transf.arcsin, jac_arcsin, 0.01, 0.99),
+    TransfRule((metafopy.transf.iprobit, metafopy.transf.pnorm, scipy.stats.norm.cdf, scipy.special.ndtr), metafopy.transf.qnorm, jac_probit, 0.01, 0.99),
+    TransfRule((metafopy.transf.iahw,), metafopy.transf.ahw, jac_ahw, 0.01, 0.99),
+    TransfRule((metafopy.transf.iabt,), metafopy.transf.abt, jac_abt, 0.01, 0.99),
 )
 
 

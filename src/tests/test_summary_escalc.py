@@ -66,10 +66,10 @@ def test_level_and_h0(pft: pandas.DataFrame) -> None:
 
 def test_transf_with_per_study_argument(pft: pandas.DataFrame) -> None:
     numpy.testing.assert_array_equal(pft.attrs['ni'], arr(REF['pft']['ni']))
-    res = metafopy.effects.summary.summary_escalc(pft, transf=metafopy.transf.transf_ipft, ni=pft.attrs['ni'])
+    res = metafopy.effects.summary.summary_escalc(pft, transf=metafopy.transf.ipft, ni=pft.attrs['ni'])
     check(res, REF['pft']['transf_ipft'])
     assert 'measure' not in res.attrs
-    check(metafopy.effects.summary.summary_escalc(pft, transf=metafopy.transf.transf_ipft, ni=pft.attrs['ni'], append=False), REF['pft']['transf_noappend'])
+    check(metafopy.effects.summary.summary_escalc(pft, transf=metafopy.transf.ipft, ni=pft.attrs['ni'], append=False), REF['pft']['transf_noappend'])
 
 
 def test_out_names_and_no_append(pft: pandas.DataFrame) -> None:
@@ -81,7 +81,7 @@ def test_out_names_and_no_append(pft: pandas.DataFrame) -> None:
 def test_transf_exp_olim_and_integral(odds: pandas.DataFrame) -> None:
     check(metafopy.effects.summary.summary_escalc(odds, transf=numpy.exp), REF['or']['transf_exp'])
     check(metafopy.effects.summary.summary_escalc(odds, transf=numpy.exp, olim=(1, 0.5)), REF['or']['olim'])
-    check(metafopy.effects.summary.summary_escalc(odds, transf=metafopy.transf.transf_exp_int, targs=0.2), REF['or']['exp_int'])
+    check(metafopy.effects.summary.summary_escalc(odds, transf=metafopy.transf.exp_int, targs=0.2), REF['or']['exp_int'])
 
 
 def test_replace_false_fills_only_missing(odds: pandas.DataFrame) -> None:
@@ -93,8 +93,8 @@ def test_replace_false_fills_only_missing(odds: pandas.DataFrame) -> None:
 
 
 def test_var_names_from_attrs(zcor: pandas.DataFrame) -> None:
-    check(metafopy.effects.summary.summary_escalc(zcor, transf=metafopy.transf.transf_ztor), REF['zcor']['ztor'])
-    check(metafopy.effects.summary.summary_escalc(zcor, transf=metafopy.transf.transf_ztor_int, targs=0.05), REF['zcor']['ztor_int'], rtol=1e-6)
+    check(metafopy.effects.summary.summary_escalc(zcor, transf=metafopy.transf.ztor), REF['zcor']['ztor'])
+    check(metafopy.effects.summary.summary_escalc(zcor, transf=metafopy.transf.ztor_int, targs=0.05), REF['zcor']['ztor_int'], rtol=1e-6)
 
 
 def test_errors(pft: pandas.DataFrame) -> None:

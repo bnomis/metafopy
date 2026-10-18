@@ -177,7 +177,7 @@ FOREST_CASES: dict[str, tuple[str, collections.abc.Callable[[pandas.DataFrame], 
     ),
     'forest_pi_dist_knha': ('knha', lambda d: {'predstyle': 'dist', 'predtail': 0.2}),
     'forest_pi_dist_predlim': ('re', lambda d: {'predstyle': 'dist', 'transf': numpy.exp, 'predlim': (0.05, 3), 'alim': (0, 3), 'refline': 1}),
-    'forest_pi_dist_ilogit': ('re', lambda d: {'predstyle': 'dist', 'transf': metafopy.transf.transf_ilogit, 'alim': (0, 1), 'refline': 0.5}),
+    'forest_pi_dist_ilogit': ('re', lambda d: {'predstyle': 'dist', 'transf': metafopy.transf.ilogit, 'alim': (0, 1), 'refline': 0.5}),
     'forest_pi_dist_preddist': ('re', lambda d: {'predstyle': 'dist', 'preddist': {'x': PDXS, 'y': PDYS, 'level': 90}}),
     'forest_pi_shade_preddist': (
         're',

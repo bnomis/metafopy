@@ -105,14 +105,14 @@ print(predict(res, transf=numpy.tanh))
 0  0.1488  0.0878  0.2087 -0.0371  0.3248
 ```
 
-For proportions, the logit (`PLO`) is a common choice, with `transf_ilogit` to go back:
+For proportions, the logit (`PLO`) is a common choice, with `transf.ilogit` to go back:
 
 ```python
-from metafopy.transf import transf_ilogit
+from metafopy import transf
 
 pri = datasets.load('dat.pritz1997')
 pri = escalc(measure='PLO', xi='xi', ni='ni', data=pri)
-print(predict(rma('yi', 'vi', data=pri), transf=transf_ilogit))
+print(predict(rma('yi', 'vi', data=pri), transf=transf.ilogit))
 ```
 
 ```text
@@ -193,6 +193,7 @@ print(summary_escalc(stay)[['source', 'yi', 'sei', 'zi', 'pval', 'ci_lb', 'ci_ub
 
 ## Transformations
 
-`metafopy.transf` holds metafor's transformation functions (`transf_ilogit`, `transf_ztor`, `transf_dtocles` and so on). Pass
+`metafopy.transf` holds metafor's transformation functions (`transf.ilogit`, `transf.ztor`, `transf.dtocles` and so on, also
+imported at the top level as `transf_ilogit`, `transf_ztor`, ...). Pass
 them as `transf=` to `predict` and `confint`, or as `atransf=` to the plot functions. NumPy functions such as `numpy.exp` and
 `numpy.tanh` work as well.

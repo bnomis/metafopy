@@ -1,4 +1,4 @@
-"""transf_* against metafor: every case in src/tests/reference/extras/transf.json (see src/tests/r/generate_transf.R)."""
+"""metafopy.transf against metafor: every case in src/tests/reference/extras/transf.json (see src/tests/r/generate_transf.R)."""
 
 import collections.abc
 import functools
@@ -10,6 +10,7 @@ import warnings
 import numpy
 import pytest
 
+import metafopy
 import metafopy.transf
 
 FIXTURE = pathlib.Path(__file__).parent / 'reference' / 'extras' / 'transf.json'
@@ -17,7 +18,7 @@ FIXTURE = pathlib.Path(__file__).parent / 'reference' / 'extras' / 'transf.json'
 # integral (integrate()) and root/mode (uniroot(), optimize()) based functions;
 # transf.exp.int and transf.exp.mode are closed forms in metafor
 NUMERIC = {'_int', '_mode'}
-CLOSED_FORM = {'transf_exp_int', 'transf_exp_mode'}
+CLOSED_FORM = {'exp_int', 'exp_mode'}
 
 
 @functools.cache
@@ -46,13 +47,18 @@ def decode(v: typing.Any) -> typing.Any:
     return v
 
 
+def py_name(name: str) -> str:
+    """``transf.ipft.hm`` is ``ipft_hm`` in ``metafopy.transf``."""
+    return name.removeprefix('transf.').replace('.', '_')
+
+
 def func(name: str) -> collections.abc.Callable[..., typing.Any]:
-    f: collections.abc.Callable[..., typing.Any] = getattr(metafopy.transf, name.replace('.', '_'))
+    f: collections.abc.Callable[..., typing.Any] = getattr(metafopy.transf, py_name(name))
     return f
 
 
 def tolerance(name: str) -> tuple[float, float]:
-    py = name.replace('.', '_')
+    py = py_name(name)
     if py not in CLOSED_FORM and any(py.endswith(s) for s in NUMERIC):
         return 1e-6, 1e-12
     return 1e-10, 1e-15
@@ -85,38 +91,45 @@ def test_transf_matches_metafor(name: str) -> None:
 
 
 def test_every_metafor_function_is_covered() -> None:
-    covered = {c['fun'].replace('.', '_') for c in cases().values()}
+    covered = {py_name(c['fun']) for c in cases().values()}
     assert covered == set(metafopy.transf.__all__)
 
 
+def test_top_level_names_are_the_module_functions() -> None:
+    # transf.ilogit translates mechanically to metafopy.transf_ilogit, the same function as metafopy.transf.ilogit
+    for name in metafopy.transf.__all__:
+        assert getattr(metafopy, f'transf_{name}') is getattr(metafopy.transf, name)
+        assert f'transf_{name}' in metafopy.__all__
+
+
 def test_scalars_and_shapes() -> None:
-    out = metafopy.transf.transf_ztor(0.5)
+    out = metafopy.transf.ztor(0.5)
     assert out.shape == (1,)
     assert out[0] == pytest.approx(numpy.tanh(0.5))
     grid = numpy.array([[0.1, 0.2], [0.3, 0.4]])
-    assert metafopy.transf.transf_logit(grid).shape == (2, 2)
-    assert metafopy.transf.transf_ilogit_int(grid, targs={'tau2': 0.1}).shape == (2, 2)
-    assert metafopy.transf.transf_ztor_mode(grid, targs=0.1).shape == (2, 2)
-    numpy.testing.assert_allclose(metafopy.transf.transf_pft(grid, 10), metafopy.transf.transf_pft(grid.ravel(), 10).reshape(2, 2))
+    assert metafopy.transf.logit(grid).shape == (2, 2)
+    assert metafopy.transf.ilogit_int(grid, targs={'tau2': 0.1}).shape == (2, 2)
+    assert metafopy.transf.ztor_mode(grid, targs=0.1).shape == (2, 2)
+    numpy.testing.assert_allclose(metafopy.transf.pft(grid, 10), metafopy.transf.pft(grid.ravel(), 10).reshape(2, 2))
 
 
 def test_targs_forms_agree() -> None:
     x = numpy.array([-1.0, 0.0, 0.7])
-    by_dict = metafopy.transf.transf_ilogit_int(x, targs={'tau2': 0.3, 'lower': -2, 'upper': 3})
-    by_seq = metafopy.transf.transf_ilogit_int(x, targs=[0.3, -2, 3])
+    by_dict = metafopy.transf.ilogit_int(x, targs={'tau2': 0.3, 'lower': -2, 'upper': 3})
+    by_seq = metafopy.transf.ilogit_int(x, targs=[0.3, -2, 3])
     numpy.testing.assert_array_equal(by_dict, by_seq)
-    numpy.testing.assert_array_equal(metafopy.transf.transf_ztor_mode(x, targs=0.2), metafopy.transf.transf_ztor_mode(x, targs={'tau2': 0.2}))
+    numpy.testing.assert_array_equal(metafopy.transf.ztor_mode(x, targs=0.2), metafopy.transf.ztor_mode(x, targs={'tau2': 0.2}))
     # tau2 below machine epsilon is treated as 0 (the plain back-transformation)
-    numpy.testing.assert_array_equal(metafopy.transf.transf_ztor_int(x, targs=1e-20), numpy.tanh(x))
+    numpy.testing.assert_array_equal(metafopy.transf.ztor_int(x, targs=1e-20), numpy.tanh(x))
 
 
 def test_mode_with_zero_tau2_is_elementwise() -> None:
     # metafor returns tanh(xi) length(xi) times for vector xi; here the result is elementwise
     x = numpy.array([0.1, 0.2, 0.3])
-    numpy.testing.assert_array_equal(metafopy.transf.transf_ztor_mode(x, targs=0), numpy.tanh(x))
-    numpy.testing.assert_array_equal(metafopy.transf.transf_iabt_mode(x, targs=0), metafopy.transf.transf_iabt(x))
+    numpy.testing.assert_array_equal(metafopy.transf.ztor_mode(x, targs=0), numpy.tanh(x))
+    numpy.testing.assert_array_equal(metafopy.transf.iabt_mode(x, targs=0), metafopy.transf.iabt(x))
 
 
 def test_ipft_hm_accepts_sample_sizes_directly() -> None:
     x = numpy.array([0.2, 0.5])
-    numpy.testing.assert_array_equal(metafopy.transf.transf_ipft_hm(x, targs={'ni': [10, 20]}), metafopy.transf.transf_ipft_hm(x, targs=[10, 20]))
+    numpy.testing.assert_array_equal(metafopy.transf.ipft_hm(x, targs={'ni': [10, 20]}), metafopy.transf.ipft_hm(x, targs=[10, 20]))

@@ -213,11 +213,11 @@ def test_hksj_alias(dat: pandas.DataFrame) -> None:
 
 
 def test_integral_transf_defaults_to_model_tau2(re: metafopy.models.rma_uni.RMAResult) -> None:
-    pr = metafopy.methods.predict.predict(re, transf=metafopy.transf.transf_exp_int)
+    pr = metafopy.methods.predict.predict(re, transf=metafopy.transf.exp_int)
     ref = case_ref()['predict_exp_int']
     for attr in ('pred', 'ci_lb', 'ci_ub', 'pi_lb', 'pi_ub'):
         close(getattr(pr, attr), ref[attr])
-    ci = metafopy.methods.confint.confint(re, fixed=True, random=False, transf=metafopy.transf.transf_ilogit_int)
+    ci = metafopy.methods.confint.confint(re, fixed=True, random=False, transf=metafopy.transf.ilogit_int)
     ref = case_ref()['confint_ilogit_int']
     assert ci.fixed is not None
     close(ci.fixed['estimate'], ref['estimate'])
