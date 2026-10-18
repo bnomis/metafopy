@@ -1,0 +1,21 @@
+/* metafopy colours: a white header with a hairline rule like the logo box, graphite text, Solarized blue links.
+ * Material colour variables: https://squidfunk.github.io/mkdocs-material/setup/changing-the-colors/#custom-colors
+ * Solarized: https://ethanschoonover.com/solarized/ */
+:root > * {
+  --md-primary-fg-color: #FFFFFF;
+  --md-primary-fg-color--light: #F4F4F5;
+  --md-primary-fg-color--dark: #E8E8EA;
+  --md-primary-bg-color: #3D3F44;
+  --md-primary-bg-color--light: #5A5C62;
+  --md-accent-fg-color: #1C6FA9;
+  --md-typeset-a-color: #268BD2;
+}
+
+.md-header {
+  border-bottom: 1px solid #D8D9DC;
+  box-shadow: none;
+}
+
+.md-header--shadow {
+  box-shadow: 0 0 0.2rem rgba(0, 0, 0, 0.08);
+}
