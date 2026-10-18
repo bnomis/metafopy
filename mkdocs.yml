@@ -3,10 +3,14 @@ site_description: Meta-analysis in Python, a re-implementation of the R package 
 repo_url: https://github.com/bnomis/metafopy
 theme:
   name: material
+  logo: assets/metafopy-mark.svg
+  favicon: assets/favicon.svg
   features:
     - navigation.sections
     - navigation.top
     - content.code.copy
+extra_javascript:
+  - assets/favicon-animate.js
 markdown_extensions:
   - admonition
   - tables
