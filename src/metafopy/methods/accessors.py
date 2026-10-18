@@ -109,11 +109,11 @@ def se(obj: typing.Any, type: str | None = None) -> typing.Any:
     """
     if isinstance(obj, metafopy.models.sel_result.SelmodelResult):
         beta = pandas.Series(obj.se, index=list(obj.coef_names))
-        out = {'beta': beta, 'delta': pandas.Series(obj.se_delta, index=list(obj.delta_names))}
+        out = metafopy.core.labelled.NamedList({'beta': beta, 'delta': pandas.Series(obj.se_delta, index=list(obj.delta_names))})
         return out.get(type or '', out)
     if isinstance(obj, metafopy.models.rma_ls_result.RMALSResult):
         beta = pandas.Series(obj.se, index=list(obj.coef_names))
-        out = {'beta': beta, 'alpha': pandas.Series(obj.se_alpha, index=list(obj.alpha_names))}
+        out = metafopy.core.labelled.NamedList({'beta': beta, 'alpha': pandas.Series(obj.se_alpha, index=list(obj.alpha_names))})
         return out.get(type or '', out)
     if hasattr(obj, 'se') and hasattr(obj, 'coef_names') and isinstance(getattr(obj, 'se', None), numpy.ndarray):
         return pandas.Series(numpy.asarray(obj.se, dtype=numpy.float64), index=list(obj.coef_names))
@@ -235,7 +235,7 @@ def model_matrix(obj: Fit, asdf: bool = False, *, na_action: metafopy.methods.co
 
     if isinstance(obj, metafopy.models.rma_ls_result.RMALSResult):
         Z = metafopy.methods.fitted.scale_rows(obj) if full else numpy.asarray(obj.Z, dtype=numpy.float64)
-        return {'location': wrap(X, names, row_names), 'scale': wrap(Z, list(obj.alpha_names), row_names)}
+        return metafopy.core.labelled.NamedList({'location': wrap(X, names, row_names), 'scale': wrap(Z, list(obj.alpha_names), row_names)})
     return wrap(X, names, row_names)
 
 

@@ -15,6 +15,7 @@ import numpy
 import numpy.typing
 import pandas
 
+import metafopy.core.labelled
 import metafopy.methods.fitview
 import metafopy.models.mv_result
 import metafopy.models.rma_ls_result
@@ -97,8 +98,8 @@ def coef_summary(object: typing.Any, type: typing.Literal['beta', 'alpha', 'delt
         return beta
     if isinstance(object, metafopy.models.rma_ls_result.RMALSResult):
         alpha = alpha_table(object)
-        return alpha if type == 'alpha' else {'beta': beta, 'alpha': alpha}
+        return alpha if type == 'alpha' else metafopy.core.labelled.NamedList({'beta': beta, 'alpha': alpha})
     if isinstance(object, metafopy.models.sel_result.SelmodelResult):
         delta = delta_table(object)
-        return delta if type == 'delta' else {'beta': beta, 'delta': delta}
+        return delta if type == 'delta' else metafopy.core.labelled.NamedList({'beta': beta, 'delta': delta})
     return beta

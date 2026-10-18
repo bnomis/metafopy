@@ -18,6 +18,7 @@ import numpy.typing
 import pandas
 import scipy.stats
 
+import metafopy.core.labelled
 import metafopy.core.parallel
 import metafopy.core.timing
 import metafopy.errors
@@ -78,7 +79,7 @@ class LSProfileResult:
         return pandas.DataFrame({'alpha': self.alpha, 'll': self.ll})
 
     def __str__(self) -> str:
-        return self.to_frame().to_string()
+        return metafopy.core.labelled.frame_text(self.to_frame())
 
 
 def profile_fit(x: metafopy.models.rma_ls_result.RMALSResult, pos: int, val: float) -> tuple[float, FloatArray, FloatArray, FloatArray] | None:

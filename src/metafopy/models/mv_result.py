@@ -11,6 +11,7 @@ import scipy.linalg
 import scipy.sparse
 
 import metafopy.core.labelled
+import metafopy.effects.datatools
 import metafopy.errors
 import metafopy.mfopt
 import metafopy.models.call
@@ -32,6 +33,18 @@ def formula_text(group: metafopy.models.mv_structs.Group | None) -> str | None:
         return None
     outer = '/'.join(group.formula.outer)
     return f'~ {group.formula.inner} | {outer}' if group.formula.inner is not None else f'~ 1 | {outer}'
+
+
+def named_columns(z: Mat, rows: collections.abc.Sequence[str] | None, columns: collections.abc.Sequence[str]) -> Mat:
+    """``z`` with the dimnames R gives a model matrix of the factors (a sparse matrix, or one of another size, stays as it is)."""
+    if scipy.sparse.issparse(z) or z.ndim != 2 or z.shape[1] != len(columns):
+        return z
+    return typing.cast(Mat, metafopy.core.labelled.design_matrix(z, rows, columns))
+
+
+def named_indicator(z: Mat, rows: collections.abc.Sequence[str] | None, prefix: str, levels: collections.abc.Sequence[str]) -> Mat:
+    """The indicator matrix ``z`` of a factor with the columns named ``prefix`` and the level, as R's ``model.matrix`` names them."""
+    return named_columns(z, rows, [f'{prefix}{level}' for level in levels])
 
 
 def named_counts(group: metafopy.models.mv_structs.Group | None) -> pandas.Series[float] | None:
@@ -168,6 +181,11 @@ class RMAMVResult(metafopy.models.fit_methods.RobustFields, metafopy.models.fit_
             object.__setattr__(self, 'X', metafopy.core.labelled.design_matrix(self.X, used, self.coef_names))
             if self.X_f is not None:
                 object.__setattr__(self, 'X_f', metafopy.core.labelled.design_matrix(self.X_f, row_names, self.coef_names))
+        # R names the columns of the matrices of the factors by the variable it built them from (mf.s[[j]] and the levels)
+        rows = tuple(str(i + 1) for i in range(self.X.shape[0]))  # the matrices of the factors are numbered from 1 over the rows used
+        if self.Z_S and len(self.s_levels) == len(self.Z_S):
+            labelled = tuple(named_indicator(z, rows, 'mf.s[[j]]', levels) for z, levels in zip(self.Z_S, self.s_levels, strict=True))
+            object.__setattr__(self, 'Z_S', labelled)
         # R sets the dimnames of G and H (levels of the inner factor) and of hessian and vvc (the names of the variance components)
         for name, names in (('G', self.G_dimnames), ('H', self.H_dimnames), ('hessian', self.vc_names), ('vvc', self.vc_names)):
             value = getattr(self, name)
@@ -341,22 +359,35 @@ class RMAMVResult(metafopy.models.fit_methods.RobustFields, metafopy.models.fit_
     @property
     def Z_G1(self) -> Mat | None:
         """The design matrix of the outer factor of the first ``~ inner | outer`` term, metafor's ``Z.G1``."""
-        return None if self.group_g is None else self.group_g.Z1
+        return None if self.group_g is None else self.named_inner(self.group_g)
 
     @property
     def Z_G2(self) -> Mat | None:
         """The design matrix of the inner factor of the first ``~ inner | outer`` term, metafor's ``Z.G2``."""
-        return None if self.group_g is None else self.group_g.Z2
+        return None if self.group_g is None else self.named_outer(self.group_g)
+
+    def named_inner(self, group: metafopy.models.mv_structs.Group) -> Mat:
+        """``Z1`` of a ``~ inner | outer`` term with the column names R gives it: the levels of a factor or the columns of the inner variables."""
+        rows = tuple(str(i + 1) for i in range(self.X.shape[0]))
+        if group.struct in metafopy.models.mv_structs.FACTOR_STRUCTS:
+            return named_indicator(group.Z1, rows, 'mf.g[[1]]', group.levels[0])
+        if group.struct in metafopy.models.mv_structs.UNSTRUCTURED:
+            return named_columns(group.Z1, rows, metafopy.effects.datatools.make_names([str(c) for c in group.inner.columns]))
+        return group.Z1
+
+    def named_outer(self, group: metafopy.models.mv_structs.Group) -> Mat:
+        """``Z2`` of a ``~ inner | outer`` term with the column names R gives it (``mf.g[[nvars]]`` and the levels)."""
+        return named_indicator(group.Z2, tuple(str(i + 1) for i in range(self.X.shape[0])), 'mf.g[[nvars]]', group.levels[1])
 
     @property
     def Z_H1(self) -> Mat | None:
         """The design matrix of the outer factor of the second ``~ inner | outer`` term, metafor's ``Z.H1``."""
-        return None if self.group_h is None else self.group_h.Z1
+        return None if self.group_h is None else self.named_inner(self.group_h)
 
     @property
     def Z_H2(self) -> Mat | None:
         """The design matrix of the inner factor of the second ``~ inner | outer`` term, metafor's ``Z.H2``."""
-        return None if self.group_h is None else self.group_h.Z2
+        return None if self.group_h is None else self.named_outer(self.group_h)
 
     @property
     def k_eff(self) -> int:
@@ -427,11 +458,13 @@ class RMAMVResult(metafopy.models.fit_methods.RobustFields, metafopy.models.fit_
         # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
         pad = na_action in ('exclude', 'pass')
         if type == 'matrix':
-            if not pad:
-                return H
-            full = numpy.full((self.not_na.shape[0], self.not_na.shape[0]), numpy.nan)
-            full[numpy.ix_(self.not_na, self.not_na)] = H
-            return full
+            if pad:
+                full = numpy.full((self.not_na.shape[0], self.not_na.shape[0]), numpy.nan)
+                full[numpy.ix_(self.not_na, self.not_na)] = H
+                H = full
+            names = self.slab_f if len(self.slab_f) == self.not_na.shape[0] else tuple(str(i + 1) for i in range(self.not_na.shape[0]))
+            names = names if pad else tuple(name for name, used in zip(names, self.not_na, strict=True) if used)
+            return metafopy.core.labelled.LabelledMatrix(H, names, names)
         h = numpy.diag(H).copy()
         h[h > 1 - 10 * float(numpy.finfo(float).eps)] = 1.0
         if not pad:
@@ -503,6 +536,7 @@ class RMAMVResult(metafopy.models.fit_methods.RobustFields, metafopy.models.fit_
                 metafopy.models.mv_print.format_result(self, metafopy.mfopt.option_digits(digits, self.digits), showfit, stars, legend)
             ),
             self,
+            metafopy.mfopt.option_digits(digits, self.digits),
         )
 
     def __str__(self) -> str:

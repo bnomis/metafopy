@@ -32,6 +32,7 @@ import metafopy.methods.common
 import metafopy.methods.confint
 import metafopy.methods.predict
 import metafopy.mfopt
+import metafopy.models.fit_methods
 import metafopy.models.rma_uni
 import metafopy.printing
 
@@ -100,22 +101,11 @@ class MatregPredictResult(metafopy.methods.predict.PredictResult):
         if self.X is not None:
             for j, name in enumerate(self.X.columns):
                 vals = self.X[name].to_numpy(dtype=numpy.float64)
-                cells = [fmt(v, self.digits) for v in vals] if j == 0 else r_numeric_column(vals)
+                cells = [fmt(v, self.digits) for v in vals] if j == 0 else metafopy.methods.predict.r_numeric_column(vals)
                 cols.append((f'X.{name}', cells))
         # auditme: accept[literal-duplication] R's blank row label of a single prediction
         slab = list(self.slab) if self.slab is not None else [''] * len(self.pred)
         return '\n'.join(['', *metafopy.methods.blup.format_r_frame(cols, slab), ''])
-
-
-def r_numeric_column(values: FloatArray) -> list[str]:
-    """A numeric column as ``print.data.frame`` shows it: 7 significant digits and a common number of decimals."""
-    decimals = 0
-    for v in values:
-        if math.isfinite(v):
-            text = f'{v:.7g}'
-            if 'e' not in text and '.' in text:
-                decimals = max(decimals, len(text.split('.')[1]))
-    return ['NA' if math.isnan(v) else f'{v:.{decimals}f}' for v in values]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -174,12 +164,12 @@ class MatregResult:
             raise metafopy.errors.InternalError('fit_stats is missing for a model fitted with n')
         return float(typing.cast(float, self.fit_stats.at[row, 'REML' if REML else 'ML']))
 
-    def logLik(self, REML: bool = False) -> float | None:
-        """The (restricted) log-likelihood (``logLik.matreg``); ``None`` with a warning for a model fitted with ``V``."""
+    def logLik(self, REML: bool = False) -> metafopy.models.fit_methods.LogLik | None:
+        """The (restricted) log-likelihood (``logLik.matreg``), printed as R prints a ``logLik``; ``None`` with a warning for a model fitted with ``V``."""
         if self.test != 't':
             warnings.warn('Cannot compute log-likelihood for this type of model object.', stacklevel=2)
             return None
-        return self.stat('ll', REML)
+        return metafopy.models.fit_methods.LogLik(self.stat('ll', REML), self.parms)
 
     def AIC(self, *others: MatregResult, k: float = 2, correct: bool = False, REML: bool = False) -> float | pandas.DataFrame | None:
         """AIC (or AICc with ``correct=True``) of this fit (``AIC.matreg``).
@@ -294,6 +284,9 @@ def as_square(x: Matrix, what: str) -> tuple[FloatArray, list[str] | None]:
         values = numpy.asarray(typing.cast(typing.Any, x).toarray(), dtype=numpy.float64)
     else:
         values = numpy.array(x, dtype=numpy.float64)
+        given = getattr(x, 'colnames', None) or getattr(x, 'rownames', None)  # a matrix with dimnames (metafopy.core.labelled.LabelledMatrix)
+        if given is not None and values.ndim == 2 and len(given) == values.shape[1]:
+            names = [str(n) for n in given]
     if values.ndim == 0:
         values = values.reshape(1, 1)
     if values.ndim != 2 or values.shape[0] != values.shape[1]:

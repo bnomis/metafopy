@@ -856,6 +856,58 @@ class MVLRTResult:
     QE_full: float
     QE_reduced: float
     digits: int = 4
+    method: str | None = None
+    """The estimation method of the full model (metafor's ``method``)."""
+
+    @property
+    def type(self) -> str:
+        """The kind of test, ``'LRT'`` (metafor's ``type``)."""
+        return 'LRT'
+
+    @property
+    def fit_stats_f(self) -> tuple[float, float, float, float, float]:
+        """The fit statistics of the full model, metafor's ``fit.stats.f``."""
+        return self.fit_stats_full
+
+    @property
+    def fit_stats_r(self) -> tuple[float, float, float, float, float]:
+        """The fit statistics of the reduced model, metafor's ``fit.stats.r``."""
+        return self.fit_stats_reduced
+
+    @property
+    def parms_f(self) -> int:
+        """The number of parameters of the full model, metafor's ``parms.f``."""
+        return self.df_full
+
+    @property
+    def parms_r(self) -> int:
+        """The number of parameters of the reduced model, metafor's ``parms.r``."""
+        return self.df_reduced
+
+    @property
+    def QE_f(self) -> float:
+        """The test statistic for residual heterogeneity of the full model, metafor's ``QE.f``."""
+        return self.QE_full
+
+    @property
+    def QE_r(self) -> float:
+        """The test statistic for residual heterogeneity of the reduced model, metafor's ``QE.r``."""
+        return self.QE_reduced
+
+    @property
+    def tau2_f(self) -> float:
+        """``NaN``: metafor stores ``NA`` for models with several variance components (``tau2.f``)."""
+        return math.nan
+
+    @property
+    def tau2_r(self) -> float:
+        """``NaN``: metafor stores ``NA`` for models with several variance components (``tau2.r``)."""
+        return math.nan
+
+    @property
+    def R2(self) -> float:
+        """``NaN``: metafor stores ``NA`` for these models."""
+        return math.nan
 
     def __str__(self) -> str:
         header = ['df', 'AIC', 'BIC', 'AICc', 'logLik', 'LRT', 'pval', 'QE']
@@ -976,6 +1028,7 @@ def anova_rma_mv(
             QE_full=full.QE,
             QE_reduced=red.QE,
             digits=d,
+            method=full.method,
         )
 
     if X is not None and club is not None:

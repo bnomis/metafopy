@@ -157,7 +157,14 @@ def r_c(*args: Value, **named: Value) -> Value:
         for a in args:
             merged.update(a if isinstance(a, dict) else {str(i): v for i, v in enumerate(a)})
         return merged
-    return vector(list(args))
+    out_c = vector(list(args))
+    if len(args) == 1 and isinstance(args[0], (pandas.Series, numpy.ndarray)) and isinstance(out_c, numpy.ndarray):
+        return out_c.view(WithoutAttributes)
+    return out_c
+
+
+class WithoutAttributes(numpy.ndarray):
+    """The vector ``c(x)`` makes of ``x``: R's ``c()`` removes the attributes, so assigned to ``dat$yi`` it takes away those of an escalc object."""
 
 
 def r_c_pairs(items: list[tuple[str, Value]]) -> Value:
@@ -235,6 +242,10 @@ def r_length(x: Value) -> Value:
 
 
 def r_round(x: Value, digits: Value = 0) -> Value:
+    if isinstance(x, pandas.DataFrame):  # round() of a data frame is a data frame
+        out = x.round(int(digits))
+        out.attrs = dict(x.attrs)
+        return out
     return numpy.round(as_array(x).astype(float) if not isinstance(x, (int, float)) else x, int(digits))
 
 
@@ -341,27 +352,28 @@ def r_diag(x: Value, **kw: Value) -> Value:
     return numpy.diag(a)
 
 
-def r_cbind(*xs: Value, **named: Value) -> Value:
-    cols: dict[str, Value] = {}
+def r_cbind(*xs: Value, deparse_names: list[str] | None = None, **named: Value) -> Value:
+    entries: list[tuple[str | None, Value]] = []
     frame = any(isinstance(x, pandas.DataFrame) for x in list(xs) + list(named.values()))
-    for x in xs:
+    deparsed = deparse_names is not None
+    for position, x in enumerate(xs):
+        given = deparse_names[position] if deparse_names is not None and position < len(deparse_names) else ''
         if isinstance(x, pandas.DataFrame):
-            for c in x.columns:
-                cols[str(c)] = x[c].to_numpy()
+            entries.extend((str(c), x[c].to_numpy()) for c in x.columns)
+            continue
+        a = numpy.asarray(x)
+        if a.ndim == 2:
+            entries.extend((None, a[:, j]) for j in range(a.shape[1]))
         else:
-            a = numpy.asarray(x)
-            if a.ndim == 2:
-                for j in range(a.shape[1]):
-                    cols[f'V{len(cols) + 1}'] = a[:, j]
-            else:
-                cols[f'V{len(cols) + 1}'] = a
-    for k, v in named.items():
-        cols[k] = numpy.asarray(v)
-    longest = max((numpy.atleast_1d(v).shape[0] for v in cols.values()), default=0)
-    cols = {k: numpy.resize(numpy.atleast_1d(v), longest) if numpy.atleast_1d(v).shape[0] != longest else v for k, v in cols.items()}  # R recycles
-    if frame:
-        return pandas.DataFrame(cols)
-    return numpy.column_stack(list(cols.values()))
+            entries.append((given or None, a))
+    entries.extend((k, numpy.asarray(v)) for k, v in named.items())
+    longest = max((numpy.atleast_1d(v).shape[0] for _, v in entries), default=0)
+    arrays = [numpy.resize(numpy.atleast_1d(v), longest) if numpy.atleast_1d(v).shape[0] != longest else numpy.atleast_1d(v) for _, v in entries]  # R recycles
+    if frame or deparsed:
+        # a column R names by a symbol keeps the name; the others have the empty name R gives them (V1, V2, ... when no symbol named any)
+        labels = ['' if name is None and deparsed else f'V{n + 1}' if name is None else name for n, (name, _) in enumerate(entries)]
+        return pandas.DataFrame(dict(enumerate(arrays))).set_axis(labels, axis=1)
+    return numpy.column_stack(arrays)
 
 
 def r_rbind(*xs: Value, **named: Value) -> Value:
@@ -416,9 +428,13 @@ def r_sapply(x: Value, fun: typing.Callable[..., Value], *args: Value, **kw: Val
         items = [x[c] for c in x.columns]
     out = [fun(item, *args) for item in items]
     try:
-        return numpy.array(out, dtype=float)
+        simplified = numpy.array(out, dtype=float)
     except TypeError, ValueError:
         return out
+    # sapply() simplifies results of length m to a matrix with one column per element of x
+    if simplified.ndim == 2:
+        return simplified.T if simplified.shape[1] > 1 else simplified.ravel()
+    return simplified
 
 
 def r_lapply(x: Value, fun: typing.Callable[..., Value], *args: Value, **kw: Value) -> Value:
@@ -486,11 +502,38 @@ def r_as_vector(x: Value, mode: Value = 'any') -> Value:
     return as_array(x).ravel(order='F') if isinstance(x, (numpy.ndarray, pandas.DataFrame)) else x
 
 
+class Named(numpy.ndarray):
+    """A matrix with the names of its rows and columns (R's dimnames), which the value tree reads as the labels."""
+
+    rownames: tuple[str, ...] | None
+    colnames: tuple[str, ...] | None
+
+    def __new__(cls, data: Value, rownames: list[Value] | None = None, colnames: list[Value] | None = None) -> Named:
+        obj = numpy.asarray(data).view(cls)
+        obj.rownames = None if rownames is None else tuple(str(n) for n in rownames)
+        obj.colnames = None if colnames is None else tuple(str(n) for n in colnames)
+        return obj
+
+    def __array_finalize__(self, obj: Value) -> None:
+        shape_kept = getattr(obj, 'shape', None) == self.shape
+        self.rownames = getattr(obj, 'rownames', None) if shape_kept else None
+        self.colnames = getattr(obj, 'colnames', None) if shape_kept else None
+
+    def __array_wrap__(self, array: numpy.ndarray, context: Value = None, return_scalar: bool = False) -> Value:
+        if return_scalar or array.ndim != 2:
+            return array[()] if array.ndim == 0 else numpy.asarray(array)
+        return super().__array_wrap__(array, context, return_scalar)
+
+
 def r_as_matrix(x: Value) -> Value:
     if not isinstance(x, pandas.DataFrame) and hasattr(x, 'to_frame') and dataclasses.is_dataclass(x):  # as.matrix.list.rma
         x = typing.cast(typing.Any, x).to_frame()
     if isinstance(x, pandas.DataFrame):
-        return x.to_numpy()
+        # a data frame whose row names are 1, 2, ... has none as a matrix; the others keep theirs (counted from 1, as R does)
+        index = x.index
+        automatic = pandas.api.types.is_integer_dtype(index) and bool((numpy.asarray(index) == numpy.arange(len(index))).all())
+        rows = None if automatic else [str(int(v) + 1) if pandas.api.types.is_integer_dtype(index) else str(v) for v in index]
+        return Named(x.to_numpy(), rows, [str(c) for c in x.columns])
     a = numpy.asarray(x)
     return a.reshape(-1, 1) if a.ndim < 2 else a
 
@@ -542,8 +585,6 @@ def r_factor(x: Value, levels: Value = None, labels: Value = None, **kw: Value) 
         if len(names) == 1 and len(categories) > 1:
             names = [f'{names[0]}{i + 1}' for i in range(len(categories))]
         return pandas.Categorical.from_codes(codes, categories=pandas.Index(names))
-    if values.dtype.kind in 'fiub':
-        return pandas.Categorical(values, categories=categories)
     return pandas.Categorical.from_codes(codes, categories=pandas.Index(keys))
 
 
@@ -613,6 +654,19 @@ def r_capture_output(thunk: typing.Callable[[], Value], **kw: Value) -> Value:
 
 
 def r_print(x: Value, *args: Value, **kw: Value) -> Value:
+    """``print(x, ...)``: the arguments the ``summary()`` of the result takes (``infonly`` of an influence result) go to it, the others are ignored."""
+    summary = getattr(x, 'summary', None)
+    if kw and callable(summary):
+        try:
+            accepted: typing.Any = inspect.signature(summary).parameters
+        except TypeError, ValueError:
+            accepted = {}
+        used = {pycall.arg_name(k): v for k, v in kw.items() if pycall.arg_name(k) in accepted}
+        if used:
+            if 'showfit' in accepted and 'showfit' not in used:
+                used['showfit'] = False  # print() has no fit statistics block, summary() has
+            print(summary(**used))
+            return x
     print(x)
     return x
 
@@ -621,15 +675,33 @@ def r_noop(*args: Value, **kw: Value) -> Value:
     return None
 
 
+PAR_STATE: dict[str, Value] = {
+    'mar': numpy.array([5.1, 4.1, 4.1, 2.1]),
+    'mfrow': numpy.array([1.0, 1.0]),
+    'mgp': numpy.array([3.0, 1.0, 0.0]),
+    'cex': 1.0,
+    'tck': math.nan,
+    'xpd': False,
+}
+
+
 def r_par(*args: Value, **kw: Value) -> Value:
-    """``par("usr")`` is the limits of the current axes; any other query or setting does nothing."""
+    """``par("usr")`` is the limits of the current axes; ``par(name = value)`` sets graphical parameters and returns the old values as a list, as R does."""
     if args == ('usr',):
         import matplotlib.pyplot
 
         left, right = matplotlib.pyplot.gca().get_xlim()
         bottom, top = matplotlib.pyplot.gca().get_ylim()
         return numpy.array([left, right, bottom, top])
-    return None
+    settings: dict[str, Value] = dict(kw)
+    for arg in args:
+        if isinstance(arg, dict):
+            settings.update(arg)
+    if not settings:
+        return None
+    old = {name: PAR_STATE.get(name) for name in settings}
+    PAR_STATE.update({name: value for name, value in settings.items() if value is not None})
+    return old
 
 
 def r_invisible(x: Value = None) -> Value:
@@ -641,7 +713,8 @@ def r_structure(x: Value, **kw: Value) -> Value:
     if isinstance(kw.get('class'), str) and kw['class'] == 'data.frame' and isinstance(x, dict):
         return pandas.DataFrame({k: numpy.atleast_1d(numpy.asarray(v)) for k, v in x.items()})
     levels = kw.get('levels')
-    if kw.get('class') == 'factor' and levels is not None and not isinstance(x, (dict, pandas.DataFrame)):
+    classes = [str(c) for c in numpy.atleast_1d(numpy.asarray(kw['class']))] if kw.get('class') is not None else []
+    if 'factor' in classes and levels is not None and not isinstance(x, (dict, pandas.DataFrame)):
         # a factor stored as its integer codes: the harness compares a factor by its labels
         labels = [str(v) for v in numpy.atleast_1d(numpy.asarray(levels))]
         return numpy.array([None if numpy.isnan(float(c)) else labels[int(c) - 1] for c in numpy.atleast_1d(numpy.asarray(x, dtype=float))], dtype=object)
@@ -705,7 +778,12 @@ def r_log(x: Value, base: Value = None) -> Value:
 
 def r_attr(x: Value, which: Value, **kw: Value) -> Value:
     attrs = getattr(x, 'attrs', None)
-    return attrs.get(str(which)) if isinstance(attrs, dict) else None
+    if not isinstance(attrs, dict):
+        return None
+    for key in (str(which), py_name(str(which))):  # `yi.names` is `yi_names` in metafopy
+        if key in attrs:
+            return attrs[key]
+    return None
 
 
 def r_levels(x: Value) -> Value:
@@ -755,6 +833,9 @@ def r_range(*xs: Value, **kw: Value) -> Value:
 def r_unlist(x: Value, **kw: Value) -> Value:
     if isinstance(x, dict):
         return vector(list(x.values()))
+    if isinstance(x, pandas.DataFrame):
+        # a data frame is a list of columns: its values column by column
+        return vector([v for column in x.columns for v in x[column].tolist()])
     return vector(list(x))
 
 
@@ -999,8 +1080,11 @@ def r_index(x: Value, *idx: Value, **kw: Value) -> Value:
             return x[list(arr)]
         return x.iloc[to_positions(sel, len(x))]
     if isinstance(x, dict):
-        key = idx[0]
-        return {k: x[k] for k in numpy.atleast_1d(key).tolist()}
+        key = numpy.atleast_1d(numpy.asarray(idx[0]))
+        if key.dtype.kind in 'biuf':  # R's x[1:2] selects by position, keeps the names
+            names = list(x)
+            return {names[i]: x[names[i]] for i in to_positions(idx[0], len(names))}
+        return {k: x[k] for k in key.tolist()}
     if dataclasses.is_dataclass(x) and not isinstance(x, type) and hasattr(x, '__getitem__') and hasattr(x, 'to_frame'):
         # `[.list.rma(x, i, ...)` selects rows, ignores a column subscript and returns NULL for rows outside the result
         rows_of_x = typing.cast(typing.Any, x)
@@ -1017,6 +1101,13 @@ def r_index(x: Value, *idx: Value, **kw: Value) -> Value:
     out = a2[rows][:, cols] if not isinstance(rows, slice) or not isinstance(cols, slice) else a2
     if kw.get('drop', True) and 1 in out.shape:
         return out.ravel()
+    given_rows, given_cols = getattr(x, 'rownames', None), getattr(x, 'colnames', None)
+    if a.ndim == 2 and (given_rows is not None or given_cols is not None):
+        return Named(
+            out,
+            None if given_rows is None else list(numpy.asarray(given_rows, dtype=object)[rows]),
+            None if given_cols is None else list(numpy.asarray(given_cols, dtype=object)[cols]),
+        )
     return out
 
 
@@ -1084,7 +1175,9 @@ def r_assign_index(x: Value, value: Value, *idx: Value) -> Value:
             names = [str(n) for n in sel]
             source = value if isinstance(value, pandas.DataFrame) else pandas.DataFrame({n: value for n in names})
             for position, name in enumerate(names):
-                out[name] = source.iloc[:, position].to_numpy() if isinstance(source, pandas.DataFrame) else source
+                # a column R names `ci.lb` is `ci_lb` in a frame metafopy made
+                target = name if name in out.columns or py_name(name) not in out.columns else py_name(name)
+                out[target] = source.iloc[:, position].to_numpy() if isinstance(source, pandas.DataFrame) else source
         return out
     is_text = isinstance(x, (list, dict)) or numpy.asarray(x).dtype.kind in 'USO' or isinstance(value, str)
     a = numpy.array(x, dtype=object if is_text else float, copy=True)
@@ -1099,6 +1192,11 @@ def r_assign_dollar(x: Value, name: str, value: Value) -> Value:
         out.attrs = dict(x.attrs)
         if value is None:  # x$name <- NULL removes the column
             return out.drop(columns=[c for c in (name, py_name(name)) if c in out.columns])
+        if isinstance(value, WithoutAttributes):
+            value = value.view(numpy.ndarray)
+            if name == 'yi':
+                # the measure and the sample sizes of an escalc object are attributes of its yi column
+                out.attrs = {k: v for k, v in out.attrs.items() if k not in ('measure', 'ni')}
         out[name] = value
         return out
     if isinstance(x, dict) or (isinstance(x, list) and not x):  # list() is an empty named list in R
@@ -1301,14 +1399,29 @@ def formula_data(env: Env, fn: typing.Callable[..., typing.Any], kwargs: dict[st
         parameters = inspect.signature(fn.func if isinstance(fn, functools.partial) else fn).parameters
     except TypeError, ValueError:
         return kwargs
-    if 'data' in kwargs or 'data' not in parameters:
+    given = kwargs.get('data')
+    if 'data' not in parameters:
+        return kwargs
+    if 'data' in kwargs and not isinstance(given, pandas.DataFrame):
         return kwargs
     names = {name for v in kwargs.values() if isinstance(v, str) and v.lstrip().startswith('~') for name in re.findall(r'[A-Za-z_.][A-Za-z0-9_.]*', v)}
     columns: dict[str, Value] = {}
     for name in sorted(names):
         value = env.vars.get(name)
+        if isinstance(given, pandas.DataFrame) and name in given.columns:
+            continue
         if isinstance(value, (list, tuple, numpy.ndarray, pandas.Series)) and numpy.ndim(value) == 1:
             columns[name] = numpy.asarray(value)
+    if isinstance(given, pandas.DataFrame):
+        # R looks a name up in the data first and then in the calling environment: the script's variables of the rows of the data are added
+        extra = {k: v for k, v in columns.items() if len(v) == len(given)}
+        if not extra:
+            return kwargs
+        frame = given.copy()
+        frame.attrs = dict(given.attrs)
+        for k, v in extra.items():
+            frame[k] = v
+        return {**kwargs, 'data': frame}
     if not columns or len({len(v) for v in columns.values()}) != 1:
         return kwargs
     return {**kwargs, 'data': pandas.DataFrame(columns)}
@@ -1383,6 +1496,8 @@ def r_symbol(env: Env, name: str) -> Value:
     for scope in reversed(env.scopes):
         if isinstance(scope, pandas.DataFrame) and name in scope.columns:
             return name
+        if isinstance(scope, pandas.DataFrame) and py_name(name) in scope.columns and name not in env.vars:
+            return py_name(name)  # the column R calls `ci.lb` is `ci_lb` in a frame metafopy made
         if isinstance(scope, dict) and name in scope:
             return name
     try:

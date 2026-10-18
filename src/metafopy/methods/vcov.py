@@ -19,6 +19,7 @@ import numpy.typing
 import pandas
 import scipy.sparse
 
+import metafopy.core.labelled
 import metafopy.errors
 import metafopy.methods.common
 import metafopy.methods.deltamethod
@@ -170,9 +171,9 @@ def vcov(
     beta = coef_frame(object.vb, names)
     if kind == 'fixed':
         if is_ls:
-            return {'beta': beta, 'alpha': coef_frame(object.va, object.alpha_names)}
+            return metafopy.core.labelled.NamedList({'beta': beta, 'alpha': coef_frame(object.va, object.alpha_names)})
         if is_sel:
-            return {'beta': beta, 'delta': coef_frame(object.vd, object.delta_names)}
+            return metafopy.core.labelled.NamedList({'beta': beta, 'delta': coef_frame(object.vd, object.delta_names)})
         return beta
     if kind == 'beta':
         return beta

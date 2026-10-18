@@ -337,6 +337,7 @@ def lrt(
         fit_stats_reduced=fs_r.as_tuple(),
         QE_full=full.QE,
         QE_reduced=red.QE,
+        method=full.method,
     )
 
 

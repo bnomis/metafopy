@@ -231,7 +231,7 @@ class RMALSResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_me
         alpha = pandas.Series(self.alpha, index=list(self.alpha_names), name='estimate')
         if type == 'alpha':
             return alpha
-        return {'beta': beta, 'alpha': alpha}
+        return metafopy.core.labelled.NamedList({'beta': beta, 'alpha': alpha})
 
     @typing.overload
     def vcov(
@@ -260,7 +260,9 @@ class RMALSResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_me
         # auditme: accept[in-function-import] metafopy.methods imports this module, so the import is deferred to avoid a cycle
         import metafopy.methods.fitted
 
-        return {'location': metafopy.methods.fitted.fitted_values(self, na_action), 'scale': metafopy.methods.fitted.scale_values(self, na_action)}
+        return metafopy.core.labelled.NamedList(
+            {'location': metafopy.methods.fitted.fitted_values(self, na_action), 'scale': metafopy.methods.fitted.scale_values(self, na_action)}
+        )
 
     def residuals(self, type: metafopy.models.rma_uni.ResidualType = 'response', *, na_action: metafopy.models.rma_uni.NAActionAll = 'omit') -> FloatArray:
         """Residuals; see :func:`metafopy.residuals` (``type`` is ``'response'``, ``'rstandard'``, ``'rstudent'``, ``'pearson'`` or ``'cholesky'``)."""
@@ -388,6 +390,7 @@ class RMALSResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_me
                 metafopy.models.rma_ls_print.format_result(self, metafopy.mfopt.option_digits(digits, self.digits), showfit, stars, legend)
             ),
             self,
+            metafopy.mfopt.option_digits(digits, self.digits),
         )
 
     def __str__(self) -> str:

@@ -7,6 +7,8 @@ import numpy
 import pandas
 import pytest
 
+import audit.rlib
+import audit.valuetree
 import metafopy
 import metafopy.datasets
 
@@ -355,3 +357,149 @@ def test_regtest_of_estimates_in_an_escalc_frame_keeps_the_measure() -> None:
     data = bcg_frame()
     out: typing.Any = metafopy.regtest('yi', vi='vi', data=data)
     assert out.fit.measure == 'RR'
+
+
+def test_structure_with_a_vector_class_is_not_a_factor() -> None:
+    # structure(14.3, dim = c(1L, 1L), class = c('vcovmat', 'matrix')) crashed on the comparison of the class vector with 'factor'
+    out = audit.rlib.r_structure(numpy.array([14.3]), dim=numpy.array([1, 1]), **{'class': numpy.array(['vcovmat', 'matrix'], dtype=object)})
+    assert out.shape == (1, 1)
+
+
+def test_regtest_of_a_trimfill_object_numbers_the_studies() -> None:
+    # R 4.3.3, metafor 5.2-1: regtest(trimfill(rma(yi, vi, data = dat, slab = author)))$fit$slab is 1:14, as the yi of trimfill() has no slab
+    data = bcg_frame()
+    filled = metafopy.trimfill(metafopy.rma(yi='yi', vi='vi', data=data))
+    out: typing.Any = metafopy.regtest(filled)
+    assert list(out.fit.slab) == [str(i) for i in range(1, 15)]
+
+
+def test_predict_vcov_is_a_list_of_the_predictions_and_the_matrix() -> None:
+    # R: predict(res, vcov = TRUE) is list(pred = <predict.rma>, vcov = <matrix>), so $pred$pred are the numbers
+    out = metafopy.predict(metafopy.rma(yi='yi', vi='vi', data=bcg_frame()), vcov=True)
+    found, inner = audit.valuetree.lookup(out, 'pred')
+    assert found
+    found, numbers = audit.valuetree.lookup(inner, 'pred')
+    assert found
+    assert isinstance(numbers, numpy.ndarray)
+    assert audit.valuetree.lookup(out, 'vcov')[1] is out.vcov
+
+
+def test_assigning_c_of_yi_removes_the_escalc_attributes() -> None:
+    # R 4.3.3, metafor 5.2-1: after dat$yi <- c(dat$yi), regtest(yi, vi, ni = nitotal, data = dat)$fit$measure is "GEN"
+    data = bcg_frame()
+    plain = audit.rlib.r_assign_dollar(data, 'yi', audit.rlib.r_c(data['yi']))
+    assert 'measure' not in plain.attrs
+    assert data.attrs['measure'] == 'RR'
+    kept = audit.rlib.r_assign_dollar(data, 'yi', data['yi'].to_numpy() * 2)
+    assert kept.attrs['measure'] == 'RR'
+
+
+def test_cumul_na_exclude_keeps_a_row_for_each_study_left_out() -> None:
+    # R 4.3.3, metafor 5.2-1: options(na.action = "na.exclude"); cumul(rma(yi, vi, data = dat)) with studies 3 and 7 missing has 13 rows, NA at 3 and 7
+    data = bcg_frame()
+    data.loc[[2, 6], ['yi', 'vi']] = numpy.nan
+    fit = metafopy.rma(yi='yi', vi='vi', data=data)
+    out = metafopy.cumul(fit, na_action='exclude')
+    assert out.order is not None
+    assert len(out.estimate) == len(out.slab) == len(out.order) == 13
+    assert numpy.flatnonzero(numpy.isnan(out.estimate)).tolist() == [2, 6]
+    assert numpy.round(out.estimate[[0, 1, 3, 12]], 3).tolist() == [-0.889, -1.325, -1.425, -0.622]
+    assert len(metafopy.cumul(fit).estimate) == 11
+    year = data['year'].to_numpy()
+    ordered = metafopy.cumul(fit, order=year, na_action='exclude')
+    assert numpy.flatnonzero(numpy.isnan(ordered.estimate)).tolist() == [3, 8]
+    grouped = metafopy.cumul(fit, order=year, collapse=True, na_action='exclude')
+    assert len(grouped.estimate) == 12
+    assert numpy.flatnonzero(numpy.isnan(grouped.estimate)).tolist() == [3]
+
+
+def test_print_num_numbers_the_coefficient_rows() -> None:
+    # R 4.3.3, metafor 5.2-1: print(rma(yi, vi, mods = ~ ablat, data = dat), num = TRUE) has the rows "1) intrcpt" and "2) ablat"
+    fit = metafopy.rma(yi='yi', vi='vi', mods='~ ablat', data=bcg_frame())
+    shown = fit.summary(showfit=False, num=True).split('\n')
+    assert any(line.startswith('1) intrcpt') for line in shown)
+    assert any(line.startswith('2) ablat') for line in shown)
+    assert not any(line.startswith('1) intrcpt') for line in fit.summary(showfit=False).split('\n'))
+    permuted: typing.Any = metafopy.permutest(fit, iter=20, seed=1)
+    assert any(line.startswith('2) ablat') for line in permuted.summary(num=True).split('\n'))
+
+
+def test_permutest_print_keeps_the_footnote_without_the_codes() -> None:
+    # R 4.3.3, metafor 5.2-1: print(permutest(res), signif.stars = FALSE) ends "---", "1) p-values based on permutation testing" and no codes
+    fit = metafopy.rma(yi='yi', vi='vi', mods='~ ablat', data=bcg_frame())
+    permuted: typing.Any = metafopy.permutest(fit, iter=20, seed=1)
+    for kwargs in ({'signif_stars': False}, {'signif_legend': False}):
+        lines = permuted.summary(**kwargs).split('\n')
+        assert lines[-4:] == ['', '---', '1) p-values based on permutation testing', '']
+        assert not any(line.startswith('Signif. codes') for line in lines)
+
+
+def test_sapply_simplifies_to_a_matrix_with_a_column_per_element() -> None:
+    # R: t(sapply(list(1, 2, 3, 4, 5), function(x) c(x, 2 * x, 3 * x, 4 * x, 5 * x, 6 * x))) has 5 rows and 6 columns
+    out = audit.rlib.r_sapply([1, 2, 3, 4, 5], lambda x: numpy.arange(1, 7) * x)
+    assert out.shape == (6, 5)
+    assert audit.rlib.r_t(out).shape == (5, 6)
+    assert audit.rlib.r_sapply([1, 2, 3], lambda x: x * 2).shape == (3,)
+
+
+def test_print_arguments_reach_the_summary_and_unlist_reads_a_data_frame(capsys: pytest.CaptureFixture[str]) -> None:
+    # R: print(influence(res), infonly = TRUE) prints the influential studies only; unlist() of a data frame is its values
+    fit = metafopy.rma(yi='yi', vi='vi', data=bcg_frame(), method='EE')
+    inf = metafopy.influence(fit)
+    audit.rlib.r_print(inf)
+    everyone = capsys.readouterr().out.strip().split('\n')
+    audit.rlib.r_print(inf, infonly=True)
+    only = capsys.readouterr().out.strip().split('\n')
+    assert len(everyone) == 14
+    assert len(only) < len(everyone)
+    assert audit.rlib.r_unlist(pandas.DataFrame({'a': [1.0], 'b': [2.0]})).tolist() == [1.0, 2.0]
+
+
+def test_factor_of_numbers_has_labels_without_decimals() -> None:
+    # R: levels(factor(c(1, 0, NA, 1))) is "0" "1", not "0.0" "1.0"
+    out = audit.rlib.r_factor(numpy.array([1.0, 0.0, numpy.nan, 1.0]))
+    assert list(out.categories) == ['0', '1']
+    assert out.tolist()[:2] == ['1', '0']
+
+
+def test_round_of_a_data_frame_and_its_dotted_columns() -> None:
+    # R: round(dat2[, c("or", "ci.lb")], digits = 2) is a data frame and dat2[c("yi", "ci.lb")] <- ... replaces the column that metafopy calls ci_lb
+    frame = pandas.DataFrame({'or': [1.234, 2.345], 'ci_lb': [0.1234, 0.5678]})
+    assert isinstance(audit.rlib.r_round(frame, 2), pandas.DataFrame)
+    assigned = audit.rlib.r_assign_index(frame, pandas.DataFrame({'ci.lb': [7.0, 8.0]}), numpy.array(['ci.lb'], dtype=object))
+    assert list(assigned.columns) == ['or', 'ci_lb']
+    assert assigned['ci_lb'].tolist() == [7.0, 8.0]
+    scope = audit.rlib.Env()
+    scope.scopes.append(frame)
+    assert audit.rlib.r_symbol(scope, 'ci.lb') == 'ci_lb'
+
+
+def test_club_sandwich_ddf_is_read_from_dfs() -> None:
+    # R 4.3.3, metafor 5.2-1: robust(rma(yi, vi, mods = ~ ablat), cluster = trial, clubSandwich = TRUE)$ddf is c(3.705255, 5.212865), as dfs
+    data = bcg_frame()
+    fit = metafopy.rma(yi='yi', vi='vi', mods='~ ablat', data=data)
+    robust = metafopy.robust(fit, cluster=data['trial'], clubSandwich=True)
+    found, ddf = audit.valuetree.lookup(robust, 'ddf')
+    assert found
+    assert numpy.round(ddf, 6).tolist() == [3.705255, 5.212865]
+
+
+def test_summary_digits_are_those_it_printed_with() -> None:
+    # R 4.3.3, metafor 5.2-1: summary(rma(yi, vi, data = dat), digits = 2)$digits is 2 for every element (4 for the fit itself)
+    fit = metafopy.rma(yi='yi', vi='vi', data=bcg_frame())
+    shown: typing.Any = fit.summary(digits=2)
+    assert shown.digits == 2
+    plain: typing.Any = fit.summary()
+    assert plain.digits == 4
+    assert fit.digits == 4
+
+
+def test_formula_names_outside_the_data_are_found_in_the_script() -> None:
+    # R: rma(yi, vi, mods = ~ alloc.random + year, data = dat) finds alloc.random in the calling environment
+    data = bcg_frame()
+    env = audit.rlib.Env()
+    env.vars['alloc.random'] = (data['alloc'] == 'random').to_numpy().astype(float)
+    out = audit.rlib.formula_data(env, metafopy.rma, {'mods': '~ alloc.random + year', 'data': data})
+    assert 'alloc.random' in out['data'].columns
+    assert out['data'].attrs == data.attrs
+    assert 'alloc.random' not in data.columns

@@ -162,7 +162,7 @@ class SelmodelResult(metafopy.models.fit_methods.FitMethods):
     def __post_init__(self) -> None:
         # R names the rows and columns of the Hessian by the coefficients, tau2 and the selection parameters
         if self.hessian is not None:
-            names = [*self.base.coef_names, 'tau2', *[f'delta.{i + 1}' for i in range(self.deltas)]]
+            names = [*self.base.coef_names, 'tau2', *self.delta_names]
             object.__setattr__(self, 'hessian', metafopy.core.labelled.design_matrix(self.hessian, names, names))
 
     @property
@@ -366,7 +366,7 @@ class SelmodelResult(metafopy.models.fit_methods.FitMethods):
             return delta
         if type == 'all':
             return pandas.concat([beta, delta])
-        return {'beta': beta, 'delta': delta}
+        return metafopy.core.labelled.NamedList({'beta': beta, 'delta': delta})
 
     @typing.overload
     def vcov(
@@ -467,7 +467,9 @@ class SelmodelResult(metafopy.models.fit_methods.FitMethods):
         """
         stars, legend = metafopy.mfopt.option_signif(signif_stars, signif_legend)
         return metafopy.models.fit_methods.SummaryText(
-            metafopy.mfopt.option_space(format_selmodel(self, metafopy.mfopt.option_digits(digits, self.digits), showfit, stars, legend)), self
+            metafopy.mfopt.option_space(format_selmodel(self, metafopy.mfopt.option_digits(digits, self.digits), showfit, stars, legend)),
+            self,
+            metafopy.mfopt.option_digits(digits, self.digits),
         )
 
     def __str__(self) -> str:
@@ -589,6 +591,6 @@ def format_selmodel(res: SelmodelResult, digits: int = 4, showfit: bool = False,
     out.append('')
     dheader, drows, dnames = delta_table(res, digits)
     dheader, drows = metafopy.printing.drop_stars(dheader, drows, stars)
-    out.append(metafopy.printing.fmt_table(dheader, drows, row_names=dnames))
+    out.append(metafopy.printing.fmt_table(dheader, drows, row_names=dnames, width=metafopy.printing.console_width()))
     out += metafopy.printing.signif_footer(legend)
     return '\n'.join(out)

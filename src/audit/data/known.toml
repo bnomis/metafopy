@@ -27,8 +27,9 @@ reason = "gosh(seed=) is bit-exact with R only where dbinom ties break the same 
 ref = "docs/differences.md"
 
 [[known]]
-match = "matrix/plot/gosh_*"
+match = ["matrix/plot/gosh_*", "scripts/plots_gosh/*"]
 kind = "type-diff"
+detail = "*PlotGoshResult*"
 reason = "plot() of a gosh result returns the value of R's last graphics call (a number); metafopy returns the axes drawn (PlotGoshResult)."
 ref = "docs/differences.md"
 
@@ -189,23 +190,9 @@ ref = "docs/differences.md"
 
 [[known]]
 match = "*"
-kind = "missing-field"
-path = "*$data$*"
-reason = "res.data is the MetaData of the fit (vectors and matrices used), not the data frame the caller passed."
-ref = "docs/differences.md"
-
-[[known]]
-match = "*"
 kind = "shape-diff"
 path = "*$data$*"
 reason = "res.data holds the studies used in the fit; R's data keeps those with missing values."
-ref = "docs/differences.md"
-
-[[known]]
-match = "matrix/print/*"
-kind = "shape-diff"
-path = "$slab"
-reason = "slab of the fit has the studies used; R keeps the studies with missing values in slab (the _f fields hold them in metafopy)."
 ref = "docs/differences.md"
 
 [[known]]
@@ -247,20 +234,6 @@ match = "*"
 kind = "missing-field"
 path = "$data"
 reason = "cumul(), leave1out() and the results of mv fits do not keep a data frame of the studies (R: data); the vectors and matrices are fields of the fit."
-ref = "docs/differences.md"
-
-[[known]]
-match = "matrix/print/vif_*"
-kind = "missing-field"
-path = "$vif$*"
-reason = "vif() gives a table of the vifs by coefficient, where R keeps a list with one entry per coefficient."
-ref = "docs/differences.md"
-
-[[known]]
-match = "matrix/print/anova_*"
-kind = "missing-field"
-path = "$class"
-reason = "The class of the anova result is the class of the Python object."
 ref = "docs/differences.md"
 
 [[known]]
@@ -313,13 +286,6 @@ reason = "R's CM.EL Hessian is noise here (standard errors of 1e-4, tau2 2e-4, w
 ref = "docs/differences.md"
 
 [[known]]
-match = "*"
-kind = "refused-where-R-works"
-detail = "InputError: Could not fit the null model."
-reason = "R's hettest() does not pass control on when x is a model object (the recursive call drops it), so maxiter has no effect there; metafopy applies it."
-ref = "docs/differences.md"
-
-[[known]]
 match = "matrix/anova/*"
 kind = "accepts-where-R-refuses"
 detail = "R: Class of*"
@@ -363,12 +329,6 @@ ref = "docs/differences.md"
 match = "*/glmm_cm*"
 kind = "value-diff"
 reason = "rma_glmm(model='CM.EL'): R's Hessian is a finite-difference one of a noisy objective, see docs/differences.md."
-ref = "docs/differences.md"
-
-[[known]]
-match = "matrix/[/vcalc_ks"
-kind = "shape-diff"
-reason = "x[i] with one index on a matrix: R indexes the elements (3 values for c(1,2,3)), numpy selects rows; metafopy keeps numpy's meaning."
 ref = "docs/differences.md"
 
 [[known]]
@@ -808,13 +768,6 @@ reason = "R stops with the error 'missing values are not allowed in 'poly'', whi
 ref = "docs/differences.md"
 
 [[known]]
-match = "options/robust/*"
-kind = "accepts-where-R-refuses"
-detail = "R: Could not obtain the cluster-robust*"
-reason = "R stops with the error 'Could not obtain the cluster-robust', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
-ref = "docs/differences.md"
-
-[[known]]
 match = "options/qqnorm/*"
 kind = "accepts-where-R-refuses"
 detail = "R: formal argument \"lty\" matched by multiple*"
@@ -847,13 +800,6 @@ match = "options/anova/*"
 kind = "accepts-where-R-refuses"
 detail = "R: Class of 'object' must be the same*"
 reason = "R stops with the error 'Class of 'object' must be the same', which comes from metafor's own code for this input and is not a check of an argument; metafopy returns a result."
-ref = "docs/differences.md"
-
-[[known]]
-match = "options/permutest/*"
-kind = "accepts-where-R-refuses"
-detail = "R: R did not return within*"
-reason = "permutest(exact = TRUE) of a trimfill fit enumerates every permutation of the filled data; in R the 13 studies of dat.bcg already take 162 s (see options/permutest/uni_factor/exact=true) and the filled data have more studies, so R does not finish within the case time limit."
 ref = "docs/differences.md"
 
 [[known]]
@@ -941,21 +887,7 @@ reason = "metafor issues this warning once per session, so only the first rma.mv
 ref = "docs/differences.md"
 
 [[known]]
-match = "*/glmm_cm*"
-kind = "value-diff"
-path = ["$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$H2", "$I2", "$tau2", "$tau2.f", "$se.tau2", "$ci.lb.tau2", "$ci.ub.tau2", "$QE.Wld", "$QEp.Wld", "$QE.LRT", "$QEp.LRT", "$QE.df", "$fit.stats$*", "$tab$*", "$pi.*", "$cr.*", "$vcov", ""]
-reason = "rma_glmm(model='CM.EL') takes its Hessian from a noisy finite-difference objective: se, zval, pval and the tau2 interval agree to about 1e-3, QE_Wld (the saturated model's Wald test) is ill-conditioned and differs more."
-ref = "docs/differences.md"
-
-[[known]]
-match = "*/glmm_rs*"
-kind = "value-diff"
-path = ["$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$H2", "$I2", "$tau2", "$tau2.f", "$se.tau2", "$ci.lb.tau2", "$ci.ub.tau2", "$QE.Wld", "$QEp.Wld", "$QE.LRT", "$QEp.LRT", "$QE.df", "$fit.stats$*", "$tab$*", "$pi.*", "$cr.*", "$vcov", ""]
-reason = "rma_glmm(model='UM.RS') agrees with R's lme4 fit to between 2e-3 and 1e-1 relative (optimiser stopping rules)."
-ref = "docs/differences.md"
-
-[[known]]
-match = "*/ls_year"
+match = ["*/ls_year", "*/ls_year#*"]
 kind = "value-diff"
 path = ["$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$M", "$H", "$H2", "$I2", "$tau2", "$tau2.f", "$fit.stats$*", "$alpha", "$alpha$*", "$alpha.perm$*", "$va", "$se.alpha", "$zval.alpha", "$pval.alpha", "$ci.lb.alpha", "$ci.ub.alpha", "$zval.alpha.perm$*", "$QS", "$QSp", "$QS.perm", "[]*", "$x", "$y", "$resid", "$z", "$pred", "$pi.*", "$cr.*", "$scale", "$vcov", ""]
 reason = "Location-scale fit ~ ablat + year with scale ~ ablat + year: the scale intercept is -151 (tau2 is 0 to machine precision), so the likelihood is flat in the scale coefficients. Log-likelihood -7.602255955 in R and Python, scale coefficients agree to 1e-6, the Wald statistics of the scale part (QS, se.alpha, va) differ by up to 2e-4; R's nlminb itself does not converge when its tolerance is tightened."
@@ -1055,22 +987,6 @@ reason = "Location-scale fits of R's tests with several scale terms (scale = ~gr
 ref = "docs/differences.md"
 
 [[known]]
-match = "scripts/misc_funnel/*"
-kind = "value-diff"
-path = "$cex"
-detail = "*par(mfrow = c(5, 2), mar = c(5, 4, 1, 1), cex = 0.5)*"
-reason = "par(cex = 0.5) returns the old value of cex of the device: 1 on R's pdf device, the matplotlib default size of the text on the figure metafopy draws on."
-ref = "docs/differences.md"
-
-[[known]]
-match = "scripts/plots_forest_plot_with_subgroups/*"
-kind = "value-diff"
-path = "$cex"
-detail = "*par(*"
-reason = "par(cex = ) and par(op) return the old and the restored value of cex of the device: 1 on R's pdf device, the matplotlib default size of the text on the figure metafopy draws on."
-ref = "docs/differences.md"
-
-[[known]]
 match = "options/robust/*/clubSandwich=true"
 kind = "value-diff"
 path = "$ddf"
@@ -1103,11 +1019,11 @@ reason = "selmodel() with type negexp1, trunc, truncest or beta on uni_factor, u
 ref = "docs/differences.md"
 
 [[known]]
-match = "options/selmodel/*"
+match = ["options/selmodel/*", "*/sel_bcg", "*/sel_bcg/*", "*/sel_digits", "*/sel_digits/*"]
 kind = "value-diff"
 path = "$hessian"
 detail = "*R *e-0[5-9], Python *e-0[5-9]*"
-reason = "selmodel() Hessian: entries that are zero to about 1e-8 (the cross derivatives with a flat selection parameter) have different finite-difference noise in R and in metafopy."
+reason = "selmodel() Hessian (stepfun and the other types): entries that are zero to about 1e-8 (the cross derivatives with a flat selection parameter) have different finite-difference noise in R and in metafopy."
 ref = "docs/differences.md"
 
 [[known]]
@@ -1153,48 +1069,6 @@ ref = "docs/differences.md"
 [[known]]
 match = "*"
 kind = "missing-field"
-path = "$chksum*"
-reason = "R keeps checksums of yi, vi, X and V to compare two fits in anova(); metafopy compares the data itself."
-ref = "docs/differences.md"
-
-[[known]]
-match = "*"
-kind = "missing-field"
-path = "$time"
-reason = "R stores the elapsed time of the fit; metafopy does not time its fits."
-ref = "docs/differences.md"
-
-[[known]]
-match = "*"
-kind = "missing-field"
-path = "$version"
-reason = "R stores the version of metafor that made the fit; metafopy has its own version."
-ref = "docs/differences.md"
-
-[[known]]
-match = "*"
-kind = "missing-field"
-path = "$verbose"
-reason = "R echoes the verbose argument in the fit; metafopy does not store it."
-ref = "docs/differences.md"
-
-[[known]]
-match = "*"
-kind = "missing-field"
-path = "$mf.*"
-reason = "R's model frames (mf.g, mf.g.f, mf.h, mf.h.f, mf.r, mf.s) are internal bookkeeping of rma.mv; metafopy keeps the factors in group_g and group_h."
-ref = "docs/differences.md"
-
-[[known]]
-match = "*"
-kind = "missing-field"
-path = "$opt.res"
-reason = "R's optimiser output is the output of optim/nlminb; the scipy optimisers give a different structure and it is not stored."
-ref = "docs/differences.md"
-
-[[known]]
-match = "*"
-kind = "missing-field"
 path = "$fit$*"
 reason = "regtest(model='lm') returns R's lm object (qr, effects, terms, ...); metafopy returns the coefficients in est, zval and pval and has no fit."
 ref = "docs/differences.md"
@@ -1204,20 +1078,6 @@ match = "*"
 kind = "label-diff"
 path = "*coef.na*"
 reason = "R names coef.na with the prefix X (coef.na.Z with Z), a quirk of how it builds the vector; metafopy names the flags by the coefficients."
-
-[[known]]
-match = "options/permutest/uni_factor/exact=true"
-kind = "accepts-where-R-refuses"
-detail = "R: reached elapsed time limit*"
-reason = "Reproduced in R: permutest(exact = TRUE) of a model with 3 allocation groups on the 13 studies of dat.bcg takes 162 s (it enumerates all the permutations), more than the time limit of a case; metafopy takes 43 s."
-ref = "docs/differences.md"
-
-[[known]]
-match = "options/profile/sel_bcg/ncpus=2"
-kind = "accepts-where-R-refuses"
-detail = "R: reached elapsed time limit*"
-reason = "Reproduced in R: profile() of a selmodel() fit with ncpus = 2 stops with the error 'argument \"withcrayon\" is missing, with no default' from the snow workers (and hangs the case runner); a bug of metafor 5.2-1 that metafopy has no counterpart of, it profiles in one process."
-ref = "docs/differences.md"
 
 [[known]]
 match = "options/confint/mv_sp/extint=true"
@@ -1234,9 +1094,9 @@ reason = "Reproduced in R: the fit of ls_year with optbeta = TRUE inverts a Hess
 ref = "docs/differences.md"
 
 [[known]]
-match = "options/permutest/uni_factor/exact=true"
+match = "options/vif/ls_*/sim=true"
 kind = "timeout"
-reason = "Reproduced in R: the exact permutation test of 3 allocation groups on 13 studies takes 162 s in R and 43 s in metafopy, both more than the time limit of a case when the machine is busy."
+reason = "Reproduced in R: vif(sim = TRUE) of a location-scale model refits it 1000 times; for the bcg fit with ablat + year in the location and the scale part it takes 105 s in R and 115 s in metafopy, more than the time limit of a case."
 ref = "docs/differences.md"
 
 [[known]]
@@ -1273,7 +1133,7 @@ ref = "docs/differences.md"
 [[known]]
 match = ["matrix/predict/uni_mods_na*", "matrix/predict/ls_na*", "matrix/predict/ls_bangert*", "options/predict/uni_mods_na/*", "options/predict/ls_na/*", "options/predict/ls_bangert/*", "scripts/misc_rma_ls/test/146"]
 kind = "shape-diff"
-path = ["$pi.se", "$pi.ddf"]
+path = ["$pi.se", "$pi.ddf", "$pred$pi.se", "$pred$pi.ddf"]
 detail = "length R *, Python *"
 reason = "predict() of a model fitted to data with missing moderator values and na.action = 'omit': R keeps pi.se and pi.ddf at one value per study of the subset (NA for the omitted ones) while pred and the intervals have the rows that are returned; metafopy gives them for the rows it returns."
 ref = "docs/differences.md"
@@ -1392,13 +1252,6 @@ reason = "hettest(res, test = 'boot'): the bootstrap statistics are random; R an
 ref = "docs/differences.md"
 
 [[known]]
-match = "options/vif/ls_bangert/sim=true"
-kind = "*"
-path = ["$beta$sim", "$beta$prop", "$alpha$sim", "$alpha$prop"]
-reason = "vif(sim = TRUE) simulates random data sets; R and metafopy do not draw the same random numbers."
-ref = "docs/differences.md"
-
-[[known]]
 match = "options/permutest/ls_bangert/seed=42"
 kind = "value-diff"
 path = "$zval.perm$*"
@@ -1463,4 +1316,84 @@ kind = "shape-diff"
 path = ""
 detail = "*[class(dat)]*"
 reason = "class() of the result of aggregate() on an escalc object that was cut with a subscript: R gives data.frame only, metafopy keeps the measure and the class escalc."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["*/ls_year", "*/ls_year/*", "*/permutest/ls_year", "*/permutest/ls_year/*", "*/permutest_ls*"]
+kind = "print-diff"
+path = ""
+detail = "*QM(df = 2) = 15.610[45]*"
+reason = "Printed QM of the flat location-scale fit ls_year: 15.6105 in R and 15.6104 in metafopy (relative 5e-6) where the scale coefficients differ by 1e-5; the log-likelihood is -7.602255955 in both."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["*/permutest/ls_*", "*/permutest/ls_*/*", "*/permutest_ls*"]
+kind = "print-diff"
+path = ""
+detail = "*QS(df = *"
+reason = "Printed QS line of permutest() of a location-scale fit with a degenerate scale part (ls_bcg, ls_year): the permutation p-value is the share of permuted statistics among those whose refit worked, and the refits fail for different permutations (permutest(ls_bcg, seed = 1234): 71 of 1000 permuted QS are NA in R and 170 in metafopy), so 0.7895 and 0.7647 come from the same QS = 0.5365."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/anova/mv_gen"
+kind = "print-diff"
+path = ""
+detail = "*QM(df = 1) = 88.56*"
+reason = "Printed QM of the GEN rma_mv fit mv_gen with correlations on the boundary (rho = -1, 1, -1): the log-likelihood is -11.577364393 in both, tau2 of the first level is 76.8913 in R and 76.8863 in metafopy, the coefficient -0.43638375 and -0.43638546, so QM is 88.5618 and 88.5624."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/print/robust_bcg/legend=*"
+kind = "shape-diff"
+path = ""
+detail = "length R 19, Python 21"
+reason = "print.rma.uni() reads legend from ... as a logical (isTRUE(ddd$legend)); the sweep passes list(x = 'topright'), the legend of a plot, for which R drops the footnote on the cluster-robust inference of a robust fit and metafopy, whose print() has no such argument, prints it."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/permutest/uni_factor/exact=true"
+kind = "value-diff"
+path = ["$QM.perm", "$zval.perm$*", "$beta.perm$*"]
+detail = "*element 19512: R None*"
+reason = "Not reproduced on its own: permutest(exact = TRUE) of ~ factor(alloc) gives 25740 permutations in R and in metafopy, both with NA at permutations 981 and 14361 and QMp 0.4611858. In the audit run the R vector had a further missing value at 19512 (the case takes 162 s in R, longer than the time limit when the machine is busy)."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["scripts/analysis_example_konstantopoulos2011/test/92", "scripts/analysis_example_konstantopoulos2011/test/93"]
+kind = "value-diff"
+path = ""
+detail = "*element 0: R True, Python False*expect_error(res <- rma.mv*"
+reason = "Iteration limits are those of different optimizers: with control = list(maxiter = 4) (R: nlminb) rma.mv() stops without convergence in R (it also does with iter.max = 4, 'convergence = 1'), where the BFGS of metafopy converges in 4 iterations (it stops with an error at 1 and 2 iterations)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/print/permutest_mods/legend=*"
+kind = "shape-diff"
+path = ""
+detail = "length R 8, Python 9"
+reason = "print.permutest.rma.uni() reads legend from ... as a logical (isTRUE(ddd$legend)); the sweep passes list(x = 'topright'), the legend of a plot, for which R leaves out the footnote on the permutation p-values and metafopy, whose print() has no such argument, prints it."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/print/ls_bcg/*"
+kind = "value-diff"
+path = ""
+detail = "*allocsystematic*"
+reason = "Printed scale coefficient allocsystematic of the location-scale fit ls_bcg (scale ~ alloc, degenerate: tau2 is 0 for two of the three allocations): the se is 2.4846 in R and 2.4847 in metafopy, and the interval -3.6795 and -3.6796, where the log-likelihood is the same."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/misc_rma_ls/test/178"
+kind = "value-diff"
+path = ["$b", "$beta", "$zval"]
+detail = "*(relative 0.0001*"
+reason = "Location-scale model with 6 location and 6 scale coefficients on 46 studies (R warns about convergence): the log-likelihood is -8.47080642716 in R and -8.47080642714 in metafopy, the scale coefficients agree to 5e-6 and the small coefficient of grade 3 (-0.0004271) to 1.2e-4 relative."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["scripts/misc_rma_ls/test/128", "scripts/misc_rma_ls/test/129"]
+kind = "value-diff"
+path = ["$pval.alpha", "$QSp", "$ci.lb.alpha", ""]
+detail = "*"
+reason = "permutest(iter = 100) of a location-scale model: the p-values are shares of the permutations whose refit worked (4/100 in R, 4/98 in metafopy: two refits fail in metafopy), the permutation distribution of the scale coefficients inherits the optimiser noise of the flat likelihood (see permutest above)."
 ref = "docs/differences.md"

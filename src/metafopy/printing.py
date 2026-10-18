@@ -75,6 +75,12 @@ def drop_stars(header: list[str], rows: list[list[str]], signif_stars: bool) -> 
     return header[:-1], [row[:-1] for row in rows]
 
 
+def number_rows(names: collections.abc.Sequence[str]) -> list[str]:
+    """The row names with their numbers in front, as ``print(x, num = TRUE)`` writes them (``1) intrcpt``, right-aligned numbers)."""
+    width = len(str(len(names)))
+    return [f'{i:>{width}}) {name}' for i, name in enumerate(names, start=1)]
+
+
 def signif_footer(signif_legend: bool, extra: collections.abc.Sequence[str] = ()) -> list[str]:
     """The lines after a coefficient table as ``print.rma.uni`` writes them: ``---`` and the ``Signif. codes`` legend when ``signif_legend``,
     then the further legend lines ``extra`` (the cluster-robust footnote); the table is followed by one blank line only when there is no legend."""
@@ -123,8 +129,8 @@ def fmt_table(
     blocks: list[list[int]] = [[]]
     used = start
     for j in range(ncol):
-        # the column of significance stars (no header) is as wide as '***' for R, which pads it
-        w_j = max(widths[j], 3) if header[j] == '' else widths[j]
+        # the column of significance stars (no header) has the width of its widest entry, a blank for p > 0.1
+        w_j = max(widths[j], 1) if header[j] == '' else widths[j]
         need = w_j + ((1 if header[j] == '' else gap) if blocks[-1] else 0)
         if limit is not None and blocks[-1] and used + need > limit:
             blocks.append([])

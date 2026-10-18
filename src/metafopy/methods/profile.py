@@ -21,6 +21,7 @@ import numpy.typing
 import pandas
 import scipy.stats
 
+import metafopy.core.labelled
 import metafopy.core.parallel
 import metafopy.core.timing
 import metafopy.errors
@@ -43,6 +44,10 @@ class ProfileList(list[typing.Any]):
     def comps(self) -> int:
         """The number of components profiled."""
         return len(self)
+
+    def __str__(self) -> str:
+        """The list as R prints it: ``[[1]]``, ``[[2]]``, ... above the profiles."""
+        return '\n'.join(f'[[{i + 1}]]\n{item}\n' for i, item in enumerate(self))
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -110,7 +115,7 @@ class ProfileResult:
         return pandas.DataFrame({'tau' if self.sqrt else 'tau2': self.tau2, 'll': self.ll})
 
     def __str__(self) -> str:
-        return self.to_frame().to_string()
+        return metafopy.core.labelled.frame_text(self.to_frame())
 
 
 @functools.singledispatch
