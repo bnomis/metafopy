@@ -19,3 +19,25 @@
 .md-header--shadow {
   box-shadow: 0 0 0.2rem rgba(0, 0, 0, 0.08);
 }
+
+/* Search box: light grey with a hairline border and rounded corners, instead of Material's dark translucent box. */
+@media screen and (min-width: 60em) {
+  .md-search__form {
+    background-color: #F4F4F5;
+    border: 1px solid #D8D9DC;
+    border-radius: 0.4rem;
+  }
+
+  .md-search__form:hover {
+    background-color: #EDEDEF;
+  }
+
+  [data-md-toggle='search']:checked ~ .md-header .md-search__form {
+    background-color: #FFFFFF;
+    border-radius: 0.4rem 0.4rem 0 0;
+  }
+
+  .md-search__output {
+    border-radius: 0 0 0.4rem 0.4rem;
+  }
+}
