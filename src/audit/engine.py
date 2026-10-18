@@ -21,7 +21,7 @@ def read_outcomes(path: pathlib.Path) -> tuple[dict[str, Json], str | None]:
     running: str | None = None
     if not path.exists():
         return done, None
-    for line in path.read_text().splitlines():
+    for line in path.read_text(errors='replace').splitlines():
         if not line.strip():
             continue
         try:

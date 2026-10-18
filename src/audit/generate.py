@@ -57,13 +57,13 @@ def option_values(
     return (values, '') if values else ([], 'uncovered')
 
 
-def args_of(entry: Json, graphics: list[str]) -> list[Json]:
+def args_of(entry: Json, graphics: list[str], extra: list[str] | None = None) -> list[Json]:
     """The formals of a function plus the arguments it reads from ``...``, as one list of formal-like entries."""
     names = {f['name'] for f in entry['formals']}
     formals = [f for f in entry['formals'] if f['name'] != '...']
     formals += [{'name': d, 'default': None, 'choices': None} for d in entry.get('dots', []) if d not in names]
     if entry.get('draws') and '...' in names:
-        formals += [{'name': g, 'default': None, 'choices': None} for g in graphics if g not in {f['name'] for f in formals}]
+        formals += [{'name': g, 'default': None, 'choices': None} for g in [*graphics, *(extra or [])] if g not in {f['name'] for f in formals}]
     return formals
 
 
@@ -139,7 +139,7 @@ def sweep(
     when: Json | None = None,
 ) -> None:
     """One case per value of each argument; ``when`` has, per swept argument, base arguments it needs changed (``fmtt(call=TRUE)`` wants scalars)."""
-    formals = args_of(entry, domains.graphics)
+    formals = args_of(entry, domains.graphics, domains.per_function.get(function.split('.')[0], {}).get('graphics'))
     known = {f['name'] for f in formals}
     for formal in formals:
         name: str = formal['name']

@@ -105,3 +105,9 @@ library. The source of metafor's tests and examples is downloaded from CRAN and 
 
 Graphics: a plot is compared by what its function returns (limits, positions, values), not by the text or pixels drawn. Items of that kind are in
 `data/recall.toml` with `reach = "none"` and the reason, and they count as missed in the totals.
+
+### Harness regressions found by the final recall of audit 8
+
+- R printed bytes that are not UTF-8 when the shell had no locale; the outcome file is now read with `errors='replace'`, and the audit script should be run with `LC_ALL=C.UTF-8`.
+- `cline` had been dropped from the graphics arguments swept for every plot function, so `profile(cline=)` was no longer tried (`a5-graphics-profile` was missed). It is now swept for `profile` only (`[fns.profile] graphics` in `data/domains.toml`).
+- The `print(x, digits = <vector>)` shim for results that print through `str()` takes the first element only for a single number now; a vector is reported, and the one case that remains (`VIFResult`) is a known entry (`a6-digits-printouts` is reproduced again).

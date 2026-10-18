@@ -143,7 +143,13 @@ def print_call(x: typing.Any, **kwargs: typing.Any) -> list[str]:
         kwargs = {k: v for k, v in kwargs.items() if k in accepted or k not in UNDOCUMENTED_PRINT_ARGUMENTS}
         if not kwargs:
             return str(x).split('\n')
-        if 'digits' in kwargs and 'digits' not in accepted and dataclasses.is_dataclass(x) and 'digits' in {f.name for f in dataclasses.fields(x)}:
+        if (
+            'digits' in kwargs
+            and 'digits' not in accepted
+            and dataclasses.is_dataclass(x)
+            and 'digits' in {f.name for f in dataclasses.fields(x)}
+            and numpy.size(kwargs['digits']) == 1
+        ):
             # print(x, digits = ) of a result that prints through str(): the digits of the result are the ones it prints with
             rest = {k: v for k, v in kwargs.items() if k != 'digits'}
             if not rest:
