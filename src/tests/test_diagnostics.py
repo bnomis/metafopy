@@ -158,7 +158,7 @@ L1O_CASES: dict[str, tuple[dict[str, typing.Any], dict[str, typing.Any]]] = {
     'l1o_knha': ({'test': 'knha'}, {}),
     'l1o_dl': ({'method': 'DL'}, {}),
     'l1o_ml': ({'method': 'ML'}, {}),
-    'l1o_exp_int': ({}, {'transf': metafopy.transf.transf_exp_int}),
+    'l1o_exp_int': ({}, {'transf': metafopy.transf.exp_int}),
     'l1o_cluster': ({}, {'cluster': 'alloc'}),
     'l1o_weights': ({'weights': 'n'}, {}),
     'l1o_level90': ({'level': 90}, {}),

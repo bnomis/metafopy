@@ -9,6 +9,7 @@ import numpy
 import pytest
 import refutil
 
+import audit.pycall
 import metafopy
 import metafopy.core.parallel
 import metafopy.methods.blocks
@@ -67,12 +68,10 @@ def test_cl_that_is_not_a_cluster_is_ignored() -> None:
 
 def test_pft_and_ipft_recycle_like_r() -> None:
     # R: transf.pft(c(0.1, 0.2, 0.3, 0.4), c(100, 200)); transf.ipft(c(0.1, 0.2, 0.3, 0.4), c(100, 200))
-    numpy.testing.assert_allclose(metafopy.transf.transf_pft([0.1, 0.2, 0.3, 0.4], [100, 200]), [0.3282089, 0.4655035, 0.5817857, 0.6852256], atol=1e-7)
-    numpy.testing.assert_allclose(
-        metafopy.transf.transf_ipft([0.1, 0.2, 0.3, 0.4], [100, 200]), [0.005681389, 0.037204624, 0.083269596, 0.149913298], atol=1e-8
-    )
+    numpy.testing.assert_allclose(metafopy.transf.pft([0.1, 0.2, 0.3, 0.4], [100, 200]), [0.3282089, 0.4655035, 0.5817857, 0.6852256], atol=1e-7)
+    numpy.testing.assert_allclose(metafopy.transf.ipft([0.1, 0.2, 0.3, 0.4], [100, 200]), [0.005681389, 0.037204624, 0.083269596, 0.149913298], atol=1e-8)
     with pytest.warns(UserWarning, match='not a multiple'):
-        out = metafopy.transf.transf_pft(numpy.linspace(0.1, 0.5, 5), numpy.linspace(100, 340, 13))
+        out = metafopy.transf.pft(numpy.linspace(0.1, 0.5, 5), numpy.linspace(100, 340, 13))
     assert out.shape == (13,)
 
 
@@ -151,7 +150,7 @@ def test_list_rma_subsetting_of_leave1out_and_cumul() -> None:
 def test_no_warning_for_equal_lengths() -> None:
     with warnings.catch_warnings():
         warnings.simplefilter('error')
-        metafopy.transf.transf_pft([0.1, 0.2], [100, 200])
+        metafopy.transf.pft([0.1, 0.2], [100, 200])
 
 
 def test_pairmat_without_the_model() -> None:
@@ -184,8 +183,8 @@ def test_btt_double() -> None:
 def test_transf_pft_matrix_keeps_shape() -> None:
     # R: transf.pft(matrix(c(.1, .2, .3, .4), 2), 10) keeps the 2 x 2 shape
     grid = numpy.array([[0.1, 0.2], [0.3, 0.4]])
-    assert metafopy.transf.transf_pft(grid, 10).shape == (2, 2)
-    assert metafopy.transf.transf_pft(0.2, numpy.array([[10, 20], [30, 40]])).shape == (2, 2)
+    assert metafopy.transf.pft(grid, 10).shape == (2, 2)
+    assert metafopy.transf.pft(0.2, numpy.array([[10, 20], [30, 40]])).shape == (2, 2)
 
 
 def test_ls_fit_on_a_ridge_is_fast() -> None:
@@ -303,8 +302,8 @@ def test_dnorm_log_and_the_ipft_helper_name() -> None:
     out = metafopy.transf.dnorm([-1.0, 0.0, 2.5], 0.5, 2.0, log=True)
     numpy.testing.assert_allclose(out, numpy.log(metafopy.transf.dnorm([-1.0, 0.0, 2.5], 0.5, 2.0)), rtol=1e-12)
     assert float(metafopy.transf.dnorm(0.0, 0.0, 0.0, log=True)) == numpy.inf
-    # the helper behind transf_ipft must not be called like the R function (the script harness resolves transf.ipft to such a name)
-    assert not hasattr(metafopy.transf, 'ipft')
+    # the script harness resolves transf.ipft to the R function, not to the helper behind it
+    assert audit.pycall.resolve_function('transf.ipft', None) is metafopy.transf.ipft
 
 
 def test_fmtx_refuses_several_digits_for_a_vector() -> None:

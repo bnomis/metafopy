@@ -176,12 +176,10 @@ def make_links() -> dict[str, Link]:
             lambda eta: metafopy.transf.arr(numpy.expm1(eta)),
             lambda eta: metafopy.transf.arr(numpy.exp(eta)),
         ),
-        'r-to-z': Link('r-to-z', metafopy.transf.transf_rtoz, metafopy.transf.transf_ztor, lambda eta: metafopy.transf.arr(1 / numpy.cosh(eta) ** 2)),
-        'r2-to-z': Link(
-            'r2-to-z', metafopy.transf.transf_r2toz, metafopy.transf.transf_ztor2, lambda eta: metafopy.transf.arr(2 * numpy.sinh(eta) / numpy.cosh(eta) ** 3)
-        ),
-        'ahw': Link('ahw', metafopy.transf.transf_ahw, metafopy.transf.transf_iahw, lambda eta: metafopy.transf.arr(3 * (1 - eta) ** 2)),
-        'abt': Link('abt', metafopy.transf.transf_abt, metafopy.transf.transf_iabt, lambda eta: metafopy.transf.arr(1 / (1 - eta))),
+        'r-to-z': Link('r-to-z', metafopy.transf.rtoz, metafopy.transf.ztor, lambda eta: metafopy.transf.arr(1 / numpy.cosh(eta) ** 2)),
+        'r2-to-z': Link('r2-to-z', metafopy.transf.r2toz, metafopy.transf.ztor2, lambda eta: metafopy.transf.arr(2 * numpy.sinh(eta) / numpy.cosh(eta) ** 3)),
+        'ahw': Link('ahw', metafopy.transf.ahw, metafopy.transf.iahw, lambda eta: metafopy.transf.arr(3 * (1 - eta) ** 2)),
+        'abt': Link('abt', metafopy.transf.abt, metafopy.transf.iabt, lambda eta: metafopy.transf.arr(1 / (1 - eta))),
     }
     links['/'] = links['reciprocal'] = links['inverse']
     return links
