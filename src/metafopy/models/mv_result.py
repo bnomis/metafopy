@@ -323,8 +323,12 @@ class RMAMVResult(metafopy.models.fit_methods.RobustFields, metafopy.models.fit_
 
     @property
     def R(self) -> typing.Any:
-        """The known correlation matrices given as ``R`` (``None`` without any), metafor's ``R``."""
-        return self.spec.get('R')
+        """The known correlation matrices given as ``R`` (``None`` without any), metafor's ``R``: a mapping with an entry for every ``~ 1 | factor`` term,
+        ``None`` for the terms without a matrix."""
+        known = self.spec.get('R')
+        if isinstance(known, collections.abc.Mapping) and self.s_names:
+            return {name: known.get(name) for name in self.s_names}
+        return known
 
     @property
     def formulas(self) -> tuple[str | None, str | None]:
@@ -368,7 +372,7 @@ class RMAMVResult(metafopy.models.fit_methods.RobustFields, metafopy.models.fit_
 
     def named_inner(self, group: metafopy.models.mv_structs.Group) -> Mat:
         """``Z1`` of a ``~ inner | outer`` term with the column names R gives it: the levels of a factor or the columns of the inner variables."""
-        rows = tuple(str(i + 1) for i in range(self.X.shape[0]))
+        rows = self.used_row_names()
         if group.struct in metafopy.models.mv_structs.FACTOR_STRUCTS:
             return named_indicator(group.Z1, rows, 'mf.g[[1]]', group.levels[0])
         if group.struct in metafopy.models.mv_structs.UNSTRUCTURED:
@@ -377,7 +381,12 @@ class RMAMVResult(metafopy.models.fit_methods.RobustFields, metafopy.models.fit_
 
     def named_outer(self, group: metafopy.models.mv_structs.Group) -> Mat:
         """``Z2`` of a ``~ inner | outer`` term with the column names R gives it (``mf.g[[nvars]]`` and the levels)."""
-        return named_indicator(group.Z2, tuple(str(i + 1) for i in range(self.X.shape[0])), 'mf.g[[nvars]]', group.levels[1])
+        return named_indicator(group.Z2, self.used_row_names(), 'mf.g[[nvars]]', group.levels[1])
+
+    def used_row_names(self) -> tuple[str, ...]:
+        """The row names of the rows used in the fit, which R gives the matrices of the ``~ inner | outer`` terms: those of the model matrix."""
+        names = getattr(self.X, 'rownames', None)
+        return tuple(names) if names is not None else tuple(str(i + 1) for i in range(self.X.shape[0]))
 
     @property
     def Z_H1(self) -> Mat | None:

@@ -13,6 +13,8 @@ import numpy
 import numpy.typing
 import pandas
 
+import metafopy.core.clubsandwich
+import metafopy.core.labelled
 import metafopy.errors
 
 __all__ = ['COUNT_NAMES', 'DataFields', 'FitMethods', 'LogLik', 'TableFields']
@@ -288,6 +290,31 @@ class RobustFields:
     def wald_test(self) -> str | None:
         """The Wald-type test of a ``club_sandwich`` model (metafor's ``wald_test``), ``None`` otherwise."""
         return None if self.robust_info is None else self.robust_info.wald_test
+
+    @property
+    def sandwiches(self) -> dict[str, typing.Any] | None:
+        """The tests of a ``club_sandwich`` model (metafor's ``sandwiches``): ``coef_test`` and ``conf_int`` tables and the ``Wald_test`` (NaN without
+        moderators), ``None`` for a model that is not a ``club_sandwich`` fit. The Wald table has the test, F statistic, ``delta``, degrees of freedom
+        and p-value."""
+        info = self.robust_info
+        if info is None or info.robumethod != 'clubSandwich':
+            return None
+        fit = typing.cast(typing.Any, self)
+        names = list(fit.coef_names)
+        test = info.coef_test
+        df_col, p_col = {'Satterthwaite': ('df_Satt', 'p_Satt'), 'naive-t': ('df', 'p_t'), 'z': (None, 'p_z'), 'saddlepoint': (None, 'p_saddle')}[test]
+        coef: dict[str, typing.Any] = {'Coef': names, 'beta': fit.beta, 'SE': fit.se, 'null_value': numpy.zeros(len(names)), 'tstat': fit.zval}
+        if df_col is not None:
+            coef[df_col] = info.dfs
+        coef[p_col] = fit.pval
+        conf = pandas.DataFrame({'Coef': names, 'beta': fit.beta, 'SE': fit.se, 'df': info.dfs, 'CI_L': fit.ci_lb, 'CI_U': fit.ci_ub})
+        wald: typing.Any = numpy.nan
+        if not fit.int_only:
+            res = metafopy.core.clubsandwich.wald_test(info.sandwich, fit.beta, numpy.eye(len(fit.beta))[list(fit.btt)], info.wald_test)
+            wald = pandas.DataFrame(
+                {'test': [info.wald_test], 'Fstat': [fit.QM], 'delta': [res.delta], 'df_num': [fit.QMdf[0]], 'df_denom': [fit.QMdf[1]], 'p_val': [fit.QMp]}
+            )
+        return metafopy.core.labelled.NamedList({'coef_test': pandas.DataFrame(coef), 'conf_int': conf, 'Wald_test': wald})
 
 
 class FitMethods:

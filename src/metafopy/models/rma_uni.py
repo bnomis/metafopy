@@ -357,15 +357,16 @@ def default_add(measure: str, add: float | None) -> float:
     return 0.0 if measure in ZERO_ADD_MEASURES else 0.5
 
 
-def as_refit_on_used(fit: RMAResult, *, dropped: bool, measure: str) -> RMAResult:
+def as_refit_on_used(fit: RMAResult, *, dropped: bool, measure: str, numbered: bool = False, row_names: tuple[str, ...] | None = None) -> RMAResult:
     """``fit`` as metafor returns a model that it fitted again to the estimates of the studies used (``regtest()`` and ``selmodel()``).
 
     The estimates carry the measure of the first model; the fit has the studies used only (``k.all``, ``k.f`` and ``ids`` refer to them, the labels are 1
     to k unless labels were given and no study was dropped) and no counts. R keeps a ``slab`` attribute on the estimates unless studies with missing values
-    were dropped, so ``slab.null`` is true only then.
+    were dropped, so ``slab.null`` is true only then. The estimates of a ``trimfill()`` fit carry the labels 1 to k whatever labels were given (``numbered``).
+    ``row_names`` are the row names of the moderator matrix of the first model, which the matrix of the refit keeps.
     """
     k = fit.k
-    kept = fit.data.slab_given and not dropped
+    kept = fit.data.slab_given and not dropped and not numbered
     labels = tuple(fit.slab) if kept else tuple(str(i + 1) for i in range(k))
     data = dataclasses.replace(
         fit.data,
@@ -383,7 +384,7 @@ def as_refit_on_used(fit: RMAResult, *, dropped: bool, measure: str) -> RMAResul
         weights_all=None,
         ids_all=None,
         subset_arg=None,
-        row_names=fit.data.rownames if dropped else None,
+        row_names=row_names,
         slab_given=not dropped,
     )
     return dataclasses.replace(fit, measure=measure, slab=labels, data=data)

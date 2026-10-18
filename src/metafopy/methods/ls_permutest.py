@@ -135,14 +135,10 @@ class LSPermutestResult:
             }
         )
 
-    def coef(self, type: typing.Literal['alpha', 'beta'] | None = None) -> pandas.Series | dict[str, pandas.Series]:
-        """The estimated coefficients, indexed by name: ``{'beta': ..., 'alpha': ...}``, or one of them with ``type``."""
-        both = metafopy.core.labelled.NamedList(
-            {
-                'beta': pandas.Series(self.beta, index=list(self.coef_names), name='estimate'),
-                'alpha': pandas.Series(self.alpha, index=list(self.alpha_names), name='estimate'),
-            }
-        )
+    def coef(self, type: typing.Literal['alpha', 'beta'] | None = None) -> pandas.DataFrame | dict[str, pandas.DataFrame]:
+        """The tables of the coefficients with the permutation p-values, ``{'beta': ..., 'alpha': ...}``, or one of them with ``type``
+        (metafor's ``coef.permutest.rma.uni``)."""
+        both = self.to_frame()
         return both if type is None else both[type]
 
     def __str__(self) -> str:
@@ -379,11 +375,13 @@ def permutest_rma_ls(
     comptol = float(con['comptol'])
     n_col = 1 if x.int_only else x.p
 
-    empty = pandas.DataFrame([[math.nan]])
+    def skipped(name: str) -> pandas.DataFrame:
+        return pandas.DataFrame({name: [math.nan]})
+
     pval = x.pval
     QMp = x.QMp
     QM_perm = numpy.array([math.nan])
-    zval_perm, beta_perm = empty, empty
+    zval_perm, beta_perm = skipped('zval.perm'), skipped('beta.perm')
     if not skip_beta:
         use_exact = bool(exact) or x_exact_iter <= iter
         n_iter = int(x_exact_iter) if use_exact else iter
@@ -402,7 +400,7 @@ def permutest_rma_ls(
     pval_alpha = x.pval_alpha
     QSp = math.nan
     QS_perm = numpy.array([math.nan])
-    zval_alpha_perm, alpha_perm = empty, empty
+    zval_alpha_perm, alpha_perm = skipped('zval.alpha.perm'), skipped('alpha.perm')
     if not skip_alpha:
         use_exact = bool(exact) or z_exact_iter <= iter
         n_iter = int(z_exact_iter) if use_exact else iter

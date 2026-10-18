@@ -25,6 +25,7 @@ import scipy.sparse
 import metafopy.core.linalg
 import metafopy.core.parallel
 import metafopy.core.timing
+import metafopy.effects.datatools
 import metafopy.errors
 import metafopy.methods.blup
 import metafopy.methods.common
@@ -374,7 +375,7 @@ def dfbetas_rma_mv(
     rows = metafopy.core.parallel.map_sims(one, list(range(len(clusters.ids))), parallel=mode, ncpus=ncpus, cl=cl, progbar=progbar)
     fail_on_missing(x, na_action)
     values, labels = per_cluster(x, clusters, numpy.vstack(rows), na_action)
-    return pandas.DataFrame(values, index=labels, columns=list(x.coef_names))
+    return pandas.DataFrame(values, index=labels, columns=metafopy.effects.datatools.make_names([str(n) for n in x.coef_names], unique=True))
 
 
 def cluster_result(
