@@ -372,7 +372,8 @@ def test_glmm_cm_el_optim(name: str) -> None:
     else:
         refutil.close(res.QE_LRT, ref['QE_LRT'], 'QE_LRT', rtol=1e-6)
         # QE_Wld of the saturated conditional model is ill-conditioned (finite or undefined depending on the platform's BLAS), so it is not checked
-        assert not warned
+        # and neither is the warning that goes with an Hessian that cannot be inverted (seen on Windows)
+        assert [w for w in warned if not w.startswith('Cannot invert the Hessian for the saturated model')] == []
 
 
 # the other optimisers are SciPy stand-ins: the estimates and the log-likelihood agree with R's, the heterogeneity test of the exact conditional
