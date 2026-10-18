@@ -9,6 +9,8 @@ theme:
     - navigation.sections
     - navigation.top
     - content.code.copy
+extra_css:
+  - assets/theme.css
 extra_javascript:
   - assets/favicon-animate.js
 markdown_extensions:
