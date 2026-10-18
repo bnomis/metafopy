@@ -21,6 +21,7 @@ import pytest
 
 import metafopy
 import metafopy.datasets
+import metafopy.effects.datatools
 import metafopy.errors
 import metafopy.methods.mv_diagnostics
 import metafopy.methods.mv_profile
@@ -133,7 +134,8 @@ def test_cooks_cluster_fixed() -> None:
 def test_dfbetas_cluster(name: str) -> None:
     out = metafopy.dfbetas(MODELS[name](), cluster=CLUSTER[name])
     frame_close(out, REF[name]['dfbetas_cluster'], 'dfbetas', check_cols=False)
-    assert list(out.columns) == list(MODELS[name]().coef_names)
+    # R: dfbetas() of rma.mv returns a data frame, whose names are syntactic (names(dfbetas(r, cluster = district)) is c('intrcpt', 'I.year...1990.'))
+    assert list(out.columns) == metafopy.effects.datatools.make_names([str(n) for n in MODELS[name]().coef_names], unique=True)
 
 
 def test_dfbetas_cluster_kon() -> None:

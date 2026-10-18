@@ -156,6 +156,15 @@ def blsplit(
         else:
             raise metafopy.errors.InternalError('blsplit() has neither a dense nor a sparse matrix')
         if fun is not None:
+            labelled = block
             block = fun(block) if args is None else fun(block, *(args if isinstance(args, list | tuple) else numpy.atleast_1d(args).tolist()))
+            # R's functions such as round() keep the dimnames of the block
+            if (
+                isinstance(labelled, metafopy.core.labelled.LabelledMatrix)
+                and isinstance(block, numpy.ndarray)
+                and not isinstance(block, metafopy.core.labelled.LabelledMatrix)
+                and block.shape == labelled.shape
+            ):
+                block = type(labelled)(block, labelled.rownames, labelled.colnames)
         res[python_scalar(value)] = block
     return res

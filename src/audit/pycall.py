@@ -124,6 +124,8 @@ def setitem(x: typing.Any, name: str, value: typing.Any) -> typing.Any:
     """``x$name <- value``: the copy of a data frame or list, or of a result (a frozen dataclass, which has no element ``name`` unless it is a field)."""
     if dataclasses.is_dataclass(x) and not isinstance(x, type):
         if name not in {f.name for f in dataclasses.fields(x)}:
+            if value is None:
+                return x  # x$name <- NULL removes an element that may not be there
             raise AttributeError(f'{type(x).__name__} has no field {name}')
         return dataclasses.replace(x, **{name: value})
     out = x.copy()

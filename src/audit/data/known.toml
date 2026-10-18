@@ -908,7 +908,7 @@ reason = "Location-scale fit ~ year with scale ~ ablat on data with missing valu
 ref = "docs/differences.md"
 
 [[known]]
-match = "*/ls_na/*"
+match = ["*/ls_na/*", "*/ls_na#*"]
 kind = "value-diff"
 path = ["$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$M", "$H", "$H2", "$I2", "$tau2", "$tau2.f", "$fit.stats$*", "$alpha", "$alpha$*", "$alpha.perm$*", "$va", "$se.alpha", "$zval.alpha", "$pval.alpha", "$ci.lb.alpha", "$ci.ub.alpha", "$zval.alpha.perm$*", "$QS", "$QSp", "$QS.perm", "[]*", "$x", "$y", "$resid", "$z", "$pred", "$pi.*", "$cr.*", "$scale", "$vcov", ""]
 reason = "Same fit as ls_na above (flat scale intercept); every option variant refits it."
@@ -1019,7 +1019,7 @@ reason = "selmodel() with type negexp1, trunc, truncest or beta on uni_factor, u
 ref = "docs/differences.md"
 
 [[known]]
-match = ["options/selmodel/*", "*/sel_bcg", "*/sel_bcg/*", "*/sel_digits", "*/sel_digits/*"]
+match = ["options/selmodel/*", "*/sel_bcg", "*/sel_bcg/*", "*/sel_bcg#*", "*/sel_digits", "*/sel_digits/*", "*/sel_digits#*"]
 kind = "value-diff"
 path = "$hessian"
 detail = "*R *e-0[5-9], Python *e-0[5-9]*"
@@ -1354,8 +1354,8 @@ ref = "docs/differences.md"
 match = "options/permutest/uni_factor/exact=true"
 kind = "value-diff"
 path = ["$QM.perm", "$zval.perm$*", "$beta.perm$*"]
-detail = "*element 19512: R None*"
-reason = "Not reproduced on its own: permutest(exact = TRUE) of ~ factor(alloc) gives 25740 permutations in R and in metafopy, both with NA at permutations 981 and 14361 and QMp 0.4611858. In the audit run the R vector had a further missing value at 19512 (the case takes 162 s in R, longer than the time limit when the machine is busy)."
+detail = "*element *: R None*"
+reason = "Not reproduced on its own: permutest(exact = TRUE) of ~ factor(alloc) gives 25740 permutations in R and in metafopy, both with NA at permutations 981 and 14361 and QMp 0.4611858 (checked again in R 4.3.3 on 2026-10-18: no other NA). In the audit runs the R vector had a further missing value (at 19512, then at 16547) in one run and none in another; the case takes 160 s in R."
 ref = "docs/differences.md"
 
 [[known]]
@@ -1403,4 +1403,139 @@ match = "options/print/vif_*/digits=*"
 kind = "missing-arg"
 detail = "print() of VIFResult takes no argument*"
 reason = "print() of a result is str(): it takes no arguments, and the digits of a VIFResult are its single-number field `digits` (the `est` element of R's vector); a vector given to R's print(vif(res), digits = c(2, NA, 1)) has no counterpart. Checked in R 4.3.3: it prints with the first element, like digits = 2."
+ref = "docs/differences.md"
+
+
+[[known]]
+match = "scripts/*"
+kind = "value-diff"
+path = ["$mar", "$mfrow", "$cex"]
+reason = "The value of `par()` that a script reads after R's graphics call: R's device state (`mar` 5.1 4.1 4.1 2.1, `mfrow`, and `cex` 0.66 that R sets itself for four or more panels) is not a matplotlib property; the subplot grid is in the figure and the margins in the axes."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["standalone/deltamethod/digits=*", "standalone/matreg/digits=*"]
+kind = "missing-field"
+path = "$digits[*]"
+reason = "`digits` of deltamethod() and matreg() is stored as a mapping of the nine metafor digits (est, se, test, pval, ci, ...), where R keeps the vector it was given (here c(2, NA, 1), which print() of R rejects); see the vif entries."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["standalone/deltamethod/digits=*", "standalone/matreg/digits=*"]
+kind = "print-diff"
+detail = "*print failed*"
+reason = "print() of R fails for the vector digits c(2, NA, 1) ('list' object cannot be coerced to type 'double'); metafopy prints the table with the first element."
+ref = "docs/differences.md"
+
+[[known]]
+match = "datasets/dat.moura2021"
+kind = "missing-field"
+path = ["$dat", "$tree"]
+reason = "dat.moura2021 is a list(dat, tree) in R; metafopy.datasets.load() returns the data frame and the tree comes from metafopy.datasets.trees.load_tree('moura2021')."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/misc_influence/test/5"
+kind = "missing-field"
+detail = "*InfluenceResult has no field inf*"
+reason = "The test assigns into the list returned by influence() (`sav$inf <- sav$inf[1]`); the result of metafopy is a frozen dataclass whose `inf` is a property."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["scripts/misc_predict/test/37", "scripts/misc_predict/test/40"]
+kind = "missing-field"
+detail = "*ndarray has no field se*"
+reason = "predict(x, vcov = TRUE) is a list(pred, vcov) in R, with `pred` a prediction object; the PredictResult of metafopy has the fields of that object (`pred`, `se`, ...) and `vcov` side by side, so `sav$pred$se` is `sav.se`."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/misc_permutest/test/46"
+kind = "missing-field"
+detail = "*PermutestResult has no field b.perm*"
+reason = "R has no element `b.perm` (the element is `beta.perm`, and `$` does not partial match `b.perm`): both sides of the test are NULL."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/analysis_example_ishak2007/test/9"
+kind = "shape-diff"
+detail = "*split(with(dat, cbind(v1i, v2i, v3i, v4i)), dat$study), diag)*"
+reason = "The audit's translation of `split()` of a matrix by study (R splits a vector); the vi matrices are built in metafopy by `vcalc()` and `blsplit()`, which are compared elsewhere."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["scripts/analysis_example_viechtbauer2007b/test/38", "scripts/analysis_example_viechtbauer2007b/test/48"]
+kind = "label-diff"
+detail = "*modvals <- cbind(0, cbind(xvals, 0))*"
+reason = "numpy has no column names: `cbind(0, ...)` gives an unnamed column in R and `V1` in the audit's translation."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["scripts/misc_escalc/test/206", "scripts/misc_escalc/test/207"]
+kind = "shape-diff"
+detail = "*attr(dat, \"*i.names\"), *"
+reason = "The names of the escalc columns are kept in `DataFrame.attrs`, which pandas does not subset with the columns: after `dat[, 1:11]` R's `yi.names` is the names of the columns left and metafopy's still lists the dropped ones."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/misc_escalc/test/187"
+kind = "value-diff"
+detail = "*attr(dat$y2, \"slab\")*"
+reason = "The escalc attributes (`measure`, `ni`, `slab`) are stored once in `DataFrame.attrs`; see the two-escalc-results entry in docs/differences.md."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/analysis_example_rothman2008/test/*"
+kind = "label-diff"
+detail = "*column names R ['yi', 'ci.lb', 'ci.ub'], Python*"
+reason = "summary() of an escalc frame has the columns `ci_lb` and `ci_ub` (`.` becomes `_`); the expected matrices are written with the dimnames of R."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["scripts/analysis_example_rothman2008/test/*", "scripts/analysis_example_raudenbush2009/test/*", "scripts/misc_rma_vs_direct_computation/test/10"]
+kind = "label-diff"
+detail = "*Python has none*"
+reason = "A matrix that R names (dimnames of `structure(..., dimnames = )`, of `t(sapply(...))` or of `res$vb`) is a plain numpy array in metafopy unless the library builds it (`vcov()`, `blsplit()`, ...)."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["scripts/misc_emmprep/test/4", "scripts/analysis_example_normand1999/test/5", "scripts/analysis_example_konstantopoulos2011/test/63", "scripts/misc_matreg/test/61"]
+kind = "shape-diff"
+detail = "*capture.output*"
+reason = "printed output: R's layout of the emmGrid (`Results are given on the log scale` lines) and of data frames and matrices differs from pandas'."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["scripts/analysis_example_normand1999/test/5", "scripts/analysis_example_konstantopoulos2011/test/63", "scripts/plots_*/*"]
+kind = "value-diff"
+detail = "*capture.output*"
+reason = "printed output: R's layout of data frames and matrices differs from pandas' (digits shown, column widths)."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["standalone/deltamethod/digits=*", "standalone/matreg/digits=*"]
+kind = "value-diff"
+path = "$digits"
+reason = "`digits` of deltamethod() and matreg() is stored as a mapping of the nine metafor digits where R keeps the vector it was given (c(2, NA, 1), which print() of R rejects); see the vif entries."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/dfbetas/mv_wide"
+kind = "value-diff"
+path = "$log.year...1900...1000."
+detail = "*element 17: R None*"
+reason = "The study 18 of mv_wide (dat.konstantopoulos2011 with ~ log(year - 1900 + 1000)): the refit without it, or its predicted value, is NA in R (the refit fails there) and a number in metafopy, which converges."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/rstudent/mv_wide"
+kind = "print-diff"
+detail = "*line 19: R '18      NA     NA      NA'*"
+reason = "The study 18 of mv_wide (dat.konstantopoulos2011 with ~ log(year - 1900 + 1000)): the refit without it, or its predicted value, is NA in R (the refit fails there) and a number in metafopy, which converges."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/robust/robust_cs_bcg"
+kind = "missing-field"
+path = "$sandwiches$*"
+reason = "robust() of a fit that is robust already (clubSandwich) with the default estimator: R changes the estimator and leaves the sandwiches of the first call in the object; the result of metafopy is a default robust fit and has none."
 ref = "docs/differences.md"

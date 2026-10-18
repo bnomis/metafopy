@@ -1208,6 +1208,8 @@ def r_assign_dollar(x: Value, name: str, value: Value) -> Value:
         return out2
     if dataclasses.is_dataclass(x) and not isinstance(x, type):
         if py_name(name) not in {f.name for f in dataclasses.fields(x)}:
+            if value is None:
+                return x  # x$name <- NULL removes an element that may not be there
             raise AttributeError(f'{type(x).__name__} has no field {name}')
         return dataclasses.replace(x, **{py_name(name): value})  # results are frozen: R's modified copy is a replaced one
     setattr(x, py_name(name), value)
@@ -1314,6 +1316,7 @@ FUNCTION_INDEX_ARGUMENTS: dict[str, tuple[str, ...]] = {
     'matreg': ('y', 'x'),
     'plot': ('out',),
     'regplot': ('mod',),
+    'to.long': ('append',),
     'to.wide': ('grpvars',),
 }
 
