@@ -302,7 +302,13 @@ class RobustFields:
         fit = typing.cast(typing.Any, self)
         names = list(fit.coef_names)
         test = info.coef_test
-        df_col, p_col = {'Satterthwaite': ('df_Satt', 'p_Satt'), 'naive-t': ('df', 'p_t'), 'z': (None, 'p_z'), 'saddlepoint': (None, 'p_saddle')}[test]
+        df_col, p_col = {
+            'Satterthwaite': ('df_Satt', 'p_Satt'),
+            'naive-t': ('df', 'p_t'),
+            'naive-tp': ('df', 'p_t'),
+            'z': (None, 'p_z'),
+            'saddlepoint': (None, 'p_saddle'),
+        }[test]
         coef: dict[str, typing.Any] = {'Coef': names, 'beta': fit.beta, 'SE': fit.se, 'null_value': numpy.zeros(len(names)), 'tstat': fit.zval}
         if df_col is not None:
             coef[df_col] = info.dfs

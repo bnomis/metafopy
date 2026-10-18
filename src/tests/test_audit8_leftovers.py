@@ -119,3 +119,23 @@ def test_mv_known_matrices_have_an_entry_for_every_factor() -> None:
     assert list(res.R) == ['district', 'school']
     assert res.R['district'] is None
     assert res.R['school'].shape == (len(levels), len(levels))
+
+
+def test_sandwiches_naive_tp(dat: pandas.DataFrame) -> None:
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        robust = metafopy.robust(metafopy.rma('yi', 'vi', data=dat), cluster=dat['trial'], club_sandwich=True, coef_test='naive-tp')
+    tables = robust.sandwiches
+    assert tables is not None
+    assert list(tables['coef_test'].columns) == ['Coef', 'beta', 'SE', 'null_value', 'tstat', 'df', 'p_t']
+
+
+def test_selmodel_refit_keeps_row_names_after_drops(dat: pandas.DataFrame) -> None:
+    # a REML model with studies dropped for missing values is refitted by ML on the studies used, and keeps their row names
+    frame = dat.copy()
+    frame.loc[2, 'yi'] = numpy.nan
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        res = metafopy.rma('yi', 'vi', data=frame)
+        sel = metafopy.selmodel(res, type='beta')
+    assert tuple(typing.cast(typing.Any, sel).base.data.rownames) == tuple(typing.cast(typing.Any, res).data.rownames)
