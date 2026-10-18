@@ -412,6 +412,10 @@ names = ["bty", "las", "xaxt", "yaxt", "cex", "lwd", "lty", "col", "pch", "bg", 
 clubSandwich = "club_sandwich"
 
 # In profile() and confint() of rma.mv and rma.ls fits the variance component arguments name the component to profile (1 is the first), not a value
+# plot.profile.rma reads cline (the line at the maximum of the profile) from the `...` of profile(); no other plot function has it
+[fns.profile]
+graphics = ["cline"]
+
 [fns.profile.args]
 sigma2 = [{ "$idx" = 1 }]
 tau2 = [{ "$idx" = 1 }]

@@ -1397,3 +1397,10 @@ path = ["$pval.alpha", "$QSp", "$ci.lb.alpha", ""]
 detail = "*"
 reason = "permutest(iter = 100) of a location-scale model: the p-values are shares of the permutations whose refit worked (4/100 in R, 4/98 in metafopy: two refits fail in metafopy), the permutation distribution of the scale coefficients inherits the optimiser noise of the flat likelihood (see permutest above)."
 ref = "docs/differences.md"
+
+[[known]]
+match = "options/print/vif_*/digits=*"
+kind = "missing-arg"
+detail = "print() of VIFResult takes no argument*"
+reason = "print() of a result is str(): it takes no arguments, and the digits of a VIFResult are its single-number field `digits` (the `est` element of R's vector); a vector given to R's print(vif(res), digits = c(2, NA, 1)) has no counterpart. Checked in R 4.3.3: it prints with the first element, like digits = 2."
+ref = "docs/differences.md"
