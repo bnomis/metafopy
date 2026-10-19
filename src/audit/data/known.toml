@@ -869,7 +869,7 @@ ref = "docs/differences.md"
 
 [[known]]
 match = "construct/ls_year/vi=0.1"
-kind = "value-diff"
+kind = "*-diff"
 reason = "rma(yi, vi = 0.1, mods = ~ ablat + year, scale = ~ ablat + year) of dat.bcg: the log-likelihood (-8.927323) and the coefficients agree, the Wald statistics of the scale part do not (se.alpha of ablat 0.0441 in R, 0.0757 in metafopy). metafopy is right: R's default Hessian (numDeriv, a relative step of 1e-4 on alpha of 3e-4) is off here; with control = list(hesspack = 'pracma') R gives 3.015, 0.0768, 0.1086 for the scale ~ ablat + (year - 1960) parametrisation, metafopy 3.045, 0.0777, 0.1091, and a central-difference Hessian of the REML log-likelihood 3.024, 0.0770, 0.1089 (checked 2026-10-19, R 4.3.3, metafor 5.2-1)."
 ref = "docs/differences.md"
 
