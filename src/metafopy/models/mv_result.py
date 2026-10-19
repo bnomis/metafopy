@@ -47,6 +47,13 @@ def named_indicator(z: Mat, rows: collections.abc.Sequence[str] | None, prefix: 
     return named_columns(z, rows, [f'{prefix}{level}' for level in levels])
 
 
+def column_levels(group: metafopy.models.mv_structs.Group, axis: int) -> collections.abc.Sequence[str]:
+    """The levels R names the columns of ``Z.G1`` (``axis`` 0) or ``Z.G2`` (1) by: those before the removal of missing values, R builds the matrices first."""
+    z = group.Z1 if axis == 0 else group.Z2
+    full = group.levels_f[axis] if group.levels_f is not None else group.levels[axis]
+    return full if z.ndim == 2 and z.shape[1] == len(full) else group.levels[axis]
+
+
 def named_counts(group: metafopy.models.mv_structs.Group | None) -> pandas.Series[float] | None:
     """The observations per level of the inner factor as a series named by the levels."""
     if group is None or group.levels_k is None:
@@ -374,19 +381,22 @@ class RMAMVResult(metafopy.models.fit_methods.RobustFields, metafopy.models.fit_
         """``Z1`` of a ``~ inner | outer`` term with the column names R gives it: the levels of a factor or the columns of the inner variables."""
         rows = self.used_row_names()
         if group.struct in metafopy.models.mv_structs.FACTOR_STRUCTS:
-            return named_indicator(group.Z1, rows, 'mf.g[[1]]', group.levels[0])
+            return named_indicator(group.Z1, rows, 'mf.g[[1]]', column_levels(group, 0))
         if group.struct in metafopy.models.mv_structs.GENERAL:
             return named_columns(group.Z1, rows, metafopy.effects.datatools.make_names([str(c) for c in group.inner.columns]))
         return group.Z1
 
     def named_outer(self, group: metafopy.models.mv_structs.Group) -> Mat:
         """``Z2`` of a ``~ inner | outer`` term with the column names R gives it (``mf.g[[nvars]]`` and the levels)."""
-        return named_indicator(group.Z2, self.used_row_names(), 'mf.g[[nvars]]', group.levels[1])
+        return named_indicator(group.Z2, self.used_row_names(), 'mf.g[[nvars]]', column_levels(group, 1))
 
     def used_row_names(self) -> tuple[str, ...]:
-        """The row names of the rows used in the fit, which R gives the matrices of the ``~ inner | outer`` terms: those of the model matrix."""
-        names = getattr(self.X, 'rownames', None)
-        return tuple(names) if names is not None else tuple(str(i + 1) for i in range(self.X.shape[0]))
+        """The row names R gives the matrices of the ``~ inner | outer`` terms: the rows after ``subset`` numbered from 1, less those with missing values.
+
+        R builds them from a data frame of the subset (``.process.G.aftersub``) and drops the rows with missing values afterwards, so a subset
+        renumbers the rows and the removal of missing values does not.
+        """
+        return tuple(str(i + 1) for i in numpy.flatnonzero(self.not_na))
 
     @property
     def Z_H1(self) -> Mat | None:
