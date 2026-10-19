@@ -117,13 +117,6 @@ reason = "reporter() writes an R Markdown report; Jupyter notebooks are the Pyth
 ref = "docs/differences.md"
 
 [[known]]
-match = "scripts/*"
-kind = "crash"
-detail = "MissingRFunctionError: reporter*"
-reason = "reporter() writes an R Markdown report; Jupyter notebooks are the Python equivalent."
-ref = "docs/differences.md"
-
-[[known]]
 match = "*"
 kind = "missing-field"
 path = "*$chksum*"
@@ -224,23 +217,10 @@ reason = "R names coef.na 'X' (a quirk of the code); metafopy names it with the 
 ref = "docs/differences.md"
 
 [[known]]
-match = "matrix/print/summary_*"
-kind = "missing-field"
-reason = "summary() returns the printed text; the fields of R's summary object are the fields of the fit, which the fit cases compare."
-ref = "docs/differences.md"
-
-[[known]]
 match = "*"
 kind = "missing-field"
 path = "$data"
 reason = "cumul(), leave1out() and the results of mv fits do not keep a data frame of the studies (R: data); the vectors and matrices are fields of the fit."
-ref = "docs/differences.md"
-
-[[known]]
-match = "matrix/print/robust_*"
-kind = "missing-field"
-path = "$sandwiches"
-reason = "The sandwich matrices of the club-sandwich estimator are kept in the robust result, not on the fit."
 ref = "docs/differences.md"
 
 [[known]]
@@ -473,12 +453,6 @@ ref = "docs/differences.md"
 match = "api/vif/*"
 kind = "missing-arg"
 reason = "R's vif() of rma.mh, rma.peto and rma.glmm fits stops (VIFs are not applicable to intercept-only models), so none of its arguments is reachable; Python raises ArgumentError."
-ref = "docs/differences.md"
-
-[[known]]
-match = "api/reporter/*"
-kind = "missing-function"
-reason = "reporter() writes an R Markdown report; Jupyter notebooks are the Python equivalent."
 ref = "docs/differences.md"
 
 [[known]]
@@ -987,22 +961,6 @@ reason = "Location-scale fits of R's tests with several scale terms (scale = ~gr
 ref = "docs/differences.md"
 
 [[known]]
-match = "options/robust/*/clubSandwich=true"
-kind = "value-diff"
-path = "$ddf"
-detail = "element * Python None"
-reason = "robust(clubSandwich=TRUE) of an rma.uni fit: R's ddf holds the Satterthwaite degrees of freedom of the coefficients; metafopy keeps them in dfs and leaves ddf unset, since ddf is a single number."
-ref = "docs/differences.md"
-
-[[known]]
-match = "*/robust_cs_bcg"
-kind = "value-diff"
-path = "$ddf"
-detail = "element * Python None"
-reason = "Same as the robust(clubSandwich=TRUE) entry: the coefficients' degrees of freedom are in dfs, not in ddf."
-ref = "docs/differences.md"
-
-[[known]]
 match = "scripts/*"
 kind = "shape-diff"
 path = "$QMdf"
@@ -1045,13 +1003,6 @@ path = ["$measure", "$ni", "$ni.f", "$slab.null"]
 detail = "*[rma(yi, vi, data = filled)]*"
 reason = "rma(yi, vi, data = filled) where filled comes from data.frame(yi = taf$yi, ...): R drops the measure and ni attributes of yi when it builds the data frame (measure GEN, no ni); metafopy keeps them in the vector. Estimates agree."
 ref = "docs/differences.md"
-
-[[known]]
-match = "scripts/regtest/*"
-kind = "value-diff"
-path = "$measure"
-detail = "*[res <- rma(yi, vi*data = dat)]*"
-reason = "dat$yi <- c(dat$yi) in the script: c() drops the measure attribute in R (measure GEN); metafopy keeps it in the vector. Estimates agree."
 
 [[known]]
 match = "options/summary/*"
@@ -1143,13 +1094,6 @@ match = ["construct/uni_mods/scale=*", "construct/uni_mods_na/scale=*", "constru
 kind = "value-diff"
 path = ["$alpha", "$va", "$se.alpha", "$zval.alpha", "$pval.alpha", "$ci.lb.alpha", "$ci.ub.alpha", "$QS", "$QSp", "$H", "$I2", "$tau2", "$tau2.f"]
 reason = "rma(mods = ~ ablat + year or ~ ablat, scale = ~ ablat or ~ alloc) of dat.bcg: the log-likelihood is equal to 1e-10 (uni_mods_year, scale ~ ablat: -8.02339884345 in R and metafopy; scale ~ alloc: -7.84205789279) and R's own default and optbeta = TRUE fits differ by 2e-6 in alpha; the scale coefficients differ by 1e-5 relative and the statistics built from them (QS, the Hessian) by 1e-3; with scale ~ alloc on data with missing values alpha is on the boundary (-22 and -26)."
-ref = "docs/differences.md"
-
-[[known]]
-match = "matrix/funnel/ls_year*"
-kind = "value-diff"
-path = "$x"
-reason = "funnel() of the flat location-scale fit ls_year: the x values are the residual-based estimates of the fit, which differ by 3e-4 relative where alpha differs."
 ref = "docs/differences.md"
 
 [[known]]
@@ -1335,27 +1279,11 @@ reason = "Printed QS line of permutest() of a location-scale fit with a degenera
 ref = "docs/differences.md"
 
 [[known]]
-match = "matrix/anova/mv_gen"
-kind = "print-diff"
-path = ""
-detail = "*QM(df = 1) = 88.56*"
-reason = "Printed QM of the GEN rma_mv fit mv_gen with correlations on the boundary (rho = -1, 1, -1): the log-likelihood is -11.577364393 in both, tau2 of the first level is 76.8913 in R and 76.8863 in metafopy, the coefficient -0.43638375 and -0.43638546, so QM is 88.5618 and 88.5624."
-ref = "docs/differences.md"
-
-[[known]]
 match = "options/print/robust_bcg/legend=*"
 kind = "shape-diff"
 path = ""
 detail = "length R 19, Python 21"
 reason = "print.rma.uni() reads legend from ... as a logical (isTRUE(ddd$legend)); the sweep passes list(x = 'topright'), the legend of a plot, for which R drops the footnote on the cluster-robust inference of a robust fit and metafopy, whose print() has no such argument, prints it."
-ref = "docs/differences.md"
-
-[[known]]
-match = "options/permutest/uni_factor/exact=true"
-kind = "value-diff"
-path = ["$QM.perm", "$zval.perm$*", "$beta.perm$*"]
-detail = "*element *: R None*"
-reason = "Not reproduced on its own: permutest(exact = TRUE) of ~ factor(alloc) gives 25740 permutations in R and in metafopy, both with NA at permutations 981 and 14361 and QMp 0.4611858 (checked again in R 4.3.3 on 2026-10-18: no other NA). In the audit runs the R vector had a further missing value (at 19512, then at 16547) in one run and none in another; the case takes 160 s in R."
 ref = "docs/differences.md"
 
 [[known]]
@@ -1411,13 +1339,6 @@ match = "scripts/*"
 kind = "value-diff"
 path = ["$mar", "$mfrow", "$cex"]
 reason = "The value of `par()` that a script reads after R's graphics call: R's device state (`mar` 5.1 4.1 4.1 2.1, `mfrow`, and `cex` 0.66 that R sets itself for four or more panels) is not a matplotlib property; the subplot grid is in the figure and the margins in the axes."
-ref = "docs/differences.md"
-
-[[known]]
-match = ["standalone/deltamethod/digits=*", "standalone/matreg/digits=*"]
-kind = "missing-field"
-path = "$digits[*]"
-reason = "`digits` of deltamethod() and matreg() is stored as a mapping of the nine metafor digits (est, se, test, pval, ci, ...), where R keeps the vector it was given (here c(2, NA, 1), which print() of R rejects); see the vif entries."
 ref = "docs/differences.md"
 
 [[known]]
@@ -1484,13 +1405,6 @@ reason = "The escalc attributes (`measure`, `ni`, `slab`) are stored once in `Da
 ref = "docs/differences.md"
 
 [[known]]
-match = "scripts/analysis_example_rothman2008/test/*"
-kind = "label-diff"
-detail = "*column names R ['yi', 'ci.lb', 'ci.ub'], Python*"
-reason = "summary() of an escalc frame has the columns `ci_lb` and `ci_ub` (`.` becomes `_`); the expected matrices are written with the dimnames of R."
-ref = "docs/differences.md"
-
-[[known]]
 match = ["scripts/analysis_example_rothman2008/test/*", "scripts/analysis_example_raudenbush2009/test/*", "scripts/misc_rma_vs_direct_computation/test/10"]
 kind = "label-diff"
 detail = "*Python has none*"
@@ -1538,4 +1452,10 @@ match = "matrix/robust/robust_cs_bcg"
 kind = "missing-field"
 path = "$sandwiches$*"
 reason = "robust() of a fit that is robust already (clubSandwich) with the default estimator: R changes the estimator and leaves the sandwiches of the first call in the object; the result of metafopy is a default robust fit and has none."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["construct/mv_sp/*", "options/confint/mv_sp/extint=true", "construct/mv_ks/control={\"optimizer\":\"nloptr\"}"]
+kind = "print-diff"
+reason = "Printed output of the spatial and unstructured rma_mv fits on dat.konstantopoulos2011, whose likelihood is flat in the range rho (see the mv_sp value-diff entry): rho differs in the third or fourth digit, and the struct = 'GDIAG' and 'GEN' variants stop at different points of the ridge (tau2 0 against 0.0826, or a variance of 3131.9 with rho -1 against 3.49 with rho -0.9997 in R); this one was not compared by log-likelihood, so a worse optimum in metafopy is not excluded."
 ref = "docs/differences.md"

@@ -228,7 +228,12 @@ def block(res: metafopy.models.mv_result.RMAMVResult, group: metafopy.models.mv_
 
 
 def format_result(
-    res: metafopy.models.mv_result.RMAMVResult, digits: int = 4, showfit: bool = False, signif_stars: bool = True, signif_legend: bool = True
+    res: metafopy.models.mv_result.RMAMVResult,
+    digits: int = 4,
+    showfit: bool = False,
+    signif_stars: bool = True,
+    signif_legend: bool = True,
+    num: bool = False,
 ) -> str:
     fm = metafopy.printing.fmt_num
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
@@ -318,7 +323,10 @@ def format_result(
     out.append('')
     out.append(
         metafopy.printing.fmt_table(
-            header, rows_, row_names=None if res.int_only else list(res.coef_names), width=metafopy.printing.console_width(1 if robust is not None else 0)
+            header,
+            rows_,
+            row_names=None if res.int_only else metafopy.printing.number_rows(res.coef_names) if num else list(res.coef_names),
+            width=metafopy.printing.console_width(1 if robust is not None else 0),
         )
     )
     out += metafopy.printing.signif_footer(signif_legend, metafopy.models.robust_print.legend_lines(robust, res.int_only) if robust is not None else ())

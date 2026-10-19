@@ -67,6 +67,7 @@ class PredictResult:
     vcov: FloatArray | pandas.DataFrame | None = None
     x_names: tuple[str, ...] | None = None
     digits: int = 4
+    digit_map: collections.abc.Mapping[str, int] | None = None
     method: str | None = None
     transf: bool = False
     pred_type: str = 'location'
@@ -119,9 +120,14 @@ class PredictResult:
                 cols[f'Z.{name}'] = numpy.asarray(z_values)[:, j]
         return pandas.DataFrame(cols, index=list(self.slab) if self.slab is not None else None)
 
+    def with_digits(self, digits: typing.Any) -> typing.Self:
+        """The result printed with ``digits`` (a number, or a mapping with any of the keys of :data:`metafopy.mfopt.DIGIT_KEYS`)."""
+        return with_digits(self, digits, self.digit_map or self.digits)  # type: ignore[arg-type]
+
     def __str__(self) -> str:
         """The predictions as ``print.list.rma`` shows them: fixed decimals (``digits``), one row per prediction."""
         digits = metafopy.mfopt.option_digits(None, self.digits)
+        by_kind = metafopy.mfopt.digits_map(self.digit_map, digits)
         frame = self.to_frame()
         # print.list.rma leaves out `se` after a transformation and the prediction interval of the models that have none
         drop = (['se'] if self.transf else []) + ([] if self.has_pi else ['pi.lb', 'pi.ub'])
@@ -130,13 +136,17 @@ class PredictResult:
         columns = [
             r_numeric_column(frame[name].to_numpy(dtype=numpy.float64))
             if str(name).startswith(('X.', 'Z.'))
-            else [metafopy.printing.fmt_num(float(v), digits) for v in frame[name]]
+            else [metafopy.printing.fmt_num(float(v), by_kind[PRINT_KINDS.get(str(name), 'est')]) for v in frame[name]]
             for name in frame.columns
         ]
         rows = [list(row) for row in zip(*columns, strict=True)]
         return metafopy.mfopt.option_space(
             '\n' + metafopy.printing.fmt_table([str(c) for c in frame.columns], rows, [str(i) for i in frame.index], gap=1) + '\n'
         )
+
+
+# the kind of number (a key of ``digits``) print.list.rma formats each column as; the others are formatted as ``est``
+PRINT_KINDS = {'se': 'se', 'ci.lb': 'ci', 'ci.ub': 'ci', 'pi.lb': 'ci', 'pi.ub': 'ci'}
 
 
 def r_numeric_column(values: FloatArray) -> list[str]:
@@ -152,7 +162,7 @@ def r_numeric_column(values: FloatArray) -> list[str]:
 
 def with_digits[R: PredictResult](result: R, digits: typing.Any, stored: int) -> R:
     """``result`` with the ``digits`` of its printout (R's ``out$digits``): ``digits``, else the ``digits`` option, else that of the model."""
-    return dataclasses.replace(result, digits=metafopy.mfopt.option_digits(digits, stored))
+    return metafopy.mfopt.with_digits(result, digits, stored)
 
 
 CUTOFF_FUNCTIONS: dict[str, collections.abc.Callable[[float], float]] = {

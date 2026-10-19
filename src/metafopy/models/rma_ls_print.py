@@ -29,6 +29,7 @@ def coef_table(
     fixed: FloatArray | None,
     digits: int,
     signif_stars: bool = True,
+    num: bool = False,
 ) -> str:
     """A coefficient table; the entries of fixed coefficients (``fixed``) other than the estimate print as ``---``."""
     tdist = ddf is not None
@@ -56,7 +57,12 @@ def coef_table(
         row.append(metafopy.printing.signif_stars(float(pval[j])))
         rows.append(row)
     header, rows = metafopy.printing.drop_stars(header, rows, signif_stars)
-    return metafopy.printing.fmt_table(header, rows, row_names=None if estimate.shape[0] == 1 else list(names), width=metafopy.printing.console_width())
+    return metafopy.printing.fmt_table(
+        header,
+        rows,
+        row_names=None if estimate.shape[0] == 1 else metafopy.printing.number_rows(names) if num else list(names),
+        width=metafopy.printing.console_width(),
+    )
 
 
 def test_line(stat: float, df: tuple[int, float | None], p: float, digits: int, name: str) -> str:
@@ -66,7 +72,12 @@ def test_line(stat: float, df: tuple[int, float | None], p: float, digits: int, 
 
 
 def format_result(
-    res: metafopy.models.rma_ls_result.RMALSResult, digits: int = 4, showfit: bool = False, signif_stars: bool = True, signif_legend: bool = True
+    res: metafopy.models.rma_ls_result.RMALSResult,
+    digits: int = 4,
+    showfit: bool = False,
+    signif_stars: bool = True,
+    signif_legend: bool = True,
+    num: bool = False,
 ) -> str:
     # auditme: accept[literal-duplication] metafor option values and column labels repeated as in the R source
     out: list[str] = ['']
@@ -94,7 +105,7 @@ def format_result(
 
     out.append('Model Results (Location):')
     out.append('')
-    out.append(coef_table(res.beta, res.se, res.zval, res.pval, res.ci_lb, res.ci_ub, res.coef_names, res.ddf, None, digits, signif_stars))
+    out.append(coef_table(res.beta, res.se, res.zval, res.pval, res.ci_lb, res.ci_ub, res.coef_names, res.ddf, None, digits, signif_stars, num))
     out.append('')
 
     if res.q > 1 and not math.isnan(res.QS):
@@ -119,6 +130,7 @@ def format_result(
             fixed,
             digits,
             signif_stars,
+            num,
         )
     )
     out += metafopy.printing.signif_footer(signif_legend)

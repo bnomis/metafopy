@@ -139,6 +139,10 @@ class InfluenceResult:
     def summary(self, infonly: bool = False) -> str:
         return format_influence(self, infonly)
 
+    def with_digits(self, digits: typing.Any) -> typing.Self:
+        """The result printed with ``digits``; every column of the printout is an ``est`` column, so a mapping acts through its ``est`` element."""
+        return dataclasses.replace(self, digits=metafopy.mfopt.digits_map(digits, self.digits)['est'])
+
     def __str__(self) -> str:
         return format_influence(self, False)
 

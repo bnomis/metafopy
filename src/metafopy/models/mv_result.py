@@ -375,7 +375,7 @@ class RMAMVResult(metafopy.models.fit_methods.RobustFields, metafopy.models.fit_
         rows = self.used_row_names()
         if group.struct in metafopy.models.mv_structs.FACTOR_STRUCTS:
             return named_indicator(group.Z1, rows, 'mf.g[[1]]', group.levels[0])
-        if group.struct in metafopy.models.mv_structs.UNSTRUCTURED:
+        if group.struct in metafopy.models.mv_structs.GENERAL:
             return named_columns(group.Z1, rows, metafopy.effects.datatools.make_names([str(c) for c in group.inner.columns]))
         return group.Z1
 
@@ -530,11 +530,12 @@ class RMAMVResult(metafopy.models.fit_methods.RobustFields, metafopy.models.fit_
         *,
         signif_stars: bool | None = None,
         signif_legend: bool | None = None,
+        num: bool = False,
     ) -> str:
         """The printout with the fit statistics table, as metafor's ``summary()``; ``str(res)`` leaves it out like ``print()``.
 
-        ``digits`` defaults to the ``digits`` option, else to the ``digits`` the model was fitted with; ``signif_stars`` and ``signif_legend``
-        as for :meth:`metafopy.models.rma_uni.RMAResult.summary`.
+        ``digits`` defaults to the ``digits`` option, else to the ``digits`` the model was fitted with; ``signif_stars``, ``signif_legend`` and
+        ``num`` as for :meth:`metafopy.models.rma_uni.RMAResult.summary`.
         """
         # auditme: accept[in-function-import] the printing module needs this class, so the import is deferred to avoid a cycle
         import metafopy.models.mv_print
@@ -542,7 +543,7 @@ class RMAMVResult(metafopy.models.fit_methods.RobustFields, metafopy.models.fit_
         stars, legend = metafopy.mfopt.option_signif(signif_stars, signif_legend)
         return metafopy.models.fit_methods.SummaryText(
             metafopy.mfopt.option_space(
-                metafopy.models.mv_print.format_result(self, metafopy.mfopt.option_digits(digits, self.digits), showfit, stars, legend)
+                metafopy.models.mv_print.format_result(self, metafopy.mfopt.option_digits(digits, self.digits), showfit, stars, legend, num)
             ),
             self,
             metafopy.mfopt.option_digits(digits, self.digits),

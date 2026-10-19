@@ -145,17 +145,19 @@ def print_call(x: typing.Any, **kwargs: typing.Any) -> list[str]:
         kwargs = {k: v for k, v in kwargs.items() if k in accepted or k not in UNDOCUMENTED_PRINT_ARGUMENTS}
         if not kwargs:
             return str(x).split('\n')
+        with_digits = getattr(x, 'with_digits', None)
+        if 'digits' in kwargs and 'digits' not in accepted and callable(with_digits) and set(kwargs) == {'digits'}:
+            # print(x, digits = ) of a result that prints through str(): the result printed with those digits
+            return str(with_digits(kwargs['digits'])).split('\n')
         if (
             'digits' in kwargs
             and 'digits' not in accepted
+            and set(kwargs) == {'digits'}
             and dataclasses.is_dataclass(x)
             and 'digits' in {f.name for f in dataclasses.fields(x)}
             and numpy.size(kwargs['digits']) == 1
         ):
-            # print(x, digits = ) of a result that prints through str(): the digits of the result are the ones it prints with
-            rest = {k: v for k, v in kwargs.items() if k != 'digits'}
-            if not rest:
-                return str(dataclasses.replace(typing.cast(typing.Any, x), digits=int(numpy.atleast_1d(kwargs['digits'])[0]))).split('\n')
+            return str(dataclasses.replace(typing.cast(typing.Any, x), digits=int(numpy.atleast_1d(kwargs['digits'])[0]))).split('\n')
         missing = sorted(k for k in kwargs if k not in accepted)
         if missing:
             raise MissingArgumentError(f'print() of {type(x).__name__} takes no argument {missing}; R was given {sorted(kwargs)}')

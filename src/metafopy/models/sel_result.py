@@ -8,6 +8,7 @@ import numpy
 import numpy.typing
 import pandas
 
+import metafopy.bias.inputs
 import metafopy.core.labelled
 import metafopy.metadata
 import metafopy.mfopt
@@ -297,7 +298,7 @@ class SelmodelResult(metafopy.models.fit_methods.FitMethods):
         return self.base.k_f
 
     def __getattr__(self, name: str) -> typing.Any:
-        """The trim-and-fill details (``fill``, ``k0``, ...) of a trimfill fit the selection model was fitted to, which metafor keeps in the result."""
+        """The trim-and-fill details (``fill``, ``se_k0``, ...) of a trimfill fit the selection model was fitted to, which metafor keeps in the result."""
         trimfill = object.__getattribute__(self, 'trimfill_info')
         if name in trimfill:
             return trimfill[name]
@@ -459,15 +460,17 @@ class SelmodelResult(metafopy.models.fit_methods.FitMethods):
 
     # -- printing -------------------------------------------------------------------
 
-    def summary(self, digits: int | None = None, showfit: bool = True, *, signif_stars: bool | None = None, signif_legend: bool | None = None) -> str:
+    def summary(
+        self, digits: int | None = None, showfit: bool = True, *, signif_stars: bool | None = None, signif_legend: bool | None = None, num: bool = False
+    ) -> str:
         """The printout with the fit statistics table, as metafor's ``summary()``; ``str(res)`` leaves it out like ``print()``.
 
         ``signif_stars`` (default: the ``signif_stars`` option, ``True``) adds the significance stars, ``signif_legend`` (default: ``signif_stars``)
-        their legend.
+        their legend, ``num`` numbers the rows of the table of coefficients.
         """
         stars, legend = metafopy.mfopt.option_signif(signif_stars, signif_legend)
         return metafopy.models.fit_methods.SummaryText(
-            metafopy.mfopt.option_space(format_selmodel(self, metafopy.mfopt.option_digits(digits, self.digits), showfit, stars, legend)),
+            metafopy.mfopt.option_space(format_selmodel(self, metafopy.mfopt.option_digits(digits, self.digits), showfit, stars, legend, num)),
             self,
             metafopy.mfopt.option_digits(digits, self.digits),
         )
@@ -509,12 +512,24 @@ def delta_table(res: SelmodelResult, digits: int) -> tuple[list[str], list[list[
     return header, rows, names
 
 
-def format_selmodel(res: SelmodelResult, digits: int = 4, showfit: bool = False, stars: bool = True, legend: bool = True) -> str:
+def trimfill_block(info: dict[str, typing.Any], k0: int, digits: int) -> list[str]:
+    """The lines print.rma.uni puts above the model for a selection model fitted to a trim-and-fill fit (the result keeps its class), and a blank line."""
+    side = info['side']
+    lines = [f'Estimated number of missing studies on the {side} side: {k0} (SE = {metafopy.printing.fmt_num(info["se_k0"], digits)})']
+    if info['k0_est'] == 'R0':
+        p_text = metafopy.bias.inputs.fp(info['p_k0'], digits, equal=True, sep=True, pname='p-val ')
+        lines.append(f'Test of H0: no missing studies on the {side} side:     {" " * len(str(k0))}{p_text}')
+    return [*lines, '']
+
+
+def format_selmodel(res: SelmodelResult, digits: int = 4, showfit: bool = False, stars: bool = True, legend: bool = True, num: bool = False) -> str:
     """The output of metafor's ``print.rma.uni`` for a selection model."""
     fmt = metafopy.printing.fmt_num
     pfmt = metafopy.models.rma_uni.pfmt
     # auditme: accept[literal-duplication] print.rma starts with a blank line
     out: list[str] = ['']
+    if res.trimfill_info:
+        out += trimfill_block(res.trimfill_info, res.k0, digits)
     fe = res.method in metafopy.models.tau2.FIXED_EFFECTS
     if fe:
         if res.int_only:
@@ -579,7 +594,14 @@ def format_selmodel(res: SelmodelResult, digits: int = 4, showfit: bool = False,
             ]
         )
     header, rows_ = metafopy.printing.drop_stars(header, rows_, stars)
-    out.append(metafopy.printing.fmt_table(header, rows_, row_names=None if res.int_only else list(res.coef_names), width=metafopy.printing.console_width()))
+    out.append(
+        metafopy.printing.fmt_table(
+            header,
+            rows_,
+            row_names=None if res.int_only else metafopy.printing.number_rows(res.coef_names) if num else list(res.coef_names),
+            width=metafopy.printing.console_width(),
+        )
+    )
 
     if not math.isnan(res.LRT):
         out.append('')

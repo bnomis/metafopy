@@ -42,7 +42,11 @@ class LSVIFResult:
     alpha: metafopy.methods.vif.VIFResult
 
     def __str__(self) -> str:
-        return f'\nLocation Coefficients:\n{self.beta}\nScale Coefficients:\n{self.alpha}'
+        return self.summary()
+
+    def summary(self, digits: int | None = None, *, num: bool = False) -> str:
+        """The printout of ``print(x, digits=, num=)``: the printouts of the two parts with ``digits`` and ``num``."""
+        return f'\nLocation Coefficients:\n{self.beta.summary(digits, num=num)}\nScale Coefficients:\n{self.alpha.summary(digits, num=num)}'
 
 
 def coef_table(

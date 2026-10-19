@@ -59,6 +59,7 @@ class Leave1outResult:
     slab: tuple[str, ...]
     stat_name: str = 'zval'
     digits: int = 4
+    digit_map: collections.abc.Mapping[str, int] | None = None
     transf: bool = False
     k: FloatArray | None = None
     order: numpy.typing.NDArray[typing.Any] | None = None
@@ -110,26 +111,30 @@ class Leave1outResult:
         return pandas.DataFrame(cols, index=list(self.slab))
 
     def __str__(self) -> str:
-        d = self.digits
+        by_kind = metafopy.mfopt.digits_map(self.digit_map, self.digits)
         spec: list[tuple[str, FloatArray, int]] = []
         if self.k is not None:
             spec.append(('k', self.k, 0))
-        spec.append(('estimate', self.estimate, d))
+        spec.append(('estimate', self.estimate, by_kind['est']))
         if not self.transf:
-            spec.append(('se', self.se, d))
+            spec.append(('se', self.se, by_kind['se']))
         spec += [
-            (self.stat_name, self.stat, d),
-            ('pval', self.pval, d),
-            ('ci.lb', self.ci_lb, d),
-            ('ci.ub', self.ci_ub, d),
-            ('Q', self.Q, d),
-            ('Qp', self.Qp, d),
+            (self.stat_name, self.stat, by_kind['test']),
+            ('pval', self.pval, by_kind['pval']),
+            ('ci.lb', self.ci_lb, by_kind['ci']),
+            ('ci.ub', self.ci_ub, by_kind['ci']),
+            ('Q', self.Q, by_kind['test']),
+            ('Qp', self.Qp, by_kind['pval']),
         ]
         if self.tau2 is not None:
-            spec.append(('tau2', self.tau2, d))
-        spec += [('I2', self.I2, d), ('H2', self.H2, d)]
+            spec.append(('tau2', self.tau2, by_kind['var']))
+        spec += [('I2', self.I2, by_kind['het']), ('H2', self.H2, by_kind['het'])]
         cols = [(name, [metafopy.printing.fmt_num(float(v), dd) for v in vals]) for name, vals, dd in spec]
         return '\n'.join(['', *metafopy.methods.blup.format_r_frame(cols, self.slab), ''])
+
+    def with_digits(self, digits: typing.Any) -> typing.Self:
+        """The result printed with ``digits`` (a number, or a mapping with any of the keys of :data:`metafopy.mfopt.DIGIT_KEYS`)."""
+        return metafopy.mfopt.with_digits(self, digits, self.digit_map or self.digits)
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -251,6 +256,7 @@ def leave1out_rma_uni(
         # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
         stat_name='tval' if x.test in ('knha', 'adhoc', 't') else 'zval',
         digits=metafopy.mfopt.option_digits(digits, x.digits),
+        digit_map=metafopy.mfopt.digit_map_of(digits, x.digits),
         transf=transf is not None,
         ids=x.ids[x.not_na] if len(slab) == int(x.not_na.sum()) else x.ids,
     )
@@ -378,6 +384,7 @@ def cumul_rma_uni(
         # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
         stat_name='tval' if x.test in ('knha', 'adhoc', 't') else 'zval',
         digits=metafopy.mfopt.option_digits(digits, x.digits),
+        digit_map=metafopy.mfopt.digit_map_of(digits, x.digits),
         transf=transf is not None,
         k=col['k'],
         order=uor,

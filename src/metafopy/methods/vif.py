@@ -109,7 +109,11 @@ class VIFResult:
         return tab
 
     def __str__(self) -> str:
-        d = self.digits
+        return self.summary()
+
+    def summary(self, digits: int | None = None, *, num: bool = False) -> str:
+        """The printout of ``print(x, digits=, num=)``: ``num`` numbers the rows of the table of coefficients (``table=True``)."""
+        d = metafopy.mfopt.option_digits(digits, self.digits) if digits is not None else self.digits
         if self.bttspec:
             if len(self.vif) == 1:
                 e = self.vif[0]
@@ -170,7 +174,8 @@ class VIFResult:
         ]
         if prop is not None:
             cols.append(('prop', [metafopy.printing.fmt_num(v, 2) for v in prop]))
-        return '\n'.join(['', *metafopy.methods.blup.format_r_frame(cols, [str(n) for n in tab.index]), ''])
+        rows = metafopy.printing.number_rows([str(n) for n in tab.index]) if num else [str(n) for n in tab.index]
+        return '\n'.join(['', *metafopy.methods.blup.format_r_frame(cols, rows), ''])
 
 
 def numeric_specs(entries: collections.abc.Sequence[VIFEntry]) -> bool:

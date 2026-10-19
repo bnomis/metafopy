@@ -24,6 +24,11 @@ EPS = float(numpy.finfo(float).eps)
 REFIT_ERRORS = (metafopy.errors.EstimationError, ValueError, ArithmeticError, numpy.linalg.LinAlgError)
 
 
+def is_true(value: typing.Any) -> bool:
+    """R's ``isTRUE``: only a logical ``True`` is true (a model or a number passed for a flag read from ``...`` is not)."""
+    return isinstance(value, bool | numpy.bool_) and bool(value)
+
+
 def check_na_action(na_action: str) -> None:
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if na_action not in ('omit', 'exclude', 'pass', 'fail'):
