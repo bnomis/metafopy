@@ -177,7 +177,7 @@ print(summary_escalc(stay)[['source', 'yi', 'sei', 'zi', 'pval', 'ci.lb', 'ci.ub
 ```
 
 ```text
-               source    yi        sei  ...          pval      ci_lb      ci_ub
+               source    yi        sei  ...          pval      ci.lb      ci.ub
 0           Edinburgh -20.0   6.364591  ...  1.675772e-03 -32.474370  -7.525630
 1      Orpington-Mild  -2.0   1.442444  ...  1.655835e-01  -4.827139   0.827139
 2  Orpington-Moderate -55.0   3.962121  ...  8.206280e-44 -62.765615 -47.234385
