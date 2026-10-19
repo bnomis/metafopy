@@ -96,7 +96,7 @@ def test_rbind_escalc_of_row_subsets_has_one_ni_per_row() -> None:
 def test_summary_escalc_of_a_column_subset() -> None:
     dat = bcg()
     out = metafopy.summary_escalc(dat[['ablat', 'yi', 'vi']])
-    assert {'sei', 'zi', 'pval', 'ci_lb', 'ci_ub'} <= set(out.columns)
+    assert {'sei', 'zi', 'pval', 'ci.lb', 'ci.ub'} <= set(out.columns)
     with pytest.raises(metafopy.errors.InputError):
         metafopy.summary_escalc(dat[['ablat', 'yi']])
 

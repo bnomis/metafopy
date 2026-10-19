@@ -85,6 +85,8 @@ run_unit <- function(expr, env) {
     message = function(m) invokeRestart("muffleMessage"))
   setTimeLimit(elapsed = Inf)
   out <- list(warnings = as.list(unique(warns)), secs = as.numeric(difftime(Sys.time(), t0, units = "secs")))
+  # as in runcases.R: a try() inside metafor can catch the time limit and return an incomplete value
+  if (!inherits(res, "error") && out$secs >= limit) res <- simpleError("reached elapsed time limit inside the call, which carried on with the step it interrupted counted as failed")
   if (inherits(res, "error")) {
     out$status <- "error"
     out$error <- conditionMessage(res)

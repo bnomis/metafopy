@@ -140,6 +140,8 @@ def classify(r: Json, py: Json, value: object) -> list[Json]:
             add('refused-where-R-works', detail=f'{cls}: {py["error"]}')
         else:
             add('crash', detail=f'{cls}: {py["error"]}')
+    elif not r_ok and py_ok and 'elapsed time limit' in r.get('error', ''):
+        add('timeout', detail=f'R: {r["error"][:200]}')
     elif not r_ok and py_ok:
         add('accepts-where-R-refuses', detail=f'R: {r.get("error", "")[:200]}')
     elif r_ok and py_ok:

@@ -25,6 +25,7 @@ for (fx in fixtures) {
 }
 
 pdf(NULL)
+TIME_LIMIT_SWALLOWED <- "reached elapsed time limit inside the call, which carried on with the step it interrupted counted as failed"
 run_case <- function(case) {
   warns <- character()
   out <- list(id = case$id, status = "ok")
@@ -51,6 +52,8 @@ run_case <- function(case) {
     options(na.action = "na.omit")
   }
   out$warnings <- as.list(unique(warns))
+  # the time limit raises an error wherever R is, and a try() of the code under test (permutest() refits in try()) records it as a failed step
+  if (!inherits(value, "error") && out$secs >= limit) value <- simpleError(TIME_LIMIT_SWALLOWED)
   if (inherits(value, "error")) {
     out$status <- "error"
     out$error <- conditionMessage(value)

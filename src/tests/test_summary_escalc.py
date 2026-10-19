@@ -24,14 +24,12 @@ def names(v: typing.Any) -> list[str]:
 
 
 def check(res: pandas.DataFrame, ref: dict[str, typing.Any], rtol: float = 1e-10) -> None:
-    # metafor's default out.names "ci.lb"/"ci.ub" are "ci_lb"/"ci_ub" here
-    cols = [c.replace('.', '_') for c in ref['columns']]
-    assert list(res.columns) == cols
-    for rname, col in zip(ref['columns'], cols, strict=True):
-        numpy.testing.assert_allclose(res[col].to_numpy(float), arr(ref[rname]), rtol=rtol, atol=1e-14, equal_nan=True, err_msg=col)
+    assert list(res.columns) == ref['columns']
+    for col in ref['columns']:
+        numpy.testing.assert_allclose(res[col].to_numpy(float), arr(ref[col]), rtol=rtol, atol=1e-14, equal_nan=True, err_msg=col)
     for key in ('yi_names', 'vi_names', 'sei_names'):
         assert res.attrs[key] == names(ref['attrs'][key])
-    assert res.attrs['ci_lb_names'] == [n.replace('.', '_') for n in names(ref['attrs']['ci_lb_names'])]
+    assert res.attrs['ci_lb_names'] == names(ref['attrs']['ci_lb_names'])
 
 
 def escalc_frame(spec: dict[str, typing.Any]) -> pandas.DataFrame:
@@ -87,7 +85,7 @@ def test_transf_exp_olim_and_integral(odds: pandas.DataFrame) -> None:
 def test_replace_false_fills_only_missing(odds: pandas.DataFrame) -> None:
     s1 = metafopy.effects.summary.summary_escalc(odds)
     s1.loc[1, 'sei'] = numpy.nan
-    s1.loc[[0, 2], 'ci_lb'] = numpy.nan
+    s1.loc[[0, 2], 'ci.lb'] = numpy.nan
     check(s1, REF['or']['replace_false_input'])
     check(metafopy.effects.summary.summary_escalc(s1, replace=False, level=80), REF['or']['replace_false'])
 
