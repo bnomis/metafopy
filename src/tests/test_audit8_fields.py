@@ -270,7 +270,8 @@ def test_round2_anova_class_and_trimfill_fields(dat: pandas.DataFrame) -> None:
     assert metafopy.anova(metafopy.rma('yi', 'vi', data=dat), res).class_f == ('rma.uni', 'rma')
     robust = metafopy.robust(res, cluster=dat['trial'])
     assert metafopy.anova(robust, btt=[1]).class_ == ('robust.rma', 'rma', 'rma.uni')
-    tf = metafopy.trimfill(metafopy.rma('yi', 'vi', data=dat))
+    # a fit that is refitted by ML (REML here) loses the trim-and-fill details, as in R
+    tf = metafopy.trimfill(metafopy.rma('yi', 'vi', data=dat, method='ML'))
     sel_tf = typing.cast(typing.Any, metafopy.selmodel(tf, type='beta'))
     assert list(sel_tf.fill) == list(tf.fill)
 

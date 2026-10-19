@@ -24,12 +24,28 @@ reference page: https://wviechtb.github.io/metafor/reference/mfopt.html.
 """
 
 import collections.abc
+import dataclasses
 import math
 import typing
 
+import numpy
+
 import metafopy.errors
 
-__all__ = ['DIGIT_KEYS', 'OPTIONS', 'getmfopt', 'model_digits', 'option_digits', 'option_signif', 'option_space', 'reduce_digits', 'setmfopt']
+__all__ = [
+    'DIGIT_KEYS',
+    'OPTIONS',
+    'digit_map_of',
+    'digits_map',
+    'getmfopt',
+    'model_digits',
+    'option_digits',
+    'option_signif',
+    'option_space',
+    'reduce_digits',
+    'setmfopt',
+    'with_digits',
+]
 
 # auditme: accept[non-alphabetical-literal] the order of metafor's digits vector
 DIGIT_KEYS = ('est', 'se', 'test', 'pval', 'ci', 'var', 'sevar', 'fit', 'het')
@@ -99,8 +115,8 @@ def reduce_digits(value: typing.Any, stored: int = 4) -> int:
     the ``est`` element of a mapping (else its first), the first element of a sequence."""
     if isinstance(value, collections.abc.Mapping):
         value = value.get('est', next(iter(value.values()), stored))
-    elif isinstance(value, collections.abc.Sequence) and not isinstance(value, str):
-        value = value[0] if value else stored
+    elif isinstance(value, numpy.ndarray | collections.abc.Sequence) and not isinstance(value, str):
+        value = value[0] if len(value) else stored
     if value is None or (isinstance(value, float) and math.isnan(value)):
         return stored
     return int(value)
@@ -115,6 +131,56 @@ def model_digits(x: typing.Any) -> int:
     """The ``digits`` a model was fitted with (metafor's ``x$digits``), else 4 for a vector of estimates."""
     stored = getattr(x, 'digits', None)
     return stored if isinstance(stored, int) and not isinstance(stored, bool) else 4
+
+
+def digits_map(digits: typing.Any = None, stored: typing.Any = 4) -> dict[str, int]:
+    """The decimals of each kind of number (``est``, ``se``, ``test``, ``pval``, ``ci``, ``var``, ``sevar``, ``fit``, ``het``) a printout uses,
+    metafor's ``.get.digits``: ``stored`` (a number or a mapping), changed by the ``digits`` option and then by an explicit ``digits``. A number
+    or an unnamed vector sets all kinds to its first element; a mapping changes the kinds it names (a unique prefix of a name is enough).
+
+    R: https://github.com/wviechtb/metafor/blob/master/R/misc.func.hidden.r (``.get.digits``).
+    """
+    res = dict.fromkeys(DIGIT_KEYS, reduce_digits(stored))
+    if isinstance(stored, collections.abc.Mapping):
+        res.update(named_digits(stored))
+    opt = OPTIONS.get('digits')
+    if opt is not None:
+        if isinstance(opt, collections.abc.Mapping):
+            res.update(named_digits(opt))
+        elif is_scalar_digits(opt):
+            res = dict.fromkeys(DIGIT_KEYS, reduce_digits(opt))
+    if digits is not None:
+        if isinstance(digits, collections.abc.Mapping):
+            res.update(named_digits(digits))
+        else:
+            res = dict.fromkeys(DIGIT_KEYS, reduce_digits(digits, res['est']))
+    return res
+
+
+def digit_map_of(digits: typing.Any, stored: typing.Any = 4) -> dict[str, int] | None:
+    """:func:`digits_map` when the kinds of number differ in their decimals, else ``None`` (the one number the result stores as ``digits``)."""
+    by_kind = digits_map(digits, stored)
+    return None if len(set(by_kind.values())) == 1 else by_kind
+
+
+def with_digits[R](result: R, digits: typing.Any, stored: typing.Any) -> R:
+    """A copy of a result dataclass with the ``digits`` and ``digit_map`` of a printout made with ``digits``."""
+    return dataclasses.replace(result, digits=option_digits(digits, stored), digit_map=digit_map_of(digits, stored))  # type: ignore[type-var]
+
+
+def is_scalar_digits(value: typing.Any) -> bool:
+    """Whether ``value`` is a single number (a vector of length one counts)."""
+    return not isinstance(value, collections.abc.Mapping | str) and numpy.size(value) == 1
+
+
+def named_digits(digits: collections.abc.Mapping[str, typing.Any]) -> dict[str, int]:
+    """The elements of a named ``digits`` vector whose name is (the start of) one of :data:`DIGIT_KEYS`, as R's ``pmatch`` finds them."""
+    out: dict[str, int] = {}
+    for name, value in digits.items():
+        hits = [key for key in DIGIT_KEYS if key == name] or [key for key in DIGIT_KEYS if key.startswith(str(name))]
+        if len(hits) == 1 and value is not None:
+            out[hits[0]] = int(value)
+    return out
 
 
 def option_digits(digits: typing.Any, stored: int = 4) -> int:

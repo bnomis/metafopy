@@ -137,6 +137,7 @@ def ranef_rma_mv(
         metafopy.errors.InputError: the model has user-defined weights or ``na_action='fail'`` with missing values.
     """
     x = object
+    expand, vcov = metafopy.methods.common.is_true(expand), metafopy.methods.common.is_true(vcov)
     metafopy.methods.common.check_na_action(na_action)
     alpha = x.level if level is None else metafopy.models.rma_uni.level_to_alpha(level)
     if x.W is not None:

@@ -375,11 +375,12 @@ class RMALSResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_me
         *,
         signif_stars: bool | None = None,
         signif_legend: bool | None = None,
+        num: bool = False,
     ) -> str:
         """The printout with the fit statistics table, as metafor's ``summary()``; ``str(res)`` leaves it out like ``print()``.
 
-        ``digits`` defaults to the ``digits`` option, else to the ``digits`` the model was fitted with; ``signif_stars`` and ``signif_legend``
-        as for :meth:`metafopy.models.rma_uni.RMAResult.summary`.
+        ``digits`` defaults to the ``digits`` option, else to the ``digits`` the model was fitted with; ``signif_stars``, ``signif_legend`` and
+        ``num`` as for :meth:`metafopy.models.rma_uni.RMAResult.summary`.
         """
         # auditme: accept[in-function-import] the printer imports this module for its type
         import metafopy.models.rma_ls_print
@@ -387,7 +388,7 @@ class RMALSResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_me
         stars, legend = metafopy.mfopt.option_signif(signif_stars, signif_legend)
         return metafopy.models.fit_methods.SummaryText(
             metafopy.mfopt.option_space(
-                metafopy.models.rma_ls_print.format_result(self, metafopy.mfopt.option_digits(digits, self.digits), showfit, stars, legend)
+                metafopy.models.rma_ls_print.format_result(self, metafopy.mfopt.option_digits(digits, self.digits), showfit, stars, legend, num)
             ),
             self,
             metafopy.mfopt.option_digits(digits, self.digits),

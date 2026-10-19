@@ -805,11 +805,14 @@ def selmodel(
     )
 
     ptable_out = ptable
+    # metafor starts from the input fit, so a trim-and-fill fit keeps its details and its printout unless it was fitted again
     trimfill_info = (
         dict(source.trimfill_info)
         if isinstance(source, metafopy.models.sel_result.SelmodelResult)
-        else {name: getattr(source, name) for name in ('fill', 'k0', 'se_k0', 'side', 'k0_est', 'p_k0') if hasattr(source, name)}
+        else {name: getattr(source, name) for name in ('fill', 'se_k0', 'side', 'k0_est', 'p_k0') if hasattr(source, name)}
     )
+    if isinstance(source, metafopy.models.rma_uni.RMAResult) and source.method not in metafopy.models.tau2.FIXED_EFFECTS and source.method != 'ML':
+        trimfill_info = {}
     return metafopy.models.sel_result.SelmodelResult(
         trimfill_info=trimfill_info,
         base=base,

@@ -191,15 +191,17 @@ class GLMMResult(metafopy.models.fit_methods.TableFields, metafopy.models.fit_me
     def fit_stats_for(self, REML: bool | None = None) -> metafopy.models.rma_uni.FitStats:
         return self.fit_stats_reml if REML else self.fit_stats_ml
 
-    def summary(self, digits: int | None = None, showfit: bool = True, *, signif_stars: bool | None = None, signif_legend: bool | None = None) -> str:
+    def summary(
+        self, digits: int | None = None, showfit: bool = True, *, signif_stars: bool | None = None, signif_legend: bool | None = None, num: bool = False
+    ) -> str:
         """The printout with the fit statistics table, as metafor's ``summary()``; ``str(res)`` leaves it out like ``print()``.
 
         ``signif_stars`` (default: the ``signif_stars`` option, ``True``) adds the significance stars, ``signif_legend`` (default: ``signif_stars``)
-        their legend.
+        their legend, ``num`` numbers the rows of the table of coefficients.
         """
         stars, legend = metafopy.mfopt.option_signif(signif_stars, signif_legend)
         return metafopy.models.fit_methods.SummaryText(
-            metafopy.mfopt.option_space(self.render(metafopy.mfopt.option_digits(digits, self.digits), showfit, stars, legend)),
+            metafopy.mfopt.option_space(self.render(metafopy.mfopt.option_digits(digits, self.digits), showfit, stars, legend, num)),
             self,
             metafopy.mfopt.option_digits(digits, self.digits),
         )
@@ -274,7 +276,7 @@ class GLMMResult(metafopy.models.fit_methods.TableFields, metafopy.models.fit_me
             out.append('')
         return out
 
-    def render(self, digits: int, showfit: bool, stars: bool = True, legend: bool = True) -> str:
+    def render(self, digits: int, showfit: bool, stars: bool = True, legend: bool = True, num: bool = False) -> str:
         out = self.title_lines(digits, showfit)
         out += self.heterogeneity_lines(digits)
         if self.p > 1 and not math.isnan(self.QM):
@@ -313,7 +315,12 @@ class GLMMResult(metafopy.models.fit_methods.TableFields, metafopy.models.fit_me
             rows.append(row)
         header, rows = metafopy.printing.drop_stars(header, rows, stars)
         out.append(
-            metafopy.printing.fmt_table(header, rows, row_names=None if self.int_only else list(self.coef_names), width=metafopy.printing.console_width())
+            metafopy.printing.fmt_table(
+                header,
+                rows,
+                row_names=None if self.int_only else metafopy.printing.number_rows(self.coef_names) if num else list(self.coef_names),
+                width=metafopy.printing.console_width(),
+            )
         )
         out += metafopy.printing.signif_footer(legend)
         return '\n'.join(out)
