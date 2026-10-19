@@ -173,7 +173,7 @@ print(stay.attrs['slab'])
 ```python
 from metafopy import summary_escalc
 
-print(summary_escalc(stay)[['source', 'yi', 'sei', 'zi', 'pval', 'ci_lb', 'ci_ub']])
+print(summary_escalc(stay)[['source', 'yi', 'sei', 'zi', 'pval', 'ci.lb', 'ci.ub']])
 ```
 
 ```text

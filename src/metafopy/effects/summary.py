@@ -8,8 +8,7 @@ metafor attributes live in ``DataFrame.attrs`` (``yi_names``, ``vi_names``,
 
 Differences from R that follow Python conventions:
 
-- ``out_names`` defaults to ``('sei', 'zi', 'pval', 'ci_lb', 'ci_ub')`` and
-  any strings are accepted (R makes them syntactically valid names);
+- any strings are accepted for ``out_names`` (R makes them syntactically valid names);
 - like R's ``mapply()``, ``transf`` is called once per value; keyword
   arguments in ``**kwargs`` that have one entry per row are passed
   elementwise, everything else (scalars, mappings such as ``targs``) as is;
@@ -96,7 +95,7 @@ def mapply(transf: collections.abc.Callable[..., typing.Any], values: FloatArray
 
 def summary_escalc(
     object: pandas.DataFrame,
-    out_names: collections.abc.Sequence[str] = ('sei', 'zi', 'pval', 'ci_lb', 'ci_ub'),
+    out_names: collections.abc.Sequence[str] = ('sei', 'zi', 'pval', 'ci.lb', 'ci.ub'),
     var_names: collections.abc.Sequence[str] | None = None,
     H0: numpy.typing.ArrayLike = 0,
     append: bool = True,
