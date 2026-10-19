@@ -1457,5 +1457,5 @@ ref = "docs/differences.md"
 [[known]]
 match = ["construct/mv_sp/*", "options/confint/mv_sp/extint=true", "construct/mv_ks/control={\"optimizer\":\"nloptr\"}"]
 kind = "print-diff"
-reason = "Printed output of the spatial and unstructured rma_mv fits on dat.konstantopoulos2011, whose likelihood is flat in the range rho (see the mv_sp value-diff entry): rho differs in the third or fourth digit, and the struct = 'GDIAG' and 'GEN' variants stop at different points of the ridge (tau2 0 against 0.0826, or a variance of 3131.9 with rho -1 against 3.49 with rho -0.9997 in R); this one was not compared by log-likelihood, so a worse optimum in metafopy is not excluded."
+reason = "Printed output of the spatial and unstructured rma_mv fits on dat.konstantopoulos2011, whose likelihood is flat in the range rho (see the mv_sp value-diff entry): rho differs in the third or fourth digit, and the struct = 'GDIAG' and 'GEN' variants have more than one local maximum of the REML surface: for GDIAG R stops at tau2 0.0826 with REML log-likelihood -32.21647 and metafopy at tau2 0 with -32.21355 (metafopy reaches R's point from the start tau2_init = 0.01 and then has the lower value); for GEN R stops at tau2 3.487, rho -0.9997 with -32.20462 and metafopy at tau2 3131.9, rho -1 with -31.86847. In both metafopy has the higher log-likelihood."
 ref = "docs/differences.md"
