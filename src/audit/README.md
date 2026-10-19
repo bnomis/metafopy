@@ -111,3 +111,7 @@ Graphics: a plot is compared by what its function returns (limits, positions, va
 - R printed bytes that are not UTF-8 when the shell had no locale; the outcome file is now read with `errors='replace'`, and the audit script should be run with `LC_ALL=C.UTF-8`.
 - `cline` had been dropped from the graphics arguments swept for every plot function, so `profile(cline=)` was no longer tried (`a5-graphics-profile` was missed). It is now swept for `profile` only (`[fns.profile] graphics` in `data/domains.toml`).
 - The `print(x, digits = <vector>)` shim for results that print through `str()` takes the first element only for a single number now; a vector is reported, and the one case that remains (`VIFResult`) is a known entry (`a6-digits-printouts` is reproduced again).
+
+### A time limit that metafor catches (audit 10)
+
+R's `setTimeLimit()` raises its error wherever R is when the limit passes. When that is inside a `try()` of metafor (`permutest()` wraps every refit in one and stores `NA` for a refit that fails), the case carries on and returns a value with one step marked as failed: audits 8 to 10 saw a single extra `NA` in `permutest(exact = TRUE)` at a different position each time. `runcases.R` and `runscripts.R` now report a case or unit that ran past the limit as an R error, and `pyrun.classify` turns it into a `timeout` finding.

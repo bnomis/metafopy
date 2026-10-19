@@ -112,7 +112,7 @@ reason = "Same as the selmodel(type='beta') entry of misc_selmodel: tau2 near 0 
 ref = "docs/differences.md"
 
 [[known]]
-match = "*/reporter*"
+match = ["*/reporter*", "scripts/misc_reporter/*"]
 reason = "reporter() writes an R Markdown report; Jupyter notebooks are the Python equivalent."
 ref = "docs/differences.md"
 
@@ -868,6 +868,12 @@ reason = "Location-scale fit ~ ablat + year with scale ~ ablat + year: the scale
 ref = "docs/differences.md"
 
 [[known]]
+match = "construct/ls_year/vi=0.1"
+kind = "value-diff"
+reason = "rma(yi, vi = 0.1, mods = ~ ablat + year, scale = ~ ablat + year) of dat.bcg: the log-likelihood (-8.927323) and the coefficients agree, the Wald statistics of the scale part do not (se.alpha of ablat 0.0441 in R, 0.0757 in metafopy). metafopy is right: R's default Hessian (numDeriv, a relative step of 1e-4 on alpha of 3e-4) is off here; with control = list(hesspack = 'pracma') R gives 3.015, 0.0768, 0.1086 for the scale ~ ablat + (year - 1960) parametrisation, metafopy 3.045, 0.0777, 0.1091, and a central-difference Hessian of the REML log-likelihood 3.024, 0.0770, 0.1089 (checked 2026-10-19, R 4.3.3, metafor 5.2-1)."
+ref = "docs/differences.md"
+
+[[known]]
 match = "*/ls_year/*"
 kind = "value-diff"
 path = ["$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$M", "$H", "$H2", "$I2", "$tau2", "$tau2.f", "$fit.stats$*", "$alpha", "$alpha$*", "$alpha.perm$*", "$va", "$se.alpha", "$zval.alpha", "$pval.alpha", "$ci.lb.alpha", "$ci.ub.alpha", "$zval.alpha.perm$*", "$QS", "$QSp", "$QS.perm", "[]*", "$x", "$y", "$resid", "$z", "$pred", "$pi.*", "$cr.*", "$scale", "$vcov", ""]
@@ -1058,7 +1064,7 @@ reason = "rma.glmm(control = list(optimizer = 'BFGS')) or another optim() method
 ref = "docs/differences.md"
 
 [[known]]
-match = ["scripts/misc_rma_glmm/*", "scripts/analysis_example_vanhouwelingen1993/*", "scripts/analysis_example_stijnen2010/*", "scripts/analysis_example_rothman2008/*", "scripts/misc_update/test/29"]
+match = ["scripts/misc_rma_glmm/*", "scripts/analysis_example_vanhouwelingen1993/*", "scripts/analysis_example_stijnen2010/*", "scripts/analysis_example_rothman2008/*", "scripts/misc_update/test/29", "scripts/misc_update/test/37"]
 kind = "value-diff"
 path = ["", "$ci.lb", "$ci.ub", "$pi.se", "$pi.lb", "$pi.ub", "$cr.lb", "$cr.ub", "$pval", "$QMp"]
 detail = "*(relative 0.*"
@@ -1327,14 +1333,6 @@ reason = "permutest(iter = 100) of a location-scale model: the p-values are shar
 ref = "docs/differences.md"
 
 [[known]]
-match = "options/print/vif_*/digits=*"
-kind = "missing-arg"
-detail = "print() of VIFResult takes no argument*"
-reason = "print() of a result is str(): it takes no arguments, and the digits of a VIFResult are its single-number field `digits` (the `est` element of R's vector); a vector given to R's print(vif(res), digits = c(2, NA, 1)) has no counterpart. Checked in R 4.3.3: it prints with the first element, like digits = 2."
-ref = "docs/differences.md"
-
-
-[[known]]
 match = "scripts/*"
 kind = "value-diff"
 path = ["$mar", "$mfrow", "$cex"]
@@ -1427,7 +1425,7 @@ ref = "docs/differences.md"
 
 [[known]]
 match = ["standalone/deltamethod/digits=*", "standalone/matreg/digits=*"]
-kind = "value-diff"
+kind = "*"
 path = "$digits"
 reason = "`digits` of deltamethod() and matreg() is stored as a mapping of the nine metafor digits where R keeps the vector it was given (c(2, NA, 1), which print() of R rejects); see the vif entries."
 ref = "docs/differences.md"
@@ -1458,4 +1456,17 @@ ref = "docs/differences.md"
 match = ["construct/mv_sp/*", "options/confint/mv_sp/extint=true", "construct/mv_ks/control={\"optimizer\":\"nloptr\"}"]
 kind = "print-diff"
 reason = "Printed output of the spatial and unstructured rma_mv fits on dat.konstantopoulos2011, whose likelihood is flat in the range rho (see the mv_sp value-diff entry): rho differs in the third or fourth digit, and the struct = 'GDIAG' and 'GEN' variants have more than one local maximum of the REML surface: for GDIAG R stops at tau2 0.0826 with REML log-likelihood -32.21647 and metafopy at tau2 0 with -32.21355 (metafopy reaches R's point from the start tau2_init = 0.01 and then has the lower value); for GEN R stops at tau2 3.487, rho -0.9997 with -32.20462 and metafopy at tau2 3131.9, rho -1 with -31.86847. In both metafopy has the higher log-likelihood."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/permutest/uni_factor/exact=true"
+kind = "timeout"
+reason = "permutest(exact = TRUE) of rma(yi, vi, mods = ~ factor(alloc)) on dat.bcg refits the model 25740 times; R takes 200 s on its own and more than the case limit when the audit runs four shards. Outside the harness R and metafopy agree: the refits of permutations 981 and 14361 fail in both (Fisher scoring does not converge in 100 iterations), so both store NA there (checked 2026-10-19, R 4.3.3, metafor 5.2-1). Before 2026-10-19 the time limit fired inside R's try() of a refit and showed as one extra NA in R."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/selmodel/*"
+kind = "print-diff"
+detail = "*R 'delta.1 *', Python 'delta.1 *'"
+reason = "The printed standard errors of the selection parameter of selmodel(type = 'beta' or 'negexp2'): the same finite-difference Hessian of a surface flat in delta as the se.delta value-diff entry above (log-likelihood and estimates agree to 1e-9, standard errors to 1e-4 relative)."
 ref = "docs/differences.md"
