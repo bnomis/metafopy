@@ -874,6 +874,13 @@ reason = "rma(yi, vi = 0.1, mods = ~ ablat + year, scale = ~ ablat + year) of da
 ref = "docs/differences.md"
 
 [[known]]
+match = ["construct/ls_year/mods=*I(ablat^2)*", "construct/ls_year/subset=*"]
+kind = "print-diff"
+detail = "*R 'intrcpt *', Python 'intrcpt *'"
+reason = "Printed scale coefficients of the ls_year fit of dat.bcg with mods = ~ ablat + I(ablat^2) + year, or with subset = 1:8: the log-likelihood (-7.167652, -3.833264) and the coefficients agree, but the standard errors of the scale part are not determined beyond two or three digits, because the scale intercept and the year slope are almost collinear (year is not centred). R's own Hessians disagree: numDeriv 235.6152 and pracma 235.9699 for the intercept (subset: 467.05 and 469.22); a central difference of R's REML log-likelihood at R's optimum gives 235.7, 237.9 and 266.2 with steps of 1e-4, 1e-3 and 1e-5 times the standard error (subset: 465.1, 474.2, 478.4). metafopy's 235.5444 and 464.8098 lie in that spread (checked 2026-10-20, R 4.3.3, metafor 5.2-1)."
+ref = "docs/differences.md"
+
+[[known]]
 match = "*/ls_year/*"
 kind = "value-diff"
 path = ["$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$M", "$H", "$H2", "$I2", "$tau2", "$tau2.f", "$fit.stats$*", "$alpha", "$alpha$*", "$alpha.perm$*", "$va", "$se.alpha", "$zval.alpha", "$pval.alpha", "$ci.lb.alpha", "$ci.ub.alpha", "$zval.alpha.perm$*", "$QS", "$QSp", "$QS.perm", "[]*", "$x", "$y", "$resid", "$z", "$pred", "$pi.*", "$cr.*", "$scale", "$vcov", ""]
@@ -892,6 +899,13 @@ match = ["*/ls_na/*", "*/ls_na#*"]
 kind = "value-diff"
 path = ["$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$M", "$H", "$H2", "$I2", "$tau2", "$tau2.f", "$fit.stats$*", "$alpha", "$alpha$*", "$alpha.perm$*", "$va", "$se.alpha", "$zval.alpha", "$pval.alpha", "$ci.lb.alpha", "$ci.ub.alpha", "$zval.alpha.perm$*", "$QS", "$QSp", "$QS.perm", "[]*", "$x", "$y", "$resid", "$z", "$pred", "$pi.*", "$cr.*", "$scale", "$vcov", ""]
 reason = "Same fit as ls_na above (flat scale intercept); every option variant refits it."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["construct/ls_year/control=*", "construct/ls_na/control=*"]
+kind = "print-diff"
+detail = "*R 'intrcpt *', Python 'intrcpt *'"
+reason = "Printed scale coefficients of ls_year and ls_na fitted with another R optimiser (hjk, Nelder-Mead, BBoptim, ...): the same stopping points on a flat likelihood as the value-diff entry below; the printed estimates and standard errors differ from 6e-5 to 4e-4 relative."
 ref = "docs/differences.md"
 
 [[known]]
@@ -1054,6 +1068,7 @@ ref = "docs/differences.md"
 match = "options/vif/ls_*/sim=true"
 kind = "timeout"
 reason = "Reproduced in R: vif(sim = TRUE) of a location-scale model refits it 1000 times; for the bcg fit with ablat + year in the location and the scale part it takes 105 s in R and 115 s in metafopy, more than the time limit of a case."
+load_dependent = true
 ref = "docs/differences.md"
 
 [[known]]
@@ -1462,7 +1477,20 @@ ref = "docs/differences.md"
 match = "options/permutest/uni_factor/exact=true"
 kind = "timeout"
 reason = "permutest(exact = TRUE) of rma(yi, vi, mods = ~ factor(alloc)) on dat.bcg refits the model 25740 times; R takes 200 s on its own and more than the case limit when the audit runs four shards. Outside the harness R and metafopy agree: the refits of permutations 981 and 14361 fail in both (Fisher scoring does not converge in 100 iterations), so both store NA there (checked 2026-10-19, R 4.3.3, metafor 5.2-1). Before 2026-10-19 the time limit fired inside R's try() of a refit and showed as one extra NA in R."
+load_dependent = true
 ref = "docs/differences.md"
+
+[[known]]
+match = "options/permutest/trimfill_bcg/exact=true"
+kind = "timeout"
+reason = "permutest(exact = TRUE) of the trim-and-fill fit of dat.bcg (k = 17 with the filled studies) refits the model 2^17 = 131072 times; R takes 545 s on its own (metafopy 128 s), more than the case limit. Outside the harness both give the permutation p-value 0.2112427 with no failed refit (checked 2026-10-20, R 4.3.3, metafor 5.2-1)."
+load_dependent = true
+
+[[known]]
+match = "options/tes/trimfill_bcg/alternative=\"greater\""
+kind = "timeout"
+reason = "tes(alternative = 'greater') of the trim-and-fill fit of dat.bcg takes 419 s in R on its own (metafopy under 2 s), more than the case limit. Outside the harness R prints the same result as metafopy: 4 of 17 significant, 0.1126 expected, p < .0001 (exact test), theta_lim not estimable (checked 2026-10-20, R 4.3.3, metafor 5.2-1)."
+load_dependent = true
 
 [[known]]
 match = "options/selmodel/*"
