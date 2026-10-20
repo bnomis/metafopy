@@ -19,7 +19,7 @@ import audit.config
 
 Json = dict[str, typing.Any]
 
-STEPS = ('matrix', 'options', 'construct', 'standalone', 'datasets', 'scripts', 'api')
+STEPS = ('matrix', 'options', 'construct', 'standalone', 'emmeans', 'datasets', 'scripts', 'api')
 
 
 @dataclasses.dataclass

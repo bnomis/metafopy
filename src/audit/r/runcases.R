@@ -5,6 +5,7 @@ args <- commandArgs(trailingOnly = TRUE)
 here <- dirname(sub("^--file=", "", grep("^--file=", commandArgs(FALSE), value = TRUE)[1]))
 source(file.path(here, "common.R"))
 suppressPackageStartupMessages(library(metafor))
+suppressPackageStartupMessages(library(emmeans))
 options(width = 80, warn = 1)
 limit <- if (length(args) >= 4L) as.numeric(args[4]) else 120
 
@@ -25,12 +26,48 @@ for (fx in fixtures) {
 }
 
 pdf(NULL)
+
+# The text a plotting function draws, so that labels (axis titles, legends, the heading of the columns of forest()) are compared too: the graphics
+# functions metafor calls are replaced, in the environment its namespace imports them from, by ones that note the strings they are given.
+drawn <- character()
+note_text <- function(x) {
+  x <- tryCatch(as.character(unlist(x)), error = function(e) character())
+  x <- trimws(gsub("[[:space:]]+", " ", x))
+  drawn <<- c(drawn, x[!is.na(x) & grepl("[A-Za-z]", x)])
+}
+spy <- function(name, defn, picks) {
+  orig <- get(name, envir = asNamespace("graphics"))
+  force(defn)
+  force(picks)  # the loop below changes `spec` before the wrappers run
+  function(...) {
+    args <- list(...)
+    named <- tryCatch(match.call(defn, as.call(c(list(as.name("f")), args))), error = function(e) NULL)
+    if (!is.null(named)) for (p in picks) if (!is.null(named[[p]])) note_text(named[[p]])
+    do.call(orig, args)
+  }
+}
+# the places a call can find these functions: metafor's imports, stats' imports (qqnorm()), and graphics itself (plot.density() and hist() call title() and
+# plot.default() from there)
+homes <- list(parent.env(asNamespace("metafor")), parent.env(asNamespace("stats")), asNamespace("graphics"), as.environment("package:graphics"))
+for (spec in list(
+  list("text", graphics:::text.default, "labels"), list("mtext", graphics::mtext, "text"), list("axis", graphics::axis, "labels"),
+  list("title", graphics::title, c("main", "sub", "xlab", "ylab")), list("plot", graphics:::plot.default, c("main", "sub", "xlab", "ylab")),
+  list("plot.default", graphics:::plot.default, c("main", "sub", "xlab", "ylab")), list("legend", graphics::legend, "legend"))) {
+  spied <- spy(spec[[1]], spec[[2]], spec[[3]])
+  for (home in homes) {
+    if (exists(spec[[1]], envir = home, inherits = FALSE)) {
+      if (bindingIsLocked(spec[[1]], home)) unlockBinding(spec[[1]], home)
+      assign(spec[[1]], spied, envir = home)
+    }
+  }
+}
 TIME_LIMIT_SWALLOWED <- "reached elapsed time limit inside the call, which carried on with the step it interrupted counted as failed"
 run_case <- function(case) {
   warns <- character()
   out <- list(id = case$id, status = "ok")
   t0 <- Sys.time()
   set.seed(1234)
+  drawn <<- character()
   # a case must not see the options that another one left behind (forest(), funnel() and baujat() set na.action and put it back on exit)
   options(na.action = "na.omit")
   value <- withCallingHandlers(
@@ -59,6 +96,7 @@ run_case <- function(case) {
     out$error <- conditionMessage(value)
     return(out)
   }
+  if (length(drawn)) out$drawn <- as.list(sort(unique(drawn)))
   out$value <- tryCatch(node_of(value), error = function(e) list(k = "opaque", cls = paste("flatten failed:", conditionMessage(e))))
   if (isTRUE(case$print)) {
     out$text <- tryCatch(print_text(value), error = function(e) paste("print failed:", conditionMessage(e)))

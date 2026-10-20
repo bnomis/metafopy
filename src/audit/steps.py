@@ -184,6 +184,7 @@ STEPS = [
     Step('options', 'One argument at a time on every swept fit', case_step('options')),
     Step('construct', 'One argument at a time on every fitting function', case_step('construct')),
     Step('standalone', 'Functions that take no model', case_step('standalone')),
+    Step('emmeans', 'The emmeans package on the reference grids of metafor fits', case_step('emmeans')),
     Step('datasets', 'Every dataset of metafor and metadat', case_step('datasets')),
     Step('scripts', 'metafor help examples and testthat files, run in R and in translated Python', scripts_step),
     Step('api', 'Formals of each function and method against the Python callable of each fit class', api_step),

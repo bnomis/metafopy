@@ -80,6 +80,11 @@ class Recipes:
         out: dict[str, Json] = self.doc.get('standalone', {})
         return out
 
+    def emmeans(self) -> dict[str, Json]:
+        """Calls of the emmeans package on reference grids of metafor fits (``[emmeans.LABEL]``: ``call`` is a call spec, ``fn`` its function)."""
+        out: dict[str, Json] = self.doc.get('emmeans', {})
+        return out
+
     def patterns(self) -> dict[str, Json]:
         """Families of functions that share one recipe (``transf.*``): the arguments each function takes from the shared set are passed."""
         out: dict[str, Json] = self.doc.get('patterns', {})

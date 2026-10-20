@@ -1498,3 +1498,23 @@ kind = "print-diff"
 detail = "*R 'delta.1 *', Python 'delta.1 *'"
 reason = "The printed standard errors of the selection parameter of selmodel(type = 'beta' or 'negexp2'): the same finite-difference Hessian of a surface flat in delta as the se.delta value-diff entry above (log-likelihood and estimates agree to 1e-9, standard errors to 1e-4 relative)."
 ref = "docs/differences.md"
+
+[[known]]
+match = "emmeans/contrast_adjust_mvt"
+kind = "value-diff"
+path = "$p.value"
+reason = "The mvt adjustment integrates the multivariate t distribution by quasi-Monte Carlo (SciPy) where R's mvtnorm uses Genz and Bretz's randomised lattice rule, so the adjusted p values agree to about 2e-4 relative (0.65787 against 0.65799)."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["matrix/profile/*", "matrix/plot/sel_*"]
+kind = "drawn-text-diff"
+reason = "profile() draws its plot by default in R (plot = TRUE) and every Python profile() has plot = False (draw it with plot_profile or plot=True); the text R draws for the profile is what the case misses."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/plot/profile_mv"
+kind = "drawn-text-diff"
+detail = "*'Log-Likelihood'*"
+reason = "plot() of the profile of an rma.mv fit labels the vertical axis 'Log-Likelihood' in R although the fit used REML: the profile of an rma.mv fit has no method element, so R's test x$method == 'REML' is empty. metafopy labels it 'Restricted Log-Likelihood', as for rma.uni."
+ref = "docs/differences.md"
