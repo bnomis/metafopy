@@ -8,7 +8,7 @@
 level = [90, [90, 95, 99]]
 level2 = [80]
 digits = [2, [2, { "$na" = true }, 1]]
-transf = [{ "$fn" = "exp" }]
+transf = [{ "$fn" = "exp" }, { "$fn" = "transf.ztor" }, { "$fn" = "transf.ilogit" }]
 atransf = [{ "$fn" = "exp" }]
 btt = [{ "$idx" = [2] }]
 att = [{ "$idx" = [2] }]
