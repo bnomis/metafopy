@@ -84,3 +84,9 @@ def test_a_ledger_entry_takes_a_list_of_case_globs() -> None:
     finding = {'kind': 'value-diff', 'path': '', 'detail': 'x'}
     assert entry.matches('scripts/b/3', finding)
     assert not entry.matches('scripts/c/3', finding)
+
+
+def test_a_load_dependent_timeout_entry_is_never_stale() -> None:
+    slow = audit.ledger.Entry('options/tes/x/*', 'timeout', '*', '*', 'why', '', load_dependent=True)
+    other = audit.ledger.Entry('options/vif/x/*', 'timeout', '*', '*', 'why', '')
+    assert audit.ledger.Ledger([slow, other]).stale() == [other]

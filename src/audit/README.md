@@ -91,7 +91,7 @@ digit, but the number of decimals must be the same (R prints `0` where Python pr
 | `fixtures.json` | The models and results the matrix runs on. Add a fixture and every generic that has a method for its class runs on it. |
 | `domains.toml` | Values for arguments by name (`[args]`), per function (`[fns.NAME.args]`), arguments that need another one set with them (`[companions.ARG]`), settings (`[options]`), the graphics arguments passed through `...`, and the arguments that are not options with the reason (`[skip]`). |
 | `recipes.toml` | How the functions that take no model are called, base arguments of generics, calls that must run first (`pre`, also per fit), per-fixture overrides (`by_fit`), several calls of one function on other inputs (`[standalone.LABEL]` with `fn =`, `when` for arguments that change with the swept one), and the functions that are waived with a reason (`[unprobed]`). |
-| `known.toml` | Accepted differences: a glob on the case id, kind and path, with the reason. |
+| `known.toml` | Accepted differences: a glob on the case id, kind and path, with the reason. A `timeout` entry of a case near the time limit says `load_dependent = true` and is not reported as stale when the case finished. |
 | `recall.toml` | The items of the earlier audits and the finding that reproduces each. |
 | `universe.json` | The snapshot of the R universe; refresh with `--update-universe`. |
 
@@ -115,3 +115,10 @@ Graphics: a plot is compared by what its function returns (limits, positions, va
 ### A time limit that metafor catches (audit 10)
 
 R's `setTimeLimit()` raises its error wherever R is when the limit passes. When that is inside a `try()` of metafor (`permutest()` wraps every refit in one and stores `NA` for a refit that fails), the case carries on and returns a value with one step marked as failed: audits 8 to 10 saw a single extra `NA` in `permutest(exact = TRUE)` at a different position each time. `runcases.R` and `runscripts.R` now report a case or unit that ran past the limit as an R error, and `pyrun.classify` turns it into a `timeout` finding.
+
+### R calls slower than the case limit (audit 11)
+
+An R shard that stops answering is killed and its case is reported as `timeout` (it used to be filed as metafopy accepting what R refuses), in the
+*Timeouts* section of the report. Whether a slow case passes the limit depends on the machine and on the other shards, so its ledger entry carries
+`load_dependent = true`, records how long the call takes in R on its own and what R returns outside the harness, and is not reported as stale in a run
+where the case finished.
