@@ -113,6 +113,11 @@ def printed_class(node: Json) -> bool:
     return bool(set(node.get('cls') or []) - PLAIN_CLASSES)
 
 
+def r_timed_out(error: str) -> bool:
+    """Whether R failed by running out of time: its time limit fired, or its shard stopped answering and was killed (`engine.run_r_shard`)."""
+    return 'elapsed time limit' in error or error.endswith('(timeout)')
+
+
 def classify(r: Json, py: Json, value: object) -> list[Json]:
     """The findings of one case: where Python and R disagree."""
     findings: list[Json] = []
@@ -140,7 +145,7 @@ def classify(r: Json, py: Json, value: object) -> list[Json]:
             add('refused-where-R-works', detail=f'{cls}: {py["error"]}')
         else:
             add('crash', detail=f'{cls}: {py["error"]}')
-    elif not r_ok and py_ok and 'elapsed time limit' in r.get('error', ''):
+    elif not r_ok and py_ok and r_timed_out(r.get('error', '')):
         add('timeout', detail=f'R: {r["error"][:200]}')
     elif not r_ok and py_ok:
         add('accepts-where-R-refuses', detail=f'R: {r.get("error", "")[:200]}')
