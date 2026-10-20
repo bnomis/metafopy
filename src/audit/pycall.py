@@ -190,7 +190,7 @@ def summary_for(x: typing.Any) -> typing.Callable[..., typing.Any]:
         raise MissingFunctionError('summary')
 
     @functools.wraps(method)
-    def call(*args: typing.Any, **kwargs: typing.Any) -> str:
+    def call(*args: typing.Any, **kwargs: typing.Any) -> typing.Any:
         result = method(*args, **kwargs)
         if hasattr(result, 'to_frame'):
             return result  # the summary of an emmGrid is a data frame, not text

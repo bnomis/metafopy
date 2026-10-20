@@ -113,3 +113,59 @@ def test_predict_names_the_model_matrix_column_of_one_column_matrices() -> None:
     res = metafopy.rma(yi='yi', vi='vi', data=dat)
     # R: print(predict(res, addx=TRUE)) has the column "intrcpt"
     assert str(metafopy.predict(res, addx=True)).split('\n')[1].split()[-1] == 'intrcpt'
+
+
+def test_marginal_vcov_prints_zeros_as_dots(bcg_mods: metafopy.models.rma_uni.RMAResult) -> None:
+    # R: print(vcov(res, type = "obs")) has class vcovmat, which shows four decimals and "." for zero
+    lines = str(metafopy.vcov(bcg_mods, type='obs')).splitlines()
+    assert lines[1].split()[:4] == ['1', '2', '3', '4']
+    assert lines[2].split()[:4] == ['1', '0.4019', '.', '.']
+
+
+def test_intercept_only_reference_grid_has_the_variable_called_1() -> None:
+    dat = metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=metafopy.datasets.load('dat.bcg'))
+    res = metafopy.rma(yi='yi', vi='vi', data=dat)
+    # R: print(emmprep(res))
+    assert str(metafopy.emmprep(res)) == '\n'.join(
+        [' 1 prediction   SE  df', ' 1     -0.715 0.18 Inf', '', 'Results are given on the log (not the response) scale. '],
+    )
+
+
+def test_covariate_with_two_values_keeps_both_in_the_reference_grid() -> None:
+    dat = metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=metafopy.datasets.load('dat.bcg'))
+    dat['flag'] = (dat['year'] > 1950).astype(float)
+    res = metafopy.rma(yi='yi', vi='vi', data=dat, mods='~ ablat + flag')
+    # emmeans' cov.keep = 2: flag is 0 and 1, ablat is its mean
+    grid = metafopy.emmprep(res).summary().to_frame()
+    assert grid['flag'].tolist() == [0.0, 1.0]
+    assert grid['ablat'].nunique() == 1
+
+
+def test_scale_prediction_has_no_prediction_interval() -> None:
+    dat = metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=metafopy.datasets.load('dat.bcg'))
+    res = metafopy.rma(yi='yi', vi='vi', data=dat, mods='~ ablat', scale='~ ablat')
+    # R: predict(res, newscale = 30) gives pred, se, ci.lb and ci.ub
+    assert str(metafopy.predict(res, newscale=[30])).split()[:4] == ['pred', 'se', 'ci.lb', 'ci.ub']
+    assert 'pi.lb' not in str(metafopy.predict(res, newscale=[30]))
+
+
+def test_mantel_haenszel_prediction_shows_the_column_x() -> None:
+    dat = metafopy.datasets.load('dat.bcg')
+    res = metafopy.rma_mh(ai=dat['tpos'], bi=dat['tneg'], ci=dat['cpos'], di=dat['cneg'])
+    # R: print(predict(res, addx = TRUE)) ends in the column X
+    assert str(metafopy.predict(res, addx=True)).split('\n')[1].split()[-1] == 'X'
+
+
+def test_formatters_print_noquote_vectors() -> None:
+    assert str(metafopy.fmtx([1.2345, 2.5, -0.001])) == '[1]  1.2345  2.5000 -0.0010'
+    assert str(metafopy.fmtp([0.0123, 0.5, 0.00001])) == '[1] 0.0123 0.5000 <.0001'
+    assert str(metafopy.fmtp2([0.0123, 0.5, 0.00001])) == '[1] p = .012 p = .50  p < .001'
+
+
+def test_summary_and_friends_of_escalc_frames_print_as_escalc() -> None:
+    dat = metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=metafopy.datasets.load('dat.bcg'))
+    assert isinstance(metafopy.summary_escalc(dat), metafopy.core.labelled.EscalcFrame)
+    assert isinstance(metafopy.dfround(dat, 2), metafopy.core.labelled.EscalcFrame)
+    wald = metafopy.conv_wald(out=[0.5, 0.7], ci_lb=[0.1, 0.2], ci_ub=[0.9, 1.2], n=[30, 40], append=False)
+    # R: rows numbered from 1 and the variances to four decimals
+    assert str(wald).splitlines()[2].split() == ['1', '0.5000', '0.0417']

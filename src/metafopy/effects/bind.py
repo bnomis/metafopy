@@ -17,6 +17,7 @@ import typing
 import numpy
 import pandas
 
+import metafopy.core.labelled
 import metafopy.effects.measures
 import metafopy.errors
 import metafopy.metadata
@@ -125,7 +126,7 @@ def cbind_escalc(*args: pandas.DataFrame | pandas.Series, **columns: typing.Any)
             break
     dat.attrs = {}
     dat.attrs.update(attrs)
-    return dat
+    return metafopy.core.labelled.escalc_frame(dat)
 
 
 def rbind_escalc(*args: pandas.DataFrame) -> pandas.DataFrame:
@@ -176,4 +177,4 @@ def rbind_escalc(*args: pandas.DataFrame) -> pandas.DataFrame:
         attrs.pop('slab', None)
     dat.attrs = {}
     dat.attrs.update(attrs)
-    return dat
+    return metafopy.core.labelled.escalc_frame(dat)

@@ -106,7 +106,10 @@ def embed(mat: FloatArray, not_na: BoolArray) -> FloatArray:
 
 
 def frame(mat: FloatArray, labels: typing.Sequence[str]) -> metafopy.core.labelled.RFrame:
-    return metafopy.core.labelled.RFrame(mat, index=list(labels), columns=list(labels))
+    """A matrix over the studies; R gives it the class ``vcovmat``, which prints zeros as ``.`` (``print.vcovmat``)."""
+    out = metafopy.core.labelled.RFrame(mat, index=list(labels), columns=list(labels))
+    out.attrs['vcovmat'] = True
+    return out
 
 
 def coef_frame(mat: FloatArray, names: typing.Sequence[str]) -> metafopy.core.labelled.RFrame:

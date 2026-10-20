@@ -305,8 +305,8 @@ find = [{ id = "datasets/dat.baskerville2012" }]
 id = "a5-forest-transf-labels"
 audit = 5
 text = "forest() labels for transf_* back-transformations"
-find = [{ id = "options/forest/*/transf=*", kind = "drawn-text-diff" }]
-hint = ["options/forest/uni_reml/transf="]
+find = [{ id = "options/forest/mv_ks/transf=*", kind = "drawn-text-diff" }]
+hint = ["options/forest/mv_ks/transf="]
 
 [[item]]
 id = "a5-forest-ilab-lab"

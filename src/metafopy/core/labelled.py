@@ -21,10 +21,23 @@ import numpy.typing
 import pandas
 import scipy.sparse
 
+import metafopy.formatters
 import metafopy.mfopt
 import metafopy.printing
 
-__all__ = ['EscalcFrame', 'LabelledMatrix', 'NamedList', 'RFrame', 'SparseVCovMat', 'VCovMat', 'design_matrix', 'frame_text', 'matrix_text', 'vector_text']
+__all__ = [
+    'EscalcFrame',
+    'LabelledMatrix',
+    'NamedList',
+    'RFrame',
+    'SparseVCovMat',
+    'VCovMat',
+    'design_matrix',
+    'escalc_frame',
+    'frame_text',
+    'matrix_text',
+    'vector_text',
+]
 
 SIGNIF = 7
 
@@ -328,11 +341,23 @@ class EscalcFrame(pandas.DataFrame):
     def text(self) -> str:
         """The frame as ``print.escalc`` shows it."""
         formatted: dict[str, list[str]] = {}
-        for key, part in (('yi_names', 'est'), ('vi_names', 'var'), ('sei_names', 'se'), ('zi_names', 'test'), ('ci_lb_names', 'ci'), ('ci_ub_names', 'ci')):
+        for key, part in (
+            ('yi_names', 'est'),
+            ('vi_names', 'var'),
+            ('sei_names', 'se'),
+            ('zi_names', 'test'),
+            ('pval_names', 'pval'),
+            ('ci_lb_names', 'ci'),
+            ('ci_ub_names', 'ci'),
+        ):
             for name in self.attrs.get(key, []) or []:
                 if name in self.columns:
                     places = self.digit_for(part)
-                    formatted[str(name)] = [cell(float(v), places) if v is not None else 'NA' for v in self[name].tolist()]
+                    values = [numpy.nan if v is None else float(v) for v in self[name].tolist()]
+                    if part == 'pval':
+                        formatted[str(name)] = ['NA' if numpy.isnan(v) else str(metafopy.formatters.fmtp(v, places)) for v in values]
+                    else:
+                        formatted[str(name)] = [cell(v, places) if v is not None else 'NA' for v in self[name].tolist()]
         return frame_text(pandas.DataFrame(self), formatted)
 
     def __str__(self) -> str:
@@ -342,6 +367,13 @@ class EscalcFrame(pandas.DataFrame):
 
     def __repr__(self) -> str:
         return self.__str__()
+
+
+def escalc_frame(dat: pandas.DataFrame, attrs: collections.abc.Mapping[collections.abc.Hashable | None, typing.Any] | None = None) -> EscalcFrame:
+    """``dat`` as an ``escalc`` data frame (R keeps the class when it adds columns, rounds or binds frames), with ``attrs`` (default: its own)."""
+    frame = EscalcFrame(dat)
+    frame.attrs = dict(dat.attrs if attrs is None else attrs)
+    return frame
 
 
 class RFrame(pandas.DataFrame):
@@ -356,7 +388,9 @@ class RFrame(pandas.DataFrame):
         return pandas.DataFrame
 
     def text(self) -> str:
-        """The frame as ``print(data.frame)`` shows it."""
+        """The frame as ``print(data.frame)`` shows it, or as ``print.vcovmat`` shows a var-cov matrix."""
+        if self.attrs.get('vcovmat'):
+            return VCovMat(self.to_numpy(dtype=numpy.float64), [str(i) for i in self.index], [str(c) for c in self.columns]).text()
         digits = self.attrs.get('digits')
         frame = pandas.DataFrame(self)
         if digits is not None:

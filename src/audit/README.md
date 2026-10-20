@@ -71,6 +71,7 @@ Rules that follow, each checked by a test or by `--recall`:
 | `matrix` | Every generic on every fit class and on every other result class (escalc frames, `list.rma`, `anova.rma`, `matreg`, ...), plus `print`. |
 | `options` | One argument at a time, every value, on every swept fixture; the settings read with `getOption`. |
 | `construct` | The fixtures themselves (values and warnings), then one argument at a time on every fitting function. |
+| `emmeans` | The emmeans package on the reference grid of a metafor fit (`emmprep()`, `emmeans()`, `contrast()`, `pairs()`, `test()`, `confint()`, `joint_tests()`, `by` groups, `at`, `weights`): the printed summaries and the values, in R and in Python. The calls are in the `[emmeans.LABEL]` tables of `data/recipes.toml`. |
 | `standalone` | Functions that take no model (`transf.*`, `conv.*`, `fmt*`, `vcalc`, ...). |
 | `datasets` | Every dataset of metafor and metadat loads in Python and equals R's. |
 | `scripts` | Every help-page example and every `tests/testthat` file of metafor, run in R expression by expression and translated to Python (`transpile.py`, `rlib.py`). Units that cannot be translated are counted, not dropped; a variable whose assignment did not run in Python is removed, so that later units are counted as unsupported and not compared with its old value. `options(na.action=)` is passed as `na_action` to the functions that take it. `x$a <- v` has the value `v`, as in R. |
@@ -103,8 +104,14 @@ library. The source of metafor's tests and examples is downloaded from CRAN and 
 
 ## What the harness cannot see
 
-Graphics: a plot is compared by what its function returns (limits, positions, values), not by the text or pixels drawn. Items of that kind are in
-`data/recall.toml` with `reach = "none"` and the reason, and they count as missed in the totals.
+Graphics: a plot is compared by what its function returns (limits, positions, values) and by the text it draws (titles, axis labels, tick labels, texts,
+legends; `drawn-text-diff`), not by the pixels. `runcases.R` and `runscripts.R` note the strings given to R's `text`, `mtext`, `axis`, `title`, `plot` and
+`legend` (`r/drawn.R`); `pyrun.drawn_text` reads them off the matplotlib figures. Plotmath and mathtext formulas are left out of the comparison, except for
+`plain(...)` and the p-value ranges of the funnel legend, which are compared as the text they draw. Colours, line types, positions and the order of drawing
+are not compared; items of that kind are in `data/recall.toml` with `reach = "none"` and the reason, and they count as missed in the totals.
+
+A function the fixtures call through the formula, such as the user's own function in `mods = ~ ablat + audit_userfn(ablat)` (fixture `uni_userfn`; the
+function is defined in `r/common.R` and in `pycall.py`), is found in the caller's environment on both sides.
 
 ### Harness regressions found by the final recall of audit 8
 

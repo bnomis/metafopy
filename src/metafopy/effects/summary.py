@@ -24,6 +24,7 @@ import pandas
 import scipy.special
 import scipy.stats
 
+import metafopy.core.labelled
 import metafopy.errors
 
 __all__ = ['summary_escalc']
@@ -220,4 +221,4 @@ def summary_escalc(
         new_attrs[key] = union(name, attrs.get(key))
     dat.attrs = {}
     dat.attrs.update(new_attrs)
-    return dat
+    return metafopy.core.labelled.escalc_frame(dat)

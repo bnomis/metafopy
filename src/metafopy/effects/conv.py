@@ -34,6 +34,7 @@ import pandas
 import scipy.stats
 
 import metafopy.core.bfgs
+import metafopy.core.labelled
 import metafopy.core.numderiv
 import metafopy.effects.datatools
 import metafopy.effects.measures
@@ -177,8 +178,7 @@ def finish(
         )
     if not append:
         attrs = dict(out.attrs)
-        out = out[[yi_name, vi_name]].copy()
-        out.attrs = attrs
+        out = metafopy.core.labelled.escalc_frame(out[[yi_name, vi_name]].copy(), attrs)
     return out
 
 

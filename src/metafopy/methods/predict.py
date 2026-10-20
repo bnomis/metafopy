@@ -143,7 +143,9 @@ class PredictResult:
         ]
         rows = [list(row) for row in zip(*columns, strict=True)]
         return metafopy.mfopt.option_space(
-            '\n' + metafopy.printing.fmt_table([str(c) for c in frame.columns], rows, [str(i) for i in frame.index], gap=1) + '\n'
+            '\n'
+            + metafopy.printing.fmt_table([str(c) for c in frame.columns], rows, [str(i) for i in frame.index], gap=1, width=metafopy.printing.console_width())
+            + '\n'
         )
 
 
@@ -664,6 +666,7 @@ def predict_fixed_binary(
                     tau2=0.0,
                     fixed=True,
                     not_na=x.tables.not_na,
+                    coef_names=('X',),  # the matrix of the new moderator values has no column names, so a data frame calls the column X
                 ),
                 newmods,
                 intercept,

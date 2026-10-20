@@ -19,6 +19,7 @@ import numpy
 import numpy.typing
 import pandas
 
+import metafopy.core.labelled
 import metafopy.effects.measures
 import metafopy.errors
 import metafopy.metadata
@@ -230,7 +231,7 @@ def dfround(
             out[out.columns[j]] = [r_round(float(v), digits_j) for v in vals]
         else:
             out[out.columns[j]] = ['NA' if math.isnan(v) else f'{v:.{digits_j}f}' for v in vals]
-    return out
+    return metafopy.core.labelled.escalc_frame(out) if isinstance(x, metafopy.core.labelled.EscalcFrame) else out
 
 
 def column_or_values(value: typing.Any, data: pandas.DataFrame | None, name: str) -> FloatArray | None:

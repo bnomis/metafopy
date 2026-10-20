@@ -74,9 +74,22 @@ def print_text(value: object) -> str:
 MATH_MARKUP = re.compile(r'\$|==|\^|paste\(|frac\(|expression\(|bquote\(')
 
 
+PLOTMATH_PLAIN = re.compile(r'^plain\((.*)\)$')
+PLOTMATH_PVALUES = re.compile(r'^paste\("([^"]+)" < p, phantom\(\) <= "([^"]+)"\)$')
+
+
+def readable(text: str) -> str:
+    """A plotmath expression that only sets plain text (``plain(Imputed ~ Studies)``, the p-value ranges of the funnel legend) as the text it draws."""
+    if match := PLOTMATH_PVALUES.match(text):
+        return f'{match.group(1)} < p <= {match.group(2)}'
+    if match := PLOTMATH_PLAIN.match(text):
+        return match.group(1).replace(' ~ ', ' ')
+    return text
+
+
 def plain_text(strings: typing.Iterable[str]) -> set[str]:
     """The drawn strings that are plain text: R's plotmath (``x[i] == 1/sqrt(v[i])``) and matplotlib's mathtext (``$x_i = ...$``) spell formulas differently."""
-    return {text for text in strings if not MATH_MARKUP.search(text)}
+    return {text for text in map(readable, strings) if not MATH_MARKUP.search(text)}
 
 
 def drawn_text() -> list[str]:
