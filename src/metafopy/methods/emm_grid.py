@@ -30,6 +30,7 @@ import metafopy.core.verbose
 import metafopy.errors
 import metafopy.formula
 import metafopy.methods.accessors
+import metafopy.methods.confint
 import metafopy.methods.emm_adjust
 import metafopy.methods.emm_contrasts
 import metafopy.methods.emm_links
@@ -265,6 +266,12 @@ def make_link(tran: metafopy.methods.emm_links.Link | str | None, measure: str) 
     return metafopy.methods.emm_links.make_link(tran)
 
 
+@metafopy.methods.confint.confint.register
+def confint_emmgrid(model: EmmGrid, **kwargs: typing.Any) -> metafopy.methods.emm_summary.EmmSummary:
+    """``confint()`` of a reference grid, marginal means or contrasts (emmeans' ``confint.emmGrid``): the summary with intervals only."""
+    return model.confint(**kwargs)
+
+
 def emmprep(
     x: Fit,
     verbose: bool = False,
@@ -410,7 +417,7 @@ def reference_grid(
         by=(),
         adjust='none',
         fam_size=len(rows),
-        infer=(True, False),
+        infer=(False, False),
         link=None,
         inv_label=None,
         log_contrast=False,

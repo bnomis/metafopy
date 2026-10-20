@@ -215,6 +215,7 @@ def build_contrasts(
     """
     if isinstance(method, collections.abc.Mapping):
         return custom(levs, method)
+    method = method.replace('.', '_')  # emmeans spells them trt.vs.ctrl and del.eff
     excl = excluded(levs, exclude, include)
     k = len(levs)
     match method:
