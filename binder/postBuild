@@ -1,0 +1,4 @@
+#!/bin/bash
+# Run by repo2docker in the repository root after the conda environment is built.
+set -euo pipefail
+python -m pip install --no-cache-dir ".[interactive]"
