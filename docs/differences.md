@@ -683,6 +683,177 @@ UserWarning: Some yi/vi values are NA.
 </div>
 </div>
 
+## rma_glmm back-ends and links
+
+`rma_glmm(control={'package': ...})` takes `'lme4'` (the default), `'GLMMadaptive'` and `'glmmTMB'`, and `link=` takes the links logit, probit, cauchit, cloglog, log, identity and sqrt. The examples fit `dat.bcg` with the intercept-only model.
+
+### GLMMadaptive reproduces R's iterates
+
+metafopy's GLMMadaptive back-end is a step-by-step port of `mixed_fit` (EM stage, then BFGS with R's `parscale` and re-centred nodes), so it agrees with R to 1e-7 here and usually reproduces where R stops short of the maximum.
+
+*Why:* the same algorithm, not just the same objective. The exception is a chaotic BFGS path (`UM.RS` with `mods` on bcg), where a 1e-12 change of the start moves the coefficients by about 1e-2; see the [notes](differences-notes.md#rma_glmm).
+
+<div class="compare" markdown>
+<div markdown>
+
+**R, metafor 5.2-1**
+
+```r
+library(metafor)
+res <- rma.glmm(ai = tpos, bi = tneg, ci = cpos, di = cneg, data = dat.bcg, measure = "OR", model = "UM.FS", control = list(package = "GLMMadaptive"))
+c(beta = coef(res), tau2 = res$tau2)
+```
+
+```text
+beta.intrcpt         tau2 
+  -0.7450203    0.2948830 
+```
+
+</div>
+<div markdown>
+
+**Python, metafopy**
+
+```python
+from metafopy import datasets, rma_glmm
+
+res = rma_glmm(ai='tpos', bi='tneg', ci='cpos', di='cneg', data=datasets.load('dat.bcg'), measure='OR', model='UM.FS', control={'package': 'GLMMadaptive'})
+print(res.beta, res.tau2)
+```
+
+```text
+[-0.74502029] 0.29488295031432865
+```
+
+</div>
+</div>
+
+### glmmTMB agrees to about 1e-5
+
+glmmTMB uses the Laplace approximation (`nAGQ` is ignored, as in R). The estimate agrees to 5e-6 relative and `tau2` to 1e-5.
+
+*Why:* the objective is the same; SciPy and TMB's optimiser stop at slightly different points.
+
+<div class="compare" markdown>
+<div markdown>
+
+**R, metafor 5.2-1**
+
+```r
+library(metafor)
+res <- rma.glmm(ai = tpos, bi = tneg, ci = cpos, di = cneg, data = dat.bcg, measure = "OR", model = "UM.FS", control = list(package = "glmmTMB"))
+c(beta = coef(res), tau2 = res$tau2)
+```
+
+```text
+beta.intrcpt         tau2 
+  -0.7450230    0.2955427 
+```
+
+</div>
+<div markdown>
+
+**Python, metafopy**
+
+```python
+from metafopy import datasets, rma_glmm
+
+res = rma_glmm(ai='tpos', bi='tneg', ci='cpos', di='cneg', data=datasets.load('dat.bcg'), measure='OR', model='UM.FS', control={'package': 'glmmTMB'})
+print(res.beta, res.tau2)
+```
+
+```text
+[-0.74502565] 0.2955402442108204
+```
+
+</div>
+</div>
+
+### Fits that fail in R are returned
+
+glmmTMB cannot fit the experimental `RR` model in R ("Cannot fit ML model"). metafopy returns its maximum-likelihood fit with the same "experimental" warning. The same holds for other measures and models that fail in R; their estimates have no R value to be compared with.
+
+*Why:* an error that comes from R's optimiser is not a property of the model, so metafopy does not reproduce it.
+
+<div class="compare" markdown>
+<div markdown>
+
+**R, metafor 5.2-1**
+
+```r
+library(metafor)
+res <- rma.glmm(ai = tpos, bi = tneg, ci = cpos, di = cneg, data = dat.bcg, measure = "RR", model = "UM.FS", control = list(package = "glmmTMB"))
+c(beta = coef(res), tau2 = res$tau2)
+```
+
+```text
+Error in rma.glmm(ai = tpos, bi = tneg, ci = cpos, di = cneg, data = dat.bcg,  : 
+  Cannot fit ML model (set 'verbose=TRUE' to obtain further details).
+In addition: Warning message:
+The use of this 'measure' is experimental - treat results with caution. 
+```
+
+</div>
+<div markdown>
+
+**Python, metafopy**
+
+```python
+from metafopy import datasets, rma_glmm
+
+res = rma_glmm(ai='tpos', bi='tneg', ci='cpos', di='cneg', data=datasets.load('dat.bcg'), measure='RR', model='UM.FS', control={'package': 'glmmTMB'})
+print(res.beta, res.tau2)
+```
+
+```text
+UserWarning: The use of this 'measure' is experimental - treat results with caution.
+[-0.71381759] 0.27177360791709804
+```
+
+</div>
+</div>
+
+### Link functions
+
+With `link='probit'` the estimate agrees with R to 3e-5 relative and `tau2` to 6e-6. The cauchit link is only checked with fixed effects, because lme4 reports a convergence warning and a huge random-effect variance there.
+
+*Why:* the same lme4 differences as for the logit link, within the 3e-5 to 1e-2 that the tests allow for mixed fits.
+
+<div class="compare" markdown>
+<div markdown>
+
+**R, metafor 5.2-1**
+
+```r
+library(metafor)
+res <- rma.glmm(ai = tpos, bi = tneg, ci = cpos, di = cneg, data = dat.bcg, measure = "OR", model = "UM.FS", link = "probit")
+c(beta = coef(res), tau2 = res$tau2)
+```
+
+```text
+beta.intrcpt         tau2 
+ -0.30394760   0.05784742 
+```
+
+</div>
+<div markdown>
+
+**Python, metafopy**
+
+```python
+from metafopy import datasets, rma_glmm
+
+res = rma_glmm(ai='tpos', bi='tneg', ci='cpos', di='cneg', data=datasets.load('dat.bcg'), measure='OR', model='UM.FS', link='probit')
+print(res.beta, res.tau2)
+```
+
+```text
+[-0.30395671] 0.05784773841202242
+```
+
+</div>
+</div>
+
 ## Random numbers
 
 ### Seeded draws reproduce R
