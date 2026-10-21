@@ -1,105 +1,820 @@
 # Differences from metafor
 
-- Names: `.` becomes `_`; indices are 0-based.
-- Optimisers: metafor's `optim` BFGS and Nelder-Mead are ported for `rma_glmm` (`CM.EL`) and `selmodel` only; `rma_mv` and location-scale fits use SciPy's BFGS, Nelder-Mead and others, as do the other optimisers, and agree to optimiser tolerance (about 1e-4 relative).
-- Not ported: `reporter()` (writes an R Markdown report; Jupyter notebooks are the Python equivalent); `ranef`/`blup` for `rma_glmm` do not exist in metafor either.
-- `conv_fivenum(method=)` `'qe'`, `'bc'`, `'mln'` (R's estmeansd 1.0.1) and `'blue'` (metaBLUE 1.0.0) are native ports (`metafopy.effects.fivenum_estimators`), checked against R on fixtures (`src/tests/r/generate_fivenum_methods.R`). `'blue'`, `'bc'` and `'mln'` agree to 1e-9 relative or better: `'bc'` and `'mln'` simulate with R's generator, so `conv_fivenum(seed=)` reproduces R's `set.seed(seed)` results exactly (without `seed` they draw from `set_seed`'s stream). `'qe'` minimises with SciPy's L-BFGS-B (R's finite-difference gradient, `ndeps = 1e-3`, `lmm = 5`, `factr = 1e7`) instead of R's version 2.3; the selected distribution is the same and the mean and SD agree to about 1e-6 relative on the fixtures, up to 1e-3 for a candidate that is not selected. R drops a candidate fit that raises a warning (`qbeta`'s, for example) where SciPy returns a poor fit that is never the best; a case where that fit would win is not reproduced. The weibull starting value comes from SciPy's L-BFGS-B, not `nlminb`. The quirks of R's `conv.fivenum` are kept: with `method='qe'` and `test=True`, a study with negative values switches the skewness test on and a skipped study leaves it on for the following studies; the `dist` attribute holds the distribution `'qe'` selected (`None` where its fit failed). `verbose=True` lets the warnings of these methods through.
-- emmeans: `emmprep`, `emmeans`, `contrast`, `pairs` and `regrid` are a native port, checked against emmeans 2.0.4 with metafor 5.2-1. Not ported: `emm_list` results and formula left-hand sides in `contrast`. Non-conformable matrix `weights` raise `InputError` (R warns and returns garbage), and with nested factors the `mvt` and `scheffe` adjustments use the rows shown, where R indexes the full grid. R's `emmprep` returns `NA` for `rma_mh` and `rma_peto` fits and fails for `selmodel` fits; metafopy computes them. `PAS` is not back-transformed, as in R (pass `tran='asin.sqrt'` to `emmprep` to get it). The `mvt` adjustment uses SciPy's quasi-Monte Carlo integration and agrees with R to about 1e-3. `rma_glmm` mixed-model cases agree to 2e-3 where R's `glmer` converges to a slightly different optimum.
-- `verbose`: progress messages go to stderr and traces to stdout as R prints them. The iteration traces of `rma_mv` and `rma_glmm` come from SciPy's optimisers, not nlminb, glm or glmer, so only their progress messages and tables match R.
-- `profile()` of `rma_mv` fits defaults to `plot=False` and `progbar=False` like the other Python `profile` methods (R: `TRUE`). `rstandard()` of `rma_mv` fits has no `type` argument, as in metafor 5.2-1.
-- `simulate(na_action=)` stands for R's `options(na.action=)` (`'omit'` is R's default). `formula` is the method `res.formula()` (a top-level `metafopy.formula` would hide the module); `se()` is a function only, because results have an `se` field. `setmfopt(theme=..., check=...)` is stored and validated but not used.
-- `conv_2x2`: R's assignment `ci[!is.na(ci)]` in the complete-data path is a bug; metafopy assigns `ci` as intended. Data frames carry one `measure` and `ni` attribute, where R tracks them per column.
-- `escalc(measure='HR')` and `'HD'` are reserved names in metafor 5.2-1 with no computation: they pass `yi` and `vi`/`sei` through, otherwise metafopy raises `NotSupportedError` (R fails with an internal error).
-- `forest()` of an `rma_mv` fit with `na_action='pass'` does not show the rows with missing values. `fsn()` of `rma_mh`/`rma_peto` fits raises "Method not available" (R fails with an internal error).
-- `rma_mv` with `struct='UN'` and a fixed `tau2` component can stop at a worse local maximum than R's nlminb (seen on berkey1998, logLik 1.799 against 1.936); `cholesky=False` or starting values reach R's optimum. For this reason the refits of `profile()` and of the profile-likelihood `confint()` of `rma_mv` fits are also started at the estimates of the full fit, and the higher of the two log-likelihoods is kept.
-- `rma_mv(restart=)` takes a previous fit (an `RMAMVResult`) as well as `True`, which starts from the last parameters the optimiser tried in the session as metafor's `restart=TRUE` does. `RMAMVResult.p` is the number of columns of `X`; metafor's `p` (the number of estimated coefficients when `beta` is given) is `p_eff`. Only `hesspack='numDeriv'` is available for the Hessians of `optbeta` and `cvvc`. `lambda1` (lasso) is non-smooth, so the optimiser accepts the last iterate.
-- `robust(club_sandwich=True, coef_test='saddlepoint')` solves the saddlepoint equation with a port of R's `uniroot` (tolerance eps^0.25), so p-values match R to about 1e-7.
-- `rma_glmm` supports all eight measures. The experimental `RR`, `RD` (unconditional models only), `PR` and `PLN` give metafor's "experimental" warning. lme4 often stops early or fails for the log and identity links (R's `RD` with `UM.RS` and method `ML`, and `RD` on collins1985a, end in "Cannot fit ML model"); metafopy returns the maximum-likelihood fit where R errors, does not reproduce lme4's convergence warnings, and agrees with R's non-converged estimates only to 2e-3 to 1e-1 relative. With adaptive quadrature and an identity link the quadrature likelihood can be undefined; then, like lme4, the first-stage estimates are returned (NA log-likelihood).
-- `forest()`/`addpoly()` support all five `predstyle`s and `fonts` (families map to matplotlib: `sans` to `sans-serif`, `serif`, `mono` to `monospace`). `preddist` is a tuple `(x, y)` or a dict; `addpoly` takes `pi_se`, `pi_dist`, `pi_ddf` and `pi_level` keywords instead of attributes on `pi.lb`; `shade`/`dist` recognise the supported transformations by function identity (`numpy.exp`, `transf_ilogit`, `plogis`, ...). R's `par(family)` leak between plots does not exist.
-- `vif(sim=)` for location-scale models follows R's `seed+l` permutations exactly for matrix inputs; for formula models the matrix columns are permuted rather than the data variables. Scale-part simulated VIFs can differ from R in a few iterations at boundary fits.
-- selmodel `profile()` has `parallel`, `ncpus`, `cl` and `progbar` (process pools or any `concurrent.futures.Executor`); `confint()` has no such arguments in metafor either.
-- `selmodel(type='stepcon')` uses SLSQP, not Rsolnp. Its `LRT.tau2` can be larger than R's, because R refits at tau2 = 0 without the delta ordering constraint and solnp stops at a worse point.
-- `rma_glmm(control={'package': ...})` accepts `'lme4'` (default), `'GLMMadaptive'` and `'glmmTMB'`, tested against R on 24 to 29 fits each (`src/tests/test_glmm_packages.py`). GLMMadaptive is a step-by-step port of `mixed_fit` (EM stage, then `optim` BFGS with R's parscale and re-centred nodes), so it reproduces R's iterates, including where R stops short of the maximum: results agree to 1e-4 relative or better, usually 1e-8. Exceptions: the BFGS path of `UM.RS` with `mods` on bcg is chaotic (a 1e-12 change of the start moves the coefficients by about 1e-2), so it agrees to 25 % and its confidence bounds are not compared; the Wald and LRT heterogeneity statistics of `UM.RS` on collins1985a agree to 3 %. glmmTMB uses the Laplace approximation (`nAGQ` is ignored, as in R) and agrees to 5e-3 relative or better; `I2` is the worst where tau2 is near zero. Fits that fail in R (GLMMadaptive: `RD`, `PR` and `RR` with `UM.RS`; glmmTMB: `RR`, `RD`, `PR`, `PLN` and `UM.RS` with `RR`) are not reproduced as errors: metafopy returns its fit where one is found. Not ported: GLMMadaptive's `mixed_fit` options beyond the defaults metafor passes.
-- `rma_glmm(control={'optimizer': 'clogit'})` and `'clogistic'` (conditional model `CM.EL`, `method='FE'`) are native ports of `survival::clogit` (exact, Efron and Breslow ties) and `Epi::clogistic`; they agree with R to about 1e-11. R's `clogit` fails on the full bcg and li2007 data, so the fixtures use smaller data sets. `rma_glmm(link=, family=)` accept the links logit, probit, cauchit, cloglog, log, identity and sqrt, or a family object, for the unconditional models and one-group measures; mixed fits agree with R to 3e-5 up to 1e-2, and the cauchit link is only checked with fixed effects (lme4 reports a convergence warning and a huge random-effect variance there). The `predict` print for the new links is not compared with R.
-- `hettest()` (metafor 5.2-1): `progbar` is off by default (R: `TRUE`), `test` raises an error if any entry is unknown (R only checks that some entry is valid), and `seed=` reproduces `set.seed(seed)` before the bootstrap draws. Results of `rma_mv`, `rma_glmm`, location-scale and selection models are refused, as in R.
-- `residuals(type=)`: R returns `NULL` (or fails) for `rstandard` and `rstudent` residuals under `na.fail` without missing studies; metafopy returns the values. The `'pass'` residuals of `rma_mv` fits are `NaN` for unused studies. `weights_(type='matrix')` of `rma_uni` and location-scale fits is the diagonal weight matrix.
-- `plot_profile()` of the list `profile()` returns draws one panel per component and honours `refline` in every panel (metafor's loop does not pass it on). `profile()` of location-scale fits takes `plot=` and `ax=`.
-- `anova(object2=)` and `robust(clubSandwich=)` are accepted as aliases of `model2` and `club_sandwich`.
-- `robust()` fits (plain and `club_sandwich=True`) are refused by `rstandard`, `rstudent`, `dfbetas`, `influence`, `leave1out`, `cumul`, `permutest`, `funnel` (with moderators), `qqnorm` and `plot_permutest` exactly where metafor refuses `robust.rma` objects; before this version metafopy ran them on the underlying model and ignored the robust variance. `simulate()`, `cooks_distance()` and `hatvalues()` still work, as in R. For `rma_mv` fits R has no `influence`, `leave1out`, `cumul` or `permutest` method at all, and metafopy raises the corresponding `NotSupportedError` or `ArgumentError`.
-- `predict()`, `forest()`, `regplot()` and `addpoly()` of a `club_sandwich=True` fit use the Satterthwaite degrees of freedom of the linear contrasts (`clubSandwich::linear_contrast`) for `coef_test='Satterthwaite'`; they agree with R to 1e-6. With `coef_test='saddlepoint'` R refuses `predict()` and so does metafopy.
-- `gosh(seed=)` draws the subset sizes with a port of R's `dbinom` (Loader's algorithm as in R 4.5.1, `metafopy.core.dbinom`, identical to R in every bit on the checked sizes), because R's `sample(prob=)` orders tied probabilities by their last bit; with the same seed the subsets are those of R. Reference fixtures were generated with R 4.5.1, whose `dbinom` differs from R 4.3.3's in the last bit for some sizes, so the subsets of R 4.3.3 can differ. The last bit also depends on the C library's `log`, `exp` and `pow` (R itself differs between platforms for the same reason), so the seeded subsets are checked against R on Linux only; the tests that compare them bit for bit are skipped on macOS and Windows.
-- Location-scale models: the Hessian of the scale part uses the Richardson depth `hessian_r=4` (`LSControl`), where metafor's numDeriv call uses `r=8`. The eight steps amplify round-off in the log-likelihood, so R's own standard errors of the scale coefficients carry noise of about 1e-5; metafopy agrees with R's to about 2e-6 relative on the fixtures. `control={'hessian_r': 8}` gives the noisy variant.
-- `rma_glmm(measure='OR')` (`UM.FS`) on `dat.bcg`: `zval` of the pooled log odds ratio is -4.2436 against R's -4.2434; the estimate, standard error and the rest of the print agree. The cause has not been traced (the log-likelihood and estimates agree, so the difference is in the standard error); it is within the 2e-3 to 1e-1 tolerance of the other mixed-model cases.
-- `summary()` of every fit class includes the fit-statistics table (`logLik`, `deviance`, `AIC`, `BIC`, `AICc`) like R's `summary()`; `str(res)` and `print(res)` do not. `fitstats()`, `AIC()` and `BIC()` take further fits and give the table of several models (`AIC(k=)` is accepted but not used, as in R). `AIC(correct=True)` gives the AICc column. These are methods of the fits (`res1.AIC(res2)`); metafor's functions are `AIC(res1, res2)`.
-- `rma_uni(yi, vi, data=escalc_frame)` stores `ni` from `escalc`'s attribute (R's `attr(yi, "ni")`) so that `funnel(yaxis='ni')`, `regtest(predictor='ni')` and `selmodel(prec='ninv')` work on `escalc` frames, as in R; `res.ni`, `res.k_all`, `res.k_eff` and `res.p_eff` give these data summaries. `res.formula_yi` and `res.formula_mods` correspond to R's `formula.yi` and `formula.mods` (strings, as written by the caller). A cluster-robust fit keeps `robust.meat`, the block-diagonal matrix of residual cross-products (`None` for `club_sandwich=True`, where metafor stores NA).
-- `confint(control=)` is accepted next to the keyword arguments `tau2_min`, `tau2_max`, `tol` and `maxiter` (`vc_min`, `vc_max`, `tol`, `maxiter` and `eptries` for `rma_mv`), spelt with `.` or `_`; an unknown entry raises `InputError`. Printed `confint()`, `anova()` of two models (blank cells, `%` after R^2, wrapped at 80 columns) and `summary()` follow R's layout. `predict()` results have `cr_lb` and `cr_ub` as aliases of `pi_lb` and `pi_ub`, and an explicit `rows=-1` in `addpoly(predict_result, rows=-1)` is honoured (the default `rows=None` uses `row`).
-- `rma_mv` with `struct='GEN'` on a likelihood ridge: on konstantopoulos2011 with `random=~year|district` and `mods=~year`, R's default `nlminb` run stops at logLik -31.47369 (tau2 0.2056 and 1.3e-8, rho -0.8045) on a plateau that continues to rho = -1, where the log-likelihood is -30.98466 (tau2 3801.59 and 9.6e-4); R started there stays there. SciPy's BFGS follows the plateau to its end and now finishes there (it used to stop with 'precision loss'): a fit whose line search fails is accepted when the decrease its inverse Hessian still predicts is below 1e-10 relative (nlminb's `rel.tol`). The estimates therefore differ from R's default run (logLik higher by 0.49, tau2 3801.59 against 0.2056) although R's own optimum is the same; the fits without `mods` (R -32.2046, here -31.8685) and with `method='ML'` behave alike.
-- `permutest()` of location-scale fits: the permuted fits use the Richardson depth `r=8` of `numDeriv::hessian` whatever `hessian_r` the fit has, and the optimiser's Nelder-Mead polish only runs when BFGS has not converged. On bcg (`mods=~ablat`, `scale=~alloc`, `iter=50`, `seed=1`) this gives R's p-values (scale: 0.1064, 0.4894, 0.2553; QS 0.6383) and the same 3 undefined standard errors of 50 permutations at the same permutations (with `r=4` there were 13 and the p-values 0.4054 and 0.8108). Where a permuted scale fit runs to the boundary (a log-variance heading to minus infinity) the stopping point differs from R's by 1 to 3 units (R -18 to -24; here -15 to -22 for 23 of the 32 boundary permutations and -30 to -36 for the rest), so the z values of the boundary coefficient are near zero in both (below 0.01, in the compared fits) but not equal; the other coefficients of such fits agree to about 1e-3.
-- Location-scale fits with `link='identity'`: the 5e-4 difference of the scale standard errors seen on bcg (REML, `scale=~ablat`, no moderators: `se_alpha[0]` 0.539892 in R against 0.539621 here) is not caused by the link. The slope of the scale model is -3.8e-5, so numDeriv's steps (0.1 times the coefficient, halved at every Richardson step) shrink to 3e-8 at R's depth `r=8`, and the second differences of the log-likelihood there are rounding error; R's `r=8` and `r=4` already differ by 5e-4 (0.539892 against 0.539623). The default `hessian_r=4` here matches R's `r=4` value to 3e-6; at `hessian_r=8` the rounding errors of the two implementations differ (0.539570 here) and cannot be reproduced without R's long-double sums and BLAS. The log link agrees better only because its coefficients are of order one.
-- `blup()` and `ranef()` of a `robust(..., club_sandwich=True)` fit reproduce R's prediction intervals, which come from `qt(level/2, df = x$ddf)` with one Satterthwaite degree of freedom per coefficient; R multiplies that vector with the vector of the standard errors of the studies, so the quantiles are recycled over the studies (study 1 gets the quantile of the intercept, study 2 that of the slope, ...) and R warns "longer object length is not a multiple of shorter object length" (twice) when the number of studies is not a multiple of the number of coefficients. This is probably a bug in R; metafopy follows it on purpose and gives the same warning (bcg with `mods='~ ablat'`, `cluster='alloc'`: study 1 interval -2.4384 to 0.4335, where the normal quantile would give -1.5480 to -0.4570). Missing studies take part in the recycling, as in R.
-- `rma_glmm(model='CM.EL')` with `control={'optimizer': ...}`: `optim` with `method` BFGS or Nelder-Mead (also written `optimizer='BFGS'` or `'Nelder-Mead'`, `optmethod=`, `optCtrl=`) are ports of R's routines and reproduce R's estimates, log-likelihood and its failure to converge on the saturated model (bcg, `method='FE'`: `QE_LRT` is NA for Nelder-Mead in both); the other optimisers (`CG`, `L-BFGS-B`, `nlm`, `uobyqa`, `newuoa`, `bobyqa`, `nloptr`, `hjk`, ... as in `selmodel`) are replaced by the closest SciPy method, so their paths differ and they reach the estimates to about 1e-6 relative. `QE_Wld` of this model on bcg is ill-conditioned in R itself (R: 269 with `nlminb`, 199 with `optim`, 68 with `bobyqa`, NA with `CG`, 0 with `nlm`); metafopy gives other values (150 to 200) with each optimiser and `QE_Wld` is not comparable. The default `nlminb` is a BFGS stand-in for R's PORT routine, as before. Fixtures for `method='ML'` need lme4 in R and are not included; the ML fit with another optimiser is only checked against the default optimiser. `CM.EL` standard errors with the optimisers differ from R's by up to 5e-4 relative (finite-difference Hessian of an integral).
-- `anova()` of a `club_sandwich=True` fit: `rhs` cannot be combined with `X` (a warning, and zero is used, as in R). The Xb results keep the `hyp` table out of the printed output, as for other fits.
-- `vcov(res, type=, na_action=)` (also `res.vcov(...)`) follows `vcov.rma`: `'fixed'` (default), `'beta'`, `'alpha'`, `'delta'`, `'obs'`/`'marginal'`, `'fitted'` and `'resid'` with R's refusals (`'obs'` needs `M`, so it is refused for `rma_mh`, `rma_peto` and `rma_glmm`; `'resid'` is refused for robust and selection-model fits and for classes without `hatvalues()`). The matrices are data frames labelled with the study labels, `na_action` stands for R's `options(na.action=)`, and the default `'fixed'` of location-scale and selection models is a dict `{'beta': ..., 'alpha'|'delta': ...}` like R's list. `type='resid'` with `na_action='fail'` raises `InputError`: R stops there with the internal error "object 'out' not found". A selection model fitted to data with missing values labels its studies 1 to k, as R does (R refits without the studies with missing values). `res.M` is the dense matrix `diag(vi + tau2)` for `rma_uni`, location-scale, selection, robust and `trimfill` fits (a sparse matrix is kept for `rma_mv` fits with `sparse=True`). `res.b` is the old alias of `beta`; `I2`, `H2`, `vt`, `QE` and `QEp` of a selection model are `nan`, as R stores `NA`. `rma_mv` fits have `k_eff` but no `ni`. `rma_glmm` is checked only against `X vb X'` because the R used for the fixtures has no lme4.
-- `coef_summary(res, type=None)` (also `res.coef_summary()`) is `coef(summary(res))`: a data frame with the columns `estimate`, `se`, `zval` (`tval` and `df` for the t-based tests, with the Satterthwaite or residual degrees of freedom of robust fits), `pval`, `ci.lb` and `ci.ub`; location-scale and selection models give a dict of two frames. The column names keep R's dots.
-- `cbind_escalc()` and `rbind_escalc()` keep the `escalc` attributes (`yi_names`, ..., `digits`, `ni`, `slab`) of the frames they combine. R keeps `measure`, `slab` and `ni` per `yi` column, a frame here has one set: `cbind_escalc` takes them from the first argument that has them, `rbind_escalc` the `measure` of the first argument, as R does.
-- `vif()` of `rma_mv` fits agrees with R to 8e-9 (default), 2e-9 (`sim`) and 2e-6 (`reestimate=True`, where each refit is a new optimisation) on `dat.konstantopoulos2011`. `vif()` takes `time`, `LB`, `joinb` and `joina` like R (`joina` for location-scale fits only); `regplot()` takes `at_lab` and `box_lty`. Its per-study arguments (`pch`, `col`, `bg`, `psize`, `slab`) have one entry per study used in the fit, not per row of the original data, and `points_regplot()` takes only `ax` (R passes `...` on to `points()` and `text()`). The `regplot()` of a location-scale model draws no prediction interval, as in R (its `predict()` gives none).
-- `predict()` with `na_action` (R: `options(na.action=)`) follows `predict.rma`, with three details of R not copied. R keeps `pi.se` and `pi.ddf` at one value per study of the subset even when `na.omit` drops studies from `pred` and the intervals; metafopy returns them for the rows it returns. For `predict()` of a `club_sandwich=True` fit made from data with missing values R stops under every `na.action` ("Could not obtain the linear contrast(s)"); metafopy returns the predictions (NaN rows for studies without moderator values). For `rma_mv` fits with several `tau2`/`gamma2` values the prediction interval of a study left out of the fit (visible under `na_action='pass'`) is NaN, because the inner level of a dropped study is not kept.
-- `rma_glmm` has no R reference for `predtype`, `newvi` and `na_action` in the tests (the R library `lme4` is not installed where the fixtures were made); the code path is that of `rma_uni`, which is compared with R.
-- Escalc attributes: pandas copies `DataFrame.attrs` unchanged on row selection, so metafopy stores the row labels in `attrs['rows']` and matches `ni` and `slab` on them. A frame whose index was reset to 0..n-1 (also a plain `d.iloc[:n]`) cannot be matched, so its `ni` is dropped and `slab` replaced by 1..k instead of being misassigned. `rma()` makes duplicated study labels unique as `a`, `a.1`; `escalc` as `a.1`, `a.2`. Coefficient names of terms such as `relevel(x, ref='a')` use the text as written (R deparses the call).
-- `labbe()` of an `rma_uni` fit from counts uses `add = 1/2`, `to = 'only0'` (or the values passed to `labbe`), not those used when the model was fitted; repeat `add=`/`to=` if the fit used other values. `rma_mh()` with an outcome that never occurs: whether the variance is exactly 0 or a negative rounding error (se NaN) depends on the summation order, in R as well. `dfround()` leaves columns with `NA` `digits` untouched (the audit's reading of R; the 5.2-1 source has no explicit branch).
-- `res.ddf` of a `robust(club_sandwich=True)` fit stays `None` (a single number elsewhere); the per-coefficient degrees of freedom are in `res.dfs` (a tuple) and `res.robust.dfs`. `anova(full, reduced)` of `rma_mv` fits compares `k` and `yi` but not `V` (R compares a checksum of `V`). `influence()` returns a different type for each `measure=`. `profile(pred=True, newmods=)` rows follow `predict()` labels. `predict(addx=True)` prints `X` rounded to `digits` (R leaves it unformatted). A misspelt `influence(measure=)` gives the full result, as in R.
-- `progbar=` defaults to `False` everywhere (R: `TRUE` for `permutest` and `tes`) and writes to stderr; the `tes` bar counts studies in the recursion, not R's combinations. `digits=` is a single number (the `est` element); R's per-element vector is accepted but only `est` is used. `signif_stars` is the mfopt option standing for `getOption('show.signif.stars')`. P-values print with the usual formatting, not R's 2-digit minimum; `predict` printouts without `slab` use 0-based row labels. The `anova(X=)` hypotheses string reproduces R's `1*` quirk. `ConfintResult.to_frame()` stacks the fixed and random tables. `anova(btt=)` and `confint()` of multi-component `rma_mv` fits return list subclasses (`ListAnovaResult`, `ConfintList`); `LSWaldResult` lists are plain lists.
-- Plot `...` arguments are explicit keywords: unknown keywords raise `TypeError` where R silently ignores them. `layout=` of `plot_infl`, `plot_permutest` and `plot_vif` is ignored with R's deprecation warning. `legend` positions are strings or `{'x': ...}`, not numeric coordinates. `plot_profile(log=)` raises `InputError` for non-positive limits. `baujat(las=)` is applied only when given. `forest(clim=)` is not forwarded for cumulative results (as in R).
-- `rma_mv(control=)`: `parallel`, `ncpus` and `cl` are accepted and ignored (serial fit); `nearpd=True` uses a finite-difference gradient instead of the analytic score; `optimizer='nlminb'` is BFGS, so iteration paths differ from PORT; the uncertainty-based `UNR` Hessian step is disabled. Location-scale `solnp`/`nloptr` follow `rma.uni`'s source (valid for the identity link, otherwise reset to `constrOptim` with a warning) and constrained methods are stood in by SLSQP.
-- `rma_glmm(model='CM.EL')`: standard errors can differ from R's by 0.2 to 0.5 % (collins1985a, EE: 0.098986, R 0.099461). R's Hessian is a finite-difference one of an objective that is noisy (`integrate()` with `rel.tol` 1.2e-4 and BiasedUrn's truncation), so the value moves by about 1e-3 under 1e-9 shifts of the evaluation point and cannot be matched. The default `dnchgcalc` is the smooth density; `dnchgcalc='dFNCHypergeo'` or `dnchgprec` uses a port of the truncating routine for the Hessian (slower, and `QE_Wld` becomes unstable). The derivative-free optimisers (`hjk`, `BBoptim`, `nmk`, `mads`, `subplex`) agree with R to about 1e-5 relative, not 1e-6 as stated above.
-- `selmodel(type='beta', steps=c(0.025, 0.975), optimizer='nlminb')` on baskerville2012: R's PORT stops on `rel.tol` 1e-10 on a flat likelihood, so estimates differ from R's by up to 9e-4 relative at the same log-likelihood; the dataset is bundled now but R's stopping point is not reproduced.
-- Audit 7 (first run of `bin/metafor-audit.sh`): `control=` entries a function does not use (`optimizer` for `confint`, `hettest`, `permutest`) raise, where R ignores them; plot keywords are explicit and unknown ones raise (see above). The data sets of metadat that are lists of data frames rather than tables are not bundled; the others are (`datasets.list_datasets()`). Results of `anova()` of location-scale fits take `adjust` and `digits` like `anova.rma`. The arguments `time`, `code1`, `code2`, `na_action` of the diagnostics and the graphical parameters of the plot functions that R passes through `...` are not implemented.
-- Audit 8, fields of results: the bookkeeping fields of metafor fits that users read (`yi_f`, `vi_f`, `ni_f`, `weights_f`, `k_f`, `ids`, `not_na`, `subset`, `slab_null`, `outdat_f`, `outdat`, `intercept`, `coef_na`, `X_f`, `tau2_f`, `add`, `to`, `drop00`, `dfs`, `model`, `fit_stats`, `ci_null`, and for `rma_mv` also `yi_f`, `vi_f`, `V_f`, `W_f`, `weighted`, `random`, `formulas`, `withS`/`withG`/`withH`/`withR`, `Z_G1`, ...) are attributes of the result classes. `ids` counts from 0. `res.fit_stats` is the 5 x 2 data frame of R's `fit.stats`; the method that computed it for a given `REML` is now `fit_stats_for(REML)`. `dfs` equals `ddf` for fits that are not robust (R's `dfs`). `res.data` is the `MetaData` of the fit (the vectors and matrices used) and not the data frame the caller passed; `slab`, `ids` and `data.yi` of the fit keep only the studies used (R keeps the studies with missing values in `slab`), the `_f` variants hold all studies after `subset`. `digits` is the single number of the `est` element, not R's vector of nine; `coef_na` is labelled with the coefficient names (R names it `X`); `precis` of a selection model is a dict. R's model frames (`mf.g`, `mf.s`, `mf.r`, ...), `opt.res` and `class.f` have no counterpart; `influence()` has `inf` and `dfbs` as data frames like R (`marks` is the tuple of asterisks, `dfbs_array` the raw array).
-- Audit 8, more fields: `cumul()` and `leave1out()` have `zval`/`tval`, `test` (`'t'` for every t-based test) and `ids` but no `data`; the result of `vif()` is a table, not R's list per coefficient; `confint()` keeps `tau2_min`; `res.control` keeps the entries R reads elsewhere (`Control.ignored`); `logLik()` returns a float that prints like R's `'log Lik.'`; `formula()` returns R's deparse (`~ablat + year`); `res.control` of `rma_glmm` and `rma_mv` is the settings dict as passed. Tables wider than 80 characters wrap like R's matrices (`metafopy.printing.SETTINGS['width']` is `getOption('width')`); the data frames of `escalc` (and of `summary_escalc`, `conv_fivenum`, `bind`) print as `print.escalc` does, with the digits of each column kind, rows numbered from 1 and p-values as `<.0001`. The audit harness lays out plain data frames, matrices and named vectors in R's format (1-based row names, seven significant digits per column) before it compares printouts; numpy arrays have no dimnames, `summary()` returns text (R returns a fit object), and the `coef.na.Z` (`Zintrcpt`) and `X` names of R are not reproduced.
-- Audit 8, round 2 fields: `predict()` has `ddf` and `pi_ddf` only for t-based tests (R has none for z tests); `anova()` of a test of moderators has `class_` (R's `class`, the class vector of the model) and the likelihood-ratio test `class_f`; `vif()` keeps its entries in a tuple that carries the names (R's list `vif$ablat`; use `res.vifs` for the named values); `res.control` of `rma_mv` and `rma_glmm` keeps the entries R reads elsewhere (`ignored`) like `rma_uni`; `g_levels_k`/`h_levels_k` are series named by the levels; `selmodel()` of a trimfill fit keeps `fill`, `se_k0`, `side`, `k0_est` and `p_k0` (its own `k0` is that of the selection model, as in R); `regtest()` refits `rma_uni` fits from the studies used, so `fit` has `k_all`, `ids`, `slab_null=False` and the measure of R. Not reproduced: `fit` of `regtest(model='lm')` is a lm object in R (`qr`, `effects`, `terms`, ...) and `None` here (the coefficients are in `est`, `zval` and `pval`); the `chksum*`, `time`, `verbose` and `version` fields of refitted models; R's `coef.na` of the refit is named `X` (and `coef.na.Z` `Z`...). `ddf` of `robust(club_sandwich=True)` stays `None` (see above) and that of a default `rma_mv` robust fit is the vector of coefficient-wise degrees of freedom (R: one number); `predict()` of a model with missing moderators drops the rows in `pi_ddf`/`prob` (R keeps vectors of length k there). `class(robust fit)` in R is `c('robust.rma', 'rma', 'rma.uni')`, reproduced in `class_`; the `Z.f` column names of a fit with `abbrev=True` are the abbreviated ones (R keeps them in full).
-- `control` entries that another function of metafor reads (`threshold`, `stepadj`, `extendInt`, `vc.min`, `optimizer`, ...) are ignored by the fitting functions, `permutest`, `confint`, `hettest` and `selmodel` as R ignores them (`pmatch` against the defaults); an entry no function reads still raises, so that a misspelt setting is not lost. `robust(adjust=)` with a string other than `'Stata'`, `'Stata1'` or `'Stata2'` (for example `'holm'`) is refused, where R silently applies no adjustment; the `sel` method of `anova()` accepts a fit of the plain class where R stops with 'Class of ...'. `emmprep(transf=)` with `'+.sqrt'` is not supported; an unknown name gives the identity link as in emmeans. The unusually large SMD warning is given once per distinct `yi` vector, like R's `yichecks`.
+metafopy follows metafor, and for nearly every function it gives the same numbers, to the digits metafor prints. This page shows
+where it does not. Each difference has a short summary, the same call in R and in Python with the output of both, and the reason.
+The R code and the Python code of an example do the same thing, so any difference in the two outputs is the difference.
 
-- Audit 7 (first run of `bin/metafor-audit.sh`): `control=` entries a function does not use (`optimizer` for `confint`, `hettest`, `permutest`) raise, where R ignores them; plot keywords are explicit and unknown ones raise (see above). The data sets of metadat that are lists of data frames rather than tables are not bundled; the others are (`datasets.list_datasets()`). Results of `anova()` of location-scale fits take `adjust` and `digits` like `anova.rma`. `time=` (R's `...`) is implemented on the fitting functions and on every method that takes it in R; `na_action` on the functions that read `getOption('na.action')`; the graphical parameters of the plot functions that R passes through `...` are explicit keywords (see above).
-- Audit 8 (arguments R reads from `...`): `code1` to `code4` (R's plotting-code hooks, `eval`ed text) are not implemented; `cooks_distance`, `dfbetas`, `rstudent` and `influence` of location-scale and selection fits are refused in R too (`.chkclass` inside `influence.rma.uni`), so their `progbar` and `digits` there are unreachable. `funnel(transf=)` only warns, as in R; `LB` (R's load-balanced scheduling) is accepted by `gosh`, `profile` and `vif` and changes no result; `joina` is accepted by every `vif` and used by location-scale fits only. `forest(addpred=, predstyle=)`, `addpoly(rows=)`, `robust(clubSandwich=)`, `hettest(method=)` and `rma_glmm(model=)` default to `None` where R has `FALSE`, `'line'`, `NULL`, `NULL` and `'UM.FS'`, with the same effect. Not implemented because they are undocumented or experimental R internals: `outlist` (an arbitrary R list evaluated with `str2lang`), `retopt` (R's optimiser output), `randhet` and `omega2` (a random-heterogeneity location-scale model R's `rma.uni` reads from `...`), `pleasedonotreportI2thankyouverymuch`, and for `rma_glmm` `retdat`, `retfit`, `skiphet`. `tdist` is not an argument of `rma_mv` and `rma_glmm` in R's documentation and `cutoff` of `rma_mv` and `vtype` of `rma_glmm` have no counterpart. `metafor.news()` opens R's NEWS file and is not ported. `vif()` of `rma_mh`, `rma_peto` and `rma_glmm` fits raises `ArgumentError` where R reports that VIFs are not applicable to intercept-only models. New: `rma(knha=, dfs=, i2def=, r2def=, skipr2=, abbrev=)`, `anova(att=, Z=)` and the `L`, `fixed`, `test`, `df`, `verbose` arguments of the location-scale `anova`, `confint(extint=, parm=, digits=)`, `permutest(verbose=, fixed=)` (`permci` warns for location-scale fits, as in R), `profile(sub1=, LB=)`, `addpoly(cr_lb=, cr_ub=)`, `rcalc(rowid=, vnames=, noid=)`, `pairmat(fixed=)`, all compared with R in `src/tests/test_audit8_args.py`.
-- Audit 8, round 3: `update(formula_=)` is metafor's `formula.` (ignored for `rma_mh` and `rma_peto`, one-sided for `mods`, as in R); selecting rows of a result with `res[i]` raises `IndexError` for rows that do not exist where R's `[.list.rma` returns `NULL`; `cumul(na_action=)` keeps the rows that were used (R keeps `NA` rows for the studies that were dropped); `baujat(na_action='fail')` raises when a study has missing values (R stops with "need finite 'ylim' values"); `fmtx()` and `radial()` refuse a `digits` of length greater than one, as R does; `rma(cutoff=)` has no effect (R 5.2-1 stops with "object 'addtxt' not found" whenever an `abs(yi)` exceeds it, a bug in `.chkyisize`).
-- Results are immutable dataclasses: `res$field <- value` is `dataclasses.replace(res, field=value)`, and an element that the result does not have (`res$zz <- 1`) cannot be added. Fits keep R's list-like access through attributes only.
-- `res[i]` of `predict()`, `rstandard()`, `rstudent()`, `blup()`, `ranef()`, `leave1out()` and `cumul()` results is metafor's `[.list.rma` with NumPy indices (0-based, slices, boolean masks), a result of the same class with the rows `i`; unlike R it does not return `NULL` for an index that selects nothing.
-- `pairmat(btt=...)` without the model returns a `PairmatSpec` that `anova(X=)` and `predict(newmods=)` complete with the model of the call, instead of metafor's lookup of the model in the enclosing call; `pairmat(res, btt=...)` still gives the matrix.
+Everything that is too small or too specific for an example here is in the [detailed notes](differences-notes.md), grouped by
+topic. [Coming from R](from-r.md) lists the rules of the translation.
 
-- Audit 8 (wrong values, first half): `rma(yi, vi, data = dat.konstantopoulos2011)` and the other bundled data sets that are escalc objects in R carry `measure`, `ni`, `digits` and the `yi`/`vi` names in `DataFrame.attrs`, as in R. The `pi.se`/`pi.ddf` quirk of `predict()` is listed above. Relative differences of 1e-4 to 4e-3 in `pval`, `ci`, `se`, `QM`, `QS` and `vb` of location-scale, `rma_mv` and `rma_glmm(model='CM.EL')` fits come from the optimiser stopping on a flat likelihood or from R's noisy objective (see the entries for those fits); they were not traced one by one.
-- Audit 8, traced against R (the log-likelihoods at the optima were compared): location-scale fits with a scale intercept near -10 to -150 (`ls_year`, `ls_na`: tau2 is 0 to machine precision) have the same log-likelihood in R and Python to 1e-9 (-7.602255955 and -4.194072548), R's own optimisers agree to 1e-6 and `nlminb` with a tight `rel.tol` does not converge; scale coefficients agree to 1e-6 to 1e-5 and the Wald statistics of the scale part (`QS`, `se.alpha`, `va`) to 2e-4. `profile()` of these fits, and `permutest()` (which refits for each permutation), end on different points of the flat surface. The `SPEXP` range `rho` of `rma_mv(random=~year|district)` on `dat.konstantopoulos2011` is 0.05592 (R `nlminb`), 0.05596 (metafopy) and 0.03527 (R Nelder-Mead) at the same REML log-likelihood -31.91350753. `rma_glmm(model='UM.FS')` and `'UM.RS'`: the objective is the same as lme4's (at R's coefficients metafopy's deviance is 4e-6 above its own optimum); R's two optimisers differ in the intercept by 4e-4 (0.61510 bobyqa, 0.61554 Nelder-Mead) and metafopy's 0.61456 is 5e-4 from bobyqa; for `UM.RS` metafopy's log-likelihood (-126.2962773) is higher than R's (-126.2962883).
-- `forest()` lowers `cex` for many studies as R does (`height / (1.25 * k * strheight('O'))`), but `strheight` is that of the axes of the caller's matplotlib figure, not of R's 7 x 7 inch pdf device (0.6399 against 0.5309 for the 56 studies of `dat.konstantopoulos2011`). `x[i]` with one index on a `vcalc()` matrix selects rows (R: elements).
-- Audit 8 fixed in the code: `simulate()` takes `na_action` (R: `options(na.action=)`) and pads to the studies of the subset under `'exclude'`, `'pass'` and `'fail'`; `k_all` of a fit from counts with `subset=` is the number of rows before subsetting (internally `MetaData.k_all` is still the length of `keep`; the public value is `MetaData.supplied`).
-- Audit 8 (rarely hit wrong values): `fmtx(drop0ifint=True)` always drops trailing zeros, where R does so only for an integer `digits` (`2L`; the default `digits` and `2` do not). `plot()` of a `gosh` result returns the axes drawn, where R returns the value of its last graphics call. `cooks_distance()` of an `rma_mv` fit gives a value where R's leave-one-out refit does not converge and gives `NA` (`mv_wide` fixture, study 18). `rma_glmm(model='UM.RS')` and `model='CM.EL'` differ from R by the amounts given above (the fixtures `glmm_rs` and `glmm_cm` of the harness). A location-scale fit whose scale intercept runs to the boundary (`ls_year`, `optbeta=True`) has a singular numerical Hessian in metafopy and an invertible one in R, so `vcovmat` is NaN here; the scale model `~ alloc` of the `ls_bcg` fixture is degenerate and the simulated and re-estimated VIFs of the scale part cannot be compared.
-- Audit 8 (second pass): `anova(x, X=)` of linear combinations that are not of full rank gives `QMdf=(m, ddf)` where R has the single `NA`; the escalc attributes (`measure`, `ni`, `slab`) are stored once in `DataFrame.attrs`, so `attr(dat$y1, "measure")` of a data frame with two escalc() results (different `var_names`) is the last measure. `selmodel()` with a likelihood that is flat or at the boundary (`type='beta'` on baskerville2012: `tau2` of 2.4e-6; `type='truncest'` with `optimizer='mads'` on hackshaw1998) ends at a slightly higher log-likelihood than R (by 4e-6 and 2.5e-4), so the estimates differ by 3e-2 (`tau2` near 0) and 5e-3 relative.
+The outputs below were captured on 2026-10-21 with R 4.3.3, metafor 5.2-1, emmeans 2.0.4 and lme4 2.0.6, and with metafopy at the
+commit of the same day. They are a record of that run, not a promise; the tests in `src/tests` and `bin/metafor-audit.sh` are what
+keeps the two in line.
 
-- R's base-graphics parameters that metafor passes through `...` to `plot()` (`bty`, `las`, `xaxt`, `yaxt`, `cex`, `lwd`, `lty`, `col`, `pch`, `bg`, `main`, `xlab`, `ylab`, `xlim`, `ylim`, `layout`, `legend`, `cline`, `addgrid`) are arguments only of the metafopy functions that interpret them themselves; the others are styled on the matplotlib `ax=` the caller passes. R warns `"x" is not a graphical parameter` for an unknown one; metafopy does not.
-- Undocumented switches that R reads from `...` (not in the Rd files): `code1` to `code4` (R evaluates the code it is given), `outlist`, `retopt`, `tdist`, `abbrev`, `skiphet`, `retdat`, `retfit`, `omega2`, `randhet`, and the spelling `nearPD` of `nearpd`, are not ported; the harness does not generate them. `print(x, num=, legend=)` of `rma.uni` fits is not ported either.
-- Location-scale fits (`rma_uni(scale=)`) use a central-difference gradient for BFGS and cap the Nelder-Mead polish, so `permutest()` and `vif(sim=True)` of a fit that ends on a boundary take about 0.05 to 0.3 s per refit like R's `nlminb` (before: 10 to 40 s per refit).
+## By design
 
-- `hettest(model)` does not forward `control` to the refits, as in R; `control` only applies to the data-vector form.
-- `selmodel()` refits the model on the studies used only when the method is not FE/EE/CE/ML, and keeps a given `slab` when no study was dropped; otherwise labels are numbered 1 to k, as in R.
-- The robust (`club_sandwich`) denominator degrees of freedom `ddf` are a vector in R and live in the `dfs` field of metafopy.
-- `anova(X=)` with a rank-deficient `X`: R gives a single NA for `QMdf`; metafopy keeps the pair (m, ddf) and gives NaN for QM and QMp.
-- The audit's known list has narrow entries for flat-likelihood fits (ls, selmodel finite-difference Hessian, glmm UM.FS/UM.RS/CM.EL, mv_sp rho), device-dependent `par(cex)`, gosh ties of `dbinom`, and attributes that R drops in `data.frame()` and `c()` in scripts (`measure`, `ni`).
-- `influence()` under `na_action='exclude'` or `'pass'` returns 13 rows as R does, but `is_infl` has no NA entries (R: NA).
-- `rma_glmm` maximises the exact likelihood; R fits the mixed models with lme4 (adaptive quadrature or Laplace, its own optimiser), so R's estimates depend on `control` in the third or fourth digit (the expected values in metafor's tests differ between the variants) and metafopy agrees with them to about 1e-3. `control['optimizer']` of R keeps the name given (`'BFGS'`); metafopy stores `'optim'` and `optmethod`.
-- `predict()` of a model fitted to data with missing moderator values (`na_action='omit'`): R keeps `pi.se` and `pi.ddf` at one value per study of the subset; metafopy has them for the returned rows.
-- `robust()` of an `rma_mv` fit without `club_sandwich`: R's `ddf` is one number, metafopy has one value per coefficient in `ddf` (all equal) and the number in `dfs`. `predict()` of a robust fit returns `ddf` with one value per prediction, as R does.
-- `deltamethod()` keeps the `digits` of the model (nine entries) and, for a vector of estimates, five (`est` to `ci`).
-- Flat or boundary fits that R's own optimisers do not agree on (location-scale fits with scale moderators on `dat.bcg`, `rma_mv` with `struct='UN'`, `selmodel` with `type='truncest'`) are in `src/audit/data/known.toml` with the log-likelihoods that agree.
+Differences that follow from Python, not from a gap in the port.
 
-- Audit 8, round 3 (printing and names): `escalc()` returns a `pandas.DataFrame` subclass (`metafopy.core.labelled.EscalcFrame`) that prints as `print.escalc` (rows from 1, the `digits` attribute for the effect sizes and variances); every selection of rows or columns, and pandas operations such as `merge`, give a plain `DataFrame` that keeps `attrs`. `vcalc()` returns a `numpy.ndarray` subclass (`VCovMat`) that prints as `print.vcovmat` (zeros as `.`, rows and columns from 1), `blsplit()` and `ranef()` of an `rma_mv` fit return a dict (`NamedList`) that prints as an R list (`$name` above each element). The matrices metafor gives dimnames (`X`, `X_f`, `Z`, `Z_f` with the row numbers of the data and the coefficient names, `G`, `H`, `hessian`, `vvc`, the `V` of `rcalc()`, the Hessian of `selmodel()`) are `numpy.ndarray` subclasses (`LabelledMatrix`) with `rownames`, `colnames` and `dimnames`; they keep the names only through operations that keep the shape (a transpose swaps them) and reductions or other shapes give plain arrays and numbers. A sparse `vcalc(sparse=True)` stays a `scipy.sparse.csr_array` and prints as SciPy does, where R prints a `dgCMatrix`.
-- Audit 8, round 3 (what `summary()` and `predict()` return): `summary(res)` is the printed text, as a `str` subclass with the fields of the fit as attributes (`summary(res).beta`), where R's `summary(res)` is the fit itself with another print method. `predict(res, vcov=True)` is the predictions with the matrix in `vcov`, where R returns `list(pred = <predictions>, vcov = <matrix>)`. `setmfopt()` returns the options as they were before, `{'metafor': options}`. `permutest(res).coef()` is the table of the coefficients with the permutation p-values (R: `coef.permutest.rma.uni`), not only the estimates. `rma_mv`, `rma_uni(scale=)` and `rma_glmm` keep the `control` entries the model does not use (`vc.min`, `stepadj`, `hessianCtrl`, `optCtrl`, `tol`, ...) in `res.control`, as R does.
-- Not implemented: the model frames `mf.g`, `mf.s`, ... of `rma.mv` (see `mf.*` above) and the column names metafor gives `Z.S`, `Z.G1` and `Z.G2` (`mf.s[[j]]11`, ...; internal to R's code).
-- Audit 8, leftovers: `sandwiches` of a `robust(club_sandwich=True)` fit has the `coef_test` and `conf_int` tables of `clubSandwich` and, with moderators, a `Wald_test` table with the test, F statistic, `delta`, degrees of freedom and p-value; R's `Wald_test` is `NA` without moderators and so is metafopy's. `rma_mv` keeps the matrices given as `R` in a mapping with an entry (`None`) for every `~ 1 | factor` term, as R's list. `dfbetas()` of `rma_mv` fits has syntactic column names (`log.year...1900...1000.`), as R's data frame. Not reproduced: R's graphics state read back with `par()` in the scripts (`mar`, `mfrow`, `cex` of the device; matplotlib keeps the grid in the figure), the `Z.G1`/`Z.G2` column names of fits with dropped rows, `yi.names`/`vi.names` after the columns of an `escalc` frame are dropped (the attributes stay in `DataFrame.attrs`), the list form of `dat.moura2021` (`metafopy.datasets.load()` returns the data frame, `metafopy.datasets.trees.load_tree('moura2021')` the tree), and the fields R lets a test assign into a result (`res$time <- NULL`, `sav$inf <- ...`; the results are frozen). A `permutest(exact=TRUE)` of `~ factor(alloc)` with a missing value at a further permutation in one audit run is an R artefact: a separate run of R 4.3.3 gives the two missing values at 981 and 14361 only.
+### Names and 0-based indices
 
-- Audit 9 (`print(digits=<vector>)`): `digits` as a named vector (or mapping) of `predict()`, `cumul()`, `leave1out()` and `influence()` results is applied per column kind as metafor's `.get.digits` does (names matched like `pmatch`; an unnamed vector gives its first element to every kind); use `res.with_digits(...)` where R calls `print(res, digits=...)`. The `vif()` table of a location-scale fit ignores `digits` in R (it passes `digits=NULL`, so the p-values have one digit); metafopy prints it with the digits it was given.
-- Audit 9 (`print(num=TRUE)`): `summary(res, num=True)` numbers the rows of the coefficient tables of location-scale, `rma_mv`, `rma_glmm` and selection-model fits and of `vif()`, as R does.
-- Audit 9 (flat likelihoods, not matched): the QM, QS and F statistics of location-scale fits whose scale part is on a flat ridge differ in the fourth digit from R (the coefficients differ by 1e-5 and the optimisers stop at different points); the `confint()` step of a flat profile can be `NA` in one and a bound in the other; `rma_mv(struct='GDIAG'/'SP*')` with `rho` on a flat likelihood ends at another point than R's `nlminb`. `rma_glmm(model='UM.FS')` of an intercept-only model differs from R because lme4's `bobyqa` stops earlier than the tighter optimiser of metafopy.
-- Audit 10: the standard errors of the scale part of `rma(yi, vi = 0.1, mods = ~ ablat + year, scale = ~ ablat + year)` on dat.bcg differ from R by up to 40%; metafopy agrees with a central-difference Hessian and with R's own `control = list(hesspack = 'pracma')`, R's default numDeriv step is too small for a scale coefficient of 3e-4. `deltamethod(coef, vcov, digits = <vector>)` stores the digits per key where R keeps the vector (whose `print()` then fails in R). The `rma.glmm()` refit in metafor's `update()` test differs from R in the fourth digit, like the other `rma.glmm()` fits by lme4.
-- Audit 11: the standard errors of the scale part of `rma(yi, vi, mods = ~ ablat + I(ablat^2) + year, scale = ~ ablat + year)` on dat.bcg, and of the same fit with `subset = 1:8`, differ from R by 3e-4 to 5e-3 at the same log-likelihood. The scale intercept and the uncentred year slope are almost collinear, so the Hessian is ill-conditioned: R's numDeriv and `hesspack = 'pracma'` Hessians differ from each other by as much, and central differences of R's own log-likelihood move by 1% to 10% with the step; metafopy's values lie in that spread. `tes(alternative = 'greater')` and `permutest(exact = TRUE)` of the trim-and-fill fit of dat.bcg take 419 s and 545 s in R and agree with metafopy.
-- Audit 9 (environment only): the `gosh()` socket cluster and the timeout of R's `permutest()` in the harness depend on the sandbox, not on metafopy.
-- `rma_mv(struct='GDIAG'/'GEN')` on `dat.konstantopoulos2011` (`~ year | district`) has more than one local maximum of the REML log-likelihood. R's `nlminb` stops at tau2 0.0826 (REML log-likelihood -32.21647, GDIAG) and tau2 3.487, rho -0.9997 (-32.20462, GEN); metafopy stops at tau2 0 (-32.21355) and tau2 3131.9, rho -1 (-31.86847), which are higher. `control={'tau2_init': [0.01, 0.01]}` gives R's GDIAG point.
-- Audit 13, printing and harness. `vcov()` frames print as `print.vcovmat` (four decimals, `.` for zeros); `predict()` results wrap at the console width; the selmodel and other tables with a stars column wrap onto a second block when R's do (the blank stars column counts for width 2). Reproduced in R and left as it is in metafopy: `emmprep()` of `rma_mh` and `rma_peto` fits gives prediction 0 with SE 0; `summary(signif.stars=FALSE)` is ignored (metafopy honours it); `profile()` draws when called, and `plot()` of a selmodel profile writes the text `FALSE` to the device. The harness now also runs 39 emmeans cases and compares the text drawn by plots (axis labels, legends) in the help examples and tests.
-- Not matched, because metafopy's optimiser stops elsewhere on a flat surface (R's `nlminb` is PORT, which metafopy does not port): `rma_mv` GDIAG and GEN (metafopy reaches a higher log-likelihood than R), berkey1998 `UN` with fixed `tau2`, the fourth digit of location-scale `QM`, `QS` and `F`, `se.alpha` and the flat-profile `confint` step of `rma_ls`, selmodel fits with `nlminb`, and the `rma_glmm` cases listed above. An opt-in port of PORT is a possible way to remove most of these.
+R's `.` in a name becomes `_`, and every index counts from 0. The study index `ids` and the position that `which.max` returns
+differ by one for that reason; the studies are the same.
+
+*Why:* Python counts from 0 and has no `.` in names. Printed `escalc` frames still number their rows from 1, as R's do.
+
+<div class="compare" markdown>
+<div markdown>
+
+**R, metafor 5.2-1**
+
+```r
+library(metafor)
+dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
+res <- rma(yi, vi, data=dat)
+res$ids[1:3]
+which.max(abs(rstudent(res)$z))
+```
+
+```text
+[1] 1 2 3
+[1] 4
+```
+
+</div>
+<div markdown>
+
+**Python, metafopy**
+
+```python
+import numpy
+
+from metafopy import datasets, escalc, rma, rstudent
+
+dat = escalc(measure='RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=datasets.load('dat.bcg'))
+res = rma('yi', 'vi', data=dat)
+print(res.ids[:3])
+print(numpy.argmax(numpy.abs(rstudent(res).z)))
+```
+
+```text
+[0 1 2]
+3
+```
+
+</div>
+</div>
+
+### Fitted models are read-only
+
+`res$field <- value` changes a fit in R and can add a field that does not exist. A fit in metafopy is a frozen dataclass: use
+`dataclasses.replace(res, field=value)` for a changed copy. Assigning to it, or adding an attribute, raises
+`FrozenInstanceError`.
+
+*Why:* a fit that quietly changes after the fact is a common source of wrong numbers, and R's list-like access is kept for
+reading (`res.tau2`, `res.beta`).
+
+<div class="compare" markdown>
+<div markdown>
+
+**R, metafor 5.2-1**
+
+```r
+library(metafor)
+dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
+res <- rma(yi, vi, data=dat)
+res$tau2 <- 0
+res$tau2
+res$zz <- 1
+res$zz
+```
+
+```text
+[1] 0
+[1] 1
+```
+
+</div>
+<div markdown>
+
+**Python, metafopy**
+
+```python
+import dataclasses
+
+from metafopy import datasets, escalc, rma
+
+dat = escalc(measure='RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=datasets.load('dat.bcg'))
+res = rma('yi', 'vi', data=dat)
+res2 = dataclasses.replace(res, tau2=0.0)
+print(res2.tau2)
+res.zz = 1
+```
+
+```text
+0.0
+FrozenInstanceError: cannot assign to field 'zz'
+```
+
+</div>
+</div>
+
+### summary() returns text
+
+In R, `summary(res)` is the fit itself with another print method. In metafopy it is the printed text, as a `str` that also has
+the fields of the fit as attributes (`s.beta`), so printing it and reading from it both work.
+
+*Why:* Python has no print methods dispatched on the class of a value; a `str` subclass gives the same printout without a second
+fit class.
+
+<div class="compare" markdown>
+<div markdown>
+
+**R, metafor 5.2-1**
+
+```r
+library(metafor)
+dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
+res <- rma(yi, vi, data=dat)
+s <- summary(res)
+is.character(s)
+s$beta
+```
+
+```text
+[1] FALSE
+              [,1]
+intrcpt -0.7145323
+```
+
+</div>
+<div markdown>
+
+**Python, metafopy**
+
+```python
+from metafopy import datasets, escalc, rma
+
+dat = escalc(measure='RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=datasets.load('dat.bcg'))
+res = rma('yi', 'vi', data=dat)
+s = res.summary()
+print(isinstance(s, str))
+print(s.beta)
+```
+
+```text
+True
+[-0.71453235]
+```
+
+</div>
+</div>
+
+### reporter() is not ported
+
+`reporter()` writes an R Markdown report of a fit. There is no counterpart: use a Jupyter notebook, which runs the same
+metafopy code and keeps its output.
+
+```python
+import metafopy
+
+metafopy.reporter
+```
+
+```text
+AttributeError: module 'metafopy' has no attribute 'reporter'
+```
+
+## Optimiser stop points
+
+metafor maximises some likelihoods with R's `nlminb` (the PORT library) or `optim`. metafopy uses SciPy's optimisers, and ports
+R's `optim` BFGS and Nelder-Mead only for `rma_glmm` (`CM.EL`) and `selmodel`. PORT is not ported. Where the likelihood has a single clear maximum the two agree
+to about 1e-4 relative or better. Where it is flat, or has several maxima, the two stop at different points, and the examples
+below are those cases.
+
+### rma_mv with struct GEN stops at another maximum
+
+On `dat.konstantopoulos2011` the REML log-likelihood of `~ year | district` has more than one local maximum. R's `nlminb` stops
+at a log-likelihood of -32.20462; metafopy's BFGS follows the ridge to its end and finishes higher, at -31.86847, with `rho` at
+the boundary. 
+
+*Why:* different optimiser on the same surface. metafopy's value is the higher likelihood, so it is not the worse fit. For the
+`struct='GDIAG'` variant, `control={'tau2_init': [0.01, 0.01]}` starts metafopy at R's point; see the
+[notes](differences-notes.md#optimisers-and-flat-likelihoods).
+
+<div class="compare" markdown>
+<div markdown>
+
+**R, metafor 5.2-1**
+
+```r
+library(metafor)
+res <- rma.mv(yi, vi, random = ~ year | district, struct = "GEN", data = dat.konstantopoulos2011)
+c(logLik = logLik(res))
+res$tau2
+res$rho
+```
+
+```text
+   logLik 
+-32.20462 
+[1] 3.486942e+00 1.167101e-06
+[1] -0.9997167
+```
+
+</div>
+<div markdown>
+
+**Python, metafopy**
+
+```python
+from metafopy import datasets, rma_mv
+
+res = rma_mv('yi', 'vi', random='~ year | district', struct='GEN', data=datasets.load('dat.konstantopoulos2011'))
+print(res.logLik())
+print(res.tau2)
+print(res.rho)
+```
+
+```text
+'log Lik.' -31.86847 (df=4)
+[3.13185220e+03 7.94227959e-04]
+[-1.]
+```
+
+</div>
+</div>
+
+### Standard errors of a location-scale model on a flat scale
+
+With `link='identity'` the scale slope of this model is near zero, and the Hessian of the log-likelihood is computed by
+numerical differences that shrink to rounding error. R gives 0.539892 for the first scale standard error and metafopy 0.539621,
+a relative difference of 5e-4; R's own `r=8` and `r=4` Richardson depths already differ from each other by the same amount.
+
+*Why:* the value is rounding noise in both implementations. metafopy uses depth `hessian_r=4` by default, which agrees with R's
+`r=4` to about 3e-6; `control={'hessian_r': 8}` gives the noisy variant.
+
+<div class="compare" markdown>
+<div markdown>
+
+**R, metafor 5.2-1**
+
+```r
+library(metafor)
+dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
+res <- rma(yi, vi, scale = ~ ablat, link = "identity", data = dat)
+res$se.alpha
+```
+
+```text
+[1] 0.53989225 0.01556825
+```
+
+</div>
+<div markdown>
+
+**Python, metafopy**
+
+```python
+from metafopy import datasets, escalc, rma
+
+dat = escalc(measure='RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=datasets.load('dat.bcg'))
+res = rma('yi', 'vi', scale='~ ablat', link='identity', data=dat)
+print(res.se_alpha)
+```
+
+```text
+[0.53962141 0.0155596 ]
+```
+
+</div>
+</div>
+
+### selmodel on a flat likelihood
+
+`selmodel(type='beta')` on `dat.baskerville2012` has `tau2` near zero and a `delta` on its lower bound (both languages warn
+about it). The log-likelihood is identical to the printed digits and `tau2` agrees to six digits, but `delta`, which sits on its
+lower bound, is 1.000e-05 in R and 1.022e-05 here.
+
+*Why:* R's PORT stops on `rel.tol` of 1e-10 on a flat likelihood, and SciPy's optimiser stops a little elsewhere on the same
+plateau.
+
+<div class="compare" markdown>
+<div markdown>
+
+**R, metafor 5.2-1**
+
+```r
+library(metafor)
+dat <- dat.baskerville2012
+res <- rma(smd, se^2, data = dat)
+sel <- selmodel(res, type = "beta", steps = c(0.025, 0.975), control = list(optimizer = "nlminb"))
+c(logLik = logLik(sel))
+sel$tau2
+sel$delta
+```
+
+```text
+Warning message:
+One or more 'delta' estimates are (almost) equal to their lower or upper bound.
+Treat results with caution (or consider adjusting 'delta.min' and/or 'delta.max'). 
+   logLik 
+-1.945572 
+[1] 0.05736726
+[1] 1.000028e-05 1.741239e+00
+```
+
+</div>
+<div markdown>
+
+**Python, metafopy**
+
+```python
+from metafopy import datasets, rma, selmodel
+
+dat = datasets.load('dat.baskerville2012')
+res = rma(dat['smd'], dat['se'] ** 2)
+sel = selmodel(res, type='beta', steps=[0.025, 0.975], control={'optimizer': 'nlminb'})
+print(sel.logLik())
+print(sel.tau2)
+print(sel.delta)
+```
+
+```text
+UserWarning: One or more 'delta' estimates are (almost) equal to their lower or upper bound.
+Treat results with caution (or consider adjusting 'delta.min' and/or 'delta.max').
+'log Lik.' -1.945572 (df=4)
+0.057367159330093655
+[1.02207630e-05 1.74123073e+00]
+```
+
+</div>
+</div>
+
+### rma_glmm with UM.FS: z value in the fourth digit
+
+The z value of the pooled log odds ratio is -4.2436 here against -4.2434 in R. The estimate and the log-likelihood agree, and the
+standard error differs in the fifth digit.
+
+*Why:* the cause has not been traced. metafopy maximises the exact likelihood and R fits it with lme4 (its own quadrature and
+optimiser), and the difference is within the 2e-3 to 1e-1 relative tolerance that the tests allow for mixed-model fits.
+
+<div class="compare" markdown>
+<div markdown>
+
+**R, metafor 5.2-1**
+
+```r
+library(metafor)
+res <- rma.glmm(measure = "OR", ai = tpos, bi = tneg, ci = cpos, di = cneg, data = dat.bcg, model = "UM.FS")
+res$zval
+res$se
+```
+
+```text
+[1] -4.243433
+[1] 0.1755679
+```
+
+</div>
+<div markdown>
+
+**Python, metafopy**
+
+```python
+from metafopy import datasets, rma_glmm
+
+res = rma_glmm(measure='OR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=datasets.load('dat.bcg'), model='UM.FS')
+print(res.zval)
+print(res.se)
+```
+
+```text
+[-4.24356287]
+[0.17556082]
+```
+
+</div>
+</div>
+
+### rma_glmm with CM.EL: standard errors
+
+The conditional model gives a standard error that is 0.5 % lower than R's on the Collins data (0.098986 against 0.099461).
+
+*Why:* R's Hessian is a finite-difference Hessian of an objective that is itself noisy (`integrate()` with `rel.tol` 1.2e-4 and
+the truncation of BiasedUrn), so R's value moves in the third digit under tiny shifts and cannot be matched. The default
+`dnchgcalc` of metafopy is the smooth density; see the [notes](differences-notes.md#rma_glmm) for the other options.
+
+<div class="compare" markdown>
+<div markdown>
+
+**R, metafor 5.2-1**
+
+```r
+library(metafor)
+res <- rma.glmm(ai = b.xci, n1i = nci, ci = b.xti, n2i = nti, data = dat.collins1985a,
+                measure = "OR", model = "CM.EL", method = "FE")
+res$se
+```
+
+```text
+Warning messages:
+1: 3 studies with NAs omitted from model fitting. 
+2: Some yi/vi values are NA. 
+[1] 0.09946104
+```
+
+</div>
+<div markdown>
+
+**Python, metafopy**
+
+```python
+from metafopy import datasets, rma_glmm
+
+res = rma_glmm(ai='b.xci', n1i='nci', ci='b.xti', n2i='nti', data=datasets.load('dat.collins1985a'), measure='OR', model='CM.EL', method='FE')
+print(res.se)
+```
+
+```text
+UserWarning: 3 studies with NAs omitted from model fitting.
+UserWarning: Some yi/vi values are NA.
+[0.09898644]
+```
+
+</div>
+</div>
+
+## Stricter than R
+
+Places where metafopy raises an error and R passes on, or the other way round.
+
+### A misspelt control entry raises
+
+R matches the names in `control` against the settings it knows with `pmatch` and ignores the rest, so a typo does nothing. In
+metafopy an entry that no function reads raises `ArgumentError`, so the typo is not lost. Entries that another metafor function
+reads (`optimizer` for `confint`, for example) are ignored as in R.
+
+<div class="compare" markdown>
+<div markdown>
+
+**R, metafor 5.2-1**
+
+```r
+library(metafor)
+dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
+res <- rma(yi, vi, data=dat)
+res <- rma(yi, vi, data=dat, control = list(optimzer = "nlminb"))
+res$tau2
+```
+
+```text
+[1] 0.3132433
+```
+
+</div>
+<div markdown>
+
+**Python, metafopy**
+
+```python
+from metafopy import datasets, escalc, rma
+
+dat = escalc(measure='RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=datasets.load('dat.bcg'))
+res = rma('yi', 'vi', data=dat, control={'optimzer': 'nlminb'})
+print(res.tau2)
+```
+
+```text
+ArgumentError: unknown control argument 'optimzer'
+```
+
+</div>
+</div>
+
+### Unknown plot arguments raise
+
+The `...` of metafor's plot functions is passed on to base graphics, which ignores (and warns about) what it does not know.
+The plot functions of metafopy take explicit keywords, so an unknown one is a `TypeError`.
+
+<div class="compare" markdown>
+<div markdown>
+
+**R, metafor 5.2-1**
+
+```r
+library(metafor)
+dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
+res <- rma(yi, vi, data=dat)
+pdf(NULL)
+forest(res, notaparameter = 1)
+cat("no error\n")
+```
+
+```text
+There were 50 or more warnings (use warnings() to see the first 50)
+no error
+```
+
+</div>
+<div markdown>
+
+**Python, metafopy**
+
+```python
+from metafopy import datasets, escalc, forest, rma
+
+dat = escalc(measure='RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=datasets.load('dat.bcg'))
+res = rma('yi', 'vi', data=dat)
+forest(res, notaparameter=1)
+```
+
+```text
+TypeError: forest() got an unexpected keyword argument 'notaparameter'
+```
+
+</div>
+</div>
+
+### escalc() with the reserved measure HR
+
+`HR` and `HD` are names that metafor 5.2-1 reserves without computing anything. R fails because `vi` is missing; metafopy
+passes `yi` and `vi` or `sei` through when they are given, and otherwise raises `NotSupportedError` with the reason.
+
+<div class="compare" markdown>
+<div markdown>
+
+**R, metafor 5.2-1**
+
+```r
+library(metafor)
+escalc(measure = "HR", ai = c(1, 2), bi = c(3, 4), ci = c(5, 6), di = c(7, 8))
+```
+
+```text
+Error in escalc(measure = "HR", ai = c(1, 2), bi = c(3, 4), ci = c(5,  : 
+  argument "vi" is missing, with no default
+```
+
+</div>
+<div markdown>
+
+**Python, metafopy**
+
+```python
+from metafopy import escalc
+
+escalc(measure='HR', ai=[1, 2], bi=[3, 4], ci=[5, 6], di=[7, 8])
+```
+
+```text
+NotSupportedError: measure='HR' is reserved in metafor but not computed there; supply 'yi' and 'vi' or 'sei'.
+```
+
+</div>
+</div>
+
+### fsn() of a Mantel-Haenszel fit
+
+Both refuse. R fails with an internal error from `inherits(x, "rma") && x$tau2.fix`; metafopy raises
+`NotSupportedError` with the message R's other methods use.
+
+<div class="compare" markdown>
+<div markdown>
+
+**R, metafor 5.2-1**
+
+```r
+library(metafor)
+res <- rma.mh(ai = tpos, bi = tneg, ci = cpos, di = cneg, data = dat.bcg)
+fsn(res)
+```
+
+```text
+Error in inherits(x, "rma") && x$tau2.fix : invalid 'y' type in 'x && y'
+```
+
+</div>
+<div markdown>
+
+**Python, metafopy**
+
+```python
+from metafopy import datasets, fsn, rma_mh
+
+res = rma_mh(ai='tpos', bi='tneg', ci='cpos', di='cneg', data=datasets.load('dat.bcg'))
+fsn(res)
+```
+
+```text
+NotSupportedError: Method not available for objects of class "rma.mh".
+```
+
+</div>
+</div>
+
+## metafopy gives a value where R does not
+
+### emmprep() of an rma_mh fit
+
+R's `emmprep` gives an estimate of 0 with standard error 0 for `rma_mh` (and `rma_peto`) fits, and fails for `selmodel` fits.
+metafopy computes the estimated marginal mean from the fit.
+
+*Why:* R's result is a placeholder, not an estimate (the pooled log risk ratio of these data is -0.47). A port that reproduced
+zeros would give a misleading answer.
+
+<div class="compare" markdown>
+<div markdown>
+
+**R, metafor 5.2-1**
+
+```r
+library(metafor)
+library(emmeans)
+res <- rma.mh(ai = tpos, bi = tneg, ci = cpos, di = cneg, data = dat.bcg)
+emmeans(emmprep(res), ~ 1)
+```
+
+```text
+ 1       emmean SE  df asymp.LCL asymp.UCL
+ overall      0  0 Inf         0         0
+
+Results are given on the log (not the response) scale. 
+Confidence level used: 0.95 
+```
+
+</div>
+<div markdown>
+
+**Python, metafopy**
+
+```python
+from metafopy import datasets, emmeans, emmprep, rma_mh
+
+res = rma_mh(ai='tpos', bi='tneg', ci='cpos', di='cneg', data=datasets.load('dat.bcg'))
+print(emmeans(emmprep(res), '~ 1'))
+```
+
+```text
+ 1       emmean    SE  df asymp.LCL asymp.UCL
+ overall -0.473 0.041 Inf    -0.554    -0.393
+
+Results are given on the log (not the response) scale. 
+Confidence level used: 0.95 
+```
+
+</div>
+</div>
+
+### fmtx(drop0ifint=TRUE)
+
+R drops trailing zeros only when `digits` is an integer (`2L`); a double `2` does not. Python has no `2` against `2L`, so
+metafopy always drops them.
+
+<div class="compare" markdown>
+<div markdown>
+
+**R, metafor 5.2-1**
+
+```r
+library(metafor)
+fmtx(c(1, 2.5, 3.25), digits = 2, drop0ifint = TRUE)
+fmtx(c(1, 2.5, 3.25), digits = 2L, drop0ifint = TRUE)
+```
+
+```text
+[1] 1.00 2.50 3.25
+[1]    1  2.5 3.25
+```
+
+</div>
+<div markdown>
+
+**Python, metafopy**
+
+```python
+from metafopy import fmtx
+
+print(fmtx([1, 2.5, 3.25], digits=2, drop0ifint=True))
+```
+
+```text
+[1]    1  2.5 3.25
+```
+
+</div>
+</div>
+
+## R's quirks copied on purpose
+
+### blup() of a cluster-robust fit recycles quantiles
+
+For a `robust(..., club_sandwich=True)` fit, R computes the prediction interval of study i with the quantile of coefficient
+`i` (modulo the number of coefficients), and warns that the lengths do not match. This is probably a bug in R. metafopy follows
+it on purpose, gives the same warning, and the two print the same intervals (study 1: -2.4384 to 0.4335; the normal quantile
+would give -1.5480 to -0.4570).
+
+<div class="compare" markdown>
+<div markdown>
+
+**R, metafor 5.2-1**
+
+```r
+library(metafor)
+dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
+res <- rma(yi, vi, mods = ~ ablat, data=dat)
+rr <- robust(res, cluster=alloc, clubSandwich=TRUE)
+head(blup(rr), 2)
+```
+
+```text
+     pred     se   pi.lb  pi.ub 
+1 -1.0025 0.2783 -2.4384 0.4335 
+2 -1.4157 0.2747 -3.0415 0.2101 
+
+Warning messages:
+1: In crit * se :
+  longer object length is not a multiple of shorter object length
+2: In crit * se :
+  longer object length is not a multiple of shorter object length
+```
+
+</div>
+<div markdown>
+
+**Python, metafopy**
+
+```python
+from metafopy import blup, datasets, escalc, rma, robust
+
+dat = escalc(measure='RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=datasets.load('dat.bcg'))
+res = rma('yi', 'vi', mods='~ ablat', data=dat)
+rr = robust(res, cluster=dat['alloc'], club_sandwich=True)
+print(blup(rr)[:2])
+```
+
+```text
+UserWarning: longer object length is not a multiple of shorter object length
+
+1 -1.0025 0.2783 -2.4384 0.4335
+2 -1.4157 0.2747 -3.0415 0.2101
+```
+
+</div>
+</div>
+
+### Diagnostics refuse robust fits, as R does
+
+`rstandard`, `rstudent`, `dfbetas`, `influence`, `leave1out`, `cumul`, `permutest` and a few more refuse a `robust()` fit, with
+the same message as R. `simulate()`, `cooks_distance()` and `hatvalues()` still work, as in R.
+
+<div class="compare" markdown>
+<div markdown>
+
+**R, metafor 5.2-1**
+
+```r
+library(metafor)
+dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
+res <- rma(yi, vi, data=dat)
+rr <- robust(res, cluster=dat$alloc)
+rstandard(rr)
+```
+
+```text
+Error: Method not available for objects of class "robust.rma".
+```
+
+</div>
+<div markdown>
+
+**Python, metafopy**
+
+```python
+from metafopy import datasets, escalc, rma, robust, rstandard
+
+dat = escalc(measure='RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=datasets.load('dat.bcg'))
+res = rma('yi', 'vi', data=dat)
+rr = robust(res, cluster=dat['alloc'])
+rstandard(rr)
+```
+
+```text
+NotSupportedError: Method not available for objects of class "robust.rma".
+```
+
+</div>
+</div>
+
+## Everything else
+
+The [detailed notes](differences-notes.md) hold the rest, grouped by topic:
+
+- [Names, results and printing](differences-notes.md#names-results-and-printing)
+- [Optimisers and flat likelihoods](differences-notes.md#optimisers-and-flat-likelihoods)
+- [rma_glmm](differences-notes.md#rma_glmm)
+- [Robust and cluster-robust fits](differences-notes.md#robust-and-cluster-robust-fits)
+- [Plots](differences-notes.md#plots)
+- [Individual functions](differences-notes.md#individual-functions)
+- [Arguments, defaults and errors](differences-notes.md#arguments-defaults-and-errors)
+- [Not ported](differences-notes.md#not-ported)
+- [The audit](differences-notes.md#the-audit)
