@@ -244,6 +244,56 @@ print(res.rho)
 </div>
 </div>
 
+### rma_mv with struct UN and a fixed tau2
+
+With one `tau2` fixed at 0.5 on `dat.berkey1998`, metafopy's default fit (a Cholesky parametrisation) stops at a log-likelihood
+of -1.5004, R at -0.8600. Passing `control={'cholesky': False}` reaches R's value.
+
+*Why:* a worse local maximum of metafopy's BFGS than R's `nlminb`. For this reason the refits of `profile()` and of the
+profile-likelihood `confint()` of `rma_mv` fits start at the estimates of the full fit and keep the higher log-likelihood.
+
+<div class="compare" markdown>
+<div markdown>
+
+**R, metafor 5.2-1**
+
+```r
+library(metafor)
+V <- vcalc(vi=1, cluster=author, rvars=c(v1i, v2i), data=dat.berkey1998)
+res <- rma.mv(yi, V, mods = ~ 0 + outcome, random = ~ outcome | trial, struct = "UN",
+              tau2 = c(NA, 0.5), data = dat.berkey1998)
+c(logLik = logLik(res))
+```
+
+```text
+    logLik 
+-0.8600248 
+```
+
+</div>
+<div markdown>
+
+**Python, metafopy**
+
+```python
+from metafopy import datasets, rma_mv, vcalc
+
+dat = datasets.load('dat.berkey1998')
+V = vcalc(vi=1, cluster='author', rvars=['v1i', 'v2i'], data=dat)
+res = rma_mv('yi', V, mods='~ 0 + outcome', random='~ outcome | trial', struct='UN', tau2=[None, 0.5], data=dat)
+print(res.logLik())
+res = rma_mv('yi', V, mods='~ 0 + outcome', random='~ outcome | trial', struct='UN', tau2=[None, 0.5], data=dat, control={'cholesky': False})
+print(res.logLik())
+```
+
+```text
+'log Lik.' -1.500362 (df=4)
+'log Lik.' -0.8600248 (df=4)
+```
+
+</div>
+</div>
+
 ### Standard errors of a location-scale model on a flat scale
 
 With `link='identity'` the scale slope of this model is near zero, and the Hessian of the log-likelihood is computed by
