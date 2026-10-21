@@ -1,15 +1,12 @@
 # Plot gallery
 
 This page reproduces plots of the [plot gallery of the metafor project](https://www.metafor-project.org/doku.php/plots), with the same
-datasets and the same models, so that you can compare the figures of metafopy with those of R metafor. In every figure the
-left image is drawn by metafopy and the right image by R metafor 5.2-1, from the code on the corresponding page of the gallery
-(Viechtbauer, 2010, <https://doi.org/10.18637/jss.v036.i03>).
+datasets and the same models. The figures are drawn by metafopy from the code shown with each of them
+(Viechtbauer, 2010, <https://doi.org/10.18637/jss.v036.i03>). For the figures of metafopy next to those of R metafor 5.2-1, see
+[Plots compared with metafor](../differences-plots.md).
 
 The Python code of each figure is run by the test suite, so it cannot rot. The figures are rendered with `python bin/gallery.py` and
-`Rscript src/tests/r/gallery.R`, see [Rendering the figures](#rendering-the-figures). The two renderings agree in the geometry of
-what is drawn (positions, sizes, labels); they differ in details of the rendering such as the font, which is Helvetica or Arial
-in R and DejaVu Sans in matplotlib by default.
-
+`Rscript src/tests/r/gallery.R`, see [Rendering the figures](#rendering-the-figures). 
 ```python
 import matplotlib
 
@@ -108,9 +105,7 @@ ax.text(-16, -1, fit_stats('RE Model', res), ha='left', va='center', fontsize=7.
 fig.savefig('forest.png', dpi=DPI)
 ```
 
-| metafopy | R metafor |
-|----------|-----------|
-| ![forest plot, metafopy](../images/gallery/py/forest.png) | ![forest plot, R](../images/gallery/r/forest.png) |
+![forest plot](../images/gallery/py/forest.png)
 
 ### Forest plot with adjusted text position
 
@@ -139,9 +134,7 @@ ax.text(-20, -1, fit_stats('RE Model', res), ha='left', va='center', fontsize=7.
 fig.savefig('forest_textpos.png', dpi=DPI)
 ```
 
-| metafopy | R metafor |
-|----------|-----------|
-| ![forest plot with adjusted text position, metafopy](../images/gallery/py/forest_textpos.png) | ![forest plot with adjusted text position, R](../images/gallery/r/forest_textpos.png) |
+![forest plot with adjusted text position](../images/gallery/py/forest_textpos.png)
 
 ### Forest plot with subgroups
 
@@ -181,9 +174,7 @@ ax.text(-16, -1.8, f'Test for Subgroup Differences: $Q_M$ = {mods.QM:.2f}, df = 
 fig.savefig('forest_subgroups.png', dpi=DPI)
 ```
 
-| metafopy | R metafor |
-|----------|-----------|
-| ![forest plot with subgroups, metafopy](../images/gallery/py/forest_subgroups.png) | ![forest plot with subgroups, R](../images/gallery/r/forest_subgroups.png) |
+![forest plot with subgroups](../images/gallery/py/forest_subgroups.png)
 
 ### Forest plot with multiple CIs
 
@@ -202,9 +193,7 @@ ax.axhline(0, color='black', linewidth=1)
 fig.savefig('forest_multiple_cis.png', dpi=DPI)
 ```
 
-| metafopy | R metafor |
-|----------|-----------|
-| ![forest plot with multiple CIs, metafopy](../images/gallery/py/forest_multiple_cis.png) | ![forest plot with multiple CIs, R](../images/gallery/r/forest_multiple_cis.png) |
+![forest plot with multiple CIs](../images/gallery/py/forest_multiple_cis.png)
 
 ### Forest plot with superscripts
 
@@ -237,9 +226,7 @@ ax.text(-16, -1, fit_stats('RE Model', res), ha='left', va='center', fontsize=7.
 fig.savefig('forest_superscripts.png', dpi=DPI)
 ```
 
-| metafopy | R metafor |
-|----------|-----------|
-| ![forest plot with superscripts, metafopy](../images/gallery/py/forest_superscripts.png) | ![forest plot with superscripts, R](../images/gallery/r/forest_superscripts.png) |
+![forest plot with superscripts](../images/gallery/py/forest_superscripts.png)
 
 ### Forest plot in RevMan style
 
@@ -377,9 +364,7 @@ for y, s in zip(
 fig.savefig('forest_revman.png', dpi=DPI)
 ```
 
-| metafopy | R metafor |
-|----------|-----------|
-| ![forest plot in RevMan style, metafopy](../images/gallery/py/forest_revman.png) | ![forest plot in RevMan style, R](../images/gallery/r/forest_revman.png) |
+![forest plot in RevMan style](../images/gallery/py/forest_revman.png)
 
 ### Forest plot in BMJ style
 
@@ -474,9 +459,7 @@ put(ax, x0, -2, f'Test for overall effect: Z={res_b.zval[0]:.2f}, P<0.001', 4, c
 fig.savefig('forest_bmj.png', dpi=DPI)
 ```
 
-| metafopy | R metafor |
-|----------|-----------|
-| ![forest plot in BMJ style, metafopy](../images/gallery/py/forest_bmj.png) | ![forest plot in BMJ style, R](../images/gallery/r/forest_bmj.png) |
+![forest plot in BMJ style](../images/gallery/py/forest_bmj.png)
 
 ### Cumulative forest plot
 
@@ -499,9 +482,7 @@ forest(
 fig.savefig('forest_cumul.png', dpi=DPI)
 ```
 
-| metafopy | R metafor |
-|----------|-----------|
-| ![cumulative forest plot, metafopy](../images/gallery/py/forest_cumul.png) | ![cumulative forest plot, R](../images/gallery/r/forest_cumul.png) |
+![cumulative forest plot](../images/gallery/py/forest_cumul.png)
 
 ### Meta-analytic scatterplot
 
@@ -529,9 +510,7 @@ regplot(
 fig.savefig('regplot.png', dpi=DPI)
 ```
 
-| metafopy | R metafor |
-|----------|-----------|
-| ![meta-analytic scatterplot, metafopy](../images/gallery/py/regplot.png) | ![meta-analytic scatterplot, R](../images/gallery/r/regplot.png) |
+![meta-analytic scatterplot](../images/gallery/py/regplot.png)
 
 ## Funnel plots
 
@@ -553,9 +532,7 @@ axes[1, 1].set_title('Inverse Sampling Variance')
 fig.savefig('funnel_variations.png', dpi=DPI)
 ```
 
-| metafopy | R metafor |
-|----------|-----------|
-| ![funnel plot variations, metafopy](../images/gallery/py/funnel_variations.png) | ![funnel plot variations, R](../images/gallery/r/funnel_variations.png) |
+![funnel plot variations](../images/gallery/py/funnel_variations.png)
 
 ### Contour-enhanced funnel plot
 
@@ -570,9 +547,7 @@ funnel(res_b, ax=ax, level=[90, 95, 99], refline=0, legend=True)
 fig.savefig('funnel_contour.png', dpi=DPI)
 ```
 
-| metafopy | R metafor |
-|----------|-----------|
-| ![contour-enhanced funnel plot, metafopy](../images/gallery/py/funnel_contour.png) | ![contour-enhanced funnel plot, R](../images/gallery/r/funnel_contour.png) |
+![contour-enhanced funnel plot](../images/gallery/py/funnel_contour.png)
 
 ### Contour-enhanced funnel plot with the precision on the vertical axis
 
@@ -599,9 +574,7 @@ ax.set_ylim(0.00001, 8)
 fig.savefig('funnel_contour2.png', dpi=DPI)
 ```
 
-| metafopy | R metafor |
-|----------|-----------|
-| ![contour-enhanced funnel plot 2, metafopy](../images/gallery/py/funnel_contour2.png) | ![contour-enhanced funnel plot 2, R](../images/gallery/r/funnel_contour2.png) |
+![contour-enhanced funnel plot 2](../images/gallery/py/funnel_contour2.png)
 
 ### Funnel plot with limit estimate
 
@@ -622,9 +595,7 @@ ax.legend(loc='upper right', fontsize=9, framealpha=1)
 fig.savefig('funnel_limit.png', dpi=DPI)
 ```
 
-| metafopy | R metafor |
-|----------|-----------|
-| ![funnel plot with limit estimate, metafopy](../images/gallery/py/funnel_limit.png) | ![funnel plot with limit estimate, R](../images/gallery/r/funnel_limit.png) |
+![funnel plot with limit estimate](../images/gallery/py/funnel_limit.png)
 
 ### Funnel plot with trim and fill
 
@@ -637,9 +608,7 @@ funnel(taf, ax=ax, legend={'show': 'cis'})
 fig.savefig('funnel_trimfill.png', dpi=DPI)
 ```
 
-| metafopy | R metafor |
-|----------|-----------|
-| ![funnel plot with trim and fill, metafopy](../images/gallery/py/funnel_trimfill.png) | ![funnel plot with trim and fill, R](../images/gallery/r/funnel_trimfill.png) |
+![funnel plot with trim and fill](../images/gallery/py/funnel_trimfill.png)
 
 ## Other plots
 
@@ -654,9 +623,7 @@ radial(res_r, ax=ax)
 fig.savefig('radial.png', dpi=DPI)
 ```
 
-| metafopy | R metafor |
-|----------|-----------|
-| ![radial plot, metafopy](../images/gallery/py/radial.png) | ![radial plot, R](../images/gallery/r/radial.png) |
+![radial plot](../images/gallery/py/radial.png)
 
 ### Baujat plot
 
@@ -672,9 +639,7 @@ baujat(res_p, ax=ax, xlim=(0, 20), ylim=(0, 0.2))
 fig.savefig('baujat.png', dpi=DPI)
 ```
 
-| metafopy | R metafor |
-|----------|-----------|
-| ![Baujat plot, metafopy](../images/gallery/py/baujat.png) | ![Baujat plot, R](../images/gallery/r/baujat.png) |
+![Baujat plot](../images/gallery/py/baujat.png)
 
 ### L'Abbe plots
 
@@ -705,9 +670,7 @@ with matplotlib.rc_context({'font.size': 7}):  # R's par(cex=0.7)
 fig.savefig('labbe.png', dpi=DPI)
 ```
 
-| metafopy | R metafor |
-|----------|-----------|
-| ![L'Abbe plots, metafopy](../images/gallery/py/labbe.png) | ![L'Abbe plots, R](../images/gallery/r/labbe.png) |
+![L'Abbe plots](../images/gallery/py/labbe.png)
 
 ### Normal quantile-quantile plots
 
@@ -727,9 +690,7 @@ for ax, (title, fit) in zip(axes.flat, models.items(), strict=True):
 fig.savefig('qqnorm.png', dpi=DPI)
 ```
 
-| metafopy | R metafor |
-|----------|-----------|
-| ![normal QQ plots, metafopy](../images/gallery/py/qqnorm.png) | ![normal QQ plots, R](../images/gallery/r/qqnorm.png) |
+![normal QQ plots](../images/gallery/py/qqnorm.png)
 
 ### Plot of influence diagnostics
 
@@ -743,9 +704,7 @@ plot_infl(influence(res_i), ax=ax, mfrow=(8, 1))
 fig.savefig('influence.png', dpi=DPI)
 ```
 
-| metafopy | R metafor |
-|----------|-----------|
-| ![influence diagnostics, metafopy](../images/gallery/py/influence.png) | ![influence diagnostics, R](../images/gallery/r/influence.png) |
+![influence diagnostics](../images/gallery/py/influence.png)
 
 ### GOSH plot
 
@@ -759,9 +718,7 @@ plot_gosh(sav, out=15, breaks=100, ax=ax)
 fig.savefig('gosh.png', dpi=DPI)
 ```
 
-| metafopy | R metafor |
-|----------|-----------|
-| ![GOSH plot, metafopy](../images/gallery/py/gosh.png) | ![GOSH plot, R](../images/gallery/r/gosh.png) |
+![GOSH plot](../images/gallery/py/gosh.png)
 
 ### Plot of cumulative results
 
@@ -773,9 +730,7 @@ plot_cumul(tmp, ax=ax, transf=numpy.exp, xlim=(0.25, 0.5), lwd=3, cex=1.3)
 fig.savefig('cumul.png', dpi=DPI)
 ```
 
-| metafopy | R metafor |
-|----------|-----------|
-| ![plot of cumulative results, metafopy](../images/gallery/py/cumul.png) | ![plot of cumulative results, R](../images/gallery/r/cumul.png) |
+![plot of cumulative results](../images/gallery/py/cumul.png)
 
 ### Log-likelihood plot
 
@@ -787,9 +742,7 @@ llplot(measure='OR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=datasets.l
 fig.savefig('llplot.png', dpi=DPI)
 ```
 
-| metafopy | R metafor |
-|----------|-----------|
-| ![log-likelihood plot, metafopy](../images/gallery/py/llplot.png) | ![log-likelihood plot, R](../images/gallery/r/llplot.png) |
+![log-likelihood plot](../images/gallery/py/llplot.png)
 
 ### Permutation distributions
 
@@ -804,9 +757,7 @@ plot_permutest(perm, QM=True, lwd=(2, 1, 1, 0), legend=True, ax=ax)
 fig.savefig('permutest.png', dpi=DPI)
 ```
 
-| metafopy | R metafor |
-|----------|-----------|
-| ![permutation distributions, metafopy](../images/gallery/py/permutest.png) | ![permutation distributions, R](../images/gallery/r/permutest.png) |
+![permutation distributions](../images/gallery/py/permutest.png)
 
 The generator is seeded with `set_seed(1234)`, like R's `set.seed(1234)`, so both figures draw the same permutations and the histograms, axes and densities agree.
 As in metafor, the legend appears in the first panel only.
@@ -822,9 +773,7 @@ plot_vif(vif(res_p, btt=1, sim=1000, progbar=False), ax=ax)
 fig.savefig('vif.png', dpi=DPI)
 ```
 
-| metafopy | R metafor |
-|----------|-----------|
-| ![simulated VIFs, metafopy](../images/gallery/py/vif.png) | ![simulated VIFs, R](../images/gallery/r/vif.png) |
+![simulated VIFs](../images/gallery/py/vif.png)
 
 The generator is seeded with `set_seed(1234)`, like R's `set.seed(1234)`, so both figures show the same 1000 simulated values.
 
@@ -867,9 +816,7 @@ ax.text(-2, -2, 'RE Model', ha='left', va='center')
 fig.savefig('caterpillar.png', dpi=DPI)
 ```
 
-| metafopy | R metafor |
-|----------|-----------|
-| ![caterpillar plot, metafopy](../images/gallery/py/caterpillar.png) | ![caterpillar plot, R](../images/gallery/r/caterpillar.png) |
+![caterpillar plot](../images/gallery/py/caterpillar.png)
 
 ### Forest plot with grouped estimates
 
@@ -917,9 +864,7 @@ ax.axhline(0.5, color='black', linewidth=1)
 fig.savefig('forest_grouped.png', dpi=DPI)
 ```
 
-| metafopy | R metafor |
-|----------|-----------|
-| ![forest plot with grouped estimates, metafopy](../images/gallery/py/forest_grouped.png) | ![forest plot with grouped estimates, R](../images/gallery/r/forest_grouped.png) |
+![forest plot with grouped estimates](../images/gallery/py/forest_grouped.png)
 
 ### Forest plot in orchard style
 
@@ -983,9 +928,7 @@ for i, name in enumerate(levels, start=1):
 fig.savefig('forest_orchard.png', dpi=DPI)
 ```
 
-| metafopy | R metafor |
-|----------|-----------|
-| ![forest plot in orchard style, metafopy](../images/gallery/py/forest_orchard.png) | ![forest plot in orchard style, R](../images/gallery/r/forest_orchard.png) |
+![forest plot in orchard style](../images/gallery/py/forest_orchard.png)
 
 ## Rendering the figures
 
@@ -997,4 +940,5 @@ python bin/gallery.py
 LC_ALL=C.UTF-8 Rscript src/tests/r/gallery.R
 ```
 
-The first command writes `docs/images/gallery/py`, the second `docs/images/gallery/r` (it needs R with metafor 5.2-1 and metadat).
+The first command writes `docs/images/gallery/py`, the second `docs/images/gallery/r` (it needs R with metafor 5.2-1 and metadat). The R
+figures are shown on [Plots compared with metafor](../differences-plots.md).
