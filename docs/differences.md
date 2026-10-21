@@ -99,6 +99,7 @@ res$zz
 **Python, metafopy**
 
 ```python
+# docs: skip
 import dataclasses
 
 from metafopy import datasets, escalc, rma
@@ -175,6 +176,7 @@ True
 metafopy code and keeps its output.
 
 ```python
+# docs: skip
 import metafopy
 
 metafopy.reporter
@@ -527,6 +529,7 @@ res$tau2
 **Python, metafopy**
 
 ```python
+# docs: skip
 from metafopy import datasets, escalc, rma
 
 dat = escalc(measure='RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=datasets.load('dat.bcg'))
@@ -571,6 +574,7 @@ no error
 **Python, metafopy**
 
 ```python
+# docs: skip
 from metafopy import datasets, escalc, forest, rma
 
 dat = escalc(measure='RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=datasets.load('dat.bcg'))
@@ -611,6 +615,7 @@ Error in escalc(measure = "HR", ai = c(1, 2), bi = c(3, 4), ci = c(5,  :
 **Python, metafopy**
 
 ```python
+# docs: skip
 from metafopy import escalc
 
 escalc(measure='HR', ai=[1, 2], bi=[3, 4], ci=[5, 6], di=[7, 8])
@@ -649,6 +654,7 @@ Error in inherits(x, "rma") && x$tau2.fix : invalid 'y' type in 'x && y'
 **Python, metafopy**
 
 ```python
+# docs: skip
 from metafopy import datasets, fsn, rma_mh
 
 res = rma_mh(ai='tpos', bi='tneg', ci='cpos', di='cneg', data=datasets.load('dat.bcg'))
@@ -840,6 +846,7 @@ Error: Method not available for objects of class "robust.rma".
 **Python, metafopy**
 
 ```python
+# docs: skip
 from metafopy import datasets, escalc, rma, robust, rstandard
 
 dat = escalc(measure='RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=datasets.load('dat.bcg'))
