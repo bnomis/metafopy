@@ -170,6 +170,145 @@ True
 </div>
 </div>
 
+### Frames from escalc() print like R, selections do not
+
+`escalc()` returns a `pandas.DataFrame` subclass that prints as R's `print.escalc` does: rows numbered from 1, the `digits` of the
+effect sizes and variances. Any selection of rows or columns, and pandas operations such as `merge`, give a plain `DataFrame`
+that keeps the attributes (`dat.attrs['measure']`) but prints the pandas way: rows from 0 and wide frames abbreviated.
+
+*Why:* pandas builds a new plain frame for every selection, and R's `[.escalc` keeps the class. Print the whole frame
+(`print(dat)`) to get R's layout.
+
+<div class="compare" markdown>
+<div markdown>
+
+**R, metafor 5.2-1**
+
+```r
+library(metafor)
+dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
+dat[1:3, ]
+class(dat)
+```
+
+```text
+  trial           author year tpos tneg cpos cneg ablat  alloc      yi     vi 
+1     1          Aronson 1948    4  119   11  128    44 random -0.8893 0.3256 
+2     2 Ferguson & Simes 1949    6  300   29  274    55 random -1.5854 0.1946 
+3     3  Rosenthal et al 1960    3  228   11  209    42 random -1.3481 0.4154 
+
+[1] "escalc"     "data.frame"
+```
+
+</div>
+<div markdown>
+
+**Python, metafopy**
+
+```python
+from metafopy import datasets, escalc
+
+dat = escalc(measure='RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=datasets.load('dat.bcg'))
+print(dat.iloc[:3])
+print(type(dat).__name__, dat.attrs['measure'])
+```
+
+```text
+0      1           Aronson  1948     4  ...     44  random -0.889311  0.325585
+1      2  Ferguson & Simes  1949     6  ...     55  random -1.585389  0.194581
+2      3   Rosenthal et al  1960     3  ...     42  random -1.348073  0.415368
+
+[3 rows x 11 columns]
+EscalcFrame RR
+```
+
+</div>
+</div>
+
+### digits= where R passes it to print()
+
+R changes the digits of a fit when printing it: `print(res, digits=2)`. A metafopy fit prints with the `digits` it was fitted with, so
+pass `digits=` to `rma()`; `predict()`, `cumul()`, `leave1out()` and `influence()` results take a named vector (a dict) as in R,
+and `result.with_digits(...)` is the counterpart of `print(result, digits=...)`.
+
+*Why:* Python's `print` takes no arguments. The printed text is the same as R's.
+
+<div class="compare" markdown>
+<div markdown>
+
+**R, metafor 5.2-1**
+
+```r
+library(metafor)
+dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
+res <- rma(yi, vi, data=dat)
+print(res, digits=2)
+print(predict(res), digits=c(pred=1, ci=3))
+```
+
+```text
+Random-Effects Model (k = 13; tau^2 estimator: REML)
+
+tau^2 (estimated amount of total heterogeneity): 0.31 (SE = 0.17)
+tau (square root of estimated tau^2 value):      0.56
+I^2 (total heterogeneity / total variability):   92.22%
+H^2 (total variability / sampling variability):  12.86
+
+Test for Heterogeneity:
+Q(df = 12) = 152.23, p-val < .01
+
+Model Results:
+
+estimate    se   zval  pval  ci.lb  ci.ub      
+   -0.71  0.18  -3.97  <.01  -1.07  -0.36  *** 
+
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+    pred     se  ci.lb  ci.ub  pi.lb pi.ub 
+ -0.7145 0.1798 -1.067 -0.362 -1.867 0.438 
+```
+
+</div>
+<div markdown>
+
+**Python, metafopy**
+
+```python
+from metafopy import datasets, escalc, predict, rma
+
+dat = escalc(measure='RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=datasets.load('dat.bcg'))
+res = rma('yi', 'vi', data=dat, digits=2)
+print(res)
+print(predict(res, digits=4).with_digits({'pred': 1, 'ci': 3}))
+```
+
+```text
+Random-Effects Model (k = 13; tau^2 estimator: REML)
+
+tau^2 (estimated amount of total heterogeneity): 0.31 (SE = 0.17)
+tau (square root of estimated tau^2 value):      0.56
+I^2 (total heterogeneity / total variability):   92.22%
+H^2 (total variability / sampling variability):  12.86
+
+Test for Heterogeneity:
+Q(df = 12) = 152.23, p-val < .01
+
+Model Results:
+
+estimate    se   zval  pval  ci.lb  ci.ub
+
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+
+ -0.7145 0.1798 -1.067 -0.362 -1.867 0.438
+```
+
+</div>
+</div>
+
 ### reporter() is not ported
 
 `reporter()` writes an R Markdown report of a fit. There is no counterpart: use a Jupyter notebook, which runs the same
@@ -448,6 +587,55 @@ print(res.se)
 </div>
 </div>
 
+### rma_glmm with UM.RS: a higher log-likelihood
+
+The random-slopes model on `dat.bcg` ends at a log-likelihood of -126.2963 in both languages, but metafopy's is higher by 1e-5
+(-126.2962773 against R's -126.2962883), and the estimates differ in the fourth (the pooled log odds ratio
+-0.76165 against -0.76158). Both warn that `nAGQ` is set to 1.
+
+*Why:* the objective is the same as lme4's. lme4's `bobyqa` stops a little earlier than metafopy's optimiser. The tests allow
+2e-3 to 1e-1 relative for mixed-model fits; see [rma_glmm](differences-notes.md#rma_glmm) for the packages and links.
+
+<div class="compare" markdown>
+<div markdown>
+
+**R, metafor 5.2-1**
+
+```r
+library(metafor)
+res <- rma.glmm(measure = "OR", ai = tpos, bi = tneg, ci = cpos, di = cneg, data = dat.bcg,
+                model = "UM.RS", control = list(package = "lme4"))
+c(beta = coef(res), tau2 = res$tau2, logLik = logLik(res))
+```
+
+```text
+Warning message:
+Not possible to fit RE/ME model='UM.RS' with nAGQ > 1 with glmer(). nAGQ automatically set to 1. 
+beta.intrcpt         tau2       logLik 
+  -0.7615840    0.3198355 -126.2962883 
+```
+
+</div>
+<div markdown>
+
+**Python, metafopy**
+
+```python
+from metafopy import datasets, rma_glmm
+
+res = rma_glmm(measure='OR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=datasets.load('dat.bcg'),
+               model='UM.RS', control={'package': 'lme4'})
+print(res.beta, res.tau2, res.logLik())
+```
+
+```text
+UserWarning: Not possible to fit RE/ME model='UM.RS' with nAGQ > 1 with glmer(). nAGQ automatically set to 1.
+[-0.76164895] 0.31985975161566554 'log Lik.' -126.2963 (df=4)
+```
+
+</div>
+</div>
+
 ### rma_glmm with CM.EL: standard errors
 
 The conditional model gives a standard error that is 0.5 % lower than R's on the Collins data (0.098986 against 0.099461).
@@ -491,6 +679,55 @@ print(res.se)
 UserWarning: 3 studies with NAs omitted from model fitting.
 UserWarning: Some yi/vi values are NA.
 [0.09898644]
+```
+
+</div>
+</div>
+
+## Random numbers
+
+### Seeded draws reproduce R
+
+`conv_fivenum(method='bc', seed=1)` simulates with a port of R's generator, so it gives the same means and SDs as R's
+`set.seed(1)`; so does `gosh(seed=)`. The values are identical here; only the row labels differ (0-based, from pandas). Without
+`seed`, metafopy draws from the stream of `set_seed`.
+
+*Why:* an analysis that reports simulated numbers can be checked against its R original.
+
+<div class="compare" markdown>
+<div markdown>
+
+**R, metafor 5.2-1**
+
+```r
+library(metafor)
+dat <- data.frame(n = c(30, 40), mn = c(1, 2), q1 = c(3, 4), md = c(5, 6), q3 = c(8, 9), mx = c(14, 16))
+conv.fivenum(min = mn, q1 = q1, median = md, q3 = q3, max = mx, n = n, data = dat, method = "bc", seed = 1, test = FALSE)
+```
+
+```text
+   n mn q1 md q3 mx     mean       sd
+1 30  1  3  5  8 14 5.832434 3.930443
+2 40  2  4  6  9 16 6.905464 4.144375
+```
+
+</div>
+<div markdown>
+
+**Python, metafopy**
+
+```python
+import pandas
+
+from metafopy import conv_fivenum
+
+dat = pandas.DataFrame({'n': [30, 40], 'mn': [1, 2], 'q1': [3, 4], 'md': [5, 6], 'q3': [8, 9], 'mx': [14, 16]})
+print(conv_fivenum(min='mn', q1='q1', median='md', q3='q3', max='mx', n='n', data=dat, method='bc', seed=1, test=False))
+```
+
+```text
+0  30   1   3   5   8  14  5.832434  3.930443
+1  40   2   4   6   9  16  6.905464  4.144375
 ```
 
 </div>
