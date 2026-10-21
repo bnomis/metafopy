@@ -2,5 +2,7 @@ name: metafopy
 channels:
   - conda-forge
 dependencies:
+  # repo2docker only reads the first `python=X.Y` pin and builds its base image on X.Y.0; the second pin upgrades it to metafopy's minimum
   - python=3.14
+  - python>=3.14.7,<3.15
   - pip
