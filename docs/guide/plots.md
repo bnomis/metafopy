@@ -3,7 +3,7 @@
 metafopy draws plots with matplotlib. Each plot function draws on the current axes (or on an axes object passed as `ax=`)
 and returns a result object that holds what was plotted. Save and show figures with the usual matplotlib functions.
 
-The [plot gallery](gallery.md) reproduces the plots of the metafor documentation with metafopy, next to the R figures.
+The [plot gallery](gallery.md) reproduces the plots of the metafor documentation with metafopy, and [compares them with the R figures](../differences-plots.md).
 
 ```python
 import matplotlib

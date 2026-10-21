@@ -62,3 +62,4 @@ nav:
   - Differences from metafor:
       - Overview: differences.md
       - Detailed notes: differences-notes.md
+      - Plots compared with metafor: differences-plots.md
