@@ -24,6 +24,11 @@ markdown_extensions:
   - pymdownx.superfences
 plugins:
   - search
+  - mkdocs-jupyter:
+      execute: true
+      include: ["*.ipynb"]
+      ignore: ["*.md", "*.py"]
+      include_source: true
   - mkdocstrings:
       handlers:
         python:
@@ -47,6 +52,7 @@ nav:
       - Plots: guide/plots.md
       - Plot gallery: guide/gallery.md
       - Datasets: guide/datasets.md
+  - Showcase: notebooks/showcase.ipynb
   - Analyses: analyses.md
   - Coming from R: from-r.md
   - Function reference:

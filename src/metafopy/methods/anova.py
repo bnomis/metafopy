@@ -43,7 +43,7 @@ def wald_test_line(name: str, QM: float, QMdf: tuple[int, float | None], QMp: fl
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
-class WaldResult:
+class WaldResult(metafopy.printing.HtmlRepr):
     """Omnibus Wald test (``QM``) and, for linear combinations, individual tests (metafor's ``anova.rma`` of class ``anova.rma``).
 
     ``btt`` holds the tested coefficients (0-based) of a test of moderators. For a test of linear combinations (``X=``) ``hyp`` holds the
@@ -192,7 +192,7 @@ class ListAnovaResult(list[WaldResult]):
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
-class LRTResult:
+class LRTResult(metafopy.printing.HtmlRepr):
     """Likelihood-ratio test of a full against a reduced model."""
 
     df_full: int
@@ -844,7 +844,7 @@ def sigma2(res: metafopy.models.rma_uni.RMAResult) -> float:
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
-class MVLRTResult:
+class MVLRTResult(metafopy.printing.HtmlRepr):
     """Likelihood-ratio test of a full against a reduced ``rma.mv`` model."""
 
     df_full: int

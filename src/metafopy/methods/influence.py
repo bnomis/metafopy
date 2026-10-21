@@ -40,7 +40,7 @@ EPS = float(numpy.finfo(float).eps)
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
-class ResidualResult:
+class ResidualResult(metafopy.printing.HtmlRepr):
     """Residuals with standard errors and z-values (metafor's ``list.rma`` of ``rstandard``/``rstudent``)."""
 
     resid: FloatArray
@@ -62,7 +62,7 @@ class ResidualResult:
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
-class InfluenceResult:
+class InfluenceResult(metafopy.printing.HtmlRepr):
     """Case-deletion diagnostics: one entry per study.
 
     ``inf`` holds the studies' influence table (``rstudent``, ``dffits``,

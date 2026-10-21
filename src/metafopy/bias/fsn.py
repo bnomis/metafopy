@@ -27,6 +27,7 @@ import metafopy.methods.fitview
 import metafopy.mfopt
 import metafopy.models.rma_uni
 import metafopy.models.tau2
+import metafopy.printing
 
 __all__ = ['FsnResult', 'fsn']
 
@@ -37,7 +38,7 @@ EPS = sys.float_info.epsilon
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
-class FsnResult:
+class FsnResult(metafopy.printing.HtmlRepr):
     type: str
     fsnum: float
     est: float
