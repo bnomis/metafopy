@@ -16,12 +16,6 @@ reason = "rma_glmm(measure='OR', model='UM.FS') zval -4.2436 against R's -4.2434
 ref = "docs/differences.md"
 
 [[known]]
-match = "*/glmm_bcg"
-kind = "print-diff"
-reason = "rma_glmm mixed-model fits agree with R to between 2e-3 and 1e-1 relative; see the rma_glmm entries."
-ref = "docs/differences.md"
-
-[[known]]
 match = "matrix/gosh/*"
 reason = "gosh(seed=) is bit-exact with R only where dbinom ties break the same way (R 4.5.1 on Linux); this oracle is R 4.3.3."
 ref = "docs/differences.md"
@@ -1542,4 +1536,32 @@ match = "matrix/summary/*#1"
 kind = "print-diff"
 detail = "R has * lines, Python *"
 reason = "Reproduced in R: summary(res, signif.stars = FALSE) ignores the argument (summary.rma() passes it to ..., print.rma() is called without it) and prints the stars column and the 'Signif. codes' legend; metafopy's summary(signif_stars=False) leaves them out, which is what the argument asks for."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/*"
+kind = "drawn-text-diff"
+detail = "R only *profile(*"
+reason = "Reproduced in R: profile() draws the profile plot when it is called (plot = TRUE by default) and the script's device then carries the axis text; metafopy's profile() returns the profile and draws only when plot() is called on it, and the plot of the result is compared in the plots cases."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/*"
+kind = "drawn-text-diff"
+detail = "R only ['FALSE']*"
+reason = "Reproduced in R: plot() of a selmodel profile (profile.rma.uni.selmodel, ci = 'wald' or scale = TRUE) writes the text 'FALSE' to the device (a stray text() argument in the R source); metafopy does not reproduce it."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/*"
+kind = "drawn-text-diff"
+detail = "*CI Region*"
+reason = "funnel() legend text: metafopy lists 'CI Region' entries (legend = list(show = 'cis'), level = c(90, 95, 99)) that R's drawn text does not contain; legend appearance only, not traced to a cause yet."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/plot.infl.rma.uni/*"
+kind = "drawn-text-diff"
+detail = "*slab.st*"
+reason = "plot.infl.rma.uni(slab.style = ...): R's drawn labels are cut to a few characters ('A,19'), metafopy draws the full label ('A,1948'); not traced to a cause yet."
 ref = "docs/differences.md"
