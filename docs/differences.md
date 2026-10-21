@@ -905,6 +905,106 @@ NotSupportedError: Method not available for objects of class "rma.mh".
 </div>
 </div>
 
+### vcov(type="resid") under na.fail
+
+With `options(na.action="na.fail")` R stops with the internal error "object 'out' not found" when the fit has studies with missing
+values. metafopy raises `InputError` that names the problem.
+
+<div class="compare" markdown>
+<div markdown>
+
+**R, metafor 5.2-1**
+
+```r
+library(metafor)
+dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
+dat$ablat[2] <- NA
+res <- rma(yi, vi, mods = ~ ablat, data=dat)
+options(na.action = "na.fail")
+vcov(res, type = "resid")
+```
+
+```text
+Warning message:
+1 study with NAs omitted from model fitting. 
+Error in vcov.rma(res, type = "resid") : object 'out' not found
+```
+
+</div>
+<div markdown>
+
+**Python, metafopy**
+
+```python
+# docs: skip
+from metafopy import datasets, escalc, rma, vcov
+
+dat = escalc(measure='RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=datasets.load('dat.bcg'))
+dat.loc[1, 'ablat'] = float('nan')
+res = rma('yi', 'vi', mods='~ ablat', data=dat)
+vcov(res, type='resid', na_action='fail')
+```
+
+```text
+UserWarning: 1 study with NAs omitted from model fitting.
+InputError: vcov(type='resid') cannot be used with na_action='fail'.
+```
+
+</div>
+</div>
+
+### predict() of a fit with missing moderator values
+
+R keeps `pi.se` (and `pi.ddf`) at one value per study of the data (13 here) even though the predictions drop the study with a
+missing moderator (12). metafopy returns them for the rows it returns, so every field has the same length.
+
+<div class="compare" markdown>
+<div markdown>
+
+**R, metafor 5.2-1**
+
+```r
+library(metafor)
+dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
+dat$ablat[2] <- NA
+res <- rma(yi, vi, mods = ~ ablat, data=dat)
+pred <- predict(res)
+length(pred$pred)
+length(pred$pi.se)
+```
+
+```text
+Warning message:
+1 study with NAs omitted from model fitting. 
+[1] 12
+[1] 13
+```
+
+</div>
+<div markdown>
+
+**Python, metafopy**
+
+```python
+from metafopy import datasets, escalc, predict, rma
+
+dat = escalc(measure='RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=datasets.load('dat.bcg'))
+dat.loc[1, 'ablat'] = float('nan')
+res = rma('yi', 'vi', mods='~ ablat', data=dat)
+pred = predict(res)
+print(len(pred.pred))
+print(len(pred.pi_se))
+```
+
+```text
+UserWarning: 1 study with NAs omitted from model fitting.
+12
+12
+```
+
+</div>
+</div>
+
 ## metafopy gives a value where R does not
 
 ### emmprep() of an rma_mh fit
