@@ -90,3 +90,19 @@ def test_a_load_dependent_timeout_entry_is_never_stale() -> None:
     slow = audit.ledger.Entry('options/tes/x/*', 'timeout', '*', '*', 'why', '', load_dependent=True)
     other = audit.ledger.Entry('options/vif/x/*', 'timeout', '*', '*', 'why', '')
     assert audit.ledger.Ledger([slow, other]).stale() == [other]
+
+
+def test_ledger_globs_escape_a_literal_bracket() -> None:
+    assert [(e.label(), glob) for e, glob in audit.ledger.Ledger.load().loose_brackets()] == []
+
+
+def test_a_bracket_set_of_quoted_text_is_found_and_an_escaped_one_matches() -> None:
+    loose = audit.ledger.Entry('scripts/*', 'drawn-text-diff', '*', "R only ['FALSE']*", 'why', '')
+    escaped = audit.ledger.Entry('scripts/*', 'drawn-text-diff', '*', "R only [[]'FALSE'[]]*", 'why', '')
+    plain = audit.ledger.Entry('api/*/code[1-4]', '*', '$[pQ]*', '*', 'why', '')
+    finding = {'kind': 'drawn-text-diff', 'path': '', 'detail': "R only ['FALSE'], Python only [] [plot(sav)]"}
+    assert not loose.matches('scripts/a/1', finding)
+    assert escaped.matches('scripts/a/1', finding)
+    assert audit.ledger.Ledger([loose, escaped, plain]).loose_brackets() == [(loose, "R only ['FALSE']*")]
+    assert audit.ledger.bracket_sets('[]*') == []
+    assert audit.ledger.bracket_sets('matrix/[/*') == []
