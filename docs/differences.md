@@ -623,8 +623,7 @@ beta.intrcpt         tau2       logLik
 ```python
 from metafopy import datasets, rma_glmm
 
-res = rma_glmm(measure='OR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=datasets.load('dat.bcg'),
-               model='UM.RS', control={'package': 'lme4'})
+res = rma_glmm(measure='OR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=datasets.load('dat.bcg'), model='UM.RS', control={'package': 'lme4'})
 print(res.beta, res.tau2, res.logLik())
 ```
 
