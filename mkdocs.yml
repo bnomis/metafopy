@@ -5,11 +5,11 @@ theme:
   name: material
   logo: assets/metafopy-mark.svg
   favicon: assets/favicon.svg
-  # Mona Sans for text, Material's Roboto Mono for code; both served by Google Fonts.
+  # Mona Sans for text, Source Code Pro for code; both served by Google Fonts.
   # https://squidfunk.github.io/mkdocs-material/setup/changing-the-fonts/
   font:
     text: Mona Sans
-    code: Roboto Mono
+    code: Source Code Pro
   features:
     - navigation.sections
     - navigation.top
