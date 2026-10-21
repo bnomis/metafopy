@@ -5,6 +5,11 @@ theme:
   name: material
   logo: assets/metafopy-mark.svg
   favicon: assets/favicon.svg
+  # Source Sans 3 for text (sister of the wordmark's Source Serif 4), Material's Roboto Mono for code; both served by Google Fonts.
+  # https://squidfunk.github.io/mkdocs-material/setup/changing-the-fonts/
+  font:
+    text: Source Sans 3
+    code: Roboto Mono
   features:
     - navigation.sections
     - navigation.top
