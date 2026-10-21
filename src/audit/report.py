@@ -161,7 +161,12 @@ def write(ctx: audit.steps.Context, outcomes: dict[str, audit.steps.Outcome], ou
     if coverage.get('unaccounted'):
         notes.append('; '.join(coverage['unaccounted'][:40]))
     if ran_all and ledger.stale():
-        notes.append('Stale ledger entries: ' + ', '.join(f'{e.match} {e.kind}' for e in ledger.stale()))
+        notes.append('Stale ledger entries: ' + ', '.join(e.label() for e in ledger.stale()))
+    if ledger.loose_brackets():
+        notes.append(
+            'Ledger globs with an unescaped [ that fnmatch reads as a set of characters: '
+            + ', '.join(f'{e.label()} ({glob!r})' for e, glob in ledger.loose_brackets())
+        )
     tail = ['## Not covered', ''] + [f'- {n}' for n in notes] + [''] if notes else []
     tail += ['## Steps', ''] + [f'- {name}: {len(o.findings)} findings; {"; ".join(o.notes)}' for name, o in outcomes.items()] + ['']
 
