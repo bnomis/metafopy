@@ -43,3 +43,15 @@
     border-radius: 0 0 0.4rem 0.4rem;
   }
 }
+
+/* Differences page: the R call and output, then the Python call and output, each at full width so long lines stay readable. */
+.compare {
+  margin: 1em 0 2em;
+  border-left: 3px solid #D8D9DC;
+  padding-left: 1rem;
+}
+
+.compare > div > p:first-child {
+  margin-bottom: 0;
+  font-weight: 600;
+}

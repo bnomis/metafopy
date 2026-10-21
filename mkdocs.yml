@@ -15,6 +15,8 @@ extra_javascript:
   - assets/favicon-animate.js
 markdown_extensions:
   - admonition
+  - attr_list
+  - md_in_html
   - tables
   - toc:
       permalink: true
@@ -57,4 +59,6 @@ nav:
       - Transformations: reference/transf.md
       - Datasets: reference/datasets.md
       - Errors: reference/errors.md
-  - Differences from metafor: differences.md
+  - Differences from metafor:
+      - Overview: differences.md
+      - Detailed notes: differences-notes.md
