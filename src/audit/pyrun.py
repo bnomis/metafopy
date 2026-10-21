@@ -5,6 +5,7 @@ import io
 import json
 import os
 import pathlib
+import re
 import signal
 import time
 import traceback
@@ -70,10 +71,49 @@ def print_text(value: object) -> str:
     return buf.getvalue()
 
 
+MATH_MARKUP = re.compile(r'\$|==|\^|paste\(|frac\(|expression\(|bquote\(')
+
+
+PLOTMATH_PLAIN = re.compile(r'^plain\((.*)\)$')
+PLOTMATH_PVALUES = re.compile(r'^paste\("([^"]+)" < p, phantom\(\) <= "([^"]+)"\)$')
+
+
+def readable(text: str) -> str:
+    """A plotmath expression that only sets plain text (``plain(Imputed ~ Studies)``, the p-value ranges of the funnel legend) as the text it draws."""
+    if match := PLOTMATH_PVALUES.match(text):
+        return f'{match.group(1)} < p <= {match.group(2)}'
+    if match := PLOTMATH_PLAIN.match(text):
+        return match.group(1).replace(' ~ ', ' ')
+    return text
+
+
+def plain_text(strings: typing.Iterable[str]) -> set[str]:
+    """The drawn strings that are plain text: R's plotmath (``x[i] == 1/sqrt(v[i])``) and matplotlib's mathtext (``$x_i = ...$``) spell formulas differently."""
+    return {text for text in map(readable, strings) if not MATH_MARKUP.search(text)}
+
+
+def drawn_text() -> list[str]:
+    """The strings the figures hold (titles, axis labels, tick labels, texts, legends) that contain a letter, as R's ``runcases.R`` notes them."""
+    found: list[str] = []
+    for number in matplotlib.pyplot.get_fignums():
+        fig = matplotlib.pyplot.figure(number)
+        found.extend(t.get_text() for t in fig.texts)
+        for ax in fig.axes:
+            found.extend(t.get_text() for t in ax.texts)
+            found.extend([ax.get_xlabel(), ax.get_ylabel(), ax.get_title()])
+            found.extend(t.get_text() for t in (*ax.get_xticklabels(), *ax.get_yticklabels()))
+            legend = ax.get_legend()
+            if legend is not None:
+                found.extend(t.get_text() for t in legend.get_texts())
+    cleaned = {' '.join(text.split()) for text in found}
+    return sorted(text for text in cleaned if re.search('[A-Za-z]', text))
+
+
 def run_guarded(call: typing.Callable[[], object], timeout: float) -> tuple[Json, object]:
     """Call under a timeout, capturing warnings and output; returns a record with status 'ok' or 'error' (and the error's class) and the value."""
     record: Json = {'status': 'ok', 'warnings': []}
     value: object = None
+    matplotlib.pyplot.close('all')  # what the fixtures drew is not what this case draws
     caught: list[warnings.WarningMessage] = []
     signal.signal(signal.SIGALRM, raise_timeout)
     signal.setitimer(signal.ITIMER_REAL, timeout)
@@ -92,6 +132,7 @@ def run_guarded(call: typing.Callable[[], object], timeout: float) -> tuple[Json
                 handle.write(''.join(traceback.format_exception(e)) + '\n')
     finally:
         signal.setitimer(signal.ITIMER_REAL, 0)
+        record['drawn'] = drawn_text()
         matplotlib.pyplot.close('all')
     record['secs'] = time.monotonic() - start
     record['warnings'] = sorted({str(w.message)[:200] for w in caught})
@@ -164,6 +205,9 @@ def classify(r: Json, py: Json, value: object) -> list[Json]:
                 add('print-diff', detail=line)
         elif 'text' in r and isinstance(value, dict) and r['text'].lstrip().startswith('$') and print_text(value).lstrip().startswith('{'):
             add('print-diff', detail='R prints the elements under $names, Python prints the repr of a dict')
+        r_drawn, py_drawn = plain_text(r.get('drawn') or []), plain_text(py.get('drawn') or [])
+        if r_drawn != py_drawn:
+            add('drawn-text-diff', detail=f'R only {sorted(r_drawn - py_drawn)[:5]}, Python only {sorted(py_drawn - r_drawn)[:5]}')
         if r.get('warnings') and not py['warnings']:
             add('warning-missing', detail=str(r['warnings'][0])[:200])
         elif py['warnings'] and not r.get('warnings'):

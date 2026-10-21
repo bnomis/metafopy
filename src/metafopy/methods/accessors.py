@@ -177,7 +177,8 @@ def formula_of(obj: Fit, type: str = 'mods') -> str | None:
         if not isinstance(obj, metafopy.models.rma_ls_result.RMALSResult):
             raise metafopy.errors.InputError("Can only use type='scale' for location-scale models.")
         scale = call_arguments(obj).get('scale')
-        return scale if isinstance(scale, str) else obj.formula_scale
+        text = scale if isinstance(scale, str) else obj.formula_scale
+        return deparse_rhs(text.split('~', 1)[1]) if isinstance(text, str) and '~' in text else text
     if isinstance(obj, metafopy.models.sel_result.SelmodelResult):
         return formula_of(obj.base, type)
     if isinstance(obj, metafopy.models.binary.FixedBinaryResult):

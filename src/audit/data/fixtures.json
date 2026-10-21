@@ -900,6 +900,25 @@
   }
  },
  {
+  "name": "uni_userfn",
+  "fn": "rma",
+  "args": {
+   "data": {
+    "$ref": "es_bcg"
+   },
+   "mods": {
+    "$formula": "~ ablat + audit_userfn(ablat)"
+   },
+   "yi": {
+    "$sym": "yi"
+   },
+   "vi": {
+    "$sym": "vi"
+   }
+  },
+  "meta": {}
+ },
+ {
   "name": "uni_counts",
   "fn": "rma",
   "args": {

@@ -130,8 +130,8 @@ def fmt_table(
     used = start
     for j in range(ncol):
         # the column of significance stars (no header) has the width of its widest entry, a blank for p > 0.1
-        w_j = max(widths[j], 1) if header[j] == '' else widths[j]
-        need = w_j + ((1 if header[j] == '' else gap) if blocks[-1] else 0)
+        w_j = max(widths[j], 2) if header[j] == '' else widths[j]
+        need = w_j + (gap if blocks[-1] else 0)
         if limit is not None and blocks[-1] and used + need > limit:
             blocks.append([])
             used = start
@@ -162,7 +162,7 @@ def fmt_wrapped_table(
     blocks: list[list[int]] = []
     used = name_w
     for j in range(ncol):
-        if not blocks or used + 1 + widths[j] > width:
+        if not blocks or used + 1 + widths[j] >= width:  # R wraps a line that would be `width` characters wide
             blocks.append([])
             used = name_w
         blocks[-1].append(j)

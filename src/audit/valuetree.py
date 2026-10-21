@@ -229,10 +229,13 @@ def to_node(value: typing.Any, guide: Node, path: str, missing: list[str], depth
         except TypeError, ValueError:
             return {'k': 'type', 'got': type(value).__name__}
     if kind == 'df':
+        frame = value.to_frame() if not isinstance(value, pandas.DataFrame) and callable(getattr(value, 'to_frame', None)) else None
         cols = []
         for col in guide['cols']:
             name = col['name']
             found, sub = lookup(value, name)
+            if not found and frame is not None:
+                found, sub = lookup(frame, name)  # a result that is a data frame in R (summary of an emmGrid) holds one in Python
             if not found:
                 missing.append(f'{path}${name}')
                 cols.append({'name': name, 'node': {'k': 'missing'}})

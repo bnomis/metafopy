@@ -336,6 +336,7 @@ def predict_rma_ls(
         vcov=vcov_pred if (vcov and not do_transf) else None,
         method=x.method,
         transf=do_transf,
+        has_pi=pred_mui and x.method not in metafopy.models.tau2.FIXED_EFFECTS,
     )
     fitted_rows = newmods is None and newscale is None
     keep, blank = metafopy.methods.predict.rows_to_keep(pred, rows.not_na, fitted_rows, na_action)

@@ -5,6 +5,7 @@ args <- commandArgs(trailingOnly = TRUE)
 here <- dirname(sub("^--file=", "", grep("^--file=", commandArgs(FALSE), value = TRUE)[1]))
 source(file.path(here, "common.R"))
 suppressPackageStartupMessages(library(metafor))
+suppressPackageStartupMessages(library(emmeans))
 options(width = 80, warn = 1)
 limit <- if (length(args) >= 4L) as.numeric(args[4]) else 120
 
@@ -25,12 +26,15 @@ for (fx in fixtures) {
 }
 
 pdf(NULL)
+
+source(file.path(here, "drawn.R"))
 TIME_LIMIT_SWALLOWED <- "reached elapsed time limit inside the call, which carried on with the step it interrupted counted as failed"
 run_case <- function(case) {
   warns <- character()
   out <- list(id = case$id, status = "ok")
   t0 <- Sys.time()
   set.seed(1234)
+  drawn <<- character()
   # a case must not see the options that another one left behind (forest(), funnel() and baujat() set na.action and put it back on exit)
   options(na.action = "na.omit")
   value <- withCallingHandlers(
@@ -59,6 +63,7 @@ run_case <- function(case) {
     out$error <- conditionMessage(value)
     return(out)
   }
+  if (length(drawn)) out$drawn <- as.list(sort(unique(drawn)))
   out$value <- tryCatch(node_of(value), error = function(e) list(k = "opaque", cls = paste("flatten failed:", conditionMessage(e))))
   if (isTRUE(case$print)) {
     out$text <- tryCatch(print_text(value), error = function(e) paste("print failed:", conditionMessage(e)))

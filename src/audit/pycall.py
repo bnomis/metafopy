@@ -30,6 +30,14 @@ class MissingArgumentError(Exception):
     """The Python callable has no parameter for an R argument."""
 
 
+def audit_userfn(x: typing.Any) -> typing.Any:
+    """A user's own function that a formula calls (the ``uni_userfn`` fixture), the counterpart of ``audit_userfn`` in ``r/common.R``.
+
+    metafopy finds it through the caller's namespace, which is this module for every call the harness makes.
+    """
+    return (numpy.asarray(x, dtype=numpy.float64) - 30) ** 2 / 100
+
+
 @functools.cache
 def aliases() -> dict[str, str]:
     doc = tomllib.loads((audit.config.DATA_DIR / 'domains.toml').read_text())
@@ -182,8 +190,10 @@ def summary_for(x: typing.Any) -> typing.Callable[..., typing.Any]:
         raise MissingFunctionError('summary')
 
     @functools.wraps(method)
-    def call(*args: typing.Any, **kwargs: typing.Any) -> str:
+    def call(*args: typing.Any, **kwargs: typing.Any) -> typing.Any:
         result = method(*args, **kwargs)
+        if hasattr(result, 'to_frame'):
+            return result  # the summary of an emmGrid is a data frame, not text
         if getattr(result, 'fit', None) is not None:
             return typing.cast(str, result)  # the text already carries the fit
         text = SummaryText(result)

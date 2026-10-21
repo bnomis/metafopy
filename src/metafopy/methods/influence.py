@@ -18,6 +18,7 @@ import numpy.typing
 import pandas
 import scipy.stats
 
+import metafopy.core.labelled
 import metafopy.core.linalg
 import metafopy.core.parallel
 import metafopy.core.timing
@@ -132,7 +133,7 @@ class InfluenceResult:
         """The DFBETAS, one column per coefficient."""
         # R builds a data frame, which turns the coefficient names into syntactic names (factor(alloc)random becomes factor.alloc.random)
         names = metafopy.effects.datatools.make_names([str(n) for n in self.coef_names], unique=True)
-        out = pandas.DataFrame(self.dfbs_array, columns=names, index=list(self.slab))
+        out = metafopy.core.labelled.RFrame(self.dfbs_array, columns=names, index=list(self.slab))
         out.attrs.update(slab=list(self.slab), digits=self.digits)
         return out
 
@@ -169,7 +170,8 @@ def format_influence(res: InfluenceResult, infonly: bool) -> str:
     ]
     if res.p == 1:
         return '\n'.join(['', *metafopy.methods.blup.format_r_frame([*base, col('dfbs', res.dfbs_array[:, 0]), ('inf', inf)], slab), ''])
-    dfbs = [col(name, res.dfbs_array[:, j]) for j, name in enumerate(res.coef_names)]
+    names = metafopy.effects.datatools.make_names([str(n) for n in res.coef_names], unique=True)
+    dfbs = [col(name, res.dfbs_array[:, j]) for j, name in enumerate(names)]
     first = metafopy.methods.blup.format_r_frame([*base, ('inf', inf)], slab)
     second = metafopy.methods.blup.format_r_frame(dfbs, slab)
     return '\n'.join(['$inf', '', *first, '', '$dfbs', '', *second, ''])

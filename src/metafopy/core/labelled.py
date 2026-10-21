@@ -21,10 +21,23 @@ import numpy.typing
 import pandas
 import scipy.sparse
 
+import metafopy.formatters
 import metafopy.mfopt
 import metafopy.printing
 
-__all__ = ['EscalcFrame', 'LabelledMatrix', 'NamedList', 'SparseVCovMat', 'VCovMat', 'design_matrix', 'frame_text', 'matrix_text', 'vector_text']
+__all__ = [
+    'EscalcFrame',
+    'LabelledMatrix',
+    'NamedList',
+    'RFrame',
+    'SparseVCovMat',
+    'VCovMat',
+    'design_matrix',
+    'escalc_frame',
+    'frame_text',
+    'matrix_text',
+    'vector_text',
+]
 
 SIGNIF = 7
 
@@ -33,21 +46,21 @@ def console_width() -> int:
     return int(metafopy.printing.SETTINGS.get('width', 80))
 
 
-def sig_digits(x: float) -> int:
-    """The significant digits (at most seven) R needs to print ``x``."""
-    text = f'{abs(x):.{SIGNIF - 1}e}'
+def sig_digits(x: float, digits: int = SIGNIF) -> int:
+    """The significant digits (at most ``digits``) R needs to print ``x``."""
+    text = f'{abs(x):.{digits - 1}e}'
     mantissa = text.split('e')[0].replace('.', '').rstrip('0')
     return max(len(mantissa), 1)
 
 
-def decimals(values: collections.abc.Sequence[float]) -> int:
-    """The number of decimals of the common fixed notation of a column of numbers (R's ``formatReal`` with seven significant digits)."""
+def decimals(values: collections.abc.Sequence[float], digits: int = SIGNIF) -> int:
+    """The number of decimals of the common fixed notation of a column of numbers (R's ``formatReal`` with ``digits`` significant digits)."""
     best = 0
     for x in values:
         if not math.isfinite(x) or x == 0:
             continue
-        exponent = math.floor(math.log10(abs(float(f'{abs(x):.{SIGNIF - 1}e}'))))
-        best = max(best, sig_digits(x) - 1 - exponent)
+        exponent = math.floor(math.log10(abs(float(f'{abs(x):.{digits - 1}e}'))))
+        best = max(best, sig_digits(x, digits) - 1 - exponent)
     return max(best, 0)
 
 
@@ -63,14 +76,59 @@ def cell(x: typing.Any, places: int) -> str:
     return str(x)
 
 
+def scientific_places(values: collections.abc.Sequence[float], digits: int = SIGNIF) -> int | None:
+    """The decimals of the mantissa when R's ``formatReal`` prints the column in scientific notation (the fixed form would be wider), else ``None``."""
+    finite = [abs(v) for v in values if math.isfinite(v)]
+    nonzero = [v for v in finite if v != 0]
+    if not nonzero:
+        return None
+    exps = [math.floor(math.log10(float(f'{v:.{digits - 1}e}'))) for v in nonzero]
+    sigs = [sig_digits(v, digits) for v in nonzero]
+    mantissa = max(sigs) - 1
+    right = max(max(s - e - 1 for s, e in zip(sigs, exps, strict=True)), 0)
+    left = max(max(e + 1 for e in exps), 1)
+    negative = int(any(v < 0 for v in values if math.isfinite(v)))
+    fixed_width = negative + left + (right + 1 if right else 0)
+    exp_width = 4 if max(abs(e) for e in exps) < 100 else 5
+    sci_width = negative + 1 + (mantissa + 1 if mantissa else 0) + exp_width
+    return mantissa if fixed_width > sci_width else None
+
+
 def column(values: list[typing.Any]) -> list[str]:
-    """One column of a data frame or matrix as R prints it: numbers share their decimals, everything else is shown as it is."""
+    """One column of a data frame or matrix as R prints it: numbers share their decimals (or switch together to scientific notation, as R does when
+    that is narrower), everything else is shown as it is."""
     numbers = [float(v) for v in values if isinstance(v, (int, float, numpy.floating, numpy.integer)) and not isinstance(v, (bool, numpy.bool_))]
     floats = [v for v in values if isinstance(v, (float, numpy.floating))]
     places = decimals(numbers) if floats else 0
+    mantissa = scientific_places(numbers) if floats else None
+    if mantissa is not None:
+        return [
+            f'{float(v):.{mantissa}e}'
+            if isinstance(v, (float, numpy.floating, int, numpy.integer)) and not isinstance(v, (bool, numpy.bool_)) and math.isfinite(float(v))
+            else cell(v if not isinstance(v, (int, numpy.integer)) or isinstance(v, (bool, numpy.bool_)) else float(v), places)
+            for v in values
+        ]
     return [
         cell(v if not isinstance(v, (int, numpy.integer)) or isinstance(v, (bool, numpy.bool_)) else float(v), places) if floats else cell(v, 0) for v in values
     ]
+
+
+def format_real(values: collections.abc.Sequence[float], digits: int = SIGNIF, nsmall: int = 0) -> list[str]:
+    """R's ``format(x, digits=, nsmall=)`` of a numeric vector: common decimals (or scientific notation if that is narrower), ``NA``/``Inf`` as R shows them."""
+    finite = [v for v in values if math.isfinite(v)]
+    mantissa = scientific_places(finite, digits) if nsmall == 0 else None
+    places = max(decimals(finite, digits), nsmall)
+    out: list[str] = []
+    for v in values:
+        if math.isnan(v):
+            out.append('NA')
+        elif math.isinf(v):
+            out.append('Inf' if v > 0 else '-Inf')
+        elif mantissa is not None:
+            out.append(f'{v:.{mantissa}e}')
+        else:
+            out.append(f'{v:.{places}f}')
+    return out
 
 
 def row_labels(index: pandas.Index) -> list[str]:
@@ -283,16 +341,64 @@ class EscalcFrame(pandas.DataFrame):
     def text(self) -> str:
         """The frame as ``print.escalc`` shows it."""
         formatted: dict[str, list[str]] = {}
-        for key, part in (('yi_names', 'est'), ('vi_names', 'var'), ('sei_names', 'se'), ('zi_names', 'test'), ('ci_lb_names', 'ci'), ('ci_ub_names', 'ci')):
+        for key, part in (
+            ('yi_names', 'est'),
+            ('vi_names', 'var'),
+            ('sei_names', 'se'),
+            ('zi_names', 'test'),
+            ('pval_names', 'pval'),
+            ('ci_lb_names', 'ci'),
+            ('ci_ub_names', 'ci'),
+        ):
             for name in self.attrs.get(key, []) or []:
                 if name in self.columns:
                     places = self.digit_for(part)
-                    formatted[str(name)] = [cell(float(v), places) if v is not None else 'NA' for v in self[name].tolist()]
+                    values = [numpy.nan if v is None else float(v) for v in self[name].tolist()]
+                    if part == 'pval':
+                        formatted[str(name)] = ['NA' if numpy.isnan(v) else str(metafopy.formatters.fmtp(v, places)) for v in values]
+                    else:
+                        formatted[str(name)] = [cell(v, places) if v is not None else 'NA' for v in self[name].tolist()]
         return frame_text(pandas.DataFrame(self), formatted)
 
     def __str__(self) -> str:
         if self.ndim != 2:
             return numpy.ndarray.__str__(self)
+        return '\n' + self.text() + '\n'
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
+
+def escalc_frame(dat: pandas.DataFrame, attrs: collections.abc.Mapping[collections.abc.Hashable | None, typing.Any] | None = None) -> EscalcFrame:
+    """``dat`` as an ``escalc`` data frame (R keeps the class when it adds columns, rounds or binds frames), with ``attrs`` (default: its own)."""
+    frame = EscalcFrame(dat)
+    frame.attrs = dict(dat.attrs if attrs is None else attrs)
+    return frame
+
+
+class RFrame(pandas.DataFrame):
+    """A data frame or matrix of a result that prints as R prints it: columns of seven significant digits (rounded to ``attrs['digits']`` decimals when
+    the frame has them), rows named as they are and wrapped at the console width instead of cut with ``...`` as pandas does.
+
+    Selecting rows or columns gives a plain data frame that keeps ``attrs``.
+    """
+
+    @property
+    def _constructor(self) -> typing.Callable[..., pandas.DataFrame]:
+        return pandas.DataFrame
+
+    def text(self) -> str:
+        """The frame as ``print(data.frame)`` shows it, or as ``print.vcovmat`` shows a var-cov matrix."""
+        if self.attrs.get('vcovmat'):
+            return VCovMat(self.to_numpy(dtype=numpy.float64), [str(i) for i in self.index], [str(c) for c in self.columns]).text()
+        digits = self.attrs.get('digits')
+        frame = pandas.DataFrame(self)
+        if digits is not None:
+            places = metafopy.mfopt.option_digits(digits)
+            frame = frame.apply(lambda col: col.round(places) if pandas.api.types.is_float_dtype(col) else col)
+        return frame_text(frame)
+
+    def __str__(self) -> str:
         return '\n' + self.text() + '\n'
 
     def __repr__(self) -> str:

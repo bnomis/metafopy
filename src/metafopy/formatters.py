@@ -19,11 +19,39 @@ import numpy
 import pandas
 
 import metafopy.errors
+import metafopy.printing
 
-__all__ = ['fmtp', 'fmtp2', 'fmtt', 'fmtx', 'format_c', 'r_as_character']
+__all__ = ['NoQuote', 'fmtp', 'fmtp2', 'fmtt', 'fmtx', 'format_c', 'r_as_character']
 
 type Number = float | int | None
 type Numbers = Number | collections.abc.Sequence[Number] | numpy.ndarray[typing.Any, typing.Any]
+
+
+class NoQuote(list[str]):
+    """A list of strings that prints as R prints the ``noquote`` vector the formatters return: no quotes, ``[1]`` markers and lines wrapped at the
+    console width; ``fmtx`` justifies the strings on the right (``right = TRUE``), the others on the left."""
+
+    right: bool = False
+
+    def __init__(self, items: collections.abc.Iterable[str] = (), right: bool = False) -> None:
+        super().__init__(items)
+        self.right = right
+
+    def __str__(self) -> str:
+        if not self:
+            return 'character(0)'
+        width = max(len(v) for v in self)
+        total = int(metafopy.printing.SETTINGS.get('width', 80))
+        marker = len(str(len(self))) + 2
+        per_line = max(1, (total - marker) // (width + 1))
+        lines = []
+        for start in range(0, len(self), per_line):
+            label = f'[{start + 1}]'.rjust(marker)
+            lines.append(label + ''.join(' ' + (v.rjust(width) if self.right else v.ljust(width)) for v in self[start : start + per_line]))
+        return '\n'.join(lines)
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
 
 def is_na(x: Number) -> bool:
@@ -117,7 +145,7 @@ def fmtx(
         if not add0:
             s = s.replace('0.', '.')
         res.append(f'{s}{postfix}')
-    return res[0] if scalar else res
+    return res[0] if scalar else NoQuote(res, right=True)
 
 
 def fmtp(p: Numbers, digits: int = 4, pname: str = '', equal: bool = False, sep: bool = False, add0: bool = False, quote: bool = False) -> str | list[str]:
@@ -143,7 +171,7 @@ def fmtp(p: Numbers, digits: int = 4, pname: str = '', equal: bool = False, sep:
             res.append(f'{pname}{eq}{sp}{format_c(q, digits)}')
         else:
             res.append(f'{pname}<{sp}{"0" if add0 else ""}{cutoff}')
-    return res[0] if scalar else res
+    return res[0] if scalar else NoQuote(res)
 
 
 def fmtp2(
@@ -188,7 +216,7 @@ def fmtp2(
         if not add0:
             s = s.replace('0.', '.')
         res.append(s)
-    return res[0] if scalar else res
+    return res[0] if scalar else NoQuote(res)
 
 
 def r_as_character(x: float) -> str:

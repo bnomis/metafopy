@@ -198,6 +198,126 @@ base = { vi = { "$sym" = "vi" }, cluster = { "$sym" = "district" }, obs = { "$sy
 [standalone.vec2mat]
 base = { x = [1, 2, 3] }
 
+# The emmeans package on the reference grids of metafor fits (emmprep): marginal means, contrasts and their summaries are compared as values and as printed.
+# The emmeans functions are not exports of metafor, so they are not in the universe; this table is their universe.
+
+[emmeans.grid_summary]
+call = { fn = "summary", target = { "$call" = { fn = "emmprep", target = { "$ref" = "uni_mods2" } } }, args = {  } }
+
+[emmeans.grid_summary_infer]
+call = { fn = "summary", target = { "$call" = { fn = "emmprep", target = { "$ref" = "uni_mods2" } } }, args = { infer = [true, true] } }
+
+[emmeans.means]
+call = { fn = "summary", target = { "$call" = { fn = "emmeans", target = { "$call" = { fn = "emmprep", target = { "$ref" = "uni_factor" } } }, args = { specs = "alloc" } } }, args = {  } }
+
+[emmeans.means_covariate]
+call = { fn = "summary", target = { "$call" = { fn = "emmeans", target = { "$call" = { fn = "emmprep", target = { "$ref" = "uni_mods2" }, args = { at = { ablat = 30 } } } }, args = { specs = "alloc" } } }, args = {  } }
+
+[emmeans.means_at_sequence]
+call = { fn = "summary", target = { "$call" = { fn = "emmeans", target = { "$call" = { fn = "emmprep", target = { "$ref" = "uni_mods2" }, args = { at = { ablat = [10, 30, 50] } } } }, args = { specs = "ablat" } } }, args = {  } }
+
+[emmeans.means_proportional]
+call = { fn = "summary", target = { "$call" = { fn = "emmeans", target = { "$call" = { fn = "emmprep", target = { "$ref" = "uni_mods2" } } }, args = { specs = "alloc", weights = "proportional" } } }, args = {  } }
+
+[emmeans.means_cells]
+call = { fn = "summary", target = { "$call" = { fn = "emmeans", target = { "$call" = { fn = "emmprep", target = { "$ref" = "uni_mods2" } } }, args = { specs = "alloc", weights = "cells" } } }, args = {  } }
+
+[emmeans.means_overall]
+call = { fn = "summary", target = { "$call" = { fn = "emmeans", target = { "$call" = { fn = "emmprep", target = { "$ref" = "uni_mods2" } } }, args = { specs = "1" } } }, args = {  } }
+
+[emmeans.means_level]
+call = { fn = "summary", target = { "$call" = { fn = "emmeans", target = { "$call" = { fn = "emmprep", target = { "$ref" = "uni_factor" } } }, args = { specs = "alloc" } } }, args = { level = 0.9 } }
+
+[emmeans.means_infer]
+call = { fn = "summary", target = { "$call" = { fn = "emmeans", target = { "$call" = { fn = "emmprep", target = { "$ref" = "uni_factor" } } }, args = { specs = "alloc" } } }, args = { infer = [true, true] } }
+
+[emmeans.means_null]
+call = { fn = "summary", target = { "$call" = { fn = "emmeans", target = { "$call" = { fn = "emmprep", target = { "$ref" = "uni_factor" } } }, args = { specs = "alloc" } } }, args = { infer = [true, true], null = 0.5 } }
+
+[emmeans.means_adjust]
+call = { fn = "summary", target = { "$call" = { fn = "emmeans", target = { "$call" = { fn = "emmprep", target = { "$ref" = "uni_factor" } } }, args = { specs = "alloc" } } }, args = { adjust = "bonferroni" } }
+
+[emmeans.confint]
+call = { fn = "confint", target = { "$call" = { fn = "emmeans", target = { "$call" = { fn = "emmprep", target = { "$ref" = "uni_factor" } } }, args = { specs = "alloc" } } }, args = {  } }
+
+[emmeans.grid_print]
+call = { fn = "summary", target = { "$call" = { fn = "emmprep", target = { "$ref" = "uni_factor" } } }, args = {  } }
+
+[emmeans.contrast_pairwise]
+call = { fn = "summary", target = { "$call" = { fn = "contrast", target = { "$call" = { fn = "emmeans", target = { "$call" = { fn = "emmprep", target = { "$ref" = "uni_factor" } } }, args = { specs = "alloc" } } }, args = { method = "pairwise" } } }, args = {  } }
+
+[emmeans.contrast_revpairwise]
+call = { fn = "summary", target = { "$call" = { fn = "contrast", target = { "$call" = { fn = "emmeans", target = { "$call" = { fn = "emmprep", target = { "$ref" = "uni_factor" } } }, args = { specs = "alloc" } } }, args = { method = "revpairwise" } } }, args = {  } }
+
+[emmeans.contrast_trt_vs_ctrl]
+call = { fn = "summary", target = { "$call" = { fn = "contrast", target = { "$call" = { fn = "emmeans", target = { "$call" = { fn = "emmprep", target = { "$ref" = "uni_factor" } } }, args = { specs = "alloc" } } }, args = { method = "trt.vs.ctrl" } } }, args = {  } }
+
+[emmeans.contrast_trt_vs_ctrl1]
+call = { fn = "summary", target = { "$call" = { fn = "contrast", target = { "$call" = { fn = "emmeans", target = { "$call" = { fn = "emmprep", target = { "$ref" = "uni_factor" } } }, args = { specs = "alloc" } } }, args = { method = "trt.vs.ctrl1" } } }, args = {  } }
+
+[emmeans.contrast_consec]
+call = { fn = "summary", target = { "$call" = { fn = "contrast", target = { "$call" = { fn = "emmeans", target = { "$call" = { fn = "emmprep", target = { "$ref" = "uni_factor" } } }, args = { specs = "alloc" } } }, args = { method = "consec" } } }, args = {  } }
+
+[emmeans.contrast_eff]
+call = { fn = "summary", target = { "$call" = { fn = "contrast", target = { "$call" = { fn = "emmeans", target = { "$call" = { fn = "emmprep", target = { "$ref" = "uni_factor" } } }, args = { specs = "alloc" } } }, args = { method = "eff" } } }, args = {  } }
+
+[emmeans.contrast_del_eff]
+call = { fn = "summary", target = { "$call" = { fn = "contrast", target = { "$call" = { fn = "emmeans", target = { "$call" = { fn = "emmprep", target = { "$ref" = "uni_factor" } } }, args = { specs = "alloc" } } }, args = { method = "del.eff" } } }, args = {  } }
+
+[emmeans.contrast_poly]
+call = { fn = "summary", target = { "$call" = { fn = "contrast", target = { "$call" = { fn = "emmeans", target = { "$call" = { fn = "emmprep", target = { "$ref" = "uni_factor" } } }, args = { specs = "alloc" } } }, args = { method = "poly" } } }, args = {  } }
+
+[emmeans.contrast_adjust_none]
+call = { fn = "summary", target = { "$call" = { fn = "contrast", target = { "$call" = { fn = "emmeans", target = { "$call" = { fn = "emmprep", target = { "$ref" = "uni_factor" } } }, args = { specs = "alloc" } } }, args = { method = "pairwise", adjust = "none" } } }, args = {  } }
+
+[emmeans.contrast_adjust_bonferroni]
+call = { fn = "summary", target = { "$call" = { fn = "contrast", target = { "$call" = { fn = "emmeans", target = { "$call" = { fn = "emmprep", target = { "$ref" = "uni_factor" } } }, args = { specs = "alloc" } } }, args = { method = "pairwise", adjust = "bonferroni" } } }, args = {  } }
+
+[emmeans.contrast_adjust_tukey]
+call = { fn = "summary", target = { "$call" = { fn = "contrast", target = { "$call" = { fn = "emmeans", target = { "$call" = { fn = "emmprep", target = { "$ref" = "uni_factor" } } }, args = { specs = "alloc" } } }, args = { method = "pairwise", adjust = "tukey" } } }, args = {  } }
+
+[emmeans.contrast_adjust_holm]
+call = { fn = "summary", target = { "$call" = { fn = "contrast", target = { "$call" = { fn = "emmeans", target = { "$call" = { fn = "emmprep", target = { "$ref" = "uni_factor" } } }, args = { specs = "alloc" } } }, args = { method = "pairwise", adjust = "holm" } } }, args = {  } }
+
+[emmeans.contrast_adjust_sidak]
+call = { fn = "summary", target = { "$call" = { fn = "contrast", target = { "$call" = { fn = "emmeans", target = { "$call" = { fn = "emmprep", target = { "$ref" = "uni_factor" } } }, args = { specs = "alloc" } } }, args = { method = "pairwise", adjust = "sidak" } } }, args = {  } }
+
+[emmeans.contrast_adjust_scheffe]
+call = { fn = "summary", target = { "$call" = { fn = "contrast", target = { "$call" = { fn = "emmeans", target = { "$call" = { fn = "emmprep", target = { "$ref" = "uni_factor" } } }, args = { specs = "alloc" } } }, args = { method = "pairwise", adjust = "scheffe" } } }, args = {  } }
+
+[emmeans.contrast_adjust_fdr]
+call = { fn = "summary", target = { "$call" = { fn = "contrast", target = { "$call" = { fn = "emmeans", target = { "$call" = { fn = "emmprep", target = { "$ref" = "uni_factor" } } }, args = { specs = "alloc" } } }, args = { method = "pairwise", adjust = "fdr" } } }, args = {  } }
+
+[emmeans.contrast_adjust_mvt]
+call = { fn = "summary", target = { "$call" = { fn = "contrast", target = { "$call" = { fn = "emmeans", target = { "$call" = { fn = "emmprep", target = { "$ref" = "uni_factor" } } }, args = { specs = "alloc" } } }, args = { method = "pairwise", adjust = "mvt" } } }, args = {  } }
+
+[emmeans.contrast_reverse]
+call = { fn = "summary", target = { "$call" = { fn = "contrast", target = { "$call" = { fn = "emmeans", target = { "$call" = { fn = "emmprep", target = { "$ref" = "uni_factor" } } }, args = { specs = "alloc" } } }, args = { method = "trt.vs.ctrl", ref = { "$idx" = 2 } } } }, args = {  } }
+
+[emmeans.contrast_infer]
+call = { fn = "summary", target = { "$call" = { fn = "contrast", target = { "$call" = { fn = "emmeans", target = { "$call" = { fn = "emmprep", target = { "$ref" = "uni_factor" } } }, args = { specs = "alloc" } } }, args = { method = "pairwise" } } }, args = { infer = [true, true] } }
+
+[emmeans.pairs]
+call = { fn = "summary", target = { "$call" = { fn = "pairs", target = { "$call" = { fn = "emmeans", target = { "$call" = { fn = "emmprep", target = { "$ref" = "uni_factor" } } }, args = { specs = "alloc" } } }, args = {  } } }, args = {  } }
+
+[emmeans.pairs_reverse]
+call = { fn = "summary", target = { "$call" = { fn = "pairs", target = { "$call" = { fn = "emmeans", target = { "$call" = { fn = "emmprep", target = { "$ref" = "uni_factor" } } }, args = { specs = "alloc" } } }, args = { reverse = true } } }, args = {  } }
+
+[emmeans.pairs_adjust]
+call = { fn = "summary", target = { "$call" = { fn = "pairs", target = { "$call" = { fn = "emmeans", target = { "$call" = { fn = "emmprep", target = { "$ref" = "uni_factor" } } }, args = { specs = "alloc" } } }, args = { adjust = "holm" } } }, args = {  } }
+
+[emmeans.pairs_confint]
+call = { fn = "confint", target = { "$call" = { fn = "pairs", target = { "$call" = { fn = "emmeans", target = { "$call" = { fn = "emmprep", target = { "$ref" = "uni_factor" } } }, args = { specs = "alloc" } } }, args = {  } } }, args = {  } }
+
+[emmeans.regrid]
+call = { fn = "summary", target = { "$call" = { fn = "regrid", target = { "$call" = { fn = "emmeans", target = { "$call" = { fn = "emmprep", target = { "$ref" = "uni_factor" } } }, args = { specs = "alloc" } } }, args = {  } } }, args = {  } }
+
+[emmeans.regrid_contrast]
+call = { fn = "summary", target = { "$call" = { fn = "pairs", target = { "$call" = { fn = "regrid", target = { "$call" = { fn = "emmeans", target = { "$call" = { fn = "emmprep", target = { "$ref" = "uni_factor" } } }, args = { specs = "alloc" } } }, args = {  } } }, args = {  } } }, args = {  } }
+
+[emmeans.response]
+call = { fn = "summary", target = { "$call" = { fn = "emmeans", target = { "$call" = { fn = "emmprep", target = { "$ref" = "uni_factor" } } }, args = { specs = "alloc" } } }, args = { type = "response" } }
+
 [unprobed]
 bldiag = "takes unnamed matrices through `...`; the case format passes named arguments only"
 setmfopt = "mutates global option state, which would leak into every other case; getmfopt reads it"

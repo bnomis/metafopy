@@ -112,7 +112,8 @@ class PredictResult:
             mat = self.X.to_numpy(dtype=numpy.float64) if isinstance(self.X, pandas.DataFrame) else self.X
             if names is not None and mat.shape[0] == self.pred.shape[0]:
                 for j, name in enumerate(names):
-                    cols[f'X.{name}'] = mat[:, j]
+                    # a data frame names the column of a one-column matrix by its column name alone
+                    cols[str(name) if len(names) == 1 else f'X.{name}'] = mat[:, j]
         z_values = getattr(self, 'Z', None)
         z_names = getattr(self, 'z_names', None)
         if isinstance(z_values, numpy.ndarray) and z_names is not None and z_values.ndim == 2 and z_values.shape[0] == self.pred.shape[0]:
@@ -132,16 +133,19 @@ class PredictResult:
         # print.list.rma leaves out `se` after a transformation and the prediction interval of the models that have none
         drop = (['se'] if self.transf else []) + ([] if self.has_pi else ['pi.lb', 'pi.ub'])
         frame = frame.drop(columns=drop)
+        model_columns = [c for c in frame.columns if c not in PRINT_KINDS and c not in ('pred', 'prob')]
         # the model matrices (X.*, Z.*) are printed as the columns of a numeric data frame, the other columns with the digits
         columns = [
             r_numeric_column(frame[name].to_numpy(dtype=numpy.float64))
-            if str(name).startswith(('X.', 'Z.'))
+            if str(name).startswith(('X.', 'Z.')) or name in model_columns
             else [metafopy.printing.fmt_num(float(v), by_kind[PRINT_KINDS.get(str(name), 'est')]) for v in frame[name]]
             for name in frame.columns
         ]
         rows = [list(row) for row in zip(*columns, strict=True)]
         return metafopy.mfopt.option_space(
-            '\n' + metafopy.printing.fmt_table([str(c) for c in frame.columns], rows, [str(i) for i in frame.index], gap=1) + '\n'
+            '\n'
+            + metafopy.printing.fmt_table([str(c) for c in frame.columns], rows, [str(i) for i in frame.index], gap=1, width=metafopy.printing.console_width())
+            + '\n'
         )
 
 
@@ -662,6 +666,7 @@ def predict_fixed_binary(
                     tau2=0.0,
                     fixed=True,
                     not_na=x.tables.not_na,
+                    coef_names=('X',),  # the matrix of the new moderator values has no column names, so a data frame calls the column X
                 ),
                 newmods,
                 intercept,

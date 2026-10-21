@@ -305,9 +305,8 @@ find = [{ id = "datasets/dat.baskerville2012" }]
 id = "a5-forest-transf-labels"
 audit = 5
 text = "forest() labels for transf_* back-transformations"
-find = []
-reach = "none"
-why = "the label is text drawn on a plot; the audit compares what forest() returns, not the pixels or the strings of the figure"
+find = [{ id = "options/forest/mv_ks/transf=*", kind = "drawn-text-diff" }]
+hint = ["options/forest/mv_ks/transf="]
 
 [[item]]
 id = "a5-forest-ilab-lab"
@@ -641,9 +640,8 @@ find = [{ id = "construct/uni_reml/mods=*sqrt*" }]
 id = "a6-formula-namespace"
 audit = 6
 text = "refits lose the caller's namespace (user function in a formula)"
-find = []
-reach = "none"
-why = "needs a user-defined R function and its Python counterpart in a formula; cases carry data, not code, except through the $lambda tag"
+find = [{ id = "matrix/*/uni_userfn" }]
+hint = ["uni_userfn"]
 
 [[item]]
 id = "a6-emmprep-factor"
@@ -833,9 +831,8 @@ find = [{ id = "matrix/ranef/mv_ks", kind = "print-diff" }]
 id = "a6-emmeans-printing"
 audit = 6
 text = "emmeans summaries use 4 significant digits and right-aligned labels where R uses 3 and left-aligned"
-find = []
-reach = "none"
-why = "emmeans output belongs to the emmeans package, not to metafor, and is outside the universe the audit enumerates"
+find = [{ id = "emmeans/*", kind = "print-diff" }]
+hint = ["emmeans/means", "emmeans/contrast_pairwise"]
 
 # ---------------------------------------------------------------- audit 6: missing
 

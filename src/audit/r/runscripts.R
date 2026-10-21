@@ -8,6 +8,7 @@ source(file.path(here, "common.R"))
 suppressPackageStartupMessages(library(metafor))
 suppressPackageStartupMessages(library(metadat))
 options(width = 80, warn = 1)
+source(file.path(here, "drawn.R"))
 
 ast <- function(e) {
   if (is.null(e)) return(list(t = "null"))
@@ -72,6 +73,7 @@ limit <- if (length(commandArgs(TRUE)) >= 5L) as.numeric(commandArgs(TRUE)[5]) e
 
 run_unit <- function(expr, env) {
   warns <- character()
+  drawn <<- character()
   t0 <- Sys.time()
   res <- withCallingHandlers(
     tryCatch({
@@ -85,6 +87,7 @@ run_unit <- function(expr, env) {
     message = function(m) invokeRestart("muffleMessage"))
   setTimeLimit(elapsed = Inf)
   out <- list(warnings = as.list(unique(warns)), secs = as.numeric(difftime(Sys.time(), t0, units = "secs")))
+  if (length(drawn)) out$drawn <- as.list(sort(unique(drawn)))
   # as in runcases.R: a try() inside metafor can catch the time limit and return an incomplete value
   if (!inherits(res, "error") && out$secs >= limit) res <- simpleError("reached elapsed time limit inside the call, which carried on with the step it interrupted counted as failed")
   if (inherits(res, "error")) {

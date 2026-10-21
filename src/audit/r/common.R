@@ -11,6 +11,10 @@ suppressPackageStartupMessages(library(jsonlite))
 
 read_json <- function(path) fromJSON(path, simplifyVector = FALSE)
 
+# A user's own function that a formula calls (the `uni_userfn` fixture); refits of the model must find it in the caller's environment.
+# src/audit/pycall.py defines the same function for Python.
+audit_userfn <- function(x) (x - 30)^2 / 100
+
 write_json <- function(x, path) {
   writeLines(toJSON(x, auto_unbox = TRUE, null = "null", na = "null", digits = NA, pretty = FALSE), path)
 }

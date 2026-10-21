@@ -12,6 +12,7 @@ import numpy
 import numpy.typing
 import pandas
 
+import metafopy.core.labelled
 import metafopy.core.padjust
 import metafopy.errors
 import metafopy.methods.emm_adjust
@@ -45,33 +46,107 @@ class EmmSummary:
         return self.frame.copy()
 
     def __str__(self) -> str:
-        frame = self.frame
-        shown = frame.copy()
-        for col in shown.columns:
-            if pandas.api.types.is_float_dtype(shown[col]):
-                shown[col] = [fmt_value(v, col) for v in shown[col]]
-        text = shown.to_string(index=False) if not self.by else '\n\n'.join(group_text(shown, self.by))
-        notes = '\n'.join(self.messages)
-        return f'{text}\n\n{notes}' if notes else text
+        return format_summary(self)
 
 
-def fmt_value(value: float, column: str) -> str:
-    if math.isnan(value):
-        return 'NA'
-    if column == 'p.value':
-        return '<.0001' if value < 0.0001 else f'{value:.4f}'
-    if math.isinf(value):
-        return 'Inf'
-    return f'{value:.4g}' if abs(value) < 1e4 else f'{value:.0f}'
+TEST_STATISTICS = ('t.ratio', 'z.ratio', 'F.ratio', 'T.square')
+PVAL_DIGITS = 4
 
 
-def group_text(frame: pandas.DataFrame, by: tuple[str, ...]) -> list[str]:
-    out: list[str] = []
-    for key, part in frame.groupby(list(by), sort=False):
-        keys = key if isinstance(key, tuple) else (key,)
-        head = ', '.join(f'{b} = {k}' for b, k in zip(by, keys, strict=True))
-        out.append(f'{head}:\n{part.drop(columns=list(by)).to_string(index=False)}')
-    return out
+def r_zapsmall(x: FloatArray, digits: int = 7) -> FloatArray:
+    """R's ``zapsmall()``; an infinite value makes it round to whole numbers, as it does in R."""
+    present = x[~numpy.isnan(x)]
+    if present.size == 0:
+        return x
+    mx = float(numpy.max(numpy.abs(present)))
+    places = max(0, digits - math.ceil(math.log10(mx))) if mx > 0 and math.isfinite(mx) else (0 if mx > 0 else digits)
+    return numpy.asarray(numpy.round(x, places), dtype=numpy.float64)
+
+
+def opt_dig(row: FloatArray) -> int:
+    """emmeans' ``.opt.dig()``: the digits that show the interval of two standard errors around the estimate."""
+    if not numpy.all(numpy.isfinite(row)) or numpy.max(numpy.abs(row)) == 0:
+        return 3
+    z = numpy.array([numpy.min(row), numpy.max(row)]) / numpy.max(numpy.abs(row))
+    pair = numpy.array([z[1] - z[0], z[0], z[1]])
+    dz = r_zapsmall(pair, 8)[0]
+    if dz == 0:
+        return 3
+    return max(round(1.51 - math.log10(dz)), 3)
+
+
+def format_summary(res: EmmSummary) -> str:
+    """``print.summary_emm``: estimates shown with the digits that carry two standard errors, test statistics to 3 and p values to 4 decimals, the rows of
+    each ``by`` group under a ``by = level:`` line, and the notes under the table (https://github.com/rvlenth/emmeans/blob/master/R/summary.R)."""
+    frame = res.frame.reset_index(drop=True)
+    names = [str(c) for c in frame.columns]
+    numeric = {c for c in names if pandas.api.types.is_float_dtype(frame[c]) or pandas.api.types.is_integer_dtype(frame[c])}
+    values: dict[str, FloatArray] = {c: r_zapsmall(frame[c].to_numpy(dtype=numpy.float64)) for c in names if c in numeric}
+    if 'df' in values:
+        values['df'] = numpy.round(values['df'], 2)
+    text: dict[str, list[str]] = {}
+    for stat in TEST_STATISTICS:
+        if stat in values:
+            text[stat] = metafopy.core.labelled.format_real(list(numpy.round(values[stat], 3)), nsmall=3)
+    if 'p.value' in values:
+        p = values['p.value']
+        shown = metafopy.core.labelled.format_real(list(numpy.round(p, PVAL_DIGITS)), nsmall=PVAL_DIGITS)
+        floor = 10.0**-PVAL_DIGITS
+        text['p.value'] = ['NA' if math.isnan(v) else (f'<{floor:.{PVAL_DIGITS}f}' if v < floor else txt) for v, txt in zip(p, shown, strict=True)]
+    est = values.get(res.est_name)
+    digits: int | None = None
+    if est is not None:
+        if 'SE' in values:
+            values['SE'] = numpy.array([float(f'{v:.3g}') if math.isfinite(v) else v for v in values['SE']])
+            rows = est[:, None] + values['SE'][:, None] * numpy.array([-2.0, 0.0, 2.0])
+        elif res.cl_names and res.cl_names[0].startswith('lower.'):
+            rows = numpy.column_stack([values[res.cl_names[0]], est, values[res.cl_names[1]]])
+        else:
+            rows = None
+        if rows is not None:
+            digits = max((opt_dig(r) for r in rows), default=3)
+    cells: dict[str, list[str]] = {}
+    for c in names:
+        if c in text:
+            cells[c] = text[c]
+        elif c in numeric:
+            cells[c] = metafopy.core.labelled.format_real(list(values[c]), digits if digits is not None else metafopy.core.labelled.SIGNIF)
+        else:
+            cells[c] = [str(v) for v in frame[c]]
+    if est is not None:
+        cells[res.est_name] = ['nonEst' if math.isnan(v) else txt for v, txt in zip(est, cells[res.est_name], strict=True)]
+    # format.data.frame pads the columns to a common width: numbers on the left, labels on the right
+    for c in names:
+        w = max((len(v) for v in cells[c]), default=0)
+        cells[c] = [v.rjust(w) if c in numeric else v.ljust(w) for v in cells[c]]
+    shown_names = [c for c in names if c not in res.by]
+    width = {c: max(len(c), *(len(v) for v in cells[c])) if cells[c] else len(c) for c in names}
+
+    def block(rows: list[int]) -> list[str]:
+        head = ''.join(' ' + (c.rjust(width[c]) if c in numeric else c.ljust(width[c])) for c in shown_names)
+        body = [''.join(' ' + (cells[c][i].rjust(width[c]) if c in numeric else cells[c][i].ljust(width[c])) for c in shown_names) for i in rows]
+        return [head, *body]
+
+    lines: list[str] = []
+    everything = list(range(len(frame)))
+    if not res.by:
+        lines.extend(block(everything))
+        lines.append('')
+    else:
+        keys = []
+        for b in res.by:
+            col = frame[b]
+            keys.append(col.to_numpy(dtype=numpy.float64) if b in numeric else pandas.Index(pandas.unique(col)).get_indexer(pandas.Index(col)))
+        order = [int(i) for i in numpy.lexsort(keys)]
+        seen: dict[str, list[int]] = {}
+        for i in order:
+            seen.setdefault(', '.join(str(frame[b].iloc[i]) for b in res.by), []).append(i)
+        for rows in seen.values():
+            lines.append(', '.join(f'{b} = {cells[b][rows[0]]}' for b in res.by) + ':')
+            lines.extend(block(rows))
+            lines.append('')
+    lines.extend(f'{m} ' for m in res.messages)
+    return '\n'.join(lines)
 
 
 def zapsmall(x: FloatArray, digits: int = 7) -> FloatArray:

@@ -336,6 +336,14 @@ def generate(
             spec.get('when'),
         )
 
+    for label, spec in recipes.emmeans().items():
+        call = spec['call']
+        gen.cases.append(
+            audit.cases.Case(
+                id=f'emmeans/{label}', axis='emmeans', call=call, needs=sorted(set(audit.domains.refs_in(call))), print=True, meta={'fn': call['fn']}
+            )
+        )
+
     for name in universe.datasets:
         gen.cases.append(audit.cases.Case(id=f'datasets/{name}', axis='datasets', call={'fn': 'identity', 'args': {'x': {'$data': name}}}, meta={'fn': name}))
 

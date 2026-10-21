@@ -30,6 +30,7 @@ import metafopy.core.verbose
 import metafopy.errors
 import metafopy.formula
 import metafopy.methods.accessors
+import metafopy.methods.confint
 import metafopy.methods.emm_adjust
 import metafopy.methods.emm_contrasts
 import metafopy.methods.emm_links
@@ -137,7 +138,13 @@ class EmmGrid:
         return self.summary(infer=(False, True), **kwargs)
 
     def __str__(self) -> str:
-        return str(self.summary())
+        summary = self.summary()
+        if self.est_type == 'prediction' and str(summary.frame.columns[0]) == self.est_name:
+            # emmeans names the one row of an intercept-only grid by a variable called 1
+            frame = summary.frame.copy()
+            frame.insert(0, '1', '1')
+            summary = dataclasses.replace(summary, frame=frame)
+        return str(summary)
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -201,6 +208,8 @@ def fit_frame(x: Fit, data: pandas.DataFrame | None) -> pandas.DataFrame:
 def fit_ddf(x: Fit) -> float:
     ddf = getattr(x, 'ddf', None)
     if ddf is None:
+        ddf = getattr(x, 'dfs', None)  # robust(club_sandwich=True) keeps one degrees of freedom per coefficient in dfs (R: in ddf)
+    if ddf is None:
         return math.inf
     values = numpy.atleast_1d(numpy.asarray(ddf, dtype=numpy.float64))
     return math.inf if bool(numpy.isnan(values[0])) else float(values.min())
@@ -247,6 +256,9 @@ def factor_levels(column: pandas.Series) -> list[typing.Any]:
     return sorted(column.dropna().unique().tolist())
 
 
+COV_KEEP = 2  # emmeans' default for the `cov.keep` option (https://rvlenth.github.io/emmeans/reference/emm_options.html)
+
+
 def reduce_covariate(var: str, values: FloatArray, cov_reduce: Reduce | None) -> float:
     if cov_reduce is None:
         return float(numpy.mean(values))
@@ -263,6 +275,12 @@ def make_link(tran: metafopy.methods.emm_links.Link | str | None, measure: str) 
     if tran == 'none':
         return None
     return metafopy.methods.emm_links.make_link(tran)
+
+
+@metafopy.methods.confint.confint.register
+def confint_emmgrid(model: EmmGrid, **kwargs: typing.Any) -> metafopy.methods.emm_summary.EmmSummary:
+    """``confint()`` of a reference grid, marginal means or contrasts (emmeans' ``confint.emmGrid``): the summary with intervals only."""
+    return model.confint(**kwargs)
 
 
 def emmprep(
@@ -356,11 +374,13 @@ def reference_grid(
             labels[var] = tuple(str(lev) for lev in levels)
         else:
             covariates.append(var)
-            values = (
-                numpy.atleast_1d(numpy.asarray(at[var], dtype=numpy.float64))
-                if var in at
-                else numpy.array([reduce_covariate(var, column.to_numpy(dtype=float), cov_reduce)])
-            )
+            observed = numpy.unique(column.dropna().to_numpy(dtype=float))
+            if var in at:
+                values = numpy.atleast_1d(numpy.asarray(at[var], dtype=numpy.float64))
+            elif observed.size <= COV_KEEP:
+                values = observed  # emmeans keeps every value of a covariate with at most `cov.keep` (2) distinct values
+            else:
+                values = numpy.array([reduce_covariate(var, column.to_numpy(dtype=float), cov_reduce)])
             raw[var] = values.tolist()
             labels[var] = tuple(float(v) for v in values)
     sizes = [len(raw[v]) for v in variables]
@@ -410,7 +430,7 @@ def reference_grid(
         by=(),
         adjust='none',
         fam_size=len(rows),
-        infer=(True, False),
+        infer=(False, False),
         link=None,
         inv_label=None,
         log_contrast=False,
