@@ -6,7 +6,7 @@ datasets and the same models. The figures are drawn by metafopy from the code sh
 [Plots compared with metafor](../differences-plots.md).
 
 The Python code of each figure is run by the test suite, so it cannot rot. The figures are rendered with `python bin/gallery.py` and
-`Rscript src/tests/r/gallery.R`, see [Rendering the figures](#rendering-the-figures). 
+`Rscript src/tests/r/gallery.R`, see [Rendering the figures](#rendering-the-figures).
 ```python
 import matplotlib
 

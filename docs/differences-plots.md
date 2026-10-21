@@ -7,7 +7,7 @@ gallery; the link under each pair leads to it.
 The two renderings agree in the geometry of what is drawn (positions, sizes, labels). They differ in details of the rendering such as
 the font, which is Helvetica or Arial in R and DejaVu Sans in matplotlib by default.
 
-### Forest plot with extra annotations
+## Forest plot with extra annotations
 
 <div class="plots" markdown>
 <figure markdown>
@@ -22,7 +22,7 @@ the font, which is Helvetica or Arial in R and DejaVu Sans in matplotlib by defa
 
 [Code in the gallery](guide/gallery.md#forest-plot-with-extra-annotations)
 
-### Forest plot with adjusted text position
+## Forest plot with adjusted text position
 
 <div class="plots" markdown>
 <figure markdown>
@@ -37,7 +37,7 @@ the font, which is Helvetica or Arial in R and DejaVu Sans in matplotlib by defa
 
 [Code in the gallery](guide/gallery.md#forest-plot-with-adjusted-text-position)
 
-### Forest plot with subgroups
+## Forest plot with subgroups
 
 <div class="plots" markdown>
 <figure markdown>
@@ -52,7 +52,7 @@ the font, which is Helvetica or Arial in R and DejaVu Sans in matplotlib by defa
 
 [Code in the gallery](guide/gallery.md#forest-plot-with-subgroups)
 
-### Forest plot with multiple CIs
+## Forest plot with multiple CIs
 
 <div class="plots" markdown>
 <figure markdown>
@@ -67,7 +67,7 @@ the font, which is Helvetica or Arial in R and DejaVu Sans in matplotlib by defa
 
 [Code in the gallery](guide/gallery.md#forest-plot-with-multiple-cis)
 
-### Forest plot with superscripts
+## Forest plot with superscripts
 
 <div class="plots" markdown>
 <figure markdown>
@@ -82,7 +82,7 @@ the font, which is Helvetica or Arial in R and DejaVu Sans in matplotlib by defa
 
 [Code in the gallery](guide/gallery.md#forest-plot-with-superscripts)
 
-### Forest plot in RevMan style
+## Forest plot in RevMan style
 
 <div class="plots" markdown>
 <figure markdown>
@@ -97,7 +97,7 @@ the font, which is Helvetica or Arial in R and DejaVu Sans in matplotlib by defa
 
 [Code in the gallery](guide/gallery.md#forest-plot-in-revman-style)
 
-### Forest plot in BMJ style
+## Forest plot in BMJ style
 
 <div class="plots" markdown>
 <figure markdown>
@@ -112,7 +112,7 @@ the font, which is Helvetica or Arial in R and DejaVu Sans in matplotlib by defa
 
 [Code in the gallery](guide/gallery.md#forest-plot-in-bmj-style)
 
-### Cumulative forest plot
+## Cumulative forest plot
 
 <div class="plots" markdown>
 <figure markdown>
@@ -127,7 +127,7 @@ the font, which is Helvetica or Arial in R and DejaVu Sans in matplotlib by defa
 
 [Code in the gallery](guide/gallery.md#cumulative-forest-plot)
 
-### Meta-analytic scatterplot
+## Meta-analytic scatterplot
 
 <div class="plots" markdown>
 <figure markdown>
@@ -142,7 +142,7 @@ the font, which is Helvetica or Arial in R and DejaVu Sans in matplotlib by defa
 
 [Code in the gallery](guide/gallery.md#meta-analytic-scatterplot)
 
-### Funnel plot variations
+## Funnel plot variations
 
 <div class="plots" markdown>
 <figure markdown>
@@ -157,7 +157,7 @@ the font, which is Helvetica or Arial in R and DejaVu Sans in matplotlib by defa
 
 [Code in the gallery](guide/gallery.md#funnel-plot-variations)
 
-### Contour-enhanced funnel plot
+## Contour-enhanced funnel plot
 
 <div class="plots" markdown>
 <figure markdown>
@@ -172,7 +172,7 @@ the font, which is Helvetica or Arial in R and DejaVu Sans in matplotlib by defa
 
 [Code in the gallery](guide/gallery.md#contour-enhanced-funnel-plot)
 
-### Contour-enhanced funnel plot with the precision on the vertical axis
+## Contour-enhanced funnel plot with the precision on the vertical axis
 
 <div class="plots" markdown>
 <figure markdown>
@@ -187,7 +187,7 @@ the font, which is Helvetica or Arial in R and DejaVu Sans in matplotlib by defa
 
 [Code in the gallery](guide/gallery.md#contour-enhanced-funnel-plot-with-the-precision-on-the-vertical-axis)
 
-### Funnel plot with limit estimate
+## Funnel plot with limit estimate
 
 <div class="plots" markdown>
 <figure markdown>
@@ -202,7 +202,7 @@ the font, which is Helvetica or Arial in R and DejaVu Sans in matplotlib by defa
 
 [Code in the gallery](guide/gallery.md#funnel-plot-with-limit-estimate)
 
-### Funnel plot with trim and fill
+## Funnel plot with trim and fill
 
 <div class="plots" markdown>
 <figure markdown>
@@ -217,7 +217,7 @@ the font, which is Helvetica or Arial in R and DejaVu Sans in matplotlib by defa
 
 [Code in the gallery](guide/gallery.md#funnel-plot-with-trim-and-fill)
 
-### Radial plot
+## Radial plot
 
 <div class="plots" markdown>
 <figure markdown>
@@ -232,7 +232,7 @@ the font, which is Helvetica or Arial in R and DejaVu Sans in matplotlib by defa
 
 [Code in the gallery](guide/gallery.md#radial-plot)
 
-### Baujat plot
+## Baujat plot
 
 <div class="plots" markdown>
 <figure markdown>
@@ -247,7 +247,7 @@ the font, which is Helvetica or Arial in R and DejaVu Sans in matplotlib by defa
 
 [Code in the gallery](guide/gallery.md#baujat-plot)
 
-### L'Abbe plots
+## L'Abbe plots
 
 <div class="plots" markdown>
 <figure markdown>
@@ -262,7 +262,7 @@ the font, which is Helvetica or Arial in R and DejaVu Sans in matplotlib by defa
 
 [Code in the gallery](guide/gallery.md#labbe-plots)
 
-### Normal quantile-quantile plots
+## Normal quantile-quantile plots
 
 <div class="plots" markdown>
 <figure markdown>
@@ -277,7 +277,7 @@ the font, which is Helvetica or Arial in R and DejaVu Sans in matplotlib by defa
 
 [Code in the gallery](guide/gallery.md#normal-quantile-quantile-plots)
 
-### Plot of influence diagnostics
+## Plot of influence diagnostics
 
 <div class="plots" markdown>
 <figure markdown>
@@ -292,7 +292,7 @@ the font, which is Helvetica or Arial in R and DejaVu Sans in matplotlib by defa
 
 [Code in the gallery](guide/gallery.md#plot-of-influence-diagnostics)
 
-### GOSH plot
+## GOSH plot
 
 <div class="plots" markdown>
 <figure markdown>
@@ -307,7 +307,7 @@ the font, which is Helvetica or Arial in R and DejaVu Sans in matplotlib by defa
 
 [Code in the gallery](guide/gallery.md#gosh-plot)
 
-### Plot of cumulative results
+## Plot of cumulative results
 
 <div class="plots" markdown>
 <figure markdown>
@@ -322,7 +322,7 @@ the font, which is Helvetica or Arial in R and DejaVu Sans in matplotlib by defa
 
 [Code in the gallery](guide/gallery.md#plot-of-cumulative-results)
 
-### Log-likelihood plot
+## Log-likelihood plot
 
 <div class="plots" markdown>
 <figure markdown>
@@ -337,7 +337,7 @@ the font, which is Helvetica or Arial in R and DejaVu Sans in matplotlib by defa
 
 [Code in the gallery](guide/gallery.md#log-likelihood-plot)
 
-### Permutation distributions
+## Permutation distributions
 
 <div class="plots" markdown>
 <figure markdown>
@@ -352,7 +352,7 @@ the font, which is Helvetica or Arial in R and DejaVu Sans in matplotlib by defa
 
 [Code in the gallery](guide/gallery.md#permutation-distributions)
 
-### Simulated variance inflation factors
+## Simulated variance inflation factors
 
 <div class="plots" markdown>
 <figure markdown>
@@ -367,7 +367,7 @@ the font, which is Helvetica or Arial in R and DejaVu Sans in matplotlib by defa
 
 [Code in the gallery](guide/gallery.md#simulated-variance-inflation-factors)
 
-### Caterpillar plot
+## Caterpillar plot
 
 <div class="plots" markdown>
 <figure markdown>
@@ -382,7 +382,7 @@ the font, which is Helvetica or Arial in R and DejaVu Sans in matplotlib by defa
 
 [Code in the gallery](guide/gallery.md#caterpillar-plot)
 
-### Forest plot with grouped estimates
+## Forest plot with grouped estimates
 
 <div class="plots" markdown>
 <figure markdown>
@@ -397,7 +397,7 @@ the font, which is Helvetica or Arial in R and DejaVu Sans in matplotlib by defa
 
 [Code in the gallery](guide/gallery.md#forest-plot-with-grouped-estimates)
 
-### Forest plot in orchard style
+## Forest plot in orchard style
 
 <div class="plots" markdown>
 <figure markdown>
