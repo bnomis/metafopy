@@ -13,3 +13,4 @@ build/
 dist/
 htmlcov/
 Rplots.pdf
+.cache/

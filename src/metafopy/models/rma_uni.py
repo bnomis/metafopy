@@ -10,6 +10,7 @@ adjustment (doi:10.1002/sim.1482).
 
 import collections.abc
 import dataclasses
+import html
 import math
 import re
 import typing
@@ -306,6 +307,16 @@ class RMAResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_meth
 
     def __repr__(self) -> str:
         return f'<RMAResult {self.method} k={self.k} p={self.p}>'
+
+    def _repr_html_(self) -> str:  # auditme: accept[leading-underscore] the name is fixed by IPython's display protocol
+        """The model title, the table of coefficients and the heterogeneity statistics as HTML, for Jupyter."""
+        title = next(line for line in str(self).splitlines() if line.strip())
+        table = self.coef_summary().to_html(float_format=lambda v: f'{v:.4g}', border=0)
+        stats = [f'k = {self.k}']
+        if self.method not in {'EE', 'FE'}:
+            stats += [f'τ² = {self.tau2:.4f}', f'I² = {self.I2:.2f}%', f'H² = {self.H2:.2f}']
+        stats.append(f'Q(df = {self.k - self.p}) = {self.QE:.2f}, p-val {metafopy.printing.fmt_pval(self.QEp, 4)}')
+        return f'<div><b>{html.escape(title)}</b>{table}<small>{html.escape("; ".join(stats))}</small></div>'
 
 
 def make_control(control: metafopy.models.tau2.Control | collections.abc.Mapping[str, typing.Any] | None) -> metafopy.models.tau2.Control:

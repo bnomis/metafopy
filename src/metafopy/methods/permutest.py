@@ -49,7 +49,7 @@ EPS = float(numpy.finfo(float).eps)
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
-class PermutestResult:
+class PermutestResult(metafopy.printing.HtmlRepr):
     """Permutation-based p-values (and optionally CI bounds) for the coefficients of a model.
 
     ``QM_perm``, ``zval_perm`` and ``beta_perm`` hold the statistics of every

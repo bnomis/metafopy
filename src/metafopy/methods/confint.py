@@ -45,7 +45,7 @@ CIType = typing.Literal['qp', 'genq', 'pl', 'ht', 'wald', 'wald.log', 'wald.sqrt
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
-class ConfintResult:
+class ConfintResult(metafopy.printing.HtmlRepr):
     """``fixed`` and/or ``random`` tables with ``estimate``, ``ci.lb``, ``ci.ub`` columns."""
 
     fixed: pandas.DataFrame | None

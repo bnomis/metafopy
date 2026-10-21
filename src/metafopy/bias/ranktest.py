@@ -23,6 +23,7 @@ import metafopy.methods.common
 import metafopy.methods.fitview
 import metafopy.mfopt
 import metafopy.models.rma_uni
+import metafopy.printing
 
 __all__ = ['RanktestResult', 'kendall_test', 'ranktest']
 
@@ -30,7 +31,7 @@ type FloatArray = numpy.typing.NDArray[numpy.float64]
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
-class RanktestResult:
+class RanktestResult(metafopy.printing.HtmlRepr):
     tau: float
     pval: float
     digits: int = 4

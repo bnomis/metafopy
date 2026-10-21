@@ -25,6 +25,7 @@ import metafopy.methods.common
 import metafopy.methods.fitview
 import metafopy.mfopt
 import metafopy.models.rma_uni
+import metafopy.printing
 
 __all__ = ['TesResult', 'tes']
 
@@ -38,7 +39,7 @@ SCIPY_ALT: dict[str, typing.Literal['two-sided', 'greater', 'less']] = {'two.sid
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
-class TesResult:
+class TesResult(metafopy.printing.HtmlRepr):
     k: int
     O: int  # noqa: E741
     E: float

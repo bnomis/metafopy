@@ -21,6 +21,17 @@ uv add "metafopy @ git+https://github.com/bnomis/metafopy"
 To work on metafopy itself, clone the repository and follow the development section of the
 [README](https://github.com/bnomis/metafopy#install-development).
 
+## Interactive charts (optional)
+
+The [showcase notebook](notebooks/showcase.ipynb) draws linked, interactive charts with [Altair](https://altair-viz.github.io/). Install the `interactive` extra to
+run it (it adds Altair and [vl-convert](https://github.com/vega/vl-convert), which saves the charts as SVG or PNG):
+
+```bash
+pip install "metafopy[interactive] @ git+https://github.com/bnomis/metafopy"
+```
+
+Results also render as HTML tables in Jupyter, which needs no extra.
+
 ## Check the installation
 
 ```python

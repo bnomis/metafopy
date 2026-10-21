@@ -7,6 +7,7 @@ prints the way R users expect.
 """
 
 import collections.abc
+import html
 import math
 import sys
 
@@ -15,9 +16,11 @@ import numpy.typing
 
 import metafopy.errors
 
+# auditme: accept[non-alphabetical-literal] ruff's RUF022 sorts the constants before the names
 __all__ = [
     'SETTINGS',
     'SIGNIF_LEGEND',
+    'HtmlRepr',
     'console_width',
     'drop_stars',
     'fmt_df',
@@ -212,3 +215,15 @@ def fmt_df_scalar(value: float | None) -> str:
     if math.isinf(value):
         return 'Inf' if value > 0 else '-Inf'
     return str(int(value)) if float(value).is_integer() else f'{round(float(value), 2):g}'
+
+
+class HtmlRepr:
+    """Mixin giving a result the rich display of Jupyter: its printed text in a ``<pre>`` block.
+
+    ``_repr_html_`` is IPython's display protocol, https://ipython.readthedocs.io/en/stable/config/integrating.html
+    """
+
+    __slots__ = ()
+
+    def _repr_html_(self) -> str:  # auditme: accept[leading-underscore] the name is fixed by IPython's display protocol
+        return f'<pre>{html.escape(str(self))}</pre>'

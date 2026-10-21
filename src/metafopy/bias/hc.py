@@ -22,6 +22,7 @@ import metafopy.methods.common
 import metafopy.methods.fitview
 import metafopy.mfopt
 import metafopy.models.rma_uni
+import metafopy.printing
 import metafopy.transf
 
 __all__ = ['HcResult', 'hc']
@@ -32,7 +33,7 @@ EPS = sys.float_info.epsilon
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
-class HcResult:
+class HcResult(metafopy.printing.HtmlRepr):
     beta: float
     se: float
     ci_lb: float

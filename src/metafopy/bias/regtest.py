@@ -25,6 +25,7 @@ import metafopy.mfopt
 import metafopy.models.binary
 import metafopy.models.rma_uni
 import metafopy.models.tau2
+import metafopy.printing
 
 __all__ = ['RegtestResult', 'regtest']
 
@@ -50,7 +51,7 @@ LIMIT_LABEL = {
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
-class RegtestResult:
+class RegtestResult(metafopy.printing.HtmlRepr):
     """Result of :func:`regtest`; ``fit`` is the meta-regression fitted (an :class:`RMAResult` for ``model='rma'``)."""
 
     model: str

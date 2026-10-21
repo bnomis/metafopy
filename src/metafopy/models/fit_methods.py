@@ -16,6 +16,7 @@ import pandas
 import metafopy.core.clubsandwich
 import metafopy.core.labelled
 import metafopy.errors
+import metafopy.printing
 
 __all__ = ['COUNT_NAMES', 'DataFields', 'FitMethods', 'LogLik', 'TableFields']
 
@@ -323,7 +324,7 @@ class RobustFields:
         return metafopy.core.labelled.NamedList({'coef_test': pandas.DataFrame(coef), 'conf_int': conf, 'Wald_test': wald})
 
 
-class FitMethods:
+class FitMethods(metafopy.printing.HtmlRepr):
     """Mixin of the generic accessors of metafor fits (``nobs()``, ``df.residual()``, ``formula()``, ...)."""
 
     __slots__ = ()
