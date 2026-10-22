@@ -179,11 +179,13 @@ def labbe(
 ) -> LabbeResult:
     """L'Abbe plot of a model without moderators fitted to 2x2 table data or incidence rates (``labbe.rma``).
 
+    Mirrors metafor's ``labbe()``, see <https://wviechtb.github.io/metafor/reference/labbe.html>.
+
     ``x`` is an ``rma_uni``, ``rma_mh`` or ``rma_glmm`` fit (``rma_peto`` fits have ``measure='PETO'``, which has no
     arm-level outcomes). ``rma_mh`` and ``rma_glmm`` fits keep the counts, and ``add``/``to`` default to the model's.
 
     The model's ``measure`` must be ``'RR'``, ``'OR'``, ``'RD'``, ``'AS'``, ``'IRR'``, ``'IRD'`` or ``'IRSD'``.
-    A fitted :class:`~metafopy.RMAResult` does not keep the raw counts, so they are taken from the columns
+    A fitted ``RMAResult`` does not keep the raw counts, so they are taken from the columns
     ``ai``, ``bi``, ``ci``, ``di`` (``x1i``, ``t1i``, ``x2i``, ``t2i`` for the rate measures) of the data the model
     was fitted to, or passed as the keyword arguments ``ai``, ``bi``, ``ci_counts`` (the ``ci`` counts; ``ci``
     itself draws the confidence region as in metafor), ``di``, ``x1i``, ``x2i``, ``t1i`` and ``t2i`` (column names or
@@ -195,7 +197,47 @@ def labbe(
     which metafor passes on to ``plot()``. ``na_action`` stands for R's ``options(na.action=)``: an unknown value raises, the others
     give the same result (metafor sets ``na.pass`` while it computes).
 
-    Returns a :class:`LabbeResult`.
+    Args:
+        x: A model without moderators fitted by [rma_uni][metafopy.rma_uni], ``rma_mh`` or ``rma_glmm`` to 2x2 table or rate data, with ``measure`` one of
+            ``'RR'``, ``'OR'``, ``'RD'``, ``'AS'``, ``'IRR'``, ``'IRD'`` or ``'IRSD'``.
+        xlim: Limits of the horizontal axis (the outcome in group 1). Default: derived from the data.
+        ylim: Limits of the vertical axis (the outcome in group 2). Default: derived from the data.
+        lim: Limits of both axes as (low, high).
+        xlab: Label of the horizontal axis. Default: derived from the model.
+        ylab: Label of the vertical axis. Default: derived from the model.
+        flip: Swap the two groups.
+        ci: Shade the confidence region of the line of the estimated effect; a colour string sets the colour.
+        pi: Shade the prediction region of the line of the estimated effect; a colour string sets the colour.
+        grid: Add a grid. ``True``, ``False`` or a colour string for the grid lines.
+        legend: Add a legend: ``True``, a location such as ``'topright'``, or a mapping of legend options. Only approximated with matplotlib.
+        add: Constant added to the cell counts of tables with zero cells. Default: the model's, else 1/2 (0 for ``'AS'`` and ``'IRSD'``).
+        to: Which tables get ``add``: ``'all'``, ``'only0'``, ``'if0all'`` or ``'none'``. Default: the model's, else ``'only0'``.
+        transf: Function applied to the arm-level outcomes before they are plotted.
+        targs: Additional arguments passed to ``transf``.
+        pch: Plotting symbol of the points.
+        psize: Sizes of the points. Default: proportional to the precision, between ``plim``.
+        plim: Range (min, max) of the point sizes.
+        col: Colour of the points or lines (a matplotlib colour).
+        bg: Fill colour of the points (for symbols with a separate fill).
+        lty: Line types of the line of equality and of the line of the estimated effect.
+        ai: Counts of the upper left cells (column name or array); only needed if the model does not keep the counts and ``data`` has no ``ai`` column.
+        bi: Counts of the upper right cells (column name or array); as ``ai``.
+        ci_counts: Counts of the lower left cells (column name or array); as ``ai``. (``ci`` draws the confidence region, as in metafor.)
+        di: Counts of the lower right cells (column name or array); as ``ai``.
+        x1i: Number of events in group 1 (rate measures); as ``ai``.
+        x2i: Number of events in group 2 (rate measures); as ``ai``.
+        t1i: Person-times of group 1 (rate measures); as ``ai``.
+        t2i: Person-times of group 2 (rate measures); as ``ai``.
+        llim: Limits (low, high) of the line of the estimated effect that is drawn (length 2).
+        addyi: Passed to [escalc][metafopy.escalc]: apply ``add`` to the outcomes.
+        addvi: Passed to [escalc][metafopy.escalc]: apply ``add`` to the sampling variances.
+        ax: Matplotlib axes to draw into. Default: the current axes.
+        bty: Type of box around the plot: ``'o'`` (the default), ``'l'``, ``'7'``, ``'c'``, ``'u'``, ``']'`` or ``'n'`` (none).
+        na_action: What to do with missing values (R's ``options(na.action=)``): ``'omit'`` (the default), ``'pass'`` or ``'fail'`` (raise an error if there are
+            any); the other values give the same plot.
+
+    Returns:
+        The plotted arm-level outcomes and the axes.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.

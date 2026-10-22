@@ -95,13 +95,47 @@ def llplot(
 ) -> LlplotResult:
     """Plot the likelihood function of the true effect given the data of each study (``llplot``).
 
+    Mirrors metafor's ``llplot()``, see <https://wviechtb.github.io/metafor/reference/llplot.html>.
+
     ``measure`` is ``'GEN'`` (give ``yi`` with ``vi`` or ``sei``) or ``'OR'`` (give the counts ``ai``, ``bi``, ``ci``, ``di``, or ``ai``,
     ``n1i``, ``ci``, ``n2i``). Studies with two zero cells in a column (``drop00``) are left out for ``'OR'``; tables with a zero cell are drawn
     dashed and those with two dotted, as in metafor. ``xvals`` is the number of points of each curve, ``level`` the confidence level of the
     interval outside which the curves are not drawn, ``scale`` rescales each likelihood to area one, and ``lty``, ``lwd`` and ``col``
     are per study (by default the more precise studies get thinner and darker lines). ``refline`` draws a vertical line.
 
-    Returns a :class:`LlplotResult` with the points and the likelihoods.
+    Args:
+        measure: ``'GEN'`` (the default; give ``yi`` with ``vi`` or ``sei``) or ``'OR'`` (give the counts ``ai``, ``bi``, ``ci``, ``di``, or ``ai``, ``n1i``,
+            ``ci``, ``n2i``).
+        yi: Observed effect sizes (array or column name of ``data``), for ``measure='GEN'``.
+        vi: Sampling variances (array or column name), for ``measure='GEN'``.
+        sei: Standard errors (array or column name), for ``measure='GEN'``; an alternative to ``vi``.
+        ai: 2x2 table counts, upper left cell (array or column name), for ``measure='OR'``.
+        bi: 2x2 table counts, upper right cell.
+        ci: 2x2 table counts, lower left cell.
+        di: 2x2 table counts, lower right cell.
+        n1i: Size of group 1; an alternative to ``bi``.
+        n2i: Size of group 2; an alternative to ``di``.
+        data: Data frame holding the variables named in the other arguments.
+        subset: Which studies to use: a boolean array or an array of 0-based indices.
+        drop00: Drop studies with two zero cells in a column (``measure='OR'``). Default ``True``.
+        xvals: Number of points of each likelihood curve.
+        xlim: Limits of the horizontal axis as (low, high). Default: derived from the data.
+        ylim: Limits of the vertical axis as (low, high). Default: derived from the data.
+        xlab: Label of the horizontal axis. Default: derived from the model.
+        ylab: Label of the vertical axis. Default: derived from the model.
+        scale: Rescale each likelihood to area one.
+        lty: Line types per study (by default tables with a zero cell are dashed and those with two dotted).
+        lwd: Line widths per study (by default the more precise studies get thinner lines).
+        col: Colours per study (by default the more precise studies get darker lines).
+        level: Confidence level in percent of the interval outside which the curves are not drawn.
+        refline: Position of a vertical reference line, or ``None`` for none.
+        onlyo1: Passed to [escalc][metafopy.escalc]: only the first outcome of the 2x2 tables is used.
+        addyi: Passed to [escalc][metafopy.escalc]: apply ``add`` to the effect size.
+        addvi: Passed to [escalc][metafopy.escalc]: apply ``add`` to the sampling variance.
+        ax: Matplotlib axes to draw into. Default: the current axes.
+
+    Returns:
+        The points and the likelihoods of the studies, and the axes.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.

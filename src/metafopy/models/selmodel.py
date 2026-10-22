@@ -285,20 +285,39 @@ def selmodel(
     control: collections.abc.Mapping[str, typing.Any] | None = None,
     **kwargs: typing.Any,
 ) -> metafopy.models.sel_result.SelmodelResult | pandas.DataFrame | FloatArray:
-    """Fit a selection model to a fitted ``rma_uni`` model (metafor's ``selmodel.rma.uni``).
+    """Fit a selection model to a fitted [rma_uni][metafopy.rma_uni] model (metafor's ``selmodel.rma.uni``).
 
-    ``type`` is one of ``'beta'``, ``'halfnorm'``, ``'negexp'``, ``'logistic'``, ``'power'``, ``'negexppow'``,
-    ``'stepfun'``, ``'trunc'``, ``'truncest'`` (plus the variants ``'halfnorm1'``, ``'halfnorm2'``, ... and
-    ``'stepcon'`` metafor documents in its source); partial names work. ``alternative`` is ``'greater'``,
-    ``'less'`` or ``'two.sided'``; ``prec`` one of ``'sei'``, ``'vi'``, ``'ninv'`` and ``'sqrtninv'``. ``delta`` fixes
-    selection parameters (``None``/``nan`` elements are estimated), ``steps`` holds the cutpoints, ``subset`` a logical
-    (or index) vector over the studies of ``x`` to which the selection function applies. ``control`` takes metafor's
-    entries (``delta.init``, ``optimizer``, ``optmethod``, ``intCtrl``, ... with ``.`` or ``_``) and the settings of the optimiser
-    (``maxit``, ``reltol``, ``ndeps``). Further keyword arguments as in metafor: ``tau2``, ``beta`` (fixed values, ``nan``
-    = free), ``scaleprec``, ``pval``, ``ptable`` (return the p-value table only), ``skiphes``, ``skiphet``,
-    ``defmap``, ``mapfun``, ``mapinvfun`` and ``retopt`` (return the optimised parameter vector).
+    Mirrors metafor's ``selmodel()``, see <https://wviechtb.github.io/metafor/reference/selmodel.html>. A selection model describes how the
+    probability that an estimate is observed depends on its p-value (and optionally its precision); it is used to assess and adjust for publication
+    bias (Vevea & Hedges, 1995; Citkowicki & Hedges, 2017; Preston, Ashby & Smyth, 2004). Models that were not fitted with ML (or as an
+    equal/fixed-effects model) are refitted with ML first.
 
-    Models that were not fitted with ML (or as an equal/fixed-effects model) are refitted with ML first.
+    Args:
+        x: A model fitted by [rma_uni][metafopy.rma_uni] (not a robust one), or an earlier selection model, whose base model is used.
+        type: Selection function: ``'beta'``, ``'halfnorm'``, ``'negexp'``, ``'logistic'``, ``'power'``, ``'negexppow'``, ``'stepfun'``, ``'trunc'`` or
+            ``'truncest'`` (plus the variants ``'halfnorm1'``, ``'halfnorm2'``, ... and ``'stepcon'`` metafor documents in its source). Partial
+            names work.
+        alternative: Direction of the one-sided p-values: ``'greater'`` (the default), ``'less'`` or ``'two.sided'``.
+        prec: Measure of precision the selection function may depend on: ``'sei'``, ``'vi'``, ``'ninv'`` or ``'sqrtninv'``. Default (``None``) is
+            no dependence on precision.
+        subset: Which studies the selection function applies to (the others are always observed): a boolean or 0-based index vector over the studies
+            of ``x``. Default: all.
+        delta: Fixed values of the selection parameters (``None`` or ``nan`` elements are estimated).
+        steps: Cutpoints of the p-values for ``type='stepfun'``, in increasing order, ending with 1.
+        decreasing: Whether the selection function is constrained to be decreasing in the p-value (``type='stepfun'``).
+        verbose: Print the progress of the optimiser; larger values print more.
+        digits: Number of decimals used when printing, stored in the result. Default: the global option.
+        control: Optimiser settings as a mapping with metafor's names (``delta.init``, ``optimizer``, ``optmethod``, ``intCtrl``, ... with ``.`` or
+            ``_``) and the optimiser's settings (``maxit``, ``reltol``, ``ndeps``).
+        **kwargs: Further arguments as in metafor: ``tau2`` and ``beta`` (fixed values, ``nan`` for free), ``scaleprec``, ``pval``, ``ptable``
+            (return the p-value table only), ``skiphes``, ``skiphet``, ``skipintcheck``, ``defmap``, ``mapfun``, ``mapinvfun`` and ``retopt``
+            (return the optimised parameter vector).
+
+    Returns:
+        The fitted selection model, a [SelmodelResult][metafopy.SelmodelResult] with the location coefficients in ``beta``, ``tau2`` and the selection
+        parameters in ``delta`` (each with standard errors, tests and confidence intervals) and the likelihood ratio tests against the model without
+        selection. With ``ptable=True`` a data frame of the p-value intervals and their frequencies is returned instead, and with ``retopt=True`` the
+        optimised parameter vector.
 
     Raises:
         metafopy.errors.ArgumentError: ``x`` is not a model this can be applied to.

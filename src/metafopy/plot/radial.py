@@ -84,13 +84,40 @@ def radial(
 ) -> RadialResult:
     """Radial (Galbraith) plot of a model without moderators (``radial.rma``); ``galbraith`` is an alias.
 
+    Mirrors metafor's ``radial()``, see <https://wviechtb.github.io/metafor/reference/radial.html>.
+
     ``center`` plots the deviations from the pooled estimate, ``atz``/``aty`` set the ticks of the z-axis and
     the values on the arc (``aty`` in the units of the effect sizes, ``transf`` is applied to the arc labels),
     ``steps`` the number of arc ticks, ``level`` the confidence level of the shaded band (default: the model's),
     ``digits`` the digits of the arc labels and ``arc_res`` the resolution of the arcs (a second number sets that
     of the confidence interval arc, default a quarter).
 
-    Returns a :class:`RadialResult` with ``x`` (precisions), ``y`` (standardised effects), ``ids`` and ``slab``.
+    Args:
+        x: A fitted model without moderators (not a robust, ``rma_mv``, location-scale or selection model).
+        center: Plot the deviations from the pooled estimate.
+        xlim: Limits of the horizontal axis (the precision). Default: derived from the data.
+        zlim: Limits of the vertical axis (the standardized effects). Default: derived from the data.
+        xlab: Label of the horizontal axis (precision).
+        zlab: Label of the vertical axis (standardized effect).
+        atz: Positions of the tick marks of the vertical axis.
+        aty: Positions (in the units of the effect sizes) of the tick marks on the arc.
+        steps: Number of tick marks on the arc.
+        level: Confidence level in percent of the shaded band. Default: the level of the model.
+        digits: Number of decimals of the arc labels.
+        transf: Function applied to the arc labels.
+        targs: Additional arguments passed to ``transf``.
+        pch: Plotting symbol of the points.
+        col: Colour of the points or lines (a matplotlib colour).
+        bg: Fill colour of the points (for symbols with a separate fill).
+        back: Colour of the shaded band.
+        arc_res: Resolution of the arcs; a second value sets that of the confidence interval arc (default a quarter).
+        cex: Character expansion factor scaling the text and symbols. Default: 1.
+        cex_lab: Character expansion factor of the axis labels.
+        cex_axis: Character expansion factor of the axis tick labels.
+        ax: Matplotlib axes to draw into. Default: the current axes.
+
+    Returns:
+        The plotted values: ``x`` (precisions), ``y`` (standardized effects), ``ids`` and ``slab``, and the axes.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.

@@ -146,7 +146,9 @@ def plot_infl(
     ax: matplotlib.axes.Axes | None = None,
     layout: object = None,
 ) -> PlotInflResult:
-    """Plot the case-deletion diagnostics returned by :func:`~metafopy.influence` (``plot.infl.rma.uni``).
+    """Plot the case-deletion diagnostics returned by [influence][metafopy.influence] (``plot.infl.rma.uni``).
+
+    Mirrors metafor's ``plot.infl.rma.uni()``, see <https://wviechtb.github.io/metafor/reference/plot.infl.rma.uni.html>.
 
     ``plotinf`` selects the diagnostics (``True`` for all eight, or their numbers 1-8: ``rstudent``, ``dffits``,
     ``cook.d``, ``cov.r``, ``tau2.del``, ``QE.del``, ``hat`` and ``weight``) and ``plotdfbs`` the DFBETAS (``True``
@@ -159,10 +161,30 @@ def plot_infl(
     diagnostics are also plotted (or ``dfbsnew`` is true), as metafor starts a new page for them. ``layout`` is accepted for old code
     and ignored with a warning, as metafor does.
 
-    Returns a :class:`PlotInflResult` with the axes.
+    Args:
+        x: The case-deletion diagnostics returned by [influence][metafopy.influence].
+        plotinf: Diagnostics to plot: ``True`` for all eight, ``False`` for none, or their numbers 1 to 8 (``rstudent``, ``dffits``, ``cook.d``, ``cov.r``,
+            ``tau2.del``, ``QE.del``, ``hat``, ``weight``).
+        plotdfbs: DFBETAS to plot: ``True`` for all, or the numbers of the coefficients (starting at 1 as in metafor).
+        dfbsnew: Draw the DFBETAS on a new figure, even if the diagnostics are not plotted.
+        logcov: Plot the covariance ratios (diagnostic 4) on a log scale.
+        slab_style: Labels of the horizontal axis: 1 for ``ids``, 2 for the study labels, 3 for abbreviated study labels.
+        las: Orientation of the axis tick labels, 0 to 3 as in R (0 parallel to the axis, 1 horizontal, 2 perpendicular, 3 vertical).
+        pch: Plotting symbol of the points (R-style code, e.g. 21 for a filled circle).
+        bg: Fill colour of the points.
+        bg_infl: Fill colour of the influential studies.
+        col_na: Colour of the line joining the points around missing diagnostics.
+        ids: Study identifiers for the horizontal axis. Default: ``1..k``.
+        na_action: ``'omit'`` (leave out studies with missing diagnostics, the default) or ``'exclude'``/``'pass'`` (keep them, joined by a line).
+        mfrow: Number of rows and columns of the grid of panels, e.g. ``(8, 1)`` for one column. Default: metafor's default.
+        ax: Matplotlib axes to draw into. Default: the current axes.
+        layout: Accepted for old code and ignored with a warning, as metafor does.
+
+    Returns:
+        The axes of the panels.
 
     Raises:
-        metafopy.errors.ArgumentError: ``x`` is not an :class:`~metafopy.InfluenceResult` (e.g. an ``rma.mv`` fit: metafor has no ``influence.rma.mv``).
+        metafopy.errors.ArgumentError: ``x`` is not an [InfluenceResult][metafopy.InfluenceResult].
         metafopy.errors.InputError: an argument or the data is invalid.
     """
     if layout is not None:

@@ -153,6 +153,8 @@ def funnel(
 ) -> FunnelResult:
     """Funnel plot of a fitted model (``funnel.rma``) or of estimates with their variances (``funnel.default``).
 
+    Mirrors metafor's ``funnel()``, see <https://wviechtb.github.io/metafor/reference/funnel.html>.
+
     ``yaxis`` is one of ``'sei'`` (default), ``'vi'``, ``'seinv'``, ``'vinv'``, ``'ni'``,
     ``'ninv'``, ``'sqrtni'``, ``'sqrtninv'``, ``'lni'`` or ``'wi'``. ``level`` (a percentage; a
     vector draws several CI regions, a contour-enhanced funnel plot) defaults to the confidence
@@ -168,7 +170,58 @@ def funnel(
     ``na_action`` stands for R's ``options(na.action=)``: estimates with missing values are left out, except for ``'fail'``, which stops; it has no effect
     on a fitted model.
 
-    Returns a :class:`FunnelResult` with the plotted coordinates and the axes.
+    Args:
+        x: A fitted model, or a vector of effect sizes (then give ``vi``, ``sei`` or ``ni``). A trim-and-fill result is also accepted.
+        vi: Sampling variances of the effect sizes in ``x`` (vector form).
+        sei: Standard errors of the effect sizes in ``x`` (vector form).
+        ni: Sample sizes, for the sample-size axes (or fit the model with ``ni``).
+        subset: Which studies to plot: a boolean array or an array of 0-based indices.
+        yaxis: Quantity on the vertical axis: ``'sei'`` (default), ``'vi'``, ``'seinv'``, ``'vinv'``, ``'ni'``, ``'ninv'``, ``'sqrtni'``, ``'sqrtninv'``,
+            ``'lni'`` or ``'wi'``.
+        xlim: Limits of the horizontal axis as (low, high). Default: derived from the data.
+        ylim: Limits of the vertical axis as (low, high). Default: derived from the data.
+        xlab: Label of the horizontal axis. Default: derived from the model.
+        ylab: Label of the vertical axis. Default: derived from the model.
+        slab: Study labels. Default: those of the model.
+        steps: Approximate number of tick marks of the axis when no explicit positions are given.
+        at: Positions of the axis tick marks. Default: chosen automatically.
+        atransf: Function applied to the axis tick labels only.
+        targs: Additional arguments passed to ``transf``.
+        digits: Number of decimals of the axis labels or annotations.
+        level: Confidence level(s) in percent of the funnel regions. A vector draws several regions (a contour-enhanced funnel plot). Default: the level of the
+            model (95 for the vector form).
+        addtau2: Add the model's ``tau^2`` to the sampling variances in the confidence regions.
+        type: Residuals plotted for models with moderators: ``'rstandard'`` (the default) or ``'rstudent'``.
+        back: Background colour outside the regions.
+        shade: Colours of the confidence regions (one per ``level``).
+        hlines: Colour of the horizontal lines.
+        refline: Reference line: the pooled estimate by default, or 0 for models with moderators and the vector form.
+        lty: Line type of the reference lines.
+        pch: Plotting symbol of the points.
+        pch_fill: Symbol of the imputed studies of a trim-and-fill result (open circles by default).
+        col: Colour of the points or lines (a matplotlib colour).
+        bg: Fill colour of the points (for symbols with a separate fill).
+        label: Label points with the study labels: ``True`` or ``'all'``, ``'out'`` for the points outside the displayed region, or the number of the most
+            extreme points to label. Default: ``False``. Labels come from ``slab``.
+        offset: Distance of the labels from the points.
+        legend: Add a legend: ``True``, a location such as ``'topright'``, or a mapping of legend options. Only approximated with matplotlib.
+        ax: Matplotlib axes to draw into. Default: the current axes.
+        refline2: Position of a second reference line.
+        level2: Confidence level in percent of the interval around the second reference line.
+        lty2: Line type of the second reference line.
+        ci_res: Number of points used to draw the confidence region boundaries.
+        colref: Colour of the reference line.
+        colci: Colour of the confidence region boundaries.
+        colbox: Colour of the box around the funnel.
+        at_lab: Labels for the axis tick marks given in ``at``.
+        measure: Vector form only: the effect size measure, used for the default axis label.
+        main: Title of the plot.
+        na_action: What to do with missing values (R's ``options(na.action=)``): ``'omit'`` (the default), ``'pass'`` or ``'fail'`` (raise an error if there are
+            any); the other values give the same plot.
+        transf: Not available, as in metafor: only gives a warning (use ``atransf``).
+
+    Returns:
+        The plotted coordinates and the axes (``x``, ``y``, the study labels and the axes).
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid, or values are missing and ``na_action='fail'``.

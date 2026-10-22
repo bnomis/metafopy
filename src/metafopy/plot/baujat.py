@@ -63,6 +63,8 @@ def baujat(
 ) -> BaujatResult:
     """Baujat plot of a fitted ``rma_uni``, ``rma_mh`` or ``rma_peto`` model (``baujat.rma``).
 
+    Mirrors metafor's ``baujat()``, see <https://wviechtb.github.io/metafor/reference/baujat.html>.
+
     ``symbol`` is ``'ids'`` (the 1-based study numbers), ``'slab'`` (the study labels) or one plotting symbol
     (a number, or one per study); ``grid`` adds a grid (a colour string sets its colour). ``progbar=True`` prints a progress bar to
     stderr while the studies are left out in turn. Each study is
@@ -73,7 +75,25 @@ def baujat(
     ``na_action`` stands for R's ``options(na.action=)``: an unknown value raises, ``'fail'`` raises when a study has missing values (in metafor the
     refits stop on them and baujat() ends with "need finite 'ylim' values"), the others give the same result (metafor sets ``na.pass`` while it computes).
 
-    Returns a :class:`BaujatResult`.
+    Args:
+        x: A model fitted by [rma_uni][metafopy.rma_uni], ``rma_mh`` or ``rma_peto``.
+        xlim: Limits of the horizontal axis as (low, high). Default: derived from the data.
+        ylim: Limits of the vertical axis as (low, high). Default: derived from the data.
+        xlab: Label of the horizontal axis. Default: derived from the model.
+        ylab: Label of the vertical axis. Default: derived from the model.
+        cex: Character expansion factor of the symbols.
+        symbol: Plotting symbol: ``'ids'`` (the 1-based study numbers, the default), ``'slab'`` (the study labels), one plotting symbol (a number), or one per
+            study.
+        grid: Add a grid. ``True``, ``False`` or a colour string for the grid lines.
+        progbar: Print a progress bar to stderr while the studies are left out in turn.
+        ax: Matplotlib axes to draw into. Default: the current axes.
+        bty: Type of box around the plot: ``'o'`` (the default), ``'l'``, ``'7'``, ``'c'``, ``'u'``, ``']'`` or ``'n'`` (none).
+        las: Orientation of the axis tick labels, 0 to 3 as in R (0 parallel to the axis, 1 horizontal, 2 perpendicular, 3 vertical).
+        na_action: What to do with missing values (R's ``options(na.action=)``): ``'omit'`` (the default), ``'pass'`` or ``'fail'`` (raise an error if there are
+            any); the other values give the same plot.
+
+    Returns:
+        The plotted coordinates and the axes (x is the contribution of each study to the overall heterogeneity, y its influence).
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.

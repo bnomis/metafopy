@@ -49,7 +49,9 @@ def plot_vif(
     xlim: collections.abc.Sequence[float] | None = None,
     layout: object = None,
 ) -> PlotVifResult:
-    """Plot the simulated (G)VIFs of a :func:`~metafopy.vif` result obtained with ``sim=True`` (``plot.vif.rma``).
+    """Plot the simulated (G)VIFs of a [vif][metafopy.vif] result obtained with ``sim=True`` (``plot.vif.rma``).
+
+    Mirrors metafor's ``plot.vif.rma()``, see <https://wviechtb.github.io/metafor/reference/plot.vif.rma.html>.
 
     ``breaks`` is the ``breaks`` argument of ``hist()``, ``freq`` draws counts instead of densities, ``trim`` drops that fraction of the
     largest simulated values from the histogram and ``lwd`` gives the widths of the dashed line at the observed (G)VIF and of the kernel
@@ -57,7 +59,24 @@ def plot_vif(
     plot is shown at the edge, with an arrow. ``xlim`` sets the limits of the horizontal axis of every panel (``hist()``'s ``xlim``, which
     metafor passes on through ``...``); ``layout`` is accepted for old code and ignored with a warning, as metafor does.
 
-    Returns a :class:`PlotVifResult` with the axes of the panels.
+    Args:
+        x: The result of [vif][metafopy.vif] obtained with ``sim=True``.
+        breaks: Number or rule for the histogram bins, as the ``breaks`` argument of R's ``hist()`` (default ``'Scott'``).
+        freq: Draw counts instead of densities.
+        col: Fill colour of the histogram bars.
+        border: Border colour of the histogram bars.
+        col_out: Colour of the dashed line at the observed (G)VIF.
+        col_density: Colour of the kernel density estimate.
+        trim: Fraction of the largest simulated values dropped from the histogram.
+        adjust: Bandwidth adjustment of the kernel density estimate.
+        lwd: Widths of the dashed line at the observed (G)VIF and of the kernel density estimate; a width of 0 leaves the element out.
+        tail: Tail of the simulated distribution shaded beyond the observed (G)VIF: ``'upper'`` (the default) or ``'lower'``.
+        ax: Matplotlib axes to draw into. Default: the current axes.
+        xlim: Limits of the horizontal axis of every panel. A (G)VIF beyond the right edge is shown at the edge with an arrow.
+        layout: Accepted for old code and ignored with a warning, as metafor does.
+
+    Returns:
+        The axes of the panels.
 
     Raises:
         metafopy.errors.InputError: the result has no simulated values (``sim=True`` was not used) or an argument is invalid.

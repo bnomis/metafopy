@@ -76,6 +76,8 @@ def qqnorm(
 ) -> QQNormResult:
     """Normal Q-Q plot of the residuals of a model (``qqnorm.rma.uni``, ``qqnorm.rma.mh`` and ``qqnorm.rma.peto``).
 
+    Mirrors metafor's ``qqnorm.rma()``, see <https://wviechtb.github.io/metafor/reference/qqnorm.rma.html>.
+
     ``type`` selects ``'rstandard'`` or ``'rstudent'`` residuals. ``envelope`` draws the simulated pseudo CI
     (a colour string sets its colour; ``level`` its confidence level, ``bonferroni`` applies a Bonferroni
     correction, ``reps`` the number of simulations, ``smooth``/``bass`` the Friedman super smoother applied to its
@@ -86,7 +88,33 @@ def qqnorm(
     ``main`` is the title of the plot. ``na_action`` stands for R's ``options(na.action=)``: ``'fail'`` stops when studies were left out of the fit, the other
     choices give the same plot. For ``rma_mh`` and ``rma_peto`` fits no envelope is drawn (so ``label='out'`` labels nothing), as in metafor.
 
-    Returns a :class:`QQNormResult`.
+    Args:
+        y: A fitted model ([rma_uni][metafopy.rma_uni], ``rma_mh``, ``rma_peto`` or a location-scale model).
+        type: Residuals to plot: ``'rstandard'`` (the default) or ``'rstudent'``.
+        pch: Plotting symbol of the points (R-style code, e.g. 21 for a filled circle).
+        col: Colour of the points or lines (a matplotlib colour).
+        bg: Fill colour of the points (for symbols with a separate fill).
+        grid: Add a grid. ``True``, ``False`` or a colour string for the grid lines.
+        envelope: Draw the simulated pseudo confidence envelope; a colour string sets its colour. No envelope is drawn for ``rma_mh`` and ``rma_peto`` fits.
+        level: Confidence level in percent of the envelope. Default: the level of the model.
+        bonferroni: Apply a Bonferroni correction to the envelope.
+        reps: Number of simulations for the envelope.
+        smooth: Smooth the bounds of the envelope with the Friedman super smoother.
+        bass: Bass (smoothness) parameter of the super smoother.
+        label: Label points with the study labels: ``True`` or ``'all'``, ``'out'`` for the points outside the displayed region, or the number of the most
+            extreme points to label. Default: ``False``.
+        offset: Distance of the labels from the points.
+        pos: Position of the labels: 1 to 4 as in R (below, left, above, right), or 13/24 to place them depending on the side of the line.
+        lty: Line types of the line of equality and of the envelope.
+        seed: Seed of the R-compatible generator, so that the envelope reproduces R's ``set.seed(seed)``.
+        rng: An explicit R-compatible random number generator; an alternative to ``seed``.
+        ax: Matplotlib axes to draw into. Default: the current axes.
+        main: Title of the plot (default ``'Normal Q-Q Plot'``).
+        na_action: What to do with missing values (R's ``options(na.action=)``): ``'omit'`` (the default), ``'pass'`` or ``'fail'`` (raise an error if there are
+            any); the other values give the same plot. ``'fail'`` raises when studies were left out of the fit.
+
+    Returns:
+        The plotted theoretical quantiles and residuals, the envelope and the axes.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.

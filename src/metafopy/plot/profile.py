@@ -166,18 +166,39 @@ def plot_profile(
     cex: float = 1.0,
     lwd: float = 1.0,
 ) -> matplotlib.axes.Axes | list[matplotlib.axes.Axes]:
-    """Plot the profile (log-)likelihood computed by :func:`~metafopy.profile` (``plot.profile.rma``).
+    """Plot the profile (log-)likelihood computed by [profile][metafopy.profile] (``plot.profile.rma``).
+
+    Mirrors metafor's ``profile.rma()``, see <https://wviechtb.github.io/metafor/reference/profile.rma.html>.
 
     ``refline`` marks the estimate and its (log-)likelihood with dotted lines, ``cline`` (``True`` for 0.05, or the
     significance level) adds a horizontal line at the likelihood-ratio test's critical value. The estimate itself is
     added to the profile if it lies within the range of the grid. Returns the axes.
 
-    ``x`` may also be the list of profiles that :func:`~metafopy.profile` returns for models with several variance
+    ``x`` may also be the list of profiles that [profile][metafopy.profile] returns for models with several variance
     components (``rma_mv``, location-scale and selection models): one panel per component is drawn in a grid, as
     ``par(mfrow = n2mfrow(comps))`` makes it (inside ``ax`` if given), and the list of axes is returned. ``xlab``,
     ``ylab`` and ``main`` are then one string for all panels or one per panel. Unlike metafor, ``refline`` also applies to
     the panels of a list. ``log`` (``'x'``, ``'y'`` or ``'xy'``) draws logarithmic axes, ``cex`` is the size of the points and ``lwd`` the
     width of the line, which metafor passes on through ``...``.
+
+    Args:
+        x: A profile from [profile][metafopy.profile], or the list of profiles it returns for models with several variance components (``rma_mv``,
+            location-scale and selection models; one panel per component).
+        xlim: Limits of the horizontal axis as (low, high). Default: derived from the data.
+        ylim: Limits of the vertical axis as (low, high). Default: derived from the data.
+        pch: Plotting symbol of the points.
+        xlab: Label of the horizontal axis; for a list of profiles one string for all panels or one per panel.
+        ylab: Label of the vertical axis; for a list of profiles one string for all panels or one per panel.
+        main: Title; for a list of profiles one string for all panels or one per panel.
+        refline: Mark the estimate and its (log-)likelihood with dotted lines (unlike metafor, also applies to the panels of a list).
+        cline: Add a horizontal line at the critical value of the likelihood-ratio test: ``True`` for significance level 0.05, or the level.
+        ax: Matplotlib axes to draw into. Default: the current axes.
+        log: Logarithmic axes: ``'x'``, ``'y'`` or ``'xy'``.
+        cex: Size of the points.
+        lwd: Width of the line.
+
+    Returns:
+        The axes drawn into (a list of axes, one per component, for a list of profiles).
 
     Raises:
         metafopy.errors.InputError: ``xlab``, ``ylab`` or ``main`` does not have one entry per profile.

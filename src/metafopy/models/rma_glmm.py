@@ -394,8 +394,8 @@ def rma_glmm(
 ) -> metafopy.models.glmm_result.GLMMResult:
     """Fit a generalized linear mixed-effects model to binary or count data.
 
-    Mirrors metafor's ``rma.glmm()``; see
-    https://wviechtb.github.io/metafor/reference/rma.glmm.html. ``measure`` is
+    Mirrors metafor's ``rma.glmm()``, see
+    <https://wviechtb.github.io/metafor/reference/rma.glmm.html>. ``measure`` is
     ``'OR'`` (2x2 tables: ``ai``, ``bi``, ``ci``, ``di`` or ``ai``, ``ci``,
     ``n1i``, ``n2i``), ``'IRR'`` (``x1i``, ``x2i``, ``t1i``, ``t2i``), ``'PLO'``
     (``xi`` and ``mi`` or ``ni``) or ``'IRLN'`` (``xi``, ``ti``). ``model`` is
@@ -411,20 +411,20 @@ def rma_glmm(
     or the estimates are unreliable.
 
     ``link`` (one of ``'logit'``, ``'probit'``, ``'cauchit'``, ``'cloglog'``, ``'log'``, ``'identity'``, ``'sqrt'``) replaces the
-    link of the model and ``family`` (``'binomial'``, ``'poisson'`` or :func:`metafopy.core.glm.binomial` /
-    :func:`metafopy.core.glm.poisson`, which carry a link) replaces family and link, like metafor's ``link`` and ``family``
+    link of the model and ``family`` (``'binomial'``, ``'poisson'`` or ``metafopy.core.glm.binomial`` /
+    ``metafopy.core.glm.poisson``, which carry a link) replaces family and link, like metafor's ``link`` and ``family``
     arguments passed through ``...``. They apply to the unconditional models (``'UM.FS'``, ``'UM.RS'``) and the one-group
     measures, the models that metafor fits with ``glm()`` and ``glmer()``; the conditional models ignore them as in metafor.
     The family must match the data (binomial for ``'OR'``, ``'RR'``, ``'RD'``, ``'PLO'``, ``'PR'``, ``'PLN'``, Poisson for
     ``'IRR'`` and ``'IRLN'``).
 
     ``control={'optimizer': 'clogit'}`` or ``'clogistic'`` fits the fixed-effects (``method='FE'``) conditional model
-    ``'CM.EL'`` for ``'OR'`` with ``survival::clogit()`` or ``Epi::clogistic()`` (implemented in :mod:`metafopy.core.clogit`,
+    ``'CM.EL'`` for ``'OR'`` with ``survival::clogit()`` or ``Epi::clogistic()`` (implemented in ``metafopy.core.clogit``,
     without building the individual patient data); ``clogitCtrl`` and ``clogisticCtrl`` entries of ``control`` are passed on
-    as in metafor (see :func:`metafopy.core.clogit.clogit_settings` and :func:`metafopy.core.clogit.clogistic_settings`).
+    as in metafor (see ``metafopy.core.clogit.clogit_settings`` and ``metafopy.core.clogit.clogistic_settings``).
     The default ``'nlminb'`` maximises the exact likelihood numerically. The other optimisers of metafor's ``control$optimizer``
     (``'optim'`` with ``optmethod``, ``'Nelder-Mead'``, ``'BFGS'``, ``'CG'``, ``'L-BFGS-B'``, ``'nlm'``, ``'uobyqa'``, ``'newuoa'``,
-    ``'bobyqa'``, ...) maximise it as :mod:`metafopy.models.sel_opt` minimises: ``optim`` with BFGS or Nelder-Mead is R's routine
+    ``'bobyqa'``, ...) maximise it as ``metafopy.models.sel_opt`` minimises: ``optim`` with BFGS or Nelder-Mead is R's routine
     (``optCtrl`` takes ``maxit``, ``reltol``, ``abstol`` and ``ndeps``), the others stand in with the closest SciPy method. The Wald test
     of the saturated model (``QE_Wld``) of ``'CM.EL'`` is ill-conditioned and differs between optimisers in R as well.
     The Hessian of ``'CM.EL'`` is computed as ``control={'hesspack': ..., 'hessianCtrl': {...}}`` asks (``'numDeriv'`` with ``r = 16``
@@ -440,18 +440,70 @@ def rma_glmm(
     the integration, in what log-likelihood they report and in the convergence tolerances; see
     ``docs/differences.md``.
 
-    ``verbose`` prints metafor's progress messages on stderr (``1``: the model fits; ``2``: every stage); the
-    trace output of ``glm()``/``glmer()`` and of the optimisers has no counterpart here.
+    Args:
+        ai: 2x2 table frequencies, upper left cell (event in group 1), as an array or the name of a column of ``data``. Used with ``measure='OR'``.
+        bi: 2x2 table frequencies, upper right cell (no event in group 1).
+        ci: 2x2 table frequencies, lower left cell (event in group 2).
+        di: 2x2 table frequencies, lower right cell (no event in group 2).
+        n1i: Size of group 1 (row total); an alternative to ``bi``.
+        n2i: Size of group 2 (row total); an alternative to ``di``.
+        x1i: Number of events in group 1 (``measure='IRR'``).
+        x2i: Number of events in group 2 (``measure='IRR'``).
+        t1i: Total person-time of group 1 (``measure='IRR'``).
+        t2i: Total person-time of group 2 (``measure='IRR'``).
+        xi: Number of events (one-group measures ``'PLO'`` and ``'IRLN'``).
+        mi: Number of non-events (``'PLO'``); an alternative to ``ni``.
+        ti: Total person-time (``'IRLN'``).
+        ni: Sample size (``'PLO'``); an alternative to ``mi``.
+        mods: Moderators, as a one-sided formula string (``'~ ablat + year'``), a matrix, or a data frame. ``None`` fits a model without moderators.
+        measure: Outcome measure, required: ``'OR'``, ``'IRR'``, ``'PLO'`` or ``'IRLN'``, or the experimental ``'RR'``, ``'RD'``, ``'PR'`` or ``'PLN'``.
+        data: Data frame holding the variables named in the other arguments.
+        slab: Study labels, as a sequence or a column name. Defaults to ``1, 2, ...``.
+        subset: Which studies to use: a boolean array, an array of 0-based indices, or a string expression evaluated on ``data``.
+        add: Constant added to the cell counts of tables with zero cells when computing the ``yi``/``vi`` values (only the first value of a
+            sequence is used). Default ``0.5``.
+        to: Which tables get ``add``: ``'all'``, ``'only0'`` (the default), ``'if0all'`` or ``'none'`` (only the first value of a sequence is used).
+        drop00: Drop studies with no events (or only events) in both groups (only the first value of a sequence is used). Default ``True``.
+        intercept: Include an intercept in the model with moderators.
+        model: Model for 2x2 tables: ``'UM.FS'`` (unconditional, fixed study effects), ``'UM.RS'`` (unconditional, random study effects),
+            ``'CM.AL'`` (conditional, approximate likelihood) or ``'CM.EL'`` (conditional, exact likelihood). Default (``None``) is ``'UM.FS'``;
+            not used by the one-group measures.
+        method: ``'ML'`` (random or mixed effects, the default), or ``'FE'`` (aliases ``'EE'``, ``'CE'``) for a fixed-effects model.
+        coding: Coding of the group indicator in the unconditional models: ``0.5`` (the default, -1/2 and +1/2), ``1`` or ``0``.
+        cor: Allow the random study effects and the random group effects of ``'UM.RS'`` to be correlated.
+        test: Test for the coefficients: ``'z'`` (the default) or ``'t'``.
+        level: Confidence interval level in percent (``95`` is 95%).
+        btt: Coefficients to test jointly in the omnibus test, as 0-based indices or a regular expression matched against coefficient names.
+            Default: all but the intercept.
+        nAGQ: Number of quadrature points for the adaptive Gauss-Hermite approximation of the likelihood of the mixed models (``1`` is the Laplace
+            approximation).
+        verbose: Print metafor's progress messages to stderr (``1``: the model fits; ``2``: every stage). The trace output of ``glm()``/``glmer()``
+            and of the optimisers has no counterpart here.
+        digits: Number of decimals used when printing, stored in the result.
+        control: Optimiser and package settings, as a [GLMMControl][metafopy.GLMMControl] or a mapping with metafor's names (``.`` becomes ``_``).
+        na_action: What to do with missing values: ``'omit'`` (drop those studies, the default), ``'fail'`` (raise) or ``'pass'`` (keep them).
+        i2def: Definition of ``I^2`` and ``H^2``: ``'1'`` (the default) or ``'2'``.
+        onlyo1: Passed to [escalc][metafopy.escalc]: only the first outcome of the 2x2 tables is used.
+        addyi: Passed to [escalc][metafopy.escalc]: apply ``add`` to the effect size ``yi``.
+        addvi: Passed to [escalc][metafopy.escalc]: apply ``add`` to the sampling variance ``vi``.
+        link: Link function replacing the one of the model: ``'logit'``, ``'probit'``, ``'cauchit'``, ``'cloglog'``, ``'log'``, ``'identity'`` or
+            ``'sqrt'``. Default (``None``) is the link of the measure.
+        family: Family replacing the family and link of the model: ``'binomial'``, ``'poisson'`` or a ``metafopy.core.glm`` family object.
+            Default (``None``) is the family of the measure.
 
-    Examples
-    --------
-    >>> from metafopy import datasets, rma_glmm
-    >>> dat = datasets.load("bcg")  # doctest: +SKIP
-    >>> rma_glmm(ai="tpos", bi="tneg", ci="cpos", di="cneg", data=dat, measure="OR")  # doctest: +SKIP
+    Returns:
+        The fitted model. Coefficients are in ``beta`` with ``se``, ``zval``, ``pval``, ``ci_lb`` and ``ci_ub``; ``tau2`` (and ``sigma2``,
+        ``rho`` for ``'UM.RS'``) is the heterogeneity; ``QE_Wld`` and ``QE_LRT`` test for (residual) heterogeneity and ``QM`` is the omnibus test;
+        ``I2`` and ``H2`` are computed from the ``yi``/``vi`` values; ``summary()`` prints the table.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
         metafopy.errors.EstimationError: a model cannot be fitted.
+
+    Examples:
+        >>> from metafopy import datasets, rma_glmm
+        >>> dat = datasets.load("bcg")  # doctest: +SKIP
+        >>> rma_glmm(ai="tpos", bi="tneg", ci="cpos", di="cneg", data=dat, measure="OR")  # doctest: +SKIP
     """
     model_name = check_arguments(measure, model, method, coding, test)
     vlevel = int(verbose)

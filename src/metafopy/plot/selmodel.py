@@ -69,13 +69,39 @@ def plot_selmodel(
 ) -> SelPlotResult:
     """Draw the selection function of a selection model against the p-value.
 
+    Mirrors metafor's ``plot.rma.uni.selmodel()``, see <https://wviechtb.github.io/metafor/reference/plot.rma.uni.selmodel.html>.
+
     ``prec`` fixes the precision at which the function is drawn (``'min'``, ``'max'``, ``'mean'``, ``'median'`` or a number).
     ``ci`` adds a confidence region: ``'wald'`` transforms the Wald bounds of the selection parameters, ``'boot'`` (or ``True``)
     simulates ``reps`` parameter vectors from their estimated multivariate normal distribution (with NumPy's generator seeded by
     ``seed``, so the bounds agree with metafor only up to simulation error). ``scale`` rescales the curve to the unit interval,
     ``shade`` fills the region, ``rug`` marks the observed p-values and ``add`` draws into existing axes. ``draw=False`` only
     computes the curve. ``bty`` (the type of box around the plot) and ``col`` (the colour of the lines) are passed on to ``plot()`` and ``lines()`` by
-    metafor. The curve is returned as :class:`SelPlotResult`.
+    metafor. The curve is returned as ``SelPlotResult``.
+
+    Args:
+        x: A selection model from [selmodel][metafopy.selmodel].
+        xlim: Limits of the horizontal axis (p-values). Default: 0 to 1.
+        ylim: Limits of the vertical axis as (low, high). Default: derived from the data.
+        n: Number of points of the curve.
+        prec: Precision at which the function is drawn: ``'min'``, ``'max'`` (the default), ``'mean'``, ``'median'`` or a number.
+        scale: Rescale the curve to the unit interval.
+        ci: Add a confidence region: ``'wald'`` (transform the Wald bounds of the selection parameters), ``'boot'`` or ``True`` (simulate ``reps`` parameter
+            vectors from their estimated multivariate normal distribution; the bounds agree with metafor only up to simulation error).
+        reps: Number of simulated parameter vectors for the ``'boot'`` confidence region.
+        shade: Fill the confidence region.
+        rug: Mark the observed p-values along the horizontal axis.
+        add: Draw into existing axes instead of starting a new plot.
+        lty: Line types of the selection function and of the confidence region.
+        lwd: Line widths of the selection function and of the confidence region.
+        seed: Seed of NumPy's generator for the ``'boot'`` region.
+        draw: If ``False`` only compute the curve and do not draw.
+        ax: Matplotlib axes to draw into. Default: the current axes.
+        bty: Type of box around the plot: ``'o'`` (the default), ``'l'``, ``'7'``, ``'c'``, ``'u'``, ``']'`` or ``'n'`` (none).
+        col: Colour of the lines.
+
+    Returns:
+        The computed curve (p-values, selection probabilities and confidence region) and the axes.
 
     Raises:
         metafopy.errors.InputError: an argument is invalid or the model has no selection function.

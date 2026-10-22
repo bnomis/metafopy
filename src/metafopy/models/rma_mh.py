@@ -249,22 +249,55 @@ def rma_mh(
 ) -> MHResult:
     """Fit a Mantel-Haenszel meta-analysis of 2x2 tables (``measure`` ``'OR'``, ``'RR'``, ``'RD'``) or rate data (``'IRR'``, ``'IRD'``).
 
-    Mirrors metafor's ``rma.mh()``; see
-    https://wviechtb.github.io/metafor/reference/rma.mh.html. The first element
-    of ``add``, ``to`` and ``drop00`` is used when computing the individual
-    ``yi``/``vi`` values, the second one for the counts entering the
-    Mantel-Haenszel estimator (by default nothing is added to them).
+    Mirrors metafor's ``rma.mh()``, see <https://wviechtb.github.io/metafor/reference/rma.mh.html>. The pooled effect is the Mantel-Haenszel
+    estimate (Mantel & Haenszel, 1959; Greenland & Robins, 1985; Robins, Breslow & Greenland, 1986; Nurminen, 1981). The individual
+    effect sizes and sampling variances are computed as by [escalc][metafopy.escalc]. For odds ratios the result also holds the
+    Cochran-Mantel-Haenszel test and Tarone's test of heterogeneity. The first element of ``add``, ``to`` and ``drop00`` is used when computing
+    the individual ``yi``/``vi`` values, the second one for the counts entering the Mantel-Haenszel estimator (by default nothing is added to them).
 
-    Examples
-    --------
-    >>> from metafopy import datasets, rma_mh
-    >>> dat = datasets.load("dat.bcg")  # doctest: +SKIP
-    >>> rma_mh(ai="tpos", bi="tneg", ci="cpos", di="cneg", data=dat)  # doctest: +SKIP
+    Args:
+        ai: Frequencies of the 2x2 tables, upper left cell (event in group 1), as an array or the name of a column of ``data``.
+        bi: Frequencies of the 2x2 tables, upper right cell (no event in group 1).
+        ci: Frequencies of the 2x2 tables, lower left cell (event in group 2).
+        di: Frequencies of the 2x2 tables, lower right cell (no event in group 2).
+        n1i: Size of group 1 (row total); can be given instead of ``bi``.
+        n2i: Size of group 2 (row total); can be given instead of ``di``.
+        x1i: Number of events in group 1 (rate data, ``'IRR'`` and ``'IRD'``).
+        x2i: Number of events in group 2 (rate data).
+        t1i: Total person-time of group 1 (rate data).
+        t2i: Total person-time of group 2 (rate data).
+        measure: Effect measure: ``'OR'`` (log odds ratio, the default), ``'RR'`` (log risk ratio), ``'RD'`` (risk difference), ``'IRR'`` (log
+            incidence rate ratio) or ``'IRD'`` (incidence rate difference). Other measures raise an error.
+        data: Data frame holding the variables named in the other arguments.
+        slab: Study labels, as a sequence or a column name. Defaults to ``1, 2, ...``.
+        subset: Which studies to use: a boolean array, an array of 0-based indices, or a string expression evaluated on ``data``.
+        add: Constant added to the cell counts of tables with zero cells. A single value, or a pair: the first for the ``yi``/``vi`` values and the
+            second for the Mantel-Haenszel estimator. Default ``0.5``, so that nothing is added to the counts of the estimator.
+        to: Which tables get ``add``: ``'all'``, ``'only0'`` (those with a zero cell, the default), ``'if0all'`` (all, if any table has a zero cell)
+            or ``'none'``. A single value, or a pair as for ``add``.
+        drop00: Drop studies with no events (or only events) in both groups. A single value, or a pair as for ``add``. Default ``True``.
+        correct: Use the continuity correction in the Cochran-Mantel-Haenszel test (odds ratios only).
+        level: Confidence interval level in percent (``95`` is 95%).
+        verbose: Print metafor's progress messages to stderr.
+        digits: Number of decimals used when printing, stored in the result.
+        na_action: What to do with missing values: ``'omit'`` (drop those studies, the default), ``'fail'`` (raise) or ``'pass'`` (keep them).
+        onlyo1: Passed to [escalc][metafopy.escalc]: only the first outcome of the 2x2 tables is used.
+        addyi: Passed to [escalc][metafopy.escalc]: apply ``add`` to the effect size ``yi``.
+        addvi: Passed to [escalc][metafopy.escalc]: apply ``add`` to the sampling variance ``vi``.
 
-    ``verbose`` prints metafor's progress messages (to stderr).
+    Returns:
+        The fitted model. The pooled estimate is in ``beta`` with ``se``, ``zval``, ``pval``, ``ci_lb`` and ``ci_ub`` (on the log scale for
+        ``'OR'``, ``'RR'`` and ``'IRR'``); ``QE``, ``QEp``, ``I2`` and ``H2`` describe the heterogeneity; ``CO``/``COp``, ``MH``/``MHp``,
+        ``BD``/``BDp`` and ``TA``/``TAp`` are the Cochran, Mantel-Haenszel, Breslow-Day and Tarone tests (odds ratios only); ``summary()`` prints
+        the table.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InputError: an argument or the data is invalid, or ``measure`` is not one of the supported measures.
+
+    Examples:
+        >>> from metafopy import datasets, rma_mh
+        >>> dat = datasets.load("dat.bcg")  # doctest: +SKIP
+        >>> rma_mh(ai="tpos", bi="tneg", ci="cpos", di="cneg", data=dat)  # doctest: +SKIP
     """
     metafopy.core.verbose.binary_start(int(verbose), subset)
     if measure not in MEASURES:

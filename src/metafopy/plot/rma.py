@@ -108,15 +108,29 @@ def plot_rma(
 ) -> PlotRmaResult | metafopy.plot.selmodel.SelPlotResult:
     """Draw the forest, funnel, radial and residual plots of a model (metafor's ``plot()`` of an ``rma.uni``, ``rma.mh`` or ``rma.peto`` fit).
 
-    For a model without moderators the panels are :func:`~metafopy.forest`, :func:`~metafopy.funnel`,
-    :func:`~metafopy.radial` and the standardized residuals (:func:`~metafopy.rstandard`) of the studies in order;
+    Mirrors metafor's ``plot.rma.uni()``, see <https://wviechtb.github.io/metafor/reference/plot.rma.uni.html>.
+
+    For a model without moderators the panels are [forest][metafopy.forest], [funnel][metafopy.funnel],
+    [radial][metafopy.radial] and the standardized residuals ([rstandard][metafopy.rstandard]) of the studies in order;
     for a meta-regression the funnel plot shows the residuals and the radial plot is replaced by the standardized
-    residuals against the fitted values. ``qqplot=True`` draws :func:`~metafopy.qqnorm` (with ``seed`` for its envelope)
+    residuals against the fitted values. ``qqplot=True`` draws [qqnorm][metafopy.qqnorm] (with ``seed`` for its envelope)
     instead of the last panel. The panels fill ``ax`` (default: the current axes) in a 2 x 2 grid, as
-    ``par(mfrow = c(2, 2))`` does. A selection model (``rma.uni.selmodel``) is drawn by :func:`~metafopy.plot_selmodel`,
+    ``par(mfrow = c(2, 2))`` does. A selection model (``rma.uni.selmodel``) is drawn by [plot_selmodel][metafopy.plot_selmodel],
     which gets ``kwargs``, as R's ``plot()`` dispatches to ``plot.rma.uni.selmodel``. ``na_action`` stands for R's ``options(na.action=)``: with
     ``'omit'`` (default) the last panel and the third panel of a meta-regression show the studies used in fitting, with ``'exclude'`` and ``'pass'`` every
     study of the subset (a gap where a value is missing), and ``'fail'`` stops when studies were left out of the fit.
+
+    Args:
+        x: A model fitted by [rma_uni][metafopy.rma_uni], ``rma_mh`` or ``rma_peto``, or a selection model.
+        qqplot: Draw the normal Q-Q plot instead of the last panel.
+        seed: Seed for the envelope of the Q-Q plot.
+        ax: Matplotlib axes whose area the four panels fill (2 x 2 grid). Default: the current axes.
+        na_action: What to do with missing values (R's ``options(na.action=)``): ``'omit'`` (the default), ``'pass'`` or ``'fail'`` (raise an error if there are
+            any); the other values give the same plot.
+        **kwargs: [plot_selmodel][metafopy.plot_selmodel] arguments, for selection models only.
+
+    Returns:
+        The axes of the panels (for a selection model, the result of [plot_selmodel][metafopy.plot_selmodel]).
 
     Raises:
         metafopy.errors.ArgumentError: ``kwargs`` are given for a model that is not a selection model.

@@ -100,10 +100,12 @@ def plot_permutest(
     xlim: collections.abc.Sequence[float] | None = None,
     layout: object = None,
 ) -> PlotPermutestResult:
-    """Plot the permutation distributions of a :func:`~metafopy.permutest` result (``plot.permutest.rma.uni``).
+    """Plot the permutation distributions of a [permutest][metafopy.permutest] result (``plot.permutest.rma.uni``).
+
+    Mirrors metafor's ``plot.permutest.rma.uni()``, see <https://wviechtb.github.io/metafor/reference/plot.permutest.rma.uni.html>.
 
     ``beta`` selects the coefficients (names or 0-based positions; all but the intercept by default; ``[]`` for none) and ``QM=True`` adds the
-    omnibus test. For a location-scale permutation test (:class:`~metafopy.methods.ls_permutest.LSPermutestResult`) ``alpha`` selects the
+    omnibus test. For a location-scale permutation test (``LSPermutestResult``) ``alpha`` selects the
     scale coefficients in the same way and ``QS=True`` adds the omnibus test of the scale coefficients; the panels are, as in metafor, the
     location omnibus test, the location coefficients, the scale omnibus test and the scale coefficients.
     ``breaks`` is the ``breaks`` argument of ``hist()``, ``freq`` draws counts instead of densities, ``trim`` drops that fraction of the most
@@ -114,7 +116,33 @@ def plot_permutest(
     ``xlim`` sets the limits of the horizontal axis of every panel (``hist()``'s ``xlim``, which metafor passes on through ``...``).
     ``layout`` is accepted for old code and ignored with a warning, as metafor does.
 
-    Returns a :class:`PlotPermutestResult` with the axes of the panels.
+    Args:
+        x: The result of [permutest][metafopy.permutest] (also for a location-scale model).
+        beta: Location coefficients to plot: names or 0-based positions (all but the intercept by default; ``[]`` for none).
+        alpha: Scale coefficients to plot (location-scale permutation tests only), selected as ``beta``.
+        QM: Add the omnibus test of the location coefficients.
+        QS: Add the omnibus test of the scale coefficients (location-scale permutation tests only).
+        breaks: Number or rule for the histogram bins, as the ``breaks`` argument of R's ``hist()`` (default ``'Scott'``).
+        freq: Draw counts instead of densities.
+        col: Fill colour of the histogram bars.
+        border: Border colour of the histogram bars.
+        col_out: Colour of the dashed line at the observed value.
+        col_ref: Colour of the theoretical null distribution.
+        col_density: Colour of the kernel density estimate of the permutation distribution.
+        trim: Fraction of the most extreme permutations dropped from the histogram.
+        adjust: Bandwidth adjustment of the kernel density estimate.
+        lwd: Widths of the dashed line at the observed value, of the theoretical null distribution, of the kernel density estimate and of the vertical line at
+            zero; a width of 0 leaves the element out.
+        legend: Label the two curves in the first panel: ``True`` or a location.
+        alternative: Alternative hypothesis, ``'two.sided'``, ``'greater'`` or ``'less'``. Default: that of the test.
+        p2defn: Definition of the two-sided p-value: ``'abs'`` or ``'px2'``. Default: that of the test.
+        stat: Test statistic used for the permutation p-values. Default: that of the test.
+        ax: Matplotlib axes to draw into. Default: the current axes.
+        xlim: Limits of the horizontal axis of every panel.
+        layout: Accepted for old code and ignored with a warning, as metafor does.
+
+    Returns:
+        The axes of the panels.
 
     Raises:
         metafopy.errors.InputError: an argument is invalid.

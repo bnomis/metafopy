@@ -212,10 +212,12 @@ def regplot(
 ) -> RegplotResult:
     """Meta-analytic scatterplot of a meta-regression model (``regplot.rma``).
 
+    Mirrors metafor's ``regplot()``, see <https://wviechtb.github.io/metafor/reference/regplot.html>.
+
     ``mod`` is the moderator on the horizontal axis (its name, or its 0-based position among the coefficients; it may
     be left out when the model has a single moderator). The regression line (``pred``) and the confidence (``ci``) and
     prediction (``pi``) bands are drawn for the other moderators set to their means; ``xvals`` gives the moderator values
-    to predict at, and ``pred`` may be a :class:`~metafopy.methods.predict.PredictResult` for those values. ``transf``
+    to predict at, and ``pred`` may be a [PredictResult][metafopy.PredictResult] for those values. ``transf``
     transforms the effects and the bands, ``atransf`` only the labels of the vertical axis, and ``olim`` limits the
     values drawn. The points have the ``cex`` ``psize`` (or the square roots of the weights rescaled to ``plim``; give
     ``'seinv'`` or ``'vinv'`` to scale the inverse standard errors or variances instead). ``label`` labels the studies
@@ -232,12 +234,62 @@ def regplot(
     ``na_action`` stands for R's ``options(na.action=)``: ``'fail'`` stops when the regression line is drawn (``pred=True``) and studies were left out of the
     fit, the other choices give the same plot.
 
-    ``x`` is a fit of :func:`metafopy.rma`, including location-scale models, of :func:`metafopy.selmodel`, of :func:`metafopy.rma_mv`
-    or of :func:`metafopy.rma_glmm`; the bands are the predictions of the model, so no prediction interval is drawn where
-    :func:`metafopy.predict` gives none (location-scale models). The sizes of the points are equal for the models without weights
+    ``x`` is a fit of [rma][metafopy.rma_uni], including location-scale models, of [selmodel][metafopy.selmodel], of [rma_mv][metafopy.rma_mv]
+    or of [rma_glmm][metafopy.rma_glmm]; the bands are the predictions of the model, so no prediction interval is drawn where
+    [predict][metafopy.predict] gives none (location-scale models). The sizes of the points are equal for the models without weights
     (``selmodel`` and ``rma_glmm`` fits).
 
-    Returns a :class:`RegplotResult` with the plotted coordinates and the axes; :func:`points_regplot` redraws its points.
+    Args:
+        x: A fitted meta-regression model: [rma_uni][metafopy.rma_uni] (including location-scale models), [selmodel][metafopy.selmodel],
+            [rma_mv][metafopy.rma_mv] or [rma_glmm][metafopy.rma_glmm].
+        mod: Moderator on the horizontal axis: its name, or its 0-based position among the coefficients. May be left out when the model has a single moderator.
+        pred: Draw the regression line (the other moderators are set to their means), or give a [PredictResult][metafopy.PredictResult] for the values in
+            ``xvals``.
+        ci: Draw the confidence band.
+        pi: Draw the prediction band (none is drawn where the model gives no prediction interval).
+        shade: Shade the bands: ``True``, ``False``, or colour(s) for the confidence and prediction bands.
+        xlim: Limits of the horizontal axis as (low, high). Default: derived from the data.
+        ylim: Limits of the vertical axis as (low, high). Default: derived from the data.
+        predlim: Limits of the prediction band.
+        olim: Limits beyond which the values drawn are truncated.
+        xlab: Label of the horizontal axis. Default: derived from the model.
+        ylab: Label of the vertical axis. Default: derived from the model.
+        at: Positions of the axis tick marks. Default: chosen automatically.
+        digits: Number of decimals of the axis labels.
+        transf: Function applied to the effects and the bands before they are drawn.
+        atransf: Function applied to the tick labels of the vertical axis only.
+        targs: Additional arguments passed to ``transf``.
+        level: Confidence level in percent of the bands. Default: the level of the model.
+        pch: Plotting symbol of the points (R-style code, e.g. 21 for a filled circle).
+        psize: Sizes of the points: a number, a vector, or ``'seinv'``/``'vinv'`` to scale the inverse standard errors or variances. Default: the square roots
+            of the weights rescaled to ``plim`` (equal sizes for models without weights).
+        plim: Range (min, max) of the point sizes.
+        col: Colour of the points or lines (a matplotlib colour).
+        bg: Fill colour of the points (for symbols with a separate fill).
+        slab: Study labels. Default: those of the model.
+        grid: Add a grid. ``True``, ``False`` or a colour string for the grid lines.
+        refline: Position of the reference line, or ``None`` for none.
+        label: Label the studies: ``True`` or ``'all'``, ``'ciout'``/``'piout'`` for those outside the bands, a boolean array or 0-based indices.
+        offset: Distance of the labels from the points in percent of the vertical range (one value or a pair for x and y).
+        labsize: Text size of the labels.
+        lcol: Colours of the regression line, the confidence band lines and the prediction band lines.
+        lwd: Line widths of the regression line and the band lines.
+        lty: Line types of the regression line and the band lines.
+        legend: Add a legend: ``True``, a location such as ``'topright'``, or a mapping with ``x`` and ``cex``.
+        xvals: Moderator values to predict at, for the regression line.
+        bty: Type of box around the plot: ``'o'`` (the default) or ``'l'``.
+        las: Orientation of the labels of the vertical axis (0 parallel to it, 1 horizontal).
+        grep: Treat a string ``mod`` as a regular expression searched for in the coefficient names (must match exactly one).
+        fixed: Treat a string ``mod`` as a literal string (with ``grep``).
+        ax: Matplotlib axes to draw into. Default: the current axes.
+        xaxt: ``'n'`` leaves out the horizontal axis; ``'s'`` (the default) draws it.
+        na_action: What to do with missing values (R's ``options(na.action=)``): ``'omit'`` (the default), ``'pass'`` or ``'fail'`` (raise an error if there are
+            any); the other values give the same plot. ``'fail'`` raises when the regression line is drawn (``pred=True``) and studies were left out of the fit.
+        at_lab: Labels of the ticks ``at`` of the vertical axis (one per value of ``at``, or per tick when ``at`` is not given).
+        box_lty: Line type of the frame of the legend (``'blank'`` for none).
+
+    Returns:
+        The plotted coordinates and the axes; pass it to [points_regplot][metafopy.points_regplot] to redraw the points.
 
     Raises:
         metafopy.errors.InputError: the model has no moderator or an argument is invalid, or ``na_action='fail'`` and studies were left out.
@@ -529,13 +581,19 @@ def draw_labels(
 
 
 def points_regplot(x: RegplotResult, ax: matplotlib.axes.Axes | None = None) -> None:
-    """Redraw the points (and the labels, if there were any) of a :func:`regplot` (metafor's ``points.regplot``).
+    """Redraw the points (and the labels, if there were any) of a [regplot][metafopy.regplot] (metafor's ``points.regplot``).
+
+    Mirrors metafor's ``regplot()``, see <https://wviechtb.github.io/metafor/reference/regplot.html>.
 
     The points are drawn on ``ax`` (default: the axes of the plot) in the order of ``x.order``, which puts the points with the
     smallest symbols on top again after other elements were added to the plot.
 
+    Args:
+        x: The result of [regplot][metafopy.regplot].
+        ax: Matplotlib axes to draw on. Default: the axes of the plot.
+
     Raises:
-        metafopy.errors.InputError: ``x`` is not the result of :func:`regplot`.
+        metafopy.errors.InputError: ``x`` is not the result of [regplot][metafopy.regplot].
     """
     if not isinstance(x, RegplotResult):
         raise metafopy.errors.InputError('Argument \'x\' must be an object of class "regplot".')

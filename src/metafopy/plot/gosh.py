@@ -87,7 +87,9 @@ def plot_gosh(
     *,
     ax: matplotlib.axes.Axes | None = None,
 ) -> PlotGoshResult:
-    """Plot the results of :func:`~metafopy.gosh` (``plot.gosh.rma``).
+    """Plot the results of [gosh][metafopy.gosh] (``plot.gosh.rma``).
+
+    Mirrors metafor's ``plot.gosh.rma()``, see <https://wviechtb.github.io/metafor/reference/plot.gosh.rma.html>.
 
     For a model without moderators the heterogeneity statistic ``het`` (``'QE'``, ``'I2'``, ``'H2'``, ``'tau2'`` or
     ``'tau'``) is plotted against the estimate, with marginal histograms and kernel density estimates (``xhist``,
@@ -97,7 +99,29 @@ def plot_gosh(
     ``alpha`` gives the transparency of the points, histogram and density line, ``trim`` removes the most extreme
     subsets (a proportion or a list of proportions per column). The panels fill the area of ``ax``.
 
-    Returns a :class:`PlotGoshResult` with the axes.
+    Args:
+        x: The result of [gosh][metafopy.gosh].
+        het: Heterogeneity statistic to plot: ``'QE'``, ``'I2'`` (the default), ``'H2'``, ``'tau2'`` or ``'tau'``.
+        pch: Plotting symbol of the points (R-style code, e.g. 21 for a filled circle).
+        cex: Character expansion factor scaling the text and symbols. Default: 1.
+        out: 0-based index of a study to highlight: the subsets that include it are drawn in ``col[0]``, those without in ``col[1]``.
+        col: Colour(s) of the points (a second colour is used for the subsets with or without the ``out`` study).
+        alpha: Transparency (0 to 1) of the points, histogram and density line, a single value or one per element. Default: ``n ** -0.2`` for ``n`` subsets.
+        border: Border colour(s) of the histograms.
+        xlim: Limits of the horizontal axis as (low, high). Default: derived from the data.
+        ylim: Limits of the vertical axis as (low, high). Default: derived from the data.
+        xhist: Draw the marginal histogram and density of the estimates (models without moderators).
+        yhist: Draw the marginal histogram and density of the heterogeneity statistic (models without moderators).
+        hh: Relative size of the marginal plots; a single value or a pair for the two margins.
+        breaks: Histogram breaks of the marginal plots; a single value or a pair.
+        adjust: Bandwidth adjustment of the kernel density estimates; a single value or a pair.
+        lwd: Width of the density lines; a single value or a pair.
+        labels: Labels of the panels of the scatterplot matrix (models with moderators).
+        trim: Proportion of the most extreme subsets to remove (a proportion, or a list of proportions per column).
+        ax: Matplotlib axes to draw into. Default: the current axes.
+
+    Returns:
+        The axes of the panels.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.

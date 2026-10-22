@@ -95,11 +95,60 @@ def forest_cumul(
     xlabadj: float | collections.abc.Sequence[float] | None = None,
     xlabfont: int | collections.abc.Sequence[int] = 1,
 ) -> metafopy.plot.ForestResult:
-    """Cumulative forest plot (``forest.cumul.rma``): one row per step of a :func:`~metafopy.cumul` analysis.
+    """Cumulative forest plot (``forest.cumul.rma``): one row per step of a [cumul][metafopy.cumul] analysis.
+
+    Mirrors metafor's ``forest.cumul.rma()``, see <https://wviechtb.github.io/metafor/reference/forest.cumul.rma.html>.
 
     The first row is labelled with the first study, the others with ``+`` and the added study. Arguments are those of
-    :func:`~metafopy.forest` for estimates with confidence intervals (``psize`` is 1 and ``pch`` a square by default, and there
+    [forest][metafopy.forest] for estimates with confidence intervals (``psize`` is 1 and ``pch`` a square by default, and there
     is no summary polygon). ``forest(cumul(res), ...)`` is the same call.
+
+    Args:
+        x: The result of [cumul][metafopy.cumul].
+        annotate: Add the annotations (estimate and confidence interval) on the right.
+        header: Header: ``True`` (the default), ``False``, a string for the study column, or a pair of strings.
+        xlim: Horizontal limits of the plot region.
+        alim: Limits of the x-axis.
+        olim: Limits beyond which the confidence intervals are truncated.
+        ylim: Vertical limits of the plot region.
+        at: Positions of the x-axis tick marks (untransformed scale).
+        steps: Approximate number of tick marks of the axis when no explicit positions are given.
+        refline: Position of the vertical reference line, or ``None`` for none.
+        digits: Number of decimals for the annotations (one value or up to three).
+        width: Fixed widths of the annotation columns.
+        xlab: Label of the x-axis.
+        ilab: Extra columns of information on the left, one row per step.
+        ilab_lab: Headings of the ``ilab`` columns.
+        ilab_xpos: X positions of the ``ilab`` columns.
+        ilab_pos: Text alignment of the ``ilab`` columns (1 below, 2 left, 3 above, 4 right).
+        transf: Function applied to the estimates and bounds before drawing.
+        atransf: Function applied to the axis tick labels only.
+        targs: Additional arguments passed to ``transf``.
+        rows: Rows in which the steps are drawn. Default: counted down from the top.
+        efac: Height of the end bars of the confidence interval lines, as a multiplier.
+        pch: Plotting symbol of the markers (R-style code; 15 is a filled square).
+        psize: Size of the markers (1 by default; no scaling by precision).
+        col: Colour of the markers.
+        colci: Colour of the confidence interval lines.
+        shade: Shade alternate rows (``True``), a colour, or the 0-based indices of the rows to shade.
+        colshade: Colour of the shading.
+        lty: Line types of the confidence intervals, the reference line and the axis line.
+        fonts: Font family and font of the labels and annotations, as in [forest][metafopy.forest].
+        cex: Character expansion factor scaling the text and symbols. Default: 1.
+        cex_lab: Character expansion factor of the axis labels.
+        cex_axis: Character expansion factor of the axis tick labels.
+        ax: Matplotlib axes to draw into. Default: the current axes.
+        annosym: Symbols of the annotations, as in [forest][metafopy.forest].
+        tabfig: 1, 2 or 3 sets ``annosym`` for fonts with tabular figures, as in [forest][metafopy.forest].
+        textpos: Horizontal limits (left, right) of the area for the labels and annotations.
+        rowadj: Vertical adjustment of the text in the rows.
+        top: Number of rows above the first step.
+        at_lab: Labels for the axis tick marks given in ``at``.
+        xlabadj: Adjustment of the x-axis label.
+        xlabfont: Font of the x-axis label (1 to 4).
+
+    Returns:
+        The plotted values and positions, with the artists on its ``ax`` (as for [forest][metafopy.forest]).
 
     Raises:
         metafopy.errors.InputError: an argument is invalid.
@@ -190,6 +239,8 @@ def plot_cumul(
 ) -> PlotCumulResult:
     """Plot of the results of a cumulative meta-analysis (``plot.cumul.rma``).
 
+    Mirrors metafor's ``plot.cumul.rma()``, see <https://wviechtb.github.io/metafor/reference/plot.cumul.rma.html>.
+
     The pooled estimates (horizontal axis) are plotted against the amount of heterogeneity (``yaxis`` ``'tau2'``, ``'tau'``, ``'I2'`` or
     ``'H2'``; ``'tau2'`` unless the model is a fixed-effects one), joined in order by a line whose colour runs from the first of ``cols`` to
     the last (light to dark by default). ``transf`` transforms the estimates, ``atransf`` only the labels of the horizontal axis,
@@ -199,7 +250,31 @@ def plot_cumul(
     ``na_action`` stands for R's ``options(na.action=)``: an unknown value raises, the others
     give the same result (metafor sets ``na.pass`` while it computes). With ``'fail'`` missing values in the results stop the plot.
 
-    Returns a :class:`PlotCumulResult` with the plotted values and their colours.
+    Args:
+        x: The result of [cumul][metafopy.cumul].
+        yaxis: Heterogeneity statistic on the vertical axis: ``'tau2'`` (the default unless the model is a fixed-effects one), ``'tau'``, ``'I2'`` or ``'H2'``.
+        xlim: Limits of the horizontal axis as (low, high). Default: derived from the data.
+        ylim: Limits of the vertical axis as (low, high). Default: derived from the data.
+        xlab: Label of the horizontal axis (the pooled estimate).
+        ylab: Label of the vertical axis (the heterogeneity statistic).
+        at: Positions of the tick marks of the horizontal axis.
+        transf: Function applied to the estimates before drawing.
+        atransf: Function applied to the labels of the horizontal axis only.
+        targs: Additional arguments passed to ``transf``.
+        digits: Number of decimals of the labels of the two axes (one value or a pair).
+        cols: Colours of the line joining the steps, from the first to the last (light to dark by default).
+        grid: Draw the dotted grid; a colour string sets the colour of its lines.
+        pch: Plotting symbol of the points.
+        cex: Character expansion factor scaling the text and symbols. Default: 1.
+        lwd: Width of the line joining the steps.
+        las: Orientation of the axis tick labels, 0 to 3 as in R (0 parallel to the axis, 1 horizontal, 2 perpendicular, 3 vertical).
+        ax: Matplotlib axes to draw into. Default: the current axes.
+        addgrid: Old spelling of ``grid`` (read from ``...`` by metafor); wins over it.
+        na_action: What to do with missing values (R's ``options(na.action=)``): ``'omit'`` (the default), ``'pass'`` or ``'fail'`` (raise an error if there are
+            any); the other values give the same plot. ``'fail'`` raises when the results contain missing values.
+
+    Returns:
+        The plotted values and their colours, and the axes.
 
     Raises:
         metafopy.errors.InputError: an argument is invalid.
