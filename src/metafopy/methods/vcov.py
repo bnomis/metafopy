@@ -152,8 +152,6 @@ def vcov(
     Which matrix is returned depends on ``type``; for ``'obs'``, ``'fitted'`` and ``'resid'`` the frame has one row and column per study of the subset. A
     ``deltamethod`` or ``matreg`` result gives its own variance-covariance matrix (``vcov.deltamethod``, ``vcov.matreg``).
 
-
-
     Args:
         object: The fitted model (or a ``deltamethod`` or ``matreg`` result).
         type: Which matrix: ``'fixed'`` (default; of the coefficients), ``'beta'`` (of the location coefficients), ``'alpha'`` (of the scale coefficients

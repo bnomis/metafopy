@@ -401,8 +401,6 @@ def expand_p(xi: FloatArray, p: numpy.typing.ArrayLike, name: str) -> FloatArray
 def rtoz(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Fisher's r-to-z transformation of correlation coefficients, `atanh(xi)`; `xi` is truncated to [-1, 1] first.
 
-
-
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
 
@@ -419,8 +417,6 @@ def rtoz(xi: numpy.typing.ArrayLike) -> FloatArray:
 def ztor(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Inverse of the r-to-z transformation, `tanh(xi)`.
 
-
-
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
 
@@ -435,8 +431,6 @@ def ztor(xi: numpy.typing.ArrayLike) -> FloatArray:
 
 def ztor_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     """Integral transformation for z-to-r: the mean of `tanh(Z)` for `Z ~ N(xi, tau2)`, the back-transformed average correlation.
-
-
 
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
@@ -467,8 +461,6 @@ def ztor_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 def ztor_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     """Mode of the distribution of the correlations when the z-transformed values are `N(xi, tau2)`, found numerically.
 
-
-
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
         targs: mapping with `tau2` (required, >= 0: the variance of the distribution of the true effects), or just the scalar `tau2`.
@@ -494,8 +486,6 @@ def ztor_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 def r2toz(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Variance-stabilizing transformation for R-squared values, `atanh(sqrt(xi))`; `xi` is truncated to [0, 1] first.
 
-
-
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
 
@@ -511,8 +501,6 @@ def r2toz(xi: numpy.typing.ArrayLike) -> FloatArray:
 
 def ztor2(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Inverse of [r2toz][metafopy.transf.r2toz], `tanh(xi)^2`.
-
-
 
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
@@ -532,8 +520,6 @@ def ztor2(xi: numpy.typing.ArrayLike) -> FloatArray:
 
 def exp_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     """Integral transformation for the exponential: the mean of a log-normal variable, `exp(xi + tau2/2)`.
-
-
 
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
@@ -557,8 +543,6 @@ def exp_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 def exp_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     """Mode of a log-normal variable, `exp(xi - tau2)`.
 
-
-
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
         targs: mapping with `tau2` (required, >= 0: the variance of the distribution of the true effects), or just the scalar `tau2`.
@@ -579,8 +563,6 @@ def exp_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 def logit(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Logit transformation of proportions, `qlogis(xi)`; NaN outside [0, 1].
 
-
-
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
 
@@ -596,8 +578,6 @@ def logit(xi: numpy.typing.ArrayLike) -> FloatArray:
 def ilogit(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Inverse logit transformation, `plogis(xi)`.
 
-
-
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
 
@@ -612,8 +592,6 @@ def ilogit(xi: numpy.typing.ArrayLike) -> FloatArray:
 
 def ilogit_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     """Integral transformation for the inverse logit: the mean of a logit-normal variable, the back-transformed average proportion.
-
-
 
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
@@ -646,8 +624,6 @@ XS = numpy.concatenate(([0.0], numpy.arange(1, 10**5 - 1) * (1 / (10**5 - 1)), [
 
 def ilogit_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     """Mode of a logit-normal variable. NaN where the density is bimodal (as in metafor).
-
-
 
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
@@ -698,8 +674,6 @@ def ilogit_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 def arcsin(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Arcsine square root transformation of proportions, `asin(sqrt(xi))`; NaN outside [0, 1].
 
-
-
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
 
@@ -715,8 +689,6 @@ def arcsin(xi: numpy.typing.ArrayLike) -> FloatArray:
 
 def iarcsin(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Inverse arcsine square root transformation, `sin(xi)^2`; 0 for `xi < 0` and 1 for `xi > pi/2`.
-
-
 
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
@@ -776,8 +748,6 @@ def iarcsin_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 def iarcsin_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     """Mode of the proportions when the arcsine square root transformed values are `N(xi, tau2)` truncated to [0, pi/2].
 
-
-
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
         targs: mapping with `tau2` (required, >= 0: the variance of the distribution of the true effects), or just the scalar `tau2`.
@@ -807,8 +777,6 @@ def iarcsin_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 def probit(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Probit transformation of proportions, `qnorm(xi)`.
 
-
-
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
 
@@ -824,8 +792,6 @@ def probit(xi: numpy.typing.ArrayLike) -> FloatArray:
 def iprobit(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Inverse probit transformation, `pnorm(xi)`.
 
-
-
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
 
@@ -840,8 +806,6 @@ def iprobit(xi: numpy.typing.ArrayLike) -> FloatArray:
 
 def iprobit_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     """Integral transformation for the inverse probit: the mean of `pnorm(Z)` for `Z ~ N(xi, tau2)`.
-
-
 
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
@@ -871,8 +835,6 @@ def iprobit_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 
 def iprobit_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     """Mode of the proportions when the probit transformed values are `N(xi, tau2)`.
-
-
 
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
@@ -919,8 +881,6 @@ def recycle_pair(x: FloatArray, n: FloatArray) -> tuple[FloatArray, FloatArray]:
 def pft(xi: numpy.typing.ArrayLike, ni: numpy.typing.ArrayLike) -> FloatArray:
     """Freeman-Tukey double arcsine transformation of proportions.
 
-
-
     Args:
         xi: proportions (`x / n`), scalar or array-like.
         ni: sample sizes, scalar or array-like. `xi` and `ni` are recycled to the longer length, with a warning if it is not a multiple.
@@ -949,8 +909,6 @@ def inverse_pft(x: FloatArray, n: FloatArray) -> FloatArray:
 def ipft(xi: numpy.typing.ArrayLike, ni: numpy.typing.ArrayLike) -> FloatArray:
     """Inverse of the Freeman-Tukey double arcsine transformation (Miller, 1978); 0 and 1 outside the attainable range.
 
-
-
     Args:
         xi: transformed values, scalar or array-like.
         ni: sample sizes, scalar or array-like, recycled with `xi` to the longer length.
@@ -966,8 +924,6 @@ def ipft(xi: numpy.typing.ArrayLike, ni: numpy.typing.ArrayLike) -> FloatArray:
 
 def ipft_hm(xi: numpy.typing.ArrayLike, targs: Targs) -> FloatArray:
     """Inverse Freeman-Tukey double arcsine transformation using the harmonic mean of the sample sizes (Miller, 1978).
-
-
 
     Args:
         xi: transformed values, scalar or array-like.
@@ -993,8 +949,6 @@ def ipft_hm(xi: numpy.typing.ArrayLike, targs: Targs) -> FloatArray:
 def isqrt(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Inverse of the square root transformation, `xi^2`; 0 for `xi < 0`.
 
-
-
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
 
@@ -1013,8 +967,6 @@ def isqrt(xi: numpy.typing.ArrayLike) -> FloatArray:
 def irft(xi: numpy.typing.ArrayLike, ti: numpy.typing.ArrayLike) -> FloatArray:
     """Freeman-Tukey transformation of incidence rates.
 
-
-
     Args:
         xi: incidence rates (`x / t`), scalar or array-like.
         ti: person-times, scalar or array-like.
@@ -1031,8 +983,6 @@ def irft(xi: numpy.typing.ArrayLike, ti: numpy.typing.ArrayLike) -> FloatArray:
 
 def iirft(xi: numpy.typing.ArrayLike, ti: numpy.typing.ArrayLike) -> FloatArray:
     """Inverse of [irft][metafopy.transf.irft]; 0 below the attainable range.
-
-
 
     Args:
         xi: transformed values, scalar or array-like.
@@ -1060,8 +1010,6 @@ def iirft(xi: numpy.typing.ArrayLike, ti: numpy.typing.ArrayLike) -> FloatArray:
 def ahw(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Hakstian and Whalen transformation of coefficient alpha, `1 - (1 - xi)^(1/3)`; NaN for `xi > 1`.
 
-
-
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
 
@@ -1078,8 +1026,6 @@ def ahw(xi: numpy.typing.ArrayLike) -> FloatArray:
 
 def iahw(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Inverse of [ahw][metafopy.transf.ahw], `1 - (1 - xi)^3`, truncated to [0, 1].
-
-
 
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
@@ -1137,8 +1083,6 @@ def iahw_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 def iahw_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     """Mode of the alpha values when the Hakstian-Whalen transformed values are `N(xi, tau2)` truncated to [0, 1].
 
-
-
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
         targs: mapping with `tau2` (required, >= 0: the variance of the distribution of the true effects), or just the scalar `tau2`.
@@ -1168,8 +1112,6 @@ def iahw_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 def abt(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Bonett transformation of coefficient alpha, `-log(1 - xi)`.
 
-
-
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
 
@@ -1185,8 +1127,6 @@ def abt(xi: numpy.typing.ArrayLike) -> FloatArray:
 
 def iabt(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Inverse of [abt][metafopy.transf.abt], `1 - exp(-xi)`; 0 for `xi < 0`.
-
-
 
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
@@ -1244,8 +1184,6 @@ def iabt_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 def iabt_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     """Mode of the alpha values when the Bonett transformed values are `N(xi, tau2)` truncated to [0, Inf).
 
-
-
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
         targs: mapping with `tau2` (required, >= 0: the variance of the distribution of the true effects), or just the scalar `tau2`.
@@ -1279,8 +1217,6 @@ def iabt_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 def dtou1(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Standardized mean difference to Cohen's U1 (the proportion of non-overlap).
 
-
-
     Args:
         xi: standardized mean differences, scalar or array-like.
 
@@ -1297,8 +1233,6 @@ def dtou1(xi: numpy.typing.ArrayLike) -> FloatArray:
 def dtou2(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Standardized mean difference to Cohen's U2, `pnorm(xi/2)`.
 
-
-
     Args:
         xi: standardized mean differences, scalar or array-like.
 
@@ -1313,8 +1247,6 @@ def dtou2(xi: numpy.typing.ArrayLike) -> FloatArray:
 
 def dtou3(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Standardized mean difference to Cohen's U3, `pnorm(xi)`.
-
-
 
     Args:
         xi: standardized mean differences, scalar or array-like.
@@ -1331,8 +1263,6 @@ def dtou3(xi: numpy.typing.ArrayLike) -> FloatArray:
 def dtoovl(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Standardized mean difference to the overlapping coefficient, `2*pnorm(-|xi|/2)`.
 
-
-
     Args:
         xi: standardized mean differences, scalar or array-like.
 
@@ -1347,8 +1277,6 @@ def dtoovl(xi: numpy.typing.ArrayLike) -> FloatArray:
 
 def dtocles(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Standardized mean difference to the common language effect size (probability of superiority), `pnorm(xi/sqrt(2))`.
-
-
 
     Args:
         xi: standardized mean differences, scalar or array-like.
@@ -1365,8 +1293,6 @@ def dtocles(xi: numpy.typing.ArrayLike) -> FloatArray:
 def clestod(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Inverse of [dtocles][metafopy.transf.dtocles]: common language effect size to standardized mean difference, `qnorm(xi)*sqrt(2)`.
 
-
-
     Args:
         xi: common language effect sizes (probabilities), scalar or array-like.
 
@@ -1381,8 +1307,6 @@ def clestod(xi: numpy.typing.ArrayLike) -> FloatArray:
 
 def dtocles_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     """Integral transformation for [dtocles][metafopy.transf.dtocles]: the mean of `pnorm(Z/sqrt(2))` for `Z ~ N(xi, tau2)`.
-
-
 
     Args:
         xi: standardized mean differences, scalar or array-like.
@@ -1413,8 +1337,6 @@ def dtocles_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 def dtocliffd(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Standardized mean difference to Cliff's delta, `2*pnorm(xi/sqrt(2)) - 1`.
 
-
-
     Args:
         xi: standardized mean differences, scalar or array-like.
 
@@ -1429,8 +1351,6 @@ def dtocliffd(xi: numpy.typing.ArrayLike) -> FloatArray:
 
 def dtobesd(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Standardized mean difference to the binomial effect size display (the proportion above the median in the first group).
-
-
 
     Args:
         xi: standardized mean differences, scalar or array-like.
@@ -1449,8 +1369,6 @@ def dtobesd(xi: numpy.typing.ArrayLike) -> FloatArray:
 
 def dtomd(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     """Standardized mean difference to mean difference for a known standard deviation, `xi * sd`.
-
-
 
     Args:
         xi: standardized mean differences, scalar or array-like.
@@ -1475,8 +1393,6 @@ def dtomd(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 
 def dtorpb(xi: numpy.typing.ArrayLike, n1i: numpy.typing.ArrayLike | None = None, n2i: numpy.typing.ArrayLike | None = None) -> FloatArray:
     """Standardized mean difference to point-biserial correlation.
-
-
 
     Args:
         xi: standardized mean differences, scalar or array-like.
@@ -1505,8 +1421,6 @@ def dtorpb(xi: numpy.typing.ArrayLike, n1i: numpy.typing.ArrayLike | None = None
 
 def dtorbis(xi: numpy.typing.ArrayLike, n1i: numpy.typing.ArrayLike | None = None, n2i: numpy.typing.ArrayLike | None = None) -> FloatArray:
     """Standardized mean difference to biserial correlation (via the point-biserial correlation).
-
-
 
     Args:
         xi: standardized mean differences, scalar or array-like.
@@ -1548,8 +1462,6 @@ def pi_check(x: FloatArray, pi: numpy.typing.ArrayLike | None) -> FloatArray:
 def rpbtorbis(xi: numpy.typing.ArrayLike, pi: numpy.typing.ArrayLike | None = None) -> FloatArray:
     """Point-biserial correlation to biserial correlation.
 
-
-
     Args:
         xi: point-biserial correlations, scalar or array-like.
         pi: proportion of cases in the first group, a single value or one per value of `xi`, in [0, 1]. Default None: 0.5.
@@ -1572,8 +1484,6 @@ def rpbtorbis(xi: numpy.typing.ArrayLike, pi: numpy.typing.ArrayLike | None = No
 def rtorpb(xi: numpy.typing.ArrayLike, pi: numpy.typing.ArrayLike | None = None) -> FloatArray:
     """Pearson correlation to point-biserial correlation after dichotomizing one variable.
 
-
-
     Args:
         xi: Pearson correlations, scalar or array-like.
         pi: proportion of cases in the first group after dichotomizing, a single value or one per value of `xi`, in [0, 1]. Default None: 0.5.
@@ -1595,8 +1505,6 @@ def rtorpb(xi: numpy.typing.ArrayLike, pi: numpy.typing.ArrayLike | None = None)
 
 def rtod(xi: numpy.typing.ArrayLike, n1i: numpy.typing.ArrayLike | None = None, n2i: numpy.typing.ArrayLike | None = None) -> FloatArray:
     """Pearson correlation (with one dichotomized variable) to standardized mean difference; inverse of [dtorbis][metafopy.transf.dtorbis].
-
-
 
     Args:
         xi: Pearson correlations, scalar or array-like.
@@ -1630,8 +1538,6 @@ def rtod(xi: numpy.typing.ArrayLike, n1i: numpy.typing.ArrayLike | None = None, 
 
 def rpbtod(xi: numpy.typing.ArrayLike, n1i: numpy.typing.ArrayLike | None = None, n2i: numpy.typing.ArrayLike | None = None) -> FloatArray:
     """Point-biserial correlation to standardized mean difference; inverse of [dtorpb][metafopy.transf.dtorpb].
-
-
 
     Args:
         xi: point-biserial correlations, scalar or array-like.
@@ -1672,8 +1578,6 @@ def pc_check(x: FloatArray, pc: numpy.typing.ArrayLike) -> FloatArray:
 def lnortord(xi: numpy.typing.ArrayLike, pc: numpy.typing.ArrayLike) -> FloatArray:
     """Log odds ratio to risk difference for a given control group risk.
 
-
-
     Args:
         xi: log odds ratios, scalar or array-like.
         pc: control group risk, a single value or one per value of `xi`, in [0, 1].
@@ -1696,8 +1600,6 @@ def lnortord(xi: numpy.typing.ArrayLike, pc: numpy.typing.ArrayLike) -> FloatArr
 
 def lnortorr(xi: numpy.typing.ArrayLike, pc: numpy.typing.ArrayLike) -> FloatArray:
     """Log odds ratio to risk ratio (not the log risk ratio) for a given control group risk.
-
-
 
     Args:
         xi: log odds ratios, scalar or array-like.
@@ -1722,8 +1624,6 @@ def lnortorr(xi: numpy.typing.ArrayLike, pc: numpy.typing.ArrayLike) -> FloatArr
 def lnortod_norm(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Log odds ratio to standardized mean difference assuming normal distributions (Cox and Snell, 1989), `xi/1.65`.
 
-
-
     Args:
         xi: log odds ratios, scalar or array-like.
 
@@ -1738,8 +1638,6 @@ def lnortod_norm(xi: numpy.typing.ArrayLike) -> FloatArray:
 
 def lnortod_logis(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Log odds ratio to standardized mean difference assuming logistic distributions (Chinn, 2000), `sqrt(3)/pi*xi`.
-
-
 
     Args:
         xi: log odds ratios, scalar or array-like.
@@ -1756,8 +1654,6 @@ def lnortod_logis(xi: numpy.typing.ArrayLike) -> FloatArray:
 def dtolnor_norm(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Standardized mean difference to log odds ratio assuming normal distributions, `xi*1.65`.
 
-
-
     Args:
         xi: standardized mean differences, scalar or array-like.
 
@@ -1772,8 +1668,6 @@ def dtolnor_norm(xi: numpy.typing.ArrayLike) -> FloatArray:
 
 def dtolnor_logis(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Standardized mean difference to log odds ratio assuming logistic distributions, `xi/sqrt(3)*pi`.
-
-
 
     Args:
         xi: standardized mean differences, scalar or array-like.
@@ -1790,8 +1684,6 @@ def dtolnor_logis(xi: numpy.typing.ArrayLike) -> FloatArray:
 def lnortortet_pearson(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Log odds ratio to tetrachoric correlation, using the approximation of Pearson (1900), `cos(pi/(1 + sqrt(exp(xi))))`.
 
-
-
     Args:
         xi: log odds ratios, scalar or array-like.
 
@@ -1807,8 +1699,6 @@ def lnortortet_pearson(xi: numpy.typing.ArrayLike) -> FloatArray:
 
 def lnortortet_digby(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Log odds ratio to tetrachoric correlation, using the approximation of Digby (1983), `(OR^(3/4) - 1)/(OR^(3/4) + 1)`.
-
-
 
     Args:
         xi: log odds ratios, scalar or array-like.

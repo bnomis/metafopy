@@ -275,7 +275,7 @@ def permutest_rma_uni(
     permutations whose statistic is as extreme as the observed one (the first permutation of an approximate test is the data, which avoids p-values of 0).
     With few studies the smallest possible p-value can exceed 0.05.
 
-    R source: <https://github.com/wviechtb/metafor/blob/master/R/permutest.rma.uni.r>; reference page:
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/permutest.rma.uni.r>
 
     Args:
         x: Model fitted by [rma_uni][metafopy.rma_uni] (not a [robust][metafopy.robust] result).

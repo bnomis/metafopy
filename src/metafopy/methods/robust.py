@@ -274,7 +274,7 @@ def robust_rma_uni(
     The variance-covariance matrix of the coefficients is replaced by a sandwich estimator that is robust to correlated errors within clusters; tests and
     confidence intervals use it.
 
-    R source: <https://github.com/wviechtb/metafor/blob/master/R/robust.rma.uni.r>; reference page:
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/robust.rma.uni.r>
 
     Args:
         model: Model fitted by [rma_uni][metafopy.rma_uni] (also a model that was made robust before).
@@ -421,7 +421,7 @@ def robust_rma_mv(
     With ``club_sandwich=True`` (or R's spelling ``clubSandwich``) the random effects must be nested within the clusters and ``R=`` matrices are not
     allowed.
 
-    R source: <https://github.com/wviechtb/metafor/blob/master/R/robust.rma.mv.r>; reference page:
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/robust.rma.mv.r>
 
     Args:
         model: Model fitted by [rma_mv][metafopy.rma_mv].

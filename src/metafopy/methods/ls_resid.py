@@ -119,7 +119,7 @@ def rstandard_rma_ls(
     With ``type='marginal'`` the marginal residuals are divided by their standard errors, with ``type='conditional'`` the conditional ones (the
     deviations of the estimates from the BLUPs), both with the study-specific ``tau^2`` of the model.
 
-    R source: <https://github.com/wviechtb/metafor/blob/master/R/rstandard.rma.uni.r>; reference page:
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/rstandard.rma.uni.r>
 
     Args:
         model: Location-scale model fitted by [rma_uni][metafopy.rma_uni] with ``scale``.

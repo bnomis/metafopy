@@ -121,7 +121,7 @@ def profile_rma_ls(
     Without ``alpha`` every estimated scale coefficient is profiled and a list is returned (a single result if there is one). ``xlim`` defaults to the
     estimate plus and minus 2.576 standard errors, limited by ``alpha_min`` and ``alpha_max`` of the control settings.
 
-    R source: <https://github.com/wviechtb/metafor/blob/master/R/profile.rma.ls.r>; reference page:
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/profile.rma.ls.r>
 
     Args:
         fitted: Location-scale model fitted by [rma_uni][metafopy.rma_uni] with ``scale``.

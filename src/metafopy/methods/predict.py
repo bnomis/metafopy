@@ -500,7 +500,7 @@ def predict_rma_uni(
 
     Without ``newmods`` an intercept-only model gives the pooled estimate and a meta-regression the fitted value of each study.
 
-    R source: <https://github.com/wviechtb/metafor/blob/master/R/predict.rma.r>; reference page:
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/predict.rma.r>
 
     Args:
         model: Model fitted by [rma_uni][metafopy.rma_uni].
@@ -642,7 +642,7 @@ def predict_rma_glmm(
     scale. Without ``newmods`` a meta-regression gives the fitted value of each study that entered the model. Prediction intervals add ``tau2`` and are
     absent (NaN) for the fixed-effects methods.
 
-    R source: <https://github.com/wviechtb/metafor/blob/master/R/predict.rma.r>; reference page:
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/predict.rma.r>
 
     Args:
         model: Model fitted by [rma_glmm][metafopy.rma_glmm].
@@ -1158,7 +1158,7 @@ def predict_rma_mv(
     ``newmods``. For the fitted values of studies left out of the fit (``na_action='pass'``), the ``tau2`` and ``gamma2`` value of a study whose inner
     level is lost is NaN when the model has several of them.
 
-    R source: <https://github.com/wviechtb/metafor/blob/master/R/predict.rma.r>; reference page:
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/predict.rma.r>
 
     Args:
         model: Model fitted by [rma_mv][metafopy.rma_mv].

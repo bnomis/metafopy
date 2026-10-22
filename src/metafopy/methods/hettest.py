@@ -337,8 +337,6 @@ def hettest(
     study-specific ``tau^2_i`` values, with a likelihood-ratio, Wald-type or score test, or with goodness-of-fit tests of the Pearson residuals. P-values
     come from a parametric bootstrap, the first sample being the data. Without ``seed`` the bootstrap uses the generator of [set_seed][metafopy.set_seed].
 
-
-
     Args:
         x: Effect size estimates (an array, or a column name of ``data``), or a random-effects model without moderators (``rma_uni``), normally fitted
             by ML or REML. For a model fitted with another method a warning is given and the test is based on ``method``. Models with moderators and

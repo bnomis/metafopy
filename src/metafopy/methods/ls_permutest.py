@@ -318,7 +318,7 @@ def permutest_rma_ls(
     not exist, so the p-values there are NaN in R; here they are computed from the observed test statistics. An intercept-only scale model skips the
     scale part with a warning.
 
-    R source: <https://github.com/wviechtb/metafor/blob/master/R/permutest.rma.ls.r>; reference page:
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/permutest.rma.ls.r>
 
     Args:
         x: Location-scale model fitted by [rma_uni][metafopy.rma_uni] with ``scale``.

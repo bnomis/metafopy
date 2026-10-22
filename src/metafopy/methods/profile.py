@@ -227,7 +227,7 @@ def profile_rma_uni(
     The model is refitted with ``tau^2`` fixed at each value of a grid and the log-likelihood (and the coefficients) recorded. ``xlim`` defaults to the
     range spanned by the Q-profile CI for ``tau^2`` and the estimate (the upper end at least 0.1). Models with equal or fixed effects cannot be profiled.
 
-    R source: <https://github.com/wviechtb/metafor/blob/master/R/profile.rma.uni.r>; reference page:
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/profile.rma.uni.r>
 
     Args:
         fitted: Random- or mixed-effects model fitted by [rma_uni][metafopy.rma_uni] (not an equal- or fixed-effects model).

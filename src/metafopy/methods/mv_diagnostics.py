@@ -555,7 +555,7 @@ def rstandard_rma_mv(
     The marginal residuals ``y - X b`` are divided by the square roots of the diagonal of ``(I - H) M (I - H)'``. Unlike ``rma_uni``, there is no ``type``
     argument, as metafor gives only marginal residuals for ``rma.mv`` fits.
 
-    R source: <https://github.com/wviechtb/metafor/blob/master/R/rstandard.rma.mv.r>; reference page:
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/rstandard.rma.mv.r>
 
     Args:
         model: Model fitted by [rma_mv][metafopy.rma_mv] (not a robust fit).

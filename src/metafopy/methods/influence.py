@@ -492,7 +492,7 @@ def rstudent_rma_uni(
     The deleted residual ``y_i - x_i' beta_(-i)`` compares each study with the prediction from the model fitted without it; its standard error adds the
     sampling variance, ``tau^2`` and the variance of the prediction.
 
-    R source: <https://github.com/wviechtb/metafor/blob/master/R/rstudent.rma.uni.r>; reference page:
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/rstudent.rma.uni.r>
 
     Args:
         model: Model fitted by [rma_uni][metafopy.rma_uni].
@@ -672,7 +672,7 @@ def rstandard_rma_uni(
     marginal variances; with ``type='conditional'`` the residuals are those from the BLUPs, divided by their conditional standard errors. Conditional
     residuals are not available for models with non-standard weights.
 
-    R source: <https://github.com/wviechtb/metafor/blob/master/R/rstandard.rma.uni.r>; reference page:
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/rstandard.rma.uni.r>
 
     Args:
         model: Model fitted by [rma_uni][metafopy.rma_uni] (not a robust fit).

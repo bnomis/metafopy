@@ -604,7 +604,7 @@ def draw_labels(
 def points_regplot(x: RegplotResult, ax: matplotlib.axes.Axes | None = None) -> None:
     """Redraw the points (and the labels, if there were any) of a [regplot][metafopy.regplot] (metafor's ``points.regplot``).
 
-    Mirrors metafor's ``points()`` method for ``regplot`` objects (``points.regplot``), documented on
+    Mirrors metafor's ``points()`` method for ``regplot`` objects (``points.regplot``).
 
     The points are drawn on ``ax`` (default: the axes of the plot) in the order of ``x.order``, which puts the points with the
     smallest symbols on top again after other elements were added to the plot.

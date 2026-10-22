@@ -276,7 +276,7 @@ def profile_rma_mv(
     the estimate (half to twice for ``tau2`` and ``gamma2`` with a spatial structure), at least up to 0.1; for a correlation the estimate +- 0.5 within
     (-1, 1) (from 0 for ``'CAR'``, half to twice the estimate for the spatial structures).
 
-    R source: <https://github.com/wviechtb/metafor/blob/master/R/profile.rma.mv.r>; reference page:
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/profile.rma.mv.r>
 
     Args:
         fitted: Model fitted by [rma_mv][metafopy.rma_mv].

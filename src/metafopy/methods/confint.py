@@ -187,7 +187,7 @@ def confint_rma_uni(
     The interval for ``tau^2`` is found by root finding (Q-profile, generalised Q, profile likelihood or the Higgins-Thompson method) or is of Wald type;
     the bounds of ``I^2`` and ``H^2`` follow from those of ``tau^2``.
 
-    R source: <https://github.com/wviechtb/metafor/blob/master/R/confint.rma.uni.r>; reference page:
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/confint.rma.uni.r>
 
     Args:
         model: Model fitted by [rma_uni][metafopy.rma_uni].
@@ -642,7 +642,7 @@ def confint_rma_mv(
     The intervals of the components are profile-likelihood intervals (Hardy and Thompson, 1996,
     [doi:10.1002/(SICI)1097-0258(19960330)15:6<619::AID-SIM188>3.0.CO;2-A](https://doi.org/10.1002/(SICI)1097-0258(19960330)15:6%3C619::AID-SIM188%3E3.0.CO;2-A)).
 
-    R source: <https://github.com/wviechtb/metafor/blob/master/R/confint.rma.mv.r>; reference page:
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/confint.rma.mv.r>
 
     Args:
         model: Model fitted by [rma_mv][metafopy.rma_mv].

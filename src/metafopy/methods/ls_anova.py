@@ -393,7 +393,7 @@ def anova_rma_ls(
     """Wald tests of the location and scale coefficients of a location-scale model or, given a second model, a likelihood-ratio test (metafor's
     ``anova.rma``).
 
-    R source: <https://github.com/wviechtb/metafor/blob/master/R/anova.rma.r>; reference page:
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/anova.rma.r>
 
     Args:
         model: Location-scale model fitted by [rma_uni][metafopy.rma_uni] with ``scale``.

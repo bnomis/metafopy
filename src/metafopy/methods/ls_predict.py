@@ -146,7 +146,7 @@ def predict_rma_ls(
     ``tau^2`` (identity link), ``pred_type`` is ``'scale'`` and the prediction intervals are NaN (use ``transf=numpy.exp`` for ``tau^2`` under the
     log link). With the identity link and no ``transf``, negative predicted ``tau^2`` values are set to 0 with a warning.
 
-    R source: <https://github.com/wviechtb/metafor/blob/master/R/predict.rma.r>; reference page:
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/predict.rma.r>
 
     Args:
         model: Location-scale model fitted by [rma_uni][metafopy.rma_uni] with ``scale``.

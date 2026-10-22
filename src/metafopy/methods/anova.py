@@ -418,7 +418,7 @@ def anova_rma_uni(
     combinations use the degrees of freedom of ``coef_test``. As in R, ``rhs`` cannot be used with ``X`` for such a model (a warning is given and zero is
     used).
 
-    R source: <https://github.com/wviechtb/metafor/blob/master/R/anova.rma.r>; reference page:
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/anova.rma.r>
 
     Args:
         model: Model fitted by [rma_uni][metafopy.rma_uni].
@@ -1059,7 +1059,7 @@ def anova_rma_mv(
     repeats the recorded call of the fit with ``method='ML'`` (and raises ``InputError`` if no call was recorded). Only the observed outcomes (not the
     sampling variances) are compared for equality in a likelihood-ratio test.
 
-    R source: <https://github.com/wviechtb/metafor/blob/master/R/anova.rma.r>; reference page:
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/anova.rma.r>
 
     Args:
         model: Model fitted by [rma_mv][metafopy.rma_mv].
