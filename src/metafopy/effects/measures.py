@@ -441,35 +441,49 @@ def escalc(
         ni: Sample or group sizes.
         yi: Effect size estimates, for ``measure='GEN'`` (used as they are, with ``vi`` or ``sei``).
         vi: Sampling variances matching ``yi``.
-        sei: Standard errors matching ``yi``; ``vi`` is their square.
+        sei: Standard errors matching ``yi``; ``vi`` is their square. Ignored when ``vi`` is given.
         data: Data frame (or mapping of columns) holding the variables named in the data arguments. Each of
             the arguments above is then an array or
             the name of a column of ``data``.
         slab: Study labels, as a sequence or a column name. Stored in ``attrs['slab']``.
-        flip: Flip the sign of the estimates: a boolean (or a boolean per study), or a numeric multiplier.
+        flip: Flip the sign of the estimates: a boolean (or a boolean per study), or a numeric multiplier (one per study), or the name of a column of
+            ``data``. The sampling variances are multiplied by the square of the multiplier.
         subset: Studies to keep in the returned frame: a boolean array, 0-based indices or an expression string evaluated on ``data``.
         include: Studies for which the measure is computed (the others get missing values), given like ``subset``.
         add: Non-negative amount to add to zero cells, counts or frequencies. Default ``0.5`` (``0`` for the measures listed above).
         to: When ``add`` is added: ``'only0'`` (to the table of a study with a zero cell, the default), ``'all'``, ``'if0all'`` (to all tables when any
             has a zero cell) or ``'none'``.
-        drop00: Drop studies with no cases or events (or only cases) in both groups from the calculations.
+        drop00: Drop studies with no cases or events (or only cases) in both groups from the calculations (set their values to missing). Used for the
+            2x2 table measures and ``'IRR'``, ``'IRD'`` and ``'IRSD'`` only.
         vtype: Type of sampling variance: one of ``'UB'``, ``'LS'`` (the default), ``'LS2'``, ``'LS3'``, ``'HO'``, ``'ST'``, ``'CS'``,
             ``'AV'``, ``'AV2'``, ``'AVHO'``, ``'H0'``, ``'H0a'``, ``'H0b'`` or ``'MAX'``. The valid options depend on the measure; a sequence gives one
             type per study.
-        correct: Apply the bias correction to the estimates (default ``True``). Must be a bool for ROM, VR, CVR, SDLN, CVLN, ROMC and CVRC.
-        cutoff: Absolute value above which an estimate is flagged as large, as a warning.
+        correct: Apply the bias correction to the estimates (default ``True``), for the measures that have one (``'SMD'``, ``'SMD1'``, ``'SMDH'``,
+            ``'SMD1H'``, ``'ROM'``, ``'VR'``, ``'CVR'``, ``'SMN'``, ``'SDLN'``, ``'CVLN'``, ``'SMCC'``, ``'SMCR'``, ``'SMCRH'``, ``'SMCRP'``,
+            ``'SMCRPH'``, ``'ROMC'`` and ``'CVRC'``); it has no effect on the others. For the measures built on [cmicalc][metafopy.cmicalc]
+            (``'SMD'``, ``'SMD1'``, ``'SMDH'``, ``'SMD1H'``, ``'SMN'``, ``'SMCC'``, ``'SMCR'``, ``'SMCRH'``, ``'SMCRP'``, ``'SMCRPH'``) it may also
+            be ``'exact'`` (the same as ``True``) or ``'approx'``; ``ROM``, ``VR``, ``CVR``, ``SDLN``, ``CVLN``, ``ROMC`` and ``CVRC`` need a bool.
+        cutoff: Absolute value above which a computed estimate is flagged with a warning. The default is 2 for ``'SMD'``, ``'SMDH'``, ``'SMD1'``
+            and ``'SMD1H'`` and no check for the other measures; ``NaN`` switches the check off. A given set of estimates is flagged once per
+            session.
         var_names: Names of the estimate and sampling variance columns of the result (``('yi', 'vi')``; a third name with ``add_measure``).
         add_measure: Add a column recording the measure computed (named ``'measure'`` unless ``var_names`` has a third entry).
         append: Return ``data`` with the new columns appended (``True``, the default) or only the new columns.
         replace: Replace existing ``yi``/``vi`` values in ``data`` (``True``, the default) or only their missing values. Needs ``append=True``.
-        digits: Number of decimals used when printing; stored values are not rounded.
-        onlyo1: Use only the first outcome of 2x2 tables; the same option as metafor's ``...`` argument.
-        addyi: Apply ``add`` to the estimate ``yi``; the same option as metafor's ``...`` argument.
-        addvi: Apply ``add`` to the sampling variance ``vi``; the same option as metafor's ``...`` argument.
+        digits: Number of decimals used when the frame is printed (stored in ``attrs['digits']``; ``None`` uses the ``digits`` option, 4 by default).
+            The stored values are not rounded.
+        onlyo1: For the 2x2 table measures: ``add`` is added to the ``ai`` and ``ci`` cells only, not to ``bi`` and ``di``. The same option as
+            metafor's ``...`` argument.
+        addyi: ``True`` (the default) computes ``yi`` from the counts after ``add`` and ``to`` have been applied, ``False`` from the unadjusted counts
+            (zero cells then give missing values for ratios). Used by ``'RR'``, ``'OR'`` (and ``'OR2D'``, ``'OR2DN'``, ``'OR2DL'``, ``'MPORM'``),
+            ``'RD'``, ``'IRR'``, ``'IRD'``, ``'IRSD'``, ``'PR'``, ``'PLN'``, ``'PLO'``, ``'IR'``, ``'IRLN'`` and ``'IRS'``; the other measures ignore
+            it. The same option as metafor's ``...`` argument.
+        addvi: The same for the sampling variances ``vi``, for the same measures.
 
     Returns:
-        The columns ``var_names`` (``yi`` and ``vi``), appended to ``data`` when it is given and ``append=True``. ``attrs['measure']``,
-            ``attrs['slab']`` and ``attrs['ni']`` carry metafor's attributes, so the frame can be passed to [rma_uni][metafopy.rma_uni].
+        The columns ``var_names`` (``yi`` and ``vi``), appended to ``data`` when it is given and ``append=True``, else a frame with those columns
+            only. ``attrs['measure']``, ``attrs['slab']``, ``attrs['ni']``, ``attrs['digits']``, ``attrs['yi_names']`` and ``attrs['vi_names']``
+            carry metafor's attributes, so the frame can be passed to [rma_uni][metafopy.rma_uni].
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.

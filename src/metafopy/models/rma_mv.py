@@ -569,10 +569,12 @@ def rma_mv(
         subset: Which rows to use: a boolean array, an array of 0-based indices, or a string expression evaluated on ``data``.
         random: Random effects, a formula such as ``'~ 1 | study'``, ``'~ 1 | district/school'`` or ``'~ outcome | study'``, or a sequence of them.
             Default (``None``) is a model without random effects.
-        struct: Variance-covariance structure of the ``~ inner | outer`` terms (one value, or two for a list of two such terms): ``'CS'`` (the
-            default), ``'HCS'``, ``'UN'``, ``'ID'``, ``'DIAG'``, ``'AR'``, ``'HAR'``, ``'CAR'``, ``'GEN'``, ``'GDIAG'`` or a spatial structure
-            (``'SPEXP'``, ``'SPGAU'``, ``'SPLIN'``, ``'SPRAT'``, ``'SPSPH'``).
-        intercept: Include an intercept in the model with moderators.
+        struct: Variance-covariance structure of the ``~ inner | outer`` terms: one value (used for both terms) or two (first and second term,
+            matching ``tau2``/``rho`` and ``gamma2``/``phi``). One of ``'CS'`` (the default), ``'HCS'``, ``'UN'``, ``'ID'``, ``'DIAG'``, ``'AR'``,
+            ``'HAR'``, ``'CAR'``, ``'GEN'``, ``'GDIAG'`` or a spatial structure (``'SPEXP'``, ``'SPGAU'``, ``'SPLIN'``, ``'SPRAT'``, ``'SPSPH'``);
+            anything else raises ``InputError``. ``'GEN'`` becomes ``'GDIAG'`` when the term is written ``~ inner || outer``. Case matters. A warning
+            says that ``struct`` is disregarded if ``random`` has no ``~ inner | outer`` term.
+        intercept: Include an intercept in the model with moderators. Ignored (the formula decides) when ``yi`` or ``mods`` is a formula.
         method: ``'REML'`` (the default) or ``'ML'`` for random and mixed effects, or ``'FE'`` (aliases ``'EE'``, ``'CE'``) for a fixed-effects model.
         test: Test for the coefficients: ``'z'`` (the default), ``'t'``, ``'knha'`` (alias ``'hksj'``) or ``'adhoc'``. Numeric ``dfs`` or
             ``dfs='contain'`` turns ``'z'`` into ``'t'``.
@@ -591,11 +593,15 @@ def rma_mv(
         gamma2: As ``tau2`` for the second ``~ inner | outer`` term.
         phi: As ``rho`` for the second ``~ inner | outer`` term.
         sparse: Use sparse matrices, which can be faster for large models.
-        dist: Distance measure for the spatial structures: a metric name (``'euclidean'`` by default), a callable, or a distance matrix. One
-            value, or two for a list of two ``~ inner | outer`` terms.
+        dist: Distance measure for the spatial structures (``struct`` ``'SPEXP'`` etc.; otherwise unused): ``'euclidean'`` (the default),
+            ``'maximum'`` or ``'manhattan'`` (names may be abbreviated), a callable that takes the matrix of inner values and returns the square
+            distance matrix, or a square symmetric data frame of distances with unique dimension names. ``'gcd'`` (metafor's great-circle
+            distance) raises ``NotSupportedError``. One value (used for both terms), or a list of two for a list of two ``~ inner | outer`` terms.
         cvvc: Compute the Hessian of the variance components and its inverse (``hessian`` and ``vvc`` of the result): ``False`` (the default), ``True``
-            or ``'varcor'`` (variances and correlations), ``'varcov'`` (variances and covariances, ``'UN'`` and ``'GEN'`` structures only) or
-            ``'transf'`` (the transformed parameters).
+            or ``'varcor'`` (variances and correlations), ``'varcov'`` (variances and covariances; for structures other than ``'UN'`` and
+            ``'GEN'``, or with fixed components, a warning is given and ``'varcor'`` is used) or ``'transf'`` (the transformed parameters).
+            Any other string raises ``InputError``. Ignored without random effects or with ``optbeta=True`` (where the Hessian includes the
+            coefficients anyway).
         optbeta: Optimise the coefficients together with the variance components; their covariance matrix is then taken from the inverse Hessian.
         beta: Fixed values for the coefficients (``nan`` entries are estimated).
         lambda1: Lasso penalty on the coefficients other than the intercept; a positive value implies ``optbeta=True``.
@@ -607,16 +613,23 @@ def rma_mv(
         control: Optimiser settings, as an [MVControl][metafopy.MVControl] or a mapping with metafor's names (``.`` becomes ``_``).
         verbose: Print metafor's table of the variance components and a log line per likelihood evaluation to stdout (the optimiser differs from
             metafor's ``nlminb``, so the sequence of evaluations differs); ``2`` or more also prints progress messages to stderr.
-        na_action: What to do with missing values: ``'omit'`` (drop those rows, the default), ``'fail'`` (raise) or ``'pass'`` (keep them).
+        na_action: What to do with rows that have missing values (metafor uses the global ``na.action`` option instead): ``'omit'`` (the default)
+            drops them with a warning and ``'fail'`` raises an error. ``'pass'`` and ``'exclude'`` drop them too.
 
     Returns:
-        The fitted model. Coefficients are in ``beta`` with ``se``, ``zval``, ``pval``, ``ci_lb`` and ``ci_ub``; the variance components in
-        ``sigma2``, ``tau2``, ``rho``, ``gamma2`` and ``phi``; ``QE`` and ``QM`` are the tests of residual heterogeneity and of the omnibus
-        hypothesis; ``summary()`` prints the table.
+        The fitted model. Coefficients are in ``beta`` with ``se``, ``zval``, ``pval``, ``ci_lb`` and ``ci_ub`` (arrays of length ``p``) and
+        their covariance matrix in ``vb``; the variance components in ``sigma2``, ``tau2``, ``rho``, ``gamma2`` and ``phi`` (arrays; ``[0.]``
+        when the model has no such component, see ``with_s``, ``with_g`` and ``with_h``); ``QE`` (with ``QEdf`` and ``QEp``) and ``QM`` (with
+        ``QMdf`` and ``QMp``) are the tests of residual heterogeneity and of the omnibus hypothesis. There are no ``I2`` or ``H2`` fields as in
+        [rma_uni][metafopy.rma_uni]. ``summary()`` returns the printout as a string.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
-        metafopy.errors.EstimationError: the model could not be fitted.
+        metafopy.errors.InputError: an argument or the data is invalid (including an unknown ``method``, ``test``, ``dfs``, ``struct``,
+            ``Rscale`` or ``cvvc``, ``W`` and ``V`` of the wrong size, and missing values with ``na_action='fail'``).
+        metafopy.errors.ArgumentError: ``control`` names a setting that does not exist.
+        metafopy.errors.NotSupportedError: ``dist='gcd'``.
+        metafopy.errors.EstimationError: the model could not be fitted (for example when the marginal variance-covariance matrix is not
+            positive definite at the starting values).
     """
     spec = {
         'yi': yi,

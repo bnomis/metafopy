@@ -404,7 +404,7 @@ def as_refit_on_used(fit: RMAResult, *, dropped: bool, measure: str, numbered: b
 def level_to_alpha(level: float) -> float:
     """metafor's ``.level()``: 95 (or 0.95) -> 0.05; a value up to 0.5 is already an alpha, so 0.05 stays 0.05 and 0 gives 1.
 
-    See `.level <https://github.com/wviechtb/metafor/blob/master/R/misc.func.hidden.R>`_.
+    See `.level <https://github.com/wviechtb/metafor/blob/master/R/misc.func.hidden.r>`_.
     """
     if level == 0:
         return 1.0
@@ -610,11 +610,12 @@ def rma_uni(
 
     Args:
         yi: Observed effect sizes, as an array or the name of a column of ``data``. May also be a model formula
-            (``'yi ~ ablat + year'``; needs ``data``, and then ``mods`` is ignored and ``intercept`` is taken from the formula),
-            or a data frame (taken as ``data``).
-        vi: Sampling variances, as an array or a column name. Give ``vi`` or ``sei``, not both.
-        sei: Standard errors, as an array or a column name; used instead of ``vi``.
-        weights: Optional custom weights for the fit, as an array or a column name. Required for ``method='GENQ'``.
+            (``'yi ~ ablat + year'``; needs ``data``; ``mods`` is then ignored with a warning and so is ``intercept``, since the formula decides
+            whether there is an intercept), or a data frame (taken as ``data``; its ``yi`` and ``vi`` columns are used).
+        vi: Sampling variances, as an array or a column name. A single value is used for every study.
+        sei: Standard errors, as an array or a column name; their squares are used as ``vi``. Ignored when ``vi`` is given.
+        weights: Optional custom weights for the fit, as an array or a column name; negative weights raise an error. Required for
+            ``method='GENQ'`` and ``'GENQM'``.
         ai: 2x2 table frequencies (upper left cell). With ``bi``, ``ci`` and ``di`` and a ``measure`` such as ``'OR'`` or ``'RR'``.
         bi: 2x2 table frequencies (upper right cell).
         ci: 2x2 table frequencies (lower left cell).
@@ -639,54 +640,69 @@ def rma_uni(
         r2i: ``R^2`` values.
         mini: Minimum values.
         maxi: Maximum values.
-        ni: Sample or group sizes, as an array or column name.
-        mods: Moderators, as a one-sided formula string (``'~ ablat + year'``), a matrix, or a data frame.
-            ``None`` fits a model with no moderators.
-        measure: Effect size or outcome measure, a metafor code such as ``'GEN'`` (generic, the default, used with ``yi``/``vi``), ``'SMD'``, ``'OR'``,
-            ``'RR'``, ``'RD'`` or ``'ZCOR'``. Must be given when raw data are passed. See [escalc][metafopy.escalc] for the full list.
+        ni: Sample or group sizes, as an array or column name. Passed to [escalc][metafopy.escalc] for raw data; otherwise stored with the
+            model (as its ``ni``), and taken from an [escalc][metafopy.escalc] frame when not given.
+        mods: Moderators, as a one-sided formula string (``'~ ablat + year'``; needs ``data``), a one-dimensional array (one moderator), a matrix or a
+            data frame, with one row per study. ``None`` fits a model with no moderators.
+        measure: Effect size or outcome measure: ``'GEN'`` (generic, the default, used with ``yi`` and ``vi``) or any code of
+            [escalc][metafopy.escalc] (``'SMD'``, ``'OR'``, ``'RR'``, ``'RD'``, ``'ZCOR'``, ...; with ``yi`` and ``vi`` it only labels the estimates).
+            ``'HR'`` and ``'HD'`` are also accepted. Must be given when raw data are passed; an [escalc][metafopy.escalc] frame supplies its own.
         data: Data frame holding the variables named in the other arguments.
-        slab: Study labels, as a sequence or a column name. Defaults to ``1, 2, ...``.
+        slab: Study labels, as a sequence or a column name. Defaults to the labels stored by [escalc][metafopy.escalc], else ``1, 2, ...``.
         subset: Which studies to fit: a boolean array, an array of 0-based indices, or a string expression evaluated on ``data``.
-        add: Constant added to the cell counts of 2x2 tables with zero cells (default ``1/2``). See [escalc][metafopy.escalc].
+        add: Constant added to zero cells, counts or frequencies when effect sizes are computed from raw data (default ``1/2``, but ``0`` for the
+            measures ``'AS'``, ``'PHI'``, ``'ZPHI'``, ``'RTET'``, ``'ZTET'``, ``'IRSD'``, ``'PAS'``, ``'PFT'``, ``'IRS'`` and ``'IRFT'``). See
+            [escalc][metafopy.escalc].
         to: Which tables get ``add``: ``'only0'`` (those with a zero cell, the default), ``'all'``, ``'if0all'`` (all, if any table has a zero cell) or
             ``'none'``.
-        drop00: Drop studies with no events (or only events) in both groups.
-        intercept: Include an intercept in the model with moderators.
-        method: Estimator of the amount of heterogeneity ``tau^2``: ``'FE'``/``'EE'``/``'CE'`` (fixed-effects, no heterogeneity),
-            ``'DL'``, ``'DLIT'``,
-            ``'HE'``, ``'HS'``, ``'HSk'``, ``'SJ'``, ``'SJIT'``, ``'ML'``, ``'REML'`` (the default), ``'EB'``, ``'PM'``, ``'PMM'``, ``'GENQ'`` or
-            ``'GENQM'``. A sequence is tried in order until one succeeds.
+        drop00: Drop studies with no events (or only events) in both groups from the calculations (raw data only).
+        intercept: Include an intercept when ``mods`` is a vector, matrix or data frame. Ignored when ``mods`` (or ``yi``) is a formula. Without
+            moderators an intercept is always included (``intercept=False`` gives a warning).
+        method: Estimator of the amount of heterogeneity ``tau^2`` (case-sensitive): ``'EE'``, ``'FE'`` or ``'CE'`` (equal-, fixed- or common-effects
+            model, ``tau^2 = 0``), ``'DL'``, ``'DLIT'``, ``'HE'`` (also ``'CO'`` and ``'VC'``), ``'HS'``, ``'HSk'``, ``'SJ'``, ``'SJIT'``, ``'ML'``,
+            ``'REML'`` (the default), ``'EB'``, ``'PM'`` (also ``'MP'``), ``'PMM'``, ``'GENQ'`` or ``'GENQM'``. A sequence is tried in order until one
+            succeeds. Location-scale models need ``'ML'`` or ``'REML'`` (the first of a sequence is used).
         weighted: Use inverse-variance weights (``True``) or ordinary least squares (``False``).
-        test: Test for the coefficients: ``'z'`` (normal, the default), ``'t'`` (t distribution), ``'knha'``
-            (Knapp-Hartung adjustment; alias ``'hksj'``) or
-            ``'adhoc'`` (truncated Knapp-Hartung).
-        level: Confidence interval level in percent (``95`` is 95%).
-        digits: Number of decimals used when printing, or a mapping with the keys ``est``, ``se``, ... (``est`` is
-            used). Stored in the result.
+        test: Test for the coefficients (case-insensitive): ``'z'`` (normal, the default), ``'t'`` (t distribution with ``k - p`` degrees of freedom),
+            ``'knha'`` (Knapp-Hartung adjustment, with t and F distributions; alias ``'hksj'``) or ``'adhoc'`` (Knapp-Hartung, but the adjusted
+            standard errors are never smaller than the unadjusted ones). With one study ``'z'`` is used.
+        level: Confidence interval level in percent (``95`` is 95%). As in metafor, ``0.95`` is also read as 95% and ``0.05`` as an alpha of 0.05.
+        digits: Number of decimals used when printing, or a mapping with the keys ``est``, ``se``, ... (only ``est`` is used, else the first value).
+            Stored in the result; ``None`` is 4.
         btt: Coefficients to test jointly in the omnibus test, as 0-based indices or a regular expression matched
-            against coefficient names.
-            Printed output reports them 1-based, as metafor does. Default: all but the intercept.
-        att: Scale coefficients to test jointly (location-scale models only); as ``btt``.
-        scale: One-sided formula (``'~ ni100'``), matrix or data frame of scale moderators. Turns the model into
-            a location-scale model.
-        link: Link function of the scale model, ``'log'`` (the default) or ``'identity'``. Location-scale models only.
-        optbeta: Estimate the location coefficients jointly with the scale coefficients. Location-scale models only.
-        alpha: Fixed values for the scale coefficients (``None`` entries are estimated). Location-scale models only.
-        beta: Fixed values for the location coefficients; needs ``optbeta=True``. Location-scale models only.
-        tau2: Fixed value of ``tau^2`` instead of estimating it.
-        control: Settings of the ``tau^2`` estimation (iteration limits, thresholds and step adjustments), as a
-            [Control][metafopy.models.tau2.Control] or a mapping with the same names as metafor (``.`` becomes ``_``).
+            against coefficient names (``re.search``).
+            Printed output reports them 1-based, as metafor does. Default: all coefficients but the intercept (the intercept itself for a model
+            without moderators).
+        att: Scale coefficients to test jointly, as ``btt``. Location-scale models only; ignored with a warning otherwise.
+        scale: Scale moderators of a location-scale model: a one-sided formula (``'~ ni100'``, which includes an intercept unless ``0`` or ``-1`` is
+            given; needs ``data``), or a matrix or data frame with one row per study, which is used as it is (no intercept column is added). Turns the
+            model into a location-scale model.
+        link: Link function of the scale model, ``'log'`` (the default) or ``'identity'``; anything else raises an error. Location-scale models only.
+        optbeta: Estimate the location coefficients jointly with the scale coefficients (needs ``weighted=True``). Location-scale models only; ignored
+            with a warning otherwise.
+        alpha: Fixed values for the scale coefficients (``None`` or ``NaN`` entries are estimated; one number is used for all). Location-scale models
+            only.
+        beta: Fixed values for the location coefficients (``None`` or ``NaN`` entries are estimated); used only with ``optbeta=True``.
+            Location-scale models only.
+        tau2: Fixed value of ``tau^2`` instead of estimating it (no effect for ``method='EE'``, ``'FE'`` or ``'CE'``; ignored with a warning for
+            location-scale models).
+        control: Settings of the ``tau^2`` estimation (``tau2_init``, ``tau2_min``, ``tau2_max``, ``threshold``, ``tol``, ``ll0check``, ``maxiter``,
+            ``stepadj``, ``evtol`` and ``REMLf``), as a [Control][metafopy.models.tau2.Control] or a mapping with the same names as metafor (``.``
+            becomes ``_``). Names that only other metafor functions read are ignored; any other name raises an error. Location-scale models take an
+            [LSControl][metafopy.models.rma_ls_result.LSControl] or a mapping instead.
         verbose: Print metafor's iteration log of the ``tau^2`` estimators to stdout; ``2`` or more also prints progress messages to stderr.
-            No effect for location-scale models.
-        na_action: What to do with missing values: ``'omit'`` (drop those studies, the default), ``'exclude'``
-            (drop them but keep NA entries in the
-            outputs), ``'pass'`` (keep them) or ``'fail'`` (raise).
-        vtype: Type of the sampling variance formula used by [escalc][metafopy.escalc], ``'LS'`` by default.
-        correct: Apply the small-sample bias correction of [escalc][metafopy.escalc].
-        cutoff: Largest allowed absolute value of an effect size (``'COR'``-type measures); larger values give a warning.
-        onlyo1: Passed to [escalc][metafopy.escalc]: only the 2x2 table's first outcome is used.
-        addyi: Passed to [escalc][metafopy.escalc]: apply ``add`` to the effect size ``yi``.
-        addvi: Passed to [escalc][metafopy.escalc]: apply ``add`` to the sampling variance ``vi``.
+            Location-scale models print only a blank line and, for ``2`` or more, the messages about extracting the data.
+        na_action: What to do with studies that have missing values (metafor uses the global ``na.action`` option instead): ``'omit'`` (the default)
+            leaves them out of the fit and ``'fail'`` raises an error. ``'pass'`` leaves them out of the fit too.
+        vtype: Type of the sampling variance formula used by [escalc][metafopy.escalc] for raw data, ``'LS'`` by default; may be a sequence with one
+            type per study.
+        correct: Bias correction of [escalc][metafopy.escalc] for the measures that have one (``True`` by default), for raw data only.
+        cutoff: Value above which the absolute value of an estimate computed by [escalc][metafopy.escalc] is flagged with a warning. The default is 2
+            for ``'SMD'`` and its variants and no check otherwise; ``NaN`` switches the check off.
+        onlyo1: Passed to [escalc][metafopy.escalc]: ``add`` is added to the ``ai`` and ``ci`` cells of the 2x2 tables only, not to ``bi`` and ``di``.
+        addyi: Passed to [escalc][metafopy.escalc]: ``True`` (the default) computes ``yi`` from the counts after ``add`` and ``to``, ``False`` from
+            the unadjusted counts.
+        addvi: Passed to [escalc][metafopy.escalc]: the same for the sampling variances ``vi``.
         knha: ``True`` is the same as ``test='knha'`` and ``False`` the same as ``test='z'``.
         dfs: Degrees of freedom of the t and F tests (the first value is used) instead of ``k - p``.
         i2def: Definition of ``I^2`` and ``H^2``: ``'1'`` (the default), or ``'2'`` to use the typical sampling variance ``1 / mean(1 / vi)``.
@@ -699,10 +715,14 @@ def rma_uni(
     Returns:
         The fitted model, an [RMAResult][metafopy.models.rma_uni.RMAResult] (an
             [RMALSResult][metafopy.models.rma_ls_result.RMALSResult] when ``scale`` is given). Estimates are in ``beta``, ``se``, ``zval``, ``pval``,
-            ``ci_lb`` and ``ci_ub``; heterogeneity statistics in ``tau2``, ``I2``, ``H2``, ``QE`` and ``QEp``; ``summary()`` prints the table.
+            ``ci_lb`` and ``ci_ub``; heterogeneity statistics in ``tau2``, ``I2``, ``H2``, ``QE`` and ``QEp`` (arrays with one value per study
+            for a location-scale model, except ``QE`` and ``QEp``); ``summary()`` returns the printout as a string.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.ArgumentError: ``control`` has a name that no function of metafor reads.
+        metafopy.errors.NotFoundError: a column name given for an argument is not in ``data``.
+        metafopy.errors.EstimationError: every requested ``tau^2`` estimator failed (including ``'GENQ'`` without ``weights``).
 
     Examples:
         >>> from metafopy import datasets, rma

@@ -2,10 +2,11 @@
 
 The pooled odds ratio follows Mantel and Haenszel (1959),
 doi:10.1093/jnci/22.4.719, with the variance estimator of Robins, Breslow and
-Greenland (1986), doi:10.2307/2531783; the pooled risk ratio and incidence rate
-ratio follow Greenland and Robins (1985), doi:10.2307/2530923; the risk
-difference variance is that of Sato, Greenland and Robins (1989),
-doi:10.2307/2531593. See
+Greenland (1986), doi:10.2307/2531052; the risk difference variance is that of
+Sato, Greenland and Robins (1989), Biometrics 45(4), 1323-1324
+(https://www.jstor.org/stable/2531784). metafor's help page also lists
+Greenland and Robins (1985), doi:10.2307/2530643, and Nurminen (1981),
+doi:10.1093/biomet/68.2.525. See
 https://wviechtb.github.io/metafor/reference/rma.mh.html and the source at
 https://github.com/wviechtb/metafor/blob/master/R/rma.mh.r.
 """
@@ -250,10 +251,11 @@ def rma_mh(
     """Fit a Mantel-Haenszel meta-analysis of 2x2 tables (``measure`` ``'OR'``, ``'RR'``, ``'RD'``) or rate data (``'IRR'``, ``'IRD'``).
 
     Mirrors metafor's ``rma.mh()``, see <https://wviechtb.github.io/metafor/reference/rma.mh.html>. The pooled effect is the Mantel-Haenszel
-    estimate (Mantel & Haenszel, 1959; Greenland & Robins, 1985; Robins, Breslow & Greenland, 1986; Nurminen, 1981). The individual
+    estimate (Mantel & Haenszel, 1959; see metafor's help page for the further references). The individual
     effect sizes and sampling variances are computed as by [escalc][metafopy.escalc]. For odds ratios the result also holds the
-    Cochran-Mantel-Haenszel test and Tarone's test of heterogeneity. The first element of ``add``, ``to`` and ``drop00`` is used when computing
-    the individual ``yi``/``vi`` values, the second one for the counts entering the Mantel-Haenszel estimator (by default nothing is added to them).
+    Cochran-Mantel-Haenszel test and Tarone's test of heterogeneity, for incidence rate ratios the Mantel-Haenszel test. The first element of
+    ``add``, ``to`` and ``drop00`` is used when computing the individual ``yi``/``vi`` values, the second one for the counts entering the
+    Mantel-Haenszel estimator (by default nothing is added to them and no study is dropped there).
 
     Args:
         ai: Frequencies of the 2x2 tables, upper left cell (event in group 1), as an array or the name of a column of ``data``.
@@ -271,25 +273,32 @@ def rma_mh(
         data: Data frame holding the variables named in the other arguments.
         slab: Study labels, as a sequence or a column name. Defaults to ``1, 2, ...``.
         subset: Which studies to use: a boolean array, an array of 0-based indices, or a string expression evaluated on ``data``.
-        add: Constant added to the cell counts of tables with zero cells. A single value, or a pair: the first for the ``yi``/``vi`` values and the
-            second for the Mantel-Haenszel estimator. Default ``0.5``, so that nothing is added to the counts of the estimator.
+        add: Constant added to zero cells or counts. A single value, or a pair: the first applies when the ``yi``/``vi`` values of the studies are
+            computed and the second to the counts entering the Mantel-Haenszel estimator. Default ``0.5``, which with a single value is used for the
+            ``yi``/``vi`` values only (the second is then ``0``).
         to: Which tables get ``add``: ``'all'``, ``'only0'`` (those with a zero cell, the default), ``'if0all'`` (all, if any table has a zero cell)
-            or ``'none'``. A single value, or a pair as for ``add``.
-        drop00: Drop studies with no events (or only events) in both groups. A single value, or a pair as for ``add``. Default ``True``.
-        correct: Use the continuity correction in the Cochran-Mantel-Haenszel test (odds ratios only).
+            or ``'none'``. A single value, or a pair as for ``add`` (the second is then ``'none'``).
+        drop00: Drop studies with no events (or only events) in both groups. A single value, or a pair as for ``add`` (the second is then
+            ``False``). Default ``True``.
+        correct: Use the continuity correction in the Cochran-Mantel-Haenszel test (odds ratios) and in the Mantel-Haenszel test (incidence rate
+            ratios).
         level: Confidence interval level in percent (``95`` is 95%).
-        verbose: Print metafor's progress messages to stderr.
+        verbose: Print metafor's progress messages to stderr (and blank lines to stdout).
         digits: Number of decimals used when printing, stored in the result.
-        na_action: What to do with missing values: ``'omit'`` (drop those studies, the default), ``'fail'`` (raise) or ``'pass'`` (keep them).
-        onlyo1: Passed to [escalc][metafopy.escalc]: only the first outcome of the 2x2 tables is used.
-        addyi: Passed to [escalc][metafopy.escalc]: apply ``add`` to the effect size ``yi``.
-        addvi: Passed to [escalc][metafopy.escalc]: apply ``add`` to the sampling variance ``vi``.
+        na_action: What to do with studies that have missing values (metafor uses the global ``na.action`` option instead): ``'omit'`` (the default)
+            leaves them out with a warning and ``'fail'`` raises an error. ``'pass'`` leaves them out too.
+        onlyo1: Passed to [escalc][metafopy.escalc] for the ``yi``/``vi`` values: ``add`` is added to the ``ai`` and ``ci`` cells only, not to
+            ``bi`` and ``di``.
+        addyi: Passed to [escalc][metafopy.escalc]: ``True`` (the default) computes ``yi`` from the counts after ``add`` and ``to``, ``False`` from
+            the unadjusted counts.
+        addvi: Passed to [escalc][metafopy.escalc]: the same for the sampling variances ``vi``.
 
     Returns:
         The fitted model. The pooled estimate is in ``beta`` with ``se``, ``zval``, ``pval``, ``ci_lb`` and ``ci_ub`` (on the log scale for
-        ``'OR'``, ``'RR'`` and ``'IRR'``); ``QE``, ``QEp``, ``I2`` and ``H2`` describe the heterogeneity; ``CO``/``COp``, ``MH``/``MHp``,
-        ``BD``/``BDp`` and ``TA``/``TAp`` are the Cochran, Mantel-Haenszel, Breslow-Day and Tarone tests (odds ratios only); ``summary()`` prints
-        the table.
+        ``'OR'``, ``'RR'`` and ``'IRR'``); ``QE``, ``QEp``, ``I2`` and ``H2`` describe the heterogeneity (``tau2`` is 0); ``MH``/``MHp`` is the
+        Cochran-Mantel-Haenszel test (odds ratios) or the Mantel-Haenszel test (incidence rate ratios), ``CO``/``COp`` the same test with a
+        different variance (odds ratios), and ``BD``/``BDp`` and ``TA``/``TAp`` the Breslow-Day and Tarone tests (odds ratios only); the tests
+        that do not apply are ``NaN``. ``summary()`` returns the printout as a string.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid, or ``measure`` is not one of the supported measures.
