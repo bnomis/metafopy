@@ -56,7 +56,7 @@ type Cluster = str | numpy.typing.ArrayLike | None
 
 EPS = float(numpy.finfo(float).eps)
 # what a failed refit looks like (metafor wraps the refits in try() and records NA)
-REFIT_ERRORS = (metafopy.errors.MetaforError, ValueError, ArithmeticError, numpy.linalg.LinAlgError, scipy.linalg.LinAlgError)
+REFIT_ERRORS = (metafopy.errors.MetafopyError, ValueError, ArithmeticError, numpy.linalg.LinAlgError, scipy.linalg.LinAlgError)
 # the arguments metafor does not pass on to the refits of the diagnostics
 DROPPED = ('beta', 'btt', 'cvvc', 'lambda1', 'lambda2', 'restart')
 

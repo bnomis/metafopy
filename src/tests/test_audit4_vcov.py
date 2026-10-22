@@ -97,7 +97,7 @@ def test_vcov_against_r(fits: dict[str, typing.Any], name: str, ty: str, na: str
     what = f'{name} {ty} {na}'
     rtol = LOOSE.get(name, TIGHT)
     if 'error' in ref:
-        with pytest.raises(metafopy.errors.MetaforError) as err:
+        with pytest.raises(metafopy.errors.MetafopyError) as err:
             fit.vcov(ty, na_action=na)
         if ref['error'] != R_BUG:
             assert ref['error'] in str(err.value), what

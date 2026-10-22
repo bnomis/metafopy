@@ -226,7 +226,7 @@ def test_anova_wald_two_models(two_models: dict[str, typing.Any], name: str, fir
 )
 def test_anova_two_models_errors(two_models: dict[str, typing.Any], name: str, first: str, second: str, kwargs: dict[str, typing.Any]) -> None:
     message = REF['anova_two'][name]['error']
-    with pytest.raises(metafopy.errors.MetaforError) as info:
+    with pytest.raises(metafopy.errors.MetafopyError) as info:
         metafopy.anova(two_models[first], two_models[second], **kwargs)
     assert str(info.value) == message
 

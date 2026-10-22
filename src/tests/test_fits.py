@@ -416,7 +416,7 @@ ERROR_CASES = [k for k in json.loads(FIXTURE.read_text(encoding='utf-8'))['error
 @pytest.mark.parametrize('key', ERROR_CASES)
 def test_unsupported_classes_raise_metafors_error(key: str, fits: dict[str, typing.Any]) -> None:
     message = ref()['errors'][key]
-    with matplotlib.pyplot.ioff(), pytest.raises(metafopy.errors.MetaforError, match=f'^{re.escape(message)}$'):
+    with matplotlib.pyplot.ioff(), pytest.raises(metafopy.errors.MetafopyError, match=f'^{re.escape(message)}$'):
         call(key, fits)()
     matplotlib.pyplot.close('all')
 

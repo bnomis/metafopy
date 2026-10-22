@@ -367,7 +367,7 @@ def confint_rma_uni(
             def prof(t: float) -> float:
                 try:
                     out = profile_lrt(x, t) - objective
-                except ValueError, ArithmeticError, numpy.linalg.LinAlgError, metafopy.errors.MetaforError:
+                except ValueError, ArithmeticError, numpy.linalg.LinAlgError, metafopy.errors.MetafopyError:
                     if vlevel:
                         metafopy.core.verbose.cat(f'tau2 = {metafopy.formatters.fmtx(t, ndig, addwidth=4)}   LRT - objective = NA \n')
                     raise
@@ -603,7 +603,7 @@ def mv_refit_fixed(x: metafopy.models.mv_result.RMAMVResult, comp: str, pos: int
             return fit
         try:
             alt = metafopy.models.rma_mv.rma_mv(**(spec | {'control': dataclasses.replace(warm, **inits)}))
-        except metafopy.errors.MetaforError:
+        except metafopy.errors.MetafopyError:
             return fit
         return alt if alt.logLik() > fit.logLik() else fit
 
@@ -758,7 +758,7 @@ def confint_rma_mv(
         def diff(val: float) -> float:
             try:
                 out = -2 * (mv_refit_logLik(x, comp, pos, val) - ll_obj) - objective
-            except ValueError, ArithmeticError, numpy.linalg.LinAlgError, metafopy.errors.MetaforError:
+            except ValueError, ArithmeticError, numpy.linalg.LinAlgError, metafopy.errors.MetafopyError:
                 if vlevel:
                     metafopy.core.verbose.cat(f'val = {metafopy.formatters.fmtx(val, ndig, addwidth=4)}   LRT - objective = NA \n')
                 raise

@@ -148,7 +148,7 @@ def refit(obj: Sel, comp: str, val: float, delta_pos: int, *, confint_: bool) ->
                 mapfun=obj.mapfun,
                 mapinvfun=obj.mapinvfun,
             )
-    except metafopy.errors.MetaforError, ArithmeticError, numpy.linalg.LinAlgError:
+    except metafopy.errors.MetafopyError, ArithmeticError, numpy.linalg.LinAlgError:
         return None
     assert isinstance(fit, metafopy.models.sel_result.SelmodelResult)
     return fit
@@ -334,7 +334,7 @@ def profile_ci(
     def root(lo: float, hi: float, direction: typing.Literal['downX', 'upX']) -> float | None:
         try:
             res = metafopy.core.zeroin.uniroot(lrt, lo, hi, tol=float(con['tol']), maxiter=int(con['maxiter']), extend_int=direction if extint else 'no')
-        except metafopy.errors.MetaforError, ArithmeticError, numpy.linalg.LinAlgError:
+        except metafopy.errors.MetafopyError, ArithmeticError, numpy.linalg.LinAlgError:
             return None
         return res.root if res.converged else None
 
@@ -344,7 +344,7 @@ def profile_ci(
         for _ in range(int(con['eptries'])):
             try:
                 res = lrt(val)
-            except metafopy.errors.MetaforError, ArithmeticError, numpy.linalg.LinAlgError:
+            except metafopy.errors.MetafopyError, ArithmeticError, numpy.linalg.LinAlgError:
                 res = math.nan
             if not math.isnan(res):
                 return val, res

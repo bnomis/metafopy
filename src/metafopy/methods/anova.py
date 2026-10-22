@@ -853,7 +853,7 @@ def refit_ml(res: metafopy.models.rma_uni.RMAResult) -> metafopy.models.rma_uni.
                 tau2=res.tau2 if res.tau2_fix else None,
                 control=res.control,
             )
-    except (metafopy.errors.MetaforError, numpy.linalg.LinAlgError, ValueError) as err:
+    except (metafopy.errors.MetafopyError, numpy.linalg.LinAlgError, ValueError) as err:
         raise metafopy.errors.InputError('Refitting the model with ML estimation failed.') from err
     return out
 
@@ -1223,7 +1223,7 @@ def refit_ml_mv(res: metafopy.models.mv_result.RMAMVResult) -> metafopy.models.m
         raise metafopy.errors.InputError('Refitting the model with ML estimation failed (no recorded call).')
     try:
         out = res.call(method='ML')
-    except (metafopy.errors.MetaforError, numpy.linalg.LinAlgError, ValueError) as err:
+    except (metafopy.errors.MetafopyError, numpy.linalg.LinAlgError, ValueError) as err:
         raise metafopy.errors.InputError('Refitting the model with ML estimation failed.') from err
     if not isinstance(out, metafopy.models.mv_result.RMAMVResult):
         raise metafopy.errors.InputError('Refitting the model with ML estimation failed.')

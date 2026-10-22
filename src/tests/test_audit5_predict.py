@@ -317,7 +317,7 @@ def test_influence_measure(re_model: metafopy.RMAResult) -> None:
 def test_influence_measure_robust(re_model: metafopy.RMAResult, dat: pandas.DataFrame) -> None:
     rob = metafopy.robust(re_model, cluster=numpy.arange(len(dat)) // 2)
     assert isinstance(metafopy.influence(rob, measure='cooks.distance'), pandas.Series)
-    with pytest.raises(metafopy.errors.MetaforError):
+    with pytest.raises(metafopy.errors.MetafopyError):
         metafopy.influence(rob, measure='dfbetas')
 
 

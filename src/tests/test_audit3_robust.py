@@ -124,7 +124,7 @@ def test_refusals(uni1: typing.Any, uni0: typing.Any, mv1: typing.Any, model: st
     try:
         REFUSING[function](x)
         outcome = 'ok'
-    except metafopy.errors.MetaforError as e:
+    except metafopy.errors.MetafopyError as e:
         outcome = str(e)
     finally:
         matplotlib.pyplot.close('all')
