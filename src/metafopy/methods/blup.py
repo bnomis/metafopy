@@ -144,9 +144,9 @@ def blup_rma_uni(
     """BLUPs of the true effects of an ``rma.uni`` fit (metafor's ``blup.rma.uni``).
 
     The prediction for study ``i`` shrinks its observed effect towards the model's fitted value (the empirical Bayes estimate of its true effect).
-    Prediction intervals use a normal distribution, or a t-distribution with ``k - p`` degrees of freedom when the model was fitted with
-    a t, knha or adhoc test. For equal- and fixed-effects models the BLUPs equal the fitted values. ``na_action`` plays the role of R's
-    ``options(na.action=)``. See <https://wviechtb.github.io/metafor/reference/blup.html>.
+    Prediction intervals use a normal distribution, or a t-distribution with the model's ``ddf`` degrees of freedom (``k - p`` unless ``dfs`` was
+    given) when the model was fitted with a t, knha or adhoc test. For equal- and fixed-effects models the BLUPs equal the fitted values.
+    ``na_action`` plays the role of R's ``options(na.action=)``. See <https://wviechtb.github.io/metafor/reference/blup.html>.
 
     Args:
         res: A model fitted by [rma_uni][metafopy.rma_uni].

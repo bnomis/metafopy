@@ -73,12 +73,10 @@ class ResidualResult(metafopy.printing.HtmlRepr):
 class InfluenceResult(metafopy.printing.HtmlRepr):
     """Case-deletion diagnostics: one entry per study.
 
-    ``inf`` holds the studies' influence table (``rstudent``, ``dffits``,
-    ``cook_d``, ``cov_r``, ``tau2_del``, ``QE_del``, ``hat``, ``weight``),
-    ``dfbs`` the ``DFBETAS`` (one column per coefficient) and ``is_infl`` marks
-    the studies metafor flags with an asterisk (|DFFITS| > 3 sqrt(p/(k-p)),
-    Cook's D beyond the median of its chi-square reference distribution,
-    hat > 3p/k or any |DFBETAS| > 1).
+    The ``inf`` property is the studies' influence table (columns ``rstudent``, ``dffits``, ``cook.d``, ``cov.r``, ``tau2.del``, ``QE.del``,
+    ``hat``, ``weight`` and ``inf``), ``dfbs`` the ``DFBETAS`` (one column per coefficient) and ``is_infl`` marks the studies metafor flags with
+    an asterisk: |DFFITS| > 3 sqrt(p/(k-p)), the lower-tail area of a chi-square distribution with ``m`` degrees of freedom cut off by Cook's
+    distance above 50%, hat > 3p/k or any |DFBETAS| > 1.
 
     Attributes:
         rstudent: Externally standardised (deleted) residuals.
@@ -99,8 +97,8 @@ class InfluenceResult(metafopy.printing.HtmlRepr):
         p: Number of coefficients in the full model.
         m: Number of coefficients the Cook's distances and covariance ratios refer to (see ``btt``).
         digits: Number of decimals used when the result is printed.
-        ids: 0-based positions of the studies among those supplied, if known.
-        not_na: Boolean flags for the supplied studies that were used in the fit, if known.
+        ids: 0-based positions, among the supplied studies, of the studies in the result, if known.
+        not_na: Boolean flags for the studies in the result that were used in the fit (all ``True`` with ``na_action='omit'``), if known.
     """
 
     rstudent: FloatArray
@@ -259,7 +257,8 @@ def influence_rma_uni(
         measure: Metafor's undocumented argument that restricts the result: ``'cooks.distance'`` gives only the Cook's distances (as
             [cooks_distance][metafopy.cooks_distance]), ``'dfbetas'`` only the DFBETAS (as [dfbetas][metafopy.dfbetas]) and ``'rstudent'`` only the
             deleted residuals (as [rstudent][metafopy.rstudent]). Any other value (the default is ``'all'``) gives the full result.
-        progbar: Print a progress bar to stderr while the studies are left out in turn (default ``False``).
+        progbar: Print a progress bar to stderr while the studies are left out in turn (default ``False``); no bar is shown with
+            ``measure='cooks.distance'`` or ``'rstudent'``.
 
     Returns:
         By default an [InfluenceResult][metafopy.InfluenceResult] with one entry per study; its ``inf`` property is the influence table

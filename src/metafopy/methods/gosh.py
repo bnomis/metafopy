@@ -1,10 +1,11 @@
 """Graphical display of study heterogeneity (metafor's ``gosh.rma``).
 
 The model is fitted to a large number of subsets of the ``k`` studies (all
-``2^k - p - ...`` of them if feasible, otherwise a random sample) and the
-pooled estimate(s) and heterogeneity statistics of each fit are collected, as
-proposed by Olkin, Dahabreh & Trikalinos (2012), doi:10.1002/jrsm.1033. See
-https://wviechtb.github.io/metafor/reference/gosh.rma.html.
+subsets with at least ``p`` studies if there are at most 10^6 of them,
+otherwise a random sample) and the pooled estimate(s) and heterogeneity
+statistics of each fit are collected, as proposed by Olkin, Dahabreh &
+Trikalinos (2012), doi:10.1002/jrsm.1053. See
+https://wviechtb.github.io/metafor/reference/gosh.html.
 """
 
 import collections.abc
@@ -107,7 +108,9 @@ def gosh(x: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> GoshResult:
     """GOSH (graphical display of study heterogeneity) analysis of a fitted model.
 
     This is a single-dispatch function: the implementation is chosen from the class of ``x``. See
-    [gosh_rma_uni][metafopy.methods.gosh.gosh_rma_uni]. See <https://wviechtb.github.io/metafor/reference/gosh.html>.
+    [gosh_rma_uni][metafopy.methods.gosh.gosh_rma_uni] for [rma_uni][metafopy.rma_uni] fits. Fits of [rma_mh][metafopy.rma_mh] and
+    [rma_peto][metafopy.rma_peto] are also supported (as in metafor), with the same arguments as ``gosh_rma_uni``; the subsets then have one
+    or more tables and the result has the column ``estimate``. See <https://wviechtb.github.io/metafor/reference/gosh.html>.
 
     Args:
         x: A fitted model object.
@@ -119,6 +122,8 @@ def gosh(x: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> GoshResult:
 
     Raises:
         metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
+        metafopy.errors.NotSupportedError: the model is of a class metafor has no GOSH analysis for (``rma.ls``, ``rma.glmm``, ``rma.mv``,
+            selection models, ``robust.rma`` and others).
     """
     metafopy.methods.fitview.check_class(x, notav=metafopy.methods.fitview.FIXED_UNI_ONLY)
     raise metafopy.errors.ArgumentError(f'gosh() not implemented for {type(x).__name__}')
@@ -141,7 +146,7 @@ def gosh_rma_uni(
 ) -> GoshResult:
     """Fit the model to subsets of the studies (metafor's ``gosh.rma``).
 
-    Olkin, Dahabreh & Trikalinos (2012, [doi:10.1002/jrsm.1033](https://doi.org/10.1002/jrsm.1033)) proposed examining the pooled estimate and the
+    Olkin, Dahabreh & Trikalinos (2012, [doi:10.1002/jrsm.1053](https://doi.org/10.1002/jrsm.1053)) proposed examining the pooled estimate and the
     heterogeneity statistics of the model fitted to all subsets of the studies; Viechtbauer (2021) generalised this to models with moderators.
     By default all subsets (with at least ``p`` studies, ``p`` being the number of coefficients) are used if there are at most ``10**6`` of
     them, otherwise ``10**6`` random subsets are drawn. The subsets are drawn before the fits, so the result equals that of a serial run.
@@ -156,11 +161,11 @@ def gosh_rma_uni(
             subset sizes and study indices as R's ``set.seed(s)``. ``None`` uses the global generator (see [set_seed][metafopy.set_seed]).
             Only used when random subsets are drawn.
         rng: An R-compatible generator to draw the random subsets from, instead of ``seed`` or the global generator.
-        progbar: Print a progress bar (per block of subsets) to stderr (default ``False``).
+        progbar: Print a progress bar (per block of subsets) to stderr (default ``False``; metafor's default is ``TRUE``).
         parallel: ``'no'`` (the default), ``'snow'`` or ``'multicore'``; fit the subsets in a process pool (see ``ncpus``).
         ncpus: Number of worker processes (default 1; a value above 1 turns parallel processing on).
         cl: An executor to fit the subsets on, instead of one created for the call.
-        LB: Accepted as in metafor (load-balanced scheduling) and changes no result.
+        LB: metafor reads this undocumented extra argument to use load-balanced scheduling with ``parallel='snow'``; accepted here and ignored.
         na_action: Stands for R's ``options(na.action=)``; metafor only checks that it is one of ``'omit'`` (the default), ``'exclude'``,
             ``'pass'`` or ``'fail'``, and so does this function.
 

@@ -144,16 +144,18 @@ def ranef_rma_mv(
         verbose: Accepted for compatibility; it has no effect.
         expand: Give the ``~ 1 | id`` terms one row per observation instead of one per level (default ``False``).
         vcov: Also return the variance-covariance matrices of the predictions (default ``False``).
-        na_action: How observations dropped for missing values are handled: ``'omit'`` (the default), ``'exclude'`` or ``'pass'`` (rows of
-            NaN for the levels that only occur in dropped observations) or ``'fail'`` (raise an error).
+        na_action: How observations dropped for missing values are handled: ``'omit'`` (the default; the ``~ 1 | id`` terms have a row for each
+            level that occurs in the observations used), ``'exclude'`` or ``'pass'`` (those terms also have a row of NaN for each level that
+            only occurs in dropped observations) or ``'fail'`` (raise an error if observations were dropped; metafor's ``ranef.rma.mv``
+            has no such check). It has no effect on the ``~ inner | outer`` terms.
 
     Returns:
-        A dict with one data frame per random-effects term, with columns ``intrcpt`` (the predicted random effect), ``se``, ``pi.lb`` and
+        A dict (named list) with one data frame per random-effects term, with columns ``intrcpt`` (the predicted random effect), ``se``, ``pi.lb`` and
         ``pi.ub``. With ``vcov=True`` a dict ``{'pred': ..., 'vcov': ...}`` whose ``vcov`` holds the matrices by term. For ``struct='GEN'`` or
         ``'GDIAG'`` a single data frame of BLUPs without standard errors. ``None`` for a model without random effects.
 
     Raises:
-        metafopy.errors.InputError: the model has user-defined weights or ``na_action='fail'`` with missing values.
+        metafopy.errors.InputError: the model has user-defined weights, ``na_action`` is unknown or ``'fail'`` with missing values.
     """
     x = object
     expand, vcov = metafopy.methods.common.is_true(expand), metafopy.methods.common.is_true(vcov)

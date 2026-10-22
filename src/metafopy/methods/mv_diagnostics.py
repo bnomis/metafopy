@@ -336,7 +336,7 @@ def cooks_rma_mv(
     <https://wviechtb.github.io/metafor/reference/influence.rma.mv.html>.
 
     Args:
-        model: A model fitted by [rma_mv][metafopy.rma_mv].
+        model: A model fitted by [rma_mv][metafopy.rma_mv] (also one passed through [robust][metafopy.robust]).
         progbar: Print a progress bar to stderr while the refits are made (default ``False``).
         cluster: Clustering variable: a column name of the data the model was fitted to, or a vector with one value per row of that data (before
             subsetting and removal of rows with missing values, which are applied to it automatically). Whole clusters are then deleted in turn.
@@ -346,9 +346,9 @@ def cooks_rma_mv(
         parallel: ``'no'`` (the default), ``'snow'`` or ``'multicore'``; run the refits in a process pool (see ``ncpus``).
         ncpus: Number of worker processes (default 1; a value above 1 turns parallel processing on).
         cl: An executor to run the refits on, instead of one created for the call.
-        LB: Accepted as in metafor (load balancing of a cluster) and changes nothing.
+        LB: metafor reads this undocumented extra argument to use load-balanced scheduling with ``parallel='snow'``; accepted here and ignored.
         btt: The coefficients the distances refer to, as 0-based indices (or a regular expression matched against the coefficient names).
-            ``None`` (the default) uses all coefficients.
+            ``None`` (the default) uses all coefficients. metafor takes this as an undocumented extra argument.
         na_action: How observations dropped for missing values are handled: ``'omit'`` (the default; no entry for them), ``'exclude'`` or
             ``'pass'`` (an entry of NaN for each) or ``'fail'`` (raise an error).
 
@@ -403,7 +403,7 @@ def dfbetas_rma_mv(
         parallel: ``'no'`` (the default), ``'snow'`` or ``'multicore'``; run the refits in a process pool (see ``ncpus``).
         ncpus: Number of worker processes (default 1; a value above 1 turns parallel processing on).
         cl: An executor to run the refits on, instead of one created for the call.
-        LB: Accepted as in metafor (load balancing of a cluster) and changes nothing.
+        LB: metafor reads this undocumented extra argument to use load-balanced scheduling with ``parallel='snow'``; accepted here and ignored.
         na_action: How observations dropped for missing values are handled: ``'omit'`` (the default; no row for them), ``'exclude'`` or
             ``'pass'`` (a row of missing values for each) or ``'fail'`` (raise an error).
 
@@ -487,9 +487,10 @@ def rstudent_rma_mv(
     """Externally standardised (deleted) residuals of an ``rma.mv`` fit (metafor's ``rstudent.rma.mv``).
 
     Each observation's residual is computed from the fit without it (without its whole cluster if ``cluster`` is given);
-    its variance adds the marginal variance under the full-data fit with the variance components of that fit. With
+    the variance of the deleted residual is the marginal variance of the deleted observation(s) (computed with the variance components estimated
+    without them) plus the variance of their predicted values from the fit without them. With
     ``cluster`` a [ClusterResidualResult][metafopy.methods.mv_diagnostics.ClusterResidualResult] is returned, which also holds each
-    cluster's ``X2`` statistic. See <https://wviechtb.github.io/metafor/reference/rstudent.rma.mv.html>.
+    cluster's ``X2`` statistic. See <https://wviechtb.github.io/metafor/reference/residuals.rma.html>.
 
     Args:
         model: A model fitted by [rma_mv][metafopy.rma_mv]; not allowed for a model passed through [robust][metafopy.robust].
@@ -503,7 +504,7 @@ def rstudent_rma_mv(
         parallel: ``'no'`` (the default), ``'snow'`` or ``'multicore'``; run the refits in a process pool (see ``ncpus``).
         ncpus: Number of worker processes (default 1; a value above 1 turns parallel processing on).
         cl: An executor to run the refits on, instead of one created for the call.
-        LB: Accepted as in metafor (load balancing of a cluster) and changes nothing.
+        LB: metafor reads this undocumented extra argument to use load-balanced scheduling with ``parallel='snow'``; accepted here and ignored.
         na_action: How observations dropped for missing values are handled: ``'omit'`` (the default; no row for them), ``'exclude'`` or
             ``'pass'`` (a row of missing values for each) or ``'fail'`` (raise an error).
 

@@ -276,14 +276,15 @@ def leave1out_fixed_binary(
         x: A model fitted by [rma_mh][metafopy.rma_mh] or [rma_peto][metafopy.rma_peto].
         cluster: Clustering variable: a column name of the data the model was fitted to, or an array with one value per supplied table. All
             tables of one cluster are left out at a time and the rows are labelled by the sorted cluster ids. ``None`` (the default) leaves out
-            one table at a time.
+            one table at a time. Unlike metafor, missing values in ``cluster`` are not rejected.
         digits: Number of decimals used when the result is printed. ``None`` uses the ``digits`` option, else the ``digits`` of the model.
         transf: A function applied to the estimates and confidence interval bounds, or ``True`` for ``numpy.exp`` when the measure is ``'OR'``,
             ``'RR'``, ``'IRR'`` or ``'PETO'`` (no transformation for other measures). The standard errors are then NaN. ``None`` or ``False`` (the
             default) applies no transformation.
         targs: Extra argument passed to ``transf`` as ``transf(x, targs)``. ``None`` (the default) calls ``transf(x)``.
         na_action: How tables with missing counts are handled: ``'omit'`` (the default; no row for them), ``'exclude'`` or ``'pass'``
-            (a row of NaN for each, only without ``cluster``) or ``'fail'`` (raise an error).
+            (a row of NaN for each, only without ``cluster``) or ``'fail'`` (raise an error if counts are missing; the R source of metafor's
+            ``leave1out`` for these models has no such check).
         progbar: Print a progress bar to stderr while the refits are made (default ``False``).
 
     Returns:
@@ -292,7 +293,7 @@ def leave1out_fixed_binary(
         and ``H2``.
 
     Raises:
-        metafopy.errors.InputError: the data are not suitable (``k = 1``) or ``cluster`` is invalid.
+        metafopy.errors.InputError: ``na_action`` is unknown or ``'fail'`` with missing counts, ``k = 1``, or ``cluster`` is invalid.
     """
     metafopy.methods.common.check_na_action(na_action)
     t = x.tables
@@ -372,18 +373,18 @@ def cumul_fixed_binary(
             default) applies no transformation.
         targs: Extra argument passed to ``transf`` as ``transf(x, targs)``. ``None`` (the default) calls ``transf(x)``.
         collapse: Add tables with the same value of ``order`` together instead of one at a time (default ``False``).
-        decreasing: Add the tables in descending order of ``order`` (default ``False``).
+        decreasing: Add the tables in descending order of ``order`` (default ``False``). metafor takes this as an undocumented extra argument.
         na_action: How tables with missing counts are handled: ``'omit'`` (the default; no row for them), ``'exclude'`` or ``'pass'``
             (a row of missing values for each) or ``'fail'`` (raise an error).
         progbar: Print a progress bar to stderr while the refits are made (default ``False``).
 
     Returns:
         A [CumulResult][metafopy.CumulResult] with one row per added table (or group of tables) holding the number of tables included ``k``,
-        the values of ``order`` and the re-estimated ``estimate``, ``se``, ``stat`` (``zval``), ``pval``, ``ci_lb``, ``ci_ub``, ``Q``, ``Qp``, ``I2``
-        and ``H2``.
+        the values of ``order`` (the 0-based positions of the tables if ``order`` is ``None``) and the re-estimated ``estimate``, ``se``,
+        ``stat`` (``zval``), ``pval``, ``ci_lb``, ``ci_ub``, ``Q``, ``Qp``, ``I2`` and ``H2``.
 
     Raises:
-        metafopy.errors.InputError: ``order`` is invalid or tables are missing and ``na_action='fail'``.
+        metafopy.errors.InputError: ``na_action`` is unknown, ``order`` is invalid or tables are missing and ``na_action='fail'``.
     """
     metafopy.methods.common.check_na_action(na_action)
     t = x.tables

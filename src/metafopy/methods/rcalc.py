@@ -1,11 +1,10 @@
 """Variance-covariance matrix of dependent correlation coefficients (metafor's ``rcalc``).
 
 R source: https://github.com/wviechtb/metafor/blob/master/R/rcalc.r. Documentation:
-https://wviechtb.github.io/metafor/reference/rcalc.html. The sampling covariances of
-correlations from one sample are those of Olkin and Finn (1995), equation 5,
-https://doi.org/10.1037/0033-2909.118.1.155 (equivalent to Steiger, 1980, equation 2,
-https://doi.org/10.1037/0033-2909.87.2.245), and for Fisher r-to-z transformed correlations
-Steiger (1980), equation 11.
+https://wviechtb.github.io/metafor/reference/rcalc.html. Equations for the sampling
+covariances of correlations from one sample are given by Olkin and Finn (1990),
+https://doi.org/10.1037/0033-2909.108.2.330, and Steiger (1980),
+https://doi.org/10.1037/0033-2909.87.2.245 (the references of metafor's documentation).
 """
 
 import collections.abc
@@ -39,11 +38,12 @@ class RCalcResult:
     """The pair of ``dat`` (one row per correlation) and ``V`` (their variance-covariance matrix) that ``rcalc`` returns.
 
     Both are ``None`` for a single matrix of dimension 1 x 1 or smaller. ``V`` is dense, except that
-    ``sparse=True`` with several matrices gives a ``scipy.sparse.csr_array``.
+    ``sparse=True`` with a list of matrices (or a formula) gives a ``scipy.sparse.csr_array``.
 
     Attributes:
-        dat: Data frame with one row per correlation: the study identifier, the two variable identifiers, a variable pair identifier
-            (``var1.var2``), the correlation (``ri``, possibly r-to-z transformed) and the common sample size (``ni``).
+        dat: Data frame with one row per correlation, with the columns ``var1`` and ``var2`` (the two variable identifiers), ``var1.var2`` (a
+            variable pair identifier), ``yi`` (the correlation, possibly r-to-z transformed) and ``ni`` (the common sample size). For a list of
+            matrices (and so for a formula) it has the study identifier as its first column (``id``, or the name of the study variable of a formula).
         V: The block diagonal variance-covariance matrix of the correlations; its row and column names are in ``dat['var1.var2']``.
     """
 
@@ -83,7 +83,7 @@ def matrix_names(x: Matrix, n: int) -> tuple[FloatArray, list[str]]:
 
 
 def rcalc_matrix(x: Matrix, ni: float, upper: bool, rtoz: bool) -> RCalcResult:
-    """The matrix case of ``rcalc``: Olkin and Finn's (1995) covariances of the lower (or upper) triangle of ``x``.
+    """The matrix case of ``rcalc``: the covariances of the lower (or upper) triangle of ``x`` (equations of Olkin and Finn, 1990).
 
     Raises:
         metafopy.errors.ArgumentError: ``x`` is not a matrix.
@@ -322,8 +322,10 @@ def rcalc(
 ) -> RCalcResult | dict[str, RCalcResult]:
     """Variance-covariance matrix of correlation coefficients from the same samples (metafor's ``rcalc``).
 
-    Correlations computed from the same sample are not independent. The sampling covariances of raw correlations follow Olkin and Finn
-    (1995), those of Fisher r-to-z transformed correlations Steiger (1980). The data and the matrix can be passed on to
+    Correlations computed from the same sample are not independent. Equations for the sampling covariances can be found in Steiger (1980,
+    [doi:10.1037/0033-2909.87.2.245](https://doi.org/10.1037/0033-2909.87.2.245)) and Olkin and Finn (1990,
+    [doi:10.1037/0033-2909.108.2.330](https://doi.org/10.1037/0033-2909.108.2.330)); for raw correlations the denominator is ``ni - 1`` (as in
+    metafor), for r-to-z transformed ones ``ni - 3``. The data and the matrix can be passed on to
     [rma_mv][metafopy.rma_mv]. As in R, the study identifier in ``dat`` consists of strings (the names of the list, or the ids converted to
     character). See <https://wviechtb.github.io/metafor/reference/rcalc.html>.
 
@@ -339,9 +341,11 @@ def rcalc(
         nfun: How the common sample size within a study is computed when it differs between correlations: ``'min'`` (the default; conservative),
             ``'harmonic'`` (harmonic mean) or ``'mean'``, an unambiguous prefix of these, or a function of the array of the sample sizes of
             a study returning a single value.
-        sparse: Return the matrix as a sparse matrix (default ``False``; only with several matrices does this give a sparse ``V``).
-        upper: For matrices, use the upper instead of the lower triangle (default ``False``).
-        simplify: For a list of matrices, combine the results into one (default ``True``); with ``False`` a dict of one result per matrix.
+        sparse: Return the matrix as a sparse matrix (default ``False``; only with a list of matrices or a formula does this give a sparse ``V``).
+        upper: For matrices, use the upper instead of the lower triangle (default ``False``; metafor takes this as an undocumented extra
+            argument).
+        simplify: For a list of matrices, combine the results into one (default ``True``); with ``False`` a dict of one result per matrix
+            (metafor takes this as an undocumented extra argument).
         rowid: For a list of matrices with ``simplify=True``: values of ``'id.var1.var2'`` giving the order of the rows of ``dat`` and ``V``
             (metafor passes this on internally for a formula).
         vnames: For a list of matrices with ``simplify=True``: four names for the columns of ``dat``.

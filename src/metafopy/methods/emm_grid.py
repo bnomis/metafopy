@@ -348,6 +348,7 @@ def emmprep(
         sigma: Error standard deviation used for bias adjustment in back-transformations (the square root of ``tau^2``). ``None`` (the
             default) takes it from the fit, or 0 for ``rma_mv`` and location-scale fits, where it cannot be extracted.
         tran: Transformation of the estimates, a link object or its name (for example ``'log'`` or ``'logit'``), or ``'none'`` for none.
+            As in emmeans, a name that is no known transformation gives the identity link carrying that name; ``'+.sqrt'`` is not supported.
             ``None`` (the default) derives it from the effect size measure (``'log'`` for ratio measures, ``'logit'`` for ``PLO``, and so on).
         at: Mapping from variable names to the values to use in the grid: for a numeric predictor its values instead of its mean, for a factor
             a subset of its levels. Other variables are as by default.
@@ -363,7 +364,9 @@ def emmprep(
         and the transformation stored.
 
     Raises:
+        metafopy.errors.ArgumentError: ``x`` is not a fitted model of a supported class.
         metafopy.errors.InputError: the fit cannot be used (redundant predictors, no formula or data) or an argument is invalid.
+        metafopy.errors.NotSupportedError: ``tran`` is ``'+.sqrt'``.
     """
     info = fit_info(x, data)
     ddf = info.ddf if df is None else float(df)
@@ -547,7 +550,8 @@ def emmeans(
         specs: The variables to get means for: a name, a sequence of names, or an R-style formula such as ``'~ alloc | lat'``; ``'1'`` or
             ``'~ 1'`` for the overall mean.
         by: Variables the results are grouped by. ``None`` (the default) for none (or those after ``|`` in ``specs``).
-        weights: How the other factors are averaged over: ``'equal'`` (the default), ``'proportional'`` (frequencies in the data),
+        weights: How the other factors are averaged over (a string may be abbreviated, for example ``'prop'``): ``'equal'`` (the default),
+            ``'proportional'`` (frequencies in the data),
             ``'outer'`` (products of the marginal frequencies), ``'cells'`` or ``'flat'`` (cell frequencies, the latter ignoring empty
             cells), a vector with one weight per combination of those factors, or a matrix whose columns are those combinations and whose
             rows are the weights of the successive means (recycled when there are more means than rows).
@@ -566,7 +570,8 @@ def emmeans(
         An [EmmGrid][metafopy.EmmGrid] of the estimated marginal means (with ``summary()`` to get the table).
 
     Raises:
-        metafopy.errors.InputError: a variable is not in the grid or the weights do not fit.
+        metafopy.errors.InputError: a variable is not in the grid, the weights do not fit the averaged factors, ``type`` is not ``'link'`` or
+            ``'response'``, or ``at``, ``cov_reduce`` or other ``emmprep`` keywords are given with a reference grid.
     """
     if isinstance(object, EmmGrid):
         if at is not None or cov_reduce is not None or prep:
@@ -894,13 +899,18 @@ def contrast(
         name: Name of the column of the contrasts (default ``'contrast'``).
         adjust: Multiplicity adjustment stored in the result for its tests and intervals: ``'tukey'``, ``'scheffe'``, ``'sidak'``,
             ``'dunnettx'``, ``'mvt'``, ``'holm'``, ``'hochberg'``, ``'hommel'``, ``'bonferroni'``, ``'BH'``, ``'BY'``, ``'fdr'`` or ``'none'``.
-            ``None`` (the default) uses the default of the method (for example ``'tukey'`` for ``'pairwise'``).
+            ``None`` (the default) uses the default of the method (for example ``'tukey'`` for ``'pairwise'``). As in emmeans, ``'tukey'``,
+            ``'scheffe'`` and ``'dunnettx'`` apply to two-sided tests only, and the methods of ``p.adjust`` (``'holm'`` to ``'fdr'``) to tests, not
+            intervals (which then use ``'bonferroni'``).
         ref: The reference level(s) of ``'trt_vs_ctrl'`` and similar methods: 0-based indices or level labels. Default the first level.
         exclude: Levels left out of the contrasts: 0-based indices or level labels.
         include: Levels to use in the contrasts (the others are left out): 0-based indices or level labels.
         reverse: Reverse the direction of the contrasts, for example later minus earlier (default ``False``).
-        wts: Weights of the levels for the ``'eff'`` and ``'del_eff'`` methods. ``None`` (the default) for equal weights.
-        max_degree: Maximum degree of the ``'poly'`` contrasts. ``None`` (the default) for the highest possible.
+        wts: Weights of the levels for the ``'eff'`` and ``'del_eff'`` methods, normalised to sum to 1: one value per level, or per included
+            level when ``exclude`` or ``include`` is used. ``None`` (the default) for equal weights. emmeans' ``wts = NA`` (take the weights
+            from the grid) is not supported.
+        max_degree: Maximum degree of the ``'poly'`` contrasts (at most 20). ``None`` (the default) for ``min(6, k - 1)`` with ``k`` levels, as
+            the ``max.degree`` default of emmeans' ``poly.emmc``.
         enhance_levels: Put the variable name in front of numeric levels in the labels of the contrasts (default ``True``).
         null: Value the tests of the summary compare the estimates with. ``None`` keeps the value of the grid (default 0).
         delta: Threshold of equivalence and non-inferiority tests of the summary. ``None`` keeps the value of the grid (default 0).
@@ -1134,7 +1144,9 @@ def regrid(object: EmmGrid, *, bias_adjust: bool = False, sigma: float | None = 
     """Back-transform the estimates, so that later contrasts are of the back-transformed values (emmeans' ``regrid``).
 
     The variance-covariance matrix of the transformed estimates follows by the delta method. Without a transformation the grid
-    is returned as is, with an identity ``linfct``. See <https://rvlenth.github.io/emmeans/reference/regrid.html>.
+    is returned as is, with an identity ``linfct``. Only the default ``transform = 'response'`` of emmeans is available: there are no
+    ``transform``, ``inv_link_lbl``, ``predict_type``, ``N_sim`` or ``sim`` arguments.
+    See <https://rvlenth.github.io/emmeans/reference/regrid.html>.
 
     Args:
         object: A reference grid or marginal means ([EmmGrid][metafopy.EmmGrid]).

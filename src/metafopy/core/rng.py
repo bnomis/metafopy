@@ -240,9 +240,12 @@ GLOBAL: RRandom | None = None
 def set_seed(seed: int) -> RRandom:
     """Seed the module-level random number generator (R's ``set.seed()``).
 
-    The generator reproduces R's default Mersenne-Twister with rejection sampling, so after ``set_seed(s)`` the functions that draw random
-    numbers (for example [permutest][metafopy.permutest] and [gosh][metafopy.gosh] with random subsets) give the same draws as R after
-    ``set.seed(s)``. Without a call the generator is seeded from the clock on first use.
+    The generator reproduces R's default Mersenne-Twister with rejection sampling. The functions that draw random numbers when they are
+    given no ``seed`` or ``rng`` use this generator: among them [permutest][metafopy.permutest], [gosh][metafopy.gosh] (with random subsets),
+    [hettest][metafopy.hettest] (the bootstrap), [vif][metafopy.vif] (with ``sim=True``), [fsn][metafopy.fsn] (with ``exact=True``),
+    [qqnorm][metafopy.qqnorm] (the envelope) and ``conv_fivenum`` (methods ``'bc'`` and ``'mln'``). After ``set_seed(s)`` the results of ``permutest``,
+    ``gosh``, ``hettest``, ``vif`` and ``conv_fivenum`` were compared with those of metafor after ``set.seed(s)`` and agree.
+    Without a call the generator is seeded from the clock on first use.
 
     Args:
         seed: The integer seed, as given to R's ``set.seed()``.

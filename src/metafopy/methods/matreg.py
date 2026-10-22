@@ -7,10 +7,10 @@ https://github.com/wviechtb/metafor/blob/master/R/print.matreg.r. Documentation:
 https://wviechtb.github.io/metafor/reference/matreg.html.
 
 With ``n``, the standard errors are those of a regression on raw data with ``n`` observations. With ``V``, the
-variance-covariance matrix of the coefficients is obtained by the multivariate delta method of Becker (1992),
-https://doi.org/10.3102/10769986017004341, and Becker and Aloe (2019, in *The Handbook of Research Synthesis and
-Meta-Analysis*), as used in meta-analytic structural equation modelling (Cheung, 2015,
-https://doi.org/10.1002/9781118957813).
+variance-covariance matrix of the coefficients is obtained by the multivariate delta method as described in Becker (1992),
+https://doi.org/10.3102/10769986017004341 (with the corrections of Becker, 1995, https://doi.org/10.3102/10769986020001100),
+the references of metafor's documentation (which also cites Becker & Aloe, 2019, Model-based meta-analysis and related approaches,
+in *The Handbook of Research Synthesis and Meta-Analysis*, 3rd ed., pp. 339-363).
 """
 
 import collections.abc
@@ -136,14 +136,17 @@ class MatregResult:
         tab: Table of coefficients, one row per coefficient (see above for the columns).
         vb: Variance-covariance matrix of the coefficients.
         R2: Proportion of variance of the outcome explained by the predictors.
-        p: Number of predictors (excluding the intercept).
-        parms: Number of estimated parameters.
+        p: Number of estimated coefficients for a model fitted with ``n`` (the intercept included when ``cov=True``); the number of predictors
+            for a model fitted with ``V``.
+        parms: Number of estimated parameters: ``p + 1`` for a model fitted with ``n`` (the residual variance counts), ``p`` for one fitted
+            with ``V``.
         digits: Number of decimals used when the result is printed.
         test: ``'t'`` for a model fitted with ``n``, ``'z'`` for one fitted with ``V``.
         level: The alpha level of the confidence intervals.
         intercept: Whether the model has an intercept.
         R2adj: Adjusted ``R^2`` (``test == 't'`` only).
-        F: The F statistic of the test of all coefficients, as a tuple (``test == 't'`` only).
+        F: The F test of the predictors as a tuple (statistic, numerator degrees of freedom, denominator degrees of freedom) (``test == 't'``
+            only).
         Fdf: Degrees of freedom of the F test (``test == 't'`` only).
         Fp: P-value of the F test (``test == 't'`` only).
         df_residual: Residual degrees of freedom (``test == 't'`` only).
@@ -437,8 +440,9 @@ def matreg(
         means: The means of the variables, for the intercept when ``cov=True``. Without them the intercept estimate is NaN.
         ztor: ``R`` (and ``V``) hold Fisher r-to-z transformed correlations, which are back-transformed to raw correlations first (default
             ``False``).
-        nearpd: Replace a non-positive-definite ``R[x, x]`` by the nearest correlation matrix (a port of ``Matrix::nearPD``) instead of failing
-            (default ``False``). Treat the results with caution.
+        nearpd: Replace an ``R[x, x]`` that cannot be inverted (is not positive definite) by the nearest correlation matrix (a port of
+            ``Matrix::nearPD``) instead of failing (default ``False``). Treat the results with caution. metafor's undocumented ``nearPD`` alias
+            of this argument is not accepted.
         level: Confidence interval level in percent (default 95), or a value below 1 read as in metafor.
         digits: Number of decimals used when the result is printed (default 4).
 
@@ -450,7 +454,7 @@ def matreg(
     Raises:
         metafopy.errors.InputError: an argument is missing, invalid or inconsistent with ``R``.
         metafopy.errors.ArgumentError: a logical argument is not a bool.
-        metafopy.errors.EstimationError: ``R[x, x]`` cannot be inverted or the model has no residual degrees of freedom.
+        metafopy.errors.EstimationError: ``R[x, x]`` cannot be inverted, or ``n`` does not exceed the number of regression coefficients.
     """
     if digits is None:
         digits = 4

@@ -1,11 +1,9 @@
 """Construction of the variance-covariance matrix of dependent effect sizes (metafor's ``vcalc``).
 
 R source: https://github.com/wviechtb/metafor/blob/master/R/vcalc.r. Documentation:
-https://wviechtb.github.io/metafor/reference/vcalc.html. The correlation structure for
-estimates of different outcome types and for estimates that share a group follows
-Pustejovsky and Tipton (2022), https://doi.org/10.1007/s11121-021-01246-3 and the
-discussion at https://www.metafor-project.org/doku.php/analyses:berkey1998. The nearest
-positive definite matrix is that of Higham (2002), https://doi.org/10.1093/imanum/22.3.329.
+https://wviechtb.github.io/metafor/reference/vcalc.html. The nearest positive definite
+matrix (``nearpd``) is computed with the algorithm of Higham (2002),
+https://doi.org/10.1093/imanum/22.3.329, which R's ``Matrix::nearPD`` implements.
 """
 
 import collections.abc
@@ -318,7 +316,7 @@ def vcalc(
 
     Args:
         vi: Sampling variances of the estimates, as an array or the name of a column of ``data``. Required. A single value is repeated for
-            all rows (typical with ``rvars``, where it is 1).
+            as many rows as ``cluster`` has.
         cluster: Clustering variable (for example the study), an array or a column name. Required, without missing values. Rows with the
             same value may be dependent.
         subgroup: Variable distinguishing independent subgroups within clusters (no overlap of subjects), an array or a column name. Rows
@@ -349,7 +347,7 @@ def vcalc(
         nearpd: Replace such matrices by the nearest correlation matrix (``Matrix::nearPD(corr=TRUE)`` in R). Use with care (default ``False``).
         sparse: Return a sparse matrix (default ``False``).
         retdat: Return a data frame of the variables used with the matrix appended in columns ``V.1``, ``V.2``, ... instead of the matrix
-            (default ``False``).
+            (default ``False``; metafor takes this as an undocumented extra argument).
 
     Returns:
         The k x k variance-covariance matrix, with k the length of ``vi``: a dense array that prints like metafor's ``vcovmat``

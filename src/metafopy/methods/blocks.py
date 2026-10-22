@@ -70,11 +70,13 @@ def bldiag(
             (default ``False``).
 
     Returns:
-        The block diagonal matrix, a dense array (0 x 0 if no non-empty matrices were given).
+        The block diagonal matrix, a dense array (0 x 0 if no non-empty matrices were given). Unlike metafor, which gives the result the class
+        ``vcovmat`` when an element has it, the result is a plain array.
 
     Raises:
         metafopy.errors.InputError: ``order`` is used with a non-square result or has the wrong length.
-        metafopy.errors.ArgumentError: an element is neither a matrix, a vector nor a scalar.
+        metafopy.errors.ArgumentError: an element is an array with more than two dimensions.
+        ValueError: an element cannot be converted to numbers (raised by NumPy).
     """
     items: list[typing.Any] = list(mlist)
     if len(items) == 1:
@@ -137,7 +139,7 @@ def blsplit(
 
     Raises:
         metafopy.errors.ArgumentError: ``x`` is not a matrix.
-        metafopy.errors.InputError: ``x`` is not symmetric or ``cluster`` does not match its dimensions.
+        metafopy.errors.InputError: ``cluster`` is missing or does not match the dimensions of ``x``, or ``x`` is not symmetric.
     """
     if cluster is None:
         raise metafopy.errors.InputError("Must specify the 'cluster' variable.")
