@@ -2,7 +2,9 @@
 
 Rosenthal (1979), doi:10.1037/0033-2909.86.3.638; Orwin (1983), doi:10.3102/10769986008002157;
 Rosenberg (2005), doi:10.1111/j.0014-3820.2005.tb01004.x; Viechtbauer's general approach based on
-a random-effects model. See https://wviechtb.github.io/metafor/reference/fsn.html.
+a random-effects model (Viechtbauer, 2024, talk at the Society for Research Synthesis Methodology).
+A sign-test ('Binomial') type is in metafor's code but not on its help page. See
+https://wviechtb.github.io/metafor/reference/fsn.html.
 """
 
 import dataclasses
@@ -44,11 +46,14 @@ class FsnResult(metafopy.printing.HtmlRepr):
     Attributes:
         type: the approach used ('Rosenthal', 'Orwin', 'Rosenberg', 'General' or 'Binomial').
         fsnum: the fail-safe N (infinite when the target effect is 0).
-        est: average effect size of the observed studies (NaN for the 'Rosenthal' and 'Binomial' types).
+        est: average effect size of the observed studies: the inverse-variance weighted average for 'Orwin' (unweighted if no `vi` or `sei`
+            is given) and 'Rosenberg', the pooled estimate of the fitted model for 'General'; NaN for the 'Rosenthal' and 'Binomial' types.
         tau2: estimate of tau^2 of the observed studies ('General' type only, else NaN).
-        pval: p-value of the observed studies.
+        pval: p-value of the observed studies (one-tailed for 'Rosenthal', two-sided for 'Binomial', 'Rosenberg' and 'General', NaN for
+            'Orwin').
         alpha: target significance level.
-        target: target average effect size, or NaN if the significance level is the criterion.
+        target: target average effect size ('Orwin' and 'General' with a target; the sign is flipped if it differs from that of the
+            average effect), or NaN if the significance level is the criterion.
         method: tau^2 estimator of the 'General' type, else None.
         est_fsn: average effect size with the file-drawer studies added ('General' type only, else NaN).
         tau2_fsn: tau^2 with the file-drawer studies added ('General' type only).
@@ -182,38 +187,47 @@ def fsn(
 
     Mirrors metafor's `fsn`, see https://wviechtb.github.io/metafor/reference/fsn.html. It computes the number of studies averaging a null
     result that would have to be added to a set of studies to reduce the significance level to a target value (or the average effect
-    to a target size). The approaches are Rosenthal's (1979, doi:10.1037/0033-2909.86.3.638), Orwin's (1983, doi:10.2307/1164923),
-    Rosenberg's (2005), a binomial one and a general approach, which refits a
-    random-effects model.
+    to a target size). The approaches (`type`) are Rosenthal's (1979, doi:10.1037/0033-2909.86.3.638), Orwin's (1983,
+    doi:10.3102/10769986008002157), Rosenberg's (2005, doi:10.1111/j.0014-3820.2005.tb01004.x), a general approach that refits a
+    random-effects model, and 'Binomial'. 'Binomial' is not on metafor's help page, but metafor's code (`R/fsn.r`, also in
+    5.2-1) has it: it takes the number of studies with a positive estimate, applies the two-sided exact binomial (sign) test of a
+    probability of 0.5 and adds studies in pairs, one with a positive and one with a non-positive estimate, until the p-value reaches
+    `alpha`; the fail-safe N is the number of studies added (0 if the observed p-value is already at least `alpha`).
 
     Args:
         x: either a fitted model without moderators (then `type='General'` is used) or the observed effect sizes (array-like, or the name of
             a column of `data`).
         vi: sampling variances of a vector `x` (array-like or column name of `data`); a single value is repeated for all studies.
-            Ignored with a warning when `x` is a model. Not needed for the 'Orwin' and 'Binomial' types.
+            Ignored with a warning when `x` is a model. Required for the 'Rosenthal', 'Rosenberg' and 'General' types. For 'Orwin' the
+            average is weighted by `1/vi` when `vi` or `sei` is given (and `weighted` is not False), else it is the unweighted
+            average. For 'Binomial' the values are not used (metafor's code asks for them, here they are optional).
         sei: standard errors, used when `vi` is not given.
         subset: 0-based integer indices or boolean mask of the studies to use (vector input only).
         data: data frame in which string values of `x`, `vi` and `sei` are looked up as column names.
-        type: 'Rosenthal' | 'Orwin' | 'Rosenberg' | 'General' | 'Binomial' (partial matching, case-insensitive). Default None: 'Rosenthal' for a
-            vector, always 'General' for a model (with a warning if another type is given).
+        type: 'Rosenthal' | 'Orwin' | 'Rosenberg' | 'General' | 'Binomial' (case-insensitive; a leading part of a name is enough, the first
+            match in the order Rosenthal, Binomial, Orwin, Rosenberg, General is taken). Default None: 'Rosenthal' for a vector, always
+            'General' for a model (with a warning if another type is given).
         alpha: target significance level (default 0.05) for the Rosenthal, Rosenberg, Binomial and General types.
-        target: target average effect size for the 'Orwin' and 'General' types. Default None: half of the average effect size for 'Orwin',
-            and for 'General' the p-value criterion `alpha` is used.
+        target: target average effect size for the 'Orwin' and 'General' types; ignored by the other types. A target of the opposite sign
+            to the observed average has its sign flipped, and a target of 0 gives an infinite fail-safe N. Default None: for 'Orwin' half of
+            the average effect size (so the fail-safe N is k), for 'General' the p-value criterion `alpha` is used instead of a target.
         method: tau^2 estimator of the random-effects model of the 'General' type, e.g. 'REML'. Default None: the method of `x`, or 'REML'.
-        exact: for the 'General' type, whether the file-drawer studies are generated as random normal deviates and the model refitted
-            (True), or the approximation is used (default False). It is set to True when `test` is not 'z'.
+        exact: for the 'General' type, whether the file-drawer studies are generated as random normal deviates (scaled to have the mean
+            `mumiss`) and the model refitted (True), or the faster approximation is used (default False). The approximation is used
+            anyway when the number of file-drawer studies exceeds 5000. It is set to True when `test` is not 'z'.
         verbose: print the steps of the search for the fail-safe N, and pass on to the model fit.
         digits: number of decimals used when the result is printed. Default None: the digits of the model, or 4.
         pool: 'stouffer' | 'fisher': how the p-values are combined for the 'Rosenthal' type (default 'stouffer').
         mumiss: average effect of the file-drawer studies for the 'General' type (default 0).
-        interval: (lower, upper) interval in which the fail-safe N is searched. Default None: 0 to 50 times the number of studies.
+        interval: (lower, upper) initial interval of the root search for the fail-safe N, which is extended if the root lies outside it.
+            Default None: 0 to 50 times the number of studies.
         maxint: largest fail-safe N that is returned; larger values are reported as '>' that value (default 1e7).
         tol: tolerance of the root finding (default `eps**0.25`).
         maxiter: maximum number of iterations of the root finding (default 1000).
         tau2: fixed value of tau^2 for the 'General' type. Default None: estimated (or the fixed value of a model `x`).
         test: test for the 'General' type: 'z' | 't' | 'knha' | 'adhoc'. Default None: the test of `x`, or 'z'.
-        weighted: whether weighted estimation is used for the 'General' type (for 'Orwin', False gives the unweighted average). Default None:
-            that of `x`, or True.
+        weighted: whether weighted estimation is used for the 'General' type (for 'Orwin', False gives the unweighted average, True requires
+            `vi` or `sei`). Default None: that of `x`, or True ('Orwin': weighted if `vi` or `sei` is given).
         seed: seed of the R-compatible random number generator used for `exact=True` (see [set_seed][metafopy.set_seed]).
         rng: an existing generator to use instead of the global one.
         na_action: what to do with studies with missing values in a vector `x`: 'omit' | 'exclude' | 'pass' omit them with a warning,
@@ -222,12 +236,13 @@ def fsn(
     Returns:
         An [FsnResult][metafopy.FsnResult] with the fail-safe N `fsnum` (infinite if the target is 0), the approach used `type`, the average
         effect `est`, `tau2`, `pval`, `alpha` and `target`, and, for the 'General' type, the values with the file drawer (`est_fsn`,
-        `tau2_fsn`, `pval_fsn`).
+        `tau2_fsn`, `pval_fsn`). The fail-safe N is 0 if the observed result already meets the criterion.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid, the model has moderators or custom weights, k = 1, or a
             sampling variance is not positive, or studies are missing and `na_action='fail'`.
-        metafopy.errors.NotSupportedError: `x` is an `rma_mh` or `rma_peto` model.
+        metafopy.errors.NotSupportedError: `x` is a model other than an `rma_uni` result (for example `rma_mh`, `rma_peto`, `rma_mv`,
+            `rma_glmm`, `rma_ls`, selection models and robust fits).
     """
     pools = [name for name in ('stouffer', 'fisher') if isinstance(pool, str) and len(pool) > 0 and name.startswith(pool.lower())]
     if len(pools) != 1:

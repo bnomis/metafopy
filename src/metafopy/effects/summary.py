@@ -109,7 +109,7 @@ def summary_escalc(
 ) -> pandas.DataFrame:
     """Add standard errors, test statistics, p-values and confidence intervals to the output of escalc.
 
-    Mirrors metafor's `summary.escalc`, see https://wviechtb.github.io/metafor/reference/summary.escalc.html. With `yi` and `vi` the
+    Mirrors metafor's `summary.escalc`, see https://wviechtb.github.io/metafor/reference/print.escalc.html. With `yi` and `vi` the
     effect sizes and sampling variances, it computes `sei = sqrt(vi)`, `zi = (yi - H0) / sei`, the two-sided p-value `pval` and the Wald-type
     interval `yi -/+ z_crit * sei`. With `transf`, `yi` and the bounds are transformed (the bounds are put in increasing order) and
     `vi`, `sei`, `zi` and `pval` are dropped.
@@ -125,7 +125,7 @@ def summary_escalc(
             and the new columns are returned.
         replace: whether existing columns with the names in `out_names` are replaced (default True); if False only their missing
             values are filled in.
-        level: confidence level in percent (default 95).
+        level: confidence level in percent, between 0 and 100 (default 95).
         olim: (lower, upper) limits to which `yi` and the bounds are clipped; `zi` and `pval` are based on the unclipped values.
             Default None: no clipping.
         digits: number of decimals used when the frame is printed; stored in `attrs['digits']`. Default None: the digits of `object`.
@@ -134,11 +134,12 @@ def summary_escalc(
 
     Returns:
         A data frame with the columns of `object` and the new columns named by `out_names` (or `yi`, `vi`, and the new columns when
-        `append=False`). The `escalc` attributes (`measure`, `slab`, `ni`, ...) are kept.
+        `append=False`). The `escalc` attributes (`measure`, `slab`, `ni`, ...) are kept, except when `transf` is given: the result then
+        does not carry `measure`, `slab`, `ni` and the row labels. With `transf` and `append=False`, only `yi` and the two bounds are returned.
 
     Raises:
-        metafopy.errors.InputError: `out_names` or `var_names` or `olim` has the wrong length, a column is not found, or `transf` does not
-            return a single value for each value.
+        metafopy.errors.InputError: `out_names` or `var_names` or `olim` has the wrong length, a column is not found, `level` is outside 0 to 100,
+            or `transf` does not return a single value for each value.
     """
     alpha = level_to_alpha(level)
     crit = float(scipy.stats.norm.isf(alpha / 2))

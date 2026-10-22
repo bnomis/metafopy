@@ -35,8 +35,9 @@ class TrimfillResult(metafopy.models.rma_uni.RMAResult):
     """The model refitted to the observed and the filled-in studies, with the trim-and-fill details.
 
     ``fill`` flags the imputed studies (they are last); ``k0`` is the estimated number of missing studies
-    (``se_k0`` its standard error), ``side`` the side of the funnel plot they are missing from and
-    ``p_k0`` the p-value of the R0 test (NaN for other estimators).
+    (``se_k0`` its standard error), ``side`` the side of the funnel plot they are missing from,
+    ``k0_est`` the estimator used ('L0', 'R0' or 'Q0') and ``p_k0`` the p-value of the test of
+    no missing studies (estimator 'R0' only, NaN for the others).
     """
 
     fill: BoolArray = dataclasses.field(default_factory=lambda: numpy.zeros(0, dtype=numpy.bool_))
@@ -135,14 +136,17 @@ def trimfill(
     studies are filled in, and the model is refitted to the observed and the filled-in studies.
 
     Args:
-        x: a fitted random- or fixed-effects model ([rma_uni][metafopy.rma_uni] result) without moderators.
+        x: a fitted equal- or random-effects model ([rma_uni][metafopy.rma_uni] result) without moderators.
         side: 'left' | 'right': the side of the funnel plot on which studies are missing. Default None: determined from the sign of the
             slope of a regression of the effect sizes on their standard errors (the 'right' side if it is negative).
         estimator: 'L0' | 'R0' | 'Q0': the estimator of the number of missing studies (default 'L0').
-        maxiter: maximum number of iterations of the algorithm (default 100); the algorithm raises when it does not converge.
+        maxiter: maximum number of iterations of the algorithm (default 100); an error is raised when it does not converge.
         verbose: whether to print the iterations (number of missing studies and estimate) to stdout.
-        ilim: (lower, upper) limits to which the filled-in effect sizes are clipped. Default None: no clipping.
-        **kwargs: `level` and `test` are passed on to the model fits; other keywords are ignored.
+        ilim: (lower, upper) limits to which the effect sizes of the augmented data set are clipped; as in metafor's code this includes
+            the observed effect sizes as well as the filled-in ones, and it is only applied when studies are filled in. Must have two
+            elements. Default None: no clipping.
+        **kwargs: `level` and `test` are passed on to the model fits; other keywords are ignored (metafor passes all extra arguments to
+            `rma.uni`).
 
     Returns:
         A [TrimfillResult][metafopy.TrimfillResult]: the refitted model (all the attributes of an [RMAResult][metafopy.RMAResult]) with the
@@ -151,6 +155,8 @@ def trimfill(
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid, `x` has moderators, k = 1, or the algorithm fails or does not converge.
+        metafopy.errors.ArgumentError: `x` is not an `rma_uni` result (for example an `rma_mh` result or a vector).
+        metafopy.errors.NotSupportedError: `x` is a robust fit, a location-scale model or a selection model.
     """
     metafopy.methods.fitview.check_method(x, 'trimfill')
     metafopy.methods.fitview.check_class(x, must='rma.uni', notav=('robust.rma', 'rma.ls', 'rma.gen', 'rma.uni.selmodel'))

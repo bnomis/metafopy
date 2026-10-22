@@ -53,7 +53,9 @@ class TesResult(metafopy.printing.HtmlRepr):
         power: estimated power of each study.
         sig: whether each study is significant.
         theta: assumed true effect (a single value or one per study).
-        theta_lim: true effect(s) at which the p-value equals `tes_alpha` (one or two values, NaN if not estimable), or None.
+        theta_lim: the 'limit estimate': the true effect at which the p-value of the test equals `tes_alpha`. For `tes_alternative='two.sided'`
+            it is a pair, the limit estimates of the 'greater' and of the 'less' test, each at `tes_alpha / 2`. NaN where not estimable.
+            None when `find_lim` is False or when `theta` has one value per study.
         tes_alternative: alternative of the test of excess significance.
         tes_alpha: significance level of the test of excess significance.
         digits: number of decimals used when printing.
@@ -176,25 +178,32 @@ def tes(
     doi:10.1177/1740774507079441). Also estimates the true effect `theta_lim` at which the test would be just significant.
 
     Args:
-        x: a fitted model (the power is based on its estimate, or its fitted values with moderators, and its tau^2), or the observed effect
-            sizes (array-like, or the name of a column of `data`).
+        x: a fitted model (the power is based on its estimate, or its fitted values with moderators, and its tau^2; then `vi`, `sei`,
+            `subset`, `theta` and `tau2` are ignored, without a warning), or the observed effect sizes (array-like, or the name of a column
+            of `data`).
         vi: sampling variances of a vector `x` (array-like or column name of `data`).
         sei: standard errors, used when `vi` is not given. One of `vi` and `sei` is required for a vector `x`.
         subset: 0-based integer indices or boolean mask of the studies to use (vector input only).
         data: data frame in which string values of `x`, `vi` and `sei` are looked up as column names.
         H0: value of the effect under the null hypothesis of the significance tests of the studies (default 0).
         alternative: 'two.sided' | 'greater' | 'less': the alternative of the significance tests of the studies (default 'two.sided').
+            Unlike in metafor, abbreviations are not accepted (also for `test` and `tes_alternative`).
         alpha: significance level of those tests (default 0.05).
-        theta: assumed true effect, a single value or one per study. Default None: the weighted average of the effects.
-        tau2: amount of heterogeneity; the power is then averaged over the distribution of the true effects. Default None: no heterogeneity.
-        test: 'chi2' | 'binom' | 'exact': the test of excess significance. Default None: 'exact' unless it needs more than 10^6
-            terms, then 'chi2'.
+        theta: assumed true effect, a single value or one per study. Default None: the inverse-variance weighted average of the effects
+            (with weights `1/(vi + tau2)` when `tau2` is used).
+        tau2: amount of heterogeneity in the true effects; the power of each study is then averaged over a normal distribution of the true
+            effects with mean `theta` and variance `tau2`. Default None: homogeneous true effects. A value not above `tau2_lb` counts as none.
+        test: 'chi2' | 'binom' | 'exact': the test of excess significance (chi-square, binomial or exact test). Default None: 'exact' if the
+            number of terms in the sum of the exact test, the sum of the binomial coefficients `choose(k, j)` over the `j` involved (all
+            `j` for `tes_alternative='two.sided'`, `j >= O` for 'greater', `j <= O` for 'less'), is at most 10^6, else 'chi2'. The exact test
+            is computed here without listing the combinations, so `test='exact'` also works for a large number of studies, where metafor stops.
         tes_alternative: 'two.sided' | 'greater' | 'less': the alternative of the test of excess significance (default 'greater').
         tes_alpha: significance level of the test of excess significance, used for `theta_lim` (default 0.1).
         progbar: whether to show a progress bar on stderr during the exact test (metafor's default is True, here it is False).
         digits: number of decimals used when the result is printed. Default None: the digits of the model, or 4.
         correct: whether the continuity correction of the chi-square test is used (default False).
-        rel_tol: relative tolerance of the numerical integration over tau^2 (default `eps**0.25`).
+        rel_tol: tolerance (absolute and relative) of the numerical integration of the power over the distribution of the true effects
+            (default `eps**0.25`).
         subdivisions: maximum number of subdivisions of that integration (default 100).
         tau2_lb: `tau2` values not above this lower bound are treated as zero (default 0).
         find_lim: whether `theta_lim` is estimated (default True; only when `theta` is a single value or estimated).
@@ -204,10 +213,12 @@ def tes(
     Returns:
         A [TesResult][metafopy.TesResult] with the number of studies `k`, the observed number `O` and expected number `E` of significant
         studies, their ratio `OEratio`, the test used `test` with its statistic `X2` (chi-square test only) and p-value `pval`, the power
-        of each study `power`, the significance flags `sig`, the assumed effect `theta` and `theta_lim`.
+        of each study `power`, the significance flags `sig`, the assumed effect `theta` and the limit estimate `theta_lim`.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid, or studies are missing and `na_action='fail'`.
+        metafopy.errors.NotSupportedError: `x` is a model of a class tes is not available for (for example `rma_mv`, `rma_glmm`, `rma_ls`,
+            selection models and robust fits).
     """
     metafopy.methods.common.check_na_action(na_action)
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists

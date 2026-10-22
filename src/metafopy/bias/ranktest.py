@@ -2,8 +2,8 @@
 
 Begg & Mazumdar (1994), doi:10.2307/2533446. Kendall's tau between the
 standardised estimates and their sampling variances; the p-value follows R's
-``cor.test(method='kendall')``: exact when there are fewer than 50 studies and no
-ties, a normal approximation otherwise.
+``cor.test(method='kendall')``: exact (the default, ``exact=True``) when there are
+no ties, a normal approximation otherwise.
 See https://wviechtb.github.io/metafor/reference/ranktest.html.
 """
 
@@ -35,8 +35,8 @@ class RanktestResult(metafopy.printing.HtmlRepr):
     """Result of [ranktest][metafopy.ranktest].
 
     Attributes:
-        tau: Kendall's rank correlation between the standardized effect sizes and the sampling variances.
-        pval: two-sided p-value of the test.
+        tau: Kendall's rank correlation coefficient between the standardized effect sizes and the sampling variances.
+        pval: two-sided p-value of the test that the true tau is zero.
         digits: number of decimals used when printing.
     """
 
@@ -132,14 +132,15 @@ def ranktest(
     correlation indicates funnel plot asymmetry.
 
     Args:
-        x: a fitted model without moderators (of any `rma` class), or the observed effect sizes (array-like, or the name of a column of `data`).
+        x: a fitted model without moderators (its effect sizes and sampling variances are used), or the observed effect sizes (array-like, or
+            the name of a column of `data`).
         vi: sampling variances of a vector `x` (array-like or column name of `data`); ignored with a warning when `x` is a model.
         sei: standard errors, used when `vi` is not given. One of `vi` and `sei` is required for a vector `x`.
         subset: 0-based integer indices or boolean mask of the studies to use (vector input only).
         data: data frame in which string values of `x`, `vi` and `sei` are looked up as column names.
         digits: number of decimals used when the result is printed. Default None: the digits of the model, or 4.
-        exact: whether the p-value is the exact one (default True). The exact p-value needs untied observations; otherwise (or if it
-            cannot be computed) the normal approximation is used.
+        exact: whether the exact p-value is computed (default True; metafor takes this argument from `...`). The exact p-value needs
+            untied observations; with ties, or if the exact p-value cannot be computed, the normal approximation is used.
         na_action: what to do with studies with missing values in a vector `x`: 'omit' | 'exclude' | 'pass' omit them with a warning,
             'fail' raises. It has no effect on a fitted model.
 

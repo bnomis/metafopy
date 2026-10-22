@@ -1,6 +1,6 @@
 """Exceptions raised by metafopy.
 
-Each one also derives from the matching built-in exception, so code that catches ``ValueError``,
+Each one except the base class `MetaforError` also derives from the matching built-in exception, so code that catches ``ValueError``,
 ``TypeError``, ``RuntimeError`` or ``NotImplementedError`` keeps working.
 """
 
@@ -8,7 +8,7 @@ __all__ = ['ArgumentError', 'EstimationError', 'InputError', 'InternalError', 'M
 
 
 class MetaforError(Exception):
-    """Base class of every exception metafopy raises on purpose."""
+    """Base class of the exceptions metafopy raises on purpose."""
 
 
 class InputError(MetaforError, ValueError):
@@ -20,11 +20,11 @@ class ArgumentError(MetaforError, TypeError):
 
 
 class NotFoundError(MetaforError, KeyError):
-    """A requested column, dataset or key does not exist."""
+    """A requested column, variable, dataset, study label or key does not exist."""
 
 
 class NotSupportedError(MetaforError, NotImplementedError):
-    """The requested combination is not implemented (in metafor either)."""
+    """The requested combination is not implemented (in metafor, in metafopy, or in both)."""
 
 
 class EstimationError(MetaforError, RuntimeError):

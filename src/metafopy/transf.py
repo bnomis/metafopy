@@ -8,12 +8,12 @@ translation of the R names. Argument names and defaults are metafor's. The funct
 are documented on metafor's help page, ``?transf``
 (https://wviechtb.github.io/metafor/reference/transf.html). Sources cited there:
 
-- Fisher (1921), r-to-z, https://hdl.handle.net/2440/15169;
+- Fisher (1921), r-to-z (Metron, 1, 1-32; the link on metafor's help page,
+  https://hdl.handle.net/2440/15169, no longer resolves);
 - Freeman & Tukey (1950), double arcsine and incidence-rate transformations,
   doi:10.1214/aoms/1177729756, inverted as in Miller (1978),
   doi:10.1080/00031305.1978.10479283 (``ipft_hm`` uses the harmonic
-  mean of the sample sizes; see Barendregt et al. 2013,
-  doi:10.1136/jech-2013-203104, on back-transforming pooled proportions);
+  mean of the sample sizes);
 - Hakstian & Whalen (1976), doi:10.1007/BF02291840, and Bonett (2002),
   doi:10.3102/10769986027004335, for coefficient alpha;
 - Olkin & Finn (1995), doi:10.1037/0033-2909.118.1.155, for R-squared;
@@ -36,15 +36,17 @@ The ``*_int`` functions integrate with SciPy's QUADPACK ``qags``/``qagi``,
 the routines behind R's ``integrate()``, using R's defaults (``rel.tol =
 abs.tol = .Machine$double.eps^0.25``, 100 subdivisions); where R's
 ``integrate()`` stops with an error, metafor returns NA and so do these.
-``ilogit_mode`` uses the line-for-line port of R's ``uniroot()`` and
-the other ``*_mode`` functions the port of R's ``optimize()``.
+``ilogit_mode`` uses the line-for-line port of R's ``uniroot()``,
+``exp_mode`` is a closed form and the other ``*_mode`` functions use the port of R's
+``optimize()``. ``exp_int`` is the closed form ``exp(xi + tau2/2)``.
 
 Behaviour kept from R, including its quirks:
 
 - ``iarcsin_int``, ``iahw_int`` and ``iabt_int`` bound
-  the integral by ``max(0, xi - 10*tau)`` (and ``min(...)``) taken over *all*
-  ``xi``, so a vector call can differ from elementwise calls, and one NaN in
-  ``xi`` makes every value NaN;
+  the integral below by ``max(0, xi - 10*tau)`` taken over *all* ``xi`` (and
+  ``iarcsin_int`` and ``iahw_int`` above by ``min(pi/2 or 1, xi + 10*tau)``,
+  also over all ``xi``), so a vector call can differ from elementwise calls,
+  and one NaN in ``xi`` makes every value NaN;
 - ``ztor_mode(NaN)`` and similar return a number, as R's
   ``optimize()`` replaces non-finite values by the largest double.
 
@@ -434,13 +436,13 @@ def ztor_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
         targs: mapping with `tau2` (required, >= 0: the variance of the distribution of the true effects) and optionally `lower` and
             `upper` (bounds of the integration; default: 10 standard deviations around each value). Also accepted, as in R: a scalar
-            or a positional sequence (`tau2`, `lower`, `upper`). Predict and confint fill in `tau2` of the model when `targs` is None.
+            or a positional sequence (`tau2`, `lower`, `upper`). For example `predict` and `confint` fill in `tau2` of the model when `targs` is None.
 
     Returns:
         Float array (at least 1-d) with the shape of `xi`.
 
     Raises:
-        metafopy.errors.InputError: `targs` is missing, has no `tau2`, or `tau2` is negative or not a scalar.
+        metafopy.errors.InputError: `targs` is missing, has no `tau2`, has more than three elements, or `tau2` is negative or not a scalar.
     """
     t = chktargsint(targs)
     x = arr(xi)
@@ -517,15 +519,15 @@ def exp_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
-        targs: mapping with `tau2` (required, >= 0: the variance of the distribution of the true effects) and optionally `lower` and
-            `upper` (bounds of the integration; default: 10 standard deviations around each value). Also accepted, as in R: a scalar
-            or a positional sequence (`tau2`, `lower`, `upper`). Predict and confint fill in `tau2` of the model when `targs` is None.
+        targs: mapping with `tau2` (required, >= 0: the variance of the distribution of the true effects). Also accepted, as in R: a scalar
+            or a positional sequence (`tau2`, `lower`, `upper`); `lower` and `upper` are accepted but not used, because the closed form
+            needs no integration. For example `predict` and `confint` fill in `tau2` of the model when `targs` is None.
 
     Returns:
         Float array (at least 1-d) with the shape of `xi`.
 
     Raises:
-        metafopy.errors.InputError: `targs` is missing, has no `tau2`, or `tau2` is negative or not a scalar.
+        metafopy.errors.InputError: `targs` is missing, has no `tau2`, has more than three elements, or `tau2` is negative or not a scalar.
     """
     t = chktargsint(targs)
     return numpy.exp(arr(xi) + t['tau2'] / 2)
@@ -587,13 +589,13 @@ def ilogit_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
         targs: mapping with `tau2` (required, >= 0: the variance of the distribution of the true effects) and optionally `lower` and
             `upper` (bounds of the integration; default: 10 standard deviations around each value). Also accepted, as in R: a scalar
-            or a positional sequence (`tau2`, `lower`, `upper`). Predict and confint fill in `tau2` of the model when `targs` is None.
+            or a positional sequence (`tau2`, `lower`, `upper`). For example `predict` and `confint` fill in `tau2` of the model when `targs` is None.
 
     Returns:
         Float array (at least 1-d) with the shape of `xi`.
 
     Raises:
-        metafopy.errors.InputError: `targs` is missing, has no `tau2`, or `tau2` is negative or not a scalar.
+        metafopy.errors.InputError: `targs` is missing, has no `tau2`, has more than three elements, or `tau2` is negative or not a scalar.
     """
     t = chktargsint(targs)
     x = arr(xi)
@@ -623,7 +625,7 @@ def ilogit_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
         Float array (at least 1-d) with the shape of `xi`.
 
     Raises:
-        metafopy.errors.InputError: `targs` is invalid (see above), or the density cannot be evaluated.
+        metafopy.errors.InputError: `targs` is missing, has no `tau2`, or `tau2` is negative or not a scalar.
     """
     tau2 = mode_tau2(targs)
     x = arr(xi)
@@ -702,14 +704,14 @@ def iarcsin_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
         targs: mapping with `tau2` (required, >= 0: the variance of the distribution of the true effects) and optionally `lower` and
-            `upper` (bounds of the integration; default: 10 standard deviations around each value). Also accepted, as in R: a scalar
-            or a positional sequence (`tau2`, `lower`, `upper`). Predict and confint fill in `tau2` of the model when `targs` is None.
+            `upper` (bounds of the integration; defaults as described above). Also accepted, as in R: a scalar
+            or a positional sequence (`tau2`, `lower`, `upper`). For example `predict` and `confint` fill in `tau2` of the model when `targs` is None.
 
     Returns:
         Float array (at least 1-d) with the shape of `xi`.
 
     Raises:
-        metafopy.errors.InputError: `targs` is missing, has no `tau2`, or `tau2` is negative or not a scalar.
+        metafopy.errors.InputError: `targs` is missing, has no `tau2`, has more than three elements, or `tau2` is negative or not a scalar.
     """
     t = chktargsint(targs)
     x = arr(xi)
@@ -791,13 +793,13 @@ def iprobit_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
         targs: mapping with `tau2` (required, >= 0: the variance of the distribution of the true effects) and optionally `lower` and
             `upper` (bounds of the integration; default: 10 standard deviations around each value). Also accepted, as in R: a scalar
-            or a positional sequence (`tau2`, `lower`, `upper`). Predict and confint fill in `tau2` of the model when `targs` is None.
+            or a positional sequence (`tau2`, `lower`, `upper`). For example `predict` and `confint` fill in `tau2` of the model when `targs` is None.
 
     Returns:
         Float array (at least 1-d) with the shape of `xi`.
 
     Raises:
-        metafopy.errors.InputError: `targs` is missing, has no `tau2`, or `tau2` is negative or not a scalar.
+        metafopy.errors.InputError: `targs` is missing, has no `tau2`, has more than three elements, or `tau2` is negative or not a scalar.
     """
     t = chktargsint(targs)
     x = arr(xi)
@@ -897,7 +899,7 @@ def ipft(xi: numpy.typing.ArrayLike, ni: numpy.typing.ArrayLike) -> FloatArray:
 
 
 def ipft_hm(xi: numpy.typing.ArrayLike, targs: Targs) -> FloatArray:
-    """Inverse Freeman-Tukey double arcsine transformation using the harmonic mean of the sample sizes (Barendregt et al., 2013).
+    """Inverse Freeman-Tukey double arcsine transformation using the harmonic mean of the sample sizes (Miller, 1978).
 
     See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
 
@@ -1021,14 +1023,14 @@ def iahw_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
         targs: mapping with `tau2` (required, >= 0: the variance of the distribution of the true effects) and optionally `lower` and
-            `upper` (bounds of the integration; default: 10 standard deviations around each value). Also accepted, as in R: a scalar
-            or a positional sequence (`tau2`, `lower`, `upper`). Predict and confint fill in `tau2` of the model when `targs` is None.
+            `upper` (bounds of the integration; defaults as described above). Also accepted, as in R: a scalar
+            or a positional sequence (`tau2`, `lower`, `upper`). For example `predict` and `confint` fill in `tau2` of the model when `targs` is None.
 
     Returns:
         Float array (at least 1-d) with the shape of `xi`.
 
     Raises:
-        metafopy.errors.InputError: `targs` is missing, has no `tau2`, or `tau2` is negative or not a scalar.
+        metafopy.errors.InputError: `targs` is missing, has no `tau2`, has more than three elements, or `tau2` is negative or not a scalar.
     """
     t = chktargsint(targs)
     x = arr(xi)
@@ -1116,14 +1118,14 @@ def iabt_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
         targs: mapping with `tau2` (required, >= 0: the variance of the distribution of the true effects) and optionally `lower` and
-            `upper` (bounds of the integration; default: 10 standard deviations around each value). Also accepted, as in R: a scalar
-            or a positional sequence (`tau2`, `lower`, `upper`). Predict and confint fill in `tau2` of the model when `targs` is None.
+            `upper` (bounds of the integration; defaults as described above). Also accepted, as in R: a scalar
+            or a positional sequence (`tau2`, `lower`, `upper`). For example `predict` and `confint` fill in `tau2` of the model when `targs` is None.
 
     Returns:
         Float array (at least 1-d) with the shape of `xi`.
 
     Raises:
-        metafopy.errors.InputError: `targs` is missing, has no `tau2`, or `tau2` is negative or not a scalar.
+        metafopy.errors.InputError: `targs` is missing, has no `tau2`, has more than three elements, or `tau2` is negative or not a scalar.
     """
     t = chktargsint(targs)
     x = arr(xi)
@@ -1266,13 +1268,13 @@ def dtocles_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
         xi: standardized mean differences, scalar or array-like.
         targs: mapping with `tau2` (required, >= 0: the variance of the distribution of the true effects) and optionally `lower` and
             `upper` (bounds of the integration; default: 10 standard deviations around each value). Also accepted, as in R: a scalar
-            or a positional sequence (`tau2`, `lower`, `upper`). Predict and confint fill in `tau2` of the model when `targs` is None.
+            or a positional sequence (`tau2`, `lower`, `upper`). For example `predict` and `confint` fill in `tau2` of the model when `targs` is None.
 
     Returns:
         Float array (at least 1-d) with the shape of `xi`.
 
     Raises:
-        metafopy.errors.InputError: `targs` is missing, has no `tau2`, or `tau2` is negative or not a scalar.
+        metafopy.errors.InputError: `targs` is missing, has no `tau2`, has more than three elements, or `tau2` is negative or not a scalar.
     """
     t = chktargsint(targs)
     x = arr(xi)

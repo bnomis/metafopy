@@ -18,7 +18,8 @@ FloatArray = numpy.typing.NDArray[numpy.float64]
 class PhyloTree:
     """A rooted tree stored as an edge table, like the `phylo` class of the R package ape.
 
-    Tips are the nodes that are never a parent; tip `i` has node id `i + 1` and the tips keep that order.
+    Tips are the nodes that are never a parent; the tips are taken in the order of their node ids
+    (as in ape, and as in the bundled tree, the tips have the ids 1 to the number of tips).
 
     Attributes:
         edges: data frame with one row per edge and the columns `parent` and `child` (node ids), `length` (edge length) and
@@ -45,7 +46,7 @@ class PhyloTree:
             Square data frame with the tip labels as index and columns.
 
         Raises:
-            metafopy.errors.InputError: the edge table does not describe a tree (a node has two parents, or there is a cycle).
+            metafopy.errors.InputError: the edge table does not describe a tree (a node has two parents, or a cycle can be reached from a tip).
         """
         if self.edges['child'].duplicated().any():
             raise metafopy.errors.InputError('the edge table does not describe a tree: a node has more than one parent')

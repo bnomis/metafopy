@@ -1,6 +1,6 @@
 """Regression test for funnel plot asymmetry (metafor's ``regtest``).
 
-Sterne & Egger (2005), doi:10.1016/j.jclinepi.2004.01.022 -- the test adds the
+Sterne & Egger (2005), doi:10.1002/0470870168.ch6 -- the test adds the
 standard error (or another measure of precision) as a predictor to the
 meta-analytic model. See https://wviechtb.github.io/metafor/reference/regtest.html.
 """
@@ -57,16 +57,20 @@ class RegtestResult(metafopy.printing.HtmlRepr):
     Attributes:
         model: 'rma' or 'lm', the regression model used.
         predictor: the predictor that was used ('sei', 'vi', 'ni', 'ninv', 'sqrtni' or 'sqrtninv').
-        zval: test statistic for the coefficient of the predictor (a t-value when the test is based on the t-distribution).
+        zval: test statistic for the coefficient of the predictor. It is referred to a t-distribution with `ddf` degrees of freedom when
+            `ddf` is not None (always for `model='lm'`), else to the standard normal distribution.
         pval: p-value of that test.
-        ddf: degrees of freedom of the test, or None for a z-test.
-        method: tau^2 estimator of the regression model.
+        ddf: degrees of freedom of the t-test (`model='lm'`: the number of studies minus the number of coefficients; `model='rma'`: tests
+            't', 'knha' and 'adhoc'), or None for a z-test.
+        method: tau^2 estimator of the regression model. For `model='lm'` no tau^2 is estimated and this is only the label of the
+            estimator of `x` (or the `method` that was given).
         digits: number of decimals used when printing.
         ret_fit: whether the printed summary shows the fitted model.
         fit: the fitted regression model ([RMAResult][metafopy.RMAResult] for `model='rma'`), or None.
-        est: estimate of the model at zero of the predictor (the effect at infinite precision), or None if it is not defined.
-        ci_lb: lower bound of the confidence interval of `est`, or None.
-        ci_ub: upper bound of the confidence interval of `est`, or None.
+        est: the 'limit estimate': the intercept of the model, its estimate at zero of the predictor. It is defined (not None) only when
+            the predictor is 'sei', 'vi', 'ninv' or 'sqrtninv' and the model has no moderators besides the intercept.
+        ci_lb: lower bound of the confidence interval of `est` (None when `est` is None).
+        ci_ub: upper bound of the confidence interval of `est` (None when `est` is None).
     """
 
     model: str
@@ -149,37 +153,45 @@ def regtest(
     Mirrors metafor's `regtest`, see https://wviechtb.github.io/metafor/reference/regtest.html. The effect sizes are regressed on a measure of
     their precision (the standard error by default) and the test for the coefficient of that predictor is the test for asymmetry
     (Egger et al., 1997, doi:10.1136/bmj.315.7109.629). With a fitted model that has moderators, the predictor is added to the model.
-    The intercept of the model with `sei` (or `vi`) as the predictor estimates the effect at infinite precision.
+    The intercept of the model with `sei`, `vi`, `ninv` or `sqrtninv` as the predictor is the 'limit estimate' of the effect (the estimate
+    under infinite precision), see [RegtestResult][metafopy.RegtestResult].
 
     Args:
-        x: a fitted model ([rma_uni][metafopy.rma_uni] result, or a fixed-effects `rma_mh` / `rma_peto` result with `model='lm'`), or the
-            observed effect sizes (array-like, or the name of a column of `data`).
+        x: a fitted model ([rma_uni][metafopy.rma_uni] result, or a fixed-effects `rma_mh` / `rma_peto` result with `model='lm'`; `model='rma'`
+            raises for the latter two, as in metafor), or the observed effect sizes (array-like, or the name of a column of `data`).
         vi: sampling variances of a vector `x` (array-like or column name of `data`); ignored with a warning when `x` is a model.
         sei: standard errors, used when `vi` is not given.
         ni: sample sizes (array-like or column name of `data`), needed for the predictors based on `ni`. For a model it must have the length
-            of the original data set. For a vector `x` it defaults to the sample sizes stored by [escalc][metafopy.escalc].
+            of the original data set and defaults to the sample sizes stored in the model. For a vector `x` it must have the length of `x`
+            and defaults to the sample sizes stored by [escalc][metafopy.escalc].
         subset: 0-based integer indices or boolean mask of the studies to use (vector input only).
         data: data frame in which string values of `x`, `vi`, `sei` and `ni` are looked up as column names.
         model: 'rma' | 'lm'. 'rma' (default) fits a meta-regression model (a mixed-effects model for a random-effects `x`), 'lm' the weighted
             regression with multiplicative dispersion (the classical Egger test).
         predictor: 'sei' | 'vi' | 'ni' | 'ninv' | 'sqrtni' | 'sqrtninv': the standard error (default), the sampling variance, the sample size,
             its inverse, its square root or the inverse of its square root. The last four need `ni`.
-        ret_fit: whether the printed summary also shows the fitted regression model (the model is always in the result).
-            It prints nothing extra for `model='lm'`.
+        ret_fit: whether the printed summary also shows the fitted regression model (`fit` is in the result either way).
+            It prints nothing extra for `model='lm'`, which has no `fit`.
         digits: number of decimals used when the result is printed. Default None: the digits of the model, or 4.
-        level: confidence level in percent for the limit estimate (the intercept) and the model fit. Default None: the level of the model, or 95.
+        level: confidence level of the interval of the limit estimate and of the model fit, between 0 and 100 (as in metafor's `level`: 95 or
+            0.95 give a 95% interval, and a value up to 0.5 is read as the significance level). Default None: the level of the model, or 95.
         method: tau^2 estimator of the meta-regression model, e.g. 'REML', 'DL' or 'FE'. Default None: the method of `x`, or 'REML' for a vector.
-        test: test for the model coefficients: 'z' | 't' | 'knha' | 'adhoc'. Default None: the test of `x`, or 'z' for a vector.
+            For `model='lm'` it is only recorded in the result.
+        test: test for the model coefficients: 'z' | 't' | 'knha' | 'adhoc'. Default None: the test of `x`, or 'z' for a vector. Ignored for
+            `model='lm'`, which always uses a t-test.
         na_action: what to do with studies with missing values in a vector `x`: 'omit' | 'exclude' | 'pass' omit them with a warning,
             'fail' raises. It has no effect on a fitted model.
 
     Returns:
-        A [RegtestResult][metafopy.RegtestResult] with the test statistic `zval` (a t-value for `test='t'`), its p-value `pval`, the
-        degrees of freedom `ddf` (None for a z-test), the estimate `est` and confidence interval `ci_lb`, `ci_ub` of the model at zero of the
-        predictor (when `predictor` is 'sei', 'vi', 'ninv' or 'sqrtninv' and the model has no moderators), and the regression model `fit`.
+        A [RegtestResult][metafopy.RegtestResult] with the test statistic `zval`, its p-value `pval`, the degrees of freedom `ddf` (None for
+        a z-test), the limit estimate `est` with its confidence interval `ci_lb`, `ci_ub` (only when `predictor` is 'sei', 'vi', 'ninv' or
+        'sqrtninv' and the model has no moderators, else None), and the regression model `fit` (None for `model='lm'`).
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid, or studies are missing and `na_action='fail'`.
+        metafopy.errors.NotSupportedError: `x` is a model of a class regtest is not available for (for example `rma_mv`, `rma_glmm`,
+            `rma_ls`, selection models and robust fits).
+        metafopy.errors.EstimationError: the tau^2 estimator of the regression model fails.
     """
     metafopy.methods.common.check_na_action(na_action)
     vec_measure: str | None = None

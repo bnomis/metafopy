@@ -1,6 +1,6 @@
 # Errors
 
-Exceptions raised by metafopy. Each also derives from the matching built-in exception, so `except ValueError` catches an `InputError`.
+Exceptions raised by metafopy. All derive from `MetaforError`; each other class also derives from the matching built-in exception, so `except ValueError` catches an `InputError`.
 
 ::: metafopy.errors.MetaforError
     options:

@@ -32,10 +32,13 @@ MISSING_STRINGS: dict[str, dict[str, tuple[str, ...]]] = {
 def list_datasets() -> list[str]:
     """Names of the bundled datasets.
 
-    The datasets are those of the R package metadat that metafor's documentation uses, see https://wviechtb.github.io/metadat/.
+    The datasets were exported from the R package metadat (https://wviechtb.github.io/metadat/): every data frame it provided when they were
+    exported, plus the data of Moura et al. (2021) and its phylogenetic tree. A few datasets listed on the metadat site are not bundled, and the
+    list can include `dat.berkey1998r`, which is not in the site index.
 
     Returns:
-        The sorted names, each with the `dat.` prefix, for example `'dat.bcg'`. Pass them to [load][metafopy.datasets.load].
+        The sorted names, each with the `dat.` prefix, for example `'dat.bcg'`. Pass them to [load][metafopy.datasets.load]. The name
+        `'dat.moura2021.tree'` is a tree, not a data frame; read it with `load_tree`.
     """
     files = importlib.resources.files(PACKAGE).iterdir()
     return sorted(f.name.removesuffix('.csv') for f in files if f.name.endswith('.csv'))

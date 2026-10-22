@@ -37,7 +37,8 @@ class HcResult(metafopy.printing.HtmlRepr):
     """Result of [hc][metafopy.hc].
 
     Attributes:
-        beta: estimate of the Henmi-Copas method (the DerSimonian-Laird estimate).
+        beta: pooled estimate of the Henmi-Copas method: the inverse-variance weighted average of the effect sizes, with the weights of an
+            equal-effects model (so not the random-effects estimate of the original model).
         se: standard error of `beta` (NaN if a transformation was applied).
         ci_lb: lower bound of the Henmi-Copas confidence interval.
         ci_ub: upper bound of the Henmi-Copas confidence interval.
@@ -45,9 +46,9 @@ class HcResult(metafopy.printing.HtmlRepr):
         se_rma: standard error of the original model (NaN if a transformation was applied).
         ci_lb_rma: lower bound of the confidence interval of the original model.
         ci_ub_rma: upper bound of the confidence interval of the original model.
-        method: tau^2 estimator of the Henmi-Copas method ('DL').
+        method: tau^2 estimator of the Henmi-Copas method (always 'DL', the DerSimonian-Laird estimator).
         method_rma: tau^2 estimator of the original model.
-        tau2: tau^2 estimate of the Henmi-Copas method.
+        tau2: DerSimonian-Laird tau^2 estimate, which enters the standard error and the interval of the Henmi-Copas method.
         tau2_rma: tau^2 estimate of the original model.
         digits: number of decimals used when printing.
     """
@@ -101,19 +102,20 @@ def hc(
     targs: typing.Any = None,
     control: dict[str, typing.Any] | None = None,
 ) -> HcResult:
-    """Henmi and Copas confidence interval for a random-effects model.
+    """Henmi and Copas pooled estimate and confidence interval for a random-effects model.
 
-    Mirrors metafor's `hc`, see https://wviechtb.github.io/metafor/reference/hc.html. It computes the confidence interval of Henmi & Copas
-    (2010, doi:10.1002/sim.4029), which accounts for the uncertainty in the estimate of tau^2 and uses the DerSimonian-Laird estimator.
+    Mirrors metafor's `hc`, see https://wviechtb.github.io/metafor/reference/hc.html. The pooled estimate uses the inverse-variance weights of an
+    equal-effects model, which do not depend on the amount of heterogeneity; the heterogeneity is estimated with the DerSimonian-Laird
+    estimator and enters the standard error and the confidence interval (Henmi & Copas, 2010, doi:10.1002/sim.4029).
 
     Args:
-        obj: a fitted random-effects model ([rma_uni][metafopy.rma_uni] result) without moderators.
+        obj: a fitted equal- or random-effects model ([rma_uni][metafopy.rma_uni] result) without moderators.
         digits: number of decimals used when the result is printed. Default None: the digits of `obj`.
         transf: function applied to the estimate and the confidence interval bounds (e.g. `metafopy.transf.ilogit`). The standard errors
             are then NaN. Default None: no transformation.
         targs: additional argument for `transf`, passed as its second argument (for the integral and mode transformations, a mapping
             with `tau2`, defaulting to the tau^2 of `obj`).
-        control: mapping with `tol` (tolerance of the root search, default `eps**0.25`) and `maxiter` (default 1000).
+        control: mapping with `tol` (tolerance of the root search, default `eps**0.25`) and `maxiter` (default 1000); other keys are ignored.
 
     Returns:
         An [HcResult][metafopy.HcResult] with the estimate `beta`, standard error `se` and bounds `ci_lb`, `ci_ub` of the Henmi-Copas
@@ -123,6 +125,8 @@ def hc(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid, `obj` has moderators, k = 1, a sampling variance is not
             positive, or the root search fails.
+        metafopy.errors.ArgumentError: `obj` is not an `rma_uni` result.
+        metafopy.errors.NotSupportedError: `obj` is a location-scale model or a selection model.
     """
     metafopy.methods.fitview.check_method(obj, 'hc')
     metafopy.methods.fitview.check_class(obj, must='rma.uni', notav=('rma.ls', 'rma.gen', 'rma.uni.selmodel'))

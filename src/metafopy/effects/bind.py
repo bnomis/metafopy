@@ -4,8 +4,8 @@ The attributes of ``escalc`` output live in ``DataFrame.attrs`` (``yi_names``, `
 ``ci_lb_names``, ``ci_ub_names``, ``digits``, ``measure``, ``slab`` and ``ni``; see :func:`metafopy.escalc`). ``pandas.concat`` keeps none of
 them for a frame built from several, so :func:`cbind_escalc` and :func:`rbind_escalc` rebuild them the way metafor does.
 
-R sources: https://github.com/wviechtb/metafor/blob/master/R/cbind.escalc.r and https://github.com/wviechtb/metafor/blob/master/R/rbind.escalc.r;
-reference page: https://wviechtb.github.io/metafor/reference/print.escalc.html.
+R source: https://github.com/wviechtb/metafor/blob/v5.2-1/R/methods.escalc.r (``cbind.escalc`` and ``rbind.escalc``);
+reference page: https://wviechtb.github.io/metafor/reference/methods.escalc.html.
 
 Differences from R: R keeps ``measure``, ``slab`` and ``ni`` as attributes of each ``yi`` column, so a combined frame may hold several measures.
 A frame has only one such set here: :func:`cbind_escalc` takes them from the first argument that has them (the first argument of
