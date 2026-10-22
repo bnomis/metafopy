@@ -2,6 +2,8 @@
 
 ## Unreleased (1.0 candidate)
 
+- The base class of metafopy's exceptions is `metafopy.errors.MetafopyError` (behaviour change: it was `MetaforError`, which is gone). `InputError`, `ArgumentError` and the others derive from it as before, and from the matching built-in exception.
+
 - Function reference: every function on the reference pages has a description, arguments (what each is, accepted values), return value and errors, and each signature is shown with one argument per line and the types behind aliases such as `Column` (a griffe extension in `docs/griffe/`, `ruff` added to `docs/requirements.txt`). About 20 wrong DOIs and many wrong option descriptions found while checking every statement against the code and metafor are corrected. Two fixes found on the way: `labbe()` stops on an unknown `na_action` like metafor (it was never checked; behaviour change), and `plot_permutest()` draws the theoretical density of an omnibus test with one degree of freedom instead of raising `OverflowError` (R stops with an infinite `ylim`).
 
 - Showcase notebook (`docs/notebooks/showcase.ipynb`, in the docs under "Showcase", with a Binder badge): the BCG trials with linked Altair forest, funnel, Baujat and bubble plots, a sensitivity grid of the `tau^2` estimators and leave-one-out fits, cumulative and GOSH charts, a multilevel side trip with `rma_mv` and a publication-bias side trip, ending with a generated write-up and exported figures. Optional extra `metafopy[interactive]` (`altair`, `vl-convert-python`); docs build with `mkdocs-jupyter`, dev group has `nbclient` and `ipykernel`, and a slow test executes the notebook. Fit and test results show as HTML in Jupyter (`_repr_html_`; a table of coefficients for `rma()` fits, the printed text for the others).

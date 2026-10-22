@@ -217,7 +217,7 @@ def refit_ml(base: metafopy.models.rma_uni.RMAResult) -> metafopy.models.rma_uni
                 skip_r2=True,
             )
             return dataclasses.replace(refit, measure=base.measure)
-    except metafopy.errors.MetaforError as exc:
+    except metafopy.errors.MetafopyError as exc:
         raise metafopy.errors.InputError("Could not refit input model using method='ML'.") from exc
 
 
@@ -725,7 +725,7 @@ def selmodel(
 
         try:
             H = metafopy.core.numderiv.hessian_by_package(hess_fn, hx, hesspack, hessian_ctrl)
-        except metafopy.errors.MetaforError, ArithmeticError, ValueError:
+        except metafopy.errors.MetafopyError, ArithmeticError, ValueError:
             H = None
             warnings.warn('Error when trying to compute the Hessian.', stacklevel=2)
         if H is not None:
@@ -818,7 +818,7 @@ def selmodel(
             ll0_tau2 = metafopy.models.sel_lik.evaluate(prob0, par0_fit, delta_transf=True, tau2_transf=False).ll
             LRT_tau2 = max(0.0, -2 * (ll0_tau2 - ll))
             LRTp_tau2 = float(scipy.stats.chi2.sf(LRT_tau2, 1))
-        except metafopy.errors.MetaforError, ArithmeticError, ValueError:
+        except metafopy.errors.MetafopyError, ArithmeticError, ValueError:
             pass
 
     # -- LRT for the selection parameters and fit statistics ------------------------------------------
