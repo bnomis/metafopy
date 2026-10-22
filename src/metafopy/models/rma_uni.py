@@ -609,76 +609,76 @@ def rma_uni(
     [doi:10.1002/jrsm.1562](https://doi.org/10.1002/jrsm.1562)).
 
     Args:
-        yi (ArrayLike | str | DataFrame | None): Observed effect sizes, as an array or the name of a column of ``data``. May also be a model formula
+        yi: Observed effect sizes, as an array or the name of a column of ``data``. May also be a model formula
             (``'yi ~ ablat + year'``; needs ``data``, and then ``mods`` is ignored and ``intercept`` is taken from the formula),
             or a data frame (taken as ``data``).
-        vi (ArrayLike | str | None): Sampling variances, as an array or a column name. Give ``vi`` or ``sei``, not both.
-        sei (ArrayLike | str | None): Standard errors, as an array or a column name; used instead of ``vi``.
-        weights (ArrayLike | str | None): Optional custom weights for the fit, as an array or a column name. Required for ``method='GENQ'``.
-        ai (ArrayLike | str | None): 2x2 table frequencies (upper left cell). With ``bi``, ``ci`` and ``di`` and a ``measure`` such as ``'OR'`` or ``'RR'``.
-        bi (ArrayLike | str | None): 2x2 table frequencies (upper right cell).
-        ci (ArrayLike | str | None): 2x2 table frequencies (lower left cell).
-        di (ArrayLike | str | None): 2x2 table frequencies (lower right cell).
-        n1i (ArrayLike | str | None): Group sizes or row totals (first group or row).
-        n2i (ArrayLike | str | None): Group sizes or row totals (second group or row).
-        x1i (ArrayLike | str | None): Number of events (first group).
-        x2i (ArrayLike | str | None): Number of events (second group).
-        t1i (ArrayLike | str | None): Total person-times (first group).
-        t2i (ArrayLike | str | None): Total person-times (second group).
-        m1i (ArrayLike | str | None): Means (first group or time point).
-        m2i (ArrayLike | str | None): Means (second group or time point).
-        sd1i (ArrayLike | str | None): Standard deviations (first group or time point).
-        sd2i (ArrayLike | str | None): Standard deviations (second group or time point).
-        xi (ArrayLike | str | None): Frequencies of the event of interest.
-        mi (ArrayLike | str | None): Frequencies of the complement of the event of interest, or the group means.
-        ri (ArrayLike | str | None): Raw correlation coefficients.
-        ti (ArrayLike | str | None): Total person-times or t-test statistics.
-        fi (ArrayLike | str | None): F-test statistics.
-        pi (ArrayLike | str | None): (Signed) p-values.
-        sdi (ArrayLike | str | None): Standard deviations.
-        r2i (ArrayLike | str | None): ``R^2`` values.
-        mini (ArrayLike | str | None): Minimum values.
-        maxi (ArrayLike | str | None): Maximum values.
-        ni (ArrayLike | str | None): Sample or group sizes, as an array or column name.
-        mods (str | ArrayLike | DataFrame | None): Moderators, as a one-sided formula string (``'~ ablat + year'``), a matrix, or a data frame.
+        vi: Sampling variances, as an array or a column name. Give ``vi`` or ``sei``, not both.
+        sei: Standard errors, as an array or a column name; used instead of ``vi``.
+        weights: Optional custom weights for the fit, as an array or a column name. Required for ``method='GENQ'``.
+        ai: 2x2 table frequencies (upper left cell). With ``bi``, ``ci`` and ``di`` and a ``measure`` such as ``'OR'`` or ``'RR'``.
+        bi: 2x2 table frequencies (upper right cell).
+        ci: 2x2 table frequencies (lower left cell).
+        di: 2x2 table frequencies (lower right cell).
+        n1i: Group sizes or row totals (first group or row).
+        n2i: Group sizes or row totals (second group or row).
+        x1i: Number of events (first group).
+        x2i: Number of events (second group).
+        t1i: Total person-times (first group).
+        t2i: Total person-times (second group).
+        m1i: Means (first group or time point).
+        m2i: Means (second group or time point).
+        sd1i: Standard deviations (first group or time point).
+        sd2i: Standard deviations (second group or time point).
+        xi: Frequencies of the event of interest.
+        mi: Frequencies of the complement of the event of interest, or the group means.
+        ri: Raw correlation coefficients.
+        ti: Total person-times or t-test statistics.
+        fi: F-test statistics.
+        pi: (Signed) p-values.
+        sdi: Standard deviations.
+        r2i: ``R^2`` values.
+        mini: Minimum values.
+        maxi: Maximum values.
+        ni: Sample or group sizes, as an array or column name.
+        mods: Moderators, as a one-sided formula string (``'~ ablat + year'``), a matrix, or a data frame.
             ``None`` fits a model with no moderators.
         measure: Effect size or outcome measure, a metafor code such as ``'GEN'`` (generic, the default, used with ``yi``/``vi``), ``'SMD'``, ``'OR'``,
             ``'RR'``, ``'RD'`` or ``'ZCOR'``. Must be given when raw data are passed. See [escalc][metafopy.escalc] for the full list.
         data: Data frame holding the variables named in the other arguments.
-        slab (ArrayLike | str | None): Study labels, as a sequence or a column name. Defaults to ``1, 2, ...``.
+        slab: Study labels, as a sequence or a column name. Defaults to ``1, 2, ...``.
         subset: Which studies to fit: a boolean array, an array of 0-based indices, or a string expression evaluated on ``data``.
         add: Constant added to the cell counts of 2x2 tables with zero cells (default ``1/2``). See [escalc][metafopy.escalc].
         to: Which tables get ``add``: ``'only0'`` (those with a zero cell, the default), ``'all'``, ``'if0all'`` (all, if any table has a zero cell) or
             ``'none'``.
         drop00: Drop studies with no events (or only events) in both groups.
         intercept: Include an intercept in the model with moderators.
-        method (str | list[str]): Estimator of the amount of heterogeneity ``tau^2``: ``'FE'``/``'EE'``/``'CE'`` (fixed-effects, no heterogeneity),
+        method: Estimator of the amount of heterogeneity ``tau^2``: ``'FE'``/``'EE'``/``'CE'`` (fixed-effects, no heterogeneity),
             ``'DL'``, ``'DLIT'``,
             ``'HE'``, ``'HS'``, ``'HSk'``, ``'SJ'``, ``'SJIT'``, ``'ML'``, ``'REML'`` (the default), ``'EB'``, ``'PM'``, ``'PMM'``, ``'GENQ'`` or
             ``'GENQM'``. A sequence is tried in order until one succeeds.
         weighted: Use inverse-variance weights (``True``) or ordinary least squares (``False``).
-        test ('z' | 't' | 'knha' | 'hksj' | 'adhoc'): Test for the coefficients: ``'z'`` (normal, the default), ``'t'`` (t distribution), ``'knha'``
+        test: Test for the coefficients: ``'z'`` (normal, the default), ``'t'`` (t distribution), ``'knha'``
             (Knapp-Hartung adjustment; alias ``'hksj'``) or
             ``'adhoc'`` (truncated Knapp-Hartung).
-        level (float): Confidence interval level in percent (``95`` is 95%).
-        digits (int | dict[str, int] | None): Number of decimals used when printing, or a mapping with the keys ``est``, ``se``, ... (``est`` is
+        level: Confidence interval level in percent (``95`` is 95%).
+        digits: Number of decimals used when printing, or a mapping with the keys ``est``, ``se``, ... (``est`` is
             used). Stored in the result.
-        btt (int | list[int] | str | None): Coefficients to test jointly in the omnibus test, as 0-based indices or a regular expression matched
+        btt: Coefficients to test jointly in the omnibus test, as 0-based indices or a regular expression matched
             against coefficient names.
             Printed output reports them 1-based, as metafor does. Default: all but the intercept.
-        att (int | list[int] | str | None): Scale coefficients to test jointly (location-scale models only); as ``btt``.
-        scale (str | ArrayLike | DataFrame | None): One-sided formula (``'~ ni100'``), matrix or data frame of scale moderators. Turns the model into
+        att: Scale coefficients to test jointly (location-scale models only); as ``btt``.
+        scale: One-sided formula (``'~ ni100'``), matrix or data frame of scale moderators. Turns the model into
             a location-scale model.
         link: Link function of the scale model, ``'log'`` (the default) or ``'identity'``. Location-scale models only.
         optbeta: Estimate the location coefficients jointly with the scale coefficients. Location-scale models only.
         alpha: Fixed values for the scale coefficients (``None`` entries are estimated). Location-scale models only.
         beta: Fixed values for the location coefficients; needs ``optbeta=True``. Location-scale models only.
         tau2: Fixed value of ``tau^2`` instead of estimating it.
-        control (Control | dict | None): Settings of the ``tau^2`` estimation (iteration limits, thresholds and step adjustments), as a
+        control: Settings of the ``tau^2`` estimation (iteration limits, thresholds and step adjustments), as a
             [Control][metafopy.models.tau2.Control] or a mapping with the same names as metafor (``.`` becomes ``_``).
         verbose: Print metafor's iteration log of the ``tau^2`` estimators to stdout; ``2`` or more also prints progress messages to stderr.
             No effect for location-scale models.
-        na_action ('omit' | 'exclude' | 'pass' | 'fail'): What to do with missing values: ``'omit'`` (drop those studies, the default), ``'exclude'``
+        na_action: What to do with missing values: ``'omit'`` (drop those studies, the default), ``'exclude'``
             (drop them but keep NA entries in the
             outputs), ``'pass'`` (keep them) or ``'fail'`` (raise).
         vtype: Type of the sampling variance formula used by [escalc][metafopy.escalc], ``'LS'`` by default.

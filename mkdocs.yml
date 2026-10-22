@@ -38,7 +38,13 @@ plugins:
       handlers:
         python:
           paths: [src]
+          inventories:
+            - https://docs.python.org/3/objects.inv
+            - https://numpy.org/doc/stable/objects.inv
+            - https://pandas.pydata.org/docs/objects.inv
           options:
+            extensions:
+              - docs/griffe/expand_aliases.py
             docstring_style: google
             members_order: source
             docstring_section_style: table
