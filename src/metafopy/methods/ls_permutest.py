@@ -312,22 +312,43 @@ def permutest_rma_ls(
     fixed: bool = False,
     verbose: bool = False,
 ) -> LSPermutestResult | list[float]:
-    """Permutation tests for the location and scale coefficients of a location-scale fit.
+    """Permutation tests for the location and scale coefficients of a location-scale fit (metafor's ``permutest.rma.ls``).
 
-    ``exact=True`` (or enough iterations to enumerate all unique permutations) runs an exact test; ``exact='i'`` returns the
-    number of iterations an exact test needs for the location and the scale part. ``btt`` and ``att`` (0-based) change the
-    coefficients the omnibus tests refer to; ``skip_beta`` and ``skip_alpha`` skip a part. ``seed`` seeds the generator for each
-    approximate part; without it the seeds are drawn from the module's R-compatible generator (see :func:`metafopy.set_seed`).
-    ``control`` takes ``comptol``, ``alternative``, ``p2defn`` and ``stat`` as in :func:`metafopy.permutest`. ``progbar=True`` prints a progress bar
-    to stderr for each part (metafor's default is ``TRUE``). ``permci=True`` only warns, as permutation-based confidence intervals are not available
-    for location-scale models in metafor either. ``fixed=True`` matches a string ``btt`` or ``att`` literally instead of as a regular expression.
-    ``verbose`` is accepted for metafor's messages about refits that fail during the permutations, which are not raised here.
+    For the scale part with ``control={'p2defn': 'px2'}``, the current metafor source (``permutest.rma.ls.r``) refers to ``x$zval.alpha.[j]``, which does
+    not exist, so the p-values there are NaN in R; here they are computed from the observed test statistics. An intercept-only scale model skips the
+    scale part with a warning.
 
-    The scale part with ``control={'p2defn': 'px2'}`` uses the observed test statistics; metafor 5.2-1 has a typo there that
-    makes these p-values ``NaN``.
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/permutest.rma.ls.r>; reference page:
+    <https://wviechtb.github.io/metafor/reference/permutest.html>.
+
+    Args:
+        x: Location-scale model fitted by [rma_uni][metafopy.rma_uni] with ``scale``.
+        exact: ``True`` carries out an exact test of each part (all unique permutations); ``'i'`` returns the numbers of iterations an exact test needs
+            for the location and the scale part; ``False`` (default) uses ``iter`` random permutations.
+        iter: Number of random permutations for an approximate test (at least 2).
+        btt: Location coefficients the omnibus test refers to: 0-based indices or a string searched for (Python ``re.search``) in the coefficient names.
+            Default: that of the model.
+        att: Scale coefficients the omnibus test refers to: 0-based indices or a string searched for (Python ``re.search``) in the scale coefficient
+            names. Default: that of the model.
+        digits: Number of decimals of the printout. Default: the ``digits`` option, else that of the model.
+        control: Mapping with ``comptol``, ``alternative``, ``p2defn`` and ``stat``, as for [permutest][metafopy.permutest].
+        seed: Seed of the generator for each approximate part. Default: drawn from the generator of [set_seed][metafopy.set_seed].
+        tol: Old spelling of the ``comptol`` entry of ``control``.
+        skip_beta: Skip the permutation test of the location part.
+        skip_alpha: Skip the permutation test of the scale part.
+        progbar: Print a progress bar to stderr for each part (default False; metafor's default is ``TRUE``).
+        permci: Only warns, as permutation-based confidence intervals are not available for location-scale models in metafor either.
+        fixed: Match a string ``btt`` or ``att`` literally instead of as a regular expression.
+        verbose: Accepted and ignored (metafor shows the errors of refits that fail during the permutations).
+
+    Returns:
+        A result (an ``LSPermutestResult``) with the permutation tests of the location part and of the scale part. With ``exact='i'``, a list with the
+        numbers of iterations an exact test needs.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InputError: ``iter`` is below 2; ``skip_beta`` and ``skip_alpha`` are both set (or the scale model has only an intercept
+            and ``skip_beta`` is set); ``btt`` or ``att`` matches no coefficient; a ``control`` entry is not accepted.
+        metafopy.errors.ArgumentError: ``control`` has an unknown entry.
     """
     iter = int(iter)  # R has one number type: iter = 100 is a double
     if iter <= 1:

@@ -1,11 +1,9 @@
 """Construction of the variance-covariance matrix of dependent effect sizes (metafor's ``vcalc``).
 
 R source: https://github.com/wviechtb/metafor/blob/master/R/vcalc.r. Documentation:
-https://wviechtb.github.io/metafor/reference/vcalc.html. The correlation structure for
-estimates of different outcome types and for estimates that share a group follows
-Pustejovsky and Tipton (2022), https://doi.org/10.1007/s11121-021-01246-3 and the
-discussion at https://www.metafor-project.org/doku.php/analyses:berkey1998. The nearest
-positive definite matrix is that of Higham (2002), https://doi.org/10.1093/imanum/22.3.329.
+https://wviechtb.github.io/metafor/reference/vcalc.html. The nearest positive definite
+matrix (``nearpd``) is computed with the algorithm of Higham (2002),
+https://doi.org/10.1093/imanum/22.3.329, which R's ``Matrix::nearPD`` implements.
 """
 
 import collections.abc
@@ -304,26 +302,57 @@ def vcalc(
 ) -> FloatArray | scipy.sparse.csr_array | pandas.DataFrame:
     """Variance-covariance matrix of dependent estimates, block diagonal over ``cluster`` (metafor's ``vcalc``).
 
-    Every variable argument is an array or the name of a column of ``data``. Within a cluster the
-    correlation of two estimates is built from ``rho`` (a scalar, or a pair of scalars or of
-    matrices as pandas data frames with row and column labels: the first for the ``obs`` values
-    within a ``type``, the second for the ``type`` values), from ``phi`` and the time points
-    ``time1``/``time2`` (an autoregressive structure), and from the groups ``grp1``/``grp2`` with
-    sizes ``w1``/``w2`` for estimates that are contrasts between two groups. With ``rvars`` (names or
-    0-based positions of columns of ``data``, or a ``slice`` of names for ``a:b``) the
-    variance-covariance matrices of the clusters are read from those columns instead, and ``vi`` is
-    typically 1.
-
-    The result is a dense ``numpy.ndarray`` (a :class:`metafopy.core.labelled.VCovMat`, which prints like
-    metafor's ``print.vcovmat``); ``sparse=True`` gives a ``scipy.sparse.csr_array`` and
-    ``retdat=True`` a data frame of the variables used with the matrix in columns ``V.1``, ``V.2``, ....
-    ``checkpd`` warns about clusters whose correlation matrix is not positive definite and ``nearpd``
-    replaces such a matrix by the nearest correlation matrix (``Matrix::nearPD(corr=TRUE)``).
+    Rows with the same ``cluster`` (and ``subgroup``) may be dependent, rows of different clusters are independent. Within a cluster the
+    correlation of two estimates is built from ``rho`` (estimates of the same or of different constructs), from ``phi`` and the time points
+    ``time1``/``time2`` (an autoregressive structure), and from the groups ``grp1``/``grp2`` with sizes ``w1``/``w2`` for estimates that are
+    contrasts between two conditions and so share a condition. The matrix can be used as the ``V`` argument of [rma_mv][metafopy.rma_mv].
+    With ``rvars`` the correlation matrices of the clusters are read from columns of ``data`` instead. See
+    <https://wviechtb.github.io/metafor/reference/vcalc.html>.
 
     Differences from R: metafor's undocumented ``nearPD`` alias of ``nearpd`` is not accepted; in
     ``rvars`` mode the matrix of a cluster is placed at that cluster's rows even when the rows of a
     cluster are not contiguous (R places the blocks in order of first appearance, which misaligns
     the matrix in that case).
+
+    Args:
+        vi: Sampling variances of the estimates, as an array or the name of a column of ``data``. Required. A single value is repeated for
+            as many rows as ``cluster`` has.
+        cluster: Clustering variable (for example the study), an array or a column name. Required, without missing values. Rows with the
+            same value may be dependent.
+        subgroup: Variable distinguishing independent subgroups within clusters (no overlap of subjects), an array or a column name. Rows
+            of different subgroups are independent even in the same cluster. ``None`` for no subgroups.
+        obs: Variable distinguishing different estimates of the same construct or response variable (for example several scales for
+            depression), an array or a column name. Needs ``rho``.
+        type: Variable distinguishing different types of constructs or response variables, an array or a column name. Needs ``rho``.
+        time1: Numeric time points at which the estimates were obtained (in the first condition for contrasts), an array or a column name.
+            Needs ``phi``.
+        time2: Numeric time points in the second condition for contrasts between two conditions, an array or a column name.
+        grp1: Group of the first condition for estimates that are contrasts between two conditions (for example ``[2, 3]`` with
+            ``grp2=[1, 1]`` for two treatments versus one control), an array or a column name. Give ``grp1`` alone or with ``grp2``.
+        grp2: Group of the second condition, an array or a column name.
+        w1: Size of the group of the first condition (or more generally its inverse-sampling-variance weight), numeric, an array or a column
+            name. Default: equal group sizes, which implies a correlation of 0.5 between contrasts that share a condition.
+        w2: Size (weight) of the group of the second condition, numeric, an array or a column name.
+        data: Data frame (or mapping of columns) holding the variables named above.
+        rho: Correlation of the sampling errors of estimates measured concurrently. A scalar, or a correlation matrix as a data frame whose
+            row and column labels are the unique values of ``obs`` (or of ``type``). With both ``obs`` and ``type`` a pair: the first element
+            (a scalar or matrix) is the within-construct correlation among the ``obs`` values, the second the between-construct correlation
+            among the ``type`` values.
+        phi: Autocorrelation of the sampling errors of two estimates that differ by one unit of ``time1``.
+        rvars: Columns of ``data`` that hold the correlation matrices of the clusters: names or 0-based positions, or a ``slice`` of names
+            (``slice('r1', 'r4')`` for R's ``r1:r4``). The first ``k_i`` columns hold the lower triangle of the matrix of the ``i``-th cluster
+            (``k_i`` rows); there must be as many columns as the largest cluster has rows. When given, all variable arguments except ``vi``,
+            ``cluster`` and ``subgroup`` are ignored. Needs ``data``.
+        checkpd: Warn about clusters whose variance-covariance matrix is not positive definite (default ``True``).
+        nearpd: Replace such matrices by the nearest correlation matrix (``Matrix::nearPD(corr=TRUE)`` in R). Use with care (default ``False``).
+        sparse: Return a sparse matrix (default ``False``).
+        retdat: Return a data frame of the variables used with the matrix appended in columns ``V.1``, ``V.2``, ... instead of the matrix
+            (default ``False``; metafor takes this as an undocumented extra argument).
+
+    Returns:
+        The k x k variance-covariance matrix, with k the length of ``vi``: a dense array that prints like metafor's ``vcovmat``
+        (`VCovMat`), a ``scipy.sparse.csr_array`` if ``sparse=True``, or with ``retdat=True`` a data frame of
+        the variables used with the matrix in the columns ``V.1``, ``V.2``, ....
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid (R stops with an error here).

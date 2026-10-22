@@ -1,6 +1,6 @@
 """Model fitting behind ``rma_glmm``: fixed, saturated and mixed-effects GLMMs of metafor's ``rma.glmm``.
 
-The four models follow Stijnen, Hamza and Ozdemir (2010), doi:10.1002/sim.3767,
+The four models follow Stijnen, Hamza and Ozdemir (2010), doi:10.1002/sim.4040,
 and Viechtbauer's documentation at https://wviechtb.github.io/metafor/reference/rma.glmm.html:
 ``UM.FS`` and ``UM.RS`` are unconditional logistic (``OR``) or Poisson (``IRR``)
 models with fixed or random study effects, ``CM.AL`` and ``CM.EL`` condition on

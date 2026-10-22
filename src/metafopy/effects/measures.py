@@ -118,13 +118,23 @@ INCOMPLETE = 'Cannot compute outcomes. Check that all of the required informatio
 
 
 def cmicalc(mi: numpy.typing.ArrayLike, method: bool | str = 'exact') -> FloatArray:
-    """Small-sample bias correction factor ``c(m)`` for SMDs (Hedges, 1981, doi:10.3102/10769986006002107).
+    """Small-sample bias correction factor for standardized mean differences.
 
-    ``method`` is ``"exact"`` (gamma-function form, computed on the log scale),
-    ``"approx"`` (``1 - 3/(4m - 1)``), or a logical (``True`` = exact, ``False`` = none).
+    Mirrors metafor's `cmicalc`, see https://wviechtb.github.io/metafor/reference/cmicalc.html.
+    The factor `c(m)` of Hedges (1981, doi:10.3102/10769986006002107) multiplies a standardized mean difference
+    to remove its small-sample bias. [escalc][metafopy.escalc] uses it for the measures SMD, SMD1, SMDH, SMD1H, SMN, SMCC, SMCR, SMCRH, SMCRP and
+    SMCRPH, passing its argument `correct` as `method`.
+
+    Args:
+        mi: degrees of freedom `m` (for example `n1i + n2i - 2`), scalar or array-like.
+        method: 'exact' | 'approx' | True | False. 'exact' (or True, the default) uses the gamma-function form, 'approx' the approximation
+            `1 - 3/(4m - 1)`, and False applies no correction (a factor of 1). Strings can be abbreviated; an empty string or None raises.
+
+    Returns:
+        Array of the factors `c(m)` with the shape of `mi`; with 'exact' or 'approx', NaN where `m <= 1` (or `mi` is missing).
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InputError: `method` is None, or a string that is not an abbreviation of 'exact' or 'approx'.
     """
     m = numpy.asarray(mi, dtype=numpy.float64)
     if isinstance(method, bool):
@@ -397,15 +407,83 @@ def escalc(
 ) -> pandas.DataFrame:
     """Calculate effect sizes ``yi`` and sampling variances ``vi`` (metafor's ``escalc``).
 
-    See https://wviechtb.github.io/metafor/reference/escalc.html for the
-    measures, their required arguments and the ``vtype`` options. ``add``
-    defaults to 1/2, except for measures where metafor uses 0 (AS, PHI, ZPHI,
-    RTET, ZTET, IRSD, PAS, PFT, IRS, IRFT). ``onlyo1``, ``addyi`` and
-    ``addvi`` correspond to metafor's ``...`` options of the same names.
+    See <https://wviechtb.github.io/metafor/reference/escalc.html> for the measures, the arguments each one needs and the ``vtype`` options.
+    ``add`` defaults to 1/2, except for the measures where metafor uses 0 (AS, PHI, ZPHI, RTET, ZTET, IRSD, PAS, PFT, IRS, IRFT).
 
-    Returns a :class:`pandas.DataFrame` with columns ``var_names`` (appended
-    to ``data`` when given and ``append=True``); ``attrs['measure']``,
-    ``attrs['slab']`` and ``attrs['ni']`` carry metafor's attributes.
+    Args:
+        measure: Effect size or outcome measure to compute, a metafor code such as ``'SMD'``, ``'OR'``, ``'RR'``, ``'ZCOR'`` or ``'PR'``; see the metafor
+            reference above for the full list. Which of the data arguments below are needed depends on the measure. ``None`` (with ``yi``) means
+            ``'GEN'``.
+        ai: 2x2 table frequencies (upper left cell).
+        bi: 2x2 table frequencies (upper right cell).
+        ci: 2x2 table frequencies (lower left cell).
+        di: 2x2 table frequencies (lower right cell).
+        n1i: Group sizes or row totals (first group or row).
+        n2i: Group sizes or row totals (second group or row).
+        x1i: Number of events (first group).
+        x2i: Number of events (second group).
+        t1i: Total person-times (first group).
+        t2i: Total person-times (second group).
+        m1i: Means (first group or time point).
+        m2i: Means (second group or time point).
+        sd1i: Standard deviations (first group or time point).
+        sd2i: Standard deviations (second group or time point).
+        xi: Frequencies of the event of interest.
+        mi: Frequencies of the complement of the event of interest, or the group means.
+        ri: Raw correlation coefficients.
+        ti: Total person-times or t-test statistics.
+        fi: F-test statistics.
+        pi: (Signed) p-values.
+        sdi: Standard deviations.
+        r2i: ``R^2`` values.
+        mini: Minimum values.
+        maxi: Maximum values.
+        ni: Sample or group sizes.
+        yi: Effect size estimates, for ``measure='GEN'`` (used as they are, with ``vi`` or ``sei``).
+        vi: Sampling variances matching ``yi``.
+        sei: Standard errors matching ``yi``; ``vi`` is their square. Ignored when ``vi`` is given.
+        data: Data frame (or mapping of columns) holding the variables named in the data arguments. Each of
+            the arguments above is then an array or
+            the name of a column of ``data``.
+        slab: Study labels, as a sequence or a column name. Stored in ``attrs['slab']``.
+        flip: Flip the sign of the estimates: a boolean (or a boolean per study), or a numeric multiplier (one per study), or the name of a column of
+            ``data``. The sampling variances are multiplied by the square of the multiplier.
+        subset: Studies to keep in the returned frame: a boolean array, 0-based indices or an expression string evaluated on ``data``.
+        include: Studies for which the measure is computed (the others get missing values), given like ``subset``.
+        add: Non-negative amount to add to zero cells, counts or frequencies. Default ``0.5`` (``0`` for the measures listed above).
+        to: When ``add`` is added: ``'only0'`` (to the table of a study with a zero cell, the default), ``'all'``, ``'if0all'`` (to all tables when any
+            has a zero cell) or ``'none'``.
+        drop00: Drop studies with no cases or events (or only cases) in both groups from the calculations (set their values to missing). Used for the
+            2x2 table measures and ``'IRR'``, ``'IRD'`` and ``'IRSD'`` only.
+        vtype: Type of sampling variance: one of ``'UB'``, ``'LS'`` (the default), ``'LS2'``, ``'LS3'``, ``'HO'``, ``'ST'``, ``'CS'``,
+            ``'AV'``, ``'AV2'``, ``'AVHO'``, ``'H0'``, ``'H0a'``, ``'H0b'`` or ``'MAX'``. The valid options depend on the measure; a sequence gives one
+            type per study.
+        correct: Apply the bias correction to the estimates (default ``True``), for the measures that have one (``'SMD'``, ``'SMD1'``, ``'SMDH'``,
+            ``'SMD1H'``, ``'ROM'``, ``'VR'``, ``'CVR'``, ``'SMN'``, ``'SDLN'``, ``'CVLN'``, ``'SMCC'``, ``'SMCR'``, ``'SMCRH'``, ``'SMCRP'``,
+            ``'SMCRPH'``, ``'ROMC'`` and ``'CVRC'``); it has no effect on the others. For the measures built on [cmicalc][metafopy.cmicalc]
+            (``'SMD'``, ``'SMD1'``, ``'SMDH'``, ``'SMD1H'``, ``'SMN'``, ``'SMCC'``, ``'SMCR'``, ``'SMCRH'``, ``'SMCRP'``, ``'SMCRPH'``) it may also
+            be ``'exact'`` (the same as ``True``) or ``'approx'``; ``ROM``, ``VR``, ``CVR``, ``SDLN``, ``CVLN``, ``ROMC`` and ``CVRC`` need a bool.
+        cutoff: Absolute value above which a computed estimate is flagged with a warning. The default is 2 for ``'SMD'``, ``'SMDH'``, ``'SMD1'``
+            and ``'SMD1H'`` and no check for the other measures; ``NaN`` switches the check off. A given set of estimates is flagged once per
+            session.
+        var_names: Names of the estimate and sampling variance columns of the result (``('yi', 'vi')``; a third name with ``add_measure``).
+        add_measure: Add a column recording the measure computed (named ``'measure'`` unless ``var_names`` has a third entry).
+        append: Return ``data`` with the new columns appended (``True``, the default) or only the new columns.
+        replace: Replace existing ``yi``/``vi`` values in ``data`` (``True``, the default) or only their missing values. Needs ``append=True``.
+        digits: Number of decimals used when the frame is printed (stored in ``attrs['digits']``; ``None`` uses the ``digits`` option, 4 by default).
+            The stored values are not rounded.
+        onlyo1: For the 2x2 table measures: ``add`` is added to the ``ai`` and ``ci`` cells only, not to ``bi`` and ``di``. The same option as
+            metafor's ``...`` argument.
+        addyi: ``True`` (the default) computes ``yi`` from the counts after ``add`` and ``to`` have been applied, ``False`` from the unadjusted counts
+            (zero cells then give missing values for ratios). Used by ``'RR'``, ``'OR'`` (and ``'OR2D'``, ``'OR2DN'``, ``'OR2DL'``, ``'MPORM'``),
+            ``'RD'``, ``'IRR'``, ``'IRD'``, ``'IRSD'``, ``'PR'``, ``'PLN'``, ``'PLO'``, ``'IR'``, ``'IRLN'`` and ``'IRS'``; the other measures ignore
+            it. The same option as metafor's ``...`` argument.
+        addvi: The same for the sampling variances ``vi``, for the same measures.
+
+    Returns:
+        The columns ``var_names`` (``yi`` and ``vi``), appended to ``data`` when it is given and ``append=True``, else a frame with those columns
+            only. ``attrs['measure']``, ``attrs['slab']``, ``attrs['ni']``, ``attrs['digits']``, ``attrs['yi_names']`` and ``attrs['vi_names']``
+            carry metafor's attributes, so the frame can be passed to [rma_uni][metafopy.rma_uni].
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.

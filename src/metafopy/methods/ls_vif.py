@@ -256,26 +256,47 @@ def vif_rma_ls(
     joina: collections.abc.Sequence[typing.Any] | None = None,
     LB: bool = False,
 ) -> metafopy.methods.vif.VIFResult | LSVIFResult:
-    """(G)VIFs for the location and, if the scale model has predictors, the scale coefficients of a location-scale model.
+    """(Generalized) variance inflation factors for the location and, if the scale model has predictors, the scale coefficients of a location-scale model
+    (metafor's ``vif.rma``).
 
-    ``btt`` and ``att`` (0-based) select sets of location and scale coefficients as ``btt`` does in :func:`metafopy.vif`;
-    ``table=True`` adds the coefficient table; ``reestimate=True`` refits the model with only the coefficients in each set.
-    A single :class:`metafopy.VIFResult` is returned when only one of the two parts applies, otherwise an
-    :class:`LSVIFResult` with both.
+    Unlike metafor, a model given by formulas has its model matrix columns permuted for ``sim`` (``sim_type == 'X'``), not the underlying data variables.
+    The location part is left out if the location model has only an intercept, the scale part if the scale model has.
 
-    ``sim=True`` (1000 iterations) or ``sim=n`` refits the model ``n`` times with independently permuted columns of the model matrix
-    (of the location and, separately, of the scale part), giving ``sim`` and ``prop`` in the results. Iteration ``l`` shuffles the
-    columns with R's generator seeded by ``seed + l`` (as metafor), so the draws are reproducible and do not depend on ``parallel``;
-    without ``seed`` the seeds are drawn from :func:`metafopy.core.rng.get_rng`. Unlike metafor, a model given by formulas has its model
-    matrix columns permuted (``sim_type == 'X'``), not the underlying data variables. ``parallel`` (``'snow'``/``'multicore'``) runs the
-    iterations in a process pool of ``ncpus`` workers, or on the :class:`concurrent.futures.Executor` given as ``cl``.
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/vif.rma.r>; reference page: <https://wviechtb.github.io/metafor/reference/vif.html>.
 
-    ``intercept=True`` includes the intercepts and ``fixed=True`` matches string ``btt``/``att`` literally (metafor's ``...`` arguments).
-    ``joinb`` and ``joina`` give one label per column of the location and scale model matrix; with ``sim`` the columns that share a label are
-    permuted together. ``LB`` is accepted as in metafor and changes nothing.
+    Args:
+        res: Location-scale model fitted by [rma_uni][metafopy.rma_uni] with ``scale``.
+        btt: Sets of location coefficients, as for [vif][metafopy.vif]: 0-based, an int, a string searched for (Python ``re.search``) in the coefficient
+            names, a list of ints, or a list of sets.
+        att: Sets of scale coefficients, as ``btt``.
+        table: Add the VIFs to the coefficient tables (``table`` of the result; ignored for a part whose ``btt`` or ``att`` is given).
+        reestimate: Refit the model with only the coefficients of each set when computing its (G)VIF.
+        sim: Simulate the distribution of each (G)VIF under independence: ``True`` for 1000 iterations or a number of iterations. The model is refitted
+            with independently permuted columns of the model matrix; the result then has ``sim`` and ``prop``. Iteration ``l`` is seeded with ``seed + l``
+            when ``seed`` is given, as in metafor, otherwise from the stream of [set_seed][metafopy.set_seed]. The location and the scale part are
+            permuted separately. The draws do not depend on ``parallel``.
+        progbar: Print a progress bar to stderr while simulating (``sim``). Default True, as in metafor.
+        seed: Seed for the simulation (``sim``). Default: the stream of [set_seed][metafopy.set_seed] is continued.
+        parallel: Parallel simulation: ``'no'`` (default), ``'snow'`` or ``'multicore'``; both use a process pool of ``ncpus`` workers ('multicore'
+            forks them where the platform allows). As in metafor, ``'no'`` with ``ncpus > 1`` (or with ``cl``) is ``'snow'``, and ``'snow'`` or
+            ``'multicore'`` with ``ncpus < 2`` and no ``cl`` runs serially. Any other value raises an InputError.
+        ncpus: Number of worker processes (at least 1).
+        cl: Executor to run the iterations on instead of a process pool.
+        digits: Number of decimals of the printout. Default: the ``digits`` option, else that of the model.
+        intercept: Include the intercepts among the coefficients (they are left out by default).
+        fixed: Match a string ``btt`` or ``att`` literally instead of as a regular expression.
+        joinb: One label per column of the location model matrix; with ``sim`` the columns that share a label are permuted together.
+        joina: One label per column of the scale model matrix, as ``joinb``.
+        LB: Accepted as in metafor, where it balances the load of a ``'snow'`` cluster; it changes nothing here.
+
+    Returns:
+        A [VIFResult][metafopy.VIFResult] when only the location or the scale part has predictors, otherwise an ``LSVIFResult`` holding the results of
+        both parts as ``beta`` and ``alpha`` (the scale part has ``attspec``).
 
     Raises:
-        metafopy.errors.InputError: an argument is invalid or the model has no predictors.
+        metafopy.errors.InputError: neither the location nor the scale model has predictors; ``sim`` is a number below 2; ``btt`` or ``att`` is
+            invalid (the intercept without ``intercept=True``, out of range or matching no coefficient); ``joinb`` or ``joina`` does not have one
+            label per column; ``parallel`` is not an accepted value or ``ncpus`` is below 1.
     """
     loc = not res.int_only
     scale = not res.Z_int_only

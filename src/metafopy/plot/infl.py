@@ -146,7 +146,9 @@ def plot_infl(
     ax: matplotlib.axes.Axes | None = None,
     layout: object = None,
 ) -> PlotInflResult:
-    """Plot the case-deletion diagnostics returned by :func:`~metafopy.influence` (``plot.infl.rma.uni``).
+    """Plot the case-deletion diagnostics returned by [influence][metafopy.influence] (``plot.infl.rma.uni``).
+
+    Mirrors metafor's ``plot.infl.rma.uni()``, see <https://wviechtb.github.io/metafor/reference/plot.infl.rma.uni.html>.
 
     ``plotinf`` selects the diagnostics (``True`` for all eight, or their numbers 1-8: ``rstudent``, ``dffits``,
     ``cook.d``, ``cov.r``, ``tau2.del``, ``QE.del``, ``hat`` and ``weight``) and ``plotdfbs`` the DFBETAS (``True``
@@ -159,11 +161,39 @@ def plot_infl(
     diagnostics are also plotted (or ``dfbsnew`` is true), as metafor starts a new page for them. ``layout`` is accepted for old code
     and ignored with a warning, as metafor does.
 
-    Returns a :class:`PlotInflResult` with the axes.
+    Args:
+        x: The case-deletion diagnostics returned by [influence][metafopy.influence].
+        plotinf: Diagnostics to plot: ``True`` for all eight, or their numbers 1 to 8 (``rstudent``, ``dffits``, ``cook.d``, ``cov.r``, ``tau2.del``,
+            ``QE.del``, ``hat``, ``weight``; numbers outside 1 to 8 are dropped, others rounded). ``False`` plots none, which needs ``plotdfbs``.
+        plotdfbs: DFBETAS to plot: ``True`` for all, or the numbers of the coefficients (starting at 1 as in metafor; numbers outside 1 to the number of
+            coefficients are dropped). Default: ``False``.
+        dfbsnew: Has no effect here: the DFBETAS are always drawn on a new figure when the diagnostics are drawn too, and on ``ax`` when they are not
+            (metafor's ``dfbsnew=FALSE`` waits for a page change on the same device).
+        logcov: Plot the covariance ratios (diagnostic 4) on a log scale. Default: ``True``.
+        slab_style: Labels of the horizontal axis: 1 for the study numbers (or ``ids``), 2 for the study labels, 3 for abbreviated study labels. Default: 1.
+        las: Orientation of the horizontal-axis tick labels (R's ``par(las=)`` values 0 to 3): 2 and 3 draw them vertical, 0 and 1 horizontal. The
+            vertical-axis labels are not affected, and other values are not checked. Default: 0.
+        pch: Plotting symbol of the points (R's ``pch`` code). Default: 21, a circle with border black and fill ``bg``.
+        bg: Fill colour of the points. Default: grey.
+        bg_infl: Fill colour of the influential studies. Default: ``'red'``.
+        col_na: Colour of the line joining the points around missing diagnostics (``na_action`` ``'exclude'`` or ``'pass'``). Default: light grey.
+        ids: Study identifiers for the horizontal axis when ``slab_style`` is 1, one per study. Default: ``1..k``.
+        na_action: What to do with missing diagnostics (R's ``options(na.action=)``): ``'omit'`` (the default) leaves out studies with missing
+            diagnostics, ``'exclude'`` and ``'pass'`` keep them (a gap, with the other points joined by a line in ``col_na``) and ``'fail'`` raises if
+            there are any.
+        mfrow: Number of rows and columns of the grid of panels for the diagnostics, e.g. ``(8, 1)`` for one column. Default: one panel for 1, two rows
+            for 2, three for 3, 2 x 2 for 4, 5 x 1 for 5, 3 x 2 for 6, 7 x 1 for 7 and 4 x 2 for 8 diagnostics (as metafor does).
+        ax: Matplotlib axes whose area the panels fill. Default: the current axes.
+        layout: Accepted for old code and ignored with a warning, as metafor does.
+
+    Returns:
+        A ``PlotInflResult`` with the axes of the diagnostics (``axes``) and of the DFBETAS (``dfbs_axes``, empty unless drawn).
 
     Raises:
-        metafopy.errors.ArgumentError: ``x`` is not an :class:`~metafopy.InfluenceResult` (e.g. an ``rma.mv`` fit: metafor has no ``influence.rma.mv``).
-        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.ArgumentError: ``x`` is not an [InfluenceResult][metafopy.InfluenceResult], for example a fitted model (``influence`` itself is
+            not available for ``rma_mv`` fits, so there is no such result for them either).
+        metafopy.errors.InputError: ``plotinf`` or ``plotdfbs`` selects nothing, neither is requested, ``na_action`` is unknown or ``'fail'`` and
+            diagnostics are missing, ``ids`` or the labels have the wrong length, or ``mfrow`` has fewer panels than diagnostics.
     """
     if layout is not None:
         warnings.warn("Argument 'layout' has been deprecated.", stacklevel=2)

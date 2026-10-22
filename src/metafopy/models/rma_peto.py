@@ -1,7 +1,7 @@
 """Peto's one-step method for pooling 2x2 tables (metafor's ``rma.peto``).
 
-Yusuf et al. (1985), doi:10.1016/S0033-0620(85)80003-7, popularised the
-method; the heterogeneity test is Peto's. See
+The method was suggested by Peto and is described by Yusuf et al. (1985),
+doi:10.1016/S0033-0620(85)80003-7; the heterogeneity test is Peto's. See
 https://wviechtb.github.io/metafor/reference/rma.peto.html and the source at
 https://github.com/wviechtb/metafor/blob/master/R/rma.peto.r.
 """
@@ -77,22 +77,44 @@ def rma_peto(
 ) -> PetoResult:
     """Fit Peto's one-step method to a set of 2x2 tables.
 
-    Mirrors metafor's ``rma.peto()``; see
-    https://wviechtb.github.io/metafor/reference/rma.peto.html. The first
-    element of ``add``, ``to`` and ``drop00`` is used for the individual
-    ``yi``/``vi`` values, the second for the counts used in the pooled
-    estimate (by default nothing is added to them).
+    Mirrors metafor's ``rma.peto()``, see <https://wviechtb.github.io/metafor/reference/rma.peto.html>. The pooled effect is a log odds ratio
+    (Yusuf et al., 1985). The first element of ``add``, ``to`` and ``drop00`` is used for the individual ``yi``/``vi`` values, the second for the
+    counts used in the pooled estimate (by default nothing is added to them).
 
-    Examples
-    --------
-    >>> from metafopy import datasets, rma_peto
-    >>> dat = datasets.load("dat.bcg")  # doctest: +SKIP
-    >>> rma_peto(ai="tpos", bi="tneg", ci="cpos", di="cneg", data=dat)  # doctest: +SKIP
+    Args:
+        ai: Frequencies of the 2x2 tables, upper left cell (event in group 1), as an array or the name of a column of ``data``.
+        bi: Frequencies of the 2x2 tables, upper right cell (no event in group 1).
+        ci: Frequencies of the 2x2 tables, lower left cell (event in group 2).
+        di: Frequencies of the 2x2 tables, lower right cell (no event in group 2).
+        n1i: Size of group 1 (row total); can be given instead of ``bi``.
+        n2i: Size of group 2 (row total); can be given instead of ``di``.
+        data: Data frame holding the variables named in the other arguments.
+        slab: Study labels, as a sequence or a column name. Defaults to ``1, 2, ...``.
+        subset: Which studies to use: a boolean array, an array of 0-based indices, or a string expression evaluated on ``data``.
+        add: Constant added to zero cells. A single value, or a pair: the first applies when the ``yi``/``vi`` values of the studies are computed
+            and the second to the counts entering the pooled estimate. Default ``0.5``, which with a single value is used for the ``yi``/``vi``
+            values only (the second is then ``0``).
+        to: Which tables get ``add``: ``'all'``, ``'only0'`` (those with a zero cell, the default), ``'if0all'`` (all, if any table has a zero cell)
+            or ``'none'``. A single value, or a pair as for ``add`` (the second is then ``'none'``).
+        drop00: Drop studies with no events (or only events) in both groups. A single value, or a pair as for ``add`` (the second is then
+            ``False``). Default ``True``.
+        level: Confidence interval level in percent (``95`` is 95%).
+        verbose: Print metafor's progress messages to stderr (and blank lines to stdout).
+        digits: Number of decimals used when printing, stored in the result.
+        na_action: What to do with studies that have missing values (metafor uses the global ``na.action`` option instead): ``'omit'`` (the default)
+            leaves them out with a warning and ``'fail'`` raises an error. ``'pass'`` leaves them out too.
 
-    ``verbose`` prints metafor's progress messages (to stderr).
+    Returns:
+        The fitted model. The pooled log odds ratio is in ``beta`` with ``se``, ``zval``, ``pval``, ``ci_lb`` and ``ci_ub``; ``QE``, ``QEp``,
+        ``I2`` and ``H2`` describe the heterogeneity (Peto's test; ``tau2`` is 0); ``summary()`` returns the printout as a string.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid, or one of the two outcomes never occurred.
+        metafopy.errors.InputError: an argument or the data is invalid, or one of the two outcomes never occurred in any table.
+
+    Examples:
+        >>> from metafopy import datasets, rma_peto
+        >>> dat = datasets.load("dat.bcg")  # doctest: +SKIP
+        >>> rma_peto(ai="tpos", bi="tneg", ci="cpos", di="cneg", data=dat)  # doctest: +SKIP
     """
     metafopy.core.verbose.binary_start(int(verbose), subset)
     add2, to2, drop2 = metafopy.models.binary.argument_pairs(add, to, drop00)

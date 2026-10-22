@@ -67,6 +67,14 @@ class ClusterResidualResult:
 
     ``X2`` is the cluster's (deleted) residuals' quadratic form ``e' Var(e)^-1 e``, ``k`` the number of observations in each
     cluster and ``cluster_slab`` the cluster ids (sorted).
+
+    Attributes:
+        obs: The residuals of the observations, a [ResidualResult][metafopy.ResidualResult].
+        cluster: The cluster of each observation.
+        X2: Quadratic form of the residuals of each cluster.
+        k: Number of observations in each cluster.
+        cluster_slab: The cluster ids, sorted; the labels of ``X2`` and ``k``.
+        digits: Number of decimals used when the result is printed.
     """
 
     obs: metafopy.methods.influence.ResidualResult
@@ -323,9 +331,30 @@ def cooks_rma_mv(
 
     ``cluster`` (a column of the data or a vector for the rows of the original data) deletes whole clusters; the result is
     then indexed by the sorted cluster ids. ``btt`` (0-based) selects the coefficients the distance refers to. With
-    ``reestimate=False`` the variance components are not re-estimated in the refits. ``parallel``, ``ncpus`` and ``cl``
-    run the refits in a process pool (see :mod:`metafopy.core.parallel`); ``progbar=True`` prints a progress bar. ``LB`` is accepted as in
-    metafor (load balancing of a cluster) and changes nothing.
+    ``reestimate=False`` the variance components are not re-estimated in the refits. Cook's distance is the Mahalanobis distance between the
+    predicted values with and without the case (Viechtbauer & Cheung, 2010, [doi:10.1002/jrsm.11](https://doi.org/10.1002/jrsm.11)). See
+    <https://wviechtb.github.io/metafor/reference/influence.rma.mv.html>.
+
+    Args:
+        model: A model fitted by [rma_mv][metafopy.rma_mv] (also one passed through [robust][metafopy.robust]).
+        progbar: Print a progress bar to stderr while the refits are made (default ``False``).
+        cluster: Clustering variable: a column name of the data the model was fitted to, or a vector with one value per row of that data (before
+            subsetting and removal of rows with missing values, which are applied to it automatically). Whole clusters are then deleted in turn.
+            ``None`` (the default) deletes each observation in turn.
+        reestimate: Re-estimate the variance and correlation components after each deletion (default ``True``). With ``False`` they stay at the
+            full-model values, which is faster and only approximate.
+        parallel: ``'no'`` (the default), ``'snow'`` or ``'multicore'``; run the refits in a process pool (see ``ncpus``).
+        ncpus: Number of worker processes (default 1; a value above 1 turns parallel processing on).
+        cl: An executor to run the refits on, instead of one created for the call.
+        LB: metafor reads this undocumented extra argument to use load-balanced scheduling with ``parallel='snow'``; accepted here and ignored.
+        btt: The coefficients the distances refer to, as 0-based indices (or a regular expression matched against the coefficient names).
+            ``None`` (the default) uses all coefficients. metafor takes this as an undocumented extra argument.
+        na_action: How observations dropped for missing values are handled: ``'omit'`` (the default; no entry for them), ``'exclude'`` or
+            ``'pass'`` (an entry of NaN for each) or ``'fail'`` (raise an error).
+
+    Returns:
+        The Cook's distances, a Series indexed by observation label, or by the sorted cluster ids when ``cluster`` is given. A case whose
+        refit fails gets NaN.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
@@ -360,12 +389,31 @@ def dfbetas_rma_mv(
     """DFBETAS of each observation, or of each cluster (metafor's ``dfbetas.rma.mv``): one column per coefficient.
 
     The change in the coefficients when a cluster is deleted is scaled by the standard errors of the full-data fit with
-    the variance components fixed at the values estimated without the cluster. The arguments are those of
-    :func:`cooks_rma_mv`.
+    the variance components fixed at the values estimated without the cluster. See
+    <https://wviechtb.github.io/metafor/reference/influence.rma.mv.html>.
+
+    Args:
+        model: A model fitted by [rma_mv][metafopy.rma_mv]; not allowed for a model passed through [robust][metafopy.robust].
+        progbar: Print a progress bar to stderr while the refits are made (default ``False``).
+        cluster: Clustering variable: a column name of the data the model was fitted to, or a vector with one value per row of that data (before
+            subsetting and removal of rows with missing values, which are applied to it automatically). Whole clusters are then deleted in turn.
+            ``None`` (the default) deletes each observation in turn.
+        reestimate: Re-estimate the variance and correlation components after each deletion (default ``True``). With ``False`` they stay at the
+            full-model values, which is faster and only approximate.
+        parallel: ``'no'`` (the default), ``'snow'`` or ``'multicore'``; run the refits in a process pool (see ``ncpus``).
+        ncpus: Number of worker processes (default 1; a value above 1 turns parallel processing on).
+        cl: An executor to run the refits on, instead of one created for the call.
+        LB: metafor reads this undocumented extra argument to use load-balanced scheduling with ``parallel='snow'``; accepted here and ignored.
+        na_action: How observations dropped for missing values are handled: ``'omit'`` (the default; no row for them), ``'exclude'`` or
+            ``'pass'`` (a row of missing values for each) or ``'fail'`` (raise an error).
+
+    Returns:
+        A data frame of DFBETAS with one row per observation (or per sorted cluster id when ``cluster`` is given) and one column per
+        coefficient. A case whose refit fails gets NaN.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
-        metafopy.errors.NotSupportedError: the model was passed through :func:`metafopy.robust`.
+        metafopy.errors.NotSupportedError: the model was passed through [robust][metafopy.robust].
     """
     x = model
     not_robust(x)
@@ -439,13 +487,35 @@ def rstudent_rma_mv(
     """Externally standardised (deleted) residuals of an ``rma.mv`` fit (metafor's ``rstudent.rma.mv``).
 
     Each observation's residual is computed from the fit without it (without its whole cluster if ``cluster`` is given);
-    its variance adds the marginal variance under the full-data fit with the variance components of that fit. With
-    ``cluster`` a :class:`ClusterResidualResult` is returned, which also holds each cluster's ``X2`` statistic. The other
-    arguments are those of :func:`cooks_rma_mv`.
+    the variance of the deleted residual is the marginal variance of the deleted observation(s) (computed with the variance components estimated
+    without them) plus the variance of their predicted values from the fit without them. With
+    ``cluster`` a [ClusterResidualResult][metafopy.methods.mv_diagnostics.ClusterResidualResult] is returned, which also holds each
+    cluster's ``X2`` statistic. See <https://wviechtb.github.io/metafor/reference/residuals.rma.html>.
+
+    Args:
+        model: A model fitted by [rma_mv][metafopy.rma_mv]; not allowed for a model passed through [robust][metafopy.robust].
+        digits: Number of decimals used when the result is printed (default 4).
+        progbar: Print a progress bar to stderr while the refits are made (default ``False``).
+        cluster: Clustering variable: a column name of the data the model was fitted to, or a vector with one value per row of that data (before
+            subsetting and removal of rows with missing values, which are applied to it automatically). Whole clusters are then deleted in turn.
+            ``None`` (the default) deletes each observation in turn.
+        reestimate: Re-estimate the variance and correlation components after each deletion (default ``True``). With ``False`` they stay at the
+            full-model values, which is faster and only approximate.
+        parallel: ``'no'`` (the default), ``'snow'`` or ``'multicore'``; run the refits in a process pool (see ``ncpus``).
+        ncpus: Number of worker processes (default 1; a value above 1 turns parallel processing on).
+        cl: An executor to run the refits on, instead of one created for the call.
+        LB: metafor reads this undocumented extra argument to use load-balanced scheduling with ``parallel='snow'``; accepted here and ignored.
+        na_action: How observations dropped for missing values are handled: ``'omit'`` (the default; no row for them), ``'exclude'`` or
+            ``'pass'`` (a row of missing values for each) or ``'fail'`` (raise an error).
+
+    Returns:
+        A [ResidualResult][metafopy.ResidualResult] with the deleted residuals ``resid``, their standard errors ``se`` and z-values ``z`` per
+        observation; with ``cluster``, a [ClusterResidualResult][metafopy.methods.mv_diagnostics.ClusterResidualResult] that adds the ``X2``
+        statistic and the number of observations ``k`` of each cluster.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
-        metafopy.errors.NotSupportedError: the model was passed through :func:`metafopy.robust`.
+        metafopy.errors.NotSupportedError: the model was passed through [robust][metafopy.robust].
     """
     x = model
     not_robust(x)
@@ -473,16 +543,32 @@ def rstandard_rma_mv(
     *,
     na_action: metafopy.methods.common.NAAction = 'omit',
 ) -> metafopy.methods.influence.ResidualResult | ClusterResidualResult:
-    """Internally standardised residuals of an ``rma.mv`` fit (metafor's ``rstandard.rma.mv``).
+    """Internally standardised residuals of an [rma_mv][metafopy.rma_mv] fit (metafor's ``rstandard.rma.mv``).
 
-    The marginal residuals ``y - X b`` are divided by the square roots of the diagonal of ``(I - H) M (I - H)'``. With
-    ``cluster`` (as for :func:`cooks_rma_mv`) a :class:`ClusterResidualResult` is returned, which also holds the ``X2``
-    statistic ``e' Var(e)^-1 e`` of each cluster's residuals. metafor has no ``type`` argument for ``rma.mv`` fits (only
-    marginal residuals).
+    The marginal residuals ``y - X b`` are divided by the square roots of the diagonal of ``(I - H) M (I - H)'``. Unlike ``rma_uni``, there is no ``type``
+    argument, as metafor gives only marginal residuals for ``rma.mv`` fits.
+
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/rstandard.rma.mv.r>; reference page:
+    <https://wviechtb.github.io/metafor/reference/residuals.rma.html>.
+
+    Args:
+        model: Model fitted by [rma_mv][metafopy.rma_mv] (not a robust fit).
+        digits: Number of decimals of the printout (default 4; the digits of the model are not used).
+        cluster: A column name of the data or a vector with one value per row of the original data. With it the residuals of each cluster are also
+            combined (statistic ``X2 = e' Var(e)^-1 e``, NaN if the cluster's variance matrix is not positive definite). Default: none.
+        na_action: What to do with studies left out of the fit because of missing values: ``'omit'`` (default) drops them, ``'exclude'`` and ``'pass'``
+            keep one row per study with NaN for those left out, ``'fail'`` raises an InputError if there are any. Corresponds to R's
+            ``na.action`` option.
+
+    Returns:
+        A [ResidualResult][metafopy.ResidualResult] with the residuals ``resid``, their standard errors ``se`` and the standardised values ``z``, labelled
+        with the study labels. With ``cluster``, a [ClusterResidualResult][metafopy.methods.mv_diagnostics.ClusterResidualResult] holding that result per
+        observation (``obs``) and per cluster, with each cluster's ``X2`` statistic.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
-        metafopy.errors.NotSupportedError: the model was passed through :func:`metafopy.robust`.
+        metafopy.errors.InputError: ``cluster`` cannot be found, has the wrong length or has missing values; ``na_action`` is not valid, or is ``'fail'``
+            and studies were left out of the fit.
+        metafopy.errors.NotSupportedError: the model was passed through [robust][metafopy.robust].
     """
     x = model
     not_robust(x)
@@ -513,7 +599,15 @@ def rstandard_rma_mv(
 
 
 def influence_rma_mv(model: MV, *args: typing.Any, **kwargs: typing.Any) -> metafopy.methods.influence.InfluenceResult:
-    """Not available: metafor has no ``influence`` method for ``rma.mv`` fits (use :func:`metafopy.cooks_distance` and relatives).
+    """Not available: metafor has no ``influence`` method for ``rma.mv`` fits (use [cooks_distance][metafopy.cooks_distance] and relatives).
+
+    Args:
+        model: A model fitted by [rma_mv][metafopy.rma_mv].
+        *args: Ignored.
+        **kwargs: Ignored.
+
+    Returns:
+        Nothing; the function always raises.
 
     Raises:
         metafopy.errors.NotSupportedError: always, as in metafor.

@@ -2,8 +2,8 @@
 
 ``leave1out`` refits an intercept-only model with each study (or cluster of
 studies) left out in turn; ``cumul`` adds the studies one at a time in a given
-order (Lau et al. 1992, doi:10.1056/NEJM199207023270206 popularised the
-cumulative approach). See
+order (Chalmers & Lau 1993, doi:10.1177/096228029300200204; Lau, Schmid &
+Chalmers 1995, doi:10.1016/0895-4356(94)00106-Z). See
 https://wviechtb.github.io/metafor/reference/leave1out.rma.uni.html and
 https://wviechtb.github.io/metafor/reference/cumul.rma.uni.html.
 """
@@ -43,6 +43,30 @@ class Leave1outResult:
     ``None`` for equal/fixed/common-effects models. ``measure``, ``level`` (the alpha of the
     confidence intervals) and ``slab_null`` (the studies carry no labels of their own) are used by
     the plots of cumulative results.
+
+    Attributes:
+        estimate: The pooled estimates, one per left-out study.
+        se: Their standard errors (NaN after a transformation).
+        stat: The test statistics (z or t values) of the estimates.
+        pval: Their p-values.
+        ci_lb: Lower bounds of the confidence intervals.
+        ci_ub: Upper bounds of the confidence intervals.
+        Q: Test statistics for the test of heterogeneity.
+        Qp: Their p-values.
+        tau2: Estimates of ``tau^2``, or ``None`` for equal-, fixed- and common-effects models.
+        I2: Values of ``I^2``.
+        H2: Values of ``H^2``.
+        slab: Row labels (``'-<study>'`` for a left-out study).
+        stat_name: Name of the test statistic column, ``'zval'`` or ``'tval'``.
+        digits: Number of decimals used when the result is printed.
+        digit_map: Per-quantity decimals when ``digits`` was given as a mapping, else ``None``.
+        transf: Whether a transformation was applied.
+        k: Number of studies in each fit (cumulative results; ``None`` for a leave-one-out result).
+        order: Values of the ordering variable (cumulative results; ``None`` for a leave-one-out result).
+        measure: Effect size measure of the model (set for cumulative results; ``'GEN'`` for a leave-one-out result).
+        level: Alpha of the confidence intervals (set for cumulative results; 0.05 for a leave-one-out result).
+        slab_null: Whether the studies carry no labels of their own.
+        ids: 0-based positions of the studies among those supplied, if known.
     """
 
     estimate: FloatArray
@@ -139,12 +163,30 @@ class Leave1outResult:
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class CumulResult(Leave1outResult):
-    """Cumulative meta-analysis results (:class:`Leave1outResult` plus ``k`` and the ordering variable)."""
+    """Cumulative meta-analysis results ([Leave1outResult][metafopy.Leave1outResult] plus ``k`` and the ordering variable).
+
+    Each row holds the result of the model fitted to the studies added so far, in the order the studies were added. ``k`` is the number of
+    studies included and ``order`` the values of the ordering variable. The other attributes are those of
+    [Leave1outResult][metafopy.Leave1outResult].
+    """
 
 
 @functools.singledispatch
 def leave1out(x: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> Leave1outResult:
-    """Leave-one-out analysis of a fitted model; see :func:`_leave1out_rma_uni`.
+    """Leave-one-out analysis of a fitted model: the model is refitted leaving out each study (or cluster) in turn.
+
+    This is a single-dispatch function: the implementation is chosen from the class of ``x``. See
+    [leave1out_rma_uni][metafopy.methods.leave1out.leave1out_rma_uni] for [rma_uni][metafopy.rma_uni] fits and
+    [leave1out_fixed_binary][metafopy.methods.binary.leave1out_fixed_binary] for [rma_mh][metafopy.rma_mh] and [rma_peto][metafopy.rma_peto]
+    fits. See <https://wviechtb.github.io/metafor/reference/leave1out.html>.
+
+    Args:
+        x: A fitted model object.
+        *args: Positional arguments passed to the implementation chosen by the class of ``x``.
+        **kwargs: Keyword arguments passed to the implementation chosen by the class of ``x``.
+
+    Returns:
+        What the implementation returns, a [Leave1outResult][metafopy.Leave1outResult].
 
     Raises:
         metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
@@ -205,11 +247,32 @@ def leave1out_rma_uni(
     then NaN. ``cluster`` gives one value per study supplied (or a column name
     in the data the model was fitted to) and leaves out all studies of one
     cluster at a time. With ``na_action='exclude'``/``'pass'`` (and no
-    ``cluster``) the output has one row per supplied study. ``digits`` defaults to the ``digits`` option, else to that of the model;
-    ``progbar=True`` prints a progress bar to stderr while the refits are made.
+    ``cluster``) the output has one row per supplied study. See <https://wviechtb.github.io/metafor/reference/leave1out.html>.
+
+    Args:
+        x: A model without moderators (an equal- or random-effects model) fitted by [rma_uni][metafopy.rma_uni]; not allowed for a model
+            passed through [robust][metafopy.robust].
+        cluster: Clustering variable: a column name of the data the model was fitted to, or an array with one value per supplied study. All
+            studies of one cluster are left out at a time and the rows are labelled by the sorted cluster ids. ``None`` (the default) leaves out
+            one study at a time. Unlike metafor, missing values in ``cluster`` are not rejected.
+        digits: Number of decimals used when the result is printed. ``None`` uses the ``digits`` option, else the ``digits`` of the model.
+        transf: A function applied to the estimates and confidence interval bounds (for example ``numpy.exp``). The integral and mode
+            transformations of `metafopy.transf` use the ``tau2`` of the model. The standard errors are then NaN.
+            ``None`` (the default) applies no transformation.
+        targs: Extra argument passed to ``transf`` as ``transf(x, targs)``. ``None`` (the default) calls ``transf(x)``.
+        na_action: How studies dropped for missing values are handled: ``'omit'`` (the default; no row for them), ``'exclude'`` or ``'pass'``
+            (a row of NaN for each, only without ``cluster``) or ``'fail'`` (which, as in metafor, does not raise an error here and gives the
+            same result as ``'omit'``).
+        progbar: Print a progress bar to stderr while the refits are made (default ``False``).
+
+    Returns:
+        A [Leave1outResult][metafopy.Leave1outResult] with one row per left-out study or cluster (labelled ``-<label>``) holding the
+        re-estimated ``estimate``, ``se``, ``stat`` (``zval``, or ``tval`` for t, knha and adhoc tests), ``pval``, ``ci_lb``, ``ci_ub``, ``Q``, ``Qp``, ``I2``
+        and ``H2`` (and ``tau2`` for random-effects models). A row is NaN when its refit fails.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InputError: an argument or the data is invalid, the model has moderators or there is a single study.
+        metafopy.errors.NotSupportedError: the model was passed through [robust][metafopy.robust].
     """
     metafopy.methods.common.check_na_action(na_action)
     metafopy.methods.fitview.check_class(x, notav=metafopy.methods.fitview.NOT_ROBUST)
@@ -284,7 +347,20 @@ def cluster_values(
 
 @functools.singledispatch
 def cumul(x: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> CumulResult:
-    """Cumulative meta-analysis of a fitted model; see :func:`_cumul_rma_uni`.
+    """Cumulative meta-analysis of a fitted model: the model is fitted to the first ``i`` studies for ``i = 1, ..., k``.
+
+    This is a single-dispatch function: the implementation is chosen from the class of ``x``. See
+    [cumul_rma_uni][metafopy.methods.leave1out.cumul_rma_uni] for [rma_uni][metafopy.rma_uni] fits and
+    [cumul_fixed_binary][metafopy.methods.binary.cumul_fixed_binary] for [rma_mh][metafopy.rma_mh] and [rma_peto][metafopy.rma_peto] fits.
+    See <https://wviechtb.github.io/metafor/reference/cumul.html>.
+
+    Args:
+        x: A fitted model object.
+        *args: Positional arguments passed to the implementation chosen by the class of ``x``.
+        **kwargs: Keyword arguments passed to the implementation chosen by the class of ``x``.
+
+    Returns:
+        What the implementation returns, a [CumulResult][metafopy.CumulResult].
 
     Raises:
         metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
@@ -306,21 +382,40 @@ def cumul_rma_uni(
     na_action: metafopy.methods.common.NAAction = 'omit',
     progbar: bool = False,
 ) -> CumulResult:
-    """Fit the intercept-only model to the first ``i`` studies for ``i = 1, ..., k``.
+    """Fit the intercept-only model to the first ``i`` studies for ``i = 1, ..., k`` (metafor's ``cumul.rma.uni``).
 
-    ``order`` is a variable (one value per supplied study, or a column name of
-    the model's data) giving the order in which studies are added; without it
-    the original order is used. With ``collapse=True`` studies sharing the same
-    value of ``order`` are added together. Studies dropped for missing values
-    in the fit are skipped (the ``na.omit`` behaviour).
-    ``na_action`` stands for R's ``options(na.action=)``: ``'fail'`` stops when studies were left out; ``'exclude'`` and ``'pass'`` keep a row of
-    missing values for each study left out (``'omit'`` has no row for it), as in metafor (see
-    https://github.com/wviechtb/metafor/blob/master/R/cumul.rma.uni.r).
-    ``digits`` defaults to the ``digits`` option, else to that of the model; ``progbar=True``
-    prints a progress bar to stderr while the refits are made.
+    A cumulative meta-analysis describes the accumulation of evidence as studies are added, typically in chronological order (Chalmers & Lau,
+    1993, [doi:10.1177/096228029300200204](https://doi.org/10.1177/096228029300200204); Lau, Schmid & Chalmers, 1995,
+    [doi:10.1016/0895-4356(94)00106-Z](https://doi.org/10.1016/0895-4356(94)00106-Z)). Studies dropped for missing values in the fit are skipped.
+    ``na_action`` stands for R's ``options(na.action=)``, as in metafor (see
+    <https://github.com/wviechtb/metafor/blob/master/R/cumul.rma.uni.r>). See <https://wviechtb.github.io/metafor/reference/cumul.html>.
+
+    Args:
+        x: A model without moderators (an equal- or random-effects model) fitted by [rma_uni][metafopy.rma_uni]; not allowed for a model
+            passed through [robust][metafopy.robust].
+        order: Variable giving the order in which the studies are added, ascending: a column name of the data the model was fitted to, or an
+            array with one value per supplied study. Studies with a missing value are not added. ``None`` (the default) uses the original order
+            and ignores ``collapse``.
+        digits: Number of decimals used when the result is printed. ``None`` uses the ``digits`` option, else the ``digits`` of the model.
+        transf: A function applied to the estimates and confidence interval bounds (for example ``numpy.exp``). The integral and mode
+            transformations of `metafopy.transf` use the ``tau2`` of the model. The standard errors are then NaN. ``None`` (the default)
+            applies no transformation.
+        targs: Extra argument passed to ``transf`` as ``transf(x, targs)``. ``None`` (the default) calls ``transf(x)``.
+        collapse: Add studies with the same value of ``order`` together instead of one at a time (default ``False``).
+        decreasing: Add the studies in descending order of ``order`` (default ``False``). metafor takes this as an undocumented extra argument.
+        na_action: How studies dropped for missing values are handled: ``'omit'`` (the default; no row for them), ``'exclude'`` or ``'pass'``
+            (a row of missing values for each) or ``'fail'`` (raise an error).
+        progbar: Print a progress bar to stderr while the refits are made (default ``False``).
+
+    Returns:
+        A [CumulResult][metafopy.CumulResult] with one row per added study (or group of studies) holding the number of studies included ``k``,
+        the values of ``order`` (the 0-based positions of the studies if ``order`` is ``None``) and the re-estimated ``estimate``, ``se``,
+        ``stat`` (``zval``, or ``tval`` for t, knha and adhoc tests), ``pval``, ``ci_lb``, ``ci_ub``, ``Q``, ``Qp``, ``I2`` and ``H2``
+        (and ``tau2`` for random-effects models).
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InputError: an argument or the data is invalid, the model has moderators, or ``na_action='fail'`` and values are missing.
+        metafopy.errors.NotSupportedError: the model was passed through [robust][metafopy.robust].
     """
     metafopy.methods.fitview.check_class(x, notav=metafopy.methods.fitview.NOT_ROBUST)
     metafopy.methods.common.check_na_action(na_action)

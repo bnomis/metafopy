@@ -399,11 +399,15 @@ def profile_ci(
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class SelProfileResult(metafopy.methods.profile.ProfileResult):
-    """Profile log-likelihood of ``tau^2`` or of one selection parameter.
+    """Profile log-likelihood of ``tau^2`` or of one selection parameter of a [selmodel][metafopy.selmodel] fit. It has the attributes of
+    [ProfileResult][metafopy.ProfileResult], with ``tau2`` holding the grid of the profiled component (also through the ``delta`` property for a
+    selection parameter, which raises AttributeError for a ``tau^2`` profile); ``I2`` and ``H2`` are NaN.
 
-    As :class:`~metafopy.ProfileResult`, with ``tau2`` holding the grid of the profiled component (``comp`` is
-    ``'tau2'`` or ``'delta'``; ``delta_pos`` the 0-based position of the selection parameter and ``deltas`` their
-    number). ``I2`` and ``H2`` are empty.
+    Attributes:
+        comp: The profiled component, ``'tau2'`` or ``'delta'``.
+        delta_pos: 0-based position of the profiled selection parameter (0 for a
+            ``tau^2`` profile).
+        deltas: Number of selection parameters of the model.
     """
 
     comp: str = 'tau2'

@@ -34,6 +34,25 @@ EPS = sys.float_info.epsilon
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class HcResult(metafopy.printing.HtmlRepr):
+    """Result of [hc][metafopy.hc].
+
+    Attributes:
+        beta: pooled estimate of the Henmi-Copas method: the inverse-variance weighted average of the effect sizes, with the weights of an
+            equal-effects model (so not the random-effects estimate of the original model).
+        se: standard error of `beta` (NaN if a transformation was applied).
+        ci_lb: lower bound of the Henmi-Copas confidence interval.
+        ci_ub: upper bound of the Henmi-Copas confidence interval.
+        beta_rma: estimate of the original model.
+        se_rma: standard error of the original model (NaN if a transformation was applied).
+        ci_lb_rma: lower bound of the confidence interval of the original model.
+        ci_ub_rma: upper bound of the confidence interval of the original model.
+        method: tau^2 estimator of the Henmi-Copas method (always 'DL', the DerSimonian-Laird estimator).
+        method_rma: tau^2 estimator of the original model.
+        tau2: DerSimonian-Laird tau^2 estimate, which enters the standard error and the interval of the Henmi-Copas method.
+        tau2_rma: tau^2 estimate of the original model.
+        digits: number of decimals used when printing.
+    """
+
     beta: float
     se: float
     ci_lb: float
@@ -49,6 +68,14 @@ class HcResult(metafopy.printing.HtmlRepr):
     digits: int = 4
 
     def summary(self, digits: int | None = None) -> str:
+        """Format the result as text, as metafor prints it.
+
+        Args:
+            digits: number of decimals. Default None: the digits stored in the result.
+
+        Returns:
+            The printed output as a string.
+        """
         d = metafopy.mfopt.option_digits(digits, self.digits)
         cols: list[tuple[str, list[str]]] = [
             ('method', [self.method_rma, self.method]),
@@ -75,10 +102,31 @@ def hc(
     targs: typing.Any = None,
     control: dict[str, typing.Any] | None = None,
 ) -> HcResult:
-    """Henmi-Copas CI for a random-effects model (no moderators); ``control`` takes ``tol`` and ``maxiter`` for the root search.
+    """Henmi and Copas pooled estimate and confidence interval for a random-effects model.
+
+    Mirrors metafor's `hc`, see https://wviechtb.github.io/metafor/reference/hc.html. The pooled estimate uses the inverse-variance weights of an
+    equal-effects model, which do not depend on the amount of heterogeneity; the heterogeneity is estimated with the DerSimonian-Laird
+    estimator and enters the standard error and the confidence interval (Henmi & Copas, 2010, doi:10.1002/sim.4029).
+
+    Args:
+        obj: a fitted equal- or random-effects model ([rma_uni][metafopy.rma_uni] result) without moderators.
+        digits: number of decimals used when the result is printed. Default None: the digits of `obj`.
+        transf: function applied to the estimate and the confidence interval bounds (e.g. `metafopy.transf.ilogit`). The standard errors
+            are then NaN. Default None: no transformation.
+        targs: additional argument for `transf`, passed as its second argument (for the integral and mode transformations, a mapping
+            with `tau2`, defaulting to the tau^2 of `obj`).
+        control: mapping with `tol` (tolerance of the root search, default `eps**0.25`) and `maxiter` (default 1000); other keys are ignored.
+
+    Returns:
+        An [HcResult][metafopy.HcResult] with the estimate `beta`, standard error `se` and bounds `ci_lb`, `ci_ub` of the Henmi-Copas
+        interval and the tau^2 estimate `tau2` it is based on, and the same quantities of the conventional model (`beta_rma`, `se_rma`,
+        `ci_lb_rma`, `ci_ub_rma`, `tau2_rma`, `method_rma`).
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InputError: an argument or the data is invalid, `obj` has moderators, k = 1, a sampling variance is not
+            positive, or the root search fails.
+        metafopy.errors.ArgumentError: `obj` is not an `rma_uni` result.
+        metafopy.errors.NotSupportedError: `obj` is a location-scale model or a selection model.
     """
     metafopy.methods.fitview.check_method(obj, 'hc')
     metafopy.methods.fitview.check_class(obj, must='rma.uni', notav=('rma.ls', 'rma.gen', 'rma.uni.selmodel'))

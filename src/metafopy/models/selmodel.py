@@ -5,9 +5,10 @@ A selection model describes how the chance that a study enters the meta-analysis
 jointly by maximum likelihood. The implementation follows ``selmodel.rma.uni()`` in metafor 5.2-1,
 https://github.com/wviechtb/metafor/blob/master/R/selmodel.rma.uni.r, see
 https://wviechtb.github.io/metafor/reference/selmodel.html for the models and the references: Iyengar and
-Greenhouse (1988, doi:10.1214/ss/1177013012), Hedges (1992), Vevea and Hedges (1995, doi:10.1007/BF02294384), Vevea and
-Woods (2005, doi:10.1037/1082-989X.10.4.428), Preston et al. (2004, doi:10.1002/sim.1722), Citkowicz and Vevea (2017,
-doi:10.1037/met0000092) and Pustejovsky (2024).
+Greenhouse (1988, doi:10.1214/ss/1177013012), Hedges (1992, doi:10.1214/ss/1177011364), Vevea and Hedges (1995,
+doi:10.1007/BF02294384), Vevea and Woods (2005, doi:10.1037/1082-989X.10.4.428), Preston et al. (2004,
+doi:10.1111/j.1365-2753.2003.00457.x), Citkowicz and Vevea (2017, doi:10.1037/met0000119) and Pustejovsky (2024,
+https://jepusto.com/posts/beta-density-selection-models/).
 
 Differences from metafor: ``subset`` refers to the studies in the fitted model (after missing values were removed),
 only the ``numDeriv`` Hessian is available, and optimisers other than ``optim`` (BFGS, Nelder-Mead) are mapped to
@@ -285,26 +286,58 @@ def selmodel(
     control: collections.abc.Mapping[str, typing.Any] | None = None,
     **kwargs: typing.Any,
 ) -> metafopy.models.sel_result.SelmodelResult | pandas.DataFrame | FloatArray:
-    """Fit a selection model to a fitted ``rma_uni`` model (metafor's ``selmodel.rma.uni``).
+    """Fit a selection model to a fitted [rma_uni][metafopy.rma_uni] model (metafor's ``selmodel.rma.uni``).
 
-    ``type`` is one of ``'beta'``, ``'halfnorm'``, ``'negexp'``, ``'logistic'``, ``'power'``, ``'negexppow'``,
-    ``'stepfun'``, ``'trunc'``, ``'truncest'`` (plus the variants ``'halfnorm1'``, ``'halfnorm2'``, ... and
-    ``'stepcon'`` metafor documents in its source); partial names work. ``alternative`` is ``'greater'``,
-    ``'less'`` or ``'two.sided'``; ``prec`` one of ``'sei'``, ``'vi'``, ``'ninv'`` and ``'sqrtninv'``. ``delta`` fixes
-    selection parameters (``None``/``nan`` elements are estimated), ``steps`` holds the cutpoints, ``subset`` a logical
-    (or index) vector over the studies of ``x`` to which the selection function applies. ``control`` takes metafor's
-    entries (``delta.init``, ``optimizer``, ``optmethod``, ``intCtrl``, ... with ``.`` or ``_``) and the settings of the optimiser
-    (``maxit``, ``reltol``, ``ndeps``). Further keyword arguments as in metafor: ``tau2``, ``beta`` (fixed values, ``nan``
-    = free), ``scaleprec``, ``pval``, ``ptable`` (return the p-value table only), ``skiphes``, ``skiphet``,
-    ``defmap``, ``mapfun``, ``mapinvfun`` and ``retopt`` (return the optimised parameter vector).
+    Mirrors metafor's ``selmodel()``, see <https://wviechtb.github.io/metafor/reference/selmodel.html>. A selection model describes how the
+    probability that an estimate is observed depends on its p-value (and optionally its precision); it is used to assess and adjust for publication
+    bias (Vevea & Hedges, 1995; Citkowicz & Vevea, 2017; Preston, Ashby & Smyth, 2004). Models that were not fitted with ML (or as an
+    equal/fixed-effects model) are refitted with ML first.
 
-    Models that were not fitted with ML (or as an equal/fixed-effects model) are refitted with ML first.
+    Args:
+        x: A model fitted by [rma_uni][metafopy.rma_uni] (not a robust one), or an earlier selection model, whose base model is used. Models with
+            non-positive sampling variances, or unweighted or custom-weighted ones, are refused.
+        type: Selection function: ``'beta'``, ``'halfnorm'``, ``'negexp'``, ``'logistic'``, ``'power'``, ``'negexppow'``, ``'stepfun'``, ``'trunc'`` or
+            ``'truncest'``; the variants ``'halfnorm1'``, ``'negexp1'``, ``'logistic1'``, ``'power1'``, ``'halfnorm2'``, ``'negexp2'``, ``'logistic2'``,
+            ``'power2'`` and ``'stepcon'`` exist in metafor's source but not on its help page. As in metafor the string is matched as a regular
+            expression against these names in this order and the first match is used, so ``'half'`` is ``'halfnorm'`` and ``'step'`` is ``'stepfun'``.
+        alternative: Direction of the one-sided p-values: ``'greater'`` (the default), ``'less'`` or ``'two.sided'`` (not available for ``'trunc'``
+            and ``'truncest'``); may be abbreviated.
+        prec: Measure of precision the selection function may depend on: ``'sei'``, ``'vi'``, ``'ninv'`` or ``'sqrtninv'`` (the last two need the
+            sample sizes stored in ``x``, else ``InputError``). Default (``None``) is no dependence on precision. It is rescaled by its maximum
+            unless ``scaleprec=False``. It is ignored with a warning for ``'beta'``, ``'trunc'`` and ``'truncest'``.
+        subset: Which studies the selection function applies to (the others are always observed): a boolean or 0-based index vector over the studies
+            of ``x``. Default: all.
+        delta: Fixed values of the selection parameters, one per parameter of the chosen type (``None`` or ``nan`` elements are estimated); a wrong
+            length or a value outside the parameter space raises ``InputError``.
+        steps: Values whose meaning depends on ``type``. ``'stepfun'`` (required): cutpoints of the p-values, sorted and de-duplicated, with 1
+            appended if missing; the lowest must be above 0. ``'beta'``: the two truncation points (alpha1, alpha2) of the p-values. ``'halfnorm'``,
+            ``'negexp'``, ``'logistic'``, ``'power'``, ``'negexppow'``: a single threshold below which the selection weight is 1 (stored in the
+            result as ``[threshold, 1]``). ``'trunc'``: the single truncation point of the effect sizes (default 0). ``'truncest'``: ignored with a
+            warning. Values must lie in [0, 1] (except for ``'trunc'``); a wrong number for the type raises ``InputError``.
+        decreasing: For ``type='stepfun'`` only: constrain the selection weights to be non-increasing over the p-value intervals (the first one
+            is then fixed at 1 and the others are bounded by 1). For any other type it is ignored with a warning.
+        verbose: Print the progress of the optimiser (to stderr); larger values print more.
+        digits: Number of decimals used when printing, stored in the result. Default (``None``): the ``digits`` of ``x``.
+        control: Optimiser settings as a mapping with metafor's names (``delta.init``, ``optimizer``, ``optmethod``, ``intCtrl``, ... with ``.`` or
+            ``_``) and the optimiser's settings (``maxit``, ``reltol``, ``ndeps``).
+        **kwargs: Further arguments as in metafor: ``tau2`` and ``beta`` (fixed values, ``nan`` for free), ``scaleprec``, ``pval``, ``ptable``,
+            ``skiphes``, ``skiphet``, ``skipintcheck``, ``defmap``, ``mapfun``, ``mapinvfun`` and ``retopt``. Others are disregarded with a warning.
+
+    Returns:
+        The fitted selection model, a [SelmodelResult][metafopy.SelmodelResult] with the location coefficients in ``beta``, ``tau2`` and the selection
+        parameters in ``delta`` (each with standard errors, tests and confidence intervals) and the likelihood ratio tests against the model without
+        selection. With ``ptable=True`` and ``steps`` given for a type that uses them (not ``'trunc'`` or ``'truncest'``) a data frame with the column
+        ``k`` (number of p-values per interval, the intervals as row labels) is returned and no model is fitted; without such ``steps`` the model is
+        fitted as usual. With ``retopt=True`` a numpy array of the optimiser's solution is returned (the coefficients, for the standardised model
+        matrix if ``x`` has moderators, then the log of ``tau2``, then the selection parameters on the optimiser's transformed scale, fixed ones as
+        given); metafor returns the whole optimiser result instead.
 
     Raises:
-        metafopy.errors.ArgumentError: ``x`` is not a model this can be applied to.
-        metafopy.errors.InputError: an argument or the data is invalid.
-        metafopy.errors.EstimationError: the model could not be fitted.
-        metafopy.errors.NotSupportedError: a requested option is not available.
+        metafopy.errors.ArgumentError: ``x`` is not a model this can be applied to (a robust model, or not from ``rma_uni``).
+        metafopy.errors.InputError: an argument or the data is invalid (unknown ``type``, ``prec`` or ``alternative``, unsuitable ``steps`` or
+            ``delta``, too few studies, no sample sizes for ``prec='ninv'``).
+        metafopy.errors.EstimationError: the optimiser did not converge or the likelihood could not be integrated.
+        metafopy.errors.NotSupportedError: the optimiser chosen in ``control`` has no counterpart in metafopy.
     """
     prev: metafopy.models.sel_result.SelmodelResult | None = None
     source = x

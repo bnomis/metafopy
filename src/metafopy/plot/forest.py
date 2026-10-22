@@ -709,46 +709,177 @@ def forest(
     addcred: bool | str | int | collections.abc.Sequence[str | int] | None = None,
     clim: collections.abc.Sequence[float] | None = None,
 ) -> ForestResult:
-    """Forest plot of a fitted model (``forest.rma``) or of estimates with their variances (``forest.default``).
+    """Forest plot of a fitted model (``forest.rma``), a cumulative analysis or of estimates with their variances (``forest.default``).
 
-    ``x`` is a fitted :class:`~metafopy.RMAResult` or the vector of estimates; in the second case
-    give the sampling variances (``vi``), standard errors (``sei``) or CI bounds (``ci_lb`` and
-    ``ci_ub``). Arguments follow metafor's names (``.`` becomes ``_``): ``slab``, ``ilab`` (with
-    ``ilab_lab``, ``ilab_xpos``, ``ilab_pos``), ``order`` (``'obs'``, ``'prec'``, ``'fit'``,
-    ``'resid'``, ... for a fitted model, or values to sort by), ``rows``, ``xlim``/``alim``/``at``,
-    ``refline``, ``annotate``, ``header``, ``transf``/``atransf``, ``psize``/``plim``, ``shade`` and
-    ``efac``. For a fitted model ``colout`` colours the markers and ``col``/``border`` the summary
-    polygon (``col`` of the numeric form colours each study); ``addpred``/``predstyle`` add a
-    prediction interval to the summary (``'line'``, ``'polygon'``, ``'bar'``, ``'shade'`` (rectangles shaded by the
-    density of the predictive distribution) or ``'dist'`` (the density itself, with the tails beyond the interval and
-    the parts either side of ``predtail`` shaded)). ``predlim`` limits the distribution drawn by ``'dist'`` and
-    ``preddist`` supplies a distribution (a tuple of the values and densities, or a mapping with the keys
-    ``'x'``, ``'y'`` and optionally ``'pi_lb'``, ``'pi_ub'`` and ``'level'``); ``'shade'`` and ``'dist'`` need the ``transf`` to be
-    one of ``numpy.exp``, ``transf_ztor``, ``numpy.tanh``, ``transf_ilogit``, ``plogis``, ``transf_iarcsin``,
-    ``transf_iprobit``, ``pnorm``, ``transf_iahw`` or ``transf_iabt``. ``fonts`` sets the font family and font of the
-    study labels, the annotations and the ``ilab`` columns (see :func:`metafopy.plot.draw.parse_fonts`: a family such as
-    ``'serif'``, ``'sans'`` or ``'mono'``, a ``(family, font)`` pair with font 1 to 4 for plain, bold, italic, bold italic, a
-    ``{family: font}`` mapping, or a sequence of up to three of these). The remaining metafor options passed
-    through ``...`` are the keyword-only ``predtail``, ``annosym``, ``tabfig`` (1, 2 or 3 sets ``annosym`` for fonts with tabular
-    figures: thin spaces around the interval, a minus sign or en dash, an en or figure space), ``textpos``, ``rowadj``, ``top``, ``at_lab``,
-    ``xlabadj``, ``xlabfont`` (one font or two, the second for the middle one of three labels) and ``decreasing``;
-    for the numeric form ``measure`` (or the ``attrs['measure']`` of a pandas Series) sets the label of the axis and header and
-    ``slab_null`` tells that the labels are the default ones (which gives the study labels less room).
-    ``na_action`` stands for metafor's ``options(na.action=)``: for a fitted model the studies dropped for missing values
-    are left out (``'omit'``, the default) or, with ``'pass'`` or ``'exclude'`` (R's ``'na.pass'`` and ``'na.exclude'``), kept as rows of the plot;
-    ``'fail'`` raises an error if there are any. ``predtype`` (``pi_type`` is its old spelling) is passed on to
-    :func:`metafopy.predict` for the prediction interval (``'default'``, ``'simple'``, ``'riley'`` or ``'t'``).
-    ``addcred`` and ``clim`` are the old spellings (read from ``...`` by metafor) of ``addpred`` and ``olim`` and win over them.
+    Mirrors metafor's ``forest()``, see <https://wviechtb.github.io/metafor/reference/forest.html> and
+    <https://wviechtb.github.io/metafor/reference/forest.rma.html>. Each study is drawn as a marker with a confidence interval. For a fitted
+    model the summary estimate is added as a polygon below the studies (with an optional prediction interval); for a model with moderators
+    the fitted value of each study is added as a polygon on its row. Arguments follow metafor's names (``.`` becomes ``_``). Indices are
+    0-based where they refer to studies (``subset``); ``rows`` and the numeric form of ``shade`` are plot rows as in R.
 
-    Indices are 0-based where they refer to positions; ``rows`` are plot rows as in R. Vector
-    arguments (``slab``, ``ilab``, ``psize``, ...) must have one entry per study of the fit (or per
-    supplied study if some were dropped for missing values).
+    Vector arguments of a fitted model (``slab``, ``ilab``, ``pch``, ``psize``, ``colout``, ``colci``, ``order``, a logical ``shade``) must have one
+    entry per study used in the fit or one per row of the original data (the entries of studies dropped for missing values are then removed,
+    as in metafor). For a vector ``x`` they must have one entry per estimate.
 
-    Returns a :class:`ForestResult` (metafor returns the same values invisibly); the markers, CI
-    segments, polygons and texts are ordinary matplotlib artists on ``result.ax``.
+    The differences from metafor are that ``predstyle='line2'`` is not available, that ``refline`` takes a single value, that ``predtail``
+    must be a number or a string such as ``'<2'`` and that ``slab=nan`` is only accepted for a vector ``x``.
+
+    Args:
+        x: A fitted model (from [rma_uni][metafopy.rma_uni] and the other fitting functions), the result of [cumul][metafopy.cumul] or a vector
+            of estimates. A cumulative analysis is passed on to [forest_cumul][metafopy.forest_cumul]; the arguments ``slab``, ``mlab``,
+            ``order``, ``addfit``, ``addpred``, ``predstyle``, ``showweights``, ``predlim``, ``colout`` and ``border`` then give a warning and
+            are ignored. For a vector give the sampling variances (``vi``), standard errors (``sei``) or the CI bounds (``ci_lb`` and ``ci_ub``).
+        vi: Sampling variances of the estimates in ``x`` (vector form only). Wins over ``sei``.
+        sei: Standard errors of the estimates in ``x`` (vector form only).
+        ci_lb: Lower confidence interval bounds of the estimates in ``x`` (vector form only; with ``ci_ub``). When given, the intervals are drawn
+            from the bounds instead of from ``vi`` or ``sei``; if neither of those is given the variances are derived from the bounds.
+        ci_ub: Upper confidence interval bounds of the estimates in ``x`` (vector form only).
+        annotate: Add the annotations (estimate and confidence interval) on the right of the plot. Default: ``True``.
+        addfit: Fitted model only: add the polygon of the pooled estimate (a model without moderators) or the polygon of the fitted value of
+            each study (a model with moderators). Default: ``True``. Ignored for a vector ``x``.
+        addpred: Add the prediction interval to the summary polygon (or, for a model with moderators, use the prediction instead of the
+            confidence interval for the polygon of each study). ``True`` or ``False``, or for an ``rma_mv`` model with several tau^2 values the
+            levels of the inner factor to use. Has no effect for an equal-effects model. Default: ``False``.
+        predstyle: Style of the prediction interval: ``'line'``, ``'polygon'``, ``'bar'``, ``'shade'`` (a bar shaded by the density of the
+            predictive distribution) or ``'dist'`` (the density itself, with the tails beyond the interval and the parts either side of
+            ``predtail`` shaded); an unambiguous abbreviation is accepted. Setting it implies ``addpred=True``; with moderators only ``'line'``
+            is relevant (any other style gives a warning). Unlike R there is no ``'line2'``. ``'shade'`` and ``'dist'`` need ``transf`` to be
+            one of ``numpy.exp``, ``transf_ztor``, ``numpy.tanh``, ``transf_ilogit``, ``plogis``, ``transf_iarcsin``, ``transf_iprobit``,
+            ``pnorm``, ``transf_iahw`` or ``transf_iabt``, or no transformation. Default: ``'line'``.
+        preddist: Predictive distribution to draw for ``'shade'`` and ``'dist'``: a pair of the values and the densities, or a mapping with the
+            keys ``'x'``, ``'y'`` and optionally ``'pi_lb'``, ``'pi_ub'`` and ``'level'`` (the bounds, else found numerically). Default: computed
+            from the model.
+        showweights: Fitted model: add the weights (in percent) of the studies as a column of the annotations; vector form: the weights are
+            1/``vi``, rescaled to percent. Not possible for the results of [rma_glmm][metafopy.rma_glmm] and [selmodel][metafopy.selmodel].
+            Default: ``False``.
+        header: ``True`` for the headings ``Study`` and, for the annotations, the estimate and CI level (for example ``Estimate [95% CI]``, dropped
+            with ``annotate=False``), ``False`` for none,
+            a string for the left heading or a pair of strings for the left and right headings. Default: ``True``.
+        xlim: Horizontal limits ``(left, right)`` of the plot region. Default: the CI bounds extended on both sides to leave room for the
+            study labels, ``ilab`` columns and annotations.
+        alim: Limits of the x axis (the axis and the polygons are drawn within them; intervals beyond them end in an arrow).
+            Default: the range of ``at``, else the ``pretty`` range of the CI bounds.
+        olim: Limits ``(lower, upper)`` that bound the estimates and the confidence and prediction interval bounds (values beyond them are set
+            to the limits; useful for bounded measures). Default: no limits.
+        ylim: Vertical limits of the plot region. A single value sets the lower limit only. Default: from the rows of the studies, ``top`` and
+            the summary rows.
+        predlim: Limits ``(lower, upper)`` of the predictive distribution drawn by ``predstyle='dist'``, on the plotted scale.
+        at: Positions of the x-axis tick marks, on the scale that is plotted (after ``transf``, before ``atransf``). Positions outside ``alim`` are
+            moved to its ends. Default: chosen from ``alim`` and ``steps``.
+        steps: Number of tick marks of the x axis: exact when ``alim`` is given, otherwise approximate (as ``pretty`` chooses). Ignored when
+            ``at`` is given. Default: 5.
+        level: Level of the confidence (and prediction) intervals: 95, 0.95 and 0.05 all give a 95% interval. Default: that of the model, or
+            95 for a vector ``x``.
+        refline: Position of the dotted vertical reference line, or ``None`` for none. A single value (R also accepts several). Its line type
+            is not affected by ``lty``. Default: 0.
+        digits: Number of decimals of the annotations, of the x-axis labels and of the weights, in this order. A single value is used for all
+            three; two values give the third the value of the first. An integer (such as ``2``) drops trailing zeros from the axis labels, a
+            float (such as ``2.0``) keeps them. Default: 2.
+        width: Minimum width (number of characters) of the annotation columns: one value for all columns or one per column. A column is never
+            narrower than its longest entry. Default: the width of the longest entry.
+        xlab: Label of the x axis, or three (left end, centre, right end) or two (left and right end) labels. Default: the name of the measure
+            (for example ``'Log Risk Ratio'``), else ``'Observed Outcome'``, adjusted for ``transf`` and ``atransf``.
+        slab: Study labels, one per study. Default: the labels of the model, else ``Study 1``, ``Study 2``, .... For a vector ``x`` ``nan``
+            suppresses the labels; for a fitted model a labels vector cannot be suppressed that way.
+        mlab: Label of the summary polygon of a fitted model, or with a prediction interval drawn by a style other than ``'line'`` a pair of
+            labels for the polygon and the interval. Default: ``'Random-Effects Model'``, ``'Equal-Effects Model'``, ``'Fixed-Effect Model'``
+            or ``'Common-Effect Model'`` by the method of the model.
+        ilab: Extra columns of information on the left of the plot: a vector, a matrix or a data frame with one row per study.
+        ilab_lab: Headings of the ``ilab`` columns, one per column.
+        ilab_xpos: X positions of the ``ilab`` columns, one per column. Default: spread over the left part of the plot region.
+        ilab_pos: Alignment of the ``ilab`` columns (one value or one per column), as the ``pos`` argument of R's ``text()``: ``1`` (below the
+            position), ``2`` (to the left, so right-aligned), ``3`` (above) or ``4`` (to the right, so left-aligned). Default: centred.
+        order: Order of the studies. A string, for a fitted model ``'est'``, ``'obs'``, ``'yi'`` (by the estimates), ``'prec'`` or ``'vi'`` (by
+            the sampling variances), ``'fit'`` (by the fitted values), ``'resid'`` or ``'rstandard'`` (by the residuals or standardized
+            residuals), ``'abs.resid'`` or ``'abs.rstandard'``; for a vector ``x`` only ``'est'``, ``'obs'``, ``'yi'``, ``'prec'`` and ``'vi'``.
+            Or a vector to sort by (increasing, or decreasing with ``decreasing=True``). Default: the order of the data.
+        subset: Vector form only (a fitted model raises an error): which estimates to show, a boolean array or 0-based indices (R: 1-based).
+        transf: Function applied to the estimates and to the confidence and prediction interval bounds (for example ``numpy.exp``). Cannot be
+            used together with ``atransf``.
+        atransf: Function applied to the x-axis labels and to the annotations (the plot stays on the original scale, so ``numpy.exp`` gives a
+            log scale). Cannot be used together with ``transf``.
+        targs: Additional arguments passed to ``transf`` or ``atransf``.
+        rows: Rows (vertical positions) of the studies, one per study, or a single value for the row of the first study (the others follow
+            below it). Default: ``k`` for the first study down to 1.
+        efac: Vertical expansion factors, ``(CI end bars, arrows, polygon, prediction interval)``. One value is used for all; for a fitted model
+            two values are ``(CI end bars and arrows, polygon and prediction interval)`` and three are ``(CI end bars, arrows, polygon)``; for a
+            vector ``x`` two values are ``(CI end bars, arrows)``. A value of 0 leaves the element out. Default: 1.
+        pch: Plotting symbol of the study markers, an R code (0 to 6 and 15 to 25 are drawn; another code gives a filled circle); one value or
+            one per study. Default: 15 (a filled square).
+        psize: Sizes of the study markers: one value or one per study. Default: scaled by the square root of the weights of the model (for a
+            vector ``x``, of the precisions) within ``plim``.
+        plim: ``(smallest, largest)`` marker size when scaled by weight; ``nan`` for one of them scales relative to the other as in R, and a
+            third value sets a minimum (when the first is ``nan``) or maximum (when the second is ``nan``) size. Default: ``(0.5, 1.5)``.
+        colout: Fitted model: colour of the study markers and, unless ``colci`` is given, of the interval lines; one value or one per study.
+            Default: black. Not used for a vector ``x``, where ``col`` does this.
+        colci: Colour of the confidence interval lines; one value or one per study. Default: that of the markers.
+        col: Fitted model: colour of the summary polygon (without moderators: up to four values for the polygon and the prediction interval, see
+            below) or of the polygons of the fitted values (default ``'#CCCCCC'``); the default for the summary polygon is black. Vector ``x``:
+            colour of the markers, interval lines and labels, one value or one per estimate (default black). For the prediction interval:
+            ``col[1]`` is the colour of the interval (line, polygon or bar), for ``'shade'`` ``col[1]`` and ``col[2]`` are the colours of the
+            centre and the ends of the shading (defaults black and ``'#F2F2F2'``) and for ``'dist'`` ``col[1]`` is the colour of the tails beyond
+            the interval (default ``'#666666'``) and ``col[2]`` and ``col[3]`` are those of the regions on either side of ``predtail``
+            (defaults ``'#CCCCCC'`` and transparent).
+        border: Border colour of the summary polygon (``border[0]``) and of the prediction interval polygon, bar or curve (``border[1]``).
+            For the polygons of the fitted values of a model with moderators the default is ``'#B3B3B3'``; otherwise black.
+        shade: Shade rows. ``True`` or ``'zebra'`` (alternate rows, counted from the bottom row, which is the last study; ``'zebra1'`` is the
+            same), ``'zebra2'`` (the other rows) or ``'all'``; a boolean array with one entry per study; or numbers, the plot rows (as
+            ``rows``) to shade. Any other string raises an error. Default: no shading.
+        colshade: Colour of the shading. Default: ``'#E5E5E5'`` (light grey).
+        lty: Line types: for a fitted model ``(CI lines, prediction interval, horizontal lines)``, defaults ``'solid'``, ``'dotted'`` and
+            ``'solid'`` (``'blank'`` removes the horizontal lines); for a vector ``x`` ``(CI lines, horizontal lines)``. A single value sets
+            the first. The reference line is always dotted.
+        fonts: Font family and font of the study labels, the annotations and the ``ilab`` columns: a family such as ``'serif'``, ``'sans'`` or
+            ``'mono'``, a ``(family, font)`` pair with font 1 to 4 for plain, bold, italic, bold italic, a ``{family: font}`` mapping, or a sequence of
+            up to three of these (one entry is used for all, two are completed with the first). Headings are always bold.
+        cex: Character expansion factor of the text and symbols. Default: 1, reduced when the number of rows would not fit on the axes
+            (so the returned ``cex`` can be below 1).
+        cex_lab: Character expansion factor of the x-axis label. Default: the value of ``cex``.
+        cex_axis: Character expansion factor of the x-axis tick labels. Default: the value of ``cex``.
+        ax: Matplotlib axes to draw into. Default: the current axes.
+        predtail: Cut point of the shading for ``predstyle='dist'``, on the scale of the model (before ``transf``): a number or a string such
+            as ``'<2'`` or ``'>2'`` (the region below a ``'<'`` cut point, or above a ``'>'`` cut point or a plain number, is filled
+            with ``col[2]``, the other region with ``col[3]``). The strings ``'lower'`` and ``'upper'`` are not accepted.
+            Default: 0, with the side towards zero filled with ``col[2]``.
+        annosym: Symbols of the annotations: left bracket, separator and right bracket (default ``' ['``, ``', '`` and ``']'``), optionally a
+            fourth for the minus sign (default ``'-'``) and a fifth for the space used in place of digits (default ``' '``). Three, four or five
+            strings are accepted; another length raises an error.
+        tabfig: ``1``, ``2`` or ``3`` replaces ``annosym`` by the symbols for fonts with tabular figures: thin spaces before the bracket and
+            after the separator, a minus (1 and 3) or en dash (2) for the minus sign and an en space (1 and 2) or figure space (3) for the space.
+            Other values are ignored.
+        textpos: ``(left, right)`` positions of the study labels (left aligned) and the annotations (right aligned); ``nan`` takes the
+            limit of ``xlim``. Default: the limits of ``xlim``.
+        rowadj: Vertical adjustment of the study labels, the annotations and the ``ilab`` texts: one value (labels and annotations), two (the
+            third is 0) or three. Default: 0.
+        top: Number of rows above the first study (for the headings). Default: 3.
+        at_lab: Labels of the tick marks, one per position. Default: the (``atransf``-transformed) positions.
+        xlabadj: Alignment of the left and right x-axis labels when two or three labels are given: 0 (left aligned), 1 (right aligned) or
+            another value (centred), for the left label, the right label getting 1 minus that; or a pair for the two labels. Default: centred.
+        xlabfont: Font (1 to 4 as in ``fonts``) of the x-axis labels: one value for all, or two with the second for the middle one of three
+            labels. With one value the middle label gets that font, or the font from ``fonts`` when there are three labels. Default: 1.
+        decreasing: Sort in decreasing order when ``order`` is a vector. Default: ``False``.
+        measure: Vector form only: the measure used for the axis label and the header. Default: the ``attrs['measure']`` of a pandas Series, else
+            ``'GEN'``.
+        slab_null: Vector form only: whether the labels are the default ones (which gives the study labels less room). Default: ``True`` when
+            ``slab`` is not given.
+        na_action: What to do with studies dropped for missing values (metafor's ``options(na.action=)``): ``'omit'`` (leave them out),
+            ``'pass'`` or ``'exclude'`` (keep them as empty rows of the plot), or ``'fail'`` (raise an error if there are any). Another value is not
+            rejected and acts like ``'omit'``. Default: ``'omit'``.
+        predtype: Type of prediction interval passed on to [predict][metafopy.predict]: ``'default'``, ``'simple'``, ``'riley'`` or ``'t'``.
+        pi_type: Old spelling of ``predtype``.
+        addcred: Old spelling of ``addpred``; wins over it.
+        clim: Old spelling of ``olim``; wins over it.
+
+    Returns:
+        A ``ForestResult`` (metafor returns the same values invisibly) with the fields ``ax``, ``xlim``, ``alim``, ``at``, ``ylim``, ``rows``,
+        ``cex``, ``cex_lab``, ``cex_axis``, ``ilab_xpos``, ``ilab_pos``, ``textpos`` and ``areas`` (the relative widths of the label, plot and
+        annotation areas; ``None`` for a vector ``x``). The markers, interval lines, polygons and texts are ordinary matplotlib artists on ``ax``.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.NotSupportedError: ``x`` is a location-scale model.
+        metafopy.errors.InputError: an argument or the data is invalid: both ``transf`` and ``atransf``; a length that does not match the number
+            of studies; missing values with ``na_action='fail'``; ``subset`` for a fitted model; an unknown ``order``, ``predstyle``, ``shade`` or
+            ``annosym``; ``showweights`` for a [rma_glmm][metafopy.rma_glmm] or [selmodel][metafopy.selmodel] result.
     """
     if isinstance(ilab_lab, str):
         ilab_lab = [ilab_lab]
@@ -1774,30 +1905,92 @@ def addpoly(
     cr_lb: numpy.typing.ArrayLike | None = None,
     cr_ub: numpy.typing.ArrayLike | None = None,
 ) -> matplotlib.axes.Axes:
-    """Add polygons (summary estimates) to a forest plot (``addpoly.rma`` and ``addpoly.default``).
+    """Add polygons (summary estimates) to a forest plot (``addpoly.rma``, ``addpoly.predict.rma`` and ``addpoly.default``).
 
-    For a fitted model without moderators the pooled estimate and its CI are drawn at ``row``
-    (default ``-2``; the prediction interval with ``addpred=True`` or ``predstyle``). For numbers
-    give the estimates ``x`` with ``vi``/``sei`` or ``ci_lb``/``ci_ub`` (and ``pi_lb``/``pi_ub``)
-    and the ``rows`` to draw them in. Unspecified options (``alim``, ``digits``, ``annotate``,
-    ``transf``, ``atransf``, ``efac``, ``cex``, ``textpos``, ...) are taken from the last
-    :func:`forest` call on the same axes. Returns the axes. ``predtype`` (``pi_type`` is its old spelling) is passed on to
-    :func:`metafopy.predict` for a fitted model. ``addcred`` is the old spelling of ``addpred`` (read from ``...`` by
-    ``addpoly.rma``) and wins over it for a fitted model. ``cr_lb`` and ``cr_ub`` are the old spellings of ``pi_lb`` and ``pi_ub`` and win over them.
+    Mirrors metafor's ``addpoly()``, see <https://wviechtb.github.io/metafor/reference/addpoly.html>. Options not given (``alim``, ``digits``,
+    ``width``, ``annotate``, ``transf``, ``atransf``, ``targs``, ``efac``, ``fonts``, ``cex``, ``annosym``, ``textpos``, ``rowadj``, ``olim``, ...) are
+    taken from the last [forest][metafopy.forest] call on the same axes; without one the limits of the axes are used. Unlike R there is no
+    ``predstyle='line2'`` and no ``tabfig`` argument.
 
-    ``predstyle`` is ``'line'``, ``'polygon'``, ``'bar'``, ``'shade'`` or ``'dist'`` (the last two draw the predictive
-    distribution, see :func:`forest`; they need ``predlim``/``preddist``/``predtail`` as there). For numbers the predictive
-    distribution is described by the keyword-only ``pi_se`` (its standard error), ``pi_dist`` (``'norm'`` or ``'t'``),
-    ``pi_ddf`` (degrees of freedom of the ``'t'``) and ``pi_level`` (the level of the interval; the ``level`` by default),
-    which metafor reads from the attributes of ``pi.lb``, or by ``preddist``. ``fonts`` is as in :func:`forest` (the first
-    entry for the labels, the second for the annotations) and defaults to that of the last :func:`forest` call.
+    Args:
+        x: A fitted model without moderators (its pooled estimate and confidence interval are drawn at ``row``), the result of
+            [predict][metafopy.predict] (its predicted values and intervals are drawn in ``rows``, which then defaults to ``row``), or a vector of
+            estimates. For a vector give the sampling variances (``vi``), standard errors (``sei``) or the CI bounds (``ci_lb`` and ``ci_ub``).
+        vi: Sampling variances of the estimates in ``x`` (vector form only).
+        sei: Standard errors of the estimates in ``x`` (vector form only).
+        ci_lb: Lower confidence interval bounds (vector form only; used with ``ci_ub``, else ``vi`` or ``sei`` give the intervals).
+        ci_ub: Upper confidence interval bounds (vector form only).
+        pi_lb: Lower prediction interval bounds (vector form only). The prediction intervals of a vector ``x`` are drawn whenever ``pi_lb`` and
+            ``pi_ub`` are both given, whatever ``addpred`` is.
+        pi_ub: Upper prediction interval bounds (vector form only).
+        rows: Rows (vertical positions) of the polygons, one per estimate, or a single value for the first (the others follow below it).
+            Default: ``-1``, ``-2``, ... for a vector ``x``, ``row`` for a ``predict`` result.
+        row: Row of the polygon of a fitted model. Default: -2.
+        level: Confidence interval level: 95, 0.95 and 0.05 all give a 95% interval. Default: that of the model; for a vector ``x`` that of the
+            last forest call, else 95.
+        annotate: Add the annotation (estimate and interval) on the right. Default: as in the last forest call, else ``True``.
+        addpred: Fitted model or ``predict`` result: add the prediction interval. For a model without prediction interval (an equal-effects
+            model) a warning is given and nothing is drawn for the interval. Default: ``False``.
+        predstyle: Style of the prediction interval: ``'line'``, ``'polygon'``, ``'bar'``, ``'shade'`` or ``'dist'`` (an unambiguous
+            abbreviation is accepted; the last two draw the predictive distribution, see [forest][metafopy.forest]). Setting it implies
+            ``addpred``. Styles other than ``'line'`` need prediction interval bounds, a single polygon and use two rows (the interval is drawn
+            in the second, below the polygon). Default: ``'line'``.
+        predlim: Limits ``(lower, upper)`` of the predictive distribution drawn by ``predstyle='dist'``, on the plotted scale.
+        digits: Number of decimals of the annotation; only the first value of a sequence is used. Default: as in the last forest call, else 2.
+        width: Minimum width (number of characters) of the annotation columns. Default: the widths of the last forest call (so the annotations
+            line up with those of the studies).
+        mlab: Label of the polygon(s), one string per polygon (a fitted model: one string). Default: the label for the method of a fitted
+            model, none for a vector ``x``.
+        transf: Function applied to the estimates and interval bounds before drawing. Default: as in the last forest call.
+        atransf: Function applied to the annotations only (the axis is not touched). Default: as in the last forest call. Cannot be used together
+            with ``transf``.
+        targs: Additional arguments passed to ``transf`` or ``atransf``. Default: as in the last forest call.
+        efac: Vertical expansion factors, ``(CI end bars, arrows, polygon, prediction interval)``. One value is used for all. For
+            ``predstyle='line'`` two values are ``(polygon, prediction interval end bars and arrows)`` and three are ``(polygon, end bars,
+            arrows)``; for the other styles two values are ``(polygon, prediction interval height)`` and three are ``(polygon, prediction interval
+            height, arrows)``. A value of 0 leaves the element out. Default: as in the last forest call, else 1.
+        col: Colour of the polygon: one value per polygon. For a single polygon up to four values as for ``col`` of [forest][metafopy.forest]
+            (polygon, then the colours of the prediction interval). Default: black.
+        border: Border colour of the polygon (one value per polygon; for a single polygon a second value is the border colour of the prediction
+            interval). Default: black.
+        lty: Line types of the prediction interval for ``predstyle='line'``: ``(line, end bars)``; one value sets the line and leaves the end
+            bars solid. Default: ``('dotted', 'solid')``.
+        fonts: Fonts of the labels and annotations, as in [forest][metafopy.forest] (the first entry for the labels, the second for the
+            annotations). Default: those of the last forest call.
+        cex: Character expansion factor. Default: that of the last forest call, else 1 or less, as small as the height of the axes needs.
+        constarea: Draw the polygons with a constant area (the height shrinks as the interval widens) rather than a constant height.
+            Default: ``False``.
+        ax: Matplotlib axes to draw into. Default: the current axes.
+        preddist: Predictive distribution for ``'shade'`` and ``'dist'``, as in [forest][metafopy.forest]. Only for the numeric form, and for
+            a single estimate.
+        predtail: Cut point of the shading for ``'dist'``, as in [forest][metafopy.forest] (a number or a string such as ``'<2'``).
+        pi_se: Vector form only: standard error of the predictive distribution, for ``'shade'`` and ``'dist'``. Taken from the model for a fitted
+            model or ``predict`` result.
+        pi_dist: Vector form only: the predictive distribution, ``'norm'`` (the default) or ``'t'``.
+        pi_ddf: Vector form only: degrees of freedom of the ``'t'`` distribution (must exceed 1 to draw it).
+        pi_level: Vector form only: level of the prediction interval, as ``level``. Default: ``level``.
+        alim: Limits of the x axis: polygons are cut off at them. Default: taken from the last forest call, else the limits of the axes.
+        olim: Limits ``(lower, upper)`` that bound the estimates and interval bounds, as in [forest][metafopy.forest]. Default: taken from the last
+            forest call.
+        annosym: Symbols of the annotations, as in [forest][metafopy.forest] (three, four or five strings). Default: as in the last forest call.
+        textpos: ``(left, right)`` positions of the labels and annotations. Default: taken from the last forest call, else the limits of the axes.
+        rowadj: Vertical adjustment of the labels and of the annotations; one value for both, or two. Default: as in the last forest call.
+        lcol: Colour of the prediction interval line, its end bars and arrows for ``predstyle='line'``; one value or one per polygon.
+            Default: black.
+        predtype: Type of prediction interval passed on to [predict][metafopy.predict] for a fitted model: ``'default'``, ``'simple'``, ``'riley'``
+            or ``'t'``.
+        pi_type: Old spelling of ``predtype``.
+        addcred: Old spelling of ``addpred`` (fitted model only); wins over it.
+        cr_lb: Old spelling of ``pi_lb``; wins over it.
+        cr_ub: Old spelling of ``pi_ub``; wins over it.
 
-    ``x`` can also be the result of :func:`metafopy.predict` (``addpoly.predict.rma``): its predicted values and
-    confidence intervals (and prediction intervals with ``addpred=True`` or ``predstyle``) are drawn in ``rows``, which
-    then defaults to ``row`` (``-2``). See https://github.com/wviechtb/metafor/blob/master/R/addpoly.predict.rma.r.
+    Returns:
+        The matplotlib axes drawn into.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InputError: an argument or the data is invalid: a fitted model with moderators; a ``predict`` result of scale values;
+            both ``transf`` and ``atransf``; a ``predstyle`` other than ``'line'`` without prediction interval bounds or with several polygons;
+            ``preddist`` with a fitted model; a length that does not match the number of polygons; no polygon left after dropping missing values.
     """
     if cr_lb is not None:
         pi_lb = cr_lb

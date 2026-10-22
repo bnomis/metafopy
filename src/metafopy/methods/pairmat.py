@@ -45,10 +45,27 @@ def pairmat(
     For use as ``anova(res, X=pairmat(res, btt='alloc'))``, or without the model, ``anova(res, X=pairmat(btt='alloc'))``, as in metafor, where the
     model is that of the ``anova()`` or ``predict()`` call. Rows for the coefficients picked by ``btt2`` themselves are placed first.
     ``fixed=True`` matches a string ``btt`` or ``btt2`` literally instead of as a regular expression (metafor's ``...`` argument).
-    See https://wviechtb.github.io/metafor/reference/pairmat.html.
+    The contrast matrix can be passed to [anova][metafopy.anova] (to test the contrasts) and [predict][metafopy.predict] (for their confidence
+    intervals). See <https://wviechtb.github.io/metafor/reference/pairmat.html>.
+
+    Args:
+        x: A meta-regression model with moderators, fitted by [rma_uni][metafopy.rma_uni], [rma_glmm][metafopy.rma_glmm] or
+            [rma_mv][metafopy.rma_mv]. May be left out (the first argument is then taken as ``btt``) when the result is an argument of an
+            ``anova`` or ``predict`` call.
+        btt: The coefficients to construct pairwise contrasts for: 0-based indices, or a string matched as a regular expression against the
+            coefficient names. At least two coefficients are needed.
+        btt2: A second set of coefficients (0-based indices or a string) included as rows of their own ('main effects'), placed first.
+            ``None`` (the default) for none.
+        fixed: Match a string ``btt`` or ``btt2`` literally instead of as a regular expression (default ``False``).
+
+    Returns:
+        A data frame with one row per pair of the coefficients picked by ``btt`` (labelled ``name1-name2``, with -1 for the first and 1 for
+        the second coefficient) preceded by the rows for ``btt2`` (labelled by the coefficient name, with 1 for it), and one column per model
+        coefficient; as in metafor the rows are named but the columns are not (they are numbered 0, 1, ...). Without a model, a ``PairmatSpec``
+        that ``anova`` and ``predict`` complete with their model.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InputError: ``btt`` is missing, matches no coefficient or a single coefficient, or the model has no moderators.
     """
     if not hasattr(x, 'coef_names'):  # metafor: an atomic first argument is btt and the model comes from the call this is an argument of
         if x is not None:

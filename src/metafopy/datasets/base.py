@@ -30,7 +30,16 @@ MISSING_STRINGS: dict[str, dict[str, tuple[str, ...]]] = {
 
 
 def list_datasets() -> list[str]:
-    """Names of the bundled datasets, e.g. ``"dat.bcg"``."""
+    """Names of the bundled datasets.
+
+    The datasets were exported from the R package metadat (https://wviechtb.github.io/metadat/): every data frame it provided when they were
+    exported, plus the data of Moura et al. (2021) and its phylogenetic tree. A few datasets listed on the metadat site are not bundled, and the
+    list can include `dat.berkey1998r`, which is not in the site index.
+
+    Returns:
+        The sorted names, each with the `dat.` prefix, for example `'dat.bcg'`. Pass them to [load][metafopy.datasets.load]. The name
+        `'dat.moura2021.tree'` is a tree, not a data frame; read it with `load_tree`.
+    """
     files = importlib.resources.files(PACKAGE).iterdir()
     return sorted(f.name.removesuffix('.csv') for f in files if f.name.endswith('.csv'))
 
@@ -57,11 +66,21 @@ def escalc_attributes() -> dict[str, dict[str, typing.Any]]:
 
 
 def load(name: str) -> pandas.DataFrame:
-    """Load a bundled metadat dataset by its R name (``"dat.bcg"``) or ``"bcg"``.
+    """Load a bundled metadat dataset.
 
-    Datasets that metadat stores as ``escalc`` objects (for example ``dat.konstantopoulos2011``) carry the attributes of such a frame in
-    ``DataFrame.attrs`` as :func:`metafopy.escalc` stores them, so that ``rma`` takes the effect size measure and the sample sizes from them, as in
-    R, where ``rma(yi, vi, data = dat.konstantopoulos2011)`` has ``measure`` ``"SMD"``.
+    Datasets that metadat stores as `escalc` objects (for example `dat.konstantopoulos2011`) carry the attributes of such a frame in
+    `DataFrame.attrs`, as [escalc][metafopy.escalc] stores them, so that `rma` takes the effect size measure and the sample sizes from
+    them, as in R.
+
+    Args:
+        name: name of the dataset, with or without the `dat.` prefix (`'dat.bcg'` and `'bcg'` are the same). See
+            [list_datasets][metafopy.datasets.list_datasets].
+
+    Returns:
+        A new data frame with the columns of the R dataset (a copy that can be changed freely).
+
+    Raises:
+        metafopy.errors.NotFoundError: there is no dataset of that name.
     """
     if not name.startswith('dat.'):
         name = f'dat.{name}'

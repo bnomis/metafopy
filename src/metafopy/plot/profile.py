@@ -166,21 +166,46 @@ def plot_profile(
     cex: float = 1.0,
     lwd: float = 1.0,
 ) -> matplotlib.axes.Axes | list[matplotlib.axes.Axes]:
-    """Plot the profile (log-)likelihood computed by :func:`~metafopy.profile` (``plot.profile.rma``).
+    """Plot the profile (log-)likelihood computed by [profile][metafopy.profile] (``plot.profile.rma``).
 
-    ``refline`` marks the estimate and its (log-)likelihood with dotted lines, ``cline`` (``True`` for 0.05, or the
-    significance level) adds a horizontal line at the likelihood-ratio test's critical value. The estimate itself is
-    added to the profile if it lies within the range of the grid. Returns the axes.
+    Mirrors metafor's ``plot.profile.rma()``, which is documented with ``profile.rma``, see <https://wviechtb.github.io/metafor/reference/profile.rma.html>.
 
-    ``x`` may also be the list of profiles that :func:`~metafopy.profile` returns for models with several variance
+    ``refline`` marks the estimate and its (log-)likelihood with dotted lines, ``cline`` (``True`` for a significance
+    level of 0.05, or a number as for metafor's ``level`` arguments) adds a horizontal line at the likelihood-ratio test's critical value. The
+    estimate itself is added to the profile if it lies within the range of the grid. Returns the axes.
+
+    ``x`` may also be the list of profiles that [profile][metafopy.profile] returns for models with several variance
     components (``rma_mv``, location-scale and selection models): one panel per component is drawn in a grid, as
     ``par(mfrow = n2mfrow(comps))`` makes it (inside ``ax`` if given), and the list of axes is returned. ``xlab``,
     ``ylab`` and ``main`` are then one string for all panels or one per panel. Unlike metafor, ``refline`` also applies to
     the panels of a list. ``log`` (``'x'``, ``'y'`` or ``'xy'``) draws logarithmic axes, ``cex`` is the size of the points and ``lwd`` the
     width of the line, which metafor passes on through ``...``.
 
+    Args:
+        x: A profile from [profile][metafopy.profile], or the list of profiles it returns for models with several variance components (``rma_mv``,
+            location-scale and selection models; one panel per component).
+        xlim: Limits of the horizontal axis as (low, high). Default: those stored in the profile (``x.xlim``).
+        ylim: Limits of the vertical axis as (low, high). Default: those stored in the profile (``x.ylim``).
+        pch: Plotting symbol of the points (R's ``pch`` code). Default: 19.
+        xlab: Label of the horizontal axis; for a list of profiles one string for all panels or one per panel. Default: derived from the profiled
+            component (for example ``tau^2 Value``).
+        ylab: Label of the vertical axis; for a list of profiles one string for all panels or one per panel. Default: ``'Log-Likelihood'`` (or
+            ``'Likelihood'`` if the profile was computed with ``exp``), preceded by ``'Restricted '`` for REML.
+        main: Title; for a list of profiles one string for all panels or one per panel. Default: ``'Profile Plot for'`` and the component.
+        refline: Mark the estimate and its (log-)likelihood with dotted lines (unlike metafor, also applies to the panels of a list). Default: ``True``.
+        cline: Add a horizontal dotted line at the critical value of the likelihood-ratio test: ``True`` for a significance level of 0.05, or a number
+            read as metafor's ``level`` is (95 or 0.95 for 95 percent, 0.05 for a significance level of 5 percent). Default: ``False``.
+        ax: Matplotlib axes to draw into (for a list of profiles, the area the panels fill). Default: the current axes.
+        log: Logarithmic axes: ``'x'``, ``'y'`` or ``'xy'``. Default: linear axes.
+        cex: Size of the points relative to the default. Default: 1.
+        lwd: Width of the line. Default: 1.
+
+    Returns:
+        The axes drawn into (a list of axes, one per component, for a list of profiles).
+
     Raises:
-        metafopy.errors.InputError: ``xlab``, ``ylab`` or ``main`` does not have one entry per profile.
+        metafopy.errors.InputError: ``xlab``, ``ylab`` or ``main`` does not have one entry per profile (or is not a single string for a single
+            profile), a limit of a logarithmic axis is not positive, or ``cline`` is outside 0 to 100.
     """
     if isinstance(x, collections.abc.Sequence):
         n = len(x)

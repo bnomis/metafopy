@@ -4,7 +4,7 @@ Transformation functions, used as `transf=` or `atransf=` in `predict`, `confint
 `transf.ilogit` is `metafopy.transf.ilogit`, and `transf.ipft.hm` is `metafopy.transf.ipft_hm`. Each is also a top-level
 function with the mechanical translation of the R name, `metafopy.transf_ilogit` and `metafopy.transf_ipft_hm`.
 Functions with `_int` and `_mode` suffixes integrate over or find the mode of the distribution of the true effects, and
-take `targs={'tau2': ...}`.
+take `targs={'tau2': ...}` (some also accept other `targs` keys, see each function).
 
 ::: metafopy.transf
     options:

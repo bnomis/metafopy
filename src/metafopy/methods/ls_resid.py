@@ -36,7 +36,29 @@ def blup_rma_ls(
     *,
     na_action: metafopy.methods.blup.NAAction = 'omit',
 ) -> metafopy.methods.blup.BlupResult:
-    """BLUPs of the true effects of a location-scale fit (arguments as in :func:`metafopy.methods.blup.blup`)."""
+    """BLUPs of the true effects of a location-scale fit (metafor's ``blup.rma.uni`` for ``rma.ls`` objects).
+
+    The arguments are those of [blup_rma_uni][metafopy.methods.blup.blup_rma_uni]; the shrinkage uses the study-specific ``tau^2`` of the
+    scale model. See <https://wviechtb.github.io/metafor/reference/blup.html>.
+
+    Args:
+        res: A location-scale model fitted by [rma_uni][metafopy.rma_uni] with ``scale``.
+        level: Level of the prediction intervals in percent (e.g. 95), or a value below 1 read as in metafor (0.95 and 0.05 both give 95 percent).
+            ``None`` (the default) uses the level of the model.
+        digits: Number of decimals used when the result is printed. ``None`` uses the ``digits`` option, else the ``digits`` of the model.
+        transf: A function applied to the predicted values and interval bounds (for example ``numpy.exp``); the standard errors are then NaN.
+            ``None`` (the default) applies no transformation.
+        targs: Extra argument passed to ``transf`` as ``transf(x, targs)``. ``None`` (the default) calls ``transf(x)``.
+        na_action: How studies dropped for missing values are handled: ``'omit'`` (the default; no row for them), ``'exclude'`` or ``'pass'``
+            (a row of NaN for each, so there is one row per supplied study) or ``'fail'`` (raise an error).
+
+    Returns:
+        A [BlupResult][metafopy.BlupResult] with the predictions ``pred``, standard errors ``se`` and prediction interval bounds ``pi_lb``
+        and ``pi_ub``, one entry per study.
+
+    Raises:
+        metafopy.errors.InputError: the model has user-defined weights, ``na_action`` is unknown or values are missing with ``na_action='fail'``.
+    """
     return metafopy.methods.blup.shrinkage_predictions(res, 'blup', level, digits, transf, targs, na_action)
 
 
@@ -50,7 +72,28 @@ def ranef_rma_ls(
     *,
     na_action: metafopy.methods.blup.NAAction = 'omit',
 ) -> metafopy.methods.ranef.RanefResult:
-    """BLUPs of the random effects of a location-scale fit (arguments as in :func:`metafopy.methods.blup.blup`)."""
+    """BLUPs of the random effects of a location-scale fit (metafor's ``ranef.rma.uni`` for ``rma.ls`` objects).
+
+    The arguments are those of [blup_rma_uni][metafopy.methods.blup.blup_rma_uni]. See <https://wviechtb.github.io/metafor/reference/ranef.html>.
+
+    Args:
+        res: A location-scale model fitted by [rma_uni][metafopy.rma_uni] with ``scale``.
+        level: Level of the prediction intervals in percent (e.g. 95), or a value below 1 read as in metafor (0.95 and 0.05 both give 95 percent).
+            ``None`` (the default) uses the level of the model.
+        digits: Number of decimals used when the result is printed. ``None`` uses the ``digits`` option, else the ``digits`` of the model.
+        transf: A function applied to the predicted values and interval bounds (for example ``numpy.exp``); the standard errors are then NaN.
+            ``None`` (the default) applies no transformation.
+        targs: Extra argument passed to ``transf`` as ``transf(x, targs)``. ``None`` (the default) calls ``transf(x)``.
+        na_action: How studies dropped for missing values are handled: ``'omit'`` (the default; no row for them), ``'exclude'`` or ``'pass'``
+            (a row of NaN for each, so there is one row per supplied study) or ``'fail'`` (raise an error).
+
+    Returns:
+        A [RanefResult][metafopy.RanefResult] with the predicted random effects ``pred``, standard errors ``se`` and prediction interval
+        bounds ``pi_lb`` and ``pi_ub``, one entry per study.
+
+    Raises:
+        metafopy.errors.InputError: the model has user-defined weights, ``na_action`` is unknown or values are missing with ``na_action='fail'``.
+    """
     out = metafopy.methods.blup.shrinkage_predictions(res, 'ranef', level, digits, transf, targs, na_action)
     return metafopy.methods.ranef.RanefResult(pred=out.pred, se=out.se, pi_lb=out.pi_lb, pi_ub=out.pi_ub, slab=out.slab, digits=out.digits, transf=out.transf)
 
@@ -64,10 +107,30 @@ def rstandard_rma_ls(
     *,
     na_action: metafopy.methods.common.NAAction = 'omit',
 ) -> metafopy.methods.influence.ResidualResult:
-    """Standardised residuals of a location-scale fit; ``type`` is ``'marginal'`` or ``'conditional'``.
+    """Internally standardised residuals of a location-scale fit (metafor's ``rstandard.rma.uni`` applied to an ``rma.ls`` object, which has no method of
+    its own).
+
+    With ``type='marginal'`` the marginal residuals are divided by their standard errors, with ``type='conditional'`` the conditional ones (the
+    deviations of the estimates from the BLUPs), both with the study-specific ``tau^2`` of the model.
+
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/rstandard.rma.uni.r>; reference page:
+    <https://wviechtb.github.io/metafor/reference/residuals.rma.html>.
+
+    Args:
+        model: Location-scale model fitted by [rma_uni][metafopy.rma_uni] with ``scale``.
+        digits: Number of decimals of the printout (default 4; unlike for [rma_uni][metafopy.rma_uni] fits the digits of the model are not used).
+        type: ``'marginal'`` (default) for marginal residuals or ``'conditional'`` for conditional residuals. Exactly one of these two values.
+        na_action: What to do with studies left out of the fit because of missing values: ``'omit'`` (default) drops them, ``'exclude'`` and ``'pass'``
+            keep one row per study with NaN for those left out, ``'fail'`` raises an InputError if there are any. Corresponds to R's
+            ``na.action`` option.
+
+    Returns:
+        A [ResidualResult][metafopy.ResidualResult] with the residuals ``resid``, their standard errors ``se`` and the standardised values ``z``, labelled
+        with the study labels.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InputError: ``type`` is not ``'marginal'`` or ``'conditional'``; ``type='conditional'`` for a model with weights given or
+            fitted without weighting; ``na_action`` is not valid, or is ``'fail'`` and studies were left out of the fit.
     """
     metafopy.methods.common.check_na_action(na_action)
     x = model

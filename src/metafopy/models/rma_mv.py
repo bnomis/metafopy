@@ -531,22 +531,22 @@ def rma_mv(
 ) -> metafopy.models.mv_result.RMAMVResult:
     """Fit a multivariate/multilevel meta-analytic model.
 
-    Mirrors metafor's ``rma.mv()`` (https://wviechtb.github.io/metafor/reference/rma.mv.html). ``yi`` is a vector, a column
+    Mirrors metafor's ``rma.mv()``, see <https://wviechtb.github.io/metafor/reference/rma.mv.html>. ``yi`` is a vector, a column
     of ``data`` or a model formula (``'yi ~ x1 + x2'``); ``V`` is a vector of sampling variances, a ``k x k`` matrix, a list of
-    block matrices (see :func:`metafopy.bldiag`), a column name or ``0``. ``random`` is a formula such as ``'~ 1 | study'``,
+    block matrices (see [bldiag][metafopy.bldiag]), a column name or ``0``. ``random`` is a formula such as ``'~ 1 | study'``,
     ``'~ 1 | district/school'`` or ``'~ outcome | study'`` (or a list of them), ``struct`` (default ``'CS'``) the variance-covariance structure of
     the ``~ inner | outer`` terms and ``R`` a dict of known correlation matrices (DataFrames with dimension names) keyed by the
     grouping variable. ``sigma2``, ``tau2``, ``rho``, ``gamma2`` and ``phi`` fix the corresponding parameters (``nan`` entries are
     estimated). ``dfs`` is ``'residual'``, ``'contain'`` or numeric. ``digits`` (a number of decimals, or a mapping with the keys ``est``, ``se``,
     ... of which ``est`` is used) is stored in the result and used by its printout unless ``digits`` is passed to ``summary()`` or set with
-    :func:`metafopy.setmfopt`.
+    ``metafopy.setmfopt``.
 
     ``cvvc`` (``False``, ``True``, ``'varcor'``, ``'varcov'`` or ``'transf'``) requests the Hessian of the variance components
     and its inverse (``hessian`` and ``vvc`` of the result): variances and correlations for ``True``/``'varcor'``, variances
     and covariances for ``'varcov'`` (``UN`` and ``GEN`` structures only), the transformed parameters for ``'transf'``. With
     ``optbeta=True`` the coefficients are optimised together with the variance components, and their covariance matrix is
     taken from the inverse Hessian (``lambda1`` and ``lambda2`` add a lasso and ridge penalty on the coefficients other than
-    the intercept and imply ``optbeta=True``; see https://github.com/wviechtb/metafor/blob/master/R/rma.mv.r). ``beta`` fixes
+    the intercept and imply ``optbeta=True``; see <https://github.com/wviechtb/metafor/blob/master/R/rma.mv.r>). ``beta`` fixes
     coefficients (``nan`` entries are estimated). ``vccon`` is a dict with the keys ``sigma2``, ``tau2``, ``rho``, ``gamma2``
     and ``phi`` whose entries are group ids: components with the same id are constrained to be equal. ``restart`` is a
     previous fit of the same model whose variance components are the starting values, or ``True`` for the last values the optimiser tried in
@@ -556,9 +556,80 @@ def rma_mv(
     stdout (the optimiser differs from metafor's ``nlminb``, so the sequence of evaluations differs too) and, with
     ``verbose=2`` or more, its progress messages to stderr.
 
+    Args:
+        yi: Observed effect sizes, as a vector, the name of a column of ``data``, or a model formula (``'yi ~ x1 + x2'``, which then also supplies the
+            moderators).
+        V: Sampling variances or covariances: a vector of variances, a ``k x k`` matrix, a list of block matrices (see
+            [bldiag][metafopy.bldiag]), a column name, or ``0`` for no known sampling variances.
+        W: Optional weights of the fit, as a vector, a column name or a ``k x k`` matrix. Default: weights from the marginal variance-covariance
+            matrix. Cannot be combined with ``optbeta``, ``lambda1`` or ``lambda2``.
+        mods: Moderators, as a one-sided formula string (``'~ ablat + year'``), a matrix, or a data frame. ``None`` fits a model without moderators.
+        data: Data frame holding the variables named in the other arguments.
+        slab: Study labels, as a sequence or a column name. Defaults to ``1, 2, ...``.
+        subset: Which rows to use: a boolean array, an array of 0-based indices, or a string expression evaluated on ``data``.
+        random: Random effects, a formula such as ``'~ 1 | study'``, ``'~ 1 | district/school'`` or ``'~ outcome | study'``, or a sequence of them.
+            Default (``None``) is a model without random effects.
+        struct: Variance-covariance structure of the ``~ inner | outer`` terms: one value (used for both terms) or two (first and second term,
+            matching ``tau2``/``rho`` and ``gamma2``/``phi``). One of ``'CS'`` (the default), ``'HCS'``, ``'UN'``, ``'ID'``, ``'DIAG'``, ``'AR'``,
+            ``'HAR'``, ``'CAR'``, ``'GEN'``, ``'GDIAG'`` or a spatial structure (``'SPEXP'``, ``'SPGAU'``, ``'SPLIN'``, ``'SPRAT'``, ``'SPSPH'``);
+            anything else raises ``InputError``. ``'GEN'`` becomes ``'GDIAG'`` when the term is written ``~ inner || outer``. Case matters. A warning
+            says that ``struct`` is disregarded if ``random`` has no ``~ inner | outer`` term.
+        intercept: Include an intercept in the model with moderators. Ignored (the formula decides) when ``yi`` or ``mods`` is a formula.
+        method: ``'REML'`` (the default) or ``'ML'`` for random and mixed effects, or ``'FE'`` (aliases ``'EE'``, ``'CE'``) for a fixed-effects model.
+        test: Test for the coefficients: ``'z'`` (the default), ``'t'``, ``'knha'`` (alias ``'hksj'``) or ``'adhoc'``. Numeric ``dfs`` or
+            ``dfs='contain'`` turns ``'z'`` into ``'t'``.
+        dfs: Degrees of freedom of the t tests: ``'residual'`` (the default), ``'contain'`` (the containment method) or numeric.
+        level: Confidence interval level in percent (``95`` is 95%).
+        digits: Number of decimals used when printing, or a mapping with the keys ``est``, ``se``, ... (``est`` is used). Stored in the result.
+        btt: Coefficients to test jointly in the omnibus test, as 0-based indices or a regular expression matched against coefficient names.
+            Default: all but the intercept.
+        R: Known correlation matrices of the random effects, a mapping from the name of the grouping variable to a matrix (a data frame with
+            dimension names).
+        Rscale: How ``R`` matrices are rescaled: ``'cor'`` (the default, to a correlation matrix), ``'cor0'``, ``'cov0'``, ``'none'``, a bool (``True`` is
+            ``'cor'``, ``False`` is ``'none'``) or an integer 0 to 3 for ``'none'``, ``'cor'``, ``'cor0'``, ``'cov0'``.
+        sigma2: Fixed values for the variance components of the ``~ 1 | factor`` terms (``nan`` entries are estimated).
+        tau2: Fixed values for the variance components of the inner factor of the first ``~ inner | outer`` term (``nan`` entries are estimated).
+        rho: Fixed values for the correlation parameters of the first ``~ inner | outer`` term (``nan`` entries are estimated).
+        gamma2: As ``tau2`` for the second ``~ inner | outer`` term.
+        phi: As ``rho`` for the second ``~ inner | outer`` term.
+        sparse: Use sparse matrices, which can be faster for large models.
+        dist: Distance measure for the spatial structures (``struct`` ``'SPEXP'`` etc.; otherwise unused): ``'euclidean'`` (the default),
+            ``'maximum'`` or ``'manhattan'`` (names may be abbreviated), a callable that takes the matrix of inner values and returns the square
+            distance matrix, or a square symmetric data frame of distances with unique dimension names. ``'gcd'`` (metafor's great-circle
+            distance) raises ``NotSupportedError``. One value (used for both terms), or a list of two for a list of two ``~ inner | outer`` terms.
+        cvvc: Compute the Hessian of the variance components and its inverse (``hessian`` and ``vvc`` of the result): ``False`` (the default), ``True``
+            or ``'varcor'`` (variances and correlations), ``'varcov'`` (variances and covariances; for structures other than ``'UN'`` and
+            ``'GEN'``, or with fixed components, a warning is given and ``'varcor'`` is used) or ``'transf'`` (the transformed parameters).
+            Any other string raises ``InputError``. Ignored without random effects or with ``optbeta=True`` (where the Hessian includes the
+            coefficients anyway).
+        optbeta: Optimise the coefficients together with the variance components; their covariance matrix is then taken from the inverse Hessian.
+        beta: Fixed values for the coefficients (``nan`` entries are estimated).
+        lambda1: Lasso penalty on the coefficients other than the intercept; a positive value implies ``optbeta=True``.
+        lambda2: Ridge penalty on the coefficients other than the intercept; a positive value implies ``optbeta=True``.
+        vccon: Constraints on the variance components, a mapping with the keys ``sigma2``, ``tau2``, ``rho``, ``gamma2`` and ``phi`` whose entries
+            are group ids; components with the same id are constrained to be equal.
+        restart: Starting values for the variance components: a previous fit of the same model, or ``True`` for the last values the optimiser tried in
+            this session (also after a fit that did not converge).
+        control: Optimiser settings, as an [MVControl][metafopy.MVControl] or a mapping with metafor's names (``.`` becomes ``_``).
+        verbose: Print metafor's table of the variance components and a log line per likelihood evaluation to stdout (the optimiser differs from
+            metafor's ``nlminb``, so the sequence of evaluations differs); ``2`` or more also prints progress messages to stderr.
+        na_action: What to do with rows that have missing values (metafor uses the global ``na.action`` option instead): ``'omit'`` (the default)
+            drops them with a warning and ``'fail'`` raises an error. ``'pass'`` and ``'exclude'`` drop them too.
+
+    Returns:
+        The fitted model. Coefficients are in ``beta`` with ``se``, ``zval``, ``pval``, ``ci_lb`` and ``ci_ub`` (arrays of length ``p``) and
+        their covariance matrix in ``vb``; the variance components in ``sigma2``, ``tau2``, ``rho``, ``gamma2`` and ``phi`` (arrays; ``[0.]``
+        when the model has no such component, see ``with_s``, ``with_g`` and ``with_h``); ``QE`` (with ``QEdf`` and ``QEp``) and ``QM`` (with
+        ``QMdf`` and ``QMp``) are the tests of residual heterogeneity and of the omnibus hypothesis. There are no ``I2`` or ``H2`` fields as in
+        [rma_uni][metafopy.rma_uni]. ``summary()`` returns the printout as a string.
+
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
-        metafopy.errors.EstimationError: the model could not be fitted.
+        metafopy.errors.InputError: an argument or the data is invalid (including an unknown ``method``, ``test``, ``dfs``, ``struct``,
+            ``Rscale`` or ``cvvc``, ``W`` and ``V`` of the wrong size, and missing values with ``na_action='fail'``).
+        metafopy.errors.ArgumentError: ``control`` names a setting that does not exist.
+        metafopy.errors.NotSupportedError: ``dist='gcd'``.
+        metafopy.errors.EstimationError: the model could not be fitted (for example when the marginal variance-covariance matrix is not
+            positive definite at the starting values).
     """
     spec = {
         'yi': yi,

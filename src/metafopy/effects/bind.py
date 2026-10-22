@@ -4,8 +4,8 @@ The attributes of ``escalc`` output live in ``DataFrame.attrs`` (``yi_names``, `
 ``ci_lb_names``, ``ci_ub_names``, ``digits``, ``measure``, ``slab`` and ``ni``; see :func:`metafopy.escalc`). ``pandas.concat`` keeps none of
 them for a frame built from several, so :func:`cbind_escalc` and :func:`rbind_escalc` rebuild them the way metafor does.
 
-R sources: https://github.com/wviechtb/metafor/blob/master/R/cbind.escalc.r and https://github.com/wviechtb/metafor/blob/master/R/rbind.escalc.r;
-reference page: https://wviechtb.github.io/metafor/reference/print.escalc.html.
+R source: https://github.com/wviechtb/metafor/blob/v5.2-1/R/methods.escalc.r (``cbind.escalc`` and ``rbind.escalc``);
+reference page: https://wviechtb.github.io/metafor/reference/methods.escalc.html.
 
 Differences from R: R keeps ``measure``, ``slab`` and ``ni`` as attributes of each ``yi`` column, so a combined frame may hold several measures.
 A frame has only one such set here: :func:`cbind_escalc` takes them from the first argument that has them (the first argument of
@@ -69,17 +69,23 @@ def bare(x: pandas.DataFrame) -> pandas.DataFrame:
 
 
 def cbind_escalc(*args: pandas.DataFrame | pandas.Series, **columns: typing.Any) -> pandas.DataFrame:
-    """Combine data frames (and further columns) side by side and keep the ``escalc`` attributes, as metafor's ``cbind()`` of ``escalc`` frames.
+    """Combine data frames and further columns side by side and keep the `escalc` attributes.
 
-    ``args`` are data frames (usually from :func:`metafopy.escalc` or :func:`metafopy.summary_escalc`) or named Series; ``columns`` add vectors
-    under the names of the keywords (a data frame given as a keyword has its columns prefixed ``name.``, unless it has just one column).
-    The result has the columns of all arguments in order (names are not made unique, like ``data.frame(..., check.names = FALSE)``).
-    The names of the effect sizes, sampling variances, standard errors, test statistics, p-values and confidence interval bounds of all
-    arguments are collected (those of later arguments first, as in R), ``digits`` is that of the last argument
-    and ``measure``, ``slab`` and ``ni`` come from the first argument that has them.
+    Mirrors metafor's `cbind()` for `escalc` objects. The names of the effect size, sampling variance, standard error, test statistic, p-value
+    and confidence interval columns of all frames are collected (those of later frames first, as in R), `digits` is that of the last
+    frame, and `measure`, `slab` and `ni` come from the first frame that has them. Column names are not made unique.
+
+    Args:
+        *args: data frames (usually from [escalc][metafopy.escalc] or [summary_escalc][metafopy.summary_escalc]) or named Series, all with
+            the same number of rows.
+        **columns: further columns, named by the keyword; a vector becomes one column and a data frame has its columns prefixed with
+            `name.` (unless it has just one column).
+
+    Returns:
+        The combined data frame, with the columns of all arguments in order and the index of the first.
 
     Raises:
-        metafopy.errors.InputError: no argument is given, or the arguments have different numbers of rows.
+        metafopy.errors.InputError: nothing is given, or the arguments have different numbers of rows.
         metafopy.errors.ArgumentError: an argument is neither a data frame nor a named Series.
     """
     parts: list[pandas.DataFrame | pandas.Series] = [*args]
@@ -130,15 +136,21 @@ def cbind_escalc(*args: pandas.DataFrame | pandas.Series, **columns: typing.Any)
 
 
 def rbind_escalc(*args: pandas.DataFrame) -> pandas.DataFrame:
-    """Stack data frames on top of each other and keep the ``escalc`` attributes, as metafor's ``rbind()`` of ``escalc`` frames.
+    """Stack data frames on top of each other and keep the `escalc` attributes.
 
-    The columns are matched by name and the attributes of the first argument are kept (``measure``, ``digits``, the names of the effect size
-    columns, ...). ``ni`` is the concatenation of the sample sizes of all arguments, or missing if one of them has none, and ``slab`` the
-    concatenation of the study labels made unique as metafor's ``.make.unique`` does (every repeated label gets ``.1``, ``.2``, ...), or missing
-    if one argument has none.
+    Mirrors metafor's `rbind()` for `escalc` objects. The columns are matched by name and the attributes of the first frame (`measure`,
+    `digits`, the names of the effect size columns, ...) are kept. `ni` is the concatenation of the sample sizes of all frames (missing if
+    one has none) and `slab` the concatenation of the study labels made unique as metafor does (repeats get `.1`, `.2`, ...), or missing
+    if one frame has none.
+
+    Args:
+        *args: the data frames to stack, usually from [escalc][metafopy.escalc]; they must have the same columns.
+
+    Returns:
+        The stacked data frame. If all frames have the default index, a fresh 0-based index is made, else the row names are made unique.
 
     Raises:
-        metafopy.errors.InputError: no argument is given, or the numbers or names of the columns differ.
+        metafopy.errors.InputError: nothing is given, or the numbers or names of the columns differ.
         metafopy.errors.ArgumentError: an argument is not a data frame.
     """
     if not args:

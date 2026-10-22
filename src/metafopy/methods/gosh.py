@@ -1,10 +1,11 @@
 """Graphical display of study heterogeneity (metafor's ``gosh.rma``).
 
 The model is fitted to a large number of subsets of the ``k`` studies (all
-``2^k - p - ...`` of them if feasible, otherwise a random sample) and the
-pooled estimate(s) and heterogeneity statistics of each fit are collected, as
-proposed by Olkin, Dahabreh & Trikalinos (2012), doi:10.1002/jrsm.1033. See
-https://wviechtb.github.io/metafor/reference/gosh.rma.html.
+subsets with at least ``p`` studies if there are at most 10^6 of them,
+otherwise a random sample) and the pooled estimate(s) and heterogeneity
+statistics of each fit are collected, as proposed by Olkin, Dahabreh &
+Trikalinos (2012), doi:10.1002/jrsm.1053. See
+https://wviechtb.github.io/metafor/reference/gosh.html.
 """
 
 import collections.abc
@@ -46,6 +47,16 @@ class GoshResult:
     ``res`` has one row per subset (sorted by the number of studies ``k``) with the
     columns ``k``, ``QE``, ``I2``, ``H2``, ``tau2``, ``tau`` and the coefficient estimates;
     ``incl`` is the corresponding matrix of inclusion indicators, ``fit`` marks successful fits.
+
+    Attributes:
+        res: Data frame with one row per subset of studies.
+        incl: Boolean matrix with one row per subset and one column per study; true where the study is in the subset.
+        fit: Boolean flags for the subsets whose model fit succeeded.
+        k: Number of studies of the model.
+        int_only: Whether the model has no moderators.
+        method: The ``tau^2`` estimator of the model.
+        measure: The effect size measure of the model.
+        digits: Number of decimals used when the result is printed.
     """
 
     res: pandas.DataFrame
@@ -94,10 +105,25 @@ def format_gosh(x: GoshResult) -> str:
 
 @functools.singledispatch
 def gosh(x: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> GoshResult:
-    """GOSH analysis of a fitted model; see :func:`_gosh_rma_uni`.
+    """GOSH (graphical display of study heterogeneity) analysis of a fitted model.
+
+    This is a single-dispatch function: the implementation is chosen from the class of ``x``. See
+    [gosh_rma_uni][metafopy.methods.gosh.gosh_rma_uni] for [rma_uni][metafopy.rma_uni] fits. Fits of [rma_mh][metafopy.rma_mh] and
+    [rma_peto][metafopy.rma_peto] are also supported (as in metafor), with the same arguments as ``gosh_rma_uni``; the subsets then have one
+    or more tables and the result has the column ``estimate``. See <https://wviechtb.github.io/metafor/reference/gosh.html>.
+
+    Args:
+        x: A fitted model object.
+        *args: Positional arguments passed to the implementation chosen by the class of ``x``.
+        **kwargs: Keyword arguments passed to the implementation chosen by the class of ``x``.
+
+    Returns:
+        What the implementation returns, a [GoshResult][metafopy.GoshResult].
 
     Raises:
         metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
+        metafopy.errors.NotSupportedError: the model is of a class metafor has no GOSH analysis for (``rma.ls``, ``rma.glmm``, ``rma.mv``,
+            selection models, ``robust.rma`` and others).
     """
     metafopy.methods.fitview.check_class(x, notav=metafopy.methods.fitview.FIXED_UNI_ONLY)
     raise metafopy.errors.ArgumentError(f'gosh() not implemented for {type(x).__name__}')
@@ -118,24 +144,39 @@ def gosh_rma_uni(
     LB: bool = False,
     na_action: metafopy.methods.common.NAAction = 'omit',
 ) -> GoshResult:
-    """Fit the model to subsets of the studies.
+    """Fit the model to subsets of the studies (metafor's ``gosh.rma``).
 
-    ``na_action`` stands for R's ``options(na.action=)``; metafor only checks that it is known.
-    ``LB`` is accepted as in metafor, where it picks ``parLapplyLB`` (load-balanced scheduling) and changes no result.
+    Olkin, Dahabreh & Trikalinos (2012, [doi:10.1002/jrsm.1053](https://doi.org/10.1002/jrsm.1053)) proposed examining the pooled estimate and the
+    heterogeneity statistics of the model fitted to all subsets of the studies; Viechtbauer (2021) generalised this to models with moderators.
+    By default all subsets (with at least ``p`` studies, ``p`` being the number of coefficients) are used if there are at most ``10**6`` of
+    them, otherwise ``10**6`` random subsets are drawn. The subsets are drawn before the fits, so the result equals that of a serial run.
+    See <https://wviechtb.github.io/metafor/reference/gosh.html>.
 
-    By default all subsets (with at least ``p`` studies) are used if there are
-    at most ``10**6`` of them, otherwise ``10**6`` random subsets; ``subsets``
-    sets that number. ``seed`` seeds the R-compatible generator (so that
-    ``gosh(res, seed=s)`` draws the same subset sizes and study indices as
-    R's ``set.seed(s)`` does, with the sampling probabilities computed as R's ``dbinom`` computes them,
-    see :mod:`metafopy.core.dbinom`); without it the module's global
-    generator is used (:func:`metafopy.set_seed`). As in metafor, ``parallel`` (``'snow'`` or ``'multicore'``) fits the
-    subsets in a process pool of ``ncpus`` workers (or on the executor ``cl``), in blocks of ``CHUNK`` subsets, and
-    ``progbar=True`` prints a progress bar (per block) to stderr; the subsets are drawn before the fits, so the result
-    equals that of the serial run.
+    Args:
+        x: A model fitted by [rma_uni][metafopy.rma_uni], with or without moderators; not allowed for a model passed through
+            [robust][metafopy.robust], or for location-scale and selection models.
+        subsets: Number of subsets to use. ``None`` (the default) uses all subsets if there are at most ``10**6``, else ``10**6`` random ones.
+            If it is at least the number of possible subsets, all subsets are used. Must be 2 or more.
+        seed: Seed of the R-compatible random number generator used to draw random subsets, so that ``gosh(res, seed=s)`` draws the same
+            subset sizes and study indices as R's ``set.seed(s)``. ``None`` uses the global generator (see [set_seed][metafopy.set_seed]).
+            Only used when random subsets are drawn.
+        rng: An R-compatible generator to draw the random subsets from, instead of ``seed`` or the global generator.
+        progbar: Print a progress bar (per block of subsets) to stderr (default ``False``; metafor's default is ``TRUE``).
+        parallel: ``'no'`` (the default), ``'snow'`` or ``'multicore'``; fit the subsets in a process pool (see ``ncpus``).
+        ncpus: Number of worker processes (default 1; a value above 1 turns parallel processing on).
+        cl: An executor to fit the subsets on, instead of one created for the call.
+        LB: metafor reads this undocumented extra argument to use load-balanced scheduling with ``parallel='snow'``; accepted here and ignored.
+        na_action: Stands for R's ``options(na.action=)``; metafor only checks that it is one of ``'omit'`` (the default), ``'exclude'``,
+            ``'pass'`` or ``'fail'``, and so does this function.
+
+    Returns:
+        A [GoshResult][metafopy.GoshResult]. Its ``res`` data frame has one row per subset (sorted by the number of studies) with the columns
+        ``k``, ``QE``, ``I2``, ``H2``, ``tau2``, ``tau`` and the coefficient estimates (``estimate`` for a model without moderators);
+        ``incl`` is the matrix of inclusion indicators.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.NotSupportedError: the model is of a class that is not supported (see ``x``).
     """
     metafopy.methods.common.check_na_action(na_action)
     metafopy.methods.fitview.check_class(x, notav=metafopy.methods.fitview.FIXED_UNI_ONLY)

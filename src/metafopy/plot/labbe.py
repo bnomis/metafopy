@@ -179,28 +179,85 @@ def labbe(
 ) -> LabbeResult:
     """L'Abbe plot of a model without moderators fitted to 2x2 table data or incidence rates (``labbe.rma``).
 
+    Mirrors metafor's ``labbe()``, see <https://wviechtb.github.io/metafor/reference/labbe.html>.
+
     ``x`` is an ``rma_uni``, ``rma_mh`` or ``rma_glmm`` fit (``rma_peto`` fits have ``measure='PETO'``, which has no
-    arm-level outcomes). ``rma_mh`` and ``rma_glmm`` fits keep the counts, and ``add``/``to`` default to the model's.
+    arm-level outcomes). ``rma_mh`` and ``rma_glmm`` fits keep the counts, and ``add``/``to`` default to the model's (for an ``rma_uni`` fit they
+    do not, unlike metafor).
 
     The model's ``measure`` must be ``'RR'``, ``'OR'``, ``'RD'``, ``'AS'``, ``'IRR'``, ``'IRD'`` or ``'IRSD'``.
-    A fitted :class:`~metafopy.RMAResult` does not keep the raw counts, so they are taken from the columns
+    A fitted ``RMAResult`` does not keep the raw counts, so they are taken from the columns
     ``ai``, ``bi``, ``ci``, ``di`` (``x1i``, ``t1i``, ``x2i``, ``t2i`` for the rate measures) of the data the model
     was fitted to, or passed as the keyword arguments ``ai``, ``bi``, ``ci_counts`` (the ``ci`` counts; ``ci``
     itself draws the confidence region as in metafor), ``di``, ``x1i``, ``x2i``, ``t1i`` and ``t2i`` (column names or
     arrays). ``ci`` and ``pi`` shade the confidence and prediction interval of the line of the estimated effect
     (a colour string sets the colour), ``flip`` swaps the groups, ``psize``/``plim`` set the point sizes (default:
     proportional to the precision between ``plim``), ``transf`` is applied to the arm-level outcomes, and
-    ``add``, ``to`` (defaults 1/2, 0 for ``'AS'`` and ``'IRSD'``, and ``'only0'``), ``lim``/``llim`` as in metafor. ``bty`` is the type of box around
+    ``add`` and ``to`` (see below for the defaults), ``lim``/``llim`` as in metafor. ``bty`` is the type of box around
     the plot (``'o'``, ``'l'``, ``'7'``, ``'c'``, ``'u'``, ``']'`` or ``'n'``),
-    which metafor passes on to ``plot()``. ``na_action`` stands for R's ``options(na.action=)``: an unknown value raises, the others
-    give the same result (metafor sets ``na.pass`` while it computes).
+    which metafor passes on to ``plot()``. ``na_action`` stands for R's ``options(na.action=)``; an unknown value
+    raises, as in metafor, and every valid value gives the same result (metafor sets ``na.pass`` while it computes).
 
-    Returns a :class:`LabbeResult`.
+    Args:
+        x: A model without moderators fitted by [rma_uni][metafopy.rma_uni], ``rma_mh`` or ``rma_glmm`` to 2x2 table or rate data, with ``measure`` one of
+            ``'RR'``, ``'OR'``, ``'RD'``, ``'AS'``, ``'IRR'``, ``'IRD'`` or ``'IRSD'`` (``rma_peto`` fits have ``measure='PETO'``).
+        xlim: Limits of the horizontal axis (the outcome in group 1) as (low, high). Default: the range of all the arm-level outcomes.
+        ylim: Limits of the vertical axis (the outcome in group 2) as (low, high). Default: the range of all the arm-level outcomes.
+        lim: Limits of both axes as (low, high); used instead of ``xlim`` and ``ylim``.
+        xlab: Label of the horizontal axis. Default: derived from the measure, with ``(Group 1)``.
+        ylab: Label of the vertical axis. Default: derived from the measure, with ``(Group 2)``.
+        flip: Swap the groups plotted on the two axes. Default: ``False``.
+        ci: Shade the confidence region of the line of the estimated effect; a colour string sets the colour (default light grey). Default: ``False``.
+        pi: Shade the prediction region of the line of the estimated effect; a colour string sets the colour (default lighter grey). Default: ``False``.
+        grid: Add a grid. ``True``, ``False`` or a colour string for the grid lines. Default: ``False``.
+        legend: Add a legend: ``True``, a corner such as ``'topleft'`` (or a matplotlib legend ``loc``), or a mapping of which only ``'x'`` (the location)
+            is used. The default location is the lower right if the estimate is positive, else the upper left. An approximation of metafor's legend:
+            drawn with matplotlib. Default: ``False``.
+        add: Constant added to the cell counts (see [escalc][metafopy.escalc]). Default: for ``rma_mh`` and ``rma_glmm`` fits the model's, otherwise
+            1/2 (0 for ``'AS'`` and ``'IRSD'``); unlike metafor an ``rma_uni`` fit does not pass on its own ``add``.
+        to: Which tables get ``add``: ``'all'``, ``'only0'``, ``'if0all'`` or ``'none'``. Default: for ``rma_mh`` and ``rma_glmm`` fits the model's,
+            otherwise ``'only0'``.
+        transf: Function applied to the arm-level outcomes (and to the lines) before they are plotted, for example ``numpy.exp``.
+        targs: Additional arguments passed to ``transf``.
+        pch: Plotting symbol of the points (R's ``pch`` code), or one per study. Default: 21, a circle with border ``col`` and fill ``bg``.
+        psize: Sizes (expansion factors) of the points, a number or one per study. Default: proportional to the precision (inverse standard error of the
+            difference), rescaled to ``plim``.
+        plim: Range (min, max) of the point sizes when ``psize`` is not given, with an optional third value; NaN for ``min`` scales the largest to ``max``
+            (the third value then enforces a minimum size), NaN for ``max`` scales the smallest to ``min`` (the third value then enforces a maximum
+            size). Default: (0.5, 3.5).
+        col: Border colour of the points, or one per study (a matplotlib colour). Default: black.
+        bg: Fill colour of the points for symbols with a separate fill, or one per study. Default: grey.
+        lty: Line types of the line of equality (no effect) and of the line of the estimated effect, as a pair (one value serves both). Default:
+            ``('solid', 'dashed')``; ``'blank'`` suppresses a line. Accepts R names (``'solid'``, ``'dashed'``, ``'dotted'``, ``'dotdash'``, ``'longdash'``,
+            ``'twodash'``, ``'blank'``), R codes 0 to 6 or a matplotlib line style.
+        ai: Counts of the upper left cells (column name of the data the model was fitted to, or array); only needed if the model does not keep the counts
+            and its data have no ``ai`` column.
+        bi: Counts of the upper right cells (column name or array); as ``ai``.
+        ci_counts: Counts of the lower left cells (column name or array); as ``ai``. (``ci`` draws the confidence region, as in metafor.)
+        di: Counts of the lower right cells (column name or array); as ``ai``.
+        x1i: Number of events in group 1 (rate measures); as ``ai``.
+        x2i: Number of events in group 2 (rate measures); as ``ai``.
+        t1i: Person-times of group 1 (rate measures); as ``ai``.
+        t2i: Person-times of group 2 (rate measures); as ``ai``.
+        llim: Limits (low, high) of the line of the estimated effect that is drawn, in arm-level outcome units (length 2). Default: chosen from the measure.
+        addyi: Passed to [escalc][metafopy.escalc]: apply ``add`` to the outcomes. Default: ``True``.
+        addvi: Passed to [escalc][metafopy.escalc]: apply ``add`` to the sampling variances. Default: ``True``.
+        ax: Matplotlib axes to draw into. Default: the current axes.
+        bty: Type of box around the plot: ``'o'`` (the default), ``'l'``, ``'7'``, ``'c'``, ``'u'``, ``']'`` or ``'n'`` (none).
+        na_action: R's ``options(na.action=)``: ``'omit'`` | ``'exclude'`` | ``'pass'`` | ``'fail'``. Every valid value gives the same plot.
+
+    Returns:
+        A ``LabbeResult`` with the axes ``ax``, the plotted outcomes of group 1 (``x``) and group 2 (``y``), the point sizes ``cex``, the symbols ``pch``,
+        colours ``col`` and ``bg``, and the 1-based study numbers ``ids`` and labels ``slab`` of the studies plotted.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
-    metafopy.methods.common.check_na_action(na_action)
+        metafopy.errors.InputError: ``na_action`` is unknown; the model has moderators or an unsupported ``measure``;
+            ``to`` is unknown; ``llim`` does not have length 2; the counts
+            are not available or have the wrong length; ``pch``, ``col``, ``bg`` or ``psize`` has the wrong length; or no study has all the arm-level
+            outcomes.
+        metafopy.errors.NotSupportedError: ``x`` is an ``rma_mv``, location-scale or selection-model fit.
     """
+    metafopy.methods.common.check_na_action(na_action)
     metafopy.methods.fitview.check_class(x, notav=('rma.mv', 'rma.ls', 'rma.gen', 'rma.uni.selmodel'))
     if not x.int_only:
         raise metafopy.errors.InputError("L'Abbe plots can only be drawn for models without moderators.")

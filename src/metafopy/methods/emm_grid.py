@@ -78,6 +78,39 @@ class EmmGrid:
     ``sigma`` the error SD used for the bias adjustment. ``nesting`` maps each nested factor to the factors it is nested in, and
     ``display`` marks the rows of the grid that occur (the others are hidden from summaries and left out of the averages).
     ``null``, ``delta`` and ``side`` are the defaults of the tests of :meth:`summary`, ``summary_type`` the default ``type``.
+
+    Attributes:
+        grid: Data frame with one row per estimate and one column per variable.
+        levels: The levels of each factor, by variable name.
+        numeric: Names of the numeric predictors.
+        linfct: Matrix of linear functions: each row gives an estimate as a combination of the model coefficients ``bhat``.
+        bhat: The model coefficients.
+        vb: Variance-covariance matrix of the model coefficients.
+        df: Degrees of freedom of the tests and intervals (infinite for z tests).
+        wgt: Number of studies behind each row of a reference grid, used by proportional weights, or ``None``.
+        est_name: Name of the estimate column in summaries (for example ``'prediction'``, ``'emmean'`` or ``'estimate'``).
+        est_type: What the estimates are (for example ``'prediction'``).
+        by: Variables the results are grouped by.
+        adjust: Multiplicity adjustment of the tests and intervals.
+        fam_size: Number of estimates in a family, used by the adjustments.
+        infer: Whether summaries give confidence intervals and tests, as a pair.
+        link: Transformation of the estimates, or ``None``.
+        inv_label: Name of the back-transformed estimate, or ``None``.
+        log_contrast: Whether the contrasts are of log-scale estimates (so back-transformed they are ratios).
+        sigma: Error SD used for the bias adjustment, or ``None``.
+        avgd_over: Variables the estimates are averaged over.
+        messages: Notes printed under summaries.
+        pairby: Variables of a pairwise grouping, or ``None``.
+        pri_vars: Names of the primary variables.
+        level: Confidence level of the intervals (default 0.95).
+        measure: The effect size measure of the model.
+        nesting: Maps each nested factor to the factors it is nested in.
+        display: Flags for the rows of the grid that occur, or ``None`` for all.
+        avgd_qualifier: Qualifier printed in the note about the averaging.
+        null: Default null value of the tests.
+        delta: Default threshold of equivalence tests.
+        side: Default tail of the tests (-1, 0 or 1).
+        summary_type: Default ``type`` of summaries (``'link'`` or ``'response'``), or ``None``.
     """
 
     grid: pandas.DataFrame
@@ -298,19 +331,42 @@ def emmprep(
     """Prepare a reference grid from a fitted model, as metafor's ``emmprep`` does for emmeans' ``qdrg``.
 
     The grid has one row per combination of the levels of the factors in the model formula, with each numeric predictor at its
-    mean over the studies (``cov_reduce``) or at the values given in ``at`` (a mapping from variable names to values, or, for
-    factors, to subsets of the levels). ``df`` and ``sigma`` override the degrees of freedom (the smallest ``ddf`` of the fit,
-    infinite for z tests) and the error SD used for bias adjustment (:math:`\\tau`, or 0 for ``rma_mv`` and ``rma_ls`` fits).
-    ``tran`` overrides the transformation derived from the effect size measure (``'log'`` for ratio measures, ``'logit'``
-    for ``PLO``, and so on; ``'none'`` for none).
+    mean over the studies (``cov_reduce``) or at the values given in ``at``. Pass the grid to [emmeans][metafopy.emmeans] (and then to
+    [contrast][metafopy.contrast], [pairs][metafopy.pairs] and [regrid][metafopy.regrid]) to get estimated marginal means. When the model
+    knows its effect size measure, the back-transformation (for example exponentiation for log ratios) is stored in the grid and applied by
+    ``type='response'``. See <https://wviechtb.github.io/metafor/reference/emmprep.html>.
 
-    ``nesting`` describes factors nested in others, as a text such as ``'grp %in% lat'`` (several separated by commas) or a
-    mapping from each nested factor to the factors it is nested in. By default the nesting is detected from the combinations
-    of levels in the data and from the terms of the model (``lat + lat:grp`` nests ``grp`` in ``lat``); ``None`` switches
-    the detection off. Combinations that cannot occur are then hidden and left out of the means.
+    Args:
+        x: A fitted model with a formula: a model from [rma_uni][metafopy.rma_uni], [rma_mv][metafopy.rma_mv],
+            [rma_glmm][metafopy.rma_glmm], [rma_mh][metafopy.rma_mh] or [rma_peto][metafopy.rma_peto], a location-scale model or a selection
+            model. Models with redundant predictors that were dropped cannot be used.
+        verbose: Print the extracted formula, degrees of freedom, ``tau^2`` and transformation (default ``False``).
+        data: Data frame with the variables of the model, to build the grid from instead of the data used in the fit. ``None`` (the default)
+            uses the data of the fit.
+        df: Degrees of freedom of the tests and intervals. ``None`` (the default) takes them from the fit (the smallest ``ddf``; infinite for z
+            tests).
+        sigma: Error standard deviation used for bias adjustment in back-transformations (the square root of ``tau^2``). ``None`` (the
+            default) takes it from the fit, or 0 for ``rma_mv`` and location-scale fits, where it cannot be extracted.
+        tran: Transformation of the estimates, a link object or its name (for example ``'log'`` or ``'logit'``), or ``'none'`` for none.
+            As in emmeans, a name that is no known transformation gives the identity link carrying that name; ``'+.sqrt'`` is not supported.
+            ``None`` (the default) derives it from the effect size measure (``'log'`` for ratio measures, ``'logit'`` for ``PLO``, and so on).
+        at: Mapping from variable names to the values to use in the grid: for a numeric predictor its values instead of its mean, for a factor
+            a subset of its levels. Other variables are as by default.
+        cov_reduce: Function reducing the values of a numeric predictor to the one used in the grid, or a mapping from variable names to such
+            functions. ``None`` (the default) uses the mean.
+        nesting: Factors nested in others, as text such as ``'grp %in% lat'`` (several separated by commas) or a mapping from each nested factor
+            to the factor(s) it is nested in. ``'auto'`` (the default) detects the nesting from the combinations of levels in the data and
+            the terms of the model (``lat + lat:grp`` nests ``grp`` in ``lat``); ``None`` switches the detection off. Combinations that cannot
+            occur are hidden and left out of the means.
+
+    Returns:
+        An [EmmGrid][metafopy.EmmGrid]: the reference grid, with the coefficients and their variance-covariance matrix, the degrees of freedom
+        and the transformation stored.
 
     Raises:
+        metafopy.errors.ArgumentError: ``x`` is not a fitted model of a supported class.
         metafopy.errors.InputError: the fit cannot be used (redundant predictors, no formula or data) or an argument is invalid.
+        metafopy.errors.NotSupportedError: ``tran`` is ``'+.sqrt'``.
     """
     info = fit_info(x, data)
     ddf = info.ddf if df is None else float(df)
@@ -486,10 +542,36 @@ def emmeans(
     With nested factors (see :func:`emmprep`) the means of a nested factor are given within the groups it is nested in, and
     the other factors are averaged over the combinations that occur in the data. ``null``, ``delta`` and ``side`` set the
     defaults of the tests of :meth:`EmmGrid.summary`; so does ``type`` (``'response'`` shows the back-transformed means by default, as
-    ``emmeans(..., type='response')``).
+    ``emmeans(..., type='response')``). See <https://rvlenth.github.io/emmeans/reference/emmeans.html>.
+
+    Args:
+        object: A reference grid from [emmprep][metafopy.emmprep], or a fitted model (see ``emmprep`` for the classes), for which a grid is
+            made first.
+        specs: The variables to get means for: a name, a sequence of names, or an R-style formula such as ``'~ alloc | lat'``; ``'1'`` or
+            ``'~ 1'`` for the overall mean.
+        by: Variables the results are grouped by. ``None`` (the default) for none (or those after ``|`` in ``specs``).
+        weights: How the other factors are averaged over (a string may be abbreviated, for example ``'prop'``): ``'equal'`` (the default),
+            ``'proportional'`` (frequencies in the data),
+            ``'outer'`` (products of the marginal frequencies), ``'cells'`` or ``'flat'`` (cell frequencies, the latter ignoring empty
+            cells), a vector with one weight per combination of those factors, or a matrix whose columns are those combinations and whose
+            rows are the weights of the successive means (recycled when there are more means than rows).
+        at: Mapping from variable names to the values of the grid (see ``emmprep``); only when ``object`` is a fitted model.
+        cov_reduce: Reduction of the numeric predictors (see ``emmprep``); only when ``object`` is a fitted model.
+        null: Value the tests of the summary compare the estimates with. ``None`` keeps the value of the grid (default 0).
+        delta: Threshold of equivalence and non-inferiority tests of the summary. ``None`` keeps the value of the grid (default 0).
+        side: Tail of the tests of the summary: ``-1``, ``0`` or ``1`` (or ``'<'``, ``'!='``, ``'>'``, or a word such as ``'left'``, ``'both'``,
+            ``'right'``, ``'noninferiority'``, ``'equivalence'``). ``None`` keeps the value of the grid (default both sides).
+        type: Default scale of summaries: ``'link'`` (the transformed scale) or ``'response'`` (back-transformed). ``None`` (the default) keeps
+            the default of the grid.
+        **prep: Further keywords for ``emmprep`` (``verbose``, ``data``, ``df``, ``sigma``, ``tran``, ``nesting``); only when ``object`` is a
+            fitted model.
+
+    Returns:
+        An [EmmGrid][metafopy.EmmGrid] of the estimated marginal means (with ``summary()`` to get the table).
 
     Raises:
-        metafopy.errors.InputError: a variable is not in the grid or the weights do not fit.
+        metafopy.errors.InputError: a variable is not in the grid, the weights do not fit the averaged factors, ``type`` is not ``'link'`` or
+            ``'response'``, or ``at``, ``cov_reduce`` or other ``emmprep`` keywords are given with a reference grid.
     """
     if isinstance(object, EmmGrid):
         if at is not None or cov_reduce is not None or prep:
@@ -804,6 +886,39 @@ def contrast(
 
     With nested factors the contrasts are formed within each combination of the groups in ``by`` (those a nested factor is nested
     in are added to it), and the groups can differ in size; only the named methods can be used then.
+    See <https://rvlenth.github.io/emmeans/reference/contrast.html>.
+
+    Args:
+        object: A reference grid or marginal means ([EmmGrid][metafopy.EmmGrid]).
+        method: The contrasts: the name of a method (``'pairwise'``, ``'revpairwise'``, ``'tukey'``, ``'trt_vs_ctrl'``, ``'trt_vs_ctrl1'``,
+            ``'trt_vs_ctrlk'``, ``'dunnett'``, ``'eff'`` (the default), ``'del_eff'``, ``'consec'``, ``'mean_chg'``, ``'poly'`` or
+            ``'identity'``), or a mapping from contrast names to coefficient vectors with one value per row of the grid (per group).
+        by: Variables to form the contrasts within. ``None`` (the default) uses those of ``object``.
+        interaction: ``False`` (the default) for ordinary contrasts. ``True`` forms contrasts of contrasts, applying ``method`` to every factor,
+            and a name or sequence of names gives the method for each factor; one contrast per combination of the factors results.
+        name: Name of the column of the contrasts (default ``'contrast'``).
+        adjust: Multiplicity adjustment stored in the result for its tests and intervals: ``'tukey'``, ``'scheffe'``, ``'sidak'``,
+            ``'dunnettx'``, ``'mvt'``, ``'holm'``, ``'hochberg'``, ``'hommel'``, ``'bonferroni'``, ``'BH'``, ``'BY'``, ``'fdr'`` or ``'none'``.
+            ``None`` (the default) uses the default of the method (for example ``'tukey'`` for ``'pairwise'``). As in emmeans, ``'tukey'``,
+            ``'scheffe'`` and ``'dunnettx'`` apply to two-sided tests only, and the methods of ``p.adjust`` (``'holm'`` to ``'fdr'``) to tests, not
+            intervals (which then use ``'bonferroni'``).
+        ref: The reference level(s) of ``'trt_vs_ctrl'`` and similar methods: 0-based indices or level labels. Default the first level.
+        exclude: Levels left out of the contrasts: 0-based indices or level labels.
+        include: Levels to use in the contrasts (the others are left out): 0-based indices or level labels.
+        reverse: Reverse the direction of the contrasts, for example later minus earlier (default ``False``).
+        wts: Weights of the levels for the ``'eff'`` and ``'del_eff'`` methods, normalised to sum to 1: one value per level, or per included
+            level when ``exclude`` or ``include`` is used. ``None`` (the default) for equal weights. emmeans' ``wts = NA`` (take the weights
+            from the grid) is not supported.
+        max_degree: Maximum degree of the ``'poly'`` contrasts (at most 20). ``None`` (the default) for ``min(6, k - 1)`` with ``k`` levels, as
+            the ``max.degree`` default of emmeans' ``poly.emmc``.
+        enhance_levels: Put the variable name in front of numeric levels in the labels of the contrasts (default ``True``).
+        null: Value the tests of the summary compare the estimates with. ``None`` keeps the value of the grid (default 0).
+        delta: Threshold of equivalence and non-inferiority tests of the summary. ``None`` keeps the value of the grid (default 0).
+        side: Tail of the tests of the summary: ``-1``, ``0`` or ``1`` (or ``'<'``, ``'!='``, ``'>'``, or a word such as ``'left'``, ``'both'``,
+            ``'right'``, ``'noninferiority'``, ``'equivalence'``). ``None`` keeps the value of the grid (default both sides).
+
+    Returns:
+        An [EmmGrid][metafopy.EmmGrid] of the contrasts, with one row per contrast.
 
     Raises:
         metafopy.errors.InputError: the method or an argument does not fit the grid.
@@ -1003,7 +1118,25 @@ def pairs(
     delta: float | None = None,
     side: Side | None = None,
 ) -> EmmGrid:
-    """All pairwise differences of the estimates (``contrast(object, 'pairwise')``; ``reverse=True`` gives later minus earlier)."""
+    """All pairwise differences of the estimates (emmeans' ``pairs``): ``contrast(object, 'pairwise')``.
+
+    Args:
+        object: A reference grid or marginal means ([EmmGrid][metafopy.EmmGrid]).
+        reverse: Give later minus earlier instead of earlier minus later, that is ``contrast(object, 'revpairwise')`` (default ``False``).
+        by: Variables to form the differences within. ``None`` (the default) uses those of ``object``.
+        adjust: Multiplicity adjustment of the tests and intervals (see [contrast][metafopy.contrast]). ``None`` (the default) uses
+            ``'tukey'``.
+        null: Value the tests of the summary compare the estimates with. ``None`` keeps the value of the grid (default 0).
+        delta: Threshold of equivalence and non-inferiority tests of the summary. ``None`` keeps the value of the grid (default 0).
+        side: Tail of the tests of the summary: ``-1``, ``0`` or ``1`` (or ``'<'``, ``'!='``, ``'>'``, or a word such as ``'left'``, ``'both'``,
+            ``'right'``, ``'noninferiority'``, ``'equivalence'``). ``None`` keeps the value of the grid (default both sides).
+
+    Returns:
+        An [EmmGrid][metafopy.EmmGrid] of the pairwise differences.
+
+    Raises:
+        metafopy.errors.InputError: an argument does not fit the grid.
+    """
     return contrast(object, 'revpairwise' if reverse else 'pairwise', by=by, adjust=adjust, null=null, delta=delta, side=side)
 
 
@@ -1011,7 +1144,18 @@ def regrid(object: EmmGrid, *, bias_adjust: bool = False, sigma: float | None = 
     """Back-transform the estimates, so that later contrasts are of the back-transformed values (emmeans' ``regrid``).
 
     The variance-covariance matrix of the transformed estimates follows by the delta method. Without a transformation the grid
-    is returned as is, with an identity ``linfct``.
+    is returned as is, with an identity ``linfct``. Only the default ``transform = 'response'`` of emmeans is available: there are no
+    ``transform``, ``inv_link_lbl``, ``predict_type``, ``N_sim`` or ``sim`` arguments.
+    See <https://rvlenth.github.io/emmeans/reference/regrid.html>.
+
+    Args:
+        object: A reference grid or marginal means ([EmmGrid][metafopy.EmmGrid]).
+        bias_adjust: Adjust the back-transformation for the bias that comes from the variation of the true effects, using ``sigma``
+            (default ``False``).
+        sigma: Error standard deviation for the bias adjustment. ``None`` (the default) uses the one stored in the grid.
+
+    Returns:
+        An [EmmGrid][metafopy.EmmGrid] whose estimates are the back-transformed values.
 
     Raises:
         metafopy.errors.InputError: ``bias_adjust`` without a valid ``sigma``.

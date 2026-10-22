@@ -85,18 +85,47 @@ def confint_rma_ls(
     digits: int | None = None,
     verbose: bool = False,
 ) -> metafopy.methods.confint.ConfintResult | metafopy.methods.confint.ConfintList:
-    """CIs for a location-scale fit (``confint.rma.ls``).
+    """Confidence intervals for the scale (or location) coefficients of a location-scale model (metafor's ``confint.rma.ls``).
 
-    ``alpha`` (a 0-based position) requests a profile-likelihood CI for that scale coefficient; ``fixed=True`` gives Wald-type
-    CIs for the location coefficients (``transf`` and ``targs`` apply to these). With neither, a profile-likelihood CI is
-    computed for every estimated scale coefficient and a list is returned (a single result if there is one). ``control`` may
-    hold ``vc_min`` and ``vc_max`` (also written ``vc.min`` and ``vc.max``), the interval searched for the bounds, and ``tol``,
-    ``maxiter``, ``eptries`` and ``verbose``; its entries replace the keyword arguments of the same name. ``xlim`` (metafor's ``...`` argument) is the interval
-    ``(vc_min, vc_max)`` and wins over ``control``. ``extint=True`` lets the search for a bound widen the interval (R's ``extendInt``), ``digits`` is the
-    number of decimals of the printout and ``parm`` is ignored with a warning, as in metafor.
+    Intervals for the scale coefficients are profile-likelihood intervals; see <https://wviechtb.github.io/metafor/reference/confint.rma.html>. The
+    intervals for the location coefficients (``fixed=True``) are of Wald type.
+
+    Args:
+        model: Location-scale model fitted by [rma_uni][metafopy.rma_uni] with ``scale``.
+        fixed: Give Wald-type intervals for the location coefficients (t distribution if the test is ``'t'``, ``'knha'`` or ``'adhoc'``, else normal).
+            Without ``alpha`` only these are returned; with ``alpha``, the interval of the scale coefficient is returned too.
+        alpha: 0-based position of the scale coefficient to compute the profile-likelihood interval for. Default: all estimated scale coefficients
+            (unless ``fixed=True``).
+        level: Confidence level in percent (``95`` is 95%). As in metafor, a value below 1 is read as the confidence level if it is above 0.5
+            (``0.95``) and as the significance level otherwise (``0.05``). Default: the level of the model.
+        transf: Function applied to each location coefficient and bound (with ``fixed=True``) separately; the bounds are put in order. Default: none.
+        targs: Second argument passed to ``transf`` (``transf(value, targs)``). Default: none (the integral and mode transformations get no default
+            ``tau2``).
+        control: Settings of the root finding: ``vc_min`` and ``vc_max`` (also written ``vc.min``, ``vc.max``; the interval searched for the bounds),
+            ``tol``, ``maxiter``, ``eptries`` and ``verbose`` (the entry ``verbose`` has no effect, see ``verbose``). Its entries replace the keyword
+            arguments of the same name. Names must be given in full; entries that only other functions of metafor read are ignored and any other entry
+            raises ``InputError``. The default interval searched for the bounds of a coefficient is its estimate plus and minus the smaller of ten
+            times its absolute value and ten times the normal critical value times its standard error (the former only if the standard error is NaN),
+            limited by ``alpha_min`` and ``alpha_max`` of the control of the fitted model.
+        tol: Convergence tolerance of the root finding (default ``eps^0.25``).
+        maxiter: Maximum number of iterations of the root finding.
+        eptries: Number of attempts to find the bounds: when the model cannot be fitted at an end of the interval searched, that end is moved towards the
+            estimate by ``1 / eptries`` of the distance and tried again.
+        xlim: Interval ``(vc_min, vc_max)`` searched for the bounds (metafor's ``...`` argument). Wins over ``control``.
+        extint: Let the search for a bound widen the interval (R's ``extendInt``).
+        parm: Ignored, with a warning, as in metafor.
+        digits: Number of decimals of the printout. Default: the ``digits`` option, else that of the model.
+        verbose: Accepted for compatibility with metafor; it has no effect here (no output is produced).
+
+    Returns:
+        A [ConfintResult][metafopy.ConfintResult] with the ``estimate``, ``ci.lb`` and ``ci.ub`` of the requested coefficient(s); the scale coefficient
+        is in the ``random`` table (rows ``alpha.1``, ``alpha.2``, ...) and the location coefficients in the ``fixed`` table. With no ``alpha`` and
+        several estimated scale coefficients, a ``ConfintList`` (a list of results); a single result if there is one. A bound the search cannot find
+        is NaN, with a warning; a bound at the end of the interval searched is shown with a ``<`` or ``>`` sign.
 
     Raises:
-        metafopy.errors.InputError: an argument is invalid, ``control`` has an unknown entry or the model has no such coefficient.
+        metafopy.errors.InputError: an argument is invalid, ``control`` has an unknown entry, the model was fitted with ``optbeta=True``, the model has
+            no such (estimated) scale coefficient or no coefficient to give an interval for, or the interval searched does not contain the estimate.
     """
     metafopy.methods.confint.warn_parm(parm)
     x = model

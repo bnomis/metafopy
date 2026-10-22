@@ -46,7 +46,21 @@ CIType = typing.Literal['qp', 'genq', 'pl', 'ht', 'wald', 'wald.log', 'wald.sqrt
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class ConfintResult(metafopy.printing.HtmlRepr):
-    """``fixed`` and/or ``random`` tables with ``estimate``, ``ci.lb``, ``ci.ub`` columns."""
+    """Confidence intervals as returned by [confint][metafopy.confint]: a ``fixed`` table for the coefficients and/or a ``random`` table for the variance
+    components. ``to_frame()`` stacks the tables and ``summary()`` gives metafor's printout.
+
+    Attributes:
+        fixed: Table of the coefficients (``fixed=True``) with the columns ``estimate``, ``ci.lb`` and ``ci.ub``, one row per coefficient, or None.
+        random: Table of the variance components with the same columns, or None. The rows are ``tau^2``, ``tau``, ``I^2(%)`` and ``H^2`` for an
+            ``rma_uni`` fit; for an ``rma_mv`` fit ``sigma^2`` and ``sigma``, ``tau^2`` and ``tau`` or ``gamma^2`` and ``gamma`` (one pair), or ``rho`` or
+            ``phi`` (one row), with the position added (``.1``, ``.2``, ...) if the model has several; for a location-scale fit ``alpha.1``, ``alpha.2``,
+            ... (``alpha`` if there is one).
+        lb_sign: Prefix printed before the lower bounds of ``random``: ``'<'`` if the bound lies below the lower end of the interval searched, ``'>'``
+            if it lies above the upper end, else ``''``.
+        ub_sign: Prefix printed before the upper bounds of ``random``, as ``lb_sign``.
+        digits: Number of decimals used when printing (None if not set).
+        tau2_min: Lower end of the interval searched for the bounds of ``tau^2`` (``rma_uni`` fits with ``random=True``, else None).
+    """
 
     fixed: pandas.DataFrame | None
     random: pandas.DataFrame | None
@@ -113,10 +127,25 @@ class ConfintList(list[ConfintResult]):
 
 @functools.singledispatch
 def confint(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> typing.Any:
-    """Confidence intervals for a fitted model.
+    """Confidence intervals for the coefficients and variance components of a fitted model (metafor's ``confint``).
+
+    This is a single-dispatch function: the implementation is chosen by the class of ``model``. See
+    [confint_rma_uni][metafopy.methods.confint.confint_rma_uni], [confint_rma_mv][metafopy.methods.confint.confint_rma_mv],
+    [confint_rma_ls][metafopy.methods.ls_confint.confint_rma_ls] and [confint_fixed_binary][metafopy.methods.binary.confint_fixed_binary]; selection
+    model fits (``selmodel``) are registered too.
+
+    Args:
+        model: The fitted model. Its class selects the implementation.
+        *args: Positional arguments passed on to the implementation.
+        **kwargs: Keyword arguments passed on to the implementation.
+
+    Returns:
+        The intervals, a [ConfintResult][metafopy.ConfintResult] (a ``ConfintList``, a list of them, for some ``rma_mv``, location-scale and selection
+        model requests).
 
     Raises:
-        metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
+        metafopy.errors.ArgumentError: there is no implementation for the class of ``model`` (for example an ``rma_glmm`` fit, as in metafor). An
+            argument the implementation does not have is a ``TypeError`` from Python, as for any function.
     """
     raise metafopy.errors.ArgumentError(f'confint() not implemented for {type(model).__name__}')
 
@@ -152,22 +181,58 @@ def confint_rma_uni(
     extint: bool = False,
     parm: typing.Any = None,
 ) -> ConfintResult:
-    """CIs for an ``rma.uni`` fit (metafor's ``confint.rma.uni``).
+    """Confidence intervals for the coefficients and for ``tau^2``, ``I^2`` and ``H^2`` of an [rma_uni][metafopy.rma_uni] fit (metafor's
+    ``confint.rma.uni``).
 
-    ``type`` is ``'qp'`` (Q-profile; Viechtbauer, 2007, doi:10.1002/sim.2514),
-    ``'genq'`` (generalised Q; Jackson, 2013, doi:10.1002/jrsm.1081; the default
-    for ``method='GENQ'``/``'GENQM'`` fits), ``'pl'`` (profile likelihood),
-    ``'ht'`` (Higgins & Thompson, 2002, doi:10.1002/sim.1186) or one of the
-    Wald types. ``transf`` (with optional ``targs``) is applied to the fixed
-    effects and their bounds. ``verbose`` prints the steps of the root finding
-    (on stdout, as metafor's ``cat()``), with ``digits`` decimals. ``control`` is metafor's list of root finding settings
-    (``tau2_min``, ``tau2_max``, ``tol`` and ``maxiter``, written with ``.`` or ``_``); its entries replace the keyword arguments of the same name.
-    ``xlim`` (metafor's ``...`` argument) is the interval ``(tau2_min, tau2_max)`` searched for the bounds (a single value is the upper
-    limit and the lower one is 0) and wins over ``control``. ``extint=True`` lets the search for a profile-likelihood bound widen the interval
-    (R's ``extendInt``; metafor's ``...`` argument). ``parm`` is ignored with a warning, as in metafor.
+    The interval for ``tau^2`` is found by root finding (Q-profile, generalised Q, profile likelihood or the Higgins-Thompson method) or is of Wald type;
+    the bounds of ``I^2`` and ``H^2`` follow from those of ``tau^2``.
+
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/confint.rma.uni.r>; reference page:
+    <https://wviechtb.github.io/metafor/reference/confint.rma.html>.
+
+    Args:
+        model: Model fitted by [rma_uni][metafopy.rma_uni].
+        fixed: Give Wald-type intervals for the coefficients (``fixed`` table of the result), using the t distribution with the degrees of freedom of the
+            test if the model uses it, else the normal distribution.
+        random: Give intervals for ``tau^2`` (and ``tau``), ``I^2`` and ``H^2`` (``random`` table). At least one of ``fixed`` and ``random`` must be True.
+        type: Method for the interval of ``tau^2`` (case is ignored; any other value raises ``InputError``): ``'qp'`` (Q-profile, Viechtbauer, 2007,
+            [doi:10.1002/sim.2514](https://doi.org/10.1002/sim.2514); needs positive sampling variances), ``'genq'`` (generalised Q, Jackson, 2013,
+            [doi:10.1002/jrsm.1081](https://doi.org/10.1002/jrsm.1081); needs a ``GENQ`` or ``GENQM`` fit), ``'pl'`` (profile likelihood, which metafor
+            suggests for ML and REML fits; the likelihood used is the REML one for ``method='REML'`` and the ML one otherwise), ``'ht'`` (the
+            test-based method of Higgins and Thompson, 2002, [doi:10.1002/sim.1186](https://doi.org/10.1002/sim.1186); only for models without
+            moderators and ``k > 2``), or a Wald type ``'wald'``, ``'wald.log'`` or ``'wald.sqrt'`` (in the metafor source but not described on its
+            reference page). Default: ``'genq'`` for ``GENQ`` and ``GENQM`` fits, else ``'qp'``.
+        level: Confidence level in percent (``95`` is 95%). As in metafor, a value below 1 is read as the confidence level if it is above 0.5
+            (``0.95``) and as the significance level otherwise (``0.05``). Default: the level of the model.
+        transf: Function applied to each coefficient and bound of the ``fixed`` table separately, for example ``numpy.exp``; the bounds are put in order.
+            Default: none.
+        targs: Second argument passed to ``transf`` (``transf(value, targs)``). Default: none, except for the integral and mode transformations of
+            [transf][metafopy.transf], which get ``{'tau2': tau2}``.
+        tau2_min: Lower end of the interval searched for the bounds of ``tau^2``. Default: the smaller of 0 and the estimate (metafor uses the
+            ``tau2.min`` of the control of the fitted model instead if it was set; metafopy does not). Replaced by the entry of ``control`` or by ``xlim``.
+        tau2_max: Upper end of the interval searched for the bounds. Default: the largest of 100, ten times the estimate and ten times the lower end.
+        tol: Convergence tolerance of the root finding (default ``eps^0.25``). Not used for ``type='genq'``, which uses the defaults of R's ``uniroot``
+            as metafor does.
+        maxiter: Maximum number of iterations of the root finding (not used for ``type='genq'``).
+        verbose: Print the steps of the root finding for the types ``'qp'``, ``'genq'`` and ``'pl'`` on stdout, as metafor does; with ``digits`` decimals.
+        digits: Number of decimals used for ``verbose`` output and the printout of the result. Default: the ``digits`` option, else that of the model.
+        control: metafor's list of root-finding settings (``tau2_min``, ``tau2_max``, ``tol`` and ``maxiter``, written with ``.`` or ``_``). Its entries
+            replace the keyword arguments of the same name. Names must be given in full (metafor accepts partial names); entries that only other
+            functions of metafor read, including ``verbose``, are ignored here, and any other entry raises ``InputError``.
+        xlim: Interval ``(tau2_min, tau2_max)`` searched for the bounds (metafor's ``...`` argument); a single value is the upper limit and the lower one
+            is 0. Wins over ``control``.
+        extint: Let the search for a profile-likelihood bound (``type='pl'``) widen the interval (R's ``extendInt``; metafor's ``...`` argument).
+        parm: Ignored, with a warning, as in metafor.
+
+    Returns:
+        A [ConfintResult][metafopy.ConfintResult] with the ``fixed`` table (coefficients) and/or the ``random`` table (``tau^2``, ``tau``, ``I^2(%)``,
+        ``H^2``), each with the columns ``estimate``, ``ci.lb`` and ``ci.ub``. A bound the search cannot find is NaN, with a warning.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InputError: an argument is invalid (unknown ``type`` or ``control`` entry, neither ``fixed`` nor ``random``, ``xlim`` of the wrong
+            length, a search interval that does not contain the estimate for ``type='pl'``, ``type='genq'`` for a fit that is not ``GENQ`` or ``GENQM``,
+            ``type='ht'`` with moderators or ``k <= 2``, ``type='qp'`` with non-positive sampling variances), ``k = 1``, or the model has no
+            estimated random-effects component (equal-effects methods, or a fixed ``tau^2``).
     """
     warn_parm(parm)
     x = model
@@ -569,18 +634,59 @@ def confint_rma_mv(
     extint: bool = False,
     parm: typing.Any = None,
 ) -> ConfintResult | ConfintList:
-    """CIs for an ``rma.mv`` fit (metafor's ``confint.rma.mv``).
+    """Confidence intervals for the variance and correlation components, or the coefficients, of an [rma_mv][metafopy.rma_mv] fit (metafor's
+    ``confint.rma.mv``).
 
-    ``sigma2``, ``tau2``, ``rho``, ``gamma2`` or ``phi`` (a 0-based position; only one may be given) request a
-    profile-likelihood CI (Hardy & Thompson, 1996, doi:10.1002/(SICI)1097-0258(19960430)15:8<619::AID-SIM188>3.0.CO;2-A)
-    for that component; ``fixed=True`` gives Wald-type CIs for the coefficients. With neither, a profile-likelihood CI is
-    computed for every estimated variance/correlation component and a :class:`ConfintList` (a list of results) is returned (a single result if there is one).
-    ``verbose`` prints the profile steps of the root finding on stdout, with ``digits`` decimals. ``control`` is metafor's list of settings
-    (``vc_min``, ``vc_max``, ``tol``, ``maxiter`` and ``eptries``, written with ``.`` or ``_``); its entries replace the keyword arguments of the same name.
-    ``xlim`` (metafor's ``...`` argument) is the interval ``(vc_min, vc_max)`` searched for the bounds and wins over ``control``.
+    The intervals of the components are profile-likelihood intervals (Hardy and Thompson, 1996,
+    [doi:10.1002/(SICI)1097-0258(19960330)15:6<619::AID-SIM188>3.0.CO;2-A](https://doi.org/10.1002/(SICI)1097-0258(19960330)15:6%3C619::AID-SIM188%3E3.0.CO;2-A)).
+
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/confint.rma.mv.r>; reference page:
+    <https://wviechtb.github.io/metafor/reference/confint.rma.html>.
+
+    Args:
+        model: Model fitted by [rma_mv][metafopy.rma_mv].
+        fixed: Give Wald-type intervals for the coefficients (t distribution with the degrees of freedom of each coefficient unless the test is ``'z'``).
+            Without a component argument only these are returned; with one, the interval of the component is returned too.
+        sigma2: 0-based position of the ``sigma2`` component to compute the interval for. Only one of ``sigma2``, ``tau2``, ``rho``, ``gamma2`` and
+            ``phi`` may be given.
+        tau2: 0-based position of the ``tau2`` component.
+        rho: 0-based position of the ``rho`` component.
+        gamma2: 0-based position of the ``gamma2`` component.
+        phi: 0-based position of the ``phi`` component.
+        level: Confidence level in percent (``95`` is 95%). As in metafor, a value below 1 is read as the confidence level if it is above 0.5
+            (``0.95``) and as the significance level otherwise (``0.05``). Default: the level of the model.
+        transf: Function applied to each coefficient and bound (with ``fixed=True``) separately; the bounds are put in order. Default: none.
+        targs: Second argument passed to ``transf`` (``transf(value, targs)``). Default: none, except for the integral and mode transformations of
+            [transf][metafopy.transf], which get ``{'tau2': 0}``.
+        vc_min: Lower end of the interval searched for the bounds of a component. Default: 0 for ``sigma2``, ``tau2`` and ``gamma2``; for ``rho`` and
+            ``phi`` -1, except ``min(0, estimate)`` for the structures ``'AR'``, ``'HAR'`` and ``'CAR'`` and 0 for the spatial structures. Replaced by
+            ``control`` or ``xlim``.
+        vc_max: Upper end of the interval searched for the bounds. Default: for ``sigma2``, ``tau2`` and ``gamma2`` the larger of 10 and 100 times the
+            estimate (10 if the estimate is practically 0); for ``rho`` and ``phi`` 1, except ``max(10, 10 * estimate)`` for the structures ``'SPEXP'``,
+            ``'SPGAU'``, ``'SPLIN'``, ``'SPRAT'`` and ``'SPSPH'`` and ``max(2, 2 * estimate)`` for ``'PHYPL'`` and ``'PHYPD'``.
+        tol: Convergence tolerance of the root finding (default ``eps^0.25``).
+        maxiter: Maximum number of iterations of the root finding.
+        eptries: Number of attempts to find the bounds: when the model cannot be fitted at an end of the interval searched, that end is moved towards the
+            estimate by ``1 / eptries`` of the distance and tried again.
+        verbose: Print the steps of the root finding on stdout, with ``digits`` decimals.
+        digits: Number of decimals used for ``verbose`` output and the printout. Default: the ``digits`` option, else that of the model.
+        control: metafor's list of settings (``vc_min``, ``vc_max``, ``tol``, ``maxiter`` and ``eptries``, written with ``.`` or ``_``). Its entries
+            replace the keyword arguments of the same name. Names must be given in full; entries that only other functions of metafor read, including
+            ``verbose``, are ignored here, and any other entry raises ``InputError``.
+        xlim: Interval ``(vc_min, vc_max)`` searched for the bounds (metafor's ``...`` argument). Wins over ``control``.
+        extint: Let the search for a bound widen the interval (R's ``extendInt``).
+        parm: Ignored, with a warning, as in metafor.
+
+    Returns:
+        A [ConfintResult][metafopy.ConfintResult] for the requested component and/or the coefficients (``fixed=True``). With neither given, one result
+        per estimated component in a ``ConfintList`` (a list, in the order ``sigma2``, ``tau2``, ``rho``, ``gamma2``, ``phi``), or a single result if
+        there is only one component. Tables have the columns ``estimate``, ``ci.lb`` and ``ci.ub``; a bound the search cannot find is NaN, with a
+        warning.
 
     Raises:
-        metafopy.errors.InputError: an argument is invalid or the model has no such component.
+        metafopy.errors.InputError: more than one component argument is given, the model has no such (estimated) component or it was fixed, the
+            interval searched does not contain the estimate, ``xlim`` is not of length 2, ``control`` has an unknown entry, or the model has no
+            component to give an interval for.
     """
     warn_parm(parm)
     x = model

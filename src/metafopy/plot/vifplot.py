@@ -2,7 +2,7 @@
 
 For each coefficient (or set of coefficients) the histogram of the (G)VIFs simulated under independence of the moderators, with the
 observed (G)VIF as a dashed line and the tail beyond it shaded; the share of simulated values beyond the observed one is its p-value.
-See https://wviechtb.github.io/metafor/reference/plot.vif.rma.html and Beisbart et al. (2024), doi:10.1002/jrsm.1706.
+See https://wviechtb.github.io/metafor/reference/plot.vif.rma.html.
 """
 
 import collections.abc
@@ -49,18 +49,40 @@ def plot_vif(
     xlim: collections.abc.Sequence[float] | None = None,
     layout: object = None,
 ) -> PlotVifResult:
-    """Plot the simulated (G)VIFs of a :func:`~metafopy.vif` result obtained with ``sim=True`` (``plot.vif.rma``).
+    """Plot the simulated (G)VIFs of a [vif][metafopy.vif] result obtained with ``sim=True`` (``plot.vif.rma``).
 
-    ``breaks`` is the ``breaks`` argument of ``hist()``, ``freq`` draws counts instead of densities, ``trim`` drops that fraction of the
-    largest simulated values from the histogram and ``lwd`` gives the widths of the dashed line at the observed (G)VIF and of the kernel
-    density estimate (of bandwidth adjustment ``adjust``); a width of 0 leaves the element out. A (G)VIF beyond the right edge of the
-    plot is shown at the edge, with an arrow. ``xlim`` sets the limits of the horizontal axis of every panel (``hist()``'s ``xlim``, which
-    metafor passes on through ``...``); ``layout`` is accepted for old code and ignored with a warning, as metafor does.
+    Mirrors metafor's ``plot.vif.rma()``, see <https://wviechtb.github.io/metafor/reference/plot.vif.rma.html>.
 
-    Returns a :class:`PlotVifResult` with the axes of the panels.
+    One panel is drawn per (G)VIF in ``x``, titled ``Coefficient: name`` (``Coefficients: name`` for a set of coefficients). Each panel is the
+    histogram of the (G)VIFs simulated under independence of the moderators, with the observed (G)VIF as a dashed black vertical line and the
+    bars beyond it filled with ``col_out``. A (G)VIF beyond the right edge of the plot is drawn at the edge, with an arrow pointing to it.
+    The kernel density estimate is omitted by default (its ``lwd`` is 0).
+
+    Args:
+        x: The result of [vif][metafopy.vif] obtained with ``sim=True``.
+        breaks: The ``breaks`` argument of R's ``hist()``: a number of bins, a rule name or a vector of break points. Default: ``'Scott'``.
+        freq: Draw counts instead of densities. This turns off the kernel density estimate. Default: ``False``.
+        col: Fill colour of the histogram bars. Default: ``'#B3B3B3'`` (light grey).
+        border: Border colour of the bars. Default: ``'#E5E5E5'`` (lighter grey).
+        col_out: Fill colour of the bars beyond the observed (G)VIF. Default: ``'#FF000080'`` (semi-transparent red). The observed value
+            itself is always drawn in black.
+        col_density: Colour of the kernel density estimate. Default: ``'blue'``.
+        trim: Fraction (below 0.5) of the largest simulated values dropped from the histogram. Default: 0.
+        adjust: Bandwidth adjustment of the kernel density estimate, as the ``adjust`` argument of R's ``density()``. Default: 1.
+        lwd: Line widths of the dashed line at the observed (G)VIF and of the kernel density estimate; a width of 0 leaves the element out.
+            A single number is used for both. Default: ``(2, 0)``.
+        tail: Tail of the simulated distribution filled beyond the observed (G)VIF, ``'upper'`` or ``'lower'``. Not in metafor, which always
+            fills the upper tail. Default: ``'upper'``.
+        ax: Matplotlib axes to draw into; the panels are laid out inside it. Default: the current axes.
+        xlim: Limits of the horizontal axis of every panel. Default: the range of the histogram breaks.
+            The plotted axis extends 4 percent beyond the limits, as in R.
+        layout: Deprecated and ignored; a warning is issued, as in metafor.
+
+    Returns:
+        A ``PlotVifResult`` with the fields ``axes`` (one axes per panel) and ``names`` (the coefficient names of the panels).
 
     Raises:
-        metafopy.errors.InputError: the result has no simulated values (``sim=True`` was not used) or an argument is invalid.
+        metafopy.errors.InputError: ``x`` was not obtained with ``sim=True``; ``trim`` is 0.5 or more; ``tail`` is neither ``'lower'`` nor ``'upper'``.
     """
     if layout is not None:
         warnings.warn("Argument 'layout' has been deprecated.", stacklevel=2)

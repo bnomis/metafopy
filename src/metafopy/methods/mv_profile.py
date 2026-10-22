@@ -40,11 +40,14 @@ NONNEG_CORR = ('CAR', *metafopy.models.mv_structs.SPATIAL)
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class MVProfileResult(metafopy.methods.profile.ProfileResult):
-    """Profile log-likelihood of one variance or correlation component of an ``rma.mv`` fit.
+    """Profile log-likelihood of one variance or correlation component of an [rma_mv][metafopy.rma_mv] fit. It has the attributes of
+    [ProfileResult][metafopy.ProfileResult], with ``tau2`` holding the grid of the profiled component (whatever it is, also through the property
+    named like the component: ``sigma2``, ``rho``, ``gamma2`` or ``phi``; the others raise AttributeError); ``I2`` and ``H2`` are NaN.
 
-    As :class:`~metafopy.ProfileResult`, with ``tau2`` holding the grid of the profiled component; ``comp`` names it
-    (``'sigma2'``, ``'tau2'``, ``'rho'``, ``'gamma2'`` or ``'phi'``), ``comp_pos`` is its 0-based position and ``comp_n``
-    the number of components of that kind in the model. ``I2`` and ``H2`` are empty.
+    Attributes:
+        comp: Name of the profiled component: ``'sigma2'``, ``'tau2'``, ``'rho'``, ``'gamma2'`` or ``'phi'``.
+        comp_pos: 0-based position of the profiled component.
+        comp_n: Number of components of that kind in the model.
     """
 
     comp: str = 'sigma2'
@@ -266,20 +269,53 @@ def profile_rma_mv(
     LB: bool = False,
     **plot_args: typing.Any,
 ) -> MVProfileResult | list[MVProfileResult]:
-    """Profile the likelihood over one variance or correlation component of an ``rma.mv`` fit.
+    """Profile the likelihood of an [rma_mv][metafopy.rma_mv] fit over one variance or correlation component (metafor's ``profile.rma.mv``).
 
-    ``sigma2``, ``tau2``, ``rho``, ``gamma2`` or ``phi`` (a 0-based position; only one may be given) selects the component;
-    without any of them every estimated component is profiled and a list is returned (a single result if there is just
-    one). ``steps`` is the number of equally spaced values in ``xlim`` or the values themselves; ``xlim`` defaults to
-    metafor's range around the estimate (a quarter to four times a variance, at least up to 0.1; the estimate +- 0.5 for a
-    correlation). ``parallel`` (``'snow'`` or ``'multicore'``), ``ncpus`` and ``cl`` fit the models of the grid in a process
-    pool, as for :func:`metafopy.profile` of selection models, and ``progbar=True`` prints a progress bar. ``plot=True``
-    draws the profiles with :func:`metafopy.plot.plot_profile` (metafor's defaults are ``plot=TRUE`` and ``progbar=TRUE``). Further keyword arguments
-    (``pch``, ``cline``, ``refline``, ``xlab``, ``ylab``, ``main``, ``log``, ``cex``, ``lwd``) are passed on to :func:`metafopy.plot.plot_profile`, as
-    metafor's ``...`` is to ``plot.profile.rma``. ``startmethod`` is deprecated in metafor and only warns; ``LB`` is accepted as in metafor and changes nothing.
+    Without any of ``sigma2``, ``tau2``, ``rho``, ``gamma2`` and ``phi`` every estimated component is profiled and a list is returned (a single result if
+    there is just one; several are a ``ProfileList``). ``xlim`` defaults to metafor's range around the estimate: for a variance a quarter to four times
+    the estimate (half to twice for ``tau2`` and ``gamma2`` with a spatial structure), at least up to 0.1; for a correlation the estimate +- 0.5 within
+    (-1, 1) (from 0 for ``'CAR'``, half to twice the estimate for the spatial structures).
+
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/profile.rma.mv.r>; reference page:
+    <https://wviechtb.github.io/metafor/reference/profile.rma.html>.
+
+    Args:
+        fitted: Model fitted by [rma_mv][metafopy.rma_mv].
+        sigma2: 0-based position of the ``sigma2`` component to profile (metafor counts from 1). Only one of ``sigma2``, ``tau2``, ``rho``, ``gamma2``
+            and ``phi`` may be given.
+        tau2: 0-based position of the ``tau2`` component to profile.
+        rho: 0-based position of the ``rho`` component to profile.
+        gamma2: 0-based position of the ``gamma2`` component to profile.
+        phi: 0-based position of the ``phi`` component to profile.
+        xlim: Range ``(lower, upper)`` of the profiled values of the component, within the parameter space (a variance at least 0, a correlation
+            within -1 and 1, at least 0 for ``'CAR'`` and the spatial structures). Default: metafor's range around the estimate.
+        ylim: Range ``(lower, upper)`` of the profile log-likelihood stored in the result (and drawn by the plot). Default: the range of the profile and
+            the maximum.
+        steps: Number of equally spaced values in ``xlim`` to profile over (a single number, at least 2), or a sequence of two or more values to profile
+            at (then ``xlim`` defaults to their range). Missing values are not allowed.
+        lltol: Tolerance when checking whether a profiled log-likelihood exceeds that of the fitted model (a warning is given if it does).
+        progbar: Print a progress bar to stderr while the models of the grid are fitted (default False; metafor's default is ``TRUE``).
+        parallel: Parallel fitting of the grid: ``'no'`` (default), ``'snow'`` or ``'multicore'``; both use a process pool ('multicore' forks the
+            workers where the platform allows). As in metafor, ``'no'`` with ``ncpus > 1`` (or with ``cl``) is ``'snow'``, and ``'snow'`` or
+            ``'multicore'`` with ``ncpus < 2`` and no ``cl`` runs serially. The result equals that of the serial run. Any other value raises
+            an InputError.
+        ncpus: Number of worker processes (at least 1).
+        cl: Executor to run the fits on instead of creating a process pool of ``ncpus`` workers.
+        plot: Draw the profile with [plot_profile][metafopy.plot_profile] (default False; metafor's default is ``TRUE``).
+        exp: Report the likelihood instead of the log-likelihood (exponentiate it; ``ylim`` is then not widened by 0.1).
+        ax: Matplotlib axes to draw on (with ``plot=True``). Default: a new figure.
+        startmethod: Deprecated in metafor; giving it only warns.
+        LB: Accepted as in metafor, where it chooses ``parLapplyLB``; it changes no result.
+        **plot_args: Further keyword arguments passed on to [plot_profile][metafopy.plot_profile] (``pch``, ``cline``, ``refline``, ``xlab``, ``ylab``,
+            ``main``, ``log``, ``cex``, ``lwd``), as metafor's ``...`` is to ``plot.profile.rma``; they are not used (and not checked) with ``plot=False``.
+
+    Returns:
+        The profile, a [MVProfileResult][metafopy.methods.mv_profile.MVProfileResult], or a list of them when several components are profiled.
 
     Raises:
-        metafopy.errors.InputError: an argument is invalid or the model has no such (estimated) component.
+        metafopy.errors.InputError: more than one component is given; the model has no such (estimated) component or the position does not exist or is
+            fixed; no component can be profiled; ``steps`` has missing values or is a single number below 2; ``xlim`` or ``ylim`` does not have length
+            2 or ``xlim`` leaves the parameter space; ``parallel`` is not one of the accepted values or ``ncpus`` is below 1.
     """
     if startmethod is not None:
         warnings.warn("Argument 'startmethod' has been deprecated.", stacklevel=2)

@@ -19,7 +19,7 @@ algorithm of Liao and Rosen. The integral is evaluated by QUADPACK's
 
 References: Liao and Rosen (2001), doi:10.1198/000313001753272547 (the
 algorithm of metafor's ``.dnoncenhypergeom``); Stijnen et al. (2010),
-doi:10.1002/sim.3767 (the exact-likelihood random-effects model).
+doi:10.1002/sim.4040 (the exact-likelihood random-effects model).
 """
 
 import dataclasses

@@ -404,7 +404,7 @@ def as_refit_on_used(fit: RMAResult, *, dropped: bool, measure: str, numbered: b
 def level_to_alpha(level: float) -> float:
     """metafor's ``.level()``: 95 (or 0.95) -> 0.05; a value up to 0.5 is already an alpha, so 0.05 stays 0.05 and 0 gives 1.
 
-    See `.level <https://github.com/wviechtb/metafor/blob/master/R/misc.func.hidden.R>`_.
+    See `.level <https://github.com/wviechtb/metafor/blob/master/R/misc.func.hidden.r>`_.
     """
     if level == 0:
         return 1.0
@@ -601,54 +601,133 @@ def rma_uni(
 ) -> RMAResult | metafopy.models.rma_ls_result.RMALSResult:
     """Fit an equal-, fixed-, random- or mixed-effects meta-analytic model.
 
-    Mirrors metafor's ``rma.uni()`` (alias ``rma``); see
-    https://wviechtb.github.io/metafor/reference/rma.uni.html. Inputs can be
+    Mirrors metafor's ``rma.uni()`` (alias ``rma``), see
+    <https://wviechtb.github.io/metafor/reference/rma.uni.html>. The model is given either as effect sizes with their sampling variances
+    (``yi`` with ``vi`` or ``sei``), as a model formula in ``yi`` (``'yi ~ ablat + year'``, which then also supplies the moderators), as an
+    [escalc][metafopy.escalc] data frame, or as raw data (``ai``, ``bi``, ... with ``measure``), in which case the effect sizes are
+    computed by [escalc][metafopy.escalc]. Passing ``scale`` fits a location-scale model (Viechtbauer & Lopez-Lopez, 2022,
+    [doi:10.1002/jrsm.1562](https://doi.org/10.1002/jrsm.1562)).
 
-    - ``yi`` with ``vi`` or ``sei`` (arrays or column names in ``data``);
-    - a model formula in ``yi`` (``'yi ~ ablat + year'``), which then also
-      supplies the moderators;
-    - an :func:`~metafopy.escalc` data frame as ``yi`` or ``data``;
-    - raw data (``ai``/``bi``/``ci``/``di``, ``m1i``/``sd1i``/``n1i``, ...)
-      with ``measure=``, in which case the effect sizes are computed by
-      :func:`~metafopy.escalc` (with ``add``, ``to``, ``drop00``, ``vtype``,
-      ``correct``, ``cutoff``, ``onlyo1``, ``addyi`` and ``addvi``).
+    Args:
+        yi: Observed effect sizes, as an array or the name of a column of ``data``. May also be a model formula
+            (``'yi ~ ablat + year'``; needs ``data``; ``mods`` is then ignored with a warning and so is ``intercept``, since the formula decides
+            whether there is an intercept), or a data frame (taken as ``data``; its ``yi`` and ``vi`` columns are used).
+        vi: Sampling variances, as an array or a column name. A single value is used for every study.
+        sei: Standard errors, as an array or a column name; their squares are used as ``vi``. Ignored when ``vi`` is given.
+        weights: Optional custom weights for the fit, as an array or a column name; negative weights raise an error. Required for
+            ``method='GENQ'`` and ``'GENQM'``.
+        ai: 2x2 table frequencies (upper left cell). With ``bi``, ``ci`` and ``di`` and a ``measure`` such as ``'OR'`` or ``'RR'``.
+        bi: 2x2 table frequencies (upper right cell).
+        ci: 2x2 table frequencies (lower left cell).
+        di: 2x2 table frequencies (lower right cell).
+        n1i: Group sizes or row totals (first group or row).
+        n2i: Group sizes or row totals (second group or row).
+        x1i: Number of events (first group).
+        x2i: Number of events (second group).
+        t1i: Total person-times (first group).
+        t2i: Total person-times (second group).
+        m1i: Means (first group or time point).
+        m2i: Means (second group or time point).
+        sd1i: Standard deviations (first group or time point).
+        sd2i: Standard deviations (second group or time point).
+        xi: Frequencies of the event of interest.
+        mi: Frequencies of the complement of the event of interest, or the group means.
+        ri: Raw correlation coefficients.
+        ti: Total person-times or t-test statistics.
+        fi: F-test statistics.
+        pi: (Signed) p-values.
+        sdi: Standard deviations.
+        r2i: ``R^2`` values.
+        mini: Minimum values.
+        maxi: Maximum values.
+        ni: Sample or group sizes, as an array or column name. Passed to [escalc][metafopy.escalc] for raw data; otherwise stored with the
+            model (as its ``ni``), and taken from an [escalc][metafopy.escalc] frame when not given.
+        mods: Moderators, as a one-sided formula string (``'~ ablat + year'``; needs ``data``), a one-dimensional array (one moderator), a matrix or a
+            data frame, with one row per study. ``None`` fits a model with no moderators.
+        measure: Effect size or outcome measure: ``'GEN'`` (generic, the default, used with ``yi`` and ``vi``) or any code of
+            [escalc][metafopy.escalc] (``'SMD'``, ``'OR'``, ``'RR'``, ``'RD'``, ``'ZCOR'``, ...; with ``yi`` and ``vi`` it only labels the estimates).
+            ``'HR'`` and ``'HD'`` are also accepted. Must be given when raw data are passed; an [escalc][metafopy.escalc] frame supplies its own.
+        data: Data frame holding the variables named in the other arguments.
+        slab: Study labels, as a sequence or a column name. Defaults to the labels stored by [escalc][metafopy.escalc], else ``1, 2, ...``.
+        subset: Which studies to fit: a boolean array, an array of 0-based indices, or a string expression evaluated on ``data``.
+        add: Constant added to zero cells, counts or frequencies when effect sizes are computed from raw data (default ``1/2``, but ``0`` for the
+            measures ``'AS'``, ``'PHI'``, ``'ZPHI'``, ``'RTET'``, ``'ZTET'``, ``'IRSD'``, ``'PAS'``, ``'PFT'``, ``'IRS'`` and ``'IRFT'``). See
+            [escalc][metafopy.escalc].
+        to: Which tables get ``add``: ``'only0'`` (those with a zero cell, the default), ``'all'``, ``'if0all'`` (all, if any table has a zero cell) or
+            ``'none'``.
+        drop00: Drop studies with no events (or only events) in both groups from the calculations (raw data only).
+        intercept: Include an intercept when ``mods`` is a vector, matrix or data frame. Ignored when ``mods`` (or ``yi``) is a formula. Without
+            moderators an intercept is always included (``intercept=False`` gives a warning).
+        method: Estimator of the amount of heterogeneity ``tau^2`` (case-sensitive): ``'EE'``, ``'FE'`` or ``'CE'`` (equal-, fixed- or common-effects
+            model, ``tau^2 = 0``), ``'DL'``, ``'DLIT'``, ``'HE'`` (also ``'CO'`` and ``'VC'``), ``'HS'``, ``'HSk'``, ``'SJ'``, ``'SJIT'``, ``'ML'``,
+            ``'REML'`` (the default), ``'EB'``, ``'PM'`` (also ``'MP'``), ``'PMM'``, ``'GENQ'`` or ``'GENQM'``. A sequence is tried in order until one
+            succeeds. Location-scale models need ``'ML'`` or ``'REML'`` (the first of a sequence is used).
+        weighted: Use inverse-variance weights (``True``) or ordinary least squares (``False``).
+        test: Test for the coefficients (case-insensitive): ``'z'`` (normal, the default), ``'t'`` (t distribution with ``k - p`` degrees of freedom),
+            ``'knha'`` (Knapp-Hartung adjustment, with t and F distributions; alias ``'hksj'``) or ``'adhoc'`` (Knapp-Hartung, but the adjusted
+            standard errors are never smaller than the unadjusted ones). With one study ``'z'`` is used.
+        level: Confidence interval level in percent (``95`` is 95%). As in metafor, ``0.95`` is also read as 95% and ``0.05`` as an alpha of 0.05.
+        digits: Number of decimals used when printing, or a mapping with the keys ``est``, ``se``, ... (only ``est`` is used, else the first value).
+            Stored in the result; ``None`` is 4.
+        btt: Coefficients to test jointly in the omnibus test, as 0-based indices or a regular expression matched
+            against coefficient names (``re.search``).
+            Printed output reports them 1-based, as metafor does. Default: all coefficients but the intercept (the intercept itself for a model
+            without moderators).
+        att: Scale coefficients to test jointly, as ``btt``. Location-scale models only; ignored with a warning otherwise.
+        scale: Scale moderators of a location-scale model: a one-sided formula (``'~ ni100'``, which includes an intercept unless ``0`` or ``-1`` is
+            given; needs ``data``), or a matrix or data frame with one row per study, which is used as it is (no intercept column is added). Turns the
+            model into a location-scale model.
+        link: Link function of the scale model, ``'log'`` (the default) or ``'identity'``; anything else raises an error. Location-scale models only.
+        optbeta: Estimate the location coefficients jointly with the scale coefficients (needs ``weighted=True``). Location-scale models only; ignored
+            with a warning otherwise.
+        alpha: Fixed values for the scale coefficients (``None`` or ``NaN`` entries are estimated; one number is used for all). Location-scale models
+            only.
+        beta: Fixed values for the location coefficients (``None`` or ``NaN`` entries are estimated); used only with ``optbeta=True``.
+            Location-scale models only.
+        tau2: Fixed value of ``tau^2`` instead of estimating it (no effect for ``method='EE'``, ``'FE'`` or ``'CE'``; ignored with a warning for
+            location-scale models).
+        control: Settings of the ``tau^2`` estimation (``tau2_init``, ``tau2_min``, ``tau2_max``, ``threshold``, ``tol``, ``ll0check``, ``maxiter``,
+            ``stepadj``, ``evtol`` and ``REMLf``), as a [Control][metafopy.models.tau2.Control] or a mapping with the same names as metafor (``.``
+            becomes ``_``). Names that only other metafor functions read are ignored; any other name raises an error. Location-scale models take an
+            [LSControl][metafopy.models.rma_ls_result.LSControl] or a mapping instead.
+        verbose: Print metafor's iteration log of the ``tau^2`` estimators to stdout; ``2`` or more also prints progress messages to stderr.
+            Location-scale models print only a blank line and, for ``2`` or more, the messages about extracting the data.
+        na_action: What to do with studies that have missing values (metafor uses the global ``na.action`` option instead): ``'omit'`` (the default)
+            leaves them out of the fit and ``'fail'`` raises an error. ``'pass'`` leaves them out of the fit too.
+        vtype: Type of the sampling variance formula used by [escalc][metafopy.escalc] for raw data, ``'LS'`` by default; may be a sequence with one
+            type per study.
+        correct: Bias correction of [escalc][metafopy.escalc] for the measures that have one (``True`` by default), for raw data only.
+        cutoff: Value above which the absolute value of an estimate computed by [escalc][metafopy.escalc] is flagged with a warning. The default is 2
+            for ``'SMD'`` and its variants and no check otherwise; ``NaN`` switches the check off.
+        onlyo1: Passed to [escalc][metafopy.escalc]: ``add`` is added to the ``ai`` and ``ci`` cells of the 2x2 tables only, not to ``bi`` and ``di``.
+        addyi: Passed to [escalc][metafopy.escalc]: ``True`` (the default) computes ``yi`` from the counts after ``add`` and ``to``, ``False`` from
+            the unadjusted counts.
+        addvi: Passed to [escalc][metafopy.escalc]: the same for the sampling variances ``vi``.
+        knha: ``True`` is the same as ``test='knha'`` and ``False`` the same as ``test='z'``.
+        dfs: Degrees of freedom of the t and F tests (the first value is used) instead of ``k - p``.
+        i2def: Definition of ``I^2`` and ``H^2``: ``'1'`` (the default), or ``'2'`` to use the typical sampling variance ``1 / mean(1 / vi)``.
+        r2def: Definition of ``R^2`` of a model with moderators: ``'1'`` (the default), ``'1v'``, ``'2'``, ``'2v'``, ``'3'``, ``'3v'``, ``'4'``, ``'4w'``,
+            ``'5'``, ``'6'``, ``'7'`` or ``'8'``.
+        skipr2: Skip the computation of ``R^2``.
+        abbrev: Shorten the names of the coefficients of ``factor()``, ``poly()``, ``relevel()`` and ``I()`` terms.
+        skiphes: Skip the Hessian of location-scale models, so that their standard errors are missing.
 
-    ``method`` may be a single estimator or a sequence tried in order until
-    one succeeds. ``test`` is ``'z'``, ``'t'``, ``'knha'`` (alias ``'hksj'``) or
-    ``'adhoc'``. ``btt`` takes 0-based coefficient indices (or a regex matched
-    against coefficient names); printed output reports them 1-based, as
-    metafor does.
-
-    ``scale`` (a one-sided formula such as ``'~ ni100'`` or a model matrix) turns the
-    model into a location-scale model (Viechtbauer & Lopez-Lopez, 2022,
-    doi:10.1002/jrsm.1562) and the result is a
-    :class:`~metafopy.models.rma_ls_result.RMALSResult`; ``link`` (``'log'`` or
-    ``'identity'``), ``optbeta``, ``alpha`` (fixed values of the scale coefficients),
-    ``beta`` (fixed values of the location coefficients, with ``optbeta``) and ``att``
-    (the scale coefficients to test) only apply to such models.
-
-    ``digits`` (a number of decimals, or a mapping with the keys ``est``, ``se``, ... of which ``est`` is used) is stored in the result
-    and used by its printout unless ``digits`` is passed to ``summary()`` or set with :func:`metafopy.setmfopt`.
-
-    The arguments metafor reads through ``...`` are ``knha`` (``True`` for ``test='knha'`` and ``False`` for ``test='z'``), ``dfs`` (the degrees of
-    freedom of the t and F tests, whose first value is used, instead of ``k - p``), ``i2def`` (``'1'``, or ``'2'`` for the typical sampling variance
-    ``1 / mean(1 / vi)`` in ``I^2`` and ``H^2``), ``r2def`` (the definition of ``R^2`` of a model with moderators: ``'1'``, ``'1v'``, ``'2'``, ``'2v'``,
-    ``'3'``, ``'3v'``, ``'4'``, ``'4w'``, ``'5'``, ``'6'``, ``'7'`` or ``'8'``), ``skipr2`` (skip the computation of ``R^2``), ``abbrev`` (shorten
-    the names of the coefficients of ``factor()``, ``poly()``, ``relevel()`` and ``I()`` terms) and ``skiphes`` (for location-scale models: skip the
-    Hessian, so that the standard errors are missing). ``time=True`` prints the processing time.
-
-    ``verbose`` prints metafor's iteration log of the tau^2 estimators to stdout
-    (and with ``verbose=2`` or more its progress messages to stderr); it has no
-    effect for location-scale models.
-
-    Examples
-    --------
-    >>> from metafopy import datasets, rma
-    >>> dat = datasets.load("dat.bcg")  # doctest: +SKIP
-    >>> rma(measure="RR", ai="tpos", bi="tneg", ci="cpos", di="cneg", data=dat)  # doctest: +SKIP
+    Returns:
+        The fitted model, an [RMAResult][metafopy.models.rma_uni.RMAResult] (an
+            [RMALSResult][metafopy.models.rma_ls_result.RMALSResult] when ``scale`` is given). Estimates are in ``beta``, ``se``, ``zval``, ``pval``,
+            ``ci_lb`` and ``ci_ub``; heterogeneity statistics in ``tau2``, ``I2``, ``H2``, ``QE`` and ``QEp`` (arrays with one value per study
+            for a location-scale model, except ``QE`` and ``QEp``); ``summary()`` returns the printout as a string.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.ArgumentError: ``control`` has a name that no function of metafor reads.
+        metafopy.errors.NotFoundError: a column name given for an argument is not in ``data``.
+        metafopy.errors.EstimationError: every requested ``tau^2`` estimator failed (including ``'GENQ'`` without ``weights``).
+
+    Examples:
+        >>> from metafopy import datasets, rma
+        >>> dat = datasets.load("dat.bcg")  # doctest: +SKIP
+        >>> rma(measure="RR", ai="tpos", bi="tneg", ci="cpos", di="cneg", data=dat)  # doctest: +SKIP
     """
     vlevel = int(verbose)
     if vlevel:

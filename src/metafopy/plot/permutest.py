@@ -3,7 +3,7 @@
 Each panel is the histogram of the test statistics (or coefficients) of the permutations of one coefficient (or the omnibus test), with the
 observed value as a dashed line, the tails beyond it shaded and, optionally, the theoretical null distribution and a kernel density
 estimate. See https://wviechtb.github.io/metafor/reference/plot.permutest.rma.uni.html and Follmann & Proschan (1999),
-doi:10.1111/j.0006-341X.1999.00151.x.
+doi:10.1111/j.0006-341X.1999.00732.x.
 """
 
 import collections.abc
@@ -100,24 +100,60 @@ def plot_permutest(
     xlim: collections.abc.Sequence[float] | None = None,
     layout: object = None,
 ) -> PlotPermutestResult:
-    """Plot the permutation distributions of a :func:`~metafopy.permutest` result (``plot.permutest.rma.uni``).
+    """Plot the permutation distributions of a [permutest][metafopy.permutest] result (``plot.permutest.rma.uni``).
 
-    ``beta`` selects the coefficients (names or 0-based positions; all but the intercept by default; ``[]`` for none) and ``QM=True`` adds the
-    omnibus test. For a location-scale permutation test (:class:`~metafopy.methods.ls_permutest.LSPermutestResult`) ``alpha`` selects the
-    scale coefficients in the same way and ``QS=True`` adds the omnibus test of the scale coefficients; the panels are, as in metafor, the
-    location omnibus test, the location coefficients, the scale omnibus test and the scale coefficients.
-    ``breaks`` is the ``breaks`` argument of ``hist()``, ``freq`` draws counts instead of densities, ``trim`` drops that fraction of the most
-    extreme permutations from the histogram, and ``lwd`` gives the widths of the dashed line at the observed value, of the theoretical
-    null distribution (the density of the reference ``z``, ``t``, chi-square or ``F`` distribution), of the kernel density estimate of
-    the permutation distribution (``adjust`` is its bandwidth adjustment) and of the vertical line at zero; a width of 0 leaves the element out.
-    ``alternative``, ``p2defn`` and ``stat`` default to those of the test. ``legend`` (``True`` or a location) labels the two curves in the first panel.
-    ``xlim`` sets the limits of the horizontal axis of every panel (``hist()``'s ``xlim``, which metafor passes on through ``...``).
-    ``layout`` is accepted for old code and ignored with a warning, as metafor does.
+    Mirrors metafor's ``plot.permutest.rma.uni()``, see <https://wviechtb.github.io/metafor/reference/plot.permutest.rma.uni.html>.
 
-    Returns a :class:`PlotPermutestResult` with the axes of the panels.
+    One panel is drawn per selected element, in the order of metafor: the omnibus test of the location coefficients (``QM=True``), the
+    location coefficients, the omnibus test of the scale coefficients (``QS=True``) and the scale coefficients. Each panel is the histogram of
+    the permuted test statistics (or coefficients), the observed value is a dashed line and the tails beyond it are filled with ``col_out``.
+    The theoretical null distribution and the kernel density estimate are omitted by default (their ``lwd`` is 0). A single-coefficient plot
+    has no panel title.
+
+    Trimming only affects the histogram; the kernel density estimate uses all permutations.
+
+    For an omnibus test with a single degree of freedom (``QM=True`` and one coefficient tested) the theoretical density is infinite at 0. That
+    point is left out of the curve and of the y range, whereas metafor stops with an infinite ``ylim`` there.
+
+    Args:
+        x: The result of [permutest][metafopy.permutest]; a location-scale permutation test gives ``LSPermutestResult``.
+        beta: Location coefficients to plot, as names or 0-based positions (R: 1-based). A single name or position is allowed. Default
+            ``None``: all coefficients but the intercept (the intercept only when it is the only coefficient). ``[]`` selects none.
+        alpha: Scale coefficients to plot, selected as ``beta``. Only used for ``LSPermutestResult``; default ``None``: all but the intercept.
+        QM: Add the panel of the omnibus test of the location coefficients (ignored for an intercept-only model). Default: ``False``.
+        QS: Add the panel of the omnibus test of the scale coefficients (``LSPermutestResult`` only). Default: ``False``.
+        breaks: The ``breaks`` argument of R's ``hist()``: a number of bins, a rule name or a vector of break points. Default: ``'Scott'``.
+        freq: Draw counts instead of densities. Forces ``lwd[1]`` and ``lwd[2]`` to 0, so no curves are drawn. Default: ``False``.
+        col: Fill colour of the histogram bars. Default: ``'#B3B3B3'`` (light grey).
+        border: Border colour of the bars. Default: ``'#E5E5E5'`` (lighter grey).
+        col_out: Fill colour of the bars in the tails beyond the observed value. Default: ``'#FF000080'`` (semi-transparent red).
+        col_ref: Colour of the theoretical null distribution. Default: ``'#4C4C4C'`` (dark grey). The dashed line at the observed value and the
+            vertical line at zero are always black.
+        col_density: Colour of the kernel density estimate. Default: ``'blue'``.
+        trim: Fraction of the permutations dropped from the histogram, which must be below 0.5. The omnibus panels drop the upper ``trim``
+            fraction, the coefficient panels drop ``trim / 2`` from each tail. Default: 0.
+        adjust: Bandwidth adjustment of the kernel density estimate, as the ``adjust`` argument of R's ``density()``. Default: 1.
+        lwd: Line widths of the dashed line at the observed value, of the theoretical null distribution, of the kernel density estimate and
+            of the vertical line at zero (coefficient panels only). A width of 0 leaves the element out. A single number is used for the
+            first three and 4 for the last; two or three values are completed to four (the second is repeated for the third, the last
+            defaults to 4). Default: ``(2, 0, 0, 4)``.
+        legend: ``True`` or a location (for example ``'topleft'``) for a legend naming the curves; drawn in the first panel only and
+            only when a curve is drawn. ``True`` places it at the top right. Default: ``False``.
+        alternative: ``'two.sided'``, ``'greater'`` or ``'less'``. Default: that of the test.
+        p2defn: Definition of the two-sided p-value, ``'abs'`` or ``'px2'``. Default: that of the test.
+        stat: Statistic plotted, ``'test'`` (z or t values) or ``'coef'`` (coefficients). Default: that of the test.
+        ax: Matplotlib axes to draw into; the panels are laid out inside it. Default: the current axes.
+        xlim: Limits of the horizontal axis of every panel. Default: the range of the histogram breaks.
+            The plotted axis extends 4 percent beyond the limits, as in R.
+        layout: Deprecated and ignored; a warning is issued, as in metafor.
+
+    Returns:
+        A ``PlotPermutestResult`` with the fields ``axes`` (the axes of the panels drawn) and ``names`` (``'QM'``, ``'QS'`` or the
+        coefficient name of each panel, in the same order).
 
     Raises:
-        metafopy.errors.InputError: an argument is invalid.
+        metafopy.errors.InputError: ``trim`` is 0.5 or more; ``alternative``, ``p2defn`` or ``stat`` is not a valid value; a coefficient
+            name or position in ``beta`` or ``alpha`` does not exist; no panel is selected.
     """
     if layout is not None:
         warnings.warn("Argument 'layout' has been deprecated.", stacklevel=2)
@@ -199,7 +235,18 @@ def plot_permutest(
         ylim = None
         if widths[1] > 0 or widths[2] > 0:
             plain = metafopy.plot.histplot.histogram(shown, breaks)
-            ylim = (0.0, float(max(float(ys.max()) if widths[1] > 0 else 0.0, float(dy.max()) if widths[2] > 0 else 0.0, float(plain.density.max()))))
+            # the chi-square density with one degree of freedom is infinite at 0: the y range ignores that point (R stops with an infinite ylim)
+            finite_ys = ys[numpy.isfinite(ys)]
+            ylim = (
+                0.0,
+                float(
+                    max(
+                        float(finite_ys.max()) if widths[1] > 0 and finite_ys.size else 0.0,
+                        float(dy.max()) if widths[2] > 0 else 0.0,
+                        float(plain.density.max()),
+                    )
+                ),
+            )
         return metafopy.plot.histplot.draw_histogram(panel, shown, breaks, col=col_, border=border_, main=main, xlab=xlab, freq=freq, ylim=ylim, xlim=xlim)
 
     def omnibus(panel: matplotlib.axes.Axes, pdist: FloatArray, obs: float, df1: int, df2: int | None, main: str) -> None:
@@ -211,7 +258,7 @@ def plot_permutest(
         if widths[0] > 0:
             metafopy.plot.draw.vline(panel, obs, lty='dashed', lw=widths[0])
         if widths[1] > 0:
-            metafopy.plot.draw.line(panel, xs, ys, col=col_ref_, lw=widths[1])
+            metafopy.plot.draw.line(panel, xs[numpy.isfinite(ys)], ys[numpy.isfinite(ys)], col=col_ref_, lw=widths[1])
         if widths[2] > 0:
             metafopy.plot.draw.line(panel, dx, dy, col=col_density_, lw=widths[2])
         legend_for(panel)
@@ -245,7 +292,7 @@ def plot_permutest(
             if widths[0] > 0:
                 metafopy.plot.draw.vline(panel, obs, lty='dashed', lw=widths[0])
         if widths[1] > 0:
-            metafopy.plot.draw.line(panel, xs, ys, col=col_ref_, lw=widths[1])
+            metafopy.plot.draw.line(panel, xs[numpy.isfinite(ys)], ys[numpy.isfinite(ys)], col=col_ref_, lw=widths[1])
         if widths[2] > 0:
             metafopy.plot.draw.line(panel, dx, dy, col=col_density_, lw=widths[2])
         if widths[3] > 0:

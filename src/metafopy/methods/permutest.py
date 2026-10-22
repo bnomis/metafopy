@@ -4,8 +4,8 @@ The test statistics of the fitted model are compared with their distribution
 under random permutations of the rows of the model matrix (or, for models
 without moderators, random sign flips of the observed effects); an exact test
 enumerates all (unique) permutations. See Follmann & Proschan (1999),
-doi:10.1111/j.0006-341X.1999.00254.x, and Good (2005, *Permutation, Parametric
-and Bootstrap Tests of Hypotheses*), and
+doi:10.1111/j.0006-341x.1999.00732.x, and Good (2009, *Permutation, Parametric
+and Bootstrap Tests of Hypotheses*, 3rd ed.), and
 https://wviechtb.github.io/metafor/reference/permutest.html.
 
 Random permutations are drawn with R's own Mersenne-Twister
@@ -50,11 +50,39 @@ EPS = float(numpy.finfo(float).eps)
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class PermutestResult(metafopy.printing.HtmlRepr):
-    """Permutation-based p-values (and optionally CI bounds) for the coefficients of a model.
+    """Permutation-based p-values (and optionally CI bounds) for the coefficients of a model, as returned by [permutest][metafopy.permutest]. ``to_frame()``
+    and ``coef()`` give the coefficient table and ``summary()`` the printout.
 
-    ``QM_perm``, ``zval_perm`` and ``beta_perm`` hold the statistics of every
-    permutation (for the approximate test, the first row is the observed one,
-    as in metafor).
+    Attributes:
+        pval: Permutation p-values of the coefficients.
+        QMdf: Degrees of freedom of the omnibus test, ``(m, None)`` for the z test and ``(m, ddf)`` for the t test.
+        QMp: Permutation p-value of the omnibus test.
+        beta: Estimates of the coefficients.
+        se: Standard errors of the coefficients.
+        zval: Test statistics of the coefficients.
+        ci_lb: Lower confidence interval bounds (permutation-based with ``permci``, else the usual ones).
+        ci_ub: Upper confidence interval bounds.
+        QM: Test statistic of the omnibus test.
+        k: Number of studies.
+        p: Number of coefficients.
+        btt: Coefficients (0-based) the omnibus test refers to.
+        m: Number of coefficients in the omnibus test.
+        test: Test used by the model: ``'z'``, ``'t'``, ``'knha'`` or ``'adhoc'``.
+        ddf: Residual degrees of freedom of the t test, or None for the z test.
+        int_only: Whether the model has only an intercept.
+        int_incl: Whether the model has an intercept.
+        coef_names: Names of the coefficients.
+        exact_iter: Number of iterations an exact test needs (``inf`` if it exceeds the largest float).
+        permci: Whether permutation-based CI bounds were computed (False if ``permci`` was requested but the number of permutations is too low for
+            the confidence level).
+        alternative: Alternative hypothesis of the test (the ``alternative`` control entry; with permutation-based CI bounds, the one of the last bound
+            search, as in metafor).
+        p2defn: Definition of the two-sided p-value.
+        stat: Statistic used for the coefficients.
+        QM_perm: Omnibus statistics of every permutation (for the approximate test the first one is the observed one, as in metafor).
+        zval_perm: Test statistics of every permutation, one column per coefficient.
+        beta_perm: Estimates of every permutation, one column per coefficient.
+        digits: Number of decimals of the printout.
     """
 
     pval: FloatArray
@@ -121,10 +149,23 @@ class PermutestResult(metafopy.printing.HtmlRepr):
 def permutest(
     x: typing.Any, *args: typing.Any, **kwargs: typing.Any
 ) -> PermutestResult | int | float | metafopy.methods.ls_permutest.LSPermutestResult | list[float]:
-    """Permutation test for a fitted model; see :func:`_permutest_rma_uni`.
+    """Permutation tests for the coefficients of a fitted model (metafor's ``permutest``).
+
+    This is a single-dispatch function: the implementation is chosen by the class of ``x``. See
+    [permutest_rma_uni][metafopy.methods.permutest.permutest_rma_uni] and [permutest_rma_ls][metafopy.methods.ls_permutest.permutest_rma_ls].
+
+    Args:
+        x: The fitted model. Its class selects the implementation.
+        *args: Positional arguments passed on to the implementation (``exact``, ``iter``, ...).
+        **kwargs: Keyword arguments passed on to the implementation.
+
+    Returns:
+        A [PermutestResult][metafopy.PermutestResult] (a location-scale result for a location-scale model); with ``exact='i'`` the number of iterations an
+        exact test needs.
 
     Raises:
-        metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
+        metafopy.errors.ArgumentError: there is no implementation for the class of ``x``.
+        TypeError: the implementation does not accept a keyword argument.
     """
     raise metafopy.errors.ArgumentError(f'permutest() not implemented for {type(x).__name__}')
 
@@ -228,23 +269,45 @@ def permutest_rma_uni(
     progbar: bool = False,
     verbose: bool = False,
 ) -> PermutestResult | int | float:
-    """Permutation test for an ``rma.uni`` fit.
+    """Permutation test for an [rma_uni][metafopy.rma_uni] fit (metafor's ``permutest.rma.uni``).
 
-    ``exact=True`` (or enough iterations to enumerate all permutations) runs an
-    exact test; ``exact='i'`` returns the number of iterations an exact test
-    needs. ``iter`` is the number of random permutations otherwise. ``btt``
-    (0-based) changes the coefficients the omnibus test refers to. ``permci``
-    (``True`` or 0-based coefficient indices) also searches for permutation-based
-    confidence interval bounds. ``seed`` plays the role of ``seed=`` in
-    metafor; without it the seed is drawn from the module's R-compatible
-    generator (see :func:`metafopy.set_seed`), which like R's global generator
-    is left in the state the permutations ended in. ``control`` takes metafor's
-    list (``comptol``, ``tol``, ``maxiter``, ``alternative``, ``p2defn``,
-    ``stat``, ``cialt``, ``distfac``). ``progbar=True`` prints a progress bar to stderr while the permutations are run (metafor's default is ``TRUE``).
-    ``verbose`` is accepted for metafor's messages about refits that fail during the permutations, which are not raised here.
+    For a model without moderators the signs of the estimates are permuted, otherwise the rows of the model matrix. The p-value is the proportion of
+    permutations whose statistic is as extreme as the observed one (the first permutation of an approximate test is the data, which avoids p-values of 0).
+    With few studies the smallest possible p-value can exceed 0.05.
+
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/permutest.rma.uni.r>; reference page:
+    <https://wviechtb.github.io/metafor/reference/permutest.html>.
+
+    Args:
+        x: Model fitted by [rma_uni][metafopy.rma_uni] (not a [robust][metafopy.robust] result).
+        exact: ``True`` carries out an exact test (all unique permutations; also used if ``iter`` exceeds their number); ``'i'`` returns the number of
+            iterations an exact test needs; ``False`` (default) uses ``iter`` random permutations.
+        iter: Number of random permutations for an approximate test (at least 2).
+        btt: Coefficients the omnibus test refers to: 0-based indices or a string searched for (Python ``re.search``) in the coefficient names.
+            Default: that of the model.
+        permci: ``True``, or 0-based coefficient indices, to also find permutation-based confidence interval bounds (slow). A bound that cannot be found
+            is NaN.
+        digits: Number of decimals of the printout. Default: the ``digits`` option, else that of the model.
+        control: Mapping with metafor's control values: ``comptol`` (tolerance of the comparisons), ``tol`` and ``maxiter`` (root finding for ``permci``),
+            ``alternative`` (``'two.sided'``, ``'less'`` or ``'greater'``), ``p2defn`` (``'abs'`` or ``'px2'``), ``stat`` (``'test'`` or ``'coef'``),
+            ``cialt`` (alternative for the CI bounds) and ``distfac`` (factor widening the search interval for the CI bounds).
+        seed: Seed of the random permutations. Default: drawn from the R-compatible generator of [set_seed][metafopy.set_seed], which is left in the state
+            the permutations ended in, as R's global generator is.
+        tol: Old spelling of the ``comptol`` entry of ``control``.
+        fixed: Match a string ``btt`` literally instead of as a regular expression.
+        progbar: Print a progress bar to stderr while the permutations are run (default False; metafor's default is ``TRUE``).
+        verbose: Accepted and ignored (metafor shows the errors of refits that fail during the permutations).
+
+    Returns:
+        A [PermutestResult][metafopy.PermutestResult] with the coefficient table (``beta``, ``se``, ``zval``, ``pval``, ``ci_lb``, ``ci_ub``), the omnibus
+        test (``QM``, ``QMp``) and the permutation distributions. With ``exact='i'``, the number of iterations an exact test needs.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InputError: ``iter`` is below 2; ``btt`` or ``permci`` names a coefficient that does not exist; a ``control`` entry is not
+            accepted; an exact test needs more iterations than the largest float.
+        metafopy.errors.ArgumentError: ``control`` has an unknown entry.
+        metafopy.errors.NotSupportedError: ``x`` is a [robust][metafopy.robust] result.
+        ValueError: an exact test needs more iterations than can be allocated (R stops with an error as well).
     """
     metafopy.methods.fitview.check_class(x, notav=metafopy.methods.fitview.NOT_ROBUST)
     iter = iter
