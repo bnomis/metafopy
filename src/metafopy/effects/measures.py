@@ -401,9 +401,9 @@ def escalc(
     ``add`` defaults to 1/2, except for the measures where metafor uses 0 (AS, PHI, ZPHI, RTET, ZTET, IRSD, PAS, PFT, IRS, IRFT).
 
     Args:
-        measure: Effect size or outcome measure to compute, a metafor code such as ``'SMD'``, ``'OR'``, ``'RR'``, ``'ZCOR'`` or ``'PR'``; see the metafor reference above for the full
-            list. Which of the data arguments below are needed depends on the measure. ``None`` (with ``yi``)
-            means ``'GEN'``.
+        measure: Effect size or outcome measure to compute, a metafor code such as ``'SMD'``, ``'OR'``, ``'RR'``, ``'ZCOR'`` or ``'PR'``; see the metafor
+            reference above for the full list. Which of the data arguments below are needed depends on the measure. ``None`` (with ``yi``) means
+            ``'GEN'``.
         ai: 2x2 table frequencies (upper left cell).
         bi: 2x2 table frequencies (upper right cell).
         ci: 2x2 table frequencies (lower left cell).
