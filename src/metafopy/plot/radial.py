@@ -2,7 +2,7 @@
 
 Plots the standardised effects ``z_i = y_i / sqrt(v_i + tau^2)`` against the precisions ``x_i = 1 / sqrt(v_i + tau^2)``;
 the slope of the line through the origin and a point is the estimate, shown on the arc to the right. See
-Rex Galbraith (1988), doi:10.1080/00401706.1988.10488373, and
+Galbraith (1988), doi:10.1080/00401706.1988.10488400, and
 https://wviechtb.github.io/metafor/reference/radial.html.
 """
 
@@ -82,7 +82,7 @@ def radial(
     *,
     ax: matplotlib.axes.Axes | None = None,
 ) -> RadialResult:
-    """Radial (Galbraith) plot of a model without moderators (``radial.rma``); ``galbraith`` is an alias.
+    """Radial (Galbraith) plot of a model without moderators (``radial.rma``); ``metafopy.plot.galbraith`` is an alias.
 
     Mirrors metafor's ``radial()``, see <https://wviechtb.github.io/metafor/reference/radial.html>.
 
@@ -94,33 +94,40 @@ def radial(
 
     Args:
         x: A fitted model without moderators (not a robust, ``rma_mv``, location-scale or selection model).
-        center: Plot the deviations from the pooled estimate.
-        xlim: Limits of the horizontal axis (the precision). Default: derived from the data.
-        zlim: Limits of the vertical axis (the standardized effects). Default: derived from the data.
-        xlab: Label of the horizontal axis (precision).
-        zlab: Label of the vertical axis (standardized effect).
-        atz: Positions of the tick marks of the vertical axis.
-        aty: Positions (in the units of the effect sizes) of the tick marks on the arc.
-        steps: Number of tick marks on the arc.
-        level: Confidence level in percent of the shaded band. Default: the level of the model.
-        digits: Number of decimals of the arc labels.
+        center: Plot the standardized deviations from the pooled estimate, which centers the plot horizontally at the pooled estimate. Default: ``False``.
+        xlim: Limits of the horizontal axis (the precision). Default: 0 to 1.3 times the largest precision.
+        zlim: Limits of the vertical axis (the standardized effects); these are the actual limits of the plotting region. Default: derived from the data,
+            at least -5 to 5.
+        xlab: Label of the horizontal axis. Default: derived from the model (a math-text label).
+        zlab: Label of the vertical axis. Default: derived from the model and ``center`` (a math-text label).
+        atz: Positions of the tick marks and labels of the vertical axis (those outside ``zlim`` are dropped). Default: -2, 0 and 2, with unlabelled
+            marks at -4 to 4.
+        aty: Positions (in the units of the effect sizes, before ``transf``) of the tick marks on the arc; ``steps`` is then ignored. Default: ``steps``
+            marks spread from the smallest to the largest estimate.
+        steps: Number of tick marks on the arc. Default: 7.
+        level: Confidence level of the shaded band (the z-axis error region), between 0 and 100 (95 or 0.95 for 95 percent). Default: the level of the model.
+        digits: Number of decimals of the arc labels. Default: 2.
         transf: Function applied to the arc labels.
         targs: Additional arguments passed to ``transf``.
-        pch: Plotting symbol of the points.
-        col: Colour of the points or lines (a matplotlib colour).
-        bg: Fill colour of the points (for symbols with a separate fill).
-        back: Colour of the shaded band.
-        arc_res: Resolution of the arcs; a second value sets that of the confidence interval arc (default a quarter).
-        cex: Character expansion factor scaling the text and symbols. Default: 1.
-        cex_lab: Character expansion factor of the axis labels.
-        cex_axis: Character expansion factor of the axis tick labels.
+        pch: Plotting symbol of the points (R's ``pch`` code). Default: 21, a circle with border ``col`` and fill ``bg``.
+        col: Border colour of the points (a matplotlib colour). Default: the foreground colour (black).
+        bg: Fill colour of the points for symbols with a separate fill. Default: a grey adjusted from the background.
+        back: Colour of the shaded band. Default: a light grey. (metafor's ``NA``, which suppresses the shading, is not supported.)
+        arc_res: Number of points used to draw the arc of the estimates; a second value sets that of the confidence interval arc. Default: 100 and,
+            when one number is given, a quarter of it (rounded up) for the confidence interval arc.
+        cex: Expansion factor of the point symbols only (as in metafor). Default: 1.
+        cex_lab: Expansion factor of the axis labels. Default: 1.
+        cex_axis: Expansion factor of the tick labels (the labels of the arc are drawn at 0.85 times this). Default: 1.
         ax: Matplotlib axes to draw into. Default: the current axes.
 
     Returns:
         The plotted values: ``x`` (precisions), ``y`` (standardized effects), ``ids`` and ``slab``, and the axes.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InputError: the model has moderators, ``level`` is outside 0 to 100, or an estimate or precision is infinite and ``xlim`` and
+            ``zlim`` are not given.
+        metafopy.errors.NotSupportedError: ``x`` is a robust, ``rma_mv``, location-scale or selection-model fit.
+        metafopy.errors.ArgumentError: ``x`` is not a fitted model.
     """
     metafopy.methods.fitview.check_class(x, notav=('robust.rma', 'rma.mv', 'rma.ls', 'rma.gen', 'rma.uni.selmodel'))
     view = metafopy.methods.fitview.fit_view(x)

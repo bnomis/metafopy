@@ -4,7 +4,7 @@ For ``measure='GEN'`` each study contributes the normal likelihood of its effect
 ``measure='OR'`` the likelihood of the (log) odds ratio is the conditional one given the margins of the 2x2 table, which follows Fisher's
 non-central hypergeometric distribution (Fog 2008, doi:10.1080/03610910701790236). With ``scale=True`` every likelihood is rescaled to area
 one, so that the curves show how much information each study has about the effect. See
-https://wviechtb.github.io/metafor/reference/llplot.html and Stijnen et al. (2010), doi:10.1002/sim.3767.
+https://wviechtb.github.io/metafor/reference/llplot.html and van Houwelingen et al. (1993), doi:10.1002/sim.4780122405.
 """
 
 import collections.abc
@@ -98,47 +98,57 @@ def llplot(
     Mirrors metafor's ``llplot()``, see <https://wviechtb.github.io/metafor/reference/llplot.html>.
 
     ``measure`` is ``'GEN'`` (give ``yi`` with ``vi`` or ``sei``) or ``'OR'`` (give the counts ``ai``, ``bi``, ``ci``, ``di``, or ``ai``,
-    ``n1i``, ``ci``, ``n2i``). Studies with two zero cells in a column (``drop00``) are left out for ``'OR'``; tables with a zero cell are drawn
-    dashed and those with two dotted, as in metafor. ``xvals`` is the number of points of each curve, ``level`` the confidence level of the
+    ``n1i``, ``ci``, ``n2i``). Studies with no cases (or only cases) in both groups (``drop00``) are left out for ``'OR'``; if kept, they are drawn
+    dotted, and tables with a single zero count dashed, as in metafor. ``xvals`` is the number of points of each curve, ``level`` the confidence level of the
     interval outside which the curves are not drawn, ``scale`` rescales each likelihood to area one, and ``lty``, ``lwd`` and ``col``
-    are per study (by default the more precise studies get thinner and darker lines). ``refline`` draws a vertical line.
+    are per study (by default the more precise studies get thicker and darker lines). ``refline`` draws a vertical line.
 
     Args:
         measure: ``'GEN'`` (the default; give ``yi`` with ``vi`` or ``sei``) or ``'OR'`` (give the counts ``ai``, ``bi``, ``ci``, ``di``, or ``ai``, ``n1i``,
             ``ci``, ``n2i``).
         yi: Observed effect sizes (array or column name of ``data``), for ``measure='GEN'``.
         vi: Sampling variances (array or column name), for ``measure='GEN'``.
-        sei: Standard errors (array or column name), for ``measure='GEN'``; an alternative to ``vi``.
+        sei: Standard errors (array or column name), for ``measure='GEN'``; an alternative to ``vi``, which takes precedence.
         ai: 2x2 table counts, upper left cell (array or column name), for ``measure='OR'``.
         bi: 2x2 table counts, upper right cell.
         ci: 2x2 table counts, lower left cell.
         di: 2x2 table counts, lower right cell.
-        n1i: Size of group 1; an alternative to ``bi``.
-        n2i: Size of group 2; an alternative to ``di``.
-        data: Data frame holding the variables named in the other arguments.
-        subset: Which studies to use: a boolean array or an array of 0-based indices.
-        drop00: Drop studies with two zero cells in a column (``measure='OR'``). Default ``True``.
-        xvals: Number of points of each likelihood curve.
-        xlim: Limits of the horizontal axis as (low, high). Default: derived from the data.
-        ylim: Limits of the vertical axis as (low, high). Default: derived from the data.
-        xlab: Label of the horizontal axis. Default: derived from the model.
-        ylab: Label of the vertical axis. Default: derived from the model.
-        scale: Rescale each likelihood to area one.
-        lty: Line types per study (by default tables with a zero cell are dashed and those with two dotted).
-        lwd: Line widths per study (by default the more precise studies get thinner lines).
-        col: Colours per study (by default the more precise studies get darker lines).
-        level: Confidence level in percent of the interval outside which the curves are not drawn.
-        refline: Position of a vertical reference line, or ``None`` for none.
+        n1i: Size of group 1 (the row total of the first row); an alternative to ``bi`` (``bi = n1i - ai``).
+        n2i: Size of group 2 (the row total of the second row); an alternative to ``di`` (``di = n2i - ci``).
+        data: Data frame holding the variables named (as column names) in the other arguments.
+        subset: Which studies to use: a boolean array or an array of 0-based indices (into the data, so ``lty``, ``lwd`` and ``col`` still have one value
+            per study of the whole data).
+        drop00: Drop studies with no cases (or only cases) in both groups (``measure='OR'``). If ``False`` they are kept and drawn dotted. Default:
+            ``True``.
+        xvals: Number of points at which each likelihood is evaluated. Default: 1000.
+        xlim: Limits of the horizontal axis (the range of the curves) as (low, high), in either order. Default: the range of the confidence intervals of
+            the studies at ``level``.
+        ylim: Limits of the vertical axis as (low, high), in either order. Default: 0 to the largest likelihood.
+        xlab: Label of the horizontal axis. Default: ``'Observed Outcome'`` for ``'GEN'``, ``'Log Odds Ratio'`` for ``'OR'``.
+        ylab: Label of the vertical axis. Default: ``'Scaled Likelihood'`` or, without ``scale``, ``'Likelihood'``.
+        scale: Rescale each likelihood so that the area under its curve is (about) 1. Default: ``True``.
+        lty: Line type of the curves: one value or one per study (of the whole data). Default: solid for ``'GEN'``; for ``'OR'`` solid, dashed for tables
+            with a single zero count and dotted for those with no cases (or only cases) in both groups. Accepts R names (``'solid'``, ``'dashed'``,
+            ``'dotted'``, ``'dotdash'``, ``'longdash'``, ``'twodash'``, ``'blank'``), R codes 0 to 6 or a matplotlib line style.
+        lwd: Line width of the curves: one value or one per study. Default: 4 to 0.4, thicker for the more precise studies (by the rank of the sampling
+            variance).
+        col: Colour of the curves: one value or one per study (a matplotlib colour). Default: shades of grey from dark (the most precise
+            study) to light (the least precise study).
+        level: Confidence level in percent of the interval of each study outside which its curve is not drawn (and which sets the default ``xlim``).
+            Default: 99.99.
+        refline: Position of a vertical reference line, or ``None`` (or NaN) for none. Default: 0.
         onlyo1: Passed to [escalc][metafopy.escalc]: only the first outcome of the 2x2 tables is used.
         addyi: Passed to [escalc][metafopy.escalc]: apply ``add`` to the effect size.
         addvi: Passed to [escalc][metafopy.escalc]: apply ``add`` to the sampling variance.
         ax: Matplotlib axes to draw into. Default: the current axes.
 
     Returns:
-        The points and the likelihoods of the studies, and the axes.
+        A ``LlplotResult`` with the axes ``ax``, the ``xs`` at which the likelihoods were evaluated and the matrix ``lls`` of the likelihoods (one row per
+        study, NaN outside the confidence interval of the study at ``level``).
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InputError: ``measure`` is not ``'GEN'`` or ``'OR'``; the required variables are missing, of different lengths or the counts are
+            invalid; ``lty``, ``lwd`` or ``col`` has the wrong length; or no study remains.
     """
     if measure not in ('GEN', 'OR'):
         raise metafopy.errors.InputError('Currently only measure="GEN" or measure="OR" can be specified.')

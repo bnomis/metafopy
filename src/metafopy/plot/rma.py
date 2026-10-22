@@ -122,15 +122,19 @@ def plot_rma(
 
     Args:
         x: A model fitted by [rma_uni][metafopy.rma_uni], ``rma_mh`` or ``rma_peto``, or a selection model.
-        qqplot: Draw the normal Q-Q plot instead of the last panel.
-        seed: Seed for the envelope of the Q-Q plot.
+        qqplot: Draw the normal Q-Q plot instead of the last panel. Default: ``False``.
+        seed: Seed of the R-compatible generator for the envelope of the Q-Q plot (only with ``qqplot=True``). Default: the package's shared generator.
         ax: Matplotlib axes whose area the four panels fill (2 x 2 grid). Default: the current axes.
-        na_action: What to do with missing values (R's ``options(na.action=)``): ``'omit'`` (the default), ``'pass'`` or ``'fail'`` (raise an error if there are
-            any); the other values give the same plot.
-        **kwargs: [plot_selmodel][metafopy.plot_selmodel] arguments, for selection models only.
+        na_action: What to do with missing values (R's ``options(na.action=)``): ``'omit'`` (the default), ``'exclude'``, ``'pass'`` or ``'fail'``. See
+            above for what each shows.
+        **kwargs: [plot_selmodel][metafopy.plot_selmodel] arguments, for selection models only. (Unlike metafor's ``...``, they are not passed on to the
+            panels of the other models, which take no further arguments.)
 
     Returns:
-        The axes of the panels (for a selection model, the result of [plot_selmodel][metafopy.plot_selmodel]).
+        A ``PlotRmaResult`` with the four ``axes``, the results of the panels (``forest``, ``funnel``, ``radial`` and ``qqnorm``; ``radial`` is ``None`` for a
+        meta-regression and ``qqnorm`` unless ``qqplot=True``), the standardized residuals ``z`` and their 1-based study numbers ``ids`` of the last
+        panel (empty with ``qqplot=True``) and the ``fitted`` values of the third panel of a meta-regression (empty otherwise). For a selection model, the
+        result of [plot_selmodel][metafopy.plot_selmodel].
 
     Raises:
         metafopy.errors.ArgumentError: ``kwargs`` are given for a model that is not a selection model.

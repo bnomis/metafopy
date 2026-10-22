@@ -81,7 +81,7 @@ def baujat(
         ylim: Limits of the vertical axis as (low, high). Default: derived from the data.
         xlab: Label of the horizontal axis. Default: derived from the model.
         ylab: Label of the vertical axis. Default: derived from the model.
-        cex: Character expansion factor of the symbols.
+        cex: Character expansion factor of the symbols. Default: 0.8 (times the base font size, as metafor's ``par("cex") * 0.8``).
         symbol: Plotting symbol: ``'ids'`` (the 1-based study numbers, the default), ``'slab'`` (the study labels), one plotting symbol (a number), or one per
             study.
         grid: Add a grid. ``True``, ``False`` or a colour string for the grid lines.
@@ -89,14 +89,17 @@ def baujat(
         ax: Matplotlib axes to draw into. Default: the current axes.
         bty: Type of box around the plot: ``'o'`` (the default), ``'l'``, ``'7'``, ``'c'``, ``'u'``, ``']'`` or ``'n'`` (none).
         las: Orientation of the axis tick labels, 0 to 3 as in R (0 parallel to the axis, 1 horizontal, 2 perpendicular, 3 vertical).
-        na_action: What to do with missing values (R's ``options(na.action=)``): ``'omit'`` (the default), ``'pass'`` or ``'fail'`` (raise an error if there are
-            any); the other values give the same plot.
+        na_action: What to do with missing values (R's ``options(na.action=)``): ``'omit'`` (the default), ``'exclude'``, ``'pass'`` or
+            ``'fail'`` (raise an error if a study has missing values); the first three give the same plot.
 
     Returns:
         The plotted coordinates and the axes (x is the contribution of each study to the overall heterogeneity, y its influence).
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InputError: ``na_action`` is unknown, or ``'fail'`` and a study has missing values, ``k`` is 1, the length of ``symbol`` does
+            not match the studies, or ``las`` is not 0 to 3.
+        metafopy.errors.NotSupportedError: ``x`` is an ``rma_mv``, ``rma_glmm``, location-scale, robust or selection-model fit.
+        metafopy.errors.ArgumentError: ``x`` is not a fitted model.
     """
     metafopy.methods.common.check_na_action(na_action)
     metafopy.methods.fitview.check_class(x, notav=metafopy.methods.fitview.FIXED_UNI_ONLY)

@@ -2,7 +2,7 @@
 
 For models without moderators the estimates are plotted against a heterogeneity statistic with marginal histograms and
 kernel density estimates; otherwise a scatterplot matrix of the heterogeneity statistic and the coefficients is drawn.
-See Olkin, Dahabreh & Trikalinos (2012), doi:10.1002/jrsm.1033, and
+See Olkin, Dahabreh & Trikalinos (2012), doi:10.1002/jrsm.1053, and
 https://wviechtb.github.io/metafor/reference/plot.gosh.rma.html.
 """
 
@@ -101,30 +101,41 @@ def plot_gosh(
 
     Args:
         x: The result of [gosh][metafopy.gosh].
-        het: Heterogeneity statistic to plot: ``'QE'``, ``'I2'`` (the default), ``'H2'``, ``'tau2'`` or ``'tau'``.
-        pch: Plotting symbol of the points (R-style code, e.g. 21 for a filled circle).
-        cex: Character expansion factor scaling the text and symbols. Default: 1.
-        out: 0-based index of a study to highlight: the subsets that include it are drawn in ``col[0]``, those without in ``col[1]``.
-        col: Colour(s) of the points (a second colour is used for the subsets with or without the ``out`` study).
-        alpha: Transparency (0 to 1) of the points, histogram and density line, a single value or one per element. Default: ``n ** -0.2`` for ``n`` subsets.
-        border: Border colour(s) of the histograms.
-        xlim: Limits of the horizontal axis as (low, high). Default: derived from the data.
-        ylim: Limits of the vertical axis as (low, high). Default: derived from the data.
-        xhist: Draw the marginal histogram and density of the estimates (models without moderators).
-        yhist: Draw the marginal histogram and density of the heterogeneity statistic (models without moderators).
-        hh: Relative size of the marginal plots; a single value or a pair for the two margins.
-        breaks: Histogram breaks of the marginal plots; a single value or a pair.
-        adjust: Bandwidth adjustment of the kernel density estimates; a single value or a pair.
-        lwd: Width of the density lines; a single value or a pair.
-        labels: Labels of the panels of the scatterplot matrix (models with moderators).
-        trim: Proportion of the most extreme subsets to remove (a proportion, or a list of proportions per column).
-        ax: Matplotlib axes to draw into. Default: the current axes.
+        het: Heterogeneity statistic to plot: ``'QE'``, ``'I2'`` (the default), ``'H2'``, ``'tau2'`` or ``'tau'`` (``'I^2'``, ``'H^2'`` and ``'tau^2'``
+            are accepted too). ``'tau2'`` and ``'tau'`` are not available for equal-effects models.
+        pch: Plotting symbol of the points (R's ``pch`` code). Default: 16, a filled circle without border.
+        cex: Expansion factor of the points. Default: 0.5.
+        out: 0-based index of a study to highlight (metafor's ``out`` counts from 1): the subsets that include it are drawn in ``col[0]``, those
+            without in ``col[1]``. Default: no highlighting.
+        col: Colour of the points. Default: black. With ``out`` it must be two colours (subsets with the ``out`` study, subsets without it), default
+            ``('red', 'blue')``.
+        alpha: Transparency (0 transparent to 1 opaque) of the points, of the histogram bars and of the density lines: one value for the points
+            (the histograms then get 0.5 and the density lines 0.9), two for points and histograms, or all three. Default: ``n ** -0.2`` for ``n`` subsets.
+        border: Border colour of the histogram bars, one for both or a pair (horizontal, vertical margin). Default: light grey. (metafor's ``FALSE``,
+            which omits the borders, is not supported.)
+        xlim: Limits of the horizontal axis as (low, high); models without moderators only. Default: the range of the histogram breaks of the estimates.
+        ylim: Limits of the vertical axis as (low, high); models without moderators only. Default: the range of the histogram breaks of ``het``.
+        xhist: Draw the marginal histogram and density of the estimates; models without moderators only. Default: ``True``.
+        yhist: Draw the marginal histogram and density of the heterogeneity statistic; models without moderators only. Default: ``True``.
+        hh: Relative size of the marginal plots, between 0 and 1 (checked for models without moderators); a single value or a pair for the two margins.
+            For models with moderators it stretches the height of the histograms on the diagonal. Default: 0.3.
+        breaks: Histogram breaks of the marginal plots, as for R's ``hist``; a single value or a pair. Default: ``'Sturges'``.
+        adjust: Bandwidth adjustment of the kernel density estimates (larger is smoother); a single value or a pair. Default: 1.
+        lwd: Width of the density lines, 0 omits them; a single value or a pair. Default: 2.
+        labels: The labels of the horizontal and vertical axes (no moderators) or the names of the variables of the scatterplot matrix. Default: derived
+            from the effect size measure, ``het`` and the coefficient names.
+        trim: Remove the most extreme subsets before plotting (an undocumented argument of metafor, passed through ``...``): the proportion to cut
+            from each tail of every variable (``het`` and the coefficients), or a list with one proportion, or a (lower, upper) pair, per variable.
+        ax: Matplotlib axes whose area the panels fill. Default: the current axes.
 
     Returns:
-        The axes of the panels.
+        A ``PlotGoshResult``: for a model without moderators ``main`` is the scatterplot and ``xhist`` and ``yhist`` the marginal histograms (``None`` if
+        not drawn); for a scatterplot matrix ``main``, ``xhist`` and ``yhist`` are ``None`` and ``panels`` holds the axes row by row. ``axes`` lists
+        whichever were drawn.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InputError: ``het`` is unknown or ``'tau2'``/``'tau'`` is used for an equal-effects model, ``out`` is not a study, ``col`` does not
+            have two colours when ``out`` is used, or ``hh`` is outside 0 to 1.
     """
     het = HET.get(het, het)
     if het not in HET_LABEL:

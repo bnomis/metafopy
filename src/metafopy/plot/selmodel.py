@@ -81,30 +81,42 @@ def plot_selmodel(
 
     Args:
         x: A selection model from [selmodel][metafopy.selmodel].
-        xlim: Limits of the horizontal axis (p-values). Default: 0 to 1.
-        ylim: Limits of the vertical axis as (low, high). Default: derived from the data.
-        n: Number of points of the curve.
-        prec: Precision at which the function is drawn: ``'min'``, ``'max'`` (the default), ``'mean'``, ``'median'`` or a number.
-        scale: Rescale the curve to the unit interval.
-        ci: Add a confidence region: ``'wald'`` (transform the Wald bounds of the selection parameters), ``'boot'`` or ``True`` (simulate ``reps`` parameter
-            vectors from their estimated multivariate normal distribution; the bounds agree with metafor only up to simulation error).
-        reps: Number of simulated parameter vectors for the ``'boot'`` confidence region.
-        shade: Fill the confidence region.
-        rug: Mark the observed p-values along the horizontal axis.
-        add: Draw into existing axes instead of starting a new plot.
-        lty: Line types of the selection function and of the confidence region.
-        lwd: Line widths of the selection function and of the confidence region.
-        seed: Seed of NumPy's generator for the ``'boot'`` region.
-        draw: If ``False`` only compute the curve and do not draw.
+        xlim: Limits of the horizontal axis (the p-values for which the function is drawn), within 0 and 1. Default: the model's smallest p-value
+            ``pval_min`` to ``1 - pval_min``, which is 0 to 1 unless the selection function or the ``pval.min`` control of ``selmodel`` sets a small positive
+            minimum (1e-5 for some functions).
+        ylim: Limits of the vertical axis as (low, high). Default: 0 to 1 for the bounded selection functions (``halfnorm``, ``halfnorm2``, ``logistic``,
+            ``logistic2``, ``negexp``, ``negexp2``, ``negexppow``, ``power``, ``power2``), otherwise the range of the curve (and of the confidence region).
+        n: Number of p-values within ``xlim`` at which the function is computed. Default: 1000. For step functions the step points are added.
+        prec: Precision at which a selection function that involves one is drawn: ``'min'`` (the most precise study), ``'max'`` (the default, the least
+            precise study), ``'mean'``, ``'median'`` or a number (1 corresponds to ``'max'``, smaller values to higher precision; the number is replaced
+            by 1 if the model was fitted without the ``prec`` argument of ``selmodel``).
+        scale: Rescale the curve (and region) to the 0 to 1 range. Default: ``False``.
+        ci: Add a confidence region around the curve: ``False`` (the default), ``True`` or ``'boot'`` (parametric bootstrap: ``reps`` parameter vectors
+            are simulated from the estimated multivariate normal distribution of the selection parameters, with NumPy's generator, so the bounds agree with
+            metafor only up to simulation error), or ``'wald'`` (the curve at the Wald bounds of the parameter; for models with a single selection
+            parameter and for step functions). Nothing is drawn if the model has no standard errors for the parameters.
+        reps: Number of simulated parameter vectors for the ``'boot'`` region. Default: 1000.
+        shade: Shade the confidence region: ``True`` (the default, light grey), ``False`` or a colour.
+        rug: Mark the observed p-values along the horizontal axis (not with ``add``). Default: ``True``.
+        add: Add the curve to the existing axes without drawing a new frame, labels or rug. Default: ``False``.
+        lty: Line types of the selection function and of the confidence region bounds, as a pair (a single value serves the curve and the bounds get
+            ``'dotted'``). Default: ``('solid', 'dotted')``. Accepts R names (``'solid'``, ``'dashed'``, ``'dotted'``, ``'dotdash'``, ``'longdash'``,
+            ``'twodash'``, ``'blank'``), R codes 0 to 6 or a matplotlib line style.
+        lwd: Line widths of the selection function and of the confidence region bounds, as a pair (a single value serves the curve and the bounds get 1).
+            Default: ``(2, 1)``.
+        seed: Seed of NumPy's generator for the ``'boot'`` region (not R's generator). Default: not seeded.
+        draw: If ``False`` only compute the curve and do not draw (the returned ``ax`` is ``None``). Default: ``True``.
         ax: Matplotlib axes to draw into. Default: the current axes.
-        bty: Type of box around the plot: ``'o'`` (the default), ``'l'``, ``'7'``, ``'c'``, ``'u'``, ``']'`` or ``'n'`` (none).
-        col: Colour of the lines.
+        bty: Type of box around the plot: ``'o'`` (the default), ``'l'``, ``'7'``, ``'c'``, ``'u'``, ``']'`` or ``'n'`` (none). Ignored with ``add``.
+        col: Colour of the curve and of the confidence region bounds (the shading has its own colour ``shade``). Default: black.
 
     Returns:
-        The computed curve (p-values, selection probabilities and confidence region) and the axes.
+        A ``SelPlotResult`` with the p-values ``xs``, the selection function ``ys``, the confidence bounds ``ys_lb`` and ``ys_ub`` (NaN without a
+        confidence region) and the axes ``ax`` (``None`` if ``draw`` is false).
 
     Raises:
-        metafopy.errors.InputError: an argument is invalid or the model has no selection function.
+        metafopy.errors.InputError: the model has a truncated selection function or none; ``ci`` is unknown; ``xlim`` or ``ylim`` does not have two values
+            or ``xlim`` is outside 0 to 1; ``prec`` is an unknown string; or ``ci='wald'`` is not possible for the model.
     """
     if x.type in metafopy.models.sel_spec.TRUNCATED or x.spec.weight is None:
         raise metafopy.errors.InputError('Cannot draw the selection function for this type of selection model.')
