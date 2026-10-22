@@ -288,7 +288,7 @@ def selmodel(
 ) -> metafopy.models.sel_result.SelmodelResult | pandas.DataFrame | FloatArray:
     """Fit a selection model to a fitted [rma_uni][metafopy.rma_uni] model (metafor's ``selmodel.rma.uni``).
 
-    Mirrors metafor's ``selmodel()``, see <https://wviechtb.github.io/metafor/reference/selmodel.html>. A selection model describes how the
+    Mirrors metafor's ``selmodel()``. A selection model describes how the
     probability that an estimate is observed depends on its p-value (and optionally its precision); it is used to assess and adjust for publication
     bias (Vevea & Hedges, 1995; Citkowicz & Vevea, 2017; Preston, Ashby & Smyth, 2004). Models that were not fitted with ML (or as an
     equal/fixed-effects model) are refitted with ML first.
@@ -338,6 +338,9 @@ def selmodel(
             ``delta``, too few studies, no sample sizes for ``prec='ninv'``).
         metafopy.errors.EstimationError: the optimiser did not converge or the likelihood could not be integrated.
         metafopy.errors.NotSupportedError: the optimiser chosen in ``control`` has no counterpart in metafopy.
+
+    Metafor reference:
+        [selmodel](https://wviechtb.github.io/metafor/reference/selmodel.html)
     """
     prev: metafopy.models.sel_result.SelmodelResult | None = None
     source = x

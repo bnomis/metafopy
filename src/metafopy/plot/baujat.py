@@ -63,7 +63,7 @@ def baujat(
 ) -> BaujatResult:
     """Baujat plot of a fitted ``rma_uni``, ``rma_mh`` or ``rma_peto`` model (``baujat.rma``).
 
-    Mirrors metafor's ``baujat()``, see <https://wviechtb.github.io/metafor/reference/baujat.html>.
+    Mirrors metafor's ``baujat()``.
 
     ``symbol`` is ``'ids'`` (the 1-based study numbers), ``'slab'`` (the study labels) or one plotting symbol
     (a number, or one per study); ``grid`` adds a grid (a colour string sets its colour). ``progbar=True`` prints a progress bar to
@@ -100,6 +100,9 @@ def baujat(
             not match the studies, or ``las`` is not 0 to 3.
         metafopy.errors.NotSupportedError: ``x`` is an ``rma_mv``, ``rma_glmm``, location-scale, robust or selection-model fit.
         metafopy.errors.ArgumentError: ``x`` is not a fitted model.
+
+    Metafor reference:
+        [baujat](https://wviechtb.github.io/metafor/reference/baujat.html)
     """
     metafopy.methods.common.check_na_action(na_action)
     metafopy.methods.fitview.check_class(x, notav=metafopy.methods.fitview.FIXED_UNI_ONLY)

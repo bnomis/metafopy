@@ -209,7 +209,7 @@ def vif_rma_mv(
 
     With ``sim`` the moderators are permuted as the variables of the data when they were given as a formula, otherwise as the columns of the model matrix.
 
-    R source: <https://github.com/wviechtb/metafor/blob/master/R/vif.rma.r>; reference page: <https://wviechtb.github.io/metafor/reference/vif.html>.
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/vif.rma.r>
 
     Args:
         res: Model fitted by [rma_mv][metafopy.rma_mv] with moderators.
@@ -244,6 +244,9 @@ def vif_rma_mv(
     Raises:
         metafopy.errors.InputError: the model has no moderators; ``att`` is given; ``sim`` is a number below 2; ``btt`` is invalid (the intercept
             without ``intercept=True``, out of range or matching no coefficient); ``parallel`` is not an accepted value or ``ncpus`` is below 1.
+
+    Metafor reference:
+        [vif](https://wviechtb.github.io/metafor/reference/vif.html)
     """
     n_sim = check_arguments(res, att, sim)
     parallel = metafopy.core.parallel.resolve_parallel(parallel, ncpus, cl)
@@ -301,7 +304,7 @@ def vif_selmodel(
 
     As in metafor, ``sim`` and ``reestimate`` are not available for these fits.
 
-    R source: <https://github.com/wviechtb/metafor/blob/master/R/vif.rma.r>; reference page: <https://wviechtb.github.io/metafor/reference/vif.html>.
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/vif.rma.r>
 
     Args:
         res: Selection model fitted by [selmodel][metafopy.selmodel] with moderators.
@@ -330,6 +333,9 @@ def vif_selmodel(
     Raises:
         metafopy.errors.InputError: the model has no moderators; ``att`` is given; ``sim`` (a number of 2 or more) or ``reestimate`` is requested;
             ``btt`` is invalid (the intercept without ``intercept=True``, out of range or matching no coefficient).
+
+    Metafor reference:
+        [vif](https://wviechtb.github.io/metafor/reference/vif.html)
     """
     n_sim = check_arguments(res, att, sim)
     if n_sim >= 2:

@@ -2,6 +2,8 @@
 
 ## Unreleased (1.0 candidate)
 
+- Function reference: the link to the metafor reference page of each function is now a final section "Metafor reference" (after Examples) instead of a sentence in the description.
+
 - The base class of metafopy's exceptions is `metafopy.errors.MetafopyError` (behaviour change: it was `MetaforError`, which is gone). `InputError`, `ArgumentError` and the others derive from it as before, and from the matching built-in exception.
 
 - Function reference: every function on the reference pages has a description, arguments (what each is, accepted values), return value and errors, and each signature is shown with one argument per line and the types behind aliases such as `Column` (a griffe extension in `docs/griffe/`, `ruff` added to `docs/requirements.txt`). About 20 wrong DOIs and many wrong option descriptions found while checking every statement against the code and metafor are corrected. Two fixes found on the way: `labbe()` stops on an unknown `na_action` like metafor (it was never checked; behaviour change), and `plot_permutest()` draws the theoretical density of an omnibus test with one degree of freedom instead of raising `OverflowError` (R stops with an infinite `ylim`).

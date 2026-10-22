@@ -131,7 +131,7 @@ def trimfill(
 ) -> TrimfillResult:
     """Trim-and-fill method for a model without moderators.
 
-    Mirrors metafor's `trimfill`, see https://wviechtb.github.io/metafor/reference/trimfill.html. The number of studies missing from one
+    Mirrors metafor's `trimfill`. The number of studies missing from one
     side of the funnel plot is estimated (Duval & Tweedie, 2000, doi:10.1111/j.0006-341X.2000.00455.x), the corresponding mirror-image
     studies are filled in, and the model is refitted to the observed and the filled-in studies.
 
@@ -157,6 +157,9 @@ def trimfill(
         metafopy.errors.InputError: an argument or the data is invalid, `x` has moderators, k = 1, or the algorithm fails or does not converge.
         metafopy.errors.ArgumentError: `x` is not an `rma_uni` result (for example an `rma_mh` result or a vector).
         metafopy.errors.NotSupportedError: `x` is a robust fit, a location-scale model or a selection model.
+
+    Metafor reference:
+        [trimfill](https://wviechtb.github.io/metafor/reference/trimfill.html)
     """
     metafopy.methods.fitview.check_method(x, 'trimfill')
     metafopy.methods.fitview.check_class(x, must='rma.uni', notav=('robust.rma', 'rma.ls', 'rma.gen', 'rma.uni.selmodel'))

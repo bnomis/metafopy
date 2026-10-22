@@ -250,7 +250,7 @@ def rma_mh(
 ) -> MHResult:
     """Fit a Mantel-Haenszel meta-analysis of 2x2 tables (``measure`` ``'OR'``, ``'RR'``, ``'RD'``) or rate data (``'IRR'``, ``'IRD'``).
 
-    Mirrors metafor's ``rma.mh()``, see <https://wviechtb.github.io/metafor/reference/rma.mh.html>. The pooled effect is the Mantel-Haenszel
+    Mirrors metafor's ``rma.mh()``. The pooled effect is the Mantel-Haenszel
     estimate (Mantel & Haenszel, 1959; see metafor's help page for the further references). The individual
     effect sizes and sampling variances are computed as by [escalc][metafopy.escalc]. For odds ratios the result also holds the
     Cochran-Mantel-Haenszel test and Tarone's test of heterogeneity, for incidence rate ratios the Mantel-Haenszel test. The first element of
@@ -307,6 +307,9 @@ def rma_mh(
         >>> from metafopy import datasets, rma_mh
         >>> dat = datasets.load("dat.bcg")  # doctest: +SKIP
         >>> rma_mh(ai="tpos", bi="tneg", ci="cpos", di="cneg", data=dat)  # doctest: +SKIP
+
+    Metafor reference:
+        [rma.mh](https://wviechtb.github.io/metafor/reference/rma.mh.html)
     """
     metafopy.core.verbose.binary_start(int(verbose), subset)
     if measure not in MEASURES:

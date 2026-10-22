@@ -36,7 +36,6 @@ def ranef(res: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> RanefResu
     [ranef_rma_uni][metafopy.methods.ranef.ranef_rma_uni] for [rma_uni][metafopy.rma_uni] fits,
     [ranef_rma_ls][metafopy.methods.ls_resid.ranef_rma_ls] for location-scale models and
     [ranef_rma_mv][metafopy.methods.mv_ranef.ranef_rma_mv] for [rma_mv][metafopy.rma_mv] fits.
-    See <https://wviechtb.github.io/metafor/reference/ranef.html>.
 
     Args:
         res: A fitted model object.
@@ -48,6 +47,9 @@ def ranef(res: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> RanefResu
 
     Raises:
         metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
+
+    Metafor reference:
+        [ranef](https://wviechtb.github.io/metafor/reference/ranef.html)
     """
     raise metafopy.errors.ArgumentError(f'ranef() not implemented for {type(res).__name__}')
 
@@ -66,7 +68,6 @@ def ranef_rma_uni(
 
     The prediction for study ``i`` is the BLUP of its deviation from the model's fitted value (the random effect). For equal- and
     fixed-effects models all random effects are 0. The arguments are those of [blup_rma_uni][metafopy.methods.blup.blup_rma_uni].
-    See <https://wviechtb.github.io/metafor/reference/ranef.html>.
 
     Args:
         res: A model fitted by [rma_uni][metafopy.rma_uni].
@@ -85,6 +86,9 @@ def ranef_rma_uni(
 
     Raises:
         metafopy.errors.InputError: the model has user-defined weights, ``na_action`` is unknown or values are missing with ``na_action='fail'``.
+
+    Metafor reference:
+        [ranef](https://wviechtb.github.io/metafor/reference/ranef.html)
     """
     out = metafopy.methods.blup.shrinkage_predictions(res, 'ranef', level, digits, transf, targs, na_action)
     return RanefResult(pred=out.pred, se=out.se, pi_lb=out.pi_lb, pi_ub=out.pi_ub, slab=out.slab, digits=out.digits, transf=out.transf)

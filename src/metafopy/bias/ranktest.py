@@ -127,7 +127,7 @@ def ranktest(
 ) -> RanktestResult:
     """Rank correlation test for funnel plot asymmetry (Begg and Mazumdar, 1994).
 
-    Mirrors metafor's `ranktest`, see https://wviechtb.github.io/metafor/reference/ranktest.html. Kendall's rank correlation between the
+    Mirrors metafor's `ranktest`. Kendall's rank correlation between the
     standardized effect sizes and their sampling variances is computed (Begg & Mazumdar, 1994, doi:10.2307/2533446). A significant
     correlation indicates funnel plot asymmetry.
 
@@ -150,6 +150,9 @@ def ranktest(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid (for example a model with moderators), or studies are missing
             and `na_action='fail'`.
+
+    Metafor reference:
+        [ranktest](https://wviechtb.github.io/metafor/reference/ranktest.html)
     """
     metafopy.methods.common.check_na_action(na_action)
     if metafopy.methods.fitview.is_rma(x):

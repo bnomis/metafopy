@@ -501,7 +501,6 @@ def predict_rma_uni(
     Without ``newmods`` an intercept-only model gives the pooled estimate and a meta-regression the fitted value of each study.
 
     R source: <https://github.com/wviechtb/metafor/blob/master/R/predict.rma.r>; reference page:
-    <https://wviechtb.github.io/metafor/reference/predict.rma.html>.
 
     Args:
         model: Model fitted by [rma_uni][metafopy.rma_uni].
@@ -562,6 +561,9 @@ def predict_rma_uni(
         metafopy.errors.InputError: an argument or the data is invalid (for example ``prob`` with ``adjust=True``, ``newmods`` of the wrong width or for
             a model without moderators, an unknown ``predtype`` or ``na_action``, a ``hetvar`` or ``newvi`` of the wrong length, or a fit made robust with
             ``club_sandwich=True`` and the saddlepoint test).
+
+    Metafor reference:
+        [predict.rma](https://wviechtb.github.io/metafor/reference/predict.rma.html)
     """
     newmods = metafopy.methods.pairmat.resolve(newmods, model)
     return with_digits(
@@ -641,7 +643,6 @@ def predict_rma_glmm(
     absent (NaN) for the fixed-effects methods.
 
     R source: <https://github.com/wviechtb/metafor/blob/master/R/predict.rma.r>; reference page:
-    <https://wviechtb.github.io/metafor/reference/predict.rma.html>.
 
     Args:
         model: Model fitted by [rma_glmm][metafopy.rma_glmm].
@@ -701,6 +702,9 @@ def predict_rma_glmm(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid (for example ``prob`` with ``adjust=True``, ``newmods`` of the wrong width or for
             a model without moderators, an unknown ``predtype`` or ``na_action``, or a ``hetvar`` or ``newvi`` of the wrong length).
+
+    Metafor reference:
+        [predict.rma](https://wviechtb.github.io/metafor/reference/predict.rma.html)
     """
     newmods = metafopy.methods.pairmat.resolve(newmods, model)
     x = model
@@ -1155,7 +1159,6 @@ def predict_rma_mv(
     level is lost is NaN when the model has several of them.
 
     R source: <https://github.com/wviechtb/metafor/blob/master/R/predict.rma.r>; reference page:
-    <https://wviechtb.github.io/metafor/reference/predict.rma.html>.
 
     Args:
         model: Model fitted by [rma_mv][metafopy.rma_mv].
@@ -1220,6 +1223,9 @@ def predict_rma_mv(
         metafopy.errors.InputError: an argument or the data is invalid (for example ``newmods`` for a model without moderators, a level in
             ``tau2_levels`` or ``gamma2_levels`` that does not exist or a sequence of the wrong length, ``prob`` with ``adjust=True``, an unknown
             ``predtype`` or ``na_action``, or a ``hetvar`` or ``newvi`` of the wrong length).
+
+    Metafor reference:
+        [predict.rma](https://wviechtb.github.io/metafor/reference/predict.rma.html)
     """
     newmods = metafopy.methods.pairmat.resolve(newmods, model)
     x = model

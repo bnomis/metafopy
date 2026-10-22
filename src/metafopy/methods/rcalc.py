@@ -327,7 +327,7 @@ def rcalc(
     [doi:10.1037/0033-2909.108.2.330](https://doi.org/10.1037/0033-2909.108.2.330)); for raw correlations the denominator is ``ni - 1`` (as in
     metafor), for r-to-z transformed ones ``ni - 3``. The data and the matrix can be passed on to
     [rma_mv][metafopy.rma_mv]. As in R, the study identifier in ``dat`` consists of strings (the names of the list, or the ids converted to
-    character). See <https://wviechtb.github.io/metafor/reference/rcalc.html>.
+    character).
 
     Args:
         x: A formula string such as ``'ri ~ var1 + var2 | study'`` (the study part may be left out for a single study), naming the
@@ -362,6 +362,9 @@ def rcalc(
         metafopy.errors.ArgumentError: ``x`` is not a formula, a matrix or a list of matrices.
         metafopy.errors.InputError: an argument or the data is invalid (R stops with an error here).
         metafopy.errors.NotFoundError: a variable of the formula is not in ``data``.
+
+    Metafor reference:
+        [rcalc](https://wviechtb.github.io/metafor/reference/rcalc.html)
     """
     metafopy.methods.common.check_na_action(na_action)
     if not isinstance(x, str | numpy.ndarray | pandas.DataFrame | list | tuple | dict):

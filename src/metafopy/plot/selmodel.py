@@ -69,7 +69,7 @@ def plot_selmodel(
 ) -> SelPlotResult:
     """Draw the selection function of a selection model against the p-value.
 
-    Mirrors metafor's ``plot.rma.uni.selmodel()``, see <https://wviechtb.github.io/metafor/reference/plot.rma.uni.selmodel.html>.
+    Mirrors metafor's ``plot.rma.uni.selmodel()``.
 
     ``prec`` fixes the precision at which the function is drawn (``'min'``, ``'max'``, ``'mean'``, ``'median'`` or a number).
     ``ci`` adds a confidence region: ``'wald'`` transforms the Wald bounds of the selection parameters, ``'boot'`` (or ``True``)
@@ -117,6 +117,9 @@ def plot_selmodel(
     Raises:
         metafopy.errors.InputError: the model has a truncated selection function or none; ``ci`` is unknown; ``xlim`` or ``ylim`` does not have two values
             or ``xlim`` is outside 0 to 1; ``prec`` is an unknown string; or ``ci='wald'`` is not possible for the model.
+
+    Metafor reference:
+        [plot.rma.uni.selmodel](https://wviechtb.github.io/metafor/reference/plot.rma.uni.selmodel.html)
     """
     if x.type in metafopy.models.sel_spec.TRUNCATED or x.spec.weight is None:
         raise metafopy.errors.InputError('Cannot draw the selection function for this type of selection model.')

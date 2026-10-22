@@ -394,7 +394,6 @@ def anova_rma_ls(
     ``anova.rma``).
 
     R source: <https://github.com/wviechtb/metafor/blob/master/R/anova.rma.r>; reference page:
-    <https://wviechtb.github.io/metafor/reference/anova.rma.html>.
 
     Args:
         model: Location-scale model fitted by [rma_uni][metafopy.rma_uni] with ``scale``.
@@ -439,6 +438,9 @@ def anova_rma_ls(
             with a list ``att``, ``X`` or ``Z`` with the wrong number of columns, ``btt`` or ``att`` selecting nothing, an unknown ``adjust``, or
             models that differ in class, data or number of parameters or cannot be compared).
         metafopy.errors.ArgumentError: ``test`` is neither ``'LRT'`` nor ``'Wald'``.
+
+    Metafor reference:
+        [anova.rma](https://wviechtb.github.io/metafor/reference/anova.rma.html)
     """
     X = metafopy.methods.pairmat.resolve(X, model)
     if abbrev:

@@ -185,7 +185,7 @@ def fsn(
 ) -> FsnResult:
     """Fail-safe N calculation.
 
-    Mirrors metafor's `fsn`, see https://wviechtb.github.io/metafor/reference/fsn.html. It computes the number of studies averaging a null
+    Mirrors metafor's `fsn`. It computes the number of studies averaging a null
     result that would have to be added to a set of studies to reduce the significance level to a target value (or the average effect
     to a target size). The approaches (`type`) are Rosenthal's (1979, doi:10.1037/0033-2909.86.3.638), Orwin's (1983,
     doi:10.3102/10769986008002157), Rosenberg's (2005, doi:10.1111/j.0014-3820.2005.tb01004.x), a general approach that refits a
@@ -243,6 +243,9 @@ def fsn(
             sampling variance is not positive, or studies are missing and `na_action='fail'`.
         metafopy.errors.NotSupportedError: `x` is a model other than an `rma_uni` result (for example `rma_mh`, `rma_peto`, `rma_mv`,
             `rma_glmm`, `rma_ls`, selection models and robust fits).
+
+    Metafor reference:
+        [fsn](https://wviechtb.github.io/metafor/reference/fsn.html)
     """
     pools = [name for name in ('stouffer', 'fisher') if isinstance(pool, str) and len(pool) > 0 and name.startswith(pool.lower())]
     if len(pools) != 1:

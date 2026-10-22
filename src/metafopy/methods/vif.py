@@ -282,7 +282,7 @@ def vif_rma_uni(
     A VIF of a coefficient (or a GVIF of a set of coefficients) shows how much the variance of its estimate is inflated by correlation with the other
     moderators; the SIF is the corresponding inflation of the standard error.
 
-    R source: <https://github.com/wviechtb/metafor/blob/master/R/vif.rma.r>; reference page: <https://wviechtb.github.io/metafor/reference/vif.html>.
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/vif.rma.r>
 
     Args:
         res: Model fitted by [rma_uni][metafopy.rma_uni] with moderators (a [robust][metafopy.robust] result is accepted, but not with ``sim`` or
@@ -322,6 +322,9 @@ def vif_rma_uni(
         metafopy.errors.InputError: the model has no moderators; ``att`` is given; ``sim`` is a number below 2 or ``sim`` or ``reestimate`` is used with
             a [robust][metafopy.robust] result; ``btt`` is the intercept (without ``intercept=True``), is out of range or matches no coefficient;
             ``joinb`` does not have one label per column of the model matrix; ``parallel`` is not an accepted value or ``ncpus`` is below 1.
+
+    Metafor reference:
+        [vif](https://wviechtb.github.io/metafor/reference/vif.html)
     """
     if att is not None:
         raise metafopy.errors.InputError("Argument 'att' only relevant for location-scale models.")

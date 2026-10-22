@@ -95,7 +95,7 @@ def llplot(
 ) -> LlplotResult:
     """Plot the likelihood function of the true effect given the data of each study (``llplot``).
 
-    Mirrors metafor's ``llplot()``, see <https://wviechtb.github.io/metafor/reference/llplot.html>.
+    Mirrors metafor's ``llplot()``.
 
     ``measure`` is ``'GEN'`` (give ``yi`` with ``vi`` or ``sei``) or ``'OR'`` (give the counts ``ai``, ``bi``, ``ci``, ``di``, or ``ai``,
     ``n1i``, ``ci``, ``n2i``). Studies with no cases (or only cases) in both groups (``drop00``) are left out for ``'OR'``; if kept, they are drawn
@@ -149,6 +149,9 @@ def llplot(
     Raises:
         metafopy.errors.InputError: ``measure`` is not ``'GEN'`` or ``'OR'``; the required variables are missing, of different lengths or the counts are
             invalid; ``lty``, ``lwd`` or ``col`` has the wrong length; or no study remains.
+
+    Metafor reference:
+        [llplot](https://wviechtb.github.io/metafor/reference/llplot.html)
     """
     if measure not in ('GEN', 'OR'):
         raise metafopy.errors.InputError('Currently only measure="GEN" or measure="OR" can be specified.')

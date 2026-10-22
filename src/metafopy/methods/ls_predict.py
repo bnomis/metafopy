@@ -147,7 +147,6 @@ def predict_rma_ls(
     log link). With the identity link and no ``transf``, negative predicted ``tau^2`` values are set to 0 with a warning.
 
     R source: <https://github.com/wviechtb/metafor/blob/master/R/predict.rma.r>; reference page:
-    <https://wviechtb.github.io/metafor/reference/predict.rma.html>.
 
     Args:
         model: Location-scale model fitted by [rma_uni][metafopy.rma_uni] with ``scale``.
@@ -206,6 +205,9 @@ def predict_rma_ls(
         metafopy.errors.InputError: an argument is invalid (for example ``prob`` with ``adjust=True``, an unknown ``predtype`` or ``na_action``, a
             ``newvi`` of the wrong length, moderator or scale values for a model without them), or the dimensions of ``newmods`` or ``newscale`` do
             not match the model or each other.
+
+    Metafor reference:
+        [predict.rma](https://wviechtb.github.io/metafor/reference/predict.rma.html)
     """
     newmods = metafopy.methods.pairmat.resolve(newmods, model)
     x = model

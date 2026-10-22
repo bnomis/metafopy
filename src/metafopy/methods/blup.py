@@ -115,7 +115,7 @@ def blup(res: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> BlupResult
 
     This is a single-dispatch function: the implementation is chosen from the class of ``res``. See
     [blup_rma_uni][metafopy.methods.blup.blup_rma_uni] for [rma_uni][metafopy.rma_uni] fits (and
-    [blup_rma_ls][metafopy.methods.ls_resid.blup_rma_ls] for location-scale models). See <https://wviechtb.github.io/metafor/reference/blup.html>.
+    [blup_rma_ls][metafopy.methods.ls_resid.blup_rma_ls] for location-scale models).
 
     Args:
         res: A fitted model object.
@@ -127,6 +127,9 @@ def blup(res: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> BlupResult
 
     Raises:
         metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
+
+    Metafor reference:
+        [blup](https://wviechtb.github.io/metafor/reference/blup.html)
     """
     raise metafopy.errors.ArgumentError(f'blup() not implemented for {type(res).__name__}')
 
@@ -146,7 +149,7 @@ def blup_rma_uni(
     The prediction for study ``i`` shrinks its observed effect towards the model's fitted value (the empirical Bayes estimate of its true effect).
     Prediction intervals use a normal distribution, or a t-distribution with the model's ``ddf`` degrees of freedom (``k - p`` unless ``dfs`` was
     given) when the model was fitted with a t, knha or adhoc test. For equal- and fixed-effects models the BLUPs equal the fitted values.
-    ``na_action`` plays the role of R's ``options(na.action=)``. See <https://wviechtb.github.io/metafor/reference/blup.html>.
+    ``na_action`` plays the role of R's ``options(na.action=)``.
 
     Args:
         res: A model fitted by [rma_uni][metafopy.rma_uni].
@@ -165,6 +168,9 @@ def blup_rma_uni(
 
     Raises:
         metafopy.errors.InputError: the model has user-defined weights, ``na_action`` is unknown or values are missing with ``na_action='fail'``.
+
+    Metafor reference:
+        [blup](https://wviechtb.github.io/metafor/reference/blup.html)
     """
     return shrinkage_predictions(res, 'blup', level, digits, transf, targs, na_action)
 

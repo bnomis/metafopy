@@ -97,7 +97,7 @@ def forest_cumul(
 ) -> metafopy.plot.ForestResult:
     """Cumulative forest plot (``forest.cumul.rma``): one row per step of a [cumul][metafopy.cumul] analysis.
 
-    Mirrors metafor's ``forest.cumul.rma()``, see <https://wviechtb.github.io/metafor/reference/forest.cumul.rma.html>.
+    Mirrors metafor's ``forest.cumul.rma()``.
 
     The first row is labelled with the first study, the others with ``+`` and the added study (``Study`` and its label when the model had
     no study labels). The plot is that of [forest][metafopy.forest] for a vector of estimates with confidence intervals: there is no summary
@@ -163,6 +163,9 @@ def forest_cumul(
 
     Raises:
         metafopy.errors.InputError: ``x`` is not the result of [cumul][metafopy.cumul], or an argument is invalid as for [forest][metafopy.forest].
+
+    Metafor reference:
+        [forest.cumul.rma](https://wviechtb.github.io/metafor/reference/forest.cumul.rma.html)
     """
     if not isinstance(x, metafopy.methods.leave1out.CumulResult):
         raise metafopy.errors.InputError('forest_cumul() needs the result of cumul().')
@@ -250,7 +253,7 @@ def plot_cumul(
 ) -> PlotCumulResult:
     """Plot of the results of a cumulative meta-analysis (``plot.cumul.rma``).
 
-    Mirrors metafor's ``plot.cumul.rma()``, see <https://wviechtb.github.io/metafor/reference/plot.cumul.rma.html>.
+    Mirrors metafor's ``plot.cumul.rma()``.
 
     The pooled estimates (horizontal axis) are plotted against the amount of heterogeneity (``yaxis`` ``'tau2'``, ``'tau'``, ``'I2'`` or
     ``'H2'``; ``'tau2'`` unless the model is a fixed-effects one), joined in order by a line whose colour runs from the first of ``cols`` to
@@ -295,6 +298,9 @@ def plot_cumul(
     Raises:
         metafopy.errors.InputError: ``x`` is not the result of [cumul][metafopy.cumul]; ``yaxis`` or ``na_action`` is unknown, or ``yaxis`` needs a
             random-effects model; ``transf`` and ``atransf`` are both given; or ``'fail'`` and results are missing.
+
+    Metafor reference:
+        [plot.cumul.rma](https://wviechtb.github.io/metafor/reference/plot.cumul.rma.html)
     """
     metafopy.methods.common.check_na_action(na_action)
     if not isinstance(x, metafopy.methods.leave1out.CumulResult):

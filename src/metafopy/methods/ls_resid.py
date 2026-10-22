@@ -39,7 +39,7 @@ def blup_rma_ls(
     """BLUPs of the true effects of a location-scale fit (metafor's ``blup.rma.uni`` for ``rma.ls`` objects).
 
     The arguments are those of [blup_rma_uni][metafopy.methods.blup.blup_rma_uni]; the shrinkage uses the study-specific ``tau^2`` of the
-    scale model. See <https://wviechtb.github.io/metafor/reference/blup.html>.
+    scale model.
 
     Args:
         res: A location-scale model fitted by [rma_uni][metafopy.rma_uni] with ``scale``.
@@ -58,6 +58,9 @@ def blup_rma_ls(
 
     Raises:
         metafopy.errors.InputError: the model has user-defined weights, ``na_action`` is unknown or values are missing with ``na_action='fail'``.
+
+    Metafor reference:
+        [blup](https://wviechtb.github.io/metafor/reference/blup.html)
     """
     return metafopy.methods.blup.shrinkage_predictions(res, 'blup', level, digits, transf, targs, na_action)
 
@@ -74,7 +77,7 @@ def ranef_rma_ls(
 ) -> metafopy.methods.ranef.RanefResult:
     """BLUPs of the random effects of a location-scale fit (metafor's ``ranef.rma.uni`` for ``rma.ls`` objects).
 
-    The arguments are those of [blup_rma_uni][metafopy.methods.blup.blup_rma_uni]. See <https://wviechtb.github.io/metafor/reference/ranef.html>.
+    The arguments are those of [blup_rma_uni][metafopy.methods.blup.blup_rma_uni].
 
     Args:
         res: A location-scale model fitted by [rma_uni][metafopy.rma_uni] with ``scale``.
@@ -93,6 +96,9 @@ def ranef_rma_ls(
 
     Raises:
         metafopy.errors.InputError: the model has user-defined weights, ``na_action`` is unknown or values are missing with ``na_action='fail'``.
+
+    Metafor reference:
+        [ranef](https://wviechtb.github.io/metafor/reference/ranef.html)
     """
     out = metafopy.methods.blup.shrinkage_predictions(res, 'ranef', level, digits, transf, targs, na_action)
     return metafopy.methods.ranef.RanefResult(pred=out.pred, se=out.se, pi_lb=out.pi_lb, pi_ub=out.pi_ub, slab=out.slab, digits=out.digits, transf=out.transf)
@@ -114,7 +120,6 @@ def rstandard_rma_ls(
     deviations of the estimates from the BLUPs), both with the study-specific ``tau^2`` of the model.
 
     R source: <https://github.com/wviechtb/metafor/blob/master/R/rstandard.rma.uni.r>; reference page:
-    <https://wviechtb.github.io/metafor/reference/residuals.rma.html>.
 
     Args:
         model: Location-scale model fitted by [rma_uni][metafopy.rma_uni] with ``scale``.
@@ -131,6 +136,9 @@ def rstandard_rma_ls(
     Raises:
         metafopy.errors.InputError: ``type`` is not ``'marginal'`` or ``'conditional'``; ``type='conditional'`` for a model with weights given or
             fitted without weighting; ``na_action`` is not valid, or is ``'fail'`` and studies were left out of the fit.
+
+    Metafor reference:
+        [residuals.rma](https://wviechtb.github.io/metafor/reference/residuals.rma.html)
     """
     metafopy.methods.common.check_na_action(na_action)
     x = model

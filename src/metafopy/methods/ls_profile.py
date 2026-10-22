@@ -122,7 +122,6 @@ def profile_rma_ls(
     estimate plus and minus 2.576 standard errors, limited by ``alpha_min`` and ``alpha_max`` of the control settings.
 
     R source: <https://github.com/wviechtb/metafor/blob/master/R/profile.rma.ls.r>; reference page:
-    <https://wviechtb.github.io/metafor/reference/profile.rma.html>.
 
     Args:
         fitted: Location-scale model fitted by [rma_uni][metafopy.rma_uni] with ``scale``.
@@ -160,6 +159,9 @@ def profile_rma_ls(
         metafopy.errors.InputError: the model was fitted with ``optbeta=True`` or has no estimated scale coefficient; ``alpha`` is out of range or
             fixed; ``steps`` has missing values or is a single number below 2; ``xlim`` or ``ylim`` does not have length 2; ``parallel`` is not one
             of the accepted values or ``ncpus`` is below 1.
+
+    Metafor reference:
+        [profile.rma](https://wviechtb.github.io/metafor/reference/profile.rma.html)
     """
     x = fitted
     parallel = metafopy.core.parallel.resolve_parallel(parallel, ncpus, cl)

@@ -319,7 +319,6 @@ def permutest_rma_ls(
     scale part with a warning.
 
     R source: <https://github.com/wviechtb/metafor/blob/master/R/permutest.rma.ls.r>; reference page:
-    <https://wviechtb.github.io/metafor/reference/permutest.html>.
 
     Args:
         x: Location-scale model fitted by [rma_uni][metafopy.rma_uni] with ``scale``.
@@ -349,6 +348,9 @@ def permutest_rma_ls(
         metafopy.errors.InputError: ``iter`` is below 2; ``skip_beta`` and ``skip_alpha`` are both set (or the scale model has only an intercept
             and ``skip_beta`` is set); ``btt`` or ``att`` matches no coefficient; a ``control`` entry is not accepted.
         metafopy.errors.ArgumentError: ``control`` has an unknown entry.
+
+    Metafor reference:
+        [permutest](https://wviechtb.github.io/metafor/reference/permutest.html)
     """
     iter = int(iter)  # R has one number type: iter = 100 is a double
     if iter <= 1:

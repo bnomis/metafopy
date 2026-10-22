@@ -334,7 +334,7 @@ def emmprep(
     mean over the studies (``cov_reduce``) or at the values given in ``at``. Pass the grid to [emmeans][metafopy.emmeans] (and then to
     [contrast][metafopy.contrast], [pairs][metafopy.pairs] and [regrid][metafopy.regrid]) to get estimated marginal means. When the model
     knows its effect size measure, the back-transformation (for example exponentiation for log ratios) is stored in the grid and applied by
-    ``type='response'``. See <https://wviechtb.github.io/metafor/reference/emmprep.html>.
+    ``type='response'``.
 
     Args:
         x: A fitted model with a formula: a model from [rma_uni][metafopy.rma_uni], [rma_mv][metafopy.rma_mv],
@@ -367,6 +367,9 @@ def emmprep(
         metafopy.errors.ArgumentError: ``x`` is not a fitted model of a supported class.
         metafopy.errors.InputError: the fit cannot be used (redundant predictors, no formula or data) or an argument is invalid.
         metafopy.errors.NotSupportedError: ``tran`` is ``'+.sqrt'``.
+
+    Metafor reference:
+        [emmprep](https://wviechtb.github.io/metafor/reference/emmprep.html)
     """
     info = fit_info(x, data)
     ddf = info.ddf if df is None else float(df)

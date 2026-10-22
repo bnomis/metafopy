@@ -332,8 +332,7 @@ def cooks_rma_mv(
     ``cluster`` (a column of the data or a vector for the rows of the original data) deletes whole clusters; the result is
     then indexed by the sorted cluster ids. ``btt`` (0-based) selects the coefficients the distance refers to. With
     ``reestimate=False`` the variance components are not re-estimated in the refits. Cook's distance is the Mahalanobis distance between the
-    predicted values with and without the case (Viechtbauer & Cheung, 2010, [doi:10.1002/jrsm.11](https://doi.org/10.1002/jrsm.11)). See
-    <https://wviechtb.github.io/metafor/reference/influence.rma.mv.html>.
+    predicted values with and without the case (Viechtbauer & Cheung, 2010, [doi:10.1002/jrsm.11](https://doi.org/10.1002/jrsm.11)).
 
     Args:
         model: A model fitted by [rma_mv][metafopy.rma_mv] (also one passed through [robust][metafopy.robust]).
@@ -358,6 +357,9 @@ def cooks_rma_mv(
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
+
+    Metafor reference:
+        [influence.rma.mv](https://wviechtb.github.io/metafor/reference/influence.rma.mv.html)
     """
     x = model
     metafopy.methods.common.check_na_action(na_action)
@@ -389,8 +391,7 @@ def dfbetas_rma_mv(
     """DFBETAS of each observation, or of each cluster (metafor's ``dfbetas.rma.mv``): one column per coefficient.
 
     The change in the coefficients when a cluster is deleted is scaled by the standard errors of the full-data fit with
-    the variance components fixed at the values estimated without the cluster. See
-    <https://wviechtb.github.io/metafor/reference/influence.rma.mv.html>.
+    the variance components fixed at the values estimated without the cluster.
 
     Args:
         model: A model fitted by [rma_mv][metafopy.rma_mv]; not allowed for a model passed through [robust][metafopy.robust].
@@ -414,6 +415,9 @@ def dfbetas_rma_mv(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
         metafopy.errors.NotSupportedError: the model was passed through [robust][metafopy.robust].
+
+    Metafor reference:
+        [influence.rma.mv](https://wviechtb.github.io/metafor/reference/influence.rma.mv.html)
     """
     x = model
     not_robust(x)
@@ -490,7 +494,7 @@ def rstudent_rma_mv(
     the variance of the deleted residual is the marginal variance of the deleted observation(s) (computed with the variance components estimated
     without them) plus the variance of their predicted values from the fit without them. With
     ``cluster`` a [ClusterResidualResult][metafopy.methods.mv_diagnostics.ClusterResidualResult] is returned, which also holds each
-    cluster's ``X2`` statistic. See <https://wviechtb.github.io/metafor/reference/residuals.rma.html>.
+    cluster's ``X2`` statistic.
 
     Args:
         model: A model fitted by [rma_mv][metafopy.rma_mv]; not allowed for a model passed through [robust][metafopy.robust].
@@ -516,6 +520,9 @@ def rstudent_rma_mv(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
         metafopy.errors.NotSupportedError: the model was passed through [robust][metafopy.robust].
+
+    Metafor reference:
+        [residuals.rma](https://wviechtb.github.io/metafor/reference/residuals.rma.html)
     """
     x = model
     not_robust(x)
@@ -549,7 +556,6 @@ def rstandard_rma_mv(
     argument, as metafor gives only marginal residuals for ``rma.mv`` fits.
 
     R source: <https://github.com/wviechtb/metafor/blob/master/R/rstandard.rma.mv.r>; reference page:
-    <https://wviechtb.github.io/metafor/reference/residuals.rma.html>.
 
     Args:
         model: Model fitted by [rma_mv][metafopy.rma_mv] (not a robust fit).
@@ -569,6 +575,9 @@ def rstandard_rma_mv(
         metafopy.errors.InputError: ``cluster`` cannot be found, has the wrong length or has missing values; ``na_action`` is not valid, or is ``'fail'``
             and studies were left out of the fit.
         metafopy.errors.NotSupportedError: the model was passed through [robust][metafopy.robust].
+
+    Metafor reference:
+        [residuals.rma](https://wviechtb.github.io/metafor/reference/residuals.rma.html)
     """
     x = model
     not_robust(x)

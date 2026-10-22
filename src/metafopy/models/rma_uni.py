@@ -601,8 +601,7 @@ def rma_uni(
 ) -> RMAResult | metafopy.models.rma_ls_result.RMALSResult:
     """Fit an equal-, fixed-, random- or mixed-effects meta-analytic model.
 
-    Mirrors metafor's ``rma.uni()`` (alias ``rma``), see
-    <https://wviechtb.github.io/metafor/reference/rma.uni.html>. The model is given either as effect sizes with their sampling variances
+    Mirrors metafor's ``rma.uni()`` (alias ``rma``). The model is given either as effect sizes with their sampling variances
     (``yi`` with ``vi`` or ``sei``), as a model formula in ``yi`` (``'yi ~ ablat + year'``, which then also supplies the moderators), as an
     [escalc][metafopy.escalc] data frame, or as raw data (``ai``, ``bi``, ... with ``measure``), in which case the effect sizes are
     computed by [escalc][metafopy.escalc]. Passing ``scale`` fits a location-scale model (Viechtbauer & Lopez-Lopez, 2022,
@@ -728,6 +727,9 @@ def rma_uni(
         >>> from metafopy import datasets, rma
         >>> dat = datasets.load("dat.bcg")  # doctest: +SKIP
         >>> rma(measure="RR", ai="tpos", bi="tneg", ci="cpos", di="cneg", data=dat)  # doctest: +SKIP
+
+    Metafor reference:
+        [rma.uni](https://wviechtb.github.io/metafor/reference/rma.uni.html)
     """
     vlevel = int(verbose)
     if vlevel:

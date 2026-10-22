@@ -262,7 +262,7 @@ def vif_rma_ls(
     Unlike metafor, a model given by formulas has its model matrix columns permuted for ``sim`` (``sim_type == 'X'``), not the underlying data variables.
     The location part is left out if the location model has only an intercept, the scale part if the scale model has.
 
-    R source: <https://github.com/wviechtb/metafor/blob/master/R/vif.rma.r>; reference page: <https://wviechtb.github.io/metafor/reference/vif.html>.
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/vif.rma.r>
 
     Args:
         res: Location-scale model fitted by [rma_uni][metafopy.rma_uni] with ``scale``.
@@ -297,6 +297,9 @@ def vif_rma_ls(
         metafopy.errors.InputError: neither the location nor the scale model has predictors; ``sim`` is a number below 2; ``btt`` or ``att`` is
             invalid (the intercept without ``intercept=True``, out of range or matching no coefficient); ``joinb`` or ``joina`` does not have one
             label per column; ``parallel`` is not an accepted value or ``ncpus`` is below 1.
+
+    Metafor reference:
+        [vif](https://wviechtb.github.io/metafor/reference/vif.html)
     """
     loc = not res.int_only
     scale = not res.Z_int_only

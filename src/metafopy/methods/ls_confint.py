@@ -87,7 +87,7 @@ def confint_rma_ls(
 ) -> metafopy.methods.confint.ConfintResult | metafopy.methods.confint.ConfintList:
     """Confidence intervals for the scale (or location) coefficients of a location-scale model (metafor's ``confint.rma.ls``).
 
-    Intervals for the scale coefficients are profile-likelihood intervals; see <https://wviechtb.github.io/metafor/reference/confint.rma.html>. The
+    Intervals for the scale coefficients are profile-likelihood intervals. The
     intervals for the location coefficients (``fixed=True``) are of Wald type.
 
     Args:
@@ -126,6 +126,9 @@ def confint_rma_ls(
     Raises:
         metafopy.errors.InputError: an argument is invalid, ``control`` has an unknown entry, the model was fitted with ``optbeta=True``, the model has
             no such (estimated) scale coefficient or no coefficient to give an interval for, or the interval searched does not contain the estimate.
+
+    Metafor reference:
+        [confint.rma](https://wviechtb.github.io/metafor/reference/confint.rma.html)
     """
     metafopy.methods.confint.warn_parm(parm)
     x = model

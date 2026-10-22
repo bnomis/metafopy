@@ -76,7 +76,7 @@ def qqnorm(
 ) -> QQNormResult:
     """Normal Q-Q plot of the residuals of a model (``qqnorm.rma.uni``, ``qqnorm.rma.mh`` and ``qqnorm.rma.peto``).
 
-    Mirrors metafor's ``qqnorm.rma()``, see <https://wviechtb.github.io/metafor/reference/qqnorm.rma.html>.
+    Mirrors metafor's ``qqnorm.rma()``.
 
     ``type`` selects ``'rstandard'`` or ``'rstudent'`` residuals. ``envelope`` draws the simulated pseudo CI
     (a colour string sets its colour; ``level`` its confidence level, ``bonferroni`` applies a Bonferroni
@@ -125,6 +125,9 @@ def qqnorm(
             100, or ``'fail'`` and studies were left out of the fit.
         metafopy.errors.NotSupportedError: ``y`` is an ``rma.mv``, ``rma.glmm``, robust or selection-model fit (``qqnorm.rma.mv`` only stops in metafor).
         metafopy.errors.ArgumentError: ``y`` is not a fitted model.
+
+    Metafor reference:
+        [qqnorm.rma](https://wviechtb.github.io/metafor/reference/qqnorm.rma.html)
     """
     if isinstance(y, metafopy.models.mv_result.RMAMVResult):
         raise metafopy.errors.NotSupportedError('Method not available for objects of class "rma.mv".')

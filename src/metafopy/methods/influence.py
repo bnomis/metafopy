@@ -212,7 +212,6 @@ def influence(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> typ
     This is a single-dispatch function: the implementation is chosen from the class of ``model``. For a model fitted by
     [rma_uni][metafopy.rma_uni] see [influence_rma_uni][metafopy.methods.influence.influence_rma_uni]; for one fitted by
     [rma_mv][metafopy.rma_mv] see [influence_rma_mv][metafopy.methods.mv_diagnostics.influence_rma_mv], which is not available (as in metafor).
-    See <https://wviechtb.github.io/metafor/reference/influence.rma.uni.html>.
 
     Args:
         model: A fitted model object.
@@ -224,6 +223,9 @@ def influence(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> typ
 
     Raises:
         metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
+
+    Metafor reference:
+        [influence.rma.uni](https://wviechtb.github.io/metafor/reference/influence.rma.uni.html)
     """
     raise metafopy.errors.ArgumentError(f'influence() not implemented for {type(model).__name__}')
 
@@ -243,7 +245,7 @@ def influence_rma_uni(
 
     The model is refitted without each study in turn, which gives the externally standardised residuals, DFFITS, Cook's distances, covariance
     ratios, DFBETAS, leave-one-out ``tau^2`` and ``QE``, hat values and weights (Viechtbauer & Cheung, 2010,
-    [doi:10.1002/jrsm.11](https://doi.org/10.1002/jrsm.11)). See <https://wviechtb.github.io/metafor/reference/influence.rma.uni.html>.
+    [doi:10.1002/jrsm.11](https://doi.org/10.1002/jrsm.11)).
     Studies whose refit fails (or loses a coefficient) get NaN.
 
     Args:
@@ -269,6 +271,9 @@ def influence_rma_uni(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
         metafopy.errors.NotSupportedError: the model was passed through [robust][metafopy.robust].
+
+    Metafor reference:
+        [influence.rma.uni](https://wviechtb.github.io/metafor/reference/influence.rma.uni.html)
     """
     if measure == 'cooks.distance':
         res = influence_fit(model, digits, btt=btt, na_action=na_action)
@@ -488,7 +493,6 @@ def rstudent_rma_uni(
     sampling variance, ``tau^2`` and the variance of the prediction.
 
     R source: <https://github.com/wviechtb/metafor/blob/master/R/rstudent.rma.uni.r>; reference page:
-    <https://wviechtb.github.io/metafor/reference/residuals.rma.html>.
 
     Args:
         model: Model fitted by [rma_uni][metafopy.rma_uni].
@@ -505,6 +509,9 @@ def rstudent_rma_uni(
     Raises:
         metafopy.errors.InputError: ``na_action`` is not valid, or is ``'fail'`` and studies were left out of the fit; the model has a single study.
         metafopy.errors.NotSupportedError: the model is a [robust][metafopy.robust] result.
+
+    Metafor reference:
+        [residuals.rma](https://wviechtb.github.io/metafor/reference/residuals.rma.html)
     """
     metafopy.methods.common.check_na_action(na_action)
     metafopy.methods.fitview.check_class(model, notav=metafopy.methods.fitview.NOT_ROBUST)
@@ -529,7 +536,7 @@ def cooks_distance(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -
 
     This is a single-dispatch function: the implementation is chosen from the class of ``model`` (see
     [cooks_rma_mv][metafopy.methods.mv_diagnostics.cooks_rma_mv] for [rma_mv][metafopy.rma_mv] fits). The `rma_uni` implementation computes
-    them as part of [influence][metafopy.influence]. See <https://wviechtb.github.io/metafor/reference/influence.rma.uni.html>.
+    them as part of [influence][metafopy.influence].
 
     Args:
         model: A fitted model object.
@@ -543,6 +550,9 @@ def cooks_distance(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -
 
     Raises:
         metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
+
+    Metafor reference:
+        [influence.rma.uni](https://wviechtb.github.io/metafor/reference/influence.rma.uni.html)
     """
     raise metafopy.errors.ArgumentError(f'cooks_distance() not implemented for {type(model).__name__}')
 
@@ -581,7 +591,7 @@ def dfbetas(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> panda
 
     This is a single-dispatch function: the implementation is chosen from the class of ``model`` (see
     [dfbetas_rma_mv][metafopy.methods.mv_diagnostics.dfbetas_rma_mv] for [rma_mv][metafopy.rma_mv] fits). The `rma_uni` implementation computes
-    them as part of [influence][metafopy.influence]. See <https://wviechtb.github.io/metafor/reference/influence.rma.uni.html>.
+    them as part of [influence][metafopy.influence].
 
     Args:
         model: A fitted model object.
@@ -594,6 +604,9 @@ def dfbetas(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> panda
 
     Raises:
         metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
+
+    Metafor reference:
+        [influence.rma.uni](https://wviechtb.github.io/metafor/reference/influence.rma.uni.html)
     """
     raise metafopy.errors.ArgumentError(f'dfbetas() not implemented for {type(model).__name__}')
 
@@ -660,7 +673,6 @@ def rstandard_rma_uni(
     residuals are not available for models with non-standard weights.
 
     R source: <https://github.com/wviechtb/metafor/blob/master/R/rstandard.rma.uni.r>; reference page:
-    <https://wviechtb.github.io/metafor/reference/residuals.rma.html>.
 
     Args:
         model: Model fitted by [rma_uni][metafopy.rma_uni] (not a robust fit).
@@ -679,6 +691,9 @@ def rstandard_rma_uni(
         metafopy.errors.InputError: ``type`` is not ``'marginal'`` or ``'conditional'``; ``type='conditional'`` for a model with weights given or
             fitted without weighting; ``na_action`` is not valid, or is ``'fail'`` and studies were left out of the fit.
         metafopy.errors.NotSupportedError: the model is a [robust][metafopy.robust] result.
+
+    Metafor reference:
+        [residuals.rma](https://wviechtb.github.io/metafor/reference/residuals.rma.html)
     """
     metafopy.methods.common.check_na_action(na_action)
     x = model

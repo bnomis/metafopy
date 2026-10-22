@@ -178,7 +178,7 @@ def leave1out(x: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> Leave1o
     This is a single-dispatch function: the implementation is chosen from the class of ``x``. See
     [leave1out_rma_uni][metafopy.methods.leave1out.leave1out_rma_uni] for [rma_uni][metafopy.rma_uni] fits and
     [leave1out_fixed_binary][metafopy.methods.binary.leave1out_fixed_binary] for [rma_mh][metafopy.rma_mh] and [rma_peto][metafopy.rma_peto]
-    fits. See <https://wviechtb.github.io/metafor/reference/leave1out.html>.
+    fits.
 
     Args:
         x: A fitted model object.
@@ -190,6 +190,9 @@ def leave1out(x: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> Leave1o
 
     Raises:
         metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
+
+    Metafor reference:
+        [leave1out](https://wviechtb.github.io/metafor/reference/leave1out.html)
     """
     raise metafopy.errors.ArgumentError(f'leave1out() not implemented for {type(x).__name__}')
 
@@ -247,7 +250,7 @@ def leave1out_rma_uni(
     then NaN. ``cluster`` gives one value per study supplied (or a column name
     in the data the model was fitted to) and leaves out all studies of one
     cluster at a time. With ``na_action='exclude'``/``'pass'`` (and no
-    ``cluster``) the output has one row per supplied study. See <https://wviechtb.github.io/metafor/reference/leave1out.html>.
+    ``cluster``) the output has one row per supplied study.
 
     Args:
         x: A model without moderators (an equal- or random-effects model) fitted by [rma_uni][metafopy.rma_uni]; not allowed for a model
@@ -273,6 +276,9 @@ def leave1out_rma_uni(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid, the model has moderators or there is a single study.
         metafopy.errors.NotSupportedError: the model was passed through [robust][metafopy.robust].
+
+    Metafor reference:
+        [leave1out](https://wviechtb.github.io/metafor/reference/leave1out.html)
     """
     metafopy.methods.common.check_na_action(na_action)
     metafopy.methods.fitview.check_class(x, notav=metafopy.methods.fitview.NOT_ROBUST)
@@ -352,7 +358,6 @@ def cumul(x: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> CumulResult
     This is a single-dispatch function: the implementation is chosen from the class of ``x``. See
     [cumul_rma_uni][metafopy.methods.leave1out.cumul_rma_uni] for [rma_uni][metafopy.rma_uni] fits and
     [cumul_fixed_binary][metafopy.methods.binary.cumul_fixed_binary] for [rma_mh][metafopy.rma_mh] and [rma_peto][metafopy.rma_peto] fits.
-    See <https://wviechtb.github.io/metafor/reference/cumul.html>.
 
     Args:
         x: A fitted model object.
@@ -364,6 +369,9 @@ def cumul(x: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> CumulResult
 
     Raises:
         metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
+
+    Metafor reference:
+        [cumul](https://wviechtb.github.io/metafor/reference/cumul.html)
     """
     raise metafopy.errors.ArgumentError(f'cumul() not implemented for {type(x).__name__}')
 
@@ -388,7 +396,7 @@ def cumul_rma_uni(
     1993, [doi:10.1177/096228029300200204](https://doi.org/10.1177/096228029300200204); Lau, Schmid & Chalmers, 1995,
     [doi:10.1016/0895-4356(94)00106-Z](https://doi.org/10.1016/0895-4356(94)00106-Z)). Studies dropped for missing values in the fit are skipped.
     ``na_action`` stands for R's ``options(na.action=)``, as in metafor (see
-    <https://github.com/wviechtb/metafor/blob/master/R/cumul.rma.uni.r>). See <https://wviechtb.github.io/metafor/reference/cumul.html>.
+    <https://github.com/wviechtb/metafor/blob/master/R/cumul.rma.uni.r>).
 
     Args:
         x: A model without moderators (an equal- or random-effects model) fitted by [rma_uni][metafopy.rma_uni]; not allowed for a model
@@ -416,6 +424,9 @@ def cumul_rma_uni(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid, the model has moderators, or ``na_action='fail'`` and values are missing.
         metafopy.errors.NotSupportedError: the model was passed through [robust][metafopy.robust].
+
+    Metafor reference:
+        [cumul](https://wviechtb.github.io/metafor/reference/cumul.html)
     """
     metafopy.methods.fitview.check_class(x, notav=metafopy.methods.fitview.NOT_ROBUST)
     metafopy.methods.common.check_na_action(na_action)

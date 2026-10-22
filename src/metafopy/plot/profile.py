@@ -168,7 +168,7 @@ def plot_profile(
 ) -> matplotlib.axes.Axes | list[matplotlib.axes.Axes]:
     """Plot the profile (log-)likelihood computed by [profile][metafopy.profile] (``plot.profile.rma``).
 
-    Mirrors metafor's ``plot.profile.rma()``, which is documented with ``profile.rma``, see <https://wviechtb.github.io/metafor/reference/profile.rma.html>.
+    Mirrors metafor's ``plot.profile.rma()``, which is documented with ``profile.rma``.
 
     ``refline`` marks the estimate and its (log-)likelihood with dotted lines, ``cline`` (``True`` for a significance
     level of 0.05, or a number as for metafor's ``level`` arguments) adds a horizontal line at the likelihood-ratio test's critical value. The
@@ -206,6 +206,9 @@ def plot_profile(
     Raises:
         metafopy.errors.InputError: ``xlab``, ``ylab`` or ``main`` does not have one entry per profile (or is not a single string for a single
             profile), a limit of a logarithmic axis is not positive, or ``cline`` is outside 0 to 100.
+
+    Metafor reference:
+        [profile.rma](https://wviechtb.github.io/metafor/reference/profile.rma.html)
     """
     if isinstance(x, collections.abc.Sequence):
         n = len(x)

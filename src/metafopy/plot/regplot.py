@@ -212,7 +212,7 @@ def regplot(
 ) -> RegplotResult:
     """Meta-analytic scatterplot of a meta-regression model (``regplot.rma``).
 
-    Mirrors metafor's ``regplot()``, see <https://wviechtb.github.io/metafor/reference/regplot.html>.
+    Mirrors metafor's ``regplot()``.
 
     ``mod`` is the moderator on the horizontal axis (its name, or its 0-based position among the coefficients; it may
     be left out when the model has a single moderator). The regression line (``pred``) and the confidence (``ci``) and
@@ -311,6 +311,9 @@ def regplot(
             an unknown string or ``label`` an unknown string; a vector argument has the wrong length; ``predlim``, ``olim`` or ``ylim`` has the wrong length;
             ``xvals`` is missing with a ``PredictResult``; or ``na_action='fail'`` and studies were left out.
         metafopy.errors.NotSupportedError: ``x`` is an ``rma_mh`` or ``rma_peto`` fit.
+
+    Metafor reference:
+        [regplot](https://wviechtb.github.io/metafor/reference/regplot.html)
     """
     metafopy.methods.fitview.check_class(x, notav=('rma.mh', 'rma.peto'))
     metafopy.methods.common.check_na_action(na_action)
@@ -602,7 +605,6 @@ def points_regplot(x: RegplotResult, ax: matplotlib.axes.Axes | None = None) -> 
     """Redraw the points (and the labels, if there were any) of a [regplot][metafopy.regplot] (metafor's ``points.regplot``).
 
     Mirrors metafor's ``points()`` method for ``regplot`` objects (``points.regplot``), documented on
-    <https://wviechtb.github.io/metafor/reference/regplot.html>.
 
     The points are drawn on ``ax`` (default: the axes of the plot) in the order of ``x.order``, which puts the points with the
     smallest symbols on top again after other elements were added to the plot.
@@ -613,6 +615,9 @@ def points_regplot(x: RegplotResult, ax: matplotlib.axes.Axes | None = None) -> 
 
     Raises:
         metafopy.errors.InputError: ``x`` is not the result of [regplot][metafopy.regplot].
+
+    Metafor reference:
+        [regplot](https://wviechtb.github.io/metafor/reference/regplot.html)
     """
     if not isinstance(x, RegplotResult):
         raise metafopy.errors.InputError('Argument \'x\' must be an object of class "regplot".')

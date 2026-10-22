@@ -77,7 +77,7 @@ def rma_peto(
 ) -> PetoResult:
     """Fit Peto's one-step method to a set of 2x2 tables.
 
-    Mirrors metafor's ``rma.peto()``, see <https://wviechtb.github.io/metafor/reference/rma.peto.html>. The pooled effect is a log odds ratio
+    Mirrors metafor's ``rma.peto()``. The pooled effect is a log odds ratio
     (Yusuf et al., 1985). The first element of ``add``, ``to`` and ``drop00`` is used for the individual ``yi``/``vi`` values, the second for the
     counts used in the pooled estimate (by default nothing is added to them).
 
@@ -115,6 +115,9 @@ def rma_peto(
         >>> from metafopy import datasets, rma_peto
         >>> dat = datasets.load("dat.bcg")  # doctest: +SKIP
         >>> rma_peto(ai="tpos", bi="tneg", ci="cpos", di="cneg", data=dat)  # doctest: +SKIP
+
+    Metafor reference:
+        [rma.peto](https://wviechtb.github.io/metafor/reference/rma.peto.html)
     """
     metafopy.core.verbose.binary_start(int(verbose), subset)
     add2, to2, drop2 = metafopy.models.binary.argument_pairs(add, to, drop00)

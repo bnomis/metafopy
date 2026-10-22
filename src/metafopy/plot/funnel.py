@@ -153,7 +153,7 @@ def funnel(
 ) -> FunnelResult:
     """Funnel plot of a fitted model (``funnel.rma``) or of estimates with their variances (``funnel.default``).
 
-    Mirrors metafor's ``funnel()``, see <https://wviechtb.github.io/metafor/reference/funnel.html>.
+    Mirrors metafor's ``funnel()``.
 
     ``yaxis`` is one of ``'sei'`` (default), ``'vi'``, ``'seinv'``, ``'vinv'``, ``'ni'``,
     ``'ninv'``, ``'sqrtni'``, ``'sqrtninv'``, ``'lni'`` or ``'wi'``. ``level`` (a percentage; a
@@ -246,6 +246,9 @@ def funnel(
             sample-size ``yaxis``; ``vi``/``sei`` is missing or the wrong length in the vector form; fewer than 2 effect sizes remain; ``slab``, ``pch``,
             ``col`` or ``bg`` has the wrong length; or values are missing and ``na_action='fail'``.
         metafopy.errors.NotSupportedError: ``yaxis='wi'`` for a model without weights, or a robust fit with moderators.
+
+    Metafor reference:
+        [funnel](https://wviechtb.github.io/metafor/reference/funnel.html)
     """
     metafopy.methods.common.check_na_action(na_action)
     if transf is not None:

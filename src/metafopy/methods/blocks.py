@@ -58,7 +58,6 @@ def bldiag(
     ``order`` is the clustering variable according to which the rows and columns of the result are
     reordered back to the original order of the data (R: ``order=cluster``). With
     ``order_is_permutation=True`` it is instead the permutation itself (R: ``order=order(cluster)``).
-    See <https://wviechtb.github.io/metafor/reference/bldiag.html>.
 
     Args:
         *mlist: The matrices to put on the diagonal: arrays, data frames or scipy sparse arrays, vectors and scalars (made diagonal), or a
@@ -77,6 +76,9 @@ def bldiag(
         metafopy.errors.InputError: ``order`` is used with a non-square result or has the wrong length.
         metafopy.errors.ArgumentError: an element is an array with more than two dimensions.
         ValueError: an element cannot be converted to numbers (raised by NumPy).
+
+    Metafor reference:
+        [bldiag](https://wviechtb.github.io/metafor/reference/bldiag.html)
     """
     items: list[typing.Any] = list(mlist)
     if len(items) == 1:
@@ -125,7 +127,7 @@ def blsplit(
     The keys are the unique cluster values in order of appearance (sorted if ``sort``). ``fun``, if
     given, is applied to each sub-matrix with ``args`` as additional positional arguments, i.e.
     ``fun(block, *args)`` (R: ``blsplit(V, cluster, round, 4)``; a single value is the one argument). A scipy sparse ``x`` gives sparse
-    sub-matrices. See <https://wviechtb.github.io/metafor/reference/blsplit.html>.
+    sub-matrices.
 
     Args:
         x: A symmetric block diagonal matrix, a dense array or a scipy sparse array.
@@ -140,6 +142,9 @@ def blsplit(
     Raises:
         metafopy.errors.ArgumentError: ``x`` is not a matrix.
         metafopy.errors.InputError: ``cluster`` is missing or does not match the dimensions of ``x``, or ``x`` is not symmetric.
+
+    Metafor reference:
+        [blsplit](https://wviechtb.github.io/metafor/reference/blsplit.html)
     """
     if cluster is None:
         raise metafopy.errors.InputError("Must specify the 'cluster' variable.")

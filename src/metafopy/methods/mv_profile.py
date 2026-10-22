@@ -277,7 +277,6 @@ def profile_rma_mv(
     (-1, 1) (from 0 for ``'CAR'``, half to twice the estimate for the spatial structures).
 
     R source: <https://github.com/wviechtb/metafor/blob/master/R/profile.rma.mv.r>; reference page:
-    <https://wviechtb.github.io/metafor/reference/profile.rma.html>.
 
     Args:
         fitted: Model fitted by [rma_mv][metafopy.rma_mv].
@@ -316,6 +315,9 @@ def profile_rma_mv(
         metafopy.errors.InputError: more than one component is given; the model has no such (estimated) component or the position does not exist or is
             fixed; no component can be profiled; ``steps`` has missing values or is a single number below 2; ``xlim`` or ``ylim`` does not have length
             2 or ``xlim`` leaves the parameter space; ``parallel`` is not one of the accepted values or ``ncpus`` is below 1.
+
+    Metafor reference:
+        [profile.rma](https://wviechtb.github.io/metafor/reference/profile.rma.html)
     """
     if startmethod is not None:
         warnings.warn("Argument 'startmethod' has been deprecated.", stacklevel=2)

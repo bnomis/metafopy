@@ -394,8 +394,7 @@ def rma_glmm(
 ) -> metafopy.models.glmm_result.GLMMResult:
     """Fit a generalized linear mixed-effects model to binary or count data.
 
-    Mirrors metafor's ``rma.glmm()``, see
-    <https://wviechtb.github.io/metafor/reference/rma.glmm.html>. ``measure`` is
+    Mirrors metafor's ``rma.glmm()``. ``measure`` is
     ``'OR'`` (2x2 tables: ``ai``, ``bi``, ``ci``, ``di`` or ``ai``, ``ci``,
     ``n1i``, ``n2i``), ``'IRR'`` (``x1i``, ``x2i``, ``t1i``, ``t2i``), ``'PLO'``
     (``xi`` and ``mi`` or ``ni``) or ``'IRLN'`` (``xi``, ``ti``). ``model`` is
@@ -518,6 +517,9 @@ def rma_glmm(
         >>> from metafopy import datasets, rma_glmm
         >>> dat = datasets.load("dat.bcg")  # doctest: +SKIP
         >>> rma_glmm(ai="tpos", bi="tneg", ci="cpos", di="cneg", data=dat, measure="OR")  # doctest: +SKIP
+
+    Metafor reference:
+        [rma.glmm](https://wviechtb.github.io/metafor/reference/rma.glmm.html)
     """
     model_name = check_arguments(measure, model, method, coding, test)
     vlevel = int(verbose)

@@ -152,7 +152,7 @@ def vcov(
     Which matrix is returned depends on ``type``; for ``'obs'``, ``'fitted'`` and ``'resid'`` the frame has one row and column per study of the subset. A
     ``deltamethod`` or ``matreg`` result gives its own variance-covariance matrix (``vcov.deltamethod``, ``vcov.matreg``).
 
-    R reference page: <https://wviechtb.github.io/metafor/reference/vcov.rma.html>.
+
 
     Args:
         object: The fitted model (or a ``deltamethod`` or ``matreg`` result).
@@ -175,6 +175,9 @@ def vcov(
             ``'delta'`` for a model that is not a selection model, studies are missing and ``na_action='fail'`` for ``'obs'``, or
             ``type='resid'`` with ``na_action='fail'``.
         metafopy.errors.NotSupportedError: ``'obs'`` for ``rma_mh``, ``rma_peto`` and ``rma_glmm``; ``'resid'`` for robust and selection-model fits.
+
+    Metafor reference:
+        [vcov.rma](https://wviechtb.github.io/metafor/reference/vcov.rma.html)
     """
     if isinstance(object, (metafopy.methods.deltamethod.DeltaMethodResult, metafopy.methods.matreg.MatregResult)):
         return object.vcov()

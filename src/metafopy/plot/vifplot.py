@@ -51,7 +51,7 @@ def plot_vif(
 ) -> PlotVifResult:
     """Plot the simulated (G)VIFs of a [vif][metafopy.vif] result obtained with ``sim=True`` (``plot.vif.rma``).
 
-    Mirrors metafor's ``plot.vif.rma()``, see <https://wviechtb.github.io/metafor/reference/plot.vif.rma.html>.
+    Mirrors metafor's ``plot.vif.rma()``.
 
     One panel is drawn per (G)VIF in ``x``, titled ``Coefficient: name`` (``Coefficients: name`` for a set of coefficients). Each panel is the
     histogram of the (G)VIFs simulated under independence of the moderators, with the observed (G)VIF as a dashed black vertical line and the
@@ -83,6 +83,9 @@ def plot_vif(
 
     Raises:
         metafopy.errors.InputError: ``x`` was not obtained with ``sim=True``; ``trim`` is 0.5 or more; ``tail`` is neither ``'lower'`` nor ``'upper'``.
+
+    Metafor reference:
+        [plot.vif.rma](https://wviechtb.github.io/metafor/reference/plot.vif.rma.html)
     """
     if layout is not None:
         warnings.warn("Argument 'layout' has been deprecated.", stacklevel=2)
