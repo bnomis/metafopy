@@ -107,18 +107,38 @@ def summary_escalc(
     transf: collections.abc.Callable[..., typing.Any] | None = None,
     **kwargs: typing.Any,
 ) -> pandas.DataFrame:
-    """Add standard errors, z-values, p-values and confidence intervals to escalc output.
+    """Add standard errors, test statistics, p-values and confidence intervals to the output of escalc.
 
-    ``sei = sqrt(vi)``, ``zi = (yi - H0)/sei``, two-sided ``pval`` and the
-    Wald-type interval ``yi -/+ z_crit * sei`` at the given ``level``. With
-    ``transf``, ``yi`` and the interval bounds are transformed (the interval
-    is re-ordered when ``transf`` is decreasing) and ``vi``, ``sei``, ``zi``
-    and ``pval`` are dropped; ``kwargs`` are passed on to ``transf``.
-    ``olim`` clips ``yi`` and the bounds to an interval (``zi`` and ``pval``
-    are based on the unclipped values).
+    Mirrors metafor's `summary.escalc`, see https://wviechtb.github.io/metafor/reference/summary.escalc.html. With `yi` and `vi` the
+    effect sizes and sampling variances, it computes `sei = sqrt(vi)`, `zi = (yi - H0) / sei`, the two-sided p-value `pval` and the Wald-type
+    interval `yi -/+ z_crit * sei`. With `transf`, `yi` and the bounds are transformed (the bounds are put in increasing order) and
+    `vi`, `sei`, `zi` and `pval` are dropped.
+
+    Args:
+        object: data frame returned by [escalc][metafopy.escalc] (or a frame with the effect sizes and sampling variances as columns).
+        out_names: names of the five new columns, in the order standard error, test statistic, p-value, lower and upper bound
+            (default 'sei', 'zi', 'pval', 'ci.lb', 'ci.ub').
+        var_names: names of the columns with the effect sizes and the sampling variances (two names). Default None: taken from the
+            attributes of `object`, else 'yi' and 'vi'.
+        H0: value of the effect under the null hypothesis for `zi` and `pval`, a scalar or one value per row (default 0).
+        append: whether the new columns are appended to `object` (default True); otherwise only the effect sizes (and sampling variances)
+            and the new columns are returned.
+        replace: whether existing columns with the names in `out_names` are replaced (default True); if False only their missing
+            values are filled in.
+        level: confidence level in percent (default 95).
+        olim: (lower, upper) limits to which `yi` and the bounds are clipped; `zi` and `pval` are based on the unclipped values.
+            Default None: no clipping.
+        digits: number of decimals used when the frame is printed; stored in `attrs['digits']`. Default None: the digits of `object`.
+        transf: function applied to the effect sizes and the bounds, for example `metafopy.transf.ilogit`. Default None.
+        **kwargs: additional arguments passed on to `transf`.
+
+    Returns:
+        A data frame with the columns of `object` and the new columns named by `out_names` (or `yi`, `vi`, and the new columns when
+        `append=False`). The `escalc` attributes (`measure`, `slab`, `ni`, ...) are kept.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InputError: `out_names` or `var_names` or `olim` has the wrong length, a column is not found, or `transf` does not
+            return a single value for each value.
     """
     alpha = level_to_alpha(level)
     crit = float(scipy.stats.norm.isf(alpha / 2))

@@ -40,6 +40,25 @@ SCIPY_ALT: dict[str, typing.Literal['two-sided', 'greater', 'less']] = {'two.sid
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class TesResult(metafopy.printing.HtmlRepr):
+    """Result of [tes][metafopy.tes].
+
+    Attributes:
+        k: number of studies.
+        O: observed number of significant studies.
+        E: expected number of significant studies (the sum of the powers).
+        OEratio: ratio of the observed to the expected number.
+        test: the test used ('chi2', 'binom' or 'exact').
+        X2: chi-square statistic (NaN unless `test` is 'chi2').
+        pval: p-value of the test of excess significance.
+        power: estimated power of each study.
+        sig: whether each study is significant.
+        theta: assumed true effect (a single value or one per study).
+        theta_lim: true effect(s) at which the p-value equals `tes_alpha` (one or two values, NaN if not estimable), or None.
+        tes_alternative: alternative of the test of excess significance.
+        tes_alpha: significance level of the test of excess significance.
+        digits: number of decimals used when printing.
+    """
+
     k: int
     O: int  # noqa: E741
     E: float
@@ -56,6 +75,14 @@ class TesResult(metafopy.printing.HtmlRepr):
     digits: int = 4
 
     def summary(self, digits: int | None = None) -> str:
+        """Format the result as text, as metafor prints it.
+
+        Args:
+            digits: number of decimals. Default None: the digits stored in the result.
+
+        Returns:
+            The printed output as a string.
+        """
         d = metafopy.mfopt.option_digits(digits, self.digits)
         out = ['', 'Test of Excess Significance', '']
         out += [
@@ -142,14 +169,45 @@ def tes(
     find_lim: bool = True,
     na_action: metafopy.methods.common.NAAction = 'omit',
 ) -> TesResult:
-    """Test of excess significance for a fitted model or a vector of estimates with sampling variances.
+    """Test of excess significance.
 
-    ``progbar=True`` prints a progress bar to stderr while the exact test is computed (one step per study; metafor's default is ``TRUE`` for
-    the exact test, here it is ``False``). ``na_action`` stands for R's ``options(na.action=)``: studies with missing values in a vector of
-    estimates are omitted with a warning, except for ``'fail'``, which stops; it has no effect on a fitted model.
+    Mirrors metafor's `tes`, see https://wviechtb.github.io/metafor/reference/tes.html. The power of each study is computed for an assumed
+    true effect and the observed number of significant studies is compared with the expected number (Ioannidis & Trikalinos, 2007,
+    doi:10.1177/1740774507079441). Also estimates the true effect `theta_lim` at which the test would be just significant.
+
+    Args:
+        x: a fitted model (the power is based on its estimate, or its fitted values with moderators, and its tau^2), or the observed effect
+            sizes (array-like, or the name of a column of `data`).
+        vi: sampling variances of a vector `x` (array-like or column name of `data`).
+        sei: standard errors, used when `vi` is not given. One of `vi` and `sei` is required for a vector `x`.
+        subset: 0-based integer indices or boolean mask of the studies to use (vector input only).
+        data: data frame in which string values of `x`, `vi` and `sei` are looked up as column names.
+        H0: value of the effect under the null hypothesis of the significance tests of the studies (default 0).
+        alternative: 'two.sided' | 'greater' | 'less': the alternative of the significance tests of the studies (default 'two.sided').
+        alpha: significance level of those tests (default 0.05).
+        theta: assumed true effect, a single value or one per study. Default None: the weighted average of the effects.
+        tau2: amount of heterogeneity; the power is then averaged over the distribution of the true effects. Default None: no heterogeneity.
+        test: 'chi2' | 'binom' | 'exact': the test of excess significance. Default None: 'exact' unless it needs more than 10^6
+            terms, then 'chi2'.
+        tes_alternative: 'two.sided' | 'greater' | 'less': the alternative of the test of excess significance (default 'greater').
+        tes_alpha: significance level of the test of excess significance, used for `theta_lim` (default 0.1).
+        progbar: whether to show a progress bar on stderr during the exact test (metafor's default is True, here it is False).
+        digits: number of decimals used when the result is printed. Default None: the digits of the model, or 4.
+        correct: whether the continuity correction of the chi-square test is used (default False).
+        rel_tol: relative tolerance of the numerical integration over tau^2 (default `eps**0.25`).
+        subdivisions: maximum number of subdivisions of that integration (default 100).
+        tau2_lb: `tau2` values not above this lower bound are treated as zero (default 0).
+        find_lim: whether `theta_lim` is estimated (default True; only when `theta` is a single value or estimated).
+        na_action: what to do with studies with missing values in a vector `x`: 'omit' | 'exclude' | 'pass' omit them with a warning,
+            'fail' raises. It has no effect on a fitted model.
+
+    Returns:
+        A [TesResult][metafopy.TesResult] with the number of studies `k`, the observed number `O` and expected number `E` of significant
+        studies, their ratio `OEratio`, the test used `test` with its statistic `X2` (chi-square test only) and p-value `pval`, the power
+        of each study `power`, the significance flags `sig`, the assumed effect `theta` and `theta_lim`.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid, or studies are missing and ``na_action='fail'``.
+        metafopy.errors.InputError: an argument or the data is invalid, or studies are missing and `na_action='fail'`.
     """
     metafopy.methods.common.check_na_action(na_action)
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists

@@ -16,25 +16,36 @@ FloatArray = numpy.typing.NDArray[numpy.float64]
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class PhyloTree:
-    """A rooted tree stored as an edge table (``parent``, ``child``, ``length``, ``child_label``) like the ``phylo`` class of ``ape``.
+    """A rooted tree stored as an edge table, like the `phylo` class of the R package ape.
 
-    Tips are the nodes that are never a parent; tip ``i`` has node id ``i + 1`` and the tips keep that order.
+    Tips are the nodes that are never a parent; tip `i` has node id `i + 1` and the tips keep that order.
+
+    Attributes:
+        edges: data frame with one row per edge and the columns `parent` and `child` (node ids), `length` (edge length) and
+            `child_label` (label of the child node).
     """
 
     edges: pandas.DataFrame
 
     @property
     def tip_labels(self) -> tuple[str, ...]:
+        """Labels of the tips, in the order of their node ids."""
         tips = self.edges[~self.edges['child'].isin(self.edges['parent'])].sort_values('child')
         return tuple(str(s) for s in tips['child_label'])
 
     def vcv(self, corr: bool = False) -> pandas.DataFrame:
-        """Variance-covariance matrix of a Brownian-motion trait along the tree (``ape::vcv.phylo``), optionally as correlations.
+        """Variance-covariance matrix of a Brownian-motion trait along the tree (`ape::vcv.phylo`).
 
-        Entry ``(i, j)`` is the summed edge length shared by the root-to-tip paths of tips ``i`` and ``j``.
+        Entry `(i, j)` is the summed edge length shared by the root-to-tip paths of tips `i` and `j`.
+
+        Args:
+            corr: whether to return the correlation matrix instead (default False).
+
+        Returns:
+            Square data frame with the tip labels as index and columns.
 
         Raises:
-            metafopy.errors.InputError: the edge table does not describe a tree.
+            metafopy.errors.InputError: the edge table does not describe a tree (a node has two parents, or there is a cycle).
         """
         if self.edges['child'].duplicated().any():
             raise metafopy.errors.InputError('the edge table does not describe a tree: a node has more than one parent')
@@ -62,7 +73,13 @@ class PhyloTree:
 
 
 def load_tree(name: str) -> PhyloTree:
-    """Load a bundled tree by dataset name, e.g. ``load_tree('moura2021')``.
+    """Load a bundled phylogenetic tree by dataset name, for example `load_tree('moura2021')`.
+
+    Args:
+        name: name of the dataset the tree belongs to, with or without the `dat.` prefix.
+
+    Returns:
+        The tree as a [PhyloTree][metafopy.datasets.PhyloTree].
 
     Raises:
         metafopy.errors.NotFoundError: there is no such tree.

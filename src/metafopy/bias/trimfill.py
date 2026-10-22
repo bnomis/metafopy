@@ -55,6 +55,18 @@ class TrimfillResult(metafopy.models.rma_uni.RMAResult):
         signif_legend: bool | None = None,
         num: bool = False,
     ) -> str:
+        """Format the refitted model and the trim-and-fill details as text, as metafor prints it.
+
+        Args:
+            digits: number of decimals, or a mapping from the output parts ('est', 'se', ...) to decimals. Default None: stored digits.
+            showfit: whether to print the fit statistics of the model (default True).
+            signif_stars: whether to print significance stars. Default None: the metafopy option.
+            signif_legend: whether to print the legend of the stars. Default None: the metafopy option.
+            num: whether to number the lines of the coefficient table (default False).
+
+        Returns:
+            The printed output as a string.
+        """
         digits = metafopy.mfopt.option_digits(digits, self.digits)
         block = [f'Estimated number of missing studies on the {self.side} side: {self.k0} (SE = {metafopy.bias.inputs.fx(self.se_k0, digits)})']
         if self.k0_est == 'R0':
@@ -116,13 +128,29 @@ def trimfill(
     ilim: tuple[float, float] | None = None,
     **kwargs: typing.Any,
 ) -> TrimfillResult:
-    """Trim-and-fill for a model without moderators.
+    """Trim-and-fill method for a model without moderators.
 
-    ``kwargs`` (``level``, ``test``) are passed to the model fits, as the ``...`` of metafor's ``trimfill``.
-    ``verbose`` prints metafor's iteration log (the number of missing studies and the estimate) on stdout.
+    Mirrors metafor's `trimfill`, see https://wviechtb.github.io/metafor/reference/trimfill.html. The number of studies missing from one
+    side of the funnel plot is estimated (Duval & Tweedie, 2000, doi:10.1111/j.0006-341X.2000.00455.x), the corresponding mirror-image
+    studies are filled in, and the model is refitted to the observed and the filled-in studies.
+
+    Args:
+        x: a fitted random- or fixed-effects model ([rma_uni][metafopy.rma_uni] result) without moderators.
+        side: 'left' | 'right': the side of the funnel plot on which studies are missing. Default None: determined from the sign of the
+            slope of a regression of the effect sizes on their standard errors (the 'right' side if it is negative).
+        estimator: 'L0' | 'R0' | 'Q0': the estimator of the number of missing studies (default 'L0').
+        maxiter: maximum number of iterations of the algorithm (default 100); the algorithm raises when it does not converge.
+        verbose: whether to print the iterations (number of missing studies and estimate) to stdout.
+        ilim: (lower, upper) limits to which the filled-in effect sizes are clipped. Default None: no clipping.
+        **kwargs: `level` and `test` are passed on to the model fits; other keywords are ignored.
+
+    Returns:
+        A [TrimfillResult][metafopy.TrimfillResult]: the refitted model (all the attributes of an [RMAResult][metafopy.RMAResult]) with the
+        additional fields `fill` (flags the filled-in studies, which come last), `k0`, `se_k0`, `side`, `k0_est` and `p_k0`. If no study is
+        missing (`k0 == 0`) the model is that of `x`.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InputError: an argument or the data is invalid, `x` has moderators, k = 1, or the algorithm fails or does not converge.
     """
     metafopy.methods.fitview.check_method(x, 'trimfill')
     metafopy.methods.fitview.check_class(x, must='rma.uni', notav=('robust.rma', 'rma.ls', 'rma.gen', 'rma.uni.selmodel'))

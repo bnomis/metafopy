@@ -32,11 +32,27 @@ type FloatArray = numpy.typing.NDArray[numpy.float64]
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class RanktestResult(metafopy.printing.HtmlRepr):
+    """Result of [ranktest][metafopy.ranktest].
+
+    Attributes:
+        tau: Kendall's rank correlation between the standardized effect sizes and the sampling variances.
+        pval: two-sided p-value of the test.
+        digits: number of decimals used when printing.
+    """
+
     tau: float
     pval: float
     digits: int = 4
 
     def summary(self, digits: int | None = None) -> str:
+        """Format the result as text, as metafor prints it.
+
+        Args:
+            digits: number of decimals. Default None: the digits stored in the result.
+
+        Returns:
+            The printed output as a string.
+        """
         d = metafopy.mfopt.option_digits(digits, self.digits)
         tau = metafopy.bias.inputs.fx(self.tau, d)
         pval = metafopy.bias.inputs.fp(self.pval, d, equal=True, sep=True, pname='p ')
@@ -109,12 +125,30 @@ def ranktest(
     exact: bool = True,
     na_action: metafopy.methods.common.NAAction = 'omit',
 ) -> RanktestResult:
-    """Rank correlation test for funnel plot asymmetry; ``x`` is a fitted model (of any class) without moderators or a vector of estimates.
-    ``na_action`` stands for R's ``options(na.action=)``: studies with missing values in a vector of estimates are omitted with a warning, except for
-    ``'fail'``, which stops; it has no effect on a fitted model.
+    """Rank correlation test for funnel plot asymmetry (Begg and Mazumdar, 1994).
+
+    Mirrors metafor's `ranktest`, see https://wviechtb.github.io/metafor/reference/ranktest.html. Kendall's rank correlation between the
+    standardized effect sizes and their sampling variances is computed (Begg & Mazumdar, 1994, doi:10.2307/2533446). A significant
+    correlation indicates funnel plot asymmetry.
+
+    Args:
+        x: a fitted model without moderators (of any `rma` class), or the observed effect sizes (array-like, or the name of a column of `data`).
+        vi: sampling variances of a vector `x` (array-like or column name of `data`); ignored with a warning when `x` is a model.
+        sei: standard errors, used when `vi` is not given. One of `vi` and `sei` is required for a vector `x`.
+        subset: 0-based integer indices or boolean mask of the studies to use (vector input only).
+        data: data frame in which string values of `x`, `vi` and `sei` are looked up as column names.
+        digits: number of decimals used when the result is printed. Default None: the digits of the model, or 4.
+        exact: whether the p-value is the exact one (default True). The exact p-value needs untied observations; otherwise (or if it
+            cannot be computed) the normal approximation is used.
+        na_action: what to do with studies with missing values in a vector `x`: 'omit' | 'exclude' | 'pass' omit them with a warning,
+            'fail' raises. It has no effect on a fitted model.
+
+    Returns:
+        A [RanktestResult][metafopy.RanktestResult] with Kendall's `tau` and the two-sided p-value `pval`.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid, or studies are missing and ``na_action='fail'``.
+        metafopy.errors.InputError: an argument or the data is invalid (for example a model with moderators), or studies are missing
+            and `na_action='fail'`.
     """
     metafopy.methods.common.check_na_action(na_action)
     if metafopy.methods.fitview.is_rma(x):

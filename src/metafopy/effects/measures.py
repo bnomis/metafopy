@@ -118,13 +118,21 @@ INCOMPLETE = 'Cannot compute outcomes. Check that all of the required informatio
 
 
 def cmicalc(mi: numpy.typing.ArrayLike, method: bool | str = 'exact') -> FloatArray:
-    """Small-sample bias correction factor ``c(m)`` for SMDs (Hedges, 1981, doi:10.3102/10769986006002107).
+    """Small-sample bias correction factor for standardized mean differences.
 
-    ``method`` is ``"exact"`` (gamma-function form, computed on the log scale),
-    ``"approx"`` (``1 - 3/(4m - 1)``), or a logical (``True`` = exact, ``False`` = none).
+    Mirrors metafor's `.cmicalc`. The factor `c(m)` of Hedges (1981, doi:10.3102/10769986006002107) multiplies a standardized mean difference
+    to remove its small-sample bias (it is used by [escalc][metafopy.escalc] for the measures SMD, SMDH and others when `correct=True`).
+
+    Args:
+        mi: degrees of freedom `m` (for example `n1i + n2i - 2`), scalar or array-like.
+        method: 'exact' | 'approx' | True | False. 'exact' (or True, the default) uses the gamma-function form, 'approx' the approximation
+            `1 - 3/(4m - 1)`, and False applies no correction (a factor of 1). Strings can be abbreviated.
+
+    Returns:
+        Array of the factors `c(m)` with the shape of `mi`; NaN where `m <= 1` (or `mi` is missing).
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InputError: `method` is a string that is neither 'exact' nor 'approx'.
     """
     m = numpy.asarray(mi, dtype=numpy.float64)
     if isinstance(method, bool):
