@@ -239,6 +239,15 @@ def test_na_action_of_baujat_labbe_rcalc_cumul_plot() -> None:
     matplotlib.pyplot.close('all')
 
 
+def test_labbe_stops_on_an_unknown_na_action() -> None:
+    # R: labbe() reads options(na.action) and stops with "Unknown 'na.action' specified under options()." (R/labbe.rma.r)
+    res = metafopy.rma_uni(measure='RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=metafopy.datasets.load('dat.bcg'), method='FE')
+    with pytest.raises(metafopy.errors.InputError, match=r'na\.action'):
+        metafopy.labbe(res, na_action='bogus')  # type: ignore[arg-type]
+    metafopy.labbe(res, na_action='exclude')
+    matplotlib.pyplot.close('all')
+
+
 def test_fsn_pool_is_case_insensitive() -> None:
     # R: fsn(yi, vi, data = dat.raudenbush1985, pool = "Fisher") (the argument is lower-cased before match.arg)
     data = metafopy.datasets.load('raudenbush1985')

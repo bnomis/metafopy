@@ -155,6 +155,15 @@ def test_plot_permutest_omnibus_matches_metafor(perm: metafopy.methods.permutest
     assert ax.get_title() == 'Omnibus Test of Coefficients'
 
 
+def test_plot_permutest_omnibus_with_one_degree_of_freedom_draws_the_theoretical_density(ax: matplotlib.axes.Axes) -> None:
+    # the chi-square density with one degree of freedom is infinite at 0: drawing it used to raise OverflowError (metafor stops with an infinite ylim)
+    one = metafopy.rma('yi', 'vi', mods='~ ablat', data=refutil.bcg())
+    result = metafopy.permutest(one, iter=50, seed=1)
+    assert isinstance(result, metafopy.methods.permutest.PermutestResult)
+    metafopy.plot_permutest(result, beta=[], QM=True, lwd=(2, 3, 3, 4), ax=ax)
+    assert numpy.isfinite(ax.get_ylim()).all()
+
+
 def test_plot_permutest_default_draws_one_panel_per_coefficient(perm: metafopy.methods.permutest.PermutestResult, ax: matplotlib.axes.Axes) -> None:
     out = metafopy.plot_permutest(perm, QM=True, legend=True, lwd=(2, 1, 1, 0), ax=ax)
     assert out.names == ('QM', 'ablat', 'year')

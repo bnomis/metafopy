@@ -112,8 +112,8 @@ def plot_permutest(
 
     Trimming only affects the histogram; the kernel density estimate uses all permutations.
 
-    Known limitation: for an omnibus test with a single degree of freedom (``QM=True`` and one coefficient tested) the theoretical density
-    is infinite at 0, and drawing it (``lwd[1] > 0``) or the kernel density estimate (``lwd[2] > 0``) raises ``OverflowError``.
+    For an omnibus test with a single degree of freedom (``QM=True`` and one coefficient tested) the theoretical density is infinite at 0. That
+    point is left out of the curve and of the y range, whereas metafor stops with an infinite ``ylim`` there.
 
     Args:
         x: The result of [permutest][metafopy.permutest]; a location-scale permutation test gives ``LSPermutestResult``.
@@ -235,7 +235,18 @@ def plot_permutest(
         ylim = None
         if widths[1] > 0 or widths[2] > 0:
             plain = metafopy.plot.histplot.histogram(shown, breaks)
-            ylim = (0.0, float(max(float(ys.max()) if widths[1] > 0 else 0.0, float(dy.max()) if widths[2] > 0 else 0.0, float(plain.density.max()))))
+            # the chi-square density with one degree of freedom is infinite at 0: the y range ignores that point (R stops with an infinite ylim)
+            finite_ys = ys[numpy.isfinite(ys)]
+            ylim = (
+                0.0,
+                float(
+                    max(
+                        float(finite_ys.max()) if widths[1] > 0 and finite_ys.size else 0.0,
+                        float(dy.max()) if widths[2] > 0 else 0.0,
+                        float(plain.density.max()),
+                    )
+                ),
+            )
         return metafopy.plot.histplot.draw_histogram(panel, shown, breaks, col=col_, border=border_, main=main, xlab=xlab, freq=freq, ylim=ylim, xlim=xlim)
 
     def omnibus(panel: matplotlib.axes.Axes, pdist: FloatArray, obs: float, df1: int, df2: int | None, main: str) -> None:
@@ -247,7 +258,7 @@ def plot_permutest(
         if widths[0] > 0:
             metafopy.plot.draw.vline(panel, obs, lty='dashed', lw=widths[0])
         if widths[1] > 0:
-            metafopy.plot.draw.line(panel, xs, ys, col=col_ref_, lw=widths[1])
+            metafopy.plot.draw.line(panel, xs[numpy.isfinite(ys)], ys[numpy.isfinite(ys)], col=col_ref_, lw=widths[1])
         if widths[2] > 0:
             metafopy.plot.draw.line(panel, dx, dy, col=col_density_, lw=widths[2])
         legend_for(panel)
@@ -281,7 +292,7 @@ def plot_permutest(
             if widths[0] > 0:
                 metafopy.plot.draw.vline(panel, obs, lty='dashed', lw=widths[0])
         if widths[1] > 0:
-            metafopy.plot.draw.line(panel, xs, ys, col=col_ref_, lw=widths[1])
+            metafopy.plot.draw.line(panel, xs[numpy.isfinite(ys)], ys[numpy.isfinite(ys)], col=col_ref_, lw=widths[1])
         if widths[2] > 0:
             metafopy.plot.draw.line(panel, dx, dy, col=col_density_, lw=widths[2])
         if widths[3] > 0:

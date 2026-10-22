@@ -195,8 +195,8 @@ def labbe(
     proportional to the precision between ``plim``), ``transf`` is applied to the arm-level outcomes, and
     ``add`` and ``to`` (see below for the defaults), ``lim``/``llim`` as in metafor. ``bty`` is the type of box around
     the plot (``'o'``, ``'l'``, ``'7'``, ``'c'``, ``'u'``, ``']'`` or ``'n'``),
-    which metafor passes on to ``plot()``. ``na_action`` stands for R's ``options(na.action=)``; it is not checked and every value gives the same
-    result (metafor stops on an unknown value and sets ``na.pass`` while it computes).
+    which metafor passes on to ``plot()``. ``na_action`` stands for R's ``options(na.action=)``; an unknown value
+    raises, as in metafor, and every valid value gives the same result (metafor sets ``na.pass`` while it computes).
 
     Args:
         x: A model without moderators fitted by [rma_uni][metafopy.rma_uni], ``rma_mh`` or ``rma_glmm`` to 2x2 table or rate data, with ``measure`` one of
@@ -244,18 +244,20 @@ def labbe(
         addvi: Passed to [escalc][metafopy.escalc]: apply ``add`` to the sampling variances. Default: ``True``.
         ax: Matplotlib axes to draw into. Default: the current axes.
         bty: Type of box around the plot: ``'o'`` (the default), ``'l'``, ``'7'``, ``'c'``, ``'u'``, ``']'`` or ``'n'`` (none).
-        na_action: R's ``options(na.action=)``; not checked, every value gives the same plot.
+        na_action: R's ``options(na.action=)``: ``'omit'`` | ``'exclude'`` | ``'pass'`` | ``'fail'``. Every valid value gives the same plot.
 
     Returns:
         A ``LabbeResult`` with the axes ``ax``, the plotted outcomes of group 1 (``x``) and group 2 (``y``), the point sizes ``cex``, the symbols ``pch``,
         colours ``col`` and ``bg``, and the 1-based study numbers ``ids`` and labels ``slab`` of the studies plotted.
 
     Raises:
-        metafopy.errors.InputError: the model has moderators or an unsupported ``measure``; ``to`` is unknown; ``llim`` does not have length 2; the counts
+        metafopy.errors.InputError: ``na_action`` is unknown; the model has moderators or an unsupported ``measure``;
+            ``to`` is unknown; ``llim`` does not have length 2; the counts
             are not available or have the wrong length; ``pch``, ``col``, ``bg`` or ``psize`` has the wrong length; or no study has all the arm-level
             outcomes.
         metafopy.errors.NotSupportedError: ``x`` is an ``rma_mv``, location-scale or selection-model fit.
     """
+    metafopy.methods.common.check_na_action(na_action)
     metafopy.methods.fitview.check_class(x, notav=('rma.mv', 'rma.ls', 'rma.gen', 'rma.uni.selmodel'))
     if not x.int_only:
         raise metafopy.errors.InputError("L'Abbe plots can only be drawn for models without moderators.")
