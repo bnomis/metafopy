@@ -32,6 +32,15 @@ class EmmSummary:
     ``frame`` has a column for each variable, the estimate (``emmean``, ``estimate``, ``response``, ``ratio``, ...), ``SE``,
     ``df``, the confidence limits (``lower.CL``/``upper.CL``, or ``asymp.LCL``/``asymp.UCL`` for z tests), ``null``, the
     ``t.ratio`` (``z.ratio``) and the ``p.value``, as far as they were asked for.
+
+    Attributes:
+        frame: The table, a data frame.
+        est_name: Name of the estimate column.
+        cl_names: Names of the lower and upper confidence limit columns.
+        by: Variables the results are grouped by.
+        adjust: Multiplicity adjustment used.
+        type: The scale shown, ``'link'`` or ``'response'``.
+        messages: Notes printed under the table.
     """
 
     frame: pandas.DataFrame

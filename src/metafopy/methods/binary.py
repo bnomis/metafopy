@@ -234,7 +234,28 @@ def leave1out_fixed_binary(
     na_action: metafopy.methods.common.NAAction = 'omit',
     progbar: bool = False,
 ) -> metafopy.methods.leave1out.Leave1outResult:
-    """Refit the model leaving out each table (or each ``cluster`` of tables) in turn; ``progbar=True`` prints a progress bar to stderr.
+    """Refit the model leaving out each table (or each ``cluster`` of tables) in turn (metafor's ``leave1out`` for ``rma.mh`` and ``rma.peto``).
+
+    See <https://wviechtb.github.io/metafor/reference/leave1out.html>.
+
+    Args:
+        x: A model fitted by [rma_mh][metafopy.rma_mh] or [rma_peto][metafopy.rma_peto].
+        cluster: Clustering variable: a column name of the data the model was fitted to, or an array with one value per supplied table. All
+            tables of one cluster are left out at a time and the rows are labelled by the sorted cluster ids. ``None`` (the default) leaves out
+            one table at a time.
+        digits: Number of decimals used when the result is printed. ``None`` uses the ``digits`` option, else the ``digits`` of the model.
+        transf: A function applied to the estimates and confidence interval bounds, or ``True`` for ``numpy.exp`` when the measure is ``'OR'``,
+            ``'RR'``, ``'IRR'`` or ``'PETO'`` (no transformation for other measures). The standard errors are then NaN. ``None`` or ``False`` (the
+            default) applies no transformation.
+        targs: Extra argument passed to ``transf`` as ``transf(x, targs)``. ``None`` (the default) calls ``transf(x)``.
+        na_action: How tables with missing counts are handled: ``'omit'`` (the default; no row for them), ``'exclude'`` or ``'pass'``
+            (a row of NaN for each, only without ``cluster``) or ``'fail'`` (raise an error).
+        progbar: Print a progress bar to stderr while the refits are made (default ``False``).
+
+    Returns:
+        A [Leave1outResult][metafopy.Leave1outResult] with one row per left-out table or cluster (labelled ``-<label>``) holding the
+        re-estimated ``estimate``, ``se``, ``stat`` (``zval``), ``pval``, ``ci_lb``, ``ci_ub``, ``Q``, ``Qp``, ``I2``
+        and ``H2``.
 
     Raises:
         metafopy.errors.InputError: the data are not suitable (``k = 1``) or ``cluster`` is invalid.
@@ -303,7 +324,29 @@ def cumul_fixed_binary(
     na_action: metafopy.methods.common.NAAction = 'omit',
     progbar: bool = False,
 ) -> metafopy.methods.leave1out.CumulResult:
-    """Fit the model to the first ``i`` tables for ``i = 1, ..., k`` (tables with missing counts are skipped); ``progbar=True`` prints a progress bar to stderr.
+    """Fit the model to the first ``i`` tables for ``i = 1, ..., k`` (metafor's ``cumul`` for ``rma.mh`` and ``rma.peto``).
+
+    Tables with missing counts are skipped. See <https://wviechtb.github.io/metafor/reference/cumul.html>.
+
+    Args:
+        x: A model fitted by [rma_mh][metafopy.rma_mh] or [rma_peto][metafopy.rma_peto].
+        order: Variable giving the order in which the tables are added, ascending: a column name of the data the model was fitted to, or an
+            array with one value per supplied table. ``None`` (the default) uses the original order and ignores ``collapse``.
+        digits: Number of decimals used when the result is printed. ``None`` uses the ``digits`` option, else the ``digits`` of the model.
+        transf: A function applied to the estimates and confidence interval bounds, or ``True`` for ``numpy.exp`` when the measure is ``'OR'``,
+            ``'RR'``, ``'IRR'`` or ``'PETO'`` (no transformation for other measures). The standard errors are then NaN. ``None`` or ``False`` (the
+            default) applies no transformation.
+        targs: Extra argument passed to ``transf`` as ``transf(x, targs)``. ``None`` (the default) calls ``transf(x)``.
+        collapse: Add tables with the same value of ``order`` together instead of one at a time (default ``False``).
+        decreasing: Add the tables in descending order of ``order`` (default ``False``).
+        na_action: How tables with missing counts are handled: ``'omit'`` (the default; no row for them), ``'exclude'`` or ``'pass'``
+            (a row of missing values for each) or ``'fail'`` (raise an error).
+        progbar: Print a progress bar to stderr while the refits are made (default ``False``).
+
+    Returns:
+        A [CumulResult][metafopy.CumulResult] with one row per added table (or group of tables) holding the number of tables included ``k``,
+        the values of ``order`` and the re-estimated ``estimate``, ``se``, ``stat`` (``zval``), ``pval``, ``ci_lb``, ``ci_ub``, ``Q``, ``Qp``, ``I2``
+        and ``H2``.
 
     Raises:
         metafopy.errors.InputError: ``order`` is invalid or tables are missing and ``na_action='fail'``.

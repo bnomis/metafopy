@@ -65,7 +65,12 @@ def fmt(x: float, digits: int) -> str:
 
 @dataclasses.dataclass(frozen=True)
 class MatregConfintResult:
-    """Confidence intervals of a ``matreg`` fit: ``tab`` has the columns ``estimate``, ``ci.lb`` and ``ci.ub``."""
+    """Confidence intervals of a ``matreg`` fit: ``tab`` has the columns ``estimate``, ``ci.lb`` and ``ci.ub``.
+
+    Attributes:
+        tab: Data frame with one row per coefficient and the columns ``estimate``, ``ci.lb`` and ``ci.ub``.
+        digits: Number of decimals used when the result is printed.
+    """
 
     tab: pandas.DataFrame
     digits: int = 4
@@ -82,6 +87,15 @@ class MatregPredictResult(metafopy.methods.predict.PredictResult):
     ``X`` is the matrix of predictor values (``addx=True``), ``vcov`` the variance-covariance matrix of the predicted
     values (``vcov=True`` without ``transf``), ``ddf`` the degrees of freedom of the t-distribution (``None`` for a
     model fitted with ``V``) and ``transf`` whether a transformation was applied (``se`` is then NaN, as in metafor).
+
+    The attributes ``pred``, ``se``, ``ci_lb``, ``ci_ub``, ``pi_lb`` and ``pi_ub`` are those of the [predict][metafopy.predict] result.
+
+    Attributes:
+        X: Predictor values of the predictions as a data frame, or ``None`` (set with ``addx=True``).
+        vcov: Variance-covariance matrix of the predicted values, or ``None`` (set with ``vcov=True`` without ``transf``).
+        ddf: Degrees of freedom of the t-distribution, or ``None`` for a model fitted with ``V``.
+        digits: Number of decimals used when the result is printed.
+        transf: Whether a transformation was applied to the predictions.
     """
 
     X: pandas.DataFrame | None = None
@@ -117,6 +131,30 @@ class MatregResult:
     (``F``, ``Fdf``, ``Fp``), ``R2adj``, the residual variances and ``fit_stats`` exist only for ``test == 't'``;
     the Wald test (``QM``, ``QMdf``, ``QMp``) only for ``test == 'z'``. ``level`` is the alpha level (``0.05`` for 95%)
     and ``intercept`` is true for a covariance matrix input (``cov=True``).
+
+    Attributes:
+        tab: Table of coefficients, one row per coefficient (see above for the columns).
+        vb: Variance-covariance matrix of the coefficients.
+        R2: Proportion of variance of the outcome explained by the predictors.
+        p: Number of predictors (excluding the intercept).
+        parms: Number of estimated parameters.
+        digits: Number of decimals used when the result is printed.
+        test: ``'t'`` for a model fitted with ``n``, ``'z'`` for one fitted with ``V``.
+        level: The alpha level of the confidence intervals.
+        intercept: Whether the model has an intercept.
+        R2adj: Adjusted ``R^2`` (``test == 't'`` only).
+        F: The F statistic of the test of all coefficients, as a tuple (``test == 't'`` only).
+        Fdf: Degrees of freedom of the F test (``test == 't'`` only).
+        Fp: P-value of the F test (``test == 't'`` only).
+        df_residual: Residual degrees of freedom (``test == 't'`` only).
+        sigma2_ml: Maximum-likelihood estimate of the residual variance (``test == 't'`` only).
+        sigma2_reml: Restricted maximum-likelihood estimate of the residual variance (``test == 't'`` only).
+        nobs: Number of observations (``test == 't'`` only).
+        deviance: Deviance of the model (``test == 't'`` only).
+        fit_stats: Log-likelihood, deviance, AIC, BIC and AICc under ML and REML (``test == 't'`` only).
+        QM: Wald-type test statistic of the coefficients (``test == 'z'`` only).
+        QMdf: Degrees of freedom of the Wald test (``test == 'z'`` only).
+        QMp: P-value of the Wald test (``test == 'z'`` only).
     """
 
     tab: pandas.DataFrame
@@ -383,7 +421,31 @@ def matreg(
     (:func:`metafopy.core.linalg.near_pd`, a port of ``Matrix::nearPD``).
 
     Without names, the coefficients are labelled ``x1``, ``x2``, ... by their 1-based position in ``R``, as in R.
-    See https://wviechtb.github.io/metafor/reference/matreg.html.
+    See <https://wviechtb.github.io/metafor/reference/matreg.html>.
+
+    Args:
+        y: The outcome variable: a 0-based index into ``R``, a variable name (``R`` must then be a data frame with dimension names) or a
+            formula string such as ``'perf ~ acog + asom + conf'``, which also gives ``x``.
+        x: The predictor variables: a sequence of 0-based indices or names (or a single one). Ignored when ``y`` is a formula. ``None`` (the
+            default) uses every variable other than ``y``.
+        R: The correlation or covariance matrix (an array or data frame; required). Only its lower triangle (including the diagonal) is used.
+        n: The sample size the matrix is based on; gives the standard errors of a regression on raw data (t tests). Give ``n`` or ``V``, not both.
+        V: The variance-covariance matrix of the elements of the lower triangle of ``R``, column-wise (with the diagonal when ``cov=True``),
+            for instance from [rcalc][metafopy.rcalc] or the ``vcov()`` of a multivariate model of correlations. Gives the standard errors by the
+            multivariate delta method (z tests). Give ``n`` or ``V``, not both.
+        cov: Treat ``R`` as a covariance matrix; the model then has an intercept, which needs ``means`` (default ``False``, a correlation matrix).
+        means: The means of the variables, for the intercept when ``cov=True``. Without them the intercept estimate is NaN.
+        ztor: ``R`` (and ``V``) hold Fisher r-to-z transformed correlations, which are back-transformed to raw correlations first (default
+            ``False``).
+        nearpd: Replace a non-positive-definite ``R[x, x]`` by the nearest correlation matrix (a port of ``Matrix::nearPD``) instead of failing
+            (default ``False``). Treat the results with caution.
+        level: Confidence interval level in percent (default 95), or a value below 1 read as in metafor.
+        digits: Number of decimals used when the result is printed (default 4).
+
+    Returns:
+        A [MatregResult][metafopy.MatregResult]: the table ``tab`` of (standardised, for a correlation matrix) regression coefficients with
+        their standard errors, test statistics, p-values and confidence interval bounds, the variance-covariance matrix ``vb`` of the
+        coefficients, ``R2`` and further fit statistics. It has ``coef``, ``vcov``, ``confint`` and ``predict`` methods.
 
     Raises:
         metafopy.errors.InputError: an argument is missing, invalid or inconsistent with ``R``.

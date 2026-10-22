@@ -40,6 +40,11 @@ class RCalcResult:
 
     Both are ``None`` for a single matrix of dimension 1 x 1 or smaller. ``V`` is dense, except that
     ``sparse=True`` with several matrices gives a ``scipy.sparse.csr_array``.
+
+    Attributes:
+        dat: Data frame with one row per correlation: the study identifier, the two variable identifiers, a variable pair identifier
+            (``var1.var2``), the correlation (``ri``, possibly r-to-z transformed) and the common sample size (``ni``).
+        V: The block diagonal variance-covariance matrix of the correlations; its row and column names are in ``dat['var1.var2']``.
     """
 
     dat: pandas.DataFrame | None
@@ -317,23 +322,37 @@ def rcalc(
 ) -> RCalcResult | dict[str, RCalcResult]:
     """Variance-covariance matrix of correlation coefficients from the same samples (metafor's ``rcalc``).
 
-    ``na_action`` stands for R's ``options(na.action=)``: an unknown value raises, the others
-    give the same result (metafor sets ``na.pass`` while it computes).
+    Correlations computed from the same sample are not independent. The sampling covariances of raw correlations follow Olkin and Finn
+    (1995), those of Fisher r-to-z transformed correlations Steiger (1980). The data and the matrix can be passed on to
+    [rma_mv][metafopy.rma_mv]. As in R, the study identifier in ``dat`` consists of strings (the names of the list, or the ids converted to
+    character). See <https://wviechtb.github.io/metafor/reference/rcalc.html>.
 
-    ``x`` is a formula string such as ``'ri ~ var1 + var2 | study'`` (the study part may be left
-    out for a single study; ``ni`` is a column of ``data`` or an array), a correlation matrix, or a
-    list (or dict) of correlation matrices, each an array or a data frame whose column labels name
-    the variables. Only the lower triangle is used (the upper one if ``upper``).
+    Args:
+        x: A formula string such as ``'ri ~ var1 + var2 | study'`` (the study part may be left out for a single study), naming the
+            correlations, the two variables of each and the study in ``data``; or a correlation matrix; or a list or dict of correlation matrices.
+            Matrices are arrays or data frames whose column labels name the variables (``x1``, ``x2``, ... if unnamed).
+        ni: Sample sizes the correlations are based on: for a formula, a column name of ``data`` or an array; for a matrix, the (common) sample
+            size; for a list of matrices, one sample size per matrix. Required.
+        data: Data frame (or mapping of columns) holding the variables of the formula (and ``ni``). Required for a formula.
+        rtoz: Transform the correlations with Fisher's r-to-z transformation and compute the matrix for the transformed values (default
+            ``False``).
+        nfun: How the common sample size within a study is computed when it differs between correlations: ``'min'`` (the default; conservative),
+            ``'harmonic'`` (harmonic mean) or ``'mean'``, an unambiguous prefix of these, or a function of the array of the sample sizes of
+            a study returning a single value.
+        sparse: Return the matrix as a sparse matrix (default ``False``; only with several matrices does this give a sparse ``V``).
+        upper: For matrices, use the upper instead of the lower triangle (default ``False``).
+        simplify: For a list of matrices, combine the results into one (default ``True``); with ``False`` a dict of one result per matrix.
+        rowid: For a list of matrices with ``simplify=True``: values of ``'id.var1.var2'`` giving the order of the rows of ``dat`` and ``V``
+            (metafor passes this on internally for a formula).
+        vnames: For a list of matrices with ``simplify=True``: four names for the columns of ``dat``.
+        noid: For a list of matrices with ``simplify=True``: drop the study identifier from ``dat`` (default ``False``).
+        na_action: Stands for R's ``options(na.action=)``; an unknown value raises, the known ones (``'omit'`` (the default), ``'exclude'``,
+            ``'pass'`` and ``'fail'``) give the same result (metafor sets ``na.pass`` while it computes).
 
-    Returns an :class:`RCalcResult` with the data ``dat`` (one row per correlation, or per row of
-    ``data`` when a formula is used) and the block diagonal ``V``. With ``simplify=False`` and a
-    list of matrices, a dict of one result per matrix. As in R, the study identifier in ``dat``
-    consists of strings (the names of the list, or the ids converted to character). ``nfun`` is
-    ``'min'``, ``'harmonic'``, ``'mean'`` or a function of the sample sizes of a study.
-
-    For a list of matrices with ``simplify=True``, ``rowid`` (values of ``'id.var1.var2'``) puts the rows of ``dat`` and ``V`` in that
-    order, ``vnames`` (four names) renames the ``dat`` columns and ``noid=True`` drops the study identifier, as in metafor, which
-    passes these on internally for a formula. The row and column names of ``V`` are in ``dat['var1.var2']``.
+    Returns:
+        An [RCalcResult][metafopy.RCalcResult] with the data ``dat`` (one row per correlation) and the block diagonal variance-covariance matrix
+        ``V``. A covariance is NaN when a correlation it needs is missing, and nothing is computed for studies with a common sample size
+        below 5. With ``simplify=False`` and a list of matrices, a dict of one such result per matrix.
 
     Raises:
         metafopy.errors.ArgumentError: ``x`` is not a formula, a matrix or a list of matrices.

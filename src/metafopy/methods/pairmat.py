@@ -45,7 +45,22 @@ def pairmat(
     For use as ``anova(res, X=pairmat(res, btt='alloc'))``, or without the model, ``anova(res, X=pairmat(btt='alloc'))``, as in metafor, where the
     model is that of the ``anova()`` or ``predict()`` call. Rows for the coefficients picked by ``btt2`` themselves are placed first.
     ``fixed=True`` matches a string ``btt`` or ``btt2`` literally instead of as a regular expression (metafor's ``...`` argument).
-    See https://wviechtb.github.io/metafor/reference/pairmat.html.
+    The contrast matrix can be passed to [anova][metafopy.anova] (to test the contrasts) and [predict][metafopy.predict] (for their confidence
+    intervals). See <https://wviechtb.github.io/metafor/reference/pairmat.html>.
+
+    Args:
+        x: A meta-regression model fitted by [rma_uni][metafopy.rma_uni] (or another model with coefficient names), with moderators. May be
+            left out (the first argument is then taken as ``btt``) when the result is an argument of an ``anova`` or ``predict`` call.
+        btt: The coefficients to construct pairwise contrasts for: 0-based indices, or a string matched as a regular expression against the
+            coefficient names. At least two coefficients are needed.
+        btt2: A second set of coefficients (0-based indices or a string) included as rows of their own ('main effects'), placed first.
+            ``None`` (the default) for none.
+        fixed: Match a string ``btt`` or ``btt2`` literally instead of as a regular expression (default ``False``).
+
+    Returns:
+        A data frame with one row per pair of the coefficients picked by ``btt`` (labelled ``name1-name2``, with -1 for the first and 1 for
+        the second coefficient) preceded by the rows for ``btt2``, and one column per model coefficient. Without a model, a ``PairmatSpec``
+        that ``anova`` and ``predict`` complete with their model.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.

@@ -40,6 +40,15 @@ class BlupResult:
     """Predicted values with standard errors and prediction intervals (metafor's ``list.rma``).
 
     ``se`` is NaN when a transformation was applied, as in metafor.
+
+    Attributes:
+        pred: The predicted values (BLUPs of the true effects, or predicted random effects), one per study.
+        se: Their standard errors.
+        pi_lb: Lower bounds of the prediction intervals.
+        pi_ub: Upper bounds of the prediction intervals.
+        slab: Study labels, in the order of the rows.
+        digits: Number of decimals used when the result is printed.
+        transf: Whether a transformation was applied to the predictions.
     """
 
     pred: FloatArray
@@ -102,7 +111,19 @@ def format_r_frame(
 
 @functools.singledispatch
 def blup(res: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> BlupResult:
-    """BLUPs of the true effects for a fitted model; see :func:`_blup_rma_uni`.
+    """Best linear unbiased predictions (BLUPs) of the true effects for a fitted model.
+
+    This is a single-dispatch function: the implementation is chosen from the class of ``res``. See
+    [blup_rma_uni][metafopy.methods.blup.blup_rma_uni] for [rma_uni][metafopy.rma_uni] fits (and
+    [blup_rma_ls][metafopy.methods.ls_resid.blup_rma_ls] for location-scale models). See <https://wviechtb.github.io/metafor/reference/blup.html>.
+
+    Args:
+        res: A fitted model object.
+        *args: Positional arguments passed to the implementation chosen by the class of ``res``.
+        **kwargs: Keyword arguments passed to the implementation chosen by the class of ``res``.
+
+    Returns:
+        What the implementation returns, a [BlupResult][metafopy.BlupResult].
 
     Raises:
         metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
@@ -120,12 +141,30 @@ def blup_rma_uni(
     *,
     na_action: NAAction = 'omit',
 ) -> BlupResult:
-    """BLUPs of the true effects of an ``rma.uni`` fit.
+    """BLUPs of the true effects of an ``rma.uni`` fit (metafor's ``blup.rma.uni``).
 
-    ``transf`` is applied (as ``transf(x)`` or ``transf(x, targs)``) to the
-    predicted values and interval bounds. ``na_action`` plays the role of R's
-    ``options(na.action=)``: with ``'exclude'``/``'pass'`` the result has one
-    row per supplied study, NaN for those left out of the fit.
+    The prediction for study ``i`` shrinks its observed effect towards the model's fitted value (the empirical Bayes estimate of its true effect).
+    Prediction intervals use a normal distribution, or a t-distribution with ``k - p`` degrees of freedom when the model was fitted with
+    a t, knha or adhoc test. For equal- and fixed-effects models the BLUPs equal the fitted values. ``na_action`` plays the role of R's
+    ``options(na.action=)``. See <https://wviechtb.github.io/metafor/reference/blup.html>.
+
+    Args:
+        res: A model fitted by [rma_uni][metafopy.rma_uni].
+        level: Level of the prediction intervals in percent (e.g. 95), or a value below 1 read as in metafor (0.95 and 0.05 both give 95 percent).
+            ``None`` (the default) uses the level of the model.
+        digits: Number of decimals used when the result is printed. ``None`` uses the ``digits`` option, else the ``digits`` of the model.
+        transf: A function applied to the predicted values and interval bounds (for example ``numpy.exp``); the standard errors are then NaN.
+            ``None`` (the default) applies no transformation.
+        targs: Extra argument passed to ``transf`` as ``transf(x, targs)``. ``None`` (the default) calls ``transf(x)``.
+        na_action: How studies dropped for missing values are handled: ``'omit'`` (the default; no row for them), ``'exclude'`` or ``'pass'``
+            (a row of NaN for each, so there is one row per supplied study) or ``'fail'`` (raise an error).
+
+    Returns:
+        A [BlupResult][metafopy.BlupResult] with the predictions ``pred``, standard errors ``se`` and prediction interval bounds ``pi_lb``
+        and ``pi_ub``, one entry per study.
+
+    Raises:
+        metafopy.errors.InputError: the model has user-defined weights, ``na_action`` is unknown or values are missing with ``na_action='fail'``.
     """
     return shrinkage_predictions(res, 'blup', level, digits, transf, targs, na_action)
 
@@ -133,6 +172,14 @@ def blup_rma_uni(
 @blup.register
 def blup_rma_glmm(res: metafopy.models.glmm_result.GLMMResult, *args: typing.Any, **kwargs: typing.Any) -> BlupResult:
     """Not available: metafor has no ``blup`` method for ``rma.glmm`` objects (only ``blup.rma.uni``).
+
+    Args:
+        res: A model fitted by [rma_glmm][metafopy.rma_glmm].
+        *args: Ignored.
+        **kwargs: Ignored.
+
+    Returns:
+        Nothing; the function always raises.
 
     Raises:
         metafopy.errors.NotSupportedError: always, as in metafor ("no applicable method for 'blup' applied to an object of class c('rma.glmm', 'rma')").

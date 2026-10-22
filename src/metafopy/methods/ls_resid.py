@@ -36,7 +36,29 @@ def blup_rma_ls(
     *,
     na_action: metafopy.methods.blup.NAAction = 'omit',
 ) -> metafopy.methods.blup.BlupResult:
-    """BLUPs of the true effects of a location-scale fit (arguments as in :func:`metafopy.methods.blup.blup`)."""
+    """BLUPs of the true effects of a location-scale fit (metafor's ``blup.rma.uni`` for ``rma.ls`` objects).
+
+    The arguments are those of [blup_rma_uni][metafopy.methods.blup.blup_rma_uni]; the shrinkage uses the study-specific ``tau^2`` of the
+    scale model. See <https://wviechtb.github.io/metafor/reference/blup.html>.
+
+    Args:
+        res: A location-scale model fitted by [rma_uni][metafopy.rma_uni] with ``scale``.
+        level: Level of the prediction intervals in percent (e.g. 95), or a value below 1 read as in metafor (0.95 and 0.05 both give 95 percent).
+            ``None`` (the default) uses the level of the model.
+        digits: Number of decimals used when the result is printed. ``None`` uses the ``digits`` option, else the ``digits`` of the model.
+        transf: A function applied to the predicted values and interval bounds (for example ``numpy.exp``); the standard errors are then NaN.
+            ``None`` (the default) applies no transformation.
+        targs: Extra argument passed to ``transf`` as ``transf(x, targs)``. ``None`` (the default) calls ``transf(x)``.
+        na_action: How studies dropped for missing values are handled: ``'omit'`` (the default; no row for them), ``'exclude'`` or ``'pass'``
+            (a row of NaN for each, so there is one row per supplied study) or ``'fail'`` (raise an error).
+
+    Returns:
+        A [BlupResult][metafopy.BlupResult] with the predictions ``pred``, standard errors ``se`` and prediction interval bounds ``pi_lb``
+        and ``pi_ub``, one entry per study.
+
+    Raises:
+        metafopy.errors.InputError: the model has user-defined weights, ``na_action`` is unknown or values are missing with ``na_action='fail'``.
+    """
     return metafopy.methods.blup.shrinkage_predictions(res, 'blup', level, digits, transf, targs, na_action)
 
 
@@ -50,7 +72,28 @@ def ranef_rma_ls(
     *,
     na_action: metafopy.methods.blup.NAAction = 'omit',
 ) -> metafopy.methods.ranef.RanefResult:
-    """BLUPs of the random effects of a location-scale fit (arguments as in :func:`metafopy.methods.blup.blup`)."""
+    """BLUPs of the random effects of a location-scale fit (metafor's ``ranef.rma.uni`` for ``rma.ls`` objects).
+
+    The arguments are those of [blup_rma_uni][metafopy.methods.blup.blup_rma_uni]. See <https://wviechtb.github.io/metafor/reference/ranef.html>.
+
+    Args:
+        res: A location-scale model fitted by [rma_uni][metafopy.rma_uni] with ``scale``.
+        level: Level of the prediction intervals in percent (e.g. 95), or a value below 1 read as in metafor (0.95 and 0.05 both give 95 percent).
+            ``None`` (the default) uses the level of the model.
+        digits: Number of decimals used when the result is printed. ``None`` uses the ``digits`` option, else the ``digits`` of the model.
+        transf: A function applied to the predicted values and interval bounds (for example ``numpy.exp``); the standard errors are then NaN.
+            ``None`` (the default) applies no transformation.
+        targs: Extra argument passed to ``transf`` as ``transf(x, targs)``. ``None`` (the default) calls ``transf(x)``.
+        na_action: How studies dropped for missing values are handled: ``'omit'`` (the default; no row for them), ``'exclude'`` or ``'pass'``
+            (a row of NaN for each, so there is one row per supplied study) or ``'fail'`` (raise an error).
+
+    Returns:
+        A [RanefResult][metafopy.RanefResult] with the predicted random effects ``pred``, standard errors ``se`` and prediction interval
+        bounds ``pi_lb`` and ``pi_ub``, one entry per study.
+
+    Raises:
+        metafopy.errors.InputError: the model has user-defined weights, ``na_action`` is unknown or values are missing with ``na_action='fail'``.
+    """
     out = metafopy.methods.blup.shrinkage_predictions(res, 'ranef', level, digits, transf, targs, na_action)
     return metafopy.methods.ranef.RanefResult(pred=out.pred, se=out.se, pi_lb=out.pi_lb, pi_ub=out.pi_ub, slab=out.slab, digits=out.digits, transf=out.transf)
 

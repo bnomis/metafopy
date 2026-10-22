@@ -58,6 +58,19 @@ def bldiag(
     ``order`` is the clustering variable according to which the rows and columns of the result are
     reordered back to the original order of the data (R: ``order=cluster``). With
     ``order_is_permutation=True`` it is instead the permutation itself (R: ``order=order(cluster)``).
+    See <https://wviechtb.github.io/metafor/reference/bldiag.html>.
+
+    Args:
+        *mlist: The matrices to put on the diagonal: arrays, data frames or scipy sparse arrays, vectors and scalars (made diagonal), or a
+            single list, tuple or dict of these.
+        order: Clustering variable (one value per row of the result) used to reorder the rows and columns of a square result back to the
+            original order of the data, for blocks that were built in the order of the sorted clusters. ``None`` (the default) keeps the order
+            of the blocks.
+        order_is_permutation: Treat ``order`` as the permutation itself (R's ``order=order(cluster)``) rather than as a clustering variable
+            (default ``False``).
+
+    Returns:
+        The block diagonal matrix, a dense array (0 x 0 if no non-empty matrices were given).
 
     Raises:
         metafopy.errors.InputError: ``order`` is used with a non-square result or has the wrong length.
@@ -110,7 +123,17 @@ def blsplit(
     The keys are the unique cluster values in order of appearance (sorted if ``sort``). ``fun``, if
     given, is applied to each sub-matrix with ``args`` as additional positional arguments, i.e.
     ``fun(block, *args)`` (R: ``blsplit(V, cluster, round, 4)``; a single value is the one argument). A scipy sparse ``x`` gives sparse
-    sub-matrices.
+    sub-matrices. See <https://wviechtb.github.io/metafor/reference/blsplit.html>.
+
+    Args:
+        x: A symmetric block diagonal matrix, a dense array or a scipy sparse array.
+        cluster: Clustering variable to split by, with one value per row of ``x``.
+        fun: A function applied to each sub-matrix (for example ``round``). ``None`` (the default) returns the sub-matrices unchanged.
+        args: Additional positional argument(s) for ``fun``, given as ``fun(block, *args)``; a single value is the one argument.
+        sort: Sort the result by the unique values of ``cluster`` instead of their order of appearance (default ``False``).
+
+    Returns:
+        A dict (a `NamedList`) of the sub-matrices (after ``fun``) keyed by the unique values of ``cluster``.
 
     Raises:
         metafopy.errors.ArgumentError: ``x`` is not a matrix.

@@ -41,7 +41,15 @@ EPS = float(numpy.finfo(float).eps)
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class ResidualResult(metafopy.printing.HtmlRepr):
-    """Residuals with standard errors and z-values (metafor's ``list.rma`` of ``rstandard``/``rstudent``)."""
+    """Residuals with standard errors and z-values (metafor's ``list.rma`` of ``rstandard``/``rstudent``).
+
+    Attributes:
+        resid: The residuals, one per study.
+        se: Their standard errors.
+        z: The residuals divided by their standard errors.
+        slab: Study labels, in the order of the rows.
+        digits: Number of decimals used when the result is printed.
+    """
 
     resid: FloatArray
     se: FloatArray
@@ -71,6 +79,28 @@ class InfluenceResult(metafopy.printing.HtmlRepr):
     the studies metafor flags with an asterisk (|DFFITS| > 3 sqrt(p/(k-p)),
     Cook's D beyond the median of its chi-square reference distribution,
     hat > 3p/k or any |DFBETAS| > 1).
+
+    Attributes:
+        rstudent: Externally standardised (deleted) residuals.
+        dffits: DFFITS values, the standardised change in the fitted value of each study when it is left out.
+        cook_d: Cook's distances.
+        cov_r: Covariance ratios.
+        tau2_del: Estimates of ``tau^2`` from the fits without each study.
+        QE_del: Test statistics for residual heterogeneity from the fits without each study.
+        hat: Diagonal elements of the hat matrix.
+        weight: Weights of the studies in the model fit, in percent.
+        dfbs_array: DFBETAS as an array with one column per coefficient.
+        is_infl: Boolean flags for the influential studies.
+        slab: Study labels, in the order of the rows.
+        coef_names: Names of the model coefficients.
+        tau2: Estimate of ``tau^2`` of the full model.
+        QE: Test statistic for residual heterogeneity of the full model.
+        k: Number of studies in the full model.
+        p: Number of coefficients in the full model.
+        m: Number of coefficients the Cook's distances and covariance ratios refer to (see ``btt``).
+        digits: Number of decimals used when the result is printed.
+        ids: 0-based positions of the studies among those supplied, if known.
+        not_na: Boolean flags for the supplied studies that were used in the fit, if known.
     """
 
     rstudent: FloatArray
@@ -179,7 +209,20 @@ def format_influence(res: InfluenceResult, infonly: bool) -> str:
 
 @functools.singledispatch
 def influence(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> typing.Any:
-    """Case-deletion diagnostics for a fitted model; see :func:`_influence_rma_uni`.
+    """Case-deletion (leave-one-out) diagnostics for a fitted model.
+
+    This is a single-dispatch function: the implementation is chosen from the class of ``model``. For a model fitted by
+    [rma_uni][metafopy.rma_uni] see [influence_rma_uni][metafopy.methods.influence.influence_rma_uni]; for one fitted by
+    [rma_mv][metafopy.rma_mv] see [influence_rma_mv][metafopy.methods.mv_diagnostics.influence_rma_mv], which is not available (as in metafor).
+    See <https://wviechtb.github.io/metafor/reference/influence.rma.uni.html>.
+
+    Args:
+        model: A fitted model object.
+        *args: Positional arguments passed to the implementation chosen by the class of ``model``.
+        **kwargs: Keyword arguments passed to the implementation chosen by the class of ``model``.
+
+    Returns:
+        What the implementation returns; for `rma_uni` fits an [InfluenceResult][metafopy.InfluenceResult].
 
     Raises:
         metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
@@ -200,18 +243,33 @@ def influence_rma_uni(
 ) -> InfluenceResult | pandas.Series | pandas.DataFrame | ResidualResult:
     """Leave-one-out diagnostics for an ``rma.uni`` fit (metafor's ``influence()``).
 
-    ``btt`` (0-based coefficient indices, default all coefficients) selects the
-    coefficients Cook's distance and the covariance ratio refer to. With
-    ``na_action='exclude'`` or ``'pass'`` the result has one row per supplied
-    study. Studies whose refit fails (or loses a coefficient) get NaN. ``digits`` defaults to the ``digits`` option, else to that of the model;
-    ``progbar=True`` prints a progress bar to stderr while the studies are left out in turn.
+    The model is refitted without each study in turn, which gives the externally standardised residuals, DFFITS, Cook's distances, covariance
+    ratios, DFBETAS, leave-one-out ``tau^2`` and ``QE``, hat values and weights (Viechtbauer & Cheung, 2010,
+    [doi:10.1002/jrsm.11](https://doi.org/10.1002/jrsm.11)). See <https://wviechtb.github.io/metafor/reference/influence.rma.uni.html>.
+    Studies whose refit fails (or loses a coefficient) get NaN.
 
-    ``measure`` is metafor's undocumented argument that restricts the result: ``'cooks.distance'`` gives the Cook's distances (as
-    :func:`cooks_distance`, also allowed for a model made robust), ``'dfbetas'`` the DFBETAS (as :func:`dfbetas`) and ``'rstudent'`` the
-    deleted residuals with their standard errors and z-values (as :func:`rstudent`); any other value gives the full result, as in R.
+    Args:
+        model: A model fitted by [rma_uni][metafopy.rma_uni]; not allowed for a model passed through [robust][metafopy.robust] (except with
+            ``measure='cooks.distance'``).
+        digits: Number of decimals used when the result is printed. ``None`` uses the ``digits`` option, else the ``digits`` of the model.
+        btt: The coefficients Cook's distance and the covariance ratio refer to, as 0-based indices (or a regular expression matched against the
+            coefficient names). ``None`` (the default) uses all coefficients.
+        na_action: How studies dropped for missing values are handled: ``'omit'`` (the default; no row for them), ``'exclude'`` or ``'pass'``
+            (a row of missing values for each, so the result has one row per supplied study) or ``'fail'`` (raise an error).
+        measure: Metafor's undocumented argument that restricts the result: ``'cooks.distance'`` gives only the Cook's distances (as
+            [cooks_distance][metafopy.cooks_distance]), ``'dfbetas'`` only the DFBETAS (as [dfbetas][metafopy.dfbetas]) and ``'rstudent'`` only the
+            deleted residuals (as [rstudent][metafopy.rstudent]). Any other value (the default is ``'all'``) gives the full result.
+        progbar: Print a progress bar to stderr while the studies are left out in turn (default ``False``).
+
+    Returns:
+        By default an [InfluenceResult][metafopy.InfluenceResult] with one entry per study; its ``inf`` property is the influence table
+        (``rstudent``, ``dffits``, ``cook.d``, ``cov.r``, ``tau2.del``, ``QE.del``, ``hat``, ``weight`` and ``inf``, which marks influential studies
+        with ``'*'``) and ``dfbs`` the DFBETAS. With ``measure`` set: a Series of Cook's distances, a DataFrame of DFBETAS, or a
+        [ResidualResult][metafopy.ResidualResult].
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.NotSupportedError: the model was passed through [robust][metafopy.robust].
     """
     if measure == 'cooks.distance':
         res = influence_fit(model, digits, btt=btt, na_action=na_action)
@@ -438,7 +496,21 @@ def rstudent_rma_uni(
 
 @functools.singledispatch
 def cooks_distance(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> pandas.Series:
-    """Cook's distances; see :func:`_cooks_rma_uni`.
+    """Cook's distances of the studies (or clusters) of a fitted model.
+
+    This is a single-dispatch function: the implementation is chosen from the class of ``model`` (see
+    [cooks_rma_mv][metafopy.methods.mv_diagnostics.cooks_rma_mv] for [rma_mv][metafopy.rma_mv] fits). The `rma_uni` implementation computes
+    them as part of [influence][metafopy.influence]. See <https://wviechtb.github.io/metafor/reference/influence.rma.uni.html>.
+
+    Args:
+        model: A fitted model object.
+        *args: Positional arguments passed to the implementation chosen by the class of ``model``.
+        **kwargs: Keyword arguments passed to the implementation chosen by the class of ``model``. For an `rma_uni` fit these are ``btt``
+            (0-based coefficient indices the distances refer to; default all), ``na_action`` (``'omit'``, ``'exclude'``, ``'pass'`` or ``'fail'``)
+            and ``progbar`` (print a progress bar).
+
+    Returns:
+        A Series of Cook's distances indexed by study label (named ``cook.d``).
 
     Raises:
         metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
@@ -454,14 +526,42 @@ def cooks_rma_uni(
     na_action: metafopy.methods.common.NAAction = 'omit',
     progbar: bool = False,
 ) -> pandas.Series:
-    """Cook's distance of each study (metafor's ``cooks.distance``), indexed by study label; ``progbar=True`` prints a progress bar to stderr."""
+    """Cook's distance of each study (metafor's ``cooks.distance``), indexed by study label.
+
+    Args:
+        model: A model fitted by [rma_uni][metafopy.rma_uni].
+        btt: The coefficients the distances refer to, as 0-based indices (or a regular expression matched against the coefficient names).
+            ``None`` (the default) uses all coefficients.
+        na_action: How studies dropped for missing values are handled: ``'omit'`` (the default; no entry for them), ``'exclude'`` or ``'pass'``
+            (an entry of NaN for each) or ``'fail'`` (raise an error).
+        progbar: Print a progress bar to stderr while the studies are left out in turn (default ``False``).
+
+    Returns:
+        The Cook's distances, a Series named ``cook.d`` indexed by study label.
+
+    Raises:
+        metafopy.errors.InputError: an argument or the data is invalid.
+    """
     res = influence_fit(model, btt=btt, na_action=na_action, progbar=progbar)
     return pandas.Series(res.cook_d, index=list(res.slab), name='cook.d')
 
 
 @functools.singledispatch
 def dfbetas(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> pandas.DataFrame:
-    """DFBETAS; see :func:`_dfbetas_rma_uni`.
+    """DFBETAS of the studies (or clusters) of a fitted model.
+
+    This is a single-dispatch function: the implementation is chosen from the class of ``model`` (see
+    [dfbetas_rma_mv][metafopy.methods.mv_diagnostics.dfbetas_rma_mv] for [rma_mv][metafopy.rma_mv] fits). The `rma_uni` implementation computes
+    them as part of [influence][metafopy.influence]. See <https://wviechtb.github.io/metafor/reference/influence.rma.uni.html>.
+
+    Args:
+        model: A fitted model object.
+        *args: Positional arguments passed to the implementation chosen by the class of ``model``.
+        **kwargs: Keyword arguments passed to the implementation chosen by the class of ``model``. For an `rma_uni` fit these are
+            ``na_action`` (``'omit'``, ``'exclude'``, ``'pass'`` or ``'fail'``) and ``progbar`` (print a progress bar).
+
+    Returns:
+        A data frame of DFBETAS with one row per study (or cluster) and one column per coefficient.
 
     Raises:
         metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
@@ -473,7 +573,21 @@ def dfbetas(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> panda
 def dfbetas_rma_uni(
     model: metafopy.models.rma_uni.RMAResult, *, na_action: metafopy.methods.common.NAAction = 'omit', progbar: bool = False
 ) -> pandas.DataFrame:
-    """Standardised change in each coefficient when a study is left out (one column per coefficient); ``progbar=True`` prints a progress bar to stderr."""
+    """Standardised change in each coefficient when a study is left out (metafor's ``dfbetas``).
+
+    Args:
+        model: A model fitted by [rma_uni][metafopy.rma_uni]; not allowed for a model passed through [robust][metafopy.robust].
+        na_action: How studies dropped for missing values are handled: ``'omit'`` (the default; no row for them), ``'exclude'`` or ``'pass'``
+            (a row of missing values for each) or ``'fail'`` (raise an error).
+        progbar: Print a progress bar to stderr while the studies are left out in turn (default ``False``).
+
+    Returns:
+        A data frame with one row per study (indexed by study label) and one column per model coefficient, holding the DFBETAS.
+
+    Raises:
+        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.NotSupportedError: the model was passed through [robust][metafopy.robust].
+    """
     metafopy.methods.fitview.check_class(model, notav=metafopy.methods.fitview.NOT_ROBUST)
     return influence_fit(model, na_action=na_action, progbar=progbar).dfbs_frame()
 

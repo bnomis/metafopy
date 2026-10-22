@@ -238,7 +238,18 @@ GLOBAL: RRandom | None = None
 
 
 def set_seed(seed: int) -> RRandom:
-    """Seed the generator used by :func:`metafopy.permutest` and :func:`metafopy.gosh` (R's ``set.seed()``)."""
+    """Seed the module-level random number generator (R's ``set.seed()``).
+
+    The generator reproduces R's default Mersenne-Twister with rejection sampling, so after ``set_seed(s)`` the functions that draw random
+    numbers (for example [permutest][metafopy.permutest] and [gosh][metafopy.gosh] with random subsets) give the same draws as R after
+    ``set.seed(s)``. Without a call the generator is seeded from the clock on first use.
+
+    Args:
+        seed: The integer seed, as given to R's ``set.seed()``.
+
+    Returns:
+        The new generator, an ``RRandom`` that can also be passed to functions that take an ``rng`` argument.
+    """
     global GLOBAL
     GLOBAL = RRandom(seed)
     return GLOBAL
