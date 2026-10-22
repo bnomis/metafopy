@@ -213,19 +213,23 @@ def vif_rma_mv(
 
     Args:
         res: Model fitted by [rma_mv][metafopy.rma_mv] with moderators.
-        btt: Sets of location coefficients to compute a (generalized) VIF for, 0-based: an int, a regular expression, or a list of ints gives one set (one
-            GVIF); a list with lists or strings among its elements gives one set per element (``btt=[1, [2, 3], 4]``, like metafor's ``btt=list(2, 3:4,
-            5)``). Default: each coefficient except the intercept gets its own VIF.
-        att: Accepted for compatibility with metafor; it has no effect for this model.
-        table: Add the VIFs to the coefficient table (only when ``btt`` is not given).
+        btt: Sets of location coefficients to compute a (generalized) VIF for, 0-based: an int, a string searched for (Python ``re.search``) in the
+            coefficient names, or a list of ints gives one set (one GVIF); a list with lists or strings among its elements gives one set per element
+            (``btt=[1, [2, 3], 4]``, like metafor's ``btt=list(2, 3:4, 5)``). Default: each coefficient except the intercept gets its own VIF.
+        att: Must be None (metafor uses it for location-scale models only); any other value raises an InputError.
+        table: Add the VIFs to the coefficient table (``table`` of the result; ignored when ``btt`` is given).
         reestimate: Refit the model with only the coefficients of each set; the variance components are re-estimated.
-        sim: Simulate the distribution of each (G)VIF under independence: ``True`` for 1000 iterations or a number of iterations. The model is refitted
-            with independently permuted columns of the model matrix; the result then has ``sim`` and ``prop``. Iteration ``l`` is seeded with ``seed + l``
+        sim: Simulate the distribution of each (G)VIF under independence: ``True`` for 1000 iterations or a number of iterations (at least 2). The
+            model is refitted with independently permuted variables of the data (a model given as a formula with ``data``) or columns of the model
+            matrix; the result then has ``sim`` and ``prop``. A warning is given, and nothing simulated, if redundant predictors were dropped.
+            Iteration ``l`` is seeded with ``seed + l``
             when ``seed`` is given, as in metafor, otherwise from the stream of [set_seed][metafopy.set_seed].
-        progbar: Print a progress bar to stderr while simulating (``sim``).
-        seed: Seed for the simulation (``sim``). Default: drawn from the generator of [set_seed][metafopy.set_seed].
-        parallel: Parallel simulation: ``'no'`` (default), ``'snow'`` or ``'multicore'``; both use a process pool of ``ncpus`` workers.
-        ncpus: Number of worker processes when ``parallel`` is not ``'no'``.
+        progbar: Print a progress bar to stderr while simulating (``sim``). Default True, as in metafor.
+        seed: Seed for the simulation (``sim``). Default: the stream of [set_seed][metafopy.set_seed] is continued.
+        parallel: Parallel simulation: ``'no'`` (default), ``'snow'`` or ``'multicore'``; both use a process pool of ``ncpus`` workers ('multicore'
+            forks them where the platform allows). As in metafor, ``'no'`` with ``ncpus > 1`` (or with ``cl``) is ``'snow'``, and ``'snow'`` or
+            ``'multicore'`` with ``ncpus < 2`` and no ``cl`` runs serially. Any other value raises an InputError.
+        ncpus: Number of worker processes (at least 1).
         cl: Executor to run the iterations on instead of a process pool.
         digits: Number of decimals of the printout. Default: the ``digits`` option, else that of the model.
         intercept: Include the intercept among the coefficients (it is left out by default).
@@ -238,7 +242,8 @@ def vif_rma_mv(
         The (G)VIFs, a [VIFResult][metafopy.VIFResult].
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InputError: the model has no moderators; ``att`` is given; ``sim`` is a number below 2; ``btt`` is invalid (the intercept
+            without ``intercept=True``, out of range or matching no coefficient); ``parallel`` is not an accepted value or ``ncpus`` is below 1.
     """
     n_sim = check_arguments(res, att, sim)
     parallel = metafopy.core.parallel.resolve_parallel(parallel, ncpus, cl)
@@ -300,11 +305,11 @@ def vif_selmodel(
 
     Args:
         res: Selection model fitted by [selmodel][metafopy.selmodel] with moderators.
-        btt: Sets of location coefficients to compute a (generalized) VIF for, 0-based: an int, a regular expression, or a list of ints gives one set (one
-            GVIF); a list with lists or strings among its elements gives one set per element (``btt=[1, [2, 3], 4]``, like metafor's ``btt=list(2, 3:4,
-            5)``). Default: each coefficient except the intercept gets its own VIF.
-        att: Accepted for compatibility with metafor; it has no effect for this model.
-        table: Add the VIFs to the coefficient table (only when ``btt`` is not given).
+        btt: Sets of location coefficients to compute a (generalized) VIF for, 0-based: an int, a string searched for (Python ``re.search``) in the
+            coefficient names, or a list of ints gives one set (one GVIF); a list with lists or strings among its elements gives one set per element
+            (``btt=[1, [2, 3], 4]``, like metafor's ``btt=list(2, 3:4, 5)``). Default: each coefficient except the intercept gets its own VIF.
+        att: Must be None (metafor uses it for location-scale models only); any other value raises an InputError.
+        table: Add the VIFs to the coefficient table (``table`` of the result; ignored when ``btt`` is given).
         reestimate: Not available for selection models; requesting it raises an error.
         sim: Not available for selection models; requesting it raises an error.
         progbar: Accepted and unused.
@@ -323,7 +328,8 @@ def vif_selmodel(
         The (G)VIFs, a [VIFResult][metafopy.VIFResult].
 
     Raises:
-        metafopy.errors.InputError: an argument is invalid or ``sim`` or ``reestimate`` was requested.
+        metafopy.errors.InputError: the model has no moderators; ``att`` is given; ``sim`` (a number of 2 or more) or ``reestimate`` is requested;
+            ``btt`` is invalid (the intercept without ``intercept=True``, out of range or matching no coefficient).
     """
     n_sim = check_arguments(res, att, sim)
     if n_sim >= 2:

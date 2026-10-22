@@ -4,8 +4,8 @@ The test statistics of the fitted model are compared with their distribution
 under random permutations of the rows of the model matrix (or, for models
 without moderators, random sign flips of the observed effects); an exact test
 enumerates all (unique) permutations. See Follmann & Proschan (1999),
-doi:10.1111/j.0006-341X.1999.00254.x, and Good (2005, *Permutation, Parametric
-and Bootstrap Tests of Hypotheses*), and
+doi:10.1111/j.0006-341x.1999.00732.x, and Good (2009, *Permutation, Parametric
+and Bootstrap Tests of Hypotheses*, 3rd ed.), and
 https://wviechtb.github.io/metafor/reference/permutest.html.
 
 Random permutations are drawn with R's own Mersenne-Twister
@@ -55,7 +55,7 @@ class PermutestResult(metafopy.printing.HtmlRepr):
 
     Attributes:
         pval: Permutation p-values of the coefficients.
-        QMdf: Degrees of freedom of the omnibus test.
+        QMdf: Degrees of freedom of the omnibus test, ``(m, None)`` for the z test and ``(m, ddf)`` for the t test.
         QMp: Permutation p-value of the omnibus test.
         beta: Estimates of the coefficients.
         se: Standard errors of the coefficients.
@@ -67,14 +67,16 @@ class PermutestResult(metafopy.printing.HtmlRepr):
         p: Number of coefficients.
         btt: Coefficients (0-based) the omnibus test refers to.
         m: Number of coefficients in the omnibus test.
-        test: Test used by the model, ``'z'`` or ``'t'`` (and variants).
-        ddf: Residual degrees of freedom of the t test, or None.
+        test: Test used by the model: ``'z'``, ``'t'``, ``'knha'`` or ``'adhoc'``.
+        ddf: Residual degrees of freedom of the t test, or None for the z test.
         int_only: Whether the model has only an intercept.
         int_incl: Whether the model has an intercept.
         coef_names: Names of the coefficients.
-        exact_iter: Number of iterations an exact test needs.
-        permci: Whether permutation-based CI bounds were computed.
-        alternative: Alternative hypothesis of the test.
+        exact_iter: Number of iterations an exact test needs (``inf`` if it exceeds the largest float).
+        permci: Whether permutation-based CI bounds were computed (False if ``permci`` was requested but the number of permutations is too low for
+            the confidence level).
+        alternative: Alternative hypothesis of the test (the ``alternative`` control entry; with permutation-based CI bounds, the one of the last bound
+            search, as in metafor).
         p2defn: Definition of the two-sided p-value.
         stat: Statistic used for the coefficients.
         QM_perm: Omnibus statistics of every permutation (for the approximate test the first one is the observed one, as in metafor).
@@ -162,7 +164,8 @@ def permutest(
         exact test needs.
 
     Raises:
-        metafopy.errors.ArgumentError: there is no implementation for the class of ``x``, or an argument has the wrong type or is not accepted.
+        metafopy.errors.ArgumentError: there is no implementation for the class of ``x``.
+        TypeError: the implementation does not accept a keyword argument.
     """
     raise metafopy.errors.ArgumentError(f'permutest() not implemented for {type(x).__name__}')
 
@@ -276,12 +279,12 @@ def permutest_rma_uni(
     <https://wviechtb.github.io/metafor/reference/permutest.html>.
 
     Args:
-        x: Model fitted by [rma_uni][metafopy.rma_uni].
+        x: Model fitted by [rma_uni][metafopy.rma_uni] (not a [robust][metafopy.robust] result).
         exact: ``True`` carries out an exact test (all unique permutations; also used if ``iter`` exceeds their number); ``'i'`` returns the number of
             iterations an exact test needs; ``False`` (default) uses ``iter`` random permutations.
-        iter: Number of random permutations for an approximate test.
-        btt: Coefficients the omnibus test refers to: 0-based indices or a regular expression matched against the coefficient names. Default: that of the
-            model.
+        iter: Number of random permutations for an approximate test (at least 2).
+        btt: Coefficients the omnibus test refers to: 0-based indices or a string searched for (Python ``re.search``) in the coefficient names.
+            Default: that of the model.
         permci: ``True``, or 0-based coefficient indices, to also find permutation-based confidence interval bounds (slow). A bound that cannot be found
             is NaN.
         digits: Number of decimals of the printout. Default: the ``digits`` option, else that of the model.
@@ -292,16 +295,19 @@ def permutest_rma_uni(
             the permutations ended in, as R's global generator is.
         tol: Old spelling of the ``comptol`` entry of ``control``.
         fixed: Match a string ``btt`` literally instead of as a regular expression.
-        progbar: Print a progress bar to stderr while the permutations are run (metafor's default is ``TRUE``).
-        verbose: Accepted for metafor's messages about refits that fail during the permutations, which are not raised here.
+        progbar: Print a progress bar to stderr while the permutations are run (default False; metafor's default is ``TRUE``).
+        verbose: Accepted and ignored (metafor shows the errors of refits that fail during the permutations).
 
     Returns:
         A [PermutestResult][metafopy.PermutestResult] with the coefficient table (``beta``, ``se``, ``zval``, ``pval``, ``ci_lb``, ``ci_ub``), the omnibus
         test (``QM``, ``QMp``) and the permutation distributions. With ``exact='i'``, the number of iterations an exact test needs.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InputError: ``iter`` is below 2; ``btt`` or ``permci`` names a coefficient that does not exist; a ``control`` entry is not
+            accepted; an exact test needs more iterations than the largest float.
         metafopy.errors.ArgumentError: ``control`` has an unknown entry.
+        metafopy.errors.NotSupportedError: ``x`` is a [robust][metafopy.robust] result.
+        ValueError: an exact test needs more iterations than can be allocated (R stops with an error as well).
     """
     metafopy.methods.fitview.check_class(x, notav=metafopy.methods.fitview.NOT_ROBUST)
     iter = iter

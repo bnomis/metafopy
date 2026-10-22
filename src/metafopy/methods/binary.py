@@ -85,14 +85,18 @@ def confint_fixed_binary(
 
     Args:
         model: Model fitted by [rma_mh][metafopy.rma_mh] or [rma_peto][metafopy.rma_peto].
-        level: Confidence level in percent (``95`` is 95%). Default: the level of the model.
-        transf: Function applied to the estimate and bounds (for example ``numpy.exp``), or ``True`` to exponentiate. Default: none.
-        targs: Extra arguments for ``transf``.
+        level: Confidence level in percent (``95`` is 95%). As in metafor, a value below 1 is read as the confidence level if it is above 0.5
+            (``0.95``) and as the significance level otherwise (``0.05``). Default: the level of the model.
+        transf: Function applied to the estimate and each bound separately (for example ``numpy.exp``); the bounds are put in order. ``True``
+            applies ``numpy.exp`` when the measure is ``'OR'``, ``'RR'``, ``'IRR'`` or Peto's odds ratio (``'PETO'``) and no transformation for other
+            measures. Default: none.
+        targs: Second argument passed to ``transf`` (``transf(value, targs)``). Default: none.
         digits: Number of decimals of the printout. Default: the ``digits`` option, else that of the model.
         parm: Ignored, with a warning, as in metafor.
 
     Returns:
-        A [ConfintResult][metafopy.ConfintResult] whose ``fixed`` table has the columns ``estimate``, ``ci.lb`` and ``ci.ub``.
+        A [ConfintResult][metafopy.ConfintResult] whose ``fixed`` table has one row, with an empty label, and the columns ``estimate``, ``ci.lb`` and
+        ``ci.ub``; the interval uses the normal distribution.
     """
     metafopy.methods.confint.warn_parm(parm)
     alpha = model.level if level is None else metafopy.models.rma_uni.level_to_alpha(level)
@@ -147,11 +151,16 @@ def rstandard_fixed_binary(
         model: Model fitted by [rma_mh][metafopy.rma_mh] or [rma_peto][metafopy.rma_peto].
         digits: Number of decimals of the printout. Default: the ``digits`` option, else that of the model.
         na_action: What to do with studies left out of the fit because of missing values: ``'omit'`` (default) drops them, ``'exclude'`` and ``'pass'``
-            keep one row per study with NaN for those left out, ``'fail'`` raises.
+            keep one row per study with NaN for those left out, ``'fail'`` raises an InputError if there are any. Corresponds to R's
+            ``na.action`` option.
 
     Returns:
         A [ResidualResult][metafopy.ResidualResult] with the residuals ``resid``, their standard errors ``se`` and the standardised values ``z``, labelled
         with the study labels.
+
+    Raises:
+        metafopy.errors.InputError: ``na_action`` is not valid, or is ``'fail'`` and tables have missing values (that is, their ``yi`` or ``vi`` is
+            missing).
     """
     metafopy.methods.common.check_na_action(na_action)
     t = model.tables
@@ -177,12 +186,16 @@ def rstudent_fixed_binary(
         model: Model fitted by [rma_mh][metafopy.rma_mh] or [rma_peto][metafopy.rma_peto].
         digits: Number of decimals of the printout. Default: the ``digits`` option, else that of the model.
         na_action: What to do with studies left out of the fit because of missing values: ``'omit'`` (default) drops them, ``'exclude'`` and ``'pass'``
-            keep one row per study with NaN for those left out, ``'fail'`` raises.
-        progbar: Print a progress bar to stderr while the tables are left out in turn.
+            keep one row per study with NaN for those left out, ``'fail'`` raises an InputError if there are any. Corresponds to R's
+            ``na.action`` option.
+        progbar: Print a progress bar to stderr while the tables are left out in turn (default False, as in metafor).
 
     Returns:
         A [ResidualResult][metafopy.ResidualResult] with the deleted residuals ``resid``, their standard errors ``se`` and the standardised values ``z``,
         labelled with the study labels.
+
+    Raises:
+        metafopy.errors.InputError: ``na_action`` is not valid, or is ``'fail'`` and tables have missing values.
     """
     metafopy.methods.common.check_na_action(na_action)
     t = model.tables

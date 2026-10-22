@@ -398,34 +398,47 @@ def anova_rma_ls(
 
     Args:
         model: Location-scale model fitted by [rma_uni][metafopy.rma_uni] with ``scale``.
-        model2: A second, nested model for a likelihood-ratio test. The model with more parameters is the full model. Default: none, which gives a Wald
-            test of the coefficients of ``model``.
-        object2: R's name for ``model2``.
-        btt: Location coefficients to test jointly: 0-based indices or a regular expression matched against the coefficient names (see ``fixed``).
-        X: Linear combinations of the location coefficients to test, as for [anova_rma_uni][metafopy.methods.anova.anova_rma_uni].
-        att: Scale coefficients to test jointly: 0-based indices or a regular expression matched against the coefficient names, or a list of such
-            specifications, which returns a list of tests.
-        Z: Linear combinations of the scale coefficients to test (a 1-d or 2-d array, tested against ``rhs``).
-        rhs: Right-hand side of the hypotheses of ``X`` and ``Z``: a number or one value per combination. Default: 0.
+        model2: A second, nested location-scale model fitted to the same data for a likelihood-ratio test. The model with more parameters is the full
+            model; when ``df`` is given, ``model`` is the full model. Default: none, which gives a Wald test of the coefficients of ``model``.
+        object2: R's name for ``model2``; giving both with different values raises ``InputError``.
+        btt: Location coefficients to test jointly: 0-based indices (sorted and without duplicates) or a string matched with ``re.search`` against the
+            coefficient names (see ``fixed``; metafor uses ``grep``). A list of several tests is not supported here. Default: the coefficients tested
+            by the omnibus test of the model, all but the intercept if there is one. Cannot be combined with ``att``.
+        X: Linear combinations of the location coefficients to test, as for [anova_rma_uni][metafopy.methods.anova.anova_rma_uni]. Cannot be combined
+            with ``Z``.
+        att: Scale coefficients to test jointly: 0-based indices or a string matched against the coefficient names of the scale model, or a list of
+            index lists (``[[0], [1]]``), which returns a list of tests (``rhs`` cannot be used with a list).
+        Z: Linear combinations of the scale coefficients to test (a 1-d or 2-d array, with all ``q`` columns or without the intercept column, tested
+            against ``rhs``).
+        rhs: Right-hand side of the hypotheses of ``X`` and ``Z`` (and of the tests of ``btt`` and ``att``): a number or one value per combination or
+            coefficient (a different length raises ``InputError``). Default: 0.
         adjust: Adjust the p-values of the individual tests (``X``, ``Z``) or of a list of tests (``att``) for multiple testing, as R's ``p.adjust``:
-            ``True`` for ``'bonferroni'``, or one of the methods in ``metafopy.core.padjust.P_ADJUST_METHODS`` (for example ``'holm'`` or ``'fdr'``).
-            Default: no adjustment.
+            ``True`` for ``'bonferroni'``, ``False`` for ``'none'``, or one of ``'holm'``, ``'hochberg'``, ``'hommel'``, ``'bonferroni'``, ``'BH'``,
+            ``'BY'``, ``'fdr'`` and ``'none'`` (a unique prefix is accepted). Default: no adjustment.
         digits: Number of decimals of the printout. Default: the ``digits`` option, else that of the model.
-        refit: With ``model2``, refit REML fits with ML when their location models differ.
+        refit: With ``model2``, refit REML fits with ML when their location models differ (otherwise a warning is given).
         abbrev: Remove ``factor(`` and ``)`` from the text of the hypotheses of ``X`` and ``Z``.
-        L: Another name for ``X``.
-        fixed: Match a string ``btt`` or ``att`` literally instead of as a regular expression.
-        test: With ``model2``: ``'LRT'`` (default) for the likelihood-ratio test, or ``'Wald'`` to test the coefficients that only the full model has,
-            with the Wald test of that model. Prefixes are accepted.
-        df: With ``model2``: replaces the difference in the number of parameters as the degrees of freedom of the likelihood-ratio test.
+        L: Old spelling of ``X``; if both are given, ``L`` is used.
+        fixed: Match a string ``btt`` or ``att`` as a literal substring of the coefficient names instead of as a regular expression.
+        test: With ``model2``: ``'LRT'`` (default) for the likelihood-ratio test, or ``'Wald'`` to test the location coefficients that only the full
+            model has, with the Wald test of that model (the models must use the same ``method``). A unique prefix is accepted; anything else raises
+            ``ArgumentError``.
+        df: With ``model2``: the degrees of freedom of the likelihood-ratio test, instead of the difference in the number of parameters (it is also
+            added to the number of parameters of the full model).
         verbose: Accepted for metafor's cluster-robust tests, which location-scale models do not have; it has no effect.
 
     Returns:
-        A Wald test result (an ``LSWaldResult``, with the statistic ``QM``, ``QMdf`` and ``QMp`` of the tested coefficients), a list of them for a list
-        ``att``, or, with ``model2``, a likelihood-ratio test result.
+        A Wald test result, an ``LSWaldResult``: for location coefficients (``btt``, ``X``) the statistic is in ``QM``, ``QMdf`` and ``QMp``, for scale
+        coefficients (``att``, ``Z``) in ``QS``, ``QSdf`` and ``QSp`` (the other statistic is NaN); ``stat``, ``df`` and ``pval_omnibus`` give whichever
+        applies, and tests of linear combinations also hold ``hyp``, ``estimate``, ``se``, ``zval``, ``pval`` and ``ddf``. A list of them for a list
+        ``att``. With ``model2``, a likelihood-ratio test result, an ``MVLRTResult`` (fields ``df_full``, ``df_reduced``, ``LRT``, ``pval``,
+        ``fit_stats_full``, ``fit_stats_reduced``, ``QE_full``, ``QE_reduced`` and ``method``), or an ``LSWaldResult`` with ``test='Wald'``.
 
     Raises:
-        metafopy.errors.InputError: an argument is invalid.
+        metafopy.errors.InputError: an argument is invalid (for example both ``X`` and ``Z`` or both ``btt`` and ``att``, ``rhs`` of the wrong length or
+            with a list ``att``, ``X`` or ``Z`` with the wrong number of columns, ``btt`` or ``att`` selecting nothing, an unknown ``adjust``, or
+            models that differ in class, data or number of parameters or cannot be compared).
+        metafopy.errors.ArgumentError: ``test`` is neither ``'LRT'`` nor ``'Wald'``.
     """
     X = metafopy.methods.pairmat.resolve(X, model)
     if abbrev:

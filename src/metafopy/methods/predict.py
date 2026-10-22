@@ -48,23 +48,26 @@ class PredictResult:
         se: Standard errors of the predicted values; NaN when a transformation was applied, as in metafor.
         ci_lb: Lower bounds of the confidence intervals.
         ci_ub: Upper bounds of the confidence intervals.
-        pi_lb: Lower bounds of the prediction intervals (``cr_lb`` is an alias).
-        pi_ub: Upper bounds of the prediction intervals (``cr_ub`` is an alias).
-        slab: Labels of the predictions, or None.
+        pi_lb: Lower bounds of the prediction intervals (``cr_lb`` is an alias); NaN where there is no prediction interval (the equal-effects methods,
+            an integral or mode transformation of an ``rma_uni`` or ``rma_glmm`` fit).
+        pi_ub: Upper bounds of the prediction intervals (``cr_ub`` is an alias); NaN where there is no prediction interval.
+        slab: Labels of the predictions, or None. A single prediction without a name has the label ``''``.
         pi_se: Standard errors of the predictions (before any transformation).
         pi_dist: Distribution of the prediction, ``'norm'`` or ``'t'`` (used by ``forest(predstyle='shade')`` and ``'dist'``).
-        pi_ddf: Degrees of freedom of the prediction distribution, one per prediction.
-        ddf: Degrees of freedom of the test of the model, if it uses the t distribution.
+        pi_ddf: Degrees of freedom of the prediction distribution, one per prediction; None when ``pi_dist`` is ``'norm'``.
+        ddf: Degrees of freedom of the confidence intervals, one per prediction (a single number for location-scale models); None when the normal
+            distribution is used (for ``rma_mv`` fits: when the prediction interval uses it).
         has_pi: Whether the model has prediction intervals (False for the equal-effects models of ``rma_mh`` and ``rma_peto``).
-        prob: Probabilities requested via ``prob``.
-        X: Model matrix of the predictions (``addx=True``); a data frame for ``matreg`` predictions.
-        vcov: Variance-covariance matrix of the predictions (``vcov=True`` without ``transf``); a data frame for ``matreg`` predictions.
+        prob: Probabilities requested via ``prob``; None if not requested or if the cutoff could not be evaluated.
+        X: Model matrix of the predictions (``addx=True``, else None); a data frame for ``matreg`` predictions.
+        vcov: Variance-covariance matrix of the predictions (``vcov=True`` without ``transf``, else None); a data frame for ``matreg`` predictions.
         x_names: Column names of ``X``.
         digits: Number of decimals used when printing.
-        digit_map: Decimals by kind of number (``est``, ``se``, ``ci``, ...), if given as a mapping.
-        method: Estimation method of the model.
+        digit_map: Decimals by kind of number (``est``, ``se``, ``ci``, ...), if the digits were given by kind.
+        method: Estimation method of the model (``'FE'`` for the ``rma_mh`` and ``rma_peto`` fits).
         transf: Whether a transformation was applied.
-        pred_type: Kind of prediction.
+        pred_type: ``'location'`` (predicted effects), or ``'scale'`` for the predicted ``tau^2`` values (``log(tau^2)`` with a log link) of a
+            location-scale model.
     """
 
     pred: FloatArray
@@ -345,7 +348,7 @@ def interval_setup(
     """The variance of the predicted values, critical value(s), distribution and degrees of freedom the prediction interval uses for ``predtype``.
 
     ``'simple'`` ignores the uncertainty of the predicted value and uses the normal distribution; ``'riley'`` uses a t distribution with
-    ``ddf - parms + p`` degrees of freedom (Riley et al., 2011, doi:10.1111/j.1467-985X.2010.00696.x) and ``'t'`` one with ``ddf``; the
+    ``ddf - parms + p`` degrees of freedom (Riley et al., 2011, doi:10.1136/bmj.d549) and ``'t'`` one with ``ddf``; the
     degrees of freedom are at least 1 (``predict.rma``).
     """
     pi_ddf = ddf
@@ -426,6 +429,8 @@ def predict(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> Predi
     This is a single-dispatch function: the implementation is chosen by the class of ``model``. See
     [predict_rma_uni][metafopy.methods.predict.predict_rma_uni], [predict_rma_glmm][metafopy.methods.predict.predict_rma_glmm],
     [predict_rma_mv][metafopy.methods.predict.predict_rma_mv] and [predict_rma_ls][metafopy.methods.ls_predict.predict_rma_ls] for the arguments of each.
+    The fits of ``rma_mh`` and ``rma_peto`` (``predict_fixed_binary``, the arguments of ``predict_rma_uni``; ``newmods`` is not accepted), of
+    ``selmodel`` and the results of ``matreg`` are also registered.
 
     Args:
         model: The fitted model. Its class selects the implementation.
@@ -436,7 +441,8 @@ def predict(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> Predi
         The predictions, a [PredictResult][metafopy.PredictResult].
 
     Raises:
-        metafopy.errors.ArgumentError: there is no implementation for the class of ``model``, or an argument has the wrong type or is not accepted.
+        metafopy.errors.ArgumentError: there is no implementation for the class of ``model``. An argument the implementation does not have is a ``TypeError``
+            from Python, as for any function.
     """
     raise metafopy.errors.ArgumentError(f'predict() not implemented for {type(model).__name__}')
 
@@ -499,47 +505,63 @@ def predict_rma_uni(
 
     Args:
         model: Model fitted by [rma_uni][metafopy.rma_uni].
-        newmods: Moderator values of new studies to predict for, without the intercept column (it is added unless ``intercept=False``) or with all ``p``
-            columns (then ``intercept`` is ignored). A 1-d array gives one prediction (or one per value if the model has a single moderator), a 2-d array
-            one prediction per row; a mapping, pandas Series or DataFrame, or a [pairmat][metafopy.pairmat] specification is also accepted. Factors must
-            be given as the contrast variables of the model matrix. Default: no new values, so an intercept-only model gives the pooled estimate and a
+        newmods: Moderator values of new studies to predict for, without the intercept column (it is added, see ``intercept``) or with all ``p``
+            columns (then ``intercept`` is ignored, with a warning if given, and the first column decides whether the intercept is included). A number or
+            1-d array gives one prediction per value if the model has a single moderator and one prediction otherwise; a 2-d array gives one prediction
+            per row. A dict, pandas Series or DataFrame with string names is matched by name to the moderators of the model when it has more than one
+            moderator (a name may be shortened to any subsequence of the moderator name, as in metafor). The predictions are labelled by the index of a
+            DataFrame with string index, or by the names of a dict or Series for a model with a single moderator, else by their position. A
+            [pairmat][metafopy.pairmat] specification is also accepted. Factors must be given as the contrast variables of the model matrix. Models
+            without moderators do not accept ``newmods``. Default: no new values, so an intercept-only model gives the pooled estimate and a
             meta-regression the fitted value of every study.
-        intercept: Whether to include the intercept when predicting for ``newmods``. Default: add it if the model has an intercept. Ignored when
-            ``newmods`` has all ``p`` columns.
+        intercept: Whether to include the intercept when predicting for ``newmods``: if False, the intercept column is set to 0. Default: the column
+            of ones is added if the model has an intercept. Ignored when ``newmods`` has all ``p`` columns.
         tau2_levels: Levels of the inner factor for the prediction interval. Accepted for compatibility with metafor; it has no effect for this model.
         gamma2_levels: Levels of the inner factor for the prediction interval. Accepted for compatibility with metafor; it has no effect for this model.
-        hetvar: Amount of heterogeneity to use in the prediction interval instead of the estimated ``tau^2``: a number or one value per prediction.
-            Default: the estimate of the model.
-        prob: Probability to add to the result, as a string such as ``'>0.2'`` or ``'<0'`` (the cutoff may be an R-style expression such as
-            ``'log(0.8)'``): the probability that a true outcome is above or below the cutoff, from the predictive distribution. A number means ``>``.
-            Cannot be combined with ``adjust=True``. Default: none.
+        hetvar: Amount of heterogeneity to use in the prediction interval instead of the estimated ``tau^2``: a number or one value per prediction
+            (a different length raises ``InputError``). Default: the estimate of the model.
+        prob: Probability to add to the result, as a string such as ``'>0.2'`` or ``'<0'``: the probability that a true outcome is above (``>``) or
+            below (``<``) the cutoff, from the predictive distribution (normal or t, see ``predtype``). A number means ``>``. The cutoff may be an
+            arithmetic expression (``+ - * / ^``) using the constants ``pi`` and ``Inf`` and the functions ``abs``, ``atanh``, ``cos``, ``exp``, ``log``,
+            ``log10``, ``log1p``, ``log2``, ``plogis``, ``qlogis``, ``sin``, ``sqrt``, ``tan`` and ``tanh``, such as ``'>log(0.8)'``; a string that is not
+            such an expression gives no ``prob``, as in metafor. Cannot be combined with ``adjust=True``. Default: none.
         addx: Add the model matrix of the predictions to the result (``X``).
-        transf: Function applied to the predicted values and interval bounds (for example ``numpy.exp``); ``se`` is then NaN. The integral and mode
-            transformations of [transf][metafopy.transf] default to ``targs={'tau2': tau2}``. Default: no transformation.
-        targs: Extra arguments for ``transf``.
-        level: Confidence and prediction interval level in percent (``95`` is 95%). Default: the level of the model.
-        adjust: Apply a Bonferroni correction to the width of the intervals (for the number of predictions).
-        vcov: Add the variance-covariance matrix of the predictions to the result (``vcov``). Ignored with ``transf``.
-        predtype: Type of prediction interval: ``'default'`` (normal or t distribution as for the model's test), ``'simple'`` (ignore the uncertainty of
-            the predicted value, normal distribution), ``'riley'`` (t distribution with ``k - parms`` degrees of freedom, Riley et al., 2011,
-            [doi:10.1111/j.1467-985X.2010.00696.x](https://doi.org/10.1111/j.1467-985X.2010.00696.x)) or ``'t'`` (t distribution with the degrees of
-            freedom of the test). Prefixes are accepted. Default: ``pi_type``, else ``'default'``.
-        pi_type: Old spelling of ``predtype``.
-        newvi: Sampling variances of the new studies, added to the variance of the prediction interval: a number or one value per prediction. Default: 0.
-        na_action: What to do with missing values, as R's ``na.action``. For the fitted values (no ``newmods``): ``'omit'`` returns the studies used in
-            fitting, ``'exclude'`` one row per study with NaN for those left out, ``'pass'`` one row per study computed from the values it has, ``'fail'``
-            raises if any study was left out. Predictions for ``newmods`` drop (``'omit'``) or keep (the others) the rows that are NaN.
-        digits: Number of decimals used when printing, or a mapping with the keys ``est``, ``se``, ``ci``, ... Default: the ``digits`` option, else that
-            of the model.
+        transf: Function applied to each predicted value and interval bound separately (for example ``numpy.exp``); ``se`` is then NaN and the lower
+            and upper bounds are put in order. Default: no transformation.
+        targs: Second argument passed to ``transf`` (``transf(value, targs)``). Default: none, except for the integral and mode transformations of
+            [transf][metafopy.transf], which get ``{'tau2': tau2}``.
+        level: Confidence and prediction interval level in percent (``95`` is 95%). As in metafor, a value below 1 is read as the confidence level if it is
+            above 0.5 (``0.95``) and as the significance level otherwise (``0.05``). Default: the level of the model.
+        adjust: Apply a Bonferroni correction: the significance level is divided by the number of predictions, which widens the intervals.
+        vcov: Add the variance-covariance matrix of the predictions to the result (``vcov``; metafor returns it as a second list element). Ignored with
+            ``transf``.
+        predtype: Type of prediction interval: ``'default'`` (the normal distribution, or the t distribution with the degrees of freedom ``ddf`` of the
+            test), ``'simple'`` (ignore the uncertainty of the predicted value, normal distribution), ``'riley'`` (t distribution with
+            ``ddf - parms + p`` degrees of freedom, which is ``k - parms`` when ``ddf = k - p``; Riley et al., 2011,
+            [doi:10.1136/bmj.d549](https://doi.org/10.1136/bmj.d549)) or ``'t'`` (t distribution with ``ddf`` degrees of freedom); degrees of freedom
+            below 1 are set to 1. Case is ignored and a unique prefix is accepted. Default: ``pi_type``, else ``'default'``.
+        pi_type: Old spelling of ``predtype``, used when ``predtype`` is None.
+        newvi: Sampling variances of the new studies, added to the variance of the prediction interval: a number or one value per prediction (a different
+            length raises ``InputError``). Default: 0.
+        na_action: What to do with studies left out of the fit because of missing values: ``'omit'``, ``'exclude'``, ``'pass'`` or ``'fail'``
+            (metafor takes this from the ``na.action`` option). For the fitted values (no ``newmods``) of a meta-regression, ``'omit'`` returns the
+            studies used in fitting, ``'exclude'`` one row per study with NaN for those left out and ``'pass'`` one row per study computed from the
+            moderator values it has. ``'fail'`` raises if any study was left out of the fit, also when ``newmods`` is given. Predictions for ``newmods``
+            drop (``'omit'``) or keep (``'exclude'``, ``'pass'``) the rows that are NaN.
+        digits: Number of decimals used when printing, or a mapping with any of the keys ``est``, ``se``, ``test``, ``pval``, ``ci``, ``var``,
+            ``sevar``, ``fit`` and ``het`` (a unique prefix of a key is accepted). It is stored in the result and does not change the values.
+            Default: the ``digits`` option, else that of the model.
         verbose: Accepted for metafor's printing of the details of a failing ``clubSandwich`` contrast; it has no effect here.
 
     Returns:
         The predictions, a [PredictResult][metafopy.PredictResult] with ``pred``, ``se``, ``ci_lb``, ``ci_ub``, ``pi_lb`` and ``pi_ub`` (one entry per
-        prediction), plus ``prob``, ``X`` and ``vcov`` if requested.
+        prediction; the prediction interval is NaN where there is none), plus ``prob``, ``X`` and ``vcov`` if requested. Unlike metafor, ``vcov`` is a
+        field of the result, not a second list element.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid (for example ``prob`` with ``adjust=True``, a ``newmods`` of the wrong width or an
-            unknown ``predtype``).
+        metafopy.errors.InputError: an argument or the data is invalid (for example ``prob`` with ``adjust=True``, ``newmods`` of the wrong width or for
+            a model without moderators, an unknown ``predtype`` or ``na_action``, a ``hetvar`` or ``newvi`` of the wrong length, or a fit made robust with
+            ``club_sandwich=True`` and the saddlepoint test).
     """
     newmods = metafopy.methods.pairmat.resolve(newmods, model)
     return with_digits(
@@ -613,55 +635,72 @@ def predict_rma_glmm(
     """Predicted values for an [rma_glmm][metafopy.rma_glmm] fit (metafor's ``predict.rma``; the arguments are those of
     [predict_rma_uni][metafopy.methods.predict.predict_rma_uni]).
 
-    The predictions are on the scale of the model's link (log odds ratios, log risk ratios, risk differences, log odds, proportions, log proportions or
-    log rates). Without ``newmods`` a meta-regression gives the fitted value of each study that entered the model. Prediction intervals add ``tau2`` and
-    are absent for the fixed-effects methods.
+    The predictions are on the scale of the linear predictor of the model: with the default links, log odds ratios (``measure='OR'``), log incidence
+    rate ratios (``'IRR'``), log odds (``'PLO'``) or log incidence rates (``'IRLN'``); the experimental measures and a different ``link`` change the
+    scale. Without ``newmods`` a meta-regression gives the fitted value of each study that entered the model. Prediction intervals add ``tau2`` and are
+    absent (NaN) for the fixed-effects methods.
 
     R source: <https://github.com/wviechtb/metafor/blob/master/R/predict.rma.r>; reference page:
     <https://wviechtb.github.io/metafor/reference/predict.rma.html>.
 
     Args:
         model: Model fitted by [rma_glmm][metafopy.rma_glmm].
-        newmods: Moderator values of new studies to predict for, without the intercept column (it is added unless ``intercept=False``) or with all ``p``
-            columns (then ``intercept`` is ignored). A 1-d array gives one prediction (or one per value if the model has a single moderator), a 2-d array
-            one prediction per row; a mapping, pandas Series or DataFrame, or a [pairmat][metafopy.pairmat] specification is also accepted. Factors must
-            be given as the contrast variables of the model matrix. Default: no new values, so an intercept-only model gives the pooled estimate and a
+        newmods: Moderator values of new studies to predict for, without the intercept column (it is added, see ``intercept``) or with all ``p``
+            columns (then ``intercept`` is ignored, with a warning if given, and the first column decides whether the intercept is included). A number or
+            1-d array gives one prediction per value if the model has a single moderator and one prediction otherwise; a 2-d array gives one prediction
+            per row. A dict, pandas Series or DataFrame with string names is matched by name to the moderators of the model when it has more than one
+            moderator (a name may be shortened to any subsequence of the moderator name, as in metafor). The predictions are labelled by the index of a
+            DataFrame with string index, or by the names of a dict or Series for a model with a single moderator, else by their position. A
+            [pairmat][metafopy.pairmat] specification is also accepted. Factors must be given as the contrast variables of the model matrix. Models
+            without moderators do not accept ``newmods``. Default: no new values, so an intercept-only model gives the pooled estimate and a
             meta-regression the fitted value of every study.
-        intercept: Whether to include the intercept when predicting for ``newmods``. Default: add it if the model has an intercept. Ignored when
-            ``newmods`` has all ``p`` columns.
+        intercept: Whether to include the intercept when predicting for ``newmods``: if False, the intercept column is set to 0. Default: the column
+            of ones is added if the model has an intercept. Ignored when ``newmods`` has all ``p`` columns.
         tau2_levels: Levels of the inner factor for the prediction interval. Accepted for compatibility with metafor; it has no effect for this model.
         gamma2_levels: Levels of the inner factor for the prediction interval. Accepted for compatibility with metafor; it has no effect for this model.
-        hetvar: Amount of heterogeneity to use in the prediction interval instead of the estimated ``tau^2``: a number or one value per prediction.
-            Default: the estimate of the model.
-        prob: Probability to add to the result, as a string such as ``'>0.2'`` or ``'<0'`` (the cutoff may be an R-style expression such as
-            ``'log(0.8)'``): the probability that a true outcome is above or below the cutoff, from the predictive distribution. A number means ``>``.
-            Cannot be combined with ``adjust=True``. Default: none.
+        hetvar: Amount of heterogeneity to use in the prediction interval instead of the estimated ``tau^2``: a number or one value per prediction
+            (a different length raises ``InputError``). Default: the estimate of the model.
+        prob: Probability to add to the result, as a string such as ``'>0.2'`` or ``'<0'``: the probability that a true outcome is above (``>``) or
+            below (``<``) the cutoff, from the predictive distribution (normal or t, see ``predtype``). A number means ``>``. The cutoff may be an
+            arithmetic expression (``+ - * / ^``) using the constants ``pi`` and ``Inf`` and the functions ``abs``, ``atanh``, ``cos``, ``exp``, ``log``,
+            ``log10``, ``log1p``, ``log2``, ``plogis``, ``qlogis``, ``sin``, ``sqrt``, ``tan`` and ``tanh``, such as ``'>log(0.8)'``; a string that is not
+            such an expression gives no ``prob``, as in metafor. Cannot be combined with ``adjust=True``. Default: none.
         addx: Add the model matrix of the predictions to the result (``X``).
-        transf: Function applied to the predicted values and interval bounds (for example ``numpy.exp``); ``se`` is then NaN. The integral and mode
-            transformations of [transf][metafopy.transf] default to ``targs={'tau2': tau2}``. Default: no transformation.
-        targs: Extra arguments for ``transf``.
-        level: Confidence and prediction interval level in percent (``95`` is 95%). Default: the level of the model.
-        adjust: Apply a Bonferroni correction to the width of the intervals (for the number of predictions).
-        vcov: Add the variance-covariance matrix of the predictions to the result (``vcov``). Ignored with ``transf``.
-        predtype: Type of prediction interval: ``'default'`` (normal or t distribution as for the model's test), ``'simple'`` (ignore the uncertainty of
-            the predicted value, normal distribution), ``'riley'`` (t distribution with ``k - parms`` degrees of freedom, Riley et al., 2011,
-            [doi:10.1111/j.1467-985X.2010.00696.x](https://doi.org/10.1111/j.1467-985X.2010.00696.x)) or ``'t'`` (t distribution with the degrees of
-            freedom of the test). Prefixes are accepted. Default: ``pi_type``, else ``'default'``.
-        pi_type: Old spelling of ``predtype``.
-        newvi: Sampling variances of the new studies, added to the variance of the prediction interval: a number or one value per prediction. Default: 0.
-        na_action: What to do with missing values, as R's ``na.action``. For the fitted values (no ``newmods``): ``'omit'`` returns the studies used in
-            fitting, ``'exclude'`` one row per study with NaN for those left out, ``'pass'`` one row per study computed from the values it has, ``'fail'``
-            raises if any study was left out. Predictions for ``newmods`` drop (``'omit'``) or keep (the others) the rows that are NaN.
-        digits: Number of decimals used when printing, or a mapping with the keys ``est``, ``se``, ``ci``, ... Default: the ``digits`` option, else that
-            of the model.
+        transf: Function applied to each predicted value and interval bound separately (for example ``numpy.exp``); ``se`` is then NaN and the lower
+            and upper bounds are put in order. Default: no transformation.
+        targs: Second argument passed to ``transf`` (``transf(value, targs)``). Default: none, except for the integral and mode transformations of
+            [transf][metafopy.transf], which get ``{'tau2': tau2}``.
+        level: Confidence and prediction interval level in percent (``95`` is 95%). As in metafor, a value below 1 is read as the confidence level if it is
+            above 0.5 (``0.95``) and as the significance level otherwise (``0.05``). Default: the level of the model.
+        adjust: Apply a Bonferroni correction: the significance level is divided by the number of predictions, which widens the intervals.
+        vcov: Add the variance-covariance matrix of the predictions to the result (``vcov``; metafor returns it as a second list element). Ignored with
+            ``transf``.
+        predtype: Type of prediction interval: ``'default'`` (the normal distribution, or the t distribution with the degrees of freedom ``ddf`` of the
+            test), ``'simple'`` (ignore the uncertainty of the predicted value, normal distribution), ``'riley'`` (t distribution with
+            ``ddf - parms + p`` degrees of freedom, which is ``k - parms`` when ``ddf = k - p``; Riley et al., 2011,
+            [doi:10.1136/bmj.d549](https://doi.org/10.1136/bmj.d549)) or ``'t'`` (t distribution with ``ddf`` degrees of freedom); degrees of freedom
+            below 1 are set to 1. Case is ignored and a unique prefix is accepted. Default: ``pi_type``, else ``'default'``.
+        pi_type: Old spelling of ``predtype``, used when ``predtype`` is None.
+        newvi: Sampling variances of the new studies, added to the variance of the prediction interval: a number or one value per prediction (a different
+            length raises ``InputError``). Default: 0.
+        na_action: What to do with studies left out of the fit because of missing values: ``'omit'``, ``'exclude'``, ``'pass'`` or ``'fail'``
+            (metafor takes this from the ``na.action`` option). For the fitted values (no ``newmods``) of a meta-regression, ``'omit'`` returns the
+            studies used in fitting, ``'exclude'`` one row per study with NaN for those left out and ``'pass'`` one row per study computed from the
+            moderator values it has. ``'fail'`` raises if any study was left out of the fit, also when ``newmods`` is given. Predictions for ``newmods``
+            drop (``'omit'``) or keep (``'exclude'``, ``'pass'``) the rows that are NaN.
+        digits: Number of decimals used when printing, or a mapping with any of the keys ``est``, ``se``, ``test``, ``pval``, ``ci``, ``var``,
+            ``sevar``, ``fit`` and ``het`` (a unique prefix of a key is accepted). It is stored in the result and does not change the values.
+            Default: the ``digits`` option, else that of the model.
         verbose: Accepted for metafor's printing of the details of a failing ``clubSandwich`` contrast; it has no effect here.
 
     Returns:
         The predictions, a [PredictResult][metafopy.PredictResult] with ``pred``, ``se``, ``ci_lb``, ``ci_ub``, ``pi_lb`` and ``pi_ub`` (one entry per
-        prediction), plus ``prob``, ``X`` and ``vcov`` if requested.
+        prediction; the prediction interval is NaN where there is none), plus ``prob``, ``X`` and ``vcov`` if requested. Unlike metafor, ``vcov`` is a
+        field of the result, not a second list element.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InputError: an argument or the data is invalid (for example ``prob`` with ``adjust=True``, ``newmods`` of the wrong width or for
+            a model without moderators, an unknown ``predtype`` or ``na_action``, or a ``hetvar`` or ``newvi`` of the wrong length).
     """
     newmods = metafopy.methods.pairmat.resolve(newmods, model)
     x = model
@@ -1120,47 +1159,67 @@ def predict_rma_mv(
 
     Args:
         model: Model fitted by [rma_mv][metafopy.rma_mv].
-        newmods: Moderator values of new studies to predict for, without the intercept column (it is added unless ``intercept=False``) or with all ``p``
-            columns (then ``intercept`` is ignored). A 1-d array gives one prediction (or one per value if the model has a single moderator), a 2-d array
-            one prediction per row; a mapping, pandas Series or DataFrame, or a [pairmat][metafopy.pairmat] specification is also accepted. Factors must
-            be given as the contrast variables of the model matrix. Default: no new values, so an intercept-only model gives the pooled estimate and a
+        newmods: Moderator values of new studies to predict for, without the intercept column (it is added, see ``intercept``) or with all ``p``
+            columns (then ``intercept`` is ignored, with a warning if given, and the first column decides whether the intercept is included). A number or
+            1-d array gives one prediction per value if the model has a single moderator and one prediction otherwise; a 2-d array gives one prediction
+            per row. A dict, pandas Series or DataFrame with string names is matched by name to the moderators of the model when it has more than one
+            moderator (a name may be shortened to any subsequence of the moderator name, as in metafor). The predictions are labelled by the index of a
+            DataFrame with string index, or by the names of a dict or Series for a model with a single moderator, else by their position. A
+            [pairmat][metafopy.pairmat] specification is also accepted. Factors must be given as the contrast variables of the model matrix. Models
+            without moderators do not accept ``newmods``. Default: no new values, so an intercept-only model gives the pooled estimate and a
             meta-regression the fitted value of every study.
-        intercept: Whether to include the intercept when predicting for ``newmods``. Default: add it if the model has an intercept. Ignored when
-            ``newmods`` has all ``p`` columns.
-        tau2_levels: Which ``tau2`` value(s) to use in the prediction interval when the model has several: labels of the inner factor or 0-based positions
-            (a single value or a sequence, one per prediction). Default: none, which gives NaN prediction intervals if there are several ``tau2`` values.
-        gamma2_levels: As ``tau2_levels``, for the ``gamma2`` values.
+        intercept: Whether to include the intercept when predicting for ``newmods``: if False, the intercept column is set to 0. Default: the column
+            of ones is added if the model has an intercept. Ignored when ``newmods`` has all ``p`` columns.
+        tau2_levels: Which ``tau2`` value(s) to use in the prediction interval when the model has several: labels of the inner factor of the first
+            ``inner | outer`` term or 0-based positions (a single value, used for every prediction, or a sequence with one per prediction). Default: none.
+            With ``newmods`` and several ``tau2`` values the prediction intervals are then NaN (metafor requires the levels). With the fitted values of a
+            meta-regression the levels are those of the studies and ``tau2_levels`` is ignored (with a warning). For an intercept-only model metafor then
+            returns one prediction for each ``tau2`` value, whereas metafopy returns a single prediction with a NaN prediction interval.
+        gamma2_levels: As ``tau2_levels``, for the ``gamma2`` values (second ``inner | outer`` term).
         hetvar: Amount of heterogeneity to use in the prediction interval instead of the sum of the variance components: a number or one value per
-            prediction. ``tau2_levels`` and ``gamma2_levels`` are then ignored (with a warning).
-        prob: Probability to add to the result, as a string such as ``'>0.2'`` or ``'<0'`` (the cutoff may be an R-style expression such as
-            ``'log(0.8)'``): the probability that a true outcome is above or below the cutoff, from the predictive distribution. A number means ``>``.
-            Cannot be combined with ``adjust=True``. Default: none.
+            prediction (a different length raises ``InputError``). ``tau2_levels`` and ``gamma2_levels`` are then ignored (with a warning).
+        prob: Probability to add to the result, as a string such as ``'>0.2'`` or ``'<0'``: the probability that a true outcome is above (``>``) or
+            below (``<``) the cutoff, from the predictive distribution (normal or t, see ``predtype``). A number means ``>``. The cutoff may be an
+            arithmetic expression (``+ - * / ^``) using the constants ``pi`` and ``Inf`` and the functions ``abs``, ``atanh``, ``cos``, ``exp``, ``log``,
+            ``log10``, ``log1p``, ``log2``, ``plogis``, ``qlogis``, ``sin``, ``sqrt``, ``tan`` and ``tanh``, such as ``'>log(0.8)'``; a string that is not
+            such an expression gives no ``prob``, as in metafor. Cannot be combined with ``adjust=True``. Default: none.
         addx: Add the model matrix of the predictions to the result (``X``).
-        transf: Function applied to the predicted values and interval bounds (for example ``numpy.exp``); ``se`` is then NaN. The integral and mode
-            transformations of [transf][metafopy.transf] default to ``targs={'tau2': tau2}``. Default: no transformation.
-        targs: Extra arguments for ``transf``.
-        level: Confidence and prediction interval level in percent (``95`` is 95%). Default: the level of the model.
-        adjust: Apply a Bonferroni correction to the width of the intervals (for the number of predictions).
-        vcov: Add the variance-covariance matrix of the predictions to the result (``vcov``). Ignored with ``transf``.
-        predtype: Type of prediction interval: ``'default'`` (normal or t distribution as for the model's test), ``'simple'`` (ignore the uncertainty of
-            the predicted value, normal distribution), ``'riley'`` (t distribution with ``k - parms`` degrees of freedom, Riley et al., 2011,
-            [doi:10.1111/j.1467-985X.2010.00696.x](https://doi.org/10.1111/j.1467-985X.2010.00696.x)) or ``'t'`` (t distribution with the degrees of
-            freedom of the test). Prefixes are accepted. Default: ``pi_type``, else ``'default'``.
-        pi_type: Old spelling of ``predtype``.
-        newvi: Sampling variances of the new studies, added to the variance of the prediction interval: a number or one value per prediction. Default: 0.
-        na_action: What to do with missing values, as R's ``na.action``. For the fitted values (no ``newmods``): ``'omit'`` returns the studies used in
-            fitting, ``'exclude'`` one row per study with NaN for those left out, ``'pass'`` one row per study computed from the values it has, ``'fail'``
-            raises if any study was left out. Predictions for ``newmods`` drop (``'omit'``) or keep (the others) the rows that are NaN.
-        digits: Number of decimals used when printing, or a mapping with the keys ``est``, ``se``, ``ci``, ... Default: the ``digits`` option, else that
-            of the model.
+        transf: Function applied to each predicted value and interval bound separately (for example ``numpy.exp``); ``se`` is then NaN and the lower
+            and upper bounds are put in order. Default: no transformation.
+        targs: Second argument passed to ``transf`` (``transf(value, targs)``). Default: none, except for the integral and mode transformations of
+            [transf][metafopy.transf], which get ``{'tau2': tau2}``.
+        level: Confidence and prediction interval level in percent (``95`` is 95%). As in metafor, a value below 1 is read as the confidence level if it is
+            above 0.5 (``0.95``) and as the significance level otherwise (``0.05``). Default: the level of the model.
+        adjust: Apply a Bonferroni correction: the significance level is divided by the number of predictions, which widens the intervals.
+        vcov: Add the variance-covariance matrix of the predictions to the result (``vcov``; metafor returns it as a second list element). Ignored with
+            ``transf``.
+        predtype: Type of prediction interval: ``'default'`` (the normal distribution, or the t distribution with the degrees of freedom ``ddf`` of the
+            test), ``'simple'`` (ignore the uncertainty of the predicted value, normal distribution), ``'riley'`` (t distribution with
+            ``ddf - parms + p`` degrees of freedom, which is ``k - parms`` when ``ddf = k - p``; Riley et al., 2011,
+            [doi:10.1136/bmj.d549](https://doi.org/10.1136/bmj.d549)) or ``'t'`` (t distribution with ``ddf`` degrees of freedom); degrees of freedom
+            below 1 are set to 1. Case is ignored and a unique prefix is accepted. Default: ``pi_type``, else ``'default'``.
+        pi_type: Old spelling of ``predtype``, used when ``predtype`` is None.
+        newvi: Sampling variances of the new studies, added to the variance of the prediction interval: a number or one value per prediction (a different
+            length raises ``InputError``). Default: 0.
+        na_action: What to do with studies left out of the fit because of missing values: ``'omit'``, ``'exclude'``, ``'pass'`` or ``'fail'``
+            (metafor takes this from the ``na.action`` option). For the fitted values (no ``newmods``) of a meta-regression, ``'omit'`` returns the
+            studies used in fitting, ``'exclude'`` one row per study with NaN for those left out and ``'pass'`` one row per study computed from the
+            moderator values it has. ``'fail'`` raises if any study was left out of the fit, also when ``newmods`` is given. Predictions for ``newmods``
+            drop (``'omit'``) or keep (``'exclude'``, ``'pass'``) the rows that are NaN.
+        digits: Number of decimals used when printing, or a mapping with any of the keys ``est``, ``se``, ``test``, ``pval``, ``ci``, ``var``,
+            ``sevar``, ``fit`` and ``het`` (a unique prefix of a key is accepted). It is stored in the result and does not change the values.
+            Default: the ``digits`` option, else that of the model.
         verbose: Accepted for metafor's printing of the details of a failing ``clubSandwich`` contrast; it has no effect here.
 
     Returns:
         The predictions, a [PredictResult][metafopy.PredictResult] with ``pred``, ``se``, ``ci_lb``, ``ci_ub``, ``pi_lb`` and ``pi_ub`` (one entry per
-        prediction), plus ``prob``, ``X`` and ``vcov`` if requested.
+        prediction; the prediction interval is NaN where there is none), plus ``prob``, ``X`` and ``vcov`` if requested. Unlike metafor, ``vcov`` is a
+        field of the result, not a second list element.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid (for example ``newmods`` for a model without moderators).
+        metafopy.errors.InputError: an argument or the data is invalid (for example ``newmods`` for a model without moderators, a level in
+            ``tau2_levels`` or ``gamma2_levels`` that does not exist or a sequence of the wrong length, ``prob`` with ``adjust=True``, an unknown
+            ``predtype`` or ``na_action``, or a ``hetvar`` or ``newvi`` of the wrong length).
     """
     newmods = metafopy.methods.pairmat.resolve(newmods, model)
     x = model

@@ -468,7 +468,8 @@ def rstudent(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> Resi
         The residuals, a [ResidualResult][metafopy.ResidualResult] (a cluster result for ``rma_mv`` with ``cluster``).
 
     Raises:
-        metafopy.errors.ArgumentError: there is no implementation for the class of ``model``, or an argument has the wrong type or is not accepted.
+        metafopy.errors.ArgumentError: there is no implementation for the class of ``model`` (there is none for location-scale models).
+        TypeError: the implementation does not accept a keyword argument.
     """
     raise metafopy.errors.ArgumentError(f'rstudent() not implemented for {type(model).__name__}')
 
@@ -487,21 +488,23 @@ def rstudent_rma_uni(
     sampling variance, ``tau^2`` and the variance of the prediction.
 
     R source: <https://github.com/wviechtb/metafor/blob/master/R/rstudent.rma.uni.r>; reference page:
-    <https://wviechtb.github.io/metafor/reference/rstudent.html>.
+    <https://wviechtb.github.io/metafor/reference/residuals.rma.html>.
 
     Args:
         model: Model fitted by [rma_uni][metafopy.rma_uni].
         digits: Number of decimals of the printout. Default: the ``digits`` option, else that of the model.
         na_action: What to do with studies left out of the fit because of missing values: ``'omit'`` (default) drops them, ``'exclude'`` and ``'pass'``
-            keep one row per study with NaN for those left out, ``'fail'`` raises.
-        progbar: Print a progress bar to stderr while the studies are left out in turn.
+            keep one row per study with NaN for those left out, ``'fail'`` raises an InputError if there are any. Corresponds to R's
+            ``na.action`` option.
+        progbar: Print a progress bar to stderr while the studies are left out in turn (default False, as in metafor).
 
     Returns:
         A [ResidualResult][metafopy.ResidualResult] with the deleted residuals ``resid``, their standard errors ``se`` and the standardised values ``z``,
         labelled with the study labels.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InputError: ``na_action`` is not valid, or is ``'fail'`` and studies were left out of the fit; the model has a single study.
+        metafopy.errors.NotSupportedError: the model is a [robust][metafopy.robust] result.
     """
     metafopy.methods.common.check_na_action(na_action)
     metafopy.methods.fitview.check_class(model, notav=metafopy.methods.fitview.NOT_ROBUST)
@@ -635,7 +638,8 @@ def rstandard(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> Res
         The residuals, a [ResidualResult][metafopy.ResidualResult] (a cluster result for ``rma_mv`` with ``cluster``).
 
     Raises:
-        metafopy.errors.ArgumentError: there is no implementation for the class of ``model``, or an argument has the wrong type or is not accepted.
+        metafopy.errors.ArgumentError: there is no implementation for the class of ``model``.
+        TypeError: the implementation does not accept a keyword argument.
     """
     raise metafopy.errors.ArgumentError(f'rstandard() not implemented for {type(model).__name__}')
 
@@ -656,21 +660,25 @@ def rstandard_rma_uni(
     residuals are not available for models with non-standard weights.
 
     R source: <https://github.com/wviechtb/metafor/blob/master/R/rstandard.rma.uni.r>; reference page:
-    <https://wviechtb.github.io/metafor/reference/rstandard.html>.
+    <https://wviechtb.github.io/metafor/reference/residuals.rma.html>.
 
     Args:
         model: Model fitted by [rma_uni][metafopy.rma_uni] (not a robust fit).
         digits: Number of decimals of the printout. Default: the ``digits`` option, else that of the model.
-        type: ``'marginal'`` (default) for marginal residuals or ``'conditional'`` for conditional residuals.
+        type: ``'marginal'`` (default) for marginal residuals or ``'conditional'`` for conditional residuals (the deviations of the estimates from the
+            BLUPs of the true effects). Exactly one of these two values (R also accepts a unique prefix).
         na_action: What to do with studies left out of the fit because of missing values: ``'omit'`` (default) drops them, ``'exclude'`` and ``'pass'``
-            keep one row per study with NaN for those left out, ``'fail'`` raises.
+            keep one row per study with NaN for those left out, ``'fail'`` raises an InputError if there are any. Corresponds to R's
+            ``na.action`` option.
 
     Returns:
         A [ResidualResult][metafopy.ResidualResult] with the residuals ``resid``, their standard errors ``se`` and the standardised values ``z``, labelled
         with the study labels.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid (for example an unknown ``type``).
+        metafopy.errors.InputError: ``type`` is not ``'marginal'`` or ``'conditional'``; ``type='conditional'`` for a model with weights given or
+            fitted without weighting; ``na_action`` is not valid, or is ``'fail'`` and studies were left out of the fit.
+        metafopy.errors.NotSupportedError: the model is a [robust][metafopy.robust] result.
     """
     metafopy.methods.common.check_na_action(na_action)
     x = model

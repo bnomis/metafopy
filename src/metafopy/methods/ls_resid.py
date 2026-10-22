@@ -107,26 +107,30 @@ def rstandard_rma_ls(
     *,
     na_action: metafopy.methods.common.NAAction = 'omit',
 ) -> metafopy.methods.influence.ResidualResult:
-    """Standardised residuals of a location-scale fit (metafor's ``rstandard.rma.ls``).
+    """Internally standardised residuals of a location-scale fit (metafor's ``rstandard.rma.uni`` applied to an ``rma.ls`` object, which has no method of
+    its own).
 
-    With ``type='marginal'`` the marginal residuals are divided by their standard errors, with ``type='conditional'`` the conditional ones.
+    With ``type='marginal'`` the marginal residuals are divided by their standard errors, with ``type='conditional'`` the conditional ones (the
+    deviations of the estimates from the BLUPs), both with the study-specific ``tau^2`` of the model.
 
     R source: <https://github.com/wviechtb/metafor/blob/master/R/rstandard.rma.uni.r>; reference page:
-    <https://wviechtb.github.io/metafor/reference/rstandard.html>.
+    <https://wviechtb.github.io/metafor/reference/residuals.rma.html>.
 
     Args:
         model: Location-scale model fitted by [rma_uni][metafopy.rma_uni] with ``scale``.
-        digits: Number of decimals of the printout.
-        type: ``'marginal'`` (default) for marginal residuals or ``'conditional'`` for conditional residuals.
+        digits: Number of decimals of the printout (default 4; unlike for [rma_uni][metafopy.rma_uni] fits the digits of the model are not used).
+        type: ``'marginal'`` (default) for marginal residuals or ``'conditional'`` for conditional residuals. Exactly one of these two values.
         na_action: What to do with studies left out of the fit because of missing values: ``'omit'`` (default) drops them, ``'exclude'`` and ``'pass'``
-            keep one row per study with NaN for those left out, ``'fail'`` raises.
+            keep one row per study with NaN for those left out, ``'fail'`` raises an InputError if there are any. Corresponds to R's
+            ``na.action`` option.
 
     Returns:
         A [ResidualResult][metafopy.ResidualResult] with the residuals ``resid``, their standard errors ``se`` and the standardised values ``z``, labelled
         with the study labels.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InputError: ``type`` is not ``'marginal'`` or ``'conditional'``; ``type='conditional'`` for a model with weights given or
+            fitted without weighting; ``na_action`` is not valid, or is ``'fail'`` and studies were left out of the fit.
     """
     metafopy.methods.common.check_na_action(na_action)
     x = model

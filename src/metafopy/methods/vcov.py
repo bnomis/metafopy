@@ -158,10 +158,11 @@ def vcov(
         object: The fitted model (or a ``deltamethod`` or ``matreg`` result).
         type: Which matrix: ``'fixed'`` (default; of the coefficients), ``'beta'`` (of the location coefficients), ``'alpha'`` (of the scale coefficients
             of a location-scale model), ``'delta'`` (of the selection parameters of a selection model), ``'obs'`` (or ``'marginal'``; of the observed
-            effects), ``'fitted'`` (of the fitted values) or ``'resid'`` (of the residuals). Partial matching is allowed. Not every type is available for
-            every model.
+            effects), ``'fitted'`` (of the fitted values) or ``'resid'`` (of the residuals). A unique prefix is enough (``'f'`` is ambiguous). Not every type
+            is available for every model.
         na_action: For ``'obs'``, ``'fitted'`` and ``'resid'``: ``'omit'`` (default) keeps the studies used in fitting, ``'exclude'`` and ``'pass'`` all
-            of them (NaN for those not used) and ``'fail'`` raises if any study was left out (``'fitted'`` gives the whole matrix, as in R).
+            of them (NaN for those not used) and ``'fail'`` raises if any study was left out (``'fitted'`` gives the whole matrix, as in R, and
+            ``'resid'`` always raises, as R fails there too).
 
     Returns:
         The variance-covariance matrix as a data frame labelled with the coefficient names or study labels; a dict of such frames for a model with several
@@ -170,8 +171,9 @@ def vcov(
     Raises:
         metafopy.errors.ArgumentError: ``object`` is not a fitted model, or ``type='resid'`` for a fit without ``hatvalues()`` (``rma_mh``, ``rma_peto``,
             ``rma_glmm``).
-        metafopy.errors.InputError: ``type`` or ``na_action`` is not valid, ``'alpha'`` for a model without scale part, ``'delta'`` for a model that is
-            not a selection model, or studies are missing and ``na_action='fail'`` for ``'obs'``.
+        metafopy.errors.InputError: ``type`` (or an ambiguous prefix of it) or ``na_action`` is not valid, ``'alpha'`` for a model without scale part,
+            ``'delta'`` for a model that is not a selection model, studies are missing and ``na_action='fail'`` for ``'obs'``, or
+            ``type='resid'`` with ``na_action='fail'``.
         metafopy.errors.NotSupportedError: ``'obs'`` for ``rma_mh``, ``rma_peto`` and ``rma_glmm``; ``'resid'`` for robust and selection-model fits.
     """
     if isinstance(object, (metafopy.methods.deltamethod.DeltaMethodResult, metafopy.methods.matreg.MatregResult)):

@@ -1,7 +1,7 @@
 """Cluster-robust (sandwich) inference for ``rma.uni`` and ``rma.mv`` fits (metafor's ``robust()``).
 
 ``robust(x, cluster)`` replaces the model-based standard errors, tests and confidence intervals of a fit by cluster-robust ones
-(Sidik and Jonkman, 2005, doi:10.1002/sim.2072; Hedges, Tipton and Johnson, 2010, doi:10.1002/jrsm.5). With
+(Sidik and Jonkman, 2005, doi:10.1081/BIP-200067915; Hedges, Tipton and Johnson, 2010, doi:10.1002/jrsm.5). With
 ``club_sandwich=True`` the small-sample corrections of Tipton and Pustejovsky (2015, doi:10.3102/1076998615606099) and
 Pustejovsky and Tipton (2018, doi:10.1080/07350015.2016.1247004) are used as implemented in the R package ``clubSandwich``
 (see :mod:`metafopy.core.clubsandwich`). Reference: https://github.com/wviechtb/metafor/blob/master/R/robust.rma.uni.r
@@ -57,7 +57,9 @@ def robust(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> typing
         A copy of the model with cluster-robust standard errors, tests and confidence intervals.
 
     Raises:
-        metafopy.errors.ArgumentError: there is no implementation for the class of ``model``, or an argument has the wrong type or is not accepted.
+        metafopy.errors.ArgumentError: there is no implementation for the class of ``model``.
+        metafopy.errors.InputError: raised by the implementation for an invalid argument.
+        TypeError: ``cluster`` is missing, more than one positional argument is given or a keyword argument is not accepted.
     """
     raise metafopy.errors.ArgumentError(f'robust() not implemented for {type(model).__name__}')
 
@@ -272,18 +274,20 @@ def robust_rma_uni(
     The variance-covariance matrix of the coefficients is replaced by a sandwich estimator that is robust to correlated errors within clusters; tests and
     confidence intervals use it.
 
-    R source: <https://github.com/wviechtb/metafor/blob/master/R/robust.rma.r>; reference page:
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/robust.rma.uni.r>; reference page:
     <https://wviechtb.github.io/metafor/reference/robust.html>.
 
     Args:
-        model: Model fitted by [rma_uni][metafopy.rma_uni].
+        model: Model fitted by [rma_uni][metafopy.rma_uni] (also a model that was made robust before).
         cluster: The clustering variable: the name of a column of the data given to the model, or a vector with one value per row of the original data
-            (before subsetting and removal of missing values).
-        adjust: Small-sample adjustment of the cluster-robust variance-covariance matrix: ``True`` (default; CR1, multiplies by ``n/(n-p)``), ``False``
-            (CR0), ``'Stata1'`` (or ``'Stata'``) or ``'Stata2'``.
+            (before subsetting and removal of missing values; a vector with one value per study used in the fit is also accepted). It must not
+            contain missing values.
+        adjust: Small-sample adjustment of the cluster-robust variance-covariance matrix: ``True`` (default; CR1, multiplies by ``n/(n-p)``, with ``n``
+            clusters and ``p`` coefficients), ``False`` (CR0), ``'Stata1'`` (or ``'Stata'``) or ``'Stata2'``. Not used with ``club_sandwich``.
         club_sandwich: Use the ``clubSandwich`` approach (bias-reduced linearization, Satterthwaite degrees of freedom) for the cluster-robust tests and
             intervals instead of the plain sandwich estimator. Default: False.
-        vcov: With ``club_sandwich``: the variance estimator, ``'CR0'``, ``'CR1'``, ``'CR1p'``, ``'CR1S'``, ``'CR2'`` or ``'CR3'``. Default: ``'CR2'``.
+        vcov: With ``club_sandwich`` (ignored otherwise; this and the next three take exactly the values listed): the variance estimator,
+            ``'CR0'``, ``'CR1'``, ``'CR1p'``, ``'CR1S'``, ``'CR2'`` or ``'CR3'``. Default: ``'CR2'``.
         coef_test: With ``club_sandwich``: the test of the coefficients, ``'z'``, ``'naive-t'``, ``'naive-tp'``, ``'Satterthwaite'`` or ``'saddlepoint'``.
             The saddlepoint test gives p-values only; the confidence intervals then use ``conf_test`` or ``Satterthwaite``. Default: ``Satterthwaite``.
         conf_test: With ``club_sandwich``: the method for the confidence intervals, as ``coef_test`` without ``'saddlepoint'``. Default: that of
@@ -292,14 +296,17 @@ def robust_rma_uni(
             ``'EDT'``. Default: ``'HTZ'``.
         clubSandwich: R's spelling of ``club_sandwich``. Giving both with different values is an error.
         digits: Number of decimals of the printout of the result. Default: the ``digits`` option, else that of the model.
-        verbose: Accepted for metafor's printing of the details of a failing ``clubSandwich`` computation; it has no effect here.
+        verbose: Accepted and ignored (metafor shows the errors of a failing ``clubSandwich`` computation).
 
     Returns:
         The model with the cluster-robust variance-covariance matrix, standard errors, tests and confidence intervals, an [RMAResult][metafopy.RMAResult]
-        of the same form as the input.
+        of the same form as the input (its ``robust`` attribute is set; without ``club_sandwich`` the tests are t tests with ``n - p`` degrees of
+        freedom).
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InputError: ``cluster`` cannot be found, has the wrong length or has missing values; ``adjust``, ``vcov``, ``coef_test``,
+            ``conf_test`` or ``wald_test`` is not an accepted value (including ``conf_test='saddlepoint'``); ``club_sandwich`` and ``clubSandwich`` differ;
+            without ``club_sandwich`` the number of clusters is not larger than the number of coefficients.
     """
     club_sandwich = bool(metafopy.methods.common.resolve_alias(club_sandwich, clubSandwich, 'club_sandwich', 'clubSandwich'))
     x = model
@@ -412,18 +419,20 @@ def robust_rma_mv(
     With ``club_sandwich=True`` (or R's spelling ``clubSandwich``) the random effects must be nested within the clusters and ``R=`` matrices are not
     allowed.
 
-    R source: <https://github.com/wviechtb/metafor/blob/master/R/robust.rma.r>; reference page:
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/robust.rma.mv.r>; reference page:
     <https://wviechtb.github.io/metafor/reference/robust.html>.
 
     Args:
         model: Model fitted by [rma_mv][metafopy.rma_mv].
         cluster: The clustering variable: the name of a column of the data given to the model, or a vector with one value per row of the original data
-            (before subsetting and removal of missing values).
-        adjust: Small-sample adjustment of the cluster-robust variance-covariance matrix: ``True`` (default; CR1, multiplies by ``n/(n-p)``), ``False``
-            (CR0), ``'Stata1'`` (or ``'Stata'``) or ``'Stata2'``.
+            (before subsetting and removal of missing values; a vector with one value per study used in the fit is also accepted). It must not
+            contain missing values.
+        adjust: Small-sample adjustment of the cluster-robust variance-covariance matrix: ``True`` (default; CR1, multiplies by ``n/(n-p)``, with ``n``
+            clusters and ``p`` coefficients), ``False`` (CR0), ``'Stata1'`` (or ``'Stata'``) or ``'Stata2'``. Not used with ``club_sandwich``.
         club_sandwich: Use the ``clubSandwich`` approach (bias-reduced linearization, Satterthwaite degrees of freedom) for the cluster-robust tests and
             intervals instead of the plain sandwich estimator. Default: False.
-        vcov: With ``club_sandwich``: the variance estimator, ``'CR0'``, ``'CR1'``, ``'CR1p'``, ``'CR1S'``, ``'CR2'`` or ``'CR3'``. Default: ``'CR2'``.
+        vcov: With ``club_sandwich`` (ignored otherwise; this and the next three take exactly the values listed): the variance estimator,
+            ``'CR0'``, ``'CR1'``, ``'CR1p'``, ``'CR1S'``, ``'CR2'`` or ``'CR3'``. Default: ``'CR2'``.
         coef_test: With ``club_sandwich``: the test of the coefficients, ``'z'``, ``'naive-t'``, ``'naive-tp'``, ``'Satterthwaite'`` or ``'saddlepoint'``.
             The saddlepoint test gives p-values only; the confidence intervals then use ``conf_test`` or ``Satterthwaite``. Default: ``Satterthwaite``.
         conf_test: With ``club_sandwich``: the method for the confidence intervals, as ``coef_test`` without ``'saddlepoint'``. Default: that of
@@ -432,14 +441,15 @@ def robust_rma_mv(
             ``'EDT'``. Default: ``'HTZ'``.
         clubSandwich: R's spelling of ``club_sandwich``. Giving both with different values is an error.
         digits: Number of decimals of the printout of the result. Default: the ``digits`` option, else that of the model.
-        verbose: Accepted for metafor's printing of the details of a failing ``clubSandwich`` computation; it has no effect here.
+        verbose: Accepted and ignored (metafor shows the errors of a failing ``clubSandwich`` computation).
 
     Returns:
         The model with the cluster-robust variance-covariance matrix, standard errors, tests and confidence intervals, an
         [RMAMVResult][metafopy.RMAMVResult] of the same form as the input.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InputError: as for [robust_rma_uni][metafopy.methods.robust.robust_rma_uni]; with ``club_sandwich`` also: the model has
+            fixed correlation matrices (``R``) or its random effects are not nested within the clusters.
     """
     club_sandwich = bool(metafopy.methods.common.resolve_alias(club_sandwich, clubSandwich, 'club_sandwich', 'clubSandwich'))
     x = model

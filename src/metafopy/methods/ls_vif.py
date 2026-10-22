@@ -260,23 +260,27 @@ def vif_rma_ls(
     (metafor's ``vif.rma``).
 
     Unlike metafor, a model given by formulas has its model matrix columns permuted for ``sim`` (``sim_type == 'X'``), not the underlying data variables.
+    The location part is left out if the location model has only an intercept, the scale part if the scale model has.
 
     R source: <https://github.com/wviechtb/metafor/blob/master/R/vif.rma.r>; reference page: <https://wviechtb.github.io/metafor/reference/vif.html>.
 
     Args:
         res: Location-scale model fitted by [rma_uni][metafopy.rma_uni] with ``scale``.
-        btt: Sets of location coefficients, as for [vif][metafopy.vif]: 0-based, an int, a regular expression, a list of ints, or a list of sets.
+        btt: Sets of location coefficients, as for [vif][metafopy.vif]: 0-based, an int, a string searched for (Python ``re.search``) in the coefficient
+            names, a list of ints, or a list of sets.
         att: Sets of scale coefficients, as ``btt``.
-        table: Add the VIFs to the coefficient table (only when ``btt`` is not given).
+        table: Add the VIFs to the coefficient tables (``table`` of the result; ignored for a part whose ``btt`` or ``att`` is given).
         reestimate: Refit the model with only the coefficients of each set when computing its (G)VIF.
         sim: Simulate the distribution of each (G)VIF under independence: ``True`` for 1000 iterations or a number of iterations. The model is refitted
             with independently permuted columns of the model matrix; the result then has ``sim`` and ``prop``. Iteration ``l`` is seeded with ``seed + l``
             when ``seed`` is given, as in metafor, otherwise from the stream of [set_seed][metafopy.set_seed]. The location and the scale part are
             permuted separately. The draws do not depend on ``parallel``.
-        progbar: Print a progress bar to stderr while simulating (``sim``).
-        seed: Seed for the simulation (``sim``). Default: drawn from the generator of [set_seed][metafopy.set_seed].
-        parallel: Parallel simulation: ``'no'`` (default), ``'snow'`` or ``'multicore'``; both use a process pool of ``ncpus`` workers.
-        ncpus: Number of worker processes when ``parallel`` is not ``'no'``.
+        progbar: Print a progress bar to stderr while simulating (``sim``). Default True, as in metafor.
+        seed: Seed for the simulation (``sim``). Default: the stream of [set_seed][metafopy.set_seed] is continued.
+        parallel: Parallel simulation: ``'no'`` (default), ``'snow'`` or ``'multicore'``; both use a process pool of ``ncpus`` workers ('multicore'
+            forks them where the platform allows). As in metafor, ``'no'`` with ``ncpus > 1`` (or with ``cl``) is ``'snow'``, and ``'snow'`` or
+            ``'multicore'`` with ``ncpus < 2`` and no ``cl`` runs serially. Any other value raises an InputError.
+        ncpus: Number of worker processes (at least 1).
         cl: Executor to run the iterations on instead of a process pool.
         digits: Number of decimals of the printout. Default: the ``digits`` option, else that of the model.
         intercept: Include the intercepts among the coefficients (they are left out by default).
@@ -286,11 +290,13 @@ def vif_rma_ls(
         LB: Accepted as in metafor, where it balances the load of a ``'snow'`` cluster; it changes nothing here.
 
     Returns:
-        A [VIFResult][metafopy.VIFResult] when only the location or the scale part applies, otherwise an ``LSVIFResult`` holding the results of both
-        parts.
+        A [VIFResult][metafopy.VIFResult] when only the location or the scale part has predictors, otherwise an ``LSVIFResult`` holding the results of
+        both parts as ``beta`` and ``alpha`` (the scale part has ``attspec``).
 
     Raises:
-        metafopy.errors.InputError: an argument is invalid or the model has no predictors.
+        metafopy.errors.InputError: neither the location nor the scale model has predictors; ``sim`` is a number below 2; ``btt`` or ``att`` is
+            invalid (the intercept without ``intercept=True``, out of range or matching no coefficient); ``joinb`` or ``joina`` does not have one
+            label per column; ``parallel`` is not an accepted value or ``ncpus`` is below 1.
     """
     loc = not res.int_only
     scale = not res.Z_int_only

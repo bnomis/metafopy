@@ -57,16 +57,18 @@ class HettestResult:
 
     Attributes:
         statistic: Test statistic, one per requested test.
-        df: Degrees of freedom, one per test (NaN for goodness-of-fit tests).
-        pval: p-value, one per test.
-        method: Estimation method, ``'ML'`` or ``'REML'``.
-        test: The requested tests.
-        boot: Whether each test used the bootstrap.
-        iter: Number of bootstrap samples.
+        df: Degrees of freedom, one per test (``k - 1`` for the likelihood-ratio, Wald-type and score tests, NaN for goodness-of-fit tests).
+        pval: p-value, one per test (bootstrap p-value for the tests that used the bootstrap, else from the chi-square distribution).
+        method: Estimation method the tests are based on, ``'ML'`` or ``'REML'``.
+        test: The requested tests, in lower case.
+        boot: Whether each test used the bootstrap (always True for the goodness-of-fit tests).
+        iter: Number of bootstrap samples (1000 unless ``boot`` was a number).
         digits: Number of decimals of the printout.
-        tau2i: Estimated study-specific heterogeneity variances (None where they could not be estimated).
-        se_tau2i: Standard errors of ``tau2i`` (only with the Wald-type test).
-        statistic_boot: Bootstrapped statistics, one column per test (NaN for iterations that failed).
+        tau2i: Estimated study-specific heterogeneity variances of the saturated model, one per study (None if the iterations did not converge and no
+            test needed them).
+        se_tau2i: Standard errors of ``tau2i`` (only with the Wald-type test, else None).
+        statistic_boot: Bootstrapped statistics, an array with one row per sample and one column per test (None if no test used the bootstrap; NaN for
+            samples that failed, and for the tests that did not use the bootstrap). The first sample is the data itself.
     """
 
     statistic: FloatArray
@@ -338,36 +340,43 @@ def hettest(
     R reference page: <https://wviechtb.github.io/metafor/reference/hettest.html>.
 
     Args:
-        x: Effect size estimates (an array, or a column name of ``data``), or a random-effects model without moderators fitted by ML or REML.
-        vi: Sampling variances (array or column name). Ignored if ``x`` is a model.
-        sei: Standard errors, instead of ``vi`` (array or column name). Ignored if ``x`` is a model.
-        subset: Which studies to use: a boolean array or 0-based indices. Ignored if ``x`` is a model.
+        x: Effect size estimates (an array, or a column name of ``data``), or a random-effects model without moderators (``rma_uni``), normally fitted
+            by ML or REML. For a model fitted with another method a warning is given and the test is based on ``method``. Models with moderators and
+            other classes of model raise an error.
+        vi: Sampling variances (array or column name). Ignored (with a warning) if ``x`` is a model.
+        sei: Standard errors, instead of ``vi`` (array or column name). Ignored (with a warning) if ``x`` is a model.
+        subset: Which studies to use: a boolean array or 0-based indices. Ignored (with a warning) if ``x`` is a model.
         data: Data frame holding the variables named in ``x``, ``vi`` and ``sei``.
-        method: ``'REML'`` (default) or ``'ML'``. Ignored if ``x`` is a model, whose own method is used.
+        method: ``'REML'`` (default) or ``'ML'`` (case-sensitive; anything else raises ``InputError``). Ignored (with a warning) if ``x`` is a model
+            fitted by ML or REML, whose own method is used.
         test: One test or a sequence of tests (case insensitive): ``'score'`` (default), ``'lrt'`` (likelihood ratio), ``'wald'``, or the goodness-of-fit
             tests of the Pearson residuals ``'ksn'``, ``'ksx2'``, ``'adn'`` and ``'adx2'`` (Kolmogorov-Smirnov and Anderson-Darling tests of normality and
             of the chi-square distribution of the squared residuals). The goodness-of-fit tests always bootstrap.
-        boot: ``True`` bootstraps with 1000 samples, a number sets the number of samples, ``False`` uses the chi-square approximation. May be a sequence,
-            one per test.
+        boot: ``True`` bootstraps with 1000 samples, a number sets the number of samples (and bootstraps every test), ``False`` uses the chi-square
+            approximation with ``k - 1`` degrees of freedom. May be a sequence of bools, one per test (or one for all). The goodness-of-fit tests always
+            bootstrap.
         progbar: Print a progress bar to stderr during the bootstrap. Unlike metafor, off by default.
-        digits: Number of decimals of the printout. Default: the ``digits`` option, else 4.
-        control: Mapping of control values: ``tau2i_init`` (starting values), ``threshold`` (convergence threshold, ``1e-8``) and ``maxiter`` (``1000``).
-            Not used if ``x`` is a model, as in metafor.
-        seed: Seed for the bootstrap. Default: the generator of [set_seed][metafopy.set_seed].
-        mom: Estimate the ``tau^2_i`` by the method of moments.
+        digits: Number of decimals of the printout. Default: the ``digits`` option, else that of the model ``x`` (4 for a vector).
+        control: Mapping of control values (names written with ``.`` or ``_``): ``tau2i_init`` (starting values of the ``tau^2_i``: one value or one per
+            study, not negative; default: the ``tau^2`` of the null model, but at least 0.01), ``threshold`` (convergence threshold, ``1e-8``) and
+            ``maxiter`` (``1000``). Not used if ``x`` is a model, as in metafor. Names must be given in full (metafor accepts partial names).
+        seed: Seed for the bootstrap: it re-seeds the generator of [set_seed][metafopy.set_seed], as ``set.seed(seed)`` does in R, before the samples
+            are drawn. Default: continue with that generator.
+        mom: Estimate the ``tau^2_i`` by the method of moments (``max(0, e_i^2 / (1 - h_i) - v_i)``).
         model: For a vector ``x``: an intercept-only model already fitted to the same data, used as the null model instead of fitting it again (metafor's
             undocumented argument).
-        na_action: As R's ``na.action``: studies with missing values in a vector ``x`` are omitted with a warning, except for ``'fail'``, which raises. No
-            effect for a fitted model.
+        na_action: As R's ``na.action``: studies with missing values in a vector ``x`` are omitted with a warning (``'omit'``, ``'exclude'`` and
+            ``'pass'`` act alike), except for ``'fail'``, which raises. No effect for a fitted model.
         verbose: Read by metafor but without effect there as well; no effect here.
 
     Returns:
         A [HettestResult][metafopy.HettestResult] with one entry per requested test in ``statistic``, ``df``, ``pval``, ``test`` and ``boot``, plus
-        ``tau2i`` and the bootstrapped statistics.
+        ``tau2i``, ``se_tau2i`` (Wald-type test) and the bootstrapped statistics ``statistic_boot``.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid, the null model or the ``tau^2_i`` could not be estimated, or studies are missing
-            and ``na_action='fail'``.
+        metafopy.errors.InputError: an argument or the data is invalid (unknown ``test``, ``method`` or ``control`` entry, wrong length of ``boot`` or
+            ``tau2i_init``, ``k <= 1``, a model with moderators), the null model or the ``tau^2_i`` could not be estimated, or studies are missing and
+            ``na_action='fail'``.
         metafopy.errors.NotSupportedError: ``x`` is a model of a class the test is not available for.
     """
     metafopy.methods.common.check_na_action(na_action)

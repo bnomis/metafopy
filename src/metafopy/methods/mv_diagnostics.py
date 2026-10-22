@@ -549,15 +549,16 @@ def rstandard_rma_mv(
     argument, as metafor gives only marginal residuals for ``rma.mv`` fits.
 
     R source: <https://github.com/wviechtb/metafor/blob/master/R/rstandard.rma.mv.r>; reference page:
-    <https://wviechtb.github.io/metafor/reference/rstandard.html>.
+    <https://wviechtb.github.io/metafor/reference/residuals.rma.html>.
 
     Args:
         model: Model fitted by [rma_mv][metafopy.rma_mv] (not a robust fit).
-        digits: Number of decimals of the printout.
+        digits: Number of decimals of the printout (default 4; the digits of the model are not used).
         cluster: A column name of the data or a vector with one value per row of the original data. With it the residuals of each cluster are also
-            combined (statistic ``X2 = e' Var(e)^-1 e``). Default: none.
+            combined (statistic ``X2 = e' Var(e)^-1 e``, NaN if the cluster's variance matrix is not positive definite). Default: none.
         na_action: What to do with studies left out of the fit because of missing values: ``'omit'`` (default) drops them, ``'exclude'`` and ``'pass'``
-            keep one row per study with NaN for those left out, ``'fail'`` raises.
+            keep one row per study with NaN for those left out, ``'fail'`` raises an InputError if there are any. Corresponds to R's
+            ``na.action`` option.
 
     Returns:
         A [ResidualResult][metafopy.ResidualResult] with the residuals ``resid``, their standard errors ``se`` and the standardised values ``z``, labelled
@@ -565,7 +566,8 @@ def rstandard_rma_mv(
         observation (``obs``) and per cluster, with each cluster's ``X2`` statistic.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InputError: ``cluster`` cannot be found, has the wrong length or has missing values; ``na_action`` is not valid, or is ``'fail'``
+            and studies were left out of the fit.
         metafopy.errors.NotSupportedError: the model was passed through [robust][metafopy.robust].
     """
     x = model

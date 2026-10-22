@@ -36,8 +36,10 @@ class LSProfileResult:
     """Profile log-likelihood of one scale coefficient.
 
     ``alpha`` holds the grid and ``ll`` the log-likelihoods (the REML ones for REML fits); ``beta``, ``ci_lb`` and
-    ``ci_ub`` hold the location coefficients and their CI bounds at each grid value, ``vc`` the estimate of the
-    coefficient and ``maxll`` the log-likelihood of the fitted model. ``position`` is the 0-based coefficient position.
+    ``ci_ub`` hold the location coefficients and their CI bounds at each grid value (one row per grid value), ``ylim`` the range of the
+    log-likelihood for the plot, ``vc`` the estimate of the coefficient, ``maxll`` the log-likelihood of the fitted model and ``exp`` whether ``ll`` and
+    ``maxll`` are exponentiated. ``position`` is the 0-based coefficient position and ``alphas`` the number of scale coefficients. Unlike
+    [ProfileResult][metafopy.ProfileResult] it has no ``tau2``, ``I2`` or ``H2``.
     """
 
     alpha: FloatArray
@@ -119,37 +121,45 @@ def profile_rma_ls(
     Without ``alpha`` every estimated scale coefficient is profiled and a list is returned (a single result if there is one). ``xlim`` defaults to the
     estimate plus and minus 2.576 standard errors, limited by ``alpha_min`` and ``alpha_max`` of the control settings.
 
-    R source: <https://github.com/wviechtb/metafor/blob/master/R/profile.rma.uni.r>; reference page:
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/profile.rma.ls.r>; reference page:
     <https://wviechtb.github.io/metafor/reference/profile.rma.html>.
 
     Args:
         fitted: Location-scale model fitted by [rma_uni][metafopy.rma_uni] with ``scale``.
-        alpha: 0-based position of the scale coefficient to profile. Default: all estimated scale coefficients.
+        alpha: 0-based position of the scale coefficient to profile (0 is the first, usually the intercept; metafor counts from 1). Default: all
+            estimated scale coefficients.
         xlim: Range ``(lower, upper)`` of the profiled values of the coefficient. Default: the estimate +- 2.576 standard errors, limited by the control
             settings.
         ylim: Range ``(lower, upper)`` of the profile log-likelihood stored in the result (and drawn by the plot). Default: the range of the profile and
             the maximum.
-        steps: Number of equally spaced values in ``xlim`` to profile over (at least 2), or the array of values themselves.
+        steps: Number of equally spaced values in ``xlim`` to profile over (a single number, at least 2), or a sequence of two or more values to profile
+            at (then ``xlim`` defaults to their range). Missing values are not allowed.
         lltol: Tolerance when checking whether a profiled log-likelihood exceeds that of the fitted model (a warning is given if it does).
-        exp: Report the likelihood instead of the log-likelihood (exponentiate it).
-        progbar: Print a progress bar to stderr while the models of the grid are fitted (metafor's default is ``TRUE``).
-        parallel: Parallel fitting of the grid: ``'no'`` (default), ``'snow'`` or ``'multicore'``; both use a process pool. The result equals that of the
-            serial run.
-        ncpus: Number of worker processes when ``parallel`` is not ``'no'``.
+        exp: Report the likelihood instead of the log-likelihood (exponentiate it; ``ylim`` is then not widened by 0.1).
+        progbar: Print a progress bar to stderr while the models of the grid are fitted (default False; metafor's default is ``TRUE``).
+        parallel: Parallel fitting of the grid: ``'no'`` (default), ``'snow'`` or ``'multicore'``; both use a process pool ('multicore' forks the
+            workers where the platform allows). As in metafor, ``'no'`` with ``ncpus > 1`` (or with ``cl``) is ``'snow'``, and ``'snow'`` or
+            ``'multicore'`` with ``ncpus < 2`` and no ``cl`` runs serially. The result equals that of the serial run. Any other value raises
+            an InputError.
+        ncpus: Number of worker processes (at least 1).
         cl: Executor to run the fits on instead of creating a process pool of ``ncpus`` workers.
-        plot: Draw the profile with [plot_profile][metafopy.plot_profile] (metafor's default is ``TRUE``). Several profiles are drawn in a grid of panels.
+        plot: Draw the profile with [plot_profile][metafopy.plot_profile] (default False; metafor's default is ``TRUE``). Several profiles are drawn in a
+            grid of panels.
         ax: Matplotlib axes to draw on (with ``plot=True``). Default: a new figure.
-        sub1: Label the profile of the scale coefficients one lower in the plots, so that the intercept is ``alpha_0``.
+        sub1: Number the scale coefficients in the axis label and title of the plot from 0, so that the first is ``alpha[0]`` instead of ``alpha[1]``
+            (metafor's undocumented ``sub1`` argument).
         LB: Accepted as in metafor, where it chooses ``parLapplyLB``; it changes no result.
         **plot_args: Further keyword arguments passed on to [plot_profile][metafopy.plot_profile] (``pch``, ``cline``, ``refline``, ``xlab``, ``ylab``,
-            ``main``, ``log``, ``cex``, ``lwd``), as metafor's ``...`` is to ``plot.profile.rma``.
+            ``main``, ``log``, ``cex``, ``lwd``), as metafor's ``...`` is to ``plot.profile.rma``; they are not used (and not checked) with ``plot=False``.
 
     Returns:
-        The profile (an ``LSProfileResult``, with the fields of [ProfileResult][metafopy.ProfileResult] for the profiled coefficient), or a list of them
-        when several scale coefficients are profiled.
+        The profile (an ``LSProfileResult`` with the grid ``alpha``, the log-likelihoods ``ll``, ``beta``, ``ci_lb``, ``ci_ub``, ``ylim``, ``vc``,
+        ``maxll`` and ``position``), or a list of them (a ``ProfileList``) when several scale coefficients are profiled.
 
     Raises:
-        metafopy.errors.InputError: an argument is invalid or the model has no such coefficient.
+        metafopy.errors.InputError: the model was fitted with ``optbeta=True`` or has no estimated scale coefficient; ``alpha`` is out of range or
+            fixed; ``steps`` has missing values or is a single number below 2; ``xlim`` or ``ylim`` does not have length 2; ``parallel`` is not one
+            of the accepted values or ``ncpus`` is below 1.
     """
     x = fitted
     parallel = metafopy.core.parallel.resolve_parallel(parallel, ncpus, cl)

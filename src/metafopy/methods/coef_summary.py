@@ -84,10 +84,11 @@ def coef_summary(object: typing.Any, type: typing.Literal['beta', 'alpha', 'delt
     table is returned.
 
     Args:
-        object: The fitted model.
+        object: The fitted model (also the result of [permutest][metafopy.permutest], which gives its table with the permutation p-values).
         type: ``'beta'`` gives the table of the (location) coefficients of any fit, ``'alpha'`` that of the scale coefficients of a location-scale model
-            and ``'delta'`` that of the selection parameters of a selection model; as in R, ``'alpha'`` or ``'delta'`` for a fit without that part gives
-            the table of the coefficients. Default: all tables of the model (a dict for models with more than one).
+            and ``'delta'`` that of the selection parameters of a selection model. As in R, any other value is not an error: ``'alpha'`` or ``'delta'``
+            for a fit without that part gives what ``None`` gives (the table of the coefficients, or the dict for a location-scale or selection model).
+            Default: all tables of the model (a dict for models with more than one).
 
     Returns:
         A data frame with the columns ``estimate``, ``se``, ``zval`` (``tval`` and ``df`` when the t distribution is used), ``pval``, ``ci.lb`` and
