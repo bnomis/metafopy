@@ -107,7 +107,23 @@ def rstandard_rma_ls(
     *,
     na_action: metafopy.methods.common.NAAction = 'omit',
 ) -> metafopy.methods.influence.ResidualResult:
-    """Standardised residuals of a location-scale fit; ``type`` is ``'marginal'`` or ``'conditional'``.
+    """Standardised residuals of a location-scale fit (metafor's ``rstandard.rma.ls``).
+
+    With ``type='marginal'`` the marginal residuals are divided by their standard errors, with ``type='conditional'`` the conditional ones.
+
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/rstandard.rma.uni.r>; reference page:
+    <https://wviechtb.github.io/metafor/reference/rstandard.html>.
+
+    Args:
+        model: Location-scale model fitted by [rma_uni][metafopy.rma_uni] with ``scale``.
+        digits: Number of decimals of the printout.
+        type: ``'marginal'`` (default) for marginal residuals or ``'conditional'`` for conditional residuals.
+        na_action: What to do with studies left out of the fit because of missing values: ``'omit'`` (default) drops them, ``'exclude'`` and ``'pass'``
+            keep one row per study with NaN for those left out, ``'fail'`` raises.
+
+    Returns:
+        A [ResidualResult][metafopy.ResidualResult] with the residuals ``resid``, their standard errors ``se`` and the standardised values ``z``, labelled
+        with the study labels.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.

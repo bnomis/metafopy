@@ -43,10 +43,21 @@ CONF_TESTS = ('z', 'naive-t', 'naive-tp', 'Satterthwaite')
 
 @functools.singledispatch
 def robust(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> typing.Any:
-    """Cluster-robust inference for a fitted model.
+    """Cluster-robust (sandwich) inference for a fitted model (metafor's ``robust``).
+
+    This is a single-dispatch function: the implementation is chosen by the class of ``model``. See
+    [robust_rma_uni][metafopy.methods.robust.robust_rma_uni] and [robust_rma_mv][metafopy.methods.robust.robust_rma_mv].
+
+    Args:
+        model: The fitted model. Its class selects the implementation.
+        *args: Positional arguments passed on to the implementation (``cluster`` first).
+        **kwargs: Keyword arguments passed on to the implementation.
+
+    Returns:
+        A copy of the model with cluster-robust standard errors, tests and confidence intervals.
 
     Raises:
-        metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
+        metafopy.errors.ArgumentError: there is no implementation for the class of ``model``, or an argument has the wrong type or is not accepted.
     """
     raise metafopy.errors.ArgumentError(f'robust() not implemented for {type(model).__name__}')
 
@@ -256,18 +267,36 @@ def robust_rma_uni(
     digits: int | collections.abc.Mapping[str, int] | None = None,
     verbose: bool = False,
 ) -> metafopy.models.rma_uni.RMAResult:
-    """Cluster-robust inference for an ``rma.uni`` fit.
+    """Cluster-robust inference for an [rma_uni][metafopy.rma_uni] fit (metafor's ``robust.rma.uni``).
 
-    ``digits`` is the number of decimals the printout of the result uses (default: the ``digits`` option, else that of ``model``).
+    The variance-covariance matrix of the coefficients is replaced by a sandwich estimator that is robust to correlated errors within clusters; tests and
+    confidence intervals use it.
 
-    ``cluster`` is a column name of the data given to the model or a vector with one value per original row. ``adjust`` is
-    ``True`` (CR1: ``n/(n-p)`` factor), ``False`` (CR0), ``'Stata1'``/``'Stata'`` or ``'Stata2'``. With ``club_sandwich=True``,
-    ``vcov`` (``CR0``, ``CR1``, ``CR1p``, ``CR1S``, ``CR2``, ``CR3``; default ``CR2``), ``coef_test`` (``z``, ``naive-t``,
-    ``naive-tp``, ``Satterthwaite``, ``saddlepoint``; the latter gives p-values only, the confidence intervals then use
-    ``Satterthwaite`` unless ``conf_test`` says otherwise), ``conf_test`` (as ``coef_test`` without ``saddlepoint``) and
-    ``wald_test`` (``chi-sq``, ``Naive-F``, ``Naive-Fp``, ``HTA``, ``HTB``, ``HTZ``, ``EDF``, ``EDT``) select the method.
-    ``clubSandwich`` is R's spelling of ``club_sandwich``; giving both with different values is an error. ``verbose`` is accepted for metafor's printing of
-    the details of a failing ``clubSandwich`` computation and has no effect here.
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/robust.rma.r>; reference page:
+    <https://wviechtb.github.io/metafor/reference/robust.html>.
+
+    Args:
+        model: Model fitted by [rma_uni][metafopy.rma_uni].
+        cluster: The clustering variable: the name of a column of the data given to the model, or a vector with one value per row of the original data
+            (before subsetting and removal of missing values).
+        adjust: Small-sample adjustment of the cluster-robust variance-covariance matrix: ``True`` (default; CR1, multiplies by ``n/(n-p)``), ``False``
+            (CR0), ``'Stata1'`` (or ``'Stata'``) or ``'Stata2'``.
+        club_sandwich: Use the ``clubSandwich`` approach (bias-reduced linearization, Satterthwaite degrees of freedom) for the cluster-robust tests and
+            intervals instead of the plain sandwich estimator. Default: False.
+        vcov: With ``club_sandwich``: the variance estimator, ``'CR0'``, ``'CR1'``, ``'CR1p'``, ``'CR1S'``, ``'CR2'`` or ``'CR3'``. Default: ``'CR2'``.
+        coef_test: With ``club_sandwich``: the test of the coefficients, ``'z'``, ``'naive-t'``, ``'naive-tp'``, ``'Satterthwaite'`` or ``'saddlepoint'``.
+            The saddlepoint test gives p-values only; the confidence intervals then use ``conf_test`` or ``Satterthwaite``. Default: ``Satterthwaite``.
+        conf_test: With ``club_sandwich``: the method for the confidence intervals, as ``coef_test`` without ``'saddlepoint'``. Default: that of
+            ``coef_test``.
+        wald_test: With ``club_sandwich``: the omnibus test, ``'chi-sq'``, ``'Naive-F'``, ``'Naive-Fp'``, ``'HTA'``, ``'HTB'``, ``'HTZ'``, ``'EDF'`` or
+            ``'EDT'``. Default: ``'HTZ'``.
+        clubSandwich: R's spelling of ``club_sandwich``. Giving both with different values is an error.
+        digits: Number of decimals of the printout of the result. Default: the ``digits`` option, else that of the model.
+        verbose: Accepted for metafor's printing of the details of a failing ``clubSandwich`` computation; it has no effect here.
+
+    Returns:
+        The model with the cluster-robust variance-covariance matrix, standard errors, tests and confidence intervals, an [RMAResult][metafopy.RMAResult]
+        of the same form as the input.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
@@ -377,9 +406,37 @@ def robust_rma_mv(
     digits: int | collections.abc.Mapping[str, int] | None = None,
     verbose: bool = False,
 ) -> metafopy.models.mv_result.RMAMVResult:
-    """Cluster-robust inference for an ``rma.mv`` fit; the arguments (``digits`` too) are those of the ``rma.uni`` method.
+    """Cluster-robust inference for an [rma_mv][metafopy.rma_mv] fit (metafor's ``robust.rma.mv``); the arguments are those of
+    [robust_rma_uni][metafopy.methods.robust.robust_rma_uni].
 
-    With ``club_sandwich=True`` (or R's spelling ``clubSandwich``) the random effects must be nested within the clusters and ``R=`` matrices are not allowed.
+    With ``club_sandwich=True`` (or R's spelling ``clubSandwich``) the random effects must be nested within the clusters and ``R=`` matrices are not
+    allowed.
+
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/robust.rma.r>; reference page:
+    <https://wviechtb.github.io/metafor/reference/robust.html>.
+
+    Args:
+        model: Model fitted by [rma_mv][metafopy.rma_mv].
+        cluster: The clustering variable: the name of a column of the data given to the model, or a vector with one value per row of the original data
+            (before subsetting and removal of missing values).
+        adjust: Small-sample adjustment of the cluster-robust variance-covariance matrix: ``True`` (default; CR1, multiplies by ``n/(n-p)``), ``False``
+            (CR0), ``'Stata1'`` (or ``'Stata'``) or ``'Stata2'``.
+        club_sandwich: Use the ``clubSandwich`` approach (bias-reduced linearization, Satterthwaite degrees of freedom) for the cluster-robust tests and
+            intervals instead of the plain sandwich estimator. Default: False.
+        vcov: With ``club_sandwich``: the variance estimator, ``'CR0'``, ``'CR1'``, ``'CR1p'``, ``'CR1S'``, ``'CR2'`` or ``'CR3'``. Default: ``'CR2'``.
+        coef_test: With ``club_sandwich``: the test of the coefficients, ``'z'``, ``'naive-t'``, ``'naive-tp'``, ``'Satterthwaite'`` or ``'saddlepoint'``.
+            The saddlepoint test gives p-values only; the confidence intervals then use ``conf_test`` or ``Satterthwaite``. Default: ``Satterthwaite``.
+        conf_test: With ``club_sandwich``: the method for the confidence intervals, as ``coef_test`` without ``'saddlepoint'``. Default: that of
+            ``coef_test``.
+        wald_test: With ``club_sandwich``: the omnibus test, ``'chi-sq'``, ``'Naive-F'``, ``'Naive-Fp'``, ``'HTA'``, ``'HTB'``, ``'HTZ'``, ``'EDF'`` or
+            ``'EDT'``. Default: ``'HTZ'``.
+        clubSandwich: R's spelling of ``club_sandwich``. Giving both with different values is an error.
+        digits: Number of decimals of the printout of the result. Default: the ``digits`` option, else that of the model.
+        verbose: Accepted for metafor's printing of the details of a failing ``clubSandwich`` computation; it has no effect here.
+
+    Returns:
+        The model with the cluster-robust variance-covariance matrix, standard errors, tests and confidence intervals, an
+        [RMAMVResult][metafopy.RMAMVResult] of the same form as the input.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.

@@ -114,17 +114,39 @@ def profile_rma_ls(
     LB: bool = False,
     **plot_args: typing.Any,
 ) -> LSProfileResult | list[LSProfileResult]:
-    """Profile the likelihood over a scale coefficient (``alpha``, a 0-based position) on ``steps`` equally spaced values in ``xlim``.
+    """Profile the likelihood of a location-scale model over a scale coefficient (metafor's ``profile.rma.ls``).
 
-    ``steps`` may also be the vector of values. Without ``alpha`` every estimated scale coefficient is profiled and a list is
-    returned (a single result if there is one). ``xlim`` defaults to the estimate plus and minus 2.576 standard errors,
-    limited by ``alpha_min`` and ``alpha_max`` of the control settings. As in metafor, ``parallel`` (``'snow'`` or
-    ``'multicore'``) refits the models in a process pool of ``ncpus`` workers (or on the executor ``cl``) and
-    ``progbar=True`` prints a progress bar to stderr; the result equals that of the serial run. ``plot=True`` draws the profile(s) with
-    :func:`metafopy.plot.plot_profile` (metafor's default is ``plot=TRUE``), several in a grid of panels. Further keyword arguments (``pch``,
-    ``cline``, ``refline``, ``xlab``, ``ylab``, ``main``, ``log``, ``cex``, ``lwd``) are passed on to :func:`metafopy.plot.plot_profile`, as metafor's
-    ``...`` is to ``plot.profile.rma``. ``sub1=True`` labels the profile of the scale coefficients one lower in the plots (so that the
-    intercept is ``alpha_0``); ``LB`` is accepted as in metafor and changes nothing.
+    Without ``alpha`` every estimated scale coefficient is profiled and a list is returned (a single result if there is one). ``xlim`` defaults to the
+    estimate plus and minus 2.576 standard errors, limited by ``alpha_min`` and ``alpha_max`` of the control settings.
+
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/profile.rma.uni.r>; reference page:
+    <https://wviechtb.github.io/metafor/reference/profile.rma.html>.
+
+    Args:
+        fitted: Location-scale model fitted by [rma_uni][metafopy.rma_uni] with ``scale``.
+        alpha: 0-based position of the scale coefficient to profile. Default: all estimated scale coefficients.
+        xlim: Range ``(lower, upper)`` of the profiled values of the coefficient. Default: the estimate +- 2.576 standard errors, limited by the control
+            settings.
+        ylim: Range ``(lower, upper)`` of the profile log-likelihood stored in the result (and drawn by the plot). Default: the range of the profile and
+            the maximum.
+        steps: Number of equally spaced values in ``xlim`` to profile over (at least 2), or the array of values themselves.
+        lltol: Tolerance when checking whether a profiled log-likelihood exceeds that of the fitted model (a warning is given if it does).
+        exp: Report the likelihood instead of the log-likelihood (exponentiate it).
+        progbar: Print a progress bar to stderr while the models of the grid are fitted (metafor's default is ``TRUE``).
+        parallel: Parallel fitting of the grid: ``'no'`` (default), ``'snow'`` or ``'multicore'``; both use a process pool. The result equals that of the
+            serial run.
+        ncpus: Number of worker processes when ``parallel`` is not ``'no'``.
+        cl: Executor to run the fits on instead of creating a process pool of ``ncpus`` workers.
+        plot: Draw the profile with [plot_profile][metafopy.plot_profile] (metafor's default is ``TRUE``). Several profiles are drawn in a grid of panels.
+        ax: Matplotlib axes to draw on (with ``plot=True``). Default: a new figure.
+        sub1: Label the profile of the scale coefficients one lower in the plots, so that the intercept is ``alpha_0``.
+        LB: Accepted as in metafor, where it chooses ``parLapplyLB``; it changes no result.
+        **plot_args: Further keyword arguments passed on to [plot_profile][metafopy.plot_profile] (``pch``, ``cline``, ``refline``, ``xlab``, ``ylab``,
+            ``main``, ``log``, ``cex``, ``lwd``), as metafor's ``...`` is to ``plot.profile.rma``.
+
+    Returns:
+        The profile (an ``LSProfileResult``, with the fields of [ProfileResult][metafopy.ProfileResult] for the profiled coefficient), or a list of them
+        when several scale coefficients are profiled.
 
     Raises:
         metafopy.errors.InputError: an argument is invalid or the model has no such coefficient.

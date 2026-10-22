@@ -454,10 +454,22 @@ def influence_core(x: metafopy.models.rma_uni.RMAResult, btt: metafopy.models.rm
 
 @functools.singledispatch
 def rstudent(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> ResidualResult:
-    """Externally standardised (studentised deleted) residuals; see :func:`_rstudent_rma_uni`.
+    """Externally standardised (studentised deleted) residuals of a fitted model (metafor's ``rstudent``).
+
+    This is a single-dispatch function: the implementation is chosen by the class of ``model``. See
+    [rstudent_rma_uni][metafopy.methods.influence.rstudent_rma_uni], [rstudent_rma_mv][metafopy.methods.mv_diagnostics.rstudent_rma_mv] and
+    [rstudent_fixed_binary][metafopy.methods.binary.rstudent_fixed_binary].
+
+    Args:
+        model: The fitted model. Its class selects the implementation.
+        *args: Positional arguments passed on to the implementation (``digits`` first).
+        **kwargs: Keyword arguments passed on to the implementation.
+
+    Returns:
+        The residuals, a [ResidualResult][metafopy.ResidualResult] (a cluster result for ``rma_mv`` with ``cluster``).
 
     Raises:
-        metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
+        metafopy.errors.ArgumentError: there is no implementation for the class of ``model``, or an argument has the wrong type or is not accepted.
     """
     raise metafopy.errors.ArgumentError(f'rstudent() not implemented for {type(model).__name__}')
 
@@ -470,9 +482,24 @@ def rstudent_rma_uni(
     na_action: metafopy.methods.common.NAAction = 'omit',
     progbar: bool = False,
 ) -> ResidualResult:
-    """Deleted residuals ``y_i - x_i' beta_(-i)`` with their standard errors and z-values.
+    """Externally standardised residuals of an [rma_uni][metafopy.rma_uni] fit (metafor's ``rstudent.rma.uni``).
 
-    ``progbar=True`` prints a progress bar to stderr while the studies are left out in turn.
+    The deleted residual ``y_i - x_i' beta_(-i)`` compares each study with the prediction from the model fitted without it; its standard error adds the
+    sampling variance, ``tau^2`` and the variance of the prediction.
+
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/rstudent.rma.uni.r>; reference page:
+    <https://wviechtb.github.io/metafor/reference/rstudent.html>.
+
+    Args:
+        model: Model fitted by [rma_uni][metafopy.rma_uni].
+        digits: Number of decimals of the printout. Default: the ``digits`` option, else that of the model.
+        na_action: What to do with studies left out of the fit because of missing values: ``'omit'`` (default) drops them, ``'exclude'`` and ``'pass'``
+            keep one row per study with NaN for those left out, ``'fail'`` raises.
+        progbar: Print a progress bar to stderr while the studies are left out in turn.
+
+    Returns:
+        A [ResidualResult][metafopy.ResidualResult] with the deleted residuals ``resid``, their standard errors ``se`` and the standardised values ``z``,
+        labelled with the study labels.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
@@ -594,10 +621,22 @@ def dfbetas_rma_uni(
 
 @functools.singledispatch
 def rstandard(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> ResidualResult:
-    """Internally standardised residuals; see :func:`_rstandard_rma_uni`.
+    """Internally standardised residuals of a fitted model (metafor's ``rstandard``).
+
+    This is a single-dispatch function: the implementation is chosen by the class of ``model``. See
+    [rstandard_rma_uni][metafopy.methods.influence.rstandard_rma_uni], [rstandard_rma_mv][metafopy.methods.mv_diagnostics.rstandard_rma_mv],
+    [rstandard_rma_ls][metafopy.methods.ls_resid.rstandard_rma_ls] and [rstandard_fixed_binary][metafopy.methods.binary.rstandard_fixed_binary].
+
+    Args:
+        model: The fitted model. Its class selects the implementation.
+        *args: Positional arguments passed on to the implementation (``digits`` first).
+        **kwargs: Keyword arguments passed on to the implementation.
+
+    Returns:
+        The residuals, a [ResidualResult][metafopy.ResidualResult] (a cluster result for ``rma_mv`` with ``cluster``).
 
     Raises:
-        metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
+        metafopy.errors.ArgumentError: there is no implementation for the class of ``model``, or an argument has the wrong type or is not accepted.
     """
     raise metafopy.errors.ArgumentError(f'rstandard() not implemented for {type(model).__name__}')
 
@@ -611,10 +650,28 @@ def rstandard_rma_uni(
     *,
     na_action: metafopy.methods.common.NAAction = 'omit',
 ) -> ResidualResult:
-    """Standardised residuals; ``type='marginal'`` uses the marginal residuals, ``'conditional'`` the conditional ones.
+    """Internally standardised residuals of an [rma_uni][metafopy.rma_uni] fit (metafor's ``rstandard.rma.uni``).
+
+    With ``type='marginal'`` the residuals ``y - X b`` are divided by the square roots of the diagonal of ``(I - H) M (I - H)'``, where ``M`` holds the
+    marginal variances; with ``type='conditional'`` the residuals are those from the BLUPs, divided by their conditional standard errors. Conditional
+    residuals are not available for models with non-standard weights.
+
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/rstandard.rma.uni.r>; reference page:
+    <https://wviechtb.github.io/metafor/reference/rstandard.html>.
+
+    Args:
+        model: Model fitted by [rma_uni][metafopy.rma_uni] (not a robust fit).
+        digits: Number of decimals of the printout. Default: the ``digits`` option, else that of the model.
+        type: ``'marginal'`` (default) for marginal residuals or ``'conditional'`` for conditional residuals.
+        na_action: What to do with studies left out of the fit because of missing values: ``'omit'`` (default) drops them, ``'exclude'`` and ``'pass'``
+            keep one row per study with NaN for those left out, ``'fail'`` raises.
+
+    Returns:
+        A [ResidualResult][metafopy.ResidualResult] with the residuals ``resid``, their standard errors ``se`` and the standardised values ``z``, labelled
+        with the study labels.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InputError: an argument or the data is invalid (for example an unknown ``type``).
     """
     metafopy.methods.common.check_na_action(na_action)
     x = model

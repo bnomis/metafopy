@@ -53,10 +53,20 @@ EPS = float(numpy.finfo(numpy.float64).eps)
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class HettestResult:
-    """Result of :func:`hettest`: one entry per requested test in ``statistic``, ``df`` (``NaN`` for goodness-of-fit tests), ``pval``, ``test``, ``boot``.
+    """Result of [hettest][metafopy.hettest]. ``summary()`` gives the printout of metafor's ``print.hettest``.
 
-    ``tau2i`` are the estimated study-specific heterogeneity variances (``None`` where they could not be estimated), ``se_tau2i`` their standard errors
-    (only with the Wald-type test) and ``statistic_boot`` the bootstrapped statistics, one column per test (``NaN`` for iterations that failed).
+    Attributes:
+        statistic: Test statistic, one per requested test.
+        df: Degrees of freedom, one per test (NaN for goodness-of-fit tests).
+        pval: p-value, one per test.
+        method: Estimation method, ``'ML'`` or ``'REML'``.
+        test: The requested tests.
+        boot: Whether each test used the bootstrap.
+        iter: Number of bootstrap samples.
+        digits: Number of decimals of the printout.
+        tau2i: Estimated study-specific heterogeneity variances (None where they could not be estimated).
+        se_tau2i: Standard errors of ``tau2i`` (only with the Wald-type test).
+        statistic_boot: Bootstrapped statistics, one column per test (NaN for iterations that failed).
     """
 
     statistic: FloatArray
@@ -319,22 +329,44 @@ def hettest(
     na_action: metafopy.methods.common.NAAction = 'omit',
     verbose: bool = False,
 ) -> HettestResult:
-    """Test for heteroscedastic heterogeneity in a random-effects model; ``x`` is a vector of estimates (with ``vi`` or ``sei``) or a model without moderators.
+    """Test for heteroscedastic heterogeneity in a random-effects model (metafor's ``hettest``).
 
-    ``test`` is one or more of ``'score'`` (default), ``'lrt'``, ``'wald'`` and the goodness-of-fit tests of the Pearson residuals ``'ksn'``, ``'ksx2'``,
-    ``'adn'`` and ``'adx2'``. The p-values come from a parametric bootstrap (``boot=True`` uses 1000 samples, a number sets the count; the
-    goodness-of-fit tests always bootstrap), the first sample being the data. ``method`` is ``'REML'`` (default) or ``'ML'``; for a model it is that of the
-    model. ``control`` takes ``tau2i_init``, ``threshold`` (1e-8) and ``maxiter`` (1000) and ``mom=True`` estimates the tau^2_i by the method of moments.
-    For a model, ``control`` is not used (as in metafor, which does not pass it on).
-    ``model`` is metafor's undocumented argument for a vector ``x``: an intercept-only model already fitted to the same data, used as the null model
-    instead of fitting it again (its ``beta`` and ``tau2`` and the log-likelihood of the ``method`` are used).
-    ``verbose`` is read by metafor and has no effect there either. Unlike metafor, ``progbar`` is off by default.
-    Without ``seed`` the bootstrap uses the generator of :func:`metafopy.set_seed`.
-    ``na_action`` stands for R's ``options(na.action=)``: studies with missing values in a vector of estimates are omitted with a warning, except for
-    ``'fail'``, which stops; it has no effect on a fitted model.
+    The standard random-effects model assumes that the heterogeneity of the true effects is homoscedastic; this tests that assumption against
+    study-specific ``tau^2_i`` values, with a likelihood-ratio, Wald-type or score test, or with goodness-of-fit tests of the Pearson residuals. P-values
+    come from a parametric bootstrap, the first sample being the data. Without ``seed`` the bootstrap uses the generator of [set_seed][metafopy.set_seed].
+
+    R reference page: <https://wviechtb.github.io/metafor/reference/hettest.html>.
+
+    Args:
+        x: Effect size estimates (an array, or a column name of ``data``), or a random-effects model without moderators fitted by ML or REML.
+        vi: Sampling variances (array or column name). Ignored if ``x`` is a model.
+        sei: Standard errors, instead of ``vi`` (array or column name). Ignored if ``x`` is a model.
+        subset: Which studies to use: a boolean array or 0-based indices. Ignored if ``x`` is a model.
+        data: Data frame holding the variables named in ``x``, ``vi`` and ``sei``.
+        method: ``'REML'`` (default) or ``'ML'``. Ignored if ``x`` is a model, whose own method is used.
+        test: One test or a sequence of tests (case insensitive): ``'score'`` (default), ``'lrt'`` (likelihood ratio), ``'wald'``, or the goodness-of-fit
+            tests of the Pearson residuals ``'ksn'``, ``'ksx2'``, ``'adn'`` and ``'adx2'`` (Kolmogorov-Smirnov and Anderson-Darling tests of normality and
+            of the chi-square distribution of the squared residuals). The goodness-of-fit tests always bootstrap.
+        boot: ``True`` bootstraps with 1000 samples, a number sets the number of samples, ``False`` uses the chi-square approximation. May be a sequence,
+            one per test.
+        progbar: Print a progress bar to stderr during the bootstrap. Unlike metafor, off by default.
+        digits: Number of decimals of the printout. Default: the ``digits`` option, else 4.
+        control: Mapping of control values: ``tau2i_init`` (starting values), ``threshold`` (convergence threshold, ``1e-8``) and ``maxiter`` (``1000``).
+            Not used if ``x`` is a model, as in metafor.
+        seed: Seed for the bootstrap. Default: the generator of [set_seed][metafopy.set_seed].
+        mom: Estimate the ``tau^2_i`` by the method of moments.
+        model: For a vector ``x``: an intercept-only model already fitted to the same data, used as the null model instead of fitting it again (metafor's
+            undocumented argument).
+        na_action: As R's ``na.action``: studies with missing values in a vector ``x`` are omitted with a warning, except for ``'fail'``, which raises. No
+            effect for a fitted model.
+        verbose: Read by metafor but without effect there as well; no effect here.
+
+    Returns:
+        A [HettestResult][metafopy.HettestResult] with one entry per requested test in ``statistic``, ``df``, ``pval``, ``test`` and ``boot``, plus
+        ``tau2i`` and the bootstrapped statistics.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid, the null model or the tau^2_i could not be estimated, or studies are missing
+        metafopy.errors.InputError: an argument or the data is invalid, the null model or the ``tau^2_i`` could not be estimated, or studies are missing
             and ``na_action='fail'``.
         metafopy.errors.NotSupportedError: ``x`` is a model of a class the test is not available for.
     """

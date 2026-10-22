@@ -78,9 +78,21 @@ def confint_fixed_binary(
     digits: int | None = None,
     parm: typing.Any = None,
 ) -> metafopy.methods.confint.ConfintResult:
-    """Wald-type confidence interval of the pooled effect (``confint.rma.mh`` / ``confint.rma.peto``); ``transf=True`` exponentiates.
+    """Wald-type confidence interval of the pooled effect of an [rma_mh][metafopy.rma_mh] or [rma_peto][metafopy.rma_peto] fit (metafor's ``confint.rma.mh``
+    and ``confint.rma.peto``).
 
-    ``digits`` is the number of decimals of the printout; ``parm`` is ignored with a warning, as in metafor.
+    See <https://wviechtb.github.io/metafor/reference/confint.rma.html>.
+
+    Args:
+        model: Model fitted by [rma_mh][metafopy.rma_mh] or [rma_peto][metafopy.rma_peto].
+        level: Confidence level in percent (``95`` is 95%). Default: the level of the model.
+        transf: Function applied to the estimate and bounds (for example ``numpy.exp``), or ``True`` to exponentiate. Default: none.
+        targs: Extra arguments for ``transf``.
+        digits: Number of decimals of the printout. Default: the ``digits`` option, else that of the model.
+        parm: Ignored, with a warning, as in metafor.
+
+    Returns:
+        A [ConfintResult][metafopy.ConfintResult] whose ``fixed`` table has the columns ``estimate``, ``ci.lb`` and ``ci.ub``.
     """
     metafopy.methods.confint.warn_parm(parm)
     alpha = model.level if level is None else metafopy.models.rma_uni.level_to_alpha(level)
@@ -128,7 +140,19 @@ def rstandard_fixed_binary(
     *,
     na_action: metafopy.methods.common.NAAction = 'omit',
 ) -> metafopy.methods.influence.ResidualResult:
-    """Standardised residuals ``(yi - beta) / sqrt(vi)`` of the individual tables."""
+    """Standardised residuals ``(yi - beta) / sqrt(vi)`` of the individual tables of an [rma_mh][metafopy.rma_mh] or [rma_peto][metafopy.rma_peto] fit
+    (metafor's ``rstandard.rma.mh`` and ``rstandard.rma.peto``).
+
+    Args:
+        model: Model fitted by [rma_mh][metafopy.rma_mh] or [rma_peto][metafopy.rma_peto].
+        digits: Number of decimals of the printout. Default: the ``digits`` option, else that of the model.
+        na_action: What to do with studies left out of the fit because of missing values: ``'omit'`` (default) drops them, ``'exclude'`` and ``'pass'``
+            keep one row per study with NaN for those left out, ``'fail'`` raises.
+
+    Returns:
+        A [ResidualResult][metafopy.ResidualResult] with the residuals ``resid``, their standard errors ``se`` and the standardised values ``z``, labelled
+        with the study labels.
+    """
     metafopy.methods.common.check_na_action(na_action)
     t = model.tables
     with numpy.errstate(all='ignore'):
@@ -146,9 +170,19 @@ def rstudent_fixed_binary(
     na_action: metafopy.methods.common.NAAction = 'omit',
     progbar: bool = False,
 ) -> metafopy.methods.influence.ResidualResult:
-    """Externally standardised residuals: each table is compared with the pooled estimate from the other tables.
+    """Externally standardised residuals of an [rma_mh][metafopy.rma_mh] or [rma_peto][metafopy.rma_peto] fit: each table is compared with the pooled
+    estimate from the other tables (metafor's ``rstudent.rma.mh`` and ``rstudent.rma.peto``).
 
-    ``progbar=True`` prints a progress bar to stderr.
+    Args:
+        model: Model fitted by [rma_mh][metafopy.rma_mh] or [rma_peto][metafopy.rma_peto].
+        digits: Number of decimals of the printout. Default: the ``digits`` option, else that of the model.
+        na_action: What to do with studies left out of the fit because of missing values: ``'omit'`` (default) drops them, ``'exclude'`` and ``'pass'``
+            keep one row per study with NaN for those left out, ``'fail'`` raises.
+        progbar: Print a progress bar to stderr while the tables are left out in turn.
+
+    Returns:
+        A [ResidualResult][metafopy.ResidualResult] with the deleted residuals ``resid``, their standard errors ``se`` and the standardised values ``z``,
+        labelled with the study labels.
     """
     metafopy.methods.common.check_na_action(na_action)
     t = model.tables

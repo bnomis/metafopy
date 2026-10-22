@@ -52,13 +52,33 @@ class ProfileList(list[typing.Any]):
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class ProfileResult:
-    """Profile log-likelihood of ``tau^2`` (or ``tau`` with ``sqrt=True``).
+    """Profile log-likelihood of ``tau^2`` (or ``tau`` with ``sqrt=True``), as returned by [profile][metafopy.profile]. ``to_frame()`` gives the grid and the
+    log-likelihoods.
 
-    ``tau2`` holds the grid (``tau`` values for ``sqrt=True``), ``ll`` the
-    (log-)likelihoods, ``beta``/``ci_lb``/``ci_ub`` the coefficient estimates and CI bounds
-    at each grid value, ``vc`` the model's own estimate and ``maxll`` its log-likelihood. With ``pred=True`` the predicted values and their
-    interval bounds at each grid value are in ``pred``, ``pred_ci_lb``, ``pred_ci_ub``, ``pred_pi_lb`` and ``pred_pi_ub`` and with ``blup=True``
-    the BLUPs in ``blup``, ``blup_se``, ``blup_pi_lb`` and ``blup_pi_ub`` (one row per prediction or study and one column per grid value).
+    Attributes:
+        tau2: The grid of profiled values (``tau`` values for ``sqrt=True``; the same values are in ``tau``).
+        ll: Profile (log-)likelihood at each grid value.
+        beta: Coefficient estimates at each grid value (one row per grid value, one column per coefficient).
+        ci_lb: Lower confidence interval bounds of the coefficients at each grid value.
+        ci_ub: Upper confidence interval bounds of the coefficients at each grid value.
+        xlim: Range of the profiled values.
+        ylim: Range of the (log-)likelihood.
+        method: Estimation method of the model.
+        vc: The model's own estimate of the profiled parameter.
+        maxll: Log-likelihood of the fitted model.
+        I2: Estimates of ``I^2`` at each grid value.
+        H2: Estimates of ``H^2`` at each grid value.
+        exp: Whether ``ll`` is the likelihood rather than the log-likelihood.
+        sqrt: Whether the profile is over ``tau`` rather than ``tau^2``.
+        pred: With ``pred=True``: predicted values at each grid value (one row per prediction, one column per grid value).
+        pred_ci_lb: With ``pred=True``: lower confidence bounds of the predictions.
+        pred_ci_ub: With ``pred=True``: upper confidence bounds of the predictions.
+        pred_pi_lb: With ``pred=True``: lower prediction interval bounds.
+        pred_pi_ub: With ``pred=True``: upper prediction interval bounds.
+        blup: With ``blup=True``: BLUPs at each grid value (one row per study).
+        blup_se: With ``blup=True``: standard errors of the BLUPs.
+        blup_pi_lb: With ``blup=True``: lower prediction interval bounds of the BLUPs.
+        blup_pi_ub: With ``blup=True``: upper prediction interval bounds of the BLUPs.
     """
 
     tau2: FloatArray
@@ -120,10 +140,22 @@ class ProfileResult:
 
 @functools.singledispatch
 def profile(fitted: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> ProfileResult:
-    """Profile likelihood of a variance component; see :func:`_profile_rma_uni`.
+    """Profile likelihood of a variance component of a fitted model (metafor's ``profile``).
+
+    This is a single-dispatch function: the implementation is chosen by the class of ``fitted``. See
+    [profile_rma_uni][metafopy.methods.profile.profile_rma_uni], [profile_rma_ls][metafopy.methods.ls_profile.profile_rma_ls],
+    [profile_rma_mv][metafopy.methods.mv_profile.profile_rma_mv]; selection models ([selmodel][metafopy.selmodel]) are also supported.
+
+    Args:
+        fitted: The fitted model. Its class selects the implementation.
+        *args: Positional arguments passed on to the implementation.
+        **kwargs: Keyword arguments passed on to the implementation.
+
+    Returns:
+        The profile, a [ProfileResult][metafopy.ProfileResult] (or a subclass, or a list of them).
 
     Raises:
-        metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
+        metafopy.errors.ArgumentError: there is no implementation for the class of ``fitted``, or an argument has the wrong type or is not accepted.
     """
     raise metafopy.errors.ArgumentError(f'profile() not implemented for {type(fitted).__name__}')
 
@@ -186,21 +218,45 @@ def profile_rma_uni(
     LB: bool = False,
     **plot_args: typing.Any,
 ) -> ProfileResult:
-    """Profile the likelihood over ``tau^2`` (``steps`` equally spaced values in ``xlim``, or the values given as ``steps``).
-    ``LB`` is accepted as in metafor, where it picks ``parLapplyLB`` and changes no result.
+    """Profile the likelihood of an [rma_uni][metafopy.rma_uni] fit over ``tau^2`` (metafor's ``profile.rma.uni``).
 
-    ``xlim`` defaults to the range spanned by the Q-profile CI for ``tau^2`` and
-    the estimate (at least up to 0.1); with ``sqrt=True`` the grid is on the ``tau``
-    scale. With ``plot=True`` the profile is drawn with :func:`metafopy.plot.plot_profile`. Further keyword arguments (``pch``, ``cline``,
-    ``refline``, ``xlab``, ``ylab``, ``main``, ``log``, ``cex``, ``lwd``) are passed on to :func:`metafopy.plot.plot_profile`, as metafor's ``...`` is
-    to ``plot.profile.rma``.
-    As in metafor, ``parallel`` (``'snow'`` or ``'multicore'``) refits the models in a process pool of ``ncpus``
-    workers (or on the executor ``cl``) and ``progbar=True`` prints a progress bar to stderr; the result equals that
-    of the serial run. ``pred=True`` adds the predicted values (for ``newmods``, or the fitted values without it, as :func:`metafopy.predict`) and
-    ``blup=True`` the BLUPs (:func:`metafopy.blup`) of each refit to the result, as metafor's undocumented ``pred``, ``blup`` and ``newmods`` arguments.
+    The model is refitted with ``tau^2`` fixed at each value of a grid and the log-likelihood (and the coefficients) recorded. ``xlim`` defaults to the
+    range spanned by the Q-profile CI for ``tau^2`` and the estimate (the upper end at least 0.1). Models with equal or fixed effects cannot be profiled.
+
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/profile.rma.uni.r>; reference page:
+    <https://wviechtb.github.io/metafor/reference/profile.rma.html>.
+
+    Args:
+        fitted: Random- or mixed-effects model fitted by [rma_uni][metafopy.rma_uni] (not an equal- or fixed-effects model).
+        xlim: Range ``(lower, upper)`` of ``tau^2`` values (``tau`` values with ``sqrt=True``). Default: the range spanned by the Q-profile CI for
+            ``tau^2`` and the estimate.
+        ylim: Range ``(lower, upper)`` of the profile log-likelihood stored in the result (and drawn by the plot). Default: the range of the profile and
+            the maximum.
+        steps: Number of equally spaced values in ``xlim`` to profile over (at least 2), or the array of values themselves.
+        lltol: Tolerance when checking whether a profiled log-likelihood exceeds that of the fitted model (a warning is given if it does).
+        plot: Draw the profile with [plot_profile][metafopy.plot_profile] (metafor's default is ``TRUE``).
+        sqrt: Profile over ``tau`` instead of ``tau^2`` (the grid and ``xlim`` are then on the ``tau`` scale).
+        exp: Report the likelihood instead of the log-likelihood (exponentiate it).
+        ax: Matplotlib axes to draw on (with ``plot=True``). Default: a new figure.
+        progbar: Print a progress bar to stderr while the models of the grid are fitted (metafor's default is ``TRUE``).
+        parallel: Parallel fitting of the grid: ``'no'`` (default), ``'snow'`` or ``'multicore'``; both use a process pool. The result equals that of the
+            serial run.
+        ncpus: Number of worker processes when ``parallel`` is not ``'no'``.
+        cl: Executor to run the fits on instead of creating a process pool of ``ncpus`` workers.
+        pred: Also store the predicted values of each refit (for ``newmods``, or the fitted values without it, as [predict][metafopy.predict]); metafor's
+            undocumented argument.
+        blup: Also store the BLUPs ([blup][metafopy.blup]) of each refit; metafor's undocumented argument.
+        newmods: Moderator values for the predictions stored with ``pred=True``, as for [predict][metafopy.predict].
+        LB: Accepted as in metafor, where it chooses ``parLapplyLB``; it changes no result.
+        **plot_args: Further keyword arguments passed on to [plot_profile][metafopy.plot_profile] (``pch``, ``cline``, ``refline``, ``xlab``, ``ylab``,
+            ``main``, ``log``, ``cex``, ``lwd``), as metafor's ``...`` is to ``plot.profile.rma``.
+
+    Returns:
+        The profile, a [ProfileResult][metafopy.ProfileResult] with the grid ``tau2``, the log-likelihoods ``ll``, the coefficients and their CI bounds at
+        each grid value, and the estimate ``vc`` and maximum log-likelihood ``maxll`` of the model.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InputError: an argument or the data is invalid (for example an equal- or fixed-effects model, or ``steps < 2``).
     """
     x = fitted
     parallel = metafopy.core.parallel.resolve_parallel(parallel, ncpus, cl)

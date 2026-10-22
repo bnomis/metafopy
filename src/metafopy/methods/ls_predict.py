@@ -137,16 +137,52 @@ def predict_rma_ls(
     digits: int | collections.abc.Mapping[str, int] | None = None,
     verbose: bool = False,
 ) -> LSPredictResult:
-    """Predict from a location-scale model (``predict.rma.ls``).
+    """Predicted values for a location-scale model, fitted by [rma_uni][metafopy.rma_uni] with ``scale`` (metafor's ``predict.rma.ls``).
 
-    ``newmods`` and ``newscale`` give the moderator and scale variable values without the intercept column (the
-    intercept is added unless ``intercept=False``, or the full ``p`` or ``q`` columns). With the identity link negative
-    predicted ``tau^2`` values are constrained to 0. ``predtype`` is ``'default'``, ``'simple'``, ``'riley'`` or ``'t'``
-    (``pi_type`` is its old spelling); ``newvi`` adds sampling variances of new studies to the prediction interval; ``prob``
-    (``'<0.2'`` or ``'>0.2'``) adds the probability that a true outcome falls on that side of the value. ``na_action`` stands for R's
-    ``na.action`` option: for the fitted values (no ``newmods`` and ``newscale``) ``'omit'`` returns the studies used in fitting, ``'exclude'`` one
-    row per study with NaN for those left out and ``'pass'`` one row per study computed from the values it has; predictions for ``newmods`` or
-    ``newscale`` drop (``'omit'``) or keep (the others) the rows that are NaN.
+    Besides the predicted effects and their intervals, the result holds the predicted ``tau^2`` for the scale variables. With the identity link negative
+    predicted ``tau^2`` values are constrained to 0.
+
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/predict.rma.r>; reference page:
+    <https://wviechtb.github.io/metafor/reference/predict.rma.html>.
+
+    Args:
+        model: Location-scale model fitted by [rma_uni][metafopy.rma_uni] with ``scale``.
+        newmods: Moderator values of new studies to predict for, without the intercept column (it is added unless ``intercept=False``) or with all ``p``
+            columns (then ``intercept`` is ignored). A 1-d array gives one prediction (or one per value if the model has a single moderator), a 2-d array
+            one prediction per row; a mapping, pandas Series or DataFrame, or a [pairmat][metafopy.pairmat] specification is also accepted. Factors must
+            be given as the contrast variables of the model matrix. Default: the fitted values of the studies.
+        intercept: Whether to include the intercept when predicting for ``newmods``. Default: add it if the model has an intercept. Ignored when
+            ``newmods`` has all ``p`` columns.
+        addx: Add the model matrix of the predictions to the result (``X``).
+        newscale: Values of the scale variables of the new studies, without the intercept column (added unless ``intercept=False``) or with all ``q``
+            columns. Default: the scale variables of the studies in the model. Must have as many rows as ``newmods`` if both are given.
+        addz: Add the model matrix of the scale variables of the predictions to the result (``Z``).
+        prob: Probability to add to the result, as a string such as ``'>0.2'`` or ``'<0'`` (the cutoff may be an R-style expression such as
+            ``'log(0.8)'``): the probability that a true outcome is above or below the cutoff, from the predictive distribution. Cannot be combined with
+            ``adjust=True``. Default: none.
+        level: Confidence and prediction interval level in percent (``95`` is 95%). Default: the level of the model.
+        adjust: Apply a Bonferroni correction to the width of the intervals (for the number of predictions).
+        transf: Function applied to the predicted values and interval bounds (for example ``numpy.exp``); ``se`` is then NaN. The integral and mode
+            transformations of [transf][metafopy.transf] default to ``targs={'tau2': tau2}``. Default: no transformation.
+        targs: Extra arguments for ``transf``.
+        vcov: Add the variance-covariance matrix of the predictions to the result (``vcov``). Ignored with ``transf``.
+        predtype: Type of prediction interval: ``'default'`` (normal or t distribution as for the model's test), ``'simple'`` (ignore the uncertainty of
+            the predicted value, normal distribution), ``'riley'`` (t distribution with ``k - parms`` degrees of freedom, Riley et al., 2011,
+            [doi:10.1111/j.1467-985X.2010.00696.x](https://doi.org/10.1111/j.1467-985X.2010.00696.x)) or ``'t'`` (t distribution with the degrees of
+            freedom of the test). Prefixes are accepted. Default: ``pi_type``, else ``'default'``.
+        pi_type: Old spelling of ``predtype``.
+        newvi: Sampling variances of the new studies, added to the variance of the prediction interval: a number or one value per prediction. Default: 0.
+        na_action: What to do with missing values, as R's ``na.action``. For the fitted values (no ``newmods`` or ``newscale``): ``'omit'`` returns the
+            studies used in fitting, ``'exclude'`` one row per study with NaN for those left out, ``'pass'`` one row per study computed from the values it
+            has, ``'fail'`` raises if any study was left out. Predictions for ``newmods`` or ``newscale`` drop (``'omit'``) or keep (the others) the rows
+            that are NaN.
+        digits: Number of decimals used when printing, or a mapping with the keys ``est``, ``se``, ``ci``, ... Default: the ``digits`` option, else that
+            of the model.
+        verbose: Accepted for compatibility with metafor; it has no effect here.
+
+    Returns:
+        The predictions, with the fields of [PredictResult][metafopy.PredictResult] and the predicted scale (``tau2``, and with ``addz=True`` the scale
+        model matrix ``Z``), an ``LSPredictResult``.
 
     Raises:
         metafopy.errors.InputError: an argument is invalid, ``predtype`` is unknown or the dimensions do not match the model.

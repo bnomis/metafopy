@@ -390,18 +390,39 @@ def anova_rma_ls(
     df: int | None = None,
     verbose: bool = False,
 ) -> LSWaldResult | metafopy.methods.anova.MVLRTResult | list[LSWaldResult]:
-    """Wald tests (``btt``, ``att``, ``X``, ``Z``) or, given a second model, a likelihood-ratio test.
+    """Wald tests of the location and scale coefficients of a location-scale model or, given a second model, a likelihood-ratio test (metafor's
+    ``anova.rma``).
 
-    ``btt`` and ``att`` (0-based indices or a regular expression matching coefficient names) test subsets of the location and scale coefficients; ``X`` and
-    ``Z`` test linear combinations of the location and scale coefficients against ``rhs``; ``att`` may also be a list of
-    subsets, which returns a list of tests. With ``model2`` the model with more parameters is the full model; ``refit=True``
-    refits REML fits with ML when their location models differ. ``object2`` is R's name for ``model2``. ``abbrev=True`` removes ``factor(`` and ``)`` from
-    the text of the hypotheses of ``X`` and ``Z``. ``adjust`` (``True`` for ``'bonferroni'`` or a method of
-    :data:`metafopy.core.padjust.P_ADJUST_METHODS`) adjusts the p-values of the individual tests (``X``, ``Z``) or of a list of
-    tests (``att``); ``digits`` is the number of decimals of the printout. ``L`` is another name for ``X`` and ``fixed=True`` matches a string
-    ``btt`` or ``att`` literally rather than as a regular expression. With ``model2``, ``test='Wald'`` tests the location coefficients that only
-    the full model has instead of the likelihood-ratio test, and ``df`` replaces the difference in the number of parameters of the
-    likelihood-ratio test. ``verbose`` is accepted for metafor's cluster-robust tests, which location-scale models do not have.
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/anova.rma.r>; reference page:
+    <https://wviechtb.github.io/metafor/reference/anova.rma.html>.
+
+    Args:
+        model: Location-scale model fitted by [rma_uni][metafopy.rma_uni] with ``scale``.
+        model2: A second, nested model for a likelihood-ratio test. The model with more parameters is the full model. Default: none, which gives a Wald
+            test of the coefficients of ``model``.
+        object2: R's name for ``model2``.
+        btt: Location coefficients to test jointly: 0-based indices or a regular expression matched against the coefficient names (see ``fixed``).
+        X: Linear combinations of the location coefficients to test, as for [anova_rma_uni][metafopy.methods.anova.anova_rma_uni].
+        att: Scale coefficients to test jointly: 0-based indices or a regular expression matched against the coefficient names, or a list of such
+            specifications, which returns a list of tests.
+        Z: Linear combinations of the scale coefficients to test (a 1-d or 2-d array, tested against ``rhs``).
+        rhs: Right-hand side of the hypotheses of ``X`` and ``Z``: a number or one value per combination. Default: 0.
+        adjust: Adjust the p-values of the individual tests (``X``, ``Z``) or of a list of tests (``att``) for multiple testing, as R's ``p.adjust``:
+            ``True`` for ``'bonferroni'``, or one of the methods in ``metafopy.core.padjust.P_ADJUST_METHODS`` (for example ``'holm'`` or ``'fdr'``).
+            Default: no adjustment.
+        digits: Number of decimals of the printout. Default: the ``digits`` option, else that of the model.
+        refit: With ``model2``, refit REML fits with ML when their location models differ.
+        abbrev: Remove ``factor(`` and ``)`` from the text of the hypotheses of ``X`` and ``Z``.
+        L: Another name for ``X``.
+        fixed: Match a string ``btt`` or ``att`` literally instead of as a regular expression.
+        test: With ``model2``: ``'LRT'`` (default) for the likelihood-ratio test, or ``'Wald'`` to test the coefficients that only the full model has,
+            with the Wald test of that model. Prefixes are accepted.
+        df: With ``model2``: replaces the difference in the number of parameters as the degrees of freedom of the likelihood-ratio test.
+        verbose: Accepted for metafor's cluster-robust tests, which location-scale models do not have; it has no effect.
+
+    Returns:
+        A Wald test result (an ``LSWaldResult``, with the statistic ``QM``, ``QMdf`` and ``QMp`` of the tested coefficients), a list of them for a list
+        ``att``, or, with ``model2``, a likelihood-ratio test result.
 
     Raises:
         metafopy.errors.InputError: an argument is invalid.

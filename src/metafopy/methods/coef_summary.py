@@ -80,11 +80,18 @@ def coef_summary(object: typing.Any, type: None = None) -> pandas.DataFrame | di
 def coef_summary(object: typing.Any, type: typing.Literal['beta', 'alpha', 'delta'] | None = None) -> pandas.DataFrame | dict[str, pandas.DataFrame]:
     """The coefficient table of a fitted model as a data frame, as metafor's ``coef(summary(res))``.
 
-    The columns are ``estimate``, ``se``, ``zval`` (``tval`` and ``df`` when the t distribution is used), ``pval``, ``ci.lb`` and ``ci.ub``. For a
-    location-scale model the result is ``{'beta': ..., 'alpha': ...}``, for a selection model ``{'beta': ..., 'delta': ...}``. ``type='beta'`` gives
-    the table of the (location) coefficients of any fit, ``type='alpha'`` that of the scale coefficients of a location-scale model and
-    ``type='delta'`` that of the selection parameters of a selection model; as in R, ``type='alpha'`` or ``'delta'`` for a fit without that part
-    gives the table of the coefficients.
+    For a location-scale model the result is ``{'beta': ..., 'alpha': ...}``, for a selection model ``{'beta': ..., 'delta': ...}``; with ``type`` one
+    table is returned.
+
+    Args:
+        object: The fitted model.
+        type: ``'beta'`` gives the table of the (location) coefficients of any fit, ``'alpha'`` that of the scale coefficients of a location-scale model
+            and ``'delta'`` that of the selection parameters of a selection model; as in R, ``'alpha'`` or ``'delta'`` for a fit without that part gives
+            the table of the coefficients. Default: all tables of the model (a dict for models with more than one).
+
+    Returns:
+        A data frame with the columns ``estimate``, ``se``, ``zval`` (``tval`` and ``df`` when the t distribution is used), ``pval``, ``ci.lb`` and
+        ``ci.ub``, one row per coefficient; a dict of frames for a location-scale or selection model without ``type``.
 
     Raises:
         metafopy.errors.ArgumentError: ``object`` is not a fitted model.

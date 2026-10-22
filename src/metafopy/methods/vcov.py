@@ -147,20 +147,31 @@ def vcov(
     *,
     na_action: metafopy.methods.common.NAAction = 'omit',
 ) -> pandas.DataFrame | dict[str, pandas.DataFrame]:
-    """Variance-covariance matrices of a fitted model, as metafor's ``vcov()``.
+    """Variance-covariance matrices of a fitted model (metafor's ``vcov``).
 
-    ``type`` is ``'fixed'``, ``'beta'``, ``'alpha'``, ``'delta'``, ``'obs'`` (or ``'marginal'``), ``'fitted'`` or ``'resid'`` (partial matching is
-    allowed); see the module description for what each gives and which fits allow it. For ``'obs'``, ``'fitted'`` and ``'resid'`` the frame has one
-    row and column per study of the subset: ``na_action='omit'`` keeps the studies used in fitting, ``'exclude'`` and ``'pass'`` all of them (NaN
-    for those not used) and ``'fail'`` stops if any study was left out (``'fitted'`` gives the whole matrix, as in R).
+    Which matrix is returned depends on ``type``; for ``'obs'``, ``'fitted'`` and ``'resid'`` the frame has one row and column per study of the subset. A
+    ``deltamethod`` or ``matreg`` result gives its own variance-covariance matrix (``vcov.deltamethod``, ``vcov.matreg``).
 
-    A ``deltamethod`` or ``matreg`` result gives its own variance-covariance matrix (``vcov.deltamethod``, ``vcov.matreg``).
+    R reference page: <https://wviechtb.github.io/metafor/reference/vcov.rma.html>.
+
+    Args:
+        object: The fitted model (or a ``deltamethod`` or ``matreg`` result).
+        type: Which matrix: ``'fixed'`` (default; of the coefficients), ``'beta'`` (of the location coefficients), ``'alpha'`` (of the scale coefficients
+            of a location-scale model), ``'delta'`` (of the selection parameters of a selection model), ``'obs'`` (or ``'marginal'``; of the observed
+            effects), ``'fitted'`` (of the fitted values) or ``'resid'`` (of the residuals). Partial matching is allowed. Not every type is available for
+            every model.
+        na_action: For ``'obs'``, ``'fitted'`` and ``'resid'``: ``'omit'`` (default) keeps the studies used in fitting, ``'exclude'`` and ``'pass'`` all
+            of them (NaN for those not used) and ``'fail'`` raises if any study was left out (``'fitted'`` gives the whole matrix, as in R).
+
+    Returns:
+        The variance-covariance matrix as a data frame labelled with the coefficient names or study labels; a dict of such frames for a model with several
+        parts and no specific ``type`` where that applies.
 
     Raises:
-        metafopy.errors.ArgumentError: ``object`` is not a fitted model, or ``type='resid'`` for a fit without ``hatvalues()`` (``rma_mh``,
-            ``rma_peto``, ``rma_glmm``).
-        metafopy.errors.InputError: ``type`` or ``na_action`` is not valid, ``'alpha'`` for a model without scale part, ``'delta'`` for a
-            model that is not a selection model, or studies are missing and ``na_action='fail'`` for ``'obs'``.
+        metafopy.errors.ArgumentError: ``object`` is not a fitted model, or ``type='resid'`` for a fit without ``hatvalues()`` (``rma_mh``, ``rma_peto``,
+            ``rma_glmm``).
+        metafopy.errors.InputError: ``type`` or ``na_action`` is not valid, ``'alpha'`` for a model without scale part, ``'delta'`` for a model that is
+            not a selection model, or studies are missing and ``na_action='fail'`` for ``'obs'``.
         metafopy.errors.NotSupportedError: ``'obs'`` for ``rma_mh``, ``rma_peto`` and ``rma_glmm``; ``'resid'`` for robust and selection-model fits.
     """
     if isinstance(object, (metafopy.methods.deltamethod.DeltaMethodResult, metafopy.methods.matreg.MatregResult)):

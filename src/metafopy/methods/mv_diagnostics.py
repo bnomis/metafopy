@@ -542,16 +542,30 @@ def rstandard_rma_mv(
     *,
     na_action: metafopy.methods.common.NAAction = 'omit',
 ) -> metafopy.methods.influence.ResidualResult | ClusterResidualResult:
-    """Internally standardised residuals of an ``rma.mv`` fit (metafor's ``rstandard.rma.mv``).
+    """Internally standardised residuals of an [rma_mv][metafopy.rma_mv] fit (metafor's ``rstandard.rma.mv``).
 
-    The marginal residuals ``y - X b`` are divided by the square roots of the diagonal of ``(I - H) M (I - H)'``. With
-    ``cluster`` (as for :func:`cooks_rma_mv`) a :class:`ClusterResidualResult` is returned, which also holds the ``X2``
-    statistic ``e' Var(e)^-1 e`` of each cluster's residuals. metafor has no ``type`` argument for ``rma.mv`` fits (only
-    marginal residuals).
+    The marginal residuals ``y - X b`` are divided by the square roots of the diagonal of ``(I - H) M (I - H)'``. Unlike ``rma_uni``, there is no ``type``
+    argument, as metafor gives only marginal residuals for ``rma.mv`` fits.
+
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/rstandard.rma.mv.r>; reference page:
+    <https://wviechtb.github.io/metafor/reference/rstandard.html>.
+
+    Args:
+        model: Model fitted by [rma_mv][metafopy.rma_mv] (not a robust fit).
+        digits: Number of decimals of the printout.
+        cluster: A column name of the data or a vector with one value per row of the original data. With it the residuals of each cluster are also
+            combined (statistic ``X2 = e' Var(e)^-1 e``). Default: none.
+        na_action: What to do with studies left out of the fit because of missing values: ``'omit'`` (default) drops them, ``'exclude'`` and ``'pass'``
+            keep one row per study with NaN for those left out, ``'fail'`` raises.
+
+    Returns:
+        A [ResidualResult][metafopy.ResidualResult] with the residuals ``resid``, their standard errors ``se`` and the standardised values ``z``, labelled
+        with the study labels. With ``cluster``, a [ClusterResidualResult][metafopy.methods.mv_diagnostics.ClusterResidualResult] holding that result per
+        observation (``obs``) and per cluster, with each cluster's ``X2`` statistic.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
-        metafopy.errors.NotSupportedError: the model was passed through :func:`metafopy.robust`.
+        metafopy.errors.NotSupportedError: the model was passed through [robust][metafopy.robust].
     """
     x = model
     not_robust(x)

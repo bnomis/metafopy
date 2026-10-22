@@ -44,12 +44,24 @@ def wald_test_line(name: str, QM: float, QMdf: tuple[int, float | None], QMp: fl
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class WaldResult(metafopy.printing.HtmlRepr):
-    """Omnibus Wald test (``QM``) and, for linear combinations, individual tests (metafor's ``anova.rma`` of class ``anova.rma``).
+    """Omnibus Wald test (``QM``) and, for linear combinations, individual tests, as returned by [anova][metafopy.anova] (metafor's ``anova.rma`` object).
 
-    ``btt`` holds the tested coefficients (0-based) of a test of moderators. For a test of linear combinations (``X=``) ``hyp`` holds the
-    hypotheses as R prints them (``'intrcpt + 30*ablat = 0'``), ``Xb`` the estimates of the combinations (less ``rhs``), ``se``, ``zval``
-    and ``pval`` their tests (``ddf`` the degrees of freedom of the t tests, ``None`` for z tests) and ``QM`` the omnibus test, which is
-    NaN when ``X`` is not of full row rank. ``digits`` is the number of decimals of the printout.
+    Attributes:
+        QM: Test statistic of the omnibus test (NaN when ``X`` is not of full row rank).
+        QMdf: Degrees of freedom of the omnibus test: ``(m, None)`` for a chi-square test, ``(m, ddf)`` for an F test.
+        QMp: p-value of the omnibus test.
+        btt: Tested coefficients (0-based) of a test of moderators.
+        Xb: Estimates of the linear combinations (less ``rhs``).
+        se: Standard errors of the combinations.
+        zval: Test statistics of the combinations.
+        pval: p-values of the combinations (adjusted if requested).
+        ddf: Degrees of freedom of the t tests of the combinations, None for z tests.
+        hyp: Hypotheses as R prints them (for example ``'intrcpt + 30*ablat = 0'``).
+        digits: Number of decimals of the printout.
+        k: Number of studies.
+        p: Number of coefficients.
+        test: Type of the test.
+        class_: The R-style class vector of the test.
     """
 
     QM: float
@@ -193,7 +205,24 @@ class ListAnovaResult(list[WaldResult]):
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class LRTResult(metafopy.printing.HtmlRepr):
-    """Likelihood-ratio test of a full against a reduced model."""
+    """Likelihood-ratio test of a full against a reduced model, as returned by [anova][metafopy.anova] for two models.
+
+    Attributes:
+        df_full: Number of parameters of the full model.
+        df_reduced: Number of parameters of the reduced model.
+        LRT: Likelihood-ratio test statistic.
+        pval: p-value of the test.
+        fit_stats_full: Fit statistics of the full model (log-likelihood, deviance, AIC, BIC, AICc).
+        fit_stats_reduced: Fit statistics of the reduced model.
+        QE_full: Test statistic for residual heterogeneity of the full model.
+        QE_reduced: Test statistic for residual heterogeneity of the reduced model.
+        tau2_full: Estimate of ``tau^2`` of the full model.
+        tau2_reduced: Estimate of ``tau^2`` of the reduced model.
+        R2: Percentage reduction in ``tau^2`` (or in the residual variance for fixed-effects models) from the reduced to the full model.
+        digits: Number of decimals of the printout.
+        method: Estimation method of the models.
+        class_f: Class vector of the full model (metafor's ``class.f``).
+    """
 
     df_full: int
     df_reduced: int
@@ -303,10 +332,21 @@ class LRTResult(metafopy.printing.HtmlRepr):
 
 @functools.singledispatch
 def anova(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> typing.Any:
-    """Wald or likelihood-ratio tests for fitted models.
+    """Wald tests of coefficients or likelihood-ratio tests of nested models for fitted models (metafor's ``anova``).
+
+    This is a single-dispatch function: the implementation is chosen by the class of ``model``. See [anova_rma_uni][metafopy.methods.anova.anova_rma_uni],
+    [anova_rma_mv][metafopy.methods.anova.anova_rma_mv] and [anova_rma_ls][metafopy.methods.ls_anova.anova_rma_ls].
+
+    Args:
+        model: The fitted model. Its class selects the implementation.
+        *args: Positional arguments passed on to the implementation (a second model first).
+        **kwargs: Keyword arguments passed on to the implementation.
+
+    Returns:
+        A [WaldResult][metafopy.WaldResult] or [LRTResult][metafopy.LRTResult], or a list of Wald results for a list of tests.
 
     Raises:
-        metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
+        metafopy.errors.ArgumentError: there is no implementation for the class of ``model``, or an argument has the wrong type or is not accepted.
     """
     raise metafopy.errors.ArgumentError(f'anova() not implemented for {type(model).__name__}')
 
@@ -361,33 +401,52 @@ def anova_rma_uni(
     att: typing.Any = None,
     Z: typing.Any = None,
 ) -> WaldResult | LRTResult | ListAnovaResult:
-    """Test coefficients of one model, or compare two nested models.
+    """Test coefficients of one [rma_uni][metafopy.rma_uni] model, or compare two nested models (metafor's ``anova.rma``).
 
-    ``anova(res, btt=...)`` tests a subset of coefficients (0-based indices, a
-    name pattern, or a list of these for one test each); ``anova(res, X=L)``
-    tests linear combinations ``L beta = rhs``; ``anova(full, reduced)`` gives
-    a likelihood-ratio test. ``adjust`` (``True`` for ``'bonferroni'`` or one of
-    :data:`metafopy.core.padjust.P_ADJUST_METHODS`) adjusts the p-values of
-    several tests as R's ``p.adjust``; ``refit=True`` refits REML models that
-    differ in their fixed effects with ML before the likelihood-ratio test. ``object2`` is R's name for ``model2``.
+    ``anova(res, btt=...)`` tests a subset of coefficients, ``anova(res, X=L)`` tests linear combinations ``L beta = rhs`` and ``anova(full, reduced)``
+    gives a likelihood-ratio test.
 
-    ``L`` is the old spelling of ``X`` and ``fixed=True`` matches a character ``btt`` literally instead of as a regular expression. For two
-    models, ``test='Wald'`` tests the coefficients that only the full model has (with the Wald test of that model) instead of the
-    likelihood-ratio test, and ``df`` replaces the difference in the number of parameters in the likelihood-ratio test. ``verbose`` adds
-    the reason to the error of a cluster-robust test that fails. ``abbrev=True`` (metafor's undocumented argument) removes ``factor(`` and
-    ``)`` from the text of the hypotheses of a test of linear combinations. ``digits`` is the number of decimals of the printout of the result (default:
-    the ``digits`` option, else that of the model); the hypotheses of a test of linear combinations are printed with it too.
+    For a model made robust with ``club_sandwich=True`` the omnibus test is the cluster-robust Wald test with the small-sample approximation chosen by
+    ``wald_test`` of [robust][metafopy.robust] (``HTZ`` by default: an F test with df1 and df2 from ``clubSandwich::Wald_test``), and the tests of linear
+    combinations use the degrees of freedom of ``coef_test``. As in R, ``rhs`` cannot be used with ``X`` for such a model (a warning is given and zero is
+    used).
 
-    For a model made robust with ``club_sandwich=True`` the omnibus test is the cluster-robust Wald test with the small-sample
-    approximation chosen by ``wald_test`` of :func:`metafopy.robust` (``HTZ`` by default: an F test with df1 and df2 from
-    ``clubSandwich::Wald_test``), and the tests of linear combinations use the degrees of freedom of ``coef_test``. As in R,
-    ``rhs`` cannot be used with ``X`` for such a model (a warning is given and zero is used).
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/anova.rma.r>; reference page:
+    <https://wviechtb.github.io/metafor/reference/anova.rma.html>.
 
-    R source: https://github.com/wviechtb/metafor/blob/master/R/anova.rma.r;
-    reference page: https://wviechtb.github.io/metafor/reference/anova.rma.html.
+    Args:
+        model: Model fitted by [rma_uni][metafopy.rma_uni].
+        model2: A second, nested model for a likelihood-ratio test. The model with more parameters is the full model. Default: none, which gives a Wald
+            test of the coefficients of ``model``.
+        object2: R's name for ``model2``.
+        btt: Coefficients to test jointly: 0-based indices, a regular expression matched against the coefficient names (see ``fixed``), or a list of such
+            specifications for one test each (a list result). Default: the coefficients tested by the omnibus test of the model.
+        X: Linear combinations of the coefficients to test: a 1-d array (one combination) or a 2-d array with one row per combination, with all ``p``
+            columns or without the intercept column. Each row is tested against ``rhs``; the result holds one test per row and the omnibus test of all of
+            them. Also accepted: a [pairmat][metafopy.pairmat] specification. Default: none.
+        rhs: Right-hand side of the hypotheses: a number or one value per combination (or per tested coefficient with ``btt``). Default: 0.
+        adjust: Adjust the p-values of several tests for multiple testing, as R's ``p.adjust``: ``True`` for ``'bonferroni'``, or one of the methods in
+            ``metafopy.core.padjust.P_ADJUST_METHODS`` (for example ``'holm'`` or ``'fdr'``). Default: no adjustment.
+        refit: For a likelihood-ratio test of REML models whose fixed effects differ, refit them with ML first.
+        L: Old spelling of ``X``.
+        fixed: Match a character ``btt`` literally instead of as a regular expression.
+        test: With ``model2``: ``'LRT'`` (default) for the likelihood-ratio test, or ``'Wald'`` to test the coefficients that only the full model has,
+            with the Wald test of that model. Prefixes are accepted.
+        df: With ``model2``: replaces the difference in the number of parameters as the degrees of freedom of the likelihood-ratio test.
+        verbose: Add the reason to the error of a cluster-robust test that fails.
+        abbrev: Remove ``factor(`` and ``)`` from the text of the hypotheses of a test of linear combinations (metafor's undocumented argument).
+        digits: Number of decimals of the printout of the result, also used for the hypotheses of a test of linear combinations. Default: the ``digits``
+            option, else that of the model.
+        att: For location-scale models only; giving it here raises an error.
+        Z: For location-scale models only; giving it here raises an error.
+
+    Returns:
+        For a Wald test, a [WaldResult][metafopy.WaldResult] with the omnibus statistic ``QM``, its degrees of freedom ``QMdf`` and p-value ``QMp`` and,
+        for linear combinations, the estimates ``Xb``, ``se``, ``zval``, ``pval`` and the hypotheses ``hyp``. For two models, an
+        [LRTResult][metafopy.LRTResult]. For a list ``btt``, a list of Wald results.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InputError: an argument or the data is invalid (for example ``att`` or ``Z`` is given, ``X`` has the wrong number of columns).
         metafopy.errors.InternalError: an internal invariant does not hold.
     """
     X = metafopy.methods.pairmat.resolve(X, model)
@@ -973,13 +1032,46 @@ def anova_rma_mv(
     att: typing.Any = None,
     Z: typing.Any = None,
 ) -> WaldResult | MVLRTResult | ListAnovaResult:
-    """Test coefficients of one ``rma.mv`` model, or compare two nested models by a likelihood-ratio test.
+    """Test coefficients of one [rma_mv][metafopy.rma_mv] model, or compare two nested models by a likelihood-ratio test (metafor's ``anova.rma``).
 
-    ``adjust``, ``refit``, ``L``, ``fixed``, ``test``, ``df``, ``verbose`` and the handling of ``club_sandwich=True`` fits are as in
-    :func:`anova_rma_uni`; the ML refit uses :func:`metafopy.update`. ``object2`` is R's name for ``model2``.
+    The arguments and the handling of ``club_sandwich=True`` fits are those of [anova_rma_uni][metafopy.methods.anova.anova_rma_uni]; the ML refit uses
+    ``metafopy.update``.
+
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/anova.rma.r>; reference page:
+    <https://wviechtb.github.io/metafor/reference/anova.rma.html>.
+
+    Args:
+        model: Model fitted by [rma_mv][metafopy.rma_mv].
+        model2: A second, nested model for a likelihood-ratio test. The model with more parameters is the full model. Default: none, which gives a Wald
+            test of the coefficients of ``model``.
+        object2: R's name for ``model2``.
+        btt: Coefficients to test jointly: 0-based indices, a regular expression matched against the coefficient names (see ``fixed``), or a list of such
+            specifications for one test each (a list result). Default: the coefficients tested by the omnibus test of the model.
+        X: Linear combinations of the coefficients to test: a 1-d array (one combination) or a 2-d array with one row per combination, with all ``p``
+            columns or without the intercept column. Each row is tested against ``rhs``; the result holds one test per row and the omnibus test of all of
+            them. Also accepted: a [pairmat][metafopy.pairmat] specification. Default: none.
+        rhs: Right-hand side of the hypotheses: a number or one value per combination (or per tested coefficient with ``btt``). Default: 0.
+        adjust: Adjust the p-values of several tests for multiple testing, as R's ``p.adjust``: ``True`` for ``'bonferroni'``, or one of the methods in
+            ``metafopy.core.padjust.P_ADJUST_METHODS`` (for example ``'holm'`` or ``'fdr'``). Default: no adjustment.
+        refit: For a likelihood-ratio test of REML models whose fixed effects differ, refit them with ML first.
+        L: Old spelling of ``X``.
+        fixed: Match a character ``btt`` literally instead of as a regular expression.
+        test: With ``model2``: ``'LRT'`` (default) for the likelihood-ratio test, or ``'Wald'`` to test the coefficients that only the full model has,
+            with the Wald test of that model. Prefixes are accepted.
+        df: With ``model2``: replaces the difference in the number of parameters as the degrees of freedom of the likelihood-ratio test.
+        verbose: Add the reason to the error of a cluster-robust test that fails.
+        abbrev: Remove ``factor(`` and ``)`` from the text of the hypotheses of a test of linear combinations (metafor's undocumented argument).
+        digits: Number of decimals of the printout of the result, also used for the hypotheses of a test of linear combinations. Default: the ``digits``
+            option, else that of the model.
+        att: For location-scale models only; giving it here raises an error.
+        Z: For location-scale models only; giving it here raises an error.
+
+    Returns:
+        For a Wald test, a [WaldResult][metafopy.WaldResult]; for two models, a likelihood-ratio test result (as [LRTResult][metafopy.LRTResult] with the
+        fit statistics of both models); for a list ``btt``, a list of Wald results.
 
     Raises:
-        metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InputError: an argument or the data is invalid (for example ``att`` or ``Z`` is given).
     """
     X = metafopy.methods.pairmat.resolve(X, model)
     check_scale_arguments(att, Z)
