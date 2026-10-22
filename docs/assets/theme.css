@@ -76,3 +76,20 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Function reference: compact parameter tables, one argument per row, with the name and the default kept on one line.
+ * mkdocstrings markup: https://mkdocstrings.github.io/python/usage/customization/ */
+.doc-contents table {
+  display: table;
+  width: 100%;
+}
+
+.doc-contents table th,
+.doc-contents table td {
+  padding: 0.5em 0.8em;
+  vertical-align: top;
+}
+
+.doc-contents table td:first-child {
+  white-space: nowrap;
+}

@@ -397,15 +397,69 @@ def escalc(
 ) -> pandas.DataFrame:
     """Calculate effect sizes ``yi`` and sampling variances ``vi`` (metafor's ``escalc``).
 
-    See https://wviechtb.github.io/metafor/reference/escalc.html for the
-    measures, their required arguments and the ``vtype`` options. ``add``
-    defaults to 1/2, except for measures where metafor uses 0 (AS, PHI, ZPHI,
-    RTET, ZTET, IRSD, PAS, PFT, IRS, IRFT). ``onlyo1``, ``addyi`` and
-    ``addvi`` correspond to metafor's ``...`` options of the same names.
+    See <https://wviechtb.github.io/metafor/reference/escalc.html> for the measures, the arguments each one needs and the ``vtype`` options.
+    ``add`` defaults to 1/2, except for the measures where metafor uses 0 (AS, PHI, ZPHI, RTET, ZTET, IRSD, PAS, PFT, IRS, IRFT).
 
-    Returns a :class:`pandas.DataFrame` with columns ``var_names`` (appended
-    to ``data`` when given and ``append=True``); ``attrs['measure']``,
-    ``attrs['slab']`` and ``attrs['ni']`` carry metafor's attributes.
+    Args:
+        measure: Effect size or outcome measure to compute, a metafor code such as ``'SMD'``, ``'OR'``, ``'RR'``, ``'ZCOR'`` or ``'PR'``; one of
+            [MEASURES][metafopy.effects.measures.MEASURES]. Which of the data arguments below are needed depends on the measure. ``None`` (with ``yi``)
+            means ``'GEN'``.
+        ai (ArrayLike | str | None): 2x2 table frequencies (upper left cell).
+        bi (ArrayLike | str | None): 2x2 table frequencies (upper right cell).
+        ci (ArrayLike | str | None): 2x2 table frequencies (lower left cell).
+        di (ArrayLike | str | None): 2x2 table frequencies (lower right cell).
+        n1i (ArrayLike | str | None): Group sizes or row totals (first group or row).
+        n2i (ArrayLike | str | None): Group sizes or row totals (second group or row).
+        x1i (ArrayLike | str | None): Number of events (first group).
+        x2i (ArrayLike | str | None): Number of events (second group).
+        t1i (ArrayLike | str | None): Total person-times (first group).
+        t2i (ArrayLike | str | None): Total person-times (second group).
+        m1i (ArrayLike | str | None): Means (first group or time point).
+        m2i (ArrayLike | str | None): Means (second group or time point).
+        sd1i (ArrayLike | str | None): Standard deviations (first group or time point).
+        sd2i (ArrayLike | str | None): Standard deviations (second group or time point).
+        xi (ArrayLike | str | None): Frequencies of the event of interest.
+        mi (ArrayLike | str | None): Frequencies of the complement of the event of interest, or the group means.
+        ri (ArrayLike | str | None): Raw correlation coefficients.
+        ti (ArrayLike | str | None): Total person-times or t-test statistics.
+        fi (ArrayLike | str | None): F-test statistics.
+        pi (ArrayLike | str | None): (Signed) p-values.
+        sdi (ArrayLike | str | None): Standard deviations.
+        r2i (ArrayLike | str | None): ``R^2`` values.
+        mini (ArrayLike | str | None): Minimum values.
+        maxi (ArrayLike | str | None): Maximum values.
+        ni (ArrayLike | str | None): Sample or group sizes.
+        yi (ArrayLike | str | None): Effect size estimates, for ``measure='GEN'`` (used as they are, with ``vi`` or ``sei``).
+        vi (ArrayLike | str | None): Sampling variances matching ``yi``.
+        sei (ArrayLike | str | None): Standard errors matching ``yi``; ``vi`` is their square.
+        data (DataFrame | dict[str, ArrayLike] | None): Data frame (or mapping of columns) holding the variables named in the data arguments. Each of
+            the arguments above is then an array or
+            the name of a column of ``data``.
+        slab (ArrayLike | str | None): Study labels, as a sequence or a column name. Stored in ``attrs['slab']``.
+        flip (bool | ArrayLike | str | None): Flip the sign of the estimates: a boolean (or a boolean per study), or a numeric multiplier.
+        subset (ArrayLike | str | None): Studies to keep in the returned frame: a boolean array, 0-based indices or an expression string evaluated on ``data``.
+        include (ArrayLike | str | None): Studies for which the measure is computed (the others get missing values), given like ``subset``.
+        add: Non-negative amount to add to zero cells, counts or frequencies. Default ``0.5`` (``0`` for the measures listed above).
+        to: When ``add`` is added: ``'only0'`` (to the table of a study with a zero cell, the default), ``'all'``, ``'if0all'`` (to all tables when any
+            has a zero cell) or ``'none'``.
+        drop00: Drop studies with no cases or events (or only cases) in both groups from the calculations.
+        vtype (str | list[str]): Type of sampling variance: one of ``'UB'``, ``'LS'`` (the default), ``'LS2'``, ``'LS3'``, ``'HO'``, ``'ST'``, ``'CS'``,
+            ``'AV'``, ``'AV2'``, ``'AVHO'``, ``'H0'``, ``'H0a'``, ``'H0b'`` or ``'MAX'``. The valid options depend on the measure; a sequence gives one
+            type per study.
+        correct (bool | str): Apply the bias correction to the estimates (default ``True``). Must be a bool for ROM, VR, CVR, SDLN, CVLN, ROMC and CVRC.
+        cutoff: Absolute value above which an estimate is flagged as large, as a warning.
+        var_names (list[str]): Names of the estimate and sampling variance columns of the result (``('yi', 'vi')``; a third name with ``add_measure``).
+        add_measure: Add a column recording the measure computed (named ``'measure'`` unless ``var_names`` has a third entry).
+        append: Return ``data`` with the new columns appended (``True``, the default) or only the new columns.
+        replace: Replace existing ``yi``/``vi`` values in ``data`` (``True``, the default) or only their missing values. Needs ``append=True``.
+        digits (int | list[int] | None): Number of decimals used when printing; stored values are not rounded.
+        onlyo1: Use only the first outcome of 2x2 tables; the same option as metafor's ``...`` argument.
+        addyi: Apply ``add`` to the estimate ``yi``; the same option as metafor's ``...`` argument.
+        addvi: Apply ``add`` to the sampling variance ``vi``; the same option as metafor's ``...`` argument.
+
+    Returns:
+        The columns ``var_names`` (``yi`` and ``vi``), appended to ``data`` when it is given and ``append=True``. ``attrs['measure']``,
+            ``attrs['slab']`` and ``attrs['ni']`` carry metafor's attributes, so the frame can be passed to [rma_uni][metafopy.rma_uni].
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.

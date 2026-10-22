@@ -41,6 +41,14 @@ plugins:
           options:
             docstring_style: google
             members_order: source
+            docstring_section_style: table
+            separate_signature: true
+            show_signature_annotations: true
+            signature_crossrefs: true
+            show_overloads: false
+            line_length: 60
+            merge_init_into_class: true
+            show_if_no_docstring: false
 nav:
   - Home: index.md
   - Installation: install.md
