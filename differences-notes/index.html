@@ -1,0 +1,1995 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Meta-analysis in Python, a re-implementation of the R package metafor">
+      
+      
+      
+      
+        <link rel="prev" href="../differences/">
+      
+      
+        <link rel="next" href="../differences-plots/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/favicon.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Detailed notes - metafopy</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Mona+Sans:300,300i,400,400i,700,700i%7CSource+Code+Pro:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Mona Sans";--md-code-font:"Source Code Pro"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../assets/theme.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#detailed-notes-on-the-differences" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="metafopy" class="md-header__button md-logo" aria-label="metafopy" data-md-component="logo">
+      
+  <img src="../assets/metafopy-mark.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            metafopy
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Detailed notes
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/bnomis/metafopy" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="metafopy" class="md-nav__button md-logo" aria-label="metafopy" data-md-component="logo">
+      
+  <img src="../assets/metafopy-mark.svg" alt="logo">
+
+    </a>
+    metafopy
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/bnomis/metafopy" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/effect-sizes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Effect sizes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fitting models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/binary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Binary and count data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/multilevel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multilevel and multivariate models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/advanced/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Selection and location-scale models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/diagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/bias/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Publication bias
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/emmeans/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Estimated marginal means
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/plots/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plots
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/gallery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plot gallery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/datasets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Datasets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../notebooks/showcase/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    metafopy showcase
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../analyses/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Analyses
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../from-r/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Coming from R
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Function reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Function reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/effects/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Effect sizes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/methods/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Methods for fitted models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/bias/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Publication bias
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/plots/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plots
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/transf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Transformations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/datasets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Datasets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/errors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Errors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Differences from metafor
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Differences from metafor
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../differences/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Detailed notes
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Detailed notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#names-results-and-printing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Names, results and printing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#optimisers-and-flat-likelihoods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Optimisers and flat likelihoods
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rma_glmm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rma_glmm
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#robust-and-cluster-robust-fits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Robust and cluster-robust fits
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#plots" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Plots
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#individual-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Individual functions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#arguments-defaults-and-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Arguments, defaults and errors
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#not-ported" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Not ported
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-audit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The audit
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../differences-plots/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plots compared with metafor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#names-results-and-printing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Names, results and printing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#optimisers-and-flat-likelihoods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Optimisers and flat likelihoods
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rma_glmm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rma_glmm
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#robust-and-cluster-robust-fits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Robust and cluster-robust fits
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#plots" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Plots
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#individual-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Individual functions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#arguments-defaults-and-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Arguments, defaults and errors
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#not-ported" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Not ported
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-audit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The audit
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="detailed-notes-on-the-differences">Detailed notes on the differences<a class="headerlink" href="#detailed-notes-on-the-differences" title="Permanent link">&para;</a></h1>
+<p>The full list of known differences between metafopy and metafor, one note per item, grouped by topic. The page
+<a href="../differences/">Differences from metafor</a> shows the most important ones with the code and output of both. The notes below are
+the reference: they give the numbers, the data sets and the reason of each. Names are as in the code (<code>.</code> is <code>_</code> in Python).</p>
+<h2 id="names-results-and-printing">Names, results and printing<a class="headerlink" href="#names-results-and-printing" title="Permanent link">&para;</a></h2>
+<p>What the result objects are and how they print.</p>
+<ul>
+<li>
+<p>Names: <code>.</code> becomes <code>_</code>; indices are 0-based.</p>
+</li>
+<li>
+<p><code>simulate(na_action=)</code> stands for R's <code>options(na.action=)</code> (<code>'omit'</code> is R's default). <code>formula</code> is the method <code>res.formula()</code> (a top-level <code>metafopy.formula</code> would hide the module); <code>se()</code> is a function only, because results have an <code>se</code> field. <code>setmfopt(theme=..., check=...)</code> is stored and validated but not used.</p>
+</li>
+<li>
+<p><code>summary()</code> of every fit class includes the fit-statistics table (<code>logLik</code>, <code>deviance</code>, <code>AIC</code>, <code>BIC</code>, <code>AICc</code>) like R's <code>summary()</code>; <code>str(res)</code> and <code>print(res)</code> do not. <code>fitstats()</code>, <code>AIC()</code> and <code>BIC()</code> take further fits and give the table of several models (<code>AIC(k=)</code> is accepted but not used, as in R). <code>AIC(correct=True)</code> gives the AICc column. These are methods of the fits (<code>res1.AIC(res2)</code>); metafor's functions are <code>AIC(res1, res2)</code>.</p>
+</li>
+<li>
+<p><code>rma_uni(yi, vi, data=escalc_frame)</code> stores <code>ni</code> from <code>escalc</code>'s attribute (R's <code>attr(yi, "ni")</code>) so that <code>funnel(yaxis='ni')</code>, <code>regtest(predictor='ni')</code> and <code>selmodel(prec='ninv')</code> work on <code>escalc</code> frames, as in R; <code>res.ni</code>, <code>res.k_all</code>, <code>res.k_eff</code> and <code>res.p_eff</code> give these data summaries. <code>res.formula_yi</code> and <code>res.formula_mods</code> correspond to R's <code>formula.yi</code> and <code>formula.mods</code> (strings, as written by the caller). A cluster-robust fit keeps <code>robust.meat</code>, the block-diagonal matrix of residual cross-products (<code>None</code> for <code>club_sandwich=True</code>, where metafor stores NA).</p>
+</li>
+<li>
+<p><code>vcov(res, type=, na_action=)</code> (also <code>res.vcov(...)</code>) follows <code>vcov.rma</code>: <code>'fixed'</code> (default), <code>'beta'</code>, <code>'alpha'</code>, <code>'delta'</code>, <code>'obs'</code>/<code>'marginal'</code>, <code>'fitted'</code> and <code>'resid'</code> with R's refusals (<code>'obs'</code> needs <code>M</code>, so it is refused for <code>rma_mh</code>, <code>rma_peto</code> and <code>rma_glmm</code>; <code>'resid'</code> is refused for robust and selection-model fits and for classes without <code>hatvalues()</code>). The matrices are data frames labelled with the study labels, <code>na_action</code> stands for R's <code>options(na.action=)</code>, and the default <code>'fixed'</code> of location-scale and selection models is a dict <code>{'beta': ..., 'alpha'|'delta': ...}</code> like R's list. <code>type='resid'</code> with <code>na_action='fail'</code> raises <code>InputError</code>: R stops there with the internal error "object 'out' not found". A selection model fitted to data with missing values labels its studies 1 to k, as R does (R refits without the studies with missing values). <code>res.M</code> is the dense matrix <code>diag(vi + tau2)</code> for <code>rma_uni</code>, location-scale, selection, robust and <code>trimfill</code> fits (a sparse matrix is kept for <code>rma_mv</code> fits with <code>sparse=True</code>). <code>res.b</code> is the old alias of <code>beta</code>; <code>I2</code>, <code>H2</code>, <code>vt</code>, <code>QE</code> and <code>QEp</code> of a selection model are <code>nan</code>, as R stores <code>NA</code>. <code>rma_mv</code> fits have <code>k_eff</code> but no <code>ni</code>. <code>rma_glmm</code> is checked only against <code>X vb X'</code> because the R used for the fixtures has no lme4.</p>
+</li>
+<li>
+<p><code>coef_summary(res, type=None)</code> (also <code>res.coef_summary()</code>) is <code>coef(summary(res))</code>: a data frame with the columns <code>estimate</code>, <code>se</code>, <code>zval</code> (<code>tval</code> and <code>df</code> for the t-based tests, with the Satterthwaite or residual degrees of freedom of robust fits), <code>pval</code>, <code>ci.lb</code> and <code>ci.ub</code>; location-scale and selection models give a dict of two frames. The column names keep R's dots.</p>
+</li>
+<li>
+<p><code>cbind_escalc()</code> and <code>rbind_escalc()</code> keep the <code>escalc</code> attributes (<code>yi_names</code>, ..., <code>digits</code>, <code>ni</code>, <code>slab</code>) of the frames they combine. R keeps <code>measure</code>, <code>slab</code> and <code>ni</code> per <code>yi</code> column, a frame here has one set: <code>cbind_escalc</code> takes them from the first argument that has them, <code>rbind_escalc</code> the <code>measure</code> of the first argument, as R does.</p>
+</li>
+<li>
+<p>Escalc attributes: pandas copies <code>DataFrame.attrs</code> unchanged on row selection, so metafopy stores the row labels in <code>attrs['rows']</code> and matches <code>ni</code> and <code>slab</code> on them. A frame whose index was reset to 0..n-1 (also a plain <code>d.iloc[:n]</code>) cannot be matched, so its <code>ni</code> is dropped and <code>slab</code> replaced by 1..k instead of being misassigned. <code>rma()</code> makes duplicated study labels unique as <code>a</code>, <code>a.1</code>; <code>escalc</code> as <code>a.1</code>, <code>a.2</code>. Coefficient names of terms such as <code>relevel(x, ref='a')</code> use the text as written (R deparses the call).</p>
+</li>
+<li>
+<p><code>res.ddf</code> of a <code>robust(club_sandwich=True)</code> fit stays <code>None</code> (a single number elsewhere); the per-coefficient degrees of freedom are in <code>res.dfs</code> (a tuple) and <code>res.robust.dfs</code>. <code>anova(full, reduced)</code> of <code>rma_mv</code> fits compares <code>k</code> and <code>yi</code> but not <code>V</code> (R compares a checksum of <code>V</code>). <code>influence()</code> returns a different type for each <code>measure=</code>. <code>profile(pred=True, newmods=)</code> rows follow <code>predict()</code> labels. <code>predict(addx=True)</code> prints <code>X</code> rounded to <code>digits</code> (R leaves it unformatted). A misspelt <code>influence(measure=)</code> gives the full result, as in R.</p>
+</li>
+<li>
+<p><code>progbar=</code> defaults to <code>False</code> everywhere (R: <code>TRUE</code> for <code>permutest</code> and <code>tes</code>) and writes to stderr; the <code>tes</code> bar counts studies in the recursion, not R's combinations. <code>digits=</code> is a single number (the <code>est</code> element); R's per-element vector is accepted but only <code>est</code> is used. <code>signif_stars</code> is the mfopt option standing for <code>getOption('show.signif.stars')</code>. P-values print with the usual formatting, not R's 2-digit minimum; <code>predict</code> printouts without <code>slab</code> use 0-based row labels. The <code>anova(X=)</code> hypotheses string reproduces R's <code>1*</code> quirk. <code>ConfintResult.to_frame()</code> stacks the fixed and random tables. <code>anova(btt=)</code> and <code>confint()</code> of multi-component <code>rma_mv</code> fits return list subclasses (<code>ListAnovaResult</code>, <code>ConfintList</code>); <code>LSWaldResult</code> lists are plain lists.</p>
+</li>
+<li>
+<p>Audit 8, fields of results: the bookkeeping fields of metafor fits that users read (<code>yi_f</code>, <code>vi_f</code>, <code>ni_f</code>, <code>weights_f</code>, <code>k_f</code>, <code>ids</code>, <code>not_na</code>, <code>subset</code>, <code>slab_null</code>, <code>outdat_f</code>, <code>outdat</code>, <code>intercept</code>, <code>coef_na</code>, <code>X_f</code>, <code>tau2_f</code>, <code>add</code>, <code>to</code>, <code>drop00</code>, <code>dfs</code>, <code>model</code>, <code>fit_stats</code>, <code>ci_null</code>, and for <code>rma_mv</code> also <code>yi_f</code>, <code>vi_f</code>, <code>V_f</code>, <code>W_f</code>, <code>weighted</code>, <code>random</code>, <code>formulas</code>, <code>withS</code>/<code>withG</code>/<code>withH</code>/<code>withR</code>, <code>Z_G1</code>, ...) are attributes of the result classes. <code>ids</code> counts from 0. <code>res.fit_stats</code> is the 5 x 2 data frame of R's <code>fit.stats</code>; the method that computed it for a given <code>REML</code> is now <code>fit_stats_for(REML)</code>. <code>dfs</code> equals <code>ddf</code> for fits that are not robust (R's <code>dfs</code>). <code>res.data</code> is the <code>MetaData</code> of the fit (the vectors and matrices used) and not the data frame the caller passed; <code>slab</code>, <code>ids</code> and <code>data.yi</code> of the fit keep only the studies used (R keeps the studies with missing values in <code>slab</code>), the <code>_f</code> variants hold all studies after <code>subset</code>. <code>digits</code> is the single number of the <code>est</code> element, not R's vector of nine; <code>coef_na</code> is labelled with the coefficient names (R names it <code>X</code>); <code>precis</code> of a selection model is a dict. R's model frames (<code>mf.g</code>, <code>mf.s</code>, <code>mf.r</code>, ...), <code>opt.res</code> and <code>class.f</code> have no counterpart; <code>influence()</code> has <code>inf</code> and <code>dfbs</code> as data frames like R (<code>marks</code> is the tuple of asterisks, <code>dfbs_array</code> the raw array).</p>
+</li>
+<li>
+<p>Audit 8, more fields: <code>cumul()</code> and <code>leave1out()</code> have <code>zval</code>/<code>tval</code>, <code>test</code> (<code>'t'</code> for every t-based test) and <code>ids</code> but no <code>data</code>; the result of <code>vif()</code> is a table, not R's list per coefficient; <code>confint()</code> keeps <code>tau2_min</code>; <code>res.control</code> keeps the entries R reads elsewhere (<code>Control.ignored</code>); <code>logLik()</code> returns a float that prints like R's <code>'log Lik.'</code>; <code>formula()</code> returns R's deparse (<code>~ablat + year</code>); <code>res.control</code> of <code>rma_glmm</code> and <code>rma_mv</code> is the settings dict as passed. Tables wider than 80 characters wrap like R's matrices (<code>metafopy.printing.SETTINGS['width']</code> is <code>getOption('width')</code>); the data frames of <code>escalc</code> (and of <code>summary_escalc</code>, <code>conv_fivenum</code>, <code>bind</code>) print as <code>print.escalc</code> does, with the digits of each column kind, rows numbered from 1 and p-values as <code>&lt;.0001</code>. The audit harness lays out plain data frames, matrices and named vectors in R's format (1-based row names, seven significant digits per column) before it compares printouts; numpy arrays have no dimnames, <code>summary()</code> returns text (R returns a fit object), and the <code>coef.na.Z</code> (<code>Zintrcpt</code>) and <code>X</code> names of R are not reproduced.</p>
+</li>
+<li>
+<p>Audit 8, round 2 fields: <code>predict()</code> has <code>ddf</code> and <code>pi_ddf</code> only for t-based tests (R has none for z tests); <code>anova()</code> of a test of moderators has <code>class_</code> (R's <code>class</code>, the class vector of the model) and the likelihood-ratio test <code>class_f</code>; <code>vif()</code> keeps its entries in a tuple that carries the names (R's list <code>vif$ablat</code>; use <code>res.vifs</code> for the named values); <code>res.control</code> of <code>rma_mv</code> and <code>rma_glmm</code> keeps the entries R reads elsewhere (<code>ignored</code>) like <code>rma_uni</code>; <code>g_levels_k</code>/<code>h_levels_k</code> are series named by the levels; <code>selmodel()</code> of a trimfill fit keeps <code>fill</code>, <code>se_k0</code>, <code>side</code>, <code>k0_est</code> and <code>p_k0</code> (its own <code>k0</code> is that of the selection model, as in R); <code>regtest()</code> refits <code>rma_uni</code> fits from the studies used, so <code>fit</code> has <code>k_all</code>, <code>ids</code>, <code>slab_null=False</code> and the measure of R. Not reproduced: <code>fit</code> of <code>regtest(model='lm')</code> is a lm object in R (<code>qr</code>, <code>effects</code>, <code>terms</code>, ...) and <code>None</code> here (the coefficients are in <code>est</code>, <code>zval</code> and <code>pval</code>); the <code>chksum*</code>, <code>time</code>, <code>verbose</code> and <code>version</code> fields of refitted models; R's <code>coef.na</code> of the refit is named <code>X</code> (and <code>coef.na.Z</code> <code>Z</code>...). <code>ddf</code> of <code>robust(club_sandwich=True)</code> stays <code>None</code> (see above) and that of a default <code>rma_mv</code> robust fit is the vector of coefficient-wise degrees of freedom (R: one number); <code>predict()</code> of a model with missing moderators drops the rows in <code>pi_ddf</code>/<code>prob</code> (R keeps vectors of length k there). <code>class(robust fit)</code> in R is <code>c('robust.rma', 'rma', 'rma.uni')</code>, reproduced in <code>class_</code>; the <code>Z.f</code> column names of a fit with <code>abbrev=True</code> are the abbreviated ones (R keeps them in full).</p>
+</li>
+<li>
+<p>Results are immutable dataclasses: <code>res$field &lt;- value</code> is <code>dataclasses.replace(res, field=value)</code>, and an element that the result does not have (<code>res$zz &lt;- 1</code>) cannot be added. Fits keep R's list-like access through attributes only.</p>
+</li>
+<li>
+<p><code>res[i]</code> of <code>predict()</code>, <code>rstandard()</code>, <code>rstudent()</code>, <code>blup()</code>, <code>ranef()</code>, <code>leave1out()</code> and <code>cumul()</code> results is metafor's <code>[.list.rma</code> with NumPy indices (0-based, slices, boolean masks), a result of the same class with the rows <code>i</code>; unlike R it does not return <code>NULL</code> for an index that selects nothing.</p>
+</li>
+<li>
+<p><code>pairmat(btt=...)</code> without the model returns a <code>PairmatSpec</code> that <code>anova(X=)</code> and <code>predict(newmods=)</code> complete with the model of the call, instead of metafor's lookup of the model in the enclosing call; <code>pairmat(res, btt=...)</code> still gives the matrix.</p>
+</li>
+<li>
+<p>The robust (<code>club_sandwich</code>) denominator degrees of freedom <code>ddf</code> are a vector in R and live in the <code>dfs</code> field of metafopy.</p>
+</li>
+<li>
+<p><code>influence()</code> under <code>na_action='exclude'</code> or <code>'pass'</code> returns 13 rows as R does, but <code>is_infl</code> has no NA entries (R: NA).</p>
+</li>
+<li>
+<p><code>predict()</code> of a model fitted to data with missing moderator values (<code>na_action='omit'</code>): R keeps <code>pi.se</code> and <code>pi.ddf</code> at one value per study of the subset; metafopy has them for the returned rows.</p>
+</li>
+<li>
+<p><code>robust()</code> of an <code>rma_mv</code> fit without <code>club_sandwich</code>: R's <code>ddf</code> is one number, metafopy has one value per coefficient in <code>ddf</code> (all equal) and the number in <code>dfs</code>. <code>predict()</code> of a robust fit returns <code>ddf</code> with one value per prediction, as R does.</p>
+</li>
+<li>
+<p><code>deltamethod()</code> keeps the <code>digits</code> of the model (nine entries) and, for a vector of estimates, five (<code>est</code> to <code>ci</code>).</p>
+</li>
+<li>
+<p>Audit 8, round 3 (printing and names): <code>escalc()</code> returns a <code>pandas.DataFrame</code> subclass (<code>metafopy.core.labelled.EscalcFrame</code>) that prints as <code>print.escalc</code> (rows from 1, the <code>digits</code> attribute for the effect sizes and variances); every selection of rows or columns, and pandas operations such as <code>merge</code>, give a plain <code>DataFrame</code> that keeps <code>attrs</code>. <code>vcalc()</code> returns a <code>numpy.ndarray</code> subclass (<code>VCovMat</code>) that prints as <code>print.vcovmat</code> (zeros as <code>.</code>, rows and columns from 1), <code>blsplit()</code> and <code>ranef()</code> of an <code>rma_mv</code> fit return a dict (<code>NamedList</code>) that prints as an R list (<code>$name</code> above each element). The matrices metafor gives dimnames (<code>X</code>, <code>X_f</code>, <code>Z</code>, <code>Z_f</code> with the row numbers of the data and the coefficient names, <code>G</code>, <code>H</code>, <code>hessian</code>, <code>vvc</code>, the <code>V</code> of <code>rcalc()</code>, the Hessian of <code>selmodel()</code>) are <code>numpy.ndarray</code> subclasses (<code>LabelledMatrix</code>) with <code>rownames</code>, <code>colnames</code> and <code>dimnames</code>; they keep the names only through operations that keep the shape (a transpose swaps them) and reductions or other shapes give plain arrays and numbers. A sparse <code>vcalc(sparse=True)</code> stays a <code>scipy.sparse.csr_array</code> and prints as SciPy does, where R prints a <code>dgCMatrix</code>.</p>
+</li>
+<li>
+<p>Audit 8, round 3 (what <code>summary()</code> and <code>predict()</code> return): <code>summary(res)</code> is the printed text, as a <code>str</code> subclass with the fields of the fit as attributes (<code>summary(res).beta</code>), where R's <code>summary(res)</code> is the fit itself with another print method. <code>predict(res, vcov=True)</code> is the predictions with the matrix in <code>vcov</code>, where R returns <code>list(pred = &lt;predictions&gt;, vcov = &lt;matrix&gt;)</code>. <code>setmfopt()</code> returns the options as they were before, <code>{'metafor': options}</code>. <code>permutest(res).coef()</code> is the table of the coefficients with the permutation p-values (R: <code>coef.permutest.rma.uni</code>), not only the estimates. <code>rma_mv</code>, <code>rma_uni(scale=)</code> and <code>rma_glmm</code> keep the <code>control</code> entries the model does not use (<code>vc.min</code>, <code>stepadj</code>, <code>hessianCtrl</code>, <code>optCtrl</code>, <code>tol</code>, ...) in <code>res.control</code>, as R does.</p>
+</li>
+<li>
+<p>Audit 9 (<code>print(digits=&lt;vector&gt;)</code>): <code>digits</code> as a named vector (or mapping) of <code>predict()</code>, <code>cumul()</code>, <code>leave1out()</code> and <code>influence()</code> results is applied per column kind as metafor's <code>.get.digits</code> does (names matched like <code>pmatch</code>; an unnamed vector gives its first element to every kind); use <code>res.with_digits(...)</code> where R calls <code>print(res, digits=...)</code>. The <code>vif()</code> table of a location-scale fit ignores <code>digits</code> in R (it passes <code>digits=NULL</code>, so the p-values have one digit); metafopy prints it with the digits it was given.</p>
+</li>
+<li>
+<p>Audit 9 (<code>print(num=TRUE)</code>): <code>summary(res, num=True)</code> numbers the rows of the coefficient tables of location-scale, <code>rma_mv</code>, <code>rma_glmm</code> and selection-model fits and of <code>vif()</code>, as R does.</p>
+</li>
+<li>
+<p>Audit 13, printing and harness. <code>vcov()</code> frames print as <code>print.vcovmat</code> (four decimals, <code>.</code> for zeros); <code>predict()</code> results wrap at the console width; the selmodel and other tables with a stars column wrap onto a second block when R's do (the blank stars column counts for width 2). Reproduced in R and left as it is in metafopy: <code>emmprep()</code> of <code>rma_mh</code> and <code>rma_peto</code> fits gives prediction 0 with SE 0; <code>summary(signif.stars=FALSE)</code> is ignored (metafopy honours it); <code>profile()</code> draws when called, and <code>plot()</code> of a selmodel profile writes the text <code>FALSE</code> to the device. The harness now also runs 39 emmeans cases and compares the text drawn by plots (axis labels, legends) in the help examples and tests.</p>
+</li>
+</ul>
+<h2 id="optimisers-and-flat-likelihoods">Optimisers and flat likelihoods<a class="headerlink" href="#optimisers-and-flat-likelihoods" title="Permanent link">&para;</a></h2>
+<p>Where metafopy and R stop at different points of the same likelihood.</p>
+<ul>
+<li>
+<p>Optimisers: metafor's <code>optim</code> BFGS and Nelder-Mead are ported for <code>rma_glmm</code> (<code>CM.EL</code>) and <code>selmodel</code> only; <code>rma_mv</code> and location-scale fits use SciPy's BFGS, Nelder-Mead and others, as do the other optimisers, and agree to optimiser tolerance (about 1e-4 relative).</p>
+</li>
+<li>
+<p><code>verbose</code>: progress messages go to stderr and traces to stdout as R prints them. The iteration traces of <code>rma_mv</code> and <code>rma_glmm</code> come from SciPy's optimisers, not nlminb, glm or glmer, so only their progress messages and tables match R.</p>
+</li>
+<li>
+<p><code>rma_mv</code> with <code>struct='UN'</code> and a fixed <code>tau2</code> component can stop at a worse local maximum than R's nlminb (seen on berkey1998, logLik 1.799 against 1.936); <code>cholesky=False</code> or starting values reach R's optimum. For this reason the refits of <code>profile()</code> and of the profile-likelihood <code>confint()</code> of <code>rma_mv</code> fits are also started at the estimates of the full fit, and the higher of the two log-likelihoods is kept.</p>
+</li>
+<li>
+<p><code>rma_mv(restart=)</code> takes a previous fit (an <code>RMAMVResult</code>) as well as <code>True</code>, which starts from the last parameters the optimiser tried in the session as metafor's <code>restart=TRUE</code> does. <code>RMAMVResult.p</code> is the number of columns of <code>X</code>; metafor's <code>p</code> (the number of estimated coefficients when <code>beta</code> is given) is <code>p_eff</code>. Only <code>hesspack='numDeriv'</code> is available for the Hessians of <code>optbeta</code> and <code>cvvc</code>. <code>lambda1</code> (lasso) is non-smooth, so the optimiser accepts the last iterate.</p>
+</li>
+<li>
+<p><code>selmodel(type='stepcon')</code> uses SLSQP, not Rsolnp. Its <code>LRT.tau2</code> can be larger than R's, because R refits at tau2 = 0 without the delta ordering constraint and solnp stops at a worse point.</p>
+</li>
+<li>
+<p>Location-scale models: the Hessian of the scale part uses the Richardson depth <code>hessian_r=4</code> (<code>LSControl</code>), where metafor's numDeriv call uses <code>r=8</code>. The eight steps amplify round-off in the log-likelihood, so R's own standard errors of the scale coefficients carry noise of about 1e-5; metafopy agrees with R's to about 2e-6 relative on the fixtures. <code>control={'hessian_r': 8}</code> gives the noisy variant.</p>
+</li>
+<li>
+<p><code>rma_mv</code> with <code>struct='GEN'</code> on a likelihood ridge: on konstantopoulos2011 with <code>random=~year|district</code> and <code>mods=~year</code>, R's default <code>nlminb</code> run stops at logLik -31.47369 (tau2 0.2056 and 1.3e-8, rho -0.8045) on a plateau that continues to rho = -1, where the log-likelihood is -30.98466 (tau2 3801.59 and 9.6e-4); R started there stays there. SciPy's BFGS follows the plateau to its end and now finishes there (it used to stop with 'precision loss'): a fit whose line search fails is accepted when the decrease its inverse Hessian still predicts is below 1e-10 relative (nlminb's <code>rel.tol</code>). The estimates therefore differ from R's default run (logLik higher by 0.49, tau2 3801.59 against 0.2056) although R's own optimum is the same; the fits without <code>mods</code> (R -32.2046, here -31.8685) and with <code>method='ML'</code> behave alike.</p>
+</li>
+<li>
+<p><code>permutest()</code> of location-scale fits: the permuted fits use the Richardson depth <code>r=8</code> of <code>numDeriv::hessian</code> whatever <code>hessian_r</code> the fit has, and the optimiser's Nelder-Mead polish only runs when BFGS has not converged. On bcg (<code>mods=~ablat</code>, <code>scale=~alloc</code>, <code>iter=50</code>, <code>seed=1</code>) this gives R's p-values (scale: 0.1064, 0.4894, 0.2553; QS 0.6383) and the same 3 undefined standard errors of 50 permutations at the same permutations (with <code>r=4</code> there were 13 and the p-values 0.4054 and 0.8108). Where a permuted scale fit runs to the boundary (a log-variance heading to minus infinity) the stopping point differs from R's by 1 to 3 units (R -18 to -24; here -15 to -22 for 23 of the 32 boundary permutations and -30 to -36 for the rest), so the z values of the boundary coefficient are near zero in both (below 0.01, in the compared fits) but not equal; the other coefficients of such fits agree to about 1e-3.</p>
+</li>
+<li>
+<p>Location-scale fits with <code>link='identity'</code>: the 5e-4 difference of the scale standard errors seen on bcg (REML, <code>scale=~ablat</code>, no moderators: <code>se_alpha[0]</code> 0.539892 in R against 0.539621 here) is not caused by the link. The slope of the scale model is -3.8e-5, so numDeriv's steps (0.1 times the coefficient, halved at every Richardson step) shrink to 3e-8 at R's depth <code>r=8</code>, and the second differences of the log-likelihood there are rounding error; R's <code>r=8</code> and <code>r=4</code> already differ by 5e-4 (0.539892 against 0.539623). The default <code>hessian_r=4</code> here matches R's <code>r=4</code> value to 3e-6; at <code>hessian_r=8</code> the rounding errors of the two implementations differ (0.539570 here) and cannot be reproduced without R's long-double sums and BLAS. The log link agrees better only because its coefficients are of order one.</p>
+</li>
+<li>
+<p><code>rma_mv(control=)</code>: <code>parallel</code>, <code>ncpus</code> and <code>cl</code> are accepted and ignored (serial fit); <code>nearpd=True</code> uses a finite-difference gradient instead of the analytic score; <code>optimizer='nlminb'</code> is BFGS, so iteration paths differ from PORT; the uncertainty-based <code>UNR</code> Hessian step is disabled. Location-scale <code>solnp</code>/<code>nloptr</code> follow <code>rma.uni</code>'s source (valid for the identity link, otherwise reset to <code>constrOptim</code> with a warning) and constrained methods are stood in by SLSQP.</p>
+</li>
+<li>
+<p><code>selmodel(type='beta', steps=c(0.025, 0.975), optimizer='nlminb')</code> on baskerville2012: R's PORT stops on <code>rel.tol</code> 1e-10 on a flat likelihood, so estimates differ from R's by up to 9e-4 relative at the same log-likelihood; the dataset is bundled now but R's stopping point is not reproduced.</p>
+</li>
+<li>
+<p>Audit 8 (wrong values, first half): <code>rma(yi, vi, data = dat.konstantopoulos2011)</code> and the other bundled data sets that are escalc objects in R carry <code>measure</code>, <code>ni</code>, <code>digits</code> and the <code>yi</code>/<code>vi</code> names in <code>DataFrame.attrs</code>, as in R. The <code>pi.se</code>/<code>pi.ddf</code> quirk of <code>predict()</code> is listed above. Relative differences of 1e-4 to 4e-3 in <code>pval</code>, <code>ci</code>, <code>se</code>, <code>QM</code>, <code>QS</code> and <code>vb</code> of location-scale, <code>rma_mv</code> and <code>rma_glmm(model='CM.EL')</code> fits come from the optimiser stopping on a flat likelihood or from R's noisy objective (see the entries for those fits); they were not traced one by one.</p>
+</li>
+<li>
+<p>Audit 8, traced against R (the log-likelihoods at the optima were compared): location-scale fits with a scale intercept near -10 to -150 (<code>ls_year</code>, <code>ls_na</code>: tau2 is 0 to machine precision) have the same log-likelihood in R and Python to 1e-9 (-7.602255955 and -4.194072548), R's own optimisers agree to 1e-6 and <code>nlminb</code> with a tight <code>rel.tol</code> does not converge; scale coefficients agree to 1e-6 to 1e-5 and the Wald statistics of the scale part (<code>QS</code>, <code>se.alpha</code>, <code>va</code>) to 2e-4. <code>profile()</code> of these fits, and <code>permutest()</code> (which refits for each permutation), end on different points of the flat surface. The <code>SPEXP</code> range <code>rho</code> of <code>rma_mv(random=~year|district)</code> on <code>dat.konstantopoulos2011</code> is 0.05592 (R <code>nlminb</code>), 0.05596 (metafopy) and 0.03527 (R Nelder-Mead) at the same REML log-likelihood -31.91350753. <code>rma_glmm(model='UM.FS')</code> and <code>'UM.RS'</code>: the objective is the same as lme4's (at R's coefficients metafopy's deviance is 4e-6 above its own optimum); R's two optimisers differ in the intercept by 4e-4 (0.61510 bobyqa, 0.61554 Nelder-Mead) and metafopy's 0.61456 is 5e-4 from bobyqa; for <code>UM.RS</code> metafopy's log-likelihood (-126.2962773) is higher than R's (-126.2962883).</p>
+</li>
+<li>
+<p>Audit 8 (rarely hit wrong values): <code>fmtx(drop0ifint=True)</code> always drops trailing zeros, where R does so only for an integer <code>digits</code> (<code>2L</code>; the default <code>digits</code> and <code>2</code> do not). <code>plot()</code> of a <code>gosh</code> result returns the axes drawn, where R returns the value of its last graphics call. <code>cooks_distance()</code> of an <code>rma_mv</code> fit gives a value where R's leave-one-out refit does not converge and gives <code>NA</code> (<code>mv_wide</code> fixture, study 18). <code>rma_glmm(model='UM.RS')</code> and <code>model='CM.EL'</code> differ from R by the amounts given above (the fixtures <code>glmm_rs</code> and <code>glmm_cm</code> of the harness). A location-scale fit whose scale intercept runs to the boundary (<code>ls_year</code>, <code>optbeta=True</code>) has a singular numerical Hessian in metafopy and an invertible one in R, so <code>vcovmat</code> is NaN here; the scale model <code>~ alloc</code> of the <code>ls_bcg</code> fixture is degenerate and the simulated and re-estimated VIFs of the scale part cannot be compared.</p>
+</li>
+<li>
+<p>Audit 8 (second pass): <code>anova(x, X=)</code> of linear combinations that are not of full rank gives <code>QMdf=(m, ddf)</code> where R has the single <code>NA</code>; the escalc attributes (<code>measure</code>, <code>ni</code>, <code>slab</code>) are stored once in <code>DataFrame.attrs</code>, so <code>attr(dat$y1, "measure")</code> of a data frame with two escalc() results (different <code>var_names</code>) is the last measure. <code>selmodel()</code> with a likelihood that is flat or at the boundary (<code>type='beta'</code> on baskerville2012: <code>tau2</code> of 2.4e-6; <code>type='truncest'</code> with <code>optimizer='mads'</code> on hackshaw1998) ends at a slightly higher log-likelihood than R (by 4e-6 and 2.5e-4), so the estimates differ by 3e-2 (<code>tau2</code> near 0) and 5e-3 relative.</p>
+</li>
+<li>
+<p>Location-scale fits (<code>rma_uni(scale=)</code>) use a central-difference gradient for BFGS and cap the Nelder-Mead polish, so <code>permutest()</code> and <code>vif(sim=True)</code> of a fit that ends on a boundary take about 0.05 to 0.3 s per refit like R's <code>nlminb</code> (before: 10 to 40 s per refit).</p>
+</li>
+<li>
+<p>Flat or boundary fits that R's own optimisers do not agree on (location-scale fits with scale moderators on <code>dat.bcg</code>, <code>rma_mv</code> with <code>struct='UN'</code>, <code>selmodel</code> with <code>type='truncest'</code>) are in <code>src/audit/data/known.toml</code> with the log-likelihoods that agree.</p>
+</li>
+<li>
+<p>Audit 9 (flat likelihoods, not matched): the QM, QS and F statistics of location-scale fits whose scale part is on a flat ridge differ in the fourth digit from R (the coefficients differ by 1e-5 and the optimisers stop at different points); the <code>confint()</code> step of a flat profile can be <code>NA</code> in one and a bound in the other; <code>rma_mv(struct='GDIAG'/'SP*')</code> with <code>rho</code> on a flat likelihood ends at another point than R's <code>nlminb</code>. <code>rma_glmm(model='UM.FS')</code> of an intercept-only model differs from R because lme4's <code>bobyqa</code> stops earlier than the tighter optimiser of metafopy.</p>
+</li>
+<li>
+<p>Audit 10: the standard errors of the scale part of <code>rma(yi, vi = 0.1, mods = ~ ablat + year, scale = ~ ablat + year)</code> on dat.bcg differ from R by up to 40%; metafopy agrees with a central-difference Hessian and with R's own <code>control = list(hesspack = 'pracma')</code>, R's default numDeriv step is too small for a scale coefficient of 3e-4. <code>deltamethod(coef, vcov, digits = &lt;vector&gt;)</code> stores the digits per key where R keeps the vector (whose <code>print()</code> then fails in R). The <code>rma.glmm()</code> refit in metafor's <code>update()</code> test differs from R in the fourth digit, like the other <code>rma.glmm()</code> fits by lme4.</p>
+</li>
+<li>
+<p>Audit 11: the standard errors of the scale part of <code>rma(yi, vi, mods = ~ ablat + I(ablat^2) + year, scale = ~ ablat + year)</code> on dat.bcg, and of the same fit with <code>subset = 1:8</code>, differ from R by 3e-4 to 5e-3 at the same log-likelihood. The scale intercept and the uncentred year slope are almost collinear, so the Hessian is ill-conditioned: R's numDeriv and <code>hesspack = 'pracma'</code> Hessians differ from each other by as much, and central differences of R's own log-likelihood move by 1% to 10% with the step; metafopy's values lie in that spread. <code>tes(alternative = 'greater')</code> and <code>permutest(exact = TRUE)</code> of the trim-and-fill fit of dat.bcg take 419 s and 545 s in R and agree with metafopy.</p>
+</li>
+<li>
+<p><code>rma_mv(struct='GDIAG'/'GEN')</code> on <code>dat.konstantopoulos2011</code> (<code>~ year | district</code>) has more than one local maximum of the REML log-likelihood. R's <code>nlminb</code> stops at tau2 0.0826 (REML log-likelihood -32.21647, GDIAG) and tau2 3.487, rho -0.9997 (-32.20462, GEN); metafopy stops at tau2 0 (-32.21355) and tau2 3131.9, rho -1 (-31.86847), which are higher. <code>control={'tau2_init': [0.01, 0.01]}</code> gives R's GDIAG point.</p>
+</li>
+<li>
+<p>Not matched, because metafopy's optimiser stops elsewhere on a flat surface (R's <code>nlminb</code> is PORT, which metafopy does not port): <code>rma_mv</code> GDIAG and GEN (metafopy reaches a higher log-likelihood than R), berkey1998 <code>UN</code> with fixed <code>tau2</code>, the fourth digit of location-scale <code>QM</code>, <code>QS</code> and <code>F</code>, <code>se.alpha</code> and the flat-profile <code>confint</code> step of <code>rma_ls</code>, selmodel fits with <code>nlminb</code>, and the <code>rma_glmm</code> cases listed above. An opt-in port of PORT is a possible way to remove most of these.</p>
+</li>
+</ul>
+<h2 id="rma_glmm">rma_glmm<a class="headerlink" href="#rma_glmm" title="Permanent link">&para;</a></h2>
+<p>Mixed-model and conditional fits.</p>
+<ul>
+<li>
+<p><code>rma_glmm</code> supports all eight measures. The experimental <code>RR</code>, <code>RD</code> (unconditional models only), <code>PR</code> and <code>PLN</code> give metafor's "experimental" warning. lme4 often stops early or fails for the log and identity links (R's <code>RD</code> with <code>UM.RS</code> and method <code>ML</code>, and <code>RD</code> on collins1985a, end in "Cannot fit ML model"); metafopy returns the maximum-likelihood fit where R errors, does not reproduce lme4's convergence warnings, and agrees with R's non-converged estimates only to 2e-3 to 1e-1 relative. With adaptive quadrature and an identity link the quadrature likelihood can be undefined; then, like lme4, the first-stage estimates are returned (NA log-likelihood).</p>
+</li>
+<li>
+<p><code>rma_glmm(control={'package': ...})</code> accepts <code>'lme4'</code> (default), <code>'GLMMadaptive'</code> and <code>'glmmTMB'</code>, tested against R on 24 to 29 fits each (<code>src/tests/test_glmm_packages.py</code>). GLMMadaptive is a step-by-step port of <code>mixed_fit</code> (EM stage, then <code>optim</code> BFGS with R's parscale and re-centred nodes), so it reproduces R's iterates, including where R stops short of the maximum: results agree to 1e-4 relative or better, usually 1e-8. Exceptions: the BFGS path of <code>UM.RS</code> with <code>mods</code> on bcg is chaotic (a 1e-12 change of the start moves the coefficients by about 1e-2), so it agrees to 25 % and its confidence bounds are not compared; the Wald and LRT heterogeneity statistics of <code>UM.RS</code> on collins1985a agree to 3 %. glmmTMB uses the Laplace approximation (<code>nAGQ</code> is ignored, as in R) and agrees to 5e-3 relative or better; <code>I2</code> is the worst where tau2 is near zero. Fits that fail in R (GLMMadaptive: <code>RD</code>, <code>PR</code> and <code>RR</code> with <code>UM.RS</code>; glmmTMB: <code>RR</code>, <code>RD</code>, <code>PR</code>, <code>PLN</code> and <code>UM.RS</code> with <code>RR</code>) are not reproduced as errors: metafopy returns its fit where one is found. Not ported: GLMMadaptive's <code>mixed_fit</code> options beyond the defaults metafor passes.</p>
+</li>
+<li>
+<p><code>rma_glmm(control={'optimizer': 'clogit'})</code> and <code>'clogistic'</code> (conditional model <code>CM.EL</code>, <code>method='FE'</code>) are native ports of <code>survival::clogit</code> (exact, Efron and Breslow ties) and <code>Epi::clogistic</code>; they agree with R to about 1e-11. R's <code>clogit</code> fails on the full bcg and li2007 data, so the fixtures use smaller data sets. <code>rma_glmm(link=, family=)</code> accept the links logit, probit, cauchit, cloglog, log, identity and sqrt, or a family object, for the unconditional models and one-group measures; mixed fits agree with R to 3e-5 up to 1e-2, and the cauchit link is only checked with fixed effects (lme4 reports a convergence warning and a huge random-effect variance there). The <code>predict</code> print for the new links is not compared with R.</p>
+</li>
+<li>
+<p><code>rma_glmm(measure='OR')</code> (<code>UM.FS</code>) on <code>dat.bcg</code>: <code>zval</code> of the pooled log odds ratio is -4.2436 against R's -4.2434; the estimate, standard error and the rest of the print agree. The cause has not been traced (the log-likelihood and estimates agree, so the difference is in the standard error); it is within the 2e-3 to 1e-1 tolerance of the other mixed-model cases.</p>
+</li>
+<li>
+<p><code>rma_glmm(model='CM.EL')</code> with <code>control={'optimizer': ...}</code>: <code>optim</code> with <code>method</code> BFGS or Nelder-Mead (also written <code>optimizer='BFGS'</code> or <code>'Nelder-Mead'</code>, <code>optmethod=</code>, <code>optCtrl=</code>) are ports of R's routines and reproduce R's estimates, log-likelihood and its failure to converge on the saturated model (bcg, <code>method='FE'</code>: <code>QE_LRT</code> is NA for Nelder-Mead in both); the other optimisers (<code>CG</code>, <code>L-BFGS-B</code>, <code>nlm</code>, <code>uobyqa</code>, <code>newuoa</code>, <code>bobyqa</code>, <code>nloptr</code>, <code>hjk</code>, ... as in <code>selmodel</code>) are replaced by the closest SciPy method, so their paths differ and they reach the estimates to about 1e-6 relative. <code>QE_Wld</code> of this model on bcg is ill-conditioned in R itself (R: 269 with <code>nlminb</code>, 199 with <code>optim</code>, 68 with <code>bobyqa</code>, NA with <code>CG</code>, 0 with <code>nlm</code>); metafopy gives other values (150 to 200) with each optimiser and <code>QE_Wld</code> is not comparable. The default <code>nlminb</code> is a BFGS stand-in for R's PORT routine, as before. Fixtures for <code>method='ML'</code> need lme4 in R and are not included; the ML fit with another optimiser is only checked against the default optimiser. <code>CM.EL</code> standard errors with the optimisers differ from R's by up to 5e-4 relative (finite-difference Hessian of an integral).</p>
+</li>
+<li>
+<p><code>rma_glmm</code> has no R reference for <code>predtype</code>, <code>newvi</code> and <code>na_action</code> in the tests (the R library <code>lme4</code> is not installed where the fixtures were made); the code path is that of <code>rma_uni</code>, which is compared with R.</p>
+</li>
+<li>
+<p><code>rma_glmm(model='CM.EL')</code>: standard errors can differ from R's by 0.2 to 0.5 % (collins1985a, EE: 0.098986, R 0.099461). R's Hessian is a finite-difference one of an objective that is noisy (<code>integrate()</code> with <code>rel.tol</code> 1.2e-4 and BiasedUrn's truncation), so the value moves by about 1e-3 under 1e-9 shifts of the evaluation point and cannot be matched. The default <code>dnchgcalc</code> is the smooth density; <code>dnchgcalc='dFNCHypergeo'</code> or <code>dnchgprec</code> uses a port of the truncating routine for the Hessian (slower, and <code>QE_Wld</code> becomes unstable). The derivative-free optimisers (<code>hjk</code>, <code>BBoptim</code>, <code>nmk</code>, <code>mads</code>, <code>subplex</code>) agree with R to about 1e-5 relative, not 1e-6 as stated above.</p>
+</li>
+<li>
+<p><code>rma_glmm</code> maximises the exact likelihood; R fits the mixed models with lme4 (adaptive quadrature or Laplace, its own optimiser), so R's estimates depend on <code>control</code> in the third or fourth digit (the expected values in metafor's tests differ between the variants) and metafopy agrees with them to about 1e-3. <code>control['optimizer']</code> of R keeps the name given (<code>'BFGS'</code>); metafopy stores <code>'optim'</code> and <code>optmethod</code>.</p>
+</li>
+</ul>
+<h2 id="robust-and-cluster-robust-fits">Robust and cluster-robust fits<a class="headerlink" href="#robust-and-cluster-robust-fits" title="Permanent link">&para;</a></h2>
+<p><code>robust()</code> and <code>club_sandwich=True</code>.</p>
+<ul>
+<li>
+<p><code>robust(club_sandwich=True, coef_test='saddlepoint')</code> solves the saddlepoint equation with a port of R's <code>uniroot</code> (tolerance eps^0.25), so p-values match R to about 1e-7.</p>
+</li>
+<li>
+<p><code>robust()</code> fits (plain and <code>club_sandwich=True</code>) are refused by <code>rstandard</code>, <code>rstudent</code>, <code>dfbetas</code>, <code>influence</code>, <code>leave1out</code>, <code>cumul</code>, <code>permutest</code>, <code>funnel</code> (with moderators), <code>qqnorm</code> and <code>plot_permutest</code> exactly where metafor refuses <code>robust.rma</code> objects; before this version metafopy ran them on the underlying model and ignored the robust variance. <code>simulate()</code>, <code>cooks_distance()</code> and <code>hatvalues()</code> still work, as in R. For <code>rma_mv</code> fits R has no <code>influence</code>, <code>leave1out</code>, <code>cumul</code> or <code>permutest</code> method at all, and metafopy raises the corresponding <code>NotSupportedError</code> or <code>ArgumentError</code>.</p>
+</li>
+<li>
+<p><code>predict()</code>, <code>forest()</code>, <code>regplot()</code> and <code>addpoly()</code> of a <code>club_sandwich=True</code> fit use the Satterthwaite degrees of freedom of the linear contrasts (<code>clubSandwich::linear_contrast</code>) for <code>coef_test='Satterthwaite'</code>; they agree with R to 1e-6. With <code>coef_test='saddlepoint'</code> R refuses <code>predict()</code> and so does metafopy.</p>
+</li>
+<li>
+<p><code>blup()</code> and <code>ranef()</code> of a <code>robust(..., club_sandwich=True)</code> fit reproduce R's prediction intervals, which come from <code>qt(level/2, df = x$ddf)</code> with one Satterthwaite degree of freedom per coefficient; R multiplies that vector with the vector of the standard errors of the studies, so the quantiles are recycled over the studies (study 1 gets the quantile of the intercept, study 2 that of the slope, ...) and R warns "longer object length is not a multiple of shorter object length" (twice) when the number of studies is not a multiple of the number of coefficients. This is probably a bug in R; metafopy follows it on purpose and gives the same warning (bcg with <code>mods='~ ablat'</code>, <code>cluster='alloc'</code>: study 1 interval -2.4384 to 0.4335, where the normal quantile would give -1.5480 to -0.4570). Missing studies take part in the recycling, as in R.</p>
+</li>
+<li>
+<p><code>anova()</code> of a <code>club_sandwich=True</code> fit: <code>rhs</code> cannot be combined with <code>X</code> (a warning, and zero is used, as in R). The Xb results keep the <code>hyp</code> table out of the printed output, as for other fits.</p>
+</li>
+<li>
+<p>Audit 8, leftovers: <code>sandwiches</code> of a <code>robust(club_sandwich=True)</code> fit has the <code>coef_test</code> and <code>conf_int</code> tables of <code>clubSandwich</code> and, with moderators, a <code>Wald_test</code> table with the test, F statistic, <code>delta</code>, degrees of freedom and p-value; R's <code>Wald_test</code> is <code>NA</code> without moderators and so is metafopy's. <code>rma_mv</code> keeps the matrices given as <code>R</code> in a mapping with an entry (<code>None</code>) for every <code>~ 1 | factor</code> term, as R's list. <code>dfbetas()</code> of <code>rma_mv</code> fits has syntactic column names (<code>log.year...1900...1000.</code>), as R's data frame. Not reproduced: R's graphics state read back with <code>par()</code> in the scripts (<code>mar</code>, <code>mfrow</code>, <code>cex</code> of the device; matplotlib keeps the grid in the figure), the <code>Z.G1</code>/<code>Z.G2</code> column names of fits with dropped rows, <code>yi.names</code>/<code>vi.names</code> after the columns of an <code>escalc</code> frame are dropped (the attributes stay in <code>DataFrame.attrs</code>), the list form of <code>dat.moura2021</code> (<code>metafopy.datasets.load()</code> returns the data frame, <code>metafopy.datasets.trees.load_tree('moura2021')</code> the tree), and the fields R lets a test assign into a result (<code>res$time &lt;- NULL</code>, <code>sav$inf &lt;- ...</code>; the results are frozen). A <code>permutest(exact=TRUE)</code> of <code>~ factor(alloc)</code> with a missing value at a further permutation in one audit run is an R artefact: a separate run of R 4.3.3 gives the two missing values at 981 and 14361 only.</p>
+</li>
+</ul>
+<h2 id="plots">Plots<a class="headerlink" href="#plots" title="Permanent link">&para;</a></h2>
+<p>Drawing with matplotlib instead of base graphics.</p>
+<ul>
+<li>
+<p><code>forest()</code>/<code>addpoly()</code> support all five <code>predstyle</code>s and <code>fonts</code> (families map to matplotlib: <code>sans</code> to <code>sans-serif</code>, <code>serif</code>, <code>mono</code> to <code>monospace</code>). <code>preddist</code> is a tuple <code>(x, y)</code> or a dict; <code>addpoly</code> takes <code>pi_se</code>, <code>pi_dist</code>, <code>pi_ddf</code> and <code>pi_level</code> keywords instead of attributes on <code>pi.lb</code>; <code>shade</code>/<code>dist</code> recognise the supported transformations by function identity (<code>numpy.exp</code>, <code>transf_ilogit</code>, <code>plogis</code>, ...). R's <code>par(family)</code> leak between plots does not exist.</p>
+</li>
+<li>
+<p><code>plot_profile()</code> of the list <code>profile()</code> returns draws one panel per component and honours <code>refline</code> in every panel (metafor's loop does not pass it on). <code>profile()</code> of location-scale fits takes <code>plot=</code> and <code>ax=</code>.</p>
+</li>
+<li>
+<p>Plot <code>...</code> arguments are explicit keywords: unknown keywords raise <code>TypeError</code> where R silently ignores them. <code>layout=</code> of <code>plot_infl</code>, <code>plot_permutest</code> and <code>plot_vif</code> is ignored with R's deprecation warning. <code>legend</code> positions are strings or <code>{'x': ...}</code>, not numeric coordinates. <code>plot_profile(log=)</code> raises <code>InputError</code> for non-positive limits. <code>baujat(las=)</code> is applied only when given. <code>forest(clim=)</code> is not forwarded for cumulative results (as in R).</p>
+</li>
+<li>
+<p><code>forest()</code> lowers <code>cex</code> for many studies as R does (<code>height / (1.25 * k * strheight('O'))</code>), but <code>strheight</code> is that of the axes of the caller's matplotlib figure, not of R's 7 x 7 inch pdf device (0.6399 against 0.5309 for the 56 studies of <code>dat.konstantopoulos2011</code>). <code>x[i]</code> with one index on a <code>vcalc()</code> matrix selects rows (R: elements).</p>
+</li>
+<li>
+<p>R's base-graphics parameters that metafor passes through <code>...</code> to <code>plot()</code> (<code>bty</code>, <code>las</code>, <code>xaxt</code>, <code>yaxt</code>, <code>cex</code>, <code>lwd</code>, <code>lty</code>, <code>col</code>, <code>pch</code>, <code>bg</code>, <code>main</code>, <code>xlab</code>, <code>ylab</code>, <code>xlim</code>, <code>ylim</code>, <code>layout</code>, <code>legend</code>, <code>cline</code>, <code>addgrid</code>) are arguments only of the metafopy functions that interpret them themselves; the others are styled on the matplotlib <code>ax=</code> the caller passes. R warns <code>"x" is not a graphical parameter</code> for an unknown one; metafopy does not.</p>
+</li>
+</ul>
+<h2 id="individual-functions">Individual functions<a class="headerlink" href="#individual-functions" title="Permanent link">&para;</a></h2>
+<p>Notes on single functions and their ports.</p>
+<ul>
+<li>
+<p><code>conv_fivenum(method=)</code> <code>'qe'</code>, <code>'bc'</code>, <code>'mln'</code> (R's estmeansd 1.0.1) and <code>'blue'</code> (metaBLUE 1.0.0) are native ports (<code>metafopy.effects.fivenum_estimators</code>), checked against R on fixtures (<code>src/tests/r/generate_fivenum_methods.R</code>). <code>'blue'</code>, <code>'bc'</code> and <code>'mln'</code> agree to 1e-9 relative or better: <code>'bc'</code> and <code>'mln'</code> simulate with R's generator, so <code>conv_fivenum(seed=)</code> reproduces R's <code>set.seed(seed)</code> results exactly (without <code>seed</code> they draw from <code>set_seed</code>'s stream). <code>'qe'</code> minimises with SciPy's L-BFGS-B (R's finite-difference gradient, <code>ndeps = 1e-3</code>, <code>lmm = 5</code>, <code>factr = 1e7</code>) instead of R's version 2.3; the selected distribution is the same and the mean and SD agree to about 1e-6 relative on the fixtures, up to 1e-3 for a candidate that is not selected. R drops a candidate fit that raises a warning (<code>qbeta</code>'s, for example) where SciPy returns a poor fit that is never the best; a case where that fit would win is not reproduced. The weibull starting value comes from SciPy's L-BFGS-B, not <code>nlminb</code>. The quirks of R's <code>conv.fivenum</code> are kept: with <code>method='qe'</code> and <code>test=True</code>, a study with negative values switches the skewness test on and a skipped study leaves it on for the following studies; the <code>dist</code> attribute holds the distribution <code>'qe'</code> selected (<code>None</code> where its fit failed). <code>verbose=True</code> lets the warnings of these methods through.</p>
+</li>
+<li>
+<p>emmeans: <code>emmprep</code>, <code>emmeans</code>, <code>contrast</code>, <code>pairs</code> and <code>regrid</code> are a native port, checked against emmeans 2.0.4 with metafor 5.2-1. Not ported: <code>emm_list</code> results and formula left-hand sides in <code>contrast</code>. Non-conformable matrix <code>weights</code> raise <code>InputError</code> (R warns and returns garbage), and with nested factors the <code>mvt</code> and <code>scheffe</code> adjustments use the rows shown, where R indexes the full grid. R's <code>emmprep</code> returns <code>NA</code> for <code>rma_mh</code> and <code>rma_peto</code> fits and fails for <code>selmodel</code> fits; metafopy computes them. <code>PAS</code> is not back-transformed, as in R (pass <code>tran='asin.sqrt'</code> to <code>emmprep</code> to get it). The <code>mvt</code> adjustment uses SciPy's quasi-Monte Carlo integration and agrees with R to about 1e-3. <code>rma_glmm</code> mixed-model cases agree to 2e-3 where R's <code>glmer</code> converges to a slightly different optimum.</p>
+</li>
+<li>
+<p><code>vif(sim=)</code> for location-scale models follows R's <code>seed+l</code> permutations exactly for matrix inputs; for formula models the matrix columns are permuted rather than the data variables. Scale-part simulated VIFs can differ from R in a few iterations at boundary fits.</p>
+</li>
+<li>
+<p>selmodel <code>profile()</code> has <code>parallel</code>, <code>ncpus</code>, <code>cl</code> and <code>progbar</code> (process pools or any <code>concurrent.futures.Executor</code>); <code>confint()</code> has no such arguments in metafor either.</p>
+</li>
+<li>
+<p><code>hettest()</code> (metafor 5.2-1): <code>progbar</code> is off by default (R: <code>TRUE</code>), <code>test</code> raises an error if any entry is unknown (R only checks that some entry is valid), and <code>seed=</code> reproduces <code>set.seed(seed)</code> before the bootstrap draws. Results of <code>rma_mv</code>, <code>rma_glmm</code>, location-scale and selection models are refused, as in R.</p>
+</li>
+<li>
+<p><code>residuals(type=)</code>: R returns <code>NULL</code> (or fails) for <code>rstandard</code> and <code>rstudent</code> residuals under <code>na.fail</code> without missing studies; metafopy returns the values. The <code>'pass'</code> residuals of <code>rma_mv</code> fits are <code>NaN</code> for unused studies. <code>weights_(type='matrix')</code> of <code>rma_uni</code> and location-scale fits is the diagonal weight matrix.</p>
+</li>
+<li>
+<p><code>gosh(seed=)</code> draws the subset sizes with a port of R's <code>dbinom</code> (Loader's algorithm as in R 4.5.1, <code>metafopy.core.dbinom</code>, identical to R in every bit on the checked sizes), because R's <code>sample(prob=)</code> orders tied probabilities by their last bit; with the same seed the subsets are those of R. Reference fixtures were generated with R 4.5.1, whose <code>dbinom</code> differs from R 4.3.3's in the last bit for some sizes, so the subsets of R 4.3.3 can differ. The last bit also depends on the C library's <code>log</code>, <code>exp</code> and <code>pow</code> (R itself differs between platforms for the same reason), so the seeded subsets are checked against R on Linux only; the tests that compare them bit for bit are skipped on macOS and Windows.</p>
+</li>
+<li>
+<p><code>vif()</code> of <code>rma_mv</code> fits agrees with R to 8e-9 (default), 2e-9 (<code>sim</code>) and 2e-6 (<code>reestimate=True</code>, where each refit is a new optimisation) on <code>dat.konstantopoulos2011</code>. <code>vif()</code> takes <code>time</code>, <code>LB</code>, <code>joinb</code> and <code>joina</code> like R (<code>joina</code> for location-scale fits only); <code>regplot()</code> takes <code>at_lab</code> and <code>box_lty</code>. Its per-study arguments (<code>pch</code>, <code>col</code>, <code>bg</code>, <code>psize</code>, <code>slab</code>) have one entry per study used in the fit, not per row of the original data, and <code>points_regplot()</code> takes only <code>ax</code> (R passes <code>...</code> on to <code>points()</code> and <code>text()</code>). The <code>regplot()</code> of a location-scale model draws no prediction interval, as in R (its <code>predict()</code> gives none).</p>
+</li>
+<li>
+<p><code>predict()</code> with <code>na_action</code> (R: <code>options(na.action=)</code>) follows <code>predict.rma</code>, with three details of R not copied. R keeps <code>pi.se</code> and <code>pi.ddf</code> at one value per study of the subset even when <code>na.omit</code> drops studies from <code>pred</code> and the intervals; metafopy returns them for the rows it returns. For <code>predict()</code> of a <code>club_sandwich=True</code> fit made from data with missing values R stops under every <code>na.action</code> ("Could not obtain the linear contrast(s)"); metafopy returns the predictions (NaN rows for studies without moderator values). For <code>rma_mv</code> fits with several <code>tau2</code>/<code>gamma2</code> values the prediction interval of a study left out of the fit (visible under <code>na_action='pass'</code>) is NaN, because the inner level of a dropped study is not kept.</p>
+</li>
+<li>
+<p><code>labbe()</code> of an <code>rma_uni</code> fit from counts uses <code>add = 1/2</code>, <code>to = 'only0'</code> (or the values passed to <code>labbe</code>), not those used when the model was fitted; repeat <code>add=</code>/<code>to=</code> if the fit used other values. <code>rma_mh()</code> with an outcome that never occurs: whether the variance is exactly 0 or a negative rounding error (se NaN) depends on the summation order, in R as well. <code>dfround()</code> leaves columns with <code>NA</code> <code>digits</code> untouched (the audit's reading of R; the 5.2-1 source has no explicit branch).</p>
+</li>
+<li>
+<p>Audit 8, round 3: <code>update(formula_=)</code> is metafor's <code>formula.</code> (ignored for <code>rma_mh</code> and <code>rma_peto</code>, one-sided for <code>mods</code>, as in R); selecting rows of a result with <code>res[i]</code> raises <code>IndexError</code> for rows that do not exist where R's <code>[.list.rma</code> returns <code>NULL</code>; <code>cumul(na_action=)</code> keeps the rows that were used (R keeps <code>NA</code> rows for the studies that were dropped); <code>baujat(na_action='fail')</code> raises when a study has missing values (R stops with "need finite 'ylim' values"); <code>fmtx()</code> and <code>radial()</code> refuse a <code>digits</code> of length greater than one, as R does; <code>rma(cutoff=)</code> has no effect (R 5.2-1 stops with "object 'addtxt' not found" whenever an <code>abs(yi)</code> exceeds it, a bug in <code>.chkyisize</code>).</p>
+</li>
+<li>
+<p>Audit 8 fixed in the code: <code>simulate()</code> takes <code>na_action</code> (R: <code>options(na.action=)</code>) and pads to the studies of the subset under <code>'exclude'</code>, <code>'pass'</code> and <code>'fail'</code>; <code>k_all</code> of a fit from counts with <code>subset=</code> is the number of rows before subsetting (internally <code>MetaData.k_all</code> is still the length of <code>keep</code>; the public value is <code>MetaData.supplied</code>).</p>
+</li>
+<li>
+<p><code>hettest(model)</code> does not forward <code>control</code> to the refits, as in R; <code>control</code> only applies to the data-vector form.</p>
+</li>
+<li>
+<p><code>selmodel()</code> refits the model on the studies used only when the method is not FE/EE/CE/ML, and keeps a given <code>slab</code> when no study was dropped; otherwise labels are numbered 1 to k, as in R.</p>
+</li>
+<li>
+<p><code>anova(X=)</code> with a rank-deficient <code>X</code>: R gives a single NA for <code>QMdf</code>; metafopy keeps the pair (m, ddf) and gives NaN for QM and QMp.</p>
+</li>
+</ul>
+<h2 id="arguments-defaults-and-errors">Arguments, defaults and errors<a class="headerlink" href="#arguments-defaults-and-errors" title="Permanent link">&para;</a></h2>
+<p>Arguments, defaults and errors that differ from R.</p>
+<ul>
+<li>
+<p><code>profile()</code> of <code>rma_mv</code> fits defaults to <code>plot=False</code> and <code>progbar=False</code> like the other Python <code>profile</code> methods (R: <code>TRUE</code>). <code>rstandard()</code> of <code>rma_mv</code> fits has no <code>type</code> argument, as in metafor 5.2-1.</p>
+</li>
+<li>
+<p><code>conv_2x2</code>: R's assignment <code>ci[!is.na(ci)]</code> in the complete-data path is a bug; metafopy assigns <code>ci</code> as intended. Data frames carry one <code>measure</code> and <code>ni</code> attribute, where R tracks them per column.</p>
+</li>
+<li>
+<p><code>escalc(measure='HR')</code> and <code>'HD'</code> are reserved names in metafor 5.2-1 with no computation: they pass <code>yi</code> and <code>vi</code>/<code>sei</code> through, otherwise metafopy raises <code>NotSupportedError</code> (R fails with an internal error).</p>
+</li>
+<li>
+<p><code>forest()</code> of an <code>rma_mv</code> fit with <code>na_action='pass'</code> does not show the rows with missing values. <code>fsn()</code> of <code>rma_mh</code>/<code>rma_peto</code> fits raises "Method not available" (R fails with an internal error).</p>
+</li>
+<li>
+<p><code>anova(object2=)</code> and <code>robust(clubSandwich=)</code> are accepted as aliases of <code>model2</code> and <code>club_sandwich</code>.</p>
+</li>
+<li>
+<p><code>confint(control=)</code> is accepted next to the keyword arguments <code>tau2_min</code>, <code>tau2_max</code>, <code>tol</code> and <code>maxiter</code> (<code>vc_min</code>, <code>vc_max</code>, <code>tol</code>, <code>maxiter</code> and <code>eptries</code> for <code>rma_mv</code>), spelt with <code>.</code> or <code>_</code>; an unknown entry raises <code>InputError</code>. Printed <code>confint()</code>, <code>anova()</code> of two models (blank cells, <code>%</code> after R^2, wrapped at 80 columns) and <code>summary()</code> follow R's layout. <code>predict()</code> results have <code>cr_lb</code> and <code>cr_ub</code> as aliases of <code>pi_lb</code> and <code>pi_ub</code>, and an explicit <code>rows=-1</code> in <code>addpoly(predict_result, rows=-1)</code> is honoured (the default <code>rows=None</code> uses <code>row</code>).</p>
+</li>
+<li>
+<p><code>control</code> entries that another function of metafor reads (<code>threshold</code>, <code>stepadj</code>, <code>extendInt</code>, <code>vc.min</code>, <code>optimizer</code>, ...) are ignored by the fitting functions, <code>permutest</code>, <code>confint</code>, <code>hettest</code> and <code>selmodel</code> as R ignores them (<code>pmatch</code> against the defaults); an entry no function reads still raises, so that a misspelt setting is not lost. <code>robust(adjust=)</code> with a string other than <code>'Stata'</code>, <code>'Stata1'</code> or <code>'Stata2'</code> (for example <code>'holm'</code>) is refused, where R silently applies no adjustment; the <code>sel</code> method of <code>anova()</code> accepts a fit of the plain class where R stops with 'Class of ...'. <code>emmprep(transf=)</code> with <code>'+.sqrt'</code> is not supported; an unknown name gives the identity link as in emmeans. The unusually large SMD warning is given once per distinct <code>yi</code> vector, like R's <code>yichecks</code>.</p>
+</li>
+<li>
+<p>Audit 7 (first run of <code>bin/metafor-audit.sh</code>): <code>control=</code> entries a function does not use (<code>optimizer</code> for <code>confint</code>, <code>hettest</code>, <code>permutest</code>) raise, where R ignores them; plot keywords are explicit and unknown ones raise (see above). The data sets of metadat that are lists of data frames rather than tables are not bundled; the others are (<code>datasets.list_datasets()</code>). Results of <code>anova()</code> of location-scale fits take <code>adjust</code> and <code>digits</code> like <code>anova.rma</code>. <code>time=</code> (R's <code>...</code>) is implemented on the fitting functions and on every method that takes it in R; <code>na_action</code> on the functions that read <code>getOption('na.action')</code>; the graphical parameters of the plot functions that R passes through <code>...</code> are explicit keywords (see above).</p>
+</li>
+<li>
+<p>Audit 8 (arguments R reads from <code>...</code>): <code>code1</code> to <code>code4</code> (R's plotting-code hooks, <code>eval</code>ed text) are not implemented; <code>cooks_distance</code>, <code>dfbetas</code>, <code>rstudent</code> and <code>influence</code> of location-scale and selection fits are refused in R too (<code>.chkclass</code> inside <code>influence.rma.uni</code>), so their <code>progbar</code> and <code>digits</code> there are unreachable. <code>funnel(transf=)</code> only warns, as in R; <code>LB</code> (R's load-balanced scheduling) is accepted by <code>gosh</code>, <code>profile</code> and <code>vif</code> and changes no result; <code>joina</code> is accepted by every <code>vif</code> and used by location-scale fits only. <code>forest(addpred=, predstyle=)</code>, <code>addpoly(rows=)</code>, <code>robust(clubSandwich=)</code>, <code>hettest(method=)</code> and <code>rma_glmm(model=)</code> default to <code>None</code> where R has <code>FALSE</code>, <code>'line'</code>, <code>NULL</code>, <code>NULL</code> and <code>'UM.FS'</code>, with the same effect. Not implemented because they are undocumented or experimental R internals: <code>outlist</code> (an arbitrary R list evaluated with <code>str2lang</code>), <code>retopt</code> (R's optimiser output), <code>randhet</code> and <code>omega2</code> (a random-heterogeneity location-scale model R's <code>rma.uni</code> reads from <code>...</code>), <code>pleasedonotreportI2thankyouverymuch</code>, and for <code>rma_glmm</code> <code>retdat</code>, <code>retfit</code>, <code>skiphet</code>. <code>tdist</code> is not an argument of <code>rma_mv</code> and <code>rma_glmm</code> in R's documentation and <code>cutoff</code> of <code>rma_mv</code> and <code>vtype</code> of <code>rma_glmm</code> have no counterpart. <code>metafor.news()</code> opens R's NEWS file and is not ported. <code>vif()</code> of <code>rma_mh</code>, <code>rma_peto</code> and <code>rma_glmm</code> fits raises <code>ArgumentError</code> where R reports that VIFs are not applicable to intercept-only models. New: <code>rma(knha=, dfs=, i2def=, r2def=, skipr2=, abbrev=)</code>, <code>anova(att=, Z=)</code> and the <code>L</code>, <code>fixed</code>, <code>test</code>, <code>df</code>, <code>verbose</code> arguments of the location-scale <code>anova</code>, <code>confint(extint=, parm=, digits=)</code>, <code>permutest(verbose=, fixed=)</code> (<code>permci</code> warns for location-scale fits, as in R), <code>profile(sub1=, LB=)</code>, <code>addpoly(cr_lb=, cr_ub=)</code>, <code>rcalc(rowid=, vnames=, noid=)</code>, <code>pairmat(fixed=)</code>, all compared with R in <code>src/tests/test_audit8_args.py</code>.</p>
+</li>
+</ul>
+<h2 id="not-ported">Not ported<a class="headerlink" href="#not-ported" title="Permanent link">&para;</a></h2>
+<p>What is deliberately left out.</p>
+<ul>
+<li>
+<p>Not ported: <code>reporter()</code> (writes an R Markdown report; Jupyter notebooks are the Python equivalent); <code>ranef</code>/<code>blup</code> for <code>rma_glmm</code> do not exist in metafor either.</p>
+</li>
+<li>
+<p>Undocumented switches that R reads from <code>...</code> (not in the Rd files): <code>code1</code> to <code>code4</code> (R evaluates the code it is given), <code>outlist</code>, <code>retopt</code>, <code>tdist</code>, <code>abbrev</code>, <code>skiphet</code>, <code>retdat</code>, <code>retfit</code>, <code>omega2</code>, <code>randhet</code>, and the spelling <code>nearPD</code> of <code>nearpd</code>, are not ported; the harness does not generate them. <code>print(x, num=, legend=)</code> of <code>rma.uni</code> fits is not ported either.</p>
+</li>
+<li>
+<p>Not implemented: the model frames <code>mf.g</code>, <code>mf.s</code>, ... of <code>rma.mv</code> (see <code>mf.*</code> above) and the column names metafor gives <code>Z.S</code>, <code>Z.G1</code> and <code>Z.G2</code> (<code>mf.s[[j]]11</code>, ...; internal to R's code).</p>
+</li>
+</ul>
+<h2 id="the-audit">The audit<a class="headerlink" href="#the-audit" title="Permanent link">&para;</a></h2>
+<p>How the known differences are tracked.</p>
+<ul>
+<li>
+<p>The audit's known list has narrow entries for flat-likelihood fits (ls, selmodel finite-difference Hessian, glmm UM.FS/UM.RS/CM.EL, mv_sp rho), device-dependent <code>par(cex)</code>, gosh ties of <code>dbinom</code>, and attributes that R drops in <code>data.frame()</code> and <code>c()</code> in scripts (<code>measure</code>, <code>ni</code>).</p>
+</li>
+<li>
+<p>Audit 9 (environment only): the <code>gosh()</code> socket cluster and the timeout of R's <code>permutest()</code> in the harness depend on the sandbox, not on metafopy.</p>
+</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../assets/favicon-animate.js"></script>
+      
+    
+  <script data-mkdocs-jupyter-mathjax="{&quot;url&quot;: &quot;https://cdn.jsdelivr.net/npm/mathjax@4.1.3/tex-mml-chtml.js&quot;, &quot;version&quot;: 4}">
+/* Shared by full pages and Material's instant navigation. */
+(() => {
+  const config = JSON.parse(document.currentScript.dataset.mkdocsJupyterMathjax);
+  if (window.mkdocsJupyterMathJax) return;
+
+  let loading;
+  let queue = Promise.resolve();
+  let previous = [];
+
+  const ready = async () => {
+    if (!loading) {
+      loading = (async () => {
+        let math = window.MathJax;
+        if (!math?.typesetPromise) {
+          const url = new URL(config.url, document.baseURI).href;
+          const existing = Array.from(document.scripts).find(script =>
+            script.src && (script.src === url || script.id === 'MathJax-script' ||
+              (/mathjax/i.test(script.src) &&
+               /\/(?:MathJax|latest|(?:tex|mml)(?:-mml)?-(?:chtml|svg))\.js(?:[?#]|$)/i.test(script.src))));
+          if (existing) {
+            if (!math?.startup?.promise) {
+              await new Promise((resolve, reject) => {
+                existing.addEventListener('load', resolve, { once: true });
+                existing.addEventListener('error', reject, { once: true });
+              });
+            }
+          } else {
+            // Keep site macros, delimiters and startup hooks when supplied.
+            const options = math || {};
+            window.MathJax = {
+              ...options,
+              loader: {
+                ...options.loader,
+                load: Array.from(new Set(['ui/safe', ...(options.loader?.load || [])]))
+              },
+              startup: { typeset: false, ...options.startup },
+              tex: {
+                tags: 'ams',
+                useLabelIds: true,
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true,
+                processEnvironments: true,
+                ...options.tex
+              }
+            };
+            await new Promise((resolve, reject) => {
+              const script = document.createElement('script');
+              script.src = config.url;
+              script.id = 'MathJax-script';
+              script.async = true;
+              script.onload = resolve;
+              script.onerror = reject;
+              document.head.appendChild(script);
+            });
+          }
+        }
+        math = window.MathJax;
+        await math.startup.promise;
+        return math;
+      })();
+    }
+    const math = await loading;
+    // A site owner can extend the v3 queue again on each navigation.
+    await math.startup.promise;
+    return math;
+  };
+
+  const unrendered = node => {
+    if (node.matches('mjx-container')) return [];
+    if (!node.querySelector('mjx-container')) return [node];
+    // In v3, scanning generated assistive MathML again produces nested output.
+    return Array.from(node.children).flatMap(unrendered);
+  };
+
+  const refresh = () => {
+    // A separate chain also serializes v3, without changing v4's startup promise.
+    queue = queue.then(async () => {
+      const notebooks = Array.from(document.querySelectorAll('.jupyter-wrapper'));
+      if (!notebooks.length && !previous.length) return;
+      if (notebooks.length === previous.length &&
+          notebooks.every((node, index) => node === previous[index])) return;
+      const math = await ready();
+      if (previous.length) {
+        math.typesetClear(previous);
+        math.texReset();
+      }
+      previous = notebooks.filter(node => node.isConnected);
+      const pending = previous.flatMap(unrendered);
+      if (pending.length) await math.typesetPromise(pending);
+    }).catch(error => console.error('mkdocs-jupyter: MathJax rendering failed', error));
+    return queue;
+  };
+
+  window.mkdocsJupyterMathJax = { refresh };
+  const start = () => {
+    if (typeof document$ !== 'undefined') document$.subscribe(refresh);
+    else refresh();
+  };
+  // Theme bundles and user-provided MathJax scripts can follow notebook content.
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', start, { once: true });
+  } else start();
+})();
+
+</script>
+</body>
+</html>

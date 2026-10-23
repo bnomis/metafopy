@@ -1,0 +1,1822 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Meta-analysis in Python, a re-implementation of the R package metafor">
+      
+      
+      
+      
+        <link rel="prev" href="../../getting-started/">
+      
+      
+        <link rel="next" href="../models/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/favicon.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Effect sizes - metafopy</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Mona+Sans:300,300i,400,400i,700,700i%7CSource+Code+Pro:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Mona Sans";--md-code-font:"Source Code Pro"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../assets/theme.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#effect-sizes" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="metafopy" class="md-header__button md-logo" aria-label="metafopy" data-md-component="logo">
+      
+  <img src="../../assets/metafopy-mark.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            metafopy
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Effect sizes
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/bnomis/metafopy" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="metafopy" class="md-nav__button md-logo" aria-label="metafopy" data-md-component="logo">
+      
+  <img src="../../assets/metafopy-mark.svg" alt="logo">
+
+    </a>
+    metafopy
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/bnomis/metafopy" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Effect sizes
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Effect sizes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#escalc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        escalc
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#zero-cells-and-bias-correction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Zero cells and bias correction
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#correlations-and-proportions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Correlations and proportions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#precomputed-effect-sizes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Precomputed effect sizes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#study-labels-subsets-and-flipping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Study labels, subsets and flipping
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summarising" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summarising
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#transformations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transformations
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fitting models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../binary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Binary and count data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../multilevel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multilevel and multivariate models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../advanced/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Selection and location-scale models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../diagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bias/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Publication bias
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../emmeans/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Estimated marginal means
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plots/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plots
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gallery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plot gallery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../datasets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Datasets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/showcase/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    metafopy showcase
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../analyses/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Analyses
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../from-r/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Coming from R
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Function reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Function reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/effects/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Effect sizes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/methods/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Methods for fitted models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/bias/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Publication bias
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/plots/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plots
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/transf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Transformations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/datasets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Datasets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/errors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Errors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Differences from metafor
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Differences from metafor
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../differences/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../differences-notes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Detailed notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../differences-plots/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plots compared with metafor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#escalc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        escalc
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#zero-cells-and-bias-correction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Zero cells and bias correction
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#correlations-and-proportions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Correlations and proportions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#precomputed-effect-sizes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Precomputed effect sizes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#study-labels-subsets-and-flipping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Study labels, subsets and flipping
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summarising" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summarising
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#transformations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transformations
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="effect-sizes">Effect sizes<a class="headerlink" href="#effect-sizes" title="Permanent link">&para;</a></h1>
+<p>Most analyses start from raw study data (2x2 tables, means and standard deviations, correlations, proportions) that
+<code>escalc</code> converts to an effect size <code>yi</code> and its sampling variance <code>vi</code>. If the studies already report effect sizes and
+standard errors, skip <code>escalc</code> and pass them to <code>rma</code> directly.</p>
+<h2 id="escalc">escalc<a class="headerlink" href="#escalc" title="Permanent link">&para;</a></h2>
+<p><code>escalc</code> takes a <code>measure</code> and the arguments that measure needs, and returns a pandas <code>DataFrame</code>. With <code>data=</code> the new
+columns <code>yi</code> and <code>vi</code> are appended to your data.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">escalc</span>
+
+<span class="n">dat</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'dat.curtis1998'</span><span class="p">)</span>
+<span class="n">dat</span> <span class="o">=</span> <span class="n">escalc</span><span class="p">(</span><span class="n">measure</span><span class="o">=</span><span class="s1">'ROM'</span><span class="p">,</span> <span class="n">m1i</span><span class="o">=</span><span class="s1">'m1i'</span><span class="p">,</span> <span class="n">sd1i</span><span class="o">=</span><span class="s1">'sd1i'</span><span class="p">,</span> <span class="n">n1i</span><span class="o">=</span><span class="s1">'n1i'</span><span class="p">,</span> <span class="n">m2i</span><span class="o">=</span><span class="s1">'m2i'</span><span class="p">,</span> <span class="n">sd2i</span><span class="o">=</span><span class="s1">'sd2i'</span><span class="p">,</span> <span class="n">n2i</span><span class="o">=</span><span class="s1">'n2i'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">dat</span><span class="p">[[</span><span class="s1">'id'</span><span class="p">,</span> <span class="s1">'genus'</span><span class="p">,</span> <span class="s1">'species'</span><span class="p">,</span> <span class="s1">'yi'</span><span class="p">,</span> <span class="s1">'vi'</span><span class="p">]]</span><span class="o">.</span><span class="n">head</span><span class="p">())</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>   id    genus    species        yi        vi
+0  21    ALNUS      RUBRA  0.550192  0.038472
+1  22    ALNUS      RUBRA  0.147040  0.017455
+2  27     ACER     RUBRUM  0.437769  0.032753
+3  32  QUERCUS     PRINUS -0.110832  0.029516
+4  35    MALUS  DOMESTICA  0.117135  0.046786
+</code></pre></div>
+<p>Here <code>ROM</code> is the log ratio of means, comparing woody plant mass under elevated and ambient CO2, the example of Hedges et
+al. (1999), <a href="https://doi.org/10.1890/0012-9658(1999)080[1150:TMAORR]2.0.CO;2">https://doi.org/10.1890/0012-9658(1999)080[1150:TMAORR]2.0.CO;2</a>. A ratio of means suits outcomes that are
+positive and measured on a ratio scale.</p>
+<p>The measures are metafor's, with the same abbreviations, and fall into groups by the data they need:</p>
+<table>
+<thead>
+<tr>
+<th>Data</th>
+<th>Arguments</th>
+<th>Measures, for example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2x2 tables</td>
+<td><code>ai</code>, <code>bi</code>, <code>ci</code>, <code>di</code> (or <code>n1i</code>, <code>n2i</code> with <code>ai</code>, <code>ci</code>)</td>
+<td><code>RR</code>, <code>OR</code>, <code>RD</code>, <code>PETO</code>, <code>AS</code>, <code>PHI</code>, <code>YUQ</code>, <code>RTET</code></td>
+</tr>
+<tr>
+<td>Person-time</td>
+<td><code>x1i</code>, <code>x2i</code>, <code>t1i</code>, <code>t2i</code></td>
+<td><code>IRR</code>, <code>IRD</code>, <code>IRSD</code></td>
+</tr>
+<tr>
+<td>Two group means</td>
+<td><code>m1i</code>, <code>m2i</code>, <code>sd1i</code>, <code>sd2i</code>, <code>n1i</code>, <code>n2i</code></td>
+<td><code>MD</code>, <code>SMD</code>, <code>SMDH</code>, <code>ROM</code>, <code>VR</code>, <code>CVR</code></td>
+</tr>
+<tr>
+<td>Correlations</td>
+<td><code>ri</code>, <code>ni</code></td>
+<td><code>COR</code>, <code>ZCOR</code></td>
+</tr>
+<tr>
+<td>Proportions</td>
+<td><code>xi</code>, <code>ni</code></td>
+<td><code>PR</code>, <code>PLO</code>, <code>PAS</code>, <code>PFT</code></td>
+</tr>
+<tr>
+<td>Incidence rates</td>
+<td><code>xi</code>, <code>ti</code></td>
+<td><code>IR</code>, <code>IRLN</code>, <code>IRS</code>, <code>IRFT</code></td>
+</tr>
+<tr>
+<td>Single means</td>
+<td><code>mi</code>, <code>sdi</code>, <code>ni</code></td>
+<td><code>MN</code>, <code>MNLN</code>, <code>SMN</code>, <code>SDLN</code>, <code>CVLN</code></td>
+</tr>
+<tr>
+<td>Change scores</td>
+<td><code>m1i</code>, <code>m2i</code>, <code>sd1i</code>, <code>sd2i</code>, <code>ni</code>, <code>ri</code></td>
+<td><code>MC</code>, <code>SMCC</code>, <code>SMCR</code>, <code>ROMC</code></td>
+</tr>
+<tr>
+<td>Partial and semi-partial correlations, R^2</td>
+<td><code>ri</code>, <code>ti</code>, <code>ni</code>, <code>mi</code>, <code>r2i</code></td>
+<td><code>PCOR</code>, <code>SPCOR</code>, <code>R2</code>, <code>ZR2</code></td>
+</tr>
+<tr>
+<td>Precomputed</td>
+<td><code>yi</code>, <code>vi</code> or <code>sei</code></td>
+<td><code>GEN</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>metafopy.effects.measures.MEASURES</code> is the full list, and the <a href="../../reference/effects/">escalc reference</a> the
+required arguments of each. The metafor documentation describes the formulas:
+<a href="https://wviechtb.github.io/metafor/reference/escalc.html">https://wviechtb.github.io/metafor/reference/escalc.html</a>.</p>
+<h2 id="zero-cells-and-bias-correction">Zero cells and bias correction<a class="headerlink" href="#zero-cells-and-bias-correction" title="Permanent link">&para;</a></h2>
+<p>Counts of zero make log ratios undefined. <code>add</code>, <code>to</code> and <code>drop00</code> control the continuity correction exactly as in
+metafor: by default <code>0.5</code> is added to all four cells of a study that has a zero cell (<code>to='only0'</code>). Set <code>add=0</code> to turn
+this off, or <code>to='all'</code> to correct every study.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">escalc</span>
+
+<span class="n">zero</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'dat.hine1989'</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">escalc</span><span class="p">(</span><span class="n">measure</span><span class="o">=</span><span class="s1">'OR'</span><span class="p">,</span> <span class="n">ai</span><span class="o">=</span><span class="s1">'ai'</span><span class="p">,</span> <span class="n">n1i</span><span class="o">=</span><span class="s1">'n1i'</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="s1">'ci'</span><span class="p">,</span> <span class="n">n2i</span><span class="o">=</span><span class="s1">'n2i'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">zero</span><span class="p">)[[</span><span class="s1">'yi'</span><span class="p">,</span> <span class="s1">'vi'</span><span class="p">]])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">escalc</span><span class="p">(</span><span class="n">measure</span><span class="o">=</span><span class="s1">'OR'</span><span class="p">,</span> <span class="n">ai</span><span class="o">=</span><span class="s1">'ai'</span><span class="p">,</span> <span class="n">n1i</span><span class="o">=</span><span class="s1">'n1i'</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="s1">'ci'</span><span class="p">,</span> <span class="n">n2i</span><span class="o">=</span><span class="s1">'n2i'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">zero</span><span class="p">,</span> <span class="n">add</span><span class="o">=</span><span class="mi">0</span><span class="p">)[[</span><span class="s1">'yi'</span><span class="p">,</span> <span class="s1">'vi'</span><span class="p">]])</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>         yi        vi
+0  0.819899  1.550837
+1  0.000000  0.550000
+2  0.453784  0.436002
+3  0.326001  0.363800
+4  0.847298  0.495608
+5  1.004583  0.354944
+         yi        vi
+0  0.819899  1.550837
+1  0.000000  0.550000
+2  0.453784  0.436002
+3  0.326001  0.363800
+4  0.847298  0.495608
+5  1.004583  0.354944
+</code></pre></div>
+<p>Measures such as <code>SMD</code> apply the small-sample bias correction of Hedges (1981), <a href="https://doi.org/10.3102/10769986006002107">https://doi.org/10.3102/10769986006002107</a>, by default (<code>correct=True</code>). For the choice
+of sampling variance formula see <code>vtype</code>, described in the metafor documentation.</p>
+<h2 id="correlations-and-proportions">Correlations and proportions<a class="headerlink" href="#correlations-and-proportions" title="Permanent link">&para;</a></h2>
+<p>The raw correlation has a variance that depends on the correlation itself. Meta-analyses of correlations therefore work on
+Fisher's z (<code>ZCOR</code>) and back-transform for presentation, following Borenstein et al. (2009),
+<a href="https://doi.org/10.1002/9780470743386">https://doi.org/10.1002/9780470743386</a>:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">predict</span><span class="p">,</span> <span class="n">rma</span>
+
+<span class="n">mol</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'dat.molloy2014'</span><span class="p">)</span>
+<span class="n">mol</span> <span class="o">=</span> <span class="n">escalc</span><span class="p">(</span><span class="n">measure</span><span class="o">=</span><span class="s1">'ZCOR'</span><span class="p">,</span> <span class="n">ri</span><span class="o">=</span><span class="s1">'ri'</span><span class="p">,</span> <span class="n">ni</span><span class="o">=</span><span class="s1">'ni'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">mol</span><span class="p">)</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">rma</span><span class="p">(</span><span class="s1">'yi'</span><span class="p">,</span> <span class="s1">'vi'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">mol</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">predict</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">transf</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">tanh</span><span class="p">))</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>     pred   ci.lb   ci.ub   pi.lb   pi.ub
+0  0.1488  0.0878  0.2087 -0.0371  0.3248
+</code></pre></div>
+<p>For proportions, the logit (<code>PLO</code>) is a common choice, with <code>transf.ilogit</code> to go back:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">transf</span>
+
+<span class="n">pri</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'dat.pritz1997'</span><span class="p">)</span>
+<span class="n">pri</span> <span class="o">=</span> <span class="n">escalc</span><span class="p">(</span><span class="n">measure</span><span class="o">=</span><span class="s1">'PLO'</span><span class="p">,</span> <span class="n">xi</span><span class="o">=</span><span class="s1">'xi'</span><span class="p">,</span> <span class="n">ni</span><span class="o">=</span><span class="s1">'ni'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">pri</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">predict</span><span class="p">(</span><span class="n">rma</span><span class="p">(</span><span class="s1">'yi'</span><span class="p">,</span> <span class="s1">'vi'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">pri</span><span class="p">),</span> <span class="n">transf</span><span class="o">=</span><span class="n">transf</span><span class="o">.</span><span class="n">ilogit</span><span class="p">))</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>     pred   ci.lb   ci.ub   pi.lb   pi.ub
+0  0.7575  0.6605  0.8337  0.4661  0.9179
+</code></pre></div>
+<h2 id="precomputed-effect-sizes">Precomputed effect sizes<a class="headerlink" href="#precomputed-effect-sizes" title="Permanent link">&para;</a></h2>
+<p>If a dataset already has effect sizes and sampling variances, pass them straight to <code>rma</code>, or to <code>escalc</code> with
+<code>measure='GEN'</code> to attach labels. Standard errors work too, with <code>sei=</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">rma</span>
+
+<span class="n">rau</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'dat.raudenbush1985'</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">rma</span><span class="p">(</span><span class="s1">'yi'</span><span class="p">,</span> <span class="s1">'vi'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">rau</span><span class="p">))</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>Random-Effects Model (k = 19; tau^2 estimator: REML)
+
+tau^2 (estimated amount of total heterogeneity): 0.0188 (SE = 0.0155)
+tau (square root of estimated tau^2 value):      0.1372
+I^2 (total heterogeneity / total variability):   41.86%
+H^2 (total variability / sampling variability):  1.72
+
+Test for Heterogeneity:
+Q(df = 18) = 35.8295, p-val = 0.0074
+
+Model Results:
+
+estimate      se    zval    pval    ci.lb   ci.ub
+  0.0837  0.0516  1.6208  0.1051  -0.0175  0.1849
+
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+</code></pre></div>
+<h2 id="study-labels-subsets-and-flipping">Study labels, subsets and flipping<a class="headerlink" href="#study-labels-subsets-and-flipping" title="Permanent link">&para;</a></h2>
+<p><code>slab</code> gives study labels used in plots and printed output, <code>subset</code> selects studies, and <code>flip</code> changes the sign of the
+effect size of selected studies. All three accept a column name or an array.</p>
+<div class="highlight"><pre><span></span><code><span class="n">stay</span> <span class="o">=</span> <span class="n">escalc</span><span class="p">(</span><span class="n">measure</span><span class="o">=</span><span class="s1">'MD'</span><span class="p">,</span> <span class="n">n1i</span><span class="o">=</span><span class="s1">'n1i'</span><span class="p">,</span> <span class="n">n2i</span><span class="o">=</span><span class="s1">'n2i'</span><span class="p">,</span> <span class="n">m1i</span><span class="o">=</span><span class="s1">'m1i'</span><span class="p">,</span> <span class="n">m2i</span><span class="o">=</span><span class="s1">'m2i'</span><span class="p">,</span> <span class="n">sd1i</span><span class="o">=</span><span class="s1">'sd1i'</span><span class="p">,</span> <span class="n">sd2i</span><span class="o">=</span><span class="s1">'sd2i'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">datasets</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'dat.normand1999'</span><span class="p">),</span> <span class="n">slab</span><span class="o">=</span><span class="s1">'source'</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">stay</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">'slab'</span><span class="p">])</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>['Edinburgh', 'Orpington-Mild', 'Orpington-Moderate', 'Orpington-Severe', 'Montreal-Home', 'Montreal-Transfer', 'Newcastle', 'Umea', 'Uppsala']
+</code></pre></div>
+<h2 id="summarising">Summarising<a class="headerlink" href="#summarising" title="Permanent link">&para;</a></h2>
+<p><code>summary_escalc</code> adds the standard errors, z values, p values and confidence limits of each study to an <code>escalc</code> result:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">summary_escalc</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">summary_escalc</span><span class="p">(</span><span class="n">stay</span><span class="p">)[[</span><span class="s1">'source'</span><span class="p">,</span> <span class="s1">'yi'</span><span class="p">,</span> <span class="s1">'sei'</span><span class="p">,</span> <span class="s1">'zi'</span><span class="p">,</span> <span class="s1">'pval'</span><span class="p">,</span> <span class="s1">'ci.lb'</span><span class="p">,</span> <span class="s1">'ci.ub'</span><span class="p">]])</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>               source    yi        sei  ...          pval      ci.lb      ci.ub
+0           Edinburgh -20.0   6.364591  ...  1.675772e-03 -32.474370  -7.525630
+1      Orpington-Mild  -2.0   1.442444  ...  1.655835e-01  -4.827139   0.827139
+2  Orpington-Moderate -55.0   3.962121  ...  8.206280e-44 -62.765615 -47.234385
+3    Orpington-Severe -71.0  12.256518  ...  6.920755e-09 -95.022333 -46.977667
+4       Montreal-Home  -4.0   4.160251  ...  3.363107e-01 -12.153943   4.153943
+5   Montreal-Transfer   1.0   1.080436  ...  3.546786e-01  -1.117615   3.117615
+6           Newcastle  11.0   9.725694  ...  2.580447e-01  -8.062010  30.062010
+7                Umea -10.0   2.512146  ...  6.872424e-05 -14.923716  -5.076284
+8             Uppsala   7.0   4.454471  ...  1.160770e-01  -1.730602  15.730602
+
+[9 rows x 7 columns]
+</code></pre></div>
+<h2 id="transformations">Transformations<a class="headerlink" href="#transformations" title="Permanent link">&para;</a></h2>
+<p><code>metafopy.transf</code> holds metafor's transformation functions (<code>transf.ilogit</code>, <code>transf.ztor</code>, <code>transf.dtocles</code> and so on, also
+imported at the top level as <code>transf_ilogit</code>, <code>transf_ztor</code>, ...). Pass
+them as <code>transf=</code> to <code>predict</code> and <code>confint</code>, or as <code>atransf=</code> to the plot functions. NumPy functions such as <code>numpy.exp</code> and
+<code>numpy.tanh</code> work as well.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.top", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../../assets/favicon-animate.js"></script>
+      
+    
+  <script data-mkdocs-jupyter-mathjax="{&quot;url&quot;: &quot;https://cdn.jsdelivr.net/npm/mathjax@4.1.3/tex-mml-chtml.js&quot;, &quot;version&quot;: 4}">
+/* Shared by full pages and Material's instant navigation. */
+(() => {
+  const config = JSON.parse(document.currentScript.dataset.mkdocsJupyterMathjax);
+  if (window.mkdocsJupyterMathJax) return;
+
+  let loading;
+  let queue = Promise.resolve();
+  let previous = [];
+
+  const ready = async () => {
+    if (!loading) {
+      loading = (async () => {
+        let math = window.MathJax;
+        if (!math?.typesetPromise) {
+          const url = new URL(config.url, document.baseURI).href;
+          const existing = Array.from(document.scripts).find(script =>
+            script.src && (script.src === url || script.id === 'MathJax-script' ||
+              (/mathjax/i.test(script.src) &&
+               /\/(?:MathJax|latest|(?:tex|mml)(?:-mml)?-(?:chtml|svg))\.js(?:[?#]|$)/i.test(script.src))));
+          if (existing) {
+            if (!math?.startup?.promise) {
+              await new Promise((resolve, reject) => {
+                existing.addEventListener('load', resolve, { once: true });
+                existing.addEventListener('error', reject, { once: true });
+              });
+            }
+          } else {
+            // Keep site macros, delimiters and startup hooks when supplied.
+            const options = math || {};
+            window.MathJax = {
+              ...options,
+              loader: {
+                ...options.loader,
+                load: Array.from(new Set(['ui/safe', ...(options.loader?.load || [])]))
+              },
+              startup: { typeset: false, ...options.startup },
+              tex: {
+                tags: 'ams',
+                useLabelIds: true,
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true,
+                processEnvironments: true,
+                ...options.tex
+              }
+            };
+            await new Promise((resolve, reject) => {
+              const script = document.createElement('script');
+              script.src = config.url;
+              script.id = 'MathJax-script';
+              script.async = true;
+              script.onload = resolve;
+              script.onerror = reject;
+              document.head.appendChild(script);
+            });
+          }
+        }
+        math = window.MathJax;
+        await math.startup.promise;
+        return math;
+      })();
+    }
+    const math = await loading;
+    // A site owner can extend the v3 queue again on each navigation.
+    await math.startup.promise;
+    return math;
+  };
+
+  const unrendered = node => {
+    if (node.matches('mjx-container')) return [];
+    if (!node.querySelector('mjx-container')) return [node];
+    // In v3, scanning generated assistive MathML again produces nested output.
+    return Array.from(node.children).flatMap(unrendered);
+  };
+
+  const refresh = () => {
+    // A separate chain also serializes v3, without changing v4's startup promise.
+    queue = queue.then(async () => {
+      const notebooks = Array.from(document.querySelectorAll('.jupyter-wrapper'));
+      if (!notebooks.length && !previous.length) return;
+      if (notebooks.length === previous.length &&
+          notebooks.every((node, index) => node === previous[index])) return;
+      const math = await ready();
+      if (previous.length) {
+        math.typesetClear(previous);
+        math.texReset();
+      }
+      previous = notebooks.filter(node => node.isConnected);
+      const pending = previous.flatMap(unrendered);
+      if (pending.length) await math.typesetPromise(pending);
+    }).catch(error => console.error('mkdocs-jupyter: MathJax rendering failed', error));
+    return queue;
+  };
+
+  window.mkdocsJupyterMathJax = { refresh };
+  const start = () => {
+    if (typeof document$ !== 'undefined') document$.subscribe(refresh);
+    else refresh();
+  };
+  // Theme bundles and user-provided MathJax scripts can follow notebook content.
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', start, { once: true });
+  } else start();
+})();
+
+</script>
+</body>
+</html>

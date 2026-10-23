@@ -1,0 +1,1795 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Meta-analysis in Python, a re-implementation of the R package metafor">
+      
+      
+      
+      
+        <link rel="prev" href="../advanced/">
+      
+      
+        <link rel="next" href="../bias/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/favicon.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Diagnostics - metafopy</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Mona+Sans:300,300i,400,400i,700,700i%7CSource+Code+Pro:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Mona Sans";--md-code-font:"Source Code Pro"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../assets/theme.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#diagnostics" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="metafopy" class="md-header__button md-logo" aria-label="metafopy" data-md-component="logo">
+      
+  <img src="../../assets/metafopy-mark.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            metafopy
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Diagnostics
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/bnomis/metafopy" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="metafopy" class="md-nav__button md-logo" aria-label="metafopy" data-md-component="logo">
+      
+  <img src="../../assets/metafopy-mark.svg" alt="logo">
+
+    </a>
+    metafopy
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/bnomis/metafopy" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../effect-sizes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Effect sizes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fitting models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../binary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Binary and count data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../multilevel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multilevel and multivariate models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../advanced/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Selection and location-scale models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#residuals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Residuals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#influence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Influence
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#leave-one-out-and-cumulative-analyses" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Leave-one-out and cumulative analyses
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#heterogeneity-sources-baujat-and-gosh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Heterogeneity sources: Baujat and GOSH
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#heteroscedastic-heterogeneity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Heteroscedastic heterogeneity
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#variance-inflation-factors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Variance inflation factors
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#best-linear-unbiased-predictions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Best linear unbiased predictions
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bias/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Publication bias
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../emmeans/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Estimated marginal means
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plots/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plots
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gallery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plot gallery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../datasets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Datasets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/showcase/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    metafopy showcase
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../analyses/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Analyses
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../from-r/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Coming from R
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Function reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Function reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/effects/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Effect sizes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/methods/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Methods for fitted models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/bias/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Publication bias
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/plots/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plots
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/transf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Transformations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/datasets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Datasets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/errors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Errors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Differences from metafor
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Differences from metafor
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../differences/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../differences-notes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Detailed notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../differences-plots/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plots compared with metafor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#residuals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Residuals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#influence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Influence
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#leave-one-out-and-cumulative-analyses" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Leave-one-out and cumulative analyses
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#heterogeneity-sources-baujat-and-gosh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Heterogeneity sources: Baujat and GOSH
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#heteroscedastic-heterogeneity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Heteroscedastic heterogeneity
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#variance-inflation-factors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Variance inflation factors
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#best-linear-unbiased-predictions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Best linear unbiased predictions
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="diagnostics">Diagnostics<a class="headerlink" href="#diagnostics" title="Permanent link">&para;</a></h1>
+<p>Diagnostics for <code>rma_uni</code> fits follow metafor's functions of the same names. The examples use the BCG data:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">escalc</span><span class="p">,</span> <span class="n">rma</span>
+
+<span class="n">dat</span> <span class="o">=</span> <span class="n">escalc</span><span class="p">(</span><span class="n">measure</span><span class="o">=</span><span class="s1">'RR'</span><span class="p">,</span> <span class="n">ai</span><span class="o">=</span><span class="s1">'tpos'</span><span class="p">,</span> <span class="n">bi</span><span class="o">=</span><span class="s1">'tneg'</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="s1">'cpos'</span><span class="p">,</span> <span class="n">di</span><span class="o">=</span><span class="s1">'cneg'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">datasets</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'dat.bcg'</span><span class="p">))</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">rma</span><span class="p">(</span><span class="s1">'yi'</span><span class="p">,</span> <span class="s1">'vi'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">)</span>
+</code></pre></div>
+<h2 id="residuals">Residuals<a class="headerlink" href="#residuals" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">rstandard</span><span class="p">,</span> <span class="n">rstudent</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">rstandard</span><span class="p">(</span><span class="n">res</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">rstudent</span><span class="p">(</span><span class="n">res</span><span class="p">))</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>     resid     se       z
+1  -0.1748 0.7788 -0.2244
+2  -0.8709 0.6896 -1.2629
+3  -0.6335 0.8344 -0.7592
+4  -0.7270 0.5486 -1.3253
+5   0.4970 0.5763  0.8624
+6  -0.0716 0.5365 -0.1334
+7  -0.9064 0.7099 -1.2768
+8   0.7265 0.5337  1.3611
+9   0.2451 0.5808  0.4220
+10 -0.6568 0.5949 -1.1040
+11  0.3752 0.5416  0.6927
+12  1.1604 0.9019  1.2867
+13  0.6972 0.5936  1.1746
+
+
+     resid     se       z
+1  -0.1822 0.8354 -0.2181
+2  -0.9314 0.7210 -1.2918
+3  -0.6625 0.8778 -0.7547
+4  -0.8131 0.5603 -1.4512
+5   0.5466 0.6448  0.8477
+6  -0.0752 0.6376 -0.1180
+7  -0.9657 0.7407 -1.3037
+8   0.8067 0.5563  1.4501
+9   0.2718 0.6668  0.4076
+10 -0.7183 0.6369 -1.1277
+11  0.4185 0.6255  0.6691
+12  1.2057 0.9348  1.2898
+13  0.7602 0.6400  1.1879
+</code></pre></div>
+<p><code>rstandard</code> gives internally standardized residuals and <code>rstudent</code> externally studentized residuals (the residual of each
+study from a model fitted without it). Studies with absolute values above about 2 or 3 deserve a look.</p>
+<p><code>residuals</code> takes a <code>type</code>: <code>'response'</code> (the default, the raw residuals), <code>'rstandard'</code>, <code>'rstudent'</code>, <code>'pearson'</code> (the raw residuals
+divided by the square root of the sampling variance plus tau^2) and <code>'cholesky'</code> (the residuals decorrelated with the Cholesky factor of
+the marginal variance-covariance matrix). Which types a fit class allows follows metafor. <code>na_action</code> stands in for R's
+<code>options(na.action=)</code>. <code>weights_(type='matrix')</code> returns the weight matrix.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">residuals</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">residuals</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="s1">'pearson'</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">residuals</span><span class="p">(</span><span class="s1">'rstudent'</span><span class="p">,</span> <span class="n">na_action</span><span class="o">=</span><span class="s1">'exclude'</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">weights_</span><span class="p">(</span><span class="s1">'matrix'</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+</code></pre></div>
+<h2 id="influence">Influence<a class="headerlink" href="#influence" title="Permanent link">&para;</a></h2>
+<p><code>influence</code> computes the case deletion diagnostics of Viechtbauer and Cheung (2010),
+<a href="https://doi.org/10.1002/jrsm.11">https://doi.org/10.1002/jrsm.11</a>: externally studentized residuals, DFFITS, Cook's distances, covariance ratios, hat values,
+leave-one-out estimates of tau^2 and Q, and DFBETAS.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">influence</span>
+
+<span class="n">inf</span> <span class="o">=</span> <span class="n">influence</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">inf</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>   rstudent  dffits cook.d  cov.r tau2.del   QE.del    hat  weight    dfbs inf
+1   -0.2181 -0.0407 0.0017 1.1164   0.3362 151.5826 0.0506  5.0595 -0.0403
+2   -1.2918 -0.3436 0.1132 1.0102   0.2926 145.3176 0.0636  6.3647 -0.3459
+3   -0.7547 -0.1604 0.0260 1.0670   0.3207 150.1970 0.0444  4.4360 -0.1597
+4   -1.4512 -0.5201 0.2295 0.9651   0.2628  96.5626 0.0970  9.6987 -0.5138
+5    0.8477  0.2707 0.0762 1.1380   0.3278 151.3200 0.0887  8.8685  0.2711
+6   -0.1180 -0.0190 0.0004 1.2407   0.3596 128.1867 0.1010 10.0957 -0.0192
+7   -1.3037 -0.3362 0.1087 1.0077   0.2930 145.8296 0.0603  6.0272 -0.3387
+8    1.4501  0.4775 0.1992 1.0011   0.2732  67.9858 0.1019 10.1894  0.4714
+9    0.4076  0.1415 0.0220 1.1968   0.3495 152.2051 0.0874  8.7431  0.1419
+10  -1.1277 -0.3487 0.1170 1.0505   0.2987 139.8271 0.0837  8.3676 -0.3487
+11   0.6691  0.2315 0.0581 1.1860   0.3405 151.4655 0.0993  9.9250  0.2330
+12   1.2898  0.2526 0.0634 1.0259   0.3082 150.7868 0.0382  3.8216  0.2535
+13   1.1879  0.3549 0.1228 1.0650   0.3037 149.7884 0.0840  8.4029  0.3548
+</code></pre></div>
+<p>The last column, <code>inf</code>, is empty unless a study is flagged as influential (as in metafor, by the usual cutoffs). The individual diagnostics are also available as
+<code>cooks_distance</code> and <code>dfbetas</code>; <code>influence(res, measure='cooks.distance')</code>, <code>measure='dfbetas'</code> and <code>measure='rstudent'</code> return the same
+objects as those functions and <code>rstudent</code>, as in metafor. <code>plot_infl</code> plots them all:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_infl</span>
+
+<span class="n">plot_infl</span><span class="p">(</span><span class="n">inf</span><span class="p">)</span>
+<span class="n">matplotlib</span><span class="o">.</span><span class="n">pyplot</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s1">'influence.png'</span><span class="p">)</span>
+</code></pre></div>
+<h2 id="leave-one-out-and-cumulative-analyses">Leave-one-out and cumulative analyses<a class="headerlink" href="#leave-one-out-and-cumulative-analyses" title="Permanent link">&para;</a></h2>
+<p><code>leave1out</code> refits the model leaving out each study in turn and <code>cumul</code> adds the studies one at a time, in their order in
+the data (sort the data first to cumulate by year or precision).</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">cumul</span><span class="p">,</span> <span class="n">leave1out</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">leave1out</span><span class="p">(</span><span class="n">res</span><span class="p">)</span><span class="o">.</span><span class="n">estimate</span><span class="p">[:</span><span class="mi">3</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">cumul</span><span class="p">(</span><span class="n">res</span><span class="p">)</span><span class="o">.</span><span class="n">estimate</span><span class="p">[:</span><span class="mi">3</span><span class="p">])</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>[-0.70708379 -0.6540312  -0.68555442]
+[-0.88931133 -1.32500344 -1.33023415]
+</code></pre></div>
+<p>Both return a result whose fields (<code>estimate</code>, <code>se</code>, <code>ci_lb</code>, <code>ci_ub</code>, <code>tau2</code>...) are arrays with one entry per fit, and print
+as a table. <code>leave1out</code> and <code>cumul</code> also work for <code>rma_mh</code> and <code>rma_peto</code> fits.</p>
+<h2 id="heterogeneity-sources-baujat-and-gosh">Heterogeneity sources: Baujat and GOSH<a class="headerlink" href="#heterogeneity-sources-baujat-and-gosh" title="Permanent link">&para;</a></h2>
+<p>A Baujat plot (Baujat et al., 2002, <a href="https://doi.org/10.1002/sim.1221">https://doi.org/10.1002/sim.1221</a>) shows which studies contribute most to the
+heterogeneity and to the overall result. The GOSH plot (Olkin et al., 2012, <a href="https://doi.org/10.1002/jrsm.1053">https://doi.org/10.1002/jrsm.1053</a>) fits the
+model to many subsets of the studies and shows the distribution of the results. With many studies it fits a random sample of
+the subsets, controlled by <code>subsets</code> and <code>seed</code>.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">baujat</span><span class="p">,</span> <span class="n">gosh</span><span class="p">,</span> <span class="n">plot_gosh</span><span class="p">,</span> <span class="n">set_seed</span>
+
+<span class="n">baujat</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+<span class="n">set_seed</span><span class="p">(</span><span class="mi">1234</span><span class="p">)</span>
+<span class="n">plot_gosh</span><span class="p">(</span><span class="n">gosh</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">subsets</span><span class="o">=</span><span class="mi">200</span><span class="p">))</span>
+</code></pre></div>
+<h2 id="heteroscedastic-heterogeneity">Heteroscedastic heterogeneity<a class="headerlink" href="#heteroscedastic-heterogeneity" title="Permanent link">&para;</a></h2>
+<p>The random-effects model assumes the same amount of heterogeneity, tau^2, for every study. <code>hettest</code> (new in metafor 5.2-1) tests
+this assumption, H0: tau^2_1 = ... = tau^2_k, for a model without moderators or for a vector of estimates with their sampling
+variances (<code>vi=</code>) or standard errors (<code>sei=</code>). The default is a score test; <code>test='lrt'</code> and <code>test='wald'</code> give a likelihood
+ratio and a Wald-type test, and <code>'ksn'</code>, <code>'ksx2'</code>, <code>'adn'</code> and <code>'adx2'</code> check the Pearson residuals with Kolmogorov-Smirnov and
+Anderson-Darling goodness-of-fit tests. The p-values come from a parametric bootstrap (<code>boot=1000</code> samples unless you set
+<code>boot=</code> to another count), which draws from R's random number generator, so <code>seed=</code> gives the results of <code>set.seed()</code> in R.
+<code>boot=False</code> uses the chi-squared reference distribution of the three model-based tests instead.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">hettest</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">hettest</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">1234</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">hettest</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">test</span><span class="o">=</span><span class="p">[</span><span class="s1">'lrt'</span><span class="p">,</span> <span class="s1">'ksn'</span><span class="p">],</span> <span class="n">boot</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">1234</span><span class="p">))</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>Test for Heteroscedastic Heterogeneity
+
+Estimation method: Restricted maximum likelihood
+Test type:         Score test
+Bootstrapping:     Yes (1000/1000 iterations)
+
+X^2(df = 12) = 2.8884, p = 0.9920
+</code></pre></div>
+<p>The result holds the statistics (<code>statistic</code>), p-values (<code>pval</code>), the estimated study-specific variances (<code>tau2i</code>) and the
+bootstrapped statistics (<code>statistic_boot</code>). Fitted models of the classes <code>rma_mv</code>, <code>rma_glmm</code>, <code>selmodel</code> and location-scale
+models are not accepted, as in metafor.</p>
+<h2 id="variance-inflation-factors">Variance inflation factors<a class="headerlink" href="#variance-inflation-factors" title="Permanent link">&para;</a></h2>
+<p>For meta-regression, <code>vif</code> reports collinearity among the moderators:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">vif</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">vif</span><span class="p">(</span><span class="n">rma</span><span class="p">(</span><span class="s1">'yi'</span><span class="p">,</span> <span class="s1">'vi'</span><span class="p">,</span> <span class="n">mods</span><span class="o">=</span><span class="s1">'~ ablat + year'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">)))</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code> ablat    year
+1.5391  1.5391
+</code></pre></div>
+<p><code>vif</code> also takes <code>rma_mv</code>, location-scale and <code>selmodel</code> fits with moderators. The options are those of metafor: <code>btt</code> (and <code>att</code>
+for the scale part), <code>table=True</code> for the coefficient table, <code>intercept=True</code> to include the intercept, <code>fixed=True</code> to match a
+string <code>btt</code> literally, and, except for <code>selmodel</code> fits, <code>reestimate=True</code> and <code>sim</code>.</p>
+<h2 id="best-linear-unbiased-predictions">Best linear unbiased predictions<a class="headerlink" href="#best-linear-unbiased-predictions" title="Permanent link">&para;</a></h2>
+<p><code>blup</code> gives the shrunken estimate of the true effect of each study, which combines its observed effect and the model
+estimate, and <code>ranef</code> the estimated random effects:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">blup</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">blup</span><span class="p">(</span><span class="n">res</span><span class="p">))</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>      pred     se   pi.lb   pi.ub
+1  -0.8002 0.4099 -1.6037  0.0032
+2  -1.2517 0.3532 -1.9440 -0.5594
+3  -0.9869 0.4348 -1.8392 -0.1346
+4  -1.3979 0.1376 -1.6675 -1.1283
+5  -0.2874 0.2113 -0.7015  0.1268
+6  -0.7846 0.0823 -0.9459 -0.6233
+7  -1.2440 0.3686 -1.9664 -0.5215
+8   0.0029 0.0626 -0.1198  0.1255
+9  -0.5068 0.2204 -0.9388 -0.0749
+10 -1.2472 0.2457 -1.7288 -0.7656
+11 -0.3537 0.1095 -0.5682 -0.1391
+12 -0.2847 0.4583 -1.1830  0.6135
+13 -0.1467 0.2434 -0.6239  0.3304
+</code></pre></div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.top", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../../assets/favicon-animate.js"></script>
+      
+    
+  <script data-mkdocs-jupyter-mathjax="{&quot;url&quot;: &quot;https://cdn.jsdelivr.net/npm/mathjax@4.1.3/tex-mml-chtml.js&quot;, &quot;version&quot;: 4}">
+/* Shared by full pages and Material's instant navigation. */
+(() => {
+  const config = JSON.parse(document.currentScript.dataset.mkdocsJupyterMathjax);
+  if (window.mkdocsJupyterMathJax) return;
+
+  let loading;
+  let queue = Promise.resolve();
+  let previous = [];
+
+  const ready = async () => {
+    if (!loading) {
+      loading = (async () => {
+        let math = window.MathJax;
+        if (!math?.typesetPromise) {
+          const url = new URL(config.url, document.baseURI).href;
+          const existing = Array.from(document.scripts).find(script =>
+            script.src && (script.src === url || script.id === 'MathJax-script' ||
+              (/mathjax/i.test(script.src) &&
+               /\/(?:MathJax|latest|(?:tex|mml)(?:-mml)?-(?:chtml|svg))\.js(?:[?#]|$)/i.test(script.src))));
+          if (existing) {
+            if (!math?.startup?.promise) {
+              await new Promise((resolve, reject) => {
+                existing.addEventListener('load', resolve, { once: true });
+                existing.addEventListener('error', reject, { once: true });
+              });
+            }
+          } else {
+            // Keep site macros, delimiters and startup hooks when supplied.
+            const options = math || {};
+            window.MathJax = {
+              ...options,
+              loader: {
+                ...options.loader,
+                load: Array.from(new Set(['ui/safe', ...(options.loader?.load || [])]))
+              },
+              startup: { typeset: false, ...options.startup },
+              tex: {
+                tags: 'ams',
+                useLabelIds: true,
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true,
+                processEnvironments: true,
+                ...options.tex
+              }
+            };
+            await new Promise((resolve, reject) => {
+              const script = document.createElement('script');
+              script.src = config.url;
+              script.id = 'MathJax-script';
+              script.async = true;
+              script.onload = resolve;
+              script.onerror = reject;
+              document.head.appendChild(script);
+            });
+          }
+        }
+        math = window.MathJax;
+        await math.startup.promise;
+        return math;
+      })();
+    }
+    const math = await loading;
+    // A site owner can extend the v3 queue again on each navigation.
+    await math.startup.promise;
+    return math;
+  };
+
+  const unrendered = node => {
+    if (node.matches('mjx-container')) return [];
+    if (!node.querySelector('mjx-container')) return [node];
+    // In v3, scanning generated assistive MathML again produces nested output.
+    return Array.from(node.children).flatMap(unrendered);
+  };
+
+  const refresh = () => {
+    // A separate chain also serializes v3, without changing v4's startup promise.
+    queue = queue.then(async () => {
+      const notebooks = Array.from(document.querySelectorAll('.jupyter-wrapper'));
+      if (!notebooks.length && !previous.length) return;
+      if (notebooks.length === previous.length &&
+          notebooks.every((node, index) => node === previous[index])) return;
+      const math = await ready();
+      if (previous.length) {
+        math.typesetClear(previous);
+        math.texReset();
+      }
+      previous = notebooks.filter(node => node.isConnected);
+      const pending = previous.flatMap(unrendered);
+      if (pending.length) await math.typesetPromise(pending);
+    }).catch(error => console.error('mkdocs-jupyter: MathJax rendering failed', error));
+    return queue;
+  };
+
+  window.mkdocsJupyterMathJax = { refresh };
+  const start = () => {
+    if (typeof document$ !== 'undefined') document$.subscribe(refresh);
+    else refresh();
+  };
+  // Theme bundles and user-provided MathJax scripts can follow notebook content.
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', start, { once: true });
+  } else start();
+})();
+
+</script>
+</body>
+</html>

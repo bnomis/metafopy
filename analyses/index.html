@@ -1,0 +1,2158 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Meta-analysis in Python, a re-implementation of the R package metafor">
+      
+      
+      
+      
+        <link rel="prev" href="../notebooks/showcase/">
+      
+      
+        <link rel="next" href="../from-r/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/favicon.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Analyses - metafopy</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Mona+Sans:300,300i,400,400i,700,700i%7CSource+Code+Pro:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Mona Sans";--md-code-font:"Source Code Pro"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../assets/theme.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#analyses" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="metafopy" class="md-header__button md-logo" aria-label="metafopy" data-md-component="logo">
+      
+  <img src="../assets/metafopy-mark.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            metafopy
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Analyses
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/bnomis/metafopy" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="metafopy" class="md-nav__button md-logo" aria-label="metafopy" data-md-component="logo">
+      
+  <img src="../assets/metafopy-mark.svg" alt="logo">
+
+    </a>
+    metafopy
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/bnomis/metafopy" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/effect-sizes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Effect sizes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fitting models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/binary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Binary and count data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/multilevel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multilevel and multivariate models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/advanced/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Selection and location-scale models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/diagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/bias/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Publication bias
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/emmeans/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Estimated marginal means
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/plots/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plots
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/gallery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plot gallery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/datasets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Datasets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../notebooks/showcase/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    metafopy showcase
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Analyses
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Analyses
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#bcg-vaccine-against-tuberculosis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        BCG vaccine against tuberculosis
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#beta-blockers-after-myocardial-infarction-yusuf-1985" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Beta blockers after myocardial infarction (Yusuf, 1985)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hospital-stay-of-stroke-patients" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hospital stay of stroke patients
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#teacher-expectancy-and-iq" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Teacher expectancy and IQ
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#publication-bias-in-passive-smoking-studies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Publication bias in passive smoking studies
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#multilevel-meta-analysis-of-recidivism-and-mental-health" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multilevel meta-analysis of recidivism and mental health
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#schools-within-districts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Schools within districts
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#writing-to-learn-interventions-a-location-scale-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Writing-to-learn interventions: a location-scale model
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../from-r/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Coming from R
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Function reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Function reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/effects/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Effect sizes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/methods/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Methods for fitted models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/bias/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Publication bias
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/plots/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plots
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/transf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Transformations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/datasets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Datasets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/errors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Errors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Differences from metafor
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Differences from metafor
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../differences/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../differences-notes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Detailed notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../differences-plots/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plots compared with metafor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#bcg-vaccine-against-tuberculosis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        BCG vaccine against tuberculosis
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#beta-blockers-after-myocardial-infarction-yusuf-1985" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Beta blockers after myocardial infarction (Yusuf, 1985)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hospital-stay-of-stroke-patients" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hospital stay of stroke patients
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#teacher-expectancy-and-iq" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Teacher expectancy and IQ
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#publication-bias-in-passive-smoking-studies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Publication bias in passive smoking studies
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#multilevel-meta-analysis-of-recidivism-and-mental-health" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multilevel meta-analysis of recidivism and mental health
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#schools-within-districts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Schools within districts
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#writing-to-learn-interventions-a-location-scale-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Writing-to-learn interventions: a location-scale model
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="analyses">Analyses<a class="headerlink" href="#analyses" title="Permanent link">&para;</a></h1>
+<p>Worked examples that mirror the <a href="https://www.metafor-project.org/doku.php/analyses">metafor analyses gallery</a>. The data are
+the metadat datasets bundled with metafopy, so every block runs as shown. Compare the output with the metafor pages to see
+that the numbers agree.</p>
+<h2 id="bcg-vaccine-against-tuberculosis">BCG vaccine against tuberculosis<a class="headerlink" href="#bcg-vaccine-against-tuberculosis" title="Permanent link">&para;</a></h2>
+<p>Colditz et al. (1994), <a href="https://doi.org/10.1001/jama.1994.03510330076038">https://doi.org/10.1001/jama.1994.03510330076038</a>, and the analysis of Berkey et al. (1995),
+<a href="https://doi.org/10.1002/sim.4780140406">https://doi.org/10.1002/sim.4780140406</a>. Trials compared vaccinated and unvaccinated subjects. The effect size
+is the log risk ratio.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib</span>
+
+<span class="n">matplotlib</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">'Agg'</span><span class="p">)</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">confint</span><span class="p">,</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">escalc</span><span class="p">,</span> <span class="n">forest</span><span class="p">,</span> <span class="n">funnel</span><span class="p">,</span> <span class="n">predict</span><span class="p">,</span> <span class="n">rma</span>
+
+<span class="n">dat</span> <span class="o">=</span> <span class="n">escalc</span><span class="p">(</span><span class="n">measure</span><span class="o">=</span><span class="s1">'RR'</span><span class="p">,</span> <span class="n">ai</span><span class="o">=</span><span class="s1">'tpos'</span><span class="p">,</span> <span class="n">bi</span><span class="o">=</span><span class="s1">'tneg'</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="s1">'cpos'</span><span class="p">,</span> <span class="n">di</span><span class="o">=</span><span class="s1">'cneg'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">datasets</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'dat.bcg'</span><span class="p">))</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">rma</span><span class="p">(</span><span class="s1">'yi'</span><span class="p">,</span> <span class="s1">'vi'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">predict</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">transf</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">))</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>Random-Effects Model (k = 13; tau^2 estimator: REML)
+
+tau^2 (estimated amount of total heterogeneity): 0.3132 (SE = 0.1664)
+tau (square root of estimated tau^2 value):      0.5597
+I^2 (total heterogeneity / total variability):   92.22%
+H^2 (total variability / sampling variability):  12.86
+
+Test for Heterogeneity:
+Q(df = 12) = 152.2330, p-val &lt; .0001
+
+Model Results:
+
+estimate      se     zval    pval    ci.lb    ci.ub
+ -0.7145  0.1798  -3.9744  &lt;.0001  -1.0669  -0.3622  ***
+
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+     pred   ci.lb   ci.ub   pi.lb  pi.ub
+0  0.4894  0.3441  0.6962  0.1546  1.549
+</code></pre></div>
+<p>The average risk ratio is about 0.5, with a prediction interval so wide that the vaccine could have no effect, or a
+strong one, in a new setting. The I^2 value says that nearly all of the variability is heterogeneity, so look for
+moderators. Trials were run at different latitudes:</p>
+<div class="highlight"><pre><span></span><code><span class="n">res_lat</span> <span class="o">=</span> <span class="n">rma</span><span class="p">(</span><span class="s1">'yi'</span><span class="p">,</span> <span class="s1">'vi'</span><span class="p">,</span> <span class="n">mods</span><span class="o">=</span><span class="s1">'~ ablat'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">res_lat</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">predict</span><span class="p">(</span><span class="n">res_lat</span><span class="p">,</span> <span class="n">newmods</span><span class="o">=</span><span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="mi">50</span><span class="p">],</span> <span class="n">transf</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">))</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>Mixed-Effects Model (k = 13; tau^2 estimator: REML)
+
+tau^2 (estimated amount of residual heterogeneity):     0.0764 (SE = 0.0591)
+tau (square root of estimated tau^2 value):             0.2763
+I^2 (residual heterogeneity / unaccounted variability): 68.39%
+H^2 (unaccounted variability / sampling variability):   3.16
+R^2 (amount of heterogeneity accounted for):            75.62%
+
+Test for Residual Heterogeneity:
+QE(df = 11) = 30.7331, p-val = 0.0012
+
+Test of Moderators (coefficient 2):
+QM(df = 1) = 16.3571, p-val &lt; .0001
+
+Model Results:
+
+         estimate      se     zval    pval    ci.lb    ci.ub
+intrcpt    0.2515  0.2491   1.0095  0.3127  -0.2368   0.7397
+ablat     -0.0291  0.0072  -4.0444  &lt;.0001  -0.0432  -0.0150  ***
+
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+     pred   ci.lb   ci.ub   pi.lb   pi.ub
+0  0.9612  0.6668  1.3857  0.5000  1.8478
+1  0.7185  0.5526  0.9343  0.3936  1.3117
+2  0.5371  0.4355  0.6623  0.3005  0.9600
+3  0.4015  0.3151  0.5115  0.2218  0.7266
+4  0.3001  0.2144  0.4201  0.1586  0.5678
+</code></pre></div>
+<p>The estimated risk ratio falls steadily with absolute latitude: the vaccine does little near the equator and cuts the risk by
+well over half in the north and south. The moderator accounts for most of the heterogeneity. Allocation method is another
+candidate moderator. Comparing nested models with a likelihood ratio test needs <code>method='ML'</code>; the larger model comes first:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">anova</span>
+
+<span class="n">ml_lat</span> <span class="o">=</span> <span class="n">rma</span><span class="p">(</span><span class="s1">'yi'</span><span class="p">,</span> <span class="s1">'vi'</span><span class="p">,</span> <span class="n">mods</span><span class="o">=</span><span class="s1">'~ ablat'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">'ML'</span><span class="p">)</span>
+<span class="n">ml_both</span> <span class="o">=</span> <span class="n">rma</span><span class="p">(</span><span class="s1">'yi'</span><span class="p">,</span> <span class="s1">'vi'</span><span class="p">,</span> <span class="n">mods</span><span class="o">=</span><span class="s1">'~ ablat + alloc'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">'ML'</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">anova</span><span class="p">(</span><span class="n">ml_both</span><span class="p">,</span> <span class="n">ml_lat</span><span class="p">))</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>         df      AIC      BIC     AICc  logLik     LRT    pval       QE   tau^2      R^2
+Full      5  24.0269  26.8517  32.5984 -7.0135     NaN     NaN  26.2034  0.0294      NaN
+Reduced   3  21.3713  23.0662  24.0380 -7.6857  1.3444  0.5106  30.7331  0.0344  14.3976
+</code></pre></div>
+<p>Allocation adds nothing once latitude is in the model. Forest and funnel plots of the random-effects model:</p>
+<div class="highlight"><pre><span></span><code><span class="n">forest</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">atransf</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">,</span> <span class="n">xlab</span><span class="o">=</span><span class="s1">'Risk ratio'</span><span class="p">)</span>
+<span class="n">matplotlib</span><span class="o">.</span><span class="n">pyplot</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s1">'bcg-forest.png'</span><span class="p">)</span>
+
+<span class="n">matplotlib</span><span class="o">.</span><span class="n">pyplot</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+<span class="n">funnel</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+<span class="n">matplotlib</span><span class="o">.</span><span class="n">pyplot</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s1">'bcg-funnel.png'</span><span class="p">)</span>
+</code></pre></div>
+<h2 id="beta-blockers-after-myocardial-infarction-yusuf-1985">Beta blockers after myocardial infarction (Yusuf, 1985)<a class="headerlink" href="#beta-blockers-after-myocardial-infarction-yusuf-1985" title="Permanent link">&para;</a></h2>
+<p>Yusuf et al. (1985), <a href="https://doi.org/10.1016/S0033-0620(85)80003-7">https://doi.org/10.1016/S0033-0620(85)80003-7</a>, described Peto's one-step method for pooling 2x2
+tables of rare events. The dataset holds several tables of the article; this one is total mortality in short-term trials of
+oral beta blockers:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">rma_mh</span><span class="p">,</span> <span class="n">rma_peto</span>
+
+<span class="n">dat</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'dat.yusuf1985'</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">rma_peto</span><span class="p">(</span><span class="n">ai</span><span class="o">=</span><span class="s1">'ai'</span><span class="p">,</span> <span class="n">n1i</span><span class="o">=</span><span class="s1">'n1i'</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="s1">'ci'</span><span class="p">,</span> <span class="n">n2i</span><span class="o">=</span><span class="s1">'n2i'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">,</span> <span class="n">subset</span><span class="o">=</span><span class="n">dat</span><span class="p">[</span><span class="s1">'table'</span><span class="p">]</span> <span class="o">==</span> <span class="s1">'6'</span><span class="p">))</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>Equal-Effects Model (k = 21)
+
+I^2 (total heterogeneity / total variability):  0.00%
+H^2 (total variability / sampling variability): 0.64
+
+Test for Heterogeneity:
+Q(df = 17) = 10.8275, p-val = 0.8654
+
+Model Results (log scale):
+
+estimate      se     zval    pval    ci.lb   ci.ub
+ -0.0692  0.1194  -0.5794  0.5623  -0.3031  0.1648
+
+Model Results (OR scale):
+
+estimate   ci.lb   ci.ub
+  0.9332  0.7385  1.1792
+</code></pre></div>
+<p>One trial has missing counts, which metafopy reports with a warning, as metafor does, and trials without events in either group are dropped by the Peto and Mantel-Haenszel methods. The Mantel-Haenszel estimate of the same trials is close:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">print</span><span class="p">(</span><span class="n">rma_mh</span><span class="p">(</span><span class="n">ai</span><span class="o">=</span><span class="s1">'ai'</span><span class="p">,</span> <span class="n">n1i</span><span class="o">=</span><span class="s1">'n1i'</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="s1">'ci'</span><span class="p">,</span> <span class="n">n2i</span><span class="o">=</span><span class="s1">'n2i'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">,</span> <span class="n">subset</span><span class="o">=</span><span class="n">dat</span><span class="p">[</span><span class="s1">'table'</span><span class="p">]</span> <span class="o">==</span> <span class="s1">'6'</span><span class="p">,</span> <span class="n">measure</span><span class="o">=</span><span class="s1">'OR'</span><span class="p">))</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>Equal-Effects Model (k = 21)
+
+I^2 (total heterogeneity / total variability):  0.00%
+H^2 (total variability / sampling variability): 0.55
+
+Test for Heterogeneity:
+Q(df = 17) = 9.4233, p-val = 0.9260
+
+Model Results (log scale):
+
+estimate      se     zval    pval    ci.lb   ci.ub
+ -0.0690  0.1192  -0.5786  0.5629  -0.3026  0.1646
+
+Model Results (OR scale):
+
+estimate   ci.lb   ci.ub
+  0.9334  0.7389  1.1790
+
+Cochran-Mantel-Haenszel Test:    CMH =  0.2701, df = 1,  p-val = 0.6033
+Tarone's Test for Heterogeneity: X^2 = 10.9288, df = 17, p-val = 0.8602
+</code></pre></div>
+<p>Both treat the trials as sharing a single effect. When the trials are heterogeneous, as in the BCG data, fit a random-effects
+model instead, see the <a href="../guide/models/">model guide</a>.</p>
+<h2 id="hospital-stay-of-stroke-patients">Hospital stay of stroke patients<a class="headerlink" href="#hospital-stay-of-stroke-patients" title="Permanent link">&para;</a></h2>
+<p>Normand (1999), &lt;https://doi.org/10.1002/(SICI)1097-0258(19990215)18:3&lt;321::AID-SIM28&gt;3.0.CO;2-P&gt;, compared the length of
+hospital stay of stroke patients under specialized and under routine care. The raw mean difference is meaningful, so use <code>measure='MD'</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="n">dat</span> <span class="o">=</span> <span class="n">escalc</span><span class="p">(</span><span class="n">measure</span><span class="o">=</span><span class="s1">'MD'</span><span class="p">,</span> <span class="n">n1i</span><span class="o">=</span><span class="s1">'n1i'</span><span class="p">,</span> <span class="n">n2i</span><span class="o">=</span><span class="s1">'n2i'</span><span class="p">,</span> <span class="n">m1i</span><span class="o">=</span><span class="s1">'m1i'</span><span class="p">,</span> <span class="n">m2i</span><span class="o">=</span><span class="s1">'m2i'</span><span class="p">,</span> <span class="n">sd1i</span><span class="o">=</span><span class="s1">'sd1i'</span><span class="p">,</span> <span class="n">sd2i</span><span class="o">=</span><span class="s1">'sd2i'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">datasets</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'dat.normand1999'</span><span class="p">))</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">rma</span><span class="p">(</span><span class="s1">'yi'</span><span class="p">,</span> <span class="s1">'vi'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">,</span> <span class="n">slab</span><span class="o">=</span><span class="n">dat</span><span class="p">[</span><span class="s1">'source'</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">confint</span><span class="p">(</span><span class="n">res</span><span class="p">))</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>Random-Effects Model (k = 9; tau^2 estimator: REML)
+
+tau^2 (estimated amount of total heterogeneity): 684.6462 (SE = 359.7541)
+tau (square root of estimated tau^2 value):      26.1657
+I^2 (total heterogeneity / total variability):   98.97%
+H^2 (total variability / sampling variability):  97.21
+
+Test for Heterogeneity:
+Q(df = 8) = 238.9158, p-val &lt; .0001
+
+Model Results:
+
+estimate      se     zval    pval     ci.lb   ci.ub
+-15.1060  8.9466  -1.6885  0.0913  -32.6409  2.4289  .
+
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+        estimate     ci.lb      ci.ub
+tau^2   684.6462  292.9181  2889.4513
+tau      26.1657   17.1149    53.7536
+I^2(%)   98.9713   97.6282    99.7543
+H^2      97.2076   42.1614   407.0306
+</code></pre></div>
+<p>The huge heterogeneity makes the pooled mean difference hard to interpret. The prediction interval shows how far a new study
+may deviate:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">print</span><span class="p">(</span><span class="n">predict</span><span class="p">(</span><span class="n">res</span><span class="p">))</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>     pred      se    ci.lb   ci.ub    pi.lb    pi.ub
+0 -15.106  8.9466 -32.6409  2.4289 -69.3049  39.0928
+</code></pre></div>
+<h2 id="teacher-expectancy-and-iq">Teacher expectancy and IQ<a class="headerlink" href="#teacher-expectancy-and-iq" title="Permanent link">&para;</a></h2>
+<p>Raudenbush (1984), <a href="https://doi.org/10.1037/0022-0663.76.1.85">https://doi.org/10.1037/0022-0663.76.1.85</a>, synthesised experiments on whether teachers' expectations affect pupils' IQ. The effect sizes
+are standardized mean differences. The studies differ in the number of weeks of contact between teacher and pupils before the
+expectancy was induced, which may moderate the effect:</p>
+<div class="highlight"><pre><span></span><code><span class="n">dat</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'dat.raudenbush1985'</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">rma</span><span class="p">(</span><span class="s1">'yi'</span><span class="p">,</span> <span class="s1">'vi'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">rma</span><span class="p">(</span><span class="s1">'yi'</span><span class="p">,</span> <span class="s1">'vi'</span><span class="p">,</span> <span class="n">mods</span><span class="o">=</span><span class="s1">'~ weeks'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">))</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>Random-Effects Model (k = 19; tau^2 estimator: REML)
+
+tau^2 (estimated amount of total heterogeneity): 0.0188 (SE = 0.0155)
+tau (square root of estimated tau^2 value):      0.1372
+I^2 (total heterogeneity / total variability):   41.86%
+H^2 (total variability / sampling variability):  1.72
+
+Test for Heterogeneity:
+Q(df = 18) = 35.8295, p-val = 0.0074
+
+Model Results:
+
+estimate      se    zval    pval    ci.lb   ci.ub
+  0.0837  0.0516  1.6208  0.1051  -0.0175  0.1849
+
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+
+Mixed-Effects Model (k = 19; tau^2 estimator: REML)
+
+tau^2 (estimated amount of residual heterogeneity):     0.0112 (SE = 0.0128)
+tau (square root of estimated tau^2 value):             0.1057
+I^2 (residual heterogeneity / unaccounted variability): 29.40%
+H^2 (unaccounted variability / sampling variability):   1.42
+R^2 (amount of heterogeneity accounted for):            40.63%
+
+Test for Residual Heterogeneity:
+QE(df = 17) = 27.6730, p-val = 0.0489
+
+Test of Moderators (coefficient 2):
+QM(df = 1) = 7.5094, p-val = 0.0061
+
+Model Results:
+
+         estimate      se     zval    pval    ci.lb    ci.ub
+intrcpt    0.1942  0.0633   3.0649  0.0022   0.0700   0.3183  **
+weeks     -0.0157  0.0057  -2.7403  0.0061  -0.0270  -0.0045  **
+
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+</code></pre></div>
+<p>The effect is smaller the longer teachers had known their pupils. The Knapp-Hartung adjustment is more conservative with few
+studies, and still finds the moderator significant:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">print</span><span class="p">(</span><span class="n">rma</span><span class="p">(</span><span class="s1">'yi'</span><span class="p">,</span> <span class="s1">'vi'</span><span class="p">,</span> <span class="n">mods</span><span class="o">=</span><span class="s1">'~ weeks'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">,</span> <span class="n">test</span><span class="o">=</span><span class="s1">'knha'</span><span class="p">))</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>Mixed-Effects Model (k = 19; tau^2 estimator: REML)
+
+tau^2 (estimated amount of residual heterogeneity):     0.0112 (SE = 0.0128)
+tau (square root of estimated tau^2 value):             0.1057
+I^2 (residual heterogeneity / unaccounted variability): 29.40%
+H^2 (unaccounted variability / sampling variability):   1.42
+R^2 (amount of heterogeneity accounted for):            40.63%
+
+Test for Residual Heterogeneity:
+QE(df = 17) = 27.6730, p-val = 0.0489
+
+Test of Moderators (coefficient 2):
+F(df1 = 1, df2 = 17) = 6.0270, p-val = 0.0252
+
+Model Results:
+
+         estimate      se     tval  df    pval    ci.lb    ci.ub
+intrcpt    0.1942  0.0707   2.7457  17  0.0138   0.0450   0.3434  *
+weeks     -0.0157  0.0064  -2.4550  17  0.0252  -0.0293  -0.0022  *
+
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+</code></pre></div>
+<h2 id="publication-bias-in-passive-smoking-studies">Publication bias in passive smoking studies<a class="headerlink" href="#publication-bias-in-passive-smoking-studies" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">fsn</span><span class="p">,</span> <span class="n">ranktest</span><span class="p">,</span> <span class="n">regtest</span><span class="p">,</span> <span class="n">selmodel</span><span class="p">,</span> <span class="n">tes</span><span class="p">,</span> <span class="n">trimfill</span>
+
+<span class="n">dat</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'dat.hackshaw1998'</span><span class="p">)</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">rma</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">'ML'</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">regtest</span><span class="p">(</span><span class="n">res</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ranktest</span><span class="p">(</span><span class="n">res</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">trimfill</span><span class="p">(</span><span class="n">res</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">fsn</span><span class="p">(</span><span class="n">res</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">selmodel</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">'halfnorm'</span><span class="p">))</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>Regression Test for Funnel Plot Asymmetry
+
+Model:     mixed-effects meta-regression model
+Predictor: standard error
+
+Test for Funnel Plot Asymmetry: z = 2.1713, p = 0.0299
+Limit Estimate (as sei -&gt; 0):   b = 0.0189 (CI: -0.1736, 0.2113)
+
+
+Rank Correlation Test for Funnel Plot Asymmetry
+
+Kendall's tau = 0.1441, p = 0.2157
+
+
+Estimated number of missing studies on the left side: 7 (SE = 4.0402)
+
+Random-Effects Model (k = 44; tau^2 estimator: ML)
+
+tau^2 (estimated amount of total heterogeneity): 0.0222 (SE = 0.0170)
+tau (square root of estimated tau^2 value):      0.1490
+I^2 (total heterogeneity / total variability):   26.86%
+H^2 (total variability / sampling variability):  1.37
+
+Test for Heterogeneity:
+Q(df = 43) = 60.5603, p-val = 0.0397
+
+Model Results:
+
+estimate      se    zval    pval   ci.lb   ci.ub
+  0.1736  0.0476  3.6472  0.0003  0.0803  0.2669  ***
+
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+
+Fail-safe N Calculation Using the General Approach
+
+Average Effect Size:         0.2171 (with file drawer: 0.0458)
+Amount of Heterogeneity:     0.0204 (with file drawer: 0.0289)
+Observed Significance Level: &lt;.0001 (with file drawer: 0.0511)
+Target Significance Level:   0.05
+
+Fail-safe N: 116
+
+
+Random-Effects Model (k = 37; tau^2 estimator: ML)
+
+tau^2 (estimated amount of total heterogeneity): 0.0321 (SE = 0.0262)
+tau (square root of estimated tau^2 value):      0.1792
+
+Test for Heterogeneity:
+LRT(df = 1) = 5.0652, p-val = 0.0244
+
+Model Results:
+
+estimate      se    zval    pval    ci.lb   ci.ub
+  0.1011  0.1175  0.8608  0.3894  -0.1291  0.3313
+
+Test for Selection Model Parameters:
+LRT(df = 1) = 2.5337, p-val = 0.1114
+
+Selection Model Results:
+
+estimate      se    zval    pval   ci.lb   ci.ub
+  2.0287  1.4126  1.4361  0.1510  0.0000  4.7974
+
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+</code></pre></div>
+<p>The data are from Hackshaw et al. (1997), <a href="https://doi.org/10.1136/bmj.315.7114.980">https://doi.org/10.1136/bmj.315.7114.980</a>, on the risk of lung cancer in
+women exposed to tobacco smoke by a smoking spouse. The regression test is significant but the rank correlation test is not,
+trim and fill imputes studies on the left of the funnel and lowers the pooled estimate, and the selection model does not
+reject the absence of selection. Such mixed answers are typical. See <a href="../guide/bias/">Publication bias</a>.</p>
+<h2 id="multilevel-meta-analysis-of-recidivism-and-mental-health">Multilevel meta-analysis of recidivism and mental health<a class="headerlink" href="#multilevel-meta-analysis-of-recidivism-and-mental-health" title="Permanent link">&para;</a></h2>
+<p>Assink and Wibbelink (2016), <a href="https://doi.org/10.20982/tqmp.12.3.p154">https://doi.org/10.20982/tqmp.12.3.p154</a>, use studies on the association between recidivism and
+mental health in delinquent juveniles. Studies contribute several effect sizes each, so a three-level model has random effects
+for studies and for effect sizes within studies. The sampling errors of the effect sizes of one study are correlated. The
+correlation is not reported, so the sampling variance-covariance matrix assumes 0.6, and cluster-robust inference protects
+against a wrong assumption:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">rma_mv</span><span class="p">,</span> <span class="n">robust</span><span class="p">,</span> <span class="n">vcalc</span>
+
+<span class="n">dat</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'dat.assink2016'</span><span class="p">)</span>
+<span class="n">V</span> <span class="o">=</span> <span class="n">vcalc</span><span class="p">(</span><span class="n">vi</span><span class="o">=</span><span class="n">dat</span><span class="p">[</span><span class="s1">'vi'</span><span class="p">],</span> <span class="n">cluster</span><span class="o">=</span><span class="n">dat</span><span class="p">[</span><span class="s1">'study'</span><span class="p">],</span> <span class="n">obs</span><span class="o">=</span><span class="n">dat</span><span class="p">[</span><span class="s1">'esid'</span><span class="p">],</span> <span class="n">rho</span><span class="o">=</span><span class="mf">0.6</span><span class="p">)</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">rma_mv</span><span class="p">(</span><span class="n">yi</span><span class="o">=</span><span class="s1">'yi'</span><span class="p">,</span> <span class="n">V</span><span class="o">=</span><span class="n">V</span><span class="p">,</span> <span class="n">random</span><span class="o">=</span><span class="s1">'~ 1 | study/esid'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">robust</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">cluster</span><span class="o">=</span><span class="n">dat</span><span class="p">[</span><span class="s1">'study'</span><span class="p">]))</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>Multivariate Meta-Analysis Model (k = 100; method: REML)
+
+Variance Components:
+
+            estim    sqrt  nlvls  fixed      factor
+sigma^2.1  0.0807  0.2841     17     no       study
+sigma^2.2  0.1545  0.3931    100     no  study/esid
+
+Test for Heterogeneity:
+Q(df = 99) = 745.4385, p-val &lt; .0001
+
+Model Results:
+
+estimate      se    zval    pval   ci.lb   ci.ub
+  0.3678  0.0965  3.8097  0.0001  0.1786  0.5570  ***
+
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+
+Multivariate Meta-Analysis Model (k = 100; method: REML)
+
+Variance Components:
+
+            estim    sqrt  nlvls  fixed      factor
+sigma^2.1  0.0807  0.2841     17     no       study
+sigma^2.2  0.1545  0.3931    100     no  study/esid
+
+Test for Heterogeneity:
+Q(df = 99) = 745.4385, p-val &lt; .0001
+
+Number of estimates:   100
+Number of clusters:    17
+Estimates per cluster: 1-22 (mean: 5.88, median: 5)
+
+Model Results:
+
+estimate      se¹    tval¹  df¹    pval¹   ci.lb¹   ci.ub¹
+  0.3678  0.0962   3.8210   16   0.0015   0.1637   0.5718   **
+
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+1) results based on cluster-robust inference (var-cov estimator: CR1,
+   approx t-test and confidence interval, df: residual method)
+</code></pre></div>
+<p>Moderators such as publication year are added with <code>mods</code>, and models with different <code>rho</code> show the sensitivity:</p>
+<div class="highlight"><pre><span></span><code><span class="k">for</span> <span class="n">rho</span> <span class="ow">in</span> <span class="p">(</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">):</span>
+    <span class="n">V</span> <span class="o">=</span> <span class="n">vcalc</span><span class="p">(</span><span class="n">vi</span><span class="o">=</span><span class="n">dat</span><span class="p">[</span><span class="s1">'vi'</span><span class="p">],</span> <span class="n">cluster</span><span class="o">=</span><span class="n">dat</span><span class="p">[</span><span class="s1">'study'</span><span class="p">],</span> <span class="n">obs</span><span class="o">=</span><span class="n">dat</span><span class="p">[</span><span class="s1">'esid'</span><span class="p">],</span> <span class="n">rho</span><span class="o">=</span><span class="n">rho</span><span class="p">)</span>
+    <span class="n">fit</span> <span class="o">=</span> <span class="n">rma_mv</span><span class="p">(</span><span class="n">yi</span><span class="o">=</span><span class="s1">'yi'</span><span class="p">,</span> <span class="n">V</span><span class="o">=</span><span class="n">V</span><span class="p">,</span> <span class="n">random</span><span class="o">=</span><span class="s1">'~ 1 | study/esid'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">rho</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">fit</span><span class="o">.</span><span class="n">beta</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">fit</span><span class="o">.</span><span class="n">se</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>0.3 0.394264622380792 0.10553049844741037
+0.6 0.36775488559263914 0.0965318193954781
+0.9 0.3487289923578839 0.09146206349192922
+</code></pre></div>
+<h2 id="schools-within-districts">Schools within districts<a class="headerlink" href="#schools-within-districts" title="Permanent link">&para;</a></h2>
+<p>Konstantopoulos (2011), <a href="https://doi.org/10.1002/jrsm.35">https://doi.org/10.1002/jrsm.35</a>, analysed studies of the effect of modified school calendars on
+student achievement. Each study is a school, and schools are nested in districts:</p>
+<div class="highlight"><pre><span></span><code><span class="n">dat</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'dat.konstantopoulos2011'</span><span class="p">)</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">rma_mv</span><span class="p">(</span><span class="n">yi</span><span class="o">=</span><span class="s1">'yi'</span><span class="p">,</span> <span class="n">V</span><span class="o">=</span><span class="s1">'vi'</span><span class="p">,</span> <span class="n">random</span><span class="o">=</span><span class="s1">'~ 1 | district/school'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">confint</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">sigma2</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>Multivariate Meta-Analysis Model (k = 56; method: REML)
+
+Variance Components:
+
+            estim    sqrt  nlvls  fixed           factor
+sigma^2.1  0.0651  0.2551     11     no         district
+sigma^2.2  0.0327  0.1809     56     no  district/school
+
+Test for Heterogeneity:
+Q(df = 55) = 578.8640, p-val &lt; .0001
+
+Model Results:
+
+estimate      se    zval    pval   ci.lb   ci.ub
+  0.1847  0.0846  2.1845  0.0289  0.0190  0.3504  *
+
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+           estimate   ci.lb   ci.ub
+sigma^2.2    0.0327  0.0163  0.0628
+sigma.2      0.1809  0.1276  0.2507
+</code></pre></div>
+<h2 id="writing-to-learn-interventions-a-location-scale-model">Writing-to-learn interventions: a location-scale model<a class="headerlink" href="#writing-to-learn-interventions-a-location-scale-model" title="Permanent link">&para;</a></h2>
+<p>Bangert-Drowns et al. (2004), <a href="https://doi.org/10.3102/00346543074001029">https://doi.org/10.3102/00346543074001029</a>. The studies examine school-based
+writing-to-learn interventions and academic achievement. The effect may depend on the length of the intervention, and so may
+the amount of heterogeneity:</p>
+<div class="highlight"><pre><span></span><code><span class="n">dat</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'dat.bangertdrowns2004'</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">rma</span><span class="p">(</span><span class="s1">'yi'</span><span class="p">,</span> <span class="s1">'vi'</span><span class="p">,</span> <span class="n">mods</span><span class="o">=</span><span class="s1">'~ length'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">rma</span><span class="p">(</span><span class="s1">'yi'</span><span class="p">,</span> <span class="s1">'vi'</span><span class="p">,</span> <span class="n">mods</span><span class="o">=</span><span class="s1">'~ length'</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="s1">'~ length'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">))</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>Mixed-Effects Model (k = 46; tau^2 estimator: REML)
+
+tau^2 (estimated amount of residual heterogeneity):     0.0441 (SE = 0.0188)
+tau (square root of estimated tau^2 value):             0.2100
+I^2 (residual heterogeneity / unaccounted variability): 55.26%
+H^2 (unaccounted variability / sampling variability):   2.24
+R^2 (amount of heterogeneity accounted for):            5.08%
+
+Test for Residual Heterogeneity:
+QE(df = 44) = 96.2810, p-val &lt; .0001
+
+Test of Moderators (coefficient 2):
+QM(df = 1) = 4.2266, p-val = 0.0398
+
+Model Results:
+
+         estimate      se    zval    pval    ci.lb   ci.ub
+intrcpt    0.0692  0.0825  0.8384  0.4018  -0.0925  0.2309
+length     0.0149  0.0073  2.0559  0.0398   0.0007  0.0292  *
+
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+
+Location-Scale Model (k = 46; tau^2 estimator: REML)
+
+Test for Residual Heterogeneity:
+QE(df = 44) = 96.2810, p-val &lt; .0001
+
+Test of Location Coefficients (coefficient 2):
+QM(df = 1) = 4.2107, p-val = 0.0402
+
+Model Results (Location):
+
+         estimate      se    zval    pval    ci.lb   ci.ub
+intrcpt    0.0719  0.0766  0.9392  0.3476  -0.0782  0.2220
+length     0.0149  0.0073  2.0520  0.0402   0.0007  0.0292  *
+
+Test of Scale Coefficients (coefficient 2):
+QM(df = 1) = 0.4194, p-val = 0.5172
+
+Model Results (Scale):
+
+         estimate      se     zval    pval    ci.lb    ci.ub
+intrcpt   -3.6011  0.9112  -3.9520  &lt;.0001  -5.3870  -1.8151  ***
+length     0.0472  0.0728   0.6476  0.5172  -0.0956   0.1899
+
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+</code></pre></div>
+<p>Viechtbauer and Lopez-Lopez (2022), <a href="https://doi.org/10.1002/jrsm.1562">https://doi.org/10.1002/jrsm.1562</a>, use these data. The length of the intervention
+does not predict the amount of heterogeneity here, so the extra scale model adds little.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../assets/favicon-animate.js"></script>
+      
+    
+  <script data-mkdocs-jupyter-mathjax="{&quot;url&quot;: &quot;https://cdn.jsdelivr.net/npm/mathjax@4.1.3/tex-mml-chtml.js&quot;, &quot;version&quot;: 4}">
+/* Shared by full pages and Material's instant navigation. */
+(() => {
+  const config = JSON.parse(document.currentScript.dataset.mkdocsJupyterMathjax);
+  if (window.mkdocsJupyterMathJax) return;
+
+  let loading;
+  let queue = Promise.resolve();
+  let previous = [];
+
+  const ready = async () => {
+    if (!loading) {
+      loading = (async () => {
+        let math = window.MathJax;
+        if (!math?.typesetPromise) {
+          const url = new URL(config.url, document.baseURI).href;
+          const existing = Array.from(document.scripts).find(script =>
+            script.src && (script.src === url || script.id === 'MathJax-script' ||
+              (/mathjax/i.test(script.src) &&
+               /\/(?:MathJax|latest|(?:tex|mml)(?:-mml)?-(?:chtml|svg))\.js(?:[?#]|$)/i.test(script.src))));
+          if (existing) {
+            if (!math?.startup?.promise) {
+              await new Promise((resolve, reject) => {
+                existing.addEventListener('load', resolve, { once: true });
+                existing.addEventListener('error', reject, { once: true });
+              });
+            }
+          } else {
+            // Keep site macros, delimiters and startup hooks when supplied.
+            const options = math || {};
+            window.MathJax = {
+              ...options,
+              loader: {
+                ...options.loader,
+                load: Array.from(new Set(['ui/safe', ...(options.loader?.load || [])]))
+              },
+              startup: { typeset: false, ...options.startup },
+              tex: {
+                tags: 'ams',
+                useLabelIds: true,
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true,
+                processEnvironments: true,
+                ...options.tex
+              }
+            };
+            await new Promise((resolve, reject) => {
+              const script = document.createElement('script');
+              script.src = config.url;
+              script.id = 'MathJax-script';
+              script.async = true;
+              script.onload = resolve;
+              script.onerror = reject;
+              document.head.appendChild(script);
+            });
+          }
+        }
+        math = window.MathJax;
+        await math.startup.promise;
+        return math;
+      })();
+    }
+    const math = await loading;
+    // A site owner can extend the v3 queue again on each navigation.
+    await math.startup.promise;
+    return math;
+  };
+
+  const unrendered = node => {
+    if (node.matches('mjx-container')) return [];
+    if (!node.querySelector('mjx-container')) return [node];
+    // In v3, scanning generated assistive MathML again produces nested output.
+    return Array.from(node.children).flatMap(unrendered);
+  };
+
+  const refresh = () => {
+    // A separate chain also serializes v3, without changing v4's startup promise.
+    queue = queue.then(async () => {
+      const notebooks = Array.from(document.querySelectorAll('.jupyter-wrapper'));
+      if (!notebooks.length && !previous.length) return;
+      if (notebooks.length === previous.length &&
+          notebooks.every((node, index) => node === previous[index])) return;
+      const math = await ready();
+      if (previous.length) {
+        math.typesetClear(previous);
+        math.texReset();
+      }
+      previous = notebooks.filter(node => node.isConnected);
+      const pending = previous.flatMap(unrendered);
+      if (pending.length) await math.typesetPromise(pending);
+    }).catch(error => console.error('mkdocs-jupyter: MathJax rendering failed', error));
+    return queue;
+  };
+
+  window.mkdocsJupyterMathJax = { refresh };
+  const start = () => {
+    if (typeof document$ !== 'undefined') document$.subscribe(refresh);
+    else refresh();
+  };
+  // Theme bundles and user-provided MathJax scripts can follow notebook content.
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', start, { once: true });
+  } else start();
+})();
+
+</script>
+</body>
+</html>
