@@ -197,11 +197,12 @@ def deltamethod(
     ``order`` (1, 2 or 3) is the order of the Taylor approximation. ``level`` defaults to the model's
     level (95 otherwise) and ``H0`` is the value(s) under the null hypothesis of the Wald-type tests.
 
-    See https://wviechtb.github.io/metafor/reference/deltamethod.html.
-
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
         metafopy.errors.EstimationError: the function or its derivatives cannot be evaluated.
+
+    Metafor reference:
+        [deltamethod](https://wviechtb.github.io/metafor/reference/deltamethod.html)
     """
     if fun is None or not callable(fun):
         raise metafopy.errors.InputError("Argument 'fun' must be a function.")

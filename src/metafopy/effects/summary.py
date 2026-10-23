@@ -109,7 +109,7 @@ def summary_escalc(
 ) -> pandas.DataFrame:
     """Add standard errors, test statistics, p-values and confidence intervals to the output of escalc.
 
-    Mirrors metafor's `summary.escalc`, see https://wviechtb.github.io/metafor/reference/print.escalc.html. With `yi` and `vi` the
+    Mirrors metafor's `summary.escalc`. With `yi` and `vi` the
     effect sizes and sampling variances, it computes `sei = sqrt(vi)`, `zi = (yi - H0) / sei`, the two-sided p-value `pval` and the Wald-type
     interval `yi -/+ z_crit * sei`. With `transf`, `yi` and the bounds are transformed (the bounds are put in increasing order) and
     `vi`, `sei`, `zi` and `pval` are dropped.
@@ -140,6 +140,9 @@ def summary_escalc(
     Raises:
         metafopy.errors.InputError: `out_names` or `var_names` or `olim` has the wrong length, a column is not found, `level` is outside 0 to 100,
             or `transf` does not return a single value for each value.
+
+    Metafor reference:
+        [print.escalc](https://wviechtb.github.io/metafor/reference/print.escalc.html)
     """
     alpha = level_to_alpha(level)
     crit = float(scipy.stats.norm.isf(alpha / 2))

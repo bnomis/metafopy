@@ -179,7 +179,7 @@ def labbe(
 ) -> LabbeResult:
     """L'Abbe plot of a model without moderators fitted to 2x2 table data or incidence rates (``labbe.rma``).
 
-    Mirrors metafor's ``labbe()``, see <https://wviechtb.github.io/metafor/reference/labbe.html>.
+    Mirrors metafor's ``labbe()``.
 
     ``x`` is an ``rma_uni``, ``rma_mh`` or ``rma_glmm`` fit (``rma_peto`` fits have ``measure='PETO'``, which has no
     arm-level outcomes). ``rma_mh`` and ``rma_glmm`` fits keep the counts, and ``add``/``to`` default to the model's (for an ``rma_uni`` fit they
@@ -256,6 +256,9 @@ def labbe(
             are not available or have the wrong length; ``pch``, ``col``, ``bg`` or ``psize`` has the wrong length; or no study has all the arm-level
             outcomes.
         metafopy.errors.NotSupportedError: ``x`` is an ``rma_mv``, location-scale or selection-model fit.
+
+    Metafor reference:
+        [labbe](https://wviechtb.github.io/metafor/reference/labbe.html)
     """
     metafopy.methods.common.check_na_action(na_action)
     metafopy.methods.fitview.check_class(x, notav=('rma.mv', 'rma.ls', 'rma.gen', 'rma.uni.selmodel'))

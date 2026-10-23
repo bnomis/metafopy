@@ -711,8 +711,7 @@ def forest(
 ) -> ForestResult:
     """Forest plot of a fitted model (``forest.rma``), a cumulative analysis or of estimates with their variances (``forest.default``).
 
-    Mirrors metafor's ``forest()``, see <https://wviechtb.github.io/metafor/reference/forest.html> and
-    <https://wviechtb.github.io/metafor/reference/forest.rma.html>. Each study is drawn as a marker with a confidence interval. For a fitted
+    Mirrors metafor's ``forest()`` and ``forest.rma()``. Each study is drawn as a marker with a confidence interval. For a fitted
     model the summary estimate is added as a polygon below the studies (with an optional prediction interval); for a model with moderators
     the fitted value of each study is added as a polygon on its row. Arguments follow metafor's names (``.`` becomes ``_``). Indices are
     0-based where they refer to studies (``subset``); ``rows`` and the numeric form of ``shade`` are plot rows as in R.
@@ -880,6 +879,10 @@ def forest(
         metafopy.errors.InputError: an argument or the data is invalid: both ``transf`` and ``atransf``; a length that does not match the number
             of studies; missing values with ``na_action='fail'``; ``subset`` for a fitted model; an unknown ``order``, ``predstyle``, ``shade`` or
             ``annosym``; ``showweights`` for a [rma_glmm][metafopy.rma_glmm] or [selmodel][metafopy.selmodel] result.
+
+    Metafor reference:
+        - [forest](https://wviechtb.github.io/metafor/reference/forest.html)
+        - [forest.rma](https://wviechtb.github.io/metafor/reference/forest.rma.html)
     """
     if isinstance(ilab_lab, str):
         ilab_lab = [ilab_lab]
@@ -1907,7 +1910,7 @@ def addpoly(
 ) -> matplotlib.axes.Axes:
     """Add polygons (summary estimates) to a forest plot (``addpoly.rma``, ``addpoly.predict.rma`` and ``addpoly.default``).
 
-    Mirrors metafor's ``addpoly()``, see <https://wviechtb.github.io/metafor/reference/addpoly.html>. Options not given (``alim``, ``digits``,
+    Mirrors metafor's ``addpoly()``. Options not given (``alim``, ``digits``,
     ``width``, ``annotate``, ``transf``, ``atransf``, ``targs``, ``efac``, ``fonts``, ``cex``, ``annosym``, ``textpos``, ``rowadj``, ``olim``, ...) are
     taken from the last [forest][metafopy.forest] call on the same axes; without one the limits of the axes are used. Unlike R there is no
     ``predstyle='line2'`` and no ``tabfig`` argument.
@@ -1991,6 +1994,9 @@ def addpoly(
         metafopy.errors.InputError: an argument or the data is invalid: a fitted model with moderators; a ``predict`` result of scale values;
             both ``transf`` and ``atransf``; a ``predstyle`` other than ``'line'`` without prediction interval bounds or with several polygons;
             ``preddist`` with a fitted model; a length that does not match the number of polygons; no polygon left after dropping missing values.
+
+    Metafor reference:
+        [addpoly](https://wviechtb.github.io/metafor/reference/addpoly.html)
     """
     if cr_lb is not None:
         pi_lb = cr_lb

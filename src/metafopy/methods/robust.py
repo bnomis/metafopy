@@ -274,8 +274,7 @@ def robust_rma_uni(
     The variance-covariance matrix of the coefficients is replaced by a sandwich estimator that is robust to correlated errors within clusters; tests and
     confidence intervals use it.
 
-    R source: <https://github.com/wviechtb/metafor/blob/master/R/robust.rma.uni.r>; reference page:
-    <https://wviechtb.github.io/metafor/reference/robust.html>.
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/robust.rma.uni.r>
 
     Args:
         model: Model fitted by [rma_uni][metafopy.rma_uni] (also a model that was made robust before).
@@ -307,6 +306,9 @@ def robust_rma_uni(
         metafopy.errors.InputError: ``cluster`` cannot be found, has the wrong length or has missing values; ``adjust``, ``vcov``, ``coef_test``,
             ``conf_test`` or ``wald_test`` is not an accepted value (including ``conf_test='saddlepoint'``); ``club_sandwich`` and ``clubSandwich`` differ;
             without ``club_sandwich`` the number of clusters is not larger than the number of coefficients.
+
+    Metafor reference:
+        [robust](https://wviechtb.github.io/metafor/reference/robust.html)
     """
     club_sandwich = bool(metafopy.methods.common.resolve_alias(club_sandwich, clubSandwich, 'club_sandwich', 'clubSandwich'))
     x = model
@@ -419,8 +421,7 @@ def robust_rma_mv(
     With ``club_sandwich=True`` (or R's spelling ``clubSandwich``) the random effects must be nested within the clusters and ``R=`` matrices are not
     allowed.
 
-    R source: <https://github.com/wviechtb/metafor/blob/master/R/robust.rma.mv.r>; reference page:
-    <https://wviechtb.github.io/metafor/reference/robust.html>.
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/robust.rma.mv.r>
 
     Args:
         model: Model fitted by [rma_mv][metafopy.rma_mv].
@@ -450,6 +451,9 @@ def robust_rma_mv(
     Raises:
         metafopy.errors.InputError: as for [robust_rma_uni][metafopy.methods.robust.robust_rma_uni]; with ``club_sandwich`` also: the model has
             fixed correlation matrices (``R``) or its random effects are not nested within the clusters.
+
+    Metafor reference:
+        [robust](https://wviechtb.github.io/metafor/reference/robust.html)
     """
     club_sandwich = bool(metafopy.methods.common.resolve_alias(club_sandwich, clubSandwich, 'club_sandwich', 'clubSandwich'))
     x = model

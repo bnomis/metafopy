@@ -131,7 +131,7 @@ def ranef_rma_mv(
     variance-covariance matrices. For ``struct='GEN'``/``'GDIAG'`` metafor returns (only) the matrix of BLUPs of the first
     ``~ inner | outer`` term, without standard errors; so does this function. ``digits`` and ``verbose`` have no effect
     (``digits`` is not used by metafor either; the progress messages are not reproduced). ``None`` for models without
-    random effects. See <https://wviechtb.github.io/metafor/reference/ranef.html>.
+    random effects.
 
     Args:
         object: A model fitted by [rma_mv][metafopy.rma_mv].
@@ -156,6 +156,9 @@ def ranef_rma_mv(
 
     Raises:
         metafopy.errors.InputError: the model has user-defined weights, ``na_action`` is unknown or ``'fail'`` with missing values.
+
+    Metafor reference:
+        [ranef](https://wviechtb.github.io/metafor/reference/ranef.html)
     """
     x = object
     expand, vcov = metafopy.methods.common.is_true(expand), metafopy.methods.common.is_true(vcov)

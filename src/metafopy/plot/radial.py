@@ -84,7 +84,7 @@ def radial(
 ) -> RadialResult:
     """Radial (Galbraith) plot of a model without moderators (``radial.rma``); ``metafopy.plot.galbraith`` is an alias.
 
-    Mirrors metafor's ``radial()``, see <https://wviechtb.github.io/metafor/reference/radial.html>.
+    Mirrors metafor's ``radial()``.
 
     ``center`` plots the deviations from the pooled estimate, ``atz``/``aty`` set the ticks of the z-axis and
     the values on the arc (``aty`` in the units of the effect sizes, ``transf`` is applied to the arc labels),
@@ -128,6 +128,9 @@ def radial(
             ``zlim`` are not given.
         metafopy.errors.NotSupportedError: ``x`` is a robust, ``rma_mv``, location-scale or selection-model fit.
         metafopy.errors.ArgumentError: ``x`` is not a fitted model.
+
+    Metafor reference:
+        [radial](https://wviechtb.github.io/metafor/reference/radial.html)
     """
     metafopy.methods.fitview.check_class(x, notav=('robust.rma', 'rma.mv', 'rma.ls', 'rma.gen', 'rma.uni.selmodel'))
     view = metafopy.methods.fitview.fit_view(x)

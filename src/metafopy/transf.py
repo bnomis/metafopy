@@ -401,13 +401,14 @@ def expand_p(xi: FloatArray, p: numpy.typing.ArrayLike, name: str) -> FloatArray
 def rtoz(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Fisher's r-to-z transformation of correlation coefficients, `atanh(xi)`; `xi` is truncated to [-1, 1] first.
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
 
     Returns:
         Float array (at least 1-d) with the shape of `xi`.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     with numpy.errstate(divide='ignore'):
         return numpy.arctanh(numpy.clip(arr(xi), -1, 1))
@@ -416,21 +417,20 @@ def rtoz(xi: numpy.typing.ArrayLike) -> FloatArray:
 def ztor(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Inverse of the r-to-z transformation, `tanh(xi)`.
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
 
     Returns:
         Float array (at least 1-d) with the shape of `xi`.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     return numpy.tanh(arr(xi))
 
 
 def ztor_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     """Integral transformation for z-to-r: the mean of `tanh(Z)` for `Z ~ N(xi, tau2)`, the back-transformed average correlation.
-
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
 
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
@@ -443,6 +443,9 @@ def ztor_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 
     Raises:
         metafopy.errors.InputError: `targs` is missing, has no `tau2`, has more than three elements, or `tau2` is negative or not a scalar.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     t = chktargsint(targs)
     x = arr(xi)
@@ -458,8 +461,6 @@ def ztor_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 def ztor_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     """Mode of the distribution of the correlations when the z-transformed values are `N(xi, tau2)`, found numerically.
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
         targs: mapping with `tau2` (required, >= 0: the variance of the distribution of the true effects), or just the scalar `tau2`.
@@ -470,6 +471,9 @@ def ztor_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 
     Raises:
         metafopy.errors.InputError: `targs` is missing, has no `tau2`, or `tau2` is negative or not a scalar.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     tau2 = mode_tau2(targs)
     x = arr(xi)
@@ -482,13 +486,14 @@ def ztor_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 def r2toz(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Variance-stabilizing transformation for R-squared values, `atanh(sqrt(xi))`; `xi` is truncated to [0, 1] first.
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
 
     Returns:
         Float array (at least 1-d) with the shape of `xi`.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     with numpy.errstate(divide='ignore'):
         return numpy.arctanh(numpy.sqrt(numpy.clip(arr(xi), 0, 1)))
@@ -497,13 +502,14 @@ def r2toz(xi: numpy.typing.ArrayLike) -> FloatArray:
 def ztor2(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Inverse of [r2toz][metafopy.transf.r2toz], `tanh(xi)^2`.
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
 
     Returns:
         Float array (at least 1-d) with the shape of `xi`.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     return numpy.tanh(arr(xi)) ** 2
 
@@ -514,8 +520,6 @@ def ztor2(xi: numpy.typing.ArrayLike) -> FloatArray:
 
 def exp_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     """Integral transformation for the exponential: the mean of a log-normal variable, `exp(xi + tau2/2)`.
-
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
 
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
@@ -528,6 +532,9 @@ def exp_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 
     Raises:
         metafopy.errors.InputError: `targs` is missing, has no `tau2`, has more than three elements, or `tau2` is negative or not a scalar.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     t = chktargsint(targs)
     return numpy.exp(arr(xi) + t['tau2'] / 2)
@@ -535,8 +542,6 @@ def exp_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 
 def exp_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     """Mode of a log-normal variable, `exp(xi - tau2)`.
-
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
 
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
@@ -548,6 +553,9 @@ def exp_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 
     Raises:
         metafopy.errors.InputError: `targs` is missing, has no `tau2`, or `tau2` is negative or not a scalar.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     return numpy.exp(arr(xi) - mode_tau2(targs))
 
@@ -555,13 +563,14 @@ def exp_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 def logit(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Logit transformation of proportions, `qlogis(xi)`; NaN outside [0, 1].
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
 
     Returns:
         Float array (at least 1-d) with the shape of `xi`.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     return qlogis(arr(xi))
 
@@ -569,21 +578,20 @@ def logit(xi: numpy.typing.ArrayLike) -> FloatArray:
 def ilogit(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Inverse logit transformation, `plogis(xi)`.
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
 
     Returns:
         Float array (at least 1-d) with the shape of `xi`.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     return plogis(arr(xi))
 
 
 def ilogit_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     """Integral transformation for the inverse logit: the mean of a logit-normal variable, the back-transformed average proportion.
-
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
 
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
@@ -596,6 +604,9 @@ def ilogit_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 
     Raises:
         metafopy.errors.InputError: `targs` is missing, has no `tau2`, has more than three elements, or `tau2` is negative or not a scalar.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     t = chktargsint(targs)
     x = arr(xi)
@@ -614,8 +625,6 @@ XS = numpy.concatenate(([0.0], numpy.arange(1, 10**5 - 1) * (1 / (10**5 - 1)), [
 def ilogit_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     """Mode of a logit-normal variable. NaN where the density is bimodal (as in metafor).
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
         targs: mapping with `tau2` (required, >= 0: the variance of the distribution of the true effects), or just the scalar `tau2`.
@@ -626,6 +635,9 @@ def ilogit_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 
     Raises:
         metafopy.errors.InputError: `targs` is missing, has no `tau2`, or `tau2` is negative or not a scalar.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     tau2 = mode_tau2(targs)
     x = arr(xi)
@@ -662,13 +674,14 @@ def ilogit_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 def arcsin(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Arcsine square root transformation of proportions, `asin(sqrt(xi))`; NaN outside [0, 1].
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
 
     Returns:
         Float array (at least 1-d) with the shape of `xi`.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     with numpy.errstate(invalid='ignore'):
         return numpy.arcsin(numpy.sqrt(arr(xi)))
@@ -677,13 +690,14 @@ def arcsin(xi: numpy.typing.ArrayLike) -> FloatArray:
 def iarcsin(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Inverse arcsine square root transformation, `sin(xi)^2`; 0 for `xi < 0` and 1 for `xi > pi/2`.
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
 
     Returns:
         Float array (at least 1-d) with the shape of `xi`.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     x = arr(xi)
     with numpy.errstate(invalid='ignore'):
@@ -696,7 +710,7 @@ def iarcsin(xi: numpy.typing.ArrayLike) -> FloatArray:
 def iarcsin_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     """Integral transformation for the inverse arcsine: the mean of `sin(Z)^2` for `Z ~ N(xi, tau2)` truncated to [0, pi/2].
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
+
 
     As in metafor, the default bounds are `max(0, xi - 10*tau)` and `min(pi/2, xi + 10*tau)` taken over all values of `xi`, so a vector
     call can differ from elementwise calls.
@@ -712,6 +726,9 @@ def iarcsin_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 
     Raises:
         metafopy.errors.InputError: `targs` is missing, has no `tau2`, has more than three elements, or `tau2` is negative or not a scalar.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     t = chktargsint(targs)
     x = arr(xi)
@@ -731,8 +748,6 @@ def iarcsin_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 def iarcsin_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     """Mode of the proportions when the arcsine square root transformed values are `N(xi, tau2)` truncated to [0, pi/2].
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
         targs: mapping with `tau2` (required, >= 0: the variance of the distribution of the true effects), or just the scalar `tau2`.
@@ -743,6 +758,9 @@ def iarcsin_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 
     Raises:
         metafopy.errors.InputError: `targs` is missing, has no `tau2`, or `tau2` is negative or not a scalar.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     tau2 = mode_tau2(targs)
     x = arr(xi)
@@ -759,13 +777,14 @@ def iarcsin_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 def probit(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Probit transformation of proportions, `qnorm(xi)`.
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
 
     Returns:
         Float array (at least 1-d) with the shape of `xi`.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     return qnorm(arr(xi))
 
@@ -773,21 +792,20 @@ def probit(xi: numpy.typing.ArrayLike) -> FloatArray:
 def iprobit(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Inverse probit transformation, `pnorm(xi)`.
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
 
     Returns:
         Float array (at least 1-d) with the shape of `xi`.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     return pnorm(arr(xi))
 
 
 def iprobit_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     """Integral transformation for the inverse probit: the mean of `pnorm(Z)` for `Z ~ N(xi, tau2)`.
-
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
 
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
@@ -800,6 +818,9 @@ def iprobit_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 
     Raises:
         metafopy.errors.InputError: `targs` is missing, has no `tau2`, has more than three elements, or `tau2` is negative or not a scalar.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     t = chktargsint(targs)
     x = arr(xi)
@@ -815,8 +836,6 @@ def iprobit_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 def iprobit_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     """Mode of the proportions when the probit transformed values are `N(xi, tau2)`.
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
         targs: mapping with `tau2` (required, >= 0: the variance of the distribution of the true effects), or just the scalar `tau2`.
@@ -827,6 +846,9 @@ def iprobit_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 
     Raises:
         metafopy.errors.InputError: `targs` is missing, has no `tau2`, or `tau2` is negative or not a scalar.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     tau2 = mode_tau2(targs)
     x = arr(xi)
@@ -859,14 +881,15 @@ def recycle_pair(x: FloatArray, n: FloatArray) -> tuple[FloatArray, FloatArray]:
 def pft(xi: numpy.typing.ArrayLike, ni: numpy.typing.ArrayLike) -> FloatArray:
     """Freeman-Tukey double arcsine transformation of proportions.
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: proportions (`x / n`), scalar or array-like.
         ni: sample sizes, scalar or array-like. `xi` and `ni` are recycled to the longer length, with a warning if it is not a multiple.
 
     Returns:
         Float array (at least 1-d) of the transformed proportions.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     xi_, n = recycle_pair(arr(xi), arr(ni))
     x = xi_ * n
@@ -886,22 +909,21 @@ def inverse_pft(x: FloatArray, n: FloatArray) -> FloatArray:
 def ipft(xi: numpy.typing.ArrayLike, ni: numpy.typing.ArrayLike) -> FloatArray:
     """Inverse of the Freeman-Tukey double arcsine transformation (Miller, 1978); 0 and 1 outside the attainable range.
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: transformed values, scalar or array-like.
         ni: sample sizes, scalar or array-like, recycled with `xi` to the longer length.
 
     Returns:
         Float array (at least 1-d) of proportions.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     return inverse_pft(*recycle_pair(arr(xi), arr(ni)))
 
 
 def ipft_hm(xi: numpy.typing.ArrayLike, targs: Targs) -> FloatArray:
     """Inverse Freeman-Tukey double arcsine transformation using the harmonic mean of the sample sizes (Miller, 1978).
-
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
 
     Args:
         xi: transformed values, scalar or array-like.
@@ -913,6 +935,9 @@ def ipft_hm(xi: numpy.typing.ArrayLike, targs: Targs) -> FloatArray:
 
     Raises:
         metafopy.errors.InputError: `targs` is missing or has no `ni`.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     if targs is None or (isinstance(targs, collections.abc.Mapping) and targs.get('ni') is None):
         raise metafopy.errors.InputError("Must specify the sample sizes via the 'targs' argument.")
@@ -924,13 +949,14 @@ def ipft_hm(xi: numpy.typing.ArrayLike, targs: Targs) -> FloatArray:
 def isqrt(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Inverse of the square root transformation, `xi^2`; 0 for `xi < 0`.
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
 
     Returns:
         Float array (at least 1-d) with the shape of `xi`.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     x = arr(xi)
     zi = x * x
@@ -941,14 +967,15 @@ def isqrt(xi: numpy.typing.ArrayLike) -> FloatArray:
 def irft(xi: numpy.typing.ArrayLike, ti: numpy.typing.ArrayLike) -> FloatArray:
     """Freeman-Tukey transformation of incidence rates.
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: incidence rates (`x / t`), scalar or array-like.
         ti: person-times, scalar or array-like.
 
     Returns:
         Float array (at least 1-d) of the transformed rates.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     with numpy.errstate(invalid='ignore'):
         return numpy.atleast_1d(numpy.asarray(1 / 2 * (numpy.sqrt(arr(xi)) + numpy.sqrt(arr(xi) + 1 / numpy.asarray(ti, numpy.float64))), numpy.float64))
@@ -957,14 +984,15 @@ def irft(xi: numpy.typing.ArrayLike, ti: numpy.typing.ArrayLike) -> FloatArray:
 def iirft(xi: numpy.typing.ArrayLike, ti: numpy.typing.ArrayLike) -> FloatArray:
     """Inverse of [irft][metafopy.transf.irft]; 0 below the attainable range.
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: transformed values, scalar or array-like.
         ti: person-times, scalar or array-like.
 
     Returns:
         Float array (at least 1-d) of incidence rates.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     x = arr(xi)
     t = numpy.asarray(ti, numpy.float64)
@@ -982,13 +1010,14 @@ def iirft(xi: numpy.typing.ArrayLike, ti: numpy.typing.ArrayLike) -> FloatArray:
 def ahw(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Hakstian and Whalen transformation of coefficient alpha, `1 - (1 - xi)^(1/3)`; NaN for `xi > 1`.
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
 
     Returns:
         Float array (at least 1-d) with the shape of `xi`.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     base = 1 - arr(xi)
     with numpy.errstate(invalid='ignore'):
@@ -998,13 +1027,14 @@ def ahw(xi: numpy.typing.ArrayLike) -> FloatArray:
 def iahw(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Inverse of [ahw][metafopy.transf.ahw], `1 - (1 - xi)^3`, truncated to [0, 1].
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
 
     Returns:
         Float array (at least 1-d) with the shape of `xi`.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     x = arr(xi)
     zi = 1 - (1 - x) ** 3
@@ -1016,7 +1046,7 @@ def iahw(xi: numpy.typing.ArrayLike) -> FloatArray:
 def iahw_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     """Integral transformation for the inverse Hakstian-Whalen transformation, with the normal distribution truncated to [0, 1].
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
+
 
     As in metafor, the default bounds are taken over all values of `xi`, so a vector call can differ from elementwise calls.
 
@@ -1031,6 +1061,9 @@ def iahw_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 
     Raises:
         metafopy.errors.InputError: `targs` is missing, has no `tau2`, has more than three elements, or `tau2` is negative or not a scalar.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     t = chktargsint(targs)
     x = arr(xi)
@@ -1050,8 +1083,6 @@ def iahw_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 def iahw_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     """Mode of the alpha values when the Hakstian-Whalen transformed values are `N(xi, tau2)` truncated to [0, 1].
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
         targs: mapping with `tau2` (required, >= 0: the variance of the distribution of the true effects), or just the scalar `tau2`.
@@ -1062,6 +1093,9 @@ def iahw_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 
     Raises:
         metafopy.errors.InputError: `targs` is missing, has no `tau2`, or `tau2` is negative or not a scalar.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     tau2 = mode_tau2(targs)
     x = arr(xi)
@@ -1078,13 +1112,14 @@ def iahw_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 def abt(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Bonett transformation of coefficient alpha, `-log(1 - xi)`.
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
 
     Returns:
         Float array (at least 1-d) with the shape of `xi`.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     with numpy.errstate(divide='ignore', invalid='ignore'):
         return -numpy.log(1 - arr(xi))
@@ -1093,13 +1128,14 @@ def abt(xi: numpy.typing.ArrayLike) -> FloatArray:
 def iabt(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Inverse of [abt][metafopy.transf.abt], `1 - exp(-xi)`; 0 for `xi < 0`.
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
 
     Returns:
         Float array (at least 1-d) with the shape of `xi`.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     x = arr(xi)
     with numpy.errstate(over='ignore'):
@@ -1111,7 +1147,7 @@ def iabt(xi: numpy.typing.ArrayLike) -> FloatArray:
 def iabt_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     """Integral transformation for the inverse Bonett transformation, with the normal distribution truncated to [0, Inf).
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
+
 
     As in metafor, the default lower bound is taken over all values of `xi`, so a vector call can differ from elementwise calls.
 
@@ -1126,6 +1162,9 @@ def iabt_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 
     Raises:
         metafopy.errors.InputError: `targs` is missing, has no `tau2`, has more than three elements, or `tau2` is negative or not a scalar.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     t = chktargsint(targs)
     x = arr(xi)
@@ -1145,8 +1184,6 @@ def iabt_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 def iabt_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     """Mode of the alpha values when the Bonett transformed values are `N(xi, tau2)` truncated to [0, Inf).
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: values to transform, scalar or array-like (NaN or None for a missing value).
         targs: mapping with `tau2` (required, >= 0: the variance of the distribution of the true effects), or just the scalar `tau2`.
@@ -1157,6 +1194,9 @@ def iabt_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 
     Raises:
         metafopy.errors.InputError: `targs` is missing, has no `tau2`, or `tau2` is negative or not a scalar.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     tau2 = mode_tau2(targs)
     x = arr(xi)
@@ -1177,13 +1217,14 @@ def iabt_mode(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 def dtou1(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Standardized mean difference to Cohen's U1 (the proportion of non-overlap).
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: standardized mean differences, scalar or array-like.
 
     Returns:
         Float array (at least 1-d) with the shape of `xi`.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     u2i = pnorm(numpy.abs(arr(xi)) / 2)
     return (2 * u2i - 1) / u2i
@@ -1192,13 +1233,14 @@ def dtou1(xi: numpy.typing.ArrayLike) -> FloatArray:
 def dtou2(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Standardized mean difference to Cohen's U2, `pnorm(xi/2)`.
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: standardized mean differences, scalar or array-like.
 
     Returns:
         Float array (at least 1-d) with the shape of `xi`.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     return pnorm(arr(xi) / 2)
 
@@ -1206,13 +1248,14 @@ def dtou2(xi: numpy.typing.ArrayLike) -> FloatArray:
 def dtou3(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Standardized mean difference to Cohen's U3, `pnorm(xi)`.
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: standardized mean differences, scalar or array-like.
 
     Returns:
         Float array (at least 1-d) with the shape of `xi`.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     return pnorm(arr(xi))
 
@@ -1220,13 +1263,14 @@ def dtou3(xi: numpy.typing.ArrayLike) -> FloatArray:
 def dtoovl(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Standardized mean difference to the overlapping coefficient, `2*pnorm(-|xi|/2)`.
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: standardized mean differences, scalar or array-like.
 
     Returns:
         Float array (at least 1-d) with the shape of `xi`.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     return 2 * pnorm(-numpy.abs(arr(xi)) / 2)
 
@@ -1234,13 +1278,14 @@ def dtoovl(xi: numpy.typing.ArrayLike) -> FloatArray:
 def dtocles(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Standardized mean difference to the common language effect size (probability of superiority), `pnorm(xi/sqrt(2))`.
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: standardized mean differences, scalar or array-like.
 
     Returns:
         Float array (at least 1-d) with the shape of `xi`.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     return pnorm(arr(xi) / math.sqrt(2))
 
@@ -1248,21 +1293,20 @@ def dtocles(xi: numpy.typing.ArrayLike) -> FloatArray:
 def clestod(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Inverse of [dtocles][metafopy.transf.dtocles]: common language effect size to standardized mean difference, `qnorm(xi)*sqrt(2)`.
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: common language effect sizes (probabilities), scalar or array-like.
 
     Returns:
         Float array (at least 1-d) with the shape of `xi`.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     return qnorm(arr(xi)) * math.sqrt(2)
 
 
 def dtocles_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     """Integral transformation for [dtocles][metafopy.transf.dtocles]: the mean of `pnorm(Z/sqrt(2))` for `Z ~ N(xi, tau2)`.
-
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
 
     Args:
         xi: standardized mean differences, scalar or array-like.
@@ -1275,6 +1319,9 @@ def dtocles_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 
     Raises:
         metafopy.errors.InputError: `targs` is missing, has no `tau2`, has more than three elements, or `tau2` is negative or not a scalar.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     t = chktargsint(targs)
     x = arr(xi)
@@ -1290,13 +1337,14 @@ def dtocles_int(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 def dtocliffd(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Standardized mean difference to Cliff's delta, `2*pnorm(xi/sqrt(2)) - 1`.
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: standardized mean differences, scalar or array-like.
 
     Returns:
         Float array (at least 1-d) with the shape of `xi`.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     return 2 * pnorm(arr(xi) / math.sqrt(2)) - 1
 
@@ -1304,13 +1352,14 @@ def dtocliffd(xi: numpy.typing.ArrayLike) -> FloatArray:
 def dtobesd(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Standardized mean difference to the binomial effect size display (the proportion above the median in the first group).
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: standardized mean differences, scalar or array-like.
 
     Returns:
         Float array (at least 1-d) with the shape of `xi`.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     x = arr(xi)
     with numpy.errstate(invalid='ignore'):
@@ -1321,8 +1370,6 @@ def dtobesd(xi: numpy.typing.ArrayLike) -> FloatArray:
 def dtomd(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
     """Standardized mean difference to mean difference for a known standard deviation, `xi * sd`.
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: standardized mean differences, scalar or array-like.
         targs: mapping with `sd`, the standard deviation (a single value), or just the scalar `sd`.
@@ -1332,6 +1379,9 @@ def dtomd(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 
     Raises:
         metafopy.errors.InputError: `targs` is missing, has no `sd`, or `sd` is not a single value.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     if targs is None or (isinstance(targs, collections.abc.Mapping) and targs.get('sd') is None):
         raise metafopy.errors.InputError("Must specify a standard deviation value via the 'targs' argument.")
@@ -1344,8 +1394,6 @@ def dtomd(xi: numpy.typing.ArrayLike, targs: Targs = None) -> FloatArray:
 def dtorpb(xi: numpy.typing.ArrayLike, n1i: numpy.typing.ArrayLike | None = None, n2i: numpy.typing.ArrayLike | None = None) -> FloatArray:
     """Standardized mean difference to point-biserial correlation.
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: standardized mean differences, scalar or array-like.
         n1i: sizes of the first group, scalar or array-like, one per value of `xi`. Default None: equal group sizes are assumed.
@@ -1356,6 +1404,9 @@ def dtorpb(xi: numpy.typing.ArrayLike, n1i: numpy.typing.ArrayLike | None = None
 
     Raises:
         metafopy.errors.InputError: `n1i` and `n2i` differ in length or do not match the length of `xi`.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     x = arr(xi)
     if n1i is None or n2i is None:
@@ -1371,8 +1422,6 @@ def dtorpb(xi: numpy.typing.ArrayLike, n1i: numpy.typing.ArrayLike | None = None
 def dtorbis(xi: numpy.typing.ArrayLike, n1i: numpy.typing.ArrayLike | None = None, n2i: numpy.typing.ArrayLike | None = None) -> FloatArray:
     """Standardized mean difference to biserial correlation (via the point-biserial correlation).
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: standardized mean differences, scalar or array-like.
         n1i: sizes of the first group, scalar or array-like, one per value of `xi`. Default None: equal group sizes are assumed.
@@ -1383,6 +1432,9 @@ def dtorbis(xi: numpy.typing.ArrayLike, n1i: numpy.typing.ArrayLike | None = Non
 
     Raises:
         metafopy.errors.InputError: `n1i` and `n2i` differ in length or do not match the length of `xi`.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     x = arr(xi)
     if n1i is None or n2i is None:
@@ -1410,8 +1462,6 @@ def pi_check(x: FloatArray, pi: numpy.typing.ArrayLike | None) -> FloatArray:
 def rpbtorbis(xi: numpy.typing.ArrayLike, pi: numpy.typing.ArrayLike | None = None) -> FloatArray:
     """Point-biserial correlation to biserial correlation.
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: point-biserial correlations, scalar or array-like.
         pi: proportion of cases in the first group, a single value or one per value of `xi`, in [0, 1]. Default None: 0.5.
@@ -1421,6 +1471,9 @@ def rpbtorbis(xi: numpy.typing.ArrayLike, pi: numpy.typing.ArrayLike | None = No
 
     Raises:
         metafopy.errors.InputError: a `pi` value is outside [0, 1] or its length does not match `xi`.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     x = arr(xi)
     p = pi_check(x, pi)
@@ -1431,8 +1484,6 @@ def rpbtorbis(xi: numpy.typing.ArrayLike, pi: numpy.typing.ArrayLike | None = No
 def rtorpb(xi: numpy.typing.ArrayLike, pi: numpy.typing.ArrayLike | None = None) -> FloatArray:
     """Pearson correlation to point-biserial correlation after dichotomizing one variable.
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: Pearson correlations, scalar or array-like.
         pi: proportion of cases in the first group after dichotomizing, a single value or one per value of `xi`, in [0, 1]. Default None: 0.5.
@@ -1442,6 +1493,9 @@ def rtorpb(xi: numpy.typing.ArrayLike, pi: numpy.typing.ArrayLike | None = None)
 
     Raises:
         metafopy.errors.InputError: a `pi` value is outside [0, 1] or its length does not match `xi`.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     x = arr(xi)
     p = pi_check(x, pi)
@@ -1451,8 +1505,6 @@ def rtorpb(xi: numpy.typing.ArrayLike, pi: numpy.typing.ArrayLike | None = None)
 
 def rtod(xi: numpy.typing.ArrayLike, n1i: numpy.typing.ArrayLike | None = None, n2i: numpy.typing.ArrayLike | None = None) -> FloatArray:
     """Pearson correlation (with one dichotomized variable) to standardized mean difference; inverse of [dtorbis][metafopy.transf.dtorbis].
-
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
 
     Args:
         xi: Pearson correlations, scalar or array-like.
@@ -1464,6 +1516,9 @@ def rtod(xi: numpy.typing.ArrayLike, n1i: numpy.typing.ArrayLike | None = None, 
 
     Raises:
         metafopy.errors.InputError: `n1i` and `n2i` differ in length, do not match `xi`, or are negative.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     x = arr(xi)
     if n1i is None or n2i is None:
@@ -1484,8 +1539,6 @@ def rtod(xi: numpy.typing.ArrayLike, n1i: numpy.typing.ArrayLike | None = None, 
 def rpbtod(xi: numpy.typing.ArrayLike, n1i: numpy.typing.ArrayLike | None = None, n2i: numpy.typing.ArrayLike | None = None) -> FloatArray:
     """Point-biserial correlation to standardized mean difference; inverse of [dtorpb][metafopy.transf.dtorpb].
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: point-biserial correlations, scalar or array-like.
         n1i: sizes of the first group, scalar or array-like, one per value of `xi`. Default None: equal group sizes are assumed.
@@ -1496,6 +1549,9 @@ def rpbtod(xi: numpy.typing.ArrayLike, n1i: numpy.typing.ArrayLike | None = None
 
     Raises:
         metafopy.errors.InputError: `n1i` and `n2i` differ in length or do not match the length of `xi`.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     x = arr(xi)
     if n1i is None or n2i is None:
@@ -1522,8 +1578,6 @@ def pc_check(x: FloatArray, pc: numpy.typing.ArrayLike) -> FloatArray:
 def lnortord(xi: numpy.typing.ArrayLike, pc: numpy.typing.ArrayLike) -> FloatArray:
     """Log odds ratio to risk difference for a given control group risk.
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: log odds ratios, scalar or array-like.
         pc: control group risk, a single value or one per value of `xi`, in [0, 1].
@@ -1533,6 +1587,9 @@ def lnortord(xi: numpy.typing.ArrayLike, pc: numpy.typing.ArrayLike) -> FloatArr
 
     Raises:
         metafopy.errors.InputError: a `pc` value is outside [0, 1] or its length does not match `xi`.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     x = arr(xi)
     p = pc_check(x, pc)
@@ -1544,8 +1601,6 @@ def lnortord(xi: numpy.typing.ArrayLike, pc: numpy.typing.ArrayLike) -> FloatArr
 def lnortorr(xi: numpy.typing.ArrayLike, pc: numpy.typing.ArrayLike) -> FloatArray:
     """Log odds ratio to risk ratio (not the log risk ratio) for a given control group risk.
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: log odds ratios, scalar or array-like.
         pc: control group risk, a single value or one per value of `xi`, in [0, 1].
@@ -1555,6 +1610,9 @@ def lnortorr(xi: numpy.typing.ArrayLike, pc: numpy.typing.ArrayLike) -> FloatArr
 
     Raises:
         metafopy.errors.InputError: a `pc` value is outside [0, 1] or its length does not match `xi`.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     x = arr(xi)
     p = pc_check(x, pc)
@@ -1566,13 +1624,14 @@ def lnortorr(xi: numpy.typing.ArrayLike, pc: numpy.typing.ArrayLike) -> FloatArr
 def lnortod_norm(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Log odds ratio to standardized mean difference assuming normal distributions (Cox and Snell, 1989), `xi/1.65`.
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: log odds ratios, scalar or array-like.
 
     Returns:
         Float array (at least 1-d) with the shape of `xi`.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     return arr(xi) / 1.65
 
@@ -1580,13 +1639,14 @@ def lnortod_norm(xi: numpy.typing.ArrayLike) -> FloatArray:
 def lnortod_logis(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Log odds ratio to standardized mean difference assuming logistic distributions (Chinn, 2000), `sqrt(3)/pi*xi`.
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: log odds ratios, scalar or array-like.
 
     Returns:
         Float array (at least 1-d) with the shape of `xi`.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     return math.sqrt(3) / math.pi * arr(xi)
 
@@ -1594,13 +1654,14 @@ def lnortod_logis(xi: numpy.typing.ArrayLike) -> FloatArray:
 def dtolnor_norm(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Standardized mean difference to log odds ratio assuming normal distributions, `xi*1.65`.
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: standardized mean differences, scalar or array-like.
 
     Returns:
         Float array (at least 1-d) with the shape of `xi`.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     return arr(xi) * 1.65
 
@@ -1608,13 +1669,14 @@ def dtolnor_norm(xi: numpy.typing.ArrayLike) -> FloatArray:
 def dtolnor_logis(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Standardized mean difference to log odds ratio assuming logistic distributions, `xi/sqrt(3)*pi`.
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: standardized mean differences, scalar or array-like.
 
     Returns:
         Float array (at least 1-d) with the shape of `xi`.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     return arr(xi) / math.sqrt(3) * math.pi
 
@@ -1622,13 +1684,14 @@ def dtolnor_logis(xi: numpy.typing.ArrayLike) -> FloatArray:
 def lnortortet_pearson(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Log odds ratio to tetrachoric correlation, using the approximation of Pearson (1900), `cos(pi/(1 + sqrt(exp(xi))))`.
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: log odds ratios, scalar or array-like.
 
     Returns:
         Float array (at least 1-d) with the shape of `xi`.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     with numpy.errstate(over='ignore'):
         return numpy.cos(math.pi / (1 + numpy.sqrt(numpy.exp(arr(xi)))))
@@ -1637,13 +1700,14 @@ def lnortortet_pearson(xi: numpy.typing.ArrayLike) -> FloatArray:
 def lnortortet_digby(xi: numpy.typing.ArrayLike) -> FloatArray:
     """Log odds ratio to tetrachoric correlation, using the approximation of Digby (1983), `(OR^(3/4) - 1)/(OR^(3/4) + 1)`.
 
-    See the `transf` page of metafor, https://wviechtb.github.io/metafor/reference/transf.html.
-
     Args:
         xi: log odds ratios, scalar or array-like.
 
     Returns:
         Float array (at least 1-d) with the shape of `xi`.
+
+    Metafor reference:
+        [transf](https://wviechtb.github.io/metafor/reference/transf.html)
     """
     with numpy.errstate(over='ignore', invalid='ignore'):
         e = numpy.exp(arr(xi)) ** (3 / 4)

@@ -275,8 +275,7 @@ def permutest_rma_uni(
     permutations whose statistic is as extreme as the observed one (the first permutation of an approximate test is the data, which avoids p-values of 0).
     With few studies the smallest possible p-value can exceed 0.05.
 
-    R source: <https://github.com/wviechtb/metafor/blob/master/R/permutest.rma.uni.r>; reference page:
-    <https://wviechtb.github.io/metafor/reference/permutest.html>.
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/permutest.rma.uni.r>
 
     Args:
         x: Model fitted by [rma_uni][metafopy.rma_uni] (not a [robust][metafopy.robust] result).
@@ -308,6 +307,9 @@ def permutest_rma_uni(
         metafopy.errors.ArgumentError: ``control`` has an unknown entry.
         metafopy.errors.NotSupportedError: ``x`` is a [robust][metafopy.robust] result.
         ValueError: an exact test needs more iterations than can be allocated (R stops with an error as well).
+
+    Metafor reference:
+        [permutest](https://wviechtb.github.io/metafor/reference/permutest.html)
     """
     metafopy.methods.fitview.check_class(x, notav=metafopy.methods.fitview.NOT_ROBUST)
     iter = iter

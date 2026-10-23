@@ -98,3 +98,42 @@
 .md-typeset table:not([class]) {
   font-size: 0.7rem;
 }
+
+/* Function reference: the "Metafor reference" section looks like the other section headings (Parameters:, Returns:), not like a collapsible note. */
+details.metafor-reference {
+  border: 0;
+  background: none;
+  box-shadow: none;
+  padding: 0;
+  margin: 1.5em 0;
+}
+
+details.metafor-reference > summary {
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0 !important;
+  margin: 0;
+  background: none;
+  cursor: default;
+  pointer-events: none;
+}
+
+details.metafor-reference > summary::before {
+  display: none;
+}
+
+details.metafor-reference > summary::after {
+  content: ':';
+  position: static;
+  display: inline;
+  width: auto;
+  height: auto;
+  background: none;
+  -webkit-mask: none;
+  mask: none;
+}
+
+details.metafor-reference > :not(summary) {
+  margin-left: 0;
+  padding-left: 0;
+}

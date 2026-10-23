@@ -148,7 +148,7 @@ def plot_infl(
 ) -> PlotInflResult:
     """Plot the case-deletion diagnostics returned by [influence][metafopy.influence] (``plot.infl.rma.uni``).
 
-    Mirrors metafor's ``plot.infl.rma.uni()``, see <https://wviechtb.github.io/metafor/reference/plot.infl.rma.uni.html>.
+    Mirrors metafor's ``plot.infl.rma.uni()``.
 
     ``plotinf`` selects the diagnostics (``True`` for all eight, or their numbers 1-8: ``rstudent``, ``dffits``,
     ``cook.d``, ``cov.r``, ``tau2.del``, ``QE.del``, ``hat`` and ``weight``) and ``plotdfbs`` the DFBETAS (``True``
@@ -194,6 +194,9 @@ def plot_infl(
             not available for ``rma_mv`` fits, so there is no such result for them either).
         metafopy.errors.InputError: ``plotinf`` or ``plotdfbs`` selects nothing, neither is requested, ``na_action`` is unknown or ``'fail'`` and
             diagnostics are missing, ``ids`` or the labels have the wrong length, or ``mfrow`` has fewer panels than diagnostics.
+
+    Metafor reference:
+        [plot.infl.rma.uni](https://wviechtb.github.io/metafor/reference/plot.infl.rma.uni.html)
     """
     if layout is not None:
         warnings.warn("Argument 'layout' has been deprecated.", stacklevel=2)

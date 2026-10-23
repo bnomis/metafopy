@@ -337,8 +337,6 @@ def hettest(
     study-specific ``tau^2_i`` values, with a likelihood-ratio, Wald-type or score test, or with goodness-of-fit tests of the Pearson residuals. P-values
     come from a parametric bootstrap, the first sample being the data. Without ``seed`` the bootstrap uses the generator of [set_seed][metafopy.set_seed].
 
-    R reference page: <https://wviechtb.github.io/metafor/reference/hettest.html>.
-
     Args:
         x: Effect size estimates (an array, or a column name of ``data``), or a random-effects model without moderators (``rma_uni``), normally fitted
             by ML or REML. For a model fitted with another method a warning is given and the test is based on ``method``. Models with moderators and
@@ -378,6 +376,9 @@ def hettest(
             ``tau2i_init``, ``k <= 1``, a model with moderators), the null model or the ``tau^2_i`` could not be estimated, or studies are missing and
             ``na_action='fail'``.
         metafopy.errors.NotSupportedError: ``x`` is a model of a class the test is not available for.
+
+    Metafor reference:
+        [hettest](https://wviechtb.github.io/metafor/reference/hettest.html)
     """
     metafopy.methods.common.check_na_action(na_action)
     tests = (test.lower(),) if isinstance(test, str) else tuple(t.lower() for t in test)

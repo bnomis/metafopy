@@ -150,7 +150,7 @@ def regtest(
 ) -> RegtestResult:
     """Regression test for funnel plot asymmetry (Egger's test and extensions).
 
-    Mirrors metafor's `regtest`, see https://wviechtb.github.io/metafor/reference/regtest.html. The effect sizes are regressed on a measure of
+    Mirrors metafor's `regtest`. The effect sizes are regressed on a measure of
     their precision (the standard error by default) and the test for the coefficient of that predictor is the test for asymmetry
     (Egger et al., 1997, doi:10.1136/bmj.315.7109.629). With a fitted model that has moderators, the predictor is added to the model.
     The intercept of the model with `sei`, `vi`, `ninv` or `sqrtninv` as the predictor is the 'limit estimate' of the effect (the estimate
@@ -192,6 +192,9 @@ def regtest(
         metafopy.errors.NotSupportedError: `x` is a model of a class regtest is not available for (for example `rma_mv`, `rma_glmm`,
             `rma_ls`, selection models and robust fits).
         metafopy.errors.EstimationError: the tau^2 estimator of the regression model fails.
+
+    Metafor reference:
+        [regtest](https://wviechtb.github.io/metafor/reference/regtest.html)
     """
     metafopy.methods.common.check_na_action(na_action)
     vec_measure: str | None = None

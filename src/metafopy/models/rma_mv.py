@@ -531,7 +531,7 @@ def rma_mv(
 ) -> metafopy.models.mv_result.RMAMVResult:
     """Fit a multivariate/multilevel meta-analytic model.
 
-    Mirrors metafor's ``rma.mv()``, see <https://wviechtb.github.io/metafor/reference/rma.mv.html>. ``yi`` is a vector, a column
+    Mirrors metafor's ``rma.mv()``. ``yi`` is a vector, a column
     of ``data`` or a model formula (``'yi ~ x1 + x2'``); ``V`` is a vector of sampling variances, a ``k x k`` matrix, a list of
     block matrices (see [bldiag][metafopy.bldiag]), a column name or ``0``. ``random`` is a formula such as ``'~ 1 | study'``,
     ``'~ 1 | district/school'`` or ``'~ outcome | study'`` (or a list of them), ``struct`` (default ``'CS'``) the variance-covariance structure of
@@ -630,6 +630,9 @@ def rma_mv(
         metafopy.errors.NotSupportedError: ``dist='gcd'``.
         metafopy.errors.EstimationError: the model could not be fitted (for example when the marginal variance-covariance matrix is not
             positive definite at the starting values).
+
+    Metafor reference:
+        [rma.mv](https://wviechtb.github.io/metafor/reference/rma.mv.html)
     """
     spec = {
         'yi': yi,

@@ -306,8 +306,7 @@ def vcalc(
     correlation of two estimates is built from ``rho`` (estimates of the same or of different constructs), from ``phi`` and the time points
     ``time1``/``time2`` (an autoregressive structure), and from the groups ``grp1``/``grp2`` with sizes ``w1``/``w2`` for estimates that are
     contrasts between two conditions and so share a condition. The matrix can be used as the ``V`` argument of [rma_mv][metafopy.rma_mv].
-    With ``rvars`` the correlation matrices of the clusters are read from columns of ``data`` instead. See
-    <https://wviechtb.github.io/metafor/reference/vcalc.html>.
+    With ``rvars`` the correlation matrices of the clusters are read from columns of ``data`` instead.
 
     Differences from R: metafor's undocumented ``nearPD`` alias of ``nearpd`` is not accepted; in
     ``rvars`` mode the matrix of a cluster is placed at that cluster's rows even when the rows of a
@@ -358,6 +357,9 @@ def vcalc(
         metafopy.errors.InputError: an argument or the data is invalid (R stops with an error here).
         metafopy.errors.NotFoundError: a named column is not in ``data``.
         metafopy.errors.ArgumentError: ``rho`` has an unsupported type.
+
+    Metafor reference:
+        [vcalc](https://wviechtb.github.io/metafor/reference/vcalc.html)
     """
     if vi is None:
         raise metafopy.errors.InputError("Must specify the 'vi' variable.")

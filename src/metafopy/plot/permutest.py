@@ -102,7 +102,7 @@ def plot_permutest(
 ) -> PlotPermutestResult:
     """Plot the permutation distributions of a [permutest][metafopy.permutest] result (``plot.permutest.rma.uni``).
 
-    Mirrors metafor's ``plot.permutest.rma.uni()``, see <https://wviechtb.github.io/metafor/reference/plot.permutest.rma.uni.html>.
+    Mirrors metafor's ``plot.permutest.rma.uni()``.
 
     One panel is drawn per selected element, in the order of metafor: the omnibus test of the location coefficients (``QM=True``), the
     location coefficients, the omnibus test of the scale coefficients (``QS=True``) and the scale coefficients. Each panel is the histogram of
@@ -154,6 +154,9 @@ def plot_permutest(
     Raises:
         metafopy.errors.InputError: ``trim`` is 0.5 or more; ``alternative``, ``p2defn`` or ``stat`` is not a valid value; a coefficient
             name or position in ``beta`` or ``alpha`` does not exist; no panel is selected.
+
+    Metafor reference:
+        [plot.permutest.rma.uni](https://wviechtb.github.io/metafor/reference/plot.permutest.rma.uni.html)
     """
     if layout is not None:
         warnings.warn("Argument 'layout' has been deprecated.", stacklevel=2)

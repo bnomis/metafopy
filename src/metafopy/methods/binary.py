@@ -81,8 +81,6 @@ def confint_fixed_binary(
     """Wald-type confidence interval of the pooled effect of an [rma_mh][metafopy.rma_mh] or [rma_peto][metafopy.rma_peto] fit (metafor's ``confint.rma.mh``
     and ``confint.rma.peto``).
 
-    See <https://wviechtb.github.io/metafor/reference/confint.rma.html>.
-
     Args:
         model: Model fitted by [rma_mh][metafopy.rma_mh] or [rma_peto][metafopy.rma_peto].
         level: Confidence level in percent (``95`` is 95%). As in metafor, a value below 1 is read as the confidence level if it is above 0.5
@@ -97,6 +95,9 @@ def confint_fixed_binary(
     Returns:
         A [ConfintResult][metafopy.ConfintResult] whose ``fixed`` table has one row, with an empty label, and the columns ``estimate``, ``ci.lb`` and
         ``ci.ub``; the interval uses the normal distribution.
+
+    Metafor reference:
+        [confint.rma](https://wviechtb.github.io/metafor/reference/confint.rma.html)
     """
     metafopy.methods.confint.warn_parm(parm)
     alpha = model.level if level is None else metafopy.models.rma_uni.level_to_alpha(level)
@@ -283,8 +284,6 @@ def leave1out_fixed_binary(
 ) -> metafopy.methods.leave1out.Leave1outResult:
     """Refit the model leaving out each table (or each ``cluster`` of tables) in turn (metafor's ``leave1out`` for ``rma.mh`` and ``rma.peto``).
 
-    See <https://wviechtb.github.io/metafor/reference/leave1out.html>.
-
     Args:
         x: A model fitted by [rma_mh][metafopy.rma_mh] or [rma_peto][metafopy.rma_peto].
         cluster: Clustering variable: a column name of the data the model was fitted to, or an array with one value per supplied table. All
@@ -307,6 +306,9 @@ def leave1out_fixed_binary(
 
     Raises:
         metafopy.errors.InputError: ``na_action`` is unknown or ``'fail'`` with missing counts, ``k = 1``, or ``cluster`` is invalid.
+
+    Metafor reference:
+        [leave1out](https://wviechtb.github.io/metafor/reference/leave1out.html)
     """
     metafopy.methods.common.check_na_action(na_action)
     t = x.tables
@@ -374,7 +376,7 @@ def cumul_fixed_binary(
 ) -> metafopy.methods.leave1out.CumulResult:
     """Fit the model to the first ``i`` tables for ``i = 1, ..., k`` (metafor's ``cumul`` for ``rma.mh`` and ``rma.peto``).
 
-    Tables with missing counts are skipped. See <https://wviechtb.github.io/metafor/reference/cumul.html>.
+    Tables with missing counts are skipped.
 
     Args:
         x: A model fitted by [rma_mh][metafopy.rma_mh] or [rma_peto][metafopy.rma_peto].
@@ -398,6 +400,9 @@ def cumul_fixed_binary(
 
     Raises:
         metafopy.errors.InputError: ``na_action`` is unknown, ``order`` is invalid or tables are missing and ``na_action='fail'``.
+
+    Metafor reference:
+        [cumul](https://wviechtb.github.io/metafor/reference/cumul.html)
     """
     metafopy.methods.common.check_na_action(na_action)
     t = x.tables

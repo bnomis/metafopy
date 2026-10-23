@@ -110,7 +110,7 @@ def gosh(x: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> GoshResult:
     This is a single-dispatch function: the implementation is chosen from the class of ``x``. See
     [gosh_rma_uni][metafopy.methods.gosh.gosh_rma_uni] for [rma_uni][metafopy.rma_uni] fits. Fits of [rma_mh][metafopy.rma_mh] and
     [rma_peto][metafopy.rma_peto] are also supported (as in metafor), with the same arguments as ``gosh_rma_uni``; the subsets then have one
-    or more tables and the result has the column ``estimate``. See <https://wviechtb.github.io/metafor/reference/gosh.html>.
+    or more tables and the result has the column ``estimate``.
 
     Args:
         x: A fitted model object.
@@ -124,6 +124,9 @@ def gosh(x: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> GoshResult:
         metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
         metafopy.errors.NotSupportedError: the model is of a class metafor has no GOSH analysis for (``rma.ls``, ``rma.glmm``, ``rma.mv``,
             selection models, ``robust.rma`` and others).
+
+    Metafor reference:
+        [gosh](https://wviechtb.github.io/metafor/reference/gosh.html)
     """
     metafopy.methods.fitview.check_class(x, notav=metafopy.methods.fitview.FIXED_UNI_ONLY)
     raise metafopy.errors.ArgumentError(f'gosh() not implemented for {type(x).__name__}')
@@ -150,7 +153,6 @@ def gosh_rma_uni(
     heterogeneity statistics of the model fitted to all subsets of the studies; Viechtbauer (2021) generalised this to models with moderators.
     By default all subsets (with at least ``p`` studies, ``p`` being the number of coefficients) are used if there are at most ``10**6`` of
     them, otherwise ``10**6`` random subsets are drawn. The subsets are drawn before the fits, so the result equals that of a serial run.
-    See <https://wviechtb.github.io/metafor/reference/gosh.html>.
 
     Args:
         x: A model fitted by [rma_uni][metafopy.rma_uni], with or without moderators; not allowed for a model passed through
@@ -177,6 +179,9 @@ def gosh_rma_uni(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
         metafopy.errors.NotSupportedError: the model is of a class that is not supported (see ``x``).
+
+    Metafor reference:
+        [gosh](https://wviechtb.github.io/metafor/reference/gosh.html)
     """
     metafopy.methods.common.check_na_action(na_action)
     metafopy.methods.fitview.check_class(x, notav=metafopy.methods.fitview.FIXED_UNI_ONLY)

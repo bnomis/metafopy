@@ -227,8 +227,7 @@ def profile_rma_uni(
     The model is refitted with ``tau^2`` fixed at each value of a grid and the log-likelihood (and the coefficients) recorded. ``xlim`` defaults to the
     range spanned by the Q-profile CI for ``tau^2`` and the estimate (the upper end at least 0.1). Models with equal or fixed effects cannot be profiled.
 
-    R source: <https://github.com/wviechtb/metafor/blob/master/R/profile.rma.uni.r>; reference page:
-    <https://wviechtb.github.io/metafor/reference/profile.rma.html>.
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/profile.rma.uni.r>
 
     Args:
         fitted: Random- or mixed-effects model fitted by [rma_uni][metafopy.rma_uni] (not an equal- or fixed-effects model).
@@ -266,6 +265,9 @@ def profile_rma_uni(
         metafopy.errors.InputError: the model uses an equal- or fixed-effects method; ``steps`` has missing values or is a single number below 2;
             ``xlim`` or ``ylim`` does not have length 2; ``xlim`` cannot be set automatically; ``parallel`` is not one of the accepted values or
             ``ncpus`` is below 1; with ``pred=True`` no predictions can be computed.
+
+    Metafor reference:
+        [profile.rma](https://wviechtb.github.io/metafor/reference/profile.rma.html)
     """
     x = fitted
     parallel = metafopy.core.parallel.resolve_parallel(parallel, ncpus, cl)

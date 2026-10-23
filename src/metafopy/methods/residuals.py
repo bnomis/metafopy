@@ -5,7 +5,7 @@ variance-covariance matrix and ``'cholesky'`` the residuals multiplied by the tr
 sum, squared, to ``QE`` for models with a non-diagonal matrix). ``'rstandard'`` and ``'rstudent'`` return the ``z`` values of
 :func:`metafopy.rstandard` and :func:`metafopy.rstudent`. For ``rma_mh`` and ``rma_peto`` fits ``'pearson'`` is ``'rstandard'``.
 
-R source: https://github.com/wviechtb/metafor/blob/master/R/residuals.rma.r; reference page:
+R source: https://github.com/wviechtb/metafor/blob/master/R/residuals.rma.r
 https://wviechtb.github.io/metafor/reference/residuals.rma.html.
 """
 

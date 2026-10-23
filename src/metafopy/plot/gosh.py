@@ -89,7 +89,7 @@ def plot_gosh(
 ) -> PlotGoshResult:
     """Plot the results of [gosh][metafopy.gosh] (``plot.gosh.rma``).
 
-    Mirrors metafor's ``plot.gosh.rma()``, see <https://wviechtb.github.io/metafor/reference/plot.gosh.rma.html>.
+    Mirrors metafor's ``plot.gosh.rma()``.
 
     For a model without moderators the heterogeneity statistic ``het`` (``'QE'``, ``'I2'``, ``'H2'``, ``'tau2'`` or
     ``'tau'``) is plotted against the estimate, with marginal histograms and kernel density estimates (``xhist``,
@@ -136,6 +136,9 @@ def plot_gosh(
     Raises:
         metafopy.errors.InputError: ``het`` is unknown or ``'tau2'``/``'tau'`` is used for an equal-effects model, ``out`` is not a study, ``col`` does not
             have two colours when ``out`` is used, or ``hh`` is outside 0 to 1.
+
+    Metafor reference:
+        [plot.gosh.rma](https://wviechtb.github.io/metafor/reference/plot.gosh.rma.html)
     """
     het = HET.get(het, het)
     if het not in HET_LABEL:

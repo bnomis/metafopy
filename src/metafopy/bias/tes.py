@@ -173,7 +173,7 @@ def tes(
 ) -> TesResult:
     """Test of excess significance.
 
-    Mirrors metafor's `tes`, see https://wviechtb.github.io/metafor/reference/tes.html. The power of each study is computed for an assumed
+    Mirrors metafor's `tes`. The power of each study is computed for an assumed
     true effect and the observed number of significant studies is compared with the expected number (Ioannidis & Trikalinos, 2007,
     doi:10.1177/1740774507079441). Also estimates the true effect `theta_lim` at which the test would be just significant.
 
@@ -219,6 +219,9 @@ def tes(
         metafopy.errors.InputError: an argument or the data is invalid, or studies are missing and `na_action='fail'`.
         metafopy.errors.NotSupportedError: `x` is a model of a class tes is not available for (for example `rma_mv`, `rma_glmm`, `rma_ls`,
             selection models and robust fits).
+
+    Metafor reference:
+        [tes](https://wviechtb.github.io/metafor/reference/tes.html)
     """
     metafopy.methods.common.check_na_action(na_action)
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists

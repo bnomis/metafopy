@@ -187,8 +187,7 @@ def confint_rma_uni(
     The interval for ``tau^2`` is found by root finding (Q-profile, generalised Q, profile likelihood or the Higgins-Thompson method) or is of Wald type;
     the bounds of ``I^2`` and ``H^2`` follow from those of ``tau^2``.
 
-    R source: <https://github.com/wviechtb/metafor/blob/master/R/confint.rma.uni.r>; reference page:
-    <https://wviechtb.github.io/metafor/reference/confint.rma.html>.
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/confint.rma.uni.r>
 
     Args:
         model: Model fitted by [rma_uni][metafopy.rma_uni].
@@ -233,6 +232,9 @@ def confint_rma_uni(
             length, a search interval that does not contain the estimate for ``type='pl'``, ``type='genq'`` for a fit that is not ``GENQ`` or ``GENQM``,
             ``type='ht'`` with moderators or ``k <= 2``, ``type='qp'`` with non-positive sampling variances), ``k = 1``, or the model has no
             estimated random-effects component (equal-effects methods, or a fixed ``tau^2``).
+
+    Metafor reference:
+        [confint.rma](https://wviechtb.github.io/metafor/reference/confint.rma.html)
     """
     warn_parm(parm)
     x = model
@@ -640,8 +642,7 @@ def confint_rma_mv(
     The intervals of the components are profile-likelihood intervals (Hardy and Thompson, 1996,
     [doi:10.1002/(SICI)1097-0258(19960330)15:6<619::AID-SIM188>3.0.CO;2-A](https://doi.org/10.1002/(SICI)1097-0258(19960330)15:6%3C619::AID-SIM188%3E3.0.CO;2-A)).
 
-    R source: <https://github.com/wviechtb/metafor/blob/master/R/confint.rma.mv.r>; reference page:
-    <https://wviechtb.github.io/metafor/reference/confint.rma.html>.
+    R source: <https://github.com/wviechtb/metafor/blob/master/R/confint.rma.mv.r>
 
     Args:
         model: Model fitted by [rma_mv][metafopy.rma_mv].
@@ -687,6 +688,9 @@ def confint_rma_mv(
         metafopy.errors.InputError: more than one component argument is given, the model has no such (estimated) component or it was fixed, the
             interval searched does not contain the estimate, ``xlim`` is not of length 2, ``control`` has an unknown entry, or the model has no
             component to give an interval for.
+
+    Metafor reference:
+        [confint.rma](https://wviechtb.github.io/metafor/reference/confint.rma.html)
     """
     warn_parm(parm)
     x = model

@@ -120,7 +120,7 @@ INCOMPLETE = 'Cannot compute outcomes. Check that all of the required informatio
 def cmicalc(mi: numpy.typing.ArrayLike, method: bool | str = 'exact') -> FloatArray:
     """Small-sample bias correction factor for standardized mean differences.
 
-    Mirrors metafor's `cmicalc`, see https://wviechtb.github.io/metafor/reference/cmicalc.html.
+    Mirrors metafor's `cmicalc`.
     The factor `c(m)` of Hedges (1981, doi:10.3102/10769986006002107) multiplies a standardized mean difference
     to remove its small-sample bias. [escalc][metafopy.escalc] uses it for the measures SMD, SMD1, SMDH, SMD1H, SMN, SMCC, SMCR, SMCRH, SMCRP and
     SMCRPH, passing its argument `correct` as `method`.
@@ -135,6 +135,9 @@ def cmicalc(mi: numpy.typing.ArrayLike, method: bool | str = 'exact') -> FloatAr
 
     Raises:
         metafopy.errors.InputError: `method` is None, or a string that is not an abbreviation of 'exact' or 'approx'.
+
+    Metafor reference:
+        [cmicalc](https://wviechtb.github.io/metafor/reference/cmicalc.html)
     """
     m = numpy.asarray(mi, dtype=numpy.float64)
     if isinstance(method, bool):
@@ -407,12 +410,12 @@ def escalc(
 ) -> pandas.DataFrame:
     """Calculate effect sizes ``yi`` and sampling variances ``vi`` (metafor's ``escalc``).
 
-    See <https://wviechtb.github.io/metafor/reference/escalc.html> for the measures, the arguments each one needs and the ``vtype`` options.
+    The metafor reference (last section) lists the measures, the arguments each one needs and the ``vtype`` options.
     ``add`` defaults to 1/2, except for the measures where metafor uses 0 (AS, PHI, ZPHI, RTET, ZTET, IRSD, PAS, PFT, IRS, IRFT).
 
     Args:
         measure: Effect size or outcome measure to compute, a metafor code such as ``'SMD'``, ``'OR'``, ``'RR'``, ``'ZCOR'`` or ``'PR'``; see the metafor
-            reference above for the full list. Which of the data arguments below are needed depends on the measure. ``None`` (with ``yi``) means
+            reference (last section) for the full list. Which of the data arguments below are needed depends on the measure. ``None`` (with ``yi``) means
             ``'GEN'``.
         ai: 2x2 table frequencies (upper left cell).
         bi: 2x2 table frequencies (upper right cell).
@@ -490,6 +493,9 @@ def escalc(
         metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
         metafopy.errors.NotSupportedError: the requested combination is not implemented.
         metafopy.errors.InternalError: an internal invariant does not hold.
+
+    Metafor reference:
+        [escalc](https://wviechtb.github.io/metafor/reference/escalc.html)
     """
     if measure is None and yi is None:
         raise metafopy.errors.InputError("Must specify an effect size or outcome measure via the 'measure' argument.")

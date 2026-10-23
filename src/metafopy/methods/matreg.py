@@ -424,7 +424,6 @@ def matreg(
     (:func:`metafopy.core.linalg.near_pd`, a port of ``Matrix::nearPD``).
 
     Without names, the coefficients are labelled ``x1``, ``x2``, ... by their 1-based position in ``R``, as in R.
-    See <https://wviechtb.github.io/metafor/reference/matreg.html>.
 
     Args:
         y: The outcome variable: a 0-based index into ``R``, a variable name (``R`` must then be a data frame with dimension names) or a
@@ -455,6 +454,9 @@ def matreg(
         metafopy.errors.InputError: an argument is missing, invalid or inconsistent with ``R``.
         metafopy.errors.ArgumentError: a logical argument is not a bool.
         metafopy.errors.EstimationError: ``R[x, x]`` cannot be inverted, or ``n`` does not exceed the number of regression coefficients.
+
+    Metafor reference:
+        [matreg](https://wviechtb.github.io/metafor/reference/matreg.html)
     """
     if digits is None:
         digits = 4

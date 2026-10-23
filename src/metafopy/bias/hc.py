@@ -104,7 +104,7 @@ def hc(
 ) -> HcResult:
     """Henmi and Copas pooled estimate and confidence interval for a random-effects model.
 
-    Mirrors metafor's `hc`, see https://wviechtb.github.io/metafor/reference/hc.html. The pooled estimate uses the inverse-variance weights of an
+    Mirrors metafor's `hc`. The pooled estimate uses the inverse-variance weights of an
     equal-effects model, which do not depend on the amount of heterogeneity; the heterogeneity is estimated with the DerSimonian-Laird
     estimator and enters the standard error and the confidence interval (Henmi & Copas, 2010, doi:10.1002/sim.4029).
 
@@ -127,6 +127,9 @@ def hc(
             positive, or the root search fails.
         metafopy.errors.ArgumentError: `obj` is not an `rma_uni` result.
         metafopy.errors.NotSupportedError: `obj` is a location-scale model or a selection model.
+
+    Metafor reference:
+        [hc](https://wviechtb.github.io/metafor/reference/hc.html)
     """
     metafopy.methods.fitview.check_method(obj, 'hc')
     metafopy.methods.fitview.check_class(obj, must='rma.uni', notav=('rma.ls', 'rma.gen', 'rma.uni.selmodel'))

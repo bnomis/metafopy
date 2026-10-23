@@ -108,7 +108,7 @@ def plot_rma(
 ) -> PlotRmaResult | metafopy.plot.selmodel.SelPlotResult:
     """Draw the forest, funnel, radial and residual plots of a model (metafor's ``plot()`` of an ``rma.uni``, ``rma.mh`` or ``rma.peto`` fit).
 
-    Mirrors metafor's ``plot.rma.uni()``, see <https://wviechtb.github.io/metafor/reference/plot.rma.uni.html>.
+    Mirrors metafor's ``plot.rma.uni()``.
 
     For a model without moderators the panels are [forest][metafopy.forest], [funnel][metafopy.funnel],
     [radial][metafopy.radial] and the standardized residuals ([rstandard][metafopy.rstandard]) of the studies in order;
@@ -140,6 +140,9 @@ def plot_rma(
         metafopy.errors.ArgumentError: ``kwargs`` are given for a model that is not a selection model.
         metafopy.errors.InputError: ``na_action`` is unknown, or ``'fail'`` and studies were left out of the fit.
         metafopy.errors.NotSupportedError: the model is an ``rma_mv``, ``rma_glmm``, location-scale or robust fit (metafor has no such method).
+
+    Metafor reference:
+        [plot.rma](https://wviechtb.github.io/metafor/reference/plot.rma.html)
     """
     if isinstance(x, metafopy.models.sel_result.SelmodelResult):
         return metafopy.plot.selmodel.plot_selmodel(x, ax=ax, **kwargs)
