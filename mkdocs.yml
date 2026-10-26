@@ -81,6 +81,7 @@ nav:
       - Methods for fitted models: reference/methods.md
       - Publication bias: reference/bias.md
       - Plots: reference/plots.md
+      - Interactive charts: reference/interactive.md
       - Transformations: reference/transf.md
       - Datasets: reference/datasets.md
       - Errors: reference/errors.md
