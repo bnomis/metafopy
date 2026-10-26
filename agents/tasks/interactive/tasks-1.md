@@ -17,7 +17,7 @@ This checkout had no `.venv` on 2026-10-26, and the tests need the
 
 ## Task 1: `ChartData` and `chart_data()`
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Module location; API (`ChartData`, `chart_data`); Implementation; Error handling
@@ -26,27 +26,27 @@ This checkout had no `.venv` on 2026-10-26, and the tests need the
 
 **Subtasks:**
 
-- [ ] Run `uv sync --extra interactive` and `pre-commit install` (the hooks were not installed on 2026-10-26)
-- [ ] Create `src/metafopy/interactive/__init__.py` with `__all__ = ['forest_chart', 'funnel_chart', 'chart_data', 'ChartData']`, importing Altair first and raising `ImportError` naming the extra (`pip install "metafopy[interactive] @ git+https://github.com/bnomis/metafopy"`) when it is missing
-- [ ] Do not import the package from `src/metafopy/__init__.py`
-- [ ] Write `data.py`: the frozen `ChartData` dataclass with the `studies` columns `slab, yi, vi, sei, ci_lb, ci_ub, weight, order, href, group, fill` and the `pooled` columns `label, estimate, ci_lb, ci_ub, pi_lb, pi_ub, k, tau2, I2`
-- [ ] Implement `chart_data()` for `RMAResult` and `RMAMVResult`: per-study intervals `yi +/- z(level) * sqrt(vi)` passed through `transf`; weights from `weights_()` as percentages; pooled rows from `predict(x, transf=transf)` and then one per `group_fits` entry in mapping order
-- [ ] Omit studies with missing `yi` or `vi`, indexing `slab`, `href` and `groups` before omission
-- [ ] Raise `metafopy.errors.InputError` for a wrong-length `slab`, `href` or `groups`, for `group_fits` without `groups`, and for a fit with moderators
-- [ ] Add a validator used by both chart functions: a hand-built `ChartData` missing a column raises `InputError` naming it
-- [ ] Write `src/tests/test_interactive.py` (skipped with `pytest.importorskip('altair')`) covering each of the above on `dat.bcg`
+- [x] Run `uv sync --extra interactive` and `pre-commit install` (the hooks were not installed on 2026-10-26)
+- [x] Create `src/metafopy/interactive/__init__.py` with `__all__ = ['forest_chart', 'funnel_chart', 'chart_data', 'ChartData']`, importing Altair first and raising `ImportError` naming the extra (`pip install "metafopy[interactive] @ git+https://github.com/bnomis/metafopy"`) when it is missing
+- [x] Do not import the package from `src/metafopy/__init__.py`
+- [x] Write `data.py`: the frozen `ChartData` dataclass with the `studies` columns `slab, yi, vi, sei, ci_lb, ci_ub, weight, order, href, group, fill` and the `pooled` columns `label, estimate, ci_lb, ci_ub, pi_lb, pi_ub, k, tau2, I2`
+- [x] Implement `chart_data()` for `RMAResult` and `RMAMVResult`: per-study intervals `yi +/- z(level) * sqrt(vi)` passed through `transf`; weights from `weights_()` as percentages; pooled rows from `predict(x, transf=transf)` and then one per `group_fits` entry in mapping order
+- [x] Omit studies with missing `yi` or `vi`, indexing `slab`, `href` and `groups` before omission
+- [x] Raise `metafopy.errors.InputError` for a wrong-length `slab`, `href` or `groups`, for `group_fits` without `groups`, and for a fit with moderators
+- [x] Add a validator used by both chart functions: a hand-built `ChartData` missing a column raises `InputError` naming it
+- [x] Write `src/tests/test_interactive.py` (skipped with `pytest.importorskip('altair')`) covering each of the above on `dat.bcg`
 
 **Acceptance Criteria:**
 
-- [ ] On `dat.bcg` with `transf=numpy.exp`, the pooled row equals `predict(fit, transf=numpy.exp)` and `weight` equals `weights_()`
-- [ ] `import metafopy` still works without Altair installed (checked by asserting `'altair' not in sys.modules` after a fresh `import metafopy` in a subprocess)
-- [ ] Each `InputError` case is raised, with the message naming the offending argument or column
+- [x] On `dat.bcg` with `transf=numpy.exp`, the pooled row equals `predict(fit, transf=numpy.exp)` and `weight` equals `weights_()`
+- [x] `import metafopy` still works without Altair installed (checked by asserting `'altair' not in sys.modules` after a fresh `import metafopy` in a subprocess)
+- [x] Each `InputError` case is raised, with the message naming the offending argument or column
 
 **Definition of Done:**
 
-- [ ] `pre-commit run --all-files` passes
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_interactive.py -m 'not slow'` passes
+- [x] `pre-commit run --all-files` passes
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_interactive.py -m 'not slow'` passes
 
 **Notes:**
 
