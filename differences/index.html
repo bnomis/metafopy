@@ -1,0 +1,3313 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Meta-analysis in Python, a re-implementation of the R package metafor">
+      
+      
+      
+      
+        <link rel="prev" href="../reference/errors/">
+      
+      
+        <link rel="next" href="../differences-notes/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/favicon.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>Overview - metafopy</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Mona+Sans:300,300i,400,400i,700,700i%7CSource+Code+Pro:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Mona Sans";--md-code-font:"Source Code Pro"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../assets/theme.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#differences-from-metafor" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="metafopy" class="md-header__button md-logo" aria-label="metafopy" data-md-component="logo">
+      
+  <img src="../assets/metafopy-mark.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            metafopy
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Overview
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/bnomis/metafopy" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="metafopy" class="md-nav__button md-logo" aria-label="metafopy" data-md-component="logo">
+      
+  <img src="../assets/metafopy-mark.svg" alt="logo">
+
+    </a>
+    metafopy
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/bnomis/metafopy" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/effect-sizes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Effect sizes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fitting models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/binary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Binary and count data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/multilevel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multilevel and multivariate models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/advanced/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Selection and location-scale models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/diagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/bias/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Publication bias
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/emmeans/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Estimated marginal means
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/plots/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plots
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/gallery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plot gallery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/datasets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Datasets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../notebooks/showcase/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    metafopy showcase
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../analyses/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Analyses
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../from-r/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Coming from R
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Function reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Function reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/effects/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Effect sizes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/methods/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Methods for fitted models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/bias/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Publication bias
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/plots/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plots
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/interactive/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Interactive charts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/transf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Transformations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/datasets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Datasets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/errors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Errors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Differences from metafor
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Differences from metafor
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#by-design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        By design
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="By design">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#names-and-0-based-indices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Names and 0-based indices
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fitted-models-are-read-only" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fitted models are read-only
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#summary-returns-text" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        summary() returns text
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#frames-from-escalc-print-like-r-selections-do-not" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Frames from escalc() print like R, selections do not
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#digits-where-r-passes-it-to-print" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        digits= where R passes it to print()
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reporter-is-not-ported" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        reporter() is not ported
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#optimiser-stop-points" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Optimiser stop points
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Optimiser stop points">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rma_mv-with-struct-gen-stops-at-another-maximum" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rma_mv with struct GEN stops at another maximum
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rma_mv-with-struct-un-and-a-fixed-tau2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rma_mv with struct UN and a fixed tau2
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#standard-errors-of-a-location-scale-model-on-a-flat-scale" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Standard errors of a location-scale model on a flat scale
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#selmodel-on-a-flat-likelihood" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        selmodel on a flat likelihood
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rma_glmm-with-umfs-z-value-in-the-fourth-digit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rma_glmm with UM.FS: z value in the fourth digit
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rma_glmm-with-umrs-a-higher-log-likelihood" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rma_glmm with UM.RS: a higher log-likelihood
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rma_glmm-with-cmel-standard-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rma_glmm with CM.EL: standard errors
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rma_glmm-back-ends-and-links" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rma_glmm back-ends and links
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="rma_glmm back-ends and links">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#glmmadaptive-reproduces-rs-iterates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GLMMadaptive reproduces R's iterates
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#glmmtmb-agrees-to-about-1e-5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        glmmTMB agrees to about 1e-5
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fits-that-fail-in-r-are-returned" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fits that fail in R are returned
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#link-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Link functions
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#random-numbers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Random numbers
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Random numbers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#seeded-draws-reproduce-r" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Seeded draws reproduce R
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stricter-than-r" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stricter than R
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Stricter than R">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#a-misspelt-control-entry-raises" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A misspelt control entry raises
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#unknown-plot-arguments-raise" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Unknown plot arguments raise
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#escalc-with-the-reserved-measure-hr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        escalc() with the reserved measure HR
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fsn-of-a-mantel-haenszel-fit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        fsn() of a Mantel-Haenszel fit
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vcovtyperesid-under-nafail" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        vcov(type="resid") under na.fail
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#predict-of-a-fit-with-missing-moderator-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        predict() of a fit with missing moderator values
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#metafopy-gives-a-value-where-r-does-not" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        metafopy gives a value where R does not
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="metafopy gives a value where R does not">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#emmprep-of-an-rma_mh-fit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        emmprep() of an rma_mh fit
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fmtxdrop0ifinttrue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        fmtx(drop0ifint=TRUE)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rs-quirks-copied-on-purpose" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        R's quirks copied on purpose
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="R&#39;s quirks copied on purpose">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#blup-of-a-cluster-robust-fit-recycles-quantiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        blup() of a cluster-robust fit recycles quantiles
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#diagnostics-refuse-robust-fits-as-r-does" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Diagnostics refuse robust fits, as R does
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#everything-else" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Everything else
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../differences-notes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Detailed notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../differences-plots/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plots compared with metafor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#by-design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        By design
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="By design">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#names-and-0-based-indices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Names and 0-based indices
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fitted-models-are-read-only" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fitted models are read-only
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#summary-returns-text" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        summary() returns text
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#frames-from-escalc-print-like-r-selections-do-not" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Frames from escalc() print like R, selections do not
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#digits-where-r-passes-it-to-print" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        digits= where R passes it to print()
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reporter-is-not-ported" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        reporter() is not ported
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#optimiser-stop-points" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Optimiser stop points
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Optimiser stop points">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rma_mv-with-struct-gen-stops-at-another-maximum" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rma_mv with struct GEN stops at another maximum
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rma_mv-with-struct-un-and-a-fixed-tau2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rma_mv with struct UN and a fixed tau2
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#standard-errors-of-a-location-scale-model-on-a-flat-scale" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Standard errors of a location-scale model on a flat scale
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#selmodel-on-a-flat-likelihood" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        selmodel on a flat likelihood
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rma_glmm-with-umfs-z-value-in-the-fourth-digit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rma_glmm with UM.FS: z value in the fourth digit
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rma_glmm-with-umrs-a-higher-log-likelihood" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rma_glmm with UM.RS: a higher log-likelihood
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rma_glmm-with-cmel-standard-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rma_glmm with CM.EL: standard errors
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rma_glmm-back-ends-and-links" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rma_glmm back-ends and links
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="rma_glmm back-ends and links">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#glmmadaptive-reproduces-rs-iterates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GLMMadaptive reproduces R's iterates
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#glmmtmb-agrees-to-about-1e-5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        glmmTMB agrees to about 1e-5
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fits-that-fail-in-r-are-returned" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fits that fail in R are returned
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#link-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Link functions
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#random-numbers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Random numbers
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Random numbers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#seeded-draws-reproduce-r" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Seeded draws reproduce R
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stricter-than-r" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stricter than R
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Stricter than R">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#a-misspelt-control-entry-raises" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A misspelt control entry raises
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#unknown-plot-arguments-raise" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Unknown plot arguments raise
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#escalc-with-the-reserved-measure-hr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        escalc() with the reserved measure HR
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fsn-of-a-mantel-haenszel-fit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        fsn() of a Mantel-Haenszel fit
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vcovtyperesid-under-nafail" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        vcov(type="resid") under na.fail
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#predict-of-a-fit-with-missing-moderator-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        predict() of a fit with missing moderator values
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#metafopy-gives-a-value-where-r-does-not" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        metafopy gives a value where R does not
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="metafopy gives a value where R does not">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#emmprep-of-an-rma_mh-fit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        emmprep() of an rma_mh fit
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fmtxdrop0ifinttrue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        fmtx(drop0ifint=TRUE)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rs-quirks-copied-on-purpose" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        R's quirks copied on purpose
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="R&#39;s quirks copied on purpose">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#blup-of-a-cluster-robust-fit-recycles-quantiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        blup() of a cluster-robust fit recycles quantiles
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#diagnostics-refuse-robust-fits-as-r-does" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Diagnostics refuse robust fits, as R does
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#everything-else" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Everything else
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="differences-from-metafor">Differences from metafor<a class="headerlink" href="#differences-from-metafor" title="Permanent link">&para;</a></h1>
+<p>metafopy follows metafor, and for nearly every function it gives the same numbers, to the digits metafor prints. This page shows
+where it does not. Each difference has a short summary, the same call in R and in Python with the output of both, and the reason.
+The R code and the Python code of an example do the same thing, so any difference in the two outputs is the difference.</p>
+<p>Everything that is too small or too specific for an example here is in the <a href="../differences-notes/">detailed notes</a>, grouped by
+topic. <a href="../from-r/">Coming from R</a> lists the rules of the translation.</p>
+<p>The outputs below were captured on 2026-10-21 with R 4.3.3, metafor 5.2-1, emmeans 2.0.4 and lme4 2.0.6, and with metafopy at the
+commit of the same day. They are a record of that run, not a promise; the tests in <code>src/tests</code> and <code>bin/metafor-audit.sh</code> are what
+keeps the two in line.</p>
+<h2 id="by-design">By design<a class="headerlink" href="#by-design" title="Permanent link">&para;</a></h2>
+<p>Differences that follow from Python, not from a gap in the port.</p>
+<h3 id="names-and-0-based-indices">Names and 0-based indices<a class="headerlink" href="#names-and-0-based-indices" title="Permanent link">&para;</a></h3>
+<p>R's <code>.</code> in a name becomes <code>_</code>, and every index counts from 0. The study index <code>ids</code> and the position that <code>which.max</code> returns
+differ by one for that reason; the studies are the same.</p>
+<p><em>Why:</em> Python counts from 0 and has no <code>.</code> in names. Printed <code>escalc</code> frames still number their rows from 1, as R's do.</p>
+<div class="compare">
+<div>
+<p><strong>R, metafor 5.2-1</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nf">library</span><span class="p">(</span><span class="n">metafor</span><span class="p">)</span>
+<span class="n">dat</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">escalc</span><span class="p">(</span><span class="n">measure</span><span class="o">=</span><span class="s">"RR"</span><span class="p">,</span><span class="w"> </span><span class="n">ai</span><span class="o">=</span><span class="n">tpos</span><span class="p">,</span><span class="w"> </span><span class="n">bi</span><span class="o">=</span><span class="n">tneg</span><span class="p">,</span><span class="w"> </span><span class="n">ci</span><span class="o">=</span><span class="n">cpos</span><span class="p">,</span><span class="w"> </span><span class="n">di</span><span class="o">=</span><span class="n">cneg</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="o">=</span><span class="n">dat.bcg</span><span class="p">)</span>
+<span class="n">res</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">rma</span><span class="p">(</span><span class="n">yi</span><span class="p">,</span><span class="w"> </span><span class="n">vi</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">)</span>
+<span class="n">res</span><span class="o">$</span><span class="n">ids</span><span class="p">[</span><span class="m">1</span><span class="o">:</span><span class="m">3</span><span class="p">]</span>
+<span class="nf">which.max</span><span class="p">(</span><span class="nf">abs</span><span class="p">(</span><span class="nf">rstudent</span><span class="p">(</span><span class="n">res</span><span class="p">)</span><span class="o">$</span><span class="n">z</span><span class="p">))</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>[1] 1 2 3
+[1] 4
+</code></pre></div>
+</div>
+<div>
+<p><strong>Python, metafopy</strong></p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">escalc</span><span class="p">,</span> <span class="n">rma</span><span class="p">,</span> <span class="n">rstudent</span>
+
+<span class="n">dat</span> <span class="o">=</span> <span class="n">escalc</span><span class="p">(</span><span class="n">measure</span><span class="o">=</span><span class="s1">'RR'</span><span class="p">,</span> <span class="n">ai</span><span class="o">=</span><span class="s1">'tpos'</span><span class="p">,</span> <span class="n">bi</span><span class="o">=</span><span class="s1">'tneg'</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="s1">'cpos'</span><span class="p">,</span> <span class="n">di</span><span class="o">=</span><span class="s1">'cneg'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">datasets</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'dat.bcg'</span><span class="p">))</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">rma</span><span class="p">(</span><span class="s1">'yi'</span><span class="p">,</span> <span class="s1">'vi'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">ids</span><span class="p">[:</span><span class="mi">3</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">rstudent</span><span class="p">(</span><span class="n">res</span><span class="p">)</span><span class="o">.</span><span class="n">z</span><span class="p">)))</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>[0 1 2]
+3
+</code></pre></div>
+</div>
+</div>
+<h3 id="fitted-models-are-read-only">Fitted models are read-only<a class="headerlink" href="#fitted-models-are-read-only" title="Permanent link">&para;</a></h3>
+<p><code>res$field &lt;- value</code> changes a fit in R and can add a field that does not exist. A fit in metafopy is a frozen dataclass: use
+<code>dataclasses.replace(res, field=value)</code> for a changed copy. Assigning to it, or adding an attribute, raises
+<code>FrozenInstanceError</code>.</p>
+<p><em>Why:</em> a fit that quietly changes after the fact is a common source of wrong numbers, and R's list-like access is kept for
+reading (<code>res.tau2</code>, <code>res.beta</code>).</p>
+<div class="compare">
+<div>
+<p><strong>R, metafor 5.2-1</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nf">library</span><span class="p">(</span><span class="n">metafor</span><span class="p">)</span>
+<span class="n">dat</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">escalc</span><span class="p">(</span><span class="n">measure</span><span class="o">=</span><span class="s">"RR"</span><span class="p">,</span><span class="w"> </span><span class="n">ai</span><span class="o">=</span><span class="n">tpos</span><span class="p">,</span><span class="w"> </span><span class="n">bi</span><span class="o">=</span><span class="n">tneg</span><span class="p">,</span><span class="w"> </span><span class="n">ci</span><span class="o">=</span><span class="n">cpos</span><span class="p">,</span><span class="w"> </span><span class="n">di</span><span class="o">=</span><span class="n">cneg</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="o">=</span><span class="n">dat.bcg</span><span class="p">)</span>
+<span class="n">res</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">rma</span><span class="p">(</span><span class="n">yi</span><span class="p">,</span><span class="w"> </span><span class="n">vi</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">)</span>
+<span class="n">res</span><span class="o">$</span><span class="n">tau2</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="m">0</span>
+<span class="n">res</span><span class="o">$</span><span class="n">tau2</span>
+<span class="n">res</span><span class="o">$</span><span class="n">zz</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="m">1</span>
+<span class="n">res</span><span class="o">$</span><span class="n">zz</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>[1] 0
+[1] 1
+</code></pre></div>
+</div>
+<div>
+<p><strong>Python, metafopy</strong></p>
+<div class="highlight"><pre><span></span><code><span class="c1"># docs: skip</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">escalc</span><span class="p">,</span> <span class="n">rma</span>
+
+<span class="n">dat</span> <span class="o">=</span> <span class="n">escalc</span><span class="p">(</span><span class="n">measure</span><span class="o">=</span><span class="s1">'RR'</span><span class="p">,</span> <span class="n">ai</span><span class="o">=</span><span class="s1">'tpos'</span><span class="p">,</span> <span class="n">bi</span><span class="o">=</span><span class="s1">'tneg'</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="s1">'cpos'</span><span class="p">,</span> <span class="n">di</span><span class="o">=</span><span class="s1">'cneg'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">datasets</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'dat.bcg'</span><span class="p">))</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">rma</span><span class="p">(</span><span class="s1">'yi'</span><span class="p">,</span> <span class="s1">'vi'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">)</span>
+<span class="n">res2</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">tau2</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">res2</span><span class="o">.</span><span class="n">tau2</span><span class="p">)</span>
+<span class="n">res</span><span class="o">.</span><span class="n">zz</span> <span class="o">=</span> <span class="mi">1</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>0.0
+FrozenInstanceError: cannot assign to field 'zz'
+</code></pre></div>
+</div>
+</div>
+<h3 id="summary-returns-text">summary() returns text<a class="headerlink" href="#summary-returns-text" title="Permanent link">&para;</a></h3>
+<p>In R, <code>summary(res)</code> is the fit itself with another print method. In metafopy it is the printed text, as a <code>str</code> that also has
+the fields of the fit as attributes (<code>s.beta</code>), so printing it and reading from it both work.</p>
+<p><em>Why:</em> Python has no print methods dispatched on the class of a value; a <code>str</code> subclass gives the same printout without a second
+fit class.</p>
+<div class="compare">
+<div>
+<p><strong>R, metafor 5.2-1</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nf">library</span><span class="p">(</span><span class="n">metafor</span><span class="p">)</span>
+<span class="n">dat</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">escalc</span><span class="p">(</span><span class="n">measure</span><span class="o">=</span><span class="s">"RR"</span><span class="p">,</span><span class="w"> </span><span class="n">ai</span><span class="o">=</span><span class="n">tpos</span><span class="p">,</span><span class="w"> </span><span class="n">bi</span><span class="o">=</span><span class="n">tneg</span><span class="p">,</span><span class="w"> </span><span class="n">ci</span><span class="o">=</span><span class="n">cpos</span><span class="p">,</span><span class="w"> </span><span class="n">di</span><span class="o">=</span><span class="n">cneg</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="o">=</span><span class="n">dat.bcg</span><span class="p">)</span>
+<span class="n">res</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">rma</span><span class="p">(</span><span class="n">yi</span><span class="p">,</span><span class="w"> </span><span class="n">vi</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">)</span>
+<span class="n">s</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">summary</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+<span class="nf">is.character</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+<span class="n">s</span><span class="o">$</span><span class="n">beta</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>[1] FALSE
+              [,1]
+intrcpt -0.7145323
+</code></pre></div>
+</div>
+<div>
+<p><strong>Python, metafopy</strong></p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">escalc</span><span class="p">,</span> <span class="n">rma</span>
+
+<span class="n">dat</span> <span class="o">=</span> <span class="n">escalc</span><span class="p">(</span><span class="n">measure</span><span class="o">=</span><span class="s1">'RR'</span><span class="p">,</span> <span class="n">ai</span><span class="o">=</span><span class="s1">'tpos'</span><span class="p">,</span> <span class="n">bi</span><span class="o">=</span><span class="s1">'tneg'</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="s1">'cpos'</span><span class="p">,</span> <span class="n">di</span><span class="o">=</span><span class="s1">'cneg'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">datasets</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'dat.bcg'</span><span class="p">))</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">rma</span><span class="p">(</span><span class="s1">'yi'</span><span class="p">,</span> <span class="s1">'vi'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">)</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">summary</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="nb">str</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">beta</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>True
+[-0.71453235]
+</code></pre></div>
+</div>
+</div>
+<h3 id="frames-from-escalc-print-like-r-selections-do-not">Frames from escalc() print like R, selections do not<a class="headerlink" href="#frames-from-escalc-print-like-r-selections-do-not" title="Permanent link">&para;</a></h3>
+<p><code>escalc()</code> returns a <code>pandas.DataFrame</code> subclass that prints as R's <code>print.escalc</code> does: rows numbered from 1, the <code>digits</code> of the
+effect sizes and variances. Any selection of rows or columns, and pandas operations such as <code>merge</code>, give a plain <code>DataFrame</code>
+that keeps the attributes (<code>dat.attrs['measure']</code>) but prints the pandas way: rows from 0 and wide frames abbreviated.</p>
+<p><em>Why:</em> pandas builds a new plain frame for every selection, and R's <code>[.escalc</code> keeps the class. Print the whole frame
+(<code>print(dat)</code>) to get R's layout.</p>
+<div class="compare">
+<div>
+<p><strong>R, metafor 5.2-1</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nf">library</span><span class="p">(</span><span class="n">metafor</span><span class="p">)</span>
+<span class="n">dat</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">escalc</span><span class="p">(</span><span class="n">measure</span><span class="o">=</span><span class="s">"RR"</span><span class="p">,</span><span class="w"> </span><span class="n">ai</span><span class="o">=</span><span class="n">tpos</span><span class="p">,</span><span class="w"> </span><span class="n">bi</span><span class="o">=</span><span class="n">tneg</span><span class="p">,</span><span class="w"> </span><span class="n">ci</span><span class="o">=</span><span class="n">cpos</span><span class="p">,</span><span class="w"> </span><span class="n">di</span><span class="o">=</span><span class="n">cneg</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="o">=</span><span class="n">dat.bcg</span><span class="p">)</span>
+<span class="n">dat</span><span class="p">[</span><span class="m">1</span><span class="o">:</span><span class="m">3</span><span class="p">,</span><span class="w"> </span><span class="p">]</span>
+<span class="nf">class</span><span class="p">(</span><span class="n">dat</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>  trial           author year tpos tneg cpos cneg ablat  alloc      yi     vi 
+1     1          Aronson 1948    4  119   11  128    44 random -0.8893 0.3256 
+2     2 Ferguson &amp; Simes 1949    6  300   29  274    55 random -1.5854 0.1946 
+3     3  Rosenthal et al 1960    3  228   11  209    42 random -1.3481 0.4154 
+
+[1] "escalc"     "data.frame"
+</code></pre></div>
+</div>
+<div>
+<p><strong>Python, metafopy</strong></p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">escalc</span>
+
+<span class="n">dat</span> <span class="o">=</span> <span class="n">escalc</span><span class="p">(</span><span class="n">measure</span><span class="o">=</span><span class="s1">'RR'</span><span class="p">,</span> <span class="n">ai</span><span class="o">=</span><span class="s1">'tpos'</span><span class="p">,</span> <span class="n">bi</span><span class="o">=</span><span class="s1">'tneg'</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="s1">'cpos'</span><span class="p">,</span> <span class="n">di</span><span class="o">=</span><span class="s1">'cneg'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">datasets</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'dat.bcg'</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">dat</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:</span><span class="mi">3</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">dat</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">dat</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">'measure'</span><span class="p">])</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>0      1           Aronson  1948     4  ...     44  random -0.889311  0.325585
+1      2  Ferguson &amp; Simes  1949     6  ...     55  random -1.585389  0.194581
+2      3   Rosenthal et al  1960     3  ...     42  random -1.348073  0.415368
+
+[3 rows x 11 columns]
+EscalcFrame RR
+</code></pre></div>
+</div>
+</div>
+<h3 id="digits-where-r-passes-it-to-print">digits= where R passes it to print()<a class="headerlink" href="#digits-where-r-passes-it-to-print" title="Permanent link">&para;</a></h3>
+<p>R changes the digits of a fit when printing it: <code>print(res, digits=2)</code>. A metafopy fit prints with the <code>digits</code> it was fitted with, so
+pass <code>digits=</code> to <code>rma()</code>; <code>predict()</code>, <code>cumul()</code>, <code>leave1out()</code> and <code>influence()</code> results take a named vector (a dict) as in R,
+and <code>result.with_digits(...)</code> is the counterpart of <code>print(result, digits=...)</code>.</p>
+<p><em>Why:</em> Python's <code>print</code> takes no arguments. The printed text is the same as R's.</p>
+<div class="compare">
+<div>
+<p><strong>R, metafor 5.2-1</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nf">library</span><span class="p">(</span><span class="n">metafor</span><span class="p">)</span>
+<span class="n">dat</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">escalc</span><span class="p">(</span><span class="n">measure</span><span class="o">=</span><span class="s">"RR"</span><span class="p">,</span><span class="w"> </span><span class="n">ai</span><span class="o">=</span><span class="n">tpos</span><span class="p">,</span><span class="w"> </span><span class="n">bi</span><span class="o">=</span><span class="n">tneg</span><span class="p">,</span><span class="w"> </span><span class="n">ci</span><span class="o">=</span><span class="n">cpos</span><span class="p">,</span><span class="w"> </span><span class="n">di</span><span class="o">=</span><span class="n">cneg</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="o">=</span><span class="n">dat.bcg</span><span class="p">)</span>
+<span class="n">res</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">rma</span><span class="p">(</span><span class="n">yi</span><span class="p">,</span><span class="w"> </span><span class="n">vi</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="n">res</span><span class="p">,</span><span class="w"> </span><span class="n">digits</span><span class="o">=</span><span class="m">2</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="nf">predict</span><span class="p">(</span><span class="n">res</span><span class="p">),</span><span class="w"> </span><span class="n">digits</span><span class="o">=</span><span class="nf">c</span><span class="p">(</span><span class="n">pred</span><span class="o">=</span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">ci</span><span class="o">=</span><span class="m">3</span><span class="p">))</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>Random-Effects Model (k = 13; tau^2 estimator: REML)
+
+tau^2 (estimated amount of total heterogeneity): 0.31 (SE = 0.17)
+tau (square root of estimated tau^2 value):      0.56
+I^2 (total heterogeneity / total variability):   92.22%
+H^2 (total variability / sampling variability):  12.86
+
+Test for Heterogeneity:
+Q(df = 12) = 152.23, p-val &lt; .01
+
+Model Results:
+
+estimate    se   zval  pval  ci.lb  ci.ub      
+   -0.71  0.18  -3.97  &lt;.01  -1.07  -0.36  *** 
+
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+    pred     se  ci.lb  ci.ub  pi.lb pi.ub 
+ -0.7145 0.1798 -1.067 -0.362 -1.867 0.438 
+</code></pre></div>
+</div>
+<div>
+<p><strong>Python, metafopy</strong></p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">escalc</span><span class="p">,</span> <span class="n">predict</span><span class="p">,</span> <span class="n">rma</span>
+
+<span class="n">dat</span> <span class="o">=</span> <span class="n">escalc</span><span class="p">(</span><span class="n">measure</span><span class="o">=</span><span class="s1">'RR'</span><span class="p">,</span> <span class="n">ai</span><span class="o">=</span><span class="s1">'tpos'</span><span class="p">,</span> <span class="n">bi</span><span class="o">=</span><span class="s1">'tneg'</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="s1">'cpos'</span><span class="p">,</span> <span class="n">di</span><span class="o">=</span><span class="s1">'cneg'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">datasets</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'dat.bcg'</span><span class="p">))</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">rma</span><span class="p">(</span><span class="s1">'yi'</span><span class="p">,</span> <span class="s1">'vi'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">,</span> <span class="n">digits</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">predict</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">digits</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span><span class="o">.</span><span class="n">with_digits</span><span class="p">({</span><span class="s1">'pred'</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">'ci'</span><span class="p">:</span> <span class="mi">3</span><span class="p">}))</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>Random-Effects Model (k = 13; tau^2 estimator: REML)
+
+tau^2 (estimated amount of total heterogeneity): 0.31 (SE = 0.17)
+tau (square root of estimated tau^2 value):      0.56
+I^2 (total heterogeneity / total variability):   92.22%
+H^2 (total variability / sampling variability):  12.86
+
+Test for Heterogeneity:
+Q(df = 12) = 152.23, p-val &lt; .01
+
+Model Results:
+
+estimate    se   zval  pval  ci.lb  ci.ub
+
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+
+ -0.7145 0.1798 -1.067 -0.362 -1.867 0.438
+</code></pre></div>
+</div>
+</div>
+<h3 id="reporter-is-not-ported">reporter() is not ported<a class="headerlink" href="#reporter-is-not-ported" title="Permanent link">&para;</a></h3>
+<p><code>reporter()</code> writes an R Markdown report of a fit. There is no counterpart: use a Jupyter notebook, which runs the same
+metafopy code and keeps its output.</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># docs: skip</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">metafopy</span>
+
+<span class="n">metafopy</span><span class="o">.</span><span class="n">reporter</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>AttributeError: module 'metafopy' has no attribute 'reporter'
+</code></pre></div>
+<h2 id="optimiser-stop-points">Optimiser stop points<a class="headerlink" href="#optimiser-stop-points" title="Permanent link">&para;</a></h2>
+<p>metafor maximises some likelihoods with R's <code>nlminb</code> (the PORT library) or <code>optim</code>. metafopy uses SciPy's optimisers, and ports
+R's <code>optim</code> BFGS and Nelder-Mead only for <code>rma_glmm</code> (<code>CM.EL</code>) and <code>selmodel</code>. PORT is not ported. Where the likelihood has a single clear maximum the two agree
+to about 1e-4 relative or better. Where it is flat, or has several maxima, the two stop at different points, and the examples
+below are those cases.</p>
+<h3 id="rma_mv-with-struct-gen-stops-at-another-maximum">rma_mv with struct GEN stops at another maximum<a class="headerlink" href="#rma_mv-with-struct-gen-stops-at-another-maximum" title="Permanent link">&para;</a></h3>
+<p>On <code>dat.konstantopoulos2011</code> the REML log-likelihood of <code>~ year | district</code> has more than one local maximum. R's <code>nlminb</code> stops
+at a log-likelihood of -32.20462; metafopy's BFGS follows the ridge to its end and finishes higher, at -31.86847, with <code>rho</code> at
+the boundary. </p>
+<p><em>Why:</em> different optimiser on the same surface. metafopy's value is the higher likelihood, so it is not the worse fit. For the
+<code>struct='GDIAG'</code> variant, <code>control={'tau2_init': [0.01, 0.01]}</code> starts metafopy at R's point; see the
+<a href="../differences-notes/#optimisers-and-flat-likelihoods">notes</a>.</p>
+<div class="compare">
+<div>
+<p><strong>R, metafor 5.2-1</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nf">library</span><span class="p">(</span><span class="n">metafor</span><span class="p">)</span>
+<span class="n">res</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">rma.mv</span><span class="p">(</span><span class="n">yi</span><span class="p">,</span><span class="w"> </span><span class="n">vi</span><span class="p">,</span><span class="w"> </span><span class="n">random</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">year</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">district</span><span class="p">,</span><span class="w"> </span><span class="n">struct</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"GEN"</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dat.konstantopoulos2011</span><span class="p">)</span>
+<span class="nf">c</span><span class="p">(</span><span class="n">logLik</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">logLik</span><span class="p">(</span><span class="n">res</span><span class="p">))</span>
+<span class="n">res</span><span class="o">$</span><span class="n">tau2</span>
+<span class="n">res</span><span class="o">$</span><span class="n">rho</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>   logLik 
+-32.20462 
+[1] 3.486942e+00 1.167101e-06
+[1] -0.9997167
+</code></pre></div>
+</div>
+<div>
+<p><strong>Python, metafopy</strong></p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">rma_mv</span>
+
+<span class="n">res</span> <span class="o">=</span> <span class="n">rma_mv</span><span class="p">(</span><span class="s1">'yi'</span><span class="p">,</span> <span class="s1">'vi'</span><span class="p">,</span> <span class="n">random</span><span class="o">=</span><span class="s1">'~ year | district'</span><span class="p">,</span> <span class="n">struct</span><span class="o">=</span><span class="s1">'GEN'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">datasets</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'dat.konstantopoulos2011'</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">logLik</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">tau2</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">rho</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>'log Lik.' -31.86847 (df=4)
+[3.13185220e+03 7.94227959e-04]
+[-1.]
+</code></pre></div>
+</div>
+</div>
+<h3 id="rma_mv-with-struct-un-and-a-fixed-tau2">rma_mv with struct UN and a fixed tau2<a class="headerlink" href="#rma_mv-with-struct-un-and-a-fixed-tau2" title="Permanent link">&para;</a></h3>
+<p>With one <code>tau2</code> fixed at 0.5 on <code>dat.berkey1998</code>, metafopy's default fit (a Cholesky parametrisation) stops at a log-likelihood
+of -1.5004, R at -0.8600. Passing <code>control={'cholesky': False}</code> reaches R's value.</p>
+<p><em>Why:</em> a worse local maximum of metafopy's BFGS than R's <code>nlminb</code>. For this reason the refits of <code>profile()</code> and of the
+profile-likelihood <code>confint()</code> of <code>rma_mv</code> fits start at the estimates of the full fit and keep the higher log-likelihood.</p>
+<div class="compare">
+<div>
+<p><strong>R, metafor 5.2-1</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nf">library</span><span class="p">(</span><span class="n">metafor</span><span class="p">)</span>
+<span class="n">V</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">vcalc</span><span class="p">(</span><span class="n">vi</span><span class="o">=</span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">cluster</span><span class="o">=</span><span class="n">author</span><span class="p">,</span><span class="w"> </span><span class="n">rvars</span><span class="o">=</span><span class="nf">c</span><span class="p">(</span><span class="n">v1i</span><span class="p">,</span><span class="w"> </span><span class="n">v2i</span><span class="p">),</span><span class="w"> </span><span class="n">data</span><span class="o">=</span><span class="n">dat.berkey1998</span><span class="p">)</span>
+<span class="n">res</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">rma.mv</span><span class="p">(</span><span class="n">yi</span><span class="p">,</span><span class="w"> </span><span class="n">V</span><span class="p">,</span><span class="w"> </span><span class="n">mods</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">outcome</span><span class="p">,</span><span class="w"> </span><span class="n">random</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">outcome</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">trial</span><span class="p">,</span><span class="w"> </span><span class="n">struct</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"UN"</span><span class="p">,</span>
+<span class="w">              </span><span class="n">tau2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="kc">NA</span><span class="p">,</span><span class="w"> </span><span class="m">0.5</span><span class="p">),</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dat.berkey1998</span><span class="p">)</span>
+<span class="nf">c</span><span class="p">(</span><span class="n">logLik</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">logLik</span><span class="p">(</span><span class="n">res</span><span class="p">))</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>    logLik 
+-0.8600248 
+</code></pre></div>
+</div>
+<div>
+<p><strong>Python, metafopy</strong></p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">rma_mv</span><span class="p">,</span> <span class="n">vcalc</span>
+
+<span class="n">dat</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'dat.berkey1998'</span><span class="p">)</span>
+<span class="n">V</span> <span class="o">=</span> <span class="n">vcalc</span><span class="p">(</span><span class="n">vi</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">cluster</span><span class="o">=</span><span class="s1">'author'</span><span class="p">,</span> <span class="n">rvars</span><span class="o">=</span><span class="p">[</span><span class="s1">'v1i'</span><span class="p">,</span> <span class="s1">'v2i'</span><span class="p">],</span> <span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">)</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">rma_mv</span><span class="p">(</span><span class="s1">'yi'</span><span class="p">,</span> <span class="n">V</span><span class="p">,</span> <span class="n">mods</span><span class="o">=</span><span class="s1">'~ 0 + outcome'</span><span class="p">,</span> <span class="n">random</span><span class="o">=</span><span class="s1">'~ outcome | trial'</span><span class="p">,</span> <span class="n">struct</span><span class="o">=</span><span class="s1">'UN'</span><span class="p">,</span> <span class="n">tau2</span><span class="o">=</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">],</span> <span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">logLik</span><span class="p">())</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">rma_mv</span><span class="p">(</span><span class="s1">'yi'</span><span class="p">,</span> <span class="n">V</span><span class="p">,</span> <span class="n">mods</span><span class="o">=</span><span class="s1">'~ 0 + outcome'</span><span class="p">,</span> <span class="n">random</span><span class="o">=</span><span class="s1">'~ outcome | trial'</span><span class="p">,</span> <span class="n">struct</span><span class="o">=</span><span class="s1">'UN'</span><span class="p">,</span> <span class="n">tau2</span><span class="o">=</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">],</span> <span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">,</span> <span class="n">control</span><span class="o">=</span><span class="p">{</span><span class="s1">'cholesky'</span><span class="p">:</span> <span class="kc">False</span><span class="p">})</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">logLik</span><span class="p">())</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>'log Lik.' -1.500362 (df=4)
+'log Lik.' -0.8600248 (df=4)
+</code></pre></div>
+</div>
+</div>
+<h3 id="standard-errors-of-a-location-scale-model-on-a-flat-scale">Standard errors of a location-scale model on a flat scale<a class="headerlink" href="#standard-errors-of-a-location-scale-model-on-a-flat-scale" title="Permanent link">&para;</a></h3>
+<p>With <code>link='identity'</code> the scale slope of this model is near zero, and the Hessian of the log-likelihood is computed by
+numerical differences that shrink to rounding error. R gives 0.539892 for the first scale standard error and metafopy 0.539621,
+a relative difference of 5e-4; R's own <code>r=8</code> and <code>r=4</code> Richardson depths already differ from each other by the same amount.</p>
+<p><em>Why:</em> the value is rounding noise in both implementations. metafopy uses depth <code>hessian_r=4</code> by default, which agrees with R's
+<code>r=4</code> to about 3e-6; <code>control={'hessian_r': 8}</code> gives the noisy variant.</p>
+<div class="compare">
+<div>
+<p><strong>R, metafor 5.2-1</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nf">library</span><span class="p">(</span><span class="n">metafor</span><span class="p">)</span>
+<span class="n">dat</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">escalc</span><span class="p">(</span><span class="n">measure</span><span class="o">=</span><span class="s">"RR"</span><span class="p">,</span><span class="w"> </span><span class="n">ai</span><span class="o">=</span><span class="n">tpos</span><span class="p">,</span><span class="w"> </span><span class="n">bi</span><span class="o">=</span><span class="n">tneg</span><span class="p">,</span><span class="w"> </span><span class="n">ci</span><span class="o">=</span><span class="n">cpos</span><span class="p">,</span><span class="w"> </span><span class="n">di</span><span class="o">=</span><span class="n">cneg</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="o">=</span><span class="n">dat.bcg</span><span class="p">)</span>
+<span class="n">res</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">rma</span><span class="p">(</span><span class="n">yi</span><span class="p">,</span><span class="w"> </span><span class="n">vi</span><span class="p">,</span><span class="w"> </span><span class="n">scale</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">ablat</span><span class="p">,</span><span class="w"> </span><span class="n">link</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"identity"</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dat</span><span class="p">)</span>
+<span class="n">res</span><span class="o">$</span><span class="n">se.alpha</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>[1] 0.53989225 0.01556825
+</code></pre></div>
+</div>
+<div>
+<p><strong>Python, metafopy</strong></p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">escalc</span><span class="p">,</span> <span class="n">rma</span>
+
+<span class="n">dat</span> <span class="o">=</span> <span class="n">escalc</span><span class="p">(</span><span class="n">measure</span><span class="o">=</span><span class="s1">'RR'</span><span class="p">,</span> <span class="n">ai</span><span class="o">=</span><span class="s1">'tpos'</span><span class="p">,</span> <span class="n">bi</span><span class="o">=</span><span class="s1">'tneg'</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="s1">'cpos'</span><span class="p">,</span> <span class="n">di</span><span class="o">=</span><span class="s1">'cneg'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">datasets</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'dat.bcg'</span><span class="p">))</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">rma</span><span class="p">(</span><span class="s1">'yi'</span><span class="p">,</span> <span class="s1">'vi'</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="s1">'~ ablat'</span><span class="p">,</span> <span class="n">link</span><span class="o">=</span><span class="s1">'identity'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">se_alpha</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>[0.53962141 0.0155596 ]
+</code></pre></div>
+</div>
+</div>
+<h3 id="selmodel-on-a-flat-likelihood">selmodel on a flat likelihood<a class="headerlink" href="#selmodel-on-a-flat-likelihood" title="Permanent link">&para;</a></h3>
+<p><code>selmodel(type='beta')</code> on <code>dat.baskerville2012</code> has <code>tau2</code> near zero and a <code>delta</code> on its lower bound (both languages warn
+about it). The log-likelihood is identical to the printed digits and <code>tau2</code> agrees to six digits, but <code>delta</code>, which sits on its
+lower bound, is 1.000e-05 in R and 1.022e-05 here.</p>
+<p><em>Why:</em> R's PORT stops on <code>rel.tol</code> of 1e-10 on a flat likelihood, and SciPy's optimiser stops a little elsewhere on the same
+plateau.</p>
+<div class="compare">
+<div>
+<p><strong>R, metafor 5.2-1</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nf">library</span><span class="p">(</span><span class="n">metafor</span><span class="p">)</span>
+<span class="n">dat</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">dat.baskerville2012</span>
+<span class="n">res</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">rma</span><span class="p">(</span><span class="n">smd</span><span class="p">,</span><span class="w"> </span><span class="n">se</span><span class="o">^</span><span class="m">2</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dat</span><span class="p">)</span>
+<span class="n">sel</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">selmodel</span><span class="p">(</span><span class="n">res</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"beta"</span><span class="p">,</span><span class="w"> </span><span class="n">steps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">0.025</span><span class="p">,</span><span class="w"> </span><span class="m">0.975</span><span class="p">),</span><span class="w"> </span><span class="n">control</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="n">optimizer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"nlminb"</span><span class="p">))</span>
+<span class="nf">c</span><span class="p">(</span><span class="n">logLik</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">logLik</span><span class="p">(</span><span class="n">sel</span><span class="p">))</span>
+<span class="n">sel</span><span class="o">$</span><span class="n">tau2</span>
+<span class="n">sel</span><span class="o">$</span><span class="n">delta</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>Warning message:
+One or more 'delta' estimates are (almost) equal to their lower or upper bound.
+Treat results with caution (or consider adjusting 'delta.min' and/or 'delta.max'). 
+   logLik 
+-1.945572 
+[1] 0.05736726
+[1] 1.000028e-05 1.741239e+00
+</code></pre></div>
+</div>
+<div>
+<p><strong>Python, metafopy</strong></p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">rma</span><span class="p">,</span> <span class="n">selmodel</span>
+
+<span class="n">dat</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'dat.baskerville2012'</span><span class="p">)</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">rma</span><span class="p">(</span><span class="n">dat</span><span class="p">[</span><span class="s1">'smd'</span><span class="p">],</span> <span class="n">dat</span><span class="p">[</span><span class="s1">'se'</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">sel</span> <span class="o">=</span> <span class="n">selmodel</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">'beta'</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="p">[</span><span class="mf">0.025</span><span class="p">,</span> <span class="mf">0.975</span><span class="p">],</span> <span class="n">control</span><span class="o">=</span><span class="p">{</span><span class="s1">'optimizer'</span><span class="p">:</span> <span class="s1">'nlminb'</span><span class="p">})</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">sel</span><span class="o">.</span><span class="n">logLik</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">sel</span><span class="o">.</span><span class="n">tau2</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">sel</span><span class="o">.</span><span class="n">delta</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>UserWarning: One or more 'delta' estimates are (almost) equal to their lower or upper bound.
+Treat results with caution (or consider adjusting 'delta.min' and/or 'delta.max').
+'log Lik.' -1.945572 (df=4)
+0.057367159330093655
+[1.02207630e-05 1.74123073e+00]
+</code></pre></div>
+</div>
+</div>
+<h3 id="rma_glmm-with-umfs-z-value-in-the-fourth-digit">rma_glmm with UM.FS: z value in the fourth digit<a class="headerlink" href="#rma_glmm-with-umfs-z-value-in-the-fourth-digit" title="Permanent link">&para;</a></h3>
+<p>The z value of the pooled log odds ratio is -4.2436 here against -4.2434 in R. The estimate and the log-likelihood agree, and the
+standard error differs in the fifth digit.</p>
+<p><em>Why:</em> the cause has not been traced. metafopy maximises the exact likelihood and R fits it with lme4 (its own quadrature and
+optimiser), and the difference is within the 2e-3 to 1e-1 relative tolerance that the tests allow for mixed-model fits.</p>
+<div class="compare">
+<div>
+<p><strong>R, metafor 5.2-1</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nf">library</span><span class="p">(</span><span class="n">metafor</span><span class="p">)</span>
+<span class="n">res</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">rma.glmm</span><span class="p">(</span><span class="n">measure</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"OR"</span><span class="p">,</span><span class="w"> </span><span class="n">ai</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tpos</span><span class="p">,</span><span class="w"> </span><span class="n">bi</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tneg</span><span class="p">,</span><span class="w"> </span><span class="n">ci</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cpos</span><span class="p">,</span><span class="w"> </span><span class="n">di</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cneg</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dat.bcg</span><span class="p">,</span><span class="w"> </span><span class="n">model</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"UM.FS"</span><span class="p">)</span>
+<span class="n">res</span><span class="o">$</span><span class="n">zval</span>
+<span class="n">res</span><span class="o">$</span><span class="n">se</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>[1] -4.243433
+[1] 0.1755679
+</code></pre></div>
+</div>
+<div>
+<p><strong>Python, metafopy</strong></p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">rma_glmm</span>
+
+<span class="n">res</span> <span class="o">=</span> <span class="n">rma_glmm</span><span class="p">(</span><span class="n">measure</span><span class="o">=</span><span class="s1">'OR'</span><span class="p">,</span> <span class="n">ai</span><span class="o">=</span><span class="s1">'tpos'</span><span class="p">,</span> <span class="n">bi</span><span class="o">=</span><span class="s1">'tneg'</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="s1">'cpos'</span><span class="p">,</span> <span class="n">di</span><span class="o">=</span><span class="s1">'cneg'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">datasets</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'dat.bcg'</span><span class="p">),</span> <span class="n">model</span><span class="o">=</span><span class="s1">'UM.FS'</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">zval</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">se</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>[-4.24356287]
+[0.17556082]
+</code></pre></div>
+</div>
+</div>
+<h3 id="rma_glmm-with-umrs-a-higher-log-likelihood">rma_glmm with UM.RS: a higher log-likelihood<a class="headerlink" href="#rma_glmm-with-umrs-a-higher-log-likelihood" title="Permanent link">&para;</a></h3>
+<p>The random-slopes model on <code>dat.bcg</code> ends at a log-likelihood of -126.2963 in both languages, but metafopy's is higher by 1e-5
+(-126.2962773 against R's -126.2962883), and the estimates differ in the fourth (the pooled log odds ratio
+-0.76165 against -0.76158). Both warn that <code>nAGQ</code> is set to 1.</p>
+<p><em>Why:</em> the objective is the same as lme4's. lme4's <code>bobyqa</code> stops a little earlier than metafopy's optimiser. The tests allow
+2e-3 to 1e-1 relative for mixed-model fits; see <a href="../differences-notes/#rma_glmm">rma_glmm</a> for the packages and links.</p>
+<div class="compare">
+<div>
+<p><strong>R, metafor 5.2-1</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nf">library</span><span class="p">(</span><span class="n">metafor</span><span class="p">)</span>
+<span class="n">res</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">rma.glmm</span><span class="p">(</span><span class="n">measure</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"OR"</span><span class="p">,</span><span class="w"> </span><span class="n">ai</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tpos</span><span class="p">,</span><span class="w"> </span><span class="n">bi</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tneg</span><span class="p">,</span><span class="w"> </span><span class="n">ci</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cpos</span><span class="p">,</span><span class="w"> </span><span class="n">di</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cneg</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dat.bcg</span><span class="p">,</span>
+<span class="w">                </span><span class="n">model</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"UM.RS"</span><span class="p">,</span><span class="w"> </span><span class="n">control</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="n">package</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"lme4"</span><span class="p">))</span>
+<span class="nf">c</span><span class="p">(</span><span class="n">beta</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">coef</span><span class="p">(</span><span class="n">res</span><span class="p">),</span><span class="w"> </span><span class="n">tau2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">res</span><span class="o">$</span><span class="n">tau2</span><span class="p">,</span><span class="w"> </span><span class="n">logLik</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">logLik</span><span class="p">(</span><span class="n">res</span><span class="p">))</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>Warning message:
+Not possible to fit RE/ME model='UM.RS' with nAGQ &gt; 1 with glmer(). nAGQ automatically set to 1. 
+beta.intrcpt         tau2       logLik 
+  -0.7615840    0.3198355 -126.2962883 
+</code></pre></div>
+</div>
+<div>
+<p><strong>Python, metafopy</strong></p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">rma_glmm</span>
+
+<span class="n">res</span> <span class="o">=</span> <span class="n">rma_glmm</span><span class="p">(</span><span class="n">measure</span><span class="o">=</span><span class="s1">'OR'</span><span class="p">,</span> <span class="n">ai</span><span class="o">=</span><span class="s1">'tpos'</span><span class="p">,</span> <span class="n">bi</span><span class="o">=</span><span class="s1">'tneg'</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="s1">'cpos'</span><span class="p">,</span> <span class="n">di</span><span class="o">=</span><span class="s1">'cneg'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">datasets</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'dat.bcg'</span><span class="p">),</span> <span class="n">model</span><span class="o">=</span><span class="s1">'UM.RS'</span><span class="p">,</span> <span class="n">control</span><span class="o">=</span><span class="p">{</span><span class="s1">'package'</span><span class="p">:</span> <span class="s1">'lme4'</span><span class="p">})</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">beta</span><span class="p">,</span> <span class="n">res</span><span class="o">.</span><span class="n">tau2</span><span class="p">,</span> <span class="n">res</span><span class="o">.</span><span class="n">logLik</span><span class="p">())</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>UserWarning: Not possible to fit RE/ME model='UM.RS' with nAGQ &gt; 1 with glmer(). nAGQ automatically set to 1.
+[-0.76164895] 0.31985975161566554 'log Lik.' -126.2963 (df=4)
+</code></pre></div>
+</div>
+</div>
+<h3 id="rma_glmm-with-cmel-standard-errors">rma_glmm with CM.EL: standard errors<a class="headerlink" href="#rma_glmm-with-cmel-standard-errors" title="Permanent link">&para;</a></h3>
+<p>The conditional model gives a standard error that is 0.5 % lower than R's on the Collins data (0.098986 against 0.099461).</p>
+<p><em>Why:</em> R's Hessian is a finite-difference Hessian of an objective that is itself noisy (<code>integrate()</code> with <code>rel.tol</code> 1.2e-4 and
+the truncation of BiasedUrn), so R's value moves in the third digit under tiny shifts and cannot be matched. The default
+<code>dnchgcalc</code> of metafopy is the smooth density; see the <a href="../differences-notes/#rma_glmm">notes</a> for the other options.</p>
+<div class="compare">
+<div>
+<p><strong>R, metafor 5.2-1</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nf">library</span><span class="p">(</span><span class="n">metafor</span><span class="p">)</span>
+<span class="n">res</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">rma.glmm</span><span class="p">(</span><span class="n">ai</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">b.xci</span><span class="p">,</span><span class="w"> </span><span class="n">n1i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">nci</span><span class="p">,</span><span class="w"> </span><span class="n">ci</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">b.xti</span><span class="p">,</span><span class="w"> </span><span class="n">n2i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">nti</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dat.collins1985a</span><span class="p">,</span>
+<span class="w">                </span><span class="n">measure</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"OR"</span><span class="p">,</span><span class="w"> </span><span class="n">model</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"CM.EL"</span><span class="p">,</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"FE"</span><span class="p">)</span>
+<span class="n">res</span><span class="o">$</span><span class="n">se</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>Warning messages:
+1: 3 studies with NAs omitted from model fitting. 
+2: Some yi/vi values are NA. 
+[1] 0.09946104
+</code></pre></div>
+</div>
+<div>
+<p><strong>Python, metafopy</strong></p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">rma_glmm</span>
+
+<span class="n">res</span> <span class="o">=</span> <span class="n">rma_glmm</span><span class="p">(</span><span class="n">ai</span><span class="o">=</span><span class="s1">'b.xci'</span><span class="p">,</span> <span class="n">n1i</span><span class="o">=</span><span class="s1">'nci'</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="s1">'b.xti'</span><span class="p">,</span> <span class="n">n2i</span><span class="o">=</span><span class="s1">'nti'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">datasets</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'dat.collins1985a'</span><span class="p">),</span> <span class="n">measure</span><span class="o">=</span><span class="s1">'OR'</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="s1">'CM.EL'</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">'FE'</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">se</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>UserWarning: 3 studies with NAs omitted from model fitting.
+UserWarning: Some yi/vi values are NA.
+[0.09898644]
+</code></pre></div>
+</div>
+</div>
+<h2 id="rma_glmm-back-ends-and-links">rma_glmm back-ends and links<a class="headerlink" href="#rma_glmm-back-ends-and-links" title="Permanent link">&para;</a></h2>
+<p><code>rma_glmm(control={'package': ...})</code> takes <code>'lme4'</code> (the default), <code>'GLMMadaptive'</code> and <code>'glmmTMB'</code>, and <code>link=</code> takes the links logit, probit, cauchit, cloglog, log, identity and sqrt. The examples fit <code>dat.bcg</code> with the intercept-only model.</p>
+<h3 id="glmmadaptive-reproduces-rs-iterates">GLMMadaptive reproduces R's iterates<a class="headerlink" href="#glmmadaptive-reproduces-rs-iterates" title="Permanent link">&para;</a></h3>
+<p>metafopy's GLMMadaptive back-end is a step-by-step port of <code>mixed_fit</code> (EM stage, then BFGS with R's <code>parscale</code> and re-centred nodes), so it agrees with R to 1e-7 here and usually reproduces where R stops short of the maximum.</p>
+<p><em>Why:</em> the same algorithm, not just the same objective. The exception is a chaotic BFGS path (<code>UM.RS</code> with <code>mods</code> on bcg), where a 1e-12 change of the start moves the coefficients by about 1e-2; see the <a href="../differences-notes/#rma_glmm">notes</a>.</p>
+<div class="compare">
+<div>
+<p><strong>R, metafor 5.2-1</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nf">library</span><span class="p">(</span><span class="n">metafor</span><span class="p">)</span>
+<span class="n">res</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">rma.glmm</span><span class="p">(</span><span class="n">ai</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tpos</span><span class="p">,</span><span class="w"> </span><span class="n">bi</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tneg</span><span class="p">,</span><span class="w"> </span><span class="n">ci</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cpos</span><span class="p">,</span><span class="w"> </span><span class="n">di</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cneg</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dat.bcg</span><span class="p">,</span><span class="w"> </span><span class="n">measure</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"OR"</span><span class="p">,</span><span class="w"> </span><span class="n">model</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"UM.FS"</span><span class="p">,</span><span class="w"> </span><span class="n">control</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="n">package</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"GLMMadaptive"</span><span class="p">))</span>
+<span class="nf">c</span><span class="p">(</span><span class="n">beta</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">coef</span><span class="p">(</span><span class="n">res</span><span class="p">),</span><span class="w"> </span><span class="n">tau2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">res</span><span class="o">$</span><span class="n">tau2</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>beta.intrcpt         tau2 
+  -0.7450203    0.2948830 
+</code></pre></div>
+</div>
+<div>
+<p><strong>Python, metafopy</strong></p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">rma_glmm</span>
+
+<span class="n">res</span> <span class="o">=</span> <span class="n">rma_glmm</span><span class="p">(</span><span class="n">ai</span><span class="o">=</span><span class="s1">'tpos'</span><span class="p">,</span> <span class="n">bi</span><span class="o">=</span><span class="s1">'tneg'</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="s1">'cpos'</span><span class="p">,</span> <span class="n">di</span><span class="o">=</span><span class="s1">'cneg'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">datasets</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'dat.bcg'</span><span class="p">),</span> <span class="n">measure</span><span class="o">=</span><span class="s1">'OR'</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="s1">'UM.FS'</span><span class="p">,</span> <span class="n">control</span><span class="o">=</span><span class="p">{</span><span class="s1">'package'</span><span class="p">:</span> <span class="s1">'GLMMadaptive'</span><span class="p">})</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">beta</span><span class="p">,</span> <span class="n">res</span><span class="o">.</span><span class="n">tau2</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>[-0.74502029] 0.29488295031432865
+</code></pre></div>
+</div>
+</div>
+<h3 id="glmmtmb-agrees-to-about-1e-5">glmmTMB agrees to about 1e-5<a class="headerlink" href="#glmmtmb-agrees-to-about-1e-5" title="Permanent link">&para;</a></h3>
+<p>glmmTMB uses the Laplace approximation (<code>nAGQ</code> is ignored, as in R). The estimate agrees to 5e-6 relative and <code>tau2</code> to 1e-5.</p>
+<p><em>Why:</em> the objective is the same; SciPy and TMB's optimiser stop at slightly different points.</p>
+<div class="compare">
+<div>
+<p><strong>R, metafor 5.2-1</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nf">library</span><span class="p">(</span><span class="n">metafor</span><span class="p">)</span>
+<span class="n">res</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">rma.glmm</span><span class="p">(</span><span class="n">ai</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tpos</span><span class="p">,</span><span class="w"> </span><span class="n">bi</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tneg</span><span class="p">,</span><span class="w"> </span><span class="n">ci</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cpos</span><span class="p">,</span><span class="w"> </span><span class="n">di</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cneg</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dat.bcg</span><span class="p">,</span><span class="w"> </span><span class="n">measure</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"OR"</span><span class="p">,</span><span class="w"> </span><span class="n">model</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"UM.FS"</span><span class="p">,</span><span class="w"> </span><span class="n">control</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="n">package</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"glmmTMB"</span><span class="p">))</span>
+<span class="nf">c</span><span class="p">(</span><span class="n">beta</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">coef</span><span class="p">(</span><span class="n">res</span><span class="p">),</span><span class="w"> </span><span class="n">tau2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">res</span><span class="o">$</span><span class="n">tau2</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>beta.intrcpt         tau2 
+  -0.7450230    0.2955427 
+</code></pre></div>
+</div>
+<div>
+<p><strong>Python, metafopy</strong></p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">rma_glmm</span>
+
+<span class="n">res</span> <span class="o">=</span> <span class="n">rma_glmm</span><span class="p">(</span><span class="n">ai</span><span class="o">=</span><span class="s1">'tpos'</span><span class="p">,</span> <span class="n">bi</span><span class="o">=</span><span class="s1">'tneg'</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="s1">'cpos'</span><span class="p">,</span> <span class="n">di</span><span class="o">=</span><span class="s1">'cneg'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">datasets</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'dat.bcg'</span><span class="p">),</span> <span class="n">measure</span><span class="o">=</span><span class="s1">'OR'</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="s1">'UM.FS'</span><span class="p">,</span> <span class="n">control</span><span class="o">=</span><span class="p">{</span><span class="s1">'package'</span><span class="p">:</span> <span class="s1">'glmmTMB'</span><span class="p">})</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">beta</span><span class="p">,</span> <span class="n">res</span><span class="o">.</span><span class="n">tau2</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>[-0.74502565] 0.2955402442108204
+</code></pre></div>
+</div>
+</div>
+<h3 id="fits-that-fail-in-r-are-returned">Fits that fail in R are returned<a class="headerlink" href="#fits-that-fail-in-r-are-returned" title="Permanent link">&para;</a></h3>
+<p>glmmTMB cannot fit the experimental <code>RR</code> model in R ("Cannot fit ML model"). metafopy returns its maximum-likelihood fit with the same "experimental" warning. The same holds for other measures and models that fail in R; their estimates have no R value to be compared with.</p>
+<p><em>Why:</em> an error that comes from R's optimiser is not a property of the model, so metafopy does not reproduce it.</p>
+<div class="compare">
+<div>
+<p><strong>R, metafor 5.2-1</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nf">library</span><span class="p">(</span><span class="n">metafor</span><span class="p">)</span>
+<span class="n">res</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">rma.glmm</span><span class="p">(</span><span class="n">ai</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tpos</span><span class="p">,</span><span class="w"> </span><span class="n">bi</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tneg</span><span class="p">,</span><span class="w"> </span><span class="n">ci</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cpos</span><span class="p">,</span><span class="w"> </span><span class="n">di</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cneg</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dat.bcg</span><span class="p">,</span><span class="w"> </span><span class="n">measure</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"RR"</span><span class="p">,</span><span class="w"> </span><span class="n">model</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"UM.FS"</span><span class="p">,</span><span class="w"> </span><span class="n">control</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="n">package</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"glmmTMB"</span><span class="p">))</span>
+<span class="nf">c</span><span class="p">(</span><span class="n">beta</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">coef</span><span class="p">(</span><span class="n">res</span><span class="p">),</span><span class="w"> </span><span class="n">tau2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">res</span><span class="o">$</span><span class="n">tau2</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>Error in rma.glmm(ai = tpos, bi = tneg, ci = cpos, di = cneg, data = dat.bcg,  : 
+  Cannot fit ML model (set 'verbose=TRUE' to obtain further details).
+In addition: Warning message:
+The use of this 'measure' is experimental - treat results with caution. 
+</code></pre></div>
+</div>
+<div>
+<p><strong>Python, metafopy</strong></p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">rma_glmm</span>
+
+<span class="n">res</span> <span class="o">=</span> <span class="n">rma_glmm</span><span class="p">(</span><span class="n">ai</span><span class="o">=</span><span class="s1">'tpos'</span><span class="p">,</span> <span class="n">bi</span><span class="o">=</span><span class="s1">'tneg'</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="s1">'cpos'</span><span class="p">,</span> <span class="n">di</span><span class="o">=</span><span class="s1">'cneg'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">datasets</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'dat.bcg'</span><span class="p">),</span> <span class="n">measure</span><span class="o">=</span><span class="s1">'RR'</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="s1">'UM.FS'</span><span class="p">,</span> <span class="n">control</span><span class="o">=</span><span class="p">{</span><span class="s1">'package'</span><span class="p">:</span> <span class="s1">'glmmTMB'</span><span class="p">})</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">beta</span><span class="p">,</span> <span class="n">res</span><span class="o">.</span><span class="n">tau2</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>UserWarning: The use of this 'measure' is experimental - treat results with caution.
+[-0.71381759] 0.27177360791709804
+</code></pre></div>
+</div>
+</div>
+<h3 id="link-functions">Link functions<a class="headerlink" href="#link-functions" title="Permanent link">&para;</a></h3>
+<p>With <code>link='probit'</code> the estimate agrees with R to 3e-5 relative and <code>tau2</code> to 6e-6. The cauchit link is only checked with fixed effects, because lme4 reports a convergence warning and a huge random-effect variance there.</p>
+<p><em>Why:</em> the same lme4 differences as for the logit link, within the 3e-5 to 1e-2 that the tests allow for mixed fits.</p>
+<div class="compare">
+<div>
+<p><strong>R, metafor 5.2-1</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nf">library</span><span class="p">(</span><span class="n">metafor</span><span class="p">)</span>
+<span class="n">res</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">rma.glmm</span><span class="p">(</span><span class="n">ai</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tpos</span><span class="p">,</span><span class="w"> </span><span class="n">bi</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tneg</span><span class="p">,</span><span class="w"> </span><span class="n">ci</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cpos</span><span class="p">,</span><span class="w"> </span><span class="n">di</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cneg</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dat.bcg</span><span class="p">,</span><span class="w"> </span><span class="n">measure</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"OR"</span><span class="p">,</span><span class="w"> </span><span class="n">model</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"UM.FS"</span><span class="p">,</span><span class="w"> </span><span class="n">link</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"probit"</span><span class="p">)</span>
+<span class="nf">c</span><span class="p">(</span><span class="n">beta</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">coef</span><span class="p">(</span><span class="n">res</span><span class="p">),</span><span class="w"> </span><span class="n">tau2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">res</span><span class="o">$</span><span class="n">tau2</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>beta.intrcpt         tau2 
+ -0.30394760   0.05784742 
+</code></pre></div>
+</div>
+<div>
+<p><strong>Python, metafopy</strong></p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">rma_glmm</span>
+
+<span class="n">res</span> <span class="o">=</span> <span class="n">rma_glmm</span><span class="p">(</span><span class="n">ai</span><span class="o">=</span><span class="s1">'tpos'</span><span class="p">,</span> <span class="n">bi</span><span class="o">=</span><span class="s1">'tneg'</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="s1">'cpos'</span><span class="p">,</span> <span class="n">di</span><span class="o">=</span><span class="s1">'cneg'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">datasets</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'dat.bcg'</span><span class="p">),</span> <span class="n">measure</span><span class="o">=</span><span class="s1">'OR'</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="s1">'UM.FS'</span><span class="p">,</span> <span class="n">link</span><span class="o">=</span><span class="s1">'probit'</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">beta</span><span class="p">,</span> <span class="n">res</span><span class="o">.</span><span class="n">tau2</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>[-0.30395671] 0.05784773841202242
+</code></pre></div>
+</div>
+</div>
+<h2 id="random-numbers">Random numbers<a class="headerlink" href="#random-numbers" title="Permanent link">&para;</a></h2>
+<h3 id="seeded-draws-reproduce-r">Seeded draws reproduce R<a class="headerlink" href="#seeded-draws-reproduce-r" title="Permanent link">&para;</a></h3>
+<p><code>conv_fivenum(method='bc', seed=1)</code> simulates with a port of R's generator, so it gives the same means and SDs as R's
+<code>set.seed(1)</code>; so does <code>gosh(seed=)</code>. The values are identical here; only the row labels differ (0-based, from pandas). Without
+<code>seed</code>, metafopy draws from the stream of <code>set_seed</code>.</p>
+<p><em>Why:</em> an analysis that reports simulated numbers can be checked against its R original.</p>
+<div class="compare">
+<div>
+<p><strong>R, metafor 5.2-1</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nf">library</span><span class="p">(</span><span class="n">metafor</span><span class="p">)</span>
+<span class="n">dat</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">data.frame</span><span class="p">(</span><span class="n">n</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">30</span><span class="p">,</span><span class="w"> </span><span class="m">40</span><span class="p">),</span><span class="w"> </span><span class="n">mn</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="m">2</span><span class="p">),</span><span class="w"> </span><span class="n">q1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">3</span><span class="p">,</span><span class="w"> </span><span class="m">4</span><span class="p">),</span><span class="w"> </span><span class="n">md</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">5</span><span class="p">,</span><span class="w"> </span><span class="m">6</span><span class="p">),</span><span class="w"> </span><span class="n">q3</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">8</span><span class="p">,</span><span class="w"> </span><span class="m">9</span><span class="p">),</span><span class="w"> </span><span class="n">mx</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">14</span><span class="p">,</span><span class="w"> </span><span class="m">16</span><span class="p">))</span>
+<span class="nf">conv.fivenum</span><span class="p">(</span><span class="n">min</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mn</span><span class="p">,</span><span class="w"> </span><span class="n">q1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">q1</span><span class="p">,</span><span class="w"> </span><span class="n">median</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">md</span><span class="p">,</span><span class="w"> </span><span class="n">q3</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">q3</span><span class="p">,</span><span class="w"> </span><span class="n">max</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mx</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dat</span><span class="p">,</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"bc"</span><span class="p">,</span><span class="w"> </span><span class="n">seed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">test</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">FALSE</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>   n mn q1 md q3 mx     mean       sd
+1 30  1  3  5  8 14 5.832434 3.930443
+2 40  2  4  6  9 16 6.905464 4.144375
+</code></pre></div>
+</div>
+<div>
+<p><strong>Python, metafopy</strong></p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">conv_fivenum</span>
+
+<span class="n">dat</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">'n'</span><span class="p">:</span> <span class="p">[</span><span class="mi">30</span><span class="p">,</span> <span class="mi">40</span><span class="p">],</span> <span class="s1">'mn'</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="s1">'q1'</span><span class="p">:</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="s1">'md'</span><span class="p">:</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">],</span> <span class="s1">'q3'</span><span class="p">:</span> <span class="p">[</span><span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">],</span> <span class="s1">'mx'</span><span class="p">:</span> <span class="p">[</span><span class="mi">14</span><span class="p">,</span> <span class="mi">16</span><span class="p">]})</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">conv_fivenum</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="s1">'mn'</span><span class="p">,</span> <span class="n">q1</span><span class="o">=</span><span class="s1">'q1'</span><span class="p">,</span> <span class="n">median</span><span class="o">=</span><span class="s1">'md'</span><span class="p">,</span> <span class="n">q3</span><span class="o">=</span><span class="s1">'q3'</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="s1">'mx'</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="s1">'n'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">'bc'</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">test</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>0  30   1   3   5   8  14  5.832434  3.930443
+1  40   2   4   6   9  16  6.905464  4.144375
+</code></pre></div>
+</div>
+</div>
+<h2 id="stricter-than-r">Stricter than R<a class="headerlink" href="#stricter-than-r" title="Permanent link">&para;</a></h2>
+<p>Places where metafopy raises an error and R passes on, or the other way round.</p>
+<h3 id="a-misspelt-control-entry-raises">A misspelt control entry raises<a class="headerlink" href="#a-misspelt-control-entry-raises" title="Permanent link">&para;</a></h3>
+<p>R matches the names in <code>control</code> against the settings it knows with <code>pmatch</code> and ignores the rest, so a typo does nothing. In
+metafopy an entry that no function reads raises <code>ArgumentError</code>, so the typo is not lost. Entries that another metafor function
+reads (<code>optimizer</code> for <code>confint</code>, for example) are ignored as in R.</p>
+<div class="compare">
+<div>
+<p><strong>R, metafor 5.2-1</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nf">library</span><span class="p">(</span><span class="n">metafor</span><span class="p">)</span>
+<span class="n">dat</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">escalc</span><span class="p">(</span><span class="n">measure</span><span class="o">=</span><span class="s">"RR"</span><span class="p">,</span><span class="w"> </span><span class="n">ai</span><span class="o">=</span><span class="n">tpos</span><span class="p">,</span><span class="w"> </span><span class="n">bi</span><span class="o">=</span><span class="n">tneg</span><span class="p">,</span><span class="w"> </span><span class="n">ci</span><span class="o">=</span><span class="n">cpos</span><span class="p">,</span><span class="w"> </span><span class="n">di</span><span class="o">=</span><span class="n">cneg</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="o">=</span><span class="n">dat.bcg</span><span class="p">)</span>
+<span class="n">res</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">rma</span><span class="p">(</span><span class="n">yi</span><span class="p">,</span><span class="w"> </span><span class="n">vi</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">)</span>
+<span class="n">res</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">rma</span><span class="p">(</span><span class="n">yi</span><span class="p">,</span><span class="w"> </span><span class="n">vi</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">,</span><span class="w"> </span><span class="n">control</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="n">optimzer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"nlminb"</span><span class="p">))</span>
+<span class="n">res</span><span class="o">$</span><span class="n">tau2</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>[1] 0.3132433
+</code></pre></div>
+</div>
+<div>
+<p><strong>Python, metafopy</strong></p>
+<div class="highlight"><pre><span></span><code><span class="c1"># docs: skip</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">escalc</span><span class="p">,</span> <span class="n">rma</span>
+
+<span class="n">dat</span> <span class="o">=</span> <span class="n">escalc</span><span class="p">(</span><span class="n">measure</span><span class="o">=</span><span class="s1">'RR'</span><span class="p">,</span> <span class="n">ai</span><span class="o">=</span><span class="s1">'tpos'</span><span class="p">,</span> <span class="n">bi</span><span class="o">=</span><span class="s1">'tneg'</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="s1">'cpos'</span><span class="p">,</span> <span class="n">di</span><span class="o">=</span><span class="s1">'cneg'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">datasets</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'dat.bcg'</span><span class="p">))</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">rma</span><span class="p">(</span><span class="s1">'yi'</span><span class="p">,</span> <span class="s1">'vi'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">,</span> <span class="n">control</span><span class="o">=</span><span class="p">{</span><span class="s1">'optimzer'</span><span class="p">:</span> <span class="s1">'nlminb'</span><span class="p">})</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">tau2</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>ArgumentError: unknown control argument 'optimzer'
+</code></pre></div>
+</div>
+</div>
+<h3 id="unknown-plot-arguments-raise">Unknown plot arguments raise<a class="headerlink" href="#unknown-plot-arguments-raise" title="Permanent link">&para;</a></h3>
+<p>The <code>...</code> of metafor's plot functions is passed on to base graphics, which ignores (and warns about) what it does not know.
+The plot functions of metafopy take explicit keywords, so an unknown one is a <code>TypeError</code>.</p>
+<div class="compare">
+<div>
+<p><strong>R, metafor 5.2-1</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nf">library</span><span class="p">(</span><span class="n">metafor</span><span class="p">)</span>
+<span class="n">dat</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">escalc</span><span class="p">(</span><span class="n">measure</span><span class="o">=</span><span class="s">"RR"</span><span class="p">,</span><span class="w"> </span><span class="n">ai</span><span class="o">=</span><span class="n">tpos</span><span class="p">,</span><span class="w"> </span><span class="n">bi</span><span class="o">=</span><span class="n">tneg</span><span class="p">,</span><span class="w"> </span><span class="n">ci</span><span class="o">=</span><span class="n">cpos</span><span class="p">,</span><span class="w"> </span><span class="n">di</span><span class="o">=</span><span class="n">cneg</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="o">=</span><span class="n">dat.bcg</span><span class="p">)</span>
+<span class="n">res</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">rma</span><span class="p">(</span><span class="n">yi</span><span class="p">,</span><span class="w"> </span><span class="n">vi</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">)</span>
+<span class="nf">pdf</span><span class="p">(</span><span class="kc">NULL</span><span class="p">)</span>
+<span class="nf">forest</span><span class="p">(</span><span class="n">res</span><span class="p">,</span><span class="w"> </span><span class="n">notaparameter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">)</span>
+<span class="nf">cat</span><span class="p">(</span><span class="s">"no error\n"</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>There were 50 or more warnings (use warnings() to see the first 50)
+no error
+</code></pre></div>
+</div>
+<div>
+<p><strong>Python, metafopy</strong></p>
+<div class="highlight"><pre><span></span><code><span class="c1"># docs: skip</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">escalc</span><span class="p">,</span> <span class="n">forest</span><span class="p">,</span> <span class="n">rma</span>
+
+<span class="n">dat</span> <span class="o">=</span> <span class="n">escalc</span><span class="p">(</span><span class="n">measure</span><span class="o">=</span><span class="s1">'RR'</span><span class="p">,</span> <span class="n">ai</span><span class="o">=</span><span class="s1">'tpos'</span><span class="p">,</span> <span class="n">bi</span><span class="o">=</span><span class="s1">'tneg'</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="s1">'cpos'</span><span class="p">,</span> <span class="n">di</span><span class="o">=</span><span class="s1">'cneg'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">datasets</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'dat.bcg'</span><span class="p">))</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">rma</span><span class="p">(</span><span class="s1">'yi'</span><span class="p">,</span> <span class="s1">'vi'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">)</span>
+<span class="n">forest</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">notaparameter</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>TypeError: forest() got an unexpected keyword argument 'notaparameter'
+</code></pre></div>
+</div>
+</div>
+<h3 id="escalc-with-the-reserved-measure-hr">escalc() with the reserved measure HR<a class="headerlink" href="#escalc-with-the-reserved-measure-hr" title="Permanent link">&para;</a></h3>
+<p><code>HR</code> and <code>HD</code> are names that metafor 5.2-1 reserves without computing anything. R fails because <code>vi</code> is missing; metafopy
+passes <code>yi</code> and <code>vi</code> or <code>sei</code> through when they are given, and otherwise raises <code>NotSupportedError</code> with the reason.</p>
+<div class="compare">
+<div>
+<p><strong>R, metafor 5.2-1</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nf">library</span><span class="p">(</span><span class="n">metafor</span><span class="p">)</span>
+<span class="nf">escalc</span><span class="p">(</span><span class="n">measure</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"HR"</span><span class="p">,</span><span class="w"> </span><span class="n">ai</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="m">2</span><span class="p">),</span><span class="w"> </span><span class="n">bi</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">3</span><span class="p">,</span><span class="w"> </span><span class="m">4</span><span class="p">),</span><span class="w"> </span><span class="n">ci</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">5</span><span class="p">,</span><span class="w"> </span><span class="m">6</span><span class="p">),</span><span class="w"> </span><span class="n">di</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">7</span><span class="p">,</span><span class="w"> </span><span class="m">8</span><span class="p">))</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>Error in escalc(measure = "HR", ai = c(1, 2), bi = c(3, 4), ci = c(5,  : 
+  argument "vi" is missing, with no default
+</code></pre></div>
+</div>
+<div>
+<p><strong>Python, metafopy</strong></p>
+<div class="highlight"><pre><span></span><code><span class="c1"># docs: skip</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">escalc</span>
+
+<span class="n">escalc</span><span class="p">(</span><span class="n">measure</span><span class="o">=</span><span class="s1">'HR'</span><span class="p">,</span> <span class="n">ai</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">bi</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="n">ci</span><span class="o">=</span><span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">],</span> <span class="n">di</span><span class="o">=</span><span class="p">[</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">])</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>NotSupportedError: measure='HR' is reserved in metafor but not computed there; supply 'yi' and 'vi' or 'sei'.
+</code></pre></div>
+</div>
+</div>
+<h3 id="fsn-of-a-mantel-haenszel-fit">fsn() of a Mantel-Haenszel fit<a class="headerlink" href="#fsn-of-a-mantel-haenszel-fit" title="Permanent link">&para;</a></h3>
+<p>Both refuse. R fails with an internal error from <code>inherits(x, "rma") &amp;&amp; x$tau2.fix</code>; metafopy raises
+<code>NotSupportedError</code> with the message R's other methods use.</p>
+<div class="compare">
+<div>
+<p><strong>R, metafor 5.2-1</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nf">library</span><span class="p">(</span><span class="n">metafor</span><span class="p">)</span>
+<span class="n">res</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">rma.mh</span><span class="p">(</span><span class="n">ai</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tpos</span><span class="p">,</span><span class="w"> </span><span class="n">bi</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tneg</span><span class="p">,</span><span class="w"> </span><span class="n">ci</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cpos</span><span class="p">,</span><span class="w"> </span><span class="n">di</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cneg</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dat.bcg</span><span class="p">)</span>
+<span class="nf">fsn</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>Error in inherits(x, "rma") &amp;&amp; x$tau2.fix : invalid 'y' type in 'x &amp;&amp; y'
+</code></pre></div>
+</div>
+<div>
+<p><strong>Python, metafopy</strong></p>
+<div class="highlight"><pre><span></span><code><span class="c1"># docs: skip</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">fsn</span><span class="p">,</span> <span class="n">rma_mh</span>
+
+<span class="n">res</span> <span class="o">=</span> <span class="n">rma_mh</span><span class="p">(</span><span class="n">ai</span><span class="o">=</span><span class="s1">'tpos'</span><span class="p">,</span> <span class="n">bi</span><span class="o">=</span><span class="s1">'tneg'</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="s1">'cpos'</span><span class="p">,</span> <span class="n">di</span><span class="o">=</span><span class="s1">'cneg'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">datasets</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'dat.bcg'</span><span class="p">))</span>
+<span class="n">fsn</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>NotSupportedError: Method not available for objects of class "rma.mh".
+</code></pre></div>
+</div>
+</div>
+<h3 id="vcovtyperesid-under-nafail">vcov(type="resid") under na.fail<a class="headerlink" href="#vcovtyperesid-under-nafail" title="Permanent link">&para;</a></h3>
+<p>With <code>options(na.action="na.fail")</code> R stops with the internal error "object 'out' not found" when the fit has studies with missing
+values. metafopy raises <code>InputError</code> that names the problem.</p>
+<div class="compare">
+<div>
+<p><strong>R, metafor 5.2-1</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nf">library</span><span class="p">(</span><span class="n">metafor</span><span class="p">)</span>
+<span class="n">dat</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">escalc</span><span class="p">(</span><span class="n">measure</span><span class="o">=</span><span class="s">"RR"</span><span class="p">,</span><span class="w"> </span><span class="n">ai</span><span class="o">=</span><span class="n">tpos</span><span class="p">,</span><span class="w"> </span><span class="n">bi</span><span class="o">=</span><span class="n">tneg</span><span class="p">,</span><span class="w"> </span><span class="n">ci</span><span class="o">=</span><span class="n">cpos</span><span class="p">,</span><span class="w"> </span><span class="n">di</span><span class="o">=</span><span class="n">cneg</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="o">=</span><span class="n">dat.bcg</span><span class="p">)</span>
+<span class="n">dat</span><span class="o">$</span><span class="n">ablat</span><span class="p">[</span><span class="m">2</span><span class="p">]</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="kc">NA</span>
+<span class="n">res</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">rma</span><span class="p">(</span><span class="n">yi</span><span class="p">,</span><span class="w"> </span><span class="n">vi</span><span class="p">,</span><span class="w"> </span><span class="n">mods</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">ablat</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">)</span>
+<span class="nf">options</span><span class="p">(</span><span class="n">na.action</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"na.fail"</span><span class="p">)</span>
+<span class="nf">vcov</span><span class="p">(</span><span class="n">res</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"resid"</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>Warning message:
+1 study with NAs omitted from model fitting. 
+Error in vcov.rma(res, type = "resid") : object 'out' not found
+</code></pre></div>
+</div>
+<div>
+<p><strong>Python, metafopy</strong></p>
+<div class="highlight"><pre><span></span><code><span class="c1"># docs: skip</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">escalc</span><span class="p">,</span> <span class="n">rma</span><span class="p">,</span> <span class="n">vcov</span>
+
+<span class="n">dat</span> <span class="o">=</span> <span class="n">escalc</span><span class="p">(</span><span class="n">measure</span><span class="o">=</span><span class="s1">'RR'</span><span class="p">,</span> <span class="n">ai</span><span class="o">=</span><span class="s1">'tpos'</span><span class="p">,</span> <span class="n">bi</span><span class="o">=</span><span class="s1">'tneg'</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="s1">'cpos'</span><span class="p">,</span> <span class="n">di</span><span class="o">=</span><span class="s1">'cneg'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">datasets</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'dat.bcg'</span><span class="p">))</span>
+<span class="n">dat</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="s1">'ablat'</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">'nan'</span><span class="p">)</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">rma</span><span class="p">(</span><span class="s1">'yi'</span><span class="p">,</span> <span class="s1">'vi'</span><span class="p">,</span> <span class="n">mods</span><span class="o">=</span><span class="s1">'~ ablat'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">)</span>
+<span class="n">vcov</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">'resid'</span><span class="p">,</span> <span class="n">na_action</span><span class="o">=</span><span class="s1">'fail'</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>UserWarning: 1 study with NAs omitted from model fitting.
+InputError: vcov(type='resid') cannot be used with na_action='fail'.
+</code></pre></div>
+</div>
+</div>
+<h3 id="predict-of-a-fit-with-missing-moderator-values">predict() of a fit with missing moderator values<a class="headerlink" href="#predict-of-a-fit-with-missing-moderator-values" title="Permanent link">&para;</a></h3>
+<p>R keeps <code>pi.se</code> (and <code>pi.ddf</code>) at one value per study of the data (13 here) even though the predictions drop the study with a
+missing moderator (12). metafopy returns them for the rows it returns, so every field has the same length.</p>
+<div class="compare">
+<div>
+<p><strong>R, metafor 5.2-1</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nf">library</span><span class="p">(</span><span class="n">metafor</span><span class="p">)</span>
+<span class="n">dat</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">escalc</span><span class="p">(</span><span class="n">measure</span><span class="o">=</span><span class="s">"RR"</span><span class="p">,</span><span class="w"> </span><span class="n">ai</span><span class="o">=</span><span class="n">tpos</span><span class="p">,</span><span class="w"> </span><span class="n">bi</span><span class="o">=</span><span class="n">tneg</span><span class="p">,</span><span class="w"> </span><span class="n">ci</span><span class="o">=</span><span class="n">cpos</span><span class="p">,</span><span class="w"> </span><span class="n">di</span><span class="o">=</span><span class="n">cneg</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="o">=</span><span class="n">dat.bcg</span><span class="p">)</span>
+<span class="n">dat</span><span class="o">$</span><span class="n">ablat</span><span class="p">[</span><span class="m">2</span><span class="p">]</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="kc">NA</span>
+<span class="n">res</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">rma</span><span class="p">(</span><span class="n">yi</span><span class="p">,</span><span class="w"> </span><span class="n">vi</span><span class="p">,</span><span class="w"> </span><span class="n">mods</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">ablat</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">)</span>
+<span class="n">pred</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">predict</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+<span class="nf">length</span><span class="p">(</span><span class="n">pred</span><span class="o">$</span><span class="n">pred</span><span class="p">)</span>
+<span class="nf">length</span><span class="p">(</span><span class="n">pred</span><span class="o">$</span><span class="n">pi.se</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>Warning message:
+1 study with NAs omitted from model fitting. 
+[1] 12
+[1] 13
+</code></pre></div>
+</div>
+<div>
+<p><strong>Python, metafopy</strong></p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">escalc</span><span class="p">,</span> <span class="n">predict</span><span class="p">,</span> <span class="n">rma</span>
+
+<span class="n">dat</span> <span class="o">=</span> <span class="n">escalc</span><span class="p">(</span><span class="n">measure</span><span class="o">=</span><span class="s1">'RR'</span><span class="p">,</span> <span class="n">ai</span><span class="o">=</span><span class="s1">'tpos'</span><span class="p">,</span> <span class="n">bi</span><span class="o">=</span><span class="s1">'tneg'</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="s1">'cpos'</span><span class="p">,</span> <span class="n">di</span><span class="o">=</span><span class="s1">'cneg'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">datasets</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'dat.bcg'</span><span class="p">))</span>
+<span class="n">dat</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="s1">'ablat'</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">'nan'</span><span class="p">)</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">rma</span><span class="p">(</span><span class="s1">'yi'</span><span class="p">,</span> <span class="s1">'vi'</span><span class="p">,</span> <span class="n">mods</span><span class="o">=</span><span class="s1">'~ ablat'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">)</span>
+<span class="n">pred</span> <span class="o">=</span> <span class="n">predict</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pred</span><span class="o">.</span><span class="n">pred</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pred</span><span class="o">.</span><span class="n">pi_se</span><span class="p">))</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>UserWarning: 1 study with NAs omitted from model fitting.
+12
+12
+</code></pre></div>
+</div>
+</div>
+<h2 id="metafopy-gives-a-value-where-r-does-not">metafopy gives a value where R does not<a class="headerlink" href="#metafopy-gives-a-value-where-r-does-not" title="Permanent link">&para;</a></h2>
+<h3 id="emmprep-of-an-rma_mh-fit">emmprep() of an rma_mh fit<a class="headerlink" href="#emmprep-of-an-rma_mh-fit" title="Permanent link">&para;</a></h3>
+<p>R's <code>emmprep</code> gives an estimate of 0 with standard error 0 for <code>rma_mh</code> (and <code>rma_peto</code>) fits, and fails for <code>selmodel</code> fits.
+metafopy computes the estimated marginal mean from the fit.</p>
+<p><em>Why:</em> R's result is a placeholder, not an estimate (the pooled log risk ratio of these data is -0.47). A port that reproduced
+zeros would give a misleading answer.</p>
+<div class="compare">
+<div>
+<p><strong>R, metafor 5.2-1</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nf">library</span><span class="p">(</span><span class="n">metafor</span><span class="p">)</span>
+<span class="nf">library</span><span class="p">(</span><span class="n">emmeans</span><span class="p">)</span>
+<span class="n">res</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">rma.mh</span><span class="p">(</span><span class="n">ai</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tpos</span><span class="p">,</span><span class="w"> </span><span class="n">bi</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tneg</span><span class="p">,</span><span class="w"> </span><span class="n">ci</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cpos</span><span class="p">,</span><span class="w"> </span><span class="n">di</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cneg</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dat.bcg</span><span class="p">)</span>
+<span class="nf">emmeans</span><span class="p">(</span><span class="nf">emmprep</span><span class="p">(</span><span class="n">res</span><span class="p">),</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="m">1</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code> 1       emmean SE  df asymp.LCL asymp.UCL
+ overall      0  0 Inf         0         0
+
+Results are given on the log (not the response) scale. 
+Confidence level used: 0.95 
+</code></pre></div>
+</div>
+<div>
+<p><strong>Python, metafopy</strong></p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">emmeans</span><span class="p">,</span> <span class="n">emmprep</span><span class="p">,</span> <span class="n">rma_mh</span>
+
+<span class="n">res</span> <span class="o">=</span> <span class="n">rma_mh</span><span class="p">(</span><span class="n">ai</span><span class="o">=</span><span class="s1">'tpos'</span><span class="p">,</span> <span class="n">bi</span><span class="o">=</span><span class="s1">'tneg'</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="s1">'cpos'</span><span class="p">,</span> <span class="n">di</span><span class="o">=</span><span class="s1">'cneg'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">datasets</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'dat.bcg'</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">emmeans</span><span class="p">(</span><span class="n">emmprep</span><span class="p">(</span><span class="n">res</span><span class="p">),</span> <span class="s1">'~ 1'</span><span class="p">))</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code> 1       emmean    SE  df asymp.LCL asymp.UCL
+ overall -0.473 0.041 Inf    -0.554    -0.393
+
+Results are given on the log (not the response) scale. 
+Confidence level used: 0.95 
+</code></pre></div>
+</div>
+</div>
+<h3 id="fmtxdrop0ifinttrue">fmtx(drop0ifint=TRUE)<a class="headerlink" href="#fmtxdrop0ifinttrue" title="Permanent link">&para;</a></h3>
+<p>R drops trailing zeros only when <code>digits</code> is an integer (<code>2L</code>); a double <code>2</code> does not. Python has no <code>2</code> against <code>2L</code>, so
+metafopy always drops them.</p>
+<div class="compare">
+<div>
+<p><strong>R, metafor 5.2-1</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nf">library</span><span class="p">(</span><span class="n">metafor</span><span class="p">)</span>
+<span class="nf">fmtx</span><span class="p">(</span><span class="nf">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="m">2.5</span><span class="p">,</span><span class="w"> </span><span class="m">3.25</span><span class="p">),</span><span class="w"> </span><span class="n">digits</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="p">,</span><span class="w"> </span><span class="n">drop0ifint</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)</span>
+<span class="nf">fmtx</span><span class="p">(</span><span class="nf">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="m">2.5</span><span class="p">,</span><span class="w"> </span><span class="m">3.25</span><span class="p">),</span><span class="w"> </span><span class="n">digits</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2L</span><span class="p">,</span><span class="w"> </span><span class="n">drop0ifint</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>[1] 1.00 2.50 3.25
+[1]    1  2.5 3.25
+</code></pre></div>
+</div>
+<div>
+<p><strong>Python, metafopy</strong></p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">fmtx</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">fmtx</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">,</span> <span class="mf">3.25</span><span class="p">],</span> <span class="n">digits</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">drop0ifint</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>[1]    1  2.5 3.25
+</code></pre></div>
+</div>
+</div>
+<h2 id="rs-quirks-copied-on-purpose">R's quirks copied on purpose<a class="headerlink" href="#rs-quirks-copied-on-purpose" title="Permanent link">&para;</a></h2>
+<h3 id="blup-of-a-cluster-robust-fit-recycles-quantiles">blup() of a cluster-robust fit recycles quantiles<a class="headerlink" href="#blup-of-a-cluster-robust-fit-recycles-quantiles" title="Permanent link">&para;</a></h3>
+<p>For a <code>robust(..., club_sandwich=True)</code> fit, R computes the prediction interval of study i with the quantile of coefficient
+<code>i</code> (modulo the number of coefficients), and warns that the lengths do not match. This is probably a bug in R. metafopy follows
+it on purpose, gives the same warning, and the two print the same intervals (study 1: -2.4384 to 0.4335; the normal quantile
+would give -1.5480 to -0.4570).</p>
+<div class="compare">
+<div>
+<p><strong>R, metafor 5.2-1</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nf">library</span><span class="p">(</span><span class="n">metafor</span><span class="p">)</span>
+<span class="n">dat</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">escalc</span><span class="p">(</span><span class="n">measure</span><span class="o">=</span><span class="s">"RR"</span><span class="p">,</span><span class="w"> </span><span class="n">ai</span><span class="o">=</span><span class="n">tpos</span><span class="p">,</span><span class="w"> </span><span class="n">bi</span><span class="o">=</span><span class="n">tneg</span><span class="p">,</span><span class="w"> </span><span class="n">ci</span><span class="o">=</span><span class="n">cpos</span><span class="p">,</span><span class="w"> </span><span class="n">di</span><span class="o">=</span><span class="n">cneg</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="o">=</span><span class="n">dat.bcg</span><span class="p">)</span>
+<span class="n">res</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">rma</span><span class="p">(</span><span class="n">yi</span><span class="p">,</span><span class="w"> </span><span class="n">vi</span><span class="p">,</span><span class="w"> </span><span class="n">mods</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">ablat</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">)</span>
+<span class="n">rr</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">robust</span><span class="p">(</span><span class="n">res</span><span class="p">,</span><span class="w"> </span><span class="n">cluster</span><span class="o">=</span><span class="n">alloc</span><span class="p">,</span><span class="w"> </span><span class="n">clubSandwich</span><span class="o">=</span><span class="kc">TRUE</span><span class="p">)</span>
+<span class="nf">head</span><span class="p">(</span><span class="nf">blup</span><span class="p">(</span><span class="n">rr</span><span class="p">),</span><span class="w"> </span><span class="m">2</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>     pred     se   pi.lb  pi.ub 
+1 -1.0025 0.2783 -2.4384 0.4335 
+2 -1.4157 0.2747 -3.0415 0.2101 
+
+Warning messages:
+1: In crit * se :
+  longer object length is not a multiple of shorter object length
+2: In crit * se :
+  longer object length is not a multiple of shorter object length
+</code></pre></div>
+</div>
+<div>
+<p><strong>Python, metafopy</strong></p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">blup</span><span class="p">,</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">escalc</span><span class="p">,</span> <span class="n">rma</span><span class="p">,</span> <span class="n">robust</span>
+
+<span class="n">dat</span> <span class="o">=</span> <span class="n">escalc</span><span class="p">(</span><span class="n">measure</span><span class="o">=</span><span class="s1">'RR'</span><span class="p">,</span> <span class="n">ai</span><span class="o">=</span><span class="s1">'tpos'</span><span class="p">,</span> <span class="n">bi</span><span class="o">=</span><span class="s1">'tneg'</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="s1">'cpos'</span><span class="p">,</span> <span class="n">di</span><span class="o">=</span><span class="s1">'cneg'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">datasets</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'dat.bcg'</span><span class="p">))</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">rma</span><span class="p">(</span><span class="s1">'yi'</span><span class="p">,</span> <span class="s1">'vi'</span><span class="p">,</span> <span class="n">mods</span><span class="o">=</span><span class="s1">'~ ablat'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">)</span>
+<span class="n">rr</span> <span class="o">=</span> <span class="n">robust</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">cluster</span><span class="o">=</span><span class="n">dat</span><span class="p">[</span><span class="s1">'alloc'</span><span class="p">],</span> <span class="n">club_sandwich</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">blup</span><span class="p">(</span><span class="n">rr</span><span class="p">)[:</span><span class="mi">2</span><span class="p">])</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>UserWarning: longer object length is not a multiple of shorter object length
+
+1 -1.0025 0.2783 -2.4384 0.4335
+2 -1.4157 0.2747 -3.0415 0.2101
+</code></pre></div>
+</div>
+</div>
+<h3 id="diagnostics-refuse-robust-fits-as-r-does">Diagnostics refuse robust fits, as R does<a class="headerlink" href="#diagnostics-refuse-robust-fits-as-r-does" title="Permanent link">&para;</a></h3>
+<p><code>rstandard</code>, <code>rstudent</code>, <code>dfbetas</code>, <code>influence</code>, <code>leave1out</code>, <code>cumul</code>, <code>permutest</code> and a few more refuse a <code>robust()</code> fit, with
+the same message as R. <code>simulate()</code>, <code>cooks_distance()</code> and <code>hatvalues()</code> still work, as in R.</p>
+<div class="compare">
+<div>
+<p><strong>R, metafor 5.2-1</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nf">library</span><span class="p">(</span><span class="n">metafor</span><span class="p">)</span>
+<span class="n">dat</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">escalc</span><span class="p">(</span><span class="n">measure</span><span class="o">=</span><span class="s">"RR"</span><span class="p">,</span><span class="w"> </span><span class="n">ai</span><span class="o">=</span><span class="n">tpos</span><span class="p">,</span><span class="w"> </span><span class="n">bi</span><span class="o">=</span><span class="n">tneg</span><span class="p">,</span><span class="w"> </span><span class="n">ci</span><span class="o">=</span><span class="n">cpos</span><span class="p">,</span><span class="w"> </span><span class="n">di</span><span class="o">=</span><span class="n">cneg</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="o">=</span><span class="n">dat.bcg</span><span class="p">)</span>
+<span class="n">res</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">rma</span><span class="p">(</span><span class="n">yi</span><span class="p">,</span><span class="w"> </span><span class="n">vi</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">)</span>
+<span class="n">rr</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">robust</span><span class="p">(</span><span class="n">res</span><span class="p">,</span><span class="w"> </span><span class="n">cluster</span><span class="o">=</span><span class="n">dat</span><span class="o">$</span><span class="n">alloc</span><span class="p">)</span>
+<span class="nf">rstandard</span><span class="p">(</span><span class="n">rr</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>Error: Method not available for objects of class "robust.rma".
+</code></pre></div>
+</div>
+<div>
+<p><strong>Python, metafopy</strong></p>
+<div class="highlight"><pre><span></span><code><span class="c1"># docs: skip</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">metafopy</span><span class="w"> </span><span class="kn">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">escalc</span><span class="p">,</span> <span class="n">rma</span><span class="p">,</span> <span class="n">robust</span><span class="p">,</span> <span class="n">rstandard</span>
+
+<span class="n">dat</span> <span class="o">=</span> <span class="n">escalc</span><span class="p">(</span><span class="n">measure</span><span class="o">=</span><span class="s1">'RR'</span><span class="p">,</span> <span class="n">ai</span><span class="o">=</span><span class="s1">'tpos'</span><span class="p">,</span> <span class="n">bi</span><span class="o">=</span><span class="s1">'tneg'</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="s1">'cpos'</span><span class="p">,</span> <span class="n">di</span><span class="o">=</span><span class="s1">'cneg'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">datasets</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'dat.bcg'</span><span class="p">))</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">rma</span><span class="p">(</span><span class="s1">'yi'</span><span class="p">,</span> <span class="s1">'vi'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dat</span><span class="p">)</span>
+<span class="n">rr</span> <span class="o">=</span> <span class="n">robust</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">cluster</span><span class="o">=</span><span class="n">dat</span><span class="p">[</span><span class="s1">'alloc'</span><span class="p">])</span>
+<span class="n">rstandard</span><span class="p">(</span><span class="n">rr</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>NotSupportedError: Method not available for objects of class "robust.rma".
+</code></pre></div>
+</div>
+</div>
+<h2 id="everything-else">Everything else<a class="headerlink" href="#everything-else" title="Permanent link">&para;</a></h2>
+<p>The <a href="../differences-notes/">detailed notes</a> hold the rest, grouped by topic:</p>
+<ul>
+<li><a href="../differences-notes/#names-results-and-printing">Names, results and printing</a></li>
+<li><a href="../differences-notes/#optimisers-and-flat-likelihoods">Optimisers and flat likelihoods</a></li>
+<li><a href="../differences-notes/#rma_glmm">rma_glmm</a></li>
+<li><a href="../differences-notes/#robust-and-cluster-robust-fits">Robust and cluster-robust fits</a></li>
+<li><a href="../differences-notes/#plots">Plots</a></li>
+<li><a href="../differences-notes/#individual-functions">Individual functions</a></li>
+<li><a href="../differences-notes/#arguments-defaults-and-errors">Arguments, defaults and errors</a></li>
+<li><a href="../differences-notes/#not-ported">Not ported</a></li>
+<li><a href="../differences-notes/#the-audit">The audit</a></li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "content.code.copy"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+        <script src="../assets/favicon-animate.js"></script>
+      
+    
+  <script data-mkdocs-jupyter-mathjax="{&quot;url&quot;: &quot;https://cdn.jsdelivr.net/npm/mathjax@4.1.3/tex-mml-chtml.js&quot;, &quot;version&quot;: 4}">
+/* Shared by full pages and Material's instant navigation. */
+(() => {
+  const config = JSON.parse(document.currentScript.dataset.mkdocsJupyterMathjax);
+  if (window.mkdocsJupyterMathJax) return;
+
+  let loading;
+  let queue = Promise.resolve();
+  let previous = [];
+
+  const ready = async () => {
+    if (!loading) {
+      loading = (async () => {
+        let math = window.MathJax;
+        if (!math?.typesetPromise) {
+          const url = new URL(config.url, document.baseURI).href;
+          const existing = Array.from(document.scripts).find(script =>
+            script.src && (script.src === url || script.id === 'MathJax-script' ||
+              (/mathjax/i.test(script.src) &&
+               /\/(?:MathJax|latest|(?:tex|mml)(?:-mml)?-(?:chtml|svg))\.js(?:[?#]|$)/i.test(script.src))));
+          if (existing) {
+            if (!math?.startup?.promise) {
+              await new Promise((resolve, reject) => {
+                existing.addEventListener('load', resolve, { once: true });
+                existing.addEventListener('error', reject, { once: true });
+              });
+            }
+          } else {
+            // Keep site macros, delimiters and startup hooks when supplied.
+            const options = math || {};
+            window.MathJax = {
+              ...options,
+              loader: {
+                ...options.loader,
+                load: Array.from(new Set(['ui/safe', ...(options.loader?.load || [])]))
+              },
+              startup: { typeset: false, ...options.startup },
+              tex: {
+                tags: 'ams',
+                useLabelIds: true,
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true,
+                processEnvironments: true,
+                ...options.tex
+              }
+            };
+            await new Promise((resolve, reject) => {
+              const script = document.createElement('script');
+              script.src = config.url;
+              script.id = 'MathJax-script';
+              script.async = true;
+              script.onload = resolve;
+              script.onerror = reject;
+              document.head.appendChild(script);
+            });
+          }
+        }
+        math = window.MathJax;
+        await math.startup.promise;
+        return math;
+      })();
+    }
+    const math = await loading;
+    // A site owner can extend the v3 queue again on each navigation.
+    await math.startup.promise;
+    return math;
+  };
+
+  const unrendered = node => {
+    if (node.matches('mjx-container')) return [];
+    if (!node.querySelector('mjx-container')) return [node];
+    // In v3, scanning generated assistive MathML again produces nested output.
+    return Array.from(node.children).flatMap(unrendered);
+  };
+
+  const refresh = () => {
+    // A separate chain also serializes v3, without changing v4's startup promise.
+    queue = queue.then(async () => {
+      const notebooks = Array.from(document.querySelectorAll('.jupyter-wrapper'));
+      if (!notebooks.length && !previous.length) return;
+      if (notebooks.length === previous.length &&
+          notebooks.every((node, index) => node === previous[index])) return;
+      const math = await ready();
+      if (previous.length) {
+        math.typesetClear(previous);
+        math.texReset();
+      }
+      previous = notebooks.filter(node => node.isConnected);
+      const pending = previous.flatMap(unrendered);
+      if (pending.length) await math.typesetPromise(pending);
+    }).catch(error => console.error('mkdocs-jupyter: MathJax rendering failed', error));
+    return queue;
+  };
+
+  window.mkdocsJupyterMathJax = { refresh };
+  const start = () => {
+    if (typeof document$ !== 'undefined') document$.subscribe(refresh);
+    else refresh();
+  };
+  // Theme bundles and user-provided MathJax scripts can follow notebook content.
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', start, { once: true });
+  } else start();
+})();
+
+</script>
+</body>
+</html>

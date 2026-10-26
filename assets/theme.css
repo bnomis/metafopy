@@ -1,0 +1,139 @@
+/* metafopy colours: a white header with a hairline rule like the logo box, graphite text, Solarized blue links.
+ * Material colour variables: https://squidfunk.github.io/mkdocs-material/setup/changing-the-colors/#custom-colors
+ * Solarized: https://ethanschoonover.com/solarized/ */
+:root > * {
+  --md-primary-fg-color: #FFFFFF;
+  --md-primary-fg-color--light: #F4F4F5;
+  --md-primary-fg-color--dark: #E8E8EA;
+  --md-primary-bg-color: #3D3F44;
+  --md-primary-bg-color--light: #5A5C62;
+  --md-accent-fg-color: #1C6FA9;
+  --md-typeset-a-color: #268BD2;
+  --md-footer-bg-color: #3D3F44;
+  --md-footer-bg-color--dark: #3D3F44;
+}
+
+.md-header {
+  border-bottom: 1px solid #D8D9DC;
+  box-shadow: none;
+}
+
+.md-header--shadow {
+  box-shadow: 0 0 0.2rem rgba(0, 0, 0, 0.08);
+}
+
+/* Search box: light grey with a hairline border and rounded corners, instead of Material's dark translucent box. */
+@media screen and (min-width: 60em) {
+  .md-search__form {
+    background-color: #F4F4F5;
+    border: 1px solid #D8D9DC;
+    border-radius: 0.4rem;
+  }
+
+  .md-search__form:hover {
+    background-color: #EDEDEF;
+  }
+
+  [data-md-toggle='search']:checked ~ .md-header .md-search__form {
+    background-color: #FFFFFF;
+    border-radius: 0.4rem 0.4rem 0 0;
+  }
+
+  .md-search__output {
+    border-radius: 0 0 0.4rem 0.4rem;
+  }
+}
+
+/* Differences page: the R call and output, then the Python call and output, each at full width so long lines stay readable. */
+.compare {
+  margin: 1em 0 2em;
+  border-left: 3px solid #D8D9DC;
+  padding-left: 1rem;
+}
+
+.compare > div > p:first-child {
+  margin-bottom: 0;
+  font-weight: 600;
+}
+
+.plots {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.plots figure {
+  margin: 0;
+}
+
+.plots figcaption {
+  text-align: center;
+  font-weight: 600;
+}
+
+@media (max-width: 44.9375em) {
+  .plots {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Function reference: compact parameter tables, one argument per row, with the name and the default kept on one line.
+ * mkdocstrings markup: https://mkdocstrings.github.io/python/usage/customization/ */
+.doc-contents table {
+  display: table;
+  width: 100%;
+}
+
+.doc-contents table th,
+.doc-contents table td {
+  padding: 0.5em 0.8em;
+  vertical-align: top;
+}
+
+.doc-contents table td:first-child {
+  white-space: nowrap;
+}
+
+/* Material sets table text to 0.64rem, which is too small to read comfortably. */
+.md-typeset table:not([class]) {
+  font-size: 0.7rem;
+}
+
+/* Function reference: the "Metafor reference" section looks like the other section headings (Parameters:, Returns:), not like a collapsible note. */
+details.metafor-reference {
+  border: 0;
+  background: none;
+  box-shadow: none;
+  padding: 0;
+  margin: 1.5em 0;
+}
+
+details.metafor-reference > summary {
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0 !important;
+  margin: 0;
+  background: none;
+  cursor: default;
+  pointer-events: none;
+}
+
+details.metafor-reference > summary::before {
+  display: none;
+}
+
+details.metafor-reference > summary::after {
+  content: ':';
+  position: static;
+  display: inline;
+  width: auto;
+  height: auto;
+  background: none;
+  -webkit-mask: none;
+  mask: none;
+}
+
+details.metafor-reference > :not(summary) {
+  margin-left: 0;
+  padding-left: 0;
+}
