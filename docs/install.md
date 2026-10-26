@@ -23,8 +23,8 @@ To work on metafopy itself, clone the repository and follow the development sect
 
 ## Interactive charts (optional)
 
-The [showcase notebook](notebooks/showcase.ipynb) draws linked, interactive charts with [Altair](https://altair-viz.github.io/). Install the `interactive` extra to
-run it (it adds Altair and [vl-convert](https://github.com/vega/vl-convert), which saves the charts as SVG or PNG):
+`metafopy.interactive` builds interactive forest and funnel charts with [Altair](https://altair-viz.github.io/) (see [Plots](guide/plots.md#interactive-charts)),
+and the [showcase notebook](notebooks/showcase.ipynb) links them. Install the `interactive` extra to use them (it adds Altair and [vl-convert](https://github.com/vega/vl-convert), which saves the charts as SVG or PNG):
 
 ```bash
 pip install "metafopy[interactive] @ git+https://github.com/bnomis/metafopy"

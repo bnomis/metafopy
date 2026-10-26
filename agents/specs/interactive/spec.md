@@ -1,7 +1,7 @@
 # Interactive charts
 
 **Version:** 1.0
-**Status:** approved
+**Status:** implemented
 **Date:** 2026-10-25
 
 Library functions that build interactive Vega-Lite forest and funnel charts

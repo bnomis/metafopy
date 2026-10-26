@@ -110,6 +110,30 @@ qqnorm(res)
 
 The gallery has more examples of each plot, and the plot of the influence diagnostics, the GOSH plot and the L'Abbe plot.
 
+## Interactive charts
+
+`metafopy.interactive` builds the forest and funnel plots as interactive [Altair](https://altair-viz.github.io/) (Vega-Lite) charts, for notebooks, the
+web and reports. It needs the `interactive` extra (see [Install](../install.md#interactive-charts-optional)) and is not loaded by `import metafopy`.
+Hovering a study shows its estimate, interval and weight, and clicking a study highlights it. Both functions take an intercept-only fit and return a chart.
+
+```python
+import metafopy.interactive
+
+forest_chart = metafopy.interactive.forest_chart(res, transf=numpy.exp, refline=1.0, xlab='Risk ratio')
+funnel_chart = metafopy.interactive.funnel_chart(res)
+forest_chart.save('forest.html')
+funnel_chart.save('funnel.html')
+```
+
+| Function | Chart |
+|----------|-------|
+| `forest_chart` | Row per study with a square sized by weight, then the pooled estimate as a diamond with its prediction interval; `groups` and `group_fits` add a pooled row per subgroup, and `href` links each study |
+| `funnel_chart` | Funnel plot with the pseudo-confidence region; a `trimfill` result draws the imputed studies as open circles |
+| `chart_data` | The frames behind both charts, as a `ChartData`, to inspect or build on |
+
+The charts inline their data and use fixed colours, so they look the same wherever they are embedded. The [showcase notebook](../notebooks/showcase.ipynb)
+links them to other charts.
+
 ## Styling
 
 Fonts and sizes are matplotlib's. `fonts` takes the family names metafor uses (`'sans'`, `'serif'`, `'mono'`), and `cex`,

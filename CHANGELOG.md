@@ -2,6 +2,8 @@
 
 ## Unreleased (1.0 candidate)
 
+- Interactive charts: `metafopy.interactive` (needs the `interactive` extra; `import metafopy` does not load Altair) has `forest_chart()` and `funnel_chart()`, which return Altair charts of an intercept-only `rma_uni`/`rma_mv` fit (funnel: also a `trimfill` result), and `chart_data()`, the frames behind them (`ChartData`). The showcase notebook calls them instead of building the charts by hand.
+
 - Function reference: the link to the metafor reference page of each function is now a final section "Metafor reference" (after Examples) instead of a sentence in the description.
 
 - The base class of metafopy's exceptions is `metafopy.errors.MetafopyError` (behaviour change: it was `MetaforError`, which is gone). `InputError`, `ArgumentError` and the others derive from it as before, and from the matching built-in exception.

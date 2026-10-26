@@ -166,7 +166,7 @@ This checkout had no `.venv` on 2026-10-26, and the tests need the
 
 ## Task 5: Documentation, deduplication and closing the spec
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Spec Reference:** Documentation; Tests (docs examples)
@@ -175,24 +175,24 @@ This checkout had no `.venv` on 2026-10-26, and the tests need the
 
 **Subtasks:**
 
-- [ ] Add an "Interactive charts" section to `docs/guide/plots.md` with a runnable example (covered by `test_docs_examples.py`)
-- [ ] Name `metafopy.interactive` in `docs/install.md`'s interactive section, and correct the notebook's last cell's `pip install "metafopy[interactive]"` to the git-URL form `docs/install.md` gives
-- [ ] Add `docs/reference/interactive.md` beside `docs/reference/plots.md`, using the same mkdocstrings form, and list it under "Function reference" in `mkdocs.yml`
-- [ ] Add a `CHANGELOG.md` entry
-- [ ] Hoist anything this package duplicates from `src/metafopy/plot/` (`forest.py`, `funnel.py`, `rutils.py`) or the notebook to a single owner: grep the tree for each literal collection, constant and one-line helper the new modules define (the z quantile for `level`, interval arithmetic, default labels), and import rather than copy. Choose the owner from the existing import graph; prefer a module `interactive` already imports over a new edge
-- [ ] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` to match
+- [x] Add an "Interactive charts" section to `docs/guide/plots.md` with a runnable example (covered by `test_docs_examples.py`)
+- [x] Name `metafopy.interactive` in `docs/install.md`'s interactive section, and correct the notebook's last cell's `pip install "metafopy[interactive]"` to the git-URL form `docs/install.md` gives
+- [x] Add `docs/reference/interactive.md` beside `docs/reference/plots.md`, using the same mkdocstrings form, and list it under "Function reference" in `mkdocs.yml`
+- [x] Add a `CHANGELOG.md` entry
+- [x] Hoist anything this package duplicates from `src/metafopy/plot/` (`forest.py`, `funnel.py`, `rutils.py`) or the notebook to a single owner: grep the tree for each literal collection, constant and one-line helper the new modules define (the z quantile for `level`, interval arithmetic, default labels), and import rather than copy. Choose the owner from the existing import graph; prefer a module `interactive` already imports over a new edge
+- [x] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` to match
 
 **Acceptance Criteria:**
 
-- [ ] `pytest src/tests/test_docs_examples.py` runs the new `plots.md` example
-- [ ] `mkdocs build --strict` succeeds with the new reference page
-- [ ] No helper or constant in `src/metafopy/interactive/` has a copy elsewhere in `src/metafopy/`
+- [x] `pytest src/tests/test_docs_examples.py` runs the new `plots.md` example
+- [x] `mkdocs build --strict` succeeds with the new reference page
+- [x] No helper or constant in `src/metafopy/interactive/` has a copy elsewhere in `src/metafopy/`
 
 **Definition of Done:**
 
-- [ ] `pre-commit run --all-files` passes
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_interactive.py src/tests/test_docs_examples.py src/tests/test_showcase_notebook.py` passes (the last task's run: every test that imports `metafopy.interactive` or runs its examples)
+- [x] `pre-commit run --all-files` passes
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_interactive.py src/tests/test_docs_examples.py src/tests/test_showcase_notebook.py` passes (the last task's run: every test that imports `metafopy.interactive` or runs its examples)
 
 **Notes:**
 
