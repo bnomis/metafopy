@@ -98,7 +98,7 @@ This checkout had no `.venv` on 2026-10-26, and the tests need the
 
 ## Task 3: `funnel_chart()`
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** API (`funnel_chart`); Error handling
@@ -107,24 +107,24 @@ This checkout had no `.venv` on 2026-10-26, and the tests need the
 
 **Subtasks:**
 
-- [ ] Write `funnel.py`: the pseudo-confidence region `estimate +/- z(level) * sei` with the y axis reversed, as metafor's `funnel()` draws it; `yaxis` `'sei'` or `'vi'`
-- [ ] Draw a `TrimfillResult`'s imputed studies (`fill`) as open circles after the observed ones
-- [ ] For a `ChartData`, draw studies on the untransformed `yi` scale against the first pooled row's estimate, with its `fill` column marking imputed studies; raise `InputError` when it has no pooled row
-- [ ] Raise `NotSupportedError` for a multilevel fit
-- [ ] Extend `src/tests/test_interactive.py`
+- [x] Write `funnel.py`: the pseudo-confidence region `estimate +/- z(level) * sei` with the y axis reversed, as metafor's `funnel()` draws it; `yaxis` `'sei'` or `'vi'`
+- [x] Draw a `TrimfillResult`'s imputed studies (`fill`) as open circles after the observed ones
+- [x] For a `ChartData`, draw studies on the untransformed `yi` scale against the first pooled row's estimate, with its `fill` column marking imputed studies; raise `InputError` when it has no pooled row
+- [x] Raise `NotSupportedError` for a multilevel fit
+- [x] Extend `src/tests/test_interactive.py`
 
 **Acceptance Criteria:**
 
-- [ ] `funnel_chart(fit).to_dict()` validates; `trimfill(fit)` adds open-circle marks for exactly its imputed studies
-- [ ] A `ChartData` built by hand from a fit's numbers gives the same region as the fit itself
-- [ ] A multilevel fit raises `NotSupportedError`; a `ChartData` with an empty `pooled` raises `InputError`
-- [ ] `vl_convert.vegalite_to_svg()` renders the chart without error
+- [x] `funnel_chart(fit).to_dict()` validates; `trimfill(fit)` adds open-circle marks for exactly its imputed studies
+- [x] A `ChartData` built by hand from a fit's numbers gives the same region as the fit itself
+- [x] A multilevel fit raises `NotSupportedError`; a `ChartData` with an empty `pooled` raises `InputError`
+- [x] `vl_convert.vegalite_to_svg()` renders the chart without error
 
 **Definition of Done:**
 
-- [ ] `pre-commit run --all-files` passes
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_interactive.py -m 'not slow'` passes
+- [x] `pre-commit run --all-files` passes
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_interactive.py -m 'not slow'` passes
 
 **Notes:**
 
