@@ -1,6 +1,8 @@
 __pycache__/
 .audit/
+.cache/
 .coverage
+.envrc
 .hypothesis/
 .pytest_cache/
 .Rhistory
@@ -12,5 +14,5 @@ __pycache__/
 build/
 dist/
 htmlcov/
+ralpher-logs/
 Rplots.pdf
-.cache/
