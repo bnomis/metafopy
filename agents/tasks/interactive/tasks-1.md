@@ -135,7 +135,7 @@ This checkout had no `.venv` on 2026-10-26, and the tests need the
 
 ## Task 4: The showcase notebook calls the library
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Spec Reference:** Module location (notebook rewritten)
@@ -144,19 +144,19 @@ This checkout had no `.venv` on 2026-10-26, and the tests need the
 
 **Subtasks:**
 
-- [ ] Rewrite the forest and funnel cells to call `forest_chart()`/`funnel_chart()` and compose the notebook's own linked controls around them
-- [ ] Re-execute the notebook so its stored outputs match the code
+- [x] Rewrite the forest and funnel cells to call `forest_chart()`/`funnel_chart()` and compose the notebook's own linked controls around them
+- [x] Re-execute the notebook so its stored outputs match the code
 
 **Acceptance Criteria:**
 
-- [ ] The notebook imports `metafopy.interactive` and defines no forest or funnel mark of its own
-- [ ] `pytest src/tests/test_showcase_notebook.py` passes (at least five `vega` HTML outputs)
+- [x] The notebook imports `metafopy.interactive` and defines no forest or funnel mark of its own
+- [x] `pytest src/tests/test_showcase_notebook.py` passes (at least five `vega` HTML outputs)
 
 **Definition of Done:**
 
-- [ ] `pre-commit run --all-files` passes
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_interactive.py src/tests/test_showcase_notebook.py` passes (the notebook test is marked `slow`, so it is named here rather than skipped)
+- [x] `pre-commit run --all-files` passes
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_interactive.py src/tests/test_showcase_notebook.py` passes (the notebook test is marked `slow`, so it is named here rather than skipped)
 
 **Notes:**
 

@@ -40,7 +40,7 @@ class ChartData:
     """The frames a chart draws: one row per study, and one row per pooled estimate."""
 
     studies: pandas.DataFrame  # slab, yi, vi, sei, ci_lb, ci_ub, weight, order, href, group, fill; ci_lb/ci_ub on the transformed scale when transformed
-    pooled: pandas.DataFrame   # label, estimate, ci_lb, ci_ub, pi_lb, pi_ub, k, tau2, I2 - one row per fit
+    pooled: pandas.DataFrame  # label, estimate, ci_lb, ci_ub, pi_lb, pi_ub, k, tau2, I2 - one row per fit
     measure: str
     transformed: bool
 
