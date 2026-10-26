@@ -1,5 +1,7 @@
+import json
 import subprocess
 import sys
+import typing
 
 import numpy
 import pandas
@@ -9,6 +11,8 @@ import metafopy
 import metafopy.errors
 
 pytest.importorskip('altair')
+
+import altair
 
 import metafopy.interactive
 import metafopy.interactive.data
@@ -112,3 +116,116 @@ def test_check_chart_data_names_missing_column(fit: metafopy.RMAResult) -> None:
 def test_import_metafopy_does_not_load_altair() -> None:
     code = 'import sys, metafopy; sys.exit(1 if "altair" in sys.modules else 0)'
     assert subprocess.run([sys.executable, '-I', '-c', code], check=False, env={'PYTHONPATH': ':'.join(sys.path)}).returncode == 0
+
+
+def mark_types(spec: dict[str, typing.Any]) -> set[str]:
+    found: set[str] = set()
+
+    def walk(node: object) -> None:
+        if isinstance(node, dict):
+            mark = node.get('mark')
+            if isinstance(mark, dict):
+                found.add(str(mark.get('type')))
+            elif isinstance(mark, str):
+                found.add(mark)
+            for v in node.values():
+                walk(v)
+        elif isinstance(node, list):
+            for v in node:
+                walk(v)
+
+    walk(spec)
+    return found
+
+
+def datasets(spec: dict[str, typing.Any], column: str) -> list[dict[str, typing.Any]]:
+    """The inlined rows of the dataset whose rows carry ``column``."""
+    rows = [r for d in spec['datasets'].values() for r in d] if 'datasets' in spec else []
+    inline: list[dict[str, typing.Any]] = []
+
+    def walk(node: object) -> None:
+        if isinstance(node, dict):
+            data = node.get('data')
+            if isinstance(data, dict) and 'values' in data:
+                inline.extend(data['values'])
+            for v in node.values():
+                walk(v)
+        elif isinstance(node, list):
+            for v in node:
+                walk(v)
+
+    walk(spec)
+    return [r for r in rows + inline if column in r]
+
+
+def test_forest_chart_validates_and_inlines(fit: metafopy.RMAResult) -> None:
+    spec = metafopy.interactive.forest_chart(fit, transf=numpy.exp, refline=1.0).to_dict()
+    assert '"url"' not in json.dumps(spec)
+    assert {'rule', 'square', 'point'} <= mark_types(spec)
+    assert len(datasets(spec, 'slab')) >= len(fit.yi)
+
+
+def test_forest_chart_orders_rows(fit: metafopy.RMAResult) -> None:
+    data = metafopy.interactive.chart_data(fit)
+    expected = {
+        'input': list(data.studies['slab']),
+        'obs': list(data.studies.sort_values('yi', kind='stable')['slab']),
+        'weight': list(data.studies.sort_values('weight', ascending=False, kind='stable')['slab']),
+    }
+    for order, slabs in expected.items():
+        spec = metafopy.interactive.forest_chart(fit, order=order).to_dict()  # type: ignore[arg-type]
+        assert slabs == spec['vconcat'][0]['layer'][-1]['encoding']['y']['sort']
+
+
+def test_forest_chart_refline(fit: metafopy.RMAResult) -> None:
+    with_line = metafopy.interactive.forest_chart(fit, refline=1.0).to_dict()
+    without = metafopy.interactive.forest_chart(fit, refline=None).to_dict()
+    assert len(with_line['vconcat'][0]['layer']) == len(without['vconcat'][0]['layer']) + 1
+    assert {'x': 1.0} in datasets(with_line, 'x')
+
+
+def test_forest_chart_href(fit: metafopy.RMAResult, bcg: pandas.DataFrame) -> None:
+    hrefs: list[str | None] = [f'#{i}' for i in range(len(bcg))]
+    hrefs[1] = None
+    spec = metafopy.interactive.forest_chart(fit, href=hrefs).to_dict()
+    rows = datasets(spec, 'slab')
+    assert sum('href' in r for r in rows) == len(bcg) - 1
+    assert 'href' not in next(r for r in rows if r['order'] == 1)
+    assert spec['vconcat'][0]['layer'][-1]['encoding']['href']['field'] == 'href'
+
+
+def test_forest_chart_multilevel() -> None:
+    mv = metafopy.rma_mv('yi', 'vi', random='~ 1 | district/school', data=metafopy.datasets.load('dat.konstantopoulos2011'))
+    spec = metafopy.interactive.forest_chart(mv).to_dict()
+    assert len(datasets(spec, 'slab')) == mv.k
+
+
+def test_forest_chart_group_rows(bcg: pandas.DataFrame, fit: metafopy.RMAResult) -> None:
+    groups = ['a' if i % 2 else 'b' for i in range(len(bcg))]
+    fits = {g: metafopy.rma(bcg['yi'][[x == g for x in groups]], bcg['vi'][[x == g for x in groups]]) for g in ('b', 'a')}
+    spec = metafopy.interactive.forest_chart(fit, groups=groups, group_fits=fits).to_dict()
+    assert [r['label'] for r in datasets(spec, 'label')] == ['Overall', 'b', 'a']
+
+
+def test_forest_chart_from_chart_data(fit: metafopy.RMAResult) -> None:
+    data = metafopy.interactive.chart_data(fit, transf=numpy.exp)
+    assert metafopy.interactive.forest_chart(data, transf=numpy.exp).to_dict()
+    with pytest.raises(metafopy.errors.InputError, match='transf'):
+        metafopy.interactive.forest_chart(data)
+    with pytest.raises(metafopy.errors.InputError, match='level'):
+        metafopy.interactive.forest_chart(data, transf=numpy.exp, level=90)
+    bad = metafopy.interactive.ChartData(data.studies.drop(columns=['weight']), data.pooled, data.measure, data.transformed)
+    with pytest.raises(metafopy.errors.InputError, match='weight'):
+        metafopy.interactive.forest_chart(bad, transf=numpy.exp)
+
+
+def test_forest_chart_renders_svg(fit: metafopy.RMAResult) -> None:
+    vl_convert = pytest.importorskip('vl_convert')
+    svg = vl_convert.vegalite_to_svg(metafopy.interactive.forest_chart(fit, transf=numpy.exp, refline=1.0).to_dict())
+    assert svg.startswith('<svg')
+
+
+def test_forest_chart_leaves_data_transformer_alone(fit: metafopy.RMAResult) -> None:
+    before = altair.data_transformers.active
+    metafopy.interactive.forest_chart(fit).to_dict()
+    assert altair.data_transformers.active == before

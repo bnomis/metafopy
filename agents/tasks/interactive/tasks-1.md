@@ -58,7 +58,7 @@ This checkout had no `.venv` on 2026-10-26, and the tests need the
 
 ## Task 2: `forest_chart()`
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** API (`forest_chart`); Implementation
@@ -67,27 +67,27 @@ This checkout had no `.venv` on 2026-10-26, and the tests need the
 
 **Subtasks:**
 
-- [ ] Write `forest.py`: accept a fit (forwarding the remaining keywords to `chart_data()`) or a `ChartData`
-- [ ] Draw each study as a `mark_rule` from `ci_lb` to `ci_ub` and a `mark_square` sized by `weight`; each pooled row as a diamond with its prediction interval as a thin rule
-- [ ] Add a tooltip per mark (estimate, interval, weight), the `selection_point` on `slab`, and an `href` encoding on study marks, leaving `None` entries unlinked
-- [ ] Order rows by `order` (`'input'`, `'obs'`, `'weight'`); draw `refline` on the transformed scale, none when `None`
-- [ ] Inline the data with `altair.data_transformers.disable_max_rows()` scoped to the call, and use fixed mark colours, not a theme
-- [ ] Extend `src/tests/test_interactive.py`
+- [x] Write `forest.py`: accept a fit (forwarding the remaining keywords to `chart_data()`) or a `ChartData`
+- [x] Draw each study as a `mark_rule` from `ci_lb` to `ci_ub` and a `mark_square` sized by `weight`; each pooled row as a diamond with its prediction interval as a thin rule
+- [x] Add a tooltip per mark (estimate, interval, weight), the `selection_point` on `slab`, and an `href` encoding on study marks, leaving `None` entries unlinked
+- [x] Order rows by `order` (`'input'`, `'obs'`, `'weight'`); draw `refline` on the transformed scale, none when `None`
+- [x] Inline the data with `altair.data_transformers.disable_max_rows()` scoped to the call, and use fixed mark colours, not a theme
+- [x] Extend `src/tests/test_interactive.py`
 
 **Acceptance Criteria:**
 
-- [ ] `forest_chart(fit).to_dict()` validates and contains no data URL
-- [ ] `href` values reach the study marks; `None` entries carry none
-- [ ] A multilevel fit (`dat.konstantopoulos2011`, `random='~ 1 | district/school'`) draws a forest
-- [ ] A forest with `group_fits` has one pooled row per group after the overall one
-- [ ] `vl_convert.vegalite_to_svg()` renders the chart without error
-- [ ] Altair's global data-transformer setting is unchanged after the call
+- [x] `forest_chart(fit).to_dict()` validates and contains no data URL
+- [x] `href` values reach the study marks; `None` entries carry none
+- [x] A multilevel fit (`dat.konstantopoulos2011`, `random='~ 1 | district/school'`) draws a forest
+- [x] A forest with `group_fits` has one pooled row per group after the overall one
+- [x] `vl_convert.vegalite_to_svg()` renders the chart without error
+- [x] Altair's global data-transformer setting is unchanged after the call
 
 **Definition of Done:**
 
-- [ ] `pre-commit run --all-files` passes
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_interactive.py -m 'not slow'` passes
+- [x] `pre-commit run --all-files` passes
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_interactive.py -m 'not slow'` passes
 
 **Notes:**
 
