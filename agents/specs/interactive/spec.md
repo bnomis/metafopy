@@ -164,7 +164,8 @@ Domain errors are `metafopy.errors` classes, as everywhere in metafopy:
 
 ## Tests
 
-`src/tests/interactive/`, skipped with `pytest.importorskip('altair')`:
+`src/tests/test_interactive.py`, beside the other flat test modules,
+skipped with `pytest.importorskip('altair')`:
 
 - `chart_data()` on `dat.bcg` with `transf=numpy.exp`: the pooled row equals
   `predict(fit, transf=numpy.exp)` and the weights equal `weights_()`.
