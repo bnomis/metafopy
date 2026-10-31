@@ -20,6 +20,8 @@ auditme pre-push hook, the CI gate and its deploy key - so a new hit fails at
 push. Re-run the checker with `python3 ~/.claude/skills/auditme/checks/audit.py .`
 until it reports no unaccepted hit.
 
+Spec: `agents/specs/auditme-clean/spec.md` (approved 2026-10-31); tasks: not yet written.
+
 ### The auditme checker's 2026-10-31 rules report hits here
 
 Found on 2026-10-31 by running the shared auditme checker at agents `108559d`
