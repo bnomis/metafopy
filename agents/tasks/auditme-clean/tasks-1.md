@@ -32,7 +32,7 @@ run in the commit body.
 
 ## Task 1: Add the auditme commit hook
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation step 1; Settings
@@ -43,22 +43,22 @@ worked down.
 
 **Subtasks:**
 
-- [ ] Read the shared repository's current `main`: `git ls-remote git@github.com:bnomis/agents.git refs/heads/main` (first field). If it fails, stop as `blocked`: the hooks cannot be pinned
-- [ ] Add to `.pre-commit-config.yaml`, after the ruff block, the repo block `git@github.com:bnomis/agents.git` at that `rev`, with hooks `auditme-changed` and `auditme-all` with `stages: [manual]` (not `pre-push` yet), under the comment `# The shared audit hooks, pinned to one commit of the checker.`
-- [ ] Run `pre-commit install --hook-type pre-commit --hook-type pre-push`
-- [ ] Run `pre-commit run auditme-all --hook-stage manual --all-files` and count the unaccepted hits by rule
-- [ ] Add one line after the `Spec:` line of the `TODO.md` item "The auditme checker reports unaccepted hits and no hook enforces it": `Note YYYY-MM-DD: with the hooks pinned at agents <rev>, the whole-tree sweep reports <N> unaccepted hits (<rule>: <n>, ...).` Never edit the dated findings
+- [x] Read the shared repository's current `main`: `git ls-remote git@github.com:bnomis/agents.git refs/heads/main` (first field). If it fails, stop as `blocked`: the hooks cannot be pinned
+- [x] Add to `.pre-commit-config.yaml`, after the ruff block, the repo block `git@github.com:bnomis/agents.git` at that `rev`, with hooks `auditme-changed` and `auditme-all` with `stages: [manual]` (not `pre-push` yet), under the comment `# The shared audit hooks, pinned to one commit of the checker.`
+- [x] Run `pre-commit install --hook-type pre-commit --hook-type pre-push`
+- [x] Run `pre-commit run auditme-all --hook-stage manual --all-files` and count the unaccepted hits by rule
+- [x] Add one line after the `Spec:` line of the `TODO.md` item "The auditme checker reports unaccepted hits and no hook enforces it": `Note YYYY-MM-DD: with the hooks pinned at agents <rev>, the whole-tree sweep reports <N> unaccepted hits (<rule>: <n>, ...).` Never edit the dated findings
 
 **Acceptance Criteria:**
 
-- [ ] `.pre-commit-config.yaml` pins both hooks at one full commit hash; `auditme-all` has `stages: [manual]` only
-- [ ] `pre-commit run auditme-changed --files TODO.md` runs the checker (passes or reports; it does not error on setup)
-- [ ] The `TODO.md` note records the date, the rev and the count by rule
+- [x] `.pre-commit-config.yaml` pins both hooks at one full commit hash; `auditme-all` has `stages: [manual]` only
+- [x] `pre-commit run auditme-changed --files TODO.md` runs the checker (passes or reports; it does not error on setup)
+- [x] The `TODO.md` note records the date, the rev and the count by rule
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` runs to completion (its hit count is the note's)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` runs to completion (its hit count is the note's)
 
 **Notes:**
 

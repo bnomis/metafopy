@@ -21,6 +21,7 @@ push. Re-run the checker with `python3 ~/.claude/skills/auditme/checks/audit.py 
 until it reports no unaccepted hit.
 
 Spec: `agents/specs/auditme-clean/spec.md` (approved 2026-10-31); tasks: `agents/tasks/auditme-clean/tasks-1.md`.
+Note 2026-10-31: with the hooks pinned at agents `a98cb19de5abd1651d08c5ba2b7ce8edda91428b`, the whole-tree sweep reports 715 unaccepted hits (literal-duplication: 281, raises-section-drift: 100, typing-deprecated-alias: 80, paired-sibling-helpers: 64, non-alphabetical-literal: 42, non-alphabetical-dict-keys: 26, missing-raises-section: 25, passthrough-shim: 11, from-import: 11, duplicate-call-sequence: 11, except-interpolation: 10, redundant-sink-caller-plus-callee: 9, in-function-import: 9, mutable-module-level-exported: 8, silent-broad-except: 7, assert-never-missing: 7, get-container-default-then-method-call: 5, reexport-in-non-init: 2, aliased-imports: 2, and one each of inconsistent-error-translation, filesystem-envelope-gap, duplicated-word, duplicate-side-effect-per-target, build-name-has-side-effect).
 
 ### The auditme checker's 2026-10-31 rules report hits here
 
