@@ -5,6 +5,7 @@ A function that is not here and not in metafopy raises ``UnsupportedError``: tha
 difference between the packages.
 """
 
+import collections.abc
 import contextlib
 import dataclasses
 import functools
@@ -12,19 +13,21 @@ import inspect
 import io
 import math
 import re
+import types
 import typing
 import warnings
 
+import matplotlib.pyplot
 import numpy
 import pandas
 
+import audit.pycall
+import audit.valuetree
 import metafopy
 import metafopy.core.rng
 import metafopy.datasets
 import metafopy.errors
 import metafopy.transf
-from audit import pycall
-from audit.valuetree import py_name
 
 Value = typing.Any
 
@@ -33,16 +36,13 @@ class UnsupportedError(Exception):
     """The script uses something the harness cannot run in Python (not a difference between R and metafopy)."""
 
 
-class MissingRFunctionError(Exception):
-    """metafor has the function and metafopy has no callable for it."""
-
-
 class Empty:
     """An empty argument, as in ``x[i, ]``."""
 
 
 EMPTY = Empty()
 
+# auditme: accept[mutable-module-level-exported] filled at run time from the R script's function list (src/audit/scripts.py)
 METAFOR_FUNCTIONS: set[str] = set()
 
 
@@ -71,8 +71,8 @@ class Env:
         if name.startswith('transf.'):
             # the function itself, so that predict() and confint() recognise the integral and mode transformations that take tau2
             try:
-                return pycall.resolve_function(name, None)
-            except pycall.MissingFunctionError:
+                return audit.pycall.resolve_function(name, None)
+            except audit.pycall.MissingFunctionError:
                 pass
         if name in SAME_FUNCTIONS:
             return SAME_FUNCTIONS[name]  # forest() and addpoly() recognise the transformations they can draw a distribution for by identity
@@ -84,18 +84,18 @@ class Env:
         self.vars[name] = value
         return value
 
-    def replace(self, name: str, make: typing.Callable[[Value], Value], value: Value) -> Value:
+    def replace(self, name: str, make: collections.abc.Callable[[Value], Value], value: Value) -> Value:
         """``x$a <- value``: the variable becomes the changed object, the value of the expression is ``value``, as in R."""
         self.vars[name] = make(value)
         return value
 
 
 CONSTANTS: dict[str, Value] = {
-    'T': True,
     'F': False,
-    'pi': math.pi,
-    'letters': numpy.array([chr(97 + i) for i in range(26)]),
     'LETTERS': numpy.array([chr(65 + i) for i in range(26)]),
+    'T': True,
+    'letters': numpy.array([chr(97 + i) for i in range(26)]),
+    'pi': math.pi,
 }
 
 
@@ -418,7 +418,7 @@ def r_matmul(a: Value, b: Value) -> Value:
     return numpy.asarray(a, dtype=float) @ numpy.asarray(b, dtype=float)
 
 
-def r_sapply(x: Value, fun: typing.Callable[..., Value], *args: Value, **kw: Value) -> Value:
+def r_sapply(x: Value, fun: collections.abc.Callable[..., Value], *args: Value, **kw: Value) -> Value:
     items = (
         list(x.values())
         if isinstance(x, dict)
@@ -437,7 +437,7 @@ def r_sapply(x: Value, fun: typing.Callable[..., Value], *args: Value, **kw: Val
     return simplified
 
 
-def r_lapply(x: Value, fun: typing.Callable[..., Value], *args: Value, **kw: Value) -> Value:
+def r_lapply(x: Value, fun: collections.abc.Callable[..., Value], *args: Value, **kw: Value) -> Value:
     if isinstance(x, dict):
         return {k: fun(v, *args) for k, v in x.items()}
     if isinstance(x, pandas.DataFrame):
@@ -556,7 +556,7 @@ def r_as_dataframe(x: Value, **kw: Value) -> Value:
     return pandas.DataFrame(x)
 
 
-def r_assign_into(env: Env, name: str, update: typing.Callable[[Value], Value], value: Value) -> Value:
+def r_assign_into(env: Env, name: str, update: collections.abc.Callable[[Value], Value], value: Value) -> Value:
     """``name[i] <- value`` and the like: the variable becomes ``update(value)``, the expression has the value ``value``."""
     env.vars[name] = update(value)
     return value
@@ -625,7 +625,7 @@ def r_in(a: Value, b: Value) -> Value:
 def r_identical(a: Value, b: Value) -> Value:
     try:
         return bool(numpy.array_equal(numpy.asarray(a), numpy.asarray(b)))
-    except Exception:
+    except TypeError, ValueError:
         return a == b
 
 
@@ -644,7 +644,7 @@ def r_runif(n: Value, min: Value = 0.0, max: Value = 1.0) -> Value:
     return float(min) + (float(max) - float(min)) * numpy.asarray(u)
 
 
-def r_capture_output(thunk: typing.Callable[[], Value], **kw: Value) -> Value:
+def r_capture_output(thunk: collections.abc.Callable[[], Value], **kw: Value) -> Value:
     buf = io.StringIO()
     with contextlib.redirect_stdout(buf):
         value = thunk()
@@ -661,7 +661,7 @@ def r_print(x: Value, *args: Value, **kw: Value) -> Value:
             accepted: typing.Any = inspect.signature(summary).parameters
         except TypeError, ValueError:
             accepted = {}
-        used = {pycall.arg_name(k): v for k, v in kw.items() if pycall.arg_name(k) in accepted}
+        used = {audit.pycall.arg_name(k): v for k, v in kw.items() if audit.pycall.arg_name(k) in accepted}
         if used:
             if 'showfit' in accepted and 'showfit' not in used:
                 used['showfit'] = False  # print() has no fit statistics block, summary() has
@@ -676,10 +676,10 @@ def r_noop(*args: Value, **kw: Value) -> Value:
 
 
 PAR_STATE: dict[str, Value] = {
+    'cex': 1.0,
     'mar': numpy.array([5.1, 4.1, 4.1, 2.1]),
     'mfrow': numpy.array([1.0, 1.0]),
     'mgp': numpy.array([3.0, 1.0, 0.0]),
-    'cex': 1.0,
     'tck': math.nan,
     'xpd': False,
 }
@@ -688,8 +688,6 @@ PAR_STATE: dict[str, Value] = {
 def r_par(*args: Value, **kw: Value) -> Value:
     """``par("usr")`` is the limits of the current axes; ``par(name = value)`` sets graphical parameters and returns the old values as a list, as R does."""
     if args == ('usr',):
-        import matplotlib.pyplot
-
         left, right = matplotlib.pyplot.gca().get_xlim()
         bottom, top = matplotlib.pyplot.gca().get_ylim()
         return numpy.array([left, right, bottom, top])
@@ -729,28 +727,29 @@ def r_structure(x: Value, **kw: Value) -> Value:
     return x
 
 
-def r_suppress(thunk: typing.Callable[[], Value]) -> Value:
+def r_suppress(thunk: collections.abc.Callable[[], Value]) -> Value:
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
         return thunk()
 
 
-def r_expect_error(thunk: typing.Callable[[], Value], *args: Value, **kw: Value) -> Value:
+def r_expect_error(thunk: collections.abc.Callable[[], Value], *args: Value, **kw: Value) -> Value:
     try:
         thunk()
-    except UnsupportedError, MissingRFunctionError:
+    except UnsupportedError, audit.pycall.MissingFunctionError:
         raise
-    except Exception:
+    except Exception:  # auditme: accept[silent-broad-except] R's expect_error is true for any error the thunk raises
         return True
     return False
 
 
-def r_try(thunk: typing.Callable[[], Value], *args: Value, **kw: Value) -> Value:
+def r_try(thunk: collections.abc.Callable[[], Value], *args: Value, **kw: Value) -> Value:
     try:
         return thunk()
-    except UnsupportedError, MissingRFunctionError:
+    except UnsupportedError, audit.pycall.MissingFunctionError:
         raise
-    except Exception as e:
+    except Exception as e:  # auditme: accept[silent-broad-except] R's try() returns the error message of any error as a string
+        # auditme: accept[except-interpolation] R's try() returns the message of the error as a string
         return f'Error: {e}'
 
 
@@ -758,7 +757,7 @@ def r_first(object: Value = None, *args: Value, **kw: Value) -> Value:
     return object
 
 
-def r_with(data: Value, thunk: typing.Callable[[], Value], env: Env) -> Value:
+def r_with(data: Value, thunk: collections.abc.Callable[[], Value], env: Env) -> Value:
     env.scopes.append(data)
     try:
         return thunk()
@@ -780,7 +779,7 @@ def r_attr(x: Value, which: Value, **kw: Value) -> Value:
     attrs = getattr(x, 'attrs', None)
     if not isinstance(attrs, dict):
         return None
-    for key in (str(which), py_name(str(which))):  # `yi.names` is `yi_names` in metafopy
+    for key in (str(which), audit.valuetree.py_name(str(which))):  # `yi.names` is `yi_names` in metafopy
         if key in attrs:
             return attrs[key]
     return None
@@ -863,6 +862,7 @@ def r_abs(x: Value) -> Value:
     return numpy.abs(as_array(x).astype(float))
 
 
+# auditme: accept[mutable-module-level-exported] R's options(), set by the running script and cleared between scripts (src/audit/scripts.py)
 SETTINGS: dict[str, Value] = {}
 DEFAULT_SETTINGS: dict[str, Value] = {'na.action': 'na.omit'}
 
@@ -875,7 +875,7 @@ def r_options(*args: Value, **kw: Value) -> Value:
     return old
 
 
-def r_apply(x: Value, margin: Value, fun: typing.Callable[..., Value], *args: Value) -> Value:
+def r_apply(x: Value, margin: Value, fun: collections.abc.Callable[..., Value], *args: Value) -> Value:
     a = as_array(x)
     axis = int(margin) - 1
     return numpy.array([fun(numpy.take(a, i, axis=1 - axis), *args) for i in range(a.shape[1 - axis])])
@@ -885,7 +885,7 @@ def r_sample(x: Value, size: Value = None, **kw: Value) -> Value:
     raise UnsupportedError("sample() draws from R's sampler")
 
 
-def r_mapply(fun: typing.Callable[..., Value], *xs: Value, **kw: Value) -> Value:
+def r_mapply(fun: collections.abc.Callable[..., Value], *xs: Value, **kw: Value) -> Value:
     return numpy.array([fun(*items) for items in zip(*[numpy.atleast_1d(x) for x in xs], strict=False)])
 
 
@@ -920,7 +920,8 @@ EXPECTATIONS = [
     'expect_warning',
 ]
 
-BASE: dict[str, typing.Callable[..., Value]] = {
+# auditme: accept[non-alphabetical-dict-keys] grouped by kind (arithmetic, summaries, strings, ...), as R's base documentation is
+BASE: dict[str, collections.abc.Callable[..., Value]] = {
     '.': r_noop,
     'abs': r_abs,
     'all': r_all,
@@ -1039,7 +1040,7 @@ def to_positions(index: Value, size: int) -> Value:
 def column_names(frame: pandas.DataFrame, names: typing.Any) -> list[str]:
     """The columns of ``frame`` for R names: ``ci.lb`` is the column ``ci_lb`` of a metafopy result."""
     present = set(frame.columns)
-    return [str(n) if str(n) in present else py_name(str(n)) for n in numpy.atleast_1d(names)]
+    return [str(n) if str(n) in present else audit.valuetree.py_name(str(n)) for n in numpy.atleast_1d(names)]
 
 
 def r_index(x: Value, *idx: Value, **kw: Value) -> Value:
@@ -1133,7 +1134,7 @@ def r_index2(x: Value, i: Value, *rest: Value) -> Value:
 def lookup_name(x: Value, name: str) -> tuple[bool, Value]:
     if isinstance(x, pandas.Series) and name in x.index:
         return True, x[name]
-    for spelling in (name, py_name(name)):
+    for spelling in (name, audit.valuetree.py_name(name)):
         if isinstance(x, dict) and spelling in x:
             return True, x[spelling]
         if isinstance(x, pandas.DataFrame) and spelling in x.columns:
@@ -1176,7 +1177,7 @@ def r_assign_index(x: Value, value: Value, *idx: Value) -> Value:
             source = value if isinstance(value, pandas.DataFrame) else pandas.DataFrame({n: value for n in names})
             for position, name in enumerate(names):
                 # a column R names `ci.lb` is `ci_lb` in a frame metafopy made
-                target = name if name in out.columns or py_name(name) not in out.columns else py_name(name)
+                target = name if name in out.columns or audit.valuetree.py_name(name) not in out.columns else audit.valuetree.py_name(name)
                 out[target] = source.iloc[:, position].to_numpy() if isinstance(source, pandas.DataFrame) else source
         return out
     is_text = isinstance(x, (list, dict)) or numpy.asarray(x).dtype.kind in 'USO' or isinstance(value, str)
@@ -1191,7 +1192,7 @@ def r_assign_dollar(x: Value, name: str, value: Value) -> Value:
         out = x.copy()
         out.attrs = dict(x.attrs)
         if value is None:  # x$name <- NULL removes the column
-            return out.drop(columns=[c for c in (name, py_name(name)) if c in out.columns])
+            return out.drop(columns=[c for c in (name, audit.valuetree.py_name(name)) if c in out.columns])
         if isinstance(value, WithoutAttributes):
             value = value.view(numpy.ndarray)
             if name == 'yi':
@@ -1207,12 +1208,12 @@ def r_assign_dollar(x: Value, name: str, value: Value) -> Value:
             out2[name] = value
         return out2
     if dataclasses.is_dataclass(x) and not isinstance(x, type):
-        if py_name(name) not in {f.name for f in dataclasses.fields(x)}:
+        if audit.valuetree.py_name(name) not in {f.name for f in dataclasses.fields(x)}:
             if value is None:
                 return x  # x$name <- NULL removes an element that may not be there
             raise AttributeError(f'{type(x).__name__} has no field {name}')
-        return dataclasses.replace(x, **{py_name(name): value})  # results are frozen: R's modified copy is a replaced one
-    setattr(x, py_name(name), value)
+        return dataclasses.replace(x, **{audit.valuetree.py_name(name): value})  # results are frozen: R's modified copy is a replaced one
+    setattr(x, audit.valuetree.py_name(name), value)
     return x
 
 
@@ -1267,7 +1268,7 @@ def recycled(a: Value, b: Value) -> tuple[Value, Value]:
     return a, b
 
 
-def null_safe(op: typing.Callable[..., Value], logical: bool = False) -> typing.Callable[..., Value]:
+def null_safe(op: collections.abc.Callable[..., Value], logical: bool = False) -> collections.abc.Callable[..., Value]:
     """R's binary operators on NULL (a missing column) give a vector of length zero: ``dat$nope == "a"`` is ``logical(0)``; the shorter operand is recycled."""
 
     def apply(a: Value, b: Value) -> Value:
@@ -1278,30 +1279,33 @@ def null_safe(op: typing.Callable[..., Value], logical: bool = False) -> typing.
     return apply
 
 
-OPERATORS: dict[str, typing.Callable[..., Value]] = {
-    '+': lambda a, b=None: numpy.add(*recycled(a, b)) if b is not None else numpy.asarray(a),
-    '-': lambda a, b=None: numpy.subtract(*recycled(a, b)) if b is not None else numpy.negative(a),
-    '*': null_safe(numpy.multiply),
-    '/': null_safe(numpy.true_divide),
-    '^': null_safe(numpy.power),
-    '%%': null_safe(numpy.mod),
-    '%/%': null_safe(numpy.floor_divide),
-    '==': null_safe(r_equal, True),
-    '!=': null_safe(r_not_equal, True),
-    '<': null_safe(numpy.less, True),
-    '>': null_safe(numpy.greater, True),
-    '<=': null_safe(numpy.less_equal, True),
-    '>=': null_safe(numpy.greater_equal, True),
-    '&': numpy.logical_and,
-    '|': numpy.logical_or,
-    '!': numpy.logical_not,
-    ':': r_colon,
-    '%in%': r_in,
-    '%*%': r_matmul,
-}
+# auditme: accept[non-alphabetical-dict-keys] grouped by kind (arithmetic, comparison, logical, sequence), as R documents its operators
+OPERATORS: collections.abc.Mapping[str, collections.abc.Callable[..., Value]] = types.MappingProxyType(
+    {
+        '+': lambda a, b=None: numpy.add(*recycled(a, b)) if b is not None else numpy.asarray(a),
+        '-': lambda a, b=None: numpy.subtract(*recycled(a, b)) if b is not None else numpy.negative(a),
+        '*': null_safe(numpy.multiply),
+        '/': null_safe(numpy.true_divide),
+        '^': null_safe(numpy.power),
+        '%%': null_safe(numpy.mod),
+        '%/%': null_safe(numpy.floor_divide),
+        '==': null_safe(r_equal, True),
+        '!=': null_safe(r_not_equal, True),
+        '<': null_safe(numpy.less, True),
+        '>': null_safe(numpy.greater, True),
+        '<=': null_safe(numpy.less_equal, True),
+        '>=': null_safe(numpy.greater_equal, True),
+        '&': numpy.logical_and,
+        '|': numpy.logical_or,
+        '!': numpy.logical_not,
+        ':': r_colon,
+        '%in%': r_in,
+        '%*%': r_matmul,
+    }
+)
 
 
-def rfor(env: Env, var: str, seq: Value, body: typing.Callable[[], Value]) -> Value:
+def rfor(env: Env, var: str, seq: Value, body: collections.abc.Callable[[], Value]) -> Value:
     for item in numpy.atleast_1d(seq).tolist() if not isinstance(seq, list) else seq:
         env.set(var, item)
         body()
@@ -1310,7 +1314,7 @@ def rfor(env: Env, var: str, seq: Value, body: typing.Callable[[], Value]) -> Va
 
 # -- calls --------------------------------------------------------------------------------------------------------------------------------------
 
-INDEX_ARGUMENTS = frozenset({'btt', 'btt2', 'att', 'subset', 'which', 'include', 'label'})
+INDEX_ARGUMENTS = frozenset({'att', 'btt', 'btt2', 'include', 'label', 'subset', 'which'})
 # indices of one function only (elsewhere `x`, `y` and `out` are data)
 FUNCTION_INDEX_ARGUMENTS: dict[str, tuple[str, ...]] = {
     'matreg': ('y', 'x'),
@@ -1357,9 +1361,9 @@ def shift_function_arguments(name: str, args: tuple[Value, ...], kwargs: dict[st
 
 
 # profile() and confint() of rma.mv and location-scale fits take the position of the component to profile (``tau2 = 1`` is the first one)
-POSITION_ARGUMENTS = frozenset({'sigma2', 'tau2', 'rho', 'gamma2', 'phi', 'alpha', 'beta'})
-POSITION_FUNCTIONS = frozenset({'profile', 'confint', 'plot'})
-POSITION_FITS = frozenset({'RMAMVResult', 'RMALSResult', 'LSPermutestResult', 'PermutestResult'})
+POSITION_ARGUMENTS = frozenset({'alpha', 'beta', 'gamma2', 'phi', 'rho', 'sigma2', 'tau2'})
+POSITION_FUNCTIONS = frozenset({'confint', 'plot', 'profile'})
+POSITION_FITS = frozenset({'LSPermutestResult', 'PermutestResult', 'RMALSResult', 'RMAMVResult'})
 
 
 def shift_arguments(kwargs: dict[str, Value], positions: bool = False, args: tuple[Value, ...] = ()) -> dict[str, Value]:
@@ -1396,7 +1400,7 @@ def run_settings(env: Env) -> None:
     env.vars['.vistest'] = lambda *a, **k: True
 
 
-def formula_data(env: Env, fn: typing.Callable[..., typing.Any], kwargs: dict[str, Value]) -> dict[str, Value]:
+def formula_data(env: Env, fn: collections.abc.Callable[..., typing.Any], kwargs: dict[str, Value]) -> dict[str, Value]:
     """R evaluates a formula in the calling environment; metafopy needs ``data``, so the variables of the script that the formulas name are collected in one."""
     try:
         parameters = inspect.signature(fn.func if isinstance(fn, functools.partial) else fn).parameters
@@ -1430,7 +1434,7 @@ def formula_data(env: Env, fn: typing.Callable[..., typing.Any], kwargs: dict[st
     return {**kwargs, 'data': pandas.DataFrame(columns)}
 
 
-def accepts(fn: typing.Callable[..., Value], name: str, first: Value = None) -> bool:
+def accepts(fn: collections.abc.Callable[..., Value], name: str, first: Value = None) -> bool:
     """Whether the call takes the argument; for a ``functools.singledispatch`` function the implementation for the type of the first argument decides."""
     target = fn.func if isinstance(fn, functools.partial) else fn
     dispatch = getattr(target, 'dispatch', None)
@@ -1442,22 +1446,22 @@ def accepts(fn: typing.Callable[..., Value], name: str, first: Value = None) -> 
         return False
 
 
-SAME_FUNCTIONS: dict[str, typing.Callable[..., Value]] = {
+SAME_FUNCTIONS: dict[str, collections.abc.Callable[..., Value]] = {
     'exp': numpy.exp,
-    'tanh': numpy.tanh,
     'plogis': metafopy.transf.plogis,
     'pnorm': metafopy.transf.pnorm,
+    'tanh': numpy.tanh,
 }
 
 
-def function_value(env: Env, name: str) -> typing.Callable[..., Value]:
+def function_value(env: Env, name: str) -> collections.abc.Callable[..., Value]:
     """The function ``name`` as a value (``transf = transf.dtorpb``), with the signature of the metafopy function (``conv.delta`` reads the argument names)."""
 
     def call(*a: Value, **k: Value) -> Value:
         return rcall(env, name, *a, **k)
 
-    with contextlib.suppress(pycall.MissingFunctionError, TypeError, ValueError):
-        call.__signature__ = inspect.signature(pycall.resolve_function(name, None))  # type: ignore[attr-defined]
+    with contextlib.suppress(audit.pycall.MissingFunctionError, TypeError, ValueError):
+        call.__signature__ = inspect.signature(audit.pycall.resolve_function(name, None))  # type: ignore[attr-defined]
     return call
 
 
@@ -1473,21 +1477,21 @@ def rcall(env: Env, name: str, *args: Value, **kwargs: Value) -> Value:
     first = args[0] if args else None
     kwargs = shift_arguments(kwargs, name in POSITION_FUNCTIONS and type(first).__name__ in POSITION_FITS, args)
     try:
-        fn = pycall.resolve_function(name, first)
-    except pycall.MissingFunctionError as e:
+        fn = audit.pycall.resolve_function(name, first)
+    except audit.pycall.MissingFunctionError as e:
         if name in METAFOR_FUNCTIONS:
-            raise MissingRFunctionError(name) from e
+            raise  # metafor has it and metafopy has no callable: the report's missing-function finding
         raise UnsupportedError(f'R function {name} is not available in the harness') from e
     kwargs = formula_data(env, fn, kwargs)
-    mapped = {pycall.arg_name(k): v for k, v in kwargs.items()}
-    pycall.check_arguments(fn, list(mapped))
-    mapped = pycall.integral_arguments(fn, mapped, first)
+    mapped = {audit.pycall.arg_name(k): v for k, v in kwargs.items()}
+    audit.pycall.check_arguments(fn, list(mapped))
+    mapped = audit.pycall.integral_arguments(fn, mapped, first)
     setting = SETTINGS.get('na.action')
     if isinstance(setting, str) and 'na_action' not in mapped and accepts(fn, 'na_action', first):
-        mapped['na_action'] = pycall.option_value('na.action', setting)
+        mapped['na_action'] = audit.pycall.option_value('na.action', setting)
     if isinstance(fn, functools.partial):
         return fn(*args[1:], **mapped)
-    args, mapped = pycall.match_positional(fn, args, mapped)
+    args, mapped = audit.pycall.match_positional(fn, args, mapped)
     return fn(*args, **mapped)
 
 
@@ -1499,8 +1503,8 @@ def r_symbol(env: Env, name: str) -> Value:
     for scope in reversed(env.scopes):
         if isinstance(scope, pandas.DataFrame) and name in scope.columns:
             return name
-        if isinstance(scope, pandas.DataFrame) and py_name(name) in scope.columns and name not in env.vars:
-            return py_name(name)  # the column R calls `ci.lb` is `ci_lb` in a frame metafopy made
+        if isinstance(scope, pandas.DataFrame) and audit.valuetree.py_name(name) in scope.columns and name not in env.vars:
+            return audit.valuetree.py_name(name)  # the column R calls `ci.lb` is `ci_lb` in a frame metafopy made
         if isinstance(scope, dict) and name in scope:
             return name
     try:
@@ -1509,7 +1513,13 @@ def r_symbol(env: Env, name: str) -> Value:
         return name
 
 
-def rnse(env: Env, name: str, data: typing.Callable[[], Value], args: list[typing.Callable[[], Value]], kwargs: dict[str, typing.Callable[[], Value]]) -> Value:
+def rnse(
+    env: Env,
+    name: str,
+    data: collections.abc.Callable[[], Value],
+    args: list[collections.abc.Callable[[], Value]],
+    kwargs: dict[str, collections.abc.Callable[[], Value]],
+) -> Value:
     """A call whose arguments are evaluated with the columns of ``data`` in scope, as metafor's model functions do."""
     frame = data()
     env.scopes.append(frame)
@@ -1522,8 +1532,4 @@ def rnse(env: Env, name: str, data: typing.Callable[[], Value], args: list[typin
     return rcall(env, name, *values, **named)
 
 
-def pairs(items: list[tuple[str, Value]]) -> dict[str, Value]:
-    return dict(items)
-
-
-__all__ = ['BASE', 'EMPTY', 'Env', 'MissingRFunctionError', 'UnsupportedError', 'rcall']
+__all__ = ['BASE', 'EMPTY', 'Env', 'UnsupportedError', 'rcall']

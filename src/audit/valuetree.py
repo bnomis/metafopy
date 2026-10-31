@@ -21,13 +21,18 @@ Labels = list[str] | tuple[list[str], list[str]] | None
 
 MAX_DEPTH = 6
 
+# the kinds of R tree node that carry no value to compare, and the kinds that are atomic vectors
+NO_VALUE_KINDS = frozenset({'null', 'opaque'})
+VECTOR_KINDS = frozenset({'lgl', 'num', 'str'})
+
 # results that wrap the array R returns: the class name and the attribute that holds the array (llplot() returns the likelihoods, to.table() the tables)
 ARRAY_RESULTS = {'LlplotResult': 'lls', 'TableArray': 'values'}
 
 
-SCALE_FIELDS = frozenset({'alpha', 'se.alpha', 'zval.alpha', 'pval.alpha', 'ci.lb.alpha', 'ci.ub.alpha', 'va', 'H', 'Z', 'Z.f'})
+SCALE_FIELDS = frozenset({'H', 'Z', 'Z.f', 'alpha', 'ci.lb.alpha', 'ci.ub.alpha', 'pval.alpha', 'se.alpha', 'va', 'zval.alpha'})
 
 
+# auditme: accept[non-alphabetical-literal] the order is the order of R's fields in the model object
 STRUCTURE_FIELDS = ('G', 'H', 'hessian', 'vvc', 'V', 'M', 'W', 'V.f', 'W.f')
 
 
@@ -176,7 +181,13 @@ def lookup(value: typing.Any, name: str, as_list: bool = True) -> tuple[bool, ty
             return True, getattr(value, spelling)
         except AttributeError:
             continue
-        except Exception:  # a property that raises is a field R has and this object cannot give
+        except (
+            ArithmeticError,
+            LookupError,
+            RuntimeError,
+            TypeError,
+            ValueError,
+        ):  # a property that raises (every metafopy error is one of these) is a field R has and this object cannot give
             return False, None
     return False, None
 
@@ -203,11 +214,11 @@ def named_vector(value: typing.Any, guide: Node, path: str) -> typing.Any:
 def to_node(value: typing.Any, guide: Node, path: str, missing: list[str], depth: int = 0, labels: Labels = None) -> Node:
     """The tree of ``value`` in the shape of the R tree ``guide``; fields R has and ``value`` lacks are appended to ``missing``."""
     kind = guide['k']
-    if kind in ('opaque', 'null'):
+    if kind in NO_VALUE_KINDS:
         return {'k': kind}
     if depth > MAX_DEPTH:
         return {'k': 'opaque'}
-    if kind in ('num', 'str', 'lgl'):
+    if kind in VECTOR_KINDS:
         if type(value).__name__ in ARRAY_RESULTS:
             value = getattr(value, ARRAY_RESULTS[type(value).__name__])
         if value is None:
@@ -309,7 +320,7 @@ def cell_equal(a: typing.Any, b: typing.Any) -> tuple[str, float]:
 
 def compare(r: Node, py: Node, path: str, out: list[Diff]) -> None:
     rk, pk = r['k'], py['k']
-    if rk in ('opaque', 'null'):
+    if rk in NO_VALUE_KINDS:
         return
     if pk == 'missing':
         return
@@ -319,7 +330,7 @@ def compare(r: Node, py: Node, path: str, out: list[Diff]) -> None:
     if pk == 'null':
         out.append(Diff(path, 'type-diff', f'R {rk}, Python None'))
         return
-    if rk in ('num', 'str', 'lgl'):
+    if rk in VECTOR_KINDS:
         compare_vector(r, py, path, out)
     elif rk == 'df':
         for rc, pc in zip(r['cols'], py['cols'], strict=True):

@@ -47,8 +47,8 @@ class Universe:
         return sorted({m['generic'] for m in self.methods})
 
     def classes_of(self, fixture: str) -> list[str]:
-        info = self.fixtures.get(fixture, {})
-        return [str(c) for c in info.get('class', [])]
+        info = self.fixtures.get(fixture) or {}
+        return [str(c) for c in info.get('class') or []]
 
     def method_for(self, generic: str, classes: list[str]) -> Json | None:
         """The S3 method R dispatches to: the first class of the chain that has one."""

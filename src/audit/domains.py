@@ -36,13 +36,13 @@ class Domains:
         )
 
     def values(self, function: str, arg: str) -> list[typing.Any] | None:
-        override = self.per_function.get(function, {}).get('args', {})
+        override = (self.per_function.get(function) or {}).get('args') or {}
         if arg in override:
             return typing.cast(list[typing.Any], override[arg])
         return self.args.get(arg)
 
     def skipped(self, function: str, arg: str) -> str | None:
-        local = self.per_function.get(function, {}).get('skip', {})
+        local = (self.per_function.get(function) or {}).get('skip') or {}
         return local.get(arg) or self.skip.get(arg)
 
 
@@ -61,19 +61,19 @@ class Recipes:
 
     def generic_calls(self, generic: str, fixture: str = '') -> list[Json]:
         """The argument sets of a generic's baseline cases on one fixture: the base alone, then the base with each extra."""
-        entry = self.doc.get('generics', {}).get(generic, {})
+        entry = (self.doc.get('generics') or {}).get(generic) or {}
         base = self.base_args(generic, fixture)
         return [base] + [{**base, **extra} for extra in entry.get('extra', [])]
 
     def pre(self, generic: str, fixture: str = '') -> list[Json]:
         """Calls that run first and leave something behind for the generic (a plot for addpoly to add to); a fit can have its own."""
-        entry = self.doc.get('generics', {}).get(generic, {})
-        out: list[Json] = entry.get('by_fit', {}).get(fixture, {}).get('pre', entry.get('pre', []))
+        entry = (self.doc.get('generics') or {}).get(generic) or {}
+        out: list[Json] = ((entry.get('by_fit') or {}).get(fixture) or {}).get('pre', entry.get('pre', []))
         return out
 
     def base_args(self, generic: str, fixture: str = '') -> Json:
-        entry = self.doc.get('generics', {}).get(generic, {})
-        base: Json = {**entry.get('base', {}), **{k: v for k, v in entry.get('by_fit', {}).get(fixture, {}).items() if k != 'pre'}}
+        entry = (self.doc.get('generics') or {}).get(generic) or {}
+        base: Json = {**(entry.get('base') or {}), **{k: v for k, v in ((entry.get('by_fit') or {}).get(fixture) or {}).items() if k != 'pre'}}
         return base
 
     def standalone(self) -> dict[str, Json]:

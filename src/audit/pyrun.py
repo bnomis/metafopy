@@ -1,5 +1,6 @@
 """Runs a shard of cases in Python and classifies each against the outcome R gave for the same case."""
 
+import collections.abc
 import contextlib
 import io
 import json
@@ -16,9 +17,11 @@ import matplotlib
 import matplotlib.pyplot
 
 import audit.config
+import audit.printdiff
+import audit.pycall
+import audit.valuetree
 import metafopy
 import metafopy.errors
-from audit import printdiff, pycall, valuetree
 
 matplotlib.use('Agg')
 
@@ -50,15 +53,17 @@ def quiet() -> contextlib.ExitStack:
     return stack
 
 
-def build_env(fixtures: list[Json]) -> tuple[pycall.Env, dict[str, str]]:
-    env: pycall.Env = {}
+def build_env(fixtures: list[Json]) -> tuple[audit.pycall.Env, dict[str, str]]:
+    env: audit.pycall.Env = {}
     errors: dict[str, str] = {}
     for fx in fixtures:
         try:
             with warnings.catch_warnings(), quiet():
                 warnings.simplefilter('ignore')
-                env[fx['name']] = pycall.run_call(fx, env)
+                env[fx['name']] = audit.pycall.run_call(fx, env)
+        # auditme: accept[silent-broad-except] the fixture's failure is recorded with its type and message and reported as a fixture-error finding
         except Exception as e:
+            # auditme: accept[except-interpolation] the message is the finding's detail, shown to the operator
             errors[fx['name']] = f'{type(e).__name__}: {e}'
     return env, errors
 
@@ -87,7 +92,7 @@ def readable(text: str) -> str:
     return text
 
 
-def plain_text(strings: typing.Iterable[str]) -> set[str]:
+def plain_text(strings: collections.abc.Iterable[str]) -> set[str]:
     """The drawn strings that are plain text: R's plotmath (``x[i] == 1/sqrt(v[i])``) and matplotlib's mathtext (``$x_i = ...$``) spell formulas differently."""
     return {text for text in map(readable, strings) if not MATH_MARKUP.search(text)}
 
@@ -109,7 +114,7 @@ def drawn_text() -> list[str]:
     return sorted(text for text in cleaned if re.search('[A-Za-z]', text))
 
 
-def run_guarded(call: typing.Callable[[], object], timeout: float) -> tuple[Json, object]:
+def run_guarded(call: collections.abc.Callable[[], object], timeout: float) -> tuple[Json, object]:
     """Call under a timeout, capturing warnings and output; returns a record with status 'ok' or 'error' (and the error's class) and the value."""
     record: Json = {'status': 'ok', 'warnings': []}
     value: object = None
@@ -124,6 +129,7 @@ def run_guarded(call: typing.Callable[[], object], timeout: float) -> tuple[Json
             value = call()
     except KeyboardInterrupt:
         raise
+    # auditme: accept[silent-broad-except] the case's failure is recorded with its type and message in the record, which classify() reports
     except BaseException as e:
         record.update(status='error', error_class=type(e).__name__, error=str(e)[:300])
         trace_file = os.environ.get('METAFOPY_AUDIT_TRACE')  # a file to append the traceback of every failing case to, for debugging the harness
@@ -139,14 +145,14 @@ def run_guarded(call: typing.Callable[[], object], timeout: float) -> tuple[Json
     return record, value
 
 
-def execute(case: Json, env: pycall.Env, fixture_errors: dict[str, str], timeout: float) -> tuple[Json, object]:
+def execute(case: Json, env: audit.pycall.Env, fixture_errors: dict[str, str], timeout: float) -> tuple[Json, object]:
     for name in case.get('needs', []):
         if name in fixture_errors:
             return {'status': 'error', 'warnings': [], 'error_class': 'FixtureError', 'error': f'fixture {name} failed: {fixture_errors[name]}'}, None
-    return run_guarded(lambda: pycall.run_call(case['call'], env), timeout)
+    return run_guarded(lambda: audit.pycall.run_call(case['call'], env), timeout)
 
 
-PLAIN_CLASSES = frozenset({'list', 'data.frame', 'matrix', 'array', 'numeric', 'character', 'logical', 'integer'})
+PLAIN_CLASSES = frozenset({'array', 'character', 'data.frame', 'integer', 'list', 'logical', 'matrix', 'numeric'})
 
 
 def printed_class(node: Json) -> bool:
@@ -178,8 +184,6 @@ def classify(r: Json, py: Json, value: object) -> list[Json]:
             add('timeout')
         elif cls == 'FixtureError':
             add('fixture-error', detail=py['error'])
-        elif cls == 'MissingFunction':
-            add('missing-function', detail=py['error'])
         elif cls == 'AttributeError' and ' has no field ' in py['error']:
             add('missing-field', detail=py['error'])
         elif cls in DOMAIN_ERRORS:
@@ -192,15 +196,15 @@ def classify(r: Json, py: Json, value: object) -> list[Json]:
         add('accepts-where-R-refuses', detail=f'R: {r.get("error", "")[:200]}')
     elif r_ok and py_ok:
         missing: list[str] = []
-        tree = valuetree.to_node(value, r['value'], '', missing)
+        tree = audit.valuetree.to_node(value, r['value'], '', missing)
         for path in missing:
             add('missing-field', path)
-        diffs: list[valuetree.Diff] = []
-        valuetree.compare(r['value'], tree, '', diffs)
+        diffs: list[audit.valuetree.Diff] = []
+        audit.valuetree.compare(r['value'], tree, '', diffs)
         for d in diffs:
             add(d.kind, d.path, d.detail)
         if 'text' in r and printed_class(r['value']):
-            line = printdiff.first_difference(r['text'], print_text(value))
+            line = audit.printdiff.first_difference(r['text'], print_text(value))
             if line is not None:
                 add('print-diff', detail=line)
         elif 'text' in r and isinstance(value, dict) and r['text'].lstrip().startswith('$') and print_text(value).lstrip().startswith('{'):
@@ -235,7 +239,8 @@ def run_shard(job: tuple[str, str, str, str, float]) -> str:
         py, value = execute(case, env, fixture_errors, timeout)
         try:
             findings = classify(r, py, value)
-        except Exception as e:  # a comparison that fails is the harness's fault, never silently a match
+        except Exception as e:  # auditme: accept[silent-broad-except] a comparison that fails is the harness's fault, never silently a match
+            # auditme: accept[except-interpolation] the message is the finding's detail, shown to the operator
             findings = [{'kind': 'runner-error', 'path': '', 'detail': f'{type(e).__name__}: {e}'}]
         results.append(
             {

@@ -69,7 +69,7 @@ worked down.
 
 ## Task 2: Fix the real defects in `src/audit/`
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Fix-or-accept policy (`src/audit/`)
@@ -80,21 +80,21 @@ operator decided on 2026-10-31.
 
 **Subtasks:**
 
-- [ ] `silent-broad-except` (`src/audit/pyrun.py`, `rlib.py`, `valuetree.py`): narrow each handler to the exceptions the call can raise, or log and re-raise; where a harness failure must become a reported finding (as `pyrun.py:238` says), keep the handler, make it record the exception type and message in the finding, and accept with a marker saying so
-- [ ] `get-container-default-then-method-call` (`src/audit/domains.py`): replace `x.get(k, {}).get(...)` with `(x.get(k) or {}).get(...)`, or validate the YAML shape once where it is loaded
-- [ ] `inconsistent-error-translation` (`src/audit/pycall.py:274`): callers of `resolve_function` translate `MissingFunctionError` to one error type; choose the one the reports already show for a missing function
-- [ ] Add a test for each changed handler and for an explicit `null` in the domains YAML, in the harness test module that covers the file
+- [x] `silent-broad-except` (`src/audit/pyrun.py`, `rlib.py`, `valuetree.py`): narrow each handler to the exceptions the call can raise, or log and re-raise; where a harness failure must become a reported finding (as `pyrun.py:238` says), keep the handler, make it record the exception type and message in the finding, and accept with a marker saying so
+- [x] `get-container-default-then-method-call` (`src/audit/domains.py`): replace `x.get(k, {}).get(...)` with `(x.get(k) or {}).get(...)`, or validate the YAML shape once where it is loaded
+- [x] `inconsistent-error-translation` (`src/audit/pycall.py:274`): callers of `resolve_function` translate `MissingFunctionError` to one error type; choose the one the reports already show for a missing function
+- [x] Add a test for each changed handler and for an explicit `null` in the domains YAML, in the harness test module that covers the file
 
 **Acceptance Criteria:**
 
-- [ ] No `silent-broad-except`, `get-container-default-then-method-call` or `inconsistent-error-translation` hit in `src/audit/` is unaccepted
-- [ ] A domains YAML entry set to `null` no longer raises `AttributeError`
+- [x] No `silent-broad-except`, `get-container-default-then-method-call` or `inconsistent-error-translation` hit in `src/audit/` is unaccepted
+- [x] A domains YAML entry set to `null` no longer raises `AttributeError`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_harness_*.py` passes, plus any other test file that imports a changed `audit` module
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_harness_*.py` passes, plus any other test file that imports a changed `audit` module
 
 **Notes:**
 
