@@ -64,6 +64,7 @@ class Entry:
     used: int = 0
 
     def globs(self) -> list[str]:
+        # auditme: accept[duplicate-side-effect-per-target] globs_of only wraps a string in a list; it has no side effect
         return [*globs_of(self.match), self.kind, *globs_of(self.path), self.detail]
 
     def label(self) -> str:

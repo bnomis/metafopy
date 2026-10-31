@@ -105,7 +105,7 @@ operator decided on 2026-10-31.
 
 ## Task 3: Accept the remaining `src/audit/` hits by rule
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Fix-or-accept policy (`src/audit/`)
@@ -115,20 +115,20 @@ scoped marker with one reason per rule, written for this harness.
 
 **Subtasks:**
 
-- [ ] List the unaccepted `src/audit/` hits by rule from the whole-tree sweep
-- [ ] For each rule, write one reason that holds for every site in the harness (for example `literal-duplication`: "the harness spells out each R call it translates"), and add it as a scoped marker at each site
-- [ ] `METAFOR_FUNCTIONS` (`src/audit/rlib.py:46`): accept `mutable-module-level-exported` with "filled at run time from the R script's function list (`src/audit/scripts.py`)"
-- [ ] A site where no rule-wide reason is true is a defect: fix it like Task 2 and add a test
+- [x] List the unaccepted `src/audit/` hits by rule from the whole-tree sweep
+- [x] For each rule, write one reason that holds for every site in the harness (for example `literal-duplication`: "the harness spells out each R call it translates"), and add it as a scoped marker at each site
+- [x] `METAFOR_FUNCTIONS` (`src/audit/rlib.py:46`): accept `mutable-module-level-exported` with "filled at run time from the R script's function list (`src/audit/scripts.py`)"
+- [x] A site where no rule-wide reason is true is a defect: fix it like Task 2 and add a test
 
 **Acceptance Criteria:**
 
-- [ ] The whole-tree sweep reports no unaccepted hit under `src/audit/`
+- [x] The whole-tree sweep reports no unaccepted hit under `src/audit/`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_harness_*.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_harness_*.py` passes
 
 **Notes:**
 

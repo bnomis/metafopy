@@ -9,11 +9,15 @@ import concurrent.futures
 import functools
 import hashlib
 import json
+import math
 import pathlib
 import re
+import subprocess
 import tarfile
 import typing
 import urllib.request
+
+import numpy
 
 import audit.config
 import audit.pyrun
@@ -25,6 +29,7 @@ import metafopy.errors
 
 Json = dict[str, typing.Any]
 
+# auditme: accept[non-alphabetical-literal] the primary URL is tried first, the archive second
 SOURCE_URLS = (
     'https://cran.r-project.org/src/contrib/metafor_5.2-1.tar.gz',
     'https://cran.r-project.org/src/contrib/Archive/metafor/metafor_5.2-1.tar.gz',
@@ -61,10 +66,6 @@ def fetch_source(work: pathlib.Path) -> pathlib.Path:
 
 
 def namespace(env: audit.rlib.Env) -> dict[str, object]:
-    import math
-
-    import numpy
-
     return {
         'E': env,
         'EMPTY': audit.rlib.EMPTY,
@@ -105,6 +106,7 @@ def run_script(script: Json, nse: set[str], timeout: float) -> tuple[list[Json],
         try:
             code = audit.transpile.translate_unit(unit['ast'], assigned, nse)
         except audit.transpile.UntranslatableError as e:
+            # auditme: accept[except-interpolation] the exception message is the tally key that the report lists as coverage
             tally[f'untranslated: {e}'] += 1
             stale |= targets
             continue
@@ -160,8 +162,6 @@ def run(
     env = audit.rdriver.environment()
     if only:
         env['AUDIT_ONLY'] = '\x1f'.join(only)
-    import subprocess
-
     procs = []
     for i in range(n):
         path = out / f'r-{i}.json'

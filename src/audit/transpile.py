@@ -4,24 +4,29 @@ The translation is mechanical and total or explicit: a construct it cannot expre
 counted as not covered. Nothing is dropped silently, and nothing is translated by hand, so two runs of the audit translate alike.
 """
 
+import collections.abc
 import dataclasses
 import re
 import typing
 
 Node = dict[str, typing.Any]
 
+# parse-tree node types that name a variable
+NAME_TYPES = frozenset({'str', 'sym'})
+# the heads of R's index operators
+INDEX_HEADS = frozenset({'[', '[['})
 LAZY = frozenset({'capture.output', 'expect_error', 'suppressMessages', 'suppressWarnings', 'try'})
 UNARY_OR_BINARY = frozenset({'+', '-'})
-BINARY = frozenset({'*', '/', '^', '%%', '%/%', '==', '!=', '<', '>', '<=', '>=', '&', '|', ':', '%in%', '%*%'})
-ASSIGN = frozenset({'<-', '=', '<<-'})
+BINARY = frozenset({'!=', '%%', '%*%', '%/%', '%in%', '&', '*', '/', ':', '<', '<=', '==', '>', '>=', '^', '|'})
+ASSIGN = frozenset({'<-', '<<-', '='})
 # bare names that are functions passed as arguments (`transf = log`), not columns of the data
 FUNCTION_SYMBOLS = frozenset({'abs', 'exp', 'identity', 'log', 'log10', 'log2', 'sqrt'})
 CONSTANT_SYMBOLS = {
-    'T': 'True',
     'F': 'False',
-    'NA_real_': 'numpy.nan',
-    'NA_integer_': 'numpy.nan',
     'NA_character_': 'None',
+    'NA_integer_': 'numpy.nan',
+    'NA_real_': 'numpy.nan',
+    'T': 'True',
     'pi': 'math.pi',
 }
 PY_KEYWORDS = frozenset(
@@ -85,7 +90,11 @@ def local_name(name: str) -> str:
 
 
 def unparse(n: Node) -> str:
-    """The R text of a parse tree (for formulas)."""
+    """The R text of a parse tree (for formulas).
+
+    Raises:
+        audit.transpile.UntranslatableError: the node type has no R text.
+    """
     t = n['t']
     if t == 'sym':
         return str(n['v'])
@@ -118,7 +127,7 @@ def unparse(n: Node) -> str:
                 return f'{unparse(args[0]["v"])}{sep}{name}{sep}{unparse(args[1]["v"])}'
             if name in {'-', '+', '~', '!'} and len(args) == 1:
                 return f'{name}{unparse(args[0]["v"])}'
-            if name in {'[', '[['} and args:
+            if name in INDEX_HEADS and args:
                 close = ']' if name == '[' else ']]'
                 return f'{unparse(args[0]["v"])}{name}{", ".join(unparse(a["v"]) for a in args[1:])}{close}'
             rendered = ', '.join((f'{a["name"]} = ' if a.get('name') else '') + unparse(a['v']) for a in args)
@@ -182,8 +191,12 @@ def callee_name(f: Node) -> str | None:
 
 
 def replacement(head: str, current: str, args: list[Node], value_code: str, c: Context) -> str:
-    """The code of the new value of ``current`` after ``head(current, args...) <- value``."""
-    if head in {'[', '[['}:
+    """The code of the new value of ``current`` after ``head(current, args...) <- value``.
+
+    Raises:
+        audit.transpile.UntranslatableError: ``head`` is not an index operator, ``$``, ``names`` or ``colnames``.
+    """
+    if head in INDEX_HEADS:
         idx = ', '.join(tr(a['v'], c) for a in args)
         return f'rassign_index({current}, {value_code}, {idx})'
     if head == '$':
@@ -194,7 +207,11 @@ def replacement(head: str, current: str, args: list[Node], value_code: str, c: C
 
 
 def tr_assign(lhs: Node, rhs_code: str, c: Context) -> str:
-    """``x <- v``, and ``f(g(x, a), b) <- v``, which R evaluates as ``x <- `g<-`(x, a, `f<-`(g(x, a), b, v))``."""
+    """``x <- v``, and ``f(g(x, a), b) <- v``, which R evaluates as ``x <- `g<-`(x, a, `f<-`(g(x, a), b, v))``.
+
+    Raises:
+        audit.transpile.UntranslatableError: the target is not a name or a call of a named function, or ``replacement`` cannot translate its function.
+    """
     plain = lhs['t'] == 'sym' or lhs['t'] == 'str'
     value_code = rhs_code if plain else 'RHS_VALUE'
     while not (lhs['t'] == 'sym' or lhs['t'] == 'str'):
@@ -215,12 +232,12 @@ def tr_assign(lhs: Node, rhs_code: str, c: Context) -> str:
     return f'E.replace({name!r}, lambda RHS_VALUE: {value_code}, {rhs_code})'
 
 
-def walk(n: Node) -> typing.Iterator[Node]:
+def walk(n: Node) -> collections.abc.Iterator[Node]:
     """Every node of a parse tree, except the plain names on the left of an assignment (``x`` in ``x <- v``, which are written and not read)."""
     yield n
     if n.get('t') == 'call':
         yield from walk(n['f'])
-        plain = n['f'].get('t') == 'sym' and n['f']['v'] in ASSIGN and len(n['args']) == 2 and n['args'][0]['v'].get('t') in {'sym', 'str'}
+        plain = n['f'].get('t') == 'sym' and n['f']['v'] in ASSIGN and len(n['args']) == 2 and n['args'][0]['v'].get('t') in NAME_TYPES
         for i, a in enumerate(n['args']):
             if not (plain and i == 0):
                 yield from walk(a['v'])
@@ -239,7 +256,7 @@ def assignment_targets(ast: Node) -> set[str]:
             lhs = n['args'][0]['v']
             while lhs.get('t') == 'call' and lhs['args']:
                 lhs = lhs['args'][0]['v']
-            if lhs.get('t') in {'sym', 'str'}:
+            if lhs.get('t') in NAME_TYPES:
                 out.add(str(lhs['v']))
     return out
 
@@ -293,7 +310,7 @@ def tr_call(n: Node, c: Context) -> str:
         return f'rindex2({args_code(args, c)})'
     if name == '$':
         key = args[1]['v']
-        field = key['v'] if key['t'] in {'sym', 'str'} else None
+        field = key['v'] if key['t'] in NAME_TYPES else None
         if field is None:
             raise UntranslatableError('computed field name')
         return f'rdollar({tr(args[0]["v"], c)}, {field!r})'

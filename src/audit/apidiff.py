@@ -4,20 +4,24 @@ The comparison is per class (the union over classes hid gaps in earlier audits):
 and its formals, plus the arguments it reads from ``...``, are compared with the parameters of what metafopy dispatches to for that object.
 """
 
+import collections.abc
 import functools
 import inspect
 import re
 import typing
 
+import audit.domains
+import audit.pycall
+import audit.universe
+import audit.valuetree
 import metafopy
 import metafopy.transf
-from audit import domains, pycall, universe, valuetree
 
 Json = dict[str, typing.Any]
 Finding = tuple[str, str, str, str]  # id, kind, path, detail
 
 
-def parameters(fn: typing.Callable[..., typing.Any], drop_first: bool) -> tuple[set[str], bool]:
+def parameters(fn: collections.abc.Callable[..., typing.Any], drop_first: bool) -> tuple[set[str], bool]:
     """Parameter names of a callable and whether it takes ``**kwargs``."""
     try:
         sig = inspect.signature(fn)
@@ -32,20 +36,20 @@ def parameters(fn: typing.Callable[..., typing.Any], drop_first: bool) -> tuple[
 
 def spellings_for(name: str, obj: typing.Any, cls: str) -> list[str]:
     """The names metafopy may give R's ``name``: the plain name, and for an S3 method the name with the class (``summary_escalc``, ``coef_summary``)."""
-    out = pycall.candidates(name)
+    out = audit.pycall.candidates(name)
     stem = cls.split('.')[0]
     if name == 'plot' and obj is not None:
         shown = obj[0] if isinstance(obj, list) and obj else obj
         kind = type(shown).__name__
-        out.append('plot_profile' if kind.endswith('ProfileResult') else pycall.PLOT_FUNCTIONS.get(kind, 'plot_rma'))
+        out.append('plot_profile' if kind.endswith('ProfileResult') else audit.pycall.PLOT_FUNCTIONS.get(kind, 'plot_rma'))
     elif stem and stem not in ('default', 'rma'):
-        out.append(f'{valuetree.py_name(name)}_{stem}')
+        out.append(f'{audit.valuetree.py_name(name)}_{stem}')
     return out
 
 
-def callables_for(name: str, obj: typing.Any, cls: str = '') -> list[tuple[typing.Callable[..., typing.Any], bool]]:
+def callables_for(name: str, obj: typing.Any, cls: str = '') -> list[tuple[collections.abc.Callable[..., typing.Any], bool]]:
     """Every Python callable that handles R's ``name`` for ``obj``: (callable, takes the object as its first parameter)."""
-    found: list[tuple[typing.Callable[..., typing.Any], bool]] = []
+    found: list[tuple[collections.abc.Callable[..., typing.Any], bool]] = []
     for spelling in spellings_for(name, obj, cls):
         method = getattr(obj, spelling, None) if obj is not None else None
         if callable(method):
@@ -63,7 +67,7 @@ def callables_for(name: str, obj: typing.Any, cls: str = '') -> list[tuple[typin
     return found
 
 
-def source_mentions(fns: list[typing.Callable[..., typing.Any]], name: str) -> bool:
+def source_mentions(fns: list[collections.abc.Callable[..., typing.Any]], name: str) -> bool:
     """Whether the source of any of the callables names ``name``: a ``**kwargs`` that never looks at an argument silently ignores it."""
     for fn in fns:
         try:
@@ -90,7 +94,7 @@ def comparable_default(text: str | None) -> typing.Any:
         return ('r-expression', text)
 
 
-def python_defaults(fn: typing.Callable[..., typing.Any]) -> dict[str, typing.Any]:
+def python_defaults(fn: collections.abc.Callable[..., typing.Any]) -> dict[str, typing.Any]:
     try:
         sig = inspect.signature(fn.func if isinstance(fn, functools.partial) else fn)
     except TypeError, ValueError:
@@ -125,7 +129,7 @@ def compare_function(
     r_args += [{'name': d, 'default': None} for d in entry.get('dots', [])]
     for formal in r_args:
         arg: str = formal['name']
-        py = aliases.get(arg, valuetree.py_name(arg))
+        py = aliases.get(arg, audit.valuetree.py_name(arg))
         if py not in have and arg not in have:
             if not any_kwargs:
                 out.append((f'{case_id}/{arg}', 'missing-arg', arg, f'{name}() has no parameter for {arg}'))
@@ -145,7 +149,7 @@ def compare_function(
     return out
 
 
-def run(u: universe.Universe, env: pycall.Env, doms: domains.Domains, derived: frozenset[str] = frozenset()) -> list[Finding]:
+def run(u: audit.universe.Universe, env: audit.pycall.Env, doms: audit.domains.Domains, derived: frozenset[str] = frozenset()) -> list[Finding]:
     findings: list[Finding] = []
     aliases = dict(doms.args_alias)
     for fixture, obj in env.items():
@@ -157,7 +161,7 @@ def run(u: universe.Universe, env: pycall.Env, doms: domains.Domains, derived: f
             if (
                 method is None
                 or generic == 'print'
-                or generic in pycall.NATIVE
+                or generic in audit.pycall.NATIVE
                 or (fixture in derived and method['class'].startswith('rma'))
                 or u.refuses(generic, classes)
             ):
@@ -166,7 +170,7 @@ def run(u: universe.Universe, env: pycall.Env, doms: domains.Domains, derived: f
     return findings
 
 
-def run_functions(u: universe.Universe, names: list[str], doms: domains.Domains) -> list[Finding]:
+def run_functions(u: audit.universe.Universe, names: list[str], doms: audit.domains.Domains) -> list[Finding]:
     """Formals of the functions that take no model: R's against the Python function of the same name."""
     findings: list[Finding] = []
     aliases = dict(doms.args_alias)

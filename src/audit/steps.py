@@ -1,5 +1,6 @@
 """The steps of the audit, in the order the one command runs them. Each step returns findings; none decides what counts as a gap."""
 
+import collections.abc
 import dataclasses
 import fnmatch
 import json
@@ -58,7 +59,7 @@ class Outcome:
 class Step:
     name: str
     title: str
-    run: typing.Callable[[Context], Outcome]
+    run: collections.abc.Callable[[Context], Outcome]
 
 
 def check_r(ctx: Context) -> Outcome:
@@ -83,6 +84,7 @@ def check_r(ctx: Context) -> Outcome:
 
 def build_universe(ctx: Context) -> Outcome:
     path = ctx.work / 'universe.json'
+    # auditme: accept[build-name-has-side-effect] the step runs R to enumerate metafor; the name is the step id
     audit.rdriver.run(audit.config.R_DIR / 'universe.R', str(audit.config.DATA_DIR / 'fixtures.json'), str(path))
     ctx.universe = audit.universe.Universe.load(path)
     out = Outcome()
@@ -117,7 +119,7 @@ def selected(case_id: str, only: list[str]) -> bool:
     return any(fnmatch.fnmatchcase(case_id, part) if re.search(r'[*?]', part) else part in case_id for part in only)
 
 
-def case_step(axis: str) -> typing.Callable[[Context], Outcome]:
+def case_step(axis: str) -> collections.abc.Callable[[Context], Outcome]:
     def run(ctx: Context) -> Outcome:
         gen = generate_cases(ctx)
         cases = [c for c in gen.cases if c.axis == axis]
@@ -177,7 +179,7 @@ def scripts_step(ctx: Context) -> Outcome:
     return out
 
 
-STEPS = [
+STEPS = (
     Step('check-r', 'The R oracle is installed and pinned', check_r),
     Step('universe', 'Enumerate metafor from R itself', build_universe),
     Step('matrix', 'Every generic and model function on every fit class', case_step('matrix')),
@@ -188,7 +190,7 @@ STEPS = [
     Step('datasets', 'Every dataset of metafor and metadat', case_step('datasets')),
     Step('scripts', 'metafor help examples and testthat files, run in R and in translated Python', scripts_step),
     Step('api', 'Formals of each function and method against the Python callable of each fit class', api_step),
-]
+)
 
 
 ALWAYS = frozenset({'check-r', 'universe'})

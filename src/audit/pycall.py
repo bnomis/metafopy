@@ -4,20 +4,22 @@ A call spec is ``{'fn': name, 'target': value, 'args': {...}}`` in the R spellin
 and the function is looked up on ``metafopy``, then ``metafopy.transf``, then as a method of the target. See ``r/common.R`` for the value tags.
 """
 
+import collections.abc
 import dataclasses
 import functools
 import inspect
 import tomllib
+import types
 import typing
 
 import numpy
 import pandas
 
 import audit.config
+import audit.valuetree
 import metafopy
 import metafopy.datasets
 import metafopy.transf
-from audit.valuetree import py_name
 
 Env = dict[str, typing.Any]
 
@@ -46,7 +48,7 @@ def aliases() -> dict[str, str]:
 
 
 def arg_name(name: str) -> str:
-    return aliases().get(name, py_name(name))
+    return aliases().get(name, audit.valuetree.py_name(name))
 
 
 def shift_index(value: typing.Any) -> typing.Any:
@@ -106,7 +108,7 @@ def resolve_value(x: typing.Any, env: Env) -> typing.Any:
 
 
 def candidates(name: str) -> list[str]:
-    base = py_name(name)
+    base = audit.valuetree.py_name(name)
     return [base, f'{base}_']
 
 
@@ -145,7 +147,11 @@ UNDOCUMENTED_PRINT_ARGUMENTS = frozenset({'legend', 'num'})
 
 
 def print_call(x: typing.Any, **kwargs: typing.Any) -> list[str]:
-    """``print(x, ...)`` as text: metafopy results print through ``str()``, which takes no arguments; the arguments of R's ``print`` go to ``summary()``."""
+    """``print(x, ...)`` as text: metafopy results print through ``str()``, which takes no arguments; the arguments of R's ``print`` go to ``summary()``.
+
+    Raises:
+        audit.pycall.MissingArgumentError: an argument is not a parameter of the ``summary()`` of ``x``.
+    """
     if kwargs:
         summary: typing.Any = getattr(x, 'summary', None)
         accepted = inspect.signature(summary).parameters if callable(summary) else {}
@@ -154,12 +160,14 @@ def print_call(x: typing.Any, **kwargs: typing.Any) -> list[str]:
         if not kwargs:
             return str(x).split('\n')
         with_digits = getattr(x, 'with_digits', None)
+        # auditme: accept[literal-duplication] both digits branches test the same argument set; each handles a different kind of result
         if 'digits' in kwargs and 'digits' not in accepted and callable(with_digits) and set(kwargs) == {'digits'}:
             # print(x, digits = ) of a result that prints through str(): the result printed with those digits
             return str(with_digits(kwargs['digits'])).split('\n')
         if (
             'digits' in kwargs
             and 'digits' not in accepted
+            # auditme: accept[literal-duplication] both digits branches test the same argument set; each handles a different kind of result
             and set(kwargs) == {'digits'}
             and dataclasses.is_dataclass(x)
             and 'digits' in {f.name for f in dataclasses.fields(x)}
@@ -181,8 +189,12 @@ class SummaryText(str):
     fit: typing.Any
 
 
-def summary_for(x: typing.Any) -> typing.Callable[..., typing.Any]:
-    """R's ``summary`` of ``x``: ``summary_escalc`` for a data frame of effect sizes, the ``summary`` method of the result otherwise."""
+def summary_for(x: typing.Any) -> collections.abc.Callable[..., typing.Any]:
+    """R's ``summary`` of ``x``: ``summary_escalc`` for a data frame of effect sizes, the ``summary`` method of the result otherwise.
+
+    Raises:
+        audit.pycall.MissingFunctionError: ``x`` has no ``summary`` method.
+    """
     if isinstance(x, pandas.DataFrame):
         return functools.partial(metafopy.summary_escalc, x)
     method = getattr(x, 'summary', None)
@@ -203,8 +215,12 @@ def summary_for(x: typing.Any) -> typing.Callable[..., typing.Any]:
     return functools.partial(call)
 
 
-def coef_for(x: typing.Any) -> typing.Callable[..., typing.Any]:
-    """R's ``coef`` of ``x``: ``coef_summary`` of the fit for a summary, the ``coef`` method of the result otherwise."""
+def coef_for(x: typing.Any) -> collections.abc.Callable[..., typing.Any]:
+    """R's ``coef`` of ``x``: ``coef_summary`` of the fit for a summary, the ``coef`` method of the result otherwise.
+
+    Raises:
+        audit.pycall.MissingFunctionError: ``x`` has no ``coef`` attribute.
+    """
     fit = getattr(x, 'fit', None) if isinstance(x, str) else None
     if fit is not None:
         return functools.partial(metafopy.coef_summary, fit)
@@ -220,14 +236,6 @@ def frame_of(x: typing.Any) -> typing.Any:
     return to_frame() if callable(to_frame) else x
 
 
-def as_data_frame(x: typing.Any) -> typing.Any:
-    return frame_of(x)
-
-
-def as_matrix(x: typing.Any) -> typing.Any:
-    return frame_of(x)
-
-
 def head(x: typing.Any, n: int = 6) -> typing.Any:
     """``head.list.rma`` keeps the other fields of the result, so a result that can select rows is cut with ``x[:n]``."""
     if hasattr(type(x), '__getitem__') and hasattr(x, 'to_frame'):
@@ -241,38 +249,44 @@ def tail(x: typing.Any, n: int = 6) -> typing.Any:
     return frame_of(x).tail(n)
 
 
-HELPERS: dict[str, typing.Callable[..., typing.Any]] = {
-    'identity': lambda x: x,
-    '[': getitem,
+HELPERS: dict[str, collections.abc.Callable[..., typing.Any]] = {
     '$<-': setitem,
-    'print': print_call,
-    'as.data.frame': as_data_frame,
-    'as.matrix': as_matrix,
+    '[': getitem,
+    'as.data.frame': frame_of,
+    'as.matrix': frame_of,
     'head': head,
+    'identity': lambda x: x,
+    'print': print_call,
     'tail': tail,
 }
 
 # generics whose Python callable depends on the object they are applied to
-TARGET_FUNCTIONS: dict[str, typing.Callable[[typing.Any], typing.Callable[..., typing.Any]]] = {'summary': summary_for, 'coef': coef_for}
+TARGET_FUNCTIONS: dict[str, collections.abc.Callable[[typing.Any], collections.abc.Callable[..., typing.Any]]] = {'coef': coef_for, 'summary': summary_for}
 
 # R functions that are operators or base methods of data frames and matrices; Python uses pandas and numpy for them, so there are no formals to compare
-NATIVE = frozenset({'[', '$<-', 'as.data.frame', 'as.matrix', 'head', 'tail'})
+NATIVE = frozenset({'$<-', '[', 'as.data.frame', 'as.matrix', 'head', 'tail'})
 
 
 # R's plot() is one generic; metafopy has one function per class of the object that is drawn
-PLOT_FUNCTIONS = {
-    'CumulResult': 'plot_cumul',
-    'GoshResult': 'plot_gosh',
-    'InfluenceResult': 'plot_infl',
-    'LSPermutestResult': 'plot_permutest',
-    'PermutestResult': 'plot_permutest',
-    'SelmodelResult': 'plot_selmodel',
-    'VIFResult': 'plot_vif',
-}
+PLOT_FUNCTIONS = types.MappingProxyType(
+    {
+        'CumulResult': 'plot_cumul',
+        'GoshResult': 'plot_gosh',
+        'InfluenceResult': 'plot_infl',
+        'LSPermutestResult': 'plot_permutest',
+        'PermutestResult': 'plot_permutest',
+        'SelmodelResult': 'plot_selmodel',
+        'VIFResult': 'plot_vif',
+    }
+)
 
 
-def resolve_function(name: str, target: typing.Any) -> typing.Callable[..., typing.Any]:
-    """The callable for an R function name; a method found on the target comes back already bound to it (call it without the target)."""
+def resolve_function(name: str, target: typing.Any) -> collections.abc.Callable[..., typing.Any]:
+    """The callable for an R function name; a method found on the target comes back already bound to it (call it without the target).
+
+    Raises:
+        audit.pycall.MissingFunctionError: metafopy has no callable for ``name``.
+    """
     if name in HELPERS:
         return HELPERS[name]
     if target is not None and name in TARGET_FUNCTIONS:
@@ -285,7 +299,7 @@ def resolve_function(name: str, target: typing.Any) -> typing.Callable[..., typi
         for module in (metafopy, metafopy.transf):
             fn = getattr(module, spelling, None)
             if callable(fn):
-                return typing.cast(typing.Callable[..., typing.Any], fn)
+                return typing.cast(collections.abc.Callable[..., typing.Any], fn)
     if isinstance(target, pandas.DataFrame):
         for spelling in candidates(name):
             fn = getattr(metafopy, f'{spelling}_escalc', None)
@@ -296,13 +310,13 @@ def resolve_function(name: str, target: typing.Any) -> typing.Callable[..., typi
             fn = getattr(target, spelling, None)
             if callable(fn):
                 return functools.partial(fn)
-    fn = getattr(numpy, py_name(name), None)
+    fn = getattr(numpy, audit.valuetree.py_name(name), None)
     if callable(fn) and target is None:
-        return typing.cast(typing.Callable[..., typing.Any], fn)
+        return typing.cast(collections.abc.Callable[..., typing.Any], fn)
     raise MissingFunctionError(name)
 
 
-def check_arguments(fn: typing.Callable[..., typing.Any], names: list[str]) -> None:
+def check_arguments(fn: collections.abc.Callable[..., typing.Any], names: list[str]) -> None:
     try:
         sig = inspect.signature(fn.func if isinstance(fn, functools.partial) else fn)
     except TypeError, ValueError:
@@ -316,7 +330,7 @@ def check_arguments(fn: typing.Callable[..., typing.Any], names: list[str]) -> N
 
 
 def match_positional(
-    fn: typing.Callable[..., typing.Any], args: tuple[typing.Any, ...], kwargs: dict[str, typing.Any]
+    fn: collections.abc.Callable[..., typing.Any], args: tuple[typing.Any, ...], kwargs: dict[str, typing.Any]
 ) -> tuple[tuple[typing.Any, ...], dict[str, typing.Any]]:
     """R matches the named arguments first and gives the positional ones to the formals left over, in order: ``blsplit(V, cluster = x, cov2cor)``
     passes ``cov2cor`` as ``fun``. Python fills the positions first, so a positional argument that would land on a named one is named."""
@@ -333,7 +347,7 @@ def match_positional(
     return (), {**dict(zip(free, args, strict=False)), **kwargs}
 
 
-def integral_arguments(fn: typing.Callable[..., typing.Any], kwargs: dict[str, typing.Any], dispatch: typing.Any = None) -> dict[str, typing.Any]:
+def integral_arguments(fn: collections.abc.Callable[..., typing.Any], kwargs: dict[str, typing.Any], dispatch: typing.Any = None) -> dict[str, typing.Any]:
     """R has one number type: ``iter = 50`` is a double that is whole. The arguments metafopy types as an ``int`` (not as a ``float``) get an ``int``."""
     if dispatch is not None and hasattr(fn, 'dispatch'):
         fn = fn.dispatch(type(dispatch))

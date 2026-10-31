@@ -2,6 +2,7 @@
 ``data/``, never from a list somebody remembered to write. What cannot be derived is reported as uncovered, and a test fails on it.
 """
 
+import collections.abc
 import dataclasses
 import fnmatch
 import typing
@@ -12,7 +13,6 @@ import audit.universe
 
 Json = dict[str, typing.Any]
 
-NO_PRINT = frozenset({'print'})
 SKIP_GENERICS = frozenset({'print'})
 
 
@@ -67,7 +67,7 @@ def args_of(entry: Json, graphics: list[str], extra: list[str] | None = None) ->
     return formals
 
 
-def caller(fn: str, target: Json | None, pre: list[Json] | None = None) -> typing.Callable[[Json], Json]:
+def caller(fn: str, target: Json | None, pre: list[Json] | None = None) -> collections.abc.Callable[[Json], Json]:
     """The call spec of ``fn`` on a set of arguments: on ``target`` when given, after the ``pre`` calls when given."""
 
     def make(args: Json) -> Json:
@@ -81,7 +81,7 @@ def caller(fn: str, target: Json | None, pre: list[Json] | None = None) -> typin
     return make
 
 
-def templated(template: Json) -> typing.Callable[[Json], Json]:
+def templated(template: Json) -> collections.abc.Callable[[Json], Json]:
     def make(args: Json) -> Json:
         return {**template, 'args': args}
 
@@ -93,7 +93,7 @@ def option_cases(
     prefix: str,
     function: str,
     entry: Json,
-    make_call: typing.Callable[[Json], Json],
+    make_call: collections.abc.Callable[[Json], Json],
     base: Json,
     needs: list[str],
     print_it: bool,
@@ -129,7 +129,7 @@ def sweep(
     prefix: str,
     function: str,
     entry: Json,
-    make_call: typing.Callable[[Json], Json],
+    make_call: collections.abc.Callable[[Json], Json],
     base: Json,
     needs: list[str],
     first_arg: str | None,

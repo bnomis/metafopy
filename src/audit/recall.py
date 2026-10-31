@@ -19,6 +19,7 @@ import audit.config
 
 Json = dict[str, typing.Any]
 
+# auditme: accept[non-alphabetical-literal] the order is the order the steps run in
 STEPS = ('matrix', 'options', 'construct', 'standalone', 'emmeans', 'datasets', 'scripts', 'api')
 
 

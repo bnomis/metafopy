@@ -16,6 +16,7 @@ import audit.universe
 SECTIONS: list[tuple[str, tuple[str, ...]]] = [
     ('Missing functions and arguments', ('missing-function', 'missing-arg')),
     ('Different defaults', ('default-diff',)),
+    # auditme: accept[literal-duplication] the kind names are the report vocabulary, spelled out where used
     ('Missing fields of results', ('missing-field',)),
     ('Crashes', ('crash', 'fixture-error', 'runner-error')),
     ('Timeouts', ('timeout',)),
@@ -33,10 +34,8 @@ Json = dict[str, typing.Any]
 
 DIGEST_ROWS = 15
 
-Finding = audit.steps.Finding
 
-
-def function_of(f: Finding, fixture_function: dict[str, str] | None = None) -> str:
+def function_of(f: audit.steps.Finding, fixture_function: dict[str, str] | None = None) -> str:
     """The function the finding is about: the R function of the case, for a fixture the function that fits it."""
     parts = f.id.split('/')
     name = parts[1] if len(parts) > 1 else f.id
@@ -45,7 +44,7 @@ def function_of(f: Finding, fixture_function: dict[str, str] | None = None) -> s
     return name
 
 
-def result_class(f: Finding, classes: dict[str, str]) -> str:
+def result_class(f: audit.steps.Finding, classes: dict[str, str]) -> str:
     """The class of the result whose field is missing: the fit class for matrix and options cases, the fixture's for construct cases."""
     parts = f.id.split('/')
     if f.step in ('matrix', 'options') and len(parts) > 2:
@@ -61,8 +60,9 @@ def normal_path(path: str) -> str:
     return '$'.join(re.sub(r'^.*[ ()].*$', '<name>', part) for part in path.split('$'))
 
 
-def cause_key(f: Finding) -> tuple[str, str]:
+def cause_key(f: audit.steps.Finding) -> tuple[str, str]:
     """What makes two findings the same cause: the kind and the path, or for findings without a path the message with its numbers masked."""
+    # auditme: accept[literal-duplication] the kind names are the report vocabulary, spelled out where used
     if f.kind in ('missing-arg', 'missing-function') and f.path:
         return f.kind, f.path.replace('_', '.') if '_' in f.path and '.' not in f.path else f.path
     if f.path:
@@ -72,9 +72,10 @@ def cause_key(f: Finding) -> tuple[str, str]:
     return f.kind, re.sub(r"\d+(\.\d+)?|'[^']*'|\"[^\"]*\"", '#', f.detail)[:90]
 
 
-def line_of(kind: str, key: str, items: list[Finding], functions: list[str]) -> str:
+def line_of(kind: str, key: str, items: list[audit.steps.Finding], functions: list[str]) -> str:
     cases = len({i.id for i in items})
     shown = ', '.join(f'`{n}`' for n in functions[:4]) + (f' and {len(functions) - 4} more' if len(functions) > 4 else '')
+    # auditme: accept[literal-duplication] the kind names are the report vocabulary, spelled out where used
     if kind in ('missing-arg', 'missing-function') and re.fullmatch(r'[\w.]+', key):
         return f'- `{key}` is missing from {shown}'
     label = f'`{key}`' if key and (kind in ('value-diff', 'shape-diff', 'type-diff', 'label-diff', 'missing-field')) else ''
@@ -111,7 +112,7 @@ def write(ctx: audit.steps.Context, outcomes: dict[str, audit.steps.Outcome], ou
     fixtures = audit.cases.load_fixtures()
     fixture_function = {fx['name']: fx['fn'] for fx in fixtures if 'fn' in fx}
 
-    causes: dict[tuple[str, str], list[Finding]] = collections.defaultdict(list)
+    causes: dict[tuple[str, str], list[audit.steps.Finding]] = collections.defaultdict(list)
     for f in new:
         causes[cause_key(f)].append(f)
 
@@ -137,6 +138,7 @@ def write(ctx: audit.steps.Context, outcomes: dict[str, audit.steps.Outcome], ou
                 continue
             rows.sort(key=lambda r: r[:4])
             out_lines += [f'## {title} ({len(rows)})', '']
+            # auditme: accept[literal-duplication] the kind names are the report vocabulary, spelled out where used
             if limit is not None and kinds == ('missing-field',):
                 names = [row[3].removeprefix('$') for row in rows]
                 out_lines.append(
@@ -167,7 +169,9 @@ def write(ctx: audit.steps.Context, outcomes: dict[str, audit.steps.Outcome], ou
             'Ledger globs with an unescaped [ that fnmatch reads as a set of characters: '
             + ', '.join(f'{e.label()} ({glob!r})' for e, glob in ledger.loose_brackets())
         )
+    # auditme: accept[literal-duplication] the report spells out its section lines
     tail = ['## Not covered', ''] + [f'- {n}' for n in notes] + [''] if notes else []
+    # auditme: accept[literal-duplication] the report spells out its section lines
     tail += ['## Steps', ''] + [f'- {name}: {len(o.findings)} findings; {"; ".join(o.notes)}' for name, o in outcomes.items()] + ['']
 
     path = out / 'wrong-or-missing.md'
