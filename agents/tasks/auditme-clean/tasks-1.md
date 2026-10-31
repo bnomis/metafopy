@@ -1,0 +1,399 @@
+# Tasks: Auditme clean
+
+**Spec:** `agents/specs/auditme-clean/spec.md`
+**Created:** 2026-10-31
+**Version:** 1
+
+The spec was approved on its review page on 2026-10-31 (every item, answers
+in `agents/specs/auditme-clean/review.md`). Every command below runs after
+`source bin/activate.sh`, per `AGENTS.md`.
+
+From Task 1 on, every commit runs the `auditme-changed` hook on its staged
+files, so "the task's commit passes its pre-commit hooks" includes "no
+unaccepted auditme hit in the files this task touched". List the remaining
+hits at any time with
+`pre-commit run auditme-all --hook-stage manual --all-files`.
+
+**Accept markers** are always scoped, `# auditme: accept[<rule>] <reason>`,
+on the hit line or the line above, with a reason that says why the pattern
+is right here (spec, "Fix-or-accept policy"). Where a rule gets a site
+wrong, accept it and add a line to `agents/specs/auditme-clean/requests.md`
+(rule, `path:line`, why the rule is wrong); the operator raises those in the
+shared auditme skill's `requests.md`, which no task here edits.
+
+**Tests.** The project has no affected-tests tool. Each task names its test
+files; for a task whose sites are found while it runs, the test files are
+those that import each changed module, found with
+`grep -rlE 'metafopy\.<package>\.<module>\b|audit\.<module>\b' src/tests`,
+plus the module's own `test_<module>.py` where it exists. Record the files
+run in the commit body.
+
+---
+
+## Task 1: Add the auditme commit hook
+
+**Status:** todo
+**Priority:** high
+**Complexity:** small
+**Spec Reference:** Implementation step 1; Settings
+
+**Technical Goal:** Every commit from here on is checked by the shared
+auditme checker on its changed files, so the backlog cannot grow while it is
+worked down.
+
+**Subtasks:**
+
+- [ ] Read the shared repository's current `main`: `git ls-remote git@github.com:bnomis/agents.git refs/heads/main` (first field). If it fails, stop as `blocked`: the hooks cannot be pinned
+- [ ] Add to `.pre-commit-config.yaml`, after the ruff block, the repo block `git@github.com:bnomis/agents.git` at that `rev`, with hooks `auditme-changed` and `auditme-all` with `stages: [manual]` (not `pre-push` yet), under the comment `# The shared audit hooks, pinned to one commit of the checker.`
+- [ ] Run `pre-commit install --hook-type pre-commit --hook-type pre-push`
+- [ ] Run `pre-commit run auditme-all --hook-stage manual --all-files` and count the unaccepted hits by rule
+- [ ] Add one line after the `Spec:` line of the `TODO.md` item "The auditme checker reports unaccepted hits and no hook enforces it": `Note YYYY-MM-DD: with the hooks pinned at agents <rev>, the whole-tree sweep reports <N> unaccepted hits (<rule>: <n>, ...).` Never edit the dated findings
+
+**Acceptance Criteria:**
+
+- [ ] `.pre-commit-config.yaml` pins both hooks at one full commit hash; `auditme-all` has `stages: [manual]` only
+- [ ] `pre-commit run auditme-changed --files TODO.md` runs the checker (passes or reports; it does not error on setup)
+- [ ] The `TODO.md` note records the date, the rev and the count by rule
+
+**Definition of Done:**
+
+- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` runs to completion (its hit count is the note's)
+
+**Notes:**
+
+- If the pinned rev is newer than agents `108559d` (the spec's measurement), its new rules add hits; they follow the spec's policy like the rest (spec, "Error handling: The checker changes during the work")
+- `project-setup adopt` would file a `TODO.md` item for the backlog; this item already covers it, so only the note is added
+
+---
+
+## Task 2: Fix the real defects in `src/audit/`
+
+**Status:** todo
+**Priority:** high
+**Complexity:** medium
+**Spec Reference:** Fix-or-accept policy (`src/audit/`)
+
+**Technical Goal:** The harness's silent broad handlers, null-unsafe `.get`
+chains and inconsistent error translation are fixed, not accepted, as the
+operator decided on 2026-10-31.
+
+**Subtasks:**
+
+- [ ] `silent-broad-except` (`src/audit/pyrun.py`, `rlib.py`, `valuetree.py`): narrow each handler to the exceptions the call can raise, or log and re-raise; where a harness failure must become a reported finding (as `pyrun.py:238` says), keep the handler, make it record the exception type and message in the finding, and accept with a marker saying so
+- [ ] `get-container-default-then-method-call` (`src/audit/domains.py`): replace `x.get(k, {}).get(...)` with `(x.get(k) or {}).get(...)`, or validate the YAML shape once where it is loaded
+- [ ] `inconsistent-error-translation` (`src/audit/pycall.py:274`): callers of `resolve_function` translate `MissingFunctionError` to one error type; choose the one the reports already show for a missing function
+- [ ] Add a test for each changed handler and for an explicit `null` in the domains YAML, in the harness test module that covers the file
+
+**Acceptance Criteria:**
+
+- [ ] No `silent-broad-except`, `get-container-default-then-method-call` or `inconsistent-error-translation` hit in `src/audit/` is unaccepted
+- [ ] A domains YAML entry set to `null` no longer raises `AttributeError`
+
+**Definition of Done:**
+
+- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [ ] `mypy` passes
+- [ ] `pytest src/tests/test_harness_*.py` passes, plus any other test file that imports a changed `audit` module
+
+**Notes:**
+
+- Depends on Task 1
+- `bin/metafor-audit.sh --recall` checks the harness still reproduces earlier audits; it needs R. Run it if R is installed and record the result; otherwise say in the commit body that it was not run
+
+---
+
+## Task 3: Accept the remaining `src/audit/` hits by rule
+
+**Status:** todo
+**Priority:** high
+**Complexity:** medium
+**Spec Reference:** Fix-or-accept policy (`src/audit/`)
+
+**Technical Goal:** Every other unaccepted hit in `src/audit/` carries a
+scoped marker with one reason per rule, written for this harness.
+
+**Subtasks:**
+
+- [ ] List the unaccepted `src/audit/` hits by rule from the whole-tree sweep
+- [ ] For each rule, write one reason that holds for every site in the harness (for example `literal-duplication`: "the harness spells out each R call it translates"), and add it as a scoped marker at each site
+- [ ] `METAFOR_FUNCTIONS` (`src/audit/rlib.py:46`): accept `mutable-module-level-exported` with "filled at run time from the R script's function list (`src/audit/scripts.py`)"
+- [ ] A site where no rule-wide reason is true is a defect: fix it like Task 2 and add a test
+
+**Acceptance Criteria:**
+
+- [ ] The whole-tree sweep reports no unaccepted hit under `src/audit/`
+
+**Definition of Done:**
+
+- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [ ] `mypy` passes
+- [ ] `pytest src/tests/test_harness_*.py` passes
+
+**Notes:**
+
+- Depends on Task 2
+
+---
+
+## Task 4: Correct the `Raises:` sections in `metafopy.methods`
+
+**Status:** todo
+**Priority:** high
+**Complexity:** large
+**Spec Reference:** API (`Raises:` form); Fix-or-accept policy (`raises-section-drift`, `missing-raises-section`); Implementation step 3
+
+**Technical Goal:** Each `Raises:` section in `src/metafopy/methods/` names
+every domain error that can reach the caller, with its condition.
+
+**Subtasks:**
+
+- [ ] For each `raises-section-drift` and `missing-raises-section` hit in `src/metafopy/methods/`, read the function body and the callee the hit names, and decide whether the error can reach the caller on that call
+- [ ] Where it can, add it to the section in the project's form (`metafopy.errors.<Name>: <condition>`), with the condition read from the code, not the hit text
+- [ ] Where it cannot (the call never takes the raising path, as `check_class` without `must`), accept with a marker naming why, and add the pattern to `agents/specs/auditme-clean/requests.md`
+
+**Acceptance Criteria:**
+
+- [ ] No unaccepted `raises-section-drift` or `missing-raises-section` hit in `src/metafopy/methods/`
+- [ ] Only docstrings and accept markers change
+
+**Definition of Done:**
+
+- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [ ] `mkdocs build --strict` passes (needs `uv pip install -r docs/requirements.txt`, README "Building the docs")
+
+**Notes:**
+
+- Depends on Task 1
+- Docstring-only, so no test selection beyond the docs build
+
+---
+
+## Task 5: Correct the `Raises:` sections in `metafopy.models`
+
+**Status:** todo
+**Priority:** high
+**Complexity:** large
+**Spec Reference:** as Task 4
+
+**Technical Goal:** As Task 4, for `src/metafopy/models/`.
+
+**Subtasks:**
+
+- [ ] As Task 4's subtasks, for every `raises-section-drift` and `missing-raises-section` hit in `src/metafopy/models/`
+
+**Acceptance Criteria:**
+
+- [ ] No unaccepted `raises-section-drift` or `missing-raises-section` hit in `src/metafopy/models/`
+- [ ] Only docstrings and accept markers change
+
+**Definition of Done:**
+
+- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [ ] `mkdocs build --strict` passes
+
+**Notes:**
+
+- Depends on Task 4 (reuse its reading of shared callees such as `rma_uni`)
+
+---
+
+## Task 6: Correct the remaining `Raises:` sections
+
+**Status:** todo
+**Priority:** high
+**Complexity:** large
+**Spec Reference:** as Task 4
+
+**Technical Goal:** As Task 4, for `src/metafopy/plot/`, `bias/`, `effects/`
+and `core/`, one package per commit.
+
+**Subtasks:**
+
+- [ ] As Task 4's subtasks, for every `raises-section-drift` and `missing-raises-section` hit in `src/metafopy/plot/`, `bias/`, `effects/` and `core/` (the `fsn` hit at `src/metafopy/bias/fsn.py:159` is the spec's example), committing each package separately
+
+**Acceptance Criteria:**
+
+- [ ] The whole-tree sweep reports no unaccepted `raises-section-drift` or `missing-raises-section` hit
+- [ ] Only docstrings and accept markers change
+
+**Definition of Done:**
+
+- [ ] Each commit passes its pre-commit hooks (never `--no-verify`)
+- [ ] `mkdocs build --strict` passes
+
+**Notes:**
+
+- Depends on Task 5
+
+---
+
+## Task 7: Apply the mechanical rules
+
+**Status:** todo
+**Priority:** medium
+**Complexity:** medium
+**Spec Reference:** Fix-or-accept policy (`typing-deprecated-alias`, `from-import`, `aliased-imports`, `in-function-import`, `non-alphabetical-literal`, `non-alphabetical-dict-keys`); Implementation step 4
+
+**Technical Goal:** The rules with a mechanical fix are fixed in
+`src/metafopy/` and `src/tests/`.
+
+**Subtasks:**
+
+- [ ] `typing-deprecated-alias`: replace `typing.Callable`, `typing.Iterable` and the like with the `collections.abc` forms, adding `import collections.abc`; never accept
+- [ ] `from-import`, `aliased-imports`: rewrite to full-path imports (`claude/rules/metafopy.md`); `in-function-import`: move to module level unless it breaks an import cycle, then accept naming the cycle
+- [ ] `non-alphabetical-literal`, `non-alphabetical-dict-keys`: sort, unless the order is metafor's or the R fixture script's (then accept with the reasons the project already uses, such as "order follows the R fixture generator"); never sort where order changes output
+
+**Acceptance Criteria:**
+
+- [ ] No unaccepted hit under these rules in `src/metafopy/` or `src/tests/`
+- [ ] Printed output is unchanged (the tests that compare printouts with R pass)
+
+**Definition of Done:**
+
+- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [ ] `mypy` passes
+- [ ] `pytest` on every test file the task edits, plus the test files that import each changed source module (see the header)
+
+**Notes:**
+
+- Depends on Task 1
+
+---
+
+## Task 8: Settle the duplication rules
+
+**Status:** todo
+**Priority:** medium
+**Complexity:** large
+**Spec Reference:** Fix-or-accept policy (`literal-duplication`, `paired-sibling-helpers`, `duplicate-call-sequence`); Implementation step 5
+
+**Technical Goal:** Each duplication hit in `src/metafopy/` and `src/tests/`
+is extracted or accepted by the spec's test.
+
+**Subtasks:**
+
+- [ ] `literal-duplication`: accept where the repetition mirrors metafor or the R fixture scripts, with the reasons the project already uses; extract a module-level constant where the literal is the project's own (a key list, a set of names), and import it from its one owner
+- [ ] `paired-sibling-helpers`: in `src/metafopy/`, keep one helper and import it (`effects/bind.py:as_names` and `effects/summary.py:names` are one pair); in `src/tests/`, accept with "each test module keeps its own fixture loader"
+- [ ] `duplicate-call-sequence`: accept where the sequence mirrors metafor's per-class methods; extract a helper only where the shared steps have one meaning
+
+**Acceptance Criteria:**
+
+- [ ] No unaccepted hit under these rules in `src/metafopy/` or `src/tests/`
+
+**Definition of Done:**
+
+- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [ ] `mypy` passes
+- [ ] `pytest` on every test file the task edits, plus the test files that import each changed source module
+
+**Notes:**
+
+- Depends on Task 7 (sorting first, so equal literals compare equal)
+
+---
+
+## Task 9: Settle the remaining judged rules
+
+**Status:** todo
+**Priority:** medium
+**Complexity:** medium
+**Spec Reference:** Fix-or-accept policy (`passthrough-shim`, `redundant-sink-caller-plus-callee`, `mutable-module-level-exported`, `assert-never-missing`, single-site rules); Implementation step 5
+
+**Technical Goal:** Every other unaccepted hit outside `src/audit/` is fixed
+or accepted by the spec's table.
+
+**Subtasks:**
+
+- [ ] `passthrough-shim`: call the target directly and remove the wrapper, unless it is a metafor-named public alias
+- [ ] `redundant-sink-caller-plus-callee` (`src/metafopy/effects/fivenum_estimators.py` and others): compute the value once and pass it, unless the numbers then differ from R's in the compared digits; then revert and accept saying so
+- [ ] `mutable-module-level-exported`: wrap `PCH` (`src/metafopy/plot/draw.py:48`) in `types.MappingProxyType`; accept `printing.SETTINGS` ("R's getOption('width'), set by users as in R"), `YICHECKS` and `LAST_EVALUATED` (run-time caches, cleared by tests)
+- [ ] `assert-never-missing`: end the chain with an `else` that raises `metafopy.errors.ArgumentError` (or the error the function already raises for bad values), unless the value is validated earlier; then accept saying where
+- [ ] `except-interpolation`, `reexport-in-non-init`, `duplicated-word` (`Lambda Lambda'` is a formula: accept), `filesystem-envelope-gap`: fix or accept each site
+- [ ] Any rule not in the spec's table, or new with Task 1's pin: fix unless the pattern is right here, and say why in the marker
+
+**Acceptance Criteria:**
+
+- [ ] The whole-tree sweep reports no unaccepted hit, except `lockfile-drift` if it still fires (Task 10)
+- [ ] No public function changes signature
+
+**Definition of Done:**
+
+- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [ ] `mypy` passes
+- [ ] `pytest` on every test file the task edits, plus the test files that import each changed source module
+
+**Notes:**
+
+- Depends on Task 8
+- A test that fails after a refactor means the fix was wrong: revert it and accept with the reason the test shows (spec, "Error handling")
+
+---
+
+## Task 10: Switch on the push and CI gates
+
+**Status:** todo
+**Priority:** high
+**Complexity:** medium
+**Spec Reference:** Implementation step 6; Error handling (`lockfile-drift`, shared-repository access); Settings
+
+**Technical Goal:** With zero unaccepted hits, the whole-tree sweep runs on
+every push and in CI.
+
+**Subtasks:**
+
+- [ ] Run `pre-commit run auditme-all --hook-stage manual --all-files`. If any hit other than `lockfile-drift` is unaccepted, stop as `blocked` and name it. If `lockfile-drift` fires, run `uv lock --check`: if it still fails only because of a global `exclude-newer`, stop as `blocked` for the operator to raise it with auditme (the spec forbids rewriting `uv.lock`)
+- [ ] Set `stages: [manual, pre-push]` under `- id: auditme-all` in `.pre-commit-config.yaml`
+- [ ] Add the steps of the shared `project-setup` template `ci-audit-step.yml` (install the deploy key, `pre-commit run auditme-all --hook-stage manual --all-files`, remove the key) to the `lint` job of `.github/workflows/ci.yml` after `uv run mypy`, with the prerequisites it lists: `uv tool install pre-commit` and `echo "$PWD/.venv/bin" >> "$GITHUB_PATH"` after `uv sync`
+- [ ] Commit, then stop as `blocked` for an operator session to create the deploy key and secret (each step confirmed): `ssh-keygen -t ed25519 -N '' -f <scratch>/agents_deploy_key`, `gh repo deploy-key add <scratch>/agents_deploy_key.pub --repo bnomis/agents --title metafopy`, `gh secret set AGENTS_DEPLOY_KEY --repo <owner>/metafopy < <scratch>/agents_deploy_key`, then delete the scratch files. The key is never printed. The operator then sets this task to `done` and restarts the list
+
+**Acceptance Criteria:**
+
+- [ ] `git push` runs `auditme-all` (seen in the push output)
+- [ ] The CI `lint` job runs the audit step and passes, once the secret exists
+
+**Definition of Done:**
+
+- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` exits 0
+
+**Notes:**
+
+- Depends on Tasks 3, 6 and 9
+- The deploy key and secret change GitHub, so an unattended run never does them
+
+---
+
+## Task 11: Close the item and the spec
+
+**Status:** todo
+**Priority:** medium
+**Complexity:** small
+**Spec Reference:** Implementation step 7
+
+**Technical Goal:** The finished work is recorded and the whole tree is
+checked once before the branch merges.
+
+**Subtasks:**
+
+- [ ] Create `DONE.md` with the title `# Done` and the line "Finished work, newest last. Items arrive from `TODO.md` unchanged."
+- [ ] Append the `TODO.md` item "The auditme checker reports unaccepted hits and no hook enforces it" to `DONE.md`, heading and body unchanged, then the line `Done: YYYY-MM-DD - agents/specs/auditme-clean/spec.md, agents/tasks/auditme-clean/tasks-1.md.`, and remove it from `TODO.md`
+- [ ] Set the spec's `**Status:**` to `implemented`, and its entry in `agents/specs/index.md` to "Implemented: ..."
+- [ ] Add `agents/specs/auditme-clean/requests.md`'s entries, if any, to the hand-over message for the operator
+
+**Acceptance Criteria:**
+
+- [ ] `TODO.md` no longer holds the item; `DONE.md` holds it unchanged with a `Done:` line
+
+**Definition of Done:**
+
+- [ ] `pre-commit run --all-files` passes
+- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` exits 0
+- [ ] `mypy` passes
+- [ ] `python3 ~/.claude/skills/todo-review/verify_bodies.py <baseline> TODO.md DONE.md` exits 0, where `<baseline>` is `TODO.md` as of the commit that added this list: `git show $(git log --diff-filter=A --format=%H -- agents/tasks/auditme-clean/tasks-1.md):TODO.md > <scratch>/todo-before.md`
+- [ ] `pytest` on the test files that import any module this list changed: `git diff --name-only <base>..HEAD -- src` gives the modules, and the header's grep their importers
+
+**Notes:**
+
+- Depends on Task 10
+- The last test run may approach the whole suite, since the list touches most packages; that is expected
