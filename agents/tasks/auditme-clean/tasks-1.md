@@ -255,7 +255,7 @@ every file the commit hook brings into scope (header, "Clearing a package").
 
 ## Task 7: Clear every rule in the rest of `src/metafopy/`
 
-**Status:** in-progress
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** as Task 5
@@ -266,20 +266,20 @@ modules), one package per commit.
 
 **Subtasks:**
 
-- [ ] As Task 5's subtasks, package by package, committing each separately (the `fsn` hit at `src/metafopy/bias/fsn.py:159` is the spec's `Raises:` example, if it is still open)
-- [ ] `redundant-sink-caller-plus-callee` (`src/metafopy/effects/fivenum_estimators.py` and others): compute the value once and pass it, unless the numbers then differ from R's in the compared digits; then revert and accept saying so
+- [x] As Task 5's subtasks, package by package, committing each separately (the `fsn` hit at `src/metafopy/bias/fsn.py:159` is the spec's `Raises:` example, if it is still open)
+- [x] `redundant-sink-caller-plus-callee` (`src/metafopy/effects/fivenum_estimators.py` and others): compute the value once and pass it, unless the numbers then differ from R's in the compared digits; then revert and accept saying so
 
 **Acceptance Criteria:**
 
-- [ ] No unaccepted hit under `src/metafopy/`
-- [ ] No public function changes signature
+- [x] No unaccepted hit under `src/metafopy/`
+- [x] No public function changes signature
 
 **Definition of Done:**
 
-- [ ] Each commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `mkdocs build --strict` passes
-- [ ] `pytest` on the test files that import each module whose code changed
+- [x] Each commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `mkdocs build --strict` passes
+- [x] `pytest` on the test files that import each module whose code changed
 
 **Notes:**
 
