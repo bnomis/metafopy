@@ -223,6 +223,7 @@ class RMALSResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_me
 
     # -- accessors ---------------------------------------------------------
 
+    # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
     def coef(self, type: typing.Literal['alpha', 'beta'] | None = None) -> pandas.Series | dict[str, pandas.Series]:
         """Location (``'beta'``) and/or scale (``'alpha'``) coefficients, indexed by name."""
         beta = pandas.Series(self.beta, index=list(self.coef_names), name='estimate')
@@ -276,6 +277,7 @@ class RMALSResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_me
             REML = self.method == 'REML'
         return self.fit_stats_reml if REML else self.fit_stats_ml
 
+    # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
     def weights_(self, type: typing.Literal['diagonal', 'matrix'] = 'diagonal', na_action: metafopy.models.rma_uni.NAActionAll = 'omit') -> FloatArray:
         """Percentage weights of the estimates in the model fit (``type='diagonal'``) or the weight matrix (``'matrix'``), metafor's ``weights()``.
 

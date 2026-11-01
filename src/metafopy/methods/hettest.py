@@ -37,6 +37,7 @@ TESTS = ('adn', 'adx2', 'ksn', 'ksx2', 'lrt', 'score', 'wald')
 GOODNESS_OF_FIT = ('adn', 'adx2', 'ksn', 'ksx2')
 MODEL_TESTS = ('lrt', 'score', 'wald')
 TAU2I_TESTS = ('lrt', 'wald')
+# auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
 ESTIMATION_METHODS = ('ML', 'REML')
 # auditme: accept[non-alphabetical-dict-keys] order follows metafor's print method
 TEST_LABEL = {
@@ -372,6 +373,7 @@ def hettest(
         ``tau2i``, ``se_tau2i`` (Wald-type test) and the bootstrapped statistics ``statistic_boot``.
 
     Raises:
+        metafopy.errors.ArgumentError: ``x`` is not a fitted model.
         metafopy.errors.InputError: an argument or the data is invalid (unknown ``test``, ``method`` or ``control`` entry, wrong length of ``boot`` or
             ``tau2i_init``, ``k <= 1``, a model with moderators), the null model or the ``tau^2_i`` could not be estimated, or studies are missing and
             ``na_action='fail'``.

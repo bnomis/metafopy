@@ -233,6 +233,7 @@ def row_terms(prob: GLMMProblem, eta: FloatArray, y: FloatArray, size: FloatArra
         if link == 'logit':
             p = scipy.special.expit(eta)
             return y * eta - size * numpy.logaddexp(0.0, eta), y - size * p, size * p * (1.0 - p)
+        # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
         if link in ('log', 'identity'):
             mu = numpy.exp(eta) if link == 'log' else eta
             invalid = ~((mu > 0) & (mu < 1))
@@ -284,6 +285,7 @@ def conditional_modes(prob: GLMMProblem, f: FloatArray, A: FloatArray) -> Modes:
 
     Raises:
         metafopy.errors.EstimationError: the objective becomes non-finite.
+        metafopy.errors.InternalError: a binomial problem has no group sizes.
     """
     cl = prob.cluster
     K = prob.n_clusters
@@ -447,6 +449,7 @@ def joint_modes(prob: GLMMProblem, theta: FloatArray, beta0: FloatArray) -> tupl
 
     Raises:
         metafopy.errors.EstimationError: the objective is undefined at the start or becomes non-finite.
+        metafopy.errors.InternalError: a binomial problem has no group sizes.
     """
     A = prob.Z @ lambda_matrix(theta, prob.structure)
     X, cl = prob.X, prob.cluster
@@ -498,6 +501,7 @@ def stage_one(prob: GLMMProblem, beta0: FloatArray) -> tuple[FloatArray, FloatAr
 
     Raises:
         metafopy.errors.EstimationError: the deviance is undefined for every ``theta``.
+        metafopy.errors.InternalError: a binomial problem has no group sizes.
     """
     sat = metafopy.core.glm.saturated_loglik(prob.family, prob.y, prob.size)
     cache: dict[float, tuple[float, FloatArray, Modes, FloatArray]] = {}
@@ -571,6 +575,9 @@ def fit_glmm(
     Raises:
         metafopy.errors.EstimationError: the optimiser fails to produce a finite optimum, or without lme4's
             conventions the Hessian cannot be inverted.
+        metafopy.errors.InputError: the arrays of the problem have inconsistent shapes, or a binomial problem has no group sizes
+            (from the starting GLM).
+        metafopy.errors.InternalError: a binomial problem has no group sizes.
     """
     q = prob.X.shape[1]
     if beta0 is None:

@@ -153,6 +153,7 @@ def plot_rma(
     view = metafopy.methods.fitview.fit_view(x)
     if na_action == 'fail' and view.na_rows is not None and view.na_rows.any():
         raise metafopy.errors.InputError('Missing values in results.')
+    # auditme: accept[literal-duplication] the na.action values that keep a row per study, tested at each use as metafor tests them
     every_row = na_action in ('exclude', 'pass')
     area = metafopy.plot.rutils.get_ax(ax)
     cex = metafopy.plot.infl.mfrow_cex(2, 2)

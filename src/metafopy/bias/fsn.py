@@ -156,6 +156,7 @@ def wmean(x: FloatArray, w: FloatArray) -> float:
     return float(numpy.sum(x * w) / numpy.sum(w))
 
 
+# auditme: accept[raises-section-drift] check_class gets a fitted model, rma_uni only numeric yi and vi, so neither raises beyond the errors declared here
 def fsn(
     x: metafopy.models.rma_uni.RMAResult | numpy.typing.ArrayLike | str,
     vi: numpy.typing.ArrayLike | str | None = None,
@@ -170,6 +171,7 @@ def fsn(
     exact: bool = False,
     verbose: bool | int = False,
     digits: int | None = None,
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     pool: typing.Literal['stouffer', 'fisher'] = 'stouffer',
     mumiss: float = 0,
     interval: tuple[float, float] | None = None,
@@ -243,13 +245,16 @@ def fsn(
             sampling variance is not positive, or studies are missing and `na_action='fail'`.
         metafopy.errors.NotSupportedError: `x` is a model other than an `rma_uni` result (for example `rma_mh`, `rma_peto`, `rma_mv`,
             `rma_glmm`, `rma_ls`, selection models and robust fits).
+        metafopy.errors.EstimationError: the tau^2 estimator of the random-effects model of the 'General' type fails.
 
     Metafor reference:
         [fsn](https://wviechtb.github.io/metafor/reference/fsn.html)
     """
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     pools = [name for name in ('stouffer', 'fisher') if isinstance(pool, str) and len(pool) > 0 and name.startswith(pool.lower())]
     if len(pools) != 1:
         raise metafopy.errors.InputError("'arg' should be one of 'stouffer', 'fisher'")
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     pool = typing.cast(typing.Literal['stouffer', 'fisher'], pools[0])
     metafopy.methods.common.check_na_action(na_action)
     gen = rng if rng is not None else (metafopy.core.rng.set_seed(seed) if seed is not None else metafopy.core.rng.get_rng())
@@ -462,6 +467,7 @@ def fsn(
     )
 
 
+# auditme: accept[raises-section-drift] rma_uni gets only numeric yi and vi, with no data or control, so it raises nothing beyond the errors declared here
 def fsn_gen(
     fsnum: float,
     yi: FloatArray,
@@ -488,6 +494,7 @@ def fsn_gen(
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.EstimationError: the tau^2 estimator of the refitted model with the file-drawer studies fails.
     """
     n = math.floor(fsnum)
     n = min(n, int(maxint))

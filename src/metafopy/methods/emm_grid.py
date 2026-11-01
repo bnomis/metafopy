@@ -573,8 +573,10 @@ def emmeans(
         An [EmmGrid][metafopy.EmmGrid] of the estimated marginal means (with ``summary()`` to get the table).
 
     Raises:
+        metafopy.errors.ArgumentError: ``object`` is a fitted model of an unsupported class.
         metafopy.errors.InputError: a variable is not in the grid, the weights do not fit the averaged factors, ``type`` is not ``'link'`` or
             ``'response'``, or ``at``, ``cov_reduce`` or other ``emmprep`` keywords are given with a reference grid.
+        metafopy.errors.NotSupportedError: ``tran`` is ``'+.sqrt'``.
     """
     if isinstance(object, EmmGrid):
         if at is not None or cov_reduce is not None or prep:
@@ -858,6 +860,7 @@ def zap_true_contrast(coef: FloatArray) -> bool:
     return bool(numpy.all(sums < 1e-06))
 
 
+# auditme: accept[raises-section-drift] make_link is called here only with the fixed name 'log', never '+.sqrt'
 def contrast(
     object: EmmGrid,
     method: str | collections.abc.Mapping[str, collections.abc.Sequence[float]] = 'eff',

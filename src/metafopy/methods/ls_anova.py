@@ -159,6 +159,7 @@ class LSWaldResult:
         cols.append(metafopy.methods.ls_common.center_stars(float(v) for v in self.pval))
         widths = [max(len(header[j]), *(len(c) for c in cols[j])) for j in range(len(header))]
         name_w = len(names[-1]) if names else 0
+        # auditme: accept[literal-duplication] the printout layout repeats as metafor's print methods repeat it
         lines2 = ['', 'Results:']
         lines2.append(' ' * name_w + ' ' + ' '.join(header[j].rjust(widths[j]) for j in range(len(header))))
         for i in range(self.m):

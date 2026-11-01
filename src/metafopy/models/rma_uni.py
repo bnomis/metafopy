@@ -47,6 +47,7 @@ type FloatArray = numpy.typing.NDArray[numpy.float64]
 type Test = typing.Literal['z', 't', 'knha', 'adhoc']
 type Btt = int | collections.abc.Sequence[int] | str | None
 type ResidualType = typing.Literal['response', 'rstandard', 'rstudent', 'pearson', 'cholesky']
+# auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
 type NAActionAll = typing.Literal['omit', 'exclude', 'pass', 'fail']
 # auditme: accept[non-alphabetical-literal] order is metafor's documented order and is meaningful
 type VcovType = typing.Literal['fixed', 'beta', 'alpha', 'delta', 'obs', 'marginal', 'fitted', 'resid']
@@ -193,6 +194,7 @@ class RMAResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_meth
             REML = self.method == 'REML'
         return self.fit_stats_reml if REML else self.fit_stats_ml
 
+    # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
     def weights_(self, type: typing.Literal['diagonal', 'matrix'] = 'diagonal', na_action: NAActionAll = 'omit') -> FloatArray:
         """Percentage weights of the estimates in the model fit (``type='diagonal'``) or the weight matrix (``'matrix'``), metafor's ``weights()``.
 
@@ -355,7 +357,7 @@ def set_btt(btt: Btt, p: int, int_incl: bool, names: collections.abc.Sequence[st
     return tuple(out)
 
 
-ZERO_ADD_MEASURES = frozenset({'AS', 'PHI', 'ZPHI', 'RTET', 'ZTET', 'IRSD', 'PAS', 'PFT', 'IRS', 'IRFT'})
+ZERO_ADD_MEASURES = frozenset({'AS', 'IRFT', 'IRS', 'IRSD', 'PAS', 'PFT', 'PHI', 'RTET', 'ZPHI', 'ZTET'})
 
 
 def default_add(measure: str, add: float | None) -> float:
@@ -508,6 +510,7 @@ def rma_uni(
     addvi: bool = True,
     knha: bool | None = None,
     dfs: float | collections.abc.Sequence[float] | None = None,
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     i2def: typing.Literal['1', '2'] = '1',
     r2def: str = '1',
     skipr2: bool = False,
@@ -593,6 +596,7 @@ def rma_uni(
     addvi: bool = True,
     knha: bool | None = None,
     dfs: float | collections.abc.Sequence[float] | None = None,
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     i2def: typing.Literal['1', '2'] = '1',
     r2def: str = '1',
     skipr2: bool = False,
@@ -722,6 +726,8 @@ def rma_uni(
         metafopy.errors.ArgumentError: ``control`` has a name that no function of metafor reads.
         metafopy.errors.NotFoundError: a column name given for an argument is not in ``data``.
         metafopy.errors.EstimationError: every requested ``tau^2`` estimator failed (including ``'GENQ'`` without ``weights``).
+        metafopy.errors.NotSupportedError: escalc does not implement the requested combination of measure and inputs.
+        metafopy.errors.InternalError: an internal invariant of escalc does not hold.
 
     Examples:
         >>> from metafopy import datasets, rma
@@ -924,6 +930,9 @@ def metadata_from_escalc(
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.ArgumentError: an argument of escalc has the wrong type or is not accepted.
+        metafopy.errors.NotSupportedError: escalc does not implement the requested combination of measure and inputs.
+        metafopy.errors.InternalError: an internal invariant of escalc does not hold.
     """
     # auditme: accept[in-function-import] metafopy.methods imports this module, so the import is deferred to avoid a cycle
     import metafopy.effects
@@ -954,6 +963,7 @@ def metadata_from_escalc(
     data_sub = None if data is None else data.iloc[idx].reset_index(drop=True)
     ni_es = es.attrs.get('ni')
     # the relative excess heterozygosity is computed from the first three cells, so metafor keeps no fourth one
+    # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
     count_names = ('ai', 'bi', 'ci', 'x1i', 'x2i', 't1i', 't2i') if measure == 'REH' else ('ai', 'bi', 'ci', 'di', 'x1i', 'x2i', 't1i', 't2i')
     counts_all = {
         name: arr[idx] for name in count_names if name in raw and (arr := metafopy.metadata.column(raw[name], data, name)) is not None and arr.shape[0] == k_all
@@ -1066,6 +1076,7 @@ def fit_rma_uni(
     m = len(btt_idx)
     if abbrev:
         names = abbreviate_names(names)
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if i2def not in ('1', '2'):
         raise metafopy.errors.InputError("Argument 'i2def' must be '1' or '2'.")
 
@@ -1121,8 +1132,7 @@ def fit_rma_uni(
     beta, vb, RSS_f, s2w = fixed_effects(yi, vi, X, tau2_hat, user_w, weighted, test)
 
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
-    tdist = test in ('knha', 'adhoc', 't')
-    ddf = (k - p if dfs is None else first_df(dfs)) if tdist else None
+    ddf = (k - p if dfs is None else first_df(dfs)) if test in ('knha', 'adhoc', 't') else None
 
     if verbose > 1:
         metafopy.core.verbose.message('Conducting the tests of the fixed effects ...')
@@ -1138,9 +1148,7 @@ def fit_rma_uni(
 
     se = numpy.sqrt(numpy.diag(vb))
     zval = beta / se
-    if tdist:
-        if ddf is None:
-            raise metafopy.errors.InternalError('ddf must not be None')
+    if ddf is not None:
         QM = QM / m
         QMdf: tuple[int, int | None] = (m, ddf)
         QMp = float(scipy.stats.f.sf(QM, m, ddf)) if ddf > 0 else math.nan
@@ -1421,6 +1429,10 @@ def alternative_r2(
 
     ``res0`` is the fit of the intercept-only model (needed by the definitions that compare with it). The result is in percent and at least 0.
     R source: https://github.com/wviechtb/metafor/blob/master/R/rma.uni.r.
+
+    Raises:
+        metafopy.errors.InternalError: ``beta`` or ``vi`` is missing, or a definition that compares with the intercept-only model
+            gets no fit of it or no fit statistics.
     """
     if beta is None or vi is None:
         raise metafopy.errors.InternalError('beta and vi are needed for R^2')
@@ -1429,8 +1441,10 @@ def alternative_r2(
     vtyp = 1 / float(numpy.mean(1 / vi))
     var_fit = float(numpy.var(fitted, ddof=1))
     with numpy.errstate(divide='ignore', invalid='ignore'):
+        # auditme: accept[assert-never-missing] r2def is checked against R2_DEFINITIONS by pseudo_r2, the only caller, before it gets here
         if r2def == '2':
             r2 = var_fit / (var_fit + tau2)
+        # auditme: accept[assert-never-missing] r2def is checked against R2_DEFINITIONS by pseudo_r2, the only caller, before it gets here
         elif r2def == '2v':
             r2 = var_fit / (var_fit + tau2 + vtyp)
         elif r2def == '4':
@@ -1448,12 +1462,16 @@ def alternative_r2(
             ll0 = res0.fit_stats_reml.ll if reml else res0.fit_stats_ml.ll
             ll1 = fs.ll
             lls = (fs.dev + 2 * ll1) / 2
+            # auditme: accept[assert-never-missing] r2def is checked against R2_DEFINITIONS by pseudo_r2, the only caller, before it gets here
             if r2def == '1v':
                 r2 = (tau2_re - tau2) / (tau2_re + vtyp)
+            # auditme: accept[assert-never-missing] r2def is checked against R2_DEFINITIONS by pseudo_r2, the only caller, before it gets here
             elif r2def == '3':
                 r2 = var_fit / tau2_re
+            # auditme: accept[assert-never-missing] r2def is checked against R2_DEFINITIONS by pseudo_r2, the only caller, before it gets here
             elif r2def == '3v':
                 r2 = var_fit / (tau2_re + vtyp)
+            # auditme: accept[assert-never-missing] r2def is checked against R2_DEFINITIONS by pseudo_r2, the only caller, before it gets here
             elif r2def == '5':
                 r2 = 1 - ll1 / ll0
             elif r2def == '6':

@@ -69,23 +69,7 @@ def coef_table(
     return pandas.DataFrame(cols, index=list(names))
 
 
-def compvif_ls(
-    group: collections.abc.Sequence[int],
-    vcov: FloatArray,
-    int_incl: bool,
-    refit: collections.abc.Callable[[FloatArray], FloatArray | None] | None,
-    X: FloatArray,
-    intercept: bool = False,
-) -> tuple[float, list[int]]:
-    """GVIF of the coefficients ``group`` (0-based) of one part of the model and the indices actually used.
-
-    Without ``refit`` the GVIF comes from the correlation matrix of the estimates; with ``refit`` (a function returning the
-    variance-covariance matrix of the part after refitting the model with a given model matrix) the model is refitted with
-    only those coefficients (plus the intercept) and the variance-covariance blocks are compared.
-    """
-    return metafopy.methods.vif.compvif_matrix(group, vcov, int_incl, refit, X, intercept)
-
-
+# auditme: accept[duplicate-call-sequence] the GVIF of one part of a location-scale model follows the steps of vif.rma, as in metafor
 def part_vif(
     res: metafopy.models.rma_ls_result.RMALSResult,
     *,
@@ -133,7 +117,7 @@ def part_vif(
 
     entries: list[metafopy.methods.vif.VIFEntry] = []
     for spec, g in zip(specs, groups, strict=True):
-        gvif, used = compvif_ls(g, vcov, int_incl, refit, M, intercept)
+        gvif, used = metafopy.methods.vif.compvif_matrix(g, vcov, int_incl, refit, M, intercept)
         m = len(used)
         entries.append(
             metafopy.methods.vif.VIFEntry(
@@ -230,7 +214,7 @@ def sim_one(
     refit = make_refit(fit, which) if reestimate else None
     try:
         with numpy.errstate(invalid='ignore'):
-            return numpy.array([compvif_ls(g, vcov, int_incl, refit, perm, intercept)[0] for g in groups])
+            return numpy.array([metafopy.methods.vif.compvif_matrix(g, vcov, int_incl, refit, perm, intercept)[0] for g in groups])
     except ValueError, ArithmeticError, numpy.linalg.LinAlgError:
         return numpy.full(len(groups), math.nan)
 
@@ -297,6 +281,7 @@ def vif_rma_ls(
         metafopy.errors.InputError: neither the location nor the scale model has predictors; ``sim`` is a number below 2; ``btt`` or ``att`` is
             invalid (the intercept without ``intercept=True``, out of range or matching no coefficient); ``joinb`` or ``joina`` does not have one
             label per column; ``parallel`` is not an accepted value or ``ncpus`` is below 1.
+        metafopy.errors.InternalError: no VIFs were computed.
 
     Metafor reference:
         [vif](https://wviechtb.github.io/metafor/reference/vif.html)

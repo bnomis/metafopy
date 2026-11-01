@@ -27,6 +27,7 @@ __all__ = ['PlotCumulResult', 'forest_cumul', 'plot_cumul']
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type Func = collections.abc.Callable[..., typing.Any]
 
+# auditme: accept[non-alphabetical-literal] the order follows metafor's documented order of the yaxis options, shown in the error message
 YAXES = ('tau2', 'tau', 'I2', 'H2')
 # auditme: accept[non-alphabetical-dict-keys] order follows metafor's documented order of the yaxis options
 YLABELS = {
@@ -50,6 +51,7 @@ class PlotCumulResult:
         return pandas.DataFrame({'estim': self.estim, 'yval': self.yval, 'col': list(self.col)})
 
 
+# auditme: accept[raises-section-drift] forest() gets the vector of cumulative estimates, never a location-scale model, so its NotSupportedError never arises
 def forest_cumul(
     x: metafopy.methods.leave1out.CumulResult,
     *,
@@ -319,12 +321,14 @@ def plot_cumul(
     axx = metafopy.plot.rutils.get_ax(ax)
     cols_c = [metafopy.plot.rutils.coladj(-0.2), metafopy.plot.rutils.coladj(-0.8)] if cols is None else list(cols)
     if digits is None:
+        # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
         dig = (2, 3) if yaxis in ('tau2', 'tau') else (2, 1)
     elif isinstance(digits, int | float):
         dig = (int(digits), int(digits))
     else:
         dig = (int(digits[0]), int(digits[1]))
     yvalue: FloatArray
+    # auditme: accept[assert-never-missing] yaxis is checked against YAXES at the top of plot_cumul
     if yaxis == 'tau2':
         assert x.tau2 is not None
         yvalue = x.tau2

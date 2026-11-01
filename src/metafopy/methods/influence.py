@@ -269,6 +269,7 @@ def influence_rma_uni(
         [ResidualResult][metafopy.ResidualResult].
 
     Raises:
+        metafopy.errors.ArgumentError: the model is not a fitted model.
         metafopy.errors.InputError: an argument or the data is invalid.
         metafopy.errors.NotSupportedError: the model was passed through [robust][metafopy.robust].
 
@@ -507,6 +508,7 @@ def rstudent_rma_uni(
         labelled with the study labels.
 
     Raises:
+        metafopy.errors.ArgumentError: the model is not a fitted model.
         metafopy.errors.InputError: ``na_action`` is not valid, or is ``'fail'`` and studies were left out of the fit; the model has a single study.
         metafopy.errors.NotSupportedError: the model is a [robust][metafopy.robust] result.
 
@@ -627,6 +629,7 @@ def dfbetas_rma_uni(
         A data frame with one row per study (indexed by study label) and one column per model coefficient, holding the DFBETAS.
 
     Raises:
+        metafopy.errors.ArgumentError: the model is not a fitted model.
         metafopy.errors.InputError: an argument or the data is invalid.
         metafopy.errors.NotSupportedError: the model was passed through [robust][metafopy.robust].
     """
@@ -688,6 +691,7 @@ def rstandard_rma_uni(
         with the study labels.
 
     Raises:
+        metafopy.errors.ArgumentError: the model is not a fitted model.
         metafopy.errors.InputError: ``type`` is not ``'marginal'`` or ``'conditional'``; ``type='conditional'`` for a model with weights given or
             fitted without weighting; ``na_action`` is not valid, or is ``'fail'`` and studies were left out of the fit.
         metafopy.errors.NotSupportedError: the model is a [robust][metafopy.robust] result.

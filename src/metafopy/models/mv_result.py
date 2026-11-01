@@ -311,6 +311,7 @@ class RMAMVResult(metafopy.models.fit_methods.RobustFields, metafopy.models.fit_
         """The distance measures of the ``'SP'`` structures (the ``dist`` argument, two entries), metafor's ``dist``."""
         dist = self.spec.get('dist', 'euclidean')
         pair = (dist[0], dist[-1]) if isinstance(dist, list | tuple) else (dist, dist)
+        # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
         methods = ('euclidean', 'maximum', 'manhattan', 'gcd')
 
         def full(value: typing.Any) -> typing.Any:
@@ -493,7 +494,11 @@ class RMAMVResult(metafopy.models.fit_methods.RobustFields, metafopy.models.fit_
         return out
 
     def weights_(
-        self, type: typing.Literal['diagonal', 'matrix', 'rowsum'] = 'diagonal', na_action: metafopy.models.rma_uni.NAActionAll = 'omit'
+        # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
+        self,
+        # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
+        type: typing.Literal['diagonal', 'matrix', 'rowsum'] = 'diagonal',
+        na_action: metafopy.models.rma_uni.NAActionAll = 'omit',
     ) -> FloatArray:
         """Percentage weights (``'diagonal'``), the weight matrix ``W`` (``'matrix'``) or the percentage row sums of ``W`` (``'rowsum'``, intercept-only).
 
@@ -533,6 +538,7 @@ class RMAMVResult(metafopy.models.fit_methods.RobustFields, metafopy.models.fit_
 
     # -- printing -------------------------------------------------------------
 
+    # auditme: accept[duplicate-call-sequence] the summary of an rma.mv fit follows the steps of the other summary methods, as in metafor
     def summary(
         self,
         digits: int | collections.abc.Mapping[str, int] | None = None,

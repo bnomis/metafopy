@@ -144,6 +144,7 @@ def rcalc_matrix(x: Matrix, ni: float, upper: bool, rtoz: bool) -> RCalcResult:
     return RCalcResult(dat, v)
 
 
+# auditme: accept[raises-section-drift] bldiag() is called with a list of numeric matrices, so its ArgumentError never arises
 def rcalc_list(
     x: collections.abc.Mapping[str, Matrix],
     ni: FloatArray,
@@ -223,6 +224,7 @@ def rcalc_formula(
     Raises:
         metafopy.errors.InputError: the formula or the data of a study is invalid.
         metafopy.errors.NotFoundError: a variable of the formula is not in ``data``.
+        metafopy.errors.InternalError: ``ri`` is missing after the checks above.
     """
     ni_ = metafopy.methods.vcalc.numeric_variable(ni, data, 'ni')
     if ni_ is None:
@@ -361,6 +363,7 @@ def rcalc(
     Raises:
         metafopy.errors.ArgumentError: ``x`` is not a formula, a matrix or a list of matrices.
         metafopy.errors.InputError: an argument or the data is invalid (R stops with an error here).
+        metafopy.errors.InternalError: a variable of the formula is missing after the checks above.
         metafopy.errors.NotFoundError: a variable of the formula is not in ``data``.
 
     Metafor reference:

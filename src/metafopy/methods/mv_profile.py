@@ -244,8 +244,8 @@ def profile_one(
     )
 
 
-# auditme: accept[duplicate-call-sequence] mirrors profile.rma.mv, which repeats the steps of the other profile methods
 @metafopy.core.timing.timed
+# auditme: accept[duplicate-call-sequence] mirrors profile.rma.mv, which repeats the steps of the other profile methods
 def profile_rma_mv(
     fitted: MV,
     sigma2: int | None = None,
@@ -343,22 +343,14 @@ def profile_rma_mv(
             raise metafopy.errors.InputError('No components in the model for which a profile likelihood can be constructed.')
         sav = [profile_one(x, comp, pos, xlim, ylim, st, step_seq, lltol, exp, pool) for comp, pos in todo]
         if plot:
-            plot_all(sav, ax, plot_args)
+            metafopy.methods.profile.plot_all(sav, ax, plot_args)
         return sav[0] if len(sav) == 1 else metafopy.methods.profile.ProfileList(sav)
 
     comp, pos = component(x, chosen)
     out = profile_one(x, comp, pos, xlim, ylim, st, step_seq, lltol, exp, pool)
     if plot:
-        plot_all([out], ax, plot_args)
+        metafopy.methods.profile.plot_all([out], ax, plot_args)
     return out
-
-
-def plot_all(results: list[MVProfileResult], ax: typing.Any, plot_args: collections.abc.Mapping[str, typing.Any]) -> None:
-    """Draw each profile; several profiles go into a grid of panels (metafor's ``par(mfrow = n2mfrow(comps))``)."""
-    # auditme: accept[in-function-import] metafopy.plot imports the methods, so the import is deferred to avoid a cycle
-    import metafopy.plot.profile
-
-    metafopy.plot.profile.plot_profile(results[0] if len(results) == 1 else results, ax=ax, **plot_args)
 
 
 metafopy.methods.profile.profile.register(metafopy.models.mv_result.RMAMVResult, profile_rma_mv)  # type: ignore[arg-type]

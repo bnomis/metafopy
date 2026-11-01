@@ -125,6 +125,9 @@ def fit_scale(
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.ArgumentError: ``control`` has a name that the location-scale fit does not read.
+        metafopy.errors.EstimationError: the optimisation of the location-scale model fails.
+        metafopy.errors.NotSupportedError: the optimiser chosen in ``control`` has no counterpart here.
     """
     meth = method if isinstance(method, str) else method[0]
     if meth not in metafopy.models.tau2.ESTIMATORS:

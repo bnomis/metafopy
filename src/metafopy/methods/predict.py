@@ -143,7 +143,7 @@ class PredictResult:
 
     def with_digits(self, digits: typing.Any) -> typing.Self:
         """The result printed with ``digits`` (a number, or a mapping with any of the keys of :data:`metafopy.mfopt.DIGIT_KEYS`)."""
-        return with_digits(self, digits, self.digit_map or self.digits)  # type: ignore[arg-type]
+        return metafopy.mfopt.with_digits(self, digits, self.digit_map or self.digits)
 
     def __str__(self) -> str:
         """The predictions as ``print.list.rma`` shows them: fixed decimals (``digits``), one row per prediction."""
@@ -170,6 +170,7 @@ class PredictResult:
 
 
 # the kind of number (a key of ``digits``) print.list.rma formats each column as; the others are formatted as ``est``
+# auditme: accept[non-alphabetical-dict-keys] order follows metafor's print method
 PRINT_KINDS = {'se': 'se', 'ci.lb': 'ci', 'ci.ub': 'ci', 'pi.lb': 'ci', 'pi.ub': 'ci'}
 
 
@@ -182,11 +183,6 @@ def r_numeric_column(values: FloatArray) -> list[str]:
             if 'e' not in text and '.' in text:
                 decimals = max(decimals, len(text.split('.')[1]))
     return ['NA' if math.isnan(v) else f'{v:.{decimals}f}' for v in values]
-
-
-def with_digits[R: PredictResult](result: R, digits: typing.Any, stored: int) -> R:
-    """``result`` with the ``digits`` of its printout (R's ``out$digits``): ``digits``, else the ``digits`` option, else that of the model."""
-    return metafopy.mfopt.with_digits(result, digits, stored)
 
 
 CUTOFF_FUNCTIONS: dict[str, collections.abc.Callable[[float], float]] = {
@@ -298,10 +294,13 @@ def check_prob_adjust(prob: str | float | None, adjust: bool, vcov: bool = False
         raise metafopy.errors.InputError("Cannot use 'prob' argument when adjust=True.")
 
 
+# auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
 PREDTYPES = ('default', 'simple', 'riley', 't')
 """The values of ``predtype`` (partial matching is allowed, as in R)."""
 
+# auditme: accept[non-alphabetical-literal] the order of the elements of metafor's predict.rma output
 ROW_FIELDS = ('pred', 'se', 'ci_lb', 'ci_ub', 'pi_lb', 'pi_ub', 'prob')
+# auditme: accept[non-alphabetical-literal] the order of the elements of metafor's predict.rma output
 SIDE_FIELDS = ('pi_se', 'X', 'Z')
 NO_MODERATORS = 'Cannot specify new moderator values for models without moderators.'
 
@@ -356,6 +355,7 @@ def interval_setup(
         crit = float(scipy.stats.norm.isf(alpha / 2))
         vpred = numpy.zeros_like(vpred)
         pi_dist = 'norm'
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if predtype in ('riley', 't'):
         pi_ddf = ddf - parms + p if predtype == 'riley' else ddf
         pi_ddf = numpy.where(pi_ddf < 1, 1.0, pi_ddf)
@@ -474,6 +474,7 @@ def uni_location_model(x: metafopy.models.rma_uni.RMAResult, rows: metafopy.meth
 
 
 @predict.register
+# auditme: accept[raises-section-drift] rows_of raises ArgumentError only for a class this function does not accept
 def predict_rma_uni(
     model: metafopy.models.rma_uni.RMAResult,
     newmods: NewMods | metafopy.methods.pairmat.PairmatSpec | None = None,
@@ -566,7 +567,7 @@ def predict_rma_uni(
         [predict.rma](https://wviechtb.github.io/metafor/reference/predict.rma.html)
     """
     newmods = metafopy.methods.pairmat.resolve(newmods, model)
-    return with_digits(
+    return metafopy.mfopt.with_digits(
         location_prediction(
             uni_location_model(model, metafopy.methods.fitted.rows_of(model)),
             newmods,
@@ -612,6 +613,7 @@ def contrast_ddf(sandwich: metafopy.core.clubsandwich.Sandwich, X_new: FloatArra
 
 
 @predict.register
+# auditme: accept[raises-section-drift] rows_of raises ArgumentError only for a class this function does not accept
 def predict_rma_glmm(
     model: metafopy.models.glmm_result.GLMMResult,
     newmods: NewMods | metafopy.methods.pairmat.PairmatSpec | None = None,
@@ -709,7 +711,7 @@ def predict_rma_glmm(
     newmods = metafopy.methods.pairmat.resolve(newmods, model)
     x = model
     rows = metafopy.methods.fitted.rows_of(x)
-    return with_digits(
+    return metafopy.mfopt.with_digits(
         location_prediction(
             LocationModel(
                 k=x.k,
@@ -786,7 +788,7 @@ def predict_fixed_binary(
     """
     newmods = metafopy.methods.pairmat.resolve(newmods, model)
     x = model
-    return with_digits(
+    return metafopy.mfopt.with_digits(
         dataclasses.replace(
             location_prediction(
                 LocationModel(
@@ -886,6 +888,7 @@ def prediction_slab(newmods: typing.Any, k_new: int, x_p: int, int_incl: bool) -
         labels = string_names(list(newmods.index if isinstance(newmods, pandas.Series) else newmods))
     if labels is not None and len(labels) == k_new:
         return tuple(labels)
+    # auditme: accept[literal-duplication] an empty label, as R prints a blank name
     return ('',) if k_new == 1 else tuple(str(i + 1) for i in range(k_new))
 
 
@@ -996,6 +999,7 @@ def location_prediction(
         slab = prediction_slab(newmods, X_new.shape[0], p, x.int_incl)
 
     if slab is None and X_new.shape[0] == 1:
+        # auditme: accept[literal-duplication] an empty label, as R prints a blank name
         slab = ('',)
 
     check_prob_adjust(prob, adjust, vcov)
@@ -1128,6 +1132,7 @@ def fitted_levels(group: metafopy.models.mv_structs.Group | None, n_comp: int, n
 
 
 @predict.register
+# auditme: accept[raises-section-drift] rows_of raises ArgumentError only for a class this function does not accept
 def predict_rma_mv(
     model: metafopy.models.mv_result.RMAMVResult,
     newmods: NewMods | metafopy.methods.pairmat.PairmatSpec | None = None,
@@ -1239,6 +1244,7 @@ def predict_rma_mv(
         raise metafopy.errors.InputError(NO_MODERATORS)
     p = x.p
     slab: tuple[str, ...] | None = None
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     general = any(v in ('GEN', 'GDIAG') for v in x.struct)
     g_labels = list(x.group_g.levels_f[0]) if x.group_g is not None else []
     h_labels = list(x.group_h.levels_f[0]) if x.group_h is not None else []
@@ -1286,6 +1292,7 @@ def predict_rma_mv(
 
     k_new = X_new.shape[0]
     if slab is None and k_new == 1:
+        # auditme: accept[literal-duplication] an empty label, as R prints a blank name
         slab = ('',)
     alpha = x.level if level is None else metafopy.models.rma_uni.level_to_alpha(level)
     if adjust:
@@ -1370,12 +1377,13 @@ def predict_rma_mv(
         transf=transf is not None,
         has_pi=not (
             x.method in metafopy.models.tau2.FIXED_EFFECTS
+            # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
             or any(g is not None and g.struct in ('GEN', 'GDIAG') for g in (x.group_g, x.group_h))
             or (transf is not None and metafopy.transf.is_tau2_transf(transf))
         ),
     )
     keep, blank = rows_to_keep(pred, not_na, fitted_rows, na_action)
-    return with_digits(out if keep.all() and blank is None else restrict_rows(out, keep, blank), digits, model.digits)
+    return metafopy.mfopt.with_digits(out if keep.all() and blank is None else restrict_rows(out, keep, blank), digits, model.digits)
 
 
 def level_array(

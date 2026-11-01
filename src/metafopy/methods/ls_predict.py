@@ -22,6 +22,7 @@ import metafopy.methods.common
 import metafopy.methods.fitted
 import metafopy.methods.pairmat
 import metafopy.methods.predict
+import metafopy.mfopt
 import metafopy.models.rma_ls_result
 import metafopy.models.rma_uni
 import metafopy.models.tau2
@@ -116,6 +117,7 @@ def quad_rows(M: FloatArray, V: FloatArray) -> FloatArray:
 
 
 @metafopy.methods.predict.predict.register
+# auditme: accept[raises-section-drift] rows_of raises ArgumentError only for a class this function does not accept
 def predict_rma_ls(
     model: metafopy.models.rma_ls_result.RMALSResult,
     newmods: numpy.typing.ArrayLike | metafopy.methods.pairmat.PairmatSpec | None = None,
@@ -329,6 +331,7 @@ def predict_rma_ls(
             vpred_pi = numpy.zeros_like(vpred)
             pi_dist = 'norm'
         pi_ddf = ddf
+        # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
         if ptype in ('riley', 't'):
             pi_ddf = float(x.k - x.p - x.q) if ptype == 'riley' else float(x.k - x.p)
             pi_ddf = max(pi_ddf, 1.0)
@@ -367,6 +370,7 @@ def predict_rma_ls(
     elif pred_mui:
         slab = metafopy.methods.predict.prediction_slab(newmods, k_new, x.p, x.int_incl)
     else:
+        # auditme: accept[literal-duplication] an empty label, as R prints a blank name
         slab = ('',) if k_new == 1 else tuple(str(i + 1) for i in range(k_new))
 
     if x.method in metafopy.models.tau2.FIXED_EFFECTS or not pred_mui:
@@ -399,4 +403,4 @@ def predict_rma_ls(
     fitted_rows = newmods is None and newscale is None
     keep, blank = metafopy.methods.predict.rows_to_keep(pred, rows.not_na, fitted_rows, na_action)
     result = out if keep.all() and blank is None else metafopy.methods.predict.restrict_rows(out, keep, blank)
-    return metafopy.methods.predict.with_digits(typing.cast(LSPredictResult, result), digits, model.digits)
+    return metafopy.mfopt.with_digits(typing.cast(LSPredictResult, result), digits, model.digits)

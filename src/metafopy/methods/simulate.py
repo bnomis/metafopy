@@ -74,6 +74,7 @@ def simulate(
     ``attrs['seed']`` holds ``seed``.
 
     Raises:
+        metafopy.errors.ArgumentError: ``object`` is a fit of a class ``simulate`` does not support.
         metafopy.errors.InputError: the model type is not supported or an argument is invalid.
     """
     metafopy.methods.common.check_na_action(na_action)

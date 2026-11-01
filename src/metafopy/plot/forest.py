@@ -230,7 +230,11 @@ TABFIG_ANNOSYM = {
 
 
 def anno_symbol(annosym: collections.abc.Sequence[str] | None, tabfig: int | None = None) -> list[str]:
-    """The five symbols of the annotations (opening, separator, closing, minus, space); ``tabfig`` 1 to 3 replaces them with those for tabular figures."""
+    """The five symbols of the annotations (opening, separator, closing, minus, space); ``tabfig`` 1 to 3 replaces them with those for tabular figures.
+
+    Raises:
+        metafopy.errors.InputError: ``annosym`` does not have 3, 4 or 5 elements.
+    """
     if annosym is None:
         a = [' [', ', ', ']', '-', ' ']
     else:
@@ -637,6 +641,7 @@ def draw_dist(
     metafopy.plot.draw.line(ax, xs, ys, col=border[1] or metafopy.plot.draw.FG)
 
 
+# auditme: accept[raises-section-drift] check_class is called only on a fitted model, so its ArgumentError never arises
 def forest(
     x: metafopy.methods.fitview.Fit | metafopy.methods.leave1out.CumulResult | numpy.typing.ArrayLike,
     vi: numpy.typing.ArrayLike | None = None,
@@ -1816,6 +1821,7 @@ def draw_pred(
         typing.assert_never(style)
 
 
+# auditme: accept[raises-section-drift] predict() is called only on a fitted model, and every fitted-model class has a method, so its ArgumentError never arises
 def forest_summary(
     model: typing.Any, level: float, addpred: bool, pred_levels: list[str | int] | None, predtype: str | None = None, pi_type: str | None = None
 ) -> metafopy.methods.predict.PredictResult:
@@ -1860,6 +1866,7 @@ def per_study(values: typing.Any, keep: numpy.typing.NDArray[numpy.bool_], k: in
     raise metafopy.errors.InputError(f"Length of the '{name}' argument ({n}) does not correspond to the size of the original dataset ({k_all}).")
 
 
+# auditme: accept[raises-section-drift] predict() is called only on a fitted model, and every fitted-model class has a method, so its ArgumentError never arises
 def addpoly(
     x: metafopy.methods.fitview.Fit | metafopy.methods.predict.PredictResult | numpy.typing.ArrayLike,
     vi: numpy.typing.ArrayLike | None = None,

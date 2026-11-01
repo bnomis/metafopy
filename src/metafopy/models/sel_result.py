@@ -349,11 +349,13 @@ class SelmodelResult(metafopy.models.fit_methods.FitMethods):
     # -- accessors ----------------------------------------------------------------
 
     @typing.overload
+    # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
     def coef(self, type: typing.Literal['beta', 'delta', 'all']) -> pandas.Series: ...
 
     @typing.overload
     def coef(self, type: None = None) -> dict[str, pandas.Series]: ...
 
+    # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
     def coef(self, type: typing.Literal['beta', 'delta', 'all'] | None = None) -> pandas.Series | dict[str, pandas.Series]:
         """The coefficients and selection parameters as ``{'beta': ..., 'delta': ...}`` (as R's ``coef()``), or one of them with ``type``.
 
@@ -372,6 +374,7 @@ class SelmodelResult(metafopy.models.fit_methods.FitMethods):
     @typing.overload
     def vcov(
         self,
+        # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
         type: typing.Literal['beta', 'alpha', 'delta', 'obs', 'marginal', 'fitted', 'resid'],
         *,
         na_action: metafopy.models.rma_uni.NAActionAll = 'omit',
@@ -398,6 +401,7 @@ class SelmodelResult(metafopy.models.fit_methods.FitMethods):
 
         return metafopy.methods.fitted.fitted_values(self, na_action)
 
+    # auditme: accept[raises-section-drift] weights_unsupported is called with self, a fitted model, so its ArgumentError never arises
     def weights_(self, type: str = 'diagonal', na_action: str = 'omit') -> FloatArray:
         """Not available (metafor's ``weights()`` stops for this class).
 

@@ -45,26 +45,28 @@ LTY = types.MappingProxyType(
 )
 
 # R plotting symbols -> (marker, filled with the foreground colour, filled with ``bg``)
-PCH: dict[int, tuple[str, bool, bool]] = {
-    0: ('s', False, False),
-    1: ('o', False, False),
-    2: ('^', False, False),
-    3: ('+', False, False),
-    4: ('x', False, False),
-    5: ('D', False, False),
-    6: ('v', False, False),
-    15: ('s', True, False),
-    16: ('o', True, False),
-    17: ('^', True, False),
-    18: ('D', True, False),
-    19: ('o', True, False),
-    20: ('o', True, False),
-    21: ('o', False, True),
-    22: ('s', False, True),
-    23: ('D', False, True),
-    24: ('^', False, True),
-    25: ('v', False, True),
-}
+PCH: types.MappingProxyType[int, tuple[str, bool, bool]] = types.MappingProxyType(
+    {
+        0: ('s', False, False),
+        1: ('o', False, False),
+        2: ('^', False, False),
+        3: ('+', False, False),
+        4: ('x', False, False),
+        5: ('D', False, False),
+        6: ('v', False, False),
+        15: ('s', True, False),
+        16: ('o', True, False),
+        17: ('^', True, False),
+        18: ('D', True, False),
+        19: ('o', True, False),
+        20: ('o', True, False),
+        21: ('o', False, True),
+        22: ('s', False, True),
+        23: ('D', False, True),
+        24: ('^', False, True),
+        25: ('v', False, True),
+    }
+)
 
 FG = 'black'
 
@@ -544,9 +546,12 @@ LEGEND_POSITIONS: types.MappingProxyType[str, str] = types.MappingProxyType(
 BOX_SIDES: types.MappingProxyType[str, tuple[str, ...]] = types.MappingProxyType(
     {
         ']': ('top', 'right', 'bottom'),
+        # auditme: accept[literal-duplication] the sides of the plot box, as R's bty and axis options name them
         '7': ('top', 'right'),
         'c': ('top', 'left', 'bottom'),
+        # auditme: accept[literal-duplication] the sides of the plot box, as R's bty and axis options name them
         'l': ('left', 'bottom'),
+        # auditme: accept[literal-duplication] the sides of the plot box, as R's bty and axis options name them
         'o': ('top', 'right', 'left', 'bottom'),
         'u': ('left', 'bottom', 'right'),
     }
@@ -571,6 +576,7 @@ def plain_axes(
     ax.set_xlim(ux)
     ax.set_ylim(uy)
     ax.set_autoscale_on(False)
+    # auditme: accept[literal-duplication] the sides of the plot box, as R's bty and axis options name them
     for name in ('top', 'right', 'left', 'bottom'):
         ax.spines[name].set_visible(name in BOX_SIDES.get(bty, ()))
     if xat is None:

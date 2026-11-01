@@ -167,8 +167,16 @@ def profile(fitted: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> Prof
 type Extras = tuple[dict[str, FloatArray], dict[str, FloatArray]]
 type FitResult = tuple[float, FloatArray, FloatArray, FloatArray, float, float, Extras]
 
+# auditme: accept[non-alphabetical-literal] the order of the columns of metafor's predict and blup output
 PRED_KEYS = ('pred', 'ci_lb', 'ci_ub', 'pi_lb', 'pi_ub')
+# auditme: accept[non-alphabetical-literal] the order of the columns of metafor's predict and blup output
 BLUP_KEYS = ('pred', 'se', 'pi_lb', 'pi_ub')
+
+
+def plot_all(results: collections.abc.Sequence[typing.Any], ax: typing.Any, plot_args: collections.abc.Mapping[str, typing.Any]) -> None:
+    """Draw the profiles of a ``profile()`` call; several go into a grid of panels (metafor's ``par(mfrow = n2mfrow(comps))``)."""
+    # metafopy.plot imports the methods, so it is imported when first needed, as profile_rma_uni does
+    importlib.import_module('metafopy.plot.profile').plot_profile(results[0] if len(results) == 1 else list(results), ax=ax, **plot_args)
 
 
 def profile_fit(x: metafopy.models.rma_uni.RMAResult, tau2: float, pred: bool = False, blup: bool = False, newmods: typing.Any = None) -> FitResult | None:
@@ -201,6 +209,7 @@ def grid_frame(columns: list[FloatArray | None], labels: collections.abc.Sequenc
 
 @profile.register
 @metafopy.core.timing.timed
+# auditme: accept[raises-section-drift] confint() is called on the fitted rma_uni model, which it supports, so its ArgumentError never arises
 def profile_rma_uni(
     fitted: metafopy.models.rma_uni.RMAResult,
     xlim: collections.abc.Sequence[float] | None = None,

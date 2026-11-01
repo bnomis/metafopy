@@ -55,6 +55,7 @@ def numeric_variable(value: Variable, data: pandas.DataFrame | None, name: str) 
 
     Raises:
         metafopy.errors.InputError: the variable is not numeric.
+        metafopy.errors.NotFoundError: the column is not in ``data``.
     """
     arr = variable(value, data, name)
     if arr is None:
@@ -149,6 +150,7 @@ def process_rho(rho: Rho, type_spec: bool, obs_spec: bool, obs: numpy.ndarray, t
     """The two correlation matrices (between ``obs`` within a type and between types), as in the ``rho`` handling of R's ``vcalc``.
 
     Raises:
+        metafopy.errors.ArgumentError: ``rho`` is of another type.
         metafopy.errors.InputError: ``rho`` does not match which of ``type`` and ``obs`` are specified, is not square, or is out of range.
     """
     parts: list[typing.Any]
@@ -357,6 +359,7 @@ def vcalc(
         metafopy.errors.InputError: an argument or the data is invalid (R stops with an error here).
         metafopy.errors.NotFoundError: a named column is not in ``data``.
         metafopy.errors.ArgumentError: ``rho`` has an unsupported type.
+        metafopy.errors.InternalError: ``vi``, ``cluster``, ``subgroup`` or the frame is missing after the checks above.
 
     Metafor reference:
         [vcalc](https://wviechtb.github.io/metafor/reference/vcalc.html)

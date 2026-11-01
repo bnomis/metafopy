@@ -274,6 +274,7 @@ def leave1out_rma_uni(
         and ``H2`` (and ``tau2`` for random-effects models). A row is NaN when its refit fails.
 
     Raises:
+        metafopy.errors.ArgumentError: the model is not a fitted model.
         metafopy.errors.InputError: an argument or the data is invalid, the model has moderators or there is a single study.
         metafopy.errors.NotSupportedError: the model was passed through [robust][metafopy.robust].
 
@@ -422,6 +423,7 @@ def cumul_rma_uni(
         (and ``tau2`` for random-effects models).
 
     Raises:
+        metafopy.errors.ArgumentError: the model is not a fitted model.
         metafopy.errors.InputError: an argument or the data is invalid, the model has moderators, or ``na_action='fail'`` and values are missing.
         metafopy.errors.NotSupportedError: the model was passed through [robust][metafopy.robust].
 
@@ -437,6 +439,7 @@ def cumul_rma_uni(
     k = x.k
     na_rows = x.data.na_rows
     # na.exclude and na.pass keep a row of missing values for each study left out of the fit (the rows `sel` are those of the subset)
+    # auditme: accept[literal-duplication] the na.action values that keep a row per study, tested at each use as metafor tests them
     fill = na_action in ('exclude', 'pass') and na_rows is not None and bool(na_rows.any())
     sel = (x.data.keep | na_rows) if fill and na_rows is not None else x.data.keep
     not_na = x.data.keep[sel]

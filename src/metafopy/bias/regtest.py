@@ -130,6 +130,7 @@ class RegtestResult(metafopy.printing.HtmlRepr):
         return self.summary()
 
 
+# auditme: accept[raises-section-drift] check_class is called only on a fitted model, so its ArgumentError never arises
 def regtest(
     x: metafopy.models.rma_uni.RMAResult | metafopy.models.binary.FixedBinaryResult | numpy.typing.ArrayLike | str,
     vi: numpy.typing.ArrayLike | str | None = None,
@@ -192,6 +193,7 @@ def regtest(
         metafopy.errors.NotSupportedError: `x` is a model of a class regtest is not available for (for example `rma_mv`, `rma_glmm`,
             `rma_ls`, selection models and robust fits).
         metafopy.errors.EstimationError: the tau^2 estimator of the regression model fails.
+        metafopy.errors.InternalError: `ni` is given but converts to no vector.
 
     Metafor reference:
         [regtest](https://wviechtb.github.io/metafor/reference/regtest.html)
@@ -227,6 +229,7 @@ def regtest(
         p = X.shape[1]
         alpha = view.level if level is None else metafopy.models.rma_uni.level_to_alpha(level)
         meth, tst, weighted, tau2_fix, tau2, control, weights = view.method, 'z', True, False, math.nan, None, None
+        # auditme: accept[literal-duplication] metafor's name of the intercept, as each of its fits names it
         coef_names: tuple[str, ...] = ('intrcpt',)
         slab = view.slab
     elif isinstance(x, metafopy.models.rma_uni.RMAResult):

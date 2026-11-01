@@ -156,6 +156,7 @@ def ranef_rma_mv(
 
     Raises:
         metafopy.errors.InputError: the model has user-defined weights, ``na_action`` is unknown or ``'fail'`` with missing values.
+        metafopy.errors.InternalError: a term of a non-spatial structure has no inner factor.
 
     Metafor reference:
         [ranef](https://wviechtb.github.io/metafor/reference/ranef.html)

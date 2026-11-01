@@ -177,6 +177,7 @@ def gosh_rma_uni(
         ``incl`` is the matrix of inclusion indicators.
 
     Raises:
+        metafopy.errors.ArgumentError: ``x`` is not a fitted model.
         metafopy.errors.InputError: an argument or the data is invalid.
         metafopy.errors.NotSupportedError: the model is of a class that is not supported (see ``x``).
 

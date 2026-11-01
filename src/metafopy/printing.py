@@ -96,6 +96,7 @@ def signif_footer(signif_legend: bool, extra: collections.abc.Sequence[str] = ()
 
 
 # the line width of R's console (``getOption('width')``) at which wide tables wrap; tests that compare with printouts made at another width change it
+# auditme: accept[mutable-module-level-exported] R's getOption('width'), set by users as in R
 SETTINGS: dict[str, int] = {'width': 80}
 
 

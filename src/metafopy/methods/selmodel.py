@@ -30,6 +30,7 @@ import metafopy.methods.fitted
 import metafopy.methods.fitview
 import metafopy.methods.predict
 import metafopy.methods.profile
+import metafopy.mfopt
 import metafopy.models.control_names
 import metafopy.models.rma_uni
 import metafopy.models.sel_result
@@ -93,7 +94,7 @@ def predict(
     normal distribution. The selection model is fitted to the studies without missing values, so ``na_action`` makes no difference to the fitted values.
     """
     base = dataclasses.replace(as_rma(model), parms=model.parms)
-    return metafopy.methods.predict.with_digits(
+    return metafopy.mfopt.with_digits(
         metafopy.methods.predict.location_prediction(
             metafopy.methods.predict.uni_location_model(base, metafopy.methods.fitted.rows_of(model)),
             newmods,
@@ -494,21 +495,14 @@ def profile(
             sav.append(profile_one(x, 'tau2', -1, xlim, ylim, st, step_seq, lltol, exp, **pool))
         sav.extend(profile_one(x, 'delta', pos, xlim, ylim, st, step_seq, lltol, exp, **pool) for pos in range(x.deltas) if not x.delta_fix[pos])
         if plot:
-            plot_all(sav, ax, plot_args)
+            metafopy.methods.profile.plot_all(sav, ax, plot_args)
         return sav[0] if len(sav) == 1 else metafopy.methods.profile.ProfileList(sav)
 
     comp, _, pos = component(x, tau2, delta)
     out = profile_one(x, comp, pos, xlim, ylim, st, step_seq, lltol, exp, **pool)
     if plot:
-        plot_all([out], ax, plot_args)
+        metafopy.methods.profile.plot_all([out], ax, plot_args)
     return out
-
-
-def plot_all(results: list[SelProfileResult], ax: typing.Any, plot_args: collections.abc.Mapping[str, typing.Any]) -> None:
-    # auditme: accept[in-function-import] metafopy.plot.profile imports the methods, so the import is deferred to avoid a cycle
-    import metafopy.plot.profile
-
-    metafopy.plot.profile.plot_profile(results[0] if len(results) == 1 else results, ax=ax, **plot_args)
 
 
 def profile_fit(x: Sel, comp: str, pos: int, val: float) -> tuple[float, FloatArray, FloatArray, FloatArray] | None:
@@ -623,6 +617,7 @@ def profile_one(
 # -- anova -----------------------------------------------------------------------------------------------
 
 
+# auditme: accept[raises-section-drift] anova_rma_uni is called without test, and its internal invariant check cannot fail for the fit made here
 def anova(
     model: Sel,
     model2: Sel | metafopy.models.rma_uni.RMAResult | None = None,

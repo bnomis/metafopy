@@ -157,11 +157,13 @@ def trimfill(
         metafopy.errors.InputError: an argument or the data is invalid, `x` has moderators, k = 1, or the algorithm fails or does not converge.
         metafopy.errors.ArgumentError: `x` is not an `rma_uni` result (for example an `rma_mh` result or a vector).
         metafopy.errors.NotSupportedError: `x` is a robust fit, a location-scale model or a selection model.
+        metafopy.errors.EstimationError: the tau^2 estimator fails when the model is refitted to the trimmed or filled data.
 
     Metafor reference:
         [trimfill](https://wviechtb.github.io/metafor/reference/trimfill.html)
     """
     metafopy.methods.fitview.check_method(x, 'trimfill')
+    # auditme: accept[literal-duplication] the classes metafor refuses, listed at each check as metafor lists them
     metafopy.methods.fitview.check_class(x, must='rma.uni', notav=('robust.rma', 'rma.ls', 'rma.gen', 'rma.uni.selmodel'))
     if not x.int_only:
         raise metafopy.errors.InputError('Trim-and-fill method only applicable to models without moderators.')

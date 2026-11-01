@@ -102,6 +102,7 @@ def forest_chart(
     pooled['est_text'] = [f'{e:.2f} [{lo:.2f}, {hi:.2f}]' for e, lo, hi in zip(pooled['estimate'], pooled['ci_lb'], pooled['ci_ub'], strict=True)]
     title = xlab if xlab is not None else data.measure
     free_x = altair.Scale(zero=False)
+    # auditme: accept[literal-duplication] each interactive plot builds its own altair selection
     pick = altair.selection_point(fields=['slab'], on='click', clear='dblclick', toggle='true')
     dim = altair.condition(pick, altair.value(1), altair.value(0.3))
     y_study = altair.Y('row:N', sort=rows, title=None, axis=altair.Axis(labelLimit=200))

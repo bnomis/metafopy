@@ -11,6 +11,7 @@ fits). The matrices of the last three types have one row per study of the subset
 R source: https://github.com/wviechtb/metafor/blob/master/R/vcov.rma.r; reference page: https://wviechtb.github.io/metafor/reference/vcov.rma.html.
 """
 
+import collections.abc
 import dataclasses
 import typing
 
@@ -37,8 +38,7 @@ __all__ = ['VCOV_TYPES', 'vcov', 'vcov_frame']
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type BoolArray = numpy.typing.NDArray[numpy.bool_]
 
-# auditme: accept[non-alphabetical-literal] order is metafor's documented order and is meaningful
-VCOV_TYPES = ('fixed', 'beta', 'alpha', 'delta', 'obs', 'marginal', 'fitted', 'resid')
+VCOV_TYPES: tuple[str, ...] = typing.get_args(metafopy.models.rma_uni.VcovType.__value__)
 """The values of ``type`` (partial matching is allowed, as in R)."""
 
 
@@ -105,15 +105,11 @@ def embed(mat: FloatArray, not_na: BoolArray) -> FloatArray:
     return full
 
 
-def frame(mat: FloatArray, labels: typing.Sequence[str]) -> metafopy.core.labelled.RFrame:
+def frame(mat: FloatArray, labels: collections.abc.Sequence[str]) -> metafopy.core.labelled.RFrame:
     """A matrix over the studies; R gives it the class ``vcovmat``, which prints zeros as ``.`` (``print.vcovmat``)."""
     out = metafopy.core.labelled.RFrame(mat, index=list(labels), columns=list(labels))
     out.attrs['vcovmat'] = True
     return out
-
-
-def coef_frame(mat: FloatArray, names: typing.Sequence[str]) -> metafopy.core.labelled.RFrame:
-    return metafopy.core.labelled.RFrame(mat, index=list(names), columns=list(names))
 
 
 def select(full: FloatArray, rows: Rows, na_action: metafopy.methods.common.NAAction) -> FloatArray:
@@ -126,6 +122,7 @@ def select(full: FloatArray, rows: Rows, na_action: metafopy.methods.common.NAAc
 @typing.overload
 def vcov(
     object: typing.Any,
+    # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
     type: typing.Literal['beta', 'alpha', 'delta', 'obs', 'marginal', 'fitted', 'resid'],
     *,
     na_action: metafopy.methods.common.NAAction = 'omit',
@@ -185,23 +182,27 @@ def vcov(
     is_ls = isinstance(object, metafopy.models.rma_ls_result.RMALSResult)
     is_sel = isinstance(object, metafopy.models.sel_result.SelmodelResult)
     names = list(object.coef_names)
-    beta = coef_frame(object.vb, names)
+    beta = metafopy.core.labelled.RFrame(object.vb, index=list(names), columns=list(names))
     if kind == 'fixed':
         if is_ls:
-            return metafopy.core.labelled.NamedList({'beta': beta, 'alpha': coef_frame(object.va, object.alpha_names)})
+            return metafopy.core.labelled.NamedList(
+                {'beta': beta, 'alpha': metafopy.core.labelled.RFrame(object.va, index=list(object.alpha_names), columns=list(object.alpha_names))}
+            )
         if is_sel:
-            return metafopy.core.labelled.NamedList({'beta': beta, 'delta': coef_frame(object.vd, object.delta_names)})
+            return metafopy.core.labelled.NamedList(
+                {'beta': beta, 'delta': metafopy.core.labelled.RFrame(object.vd, index=list(object.delta_names), columns=list(object.delta_names))}
+            )
         return beta
     if kind == 'beta':
         return beta
     if kind == 'alpha':
         if not is_ls:
             raise metafopy.errors.InputError('Can only extract var-cov matrix of alpha coefficients for location-scale models.')
-        return coef_frame(object.va, object.alpha_names)
+        return metafopy.core.labelled.RFrame(object.va, index=list(object.alpha_names), columns=list(object.alpha_names))
     if kind == 'delta':
         if not is_sel:
             raise metafopy.errors.InputError('Can only extract var-cov matrix of delta coefficients for selection models.')
-        return coef_frame(object.vd, object.delta_names)
+        return metafopy.core.labelled.RFrame(object.vd, index=list(object.delta_names), columns=list(object.delta_names))
     rows = rows_of(object)
     if kind in ('obs', 'marginal'):
         if not isinstance(object, metafopy.models.mv_result.RMAMVResult) and 'rma.uni' not in metafopy.methods.fitview.r_class(object):
@@ -212,6 +213,7 @@ def vcov(
         return frame(select(full, rows, na_action), rows.shown(na_action))
     if kind == 'fitted':
         out = rows.X_f @ object.vb @ rows.X_f.T
+        # auditme: accept[literal-duplication] the na.action values that keep a row per study, tested at each use as metafor tests them
         if na_action in ('exclude', 'pass'):
             out = out.copy()
             out[~rows.not_na, :] = numpy.nan
@@ -221,7 +223,13 @@ def vcov(
 
 
 def residual_vcov(object: typing.Any, rows: Rows, na_action: metafopy.methods.common.NAAction) -> pandas.DataFrame:
-    """``vcov(type='resid')``: ``(I - H) M (I - H)'`` with the hat matrix ``H`` of the fit."""
+    """``vcov(type='resid')``: ``(I - H) M (I - H)'`` with the hat matrix ``H`` of the fit.
+
+    Raises:
+        metafopy.errors.ArgumentError: ``object`` is not a fitted model of a class with a hat matrix.
+        metafopy.errors.InputError: ``na_action`` is ``'fail'``.
+        metafopy.errors.NotSupportedError: the model is robust, a selection model or a location-scale model.
+    """
     if getattr(object, 'robust', None) is not None:
         raise metafopy.errors.NotSupportedError('Extraction of var-cov matrix of the residuals not available for objects of this type.')
     metafopy.methods.fitview.check_method(object, 'hatvalues', ('rma.uni', 'rma.mv'))
@@ -236,7 +244,14 @@ def residual_vcov(object: typing.Any, rows: Rows, na_action: metafopy.methods.co
 
 
 def vcov_frame(object: typing.Any, type: metafopy.models.rma_uni.VcovType, na_action: metafopy.methods.common.NAAction) -> pandas.DataFrame:
-    """:func:`vcov` for the fit classes whose ``'fixed'`` matrix is a single frame (never a dict)."""
+    """:func:`vcov` for the fit classes whose ``'fixed'`` matrix is a single frame (never a dict).
+
+    Raises:
+        metafopy.errors.ArgumentError: as for :func:`vcov`.
+        metafopy.errors.InputError: as for :func:`vcov`.
+        metafopy.errors.InternalError: :func:`vcov` returned several matrices.
+        metafopy.errors.NotSupportedError: as for :func:`vcov`.
+    """
     out = vcov(object, type, na_action=na_action)
     if isinstance(out, dict):
         raise metafopy.errors.InternalError('vcov() returned several matrices for a model with a single coefficient part.')

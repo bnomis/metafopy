@@ -238,10 +238,13 @@ def permutest_control(control: collections.abc.Mapping[str, typing.Any] | None) 
                 continue
             raise metafopy.errors.ArgumentError(f'unknown control argument {key!r}')
         con[match[0]] = value
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if con['alternative'] not in ('two.sided', 'less', 'greater'):
         raise metafopy.errors.InputError("control 'alternative' must be 'two.sided', 'less' or 'greater'")
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if con['p2defn'] not in ('abs', 'px2'):
         raise metafopy.errors.InputError("control 'p2defn' must be 'abs' or 'px2'")
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if con['stat'] not in ('test', 'coef'):
         raise metafopy.errors.InputError("control 'stat' must be 'test' or 'coef'")
     return con
@@ -498,6 +501,7 @@ def pvalues(x: metafopy.models.rma_uni.RMAResult, zval_perm: FloatArray, beta_pe
     return numpy.where(pval > 1, 1.0, pval)
 
 
+# auditme: accept[missing-raises-section] a failed refit raises InputError (a ValueError), caught by the root search below
 def permci_bound(
     x: metafopy.models.rma_uni.RMAResult,
     j: int,
@@ -512,8 +516,8 @@ def permci_bound(
 ) -> float:
     """Search for a permutation-based CI bound of coefficient ``j`` (metafor's ``.permci`` with ``uniroot``).
 
-    Raises:
-        metafopy.errors.InputError: the model cannot be refitted.
+    A model that cannot be refitted raises ``InputError`` inside the root search, which catches it (it is a ``ValueError``)
+    and gives NaN.
     """
     c = dict(con)
     one_sided = c['cialt'] == 'one.sided'

@@ -27,6 +27,7 @@ AXIS_MARGIN = 1.05
 def funnel_chart(
     x: metafopy.models.rma_uni.RMAResult | metafopy.TrimfillResult | metafopy.interactive.data.ChartData,
     *,
+    # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
     yaxis: typing.Literal['sei', 'vi'] = 'sei',
     level: float | None = None,
     href: collections.abc.Sequence[str | None] | None = None,
@@ -83,6 +84,7 @@ def funnel_chart(
     y_title = 'Standard error' if yaxis == 'sei' else 'Sampling variance'
     y_scale = altair.Scale(reverse=True, domain=[0, top])
     x_scale = altair.Scale(zero=False)
+    # auditme: accept[literal-duplication] each interactive plot builds its own altair selection
     pick = altair.selection_point(fields=['slab'], on='click', clear='dblclick', toggle='true')
     dim = altair.condition(pick, altair.value(1), altair.value(0.3))
     tooltip = [

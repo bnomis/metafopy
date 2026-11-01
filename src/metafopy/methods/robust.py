@@ -449,6 +449,7 @@ def robust_rma_mv(
         [RMAMVResult][metafopy.RMAMVResult] of the same form as the input.
 
     Raises:
+        metafopy.errors.EstimationError: with ``club_sandwich``, the marginal variance-covariance matrix cannot be inverted.
         metafopy.errors.InputError: as for [robust_rma_uni][metafopy.methods.robust.robust_rma_uni]; with ``club_sandwich`` also: the model has
             fixed correlation matrices (``R``) or its random effects are not nested within the clusters.
 

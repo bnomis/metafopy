@@ -45,6 +45,7 @@ import metafopy.models.control_names
 import metafopy.models.glmm_fit
 import metafopy.models.glmm_result
 import metafopy.models.rma_uni
+import metafopy.models.sel_opt
 import metafopy.models.tables
 
 __all__ = ['rma_glmm']
@@ -115,7 +116,7 @@ def make_control(control: metafopy.models.glmm_fit.GLMMControl | collections.abc
         clean['optmethod'] = match_optmethod(clean['optmethod'])
     if 'optimizer' in clean:
         optimizer = match_optimizer(clean['optimizer'])
-        if optimizer in metafopy.models.glmm_fit.OPTMETHODS:
+        if optimizer in metafopy.models.sel_opt.OPTMETHODS:
             # as metafor: optimizer='BFGS' stands for optimizer='optim' with optmethod='BFGS'
             clean['optmethod'] = optimizer
             optimizer = 'optim'
@@ -151,9 +152,9 @@ def match_optmethod(value: typing.Any) -> str:
     """The ``optim()`` method named by ``control$optmethod`` (like ``match.arg()``).
 
     Raises:
-        metafopy.errors.InputError: the value names none of the methods in :data:`metafopy.models.glmm_fit.OPTMETHODS`.
+        metafopy.errors.InputError: the value names none of the methods in :data:`metafopy.models.sel_opt.OPTMETHODS`.
     """
-    return match_choice(value, metafopy.models.glmm_fit.OPTMETHODS, 'optmethod')
+    return match_choice(value, metafopy.models.sel_opt.OPTMETHODS, 'optmethod')
 
 
 def match_choice(value: typing.Any, names: tuple[str, ...], what: str) -> str:
@@ -512,6 +513,8 @@ def rma_glmm(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
         metafopy.errors.EstimationError: a model cannot be fitted.
+        metafopy.errors.NotSupportedError: the optimiser chosen in ``control`` has no counterpart here.
+        metafopy.errors.InternalError: a binomial model was built without its group sizes.
 
     Examples:
         >>> from metafopy import datasets, rma_glmm
@@ -597,6 +600,7 @@ def rma_glmm(
         raise metafopy.errors.InputError('Number of parameters to be estimated is larger than the number of observations.')
     btt_idx = metafopy.models.rma_uni.set_btt(btt, p, int_incl, names)
     m = len(btt_idx)
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if con.optimizer in ('clogit', 'clogistic') and method == 'ML':
         raise metafopy.errors.InputError("Cannot use 'clogit' or 'clogistic' with method='ML'.")
     if not metafopy.core.linalg.is_positive_definite(X.T @ X, tol=con.evtol):

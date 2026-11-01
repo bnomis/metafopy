@@ -41,6 +41,7 @@ CONSTRAINED = ('constrOptim',)
 INEQUALITY = ('auglag', 'constrOptim', 'constrOptim.nl', 'nloptr', 'solnp')
 NO_LOG_LINK = ('auglag', 'constrOptim', 'constrOptim.nl')
 OPTIMIZERS = (*metafopy.models.sel_opt.OPTIMIZERS, 'constrOptim')
+# auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
 OPTIMIZER_SETTINGS = ('abstol', 'maxit', 'ndeps', 'reltol', 'tol')
 
 
@@ -88,6 +89,7 @@ def resolve_optimizer(con: metafopy.models.rma_ls_result.LSControl, link: str) -
 
     Raises:
         metafopy.errors.InputError: the optimiser is unknown or cannot be used with the log link.
+        metafopy.errors.NotSupportedError: ``optmethod`` names an ``optim`` method with no SciPy counterpart.
     """
     optimizer = metafopy.models.sel_opt.partial_match(con.optimizer, OPTIMIZERS, 'optimizer')
     optmethod = metafopy.models.sel_opt.partial_match(con.optmethod, metafopy.models.sel_opt.OPTMETHODS, 'optmethod')
@@ -130,6 +132,7 @@ def minimise_standin(
 
     Raises:
         metafopy.errors.EstimationError: the optimiser did not converge or could not start.
+        metafopy.errors.NotSupportedError: the optimiser has no counterpart here.
     """
     if not math.isfinite(objective(start)):
         raise metafopy.errors.EstimationError('Cannot evaluate the log-likelihood at the initial values.')
@@ -252,6 +255,7 @@ def start_alpha(md: metafopy.metadata.MetaData, Z: FloatArray, link: str, is_int
 
     Raises:
         metafopy.errors.EstimationError: no suitable starting values were found.
+        metafopy.errors.InputError: the heterogeneity (HE) fit of the location model that gives the starting values rejects the data.
     """
     md0 = dataclasses.replace(md, weights=None, intercept=False)
     with warnings.catch_warnings():
@@ -341,6 +345,7 @@ def fit_rma_ls(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
         metafopy.errors.EstimationError: the optimisation failed.
+        metafopy.errors.NotSupportedError: the optimiser chosen in ``control`` has no counterpart here.
     """
     # auditme: accept[literal-duplication] metafor option values and column labels repeated as in the R source
     if method not in ('ML', 'REML'):

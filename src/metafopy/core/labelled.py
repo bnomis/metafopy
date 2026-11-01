@@ -317,9 +317,6 @@ def trim_zeros(text: str, digits: int) -> str:
     return text
 
 
-FRAME_DIGITS = ('est', 'se', 'test', 'pval', 'ci', 'var', 'sevar', 'fit', 'het')
-
-
 class EscalcFrame(pandas.DataFrame):
     """The data frame ``escalc()`` returns; it prints as metafor's ``print.escalc()`` does (columns of the effect sizes and variances with ``digits``
     decimals, the other columns as ``print.data.frame`` shows them, rows numbered from 1).
@@ -328,7 +325,7 @@ class EscalcFrame(pandas.DataFrame):
     """
 
     @property
-    def _constructor(self) -> typing.Callable[..., pandas.DataFrame]:
+    def _constructor(self) -> collections.abc.Callable[..., pandas.DataFrame]:
         return pandas.DataFrame
 
     def digit_for(self, name: str) -> int:
@@ -384,7 +381,7 @@ class RFrame(pandas.DataFrame):
     """
 
     @property
-    def _constructor(self) -> typing.Callable[..., pandas.DataFrame]:
+    def _constructor(self) -> collections.abc.Callable[..., pandas.DataFrame]:
         return pandas.DataFrame
 
     def text(self) -> str:
@@ -452,6 +449,7 @@ class SparseVCovMat(scipy.sparse.csr_array):
             width = max((len(c) for c in cells), default=0)
             columns.append([c.ljust(width) for c in cells])
         rows = [[columns[j][i] for j in range(m)] for i in range(n)]
+        # auditme: accept[literal-duplication] an empty label, as R prints a blank name
         body = metafopy.printing.fmt_wrapped_table([''] * m, rows, [f'[{i + 1},]' for i in range(n)], console_width())
         return f'{n} x {m} sparse Matrix of class "dgCMatrix"\n{body}'
 

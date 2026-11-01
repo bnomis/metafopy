@@ -34,11 +34,11 @@ __all__ = ['RESIDUAL_TYPES', 'residuals']
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type BoolArray = numpy.typing.NDArray[numpy.bool_]
 
-RESIDUAL_TYPES = ('response', 'rstandard', 'rstudent', 'pearson', 'cholesky')
+RESIDUAL_TYPES: tuple[str, ...] = typing.get_args(metafopy.models.rma_uni.ResidualType.__value__)
 """The values of ``type`` (partial matching is allowed, as in R)."""
 
 EPS = float(numpy.finfo(float).eps)
-UNI_CLASSES = ('rma.uni', 'rma.mv', 'rma.mh', 'rma.peto')
+UNI_CLASSES = ('rma.mh', 'rma.mv', 'rma.peto', 'rma.uni')
 BINARY_ONLY = 'Extraction of Cholesky residuals not available for objects of class "rma.mh", "rma.peto", or "rma.glmm".'
 
 
@@ -109,6 +109,7 @@ def standardised(x: typing.Any, kind: str, na_action: metafopy.methods.common.NA
     elif kind == 'rstandard':
         notav = ('robust.rma', 'rma.gen', 'rma.uni.selmodel')
     else:
+        # auditme: accept[literal-duplication] the classes metafor refuses, listed at each check as metafor lists them
         notav = ('robust.rma', 'rma.ls', 'rma.gen', 'rma.uni.selmodel')
     metafopy.methods.fitview.check_class(x, notav=notav)
     fn = metafopy.methods.influence.rstandard if kind == 'rstandard' else metafopy.methods.influence.rstudent
@@ -139,6 +140,7 @@ def residuals(x: typing.Any, type: metafopy.models.rma_uni.ResidualType = 'respo
     glmm = isinstance(x, metafopy.models.glmm_result.GLMMResult)
     if binary and kind == 'pearson':
         kind = 'rstandard'
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if kind in ('rstandard', 'rstudent'):
         return standardised(x, kind, na_action)
     if kind == 'pearson' and glmm:
@@ -159,7 +161,11 @@ def residuals(x: typing.Any, type: metafopy.models.rma_uni.ResidualType = 'respo
 
 
 def cholesky_residuals(e: FloatArray, lay: Layout) -> FloatArray:
-    """``L e`` where ``L'L`` is the inverse of the marginal variance-covariance matrix and ``L`` is upper triangular."""
+    """``L e`` where ``L'L`` is the inverse of the marginal variance-covariance matrix and ``L`` is upper triangular.
+
+    Raises:
+        metafopy.errors.InputError: the Cholesky decomposition of the marginal variance-covariance matrix fails.
+    """
     if lay.M is None:
         return e / numpy.sqrt(typing.cast(FloatArray, lay.var))
     try:

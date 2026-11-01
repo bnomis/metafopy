@@ -141,6 +141,7 @@ def process_after_sub(
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InternalError: a structure built on an inner factor has none.
     """
     k = len(outer)
     nvars = inner.shape[1] + 1
@@ -313,6 +314,8 @@ def distance_matrix(group_inner: pandas.DataFrame, dist: object) -> FloatArray:
     """Distances between the rows of the inner variables (``dist(model.matrix(~ x + y - 1))``).
 
     Raises:
+        metafopy.errors.InputError: ``dist`` names no known distance.
+        metafopy.errors.NotSupportedError: ``dist`` is ``'gcd'`` (the great-circle distance).
         metafopy.errors.InternalError: a distance matrix reached this function unresolved.
     """
     if isinstance(dist, pandas.DataFrame):
@@ -329,6 +332,7 @@ def distance_matrix(group_inner: pandas.DataFrame, dist: object) -> FloatArray:
     if callable(dist):
         out = numpy.asarray(dist(cmat), dtype=numpy.float64)
         return out
+    # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
     methods = ('euclidean', 'maximum', 'manhattan', 'gcd')
     given = str(dist)
     # R's charmatch(): an exact match wins, otherwise the name may be abbreviated if that is unambiguous
@@ -356,6 +360,8 @@ def process_after_rmna(
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.NotSupportedError: ``dist`` is ``'gcd'`` (the great-circle distance).
+        metafopy.errors.InternalError: a structure built on an inner factor has none.
     """
     struct = g.struct
     tname, rname = label_vc(g.is_g)
@@ -506,6 +512,7 @@ def con_e(v: FloatArray, r: FloatArray, term: Term, vctransf: bool, vccov: bool)
 
 
     Raises:
+        metafopy.errors.EstimationError: with ``nearpd``, the matrix of a ``UN`` or ``GEN`` structure is negative semi-definite.
         metafopy.errors.InternalError: the distance matrix of a spatial structure is missing.
     """
     struct = term.struct

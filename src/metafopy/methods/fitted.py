@@ -58,7 +58,11 @@ def uni_rows(x: metafopy.models.rma_uni.RMAResult | metafopy.models.rma_ls_resul
 
 
 def rows_of(x: typing.Any) -> Rows:
-    """The rows of the subset of a fit (``X.f``, ``not.na`` and the labels), as metafor stores them."""
+    """The rows of the subset of a fit (``X.f``, ``not.na`` and the labels), as metafor stores them.
+
+    Raises:
+        metafopy.errors.ArgumentError: ``x`` is not a fitted model.
+    """
     if isinstance(x, metafopy.models.sel_result.SelmodelResult):
         return Rows(X_f=x.X, not_na=numpy.ones(x.X.shape[0], dtype=numpy.bool_), slab=tuple(x.base.slab))
     if isinstance(x, metafopy.models.rma_uni.RMAResult | metafopy.models.rma_ls_result.RMALSResult):
@@ -88,6 +92,7 @@ def label_square(x: typing.Any, out: FloatArray) -> FloatArray:
     return metafopy.core.labelled.LabelledMatrix(out, labels, labels)
 
 
+# auditme: accept[raises-section-drift] rows_of raises ArgumentError only for a class this function does not accept
 def fitted_values(x: typing.Any, na_action: metafopy.methods.common.NAAction = 'omit') -> FloatArray:
     """Fitted values ``X.f beta`` over the rows of the subset, handled as ``na_action`` says (``'omit'``, ``'exclude'``, ``'pass'`` or ``'fail'``).
 

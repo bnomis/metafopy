@@ -170,6 +170,7 @@ class GLMMResult(metafopy.models.fit_methods.TableFields, metafopy.models.fit_me
 
         return metafopy.methods.fitted.fitted_values(self, na_action)
 
+    # auditme: accept[raises-section-drift] weights_unsupported is called with self, a fitted model, so its ArgumentError never arises
     def weights_(self, type: str = 'diagonal', na_action: str = 'omit') -> FloatArray:
         """Not available (metafor's ``weights()`` stops for this class).
 

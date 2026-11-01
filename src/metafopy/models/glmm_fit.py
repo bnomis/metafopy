@@ -77,8 +77,6 @@ OPTIMIZERS = (
     'Rcgmin',
     'Rvmmin',
 )
-# auditme: accept[non-alphabetical-literal] the order is that of optim()'s documentation
-OPTMETHODS = ('Nelder-Mead', 'BFGS', 'CG', 'L-BFGS-B', 'SANN', 'Brent')
 GLMMADAPTIVE_MAX_COEF = 12.0
 GLMMADAPTIVE_MAX_COEF_SATURATED = 50.0
 SATURATED_WARNING = "Cannot fit saturated model (set 'verbose=TRUE' to obtain further details)."
@@ -208,6 +206,9 @@ def fit_mixed(
 
     Raises:
         metafopy.errors.EstimationError: the model cannot be fitted.
+        metafopy.errors.InputError: the arrays of the problem have inconsistent shapes, or a binomial problem has no group sizes
+            (from the starting GLM).
+        metafopy.errors.InternalError: a binomial problem has no group sizes.
     """
     points = spec.nagq if nagq is None else nagq
     package = spec.control.package
@@ -280,6 +281,7 @@ def fixed_glm(
 
     Raises:
         metafopy.errors.EstimationError: the model cannot be fitted.
+        metafopy.errors.InputError: ``y`` and ``X`` differ in their number of rows, or a binomial model has no ``size``.
     """
     try:
         return metafopy.core.glm.glm_fit(X, y, family=family, size=size, offset=offset, link=link)
@@ -342,6 +344,7 @@ def unconditional(spec: FitSpec) -> ModelFit:
 
     Raises:
         metafopy.errors.EstimationError: the models cannot be fitted.
+        metafopy.errors.InputError: the family does not fit the data of the measure.
     """
     k = spec.X.shape[0]
     c = spec.cells
@@ -533,6 +536,8 @@ def single_level(spec: FitSpec) -> SingleLevel:
 
     Raises:
         metafopy.errors.EstimationError: a model cannot be fitted.
+        metafopy.errors.InputError: the family does not fit the data of the measure.
+        metafopy.errors.InternalError: a binomial problem has no group sizes.
     """
     k, p = spec.X.shape
     family, y, size, offset = single_level_data(spec)
@@ -579,7 +584,7 @@ def single_level(spec: FitSpec) -> SingleLevel:
     return SingleLevel(fit, fe, qe_fit, X_qe, ml.beta[:p], tau2)
 
 
-def minimise(func: typing.Callable[[FloatArray], float], x0: FloatArray, gtol: float) -> scipy.optimize.OptimizeResult:
+def minimise(func: collections.abc.Callable[[FloatArray], float], x0: FloatArray, gtol: float) -> scipy.optimize.OptimizeResult:
     """BFGS with central-difference gradients, restarted once from its solution.
 
     Raises:
@@ -684,12 +689,12 @@ def conditional_logistic(spec: FitSpec, base: SingleLevel) -> ModelFit:
 
 def search(
     spec: FitSpec,
-    func: typing.Callable[[FloatArray], float],
+    func: collections.abc.Callable[[FloatArray], float],
     x0: FloatArray,
     what: str,
     *,
     dummy: bool,
-    precise: typing.Callable[[FloatArray], float] | None = None,
+    precise: collections.abc.Callable[[FloatArray], float] | None = None,
 ) -> tuple[FloatArray, float]:
     """Minimise ``func`` from ``x0`` with the optimiser of ``control$optimizer``: ``(estimates, minimum)``.
 
@@ -703,6 +708,7 @@ def search(
 
     Raises:
         metafopy.errors.EstimationError: the optimiser does not converge.
+        metafopy.errors.NotSupportedError: the optimiser of ``control`` has no counterpart here.
     """
     ctl = spec.control
     if ctl.optimizer == 'nlminb':
@@ -717,7 +723,7 @@ def search(
     try:
         par = metafopy.models.sel_opt.minimize(fn, par0, choice, ctl.opt_ctrl)
     except (metafopy.errors.EstimationError, ValueError, ArithmeticError, numpy.linalg.LinAlgError) as err:
-        raise metafopy.errors.EstimationError(f'Cannot fit {what} model. {err}') from err
+        raise metafopy.errors.EstimationError(f'Cannot fit {what} model.') from err
     est = numpy.asarray(par[:n], dtype=numpy.float64)
     return est, func(est)
 
@@ -727,7 +733,10 @@ def exact_conditional(spec: FitSpec, base: SingleLevel) -> ModelFit:
 
     Raises:
         metafopy.errors.EstimationError: an optimisation fails or the Hessian cannot be inverted.
+        metafopy.errors.InputError: a count is negative or not an integer.
+        metafopy.errors.NotSupportedError: the optimiser of ``control`` has no counterpart here.
     """
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if spec.control.optimizer in ('clogit', 'clogistic'):
         return conditional_logistic(spec, base)
     c = spec.cells
@@ -746,10 +755,10 @@ def exact_conditional(spec: FitSpec, base: SingleLevel) -> ModelFit:
     tight = dataclasses.replace(smooth, rel_tol=min(smooth.rel_tol, 1e-10))
     hessian_ctrl = {'r': ctl.hessian_r, **ctl.hessian_ctrl} if ctl.hesspack == 'numDeriv' else dict(ctl.hessian_ctrl)
 
-    def fixed_objective(X: FloatArray, control: metafopy.core.nchg.IntegrationControl) -> typing.Callable[[FloatArray], float]:
+    def fixed_objective(X: FloatArray, control: metafopy.core.nchg.IntegrationControl) -> collections.abc.Callable[[FloatArray], float]:
         return lambda b: metafopy.core.nchg.neg_loglik(b, tables, X, False, control)
 
-    def hess(func: typing.Callable[[FloatArray], float], x: FloatArray) -> FloatArray:
+    def hess(func: collections.abc.Callable[[FloatArray], float], x: FloatArray) -> FloatArray:
         return metafopy.core.numderiv.hessian_by_package(func, x, ctl.hesspack, hessian_ctrl)
 
     f_fe = fixed_objective(spec.X, smooth)
@@ -818,6 +827,10 @@ def fit_model(spec: FitSpec) -> ModelFit:
 
     Raises:
         metafopy.errors.EstimationError: the model cannot be fitted.
+        metafopy.errors.InputError: the family does not fit the data of the measure, or a count of an exact conditional model is
+            negative or not an integer.
+        metafopy.errors.NotSupportedError: the optimiser of ``control`` has no counterpart here.
+        metafopy.errors.InternalError: a binomial problem has no group sizes.
     """
     # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
     if spec.measure in ONE_GROUP:

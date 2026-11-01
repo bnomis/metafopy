@@ -20,11 +20,16 @@ import metafopy.printing
 
 __all__ = ['COUNT_NAMES', 'DataFields', 'FitMethods', 'LogLik', 'TableFields']
 
+# auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
 COUNT_NAMES = ('ai', 'bi', 'ci', 'di', 'x1i', 'x2i', 't1i', 't2i')  # auditme: accept[non-alphabetical-literal] metafor's order
 # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
-FIT_STAT_ROWS = ['ll', 'dev', 'AIC', 'BIC', 'AICc']  # auditme: accept[non-alphabetical-literal] metafor's order
+FIT_STAT_ROWS = ('ll', 'dev', 'AIC', 'BIC', 'AICc')  # auditme: accept[non-alphabetical-literal] metafor's order
 # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
 STAT_NAMES = ['logLik', 'deviance', 'AIC', 'BIC', 'AICc']  # auditme: accept[non-alphabetical-literal] metafor's order
+
+# auditme: accept[non-alphabetical-literal] order is metafor's documented order and is meaningful
+type CoefType = typing.Literal['beta', 'alpha', 'delta']
+"""The values of ``type`` of :func:`metafopy.methods.coef_summary.coef_summary`."""
 
 
 def default_names(fits: collections.abc.Sequence[typing.Any], names: collections.abc.Sequence[str] | None) -> list[str]:
@@ -305,7 +310,9 @@ class RobustFields:
         test = info.coef_test
         df_col, p_col = {
             'Satterthwaite': ('df_Satt', 'p_Satt'),
+            # auditme: accept[literal-duplication] the column names repeat as the clubSandwich output repeats them
             'naive-t': ('df', 'p_t'),
+            # auditme: accept[literal-duplication] the column names repeat as the clubSandwich output repeats them
             'naive-tp': ('df', 'p_t'),
             'z': (None, 'p_z'),
             'saddlepoint': (None, 'p_saddle'),
@@ -338,7 +345,7 @@ class FitMethods(metafopy.printing.HtmlRepr):
     def fit_stats(self) -> pandas.DataFrame:
         """The log-likelihood, deviance, AIC, BIC and AICc (rows) under ML and REML (columns), metafor's ``fit.stats``."""
         fit = typing.cast(typing.Any, self)
-        return pandas.DataFrame({'ML': list(fit.fit_stats_ml.as_tuple()), 'REML': list(fit.fit_stats_reml.as_tuple())}, index=FIT_STAT_ROWS)
+        return pandas.DataFrame({'ML': list(fit.fit_stats_ml.as_tuple()), 'REML': list(fit.fit_stats_reml.as_tuple())}, index=list(FIT_STAT_ROWS))
 
     def use_reml(self, REML: bool | None) -> bool:
         """``REML`` as given, else whether the model was fitted with REML (as in metafor)."""
@@ -402,7 +409,7 @@ class FitMethods(metafopy.printing.HtmlRepr):
         warn_if_different_data(fits)
         return pandas.DataFrame(dict(zip(default_names(fits, names), columns, strict=True)), index=STAT_NAMES)
 
-    def coef_summary(self, type: typing.Literal['beta', 'alpha', 'delta'] | None = None) -> typing.Any:
+    def coef_summary(self, type: CoefType | None = None) -> typing.Any:
         """See :func:`metafopy.methods.coef_summary.coef_summary`."""
         # auditme: accept[in-function-import] metafopy.methods imports the result classes, so the import is deferred to avoid a cycle
         import metafopy.methods.coef_summary

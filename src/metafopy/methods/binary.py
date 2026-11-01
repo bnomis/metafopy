@@ -482,6 +482,7 @@ def gosh_binary_block(
 
 @metafopy.methods.gosh.gosh.register
 @metafopy.core.timing.timed
+# auditme: accept[duplicate-call-sequence] gosh of a fixed-effects binary model follows the steps of gosh.rma, as in metafor
 def gosh_fixed_binary(
     x: metafopy.models.binary.FixedBinaryResult,
     subsets: int | None = None,

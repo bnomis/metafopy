@@ -22,6 +22,7 @@ TEXT_COLUMNS = {'dat.bauer2002': ['threshold'], 'dat.yusuf1985': ['id']}
 # (R's NA is an empty field in the CSV), all other strings are kept as they are
 MISSING_STRINGS: dict[str, dict[str, tuple[str, ...]]] = {
     'dat.axfors2021': {'blinding_exact': ()},
+    # auditme: accept[literal-duplication] the empty string is the missing value of this metadat column, as for the other entries
     'dat.bakdash2021': {'DTIC.link': ('',)},
     'dat.linde2015': {'treatment3': ()},
     'dat.michael2013': {'Compensation': ()},

@@ -124,7 +124,11 @@ def coef_table(res: MV | metafopy.models.sel_result.SelmodelResult) -> pandas.Da
 
 
 def check_arguments(res: MV | metafopy.models.sel_result.SelmodelResult, att: typing.Any, sim: bool | int) -> int:
-    """metafor's argument checks; returns the number of simulations."""
+    """metafor's argument checks; returns the number of simulations.
+
+    Raises:
+        metafopy.errors.InputError: the model is intercept-only, ``sim`` is below 2, or ``att`` is given.
+    """
     if res.int_only:
         raise metafopy.errors.InputError('VIFs not applicable to intercept-only models.')
     if isinstance(sim, bool):
@@ -147,7 +151,11 @@ def vif_coefficients(
     fixed: bool,
     digits: int | None,
 ) -> tuple[metafopy.methods.vif.VIFResult, list[tuple[int, ...]]]:
-    """The (G)VIFs of the sets of coefficients in ``btt`` (without the simulations) and the 0-based sets."""
+    """The (G)VIFs of the sets of coefficients in ``btt`` (without the simulations) and the 0-based sets.
+
+    Raises:
+        metafopy.errors.InputError: the VIFs cannot be computed for the sets ``btt`` selects.
+    """
     int_incl, p, names = res.int_incl, res.p, res.coef_names
     btt_missing = btt is None
     specs: list[metafopy.methods.vif.BttSpec]

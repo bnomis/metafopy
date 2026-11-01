@@ -42,6 +42,7 @@ __all__ = ['MVControl', 'rma_mv']
 
 # auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
 CVVC_OPTIONS = ('varcor', 'varcov', 'transf')
+# auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
 OPTIMIZER_SETTINGS = ('abstol', 'maxit', 'ndeps', 'reltol', 'tol')
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
@@ -417,6 +418,7 @@ def prepare_vccon(vccon: collections.abc.Mapping[str, numpy.typing.ArrayLike] | 
     return out
 
 
+# auditme: accept[mutable-module-level-exported] a run-time cache of the last parameters tried, written by every fit for restart=True
 LAST_EVALUATED: dict[str, typing.Any] = {}
 
 
@@ -630,6 +632,7 @@ def rma_mv(
         metafopy.errors.NotSupportedError: ``dist='gcd'``.
         metafopy.errors.EstimationError: the model could not be fitted (for example when the marginal variance-covariance matrix is not
             positive definite at the starting values).
+        metafopy.errors.InternalError: a random-effects structure built on an inner factor has none.
 
     Metafor reference:
         [rma.mv](https://wviechtb.github.io/metafor/reference/rma.mv.html)

@@ -217,6 +217,7 @@ def model_matrix(obj: Fit, asdf: bool = False, *, na_action: metafopy.methods.co
     rows = metafopy.methods.fitted.rows_of(obj)
     if na_action == 'fail' and not rows.not_na.all():
         raise metafopy.errors.InputError('Missing values in results.')
+    # auditme: accept[literal-duplication] the na.action values that keep a row per study, tested at each use as metafor tests them
     full = na_action in ('exclude', 'pass')
     if isinstance(obj, metafopy.models.binary.FixedBinaryResult):
         fixed = True

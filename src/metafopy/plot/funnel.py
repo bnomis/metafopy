@@ -104,6 +104,7 @@ def vec(v: typing.Any, n: int, name: str) -> tuple[list[typing.Any], bool]:
     return out, True
 
 
+# auditme: accept[raises-section-drift] check_class is called only on a fitted model, so its ArgumentError never arises
 def funnel(
     x: metafopy.methods.fitview.Fit | numpy.typing.ArrayLike,
     vi: numpy.typing.ArrayLike | None = None,
@@ -504,8 +505,10 @@ def funnel(
     axx.set_ylabel(ylab_c)
     if main:
         axx.set_title(main, fontsize=metafopy.plot.draw.base_fontsize() * 1.2, fontweight='bold')
+    # auditme: accept[literal-duplication] the sides of the plot box, as R's bty and axis options name them
     for name in ('top', 'right'):
         axx.spines[name].set_visible(False)
+    # auditme: accept[literal-duplication] the sides of the plot box, as R's bty and axis options name them
     for name in ('left', 'bottom'):
         axx.spines[name].set_visible(True)
         axx.spines[name].set_color(colbox_c)

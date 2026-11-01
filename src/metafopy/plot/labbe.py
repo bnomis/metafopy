@@ -139,6 +139,7 @@ def per_study(v: typing.Any, rows: Rows, name: str) -> list[typing.Any]:
     return out
 
 
+# auditme: accept[raises-section-drift] escalc() gets a fixed measure name and float arrays of counts, so its ArgumentError never arises
 def labbe(
     x: metafopy.models.rma_uni.RMAResult | metafopy.models.binary.FixedBinaryResult | metafopy.models.glmm_result.GLMMResult,
     xlim: collections.abc.Sequence[float] | None = None,

@@ -45,8 +45,6 @@ type Transf = collections.abc.Callable[..., typing.Any]
 type NAAction = typing.Literal['omit', 'exclude', 'pass', 'fail']
 
 LEGEND = "Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1"
-# auditme: accept[non-alphabetical-literal] order is metafor's and is meaningful (rows of fit.stats)
-FIT_ROWS = ('ll', 'dev', 'AIC', 'BIC', 'AICc')
 
 
 def chol_inverse(x: FloatArray) -> FloatArray | None:
@@ -646,7 +644,7 @@ def fit_with_n(
                 -2 * ll_reml + 2 * parms * big_reml / (big_reml - parms - 1),
             ],
         },
-        index=list(FIT_ROWS),
+        index=list(metafopy.models.fit_methods.FIT_STAT_ROWS),
     )
     tab = pandas.DataFrame(
         {'beta': beta, 'se': se, 'tval': tval, 'df': numpy.full(len(beta), df), 'pval': pval, 'ci.lb': ci_lb, 'ci.ub': ci_ub},

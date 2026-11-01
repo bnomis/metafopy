@@ -26,7 +26,9 @@ __all__ = ['weights_mv', 'weights_uni', 'weights_unsupported']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 
+# auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
 UNI_TYPES = ('diagonal', 'matrix')
+# auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
 MV_TYPES = ('diagonal', 'matrix', 'rowsum')
 
 
@@ -44,6 +46,7 @@ def matrix(x: typing.Any, W: FloatArray, not_na: numpy.typing.NDArray[numpy.bool
 
 def weights_uni(
     x: metafopy.models.rma_uni.RMAResult | metafopy.models.rma_ls_result.RMALSResult,
+    # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
     type: typing.Literal['diagonal', 'matrix'] = 'diagonal',
     na_action: metafopy.methods.common.NAAction = 'omit',
 ) -> FloatArray:
@@ -62,10 +65,15 @@ def weights_uni(
 
 def weights_mv(
     x: metafopy.models.mv_result.RMAMVResult,
+    # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
     type: typing.Literal['diagonal', 'matrix', 'rowsum'] = 'diagonal',
     na_action: metafopy.methods.common.NAAction = 'omit',
 ) -> FloatArray:
-    """Percentage weights, the weight matrix or the percentage row sums of an ``rma_mv`` fit; see :func:`metafopy.models.mv_result.RMAMVResult.weights_`."""
+    """Percentage weights, the weight matrix or the percentage row sums of an ``rma_mv`` fit; see :func:`metafopy.models.mv_result.RMAMVResult.weights_`.
+
+    Raises:
+        metafopy.errors.InputError: ``type='rowsum'`` for a model with moderators.
+    """
     metafopy.methods.common.check_na_action(na_action)
     kind = metafopy.methods.common.match_arg(type, MV_TYPES)
     W = x.weight_matrix()
@@ -82,7 +90,8 @@ def weights_unsupported(x: typing.Any) -> typing.NoReturn:
     """Stop as metafor's ``weights.rma.glmm`` and ``weights.rma.uni`` do for the classes they are not available for.
 
     Raises:
-        metafopy.errors.NotSupportedError: always.
+        metafopy.errors.ArgumentError: ``x`` is not a fitted model.
+        metafopy.errors.NotSupportedError: ``x`` is a fitted model.
     """
     metafopy.methods.fitview.check_class(x, notav=('rma.glmm', 'rma.uni.selmodel'))
     raise metafopy.errors.NotSupportedError(f'Method not available for objects of class "{type(x).__name__}".')

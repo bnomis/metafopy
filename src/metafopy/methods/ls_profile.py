@@ -95,8 +95,8 @@ def profile_fit(x: metafopy.models.rma_ls_result.RMALSResult, pos: int, val: flo
 
 
 @metafopy.methods.profile.profile.register  # type: ignore[arg-type]  # returns a result class of its own
-# auditme: accept[duplicate-call-sequence] the profile of a location-scale model follows the same steps as profile.rma in metafor
 @metafopy.core.timing.timed
+# auditme: accept[duplicate-call-sequence] the profile of a location-scale model follows the same steps as profile.rma in metafor
 def profile_rma_ls(
     fitted: metafopy.models.rma_ls_result.RMALSResult,
     alpha: int | None = None,
@@ -186,7 +186,7 @@ def profile_rma_ls(
         ]
         out = [r for r in results if isinstance(r, LSProfileResult)]
         if plot and out:
-            plot_all(out, ax, plot_args)
+            metafopy.methods.profile.plot_all(out, ax, plot_args)
         return out[0] if len(out) == 1 else metafopy.methods.profile.ProfileList(out)
 
     if bool(numpy.all(x.alpha_fix)):
@@ -270,12 +270,5 @@ def profile_rma_ls(
         sub1=sub1,
     )
     if plot:
-        plot_all([result], ax, plot_args)
+        metafopy.methods.profile.plot_all([result], ax, plot_args)
     return result
-
-
-def plot_all(results: list[LSProfileResult], ax: matplotlib.axes.Axes | None, plot_args: collections.abc.Mapping[str, typing.Any]) -> None:
-    # auditme: accept[in-function-import] metafopy.plot.profile imports the methods, so the import is deferred to avoid a cycle
-    import metafopy.plot.profile
-
-    metafopy.plot.profile.plot_profile(results[0] if len(results) == 1 else results, ax=ax, **plot_args)

@@ -142,6 +142,7 @@ def blsplit(
     Raises:
         metafopy.errors.ArgumentError: ``x`` is not a matrix.
         metafopy.errors.InputError: ``cluster`` is missing or does not match the dimensions of ``x``, or ``x`` is not symmetric.
+        metafopy.errors.InternalError: ``x`` is neither a dense nor a sparse matrix after the checks above.
 
     Metafor reference:
         [blsplit](https://wviechtb.github.io/metafor/reference/blsplit.html)

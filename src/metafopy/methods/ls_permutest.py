@@ -135,6 +135,7 @@ class LSPermutestResult:
             }
         )
 
+    # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
     def coef(self, type: typing.Literal['alpha', 'beta'] | None = None) -> pandas.DataFrame | dict[str, pandas.DataFrame]:
         """The tables of the coefficients with the permutation p-values, ``{'beta': ..., 'alpha': ...}``, or one of them with ``type``
         (metafor's ``coef.permutest.rma.uni``)."""

@@ -108,6 +108,7 @@ class WaldResult(metafopy.printing.HtmlRepr):
             return pandas.DataFrame({'coefs': [coefs], 'Fval': [self.QM], 'df1': [round(m, 2)], 'df2': [round(float(df2), 2)], 'pval': [self.QMp]})
         n = self.Xb.shape[0]
         cols: dict[str, typing.Any] = {
+            # auditme: accept[literal-duplication] an empty label, as R prints a blank name
             'hyp': list(self.hyp) if self.hyp is not None else [''] * n,
             'estimate': self.Xb,
             'se': self.se,
@@ -136,6 +137,7 @@ class WaldResult(metafopy.printing.HtmlRepr):
         if self.hyp is not None:
             width = max(len(h) for h in self.hyp)
             out += [f'{name} {h.rjust(width)}' for name, h in zip(names, self.hyp, strict=True)]
+        # auditme: accept[literal-duplication] the printout layout repeats as metafor's print methods repeat it
         out += ['', 'Results:']
         header = ['estimate', 'se', 'zval' if self.ddf is None else 'tval']
         cells = [[metafopy.printing.fmt_num(float(v), d) for v in col] for col in (self.Xb, self.se, self.zval)]
@@ -602,7 +604,11 @@ def check_test(test: str | None) -> str:
 def select_btt(
     btt: metafopy.models.rma_uni.Btt, p: int, int_incl: bool, names: collections.abc.Sequence[str], default: tuple[int, ...], fixed: bool
 ) -> tuple[int, ...]:
-    """The coefficients ``btt`` selects (``.set.btt``); ``fixed`` matches a character ``btt`` literally."""
+    """The coefficients ``btt`` selects (``.set.btt``); ``fixed`` matches a character ``btt`` literally.
+
+    Raises:
+        metafopy.errors.InputError: ``btt`` is a string that matches no coefficient name.
+    """
     if btt is None:
         return default
     if fixed and isinstance(btt, str):
@@ -625,6 +631,7 @@ def club_wald_btt(beta: FloatArray, info: metafopy.models.robust_info.RobustInfo
 
     Raises:
         metafopy.errors.InputError: the test cannot be computed.
+        metafopy.errors.InternalError: the cluster-robust fit has lost its variance estimator.
     """
     if info.sandwich is None:
         raise metafopy.errors.InternalError('a clubSandwich fit must keep its variance estimator')
@@ -633,6 +640,7 @@ def club_wald_btt(beta: FloatArray, info: metafopy.models.robust_info.RobustInfo
         res = metafopy.core.clubsandwich.wald_test(info.sandwich, beta, C, info.wald_test or 'HTZ')
     except (numpy.linalg.LinAlgError, ValueError, ArithmeticError) as err:
         raise metafopy.errors.InputError(
+            # auditme: accept[except-interpolation] the caught message is shown only with verbose=True, as metafor's anova.rma shows it
             'Could not obtain the cluster-robust Wald test' + (f' ({err}).' if verbose else ' (use verbose=True for more details).')
         ) from err
     return WaldResult(QM=max(0.0, res.Fstat), QMdf=(res.df_num, res.df_denom), QMp=res.p_val, btt=idx)
@@ -655,6 +663,7 @@ def club_wald_x(
 
     Raises:
         metafopy.errors.InputError: the contrasts do not fit the model or the tests cannot be computed.
+        metafopy.errors.InternalError: the cluster-robust fit has lost its variance estimator.
     """
     sw = info.sandwich
     if sw is None:
@@ -669,6 +678,7 @@ def club_wald_x(
         ddf = metafopy.core.clubsandwich.contrast_df(sw, C, info.coef_test or 'Satterthwaite')
     except metafopy.errors.InputError as err:
         raise metafopy.errors.InputError(
+            # auditme: accept[except-interpolation] the caught message is shown only with verbose=True, as metafor's anova.rma shows it
             'Could not obtain the cluster-robust test(s)' + (f' ({err}).' if verbose else ' (use verbose=True for more details).')
         ) from err
     if rhs_given:
@@ -684,6 +694,7 @@ def club_wald_x(
             res = metafopy.core.clubsandwich.wald_test(sw, beta, C, info.wald_test or 'HTZ')
         except (numpy.linalg.LinAlgError, ValueError, ArithmeticError) as err:
             raise metafopy.errors.InputError(
+                # auditme: accept[except-interpolation] the caught message is shown only with verbose=True, as metafor's anova.rma shows it
                 'Could not obtain the cluster-robust omnibus Wald test' + (f' ({err}).' if verbose else ' (use verbose=True for more details).')
             ) from err
         QM, QMdf, QMp = max(0.0, res.Fstat), (res.df_num, res.df_denom), res.p_val
@@ -713,6 +724,7 @@ def check_same_class(a: object, b: object) -> None:
         raise metafopy.errors.InputError("Class of 'object' must be the same as class of 'object2'.")
 
 
+# auditme: accept[raises-section-drift] anova() is called on an rma_uni or rma_mv fit with btt only, so its ArgumentError never arises
 def wald_between(
     a: metafopy.models.rma_uni.RMAResult | metafopy.models.mv_result.RMAMVResult,
     b: metafopy.models.rma_uni.RMAResult | metafopy.models.mv_result.RMAMVResult,
@@ -1107,6 +1119,7 @@ def anova_rma_mv(
             ``btt`` selects nothing, ``adjust`` is unknown, the models differ in class, data or number of parameters, an ML refit fails, or a
             cluster-robust test cannot be computed).
         metafopy.errors.ArgumentError: ``test`` is neither ``'LRT'`` nor ``'Wald'``.
+        metafopy.errors.InternalError: the cluster-robust fit has lost its variance estimator.
 
     Metafor reference:
         [anova.rma](https://wviechtb.github.io/metafor/reference/anova.rma.html)

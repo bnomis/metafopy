@@ -9,6 +9,7 @@ R sources: https://github.com/wviechtb/metafor/blob/master/R/coef.summary.rma.r 
 https://github.com/wviechtb/metafor/blob/master/R/coef.rma.r; reference page: https://wviechtb.github.io/metafor/reference/coef.summary.rma.html.
 """
 
+import collections.abc
 import typing
 
 import numpy
@@ -17,6 +18,7 @@ import pandas
 
 import metafopy.core.labelled
 import metafopy.methods.fitview
+import metafopy.models.fit_methods
 import metafopy.models.mv_result
 import metafopy.models.rma_ls_result
 import metafopy.models.rma_uni
@@ -28,7 +30,7 @@ type FloatArray = numpy.typing.NDArray[numpy.float64]
 
 
 def table(
-    names: typing.Sequence[str],
+    names: collections.abc.Sequence[str],
     estimate: FloatArray,
     se: FloatArray,
     stat: FloatArray,
@@ -50,6 +52,7 @@ def degrees_of_freedom(x: typing.Any, ddf: typing.Any, count: int) -> FloatArray
     robust = getattr(x, 'robust', None)
     if robust is not None and isinstance(x, metafopy.models.rma_uni.RMAResult):
         return numpy.asarray(robust.dfs, dtype=numpy.float64)
+    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     if getattr(x, 'test', 'z') not in ('knha', 'adhoc', 't'):
         return None
     return numpy.broadcast_to(numpy.asarray(numpy.nan if ddf is None else ddf, dtype=numpy.float64), (count,)).copy()
@@ -70,14 +73,15 @@ def delta_table(x: metafopy.models.sel_result.SelmodelResult) -> pandas.DataFram
 
 
 @typing.overload
-def coef_summary(object: typing.Any, type: typing.Literal['beta', 'alpha', 'delta']) -> pandas.DataFrame: ...
+def coef_summary(object: typing.Any, type: metafopy.models.fit_methods.CoefType) -> pandas.DataFrame: ...
 
 
 @typing.overload
 def coef_summary(object: typing.Any, type: None = None) -> pandas.DataFrame | dict[str, pandas.DataFrame]: ...
 
 
-def coef_summary(object: typing.Any, type: typing.Literal['beta', 'alpha', 'delta'] | None = None) -> pandas.DataFrame | dict[str, pandas.DataFrame]:
+# auditme: accept[raises-section-drift] check_class is called without notav, so its NotSupportedError never arises
+def coef_summary(object: typing.Any, type: metafopy.models.fit_methods.CoefType | None = None) -> pandas.DataFrame | dict[str, pandas.DataFrame]:
     """The coefficient table of a fitted model as a data frame, as metafor's ``coef(summary(res))``.
 
     For a location-scale model the result is ``{'beta': ..., 'alpha': ...}``, for a selection model ``{'beta': ..., 'delta': ...}``; with ``type`` one
