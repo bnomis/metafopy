@@ -79,3 +79,11 @@ The operator raises these in the shared auditme skill's `requests.md`.
   Site: `src/tests/test_audit4_robust.py` (`blup_models`),
   `src/tests/test_audit5_plots.py` (`vifs`), `src/tests/test_emmeans.py`
   (`grid`).
+
+## lockfile-drift
+
+- Done 2026-11-01 in agents `8b43d9b`, not a request: the rule ran
+  `uv lock --check` under the user's uv config, so a global relative
+  `exclude-newer` the lock was not made with reported drift locally only.
+  It now repeats the check without the user config when uv names that
+  setting as its reason. This repository pins `8b43d9b`.

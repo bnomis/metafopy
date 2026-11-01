@@ -349,7 +349,7 @@ modules), one package per commit.
 
 ## Task 10: Switch on the push and CI gates
 
-**Status:** todo
+**Status:** blocked
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Implementation step 6; Error handling (`lockfile-drift`, shared-repository access); Settings
@@ -359,9 +359,9 @@ every push and in CI.
 
 **Subtasks:**
 
-- [ ] Run `pre-commit run auditme-all --hook-stage manual --all-files`. If any hit other than `lockfile-drift` is unaccepted, stop as `blocked` and name it. If `lockfile-drift` fires, run `uv lock --check`: if it still fails only because of a global `exclude-newer`, stop as `blocked` for the operator to raise it with auditme (the spec forbids rewriting `uv.lock`)
-- [ ] Set `stages: [manual, pre-push]` under `- id: auditme-all` in `.pre-commit-config.yaml`
-- [ ] Add the steps of the shared `project-setup` template `ci-audit-step.yml` (install the deploy key, `pre-commit run auditme-all --hook-stage manual --all-files`, remove the key) to the `lint` job of `.github/workflows/ci.yml` after `uv run mypy`, with the prerequisites it lists: `uv tool install pre-commit` and `echo "$PWD/.venv/bin" >> "$GITHUB_PATH"` after `uv sync`
+- [x] Run `pre-commit run auditme-all --hook-stage manual --all-files`. If any hit other than `lockfile-drift` is unaccepted, stop as `blocked` and name it. If `lockfile-drift` fires, run `uv lock --check`: if it still fails only because of a global `exclude-newer`, stop as `blocked` for the operator to raise it with auditme (the spec forbids rewriting `uv.lock`)
+- [x] Set `stages: [manual, pre-push]` under `- id: auditme-all` in `.pre-commit-config.yaml`
+- [x] Add the steps of the shared `project-setup` template `ci-audit-step.yml` (install the deploy key, `pre-commit run auditme-all --hook-stage manual --all-files`, remove the key) to the `lint` job of `.github/workflows/ci.yml` after `uv run mypy`, with the prerequisites it lists: `uv tool install pre-commit` and `echo "$PWD/.venv/bin" >> "$GITHUB_PATH"` after `uv sync`
 - [ ] Commit, then stop as `blocked` for an operator session to create the deploy key and secret (each step confirmed): `ssh-keygen -t ed25519 -N '' -f <scratch>/agents_deploy_key`, `gh repo deploy-key add <scratch>/agents_deploy_key.pub --repo bnomis/agents --title metafopy`, `gh secret set AGENTS_DEPLOY_KEY --repo <owner>/metafopy < <scratch>/agents_deploy_key`, then delete the scratch files. The key is never printed. The operator then sets this task to `done` and restarts the list
 
 **Acceptance Criteria:**
@@ -371,13 +371,15 @@ every push and in CI.
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` exits 0
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` exits 0
 
 **Notes:**
 
 - Depends on Task 9
 - The deploy key and secret change GitHub, so an unattended run never does them
+- 2026-11-01: `lockfile-drift` fired only because of the operator's global `exclude-newer = "14 days"` (`uv lock --check` wanted `wcwidth` 0.9.3 -> 0.9.2; with `UV_NO_CONFIG=1` it passed). The operator chose to fix the shared checker: agents `8b43d9b` repeats `uv lock --check` without the user config when uv names a global `exclude-newer` the lock lacks as its reason. The pin moved from `a98cb19` to `8b43d9b`; the newer checker's one new hit, `ruff-version-drift` (the hook pinned ruff v0.17.1, `uv.lock` holds 0.17.0), was cleared by setting the hook's rev to v0.17.0, since `uv.lock` is not rewritten
+- Committed; waiting for the operator to create the deploy key and the `AGENTS_DEPLOY_KEY` secret (last subtask). Until the secret exists, the CI `lint` job's audit step fails, so push `main` only after it is set
 
 ---
 

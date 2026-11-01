@@ -24,6 +24,33 @@ jobs:
       - run: uv run ruff format --check .
       - run: uv run ruff check .
       - run: uv run mypy
+      # the audit checker needs ruff and python3 on PATH, and pre-commit to run its hooks
+      - run: echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+      - run: uv tool install pre-commit
+      - name: Install the audit deploy key
+        env:
+          AGENTS_DEPLOY_KEY: ${{ secrets.AGENTS_DEPLOY_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$AGENTS_DEPLOY_KEY" > ~/.ssh/agents_deploy_key
+          chmod 600 ~/.ssh/agents_deploy_key
+          curl -fsSL https://api.github.com/meta | jq -r '.ssh_keys[] | "github.com " + .' >> ~/.ssh/known_hosts
+          {
+            echo 'Host github-agents'
+            echo '  HostName github.com'
+            echo '  User git'
+            echo '  IdentityFile ~/.ssh/agents_deploy_key'
+            echo '  IdentitiesOnly yes'
+            echo '  StrictHostKeyChecking yes'
+          } >> ~/.ssh/config
+          git config --global url."git@github-agents:bnomis/agents.git".insteadOf "git@github.com:bnomis/agents.git"
+
+      - name: Audit the whole tree
+        run: pre-commit run auditme-all --hook-stage manual --all-files
+
+      - name: Remove the audit deploy key
+        if: always()
+        run: rm -f ~/.ssh/agents_deploy_key
 
   test:
     runs-on: ${{ matrix.os }}
