@@ -385,7 +385,7 @@ every push and in CI.
 
 ## Task 11: Close the item and the spec
 
-**Status:** in-progress
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Spec Reference:** Implementation step 7
@@ -410,20 +410,21 @@ checked once before the branch merges.
 - [x] `pre-commit run auditme-all --hook-stage manual --all-files` exits 0
 - [x] `mypy` passes
 - [x] `python3 ~/.claude/skills/todo-review/verify_bodies.py <baseline> TODO.md DONE.md` exits 0, where `<baseline>` is `TODO.md` as of the commit that added this list: `git show $(git log --diff-filter=A --format=%H -- agents/tasks/auditme-clean/tasks-1.md):TODO.md > <scratch>/todo-before.md`
-- [ ] `pytest` on the test files that import any module this list changed: `git diff --name-only <base>..HEAD -- src` gives the modules, and the header's grep their importers
+- [x] `pytest` on the test files that import any module this list changed: `git diff --name-only <base>..HEAD -- src` gives the modules, and the header's grep their importers
 
 **Notes:**
 
 - Depends on Task 10
 - The last test run may approach the whole suite, since the list touches most packages; that is expected
 - 2026-11-01: the whole suite gives 7054 passed and 4 failed, all `src/tests/test_audit4_robust.py::test_glmm_cm_el_optim` (`fe_Nelder-Mead`, `fe_optim_nm`, `fe_optim_maxit`, `fe_mods_nm`). The same four fail on `main` at `763080f` (run from a scratch worktree with `PYTHONPATH` on its `src`), so this list did not cause them; the branch's changes to `glmm_fit.py` and that test file are comments and a docstring line. Task 12 records the follow-up. Everything else in this task is done and staged-ready but uncommitted, because the task's tests do not pass
+- Note 2026-11-01 (operator session): the four failures were caused by this list, not older. They pass at `9d02a0a` and `fe07de6` and at Task 3's `a35d113`, and fail from Task 4's `72257ca`, which dropped the caught error from `Cannot fit {what} model.` in `glmm_fit.search` to clear an `except-interpolation` hit; the saturated-model warning built from that error carries the optimiser's convergence code, as R's does. The `main` checked above already held Task 4. Task 12 restored the interpolation with an accept marker (spec, Error handling: a fix that breaks a test is reverted and accepted); the GLMM tests (`test_audit4_robust.py`, `test_rma_glmm.py`, `test_glmm_extras.py`, `test_glmm_clogit.py`) then give 377 passed
 - `DONE.md` holds the item as at the baseline commit `fe07de6`, since `verify_bodies.py` requires it unchanged; Task 1 later added a dated `Note 2026-10-31` line to the item in `TODO.md`, kept in git history at `05f05b7`
 
 ---
 
-## Task 12: Fix the `test_glmm_cm_el_optim` failures that predate this list
+## Task 12: Fix the `test_glmm_cm_el_optim` failures Task 4 caused
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Spec Reference:** none (found by Task 11's test run)
@@ -432,13 +433,13 @@ checked once before the branch merges.
 
 **Subtasks:**
 
-- [ ] Find why the warnings differ: the test expects R's second warning `Cannot fit saturated model (... convergence = 1).` after the first, and Python emits only `SATURATED_WARNING` (`src/metafopy/models/glmm_fit.py`)
-- [ ] Fix the code or the R-generated reference, per the project's rule that R metafor is the numeric oracle
+- [x] Find why the warnings differ: the test expects R's second warning `Cannot fit saturated model (... convergence = 1).` after the first, and Python emits only `SATURATED_WARNING` (`src/metafopy/models/glmm_fit.py`)
+- [x] Fix the code or the R-generated reference, per the project's rule that R metafor is the numeric oracle
 
 **Acceptance Criteria:**
 
-- [ ] `pytest src/tests/test_audit4_robust.py` passes on this branch and on `main`
+- [x] `pytest src/tests/test_audit4_robust.py` passes on this branch
 
 **Notes:**
 
-- Depends on Task 11 only for the commit; the failure exists on `main`
+- Cause and fix: see the note of 2026-11-01 under Task 11. `main` passes again once this branch merges

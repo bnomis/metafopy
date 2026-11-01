@@ -724,7 +724,8 @@ def search(
     try:
         par = metafopy.models.sel_opt.minimize(fn, par0, choice, ctl.opt_ctrl)
     except (metafopy.errors.EstimationError, ValueError, ArithmeticError, numpy.linalg.LinAlgError) as err:
-        raise metafopy.errors.EstimationError(f'Cannot fit {what} model.') from err
+        # auditme: accept[except-interpolation] the warning built from it carries the optimiser's convergence code, as metafor's does
+        raise metafopy.errors.EstimationError(f'Cannot fit {what} model. {err}') from err
     est = numpy.asarray(par[:n], dtype=numpy.float64)
     return est, func(est)
 
