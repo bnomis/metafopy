@@ -25,9 +25,16 @@ MEMORY_LIMIT = 4 * 1024**3
 
 
 def limit_memory() -> None:
-    """Cap the address space of this process; the harness runs on Linux and macOS, and on Windows (no ``resource`` module) this does nothing."""
+    """Cap the address space of this process where the platform allows it.
+
+    Linux honours the cap. Windows has no ``resource`` module, and macOS 27 refuses any finite ``RLIMIT_AS`` with ``ValueError``; on both the
+    process runs uncapped, and a runaway R shard is still killed by the case timeout (``audit.engine.wait_or_kill``).
+    """
     try:
         import resource
     except ImportError:
         return
-    resource.setrlimit(resource.RLIMIT_AS, (MEMORY_LIMIT, MEMORY_LIMIT))
+    try:
+        resource.setrlimit(resource.RLIMIT_AS, (MEMORY_LIMIT, MEMORY_LIMIT))
+    except ValueError:
+        return

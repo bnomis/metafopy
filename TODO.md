@@ -5,27 +5,29 @@ Open work only, in implementation order, nearest first. Finished items move to
 the shape of an item.
 
 
-## The metafor audit cannot start R on macOS 27.2
+## The metafor audit's options step loses a Python worker on macOS
 
-Found on 2026-11-01 by the first run of `bin/metafor-audit.sh` on this machine
-(macOS 27.2, R 4.6.2, run `.audit/runs/20261101-204233`): `check-r` and
-`universe` passed, then `matrix` stopped with `subprocess.SubprocessError:
-Exception occurred in preexec_fn` when it started its first R shard, so no
-case was compared.
+Found on 2026-11-01 by the second run of `bin/metafor-audit.sh` on this
+machine (macOS 27.2, R 4.6.2, run `.audit/runs/20261101-211517`), the first
+after the memory cap stopped failing: `check-r`, `universe` and `matrix`
+(2503 cases, 3298 findings) completed, and every R shard of `options`
+finished, but `options` then stopped with
+`concurrent.futures.process.BrokenProcessPool: A process in the process pool
+was terminated abruptly`. No Python shard wrote its `py-*.json`, and macOS
+wrote no crash report for it.
 
-Cause: `audit.rdriver.start` passes `preexec_fn=limit_memory`, which calls
-`audit.config.limit_memory` (`src/audit/config.py:27`), and that sets
-`resource.setrlimit(resource.RLIMIT_AS, (MEMORY_LIMIT, MEMORY_LIMIT))` with
-`MEMORY_LIMIT` at 4 GiB. On macOS 27.2 the call raises `ValueError: current
-limit exceeds maximum limit` for every finite limit tried (4, 8 and 64 GiB,
-and a finite soft limit with an unlimited hard one), checked in a plain
-Python process the same day.
+Cause: unconfirmed. `audit.engine.run_cases` runs the Python side of each
+shard in a `ProcessPoolExecutor` (`src/audit/engine.py:96`), and a worker that
+dies takes the whole step with it. Suspected: a case that grows without
+bound, now that macOS runs workers without the 4 GiB address-space cap (see
+the macOS item in `DONE.md`), so the system kills the worker where Linux
+would raise `MemoryError` inside it.
 
-Fix direction: make the cap best-effort where the platform refuses it (catch
-the `ValueError` on macOS, as Windows already skips it), or cap with a limit
-macOS honours, so the shard still starts; keep the cap on Linux, where it
-works. The R shards are already killed after twice the case timeout, so a
-runaway shard is still stopped. Then rerun the audit item below.
+Fix direction: run the step alone (`bin/metafor-audit.sh --steps options`)
+and watch the workers' memory to find the case; then decide between a memory
+guard macOS honours (for example checking the resident size between cases)
+and making a lost worker a reported finding for its shard rather than the end
+of the step.
 
 ## Run the metafor audit to find the next gaps against R metafor
 

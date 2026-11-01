@@ -91,3 +91,27 @@ Fix direction: drop the `env` argument so the child inherits the parent's
 environment, and keep `-I`. Check it on the Windows CI job.
 
 Done: 2026-11-01 - `src/tests/test_interactive.py` runs the child without `env`, so it inherits `SYSTEMROOT` (`0687fd5`); every job of CI run 41309320319 on that commit passed, Windows included.
+
+## The metafor audit cannot start R on macOS 27.2
+
+Found on 2026-11-01 by the first run of `bin/metafor-audit.sh` on this machine
+(macOS 27.2, R 4.6.2, run `.audit/runs/20261101-204233`): `check-r` and
+`universe` passed, then `matrix` stopped with `subprocess.SubprocessError:
+Exception occurred in preexec_fn` when it started its first R shard, so no
+case was compared.
+
+Cause: `audit.rdriver.start` passes `preexec_fn=limit_memory`, which calls
+`audit.config.limit_memory` (`src/audit/config.py:27`), and that sets
+`resource.setrlimit(resource.RLIMIT_AS, (MEMORY_LIMIT, MEMORY_LIMIT))` with
+`MEMORY_LIMIT` at 4 GiB. On macOS 27.2 the call raises `ValueError: current
+limit exceeds maximum limit` for every finite limit tried (4, 8 and 64 GiB,
+and a finite soft limit with an unlimited hard one), checked in a plain
+Python process the same day.
+
+Fix direction: make the cap best-effort where the platform refuses it (catch
+the `ValueError` on macOS, as Windows already skips it), or cap with a limit
+macOS honours, so the shard still starts; keep the cap on Linux, where it
+works. The R shards are already killed after twice the case timeout, so a
+runaway shard is still stopped. Then rerun the audit item below.
+
+Done: 2026-11-01 - `audit.config.limit_memory` returns when `setrlimit` raises `ValueError`; tests in `src/tests/test_harness_engine.py`. The rerun (`.audit/runs/20261101-211517`) started R and completed `matrix`, then stopped in `options` on a new defect, filed in `TODO.md`.
