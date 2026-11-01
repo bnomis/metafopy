@@ -443,7 +443,7 @@ def quasi_newton(ctx: Context, beta: FloatArray, D: FloatArray, post_modes: Floa
 
 
 def covariance_factor(D: FloatArray, structure: metafopy.core.glmm.Structure) -> FloatArray:
-    """The ``theta`` of :class:`metafopy.core.glmm.GLMMFit` (``D = Lambda Lambda'``) for the covariance matrix ``D``."""
+    """The ``theta`` of :class:`metafopy.core.glmm.GLMMFit` (``D = Lambda @ Lambda.T``) for the covariance matrix ``D``."""
     if structure == 'independent':
         return numpy.sqrt(numpy.diag(D))
     lower = numpy.linalg.cholesky(D)
@@ -456,6 +456,8 @@ def fit_adaptive(
     """Fit ``prob`` as ``GLMMadaptive::mixed_model()`` does, with ``nagq`` quadrature points per random effect and the start value ``d0`` for ``D``.
 
     Raises:
+        metafopy.errors.InputError: the starting fit of the fixed effects has inconsistent shapes or ``size`` is missing.
+        metafopy.errors.InternalError: the clusters are not numbered from 0 and sorted, or ``size`` is missing for the binomial family.
         metafopy.errors.EstimationError: a coefficient exceeds ``control.max_coef_value`` in absolute value, a Hessian is not positive
             definite or the covariance matrix of the estimates cannot be computed.
     """

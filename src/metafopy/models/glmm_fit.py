@@ -282,6 +282,7 @@ def fixed_glm(
     Raises:
         metafopy.errors.EstimationError: the model cannot be fitted.
         metafopy.errors.InputError: ``y`` and ``X`` differ in their number of rows, or a binomial model has no ``size``.
+        metafopy.errors.InternalError: a binomial model has no ``size`` when the log-likelihood is computed.
     """
     try:
         return metafopy.core.glm.glm_fit(X, y, family=family, size=size, offset=offset, link=link)

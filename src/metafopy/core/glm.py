@@ -62,8 +62,7 @@ DBL_EPSILON = sys.float_info.epsilon
 LOGIT_THRESHOLD = 30.0
 # auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
 LINKS: tuple[Link, ...] = ('logit', 'probit', 'cauchit', 'cloglog', 'log', 'identity', 'sqrt')
-# auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
-FAMILIES: tuple[Family, ...] = ('binomial', 'poisson')
+FAMILIES: tuple[Family, ...] = typing.get_args(Family.__value__)
 PROBIT_THRESHOLD = float(-scipy.stats.norm.ppf(DBL_EPSILON))
 CAUCHIT_THRESHOLD = float(-scipy.stats.cauchy.ppf(DBL_EPSILON))
 CLOGLOG_ETA_MAX = 700.0
@@ -309,6 +308,7 @@ def glm_fit(
 
     Raises:
         metafopy.errors.InputError: the arguments have inconsistent shapes or ``size`` is missing.
+        metafopy.errors.InternalError: ``size`` is missing for the binomial family (the log-likelihood).
         metafopy.errors.EstimationError: no valid coefficients can be found or the iterations produce non-finite values.
     """
     n, q = X.shape

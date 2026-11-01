@@ -7,9 +7,10 @@ https://wviechtb.github.io/metafor/reference/misc-options.html.
 """
 
 import annotationlib
+import collections.abc
 import functools
 import inspect
-import time as clock
+import time
 import typing
 
 __all__ = ['format_time', 'timed']
@@ -31,7 +32,7 @@ def format_time(x: float) -> str:
     return f'\nProcessing time: {number(hours)} {h} {number(minutes)} {m} {number(seconds)} {s}\n'
 
 
-def timed[**P, R](fn: typing.Callable[P, R]) -> typing.Callable[P, R]:
+def timed[**P, R](fn: collections.abc.Callable[P, R]) -> collections.abc.Callable[P, R]:
     """Give ``fn`` the keyword ``time``: with ``time=True`` the processing time is printed after the call, as metafor does with ``time=TRUE``."""
     sig = inspect.signature(fn, annotation_format=annotationlib.Format.FORWARDREF)
     if 'time' in sig.parameters:
@@ -45,10 +46,10 @@ def timed[**P, R](fn: typing.Callable[P, R]) -> typing.Callable[P, R]:
     def wrapper(*args: typing.Any, **kwargs: typing.Any) -> R:
         if not kwargs.pop('time', False):
             return fn(*args, **kwargs)
-        start = clock.perf_counter()
+        start = time.perf_counter()
         out = fn(*args, **kwargs)
-        print(format_time(clock.perf_counter() - start), end='')
+        print(format_time(time.perf_counter() - start), end='')
         return out
 
     wrapper.__signature__ = sig.replace(parameters=params)  # type: ignore[attr-defined]
-    return typing.cast('typing.Callable[P, R]', wrapper)
+    return typing.cast('collections.abc.Callable[P, R]', wrapper)

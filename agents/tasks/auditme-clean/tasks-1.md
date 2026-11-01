@@ -255,7 +255,7 @@ every file the commit hook brings into scope (header, "Clearing a package").
 
 ## Task 7: Clear every rule in the rest of `src/metafopy/`
 
-**Status:** todo
+**Status:** in-progress
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** as Task 5
