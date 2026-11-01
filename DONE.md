@@ -69,3 +69,25 @@ git conventions ask for the project's whole-tree checks as a `pre-push` hook
 and in CI.
 
 Done: 2026-11-01 - agents/specs/auditme-clean/spec.md, agents/tasks/auditme-clean/tasks-1.md.
+
+## Windows CI fails `test_import_metafopy_does_not_load_altair`
+
+Found on 2026-11-01 in CI run 41299245958 on `c00e511`: lint, Ubuntu and
+macOS passed, and Windows failed this one test with `assert 1 == 0`. It also
+failed on Windows alone on `fe07de6`, so every push to `main` has shown red
+since then. The log shows the child process dying in `import _overlapped`
+with `OSError: [WinError 10106] The requested service provider could not be
+loaded or initialized`.
+
+Cause: the test in `src/tests/test_interactive.py` runs the child with
+`env={'PYTHONPATH': ':'.join(sys.path)}`, which replaces the whole
+environment. Without `SYSTEMROOT`, Winsock cannot start on Windows, so
+asyncio's `_overlapped` fails to load. The `PYTHONPATH` it passes has no
+effect anyway: `-I` makes the child ignore every `PYTHON*` variable, and it
+finds metafopy through the virtual environment's install. The `':'` join
+would also split Windows paths at their drive letters.
+
+Fix direction: drop the `env` argument so the child inherits the parent's
+environment, and keep `-I`. Check it on the Windows CI job.
+
+Done: 2026-11-01 - `src/tests/test_interactive.py` runs the child without `env`, so it inherits `SYSTEMROOT`; still to be seen on the Windows CI job.

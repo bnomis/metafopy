@@ -120,7 +120,7 @@ def test_check_chart_data_names_missing_column(fit: metafopy.RMAResult) -> None:
 
 def test_import_metafopy_does_not_load_altair() -> None:
     code = 'import sys, metafopy; sys.exit(1 if "altair" in sys.modules else 0)'
-    assert subprocess.run([sys.executable, '-I', '-c', code], check=False, env={'PYTHONPATH': ':'.join(sys.path)}).returncode == 0
+    assert subprocess.run([sys.executable, '-I', '-c', code], check=False).returncode == 0
 
 
 def mark_types(spec: dict[str, typing.Any]) -> set[str]:
