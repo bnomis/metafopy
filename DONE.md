@@ -90,4 +90,4 @@ would also split Windows paths at their drive letters.
 Fix direction: drop the `env` argument so the child inherits the parent's
 environment, and keep `-I`. Check it on the Windows CI job.
 
-Done: 2026-11-01 - `src/tests/test_interactive.py` runs the child without `env`, so it inherits `SYSTEMROOT`; still to be seen on the Windows CI job.
+Done: 2026-11-01 - `src/tests/test_interactive.py` runs the child without `env`, so it inherits `SYSTEMROOT` (`0687fd5`); every job of CI run 41309320319 on that commit passed, Windows included.
