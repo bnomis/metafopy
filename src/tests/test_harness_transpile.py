@@ -54,7 +54,9 @@ def test_bare_name_in_a_model_call_is_a_column_or_else_the_function(monkeypatch:
 
 def test_assignment_targets_and_reads() -> None:
     ast = call('<-', call('[', call('$', sym('dat'), sym('yi')), num(1)), {'t': 'na'})
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert audit.transpile.assignment_targets(ast) == {'dat'}
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert audit.transpile.symbols(ast) >= {'dat'}
     plain = call('<-', sym('res'), call('rma', sym('yi'), sym('vi')))
     assert audit.transpile.assignment_targets(plain) == {'res'}

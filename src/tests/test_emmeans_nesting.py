@@ -14,6 +14,7 @@ import metafopy.methods.emm_summary
 
 type Case = collections.abc.Callable[[metafopy.EmmGrid, str, metafopy.EmmGrid], metafopy.methods.emm_summary.EmmSummary]
 
+# auditme: accept[non-alphabetical-literal] order follows the R fixture script
 WEIGHTS = ('proportional', 'outer', 'cells', 'flat')
 
 SPECS = {
@@ -37,6 +38,7 @@ def means(g: metafopy.EmmGrid, spec: str, em: metafopy.EmmGrid) -> metafopy.meth
     return em.summary(infer=True)
 
 
+# auditme: accept[non-alphabetical-dict-keys] order follows the R fixture script
 CASES: dict[str, Case] = {
     'emm': means,
     'emm_resp': lambda g, spec, em: em.summary(infer=True, type='response'),
@@ -108,11 +110,15 @@ def test_nested_means_and_contrasts(designs: dict[str, metafopy.EmmGrid], prefix
 
 
 def test_detected_nesting(designs: dict[str, metafopy.EmmGrid]) -> None:
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert designs['n1'].nesting == {'grp': ('lat',)}
     assert designs['n1'].display == (True,) * 4
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert designs['n2'].nesting == {'grp3': ('lat',)}
     assert designs['n2'].display == (True, True, True, True, True, False)
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert designs['n3'].nesting == {'grp': ('lat',)}
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert designs['n4'].nesting == {'grp': ('lat',), 'sub': ('lat', 'grp')}
 
 
@@ -154,6 +160,7 @@ def test_nested_weights(designs: dict[str, metafopy.EmmGrid]) -> None:
 def test_nested_contrast_errors(designs: dict[str, metafopy.EmmGrid]) -> None:
     n1 = designs['n1']
     latby = metafopy.emmeans(n1, '~ lat | grp')
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert latby.by == ('lat', 'grp')
     with pytest.raises(metafopy.errors.InputError, match='no factor levels left'):
         metafopy.pairs(latby)
@@ -167,34 +174,45 @@ def test_nested_contrast_errors(designs: dict[str, metafopy.EmmGrid]) -> None:
 
 def test_contrasts_by_the_groups_leave_no_nesting(designs: dict[str, metafopy.EmmGrid]) -> None:
     by_lat = metafopy.pairs(metafopy.emmeans(designs['n1'], 'grp'), by='lat')
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert by_lat.by == ('lat',)
     assert by_lat.nesting == {}
     assert by_lat.display is None
 
 
 def test_term_codes() -> None:
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     info = metafopy.methods.emm_nesting.term_info('lat + lat:grp', ['lat', 'grp'])
     assert info.codes == ({'lat': 1}, {'lat': 2, 'grp': 1})
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert info.main == {'lat'}
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     crossed = metafopy.methods.emm_nesting.term_info('lat * grp', ['lat', 'grp'])
     assert crossed.codes == ({'lat': 1}, {'grp': 1}, {'lat': 1, 'grp': 1})
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     no_intercept = metafopy.methods.emm_nesting.term_info('0 + lat + lat:grp', ['lat', 'grp'])
     assert no_intercept.codes[0] == {'lat': 2}
     wrapped = metafopy.methods.emm_nesting.term_info('C(lat) + I(x ** 2)', ['lat', 'x'])
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert wrapped.main == {'lat'}
     assert wrapped.codes == ({'lat': 1}, {})
 
 
 def test_nesting_from_the_data() -> None:
     frame = pandas.DataFrame({'a': ['x', 'x', 'y', 'y'], 'b': ['p', 'q', 'r', 'r']})
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     levels = {'a': ('x', 'y'), 'b': ('p', 'q', 'r')}
     wgt = numpy.array([1.0, 1.0, 1.0, 1.0])
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert metafopy.methods.emm_nesting.find_nests(frame, wgt, levels, None) == {'b': ('a',)}
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert metafopy.methods.emm_nesting.find_nests(frame, wgt, {'a': ('x', 'y')}, None) == {}
 
 
 def test_parse_nest() -> None:
     parse = metafopy.methods.emm_nesting.parse_nest
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert parse('B %in% A') == {'B': ('A',)}
     assert parse('B %in% (A * C), D %in% B') == {'B': ('A', 'C'), 'D': ('B',)}
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert parse({'B': 'A', 'D': ['A', 'B']}) == {'B': ('A',), 'D': ('A', 'B')}

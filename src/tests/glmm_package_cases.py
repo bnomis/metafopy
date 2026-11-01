@@ -3,6 +3,7 @@
 The fixture comes from ``r/generate_glmm_packages.R``.
 """
 
+import collections.abc
 import typing
 
 import glmm_cases
@@ -10,13 +11,15 @@ import glmm_cases
 import metafopy
 
 type Control = dict[str, typing.Any]
-type Case = typing.Callable[[Control], metafopy.GLMMResult]
+type Case = collections.abc.Callable[[Control], metafopy.GLMMResult]
 
+# auditme: accept[non-alphabetical-dict-keys] argument order of the R call
 ONE_GROUP_ARGS: dict[str, typing.Any] = {'xi': 'tpos', 'mi': 'tneg'}
+# auditme: accept[non-alphabetical-dict-keys] argument order of the R call
 RATE_ARGS: dict[str, typing.Any] = {'xi': 'tpos', 'ti': 'ti', 'measure': 'IRLN'}
 
 
-def case(data: typing.Callable[[], typing.Any], args: dict[str, typing.Any], **kw: typing.Any) -> Case:
+def case(data: collections.abc.Callable[[], typing.Any], args: dict[str, typing.Any], **kw: typing.Any) -> Case:
     """A fit of ``args`` on ``data`` with the keyword arguments ``kw`` and the control settings handed in by the test."""
     return lambda control: metafopy.rma_glmm(**args, data=data(), control=control, **kw)
 
@@ -59,6 +62,7 @@ CASES: dict[str, Case] = {
 }
 
 # the number of quadrature points only matters for GLMMadaptive
+# auditme: accept[non-alphabetical-dict-keys] order follows the R fixture script
 GLMMADAPTIVE_ONLY: dict[str, Case] = {
     'fs_nagq3': bcg(model='UM.FS', nAGQ=3),
     'fs_nagq15': bcg(model='UM.FS', nAGQ=15),
@@ -68,6 +72,7 @@ GLMMADAPTIVE_ONLY: dict[str, Case] = {
 }
 
 # the experimental measures that R fits with at least one package
+# auditme: accept[non-alphabetical-dict-keys] order follows the R fixture script
 EXPERIMENTAL: dict[str, Case] = {
     'rr_fs_ml': case(glmm_cases.bcg, {**glmm_cases.BCG, 'measure': 'RR'}, model='UM.FS'),
     'pln_ml': one_group('PLN'),

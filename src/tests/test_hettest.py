@@ -16,8 +16,11 @@ import metafopy.errors
 import metafopy.methods.hettest
 
 REF: dict[str, typing.Any] = json.loads((pathlib.Path(__file__).parent / 'reference' / 'phase11' / 'hettest.json').read_text(encoding='utf-8'))
+# auditme: accept[non-alphabetical-literal] order follows the R fixture script
 ALL_TESTS = ('score', 'lrt', 'wald', 'ksn', 'ksx2', 'adn', 'adx2')
+# auditme: accept[non-alphabetical-literal] order follows the R fixture script
 MODEL_TESTS = ('score', 'lrt', 'wald')
+# auditme: accept[non-alphabetical-literal] order follows the R fixture script
 SCORE_LRT = ('score', 'lrt')
 LRT_WALD = ('lrt', 'wald')
 
@@ -28,10 +31,12 @@ def dat() -> pandas.DataFrame:
 
 
 @pytest.fixture(scope='module')
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def hack() -> pandas.DataFrame:
     return metafopy.datasets.load('hackshaw1998')
 
 
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def same_text(actual: str, expected: str) -> None:
     assert refutil.r_print(actual).strip() == refutil.r_print(expected).strip()
 

@@ -1,5 +1,6 @@
 """The experimental-measure ``rma_glmm`` calls stored in ``reference/phase6/glmm_extras.json`` (see ``r/generate_glmm_extras.R``)."""
 
+import collections.abc
 import functools
 import typing
 import warnings
@@ -10,7 +11,7 @@ import numpy
 import metafopy
 import metafopy.transf
 
-type Fit = typing.Callable[[], metafopy.GLMMResult]
+type Fit = collections.abc.Callable[[], metafopy.GLMMResult]
 
 # auditme: accept[non-alphabetical-dict-keys] the order follows metafor's documented option order or the R fixture generator
 PROP: dict[str, typing.Any] = {'xi': 'tpos', 'mi': 'tneg'}
@@ -64,7 +65,7 @@ CASES: dict[str, Fit] = {
 
 # -- predict() ---------------------------------------------------------------------------------------------------
 
-type Predict = typing.Callable[[], metafopy.PredictResult]
+type Predict = collections.abc.Callable[[], metafopy.PredictResult]
 
 
 @functools.cache

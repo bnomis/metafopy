@@ -4,6 +4,7 @@
 scale standard errors of an identity-link location-scale fit at two Richardson depths.
 """
 
+import collections.abc
 import sys
 import typing
 import warnings
@@ -16,7 +17,7 @@ import refutil
 import metafopy
 import metafopy.datasets
 
-any_permutest: typing.Callable[..., typing.Any] = metafopy.permutest
+any_permutest: collections.abc.Callable[..., typing.Any] = metafopy.permutest
 
 REF: dict[str, typing.Any] = refutil.load_phase12('audit4_numerics')
 
@@ -25,6 +26,7 @@ def kon() -> pandas.DataFrame:
     return pandas.DataFrame(REF['gen']['kon'])
 
 
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def bcg() -> pandas.DataFrame:
     return metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=metafopy.datasets.load('dat.bcg'))
 

@@ -70,3 +70,12 @@ The operator raises these in the shared auditme skill's `requests.md`.
   checker should count a bare `raise` in an `except` as a raise of the
   caught types.
   Site: `src/metafopy/effects/fivenum.py` (`conv_fivenum`).
+
+## passthrough-shim (pytest fixture)
+
+- Rule: a function decorated `@pytest.fixture` that returns a call is
+  reported as a shim, but tests request it by its name, so it cannot be
+  removed. The checker should skip fixtures.
+  Site: `src/tests/test_audit4_robust.py` (`blup_models`),
+  `src/tests/test_audit5_plots.py` (`vifs`), `src/tests/test_emmeans.py`
+  (`grid`).

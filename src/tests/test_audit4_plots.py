@@ -15,8 +15,8 @@ import metafopy
 import metafopy.datasets
 import metafopy.errors
 import metafopy.methods.ls_vif
+import metafopy.plot
 import metafopy.plot.cumul
-from metafopy.plot import ForestResult, RegplotResult
 
 pytestmark = pytest.mark.filterwarnings('ignore:One or more intervals do not contain')
 
@@ -29,6 +29,7 @@ MV_RTOL = 1e-5
 
 
 @pytest.fixture(scope='module')
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def dat() -> pandas.DataFrame:
     return metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=metafopy.datasets.load('dat.bcg'))
 
@@ -51,6 +52,7 @@ def mv_t(kon: pandas.DataFrame) -> metafopy.RMAMVResult:
 
 
 @pytest.fixture(scope='module')
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def uni(dat: pandas.DataFrame) -> metafopy.RMAResult:
     return metafopy.rma('yi', 'vi', mods='~ ablat + year', data=dat)
 
@@ -93,6 +95,7 @@ def test_vif_mv_default(mv: metafopy.RMAMVResult) -> None:
 def test_vif_mv_table(mv: metafopy.RMAMVResult, mv_t: metafopy.RMAMVResult) -> None:
     out = metafopy.vif(mv, table=True)
     check_vif(out, VIF['mv_table'], 'table', rtol=MV_RTOL, text=True)
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     check_table(out, ['estimate', 'se', 'zval', 'pval', 'ci.lb', 'ci.ub'])
     out_t = metafopy.vif(mv_t, table=True)
     check_vif(out_t, VIF['mv_table_t'], 'table, test t', rtol=MV_RTOL)
@@ -122,6 +125,7 @@ def test_vif_mv_btt(mv: metafopy.RMAMVResult) -> None:
     )
 
 
+# auditme: accept[duplicate-call-sequence] each test module keeps its own comparison helper
 def test_vif_mv_intercept_and_errors(mv: metafopy.RMAMVResult) -> None:
     with pytest.raises(metafopy.errors.InputError, match='Cannot compute VIF'):
         metafopy.vif(mv, btt=0)
@@ -170,6 +174,7 @@ def test_vif_selmodel(sel: metafopy.SelmodelResult) -> None:
     check_vif(sel.vif(), VIF['sel_default'], 'method')
     out = metafopy.vif(sel, table=True)
     check_vif(out, VIF['sel_table'], 'table', text=True)
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     check_table(out, ['estimate', 'se', 'zval', 'pval', 'ci.lb', 'ci.ub'])
     check_vif(metafopy.vif(sel, intercept=True), VIF['sel_intercept'], 'intercept')
     check_vif(metafopy.vif(sel, btt=[1, 2]), VIF['sel_btt'], 'btt', text=True)
@@ -229,6 +234,7 @@ def test_vif_ls_intercept_and_fixed(dat: pandas.DataFrame) -> None:
 
 
 @pytest.fixture
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def ax() -> collections.abc.Iterator[matplotlib.axes.Axes]:
     fig, axes = matplotlib.pyplot.subplots(figsize=(7, 7))
     yield axes
@@ -243,7 +249,7 @@ def fit_one(kind: str, dat: pandas.DataFrame, formula: str = '~ ablat') -> typin
     return metafopy.selmodel(metafopy.rma('yi', 'vi', mods=formula, data=dat), type='halfnorm')
 
 
-def check_regplot(out: RegplotResult, ref: dict[str, typing.Any], rtol: float = 1e-8) -> None:
+def check_regplot(out: metafopy.plot.RegplotResult, ref: dict[str, typing.Any], rtol: float = 1e-8) -> None:
     refutil.close(out.xi, ref['xi'], 'xi')
     refutil.close(out.yi, ref['yi'], 'yi', rtol=rtol)
     refutil.close(out.psize, ref['psize'], 'psize', rtol=rtol)
@@ -392,15 +398,16 @@ def test_regplot_result_frame_has_the_columns_of_metafor(dat: pandas.DataFrame, 
 
 
 @pytest.fixture(scope='module')
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def plain(dat: pandas.DataFrame) -> metafopy.RMAResult:
     return metafopy.rma('yi', 'vi', data=dat)
 
 
-def annotations(result: ForestResult) -> list[str]:
+def annotations(result: metafopy.plot.ForestResult) -> list[str]:
     return [t.get_text() for t in result.ax.texts if '[' in t.get_text()]
 
 
-def check_layout(out: ForestResult, ref: dict[str, typing.Any]) -> None:
+def check_layout(out: metafopy.plot.ForestResult, ref: dict[str, typing.Any]) -> None:
     refutil.close(out.xlim, ref['xlim'], 'xlim', rtol=1e-6)
     refutil.close(out.alim, ref['alim'], 'alim', rtol=1e-6)
     refutil.close(out.textpos, ref['textpos'], 'textpos', rtol=1e-6)

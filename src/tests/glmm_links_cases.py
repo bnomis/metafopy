@@ -1,13 +1,15 @@
 """The ``rma_glmm`` calls with ``link`` and ``family`` whose R results are stored in ``reference/phase9/glmm_links.json`` (see ``r/generate_glmm_links.R``)."""
 
+import collections.abc
 import typing
 
 import metafopy
 import metafopy.core.glm
 import metafopy.datasets
 
-type Fit = typing.Callable[[], metafopy.GLMMResult]
+type Fit = collections.abc.Callable[[], metafopy.GLMMResult]
 
+# auditme: accept[non-alphabetical-literal] order follows the R fixture script
 LINKS = ('probit', 'cloglog', 'cauchit')
 
 

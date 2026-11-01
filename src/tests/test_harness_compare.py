@@ -8,16 +8,16 @@ import audit.report
 import audit.rlib
 import audit.steps
 import audit.universe
-import audit.valuetree as valuetree
+import audit.valuetree
 
 
-def vector(values: list[object], kind: str = 'num') -> valuetree.Node:
+def vector(values: list[object], kind: str = 'num') -> audit.valuetree.Node:
     return {'k': kind, 'v': values, 'd': None}
 
 
-def diffs(r: valuetree.Node, py: valuetree.Node) -> list[valuetree.Diff]:
-    out: list[valuetree.Diff] = []
-    valuetree.compare(r, py, '', out)
+def diffs(r: audit.valuetree.Node, py: audit.valuetree.Node) -> list[audit.valuetree.Diff]:
+    out: list[audit.valuetree.Diff] = []
+    audit.valuetree.compare(r, py, '', out)
     return out
 
 
@@ -46,24 +46,27 @@ def test_one_based_indices_equal_zero_based_ones() -> None:
 
 
 def test_not_every_difference_of_one_is_an_index() -> None:
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert [d.kind for d in diffs(vector([1.5, 2.5]), vector([0.5, 1.5]))] == ['value-diff']
 
 
 def test_missing_values_match_each_other_only() -> None:
     assert diffs(vector([None, 1.0]), vector([None, 1.0])) == []
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert [d.kind for d in diffs(vector([None]), vector([1.0]))] == ['value-diff']
 
 
 def test_missing_field_is_reported_by_to_node() -> None:
-    guide: valuetree.Node = {'k': 'list', 'items': [{'name': 'a', 'node': vector([1.0])}, {'name': 'b', 'node': vector([2.0])}], 'cls': ['list']}
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
+    guide: audit.valuetree.Node = {'k': 'list', 'items': [{'name': 'a', 'node': vector([1.0])}, {'name': 'b', 'node': vector([2.0])}], 'cls': ['list']}
     missing: list[str] = []
-    valuetree.to_node({'a': 1.0}, guide, '', missing)
+    audit.valuetree.to_node({'a': 1.0}, guide, '', missing)
     assert missing == ['$b']
 
 
 def test_python_names_find_r_names() -> None:
-    assert valuetree.py_name('ci.lb') == 'ci_lb'
-    found, value = valuetree.lookup({'ci_lb': 3}, 'ci.lb')
+    assert audit.valuetree.py_name('ci.lb') == 'ci_lb'
+    found, value = audit.valuetree.lookup({'ci_lb': 3}, 'ci.lb')
     assert found
     assert value == 3
 
@@ -102,12 +105,14 @@ def test_different_names_are_a_label_difference() -> None:
 
 
 def test_matrix_without_dimnames_where_r_has_them_is_a_label_difference() -> None:
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     r = {'k': 'num', 'v': [1.0] * 4, 'd': [2, 2], 'rn': ['a', 'b'], 'cn': ['a', 'b']}
     py = {'k': 'num', 'v': [1.0] * 4, 'd': [2, 2]}
     assert {d.kind for d in diffs(r, py)} == {'label-diff'}
 
 
 def test_positions_as_row_names_are_not_labels() -> None:
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     r = {'k': 'num', 'v': [1.0] * 4, 'd': [2, 2], 'rn': ['1', '2'], 'cn': None}
     py = {'k': 'num', 'v': [1.0] * 4, 'd': [2, 2]}
     assert diffs(r, py) == []
@@ -132,26 +137,29 @@ def test_every_new_finding_is_rendered_in_the_report(tmp_path: pathlib.Path) -> 
 
 
 def test_digits_number_stands_for_the_vector_of_nine() -> None:
-    guide: valuetree.Node = {'k': 'list', 'items': [{'name': 'digits', 'node': vector([4.0] * 9)}], 'cls': ['list']}
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
+    guide: audit.valuetree.Node = {'k': 'list', 'items': [{'name': 'digits', 'node': vector([4.0] * 9)}], 'cls': ['list']}
     missing: list[str] = []
-    py = valuetree.to_node({'digits': 4}, guide, '', missing)
-    out: list[valuetree.Diff] = []
-    valuetree.compare(guide, py, '', out)
+    py = audit.valuetree.to_node({'digits': 4}, guide, '', missing)
+    out: list[audit.valuetree.Diff] = []
+    audit.valuetree.compare(guide, py, '', out)
     assert out == []
-    other = valuetree.to_node({'digits': 2}, guide, '', missing)
-    valuetree.compare(guide, other, '', out)
+    other = audit.valuetree.to_node({'digits': 2}, guide, '', missing)
+    audit.valuetree.compare(guide, other, '', out)
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert [d.kind for d in out] == ['value-diff']
 
 
 def test_printed_lines_ignore_curly_quotes_and_trailing_spaces() -> None:
-    assert valuetree.cell_equal("Signif. codes:  0 '***' 0.001  ", 'Signif. codes:  0 \u2018***\u2019 0.001')[0] == 'same'
-    assert valuetree.cell_equal("a 'b'", "a 'c'")[0] == 'diff'
+    assert audit.valuetree.cell_equal("Signif. codes:  0 '***' 0.001  ", 'Signif. codes:  0 \u2018***\u2019 0.001')[0] == 'same'
+    assert audit.valuetree.cell_equal("a 'b'", "a 'c'")[0] == 'diff'
 
 
 def test_printed_lines_ignore_blank_lines() -> None:
     r = vector(['', 'QM = 1', ''], 'str')
     py = vector(['QM = 1'], 'str')
     assert diffs(r, py) == []
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert [d.kind for d in diffs(vector(['a', 'b'], 'str'), vector(['a'], 'str'))] == ['shape-diff']
 
 

@@ -1,5 +1,6 @@
 """rma_mv (fits, structures, tests, printing, weights, hat values) checked against R metafor 5.2-1."""
 
+import collections.abc
 import json
 import pathlib
 import typing
@@ -18,7 +19,7 @@ RTOL = 1e-5
 VC_RTOL = 1e-4
 VC_ATOL = 1e-6
 
-type Fit = typing.Callable[[], metafopy.RMAMVResult]
+type Fit = collections.abc.Callable[[], metafopy.RMAMVResult]
 
 
 def frame(name: str) -> pandas.DataFrame:

@@ -26,6 +26,7 @@ import metafopy.transf
 
 
 @pytest.fixture
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def ax() -> collections.abc.Iterator[matplotlib.axes.Axes]:
     fig, axes = matplotlib.pyplot.subplots(figsize=(7, 7))
     yield axes
@@ -33,16 +34,19 @@ def ax() -> collections.abc.Iterator[matplotlib.axes.Axes]:
 
 
 @pytest.fixture(scope='module')
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def dat() -> pandas.DataFrame:
     return metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=metafopy.datasets.load('dat.bcg'))
 
 
 @pytest.fixture(scope='module')
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def res(dat: pandas.DataFrame) -> metafopy.RMAResult:
     return metafopy.rma('yi', 'vi', data=dat)
 
 
 @pytest.fixture(scope='module')
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def meta(dat: pandas.DataFrame) -> metafopy.RMAResult:
     return metafopy.rma('yi', 'vi', mods='~ ablat + year', data=dat)
 
@@ -99,6 +103,7 @@ def test_forest_label_of_a_correlation_back_transformation(ax: matplotlib.axes.A
 
 
 def test_forest_ilab_lab_single_string(res: metafopy.RMAResult, dat: pandas.DataFrame, ax: matplotlib.axes.Axes) -> None:
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     metafopy.forest(res, ilab=dat[['ablat']], ilab_lab='Latitude', ax=ax)
     found = texts(ax)
     assert 'Latitude' in found
@@ -154,7 +159,9 @@ def test_plot_cumul_named_colours(res: metafopy.RMAResult, ax: matplotlib.axes.A
 
 
 def test_color_ramp_names_and_hex_agree() -> None:
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert metafopy.plot.rutils.color_ramp('white', '#000000', 3) == ['#FFFFFF', '#7F7F7F', '#000000']
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert metafopy.plot.rutils.color_ramp('#FFFFFF', '#000000', 3) == ['#FFFFFF', '#7F7F7F', '#000000']
 
 
@@ -281,6 +288,7 @@ def perm(meta: metafopy.RMAResult) -> metafopy.methods.permutest.PermutestResult
 
 
 @pytest.fixture(scope='module')
+# auditme: accept[passthrough-shim] a pytest fixture, requested by name; the wrapper builds the object once per test
 def vifs(meta: metafopy.RMAResult) -> metafopy.methods.vif.VIFResult:
     return metafopy.vif(meta, btt=1, sim=30, progbar=False, seed=1)
 
@@ -322,6 +330,7 @@ def visible_spines(a: matplotlib.axes.Axes) -> set[str]:
     ('bty', 'sides'),
     [
         ('o', {'top', 'right', 'left', 'bottom'}),
+        # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
         ('l', {'left', 'bottom'}),
         ('7', {'top', 'right'}),
         ('c', {'top', 'left', 'bottom'}),
@@ -352,12 +361,14 @@ def test_baujat_las(res: metafopy.RMAResult) -> None:
 def test_labbe_bty(dat: pandas.DataFrame, ax: matplotlib.axes.Axes) -> None:
     fit = metafopy.rma(ai='tpos', bi='tneg', ci='cpos', di='cneg', data=metafopy.datasets.load('dat.bcg'), measure='RR')
     metafopy.labbe(fit, bty='l', ai='tpos', bi='tneg', ci_counts='cpos', di='cneg', ax=ax)
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert visible_spines(ax) == {'left', 'bottom'}
 
 
 def test_plot_selmodel_bty_and_col(meta: metafopy.RMAResult, ax: matplotlib.axes.Axes) -> None:
     sel = typing.cast(metafopy.SelmodelResult, metafopy.selmodel(meta, type='halfnorm'))
     metafopy.plot_selmodel(sel, bty='l', col='red', ax=ax)
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert visible_spines(ax) == {'left', 'bottom'}
     assert any(line.get_color() == '#FF0000' or line.get_color() == 'red' for line in ax.lines)
 

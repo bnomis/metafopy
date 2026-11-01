@@ -1,5 +1,6 @@
 """The ``rma_glmm`` calls whose R results are stored in ``reference/phase3/glmm.json`` (see ``r/generate_glmm.R``)."""
 
+import collections.abc
 import typing
 
 import numpy
@@ -8,7 +9,7 @@ import pandas
 import metafopy
 import metafopy.datasets
 
-type Fit = typing.Callable[[], metafopy.GLMMResult]
+type Fit = collections.abc.Callable[[], metafopy.GLMMResult]
 
 
 def bcg() -> pandas.DataFrame:

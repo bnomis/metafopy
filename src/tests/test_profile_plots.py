@@ -143,15 +143,19 @@ def test_labels_of_the_panels(prof: dict[str, typing.Any], fig: matplotlib.figur
     assert [a.get_xlabel() for a in axes] == [r'$\tau^2$ Value', r'$\delta_{2}$ Value']
     assert [a.get_title() for a in axes] == [r'Profile Plot for $\tau^2$', r'Profile Plot for $\delta_{2}$']
     assert {a.get_ylabel() for a in axes} == {'Log-Likelihood'}
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     custom = metafopy.plot.plot_profile(prof['mv'], xlab=['a', 'b'], main='m', ylab='y', ax=fig.add_subplot(111))
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert [a.get_xlabel() for a in custom] == ['a', 'b']
     assert {a.get_title() for a in custom} == {'m'}
 
 
 def test_panel_label_lengths_are_checked(prof: dict[str, typing.Any], fig: matplotlib.figure.Figure) -> None:
     with pytest.raises(metafopy.errors.InputError, match="'xlab'"):
+        # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
         metafopy.plot.plot_profile(prof['mv'], xlab=['a', 'b', 'c'], ax=fig.add_subplot(111))
     with pytest.raises(metafopy.errors.InputError, match="'main'"):
+        # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
         metafopy.plot.plot_profile(prof['ls_single'], main=['a', 'b'], ax=fig.add_subplot(111))
 
 

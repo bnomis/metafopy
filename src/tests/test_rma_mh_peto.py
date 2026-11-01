@@ -1,5 +1,6 @@
 """rma_mh and rma_peto (fits, printing, weights, residuals, leave1out, cumul, confint) checked against R metafor 5.2-1."""
 
+import collections.abc
 import json
 import pathlib
 import typing
@@ -17,7 +18,7 @@ import metafopy.transf
 REF: dict[str, typing.Any] = json.loads((pathlib.Path(__file__).parent / 'reference' / 'phase3' / 'mh_peto.json').read_text(encoding='utf-8'))
 RTOL = 1e-8
 
-type Fit = typing.Callable[[], metafopy.MHResult | metafopy.PetoResult]
+type Fit = collections.abc.Callable[[], metafopy.MHResult | metafopy.PetoResult]
 
 
 def bcg_data() -> pandas.DataFrame:
@@ -26,6 +27,7 @@ def bcg_data() -> pandas.DataFrame:
     return d
 
 
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def bcg_na_data() -> pandas.DataFrame:
     d = metafopy.datasets.load('bcg')
     d.loc[2, 'tpos'] = numpy.nan
@@ -58,7 +60,7 @@ def yusuf_table6() -> numpy.ndarray[tuple[int], numpy.dtype[numpy.bool_]]:
     return (yusuf()['table'] == '6').to_numpy()
 
 
-def bcg_subset(select: typing.Callable[[pandas.Series], pandas.Series]) -> pandas.DataFrame:
+def bcg_subset(select: collections.abc.Callable[[pandas.Series], pandas.Series]) -> pandas.DataFrame:
     d = bcg_data()
     return d[select(d['alloc'])].reset_index(drop=True)
 

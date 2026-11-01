@@ -4,8 +4,8 @@ import pandas
 import pytest
 
 import metafopy
+import metafopy.core.labelled
 import metafopy.datasets
-from metafopy.core.labelled import RFrame, column
 
 
 @pytest.fixture(scope='module')
@@ -16,22 +16,23 @@ def bcg_mods() -> metafopy.models.rma_uni.RMAResult:
 
 def test_column_switches_to_scientific_like_r() -> None:
     # print(c(-1.620293e-03, 5.177601e-05)) in R
-    assert column([-1.620293e-03, 5.177601e-05]) == ['-1.620293e-03', '5.177601e-05']
+    assert metafopy.core.labelled.column([-1.620293e-03, 5.177601e-05]) == ['-1.620293e-03', '5.177601e-05']
     # print(c(100000, 2.5)), print(c(123456, 0.5))
-    assert column([100000.0, 2.5]) == ['1.0e+05', '2.5e+00']
-    assert column([123456.0, 0.5]) == ['123456.0', '0.5']
+    assert metafopy.core.labelled.column([100000.0, 2.5]) == ['1.0e+05', '2.5e+00']
+    assert metafopy.core.labelled.column([123456.0, 0.5]) == ['123456.0', '0.5']
 
 
 def test_dfbetas_prints_with_the_digits_of_the_model(bcg_mods: metafopy.models.rma_uni.RMAResult) -> None:
     out = str(metafopy.dfbetas(bcg_mods)).splitlines()
     # R: print(dfbetas(res)) gives "1   0.0065  0.0224" for the first study
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert out[1].split() == ['intrcpt', 'ablat']
     assert out[2].split() == ['1', '0.0065', '0.0224']
 
 
 def test_vcov_prints_wide_matrices_in_blocks(bcg_mods: metafopy.models.rma_uni.RMAResult) -> None:
     out = metafopy.vcov(bcg_mods, type='obs')
-    assert isinstance(out, RFrame)
+    assert isinstance(out, metafopy.core.labelled.RFrame)
     assert '...' not in str(out)
     # R: print(vcov(res)) has -1.620293e-03 and 5.177601e-05 in the column of ablat
     assert '5.177601e-05' in str(metafopy.vcov(bcg_mods)).split()
@@ -118,6 +119,7 @@ def test_predict_names_the_model_matrix_column_of_one_column_matrices() -> None:
 def test_marginal_vcov_prints_zeros_as_dots(bcg_mods: metafopy.models.rma_uni.RMAResult) -> None:
     # R: print(vcov(res, type = "obs")) has class vcovmat, which shows four decimals and "." for zero
     lines = str(metafopy.vcov(bcg_mods, type='obs')).splitlines()
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert lines[1].split()[:4] == ['1', '2', '3', '4']
     assert lines[2].split()[:4] == ['1', '0.4019', '.', '.']
 
@@ -145,6 +147,7 @@ def test_scale_prediction_has_no_prediction_interval() -> None:
     dat = metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=metafopy.datasets.load('dat.bcg'))
     res = metafopy.rma(yi='yi', vi='vi', data=dat, mods='~ ablat', scale='~ ablat')
     # R: predict(res, newscale = 30) gives pred, se, ci.lb and ci.ub
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert str(metafopy.predict(res, newscale=[30])).split()[:4] == ['pred', 'se', 'ci.lb', 'ci.ub']
     assert 'pi.lb' not in str(metafopy.predict(res, newscale=[30]))
 

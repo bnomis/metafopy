@@ -23,6 +23,7 @@ matplotlib.use('Agg')
 DIGITS = [2, numpy.nan, 1]  # R: digits = c(2, NA, 1); an unnamed vector means its first element for every statistic
 
 
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def konstantopoulos() -> object:
     return metafopy.datasets.load('konstantopoulos2011')
 
@@ -127,6 +128,7 @@ def test_list_rma_subsetting() -> None:
     sub = metafopy.rstandard(res)[0:3]
     numpy.testing.assert_allclose(sub.resid, [0.1397, -0.2363, -0.3773], atol=5e-5)
     numpy.testing.assert_allclose(sub.se, [0.6183, 0.4801, 0.6888], atol=5e-5)
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert sub.slab == ('1', '2', '3')
     assert sub.digits == metafopy.rstandard(res).digits
     pred = metafopy.predict(res)[1:3]
@@ -290,8 +292,10 @@ def test_cbind_with_a_data_frame_keyword() -> None:
     # R: names(cbind(escalc(...), w = dat[1:3])) ends with "w.trial", "w.author", "w.year"; a one-column data frame keeps its own name
     dat = refutil.bcg()
     es = metafopy.escalc(measure='RR', ai=dat['tpos'], bi=dat['tneg'], ci=dat['cpos'], di=dat['cneg'], data=dat)
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     out = metafopy.cbind_escalc(es, w=dat[['trial', 'author', 'year']])
     assert list(out.columns[-3:]) == ['w.trial', 'w.author', 'w.year']
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert list(metafopy.cbind_escalc(es, w=dat[['trial']]).columns)[-1] == 'trial'
 
 

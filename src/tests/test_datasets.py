@@ -7,6 +7,7 @@ def test_list_and_load() -> None:
     names = metafopy.datasets.list_datasets()
     assert 'dat.bcg' in names
     bcg = metafopy.datasets.load('bcg')
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert list(bcg.columns[:3]) == ['trial', 'author', 'year']
     assert len(bcg) == 13
 

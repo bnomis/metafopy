@@ -40,6 +40,7 @@ def same(a: metafopy.SelProfileResult, b: metafopy.SelProfileResult) -> None:
 
 # auditme: accept[literal-duplication] test cases spell out their own R arguments
 @pytest.mark.parametrize(('name', 'parallel'), [('tau2', 'snow'), ('mods', 'snow'), ('delta', 'multicore'), ('delta_xlim', 'multicore')])
+# auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
 def test_process_pool_equals_serial(name: str, parallel: typing.Literal['snow', 'multicore']) -> None:
     same(run(name), run(name, parallel=parallel, ncpus=2))
 

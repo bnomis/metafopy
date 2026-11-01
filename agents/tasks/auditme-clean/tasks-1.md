@@ -289,7 +289,7 @@ modules), one package per commit.
 
 ## Task 8: Clear every rule in `src/tests/`
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** large
 **Spec Reference:** as Task 5
@@ -298,17 +298,17 @@ modules), one package per commit.
 
 **Subtasks:**
 
-- [ ] As Task 5's subtasks, for `src/tests/`; test modules keep their own fixture loaders (`paired-sibling-helpers`: accept with "each test module keeps its own fixture loader"), and literals that mirror the R fixture scripts are accepted with the reasons the project already uses
+- [x] As Task 5's subtasks, for `src/tests/`; test modules keep their own fixture loaders (`paired-sibling-helpers`: accept with "each test module keeps its own fixture loader"), and literals that mirror the R fixture scripts are accepted with the reasons the project already uses
 
 **Acceptance Criteria:**
 
-- [ ] No unaccepted hit under `src/tests/`
+- [x] No unaccepted hit under `src/tests/`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest` on every test file the task edits
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest` on every test file the task edits
 
 **Notes:**
 

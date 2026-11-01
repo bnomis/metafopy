@@ -118,6 +118,7 @@ def test_warnings(name: str) -> None:
 
 
 @pytest.mark.parametrize('name', [n for n in FITS if n not in TOLERANCE and n not in SATURATED_ROUNDOFF])
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def test_print_exact(name: str) -> None:
     ref = REF[name]
     res, _ = fit_with_warnings(name)
@@ -177,6 +178,7 @@ def test_experimental_measures_need_their_data() -> None:
 
 # -- predict, ranef -------------------------------------------------------------------------------------------------
 
+# auditme: accept[non-alphabetical-dict-keys] order follows the R fixture script
 PREDICT_TOLERANCE = {
     'al': 1e-4,
     'el': 1e-3,

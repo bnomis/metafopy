@@ -219,6 +219,7 @@ def test_vif_frame(fits: dict[str, typing.Any]) -> None:
     frame = metafopy.methods.vif.vif(fits['bcg'], btt=[1, [2, 3], 4]).to_frame()
     assert list(frame.columns) == ['coefs', 'm', 'vif', 'sif']
     assert list(frame.index) == [0, 1, 2]
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     named = metafopy.methods.vif.vif(fits['bcg'], btt=['ablat', 'alloc']).to_frame()
     assert list(named.columns) == ['spec', 'coefs', 'm', 'vif', 'sif']
     assert list(named['coefs']) == ['2', '3:4']

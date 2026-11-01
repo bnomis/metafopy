@@ -11,11 +11,13 @@ import metafopy.printing
 
 
 @pytest.fixture(autouse=True)
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def console_80() -> None:
     metafopy.printing.SETTINGS['width'] = 80
 
 
 @pytest.fixture(scope='module')
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def dat() -> pandas.DataFrame:
     return metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=metafopy.datasets.load('dat.bcg'))
 
@@ -23,13 +25,16 @@ def dat() -> pandas.DataFrame:
 def test_hatvalues_matrix_is_named_by_study(dat: pandas.DataFrame) -> None:
     res: typing.Any = metafopy.rma('yi', 'vi', mods='~ ablat', data=dat)
     hat = res.hatvalues(type='matrix')
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert list(hat.rownames)[:3] == ['1', '2', '3']
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert list(hat.colnames)[:3] == ['1', '2', '3']
 
 
 def test_predict_addx_names(dat: pandas.DataFrame) -> None:
     res: typing.Any = metafopy.rma('yi', 'vi', mods='~ ablat', data=dat)
     pred: typing.Any = res.predict(newmods=[[20]], addx=True)
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert tuple(pred.X.colnames) == ('intrcpt', 'ablat')
 
 

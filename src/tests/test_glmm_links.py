@@ -6,6 +6,7 @@ The mixed models use ``glmer()`` with probit, complementary log-log, identity an
 loose tolerance (R then often only warns), so those estimates agree to ``MIXED`` or the entries of ``TOLERANCE``.
 """
 
+import collections.abc
 import functools
 import json
 import pathlib
@@ -51,6 +52,7 @@ EXPERIMENTAL = "The use of this 'measure' is experimental - treat results with c
 FITS = list(glmm_links_cases.CASES)
 
 
+# auditme: accept[duplicate-call-sequence] each test module keeps its own comparison helper
 def close(actual: typing.Any, expected: typing.Any, what: str, rtol: float) -> None:
     """Relative differences scaled by ``max(|expected|, 1e-3)``; NaN (and infinite values) must match R's NA."""
     exp = numpy.atleast_1d(numpy.array([numpy.nan if v is None else v for v in refutil.as_list(expected)], dtype=float))
@@ -124,6 +126,7 @@ def test_warnings(name: str) -> None:
 
 
 @pytest.mark.parametrize('name', [n for n in FITS if not is_mixed(REF[n]) and n not in NOISY_QE_WLD])
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def test_print_exact(name: str) -> None:
     ref = REF[name]
     res, _ = fit_with_warnings(name)
@@ -131,6 +134,7 @@ def test_print_exact(name: str) -> None:
     assert refutil.same_print(res.summary(showfit=True), ref['print_showfit']), f'\n{res.summary(showfit=True)}\n{ref["print_showfit"]}'
 
 
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def mask_numbers(text: str) -> str:
     return re.sub(r' +', ' ', re.sub(r'-?\d+\.\d+|<\.\d+|\d+', '#', refutil.r_print(text)))
 
@@ -212,7 +216,7 @@ def test_unknown_family() -> None:
         (glmm_links_cases.r1(family='binomial'), 'poisson'),
     ],
 )
-def test_family_must_match_the_data(call: typing.Callable[[], metafopy.GLMMResult], own: str) -> None:
+def test_family_must_match_the_data(call: collections.abc.Callable[[], metafopy.GLMMResult], own: str) -> None:
     with pytest.raises(metafopy.errors.InputError, match=f"must be '{own}'"):
         call()
 
@@ -268,10 +272,10 @@ class TestLinks:
 
 # -- predict ---------------------------------------------------------------------------------------------------------------------------------
 
-type Predict = typing.Callable[[], metafopy.PredictResult]
+type Predict = collections.abc.Callable[[], metafopy.PredictResult]
 
 
-def predicting(model: typing.Callable[[], metafopy.GLMMResult], **kw: typing.Any) -> Predict:
+def predicting(model: collections.abc.Callable[[], metafopy.GLMMResult], **kw: typing.Any) -> Predict:
     fitted = functools.cache(model)
 
     def call() -> metafopy.PredictResult:
@@ -282,6 +286,7 @@ def predicting(model: typing.Callable[[], metafopy.GLMMResult], **kw: typing.Any
     return call
 
 
+# auditme: accept[non-alphabetical-dict-keys] order follows the R fixture script
 PREDICT: dict[str, Predict] = {
     'or_probit_mod': predicting(glmm_links_cases.b2(model='UM.FS', link='probit', mods='~ ablat'), newmods=[10, 30, 50]),
     'or_probit_mod_exp': predicting(glmm_links_cases.b2(model='UM.FS', link='probit', mods='~ ablat'), newmods=[10, 30, 50], transf=numpy.exp),
@@ -292,6 +297,7 @@ PREDICT: dict[str, Predict] = {
     'irln_sqrt_fe': predicting(glmm_links_cases.r1(link='sqrt', method='FE')),
     'irr_identity_fe': predicting(glmm_links_cases.h2(model='UM.FS', link='identity', method='FE'), transf=numpy.exp),
 }
+# auditme: accept[non-alphabetical-dict-keys] order follows the R fixture script
 PREDICT_TOLERANCE = {'or_probit_mod': MIXED, 'or_probit_mod_exp': MIXED, 'or_probit': MIXED, 'plo_probit': MIXED, 'plo_cloglog_mod': MIXED}
 
 

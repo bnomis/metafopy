@@ -157,6 +157,7 @@ def test_redundant_predictor_dropped(dat: pandas.DataFrame) -> None:
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter('always')
         res = metafopy.rma(data=d, mods='~ ablat + ablat2')
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert res.coef_names == ('intrcpt', 'ablat')
     assert any('Redundant' in str(x.message) for x in w)
 

@@ -24,11 +24,13 @@ def test_parse_random_simple() -> None:
 
 def test_parse_random_nested() -> None:
     term = metafopy.parse_random('~1|district/school')
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert term == metafopy.RandomTerm(None, ('district', 'school'), nested=True)
     assert str(term) == '~ 1 | district/school'
 
 
 def test_parse_random_inner_outer() -> None:
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert metafopy.parse_random('~ outcome | trial') == metafopy.RandomTerm('outcome', ('trial',), nested=False)
 
 

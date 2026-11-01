@@ -16,11 +16,13 @@ import metafopy.printing
 
 
 @pytest.fixture(autouse=True)
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def console_80() -> None:
     metafopy.printing.SETTINGS['width'] = 80
 
 
 @pytest.fixture(scope='module')
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def dat() -> pandas.DataFrame:
     return metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=metafopy.datasets.load('dat.bcg'))
 
@@ -50,6 +52,7 @@ def test_uni_fields_with_missing_values(dat_na: pandas.DataFrame) -> None:
     assert res.intercept is True
     assert res.model == 'rma.uni'
     assert res.coef_na == (False, False)
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert set(res.outdat_f) >= {'ai', 'bi', 'ci', 'di'} or all(v is None for v in res.outdat_f.values())
     assert res.add == 0.5
     assert res.to == 'only0'
@@ -75,6 +78,7 @@ def test_counts_of_tables(dat: pandas.DataFrame) -> None:
     assert res.yi_f.shape == (13,)
     assert res.ni_f.shape == (13,)
     assert res.slab_null is True
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert set(res.outdat) >= {'ai', 'bi', 'ci', 'di'}
     assert res.btt == (0,)
     assert res.tau2_f == 0.0
@@ -235,10 +239,12 @@ def test_round2_predict_ddf_only_for_t_tests(dat: pandas.DataFrame) -> None:
 
 def test_round2_predict_print_keeps_na_columns_like_r(dat: pandas.DataFrame) -> None:
     res = metafopy.rma('yi', 'vi', mods='~ ablat', scale='~ ablat', data=dat)
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert str(metafopy.predict(res, newmods=30)).split('\n')[1].split() == ['pred', 'se', 'ci.lb', 'ci.ub', 'pi.lb', 'pi.ub']
     mh = metafopy.rma_mh(ai='tpos', bi='tneg', ci='cpos', di='cneg', data=metafopy.datasets.load('dat.bcg'))
     out = metafopy.predict(mh)
     assert out.method == 'FE'
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert str(out).split('\n')[1].split() == ['pred', 'se', 'ci.lb', 'ci.ub']
 
 
@@ -266,9 +272,12 @@ def test_round2_slab_null_follows_r() -> None:
 
 def test_round2_anova_class_and_trimfill_fields(dat: pandas.DataFrame) -> None:
     res = metafopy.rma('yi', 'vi', mods='~ ablat + year', data=dat)
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert metafopy.anova(res, btt=[1]).class_ == ('rma.uni', 'rma')
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert metafopy.anova(metafopy.rma('yi', 'vi', data=dat), res).class_f == ('rma.uni', 'rma')
     robust = metafopy.robust(res, cluster=dat['trial'])
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert metafopy.anova(robust, btt=[1]).class_ == ('robust.rma', 'rma', 'rma.uni')
     # a fit that is refitted by ML (REML here) loses the trim-and-fill details, as in R
     tf = metafopy.trimfill(metafopy.rma('yi', 'vi', data=dat, method='ML'))
@@ -287,6 +296,7 @@ def test_round2_mv_control_and_level_counts() -> None:
     berkey = metafopy.datasets.load('dat.berkey1998')
     un = metafopy.rma_mv('yi', 'v1i', mods='~ 0 + outcome', random='~ outcome | trial', struct='UN', data=berkey)
     assert un.g_levels_k is not None
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert list(un.g_levels_k.index) == ['AL', 'PD']
 
 
@@ -294,6 +304,7 @@ def test_round3_escalc_prints_like_r() -> None:
     x = metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=metafopy.datasets.load('dat.bcg').iloc[:3], digits=3)
     assert isinstance(x, pandas.DataFrame)
     lines = [ln.split() for ln in str(x).splitlines() if ln.strip()]
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert lines[0][-2:] == ['yi', 'vi']
     assert lines[1] == ['1', '1', 'Aronson', '1948', '4', '119', '11', '128', '44', 'random', '-0.889', '0.326']
     assert lines[3][-2:] == ['-1.348', '0.415']
@@ -315,10 +326,13 @@ def test_round3_mv_matrices_have_dimnames() -> None:
     res = metafopy.rma_mv('yi', 'vi', random='~ 1 | district/school', data=k, cvvc=True)
     vvc = typing.cast(typing.Any, res.vvc)
     hessian = typing.cast(typing.Any, res.hessian)
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert vvc.dimnames == (('sigma^2.1', 'sigma^2.2'), ('sigma^2.1', 'sigma^2.2'))
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert hessian.rownames == ('sigma^2.1', 'sigma^2.2')
     berkey = metafopy.datasets.load('dat.berkey1998')
     un = metafopy.rma_mv('yi', 'v1i', mods='~ 0 + outcome', random='~ outcome | trial', struct='UN', data=berkey)
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert typing.cast(typing.Any, un.G).colnames == ('AL', 'PD')
 
 
@@ -339,15 +353,20 @@ def test_round3_design_matrices_carry_the_names_of_r() -> None:
     frame.loc[2, 'yi'] = numpy.nan
     res = typing.cast(typing.Any, metafopy.rma('yi', 'vi', mods='~ ablat', data=frame))
     assert res.X.rownames[:4] == ('1', '2', '4', '5')
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert res.X.colnames == ('intrcpt', 'ablat')
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert res.X_f.rownames[:4] == ('1', '2', '3', '4')
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert res.X.T.rownames == ('intrcpt', 'ablat')
     assert isinstance(res.X @ res.beta, numpy.ndarray)
     mm = typing.cast(typing.Any, metafopy.model_matrix(res))
     assert mm.rownames == res.X.rownames
     assert list(metafopy.model_matrix(res, asdf=True).index[:3]) == ['1', '2', '4']
     ls = typing.cast(typing.Any, metafopy.rma('yi', 'vi', mods='~ ablat', scale='~ ablat', data=frame))
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert ls.Z.colnames == ('intrcpt', 'ablat')
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert ls.H.rownames == ('intrcpt', 'ablat')
     sel = typing.cast(typing.Any, metafopy.selmodel(metafopy.rma('yi', 'vi', data=frame, method='ML'), type='beta'))
     assert sel.hessian.rownames == ('intrcpt', 'tau2', 'delta.1', 'delta.2')

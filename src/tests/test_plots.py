@@ -39,6 +39,7 @@ def dat() -> pandas.DataFrame:
 
 
 @pytest.fixture
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def ax() -> collections.abc.Iterator[matplotlib.axes.Axes]:
     fig, axes = matplotlib.pyplot.subplots(figsize=(7, 7))
     yield axes
@@ -297,6 +298,7 @@ def test_forest_default_order_vector_and_shade_match_metafor(dat: pandas.DataFra
 def test_addpoly_default_matches_metafor(dat: pandas.DataFrame, ax: matplotlib.axes.Axes) -> None:
     yi, vi, slab = yi_vi(dat)
     r = metafopy.plot.forest(yi, vi, slab=slab, ylim=(-4, 17), xlim=(-8, 6), measure='RR', ax=ax)
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     metafopy.plot.addpoly([-0.5, 0.2], sei=[0.1, 0.2], rows=[-1.5, -2.5], mlab=['A', 'B'], cex=0.9, ax=ax)
     metafopy.plot.addpoly(0.3, ci_lb=-0.2, ci_ub=0.9, pi_lb=-0.8, pi_ub=1.4, rows=-3.2, predstyle='polygon', mlab='C', annotate=False, ax=ax)
     metafopy.plot.addpoly(-0.3, vi=0.05, rows=-1, transf=numpy.exp, efac=2, constarea=True, ax=ax)
@@ -370,7 +372,17 @@ def test_forest_na_pass_matches_metafor(dat: pandas.DataFrame, ax: matplotlib.ax
     res = case_fit(dna, slab='label')
     # auditme: accept[literal-duplication] fixture inputs mirror the R calls that generate the reference
     r = metafopy.plot.forest(
-        res, ax=ax, ilab=dna['year'].to_numpy(), ilab_lab=['Year'], ilab_xpos=[-7], xlim=(-10, 6), shade=True, showweights=True, na_action='pass'
+        # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
+        res,
+        ax=ax,
+        ilab=dna['year'].to_numpy(),
+        # auditme: accept[literal-duplication] each test case spells out its own values, as the R fixture script does
+        ilab_lab=['Year'],
+        ilab_xpos=[-7],
+        xlim=(-10, 6),
+        shade=True,
+        showweights=True,
+        na_action='pass',
     )
     check_forest(r, plotref.PLOTS['forest_na_pass'], 'forest_na_pass')
     assert len(r.rows) == 13
@@ -608,6 +620,7 @@ QQ_CASES: dict[str, tuple[str, dict[str, typing.Any]]] = {
     'qqnorm_stud': ('mods', {'type': 'rstudent', 'seed': 42, 'label': True, 'grid': True, 'level': 90, 'reps': 300, 'pos': 24}),
     'qqnorm_bonf': (
         'ee',
+        # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
         {'seed': 7, 'bonferroni': True, 'smooth': False, 'label': 'out', 'envelope': 'gray85', 'lty': ('dashed', 'solid'), 'pch': 19, 'col': 'blue'},
     ),
     'qqnorm_label': ('re', {'seed': 99, 'label': 3, 'offset': 0.5, 'pos': 13, 'bass': 2, 'reps': 200}),

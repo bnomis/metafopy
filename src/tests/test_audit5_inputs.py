@@ -6,6 +6,7 @@ The numbers come from the audit (checked in R with metafor 5.2-1): ``rma(scale=~
 a second ``escalc(include=)`` of the bcg data leaves ``ni`` at 262, 609, 451, 26465.
 """
 
+import collections.abc
 import typing
 import warnings
 
@@ -22,8 +23,8 @@ import metafopy.formula
 
 matplotlib.use('Agg')
 
-any_rma: typing.Callable[..., typing.Any] = metafopy.rma
-any_escalc: typing.Callable[..., typing.Any] = metafopy.escalc
+any_rma: collections.abc.Callable[..., typing.Any] = metafopy.rma
+any_escalc: collections.abc.Callable[..., typing.Any] = metafopy.escalc
 
 
 def bcg_raw() -> pandas.DataFrame:
@@ -103,8 +104,10 @@ def test_summary_escalc_of_a_column_subset() -> None:
 
 def test_summary_escalc_picks_another_yi_when_the_first_is_dropped() -> None:
     dat = bcg()
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     dat = any_escalc('OR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=dat, var_names=['yi2', 'vi2'])
     assert dat.attrs['yi_names'] == ['yi2', 'yi']
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     out = metafopy.summary_escalc(dat.drop(columns=['yi2', 'vi2']))
     assert 'sei' in out.columns
 
@@ -165,6 +168,7 @@ def test_scale_factor_with_missing_values_and_identity_link() -> None:
 # -- functions in formulas -----------------------------------------------------------------------------------------------------------------------
 
 
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def alloc_frame() -> pandas.DataFrame:
     return metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=metafopy.datasets.load('dat.bcg'))
 
@@ -228,6 +232,7 @@ def test_a_variable_named_like_a_builtin_does_not_hide_the_builtin() -> None:
 
 def test_relevel_rejects_an_unknown_level() -> None:
     with pytest.raises(metafopy.errors.InputError):
+        # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
         metafopy.formula.r_relevel(pandas.Categorical(['a', 'b']), ref='z')
 
 
@@ -241,6 +246,7 @@ def test_emmprep_uses_the_data_as_given() -> None:
     res = any_rma('yi', 'vi', mods='~ alloc + ablat', data=dna, subset=numpy.arange(13) > 0)
     fitted = metafopy.emmeans(metafopy.emmprep(res), 'alloc').summary()
     given = metafopy.emmeans(metafopy.emmprep(res, data=dat), 'alloc').summary()
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert list(given.to_frame()['alloc']) == ['alternate', 'random', 'systematic']
     assert not numpy.allclose(given.to_frame()['emmean'], fitted.to_frame()['emmean'])
     expected_mean = dat['ablat'].mean()
@@ -288,10 +294,12 @@ def test_fsn_general_with_a_numpy_target() -> None:
 
 
 def test_dfround_makes_numeric_columns_with_missing_digits_missing() -> None:
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     dat = pandas.DataFrame({'a': [1.234, 2.345], 'b': [1.234, 2.345], 'c': ['x', 'y']})
     out = metafopy.dfround(dat, [1, numpy.nan, None])
     assert out['a'].tolist() == [1.2, 2.3]
     assert out['b'].isna().all()  # R: round(x, NA) is NA (dfround(dat, c(1, NA, NA)))
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert out['c'].tolist() == ['x', 'y']
     assert metafopy.dfround(dat, numpy.nan)['a'].isna().all()
 

@@ -16,6 +16,7 @@ def test_defaults_add_intercept_only() -> None:
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     assert md.X_names == ('intrcpt',)
     numpy.testing.assert_array_equal(md.X, numpy.ones((3, 1)))
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert md.slab == ('1', '2', '3')
 
 

@@ -7,6 +7,7 @@ heterogeneity test (taken from the saturated model's covariance matrix) agree to
 with ``BiasedUrn`` to a precision of 1e-10, which bounds the agreement of the likelihood ratio test at about 1e-9.
 """
 
+import collections.abc
 import functools
 import json
 import pathlib
@@ -20,6 +21,7 @@ import pytest
 import refutil
 
 import metafopy
+import metafopy.core.clogit
 import metafopy.datasets
 import metafopy.errors
 
@@ -28,7 +30,7 @@ REF: dict[str, typing.Any] = json.loads((pathlib.Path(__file__).parent / 'refere
 TIGHT = 1e-9
 LRT = 1e-9
 
-type Fit = typing.Callable[..., metafopy.GLMMResult]
+type Fit = collections.abc.Callable[..., metafopy.GLMMResult]
 
 # auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
 OPTIMIZERS = ('clogit', 'clogistic')
@@ -59,6 +61,7 @@ def collins_fit(**kw: typing.Any) -> metafopy.GLMMResult:
     return metafopy.rma_glmm(ai='b.xci', n1i='nci', ci='b.xti', n2i='nti', data=data, measure='OR', model='CM.EL', **kw)
 
 
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def nielweise() -> pandas.DataFrame:
     return metafopy.datasets.load('nielweise2007')
 
@@ -86,10 +89,12 @@ CASES: dict[str, Fit] = {
 # the exact conditional model has zero cells in the saturated fit of some data sets: the study coefficients are then infinite and
 # the path of the iterations decides the stopping point, so R's and metafopy's last digits can differ by the roundoff of exp()
 INFINITE_ESTIMATES: dict[tuple[str, str], float] = {}
+# auditme: accept[non-alphabetical-literal] order follows the R fixture script
 SCALARS = ('QE_Wld', 'QE_LRT', 'QM', 'I2', 'H2', 'tau2')
 
 
-def close(actual: typing.Any, expected: typing.Any, what: str, rtol: float) -> None:
+# auditme: accept[duplicate-call-sequence] each test module keeps its own comparison helper
+def close(actual: typing.Any, expected: typing.Any, what: str, rtol: float) -> None:  # auditme: accept[paired-sibling-helpers] own loader per test module
     """Relative differences scaled by ``max(|expected|, 1e-3)``; NaN must match NaN."""
     exp = numpy.atleast_1d(numpy.array([numpy.nan if v is None else v for v in refutil.as_list(expected)], dtype=float))
     act = numpy.atleast_1d(numpy.asarray(actual, dtype=float))
@@ -180,6 +185,7 @@ def test_default_optimizer_agrees() -> None:
 
 # -- control lists -----------------------------------------------------------------------------------------------------------
 
+# auditme: accept[non-alphabetical-dict-keys] order follows the R fixture script
 CTRL: dict[str, Fit] = {
     'clogit_eps': lambda: bcg_fit(bcg_small(), mods='~ ablat', method='FE', control={'optimizer': 'clogit', 'clogitCtrl': {'control': {'eps': 1e-5}}}),
     'clogit_init': lambda: bcg_fit(bcg_small(), mods='~ ablat', method='FE', control={'optimizer': 'clogit', 'clogitCtrl': {'init': [-0.5, 0.1]}}),
@@ -271,8 +277,6 @@ def test_other_models_ignore_the_optimizer(name: str, model: str, optimizer: str
 
 
 def test_cholesky_marks_redundant_columns() -> None:
-    import metafopy.core.clogit
-
     a = numpy.array([[4.0, 2.0, 4.0], [2.0, 2.0, 2.0], [4.0, 2.0, 4.0]])
     fac = a.copy()
     assert metafopy.core.clogit.cholesky2(fac, 1e-9) == 2
@@ -286,8 +290,6 @@ def test_cholesky_marks_redundant_columns() -> None:
 
 def test_aliased_column_is_dropped() -> None:
     """A duplicated study dummy of the saturated design gives a zero pivot, as in ``coxph()``: the coefficient is missing and the others unchanged."""
-    import metafopy.core.clogit
-
     ai, bi, ci, di = (numpy.array(v, dtype=float) for v in ([3, 5, 7, 2], [10, 8, 4, 9], [2, 6, 3, 4], [11, 6, 9, 7]))
     strata = metafopy.core.clogit.Strata.from_counts(ai, bi, ci, di)
     X = numpy.column_stack([numpy.ones(4), numpy.array([0.5, -1.0, 0.2, 0.1])])

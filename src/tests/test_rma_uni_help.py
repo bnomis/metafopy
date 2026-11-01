@@ -57,11 +57,13 @@ def check(res: metafopy.models.rma_uni.RMAResult, key: str, *, names: bool = Tru
 
 
 @pytest.fixture(scope='module')
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def dat() -> pandas.DataFrame:
     return metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=metafopy.datasets.load('dat.bcg'))
 
 
 @pytest.fixture(scope='module')
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def re(dat: pandas.DataFrame) -> metafopy.models.rma_uni.RMAResult:
     return metafopy.rma('yi', 'vi', data=dat)
 
@@ -124,6 +126,7 @@ def test_pairmat_needs_several_coefficients(dat: pandas.DataFrame, re: metafopy.
 
 
 def test_subgroups_and_q_decomposition(dat: pandas.DataFrame) -> None:
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     subs = {lvl: metafopy.rma('yi', 'vi', data=dat, subset=f'alloc == "{lvl}"') for lvl in ('alternate', 'random', 'systematic')}
     for lvl, res in subs.items():
         check(res, f'sub_{lvl}')

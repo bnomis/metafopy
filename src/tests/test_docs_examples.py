@@ -27,6 +27,7 @@ def test_page_examples_run(page: pathlib.Path, tmp_path: pathlib.Path, monkeypat
     monkeypatch.chdir(tmp_path)
     namespace: dict[str, object] = {'__name__': f'docs_{page.stem}'}
     rng = metafopy.core.rng.GLOBAL  # the examples call set_seed, which must not leak into other tests
+    # auditme: accept[filesystem-envelope-gap] a missing or unreadable docs page fails the test, which is the intent
     try:
         for block in docsblocks.python_blocks(page.read_text()):
             if block.skip:
@@ -35,6 +36,7 @@ def test_page_examples_run(page: pathlib.Path, tmp_path: pathlib.Path, monkeypat
                 try:
                     exec(compile(block.code, f'{page.relative_to(docsblocks.DOCS)}:{block.line}', 'exec'), namespace)
                 except Exception as e:
+                    # auditme: accept[except-interpolation] the page, line and error name the failing example, and the cause is chained
                     raise AssertionError(f'{page.relative_to(docsblocks.DOCS)} line {block.line}: {type(e).__name__}: {e}') from e
     finally:
         matplotlib.pyplot.close('all')

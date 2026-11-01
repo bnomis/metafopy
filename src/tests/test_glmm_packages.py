@@ -28,7 +28,9 @@ TMB_DEFAULT = 5e-3
 TMB_TOLERANCE: dict[str, float] = {}
 
 # fits whose BFGS path is long enough for a 1e-12 change of the start to move the result (rs_ml_mod), or whose R run stops at a different iterate
+# auditme: accept[non-alphabetical-literal] order follows the R fixture script
 CHAOTIC = frozenset({'rs_ml_mod', 'rs_collins'})
+# auditme: accept[non-alphabetical-dict-keys] order follows the R fixture script
 ADAPTIVE_TOLERANCE: dict[str, float] = {
     'rs_ml_mod': 2.5e-1,
     # the confidence bound is a few 1e-3 from zero, so one unit in the last place of the optimiser shows
@@ -36,10 +38,12 @@ ADAPTIVE_TOLERANCE: dict[str, float] = {
     'rs_collins': 3e-2,
 }
 
+# auditme: accept[non-alphabetical-literal] order follows the R fixture script
 SCALARS = ('tau2', 'sigma2', 'I2', 'QE_Wld', 'QE_LRT', 'QM')
 
 
-def close(actual: typing.Any, expected: typing.Any, what: str, rtol: float) -> None:
+# auditme: accept[duplicate-call-sequence] each test module keeps its own comparison helper
+def close(actual: typing.Any, expected: typing.Any, what: str, rtol: float) -> None:  # auditme: accept[paired-sibling-helpers] own loader per test module
     """Relative differences scaled by ``max(|expected|, 1e-3)``; NaN must match NaN."""
     exp = numpy.atleast_1d(numpy.array([numpy.nan if v is None else v for v in refutil.as_list(expected)], dtype=float))
     act = numpy.atleast_1d(numpy.asarray(actual, dtype=float))

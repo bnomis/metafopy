@@ -199,7 +199,9 @@ def test_regplot_at_lab_and_box_lty(bcg: pandas.DataFrame) -> None:
     matplotlib.use('Agg')
     res = metafopy.rma('yi', 'vi', mods='~ ablat', data=bcg)
     fig, ax = matplotlib.pyplot.subplots()
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     metafopy.regplot(res, mod='ablat', at=[-1.0, -0.5, 0.0], at_lab=['low', 'mid', 'high'], legend=True, box_lty='dashed', ax=ax)
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert [t.get_text() for t in ax.get_yticklabels()] == ['low', 'mid', 'high']
     legend = ax.get_legend()
     assert legend is not None
@@ -211,7 +213,9 @@ def test_regplot_at_lab_and_box_lty(bcg: pandas.DataFrame) -> None:
 
 
 def correlation_list() -> dict[str, pandas.DataFrame]:
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     r1 = pandas.DataFrame([[1, 0.4, 0.3], [0.4, 1, 0.2], [0.3, 0.2, 1]], index=['a', 'b', 'c'], columns=['a', 'b', 'c'])
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     r2 = pandas.DataFrame([[1, 0.5], [0.5, 1]], index=['a', 'b'], columns=['a', 'b'])
     return {'s1': r1, 's2': r2}
 
@@ -250,6 +254,7 @@ def test_funnel_transf_warns_and_lb_accepted(bcg: pandas.DataFrame) -> None:
     b = metafopy.gosh(res, 50, seed=1, LB=True)
     numpy.testing.assert_allclose(a.res['estimate'], b.res['estimate'])
     ref = metafopy.vif(metafopy.rma('yi', 'vi', mods='~ ablat + year', data=bcg))
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     again = metafopy.vif(metafopy.rma('yi', 'vi', mods='~ ablat + year', data=bcg), joina=['x'], LB=True)
     numpy.testing.assert_allclose([e.vif for e in ref.vif], [e.vif for e in again.vif])
 

@@ -83,6 +83,7 @@ def test_regtest_and_selmodel_refit_the_studies_used(which: int) -> None:
         assert view is not None
         assert view.measure == 'RR'
         assert (view.k, view.k_f, view.k_all) == (k, k, k)
+        # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
         assert view.slab[:3] == ('1', '2', '3')
         assert view.slab_null is slab_null
         assert len(view.not_na) == k
@@ -159,7 +160,9 @@ def test_location_scale_predict_labels_follow_the_names_of_newmods() -> None:
         res = metafopy.rma(yi='yi', vi='vi', mods='~ year', scale='~ ablat', data=data)
         named = metafopy.predict(res, newmods={'ablat': 30, 'year': 1960})
         plain = metafopy.predict(res, newmods=[10, 60])
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert named.slab == ('ablat', 'year')
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert plain.slab == ('1', '2')
 
 
@@ -397,6 +400,7 @@ def test_assigning_c_of_yi_removes_the_escalc_attributes() -> None:
 def test_cumul_na_exclude_keeps_a_row_for_each_study_left_out() -> None:
     # R 4.3.3, metafor 5.2-1: options(na.action = "na.exclude"); cumul(rma(yi, vi, data = dat)) with studies 3 and 7 missing has 13 rows, NA at 3 and 7
     data = bcg_frame()
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     data.loc[[2, 6], ['yi', 'vi']] = numpy.nan
     fit = metafopy.rma(yi='yi', vi='vi', data=data)
     out = metafopy.cumul(fit, na_action='exclude')
