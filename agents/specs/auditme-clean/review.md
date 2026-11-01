@@ -90,3 +90,16 @@ because that job already installs the environment; it is reversible.
 
 Answered on the review page on 2026-10-31: every item (1 to 17) approved,
 with no flags and no comments.
+
+## Amendment 1.1 (2026-11-01)
+
+Task 4 of `agents/tasks/auditme-clean/tasks-1.md` could not commit: the
+`auditme-changed` hook reports every unaccepted hit in a file changed on the
+branch since `main`, and every hit whose related files include one, so a
+commit cannot fix one rule and leave a file's other rules for later. The
+spec's order of work (item 15 above) assumed the opposite. The operator was
+offered four ways on (clear by package; move the hook to the manual stage;
+skip the hook per commit; narrow the checker in the shared repository) and
+chose, on 2026-11-01, to clear by package. The spec's Implementation section
+now says so (version 1.1), and Tasks 4 to 9 of the task list clear every rule
+per package.

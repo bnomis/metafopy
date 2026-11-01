@@ -1,8 +1,8 @@
 # Auditme clean
 
-**Version:** 1.0
+**Version:** 1.1
 **Status:** approved
-**Date:** 2026-10-31
+**Date:** 2026-10-31; amended 2026-11-01 (order of work, Implementation)
 **Review document:** [review.md](review.md)
 **Review page:** https://claude.ai/artifact/QoVrK6ztdQZsb1KLd3Twng
 
@@ -124,7 +124,17 @@ same test: fix unless the pattern is right here, and say why in the marker.
 ## Implementation
 
 Work proceeds in this order; each step is one or more commits, and each
-commit leaves the touched files with no unaccepted hit.
+commit passes the `auditme-changed` hook.
+
+**The hook's scope** (amended 2026-11-01). The hook reports every
+unaccepted hit in a file changed on the branch since `main`, not only in the
+commit's own files, and every hit whose `related` files (the other copies of
+a duplicated literal, the callee of a `Raises:` drift) include such a file.
+A file stays in scope for every later commit once it has changed. So a
+commit cannot fix one rule in a file and leave its other rules for later:
+it clears every rule in every file in scope, including the files its own
+fixes pull in. Task 4 of the first task list stopped on this on 2026-11-01
+(72 hits in scope); the operator chose to clear by package.
 
 1. **Commit hook.** Run `/project-setup adopt`: add the
    `git@github.com:bnomis/agents.git` hook block with `auditme-changed`
@@ -134,24 +144,23 @@ commit leaves the touched files with no unaccepted hit.
    when hits remain; this spec's item already covers that, so add the dated
    count to it instead of filing a second one.
 2. **`src/audit/`**: fix its real defects, then accept the rest by rule.
-3. **`Raises:` sections** in `src/metafopy/`, one package per commit
-   (`methods`, `models`, `plot`, `bias`, `effects`, `core`). The section is
-   corrected from the function body and its callees, not from the hit's
-   wording; the API reference built by mkdocs shows the result.
-4. **Mechanical rules** in `src/metafopy/` and `src/tests/`:
-   `typing-deprecated-alias`, the import rules, sorting.
-5. **Judged rules**: the rest of the table above.
-6. **Gates.** With zero unaccepted hits, add `stages: [manual, pre-push]` to
+3. **By package, every rule**: `src/metafopy/methods/` (with the files its
+   fixes pull in), then `models`, `plot`, `bias`, `effects` and `core`, the
+   remaining modules of `src/metafopy/`, and `src/tests/`. Each step clears
+   every hit the hook reports, by the policy table above. A `Raises:`
+   section is corrected from the function body and its callees, not from
+   the hit's wording; the API reference built by mkdocs shows the result.
+4. **Sweep**: whatever the whole-tree check still reports.
+5. **Gates.** With zero unaccepted hits, add `stages: [manual, pre-push]` to
    `auditme-all`, add the CI step from `project-setup`'s
    `templates/ci-audit-step.yml` to the `lint` job of `ci.yml`, and run its
    deploy-key steps (each confirmed by the operator).
-7. **Close.** Move the `TODO.md` item to `DONE.md` (created by this step) with
+6. **Close.** Move the `TODO.md` item to `DONE.md` (created by this step) with
    a `Done:` line naming this spec and its task list; set this spec's status
    to `implemented`.
 
 Each step's Definition of Done: `ruff format`, `ruff check`, `mypy` and
-`pytest` pass, and `python3 ~/.claude/skills/auditme/checks/audit.py .` shows
-no unaccepted hit in the files the step touched.
+`pytest` pass, and its commit passes the `auditme-changed` hook.
 
 ## Error handling
 
@@ -165,7 +174,7 @@ no unaccepted hit in the files the step touched.
 - **`lockfile-drift`.** On 2026-10-31 it fires only locally: the operator's
   global `uv.toml` sets `exclude-newer = "14 days"`, and `wcwidth` 0.9.3 is
   newer than that window, while CI's `uv sync --locked` passes. It clears
-  when the release ages past the window. If it still blocks step 6, raise
+  when the release ages past the window. If it still blocks step 5, raise
   the environment dependence in the auditme `requests.md` rather than
   rewriting `uv.lock`, which `AGENTS.md` forbids without instruction.
 - **No access to the shared repository.** `project-setup` stops if
@@ -177,8 +186,8 @@ no unaccepted hit in the files the step touched.
 | Setting | Type | Default | Description |
 |---|---|---|---|
 | `.pre-commit-config.yaml` agents `rev` | commit hash | shared `main` at step 1 | the checker version every hook and CI runs |
-| `auditme-all` `stages` | list | `[manual]`, then `[manual, pre-push]` at step 6 | when the whole-tree sweep runs |
-| `AGENTS_DEPLOY_KEY` | GitHub secret | none until step 6 | read-only key CI uses to fetch the shared hooks |
+| `auditme-all` `stages` | list | `[manual]`, then `[manual, pre-push]` at step 5 | when the whole-tree sweep runs |
+| `AGENTS_DEPLOY_KEY` | GitHub secret | none until step 5 | read-only key CI uses to fetch the shared hooks |
 
 ## External dependencies
 

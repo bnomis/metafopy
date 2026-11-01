@@ -8,11 +8,24 @@ The spec was approved on its review page on 2026-10-31 (every item, answers
 in `agents/specs/auditme-clean/review.md`). Every command below runs after
 `source bin/activate.sh`, per `AGENTS.md`.
 
-From Task 1 on, every commit runs the `auditme-changed` hook on its staged
-files, so "the task's commit passes its pre-commit hooks" includes "no
-unaccepted auditme hit in the files this task touched". List the remaining
-hits at any time with
+From Task 1 on, every commit runs the `auditme-changed` hook. Its scope is
+wider than the commit (spec, Implementation, amended 2026-11-01): every
+unaccepted hit in a file changed on the branch since `main`, and every hit
+whose `related` files include one. So "the task's commit passes its
+pre-commit hooks" means every rule is clear in every such file, including
+files a fix pulls in. List the remaining hits at any time with
 `pre-commit run auditme-all --hook-stage manual --all-files`.
+
+**Clearing a package** (Tasks 4 to 9, amended 2026-11-01). Fix or accept
+each hit by the spec's policy table. The scope check, run before each
+commit with the changes staged, is the hook itself:
+`pre-commit run auditme-changed`. Clear what it reports and run it again
+until it passes. The checker reads a marker only on the hit line or the
+line above it, one per line; for a decorated `def` the marker goes between
+the last decorator and the `def`. Where a line takes hits from two rules,
+or the line above already holds a marker, remove one cause in code (derive
+a tuple from an existing type alias, add an alias) rather than exceed 160
+columns.
 
 **Accept markers** are always scoped, `# auditme: accept[<rule>] <reason>`,
 on the hit line or the line above, with a reason that says why the pattern
@@ -136,91 +149,103 @@ scoped marker with one reason per rule, written for this harness.
 
 ---
 
-## Task 4: Correct the `Raises:` sections in `metafopy.methods`
+## Task 4: Clear every rule in `metafopy.methods` and the files it pulls in
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
-**Spec Reference:** API (`Raises:` form); Fix-or-accept policy (`raises-section-drift`, `missing-raises-section`); Implementation step 3
+**Spec Reference:** API (`Raises:` form); Fix-or-accept policy; Implementation step 3 (amended 2026-11-01)
 
 **Technical Goal:** Each `Raises:` section in `src/metafopy/methods/` names
-every domain error that can reach the caller, with its condition.
+every domain error that can reach the caller, and every rule is clear in
+every file the commit hook brings into scope (header, "Clearing a package").
 
 **Subtasks:**
 
-- [ ] For each `raises-section-drift` and `missing-raises-section` hit in `src/metafopy/methods/`, read the function body and the callee the hit names, and decide whether the error can reach the caller on that call
-- [ ] Where it can, add it to the section in the project's form (`metafopy.errors.<Name>: <condition>`), with the condition read from the code, not the hit text
-- [ ] Where it cannot (the call never takes the raising path, as `check_class` without `must`), accept with a marker naming why, and add the pattern to `agents/specs/auditme-clean/requests.md`
+- [x] For each `raises-section-drift` and `missing-raises-section` hit in `src/metafopy/methods/`, read the function body and the callee the hit names, and decide whether the error can reach the caller on that call
+- [x] Where it can, add it to the section in the project's form (`metafopy.errors.<Name>: <condition>`), with the condition read from the code, not the hit text
+- [x] Where it cannot (the call never takes the raising path, as `check_class` without `must`), accept with a marker naming why, and add the pattern to `agents/specs/auditme-clean/requests.md`
+- [x] Clear every other hit the hook reports, by the policy table: the `methods` files' other rules, the callers in `models/`, `plot/`, `bias/` and `core/` whose `Raises:` sections drift from the new entries, and the files those fixes pull in in turn
 
 **Acceptance Criteria:**
 
-- [ ] No unaccepted `raises-section-drift` or `missing-raises-section` hit in `src/metafopy/methods/`
-- [ ] Only docstrings and accept markers change
+- [x] No unaccepted `raises-section-drift` or `missing-raises-section` hit in `src/metafopy/methods/`
+- [x] `pre-commit run auditme-changed` passes with the task's changes staged
+- [x] No public function changes signature
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mkdocs build --strict` passes (needs `uv pip install -r docs/requirements.txt`, README "Building the docs")
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `mkdocs build --strict` passes (needs `uv pip install -r docs/requirements.txt`, README "Building the docs")
+- [x] `pytest -m 'not slow'` on the test files that import each module whose code changed, and those named after them (list in the commit body)
 
 **Notes:**
 
 - Depends on Task 1
-- Docstring-only, so no test selection beyond the docs build
+- Stopped 2026-11-01 because the hook's scope is wider than the commit (spec, Implementation, amended 2026-11-01); the operator chose to clear by package, and Tasks 5 to 9 were rewritten to match
 
 ---
 
-## Task 5: Correct the `Raises:` sections in `metafopy.models`
+## Task 5: Clear every rule in `metafopy.models`
 
 **Status:** todo
 **Priority:** high
 **Complexity:** large
-**Spec Reference:** as Task 4
+**Spec Reference:** Implementation step 3 (amended 2026-11-01); Fix-or-accept policy
 
-**Technical Goal:** As Task 4, for `src/metafopy/models/`.
+**Technical Goal:** No unaccepted hit, under any rule, in
+`src/metafopy/models/`, nor in any file the commit hook pulls in.
 
 **Subtasks:**
 
-- [ ] As Task 4's subtasks, for every `raises-section-drift` and `missing-raises-section` hit in `src/metafopy/models/`
+- [ ] List the hits: run `python3 ~/.claude/skills/auditme/checks/audit.py . > <scratch>/audit.jsonl` and take every unaccepted hit whose `path` is under `src/metafopy/models/`
+- [ ] Fix or accept each by the spec's policy table (see "Clearing a package" in the header)
+- [ ] Before committing, run the scope check in the header and clear what it adds, until it reports nothing
+- [ ] Commit; the hook must pass
 
 **Acceptance Criteria:**
 
-- [ ] No unaccepted `raises-section-drift` or `missing-raises-section` hit in `src/metafopy/models/`
-- [ ] Only docstrings and accept markers change
+- [ ] No unaccepted hit under `src/metafopy/models/`
+- [ ] No public function changes signature
 
 **Definition of Done:**
 
 - [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [ ] `mypy` passes
 - [ ] `mkdocs build --strict` passes
+- [ ] `pytest` on the test files that import each module whose code (not only docstrings or markers) changed (see the header)
 
 **Notes:**
 
-- Depends on Task 4 (reuse its reading of shared callees such as `rma_uni`)
+- Depends on Task 4
 
 ---
 
-## Task 6: Correct the remaining `Raises:` sections
+## Task 6: Clear every rule in `metafopy.plot`
 
 **Status:** todo
 **Priority:** high
 **Complexity:** large
-**Spec Reference:** as Task 4
+**Spec Reference:** as Task 5
 
-**Technical Goal:** As Task 4, for `src/metafopy/plot/`, `bias/`, `effects/`
-and `core/`, one package per commit.
+**Technical Goal:** As Task 5, for `src/metafopy/plot/`.
 
 **Subtasks:**
 
-- [ ] As Task 4's subtasks, for every `raises-section-drift` and `missing-raises-section` hit in `src/metafopy/plot/`, `bias/`, `effects/` and `core/` (the `fsn` hit at `src/metafopy/bias/fsn.py:159` is the spec's example), committing each package separately
+- [ ] As Task 5's subtasks, for `src/metafopy/plot/`
 
 **Acceptance Criteria:**
 
-- [ ] The whole-tree sweep reports no unaccepted `raises-section-drift` or `missing-raises-section` hit
-- [ ] Only docstrings and accept markers change
+- [ ] No unaccepted hit under `src/metafopy/plot/`
+- [ ] No public function changes signature
 
 **Definition of Done:**
 
-- [ ] Each commit passes its pre-commit hooks (never `--no-verify`)
+- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [ ] `mypy` passes
 - [ ] `mkdocs build --strict` passes
+- [ ] `pytest` on the test files that import each module whose code changed
 
 **Notes:**
 
@@ -228,100 +253,92 @@ and `core/`, one package per commit.
 
 ---
 
-## Task 7: Apply the mechanical rules
+## Task 7: Clear every rule in the rest of `src/metafopy/`
 
 **Status:** todo
-**Priority:** medium
-**Complexity:** medium
-**Spec Reference:** Fix-or-accept policy (`typing-deprecated-alias`, `from-import`, `aliased-imports`, `in-function-import`, `non-alphabetical-literal`, `non-alphabetical-dict-keys`); Implementation step 4
-
-**Technical Goal:** The rules with a mechanical fix are fixed in
-`src/metafopy/` and `src/tests/`.
-
-**Subtasks:**
-
-- [ ] `typing-deprecated-alias`: replace `typing.Callable`, `typing.Iterable` and the like with the `collections.abc` forms, adding `import collections.abc`; never accept
-- [ ] `from-import`, `aliased-imports`: rewrite to full-path imports (`claude/rules/metafopy.md`); `in-function-import`: move to module level unless it breaks an import cycle, then accept naming the cycle
-- [ ] `non-alphabetical-literal`, `non-alphabetical-dict-keys`: sort, unless the order is metafor's or the R fixture script's (then accept with the reasons the project already uses, such as "order follows the R fixture generator"); never sort where order changes output
-
-**Acceptance Criteria:**
-
-- [ ] No unaccepted hit under these rules in `src/metafopy/` or `src/tests/`
-- [ ] Printed output is unchanged (the tests that compare printouts with R pass)
-
-**Definition of Done:**
-
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest` on every test file the task edits, plus the test files that import each changed source module (see the header)
-
-**Notes:**
-
-- Depends on Task 1
-
----
-
-## Task 8: Settle the duplication rules
-
-**Status:** todo
-**Priority:** medium
+**Priority:** high
 **Complexity:** large
-**Spec Reference:** Fix-or-accept policy (`literal-duplication`, `paired-sibling-helpers`, `duplicate-call-sequence`); Implementation step 5
+**Spec Reference:** as Task 5
 
-**Technical Goal:** Each duplication hit in `src/metafopy/` and `src/tests/`
-is extracted or accepted by the spec's test.
-
-**Subtasks:**
-
-- [ ] `literal-duplication`: accept where the repetition mirrors metafor or the R fixture scripts, with the reasons the project already uses; extract a module-level constant where the literal is the project's own (a key list, a set of names), and import it from its one owner
-- [ ] `paired-sibling-helpers`: in `src/metafopy/`, keep one helper and import it (`effects/bind.py:as_names` and `effects/summary.py:names` are one pair); in `src/tests/`, accept with "each test module keeps its own fixture loader"
-- [ ] `duplicate-call-sequence`: accept where the sequence mirrors metafor's per-class methods; extract a helper only where the shared steps have one meaning
-
-**Acceptance Criteria:**
-
-- [ ] No unaccepted hit under these rules in `src/metafopy/` or `src/tests/`
-
-**Definition of Done:**
-
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest` on every test file the task edits, plus the test files that import each changed source module
-
-**Notes:**
-
-- Depends on Task 7 (sorting first, so equal literals compare equal)
-
----
-
-## Task 9: Settle the remaining judged rules
-
-**Status:** todo
-**Priority:** medium
-**Complexity:** medium
-**Spec Reference:** Fix-or-accept policy (`passthrough-shim`, `redundant-sink-caller-plus-callee`, `mutable-module-level-exported`, `assert-never-missing`, single-site rules); Implementation step 5
-
-**Technical Goal:** Every other unaccepted hit outside `src/audit/` is fixed
-or accepted by the spec's table.
+**Technical Goal:** As Task 5, for `bias/`, `effects/`, `core/` and every
+other module of `src/metafopy/` (`datasets/`, `interactive/`, the top-level
+modules), one package per commit.
 
 **Subtasks:**
 
-- [ ] `passthrough-shim`: call the target directly and remove the wrapper, unless it is a metafor-named public alias
+- [ ] As Task 5's subtasks, package by package, committing each separately (the `fsn` hit at `src/metafopy/bias/fsn.py:159` is the spec's `Raises:` example, if it is still open)
 - [ ] `redundant-sink-caller-plus-callee` (`src/metafopy/effects/fivenum_estimators.py` and others): compute the value once and pass it, unless the numbers then differ from R's in the compared digits; then revert and accept saying so
-- [ ] `mutable-module-level-exported`: wrap `PCH` (`src/metafopy/plot/draw.py:48`) in `types.MappingProxyType`; accept `printing.SETTINGS` ("R's getOption('width'), set by users as in R"), `YICHECKS` and `LAST_EVALUATED` (run-time caches, cleared by tests)
-- [ ] `assert-never-missing`: end the chain with an `else` that raises `metafopy.errors.ArgumentError` (or the error the function already raises for bad values), unless the value is validated earlier; then accept saying where
-- [ ] `except-interpolation`, `reexport-in-non-init`, `duplicated-word` (`Lambda Lambda'` is a formula: accept), `filesystem-envelope-gap`: fix or accept each site
-- [ ] Any rule not in the spec's table, or new with Task 1's pin: fix unless the pattern is right here, and say why in the marker
 
 **Acceptance Criteria:**
 
-- [ ] The whole-tree sweep reports no unaccepted hit, except `lockfile-drift` if it still fires (Task 10)
+- [ ] No unaccepted hit under `src/metafopy/`
 - [ ] No public function changes signature
 
 **Definition of Done:**
 
+- [ ] Each commit passes its pre-commit hooks (never `--no-verify`)
+- [ ] `mypy` passes
+- [ ] `mkdocs build --strict` passes
+- [ ] `pytest` on the test files that import each module whose code changed
+
+**Notes:**
+
+- Depends on Task 6
+
+---
+
+## Task 8: Clear every rule in `src/tests/`
+
+**Status:** todo
+**Priority:** medium
+**Complexity:** large
+**Spec Reference:** as Task 5
+
+**Technical Goal:** As Task 5, for `src/tests/`.
+
+**Subtasks:**
+
+- [ ] As Task 5's subtasks, for `src/tests/`; test modules keep their own fixture loaders (`paired-sibling-helpers`: accept with "each test module keeps its own fixture loader"), and literals that mirror the R fixture scripts are accepted with the reasons the project already uses
+
+**Acceptance Criteria:**
+
+- [ ] No unaccepted hit under `src/tests/`
+
+**Definition of Done:**
+
 - [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
 - [ ] `mypy` passes
-- [ ] `pytest` on every test file the task edits, plus the test files that import each changed source module
+- [ ] `pytest` on every test file the task edits
+
+**Notes:**
+
+- Depends on Task 7
+
+---
+
+## Task 9: Sweep the whole tree
+
+**Status:** todo
+**Priority:** medium
+**Complexity:** small
+**Spec Reference:** Implementation step 4 (amended 2026-11-01)
+
+**Technical Goal:** The whole-tree check reports no unaccepted hit, except
+`lockfile-drift` if it still fires (Task 10).
+
+**Subtasks:**
+
+- [ ] Run `pre-commit run auditme-all --hook-stage manual --all-files`; fix or accept every remaining hit by the policy table, including any rule not in the table (fix unless the pattern is right here, and say why in the marker)
+
+**Acceptance Criteria:**
+
+- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` reports nothing but `lockfile-drift`, if that
+
+**Definition of Done:**
+
+- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`), or there is nothing to commit
+- [ ] `mypy` passes
+- [ ] `pytest` on the test files that import each module whose code changed
 
 **Notes:**
 
@@ -359,7 +376,7 @@ every push and in CI.
 
 **Notes:**
 
-- Depends on Tasks 3, 6 and 9
+- Depends on Task 9
 - The deploy key and secret change GitHub, so an unattended run never does them
 
 ---
