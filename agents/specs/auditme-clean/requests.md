@@ -15,7 +15,9 @@ The operator raises these in the shared auditme skill's `requests.md`.
   `src/metafopy/methods/anova.py` (`wald_between`),
   `src/metafopy/methods/profile.py` (`profile_rma_uni`),
   `src/metafopy/methods/rcalc.py` (`rcalc_list`),
-  `src/metafopy/methods/selmodel.py` (`anova`).
+  `src/metafopy/methods/selmodel.py` (`anova`),
+  `src/metafopy/plot/llplot.py` (`llplot`, `escalc` with the fixed measure
+  `'OR'`), `src/metafopy/plot/rma.py` (`plot_rma`, `qqnorm`'s envelope).
 - Rule: the caller passes a value of a type the callee's dispatch error does
   not apply to (`rows_of` raises `ArgumentError` for an unsupported class;
   `fitted_values` and the `predict_*` functions only receive supported ones).
@@ -36,3 +38,8 @@ The operator raises these in the shared auditme skill's `requests.md`.
   passed on unchanged.
   Site: `src/metafopy/mfopt.py` (`with_digits`, which computes `digits` and
   `digit_map` for `dataclasses.replace`).
+
+- Rule: `passthrough-shim` also fires on `dash` in `src/metafopy/plot/regplot.py`,
+  which passes its one parameter twice (`LTY.get(name, name)`, the name as its
+  own default). The checker should treat a wrapper that reuses a parameter as
+  the default argument as computing a value, not passing it on.

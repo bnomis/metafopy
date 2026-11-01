@@ -97,6 +97,7 @@ def fitted_panel(ax: matplotlib.axes.Axes, pred: FloatArray, z: FloatArray) -> N
     title(ax, 'Fitted vs. Standardized Residuals')
 
 
+# auditme: accept[raises-section-drift] qqnorm draws an envelope only for fits with a hat matrix, so its InternalError never arises here
 def plot_rma(
     x: metafopy.methods.fitview.Fit,
     qqplot: bool = False,

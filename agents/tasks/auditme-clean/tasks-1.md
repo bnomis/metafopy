@@ -224,7 +224,7 @@ every file the commit hook brings into scope (header, "Clearing a package").
 
 ## Task 6: Clear every rule in `metafopy.plot`
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** as Task 5
@@ -233,19 +233,19 @@ every file the commit hook brings into scope (header, "Clearing a package").
 
 **Subtasks:**
 
-- [ ] As Task 5's subtasks, for `src/metafopy/plot/`
+- [x] As Task 5's subtasks, for `src/metafopy/plot/`
 
 **Acceptance Criteria:**
 
-- [ ] No unaccepted hit under `src/metafopy/plot/`
-- [ ] No public function changes signature
+- [x] No unaccepted hit under `src/metafopy/plot/`
+- [x] No public function changes signature
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `mkdocs build --strict` passes
-- [ ] `pytest` on the test files that import each module whose code changed
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `mkdocs build --strict` passes
+- [x] `pytest` on the test files that import each module whose code changed
 
 **Notes:**
 

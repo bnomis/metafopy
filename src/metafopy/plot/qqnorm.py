@@ -125,6 +125,7 @@ def qqnorm(
             100, or ``'fail'`` and studies were left out of the fit.
         metafopy.errors.NotSupportedError: ``y`` is an ``rma.mv``, ``rma.glmm``, robust or selection-model fit (``qqnorm.rma.mv`` only stops in metafor).
         metafopy.errors.ArgumentError: ``y`` is not a fitted model.
+        metafopy.errors.InternalError: an envelope is drawn for a model class that has no hat matrix.
 
     Metafor reference:
         [qqnorm.rma](https://wviechtb.github.io/metafor/reference/qqnorm.rma.html)

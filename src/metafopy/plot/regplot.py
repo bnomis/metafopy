@@ -34,7 +34,7 @@ __all__ = ['RegplotResult', 'points_regplot', 'regplot']
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type Func = collections.abc.Callable[..., typing.Any]
 
-LEGEND_LOC = {'topright': 'upper right', 'topleft': 'upper left', 'bottomright': 'lower right', 'bottomleft': 'lower left'}
+LEGEND_LOC = {'bottomleft': 'lower left', 'bottomright': 'lower right', 'topleft': 'upper left', 'topright': 'upper right'}
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -88,7 +88,11 @@ class RegplotResult:
 
 
 def expand(v: typing.Any, n: int, name: str) -> list[typing.Any]:
-    """An argument that is one value or one value per study (``.expand1()`` and the length check of metafor)."""
+    """An argument that is one value or one value per study (``.expand1()`` and the length check of metafor).
+
+    Raises:
+        metafopy.errors.InputError: ``v`` has one value per study but not ``n`` of them.
+    """
     if isinstance(v, str) or numpy.ndim(v) == 0:
         return [v] * n
     out = list(v)
@@ -104,6 +108,9 @@ def find_moderator(
 
     A string is matched against the coefficient names by ``charmatch()`` (exactly, or as the start of a single name); with ``grep=True`` it is
     searched for in the names as a regular expression (``fixed=True``: as a literal string) and must be found in exactly one.
+
+    Raises:
+        metafopy.errors.InputError: ``mod`` is ``None`` for a model with several predictors, is not found or not unique, or is a position outside the model.
     """
     p = x.X.shape[1]
     if mod is None:
@@ -129,7 +136,11 @@ def find_moderator(
 
 
 def symbol_sizes(psize: typing.Any, weights: FloatArray, vi: FloatArray, plim: collections.abc.Sequence[float]) -> FloatArray:
-    """The ``cex`` of the points: the given sizes, or the weights (or ``'seinv'``/``'vinv'``) rescaled to ``plim``."""
+    """The ``cex`` of the points: the given sizes, or the weights (or ``'seinv'``/``'vinv'``) rescaled to ``plim``.
+
+    Raises:
+        metafopy.errors.InputError: a numeric ``psize`` has the wrong length, ``plim`` has fewer than two values, or ``psize`` is an unknown string.
+    """
     k = vi.shape[0]
     if psize is not None and not isinstance(psize, str):
         return numpy.asarray(expand(psize, k, 'psize'), dtype=float)
@@ -311,6 +322,7 @@ def regplot(
             an unknown string or ``label`` an unknown string; a vector argument has the wrong length; ``predlim``, ``olim`` or ``ylim`` has the wrong length;
             ``xvals`` is missing with a ``PredictResult``; or ``na_action='fail'`` and studies were left out.
         metafopy.errors.NotSupportedError: ``x`` is an ``rma_mh`` or ``rma_peto`` fit.
+        metafopy.errors.ArgumentError: ``x`` is not a fitted model.
 
     Metafor reference:
         [regplot](https://wviechtb.github.io/metafor/reference/regplot.html)
@@ -407,6 +419,7 @@ def regplot(
             pi = False
         else:
             pi_lb, pi_ub = pred.pi_lb, pred.pi_ub
+        # auditme: accept[literal-duplication] the two label modes are tested at each site that handles them, as metafor does
         if label_mode in ('ciout', 'piout'):
             warnings.warn("Cannot label points based on the confidence/prediction interval when passing an object to 'pred'.", stacklevel=2)
             label_mode = None
@@ -537,6 +550,7 @@ def regplot(
     flags = numpy.zeros(k, dtype=bool)
     if label_mode == 'all' or (isinstance(label, bool) and label):
         flags[:] = True
+    # auditme: accept[literal-duplication] the two label modes are tested at each site that handles them, as metafor does
     elif label_mode in ('ciout', 'piout'):
         assert at_obs_t is not None
         lb, ub = (at_obs_t[1], at_obs_t[2]) if label_mode == 'ciout' else (at_obs_t[3], at_obs_t[4])
@@ -627,7 +641,9 @@ def points_regplot(x: RegplotResult, ax: matplotlib.axes.Axes | None = None) -> 
         draw_labels(axx, x.xi, x.yi, x.pred, x.psize, x.label, x.slab, x.offset, x.labsize)
 
 
+# auditme: accept[passthrough-shim] dash computes both arguments (the name is also the default), so it is not a pass-through of its parameters
 def dash(name: str) -> typing.Any:
+    """The matplotlib line style of an R line type name, or the name itself when it is already a style."""
     return metafopy.plot.draw.LTY.get(name, name)
 
 

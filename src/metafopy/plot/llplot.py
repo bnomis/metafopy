@@ -62,6 +62,7 @@ def r_rank(x: FloatArray) -> numpy.typing.NDArray[numpy.intp]:
     return numpy.asarray(scipy.stats.rankdata(x, method='average'), dtype=float).astype(numpy.intp) - 1
 
 
+# auditme: accept[raises-section-drift] measure='OR' is fixed here, so escalc's NotSupportedError and InternalError never arise
 def llplot(
     measure: str = 'GEN',
     yi: Column | None = None,
@@ -147,6 +148,7 @@ def llplot(
         study, NaN outside the confidence interval of the study at ``level``).
 
     Raises:
+        metafopy.errors.ArgumentError: a count passed to [escalc][metafopy.escalc] has the wrong type.
         metafopy.errors.InputError: ``measure`` is not ``'GEN'`` or ``'OR'``; the required variables are missing, of different lengths or the counts are
             invalid; ``lty``, ``lwd`` or ``col`` has the wrong length; or no study remains.
 
