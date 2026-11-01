@@ -1,6 +1,7 @@
 __pycache__/
 .audit/
 .cache/
+.claude/worktrees/
 .coverage
 .envrc
 .hypothesis/
