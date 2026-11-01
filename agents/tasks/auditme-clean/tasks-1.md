@@ -318,7 +318,7 @@ modules), one package per commit.
 
 ## Task 9: Sweep the whole tree
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Spec Reference:** Implementation step 4 (amended 2026-11-01)
@@ -328,17 +328,17 @@ modules), one package per commit.
 
 **Subtasks:**
 
-- [ ] Run `pre-commit run auditme-all --hook-stage manual --all-files`; fix or accept every remaining hit by the policy table, including any rule not in the table (fix unless the pattern is right here, and say why in the marker)
+- [x] Run `pre-commit run auditme-all --hook-stage manual --all-files`; fix or accept every remaining hit by the policy table, including any rule not in the table (fix unless the pattern is right here, and say why in the marker)
 
 **Acceptance Criteria:**
 
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` reports nothing but `lockfile-drift`, if that
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` reports nothing but `lockfile-drift`, if that
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`), or there is nothing to commit
-- [ ] `mypy` passes
-- [ ] `pytest` on the test files that import each module whose code changed
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`), or there is nothing to commit
+- [x] `mypy` passes
+- [x] `pytest` on the test files that import each module whose code changed (no code changed in this task)
 
 **Notes:**
 
