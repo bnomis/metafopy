@@ -11,7 +11,7 @@ dir.create(lib, recursive = TRUE, showWarnings = FALSE)
 .libPaths(c(lib, .libPaths()))
 options(repos = c(CRAN = "https://cloud.r-project.org"), Ncpus = 4L)
 
-pinned <- c(metafor = "5.2-1", metadat = "1.6-0", gsl = "2.1-8")
+pinned <- c(metafor = "5.2-1", metadat = "1.6-0", gsl = "2.1-9")
 loose <- c("jsonlite", "remotes", "mvtnorm", "CompQuadForm", "numDeriv", "Matrix", "clubSandwich", "lme4", "GLMMadaptive", "glmmTMB",
            "emmeans", "survival", "Epi", "estmeansd", "metaBLUE", "BiasedUrn", "nloptr", "minqa", "dfoptim", "ucminf", "optimParallel",
            "Rsolnp", "alabama", "BB", "pracma", "subplex", "lbfgs", "lbfgsb3c", "metafor", "testthat", "xtable", "survival", "sandwich")

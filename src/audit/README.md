@@ -98,7 +98,7 @@ digit, but the number of decimals must be the same (R prints `0` where Python pr
 
 ## Setting up R
 
-`Rscript src/audit/r/setup.R <library> <versions.json>` installs metafor 5.2-1, metadat 1.6-0 and gsl 2.1-8 at their pinned versions and the other
+`Rscript src/audit/r/setup.R <library> <versions.json>` installs metafor 5.2-1, metadat 1.6-0 and gsl 2.1-9 at their pinned versions and the other
 packages (lme4, clubSandwich, emmeans, ...) at the newest version R accepts, and records what it installed. Point `METAFOPY_AUDIT_RLIB` at the
 library. The source of metafor's tests and examples is downloaded from CRAN and checked against `data/metafor-source.sha256`.
 
