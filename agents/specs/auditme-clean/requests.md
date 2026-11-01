@@ -22,6 +22,10 @@ The operator raises these in the shared auditme skill's `requests.md`.
   not apply to (`rows_of` raises `ArgumentError` for an unsupported class;
   `fitted_values` and the `predict_*` functions only receive supported ones).
   Sites: `src/metafopy/methods/fitted.py`, `ls_predict.py`, `predict.py`.
+- Rule: the caller calls the callee only inside an `is_rma(x)` branch, which
+  rules out the `ArgumentError` the callee raises for a non-model. The
+  checker should not attribute that error across such a guard.
+  Sites: `src/metafopy/bias/ranktest.py` (`ranktest`), `src/metafopy/bias/tes.py` (`tes`).
 
 ## missing-raises-section
 

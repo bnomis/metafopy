@@ -146,6 +146,7 @@ def poisson_binomial(p: FloatArray, progbar: bool = False) -> FloatArray:
     return pmf
 
 
+# auditme: accept[raises-section-drift] check_class is called without must and fit_view only after is_rma(x), so ArgumentError cannot arise
 def tes(
     x: metafopy.methods.fitview.Fit | numpy.typing.ArrayLike | str,
     vi: numpy.typing.ArrayLike | str | None = None,
