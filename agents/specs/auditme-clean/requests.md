@@ -26,6 +26,14 @@ The operator raises these in the shared auditme skill's `requests.md`.
   rules out the `ArgumentError` the callee raises for a non-model. The
   checker should not attribute that error across such a guard.
   Sites: `src/metafopy/bias/ranktest.py` (`ranktest`), `src/metafopy/bias/tes.py` (`tes`).
+- Rule: a callee's `Raises:` entry is attributed to a function that receives
+  an argument (`measure`) already checked against a supported list by every
+  caller, so the callee's argument, support and internal errors cannot arise.
+  Site: `src/metafopy/models/tables.py` (`prepare_tables`, calling `escalc`).
+- Rule: `non-alphabetical-literal` flags an `__all__` ordered as ruff RUF022
+  requires (constants, classes, functions), which the checker's ASCII order
+  contradicts. The checker should accept the RUF022 order for `__all__`.
+  Sites: `src/metafopy/interactive/data.py`, `src/metafopy/methods/emm_contrasts.py`.
 
 ## missing-raises-section
 

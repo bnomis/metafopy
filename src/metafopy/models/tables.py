@@ -35,7 +35,7 @@ type To = typing.Literal['all', 'only0', 'if0all', 'none']
 TWO_BY_TWO = ('ai', 'bi', 'ci', 'di')
 # auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
 # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
-RATES = ('x1i', 'x2i', 't1i', 't2i')
+RATES = ('x1i', 'x2i', 't1i', 't2i')  # auditme: accept[non-alphabetical-literal] the order is that of the arguments
 # auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
 PROPORTIONS = ('xi', 'mi')
 # auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
@@ -143,6 +143,7 @@ def one_group_counts(
     return {'xi': x, 'mi': m}, x + m
 
 
+# auditme: accept[raises-section-drift] the callers check measure against a supported list, so escalc's argument, support and internal errors cannot arise
 def prepare_tables(
     measure: str,
     *,
