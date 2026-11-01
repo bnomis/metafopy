@@ -385,7 +385,7 @@ every push and in CI.
 
 ## Task 11: Close the item and the spec
 
-**Status:** todo
+**Status:** in-progress
 **Priority:** medium
 **Complexity:** small
 **Spec Reference:** Implementation step 7
@@ -395,24 +395,50 @@ checked once before the branch merges.
 
 **Subtasks:**
 
-- [ ] Create `DONE.md` with the title `# Done` and the line "Finished work, newest last. Items arrive from `TODO.md` unchanged."
-- [ ] Append the `TODO.md` item "The auditme checker reports unaccepted hits and no hook enforces it" to `DONE.md`, heading and body unchanged, then the line `Done: YYYY-MM-DD - agents/specs/auditme-clean/spec.md, agents/tasks/auditme-clean/tasks-1.md.`, and remove it from `TODO.md`
-- [ ] Set the spec's `**Status:**` to `implemented`, and its entry in `agents/specs/index.md` to "Implemented: ..."
-- [ ] Add `agents/specs/auditme-clean/requests.md`'s entries, if any, to the hand-over message for the operator
+- [x] Create `DONE.md` with the title `# Done` and the line "Finished work, newest last. Items arrive from `TODO.md` unchanged."
+- [x] Append the `TODO.md` item "The auditme checker reports unaccepted hits and no hook enforces it" to `DONE.md`, heading and body unchanged, then the line `Done: YYYY-MM-DD - agents/specs/auditme-clean/spec.md, agents/tasks/auditme-clean/tasks-1.md.`, and remove it from `TODO.md`
+- [x] Set the spec's `**Status:**` to `implemented`, and its entry in `agents/specs/index.md` to "Implemented: ..."
+- [x] Add `agents/specs/auditme-clean/requests.md`'s entries, if any, to the hand-over message for the operator
 
 **Acceptance Criteria:**
 
-- [ ] `TODO.md` no longer holds the item; `DONE.md` holds it unchanged with a `Done:` line
+- [x] `TODO.md` no longer holds the item; `DONE.md` holds it unchanged with a `Done:` line
 
 **Definition of Done:**
 
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` exits 0
-- [ ] `mypy` passes
-- [ ] `python3 ~/.claude/skills/todo-review/verify_bodies.py <baseline> TODO.md DONE.md` exits 0, where `<baseline>` is `TODO.md` as of the commit that added this list: `git show $(git log --diff-filter=A --format=%H -- agents/tasks/auditme-clean/tasks-1.md):TODO.md > <scratch>/todo-before.md`
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` exits 0
+- [x] `mypy` passes
+- [x] `python3 ~/.claude/skills/todo-review/verify_bodies.py <baseline> TODO.md DONE.md` exits 0, where `<baseline>` is `TODO.md` as of the commit that added this list: `git show $(git log --diff-filter=A --format=%H -- agents/tasks/auditme-clean/tasks-1.md):TODO.md > <scratch>/todo-before.md`
 - [ ] `pytest` on the test files that import any module this list changed: `git diff --name-only <base>..HEAD -- src` gives the modules, and the header's grep their importers
 
 **Notes:**
 
 - Depends on Task 10
 - The last test run may approach the whole suite, since the list touches most packages; that is expected
+- 2026-11-01: the whole suite gives 7054 passed and 4 failed, all `src/tests/test_audit4_robust.py::test_glmm_cm_el_optim` (`fe_Nelder-Mead`, `fe_optim_nm`, `fe_optim_maxit`, `fe_mods_nm`). The same four fail on `main` at `763080f` (run from a scratch worktree with `PYTHONPATH` on its `src`), so this list did not cause them; the branch's changes to `glmm_fit.py` and that test file are comments and a docstring line. Task 12 records the follow-up. Everything else in this task is done and staged-ready but uncommitted, because the task's tests do not pass
+- `DONE.md` holds the item as at the baseline commit `fe07de6`, since `verify_bodies.py` requires it unchanged; Task 1 later added a dated `Note 2026-10-31` line to the item in `TODO.md`, kept in git history at `05f05b7`
+
+---
+
+## Task 12: Fix the `test_glmm_cm_el_optim` failures that predate this list
+
+**Status:** todo
+**Priority:** medium
+**Complexity:** small
+**Spec Reference:** none (found by Task 11's test run)
+
+**Technical Goal:** `test_glmm_cm_el_optim` passes, or its reference is corrected, so Task 11's test criterion can be met.
+
+**Subtasks:**
+
+- [ ] Find why the warnings differ: the test expects R's second warning `Cannot fit saturated model (... convergence = 1).` after the first, and Python emits only `SATURATED_WARNING` (`src/metafopy/models/glmm_fit.py`)
+- [ ] Fix the code or the R-generated reference, per the project's rule that R metafor is the numeric oracle
+
+**Acceptance Criteria:**
+
+- [ ] `pytest src/tests/test_audit4_robust.py` passes on this branch and on `main`
+
+**Notes:**
+
+- Depends on Task 11 only for the commit; the failure exists on `main`
