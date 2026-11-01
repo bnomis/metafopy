@@ -55,3 +55,18 @@ The operator raises these in the shared auditme skill's `requests.md`.
   which passes its one parameter twice (`LTY.get(name, name)`, the name as its
   own default). The checker should treat a wrapper that reuses a parameter as
   the default argument as computing a value, not passing it on.
+
+## missing-raises-section (handled raise)
+
+- Rule: a `raise` inside a nested function whose only caller sits in a
+  `try` that catches the error is attributed to the enclosing function. The
+  checker should skip a raise caught within the same enclosing function.
+  Site: `src/metafopy/effects/fivenum_estimators.py` (`lbfgsb`).
+
+## raises-section-drift (re-raise)
+
+- Rule: an error caught in a nested function and re-raised for one branch
+  (`if m1 == 'blue': raise`) is reported as never reaching the caller. The
+  checker should count a bare `raise` in an `except` as a raise of the
+  caught types.
+  Site: `src/metafopy/effects/fivenum.py` (`conv_fivenum`).

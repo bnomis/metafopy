@@ -204,6 +204,7 @@ def aggregate_escalc(
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.NotFoundError: a column named by an argument does not exist in ``data``.
         metafopy.errors.EstimationError: ``V`` is not positive definite or cannot be inverted in a cluster.
     """
     if struct not in STRUCTS:

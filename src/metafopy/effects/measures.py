@@ -300,6 +300,7 @@ def chksubset(x: numpy.typing.ArrayLike | str | None, k: int, data: pandas.DataF
     return mask
 
 
+# auditme: accept[mutable-module-level-exported] metafor's session list of warned yi vectors, mutated in place and cleared by the tests
 YICHECKS: list[bytes] = []
 """Signatures of the ``yi`` vectors already warned about; metafor keeps the last 100 (``yichecks``) and warns once per vector per session."""
 

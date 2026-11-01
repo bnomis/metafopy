@@ -54,8 +54,10 @@ EPS = float(numpy.finfo(float).eps)
 
 
 def match_replace(replace: Replace) -> str:
-    """Raises:
-    metafopy.errors.InputError: ``replace`` is not one of ``'ifna'``, ``'all'`` and ``'complete'`` (or a prefix).
+    """The ``replace`` option as one of ``'ifna'``, ``'all'`` and ``'complete'``.
+
+    Raises:
+        metafopy.errors.InputError: ``replace`` is not one of those (or a prefix).
     """
     if isinstance(replace, bool | numpy.bool_):
         return 'all' if replace else 'ifna'
@@ -280,6 +282,7 @@ def conv_2x2(
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.NotFoundError: a column named by an argument does not exist in ``data``.
     """
     repl = match_replace(replace)
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
@@ -441,6 +444,7 @@ def conv_delta(
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.NotFoundError: a column named by an argument does not exist in ``data``.
     """
     if yi is None or vi is None:
         raise metafopy.errors.InputError("Must specify the 'yi' and 'vi' arguments.")
@@ -540,6 +544,8 @@ def conv_wald(
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.NotFoundError: a column named by an argument does not exist in ``data``.
+        metafopy.errors.InternalError: the new sampling variances cannot be determined.
     """
     if out is None and ci_lb is None and ci_ub is None and zval is None and pval is None:
         raise metafopy.errors.InputError("Must specify at least some of these arguments: 'out', 'ci.lb', 'ci.ub', 'zval', 'pval'.")

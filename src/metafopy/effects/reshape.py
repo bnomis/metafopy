@@ -331,8 +331,10 @@ def study_labels(slab: numpy.typing.ArrayLike | str | None, data: pandas.DataFra
 
 
 def check_common(measure: str | None, to: str, na_action: str) -> str:
-    """Raises:
-    metafopy.errors.InputError: the measure, ``to`` or ``na_action`` is not valid.
+    """``measure`` once it, ``to`` and ``na_action`` are checked.
+
+    Raises:
+        metafopy.errors.InputError: the measure, ``to`` or ``na_action`` is not valid.
     """
     if measure is None:
         raise metafopy.errors.InputError("Must specify an effect size or outcome measure via the 'measure' argument.")
