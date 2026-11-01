@@ -164,6 +164,7 @@ def minimize(
 
     Raises:
         metafopy.errors.EstimationError: the optimiser did not converge.
+        metafopy.errors.InputError: the optimiser settings are invalid.
         metafopy.errors.NotSupportedError: the optimiser has no counterpart here.
     """
     opt = choice.optimizer

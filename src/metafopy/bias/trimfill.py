@@ -158,6 +158,7 @@ def trimfill(
         metafopy.errors.ArgumentError: `x` is not an `rma_uni` result (for example an `rma_mh` result or a vector).
         metafopy.errors.NotSupportedError: `x` is a robust fit, a location-scale model or a selection model.
         metafopy.errors.EstimationError: the tau^2 estimator fails when the model is refitted to the trimmed or filled data.
+        metafopy.errors.InternalError: a weight matrix an estimator needs is missing.
 
     Metafor reference:
         [trimfill](https://wviechtb.github.io/metafor/reference/trimfill.html)

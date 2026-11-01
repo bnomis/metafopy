@@ -189,7 +189,7 @@ every file the commit hook brings into scope (header, "Clearing a package").
 
 ## Task 5: Clear every rule in `metafopy.models`
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** Implementation step 3 (amended 2026-11-01); Fix-or-accept policy
@@ -199,22 +199,22 @@ every file the commit hook brings into scope (header, "Clearing a package").
 
 **Subtasks:**
 
-- [ ] List the hits: run `python3 ~/.claude/skills/auditme/checks/audit.py . > <scratch>/audit.jsonl` and take every unaccepted hit whose `path` is under `src/metafopy/models/`
-- [ ] Fix or accept each by the spec's policy table (see "Clearing a package" in the header)
-- [ ] Before committing, run the scope check in the header and clear what it adds, until it reports nothing
-- [ ] Commit; the hook must pass
+- [x] List the hits: run `python3 ~/.claude/skills/auditme/checks/audit.py . > <scratch>/audit.jsonl` and take every unaccepted hit whose `path` is under `src/metafopy/models/`
+- [x] Fix or accept each by the spec's policy table (see "Clearing a package" in the header)
+- [x] Before committing, run the scope check in the header and clear what it adds, until it reports nothing
+- [x] Commit; the hook must pass
 
 **Acceptance Criteria:**
 
-- [ ] No unaccepted hit under `src/metafopy/models/`
-- [ ] No public function changes signature
+- [x] No unaccepted hit under `src/metafopy/models/`
+- [x] No public function changes signature
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `mkdocs build --strict` passes
-- [ ] `pytest` on the test files that import each module whose code (not only docstrings or markers) changed (see the header)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `mkdocs build --strict` passes
+- [x] `pytest` on the test files that import each module whose code (not only docstrings or markers) changed (see the header)
 
 **Notes:**
 

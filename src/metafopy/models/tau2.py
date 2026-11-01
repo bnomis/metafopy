@@ -122,6 +122,7 @@ def estimate_tau2(
 
     Raises:
         metafopy.errors.EstimationError: the estimator cannot be used for these data or failed to converge.
+        metafopy.errors.InternalError: a weight matrix the estimator needs is missing.
     """
     k, p = X.shape
     ymc = yi - yi.mean()

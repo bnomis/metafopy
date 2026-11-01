@@ -54,6 +54,7 @@ def constr_optim(
 
     Raises:
         metafopy.errors.EstimationError: the starting value is not in the interior of the feasible region.
+        metafopy.errors.InputError: the optimiser settings are invalid.
     """
     if numpy.any(ui @ theta - ci <= 0):
         raise metafopy.errors.EstimationError('initial value is not in the interior of the feasible region')
@@ -99,6 +100,7 @@ def minimise(f: Objective, x0: FloatArray, *, method: str = 'BFGS', maxiter: int
 
     Raises:
         metafopy.errors.EstimationError: ``f`` cannot be evaluated at the starting value or no run converged.
+        metafopy.errors.InputError: the optimiser settings are invalid.
     """
 
     def safe(x: FloatArray) -> float:

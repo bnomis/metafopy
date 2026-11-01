@@ -60,6 +60,7 @@ def maximise(
 
     Raises:
         metafopy.errors.EstimationError: the optimiser did not converge or ``mfmaxit`` was reached.
+        metafopy.errors.NotSupportedError: the optimiser has no counterpart here.
     """
     base = par0.copy()
     evaluations = 0
@@ -132,6 +133,7 @@ def maximise_other(
 
     Raises:
         metafopy.errors.EstimationError: the log-likelihood cannot be evaluated at the initial values or the optimiser failed.
+        metafopy.errors.NotSupportedError: the optimiser has no counterpart here.
     """
 
     def objective(x: FloatArray) -> float:
@@ -139,6 +141,7 @@ def maximise_other(
         par = expand(x)
         val = metafopy.models.mv_lik.negative_loglik(problem, par, reml)
         if log is not None and math.isfinite(val):
+            # auditme: accept[redundant-sink-caller-plus-callee] objective is the one place that logs, and it is called once per evaluation
             log(par, -val)
         return val
 
@@ -152,6 +155,7 @@ def maximise_other(
     except metafopy.errors.EstimationError:
         raise
     except (ValueError, ArithmeticError, numpy.linalg.LinAlgError) as err:
+        # auditme: accept[except-interpolation] metafor reports the optimiser message
         raise metafopy.errors.EstimationError(f'Error during the optimization: {err}') from err
     val = objective(x)
     return OptResult(par=expand(x), value=-val, iterations=0)
