@@ -21,7 +21,7 @@ import metafopy
 import metafopy.errors
 import metafopy.methods.permutest
 import metafopy.methods.vif
-from metafopy.plot import PlotPermutestResult, PlotVifResult
+import metafopy.plot
 
 REF = refutil.load_phase2('permutest_vif_plots')
 
@@ -78,6 +78,7 @@ def test_seeded_simulated_vifs_are_those_of_r(fit: metafopy.RMAResult) -> None:
 
 
 @pytest.fixture
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def ax() -> collections.abc.Iterator[matplotlib.axes.Axes]:
     fig, axes = matplotlib.pyplot.subplots(figsize=(7, 7))
     yield axes
@@ -139,12 +140,13 @@ CASES: list[tuple[str, dict[str, typing.Any]]] = [
 ]
 
 
+# auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
 @pytest.mark.parametrize(('key', 'kwargs'), CASES, ids=[c[0] for c in CASES])
 def test_plot_permutest_matches_metafor(
     key: str, kwargs: dict[str, typing.Any], perm: metafopy.methods.permutest.PermutestResult, ax: matplotlib.axes.Axes
 ) -> None:
     out = metafopy.plot_permutest(perm, ax=ax, **kwargs)
-    assert isinstance(out, PlotPermutestResult)
+    assert isinstance(out, metafopy.plot.PlotPermutestResult)
     assert out.axes == (ax,)
     check_plot(ax, REF[key], freq=bool(kwargs.get('freq')))
 
@@ -188,10 +190,11 @@ VIF_CASES: list[tuple[str, dict[str, typing.Any]]] = [
 ]
 
 
+# auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
 @pytest.mark.parametrize(('key', 'kwargs'), VIF_CASES, ids=[c[0] for c in VIF_CASES])
 def test_plot_vif_matches_metafor(key: str, kwargs: dict[str, typing.Any], vifs: metafopy.methods.vif.VIFResult, ax: matplotlib.axes.Axes) -> None:
     out = metafopy.plot_vif(vifs, ax=ax, **kwargs)
-    assert isinstance(out, PlotVifResult)
+    assert isinstance(out, metafopy.plot.PlotVifResult)
     ref = REF[key]
     check_plot(ax, {**ref, 'events': [e for e in ref['events'] if e['type'] != 'segments']}, freq=bool(kwargs.get('freq')))
     segments = [a for a in artists(ax, 'segment')]

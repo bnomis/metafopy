@@ -45,7 +45,7 @@ NOISY_ATOL = 5e-3
 
 # auditme: accept[non-alphabetical-literal] metafor's column order
 # auditme: accept[literal-duplication] test cases spell out their own R arguments
-WALD = ('se', 'zval', 'pval', 'ci_lb', 'ci_ub')
+WALD = ('se', 'zval', 'pval', 'ci_lb', 'ci_ub')  # auditme: accept[non-alphabetical-literal] order follows the R fixture script
 ALL_CASES = sorted(k for k, v in REF['fits'].items() if 'error' not in v)
 
 

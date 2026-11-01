@@ -63,6 +63,7 @@ def column_values(value: object, data: pandas.DataFrame | None, name: str) -> Fl
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.NotFoundError: a name or expression is not found in the data.
     """
     if isinstance(value, str):
         if data is None:
@@ -91,6 +92,7 @@ def prepare_yi(
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.NotFoundError: a name or expression is not found in the data.
     """
     if isinstance(yi, str) and '~' in yi:
         if data is None:
@@ -165,6 +167,7 @@ def prepare_v(V: VLike, data: pandas.DataFrame | None, k: int, sparse: bool) -> 
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.NotFoundError: a name or expression is not found in the data.
     """
     if V is None:
         raise metafopy.errors.InputError("Must specify the 'V' argument.")
@@ -215,6 +218,7 @@ def prepare_w(W: object, data: pandas.DataFrame | None, k: int, sparse: bool) ->
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.NotFoundError: a name or expression is not found in the data.
     """
     if W is None:
         return None
@@ -301,6 +305,7 @@ def extract_random(
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.NotFoundError: a variable of a formula is not found in the data.
     """
     structs = [struct] * 2 if isinstance(struct, str) else list(struct)
     if len(structs) == 1:

@@ -33,12 +33,14 @@ RTOL_OPT = 1e-5
 
 # auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 @functools.cache
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def ref() -> dict[str, typing.Any]:
     data: dict[str, typing.Any] = json.loads(FIXTURE.read_text(encoding='utf-8'))
     return data
 
 
 CASE_ARGS = 'key,fit,kw'  # the arguments of the parametrized tests
+# auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
 BINARY = ['mh', 'peto']
 # auditme: accept[literal-duplication] the primitives the plot tests of the repository leave out
 SKIP_TEXT = {'mtext'}  # the texts are compared one by one
@@ -48,6 +50,7 @@ SKIP_AXES = {'axis', 'mtext', 'usr'}  # the texts are compared one by one, the a
 
 # auditme: accept[paired-sibling-helpers] each test module has its own figure fixture
 @pytest.fixture
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def ax() -> collections.abc.Iterator[matplotlib.axes.Axes]:
     fig, axes = matplotlib.pyplot.subplots(figsize=(7, 7))
     yield axes
@@ -422,6 +425,7 @@ def test_unsupported_classes_raise_metafors_error(key: str, fits: dict[str, typi
 
 
 def test_class_names(fits: dict[str, typing.Any]) -> None:
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert metafopy.methods.fitview.r_class(fits['robust']) == ('robust.rma', 'rma', 'rma.uni')
     assert metafopy.methods.fitview.r_class(fits['sel']) == ('rma.uni.selmodel', 'rma.uni', 'rma')
     assert metafopy.methods.fitview.r_class(numpy.zeros(2)) == ()

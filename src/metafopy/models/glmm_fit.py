@@ -282,6 +282,7 @@ def fixed_glm(
     Raises:
         metafopy.errors.EstimationError: the model cannot be fitted.
         metafopy.errors.InputError: ``y`` and ``X`` differ in their number of rows, or a binomial model has no ``size``.
+        metafopy.errors.InternalError: a binomial model has no ``size`` when the log-likelihood is computed.
     """
     try:
         return metafopy.core.glm.glm_fit(X, y, family=family, size=size, offset=offset, link=link)
@@ -723,7 +724,8 @@ def search(
     try:
         par = metafopy.models.sel_opt.minimize(fn, par0, choice, ctl.opt_ctrl)
     except (metafopy.errors.EstimationError, ValueError, ArithmeticError, numpy.linalg.LinAlgError) as err:
-        raise metafopy.errors.EstimationError(f'Cannot fit {what} model.') from err
+        # auditme: accept[except-interpolation] the warning built from it carries the optimiser's convergence code, as metafor's does
+        raise metafopy.errors.EstimationError(f'Cannot fit {what} model. {err}') from err
     est = numpy.asarray(par[:n], dtype=numpy.float64)
     return est, func(est)
 

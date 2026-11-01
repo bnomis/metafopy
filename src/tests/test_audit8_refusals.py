@@ -4,6 +4,7 @@ import math
 import typing
 import warnings
 
+import matplotlib
 import numpy
 import pandas
 import pytest
@@ -209,8 +210,10 @@ def test_fmtt_requires_a_scalar() -> None:
 
 def test_harness_factor_matches_values_to_levels_as_character() -> None:
     # R: factor(factor(c(1, 2)), levels = c(2, 1), labels = c('con', 'exp')) keeps both values
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     out = audit.rlib.r_factor(pandas.Categorical(['1', '2', '1']), levels=[2, 1], labels=['con', 'exp'])
     assert list(out) == ['exp', 'con', 'exp']
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert list(out.categories) == ['con', 'exp']
 
 
@@ -237,8 +240,6 @@ def test_regtest_lm_of_an_rma_peto_fit() -> None:
 
 def test_forest_takes_rows_for_the_studies_with_missing_values() -> None:
     """R: ``rows`` has one entry per outcome of the data, those left out for missing values included, whose rows are closed up."""
-    import matplotlib
-
     matplotlib.use('Agg')
     dat = refutil.bcg().copy()
     dat.loc[[1, 4], 'yi'] = numpy.nan

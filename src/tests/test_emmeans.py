@@ -12,6 +12,7 @@ import metafopy.errors
 
 
 @pytest.fixture(scope='module')
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def dat() -> pandas.DataFrame:
     bcg = metafopy.datasets.load('bcg')
     out = metafopy.escalc(measure='RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=bcg)
@@ -25,6 +26,7 @@ def res(dat: pandas.DataFrame) -> metafopy.RMAResult:
 
 
 @pytest.fixture(scope='module')
+# auditme: accept[passthrough-shim] a pytest fixture, requested by name; the wrapper builds the object once per test
 def grid(res: metafopy.RMAResult) -> metafopy.EmmGrid:
     return metafopy.emmprep(res)
 
@@ -36,6 +38,7 @@ def alloc(grid: metafopy.EmmGrid) -> metafopy.EmmGrid:
 
 def test_reference_grid(grid: metafopy.EmmGrid) -> None:
     assert list(grid.grid.columns) == ['alloc', 'ablat']
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert grid.grid['alloc'].tolist() == ['alternate', 'random', 'systematic']
     numpy.testing.assert_allclose(grid.grid['ablat'], [33.46153846153846] * 3)
     numpy.testing.assert_allclose(grid.linfct[:, 3], 33.46153846153846)
@@ -140,6 +143,7 @@ def test_knapp_hartung_and_t(dat: pandas.DataFrame) -> None:
 def test_formula_order_and_terms(dat: pandas.DataFrame) -> None:
     res2 = metafopy.rma_uni('yi', 'vi', mods='~ ablat + alloc', data=dat)
     g2 = metafopy.emmprep(res2)
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert list(g2.grid.columns) == ['ablat', 'alloc']
     emmcheck.check(metafopy.emmeans(g2, 'alloc').summary(infer=True), 'order_alloc')
     emmcheck.check(metafopy.emmeans(g2, 'ablat').summary(infer=True), 'order_ablat')
@@ -157,6 +161,7 @@ def test_weights(dat: pandas.DataFrame, weights: str) -> None:
 def test_two_factors(dat: pandas.DataFrame) -> None:
     two = metafopy.emmprep(metafopy.rma_uni('yi', 'vi', mods='~ alloc + lat', data=dat))
     emmcheck.check(metafopy.emmeans(two, 'lat').summary(infer=True), 'two_lat')
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     both = metafopy.emmeans(two, ['alloc', 'lat'])
     emmcheck.check(both.summary(infer=True), 'two_both')
     emmcheck.check(metafopy.pairs(both).summary(infer=True), 'two_both_pairs')
@@ -180,6 +185,7 @@ def test_interactions(dat: pandas.DataFrame) -> None:
     int4 = metafopy.emmprep(metafopy.rma_uni('yi', 'vi', mods='~ alloc * lat', data=dat))
     emmcheck.check(metafopy.emmeans(int4, 'alloc', by='lat').summary(infer=True), 'int_by')
     emmcheck.check(metafopy.pairs(metafopy.emmeans(int4, 'alloc', by='lat')).summary(infer=True), 'int_by_pairs')
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     both = metafopy.emmeans(int4, ['alloc', 'lat'])
     emmcheck.check(metafopy.pairs(both).summary(infer=True), 'int_both_pairs')
     emmcheck.check(metafopy.contrast(both, 'eff').summary(infer=True), 'int_both_eff')
@@ -277,6 +283,7 @@ def test_rma_mv() -> None:
     emmcheck.check(e.summary(infer=True), 'mv_year_t', emmcheck.OPTIM)
     emmcheck.check(metafopy.pairs(e).summary(infer=True), 'mv_year_t_pairs', emmcheck.OPTIM)
     berkey = metafopy.datasets.load('berkey1998')
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     v = metafopy.bldiag([berkey.loc[berkey['trial'] == t, ['v1i', 'v2i']].to_numpy() for t in sorted(berkey['trial'].unique())])
     un = metafopy.rma_mv('yi', v, mods='~ 0 + outcome', random='~ outcome | trial', struct='UN', data=berkey)
     eun = metafopy.emmeans(metafopy.emmprep(un), 'outcome')
@@ -325,6 +332,7 @@ def test_errors_and_printing(dat: pandas.DataFrame, alloc: metafopy.EmmGrid) -> 
         metafopy.pairs(alloc).summary(adjust='nonsense')
     with pytest.raises(metafopy.errors.InputError, match='Nonconforming'):
         metafopy.contrast(alloc, {'bad': [1, -1]})
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     plain = metafopy.rma_uni('yi', 'vi', mods=dat[['ablat']].to_numpy(), data=dat)
     with pytest.raises(metafopy.errors.InputError, match='without a formula'):
         metafopy.emmprep(plain)

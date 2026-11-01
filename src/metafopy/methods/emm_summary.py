@@ -58,6 +58,7 @@ class EmmSummary:
         return format_summary(self)
 
 
+# auditme: accept[non-alphabetical-literal] the order of the statistics in metafor's summary
 TEST_STATISTICS = ('t.ratio', 'z.ratio', 'F.ratio', 'T.square')
 PVAL_DIGITS = 4
 

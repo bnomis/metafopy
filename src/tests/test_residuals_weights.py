@@ -15,9 +15,11 @@ import metafopy
 import metafopy.errors
 
 REF = refutil.load_phase9('residuals_weights')
+# auditme: accept[non-alphabetical-dict-keys] order follows the R fixture script
 NA_ACTIONS = {'na.omit': 'omit', 'na.exclude': 'exclude', 'na.pass': 'pass', 'na.fail': 'fail'}
 # rma.mv, rma.glmm, location-scale and selection-model estimates come from an optimiser; they agree with R to its tolerance
 OPTIM = 1e-4
+# auditme: accept[non-alphabetical-dict-keys] order follows the R fixture script
 TOLERANCE = {'ls': OPTIM, 'sel': OPTIM, 'glmm': OPTIM, 'mv_konst': OPTIM, 'mv_na_mods': OPTIM, 'mv_na_int': OPTIM}
 CELLS: dict[str, typing.Any] = dict(ai='tpos', bi='tneg', ci='cpos', di='cneg')
 # what the error text of R means: the exception class and the words that must be in metafopy's message
@@ -30,6 +32,7 @@ ERRORS = [
 ]
 
 
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def quiet[T](fn: collections.abc.Callable[[], T]) -> T:
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
@@ -45,6 +48,7 @@ def data(vi_na: bool = False, weights: bool = False) -> pandas.DataFrame:
     return d
 
 
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def raw_na() -> pandas.DataFrame:
     d = metafopy.datasets.load('bcg')
     d.loc[2, 'tpos'] = numpy.nan
@@ -106,12 +110,14 @@ CASES = [(key, ty, na) for key, spec in REF.items() if isinstance(spec, dict) an
 WEIGHT_CASES = [(key, ty, na) for key, spec in REF.items() if isinstance(spec, dict) and 'weights' in spec for ty in spec['weights'] for na in NA_ACTIONS]
 
 
+# auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
 @pytest.mark.parametrize(('key', 'ty', 'na'), CASES)
 def test_residuals(key: str, ty: str, na: str) -> None:
     res = fits()[key]
     check(lambda: res.residuals(ty, na_action=NA_ACTIONS[na]), REF[key]['residuals'][ty][na], key, f'{key} residuals {ty} {na}')
 
 
+# auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
 @pytest.mark.parametrize(('key', 'ty', 'na'), WEIGHT_CASES)
 def test_weights(key: str, ty: str, na: str) -> None:
     res = fits()[key]

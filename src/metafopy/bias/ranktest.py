@@ -114,6 +114,7 @@ def kendall_test(x: FloatArray, y: FloatArray, exact: bool | None = None) -> tup
     return tau, float(2 * min(scipy.stats.norm.cdf(z), scipy.stats.norm.sf(z)))
 
 
+# auditme: accept[raises-section-drift] fit_view is called only after is_rma(x), so its ArgumentError for a non-model cannot arise
 def ranktest(
     x: metafopy.methods.fitview.Fit | numpy.typing.ArrayLike | str,
     vi: numpy.typing.ArrayLike | str | None = None,

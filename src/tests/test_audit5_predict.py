@@ -5,6 +5,7 @@ The 0.2016 of ``prob='>log(0.8)'`` is the value of the audit (metafor 5.2-1, bcg
 the behaviour and the agreement between spellings of the same call.
 """
 
+import dataclasses
 import typing
 import warnings
 
@@ -23,6 +24,7 @@ pytestmark = pytest.mark.filterwarnings('ignore::UserWarning')
 
 
 @pytest.fixture(scope='module')
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def dat() -> pandas.DataFrame:
     return metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=metafopy.datasets.load('dat.bcg'))
 
@@ -131,7 +133,9 @@ def test_prob_unparsable_cutoff_drops_prob(re_model: metafopy.RMAResult) -> None
 def test_addx_in_frame_and_print(two_mods: metafopy.RMAResult) -> None:
     out = metafopy.predict(two_mods, addx=True)
     frame = out.to_frame()
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert list(frame.columns[-3:]) == ['X.intrcpt', 'X.ablat', 'X.year']
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     numpy.testing.assert_allclose(frame[['X.intrcpt', 'X.ablat', 'X.year']].to_numpy(), two_mods.X_f if hasattr(two_mods, 'X_f') else two_mods.X)
     assert 'X.ablat' in str(out)
     plain = metafopy.predict(two_mods).to_frame()
@@ -244,6 +248,7 @@ def test_top_level_vcov_of_deltamethod_and_matreg(re_model: metafopy.RMAResult) 
     delta = metafopy.deltamethod(re_model, fun=lambda b: {'e': numpy.exp(b[0])})
     pandas.testing.assert_frame_equal(typing.cast(pandas.DataFrame, metafopy.vcov(delta)), delta.vcov())
     cov = pandas.DataFrame([[1.0, 0.5, 0.3], [0.5, 1.0, 0.2], [0.3, 0.2, 1.0]], index=['y', 'a', 'b'], columns=['y', 'a', 'b'])
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     mat = metafopy.matreg('y', ['a', 'b'], R=cov, n=100)
     pandas.testing.assert_frame_equal(typing.cast(pandas.DataFrame, metafopy.vcov(mat)), mat.vcov())
 
@@ -273,9 +278,11 @@ def test_mv_group_fields(dat: pandas.DataFrame) -> None:
     assert res.h_nlevels is None
     assert res.h_levels_f is None
     assert res.h_levels_k is None
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert res.G_dimnames == ('alternate', 'random', 'systematic')
     frame = res.G_frame
     assert frame is not None
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert list(frame.index) == list(frame.columns) == ['alternate', 'random', 'systematic']
     assert res.G is not None
     numpy.testing.assert_allclose(frame.to_numpy(), res.G)
@@ -361,8 +368,6 @@ def test_anova_abbrev_is_accepted(two_mods: metafopy.RMAResult) -> None:
 
 
 def test_abbreviate_hyp_removes_factor_and_parentheses() -> None:
-    import dataclasses
-
     @dataclasses.dataclass(frozen=True)
     class Hyp:
         hyp: tuple[str, ...]

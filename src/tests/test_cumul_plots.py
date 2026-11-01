@@ -12,7 +12,7 @@ import refutil
 
 import metafopy
 import metafopy.errors
-from metafopy.plot import ForestResult, PlotCumulResult
+import metafopy.plot
 
 
 @pytest.fixture(scope='module')
@@ -31,13 +31,14 @@ def cum0(dat: pandas.DataFrame) -> metafopy.CumulResult:
 
 
 @pytest.fixture
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def ax() -> collections.abc.Iterator[matplotlib.axes.Axes]:
     fig, axes = matplotlib.pyplot.subplots(figsize=(7, 7))
     yield axes
     matplotlib.pyplot.close(fig)
 
 
-def check_forest(out: ForestResult, ref: dict[str, typing.Any]) -> None:
+def check_forest(out: metafopy.plot.ForestResult, ref: dict[str, typing.Any]) -> None:
     refutil.close(out.xlim, ref['xlim'], 'xlim')
     refutil.close(out.alim, ref['alim'], 'alim')
     refutil.close(out.at, ref['at'], 'at')
@@ -47,7 +48,7 @@ def check_forest(out: ForestResult, ref: dict[str, typing.Any]) -> None:
     refutil.close(out.cex, ref['cex'], 'cex')
 
 
-def check_plot(out: PlotCumulResult, ref: dict[str, typing.Any]) -> None:
+def check_plot(out: metafopy.plot.PlotCumulResult, ref: dict[str, typing.Any]) -> None:
     refutil.close(out.estim, ref['estim'], 'estim')
     refutil.close(out.yval, ref['yval'], 'yval')
     assert list(out.col) == [str(c).upper() for c in refutil.as_list(ref['col'])]

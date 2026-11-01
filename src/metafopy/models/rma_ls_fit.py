@@ -133,6 +133,7 @@ def minimise_standin(
     Raises:
         metafopy.errors.EstimationError: the optimiser did not converge or could not start.
         metafopy.errors.NotSupportedError: the optimiser has no counterpart here.
+        metafopy.errors.InputError: the optimiser settings are invalid.
     """
     if not math.isfinite(objective(start)):
         raise metafopy.errors.EstimationError('Cannot evaluate the log-likelihood at the initial values.')
@@ -256,6 +257,7 @@ def start_alpha(md: metafopy.metadata.MetaData, Z: FloatArray, link: str, is_int
     Raises:
         metafopy.errors.EstimationError: no suitable starting values were found.
         metafopy.errors.InputError: the heterogeneity (HE) fit of the location model that gives the starting values rejects the data.
+        metafopy.errors.InternalError: a weight matrix an estimator needs is missing.
     """
     md0 = dataclasses.replace(md, weights=None, intercept=False)
     with warnings.catch_warnings():
@@ -346,6 +348,7 @@ def fit_rma_ls(
         metafopy.errors.InputError: an argument or the data is invalid.
         metafopy.errors.EstimationError: the optimisation failed.
         metafopy.errors.NotSupportedError: the optimiser chosen in ``control`` has no counterpart here.
+        metafopy.errors.InternalError: a weight matrix an estimator needs is missing.
     """
     # auditme: accept[literal-duplication] metafor option values and column labels repeated as in the R source
     if method not in ('ML', 'REML'):

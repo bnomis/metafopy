@@ -1,5 +1,6 @@
 """Location-scale models (``rma_uni(..., scale=)``) checked against R metafor 5.2-1 (fixtures from tests/r/generate_location_scale.R)."""
 
+import collections.abc
 import json
 import pathlib
 import re
@@ -28,15 +29,15 @@ OPT_DEFAULT = OPT
 # the scale part of bcg_ablat is only identified to about 1e-4, so permuted alpha statistics move by ~1.4e-4 with the BLAS (seen on Windows CI)
 PERM_ALPHA = 5e-4
 
-type Fit = typing.Callable[[], metafopy.RMALSResult]
+type Fit = collections.abc.Callable[[], metafopy.RMALSResult]
 
 MODS3 = '~ ni100 + meta'
 SCALE3 = '~ ni100 + imag'
 
 
-any_permutest: typing.Callable[..., typing.Any] = metafopy.permutest
-any_profile: typing.Callable[..., typing.Any] = metafopy.profile
-any_vif: typing.Callable[..., typing.Any] = metafopy.vif
+any_permutest: collections.abc.Callable[..., typing.Any] = metafopy.permutest
+any_profile: collections.abc.Callable[..., typing.Any] = metafopy.profile
+any_vif: collections.abc.Callable[..., typing.Any] = metafopy.vif
 
 
 def flat(value: typing.Any) -> list[float]:

@@ -73,6 +73,7 @@ SHAPES = {
 
 
 @pytest.mark.parametrize('name', sorted(SHAPES))
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def test_shape(name: str) -> None:
     assert f'dat.{name}' in metafopy.datasets.list_datasets()
     assert metafopy.datasets.load(name).shape == SHAPES[name]

@@ -58,10 +58,12 @@ def test_summary_escalc_names_the_interval_like_r() -> None:
 def test_r_time_limit_inside_the_call_is_a_timeout() -> None:
     r = {'status': 'error', 'error': 'reached elapsed time limit inside the call, which carried on with the step it interrupted counted as failed'}
     py = {'status': 'ok', 'warnings': []}
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert [f['kind'] for f in audit.pyrun.classify(r, py, pandas.DataFrame())] == ['timeout']
 
 
 def test_r_shard_that_stops_answering_is_a_timeout() -> None:
     r = {'status': 'error', 'error': 'R did not return within 270s (timeout)'}
     py = {'status': 'ok', 'warnings': []}
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert [f['kind'] for f in audit.pyrun.classify(r, py, pandas.DataFrame())] == ['timeout']

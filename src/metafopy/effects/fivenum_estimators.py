@@ -66,7 +66,11 @@ def qnorm(p: float) -> float:
 
 
 def sum_stat_index(n: float, kind: str) -> list[int]:
-    """The ranks (1-based) of the order statistics a scenario reports."""
+    """The ranks (1-based) of the order statistics a scenario reports.
+
+    Raises:
+        metafopy.errors.InputError: ``kind`` is not a known scenario.
+    """
     if kind == 'S1':
         return [1, math.floor(n / 2) + 1, int(n)]
     if kind == 'S2':
@@ -77,7 +81,11 @@ def sum_stat_index(n: float, kind: str) -> list[int]:
 
 
 def luo_mean(x: collections.abc.Sequence[float] | FloatArray, n: float, kind: str) -> float:
-    """metaBLUE's ``Luo.mean``: Luo et al. (2018), doi:10.1177/0962280216669183, mean estimator."""
+    """metaBLUE's ``Luo.mean``: Luo et al. (2018), doi:10.1177/0962280216669183, mean estimator.
+
+    Raises:
+        metafopy.errors.InputError: ``kind`` is not a known scenario.
+    """
     v = [float(a) for a in x]
     if kind == 'S1':
         return float(4 / (4 + n**0.75) * (v[0] + v[2]) / 2 + n**0.75 / (4 + n**0.75) * v[1])
@@ -91,7 +99,11 @@ def luo_mean(x: collections.abc.Sequence[float] | FloatArray, n: float, kind: st
 
 
 def wan_std(x: collections.abc.Sequence[float] | FloatArray, n: float, kind: str) -> float:
-    """metaBLUE's ``Wan.std``: Wan et al. (2014), doi:10.1186/1471-2288-14-135, SD estimator."""
+    """metaBLUE's ``Wan.std``: Wan et al. (2014), doi:10.1186/1471-2288-14-135, SD estimator.
+
+    Raises:
+        metafopy.errors.InputError: ``kind`` is not a known scenario.
+    """
     v = [float(a) for a in x]
     if kind == 'S1':
         return (v[2] - v[0]) / (2 * qnorm((n - 0.375) / (n + 0.25)))
@@ -111,6 +123,7 @@ def blue_s(x: collections.abc.Sequence[float] | FloatArray, n: float, kind: str)
     Yang et al. (2022) (the ``Qr_d*`` derivatives of the quantile function). ``kind`` is ``'S1'``, ``'S2'`` or ``'S3'``.
 
     Raises:
+        metafopy.errors.InputError: ``kind`` is not a known scenario.
         metafopy.errors.EstimationError: the covariance matrix of the order statistics is singular.
     """
     index = sum_stat_index(n, kind)
@@ -238,6 +251,7 @@ def round_lambda(lam: float) -> float:
     return 0.0 if abs(lam) < 1e-8 else max(0.0, lam)
 
 
+# auditme: accept[missing-raises-section] the EstimationError of the objective is caught inside the call and becomes the None result
 def lbfgsb(
     fn: collections.abc.Callable[[FloatArray], float],
     start: collections.abc.Sequence[float],
@@ -436,6 +450,40 @@ def bc_mean_sd(quants: FloatArray, n: float, scenario: str, rng: metafopy.core.r
     return Estimate(r_mean(bc_rvs), r_sd(bc_rvs))
 
 
+def boxcox(quants: FloatArray, lam: float) -> FloatArray:
+    """The Box-Cox transformation of ``quants`` with parameter ``lam`` (the log for ``lam = 0``)."""
+    with numpy.errstate(all='ignore'):
+        return numpy.log(quants) if lam == 0 else (quants**lam - 1) / lam
+
+
+def loglik(t: FloatArray, mu: float, sigma: float, n: float, scenario: str) -> float:
+    """The log-likelihood of the transformed quantiles ``t`` under a normal with mean ``mu`` and SD ``sigma`` for ``scenario``."""
+    h = math.floor(0.25 * n + 1)
+    j = math.floor(0.5 * n + 1)
+    k = math.floor(0.75 * n + 1)
+    norm = scipy.stats.norm
+    with numpy.errstate(all='ignore'):
+        dens = float(numpy.sum(norm.logpdf(t, mu, sigma)))
+        cdf = norm.cdf(t, mu, sigma)
+        if scenario == 'S1':
+            return float(dens + (j - 2) * math.log(cdf[1] - cdf[0]) + (n - j - 1) * math.log(cdf[2] - cdf[1]))
+        if scenario == 'S2':
+            return float(
+                dens
+                + (h - 1) * norm.logcdf(t[0], mu, sigma)
+                + (j - h - 1) * math.log(cdf[1] - cdf[0])
+                + (k - j - 1) * math.log(cdf[2] - cdf[1])
+                + (n - k) * norm.logsf(t[2], mu, sigma)
+            )
+        return float(
+            dens
+            + (h - 2) * math.log(cdf[1] - cdf[0])
+            + (j - h - 1) * math.log(cdf[2] - cdf[1])
+            + (k - j - 1) * math.log(cdf[3] - cdf[2])
+            + (n - k - 1) * math.log(cdf[4] - cdf[3])
+        )
+
+
 def mln_mean_sd(quants: FloatArray, n: float, scenario: str, rng: metafopy.core.rng.RRandom) -> Estimate:
     """estmeansd's ``mln.mean.sd``: the Box-Cox transformation and normal parameters by maximum likelihood.
 
@@ -443,45 +491,15 @@ def mln_mean_sd(quants: FloatArray, n: float, scenario: str, rng: metafopy.core.
         metafopy.errors.InputError: ``n`` or the quantiles are invalid.
     """
     check_errors(quants, n)
-    h = math.floor(0.25 * n + 1)
-    j = math.floor(0.5 * n + 1)
-    k = math.floor(0.75 * n + 1)
-
-    def boxcox(lam: float) -> FloatArray:
-        with numpy.errstate(all='ignore'):
-            return numpy.log(quants) if lam == 0 else (quants**lam - 1) / lam
-
-    def loglik(t: FloatArray, mu: float, sigma: float) -> float:
-        norm = scipy.stats.norm
-        with numpy.errstate(all='ignore'):
-            dens = float(numpy.sum(norm.logpdf(t, mu, sigma)))
-            cdf = norm.cdf(t, mu, sigma)
-            if scenario == 'S1':
-                return float(dens + (j - 2) * math.log(cdf[1] - cdf[0]) + (n - j - 1) * math.log(cdf[2] - cdf[1]))
-            if scenario == 'S2':
-                return float(
-                    dens
-                    + (h - 1) * norm.logcdf(t[0], mu, sigma)
-                    + (j - h - 1) * math.log(cdf[1] - cdf[0])
-                    + (k - j - 1) * math.log(cdf[2] - cdf[1])
-                    + (n - k) * norm.logsf(t[2], mu, sigma)
-                )
-            return float(
-                dens
-                + (h - 2) * math.log(cdf[1] - cdf[0])
-                + (j - h - 1) * math.log(cdf[2] - cdf[1])
-                + (k - j - 1) * math.log(cdf[3] - cdf[2])
-                + (n - k - 1) * math.log(cdf[4] - cdf[3])
-            )
 
     def profile(lam: float) -> float:
-        t = boxcox(lam)
-        return loglik(t, luo_mean(t, n, scenario), wan_std(t, n, scenario))
+        t = boxcox(quants, lam)
+        return loglik(t, luo_mean(t, n, scenario), wan_std(t, n, scenario), n, scenario)
 
     lam_hat = round_lambda(metafopy.core.optim.fmin(lambda lam: -profile(lam), 0.0, 10.0, tol=0.001))
-    t = boxcox(lam_hat)
+    t = boxcox(quants, lam_hat)
     start = [luo_mean(t, n, scenario), wan_std(t, n, scenario)]
-    mle = metafopy.core.optim.nelder_mead(lambda theta: -loglik(t, float(theta[0]), float(theta[1])), start)
+    mle = metafopy.core.optim.nelder_mead(lambda theta: -loglik(t, float(theta[0]), float(theta[1]), n, scenario), start)
     mu, sigma = float(mle.par[0]), float(mle.par[1])
 
     data = rnorm(rng, 10000, mu, sigma)

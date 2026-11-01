@@ -41,9 +41,6 @@ __all__ = ['DeltaMethodResult', 'deltamethod']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 
-# auditme: accept[non-alphabetical-literal] order is metafor's documented order and is meaningful
-DIGIT_KEYS = metafopy.mfopt.DIGIT_KEYS
-
 
 @dataclasses.dataclass(frozen=True)
 class DeltaMethodResult:
@@ -88,7 +85,7 @@ def get_digits(
     digits: int | collections.abc.Sequence[float] | collections.abc.Mapping[str, int] | None, default: collections.abc.Mapping[str, int] | None = None
 ) -> dict[str, int]:
     """metafor's ``.get.digits()`` for the keys used here (missing keys keep their defaults)."""
-    out = dict(default) if default is not None else dict.fromkeys(DIGIT_KEYS[:5], 4)
+    out = dict(default) if default is not None else dict.fromkeys(metafopy.mfopt.DIGIT_KEYS[:5], 4)
     if digits is None:
         return out
     if isinstance(digits, collections.abc.Mapping):
@@ -212,7 +209,7 @@ def deltamethod(
     if level is None:
         model_level = None if is_vector(x) else getattr(x, 'level', None)
         level = 95.0 if model_level is None else float(model_level)
-    digit_map = get_digits(digits, None if is_vector(x) else dict.fromkeys(DIGIT_KEYS, metafopy.mfopt.model_digits(x)))
+    digit_map = get_digits(digits, None if is_vector(x) else dict.fromkeys(metafopy.mfopt.DIGIT_KEYS, metafopy.mfopt.model_digits(x)))
     p = coef.shape[0]
     vb = check_vcov(vcov_in, p)
 

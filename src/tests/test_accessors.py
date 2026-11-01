@@ -29,6 +29,7 @@ def raw() -> pandas.DataFrame:
 CELLS: dict[str, typing.Any] = dict(ai='tpos', bi='tneg', ci='cpos', di='cneg')
 
 
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def quiet[T](fn: collections.abc.Callable[[], T]) -> T:
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
@@ -80,6 +81,7 @@ def test_accessors(key: str) -> None:
         refutil.close(se, exp['se'], f'{key}.se', rtol=rtol)
         numpy.testing.assert_allclose(metafopy.model_matrix(res), numpy.array(exp['model_matrix'], dtype=float).reshape(res.k, -1))
         # metafor's mh and peto fits have a model matrix without column names, which as.data.frame() names V1
+        # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
         expected = ['V1'] if key in ('mh', 'peto') else list(res.coef_names)
         assert list(metafopy.model_matrix(res, asdf=True).columns) == expected
 

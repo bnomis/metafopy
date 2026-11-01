@@ -26,6 +26,7 @@ SIMULATE_NA = numpy.array(
 )
 
 
+# auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
 @pytest.mark.parametrize('na_action', ['omit', 'exclude', 'pass', 'fail'])
 def test_simulate_na_action(na_action: str) -> None:
     with warnings.catch_warnings():

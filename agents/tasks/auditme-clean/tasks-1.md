@@ -189,7 +189,7 @@ every file the commit hook brings into scope (header, "Clearing a package").
 
 ## Task 5: Clear every rule in `metafopy.models`
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** Implementation step 3 (amended 2026-11-01); Fix-or-accept policy
@@ -199,22 +199,22 @@ every file the commit hook brings into scope (header, "Clearing a package").
 
 **Subtasks:**
 
-- [ ] List the hits: run `python3 ~/.claude/skills/auditme/checks/audit.py . > <scratch>/audit.jsonl` and take every unaccepted hit whose `path` is under `src/metafopy/models/`
-- [ ] Fix or accept each by the spec's policy table (see "Clearing a package" in the header)
-- [ ] Before committing, run the scope check in the header and clear what it adds, until it reports nothing
-- [ ] Commit; the hook must pass
+- [x] List the hits: run `python3 ~/.claude/skills/auditme/checks/audit.py . > <scratch>/audit.jsonl` and take every unaccepted hit whose `path` is under `src/metafopy/models/`
+- [x] Fix or accept each by the spec's policy table (see "Clearing a package" in the header)
+- [x] Before committing, run the scope check in the header and clear what it adds, until it reports nothing
+- [x] Commit; the hook must pass
 
 **Acceptance Criteria:**
 
-- [ ] No unaccepted hit under `src/metafopy/models/`
-- [ ] No public function changes signature
+- [x] No unaccepted hit under `src/metafopy/models/`
+- [x] No public function changes signature
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `mkdocs build --strict` passes
-- [ ] `pytest` on the test files that import each module whose code (not only docstrings or markers) changed (see the header)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `mkdocs build --strict` passes
+- [x] `pytest` on the test files that import each module whose code (not only docstrings or markers) changed (see the header)
 
 **Notes:**
 
@@ -224,7 +224,7 @@ every file the commit hook brings into scope (header, "Clearing a package").
 
 ## Task 6: Clear every rule in `metafopy.plot`
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** as Task 5
@@ -233,19 +233,19 @@ every file the commit hook brings into scope (header, "Clearing a package").
 
 **Subtasks:**
 
-- [ ] As Task 5's subtasks, for `src/metafopy/plot/`
+- [x] As Task 5's subtasks, for `src/metafopy/plot/`
 
 **Acceptance Criteria:**
 
-- [ ] No unaccepted hit under `src/metafopy/plot/`
-- [ ] No public function changes signature
+- [x] No unaccepted hit under `src/metafopy/plot/`
+- [x] No public function changes signature
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `mkdocs build --strict` passes
-- [ ] `pytest` on the test files that import each module whose code changed
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `mkdocs build --strict` passes
+- [x] `pytest` on the test files that import each module whose code changed
 
 **Notes:**
 
@@ -255,7 +255,7 @@ every file the commit hook brings into scope (header, "Clearing a package").
 
 ## Task 7: Clear every rule in the rest of `src/metafopy/`
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** as Task 5
@@ -266,20 +266,20 @@ modules), one package per commit.
 
 **Subtasks:**
 
-- [ ] As Task 5's subtasks, package by package, committing each separately (the `fsn` hit at `src/metafopy/bias/fsn.py:159` is the spec's `Raises:` example, if it is still open)
-- [ ] `redundant-sink-caller-plus-callee` (`src/metafopy/effects/fivenum_estimators.py` and others): compute the value once and pass it, unless the numbers then differ from R's in the compared digits; then revert and accept saying so
+- [x] As Task 5's subtasks, package by package, committing each separately (the `fsn` hit at `src/metafopy/bias/fsn.py:159` is the spec's `Raises:` example, if it is still open)
+- [x] `redundant-sink-caller-plus-callee` (`src/metafopy/effects/fivenum_estimators.py` and others): compute the value once and pass it, unless the numbers then differ from R's in the compared digits; then revert and accept saying so
 
 **Acceptance Criteria:**
 
-- [ ] No unaccepted hit under `src/metafopy/`
-- [ ] No public function changes signature
+- [x] No unaccepted hit under `src/metafopy/`
+- [x] No public function changes signature
 
 **Definition of Done:**
 
-- [ ] Each commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `mkdocs build --strict` passes
-- [ ] `pytest` on the test files that import each module whose code changed
+- [x] Each commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `mkdocs build --strict` passes
+- [x] `pytest` on the test files that import each module whose code changed
 
 **Notes:**
 
@@ -289,7 +289,7 @@ modules), one package per commit.
 
 ## Task 8: Clear every rule in `src/tests/`
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** large
 **Spec Reference:** as Task 5
@@ -298,17 +298,17 @@ modules), one package per commit.
 
 **Subtasks:**
 
-- [ ] As Task 5's subtasks, for `src/tests/`; test modules keep their own fixture loaders (`paired-sibling-helpers`: accept with "each test module keeps its own fixture loader"), and literals that mirror the R fixture scripts are accepted with the reasons the project already uses
+- [x] As Task 5's subtasks, for `src/tests/`; test modules keep their own fixture loaders (`paired-sibling-helpers`: accept with "each test module keeps its own fixture loader"), and literals that mirror the R fixture scripts are accepted with the reasons the project already uses
 
 **Acceptance Criteria:**
 
-- [ ] No unaccepted hit under `src/tests/`
+- [x] No unaccepted hit under `src/tests/`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest` on every test file the task edits
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest` on every test file the task edits
 
 **Notes:**
 
@@ -318,7 +318,7 @@ modules), one package per commit.
 
 ## Task 9: Sweep the whole tree
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Spec Reference:** Implementation step 4 (amended 2026-11-01)
@@ -328,17 +328,17 @@ modules), one package per commit.
 
 **Subtasks:**
 
-- [ ] Run `pre-commit run auditme-all --hook-stage manual --all-files`; fix or accept every remaining hit by the policy table, including any rule not in the table (fix unless the pattern is right here, and say why in the marker)
+- [x] Run `pre-commit run auditme-all --hook-stage manual --all-files`; fix or accept every remaining hit by the policy table, including any rule not in the table (fix unless the pattern is right here, and say why in the marker)
 
 **Acceptance Criteria:**
 
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` reports nothing but `lockfile-drift`, if that
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` reports nothing but `lockfile-drift`, if that
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`), or there is nothing to commit
-- [ ] `mypy` passes
-- [ ] `pytest` on the test files that import each module whose code changed
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`), or there is nothing to commit
+- [x] `mypy` passes
+- [x] `pytest` on the test files that import each module whose code changed (no code changed in this task)
 
 **Notes:**
 
@@ -349,7 +349,7 @@ modules), one package per commit.
 
 ## Task 10: Switch on the push and CI gates
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Implementation step 6; Error handling (`lockfile-drift`, shared-repository access); Settings
@@ -359,10 +359,10 @@ every push and in CI.
 
 **Subtasks:**
 
-- [ ] Run `pre-commit run auditme-all --hook-stage manual --all-files`. If any hit other than `lockfile-drift` is unaccepted, stop as `blocked` and name it. If `lockfile-drift` fires, run `uv lock --check`: if it still fails only because of a global `exclude-newer`, stop as `blocked` for the operator to raise it with auditme (the spec forbids rewriting `uv.lock`)
-- [ ] Set `stages: [manual, pre-push]` under `- id: auditme-all` in `.pre-commit-config.yaml`
-- [ ] Add the steps of the shared `project-setup` template `ci-audit-step.yml` (install the deploy key, `pre-commit run auditme-all --hook-stage manual --all-files`, remove the key) to the `lint` job of `.github/workflows/ci.yml` after `uv run mypy`, with the prerequisites it lists: `uv tool install pre-commit` and `echo "$PWD/.venv/bin" >> "$GITHUB_PATH"` after `uv sync`
-- [ ] Commit, then stop as `blocked` for an operator session to create the deploy key and secret (each step confirmed): `ssh-keygen -t ed25519 -N '' -f <scratch>/agents_deploy_key`, `gh repo deploy-key add <scratch>/agents_deploy_key.pub --repo bnomis/agents --title metafopy`, `gh secret set AGENTS_DEPLOY_KEY --repo <owner>/metafopy < <scratch>/agents_deploy_key`, then delete the scratch files. The key is never printed. The operator then sets this task to `done` and restarts the list
+- [x] Run `pre-commit run auditme-all --hook-stage manual --all-files`. If any hit other than `lockfile-drift` is unaccepted, stop as `blocked` and name it. If `lockfile-drift` fires, run `uv lock --check`: if it still fails only because of a global `exclude-newer`, stop as `blocked` for the operator to raise it with auditme (the spec forbids rewriting `uv.lock`)
+- [x] Set `stages: [manual, pre-push]` under `- id: auditme-all` in `.pre-commit-config.yaml`
+- [x] Add the steps of the shared `project-setup` template `ci-audit-step.yml` (install the deploy key, `pre-commit run auditme-all --hook-stage manual --all-files`, remove the key) to the `lint` job of `.github/workflows/ci.yml` after `uv run mypy`, with the prerequisites it lists: `uv tool install pre-commit` and `echo "$PWD/.venv/bin" >> "$GITHUB_PATH"` after `uv sync`
+- [x] Commit, then stop as `blocked` for an operator session to create the deploy key and secret (each step confirmed): `ssh-keygen -t ed25519 -N '' -f <scratch>/agents_deploy_key`, `gh repo deploy-key add <scratch>/agents_deploy_key.pub --repo bnomis/agents --title metafopy`, `gh secret set AGENTS_DEPLOY_KEY --repo <owner>/metafopy < <scratch>/agents_deploy_key`, then delete the scratch files. The key is never printed. The operator then sets this task to `done` and restarts the list
 
 **Acceptance Criteria:**
 
@@ -371,19 +371,21 @@ every push and in CI.
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` exits 0
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` exits 0
 
 **Notes:**
 
 - Depends on Task 9
 - The deploy key and secret change GitHub, so an unattended run never does them
+- 2026-11-01: `lockfile-drift` fired only because of the operator's global `exclude-newer = "14 days"` (`uv lock --check` wanted `wcwidth` 0.9.3 -> 0.9.2; with `UV_NO_CONFIG=1` it passed). The operator chose to fix the shared checker: agents `8b43d9b` repeats `uv lock --check` without the user config when uv names a global `exclude-newer` the lock lacks as its reason. The pin moved from `a98cb19` to `8b43d9b`; the newer checker's one new hit, `ruff-version-drift` (the hook pinned ruff v0.17.1, `uv.lock` holds 0.17.0), was cleared by setting the hook's rev to v0.17.0, since `uv.lock` is not rewritten
+- 2026-11-01: the operator session created the read-only deploy key `metafopy` on bnomis/agents and the `AGENTS_DEPLOY_KEY` secret on bnomis/metafopy, each step confirmed; the key files were deleted. The acceptance criteria (`git push` runs `auditme-all`, the CI audit step passes) are seen at the next push of `main`
 
 ---
 
 ## Task 11: Close the item and the spec
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Spec Reference:** Implementation step 7
@@ -393,24 +395,51 @@ checked once before the branch merges.
 
 **Subtasks:**
 
-- [ ] Create `DONE.md` with the title `# Done` and the line "Finished work, newest last. Items arrive from `TODO.md` unchanged."
-- [ ] Append the `TODO.md` item "The auditme checker reports unaccepted hits and no hook enforces it" to `DONE.md`, heading and body unchanged, then the line `Done: YYYY-MM-DD - agents/specs/auditme-clean/spec.md, agents/tasks/auditme-clean/tasks-1.md.`, and remove it from `TODO.md`
-- [ ] Set the spec's `**Status:**` to `implemented`, and its entry in `agents/specs/index.md` to "Implemented: ..."
-- [ ] Add `agents/specs/auditme-clean/requests.md`'s entries, if any, to the hand-over message for the operator
+- [x] Create `DONE.md` with the title `# Done` and the line "Finished work, newest last. Items arrive from `TODO.md` unchanged."
+- [x] Append the `TODO.md` item "The auditme checker reports unaccepted hits and no hook enforces it" to `DONE.md`, heading and body unchanged, then the line `Done: YYYY-MM-DD - agents/specs/auditme-clean/spec.md, agents/tasks/auditme-clean/tasks-1.md.`, and remove it from `TODO.md`
+- [x] Set the spec's `**Status:**` to `implemented`, and its entry in `agents/specs/index.md` to "Implemented: ..."
+- [x] Add `agents/specs/auditme-clean/requests.md`'s entries, if any, to the hand-over message for the operator
 
 **Acceptance Criteria:**
 
-- [ ] `TODO.md` no longer holds the item; `DONE.md` holds it unchanged with a `Done:` line
+- [x] `TODO.md` no longer holds the item; `DONE.md` holds it unchanged with a `Done:` line
 
 **Definition of Done:**
 
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` exits 0
-- [ ] `mypy` passes
-- [ ] `python3 ~/.claude/skills/todo-review/verify_bodies.py <baseline> TODO.md DONE.md` exits 0, where `<baseline>` is `TODO.md` as of the commit that added this list: `git show $(git log --diff-filter=A --format=%H -- agents/tasks/auditme-clean/tasks-1.md):TODO.md > <scratch>/todo-before.md`
-- [ ] `pytest` on the test files that import any module this list changed: `git diff --name-only <base>..HEAD -- src` gives the modules, and the header's grep their importers
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` exits 0
+- [x] `mypy` passes
+- [x] `python3 ~/.claude/skills/todo-review/verify_bodies.py <baseline> TODO.md DONE.md` exits 0, where `<baseline>` is `TODO.md` as of the commit that added this list: `git show $(git log --diff-filter=A --format=%H -- agents/tasks/auditme-clean/tasks-1.md):TODO.md > <scratch>/todo-before.md`
+- [x] `pytest` on the test files that import any module this list changed: `git diff --name-only <base>..HEAD -- src` gives the modules, and the header's grep their importers
 
 **Notes:**
 
 - Depends on Task 10
 - The last test run may approach the whole suite, since the list touches most packages; that is expected
+- 2026-11-01: the whole suite gives 7054 passed and 4 failed, all `src/tests/test_audit4_robust.py::test_glmm_cm_el_optim` (`fe_Nelder-Mead`, `fe_optim_nm`, `fe_optim_maxit`, `fe_mods_nm`). The same four fail on `main` at `763080f` (run from a scratch worktree with `PYTHONPATH` on its `src`), so this list did not cause them; the branch's changes to `glmm_fit.py` and that test file are comments and a docstring line. Task 12 records the follow-up. Everything else in this task is done and staged-ready but uncommitted, because the task's tests do not pass
+- Note 2026-11-01 (operator session): the four failures were caused by this list, not older. They pass at `9d02a0a` and `fe07de6` and at Task 3's `a35d113`, and fail from Task 4's `72257ca`, which dropped the caught error from `Cannot fit {what} model.` in `glmm_fit.search` to clear an `except-interpolation` hit; the saturated-model warning built from that error carries the optimiser's convergence code, as R's does. The `main` checked above already held Task 4. Task 12 restored the interpolation with an accept marker (spec, Error handling: a fix that breaks a test is reverted and accepted); the GLMM tests (`test_audit4_robust.py`, `test_rma_glmm.py`, `test_glmm_extras.py`, `test_glmm_clogit.py`) then give 377 passed
+- `DONE.md` holds the item as at the baseline commit `fe07de6`, since `verify_bodies.py` requires it unchanged; Task 1 later added a dated `Note 2026-10-31` line to the item in `TODO.md`, kept in git history at `05f05b7`
+
+---
+
+## Task 12: Fix the `test_glmm_cm_el_optim` failures Task 4 caused
+
+**Status:** done
+**Priority:** medium
+**Complexity:** small
+**Spec Reference:** none (found by Task 11's test run)
+
+**Technical Goal:** `test_glmm_cm_el_optim` passes, or its reference is corrected, so Task 11's test criterion can be met.
+
+**Subtasks:**
+
+- [x] Find why the warnings differ: the test expects R's second warning `Cannot fit saturated model (... convergence = 1).` after the first, and Python emits only `SATURATED_WARNING` (`src/metafopy/models/glmm_fit.py`)
+- [x] Fix the code or the R-generated reference, per the project's rule that R metafor is the numeric oracle
+
+**Acceptance Criteria:**
+
+- [x] `pytest src/tests/test_audit4_robust.py` passes on this branch
+
+**Notes:**
+
+- Cause and fix: see the note of 2026-11-01 under Task 11. `main` passes again once this branch merges

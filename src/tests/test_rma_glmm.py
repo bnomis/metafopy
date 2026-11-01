@@ -88,6 +88,7 @@ def close(actual: typing.Any, expected: typing.Any, what: str, rtol: float) -> N
     assert worst <= rtol, f'{what}: relative difference {worst:.2e} > {rtol:.0e}\n{act}\n{exp}'
 
 
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def mask_numbers(text: str) -> str:
     return re.sub(r' +', ' ', re.sub(r'-?\d+\.\d+|<\.\d+|\d+', '#', refutil.r_print(text)))
 

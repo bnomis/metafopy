@@ -1019,6 +1019,7 @@ def fit_rma_uni(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
         metafopy.errors.EstimationError: every requested tau^2 estimator failed.
+        metafopy.errors.InternalError: a weight matrix an estimator needs is missing.
     """
     methods = [method] if isinstance(method, str) else list(method)
     for m_ in methods:

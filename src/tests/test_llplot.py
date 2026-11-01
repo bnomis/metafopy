@@ -12,7 +12,7 @@ import refutil
 
 import metafopy
 import metafopy.errors
-from metafopy.plot import LlplotResult
+import metafopy.plot
 
 COLUMNS = [0, 99, 249, 399, 499]
 
@@ -23,13 +23,14 @@ def dat() -> pandas.DataFrame:
 
 
 @pytest.fixture
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def ax() -> collections.abc.Iterator[matplotlib.axes.Axes]:
     fig, axes = matplotlib.pyplot.subplots(figsize=(7, 7))
     yield axes
     matplotlib.pyplot.close(fig)
 
 
-def check(out: LlplotResult, ref: dict[str, typing.Any], rtol: float = 1e-8) -> None:
+def check(out: metafopy.plot.LlplotResult, ref: dict[str, typing.Any], rtol: float = 1e-8) -> None:
     assert list(out.lls.shape) == refutil.as_list(ref['dim'])
     assert numpy.isnan(out.lls).sum(axis=1).tolist() == [int(v) for v in refutil.as_list(ref['nna'])]
     refutil.close(numpy.nansum(out.lls, axis=1), ref['sums'], 'sums', rtol=rtol)
@@ -62,6 +63,7 @@ def test_or_with_zero_cells_and_subset_matches_metafor(ax: matplotlib.axes.Axes)
         out = metafopy.llplot('OR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=bcg, xvals=500, level=99, subset=[*range(8), *range(9, 13)], ax=ax)
     check(out, refutil.load_phase2('llplot')['or_zero'], rtol=1e-6)
     styles = sorted({typing.cast(typing.Any, line).meta['lty'] for line in ax.lines if line.get_gid() == 'line'})
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert styles == ['dashed', 'solid']
 
 

@@ -18,12 +18,14 @@ import metafopy.errors
 
 # auditme: accept[non-alphabetical-literal] predictor order of the R example sets the coefficient order
 MT_X = ['hp', 'wt', 'am']
+# auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
 COLDITZ_NAMES = ['con', 'exp']
 FIXTURE = pathlib.Path(__file__).parent / 'reference' / 'phase7' / 'matreg.json'
 
 
 # auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 @functools.cache
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def ref() -> dict[str, typing.Any]:
     data: dict[str, typing.Any] = json.loads(FIXTURE.read_text(encoding='utf-8'))
     return data
@@ -333,6 +335,7 @@ def test_argument_errors(kwargs: dict[str, typing.Any], error: type[Exception], 
         (pandas.Series({'hp': 1, 'wt': 2, 'zz': 3}), "Could not find variable 'zz'"),
         (pandas.Series({'hp': 1, 'wt': 2}), 'for this variable: am'),
         (pandas.Series({'hp': 1, 'w': 2, 'wt': 3}), 'multiple matches'),
+        # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
         ([['a', 'b', 'c']], 'numeric'),
     ],
 )

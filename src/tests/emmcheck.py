@@ -22,6 +22,7 @@ GLMM_ATOL = 1e-3
 MVT = 5e-3
 
 
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def as_list(value: typing.Any) -> list[typing.Any]:
     return value if isinstance(value, list) else [value]
 
@@ -48,6 +49,7 @@ def check(got: metafopy.methods.emm_summary.EmmSummary, key: str, rtol: float = 
             assert [str(v) for v in actual] == [str(v) for v in expected], f'{key}.{name}'
 
 
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def bcg_lat() -> pandas.DataFrame:
     """The BCG trials with the latitude split into ``lat``, as in the R script."""
     bcg = metafopy.datasets.load('bcg')
@@ -62,10 +64,14 @@ def nested_data() -> tuple[pandas.DataFrame, pandas.DataFrame]:
     dat = bcg_lat()
     n = len(dat)
     pos = numpy.arange(1, n + 1)
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     dat['grp'] = (['a', 'b'] * (n // 2 + 1))[:n]
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     dat['grp3'] = numpy.where(dat['lat'] == 'high', numpy.array(['a', 'b', 'c'])[pos % 3], numpy.array(['a', 'b'])[pos % 2])
     cells = dat.copy()
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     grp = [''] * n
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     sub = [''] * n
     for lat in ('high', 'low'):
         for k, row in enumerate(numpy.flatnonzero(cells['lat'] == lat)):

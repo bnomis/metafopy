@@ -1,5 +1,6 @@
 """robust() for rma.uni and rma.mv fits (default sandwich estimators and clubSandwich) checked against R metafor 5.2-1 and clubSandwich 0.7.0."""
 
+import collections.abc
 import json
 import pathlib
 import typing
@@ -33,7 +34,7 @@ def weights_arg() -> numpy.typing.NDArray[numpy.float64]:
 
 
 # auditme: accept[non-alphabetical-dict-keys] the order follows the R fixture generator
-MODELS: dict[str, typing.Callable[[], typing.Any]] = {
+MODELS: dict[str, collections.abc.Callable[[], typing.Any]] = {
     'uni_int': lambda: uni(),
     'uni_mods': lambda: uni(mods='~ ' + MODS),
     'uni_fe': lambda: uni(mods='~ ' + MODS, method='FE'),

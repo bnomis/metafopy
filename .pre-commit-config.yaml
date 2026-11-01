@@ -1,14 +1,14 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.17.1
+    rev: v0.17.0
     hooks:
       - id: ruff
         args: [--fix]
       - id: ruff-format
   # The shared audit hooks, pinned to one commit of the checker.
   - repo: git@github.com:bnomis/agents.git
-    rev: a98cb19de5abd1651d08c5ba2b7ce8edda91428b
+    rev: 8b43d9b961d61dfc848140b1609920dee719d62d
     hooks:
       - id: auditme-changed
       - id: auditme-all
-        stages: [manual]
+        stages: [manual, pre-push]

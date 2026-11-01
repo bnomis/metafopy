@@ -12,10 +12,12 @@ import pytest
 import metafopy
 import metafopy.datasets
 
+# auditme: accept[non-alphabetical-dict-keys] order follows the R fixture script
 DIGITS = {'est': 2, 'se': 3, 'test': 1, 'pval': 3, 'ci': 1, 'var': 4, 'sevar': 4, 'fit': 4, 'het': 1}
 
 
 @pytest.fixture(scope='module')
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def dat() -> pandas.DataFrame:
     return metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=metafopy.datasets.load('dat.bcg'))
 
@@ -101,6 +103,7 @@ def test_gdiag_design_matrix_has_the_inner_variables_as_columns() -> None:
     z = typing.cast(typing.Any, fit.Z_G1)
     assert z is not None
     assert tuple(z.colnames) == ('intrcpt', 'year')
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert tuple(z.rownames[:3]) == ('1', '2', '3')
 
 

@@ -12,7 +12,7 @@ import refutil
 
 import metafopy
 import metafopy.errors
-from metafopy.plot import RegplotResult
+import metafopy.plot
 
 
 @pytest.fixture(scope='module')
@@ -21,18 +21,20 @@ def dat() -> pandas.DataFrame:
 
 
 @pytest.fixture(scope='module')
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def res(dat: pandas.DataFrame) -> metafopy.RMAResult:
     return metafopy.rma('yi', 'vi', mods='~ ablat', data=dat)
 
 
 @pytest.fixture
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def ax() -> collections.abc.Iterator[matplotlib.axes.Axes]:
     fig, axes = matplotlib.pyplot.subplots(figsize=(7, 7))
     yield axes
     matplotlib.pyplot.close(fig)
 
 
-def check(out: RegplotResult, ref: dict[str, typing.Any]) -> None:
+def check(out: metafopy.plot.RegplotResult, ref: dict[str, typing.Any]) -> None:
     refutil.close(out.xi, ref['xi'], 'xi')
     refutil.close(out.yi, ref['yi'], 'yi')
     refutil.close(out.psize, ref['psize'], 'psize')

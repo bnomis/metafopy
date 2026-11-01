@@ -234,17 +234,25 @@ LABEL_GROUPS: tuple[tuple[str, tuple[typing.Any, ...]], ...] = (
 # (long, short) labels of the recognised groups that the probed table of setlab_table lacks, keyed '<a|t>:<group>' (``atransf`` or ``transf``)
 GROUP_LABELS: types.MappingProxyType[str, dict[str, tuple[str, str]]] = types.MappingProxyType(
     {
+        # auditme: accept[literal-duplication] each group spells out its atransf and transf labels, which are the same table rows in R
         'ABT': {'a:iabt': ("Cronbach's alpha", 'Alpha'), 't:iabt': ("Cronbach's alpha", 'Alpha')},
+        # auditme: accept[literal-duplication] each group spells out its atransf and transf labels, which are the same table rows in R
         'AHW': {'a:iahw': ("Cronbach's alpha", 'Alpha'), 't:iahw': ("Cronbach's alpha", 'Alpha')},
         'IRS': {
             'a:isqrt': ('Incidence Rate (square root scale)', 'Rate'),
             't:isqrt': ('Incidence Rate', 'Rate'),
         },
+        # auditme: accept[literal-duplication] each group spells out its atransf and transf labels, which are the same table rows in R
         'PAS': {'a:iarcsin': ('Proportion (arcsine scale)', 'Proportion'), 't:iarcsin': ('Proportion', 'Proportion')},
+        # auditme: accept[literal-duplication] each group spells out its atransf and transf labels, which are the same table rows in R
         'PFT': {'a:ipft.hm': ('Proportion', 'Proportion'), 't:ipft.hm': ('Proportion', 'Proportion')},
+        # auditme: accept[literal-duplication] each group spells out its atransf and transf labels, which are the same table rows in R
         'PLO': {'a:ilogit': ('Proportion (logit scale)', 'Proportion'), 't:ilogit': ('Proportion', 'Proportion')},
+        # auditme: accept[literal-duplication] each group spells out its atransf and transf labels, which are the same table rows in R
         'PRZ': {'a:iprobit': ('Proportion (probit scale)', 'Proportion'), 't:iprobit': ('Proportion', 'Proportion')},
+        # auditme: accept[literal-duplication] each group spells out its atransf and transf labels, which are the same table rows in R
         'ZR2': {'a:ztor2': ('Coefficient of Determination', '$R^2$'), 't:ztor2': ('Coefficient of Determination', '$R^2$')},
+        # auditme: accept[literal-duplication] each group spells out its atransf and transf labels, which are the same table rows in R
         'ZR2F': {'a:ztor2': ('Coefficient of Determination', '$R^2$'), 't:ztor2': ('Coefficient of Determination', '$R^2$')},
     }
 )

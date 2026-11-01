@@ -22,6 +22,7 @@ MODS = ('~ ablat', '~ ablat + year')
 
 
 @pytest.fixture(scope='module')
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def dat() -> pandas.DataFrame:
     return metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=metafopy.datasets.load('dat.bcg'))
 
@@ -160,6 +161,7 @@ def test_anova_uni_plain_robust_unchanged(fits: dict[str, typing.Any]) -> None:
 
 
 @pytest.fixture(scope='module')
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def mv_fit() -> typing.Any:
     kon = metafopy.datasets.load('konstantopoulos2011')
     return metafopy.rma_mv('yi', 'vi', mods='~ I(year - 1990)', random='~ 1 | district/school', data=kon)
@@ -199,6 +201,7 @@ def two_models(dat: pandas.DataFrame) -> dict[str, typing.Any]:
 
 
 @pytest.mark.parametrize(
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     ('name', 'first', 'second', 'kwargs'),
     [
         ('wald_reml', 'full_reml', 'red_reml', {'test': 'Wald'}),
@@ -217,6 +220,7 @@ def test_anova_wald_two_models(two_models: dict[str, typing.Any], name: str, fir
 
 
 @pytest.mark.parametrize(
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     ('name', 'first', 'second', 'kwargs'),
     [
         ('wald_same', 'red_ml', 'red_ml', {'test': 'Wald', 'df': 1}),
@@ -269,6 +273,7 @@ def blup_fits(dat: pandas.DataFrame) -> dict[str, typing.Any]:
 
 
 @pytest.fixture(scope='module')
+# auditme: accept[passthrough-shim] a pytest fixture, requested by name; the wrapper builds the object once per test
 def blup_models(dat: pandas.DataFrame) -> dict[str, typing.Any]:
     return blup_fits(dat)
 
@@ -332,7 +337,15 @@ def test_blup_club_na_exclude(blup_models: dict[str, typing.Any]) -> None:
 
 
 # auditme: accept[non-alphabetical-literal] the order follows the R fixture generator
-GLMM_ARGS: dict[str, typing.Any] = {'measure': 'OR', 'ai': 'tpos', 'bi': 'tneg', 'ci': 'cpos', 'di': 'cneg', 'model': 'CM.EL', 'method': 'FE'}
+GLMM_ARGS: dict[str, typing.Any] = {  # auditme: accept[non-alphabetical-dict-keys] the argument order of the R call, which the error messages follow
+    'measure': 'OR',
+    'ai': 'tpos',
+    'bi': 'tneg',
+    'ci': 'cpos',
+    'di': 'cneg',
+    'model': 'CM.EL',
+    'method': 'FE',
+}
 
 
 def glmm(control: dict[str, typing.Any], **kwargs: typing.Any) -> tuple[typing.Any, list[str]]:

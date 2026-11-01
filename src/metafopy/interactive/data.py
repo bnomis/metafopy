@@ -19,12 +19,15 @@ import metafopy.models.mv_result
 import metafopy.models.rma_uni
 import metafopy.plot.rutils
 
+# auditme: accept[non-alphabetical-literal] ruff RUF022 requires constants, then classes, then functions
 __all__ = ['POOLED_COLUMNS', 'STUDY_COLUMNS', 'ChartData', 'chart_data', 'check_chart_data', 'zcrit']
 
 type Fit = metafopy.models.rma_uni.RMAResult | metafopy.models.mv_result.RMAMVResult
 type Transf = collections.abc.Callable[[numpy.typing.ArrayLike], numpy.ndarray]
 
+# auditme: accept[non-alphabetical-literal] the order is the column order of the frame
 STUDY_COLUMNS = ('slab', 'yi', 'vi', 'sei', 'ci_lb', 'ci_ub', 'weight', 'order', 'href', 'group', 'fill')
+# auditme: accept[non-alphabetical-literal] the order is the column order of the frame
 POOLED_COLUMNS = ('label', 'estimate', 'ci_lb', 'ci_ub', 'pi_lb', 'pi_ub', 'k', 'tau2', 'I2')
 
 
@@ -73,7 +76,11 @@ def full_labels(x: Fit, k_f: int) -> list[str]:
 
 
 def per_row(name: str, values: collections.abc.Sequence[object] | None, k_f: int) -> list[object]:
-    """``values`` checked to have one entry per study of the fit before omission, ``None`` entries without values."""
+    """``values`` checked to have one entry per study of the fit before omission, ``None`` entries without values.
+
+    Raises:
+        metafopy.errors.InputError: ``values`` does not have one entry per study.
+    """
     if values is None:
         return [None] * k_f
     if len(values) != k_f:

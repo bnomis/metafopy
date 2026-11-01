@@ -6,6 +6,7 @@ models, ``rma_glmm(control=)`` (``hesspack``, ``hessianCtrl``, ``dnchgcalc``, ``
 already exist (``reference/phase7/matreg.json``, ``reference/phase3/glmm.json``) and analytic derivatives.
 """
 
+import collections.abc
 import json
 import math
 import pathlib
@@ -33,6 +34,7 @@ def colditz_long() -> pandas.DataFrame:
     """The long-format dataset of the example of ``?matreg`` (van Houwelingen et al., 2002)."""
     long = metafopy.to_long(measure='OR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=metafopy.datasets.load('colditz1994'), append=False)
     long = metafopy.escalc(measure='PLO', xi='out1', mi='out2', data=long)
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     long['group'] = pandas.Categorical(long['group'].astype(str).map({'2': 'con', '1': 'exp'}), categories=['con', 'exp'])
     return long
 
@@ -72,6 +74,7 @@ def test_colditz_vvc_feeds_matreg() -> None:
     res = colditz_fit({'nearpd': True})
     ref = MATREG['colditz']
     assert res.G is not None
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     G = pandas.DataFrame(numpy.asarray(ref['G']), index=['con', 'exp'], columns=['con', 'exp'])
     fit = metafopy.matreg(1, [0], R=G, cov=True, means=ref['means'], V=res.vvc)
     refutil.close(fit.tab['beta'], ref['fit_V']['beta'], 'matreg beta', rtol=1e-5)
@@ -149,7 +152,7 @@ def test_mv_unknown_hesspack() -> None:
 # -- numerical Hessians -----------------------------------------------------------------------------------
 
 
-def analytic() -> tuple[typing.Callable[[numpy.ndarray], float], numpy.ndarray, numpy.ndarray]:
+def analytic() -> tuple[collections.abc.Callable[[numpy.ndarray], float], numpy.ndarray, numpy.ndarray]:
     def f(x: numpy.ndarray) -> float:
         return float(numpy.exp(x[0]) * numpy.sin(x[1]) + x[0] * x[1] ** 2 + x[2] ** 3)
 

@@ -19,6 +19,7 @@ import pandas
 
 import metafopy.core.labelled
 import metafopy.effects.measures
+import metafopy.effects.summary
 import metafopy.errors
 import metafopy.metadata
 
@@ -27,10 +28,6 @@ __all__ = ['cbind_escalc', 'rbind_escalc']
 # auditme: accept[non-alphabetical-literal] order is metafor's documented order and is meaningful
 NAME_KEYS = ('yi_names', 'vi_names', 'sei_names', 'zi_names', 'pval_names', 'ci_lb_names', 'ci_ub_names')
 YI_KEYS = ('measure', 'slab', 'ni', metafopy.metadata.ROWS_KEY)
-
-
-def as_names(value: typing.Any) -> list[str]:
-    return [] if value is None else [value] if isinstance(value, str) else list(value)
 
 
 def unique(names: list[str]) -> list[str]:
@@ -119,7 +116,7 @@ def cbind_escalc(*args: pandas.DataFrame | pandas.Series, **columns: typing.Any)
         for part in parts:
             if isinstance(part, pandas.DataFrame):
                 # R's `[.escalc` drops the names of columns that are not in the frame, so a subset of columns only contributes its own
-                collected = [name for name in as_names(part.attrs.get(key)) if name in part.columns] + collected
+                collected = [name for name in metafopy.effects.summary.names(part.attrs.get(key)) if name in part.columns] + collected
         names = unique(collected)
         if names:
             attrs[key] = names

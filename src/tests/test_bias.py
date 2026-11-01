@@ -23,10 +23,12 @@ import metafopy.transf
 REF = refutil.load_phase2('bias')
 
 
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def same_text(actual: str, expected: str) -> None:
     assert refutil.r_print(actual).strip() == refutil.r_print(expected).strip()
 
 
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def hackshaw() -> pandas.DataFrame:
     return metafopy.datasets.load('hackshaw1998')
 

@@ -13,6 +13,7 @@ import metafopy.datasets
 
 
 @pytest.fixture(scope='module')
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def dat() -> pandas.DataFrame:
     return metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=metafopy.datasets.load('dat.bcg'))
 
@@ -57,7 +58,9 @@ def test_skipped_parts_of_location_scale_permutest_have_one_missing_value() -> N
     assert no_alpha.alpha_perm.shape == (1, 1)
     assert no_alpha.alpha_perm.isna().all().all()
     tables = no_alpha.coef()
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert list(tables) == ['beta', 'alpha']
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert list(tables['beta'].columns[:2]) == ['estimate', 'se']
 
 
@@ -104,7 +107,9 @@ def test_blsplit_keeps_dimnames_through_a_function() -> None:
     # R: blsplit(V, dat$study, round, 4)$`1` of rcalc(ri ~ var1 + var2 | study) has the dimnames acog.perf, asom.perf, ...
     tmp = typing.cast(typing.Any, metafopy.rcalc('ri ~ var1 + var2 | study', ni='ni', data=metafopy.datasets.load('dat.craft2003')))
     block = metafopy.blsplit(tmp.V, tmp.dat['study'], numpy.round, 4)['1']
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert block.rownames[:3] == ('acog.perf', 'asom.perf', 'conf.perf')
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert block.colnames[:3] == ('acog.perf', 'asom.perf', 'conf.perf')
 
 
@@ -116,6 +121,7 @@ def test_mv_known_matrices_have_an_entry_for_every_factor() -> None:
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
         res = metafopy.rma_mv('yi', 'vi', random=['~ 1 | district', '~ 1 | school'], R={'school': corr}, data=data)
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert list(res.R) == ['district', 'school']
     assert res.R['district'] is None
     assert res.R['school'].shape == (len(levels), len(levels))

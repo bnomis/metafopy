@@ -21,14 +21,17 @@ import metafopy.models.rma_uni
 matplotlib.use('Agg')
 
 REF: dict[str, typing.Any] = refutil.load_phase12('audit4_predict')
+# auditme: accept[non-alphabetical-dict-keys] order follows the R fixture script
 ACTIONS: dict[str, metafopy.models.rma_uni.NAActionAll] = {'na.omit': 'omit', 'na.exclude': 'exclude', 'na.pass': 'pass'}
 NEWMODS = [10, 30, 50]
-FIELDS = ('pred', 'se', 'ci_lb', 'ci_ub', 'pi_lb', 'pi_ub')
+# auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
+FIELDS = ('pred', 'se', 'ci_lb', 'ci_ub', 'pi_lb', 'pi_ub')  # auditme: accept[non-alphabetical-literal] order follows the R fixture script
 # auditme: accept[non-alphabetical-literal] the order follows the R fixture generator
 TRANSFS = {'exp': numpy.exp}
 
 
 @pytest.fixture(scope='module')
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def dat() -> pandas.DataFrame:
     return metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=metafopy.datasets.load('dat.bcg'))
 
@@ -85,6 +88,7 @@ def check_prediction(res: typing.Any, spec: dict[str, typing.Any], what: str, rt
     if spec['prob'] is not None:
         close(res.prob, spec['prob'], f'{what} prob', rtol)
     slab = [spec['slab']] if isinstance(spec['slab'], str) else spec['slab']
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     if labels and res.slab is not None and slab != ['']:
         assert list(res.slab) == slab, what
 
@@ -323,8 +327,11 @@ def test_na_action(dna: pandas.DataFrame, bna: pandas.DataFrame, key: str, actio
 def test_na_action_counts(dna: pandas.DataFrame) -> None:
     """bcg with yi[3] and ablat[5] missing: 13 values under exclude and pass, 11 under omit."""
     res = uni(dna, mods='~ablat')
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert [len(res.fitted(na_action=a)) for a in ('omit', 'exclude', 'pass')] == [11, 13, 13]
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert [len(metafopy.predict(res, na_action=a).pred) for a in ('omit', 'exclude', 'pass')] == [11, 13, 13]
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert [len(res.hatvalues(na_action=a)) for a in ('omit', 'exclude', 'pass')] == [11, 13, 13]
     passed = res.fitted(na_action='pass')
     assert numpy.isnan(passed[4])
@@ -396,6 +403,7 @@ def test_na_action_club_sandwich(dna: pandas.DataFrame) -> None:
     """R cannot predict from a clubSandwich fit made from data with missing values; metafopy returns one row per study with NaN where unknown."""
     mods = uni(dna, mods='~ablat')
     res = metafopy.robust(mods, dna['trial'].to_numpy(), club_sandwich=True)
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert [len(metafopy.predict(res, na_action=a).pred) for a in ('omit', 'exclude', 'pass')] == [11, 13, 13]
     passed = metafopy.predict(res, na_action='pass')
     assert numpy.isnan(passed.pred[4])

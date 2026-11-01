@@ -633,6 +633,7 @@ def rma_mv(
         metafopy.errors.EstimationError: the model could not be fitted (for example when the marginal variance-covariance matrix is not
             positive definite at the starting values).
         metafopy.errors.InternalError: a random-effects structure built on an inner factor has none.
+        metafopy.errors.NotFoundError: a variable is not found in the data.
 
     Metafor reference:
         [rma.mv](https://wviechtb.github.io/metafor/reference/rma.mv.html)

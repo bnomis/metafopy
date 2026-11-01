@@ -82,8 +82,10 @@ def match_method(method: str | collections.abc.Sequence[str]) -> tuple[str, str]
 
 
 def match_dist(dist: typing.Any, k: int, data: pandas.DataFrame | None) -> list[str]:
-    """Raises:
-    metafopy.errors.InputError: a value is not (a prefix of) ``'norm'`` or ``'lnorm'``.
+    """The assumed distribution of each study as ``'norm'`` or ``'lnorm'``.
+
+    Raises:
+        metafopy.errors.InputError: a value is not (a prefix of) ``'norm'`` or ``'lnorm'``.
     """
     if isinstance(dist, str) and data is not None and dist in data.columns:
         values = [str(v) for v in data[dist]]
@@ -114,6 +116,7 @@ def walter_denominator(n: float) -> float:
     return float(metafopy.core.integrate.integrate(f, -math.inf, math.inf))
 
 
+# auditme: accept[raises-section-drift] the 'blue' method re-raises the EstimationError from apply_external, which the checker does not follow
 def conv_fivenum(
     min: Arg = None,
     q1: Arg = None,

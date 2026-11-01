@@ -5,6 +5,7 @@ optimiser's accuracy. Permuted fits whose scale coefficients run to the boundary
 invertible in one implementation and not in the other; the scale-part comparisons therefore tolerate a few such iterations.
 """
 
+import collections.abc
 import concurrent.futures
 import json
 import pathlib
@@ -32,7 +33,7 @@ OBSERVED = ('yi', 'vi', *THREE)
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 
-any_vif: typing.Callable[..., typing.Any] = metafopy.vif
+any_vif: collections.abc.Callable[..., typing.Any] = metafopy.vif
 
 
 def complete() -> pandas.DataFrame:
@@ -40,7 +41,7 @@ def complete() -> pandas.DataFrame:
     return d.dropna(subset=list(OBSERVED)).reset_index(drop=True)
 
 
-def fit(mods: typing.Sequence[str] | None, scale: bool = True, **kwargs: typing.Any) -> metafopy.RMALSResult:
+def fit(mods: collections.abc.Sequence[str] | None, scale: bool = True, **kwargs: typing.Any) -> metafopy.RMALSResult:
     d = complete()
     X = None if mods is None else d[list(mods)].to_numpy()
     Z = numpy.column_stack([numpy.ones(len(d)), d['ni100'], d['imag']]) if scale else '~ 1'
@@ -136,6 +137,7 @@ def test_parallel_equals_serial() -> None:
     assert isinstance(serial, metafopy.methods.ls_vif.LSVIFResult)
     for other in (snow, multicore, implied, pooled):
         assert isinstance(other, metafopy.methods.ls_vif.LSVIFResult)
+        # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
         for part in ('beta', 'alpha'):
             a, b = getattr(serial, part), getattr(other, part)
             numpy.testing.assert_array_equal(a.sim, b.sim)

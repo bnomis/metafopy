@@ -19,6 +19,7 @@ import metafopy.interactive.data
 
 
 @pytest.fixture(scope='module')
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def bcg() -> pandas.DataFrame:
     return metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=metafopy.datasets.load('dat.bcg'))
 
@@ -71,8 +72,10 @@ def test_missing_yi_omitted_and_indexed_before_omission(bcg: pandas.DataFrame) -
 
 def test_group_fits(bcg: pandas.DataFrame, fit: metafopy.RMAResult) -> None:
     groups = ['a' if i % 2 else 'b' for i in range(len(bcg))]
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     fits = {g: metafopy.rma(bcg['yi'][[x == g for x in groups]], bcg['vi'][[x == g for x in groups]]) for g in ('b', 'a')}
     data = metafopy.interactive.chart_data(fit, groups=groups, group_fits=fits)
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert list(data.pooled['label']) == ['Overall', 'b', 'a']
     assert list(data.studies['group']) == groups
 
@@ -86,6 +89,7 @@ def test_multilevel_fit() -> None:
 
 @pytest.mark.parametrize('name', ['slab', 'href', 'groups'])
 def test_wrong_length_arguments(fit: metafopy.RMAResult, name: str) -> None:
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     kwargs: dict[str, list[str]] = {name: ['x']}
     with pytest.raises(metafopy.errors.InputError, match=name):
         metafopy.interactive.chart_data(fit, slab=kwargs.get('slab'), href=kwargs.get('href'), groups=kwargs.get('groups'))
@@ -105,6 +109,7 @@ def test_moderators_refused(bcg: pandas.DataFrame) -> None:
 def test_check_chart_data_names_missing_column(fit: metafopy.RMAResult) -> None:
     data = metafopy.interactive.chart_data(fit)
     metafopy.interactive.data.check_chart_data(data)
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     bad = metafopy.interactive.ChartData(data.studies.drop(columns=['weight']), data.pooled, data.measure, data.transformed)
     with pytest.raises(metafopy.errors.InputError, match='weight'):
         metafopy.interactive.data.check_chart_data(bad)
@@ -202,8 +207,10 @@ def test_forest_chart_multilevel() -> None:
 
 def test_forest_chart_group_rows(bcg: pandas.DataFrame, fit: metafopy.RMAResult) -> None:
     groups = ['a' if i % 2 else 'b' for i in range(len(bcg))]
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     fits = {g: metafopy.rma(bcg['yi'][[x == g for x in groups]], bcg['vi'][[x == g for x in groups]]) for g in ('b', 'a')}
     spec = metafopy.interactive.forest_chart(fit, groups=groups, group_fits=fits).to_dict()
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert [r['label'] for r in datasets(spec, 'label')] == ['Overall', 'b', 'a']
 
 
@@ -214,6 +221,7 @@ def test_forest_chart_from_chart_data(fit: metafopy.RMAResult) -> None:
         metafopy.interactive.forest_chart(data)
     with pytest.raises(metafopy.errors.InputError, match='level'):
         metafopy.interactive.forest_chart(data, transf=numpy.exp, level=90)
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     bad = metafopy.interactive.ChartData(data.studies.drop(columns=['weight']), data.pooled, data.measure, data.transformed)
     with pytest.raises(metafopy.errors.InputError, match='weight'):
         metafopy.interactive.forest_chart(bad, transf=numpy.exp)

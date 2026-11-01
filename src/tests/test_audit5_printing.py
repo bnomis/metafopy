@@ -5,6 +5,7 @@ against the printouts of R metafor 5.2-1 stored by tests/r/generate_audit4_robus
 import collections.abc
 import typing
 
+import matplotlib
 import numpy
 import pandas
 import pytest
@@ -19,21 +20,25 @@ REF: dict[str, typing.Any] = refutil.load_phase12('audit4_robust')
 
 
 @pytest.fixture(scope='module')
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def dat() -> pandas.DataFrame:
     return metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=metafopy.datasets.load('dat.bcg'))
 
 
 @pytest.fixture(scope='module')
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def res1(dat: pandas.DataFrame) -> metafopy.RMAResult:
     return metafopy.rma('yi', 'vi', mods='~ ablat', data=dat)
 
 
 @pytest.fixture(scope='module')
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def res2(dat: pandas.DataFrame) -> metafopy.RMAResult:
     return metafopy.rma('yi', 'vi', mods='~ ablat + year', data=dat)
 
 
 @pytest.fixture(scope='module')
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def mv_fit(dat: pandas.DataFrame) -> typing.Any:
     kon = metafopy.datasets.load('konstantopoulos2011')
     return metafopy.rma_mv('yi', 'vi', mods='~ I(year - 1990)', random='~ 1 | district/school', data=kon)
@@ -111,6 +116,7 @@ def test_digits_predict_follows_model(dat: pandas.DataFrame) -> None:
 
 def test_predict_print_layout(res1: metafopy.RMAResult) -> None:
     text = str(metafopy.predict(res1, newmods=[10]))
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert refutil.r_print(text).strip().split('\n')[0].split() == ['pred', 'se', 'ci.lb', 'ci.ub', 'pi.lb', 'pi.ub']
 
 
@@ -283,10 +289,12 @@ def test_wald_result_to_frame_z(res1: metafopy.RMAResult) -> None:
 
 def test_wald_result_to_frame_btt(res1: metafopy.RMAResult, club: dict[str, typing.Any]) -> None:
     frame = metafopy.anova(res1, btt=[0, 1]).to_frame()
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert list(frame.columns) == ['coefs', 'QM', 'df', 'pval']
     assert frame.loc[0, 'coefs'] == '1:2'
     assert frame.loc[0, 'df'] == 2
     robust = metafopy.anova(club['rb1']).to_frame()
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert list(robust.columns) == ['coefs', 'Fval', 'df1', 'df2', 'pval']
     refutil.close(robust.loc[0, 'Fval'], REF['anova_uni']['default']['QM'], 'Fval', rtol=1e-6)
     assert robust.loc[0, 'df2'] == 1.52
@@ -300,12 +308,16 @@ def test_anova_btt_list_result(res2: metafopy.RMAResult) -> None:
     assert isinstance(out, list)
     assert isinstance(out, metafopy.methods.anova.ListAnovaResult)
     assert len(out) == 2
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert out.names == ('1', '2:3')
     assert all(isinstance(r, metafopy.methods.anova.WaldResult) for r in out)
     frame = out.to_frame()
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert list(frame.columns) == ['coefs', 'QM', 'df', 'pval']
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert list(frame['coefs']) == ['1', '2:3']
     lines = str(out).split('\n')
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert lines[0].split() == ['coefs', 'QM', 'df', 'pval']
     assert lines[1].split()[:2] == ['1', '1']
     assert lines[2].split()[1] == '2:3'
@@ -313,11 +325,14 @@ def test_anova_btt_list_result(res2: metafopy.RMAResult) -> None:
 
 
 def test_anova_btt_list_names_and_adjust(res2: metafopy.RMAResult) -> None:
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     out = metafopy.anova(res2, btt=['ablat', 'year'], adjust='bonferroni')
     assert isinstance(out, metafopy.methods.anova.ListAnovaResult)
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert out.names == ('ablat', 'year')
     frame = out.to_frame()
     assert list(frame.columns) == ['spec', 'coefs', 'QM', 'df', 'pval']
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     plain = metafopy.anova(res2, btt=['ablat', 'year'])
     numpy.testing.assert_allclose(frame['pval'], numpy.minimum(1, 2 * numpy.array([r.QMp for r in plain])))
 
@@ -325,7 +340,9 @@ def test_anova_btt_list_names_and_adjust(res2: metafopy.RMAResult) -> None:
 def test_anova_btt_list_f_test(dat: pandas.DataFrame) -> None:
     res = metafopy.rma('yi', 'vi', mods='~ ablat + year', data=dat, test='knha')
     out = metafopy.anova(res, btt=[[0], [1]])
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert list(out.to_frame().columns) == ['coefs', 'Fval', 'df1', 'df2', 'pval']
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert str(out).split('\n')[0].split() == ['coefs', 'Fval', 'df1', 'df2', 'pval']
 
 
@@ -360,6 +377,7 @@ def test_confint_mv_list_result(two_components: typing.Any) -> None:
     assert '\n\n' in text
     frame = out.to_frame()
     assert list(frame.index) == ['sigma^2.1', 'sigma.1', 'sigma^2.2', 'sigma.2']
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert list(frame.columns) == ['estimate', 'ci.lb', 'ci.ub']
     assert '0.0132' in text
     assert '0.0132' not in out.summary(digits=2)
@@ -369,6 +387,7 @@ def test_confint_mv_list_result(two_components: typing.Any) -> None:
 def test_confint_result_to_frame(res1: metafopy.RMAResult) -> None:
     out = metafopy.confint(res1, fixed=True)
     frame = out.to_frame()
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert list(frame.columns) == ['estimate', 'ci.lb', 'ci.ub']
     assert list(frame.index) == ['intrcpt', 'ablat', 'tau^2', 'tau', 'I^2(%)', 'H^2']
     numpy.testing.assert_allclose(frame.loc['ablat'], [out.fixed.loc['ablat', c] for c in frame.columns])
@@ -388,6 +407,7 @@ def test_confint_digits_follow_fit(dat: pandas.DataFrame) -> None:
 
 
 @pytest.fixture(scope='module')
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def intercept_only(dat: pandas.DataFrame) -> metafopy.RMAResult:
     return metafopy.rma('yi', 'vi', data=dat)
 
@@ -452,8 +472,6 @@ def test_progbar_permutest_location_scale(dat: pandas.DataFrame, capsys: pytest.
 
 
 def test_progbar_baujat(res1: metafopy.RMAResult, intercept_only: metafopy.RMAResult, capsys: pytest.CaptureFixture[str]) -> None:
-    import matplotlib
-
     matplotlib.use('Agg')
     capsys.readouterr()
     metafopy.baujat(intercept_only, progbar=True)

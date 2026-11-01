@@ -259,7 +259,8 @@ def replmiss(x: numpy.typing.ArrayLike | str | None, y: numpy.typing.ArrayLike |
     missing; an empty or ``None`` ``y`` returns ``x`` unchanged.
 
     Raises:
-        metafopy.errors.InputError: ``x`` and ``y`` have different lengths.
+        metafopy.errors.InputError: ``x`` and ``y`` have different lengths, or a column is named without ``data``.
+        metafopy.errors.NotFoundError: a column named by ``x`` or ``y`` does not exist in ``data``.
     """
     xv = column_or_values(x, data, 'x')
     yv = column_or_values(y, data, 'y')

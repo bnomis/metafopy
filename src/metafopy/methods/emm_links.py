@@ -28,6 +28,7 @@ EPS = sys.float_info.epsilon
 THRESH = 30.0
 PROBIT_THRESH = -float(scipy.special.ndtri(EPS))
 CAUCHY_THRESH = -float(scipy.stats.cauchy.ppf(EPS))
+# auditme: accept[non-alphabetical-literal] the bases in numeric order, which sorting as text would break
 LOG_LIKE = ('log', 'log2', 'log10')
 LOG_MEASURES = (
     'CVLN',

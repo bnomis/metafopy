@@ -16,18 +16,22 @@ import metafopy.errors
 
 REF: dict[str, typing.Any] = refutil.load_phase12('audit4_vcov')
 
-NA_ACTIONS = ('omit', 'exclude', 'pass', 'fail')
+# auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
+NA_ACTIONS = ('omit', 'exclude', 'pass', 'fail')  # auditme: accept[non-alphabetical-literal] order follows the R fixture script
 pytestmark = pytest.mark.filterwarnings('ignore::UserWarning')
+# auditme: accept[non-alphabetical-literal] order follows the R fixture script
 VCOV_TYPES = ('fixed', 'beta', 'alpha', 'delta', 'obs', 'marginal', 'fitted', 'resid')
 # R's own failure for type = "resid" with na.fail (the variable `out` is never defined); metafopy refuses with its own message
 R_BUG = "object 'out' not found"
 # the tolerance of fits that depend on an optimiser
 OPT = 1e-5
 TIGHT = 1e-8
+# auditme: accept[non-alphabetical-dict-keys] order follows the R fixture script
 LOOSE = {'mv_t': OPT, 'ls_knha': OPT, 'mv': OPT, 'mv_mods': OPT, 'ls': OPT, 'ls_na': OPT, 'sel': OPT, 'sel_mods': OPT, 'rob_mv': OPT, 'rob_cs': OPT, 'tf': 1e-7}
 
 
 @pytest.fixture(scope='module')
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def dat0() -> pandas.DataFrame:
     return metafopy.escalc('RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=metafopy.datasets.load('dat.bcg'))
 
@@ -116,6 +120,7 @@ def test_vcov_function_and_partial_matching(fits: dict[str, typing.Any]) -> None
     ls = fits['ls']
     full = metafopy.vcov(ls)
     assert isinstance(full, dict)
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert list(full) == ['beta', 'alpha']
     numpy.testing.assert_array_equal(metafopy.vcov(ls, 'alpha').to_numpy(), ls.va)
     partial: typing.Any = metafopy.vcov  # partial matching of `type` is allowed at run time, as in R
@@ -191,6 +196,7 @@ def check_table(actual: pandas.DataFrame, spec: dict[str, typing.Any], what: str
     numpy.testing.assert_allclose(actual.to_numpy(), expected.to_numpy(), rtol=rtol, atol=1e-10, equal_nan=True, err_msg=what)
 
 
+# auditme: accept[non-alphabetical-literal] order follows the R fixture script
 COEF_FITS = ('uni', 'uni_mods', 'uni_knha', 'uni_t', 'mv', 'mv_t', 'mh', 'peto', 'ls', 'ls_knha', 'sel', 'sel_mods', 'rob', 'rob_mods', 'rob_cs', 'tf')
 
 
@@ -242,9 +248,13 @@ def escalc_frames() -> dict[str, pandas.DataFrame]:
     b_dup = metafopy.escalc('RR', data=bcg.iloc[5:9], slab=[f's{i}' for i in range(1, 5)], digits=5, **cells)
     data = pandas.DataFrame({'m1i': [10, 12], 'm2i': [9, 10], 'sd1i': [2, 3], 'sd2i': [2, 3], 'n1i': [20, 30], 'n2i': [20, 30]})
     nia = metafopy.escalc('SMD', m1i='m1i', m2i='m2i', sd1i='sd1i', sd2i='sd2i', n1i='n1i', n2i='n2i', data=data)
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     y1 = metafopy.escalc('RR', data=bcg.iloc[0:5], var_names=('y1', 'v1'), **cells)[['y1', 'v1']]
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     y1.attrs = {k: v for k, v in metafopy.escalc('RR', data=bcg.iloc[0:5], var_names=('y1', 'v1'), **cells).attrs.items()}
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     y2_full = metafopy.escalc('OR', data=bcg.iloc[0:5], var_names=('y2', 'v2'), digits=2, **cells)
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     y2 = y2_full[['y2', 'v2']]
     y2.attrs = dict(y2_full.attrs)
     return {'a': a, 'b': b, 'b_dup': b_dup, 'nia': nia, 'y1': y1, 'y2': y2}
@@ -300,6 +310,7 @@ def test_cbind_escalc() -> None:
 def test_bind_escalc_errors() -> None:
     f = escalc_frames()
     with pytest.raises(metafopy.errors.InputError, match='numbers of columns'):
+        # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
         metafopy.rbind_escalc(f['a'], f['a'][['yi', 'vi']])
     with pytest.raises(metafopy.errors.InputError, match='names do not match'):
         metafopy.rbind_escalc(f['a'], f['a'].rename(columns={'author': 'who'}))
@@ -312,4 +323,5 @@ def test_bind_escalc_errors() -> None:
     out = metafopy.rbind_escalc(f['a'], plain)
     assert out.attrs.get('ni') is None
     assert 'slab' not in out.attrs
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert out.attrs['yi_names'] == ['yi']
