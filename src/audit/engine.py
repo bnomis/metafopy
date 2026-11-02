@@ -1,5 +1,6 @@
 """Run cases in R and in Python and collect the findings."""
 
+import collections.abc
 import concurrent.futures
 import json
 import pathlib
@@ -73,28 +74,61 @@ def watch(proc: subprocess.Popen[bytes], out: pathlib.Path, stall: float, limit:
     return 'died' if proc.returncode != 0 else None
 
 
-def run_r_shard(work: pathlib.Path, i: int, fixtures_path: pathlib.Path, shard: list[audit.cases.Case], timeout: float) -> None:
-    """Run a shard in R; when R dies on a case (memory, a crash) record that case as an R failure and restart on the cases that remain."""
-    out = work / f'r-{i}.jsonl'
+def run_shard(
+    work: pathlib.Path,
+    name: str,
+    shard: list[audit.cases.Case],
+    timeout: float,
+    start: collections.abc.Callable[[pathlib.Path, pathlib.Path], subprocess.Popen[bytes]],
+    dead: collections.abc.Callable[[str, Stop], Json],
+) -> list[Json]:
+    """Run ``shard`` in processes made by ``start(cases_path, out_path)``, restarting on the cases left whenever one stops early. The case running
+    when a process stopped gets ``dead(case_id, stop)`` as its result. Returns one result per finished case, in shard order."""
+    out = work / f'{name}.jsonl'
     finished: dict[str, Json] = {}
     remaining = list(shard)
     attempts = 0
     while remaining and attempts <= len(shard):
         attempts += 1
-        part = work / f'cases-{i}-rest.json'
+        part = work / f'{name}-rest.json'
         audit.cases.write_cases(part, remaining)
-        proc = audit.rdriver.start(audit.config.R_DIR / 'runcases.R', work / f'r-{i}.log', str(fixtures_path), str(part), str(out), str(timeout))
+        proc = start(part, out)
         stop = watch(proc, out, 2 * timeout + 30, audit.config.MEMORY_LIMIT)
         done, running = read_outcomes(out)
         finished.update(done)
+        if running is not None and stop is None:
+            stop = 'died'
         if running is not None:
-            reason = f'R did not return within {2 * timeout + 30:.0f}s (timeout)' if stop == 'stalled' else 'R process died on this case'
-            finished[running] = {'id': running, 'status': 'error', 'error': reason, 'warnings': []}
+            finished[running] = dead(running, stop or 'died')
         remaining = [c for c in remaining if c.id not in finished]
         if stop is None and running is None:
             break
-        out.rename(work / f'r-{i}-attempt{attempts}.jsonl')
-    (work / f'r-{i}.json').write_text(json.dumps({'results': [finished[c.id] for c in shard if c.id in finished]}))
+        if running is None and not done:
+            for case in remaining:
+                finished[case.id] = dead(case.id, stop or 'died')
+            remaining = []
+        if out.exists():
+            out.rename(work / f'{name}-attempt{attempts}.jsonl')
+    return [finished[c.id] for c in shard if c.id in finished]
+
+
+def run_r_shard(work: pathlib.Path, i: int, fixtures_path: pathlib.Path, shard: list[audit.cases.Case], timeout: float) -> None:
+    """Run a shard in R; when R dies on a case (memory, a crash) record that case as an R failure and restart on the cases that remain."""
+
+    def start(cases_path: pathlib.Path, out_path: pathlib.Path) -> subprocess.Popen[bytes]:
+        return audit.rdriver.start(audit.config.R_DIR / 'runcases.R', work / f'r-{i}.log', str(fixtures_path), str(cases_path), str(out_path), str(timeout))
+
+    def dead(case_id: str, stop: Stop) -> Json:
+        if stop == 'stalled':
+            reason = f'R did not return within {2 * timeout + 30:.0f}s (timeout)'
+        elif stop == 'memory':
+            reason = f'R passed the memory limit of {audit.config.MEMORY_LIMIT / 1024**3:g} GiB (killed)'
+        else:
+            reason = 'R process died on this case (killed)'
+        return {'id': case_id, 'status': 'error', 'error': reason, 'warnings': []}
+
+    results = run_shard(work, f'r-{i}', shard, timeout, start, dead)
+    (work / f'r-{i}.json').write_text(json.dumps({'results': results}))
 
 
 def run_cases(cases: list[audit.cases.Case], fixtures: list[Json], work: pathlib.Path, jobs: int, timeout: float) -> list[Json]:

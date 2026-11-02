@@ -49,7 +49,7 @@ that imports a changed `audit` module.
 
 ## Task 2: One restart loop for both languages
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** API (`run_shard`, `run_r_shard`), Implementation - One shard loop for both languages, Error handling
@@ -58,22 +58,22 @@ that imports a changed `audit` module.
 
 **Subtasks:**
 
-- [ ] Write `run_shard` per the spec's steps 1 to 4, using `watch` and `read_outcomes`; the stall limit is `2 * timeout + 30`
-- [ ] When a process stops with no case running, give every remaining case `dead(case_id, stop)` and end the loop; the detail names the exit status and the log path
-- [ ] Rewrite `run_r_shard` on `run_shard`, writing `r-{i}.json` as today; its `dead` gives `R did not return within <s>s (timeout)` for `stalled`, `R passed the memory limit of <n> GiB (killed)` for `memory`, `R process died on this case (killed)` for `died`
-- [ ] Tests in `src/tests/test_harness_engine.py` with a `python -c` stand-in for `start` that writes start and result lines: one that dies on its second case (that case gets `dead`, the rest finish, `<name>-attempt1.jsonl` is kept); one that dies before its first case (every case gets `dead`, one attempt)
+- [x] Write `run_shard` per the spec's steps 1 to 4, using `watch` and `read_outcomes`; the stall limit is `2 * timeout + 30`
+- [x] When a process stops with no case running, give every remaining case `dead(case_id, stop)` and end the loop; the detail names the exit status and the log path
+- [x] Rewrite `run_r_shard` on `run_shard`, writing `r-{i}.json` as today; its `dead` gives `R did not return within <s>s (timeout)` for `stalled`, `R passed the memory limit of <n> GiB (killed)` for `memory`, `R process died on this case (killed)` for `died`
+- [x] Tests in `src/tests/test_harness_engine.py` with a `python -c` stand-in for `start` that writes start and result lines: one that dies on its second case (that case gets `dead`, the rest finish, `<name>-attempt1.jsonl` is kept); one that dies before its first case (every case gets `dead`, one attempt)
 
 **Acceptance Criteria:**
 
-- [ ] A shard whose process dies mid-way returns a result for every case
-- [ ] A process that dies before its first case does not restart
-- [ ] `pyrun.r_timed_out` still recognises the `stalled` reason
+- [x] A shard whose process dies mid-way returns a result for every case
+- [x] A process that dies before its first case does not restart
+- [x] `pyrun.r_timed_out` still recognises the `stalled` reason
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_harness_engine.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_harness_engine.py` passes
 
 **Notes:**
 

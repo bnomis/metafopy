@@ -7,8 +7,10 @@ import sys
 
 import pytest
 
+import audit.cases
 import audit.config
 import audit.engine
+import audit.pyrun
 import audit.rdriver
 
 
@@ -78,3 +80,52 @@ def test_the_memory_cap_is_set_where_the_platform_allows_it(monkeypatch: pytest.
 def test_an_r_shard_process_starts_on_this_platform() -> None:
     proc = subprocess.run([sys.executable, '-c', 'pass'], check=False, preexec_fn=audit.rdriver.limit_memory)
     assert proc.returncode == 0
+
+
+STAND_IN = """
+import json, os, sys
+cases, out, die = sys.argv[1:4]
+if die == '*':
+    os._exit(1)
+with open(out, 'a') as f:
+    for case in json.load(open(cases)):
+        f.write(json.dumps({'start': case['id']}) + '\\n')
+        f.flush()
+        if case['id'] == die:
+            os._exit(1)
+        f.write(json.dumps({'id': case['id'], 'status': 'ok'}) + '\\n')
+        f.flush()
+"""
+
+
+def run_stand_in(tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch, die: str) -> tuple[list[audit.engine.Json], list[int]]:
+    monkeypatch.setattr(audit.config, 'POLL_SECONDS', 0.05)
+    shard = [audit.cases.Case(id=name, axis='x', call={}) for name in 'abc']
+    starts: list[int] = []
+
+    def start(cases_path: pathlib.Path, out_path: pathlib.Path) -> subprocess.Popen[bytes]:
+        starts.append(1)
+        return subprocess.Popen([sys.executable, '-c', STAND_IN, str(cases_path), str(out_path), die])
+
+    def dead(case_id: str, stop: audit.engine.Stop) -> audit.engine.Json:
+        return {'id': case_id, 'status': 'dead', 'stop': stop}
+
+    return audit.engine.run_shard(tmp_path, 'p', shard, 1.0, start, dead), starts
+
+
+def test_a_shard_whose_process_dies_midway_returns_every_case(tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    results, starts = run_stand_in(tmp_path, monkeypatch, 'b')
+    assert ''.join(r['id'] + r['status'][0] for r in results) == 'aobdco'
+    assert results[1]['stop'] == 'died'
+    assert len(starts) == 2
+    assert (tmp_path / 'p-attempt1.jsonl').exists()
+
+
+def test_a_process_that_dies_before_its_first_case_does_not_restart(tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    results, starts = run_stand_in(tmp_path, monkeypatch, '*')
+    assert ''.join(r['id'] + r['status'][0] for r in results) == 'adbdcd'
+    assert len(starts) == 1
+
+
+def test_a_stalled_r_shard_reason_is_still_recognised_as_a_timeout() -> None:
+    assert audit.pyrun.r_timed_out('R did not return within 90s (timeout)')
