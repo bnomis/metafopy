@@ -1,7 +1,7 @@
 # Scripts shard survival
 
 **Version:** 1.0
-**Status:** approved
+**Status:** implemented
 **Date:** 2026-11-02
 
 The audit's `scripts` step runs metafor's own help examples and test files,

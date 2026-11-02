@@ -72,6 +72,7 @@ def watch(proc: subprocess.Popen[bytes], out: pathlib.Path, stall: float, limit:
     bytes ('memory'). A process that exits non-zero by itself is 'died'. None when it finished cleanly."""
 
 
+# auditme: accept[spec-api-signature-drift] this spec records the cases path as built; scripts-shard-survival adds `write` and the parts to `dead`
 def run_shard(
     work: pathlib.Path,
     name: str,

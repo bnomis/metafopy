@@ -17,12 +17,22 @@ Json = dict[str, typing.Any]
 Stop = typing.Literal['died', 'memory', 'stalled']
 
 
-def read_outcomes(path: pathlib.Path) -> tuple[dict[str, Json], str | None]:
-    """The finished cases of a runner's JSON-lines file and the case it was running when it stopped (None when it finished cleanly)."""
+class Item(typing.Protocol):
+    """Anything a shard runs: a case, a script."""
+
+    @property
+    def id(self) -> str: ...
+
+
+def read_outcomes(path: pathlib.Path) -> tuple[dict[str, Json], str | None, list[Json]]:
+    """The finished items of a runner's JSON-lines file, the item running when it stopped (None when it finished cleanly), and the part lines
+    that item wrote before it stopped. A line ``{"part": id, ...}`` belongs to item ``id``; a finished item's parts are in its record under
+    ``"parts"``, in order, and only when it has any."""
     done: dict[str, Json] = {}
     running: str | None = None
+    parts: dict[str, list[Json]] = {}
     if not path.exists():
-        return done, None
+        return done, None, []
     for line in path.read_text(errors='replace').splitlines():
         if not line.strip():
             continue
@@ -32,10 +42,14 @@ def read_outcomes(path: pathlib.Path) -> tuple[dict[str, Json], str | None]:
             continue
         if 'start' in doc:
             running = doc['start']
-        else:
+        elif 'part' in doc:
+            parts.setdefault(doc['part'], []).append(doc)
+        elif 'id' in doc:
+            if doc['id'] in parts:
+                doc['parts'] = parts[doc['id']]
             done[doc['id']] = doc
             running = None
-    return done, running
+    return done, running, parts.get(running, []) if running is not None else []
 
 
 def resident_bytes(pid: int) -> int | None:
@@ -74,16 +88,18 @@ def watch(proc: subprocess.Popen[bytes], out: pathlib.Path, stall: float, limit:
     return 'died' if proc.returncode != 0 else None
 
 
-def run_shard(
+def run_shard[T: Item](
     work: pathlib.Path,
     name: str,
-    shard: list[audit.cases.Case],
+    shard: list[T],
     timeout: float,
     start: collections.abc.Callable[[pathlib.Path, pathlib.Path], subprocess.Popen[bytes]],
-    dead: collections.abc.Callable[[str, Stop], Json],
+    dead: collections.abc.Callable[[str, Stop, list[Json]], Json],
+    write: collections.abc.Callable[[pathlib.Path, list[T]], None],
 ) -> list[Json]:
-    """Run ``shard`` in processes made by ``start(cases_path, out_path)``, restarting on the cases left whenever one stops early. The case running
-    when a process stopped gets ``dead(case_id, stop)`` as its result. Returns one result per finished case, in shard order."""
+    """Run ``shard`` in processes made by ``start(items_path, out_path)``, restarting on the items left whenever one stops early;
+    ``write(path, remaining)`` writes the items a process is started on. The item running when a process stopped gets
+    ``dead(item_id, stop, parts)`` as its result, ``parts`` being the part lines it wrote first. Returns one result per finished item, in shard order."""
     out = work / f'{name}.jsonl'
     finished: dict[str, Json] = {}
     remaining = list(shard)
@@ -91,25 +107,34 @@ def run_shard(
     while remaining and attempts <= len(shard):
         attempts += 1
         part = work / f'{name}-rest.json'
-        audit.cases.write_cases(part, remaining)
+        write(part, remaining)
         proc = start(part, out)
         stop = watch(proc, out, 2 * timeout + 30, audit.config.MEMORY_LIMIT)
-        done, running = read_outcomes(out)
+        done, running, running_parts = read_outcomes(out)
         finished.update(done)
         if running is not None and stop is None:
             stop = 'died'
         if running is not None:
-            finished[running] = dead(running, stop or 'died')
+            finished[running] = dead(running, stop or 'died', running_parts)
         remaining = [c for c in remaining if c.id not in finished]
         if stop is None and running is None:
             break
         if running is None and not done:
             for case in remaining:
-                finished[case.id] = dead(case.id, stop or 'died')
+                finished[case.id] = dead(case.id, stop or 'died', [])
             remaining = []
         if out.exists():
             out.rename(work / f'{name}-attempt{attempts}.jsonl')
     return [finished[c.id] for c in shard if c.id in finished]
+
+
+def r_stop_reason(stop: Stop, timeout: float, unit: str) -> str:
+    """Why R's process stopped on ``unit`` ('case', 'unit'), in the words ``audit.pyrun.r_killed`` and the report's stall check read."""
+    if stop == 'stalled':
+        return f'R did not return within {2 * timeout + 30:.0f}s (timeout)'
+    if stop == 'memory':
+        return f'R passed the memory limit of {audit.config.MEMORY_LIMIT / 1024**3:g} GiB (killed)'
+    return f'R process died on this {unit} (killed)'
 
 
 def run_r_shard(work: pathlib.Path, i: int, fixtures_path: pathlib.Path, shard: list[audit.cases.Case], timeout: float) -> None:
@@ -118,17 +143,39 @@ def run_r_shard(work: pathlib.Path, i: int, fixtures_path: pathlib.Path, shard: 
     def start(cases_path: pathlib.Path, out_path: pathlib.Path) -> subprocess.Popen[bytes]:
         return audit.rdriver.start(audit.config.R_DIR / 'runcases.R', work / f'r-{i}.log', str(fixtures_path), str(cases_path), str(out_path), str(timeout))
 
-    def dead(case_id: str, stop: Stop) -> Json:
-        if stop == 'stalled':
-            reason = f'R did not return within {2 * timeout + 30:.0f}s (timeout)'
-        elif stop == 'memory':
-            reason = f'R passed the memory limit of {audit.config.MEMORY_LIMIT / 1024**3:g} GiB (killed)'
-        else:
-            reason = 'R process died on this case (killed)'
-        return {'id': case_id, 'status': 'error', 'error': reason, 'warnings': []}
+    def dead(case_id: str, stop: Stop, parts: list[Json]) -> Json:
+        return {'id': case_id, 'status': 'error', 'error': r_stop_reason(stop, timeout, 'case'), 'warnings': []}
 
-    results = run_shard(work, f'r-{i}', shard, timeout, start, dead)
+    results = run_shard(work, f'r-{i}', shard, timeout, start, dead, audit.cases.write_cases)
     (work / f'r-{i}.json').write_text(json.dumps({'results': results}))
+
+
+def py_stop(stop: Stop, timeout: float, returncode: int | None, log: pathlib.Path, unit: str) -> tuple[str, str]:
+    """The finding kind and detail for a Python process that stopped on ``unit`` ('case', 'script')."""
+    if stop == 'stalled':
+        return 'timeout', f'Python did not return within {2 * timeout + 30:.0f}s'
+    if stop == 'memory':
+        return 'memory', f'Python passed the memory limit of {audit.config.MEMORY_LIMIT / 1024**3:g} GiB'
+    return 'process-died', f'Python process died on this {unit} (exit status {returncode}); see {log}'
+
+
+class PyLauncher:
+    """Starts ``python -m <module> <job.json>`` for a shard, appending its output to ``log``, and remembers the last process."""
+
+    def __init__(self, work: pathlib.Path, name: str, module: str, log: pathlib.Path) -> None:
+        self.job_path = work / f'{name}-job.json'
+        self.module = module
+        self.log = log
+        self.last: subprocess.Popen[bytes] | None = None
+
+    def start(self, job: Json) -> subprocess.Popen[bytes]:
+        self.job_path.write_text(json.dumps(job))
+        with self.log.open('ab') as handle:
+            self.last = subprocess.Popen([sys.executable, '-m', self.module, str(self.job_path)], stdout=handle, stderr=subprocess.STDOUT)
+        return self.last
+
+    def returncode(self) -> int | None:
+        return self.last.returncode if self.last else None
 
 
 def run_py_shard(work: pathlib.Path, i: int, fixtures_path: pathlib.Path, shard: list[audit.cases.Case], timeout: float) -> None:
@@ -137,24 +184,15 @@ def run_py_shard(work: pathlib.Path, i: int, fixtures_path: pathlib.Path, shard:
     r_path = work / f'r-{i}.json'
     r_by_id = {r['id']: r for r in json.loads(r_path.read_text())['results']}
     log = work / f'py-{i}.log'
-    last: list[subprocess.Popen[bytes]] = []
+    launcher = PyLauncher(work, f'py-{i}', 'audit.pyrun', log)
 
     def start(cases_path: pathlib.Path, out_path: pathlib.Path) -> subprocess.Popen[bytes]:
-        job = {'fixtures_path': str(fixtures_path), 'cases_path': str(cases_path), 'r_path': str(r_path), 'out_path': str(out_path), 'timeout': timeout}
-        job_path = work / f'py-{i}-job.json'
-        job_path.write_text(json.dumps(job))
-        proc = subprocess.Popen([sys.executable, '-m', 'audit.pyrun', str(job_path)], stdout=log.open('ab'), stderr=subprocess.STDOUT)
-        last.append(proc)
-        return proc
+        return launcher.start(
+            {'fixtures_path': str(fixtures_path), 'cases_path': str(cases_path), 'r_path': str(r_path), 'out_path': str(out_path), 'timeout': timeout}
+        )
 
-    def dead(case_id: str, stop: Stop) -> Json:
-        if stop == 'stalled':
-            kind, detail = 'timeout', f'Python did not return within {2 * timeout + 30:.0f}s'
-        elif stop == 'memory':
-            kind, detail = 'memory', f'Python passed the memory limit of {audit.config.MEMORY_LIMIT / 1024**3:g} GiB'
-        else:
-            status = last[-1].returncode if last else None
-            kind, detail = 'process-died', f'Python process died on this case (exit status {status}); see {log}'
+    def dead(case_id: str, stop: Stop, parts: list[Json]) -> Json:
+        kind, detail = py_stop(stop, timeout, launcher.returncode(), log, 'case')
         r = r_by_id.get(case_id) or {}
         return {
             'id': case_id,
@@ -167,7 +205,7 @@ def run_py_shard(work: pathlib.Path, i: int, fixtures_path: pathlib.Path, shard:
             'findings': [{'kind': kind, 'path': '', 'detail': detail}],
         }
 
-    results = run_shard(work, f'py-{i}', shard, timeout, start, dead)
+    results = run_shard(work, f'py-{i}', shard, timeout, start, dead, audit.cases.write_cases)
     (work / f'py-{i}.json').write_text(json.dumps({'results': results}))
 
 

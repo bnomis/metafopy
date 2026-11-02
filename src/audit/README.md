@@ -136,3 +136,9 @@ A Python shard that dies, or grows past the memory limit, is restarted after the
 (the detail names the exit status or the limit) in the *Crashes* section, and every case after it still gets a result. An R shard that dies or passes the
 limit is restarted the same way, and its case is reported as `r-killed` in the *R processes killed* section: R's death says nothing about metafopy, so it
 is never filed as metafopy accepting what R refuses.
+
+The `scripts` step works the same way, with a script as the unit that can be lost. A Python shard that dies, stalls or passes the limit is restarted on
+the scripts that remain; the units of the running script that finished keep their findings and tally, the unit it died on is reported as
+`process-died`, `timeout` or `memory`, and the units after it are counted as `not run: Python process died partway through the script`. When R dies
+in a script, the same holds for the R side: the dead unit is reported as `r-killed` and the rest of that script is counted as `not run: R process died
+partway through the script`.
