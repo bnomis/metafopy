@@ -22,6 +22,10 @@ Fix direction: after the shard survival spec ships, make `runscripts.R` and
 `audit.scripts.run_shard` write a start line before each unit, and run both
 sides through that spec's `audit.engine.run_shard` and `watch`.
 
+Note 2026-11-02: the shard survival spec shipped (merged at `eadb479`);
+`audit.engine.run_shard` and `watch` are on `main`, so this item can start.
+`audit.scripts` still runs its Python side in a `ProcessPoolExecutor`.
+
 ## Run the metafor audit to find the next gaps against R metafor
 
 Found on 2026-11-01: `TODO.md` held no open port work, and this checkout
@@ -43,6 +47,13 @@ Note 2026-11-02: `bin/metafor-audit.sh --steps options` completed into
 `.audit/runs/20261101-211517`, and no recall run was found. Still to do: file
 those causes, run the whole audit in one run, and run `--recall`.
 <!-- doc-counts: accept-end -->
+
+Note 2026-11-02: the shard survival queue ran the `options` step again into
+`.audit/runs/20261102-143634` in its worktree, which was removed at the merge
+(`eadb479`), so that report is gone; `20261102-061046` is still the latest
+`options` run in this checkout. That run's one new cause unrelated to the
+change was a `gosh` case whose R cluster could not open its port, taken as a
+clash in that run; it is not filed unless the next run shows it again.
 
 ## Remove the auditme accept markers once the shared rules stop the false positives
 
