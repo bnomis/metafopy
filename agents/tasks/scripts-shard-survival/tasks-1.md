@@ -229,7 +229,7 @@ script, not the step.
 
 ## Task 6: Check the whole change and close the spec
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Spec Reference:** whole spec
@@ -238,29 +238,29 @@ script, not the step.
 
 **Subtasks:**
 
-- [ ] Run `bin/metafor-audit.sh --steps scripts` in the background and confirm it completes; compare its tally and causes with Task 1's Notes and
+- [x] Run `bin/metafor-audit.sh --steps scripts` in the background and confirm it completes; compare its tally and causes with Task 1's Notes and
       explain every difference in this task's Notes, dated
-- [ ] Hoist anything the scripts drivers still duplicate from the cases path to a single owner: grep the tree for each literal collection,
+- [x] Hoist anything the scripts drivers still duplicate from the cases path to a single owner: grep the tree for each literal collection,
       constant and one-line helper the changed modules define, and import rather than copy. Choose the owner from the existing import graph; prefer
       a module the consumer already imports over adding a new edge
-- [ ] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` to "Implemented: ..."
-- [ ] Move the `TODO.md` item "The audit's scripts step stops when one of its processes dies" to the end of `DONE.md`: append its heading and body
+- [x] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` to "Implemented: ..."
+- [x] Move the `TODO.md` item "The audit's scripts step stops when one of its processes dies" to the end of `DONE.md`: append its heading and body
       unchanged, then `Done: <date> - agents/specs/scripts-shard-survival/spec.md, agents/tasks/scripts-shard-survival/tasks-1.md.`, and remove it
       from `TODO.md`
-- [ ] Run `python3 ~/.claude/skills/todo-review/verify_bodies.py <baseline> TODO.md DONE.md`, where the baseline is `TODO.md` at the commit that
+- [x] Run `python3 ~/.claude/skills/todo-review/verify_bodies.py <baseline> TODO.md DONE.md`, where the baseline is `TODO.md` at the commit that
       added this task list (`git show $(git log --diff-filter=A --format=%H -- agents/tasks/scripts-shard-survival/tasks-1.md):TODO.md`)
 
 **Acceptance Criteria:**
 
-- [ ] The real `scripts` step completes, and every difference from Task 1's run is explained
-- [ ] `verify_bodies.py` exits 0
+- [x] The real `scripts` step completes, and every difference from Task 1's run is explained
+- [x] `verify_bodies.py` exits 0
 
 **Definition of Done:**
 
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_harness_engine.py src/tests/test_harness_scripts.py src/tests/test_harness_transpile.py src/tests/test_harness_compare.py src/tests/test_harness_errors.py src/tests/test_harness_accounts.py src/tests/test_audit10_fixes.py`
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_harness_engine.py src/tests/test_harness_scripts.py src/tests/test_harness_transpile.py src/tests/test_harness_compare.py src/tests/test_harness_errors.py src/tests/test_harness_accounts.py src/tests/test_audit10_fixes.py`
       passes (every test file that imports a changed `audit` module)
 
 **Notes:**
@@ -268,3 +268,12 @@ script, not the step.
 - Depends on Tasks 1 to 5
 - The `scripts` step takes a long time; do not change files it reads while it runs
 - The worktree setup of Task 1's Notes applies here too
+- Run after the change, 2026-11-02, `bin/metafor-audit.sh --steps scripts` at commit `836d976`, exit status 0, run directory
+  `.audit/runs/20261102-210939/` (worktree; lost with it). Tally: 8064 findings; 6446 expressions, 4906 compared (273s). 7301 findings matched
+  `data/known.toml`, 760 numeric differences were below the threshold, and 4 findings make 3 causes: the same two wrong values and the same
+  universe difference as Task 1's run. Differences from Task 1: none in the findings or the tally; the time is 273s against 261s, within the
+  run-to-run spread, and no `-attempt` file was written, so no process died in either run and the restart path was not exercised by the real run
+  (the unit tests in `test_harness_engine.py` and `test_harness_scripts.py` cover it)
+- Hoisting: the stop messages and the process launcher are owned by `audit.engine` (`r_stop_reason`, `py_stop`, `PyLauncher`); a grep for their
+  literals finds no copy in `audit.scripts`
+- `verify_bodies.py` printed "3 of 3 item bodies preserved" and exited 0

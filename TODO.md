@@ -5,29 +5,6 @@ Open work only, in implementation order, nearest first. Finished items move to
 the shape of an item.
 
 
-## The audit's scripts step stops when one of its processes dies
-
-Found on 2026-11-02 while writing `agents/specs/audit-shard-survival/spec.md`,
-whose review chose to keep this step out of that spec:
-`audit.scripts.run` runs the Python side of the scripts step in a
-`concurrent.futures.ProcessPoolExecutor`, so one worker killed by the system
-raises `BrokenProcessPool` and ends the step. Its R processes are started
-once each with no restart, and a shard whose `r-N.json` is missing raises
-`RuntimeError`. Neither side has a memory watch on macOS.
-
-Cause: the scripts shards write no per-unit start lines (`runscripts.R`), so
-the case-level restart of the cases path cannot be applied to them.
-
-Fix direction: after the shard survival spec ships, make `runscripts.R` and
-`audit.scripts.run_shard` write a start line before each unit, and run both
-sides through that spec's `audit.engine.run_shard` and `watch`.
-
-Note 2026-11-02: the shard survival spec shipped (merged at `eadb479`);
-`audit.engine.run_shard` and `watch` are on `main`, so this item can start.
-`audit.scripts` still runs its Python side in a `ProcessPoolExecutor`.
-
-Spec: agents/specs/scripts-shard-survival/spec.md; tasks: agents/tasks/scripts-shard-survival/tasks-1.md.
-
 ## Run the metafor audit to find the next gaps against R metafor
 
 Found on 2026-11-01: `TODO.md` held no open port work, and this checkout
