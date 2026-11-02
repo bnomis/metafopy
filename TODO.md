@@ -26,6 +26,8 @@ Note 2026-11-02: the shard survival spec shipped (merged at `eadb479`);
 `audit.engine.run_shard` and `watch` are on `main`, so this item can start.
 `audit.scripts` still runs its Python side in a `ProcessPoolExecutor`.
 
+Spec: agents/specs/scripts-shard-survival/spec.md; tasks: agents/tasks/scripts-shard-survival/tasks-1.md.
+
 ## Run the metafor audit to find the next gaps against R metafor
 
 Found on 2026-11-01: `TODO.md` held no open port work, and this checkout
