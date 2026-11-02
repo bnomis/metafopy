@@ -128,6 +128,15 @@ def run_shard[T: Item](
     return [finished[c.id] for c in shard if c.id in finished]
 
 
+def r_stop_reason(stop: Stop, timeout: float, unit: str) -> str:
+    """Why R's process stopped on ``unit`` ('case', 'unit'), in the words ``audit.pyrun.r_killed`` and the report's stall check read."""
+    if stop == 'stalled':
+        return f'R did not return within {2 * timeout + 30:.0f}s (timeout)'
+    if stop == 'memory':
+        return f'R passed the memory limit of {audit.config.MEMORY_LIMIT / 1024**3:g} GiB (killed)'
+    return f'R process died on this {unit} (killed)'
+
+
 def run_r_shard(work: pathlib.Path, i: int, fixtures_path: pathlib.Path, shard: list[audit.cases.Case], timeout: float) -> None:
     """Run a shard in R; when R dies on a case (memory, a crash) record that case as an R failure and restart on the cases that remain."""
 
@@ -135,13 +144,7 @@ def run_r_shard(work: pathlib.Path, i: int, fixtures_path: pathlib.Path, shard: 
         return audit.rdriver.start(audit.config.R_DIR / 'runcases.R', work / f'r-{i}.log', str(fixtures_path), str(cases_path), str(out_path), str(timeout))
 
     def dead(case_id: str, stop: Stop, parts: list[Json]) -> Json:
-        if stop == 'stalled':
-            reason = f'R did not return within {2 * timeout + 30:.0f}s (timeout)'
-        elif stop == 'memory':
-            reason = f'R passed the memory limit of {audit.config.MEMORY_LIMIT / 1024**3:g} GiB (killed)'
-        else:
-            reason = 'R process died on this case (killed)'
-        return {'id': case_id, 'status': 'error', 'error': reason, 'warnings': []}
+        return {'id': case_id, 'status': 'error', 'error': r_stop_reason(stop, timeout, 'case'), 'warnings': []}
 
     results = run_shard(work, f'r-{i}', shard, timeout, start, dead, audit.cases.write_cases)
     (work / f'r-{i}.json').write_text(json.dumps({'results': results}))

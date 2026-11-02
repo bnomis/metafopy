@@ -1,7 +1,12 @@
 # Runs the scripts of the audit in R: the \examples of every help page of metafor and the files of its tests/testthat, one top-level expression
 # at a time (the statements of a test_that block count as top-level), recording the value of each next to its parse tree.
 #
-#   Rscript runscripts.R <metafor-source-dir> <out.json> <shard> <shards> [timeout-seconds]
+#   Rscript runscripts.R list <metafor-source-dir> <out.json>
+#   Rscript runscripts.R run <metafor-source-dir> <scripts.json> <out.jsonl> [timeout-seconds]
+#
+# list writes [{id, kind, topic, file}] for every script (AUDIT_ONLY filters by id). run executes the listed scripts and writes one JSON line per
+# event, flushed each time: {"start": id}, one {"part": id, "unit": ...} per unit, then {"id", "kind", "topic"}, so that a crash of R costs only the
+# rest of the script it died in.
 args <- commandArgs(trailingOnly = TRUE)
 here <- dirname(sub("^--file=", "", grep("^--file=", commandArgs(FALSE), value = TRUE)[1]))
 source(file.path(here, "common.R"))
@@ -69,7 +74,7 @@ assign("require", function(...) invisible(TRUE), envir = stubs)
 assign(".vistest", function(...) TRUE, envir = stubs)
 assign("test_that", function(desc, code) invisible(NULL), envir = stubs)
 
-limit <- if (length(commandArgs(TRUE)) >= 5L) as.numeric(commandArgs(TRUE)[5]) else 120
+limit <- if (identical(args[1], "run") && length(args) >= 5L) as.numeric(args[5]) else 120
 
 run_unit <- function(expr, env) {
   warns <- character()
@@ -100,9 +105,10 @@ run_unit <- function(expr, env) {
   out
 }
 
-run_script <- function(path, id, kind, topic) {
+# runs one script, calling emit(unit_record) as each unit finishes; returns list(error = ...) when the file does not parse, else list()
+run_script <- function(path, emit) {
   exprs <- tryCatch(parse(path, keep.source = FALSE), error = function(e) e)
-  if (inherits(exprs, "error")) return(list(id = id, kind = kind, topic = topic, error = conditionMessage(exprs), units = list()))
+  if (inherits(exprs, "error")) return(list(error = conditionMessage(exprs)))
   units <- flatten_units(exprs)
   env <- new.env(parent = stubs)
   old <- setwd(tempdir())
@@ -110,40 +116,60 @@ run_script <- function(path, id, kind, topic) {
   assign("source", function(file, ...) invisible(sys.source(file.path(dirname(path), basename(file)), envir = env)), envir = stubs)
   pdf(NULL)
   on.exit(graphics.off(), add = TRUE)
-  results <- lapply(units, function(u) {
+  for (u in units) {
     set.seed(1234)
     r <- run_unit(u, env)
     r$src <- paste(deparse(u, width.cutoff = 200L), collapse = "\n")
     r$ast <- ast(u)
-    r
-  })
-  list(id = id, kind = kind, topic = topic, units = results)
+    emit(r)
+  }
+  list()
 }
 
-src <- args[1]
-shard <- as.integer(args[3])
-shards <- as.integer(args[4])
-jobs <- list()
+# the R file of a script: the examples of an Rd page (NULL when it has none), or the test file itself
+script_file <- function(src, file, dest) {
+  if (!grepl("\\.Rd$", file)) return(file.path(src, file))
+  suppressWarnings(tools::Rd2ex(file.path(src, file), dest))
+  if (file.exists(dest)) dest else NULL
+}
 
-rd_dir <- file.path(src, "man")
-tmp <- tempfile()
-dir.create(tmp)
-for (rd in sort(list.files(rd_dir, pattern = "\\.Rd$", full.names = TRUE))) {
-  topic <- sub("\\.Rd$", "", basename(rd))
-  dest <- file.path(tmp, paste0(topic, ".R"))
-  suppressWarnings(tools::Rd2ex(rd, dest))
-  if (file.exists(dest)) jobs[[length(jobs) + 1L]] <- list(path = dest, id = paste0("rd/", topic), kind = "rd", topic = topic)
+mode <- args[1]
+src <- args[2]
+if (identical(mode, "list")) {
+  jobs <- list()
+  tmp <- tempfile()
+  dir.create(tmp)
+  for (rd in sort(list.files(file.path(src, "man"), pattern = "\\.Rd$"))) {
+    topic <- sub("\\.Rd$", "", rd)
+    if (!is.null(script_file(src, file.path("man", rd), file.path(tmp, paste0(topic, ".R")))))
+      jobs[[length(jobs) + 1L]] <- list(id = paste0("rd/", topic), kind = "rd", topic = topic, file = file.path("man", rd))
+  }
+  for (f in sort(list.files(file.path(src, "tests", "testthat"), pattern = "^test_.*\\.[rR]$"))) {
+    topic <- sub("^test_", "", sub("\\.[rR]$", "", f))
+    jobs[[length(jobs) + 1L]] <- list(id = paste0("test/", topic), kind = "test", topic = topic, file = file.path("tests", "testthat", f))
+  }
+  only <- Sys.getenv("AUDIT_ONLY", "")
+  if (nzchar(only)) {
+    parts <- strsplit(only, "\x1f", fixed = TRUE)[[1]]
+    jobs <- Filter(function(j) any(vapply(parts, function(p) grepl(p, j$id, fixed = TRUE), logical(1))), jobs)
+  }
+  write_json(jobs, args[3])
+} else if (identical(mode, "run")) {
+  jobs <- read_json(args[3])
+  tmp <- tempfile()
+  dir.create(tmp)
+  con <- file(args[4], open = "wt")
+  line <- function(x) {
+    writeLines(toJSON(x, auto_unbox = TRUE, null = "null", na = "null", digits = NA), con)
+    flush(con)
+  }
+  for (j in jobs) {
+    line(list(start = j$id))
+    path <- script_file(src, j$file, file.path(tmp, paste0(j$topic, ".R")))
+    res <- if (is.null(path)) list(error = "no examples") else run_script(path, function(r) line(list(part = j$id, unit = r)))
+    line(c(list(id = j$id, kind = j$kind, topic = j$topic), res))
+  }
+  close(con)
+} else {
+  stop("usage: runscripts.R list|run ...")
 }
-tdir <- file.path(src, "tests", "testthat")
-for (f in sort(list.files(tdir, pattern = "^test_.*\\.[rR]$", full.names = TRUE))) {
-  topic <- sub("^test_", "", sub("\\.[rR]$", "", basename(f)))
-  jobs[[length(jobs) + 1L]] <- list(path = f, id = paste0("test/", topic), kind = "test", topic = topic)
-}
-only <- Sys.getenv("AUDIT_ONLY", "")
-if (nzchar(only)) {
-  parts <- strsplit(only, "\x1f", fixed = TRUE)[[1]]
-  jobs <- Filter(function(j) any(vapply(parts, function(p) grepl(p, j$id, fixed = TRUE), logical(1))), jobs)
-}
-jobs <- jobs[seq_along(jobs) %% shards == shard %% shards]
-out <- lapply(jobs, function(j) run_script(j$path, j$id, j$kind, j$topic))
-write_json(list(scripts = out), args[2])

@@ -6,6 +6,7 @@ it, and the values are compared exactly as in the other steps. Expressions that 
 
 import collections
 import concurrent.futures
+import dataclasses
 import functools
 import hashlib
 import json
@@ -19,7 +20,9 @@ import urllib.request
 
 import numpy
 
+import audit.cases
 import audit.config
+import audit.engine
 import audit.pyrun
 import audit.rdriver
 import audit.rlib
@@ -152,6 +155,61 @@ def run_shard(job: tuple[str, str, list[str], float]) -> str:
     return out_path
 
 
+@dataclasses.dataclass(frozen=True)
+class Script:
+    id: str  # 'rd/<topic>' or 'test/<topic>'
+    kind: str  # 'rd' or 'test'
+    topic: str
+    file: str  # path inside the metafor source: 'man/<topic>.Rd' or 'tests/testthat/test_<topic>.R'
+
+
+def list_scripts(source: pathlib.Path, work: pathlib.Path, only: list[str] | None) -> list[Script]:
+    """Every script ``runscripts.R list`` finds in the metafor source, in R's order, filtered by ``only`` (substrings of a script id)."""
+    out_path = work / 'scripts.json'
+    log = work / 'list.log'
+    out_path.unlink(missing_ok=True)
+    env = audit.rdriver.environment()
+    if only:
+        env['AUDIT_ONLY'] = '\x1f'.join(only)
+    with log.open('wb') as handle:
+        subprocess.run(
+            audit.rdriver.rscript_command(audit.config.R_DIR / 'runscripts.R', 'list', str(source), str(out_path)),
+            env=env,
+            stdout=handle,
+            stderr=subprocess.STDOUT,
+            check=False,
+        )
+    try:
+        return [Script(**entry) for entry in json.loads(out_path.read_text())]
+    except (OSError, ValueError, TypeError) as e:
+        raise RuntimeError(f'the list of scripts could not be read ({type(e).__name__}), see {log}') from e
+
+
+def write_scripts(path: pathlib.Path, scripts: list[Script]) -> None:
+    path.write_text(json.dumps([dataclasses.asdict(s) for s in scripts]))
+
+
+def run_r_scripts(work: pathlib.Path, i: int, source: pathlib.Path, shard: list[Script], timeout: float) -> None:
+    """R side of scripts shard ``i`` through ``engine.run_shard``; when R dies in a script, the units it finished are kept, the dead unit is an error
+    and the script is marked lost. Writes ``r-{i}.json`` as ``{"scripts": [...]}`` in shard order."""
+    by_id = {s.id: s for s in shard}
+
+    def start(scripts_path: pathlib.Path, out_path: pathlib.Path) -> subprocess.Popen[bytes]:
+        return audit.rdriver.start(audit.config.R_DIR / 'runscripts.R', work / f'r-{i}.log', 'run', str(source), str(scripts_path), str(out_path), str(timeout))
+
+    def dead(script_id: str, stop: audit.engine.Stop, parts: list[Json]) -> Json:
+        script = by_id[script_id]
+        unit: Json = {'status': 'error', 'error': audit.engine.r_stop_reason(stop, timeout, 'unit'), 'warnings': [], 'src': '', 'ast': None}
+        return {'id': script.id, 'kind': script.kind, 'topic': script.topic, 'lost': True, 'units': [p['unit'] for p in parts] + [unit]}
+
+    results = audit.engine.run_shard(work, f'r-{i}', shard, timeout, start, dead, write_scripts)
+    for record in results:
+        if 'parts' in record:
+            record['units'] = [p['unit'] for p in record.pop('parts')]
+        record.setdefault('units', [])
+    (work / f'r-{i}.json').write_text(json.dumps({'scripts': results}))
+
+
 def run(
     work: pathlib.Path, jobs: int, timeout: float, universe_functions: dict[str, Json], only: list[str] | None
 ) -> tuple[list[Json], collections.Counter[str]]:
@@ -159,33 +217,13 @@ def run(
     out = work / 'scripts'
     out.mkdir(parents=True, exist_ok=True)
     n = max(1, jobs)
-    env = audit.rdriver.environment()
-    if only:
-        env['AUDIT_ONLY'] = '\x1f'.join(only)
-    procs = []
-    for i in range(n):
-        path = out / f'r-{i}.json'
-        log = (out / f'r-{i}.log').open('wb')
-        procs.append(
-            (
-                path,
-                subprocess.Popen(
-                    audit.rdriver.rscript_command(audit.config.R_DIR / 'runscripts.R', str(source), str(path), str(i), str(n), str(timeout)),
-                    env=env,
-                    stdout=log,
-                    stderr=subprocess.STDOUT,
-                    preexec_fn=audit.rdriver.limit_memory,
-                ),
-            )
-        )
-    for path, proc in procs:
-        proc.wait()
-        if not path.exists():
-            raise RuntimeError(f'R script shard failed, see {path.with_suffix(".log")}')
+    shards = [s for s in audit.cases.shards(list_scripts(source, out, only), n) if s]
+    with concurrent.futures.ThreadPoolExecutor(max_workers=n) as threads:
+        list(threads.map(lambda i: run_r_scripts(out, i, source, shards[i], timeout), range(len(shards))))
     nse = sorted(name for name, entry in universe_functions.items() if any(f['name'] == 'data' for f in entry['formals']))
     (out / 'functions.json').write_text(json.dumps(sorted(universe_functions)))
     shard_jobs = []
-    for i in range(n):
+    for i in range(len(shards)):
         target = out / f'py-{i}.json'
         pathlib.Path(str(target) + '.functions').write_text(json.dumps(sorted(universe_functions)))
         shard_jobs.append((str(out / f'r-{i}.json'), str(target), nse, timeout))

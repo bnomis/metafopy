@@ -97,7 +97,7 @@ changing any result of the cases path.
 
 ## Task 3: Stream the R side of the scripts step
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** API (`Script`, `list_scripts`, `run_r_scripts`), Implementation - The R side
@@ -107,29 +107,29 @@ rest of one script, not the shard.
 
 **Subtasks:**
 
-- [ ] In `src/audit/r/runscripts.R`, add `list <source> <out.json>` (today's job discovery and `AUDIT_ONLY` filter, writing `[{id, kind, topic,
+- [x] In `src/audit/r/runscripts.R`, add `list <source> <out.json>` (today's job discovery and `AUDIT_ONLY` filter, writing `[{id, kind, topic,
       file}]`) and `run <source> <scripts.json> <out.jsonl> <timeout>` (start, one `{"part": id, "unit": ...}` per unit, closing line, each flushed,
       `Rd2ex` at script start); remove the shard arguments
-- [ ] Add `Script` and `list_scripts` to `src/audit/scripts.py`; `list_scripts` raises `RuntimeError` naming its log when `list` fails or writes
+- [x] Add `Script` and `list_scripts` to `src/audit/scripts.py`; `list_scripts` raises `RuntimeError` naming its log when `list` fails or writes
       nothing readable
-- [ ] Add `run_r_scripts`: `start` uses `audit.rdriver.start` with `r-{i}.log`; a finished script's record is its closing line with `units` from its
+- [x] Add `run_r_scripts`: `start` uses `audit.rdriver.start` with `r-{i}.log`; a finished script's record is its closing line with `units` from its
       parts; `dead` gives the spec's lost record with the dead unit and the cases path's reasons; writes `r-{i}.json` as `{"scripts": [...]}`
-- [ ] New `src/tests/test_harness_scripts.py`: `run_r_scripts` with `audit.rdriver.start` monkeypatched to a `python -c` stand-in that writes the
+- [x] New `src/tests/test_harness_scripts.py`: `run_r_scripts` with `audit.rdriver.start` monkeypatched to a `python -c` stand-in that writes the
       R lines, once finishing and once exiting 1 after one unit of its first script; check `r-0.json` holds every script, the lost one with its
       finished unit and a dead unit ending `(killed)`
-- [ ] By hand, in the worktree: `Rscript src/audit/r/runscripts.R list` on the fetched source, then `run` on two short scripts, and check the lines
+- [x] By hand, in the worktree: `Rscript src/audit/r/runscripts.R list` on the fetched source, then `run` on two short scripts, and check the lines
       with `audit.engine.read_outcomes`; note the commands and result in this task's Notes
 
 **Acceptance Criteria:**
 
-- [ ] `list` gives the same script ids, in the same order, as the scripts in Task 1's run
-- [ ] A stand-in R that dies partway through a script leaves a record for every script in `r-0.json`
+- [x] `list` gives the same script ids, in the same order, as the scripts in Task 1's run
+- [x] A stand-in R that dies partway through a script leaves a record for every script in `r-0.json`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_harness_scripts.py src/tests/test_harness_transpile.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_harness_scripts.py src/tests/test_harness_transpile.py` passes
 
 **Notes:**
 
@@ -138,6 +138,11 @@ rest of one script, not the shard.
 - `audit.scripts.run` still calls the old R entry until Task 5; keep the step runnable at this commit by leaving the old Python side as it is, and
   switching `run`'s R half to `list_scripts` and `run_r_scripts` here
 - The fetched metafor source is under the audit work directory's `source/metafor` (`audit.scripts.fetch_source`)
+- By hand, 2026-11-02, at the Task 3 commit (`Rscript` through `audit.rdriver`, the audit's private library): `list` on the fetched source gave 191 scripts,
+  the same ids as the 191 in Task 1's run (`.audit/runs/20261102-202532/`), and in the order that run's four shards had them (checked by sharding the list
+  as the old `runscripts.R` did). `run` on `rd/addpoly.default` and `test/tips_testing_factors_lincoms` exited 0, and `audit.engine.read_outcomes`
+  read both back as finished (7 and 88 part lines) with nothing running
+- The reasons for R's stop moved to `audit.engine.r_stop_reason`, which `run_r_shard` and `run_r_scripts` share
 
 ---
 
