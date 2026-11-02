@@ -16,7 +16,7 @@ them.
 
 ## Task 1: Run the scripts step once before the change
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Tests (the real run before the change)
@@ -26,25 +26,32 @@ checkout (checked 2026-11-02).
 
 **Subtasks:**
 
-- [ ] Before changing any file, run `bin/metafor-audit.sh --steps scripts` in the background and wait for it; it reads `src/audit/`, so change nothing
+- [x] Before changing any file, run `bin/metafor-audit.sh --steps scripts` in the background and wait for it; it reads `src/audit/`, so change nothing
       while it runs
-- [ ] Record in this task's Notes the run directory under `.audit/runs/`, the commit it ran at, its exit status, and the scripts coverage tally and
+- [x] Record in this task's Notes the run directory under `.audit/runs/`, the commit it ran at, its exit status, and the scripts coverage tally and
       cause lines from its `wrong-or-missing.md`, dated
-- [ ] If the step stops on a dead process (the defect this list fixes), record that and what it left, instead of a tally
+- [x] If the step stops on a dead process (the defect this list fixes), record that and what it left, instead of a tally
 
 **Acceptance Criteria:**
 
-- [ ] This task's Notes name the run and hold its tally and causes, or the failure it hit
+- [x] This task's Notes name the run and hold its tally and causes, or the failure it hit
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
 
 **Notes:**
 
 - A worktree has no `.venv` or `.audit/Rlib`: build the environment with `uv sync --frozen --all-extras` (never edit `uv.lock`) and point
   `METAFOPY_AUDIT_RLIB` at the main checkout's `.audit/Rlib`, as `agents/tasks/audit-shard-survival/tasks-1.md` Task 6 did
 - The run directory lives in the worktree and is lost when the worktree is removed, so the Notes must carry the figures, not only the path
+- Baseline run, 2026-11-02, `bin/metafor-audit.sh --steps scripts` at commit `d811e57`, exit status 0, run directory
+  `.audit/runs/20261102-202532/` (worktree; lost with it). The step did not stop on a dead process.
+- Scripts coverage tally: 8064 findings; 6446 expressions, 4906 compared (261s). Of the findings, 7301 matched `data/known.toml` and 760 numeric
+  differences were below the reporting threshold; 4 findings make 3 causes
+- Cause lines in `wrong-or-missing.md`: two wrong values (a `plot(sav, ...)` `$ys` element 941, relative 0.00019, 2 cases; an
+  `expect_equivalent(c(residuals(res)), ...)` element 5, relative 0.00017, 1 case) and one other (the R universe differs from
+  `data/universe.json`; refresh with `--update-universe`)
 
 ---
 
