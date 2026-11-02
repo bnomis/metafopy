@@ -184,6 +184,25 @@ CONTROL_DEFAULTS: dict[str, typing.Any] = {
 }
 
 
+# R's permutest allocates the arrays of the permutation statistics before running any permutation, and stops when it cannot. How much R can allocate
+# depends on the machine (on macOS its vector heap stops at 16 GB by default: R_MAX_VSIZE in R's ?Memory); the same bound here refuses such a test
+# on every platform before it exhausts the memory.
+MAX_PERMUTATION_BYTES = 16 * 1024**3
+
+
+def permutation_arrays(n_iter: int, width: int) -> tuple[FloatArray, FloatArray, FloatArray]:
+    """Arrays for the test statistics, the coefficients (``n_iter`` x ``width`` each) and the omnibus statistic (``n_iter``) of each permutation.
+
+    They are not filled, so memory is only taken as permutations are stored: the caller writes every row, NaN for a refit that fails.
+
+    Raises:
+        metafopy.errors.InputError: the arrays would take more than ``MAX_PERMUTATION_BYTES`` (R: "Number of iterations requested too large.").
+    """
+    if n_iter * (2 * width + 1) * 8 > MAX_PERMUTATION_BYTES:
+        raise metafopy.errors.InputError('Number of iterations requested too large.')
+    return numpy.empty((n_iter, width)), numpy.empty((n_iter, width)), numpy.empty(n_iter)
+
+
 def unique_perms_count(X: FloatArray) -> tuple[int | float, numpy.typing.NDArray[numpy.intp], FloatArray]:
     """Number of distinct row permutations of ``X``, the group labels of its sorted rows, and the sorted ``X``."""
     k = X.shape[0]
@@ -207,13 +226,11 @@ def unique_perms_count(X: FloatArray) -> tuple[int | float, numpy.typing.NDArray
     return total, labels, Xs
 
 
-def multiset_perms(labels: numpy.typing.NDArray[numpy.intp]) -> list[tuple[int, ...]]:
-    """All distinct permutations of ``labels`` in lexicographic order (metafor's ``.genuperms``)."""
-    items = sorted(labels.tolist())
-    out: list[tuple[int, ...]] = []
-    perm = list(items)
+def multiset_perms(labels: numpy.typing.NDArray[numpy.intp]) -> collections.abc.Iterator[tuple[int, ...]]:
+    """All distinct permutations of ``labels`` in lexicographic order (metafor's ``.genuperms``), one at a time."""
+    perm = sorted(labels.tolist())
     while True:
-        out.append(tuple(perm))
+        yield tuple(perm)
         i = len(perm) - 2
         while i >= 0 and perm[i] >= perm[i + 1]:
             i -= 1
@@ -224,7 +241,6 @@ def multiset_perms(labels: numpy.typing.NDArray[numpy.intp]) -> list[tuple[int, 
             j -= 1
         perm[i], perm[j] = perm[j], perm[i]
         perm[i + 1 :] = reversed(perm[i + 1 :])
-    return out
 
 
 def permutest_control(control: collections.abc.Mapping[str, typing.Any] | None) -> dict[str, typing.Any]:
@@ -306,10 +322,9 @@ def permutest_rma_uni(
 
     Raises:
         metafopy.errors.InputError: ``iter`` is below 2; ``btt`` or ``permci`` names a coefficient that does not exist; a ``control`` entry is not
-            accepted; an exact test needs more iterations than the largest float.
+            accepted; an exact test needs more iterations than the largest float, or more than can be allocated (R stops with an error as well).
         metafopy.errors.ArgumentError: ``control`` has an unknown entry.
         metafopy.errors.NotSupportedError: ``x`` is a [robust][metafopy.robust] result.
-        ValueError: an exact test needs more iterations than can be allocated (R stops with an error as well).
 
     Metafor reference:
         [permutest](https://wviechtb.github.io/metafor/reference/permutest.html)
@@ -433,12 +448,11 @@ def run_permutations(
     progbar: bool = False,
 ) -> tuple[FloatArray, FloatArray, FloatArray]:
     k, p = x.k, x.p
-    zval = numpy.full((n_iter, p), numpy.nan)
-    beta = numpy.full((n_iter, p), numpy.nan)
-    QM = numpy.full(n_iter, numpy.nan)
+    zval, beta, QM = permutation_arrays(n_iter, p)
 
     def store(i: int, fit: metafopy.models.rma_uni.RMAResult | None) -> bool:
         if fit is None:
+            zval[i], beta[i], QM[i] = numpy.nan, numpy.nan, numpy.nan
             return False
         beta[i] = fit.beta
         zval[i] = fit.zval
@@ -463,9 +477,8 @@ def run_permutations(
 
     btt = list(x.btt)
     if exact:
-        perms = multiset_perms(labels)
-        for i in metafopy.core.parallel.progress(range(n_iter), n_iter, progbar):
-            store(i, metafopy.methods.common.refit_arrays(x, X=Xs[numpy.array(perms[i]) - 1], btt=btt))
+        for i, rows in zip(metafopy.core.parallel.progress(range(n_iter), n_iter, progbar), multiset_perms(labels), strict=True):
+            store(i, metafopy.methods.common.refit_arrays(x, X=Xs[numpy.array(rows) - 1], btt=btt))
     else:
         assert gen is not None
         i = 0

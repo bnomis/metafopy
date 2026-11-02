@@ -115,3 +115,29 @@ works. The R shards are already killed after twice the case timeout, so a
 runaway shard is still stopped. Then rerun the audit item below.
 
 Done: 2026-11-01 - `audit.config.limit_memory` returns when `setrlimit` raises `ValueError`; tests in `src/tests/test_harness_engine.py`. The rerun (`.audit/runs/20261101-211517`) started R and completed `matrix`, then stopped in `options` on a new defect, filed in `TODO.md`.
+
+## The metafor audit's options step loses a Python worker on macOS
+
+Found on 2026-11-01 by the second run of `bin/metafor-audit.sh` on this
+machine (macOS 27.2, R 4.6.2, run `.audit/runs/20261101-211517`), the first
+after the memory cap stopped failing: `check-r`, `universe` and `matrix`
+(2503 cases, 3298 findings) completed, and every R shard of `options`
+finished, but `options` then stopped with
+`concurrent.futures.process.BrokenProcessPool: A process in the process pool
+was terminated abruptly`. No Python shard wrote its `py-*.json`, and macOS
+wrote no crash report for it.
+
+Cause: unconfirmed. `audit.engine.run_cases` runs the Python side of each
+shard in a `ProcessPoolExecutor` (`src/audit/engine.py:96`), and a worker that
+dies takes the whole step with it. Suspected: a case that grows without
+bound, now that macOS runs workers without the 4 GiB address-space cap (see
+the macOS item in `DONE.md`), so the system kills the worker where Linux
+would raise `MemoryError` inside it.
+
+Fix direction: run the step alone (`bin/metafor-audit.sh --steps options`)
+and watch the workers' memory to find the case; then decide between a memory
+guard macOS honours (for example checking the resident size between cases)
+and making a lost worker a reported finding for its shard rather than the end
+of the step.
+
+Done: 2026-11-02 - the cause was `permutest(exact=True)` on fits with moderators, which allocated arrays for every permutation (13! for `uni_mods_year`) and built them all as a list. `metafopy.methods.permutest.permutation_arrays` now refuses arrays over 16 GB with R's "Number of iterations requested too large.", and `multiset_perms` yields one permutation at a time; tests in `src/tests/test_permutest_vif_plots.py` and `src/tests/test_permutest_ls_plots.py`. The rerun `bin/metafor-audit.sh --steps options` (`.audit/runs/20261102-061046`) completed: 20029 cases, 16758 findings, and every exact permutest case has R's outcome. Hardening the harness against a lost worker is filed in `TODO.md`.

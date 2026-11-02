@@ -20,6 +20,7 @@ import refutil
 import test_permutest_vif_plots
 
 import metafopy
+import metafopy.errors
 import metafopy.methods.ls_permutest
 
 REF: dict[str, typing.Any] = json.loads((pathlib.Path(__file__).parent / 'reference' / 'phase7' / 'permutest_ls_plots.json').read_text(encoding='utf-8'))
@@ -89,3 +90,12 @@ def test_panels_and_titles(perm: metafopy.methods.ls_permutest.LSPermutestResult
     # auditme: accept[literal-duplication] the coefficient names come from the R fixture
     assert metafopy.plot_permutest(skipped, QS=True).names == ('ablat',)
     matplotlib.pyplot.close('all')
+
+
+def test_an_exact_test_too_large_to_allocate_is_refused_as_in_r() -> None:
+    # R (macOS, default vector heap): permutest of the audit's ls_year fit with exact = TRUE stops with 'Number of iterations requested too large.'
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        fit = metafopy.rma_uni('yi', 'vi', mods='~ ablat + year', scale='~ ablat + year', data=refutil.bcg())
+    with pytest.raises(metafopy.errors.InputError, match='Number of iterations requested too large'):
+        metafopy.permutest(fit, exact=True)

@@ -5,29 +5,22 @@ Open work only, in implementation order, nearest first. Finished items move to
 the shape of an item.
 
 
-## The metafor audit's options step loses a Python worker on macOS
+## A Python audit worker that dies stops the whole audit step
 
-Found on 2026-11-01 by the second run of `bin/metafor-audit.sh` on this
-machine (macOS 27.2, R 4.6.2, run `.audit/runs/20261101-211517`), the first
-after the memory cap stopped failing: `check-r`, `universe` and `matrix`
-(2503 cases, 3298 findings) completed, and every R shard of `options`
-finished, but `options` then stopped with
-`concurrent.futures.process.BrokenProcessPool: A process in the process pool
-was terminated abruptly`. No Python shard wrote its `py-*.json`, and macOS
-wrote no crash report for it.
+Found on 2026-11-02 while fixing the lost worker in `options` (see `DONE.md`):
+`audit.engine.run_cases` runs the Python side of the shards in a
+`ProcessPoolExecutor`, so one worker killed by the system (out of memory, a
+crash in compiled code) raises `BrokenProcessPool` and ends the step, and no
+shard writes its results. On macOS 27 the Python workers run without a memory
+cap, because `setrlimit(RLIMIT_AS)` is refused there, so any case that grows
+without bound kills its worker instead of raising `MemoryError`. The case
+that did so (`permutest(exact=True)`) is fixed; nothing stops the next one.
 
-Cause: unconfirmed. `audit.engine.run_cases` runs the Python side of each
-shard in a `ProcessPoolExecutor` (`src/audit/engine.py:96`), and a worker that
-dies takes the whole step with it. Suspected: a case that grows without
-bound, now that macOS runs workers without the 4 GiB address-space cap (see
-the macOS item in `DONE.md`), so the system kills the worker where Linux
-would raise `MemoryError` inside it.
-
-Fix direction: run the step alone (`bin/metafor-audit.sh --steps options`)
-and watch the workers' memory to find the case; then decide between a memory
-guard macOS honours (for example checking the resident size between cases)
-and making a lost worker a reported finding for its shard rather than the end
-of the step.
+Fix direction: watch each Python worker's resident size between cases, or
+from a thread, and record a case that passes a limit as an error; and make
+`run_cases` record a dead worker's current case as a finding for its shard,
+then carry on with the rest of that shard, as the R side already does
+(`r-N-attempt1.jsonl`).
 
 ## Run the metafor audit to find the next gaps against R metafor
 

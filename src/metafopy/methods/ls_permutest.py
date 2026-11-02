@@ -195,12 +195,11 @@ def beta_permutations(
     skiphes = not x.optbeta
     gen = None if exact else draw_generator(seed)
     n_col = 1 if x.int_only else p
-    zval = numpy.full((n_iter, n_col), numpy.nan)
-    beta = numpy.full((n_iter, n_col), numpy.nan)
-    QM = numpy.full(n_iter, numpy.nan)
+    zval, beta, QM = metafopy.methods.permutest.permutation_arrays(n_iter, n_col)
 
     def store(i: int, fit: metafopy.models.rma_ls_result.RMALSResult | None) -> bool:
         if fit is None:
+            zval[i], beta[i], QM[i] = numpy.nan, numpy.nan, numpy.nan
             return False
         beta[i] = fit.beta
         zval[i] = fit.zval
@@ -232,8 +231,8 @@ def beta_permutations(
 
     if gen is None:
         perms = metafopy.methods.permutest.multiset_perms(labels)
-        for i in metafopy.core.parallel.progress(range(n_iter), n_iter, progbar):
-            store(i, fit_rows(numpy.array(perms[i]) - 1))
+        for i, perm in zip(metafopy.core.parallel.progress(range(n_iter), n_iter, progbar), perms, strict=True):
+            store(i, fit_rows(numpy.array(perm) - 1))
     else:
         i = 0
         while i < n_iter:
@@ -257,12 +256,11 @@ def alpha_permutations(
     alpha_arg = numpy.where(x.alpha_fix, x.alpha, numpy.nan)
     beta_arg = numpy.where(x.beta_fix, x.beta, numpy.nan) if x.optbeta else None
     gen = None if exact else draw_generator(seed)
-    zval = numpy.full((n_iter, q), numpy.nan)
-    alpha = numpy.full((n_iter, q), numpy.nan)
-    QS = numpy.full(n_iter, numpy.nan)
+    zval, alpha, QS = metafopy.methods.permutest.permutation_arrays(n_iter, q)
 
     def store(i: int, fit: metafopy.models.rma_ls_result.RMALSResult | None) -> bool:
         if fit is None:
+            zval[i], alpha[i], QS[i] = numpy.nan, numpy.nan, numpy.nan
             return False
         alpha[i] = fit.alpha
         zval[i] = fit.zval_alpha
@@ -276,8 +274,8 @@ def alpha_permutations(
 
     if gen is None:
         perms = metafopy.methods.permutest.multiset_perms(labels)
-        for i in metafopy.core.parallel.progress(range(n_iter), n_iter, progbar):
-            store(i, fit_rows(numpy.array(perms[i]) - 1))
+        for i, perm in zip(metafopy.core.parallel.progress(range(n_iter), n_iter, progbar), perms, strict=True):
+            store(i, fit_rows(numpy.array(perm) - 1))
     else:
         i = 0
         while i < n_iter:
@@ -347,7 +345,8 @@ def permutest_rma_ls(
 
     Raises:
         metafopy.errors.InputError: ``iter`` is below 2; ``skip_beta`` and ``skip_alpha`` are both set (or the scale model has only an intercept
-            and ``skip_beta`` is set); ``btt`` or ``att`` matches no coefficient; a ``control`` entry is not accepted.
+            and ``skip_beta`` is set); ``btt`` or ``att`` matches no coefficient; a ``control`` entry is not accepted; an exact test needs more
+            iterations than can be allocated (R stops with an error as well).
         metafopy.errors.ArgumentError: ``control`` has an unknown entry.
 
     Metafor reference:

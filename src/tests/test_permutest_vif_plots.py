@@ -68,6 +68,18 @@ def test_seeded_permutations_are_those_of_r(fit: metafopy.RMAResult) -> None:
         numpy.testing.assert_allclose(result.zval_perm[name], ref['zval_perm'][name], rtol=1e-8, atol=1e-8)
 
 
+def test_an_exact_test_too_large_to_allocate_is_refused_as_in_r(fit: metafopy.RMAResult) -> None:
+    # R (macOS, default vector heap): permutest(res, exact = TRUE) stops with 'Number of iterations requested too large.' (13! permutations)
+    with pytest.raises(metafopy.errors.InputError, match='Number of iterations requested too large'):
+        metafopy.permutest(fit, exact=True)
+
+
+def test_unique_permutations_are_generated_one_at_a_time() -> None:
+    perms = metafopy.methods.permutest.multiset_perms(numpy.array([1, 1, 3]))
+    assert iter(perms) is perms
+    assert list(perms) == [(1, 1, 3), (1, 3, 1), (3, 1, 1)]
+
+
 def test_seeded_simulated_vifs_are_those_of_r(fit: metafopy.RMAResult) -> None:
     # R: set.seed(4321); vif(res, btt = 2, sim = TRUE); the model comes from a formula, so the variables of the data are shuffled
     metafopy.set_seed(4321)
