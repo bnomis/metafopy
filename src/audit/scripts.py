@@ -179,22 +179,6 @@ def stream_scripts(r_path: pathlib.Path, scripts_path: pathlib.Path, out_path: p
             write({'id': script_id})
 
 
-def run_shard(job: tuple[str, str, list[str], float]) -> str:
-    """Process entry point: (R results of the shard, output path, names of the functions with a ``data`` argument, timeout) -> output path."""
-    r_path, out_path, nse_names, timeout = job
-    audit.config.limit_memory()
-    audit.rlib.METAFOR_FUNCTIONS.update(json.loads(pathlib.Path(out_path + '.functions').read_text()))
-    doc = json.loads(pathlib.Path(r_path).read_text())
-    findings: list[Json] = []
-    tally: collections.Counter[str] = collections.Counter()
-    for script in doc['scripts']:
-        for f, t in run_script(script, set(nse_names), timeout):
-            findings += f
-            tally.update(t)
-    pathlib.Path(out_path).write_text(json.dumps({'findings': findings, 'tally': tally}))
-    return out_path
-
-
 @dataclasses.dataclass(frozen=True)
 class Script:
     id: str  # 'rd/<topic>' or 'test/<topic>'
@@ -250,6 +234,47 @@ def run_r_scripts(work: pathlib.Path, i: int, source: pathlib.Path, shard: list[
     (work / f'r-{i}.json').write_text(json.dumps({'scripts': results}))
 
 
+def run_py_scripts(work: pathlib.Path, i: int, shard: list[Script], nse: list[str], functions: list[str], timeout: float) -> None:
+    """Python side of scripts shard ``i`` through ``engine.run_shard``, in its own process so that one dying costs the rest of a script, not the
+    step. Writes ``py-{i}.json`` as ``{"findings": [...], "tally": {...}}`` from the parts."""
+    r_path = work / f'r-{i}.json'
+    unit_counts = {s['id']: len(s['units']) for s in json.loads(r_path.read_text())['scripts']}
+    log = work / f'py-{i}.log'
+    launcher = audit.engine.PyLauncher(work, f'py-{i}', 'audit.scripts', log)
+
+    def start(scripts_path: pathlib.Path, out_path: pathlib.Path) -> subprocess.Popen[bytes]:
+        job = {'r_path': str(r_path), 'scripts_path': str(scripts_path), 'out_path': str(out_path), 'nse': nse, 'functions': functions, 'timeout': timeout}
+        return launcher.start(job)
+
+    def dead(script_id: str, stop: audit.engine.Stop, parts: list[Json]) -> Json:
+        kind, detail = audit.engine.py_stop(stop, timeout, launcher.returncode(), log, 'script')
+        script = next(s for s in shard if s.id == script_id)
+        left = max(0, unit_counts.get(script_id, 0) - len(parts) - 1)
+        tally: collections.Counter[str] = collections.Counter()
+        findings: list[Json] = []
+        for part in parts:
+            findings += part['findings']
+            tally.update(part['tally'])
+        tally['units'] += 1 + left
+        if left:
+            tally['not run: Python process died partway through the script'] += left
+        findings.append({'id': f'scripts/{script.topic}/{script.kind}/{len(parts)}', 'kind': kind, 'path': '', 'detail': detail})
+        return {'id': script_id, 'findings': findings, 'tally': dict(tally)}
+
+    results = audit.engine.run_shard(work, f'py-{i}', shard, timeout, start, dead, write_scripts)
+    findings: list[Json] = []
+    tally: collections.Counter[str] = collections.Counter()
+    for record in results:
+        if 'parts' in record:
+            for part in record['parts']:
+                findings += part['findings']
+                tally.update(part['tally'])
+        else:
+            findings += record.get('findings', [])
+            tally.update(record.get('tally', {}))
+    (work / f'py-{i}.json').write_text(json.dumps({'findings': findings, 'tally': tally}))
+
+
 def run(
     work: pathlib.Path, jobs: int, timeout: float, universe_functions: dict[str, Json], only: list[str] | None
 ) -> tuple[list[Json], collections.Counter[str]]:
@@ -261,18 +286,13 @@ def run(
     with concurrent.futures.ThreadPoolExecutor(max_workers=n) as threads:
         list(threads.map(lambda i: run_r_scripts(out, i, source, shards[i], timeout), range(len(shards))))
     nse = sorted(name for name, entry in universe_functions.items() if any(f['name'] == 'data' for f in entry['formals']))
-    (out / 'functions.json').write_text(json.dumps(sorted(universe_functions)))
-    shard_jobs = []
-    for i in range(len(shards)):
-        target = out / f'py-{i}.json'
-        pathlib.Path(str(target) + '.functions').write_text(json.dumps(sorted(universe_functions)))
-        shard_jobs.append((str(out / f'r-{i}.json'), str(target), nse, timeout))
-    with concurrent.futures.ProcessPoolExecutor(max_workers=n) as pool:
-        outs = list(pool.map(run_shard, shard_jobs))
+    functions = sorted(universe_functions)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=n) as threads:
+        list(threads.map(lambda i: run_py_scripts(out, i, shards[i], nse, functions, timeout), range(len(shards))))
     findings: list[Json] = []
     tally: collections.Counter[str] = collections.Counter()
-    for shard_out in outs:
-        doc = json.loads(pathlib.Path(shard_out).read_text())
+    for i in range(len(shards)):
+        doc = json.loads((out / f'py-{i}.json').read_text())
         findings += doc['findings']
         tally.update(doc['tally'])
     return findings, tally

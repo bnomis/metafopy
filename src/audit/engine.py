@@ -150,30 +150,49 @@ def run_r_shard(work: pathlib.Path, i: int, fixtures_path: pathlib.Path, shard: 
     (work / f'r-{i}.json').write_text(json.dumps({'results': results}))
 
 
+def py_stop(stop: Stop, timeout: float, returncode: int | None, log: pathlib.Path, unit: str) -> tuple[str, str]:
+    """The finding kind and detail for a Python process that stopped on ``unit`` ('case', 'script')."""
+    if stop == 'stalled':
+        return 'timeout', f'Python did not return within {2 * timeout + 30:.0f}s'
+    if stop == 'memory':
+        return 'memory', f'Python passed the memory limit of {audit.config.MEMORY_LIMIT / 1024**3:g} GiB'
+    return 'process-died', f'Python process died on this {unit} (exit status {returncode}); see {log}'
+
+
+class PyLauncher:
+    """Starts ``python -m <module> <job.json>`` for a shard, appending its output to ``log``, and remembers the last process."""
+
+    def __init__(self, work: pathlib.Path, name: str, module: str, log: pathlib.Path) -> None:
+        self.job_path = work / f'{name}-job.json'
+        self.module = module
+        self.log = log
+        self.last: subprocess.Popen[bytes] | None = None
+
+    def start(self, job: Json) -> subprocess.Popen[bytes]:
+        self.job_path.write_text(json.dumps(job))
+        with self.log.open('ab') as handle:
+            self.last = subprocess.Popen([sys.executable, '-m', self.module, str(self.job_path)], stdout=handle, stderr=subprocess.STDOUT)
+        return self.last
+
+    def returncode(self) -> int | None:
+        return self.last.returncode if self.last else None
+
+
 def run_py_shard(work: pathlib.Path, i: int, fixtures_path: pathlib.Path, shard: list[audit.cases.Case], timeout: float) -> None:
     """Python side of shard ``i``, run in its own process so that one dying costs a case, not the step; writes ``py-{i}.json`` as
     ``{"results": [...]}`` in shard order."""
     r_path = work / f'r-{i}.json'
     r_by_id = {r['id']: r for r in json.loads(r_path.read_text())['results']}
     log = work / f'py-{i}.log'
-    last: list[subprocess.Popen[bytes]] = []
+    launcher = PyLauncher(work, f'py-{i}', 'audit.pyrun', log)
 
     def start(cases_path: pathlib.Path, out_path: pathlib.Path) -> subprocess.Popen[bytes]:
-        job = {'fixtures_path': str(fixtures_path), 'cases_path': str(cases_path), 'r_path': str(r_path), 'out_path': str(out_path), 'timeout': timeout}
-        job_path = work / f'py-{i}-job.json'
-        job_path.write_text(json.dumps(job))
-        proc = subprocess.Popen([sys.executable, '-m', 'audit.pyrun', str(job_path)], stdout=log.open('ab'), stderr=subprocess.STDOUT)
-        last.append(proc)
-        return proc
+        return launcher.start(
+            {'fixtures_path': str(fixtures_path), 'cases_path': str(cases_path), 'r_path': str(r_path), 'out_path': str(out_path), 'timeout': timeout}
+        )
 
     def dead(case_id: str, stop: Stop, parts: list[Json]) -> Json:
-        if stop == 'stalled':
-            kind, detail = 'timeout', f'Python did not return within {2 * timeout + 30:.0f}s'
-        elif stop == 'memory':
-            kind, detail = 'memory', f'Python passed the memory limit of {audit.config.MEMORY_LIMIT / 1024**3:g} GiB'
-        else:
-            status = last[-1].returncode if last else None
-            kind, detail = 'process-died', f'Python process died on this case (exit status {status}); see {log}'
+        kind, detail = py_stop(stop, timeout, launcher.returncode(), log, 'case')
         r = r_by_id.get(case_id) or {}
         return {
             'id': case_id,

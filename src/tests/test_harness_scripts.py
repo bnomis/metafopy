@@ -2,6 +2,7 @@
 
 import collections
 import json
+import os
 import pathlib
 import subprocess
 import sys
@@ -149,3 +150,46 @@ def test_stream_scripts_lines_read_back_and_sum_to_run_script(tmp_path: pathlib.
     assert streamed == direct
     assert streamed_findings == direct_findings
     assert streamed['R failed (skipped)'] == 3
+
+
+init = audit.engine.PyLauncher.__init__
+
+DYING_PYTHON = """
+import os, sys, json, pathlib
+import audit.scripts
+
+real = audit.scripts.run_script
+
+def run_script(script, nse, timeout):
+    for n, part in enumerate(real(script, nse, timeout)):
+        if script['topic'] == 't0' and n == 1:
+            os._exit(3)
+        yield part
+
+audit.scripts.run_script = run_script
+job = json.loads(pathlib.Path(sys.argv[1]).read_text())
+audit.scripts.stream_scripts(pathlib.Path(job['r_path']), pathlib.Path(job['scripts_path']), pathlib.Path(job['out_path']), job['nse'], job['timeout'])
+"""
+
+
+def test_run_returns_every_script_when_the_python_process_dies(tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(audit.config, 'POLL_SECONDS', 0.05)
+    monkeypatch.setattr(audit.config, 'WORK', tmp_path / 'work')
+    (tmp_path / 'dying.py').write_text(DYING_PYTHON)
+    monkeypatch.setenv('PYTHONPATH', os.pathsep.join([str(tmp_path), os.environ.get('PYTHONPATH', '')]))
+    monkeypatch.setattr(audit.engine.PyLauncher, '__init__', lambda self, work, name, module, log: init(self, work, name, 'dying', log))
+    monkeypatch.setattr(audit.scripts, 'fetch_source', lambda work: tmp_path)
+    three = [audit.scripts.Script(f'rd/t{i}', 'rd', f't{i}', '') for i in range(3)]
+    monkeypatch.setattr(audit.scripts, 'list_scripts', lambda source, work, only: three)
+
+    def run_r(work: pathlib.Path, i: int, source: pathlib.Path, shard: list[audit.scripts.Script], timeout: float) -> None:
+        records = [{'id': s.id, 'kind': 'rd', 'topic': s.topic, 'units': [failed_unit('boom'), failed_unit('boom'), failed_unit('boom')]} for s in shard]
+        (work / f'r-{i}.json').write_text(json.dumps({'scripts': records}))
+
+    monkeypatch.setattr(audit.scripts, 'run_r_scripts', run_r)
+    findings, tally = audit.scripts.run(tmp_path, 1, 10, {}, None)
+    died = [f for f in findings if f['kind'] == 'process-died']
+    assert [f['id'] for f in died] == ['scripts/t0/rd/1']
+    assert tally['units'] == 9
+    assert tally['not run: Python process died partway through the script'] == 1
+    assert tally['R failed (skipped)'] == 7

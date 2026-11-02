@@ -188,7 +188,7 @@ metafopy.
 
 ## Task 5: Run the Python scripts shards through the restart loop
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** API (`run_py_scripts`), Implementation - The Python side, Error handling
@@ -198,25 +198,25 @@ script, not the step.
 
 **Subtasks:**
 
-- [ ] Add `run_py_scripts`: writes the job file, starts `sys.executable -m audit.scripts <job.json>` with the inherited environment and output to
+- [x] Add `run_py_scripts`: writes the job file, starts `sys.executable -m audit.scripts <job.json>` with the inherited environment and output to
       `py-{i}.log`, runs it through `engine.run_shard`, and writes `py-{i}.json` as `{"findings": [...], "tally": {...}}` from the parts
-- [ ] Its `dead` keeps the parts' findings and tallies, adds the `memory`, `process-died` or `timeout` finding at unit `len(parts)` with id
+- [x] Its `dead` keeps the parts' findings and tallies, adds the `memory`, `process-died` or `timeout` finding at unit `len(parts)` with id
       `scripts/<topic>/<kind>/<n>`, and counts the units after it as `not run: Python process died partway through the script`
-- [ ] Rewrite `run`: `list_scripts`, R shards in a `ThreadPoolExecutor`, then Python shards in another; remove the process pool and `run_shard(job)`
-- [ ] End-to-end test in `src/tests/test_harness_scripts.py`: `run` with `list_scripts` and `run_r_scripts` stubbed and one unit made to exit the
+- [x] Rewrite `run`: `list_scripts`, R shards in a `ThreadPoolExecutor`, then Python shards in another; remove the process pool and `run_shard(job)`
+- [x] End-to-end test in `src/tests/test_harness_scripts.py`: `run` with `list_scripts` and `run_r_scripts` stubbed and one unit made to exit the
       Python process; every script comes back, one `process-died` finding, and `not run` for the units after it
-- [ ] In `src/audit/README.md`, add the scripts step to "Shards that die or pass the memory limit"
+- [x] In `src/audit/README.md`, add the scripts step to "Shards that die or pass the memory limit"
 
 **Acceptance Criteria:**
 
-- [ ] `run` returns findings for every script when a Python shard process dies
-- [ ] No `ProcessPoolExecutor` remains in `src/audit/scripts.py`, and `audit.steps.scripts_step` is unchanged
+- [x] `run` returns findings for every script when a Python shard process dies
+- [x] No `ProcessPoolExecutor` remains in `src/audit/scripts.py`, and `audit.steps.scripts_step` is unchanged
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_harness_scripts.py src/tests/test_harness_transpile.py src/tests/test_harness_engine.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_harness_scripts.py src/tests/test_harness_transpile.py src/tests/test_harness_engine.py` passes
 
 **Notes:**
 
