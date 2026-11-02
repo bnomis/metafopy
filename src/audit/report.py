@@ -18,8 +18,9 @@ SECTIONS: list[tuple[str, tuple[str, ...]]] = [
     ('Different defaults', ('default-diff',)),
     # auditme: accept[literal-duplication] the kind names are the report vocabulary, spelled out where used
     ('Missing fields of results', ('missing-field',)),
-    ('Crashes', ('crash', 'fixture-error', 'runner-error')),
+    ('Crashes', ('crash', 'fixture-error', 'memory', 'process-died', 'runner-error')),
     ('Timeouts', ('timeout',)),
+    ('R processes killed', ('r-killed',)),
     ('Refused by metafopy where R works', ('refused-where-R-works',)),
     ('Accepted by metafopy where R refuses', ('accepts-where-R-refuses',)),
     ('Wrong values', ('value-diff', 'shape-diff', 'type-diff')),

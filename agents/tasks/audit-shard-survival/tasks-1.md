@@ -153,7 +153,7 @@ that imports a changed `audit` module.
 
 ## Task 5: Report killed cases
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Spec Reference:** Implementation - Classification and report
@@ -162,20 +162,20 @@ that imports a changed `audit` module.
 
 **Subtasks:**
 
-- [ ] Add `r_killed(error)` to `src/audit/pyrun.py` (R's error ends in `(killed)`), and in `classify` give `r-killed` with R's error as detail before the `accepts-where-R-refuses` branch, whatever Python did
-- [ ] In `src/audit/report.py`, add `memory` and `process-died` to *Crashes*, and `('R processes killed', ('r-killed',))` after *Timeouts*
-- [ ] In `src/audit/README.md`, add a section beside "R calls slower than the case limit" on how a shard that dies or passes the memory limit is reported
-- [ ] Tests: `classify` gives `r-killed` for an R error ending `(killed)` when Python succeeded and when it failed, and still `timeout` for `(timeout)`; a report built from findings of the new kinds lists them in the expected sections
+- [x] Add `r_killed(error)` to `src/audit/pyrun.py` (R's error ends in `(killed)`), and in `classify` give `r-killed` with R's error as detail before the `accepts-where-R-refuses` branch, whatever Python did
+- [x] In `src/audit/report.py`, add `memory` and `process-died` to *Crashes*, and `('R processes killed', ('r-killed',))` after *Timeouts*
+- [x] In `src/audit/README.md`, add a section beside "R calls slower than the case limit" on how a shard that dies or passes the memory limit is reported
+- [x] Tests: `classify` gives `r-killed` for an R error ending `(killed)` when Python succeeded and when it failed, and still `timeout` for `(timeout)`; a report built from findings of the new kinds lists them in the expected sections
 
 **Acceptance Criteria:**
 
-- [ ] No R error ending `(killed)` is classified `accepts-where-R-refuses`
+- [x] No R error ending `(killed)` is classified `accepts-where-R-refuses`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_harness_compare.py src/tests/test_harness_errors.py src/tests/test_audit10_fixes.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_harness_compare.py src/tests/test_harness_errors.py src/tests/test_audit10_fixes.py` passes
 
 **Notes:**
 

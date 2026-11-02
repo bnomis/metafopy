@@ -166,6 +166,11 @@ def r_timed_out(error: str) -> bool:
     return 'elapsed time limit' in error or error.endswith('(timeout)')
 
 
+def r_killed(error: str) -> bool:
+    """Whether R failed because its process was killed or died (`engine.run_r_shard`), which says nothing about metafopy."""
+    return error.endswith('(killed)')
+
+
 def classify(r: Json, py: Json, value: object) -> list[Json]:
     """The findings of one case: where Python and R disagree."""
     findings: list[Json] = []
@@ -176,7 +181,9 @@ def classify(r: Json, py: Json, value: object) -> list[Json]:
     r_ok = r['status'] == 'ok'
     py_ok = py['status'] == 'ok'
     cls = py.get('error_class', '')
-    if r_ok and not py_ok:
+    if not r_ok and r_killed(r.get('error', '')):
+        add('r-killed', detail=f'R: {r["error"][:200]}')
+    elif r_ok and not py_ok:
         if cls == 'MissingFunctionError':
             add('missing-function', detail=py['error'])
         elif cls == 'MissingArgumentError':
