@@ -84,7 +84,7 @@ that imports a changed `audit` module.
 
 ## Task 3: Stream a Python shard's results
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** API (`run_stream`, `python -m audit.pyrun`), Implementation - The Python shard process
@@ -93,20 +93,20 @@ that imports a changed `audit` module.
 
 **Subtasks:**
 
-- [ ] Add `run_stream(fixtures_path, cases_path, r_path, out_path, timeout)` to `src/audit/pyrun.py`, built from today's `run_shard` body: `limit_memory`, fixtures, seed 1234 before each case, one result record per case in today's shape, written as a JSON line after a `{"start": id}` line
-- [ ] Add `python -m audit.pyrun <job.json>`, where the job file holds `run_stream`'s arguments; read `sys.argv` directly (an internal entry point, not a CLI)
-- [ ] Keep `run_shard(job)` working until Task 4 removes it
-- [ ] Test in `src/tests/test_harness_engine.py`: run the module as a subprocess on two tiny cases with a stub R result file, and check `read_outcomes` gives both results and no running case
+- [x] Add `run_stream(fixtures_path, cases_path, r_path, out_path, timeout)` to `src/audit/pyrun.py`, built from today's `run_shard` body: `limit_memory`, fixtures, seed 1234 before each case, one result record per case in today's shape, written as a JSON line after a `{"start": id}` line
+- [x] Add `python -m audit.pyrun <job.json>`, where the job file holds `run_stream`'s arguments; read `sys.argv` directly (an internal entry point, not a CLI)
+- [x] Keep `run_shard(job)` working until Task 4 removes it
+- [x] Test in `src/tests/test_harness_engine.py`: run the module as a subprocess on two tiny cases with a stub R result file, and check `read_outcomes` gives both results and no running case
 
 **Acceptance Criteria:**
 
-- [ ] A process killed between two cases leaves the first case's result and the second case's start line in its output
+- [x] A process killed between two cases leaves the first case's result and the second case's start line in its output
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_harness_engine.py src/tests/test_harness_compare.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_harness_engine.py src/tests/test_harness_compare.py` passes
 
 **Notes:**
 

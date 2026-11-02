@@ -1,5 +1,6 @@
 """The runner of the audit harness (``src/audit/engine.py``): a case that never returns must not stop an audit."""
 
+import json
 import os
 import pathlib
 import subprocess
@@ -129,3 +130,27 @@ def test_a_process_that_dies_before_its_first_case_does_not_restart(tmp_path: pa
 
 def test_a_stalled_r_shard_reason_is_still_recognised_as_a_timeout() -> None:
     assert audit.pyrun.r_timed_out('R did not return within 90s (timeout)')
+
+
+def test_a_python_shard_process_streams_a_start_line_before_each_result(tmp_path: pathlib.Path) -> None:
+    first, second = 'one', 'two'
+    cases = [{'id': name, 'axis': 'x', 'call': {'fn': 'nosuchfunction'}} for name in (first, second)]
+    (tmp_path / 'fixtures.json').write_text('[]')
+    (tmp_path / 'cases.json').write_text(json.dumps(cases))
+    (tmp_path / 'r.json').write_text(json.dumps({'results': [{'id': name, 'status': 'ok', 'value': {}} for name in (first, second)]}))
+    job = {
+        'fixtures_path': str(tmp_path / 'fixtures.json'),
+        'cases_path': str(tmp_path / 'cases.json'),
+        'r_path': str(tmp_path / 'r.json'),
+        'out_path': str(tmp_path / 'out.jsonl'),
+        'timeout': 30.0,
+    }
+    (tmp_path / 'job.json').write_text(json.dumps(job))
+    subprocess.run([sys.executable, '-m', 'audit.pyrun', str(tmp_path / 'job.json')], check=True, env=os.environ)
+    lines = [json.loads(line) for line in (tmp_path / 'out.jsonl').read_text().splitlines()]
+    assert [line.get('start', line.get('id')) for line in lines] == [first, first, second, second]
+    assert 'start' in lines[0]
+    assert 'start' not in lines[1]
+    done, running = audit.engine.read_outcomes(tmp_path / 'out.jsonl')
+    assert sorted(done) == [first, second]
+    assert running is None
