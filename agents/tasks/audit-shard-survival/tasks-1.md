@@ -14,7 +14,7 @@ that imports a changed `audit` module.
 
 ## Task 1: Watch a shard's output and memory
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** API (`Stop`, `resident_bytes`, `watch`), Implementation - The memory watch, Settings
@@ -23,22 +23,22 @@ that imports a changed `audit` module.
 
 **Subtasks:**
 
-- [ ] Add `POLL_SECONDS = 2.0` to `src/audit/config.py`, and say in `MEMORY_LIMIT`'s comment and `limit_memory`'s docstring that the limit is also the resident size `audit.engine.watch` enforces
-- [ ] Add `Stop` and `resident_bytes(pid)` to `src/audit/engine.py`: `ps -o rss= -p <pid>`, KiB times 1024; None when `ps` fails, prints nothing, or is missing (Windows)
-- [ ] Add `watch(proc, out, stall, limit)` per the spec, polling every `config.POLL_SECONDS`; it returns `'stalled'`, `'memory'`, `'died'` (non-zero exit by itself) or None
-- [ ] Switch `run_r_shard` to `watch(..., audit.config.MEMORY_LIMIT)`, keeping today's reason texts for now (Task 2 changes them), and remove `wait_or_kill`
-- [ ] Update the `wait_or_kill` tests in `src/tests/test_harness_engine.py` to `watch`, and add: `resident_bytes` of `os.getpid()` is positive and of a finished process is None; a `python -c` process that allocates past a small limit gives `'memory'`; one that exits 1 gives `'died'`
+- [x] Add `POLL_SECONDS = 2.0` to `src/audit/config.py`, and say in `MEMORY_LIMIT`'s comment and `limit_memory`'s docstring that the limit is also the resident size `audit.engine.watch` enforces
+- [x] Add `Stop` and `resident_bytes(pid)` to `src/audit/engine.py`: `ps -o rss= -p <pid>`, KiB times 1024; None when `ps` fails, prints nothing, or is missing (Windows)
+- [x] Add `watch(proc, out, stall, limit)` per the spec, polling every `config.POLL_SECONDS`; it returns `'stalled'`, `'memory'`, `'died'` (non-zero exit by itself) or None
+- [x] Switch `run_r_shard` to `watch(..., audit.config.MEMORY_LIMIT)`, keeping today's reason texts for now (Task 2 changes them), and remove `wait_or_kill`
+- [x] Update the `wait_or_kill` tests in `src/tests/test_harness_engine.py` to `watch`, and add: `resident_bytes` of `os.getpid()` is positive and of a finished process is None; a `python -c` process that allocates past a small limit gives `'memory'`; one that exits 1 gives `'died'`
 
 **Acceptance Criteria:**
 
-- [ ] `watch` gives each of `'stalled'`, `'memory'`, `'died'` and None for the matching stand-in process
-- [ ] No reference to `wait_or_kill` remains in `src/`
+- [x] `watch` gives each of `'stalled'`, `'memory'`, `'died'` and None for the matching stand-in process
+- [x] No reference to `wait_or_kill` remains in `src/`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_harness_engine.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_harness_engine.py` passes
 
 **Notes:**
 

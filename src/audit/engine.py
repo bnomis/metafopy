@@ -13,6 +13,7 @@ import audit.pyrun
 import audit.rdriver
 
 Json = dict[str, typing.Any]
+Stop = typing.Literal['died', 'memory', 'stalled']
 
 
 def read_outcomes(path: pathlib.Path) -> tuple[dict[str, Json], str | None]:
@@ -36,20 +37,40 @@ def read_outcomes(path: pathlib.Path) -> tuple[dict[str, Json], str | None]:
     return done, running
 
 
-def wait_or_kill(proc: subprocess.Popen[bytes], out: pathlib.Path, stall: float) -> bool:
-    """Wait for R; kill it when its output has not moved for ``stall`` seconds (compiled code ignores ``setTimeLimit``). True when it was killed."""
+def resident_bytes(pid: int) -> int | None:
+    """The resident size of process ``pid`` in bytes (``ps -o rss= -p <pid>`` reports KiB), or None when the process has gone or ``ps`` is missing."""
+    try:
+        done = subprocess.run(['ps', '-o', 'rss=', '-p', str(pid)], capture_output=True, text=True, check=False)
+    except OSError:
+        return None
+    text = done.stdout.strip()
+    if done.returncode != 0 or not text.isdigit():
+        return None
+    return int(text) * 1024
+
+
+def watch(proc: subprocess.Popen[bytes], out: pathlib.Path, stall: float, limit: int) -> Stop | None:
+    """Wait for a shard process. Kill it when its output has not moved for ``stall`` seconds ('stalled'; compiled code ignores in-process time
+    limits) or its resident size passes ``limit`` bytes ('memory'). A process that exits non-zero by itself is 'died'; None when it finished cleanly."""
     last_size = -1
     last_move = time.monotonic()
     while proc.poll() is None:
-        time.sleep(2.0)
+        time.sleep(audit.config.POLL_SECONDS)
+        if proc.poll() is not None:
+            break
+        resident = resident_bytes(proc.pid)
+        if resident is not None and resident > limit:
+            proc.kill()
+            proc.wait()
+            return 'memory'
         size = out.stat().st_size if out.exists() else 0
         if size != last_size:
             last_size, last_move = size, time.monotonic()
         elif time.monotonic() - last_move > stall:
             proc.kill()
             proc.wait()
-            return True
-    return False
+            return 'stalled'
+    return 'died' if proc.returncode != 0 else None
 
 
 def run_r_shard(work: pathlib.Path, i: int, fixtures_path: pathlib.Path, shard: list[audit.cases.Case], timeout: float) -> None:
@@ -63,14 +84,14 @@ def run_r_shard(work: pathlib.Path, i: int, fixtures_path: pathlib.Path, shard: 
         part = work / f'cases-{i}-rest.json'
         audit.cases.write_cases(part, remaining)
         proc = audit.rdriver.start(audit.config.R_DIR / 'runcases.R', work / f'r-{i}.log', str(fixtures_path), str(part), str(out), str(timeout))
-        stalled = wait_or_kill(proc, out, 2 * timeout + 30)
+        stop = watch(proc, out, 2 * timeout + 30, audit.config.MEMORY_LIMIT)
         done, running = read_outcomes(out)
         finished.update(done)
         if running is not None:
-            reason = f'R did not return within {2 * timeout + 30:.0f}s (timeout)' if stalled else 'R process died on this case'
+            reason = f'R did not return within {2 * timeout + 30:.0f}s (timeout)' if stop == 'stalled' else 'R process died on this case'
             finished[running] = {'id': running, 'status': 'error', 'error': reason, 'warnings': []}
         remaining = [c for c in remaining if c.id not in finished]
-        if proc.returncode == 0 and running is None and not stalled:
+        if stop is None and running is None:
             break
         out.rename(work / f'r-{i}-attempt{attempts}.jsonl')
     (work / f'r-{i}.json').write_text(json.dumps({'results': [finished[c.id] for c in shard if c.id in finished]}))
