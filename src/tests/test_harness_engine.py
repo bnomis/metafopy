@@ -154,3 +154,46 @@ def test_a_python_shard_process_streams_a_start_line_before_each_result(tmp_path
     done, running = audit.engine.read_outcomes(tmp_path / 'out.jsonl')
     assert sorted(done) == [first, second]
     assert running is None
+
+
+SITECUSTOMIZE = """
+import os
+import audit.pycall
+
+real = audit.pycall.run_call
+
+
+def run_call(spec, env):
+    if spec.get('fn') == 'die':
+        os._exit(3)
+    return real(spec, env)
+
+
+audit.pycall.run_call = run_call
+"""
+
+R_STAND_IN = """
+import json, sys
+with open(sys.argv[2], 'a') as f:
+    for c in json.load(open(sys.argv[1])):
+        f.write(json.dumps({'id': c['id'], 'status': 'ok', 'value': {}}) + '\\n')
+"""
+
+
+def test_run_cases_returns_a_result_for_every_case_when_a_python_process_dies(tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(audit.config, 'POLL_SECONDS', 0.05)
+
+    def r_start(script: pathlib.Path, log: pathlib.Path, *args: str) -> subprocess.Popen[bytes]:
+        return subprocess.Popen([sys.executable, '-c', R_STAND_IN, args[1], args[2]])
+
+    monkeypatch.setattr(audit.rdriver, 'start', r_start)
+    hook = tmp_path / 'hook'
+    hook.mkdir()
+    (hook / 'sitecustomize.py').write_text(SITECUSTOMIZE)
+    monkeypatch.setenv('PYTHONPATH', os.pathsep.join([str(hook), *sys.path]))
+    cases = [audit.cases.Case(id='ok', axis='x', call={'fn': 'nosuchfunction'}), audit.cases.Case(id='boom', axis='x', call={'fn': 'die'})]
+    results = audit.engine.run_cases(cases, [], tmp_path / 'work', 1, 5.0)
+    assert [r['id'] for r in results] == ['ok', 'boom']
+    assert results[1]['findings'][0]['kind'] == 'process-died'
+    assert 'exit status 3' in results[1]['findings'][0]['detail']
+    assert 'process-died' not in [f['kind'] for f in results[0]['findings']]

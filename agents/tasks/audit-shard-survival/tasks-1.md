@@ -117,7 +117,7 @@ that imports a changed `audit` module.
 
 ## Task 4: Run the Python shards through the restart loop
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** API (`run_py_shard`), Implementation - The Python shard process, Error handling
@@ -126,22 +126,22 @@ that imports a changed `audit` module.
 
 **Subtasks:**
 
-- [ ] Add `run_py_shard`: writes the job file, starts `sys.executable -m audit.pyrun <job.json>` with the inherited environment and output to `py-{i}.log`, runs it through `run_shard`, and writes `py-{i}.json` as `{"results": [...]}` in shard order
-- [ ] Its `dead` gives the spec's result record with one finding: `memory` (detail names the limit), `process-died` (detail names the exit status) or `timeout` for `stalled`
-- [ ] Run the Python shards in a `ThreadPoolExecutor` in `run_cases`; remove the process pool and `pyrun.run_shard`
-- [ ] End-to-end test: `run_cases` on two tiny cases with R stubbed and the Python call of one case monkeypatched (through the job's environment or a test hook) to exit the process; both cases come back, one with `process-died`
+- [x] Add `run_py_shard`: writes the job file, starts `sys.executable -m audit.pyrun <job.json>` with the inherited environment and output to `py-{i}.log`, runs it through `run_shard`, and writes `py-{i}.json` as `{"results": [...]}` in shard order
+- [x] Its `dead` gives the spec's result record with one finding: `memory` (detail names the limit), `process-died` (detail names the exit status) or `timeout` for `stalled`
+- [x] Run the Python shards in a `ThreadPoolExecutor` in `run_cases`; remove the process pool and `pyrun.run_shard`
+- [x] End-to-end test: `run_cases` on two tiny cases with R stubbed and the Python call of one case monkeypatched (through the job's environment or a test hook) to exit the process; both cases come back, one with `process-died`
 
 **Acceptance Criteria:**
 
-- [ ] `run_cases` returns a result for every case when a Python shard process dies
-- [ ] `--metafopy-src` still reaches the Python shards (the child inherits `PYTHONPATH`)
-- [ ] No `ProcessPoolExecutor` remains in `src/audit/engine.py`
+- [x] `run_cases` returns a result for every case when a Python shard process dies
+- [x] `--metafopy-src` still reaches the Python shards (the child inherits `PYTHONPATH`)
+- [x] No `ProcessPoolExecutor` remains in `src/audit/engine.py`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_harness_engine.py src/tests/test_harness_compare.py src/tests/test_harness_errors.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_harness_engine.py src/tests/test_harness_compare.py src/tests/test_harness_errors.py` passes
 
 **Notes:**
 

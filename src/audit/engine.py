@@ -5,12 +5,12 @@ import concurrent.futures
 import json
 import pathlib
 import subprocess
+import sys
 import time
 import typing
 
 import audit.cases
 import audit.config
-import audit.pyrun
 import audit.rdriver
 
 Json = dict[str, typing.Any]
@@ -131,6 +131,46 @@ def run_r_shard(work: pathlib.Path, i: int, fixtures_path: pathlib.Path, shard: 
     (work / f'r-{i}.json').write_text(json.dumps({'results': results}))
 
 
+def run_py_shard(work: pathlib.Path, i: int, fixtures_path: pathlib.Path, shard: list[audit.cases.Case], timeout: float) -> None:
+    """Python side of shard ``i``, run in its own process so that one dying costs a case, not the step; writes ``py-{i}.json`` as
+    ``{"results": [...]}`` in shard order."""
+    r_path = work / f'r-{i}.json'
+    r_by_id = {r['id']: r for r in json.loads(r_path.read_text())['results']}
+    log = work / f'py-{i}.log'
+    last: list[subprocess.Popen[bytes]] = []
+
+    def start(cases_path: pathlib.Path, out_path: pathlib.Path) -> subprocess.Popen[bytes]:
+        job = {'fixtures_path': str(fixtures_path), 'cases_path': str(cases_path), 'r_path': str(r_path), 'out_path': str(out_path), 'timeout': timeout}
+        job_path = work / f'py-{i}-job.json'
+        job_path.write_text(json.dumps(job))
+        proc = subprocess.Popen([sys.executable, '-m', 'audit.pyrun', str(job_path)], stdout=log.open('ab'), stderr=subprocess.STDOUT)
+        last.append(proc)
+        return proc
+
+    def dead(case_id: str, stop: Stop) -> Json:
+        if stop == 'stalled':
+            kind, detail = 'timeout', f'Python did not return within {2 * timeout + 30:.0f}s'
+        elif stop == 'memory':
+            kind, detail = 'memory', f'Python passed the memory limit of {audit.config.MEMORY_LIMIT / 1024**3:g} GiB'
+        else:
+            status = last[-1].returncode if last else None
+            kind, detail = 'process-died', f'Python process died on this case (exit status {status}); see {log}'
+        r = r_by_id.get(case_id) or {}
+        return {
+            'id': case_id,
+            'r_status': r.get('status'),
+            'py_status': 'error',
+            'r_error': r.get('error'),
+            'py_error': detail,
+            'secs_r': r.get('secs'),
+            'secs_py': None,
+            'findings': [{'kind': kind, 'path': '', 'detail': detail}],
+        }
+
+    results = run_shard(work, f'py-{i}', shard, timeout, start, dead)
+    (work / f'py-{i}.json').write_text(json.dumps({'results': results}))
+
+
 def run_cases(cases: list[audit.cases.Case], fixtures: list[Json], work: pathlib.Path, jobs: int, timeout: float) -> list[Json]:
     """Execute every case in R, then in Python against R's outcome; returns one result per case, in case order."""
     work.mkdir(parents=True, exist_ok=True)
@@ -138,20 +178,13 @@ def run_cases(cases: list[audit.cases.Case], fixtures: list[Json], work: pathlib
     fixtures_path.write_text(json.dumps(fixtures))
     n = max(1, min(jobs, len(cases)))
     shards = audit.cases.shards(cases, n)
-    case_paths = []
-    for i, shard in enumerate(shards):
-        path = work / f'cases-{i}.json'
-        audit.cases.write_cases(path, shard)
-        case_paths.append(path)
-
     with concurrent.futures.ThreadPoolExecutor(max_workers=n) as threads:
         list(threads.map(lambda i: run_r_shard(work, i, fixtures_path, shards[i], timeout), range(len(shards))))
 
-    jobs_py = [(str(fixtures_path), str(path), str(work / f'r-{i}.json'), str(work / f'py-{i}.json'), timeout) for i, path in enumerate(case_paths)]
-    with concurrent.futures.ProcessPoolExecutor(max_workers=n) as pool:
-        outs = list(pool.map(audit.pyrun.run_shard, jobs_py))
+    with concurrent.futures.ThreadPoolExecutor(max_workers=n) as threads:
+        list(threads.map(lambda i: run_py_shard(work, i, fixtures_path, shards[i], timeout), range(len(shards))))
     by_id: dict[str, Json] = {}
-    for out in outs:
-        for result in json.loads(pathlib.Path(out).read_text())['results']:
+    for i in range(len(shards)):
+        for result in json.loads((work / f'py-{i}.json').read_text())['results']:
             by_id[result['id']] = result
     return [by_id[c.id] for c in cases if c.id in by_id]

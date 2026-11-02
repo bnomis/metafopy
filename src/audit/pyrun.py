@@ -270,15 +270,6 @@ def run_stream(fixtures_path: pathlib.Path, cases_path: pathlib.Path, r_path: pa
             out.flush()
 
 
-def run_shard(job: tuple[str, str, str, str, float]) -> str:
-    """Process entry point: (fixtures.json, cases.json, r-results.json, out.json, timeout) -> out path."""
-    fixtures_path, cases_path, r_path, out_path, timeout = job
-    cases, r_by_id, env, fixture_errors = load_shard(pathlib.Path(fixtures_path), pathlib.Path(cases_path), pathlib.Path(r_path))
-    results = [case_result(case, r_by_id.get(case['id']), env, fixture_errors, timeout) for case in cases]
-    pathlib.Path(out_path).write_text(json.dumps({'results': results}))
-    return out_path
-
-
 if __name__ == '__main__':
     # The shard process: argv[1] is a job file holding run_stream's arguments (an internal entry point, not a CLI).
     job_doc = json.loads(pathlib.Path(sys.argv[1]).read_text())
