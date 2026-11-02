@@ -33,14 +33,6 @@ left here still has a hit without its marker.
   caller, so the callee's argument, support and internal errors cannot arise.
   Site: `src/metafopy/models/tables.py` (`prepare_tables`, calling `escalc`).
 
-## raises-section-drift (re-raise)
-
-- Rule: an error caught in a nested function and re-raised for one branch
-  (`if m1 == 'blue': raise`) is reported as never reaching the caller. The
-  checker should count a bare `raise` in an `except` as a raise of the
-  caught types.
-  Site: `src/metafopy/effects/fivenum.py` (`conv_fivenum`).
-
 ## lockfile-drift
 
 - Done 2026-11-01 in agents `8b43d9b`, not a request: the rule ran

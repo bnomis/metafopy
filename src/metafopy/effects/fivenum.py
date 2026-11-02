@@ -116,7 +116,6 @@ def walter_denominator(n: float) -> float:
     return float(metafopy.core.integrate.integrate(f, -math.inf, math.inf))
 
 
-# auditme: accept[raises-section-drift] the 'blue' method re-raises the EstimationError from apply_external, which the checker does not follow
 def conv_fivenum(
     min: Arg = None,
     q1: Arg = None,

@@ -513,6 +513,10 @@ def estimate(method: str, quants: FloatArray, n: float, scenario: str) -> Estima
     """The mean and SD of one study with ``method`` (``'qe'``, ``'bc'``, ``'mln'`` or ``'blue'``).
 
     ``'bc'`` and ``'mln'`` draw from the module-level generator.
+
+    Raises:
+        metafopy.errors.InputError: ``n``, the quantiles or ``scenario`` are invalid.
+        metafopy.errors.EstimationError: ``'qe'`` could fit no distribution, or ``'blue'`` met a singular covariance matrix.
     """
     if method == 'qe':
         return qe_mean_sd(quants, n, scenario)
