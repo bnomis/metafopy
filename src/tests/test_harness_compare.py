@@ -124,7 +124,10 @@ def test_printed_zero_must_have_the_same_decimals() -> None:
 
 
 def test_every_new_finding_is_rendered_in_the_report(tmp_path: pathlib.Path) -> None:
-    findings = [audit.steps.Finding('matrix', 'matrix/x/y', kind, 'p', 'd') for kind in ('default-diff', 'value-diff', 'a-kind-nobody-listed')]
+    findings = [
+        audit.steps.Finding('matrix', 'matrix/x/y', kind, 'p', 'd')
+        for kind in ('default-diff', 'value-diff', 'a-kind-nobody-listed', 'memory', 'process-died', 'r-killed')
+    ]
     ctx = audit.steps.Context(
         work=tmp_path, jobs=1, timeout=0.0, quick=False, only=None, no_ledger=True, universe=audit.universe.Universe.load(audit.universe.snapshot_path())
     )
@@ -134,6 +137,8 @@ def test_every_new_finding_is_rendered_in_the_report(tmp_path: pathlib.Path) -> 
     assert 'Different defaults (1)' in text
     assert 'Other (1)' in text
     assert 'Wrong values (1)' in text
+    assert 'Crashes (2)' in text
+    assert 'R processes killed (1)' in text
 
 
 def test_digits_number_stands_for_the_vector_of_nine() -> None:

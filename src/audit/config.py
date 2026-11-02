@@ -21,14 +21,15 @@ DRIFT_RTOL = 1e-4
 
 CASE_TIMEOUT = 120.0
 SEED = 1234
-MEMORY_LIMIT = 4 * 1024**3
+MEMORY_LIMIT = 4 * 1024**3  # bytes; also the resident size ``audit.engine.watch`` enforces on each shard process
+POLL_SECONDS = 2.0
 
 
 def limit_memory() -> None:
     """Cap the address space of this process where the platform allows it.
 
     Linux honours the cap. Windows has no ``resource`` module, and macOS 27 refuses any finite ``RLIMIT_AS`` with ``ValueError``; on both the
-    process runs uncapped, and a runaway R shard is still killed by the case timeout (``audit.engine.wait_or_kill``).
+    process runs uncapped, and ``audit.engine.watch`` still kills a shard whose resident size passes ``MEMORY_LIMIT`` or whose output stalls.
     """
     try:
         import resource

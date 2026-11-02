@@ -1,7 +1,7 @@
 # Audit shard survival
 
 **Version:** 1.0
-**Status:** approved
+**Status:** implemented
 **Date:** 2026-11-02
 
 The audit harness runs its cases in shards (slices of the case list): first

@@ -8,6 +8,7 @@ import os
 import pathlib
 import re
 import signal
+import sys
 import time
 import traceback
 import typing
@@ -165,6 +166,11 @@ def r_timed_out(error: str) -> bool:
     return 'elapsed time limit' in error or error.endswith('(timeout)')
 
 
+def r_killed(error: str) -> bool:
+    """Whether R failed because its process was killed or died (`engine.run_r_shard`), which says nothing about metafopy."""
+    return error.endswith('(killed)')
+
+
 def classify(r: Json, py: Json, value: object) -> list[Json]:
     """The findings of one case: where Python and R disagree."""
     findings: list[Json] = []
@@ -175,7 +181,9 @@ def classify(r: Json, py: Json, value: object) -> list[Json]:
     r_ok = r['status'] == 'ok'
     py_ok = py['status'] == 'ok'
     cls = py.get('error_class', '')
-    if r_ok and not py_ok:
+    if not r_ok and r_killed(r.get('error', '')):
+        add('r-killed', detail=f'R: {r["error"][:200]}')
+    elif r_ok and not py_ok:
         if cls == 'MissingFunctionError':
             add('missing-function', detail=py['error'])
         elif cls == 'MissingArgumentError':
@@ -219,40 +227,63 @@ def classify(r: Json, py: Json, value: object) -> list[Json]:
     return findings
 
 
-def run_shard(job: tuple[str, str, str, str, float]) -> str:
-    """Process entry point: (fixtures.json, cases.json, r-results.json, out.json, timeout) -> out path."""
-    fixtures_path, cases_path, r_path, out_path, timeout = job
+def case_result(case: Json, r: Json | None, env: audit.pycall.Env, fixture_errors: dict[str, str], timeout: float) -> Json:
+    """The result record of one case: Python run under the seed and classified against R's outcome ``r`` (None when R gave none)."""
+    if r is None:
+        return {'id': case['id'], 'findings': [{'kind': 'runner-error', 'path': '', 'detail': 'R produced no result'}]}
+    metafopy.set_seed(1234)
+    py, value = execute(case, env, fixture_errors, timeout)
+    try:
+        findings = classify(r, py, value)
+    except Exception as e:  # auditme: accept[silent-broad-except] a comparison that fails is the harness's fault, never silently a match
+        # auditme: accept[except-interpolation] the message is the finding's detail, shown to the operator
+        findings = [{'kind': 'runner-error', 'path': '', 'detail': f'{type(e).__name__}: {e}'}]
+    return {
+        'id': case['id'],
+        'r_status': r['status'],
+        'py_status': py['status'],
+        'r_error': r.get('error'),
+        'py_error': py.get('error'),
+        'secs_r': r.get('secs'),
+        'secs_py': py.get('secs'),
+        'findings': findings,
+    }
+
+
+def load_shard(
+    fixtures_path: pathlib.Path, cases_path: pathlib.Path, r_path: pathlib.Path
+) -> tuple[list[Json], dict[str, Json], audit.pycall.Env, dict[str, str]]:
+    """Cap memory, then read the shard's cases and R's results and build the fixtures: (cases, R results by id, env, fixture errors)."""
     audit.config.limit_memory()
-    fixtures = json.loads(pathlib.Path(fixtures_path).read_text())
-    cases = json.loads(pathlib.Path(cases_path).read_text())
-    r_doc = json.loads(pathlib.Path(r_path).read_text())
+    fixtures = json.loads(fixtures_path.read_text())
+    cases = json.loads(cases_path.read_text())
+    r_doc = json.loads(r_path.read_text())
     r_by_id = {r['id']: r for r in r_doc['results']}
     metafopy.set_seed(1234)
     env, fixture_errors = build_env(fixtures)
-    results = []
-    for case in cases:
-        r = r_by_id.get(case['id'])
-        if r is None:
-            results.append({'id': case['id'], 'findings': [{'kind': 'runner-error', 'path': '', 'detail': 'R produced no result'}]})
-            continue
-        metafopy.set_seed(1234)
-        py, value = execute(case, env, fixture_errors, timeout)
-        try:
-            findings = classify(r, py, value)
-        except Exception as e:  # auditme: accept[silent-broad-except] a comparison that fails is the harness's fault, never silently a match
-            # auditme: accept[except-interpolation] the message is the finding's detail, shown to the operator
-            findings = [{'kind': 'runner-error', 'path': '', 'detail': f'{type(e).__name__}: {e}'}]
-        results.append(
-            {
-                'id': case['id'],
-                'r_status': r['status'],
-                'py_status': py['status'],
-                'r_error': r.get('error'),
-                'py_error': py.get('error'),
-                'secs_r': r.get('secs'),
-                'secs_py': py.get('secs'),
-                'findings': findings,
-            }
-        )
-    pathlib.Path(out_path).write_text(json.dumps({'results': results}))
-    return out_path
+    return cases, r_by_id, env, fixture_errors
+
+
+def run_stream(fixtures_path: pathlib.Path, cases_path: pathlib.Path, r_path: pathlib.Path, out_path: pathlib.Path, timeout: float) -> None:
+    """Run the cases in ``cases_path`` and append to ``out_path`` a ``{"start": id}`` line before each case and its result line after it,
+    flushed each time, as ``runcases.R`` does."""
+    cases, r_by_id, env, fixture_errors = load_shard(fixtures_path, cases_path, r_path)
+    with out_path.open('a') as out:
+        for case in cases:
+            out.write(json.dumps({'start': case['id']}) + '\n')
+            out.flush()
+            result = case_result(case, r_by_id.get(case['id']), env, fixture_errors, timeout)
+            out.write(json.dumps(result) + '\n')
+            out.flush()
+
+
+if __name__ == '__main__':
+    # The shard process: argv[1] is a job file holding run_stream's arguments (an internal entry point, not a CLI).
+    job_doc = json.loads(pathlib.Path(sys.argv[1]).read_text())
+    run_stream(
+        pathlib.Path(job_doc['fixtures_path']),
+        pathlib.Path(job_doc['cases_path']),
+        pathlib.Path(job_doc['r_path']),
+        pathlib.Path(job_doc['out_path']),
+        job_doc['timeout'],
+    )

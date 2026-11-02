@@ -67,3 +67,13 @@ def test_r_shard_that_stops_answering_is_a_timeout() -> None:
     py = {'status': 'ok', 'warnings': []}
     # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert [f['kind'] for f in audit.pyrun.classify(r, py, pandas.DataFrame())] == ['timeout']
+
+
+def test_r_process_killed_is_not_accepted_where_r_refuses() -> None:
+    r = {'status': 'error', 'error': 'R process died on this case (killed)'}
+    ok = {'status': 'ok', 'warnings': []}
+    failed = {'status': 'error', 'error_class': 'ValueError', 'error': 'x', 'warnings': []}
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
+    assert [f['kind'] for f in audit.pyrun.classify(r, ok, pandas.DataFrame())] == ['r-killed']
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
+    assert [f['kind'] for f in audit.pyrun.classify(r, failed, pandas.DataFrame())] == ['r-killed']

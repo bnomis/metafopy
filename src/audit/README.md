@@ -129,3 +129,10 @@ An R shard that stops answering is killed and its case is reported as `timeout` 
 *Timeouts* section of the report. Whether a slow case passes the limit depends on the machine and on the other shards, so its ledger entry carries
 `load_dependent = true`, records how long the call takes in R on its own and what R returns outside the harness, and is not reported as stale in a run
 where the case finished.
+
+### Shards that die or pass the memory limit
+
+A Python shard that dies, or grows past the memory limit, is restarted after the case it was running; that case is reported as `process-died` or `memory`
+(the detail names the exit status or the limit) in the *Crashes* section, and every case after it still gets a result. An R shard that dies or passes the
+limit is restarted the same way, and its case is reported as `r-killed` in the *R processes killed* section: R's death says nothing about metafopy, so it
+is never filed as metafopy accepting what R refuses.
