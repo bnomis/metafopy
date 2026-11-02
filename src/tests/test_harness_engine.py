@@ -1,5 +1,6 @@
 """The runner of the audit harness (``src/audit/engine.py``): a case that never returns must not stop an audit."""
 
+import dataclasses
 import json
 import os
 import pathlib
@@ -55,9 +56,10 @@ def test_resident_bytes_of_this_process_is_positive_and_of_a_finished_one_none()
 def test_the_case_running_when_r_stopped_is_the_one_reported(tmp_path: pathlib.Path) -> None:
     path = tmp_path / 'r.jsonl'
     path.write_text('{"start": "a"}\n{"id": "a", "status": "ok"}\n{"start": "b"}\n')
-    done, running = audit.engine.read_outcomes(path)
+    done, running, parts = audit.engine.read_outcomes(path)
     assert set(done) == {'a'}
     assert running == 'b'
+    assert parts == []
 
 
 def test_a_process_starts_where_the_platform_refuses_the_memory_cap(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -108,10 +110,10 @@ def run_stand_in(tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch, die: s
         starts.append(1)
         return subprocess.Popen([sys.executable, '-c', STAND_IN, str(cases_path), str(out_path), die])
 
-    def dead(case_id: str, stop: audit.engine.Stop) -> audit.engine.Json:
+    def dead(case_id: str, stop: audit.engine.Stop, parts: list[audit.engine.Json]) -> audit.engine.Json:
         return {'id': case_id, 'status': 'dead', 'stop': stop}
 
-    return audit.engine.run_shard(tmp_path, 'p', shard, 1.0, start, dead), starts
+    return audit.engine.run_shard(tmp_path, 'p', shard, 1.0, start, dead, audit.cases.write_cases), starts
 
 
 def test_a_shard_whose_process_dies_midway_returns_every_case(tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -151,7 +153,8 @@ def test_a_python_shard_process_streams_a_start_line_before_each_result(tmp_path
     assert [line.get('start', line.get('id')) for line in lines] == [first, first, second, second]
     assert 'start' in lines[0]
     assert 'start' not in lines[1]
-    done, running = audit.engine.read_outcomes(tmp_path / 'out.jsonl')
+    done, running, parts = audit.engine.read_outcomes(tmp_path / 'out.jsonl')
+    assert parts == []
     assert sorted(done) == [first, second]
     assert running is None
 
@@ -197,3 +200,65 @@ def test_run_cases_returns_a_result_for_every_case_when_a_python_process_dies(tm
     assert results[1]['findings'][0]['kind'] == 'process-died'
     assert 'exit status 3' in results[1]['findings'][0]['detail']
     assert 'process-died' not in [f['kind'] for f in results[0]['findings']]
+
+
+def test_part_lines_are_gathered_for_a_finished_item_and_returned_for_the_running_one(tmp_path: pathlib.Path) -> None:
+    path = tmp_path / 'out.jsonl'
+    lines = [
+        {'start': 'a'},
+        {'part': 'a', 'unit': 1},
+        {'part': 'a', 'unit': 2},
+        {'id': 'a', 'status': 'ok'},
+        {'start': 'b'},
+        {'id': 'b', 'status': 'ok'},
+        {'start': 'd'},
+        {'part': 'd', 'unit': 1},
+        {'part': 'd', 'unit': 2},
+        {'noise': True},
+    ]
+    path.write_text('\n'.join(json.dumps(line) for line in lines) + '\n')
+    done, running, parts = audit.engine.read_outcomes(path)
+    assert done['a']['parts'] == [{'part': 'a', 'unit': 1}, {'part': 'a', 'unit': 2}]
+    assert 'parts' not in done['b']
+    assert running == 'd'
+    assert parts == [{'part': 'd', 'unit': 1}, {'part': 'd', 'unit': 2}]
+
+
+PARTS_STAND_IN = """
+import json, os, sys
+items, out = sys.argv[1:3]
+with open(out, 'a') as f:
+    for item in json.load(open(items)):
+        f.write(json.dumps({'start': item}) + '\\n')
+        if item == 'b':
+            for n in (1, 2):
+                f.write(json.dumps({'part': item, 'unit': n}) + '\\n')
+            f.flush()
+            os._exit(1)
+        f.write(json.dumps({'id': item, 'status': 'ok'}) + '\\n')
+        f.flush()
+"""
+
+
+@dataclasses.dataclass(frozen=True)
+class Plain:
+    id: str
+
+
+def test_run_shard_drives_plain_items_and_gives_dead_the_parts_of_the_running_one(tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(audit.config, 'POLL_SECONDS', 0.05)
+    seen: list[list[audit.engine.Json]] = []
+
+    def write(path: pathlib.Path, items: list[Plain]) -> None:
+        path.write_text(json.dumps([item.id for item in items]))
+
+    def start(items_path: pathlib.Path, out_path: pathlib.Path) -> subprocess.Popen[bytes]:
+        return subprocess.Popen([sys.executable, '-c', PARTS_STAND_IN, str(items_path), str(out_path)])
+
+    def dead(item_id: str, stop: audit.engine.Stop, parts: list[audit.engine.Json]) -> audit.engine.Json:
+        seen.append(parts)
+        return {'id': item_id, 'status': 'dead', 'parts': parts}
+
+    results = audit.engine.run_shard(tmp_path, 'p', [Plain(name) for name in 'abc'], 1.0, start, dead, write)
+    assert ''.join(r['id'] + r['status'][0] for r in results) == 'aobdco'
+    assert seen == [[{'part': 'b', 'unit': 1}, {'part': 'b', 'unit': 2}]]

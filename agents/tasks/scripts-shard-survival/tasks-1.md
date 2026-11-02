@@ -57,7 +57,7 @@ checkout (checked 2026-11-02).
 
 ## Task 2: Part lines and any item in the shared loop
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** API (`Item`, `read_outcomes`, `run_shard`), Implementation - Shared loop
@@ -67,26 +67,26 @@ changing any result of the cases path.
 
 **Subtasks:**
 
-- [ ] Add the `Item` protocol to `src/audit/engine.py`
-- [ ] Make `read_outcomes` return `(done, running, running_parts)`: a `{"part": id, ...}` line is appended to that item's parts; a finished item's
+- [x] Add the `Item` protocol to `src/audit/engine.py`
+- [x] Make `read_outcomes` return `(done, running, running_parts)`: a `{"part": id, ...}` line is appended to that item's parts; a finished item's
       record gets `"parts"` only when it has any; a line with none of `start`, `part`, `id` is skipped
-- [ ] Give `run_shard` the type parameter `T: Item`, the `write` argument in place of `audit.cases.write_cases`, and pass the running item's parts as
+- [x] Give `run_shard` the type parameter `T: Item`, the `write` argument in place of `audit.cases.write_cases`, and pass the running item's parts as
       `dead`'s third argument
-- [ ] Update `run_r_shard` and `run_py_shard` (the cases path) to pass `audit.cases.write_cases` and to take and ignore the parts
-- [ ] Tests in `src/tests/test_harness_engine.py`: part lines gathered for a finished item and returned for the running one; `run_shard` over plain
+- [x] Update `run_r_shard` and `run_py_shard` (the cases path) to pass `audit.cases.write_cases` and to take and ignore the parts
+- [x] Tests in `src/tests/test_harness_engine.py`: part lines gathered for a finished item and returned for the running one; `run_shard` over plain
       dataclass items with its own `write`, where a `python -c` stand-in writes two parts of its second item and exits 1, passes those two parts to
       `dead` and finishes the other items
 
 **Acceptance Criteria:**
 
-- [ ] Every existing test in `src/tests/test_harness_engine.py` passes unchanged, apart from call sites of `read_outcomes` updated for its third value
-- [ ] A finished case's record has no `parts` key, so `r-N.json` and `py-N.json` of the cases path keep their shape
+- [x] Every existing test in `src/tests/test_harness_engine.py` passes unchanged, apart from call sites of `read_outcomes` updated for its third value
+- [x] A finished case's record has no `parts` key, so `r-N.json` and `py-N.json` of the cases path keep their shape
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_harness_engine.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_harness_engine.py` passes
 
 **Notes:**
 
