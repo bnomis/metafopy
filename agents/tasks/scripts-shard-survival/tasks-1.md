@@ -148,7 +148,7 @@ rest of one script, not the shard.
 
 ## Task 4: Stream the Python side of a scripts shard
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** API (`stream_scripts`, `python -m audit.scripts`), Implementation - The Python side
@@ -158,25 +158,25 @@ metafopy.
 
 **Subtasks:**
 
-- [ ] Turn `run_script` into a generator of per-unit `(findings, tally)`, keeping every finding and tally entry it gives today
-- [ ] In it, give a unit whose R error satisfies `audit.pyrun.r_killed` an `r-killed` finding with R's error as detail, without translating it;
+- [x] Turn `run_script` into a generator of per-unit `(findings, tally)`, keeping every finding and tally entry it gives today
+- [x] In it, give a unit whose R error satisfies `audit.pyrun.r_killed` an `r-killed` finding with R's error as detail, without translating it;
       count a dead unit with the `(timeout)` stall reason as `R failed (skipped)`; count `not run: R process died partway through the script` once
       for a script with `"lost": true`
-- [ ] Add `stream_scripts(r_path, scripts_path, out_path, nse, timeout)`: `limit_memory`, the metafor function names, seed 1234 before each unit,
+- [x] Add `stream_scripts(r_path, scripts_path, out_path, nse, timeout)`: `limit_memory`, the metafor function names, seed 1234 before each unit,
       start / part / closing lines flushed each time
-- [ ] Add `python -m audit.scripts <job.json>`, reading `sys.argv` directly (an internal entry point, not a CLI)
-- [ ] Tests in `src/tests/test_harness_scripts.py`: a lost script record gives `r-killed` at the dead unit and one `not run` tally; `stream_scripts`
+- [x] Add `python -m audit.scripts <job.json>`, reading `sys.argv` directly (an internal entry point, not a CLI)
+- [x] Tests in `src/tests/test_harness_scripts.py`: a lost script record gives `r-killed` at the dead unit and one `not run` tally; `stream_scripts`
       run as a subprocess on a stub `r-0.json` of two tiny scripts writes lines that `read_outcomes` reads back with no running item
 
 **Acceptance Criteria:**
 
-- [ ] Summing the part lines of a script gives the same findings and tally as today's `run_script` on the same R records (test it on a stub)
+- [x] Summing the part lines of a script gives the same findings and tally as today's `run_script` on the same R records (test it on a stub)
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_harness_scripts.py src/tests/test_harness_transpile.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_harness_scripts.py src/tests/test_harness_transpile.py` passes
 
 **Notes:**
 

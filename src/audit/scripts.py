@@ -5,6 +5,7 @@ it, and the values are compared exactly as in the other steps. Expressions that 
 """
 
 import collections
+import collections.abc
 import concurrent.futures
 import dataclasses
 import functools
@@ -14,6 +15,7 @@ import math
 import pathlib
 import re
 import subprocess
+import sys
 import tarfile
 import typing
 import urllib.request
@@ -93,17 +95,32 @@ def namespace(env: audit.rlib.Env) -> dict[str, object]:
     }
 
 
-def run_script(script: Json, nse: set[str], timeout: float) -> tuple[list[Json], collections.Counter[str]]:
+R_STALL = re.compile(r'^R did not return within \d+s \(timeout\)$')
+
+
+def run_script(script: Json, nse: set[str], timeout: float) -> collections.abc.Iterator[tuple[list[Json], collections.Counter[str]]]:
+    """Run the units of one script and yield each unit's findings and tally. A lost script (R died in it) ends with its dead unit, which is
+    reported as ``r-killed`` (or counted as an R failure for a stall) and not translated, and the script's remainder is counted once."""
     env = audit.rlib.Env()
     audit.rlib.SETTINGS.clear()
     ns = namespace(env)
     assigned: set[str] = set()
     stale: set[str] = set()
-    findings: list[Json] = []
-    tally: collections.Counter[str] = collections.Counter()
-    for i, unit in enumerate(script['units']):
+    units = script['units']
+    for i, unit in enumerate(units):
         case_id = f'scripts/{script["topic"]}/{script["kind"]}/{i}'
+        findings: list[Json] = []
+        tally: collections.Counter[str] = collections.Counter()
         tally['units'] += 1
+        if script.get('lost') and i == len(units) - 1:
+            error = unit.get('error', '')
+            if audit.pyrun.r_killed(error):
+                findings.append({'id': case_id, 'kind': 'r-killed', 'path': '', 'detail': f'R: {error[:200]}'})
+            elif R_STALL.match(error):
+                tally['R failed (skipped)'] += 1
+            tally['not run: R process died partway through the script'] += 1
+            yield findings, tally
+            continue
         metafopy.set_seed(1234)
         targets = audit.transpile.assignment_targets(unit['ast'])
         try:
@@ -112,11 +129,13 @@ def run_script(script: Json, nse: set[str], timeout: float) -> tuple[list[Json],
             # auditme: accept[except-interpolation] the exception message is the tally key that the report lists as coverage
             tally[f'untranslated: {e}'] += 1
             stale |= targets
+            yield findings, tally
             continue
         if audit.transpile.symbols(unit['ast']) & stale:
             # it reads a variable that an earlier unit changed in R but not in Python (a unit that could not be translated or that failed)
             tally['skipped: reads a variable that differs between R and Python'] += 1
             stale |= targets
+            yield findings, tally
             continue
         stale -= targets
         py, value = audit.pyrun.run_guarded(functools.partial(eval, code, ns), timeout)
@@ -127,16 +146,37 @@ def run_script(script: Json, nse: set[str], timeout: float) -> tuple[list[Json],
             tally['R failed (skipped)'] += 1
             if not ENVIRONMENT_ERRORS.search(unit.get('error', '')):
                 tally[f'R error: {unit.get("error", "")[:60]}'] += 1
+            yield findings, tally
             continue
         cls = py.get('error_class', '')
         if cls == 'UnsupportedError':
             tally[f'unsupported: {py["error"][:70]}'] += 1
+            yield findings, tally
             continue
         tally['compared'] += 1
         for f in audit.pyrun.classify(unit, py, value):
             snippet = unit['src'].replace('\n', ' ')[:90]
             findings.append({'id': case_id, 'kind': f['kind'], 'path': f['path'], 'detail': f'{f["detail"]} [{snippet}]'.strip()})
-    return findings, tally
+        yield findings, tally
+
+
+def stream_scripts(r_path: pathlib.Path, scripts_path: pathlib.Path, out_path: pathlib.Path, nse: list[str], timeout: float) -> None:
+    """Run the scripts in ``scripts_path`` against R's records in ``r_path``, appending to ``out_path`` a ``{"start": id}`` line before each script,
+    one ``{"part": id, "findings": [...], "tally": {...}}`` line per unit and a closing ``{"id": id}`` line, flushed each time."""
+    audit.config.limit_memory()
+    by_id = {s['id']: s for s in json.loads(r_path.read_text())['scripts']}
+    wanted = [entry['id'] for entry in json.loads(scripts_path.read_text())]
+    with out_path.open('a') as out:
+
+        def write(doc: Json) -> None:
+            out.write(json.dumps(doc) + '\n')
+            out.flush()
+
+        for script_id in wanted:
+            write({'start': script_id})
+            for findings, tally in run_script(by_id[script_id], set(nse), timeout):
+                write({'part': script_id, 'findings': findings, 'tally': tally})
+            write({'id': script_id})
 
 
 def run_shard(job: tuple[str, str, list[str], float]) -> str:
@@ -148,9 +188,9 @@ def run_shard(job: tuple[str, str, list[str], float]) -> str:
     findings: list[Json] = []
     tally: collections.Counter[str] = collections.Counter()
     for script in doc['scripts']:
-        f, t = run_script(script, set(nse_names), timeout)
-        findings += f
-        tally.update(t)
+        for f, t in run_script(script, set(nse_names), timeout):
+            findings += f
+            tally.update(t)
     pathlib.Path(out_path).write_text(json.dumps({'findings': findings, 'tally': tally}))
     return out_path
 
@@ -236,3 +276,16 @@ def run(
         findings += doc['findings']
         tally.update(doc['tally'])
     return findings, tally
+
+
+if __name__ == '__main__':
+    # The shard process: argv[1] is a job file holding stream_scripts's arguments and the metafor function names (an internal entry point, not a CLI).
+    job_doc = json.loads(pathlib.Path(sys.argv[1]).read_text())
+    audit.rlib.METAFOR_FUNCTIONS.update(job_doc['functions'])
+    stream_scripts(
+        pathlib.Path(job_doc['r_path']),
+        pathlib.Path(job_doc['scripts_path']),
+        pathlib.Path(job_doc['out_path']),
+        job_doc['nse'],
+        job_doc['timeout'],
+    )
