@@ -141,3 +141,24 @@ and making a lost worker a reported finding for its shard rather than the end
 of the step.
 
 Done: 2026-11-02 - the cause was `permutest(exact=True)` on fits with moderators, which allocated arrays for every permutation (13! for `uni_mods_year`) and built them all as a list. `metafopy.methods.permutest.permutation_arrays` now refuses arrays over 16 GB with R's "Number of iterations requested too large.", and `multiset_perms` yields one permutation at a time; tests in `src/tests/test_permutest_vif_plots.py` and `src/tests/test_permutest_ls_plots.py`. The rerun `bin/metafor-audit.sh --steps options` (`.audit/runs/20261102-061046`) completed: 20029 cases, 16758 findings, and every exact permutest case has R's outcome. Hardening the harness against a lost worker is filed in `TODO.md`.
+
+## A Python audit worker that dies stops the whole audit step
+
+Found on 2026-11-02 while fixing the lost worker in `options` (see `DONE.md`):
+`audit.engine.run_cases` runs the Python side of the shards in a
+`ProcessPoolExecutor`, so one worker killed by the system (out of memory, a
+crash in compiled code) raises `BrokenProcessPool` and ends the step, and no
+shard writes its results. On macOS 27 the Python workers run without a memory
+cap, because `setrlimit(RLIMIT_AS)` is refused there, so any case that grows
+without bound kills its worker instead of raising `MemoryError`. The case
+that did so (`permutest(exact=True)`) is fixed; nothing stops the next one.
+
+Fix direction: watch each Python worker's resident size between cases, or
+from a thread, and record a case that passes a limit as an error; and make
+`run_cases` record a dead worker's current case as a finding for its shard,
+then carry on with the rest of that shard, as the R side already does
+(`r-N-attempt1.jsonl`).
+
+Spec: agents/specs/audit-shard-survival/spec.md; tasks: agents/tasks/audit-shard-survival/tasks-1.md.
+
+Done: 2026-11-02 - agents/specs/audit-shard-survival/spec.md, agents/tasks/audit-shard-survival/tasks-1.md.

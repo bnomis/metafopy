@@ -186,7 +186,7 @@ that imports a changed `audit` module.
 
 ## Task 6: Check the whole change and close the spec
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Spec Reference:** whole spec
@@ -195,24 +195,26 @@ that imports a changed `audit` module.
 
 **Subtasks:**
 
-- [ ] Run `bin/metafor-audit.sh --steps options` in the background and confirm it completes, with every case given a result; compare its cause list with `.audit/runs/20261102-061046/wrong-or-missing.md` and explain any cause that appeared or vanished
-- [ ] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` to "Implemented: ..."
-- [ ] Move the `TODO.md` item "A Python audit worker that dies stops the whole audit step" to the end of `DONE.md`: append its heading and body unchanged, then `Done: <date> - agents/specs/audit-shard-survival/spec.md, agents/tasks/audit-shard-survival/tasks-1.md.`, and remove it from `TODO.md`
-- [ ] Run `python3 ~/.claude/skills/todo-review/verify_bodies.py <baseline> TODO.md DONE.md`, where the baseline is `TODO.md` at the commit that added this task list (`git show $(git log --diff-filter=A --format=%H -- agents/tasks/audit-shard-survival/tasks-1.md):TODO.md`)
+- [x] Run `bin/metafor-audit.sh --steps options` in the background and confirm it completes, with every case given a result; compare its cause list with `.audit/runs/20261102-061046/wrong-or-missing.md` and explain any cause that appeared or vanished
+- [x] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` to "Implemented: ..."
+- [x] Move the `TODO.md` item "A Python audit worker that dies stops the whole audit step" to the end of `DONE.md`: append its heading and body unchanged, then `Done: <date> - agents/specs/audit-shard-survival/spec.md, agents/tasks/audit-shard-survival/tasks-1.md.`, and remove it from `TODO.md`
+- [x] Run `python3 ~/.claude/skills/todo-review/verify_bodies.py <baseline> TODO.md DONE.md`, where the baseline is `TODO.md` at the commit that added this task list (`git show $(git log --diff-filter=A --format=%H -- agents/tasks/audit-shard-survival/tasks-1.md):TODO.md`)
 
 **Acceptance Criteria:**
 
-- [ ] The real `options` step completes, and the comparison with the earlier run is explained
-- [ ] `verify_bodies.py` exits 0
+- [x] The real `options` step completes, and the comparison with the earlier run is explained
+- [x] `verify_bodies.py` exits 0
 
 **Definition of Done:**
 
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_harness_engine.py src/tests/test_harness_compare.py src/tests/test_harness_errors.py src/tests/test_harness_transpile.py src/tests/test_audit10_fixes.py` passes (every test file that imports a changed `audit` module)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_harness_engine.py src/tests/test_harness_compare.py src/tests/test_harness_errors.py src/tests/test_harness_transpile.py src/tests/test_audit10_fixes.py` passes (every test file that imports a changed `audit` module)
 
 **Notes:**
 
 - Depends on Tasks 1 to 5
 - The `options` step takes a long time; do not change files it reads while it runs
+- Real run on 2026-11-02 (`.audit/runs/20261102-143634`, metafopy `72d295d`): the `options` step completed, 20029 cases, every one with a result. Against `.audit/runs/20261102-061046`: no cause vanished. Two appeared. "R processes killed: R passed the memory limit of 4 GiB" (2 `permutest` cases, `exact=true` on `uni_mods` and `ls_bcg`) is the section Task 5 added; the earlier run had no finding for those cases, as R failed on them and Python refused them, so the two agreed. "R: creation of server socket failed: port 11628 cannot be opened" (1 `gosh` case, `ncpus=2`) is a port clash in R's `gosh` cluster during this run, not a result of this change; it is why the `gosh` counts are one lower. Total findings 16751 against 16758.
+- The worktree had no `.venv` or `.audit/Rlib`: the run used `uv sync --frozen --all-extras` and `METAFOPY_AUDIT_RLIB` pointing at the main checkout's library.
