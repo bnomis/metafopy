@@ -187,3 +187,25 @@ Note 2026-11-02: the shard survival spec shipped (merged at `eadb479`);
 Spec: agents/specs/scripts-shard-survival/spec.md; tasks: agents/tasks/scripts-shard-survival/tasks-1.md.
 
 Done: 2026-11-02 - agents/specs/scripts-shard-survival/spec.md, agents/tasks/scripts-shard-survival/tasks-1.md.
+
+## Remove the auditme accept markers once the shared rules stop the false positives
+
+Found on 2026-11-01 while clearing the auditme hits
+(`agents/specs/auditme-clean/spec.md`): some hits were the rules getting the
+code wrong, not the code. Each site is accepted with a marker and listed by
+rule in `agents/specs/auditme-clean/requests.md`.
+
+Cause: the shared auditme rules decide from the shape of a call or a
+`raise` alone; the fix is in the agents repository, filed in its `TODO.md` as
+"auditme rules report hits the code does not have".
+
+Fix direction: once that item ships, bump the agents rev in
+`.pre-commit-config.yaml`, remove each marker listed in `requests.md` that
+the new rules no longer need, and delete its entry there.
+
+Note 2026-11-02: the agents item shipped on 2026-11-01 (its `DONE.md`,
+`agents/specs/auditme-false-positives/spec.md`), merged on its `origin/main`
+at `827a373`. `.pre-commit-config.yaml` still pins `8b43d9b`, which predates
+it, so this item can start.
+
+Done: 2026-11-02 - `.pre-commit-config.yaml` pins agents `49dab9d`; the 12 markers its rules no longer need (every `passthrough-shim`, `missing-raises-section` and RUF022 `__all__` marker, and the `raises-section-drift` markers of `coef_summary` and `llplot`) are removed, and `agents/specs/auditme-clean/requests.md` keeps only the requests whose sites still hit; `pre-commit run auditme-all --hook-stage manual --all-files` passes.

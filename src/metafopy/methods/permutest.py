@@ -514,7 +514,6 @@ def pvalues(x: metafopy.models.rma_uni.RMAResult, zval_perm: FloatArray, beta_pe
     return numpy.where(pval > 1, 1.0, pval)
 
 
-# auditme: accept[missing-raises-section] a failed refit raises InputError (a ValueError), caught by the root search below
 def permci_bound(
     x: metafopy.models.rma_uni.RMAResult,
     j: int,

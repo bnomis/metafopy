@@ -5,26 +5,6 @@ Open work only, in implementation order, nearest first. Finished items move to
 the shape of an item.
 
 
-## Remove the auditme accept markers once the shared rules stop the false positives
-
-Found on 2026-11-01 while clearing the auditme hits
-(`agents/specs/auditme-clean/spec.md`): some hits were the rules getting the
-code wrong, not the code. Each site is accepted with a marker and listed by
-rule in `agents/specs/auditme-clean/requests.md`.
-
-Cause: the shared auditme rules decide from the shape of a call or a
-`raise` alone; the fix is in the agents repository, filed in its `TODO.md` as
-"auditme rules report hits the code does not have".
-
-Fix direction: once that item ships, bump the agents rev in
-`.pre-commit-config.yaml`, remove each marker listed in `requests.md` that
-the new rules no longer need, and delete its entry there.
-
-Note 2026-11-02: the agents item shipped on 2026-11-01 (its `DONE.md`,
-`agents/specs/auditme-false-positives/spec.md`), merged on its `origin/main`
-at `827a373`. `.pre-commit-config.yaml` still pins `8b43d9b`, which predates
-it, so this item can start.
-
 ## Run the metafor audit to find the next gaps against R metafor
 
 Found on 2026-11-01: `TODO.md` held no open port work, and this checkout

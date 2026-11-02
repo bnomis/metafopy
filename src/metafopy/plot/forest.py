@@ -322,7 +322,6 @@ def default_mlab(method: str) -> str:
     return {'FE': 'Fixed-Effect Model', 'EE': 'Equal-Effects Model', 'CE': 'Common-Effect Model'}.get(method, 'Random-Effects Model')
 
 
-# auditme: accept[passthrough-shim] sets the family and font of ``fonts``, with ``bold`` as the explicit font=2 of metafor
 def ftxt(ax: matplotlib.axes.Axes, x: float, y: float, s: str, fnt: metafopy.plot.draw.Font, *, bold: bool = False, **kw: typing.Any) -> matplotlib.text.Text:
     """``text()`` in the font ``(family, font)`` of ``fonts``; ``bold=True`` is an explicit ``font=2``, which wins over the font in ``fnt``."""
     return metafopy.plot.draw.txt(ax, x, y, s, family=fnt[0], font=2 if bold else fnt[1], **kw)

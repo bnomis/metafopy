@@ -13,7 +13,6 @@ import numpy.typing
 
 import metafopy.errors
 
-# auditme: accept[non-alphabetical-literal] ruff RUF022 requires constants, then classes, then functions
 __all__ = ['METHODS', 'ContrastSet', 'build_contrasts']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]

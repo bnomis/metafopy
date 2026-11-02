@@ -273,7 +273,6 @@ def blup_fits(dat: pandas.DataFrame) -> dict[str, typing.Any]:
 
 
 @pytest.fixture(scope='module')
-# auditme: accept[passthrough-shim] a pytest fixture, requested by name; the wrapper builds the object once per test
 def blup_models(dat: pandas.DataFrame) -> dict[str, typing.Any]:
     return blup_fits(dat)
 

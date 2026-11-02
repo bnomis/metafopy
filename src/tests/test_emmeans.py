@@ -26,7 +26,6 @@ def res(dat: pandas.DataFrame) -> metafopy.RMAResult:
 
 
 @pytest.fixture(scope='module')
-# auditme: accept[passthrough-shim] a pytest fixture, requested by name; the wrapper builds the object once per test
 def grid(res: metafopy.RMAResult) -> metafopy.EmmGrid:
     return metafopy.emmprep(res)
 

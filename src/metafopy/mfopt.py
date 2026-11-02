@@ -163,7 +163,6 @@ def digit_map_of(digits: typing.Any, stored: typing.Any = 4) -> dict[str, int] |
     return None if len(set(by_kind.values())) == 1 else by_kind
 
 
-# auditme: accept[passthrough-shim] not a pass-through: it computes the digits and digit_map fields that it passes to dataclasses.replace
 def with_digits[R](result: R, digits: typing.Any, stored: typing.Any) -> R:
     """A copy of a result dataclass with the ``digits`` and ``digit_map`` of a printout made with ``digits``."""
     return dataclasses.replace(result, digits=option_digits(digits, stored), digit_map=digit_map_of(digits, stored))  # type: ignore[type-var]

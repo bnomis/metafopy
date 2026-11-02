@@ -62,7 +62,6 @@ def r_rank(x: FloatArray) -> numpy.typing.NDArray[numpy.intp]:
     return numpy.asarray(scipy.stats.rankdata(x, method='average'), dtype=float).astype(numpy.intp) - 1
 
 
-# auditme: accept[raises-section-drift] measure='OR' is fixed here, so escalc's NotSupportedError and InternalError never arise
 def llplot(
     measure: str = 'GEN',
     yi: Column | None = None,

@@ -288,7 +288,6 @@ def perm(meta: metafopy.RMAResult) -> metafopy.methods.permutest.PermutestResult
 
 
 @pytest.fixture(scope='module')
-# auditme: accept[passthrough-shim] a pytest fixture, requested by name; the wrapper builds the object once per test
 def vifs(meta: metafopy.RMAResult) -> metafopy.methods.vif.VIFResult:
     return metafopy.vif(meta, btt=1, sim=30, progbar=False, seed=1)
 

@@ -19,7 +19,6 @@ import metafopy.models.mv_result
 import metafopy.models.rma_uni
 import metafopy.plot.rutils
 
-# auditme: accept[non-alphabetical-literal] ruff RUF022 requires constants, then classes, then functions
 __all__ = ['POOLED_COLUMNS', 'STUDY_COLUMNS', 'ChartData', 'chart_data', 'check_chart_data', 'zcrit']
 
 type Fit = metafopy.models.rma_uni.RMAResult | metafopy.models.mv_result.RMAMVResult

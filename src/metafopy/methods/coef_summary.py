@@ -80,7 +80,6 @@ def coef_summary(object: typing.Any, type: metafopy.models.fit_methods.CoefType)
 def coef_summary(object: typing.Any, type: None = None) -> pandas.DataFrame | dict[str, pandas.DataFrame]: ...
 
 
-# auditme: accept[raises-section-drift] check_class is called without notav, so its NotSupportedError never arises
 def coef_summary(object: typing.Any, type: metafopy.models.fit_methods.CoefType | None = None) -> pandas.DataFrame | dict[str, pandas.DataFrame]:
     """The coefficient table of a fitted model as a data frame, as metafor's ``coef(summary(res))``.
 

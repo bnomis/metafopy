@@ -251,7 +251,6 @@ def round_lambda(lam: float) -> float:
     return 0.0 if abs(lam) < 1e-8 else max(0.0, lam)
 
 
-# auditme: accept[missing-raises-section] the EstimationError of the objective is caught inside the call and becomes the None result
 def lbfgsb(
     fn: collections.abc.Callable[[FloatArray], float],
     start: collections.abc.Sequence[float],

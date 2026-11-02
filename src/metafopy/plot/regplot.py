@@ -641,7 +641,6 @@ def points_regplot(x: RegplotResult, ax: matplotlib.axes.Axes | None = None) -> 
         draw_labels(axx, x.xi, x.yi, x.pred, x.psize, x.label, x.slab, x.offset, x.labsize)
 
 
-# auditme: accept[passthrough-shim] dash computes both arguments (the name is also the default), so it is not a pass-through of its parameters
 def dash(name: str) -> typing.Any:
     """The matplotlib line style of an R line type name, or the name itself when it is already a style."""
     return metafopy.plot.draw.LTY.get(name, name)
