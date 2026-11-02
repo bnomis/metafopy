@@ -36,6 +36,14 @@ Fix direction: run `bin/metafor-audit.sh` in the background, then file each
 cause in its `wrong-or-missing.md` here with `/todo-add`. Run
 `bin/metafor-audit.sh --recall` too, and fix any miss in `src/audit/data/`.
 
+<!-- doc-counts: accept-start note of 2026-11-02 - a dated record, not a claim about the present -->
+Note 2026-11-02: `bin/metafor-audit.sh --steps options` completed into
+`.audit/runs/20261102-061046` at `2fc8c6d`; its `wrong-or-missing.md` lists
+81 causes, none yet filed here. The `matrix` step last ran in
+`.audit/runs/20261101-211517`, and no recall run was found. Still to do: file
+those causes, run the whole audit in one run, and run `--recall`.
+<!-- doc-counts: accept-end -->
+
 ## Remove the auditme accept markers once the shared rules stop the false positives
 
 Found on 2026-11-01 while clearing the auditme hits
@@ -50,3 +58,8 @@ Cause: the shared auditme rules decide from the shape of a call or a
 Fix direction: once that item ships, bump the agents rev in
 `.pre-commit-config.yaml`, remove each marker listed in `requests.md` that
 the new rules no longer need, and delete its entry there.
+
+Note 2026-11-02: the agents item shipped on 2026-11-01 (its `DONE.md`,
+`agents/specs/auditme-false-positives/spec.md`), merged on its `origin/main`
+at `827a373`. `.pre-commit-config.yaml` still pins `8b43d9b`, which predates
+it, so this item can start.
