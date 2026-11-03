@@ -117,7 +117,7 @@ relative tolerance elsewhere; the Linux-only skip gets its true reason.
 
 ## Task 3: Pin R's platform and arithmetic
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Implementation - The pin; Error handling; Settings; Documentation
@@ -127,29 +127,29 @@ different package version.
 
 **Subtasks:**
 
-- [ ] Add `r_identity()` to `src/audit/r/common.R`, returning `R` (version), `R_platform` (`R.version$platform`) and `R_fma` (`"fused"` when
+- [x] Add `r_identity()` to `src/audit/r/common.R`, returning `R` (version), `R_platform` (`R.version$platform`) and `R_fma` (`"fused"` when
       `sprintf("%a", dbinom(10, 13, 0.5))` is `"0x1.1dffffffffffep-5"`, `"unfused"` when it is `"0x1.1ep-5"`, else `"unknown"`)
-- [ ] Use it in `src/audit/r/versions.R` and `src/audit/r/setup.R` in place of `vers$R`; make `setup.R` drop `R`, `R_platform` and `R_fma`
+- [x] Use it in `src/audit/r/versions.R` and `src/audit/r/setup.R` in place of `vers$R`; make `setup.R` drop `R`, `R_platform` and `R_fma`
       from the packages to install
-- [ ] Add `"R_platform": "aarch64-apple-darwin27.0.0"` and `"R_fma": "fused"` to `src/audit/data/r-versions.json`, after checking that
+- [x] Add `"R_platform": "aarch64-apple-darwin27.0.0"` and `"R_fma": "fused"` to `src/audit/data/r-versions.json`, after checking that
       `Rscript src/audit/r/versions.R <out.json>` writes those values on this machine
-- [ ] In `check_r` (`src/audit/steps.py`), refuse when the pin's `R_fma` disagrees with `metafopy.core.dbinom.FUSED`, naming both and the
+- [x] In `check_r` (`src/audit/steps.py`), refuse when the pin's `R_fma` disagrees with `metafopy.core.dbinom.FUSED`, naming both and the
       three ways on; with `--allow-r-drift` the difference becomes a note, as for drift
-- [ ] Tests in `src/tests/test_harness_compare.py`: a different `R_platform` or `R_fma` is drift named by `check_r`; `R_fma` against a
+- [x] Tests in `src/tests/test_harness_compare.py`: a different `R_platform` or `R_fma` is drift named by `check_r`; `R_fma` against a
       patched `FUSED` raises, and becomes a note with the flag
-- [ ] Name the two entries in `src/audit/README.md` where it describes the pin
+- [x] Name the two entries in `src/audit/README.md` where it describes the pin
 
 **Acceptance Criteria:**
 
-- [ ] `bin/metafor-audit.sh --steps check-r` passes on this machine
-- [ ] With `R_fma` changed to `"unfused"` in a copy of the pin, `check_r` raises naming `R_fma fused -> unfused` (or the reverse) and the
+- [x] `bin/metafor-audit.sh --steps check-r` passes on this machine
+- [x] With `R_fma` changed to `"unfused"` in a copy of the pin, `check_r` raises naming `R_fma fused -> unfused` (or the reverse) and the
       three ways on
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_harness_compare.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_harness_compare.py` passes
 
 **Notes:**
 

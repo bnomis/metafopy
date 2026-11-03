@@ -104,7 +104,10 @@ first, then each other package whose installed version differs) and records what
 examples is downloaded from CRAN and checked against `data/metafor-source.sha256`.
 
 `check-r` compares the whole library with the pin and refuses a different one, naming each package as `name pinned -> installed`; reinstall with
-`setup.R`, or run once with `--allow-r-drift`, which records the differences in the report's notes. To move the oracle on purpose, review what the new
+`setup.R`, or run once with `--allow-r-drift`, which records the differences in the report's notes. The pin also holds `R_platform` (R's
+`R.version$platform`) and `R_fma` (`fused` or `unfused`, probed from the last bit of `dbinom(10, 13, 0.5)`), so a different R build is drift like a
+different package; `check-r` also refuses an `R_fma` that disagrees with `metafopy.core.dbinom.FUSED`, since random `gosh` subsets would then differ
+from R's. Move to a matching R build, re-pin, or pass the flag. To move the oracle on purpose, review what the new
 versions change, then copy a run's `r-versions.json` over `data/r-versions.json`.
 
 ## What the harness cannot see

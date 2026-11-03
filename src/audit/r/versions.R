@@ -5,5 +5,5 @@ source(file.path(here, "common.R"))
 inst <- installed.packages(lib.loc = .libPaths())
 vers <- as.list(setNames(inst[, "Version"], inst[, "Package"]))
 vers <- vers[!(names(vers) %in% rownames(installed.packages(priority = "base")))]
-vers$R <- paste(R.version$major, R.version$minor, sep = ".")
+vers <- c(vers, r_identity())
 write_json(vers[order(names(vers))], args[1])

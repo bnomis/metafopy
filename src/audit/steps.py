@@ -5,6 +5,7 @@ import dataclasses
 import fnmatch
 import json
 import pathlib
+import platform
 import re
 import typing
 
@@ -18,6 +19,7 @@ import audit.pyrun
 import audit.rdriver
 import audit.scripts
 import audit.universe
+import metafopy.core.dbinom
 
 Json = dict[str, typing.Any]
 
@@ -86,7 +88,19 @@ def check_r(ctx: Context) -> Outcome:
             'no data/r-versions.json: pin the R library first by copying the r-versions.json that `Rscript src/audit/r/versions.R <out.json>` '
             'writes to src/audit/data/r-versions.json'
         )
-    drift = library_drift(json.loads(lock_path.read_text()), versions)
+    lock: Json = json.loads(lock_path.read_text())
+    drift = library_drift(lock, versions)
+    pinned_fma = lock.get('R_fma')
+    python_fma = 'fused' if metafopy.core.dbinom.FUSED else 'unfused'
+    if pinned_fma is not None and pinned_fma != python_fma:
+        message = (
+            f'the pinned R_fma is {pinned_fma} but metafopy.core.dbinom.FUSED is {python_fma} (platform {platform.machine()}): '
+            'random gosh subsets would differ from R. Either run on the platform the pin was made on, or reinstall an R build that matches '
+            "this platform and re-pin by copying a run's r-versions.json over src/audit/data/r-versions.json; or run once with --allow-r-drift"
+        )
+        if not ctx.allow_r_drift:
+            raise RuntimeError(message)
+        out.notes.append(f'{message} (--allow-r-drift)')
     if drift:
         listing = ', '.join(f'{name} {pinned} -> {installed}' for name, (pinned, installed) in drift.items())
         if not ctx.allow_r_drift:
