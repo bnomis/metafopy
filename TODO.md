@@ -15,6 +15,15 @@ Cause: not yet traced. The miss is either a probe the harness no longer runs or 
 
 Fix direction: fix the recall miss in the harness (`src/audit/data/`), not in a report, as `AGENTS.md` says; remove or narrow each stale ledger entry; review the universe change and refresh it with `bin/metafor-audit.sh --update-universe`. Rerun `--recall` to confirm.
 
+Note 2026-11-03: traced to the R oracle moving unchecked: R 4.3.3 and lme4
+2.0.6 when `docs/differences.md` was captured (2026-10-21), R 4.6.2 and lme4
+2.1-0 in the runs of 2026-11-01 and 2026-11-02. `setup.R` installs every
+package but metafor, metadat and gsl at its newest version, and `check_r`
+compares the library only with a `data/r-versions.json` that was never
+committed. On 2026-11-02 R gave `glmm_rs` se 0.182140 and Python 0.182139.
+
+Spec: agents/specs/r-oracle-pin/spec.md; tasks: agents/tasks/r-oracle-pin/tasks-1.md.
+
 Causes, from the run's `wrong-or-missing-full.md`:
 
 - the R universe differs from data/universe.json; refresh it with `bin/metafor-audit.sh --update-universe` (1 cases; `universe`)
