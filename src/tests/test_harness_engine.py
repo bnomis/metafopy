@@ -1,9 +1,11 @@
 """The runner of the audit harness (``src/audit/engine.py``): a case that never returns must not stop an audit."""
 
+import concurrent.futures
 import dataclasses
 import json
 import os
 import pathlib
+import socket
 import subprocess
 import sys
 
@@ -262,3 +264,22 @@ def test_run_shard_drives_plain_items_and_gives_dead_the_parts_of_the_running_on
     results = audit.engine.run_shard(tmp_path, 'p', [Plain(name) for name in 'abc'], 1.0, start, dead, write)
     assert ''.join(r['id'] + r['status'][0] for r in results) == 'aobdco'
     assert seen == [[{'part': 'b', 'unit': 1}, {'part': 'b', 'unit': 2}]]
+
+
+def test_each_r_process_gets_its_own_free_cluster_port() -> None:
+    # Every R script of the audit calls set.seed(1234), and R draws its cluster port from that seed and the clock, so R processes started
+    # side by side drew the same port and one failed with 'creation of server socket failed' (audit of 2026-11-03).
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as threads:
+        ports = list(threads.map(lambda _: int(audit.rdriver.environment()['R_PARALLEL_PORT']), range(64)))
+    assert len(set(ports)) == len(ports)
+    for port in ports:
+        with socket.socket() as probe:
+            probe.bind(('', port))
+
+
+def test_r_takes_the_cluster_port_it_is_given(tmp_path: pathlib.Path) -> None:
+    script = tmp_path / 'port.R'
+    script.write_text('set.seed(1234)\ncat(parallel:::defaultClusterOptions$port)\n')
+    env = audit.rdriver.environment()
+    proc = subprocess.run(audit.rdriver.rscript_command(script), env=env, capture_output=True, text=True, check=True)
+    assert proc.stdout == env['R_PARALLEL_PORT']

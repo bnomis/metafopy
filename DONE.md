@@ -275,3 +275,15 @@ Causes, from the run's `wrong-or-missing-full.md`:
 <!-- doc-counts: accept-end -->
 
 Done: 2026-11-03 - agents/specs/r-oracle-pin/spec.md, agents/tasks/r-oracle-pin/tasks-1.md.
+
+## The audit reports R's cluster port clash as a difference from R
+
+<!-- doc-counts: accept-start found on 2026-11-03 - a dated record, not a claim about the present -->
+Found on 2026-11-03 by `/todo-review`. The `DONE.md` entry of the whole-audit item records, in its note of 2026-11-02, a `gosh` case in `.audit/runs/20261102-143634` whose R cluster could not open its port, "not filed unless the next run shows it again". The whole audit `.audit/runs/20261103-071849` (metafopy `f040b41`, R 4.6.2) showed it again, on `profile`: `R: creation of server socket failed: port 11347 cannot be opened` (noted on the location-scale item).
+<!-- doc-counts: accept-end -->
+
+Cause: nothing in `src/audit/` sets the port of R's `parallel` clusters, so each R process takes a random port when it starts one (R's default), and shards running side by side can take the same port. R's failure is then reported as a cause, though it is not a difference of metafopy.
+
+Fix direction: give each R process the harness starts its own port range (`R_PARALLEL_PORT` in its environment, derived from the shard), with a test that two shards never share a port; then check that the next whole audit shows no socket failure.
+
+Done: 2026-11-03 - `audit.rdriver.cluster_port` gives each R process a free port of its own in `R_PARALLEL_PORT` (branch `fix/r-cluster-port`); tests `test_each_r_process_gets_its_own_free_cluster_port` and `test_r_takes_the_cluster_port_it_is_given` in `src/tests/test_harness_engine.py`. The next whole audit confirms no socket failure.

@@ -147,3 +147,9 @@ the scripts that remain; the units of the running script that finished keep thei
 `process-died`, `timeout` or `memory`, and the units after it are counted as `not run: Python process died partway through the script`. When R dies
 in a script, the same holds for the R side: the dead unit is reported as `r-killed` and the rest of that script is counted as `not run: R process died
 partway through the script`.
+
+### R's cluster port
+
+R picks the port of a `parallel` cluster (`gosh`, `profile` with `parallel = "snow"`) from its random seed and the clock when `parallel` loads, and every audit
+script calls `set.seed(1234)`, so R processes started side by side picked the same port and one failed with `creation of server socket failed` (whole
+audits of 2026-11-02 and 2026-11-03). `rdriver.environment()` now gives each R process a free port of its own in `R_PARALLEL_PORT`.
