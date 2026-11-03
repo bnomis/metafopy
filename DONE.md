@@ -248,3 +248,30 @@ report is gone, and its figures are in Task 6's notes in
 values and one universe difference), not yet filed here.
 
 Done: 2026-11-02 - the whole audit ran into `.audit/runs/20261102-223017` at `ffd5ffe` (143 causes, 1740 findings) and `--recall` into `.audit/runs/recall-20261102-230628` (176 of 177 reproduced); every cause is filed in `TODO.md` in one item per family, and the recall miss with the harness item.
+
+## The audit harness misses one recall item and carries stale ledger entries
+
+<!-- doc-counts: accept-start found on 2026-11-02 - a dated record, not a claim about the present -->
+Found on 2026-11-02 by the whole audit `.audit/runs/20261102-223017` at metafopy `ffd5ffe` (metafor 5.2-1). The recall check (`bin/metafor-audit.sh --recall`, `.audit/runs/recall-20261102-230628`) reproduced 176 of 177 items of audits 4 to 6; it missed `a6-glmm-um-rs`: `rma_glmm(measure='OR', model='UM.RS')` on bcg: se 0.18214 where R gives 0.18147. The audit also reported the universe and the ledger lines below. The run's report is local and not in
+git, so its cause lines are copied below as it printed them.
+
+Cause: not yet traced. The miss is either a probe the harness no longer runs or a ledger entry in `src/audit/data/known.toml` that now hides it; the stale ledger entries match nothing in this run; the universe changed since `src/audit/data/universe.json` was written.
+
+Fix direction: fix the recall miss in the harness (`src/audit/data/`), not in a report, as `AGENTS.md` says; remove or narrow each stale ledger entry; review the universe change and refresh it with `bin/metafor-audit.sh --update-universe`. Rerun `--recall` to confirm.
+
+Note 2026-11-03: traced to the R oracle moving unchecked: R 4.3.3 and lme4
+2.0.6 when `docs/differences.md` was captured (2026-10-21), R 4.6.2 and lme4
+2.1-0 in the runs of 2026-11-01 and 2026-11-02. `setup.R` installs every
+package but metafor, metadat and gsl at its newest version, and `check_r`
+compares the library only with a `data/r-versions.json` that was never
+committed. On 2026-11-02 R gave `glmm_rs` se 0.182140 and Python 0.182139.
+
+Spec: agents/specs/r-oracle-pin/spec.md; tasks: agents/tasks/r-oracle-pin/tasks-1.md.
+
+Causes, from the run's `wrong-or-missing-full.md`:
+
+- the R universe differs from data/universe.json; refresh it with `bin/metafor-audit.sh --update-universe` (1 cases; `universe`)
+- Stale ledger entries: construct/glmm_cm/* refused-where-R-works 'EstimationError: Cannot compute var-cov matrix of the fixed effects.', */glmm_rs* value-diff, matrix/dfbetas/mv_wide value-diff '*element 17: R None*', matrix/rstudent/mv_wide print-diff "*line 19: R '18      NA     NA      NA'*", options/selmodel/* print-diff "*R 'delta.1 *', Python 'delta.1 *'"
+<!-- doc-counts: accept-end -->
+
+Done: 2026-11-03 - agents/specs/r-oracle-pin/spec.md, agents/tasks/r-oracle-pin/tasks-1.md.

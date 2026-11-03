@@ -1,7 +1,7 @@
 # R oracle pin
 
 **Version:** 1.0
-**Status:** approved
+**Status:** implemented
 **Date:** 2026-11-03
 
 The audit harness compares metafopy with R metafor, so R and every package

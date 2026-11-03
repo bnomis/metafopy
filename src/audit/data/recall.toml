@@ -4,6 +4,8 @@
 # switched off and reports, per audit, which items it reproduced. An item is reproduced when some finding matches a `find` entry: globs on `id`, `kind`,
 # `path` and `detail` (default `*`). `hint` lists substrings of case ids (or script topics) that are enough to re-run only the cases involved.
 # `reach = "none"` marks an item no probe can see by design, with the reason in `why`; those count as missed in the totals, never as hits.
+# `oracle_moved = "<date, versions, evidence>"` marks an item whose difference the pinned R no longer shows; it is listed apart, counted neither as
+# reproduced nor as missed, and a hit on it is reported as reproduced again.
 # Items from the audit reports themselves are quoted in `text`.
 
 [audit.4]
@@ -796,6 +798,7 @@ id = "a6-glmm-um-rs"
 audit = 6
 text = "rma_glmm(measure='OR', model='UM.RS') on bcg: se 0.18214 where R gives 0.18147"
 find = [{ id = "construct/glmm_rs", kind = "value-diff" }]
+oracle_moved = "2026-11-02, R 4.6.2 and lme4 2.1-0: R gives se 0.182140, Python 0.182139"
 
 [[item]]
 id = "a6-ls-na-se-alpha"

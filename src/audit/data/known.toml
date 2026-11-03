@@ -41,6 +41,13 @@ reason = "R cannot invert the noisy Hessian of the saturated CM.EL model and giv
 ref = "docs/differences.md"
 
 [[known]]
+match = "construct/glmm_cm/control=*"
+kind = "warning-extra"
+detail = "Cannot invert the Hessian for the saturated model.*"
+reason = "metafopy warns where R now inverts: with R 4.6.2 and lme4 2.1-0 (the pinned oracle), R inverts the noisy Hessian of the saturated CM.EL model under the optimizers lbfgsb3c, optimParallel, Rcgmin and Rvmmin and gives QE_Wld, QE_LRT and QE_df, while metafopy's Hessian does not invert and it warns."
+ref = "docs/differences.md"
+
+[[known]]
 match = "*/glmm_rs*"
 kind = "print-diff"
 reason = "Same as the value-diff entry: the printed tests of the UM.RS fit differ in the third decimal."
@@ -253,13 +260,6 @@ reason = "fmtt(call=TRUE) returns an R plotmath call, which has no Python counte
 ref = "docs/differences.md"
 
 [[known]]
-match = "construct/glmm_cm/*"
-kind = "refused-where-R-works"
-detail = "EstimationError: Cannot compute var-cov matrix of the fixed effects."
-reason = "R's CM.EL Hessian is noise here (standard errors of 1e-4, tau2 2e-4, warning 'unusually small'; the ~ablat fit does not converge in R); metafopy refuses to report them."
-ref = "docs/differences.md"
-
-[[known]]
 match = "matrix/anova/*"
 kind = "accepts-where-R-refuses"
 detail = "R: Class of*"
@@ -291,12 +291,6 @@ ref = "docs/differences.md"
 match = "matrix/*/mv_gen"
 kind = "value-diff"
 reason = "confint() and profile() of the unstructured (GEN) rma_mv fit: the confidence limits of the variance components run to a flat part of the likelihood (6900 against 7700) and the profile likelihood is evaluated at points where the optimisers end differently."
-ref = "docs/differences.md"
-
-[[known]]
-match = "*/glmm_rs*"
-kind = "value-diff"
-reason = "rma_glmm(model='UM.RS'): R log-likelihood -126.2962883, Python -126.2962773 (higher); coefficients differ by 1e-4 and standard errors by 4e-3 relative because R's glmer stops early on a flat surface."
 ref = "docs/differences.md"
 
 [[known]]
@@ -1443,15 +1437,15 @@ ref = "docs/differences.md"
 match = "matrix/dfbetas/mv_wide"
 kind = "value-diff"
 path = "$log.year...1900...1000."
-detail = "*element 17: R None*"
-reason = "The study 18 of mv_wide (dat.konstantopoulos2011 with ~ log(year - 1900 + 1000)): the refit without it, or its predicted value, is NA in R (the refit fails there) and a number in metafopy, which converges."
+detail = "*element 53: R None*"
+reason = "One study of mv_wide (element 53 of the vector; study 18 under the unpinned R 4.3.3) (dat.konstantopoulos2011 with ~ log(year - 1900 + 1000)): the refit without it, or its predicted value, is NA in R (the refit fails there) and a number in metafopy, which converges."
 ref = "docs/differences.md"
 
 [[known]]
 match = "matrix/rstudent/mv_wide"
 kind = "print-diff"
-detail = "*line 19: R '18      NA     NA      NA'*"
-reason = "The study 18 of mv_wide (dat.konstantopoulos2011 with ~ log(year - 1900 + 1000)): the refit without it, or its predicted value, is NA in R (the refit fails there) and a number in metafopy, which converges."
+detail = "*line 3: R '2       NA     NA      NA'*"
+reason = "One study of mv_wide (line 3 of the printed table; study 18 under the unpinned R 4.3.3) (dat.konstantopoulos2011 with ~ log(year - 1900 + 1000)): the refit without it, or its predicted value, is NA in R (the refit fails there) and a number in metafopy, which converges."
 ref = "docs/differences.md"
 
 [[known]]
@@ -1485,13 +1479,6 @@ match = "options/tes/trimfill_bcg/alternative=\"greater\""
 kind = "timeout"
 reason = "tes(alternative = 'greater') of the trim-and-fill fit of dat.bcg takes 419 s in R on its own (metafopy under 2 s), more than the case limit. Outside the harness R prints the same result as metafopy: 4 of 17 significant, 0.1126 expected, p < .0001 (exact test), theta_lim not estimable (checked 2026-10-20, R 4.3.3, metafor 5.2-1)."
 load_dependent = true
-
-[[known]]
-match = "options/selmodel/*"
-kind = "print-diff"
-detail = "*R 'delta.1 *', Python 'delta.1 *'"
-reason = "The printed standard errors of the selection parameter of selmodel(type = 'beta' or 'negexp2'): the same finite-difference Hessian of a surface flat in delta as the se.delta value-diff entry above (log-likelihood and estimates agree to 1e-9, standard errors to 1e-4 relative)."
-ref = "docs/differences.md"
 
 [[known]]
 match = "emmeans/contrast_adjust_mvt"

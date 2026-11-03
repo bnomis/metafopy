@@ -9,7 +9,9 @@ topic. [Coming from R](from-r.md) lists the rules of the translation.
 
 The outputs below were captured on 2026-10-21 with R 4.3.3, metafor 5.2-1, emmeans 2.0.4 and lme4 2.0.6, and with metafopy at the
 commit of the same day. They are a record of that run, not a promise; the tests in `src/tests` and `bin/metafor-audit.sh` are what
-keeps the two in line.
+keeps the two in line. The audit's R oracle is pinned to R 4.6.2 and lme4 2.1-0 (`src/audit/data/r-versions.json`); the known
+differences of the audit were brought up to that pin on 2026-11-03, and an example here that the pinned R no longer shows has been
+removed.
 
 ## By design
 
@@ -582,54 +584,6 @@ print(res.se)
 ```text
 [-4.24356287]
 [0.17556082]
-```
-
-</div>
-</div>
-
-### rma_glmm with UM.RS: a higher log-likelihood
-
-The random-slopes model on `dat.bcg` ends at a log-likelihood of -126.2963 in both languages, but metafopy's is higher by 1e-5
-(-126.2962773 against R's -126.2962883), and the estimates differ in the fourth (the pooled log odds ratio
--0.76165 against -0.76158). Both warn that `nAGQ` is set to 1.
-
-*Why:* the objective is the same as lme4's. lme4's `bobyqa` stops a little earlier than metafopy's optimiser. The tests allow
-2e-3 to 1e-1 relative for mixed-model fits; see [rma_glmm](differences-notes.md#rma_glmm) for the packages and links.
-
-<div class="compare" markdown>
-<div markdown>
-
-**R, metafor 5.2-1**
-
-```r
-library(metafor)
-res <- rma.glmm(measure = "OR", ai = tpos, bi = tneg, ci = cpos, di = cneg, data = dat.bcg,
-                model = "UM.RS", control = list(package = "lme4"))
-c(beta = coef(res), tau2 = res$tau2, logLik = logLik(res))
-```
-
-```text
-Warning message:
-Not possible to fit RE/ME model='UM.RS' with nAGQ > 1 with glmer(). nAGQ automatically set to 1. 
-beta.intrcpt         tau2       logLik 
-  -0.7615840    0.3198355 -126.2962883 
-```
-
-</div>
-<div markdown>
-
-**Python, metafopy**
-
-```python
-from metafopy import datasets, rma_glmm
-
-res = rma_glmm(measure='OR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=datasets.load('dat.bcg'), model='UM.RS', control={'package': 'lme4'})
-print(res.beta, res.tau2, res.logLik())
-```
-
-```text
-UserWarning: Not possible to fit RE/ME model='UM.RS' with nAGQ > 1 with glmer(). nAGQ automatically set to 1.
-[-0.76164895] 0.31985975161566554 'log Lik.' -126.2963 (df=4)
 ```
 
 </div>

@@ -98,9 +98,14 @@ digit, but the number of decimals must be the same (R prints `0` where Python pr
 
 ## Setting up R
 
-`Rscript src/audit/r/setup.R <library> <versions.json>` installs metafor 5.2-1, metadat 1.6-0 and gsl 2.1-9 at their pinned versions and the other
-packages (lme4, clubSandwich, emmeans, ...) at the newest version R accepts, and records what it installed. Point `METAFOPY_AUDIT_RLIB` at the
-library. The source of metafor's tests and examples is downloaded from CRAN and checked against `data/metafor-source.sha256`.
+`Rscript src/audit/r/setup.R <library> <versions.json>` installs every package at the version pinned in `data/r-versions.json` (metafor, metadat and gsl
+first, then each other package whose installed version differs) and records what it installed. A package that fails to install is listed under
+`NOT INSTALLED` with its pinned version. R itself is not installed. Point `METAFOPY_AUDIT_RLIB` at the library. The source of metafor's tests and
+examples is downloaded from CRAN and checked against `data/metafor-source.sha256`.
+
+`check-r` compares the whole library with the pin and refuses a different one, naming each package as `name pinned -> installed`; reinstall with
+`setup.R`, or run once with `--allow-r-drift`, which records the differences in the report's notes. To move the oracle on purpose, review what the new
+versions change, then copy a run's `r-versions.json` over `data/r-versions.json`.
 
 ## What the harness cannot see
 

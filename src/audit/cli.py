@@ -62,6 +62,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help='Report known differences as findings too',
     )
     parser.add_argument(
+        '--allow-r-drift',
+        action='store_true',
+        help='Run on an R library that differs from data/r-versions.json; the report records the differences',
+    )
+    parser.add_argument(
         '--recall',
         nargs='?',
         const='all',
@@ -102,7 +107,7 @@ def recall(args: argparse.Namespace) -> int:
     results: dict[int, dict[str, bool]] = {}
     for number in numbers:
         items = [i for i in corpus.items if i.audit == number]
-        findings = audit.recall.run_audit(number, corpus.audits[number], items, out, args.jobs, args.recall_full)
+        findings = audit.recall.run_audit(number, corpus.audits[number], items, out, args.jobs, args.recall_full, args.allow_r_drift)
         results[number] = audit.recall.evaluate(items, findings)
         print(f'[recall] audit {number}: {sum(results[number].values())} of {len(items)} reproduced', flush=True)
     path, ok = audit.recall.write(out, corpus, results, {n: corpus.audits[n]['commit'] for n in numbers})
@@ -129,7 +134,14 @@ def main(argv: list[str] | None = None) -> int:
     out = args.out or audit.config.WORK / 'runs' / time.strftime('%Y%m%d-%H%M%S')
     out.mkdir(parents=True, exist_ok=True)
     ctx = audit.steps.Context(
-        work=out, jobs=args.jobs, timeout=args.timeout, quick=args.quick, only=args.only, update_universe=args.update_universe, no_ledger=args.no_ledger
+        work=out,
+        jobs=args.jobs,
+        timeout=args.timeout,
+        quick=args.quick,
+        only=args.only,
+        update_universe=args.update_universe,
+        no_ledger=args.no_ledger,
+        allow_r_drift=args.allow_r_drift,
     )
     outcomes: dict[str, audit.steps.Outcome] = {}
     for step in audit.steps.STEPS:

@@ -43,6 +43,7 @@ class Context:
     only: list[str] | None
     update_universe: bool = False
     no_ledger: bool = False
+    allow_r_drift: bool = False
     universe: audit.universe.Universe | None = None
     generated: audit.generate.Generated | None = None
     coverage: dict[str, typing.Any] = dataclasses.field(default_factory=dict)
@@ -62,8 +63,16 @@ class Step:
     run: collections.abc.Callable[[Context], Outcome]
 
 
+def library_drift(lock: Json, installed: Json) -> dict[str, tuple[str | None, str | None]]:
+    """Every package (and ``R``) whose installed version differs from the pin, as name -> (pinned, installed); a package missing on either
+    side has None there."""
+    return {name: (lock.get(name), installed.get(name)) for name in sorted(lock.keys() | installed.keys()) if lock.get(name) != installed.get(name)}
+
+
 def check_r(ctx: Context) -> Outcome:
-    proc = audit.rdriver.run(
+    """Check the installed R library against ``data/r-versions.json``. A missing pin file or any drift raises RuntimeError naming each
+    difference and how to proceed, unless ``ctx.allow_r_drift``, when the drift becomes a note in the report."""
+    audit.rdriver.run(
         audit.config.R_DIR / 'versions.R',
         str(ctx.work / 'r-versions.json'),
     )
@@ -72,13 +81,22 @@ def check_r(ctx: Context) -> Outcome:
     if versions.get('metafor') != audit.config.METAFOR_VERSION:
         raise RuntimeError(f'metafor {versions.get("metafor")} is installed, the oracle is {audit.config.METAFOR_VERSION}')
     lock_path = audit.config.DATA_DIR / 'r-versions.json'
-    if lock_path.exists():
-        lock: Json = json.loads(lock_path.read_text())
-        drift = {k: (lock[k], versions.get(k)) for k in lock if versions.get(k) != lock[k]}
-        if drift:
-            raise RuntimeError(f'the R library differs from data/r-versions.json: {drift}')
+    if not lock_path.exists():
+        raise RuntimeError(
+            'no data/r-versions.json: pin the R library first by copying the r-versions.json that `Rscript src/audit/r/versions.R <out.json>` '
+            'writes to src/audit/data/r-versions.json'
+        )
+    drift = library_drift(json.loads(lock_path.read_text()), versions)
+    if drift:
+        listing = ', '.join(f'{name} {pinned} -> {installed}' for name, (pinned, installed) in drift.items())
+        if not ctx.allow_r_drift:
+            raise RuntimeError(
+                f'the R library differs from data/r-versions.json (pinned -> installed): {listing}. Either reinstall the pinned versions with '
+                "`Rscript src/audit/r/setup.R <library> <versions.json>`; or re-pin by copying a run's r-versions.json over "
+                'src/audit/data/r-versions.json after reviewing what the new versions change; or run once with --allow-r-drift'
+            )
+        out.notes.append(f'R library differs from the pin (--allow-r-drift): {listing}')
     out.notes.append(f'R {versions.get("R")}, metafor {versions.get("metafor")}; {len(versions)} packages')
-    del proc
     return out
 
 
