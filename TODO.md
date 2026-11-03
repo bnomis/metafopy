@@ -15,7 +15,7 @@ Cause: not yet traced. Every fit is affected, so the likely cause is the choice 
 
 Fix direction: compare the subset matrix `incl` with R's for one small fit first; the printed summaries follow from it.
 
-Spec: agents/specs/r-fused-arithmetic/spec.md; tasks: agents/tasks/r-fused-arithmetic/tasks-1.md.
+Spec: agents/specs/r-fused-arithmetic/spec.md (implemented); tasks: agents/tasks/r-fused-arithmetic/tasks-1.md.
 
 Causes, from the run's `wrong-or-missing-full.md`:
 
@@ -54,6 +54,8 @@ Causes, from the run's `wrong-or-missing-full.md`:
 <!-- doc-counts: accept-end -->
 
 Note 2026-11-03: the whole audit `.audit/runs/20261103-071849` on the pinned R 4.6.2 and lme4 2.1-0 (metafopy `f040b41`) lists every cause below again; none vanished. The `dfbetas` cause (`$log.year...1900...1000.`) is now matched by the ledger entry of `matrix/dfbetas/mv_wide`, which names element 53 where it named element 17, so a rerender no longer lists it.
+
+Note 2026-11-03: `bin/metafor-audit.sh --only gosh` on the pinned R 4.6.2 with the fused `dbinom` (metafopy `5b09d65`, run `.audit/runs/20261103-204725`, local) lists no `$incl`, `$res` or summary-line (`k`, `Model fits succeeded`) difference for a `gosh` case: the causes that came from different random subsets have gone. The only `gosh` findings left are `matrix/gosh/uni_digits` (`$digits` R 2, Python 4.0, and its `print` line) and the `scripts/gosh/*` missing fields (`chksum*`, `verbose`), all matched by the ledger. Two ledger entries (`matrix/gosh/*` and `options/gosh/trimfill_bcg/*` in `src/audit/data/known.toml`) still give the reason "R 4.3.3"; they hide any `matrix/gosh` difference, so their reason is stale and the match should be narrowed to `uni_digits`. The slice did not run the `vif`, `dfbetas` or `profile` causes listed above; they stay open here until a whole audit lists them or not.
 
 ## Location-scale fits differ from R in estimates, permutation tests, profile bounds and print
 

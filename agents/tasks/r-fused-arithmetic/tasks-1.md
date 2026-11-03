@@ -163,7 +163,7 @@ different package version.
 
 ## Task 4: Rerun the gosh cases, settle the TODO item and close the spec
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** medium
 **Spec Reference:** Implementation - Rerun and the rest of the item
@@ -173,28 +173,28 @@ the spec is closed.
 
 **Subtasks:**
 
-- [ ] Run `bin/metafor-audit.sh --only gosh` in the background; record the run directory and its causes in this task's Notes
-- [ ] Compare its causes with those of the `TODO.md` item "gosh gives different subsets and results from R on every fit"
-- [ ] If no cause of the item remains: move the item to the end of `DONE.md`, its heading and body unchanged, then
+- [x] Run `bin/metafor-audit.sh --only gosh` in the background; record the run directory and its causes in this task's Notes
+- [x] Compare its causes with those of the `TODO.md` item "gosh gives different subsets and results from R on every fit"
+- [x] If no cause of the item remains: move the item to the end of `DONE.md`, its heading and body unchanged, then
       `Done: <date> - agents/specs/r-fused-arithmetic/spec.md, agents/tasks/r-fused-arithmetic/tasks-1.md.`, and remove it from `TODO.md`
-- [ ] Otherwise: add a dated note to the item naming the run, the causes that went and the causes that remain, and change its `Spec:` line's
+- [x] Otherwise: add a dated note to the item naming the run, the causes that went and the causes that remain, and change its `Spec:` line's
       text to say the spec is implemented; the item stays open. A cause that is new and belongs to no item is listed in the note, not fixed
-- [ ] Run `python3 ~/.claude/skills/todo-review/verify_bodies.py <baseline> TODO.md DONE.md`, the baseline being `TODO.md` at the commit that
+- [x] Run `python3 ~/.claude/skills/todo-review/verify_bodies.py <baseline> TODO.md DONE.md`, the baseline being `TODO.md` at the commit that
       added this task list (`git show $(git log --diff-filter=A --format=%H -- agents/tasks/r-fused-arithmetic/tasks-1.md):TODO.md`); a note
       added to the item is the only change allowed
-- [ ] Set the spec's `**Status:**` to `implemented`, and its entry in `agents/specs/index.md` to say so
+- [x] Set the spec's `**Status:**` to `implemented`, and its entry in `agents/specs/index.md` to say so
 
 **Acceptance Criteria:**
 
-- [ ] The run reports no `$incl` difference for a `gosh` case
-- [ ] The `TODO.md` item is in `DONE.md` with its `Done:` line, or carries a dated note listing what remains
+- [x] The run reports no `$incl` difference for a `gosh` case
+- [x] The `TODO.md` item is in `DONE.md` with its `Done:` line, or carries a dated note listing what remains
 
 **Definition of Done:**
 
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_diagnostics.py src/tests/test_audit3_misc.py src/tests/test_audit8_args.py src/tests/test_audit8_crashes.py
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_diagnostics.py src/tests/test_audit3_misc.py src/tests/test_audit8_args.py src/tests/test_audit8_crashes.py
       src/tests/test_audit8_fields.py src/tests/test_fits.py src/tests/test_plots.py src/tests/test_plots_image.py src/tests/test_profile_parallel.py
       src/tests/test_rma_ls.py src/tests/test_harness_compare.py src/tests/test_harness_engine.py` passes (every test file that imports
       `metafopy.core.dbinom` or `audit.steps`, or calls `gosh`)
@@ -203,6 +203,9 @@ the spec is closed.
 
 - Depends on Tasks 1 to 3
 - The run takes long; start it in the background and wait for it
+- Run 2026-11-03: `.audit/runs/20261103-204725` (local), `bin/metafor-audit.sh --only gosh` with `METAFOPY_AUDIT_RLIB` pointing at the main checkout's
+  library (the worktree has none). No `$incl`, `$res` or summary-line difference; left: `matrix/gosh/uni_digits` and `scripts/gosh/*` missing fields
+  (ledger-matched). The item stays open: its `vif`, `dfbetas` and `profile` causes were not in the slice, and two stale `known.toml` reasons are noted in it
 
 ---
 

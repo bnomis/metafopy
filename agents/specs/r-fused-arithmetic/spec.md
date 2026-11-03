@@ -1,7 +1,7 @@
 # R fused arithmetic
 
 **Version:** 1.0
-**Status:** proposed
+**Status:** implemented
 **Date:** 2026-11-03
 
 metafopy reproduces R's `dbinom()` to the last bit, because `gosh()` draws
