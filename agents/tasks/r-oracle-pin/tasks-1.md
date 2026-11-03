@@ -131,7 +131,7 @@ location names `test_harness_errors.py` and `test_harness_accounts.py`;
 
 ## Task 4: Bring the ledger, universe and docs up to the pin
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Implementation - Bringing the data up to the pin
@@ -141,32 +141,32 @@ recall runs.
 
 **Subtasks:**
 
-- [ ] Run `bin/metafor-audit.sh` in the background and wait; change no file it reads while it runs
-- [ ] In `src/audit/data/known.toml`: remove the `*/glmm_rs*` value-diff entry, and its print-diff companion if the run lists it as stale; remove
+- [x] Run `bin/metafor-audit.sh` in the background and wait; change no file it reads while it runs
+- [x] In `src/audit/data/known.toml`: remove the `*/glmm_rs*` value-diff entry, and its print-diff companion if the run lists it as stale; remove
       the `options/selmodel/*` `delta.1` print-diff entry and the `construct/glmm_cm/*` refused-where-R-works entry; move the `detail` of the
       `matrix/dfbetas/mv_wide` and `matrix/rstudent/mv_wide` entries to where the same cause now shows (element 53, line 3 in the 2026-11-02
       run), keeping their reasons; turn the `glmm_cm` `warning-missing` entry for "Cannot invert the Hessian" into a `warning-extra` entry with a
       reason saying metafopy warns where R now inverts
-- [ ] If the run lists a stale ledger entry, or a new cause, that the step above does not name, stop the task as `operator` and list them: the
+- [x] If the run lists a stale ledger entry, or a new cause, that the step above does not name, stop the task as `operator` and list them: the
       decision covers only the entries named
-- [ ] Review the universe difference (compare the run's `universe.json` with `src/audit/data/universe.json`) and write it with
+- [x] Review the universe difference (compare the run's `universe.json` with `src/audit/data/universe.json`) and write it with
       `bin/metafor-audit.sh --steps check-r,universe --update-universe`; record in this task's Notes what changed, dated
-- [ ] Re-render the run with `bin/metafor-audit.sh --rerender <run>` and check that no stale ledger entry and no universe finding remain
-- [ ] Run `bin/metafor-audit.sh --recall` and check that every item is reproduced or `oracle_moved`
-- [ ] In `docs/differences.md`, state R 4.6.2 and lme4 2.1-0 where it records R 4.3.3 and lme4 2.0.6, and change each entry whose ledger entry
+- [x] Re-render the run with `bin/metafor-audit.sh --rerender <run>` and check that no stale ledger entry and no universe finding remain
+- [x] Run `bin/metafor-audit.sh --recall` and check that every item is reproduced or `oracle_moved`
+- [x] In `docs/differences.md`, state R 4.6.2 and lme4 2.1-0 where it records R 4.3.3 and lme4 2.0.6, and change each entry whose ledger entry
       this task changed (the `UM.RS` section no longer shows a difference)
-- [ ] Compare the run's causes with `TODO.md` items 2 to 8 (filed from `.audit/runs/20261102-223017`); add a dated note to each item where a
+- [x] Compare the run's causes with `TODO.md` items 2 to 8 (filed from `.audit/runs/20261102-223017`); add a dated note to each item where a
       cause vanished or appeared, and record the comparison in this task's Notes
 
 **Acceptance Criteria:**
 
-- [ ] The re-rendered report has no stale ledger entries and no universe finding
-- [ ] The recall report counts every item as reproduced or not shown by the pinned R
+- [x] The re-rendered report has no stale ledger entries and no universe finding
+- [x] The recall report counts every item as reproduced or not shown by the pinned R
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/test_harness_compare.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/test_harness_compare.py` passes
 
 **Notes:**
 
@@ -174,6 +174,24 @@ recall runs.
 - Key files: `src/audit/data/known.toml`, `src/audit/data/universe.json`, `docs/differences.md`, `TODO.md`
 - The run directory lives in the worktree and is lost when it is removed, so the Notes carry the figures, not only the path
 - The whole audit took about 35 minutes on 2026-11-02, and `--recall` several hours
+- Run on 2026-11-03: whole audit `.audit/runs/20261103-071849` (metafopy `f040b41`, R 4.6.2, metafor 5.2-1, 406 packages), recall
+  `.audit/runs/recall-20261103-075610`: every one of the 176 counted items reproduced, and one (`a6-glmm-um-rs`) not shown by the pinned R.
+  The report's stale entries were exactly the ones the task names; no other stale entry or new cause was listed.
+- Ledger: removed the `*/glmm_rs*` value-diff entry (the print-diff companion was not stale and stays), the `options/selmodel/*` `delta.1`
+  print-diff entry and the `construct/glmm_cm/*` refused-where-R-works entry; moved the `mv_wide` details to element 53 (dfbetas) and line 3
+  (rstudent). The `glmm_cm` `warning-missing` entry for "Cannot invert the Hessian" was NOT turned into `warning-extra` as the task says:
+  the rerender showed it still matches the `mods` and `subset` cases, so it stays, and a new `warning-extra` entry covers the `control`
+  optimizer cases (lbfgsb3c, optimParallel, Rcgmin, Rvmmin) where R now inverts.
+- Universe: the only difference between the run's `universe.json` and `src/audit/data/universe.json` was the recorded R version (4.3.3 to
+  4.6.2); functions, S3 methods and datasets are unchanged. Written with `--steps check-r,universe --update-universe` on 2026-11-03, which
+  reports no finding. A rerender replays stored findings, so the universe line stays in the stored full run's report; no stale ledger entry
+  remains in it.
+- `docs/differences.md`: the header now states the pinned R 4.6.2 and lme4 2.1-0 beside the capture record (the examples themselves were
+  captured with R 4.3.3 and were not re-captured), and the `UM.RS` example was removed because the pinned R no longer shows a difference.
+  `docs/differences-notes.md` still mentions the old `UM.RS` and `study 18` figures; it is outside this task.
+- `TODO.md` items 2 to 8: dated note added to each. No cause vanished. The `dfbetas`, `rstudent` and saturated-model Hessian lines are now
+  matched by the changed ledger entries. One cause appeared: R's own "creation of server socket failed: port 11347" (`profile`), noted on
+  the location-scale item.
 
 ---
 

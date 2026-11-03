@@ -40,6 +40,8 @@ Cause: not yet traced. Every fit is affected, so the likely cause is the choice 
 
 Fix direction: compare the subset matrix `incl` with R's for one small fit first; the printed summaries follow from it.
 
+Note 2026-11-03: the whole audit `.audit/runs/20261103-071849` on the pinned R 4.6.2 and lme4 2.1-0 (metafopy `f040b41`) lists every cause below again; none vanished. The `dfbetas` cause (`$log.year...1900...1000.`) is now matched by the ledger entry of `matrix/dfbetas/mv_wide`, which names element 53 where it named element 17, so a rerender no longer lists it.
+
 Causes, from the run's `wrong-or-missing-full.md`:
 
 - `$incl` element 259: R False, Python True (86 cases; `gosh`, `print`)
@@ -85,6 +87,8 @@ git, so its cause lines are copied below as it printed them.
 Cause: not yet traced; several may share one. The findings point at `src/metafopy/models/rma_ls_fit.py` (convergence), `src/metafopy/methods/ls_permutest.py`, `src/metafopy/methods/ls_confint.py`, `src/metafopy/methods/ls_vif.py` and `src/metafopy/models/rma_ls_result.py` (print). The R process killed for memory is R's own limit on `permutest(exact=TRUE)`, not a metafopy fault.
 
 Fix direction: start with the fit itself (the 211-case `QM` and 127-case `se` differences on `ls_year` and `ls_na`), since the tests, `confint` and `permutest` are built on it; then `permutest`'s signs, the `confint` bounds where R gives up, the optimizers, and the print headings. Split this item if the parts turn out to have separate causes.
+
+Note 2026-11-03: the whole audit `.audit/runs/20261103-071849` on the pinned R 4.6.2 and lme4 2.1-0 (metafopy `f040b41`) lists every cause below again; none vanished. One cause appeared that belongs to no item: `R: creation of server socket failed: port 11347 cannot be opened` (`profile`, R's own failure to open a port while shards ran; not a difference of metafopy).
 
 Causes, from the run's `wrong-or-missing-full.md`:
 
@@ -159,6 +163,8 @@ Cause: not yet traced. The findings point at `src/metafopy/models/selmodel.py` a
 
 Fix direction: compare `selmodel` on bcg with R at a tighter tolerance first; then `trimfill`'s `se.k0`.
 
+Note 2026-11-03: the whole audit `.audit/runs/20261103-071849` on the pinned R 4.6.2 and lme4 2.1-0 (metafopy `f040b41`) lists every cause below again; none vanished; the stale `delta.1` print-diff ledger entry of `options/selmodel/*` was removed, because the pinned R no longer shows that print difference.
+
 Causes, from the run's `wrong-or-missing-full.md`:
 
 - `element #: R #   < p <= #     #   #   NA    NA    NA     NA     NA   , Python #   < p <= #` element 25: R 0.1   < p <= 0.5     2   98.1051   NA    NA    NA     NA     NA   , Python 0.1   < p <= 0.5     2   98.1050   NA    NA    NA   (5 cases; `print`)
@@ -184,6 +190,8 @@ Cause: not yet traced. The findings point at `src/metafopy/models/rma_mv.py`, `s
 
 Fix direction: start with the Hessian's size (R 9, Python 4 on `mv_sp`), which decides what the other results are built on.
 
+Note 2026-11-03: the whole audit `.audit/runs/20261103-071849` on the pinned R 4.6.2 and lme4 2.1-0 (metafopy `f040b41`) lists every cause below again; none vanished. The `rstudent` cause (line 3) is now matched by the ledger entry of `matrix/rstudent/mv_wide`, which names line 3 where it named line 19, so a rerender no longer lists it.
+
 Causes, from the run's `wrong-or-missing-full.md`:
 
 - R: Non-numeric argument to mathematical function (2 cases; `ranef`)
@@ -204,6 +212,8 @@ git, so its cause lines are copied below as it printed them.
 Cause: not yet traced. The findings point at `src/metafopy/models/rma_glmm.py` and `src/metafopy/models/glmm_fit.py`.
 
 Fix direction: start with the `Wld` difference, which is far beyond rounding.
+
+Note 2026-11-03: the whole audit `.audit/runs/20261103-071849` on the pinned R 4.6.2 and lme4 2.1-0 (metafopy `f040b41`) lists every cause below again; none vanished. `rma_glmm(model='UM.RS')` no longer differs from R in se, so its value-diff ledger entry was removed. The warning `Cannot invert the Hessian for the saturated model.` is now a `warning-extra` ledger entry for the `control` optimizer cases (R inverts, metafopy warns); the `warning-missing` entry for the other cases stays, and the refused-where-R-works entry for `glmm_cm` was removed.
 
 Causes, from the run's `wrong-or-missing-full.md`:
 
@@ -228,6 +238,8 @@ Cause: not yet traced; each may be separate. The cases name `rma`, `hettest` and
 
 Fix direction: check each case against R; ledger the ones that are rounding below the threshold with a reason, and fix the rest.
 
+Note 2026-11-03: the whole audit `.audit/runs/20261103-071849` on the pinned R 4.6.2 and lme4 2.1-0 (metafopy `f040b41`) lists every cause below again; none vanished and none appeared.
+
 Causes, from the run's `wrong-or-missing-full.md`:
 
 - `$ci.ub` element 1: R -0.00033139675441687, Python -0.00033145363275964915 (relative 0.00017) (2 cases; `rma`)
@@ -251,6 +263,8 @@ git, so its cause lines are copied below as it printed them.
 Cause: not yet traced. The findings point at the print methods of each result class (`src/metafopy/models/call.py` for the printed call).
 
 Fix direction: fix them one class at a time, starting with the printed call of `update`, which affects every fitting function.
+
+Note 2026-11-03: the whole audit `.audit/runs/20261103-071849` on the pinned R 4.6.2 and lme4 2.1-0 (metafopy `f040b41`) lists every cause below again; none vanished and none appeared.
 
 Causes, from the run's `wrong-or-missing-full.md`:
 
