@@ -197,7 +197,7 @@ recall runs.
 
 ## Task 5: Check the whole change and close the spec
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Spec Reference:** whole spec
@@ -206,24 +206,24 @@ recall runs.
 
 **Subtasks:**
 
-- [ ] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` to "Implemented: ..."
-- [ ] Move the `TODO.md` item "The audit harness misses one recall item and carries stale ledger entries" to the end of `DONE.md`: append its
+- [x] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` to "Implemented: ..."
+- [x] Move the `TODO.md` item "The audit harness misses one recall item and carries stale ledger entries" to the end of `DONE.md`: append its
       heading and body unchanged, then `Done: <date> - agents/specs/r-oracle-pin/spec.md, agents/tasks/r-oracle-pin/tasks-1.md.`, and remove it
       from `TODO.md`
-- [ ] Run `python3 ~/.claude/skills/todo-review/verify_bodies.py <baseline> TODO.md DONE.md`, where the baseline is `TODO.md` at the commit that
+- [x] Run `python3 ~/.claude/skills/todo-review/verify_bodies.py <baseline> TODO.md DONE.md`, where the baseline is `TODO.md` at the commit that
       added this task list (`git show $(git log --diff-filter=A --format=%H -- agents/tasks/r-oracle-pin/tasks-1.md):TODO.md`); the notes Task 4
       added to items 2 to 8 are additions, so their bodies still contain the baseline text
 
 **Acceptance Criteria:**
 
-- [ ] `verify_bodies.py` exits 0
+- [x] `verify_bodies.py` exits 0
 
 **Definition of Done:**
 
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_harness_compare.py src/tests/test_harness_accounts.py src/tests/test_harness_engine.py src/tests/test_harness_errors.py src/tests/test_harness_scripts.py src/tests/test_harness_transpile.py src/tests/test_audit10_fixes.py`
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_harness_compare.py src/tests/test_harness_accounts.py src/tests/test_harness_engine.py src/tests/test_harness_errors.py src/tests/test_harness_scripts.py src/tests/test_harness_transpile.py src/tests/test_audit10_fixes.py`
       passes (every test file that imports a changed `audit` module)
 
 **Notes:**
