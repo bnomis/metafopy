@@ -15,6 +15,8 @@ Cause: not yet traced. Every fit is affected, so the likely cause is the choice 
 
 Fix direction: compare the subset matrix `incl` with R's for one small fit first; the printed summaries follow from it.
 
+Spec: agents/specs/r-fused-arithmetic/spec.md; tasks: agents/tasks/r-fused-arithmetic/tasks-1.md.
+
 Causes, from the run's `wrong-or-missing-full.md`:
 
 - `$incl` element 259: R False, Python True (86 cases; `gosh`, `print`)
