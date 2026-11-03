@@ -95,7 +95,7 @@ location names `test_harness_errors.py` and `test_harness_accounts.py`;
 
 ## Task 3: Count recall items the oracle moved apart
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** API (`Item.oracle_moved`), Implementation - Recall items the oracle moved, Error handling
@@ -104,24 +104,24 @@ location names `test_harness_errors.py` and `test_harness_accounts.py`;
 
 **Subtasks:**
 
-- [ ] Add `oracle_moved` to `audit.recall.Item` and to `Corpus.load` (default `''`)
-- [ ] In `recall.write`, leave such items out of each audit's counts and the total, add `; <n> not shown by the pinned R` to the total line,
+- [x] Add `oracle_moved` to `audit.recall.Item` and to `Corpus.load` (default `''`)
+- [x] In `recall.write`, leave such items out of each audit's counts and the total, add `; <n> not shown by the pinned R` to the total line,
       and list them under `## Oracle moved (<n>)` with their text and the field; an `oracle_moved` item that matches a finding is listed as
       `reproduced again` and does not make the run fail
-- [ ] Describe the field in the header comment of `src/audit/data/recall.toml`, and give `a6-glmm-um-rs`
+- [x] Describe the field in the header comment of `src/audit/data/recall.toml`, and give `a6-glmm-um-rs`
       `oracle_moved = "2026-11-02, R 4.6.2 and lme4 2.1-0: R gives se 0.182140, Python 0.182139"`
-- [ ] Update the existing `Item(...)` calls in `src/tests/test_harness_compare.py` for the new field, and add tests: an `oracle_moved` item is
+- [x] Update the existing `Item(...)` calls in `src/tests/test_harness_compare.py` for the new field, and add tests: an `oracle_moved` item is
       in neither count and is listed in its section; one that matches a finding is marked `reproduced again`
 
 **Acceptance Criteria:**
 
-- [ ] `recall.write` on audit 6's results without the `a6-glmm-um-rs` hit reports every other item and one item not shown by the pinned R
+- [x] `recall.write` on audit 6's results without the `a6-glmm-um-rs` hit reports every other item and one item not shown by the pinned R
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_harness_compare.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_harness_compare.py` passes
 
 **Notes:**
 

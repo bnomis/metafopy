@@ -32,6 +32,7 @@ class Item:
     hint: list[str]
     reach: str
     why: str
+    oracle_moved: str = ''
 
     def matches(self, finding: Json) -> bool:
         for detector in self.find:
@@ -48,7 +49,10 @@ class Corpus:
     @classmethod
     def load(cls) -> Corpus:
         doc = tomllib.loads((audit.config.DATA_DIR / 'recall.toml').read_text())
-        items = [Item(i['id'], i['audit'], i['text'], i.get('find', []), i.get('hint', []), i.get('reach', ''), i.get('why', '')) for i in doc['item']]
+        items = [
+            Item(i['id'], i['audit'], i['text'], i.get('find', []), i.get('hint', []), i.get('reach', ''), i.get('why', ''), i.get('oracle_moved', ''))
+            for i in doc['item']
+        ]
         ids = [i.id for i in items]
         duplicates = sorted({i for i in ids if ids.count(i) > 1})
         if duplicates:
@@ -125,21 +129,33 @@ def write(out: pathlib.Path, corpus: Corpus, results: dict[int, dict[str, bool]]
     lines = ['# Recall: what the harness reproduces of the earlier audits', '']
     ok = True
     total_hit = total = 0
+    moved: list[tuple[Item, bool]] = []
     for number, hit in sorted(results.items()):
         items = [i for i in corpus.items if i.audit == number]
-        got = [i for i in items if hit[i.id]]
-        missed = [i for i in items if not hit[i.id]]
+        moved += [(i, hit[i.id]) for i in items if i.oracle_moved]
+        counted = [i for i in items if not i.oracle_moved]
+        got = [i for i in counted if hit[i.id]]
+        missed = [i for i in counted if not hit[i.id]]
         total_hit += len(got)
-        total += len(items)
-        lines += [f'## Audit {number} (metafopy `{commits[number]}`): {len(got)} of {len(items)} reproduced', '']
+        total += len(counted)
+        lines += [f'## Audit {number} (metafopy `{commits[number]}`): {len(got)} of {len(counted)} reproduced', '']
         for i in missed:
             reason = f' ({i.why})' if i.reach == 'none' else ''
             lines.append(f'- missed `{i.id}`: {i.text}{reason}')
             if i.reach != 'none':
                 ok = False
         lines.append('')
-    lines.insert(2, f'{total_hit} of {total} items reproduced.')
+    summary = f'{total_hit} of {total} items reproduced'
+    if moved:
+        summary += f'; {len(moved)} not shown by the pinned R'
+    lines.insert(2, f'{summary}.')
     lines.insert(3, '')
+    if moved:
+        lines += [f'## Oracle moved ({len(moved)})', '']
+        for i, hit_again in moved:
+            again = ' (reproduced again)' if hit_again else ''
+            lines.append(f'- `{i.id}`: {i.text}{again}; {i.oracle_moved}')
+        lines.append('')
     path = out / 'recall.md'
     path.write_text('\n'.join(lines))
     return path, ok

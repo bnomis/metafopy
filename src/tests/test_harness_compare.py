@@ -93,6 +93,34 @@ def test_recall_item_matches_by_globs() -> None:
     assert not item.matches({'id': 'options/predict/uni_reml/type="obs"', 'kind': 'crash', 'path': '', 'detail': ''})
 
 
+def write_recall(tmp_path: pathlib.Path, hit: bool) -> tuple[str, bool]:
+    corpus = audit.recall.Corpus(
+        {6: {}},
+        [
+            audit.recall.Item('a', 6, 'plain', [], [], '', ''),
+            audit.recall.Item('b', 6, 'moved text', [], [], '', '', '2026-11-02, R 4.6.2'),
+        ],
+    )
+    path, ok = audit.recall.write(tmp_path, corpus, {6: {'a': True, 'b': hit}}, {6: 'abc1234'})
+    return path.read_text(), ok
+
+
+def test_recall_oracle_moved_item_is_in_neither_count(tmp_path: pathlib.Path) -> None:
+    text, ok = write_recall(tmp_path, hit=False)
+    assert ok
+    assert '1 of 1 items reproduced; 1 not shown by the pinned R.' in text
+    assert '## Audit 6 (metafopy `abc1234`): 1 of 1 reproduced' in text
+    assert '## Oracle moved (1)' in text
+    assert '- `b`: moved text; 2026-11-02, R 4.6.2' in text
+    assert 'missed' not in text
+
+
+def test_recall_oracle_moved_item_that_matches_is_reproduced_again(tmp_path: pathlib.Path) -> None:
+    text, ok = write_recall(tmp_path, hit=True)
+    assert ok
+    assert '- `b`: moved text (reproduced again); 2026-11-02, R 4.6.2' in text
+
+
 def test_recall_hints_select_script_topics_and_cases() -> None:
     items = [
         audit.recall.Item('a', 5, '', [{'id': 'scripts/rma.mh/*'}], [], '', ''),
