@@ -60,7 +60,7 @@ location names `test_harness_errors.py` and `test_harness_accounts.py`;
 
 ## Task 2: Install the pinned versions in setup
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation - Setup, Error handling
@@ -69,21 +69,21 @@ location names `test_harness_errors.py` and `test_harness_accounts.py`;
 
 **Subtasks:**
 
-- [ ] In `src/audit/r/setup.R`, read `src/audit/data/r-versions.json`; install metafor, metadat and gsl first as today, then, in the pin file's
+- [x] In `src/audit/r/setup.R`, read `src/audit/data/r-versions.json`; install metafor, metadat and gsl first as today, then, in the pin file's
       order, every package whose installed version differs, with `remotes::install_version(p, version, upgrade = "never", dependencies = FALSE)`;
       skip `R`; print each failure under `NOT INSTALLED` with its pinned version
-- [ ] Update the header comment of `setup.R` and the "Setting up R" section of `src/audit/README.md`: every package is pinned in
+- [x] Update the header comment of `setup.R` and the "Setting up R" section of `src/audit/README.md`: every package is pinned in
       `data/r-versions.json`, `check-r` refuses a different library, and how to re-pin
-- [ ] Run `Rscript src/audit/r/setup.R <library> <out.json>` against the installed library and check it installs nothing (every version already
+- [x] Run `Rscript src/audit/r/setup.R <library> <out.json>` against the installed library and check it installs nothing (every version already
       matches) and that `out.json` equals the pin
 
 **Acceptance Criteria:**
 
-- [ ] On the installed library, `setup.R` reports no package to install and writes versions equal to the pin
+- [x] On the installed library, `setup.R` reports no package to install and writes versions equal to the pin
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
 
 **Notes:**
 
