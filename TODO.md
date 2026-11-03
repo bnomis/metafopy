@@ -5,6 +5,16 @@ Open work only, in implementation order, nearest first. Finished items move to
 the shape of an item.
 
 
+## The audit reports R's cluster port clash as a difference from R
+
+<!-- doc-counts: accept-start found on 2026-11-03 - a dated record, not a claim about the present -->
+Found on 2026-11-03 by `/todo-review`. The `DONE.md` entry of the whole-audit item records, in its note of 2026-11-02, a `gosh` case in `.audit/runs/20261102-143634` whose R cluster could not open its port, "not filed unless the next run shows it again". The whole audit `.audit/runs/20261103-071849` (metafopy `f040b41`, R 4.6.2) showed it again, on `profile`: `R: creation of server socket failed: port 11347 cannot be opened` (noted on the location-scale item).
+<!-- doc-counts: accept-end -->
+
+Cause: nothing in `src/audit/` sets the port of R's `parallel` clusters, so each R process takes a random port when it starts one (R's default), and shards running side by side can take the same port. R's failure is then reported as a cause, though it is not a difference of metafopy.
+
+Fix direction: give each R process the harness starts its own port range (`R_PARALLEL_PORT` in its environment, derived from the shard), with a test that two shards never share a port; then check that the next whole audit shows no socket failure.
+
 ## gosh gives different subsets and results from R on every fit
 
 <!-- doc-counts: accept-start found on 2026-11-02 - a dated record, not a claim about the present -->
