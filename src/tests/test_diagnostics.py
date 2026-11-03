@@ -1,5 +1,7 @@
 """influence(), rstandard(), rstudent(), leave1out() and cumul() checked against R metafor (tests/r/generate_diagnostics.R)."""
 
+import platform
+import sys
 import typing
 
 import numpy
@@ -447,12 +449,33 @@ def test_gosh_random_subsets(fits: dict[str, typing.Any], key: str, fit: str, kw
     check_gosh(metafopy.gosh(fits[fit], **kw), REF[key], key)
 
 
-@refutil.linux_only
 @pytest.mark.parametrize('case', refutil.load_phase12('audit3')['gosh']['dbinom_k'], ids=lambda c: str(c['k']))
 def test_dbinom_bits_match_r(case: dict[str, typing.Any]) -> None:
-    """R 4.5.1's probabilities of the subset sizes, to the last bit (the fixture holds them as hexadecimal floats)."""
+    """R 4.5.1's (unfused, Linux) probabilities of the subset sizes, to the last bit (the fixture holds them as hexadecimal floats)."""
     expected = [float.fromhex(v) for v in case['hex']]
-    assert metafopy.core.dbinom.dbinom(case['x'], case['k'], 0.5).tolist() == expected
+    got = metafopy.core.dbinom.dbinom(case['x'], case['k'], 0.5, fused=False)
+    refutil.assert_bits(got, expected, exact=sys.platform.startswith('linux'))
+
+
+@pytest.mark.parametrize(('machine', 'expected'), [('arm64', True), ('aarch64', True), ('ARM64', True), ('x86_64', False), ('AMD64', False)])
+def test_platform_fuses(monkeypatch: pytest.MonkeyPatch, machine: str, expected: bool) -> None:
+    monkeypatch.setattr(platform, 'machine', lambda: machine)
+    assert metafopy.core.dbinom.platform_fuses() is expected
+
+
+@pytest.mark.parametrize(
+    ('cases', 'expected'),
+    [
+        ([([4, 10, 12], 13, 0.5)], ['0x1.657fffffffffdp-4', '0x1.1dffffffffffep-5', '0x1.9fffffffffff4p-10']),
+        ([([0], n, 0.3) for n in (2, 3, 4)], ['0x1.f5c28f5c28f5dp-2', '0x1.5f3b645a1cac1p-2', '0x1.ebb98c7e2823ep-3']),
+        ([([n], n, 0.7) for n in (2, 3, 4)], ['0x1.f5c28f5c28f5bp-2', '0x1.5f3b645a1cabfp-2', '0x1.ebb98c7e2823ep-3']),
+    ],
+    ids=['saddle-point', 'pow1p-x0', 'pow1p-xn'],
+)
+def test_dbinom_fused_bits_match_r_4_6_2(cases: list[tuple[list[int], int, float]], expected: list[str]) -> None:
+    """R 4.6.2 on arm64 (fused): the saddle-point values and the ``pow1p`` values for n = 2, 3, 4."""
+    got = [v for x, n, p in cases for v in metafopy.core.dbinom.dbinom(x, n, p, fused=True).tolist()]
+    refutil.assert_bits(got, [float.fromhex(v) for v in expected], exact=sys.platform == 'darwin')
 
 
 @refutil.linux_only

@@ -13,7 +13,7 @@ imports a changed module or calls `gosh`.
 
 ## Task 1: Fused forms in dbinom, following the platform
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** API; Implementation - The fused forms
@@ -23,31 +23,33 @@ the user runs on the same kind of machine.
 
 **Subtasks:**
 
-- [ ] Add `platform_fuses()` (true when `platform.machine().lower()` is `arm64` or `aarch64`) and `FUSED = platform_fuses()` to
+- [x] Add `platform_fuses()` (true when `platform.machine().lower()` is `arm64` or `aarch64`) and `FUSED = platform_fuses()` to
       `src/metafopy/core/dbinom.py`
-- [ ] Give `bd0`, `pow1p` and `dbinom_raw` a `fused: bool` argument and use the fused forms of the spec's table when it is true; give `dbinom` a
+- [x] Give `bd0`, `pow1p` and `dbinom_raw` a `fused: bool` argument and use the fused forms of the spec's table when it is true; give `dbinom` a
       `fused: bool | None = None` argument, `None` meaning `FUSED`, passed down to every call
-- [ ] Rewrite the module docstring: the last bit depends on whether R's build fuses `a*b + c` (arm64 clang does, x86_64 R does not), as traced
+- [x] Rewrite the module docstring: the last bit depends on whether R's build fuses `a*b + c` (arm64 clang does, x86_64 R does not), as traced
       on 2026-11-03
-- [ ] In `src/tests/test_diagnostics.py`, make `test_dbinom_bits_match_r` call `dbinom(..., fused=False)` and drop its `refutil.linux_only`
-      mark (the fixture is R 4.5.1 on Linux, unfused)
-- [ ] Add tests: `platform_fuses` with `platform.machine` patched to `arm64`, `aarch64` and `x86_64`; `dbinom(c(4, 10, 12), 13, 0.5)`,
+- [x] In `src/tests/test_diagnostics.py`, make `test_dbinom_bits_match_r` call `dbinom(..., fused=False)` and drop its `refutil.linux_only`
+      mark (the fixture is R 4.5.1 on Linux, unfused); add `refutil.assert_bits(got, expected, exact)` to `src/tests/refutil.py` (last bit
+      when `exact`, else `rtol=1e-12`) and compare with `exact=sys.platform.startswith('linux')` (decision of 2026-11-03, see Notes)
+- [x] Add tests: `platform_fuses` with `platform.machine` patched to `arm64`, `aarch64` and `x86_64`; `dbinom(c(4, 10, 12), 13, 0.5)`,
       `dbinom(0, 2:4, 0.3)` and `dbinom(2:4, 2:4, 0.7)` with `fused=True` equal R 4.6.2's bits as the spec's Motivation lists them
-      (`0x1.657fffffffffdp-4`, `0x1.1dffffffffffep-5`, `0x1.9fffffffffff4p-10`; the `pow1p` values from R, written as hex literals)
-- [ ] Remove the `# auditme: accept[spec-api-signature-drift]` line above `def dbinom` in the spec's API block, now that the code has `fused`
+      (`0x1.657fffffffffdp-4`, `0x1.1dffffffffffep-5`, `0x1.9fffffffffff4p-10`; the `pow1p` values from R, written as hex literals),
+      compared through `refutil.assert_bits` with `exact=sys.platform == 'darwin'` (written already; only the comparison changes)
+- [x] Remove the `# auditme: accept[spec-api-signature-drift]` line above `def dbinom` in the spec's API block, now that the code has `fused`
 
 **Acceptance Criteria:**
 
-- [ ] `dbinom(..., fused=False)` gives the bits of `audit3.json`'s `gosh.dbinom_k` on every platform
-- [ ] `dbinom(..., fused=True)` gives R 4.6.2's bits for the values above
-- [ ] After `metafopy.set_seed(1234)`, `gosh(rma(yi, vi, data=dat), subsets=20)` on bcg (`measure='RR'`) with `FUSED` true gives R's first
+- [x] `dbinom(..., fused=False)` gives the bits of `audit3.json`'s `gosh.dbinom_k` on Linux, and agrees with them to `rtol=1e-12` elsewhere
+- [x] `dbinom(..., fused=True)` gives R 4.6.2's bits for the values above on macOS, and agrees with them to `rtol=1e-12` elsewhere
+- [x] After `metafopy.set_seed(1234)`, `gosh(rma(yi, vi, data=dat), subsets=20)` on bcg (`measure='RR'`) with `FUSED` true gives R's first
       `k` values `3 5 5 5 5 5 5 6 6 6` and first estimate `-1.1366851`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_diagnostics.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_diagnostics.py` passes
 
 **Notes:**
 
@@ -58,6 +60,13 @@ the user runs on the same kind of machine.
 
 ---
 
+**Unblocked 2026-11-03 (operator decision, recorded in the spec's Decisions):** with `fused=False` on arm64 macOS, `dbinom` misses 7 of
+the 844 values of `audit3.json` (k = 13, 28, 210, 400). Correctly rounded `log`, `exp` and `log1p` miss the same 7, and moving one `log1p`,
+`log` or `exp` result by 1 ulp reproduces each: glibc's last bits, not the fused arithmetic. Each fixture is compared to the last bit on the
+C library that made it and to `rtol=1e-12` elsewhere; the seeded `gosh` tests run only on their fixture's platform (Task 2).
+
+---
+
 ## Task 2: A fused reference from R, and seeded gosh tests of both variants
 
 **Status:** todo
@@ -65,7 +74,8 @@ the user runs on the same kind of machine.
 **Complexity:** medium
 **Spec Reference:** Implementation - Fixtures and tests; Documentation
 
-**Technical Goal:** both arithmetics are tested on every platform against values R made, and the Linux-only skip with the wrong reason goes.
+**Technical Goal:** both arithmetics are tested against values R made: to the last bit on the C library that made each fixture, and to a
+relative tolerance elsewhere; the Linux-only skip gets its true reason.
 
 **Subtasks:**
 
@@ -76,18 +86,19 @@ the user runs on the same kind of machine.
 - [ ] Run it with the pinned R (`LC_ALL=C.UTF-8 Rscript src/tests/r/generate_dbinom_fused.R`) to write
       `src/tests/reference/phase12/dbinom_fused.json`; check the probe is `0x1.1dffffffffffep-5`, or stop the task as `blocked` naming the R
       found
-- [ ] Add a test with `fused=True` over every k and p of the new fixture
+- [ ] Add a test with `fused=True` over every k and p of the new fixture, through `refutil.assert_bits` with `exact=sys.platform == 'darwin'`
 - [ ] Make `test_gosh_seeded` (`src/tests/test_audit3_misc.py`) and `test_gosh_random_subsets_global_seed` (`src/tests/test_diagnostics.py`)
-      patch `metafopy.core.dbinom.FUSED` to `False` with `monkeypatch`, and add a test that patches it to `True` against the new `gosh`
-      reference
-- [ ] Remove `refutil.linux_only` from `src/tests/refutil.py` and every use of it
+      patch `metafopy.core.dbinom.FUSED` to `False` with `monkeypatch` and keep `refutil.linux_only`, and add a test that patches it to
+      `True` against the new `gosh` reference, marked by a new `refutil.macos_only`
+- [ ] Give `refutil.linux_only` the reason "glibc's log, log1p and exp set the last bit of R's dbinom()" and correct its comment; give
+      `refutil.macos_only` the reason "Apple's libm sets the last bit of R's dbinom()"; leave either mark only on seeded `gosh` tests
 - [ ] Update the `seed` entry of `gosh_rma_uni`'s docstring (`src/metafopy/methods/gosh.py`) and `set_seed`'s docstring
       (`src/metafopy/core/rng.py`): random subsets match R built for the same kind of machine (fused on arm64, not on x86_64)
 
 **Acceptance Criteria:**
 
-- [ ] `grep -rn linux_only src/tests` finds nothing
-- [ ] The `dbinom` and seeded `gosh` tests run, not skip, on this machine, for both variants
+- [ ] `grep -rn 'linux_only\|macos_only' src/tests` finds only `refutil.py` and seeded `gosh` tests
+- [ ] On this machine every `dbinom` fixture test and the fused seeded `gosh` test run, not skip
 
 **Definition of Done:**
 
@@ -192,3 +203,30 @@ the spec is closed.
 
 - Depends on Tasks 1 to 3
 - The run takes long; start it in the background and wait for it
+
+---
+
+## Task 5: Decide how the unfused variant is tested off Linux
+
+**Status:** done
+**Priority:** high
+**Complexity:** small
+**Spec Reference:** Fixtures and tests (needs an operator decision; the spec assumes the unfused fixture matches everywhere)
+
+**Technical Goal:** settle what runs `fused=False` against the Linux fixture, given that Apple's libm differs from glibc's in `log`, `exp` and
+`log1p` (found in Task 1), so Tasks 1 and 2 can drop `refutil.linux_only` honestly.
+
+**Subtasks:**
+
+- [x] Operator chooses: keep `linux_only` on the unfused fixture test with the true reason (the C library's `log`/`exp`); compare unfused
+      results to the fixture with a tolerance of a few ulp off Linux; or cover the unfused arithmetic only through the Python-side fma-free
+      reference
+- [x] Amend the spec's Decisions, Fixtures and tests, and Task 1 and Task 2 acceptance criteria to match
+
+**Decision (operator, 2026-11-03):** exact where made - each fixture to the last bit on the C library that made it (glibc on Linux, Apple's
+libm on macOS), `rtol=1e-12` elsewhere; seeded `gosh` tests only on their fixture's platform. Recorded in the spec's Decisions and in
+Tasks 1 and 2.
+
+**Notes:**
+
+- Blocks Tasks 1 and 2
