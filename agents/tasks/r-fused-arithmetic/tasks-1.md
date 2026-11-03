@@ -69,7 +69,7 @@ C library that made it and to `rtol=1e-12` elsewhere; the seeded `gosh` tests ru
 
 ## Task 2: A fused reference from R, and seeded gosh tests of both variants
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Implementation - Fixtures and tests; Documentation
@@ -79,32 +79,32 @@ relative tolerance elsewhere; the Linux-only skip gets its true reason.
 
 **Subtasks:**
 
-- [ ] Write `src/tests/r/generate_dbinom_fused.R`: `dbinom(0:k, k, p)` as `%a` for k in 2, 5, 8, 13, 16, 24, 28, 37, 90, 210, 400 and p in
+- [x] Write `src/tests/r/generate_dbinom_fused.R`: `dbinom(0:k, k, p)` as `%a` for k in 2, 5, 8, 13, 16, 24, 28, 37, 90, 210, 400 and p in
       0.5, 0.3, 0.7; one seeded `gosh` reference (`set.seed(99)`, `gosh(r13, subsets = 100)`) in the shape `REF['gosh_random_global']` has in
       `src/tests/r/generate_diagnostics.R`; and `R.version.string`, `R.version$platform` and the fusion probe
       (`sprintf("%a", dbinom(10, 13, 0.5))`)
-- [ ] Run it with the pinned R (`LC_ALL=C.UTF-8 Rscript src/tests/r/generate_dbinom_fused.R`) to write
+- [x] Run it with the pinned R (`LC_ALL=C.UTF-8 Rscript src/tests/r/generate_dbinom_fused.R`) to write
       `src/tests/reference/phase12/dbinom_fused.json`; check the probe is `0x1.1dffffffffffep-5`, or stop the task as `blocked` naming the R
       found
-- [ ] Add a test with `fused=True` over every k and p of the new fixture, through `refutil.assert_bits` with `exact=sys.platform == 'darwin'`
-- [ ] Make `test_gosh_seeded` (`src/tests/test_audit3_misc.py`) and `test_gosh_random_subsets_global_seed` (`src/tests/test_diagnostics.py`)
+- [x] Add a test with `fused=True` over every k and p of the new fixture, through `refutil.assert_bits` with `exact=sys.platform == 'darwin'`
+- [x] Make `test_gosh_seeded` (`src/tests/test_audit3_misc.py`) and `test_gosh_random_subsets_global_seed` (`src/tests/test_diagnostics.py`)
       patch `metafopy.core.dbinom.FUSED` to `False` with `monkeypatch` and keep `refutil.linux_only`, and add a test that patches it to
       `True` against the new `gosh` reference, marked by a new `refutil.macos_only`
-- [ ] Give `refutil.linux_only` the reason "glibc's log, log1p and exp set the last bit of R's dbinom()" and correct its comment; give
+- [x] Give `refutil.linux_only` the reason "glibc's log, log1p and exp set the last bit of R's dbinom()" and correct its comment; give
       `refutil.macos_only` the reason "Apple's libm sets the last bit of R's dbinom()"; leave either mark only on seeded `gosh` tests
-- [ ] Update the `seed` entry of `gosh_rma_uni`'s docstring (`src/metafopy/methods/gosh.py`) and `set_seed`'s docstring
+- [x] Update the `seed` entry of `gosh_rma_uni`'s docstring (`src/metafopy/methods/gosh.py`) and `set_seed`'s docstring
       (`src/metafopy/core/rng.py`): random subsets match R built for the same kind of machine (fused on arm64, not on x86_64)
 
 **Acceptance Criteria:**
 
-- [ ] `grep -rn 'linux_only\|macos_only' src/tests` finds only `refutil.py` and seeded `gosh` tests
-- [ ] On this machine every `dbinom` fixture test and the fused seeded `gosh` test run, not skip
+- [x] `grep -rn 'linux_only\|macos_only' src/tests` finds only `refutil.py` and seeded `gosh` tests
+- [x] On this machine every `dbinom` fixture test and the fused seeded `gosh` test run, not skip
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_diagnostics.py src/tests/test_audit3_misc.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_diagnostics.py src/tests/test_audit3_misc.py` passes
 
 **Notes:**
 

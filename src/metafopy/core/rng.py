@@ -245,6 +245,8 @@ def set_seed(seed: int) -> RRandom:
     [hettest][metafopy.hettest] (the bootstrap), [vif][metafopy.vif] (with ``sim=True``), [fsn][metafopy.fsn] (with ``exact=True``),
     [qqnorm][metafopy.qqnorm] (the envelope) and ``conv_fivenum`` (methods ``'bc'`` and ``'mln'``). After ``set_seed(s)`` the results of ``permutest``,
     ``gosh``, ``hettest``, ``vif`` and ``conv_fivenum`` were compared with those of metafor after ``set.seed(s)`` and agree.
+    The random subsets of ``gosh`` match R built for the same kind of machine (fused multiply-add on arm64, none on x86_64), because R draws them
+    with probabilities whose last bit depends on that arithmetic.
     Without a call the generator is seeded from the clock on first use.
 
     Args:

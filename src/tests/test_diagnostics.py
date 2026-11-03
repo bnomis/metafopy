@@ -15,6 +15,7 @@ import metafopy.methods.influence
 import metafopy.transf
 
 REF = refutil.load_phase2('diagnostics')
+REF_FUSED = refutil.load_phase12('dbinom_fused')
 
 
 @pytest.fixture(scope='module')
@@ -443,7 +444,8 @@ def test_gosh_exact_matches_metafor(gosh_fits: dict[str, typing.Any], key: str) 
         ('gosh_random_mods', 'r13m', {'subsets': 200, 'seed': 7}),
     ],
 )
-def test_gosh_random_subsets(fits: dict[str, typing.Any], key: str, fit: str, kw: dict[str, typing.Any]) -> None:
+def test_gosh_random_subsets(monkeypatch: pytest.MonkeyPatch, fits: dict[str, typing.Any], key: str, fit: str, kw: dict[str, typing.Any]) -> None:
+    monkeypatch.setattr(metafopy.core.dbinom, 'FUSED', False)
     # Subset sizes and study indices are drawn with R's generator and R's dbinom (SciPy's binomial pmf differs in the last bit,
     # which reorders tied sizes inside R's sampler).
     check_gosh(metafopy.gosh(fits[fit], **kw), REF[key], key)
@@ -479,10 +481,26 @@ def test_dbinom_fused_bits_match_r_4_6_2(cases: list[tuple[list[int], int, float
 
 
 @refutil.linux_only
-def test_gosh_random_subsets_global_seed(fits: dict[str, typing.Any]) -> None:
+def test_gosh_random_subsets_global_seed(monkeypatch: pytest.MonkeyPatch, fits: dict[str, typing.Any]) -> None:
+    monkeypatch.setattr(metafopy.core.dbinom, 'FUSED', False)
     ref = REF['gosh_random_global']
     metafopy.set_seed(99)
     check_gosh(metafopy.gosh(fits['r13'], subsets=100), ref, 'global seed')
+
+
+@refutil.macos_only
+def test_gosh_random_subsets_global_seed_fused(monkeypatch: pytest.MonkeyPatch, fits: dict[str, typing.Any]) -> None:
+    """R 4.6.2 on arm64 (fused) draws these subsets with ``set.seed(99)``."""
+    monkeypatch.setattr(metafopy.core.dbinom, 'FUSED', True)
+    metafopy.set_seed(99)
+    check_gosh(metafopy.gosh(fits['r13'], subsets=100), REF_FUSED['gosh_random_global'], 'fused global seed')
+
+
+@pytest.mark.parametrize('case', REF_FUSED['dbinom'], ids=lambda c: f'k{c["k"]}-p{c["p"]}')
+def test_dbinom_fused_fixture_bits_match_r(case: dict[str, typing.Any]) -> None:
+    """``dbinom(0:k, k, p)`` of R 4.6.2 on arm64 (fused), to the last bit on Apple's libm and to ``rtol=1e-12`` elsewhere."""
+    got = metafopy.core.dbinom.dbinom(case['x'], case['k'], case['p'], fused=True)
+    refutil.assert_bits(got, [float.fromhex(v) for v in case['hex']], exact=sys.platform == 'darwin')
 
 
 def test_gosh_random_subsets_distribution(fits: dict[str, typing.Any]) -> None:
