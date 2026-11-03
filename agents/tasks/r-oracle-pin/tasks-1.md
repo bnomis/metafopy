@@ -16,7 +16,7 @@ location names `test_harness_errors.py` and `test_harness_accounts.py`;
 
 ## Task 1: Pin the R library and refuse a different one
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** API (`Context.allow_r_drift`, `library_drift`, `check_r`), Implementation - The pin, Error handling, Settings
@@ -26,29 +26,29 @@ location names `test_harness_errors.py` and `test_harness_accounts.py`;
 
 **Subtasks:**
 
-- [ ] Write `src/audit/data/r-versions.json` from the 2026-11-02 run's library: run `Rscript src/audit/r/versions.R <out>` against the installed
+- [x] Write `src/audit/data/r-versions.json` from the 2026-11-02 run's library: run `Rscript src/audit/r/versions.R <out>` against the installed
       library (`METAFOPY_AUDIT_RLIB`) and check it reports R 4.6.2 and lme4 2.1-0; if the installed library differs from those, stop the task as
       `blocked` and name the differences
-- [ ] Add `library_drift(lock, installed)` to `src/audit/steps.py`
-- [ ] Rewrite `check_r`: a missing pin raises `RuntimeError` naming the re-pin step (also with the flag); drift raises listing every package as
+- [x] Add `library_drift(lock, installed)` to `src/audit/steps.py`
+- [x] Rewrite `check_r`: a missing pin raises `RuntimeError` naming the re-pin step (also with the flag); drift raises listing every package as
       `name pinned -> installed` and the three ways on (reinstall with `setup.R`, re-pin after review, `--allow-r-drift`); with
       `ctx.allow_r_drift` the same list becomes the note `R library differs from the pin (--allow-r-drift): ...`; the metafor check stays first
-- [ ] Add `Context.allow_r_drift` and `--allow-r-drift` to `src/audit/cli.py`, and pass the flag on from `--recall` to the runs
+- [x] Add `Context.allow_r_drift` and `--allow-r-drift` to `src/audit/cli.py`, and pass the flag on from `--recall` to the runs
       `audit.recall.run_audit` starts
-- [ ] Tests in `src/tests/test_harness_compare.py`: `library_drift` on equal, changed, missing and extra packages; `check_r` with
+- [x] Tests in `src/tests/test_harness_compare.py`: `library_drift` on equal, changed, missing and extra packages; `check_r` with
       `audit.rdriver.run` stubbed (writing a given versions file) and `audit.config.DATA_DIR` pointed at a temporary pin: no pin raises, drift
       raises naming the package and the three ways, drift with `allow_r_drift` returns the note
 
 **Acceptance Criteria:**
 
-- [ ] `bin/metafor-audit.sh --steps check-r` passes on this machine's library
-- [ ] The same command with one pinned version edited in a scratch copy of the pin (restored afterwards) fails naming that package
+- [x] `bin/metafor-audit.sh --steps check-r` passes on this machine's library
+- [x] The same command with one pinned version edited in a scratch copy of the pin (restored afterwards) fails naming that package
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_harness_compare.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_harness_compare.py` passes
 
 **Notes:**
 

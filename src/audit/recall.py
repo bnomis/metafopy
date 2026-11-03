@@ -94,7 +94,7 @@ def checkout(commit: str) -> pathlib.Path:
     return path
 
 
-def run_audit(number: int, spec: Json, items: list[Item], out: pathlib.Path, jobs: int, full: bool) -> list[Json]:
+def run_audit(number: int, spec: Json, items: list[Item], out: pathlib.Path, jobs: int, full: bool, allow_r_drift: bool = False) -> list[Json]:
     """Run the harness against metafopy as of the audit's commit; the findings of the run, unfiltered."""
     worktree = checkout(spec['commit'])
     run_dir = out / f'audit{number}'
@@ -109,6 +109,8 @@ def run_audit(number: int, spec: Json, items: list[Item], out: pathlib.Path, job
         str(jobs),
         '--no-ledger',
     ]
+    if allow_r_drift:
+        command.append('--allow-r-drift')
     if not full:
         command += ['--steps', ','.join(steps_for(items))]
         for hint in hints(items):

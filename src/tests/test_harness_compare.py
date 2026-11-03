@@ -1,8 +1,14 @@
 """The comparison rules of the audit harness (``src/audit``): value trees, printed output, tolerances and the recall matcher."""
 
+import json
 import pathlib
+import subprocess
 
+import pytest
+
+import audit.config
 import audit.printdiff
+import audit.rdriver
 import audit.recall
 import audit.report
 import audit.rlib
@@ -172,3 +178,63 @@ def test_profile_positions_of_mv_fits_are_zero_based() -> None:
     assert audit.rlib.shift_arguments({'tau2': 1}, True) == {'tau2': 0}
     assert audit.rlib.shift_arguments({'tau2': 1}, False) == {'tau2': 1}
     assert audit.rlib.shift_arguments({'include': [1, 3]}) == {'include': [0, 2]}
+
+
+def test_library_drift_of_equal_libraries_is_empty() -> None:
+    assert audit.steps.library_drift({'R': '4.6.2', 'lme4': '2.1-0'}, {'R': '4.6.2', 'lme4': '2.1-0'}) == {}
+
+
+def test_library_drift_lists_changed_missing_and_extra_packages() -> None:
+    lock = {'R': '4.6.2', 'lme4': '2.1-0', 'gone': '1.0'}
+    installed = {'R': '4.6.2', 'lme4': '2.0.6', 'extra': '3.0'}
+    assert audit.steps.library_drift(lock, installed) == {'extra': (None, '3.0'), 'gone': ('1.0', None), 'lme4': ('2.1-0', '2.0.6')}
+
+
+def pin_environment(monkeypatch: pytest.MonkeyPatch, tmp_path: pathlib.Path, pinned: dict[str, str] | None, installed: dict[str, str]) -> audit.steps.Context:
+    data = tmp_path / 'data'
+    data.mkdir()
+    if pinned is not None:
+        (data / 'r-versions.json').write_text(json.dumps(pinned))
+    monkeypatch.setattr(audit.config, 'DATA_DIR', data)
+
+    def fake_run(script: pathlib.Path, *args: str) -> subprocess.CompletedProcess[str]:
+        pathlib.Path(args[0]).write_text(json.dumps(installed))
+        return subprocess.CompletedProcess([], 0, '', '')
+
+    monkeypatch.setattr(audit.rdriver, 'run', fake_run)
+    work = tmp_path / 'work'
+    work.mkdir()
+    return audit.steps.Context(work=work, jobs=1, timeout=1.0, quick=False, only=None)
+
+
+def test_check_r_without_a_pin_raises_even_with_the_flag(monkeypatch: pytest.MonkeyPatch, tmp_path: pathlib.Path) -> None:
+    installed = {'R': '4.6.2', 'metafor': audit.config.METAFOR_VERSION}
+    ctx = pin_environment(monkeypatch, tmp_path, None, installed)
+    ctx.allow_r_drift = True
+    with pytest.raises(RuntimeError, match='pin the R library first'):
+        audit.steps.check_r(ctx)
+
+
+def test_check_r_refuses_drift_naming_the_package_and_the_ways_on(monkeypatch: pytest.MonkeyPatch, tmp_path: pathlib.Path) -> None:
+    pinned = {'R': '4.6.2', 'lme4': '2.1-0', 'metafor': audit.config.METAFOR_VERSION}
+    ctx = pin_environment(monkeypatch, tmp_path, pinned, {**pinned, 'lme4': '2.0.6'})
+    with pytest.raises(RuntimeError, match=r'lme4 2\.1-0 -> 2\.0\.6') as info:
+        audit.steps.check_r(ctx)
+    message = str(info.value)
+    assert 'setup.R' in message
+    assert 're-pin' in message
+    assert '--allow-r-drift' in message
+
+
+def test_check_r_with_the_flag_turns_drift_into_a_note(monkeypatch: pytest.MonkeyPatch, tmp_path: pathlib.Path) -> None:
+    pinned = {'R': '4.6.2', 'lme4': '2.1-0', 'metafor': audit.config.METAFOR_VERSION}
+    ctx = pin_environment(monkeypatch, tmp_path, pinned, {**pinned, 'lme4': '2.0.6'})
+    ctx.allow_r_drift = True
+    outcome = audit.steps.check_r(ctx)
+    assert outcome.notes[0] == 'R library differs from the pin (--allow-r-drift): lme4 2.1-0 -> 2.0.6'
+
+
+def test_check_r_passes_on_the_pinned_library(monkeypatch: pytest.MonkeyPatch, tmp_path: pathlib.Path) -> None:
+    pinned = {'R': '4.6.2', 'metafor': audit.config.METAFOR_VERSION}
+    ctx = pin_environment(monkeypatch, tmp_path, pinned, pinned)
+    assert audit.steps.check_r(ctx).notes == [f'R 4.6.2, metafor {audit.config.METAFOR_VERSION}; 2 packages']
