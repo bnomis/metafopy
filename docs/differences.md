@@ -539,6 +539,20 @@ alpha.1  -3.0288 -25.1411 0.4381
 </div>
 </div>
 
+### Numerical Hessians of selection models and failed refits of rma_mv
+
+Standard errors of selection models come from a numerical Hessian, and R's and metafopy's are computed differently. On the
+same maximum they agree to about four digits: `selmodel(type='beta')` of the trim-and-fill fit of `dat.bcg` has the same
+log-likelihood (-99.049066667) and `delta` in both, and the standard error of the estimate is 0.06952 in R (with either of
+R's optimisers) and 0.06949 here, so its z value and p-value differ in the fourth digit. Where the Hessian is close to
+singular, R may fail to invert it where metafopy does not: `profile()` of `selmodel(res, type='stepfun')` refits each grid
+point to the same log-likelihood in both, but R reports "Error when trying to invert the Hessian" and gives `NA` intervals,
+where metafopy gives values. In the same way, `profile()` of an `rma_mv` fit can fail a refit in R (`ll` is `NA`) that
+metafopy completes.
+
+*Why:* a numerical Hessian, or a refit that R's optimiser fails, is not a property of the model, so metafopy keeps the
+inverted Hessian and the completed refit (checked 2026-11-04, R 4.6.2, metafor 5.2-1).
+
 ### selmodel on a flat likelihood
 
 `selmodel(type='beta')` on `dat.baskerville2012` has `tau2` near zero and a `delta` on its lower bound (both languages warn

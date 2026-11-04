@@ -5,25 +5,6 @@ Open work only, in implementation order, nearest first. Finished items move to
 the shape of an item.
 
 
-## Numerical Hessians and failed refits of R outside the accepted fits
-
-Cause: as for the location-scale and GLMM fits accepted on 2026-11-04, R and metafopy reach the same maximum, but R's finite-difference Hessian, taken at a point that differs in the last digits, gives other standard errors, or cannot be inverted for some refits; or R's optimiser fails a refit that metafopy completes. The evidence is in the notes of 2026-11-04 on the selection-model item (`selmodel(type='beta')` of `trimfill_bcg`: same log-likelihood -99.049066667 and `delta`; `profile()` of `sel_bcg`: 'Error when trying to invert the Hessian') and on the multivariate item (`profile()` of `mv_wide`: R's refit fails, `ll` NA).
-
-Fix direction: the decision of 2026-11-04 named location-scale and GLMM fits only; ask the operator whether it extends to these selection-model and multivariate cases, then add ledger entries with this evidence to `src/audit/data/known.toml` and `docs/differences.md`, or trace them further if not.
-
-### Selection models (copied from the selection-model item)
-
-- `$pval.delta` element 1: R 9.65330124664416e-05, Python 9.648235818601725e-05 (relative 0.00052) (1 cases; `selmodel`)
-- `$se` element 0: R 0.0695218232173794, Python 0.06949089045726904 (relative 0.00044) (1 cases; `selmodel`)
-- `$zval` element 0: R -2.3598482640218, Python -2.360898712835864 (relative 0.00044) (1 cases; `selmodel`)
-- line 5: R '-0.1641  0.0695  -2.3598  0.0183  -0.3003  -0.0278  *', Python '-0.1641  0.0695  -2.3609  0.0182  -0.3003  -0.0279  *' (3 cases; `rma`, `selmodel`)
-
-Note 2026-11-04: the `profile` causes the gosh item carried belong here. The slice `--only vif --only dfbetas --only profile` (`.audit/runs/20261104-071144`, local) lists `[]$ci.lb$intrcpt` and `[]$ci.ub$intrcpt` element 3 with R None, Python a value, on `matrix/profile/sel_bcg`, `matrix/profile/sel_digits` and the `options/profile/sel_bcg/*` cases, and `[]$ci.lb$intrcpt` element 2 (R -0.402157171730945, Python -0.40209684929512357) and `[]$ci.ub$ablat` on `matrix/profile/sel_mods_bcg`.
-
-### Multivariate profile (copied from the multivariate item)
-
-Note 2026-11-04: the `profile` causes on `matrix/profile/mv_wide` that the gosh item carried belong here: the slice `.audit/runs/20261104-071144` (local) lists `[]$ll`, `[]$beta$intrcpt`, `[]$beta$log(year - 1900 + 1000)` and `[]$ci.lb`/`[]$ci.ub` of both coefficients, element 2, R None, Python a value - the same pattern as `rstudent` and `confint` here.
-
 ## Selection models, trimfill and profile differ from R in small values and print
 
 <!-- doc-counts: accept-start found on 2026-11-02 - a dated record, not a claim about the present -->

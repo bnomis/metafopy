@@ -1624,3 +1624,25 @@ kind = "drawn-text-diff"
 detail = "*slab.st*"
 reason = "plot.infl.rma.uni(slab.style = ...): R's drawn labels are cut to a few characters ('A,19'), metafopy draws the full label ('A,1948'); not traced to a cause yet."
 ref = "docs/differences.md"
+
+[[known]]
+match = ["matrix/profile/sel_bcg", "matrix/profile/sel_digits", "options/profile/sel_bcg/*", "matrix/profile/sel_mods_bcg"]
+kind = "value-diff"
+path = ["[[]]$ci.lb$*", "[[]]$ci.ub$*"]
+reason = "profile() of the selection models of dat.bcg: R's refit at each grid point reaches the same log-likelihood as metafopy's (no $ll difference), but for sel_bcg R cannot invert the refit's numerical Hessian ('Error when trying to invert the Hessian'), so its interval is NA where metafopy's Hessian inverts; for sel_mods_bcg both invert and the intervals differ by 1e-4 relative. Accepted as R's numerical Hessian by decision of the operator (2026-11-04), as for location-scale fits (checked 2026-11-04, R 4.6.2, metafor 5.2-1)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/profile/mv_wide"
+kind = "value-diff"
+path = ["[[]]$ll", "[[]]$beta$*", "[[]]$ci.lb$*", "[[]]$ci.ub$*"]
+detail = "element *: R None, Python *"
+reason = "profile() of mv_wide: R's refit at one grid point fails (ll, beta and the intervals NA) where metafopy's refit completes (log-likelihood -9.8182). A failure of R's optimiser is not a property of the model; accepted by decision of the operator (2026-11-04), as for location-scale fits (checked 2026-11-04, R 4.6.2, metafor 5.2-1)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/selmodel/trimfill_bcg/type=*beta*"
+kind = "*-diff"
+path = ["$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$pval.delta", "$se.delta", "$zval.delta", ""]
+reason = "selmodel(type = 'beta') of the trim-and-fill fit: R and metafopy reach the same log-likelihood (-99.049066667) and delta, and R's optimizer = 'BFGS' gives R's se too (0.06952); metafopy's numerical Hessian gives 0.06949 (4e-4 relative), so the z value and p-values differ in the fourth digit. Accepted as R's numerical Hessian by decision of the operator (2026-11-04), as for location-scale fits (checked 2026-11-04, R 4.6.2, metafor 5.2-1)."
+ref = "docs/differences.md"
