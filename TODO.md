@@ -5,6 +5,35 @@ Open work only, in implementation order, nearest first. Finished items move to
 the shape of an item.
 
 
+## `I()` in a formula reads `|` as a bitwise OR where R's is a logical OR
+
+<!-- doc-counts: accept-start found on 2026-11-04 - a dated record, not a claim about the present -->
+Found on 2026-11-04 during the review of `TODO.md`, checking the location-scale causes of the small-numeric item. `rma('yi', 'vi', mods='~ablat+year', scale='~0+I(1|ablat)', data=dat)` on `dat.bcg` (`escalc(measure='RR')`) gives the scale column 45, 55, 43, 53, 13, ... (the bitwise OR of 1 and the integer `ablat`) and a log-likelihood of -8.4771; R's `1|ablat` is a logical OR, the column is 1 in every row, the model is `scale = ~ 1` and R's log-likelihood is -8.1069 (metafopy's `scale='~1'` gives -8.10687, as R). The audit case `construct/uni_mods_year/scale={"$formula":"~ 0 + I(1|ablat)"}` lists only a tiny `$ci.ub` difference for it, so the harness does not see this.
+<!-- doc-counts: accept-end -->
+
+Cause: `metafopy.formula.design_matrix` hands `I(...)` to formulaic, which evaluates it as Python; `r_power` rewrites R's `^` only, so R's logical `|`, `&` and `!` reach Python's bitwise operators (on integers they give numbers, on floats an error).
+
+Fix direction: translate R's logical operators inside `I()` (and anywhere formulaic evaluates R code) to element-wise logical operations, next to `r_power`; then find why the audit case shows no difference (how the harness passes the data or the formula) and make it show one before the fix.
+
+## Numerical Hessians and failed refits of R outside the accepted fits
+
+Cause: as for the location-scale and GLMM fits accepted on 2026-11-04, R and metafopy reach the same maximum, but R's finite-difference Hessian, taken at a point that differs in the last digits, gives other standard errors, or cannot be inverted for some refits; or R's optimiser fails a refit that metafopy completes. The evidence is in the notes of 2026-11-04 on the selection-model item (`selmodel(type='beta')` of `trimfill_bcg`: same log-likelihood -99.049066667 and `delta`; `profile()` of `sel_bcg`: 'Error when trying to invert the Hessian') and on the multivariate item (`profile()` of `mv_wide`: R's refit fails, `ll` NA).
+
+Fix direction: the decision of 2026-11-04 named location-scale and GLMM fits only; ask the operator whether it extends to these selection-model and multivariate cases, then add ledger entries with this evidence to `src/audit/data/known.toml` and `docs/differences.md`, or trace them further if not.
+
+### Selection models (copied from the selection-model item)
+
+- `$pval.delta` element 1: R 9.65330124664416e-05, Python 9.648235818601725e-05 (relative 0.00052) (1 cases; `selmodel`)
+- `$se` element 0: R 0.0695218232173794, Python 0.06949089045726904 (relative 0.00044) (1 cases; `selmodel`)
+- `$zval` element 0: R -2.3598482640218, Python -2.360898712835864 (relative 0.00044) (1 cases; `selmodel`)
+- line 5: R '-0.1641  0.0695  -2.3598  0.0183  -0.3003  -0.0278  *', Python '-0.1641  0.0695  -2.3609  0.0182  -0.3003  -0.0279  *' (3 cases; `rma`, `selmodel`)
+
+Note 2026-11-04: the `profile` causes the gosh item carried belong here. The slice `--only vif --only dfbetas --only profile` (`.audit/runs/20261104-071144`, local) lists `[]$ci.lb$intrcpt` and `[]$ci.ub$intrcpt` element 3 with R None, Python a value, on `matrix/profile/sel_bcg`, `matrix/profile/sel_digits` and the `options/profile/sel_bcg/*` cases, and `[]$ci.lb$intrcpt` element 2 (R -0.402157171730945, Python -0.40209684929512357) and `[]$ci.ub$ablat` on `matrix/profile/sel_mods_bcg`.
+
+### Multivariate profile (copied from the multivariate item)
+
+Note 2026-11-04: the `profile` causes on `matrix/profile/mv_wide` that the gosh item carried belong here: the slice `.audit/runs/20261104-071144` (local) lists `[]$ll`, `[]$beta$intrcpt`, `[]$beta$log(year - 1900 + 1000)` and `[]$ci.lb`/`[]$ci.ub` of both coefficients, element 2, R None, Python a value - the same pattern as `rstudent` and `confint` here.
+
 ## Selection models, trimfill and profile differ from R in small values and print
 
 <!-- doc-counts: accept-start found on 2026-11-02 - a dated record, not a claim about the present -->
@@ -36,6 +65,8 @@ Note 2026-11-04: the `profile` causes the gosh item carried belong here. The sli
 
 Note 2026-11-04: re-checked on the slice `.audit/runs/20261104-105354` (local, metafopy `a7b8700`); every cause above is listed again. `selmodel(type='beta')` of `trimfill_bcg` has R's log-likelihood (-99.049066667) and `delta`, and R's `optimizer='BFGS'` gives R's se too; only the se (0.06952 against 0.06949) differs, so it is the numerical Hessian. In `profile()` of `sel_bcg` R's refits converge but R cannot invert their Hessian ('Error when trying to invert the Hessian'), so its `ci.lb`/`ci.ub` are NA where metafopy's Hessian inverts. `trimfill`'s `se.k0` is not yet traced.
 
+Note 2026-11-04: the `selmodel` standard-error findings (`$se`, `$zval`, `$pval.delta`, the line-5 row) and the `profile` intervals where R gives none are worked in the item "Numerical Hessians and failed refits of R outside the accepted fits"; `trimfill`'s `se.k0` and the print of the step table stay here.
+
 ## Multivariate fits differ from R in the Hessian, ranef, rstudent and confint
 
 <!-- doc-counts: accept-start found on 2026-11-02 - a dated record, not a claim about the present -->
@@ -62,6 +93,8 @@ Note 2026-11-03: the whole audit `.audit/runs/20261103-071849` on the pinned R 4
 Note 2026-11-04: the `profile` causes on `matrix/profile/mv_wide` that the gosh item carried belong here: the slice `.audit/runs/20261104-071144` (local) lists `[]$ll`, `[]$beta$intrcpt`, `[]$beta$log(year - 1900 + 1000)` and `[]$ci.lb`/`[]$ci.ub` of both coefficients, element 2, R None, Python a value - the same pattern as `rstudent` and `confint` here.
 
 Note 2026-11-04: re-checked on the slice `.audit/runs/20261104-105354` (local, metafopy `a7b8700`); every cause above is listed again. In `profile()` of `mv_wide` R's refit fails at one grid point (`ll` NA) and metafopy's converges: the pattern accepted for location-scale fits on 2026-11-04, a decision that named those fits only. The Hessian of `mv_sp` (R 9 entries, metafopy 4) is a different set of parameters, not an optimiser stop point.
+
+Note 2026-11-04: the `profile` findings of `mv_wide` (R's refit fails at one grid point) are worked in the item "Numerical Hessians and failed refits of R outside the accepted fits"; the Hessian size, `ranef`, `rstudent`, `confint` and `simulate` stay here.
 
 ## Small numeric differences from R in rma, hettest and emmeans
 
@@ -90,6 +123,8 @@ Causes, from the run's `wrong-or-missing-full.md`:
 Note 2026-11-03: the whole audit `.audit/runs/20261103-071849` on the pinned R 4.6.2 and lme4 2.1-0 (metafopy `f040b41`) lists every cause below again; none vanished and none appeared.
 
 Note 2026-11-04: `line 20: R '---', Python 'intrcpt'` (7 cases) and the `intrcpt -0.5506` row (1 case) were the wrapping of a wide coefficient table: `metafopy.printing.fmt_table` counted a blank column of significance stars two characters wide where R counts one. Fixed with the location-scale print (`test_print_wraps_a_wide_table_as_r`); the `construct` step lists neither since (`.audit/runs/20261104-100918`, local).
+
+Note 2026-11-04: the `rma` causes still listed by the whole `construct` run `.audit/runs/20261104-100918` (re-rendered with today's ledger) are location-scale fits: `uni_reml` with `scale = ~ ablat` (`$H`, the scale row `-1.1536 2.3709`; log-likelihood -12.2023666 in both), `uni_mods_na` with `scale = ~ alloc` (the degenerate `alloc` scale of `ls_bcg`) and `uni_mods_year` with `scale = ~ 0 + I(1|ablat)` (`$ci.ub`; see the item on `I()` reading `|` as a bitwise OR). The first two fall under the operator's decision of 2026-11-04 on location-scale fits. `hettest`, the emmeans contrast and the script residual were not re-run.
 
 ## Printed output differs from R in layout, row names and the printed call
 
