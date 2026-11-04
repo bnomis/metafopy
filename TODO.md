@@ -5,7 +5,13 @@ Open work only, in implementation order, nearest first. Finished items move to
 the shape of an item.
 
 
-## The missing scale-test heading of `ls_bcg` variants has no ledger entry
+## Accepted location-scale differences that no ledger entry matches
+
+Cause: the operator accepted on 2026-11-04 the differences of location-scale fits that come from R's `nlminb` stopping at another point of a flat scale likelihood, or from R's numerical Hessian at the same maximum; the ledger entries written then match the `ls_*` fixtures and some `uni_*/scale=` cases by their details, so these cases are still listed as new.
+
+Fix direction: check each case below against R (log-likelihood and estimates: the same maximum with other standard errors is the Hessian, other estimates a stop point); add a ledger entry with that evidence to `src/audit/data/known.toml` for each that is, and file any that is neither as a defect; re-render a slice to see the findings move to `known`.
+
+### The missing scale-test heading of `ls_bcg` variants (filed 2026-11-04)
 
 <!-- doc-counts: accept-start found on 2026-11-04 - a dated record, not a claim about the present -->
 Found on 2026-11-04 by the slices `.audit/runs/20261104-174649` and `20261104-175221` (local, metafopy `3ec15be` with the change of `e1b260f`). On `construct/ls_bcg/mods=` with `~ ablat + alloc`, `~ ablat - 1`, `~ poly(ablat, 2)`, `~ ablat:alloc`, `~ I(ablat > 30)` and `~ I(ablat > 30 | year < 1970)`, R prints 'Test of Scale Coefficients (coefficients 2:3):' where metafopy goes on to 'Model Results (Scale):'. The audit lists them as new: no entry of `src/audit/data/known.toml` matches them, although the `Done:` line of the location-scale item in `DONE.md` (2026-11-04) says "the missing scale-test headings follow from the Hessian difference already accepted there". On the fixture itself (`mods = ~ ablat`, `scale = ~ alloc`) R and metafopy agree (`QS` 0.53647, scale se 2.1032, 5.1596, 2.4847). With `mods = ~ ablat + alloc` the scale estimates run off along the flat likelihood and stop at different points (R's intercept -21.54, metafopy's -33.715); R's Hessian there still inverts (se 44590.91, `QS` 0.1679, p 0.9195), metafopy's does not (se and `QS` NaN).
@@ -14,6 +20,15 @@ Found on 2026-11-04 by the slices `.audit/runs/20261104-174649` and `20261104-17
 Cause: R's `nlminb` stops at another point of a flat scale likelihood, the case accepted by decision of the operator (2026-11-04); `print` of a location-scale fit leaves out the scale test when `QS` is NaN (`src/metafopy/models/rma_ls_print.py:115`), so the difference shows as a missing heading.
 
 Fix direction: add the print-diff entry the `Done:` line promised to `src/audit/data/known.toml` (match `construct/ls_bcg/mods=*`, detail `line *: R 'Test of Scale Coefficients*', Python 'Model Results (Scale):'`), with this evidence as its reason; re-render a slice to see the findings move to `known`.
+
+### Location-scale fits of `uni_*` fixtures (copied from the small-numeric item)
+
+- `$H` element 3: R 0.978416389473902, Python 0.9791954341103023 (relative 0.0008) (1 cases; `rma`)
+- line 15: R 'allocrandom      -22.3482  55186.2609  -0.0004  0.9997  -108185.4320', Python 'allocrandom      -27.1962  626049.2249   0.0000   (1 cases; `rma`)
+- line 11: R 'intrcpt   -1.1536  2.3709  -0.4866  0.6266  -5.8005  3.4933', Python 'intrcpt   -1.1536  2.3700  -0.4867  0.6264  -5.7987  3.491 (1 cases; `rma`)
+- `$ci.ub` element 1: R -0.00033139675441687, Python -0.00033145363275964915 (relative 0.00017) (2 cases; `rma`)
+
+Note 2026-11-04: the construct run `.audit/runs/20261104-193457` (local, metafopy `548759d`; `--only 'scale=' --only 'construct/ls_'`) lists these again as new: on `uni_reml` with `scale = ~ ablat` also `$va`, `$se.alpha`, `$zval.alpha`, `$pval.alpha`, `$ci.lb.alpha` and `$ci.ub.alpha` (relative 0.0002 to 0.0008; log-likelihood -12.2023666 in both, from the small-numeric item's note); on `uni_mods_year` with `scale = ~ ablat` `$ci.ub` (R 0.00181749426921627, Python 0.0018172047295845102) and 'QM(df = 1) = 0.0795, p-val = 0.7780' against '0.0793, p-val = 0.7782', with `scale = ~ alloc` the row 'intrcpt -4.8337' against '-4.8336', with `scale = ~ 0 + I(1/ablat)` the row '-73.4722  35.3727' against '-73.4724  35.3725' (also on `ls_year`); and on `construct/ls_year/optbeta=true` R's 'Test of Location Coefficients (coefficients 2:3):' where metafopy goes on to 'Model Results (Location):'.
 
 ## Numerical Hessians and failed refits of R outside the accepted fits
 
@@ -126,6 +141,8 @@ Note 2026-11-04: `line 20: R '---', Python 'intrcpt'` (7 cases) and the `intrcpt
 
 Note 2026-11-04: the `rma` causes still listed by the whole `construct` run `.audit/runs/20261104-100918` (re-rendered with today's ledger) are location-scale fits: `uni_reml` with `scale = ~ ablat` (`$H`, the scale row `-1.1536 2.3709`; log-likelihood -12.2023666 in both), `uni_mods_na` with `scale = ~ alloc` (the degenerate `alloc` scale of `ls_bcg`) and `uni_mods_year` with `scale = ~ 0 + I(1|ablat)` (`$ci.ub`; see the item on `I()` reading `|` as a bitwise OR). The first two fall under the operator's decision of 2026-11-04 on location-scale fits. `hettest`, the emmeans contrast and the script residual were not re-run.
 
+Note 2026-11-04 (correcting the note above): the case `uni_mods_year` has `scale = ~ 0 + I(1/ablat)`; case ids show `/` as `|` (`label()`, `src/audit/domains.py:116`), so it has nothing to do with the item on `I()` reading `|` as a bitwise OR (now in `DONE.md`). The `rma` causes of location-scale fits are worked in the item "Accepted location-scale differences that no ledger entry matches"; `hettest`, the emmeans contrast and the script residual stay here.
+
 ## Printed output differs from R in layout, row names and the printed call
 
 <!-- doc-counts: accept-start found on 2026-11-02 - a dated record, not a claim about the present -->
@@ -157,3 +174,5 @@ Causes, from the run's `wrong-or-missing-full.md`:
 Note 2026-11-03: the whole audit `.audit/runs/20261103-071849` on the pinned R 4.6.2 and lme4 2.1-0 (metafopy `f040b41`) lists every cause below again; none vanished and none appeared.
 
 Note 2026-11-04: from the location-scale item (now in `DONE.md`): `predict()` of `ls_na` with a named `newscale` prints the row name `1` where R prints `year` (`options/predict/ls_na/newscale={"$named":{"ablat":30,"year":1960}}`, `.audit/runs/20261104-092750`, local).
+
+Note 2026-11-04: a print defect found by the construct run `.audit/runs/20261104-193457` (local, metafopy `548759d`): a scale model with one coefficient other than the intercept (`scale = ~ 0 + ablat`, `~ 0 + I(1/ablat)`, on `uni_reml`, `uni_mods`, `uni_na`, `uni_mods_na`, `uni_mods_year`, `uni_factor`, `uni_counts`, `ls_bcg`, `ls_year` and `ls_na`) prints the row without a name in R (R '-0.0338  0.0167  -2.0262  0.0427  -0.0664  -0.0011  *', Python 'ablat   -0.0338  0.0167  ...'). R's `print.rma.uni` prints any one-row scale table as a vector (`if (nrow(res.table) == 1L)`); `src/metafopy/models/rma_ls_print.py` drops the name only for an intercept-only scale model (`res.Z_int_only`). Start here: one condition, then the printed call of `update`.
