@@ -287,3 +287,59 @@ Cause: nothing in `src/audit/` sets the port of R's `parallel` clusters, so each
 Fix direction: give each R process the harness starts its own port range (`R_PARALLEL_PORT` in its environment, derived from the shard), with a test that two shards never share a port; then check that the next whole audit shows no socket failure.
 
 Done: 2026-11-03 - `audit.rdriver.cluster_port` gives each R process a free port of its own in `R_PARALLEL_PORT` (branch `fix/r-cluster-port`); tests `test_each_r_process_gets_its_own_free_cluster_port` and `test_r_takes_the_cluster_port_it_is_given` in `src/tests/test_harness_engine.py`. The next whole audit confirms no socket failure.
+
+## gosh gives different subsets and results from R on every fit
+
+<!-- doc-counts: accept-start found on 2026-11-02 - a dated record, not a claim about the present -->
+Found on 2026-11-02 by the whole audit `.audit/runs/20261102-223017` at metafopy `ffd5ffe` (metafor 5.2-1). Every `gosh` fit differs from R, in which subsets are included and in every result of them. The run's report is local and not in
+git, so its cause lines are copied below as it printed them.
+
+Cause: not yet traced. Every fit is affected, so the likely cause is the choice or order of subsets in `src/metafopy/methods/gosh.py` (random subsets when there are more than `subsets` of them), not one statistic.
+
+Fix direction: compare the subset matrix `incl` with R's for one small fit first; the printed summaries follow from it.
+
+Spec: agents/specs/r-fused-arithmetic/spec.md (implemented); tasks: agents/tasks/r-fused-arithmetic/tasks-1.md.
+
+Causes, from the run's `wrong-or-missing-full.md`:
+
+- `$incl` element 259: R False, Python True (86 cases; `gosh`, `print`)
+- `$res$H2` element 9: R 2.01139580879891, Python 22.871620858684505 (relative 0.91) (86 cases; `gosh`, `print`)
+- `$res$I2` element 9: R 50.2832811112825, Python 95.62776942579347 (relative 0.47) (86 cases; `gosh`, `print`)
+- `$res$QE` element 9: R 10.0569790439946, Python 114.35810429342253 (relative 0.91) (86 cases; `gosh`, `print`)
+- `$res$k` element 3: R 4, Python 5.0 (relative 0.2) (86 cases; `gosh`, `print`)
+- `$res$estimate` element 6: R -0.0270396616679308, Python -0.5357504809424486 (relative 0.95) (50 cases; `gosh`, `print`)
+- `$res$tau` element 0: R 0.384719728838867, Python 0.0 (relative 1) (60 cases; `gosh`)
+- `$res$tau2` element 0: R 0.148009269757851, Python 0.0 (relative 1) (60 cases; `gosh`)
+- `$res$intrcpt` element 0: R -0.408765362241168, Python 0.3991816712497156 (relative 2) (36 cases; `gosh`)
+- `[]$ci.lb$intrcpt` element 3: R None, Python -1.3381058095114846 (33 cases; `profile`)
+- `[]$ci.ub$intrcpt` element 3: R None, Python 0.07707642670447312 (32 cases; `profile`)
+- `$fit` element 0: R False, Python True (24 cases; `gosh`)
+- `$res$ablat` element 2: R 0.00233066315964768, Python -0.012250480672567066 (relative 1.2) (24 cases; `gosh`)
+- `$res$factor.alloc.random` element 1: R -0.651139340705579, Python None (12 cases; `gosh`)
+- `$res$factor.alloc.systematic` element 1: R -0.58522921765392, Python None (12 cases; `gosh`)
+- `$res$year` element 0: R None, Python 0.014467269976428554 (12 cases; `gosh`)
+- `$beta$sim` element 1152: R None, Python 1.0193929566782072 (2 cases; `vif`)
+- `$log.year...1900...1000.` element 53: R None, Python 0.0633444763804744 (1 cases; `dfbetas`)
+- `[]$beta$<name>` element 2: R None, Python 5.766776911948009 (1 cases; `profile`)
+- `[]$beta$intrcpt` element 2: R None, Python -40.15864014777602 (1 cases; `profile`)
+- `[]$ci.lb$<name>` element 2: R None, Python -13.618798384495301 (1 cases; `profile`)
+- `[]$ci.ub$<name>` element 2: R None, Python 25.15235220839132 (1 cases; `profile`)
+- `[]$ll` element 2: R None, Python -9.81822951023776 (1 cases; `profile`)
+- line 4: R 'k         6.0000  2.0000  5.0000  6.0000  7.0000  10.0000', Python 'k         6.2500  2.0000  5.0000  6.0000   7.2500  10.0000' (36 cases; `gosh`, `print`)
+- line 4: R 'k         6.1000  3.0000  4.7500  6.0000   8.0000  11.0000', Python 'k         7.5000  4.0000  5.7500  8.0000   9.2500  11.0000' (14 cases; `gosh`)
+- line 2: R 'Model fits succeeded: 17', Python 'Model fits succeeded: 19' (12 cases; `gosh`)
+- line 4: R 'k        6.7500  4.0000  5.0000  6.5000  8.0000 11.0000', Python 'k        6.7000  3.0000  5.7500  7.0000  8.0000 11.0000' (11 cases; `gosh`)
+- line 4: R 'k         6.4000    3.0000   5.0000   6.0000  7.2500 11.0000', Python 'k         6.7500    4.0000   5.0000   6.5000  8.0000 11.00 (10 cases; `gosh`)
+- line 3: R '1.0000', Python '1.00' (4 cases; `vif`)
+- line 4: R 'k                        5.5000  3.0000  4.2500  5.5000  6.7500  8.0000', Python 'k                        6.2000  4.0000  5.0000 (1 cases; `gosh`)
+- line 4: R 'k         5.5000    3.0000    4.2500   5.5000  6.7500   8.0000', Python 'k          6.2000    4.0000   5.0000   6.0000  7.0000 10 (1 cases; `gosh`)
+- line 4: R 'k        7.2000  5.0000  6.0000  7.0000  8.7500 10.0000', Python 'k        6.8000  3.0000  6.0000  7.0000  8.0000  9.0000' (1 cases; `gosh`)
+<!-- doc-counts: accept-end -->
+
+Note 2026-11-03: the whole audit `.audit/runs/20261103-071849` on the pinned R 4.6.2 and lme4 2.1-0 (metafopy `f040b41`) lists every cause below again; none vanished. The `dfbetas` cause (`$log.year...1900...1000.`) is now matched by the ledger entry of `matrix/dfbetas/mv_wide`, which names element 53 where it named element 17, so a rerender no longer lists it.
+
+Note 2026-11-03: `bin/metafor-audit.sh --only gosh` on the pinned R 4.6.2 with the fused `dbinom` (metafopy `5b09d65`, run `.audit/runs/20261103-204725`, local) lists no `$incl`, `$res` or summary-line (`k`, `Model fits succeeded`) difference for a `gosh` case: the causes that came from different random subsets have gone. The only `gosh` findings left are `matrix/gosh/uni_digits` (`$digits` R 2, Python 4.0, and its `print` line) and the `scripts/gosh/*` missing fields (`chksum*`, `verbose`), all matched by the ledger. Two ledger entries (`matrix/gosh/*` and `options/gosh/trimfill_bcg/*` in `src/audit/data/known.toml`) still give the reason "R 4.3.3"; they hide any `matrix/gosh` difference, so their reason is stale and the match should be narrowed to `uni_digits`. The slice did not run the `vif`, `dfbetas` or `profile` causes listed above; they stay open here until a whole audit lists them or not.
+
+Note 2026-11-04: the two ledger entries are removed. Without them, `bin/metafor-audit.sh --only gosh` (run `.audit/runs/20261104-070314`, local) listed only `matrix/gosh/uni_digits`: `gosh` dropped the fit's `digits` (R keeps `x$digits`), now fixed in `gosh.assemble` with `test_gosh_keeps_the_digits_of_the_fit`, after which the slice lists no `gosh` finding (`.audit/runs/20261104-070917`). Every `gosh` cause above has gone. The slice `--only vif --only dfbetas --only profile` (`.audit/runs/20261104-071144`) still lists the `vif` and `profile` causes above (`[]$ci.lb$intrcpt` R None in 33 cases, `$beta$sim`, `[]$ll`, the `vif` print `1.0000` against `1.00`) and none for `dfbetas`; they are not `gosh` differences, and they keep this item open.
+
+Done: 2026-11-04 - the gosh causes went with the fused `dbinom` (spec `agents/specs/r-fused-arithmetic/spec.md`, tasks `agents/tasks/r-fused-arithmetic/tasks-1.md`) and `c424565` (`gosh` keeps the fit's `digits`); `.audit/runs/20261104-070917` lists no `gosh` finding. Its `vif` and `profile` causes moved to the location-scale, selection-model and multivariate items, by the dated notes of 2026-11-04 there.
