@@ -518,4 +518,4 @@ def gosh_fixed_binary(
     beta = numpy.concatenate([b for b, _ in parts])
     het = numpy.concatenate([h for _, h in parts])
     # auditme: accept[literal-duplication] R's column name for an intercept-only model
-    return metafopy.methods.gosh.assemble(beta, het, incl, ['estimate'], True, x.method, x.measure)
+    return metafopy.methods.gosh.assemble(beta, het, incl, ['estimate'], True, x.method, x.measure, x.digits)

@@ -1,5 +1,6 @@
 """influence(), rstandard(), rstudent(), leave1out() and cumul() checked against R metafor (tests/r/generate_diagnostics.R)."""
 
+import dataclasses
 import platform
 import sys
 import typing
@@ -508,3 +509,12 @@ def test_gosh_random_subsets_distribution(fits: dict[str, typing.Any]) -> None:
     assert out.incl.shape == (300, 13)
     assert (out.res['k'].to_numpy() == out.incl.sum(axis=1)).all()
     assert (numpy.diff(out.res['k'].to_numpy()) >= 0).all()
+
+
+def test_gosh_keeps_the_digits_of_the_fit(fits: dict[str, typing.Any]) -> None:
+    """R's ``gosh.rma`` stores ``digits = x$digits``, and its print uses them (audit case ``matrix/gosh/uni_digits``)."""
+    fit = dataclasses.replace(fits['r13'], digits=2)
+    out = metafopy.gosh(fit, subsets=20, seed=1)
+    assert out.digits == 2
+    k_line = next(line for line in str(out).splitlines() if line.startswith('k '))
+    assert all(len(v.split('.')[1]) == 2 for v in k_line.split()[1:])

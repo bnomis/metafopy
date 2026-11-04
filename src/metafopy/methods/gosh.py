@@ -206,7 +206,7 @@ def gosh_rma_uni(
     beta = numpy.concatenate([b for b, _ in parts])
     het = numpy.concatenate([h for _, h in parts])
     # auditme: accept[literal-duplication] R's column name for an intercept-only model
-    return assemble(beta, het, incl, ['estimate'] if x.int_only else list(x.coef_names), x.int_only, x.method, x.measure)
+    return assemble(beta, het, incl, ['estimate'] if x.int_only else list(x.coef_names), x.int_only, x.method, x.measure, x.digits)
 
 
 def inclusion_matrix(k: int, p: int, subsets: int | None, seed: int | None, rng: metafopy.core.rng.RRandom | None) -> numpy.typing.NDArray[numpy.bool_]:
@@ -242,9 +242,17 @@ def inclusion_matrix(k: int, p: int, subsets: int | None, seed: int | None, rng:
 
 
 def assemble(
-    beta: FloatArray, het: FloatArray, incl: numpy.typing.NDArray[numpy.bool_], names: list[str], int_only: bool, method: str, measure: str
+    beta: FloatArray,
+    het: FloatArray,
+    incl: numpy.typing.NDArray[numpy.bool_],
+    names: list[str],
+    int_only: bool,
+    method: str,
+    measure: str,
+    digits: int,
 ) -> GoshResult:
-    """The :class:`GoshResult` of the fits to the subsets in ``incl`` (``het`` holds ``k``, ``QE``, ``I2``, ``H2`` and ``tau2``).
+    """The :class:`GoshResult` of the fits to the subsets in ``incl`` (``het`` holds ``k``, ``QE``, ``I2``, ``H2`` and ``tau2``); ``digits`` are
+    the model's, as R's ``gosh.rma`` keeps ``x$digits``.
 
     Raises:
         metafopy.errors.InputError: all fits failed.
@@ -262,7 +270,7 @@ def assemble(
     frame = frame.iloc[order].reset_index(drop=True)
     incl = incl[order]
     fit_ok = ~frame.isna().any(axis=1).to_numpy()
-    return GoshResult(res=frame, incl=incl, fit=fit_ok, k=incl.shape[1], int_only=int_only, method=method, measure=measure)
+    return GoshResult(res=frame, incl=incl, fit=fit_ok, k=incl.shape[1], int_only=int_only, method=method, measure=measure, digits=digits)
 
 
 def gosh_block(x: metafopy.models.rma_uni.RMAResult, model: int, incl: numpy.typing.NDArray[numpy.bool_]) -> tuple[FloatArray, FloatArray]:

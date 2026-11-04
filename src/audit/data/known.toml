@@ -16,11 +16,6 @@ reason = "rma_glmm(measure='OR', model='UM.FS') zval -4.2436 against R's -4.2434
 ref = "docs/differences.md"
 
 [[known]]
-match = "matrix/gosh/*"
-reason = "gosh(seed=) is bit-exact with R only where dbinom ties break the same way (R 4.5.1 on Linux); this oracle is R 4.3.3."
-ref = "docs/differences.md"
-
-[[known]]
 match = ["matrix/plot/gosh_*", "scripts/plots_gosh/*"]
 kind = "type-diff"
 detail = "*PlotGoshResult*"
@@ -997,11 +992,6 @@ match = "construct/ls_bcg/*"
 kind = "value-diff"
 path = ["$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$M", "$H", "$H2", "$I2", "$tau2", "$tau2.f", "$fit.stats$*", "$alpha", "$alpha$*", "$va", "$se.alpha", "$zval.alpha", "$pval.alpha", "$ci.lb.alpha", "$ci.ub.alpha", "$QS", "$QSp"]
 reason = "rma(mods=, scale = ~ alloc) of dat.bcg with extra or changed moderators, vi=0.1 and optbeta: the three-level scale model is degenerate (alpha of 18 to 31 on the boundary, tau2 of 1e-6, the Hessian of the scale part 1e8 or singular); the log-likelihood is equal and the boundary estimates differ. The default fit and optbeta=TRUE agree to 1e-9 in the log-likelihood and 1e-6 in the estimates."
-ref = "docs/differences.md"
-
-[[known]]
-match = "options/gosh/trimfill_bcg/*"
-reason = "gosh(seed=) is bit-exact with R only where dbinom ties break the same way (R 4.5.1 on Linux); this oracle is R 4.3.3."
 ref = "docs/differences.md"
 
 [[known]]
