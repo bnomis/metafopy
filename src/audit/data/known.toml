@@ -1002,6 +1002,20 @@ reason = "rma_glmm(model='UM.FS') (and mods) fitted by lme4 in R and by the port
 ref = "docs/differences.md"
 
 [[known]]
+match = "construct/glmm_bcg/*"
+kind = "print-diff"
+detail = "line *: R '*[0-9]*', Python '*[0-9]*'"
+reason = "The printed tests, coefficient rows and heterogeneity lines of rma_glmm(model='UM.FS') with moderators, measure, nAGQ or model variants (the value-diff entry above): R's glmer() stops before it converges for mods = ~ alloc, ~ year, ~ 0 + alloc and nAGQ = 3 (max|grad| 0.0187, 0.0137, 0.0041, 0.0050; for ~ alloc metafopy's estimates are 4.4e-5 higher on glmer's Laplace objective), and where it converges (~ I(ablat^2)) the maxima agree to 1e-8 but lme4's finite-difference Hessian is taken at estimates that differ in the sixth digit (QM 76.2183 against 76.2266). model = 'CM.EL' is the noisy saturated Hessian of the */glmm_cm* entries (Wld 268.5990 against 191.7124). Rows whose names or headings differ are not matched (checked 2026-11-04, R 4.6.2, metafor 5.2-1, lme4 2.1-0)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/predict/glmm_bcg/*"
+kind = "value-diff"
+path = "$prob"
+reason = "predict() of rma_glmm(model='UM.FS') with transf: the back-transformed prediction inherits the fourth-digit difference of the estimate and its standard error (the value-diff entries of */glmm_bcg above)."
+ref = "docs/differences.md"
+
+[[known]]
 match = "scripts/*"
 kind = "value-diff"
 detail = "*rma.glmm*"

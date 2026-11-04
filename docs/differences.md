@@ -601,6 +601,13 @@ standard error differs in the fifth digit.
 *Why:* the cause has not been traced. metafopy maximises the exact likelihood and R fits it with lme4 (its own quadrature and
 optimiser), and the difference is within the 2e-3 to 1e-1 relative tolerance that the tests allow for mixed-model fits.
 
+With moderators the printed tests differ in the same way. With `mods = ~ alloc`, `~ year` or `~ 0 + alloc`, and with `nAGQ = 3`,
+R's `glmer()` stops before it converges ("Model failed to converge with max|grad| = 0.0187", 0.0137, 0.0041 and 0.0050): for
+`~ alloc` metafopy's estimates are 4.4e-5 higher on glmer's own Laplace objective, and `QM` is 1.8844 against R's 1.8981. Where
+glmer converges (`~ I(ablat^2)`) the two maxima agree to 1e-8, and `QM` still differs (76.2266 against 76.2183), because the
+covariance matrix comes from lme4's finite-difference Hessian at estimates that differ in the sixth digit (checked 2026-11-04,
+R 4.6.2, metafor 5.2-1, lme4 2.1-0).
+
 <div class="compare" markdown>
 <div markdown>
 
