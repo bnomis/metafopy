@@ -482,6 +482,56 @@ print(res.se_alpha)
 </div>
 </div>
 
+### Refits of a location-scale model that R's optimiser leaves short
+
+`confint` and `permutest` refit a location-scale model many times, with one scale coefficient fixed or with permuted rows.
+Where the scale likelihood is flat, R's `nlminb` stops some of these refits short, or fails them, and metafopy's optimiser
+finishes them. Here the lower bound for the scale intercept refits the model with that coefficient fixed. At R's bound,
+-18.7856, R's refit ends at a log-likelihood of -11.58, below the cut-off of -9.75. metafopy's refit reaches -8.01 by moving
+the other scale coefficients, so it keeps searching and finds -25.1411. In the same way, `permutest` skips a permutation whose
+refit R fails ("did not achieve convergence") and draws the next one, while metafopy keeps it, so the later rows are shifted.
+
+*Why:* the refits run on the same likelihood, and metafopy's reach the higher value. A failure or early stop of R's optimiser
+is not a property of the model, so metafopy does not reproduce it (checked 2026-11-04, R 4.6.2, metafor 5.2-1).
+
+<div class="compare" markdown>
+<div markdown>
+
+**R, metafor 5.2-1**
+
+```r
+library(metafor)
+dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
+res <- rma(yi, vi, mods = ~ ablat, scale = ~ alloc, data = dat)
+confint(res, alpha = 1)
+```
+
+```text
+        estimate    ci.lb  ci.ub
+alpha.1  -3.0288 -18.7856 0.4381
+```
+
+</div>
+<div markdown>
+
+**Python, metafopy**
+
+```python
+from metafopy import confint, datasets, escalc, rma
+
+dat = escalc(measure='RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=datasets.load('dat.bcg'))
+res = rma('yi', 'vi', mods='~ ablat', scale='~ alloc', data=dat)
+print(confint(res, alpha=0))
+```
+
+```text
+        estimate    ci.lb  ci.ub
+alpha.1  -3.0288 -25.1411 0.4381
+```
+
+</div>
+</div>
+
 ### selmodel on a flat likelihood
 
 `selmodel(type='beta')` on `dat.baskerville2012` has `tau2` near zero and a `delta` on its lower bound (both languages warn

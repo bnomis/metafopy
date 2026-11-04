@@ -913,6 +913,67 @@ reason = "Same as permutest/ls_*: refits of a flat location-scale likelihood."
 ref = "docs/differences.md"
 
 [[known]]
+match = ["construct/ls_*", "matrix/print/ls_*", "matrix/summary/ls_*", "matrix/update/ls_*", "options/print/ls_*", "options/summary/ls_*", "options/update/ls_*", "options/anova/ls_*", "options/predict/ls_*"]
+kind = "print-diff"
+detail = "line *: R '[A-Za-z]*[0-9]*', Python '[A-Za-z]*[0-9]*'"
+reason = "The printed tests and coefficient rows of the flat location-scale fits and their refits (the value-diff entries of ls_year, ls_na and construct/ls_*/control=* above): R's nlminb and metafopy's BFGS stop at different points of the same likelihood. On ls_na R's se.alpha of the scale intercept is 5.5981763 and metafopy's 5.5980235 at log-likelihoods equal to 1e-11; R's own optimizer = 'BFGS' gives 5.5979565. With vi = 0.1 (ls_bcg) or scale = ~ alloc (ls_na) the scale intercept runs towards tau2 = 0 (-21.9 against -22.5, -15.2 against -17.2) at log-likelihoods equal to 1e-9, and the printed scale test QS differs while QM agrees (checked 2026-11-04, R 4.6.2, metafor 5.2-1). Rows whose names or headings differ are not matched."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["construct/ls_*", "options/predict/ls_*"]
+kind = "print-diff"
+detail = "line *: R '-[0-9]*', Python '-[0-9]*'"
+reason = "Same as the print-diff entry above, for printed rows without a name (predict() values, a coefficient whose name is a one-column formula term)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/logLik/ls_*"
+kind = "print-diff"
+detail = "line 1: R \"'log Lik.' *\", Python \"'log Lik.' *\""
+reason = "The seventh digit of the log-likelihood of the flat fit ls_na (-4.194072548 in both): R prints -3.214979 for one option variant and metafopy -3.21498, a stop point of the optimiser as in the value-diff entries above."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["construct/ls_bcg/optbeta=true", "construct/ls_na/optbeta=true"]
+kind = "value-diff"
+path = "$vcovmat"
+reason = "The joint covariance matrix of optbeta = TRUE is the inverse numerical Hessian at the optimiser's stop point on a flat scale likelihood (see construct/ls_*/control=* above); it differs by 1e-4 to 2e-4 relative."
+ref = "docs/differences.md"
+
+[[known]]
+match = "construct/ls_na/control=*"
+kind = "refused-where-R-works"
+detail = "EstimationError: Optimizer (*) did not achieve convergence*"
+reason = "metafopy runs SciPy stand-ins for lbfgsb3c, Rcgmin, Rvmmin and optimParallel; on the flat scale likelihood of ls_na (scale intercept -10.4, tau2 on the boundary) they report abnormal termination where R's packages stop, as nlminb and BFGS stop at different points (see construct/ls_*/control=* above). The default optimiser fits it."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["*/permutest/ls_na", "*/permutest/ls_na/*"]
+kind = "*-diff"
+reason = "permutest(iter = 20, seed = 1) of ls_na: at the fourth permutation R's refit fails ('Optimizer (nlminb) did not achieve convergence (convergence = 1)') and R draws the next permutation, while metafopy's refit converges (QM 46.76), so every later row is shifted by one; the rows agree otherwise (checked 2026-11-04, R 4.6.2, metafor 5.2-1). metafopy does not reproduce a failure of R's optimiser."
+ref = "docs/differences.md"
+
+[[known]]
+match = "*/permutest/ls_bangert*"
+kind = "print-diff"
+detail = "*R 'I(ni/100) *', Python 'I(ni/100) *'"
+reason = "permutest(iter = 20, seed = 1) of ls_bangert: at the 17th permutation of the scale model the coefficient of imag runs off on a flat likelihood and metafopy's numerical Hessian cannot be inverted (z-values NaN), while R's can (z of imag -0.0006); the permutation p-value of the scale slope I(ni/100) is then 1/19 in metafopy against R's 1/20, and its significance star differs (checked 2026-11-04, R 4.6.2, metafor 5.2-1). The same Hessian difference as construct/ls_bcg's warning-extra entry."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/permutest/ls_bcg/exact=true"
+kind = "r-killed"
+reason = "The exact permutation test of ls_bcg enumerates every permutation of the scale model and R passes the harness's 4 GiB memory limit; metafopy has nothing to compare with."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["*/confint/ls_na*", "*/confint/ls_bcg*"]
+kind = "print-diff"
+detail = "*R 'alpha.*', Python 'alpha.*'"
+reason = "confint() bounds of the scale coefficients of the flat fits ls_na and ls_bcg: each bound refits the model with one scale coefficient fixed, and R's nlminb stops short on that flat surface. With the scale intercept of ls_na fixed at -27.0874 R's refit ends at log-likelihood -42.12 and metafopy's at -5.98, so R finds no lower bound (NA); for ls_bcg fixed at -18.7856 R reaches -11.58 and metafopy -8.01 (the cut-off is -9.75), so R's bound is nearer the estimate (checked 2026-11-04, R 4.6.2, metafor 5.2-1)."
+ref = "docs/differences.md"
+
+[[known]]
 match = "*/mv_sp*"
 kind = "value-diff"
 path = ["$rho", "$tau2", "$sigma2", "$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$G", "$M", "$vvc", "$hessian", "$fit.stats$*", "[]*", ""]

@@ -2,6 +2,8 @@
 
 ## Unreleased (1.0 candidate)
 
+- Printed output of location-scale fits follows R: `vif()` prints four decimals and one-digit p-values whatever `digits` it was given (R's `vif.rma` keeps no `digits` for these fits; explicit print digits still apply), a single location coefficient other than the intercept keeps its row name, and a wide coefficient table wraps where R's does, because a blank column of significance stars now counts one character (it counted two since Audit 13; this also fixes the wrapping of wide `rma()` tables). The audit ledger accepts the remaining differences of location-scale fits as stop points or failures of R's `nlminb` on flat likelihoods (`docs/differences.md`, "Refits of a location-scale model that R's optimiser leaves short").
+
 - Interactive charts: `metafopy.interactive` (needs the `interactive` extra; `import metafopy` does not load Altair) has `forest_chart()` and `funnel_chart()`, which return Altair charts of an intercept-only `rma_uni`/`rma_mv` fit (funnel: also a `trimfill` result), and `chart_data()`, the frames behind them (`ChartData`). The showcase notebook calls them instead of building the charts by hand.
 
 - Function reference: the link to the metafor reference page of each function is now a final section "Metafor reference" (after Examples) instead of a sentence in the description.

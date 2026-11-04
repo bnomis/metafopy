@@ -5,83 +5,6 @@ Open work only, in implementation order, nearest first. Finished items move to
 the shape of an item.
 
 
-## Location-scale fits differ from R in estimates, permutation tests, profile bounds and print
-
-<!-- doc-counts: accept-start found on 2026-11-02 - a dated record, not a claim about the present -->
-Found on 2026-11-02 by the whole audit `.audit/runs/20261102-223017` at metafopy `ffd5ffe` (metafor 5.2-1). Location-scale fits (`rma` with `scale`; the `ls_*` fits) differ in the last digits of their standard errors and tests, in `permutest` (permuted coefficients of the opposite sign), in `confint` scale bounds where R gives `NA`, in `vif`, in four optimizers metafopy refuses, and in the headings of their print. The run's report is local and not in
-git, so its cause lines are copied below as it printed them.
-
-Cause: not yet traced; several may share one. The findings point at `src/metafopy/models/rma_ls_fit.py` (convergence), `src/metafopy/methods/ls_permutest.py`, `src/metafopy/methods/ls_confint.py`, `src/metafopy/methods/ls_vif.py` and `src/metafopy/models/rma_ls_result.py` (print). The R process killed for memory is R's own limit on `permutest(exact=TRUE)`, not a metafopy fault.
-
-Fix direction: start with the fit itself (the 211-case `QM` and 127-case `se` differences on `ls_year` and `ls_na`), since the tests, `confint` and `permutest` are built on it; then `permutest`'s signs, the `confint` bounds where R gives up, the optimizers, and the print headings. Split this item if the parts turn out to have separate causes.
-
-Causes, from the run's `wrong-or-missing-full.md`:
-
-- R: R passed the memory limit of 4 GiB (killed) (2 cases; `permutest`)
-- EstimationError: Optimizer (Rcgmin) did not achieve convergence (ABNORMAL: ). (1 cases; `rma`)
-- EstimationError: Optimizer (Rvmmin) did not achieve convergence (ABNORMAL: ). (1 cases; `rma`)
-- EstimationError: Optimizer (lbfgsb3c) did not achieve convergence (ABNORMAL: ). (1 cases; `rma`)
-- EstimationError: Optimizer (optimParallel) did not achieve convergence (ABNORMAL: ). (1 cases; `rma`)
-- `$QM.perm` element 14: R 0.0200910239625718, Python 11.119548182959777 (relative 1) (50 cases; `permutest`)
-- `$beta.perm$intrcpt` element 19: R -47.5589351508886, Python 45.83744578027836 (relative 2) (50 cases; `permutest`)
-- `$beta.perm$year` element 19: R 0.0238767715964596, Python -0.023592544278131733 (relative 2) (50 cases; `permutest`)
-- `$zval.perm$intrcpt` element 19: R -1.32883778217893, Python 1.9383745471523741 (relative 1.7) (50 cases; `permutest`)
-- `$zval.perm$year` element 19: R 1.3115090918244, Python -1.9512703736744204 (relative 1.7) (50 cases; `permutest`)
-- `$beta$prop` element 1: R 0.998998998998999, Python 0.998 (relative 0.001) (2 cases; `vif`)
-- `$vcovmat` element 10: R 0.600577420109585, Python 0.6005034810249658 (relative 0.00012) (2 cases; `rma`)
-- `$alpha$prop` element 1: R 0.698396793587174, Python 0.6717325227963525 (relative 0.038) (1 cases; `vif`)
-- `$alpha$sim` element 1990: R 1.00000000064568, Python None (1 cases; `vif`)
-- `$ci.lb.alpha` element 1: R -0.137767763314913, Python -0.13771275253750662 (relative 0.0004) (1 cases; `rma`)
-- `$ci.ub.alpha` element 0: R 3.49331755351219, Python 3.4915535605161026 (relative 0.0005) (1 cases; `rma`)
-- `$pval.alpha` element 0: R 0.626571724710284, Python 0.6264407445288733 (relative 0.00021) (1 cases; `rma`)
-- `$se.alpha` element 1: R 0.0701795309043885, Python 0.07015146427298927 (relative 0.0004) (1 cases; `rma`)
-- `$va` element 2: R -0.162084992095922, Python -0.1619553584200976 (relative 0.0008) (1 cases; `rma`)
-- `$zval.alpha` element 1: R -0.00311216515101929, Python -0.0031133933120681464 (relative 0.00039) (1 cases; `rma`)
-- line 12: R 'QM(df = 2) = 1.2830, p-val = 0.5265', Python 'QM(df = 2) = 1.2828, p-val = 0.5266' (211 cases; `permutest`, `print`, `rma`, `rma.glmm` and 2 more)
-- line 14: R 'intrcpt  -10.4383  5.5982  -1.8646  0.0622  -21.4105  0.5339  .', Python 'intrcpt  -10.4383  5.5980  -1.8646  0.0622  -21.4102   (127 cases; `print`, `rma`, `summary`, `update`)
-- line 2: R 'alpha.1 -10.4383    NA -2.9930', Python 'alpha.1 -10.4383 -27.0874 -2.9930' (44 cases; `confint`)
-- line 2: R 'alpha.1  -3.0288 -18.7856 0.4381', Python 'alpha.1  -3.0288 -25.1411 0.4381' (43 cases; `confint`)
-- line 14: R 'intrcpt           -3.0288  2.1031  -1.4401  0.1498   -7.1508   1.0933', Python 'intrcpt           -3.0288  2.1032  -1.4401  0.14 (6 cases; `rma`)
-- line 6: R '0.3083  0.8897', Python '0.3077  0.8898' (5 cases; `vif`)
-- line 14: R 'intrcpt  -10.4383  5.5982  -1.8646   8  0.0992  -23.3477  2.4711  .', Python 'intrcpt  -10.4383  5.5980  -1.8646   8  0.0992  -2 (5 cases; `rma`)
-- line 12: R 'Test of Scale Coefficients (coefficients 2:3):', Python 'Model Results (Scale):' (3 cases; `rma`)
-- line 6: R 'ablat   -0.0189  0.0017  -11.0003  <.0001  -0.0223  -0.0155  ***', Python '-0.0189  0.0017  -11.0003  <.0001  -0.0223  -0.0155  * (3 cases; `rma`)
-- line 14: R 'intrcpt           -5.4749  27.8296  -0.1967  0.8440  -60.0200  49.0701', Python 'intrcpt           -5.4749  27.8241  -0.1968  0. (3 cases; `rma`)
-- line 13: R 'I(ni/100)     -1.00  0.61  -1.64  0.05   -2.19   0.19  *', Python 'I(ni/100)     -1.00  0.61  -1.64  0.05   -2.19   0.19  .' (2 cases; `permutest`)
-- line 2: R 'alpha.1    -3.03 -18.79  0.44', Python 'alpha.1    -3.03 -25.14  0.44' (2 cases; `confint`)
-- line 2: R 'alpha.1   -10.44    NA -2.99', Python 'alpha.1   -10.44 -27.09 -2.99' (2 cases; `confint`)
-- line 1: R "'log Lik.' -3.214979 (df=4)", Python "'log Lik.' -3.21498 (df=4)" (1 cases; `logLik`)
-- line 2: R '-10.3388 5.5402 -21.1974 0.5199', Python '-10.3388 5.5401 -21.1971 0.5196' (1 cases; `predict`)
-- line 2: R '-3.5286 1.7967 -7.0501 -0.0071', Python '-3.5286 1.7970 -7.0506 -0.0066' (1 cases; `predict`)
-- line 3: R 'I(ni/100)  1.0094  0.28', Python 'I(ni/100)  1.0094  0.30' (1 cases; `vif`)
-- line 2: R 'QS(df = 1) = 0.5476, p-val = 0.4593', Python 'QS(df = 1) = 0.5474, p-val = 0.4594' (1 cases; `anova`)
-- line 4: R 'Test of Location Coefficients (coefficients 2:3):', Python 'Model Results (Location):' (1 cases; `rma`)
-- line 15: R 'Test of Scale Coefficients (coefficients 2:3):', Python 'intrcpt' (1 cases; `rma`)
-- line 6: R 'allocrandom      2.2723  0.50', Python 'allocrandom      2.2723  0.97' (1 cases; `vif`)
-- line 6: R 'alpha.3   1.1903 <-10.7124    NA', Python 'alpha.3   1.1903 <-10.7124 >13.0929' (1 cases; `confint`)
-- line 2: R 'alpha.1  -3.0288 -17.9949 -0.1956', Python 'alpha.1  -3.0288 -25.2283 -0.1956' (1 cases; `confint`)
-- line 2: R 'alpha.1 -10.4383    NA    NA', Python 'alpha.1 -10.4383    NA -2.9930' (1 cases; `confint`)
-- line 17: R 'imag         2.1262  1.1857   1.7932  0.0729  -0.1978   4.4502   .', Python 'imag         2.1258  1.1857   1.7929  0.0730  -0.19 (1 cases; `rma`)
-- line 12: R 'intrcpt                                              0.0876  -1.2308  0.0846  .', Python 'intrcpt                                (1 cases; `rma`)
-- line 14: R 'intrcpt           -3.4482  6.0407  -0.5708  0.5681  -15.2878   8.3913', Python 'intrcpt           -3.4482  6.0391  -0.5710  0.56 (1 cases; `rma`)
-- line 8: R 'intrcpt       6.9574  27.4113   0.2538  0.7996  -46.7677  60.6825', Python 'intrcpt       6.9587  27.4109   0.2539  0.7996  -46.7 (1 cases; `rma`)
-- line 3: R 'intrcpt     0.2303 0.0655  3.5166  <.1  0.1019  0.3586     NA     NA', Python 'intrcpt     0.2303 0.0655  3.5166 0.0004  0.1019   (1 cases; `vif`)
-- line 15: R 'intrcpt     -2.3458  0.8353  -2.8082  0.0050  -3.9830  -0.7085  **', Python 'intrcpt     -2.3456  0.8354  -2.8079  0.0050  -3.98 (1 cases; `rma`)
-- line 3: R 'intrcpt   0.2677 0.2247  1.1914  0.2 -0.1727  0.7080     NA     NA', Python 'intrcpt   0.2677 0.2247  1.1914 0.2335 -0.1727  0.70 (1 cases; `vif`)
-- line 11: R 'intrcpt  -10.4383  5.5982  -1.8646  0.0500   -21.4105  0.5339  *', Python 'intrcpt  -10.4383  5.5980  -1.8646  0.0500   -21.4102 (1 cases; `permutest`)
-- line 11: R 'intrcpt  -10.4383  5.5982  -1.8646  0.1500   -21.4105  0.5339', Python 'intrcpt  -10.4383  5.5980  -1.8646  0.1500   -21.4102  0 (1 cases; `permutest`)
-- line 14: R 'intrcpt  -10.4383  5.5982  -1.8646  0.0622  -19.6465  -1.2301  .', Python 'intrcpt  -10.4383  5.5980  -1.8646  0.0622  -19.6462  (1 cases; `rma`)
-- line 3: R 'intrcpt -35.8515 40.6744 -0.8814  0.4 -115.5718 43.8688     NA     NA', Python 'intrcpt -35.8509 40.6745 -0.8814 0.3781 -115.5715 (1 cases; `vif`)
-- line 3: R 'intrcpt -81.2229 19.3071 -4.2069  <.1 -119.0641 -43.3817     NA     NA', Python 'intrcpt -81.2229 19.3071 -4.2069 <.0001 -119.064 (1 cases; `vif`)
-- line 1: R 'pred     se   ci.lb  ci.ub   pi.lb  pi.ub X.intrcpt X.I.ni.100. X.meta', Python 'pred     se   ci.lb  ci.ub   pi.lb  pi.ub X.intr (1 cases; `predict`)
-- line 1: R 'pred     se   ci.lb  ci.ub   pi.lb  pi.ub Z.intrcpt Z.I.ni.100. Z.imag', Python 'pred     se   ci.lb  ci.ub   pi.lb  pi.ub Z.intr (1 cases; `predict`)
-- line 2: R 'year  379.7309 223.8329 -58.9736 818.4354', Python '1 379.7302 223.8271 -58.9629 818.4233' (1 cases; `predict`)
-<!-- doc-counts: accept-end -->
-
-Note 2026-11-03: the whole audit `.audit/runs/20261103-071849` on the pinned R 4.6.2 and lme4 2.1-0 (metafopy `f040b41`) lists every cause below again; none vanished. One cause appeared that belongs to no item: `R: creation of server socket failed: port 11347 cannot be opened` (`profile`, R's own failure to open a port while shards ran; not a difference of metafopy).
-
-Note 2026-11-04: the `vif` causes the gosh item carried belong here: the slice `.audit/runs/20261104-071144` (local) lists them on the `ls_bcg`, `ls_year`, `ls_na` and `ls_bangert` cases. It also lists `vif` print differences with `digits=2` not recorded above: R '1.0000', Python '1.00' (`ls_bcg`, `ls_na`); R '4.7231  4.7231', Python '4.72  4.72' (`ls_year`); R '1.0094  1.0094', Python '1.01  1.01' (`ls_bangert`); and on `options/vif/ls_bangert/sim=true` `$beta$sim` element 1285 (R 1.83095037872554, Python 1.0234467077414686) and `$beta$prop` (R 0.282, Python 0.296). The R port clash the note of 2026-11-03 names was filed and fixed in `a6059a2` (each R process gets its own port); see `DONE.md`.
-
 ## Selection models, trimfill and profile differ from R in small values and print
 
 <!-- doc-counts: accept-start found on 2026-11-02 - a dated record, not a claim about the present -->
@@ -187,6 +110,8 @@ Causes, from the run's `wrong-or-missing-full.md`:
 
 Note 2026-11-03: the whole audit `.audit/runs/20261103-071849` on the pinned R 4.6.2 and lme4 2.1-0 (metafopy `f040b41`) lists every cause below again; none vanished and none appeared.
 
+Note 2026-11-04: `line 20: R '---', Python 'intrcpt'` (7 cases) and the `intrcpt -0.5506` row (1 case) were the wrapping of a wide coefficient table: `metafopy.printing.fmt_table` counted a blank column of significance stars two characters wide where R counts one. Fixed with the location-scale print (`test_print_wraps_a_wide_table_as_r`); the `construct` step lists neither since (`.audit/runs/20261104-100918`, local).
+
 ## Printed output differs from R in layout, row names and the printed call
 
 <!-- doc-counts: accept-start found on 2026-11-02 - a dated record, not a claim about the present -->
@@ -216,3 +141,5 @@ Causes, from the run's `wrong-or-missing-full.md`:
 <!-- doc-counts: accept-end -->
 
 Note 2026-11-03: the whole audit `.audit/runs/20261103-071849` on the pinned R 4.6.2 and lme4 2.1-0 (metafopy `f040b41`) lists every cause below again; none vanished and none appeared.
+
+Note 2026-11-04: from the location-scale item (now in `DONE.md`): `predict()` of `ls_na` with a named `newscale` prints the row name `1` where R prints `year` (`options/predict/ls_na/newscale={"$named":{"ablat":30,"year":1960}}`, `.audit/runs/20261104-092750`, local).
