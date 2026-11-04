@@ -30,8 +30,12 @@ def coef_table(
     digits: int,
     signif_stars: bool = True,
     num: bool = False,
+    int_only: bool = False,
 ) -> str:
-    """A coefficient table; the entries of fixed coefficients (``fixed``) other than the estimate print as ``---``."""
+    """A coefficient table; the entries of fixed coefficients (``fixed``) other than the estimate print as ``---``.
+
+    The table of an intercept-only part (``int_only``) prints without its row name, as metafor's ``.print.vector``.
+    """
     tdist = ddf is not None
     header = ['estimate', 'se', 'tval' if tdist else 'zval']
     if tdist:
@@ -60,7 +64,7 @@ def coef_table(
     return metafopy.printing.fmt_table(
         header,
         rows,
-        row_names=None if estimate.shape[0] == 1 else metafopy.printing.number_rows(names) if num else list(names),
+        row_names=None if int_only else metafopy.printing.number_rows(names) if num else list(names),
         width=metafopy.printing.console_width(),
     )
 
@@ -105,7 +109,7 @@ def format_result(
 
     out.append('Model Results (Location):')
     out.append('')
-    out.append(coef_table(res.beta, res.se, res.zval, res.pval, res.ci_lb, res.ci_ub, res.coef_names, res.ddf, None, digits, signif_stars, num))
+    out.append(coef_table(res.beta, res.se, res.zval, res.pval, res.ci_lb, res.ci_ub, res.coef_names, res.ddf, None, digits, signif_stars, num, res.int_only))
     out.append('')
 
     if res.q > 1 and not math.isnan(res.QS):
@@ -131,6 +135,7 @@ def format_result(
             digits,
             signif_stars,
             num,
+            res.Z_int_only,
         )
     )
     out += metafopy.printing.signif_footer(signif_legend)

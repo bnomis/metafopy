@@ -20,6 +20,7 @@ import metafopy.methods.ls_permutest
 import metafopy.methods.ls_predict
 import metafopy.methods.ls_profile
 import metafopy.methods.ls_vif
+import metafopy.printing
 
 REF: dict[str, typing.Any] = json.loads((pathlib.Path(__file__).parent / 'reference' / 'phase5' / 'location_scale.json').read_text(encoding='utf-8'))
 
@@ -189,6 +190,34 @@ def test_fit_flat_likelihood(name: str) -> None:
     res = FITS[name]()
     refutil.close(res.fit_stats_reml.ll, ref['fit_reml'][0], f'{name} ll', rtol=1e-6)
     refutil.close(res.beta, ref['beta'], f'{name} beta', rtol=1e-4, atol=1e-6)
+
+
+def test_print_names_a_single_location_coefficient() -> None:
+    """R drops the row name only for an intercept-only part (audit cases ``construct/ls_*/mods=~ ablat - 1``); R 4.6.2, metafor 5.2-1."""
+    lines = [line.rstrip() for line in str(ls(bcg(), mods='~ ablat - 1', scale='~ alloc')).splitlines()]
+    assert 'ablat   -0.0189  0.0017  -11.0003  <.0001  -0.0223  -0.0155  ***' in lines
+    lines = [line.rstrip() for line in str(ls(bcg(), mods='~ ablat', scale='~ 1')).splitlines()]
+    assert ' -2.5725  1.0241  -2.5119  0.0120  -4.5797  -0.5652  *' in lines
+
+
+def test_print_wraps_a_wide_table_as_r(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A blank column of significance stars is one character wide in R, so the second block of a wide table keeps it (audit case
+    ``construct/ls_bcg/mods=~ relevel(...)``); R 4.6.2, metafor 5.2-1, width 80."""
+    monkeypatch.setitem(metafopy.printing.SETTINGS, 'width', 80)
+    res = ls(bcg(), mods="~ relevel(factor(alloc), ref='systematic')", scale='~ alloc')
+    text = str(res)
+    location = text[text.index('Model Results (Location):') : text.index('Test of Scale Coefficients')]
+    assert [line.rstrip() for line in location.splitlines() if line.strip()] == [
+        'Model Results (Location):',
+        '                                                     estimate      se     zval',
+        'intrcpt                                               -0.4242  0.3597  -1.1792',
+        'relevel(factor(alloc), ref = "systematic")alternate   -0.1166  0.4569  -0.2552',
+        'relevel(factor(alloc), ref = "systematic")random      -0.5468  0.4534  -1.2059',
+        '                                                       pval    ci.lb   ci.ub',
+        'intrcpt                                              0.2383  -1.1293  0.2809',
+        'relevel(factor(alloc), ref = "systematic")alternate  0.7986  -1.0120  0.7788',
+        'relevel(factor(alloc), ref = "systematic")random     0.2279  -1.4354  0.3419',
+    ]
 
 
 @pytest.mark.parametrize('name', ['bd_int', 'bd_ni', 'bd_3', 'bd_3_t', 'bd_3_alpha', 'bd_na', 'bd_optbeta'])

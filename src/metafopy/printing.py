@@ -133,8 +133,8 @@ def fmt_table(
     blocks: list[list[int]] = [[]]
     used = start
     for j in range(ncol):
-        # the column of significance stars (no header) has the width of its widest entry, a blank for p > 0.1
-        w_j = max(widths[j], 2) if header[j] == '' else widths[j]
+        # the column of significance stars (no header) has the width of its widest entry; R's symbol for p > 0.1 is a blank, one wide
+        w_j = max(widths[j], 1) if header[j] == '' else widths[j]
         need = w_j + (gap if blocks[-1] else 0)
         if limit is not None and blocks[-1] and used + need > limit:
             blocks.append([])
