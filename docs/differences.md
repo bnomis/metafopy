@@ -494,6 +494,13 @@ refit R fails ("did not achieve convergence") and draws the next one, while meta
 *Why:* the refits run on the same likelihood, and metafopy's reach the higher value. A failure or early stop of R's optimiser
 is not a property of the model, so metafopy does not reproduce it (checked 2026-11-04, R 4.6.2, metafor 5.2-1).
 
+The fit itself does the same where the scale intercept runs towards `tau2 = 0`. With `mods = ~ ablat + alloc` and
+`scale = ~ alloc` on `dat.bcg`, both reach a log-likelihood of -7.0165323, R with the scale intercept at -21.54 and metafopy
+at -33.71. At R's point the numerical Hessian still inverts, with standard errors of 44591; at metafopy's it does not, so the
+standard errors and the scale test `QS` are `NaN` and the printout leaves out the line "Test of Scale Coefficients". The same
+holds for `optbeta=True` on `mods = scale = ~ ablat + year`, where metafopy leaves out the location test (checked
+2026-11-04, R 4.6.2, metafor 5.2-1).
+
 <div class="compare" markdown>
 <div markdown>
 

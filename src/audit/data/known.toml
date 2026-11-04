@@ -913,10 +913,17 @@ reason = "Same as permutest/ls_*: refits of a flat location-scale likelihood."
 ref = "docs/differences.md"
 
 [[known]]
-match = ["construct/ls_*", "matrix/print/ls_*", "matrix/summary/ls_*", "matrix/update/ls_*", "options/print/ls_*", "options/summary/ls_*", "options/update/ls_*", "options/anova/ls_*", "options/predict/ls_*"]
+match = ["construct/ls_*", "construct/uni_*/scale=*", "matrix/print/ls_*", "matrix/summary/ls_*", "matrix/update/ls_*", "options/print/ls_*", "options/summary/ls_*", "options/update/ls_*", "options/anova/ls_*", "options/predict/ls_*"]
 kind = "print-diff"
 detail = "line *: R '[A-Za-z]*[0-9]*', Python '[A-Za-z]*[0-9]*'"
-reason = "The printed tests and coefficient rows of the flat location-scale fits and their refits (the value-diff entries of ls_year, ls_na and construct/ls_*/control=* above): R's nlminb and metafopy's BFGS stop at different points of the same likelihood. On ls_na R's se.alpha of the scale intercept is 5.5981763 and metafopy's 5.5980235 at log-likelihoods equal to 1e-11; R's own optimizer = 'BFGS' gives 5.5979565. With vi = 0.1 (ls_bcg) or scale = ~ alloc (ls_na) the scale intercept runs towards tau2 = 0 (-21.9 against -22.5, -15.2 against -17.2) at log-likelihoods equal to 1e-9, and the printed scale test QS differs while QM agrees (checked 2026-11-04, R 4.6.2, metafor 5.2-1). Rows whose names or headings differ are not matched."
+reason = "The printed tests and coefficient rows of the flat location-scale fits and their refits (the value-diff entries of ls_year, ls_na and construct/ls_*/control=* above): R's nlminb and metafopy's BFGS stop at different points of the same likelihood. On ls_na R's se.alpha of the scale intercept is 5.5981763 and metafopy's 5.5980235 at log-likelihoods equal to 1e-11; R's own optimizer = 'BFGS' gives 5.5979565. With vi = 0.1 (ls_bcg) or scale = ~ alloc (ls_na) the scale intercept runs towards tau2 = 0 (-21.9 against -22.5, -15.2 against -17.2) at log-likelihoods equal to 1e-9, and the printed scale test QS differs while QM agrees (checked 2026-11-04, R 4.6.2, metafor 5.2-1). The location-scale fits of the uni_* fixtures (construct/uni_*/scale=*) are the same: equal log-likelihoods (-12.2023666 for uni_reml with scale ~ ablat, -2.8010620 for uni_mods_na with scale ~ alloc, whose scale coefficient runs to -22.35 in R and -27.20 in metafopy). Rows whose names or headings differ are not matched."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["construct/ls_bcg/mods=*", "construct/ls_year/optbeta=true"]
+kind = "print-diff"
+detail = "line *: R 'Test of * Coefficients (coefficient*):', Python 'Model Results (*):'"
+reason = "The scale intercept of these fits runs towards tau2 = 0, and R's nlminb and metafopy's optimiser stop at different points of the flat likelihood at log-likelihoods equal to 1e-7 (ls_bcg with mods ~ ablat + alloc: -7.0165323, scale intercept -21.54 in R, -33.71 in metafopy; ls_year with optbeta = TRUE: -7.6022560 and -7.6022565). At R's point the numerical Hessian inverts (se 26960 to 44591 on the ls_bcg variants, 80.37 on ls_year); at metafopy's it is singular, so the standard errors and QS (QM for optbeta) are NaN and the print leaves out that test (checked 2026-11-04, R 4.6.2, metafor 5.2-1)."
 ref = "docs/differences.md"
 
 [[known]]
@@ -1164,10 +1171,10 @@ reason = "predict() of a model fitted to data with missing moderator values and 
 ref = "docs/differences.md"
 
 [[known]]
-match = ["construct/uni_mods/scale=*", "construct/uni_mods_na/scale=*", "construct/uni_mods_year/scale=*"]
+match = ["construct/uni_mods/scale=*", "construct/uni_mods_na/scale=*", "construct/uni_mods_year/scale=*", "construct/uni_reml/scale=*"]
 kind = "value-diff"
-path = ["$alpha", "$va", "$se.alpha", "$zval.alpha", "$pval.alpha", "$ci.lb.alpha", "$ci.ub.alpha", "$QS", "$QSp", "$H", "$I2", "$tau2", "$tau2.f"]
-reason = "rma(mods = ~ ablat + year or ~ ablat, scale = ~ ablat or ~ alloc) of dat.bcg: the log-likelihood is equal to 1e-10 (uni_mods_year, scale ~ ablat: -8.02339884345 in R and metafopy; scale ~ alloc: -7.84205789279) and R's own default and optbeta = TRUE fits differ by 2e-6 in alpha; the scale coefficients differ by 1e-5 relative and the statistics built from them (QS, the Hessian) by 1e-3; with scale ~ alloc on data with missing values alpha is on the boundary (-22 and -26)."
+path = ["$ci.ub", "$alpha", "$va", "$se.alpha", "$zval.alpha", "$pval.alpha", "$ci.lb.alpha", "$ci.ub.alpha", "$QS", "$QSp", "$H", "$I2", "$tau2", "$tau2.f"]
+reason = "rma(mods = ~ ablat + year or ~ ablat, scale = ~ ablat or ~ alloc) of dat.bcg: the log-likelihood is equal to 1e-10 (uni_mods_year, scale ~ ablat: -8.02339884345 in R and metafopy; scale ~ alloc: -7.84205789279) and R's own default and optbeta = TRUE fits differ by 2e-6 in alpha; the scale coefficients differ by 1e-5 relative and the statistics built from them (QS, the Hessian) by 1e-3; with scale ~ alloc on data with missing values alpha is on the boundary (-22 and -26). The same for uni_reml with scale ~ ablat (-12.2023666 in R and metafopy, se of the scale intercept 2.3709 against 2.3700) and the location interval built on the same fit ($ci.ub, 1.6e-4 relative; checked 2026-11-04, R 4.6.2, metafor 5.2-1)."
 ref = "docs/differences.md"
 
 [[known]]
