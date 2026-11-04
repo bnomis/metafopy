@@ -1,4 +1,4 @@
-"""R's ``dbinom()`` for integer arguments, bit for bit (Loader's saddle-point algorithm as R 4.5.1 implements it).
+"""R's ``dbinom()`` for integer arguments, bit for bit (Loader's saddle-point algorithm as R implements it).
 
 ``gosh()`` draws the sizes of the random subsets with ``sample(prob = dbinom(...))``. The binomial probabilities of the sizes ``m`` and
 ``k - m`` are equal mathematically, but not in the last bit of a double, and R's sampler orders the probabilities, so a different last bit
@@ -6,10 +6,15 @@ gives different subsets for the same seed. SciPy's ``binom.pmf`` rounds differen
 ``stirlerr()`` from R's ``src/nmath`` (``dbinom.c``, ``bd0.c``, ``stirlerr.c``; GPL >= 2), see
 https://github.com/wch/r-source/tree/trunk/src/nmath. Only integer ``x`` and ``n`` are supported, which is all ``dbinom`` is used for here.
 
+The last bit depends on how R was compiled: clang on arm64 contracts ``a*b + c`` into one fused multiply-add (one rounding), while R built for
+x86_64 rounds twice (traced on 2026-11-03). ``dbinom(..., fused=True)`` reproduces the first, ``fused=False`` the second, and ``FUSED``, the
+default, follows the platform this runs on.
+
 Loader (2000), Fast and accurate computation of binomial probabilities, https://www.r-project.org/doc/reports/CLoader-dbinom-2002.pdf
 """
 
 import math
+import platform
 import sys
 
 import numpy
@@ -17,7 +22,7 @@ import numpy.typing
 
 import metafopy.errors
 
-__all__ = ['dbinom', 'dbinom_raw']
+__all__ = ['FUSED', 'dbinom', 'dbinom_raw', 'platform_fuses']
 
 FloatArray = numpy.typing.NDArray[numpy.float64]
 
@@ -69,6 +74,14 @@ SFERR_HALVES = (
 )
 
 
+def platform_fuses() -> bool:
+    """Whether R built for this machine fuses ``a*b + c`` into one rounding: true on arm64 and aarch64 (``platform.machine()``), else false."""
+    return platform.machine().lower() in {'arm64', 'aarch64'}
+
+
+FUSED = platform_fuses()
+
+
 def stirlerr(n: int) -> float:
     """``log(n!) - log(sqrt(2 pi n) (n/e)^n)``, the error of Stirling's formula, for a non-negative integer ``n``."""
     if n <= 15:
@@ -90,7 +103,7 @@ def stirlerr(n: int) -> float:
     return S0 / x
 
 
-def bd0(x: float, np: float) -> float:
+def bd0(x: float, np: float, fused: bool) -> float:
     """Loader's deviance term ``x log(x/np) + np - x``, accurate also when ``x`` is close to ``np``."""
     if abs(x - np) < 0.1 * (x + np):
         d = x - np
@@ -107,10 +120,12 @@ def bd0(x: float, np: float) -> float:
             if s == s_:
                 return math.ldexp(s, 1)
     lg_x_n = math.log(x / np)
+    if fused:
+        return math.fma(x, lg_x_n - 1.0, np) if x > np else math.fma(x, lg_x_n, np) - x
     return x * (lg_x_n - 1.0) + np if x > np else x * lg_x_n + np - x
 
 
-def pow1p(x: float, y: float) -> float:
+def pow1p(x: float, y: float, fused: bool) -> float:
     """``(1 + x)^y`` for a non-negative integer ``y``, more accurately than ``pow(1 + x, y)`` for small ``x``."""
     if y <= 4.0:
         if y == 0:
@@ -118,9 +133,11 @@ def pow1p(x: float, y: float) -> float:
         if y == 1:
             return x + 1.0
         if y == 2:
-            return x * (x + 2.0) + 1.0
+            return math.fma(x, x + 2.0, 1.0) if fused else x * (x + 2.0) + 1.0
         if y == 3:
-            return x * (x * (x + 3.0) + 3.0) + 1.0
+            return math.fma(x, math.fma(x, x + 3.0, 3.0), 1.0) if fused else x * (x * (x + 3.0) + 3.0) + 1.0
+        if fused:
+            return math.fma(x, math.fma(x, math.fma(x, x + 4.0, 6.0), 4.0), 1.0)
         return x * (x * (x * (x + 4.0) + 6.0) + 4.0) + 1.0
     xp1 = x + 1.0
     x_ = xp1 - 1.0
@@ -129,7 +146,7 @@ def pow1p(x: float, y: float) -> float:
     return math.exp(y * math.log1p(x))
 
 
-def dbinom_raw(x: int, n: int, p: float, q: float) -> float:
+def dbinom_raw(x: int, n: int, p: float, q: float, fused: bool) -> float:
     """The binomial probability of ``x`` successes in ``n`` trials with success probability ``p`` and ``q = 1 - p``."""
     if p == 0:
         return 1.0 if x == 0 else 0.0
@@ -138,25 +155,28 @@ def dbinom_raw(x: int, n: int, p: float, q: float) -> float:
     if x == 0:
         if n == 0:
             return 1.0
-        return math.pow(q, n) if p > q else pow1p(-p, float(n))
+        return math.pow(q, n) if p > q else pow1p(-p, float(n), fused)
     if x == n:
-        return pow1p(-q, float(n)) if p > q else math.pow(p, n)
+        return pow1p(-q, float(n), fused) if p > q else math.pow(p, n)
     if x < 0 or x > n:
         return 0.0
-    lc = stirlerr(n) - stirlerr(x) - stirlerr(n - x) - bd0(float(x), n * p) - bd0(float(n - x), n * q)
+    lc = stirlerr(n) - stirlerr(x) - stirlerr(n - x) - bd0(float(x), n * p, fused) - bd0(float(n - x), n * q, fused)
     lf = M_LN_2PI + math.log(x) + math.log1p(-x / n)
-    return math.exp(lc - 0.5 * lf)
+    return math.exp(math.fma(-0.5, lf, lc) if fused else lc - 0.5 * lf)
 
 
-def dbinom(x: numpy.typing.ArrayLike, n: int, p: float) -> FloatArray:
+def dbinom(x: numpy.typing.ArrayLike, n: int, p: float, fused: bool | None = None) -> FloatArray:
     """``dbinom(x, n, p)`` of R for integer ``x`` (a vector) and ``n``.
+
+    ``fused`` chooses the arithmetic of R built with (true) or without (false) fused multiply-add; ``None`` uses ``FUSED``.
 
     Raises:
         metafopy.errors.InputError: ``n`` is not a non-negative integer, ``p`` is not a probability or an ``x`` is not an integer.
     """
     if n < 0 or int(n) != n or not 0.0 <= p <= 1.0:
         raise metafopy.errors.InputError('dbinom() needs an integer n >= 0 and a probability p')
+    use_fma = FUSED if fused is None else fused
     xs = numpy.atleast_1d(numpy.asarray(x, dtype=numpy.float64))
     if numpy.any(xs != numpy.round(xs)):
         raise metafopy.errors.InputError('dbinom() needs integer values of x')
-    return numpy.array([dbinom_raw(int(v), int(n), p, 1.0 - p) if v >= 0 else 0.0 for v in xs], dtype=numpy.float64)
+    return numpy.array([dbinom_raw(int(v), int(n), p, 1.0 - p, use_fma) if v >= 0 else 0.0 for v in xs], dtype=numpy.float64)

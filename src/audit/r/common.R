@@ -9,6 +9,14 @@
 
 suppressPackageStartupMessages(library(jsonlite))
 
+# The build of R that shapes the oracle's numbers: its version, its platform and whether its C compiler fused a*b + c into one rounding. The
+# probe is dbinom(10, 13, 0.5), whose last bit is 0x1.1dffffffffffep-5 when fused and 0x1.1ep-5 when not (src/metafopy/core/dbinom.py).
+r_identity <- function() {
+  probe <- sprintf("%a", dbinom(10, 13, 0.5))
+  fma <- if (identical(probe, "0x1.1dffffffffffep-5")) "fused" else if (identical(probe, "0x1.1ep-5")) "unfused" else "unknown"
+  list(R = paste(R.version$major, R.version$minor, sep = "."), R_platform = R.version$platform, R_fma = fma)
+}
+
 read_json <- function(path) fromJSON(path, simplifyVector = FALSE)
 
 # A user's own function that a formula calls (the `uni_userfn` fixture); refits of the model must find it in the caller's environment.

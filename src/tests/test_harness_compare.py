@@ -15,6 +15,7 @@ import audit.rlib
 import audit.steps
 import audit.universe
 import audit.valuetree
+import metafopy.core.dbinom
 
 
 def vector(values: list[object], kind: str = 'num') -> audit.valuetree.Node:
@@ -266,3 +267,40 @@ def test_check_r_passes_on_the_pinned_library(monkeypatch: pytest.MonkeyPatch, t
     pinned = {'R': '4.6.2', 'metafor': audit.config.METAFOR_VERSION}
     ctx = pin_environment(monkeypatch, tmp_path, pinned, pinned)
     assert audit.steps.check_r(ctx).notes == [f'R 4.6.2, metafor {audit.config.METAFOR_VERSION}; 2 packages']
+
+
+def test_library_drift_names_a_different_r_platform_or_arithmetic() -> None:
+    lock = {'R': '4.6.2', 'R_fma': 'fused', 'R_platform': 'aarch64-apple-darwin27.0.0'}
+    installed = {'R': '4.6.2', 'R_fma': 'unfused', 'R_platform': 'x86_64-pc-linux-gnu'}
+    assert audit.steps.library_drift(lock, installed) == {
+        'R_fma': ('fused', 'unfused'),
+        'R_platform': ('aarch64-apple-darwin27.0.0', 'x86_64-pc-linux-gnu'),
+    }
+
+
+def test_check_r_names_a_different_r_platform(monkeypatch: pytest.MonkeyPatch, tmp_path: pathlib.Path) -> None:
+    pinned = {'R': '4.6.2', 'R_platform': 'aarch64-apple-darwin27.0.0', 'metafor': audit.config.METAFOR_VERSION}
+    ctx = pin_environment(monkeypatch, tmp_path, pinned, {**pinned, 'R_platform': 'x86_64-pc-linux-gnu'})
+    with pytest.raises(RuntimeError, match=r'R_platform aarch64-apple-darwin27\.0\.0 -> x86_64-pc-linux-gnu'):
+        audit.steps.check_r(ctx)
+
+
+@pytest.mark.parametrize('fused', [False, True])
+def test_check_r_refuses_a_pinned_arithmetic_that_disagrees_with_python(monkeypatch: pytest.MonkeyPatch, tmp_path: pathlib.Path, fused: bool) -> None:
+    pinned = {'R': '4.6.2', 'R_fma': 'unfused' if fused else 'fused', 'metafor': audit.config.METAFOR_VERSION}
+    ctx = pin_environment(monkeypatch, tmp_path, pinned, pinned)
+    monkeypatch.setattr(metafopy.core.dbinom, 'FUSED', fused)
+    with pytest.raises(RuntimeError, match='R_fma') as info:
+        audit.steps.check_r(ctx)
+    message = str(info.value)
+    assert f'FUSED is {"fused" if fused else "unfused"}' in message
+    assert 're-pin' in message
+    assert '--allow-r-drift' in message
+
+
+def test_check_r_with_the_flag_turns_an_arithmetic_disagreement_into_a_note(monkeypatch: pytest.MonkeyPatch, tmp_path: pathlib.Path) -> None:
+    pinned = {'R': '4.6.2', 'R_fma': 'fused', 'metafor': audit.config.METAFOR_VERSION}
+    ctx = pin_environment(monkeypatch, tmp_path, pinned, pinned)
+    monkeypatch.setattr(metafopy.core.dbinom, 'FUSED', False)
+    ctx.allow_r_drift = True
+    assert 'R_fma is fused' in audit.steps.check_r(ctx).notes[0]

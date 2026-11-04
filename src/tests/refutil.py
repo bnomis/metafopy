@@ -122,6 +122,17 @@ def same_print(actual: str, expected: str) -> bool:
     return norm(a) == norm(e)
 
 
-# R's dbinom() rounds in the last bit with the C library's log, exp and pow; the reference values come from Linux (glibc), where R's tied sizes
-# in gosh()'s sample(prob=) are ordered as in the fixtures. Other C libraries (macOS, Windows) round differently.
-linux_only = pytest.mark.skipif(not sys.platform.startswith('linux'), reason="the last bit of R's dbinom() depends on the C library")
+def assert_bits(got: typing.Any, expected: typing.Any, exact: bool) -> None:
+    """Compare with values R made: to the last bit when ``exact`` (the C library that made them), else to ``rtol=1e-12``."""
+    got_list = numpy.atleast_1d(numpy.asarray(got, dtype=float)).tolist()
+    exp_list = [float(v) for v in as_list(expected)]
+    if exact:
+        assert got_list == exp_list
+    else:
+        numpy.testing.assert_allclose(got_list, exp_list, rtol=1e-12, atol=0.0)
+
+
+# Seeded gosh() tests compare the subsets R drew, and R orders tied subset sizes by the last bit of dbinom(), which the C library's log, log1p and
+# exp set. A fixture matches only where that library is the one that made it.
+linux_only = pytest.mark.skipif(not sys.platform.startswith('linux'), reason="glibc's log, log1p and exp set the last bit of R's dbinom()")
+macos_only = pytest.mark.skipif(sys.platform != 'darwin', reason="Apple's libm sets the last bit of R's dbinom()")

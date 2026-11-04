@@ -11,6 +11,7 @@ import pytest
 import refutil
 
 import metafopy
+import metafopy.core.dbinom
 import metafopy.datasets
 
 matplotlib.use('Agg')
@@ -68,8 +69,9 @@ GOSH_CASES = {
 
 @refutil.linux_only
 @pytest.mark.parametrize('key', sorted(GOSH_CASES))
-def test_gosh_seeded(escalc_frame: pandas.DataFrame, hack: pandas.DataFrame, key: str) -> None:
+def test_gosh_seeded(monkeypatch: pytest.MonkeyPatch, escalc_frame: pandas.DataFrame, hack: pandas.DataFrame, key: str) -> None:
     """The subsets of a seeded gosh() are those of R, which orders the tied probabilities of the subset sizes by their last bit."""
+    monkeypatch.setattr(metafopy.core.dbinom, 'FUSED', False)
     data, fit_kw, kw = GOSH_CASES[key]
     out = metafopy.gosh(fit(escalc_frame if data == 'escalc_frame' else hack, **fit_kw), **kw)
     ref = REF['gosh'][key]

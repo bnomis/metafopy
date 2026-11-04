@@ -160,7 +160,8 @@ def gosh_rma_uni(
         subsets: Number of subsets to use. ``None`` (the default) uses all subsets if there are at most ``10**6``, else ``10**6`` random ones.
             If it is at least the number of possible subsets, all subsets are used. Must be 2 or more.
         seed: Seed of the R-compatible random number generator used to draw random subsets, so that ``gosh(res, seed=s)`` draws the same
-            subset sizes and study indices as R's ``set.seed(s)``. ``None`` uses the global generator (see [set_seed][metafopy.set_seed]).
+            subset sizes and study indices as R's ``set.seed(s)``, for R built for the same kind of machine (fused multiply-add on arm64, none on
+            x86_64; see ``metafopy.core.dbinom``). ``None`` uses the global generator (see [set_seed][metafopy.set_seed]).
             Only used when random subsets are drawn.
         rng: An R-compatible generator to draw the random subsets from, instead of ``seed`` or the global generator.
         progbar: Print a progress bar (per block of subsets) to stderr (default ``False``; metafor's default is ``TRUE``).

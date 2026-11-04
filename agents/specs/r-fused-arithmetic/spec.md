@@ -1,7 +1,7 @@
 # R fused arithmetic
 
 **Version:** 1.0
-**Status:** proposed
+**Status:** implemented
 **Date:** 2026-11-03
 
 metafopy reproduces R's `dbinom()` to the last bit, because `gosh()` draws
@@ -54,6 +54,21 @@ Decisions taken with the operator on 2026-11-03:
    refuses a mismatch, and `--allow-r-drift` overrides it, as for package
    versions ([R oracle pin](../r-oracle-pin/spec.md)).
 
+Amended 2026-11-03, after Task 1 of `agents/tasks/r-fused-arithmetic/tasks-1.md`
+stopped: the last bit also depends on the C library. With correctly rounded
+`log`, `exp` and `log1p`, the unfused port still misses 7 of the 844 values
+of `audit3.json`, and moving one `log1p`, `log` or `exp` result by 1 ulp
+reproduces each of them: glibc's functions are not correctly rounded, and
+Apple's libm differs from them at a few arguments. So `refutil.linux_only`'s
+old reason was half right. Decided with the operator the same day: each
+fixture is compared to the last bit on the C library that made it (glibc on
+Linux for `audit3.json`, Apple's libm on macOS for `dbinom_fused.json`) and
+with a relative tolerance of 1e-12 elsewhere (one ulp of a `log` grows to
+about 500 ulp of the result at k = 400); the seeded `gosh` tests, which
+depend on the exact order of tied weights, run only on their fixture's
+platform. This replaces "tests check both variants on every platform" in
+decision 1.
+
 ## Module location
 
 - `src/metafopy/core/dbinom.py` - `FUSED`, `fused` arguments, the fused forms
@@ -84,7 +99,6 @@ def pow1p(x: float, y: float, fused: bool) -> float: ...
 def dbinom_raw(x: int, n: int, p: float, q: float, fused: bool) -> float: ...
 
 
-# auditme: accept[spec-api-signature-drift] `fused` is what this spec adds; remove this marker when it is implemented
 def dbinom(x: numpy.typing.ArrayLike, n: int, p: float, fused: bool | None = None) -> FloatArray:
     """R's dbinom(x, n, p) for integer x and n, to the last bit of R built with (fused=True) or without (fused=False) fused
     multiply-add; None uses FUSED."""
@@ -125,11 +139,16 @@ passed down from `dbinom`; `FUSED = platform_fuses()` is read once at import.
   plus `R.version.string`, `R.version$platform` and the fusion probe below.
 - `test_dbinom_bits_match_r` runs everywhere with `fused=False` against
   `audit3.json`, and a new test with `fused=True` against
-  `dbinom_fused.json`.
+  `dbinom_fused.json`. A helper `refutil.assert_bits(got, expected, exact)`
+  compares to the last bit when `exact` is true and with `rtol=1e-12`
+  otherwise; `exact` is `sys.platform.startswith('linux')` for the unfused
+  fixture and `sys.platform == 'darwin'` for the fused one.
 - The seeded `gosh` tests patch `metafopy.core.dbinom.FUSED`: `False` for
   the Linux fixtures (`test_gosh_seeded`,
-  `test_gosh_random_subsets_global_seed`), `True` for the new fused `gosh`
-  reference. `refutil.linux_only` is removed.
+  `test_gosh_random_subsets_global_seed`), marked `refutil.linux_only`
+  with the reason "glibc's log, log1p and exp set the last bit of R's
+  dbinom()"; `True` for the new fused `gosh` reference, marked by a new
+  `refutil.macos_only` ("Apple's libm sets the last bit of R's dbinom()").
 - `platform_fuses` is tested by patching `platform.machine`.
 
 ### The pin

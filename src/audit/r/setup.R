@@ -16,7 +16,7 @@ options(repos = c(CRAN = "https://cloud.r-project.org"), Ncpus = 4L)
 have <- rownames(installed.packages(lib.loc = .libPaths()))
 install.packages(setdiff(c("jsonlite", "remotes"), have))
 pin <- jsonlite::fromJSON(file.path(here, "..", "data", "r-versions.json"), simplifyVector = FALSE)
-pin$R <- NULL
+pin[c("R", "R_platform", "R_fma")] <- NULL
 first <- c("metafor", "metadat", "gsl")
 # jsonlite names a package found in two library paths (a private and a system one) "name.1" for the second copy; that copy is not a package
 shadow <- grepl("\\.[0-9]+$", names(pin)) & sub("\\.[0-9]+$", "", names(pin)) %in% names(pin)
@@ -35,7 +35,8 @@ for (p in wanted) {
 inst <- installed.packages(lib.loc = .libPaths())
 vers <- as.list(setNames(inst[, "Version"], inst[, "Package"]))
 vers <- vers[!(names(vers) %in% rownames(installed.packages(priority = "base")))]
-vers$R <- paste(R.version$major, R.version$minor, sep = ".")
+source(file.path(here, "common.R"))
+vers <- c(vers, r_identity())
 writeLines(jsonlite::toJSON(vers[order(names(vers))], auto_unbox = TRUE, pretty = TRUE), out)
 failed <- Filter(function(p) !identical(installed_version(p), pin[[p]]), wanted)
 for (p in failed) cat("NOT INSTALLED:", p, pin[[p]], "\n")
