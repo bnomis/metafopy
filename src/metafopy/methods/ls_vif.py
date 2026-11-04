@@ -31,6 +31,10 @@ import metafopy.models.rma_uni
 
 __all__ = ['LSVIFResult', 'vif_rma_ls']
 
+# R's formatC(x, format = 'f', digits = NULL) and fmtp(p, digits = NULL)
+NULL_DIGITS = 4
+NULL_PVAL_DIGITS = 1
+
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 
 
@@ -45,8 +49,15 @@ class LSVIFResult:
         return self.summary()
 
     def summary(self, digits: int | None = None, *, num: bool = False) -> str:
-        """The printout of ``print(x, digits=, num=)``: the printouts of the two parts with ``digits`` and ``num``."""
-        return f'\nLocation Coefficients:\n{self.beta.summary(digits, num=num)}\nScale Coefficients:\n{self.alpha.summary(digits, num=num)}'
+        """The printout of ``print(x, digits=, num=)``: the printouts of the two parts with ``digits`` and ``num``.
+
+        metafor's ``vif.rma`` stores no ``digits`` in the result of a location-scale model, so without ``digits`` its ``print.vif.rma`` formats
+        both parts with ``digits = NULL``: four decimals (``formatC``'s default) and one for the p-values (``fmtp``), whatever ``digits`` was
+        given to ``vif()`` or set as an option.
+        """
+        pval_digits = NULL_PVAL_DIGITS if digits is None else None
+        parts = [part.summary(NULL_DIGITS if digits is None else digits, num=num, pval_digits=pval_digits) for part in (self.beta, self.alpha)]
+        return f'\nLocation Coefficients:\n{parts[0]}\nScale Coefficients:\n{parts[1]}'
 
 
 def coef_table(

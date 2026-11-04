@@ -132,9 +132,13 @@ class VIFResult:
     def __str__(self) -> str:
         return self.summary()
 
-    def summary(self, digits: int | None = None, *, num: bool = False) -> str:
-        """The printout of ``print(x, digits=, num=)``: ``num`` numbers the rows of the table of coefficients (``table=True``)."""
+    def summary(self, digits: int | None = None, *, num: bool = False, pval_digits: int | None = None) -> str:
+        """The printout of ``print(x, digits=, num=)``: ``num`` numbers the rows of the table of coefficients (``table=True``).
+
+        ``pval_digits`` (default: the digits of the other numbers) is the number of decimals of the p-values.
+        """
         d = metafopy.mfopt.option_digits(digits, self.digits) if digits is not None else self.digits
+        pd = d if pval_digits is None else pval_digits
         if self.bttspec:
             if len(self.vif) == 1:
                 e = self.vif[0]
@@ -187,7 +191,7 @@ class VIFResult:
         if 'df' in tab.columns:
             cols.append(('df', [f'{round(float(v), 2):g}' for v in tab['df']]))
         cols += [
-            ('pval', [metafopy.printing.fmt_pval(v, d) for v in tab['pval']]),
+            ('pval', [metafopy.printing.fmt_pval(v, pd) for v in tab['pval']]),
             ('ci.lb', [metafopy.printing.fmt_num(v, d) for v in tab['ci.lb']]),
             ('ci.ub', [metafopy.printing.fmt_num(v, d) for v in tab['ci.ub']]),
             ('vif', [metafopy.printing.fmt_num(v, d) for v in vifs]),
