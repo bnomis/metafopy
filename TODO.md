@@ -5,6 +5,33 @@ Open work only, in implementation order, nearest first. Finished items move to
 the shape of an item.
 
 
+## Generalised linear mixed models differ from R in tests and a warning
+
+<!-- doc-counts: accept-start found on 2026-11-02 - a dated record, not a claim about the present -->
+Found on 2026-11-02 by the whole audit `.audit/runs/20261102-223017` at metafopy `ffd5ffe` (metafor 5.2-1). `rma.glmm` fits differ in their tests (`Wld` 268.5990 against 191.7124 for `model="CM.EL"`), in small values, and do not give R's Hessian warning for the saturated model. The run's report is local and not in
+git, so its cause lines are copied below as it printed them.
+
+Cause: not yet traced. The findings point at `src/metafopy/models/rma_glmm.py` and `src/metafopy/models/glmm_fit.py`.
+
+Fix direction: start with the `Wld` difference, which is far beyond rounding.
+
+Causes, from the run's `wrong-or-missing-full.md`:
+
+- `$prob` element 0: R 0.00197382147421394, Python 0.0019733636664781558 (relative 0.00023) (1 cases; `predict`)
+- line 11: R 'QM(df = 1) = 76.2183, p-val < .0001', Python 'QM(df = 1) = 76.2266, p-val < .0001' (5 cases; `rma`, `rma.glmm`)
+- line 11: R '-0.7138  0.1691  -4.2219  <.0001  -1.0451  -0.3824  ***', Python '-0.7138  0.1690  -4.2225  <.0001  -1.0451  -0.3825  ***' (2 cases; `rma.glmm`)
+- line 3: R 'tau^2 (estimated amount of residual heterogeneity):     0.2733', Python 'tau^2 (estimated amount of residual heterogeneity):      (2 cases; `rma.glmm`)
+- line 5: R 'I^2 (residual heterogeneity / unaccounted variability): 61.79%', Python 'I^2 (residual heterogeneity / unaccounted variability):  (1 cases; `rma.glmm`)
+- line 8: R 'Wld(df = 12) = 268.5990, p-val < .0001', Python 'Wld(df = 12) = 191.7124, p-val < .0001' (1 cases; `rma.glmm`)
+- line 14: R 'intrcpt     -10.2984  18.9350  -0.5439  0.5865  -47.4102  26.8135', Python 'intrcpt     -10.3059  18.9351  -0.5443  0.5863  -47. (1 cases; `rma.glmm`)
+- line 14: R 'intrcpt  -61.2823  29.0390  -2.1103  0.0348  -118.1976  -4.3670  *', Python 'intrcpt  -61.2807  29.0369  -2.1104  0.0348  -118.1 (1 cases; `rma.glmm`)
+- Cannot invert the Hessian for the saturated model. (4 cases; `rma.glmm`)
+<!-- doc-counts: accept-end -->
+
+Note 2026-11-03: the whole audit `.audit/runs/20261103-071849` on the pinned R 4.6.2 and lme4 2.1-0 (metafopy `f040b41`) lists every cause below again; none vanished. `rma_glmm(model='UM.RS')` no longer differs from R in se, so its value-diff ledger entry was removed. The warning `Cannot invert the Hessian for the saturated model.` is now a `warning-extra` ledger entry for the `control` optimizer cases (R inverts, metafopy warns); the `warning-missing` entry for the other cases stays, and the refused-where-R-works entry for `glmm_cm` was removed.
+
+Note 2026-11-04: re-checked on the slice `.audit/runs/20261104-105354` (local, metafopy `a7b8700`); every cause above is listed again except the Hessian warning, which the ledger matches. On `construct/glmm_bcg/mods=~ alloc` (UM.FS) R's log-likelihood is -70.4602835 and metafopy's -70.4652470: metafopy's fit stops short of R's maximum (tau2 0.27290 against 0.27334, QM 1.8844 against 1.8981), so these differences are a defect of metafopy's fit, not a stop point of R's optimiser. Start there.
+
 ## Selection models, trimfill and profile differ from R in small values and print
 
 <!-- doc-counts: accept-start found on 2026-11-02 - a dated record, not a claim about the present -->
@@ -34,6 +61,8 @@ Note 2026-11-03: the whole audit `.audit/runs/20261103-071849` on the pinned R 4
 
 Note 2026-11-04: the `profile` causes the gosh item carried belong here. The slice `--only vif --only dfbetas --only profile` (`.audit/runs/20261104-071144`, local) lists `[]$ci.lb$intrcpt` and `[]$ci.ub$intrcpt` element 3 with R None, Python a value, on `matrix/profile/sel_bcg`, `matrix/profile/sel_digits` and the `options/profile/sel_bcg/*` cases, and `[]$ci.lb$intrcpt` element 2 (R -0.402157171730945, Python -0.40209684929512357) and `[]$ci.ub$ablat` on `matrix/profile/sel_mods_bcg`.
 
+Note 2026-11-04: re-checked on the slice `.audit/runs/20261104-105354` (local, metafopy `a7b8700`); every cause above is listed again. `selmodel(type='beta')` of `trimfill_bcg` has R's log-likelihood (-99.049066667) and `delta`, and R's `optimizer='BFGS'` gives R's se too; only the se (0.06952 against 0.06949) differs, so it is the numerical Hessian. In `profile()` of `sel_bcg` R's refits converge but R cannot invert their Hessian ('Error when trying to invert the Hessian'), so its `ci.lb`/`ci.ub` are NA where metafopy's Hessian inverts. `trimfill`'s `se.k0` is not yet traced.
+
 ## Multivariate fits differ from R in the Hessian, ranef, rstudent and confint
 
 <!-- doc-counts: accept-start found on 2026-11-02 - a dated record, not a claim about the present -->
@@ -59,30 +88,7 @@ Note 2026-11-03: the whole audit `.audit/runs/20261103-071849` on the pinned R 4
 
 Note 2026-11-04: the `profile` causes on `matrix/profile/mv_wide` that the gosh item carried belong here: the slice `.audit/runs/20261104-071144` (local) lists `[]$ll`, `[]$beta$intrcpt`, `[]$beta$log(year - 1900 + 1000)` and `[]$ci.lb`/`[]$ci.ub` of both coefficients, element 2, R None, Python a value - the same pattern as `rstudent` and `confint` here.
 
-## Generalised linear mixed models differ from R in tests and a warning
-
-<!-- doc-counts: accept-start found on 2026-11-02 - a dated record, not a claim about the present -->
-Found on 2026-11-02 by the whole audit `.audit/runs/20261102-223017` at metafopy `ffd5ffe` (metafor 5.2-1). `rma.glmm` fits differ in their tests (`Wld` 268.5990 against 191.7124 for `model="CM.EL"`), in small values, and do not give R's Hessian warning for the saturated model. The run's report is local and not in
-git, so its cause lines are copied below as it printed them.
-
-Cause: not yet traced. The findings point at `src/metafopy/models/rma_glmm.py` and `src/metafopy/models/glmm_fit.py`.
-
-Fix direction: start with the `Wld` difference, which is far beyond rounding.
-
-Causes, from the run's `wrong-or-missing-full.md`:
-
-- `$prob` element 0: R 0.00197382147421394, Python 0.0019733636664781558 (relative 0.00023) (1 cases; `predict`)
-- line 11: R 'QM(df = 1) = 76.2183, p-val < .0001', Python 'QM(df = 1) = 76.2266, p-val < .0001' (5 cases; `rma`, `rma.glmm`)
-- line 11: R '-0.7138  0.1691  -4.2219  <.0001  -1.0451  -0.3824  ***', Python '-0.7138  0.1690  -4.2225  <.0001  -1.0451  -0.3825  ***' (2 cases; `rma.glmm`)
-- line 3: R 'tau^2 (estimated amount of residual heterogeneity):     0.2733', Python 'tau^2 (estimated amount of residual heterogeneity):      (2 cases; `rma.glmm`)
-- line 5: R 'I^2 (residual heterogeneity / unaccounted variability): 61.79%', Python 'I^2 (residual heterogeneity / unaccounted variability):  (1 cases; `rma.glmm`)
-- line 8: R 'Wld(df = 12) = 268.5990, p-val < .0001', Python 'Wld(df = 12) = 191.7124, p-val < .0001' (1 cases; `rma.glmm`)
-- line 14: R 'intrcpt     -10.2984  18.9350  -0.5439  0.5865  -47.4102  26.8135', Python 'intrcpt     -10.3059  18.9351  -0.5443  0.5863  -47. (1 cases; `rma.glmm`)
-- line 14: R 'intrcpt  -61.2823  29.0390  -2.1103  0.0348  -118.1976  -4.3670  *', Python 'intrcpt  -61.2807  29.0369  -2.1104  0.0348  -118.1 (1 cases; `rma.glmm`)
-- Cannot invert the Hessian for the saturated model. (4 cases; `rma.glmm`)
-<!-- doc-counts: accept-end -->
-
-Note 2026-11-03: the whole audit `.audit/runs/20261103-071849` on the pinned R 4.6.2 and lme4 2.1-0 (metafopy `f040b41`) lists every cause below again; none vanished. `rma_glmm(model='UM.RS')` no longer differs from R in se, so its value-diff ledger entry was removed. The warning `Cannot invert the Hessian for the saturated model.` is now a `warning-extra` ledger entry for the `control` optimizer cases (R inverts, metafopy warns); the `warning-missing` entry for the other cases stays, and the refused-where-R-works entry for `glmm_cm` was removed.
+Note 2026-11-04: re-checked on the slice `.audit/runs/20261104-105354` (local, metafopy `a7b8700`); every cause above is listed again. In `profile()` of `mv_wide` R's refit fails at one grid point (`ll` NA) and metafopy's converges: the pattern accepted for location-scale fits on 2026-11-04, a decision that named those fits only. The Hessian of `mv_sp` (R 9 entries, metafopy 4) is a different set of parameters, not an optimiser stop point.
 
 ## Small numeric differences from R in rma, hettest and emmeans
 
