@@ -80,6 +80,7 @@ The printed output is the same as metafor's.
 | `dat.bcg` (lazy-loaded) | `datasets.load('dat.bcg')` |
 | `tpos`, `tneg` (unquoted columns, `data=dat`) | `'tpos'`, `'tneg'` (strings naming columns of `data=`) or arrays |
 | `mods = ~ ablat + year` | `mods='~ ablat + year'` (a string; [formulaic](https://matthewwardrop.github.io/formulaic/) syntax) |
+| `mods = ~ I(ablat^2) + I(ablat > 30 \| year < 1970)` | the same string: inside a call `^` is a power and `\|`, `&` and `!` are logical, as in R; a logical term is a factor with levels `FALSE` and `TRUE`, so its coefficient is named `I(ablat > 30 \| year < 1970)TRUE` |
 | `random = ~ 1 \| study/esid` | `random='~ 1 \| study/esid'` |
 | `random = list(~ 1 \| a, ~ 1 \| b)` | `random=['~ 1 \| a', '~ 1 \| b']` |
 | `btt = 2:3` (1-based) | `btt=[1, 2]` (0-based) |

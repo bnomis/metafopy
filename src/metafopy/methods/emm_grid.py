@@ -406,7 +406,7 @@ def reference_grid(
     rhs = info.formula.split('~', 1)[1].strip() if '~' in info.formula else info.formula.strip()
     data = info.data
     context = metafopy.formula.formula_context()
-    model_matrix = formulaic.model_matrix(metafopy.formula.r_power(rhs), data, na_action='ignore', context=context)
+    model_matrix = formulaic.model_matrix(metafopy.formula.r_power(metafopy.formula.r_logical_formula(rhs)), data, na_action='ignore', context=context)
     spec = model_matrix.model_spec
     required = [] if spec is None else [v for v in spec.required_variables if v in data.columns]
     variables = appearance(rhs, required)

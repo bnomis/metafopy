@@ -353,3 +353,14 @@ def test_regrid_of_log_contrast_labels_as_ratios(alloc: metafopy.EmmGrid) -> Non
 
 def test_r2_to_z_link_name() -> None:
     assert metafopy.methods.emm_links.make_link('r2-to-z').name == 'r2-to-z'
+
+
+def test_reference_grid_of_a_logical_term(dat: pandas.DataFrame) -> None:
+    """R's ``|`` in ``I()`` is logical; R's emmeans (printed 2026-11-04) grids ablat 33.5 and year 1966, prediction -0.432, SE 0.176."""
+    res = metafopy.rma_uni('yi', 'vi', mods='~ ablat + I(ablat > 30 | year < 1970)', data=dat)
+    grid = metafopy.emmprep(res)
+    # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
+    assert list(grid.grid.columns) == ['ablat', 'year']
+    assert grid.linfct.tolist() == [[1.0, 33.46153846153846, 1.0]]
+    est = grid.linfct @ numpy.asarray(res.beta, dtype=float).ravel()
+    assert est[0] == pytest.approx(-0.432, abs=5e-4)

@@ -9,6 +9,7 @@ Random-effects formulas for ``rma.mv`` (``~ 1 | study``, ``~ 1 | a/b``,
 variance structures they imply are built by the model code.
 """
 
+import ast
 import collections.abc
 import dataclasses
 import inspect
@@ -17,13 +18,14 @@ import re
 import typing
 
 import formulaic.model_matrix
+import formulaic.transforms
 import numpy
 import numpy.typing
 import pandas
 
 import metafopy.errors
 
-__all__ = ['RandomTerm', 'design_matrix', 'formula_context', 'parse_random', 'r_column_name', 'r_factor', 'r_relevel', 'r_scale']
+__all__ = ['RandomTerm', 'design_matrix', 'formula_context', 'parse_random', 'r_column_name', 'r_factor', 'r_logical_formula', 'r_relevel', 'r_scale']
 
 KEYWORD = re.compile(r'(?<=[(,] )(\w+)=(?!=)')
 RAW_TRUE = re.compile(r'raw\s*=\s*(True|TRUE|T)\b')
@@ -150,13 +152,155 @@ def r_power(rhs: str) -> str:
     return ''.join(out)
 
 
+R_TOKEN = re.compile(r"\s+|'[^']*'|\"[^\"]*\"|\d+\.?\d*(?:[eE][-+]?\d+)?|\.\d+|[A-Za-z_.][\w.]*|\|\||&&|[=!<>]=|.")
+R_LOGICAL = {'!': 'not', '&': 'and', '&&': 'and', '|': 'or', '||': 'or'}
+R_SPACED = frozenset({'!=', '&', '&&', '*', '+', '<', '<=', '==', '>', '>=', '|', '||'})
+LOGICAL_PLACEHOLDER = 'metafopy_logical_'
+LOGICAL_DTYPES = frozenset({'bool', 'boolean'})
+
+
+def r_tokens(text: str) -> list[str]:
+    return [t for t in R_TOKEN.findall(text) if not t.isspace()]
+
+
+def r_deparse(tokens: list[str]) -> str:
+    """Lay out R code as R's ``deparse`` does, which gives ``model.matrix`` its column names: ``1|ablat`` is ``1 | ablat``, ``x^2`` stays."""
+    out = ''
+    for i, tok in enumerate(tokens):
+        binary = i > 0 and (tokens[i - 1][-1].isalnum() or tokens[i - 1][-1] in '_.)\'"')
+        if tok in R_SPACED or (tok == '-' and binary):
+            out += f' {tok} '
+        elif tok == ',':
+            out += ', '
+        else:
+            out += tok
+    return out
+
+
+def r_logical(x: typing.Any) -> typing.Any:
+    """R's ``as.logical`` of a number: non-zero is TRUE, NA stays NA (a pandas nullable boolean, whose ``|``, ``&`` and ``~`` are R's three-valued logic)."""
+    if isinstance(x, (bool, int, float)):
+        return pandas.NA if isinstance(x, float) and math.isnan(x) else bool(x)
+    values = pandas.Series(x)
+    if str(values.dtype) not in LOGICAL_DTYPES:
+        values = values.astype('Float64') != 0
+    return values.astype('boolean')
+
+
+def r_or(x: typing.Any, y: typing.Any) -> typing.Any:
+    return r_logical(x) | r_logical(y)
+
+
+def r_and(x: typing.Any, y: typing.Any) -> typing.Any:
+    return r_logical(x) & r_logical(y)
+
+
+def r_not(x: typing.Any) -> typing.Any:
+    value = r_logical(x)
+    return (not value) if isinstance(value, bool) else (value if value is pandas.NA else ~value)
+
+
+class RLogicalCalls(ast.NodeTransformer):
+    """Turn Python's ``or``, ``and`` and ``not`` (R's ``|``, ``&`` and ``!``, which have the same precedence) into element-wise calls."""
+
+    def visit_BoolOp(self, node: ast.BoolOp) -> ast.expr:
+        values: list[ast.expr] = [self.visit(v) for v in node.values]
+        name = 'r_or' if isinstance(node.op, ast.Or) else 'r_and'
+        out = values[0]
+        for value in values[1:]:
+            out = ast.Call(func=ast.Name(id=name, ctx=ast.Load()), args=[out, value], keywords=[])
+        return out
+
+    def visit_UnaryOp(self, node: ast.UnaryOp) -> ast.expr:
+        if isinstance(node.op, ast.Not):
+            return ast.Call(func=ast.Name(id='r_not', ctx=ast.Load()), args=[self.visit(node.operand)], keywords=[])
+        node.operand = self.visit(node.operand)
+        return node
+
+
+def r_identity(x: typing.Any) -> typing.Any:
+    """R's ``I()`` in ``model.matrix``: a logical value becomes a factor with levels FALSE and TRUE, anything else is left as it is."""
+    if isinstance(x, (pandas.Series, pandas.api.extensions.ExtensionArray, numpy.ndarray)) and str(x.dtype) in LOGICAL_DTYPES:
+        values = pandas.Series(x).astype('boolean')
+        return pandas.Categorical(values.map({True: 'TRUE', False: 'FALSE'}), categories=['FALSE', 'TRUE'])
+    return x
+
+
+def call_spans(rhs: str) -> list[tuple[int, int]]:
+    """The outermost function calls of a formula, as ``(start, end)`` with ``rhs[start:end]`` the name and its parenthesised arguments."""
+    spans: list[tuple[int, int]] = []
+    depth, start = 0, -1
+    for i, ch in enumerate(rhs):
+        if ch == '(':
+            if depth == 0 and i > 0 and (rhs[i - 1].isalnum() or rhs[i - 1] in '_.'):
+                start = i
+                while start > 0 and (rhs[start - 1].isalnum() or rhs[start - 1] in '_.'):
+                    start -= 1
+            depth += 1
+        elif ch == ')' and depth:
+            depth -= 1
+            if depth == 0 and start >= 0:
+                spans.append((start, i + 1))
+                start = -1
+    return spans
+
+
+def r_logical_calls(rhs: str) -> list[tuple[int, int, str, str]]:
+    """The outermost calls of a formula that use R's ``|``, ``&`` or ``!``, which Python reads as bitwise operators.
+
+    Each is ``(start, end, python, r_text)``: the call as Python code that calls
+    ``r_or``, ``r_and`` and ``r_not`` element-wise, and as R lays it out.
+    """
+    calls: list[tuple[int, int, str, str]] = []
+    for start, end in call_spans(rhs):
+        tokens = r_tokens(rhs[start:end])
+        if any(t in R_LOGICAL for t in tokens):
+            python = ' '.join(R_LOGICAL.get(t, '**' if t == '^' else t) for t in tokens)
+            calls.append((start, end, ast.unparse(RLogicalCalls().visit(ast.parse(python, mode='eval'))), r_deparse(tokens)))
+    return calls
+
+
+def r_logical_formula(rhs: str) -> str:
+    """The formula with each call that uses R's logical operators in the Python formulaic evaluates (see :func:`r_logical_calls`)."""
+    for start, end, python, _ in reversed(r_logical_calls(rhs)):
+        rhs = rhs[:start] + python + rhs[end:]
+    return rhs
+
+
+def r_logical_terms(rhs: str, data: pandas.DataFrame, context: dict[str, typing.Any]) -> tuple[str, pandas.DataFrame, dict[str, str]]:
+    """Evaluate each call that uses R's logical operators as R would, missing values included (``1 | NA`` is TRUE, ``!NA`` is NA).
+
+    Each such call becomes a placeholder column of ``data``, read with pandas'
+    nullable types, whose ``|``, ``&`` and ``~`` are R's three-valued logic;
+    the returned mapping gives each placeholder the call's R text, for the
+    column names.
+    """
+    calls = r_logical_calls(rhs)
+    if not calls:
+        return rhs, data, {}
+    namespace = {**formulaic.transforms.TRANSFORMS, **context}
+    namespace |= {str(c): data[c].convert_dtypes(convert_string=False, convert_integer=False) for c in data.columns}
+    data = data.copy()
+    names: dict[str, str] = {}
+    for i, (start, end, python, r_text) in reversed(list(enumerate(calls))):
+        placeholder = f'{LOGICAL_PLACEHOLDER}{i}'
+        data[placeholder] = eval(python, namespace)  # the formula is the caller's own R code, which R evaluates too
+        names[placeholder] = r_text
+        rhs = rhs[:start] + placeholder + rhs[end:]
+    return rhs, data, names
+
+
 R_FORMULA_FUNCTIONS: dict[str, typing.Any] = {
     'FALSE': False,
+    'I': r_identity,
     'TRUE': True,
     'abs': numpy.abs,
     'factor': r_factor,
     'mean': lambda x: float(numpy.mean(numpy.asarray(x, dtype=numpy.float64))),
     'median': lambda x: float(numpy.median(numpy.asarray(x, dtype=numpy.float64))),
+    'r_and': r_and,
+    'r_not': r_not,
+    'r_or': r_or,
     'relevel': r_relevel,
     'scale': r_scale,
     'sqrt': numpy.sqrt,
@@ -204,7 +348,9 @@ def design_matrix(formula: str, data: pandas.DataFrame) -> tuple[numpy.typing.ND
             raise metafopy.errors.InputError(f'expected a one-sided formula, got {formula!r}')
     if type(data) is not pandas.DataFrame:
         data = pandas.DataFrame(data)  # formulaic evaluates the variables of a data frame subclass (the result of escalc) differently
-    mm = formulaic.model_matrix(r_power(rhs), data, na_action='ignore', context=formula_context())
+    context = formula_context()
+    rhs, data, logical = r_logical_terms(rhs, data, context)
+    mm = formulaic.model_matrix(r_power(rhs), data, na_action='ignore', context=context)
     X = numpy.array(mm.to_numpy(dtype=float), dtype=numpy.float64)
     if X.ndim == 1:
         X = X[:, None]
@@ -222,6 +368,8 @@ def design_matrix(formula: str, data: pandas.DataFrame) -> tuple[numpy.typing.ND
             cols = [j for j, name in enumerate(names) if re.search(rf'(?<![\w.]){re.escape(var)}(?![\w.])|^{re.escape(var)}', name)]
             if cols:
                 X[numpy.ix_(gone, cols)] = numpy.nan
+    for placeholder, text in logical.items():
+        names = tuple(name.replace(placeholder, text) for name in names)
     return X, names, missing
 
 

@@ -5,16 +5,6 @@ Open work only, in implementation order, nearest first. Finished items move to
 the shape of an item.
 
 
-## `I()` in a formula reads `|` as a bitwise OR where R's is a logical OR
-
-<!-- doc-counts: accept-start found on 2026-11-04 - a dated record, not a claim about the present -->
-Found on 2026-11-04 during the review of `TODO.md`, checking the location-scale causes of the small-numeric item. `rma('yi', 'vi', mods='~ablat+year', scale='~0+I(1|ablat)', data=dat)` on `dat.bcg` (`escalc(measure='RR')`) gives the scale column 45, 55, 43, 53, 13, ... (the bitwise OR of 1 and the integer `ablat`) and a log-likelihood of -8.4771; R's `1|ablat` is a logical OR, the column is 1 in every row, the model is `scale = ~ 1` and R's log-likelihood is -8.1069 (metafopy's `scale='~1'` gives -8.10687, as R). The audit case `construct/uni_mods_year/scale={"$formula":"~ 0 + I(1|ablat)"}` lists only a tiny `$ci.ub` difference for it, so the harness does not see this.
-<!-- doc-counts: accept-end -->
-
-Cause: `metafopy.formula.design_matrix` hands `I(...)` to formulaic, which evaluates it as Python; `r_power` rewrites R's `^` only, so R's logical `|`, `&` and `!` reach Python's bitwise operators (on integers they give numbers, on floats an error).
-
-Fix direction: translate R's logical operators inside `I()` (and anywhere formulaic evaluates R code) to element-wise logical operations, next to `r_power`; then find why the audit case shows no difference (how the harness passes the data or the formula) and make it show one before the fix.
-
 ## Numerical Hessians and failed refits of R outside the accepted fits
 
 Cause: as for the location-scale and GLMM fits accepted on 2026-11-04, R and metafopy reach the same maximum, but R's finite-difference Hessian, taken at a point that differs in the last digits, gives other standard errors, or cannot be inverted for some refits; or R's optimiser fails a refit that metafopy completes. The evidence is in the notes of 2026-11-04 on the selection-model item (`selmodel(type='beta')` of `trimfill_bcg`: same log-likelihood -99.049066667 and `delta`; `profile()` of `sel_bcg`: 'Error when trying to invert the Hessian') and on the multivariate item (`profile()` of `mv_wide`: R's refit fails, `ll` NA).

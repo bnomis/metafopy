@@ -235,13 +235,14 @@ mainadd = ["x"]
 setmfrow = [false]
 tail = ["lower", "upper"]
 
-scale = [{ "$formula" = "~ 0 + ablat" }, { "$formula" = "~ 0 + I(1/ablat)" }, { "$formula" = "~ alloc" }, { "$formula" = "~ ablat" }, { "$formula" = "~ 1" }]
+scale = [{ "$formula" = "~ 0 + ablat" }, { "$formula" = "~ 0 + I(1/ablat)" }, { "$formula" = "~ alloc" }, { "$formula" = "~ ablat" }, { "$formula" = "~ 1" }, { "$formula" = "~ 0 + I(1 | ablat)" }]
 mods = [
   { "$formula" = "~ ablat" }, { "$formula" = "~ ablat + alloc" }, { "$formula" = "~ alloc" }, { "$formula" = "~ ablat - 1" },
   { "$formula" = "~ I(ablat^2)" }, { "$formula" = "~ I(1/ablat)" }, { "$formula" = "~ I((ablat - 30)^2)" }, { "$formula" = "~ poly(ablat, 2)" }, { "$formula" = "~ log(ablat)" }, { "$formula" = "~ sqrt(ablat)" },
   { "$formula" = "~ scale(ablat)" }, { "$formula" = "~ factor(alloc)" }, { "$formula" = "~ relevel(factor(alloc), ref = 'systematic')" },
   { "$formula" = "~ ablat * alloc" }, { "$formula" = "~ ablat:alloc" }, { "$formula" = "~ year" }, { "$formula" = "~ 1" },
   { "$formula" = "~ ablat + I(ablat^2) + year" }, { "$formula" = "~ poly(year, 2, raw = TRUE)" }, { "$formula" = "~ 0 + alloc" },
+  { "$formula" = "~ I(ablat > 30)" }, { "$formula" = "~ I(ablat > 30 | year < 1970)" }, { "$formula" = "~ I(!(ablat > 30) & year < 1970)" },
   { "$col" = ["es_bcg", "ablat"] },
 ]
 random = [

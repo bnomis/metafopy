@@ -46,6 +46,7 @@ def dat(dat0: pandas.DataFrame) -> pandas.DataFrame:
 
 
 @pytest.fixture(scope='module')
+# auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
 def bcg() -> pandas.DataFrame:
     return metafopy.datasets.load('dat.bcg')
 
