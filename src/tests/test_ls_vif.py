@@ -7,6 +7,7 @@ four decimals for every number (``formatC``'s default) and one for the p-values 
 import typing
 import warnings
 
+import numpy
 import pytest
 
 import metafopy
@@ -45,7 +46,39 @@ def test_table_prints_pvalues_with_one_digit(bangert: metafopy.RMALSResult) -> N
 
 def test_explicit_print_digits_are_used(bangert: metafopy.RMALSResult) -> None:
     """``print(vif(res), digits = 2)`` in R passes the digits on to both parts."""
-    out = metafopy.vif(bangert)
+    out: typing.Any = metafopy.vif(bangert)  # vif() is typed by its rma_uni overload
     assert isinstance(out, metafopy.methods.ls_vif.LSVIFResult)
     text = [line.rstrip() for line in out.summary(2).splitlines()]
     assert '     1.01  1.01' in text
+
+
+# R 4.6.2, metafor 5.2-1: vif(res, sim = 50, seed = 42) and set.seed(1234); vif(res, sim = 50), the first draws of each part's first set (printed 2026-11-05)
+R_SIM = {
+    'seed': {'beta': (0.26, [1.054888452, 1.005777189, 1.00169033]), 'alpha': (0.64, [1, 1, 1.032671213])},
+    'stream': {'beta': (0.3, [1.045362421, 1.00908478, 1.001915041, 1.000840407]), 'alpha': (0.76, [1.000029626, 1.000000001, 1.060457984, 1.000000001])},
+}
+
+
+@pytest.mark.parametrize('how', ['seed', 'stream'])
+def test_sim_permutes_the_data_variables_as_r(bangert: metafopy.RMALSResult, how: str) -> None:
+    """metafor's ``.compvifsim`` permutes the variables of the data a formula uses and rebuilds the model matrix (``I(ni/100)`` keeps its
+    transformation), and without ``seed`` continues the global stream; audit cases ``options/vif/ls_*/sim=true``."""
+    out: typing.Any  # vif() is typed by its rma_uni overload
+    if how == 'seed':
+        out = metafopy.vif(bangert, sim=50, seed=42, progbar=False)
+    else:
+        metafopy.set_seed(1234)
+        out = metafopy.vif(bangert, sim=50, progbar=False)
+    assert isinstance(out, metafopy.methods.ls_vif.LSVIFResult)
+    for part, (prop, first) in R_SIM[how].items():
+        res = getattr(out, part)
+        sims = numpy.asarray(res.sim)
+        assert res.sim_type == 'data'
+        assert sims[: len(first), 0] == pytest.approx(first, rel=1e-6)
+        if part == 'beta':
+            assert res.prop == pytest.approx([prop, prop])
+        else:
+            # one scale refit (iteration 35 with seed 42, 12 in the stream) runs along a ridge towards alpha = -inf: R's nlminb stops at
+            # -17.5 with a finite Hessian and a VIF of 1, metafopy's optimiser goes on to -40.8 where the numerical Hessian is NaN, so the
+            # draw is dropped (an optimiser stop on a flat scale likelihood, accepted by decision of the operator, 2026-11-04)
+            assert int(numpy.isnan(sims[:, 0]).sum()) == 1

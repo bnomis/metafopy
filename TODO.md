@@ -5,22 +5,6 @@ Open work only, in implementation order, nearest first. Finished items move to
 the shape of an item.
 
 
-## vif() of location-scale fits differs from R with sim, reestimate and table
-
-<!-- doc-counts: accept-start found on 2026-11-05 - a dated record, not a claim about the present -->
-Found on 2026-11-04 by the slice `.audit/runs/20261104-092750` and again on 2026-11-05 by `.audit/runs/20261105-162814` (local, `--only scale= --only ls_`, options step, metafopy `e23afc5`'s parent), where every case below is listed as new. The location-scale item in `DONE.md` (2026-11-04) carried some of them in its body, but its Done line records only the fix of the `vif` print digits, and no ledger entry matches them.
-
-- `options/vif/ls_bangert/sim=true`: `$beta$prop` element 1 R 0.282, Python 0.296; `$alpha$prop` element 1 R 0.698396793587174, Python 0.6717325227963525; `$beta$sim` element 1285 R 1.83095037872554, Python 1.0234467077414686; `$alpha$sim` element 1990 R 1.00000000064568, Python None; print line 3 R 'I(ni/100)  1.0094  0.28', Python 'I(ni/100)  1.0094  0.30'
-- `options/vif/ls_year/sim=true`: `$beta$prop` element 1 R 0.998998998998999, Python 0.998; `$beta$sim` element 1152 R None, Python 1.0193929566782072
-- `options/vif/ls_bcg/sim=true`: print line 6 R 'allocrandom      2.2723  0.50', Python 'allocrandom      2.2723  0.97'
-- `options/vif/ls_year/reestimate=true`: print line 6 R '0.3083  0.8897', Python '0.3077  0.8898'
-- `options/vif/ls_na/table=true`: print line 7 R 'intrcpt -10.4383 5.5982 -1.8646  <.1 -21.4105 0.5339     NA     NA', Python 'intrcpt -10.4383 5.5980 ...'
-<!-- doc-counts: accept-end -->
-
-Cause: not traced. Suspected (unconfirmed): the `sim` proportions and the `None` entries (a refit R kept and metafopy dropped, and the reverse) suggest the simulated refits fail or are dropped differently, as R's `nlminb` fails on the flat scale likelihoods accepted for location-scale fits on 2026-11-04; the `reestimate` and `table` rows differ in the fourth digit, as the accepted location-scale estimates do. Code: `src/metafopy/methods/ls_vif.py`. A documented difference is a lead for the `sim` cases: the docstring of `vif_rma_ls` (`src/metafopy/methods/ls_vif.py:257`) says that, unlike metafor, a model given by formulas has the columns of its model matrix permuted, not the underlying data variables, so the simulated distributions (and `prop`) of `ls_bcg`'s `alloc` dummies cannot match R's.
-
-Fix direction: first decide whether `sim` should permute the data variables as metafor does (a change to a documented behaviour); then trace `options/vif/ls_bangert/sim=true` refit by refit against R with a fixed seed: count the refits each side drops and compare the draws they start from. Ledger what is a failure or stop point of R's optimiser under the operator's decision of 2026-11-04 on location-scale fits; fix what is a difference of metafopy's own (a draw, a dropped refit, a proportion's denominator: R's `$beta$prop` 0.998998998998999 is 998/999, metafopy's 0.998 is 998/1000).
-
 ## Printed output differs from R in layout, row names and the printed call
 
 <!-- doc-counts: accept-start found on 2026-11-02 - a dated record, not a claim about the present -->

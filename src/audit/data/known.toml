@@ -1742,3 +1742,39 @@ kind = "print-diff"
 detail = "line 13: R '-73.4722  35.3727  -2.0771  0.0378  -142.8015  -4.1429  *', Python '-73.4724  35.3725  -2.0771  0.0378  -142.8013  -4.1436  *'"
 reason = "The printed one-row scale table of rma(mods = ~ ablat + year, scale = ~ 0 + I(1/ablat)) of dat.bcg: its estimate, se and upper limit are the accepted value-diffs of the entry on construct/uni_mods*/scale=* above (the scale likelihood is flat; R's numerical Hessian). Shown since the row prints without a name as in R (2026-11-05)."
 ref = "docs/differences.md"
+
+[[known]]
+match = "options/vif/ls_year/sim=true"
+kind = "value-diff"
+path = "$beta$sim"
+detail = "element *: R None, Python *"
+reason = "vif(sim = TRUE) of ls_year: after set.seed(1234) the permutations of the data variables and the simulated VIFs are R's, except where R's refit fails: at iteration 153 R's nlminb stops with 'did not achieve convergence (convergence = 1)', so R stores NA, while metafopy's refit converges (VIF 1.376; R's own optimizer = 'BFGS' converges on the same permutation too). A failed refit of R's optimiser on a flat scale likelihood, accepted by decision of the operator (2026-11-04) (checked 2026-11-05, R 4.6.2, metafor 5.2-1)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/vif/ls_bangert/sim=true"
+kind = "value-diff"
+path = ["$alpha$sim", "$alpha$prop"]
+reason = "vif(sim = TRUE) of ls_bangert: the permutations of the data variables and the simulated VIFs are R's, except a scale refit that runs along a ridge towards alpha = -inf (with seed 42, iteration 35: R's nlminb stops at alpha imag -17.5 with a finite Hessian and a VIF of 1; metafopy's optimiser goes on to -40.8, where its numerical Hessian is NaN), so metafopy drops that draw and the proportion counts one draw less (0.6965 against 0.6984). An optimiser stop on a flat scale likelihood, accepted by decision of the operator (2026-11-04) (checked 2026-11-05, R 4.6.2, metafor 5.2-1)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/vif/ls_bcg/sim=true"
+kind = "print-diff"
+detail = "line 6: R 'allocrandom      2.2723  0.50', Python 'allocrandom      2.2723  0.57'"
+reason = "The printed values of vif() whose differences are accepted for the degenerate ~ alloc scale of ls_bcg, whose simulated refits run off to the boundary (the $alpha$prop entry of options/vif/ls_bcg/* above)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/vif/ls_year/reestimate=true"
+kind = "print-diff"
+detail = "line 6: R '0.3083  0.8897', Python '0.3077  0.8898'"
+reason = "The printed values of vif() whose differences are accepted for the flat scale intercept of ls_year, which every option variant refits (the entry on */ls_year/* above)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/vif/ls_na/table=true"
+kind = "print-diff"
+detail = "line 7: R 'intrcpt -10.4383 5.5982 -1.8646  <.1 -21.4105 0.5339     NA     NA', Python 'intrcpt -10.4383 5.5980 -1.8646  <.1 -21.4102 0.5336     NA     NA'"
+reason = "The printed values of vif() whose differences are accepted for the flat scale intercept of ls_na, which every option variant refits (the entry on */ls_na/* above)."
+ref = "docs/differences.md"

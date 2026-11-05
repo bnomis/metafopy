@@ -2,6 +2,8 @@
 
 ## Unreleased (1.0 candidate)
 
+- `vif(sim=True)` of a location-scale fit given by formulas permutes the variables of the data each formula uses and rebuilds the model matrix, as metafor's `.compvifsim` does (behaviour change: it permuted the columns of the model matrix, so `sim` and `prop` differed from R's; `sim_type` is now `'data'`), and without `seed` a serial run continues the global stream of `set_seed()` as R does, instead of drawing a seed per iteration.
+
 - The scale table of a location-scale fit with one scale coefficient other than the intercept (`scale='~ 0 + ablat'`) prints without a row name, as R's `print.rma.uni` prints any one-row scale table; only an intercept-only scale model did before.
 
 - R's logical operators in formulas: inside a call such as `I()`, `|`, `&` and `!` are R's element-wise logical operators, with R's missing values (`1 | NA` is TRUE), where Python's bitwise operators gave other numbers or an error (`scale='~ 0 + I(1|ablat)'` fitted the column 45, 55, ... instead of 1), and a logical `I()` term is a factor with levels `FALSE` and `TRUE` as in R's `model.matrix` (behaviour change: `mods='~ I(ablat > 30)'` names its coefficient `I(ablat > 30)TRUE`, and `~ 0 + I(ablat > 30)` has a `FALSE` and a `TRUE` column). `emmprep()` of such a fit works. The audit sweeps `I(ablat > 30)`, `I(ablat > 30 | year < 1970)` and `I(!(ablat > 30) & year < 1970)` as moderators and `~ 0 + I(1 | ablat)` as a scale model.

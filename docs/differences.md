@@ -524,6 +524,13 @@ standard errors and the scale test `QS` are `NaN` and the printout leaves out th
 holds for `optbeta=True` on `mods = scale = ~ ablat + year`, where metafopy leaves out the location test (checked
 2026-11-04, R 4.6.2, metafor 5.2-1).
 
+`vif(sim=True)` refits the model once per permutation of the data variables, and metafopy draws R's permutations. Where R's
+`nlminb` fails a refit, R stores `NA` and metafopy a value (on `mods = scale = ~ ablat + year`, iteration 153 after
+`set.seed(1234)`); where a scale refit runs towards a boundary, R's stops with a finite Hessian and metafopy's goes further, to
+where its numerical Hessian is `NaN`, so metafopy drops the draw. The proportion of simulated VIFs below the observed one then
+counts a draw more or less (0.6984 in R and 0.6965 here on `dat.bangertdrowns2004`; checked 2026-11-05, R 4.6.2, metafor
+5.2-1).
+
 <div class="compare" markdown>
 <div markdown>
 

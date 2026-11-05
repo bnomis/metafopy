@@ -3,7 +3,8 @@
 The (generalised) variance inflation factors of the location coefficients and, when the scale model has predictors, of the
 scale coefficients (Viechtbauer & Lopez-Lopez, 2022, doi:10.1002/jrsm.1562; Fox & Monette, 1992,
 doi:10.1080/01621459.1992.10475190), computed as for :func:`metafopy.vif`. With ``sim`` the (G)VIFs are also computed after permuting
-the columns of the location (scale) model matrix, with R's generator (:class:`metafopy.core.rng.RRandom`), as metafor's ``.compvifsim`` does.
+the variables of the data each formula uses (or the columns of a model matrix given as one), with R's generator
+(:class:`metafopy.core.rng.RRandom`), as metafor's ``.compvifsim`` does.
 See https://github.com/wviechtb/metafor/blob/master/R/vif.rma.r and https://github.com/wviechtb/metafor/blob/master/R/misc.func.hidden.vif.r.
 """
 
@@ -100,7 +101,7 @@ def part_vif(
 ) -> metafopy.methods.vif.VIFResult:
     """The (G)VIFs of the location (``which='beta'``) or the scale (``which='alpha'``) coefficients.
 
-    With ``sim >= 2`` the model is refitted ``sim`` times with independently permuted columns of the model matrix of this part.
+    With ``sim >= 2`` the model is refitted ``sim`` times with the variables of this part (or the columns of its model matrix) permuted.
 
     Raises:
         metafopy.errors.InputError: a coefficient set is invalid.
@@ -151,7 +152,13 @@ def part_vif(
     vifs = numpy.array([e.vif for e in entries])
     # simulating is pointless when every (G)VIF is already 1
     if sim >= 2 and not numpy.all(vifs[~numpy.isnan(vifs)] == 1):
-        seeds = [seed + i for i in range(1, sim + 1)] if seed is not None else [int(metafopy.core.rng.get_rng().unif_index(2**31 - 1)) for _ in range(sim)]
+        seeds: list[int | None]
+        if seed is not None:
+            seeds = [seed + i for i in range(1, sim + 1)]
+        elif parallel == 'no':
+            seeds = [None] * sim  # each iteration continues the global stream, as in R
+        else:
+            seeds = [int(metafopy.core.rng.get_rng().unif_index(2**31 - 1)) for _ in range(sim)]
         one = functools.partial(sim_one, res, which, tuple(groups), reestimate, intercept, join)
         rows = metafopy.core.parallel.map_sims(one, seeds, parallel=parallel, ncpus=ncpus, cl=cl, progbar=progbar)
         sims = numpy.vstack(rows)
@@ -165,7 +172,7 @@ def part_vif(
         table=tab,
         test=res.test if tab is not None else None,
         sim=sims,
-        sim_type='X' if sims is not None else None,
+        sim_type=('data' if part_formula(res, which) is not None and join is None else 'X') if sims is not None else None,
         prop=prop,
         attspec=None if which == 'beta' else not missing,
     )
@@ -192,6 +199,11 @@ def make_refit(fit: metafopy.models.rma_ls_result.RMALSResult, which: str) -> co
     return refit_part
 
 
+def part_formula(res: metafopy.models.rma_ls_result.RMALSResult, which: str) -> str | None:
+    """The formula of the location (``which='beta'``) or the scale part, if that part was given as one."""
+    return res.data.formula_mods if which == 'beta' else res.formula_scale
+
+
 def sim_one(
     res: metafopy.models.rma_ls_result.RMALSResult,
     which: str,
@@ -199,16 +211,19 @@ def sim_one(
     reestimate: bool,
     intercept: bool,
     join: tuple[typing.Any, ...] | None,
-    seed: int,
+    seed: int | None,
 ) -> FloatArray:
-    """One iteration of metafor's ``.compvifsim``: (G)VIFs after permuting every column of the model matrix of one part.
+    """One iteration of metafor's ``.compvifsim``: (G)VIFs after permuting the model matrix of one part.
 
-    The generator is R's, seeded with ``seed`` (metafor calls ``set.seed(seed + l)`` for iteration ``l``), and each column is shuffled
-    with ``sample()`` in turn, so the draws are those of metafor when the model matrix was given as a matrix.
+    The generator is R's, seeded with ``seed`` (metafor calls ``set.seed(seed + l)`` for iteration ``l``) or, with ``seed=None``, the global
+    stream continued. A part given by a formula with data has the variables of the data it uses shuffled with ``sample()`` and its model
+    matrix rebuilt, as metafor does; otherwise each column is shuffled in turn.
     """
-    rng = metafopy.core.rng.RRandom(seed)
+    rng = metafopy.core.rng.get_rng() if seed is None else metafopy.core.rng.RRandom(seed)
     M = res.X if which == 'beta' else res.Z
-    perm = metafopy.methods.vif.permute_joined(M, rng, join) if join is not None else metafopy.methods.vif.permute_design(None, None, M, rng)
+    formula = part_formula(res, which)
+    rows = res.data.data.loc[res.data.keep] if formula is not None and res.data.data is not None else None
+    perm = metafopy.methods.vif.permute_design(formula, rows, M, rng, join)
     drop = metafopy.core.linalg.drop_redundant(perm)
     if drop.any():
         # a set containing a coefficient that became redundant is infinitely inflated
@@ -254,7 +269,6 @@ def vif_rma_ls(
     """(Generalized) variance inflation factors for the location and, if the scale model has predictors, the scale coefficients of a location-scale model
     (metafor's ``vif.rma``).
 
-    Unlike metafor, a model given by formulas has its model matrix columns permuted for ``sim`` (``sim_type == 'X'``), not the underlying data variables.
     The location part is left out if the location model has only an intercept, the scale part if the scale model has.
 
     R source: <https://github.com/wviechtb/metafor/blob/master/R/vif.rma.r>
@@ -267,9 +281,10 @@ def vif_rma_ls(
         table: Add the VIFs to the coefficient tables (``table`` of the result; ignored for a part whose ``btt`` or ``att`` is given).
         reestimate: Refit the model with only the coefficients of each set when computing its (G)VIF.
         sim: Simulate the distribution of each (G)VIF under independence: ``True`` for 1000 iterations or a number of iterations. The model is refitted
-            with independently permuted columns of the model matrix; the result then has ``sim`` and ``prop``. Iteration ``l`` is seeded with ``seed + l``
-            when ``seed`` is given, as in metafor, otherwise from the stream of [set_seed][metafopy.set_seed]. The location and the scale part are
-            permuted separately. The draws do not depend on ``parallel``.
+            with independently permuted variables of the data (a part given as a formula with ``data``) or columns of its model matrix; the result
+            then has ``sim`` and ``prop``. Iteration ``l`` is seeded with ``seed + l`` when ``seed`` is given, as in metafor, otherwise from the stream
+            of [set_seed][metafopy.set_seed]. The location and the scale part are permuted separately. With ``seed`` the draws do not depend on
+            ``parallel``; without it a serial run continues the global stream, as R does.
         progbar: Print a progress bar to stderr while simulating (``sim``). Default True, as in metafor.
         seed: Seed for the simulation (``sim``). Default: the stream of [set_seed][metafopy.set_seed] is continued.
         parallel: Parallel simulation: ``'no'`` (default), ``'snow'`` or ``'multicore'``; both use a process pool of ``ncpus`` workers ('multicore'
