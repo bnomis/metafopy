@@ -1139,7 +1139,7 @@ reason = "rma.glmm(control = list(optimizer = 'BFGS')) or another optim() method
 ref = "docs/differences.md"
 
 [[known]]
-match = ["scripts/misc_rma_glmm/*", "scripts/analysis_example_vanhouwelingen1993/*", "scripts/analysis_example_stijnen2010/*", "scripts/analysis_example_rothman2008/*", "scripts/misc_update/test/29", "scripts/misc_update/test/37"]
+match = ["scripts/misc_rma_glmm/*", "scripts/analysis_example_vanhouwelingen1993/*", "scripts/analysis_example_stijnen2010/*", "scripts/analysis_example_rothman2008/*", "scripts/misc_update/test/29", "scripts/misc_update/test/37", "scripts/misc_residuals/test/43"]
 kind = "value-diff"
 path = ["", "$ci.lb", "$ci.ub", "$pi.se", "$pi.lb", "$pi.ub", "$cr.lb", "$cr.ub", "$pval", "$QMp"]
 detail = "*(relative 0.*"
@@ -1712,4 +1712,26 @@ kind = "value-diff"
 path = "$sim_*"
 detail = "*(relative 0.000*"
 reason = "simulate() of the three-level rma_mv fit of dat.konstantopoulos2011: the draws use the same random numbers, and the fitted coefficients, which agree to about 1.5e-6 (intercept -40.231489 in R, -40.231549 here, where the REML log-likelihood is 6e-10 higher), carry into them; draw 28 differs by 6e-7 absolute (1.4e-4 relative on a value of 0.0045). Accepted by decision of the operator (checked 2026-11-05, R 4.6.2, metafor 5.2-1)."
+ref = "docs/differences.md"
+
+[[known]]
+match = 'options/hettest/uni_counts/test="lrt"'
+kind = "value-diff"
+path = "$pval"
+detail = "element 0: R 0.928, Python 0.927 *"
+reason = "hettest(test = 'lrt') bootstraps the p-value as the share of 1000 statistics above the observed one, and the first sample is the data itself. With set.seed(1234) all 1000 statistics agree to 3e-15 and 927 exceed the observed value in both, but the data's own statistic, computed apart from the observed one, is 4 ulp above it in R (0x1.67af0b307e7b4p+2 against 0x1.67af0b307e7b0p+2) and 8 ulp below it here, so R counts the data against itself (928) and metafopy does not (927). Accepted by decision of the operator (checked 2026-11-05, R 4.6.2, metafor 5.2-1)."
+ref = "docs/differences.md"
+
+[[known]]
+match = 'options/hettest/uni_counts/test="lrt"'
+kind = "print-diff"
+detail = "line 5: R 'X^2(df = 12) = 5.6201, p = 0.9280', Python 'X^2(df = 12) = 5.6201, p = 0.9270'"
+reason = "The printed p-value of the value-diff entry above (hettest's first bootstrap sample compared with itself, decided by rounding)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "emmeans/contrast_adjust_mvt"
+kind = "print-diff"
+detail = "line 2: R 'alternate - random        0.448 0.516 Inf   0.868  0.6580', Python 'alternate - random        0.448 0.516 Inf   0.868  0.6578'"
+reason = "The printed p value of the accepted value-diff of the same case above: the mvt adjustment integrates the multivariate t distribution by SciPy's quasi-Monte Carlo where R's mvtnorm uses Genz and Bretz's randomised lattice rule (0.65787 against 0.65799)."
 ref = "docs/differences.md"

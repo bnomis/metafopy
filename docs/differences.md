@@ -588,6 +588,16 @@ sum of the `L0` and `Q0` estimators then differs (71 in R, 75 here on `dat.bcg`)
 *Why:* R's answer depends on which way a rounding error falls, and its BLAS (OpenBLAS) picks its summation kernel by
 processor, so no fixed order of operations reproduces it (checked 2026-11-05, R 4.6.2, metafor 5.2-1).
 
+### hettest(): the data compared with itself
+
+`hettest()` computes its bootstrap p-value as the share of statistics that exceed the observed one, and its first sample is the
+data itself. Both languages compute that sample's statistic apart from the observed one, so the two equal values differ in the
+last bits and the strict `>` counts the data against itself by chance. On the odds ratios of `dat.bcg` with `test='lrt'` and
+`set.seed(1234)` every bootstrap statistic agrees to 3e-15, but R's first one is 4 ulp above its observed value and metafopy's 8
+ulp below, so the p-value is 0.928 in R and 0.927 here.
+
+*Why:* R's answer depends on which way a rounding error falls (checked 2026-11-05, R 4.6.2, metafor 5.2-1).
+
 ### selmodel on a flat likelihood
 
 `selmodel(type='beta')` on `dat.baskerville2012` has `tau2` near zero and a `delta` on its lower bound (both languages warn

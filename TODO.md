@@ -5,38 +5,6 @@ Open work only, in implementation order, nearest first. Finished items move to
 the shape of an item.
 
 
-## Small numeric differences from R in rma, hettest and emmeans
-
-<!-- doc-counts: accept-start found on 2026-11-02 - a dated record, not a claim about the present -->
-Found on 2026-11-02 by the whole audit `.audit/runs/20261102-223017` at metafopy `ffd5ffe` (metafor 5.2-1). A few single cases differ from R in the fourth digit or in one coefficient, outside the families above. The run's report is local and not in
-git, so its cause lines are copied below as it printed them.
-
-Cause: not yet traced; each may be separate. The cases name `rma`, `hettest` and `contrast_adjust_mvt`.
-
-Fix direction: check each case against R; ledger the ones that are rounding below the threshold with a reason, and fix the rest.
-
-Causes, from the run's `wrong-or-missing-full.md`:
-
-- `$ci.ub` element 1: R -0.00033139675441687, Python -0.00033145363275964915 (relative 0.00017) (2 cases; `rma`)
-- `$H` element 3: R 0.978416389473902, Python 0.9791954341103023 (relative 0.0008) (1 cases; `rma`)
-- `$pval` element 0: R 0.928, Python 0.927 (relative 0.0011) (1 cases; `hettest`)
-- `element #: R #, Python # (relative #) [expect_equivalent(c(residuals(res)), c(dat$yi - coe` element 5: R 0.0904795669122727, Python 0.09049455961258412 (relative 0.00017) [expect_equivalent(c(residuals(res)), c(dat$yi - coef(res)))] (1 cases; `the examples and tests of metafor`)
-- line 20: R '---', Python 'intrcpt' (7 cases; `rma`)
-- line 5: R 'X^2(df = 12) = 5.6201, p = 0.9280', Python 'X^2(df = 12) = 5.6201, p = 0.9270' (1 cases; `hettest`)
-- line 15: R 'allocrandom      -22.3482  55186.2609  -0.0004  0.9997  -108185.4320', Python 'allocrandom      -27.1962  626049.2249   0.0000   (1 cases; `rma`)
-- line 2: R 'alternate - random        0.448 0.516 Inf   0.868  0.6580', Python 'alternate - random        0.448 0.516 Inf   0.868  0.6578' (1 cases; `contrast_adjust_mvt`)
-- line 13: R 'intrcpt                   -0.5506  0.2503  -2.2003  0.0278  -1.0411  -0.0601  *', Python 'intrcpt                   -0.5506  0.2 (1 cases; `rma`)
-- line 11: R 'intrcpt   -1.1536  2.3709  -0.4866  0.6266  -5.8005  3.4933', Python 'intrcpt   -1.1536  2.3700  -0.4867  0.6264  -5.7987  3.491 (1 cases; `rma`)
-<!-- doc-counts: accept-end -->
-
-Note 2026-11-03: the whole audit `.audit/runs/20261103-071849` on the pinned R 4.6.2 and lme4 2.1-0 (metafopy `f040b41`) lists every cause below again; none vanished and none appeared.
-
-Note 2026-11-04: `line 20: R '---', Python 'intrcpt'` (7 cases) and the `intrcpt -0.5506` row (1 case) were the wrapping of a wide coefficient table: `metafopy.printing.fmt_table` counted a blank column of significance stars two characters wide where R counts one. Fixed with the location-scale print (`test_print_wraps_a_wide_table_as_r`); the `construct` step lists neither since (`.audit/runs/20261104-100918`, local).
-
-Note 2026-11-04: the `rma` causes still listed by the whole `construct` run `.audit/runs/20261104-100918` (re-rendered with today's ledger) are location-scale fits: `uni_reml` with `scale = ~ ablat` (`$H`, the scale row `-1.1536 2.3709`; log-likelihood -12.2023666 in both), `uni_mods_na` with `scale = ~ alloc` (the degenerate `alloc` scale of `ls_bcg`) and `uni_mods_year` with `scale = ~ 0 + I(1|ablat)` (`$ci.ub`; see the item on `I()` reading `|` as a bitwise OR). The first two fall under the operator's decision of 2026-11-04 on location-scale fits. `hettest`, the emmeans contrast and the script residual were not re-run.
-
-Note 2026-11-04 (correcting the note above): the case `uni_mods_year` has `scale = ~ 0 + I(1/ablat)`; case ids show `/` as `|` (`label()`, `src/audit/domains.py:116`), so it has nothing to do with the item on `I()` reading `|` as a bitwise OR (now in `DONE.md`). The `rma` causes of location-scale fits are worked in the item "Accepted location-scale differences that no ledger entry matches"; `hettest`, the emmeans contrast and the script residual stay here.
-
 ## Printed output differs from R in layout, row names and the printed call
 
 <!-- doc-counts: accept-start found on 2026-11-02 - a dated record, not a claim about the present -->
