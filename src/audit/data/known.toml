@@ -1735,3 +1735,10 @@ kind = "print-diff"
 detail = "line 2: R 'alternate - random        0.448 0.516 Inf   0.868  0.6580', Python 'alternate - random        0.448 0.516 Inf   0.868  0.6578'"
 reason = "The printed p value of the accepted value-diff of the same case above: the mvt adjustment integrates the multivariate t distribution by SciPy's quasi-Monte Carlo where R's mvtnorm uses Genz and Bretz's randomised lattice rule (0.65787 against 0.65799)."
 ref = "docs/differences.md"
+
+[[known]]
+match = 'construct/uni_mods_year/scale={"$formula":"~ 0 + I(1|ablat)"}'
+kind = "print-diff"
+detail = "line 13: R '-73.4722  35.3727  -2.0771  0.0378  -142.8015  -4.1429  *', Python '-73.4724  35.3725  -2.0771  0.0378  -142.8013  -4.1436  *'"
+reason = "The printed one-row scale table of rma(mods = ~ ablat + year, scale = ~ 0 + I(1/ablat)) of dat.bcg: its estimate, se and upper limit are the accepted value-diffs of the entry on construct/uni_mods*/scale=* above (the scale likelihood is flat; R's numerical Hessian). Shown since the row prints without a name as in R (2026-11-05)."
+ref = "docs/differences.md"

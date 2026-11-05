@@ -135,7 +135,7 @@ def format_result(
             digits,
             signif_stars,
             num,
-            res.Z_int_only,
+            res.alpha.shape[0] == 1,  # print.rma.uni prints any one-row scale table as a vector
         )
     )
     out += metafopy.printing.signif_footer(signif_legend)

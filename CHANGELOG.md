@@ -2,6 +2,8 @@
 
 ## Unreleased (1.0 candidate)
 
+- The scale table of a location-scale fit with one scale coefficient other than the intercept (`scale='~ 0 + ablat'`) prints without a row name, as R's `print.rma.uni` prints any one-row scale table; only an intercept-only scale model did before.
+
 - R's logical operators in formulas: inside a call such as `I()`, `|`, `&` and `!` are R's element-wise logical operators, with R's missing values (`1 | NA` is TRUE), where Python's bitwise operators gave other numbers or an error (`scale='~ 0 + I(1|ablat)'` fitted the column 45, 55, ... instead of 1), and a logical `I()` term is a factor with levels `FALSE` and `TRUE` as in R's `model.matrix` (behaviour change: `mods='~ I(ablat > 30)'` names its coefficient `I(ablat > 30)TRUE`, and `~ 0 + I(ablat > 30)` has a `FALSE` and a `TRUE` column). `emmprep()` of such a fit works. The audit sweeps `I(ablat > 30)`, `I(ablat > 30 | year < 1970)` and `I(!(ablat > 30) & year < 1970)` as moderators and `~ 0 + I(1 | ablat)` as a scale model.
 
 - Printed output of location-scale fits follows R: `vif()` prints four decimals and one-digit p-values whatever `digits` it was given (R's `vif.rma` keeps no `digits` for these fits; explicit print digits still apply), a single location coefficient other than the intercept keeps its row name, and a wide coefficient table wraps where R's does, because a blank column of significance stars now counts one character (it counted two since Audit 13; this also fixes the wrapping of wide `rma()` tables). The audit ledger accepts the remaining differences of location-scale fits as stop points or failures of R's `nlminb` on flat likelihoods (`docs/differences.md`, "Refits of a location-scale model that R's optimiser leaves short").

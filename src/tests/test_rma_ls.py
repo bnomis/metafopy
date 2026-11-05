@@ -220,6 +220,20 @@ def test_print_wraps_a_wide_table_as_r(monkeypatch: pytest.MonkeyPatch) -> None:
     ]
 
 
+@pytest.mark.parametrize('num', [False, True])
+def test_print_one_row_scale_table_without_a_name(num: bool) -> None:
+    """R's ``print.rma.uni`` prints any one-row scale table as a vector (``if (nrow(res.table) == 1L)``), not only an intercept-only
+    one (audit cases ``construct/*/scale=~ 0 + ablat``); R 4.6.2, metafor 5.2-1."""
+    res = ls(bcg(), scale='~ 0 + ablat')
+    text = res.summary(num=True) if num else str(res)
+    scale = text[text.index('Model Results (Scale):') : text.index('---')]
+    assert [line.rstrip() for line in scale.splitlines() if line.strip()] == [
+        'Model Results (Scale):',
+        'estimate      se     zval    pval    ci.lb    ci.ub',
+        ' -0.0338  0.0167  -2.0262  0.0427  -0.0664  -0.0011  *',
+    ]
+
+
 @pytest.mark.parametrize('name', ['bd_int', 'bd_ni', 'bd_3', 'bd_3_t', 'bd_3_alpha', 'bd_na', 'bd_optbeta'])
 def test_print(name: str) -> None:
     ref = REF[name]
