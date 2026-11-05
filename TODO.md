@@ -38,6 +38,8 @@ Note 2026-11-04: re-checked on the slice `.audit/runs/20261104-105354` (local, m
 
 Note 2026-11-04: the `selmodel` standard-error findings (`$se`, `$zval`, `$pval.delta`, the line-5 row) and the `profile` intervals where R gives none are worked in the item "Numerical Hessians and failed refits of R outside the accepted fits"; `trimfill`'s `se.k0` and the print of the step table stay here.
 
+Note 2026-11-05: `trimfill`'s `se.k0` (and its printed SE) is accepted by decision of the operator (2026-11-05): it differs only for `trimfill()` of a trim-and-fill result (`trimfill_bcg`, estimators L0 and Q0), where each filled study ties with its mirror image in exact arithmetic and R breaks the tie by a last-bit difference of its OpenBLAS FE estimate (4 ulp; rank sum 71 in R, 75 here; `k0` agrees). Ledger entries in `src/audit/data/known.toml`, section "trimfill of a trim-and-fill result: SE of k0" in `docs/differences.md`; the slice `.audit/runs/20261105-080128` (local, `--only trimfill`) lists neither. The print of the step table, the `$ys` plot value and the `negexp` row of `uni_factor` remain.
+
 ## Multivariate fits differ from R in the Hessian, ranef, rstudent and confint
 
 <!-- doc-counts: accept-start found on 2026-11-02 - a dated record, not a claim about the present -->

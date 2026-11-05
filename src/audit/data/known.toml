@@ -1646,3 +1646,17 @@ kind = "*-diff"
 path = ["$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$pval.delta", "$se.delta", "$zval.delta", ""]
 reason = "selmodel(type = 'beta') of the trim-and-fill fit: R and metafopy reach the same log-likelihood (-99.049066667) and delta, and R's optimizer = 'BFGS' gives R's se too (0.06952); metafopy's numerical Hessian gives 0.06949 (4e-4 relative), so the z value and p-values differ in the fourth digit. Accepted as R's numerical Hessian by decision of the operator (2026-11-04), as for location-scale fits (checked 2026-11-04, R 4.6.2, metafor 5.2-1)."
 ref = "docs/differences.md"
+
+[[known]]
+match = ["matrix/trimfill/trimfill_bcg#1", "matrix/trimfill/trimfill_bcg#3", "options/trimfill/trimfill_bcg/*"]
+kind = "value-diff"
+path = "$se.k0"
+reason = "trimfill() of a trim-and-fill result (estimators L0 and Q0): each filled study mirrors an observed one about the pooled estimate, so their |yi - beta| tie in exact arithmetic. R's FE estimate from its OpenBLAS matrix products is 4 ulp from metafopy's (-0x1.b89cac8764b01p-2 against -0x1.b89cac8764b05p-2; no summation order tried reproduces R's bits), the positive member of each pair comes out 1 ulp smaller in R and ranks first, so R's rank sum is 71 and metafopy's 75 (unrounded k0 -0.67 and -0.18). k0 itself (0) and the estimate agree; se.k0 is 2.4267 in R and 2.5278 here. Accepted by decision of the operator (checked 2026-11-05, R 4.6.2, metafor 5.2-1)."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["matrix/trimfill/trimfill_bcg#1", "matrix/trimfill/trimfill_bcg#3", "options/trimfill/trimfill_bcg/*"]
+kind = "print-diff"
+detail = "line 1: R 'Estimated number of missing studies on the * side: * (SE = *)', Python 'Estimated number of missing studies*"
+reason = "The printed se.k0 of the value-diff entry above (trimfill() of a trim-and-fill result, R's rounding breaks the tie of mirrored studies)."
+ref = "docs/differences.md"

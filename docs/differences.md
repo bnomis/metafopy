@@ -553,6 +553,18 @@ metafopy completes.
 *Why:* a numerical Hessian, or a refit that R's optimiser fails, is not a property of the model, so metafopy keeps the
 inverted Hessian and the completed refit (checked 2026-11-04, R 4.6.2, metafor 5.2-1).
 
+### trimfill of a trim-and-fill result: SE of k0
+
+`trimfill()` applied to the result of `trimfill()` ranks the observed and the filled studies by their distance from the pooled
+estimate. A filled study is the mirror image of an observed one, so in exact arithmetic the two are the same distance away and
+tie. R's estimate comes from its BLAS matrix products and differs from metafopy's in the last bits, so in R the filled member
+of each pair is a little closer and ranks first, while here the pair ties exactly and the observed study ranks first. The rank
+sum of the `L0` and `Q0` estimators then differs (71 in R, 75 here on `dat.bcg`), and with it the standard error of `k0`:
+2.4267 in R and 2.5278 here. `k0` itself (0) and the estimates agree.
+
+*Why:* R's answer depends on which way a rounding error falls, and its BLAS (OpenBLAS) picks its summation kernel by
+processor, so no fixed order of operations reproduces it (checked 2026-11-05, R 4.6.2, metafor 5.2-1).
+
 ### selmodel on a flat likelihood
 
 `selmodel(type='beta')` on `dat.baskerville2012` has `tau2` near zero and a `delta` on its lower bound (both languages warn
