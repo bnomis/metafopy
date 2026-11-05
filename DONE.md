@@ -556,3 +556,36 @@ Note 2026-11-05: `trimfill`'s `se.k0` (and its printed SE) is accepted by decisi
 Note 2026-11-05: the print of the step table (`98.1051` against `98.1050`, the `options/print/sel_bcg/*` cases) is accepted by decision of the operator (2026-11-05) as an optimiser stop on a flat likelihood: the third `delta` of `selmodel(type='stepfun')` on `dat.bcg` is 98.1050604 in R and 98.1050385 here; both run the ported BFGS, their first 13 likelihood evaluations agree and later ones differ by 1 to 3 ulp (SciPy's `ndtr` and `ndtri` in place of R's `pnorm` and `qnorm`), which the finite-difference gradient magnifies where no p-value falls in the second interval. Ledger entry in `src/audit/data/known.toml`, paragraph under "selmodel on a flat likelihood" in `docs/differences.md`; the slice `.audit/runs/20261105-131208` (local, `--only '*/print/sel_bcg*'`) lists no new finding. The `$ys` plot value and the `negexp` row of `uni_factor` remain.
 
 Done: 2026-11-05 - every cause is accepted or worked elsewhere: the selmodel standard errors and the profile intervals in the item "Numerical Hessians and failed refits of R outside the accepted fits" (`f28ec07`); trimfill's `se.k0` and its print (`6a19203`); the step-table print of `sel_bcg` as an optimiser stop on a flat likelihood (`30a89e8`); the `$ys` value of `plot()` of the beta model of metafor's tests, added to the ledger entry on `scripts/misc_selmodel/*` (metafopy's log-likelihood is 5e-7 higher, -2.7924029 against -2.7924034, `delta` differs by 1.5e-5 relative and the selection function at p = 0.94 by 2e-4), and the printed `delta` row of `negexp` on `uni_factor`, a print-diff entry beside the accepted Hessian values, in this commit. The slice `.audit/runs/20261105-140443` (local, `--only selmodel --only trimfill --only profile --only sel_`, steps matrix and options) lists as new only the printed call of `update` and R's failed print of `leave1out` on `trimfill_bcg`, both causes of the item "Printed output differs from R in layout, row names and the printed call"; `.audit/runs/20261105-135933` (`--only scripts/misc_selmodel`) lists none.
+
+## Multivariate fits differ from R in the Hessian, ranef, rstudent and confint
+
+<!-- doc-counts: accept-start found on 2026-11-02 - a dated record, not a claim about the present -->
+Found on 2026-11-02 by the whole audit `.audit/runs/20261102-223017` at metafopy `ffd5ffe` (metafor 5.2-1). `rma.mv` fits return a Hessian of a different size, `ranef` accepts what R refuses, and `rstudent` and `confint` give values where R gives `NA`. The run's report is local and not in
+git, so its cause lines are copied below as it printed them.
+
+Cause: not yet traced. The findings point at `src/metafopy/models/rma_mv.py`, `src/metafopy/methods/mv_ranef.py` and `src/metafopy/methods/mv_diagnostics.py`.
+
+Fix direction: start with the Hessian's size (R 9, Python 4 on `mv_sp`), which decides what the other results are built on.
+
+Causes, from the run's `wrong-or-missing-full.md`:
+
+- R: Non-numeric argument to mathematical function (2 cases; `ranef`)
+- `$hessian` length R 9, Python 4 (3 cases; `rma.mv`)
+- `$vvc` length R 9, Python 4 (3 cases; `rma.mv`)
+- `$sim_1` element 28: R 0.00452385962595871, Python 0.004523223001831139 (relative 0.00014) (1 cases; `simulate`)
+- `[]$random` element 4: R 0.0626269108525104, Python 0.06260801509732174 (relative 0.0003) (1 cases; `confint`)
+- line 3: R '2       NA     NA      NA', Python '2  -0.3409 0.4999 -0.6819' (1 cases; `rstudent`)
+- line 8: R 'tau^2.3   0.0007    NA    NA', Python 'tau^2.3   0.0007 0.0002 0.0062' (1 cases; `confint`)
+<!-- doc-counts: accept-end -->
+
+Note 2026-11-03: the whole audit `.audit/runs/20261103-071849` on the pinned R 4.6.2 and lme4 2.1-0 (metafopy `f040b41`) lists every cause below again; none vanished. The `rstudent` cause (line 3) is now matched by the ledger entry of `matrix/rstudent/mv_wide`, which names line 3 where it named line 19, so a rerender no longer lists it.
+
+Note 2026-11-04: the `profile` causes on `matrix/profile/mv_wide` that the gosh item carried belong here: the slice `.audit/runs/20261104-071144` (local) lists `[]$ll`, `[]$beta$intrcpt`, `[]$beta$log(year - 1900 + 1000)` and `[]$ci.lb`/`[]$ci.ub` of both coefficients, element 2, R None, Python a value - the same pattern as `rstudent` and `confint` here.
+
+Note 2026-11-04: re-checked on the slice `.audit/runs/20261104-105354` (local, metafopy `a7b8700`); every cause above is listed again. In `profile()` of `mv_wide` R's refit fails at one grid point (`ll` NA) and metafopy's converges: the pattern accepted for location-scale fits on 2026-11-04, a decision that named those fits only. The Hessian of `mv_sp` (R 9 entries, metafopy 4) is a different set of parameters, not an optimiser stop point.
+
+Note 2026-11-04: the `profile` findings of `mv_wide` (R's refit fails at one grid point) are worked in the item "Numerical Hessians and failed refits of R outside the accepted fits"; the Hessian size, `ranef`, `rstudent`, `confint` and `simulate` stay here.
+
+Note 2026-11-05: the Hessian size (`$hessian` and `$vvc`, R 9 entries, metafopy 4, on `construct/mv_sp/optbeta=true`, `lambda1=0.5` and `lambda2=0.5`) is accepted by decision of the operator (2026-11-05) as an optimiser stop on a flat likelihood: with `optbeta` the REML likelihood of the SPEXP fit is flat in `rho`; R's `nlminb` stops at 0.0561 (-31.9135075280) and metafopy at 0.0427 (-31.9135075251), and the `rho` row of the Hessian (8.6e-7 in R, 4e-9 here) falls within `hesstol` (1.5e-8) only here, so only metafopy drops it. Ledger entry in `src/audit/data/known.toml`, section "rma_mv with struct SPEXP: the range rho and the Hessian" in `docs/differences.md`; the slice `.audit/runs/20261105-143417` (local, `--only mv_`, steps matrix and construct, re-rendered) lists as new only `confint` of `mv_gen` and `mv_wide` and `simulate` of `mv_wide`. `ranef`, `confint` and `simulate` remain.
+
+Done: 2026-11-05 - every cause is accepted, matched or worked elsewhere: the Hessian size of `mv_sp` with `optbeta` (`cdb906c`); `rstudent` of `mv_wide` by its existing ledger entry (note of 2026-11-03); the `profile` refit of `mv_wide` in the item "Numerical Hessians and failed refits of R outside the accepted fits" (`f28ec07`); and, in this commit, `ranef(transf=transf.ilogit)`, where R stops because `ranef.rma.mv` gives a data frame to `plogis` (metafopy gives R's values for the element-wise function), the printed `NA` limits of `tau^2.3` of `confint` of `mv_gen` beside its accepted values, and `confint` and `simulate` of `mv_wide`, which stop inside R's root tolerance (both give 0.0626101223 at tol 1e-10) or carry coefficients that agree to 1.5e-6, by decision of the operator (2026-11-05). Ledger entries in `src/audit/data/known.toml`, sections "ranef() of an rma_mv fit with transf=transf_ilogit" and "rma_mv with three levels: confint() and simulate() in the fifth digit" in `docs/differences.md`. The slice `.audit/runs/20261105-151105` (local, `--only mv_`, steps matrix, options and construct) lists as new only the printed call of `update` of `mv_ks` and `mv_sp`, a cause of the item "Printed output differs from R in layout, row names and the printed call".

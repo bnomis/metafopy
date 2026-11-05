@@ -1683,3 +1683,33 @@ path = ["$hessian", "$vvc"]
 detail = "length R 9, Python 4"
 reason = "rma_mv SPEXP fit of dat.konstantopoulos2011 with optbeta (lambda1 and lambda2 imply it): the REML likelihood is flat in rho, R's nlminb stops at rho 0.0561 (log-likelihood -31.9135075280) and metafopy at 0.0427 (-31.9135075251). Both drop Hessian rows within hesstol (1.5e-8): R's rho diagonal is 8.6e-7 and is kept (3 x 3), metafopy's is 4e-9 and is dropped (2 x 2). With rho fixed at R's value metafopy reaches R's log-likelihood. Accepted as an optimiser stop on a flat likelihood by decision of the operator (checked 2026-11-05, R 4.6.2, metafor 5.2-1)."
 ref = "docs/differences.md"
+
+[[known]]
+match = "options/ranef/mv_*/transf=*"
+kind = "accepts-where-R-refuses"
+detail = "R: Non-numeric argument to mathematical function*"
+reason = "ranef.rma.mv applies transf to each data frame of predictions at once; plogis (transf.ilogit) is not defined for a data frame, so R stops with this error from metafor's own code, not a check of an argument. metafopy applies the function to the values and gives R's result for the element-wise function(x) 1/(1+exp(-x)) (checked 2026-11-05, R 4.6.2, metafor 5.2-1)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/confint/mv_gen"
+kind = "print-diff"
+detail = "line 8: R 'tau^2.3   0.0007    NA    NA', Python 'tau^2.3   0.0007 0.0002 0.0062'"
+reason = "The printed limits of tau^2.3 of confint() of the unstructured (GEN) rma_mv fit: R's profile search runs into the flat part of the likelihood and gives NA where metafopy finds both limits; the values are the accepted value-diffs of the entry on matrix/*/mv_gen above."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/confint/mv_wide"
+kind = "value-diff"
+path = "[[]]$random"
+detail = "*(relative 0.000*"
+reason = "confint() of the three-level rma_mv fit of dat.konstantopoulos2011 (mods ~ log(year - 1900 + 1000)): both run the same Brent root-finder with R's tol of eps^0.25 (1.2e-4) from estimates that agree to about 1e-6 (metafopy's REML log-likelihood is 6e-10 higher), and stop at different points inside that tolerance: the upper limit of sigma^2.2 is 0.0626269 in R and 0.0626080 here; with tol = 1e-10 both give 0.0626101223. Accepted by decision of the operator (checked 2026-11-05, R 4.6.2, metafor 5.2-1)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "matrix/simulate/mv_wide"
+kind = "value-diff"
+path = "$sim_*"
+detail = "*(relative 0.000*"
+reason = "simulate() of the three-level rma_mv fit of dat.konstantopoulos2011: the draws use the same random numbers, and the fitted coefficients, which agree to about 1.5e-6 (intercept -40.231489 in R, -40.231549 here, where the REML log-likelihood is 6e-10 higher), carry into them; draw 28 differs by 6e-7 absolute (1.4e-4 relative on a value of 0.0045). Accepted by decision of the operator (checked 2026-11-05, R 4.6.2, metafor 5.2-1)."
+ref = "docs/differences.md"

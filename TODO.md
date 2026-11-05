@@ -5,37 +5,6 @@ Open work only, in implementation order, nearest first. Finished items move to
 the shape of an item.
 
 
-## Multivariate fits differ from R in the Hessian, ranef, rstudent and confint
-
-<!-- doc-counts: accept-start found on 2026-11-02 - a dated record, not a claim about the present -->
-Found on 2026-11-02 by the whole audit `.audit/runs/20261102-223017` at metafopy `ffd5ffe` (metafor 5.2-1). `rma.mv` fits return a Hessian of a different size, `ranef` accepts what R refuses, and `rstudent` and `confint` give values where R gives `NA`. The run's report is local and not in
-git, so its cause lines are copied below as it printed them.
-
-Cause: not yet traced. The findings point at `src/metafopy/models/rma_mv.py`, `src/metafopy/methods/mv_ranef.py` and `src/metafopy/methods/mv_diagnostics.py`.
-
-Fix direction: start with the Hessian's size (R 9, Python 4 on `mv_sp`), which decides what the other results are built on.
-
-Causes, from the run's `wrong-or-missing-full.md`:
-
-- R: Non-numeric argument to mathematical function (2 cases; `ranef`)
-- `$hessian` length R 9, Python 4 (3 cases; `rma.mv`)
-- `$vvc` length R 9, Python 4 (3 cases; `rma.mv`)
-- `$sim_1` element 28: R 0.00452385962595871, Python 0.004523223001831139 (relative 0.00014) (1 cases; `simulate`)
-- `[]$random` element 4: R 0.0626269108525104, Python 0.06260801509732174 (relative 0.0003) (1 cases; `confint`)
-- line 3: R '2       NA     NA      NA', Python '2  -0.3409 0.4999 -0.6819' (1 cases; `rstudent`)
-- line 8: R 'tau^2.3   0.0007    NA    NA', Python 'tau^2.3   0.0007 0.0002 0.0062' (1 cases; `confint`)
-<!-- doc-counts: accept-end -->
-
-Note 2026-11-03: the whole audit `.audit/runs/20261103-071849` on the pinned R 4.6.2 and lme4 2.1-0 (metafopy `f040b41`) lists every cause below again; none vanished. The `rstudent` cause (line 3) is now matched by the ledger entry of `matrix/rstudent/mv_wide`, which names line 3 where it named line 19, so a rerender no longer lists it.
-
-Note 2026-11-04: the `profile` causes on `matrix/profile/mv_wide` that the gosh item carried belong here: the slice `.audit/runs/20261104-071144` (local) lists `[]$ll`, `[]$beta$intrcpt`, `[]$beta$log(year - 1900 + 1000)` and `[]$ci.lb`/`[]$ci.ub` of both coefficients, element 2, R None, Python a value - the same pattern as `rstudent` and `confint` here.
-
-Note 2026-11-04: re-checked on the slice `.audit/runs/20261104-105354` (local, metafopy `a7b8700`); every cause above is listed again. In `profile()` of `mv_wide` R's refit fails at one grid point (`ll` NA) and metafopy's converges: the pattern accepted for location-scale fits on 2026-11-04, a decision that named those fits only. The Hessian of `mv_sp` (R 9 entries, metafopy 4) is a different set of parameters, not an optimiser stop point.
-
-Note 2026-11-04: the `profile` findings of `mv_wide` (R's refit fails at one grid point) are worked in the item "Numerical Hessians and failed refits of R outside the accepted fits"; the Hessian size, `ranef`, `rstudent`, `confint` and `simulate` stay here.
-
-Note 2026-11-05: the Hessian size (`$hessian` and `$vvc`, R 9 entries, metafopy 4, on `construct/mv_sp/optbeta=true`, `lambda1=0.5` and `lambda2=0.5`) is accepted by decision of the operator (2026-11-05) as an optimiser stop on a flat likelihood: with `optbeta` the REML likelihood of the SPEXP fit is flat in `rho`; R's `nlminb` stops at 0.0561 (-31.9135075280) and metafopy at 0.0427 (-31.9135075251), and the `rho` row of the Hessian (8.6e-7 in R, 4e-9 here) falls within `hesstol` (1.5e-8) only here, so only metafopy drops it. Ledger entry in `src/audit/data/known.toml`, section "rma_mv with struct SPEXP: the range rho and the Hessian" in `docs/differences.md`; the slice `.audit/runs/20261105-143417` (local, `--only mv_`, steps matrix and construct, re-rendered) lists as new only `confint` of `mv_gen` and `mv_wide` and `simulate` of `mv_wide`. `ranef`, `confint` and `simulate` remain.
-
 ## Small numeric differences from R in rma, hettest and emmeans
 
 <!-- doc-counts: accept-start found on 2026-11-02 - a dated record, not a claim about the present -->

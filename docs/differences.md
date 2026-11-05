@@ -449,6 +449,17 @@ metafopy drops the row and its Hessian and `vvc` are 2 x 2.
 *Why:* different optimiser on a flat surface. With `rho` fixed at R's value metafopy reaches R's log-likelihood. Accepted by
 decision of the operator (checked 2026-11-05, R 4.6.2, metafor 5.2-1).
 
+### rma_mv with three levels: confint() and simulate() in the fifth digit
+
+The fit `rma_mv(yi, vi, mods='~ log(year - 1900 + 1000)', random='~ 1 | district/school')` of `dat.konstantopoulos2011`
+agrees with R to about 1e-6 (metafopy's REML log-likelihood is 6e-10 higher). `confint()` finds each limit with the same Brent
+root-finder and R's tolerance of 1.2e-4, so the upper limit of `sigma^2.2` stops at 0.0626269 in R and 0.0626080 here; with
+`control={'tol': 1e-10}` both give 0.0626101223. `simulate()` carries the coefficients into its draws, which differ by about
+6e-7.
+
+*Why:* both stop inside the same tolerance, from estimates that differ in the sixth digit (checked 2026-11-05, R 4.6.2,
+metafor 5.2-1).
+
 ### Standard errors of a location-scale model on a flat scale
 
 With `link='identity'` the scale slope of this model is near zero, and the Hessian of the log-likelihood is computed by
@@ -1329,6 +1340,13 @@ print(fmtx([1, 2.5, 3.25], digits=2, drop0ifint=True))
 
 </div>
 </div>
+
+### ranef() of an rma_mv fit with transf=transf_ilogit
+
+R's `ranef.rma.mv` applies `transf` to each data frame of predicted random effects at once. `exp` accepts a data frame, but
+`plogis`, which `transf.ilogit` calls, does not, so R stops with "Non-numeric argument to mathematical function". metafopy
+applies the function to the values and gives what R gives for an element-wise function such as `function(x) 1/(1+exp(-x))`
+(0.4526, 0.4788, 0.5351 for the first schools of `dat.konstantopoulos2011`; checked 2026-11-05, R 4.6.2, metafor 5.2-1).
 
 ## R's quirks copied on purpose
 
