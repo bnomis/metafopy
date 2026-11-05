@@ -34,6 +34,8 @@ Note 2026-11-04: re-checked on the slice `.audit/runs/20261104-105354` (local, m
 
 Note 2026-11-04: the `profile` findings of `mv_wide` (R's refit fails at one grid point) are worked in the item "Numerical Hessians and failed refits of R outside the accepted fits"; the Hessian size, `ranef`, `rstudent`, `confint` and `simulate` stay here.
 
+Note 2026-11-05: the Hessian size (`$hessian` and `$vvc`, R 9 entries, metafopy 4, on `construct/mv_sp/optbeta=true`, `lambda1=0.5` and `lambda2=0.5`) is accepted by decision of the operator (2026-11-05) as an optimiser stop on a flat likelihood: with `optbeta` the REML likelihood of the SPEXP fit is flat in `rho`; R's `nlminb` stops at 0.0561 (-31.9135075280) and metafopy at 0.0427 (-31.9135075251), and the `rho` row of the Hessian (8.6e-7 in R, 4e-9 here) falls within `hesstol` (1.5e-8) only here, so only metafopy drops it. Ledger entry in `src/audit/data/known.toml`, section "rma_mv with struct SPEXP: the range rho and the Hessian" in `docs/differences.md`; the slice `.audit/runs/20261105-143417` (local, `--only mv_`, steps matrix and construct, re-rendered) lists as new only `confint` of `mv_gen` and `mv_wide` and `simulate` of `mv_wide`. `ranef`, `confint` and `simulate` remain.
+
 ## Small numeric differences from R in rma, hettest and emmeans
 
 <!-- doc-counts: accept-start found on 2026-11-02 - a dated record, not a claim about the present -->

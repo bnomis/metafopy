@@ -437,6 +437,18 @@ print(res.logLik())
 </div>
 </div>
 
+### rma_mv with struct SPEXP: the range rho and the Hessian
+
+On `dat.konstantopoulos2011` the REML log-likelihood of `~ year | district` with `struct='SPEXP'` is flat in the range `rho`:
+R's `nlminb` stops at 0.0559 and metafopy at 0.0560, with the same log-likelihood (-31.91350753) and `tau2`. With
+`optbeta=True` (or `lambda1`, `lambda2`, which imply it) the two stop further apart, at 0.0561 in R and 0.0427 here, where
+metafopy's log-likelihood is 3e-9 higher. Both then drop from the Hessian every row whose entries are within `hesstol`
+(1.5e-8). R's curvature in `rho` is 8.6e-7, so R keeps the row and its Hessian is 3 x 3. At metafopy's point it is 4e-9, so
+metafopy drops the row and its Hessian and `vvc` are 2 x 2.
+
+*Why:* different optimiser on a flat surface. With `rho` fixed at R's value metafopy reaches R's log-likelihood. Accepted by
+decision of the operator (checked 2026-11-05, R 4.6.2, metafor 5.2-1).
+
 ### Standard errors of a location-scale model on a flat scale
 
 With `link='identity'` the scale slope of this model is near zero, and the Hessian of the log-likelihood is computed by
