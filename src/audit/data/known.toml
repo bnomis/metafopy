@@ -1660,3 +1660,11 @@ kind = "print-diff"
 detail = "line 1: R 'Estimated number of missing studies on the * side: * (SE = *)', Python 'Estimated number of missing studies*"
 reason = "The printed se.k0 of the value-diff entry above (trimfill() of a trim-and-fill result, R's rounding breaks the tie of mirrored studies)."
 ref = "docs/differences.md"
+
+[[known]]
+match = ["*/print/sel_bcg", "*/print/sel_bcg/*", "*/print/sel_bcg#*"]
+kind = "value-diff"
+path = ""
+detail = "element *: R 0.1   < p <= 0.5     2   98.1051 *, Python 0.1   < p <= 0.5     2   98.1050 *"
+reason = "selmodel(type = 'stepfun', steps = c(0.025, 0.1, 0.5, 1)) on dat.bcg: the third delta is 98.1050604 in R and 98.1050385 here (2e-7 relative), so the step table prints 98.1051 against 98.1050. Both run the same ported optim BFGS; their first 13 likelihood evaluations agree, later ones differ by 1 to 3 ulp (metafopy's pnorm and qnorm are SciPy's ndtr and ndtri, not ports of R's), and the finite-difference gradient magnifies those bits on a surface that is flat in delta (the second interval holds no p-values; R cannot invert the Hessian). Accepted as an optimiser stop on a flat likelihood by decision of the operator (checked 2026-11-05, R 4.6.2, metafor 5.2-1)."
+ref = "docs/differences.md"

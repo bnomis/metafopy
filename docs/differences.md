@@ -626,6 +626,13 @@ Treat results with caution (or consider adjusting 'delta.min' and/or 'delta.max'
 </div>
 </div>
 
+The step function `selmodel(res, type='stepfun', steps=[0.025, 0.1, 0.5, 1])` on `dat.bcg` is flat in its `delta` too: no
+p-value falls in the second interval, and R cannot invert the Hessian. Both languages run the same port of `optim`'s BFGS, and
+their first likelihood evaluations agree; later ones differ by a few units in the last place, because metafopy's `pnorm` and
+`qnorm` are SciPy's and not ports of R's. The finite-difference gradient magnifies those bits, and the third `delta` stops at
+98.1050604 in R and 98.1050385 here, so the step table prints 98.1051 against 98.1050 (checked 2026-11-05, R 4.6.2, metafor
+5.2-1).
+
 ### rma_glmm with UM.FS: z value in the fourth digit
 
 The z value of the pooled log odds ratio is -4.2436 here against -4.2434 in R. The estimate and the log-likelihood agree, and the
