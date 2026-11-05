@@ -1217,7 +1217,7 @@ ref = "docs/differences.md"
 [[known]]
 match = "scripts/misc_selmodel/*"
 kind = "value-diff"
-path = ["", "$ys.lb", "$ys.ub", "$hessian"]
+path = ["", "$ys", "$ys.lb", "$ys.ub", "$hessian"]
 detail = "*(relative *"
 reason = "selmodel() of the tests of metafor with a flat likelihood in the selection parameter (type = 'truncest': R's own expected delta is 0.2337 with the default optimiser and 0.1802 with mads) or with tau2 at about 2e-6 on the boundary (2.45e-6 in R and 2.39e-6 in metafopy): the estimates, the profile limits of the selection function that start from them and the finite-difference Hessian entries of about 1e-8 differ."
 ref = "docs/differences.md"
@@ -1667,4 +1667,11 @@ kind = "value-diff"
 path = ""
 detail = "element *: R 0.1   < p <= 0.5     2   98.1051 *, Python 0.1   < p <= 0.5     2   98.1050 *"
 reason = "selmodel(type = 'stepfun', steps = c(0.025, 0.1, 0.5, 1)) on dat.bcg: the third delta is 98.1050604 in R and 98.1050385 here (2e-7 relative), so the step table prints 98.1051 against 98.1050. Both run the same ported optim BFGS; their first 13 likelihood evaluations agree, later ones differ by 1 to 3 ulp (metafopy's pnorm and qnorm are SciPy's ndtr and ndtri, not ports of R's), and the finite-difference gradient magnifies those bits on a surface that is flat in delta (the second interval holds no p-values; R cannot invert the Hessian). Accepted as an optimiser stop on a flat likelihood by decision of the operator (checked 2026-11-05, R 4.6.2, metafor 5.2-1)."
+ref = "docs/differences.md"
+
+[[known]]
+match = 'options/selmodel/uni_factor/type="negexp*"'
+kind = "print-diff"
+detail = "line 17: R '0.0037  2.1304  0.0017  0.9986  0.0000  4.1793', Python '0.0037  2.1307  0.0017  0.9986  0.0000  4.1798'"
+reason = "The printed delta row of selmodel(type = 'negexp') on uni_factor: its se.delta (2.13044 in R, 2.13071 here) and upper limit are the value-diffs of the entry on the selection parameters' finite-difference Hessian above (a surface flat in delta, delta 0.0037 with p = 0.9986); the log-likelihood and estimates agree. Accepted with the selmodel Hessians by decision of the operator (2026-11-04)."
 ref = "docs/differences.md"

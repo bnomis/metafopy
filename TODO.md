@@ -5,43 +5,6 @@ Open work only, in implementation order, nearest first. Finished items move to
 the shape of an item.
 
 
-## Selection models, trimfill and profile differ from R in small values and print
-
-<!-- doc-counts: accept-start found on 2026-11-02 - a dated record, not a claim about the present -->
-Found on 2026-11-02 by the whole audit `.audit/runs/20261102-223017` at metafopy `ffd5ffe` (metafor 5.2-1). `selmodel` fits differ in standard errors and tests in the fourth digit, `profile` on them gives values where R gives none, and `trimfill` gives a different `se.k0`. The run's report is local and not in
-git, so its cause lines are copied below as it printed them.
-
-Cause: not yet traced. The findings point at `src/metafopy/models/selmodel.py` and `src/metafopy/models/sel_opt.py` (convergence), `src/metafopy/methods/profile.py` and `src/metafopy/bias/trimfill.py`.
-
-Fix direction: compare `selmodel` on bcg with R at a tighter tolerance first; then `trimfill`'s `se.k0`.
-
-Causes, from the run's `wrong-or-missing-full.md`:
-
-- `element #: R #   < p <= #     #   #   NA    NA    NA     NA     NA   , Python #   < p <= #` element 25: R 0.1   < p <= 0.5     2   98.1051   NA    NA    NA     NA     NA   , Python 0.1   < p <= 0.5     2   98.1050   NA    NA    NA   (5 cases; `print`)
-- `$se.k0` element 0: R 2.42672899037311, Python 2.5278357875775743 (relative 0.04) (3 cases; `trimfill`)
-- `$ys` element 941: R 5.43592478667369e-05, Python 5.434893707014758e-05 (relative 0.00019) [plot(sav, ylim = c(0, 50), ci = TRUE, bty = "l", seed  (2 cases; `the examples and tests of metafor`)
-- `$pval.delta` element 1: R 9.65330124664416e-05, Python 9.648235818601725e-05 (relative 0.00052) (1 cases; `selmodel`)
-- `$se` element 0: R 0.0695218232173794, Python 0.06949089045726904 (relative 0.00044) (1 cases; `selmodel`)
-- `$zval` element 0: R -2.3598482640218, Python -2.360898712835864 (relative 0.00044) (1 cases; `selmodel`)
-- `[]$ci.ub$ablat` element 2: R -0.0128066816910312, Python -0.012807994996842143 (relative 0.0001) (1 cases; `profile`)
-- `element #: R #   < p <= #     #   #   NA    NA    NA     NA     NA , Python #   < p <= #  ` element 22: R 0.1   < p <= 0.5     2   98.1051   NA    NA    NA     NA     NA , Python 0.1   < p <= 0.5     2   98.1050   NA    NA    NA     (1 cases; `print`)
-- line 5: R '-0.1641  0.0695  -2.3598  0.0183  -0.3003  -0.0278  *', Python '-0.1641  0.0695  -2.3609  0.0182  -0.3003  -0.0279  *' (3 cases; `rma`, `selmodel`)
-- line 1: R 'Estimated number of missing studies on the left side: 0 (SE = 2.4267)', Python 'Estimated number of missing studies on the left s (3 cases; `trimfill`)
-- line 17: R '0.0037  2.1304  0.0017  0.9986  0.0000  4.1793', Python '0.0037  2.1307  0.0017  0.9986  0.0000  4.1798' (2 cases; `selmodel`)
-<!-- doc-counts: accept-end -->
-
-Note 2026-11-03: the whole audit `.audit/runs/20261103-071849` on the pinned R 4.6.2 and lme4 2.1-0 (metafopy `f040b41`) lists every cause below again; none vanished; the stale `delta.1` print-diff ledger entry of `options/selmodel/*` was removed, because the pinned R no longer shows that print difference.
-
-Note 2026-11-04: the `profile` causes the gosh item carried belong here. The slice `--only vif --only dfbetas --only profile` (`.audit/runs/20261104-071144`, local) lists `[]$ci.lb$intrcpt` and `[]$ci.ub$intrcpt` element 3 with R None, Python a value, on `matrix/profile/sel_bcg`, `matrix/profile/sel_digits` and the `options/profile/sel_bcg/*` cases, and `[]$ci.lb$intrcpt` element 2 (R -0.402157171730945, Python -0.40209684929512357) and `[]$ci.ub$ablat` on `matrix/profile/sel_mods_bcg`.
-
-Note 2026-11-04: re-checked on the slice `.audit/runs/20261104-105354` (local, metafopy `a7b8700`); every cause above is listed again. `selmodel(type='beta')` of `trimfill_bcg` has R's log-likelihood (-99.049066667) and `delta`, and R's `optimizer='BFGS'` gives R's se too; only the se (0.06952 against 0.06949) differs, so it is the numerical Hessian. In `profile()` of `sel_bcg` R's refits converge but R cannot invert their Hessian ('Error when trying to invert the Hessian'), so its `ci.lb`/`ci.ub` are NA where metafopy's Hessian inverts. `trimfill`'s `se.k0` is not yet traced.
-
-Note 2026-11-04: the `selmodel` standard-error findings (`$se`, `$zval`, `$pval.delta`, the line-5 row) and the `profile` intervals where R gives none are worked in the item "Numerical Hessians and failed refits of R outside the accepted fits"; `trimfill`'s `se.k0` and the print of the step table stay here.
-
-Note 2026-11-05: `trimfill`'s `se.k0` (and its printed SE) is accepted by decision of the operator (2026-11-05): it differs only for `trimfill()` of a trim-and-fill result (`trimfill_bcg`, estimators L0 and Q0), where each filled study ties with its mirror image in exact arithmetic and R breaks the tie by a last-bit difference of its OpenBLAS FE estimate (4 ulp; rank sum 71 in R, 75 here; `k0` agrees). Ledger entries in `src/audit/data/known.toml`, section "trimfill of a trim-and-fill result: SE of k0" in `docs/differences.md`; the slice `.audit/runs/20261105-080128` (local, `--only trimfill`) lists neither. The print of the step table, the `$ys` plot value and the `negexp` row of `uni_factor` remain.
-
-Note 2026-11-05: the print of the step table (`98.1051` against `98.1050`, the `options/print/sel_bcg/*` cases) is accepted by decision of the operator (2026-11-05) as an optimiser stop on a flat likelihood: the third `delta` of `selmodel(type='stepfun')` on `dat.bcg` is 98.1050604 in R and 98.1050385 here; both run the ported BFGS, their first 13 likelihood evaluations agree and later ones differ by 1 to 3 ulp (SciPy's `ndtr` and `ndtri` in place of R's `pnorm` and `qnorm`), which the finite-difference gradient magnifies where no p-value falls in the second interval. Ledger entry in `src/audit/data/known.toml`, paragraph under "selmodel on a flat likelihood" in `docs/differences.md`; the slice `.audit/runs/20261105-131208` (local, `--only '*/print/sel_bcg*'`) lists no new finding. The `$ys` plot value and the `negexp` row of `uni_factor` remain.
-
 ## Multivariate fits differ from R in the Hessian, ranef, rstudent and confint
 
 <!-- doc-counts: accept-start found on 2026-11-02 - a dated record, not a claim about the present -->
