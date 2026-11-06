@@ -1692,6 +1692,13 @@ reason = "ranef.rma.mv applies transf to each data frame of predictions at once;
 ref = "docs/differences.md"
 
 [[known]]
+match = 'options/leave1out/*/option:na.action="na.fail"'
+kind = "print-diff"
+detail = "line 1: R 'print failed: argument must be coercible to non-negative integer'*"
+reason = "leave1out.rma.uni, .rma.mh and .rma.peto set the slab element only under na.action na.omit, na.exclude or na.pass, so under na.fail the result has no slab and print.list.rma stops in seq_len(slab.pos - 1): an error of metafor's own code, not a check of an argument. The values agree; metafopy names the rows as under na.omit (checked 2026-11-06, R 4.6.2, metafor 5.2-1)."
+ref = "docs/differences.md"
+
+[[known]]
 match = "matrix/confint/mv_gen"
 kind = "print-diff"
 detail = "line 8: R 'tau^2.3   0.0007    NA    NA', Python 'tau^2.3   0.0007 0.0002 0.0062'"

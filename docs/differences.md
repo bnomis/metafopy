@@ -1373,6 +1373,13 @@ R's `ranef.rma.mv` applies `transf` to each data frame of predicted random effec
 applies the function to the values and gives what R gives for an element-wise function such as `function(x) 1/(1+exp(-x))`
 (0.4526, 0.4788, 0.5351 for the first schools of `dat.konstantopoulos2011`; checked 2026-11-05, R 4.6.2, metafor 5.2-1).
 
+### leave1out() under options(na.action = "na.fail")
+
+R's `leave1out` methods for `rma.uni`, `rma.mh` and `rma.peto` fits name the left-out study (`slab`) only when `na.action` is
+`"na.omit"`, `"na.exclude"` or `"na.pass"`. Under `"na.fail"` the result has no `slab`, and printing it stops in `print.list.rma`
+with "argument must be coercible to non-negative integer". The values are the same; metafopy names each row as under `"na.omit"`
+(`-1`, `-2`, ... for `dat.bcg`) and prints the table (checked 2026-11-06, R 4.6.2, metafor 5.2-1).
+
 ## R's quirks copied on purpose
 
 ### blup() of a cluster-robust fit recycles quantiles
