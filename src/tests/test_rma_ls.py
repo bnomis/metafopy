@@ -234,6 +234,18 @@ def test_print_one_row_scale_table_without_a_name(num: bool) -> None:
     ]
 
 
+def test_predict_names_rows_by_a_named_newscale() -> None:
+    """With one scale predictor a vector ``newscale`` holds one value per prediction, and R names each row by its element (audit case
+    ``options/predict/ls_na/newscale={"$named":{"ablat":30,"year":1960}}``); R 4.6.2, metafor 5.2-1:
+    ``predict(rma(yi, vi, mods = ~ year, scale = ~ ablat, data = dat), newscale = c(ablat = 30, year = 1960))``."""
+    res = ls(bcg(), mods='~ year', scale='~ ablat')
+    newscale = {'ablat': 30, 'year': 1960}
+    out = metafopy.predict(res, newscale=newscale)
+    assert out.slab is not None
+    assert list(out.slab) == list(newscale)
+    assert out.pred == pytest.approx([-4.4395, 375.2869], abs=2e-3)
+
+
 @pytest.mark.parametrize('name', ['bd_int', 'bd_ni', 'bd_3', 'bd_3_t', 'bd_3_alpha', 'bd_na', 'bd_optbeta'])
 def test_print(name: str) -> None:
     ref = REF[name]

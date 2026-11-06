@@ -16,6 +16,7 @@ import scipy.stats
 
 import metafopy.core.clubsandwich
 import metafopy.core.labelled
+import metafopy.effects.datatools
 import metafopy.errors
 import metafopy.methods.common
 import metafopy.methods.fitted
@@ -153,6 +154,8 @@ class PredictResult:
         # print.list.rma leaves out `se` after a transformation and the prediction interval of the models that have none
         drop = (['se'] if self.transf else []) + ([] if self.has_pi else ['pi.lb', 'pi.ub'])
         frame = frame.drop(columns=drop)
+        # print.list.rma builds a data.frame, whose check.names makes the names of the model matrix columns syntactic
+        frame.columns = metafopy.effects.datatools.make_names([str(c) for c in frame.columns])
         model_columns = [c for c in frame.columns if c not in PRINT_KINDS and c not in ('pred', 'prob')]
         # the model matrices (X.*, Z.*) are printed as the columns of a numeric data frame, the other columns with the digits
         columns = [

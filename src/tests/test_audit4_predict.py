@@ -17,6 +17,7 @@ import metafopy.errors
 import metafopy.methods.blup
 import metafopy.methods.predict
 import metafopy.models.rma_uni
+import metafopy.printing
 
 matplotlib.use('Agg')
 
@@ -409,3 +410,15 @@ def test_na_action_club_sandwich(dna: pandas.DataFrame) -> None:
     assert numpy.isnan(passed.pred[4])
     assert numpy.isnan(passed.ci_lb[4])
     assert not numpy.isnan(passed.pred[2])
+
+
+def test_print_of_addx_uses_r_column_names(monkeypatch: pytest.MonkeyPatch) -> None:
+    """``print.list.rma`` builds a data frame, whose ``check.names`` turns ``X.factor(alloc)random`` into ``X.factor.alloc.random`` (audit case
+    ``options/predict/uni_factor/addx=true``); R 4.6.2, metafor 5.2-1, width 80."""
+    monkeypatch.setitem(metafopy.printing.SETTINGS, 'width', 80)
+    dat = metafopy.escalc(measure='RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=metafopy.datasets.load('dat.bcg'))
+    res = metafopy.rma(yi='yi', vi='vi', mods='~ factor(alloc)', data=dat)
+    out = metafopy.predict(res, addx=True)
+    lines = [line.rstrip() for line in str(out).splitlines()]
+    assert '   X.factor.alloc.random X.factor.alloc.systematic' in lines
+    assert 'X.factor(alloc)random' in out.to_frame().columns

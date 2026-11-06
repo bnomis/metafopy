@@ -2,6 +2,8 @@
 
 ## Unreleased (1.0 candidate)
 
+- `predict()` of a location-scale fit with one scale predictor names each prediction of a named `newscale` (`{'ablat': 30, 'year': 1960}`) by its element, as R does (they were numbered `1`, `2`), and the printed predictions name the model matrix columns of `addx=True` as R's `data.frame` does (`X.factor.alloc.random`; `to_frame()` keeps `X.factor(alloc)random`).
+
 - `vif(sim=True)` of a location-scale fit given by formulas permutes the variables of the data each formula uses and rebuilds the model matrix, as metafor's `.compvifsim` does (behaviour change: it permuted the columns of the model matrix, so `sim` and `prop` differed from R's; `sim_type` is now `'data'`), and without `seed` a serial run continues the global stream of `set_seed()` as R does, instead of drawing a seed per iteration.
 
 - The scale table of a location-scale fit with one scale coefficient other than the intercept (`scale='~ 0 + ablat'`) prints without a row name, as R's `print.rma.uni` prints any one-row scale table; only an intercept-only scale model did before.
