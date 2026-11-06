@@ -311,6 +311,14 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 </div>
 </div>
 
+### update(evaluate=False) returns a Python call
+
+`update(res, method='DL', evaluate=False)` returns the call that would refit the model instead of fitting it, as R's does.
+metafopy's call prints in Python syntax, `rma_uni(yi='yi', vi='vi', data=<EscalcFrame>, method='DL')`, where R prints
+`rma(yi = yi, vi = vi, data = dat, method = "DL")`.
+
+*Why:* the call is a Python object, and its text is what Python code would run.
+
 ### reporter() is not ported
 
 `reporter()` writes an R Markdown report of a fit. There is no counterpart: use a Jupyter notebook, which runs the same

@@ -1778,3 +1778,10 @@ kind = "print-diff"
 detail = "line 7: R 'intrcpt -10.4383 5.5982 -1.8646  <.1 -21.4105 0.5339     NA     NA', Python 'intrcpt -10.4383 5.5980 -1.8646  <.1 -21.4102 0.5336     NA     NA'"
 reason = "The printed values of vif() whose differences are accepted for the flat scale intercept of ls_na, which every option variant refits (the entry on */ls_na/* above)."
 ref = "docs/differences.md"
+
+[[known]]
+match = "options/update/*/evaluate=false"
+kind = "print-diff"
+detail = "line 1: R '*(*', Python \"*(*\""
+reason = "update(evaluate = FALSE) returns the call. metafopy's prints in Python syntax (rma_uni(yi='yi', vi='vi', data=<EscalcFrame>, method='DL')), which cannot equal R's. R's side is also a harness artefact: runcases.R builds each fit with do.call() on the function object and the evaluated arguments, so R's call deparses as the function source ('(function (yi, vi, sei, ...') or with the data inlined, where a call by name prints rma(yi = yi, vi = vi, data = dat, method = \"DL\"). Accepted as by design by decision of the operator (checked 2026-11-05, R 4.6.2, metafor 5.2-1)."
+ref = "docs/differences.md"
