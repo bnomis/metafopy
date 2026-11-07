@@ -321,12 +321,16 @@ class EscalcFrame(pandas.DataFrame):
     """The data frame ``escalc()`` returns; it prints as metafor's ``print.escalc()`` does (columns of the effect sizes and variances with ``digits``
     decimals, the other columns as ``print.data.frame`` shows them, rows numbered from 1).
 
-    Selecting rows or columns gives a plain data frame that keeps ``attrs``.
+    Selecting rows or columns gives a plain data frame that keeps ``attrs``; a copy is an ``escalc`` frame, as in R.
     """
 
     @property
     def _constructor(self) -> collections.abc.Callable[..., pandas.DataFrame]:
         return pandas.DataFrame
+
+    # pandas-stubs mark copy final, pandas itself allows the override; selections go through _constructor and stay plain
+    def copy(self, deep: bool = True) -> EscalcFrame:  # type: ignore[misc]
+        return escalc_frame(super().copy(deep=deep), self.attrs)
 
     def digit_for(self, name: str) -> int:
         """The decimals of one kind of column (``est``, ``var``, ``se``, ``test``, ``ci``): the ``digits`` of the frame, else the ``digits`` option."""

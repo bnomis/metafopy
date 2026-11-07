@@ -7,8 +7,10 @@ import typing
 
 import pandas
 
+import metafopy.core.labelled
 import metafopy.errors
 import metafopy.metadata
+import metafopy.mfopt
 
 # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
 __all__ = ['list_datasets', 'load']
@@ -69,9 +71,10 @@ def escalc_attributes() -> dict[str, dict[str, typing.Any]]:
 def load(name: str) -> pandas.DataFrame:
     """Load a bundled metadat dataset.
 
-    Datasets that metadat stores as `escalc` objects (for example `dat.konstantopoulos2011`) carry the attributes of such a frame in
-    `DataFrame.attrs`, as [escalc][metafopy.escalc] stores them, so that `rma` takes the effect size measure and the sample sizes from
-    them, as in R.
+    Datasets that metadat stores as `escalc` objects (for example `dat.konstantopoulos2011`) are returned as an `EscalcFrame`, the frame
+    [escalc][metafopy.escalc] returns, which prints as R's `print.escalc` does. They carry the attributes of such a frame in
+    `DataFrame.attrs`, as `escalc` stores them, so that `rma` takes the effect size measure and the sample sizes from them, as in R;
+    `digits` that differ by kind are a mapping by kind (`'est'`, `'var'`, ...), as R's named vector.
 
     Args:
         name: name of the dataset, with or without the `dat.` prefix (`'dat.bcg'` and `'bcg'` are the same). See
@@ -93,7 +96,8 @@ def load(name: str) -> pandas.DataFrame:
         frame.attrs['slab'] = None
         frame.attrs['ni'] = stored.get('ni')
         frame.attrs[metafopy.metadata.ROWS_KEY] = list(frame.index)
-        frame.attrs['digits'] = None if not digits else (digits[0] if len(set(digits)) == 1 else digits)
+        frame.attrs['digits'] = None if not digits else (digits[0] if len(set(digits)) == 1 else dict(zip(metafopy.mfopt.DIGIT_KEYS, digits, strict=True)))
         frame.attrs['yi_names'] = stored['yi_names']
         frame.attrs['vi_names'] = stored['vi_names']
+        return metafopy.core.labelled.escalc_frame(frame)
     return frame
