@@ -2,6 +2,8 @@
 
 ## Unreleased (1.0 candidate)
 
+- The sparse matrix of `vcalc(sparse=True)` prints as Matrix prints a `dgCMatrix`: a column switches to scientific notation when that is narrower (`1e-03  6e-04`, where it printed `0.0010 0.0006`), zeros are padded and numbers right-aligned as Matrix's `formatSparseM` does, and row labels are right-aligned, so the table wraps where R's does.
+
 - `rcalc()` results print as R prints its list: `$dat` and `$V`, and with `simplify=False` each study's under its own tag (`` $`1`$dat ``); `simplify=False` returns a `NamedList` (a `dict`), so `res['1'].dat` works as before. They printed as a dataclass and a dict.
 
 - `datasets.load()` returns the datasets that metadat ships as `escalc` objects (`dat.konstantopoulos2011`, `dat.bangertdrowns2004`, `dat.mccurdy2020` and the others) as an `EscalcFrame`, which prints as R's `print.escalc` (rows numbered from 1, `yi` and `vi` with the dataset's `digits`); they were plain pandas frames. A dataset whose `digits` differ by kind (`dat.mccurdy2020`: five decimals for variances) keeps them as a mapping by kind (`{'est': 4, ..., 'var': 5, ...}`) instead of a bare list.

@@ -20,6 +20,7 @@ import metafopy
 import metafopy.core.linalg
 import metafopy.datasets
 import metafopy.errors
+import metafopy.printing
 
 REF: dict[str, typing.Any] = json.loads((pathlib.Path(__file__).parent / 'reference' / 'phase4' / 'vcalc.json').read_text(encoding='utf-8'))
 RTOL = 1e-10
@@ -879,3 +880,15 @@ def test_rcalc_without_simplify_prints_as_r_list() -> None:
     assert text[9:11] == ['$`1`$V', '          acog.asom acog.conf acog.perf asom.conf asom.perf conf.perf']
     assert text[17] == '$`3`'
     assert len(text) == 170
+
+
+def test_sparse_vcalc_prints_scientific_columns_as_r(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Matrix's print of a ``dgCMatrix`` formats each column as R's ``format``, which switches to scientific notation when that is narrower:
+    a column of 0.001 and 0.0006 prints as ``1e-03`` and ``6e-04`` (R 4.6.2, metafor 5.2-1, Matrix, width 80, printed 2026-11-07); audit case
+    ``standalone/vcalc/sparse=true``, where metafopy printed ``0.0010 0.0006``."""
+    monkeypatch.setitem(metafopy.printing.SETTINGS, 'width', 80)
+    data = metafopy.datasets.load('dat.konstantopoulos2011')
+    out = metafopy.vcalc(vi='vi', cluster='district', obs='school', data=data, rho=0.6, sparse=True)
+    text = [line.rstrip() for line in str(out).splitlines()]
+    assert '[34,] .           .           .            1e-03  6e-04  6e-04  6e-04  6e-04' in text
+    assert '[34,]  6e-04  6e-04  6e-04 .           .           .           .' in text

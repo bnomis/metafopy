@@ -462,13 +462,23 @@ class SparseVCovMat(scipy.sparse.csr_array):
         columns = []
         for j in range(m):
             nonzero = dense[:, j] != 0
-            places = decimals([float(v) for v in dense[nonzero, j]])
-            cells = [cell(float(v), places) if flag else '.' for v, flag in zip(dense[:, j], nonzero, strict=True)]
-            width = max((len(c) for c in cells), default=0)
-            columns.append([c.ljust(width) for c in cells])
+            values = [float(v) for v in dense[nonzero, j]]
+            places = decimals(values)
+            mantissa = scientific_places(values)  # R's format switches a column to scientific notation when that is narrower
+            if mantissa is None:
+                numbers = [cell(v, places) for v in values]
+                pad = places + int(places > 0)
+            else:
+                numbers = [f'{v:.{mantissa}e}' for v in values]
+                pad = mantissa + (1 if max(abs(math.floor(math.log10(abs(v)))) for v in values) < 100 else 2) + 4
+            # Matrix's formatSparseM (align = "fancy"): a zero is "." padded to the width format.info gives the column, the numbers right-aligned
+            zero = '.'.ljust(pad + 1) if pad > 0 else '.'
+            width = max([len(zero) if not nonzero.all() else 0, *(len(c) for c in numbers)])
+            it = iter(numbers)
+            columns.append([next(it).rjust(width) if flag else zero.ljust(width) for flag in nonzero])
         rows = [[columns[j][i] for j in range(m)] for i in range(n)]
         # auditme: accept[literal-duplication] an empty label, as R prints a blank name
-        body = metafopy.printing.fmt_wrapped_table([''] * m, rows, [f'[{i + 1},]' for i in range(n)], console_width())
+        body = metafopy.printing.fmt_wrapped_table([''] * m, rows, [f'[{i + 1},]'.rjust(len(f'[{n},]')) for i in range(n)], console_width())
         return f'{n} x {m} sparse Matrix of class "dgCMatrix"\n{body}'
 
     def __str__(self) -> str:
