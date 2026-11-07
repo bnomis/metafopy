@@ -319,6 +319,13 @@ metafopy's call prints in Python syntax, `rma_uni(yi='yi', vi='vi', data=<Escalc
 
 *Why:* the call is a Python object, and its text is what Python code would run.
 
+### regplot() returns a RegplotResult
+
+metafor has no print method for the object `regplot()` returns invisibly, so R prints it with `print.default`: each element under
+`$slab`, `$ids`, `$xi`, ... `$pred`, then its attributes. metafopy returns a `RegplotResult` dataclass with the same elements and the
+axes drawn on, and prints it as a dataclass; `to_frame()` gives the elements as a table. `ids` and `order` are 0-based, as every
+index in metafopy, where R's are 1-based (checked 2026-11-07, R 4.6.2, metafor 5.2-1).
+
 ### reporter() is not ported
 
 `reporter()` writes an R Markdown report of a fit. There is no counterpart: use a Jupyter notebook, which runs the same

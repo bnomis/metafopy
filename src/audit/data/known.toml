@@ -1787,6 +1787,13 @@ reason = "The printed values of vif() whose differences are accepted for the fla
 ref = "docs/differences.md"
 
 [[known]]
+match = "*/regplot_mods"
+kind = "print-diff"
+detail = "line 1: R '$slab', Python \"RegplotResult(*"
+reason = "metafor has no print method for a regplot object: R prints the list regplot() returns invisibly with print.default, element by element with its attributes, and its ids and order are 1-based where metafopy's are 0-based. metafopy prints its RegplotResult dataclass; the values agree. Accepted as by design by decision of the operator (checked 2026-11-07, R 4.6.2, metafor 5.2-1)."
+ref = "docs/differences.md"
+
+[[known]]
 match = "options/update/*/evaluate=false"
 kind = "print-diff"
 detail = "line 1: R '*(*', Python \"*(*\""
