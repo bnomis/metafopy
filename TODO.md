@@ -5,6 +5,16 @@ Open work only, in implementation order, nearest first. Finished items move to
 the shape of an item.
 
 
+## test_large_smd_warning fails after the escalc parity tests
+
+<!-- doc-counts: accept-start found on 2026-11-07 - a dated record, not a claim about the present -->
+Found on 2026-11-07 while checking `989a03c`: `src/tests/test_escalc.py::test_large_smd_warning` fails ("DID NOT WARN") when the scoped test files run before it, and passes alone; it fails the same way on the parent commit `81df418` (changes stashed), so the fix of `989a03c` did not cause it. A watcher run (a pytest plugin checking the cache after each test) shows that `src/tests/test_escalc_parity.py::test_escalc_matches_metafor[smd_large_warn]` (the case `smd_large_warn` of `src/tests/r/generate_escalc.R:138`) computes the same `yi` from the same inputs first.
+<!-- doc-counts: accept-end -->
+
+Cause: `metafopy.effects.measures.YICHECKS` (`src/metafopy/effects/measures.py:304`, checked at `:319`) keeps, as metafor's `.chkyisize` does, the signatures of the `yi` vectors it has warned about for the whole session, and warns only once per vector. Only `test_audit8_refusals.py::test_unusually_large_smd_warns_once_per_yi_vector` clears it, so any test that expects the warning depends on no earlier test having seen the same `yi`.
+
+Fix direction: clear `YICHECKS` before each test in an autouse fixture of `src/tests/conftest.py` (beside `wide_console`), so every test starts with R's fresh session; the clear in `test_audit8_refusals.py` then becomes redundant. Small; no spec.
+
 ## Printed output differs from R in layout, row names and the printed call
 
 <!-- doc-counts: accept-start found on 2026-11-02 - a dated record, not a claim about the present -->
