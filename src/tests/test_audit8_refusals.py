@@ -188,8 +188,7 @@ def large_smd() -> pandas.DataFrame:
 
 
 def test_unusually_large_smd_warns_once_per_yi_vector() -> None:
-    # .chkyisize keeps the signatures of the last 100 yi vectors it warned about
-    metafopy.effects.measures.YICHECKS.clear()
+    # .chkyisize keeps the signatures of the last 100 yi vectors it warned about (conftest.py clears them before each test)
     with pytest.warns(UserWarning, match='unusually large'):
         large_smd()
     with warnings.catch_warnings():

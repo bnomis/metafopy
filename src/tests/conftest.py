@@ -8,6 +8,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).parent))
 import matplotlib
 import pytest
 
+import metafopy.effects.measures
 import metafopy.printing
 
 # draw plots without a display (and make the images of test_plots_image.py reproducible)
@@ -20,3 +21,10 @@ def wide_console() -> collections.abc.Iterator[None]:
     metafopy.printing.SETTINGS['width'] = 200
     yield
     metafopy.printing.SETTINGS['width'] = 80
+
+
+@pytest.fixture(autouse=True)
+def fresh_yi_checks() -> None:
+    """Each test starts as a new R session: metafor warns once per session about an unusually large ``yi`` vector (``.chkyisize``), so a vector
+    an earlier test warned about would keep a later test from seeing the warning."""
+    metafopy.effects.measures.YICHECKS.clear()
