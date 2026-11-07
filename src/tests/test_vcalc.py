@@ -868,3 +868,14 @@ def test_package_exports() -> None:
     for name in ('RCalcResult', 'bldiag', 'blsplit', 'rcalc', 'vcalc'):
         assert name in metafopy.__all__
         assert hasattr(metafopy, name)
+
+
+def test_rcalc_without_simplify_prints_as_r_list() -> None:
+    """R prints ``rcalc(..., simplify = FALSE)`` as a list of lists: ``$`1```, then ``$`1`$dat`` and ``$`1`$V`` (R 4.6.2, metafor 5.2-1, printed
+    2026-11-07, blank lines left out); audit case ``standalone/rcalc/simplify=false``, where metafopy printed a dict."""
+    res = metafopy.rcalc('ri ~ var1 + var2 | study', ni='ni', data=craft(), simplify=False)
+    text = [line.rstrip() for line in str(res).splitlines() if line.strip()]
+    assert text[:4] == ['$`1`', '$`1`$dat', '  var1 var2 var1.var2    yi  ni', '1 acog asom acog.asom  0.47 142']
+    assert text[9:11] == ['$`1`$V', '          acog.asom acog.conf acog.perf asom.conf asom.perf conf.perf']
+    assert text[17] == '$`3`'
+    assert len(text) == 170

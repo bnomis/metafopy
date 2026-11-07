@@ -424,15 +424,29 @@ def element_text(value: typing.Any) -> str:
     return str(value)
 
 
+@typing.runtime_checkable
+class RList(typing.Protocol):
+    """A result that R returns as a named list: inside a printed list its elements print under its own tag (``$`1`$dat``)."""
+
+    def r_elements(self) -> collections.abc.Mapping[str, typing.Any]: ...
+
+
+def list_text(items: collections.abc.Iterable[tuple[typing.Any, typing.Any]], prefix: str = '') -> str:
+    """R's ``print.default`` of a named list: ``$name`` above each element (names that are not syntactic in backticks), an element that is itself a
+    list printed under ``prefix$name``."""
+    blocks = []
+    for name, value in items:
+        tag = prefix + '$' + (str(name) if SYNTACTIC.fullmatch(str(name)) else f'`{name}`')
+        inner = value.r_elements() if isinstance(value, RList) else value if isinstance(value, NamedList) else None
+        blocks.append(f'{tag}\n{list_text(inner.items(), tag) if inner is not None else element_text(value)}\n')
+    return '\n'.join(blocks)
+
+
 class NamedList(dict[typing.Any, typing.Any]):
     """A dict that prints as R prints a named list: ``$name`` above each element (names that are not syntactic in backticks)."""
 
     def __str__(self) -> str:
-        blocks = []
-        for name, value in self.items():
-            label = str(name) if SYNTACTIC.fullmatch(str(name)) else f'`{name}`'
-            blocks.append(f'${label}\n{element_text(value)}\n')
-        return '\n'.join(blocks)
+        return list_text(self.items())
 
     def __repr__(self) -> str:
         return self.__str__()

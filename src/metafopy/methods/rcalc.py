@@ -56,6 +56,13 @@ class RCalcResult:
             names = [str(n) for n in self.dat['var1.var2']]
             object.__setattr__(self, 'V', metafopy.core.labelled.VCovMat(self.V, names, names))
 
+    def r_elements(self) -> dict[str, typing.Any]:
+        """The elements of R's list, ``dat`` and ``V``."""
+        return {'dat': self.dat, 'V': self.V}
+
+    def __str__(self) -> str:
+        return metafopy.core.labelled.list_text(self.r_elements().items())
+
 
 def match_nfun(nfun: str) -> str:
     """R's ``match.arg()``: an unambiguous prefix of one of the choices.
@@ -165,7 +172,7 @@ def rcalc_list(
         raise metafopy.errors.InputError("Argument 'ni' must be of the same length as there are elements in 'x'.")
     res = [rcalc_matrix(m, float(ni[i]), upper, rtoz) for i, m in enumerate(x.values())]
     if not simplify:
-        return dict(zip(x.keys(), res, strict=True))
+        return metafopy.core.labelled.NamedList(zip(x.keys(), res, strict=True))
     kept = [(name, r) for name, r in zip(x.keys(), res, strict=True) if r.dat is not None and r.V is not None]
     if not kept:
         return RCalcResult(None, None)

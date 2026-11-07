@@ -2,6 +2,8 @@
 
 ## Unreleased (1.0 candidate)
 
+- `rcalc()` results print as R prints its list: `$dat` and `$V`, and with `simplify=False` each study's under its own tag (`` $`1`$dat ``); `simplify=False` returns a `NamedList` (a `dict`), so `res['1'].dat` works as before. They printed as a dataclass and a dict.
+
 - `datasets.load()` returns the datasets that metadat ships as `escalc` objects (`dat.konstantopoulos2011`, `dat.bangertdrowns2004`, `dat.mccurdy2020` and the others) as an `EscalcFrame`, which prints as R's `print.escalc` (rows numbered from 1, `yi` and `vi` with the dataset's `digits`); they were plain pandas frames. A dataset whose `digits` differ by kind (`dat.mccurdy2020`: five decimals for variances) keeps them as a mapping by kind (`{'est': 4, ..., 'var': 5, ...}`) instead of a bare list.
 
 - `predict()` of a location-scale fit with one scale predictor names each prediction of a named `newscale` (`{'ablat': 30, 'year': 1960}`) by its element, as R does (they were numbered `1`, `2`), and the printed predictions name the model matrix columns of `addx=True` as R's `data.frame` does (`X.factor.alloc.random`; `to_frame()` keeps `X.factor(alloc)random`).
