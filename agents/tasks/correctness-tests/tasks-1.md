@@ -333,7 +333,7 @@ cases. With them the coverage gate passes.
 
 ## Task 9: Published cases from open-access sources
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** Seed sources; Kinds of evidence (`published`)
@@ -342,25 +342,25 @@ cases. With them the coverage gate passes.
 
 **Subtasks:**
 
-- [ ] For each source in the spec's Seed sources:
+- [x] For each source in the spec's Seed sources:
   - fetch it through the PubMed, Paperclip or alphaXiv tools;
   - find its worked example and the metafopy dataset that holds the same data;
   - add `published` cases with values written as printed, as strings.
-- [ ] A source that cannot be fetched goes under "Sources needed" in `mismatches.md`, with its citation and the table or example wanted
-- [ ] A source whose data is in no metafopy dataset: put the data inline in the case, with its locator
-- [ ] `test_published.py`, parametrised over `case_params('published')`
-- [ ] Record any mismatch as the header says
+- [x] A source that cannot be fetched goes under "Sources needed" in `mismatches.md`, with its citation and the table or example wanted
+- [x] A source whose data is in no metafopy dataset: put the data inline in the case, with its locator
+- [x] `test_published.py`, parametrised over `case_params('published')`
+- [x] Record any mismatch as the header says (no `published` case could be written from the sources fetched; every seed source is under "Sources needed" in `mismatches.md`, so the test has no cases yet and skips)
 
 **Acceptance Criteria:**
 
-- [ ] Every seed source has `published` cases or a "Sources needed" entry
-- [ ] Every `published` case has `citation`, `locator` and `read`
+- [x] Every seed source has `published` cases or a "Sources needed" entry
+- [x] Every `published` case has `citation`, `locator` and `read`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness` passes
 
 **Notes:**
 
