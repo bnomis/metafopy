@@ -372,7 +372,7 @@ cases. With them the coverage gate passes.
 
 ## Task 10: Property cases
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** medium
 **Spec Reference:** Implementation step 4; Kinds of evidence (`property`)
@@ -381,21 +381,21 @@ cases. With them the coverage gate passes.
 
 **Subtasks:**
 
-- [ ] Location invariance: `tau2` unchanged and `beta` shifted by `c` when `yi` is shifted by `c`. Scale invariance: `tau2` times `c^2` and
+- [x] Location invariance: `tau2` unchanged and `beta` shifted by `c` when `yi` is shifted by `c`. Scale invariance: `tau2` times `c^2` and
       `beta` times `c` when `yi` is scaled by `c` and `vi` by `c^2`. Check both for every estimator in `ESTIMATORS`
-- [ ] When the data are homogeneous enough that `tau2` is truncated to 0, each random-effects estimator gives the equal-effects estimate
-- [ ] At metafopy's optimum the REML and ML score is zero, and for PM `Q(tau2) = k - 1`
-- [ ] `I2 = (H2 - 1) / H2` for every estimator
+- [x] When the data are homogeneous enough that `tau2` is truncated to 0, each random-effects estimator gives the equal-effects estimate
+- [x] At metafopy's optimum the REML and ML score is zero, and for PM `Q(tau2) = k - 1`
+- [x] `I2 = (H2 - 1) / H2` for every estimator
 
 **Acceptance Criteria:**
 
-- [ ] Each property case names the estimators it runs over, read from `ESTIMATORS`
+- [x] Each property case names the estimators it runs over, read from `ESTIMATORS`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness` passes
 
 **Notes:**
 

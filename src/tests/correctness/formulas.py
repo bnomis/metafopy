@@ -1355,6 +1355,7 @@ def fixed_effects_fit(
     """``(tau2, beta, se)``: the estimate of ``tau2`` and the weighted least squares coefficients with weights ``1 / (v + tau2)`` and their standard errors."""
     tau2 = rma_tau2(yi, vi, method, weights, mods, data)
     design = model_matrix(len(yi), mods, data)
+    # auditme: accept[literal-duplication] this module imports numpy and scipy only, so it cannot share the tuple with test_properties.py
     if method in ('GENQ', 'GENQM'):
         assert weights is not None
         # the supplied weights also weight the coefficients; the standard errors are then the sandwich of a misspecified weight matrix (Jackson et al. 2014)

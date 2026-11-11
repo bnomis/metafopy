@@ -1,0 +1,122 @@
+# Property cases for the tau2 estimators of rma_uni: identities and estimating equations that theory guarantees.
+#
+# They add to the `published` and `derived` cases but never satisfy the coverage gate alone. The location and scale invariances are `hypothesis` tests in
+# `test_properties.py`; they run over every estimator in `ESTIMATORS`. The checks below that loop over estimators read them from `ESTIMATORS` too.
+
+# Where the data are as homogeneous as sampling error allows, each random-effects estimator truncates tau2 at 0 and gives the equal-effects fit.
+[[case]]
+id = "property.truncated-tau2.equal-effects"
+kind = "property"
+function = "rma_uni"
+data = { yi = [0.30, 0.31, 0.29, 0.30, 0.32, 0.28], vi = [0.10, 0.08, 0.12, 0.09, 0.11, 0.10] }
+args = { yi = "yi", vi = "vi", method = "EE" }
+expect = {}
+check = "test_properties.truncated_tau2_is_equal_effects"
+
+# I2 = 100 (H2 - 1) / H2 for every estimator.
+[[case]]
+id = "property.i2-from-h2.bcg"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "DL" }
+expect = {}
+check = "test_properties.i2_follows_h2_every_estimator"
+
+[[case]]
+id = "property.i2-from-h2.raudenbush"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "DL" }
+expect = {}
+check = "test_properties.i2_follows_h2_every_estimator"
+
+# Estimating equations at metafopy's optimum, with the convergence settings tightened so that the stopping rule does not enter.
+[[case]]
+id = "property.reml-score.bcg"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "REML", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = {}
+check = "test_properties.reml_score_is_zero"
+
+[[case]]
+id = "property.reml-score.bcg.ablat"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "REML", mods = "~ ablat", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = {}
+check = "test_properties.reml_score_is_zero"
+
+[[case]]
+id = "property.reml-score.raudenbush"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "REML", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = {}
+check = "test_properties.reml_score_is_zero"
+
+[[case]]
+id = "property.ml-score.bcg"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "ML", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = {}
+check = "test_properties.ml_score_is_zero"
+
+[[case]]
+id = "property.ml-score.bcg.ablat"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "ML", mods = "~ ablat", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = {}
+check = "test_properties.ml_score_is_zero"
+
+[[case]]
+id = "property.ml-score.raudenbush"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "ML", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = {}
+check = "test_properties.ml_score_is_zero"
+
+[[case]]
+id = "property.pm-q.bcg"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "PM", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = {}
+check = "test_properties.pm_q_is_k_minus_p"
+
+[[case]]
+id = "property.pm-q.bcg.ablat"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "PM", mods = "~ ablat", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = {}
+check = "test_properties.pm_q_is_k_minus_p"
+
+[[case]]
+id = "property.pm-q.raudenbush"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "PM", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = {}
+check = "test_properties.pm_q_is_k_minus_p"
