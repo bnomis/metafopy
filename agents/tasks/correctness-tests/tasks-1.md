@@ -447,7 +447,7 @@ cases. With them the coverage gate passes.
 
 ## Task 12: Other-software cases from R meta
 
-**Status:** todo
+**Status:** in-progress
 **Priority:** low
 **Complexity:** medium
 **Spec Reference:** Implementation step 6; Kinds of evidence (`other`); Error handling (generator)
