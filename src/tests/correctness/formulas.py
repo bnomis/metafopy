@@ -911,3 +911,304 @@ def normal_d_to_log_odds_ratio_yi(m1i: FloatArray, m2i: FloatArray, sd1i: FloatA
 def normal_d_to_log_odds_ratio_vi(m1i: FloatArray, m2i: FloatArray, sd1i: FloatArray, sd2i: FloatArray, n1i: FloatArray, n2i: FloatArray) -> FloatArray:
     """Variance of ``1.65 d``: ``1.65^2 Var(d)`` (Sanchez-Meca et al. 2003)."""
     return d_to_log_odds_ratio_vi(m1i, m2i, sd1i, sd2i, n1i, n2i, 1.65)
+
+
+def weighted_mean(values: FloatArray, weights: FloatArray) -> float:
+    return float(numpy.sum(weights * values) / numpy.sum(weights))
+
+
+def correlation_yi(ri: FloatArray) -> FloatArray:
+    """The Pearson correlation is its own effect size."""
+    return ri
+
+
+def correlation_vi(ri: FloatArray, ni: FloatArray, vtype: str = 'LS') -> FloatArray:
+    """Sampling variance of a Pearson correlation.
+
+    - ``LS``: ``(1 - r^2)^2 / (n - 1)``, the large-sample variance (Olkin & Pratt 1958, Annals of Mathematical Statistics 29:201-211; Hedges & Olkin 1985);
+    - ``AV``: ``LS`` at the sample-size weighted mean correlation (Hunter & Schmidt 2004);
+    - ``H0``: ``(1 - r^2) / (n - 2)``, the squared standard error of the ``t`` test of ``rho = 0`` with ``n - 2`` degrees of freedom;
+    - ``H0b``: ``1 / n``, the large-sample variance at ``rho = 0``.
+    """
+    if vtype == 'LS':
+        return (1 - ri**2) ** 2 / (ni - 1)
+    if vtype == 'AV':
+        return (1 - weighted_mean(ri, ni) ** 2) ** 2 / (ni - 1)
+    if vtype in ('H0', 'H0a'):
+        return (1 - ri**2) / (ni - 2)
+    if vtype == 'H0b':
+        return 1 / ni
+    raise ValueError(f'unsupported vtype: {vtype}')
+
+
+def olkin_pratt_yi(ri: FloatArray, ni: FloatArray) -> FloatArray:
+    """The unbiased estimator of rho, ``r 2F1(1/2, 1/2; (n - 2) / 2; 1 - r^2)`` (Olkin & Pratt 1958, eq. 2.3)."""
+    return ri * scipy.special.hyp2f1(0.5, 0.5, (ni - 2) / 2, 1 - ri**2)
+
+
+def olkin_pratt_vi(ri: FloatArray, ni: FloatArray, vtype: str = 'LS') -> FloatArray:
+    """Variance of the Olkin-Pratt estimator.
+
+    ``UB``: the unbiased estimate of its variance, ``r_u^2 - (1 - (n - 3) / (n - 2) (1 - r^2) 2F1(1, 1; n / 2; 1 - r^2))`` (Olkin & Pratt 1958, eq. 2.6);
+    ``LS`` and ``AV`` as ``correlation_vi`` evaluated at ``r_u``.
+    """
+    ru = olkin_pratt_yi(ri, ni)
+    if vtype == 'UB':
+        return numpy.asarray(ru**2 - (1 - (ni - 3) / (ni - 2) * (1 - ri**2) * scipy.special.hyp2f1(1, 1, ni / 2, 1 - ri**2)))
+    return correlation_vi(ru, ni, vtype)
+
+
+# auditme: accept[passthrough-shim] case files name a formula by function, so each measure's yi has its own named formula
+def fisher_z_yi(ri: FloatArray) -> FloatArray:
+    """Fisher's variance-stabilising transform ``atanh(r)`` (Fisher 1915, Biometrika 10:507-521)."""
+    return numpy.arctanh(ri)
+
+
+def fisher_z_vi(ni: FloatArray) -> FloatArray:
+    """Variance of Fisher's z, ``1 / (n - 3)`` (Fisher 1921, Metron 1:3-32)."""
+    return 1 / (ni - 3)
+
+
+def partial_correlation_vi(ri: FloatArray, mi: FloatArray, ni: FloatArray, vtype: str = 'LS') -> FloatArray:
+    """Variance of a partial correlation with ``m`` predictors: ``(1 - r^2)^2 / (n - m)``, a correlation's variance with ``n - m - 1`` residual degrees of
+    freedom (Aloe & Becker 2012, Journal of Educational and Behavioral Statistics 37:340-364). ``AV`` uses the weighted mean correlation."""
+    base = weighted_mean(ri, ni) if vtype == 'AV' else ri
+    return (1 - base**2) ** 2 / (ni - mi)
+
+
+def fisher_z_partial_vi(mi: FloatArray, ni: FloatArray) -> FloatArray:
+    """Variance of Fisher's z of a partial correlation, ``1 / (n - m - 2)`` (Aloe & Becker 2012)."""
+    return 1 / (ni - mi - 2)
+
+
+def r2_vi(r2i: FloatArray, mi: FloatArray, ni: FloatArray, vtype: str = 'LS') -> FloatArray:
+    """Variance of a squared multiple correlation (Olkin & Finn 1995, Psychological Bulletin 118:155-164).
+
+    ``LS``: ``4 R^2 (1 - R^2)^2 / n``; ``LS2``: ``4 R^2 (1 - R^2)^2 (n - m - 1)^2 / ((n^2 - 1) (n + 3))``, which replaces the factor ``1 / n`` by the exact
+    one; ``AV`` and ``AV2`` evaluate these at the sample-size weighted mean of ``R^2``.
+    """
+    base = weighted_mean(r2i, ni) if vtype in ('AV', 'AV2') else r2i
+    if vtype in ('LS2', 'AV2'):
+        return 4 * base * (1 - base) ** 2 * (ni - mi - 1) ** 2 / ((ni**2 - 1) * (ni + 3))
+    return 4 * base * (1 - base) ** 2 / ni
+
+
+def fisher_z_multiple_yi(r2i: FloatArray) -> FloatArray:
+    """Fisher's z of the multiple correlation ``sqrt(R^2)``."""
+    return numpy.arctanh(numpy.sqrt(r2i))
+
+
+def proportion_vi(xi: FloatArray, mi: FloatArray, vtype: str = 'LS') -> FloatArray:
+    """Sampling variance of a binomial proportion: ``p (1 - p) / n`` (``LS``), ``p (1 - p) / (n - 1)`` (``UB``, unbiased), or ``LS`` at the weighted mean
+    proportion (``AV``)."""
+    ni = xi + mi
+    p = xi / ni
+    if vtype == 'UB':
+        return p * (1 - p) / (ni - 1)
+    if vtype == 'AV':
+        mean_p = weighted_mean(p, ni)
+        return mean_p * (1 - mean_p) / ni
+    return p * (1 - p) / ni
+
+
+def proportion_yi(xi: FloatArray, mi: FloatArray) -> FloatArray:
+    return xi / (xi + mi)
+
+
+def log_proportion_yi(xi: FloatArray, mi: FloatArray) -> FloatArray:
+    return numpy.log(xi / (xi + mi))
+
+
+def log_proportion_vi(xi: FloatArray, mi: FloatArray, vtype: str = 'LS') -> FloatArray:
+    """Delta-method variance of ``log p``: ``(1 - p) / (n p) = 1 / x - 1 / n``; ``AV`` at the weighted mean proportion."""
+    ni = xi + mi
+    p = weighted_mean(xi / ni, ni) if vtype == 'AV' else xi / ni
+    return (1 - p) / (ni * p)
+
+
+def logit_yi(xi: FloatArray, mi: FloatArray) -> FloatArray:
+    return numpy.log(xi / mi)
+
+
+def logit_vi(xi: FloatArray, mi: FloatArray, vtype: str = 'LS') -> FloatArray:
+    """Delta-method variance of ``logit p``: ``1 / (n p (1 - p)) = 1 / x + 1 / m``; ``AV`` at the weighted mean proportion."""
+    ni = xi + mi
+    p = weighted_mean(xi / ni, ni) if vtype == 'AV' else xi / ni
+    return 1 / (ni * p * (1 - p))
+
+
+def probit_yi(xi: FloatArray, mi: FloatArray) -> FloatArray:
+    return scipy.stats.norm.ppf(xi / (xi + mi))
+
+
+def probit_vi(xi: FloatArray, mi: FloatArray) -> FloatArray:
+    """Delta-method variance of ``Phi^-1(p)``: ``p (1 - p) / (n phi(z)^2)``."""
+    p = xi / (xi + mi)
+    return p * (1 - p) / ((xi + mi) * scipy.stats.norm.pdf(scipy.stats.norm.ppf(p)) ** 2)
+
+
+def arcsine_proportion_yi(xi: FloatArray, mi: FloatArray) -> FloatArray:
+    return numpy.arcsin(numpy.sqrt(xi / (xi + mi)))
+
+
+def arcsine_proportion_vi(xi: FloatArray, mi: FloatArray) -> FloatArray:
+    """Variance ``1 / (4 n)`` of the arcsine square-root transform (Anscombe 1948, Biometrika 35:246-254)."""
+    return 1 / (4 * (xi + mi))
+
+
+def freeman_tukey_proportion_yi(xi: FloatArray, mi: FloatArray) -> FloatArray:
+    """Double arcsine transform ``(asin sqrt(x / (n + 1)) + asin sqrt((x + 1) / (n + 1))) / 2`` (Freeman & Tukey 1950; Miller 1978, Am Stat 32:138)."""
+    ni = xi + mi
+    return (numpy.arcsin(numpy.sqrt(xi / (ni + 1))) + numpy.arcsin(numpy.sqrt((xi + 1) / (ni + 1)))) / 2
+
+
+def freeman_tukey_proportion_vi(xi: FloatArray, mi: FloatArray) -> FloatArray:
+    """Variance ``1 / (4 n + 2)`` (Miller 1978)."""
+    return 1 / (4 * (xi + mi) + 2)
+
+
+def incidence_rate_yi(xi: FloatArray, ti: FloatArray) -> FloatArray:
+    return xi / ti
+
+
+def incidence_rate_vi(xi: FloatArray, ti: FloatArray) -> FloatArray:
+    """Poisson variance of a rate: ``x / t^2``."""
+    return xi / ti**2
+
+
+def log_incidence_rate_yi(xi: FloatArray, ti: FloatArray) -> FloatArray:
+    return numpy.log(xi / ti)
+
+
+def log_incidence_rate_vi(xi: FloatArray) -> FloatArray:
+    """Delta-method variance of the log of a Poisson rate, ``1 / x``."""
+    return 1 / xi
+
+
+def sqrt_incidence_rate_yi(xi: FloatArray, ti: FloatArray) -> FloatArray:
+    return numpy.sqrt(xi / ti)
+
+
+def sqrt_incidence_rate_vi(ti: FloatArray) -> FloatArray:
+    """Variance-stabilised square-root rate, ``1 / (4 t)`` (Anscombe 1948)."""
+    return 1 / (4 * ti)
+
+
+def freeman_tukey_rate_yi(xi: FloatArray, ti: FloatArray) -> FloatArray:
+    """Freeman-Tukey transform of a rate, ``(sqrt(x / t) + sqrt((x + 1) / t)) / 2`` (Freeman & Tukey 1950, Annals of Mathematical Statistics 21:607-611)."""
+    return (numpy.sqrt(xi / ti) + numpy.sqrt((xi + 1) / ti)) / 2
+
+
+def freeman_tukey_rate_vi(ti: FloatArray) -> FloatArray:
+    return 1 / (4 * ti)
+
+
+def mean_yi(mi: FloatArray) -> FloatArray:
+    return mi
+
+
+def mean_vi(sdi: FloatArray, ni: FloatArray, vtype: str = 'LS') -> FloatArray:
+    """Variance of a sample mean, ``s^2 / n``; ``HO`` uses the pooled variance ``sum((n - 1) s^2) / sum(n - 1)`` over studies."""
+    if vtype == 'HO':
+        return numpy.sum((ni - 1) * sdi**2) / numpy.sum(ni - 1) / ni
+    return sdi**2 / ni
+
+
+def pomp_mean_yi(mi: FloatArray, mini: FloatArray, maxi: FloatArray) -> FloatArray:
+    """Percent of maximal possible score, ``100 (m - min) / (max - min)`` (Cohen, Cohen, Aiken & West 1999, Multivariate Behavioral Research 34:315-346)."""
+    return 100 * (mi - mini) / (maxi - mini)
+
+
+def pomp_mean_vi(sdi: FloatArray, ni: FloatArray, mini: FloatArray, maxi: FloatArray, vtype: str = 'LS') -> FloatArray:
+    """Variance of the POMP mean: that of the mean after rescaling the standard deviations by ``100 / (max - min)``."""
+    return mean_vi(100 * sdi / (maxi - mini), ni, vtype)
+
+
+def standardised_mean_yi(mi: FloatArray, sdi: FloatArray, ni: FloatArray) -> FloatArray:
+    """Single-group standardised mean ``c(n - 1) m / s`` with Hedges' small-sample correction (Hedges 1981)."""
+    return hedges_correction(ni - 1) * mi / sdi
+
+
+def standardised_mean_vi(mi: FloatArray, sdi: FloatArray, ni: FloatArray) -> FloatArray:
+    """Large-sample variance ``1 / n + g^2 / (2 n)`` of a one-sample standardised mean (Hedges & Olkin 1985, ch. 5)."""
+    return 1 / ni + standardised_mean_yi(mi, sdi, ni) ** 2 / (2 * ni)
+
+
+# auditme: accept[passthrough-shim] case files name a formula by function, so each measure's yi has its own named formula
+def log_mean_yi(mi: FloatArray) -> FloatArray:
+    return numpy.log(mi)
+
+
+def log_mean_vi(mi: FloatArray, sdi: FloatArray, ni: FloatArray) -> FloatArray:
+    """Delta-method variance of ``log m``, ``s^2 / (n m^2)`` (Raudenbush & Bryk 1987, Journal of Educational Statistics 12:241-269)."""
+    return sdi**2 / (ni * mi**2)
+
+
+def log_sd_yi(sdi: FloatArray, ni: FloatArray) -> FloatArray:
+    """``log s`` plus its bias correction ``1 / (2 (n - 1))`` (Nakagawa et al. 2015, Methods in Ecology and Evolution 6:143-152)."""
+    return numpy.log(sdi) + 1 / (2 * (ni - 1))
+
+
+def log_sd_vi(ni: FloatArray) -> FloatArray:
+    """Variance of ``log s``, ``1 / (2 (n - 1))`` (Nakagawa et al. 2015)."""
+    return 1 / (2 * (ni - 1))
+
+
+def log_cv_yi(mi: FloatArray, sdi: FloatArray, ni: FloatArray) -> FloatArray:
+    return numpy.log(sdi / mi) + 1 / (2 * (ni - 1))
+
+
+def log_cv_vi(mi: FloatArray, sdi: FloatArray, ni: FloatArray) -> FloatArray:
+    """Variance of ``log(s / m)``: that of ``log s`` plus that of ``log m`` (Nakagawa et al. 2015)."""
+    return 1 / (2 * (ni - 1)) + sdi**2 / (ni * mi**2)
+
+
+def cronbach_alpha_yi(ai: FloatArray) -> FloatArray:
+    """The reliability coefficient itself (Cronbach 1951, Psychometrika 16:297-334)."""
+    return ai
+
+
+def cronbach_alpha_vi(ai: FloatArray, mi: FloatArray, ni: FloatArray) -> FloatArray:
+    """Variance ``2 m (1 - a)^2 / ((m - 1) (n - 2))`` of the raw coefficient (Bonett 2002, Journal of Educational and Behavioral Statistics 27:335-340)."""
+    return 2 * mi * (1 - ai) ** 2 / ((mi - 1) * (ni - 2))
+
+
+def hakstian_whalen_yi(ai: FloatArray) -> FloatArray:
+    """Cube-root transform ``1 - (1 - a)^(1/3)`` (Hakstian & Whalen 1976, Journal of the American Statistical Association 71:460-462)."""
+    return 1 - (1 - ai) ** (1 / 3)
+
+
+def hakstian_whalen_vi(ai: FloatArray, mi: FloatArray, ni: FloatArray) -> FloatArray:
+    """Variance ``18 m (n - 1) (1 - a)^(2/3) / ((m - 1) (9 n - 11)^2)`` (Hakstian & Whalen 1976)."""
+    return 18 * mi * (ni - 1) * (1 - ai) ** (2 / 3) / ((mi - 1) * (9 * ni - 11) ** 2)
+
+
+def bonett_alpha_yi(ai: FloatArray) -> FloatArray:
+    """Log transform ``-log(1 - a)`` (Bonett 2002)."""
+    return -numpy.log(1 - ai)
+
+
+def bonett_alpha_vi(mi: FloatArray, ni: FloatArray) -> FloatArray:
+    """Variance ``2 m / ((m - 1) (n - 2))`` of the transformed coefficient (Bonett 2002)."""
+    return 2 * mi / ((mi - 1) * (ni - 2))
+
+
+def heterozygosity_statistic(p: FloatArray) -> FloatArray:
+    """Log ratio of the heterozygote proportion to the geometric mean of the homozygote proportions, ``log(p1 / (2 sqrt(p0 p2)))``."""
+    return numpy.asarray(numpy.log(p[1]) - numpy.log(2 * numpy.sqrt(p[0] * p[2])))
+
+
+def excess_heterozygosity_yi(ai: FloatArray, bi: FloatArray, ci: FloatArray) -> FloatArray:
+    p = numpy.vstack([ai, bi, ci]) / (ai + bi + ci)
+    return heterozygosity_statistic(p)
+
+
+def excess_heterozygosity_vi(ai: FloatArray, bi: FloatArray, ci: FloatArray) -> FloatArray:
+    """Delta-method variance of ``excess_heterozygosity_yi`` under multinomial sampling of the three genotypes (Agresti 2013, section 16.1)."""
+    counts = numpy.column_stack([ai, bi, ci, numpy.zeros_like(ai)])
+    return multinomial_delta_variance(lambda p: heterozygosity_statistic(p[:3]), counts)
+
+
+def squared_correlation_yi(r2i: FloatArray) -> FloatArray:
+    """The squared multiple correlation is its own effect size."""
+    return r2i

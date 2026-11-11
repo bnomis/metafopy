@@ -178,7 +178,7 @@ accepted `vtype`, coded from the publication that defines it.
 
 ## Task 5: escalc - correlations, single-group and remaining measures
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** Implementation step 2; Coverage list (measures)
@@ -189,20 +189,20 @@ the proportions and rates (`PR` to `IRFT`), the means and variability measures (
 
 **Subtasks:**
 
-- [ ] Add their `[[vtypes]]` rows to `escalc.toml`
-- [ ] A `formulas.py` function and `derived` cases for each, as in Task 3; `GEN` (user-supplied `yi`/`vi`) gets an `[[exempt]]` entry explaining
+- [x] Add their `[[vtypes]]` rows to `escalc.toml`
+- [x] A `formulas.py` function and `derived` cases for each, as in Task 3; `GEN` (user-supplied `yi`/`vi`) gets an `[[exempt]]` entry explaining
       that it computes nothing
-- [ ] Record any mismatch as the header says
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] The gate's missing list names no measure
+- [x] The gate's missing list names no measure
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness` passes
 
 **Notes:**
 
