@@ -1,6 +1,6 @@
 # Correctness tests
 
-**Version:** 1.0
+**Version:** 1.1
 **Status:** proposed
 **Date:** 2026-11-11
 
@@ -99,6 +99,7 @@ class Case:
     setup: dict[str, typing.Any] | None = None
     reason: str = ''
     tolerance: float | None = None
+    check: str | None = None
 
 
 def load_cases(kind: str | None = None) -> list[Case]:
@@ -129,9 +130,13 @@ loader resolves both and refuses anything else.
 `test_coverage.py` fails unless each item has a `published` or `derived` case with `status = "pass"` or `"mismatch"`, or an `[[exempt]]` entry in its
 case file with a reason (for example, a measure whose defining paper gives no formula):
 
-- every `measure` accepted by `metafopy.escalc`, read from `metafopy.effects.measures` at test time, not listed here, for both `yi` and `vi` (each `vtype`);
+- every `measure` in `metafopy.effects.measures.MEASURES`, read at test time, for `yi` and for `vi` with each `vtype` it accepts. The code has no
+  per-measure `vtype` table, so `escalc.toml` holds one (`[[vtypes]]` entries of a measure and its accepted `vtype` values, from the `escalc` docstring
+  and metafor's documentation; decided 2026-11-11); a test checks that `escalc` accepts every listed pair, and the gate needs a case or exemption
+  for each;
 - every `rma_uni` `method` in `metafopy.models.tau2.ESTIMATORS`, read at test time (the equal-effects methods included);
-- `rma_uni` inference: every value of the `metafopy.models.rma_uni.Test` alias, read at test time; the Q-profile and other `confint` methods for `tau2`;
+- `rma_uni` inference: every value of the `metafopy.models.rma_uni.Test` alias and every `confint` `type` for `tau2` in
+  `metafopy.methods.confint.CIType`, both read at test time;
   `predict` prediction intervals;
 - heterogeneity statistics: `QE`, `QM`, `I2`, `H2`;
 - `rma_mh` for `OR`, `RR`, `RD`, `IRR`, `IRD` (estimate and variance) and `rma_peto`.
