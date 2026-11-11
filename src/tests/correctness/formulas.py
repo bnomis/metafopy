@@ -1636,3 +1636,127 @@ def wald_log_bounds(yi: FloatArray, vi: FloatArray, method: str, mods: str | Non
 def wald_sqrt_bounds(yi: FloatArray, vi: FloatArray, method: str, mods: str | None = None, data: object | None = None, level: float = 95) -> FloatArray:
     """Wald interval on the scale of tau."""
     return wald_bounds(yi, vi, method, 'wald.sqrt', mods, data, level)
+
+
+# Mantel-Haenszel and Peto pooling of 2x2 tables and incidence rates. Each estimator takes the tables as they are (no continuity correction), the way
+# `rma_mh` and `rma_peto` pool them by default; a study with a zero cell contributes its zero terms.
+
+
+def mh_or_beta(ai: FloatArray, bi: FloatArray, ci: FloatArray, di: FloatArray) -> float:
+    """Log of the Mantel-Haenszel odds ratio ``sum(a d / n) / sum(b c / n)`` (Mantel and Haenszel, 1959, J Natl Cancer Inst 22:719-748)."""
+    n = ai + bi + ci + di
+    return math.log(float(numpy.sum(ai * di / n)) / float(numpy.sum(bi * ci / n)))
+
+
+def mh_or_se(ai: FloatArray, bi: FloatArray, ci: FloatArray, di: FloatArray) -> float:
+    """Standard error of the log Mantel-Haenszel odds ratio (Robins, Breslow and Greenland, 1986, Biometrics 42:311-323).
+
+    With ``P = (a + d) / n``, ``Q = (b + c) / n``, ``R = a d / n`` and ``S = b c / n`` summed over the tables, the variance is
+    ``sum(P R) / (2 R^2) + sum(P S + Q R) / (2 R S) + sum(Q S) / (2 S^2)``.
+    """
+    n = ai + bi + ci + di
+    p, q, r, s = (ai + di) / n, (bi + ci) / n, ai * di / n, bi * ci / n
+    big_r, big_s = float(numpy.sum(r)), float(numpy.sum(s))
+    variance = float(numpy.sum(p * r)) / (2 * big_r**2) + float(numpy.sum(p * s + q * r)) / (2 * big_r * big_s) + float(numpy.sum(q * s)) / (2 * big_s**2)
+    return math.sqrt(variance)
+
+
+def mh_rr_terms(ai: FloatArray, bi: FloatArray, ci: FloatArray, di: FloatArray) -> tuple[float, float]:
+    """``R = sum(a n2 / n)`` and ``S = sum(c n1 / n)``, the numerator and denominator of the Mantel-Haenszel risk ratio."""
+    n1, n2 = ai + bi, ci + di
+    n = n1 + n2
+    return float(numpy.sum(ai * n2 / n)), float(numpy.sum(ci * n1 / n))
+
+
+def mh_rr_beta(ai: FloatArray, bi: FloatArray, ci: FloatArray, di: FloatArray) -> float:
+    """Log of the Mantel-Haenszel risk ratio ``sum(a n2 / n) / sum(c n1 / n)`` (Greenland and Robins, 1985, Biometrics 41:55-68)."""
+    big_r, big_s = mh_rr_terms(ai, bi, ci, di)
+    return math.log(big_r / big_s)
+
+
+def mh_rr_se(ai: FloatArray, bi: FloatArray, ci: FloatArray, di: FloatArray) -> float:
+    """Standard error of the log Mantel-Haenszel risk ratio (Greenland and Robins, 1985).
+
+    The variance is ``sum((n1 n2 (a + c) - a c n) / n^2) / (R S)`` with ``R`` and ``S`` as in ``mh_rr_terms``.
+    """
+    n1, n2 = ai + bi, ci + di
+    n = n1 + n2
+    big_r, big_s = mh_rr_terms(ai, bi, ci, di)
+    return math.sqrt(float(numpy.sum((n1 * n2 * (ai + ci) - ai * ci * n) / n**2)) / (big_r * big_s))
+
+
+def mh_rd_beta(ai: FloatArray, bi: FloatArray, ci: FloatArray, di: FloatArray) -> float:
+    """Mantel-Haenszel risk difference ``sum((a n2 - c n1) / n) / sum(n1 n2 / n)`` (Greenland and Robins, 1985)."""
+    n1, n2 = ai + bi, ci + di
+    n = n1 + n2
+    return float(numpy.sum((ai * n2 - ci * n1) / n)) / float(numpy.sum(n1 * n2 / n))
+
+
+def mh_rd_se(ai: FloatArray, bi: FloatArray, ci: FloatArray, di: FloatArray) -> float:
+    """Standard error of the Mantel-Haenszel risk difference, the variance consistent for sparse tables (Sato, Greenland and Robins, 1989,
+    Biometrics 45:1323-1324).
+
+    With ``P = (n1^2 c - n2^2 a + n1 n2 (n2 - n1) / 2) / n^2``, ``Q = (a (n2 - c) + c (n1 - a)) / (2 n)`` and ``R = n1 n2 / n``, the variance is
+    ``(RD sum(P) + sum(Q)) / sum(R)^2``.
+    """
+    n1, n2 = ai + bi, ci + di
+    n = n1 + n2
+    rd = mh_rd_beta(ai, bi, ci, di)
+    p = (n1**2 * ci - n2**2 * ai + n1 * n2 * (n2 - n1) / 2) / n**2
+    q = (ai * (n2 - ci) + ci * (n1 - ai)) / (2 * n)
+    r = n1 * n2 / n
+    return math.sqrt((rd * float(numpy.sum(p)) + float(numpy.sum(q))) / float(numpy.sum(r)) ** 2)
+
+
+def mh_irr_terms(x1i: FloatArray, x2i: FloatArray, t1i: FloatArray, t2i: FloatArray) -> tuple[float, float]:
+    """``R = sum(x1 t2 / T)`` and ``S = sum(x2 t1 / T)`` with ``T = t1 + t2``, the numerator and denominator of the Mantel-Haenszel rate ratio."""
+    total = t1i + t2i
+    return float(numpy.sum(x1i * t2i / total)), float(numpy.sum(x2i * t1i / total))
+
+
+def mh_irr_beta(x1i: FloatArray, x2i: FloatArray, t1i: FloatArray, t2i: FloatArray) -> float:
+    """Log of the Mantel-Haenszel incidence rate ratio ``sum(x1 t2 / T) / sum(x2 t1 / T)`` (Greenland and Robins, 1985)."""
+    big_r, big_s = mh_irr_terms(x1i, x2i, t1i, t2i)
+    return math.log(big_r / big_s)
+
+
+def mh_irr_se(x1i: FloatArray, x2i: FloatArray, t1i: FloatArray, t2i: FloatArray) -> float:
+    """Standard error of the log Mantel-Haenszel rate ratio (Greenland and Robins, 1985): variance ``sum(t1 t2 (x1 + x2) / T^2) / (R S)``."""
+    total = t1i + t2i
+    big_r, big_s = mh_irr_terms(x1i, x2i, t1i, t2i)
+    return math.sqrt(float(numpy.sum(t1i * t2i * (x1i + x2i) / total**2)) / (big_r * big_s))
+
+
+def mh_ird_beta(x1i: FloatArray, x2i: FloatArray, t1i: FloatArray, t2i: FloatArray) -> float:
+    """Mantel-Haenszel incidence rate difference ``sum((x1 t2 - x2 t1) / T) / sum(t1 t2 / T)`` (Greenland and Robins, 1985)."""
+    total = t1i + t2i
+    return float(numpy.sum((x1i * t2i - x2i * t1i) / total)) / float(numpy.sum(t1i * t2i / total))
+
+
+def mh_ird_se(x1i: FloatArray, x2i: FloatArray, t1i: FloatArray, t2i: FloatArray) -> float:
+    """Standard error of the Mantel-Haenszel rate difference: variance ``sum((t1 t2 / T)^2 (x1 / t1^2 + x2 / t2^2)) / sum(t1 t2 / T)^2``.
+
+    It is the variance of a weighted sum of two independent Poisson rates, ``Var(x / t) = x / t^2``, with the weights ``t1 t2 / T`` over their sum.
+    """
+    total = t1i + t2i
+    numerator = float(numpy.sum((t1i * t2i / total) ** 2 * (x1i / t1i**2 + x2i / t2i**2)))
+    return math.sqrt(numerator / float(numpy.sum(t1i * t2i / total)) ** 2)
+
+
+def peto_terms(ai: FloatArray, bi: FloatArray, ci: FloatArray, di: FloatArray) -> tuple[FloatArray, FloatArray]:
+    """Observed minus expected ``a - E`` and the hypergeometric variance ``V`` of each table, ``E = n1 m1 / n``, ``V = n1 n2 m1 m2 / (n^2 (n - 1))``."""
+    n1, n2 = ai + bi, ci + di
+    n = n1 + n2
+    m1, m2 = ai + ci, bi + di
+    return ai - n1 * m1 / n, n1 * n2 * m1 * m2 / (n**2 * (n - 1))
+
+
+def peto_beta(ai: FloatArray, bi: FloatArray, ci: FloatArray, di: FloatArray) -> float:
+    """Peto's pooled log odds ratio ``sum(a - E) / sum(V)`` (Yusuf et al. 1985, Progress in Cardiovascular Diseases 27:335-371)."""
+    observed_minus_expected, variance = peto_terms(ai, bi, ci, di)
+    return float(numpy.sum(observed_minus_expected)) / float(numpy.sum(variance))
+
+
+def peto_se(ai: FloatArray, bi: FloatArray, ci: FloatArray, di: FloatArray) -> float:
+    """Standard error ``1 / sqrt(sum(V))`` of Peto's pooled log odds ratio (Yusuf et al. 1985)."""
+    return 1 / math.sqrt(float(numpy.sum(peto_terms(ai, bi, ci, di)[1])))

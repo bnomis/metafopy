@@ -1,7 +1,6 @@
 """The scope gate of the correctness suite and the checks of the harness itself.
 
-The gate names every item of the core that has no ``published`` or ``derived`` case. To read the list while the gate is an expected failure, run
-``pytest --runxfail src/tests/correctness/test_coverage.py -k every_core_item``.
+The gate names every item of the core that has no ``published`` or ``derived`` case.
 """
 
 import ast
@@ -141,7 +140,6 @@ def test_escalc_accepts_each_listed_vtype(measure: str, vtype: str) -> None:
     assert len(out['yi']) == len(out['vi']) == 3
 
 
-@pytest.mark.xfail(strict=True, reason='coverage incomplete; see agents/tasks/correctness-tests/tasks-1.md')
 def test_every_core_item_has_a_case() -> None:
     missing = missing_items(correctness.cases.load_cases(), correctness.cases.load_exemptions())
     assert not missing, f'{len(missing)} items have no published or derived case: {", ".join(missing)}'

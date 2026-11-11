@@ -295,7 +295,7 @@ the proportions and rates (`PR` to `IRFT`), the means and variability measures (
 
 ## Task 8: rma_mh and rma_peto, then close the gate
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Implementation step 2; Coverage list (MH, Peto)
@@ -305,25 +305,25 @@ cases. With them the coverage gate passes.
 
 **Subtasks:**
 
-- [ ] `formulas.py`:
+- [x] `formulas.py`:
   - the MH estimators from Mantel and Haenszel (1959);
   - the `OR` variance from Robins, Breslow and Greenland (1986);
   - the `RR` and `RD` variances from Greenland and Robins (1985);
   - the incidence forms from the publication metafor cites;
   - Peto's one-step estimator from Yusuf et al. (1985).
-- [ ] Cases on `dat.bcg` and a dataset with a zero cell, in `mh_peto.toml`
-- [ ] Record any mismatch as the header says
-- [ ] Remove the gate's `xfail` mark from `test_coverage.py`
+- [x] Cases on `dat.bcg` and a dataset with a zero cell, in `mh_peto.toml`
+- [x] Record any mismatch as the header says
+- [x] Remove the gate's `xfail` mark from `test_coverage.py`
 
 **Acceptance Criteria:**
 
-- [ ] The gate passes with no xfail mark
+- [x] The gate passes with no xfail mark
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness` passes
 
 **Notes:**
 
