@@ -1,0 +1,12 @@
+# Correctness cases for the heterogeneity statistics QE, QM, I2 and H2 (coverage items `heterogeneity.<statistic>`).
+
+# Proof of the property path: I2 is H2 expressed as a share of the total variability, I2 = 100 (H2 - 1) / H2.
+[[case]]
+id = "heterogeneity.i2-from-h2.dl.bcg"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "DL" }
+expect = {}
+check = "test_properties.i2_follows_h2"

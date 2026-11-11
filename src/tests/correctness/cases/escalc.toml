@@ -1,0 +1,112 @@
+# Correctness cases for escalc: effect sizes (yi) and sampling variances (vi).
+#
+# `vtypes` lists, for every measure of metafopy.effects.measures.MEASURES, the `vtype` values escalc accepts (read on 2026-11-11 from the options
+# escalc validates and the escalc docstring; a measure that ignores `vtype` lists only the default, "LS"). It is the same list as a series of
+# [[vtypes]] entries. test_coverage.py checks that escalc accepts every pair, and the coverage gate needs a published or derived case (or an
+# [[exempt]] entry) for `escalc.yi.<measure>` and for `escalc.vi.<measure>.<vtype>` of each pair.
+
+vtypes = [
+  { measure = "RR", vtype = ["LS", "AV", "H0"] },
+  { measure = "OR", vtype = ["LS", "AV", "H0"] },
+  { measure = "PETO", vtype = ["LS"] },
+  { measure = "RD", vtype = ["UB", "LS", "AV", "H0"] },
+  { measure = "AS", vtype = ["LS"] },
+  { measure = "PHI", vtype = ["LS", "ST", "CS"] },
+  { measure = "ZPHI", vtype = ["LS", "ST", "CS"] },
+  { measure = "YUQ", vtype = ["LS"] },
+  { measure = "YUY", vtype = ["LS"] },
+  { measure = "RTET", vtype = ["LS"] },
+  { measure = "ZTET", vtype = ["LS"] },
+  { measure = "PBIT", vtype = ["LS"] },
+  { measure = "OR2D", vtype = ["LS", "AV", "H0"] },
+  { measure = "OR2DN", vtype = ["LS", "AV", "H0"] },
+  { measure = "OR2DL", vtype = ["LS", "AV", "H0"] },
+  { measure = "MPRD", vtype = ["LS"] },
+  { measure = "MPRR", vtype = ["LS"] },
+  { measure = "MPOR", vtype = ["LS"] },
+  { measure = "MPORC", vtype = ["LS"] },
+  { measure = "MPPETO", vtype = ["LS"] },
+  { measure = "MPORM", vtype = ["LS", "AV", "H0"] },
+  { measure = "IRR", vtype = ["LS"] },
+  { measure = "IRD", vtype = ["LS"] },
+  { measure = "IRSD", vtype = ["LS"] },
+  { measure = "MD", vtype = ["UB", "LS", "HO"] },
+  { measure = "POMPMD", vtype = ["UB", "LS", "HO"] },
+  { measure = "SMD", vtype = ["UB", "LS", "LS2", "LS3", "AV", "H0"] },
+  { measure = "SMDH", vtype = ["LS", "LS2", "LS3"] },
+  { measure = "SMD1", vtype = ["UB", "LS", "LS2", "LS3", "AV", "H0"] },
+  { measure = "SMD1H", vtype = ["LS"] },
+  { measure = "ROM", vtype = ["LS", "LS2", "HO", "AV", "AVHO"] },
+  { measure = "VR", vtype = ["LS", "LS2"] },
+  { measure = "CVR", vtype = ["LS", "LS2"] },
+  { measure = "RPB", vtype = ["LS", "ST", "CS"] },
+  { measure = "ZPB", vtype = ["LS", "ST", "CS"] },
+  { measure = "RBIS", vtype = ["LS"] },
+  { measure = "ZBIS", vtype = ["LS"] },
+  { measure = "D2OR", vtype = ["LS"] },
+  { measure = "D2ORN", vtype = ["LS"] },
+  { measure = "D2ORL", vtype = ["LS"] },
+  { measure = "COR", vtype = ["LS", "AV", "H0", "H0a", "H0b"] },
+  { measure = "UCOR", vtype = ["UB", "LS", "AV"] },
+  { measure = "ZCOR", vtype = ["LS"] },
+  { measure = "PCOR", vtype = ["LS", "AV"] },
+  { measure = "ZPCOR", vtype = ["LS"] },
+  { measure = "SPCOR", vtype = ["LS", "AV"] },
+  { measure = "ZSPCOR", vtype = ["LS", "AV"] },
+  { measure = "R2", vtype = ["LS", "LS2", "AV", "AV2"] },
+  { measure = "ZR2", vtype = ["LS"] },
+  { measure = "R2F", vtype = ["LS"] },
+  { measure = "ZR2F", vtype = ["LS"] },
+  { measure = "PR", vtype = ["UB", "LS", "AV"] },
+  { measure = "PLN", vtype = ["LS", "AV"] },
+  { measure = "PLO", vtype = ["LS", "AV"] },
+  { measure = "PRZ", vtype = ["LS"] },
+  { measure = "PAS", vtype = ["LS"] },
+  { measure = "PFT", vtype = ["LS"] },
+  { measure = "IR", vtype = ["LS"] },
+  { measure = "IRLN", vtype = ["LS"] },
+  { measure = "IRS", vtype = ["LS"] },
+  { measure = "IRFT", vtype = ["LS"] },
+  { measure = "MN", vtype = ["LS", "HO"] },
+  { measure = "POMPMN", vtype = ["LS", "HO"] },
+  { measure = "SMN", vtype = ["LS"] },
+  { measure = "MNLN", vtype = ["LS"] },
+  { measure = "SDLN", vtype = ["LS"] },
+  { measure = "CVLN", vtype = ["LS"] },
+  { measure = "MC", vtype = ["LS"] },
+  { measure = "POMPMC", vtype = ["LS"] },
+  { measure = "SMCC", vtype = ["UB", "LS", "LS2", "H0"] },
+  { measure = "SMCR", vtype = ["UB", "LS", "LS2", "H0"] },
+  { measure = "SMCRH", vtype = ["LS", "LS2"] },
+  { measure = "SMCRP", vtype = ["LS"] },
+  { measure = "SMCRPH", vtype = ["LS", "LS2"] },
+  { measure = "CLESCN", vtype = ["LS"] },
+  { measure = "AUCCN", vtype = ["LS"] },
+  { measure = "ROMC", vtype = ["LS", "LS2"] },
+  { measure = "VRC", vtype = ["LS", "LS2"] },
+  { measure = "CVRC", vtype = ["LS", "LS2"] },
+  { measure = "ARAW", vtype = ["LS"] },
+  { measure = "AHW", vtype = ["LS"] },
+  { measure = "ABT", vtype = ["LS"] },
+  { measure = "REH", vtype = ["LS"] },
+  { measure = "CLES", vtype = ["LS", "LS2", "H0", "MAX"] },
+  { measure = "CLESN", vtype = ["LS", "LS2", "LS3", "HO", "H0"] },
+  { measure = "AUC", vtype = ["LS", "LS2", "H0", "MAX"] },
+  { measure = "AUCN", vtype = ["LS", "LS2", "LS3", "HO", "H0"] },
+  { measure = "GEN", vtype = ["LS"] },
+]
+
+# Proof of the derived path: the risk difference and its large-sample variance, from formulas.py, on inline data with no zero cell.
+[[case]]
+id = "escalc.rd.ls.formula"
+kind = "derived"
+function = "escalc"
+args = { measure = "RD", ai = "ai", bi = "bi", ci = "ci", di = "di", vtype = "LS" }
+expect = { yi = "formulas.risk_difference_yi", vi = "formulas.risk_difference_vi" }
+covers = ["escalc.yi.RD", "escalc.vi.RD.LS"]
+
+[case.data]
+ai = [12.0, 20.0, 8.0]
+bi = [88.0, 80.0, 92.0]
+ci = [18.0, 25.0, 14.0]
+di = [82.0, 75.0, 86.0]

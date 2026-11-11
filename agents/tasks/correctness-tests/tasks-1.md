@@ -49,7 +49,7 @@ textbook) is listed under "Sources needed" in the same file, and its case is not
 
 ## Task 2: The harness - case loader, validation and the coverage gate
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Module location; Kinds of evidence; Case file format; API; Coverage list; Error handling
@@ -59,15 +59,15 @@ still lacking a `published` or `derived` case.
 
 **Subtasks:**
 
-- [ ] Check that `src/tests/correctness/` does not exist (`ls src/tests/correctness`); stop as `blocked` if it does
-- [ ] Create `src/tests/correctness/__init__.py` and `cases.py` with `Source`, `Case`, `load_cases`, `run_case`, `published_tolerance`,
+- [x] Check that `src/tests/correctness/` does not exist (`ls src/tests/correctness`); stop as `blocked` if it does
+- [x] Create `src/tests/correctness/__init__.py` and `cases.py` with `Source`, `Case`, `load_cases`, `run_case`, `published_tolerance`,
       `check_case` and `case_params`, exactly as in the spec's API section, reading TOML with `tomllib`
-- [ ] Validate as in Error handling: every invalid file or case raises `ValueError` naming the file and case id
-- [ ] Resolve `function` as `metafopy.<name>` or `formulas.<name>`, and `check` as a function in a test module of `src/tests/correctness/`;
+- [x] Validate as in Error handling: every invalid file or case raises `ValueError` naming the file and case id
+- [x] Resolve `function` as `metafopy.<name>` or `formulas.<name>`, and `check` as a function in a test module of `src/tests/correctness/`;
       refuse anything else
-- [ ] Create `formulas.py` holding only a module docstring that states its rule: no `metafopy` import; each function cites its equation
-- [ ] Create `cases/escalc.toml`, `tau2.toml`, `inference.toml`, `heterogeneity.toml` and `mh_peto.toml`, empty except a header comment
-- [ ] `test_coverage.py`:
+- [x] Create `formulas.py` holding only a module docstring that states its rule: no `metafopy` import; each function cites its equation (it also holds the two risk-difference functions that the derived end-to-end case needs)
+- [x] Create `cases/escalc.toml`, `tau2.toml`, `inference.toml`, `heterogeneity.toml` and `mh_peto.toml`, empty except a header comment (`vtypes` is one inline array in `escalc.toml`, the same data as `[[vtypes]]` entries)
+- [x] `test_coverage.py`:
   - load every case file;
   - check with `ast` that `formulas.py` imports no `metafopy` module;
   - the gate reads `metafopy.effects.measures.MEASURES`, the `[[vtypes]]` table in `escalc.toml`, `metafopy.models.tau2.ESTIMATORS`,
@@ -75,23 +75,23 @@ still lacking a `published` or `derived` case.
     and the `rma_mh` measures and `rma_peto` named in the spec;
   - it lists every item with no `published` or `derived` case and no `[[exempt]]` entry.
   Mark the gate test `xfail(strict=True, reason='coverage incomplete; see agents/tasks/correctness-tests/tasks-1.md')` until Task 8 removes the mark
-- [ ] `test_coverage.py` also checks that `escalc` accepts each `[[vtypes]]` pair, on the smallest dataset that suits the measure
-- [ ] Unit tests of the harness on inline TOML strings: `published_tolerance` (`'0.0193'` gives `5e-05`, `'684'` gives `0.5`, `'-15.106'` gives
+- [x] `test_coverage.py` also checks that `escalc` accepts each `[[vtypes]]` pair, on the smallest dataset that suits the measure
+- [x] Unit tests of the harness on inline TOML strings: `published_tolerance` (`'0.0193'` gives `5e-05`, `'684'` gives `0.5`, `'-15.106'` gives
       `5e-04`); each validation error; a `mismatch` case becoming a strict xfail
-- [ ] Two end-to-end cases proving the path: a `derived` `escalc` `RD` `yi` and `vi` on inline data, and a `property` case on `dat.bcg`: `I2` equals
+- [x] Two end-to-end cases proving the path: a `derived` `escalc` `RD` `yi` and `vi` on inline data, and a `property` case on `dat.bcg`: `I2` equals
       `(H2 - 1) / H2` for a `DL` fit
-- [ ] `test_derived.py` and `test_properties.py`, each a parametrised test over `case_params(<kind>)`
+- [x] `test_derived.py` and `test_properties.py`, each a parametrised test over `case_params(<kind>)`
 
 **Acceptance Criteria:**
 
-- [ ] `pytest src/tests/correctness` passes, with the gate as an expected failure that lists the missing items
-- [ ] A case file with a duplicate id or an invalid key makes `test_coverage.py` fail, naming the file
+- [x] `pytest src/tests/correctness` passes, with the gate as an expected failure that lists the missing items
+- [x] A case file with a duplicate id or an invalid key makes `test_coverage.py` fail, naming the file
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness` passes
 
 **Notes:**
 

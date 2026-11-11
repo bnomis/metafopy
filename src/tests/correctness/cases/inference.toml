@@ -1,0 +1,2 @@
+# Correctness cases for rma_uni inference: the tests (coverage items `test.<name>`), the tau2 confidence intervals (`confint.<type>`) and prediction
+# intervals (`predict.pi`).
