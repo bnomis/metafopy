@@ -1,4 +1,67 @@
 # Correctness cases for the heterogeneity statistics QE, QM, I2 and H2 (coverage items `heterogeneity.<statistic>`).
+#
+# `derived` cases on dat.bcg under the REML and DL fits, with and without the moderator `ablat`, from `formulas.rma_QE` and its siblings, coded from
+# Higgins and Thompson (2002) and the Wald equation of the omnibus test.
+
+[[case]]
+id = "heterogeneity.reml.bcg.none"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "REML", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { QE = "formulas.rma_QE", QM = "formulas.rma_QM", I2 = "formulas.rma_I2", H2 = "formulas.rma_H2" }
+covers = ["heterogeneity.H2", "heterogeneity.I2", "heterogeneity.QE", "heterogeneity.QM"]
+
+[[case]]
+id = "heterogeneity.reml.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "REML", mods = "~ ablat", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { QE = "formulas.rma_QE", QM = "formulas.rma_QM", I2 = "formulas.rma_I2", H2 = "formulas.rma_H2" }
+covers = ["heterogeneity.H2", "heterogeneity.I2", "heterogeneity.QE", "heterogeneity.QM"]
+
+[[case]]
+id = "heterogeneity.dl.bcg.none"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "DL" }
+expect = { QE = "formulas.rma_QE", QM = "formulas.rma_QM", I2 = "formulas.rma_I2", H2 = "formulas.rma_H2" }
+covers = ["heterogeneity.H2", "heterogeneity.I2", "heterogeneity.QE", "heterogeneity.QM"]
+
+[[case]]
+id = "heterogeneity.dl.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "DL", mods = "~ ablat" }
+expect = { QE = "formulas.rma_QE", QM = "formulas.rma_QM", I2 = "formulas.rma_I2", H2 = "formulas.rma_H2" }
+covers = ["heterogeneity.H2", "heterogeneity.I2", "heterogeneity.QE", "heterogeneity.QM"]
+
+[[case]]
+id = "heterogeneity.qm.knha.bcg.none"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "REML", test = "knha", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { QM = "formulas.rma_QM" }
+covers = ["heterogeneity.QM"]
+
+[[case]]
+id = "heterogeneity.qm.knha.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "REML", test = "knha", mods = "~ ablat", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { QM = "formulas.rma_QM" }
+covers = ["heterogeneity.QM"]
 
 # Proof of the property path: I2 is H2 expressed as a share of the total variability, I2 = 100 (H2 - 1) / H2.
 [[case]]

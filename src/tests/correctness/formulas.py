@@ -1375,3 +1375,264 @@ def rma_beta(yi: FloatArray, vi: FloatArray, method: str, weights: FloatArray | 
 def rma_se(yi: FloatArray, vi: FloatArray, method: str, weights: FloatArray | None = None, mods: str | None = None, data: object | None = None) -> FloatArray:
     """The standard errors of the coefficients of ``rma_uni`` with ``method``."""
     return fixed_effects_fit(yi, vi, method, weights, mods, data)[2]
+
+
+# Inference for the coefficients. With the random-effects weights W = diag(1 / (v + tau2)) the covariance matrix of the coefficients is (X' W X)^-1.
+# The Wald tests use the normal (z) or the t distribution with k - p degrees of freedom (t). Knapp & Hartung (2003, Stat Med 22:2693-2710) multiply the
+# covariance matrix by s2 = y' P(W) y / (k - p) and refer the statistics to the t distribution with k - p degrees of freedom; the ad hoc variant
+# restricts s2 to at least one (the truncation that metafor's documentation attributes to Knapp and Hartung).
+
+
+def alpha_of(level: float) -> float:
+    """The significance level of a confidence level given in percent."""
+    return 1 - level / 100
+
+
+def coefficient_covariance(
+    yi: FloatArray, vi: FloatArray, method: str, test: str, mods: str | None, data: object | None
+) -> tuple[FloatArray, FloatArray, float]:
+    """``(beta, covariance, degrees of freedom)`` for the random-effects fit of ``method`` under ``test``; the degrees of freedom are infinite for ``z``."""
+    k = len(yi)
+    design = model_matrix(k, mods, data)
+    df = k - int(design.shape[1])
+    tau2 = rma_tau2(yi, vi, method, None, mods, data)
+    w = numpy.diag(1 / (vi + tau2))
+    cov = numpy.linalg.inv(design.T @ w @ design)
+    beta = cov @ design.T @ w @ yi
+    if test in ('knha', 'adhoc'):
+        s2 = random_effects_q(yi, vi, design, tau2) / df
+        cov = cov * (max(1.0, s2) if test == 'adhoc' else s2)
+    return beta, cov, math.inf if test == 'z' else float(df)
+
+
+def critical_value(test: str, df: float, level: float) -> float:
+    """The two-sided critical value of the test: normal for ``z``, t for the others."""
+    p = 1 - alpha_of(level) / 2
+    return float(scipy.stats.norm.ppf(p) if test == 'z' else scipy.stats.t.ppf(p, df))
+
+
+def rma_zval(yi: FloatArray, vi: FloatArray, method: str, test: str = 'z', mods: str | None = None, data: object | None = None) -> FloatArray:
+    """The test statistics ``beta / se`` of the coefficients."""
+    beta, cov, _ = coefficient_covariance(yi, vi, method, test, mods, data)
+    return beta / numpy.sqrt(numpy.diag(cov))
+
+
+def rma_pval(yi: FloatArray, vi: FloatArray, method: str, test: str = 'z', mods: str | None = None, data: object | None = None) -> FloatArray:
+    """The two-sided p-values of the coefficients."""
+    _, _, df = coefficient_covariance(yi, vi, method, test, mods, data)
+    stat = numpy.abs(rma_zval(yi, vi, method, test, mods, data))
+    return 2 * (scipy.stats.norm.sf(stat) if test == 'z' else scipy.stats.t.sf(stat, df))
+
+
+def rma_ci_lb(
+    yi: FloatArray, vi: FloatArray, method: str, test: str = 'z', mods: str | None = None, data: object | None = None, level: float = 95
+) -> FloatArray:
+    """The lower confidence bounds of the coefficients."""
+    beta, cov, df = coefficient_covariance(yi, vi, method, test, mods, data)
+    return beta - critical_value(test, df, level) * numpy.sqrt(numpy.diag(cov))
+
+
+def rma_ci_ub(
+    yi: FloatArray, vi: FloatArray, method: str, test: str = 'z', mods: str | None = None, data: object | None = None, level: float = 95
+) -> FloatArray:
+    """The upper confidence bounds of the coefficients."""
+    beta, cov, df = coefficient_covariance(yi, vi, method, test, mods, data)
+    return beta + critical_value(test, df, level) * numpy.sqrt(numpy.diag(cov))
+
+
+def prediction_bounds(
+    yi: FloatArray, vi: FloatArray, method: str, test: str, mods: str | None, data: object | None, level: float
+) -> tuple[FloatArray, FloatArray]:
+    """Prediction interval at each row of the model matrix (Riley, Higgins & Deeks 2011, JRSS A 174:369-382, equation 12):
+    ``x'beta +- crit * sqrt(tau2 + x' Cov x)``, with the critical value of the test."""
+    beta, cov, df = coefficient_covariance(yi, vi, method, test, mods, data)
+    tau2 = rma_tau2(yi, vi, method, None, mods, data)
+    design = model_matrix(len(yi), mods, data)
+    centre = design @ beta
+    half = critical_value(test, df, level) * numpy.sqrt(tau2 + numpy.einsum('ij,jk,ik->i', design, cov, design))
+    return centre - half, centre + half
+
+
+def prediction_lb(
+    yi: FloatArray, vi: FloatArray, method: str, test: str = 'z', mods: str | None = None, data: object | None = None, level: float = 95
+) -> FloatArray:
+    """The lower prediction bounds at the rows of the model matrix."""
+    return prediction_bounds(yi, vi, method, test, mods, data, level)[0]
+
+
+def prediction_ub(
+    yi: FloatArray, vi: FloatArray, method: str, test: str = 'z', mods: str | None = None, data: object | None = None, level: float = 95
+) -> FloatArray:
+    """The upper prediction bounds at the rows of the model matrix."""
+    return prediction_bounds(yi, vi, method, test, mods, data, level)[1]
+
+
+# Heterogeneity. QE is Cochran's Q about the equal-effects fit, QE = y' P(W(0)) y. The test of the moderators is the Wald statistic b' Cov^-1 b of the
+# coefficients that are not the intercept (the intercept for a model with no moderators), divided by their number when the t distribution is used, which
+# makes it an F statistic. I2 and H2 follow Higgins & Thompson (2002, Stat Med 21:1539-1558, equations 7 and 9) with the typical within-study variance
+# vt = (k - p) / tr(P(W(0))): H2 = (vt + tau2) / vt and I2 = 100 tau2 / (vt + tau2).
+
+
+def rma_QE(yi: FloatArray, vi: FloatArray, mods: str | None = None, data: object | None = None) -> float:
+    """Cochran's Q: the weighted residual sum of squares with the inverse-variance weights."""
+    return random_effects_q(yi, vi, model_matrix(len(yi), mods, data), 0.0)
+
+
+def rma_QM(yi: FloatArray, vi: FloatArray, method: str, test: str = 'z', mods: str | None = None, data: object | None = None) -> float:
+    """The omnibus test statistic of the moderators (``chi2`` for ``z``, ``F`` for the t-based tests)."""
+    beta, cov, _ = coefficient_covariance(yi, vi, method, test, mods, data)
+    which = slice(1, None) if mods else slice(0, 1)
+    b = beta[which]
+    stat = float(b @ numpy.linalg.inv(cov[which, which]) @ b)
+    return stat if test == 'z' else stat / len(b)
+
+
+def typical_variance(yi: FloatArray, vi: FloatArray, mods: str | None, data: object | None) -> float:
+    """``vt = (k - p) / tr(P(W(0)))``, the typical sampling variance."""
+    design = model_matrix(len(yi), mods, data)
+    return float(len(yi) - design.shape[1]) / float(numpy.trace(projection(1 / vi, design)))
+
+
+def rma_I2(yi: FloatArray, vi: FloatArray, method: str, mods: str | None = None, data: object | None = None) -> float:
+    """The share of the total variability that is heterogeneity, in percent."""
+    tau2 = rma_tau2(yi, vi, method, None, mods, data)
+    return 100 * tau2 / (typical_variance(yi, vi, mods, data) + tau2)
+
+
+def rma_H2(yi: FloatArray, vi: FloatArray, method: str, mods: str | None = None, data: object | None = None) -> float:
+    """The ratio of the total variability to the sampling variability."""
+    tau2 = rma_tau2(yi, vi, method, None, mods, data)
+    vt = typical_variance(yi, vi, mods, data)
+    return (vt + tau2) / vt
+
+
+# Confidence intervals for tau2. Each returns the array (lower, upper); `level` is a percentage.
+
+
+def qprofile_bounds(yi: FloatArray, vi: FloatArray, mods: str | None = None, data: object | None = None, level: float = 95) -> FloatArray:
+    """Q-profile interval (Viechtbauer 2007, Stat Med 26:37-52): the values of tau2 at which Q(tau2) = y' P(W(tau2)) y, which is chi-square distributed
+    with k - p degrees of freedom at the true tau2, equals the upper and the lower ``alpha / 2`` quantile. Q falls as tau2 grows; a bound is zero where
+    Q(0) is already below its quantile."""
+    design = model_matrix(len(yi), mods, data)
+    df = len(yi) - design.shape[1]
+    alpha = alpha_of(level)
+    lower = solve_decreasing(lambda t: random_effects_q(yi, vi, design, t) - float(scipy.stats.chi2.ppf(1 - alpha / 2, df)))
+    upper = solve_decreasing(lambda t: random_effects_q(yi, vi, design, t) - float(scipy.stats.chi2.ppf(alpha / 2, df)))
+    return numpy.array([lower, upper])
+
+
+def general_q_cdf(yi: FloatArray, vi: FloatArray, design: FloatArray, weights: FloatArray, tau2: float) -> float:
+    """``P(Q <= observed)`` for the generalised Q statistic y' P(A) y at the given tau2, as a sum of ``lambda_j chi2_1`` with ``lambda`` the non-zero
+    eigenvalues of ``P(A) (V + tau2 I)`` (Jackson 2013, Stat Med 32:2837-2850; DerSimonian & Kacker 2007)."""
+    p = projection(weights, design)
+    eig = numpy.linalg.eigvals(p @ numpy.diag(vi + tau2)).real
+    eig = eig[eig > 1e-10 * eig.max()]
+    return quadratic_form_cdf(float(yi @ p @ yi), eig)
+
+
+def general_q_bounds(yi: FloatArray, vi: FloatArray, weights: FloatArray, mods: str | None = None, data: object | None = None, level: float = 95) -> FloatArray:
+    """Generalised Q interval (Jackson 2013): the tau2 at which the observed statistic is the ``1 - alpha / 2`` and the ``alpha / 2`` quantile of its
+    distribution. The distribution function falls as tau2 grows."""
+    design = model_matrix(len(yi), mods, data)
+    alpha = alpha_of(level)
+    lower = solve_decreasing(lambda t: general_q_cdf(yi, vi, design, weights, t) - (1 - alpha / 2))
+    upper = solve_decreasing(lambda t: general_q_cdf(yi, vi, design, weights, t) - alpha / 2)
+    return numpy.array([lower, upper])
+
+
+def profile_log_likelihood(yi: FloatArray, vi: FloatArray, design: FloatArray, tau2: float, restricted: bool) -> float:
+    """The part of the profile (restricted) log-likelihood that depends on tau2 (Hardy & Thompson 1996; Viechtbauer 2005):
+    ``-1/2 (sum log(v + tau2) + Q(tau2) [+ log |X' W X|])``, the bracketed term for the restricted likelihood."""
+    w = 1 / (vi + tau2)
+    value = numpy.sum(numpy.log(vi + tau2)) + random_effects_q(yi, vi, design, tau2)
+    if restricted:
+        value += numpy.linalg.slogdet(design.T @ (w[:, None] * design))[1]
+    return float(-0.5 * value)
+
+
+def profile_likelihood_bounds(
+    yi: FloatArray, vi: FloatArray, method: str, mods: str | None = None, data: object | None = None, level: float = 95
+) -> FloatArray:
+    """Profile-likelihood interval (Hardy & Thompson 1996, Stat Med 15:619-629): the tau2 either side of the estimate where twice the drop of the
+    profile log-likelihood from its maximum equals the ``level`` quantile of chi-square with one degree of freedom. The estimate is that of
+    ``method`` (``REML`` or ``ML``); a lower bound is zero where the drop at zero is below the quantile."""
+    design = model_matrix(len(yi), mods, data)
+    restricted = method == 'REML'
+    estimate = rma_tau2(yi, vi, method, None, mods, data)
+    crit = float(scipy.stats.chi2.ppf(level / 100, 1))
+
+    def log_likelihood(t: float) -> float:
+        return profile_log_likelihood(yi, vi, design, t, restricted)
+
+    top = log_likelihood(estimate)
+
+    def excess(t: float) -> float:
+        # auditme: accept[redundant-sink-caller-plus-callee] the maximum is evaluated once at the estimate; the root finder evaluates other values of tau2
+        return 2 * (top - log_likelihood(t)) - crit
+
+    lower = 0.0 if excess(0.0) < 0 else float(scipy.optimize.brentq(excess, 0.0, estimate, xtol=1e-14, rtol=1e-14))
+    bound = max(1.0, 2 * estimate)
+    while excess(bound) < 0:
+        bound *= 2
+    upper = float(scipy.optimize.brentq(excess, estimate, bound, xtol=1e-14, rtol=1e-14))
+    return numpy.array([lower, upper])
+
+
+def higgins_thompson_bounds(yi: FloatArray, vi: FloatArray, level: float = 95) -> FloatArray:
+    """Test-based interval of Higgins & Thompson (2002, equations 24 and 25) for a model with no moderators: ``ln H +- z se`` with
+    ``H = sqrt(Q / (k - 1))`` and ``se(ln H) = (ln Q - ln(k - 1)) / (2 (sqrt(2Q) - sqrt(2k - 3)))`` when ``Q > k`` and
+    ``sqrt(1 / (2 (k - 2)) (1 - 1 / (3 (k - 2)^2)))`` otherwise; the bounds of H2 give those of tau2 as ``vt (H2 - 1)``, with H2 at least one."""
+    k = len(yi)
+    q = rma_QE(yi, vi)
+    if q > k:
+        se = 0.5 * (math.log(q) - math.log(k - 1)) / (math.sqrt(2 * q) - math.sqrt(2 * k - 3))
+    else:
+        se = math.sqrt(1 / (2 * (k - 2)) * (1 - 1 / (3 * (k - 2) ** 2)))
+    log_h = 0.5 * math.log(q / (k - 1))
+    z = float(scipy.stats.norm.ppf(1 - alpha_of(level) / 2))
+    vt = typical_variance(yi, vi, None, None)
+    h2 = numpy.maximum(1.0, numpy.exp(2 * numpy.array([log_h - z * se, log_h + z * se])))
+    return vt * (h2 - 1)
+
+
+def tau2_standard_error(yi: FloatArray, vi: FloatArray, method: str, mods: str | None = None, data: object | None = None) -> float:
+    """Standard error of the ML or REML estimate of tau2 from the expected information (Viechtbauer 2005): ``sqrt(2 / tr(W^2))`` for ML and
+    ``sqrt(2 / tr(P^2))`` for REML."""
+    design = model_matrix(len(yi), mods, data)
+    tau2 = rma_tau2(yi, vi, method, None, mods, data)
+    w = 1 / (vi + tau2)
+    if method == 'REML':
+        p = projection(w, design)
+        return math.sqrt(2 / float(numpy.trace(p @ p)))
+    return math.sqrt(2 / float(numpy.sum(w**2)))
+
+
+def wald_bounds(yi: FloatArray, vi: FloatArray, method: str, form: str, mods: str | None = None, data: object | None = None, level: float = 95) -> FloatArray:
+    """Wald intervals for tau2 from its standard error: on the scale of tau2 (``wald``), of log tau2 (``wald.log``, delta method ``se / tau2``) and of
+    tau (``wald.sqrt``, ``se / (2 tau)``), back-transformed. Lower bounds are truncated at zero where the scale allows negative values."""
+    tau2 = rma_tau2(yi, vi, method, None, mods, data)
+    se = tau2_standard_error(yi, vi, method, mods, data)
+    z = float(scipy.stats.norm.ppf(1 - alpha_of(level) / 2))
+    if form == 'wald':
+        return numpy.array([max(0.0, tau2 - z * se), tau2 + z * se])
+    if form == 'wald.log':
+        half = z * se / tau2
+        return numpy.array([tau2 * math.exp(-half), tau2 * math.exp(half)])
+    tau = math.sqrt(tau2)
+    half = z * se / (2 * tau)
+    return numpy.array([max(0.0, tau - half) ** 2, (tau + half) ** 2])
+
+
+def wald_tau2_bounds(yi: FloatArray, vi: FloatArray, method: str, mods: str | None = None, data: object | None = None, level: float = 95) -> FloatArray:
+    """Wald interval on the scale of tau2."""
+    return wald_bounds(yi, vi, method, 'wald', mods, data, level)
+
+
+def wald_log_bounds(yi: FloatArray, vi: FloatArray, method: str, mods: str | None = None, data: object | None = None, level: float = 95) -> FloatArray:
+    """Wald interval on the log scale of tau2."""
+    return wald_bounds(yi, vi, method, 'wald.log', mods, data, level)
+
+
+def wald_sqrt_bounds(yi: FloatArray, vi: FloatArray, method: str, mods: str | None = None, data: object | None = None, level: float = 95) -> FloatArray:
+    """Wald interval on the scale of tau."""
+    return wald_bounds(yi, vi, method, 'wald.sqrt', mods, data, level)

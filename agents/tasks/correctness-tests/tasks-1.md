@@ -250,7 +250,7 @@ the proportions and rates (`PR` to `IRFT`), the means and variability measures (
 
 ## Task 7: rma_uni - inference, confidence intervals and heterogeneity
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Implementation step 2; Coverage list (inference, heterogeneity)
@@ -260,31 +260,31 @@ the proportions and rates (`PR` to `IRFT`), the means and variability measures (
 
 **Subtasks:**
 
-- [ ] `formulas.py`:
+- [x] `formulas.py`:
   - the Wald `z` and `t` tests;
   - the Knapp-Hartung variance and t test, from Knapp and Hartung (2003);
   - the `adhoc` truncation that metafor's documentation attributes to it;
   - Cochran's Q;
   - `I2` and `H2` from Higgins and Thompson (2002), in the typical-variance form metafor documents;
   - prediction intervals, from the publication metafor cites for its form.
-- [ ] `confint` for `tau2`, one function per type:
+- [x] `confint` for `tau2`, one function per type:
   - Q-profile, from Viechtbauer (2007), solved by root finding;
   - generalised Q;
   - profile likelihood;
   - Higgins-Thompson;
   - the three Wald forms.
-- [ ] Cases on `dat.bcg` under the `REML` and `DL` fits, in `inference.toml` and `heterogeneity.toml`
-- [ ] Record any mismatch as the header says
+- [x] Cases on `dat.bcg` under the `REML` and `DL` fits, in `inference.toml` and `heterogeneity.toml`
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] The gate's missing list names no `test` value, no `CIType` value and no heterogeneity statistic
+- [x] The gate's missing list names no `test` value, no `CIType` value and no heterogeneity statistic
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness` passes
 
 **Notes:**
 
