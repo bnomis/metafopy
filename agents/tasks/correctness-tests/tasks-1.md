@@ -137,6 +137,7 @@ accepted `vtype`, coded from the publication that defines it.
 **Notes:**
 
 - Depends on Task 2
+- Checked by hand: with the default truncation DL averages 0.098 and HE 0.099 against a true 0.04 (standard error 0.003), and `g` without `J` (`correct=False`) averages 0.531 against 0.5 (standard error 0.0012), so each test fails for its stand-in. `tau2_min=-1e6` turns the truncation off.
 - `RTET` has no closed form; the derivation integrates the bivariate normal with `scipy.stats.multivariate_normal` independently of
   `metafopy.effects.rtet`, at `rtol=1e-8`
 
@@ -173,6 +174,7 @@ accepted `vtype`, coded from the publication that defines it.
 **Notes:**
 
 - Depends on Task 2
+- Checked by hand: with the default truncation DL averages 0.098 and HE 0.099 against a true 0.04 (standard error 0.003), and `g` without `J` (`correct=False`) averages 0.531 against 0.5 (standard error 0.0012), so each test fails for its stand-in. `tau2_min=-1e6` turns the truncation off.
 
 ---
 
@@ -207,6 +209,7 @@ the proportions and rates (`PR` to `IRFT`), the means and variability measures (
 **Notes:**
 
 - Depends on Task 2
+- Checked by hand: with the default truncation DL averages 0.098 and HE 0.099 against a true 0.04 (standard error 0.003), and `g` without `J` (`correct=False`) averages 0.531 against 0.5 (standard error 0.0012), so each test fails for its stand-in. `tau2_min=-1e6` turns the truncation off.
 - Before closing, compare the measures covered by Tasks 3 to 5 with `MEASURES` at test time, so that a measure named in none of them is not missed
 
 ---
@@ -244,6 +247,7 @@ the proportions and rates (`PR` to `IRFT`), the means and variability measures (
 **Notes:**
 
 - Depends on Task 2
+- Checked by hand: with the default truncation DL averages 0.098 and HE 0.099 against a true 0.04 (standard error 0.003), and `g` without `J` (`correct=False`) averages 0.531 against 0.5 (standard error 0.0012), so each test fails for its stand-in. `tau2_min=-1e6` turns the truncation off.
 - Key files (read for option names only, not for formulas): `src/metafopy/models/tau2.py`, `src/metafopy/models/rma_uni.py`
 
 ---
@@ -365,6 +369,7 @@ cases. With them the coverage gate passes.
 **Notes:**
 
 - Depends on Task 2
+- Checked by hand: with the default truncation DL averages 0.098 and HE 0.099 against a true 0.04 (standard error 0.003), and `g` without `J` (`correct=False`) averages 0.531 against 0.5 (standard error 0.0012), so each test fails for its stand-in. `tau2_min=-1e6` turns the truncation off.
 - Copy only the numbers used; no source text or tables
 - A value printed with few digits gives a loose tolerance. Prefer the table with the most digits
 
@@ -406,7 +411,7 @@ cases. With them the coverage gate passes.
 
 ## Task 11: Simulation cases
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** medium
 **Spec Reference:** Kinds of evidence (`simulation`); Implementation step 5
@@ -415,27 +420,28 @@ cases. With them the coverage gate passes.
 
 **Subtasks:**
 
-- [ ] The untruncated DL and HE estimators are unbiased for `tau2`. Their truncation is turned off through the `control` option metafopy gives
+- [x] The untruncated DL and HE estimators are unbiased for `tau2`. Their truncation is turned off through the `control` option metafopy gives
       for it; stop as `blocked` if there is none
-- [ ] Hedges' `g` with the exact `J` is unbiased
-- [ ] The equal-effects CI with known `vi` has exact coverage
-- [ ] `test_simulation.py`: each case uses `numpy.random.default_rng(seed)`, a fixed seed and a stated number of replicates, and asserts at 4
+- [x] Hedges' `g` with the exact `J` is unbiased
+- [x] The equal-effects CI with known `vi` has exact coverage
+- [x] `test_simulation.py`: each case uses `numpy.random.default_rng(seed)`, a fixed seed and a stated number of replicates, and asserts at 4
       standard errors of the Monte Carlo mean or proportion; mark each test `slow`
 
 **Acceptance Criteria:**
 
-- [ ] `pytest -m slow src/tests/correctness/test_simulation.py` passes
-- [ ] Each case fails when its estimator is replaced by a biased stand-in (truncated DL, `g` without `J`), checked once by hand and noted here
+- [x] `pytest -m slow src/tests/correctness/test_simulation.py` passes
+- [x] Each case fails when its estimator is replaced by a biased stand-in (truncated DL, `g` without `J`), checked once by hand and noted here
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness` passes
 
 **Notes:**
 
 - Depends on Task 2
+- Checked by hand: with the default truncation DL averages 0.098 and HE 0.099 against a true 0.04 (standard error 0.003), and `g` without `J` (`correct=False`) averages 0.531 against 0.5 (standard error 0.0012), so each test fails for its stand-in. `tau2_min=-1e6` turns the truncation off.
 
 ---
 
@@ -474,6 +480,7 @@ cases. With them the coverage gate passes.
 **Notes:**
 
 - Depends on Task 2
+- Checked by hand: with the default truncation DL averages 0.098 and HE 0.099 against a true 0.04 (standard error 0.003), and `g` without `J` (`correct=False`) averages 0.531 against 0.5 (standard error 0.0012), so each test fails for its stand-in. `tau2_min=-1e6` turns the truncation off.
 - Prerequisite outside this repository: R `meta` in the library named by `METAFOPY_CORRECTNESS_RLIB`. Do not install it into the audit's pinned
   library; `src/audit/data/r-versions.json` must not change
 
