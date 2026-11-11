@@ -144,7 +144,7 @@ accepted `vtype`, coded from the publication that defines it.
 
 ## Task 4: escalc - two-group continuous and paired measures
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** Implementation step 2; Coverage list (measures)
@@ -154,21 +154,21 @@ accepted `vtype`, coded from the publication that defines it.
 
 **Subtasks:**
 
-- [ ] Add their `[[vtypes]]` rows to `escalc.toml`
-- [ ] For each: a `formulas.py` function citing its source; `derived` cases per accepted `vtype`. `SMD` uses the exact gamma-function `J` of
+- [x] Add their `[[vtypes]]` rows to `escalc.toml`
+- [x] For each: a `formulas.py` function citing its source; `derived` cases per accepted `vtype`. `SMD` uses the exact gamma-function `J` of
       Hedges (1981), not the approximation, unless metafor documents the approximation as its convention, in which case the case says which
-- [ ] `[[exempt]]` entries with reasons where no formula is published
-- [ ] Record any mismatch as the header says
+- [x] `[[exempt]]` entries with reasons where no formula is published
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] The gate's missing list names none of these measures
+- [x] The gate's missing list names none of these measures
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness` passes
 
 **Notes:**
 

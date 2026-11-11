@@ -16,6 +16,7 @@ import numpy
 import numpy.typing
 import scipy.integrate
 import scipy.optimize
+import scipy.special
 import scipy.stats
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
@@ -477,3 +478,436 @@ def fisher_z_tetrachoric_yi(ai: FloatArray, bi: FloatArray, ci: FloatArray, di: 
 def fisher_z_tetrachoric_vi(ai: FloatArray, bi: FloatArray, ci: FloatArray, di: FloatArray) -> FloatArray:
     """Variance of ``atanh(r)`` by the delta method: ``Var(r) / (1 - r^2)^2``."""
     return tetrachoric_vi(ai, bi, ci, di) / (1 - tetrachoric_yi(ai, bi, ci, di) ** 2) ** 2
+
+
+def hedges_correction(m: FloatArray) -> FloatArray:
+    """Bias-correction factor ``c(m) = Gamma(m / 2) / (sqrt(m / 2) Gamma((m - 1) / 2))`` (Hedges 1981, Journal of Educational Statistics 6:107-128, eq. 6a).
+
+    ``g = c(m) d`` is then unbiased for the standardised mean difference when ``m`` is the degrees of freedom of the standardiser.
+    """
+    return numpy.exp(scipy.special.gammaln(m / 2) - scipy.special.gammaln((m - 1) / 2)) / numpy.sqrt(m / 2)
+
+
+def standardised_variance(g: FloatArray, a: FloatArray, m: FloatArray, n: FloatArray, vtype: str, weights: FloatArray | None = None) -> FloatArray:
+    """Sampling variance of ``g = c(m) d`` where ``d = (difference of means) / s``, the difference has variance ``a sigma^2`` and ``s^2 ~ sigma^2 chi2_m / m``.
+
+    ``d`` is then a scaled non-central t, so ``Var(d) = m / (m - 2) (a + delta^2) - delta^2 / c^2`` exactly (Hedges 1981; Hedges & Olkin 1985, ch. 5), and
+    ``Var(g) = c^2 Var(d)``.
+
+    - ``LS``: the large-sample form ``a + g^2 / (2 n)`` (Hedges & Olkin 1985, eq. 8, with ``n`` the total sample size);
+    - ``LS2``: the same on ``d = g / c``, multiplied by ``c^2``;
+    - ``UB``: the exact form with ``delta^2`` replaced by its unbiased estimate ``(m - 2) d^2 / m - a`` (Viechtbauer 2007, Journal of Educational and
+      Behavioral Statistics 32:39-60), which reduces to ``a + g^2 (1 - (m - 2) / (m c^2))``;
+    - ``AV``: ``LS`` with ``g`` replaced by the ``weights``-weighted mean of ``g`` over the studies (Sanchez-Meca & Marin-Martinez 2001);
+    - ``H0``: the exact form at ``delta = 0``, ``c^2 a m / (m - 2)``.
+    """
+    c = hedges_correction(m)
+    if vtype == 'LS':
+        return a + g**2 / (2 * n)
+    if vtype == 'LS2':
+        return c**2 * (a + (g / c) ** 2 / (2 * n))
+    if vtype == 'UB':
+        return a + g**2 * (1 - (m - 2) / (m * c**2))
+    if vtype == 'AV' and weights is not None:
+        mean_g = numpy.sum(weights * g) / numpy.sum(weights)
+        return a + mean_g**2 / (2 * n)
+    if vtype == 'H0':
+        return numpy.where(m > 2, c**2 * a * m / (m - 2), numpy.nan)
+    raise ValueError(f'unsupported vtype: {vtype}')
+
+
+def pooled_sd(sd1i: FloatArray, sd2i: FloatArray, n1i: FloatArray, n2i: FloatArray) -> FloatArray:
+    """Pooled standard deviation ``sqrt(((n1 - 1) s1^2 + (n2 - 1) s2^2) / (n1 + n2 - 2))``."""
+    return numpy.sqrt(((n1i - 1) * sd1i**2 + (n2i - 1) * sd2i**2) / (n1i + n2i - 2))
+
+
+def mean_difference_yi(m1i: FloatArray, m2i: FloatArray) -> FloatArray:
+    """Raw mean difference ``m1 - m2`` (the definition)."""
+    return m1i - m2i
+
+
+def mean_difference_vi(sd1i: FloatArray, sd2i: FloatArray, n1i: FloatArray, n2i: FloatArray, vtype: str = 'LS') -> FloatArray:
+    """Variance of a difference of independent means: ``s1^2 / n1 + s2^2 / n2`` (``LS``, ``UB``), or ``s_p^2 (1 / n1 + 1 / n2)`` (``HO``)."""
+    if vtype == 'HO':
+        return pooled_sd(sd1i, sd2i, n1i, n2i) ** 2 * (1 / n1i + 1 / n2i)
+    return sd1i**2 / n1i + sd2i**2 / n2i
+
+
+def pomp_mean_difference_yi(m1i: FloatArray, m2i: FloatArray, mini: FloatArray, maxi: FloatArray) -> FloatArray:
+    """Mean difference on the percent-of-maximum-possible scale, ``100 (m1 - m2) / (max - min)`` (Cohen, Cohen, Aiken & West 1999, Multivariate Behavioral
+    Research 34:315-346)."""
+    return 100 * (m1i - m2i) / (maxi - mini)
+
+
+def pomp_mean_difference_vi(
+    sd1i: FloatArray, sd2i: FloatArray, n1i: FloatArray, n2i: FloatArray, mini: FloatArray, maxi: FloatArray, vtype: str = 'LS'
+) -> FloatArray:
+    """Variance of the POMP-scaled mean difference: the raw variance times ``(100 / (max - min))^2``, since the rescaling is linear."""
+    return (100 / (maxi - mini)) ** 2 * mean_difference_vi(sd1i, sd2i, n1i, n2i, vtype)
+
+
+def smd_yi(m1i: FloatArray, m2i: FloatArray, sd1i: FloatArray, sd2i: FloatArray, n1i: FloatArray, n2i: FloatArray) -> FloatArray:
+    """Hedges' g, ``c(m) (m1 - m2) / s_p`` with ``m = n1 + n2 - 2`` (Hedges 1981, eq. 6a)."""
+    return hedges_correction(n1i + n2i - 2) * (m1i - m2i) / pooled_sd(sd1i, sd2i, n1i, n2i)
+
+
+def smd_vi(m1i: FloatArray, m2i: FloatArray, sd1i: FloatArray, sd2i: FloatArray, n1i: FloatArray, n2i: FloatArray, vtype: str = 'LS') -> FloatArray:
+    """Variance of Hedges' g; see ``standardised_variance`` (``a = 1 / n1 + 1 / n2``, ``m = n1 + n2 - 2``, ``n = n1 + n2``)."""
+    g = smd_yi(m1i, m2i, sd1i, sd2i, n1i, n2i)
+    return standardised_variance(g, 1 / n1i + 1 / n2i, n1i + n2i - 2, n1i + n2i, vtype, n1i + n2i)
+
+
+def glass_yi(m1i: FloatArray, m2i: FloatArray, sd2i: FloatArray, n2i: FloatArray) -> FloatArray:
+    """Glass' delta with the second group's standard deviation, corrected by ``c(n2 - 1)`` (Hedges 1981, section on Glass' estimator)."""
+    return hedges_correction(n2i - 1) * (m1i - m2i) / sd2i
+
+
+def glass_vi(m1i: FloatArray, m2i: FloatArray, sd2i: FloatArray, n1i: FloatArray, n2i: FloatArray, vtype: str = 'UB') -> FloatArray:
+    """Variance of the corrected Glass delta from the exact non-central t moments (``a = 1 / n1 + 1 / n2``, ``m = n2 - 1``); ``UB`` and ``H0`` only."""
+    g = glass_yi(m1i, m2i, sd2i, n2i)
+    return standardised_variance(g, 1 / n1i + 1 / n2i, n2i - 1, n2i, vtype)
+
+
+def smd1h_vi(m1i: FloatArray, m2i: FloatArray, sd1i: FloatArray, sd2i: FloatArray, n1i: FloatArray, n2i: FloatArray) -> FloatArray:
+    """Variance of the Glass delta without equal variances (Bonett 2008, Psychological Methods 13:99-109, delta method with ``n - 1``).
+
+    ``Var(D) / s2^2 + d^2 Var(s2^2) / (4 s2^4)`` with ``Var(D) = s1^2 / (n1 - 1) + s2^2 / (n2 - 1)`` and ``Var(s2^2) = 2 s2^4 / (n2 - 1)``.
+    """
+    g = glass_yi(m1i, m2i, sd2i, n2i)
+    return sd1i**2 / (sd2i**2 * (n1i - 1)) + 1 / (n2i - 1) + g**2 / (2 * (n2i - 1))
+
+
+def smdh_yi(m1i: FloatArray, m2i: FloatArray, sd1i: FloatArray, sd2i: FloatArray, n1i: FloatArray, n2i: FloatArray) -> FloatArray:
+    """Standardised mean difference with the root mean square of the two standard deviations (Bonett 2008, Psychological Methods 13:99-109).
+
+    The bias correction is ``c(n1 + n2 - 2)``.
+    """
+    return hedges_correction(n1i + n2i - 2) * (m1i - m2i) / numpy.sqrt((sd1i**2 + sd2i**2) / 2)
+
+
+def bonett_variance(d: FloatArray, sd1i: FloatArray, sd2i: FloatArray, n1i: FloatArray, n2i: FloatArray, vtype: str) -> FloatArray:
+    """Delta-method variance of ``d = D / s`` with ``s^2 = (s1^2 + s2^2) / 2`` (Bonett 2008, Psychological Methods 13:99-109).
+
+    ``Var(D) / s^2 + d^2 (Var(s1^2) + Var(s2^2)) / (16 s^4)``, with ``Var(s_i^2) = 2 s_i^4 / df_i``. ``LS`` takes ``df_i = n_i - 1`` in both terms, ``LS2``
+    ``df_i = n_i`` in both, and ``LS3`` ``n_i`` in the first and ``n_i - 1`` in the second.
+    """
+    s2 = (sd1i**2 + sd2i**2) / 2
+    first = (n1i, n2i) if vtype in ('LS2', 'LS3') else (n1i - 1, n2i - 1)
+    second = (n1i, n2i) if vtype == 'LS2' else (n1i - 1, n2i - 1)
+    return (sd1i**2 / first[0] + sd2i**2 / first[1]) / s2 + d**2 * (sd1i**4 / second[0] + sd2i**4 / second[1]) / (8 * s2**2)
+
+
+def smdh_vi(m1i: FloatArray, m2i: FloatArray, sd1i: FloatArray, sd2i: FloatArray, n1i: FloatArray, n2i: FloatArray, vtype: str = 'LS') -> FloatArray:
+    """Variance of ``smdh_yi``: ``bonett_variance`` evaluated at the corrected estimate."""
+    return bonett_variance(smdh_yi(m1i, m2i, sd1i, sd2i, n1i, n2i), sd1i, sd2i, n1i, n2i, vtype)
+
+
+def log_response_ratio_yi(m1i: FloatArray, m2i: FloatArray, sd1i: FloatArray, sd2i: FloatArray, n1i: FloatArray, n2i: FloatArray) -> FloatArray:
+    """Log ratio of means with the second-order bias correction (Hedges, Gurevitch & Curtis 1999, Ecology 80:1150-1156; Lajeunesse 2015, Ecology 96:2056-2063).
+
+    ``log(m1 / m2) + (s1^2 / (n1 m1^2) - s2^2 / (n2 m2^2)) / 2``.
+    """
+    return numpy.log(m1i / m2i) + (sd1i**2 / (n1i * m1i**2) - sd2i**2 / (n2i * m2i**2)) / 2
+
+
+def log_response_ratio_vi(
+    m1i: FloatArray, m2i: FloatArray, sd1i: FloatArray, sd2i: FloatArray, n1i: FloatArray, n2i: FloatArray, vtype: str = 'LS'
+) -> FloatArray:
+    """Delta-method variance of the log ratio of means (Hedges, Gurevitch & Curtis 1999, eq. 2; Lajeunesse 2015 for the second-order ``LS2``).
+
+    ``LS``: ``s1^2 / (n1 m1^2) + s2^2 / (n2 m2^2)``; ``HO``: the pooled variance in both terms; ``AV``: the coefficient of variation replaced by its mean over
+    studies, weighted by group size, per group; ``AVHO``: by the mean over both groups and all studies (Nakagawa et al. 2015, Methods in Ecology and
+    Evolution 6:143-152); ``LS2`` adds ``s^4 / (2 n^2 m^4)`` per group.
+    """
+    cv1, cv2 = sd1i / m1i, sd2i / m2i
+    if vtype == 'LS':
+        return cv1**2 / n1i + cv2**2 / n2i
+    if vtype == 'HO':
+        sp2 = pooled_sd(sd1i, sd2i, n1i, n2i) ** 2
+        return sp2 / (n1i * m1i**2) + sp2 / (n2i * m2i**2)
+    if vtype == 'AV':
+        return (numpy.sum(n1i * cv1) / numpy.sum(n1i)) ** 2 / n1i + (numpy.sum(n2i * cv2) / numpy.sum(n2i)) ** 2 / n2i
+    if vtype == 'AVHO':
+        return ((numpy.sum(n1i * cv1) + numpy.sum(n2i * cv2)) / (numpy.sum(n1i) + numpy.sum(n2i))) ** 2 * (1 / n1i + 1 / n2i)
+    if vtype == 'LS2':
+        return cv1**2 / n1i + cv2**2 / n2i + cv1**4 / (2 * n1i**2) + cv2**4 / (2 * n2i**2)
+    raise ValueError(f'unsupported vtype: {vtype}')
+
+
+def log_variability_ratio_yi(sd1i: FloatArray, sd2i: FloatArray, n1i: FloatArray, n2i: FloatArray) -> FloatArray:
+    """Log ratio of standard deviations with the small-sample correction ``1 / (2 (n - 1))`` per group (Nakagawa et al. 2015, lnVR)."""
+    return numpy.log(sd1i / sd2i) + 1 / (2 * (n1i - 1)) - 1 / (2 * (n2i - 1))
+
+
+def log_variability_ratio_vi(sd1i: FloatArray, sd2i: FloatArray, n1i: FloatArray, n2i: FloatArray, vtype: str = 'LS') -> FloatArray:
+    """Variance of ``log s``, ``1 / (2 (n - 1))`` (``LS``) or its second-order form ``1 / (2 (n - 1)) + 1 / (2 (n - 1)^2)`` (``LS2``), summed over the
+    groups (Nakagawa et al. 2015, Methods in Ecology and Evolution 6:143-152)."""
+    if vtype == 'LS2':
+        return (n1i / (n1i - 1) ** 2 + n2i / (n2i - 1) ** 2) / 2
+    return 1 / (2 * (n1i - 1)) + 1 / (2 * (n2i - 1))
+
+
+def log_cv_ratio_yi(m1i: FloatArray, m2i: FloatArray, sd1i: FloatArray, sd2i: FloatArray, n1i: FloatArray, n2i: FloatArray) -> FloatArray:
+    """Log ratio of coefficients of variation (Nakagawa et al. 2015, lnCVR) with both small-sample corrections.
+
+    ``E[log s] = log sigma - 1 / (2 (n - 1))`` and ``E[log m] = log mu - s^2 / (2 n m^2)`` to second order, so the bias of ``log s - log m`` is removed by
+    adding ``1 / (2 (n - 1))`` and subtracting ``s^2 / (2 n m^2)``, per group.
+    """
+    return numpy.log(sd1i / m1i) - numpy.log(sd2i / m2i) + 1 / (2 * (n1i - 1)) - 1 / (2 * (n2i - 1)) + (sd2i**2 / (n2i * m2i**2) - sd1i**2 / (n1i * m1i**2)) / 2
+
+
+def log_cv_ratio_vi(m1i: FloatArray, m2i: FloatArray, sd1i: FloatArray, sd2i: FloatArray, n1i: FloatArray, n2i: FloatArray, vtype: str = 'LS') -> FloatArray:
+    """Variance of the log CV ratio: that of ``log s`` plus that of ``log m`` per group, as the mean and variance of a normal sample are independent
+    (Nakagawa et al. 2015)."""
+    return log_variability_ratio_vi(sd1i, sd2i, n1i, n2i, vtype) + log_response_ratio_vi(m1i, m2i, sd1i, sd2i, n1i, n2i, vtype)
+
+
+def point_biserial_yi(m1i: FloatArray, m2i: FloatArray, sd1i: FloatArray, sd2i: FloatArray, n1i: FloatArray, n2i: FloatArray) -> FloatArray:
+    """Point-biserial correlation from ``d`` (Tate 1954, Annals of Mathematical Statistics 25:603-607; Jacobs & Viechtbauer 2017, Research Synthesis Methods
+    8:161-180): ``r = d / sqrt(d^2 + h)`` with ``d`` not bias-corrected and ``h = m / n1 + m / n2``, ``m = n1 + n2 - 2``."""
+    m = n1i + n2i - 2
+    d = (m1i - m2i) / pooled_sd(sd1i, sd2i, n1i, n2i)
+    return d / numpy.sqrt(d**2 + m / n1i + m / n2i)
+
+
+def point_biserial_vi(
+    m1i: FloatArray, m2i: FloatArray, sd1i: FloatArray, sd2i: FloatArray, n1i: FloatArray, n2i: FloatArray, fisher_z: bool = False
+) -> FloatArray:
+    """Delta-method variance of ``r = d / sqrt(d^2 + h)`` from ``Var(d) = 1 / n1 + 1 / n2 + d^2 / (2 (n1 + n2))``: ``dr/dd = h / (d^2 + h)^(3/2)``.
+
+    With ``fisher_z`` the variance of ``atanh(r)``, ``Var(r) / (1 - r^2)^2``.
+    """
+    m = n1i + n2i - 2
+    d = (m1i - m2i) / pooled_sd(sd1i, sd2i, n1i, n2i)
+    h = m / n1i + m / n2i
+    var_r = h**2 / (h + d**2) ** 3 * (1 / n1i + 1 / n2i + d**2 / (2 * (n1i + n2i)))
+    if fisher_z:
+        return var_r / (1 - d**2 / (d**2 + h)) ** 2
+    return var_r
+
+
+def fisher_z_point_biserial_yi(m1i: FloatArray, m2i: FloatArray, sd1i: FloatArray, sd2i: FloatArray, n1i: FloatArray, n2i: FloatArray) -> FloatArray:
+    """Fisher's z of the point-biserial correlation, ``atanh(r)`` (Fisher 1921, Metron 1:3-32)."""
+    return numpy.arctanh(point_biserial_yi(m1i, m2i, sd1i, sd2i, n1i, n2i))
+
+
+def biserial_yi(m1i: FloatArray, m2i: FloatArray, sd1i: FloatArray, sd2i: FloatArray, n1i: FloatArray, n2i: FloatArray) -> FloatArray:
+    """Biserial correlation ``r_b = sqrt(p q) r_pb / phi(z)``, ``z`` the normal quantile with upper tail ``p`` (Soper 1914, Biometrika 10:384-390)."""
+    n = n1i + n2i
+    p, q = n1i / n, n2i / n
+    z = scipy.stats.norm.isf(p)
+    return numpy.sqrt(p * q) / scipy.stats.norm.pdf(z) * point_biserial_yi(m1i, m2i, sd1i, sd2i, n1i, n2i)
+
+
+def fisher_z_biserial_yi(m1i: FloatArray, m2i: FloatArray, sd1i: FloatArray, sd2i: FloatArray, n1i: FloatArray, n2i: FloatArray) -> FloatArray:
+    """Fisher's z of the biserial correlation, ``atanh(r_b)``."""
+    return numpy.arctanh(biserial_yi(m1i, m2i, sd1i, sd2i, n1i, n2i))
+
+
+def d_to_log_odds_ratio_yi(
+    m1i: FloatArray, m2i: FloatArray, sd1i: FloatArray, sd2i: FloatArray, n1i: FloatArray, n2i: FloatArray, scale: float = math.pi / math.sqrt(3)
+) -> FloatArray:
+    """Log odds ratio from ``d``: ``scale * d``, with ``scale = pi / sqrt(3)`` for a logistic latent variable (Hasselblad & Hedges 1995, Psychological
+    Bulletin 117:167-178; Sanchez-Meca, Marin-Martinez & Chacon-Moscoso 2003, Psychological Methods 8:448-467) and ``1.65`` after Cox (1970)."""
+    return scale * (m1i - m2i) / pooled_sd(sd1i, sd2i, n1i, n2i)
+
+
+def d_to_log_odds_ratio_vi(
+    m1i: FloatArray, m2i: FloatArray, sd1i: FloatArray, sd2i: FloatArray, n1i: FloatArray, n2i: FloatArray, scale: float = math.pi / math.sqrt(3)
+) -> FloatArray:
+    """Variance of ``scale * d``: ``scale^2 (1 / n1 + 1 / n2 + d^2 / (2 (n1 + n2)))`` (the variance of ``d``, Hedges & Olkin 1985, eq. 8)."""
+    d = (m1i - m2i) / pooled_sd(sd1i, sd2i, n1i, n2i)
+    return scale**2 * (1 / n1i + 1 / n2i + d**2 / (2 * (n1i + n2i)))
+
+
+def change_sd(sd1i: FloatArray, sd2i: FloatArray, ri: FloatArray) -> FloatArray:
+    """Standard deviation of the change score, ``sqrt(s1^2 + s2^2 - 2 r s1 s2)`` (the variance of a difference of correlated variables)."""
+    return numpy.sqrt(sd1i**2 + sd2i**2 - 2 * ri * sd1i * sd2i)
+
+
+def mean_change_yi(m1i: FloatArray, m2i: FloatArray) -> FloatArray:
+    """Raw mean change ``m1 - m2`` (the definition)."""
+    return m1i - m2i
+
+
+def mean_change_vi(sd1i: FloatArray, sd2i: FloatArray, ri: FloatArray, ni: FloatArray) -> FloatArray:
+    """Variance of a mean change, ``Var(change score) / n``."""
+    return change_sd(sd1i, sd2i, ri) ** 2 / ni
+
+
+def pomp_mean_change_yi(m1i: FloatArray, m2i: FloatArray, mini: FloatArray, maxi: FloatArray) -> FloatArray:
+    """Mean change on the POMP scale (Cohen et al. 1999): ``100 (m1 - m2) / (max - min)``."""
+    return 100 * (m1i - m2i) / (maxi - mini)
+
+
+def pomp_mean_change_vi(sd1i: FloatArray, sd2i: FloatArray, ri: FloatArray, ni: FloatArray, mini: FloatArray, maxi: FloatArray) -> FloatArray:
+    """Variance of the POMP-scaled mean change: the raw variance times ``(100 / (max - min))^2``."""
+    return (100 / (maxi - mini)) ** 2 * mean_change_vi(sd1i, sd2i, ri, ni)
+
+
+def smcc_yi(m1i: FloatArray, m2i: FloatArray, sd1i: FloatArray, sd2i: FloatArray, ri: FloatArray, ni: FloatArray) -> FloatArray:
+    """Standardised mean change with change-score standardisation, ``c(n - 1) (m1 - m2) / sd_change`` (Gibbons, Hedeker & Davis 1993, Archives of General
+    Psychiatry 50:739-750; Becker 1988, British Journal of Mathematical and Statistical Psychology 41:257-278)."""
+    return hedges_correction(ni - 1) * (m1i - m2i) / change_sd(sd1i, sd2i, ri)
+
+
+def smcc_vi(m1i: FloatArray, m2i: FloatArray, sd1i: FloatArray, sd2i: FloatArray, ri: FloatArray, ni: FloatArray, vtype: str = 'LS') -> FloatArray:
+    """Variance of ``smcc_yi``; the change scores are one sample of size ``n``, so ``standardised_variance`` applies with ``a = 1 / n`` and ``m = n - 1``."""
+    g = smcc_yi(m1i, m2i, sd1i, sd2i, ri, ni)
+    return standardised_variance(g, 1 / ni, ni - 1, ni, vtype)
+
+
+def smcr_yi(m1i: FloatArray, m2i: FloatArray, sd1i: FloatArray, ni: FloatArray) -> FloatArray:
+    """Standardised mean change with raw-score standardisation, ``c(n - 1) (m1 - m2) / s1`` (Becker 1988; Morris 2008, Organizational Research Methods
+    11:364-386)."""
+    return hedges_correction(ni - 1) * (m1i - m2i) / sd1i
+
+
+def unbiased_correlation(ri: FloatArray, ni: FloatArray) -> FloatArray:
+    """Olkin & Pratt (1958, Annals of Mathematical Statistics 29:201-211) unbiased correlation, ``r 2F1(1/2, 1/2; (n - 2) / 2; 1 - r^2)``."""
+    return ri * scipy.special.hyp2f1(0.5, 0.5, (ni - 2) / 2, 1 - ri**2)
+
+
+def smcr_vi(m1i: FloatArray, m2i: FloatArray, sd1i: FloatArray, ri: FloatArray, ni: FloatArray, vtype: str = 'LS') -> FloatArray:
+    """Variance of ``smcr_yi`` (Morris 2008): ``standardised_variance`` with ``a = 2 (1 - r) / n`` and ``m = n - 1``; ``UB`` and ``H0`` use the unbiased
+    correlation of Olkin & Pratt (1958)."""
+    g = smcr_yi(m1i, m2i, sd1i, ni)
+    r = unbiased_correlation(ri, ni) if vtype in ('UB', 'H0') else ri
+    return standardised_variance(g, 2 * (1 - r) / ni, ni - 1, ni, vtype)
+
+
+def smcrh_vi(m1i: FloatArray, m2i: FloatArray, sd1i: FloatArray, sd2i: FloatArray, ri: FloatArray, ni: FloatArray, vtype: str = 'LS') -> FloatArray:
+    """Delta-method variance of ``d = D / s1`` for paired data without equal variances (Bonett 2008, Psychological Methods 13:99-109).
+
+    ``Var(D) / s1^2 + d^2 Var(s1^2) / (4 s1^4)`` with ``Var(D) = sd_change^2 / df`` and ``Var(s1^2) = 2 s1^4 / df``; ``df = n - 1`` (``LS``) or ``n`` (``LS2``).
+    """
+    g = smcr_yi(m1i, m2i, sd1i, ni)
+    df = ni if vtype == 'LS2' else ni - 1
+    return change_sd(sd1i, sd2i, ri) ** 2 / (sd1i**2 * df) + g**2 / (2 * df)
+
+
+def paired_bonett_variance(d: FloatArray, sd1i: FloatArray, sd2i: FloatArray, ri: FloatArray, ni: FloatArray, vtype: str) -> FloatArray:
+    """Delta-method variance of ``d = D / s`` with ``s^2 = (s1^2 + s2^2) / 2`` for paired data.
+
+    ``Var(s^2) = (Var(s1^2) + Var(s2^2) + 2 Cov(s1^2, s2^2)) / 4`` with ``Var(s_i^2) = 2 s_i^4 / df`` and ``Cov(s1^2, s2^2) = 2 r^2 s1^2 s2^2 / df`` (normal
+    theory), so ``Var(d) = sd_change^2 / (s^2 df) + d^2 (s1^4 + s2^4 + 2 r^2 s1^2 s2^2) / (8 s^4 df)``; ``df = n - 1`` (``LS``) or ``n`` (``LS2``).
+    """
+    s2 = (sd1i**2 + sd2i**2) / 2
+    df = ni if vtype == 'LS2' else ni - 1
+    return change_sd(sd1i, sd2i, ri) ** 2 / (s2 * df) + d**2 * (sd1i**4 + sd2i**4 + 2 * ri**2 * sd1i**2 * sd2i**2) / (8 * s2**2 * df)
+
+
+def common_language_paired_yi(m1i: FloatArray, m2i: FloatArray, sd1i: FloatArray, sd2i: FloatArray) -> FloatArray:
+    """Probability of superiority ``Phi(d / sqrt(2))`` for normal data (McGraw & Wong 1992, Psychological Bulletin 111:361-365), ``d`` standardised by the
+    root mean square of the two standard deviations."""
+    return scipy.stats.norm.cdf((m1i - m2i) / numpy.sqrt((sd1i**2 + sd2i**2) / 2) / math.sqrt(2))
+
+
+def common_language_paired_vi(m1i: FloatArray, m2i: FloatArray, sd1i: FloatArray, sd2i: FloatArray, ri: FloatArray, ni: FloatArray) -> FloatArray:
+    """Delta-method variance of ``Phi(d / sqrt(2))``: ``phi(d / sqrt(2))^2 Var(d) / 2 = exp(-d^2 / 2) Var(d) / (4 pi)`` with ``Var(d)`` from
+    ``paired_bonett_variance``."""
+    d = (m1i - m2i) / numpy.sqrt((sd1i**2 + sd2i**2) / 2)
+    return numpy.exp(-(d**2) / 2) / (4 * math.pi) * paired_bonett_variance(d, sd1i, sd2i, ri, ni, 'LS')
+
+
+def log_response_ratio_change_yi(m1i: FloatArray, m2i: FloatArray, sd1i: FloatArray, sd2i: FloatArray, ni: FloatArray) -> FloatArray:
+    """Log ratio of means for dependent samples with the second-order bias correction (Lajeunesse 2015, Ecology 96:2056-2063; Nakagawa et al. 2015)."""
+    return numpy.log(m1i / m2i) + (sd1i**2 / (ni * m1i**2) - sd2i**2 / (ni * m2i**2)) / 2
+
+
+def log_response_ratio_change_vi(
+    m1i: FloatArray, m2i: FloatArray, sd1i: FloatArray, sd2i: FloatArray, ri: FloatArray, ni: FloatArray, vtype: str = 'LS'
+) -> FloatArray:
+    """Delta-method variance of ``log m1 - log m2`` for correlated means: ``cv1^2 / n + cv2^2 / n - 2 r cv1 cv2 / n``. ``LS2`` adds the second-order terms
+    ``cv1^4 / (2 n^2) + cv2^4 / (2 n^2) - r^2 cv1^2 cv2^2 / n^2`` (Lajeunesse 2015)."""
+    cv1, cv2 = sd1i / m1i, sd2i / m2i
+    first = cv1**2 / ni + cv2**2 / ni - 2 * ri * cv1 * cv2 / ni
+    if vtype == 'LS2':
+        return first + cv1**4 / (2 * ni**2) + cv2**4 / (2 * ni**2) - ri**2 * cv1**2 * cv2**2 / ni**2
+    return first
+
+
+def log_variability_ratio_change_yi(sd1i: FloatArray, sd2i: FloatArray) -> FloatArray:
+    """Log ratio of standard deviations for dependent samples, ``log(s1 / s2)`` (Raudenbush & Bryk 1987, Journal of Educational Statistics 12:241-269)."""
+    return numpy.log(sd1i / sd2i)
+
+
+def log_variability_ratio_change_vi(ri: FloatArray, ni: FloatArray, vtype: str = 'LS') -> FloatArray:
+    """Variance of ``log s1 - log s2``: ``Var(log s_i) = 1 / (2 (n - 1))`` and ``Cov(log s1, log s2) = r^2 / (2 (n - 1))`` (normal theory), so
+    ``(1 - r^2) / (n - 1)``; ``LS2`` adds the second-order term ``(1 - r^4) / (n - 1)^2``."""
+    first = (1 - ri**2) / (ni - 1)
+    return first + (1 - ri**4) / (ni - 1) ** 2 if vtype == 'LS2' else first
+
+
+def log_cv_ratio_change_yi(m1i: FloatArray, m2i: FloatArray, sd1i: FloatArray, sd2i: FloatArray, ni: FloatArray) -> FloatArray:
+    """Log ratio of coefficients of variation for dependent samples with the mean-bias correction of Lajeunesse (2015); the ``1 / (2 (n - 1))`` terms of
+    the two occasions cancel."""
+    return numpy.log(sd1i / m1i) - numpy.log(sd2i / m2i) + (sd2i**2 / (ni * m2i**2) - sd1i**2 / (ni * m1i**2)) / 2
+
+
+def log_cv_ratio_change_vi(
+    m1i: FloatArray, m2i: FloatArray, sd1i: FloatArray, sd2i: FloatArray, ri: FloatArray, ni: FloatArray, vtype: str = 'LS'
+) -> FloatArray:
+    """Variance of the log CV ratio for dependent samples: that of the log ratio of the means plus that of the log ratio of the standard deviations, which
+    are independent under normality."""
+    return log_response_ratio_change_vi(m1i, m2i, sd1i, sd2i, ri, ni, vtype) + log_variability_ratio_change_vi(ri, ni, vtype)
+
+
+def auc_yi(ai: FloatArray) -> FloatArray:
+    """The area under the curve, or common-language effect size, is the effect size itself (McGraw & Wong 1992; Ruscio 2008, Psychological Methods 13:19-30)."""
+    return ai
+
+
+def auc_vi(ai: FloatArray, n1i: FloatArray, n2i: FloatArray, vtype: str = 'H0') -> FloatArray:
+    """Sampling variance of the Mann-Whitney probability ``A``.
+
+    - ``H0``: ``(n1 + n2 + 1) / (12 n1 n2)``, the exact null variance of ``U / (n1 n2)`` (Mann & Whitney 1947, Annals of Mathematical Statistics 18:50-60);
+    - ``LS2`` (no ties): Hanley & McNeil (1982, Radiology 143:29-36) ``(A (1 - A) + (n1 - 1) (Q1 - A^2) + (n2 - 1) (Q2 - A^2)) / (n1 n2)`` with
+      ``Q1 = A / (2 - A)`` and ``Q2 = 2 A^2 / (1 + A)``, with the denominator ``(n1 - 1) (n2 - 1)`` of Newcombe (2006, Statistics in Medicine 25:559-573).
+    """
+    if vtype == 'H0':
+        return (n1i + n2i + 1) / (12 * n1i * n2i)
+    q0, q1, q2 = ai * (1 - ai), ai / (2 - ai), 2 * ai**2 / (1 + ai)
+    if vtype == 'LS2':
+        return (q0 + (n1i - 1) * (q1 - ai**2) + (n2i - 1) * (q2 - ai**2)) / ((n1i - 1) * (n2i - 1))
+    raise ValueError(f'unsupported vtype: {vtype}')
+
+
+def common_language_normal_yi(
+    m1i: FloatArray, m2i: FloatArray, sd1i: FloatArray, sd2i: FloatArray, n1i: FloatArray, n2i: FloatArray, vtype: str = 'LS'
+) -> FloatArray:
+    """``Phi(d / sqrt(2))`` (McGraw & Wong 1992), ``d`` standardised by the pooled standard deviation (``HO``) or the root mean square of the two (others)."""
+    sp = pooled_sd(sd1i, sd2i, n1i, n2i) if vtype == 'HO' else numpy.sqrt((sd1i**2 + sd2i**2) / 2)
+    return scipy.stats.norm.cdf((m1i - m2i) / sp / math.sqrt(2))
+
+
+def common_language_normal_vi(
+    m1i: FloatArray, m2i: FloatArray, sd1i: FloatArray, sd2i: FloatArray, n1i: FloatArray, n2i: FloatArray, vtype: str = 'LS'
+) -> FloatArray:
+    """Delta-method variance of ``Phi(d / sqrt(2))``, ``exp(-d^2 / 2) Var(d) / (4 pi)``, with ``Var(d)`` as follows.
+
+    ``HO`` (pooled standard deviation): ``1 / n1 + 1 / n2 + d^2 / (2 (n1 + n2))`` (Hedges & Olkin 1985, eq. 8). Otherwise ``bonett_variance`` for ``LS``,
+    ``LS2`` and ``LS3``; and for ``H0`` (``d = 0``) its first term only.
+    """
+    if vtype == 'HO':
+        d = (m1i - m2i) / pooled_sd(sd1i, sd2i, n1i, n2i)
+        return numpy.exp(-(d**2) / 2) / (4 * math.pi) * (1 / n1i + 1 / n2i + d**2 / (2 * (n1i + n2i)))
+    d = (m1i - m2i) / numpy.sqrt((sd1i**2 + sd2i**2) / 2)
+    if vtype == 'H0':
+        return bonett_variance(numpy.zeros_like(d), sd1i, sd2i, n1i, n2i, 'LS') / (4 * math.pi)
+    return numpy.exp(-(d**2) / 2) / (4 * math.pi) * bonett_variance(d, sd1i, sd2i, n1i, n2i, vtype)
+
+
+def fisher_z_point_biserial_vi(m1i: FloatArray, m2i: FloatArray, sd1i: FloatArray, sd2i: FloatArray, n1i: FloatArray, n2i: FloatArray) -> FloatArray:
+    """Variance of the Fisher z of the point-biserial correlation: ``point_biserial_vi`` divided by ``(1 - r^2)^2`` (delta method for ``atanh``)."""
+    return point_biserial_vi(m1i, m2i, sd1i, sd2i, n1i, n2i, True)
+
+
+def normal_d_to_log_odds_ratio_yi(m1i: FloatArray, m2i: FloatArray, sd1i: FloatArray, sd2i: FloatArray, n1i: FloatArray, n2i: FloatArray) -> FloatArray:
+    """Log odds ratio from ``d`` as ``1.65 d`` (Cox 1970, The Analysis of Binary Data, Chapman & Hall; Sanchez-Meca et al. 2003)."""
+    return d_to_log_odds_ratio_yi(m1i, m2i, sd1i, sd2i, n1i, n2i, 1.65)
+
+
+def normal_d_to_log_odds_ratio_vi(m1i: FloatArray, m2i: FloatArray, sd1i: FloatArray, sd2i: FloatArray, n1i: FloatArray, n2i: FloatArray) -> FloatArray:
+    """Variance of ``1.65 d``: ``1.65^2 Var(d)`` (Sanchez-Meca et al. 2003)."""
+    return d_to_log_odds_ratio_vi(m1i, m2i, sd1i, sd2i, n1i, n2i, 1.65)
