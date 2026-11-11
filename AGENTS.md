@@ -11,7 +11,7 @@ Development follows the rules, commands and skills in <https://github.com/bnomis
 - `source bin/activate.sh`, then run `pytest`, `ruff` and `mypy` directly. No `uv run`.
 - Python `>=3.14.7,<3.15`; dependencies and `uv.lock` are managed with `uv`. Do not edit `uv.lock` by hand or without instruction.
 - Tooling: `ruff format`, `ruff check`, `mypy` (strict). Single quotes, line length 160.
-- Tests live in `src/tests/`. Fixtures in `src/tests/reference/` are generated from R by `src/tests/r/*.R` (`LC_ALL=C.UTF-8 Rscript`); R metafor is the numeric oracle.
+- Tests live in `src/tests/`. Fixtures in `src/tests/reference/` are generated from R by `src/tests/r/*.R` (`LC_ALL=C.UTF-8 Rscript`); R metafor is the second numeric oracle, after the publication defining each method; correctness cases in `src/tests/correctness/` record where the two disagree.
 
 ## Project conventions
 

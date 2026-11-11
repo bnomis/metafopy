@@ -18,7 +18,7 @@ textbook) is listed under "Sources needed" in the same file, and its case is not
 
 ## Task 1: Rank the defining reference above R parity in the rules
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation step 7
@@ -27,19 +27,19 @@ textbook) is listed under "Sources needed" in the same file, and its case is not
 
 **Subtasks:**
 
-- [ ] In `claude/rules/metafopy.md`, replace "R metafor is the oracle: port numerics line for line and compare against committed JSON fixtures." with
+- [x] In `claude/rules/metafopy.md`, replace "R metafor is the oracle: port numerics line for line and compare against committed JSON fixtures." with
       a rule saying that the publication defining a method is the first oracle and R metafor the second. Numerics are still ported from metafor,
       and R parity fixtures stay. Where the two disagree, a correctness case in `src/tests/correctness/` records it, and metafopy's output changes
       only after the user confirms it
-- [ ] In `AGENTS.md`, amend "R metafor is the numeric oracle" the same way, pointing at `src/tests/correctness/`
+- [x] In `AGENTS.md`, amend "R metafor is the numeric oracle" the same way, pointing at `src/tests/correctness/`
 
 **Acceptance Criteria:**
 
-- [ ] Neither file says that R metafor is the only oracle
+- [x] Neither file says that R metafor is the only oracle
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
 
 **Notes:**
 
