@@ -104,7 +104,7 @@ still lacking a `published` or `derived` case.
 
 ## Task 3: escalc - two-group binary and count measures
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** Implementation step 2; Coverage list (measures)
@@ -114,25 +114,25 @@ accepted `vtype`, coded from the publication that defines it.
 
 **Subtasks:**
 
-- [ ] Add the `[[vtypes]]` rows for these measures to `escalc.toml`, from the `escalc` docstring and metafor's `escalc` help
-- [ ] For each measure among `RR`, `OR`, `PETO`, `RD`, `AS`, `PHI`, `ZPHI`, `YUQ`, `YUY`, `RTET`, `ZTET`, `PBIT`, `OR2D`, `OR2DN`, `OR2DL`, the `MP*`
+- [x] Add the `[[vtypes]]` rows for these measures to `escalc.toml`, from the `escalc` docstring and metafor's `escalc` help
+- [x] For each measure among `RR`, `OR`, `PETO`, `RD`, `AS`, `PHI`, `ZPHI`, `YUQ`, `YUY`, `RTET`, `ZTET`, `PBIT`, `OR2D`, `OR2DN`, `OR2DL`, the `MP*`
       paired measures, `IRR`, `IRD` and `IRSD`:
   - write a function in `formulas.py`, citing the equation and its source in its docstring;
   - add a `derived` case per accepted `vtype`, on inline data that includes a zero cell and checks the `add`/`to` handling against the
     publication.
-- [ ] Where no publication gives a usable formula, add an `[[exempt]]` entry with the reason instead
-- [ ] Record any mismatch as the header says
+- [x] Where no publication gives a usable formula, add an `[[exempt]]` entry with the reason instead
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] The gate's missing list no longer names any of these measures or their `vtype` pairs
-- [ ] Each `formulas.py` function names its source and equation
+- [x] The gate's missing list no longer names any of these measures or their `vtype` pairs
+- [x] Each `formulas.py` function names its source and equation
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness` passes
 
 **Notes:**
 
