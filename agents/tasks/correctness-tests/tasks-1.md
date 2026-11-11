@@ -213,7 +213,7 @@ the proportions and rates (`PR` to `IRFT`), the means and variability measures (
 
 ## Task 6: rma_uni - tau2 estimators
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** Implementation step 2; Coverage list (methods)
@@ -222,24 +222,24 @@ the proportions and rates (`PR` to `IRFT`), the means and variability measures (
 
 **Subtasks:**
 
-- [ ] Code the closed forms in `formulas.py`: `DL`, `HE`, `HS`, `HSk`, `SJ`, `CO`, `VC` and `GENQ`. Use the formula papers in the spec's Seed sources
+- [x] Code the closed forms in `formulas.py`: `DL`, `HE`, `HS`, `HSk`, `SJ`, `CO`, `VC` and `GENQ`. Use the formula papers in the spec's Seed sources
       and Veroniki et al. (2016). Truncation at zero follows the source
-- [ ] Code the iterative estimators as estimating equations solved with `scipy.optimize.brentq`: `DLIT`, `SJIT`, `ML`, `REML`, `EB`, `PM`, `MP`,
+- [x] Code the iterative estimators as estimating equations solved with `scipy.optimize.brentq`: `DLIT`, `SJIT`, `ML`, `REML`, `EB`, `PM`, `MP`,
       `PMM` and `GENQM`. Each is written from the publication's equation, not from metafopy's loop
-- [ ] The equal-effects methods `EE`, `FE` and `CE`: `derived` cases with `tau2 = 0` and the weighted mean, its standard error and the
+- [x] The equal-effects methods `EE`, `FE` and `CE`: `derived` cases with `tau2 = 0` and the weighted mean, its standard error and the
       equal-effects CI
-- [ ] Cases on `dat.bcg` (log RR, with and without `ablat`) and on one more dataset, for `tau2`, `beta` and `se`
-- [ ] Record any mismatch as the header says
+- [x] Cases on `dat.bcg` (log RR, with and without `ablat`) and on one more dataset, for `tau2`, `beta` and `se`
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] The gate's missing list names no estimator
+- [x] The gate's missing list names no estimator
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness` passes
 
 **Notes:**
 

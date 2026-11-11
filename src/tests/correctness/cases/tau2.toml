@@ -1,1 +1,786 @@
 # Correctness cases for the tau2 estimators of rma_uni (coverage items `tau2.<method>`).
+#
+# `derived` cases: tau2, the coefficients and their standard errors come from `formulas.rma_tau2` and `formulas.fixed_effects_fit`, coded from
+# the estimating or moment equation of each method. The `control` tightens the convergence settings of the iterative estimators so that the
+# comparison measures the estimator, not the stopping rule.
+
+[[case]]
+id = "tau2.ee.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "EE" }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+covers = ["tau2.EE"]
+
+[[case]]
+id = "tau2.ee.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "EE", mods = "~ ablat" }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+covers = ["tau2.EE"]
+
+[[case]]
+id = "tau2.ee.raudenbush"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "EE" }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+covers = ["tau2.EE"]
+
+[[case]]
+id = "tau2.ee.raudenbush.weeks"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "EE", mods = "~ weeks" }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+covers = ["tau2.EE"]
+
+[[case]]
+id = "tau2.fe.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "FE" }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+covers = ["tau2.FE"]
+
+[[case]]
+id = "tau2.fe.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "FE", mods = "~ ablat" }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+covers = ["tau2.FE"]
+
+[[case]]
+id = "tau2.fe.raudenbush"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "FE" }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+covers = ["tau2.FE"]
+
+[[case]]
+id = "tau2.fe.raudenbush.weeks"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "FE", mods = "~ weeks" }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+covers = ["tau2.FE"]
+
+[[case]]
+id = "tau2.ce.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "CE" }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+covers = ["tau2.CE"]
+
+[[case]]
+id = "tau2.ce.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "CE", mods = "~ ablat" }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+covers = ["tau2.CE"]
+
+[[case]]
+id = "tau2.ce.raudenbush"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "CE" }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+covers = ["tau2.CE"]
+
+[[case]]
+id = "tau2.ce.raudenbush.weeks"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "CE", mods = "~ weeks" }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+covers = ["tau2.CE"]
+
+[[case]]
+id = "tau2.dl.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "DL" }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+covers = ["tau2.DL"]
+
+[[case]]
+id = "tau2.dl.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "DL", mods = "~ ablat" }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+covers = ["tau2.DL"]
+
+[[case]]
+id = "tau2.dl.raudenbush"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "DL" }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+covers = ["tau2.DL"]
+
+[[case]]
+id = "tau2.dl.raudenbush.weeks"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "DL", mods = "~ weeks" }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+covers = ["tau2.DL"]
+
+[[case]]
+id = "tau2.dlit.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "DLIT", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+tolerance = 1e-8
+covers = ["tau2.DLIT"]
+
+[[case]]
+id = "tau2.dlit.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "DLIT", mods = "~ ablat", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+tolerance = 1e-8
+covers = ["tau2.DLIT"]
+
+[[case]]
+id = "tau2.dlit.raudenbush"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "DLIT", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+tolerance = 1e-8
+covers = ["tau2.DLIT"]
+
+[[case]]
+id = "tau2.dlit.raudenbush.weeks"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "DLIT", mods = "~ weeks", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+tolerance = 1e-8
+covers = ["tau2.DLIT"]
+
+[[case]]
+id = "tau2.he.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "HE" }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+covers = ["tau2.HE"]
+
+[[case]]
+id = "tau2.he.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "HE", mods = "~ ablat" }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+covers = ["tau2.HE"]
+
+[[case]]
+id = "tau2.he.raudenbush"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "HE" }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+covers = ["tau2.HE"]
+
+[[case]]
+id = "tau2.he.raudenbush.weeks"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "HE", mods = "~ weeks" }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+covers = ["tau2.HE"]
+
+[[case]]
+id = "tau2.co.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "CO" }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+covers = ["tau2.CO"]
+
+[[case]]
+id = "tau2.co.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "CO", mods = "~ ablat" }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+covers = ["tau2.CO"]
+
+[[case]]
+id = "tau2.co.raudenbush"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "CO" }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+covers = ["tau2.CO"]
+
+[[case]]
+id = "tau2.co.raudenbush.weeks"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "CO", mods = "~ weeks" }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+covers = ["tau2.CO"]
+
+[[case]]
+id = "tau2.vc.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "VC" }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+covers = ["tau2.VC"]
+
+[[case]]
+id = "tau2.vc.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "VC", mods = "~ ablat" }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+covers = ["tau2.VC"]
+
+[[case]]
+id = "tau2.vc.raudenbush"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "VC" }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+covers = ["tau2.VC"]
+
+[[case]]
+id = "tau2.vc.raudenbush.weeks"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "VC", mods = "~ weeks" }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+covers = ["tau2.VC"]
+
+[[case]]
+id = "tau2.hs.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "HS" }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+covers = ["tau2.HS"]
+
+[[case]]
+id = "tau2.hs.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "HS", mods = "~ ablat" }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+covers = ["tau2.HS"]
+
+[[case]]
+id = "tau2.hs.raudenbush"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "HS" }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+covers = ["tau2.HS"]
+
+[[case]]
+id = "tau2.hs.raudenbush.weeks"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "HS", mods = "~ weeks" }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+covers = ["tau2.HS"]
+
+[[case]]
+id = "tau2.hsk.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "HSk" }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+covers = ["tau2.HSk"]
+
+[[case]]
+id = "tau2.hsk.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "HSk", mods = "~ ablat" }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+covers = ["tau2.HSk"]
+
+[[case]]
+id = "tau2.hsk.raudenbush"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "HSk" }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+covers = ["tau2.HSk"]
+
+[[case]]
+id = "tau2.hsk.raudenbush.weeks"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "HSk", mods = "~ weeks" }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+covers = ["tau2.HSk"]
+
+[[case]]
+id = "tau2.sj.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "SJ" }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+covers = ["tau2.SJ"]
+
+[[case]]
+id = "tau2.sj.raudenbush"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "SJ" }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+covers = ["tau2.SJ"]
+
+[[case]]
+id = "tau2.sjit.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "SJIT", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+tolerance = 1e-8
+covers = ["tau2.SJIT"]
+
+[[case]]
+id = "tau2.sjit.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "SJIT", mods = "~ ablat", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+tolerance = 1e-8
+covers = ["tau2.SJIT"]
+
+[[case]]
+id = "tau2.sjit.raudenbush"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "SJIT", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+tolerance = 1e-8
+covers = ["tau2.SJIT"]
+
+[[case]]
+id = "tau2.sjit.raudenbush.weeks"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "SJIT", mods = "~ weeks", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+tolerance = 1e-8
+covers = ["tau2.SJIT"]
+
+[[case]]
+id = "tau2.ml.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "ML", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+tolerance = 1e-8
+covers = ["tau2.ML"]
+
+[[case]]
+id = "tau2.ml.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "ML", mods = "~ ablat", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+tolerance = 1e-8
+covers = ["tau2.ML"]
+
+[[case]]
+id = "tau2.ml.raudenbush"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "ML", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+tolerance = 1e-8
+covers = ["tau2.ML"]
+
+[[case]]
+id = "tau2.ml.raudenbush.weeks"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "ML", mods = "~ weeks", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+tolerance = 1e-8
+covers = ["tau2.ML"]
+
+[[case]]
+id = "tau2.reml.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "REML", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+tolerance = 1e-8
+covers = ["tau2.REML"]
+
+[[case]]
+id = "tau2.reml.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "REML", mods = "~ ablat", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+tolerance = 1e-8
+covers = ["tau2.REML"]
+
+[[case]]
+id = "tau2.reml.raudenbush"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "REML", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+tolerance = 1e-8
+covers = ["tau2.REML"]
+
+[[case]]
+id = "tau2.reml.raudenbush.weeks"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "REML", mods = "~ weeks", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+tolerance = 1e-8
+covers = ["tau2.REML"]
+
+[[case]]
+id = "tau2.eb.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "EB", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+tolerance = 1e-8
+covers = ["tau2.EB"]
+
+[[case]]
+id = "tau2.eb.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "EB", mods = "~ ablat", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+tolerance = 1e-8
+covers = ["tau2.EB"]
+
+[[case]]
+id = "tau2.eb.raudenbush"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "EB", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+tolerance = 1e-8
+covers = ["tau2.EB"]
+
+[[case]]
+id = "tau2.eb.raudenbush.weeks"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "EB", mods = "~ weeks", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+tolerance = 1e-8
+covers = ["tau2.EB"]
+
+[[case]]
+id = "tau2.pm.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "PM", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+tolerance = 1e-8
+covers = ["tau2.PM"]
+
+[[case]]
+id = "tau2.pm.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "PM", mods = "~ ablat", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+tolerance = 1e-8
+covers = ["tau2.PM"]
+
+[[case]]
+id = "tau2.pm.raudenbush"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "PM", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+tolerance = 1e-8
+covers = ["tau2.PM"]
+
+[[case]]
+id = "tau2.pm.raudenbush.weeks"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "PM", mods = "~ weeks", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+tolerance = 1e-8
+covers = ["tau2.PM"]
+
+[[case]]
+id = "tau2.mp.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "MP", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+tolerance = 1e-8
+covers = ["tau2.MP"]
+
+[[case]]
+id = "tau2.mp.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "MP", mods = "~ ablat", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+tolerance = 1e-8
+covers = ["tau2.MP"]
+
+[[case]]
+id = "tau2.mp.raudenbush"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "MP", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+tolerance = 1e-8
+covers = ["tau2.MP"]
+
+[[case]]
+id = "tau2.mp.raudenbush.weeks"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "MP", mods = "~ weeks", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+tolerance = 1e-8
+covers = ["tau2.MP"]
+
+[[case]]
+id = "tau2.pmm.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "PMM", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+tolerance = 1e-8
+covers = ["tau2.PMM"]
+
+[[case]]
+id = "tau2.pmm.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "PMM", mods = "~ ablat", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+tolerance = 1e-8
+covers = ["tau2.PMM"]
+
+[[case]]
+id = "tau2.pmm.raudenbush"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "PMM", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+tolerance = 1e-8
+covers = ["tau2.PMM"]
+
+[[case]]
+id = "tau2.pmm.raudenbush.weeks"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "PMM", mods = "~ weeks", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+tolerance = 1e-8
+covers = ["tau2.PMM"]
+
+[[case]]
+id = "tau2.genq.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "GENQ", weights = "tpos", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+tolerance = 1e-8
+covers = ["tau2.GENQ"]
+
+[[case]]
+id = "tau2.genq.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "GENQ", mods = "~ ablat", weights = "tpos", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+tolerance = 1e-8
+covers = ["tau2.GENQ"]
+
+[[case]]
+id = "tau2.genq.raudenbush"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "GENQ", weights = "n1i", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+tolerance = 1e-8
+covers = ["tau2.GENQ"]
+
+[[case]]
+id = "tau2.genq.raudenbush.weeks"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "GENQ", mods = "~ weeks", weights = "n1i", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+tolerance = 1e-8
+covers = ["tau2.GENQ"]
+
+[[case]]
+id = "tau2.genqm.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "GENQM", weights = "tpos", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+tolerance = 1e-6
+covers = ["tau2.GENQM"]
+
+[[case]]
+id = "tau2.genqm.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "GENQM", mods = "~ ablat", weights = "tpos", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+tolerance = 1e-6
+covers = ["tau2.GENQM"]
+
+[[case]]
+id = "tau2.genqm.raudenbush"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "GENQM", weights = "n1i", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+tolerance = 1e-6
+covers = ["tau2.GENQM"]
+
+[[case]]
+id = "tau2.genqm.raudenbush.weeks"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "GENQM", mods = "~ weeks", weights = "n1i", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+tolerance = 1e-6
+covers = ["tau2.GENQM"]

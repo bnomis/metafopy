@@ -11,6 +11,7 @@ import collections.abc
 import functools
 import math
 import typing
+import warnings
 
 import numpy
 import numpy.typing
@@ -1212,3 +1213,165 @@ def excess_heterozygosity_vi(ai: FloatArray, bi: FloatArray, ci: FloatArray) -> 
 def squared_correlation_yi(r2i: FloatArray) -> FloatArray:
     """The squared multiple correlation is its own effect size."""
     return r2i
+
+
+# --- rma_uni: the tau2 estimators and the weighted fit that follows them ------------------------------------------------------------------------------
+#
+# Notation (Viechtbauer 2005, JEBS 30:261-293; Raudenbush 2009, in the Handbook of Research Synthesis): y is the vector of k effects, V = diag(v) their
+# sampling variances, X the k x p model matrix (a column of ones, then any moderators), tau2 the residual heterogeneity. For a weight matrix A the
+# projection is P(A) = A - A X (X' A X)^-1 X' A, and the weighted residual sum of squares is Q(A) = y' P(A) y. The random-effects weights are
+# W(tau2) = diag(1 / (v + tau2)).
+
+
+def model_matrix(count: int, mods: str | None, data: object | None) -> FloatArray:
+    """``X``: a column of ones, then the columns of the one-sided formula ``mods`` (``'~ ablat + year'``) read from the data frame ``data``."""
+    columns = [numpy.ones(count)]
+    if mods:
+        for name in mods.replace('~', '').split('+'):
+            columns.append(numpy.asarray(data[name.strip()], dtype=numpy.float64))  # type: ignore[index]
+    return numpy.column_stack(columns)
+
+
+def projection(weights: FloatArray, design: FloatArray) -> FloatArray:
+    """``P(A) = A - A X (X' A X)^-1 X' A`` for the diagonal weight matrix ``A = diag(weights)``."""
+    a = numpy.diag(weights)
+    return a - a @ design @ numpy.linalg.inv(design.T @ a @ design) @ design.T @ a
+
+
+def random_effects_q(yi: FloatArray, vi: FloatArray, design: FloatArray, tau2: float) -> float:
+    """``Q(tau2) = y' P(W(tau2)) y``, the weighted residual sum of squares of the random-effects model."""
+    return float(yi @ projection(1 / (vi + tau2), design) @ yi)
+
+
+def moment_tau2(yi: FloatArray, vi: FloatArray, design: FloatArray, weights: FloatArray) -> float:
+    """Method of moments for fixed weights ``a``: ``tau2 = (y' P y - tr(P V)) / tr(P)``, from ``E[y' P y] = tau2 tr(P) + tr(P V)``.
+
+    Equal weights give Hedges (1983), inverse-variance weights DerSimonian & Laird (1986) generalised to moderators by Raudenbush (2009), and any other
+    weights the generalised Q estimator of DerSimonian & Kacker (2007). Truncation at zero is not applied here.
+    """
+    p = projection(weights, design)
+    return float((yi @ p @ yi - numpy.trace(p @ numpy.diag(vi))) / numpy.trace(p))
+
+
+def solve_decreasing(func: collections.abc.Callable[[float], float]) -> float:
+    """The root of ``func`` on ``tau2 >= 0``, where ``func`` is positive below it and negative above; zero if ``func(0) <= 0``."""
+    if func(0.0) <= 0:
+        return 0.0
+    upper = 1.0
+    while func(upper) > 0:
+        upper *= 4
+    return float(scipy.optimize.brentq(func, 0.0, upper, xtol=1e-14, rtol=1e-14, maxiter=1000))
+
+
+def quadratic_form_cdf(x: float, eigenvalues: FloatArray) -> float:
+    """``P(Q <= x)`` for ``Q = sum(lambda_j * chi2_1)``, positive eigenvalues, by Imhof's (1961, Biometrika 48:419-426) inversion integral."""
+
+    def integrand(u: float) -> float:
+        theta = 0.5 * numpy.sum(numpy.arctan(eigenvalues * u)) - 0.5 * x * u
+        rho = numpy.prod((1 + (eigenvalues * u) ** 2) ** 0.25)
+        return float(numpy.sin(theta) / (u * rho))
+
+    with warnings.catch_warnings():
+        # the oscillating tail of the integrand cannot reach the requested accuracy; 1e-9 is reached well before it, and the cases compare at 1e-6
+        warnings.simplefilter('ignore', scipy.integrate.IntegrationWarning)
+        integral = scipy.integrate.quad(integrand, 0, numpy.inf, limit=200, epsabs=1e-9, epsrel=1e-9)[0]
+    return 0.5 - integral / math.pi
+
+
+def median_unbiased_general_q(yi: FloatArray, vi: FloatArray, design: FloatArray, weights: FloatArray) -> float:
+    """Median-unbiased generalised Q estimator (Viechtbauer 2021, Behavior Research Methods): ``tau2`` at which the median of ``y' P y`` is the observed.
+
+    Under normality ``y' P y`` is ``sum(lambda_j chi2_1)`` with ``lambda`` the non-zero eigenvalues of ``P (V + tau2 I)``; the median is found by
+    solving ``P(Q <= m) = 1/2``. Lower bound zero.
+    """
+    p = projection(weights, design)
+    observed = float(yi @ p @ yi)
+
+    def median(tau2: float) -> float:
+        eig = numpy.linalg.eigvals(p @ numpy.diag(vi + tau2)).real
+        eig = eig[eig > 1e-10 * eig.max()]
+        return float(scipy.optimize.brentq(lambda m: quadratic_form_cdf(m, eig) - 0.5, 1e-12, 50 * eig.sum() + 50, xtol=1e-10, rtol=1e-10))
+
+    return solve_decreasing(lambda tau2: observed - median(tau2))
+
+
+def rma_tau2(yi: FloatArray, vi: FloatArray, method: str, weights: FloatArray | None = None, mods: str | None = None, data: object | None = None) -> float:
+    """The estimate of ``tau2`` of ``method``, written from the estimating equation or moment equation of its publication.
+
+    ``DL``, ``HE`` (and ``CO``, ``VC``, which the metafor documentation lists as Hedges' variance component estimator), ``HS``, ``HSk``, ``SJ`` closed
+    forms; ``DLIT``, ``SJIT``, ``ML``, ``REML``, ``EB``, ``PM`` (``MP``), ``PMM`` solved by root finding on their equations; ``GENQ`` and ``GENQM``
+    with the given ``weights``; the equal-effects methods ``EE``, ``FE`` and ``CE`` fix ``tau2 = 0``.
+    """
+    k = len(yi)
+    design = model_matrix(k, mods, data)
+    df: int = k - int(design.shape[1])
+    w0 = 1 / vi
+    if method in ('EE', 'FE', 'CE'):
+        return 0.0
+    if method == 'DL':
+        return max(0.0, moment_tau2(yi, vi, design, w0))
+    if method in ('HE', 'CO', 'VC'):
+        return max(0.0, moment_tau2(yi, vi, design, numpy.ones(k)))
+    if method == 'GENQ':
+        assert weights is not None
+        return max(0.0, moment_tau2(yi, vi, design, weights))
+    if method == 'GENQM':
+        assert weights is not None
+        return median_unbiased_general_q(yi, vi, design, weights)
+    if method == 'HS':
+        # Hunter & Schmidt (1990): (Q - k) / sum(w), with the sampling variances' average k / sum(w) as the correction; Viechtbauer et al. (2015)
+        return max(0.0, (random_effects_q(yi, vi, design, 0.0) - k) / float(w0.sum()))
+    if method == 'HSk':
+        # Brannick et al. (2019): the weighted variance Q / sum(w) is divided by k - p, not k, before the average sampling variance is subtracted
+        return max(0.0, (random_effects_q(yi, vi, design, 0.0) * k / df - k) / float(w0.sum()))
+    if method == 'SJ':
+        # Sidik & Jonkman (2005, JRSS C 54:367-384): crude estimate sum((y - ybar)^2) / k, then sum(w (y - ybar_w)^2) / (k - 1) with w = 1 / (v / crude + 1)
+        crude = float(numpy.sum((yi - yi.mean()) ** 2) / k)
+        return random_effects_q(yi, vi, design, crude) * crude / df
+    if method == 'DLIT':
+        # the fixed point of the DL moment equation with the weights re-computed at its own estimate (DerSimonian & Laird 1986, iterated)
+        return solve_decreasing(lambda t: moment_tau2(yi, vi, design, 1 / (vi + t)) - t)
+    if method in ('SJIT', 'EB', 'PM', 'MP'):
+        # Paule & Mandel (1982): Q(tau2) = k - p; Morris (1983) EB and the fixed point of the Sidik-Jonkman update
+        # tau2 Q(tau2) / (k - p) reach the same equation
+        return solve_decreasing(lambda t: random_effects_q(yi, vi, design, t) - df)
+    if method == 'PMM':
+        target = float(scipy.stats.chi2.median(df))
+        return solve_decreasing(lambda t: random_effects_q(yi, vi, design, t) - target)
+    if method in ('REML', 'ML'):
+        # Hardy & Thompson (1996) and Viechtbauer (2005): the score equations y' P^2 y = tr(W) (ML) and y' P^2 y = tr(P) (REML)
+        def score(t: float) -> float:
+            w = 1 / (vi + t)
+            p = projection(w, design)
+            return float(yi @ p @ p @ yi - (numpy.trace(p) if method == 'REML' else w.sum()))
+
+        return solve_decreasing(score)
+    raise ValueError(f'unsupported method: {method}')
+
+
+def fixed_effects_fit(
+    yi: FloatArray, vi: FloatArray, method: str, weights: FloatArray | None = None, mods: str | None = None, data: object | None = None
+) -> tuple[float, FloatArray, FloatArray]:
+    """``(tau2, beta, se)``: the estimate of ``tau2`` and the weighted least squares coefficients with weights ``1 / (v + tau2)`` and their standard errors."""
+    tau2 = rma_tau2(yi, vi, method, weights, mods, data)
+    design = model_matrix(len(yi), mods, data)
+    if method in ('GENQ', 'GENQM'):
+        assert weights is not None
+        # the supplied weights also weight the coefficients; the standard errors are then the sandwich of a misspecified weight matrix (Jackson et al. 2014)
+        a = numpy.diag(weights)
+        bread = numpy.linalg.inv(design.T @ a @ design)
+        cov = bread @ design.T @ a @ numpy.diag(vi + tau2) @ a @ design @ bread
+        return tau2, bread @ design.T @ a @ yi, numpy.sqrt(numpy.diag(cov))
+    w = numpy.diag(1 / (vi + tau2))
+    cov = numpy.linalg.inv(design.T @ w @ design)
+    return tau2, cov @ design.T @ w @ yi, numpy.sqrt(numpy.diag(cov))
+
+
+def rma_beta(yi: FloatArray, vi: FloatArray, method: str, weights: FloatArray | None = None, mods: str | None = None, data: object | None = None) -> FloatArray:
+    """The coefficients of ``rma_uni`` with ``method``."""
+    return fixed_effects_fit(yi, vi, method, weights, mods, data)[1]
+
+
+def rma_se(yi: FloatArray, vi: FloatArray, method: str, weights: FloatArray | None = None, mods: str | None = None, data: object | None = None) -> FloatArray:
+    """The standard errors of the coefficients of ``rma_uni`` with ``method``."""
+    return fixed_effects_fit(yi, vi, method, weights, mods, data)[2]

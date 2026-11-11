@@ -328,6 +328,9 @@ def formula_value(case: Case, name: str, frame: pandas.DataFrame | None) -> typi
     func = resolve_formula(name, case.id)
     kwargs: dict[str, typing.Any] = {}
     for param in inspect.signature(func).parameters:
+        if param == 'data' and frame is not None:
+            kwargs[param] = frame
+            continue
         if param not in case.args:
             continue
         value = case.args[param]
