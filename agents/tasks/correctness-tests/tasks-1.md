@@ -495,7 +495,7 @@ cases. With them the coverage gate passes.
 
 ## Task 13: Review the mismatches and the sources needed
 
-**Status:** in-progress
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Mismatches; Implementation step 8
@@ -513,8 +513,8 @@ answer.
   - decisions, with options *follow the reference*, *keep metafor* and *investigate*, and a recommendation for each;
   - an empty Answers section.
 - [x] Publish its interactive page, with answers saved to the artifact's database, and put `**Review page:** <URL>` in the document's header
-- [ ] If there are no mismatches and no sources needed, write that in the document and skip the page
-- [ ] Stop the list for the operator. Once every item has an answer, an operator session reads the page's answers, copies each into the Answers
+- [x] If there are no mismatches and no sources needed, write that in the document and skip the page
+- [x] Stop the list for the operator. Once every item has an answer, an operator session reads the page's answers, copies each into the Answers
       section with the date, commits that, and only then restarts the list
 
 **Acceptance Criteria:**
@@ -523,14 +523,15 @@ answer.
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness` passes, `slow` tests skipped (`-m 'not slow'`)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness` passes, `slow` tests skipped (`-m 'not slow'`)
 
 **Notes:**
 
 - Page published by an operator session on 2026-11-12: https://claude.ai/artifact/UTpCxfSZ1588zUnpgL9T1T (answers in its database, collection
-  `answers`). Waiting for the user to answer every item.
+  `answers`). Every item answered on 2026-11-12; the answers are copied into the Answers section of `mismatches.md`.
+- "If there are no mismatches" ticked as not applicable: there was one mismatch and fifteen sources.
 - Depends on Tasks 3 to 12
 
 ---
@@ -569,3 +570,6 @@ answer.
 **Notes:**
 
 - Depends on Task 13
+- The supplied sources are PDFs (and one `.doc`) in `/Users/simonb/src/metafopy papers`, outside the repository; read them with `pdftotext`
+  (`/opt/homebrew/bin/pdftotext`) or `textutil` for the `.doc`. Never copy them into the repository. If that directory cannot be read from the queue's
+  session, stop as `blocked` and say so

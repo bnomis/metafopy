@@ -109,4 +109,26 @@ estimators have metafor parity, derived, property and simulation cases.
 
 ## Answers
 
-Left empty. The operator reads the page answers, copies each here with the date, and commits that before the list restarts.
+Answered by the user on the review page on 2026-11-12 and copied here the same day.
+
+- **Decision: the `ht` interval under REML** (`confint.ht.reml.bcg.none`): *follow the reference*. No comment.
+
+Sources needed: every source is *supply*. The files are in `/Users/simonb/src/metafopy papers`, outside the repository; they are not committed.
+
+- Veroniki et al. (2016), with Bowden et al. (2011) for the trial data: *supply*.
+- DerSimonian & Laird (1986): *supply*.
+- Hedges (1983): *supply*.
+- Hunter & Schmidt (2004): the file is Schmidt's chapter "Meta-Analysis" (chapter 22 of a Wiley handbook), not the 2004 book; the Handbook of
+  Research Synthesis and Meta-Analysis, chapter 17 (Schmidt, Le and Oh) also covers the approach. Whether either has an HS worked example is checked
+  when the case is written: *supply*.
+- Sidik & Jonkman (2005): *supply*.
+- Viechtbauer (2005) and Morris (1983): *supply*.
+- Paule & Mandel (1982): *supply*.
+- DerSimonian & Kacker (2007): *supply*.
+- Knapp & Hartung (2003): *supply*.
+- Higgins & Thompson (2002): *supply*.
+- Mantel & Haenszel (1959) and Robins, Breslow & Greenland (1986): *supply*.
+- Yusuf et al. (1985): *supply*.
+- Hedges (1981): *supply*.
+- Hedges, Gurevitch & Curtis (1999): *supply*.
+- Borenstein et al. (2009), Normand (1999), and Raudenbush (2009) as chapter 16 of the Handbook of Research Synthesis and Meta-Analysis, 2nd ed.: *supply*.
