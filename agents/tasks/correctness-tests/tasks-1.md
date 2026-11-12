@@ -512,7 +512,7 @@ answer.
   - "Sources needed";
   - decisions, with options *follow the reference*, *keep metafor* and *investigate*, and a recommendation for each;
   - an empty Answers section.
-- [ ] Publish its interactive page, with answers saved to the artifact's database, and put `**Review page:** <URL>` in the document's header
+- [x] Publish its interactive page, with answers saved to the artifact's database, and put `**Review page:** <URL>` in the document's header
 - [ ] If there are no mismatches and no sources needed, write that in the document and skip the page
 - [ ] Stop the list for the operator. Once every item has an answer, an operator session reads the page's answers, copies each into the Answers
       section with the date, commits that, and only then restarts the list
@@ -529,8 +529,8 @@ answer.
 
 **Notes:**
 
-- Page not published: this session has no tool to publish an interactive page. The operator publishes it, puts the URL in the document header, and
-  collects the answers.
+- Page published by an operator session on 2026-11-12: https://claude.ai/artifact/UTpCxfSZ1588zUnpgL9T1T (answers in its database, collection
+  `answers`). Waiting for the user to answer every item.
 - Depends on Tasks 3 to 12
 
 ---

@@ -2,8 +2,7 @@
 
 **Spec:** `agents/specs/correctness-tests/spec.md`
 **Task list:** `agents/tasks/correctness-tests/tasks-1.md` (Task 13)
-**Review page:** not published: the session that wrote this document has no tool for publishing an interactive page. The operator publishes it
-(see Answers) before the list restarts.
+**Review page:** https://claude.ai/artifact/UTpCxfSZ1588zUnpgL9T1T
 
 ## What is reviewed and how
 
