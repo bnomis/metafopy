@@ -94,8 +94,9 @@ against a registry.
 - Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Wiley, Chichester. Normand SLT (1999). Meta-analysis: formulating, evaluating, combining, and reporting. Statistics in Medicine 18(3):321-359. Raudenbush SW (2009). Analyzing effect sizes: random-effects models. In Cooper H, Hedges LV, Valentine JC (eds), The Handbook of Research Synthesis and Meta-Analysis, 2nd ed., pp. 295-315. Russell Sage Foundation, New York. doi:10.1002/9780470743386 doi:10.1002/(SICI)1097-0258(19990215)18:3<321::AID-SIM28>3.0.CO;2-P
 
 On 2026-11-12 the user saved the sources in `/Users/simonb/src/metafopy papers` (outside the repository; the papers are not committed).
-Every row has its paper there except: Raudenbush (2009), not supplied; Hunter & Schmidt (2004), for which the file is Schmidt's chapter
-"Meta-Analysis" (chapter 22 of a Wiley handbook), not the 2004 book.
+Every row has its source there, Raudenbush (2009) as chapter 16 of the whole Handbook (2nd ed., 2009), except Hunter & Schmidt (2004): that
+file is Schmidt's chapter "Meta-Analysis" (chapter 22 of a Wiley handbook), not the 2004 book. The Handbook's chapter 17 (Schmidt, Le and Oh) also
+covers the Hunter-Schmidt approach.
 
 Each source row is a decision: supply the source, or drop it. Recommendation for every row: drop it unless you already hold the source; the
 estimators have metafor parity, derived, property and simulation cases.
