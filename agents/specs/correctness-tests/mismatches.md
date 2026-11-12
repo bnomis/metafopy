@@ -67,6 +67,27 @@ none of the sources below met both. The user is asked to supply the table or exa
 | Hedges, Gurevitch & Curtis (1999), Ecology 80:1150-1156 | ROM on `dat.curtis1998` | Not open access. |
 | Borenstein et al., Introduction to Meta-Analysis; Normand (1999), Stat Med 18:321-359; Raudenbush (2009) | Worked examples on `dat.normand1999`, `dat.raudenbush1985` | Textbooks and paywalled papers. |
 
+### Full references
+
+Every DOI below was checked against Crossref on 2026-11-12. Hunter and Schmidt (2004) and Raudenbush (2009) have no DOI and were not checked
+against a registry.
+
+- Veroniki AA, Jackson D, Viechtbauer W, Bender R, Bowden J, Knapp G, Kuss O, Higgins JPT, Langan D, Salanti G (2016). Methods to estimate the between-study variance and its uncertainty in meta-analysis. Research Synthesis Methods 7(1):55-79 (PMC4950030). doi:10.1002/jrsm.1164 Trial data: Bowden J, Tierney JF, Copas AJ, Burdett S (2011). Quantifying, displaying and accounting for heterogeneity in the meta-analysis of RCTs using standard and generalised Q statistics. BMC Medical Research Methodology 11:41 (open access; not yet checked for the data). doi:10.1186/1471-2288-11-41
+- DerSimonian R, Laird N (1986). Meta-analysis in clinical trials. Controlled Clinical Trials 7(3):177-188. doi:10.1016/0197-2456(86)90046-2
+- Hedges LV (1983). A random effects model for effect sizes. Psychological Bulletin 93(2):388-395. doi:10.1037/0033-2909.93.2.388
+- Hunter JE, Schmidt FL (2004). Methods of Meta-Analysis: Correcting Error and Bias in Research Findings, 2nd ed. Sage, Thousand Oaks, CA.
+- Sidik K, Jonkman JN (2005). Simple heterogeneity variance estimation for meta-analysis. Journal of the Royal Statistical Society, Series C (Applied Statistics) 54(2):367-384. doi:10.1111/j.1467-9876.2005.00489.x
+- Viechtbauer W (2005). Bias and efficiency of meta-analytic variance estimators in the random-effects model. Journal of Educational and Behavioral Statistics 30(3):261-293. Morris CN (1983). Parametric empirical Bayes inference: theory and applications. Journal of the American Statistical Association 78(381):47-55. doi:10.3102/10769986030003261 doi:10.1080/01621459.1983.10477920
+- Paule RC, Mandel J (1982). Consensus values and weighting factors. Journal of Research of the National Bureau of Standards 87(5):377-385 (free at NIST). doi:10.6028/jres.087.022
+- DerSimonian R, Kacker R (2007). Random-effects model for meta-analysis of clinical trials: an update. Contemporary Clinical Trials 28(2):105-114. doi:10.1016/j.cct.2006.04.004
+- Knapp G, Hartung J (2003). Improved tests for a random effects meta-regression with a single covariate. Statistics in Medicine 22(17):2693-2710. doi:10.1002/sim.1482
+- Higgins JPT, Thompson SG (2002). Quantifying heterogeneity in a meta-analysis. Statistics in Medicine 21(11):1539-1558. doi:10.1002/sim.1186
+- Mantel N, Haenszel W (1959). Statistical aspects of the analysis of data from retrospective studies of disease. Journal of the National Cancer Institute 22(4):719-748. Robins J, Breslow N, Greenland S (1986). Estimators of the Mantel-Haenszel variance consistent in both sparse data and large-strata limiting models. Biometrics 42(2):311-323. doi:10.1093/jnci/22.4.719 doi:10.2307/2531052
+- Yusuf S, Peto R, Lewis J, Collins R, Sleight P (1985). Beta blockade during and after myocardial infarction: an overview of the randomized trials. Progress in Cardiovascular Diseases 27(5):335-371. doi:10.1016/S0033-0620(85)80003-7
+- Hedges LV (1981). Distribution theory for Glass's estimator of effect size and related estimators. Journal of Educational Statistics 6(2):107-128. doi:10.3102/10769986006002107
+- Hedges LV, Gurevitch J, Curtis PS (1999). The meta-analysis of response ratios in experimental ecology. Ecology 80(4):1150-1156. doi:10.1890/0012-9658(1999)080[1150:TMAORR]2.0.CO;2
+- Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Wiley, Chichester. Normand SLT (1999). Meta-analysis: formulating, evaluating, combining, and reporting. Statistics in Medicine 18(3):321-359. Raudenbush SW (2009). Analyzing effect sizes: random-effects models. In Cooper H, Hedges LV, Valentine JC (eds), The Handbook of Research Synthesis and Meta-Analysis, 2nd ed., pp. 295-315. Russell Sage Foundation, New York. doi:10.1002/9780470743386 doi:10.1002/(SICI)1097-0258(19990215)18:3<321::AID-SIM28>3.0.CO;2-P
+
 Each source row is a decision: supply the source, or drop it. Recommendation for every row: drop it unless you already hold the source; the
 estimators have metafor parity, derived, property and simulation cases.
 
