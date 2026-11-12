@@ -1,0 +1,2478 @@
+# Correctness cases for escalc: effect sizes (yi) and sampling variances (vi).
+#
+# `vtypes` lists, for every measure of metafopy.effects.measures.MEASURES, the `vtype` values escalc accepts (read on 2026-11-11 from the options
+# escalc validates and the escalc docstring; a measure that ignores `vtype` lists only the default, "LS"). It is the same list as a series of
+# [[vtypes]] entries. test_coverage.py checks that escalc accepts every pair, and the coverage gate needs a published or derived case (or an
+# [[exempt]] entry) for `escalc.yi.<measure>` and for `escalc.vi.<measure>.<vtype>` of each pair.
+
+vtypes = [
+  { measure = "RR", vtype = ["LS", "AV", "H0"] },
+  { measure = "OR", vtype = ["LS", "AV", "H0"] },
+  { measure = "PETO", vtype = ["LS"] },
+  { measure = "RD", vtype = ["UB", "LS", "AV", "H0"] },
+  { measure = "AS", vtype = ["LS"] },
+  { measure = "PHI", vtype = ["LS", "ST", "CS"] },
+  { measure = "ZPHI", vtype = ["LS", "ST", "CS"] },
+  { measure = "YUQ", vtype = ["LS"] },
+  { measure = "YUY", vtype = ["LS"] },
+  { measure = "RTET", vtype = ["LS"] },
+  { measure = "ZTET", vtype = ["LS"] },
+  { measure = "PBIT", vtype = ["LS"] },
+  { measure = "OR2D", vtype = ["LS", "AV", "H0"] },
+  { measure = "OR2DN", vtype = ["LS", "AV", "H0"] },
+  { measure = "OR2DL", vtype = ["LS", "AV", "H0"] },
+  { measure = "MPRD", vtype = ["LS"] },
+  { measure = "MPRR", vtype = ["LS"] },
+  { measure = "MPOR", vtype = ["LS"] },
+  { measure = "MPORC", vtype = ["LS"] },
+  { measure = "MPPETO", vtype = ["LS"] },
+  { measure = "MPORM", vtype = ["LS", "AV", "H0"] },
+  { measure = "IRR", vtype = ["LS"] },
+  { measure = "IRD", vtype = ["LS"] },
+  { measure = "IRSD", vtype = ["LS"] },
+  { measure = "MD", vtype = ["UB", "LS", "HO"] },
+  { measure = "POMPMD", vtype = ["UB", "LS", "HO"] },
+  { measure = "SMD", vtype = ["UB", "LS", "LS2", "LS3", "AV", "H0"] },
+  { measure = "SMDH", vtype = ["LS", "LS2", "LS3"] },
+  { measure = "SMD1", vtype = ["UB", "LS", "LS2", "LS3", "AV", "H0"] },
+  { measure = "SMD1H", vtype = ["LS"] },
+  { measure = "ROM", vtype = ["LS", "LS2", "HO", "AV", "AVHO"] },
+  { measure = "VR", vtype = ["LS", "LS2"] },
+  { measure = "CVR", vtype = ["LS", "LS2"] },
+  { measure = "RPB", vtype = ["LS", "ST", "CS"] },
+  { measure = "ZPB", vtype = ["LS", "ST", "CS"] },
+  { measure = "RBIS", vtype = ["LS"] },
+  { measure = "ZBIS", vtype = ["LS"] },
+  { measure = "D2OR", vtype = ["LS"] },
+  { measure = "D2ORN", vtype = ["LS"] },
+  { measure = "D2ORL", vtype = ["LS"] },
+  { measure = "COR", vtype = ["LS", "AV", "H0", "H0a", "H0b"] },
+  { measure = "UCOR", vtype = ["UB", "LS", "AV"] },
+  { measure = "ZCOR", vtype = ["LS"] },
+  { measure = "PCOR", vtype = ["LS", "AV"] },
+  { measure = "ZPCOR", vtype = ["LS"] },
+  { measure = "SPCOR", vtype = ["LS", "AV"] },
+  { measure = "ZSPCOR", vtype = ["LS", "AV"] },
+  { measure = "R2", vtype = ["LS", "LS2", "AV", "AV2"] },
+  { measure = "ZR2", vtype = ["LS"] },
+  { measure = "R2F", vtype = ["LS"] },
+  { measure = "ZR2F", vtype = ["LS"] },
+  { measure = "PR", vtype = ["UB", "LS", "AV"] },
+  { measure = "PLN", vtype = ["LS", "AV"] },
+  { measure = "PLO", vtype = ["LS", "AV"] },
+  { measure = "PRZ", vtype = ["LS"] },
+  { measure = "PAS", vtype = ["LS"] },
+  { measure = "PFT", vtype = ["LS"] },
+  { measure = "IR", vtype = ["LS"] },
+  { measure = "IRLN", vtype = ["LS"] },
+  { measure = "IRS", vtype = ["LS"] },
+  { measure = "IRFT", vtype = ["LS"] },
+  { measure = "MN", vtype = ["LS", "HO"] },
+  { measure = "POMPMN", vtype = ["LS", "HO"] },
+  { measure = "SMN", vtype = ["LS"] },
+  { measure = "MNLN", vtype = ["LS"] },
+  { measure = "SDLN", vtype = ["LS"] },
+  { measure = "CVLN", vtype = ["LS"] },
+  { measure = "MC", vtype = ["LS"] },
+  { measure = "POMPMC", vtype = ["LS"] },
+  { measure = "SMCC", vtype = ["UB", "LS", "LS2", "H0"] },
+  { measure = "SMCR", vtype = ["UB", "LS", "LS2", "H0"] },
+  { measure = "SMCRH", vtype = ["LS", "LS2"] },
+  { measure = "SMCRP", vtype = ["LS"] },
+  { measure = "SMCRPH", vtype = ["LS", "LS2"] },
+  { measure = "CLESCN", vtype = ["LS"] },
+  { measure = "AUCCN", vtype = ["LS"] },
+  { measure = "ROMC", vtype = ["LS", "LS2"] },
+  { measure = "VRC", vtype = ["LS", "LS2"] },
+  { measure = "CVRC", vtype = ["LS", "LS2"] },
+  { measure = "ARAW", vtype = ["LS"] },
+  { measure = "AHW", vtype = ["LS"] },
+  { measure = "ABT", vtype = ["LS"] },
+  { measure = "REH", vtype = ["LS"] },
+  { measure = "CLES", vtype = ["LS", "LS2", "H0", "MAX"] },
+  { measure = "CLESN", vtype = ["LS", "LS2", "LS3", "HO", "H0"] },
+  { measure = "AUC", vtype = ["LS", "LS2", "H0", "MAX"] },
+  { measure = "AUCN", vtype = ["LS", "LS2", "LS3", "HO", "H0"] },
+  { measure = "GEN", vtype = ["LS"] },
+]
+
+# Proof of the derived path: the risk difference and its large-sample variance, from formulas.py, on inline data with no zero cell.
+[[case]]
+id = "escalc.rd.ls.formula"
+kind = "derived"
+function = "escalc"
+args = { measure = "RD", ai = "ai", bi = "bi", ci = "ci", di = "di", vtype = "LS" }
+expect = { yi = "formulas.risk_difference_yi", vi = "formulas.risk_difference_vi" }
+covers = ["escalc.yi.RD", "escalc.vi.RD.LS"]
+
+[case.data]
+ai = [12.0, 20.0, 8.0]
+bi = [88.0, 80.0, 92.0]
+ci = [18.0, 25.0, 14.0]
+di = [82.0, 75.0, 86.0]
+
+[[case]]
+id = "escalc.rr.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "RR", ai = "ai", bi = "bi", ci = "ci", di = "di", vtype = "LS" }
+expect = { yi = "formulas.log_risk_ratio_yi", vi = "formulas.log_risk_ratio_vi" }
+covers = ["escalc.yi.RR", "escalc.vi.RR.LS"]
+
+[case.data]
+ai = [0.0, 15.0, 8.0, 30.0, 22.0]
+bi = [25.0, 60.0, 40.0, 70.0, 38.0]
+ci = [3.0, 20.0, 12.0, 25.0, 0.0]
+di = [22.0, 55.0, 48.0, 75.0, 48.0]
+
+[[case]]
+id = "escalc.rr.av.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "RR", ai = "ai", bi = "bi", ci = "ci", di = "di", vtype = "AV" }
+expect = { yi = "formulas.log_risk_ratio_yi", vi = "formulas.log_risk_ratio_vi" }
+covers = ["escalc.vi.RR.AV"]
+
+[case.data]
+ai = [0.0, 15.0, 8.0, 30.0, 22.0]
+bi = [25.0, 60.0, 40.0, 70.0, 38.0]
+ci = [3.0, 20.0, 12.0, 25.0, 0.0]
+di = [22.0, 55.0, 48.0, 75.0, 48.0]
+
+[[case]]
+id = "escalc.rr.h0.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "RR", ai = "ai", bi = "bi", ci = "ci", di = "di", vtype = "H0" }
+expect = { yi = "formulas.log_risk_ratio_yi", vi = "formulas.log_risk_ratio_vi" }
+covers = ["escalc.vi.RR.H0"]
+
+[case.data]
+ai = [0.0, 15.0, 8.0, 30.0, 22.0]
+bi = [25.0, 60.0, 40.0, 70.0, 38.0]
+ci = [3.0, 20.0, 12.0, 25.0, 0.0]
+di = [22.0, 55.0, 48.0, 75.0, 48.0]
+
+[[case]]
+id = "escalc.or.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "OR", ai = "ai", bi = "bi", ci = "ci", di = "di", vtype = "LS" }
+expect = { yi = "formulas.log_odds_ratio_yi", vi = "formulas.log_odds_ratio_vi" }
+covers = ["escalc.yi.OR", "escalc.vi.OR.LS"]
+
+[case.data]
+ai = [0.0, 15.0, 8.0, 30.0, 22.0]
+bi = [25.0, 60.0, 40.0, 70.0, 38.0]
+ci = [3.0, 20.0, 12.0, 25.0, 0.0]
+di = [22.0, 55.0, 48.0, 75.0, 48.0]
+
+[[case]]
+id = "escalc.or.av.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "OR", ai = "ai", bi = "bi", ci = "ci", di = "di", vtype = "AV" }
+expect = { yi = "formulas.log_odds_ratio_yi", vi = "formulas.log_odds_ratio_vi" }
+covers = ["escalc.vi.OR.AV"]
+
+[case.data]
+ai = [0.0, 15.0, 8.0, 30.0, 22.0]
+bi = [25.0, 60.0, 40.0, 70.0, 38.0]
+ci = [3.0, 20.0, 12.0, 25.0, 0.0]
+di = [22.0, 55.0, 48.0, 75.0, 48.0]
+
+[[case]]
+id = "escalc.or.h0.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "OR", ai = "ai", bi = "bi", ci = "ci", di = "di", vtype = "H0" }
+expect = { yi = "formulas.log_odds_ratio_yi", vi = "formulas.log_odds_ratio_vi" }
+covers = ["escalc.vi.OR.H0"]
+
+[case.data]
+ai = [0.0, 15.0, 8.0, 30.0, 22.0]
+bi = [25.0, 60.0, 40.0, 70.0, 38.0]
+ci = [3.0, 20.0, 12.0, 25.0, 0.0]
+di = [22.0, 55.0, 48.0, 75.0, 48.0]
+
+[[case]]
+id = "escalc.rd.ub.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "RD", ai = "ai", bi = "bi", ci = "ci", di = "di", vtype = "UB" }
+expect = { yi = "formulas.risk_difference_yi_adjusted", vi = "formulas.risk_difference_vi_by_type" }
+covers = ["escalc.yi.RD", "escalc.vi.RD.UB"]
+
+[case.data]
+ai = [0.0, 15.0, 8.0, 30.0, 22.0]
+bi = [25.0, 60.0, 40.0, 70.0, 38.0]
+ci = [3.0, 20.0, 12.0, 25.0, 0.0]
+di = [22.0, 55.0, 48.0, 75.0, 48.0]
+
+[[case]]
+id = "escalc.rd.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "RD", ai = "ai", bi = "bi", ci = "ci", di = "di", vtype = "LS" }
+expect = { yi = "formulas.risk_difference_yi_adjusted", vi = "formulas.risk_difference_vi_by_type" }
+covers = ["escalc.vi.RD.LS"]
+
+[case.data]
+ai = [0.0, 15.0, 8.0, 30.0, 22.0]
+bi = [25.0, 60.0, 40.0, 70.0, 38.0]
+ci = [3.0, 20.0, 12.0, 25.0, 0.0]
+di = [22.0, 55.0, 48.0, 75.0, 48.0]
+
+[[case]]
+id = "escalc.rd.av.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "RD", ai = "ai", bi = "bi", ci = "ci", di = "di", vtype = "AV" }
+expect = { yi = "formulas.risk_difference_yi_adjusted", vi = "formulas.risk_difference_vi_by_type" }
+covers = ["escalc.vi.RD.AV"]
+
+[case.data]
+ai = [0.0, 15.0, 8.0, 30.0, 22.0]
+bi = [25.0, 60.0, 40.0, 70.0, 38.0]
+ci = [3.0, 20.0, 12.0, 25.0, 0.0]
+di = [22.0, 55.0, 48.0, 75.0, 48.0]
+
+[[case]]
+id = "escalc.rd.h0.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "RD", ai = "ai", bi = "bi", ci = "ci", di = "di", vtype = "H0" }
+expect = { yi = "formulas.risk_difference_yi_adjusted", vi = "formulas.risk_difference_vi_by_type" }
+covers = ["escalc.vi.RD.H0"]
+
+[case.data]
+ai = [0.0, 15.0, 8.0, 30.0, 22.0]
+bi = [25.0, 60.0, 40.0, 70.0, 38.0]
+ci = [3.0, 20.0, 12.0, 25.0, 0.0]
+di = [22.0, 55.0, 48.0, 75.0, 48.0]
+
+[[case]]
+id = "escalc.peto.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "PETO", ai = "ai", bi = "bi", ci = "ci", di = "di", vtype = "LS" }
+expect = { yi = "formulas.peto_yi", vi = "formulas.peto_vi" }
+covers = ["escalc.yi.PETO", "escalc.vi.PETO.LS"]
+
+[case.data]
+ai = [0.0, 15.0, 8.0, 30.0, 22.0]
+bi = [25.0, 60.0, 40.0, 70.0, 38.0]
+ci = [3.0, 20.0, 12.0, 25.0, 0.0]
+di = [22.0, 55.0, 48.0, 75.0, 48.0]
+
+[[case]]
+id = "escalc.as.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "AS", ai = "ai", bi = "bi", ci = "ci", di = "di", vtype = "LS" }
+expect = { yi = "formulas.arcsine_difference_yi", vi = "formulas.arcsine_difference_vi" }
+covers = ["escalc.yi.AS", "escalc.vi.AS.LS"]
+
+[case.data]
+ai = [2.0, 15.0, 8.0, 30.0, 22.0]
+bi = [23.0, 60.0, 40.0, 70.0, 38.0]
+ci = [3.0, 20.0, 12.0, 25.0, 4.0]
+di = [22.0, 55.0, 48.0, 75.0, 44.0]
+
+[[case]]
+id = "escalc.phi.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "PHI", ai = "ai", bi = "bi", ci = "ci", di = "di", vtype = "LS" }
+expect = { yi = "formulas.phi_yi", vi = "formulas.phi_vi" }
+covers = ["escalc.yi.PHI", "escalc.vi.PHI.LS"]
+
+[case.data]
+ai = [2.0, 15.0, 8.0, 30.0, 22.0]
+bi = [23.0, 60.0, 40.0, 70.0, 38.0]
+ci = [3.0, 20.0, 12.0, 25.0, 4.0]
+di = [22.0, 55.0, 48.0, 75.0, 44.0]
+
+[[case]]
+id = "escalc.phi.st.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "PHI", ai = "ai", bi = "bi", ci = "ci", di = "di", vtype = "ST" }
+expect = { yi = "formulas.phi_yi", vi = "formulas.phi_vi" }
+covers = ["escalc.vi.PHI.ST"]
+
+[case.data]
+ai = [2.0, 15.0, 8.0, 30.0, 22.0]
+bi = [23.0, 60.0, 40.0, 70.0, 38.0]
+ci = [3.0, 20.0, 12.0, 25.0, 4.0]
+di = [22.0, 55.0, 48.0, 75.0, 44.0]
+
+[[case]]
+id = "escalc.phi.cs.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "PHI", ai = "ai", bi = "bi", ci = "ci", di = "di", vtype = "CS" }
+expect = { yi = "formulas.phi_yi", vi = "formulas.phi_vi" }
+covers = ["escalc.vi.PHI.CS"]
+
+[case.data]
+ai = [2.0, 15.0, 8.0, 30.0, 22.0]
+bi = [23.0, 60.0, 40.0, 70.0, 38.0]
+ci = [3.0, 20.0, 12.0, 25.0, 4.0]
+di = [22.0, 55.0, 48.0, 75.0, 44.0]
+
+[[case]]
+id = "escalc.zphi.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "ZPHI", ai = "ai", bi = "bi", ci = "ci", di = "di", vtype = "LS" }
+expect = { yi = "formulas.fisher_z_phi_yi", vi = "formulas.fisher_z_phi_vi" }
+covers = ["escalc.yi.ZPHI", "escalc.vi.ZPHI.LS"]
+
+[case.data]
+ai = [2.0, 15.0, 8.0, 30.0, 22.0]
+bi = [23.0, 60.0, 40.0, 70.0, 38.0]
+ci = [3.0, 20.0, 12.0, 25.0, 4.0]
+di = [22.0, 55.0, 48.0, 75.0, 44.0]
+
+[[case]]
+id = "escalc.zphi.st.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "ZPHI", ai = "ai", bi = "bi", ci = "ci", di = "di", vtype = "ST" }
+expect = { yi = "formulas.fisher_z_phi_yi", vi = "formulas.fisher_z_phi_vi" }
+covers = ["escalc.vi.ZPHI.ST"]
+
+[case.data]
+ai = [2.0, 15.0, 8.0, 30.0, 22.0]
+bi = [23.0, 60.0, 40.0, 70.0, 38.0]
+ci = [3.0, 20.0, 12.0, 25.0, 4.0]
+di = [22.0, 55.0, 48.0, 75.0, 44.0]
+
+[[case]]
+id = "escalc.zphi.cs.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "ZPHI", ai = "ai", bi = "bi", ci = "ci", di = "di", vtype = "CS" }
+expect = { yi = "formulas.fisher_z_phi_yi", vi = "formulas.fisher_z_phi_vi" }
+covers = ["escalc.vi.ZPHI.CS"]
+
+[case.data]
+ai = [2.0, 15.0, 8.0, 30.0, 22.0]
+bi = [23.0, 60.0, 40.0, 70.0, 38.0]
+ci = [3.0, 20.0, 12.0, 25.0, 4.0]
+di = [22.0, 55.0, 48.0, 75.0, 44.0]
+
+[[case]]
+id = "escalc.yuq.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "YUQ", ai = "ai", bi = "bi", ci = "ci", di = "di", vtype = "LS" }
+expect = { yi = "formulas.yule_q_yi", vi = "formulas.yule_q_vi" }
+covers = ["escalc.yi.YUQ", "escalc.vi.YUQ.LS"]
+
+[case.data]
+ai = [0.0, 15.0, 8.0, 30.0, 22.0]
+bi = [25.0, 60.0, 40.0, 70.0, 38.0]
+ci = [3.0, 20.0, 12.0, 25.0, 0.0]
+di = [22.0, 55.0, 48.0, 75.0, 48.0]
+
+[[case]]
+id = "escalc.yuy.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "YUY", ai = "ai", bi = "bi", ci = "ci", di = "di", vtype = "LS" }
+expect = { yi = "formulas.yule_y_yi", vi = "formulas.yule_y_vi" }
+covers = ["escalc.yi.YUY", "escalc.vi.YUY.LS"]
+
+[case.data]
+ai = [0.0, 15.0, 8.0, 30.0, 22.0]
+bi = [25.0, 60.0, 40.0, 70.0, 38.0]
+ci = [3.0, 20.0, 12.0, 25.0, 0.0]
+di = [22.0, 55.0, 48.0, 75.0, 48.0]
+
+[[case]]
+id = "escalc.pbit.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "PBIT", ai = "ai", bi = "bi", ci = "ci", di = "di", vtype = "LS" }
+expect = { yi = "formulas.probit_difference_yi", vi = "formulas.probit_difference_vi" }
+covers = ["escalc.yi.PBIT", "escalc.vi.PBIT.LS"]
+
+[case.data]
+ai = [0.0, 15.0, 8.0, 30.0, 22.0]
+bi = [25.0, 60.0, 40.0, 70.0, 38.0]
+ci = [3.0, 20.0, 12.0, 25.0, 0.0]
+di = [22.0, 55.0, 48.0, 75.0, 48.0]
+
+[[case]]
+id = "escalc.or2d.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "OR2D", ai = "ai", bi = "bi", ci = "ci", di = "di", vtype = "LS" }
+expect = { yi = "formulas.odds_ratio_to_d_yi", vi = "formulas.odds_ratio_to_d_vi" }
+covers = ["escalc.yi.OR2D", "escalc.vi.OR2D.LS"]
+
+[case.data]
+ai = [0.0, 15.0, 8.0, 30.0, 22.0]
+bi = [25.0, 60.0, 40.0, 70.0, 38.0]
+ci = [3.0, 20.0, 12.0, 25.0, 0.0]
+di = [22.0, 55.0, 48.0, 75.0, 48.0]
+
+[[case]]
+id = "escalc.or2d.av.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "OR2D", ai = "ai", bi = "bi", ci = "ci", di = "di", vtype = "AV" }
+expect = { yi = "formulas.odds_ratio_to_d_yi", vi = "formulas.odds_ratio_to_d_vi" }
+covers = ["escalc.vi.OR2D.AV"]
+
+[case.data]
+ai = [0.0, 15.0, 8.0, 30.0, 22.0]
+bi = [25.0, 60.0, 40.0, 70.0, 38.0]
+ci = [3.0, 20.0, 12.0, 25.0, 0.0]
+di = [22.0, 55.0, 48.0, 75.0, 48.0]
+
+[[case]]
+id = "escalc.or2d.h0.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "OR2D", ai = "ai", bi = "bi", ci = "ci", di = "di", vtype = "H0" }
+expect = { yi = "formulas.odds_ratio_to_d_yi", vi = "formulas.odds_ratio_to_d_vi" }
+covers = ["escalc.vi.OR2D.H0"]
+
+[case.data]
+ai = [0.0, 15.0, 8.0, 30.0, 22.0]
+bi = [25.0, 60.0, 40.0, 70.0, 38.0]
+ci = [3.0, 20.0, 12.0, 25.0, 0.0]
+di = [22.0, 55.0, 48.0, 75.0, 48.0]
+
+[[case]]
+id = "escalc.or2dn.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "OR2DN", ai = "ai", bi = "bi", ci = "ci", di = "di", vtype = "LS" }
+expect = { yi = "formulas.odds_ratio_to_d_yi", vi = "formulas.odds_ratio_to_d_vi" }
+covers = ["escalc.yi.OR2DN", "escalc.vi.OR2DN.LS"]
+
+[case.data]
+ai = [0.0, 15.0, 8.0, 30.0, 22.0]
+bi = [25.0, 60.0, 40.0, 70.0, 38.0]
+ci = [3.0, 20.0, 12.0, 25.0, 0.0]
+di = [22.0, 55.0, 48.0, 75.0, 48.0]
+
+[[case]]
+id = "escalc.or2dn.av.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "OR2DN", ai = "ai", bi = "bi", ci = "ci", di = "di", vtype = "AV" }
+expect = { yi = "formulas.odds_ratio_to_d_yi", vi = "formulas.odds_ratio_to_d_vi" }
+covers = ["escalc.vi.OR2DN.AV"]
+
+[case.data]
+ai = [0.0, 15.0, 8.0, 30.0, 22.0]
+bi = [25.0, 60.0, 40.0, 70.0, 38.0]
+ci = [3.0, 20.0, 12.0, 25.0, 0.0]
+di = [22.0, 55.0, 48.0, 75.0, 48.0]
+
+[[case]]
+id = "escalc.or2dn.h0.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "OR2DN", ai = "ai", bi = "bi", ci = "ci", di = "di", vtype = "H0" }
+expect = { yi = "formulas.odds_ratio_to_d_yi", vi = "formulas.odds_ratio_to_d_vi" }
+covers = ["escalc.vi.OR2DN.H0"]
+
+[case.data]
+ai = [0.0, 15.0, 8.0, 30.0, 22.0]
+bi = [25.0, 60.0, 40.0, 70.0, 38.0]
+ci = [3.0, 20.0, 12.0, 25.0, 0.0]
+di = [22.0, 55.0, 48.0, 75.0, 48.0]
+
+[[case]]
+id = "escalc.or2dl.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "OR2DL", ai = "ai", bi = "bi", ci = "ci", di = "di", vtype = "LS" }
+expect = { yi = "formulas.odds_ratio_to_d_yi", vi = "formulas.odds_ratio_to_d_vi" }
+covers = ["escalc.yi.OR2DL", "escalc.vi.OR2DL.LS"]
+
+[case.data]
+ai = [0.0, 15.0, 8.0, 30.0, 22.0]
+bi = [25.0, 60.0, 40.0, 70.0, 38.0]
+ci = [3.0, 20.0, 12.0, 25.0, 0.0]
+di = [22.0, 55.0, 48.0, 75.0, 48.0]
+
+[[case]]
+id = "escalc.or2dl.av.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "OR2DL", ai = "ai", bi = "bi", ci = "ci", di = "di", vtype = "AV" }
+expect = { yi = "formulas.odds_ratio_to_d_yi", vi = "formulas.odds_ratio_to_d_vi" }
+covers = ["escalc.vi.OR2DL.AV"]
+
+[case.data]
+ai = [0.0, 15.0, 8.0, 30.0, 22.0]
+bi = [25.0, 60.0, 40.0, 70.0, 38.0]
+ci = [3.0, 20.0, 12.0, 25.0, 0.0]
+di = [22.0, 55.0, 48.0, 75.0, 48.0]
+
+[[case]]
+id = "escalc.or2dl.h0.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "OR2DL", ai = "ai", bi = "bi", ci = "ci", di = "di", vtype = "H0" }
+expect = { yi = "formulas.odds_ratio_to_d_yi", vi = "formulas.odds_ratio_to_d_vi" }
+covers = ["escalc.vi.OR2DL.H0"]
+
+[case.data]
+ai = [0.0, 15.0, 8.0, 30.0, 22.0]
+bi = [25.0, 60.0, 40.0, 70.0, 38.0]
+ci = [3.0, 20.0, 12.0, 25.0, 0.0]
+di = [22.0, 55.0, 48.0, 75.0, 48.0]
+
+[[case]]
+id = "escalc.mprd.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "MPRD", ai = "ai", bi = "bi", ci = "ci", di = "di", vtype = "LS" }
+expect = { yi = "formulas.paired_risk_difference_yi", vi = "formulas.paired_risk_difference_vi" }
+covers = ["escalc.yi.MPRD", "escalc.vi.MPRD.LS"]
+
+[case.data]
+ai = [0.0, 15.0, 8.0, 30.0, 22.0]
+bi = [25.0, 60.0, 40.0, 70.0, 38.0]
+ci = [3.0, 20.0, 12.0, 25.0, 0.0]
+di = [22.0, 55.0, 48.0, 75.0, 48.0]
+
+[[case]]
+id = "escalc.mprr.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "MPRR", ai = "ai", bi = "bi", ci = "ci", di = "di", vtype = "LS" }
+expect = { yi = "formulas.paired_log_risk_ratio_yi", vi = "formulas.paired_log_risk_ratio_vi" }
+covers = ["escalc.yi.MPRR", "escalc.vi.MPRR.LS"]
+
+[case.data]
+ai = [0.0, 15.0, 8.0, 30.0, 22.0]
+bi = [25.0, 60.0, 40.0, 70.0, 38.0]
+ci = [3.0, 20.0, 12.0, 25.0, 0.0]
+di = [22.0, 55.0, 48.0, 75.0, 48.0]
+
+[[case]]
+id = "escalc.mpor.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "MPOR", ai = "ai", bi = "bi", ci = "ci", di = "di", vtype = "LS" }
+expect = { yi = "formulas.paired_log_odds_ratio_yi", vi = "formulas.paired_log_odds_ratio_vi" }
+covers = ["escalc.yi.MPOR", "escalc.vi.MPOR.LS"]
+
+[case.data]
+ai = [0.0, 15.0, 8.0, 30.0, 22.0]
+bi = [25.0, 60.0, 40.0, 70.0, 38.0]
+ci = [3.0, 20.0, 12.0, 25.0, 0.0]
+di = [22.0, 55.0, 48.0, 75.0, 48.0]
+
+[[case]]
+id = "escalc.mporc.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "MPORC", ai = "ai", bi = "bi", ci = "ci", di = "di", vtype = "LS" }
+expect = { yi = "formulas.conditional_log_odds_ratio_yi", vi = "formulas.conditional_log_odds_ratio_vi" }
+covers = ["escalc.yi.MPORC", "escalc.vi.MPORC.LS"]
+
+[case.data]
+ai = [0.0, 15.0, 8.0, 30.0, 22.0]
+bi = [25.0, 60.0, 40.0, 70.0, 38.0]
+ci = [3.0, 20.0, 12.0, 25.0, 0.0]
+di = [22.0, 55.0, 48.0, 75.0, 48.0]
+
+[[case]]
+id = "escalc.mppeto.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "MPPETO", ai = "ai", bi = "bi", ci = "ci", di = "di", vtype = "LS" }
+expect = { yi = "formulas.paired_peto_yi", vi = "formulas.paired_peto_vi" }
+covers = ["escalc.yi.MPPETO", "escalc.vi.MPPETO.LS"]
+
+[case.data]
+ai = [0.0, 15.0, 8.0, 30.0, 22.0]
+bi = [25.0, 60.0, 40.0, 70.0, 38.0]
+ci = [3.0, 20.0, 12.0, 25.0, 0.0]
+di = [22.0, 55.0, 48.0, 75.0, 48.0]
+
+[[case]]
+id = "escalc.rtet.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "RTET", ai = "ai", bi = "bi", ci = "ci", di = "di", vtype = "LS" }
+expect = { yi = "formulas.tetrachoric_yi", vi = "formulas.tetrachoric_vi" }
+covers = ["escalc.yi.RTET", "escalc.vi.RTET.LS"]
+tolerance = 0.0001
+
+[case.data]
+ai = [2.0, 15.0, 8.0, 30.0, 22.0]
+bi = [23.0, 60.0, 40.0, 70.0, 38.0]
+ci = [3.0, 20.0, 12.0, 25.0, 4.0]
+di = [22.0, 55.0, 48.0, 75.0, 44.0]
+
+[[case]]
+id = "escalc.ztet.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "ZTET", ai = "ai", bi = "bi", ci = "ci", di = "di", vtype = "LS" }
+expect = { yi = "formulas.fisher_z_tetrachoric_yi", vi = "formulas.fisher_z_tetrachoric_vi" }
+covers = ["escalc.yi.ZTET", "escalc.vi.ZTET.LS"]
+tolerance = 0.0001
+
+[case.data]
+ai = [2.0, 15.0, 8.0, 30.0, 22.0]
+bi = [23.0, 60.0, 40.0, 70.0, 38.0]
+ci = [3.0, 20.0, 12.0, 25.0, 4.0]
+di = [22.0, 55.0, 48.0, 75.0, 44.0]
+
+[[case]]
+id = "escalc.irr.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "IRR", x1i = "x1i", x2i = "x2i", t1i = "t1i", t2i = "t2i" }
+expect = { yi = "formulas.log_rate_ratio_yi", vi = "formulas.log_rate_ratio_vi" }
+covers = ["escalc.yi.IRR", "escalc.vi.IRR.LS"]
+
+[case.data]
+x1i = [0.0, 12.0, 30.0, 7.0, 45.0]
+x2i = [4.0, 20.0, 0.0, 9.0, 38.0]
+t1i = [150.0, 400.0, 900.0, 210.0, 1200.0]
+t2i = [140.0, 380.0, 880.0, 230.0, 1150.0]
+
+[[case]]
+id = "escalc.ird.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "IRD", x1i = "x1i", x2i = "x2i", t1i = "t1i", t2i = "t2i" }
+expect = { yi = "formulas.rate_difference_yi", vi = "formulas.rate_difference_vi" }
+covers = ["escalc.yi.IRD", "escalc.vi.IRD.LS"]
+
+[case.data]
+x1i = [0.0, 12.0, 30.0, 7.0, 45.0]
+x2i = [4.0, 20.0, 0.0, 9.0, 38.0]
+t1i = [150.0, 400.0, 900.0, 210.0, 1200.0]
+t2i = [140.0, 380.0, 880.0, 230.0, 1150.0]
+
+[[case]]
+id = "escalc.irsd.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "IRSD", x1i = "x1i", x2i = "x2i", t1i = "t1i", t2i = "t2i" }
+expect = { yi = "formulas.sqrt_rate_difference_yi", vi = "formulas.sqrt_rate_difference_vi" }
+covers = ["escalc.yi.IRSD", "escalc.vi.IRSD.LS"]
+
+[case.data]
+x1i = [3.0, 12.0, 30.0, 7.0, 45.0]
+x2i = [4.0, 20.0, 11.0, 9.0, 38.0]
+t1i = [150.0, 400.0, 900.0, 210.0, 1200.0]
+t2i = [140.0, 380.0, 880.0, 230.0, 1150.0]
+
+[[exempt]]
+item = "escalc.yi.MPORM"
+reason = "MPORM (the odds ratio of paired proportions corrected for the correlation of the pairs) is defined in a publication not read for this suite; no formula usable without it"
+
+[[exempt]]
+item = "escalc.vi.MPORM.LS"
+reason = "MPORM (the odds ratio of paired proportions corrected for the correlation of the pairs) is defined in a publication not read for this suite; no formula usable without it"
+
+[[exempt]]
+item = "escalc.vi.MPORM.AV"
+reason = "MPORM (the odds ratio of paired proportions corrected for the correlation of the pairs) is defined in a publication not read for this suite; no formula usable without it"
+
+[[exempt]]
+item = "escalc.vi.MPORM.H0"
+reason = "MPORM (the odds ratio of paired proportions corrected for the correlation of the pairs) is defined in a publication not read for this suite; no formula usable without it"
+
+[[case]]
+id = "escalc.md.ub.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "MD", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", vtype = "UB" }
+expect = { yi = "formulas.mean_difference_yi", vi = "formulas.mean_difference_vi" }
+covers = ["escalc.yi.MD", "escalc.vi.MD.UB"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.md.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "MD", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", vtype = "LS" }
+expect = { yi = "formulas.mean_difference_yi", vi = "formulas.mean_difference_vi" }
+covers = ["escalc.vi.MD.LS"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.md.ho.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "MD", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", vtype = "HO" }
+expect = { yi = "formulas.mean_difference_yi", vi = "formulas.mean_difference_vi" }
+covers = ["escalc.vi.MD.HO"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.pompmd.ub.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "POMPMD", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", mini = "mini", maxi = "maxi", vtype = "UB" }
+expect = { yi = "formulas.pomp_mean_difference_yi", vi = "formulas.pomp_mean_difference_vi" }
+covers = ["escalc.yi.POMPMD", "escalc.vi.POMPMD.UB"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+mini = [0.0, 0.0, 0.0, 0.0, 0.0]
+maxi = [40.0, 60.0, 20.0, 80.0, 50.0]
+
+[[case]]
+id = "escalc.pompmd.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "POMPMD", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", mini = "mini", maxi = "maxi", vtype = "LS" }
+expect = { yi = "formulas.pomp_mean_difference_yi", vi = "formulas.pomp_mean_difference_vi" }
+covers = ["escalc.vi.POMPMD.LS"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+mini = [0.0, 0.0, 0.0, 0.0, 0.0]
+maxi = [40.0, 60.0, 20.0, 80.0, 50.0]
+
+[[case]]
+id = "escalc.pompmd.ho.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "POMPMD", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", mini = "mini", maxi = "maxi", vtype = "HO" }
+expect = { yi = "formulas.pomp_mean_difference_yi", vi = "formulas.pomp_mean_difference_vi" }
+covers = ["escalc.vi.POMPMD.HO"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+mini = [0.0, 0.0, 0.0, 0.0, 0.0]
+maxi = [40.0, 60.0, 20.0, 80.0, 50.0]
+
+[[case]]
+id = "escalc.smd.ub.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "SMD", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", vtype = "UB" }
+expect = { yi = "formulas.smd_yi", vi = "formulas.smd_vi" }
+covers = ["escalc.yi.SMD", "escalc.vi.SMD.UB"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.smd.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "SMD", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", vtype = "LS" }
+expect = { yi = "formulas.smd_yi", vi = "formulas.smd_vi" }
+covers = ["escalc.vi.SMD.LS"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.smd.ls2.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "SMD", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", vtype = "LS2" }
+expect = { yi = "formulas.smd_yi", vi = "formulas.smd_vi" }
+covers = ["escalc.vi.SMD.LS2"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.smd.av.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "SMD", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", vtype = "AV" }
+expect = { yi = "formulas.smd_yi", vi = "formulas.smd_vi" }
+covers = ["escalc.vi.SMD.AV"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.smd.h0.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "SMD", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", vtype = "H0" }
+expect = { yi = "formulas.smd_yi", vi = "formulas.smd_vi" }
+covers = ["escalc.vi.SMD.H0"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.smd1.ub.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "SMD1", m1i = "m1i", m2i = "m2i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", vtype = "UB" }
+expect = { yi = "formulas.glass_yi", vi = "formulas.glass_vi" }
+covers = ["escalc.yi.SMD1", "escalc.vi.SMD1.UB"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.smd1.h0.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "SMD1", m1i = "m1i", m2i = "m2i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", vtype = "H0" }
+expect = { yi = "formulas.glass_yi", vi = "formulas.glass_vi" }
+covers = ["escalc.vi.SMD1.H0"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.smdh.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "SMDH", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", vtype = "LS" }
+expect = { yi = "formulas.smdh_yi", vi = "formulas.smdh_vi" }
+covers = ["escalc.yi.SMDH", "escalc.vi.SMDH.LS"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.smdh.ls2.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "SMDH", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", vtype = "LS2" }
+expect = { yi = "formulas.smdh_yi", vi = "formulas.smdh_vi" }
+covers = ["escalc.vi.SMDH.LS2"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.smdh.ls3.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "SMDH", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", vtype = "LS3" }
+expect = { yi = "formulas.smdh_yi", vi = "formulas.smdh_vi" }
+covers = ["escalc.vi.SMDH.LS3"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.smd1h.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "SMD1H", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", vtype = "LS" }
+expect = { yi = "formulas.glass_yi", vi = "formulas.smd1h_vi" }
+covers = ["escalc.yi.SMD1H", "escalc.vi.SMD1H.LS"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.rom.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "ROM", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", vtype = "LS" }
+expect = { yi = "formulas.log_response_ratio_yi", vi = "formulas.log_response_ratio_vi" }
+covers = ["escalc.yi.ROM", "escalc.vi.ROM.LS"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.rom.ls2.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "ROM", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", vtype = "LS2" }
+expect = { yi = "formulas.log_response_ratio_yi", vi = "formulas.log_response_ratio_vi" }
+covers = ["escalc.vi.ROM.LS2"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.rom.ho.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "ROM", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", vtype = "HO" }
+expect = { yi = "formulas.log_response_ratio_yi", vi = "formulas.log_response_ratio_vi" }
+covers = ["escalc.vi.ROM.HO"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.rom.av.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "ROM", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", vtype = "AV" }
+expect = { yi = "formulas.log_response_ratio_yi", vi = "formulas.log_response_ratio_vi" }
+covers = ["escalc.vi.ROM.AV"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.rom.avho.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "ROM", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", vtype = "AVHO" }
+expect = { yi = "formulas.log_response_ratio_yi", vi = "formulas.log_response_ratio_vi" }
+covers = ["escalc.vi.ROM.AVHO"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.vr.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "VR", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", vtype = "LS" }
+expect = { yi = "formulas.log_variability_ratio_yi", vi = "formulas.log_variability_ratio_vi" }
+covers = ["escalc.yi.VR", "escalc.vi.VR.LS"]
+
+[case.data]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.vr.ls2.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "VR", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", vtype = "LS2" }
+expect = { yi = "formulas.log_variability_ratio_yi", vi = "formulas.log_variability_ratio_vi" }
+covers = ["escalc.vi.VR.LS2"]
+
+[case.data]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.cvr.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "CVR", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", vtype = "LS" }
+expect = { yi = "formulas.log_cv_ratio_yi", vi = "formulas.log_cv_ratio_vi" }
+covers = ["escalc.yi.CVR", "escalc.vi.CVR.LS"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.cvr.ls2.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "CVR", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", vtype = "LS2" }
+expect = { yi = "formulas.log_cv_ratio_yi", vi = "formulas.log_cv_ratio_vi" }
+covers = ["escalc.vi.CVR.LS2"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.rpb.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "RPB", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", vtype = "LS" }
+expect = { yi = "formulas.point_biserial_yi", vi = "formulas.point_biserial_vi" }
+covers = ["escalc.yi.RPB", "escalc.vi.RPB.LS"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.rpb.st.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "RPB", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", vtype = "ST" }
+expect = { yi = "formulas.point_biserial_yi", vi = "formulas.point_biserial_vi" }
+covers = ["escalc.vi.RPB.ST"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.zpb.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "ZPB", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", vtype = "LS" }
+expect = { yi = "formulas.fisher_z_point_biserial_yi", vi = "formulas.fisher_z_point_biserial_vi" }
+covers = ["escalc.yi.ZPB", "escalc.vi.ZPB.LS"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.zpb.st.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "ZPB", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", vtype = "ST" }
+expect = { yi = "formulas.fisher_z_point_biserial_yi", vi = "formulas.fisher_z_point_biserial_vi" }
+covers = ["escalc.vi.ZPB.ST"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.rbis.yi.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "RBIS", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i" }
+expect = { yi = "formulas.biserial_yi" }
+covers = ["escalc.yi.RBIS"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.zbis.yi.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "ZBIS", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i" }
+expect = { yi = "formulas.fisher_z_biserial_yi" }
+covers = ["escalc.yi.ZBIS"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.d2or.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "D2OR", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", vtype = "LS" }
+expect = { yi = "formulas.d_to_log_odds_ratio_yi", vi = "formulas.d_to_log_odds_ratio_vi" }
+covers = ["escalc.yi.D2OR", "escalc.vi.D2OR.LS"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.d2orn.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "D2ORN", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", vtype = "LS" }
+expect = { yi = "formulas.normal_d_to_log_odds_ratio_yi", vi = "formulas.normal_d_to_log_odds_ratio_vi" }
+covers = ["escalc.yi.D2ORN", "escalc.vi.D2ORN.LS"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.d2orl.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "D2ORL", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", vtype = "LS" }
+expect = { yi = "formulas.d_to_log_odds_ratio_yi", vi = "formulas.d_to_log_odds_ratio_vi" }
+covers = ["escalc.yi.D2ORL", "escalc.vi.D2ORL.LS"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.mc.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "MC", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", ni = "ni", ri = "ri", vtype = "LS" }
+expect = { yi = "formulas.mean_change_yi", vi = "formulas.mean_change_vi" }
+covers = ["escalc.yi.MC", "escalc.vi.MC.LS"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+ni = [20.0, 35.0, 12.0, 60.0, 28.0]
+ri = [0.6, 0.4, 0.75, 0.3, 0.55]
+
+[[case]]
+id = "escalc.pompmc.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "POMPMC", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", ni = "ni", ri = "ri", mini = "mini", maxi = "maxi", vtype = "LS" }
+expect = { yi = "formulas.pomp_mean_change_yi", vi = "formulas.pomp_mean_change_vi" }
+covers = ["escalc.yi.POMPMC", "escalc.vi.POMPMC.LS"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+ni = [20.0, 35.0, 12.0, 60.0, 28.0]
+ri = [0.6, 0.4, 0.75, 0.3, 0.55]
+mini = [0.0, 0.0, 0.0, 0.0, 0.0]
+maxi = [40.0, 60.0, 20.0, 80.0, 50.0]
+
+[[case]]
+id = "escalc.smcc.ub.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "SMCC", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", ni = "ni", ri = "ri", vtype = "UB" }
+expect = { yi = "formulas.smcc_yi", vi = "formulas.smcc_vi" }
+covers = ["escalc.yi.SMCC", "escalc.vi.SMCC.UB"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+ni = [20.0, 35.0, 12.0, 60.0, 28.0]
+ri = [0.6, 0.4, 0.75, 0.3, 0.55]
+
+[[case]]
+id = "escalc.smcc.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "SMCC", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", ni = "ni", ri = "ri", vtype = "LS" }
+expect = { yi = "formulas.smcc_yi", vi = "formulas.smcc_vi" }
+covers = ["escalc.vi.SMCC.LS"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+ni = [20.0, 35.0, 12.0, 60.0, 28.0]
+ri = [0.6, 0.4, 0.75, 0.3, 0.55]
+
+[[case]]
+id = "escalc.smcc.ls2.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "SMCC", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", ni = "ni", ri = "ri", vtype = "LS2" }
+expect = { yi = "formulas.smcc_yi", vi = "formulas.smcc_vi" }
+covers = ["escalc.vi.SMCC.LS2"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+ni = [20.0, 35.0, 12.0, 60.0, 28.0]
+ri = [0.6, 0.4, 0.75, 0.3, 0.55]
+
+[[case]]
+id = "escalc.smcc.h0.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "SMCC", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", ni = "ni", ri = "ri", vtype = "H0" }
+expect = { yi = "formulas.smcc_yi", vi = "formulas.smcc_vi" }
+covers = ["escalc.vi.SMCC.H0"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+ni = [20.0, 35.0, 12.0, 60.0, 28.0]
+ri = [0.6, 0.4, 0.75, 0.3, 0.55]
+
+[[case]]
+id = "escalc.smcr.ub.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "SMCR", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", ni = "ni", ri = "ri", vtype = "UB" }
+expect = { yi = "formulas.smcr_yi", vi = "formulas.smcr_vi" }
+covers = ["escalc.yi.SMCR", "escalc.vi.SMCR.UB"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+ni = [20.0, 35.0, 12.0, 60.0, 28.0]
+ri = [0.6, 0.4, 0.75, 0.3, 0.55]
+
+[[case]]
+id = "escalc.smcr.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "SMCR", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", ni = "ni", ri = "ri", vtype = "LS" }
+expect = { yi = "formulas.smcr_yi", vi = "formulas.smcr_vi" }
+covers = ["escalc.vi.SMCR.LS"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+ni = [20.0, 35.0, 12.0, 60.0, 28.0]
+ri = [0.6, 0.4, 0.75, 0.3, 0.55]
+
+[[case]]
+id = "escalc.smcr.ls2.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "SMCR", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", ni = "ni", ri = "ri", vtype = "LS2" }
+expect = { yi = "formulas.smcr_yi", vi = "formulas.smcr_vi" }
+covers = ["escalc.vi.SMCR.LS2"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+ni = [20.0, 35.0, 12.0, 60.0, 28.0]
+ri = [0.6, 0.4, 0.75, 0.3, 0.55]
+
+[[case]]
+id = "escalc.smcr.h0.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "SMCR", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", ni = "ni", ri = "ri", vtype = "H0" }
+expect = { yi = "formulas.smcr_yi", vi = "formulas.smcr_vi" }
+covers = ["escalc.vi.SMCR.H0"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+ni = [20.0, 35.0, 12.0, 60.0, 28.0]
+ri = [0.6, 0.4, 0.75, 0.3, 0.55]
+
+[[case]]
+id = "escalc.smcrh.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "SMCRH", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", ni = "ni", ri = "ri", vtype = "LS" }
+expect = { yi = "formulas.smcr_yi", vi = "formulas.smcrh_vi" }
+covers = ["escalc.yi.SMCRH", "escalc.vi.SMCRH.LS"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+ni = [20.0, 35.0, 12.0, 60.0, 28.0]
+ri = [0.6, 0.4, 0.75, 0.3, 0.55]
+
+[[case]]
+id = "escalc.smcrh.ls2.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "SMCRH", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", ni = "ni", ri = "ri", vtype = "LS2" }
+expect = { yi = "formulas.smcr_yi", vi = "formulas.smcrh_vi" }
+covers = ["escalc.vi.SMCRH.LS2"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+ni = [20.0, 35.0, 12.0, 60.0, 28.0]
+ri = [0.6, 0.4, 0.75, 0.3, 0.55]
+
+[[case]]
+id = "escalc.clescn.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "CLESCN", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", ni = "ni", ri = "ri", vtype = "LS" }
+expect = { yi = "formulas.common_language_paired_yi", vi = "formulas.common_language_paired_vi" }
+covers = ["escalc.yi.CLESCN", "escalc.vi.CLESCN.LS"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+ni = [20.0, 35.0, 12.0, 60.0, 28.0]
+ri = [0.6, 0.4, 0.75, 0.3, 0.55]
+
+[[case]]
+id = "escalc.auccn.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "AUCCN", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", ni = "ni", ri = "ri", vtype = "LS" }
+expect = { yi = "formulas.common_language_paired_yi", vi = "formulas.common_language_paired_vi" }
+covers = ["escalc.yi.AUCCN", "escalc.vi.AUCCN.LS"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+ni = [20.0, 35.0, 12.0, 60.0, 28.0]
+ri = [0.6, 0.4, 0.75, 0.3, 0.55]
+
+[[case]]
+id = "escalc.romc.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "ROMC", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", ni = "ni", ri = "ri", vtype = "LS" }
+expect = { yi = "formulas.log_response_ratio_change_yi", vi = "formulas.log_response_ratio_change_vi" }
+covers = ["escalc.yi.ROMC", "escalc.vi.ROMC.LS"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+ni = [20.0, 35.0, 12.0, 60.0, 28.0]
+ri = [0.6, 0.4, 0.75, 0.3, 0.55]
+
+[[case]]
+id = "escalc.romc.ls2.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "ROMC", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", ni = "ni", ri = "ri", vtype = "LS2" }
+expect = { yi = "formulas.log_response_ratio_change_yi", vi = "formulas.log_response_ratio_change_vi" }
+covers = ["escalc.vi.ROMC.LS2"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+ni = [20.0, 35.0, 12.0, 60.0, 28.0]
+ri = [0.6, 0.4, 0.75, 0.3, 0.55]
+
+[[case]]
+id = "escalc.vrc.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "VRC", sd1i = "sd1i", sd2i = "sd2i", ni = "ni", ri = "ri", vtype = "LS" }
+expect = { yi = "formulas.log_variability_ratio_change_yi", vi = "formulas.log_variability_ratio_change_vi" }
+covers = ["escalc.yi.VRC", "escalc.vi.VRC.LS"]
+
+[case.data]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+ni = [20.0, 35.0, 12.0, 60.0, 28.0]
+ri = [0.6, 0.4, 0.75, 0.3, 0.55]
+
+[[case]]
+id = "escalc.vrc.ls2.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "VRC", sd1i = "sd1i", sd2i = "sd2i", ni = "ni", ri = "ri", vtype = "LS2" }
+expect = { yi = "formulas.log_variability_ratio_change_yi", vi = "formulas.log_variability_ratio_change_vi" }
+covers = ["escalc.vi.VRC.LS2"]
+
+[case.data]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+ni = [20.0, 35.0, 12.0, 60.0, 28.0]
+ri = [0.6, 0.4, 0.75, 0.3, 0.55]
+
+[[case]]
+id = "escalc.cvrc.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "CVRC", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", ni = "ni", ri = "ri", vtype = "LS" }
+expect = { yi = "formulas.log_cv_ratio_change_yi", vi = "formulas.log_cv_ratio_change_vi" }
+covers = ["escalc.yi.CVRC", "escalc.vi.CVRC.LS"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+ni = [20.0, 35.0, 12.0, 60.0, 28.0]
+ri = [0.6, 0.4, 0.75, 0.3, 0.55]
+
+[[case]]
+id = "escalc.cvrc.ls2.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "CVRC", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", ni = "ni", ri = "ri", vtype = "LS2" }
+expect = { yi = "formulas.log_cv_ratio_change_yi", vi = "formulas.log_cv_ratio_change_vi" }
+covers = ["escalc.vi.CVRC.LS2"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+ni = [20.0, 35.0, 12.0, 60.0, 28.0]
+ri = [0.6, 0.4, 0.75, 0.3, 0.55]
+
+[[case]]
+id = "escalc.cles.h0.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "CLES", ai = "ai", n1i = "n1i", n2i = "n2i", vtype = "H0" }
+expect = { yi = "formulas.auc_yi", vi = "formulas.auc_vi" }
+covers = ["escalc.yi.CLES", "escalc.vi.CLES.H0"]
+
+[case.data]
+ai = [0.62, 0.55, 0.71, 0.48, 0.66]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.cles.ls2.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "CLES", ai = "ai", n1i = "n1i", n2i = "n2i", vtype = "LS2" }
+expect = { yi = "formulas.auc_yi", vi = "formulas.auc_vi" }
+covers = ["escalc.vi.CLES.LS2"]
+
+[case.data]
+ai = [0.62, 0.55, 0.71, 0.48, 0.66]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.auc.h0.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "AUC", ai = "ai", n1i = "n1i", n2i = "n2i", vtype = "H0" }
+expect = { yi = "formulas.auc_yi", vi = "formulas.auc_vi" }
+covers = ["escalc.yi.AUC", "escalc.vi.AUC.H0"]
+
+[case.data]
+ai = [0.62, 0.55, 0.71, 0.48, 0.66]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.auc.ls2.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "AUC", ai = "ai", n1i = "n1i", n2i = "n2i", vtype = "LS2" }
+expect = { yi = "formulas.auc_yi", vi = "formulas.auc_vi" }
+covers = ["escalc.vi.AUC.LS2"]
+
+[case.data]
+ai = [0.62, 0.55, 0.71, 0.48, 0.66]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.clesn.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "CLESN", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", vtype = "LS" }
+expect = { yi = "formulas.common_language_normal_yi", vi = "formulas.common_language_normal_vi" }
+covers = ["escalc.yi.CLESN", "escalc.vi.CLESN.LS"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.clesn.ls2.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "CLESN", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", vtype = "LS2" }
+expect = { yi = "formulas.common_language_normal_yi", vi = "formulas.common_language_normal_vi" }
+covers = ["escalc.vi.CLESN.LS2"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.clesn.ls3.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "CLESN", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", vtype = "LS3" }
+expect = { yi = "formulas.common_language_normal_yi", vi = "formulas.common_language_normal_vi" }
+covers = ["escalc.vi.CLESN.LS3"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.clesn.ho.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "CLESN", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", vtype = "HO" }
+expect = { yi = "formulas.common_language_normal_yi", vi = "formulas.common_language_normal_vi" }
+covers = ["escalc.vi.CLESN.HO"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.clesn.h0.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "CLESN", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", vtype = "H0" }
+expect = { yi = "formulas.common_language_normal_yi", vi = "formulas.common_language_normal_vi" }
+covers = ["escalc.vi.CLESN.H0"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.aucn.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "AUCN", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", vtype = "LS" }
+expect = { yi = "formulas.common_language_normal_yi", vi = "formulas.common_language_normal_vi" }
+covers = ["escalc.yi.AUCN", "escalc.vi.AUCN.LS"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.aucn.ls2.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "AUCN", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", vtype = "LS2" }
+expect = { yi = "formulas.common_language_normal_yi", vi = "formulas.common_language_normal_vi" }
+covers = ["escalc.vi.AUCN.LS2"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.aucn.ls3.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "AUCN", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", vtype = "LS3" }
+expect = { yi = "formulas.common_language_normal_yi", vi = "formulas.common_language_normal_vi" }
+covers = ["escalc.vi.AUCN.LS3"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.aucn.ho.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "AUCN", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", vtype = "HO" }
+expect = { yi = "formulas.common_language_normal_yi", vi = "formulas.common_language_normal_vi" }
+covers = ["escalc.vi.AUCN.HO"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[case]]
+id = "escalc.aucn.h0.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "AUCN", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i", vtype = "H0" }
+expect = { yi = "formulas.common_language_normal_yi", vi = "formulas.common_language_normal_vi" }
+covers = ["escalc.vi.AUCN.H0"]
+
+[case.data]
+m1i = [12.5, 30.1, 8.2, 45.0, 21.3]
+m2i = [10.1, 27.4, 8.9, 38.2, 17.0]
+sd1i = [3.1, 7.2, 2.0, 9.5, 5.1]
+sd2i = [2.7, 8.0, 2.4, 10.2, 4.4]
+n1i = [20.0, 35.0, 12.0, 60.0, 28.0]
+n2i = [22.0, 30.0, 15.0, 55.0, 25.0]
+
+[[exempt]]
+item = "escalc.vi.SMD.LS3"
+reason = "the LS3 variant (the large-sample term with n - 3.94 in place of n) is listed in the metafor documentation; the publication that defines the 3.94 offset was not read for this suite, so no formula is usable without it"
+
+[[exempt]]
+item = "escalc.vi.SMD1.LS"
+reason = "the large-sample variance of the Glass delta with the second group size n2 in the d^2 term is a metafor convention; the publication was not read for this suite and the delta method gives n2 - 1, so no formula is usable without it"
+
+[[exempt]]
+item = "escalc.vi.SMD1.LS2"
+reason = "the LS2 variance of the Glass delta is a metafor convention; the publication was not read for this suite"
+
+[[exempt]]
+item = "escalc.vi.SMD1.LS3"
+reason = "the LS3 variance of the Glass delta is a metafor convention; the publication was not read for this suite"
+
+[[exempt]]
+item = "escalc.vi.SMD1.AV"
+reason = "the AV variance of the Glass delta is a metafor convention; the publication was not read for this suite"
+
+[[exempt]]
+item = "escalc.vi.RPB.CS"
+reason = "the CS variance (a Pearson-correlation variance specialised to a point-biserial correlation) is defined in a publication not read for this suite; no formula usable without it"
+
+[[exempt]]
+item = "escalc.vi.ZPB.CS"
+reason = "the CS variance (a Pearson-correlation variance specialised to a point-biserial correlation) is defined in a publication not read for this suite; no formula usable without it"
+
+[[exempt]]
+item = "escalc.vi.RBIS.LS"
+reason = "the sampling variance of the biserial correlation is derived in Jacobs & Viechtbauer (2017), which was not read for this suite; no formula usable without it"
+
+[[exempt]]
+item = "escalc.vi.ZBIS.LS"
+reason = "the sampling variance of the biserial correlation is derived in Jacobs & Viechtbauer (2017), which was not read for this suite; no formula usable without it"
+
+[[exempt]]
+item = "escalc.vi.CLES.LS"
+reason = "the LS variance (Newcombe 2006 simplification of the Hanley-McNeil variance) was not read for this suite; no formula usable without it"
+
+[[exempt]]
+item = "escalc.vi.CLES.MAX"
+reason = "the MAX bound on the variance of the Mann-Whitney probability is defined in a publication not read for this suite"
+
+[[exempt]]
+item = "escalc.vi.AUC.LS"
+reason = "the LS variance (Newcombe 2006 simplification of the Hanley-McNeil variance) was not read for this suite; no formula usable without it"
+
+[[exempt]]
+item = "escalc.vi.AUC.MAX"
+reason = "the MAX bound on the variance of the Mann-Whitney probability is defined in a publication not read for this suite"
+
+[[exempt]]
+item = "escalc.vi.SMCRP.LS"
+reason = "SMCRP standardises by the root mean square of the two standard deviations with the degrees of freedom 2 (n - 1) / (1 + r^2) in the bias correction; the publication defining that correction was not read for this suite, so no formula is usable without it"
+
+[[exempt]]
+item = "escalc.vi.SMCRPH.LS"
+reason = "SMCRPH shares the bias correction of SMCRP, with degrees of freedom 2 (n - 1) / (1 + r^2); the publication defining that correction was not read for this suite, so no formula is usable without it"
+
+[[exempt]]
+item = "escalc.vi.SMCRPH.LS2"
+reason = "SMCRPH shares the bias correction of SMCRP, with degrees of freedom 2 (n - 1) / (1 + r^2); the publication defining that correction was not read for this suite, so no formula is usable without it"
+
+[[exempt]]
+item = "escalc.yi.SMCRP"
+reason = "SMCRP standardises by the root mean square of the two standard deviations with the degrees of freedom 2 (n - 1) / (1 + r^2) in the bias correction; the publication defining that correction was not read for this suite, so no formula is usable without it"
+
+[[exempt]]
+item = "escalc.yi.SMCRPH"
+reason = "SMCRPH shares the bias correction of SMCRP, with degrees of freedom 2 (n - 1) / (1 + r^2); the publication defining that correction was not read for this suite, so no formula is usable without it"
+
+[[case]]
+id = "escalc.cor.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "COR", ri = "ri", ni = "ni", vtype = "LS" }
+expect = { yi = "formulas.correlation_yi", vi = "formulas.correlation_vi" }
+covers = ["escalc.yi.COR", "escalc.vi.COR.LS"]
+
+[case.data]
+ri = [0.25, 0.41, -0.12, 0.6, 0.33]
+ni = [30.0, 55.0, 24.0, 80.0, 42.0]
+
+[[case]]
+id = "escalc.cor.av.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "COR", ri = "ri", ni = "ni", vtype = "AV" }
+expect = { vi = "formulas.correlation_vi" }
+covers = ["escalc.vi.COR.AV"]
+
+[case.data]
+ri = [0.25, 0.41, -0.12, 0.6, 0.33]
+ni = [30.0, 55.0, 24.0, 80.0, 42.0]
+
+[[case]]
+id = "escalc.cor.h0.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "COR", ri = "ri", ni = "ni", vtype = "H0" }
+expect = { vi = "formulas.correlation_vi" }
+covers = ["escalc.vi.COR.H0"]
+
+[case.data]
+ri = [0.25, 0.41, -0.12, 0.6, 0.33]
+ni = [30.0, 55.0, 24.0, 80.0, 42.0]
+
+[[case]]
+id = "escalc.cor.h0a.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "COR", ri = "ri", ni = "ni", vtype = "H0a" }
+expect = { vi = "formulas.correlation_vi" }
+covers = ["escalc.vi.COR.H0a"]
+
+[case.data]
+ri = [0.25, 0.41, -0.12, 0.6, 0.33]
+ni = [30.0, 55.0, 24.0, 80.0, 42.0]
+
+[[case]]
+id = "escalc.cor.h0b.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "COR", ri = "ri", ni = "ni", vtype = "H0b" }
+expect = { vi = "formulas.correlation_vi" }
+covers = ["escalc.vi.COR.H0b"]
+
+[case.data]
+ri = [0.25, 0.41, -0.12, 0.6, 0.33]
+ni = [30.0, 55.0, 24.0, 80.0, 42.0]
+
+[[case]]
+id = "escalc.ucor.ub.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "UCOR", ri = "ri", ni = "ni", vtype = "UB" }
+expect = { yi = "formulas.olkin_pratt_yi", vi = "formulas.olkin_pratt_vi" }
+covers = ["escalc.yi.UCOR", "escalc.vi.UCOR.UB"]
+
+[case.data]
+ri = [0.25, 0.41, -0.12, 0.6, 0.33]
+ni = [30.0, 55.0, 24.0, 80.0, 42.0]
+
+[[case]]
+id = "escalc.ucor.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "UCOR", ri = "ri", ni = "ni", vtype = "LS" }
+expect = { vi = "formulas.olkin_pratt_vi" }
+covers = ["escalc.vi.UCOR.LS"]
+
+[case.data]
+ri = [0.25, 0.41, -0.12, 0.6, 0.33]
+ni = [30.0, 55.0, 24.0, 80.0, 42.0]
+
+[[case]]
+id = "escalc.ucor.av.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "UCOR", ri = "ri", ni = "ni", vtype = "AV" }
+expect = { vi = "formulas.olkin_pratt_vi" }
+covers = ["escalc.vi.UCOR.AV"]
+
+[case.data]
+ri = [0.25, 0.41, -0.12, 0.6, 0.33]
+ni = [30.0, 55.0, 24.0, 80.0, 42.0]
+
+[[case]]
+id = "escalc.zcor.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "ZCOR", ri = "ri", ni = "ni" }
+expect = { yi = "formulas.fisher_z_yi", vi = "formulas.fisher_z_vi" }
+covers = ["escalc.yi.ZCOR", "escalc.vi.ZCOR.LS"]
+
+[case.data]
+ri = [0.25, 0.41, -0.12, 0.6, 0.33]
+ni = [30.0, 55.0, 24.0, 80.0, 42.0]
+
+[[case]]
+id = "escalc.pcor.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "PCOR", ri = "ri", mi = "mi", ni = "ni", vtype = "LS" }
+expect = { yi = "formulas.correlation_yi", vi = "formulas.partial_correlation_vi" }
+covers = ["escalc.yi.PCOR", "escalc.vi.PCOR.LS"]
+
+[case.data]
+ri = [0.25, 0.41, -0.12, 0.6, 0.33]
+mi = [2.0, 3.0, 2.0, 4.0, 3.0]
+ni = [30.0, 55.0, 24.0, 80.0, 42.0]
+
+[[case]]
+id = "escalc.pcor.av.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "PCOR", ri = "ri", mi = "mi", ni = "ni", vtype = "AV" }
+expect = { vi = "formulas.partial_correlation_vi" }
+covers = ["escalc.vi.PCOR.AV"]
+
+[case.data]
+ri = [0.25, 0.41, -0.12, 0.6, 0.33]
+mi = [2.0, 3.0, 2.0, 4.0, 3.0]
+ni = [30.0, 55.0, 24.0, 80.0, 42.0]
+
+[[case]]
+id = "escalc.zpcor.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "ZPCOR", ri = "ri", mi = "mi", ni = "ni" }
+expect = { yi = "formulas.fisher_z_yi", vi = "formulas.fisher_z_partial_vi" }
+covers = ["escalc.yi.ZPCOR", "escalc.vi.ZPCOR.LS"]
+
+[case.data]
+ri = [0.25, 0.41, -0.12, 0.6, 0.33]
+mi = [2.0, 3.0, 2.0, 4.0, 3.0]
+ni = [30.0, 55.0, 24.0, 80.0, 42.0]
+
+[[case]]
+id = "escalc.spcor.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "SPCOR", ri = "ri", mi = "mi", ni = "ni", r2i = "r2i", vtype = "LS" }
+expect = { yi = "formulas.correlation_yi" }
+covers = ["escalc.yi.SPCOR"]
+
+[case.data]
+ri = [0.25, 0.41, -0.12, 0.6, 0.33]
+mi = [2.0, 3.0, 2.0, 4.0, 3.0]
+ni = [30.0, 55.0, 24.0, 80.0, 42.0]
+r2i = [0.3, 0.4, 0.2, 0.5, 0.35]
+
+[[case]]
+id = "escalc.zspcor.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "ZSPCOR", ri = "ri", mi = "mi", ni = "ni", r2i = "r2i", vtype = "LS" }
+expect = { yi = "formulas.fisher_z_yi" }
+covers = ["escalc.yi.ZSPCOR"]
+
+[case.data]
+ri = [0.25, 0.41, -0.12, 0.6, 0.33]
+mi = [2.0, 3.0, 2.0, 4.0, 3.0]
+ni = [30.0, 55.0, 24.0, 80.0, 42.0]
+r2i = [0.3, 0.4, 0.2, 0.5, 0.35]
+
+[[case]]
+id = "escalc.r2.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "R2", r2i = "r2i", mi = "mi", ni = "ni", vtype = "LS" }
+expect = { yi = "formulas.squared_correlation_yi", vi = "formulas.r2_vi" }
+covers = ["escalc.yi.R2", "escalc.vi.R2.LS"]
+
+[case.data]
+r2i = [0.2, 0.35, 0.1, 0.5, 0.28]
+mi = [2.0, 3.0, 2.0, 4.0, 3.0]
+ni = [30.0, 55.0, 24.0, 80.0, 42.0]
+
+[[case]]
+id = "escalc.r2.ls2.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "R2", r2i = "r2i", mi = "mi", ni = "ni", vtype = "LS2" }
+expect = { vi = "formulas.r2_vi" }
+covers = ["escalc.vi.R2.LS2"]
+
+[case.data]
+r2i = [0.2, 0.35, 0.1, 0.5, 0.28]
+mi = [2.0, 3.0, 2.0, 4.0, 3.0]
+ni = [30.0, 55.0, 24.0, 80.0, 42.0]
+
+[[case]]
+id = "escalc.r2.av.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "R2", r2i = "r2i", mi = "mi", ni = "ni", vtype = "AV" }
+expect = { vi = "formulas.r2_vi" }
+covers = ["escalc.vi.R2.AV"]
+
+[case.data]
+r2i = [0.2, 0.35, 0.1, 0.5, 0.28]
+mi = [2.0, 3.0, 2.0, 4.0, 3.0]
+ni = [30.0, 55.0, 24.0, 80.0, 42.0]
+
+[[case]]
+id = "escalc.r2.av2.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "R2", r2i = "r2i", mi = "mi", ni = "ni", vtype = "AV2" }
+expect = { vi = "formulas.r2_vi" }
+covers = ["escalc.vi.R2.AV2"]
+
+[case.data]
+r2i = [0.2, 0.35, 0.1, 0.5, 0.28]
+mi = [2.0, 3.0, 2.0, 4.0, 3.0]
+ni = [30.0, 55.0, 24.0, 80.0, 42.0]
+
+[[case]]
+id = "escalc.zr2.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "ZR2", r2i = "r2i", mi = "mi", ni = "ni", vtype = "LS" }
+expect = { yi = "formulas.fisher_z_multiple_yi" }
+covers = ["escalc.yi.ZR2"]
+
+[case.data]
+r2i = [0.2, 0.35, 0.1, 0.5, 0.28]
+mi = [2.0, 3.0, 2.0, 4.0, 3.0]
+ni = [30.0, 55.0, 24.0, 80.0, 42.0]
+
+[[case]]
+id = "escalc.r2f.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "R2F", r2i = "r2i", mi = "mi", ni = "ni", vtype = "LS" }
+expect = { yi = "formulas.squared_correlation_yi" }
+covers = ["escalc.yi.R2F"]
+
+[case.data]
+r2i = [0.2, 0.35, 0.1, 0.5, 0.28]
+mi = [2.0, 3.0, 2.0, 4.0, 3.0]
+ni = [30.0, 55.0, 24.0, 80.0, 42.0]
+
+[[case]]
+id = "escalc.zr2f.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "ZR2F", r2i = "r2i", mi = "mi", ni = "ni", vtype = "LS" }
+expect = { yi = "formulas.fisher_z_multiple_yi" }
+covers = ["escalc.yi.ZR2F"]
+
+[case.data]
+r2i = [0.2, 0.35, 0.1, 0.5, 0.28]
+mi = [2.0, 3.0, 2.0, 4.0, 3.0]
+ni = [30.0, 55.0, 24.0, 80.0, 42.0]
+
+[[case]]
+id = "escalc.pr.ub.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "PR", xi = "xi", mi = "mi", vtype = "UB" }
+expect = { yi = "formulas.proportion_yi", vi = "formulas.proportion_vi" }
+covers = ["escalc.yi.PR", "escalc.vi.PR.UB"]
+
+[case.data]
+xi = [12.0, 20.0, 8.0, 33.0, 15.0]
+mi = [88.0, 60.0, 42.0, 47.0, 35.0]
+
+[[case]]
+id = "escalc.pr.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "PR", xi = "xi", mi = "mi", vtype = "LS" }
+expect = { vi = "formulas.proportion_vi" }
+covers = ["escalc.vi.PR.LS"]
+
+[case.data]
+xi = [12.0, 20.0, 8.0, 33.0, 15.0]
+mi = [88.0, 60.0, 42.0, 47.0, 35.0]
+
+[[case]]
+id = "escalc.pr.av.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "PR", xi = "xi", mi = "mi", vtype = "AV" }
+expect = { vi = "formulas.proportion_vi" }
+covers = ["escalc.vi.PR.AV"]
+
+[case.data]
+xi = [12.0, 20.0, 8.0, 33.0, 15.0]
+mi = [88.0, 60.0, 42.0, 47.0, 35.0]
+
+[[case]]
+id = "escalc.pln.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "PLN", xi = "xi", mi = "mi", vtype = "LS" }
+expect = { yi = "formulas.log_proportion_yi", vi = "formulas.log_proportion_vi" }
+covers = ["escalc.yi.PLN", "escalc.vi.PLN.LS"]
+
+[case.data]
+xi = [12.0, 20.0, 8.0, 33.0, 15.0]
+mi = [88.0, 60.0, 42.0, 47.0, 35.0]
+
+[[case]]
+id = "escalc.pln.av.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "PLN", xi = "xi", mi = "mi", vtype = "AV" }
+expect = { vi = "formulas.log_proportion_vi" }
+covers = ["escalc.vi.PLN.AV"]
+
+[case.data]
+xi = [12.0, 20.0, 8.0, 33.0, 15.0]
+mi = [88.0, 60.0, 42.0, 47.0, 35.0]
+
+[[case]]
+id = "escalc.plo.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "PLO", xi = "xi", mi = "mi", vtype = "LS" }
+expect = { yi = "formulas.logit_yi", vi = "formulas.logit_vi" }
+covers = ["escalc.yi.PLO", "escalc.vi.PLO.LS"]
+
+[case.data]
+xi = [12.0, 20.0, 8.0, 33.0, 15.0]
+mi = [88.0, 60.0, 42.0, 47.0, 35.0]
+
+[[case]]
+id = "escalc.plo.av.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "PLO", xi = "xi", mi = "mi", vtype = "AV" }
+expect = { vi = "formulas.logit_vi" }
+covers = ["escalc.vi.PLO.AV"]
+
+[case.data]
+xi = [12.0, 20.0, 8.0, 33.0, 15.0]
+mi = [88.0, 60.0, 42.0, 47.0, 35.0]
+
+[[case]]
+id = "escalc.prz.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "PRZ", xi = "xi", mi = "mi" }
+expect = { yi = "formulas.probit_yi", vi = "formulas.probit_vi" }
+covers = ["escalc.yi.PRZ", "escalc.vi.PRZ.LS"]
+
+[case.data]
+xi = [12.0, 20.0, 8.0, 33.0, 15.0]
+mi = [88.0, 60.0, 42.0, 47.0, 35.0]
+
+[[case]]
+id = "escalc.pas.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "PAS", xi = "xi", mi = "mi" }
+expect = { yi = "formulas.arcsine_proportion_yi", vi = "formulas.arcsine_proportion_vi" }
+covers = ["escalc.yi.PAS", "escalc.vi.PAS.LS"]
+
+[case.data]
+xi = [12.0, 20.0, 8.0, 33.0, 15.0]
+mi = [88.0, 60.0, 42.0, 47.0, 35.0]
+
+[[case]]
+id = "escalc.pft.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "PFT", xi = "xi", mi = "mi" }
+expect = { yi = "formulas.freeman_tukey_proportion_yi", vi = "formulas.freeman_tukey_proportion_vi" }
+covers = ["escalc.yi.PFT", "escalc.vi.PFT.LS"]
+
+[case.data]
+xi = [12.0, 20.0, 8.0, 33.0, 15.0]
+mi = [88.0, 60.0, 42.0, 47.0, 35.0]
+
+[[case]]
+id = "escalc.ir.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "IR", xi = "xi", ti = "ti" }
+expect = { yi = "formulas.incidence_rate_yi", vi = "formulas.incidence_rate_vi" }
+covers = ["escalc.yi.IR", "escalc.vi.IR.LS"]
+
+[case.data]
+xi = [12.0, 20.0, 8.0, 33.0, 15.0]
+ti = [1000.0, 1200.0, 900.0, 2500.0, 1500.0]
+
+[[case]]
+id = "escalc.irln.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "IRLN", xi = "xi", ti = "ti" }
+expect = { yi = "formulas.log_incidence_rate_yi", vi = "formulas.log_incidence_rate_vi" }
+covers = ["escalc.yi.IRLN", "escalc.vi.IRLN.LS"]
+
+[case.data]
+xi = [12.0, 20.0, 8.0, 33.0, 15.0]
+ti = [1000.0, 1200.0, 900.0, 2500.0, 1500.0]
+
+[[case]]
+id = "escalc.irs.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "IRS", xi = "xi", ti = "ti" }
+expect = { yi = "formulas.sqrt_incidence_rate_yi", vi = "formulas.sqrt_incidence_rate_vi" }
+covers = ["escalc.yi.IRS", "escalc.vi.IRS.LS"]
+
+[case.data]
+xi = [12.0, 20.0, 8.0, 33.0, 15.0]
+ti = [1000.0, 1200.0, 900.0, 2500.0, 1500.0]
+
+[[case]]
+id = "escalc.irft.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "IRFT", xi = "xi", ti = "ti" }
+expect = { yi = "formulas.freeman_tukey_rate_yi", vi = "formulas.freeman_tukey_rate_vi" }
+covers = ["escalc.yi.IRFT", "escalc.vi.IRFT.LS"]
+
+[case.data]
+xi = [12.0, 20.0, 8.0, 33.0, 15.0]
+ti = [1000.0, 1200.0, 900.0, 2500.0, 1500.0]
+
+[[case]]
+id = "escalc.mn.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "MN", mi = "mi", sdi = "sdi", ni = "ni", vtype = "LS" }
+expect = { yi = "formulas.mean_yi", vi = "formulas.mean_vi" }
+covers = ["escalc.yi.MN", "escalc.vi.MN.LS"]
+
+[case.data]
+mi = [10.5, 12.2, 9.8, 14.1, 11.3]
+sdi = [2.1, 3.0, 2.5, 4.2, 2.8]
+ni = [20.0, 35.0, 15.0, 60.0, 28.0]
+
+[[case]]
+id = "escalc.mn.ho.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "MN", mi = "mi", sdi = "sdi", ni = "ni", vtype = "HO" }
+expect = { vi = "formulas.mean_vi" }
+covers = ["escalc.vi.MN.HO"]
+
+[case.data]
+mi = [10.5, 12.2, 9.8, 14.1, 11.3]
+sdi = [2.1, 3.0, 2.5, 4.2, 2.8]
+ni = [20.0, 35.0, 15.0, 60.0, 28.0]
+
+[[case]]
+id = "escalc.pompmn.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "POMPMN", mi = "mi", sdi = "sdi", ni = "ni", mini = "mini", maxi = "maxi", vtype = "LS" }
+expect = { yi = "formulas.pomp_mean_yi", vi = "formulas.pomp_mean_vi" }
+covers = ["escalc.yi.POMPMN", "escalc.vi.POMPMN.LS"]
+
+[case.data]
+mi = [10.5, 12.2, 9.8, 14.1, 11.3]
+sdi = [2.1, 3.0, 2.5, 4.2, 2.8]
+ni = [20.0, 35.0, 15.0, 60.0, 28.0]
+mini = [0.0, 0.0, 0.0, 0.0, 0.0]
+maxi = [20.0, 25.0, 20.0, 30.0, 25.0]
+
+[[case]]
+id = "escalc.pompmn.ho.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "POMPMN", mi = "mi", sdi = "sdi", ni = "ni", mini = "mini", maxi = "maxi", vtype = "HO" }
+expect = { vi = "formulas.pomp_mean_vi" }
+covers = ["escalc.vi.POMPMN.HO"]
+
+[case.data]
+mi = [10.5, 12.2, 9.8, 14.1, 11.3]
+sdi = [2.1, 3.0, 2.5, 4.2, 2.8]
+ni = [20.0, 35.0, 15.0, 60.0, 28.0]
+mini = [0.0, 0.0, 0.0, 0.0, 0.0]
+maxi = [20.0, 25.0, 20.0, 30.0, 25.0]
+
+[[case]]
+id = "escalc.smn.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "SMN", mi = "mi", sdi = "sdi", ni = "ni" }
+expect = { yi = "formulas.standardised_mean_yi", vi = "formulas.standardised_mean_vi" }
+covers = ["escalc.yi.SMN", "escalc.vi.SMN.LS"]
+
+[case.data]
+mi = [10.5, 12.2, 9.8, 14.1, 11.3]
+sdi = [2.1, 3.0, 2.5, 4.2, 2.8]
+ni = [20.0, 35.0, 15.0, 60.0, 28.0]
+
+[[case]]
+id = "escalc.mnln.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "MNLN", mi = "mi", sdi = "sdi", ni = "ni" }
+expect = { yi = "formulas.log_mean_yi", vi = "formulas.log_mean_vi" }
+covers = ["escalc.yi.MNLN", "escalc.vi.MNLN.LS"]
+
+[case.data]
+mi = [10.5, 12.2, 9.8, 14.1, 11.3]
+sdi = [2.1, 3.0, 2.5, 4.2, 2.8]
+ni = [20.0, 35.0, 15.0, 60.0, 28.0]
+
+[[case]]
+id = "escalc.sdln.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "SDLN", mi = "mi", sdi = "sdi", ni = "ni" }
+expect = { yi = "formulas.log_sd_yi", vi = "formulas.log_sd_vi" }
+covers = ["escalc.yi.SDLN", "escalc.vi.SDLN.LS"]
+
+[case.data]
+mi = [10.5, 12.2, 9.8, 14.1, 11.3]
+sdi = [2.1, 3.0, 2.5, 4.2, 2.8]
+ni = [20.0, 35.0, 15.0, 60.0, 28.0]
+
+[[case]]
+id = "escalc.cvln.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "CVLN", mi = "mi", sdi = "sdi", ni = "ni" }
+expect = { yi = "formulas.log_cv_yi", vi = "formulas.log_cv_vi" }
+covers = ["escalc.yi.CVLN", "escalc.vi.CVLN.LS"]
+
+[case.data]
+mi = [10.5, 12.2, 9.8, 14.1, 11.3]
+sdi = [2.1, 3.0, 2.5, 4.2, 2.8]
+ni = [20.0, 35.0, 15.0, 60.0, 28.0]
+
+[[case]]
+id = "escalc.araw.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "ARAW", ai = "ai", mi = "mi", ni = "ni" }
+expect = { yi = "formulas.cronbach_alpha_yi", vi = "formulas.cronbach_alpha_vi" }
+covers = ["escalc.yi.ARAW", "escalc.vi.ARAW.LS"]
+
+[case.data]
+ai = [0.7, 0.8, 0.75, 0.9, 0.65]
+mi = [5.0, 8.0, 6.0, 10.0, 4.0]
+ni = [50.0, 120.0, 80.0, 200.0, 60.0]
+
+[[case]]
+id = "escalc.ahw.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "AHW", ai = "ai", mi = "mi", ni = "ni" }
+expect = { yi = "formulas.hakstian_whalen_yi", vi = "formulas.hakstian_whalen_vi" }
+covers = ["escalc.yi.AHW", "escalc.vi.AHW.LS"]
+
+[case.data]
+ai = [0.7, 0.8, 0.75, 0.9, 0.65]
+mi = [5.0, 8.0, 6.0, 10.0, 4.0]
+ni = [50.0, 120.0, 80.0, 200.0, 60.0]
+
+[[case]]
+id = "escalc.abt.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "ABT", ai = "ai", mi = "mi", ni = "ni" }
+expect = { yi = "formulas.bonett_alpha_yi", vi = "formulas.bonett_alpha_vi" }
+covers = ["escalc.yi.ABT", "escalc.vi.ABT.LS"]
+
+[case.data]
+ai = [0.7, 0.8, 0.75, 0.9, 0.65]
+mi = [5.0, 8.0, 6.0, 10.0, 4.0]
+ni = [50.0, 120.0, 80.0, 200.0, 60.0]
+
+[[case]]
+id = "escalc.reh.ls.derived"
+kind = "derived"
+function = "escalc"
+args = { measure = "REH", ai = "ai", bi = "bi", ci = "ci" }
+expect = { yi = "formulas.excess_heterozygosity_yi", vi = "formulas.excess_heterozygosity_vi" }
+covers = ["escalc.yi.REH", "escalc.vi.REH.LS"]
+
+[case.data]
+ai = [30.0, 25.0, 40.0, 18.0, 22.0]
+bi = [50.0, 40.0, 45.0, 30.0, 38.0]
+ci = [20.0, 35.0, 15.0, 32.0, 40.0]
+
+[[exempt]]
+item = "escalc.vi.SPCOR.LS"
+reason = "the variance of a semi-partial correlation is defined in Aloe (2014, Journal of Educational and Behavioral Statistics 39:1-23), which was not read for this suite; no formula usable without it"
+
+[[exempt]]
+item = "escalc.vi.SPCOR.AV"
+reason = "the variance of a semi-partial correlation is defined in Aloe (2014, Journal of Educational and Behavioral Statistics 39:1-23), which was not read for this suite; no formula usable without it"
+
+[[exempt]]
+item = "escalc.vi.ZSPCOR.LS"
+reason = "the variance of the Fisher z of a semi-partial correlation is defined in Aloe (2014, Journal of Educational and Behavioral Statistics 39:1-23), which was not read for this suite; no formula usable without it"
+
+[[exempt]]
+item = "escalc.vi.ZSPCOR.AV"
+reason = "the variance of the Fisher z of a semi-partial correlation is defined in Aloe (2014, Journal of Educational and Behavioral Statistics 39:1-23), which was not read for this suite; no formula usable without it"
+
+[[exempt]]
+item = "escalc.vi.ZR2.LS"
+reason = "the variance of the Fisher z of a multiple correlation is defined in a publication not read for this suite; no formula usable without it"
+
+[[exempt]]
+item = "escalc.vi.R2F.LS"
+reason = "the variance of R^2 under the random-predictor model is a numerical integral over the non-central F density (Algina & Keselman 2008), which was not read for this suite; no independent formula usable without it"
+
+[[exempt]]
+item = "escalc.vi.ZR2F.LS"
+reason = "the variance of the Fisher z of the multiple correlation under the random-predictor model is a numerical integral over the non-central F density (Algina & Keselman 2008), which was not read for this suite; no independent formula usable without it"
+
+[[exempt]]
+item = "escalc.yi.GEN"
+reason = "GEN takes yi and vi from the user and computes nothing"
+
+[[exempt]]
+item = "escalc.vi.GEN.LS"
+reason = "GEN takes yi and vi from the user and computes nothing"

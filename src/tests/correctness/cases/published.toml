@@ -1,0 +1,1300 @@
+# Cases whose expected values are printed in a publication (values as printed, as strings; the tolerance is half the last printed digit).
+# Sources that print no usable worked example are listed in agents/specs/correctness-tests/mismatches.md.
+
+# Raudenbush (2009), Handbook of Research Synthesis and Meta-Analysis 2nd ed., chapter 16, Table 16.2 (teacher expectancy, 19 studies).
+
+[[case]]
+id = "published.raudenbush2009.homogeneous"
+kind = "published"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "EE" }
+expect = { "beta[0]" = "0.060", "se[0]" = "0.036", QE = "35.83" }
+covers = ["tau2.EE"]
+
+[case.source]
+citation = "Raudenbush SW (2009). Analyzing effect sizes: random-effects models. In Cooper H, Hedges LV, Valentine JC (eds), The Handbook of Research Synthesis and Meta-Analysis, 2nd ed., pp. 295-315. Russell Sage Foundation, New York."
+locator = "Table 16.2, homogeneous effects model; Q0 in equation 16.8"
+read = 2026-11-12
+
+[[case]]
+id = "published.raudenbush2009.reml"
+kind = "published"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "REML" }
+expect = { tau2 = "0.019", "beta[0]" = "0.084", "se[0]" = "0.052" }
+covers = ["tau2.REML"]
+
+[case.source]
+citation = "Raudenbush SW (2009). Analyzing effect sizes: random-effects models. In Cooper H, Hedges LV, Valentine JC (eds), The Handbook of Research Synthesis and Meta-Analysis, 2nd ed., pp. 295-315. Russell Sage Foundation, New York."
+locator = "Table 16.2, simple random-effects model, and equation 16.11 (the table prints the intercept as 0.083, the text as 0.084)"
+read = 2026-11-12
+
+# The handbook's Table 16.1 codes prior contact as 0 to 3 (X) and prints the effect size of study 10 as 0.87; the 0.80 used here is the value
+# that reproduces the printed Q of 35.83 and 16.57 (0.87 gives 37.5 and 17.9) and is the value of dat.raudenbush1985.
+[[case]]
+id = "published.raudenbush2009.mixed"
+kind = "published"
+function = "rma_uni"
+data = { yi = [0.03, 0.12, -0.14, 1.18, 0.26, -0.06, -0.02, -0.32, 0.27, 0.80, 0.54, 0.18, -0.02, 0.23, -0.18, -0.06, 0.30, 0.07, -0.07], vi = [0.015625, 0.021609, 0.027889, 0.139129, 0.136161, 0.010609, 0.010609, 0.0484, 0.026896, 0.063001, 0.091204, 0.049729, 0.083521, 0.0841, 0.025281, 0.027889, 0.019321, 0.008836, 0.030276], x = [2, 3, 3, 0, 0, 3, 3, 3, 0, 1, 0, 0, 1, 2, 3, 3, 1, 2, 3] }
+args = { yi = "yi", vi = "vi", method = "REML", mods = "~ x" }
+expect = { tau2 = "0.000", "beta[0]" = "0.407", "se[0]" = "0.087", "beta[1]" = "-0.157", "se[1]" = "0.036", QE = "16.57" }
+covers = ["tau2.REML"]
+
+[case.source]
+citation = "Raudenbush SW (2009). Analyzing effect sizes: random-effects models. In Cooper H, Hedges LV, Valentine JC (eds), The Handbook of Research Synthesis and Meta-Analysis, 2nd ed., pp. 295-315. Russell Sage Foundation, New York."
+locator = "Table 16.1 (data, X = weeks of prior contact coded 0 to 3) and Table 16.2, mixed-effects model"
+read = 2026-11-12
+
+# Normand (1999), Statistics in Medicine 18:321-359, section 8 (multidisciplinary care for stroke inpatients, nine trials). The variances of Table VIII are
+# the pooled-variance mean difference, escalc's vtype = "HO".
+
+[[case]]
+id = "published.normand1999.md.ho"
+kind = "published"
+function = "escalc"
+dataset = "dat.normand1999"
+args = { measure = "MD", vtype = "HO", m1i = "m1i", sd1i = "sd1i", n1i = "n1i", m2i = "m2i", sd2i = "sd2i", n2i = "n2i" }
+expect = { "yi[0]" = "-20", "yi[3]" = "-71", "vi[0]" = "40.59", "vi[1]" = "2.05", "vi[2]" = "15.28", "vi[3]" = "150.22", "vi[4]" = "20.19", "vi[5]" = "1.22", "vi[6]" = "95.38", "vi[7]" = "8.03", "vi[8]" = "20.69" }
+covers = ["escalc.vi.MD.HO"]
+
+[case.source]
+citation = "Normand SLT (1999). Meta-analysis: formulating, evaluating, combining, and reporting. Statistics in Medicine 18(3):321-359."
+locator = "Table VIII, columns Y_i and s2_Yi"
+read = 2026-11-12
+doi = "10.1002/(SICI)1097-0258(19990215)18:3<321::AID-SIM28>3.0.CO;2-P"
+
+[[case]]
+id = "published.normand1999.fe"
+kind = "published"
+function = "rma_uni"
+dataset = "dat.normand1999"
+setup = { escalc = { measure = "MD", vtype = "HO", m1i = "m1i", sd1i = "sd1i", n1i = "n1i", m2i = "m2i", sd2i = "sd2i", n2i = "n2i" } }
+args = { yi = "yi", vi = "vi", method = "FE" }
+expect = { "beta[0]" = "-3.494", "se[0]" = "0.78", QE = "241.059" }
+covers = ["tau2.FE"]
+
+[case.source]
+citation = "Normand SLT (1999). Meta-analysis: formulating, evaluating, combining, and reporting. Statistics in Medicine 18(3):321-359."
+locator = "Table VIII (Y_W) and sections 8.1 and 8.2 (Q_W, standard error)"
+read = 2026-11-12
+doi = "10.1002/(SICI)1097-0258(19990215)18:3<321::AID-SIM28>3.0.CO;2-P"
+
+[[case]]
+id = "published.normand1999.dl"
+kind = "published"
+function = "rma_uni"
+dataset = "dat.normand1999"
+setup = { escalc = { measure = "MD", vtype = "HO", m1i = "m1i", sd1i = "sd1i", n1i = "n1i", m2i = "m2i", sd2i = "sd2i", n2i = "n2i" } }
+args = { yi = "yi", vi = "vi", method = "DL" }
+expect = { tau2 = "219", "beta[0]" = "-14", "se[0]" = "5", "ci_lb[0]" = "-24", "ci_ub[0]" = "-4" }
+covers = ["tau2.DL"]
+
+[case.source]
+citation = "Normand SLT (1999). Meta-analysis: formulating, evaluating, combining, and reporting. Statistics in Medicine 18(3):321-359."
+locator = "Table X, DerSimonian and Laird row; section 8.3 (method of moments estimate 219)"
+read = 2026-11-12
+doi = "10.1002/(SICI)1097-0258(19990215)18:3<321::AID-SIM28>3.0.CO;2-P"
+
+# Table X prints the REML interval as (-32, 2); the estimate -15 with standard error 9 (-15.12 and 8.95 unrounded) gives -32.67 and 2.43, which does not
+# round to those limits, so the interval is not checked.
+[[case]]
+id = "published.normand1999.reml"
+kind = "published"
+function = "rma_uni"
+dataset = "dat.normand1999"
+setup = { escalc = { measure = "MD", vtype = "HO", m1i = "m1i", sd1i = "sd1i", n1i = "n1i", m2i = "m2i", sd2i = "sd2i", n2i = "n2i" } }
+args = { yi = "yi", vi = "vi", method = "REML" }
+expect = { tau2 = "685", "beta[0]" = "-15", "se[0]" = "9" }
+covers = ["tau2.REML"]
+
+[case.source]
+citation = "Normand SLT (1999). Meta-analysis: formulating, evaluating, combining, and reporting. Statistics in Medicine 18(3):321-359."
+locator = "Table X, REML row; section 8.3 (REML estimate 685)"
+read = 2026-11-12
+doi = "10.1002/(SICI)1097-0258(19990215)18:3<321::AID-SIM28>3.0.CO;2-P"
+
+# Drafts for group A: Knapp and Hartung (2003), Higgins and Thompson (2002). Sidik and Jonkman (2005) prints no data (see A.md).
+
+# Knapp and Hartung (2003), BCG vaccine trials of Table I (the data of dat.bcg; the latitude of trial 9 is used in absolute value, as in the paper's
+# Figure 1 and Section 4). The paper computes yi and the "usual" within-trial variance by equations (19) and (20), which add 0.5 to each cell AND to
+# each group size (a + 0.5)/(n + 0.5), not 1 as escalc's add = 0.5 does; so yi and vi are given as columns here, computed from the counts of Table I
+# by those equations. The smoothed variance is equation (21). x is the absolute latitude minus its mean (33.4615). The paper's "t-score" is the
+# coefficient divided by its standard error (zval), with the usual standard error (test = "z") or the Knapp-Hartung one (test = "knha").
+
+[[case]]
+id = "published.knapp2003.dl.usual.z"
+kind = "published"
+function = "rma_uni"
+data = { yi = [-0.8164461933995422, -1.5224242313208958, -1.2382662455132243, -1.4355310287910705, -0.21310410364868027, -0.784664723908199, -1.608465613525195, 0.01194044037191766, -0.46337101762676713, -1.35001121697575, -0.3402056750187148, 0.38708632158239453, -0.016060800992270252], vi = [0.29391311918808777, 0.18118692327429947, 0.36381600563348004, 0.019872892172806723, 0.05053395824788897, 0.006887068709663239, 0.2109037415828761, 0.0039576147589406845, 0.05560557501515042, 0.07122703158807969, 0.012372740272096113, 0.4667051507281205, 0.07014680879104701], xc = [10.53846153846154, 21.53846153846154, 8.53846153846154, 18.53846153846154, -20.46153846153846, 10.53846153846154, -14.46153846153846, -20.46153846153846, -6.46153846153846, 8.53846153846154, -15.46153846153846, -0.4615384615384599, -0.4615384615384599] }
+args = { yi = "yi", vi = "vi", method = "DL", mods = "~ xc", test = "z" }
+expect = { "tau2" = "0.0622", "beta[0]" = "-0.708", "beta[1]" = "-0.029", "zval[0]" = "-7.08", "zval[1]" = "-4.30" }
+covers = ["tau2.DL", "test.z"]
+
+[case.source]
+citation = "Knapp G, Hartung J (2003). Improved tests for a random effects meta-regression with a single covariate. Statistics in Medicine 22:2693-2710."
+doi = "10.1002/sim.1482"
+locator = "Section 5, method of moments estimator with the usual within-trial variances (equations 7, 10 and 11)"
+read = 2026-11-12
+
+[[case]]
+id = "published.knapp2003.dl.usual.knha"
+kind = "published"
+function = "rma_uni"
+data = { yi = [-0.8164461933995422, -1.5224242313208958, -1.2382662455132243, -1.4355310287910705, -0.21310410364868027, -0.784664723908199, -1.608465613525195, 0.01194044037191766, -0.46337101762676713, -1.35001121697575, -0.3402056750187148, 0.38708632158239453, -0.016060800992270252], vi = [0.29391311918808777, 0.18118692327429947, 0.36381600563348004, 0.019872892172806723, 0.05053395824788897, 0.006887068709663239, 0.2109037415828761, 0.0039576147589406845, 0.05560557501515042, 0.07122703158807969, 0.012372740272096113, 0.4667051507281205, 0.07014680879104701], xc = [10.53846153846154, 21.53846153846154, 8.53846153846154, 18.53846153846154, -20.46153846153846, 10.53846153846154, -14.46153846153846, -20.46153846153846, -6.46153846153846, 8.53846153846154, -15.46153846153846, -0.4615384615384599, -0.4615384615384599] }
+args = { yi = "yi", vi = "vi", method = "DL", mods = "~ xc", test = "knha" }
+expect = { "tau2" = "0.0622", "zval[0]" = "-6.00", "zval[1]" = "-3.64" }
+covers = ["tau2.DL", "test.knha"]
+
+[case.source]
+citation = "Knapp G, Hartung J (2003). Improved tests for a random effects meta-regression with a single covariate. Statistics in Medicine 22:2693-2710."
+doi = "10.1002/sim.1482"
+locator = "Section 5, t-scores with the newly proposed standard errors (equations 13 to 16), method of moments, usual variances"
+read = 2026-11-12
+
+[[case]]
+id = "published.knapp2003.eb.usual"
+kind = "published"
+function = "rma_uni"
+data = { yi = [-0.8164461933995422, -1.5224242313208958, -1.2382662455132243, -1.4355310287910705, -0.21310410364868027, -0.784664723908199, -1.608465613525195, 0.01194044037191766, -0.46337101762676713, -1.35001121697575, -0.3402056750187148, 0.38708632158239453, -0.016060800992270252], vi = [0.29391311918808777, 0.18118692327429947, 0.36381600563348004, 0.019872892172806723, 0.05053395824788897, 0.006887068709663239, 0.2109037415828761, 0.0039576147589406845, 0.05560557501515042, 0.07122703158807969, 0.012372740272096113, 0.4667051507281205, 0.07014680879104701], xc = [10.53846153846154, 21.53846153846154, 8.53846153846154, 18.53846153846154, -20.46153846153846, 10.53846153846154, -14.46153846153846, -20.46153846153846, -6.46153846153846, 8.53846153846154, -15.46153846153846, -0.4615384615384599, -0.4615384615384599] }
+args = { yi = "yi", vi = "vi", method = "EB", mods = "~ xc", test = "z" }
+expect = { "tau2" = "0.1388", "beta[0]" = "-0.720", "beta[1]" = "-0.028" }
+covers = ["tau2.EB"]
+
+[case.source]
+citation = "Knapp G, Hartung J (2003). Improved tests for a random effects meta-regression with a single covariate. Statistics in Medicine 22:2693-2710."
+doi = "10.1002/sim.1482"
+locator = "Section 5, empirical Bayes estimator (equation 9) with the usual within-trial variances"
+read = 2026-11-12
+
+[[case]]
+id = "published.knapp2003.dl.smoothed.z"
+kind = "published"
+function = "rma_uni"
+data = { yi = [-0.8164461933995422, -1.5224242313208958, -1.2382662455132243, -1.4355310287910705, -0.21310410364868027, -0.784664723908199, -1.608465613525195, 0.01194044037191766, -0.46337101762676713, -1.35001121697575, -0.3402056750187148, 0.38708632158239453, -0.016060800992270252], vi = [2.83207889696663, 1.2042713705482315, 1.6232648282533022, 0.027656479565818765, 0.0683348444866086, 0.24459036297941716, 0.3372037559816863, 0.004150990663067254, 0.04958399419383505, 0.2166959784816329, 0.009960576433620784, 0.15121155415260995, 0.021191388359380732], xc = [10.53846153846154, 21.53846153846154, 8.53846153846154, 18.53846153846154, -20.46153846153846, 10.53846153846154, -14.46153846153846, -20.46153846153846, -6.46153846153846, 8.53846153846154, -15.46153846153846, -0.4615384615384599, -0.4615384615384599] }
+args = { yi = "yi", vi = "vi", method = "DL", mods = "~ xc", test = "z" }
+expect = { "tau2" = "0.1013", "beta[0]" = "-0.618", "beta[1]" = "-0.027", "zval[0]" = "-4.52", "zval[1]" = "-2.87" }
+covers = ["tau2.DL", "test.z"]
+
+[case.source]
+citation = "Knapp G, Hartung J (2003). Improved tests for a random effects meta-regression with a single covariate. Statistics in Medicine 22:2693-2710."
+doi = "10.1002/sim.1482"
+locator = "Section 5, method of moments estimator with the smoothed within-trial variances (equation 21)"
+read = 2026-11-12
+
+[[case]]
+id = "published.knapp2003.dl.smoothed.knha"
+kind = "published"
+function = "rma_uni"
+data = { yi = [-0.8164461933995422, -1.5224242313208958, -1.2382662455132243, -1.4355310287910705, -0.21310410364868027, -0.784664723908199, -1.608465613525195, 0.01194044037191766, -0.46337101762676713, -1.35001121697575, -0.3402056750187148, 0.38708632158239453, -0.016060800992270252], vi = [2.83207889696663, 1.2042713705482315, 1.6232648282533022, 0.027656479565818765, 0.0683348444866086, 0.24459036297941716, 0.3372037559816863, 0.004150990663067254, 0.04958399419383505, 0.2166959784816329, 0.009960576433620784, 0.15121155415260995, 0.021191388359380732], xc = [10.53846153846154, 21.53846153846154, 8.53846153846154, 18.53846153846154, -20.46153846153846, 10.53846153846154, -14.46153846153846, -20.46153846153846, -6.46153846153846, 8.53846153846154, -15.46153846153846, -0.4615384615384599, -0.4615384615384599] }
+args = { yi = "yi", vi = "vi", method = "DL", mods = "~ xc", test = "knha" }
+expect = { "tau2" = "0.1013", "zval[0]" = "-4.12", "zval[1]" = "-2.62" }
+covers = ["tau2.DL", "test.knha"]
+
+[case.source]
+citation = "Knapp G, Hartung J (2003). Improved tests for a random effects meta-regression with a single covariate. Statistics in Medicine 22:2693-2710."
+doi = "10.1002/sim.1482"
+locator = "Section 5, t-scores with the newly proposed standard errors, method of moments, smoothed variances"
+read = 2026-11-12
+
+[[case]]
+id = "published.knapp2003.eb.smoothed"
+kind = "published"
+function = "rma_uni"
+data = { yi = [-0.8164461933995422, -1.5224242313208958, -1.2382662455132243, -1.4355310287910705, -0.21310410364868027, -0.784664723908199, -1.608465613525195, 0.01194044037191766, -0.46337101762676713, -1.35001121697575, -0.3402056750187148, 0.38708632158239453, -0.016060800992270252], vi = [2.83207889696663, 1.2042713705482315, 1.6232648282533022, 0.027656479565818765, 0.0683348444866086, 0.24459036297941716, 0.3372037559816863, 0.004150990663067254, 0.04958399419383505, 0.2166959784816329, 0.009960576433620784, 0.15121155415260995, 0.021191388359380732], xc = [10.53846153846154, 21.53846153846154, 8.53846153846154, 18.53846153846154, -20.46153846153846, 10.53846153846154, -14.46153846153846, -20.46153846153846, -6.46153846153846, 8.53846153846154, -15.46153846153846, -0.4615384615384599, -0.4615384615384599] }
+args = { yi = "yi", vi = "vi", method = "EB", mods = "~ xc", test = "z" }
+expect = { "tau2" = "0.1479", "beta[0]" = "-0.626", "beta[1]" = "-0.026" }
+covers = ["tau2.EB"]
+
+[case.source]
+citation = "Knapp G, Hartung J (2003). Improved tests for a random effects meta-regression with a single covariate. Statistics in Medicine 22:2693-2710."
+doi = "10.1002/sim.1482"
+locator = "Section 5, empirical Bayes estimator with the smoothed within-trial variances"
+read = 2026-11-12
+
+# Higgins and Thompson (2002), the sclerotherapy example (19 trials, log odds ratio). The paper prints no study data, only k, Q, tau2 and I2 in its Table I.
+# The counts are the sclerotherapy and control arms of the 19 trials of dat.pagliaro1992 (Pagliaro et al., the paper's reference 8) that have both arms;
+# that these are the paper's trials is confirmed by the printed values reproduced here (k = 19, Q = 81.5, tau2 = 0.98, I2 = 78). Lacking a stated
+# arm label or outcome in the paper, treat the data identification as a lead checked only by those four numbers. The DL estimator gives the printed
+# heterogeneity variance. escalc's default add = 1/2 for the zero cells (trials with a zero count) gives the printed Q.
+[[case]]
+id = "published.higgins2002.sclerotherapy"
+kind = "published"
+function = "rma_uni"
+data = { ai = [9.0, 13.0, 4.0, 3.0, 5.0, 5.0, 3.0, 11.0, 19.0, 17.0, 10.0, 12.0, 0.0, 13.0, 31.0, 20.0, 3.0, 3.0, 6.0], bi = [33.0, 60.0, 14.0, 32.0, 51.0, 11.0, 20.0, 38.0, 34.0, 36.0, 61.0, 29.0, 21.0, 20.0, 112.0, 35.0, 10.0, 18.0, 16.0], ci = [13.0, 13.0, 0.0, 22.0, 30.0, 6.0, 9.0, 31.0, 9.0, 26.0, 29.0, 14.0, 3.0, 14.0, 23.0, 19.0, 12.0, 5.0, 2.0], di = [28.0, 59.0, 19.0, 14.0, 23.0, 12.0, 13.0, 15.0, 51.0, 34.0, 40.0, 27.0, 17.0, 21.0, 115.0, 32.0, 4.0, 23.0, 22.0] }
+setup = { escalc = { measure = "OR", ai = "ai", bi = "bi", ci = "ci", di = "di" } }
+args = { yi = "yi", vi = "vi", method = "DL" }
+expect = { QE = "81.5", tau2 = "0.98", I2 = "78" }
+covers = ["tau2.DL", "heterogeneity.QE", "heterogeneity.I2"]
+
+[case.source]
+citation = "Higgins JPT, Thompson SG (2002). Quantifying heterogeneity in a meta-analysis. Statistics in Medicine 21:1539-1558."
+doi = "10.1002/sim.1186"
+locator = "Table I, sclerotherapy column (number of trials, heterogeneity variance, Q, I2 point value)"
+read = 2026-11-12
+
+# Draft published cases, group B: Paule and Mandel (1982), DerSimonian and Kacker (2007), Hedges (1983), Viechtbauer (2005), Schmidt (Hunter-Schmidt).
+# Values as printed, as strings; the tolerance is half the last printed digit.
+
+# Paule and Mandel (1982), section 4: two sets of measurements (coded values, measured minus 200). The inputs are the printed set means (1.533, 16.55)
+# and the printed variances of the means (0.0238, 0.0625): the paper iterates from these rounded values.
+[[case]]
+id = "published.paulemandel1982.two-sets.pm"
+kind = "published"
+function = "rma_uni"
+data = { yi = [1.533, 16.55], vi = [0.0238, 0.0625] }
+args = { yi = "yi", vi = "vi", method = "PM" }
+expect = { tau2 = "112.7120", "beta[0]" = "9.0402", "se[0]" = "7.51" }
+covers = ["tau2.PM"]
+
+[case.source]
+citation = "Paule RC, Mandel J (1982). Consensus values and weighting factors. Journal of Research of the National Bureau of Standards 87(5):377-385."
+doi = "10.6028/jres.087.022"
+locator = "section 4 (iterated between-set variance 112.7120, weighted average 9.0402) and section 6 (standard error 7.51); sets A (six values) and B (two values) of the second example in section 2"
+read = 2026-11-12
+
+# The same example with the pooled within-set variance 0.1398 (equation 2), so that the variances of the means are 0.1398/6 and 0.1398/2.
+[[case]]
+id = "published.paulemandel1982.two-sets.pm.pooled"
+kind = "published"
+function = "rma_uni"
+data = { yi = [1.533, 16.55], vi = [0.0233, 0.0699] }
+args = { yi = "yi", vi = "vi", method = "PM" }
+expect = { tau2 = "112.7085", "beta[0]" = "9.0399" }
+covers = ["tau2.PM"]
+
+[case.source]
+citation = "Paule RC, Mandel J (1982). Consensus values and weighting factors. Journal of Research of the National Bureau of Standards 87(5):377-385."
+doi = "10.6028/jres.087.022"
+locator = "section 4, last paragraph before section 5 (pooled s^2 = 0.1398 gives 112.7085 and 9.0399)"
+read = 2026-11-12
+
+# Heat of vaporisation of cadmium, five laboratories (section 7). The paper prints the variances of the means only as multiples of 10^3 (3, 76, 464, 3, 14), so
+# only the between-laboratory variance (105 x 10^3) is asserted: the printed weighted average 26,713 cannot be reproduced to its last digit from variances
+# rounded to one to three figures (metafopy gives 26712.1 from them).
+[[case]]
+id = "published.paulemandel1982.cadmium.pm"
+kind = "published"
+function = "rma_uni"
+data = { yi = [27044.0, 26022.0, 26340.0, 26787.0, 26796.0], vi = [3000.0, 76000.0, 464000.0, 3000.0, 14000.0] }
+args = { yi = "yi", vi = "vi", method = "PM" }
+expect = { tau2 = "105e3" }
+covers = ["tau2.PM"]
+
+[case.source]
+citation = "Paule RC, Mandel J (1982). Consensus values and weighting factors. Journal of Research of the National Bureau of Standards 87(5):377-385."
+doi = "10.6028/jres.087.022"
+locator = "section 7, table of the five laboratories (average values, s^2/n in units of 10^3, between-set variance 105 x 10^3)"
+read = 2026-11-12
+
+# DerSimonian and Kacker (2007), the review of intravenous magnesium (Teo et al. 1991): seven trials, 1301 subjects. The paper prints no trial-level data; the
+# seven trials are the first seven rows of dat.egger2001 (Morton, Rasmussen, Smith, Abraham, Feldstedt, Shechter, Ceremuzynski), whose sizes add up to the
+# printed 1301. The log odds ratio variance of section 4, [n r (1 - r)]^-1 for each arm, equals 1/a + 1/b + 1/c + 1/d, as escalc computes it. Table 3 prints
+# tau (not tau^2), which has no result attribute: the checks use the weighted means and standard errors of Table 4, which depend on tau^2.
+[[case]]
+id = "published.dersimonian2007.teo.pm"
+kind = "published"
+function = "rma_uni"
+dataset = "dat.egger2001"
+setup = { escalc = { measure = "OR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i" } }
+args = { yi = "yi", vi = "vi", method = "PM", subset = [0, 1, 2, 3, 4, 5, 6] }
+expect = { "beta[0]" = "-0.7866", "se[0]" = "0.3124" }
+covers = ["tau2.PM"]
+
+[case.source]
+citation = "DerSimonian R, Kacker R (2007). Random-effects model for meta-analysis of clinical trials: an update. Contemporary Clinical Trials 28:105-114."
+doi = "10.1016/j.cct.2006.04.004"
+locator = "Table 4, Teo row, column mw(PM) (Table 3 gives tau(PM) = 0.3312); trials from Teo et al. (1991), BMJ 303:1499-1503, 1301 subjects in Table 2"
+read = 2026-11-12
+
+[[case]]
+id = "published.dersimonian2007.teo.dl"
+kind = "published"
+function = "rma_uni"
+dataset = "dat.egger2001"
+setup = { escalc = { measure = "OR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i" } }
+args = { yi = "yi", vi = "vi", method = "DL", subset = [0, 1, 2, 3, 4, 5, 6] }
+expect = { "beta[0]" = "-0.8032", "se[0]" = "0.3336" }
+covers = ["tau2.DL"]
+
+[case.source]
+citation = "DerSimonian R, Kacker R (2007). Random-effects model for meta-analysis of clinical trials: an update. Contemporary Clinical Trials 28:105-114."
+doi = "10.1016/j.cct.2006.04.004"
+locator = "Table 4, Teo row, column mw(DL) (Table 3 gives tau(DL) = 0.4135); trials as in published.dersimonian2007.teo.pm"
+read = 2026-11-12
+
+# The Cochran ANOVA estimate is the Hedges estimator (the unweighted variance of the effects less the mean sampling variance); it is negative here, so tau = 0.
+[[case]]
+id = "published.dersimonian2007.teo.ca"
+kind = "published"
+function = "rma_uni"
+dataset = "dat.egger2001"
+setup = { escalc = { measure = "OR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i" } }
+args = { yi = "yi", vi = "vi", method = "HE", subset = [0, 1, 2, 3, 4, 5, 6] }
+expect = { tau2 = "0.0000", "beta[0]" = "-0.7533", "se[0]" = "0.2649" }
+covers = ["tau2.HE"]
+
+[case.source]
+citation = "DerSimonian R, Kacker R (2007). Random-effects model for meta-analysis of clinical trials: an update. Contemporary Clinical Trials 28:105-114."
+doi = "10.1016/j.cct.2006.04.004"
+locator = "Table 3 (Teo, t(CA) = 0.0000) and Table 4 (Teo, mw(CA)); trials as in published.dersimonian2007.teo.pm"
+read = 2026-11-12
+
+# Hedges (1983), Table 1: effect sizes g and group sizes of 24 open-education studies. The paper prints g, nE and nC, and the unbiased variance estimate
+# 1/n~ + (1 - 1/a) g^2 of equation 9, which is escalc's vtype "UB". escalc computes g from a standardised difference, so each printed g is given as
+# d = g / J(nE + nC - 2), with means d and 0 and standard deviations 1: escalc then returns the printed g and the variance of equation 9. (From the
+# printed three-decimal variances themselves tau^2 is 0.0354 for the randomised studies, which rounds to 0.035, not the printed 0.036.)
+[[case]]
+id = "published.hedges1983.random-assignment.he"
+kind = "published"
+function = "rma_uni"
+data = { m1i = [0.1466598044, 0.2494202997, 0.0491029532, -0.3147016015, -0.2677529376, -0.1104662116, 0.125033813, -0.1520115377, 0.5523959418, 0.1904831191, -0.3633377133, -0.3222026783], m2i = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], sd1i = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], sd2i = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], n1i = [57, 48, 180, 80, 131, 90, 41, 60, 10, 138, 156, 56], n2i = [112, 86, 180, 61, 138, 90, 52, 55, 10, 160, 50, 56] }
+setup = { escalc = { measure = "SMD", m1i = "m1i", sd1i = "sd1i", n1i = "n1i", m2i = "m2i", sd2i = "sd2i", n2i = "n2i", vtype = "UB" } }
+args = { yi = "yi", vi = "vi", method = "HE" }
+expect = { tau2 = "0.036" }
+covers = ["tau2.HE"]
+
+[case.source]
+citation = "Hedges LV (1983). A random effects model for effect sizes. Psychological Bulletin 93(2):388-395."
+doi = "10.1037/0033-2909.93.2.388"
+locator = "Table 1 (twelve randomised experiments: nE, nC, g) and the Example section (unbiased estimate of the variance of the population effect sizes, equation 10: 0.036)"
+read = 2026-11-12
+
+[[case]]
+id = "published.hedges1983.no-random-assignment.he"
+kind = "published"
+function = "rma_uni"
+data = { m1i = [0.5087310356, 0.3321529553, 0.1091599935, -0.3837033075, 0.260758878, -0.4900566617, 0.5867728841, 0.38905912, -0.3459692525, -0.7198964052, 0.006051749, -0.3988494907], m2i = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], sd1i = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], sd2i = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], n1i = [42, 74, 89, 40, 133, 76, 80, 72, 120, 120, 38, 40], n2i = [100, 44, 425, 40, 127, 105, 81, 72, 150, 167, 52, 40] }
+setup = { escalc = { measure = "SMD", m1i = "m1i", sd1i = "sd1i", n1i = "n1i", m2i = "m2i", sd2i = "sd2i", n2i = "n2i", vtype = "UB" } }
+args = { yi = "yi", vi = "vi", method = "HE" }
+expect = { tau2 = "0.162" }
+covers = ["tau2.HE"]
+
+[case.source]
+citation = "Hedges LV (1983). A random effects model for effect sizes. Psychological Bulletin 93(2):388-395."
+doi = "10.1037/0033-2909.93.2.388"
+locator = "Table 1 (twelve studies without random assignment: nE, nC, g) and the Example section (equation 10: 0.162)"
+read = 2026-11-12
+
+# Viechtbauer (2005), Table 1: ten studies of open versus traditional education on student creativity (Hedges and Olkin 1985, p. 25). Effect sizes and
+# variances as printed (three decimals); the paper gives the estimates to two decimals.
+[[case]]
+id = "published.viechtbauer2005.creativity.hs"
+kind = "published"
+function = "rma_uni"
+data = { yi = [-0.581, 0.530, 0.771, 1.031, 0.553, 0.295, 0.078, 0.573, -0.176, -0.232], vi = [0.023, 0.052, 0.060, 0.115, 0.095, 0.203, 0.200, 0.211, 0.051, 0.040] }
+args = { yi = "yi", vi = "vi", method = "HS" }
+expect = { tau2 = "0.23" }
+covers = ["tau2.HS"]
+
+[case.source]
+citation = "Viechtbauer W (2005). Bias and efficiency of meta-analytic variance estimators in the random-effects model. Journal of Educational and Behavioral Statistics 30(3):261-293."
+doi = "10.3102/10769986030003261"
+locator = "section 4 (HS 0.23) and Table 1"
+read = 2026-11-12
+
+[[case]]
+id = "published.viechtbauer2005.creativity.he"
+kind = "published"
+function = "rma_uni"
+data = { yi = [-0.581, 0.530, 0.771, 1.031, 0.553, 0.295, 0.078, 0.573, -0.176, -0.232], vi = [0.023, 0.052, 0.060, 0.115, 0.095, 0.203, 0.200, 0.211, 0.051, 0.040] }
+args = { yi = "yi", vi = "vi", method = "HE" }
+expect = { tau2 = "0.15" }
+covers = ["tau2.HE"]
+
+[case.source]
+citation = "Viechtbauer W (2005). Bias and efficiency of meta-analytic variance estimators in the random-effects model. Journal of Educational and Behavioral Statistics 30(3):261-293."
+doi = "10.3102/10769986030003261"
+locator = "section 4 (HE 0.15) and Table 1"
+read = 2026-11-12
+
+[[case]]
+id = "published.viechtbauer2005.creativity.dl"
+kind = "published"
+function = "rma_uni"
+data = { yi = [-0.581, 0.530, 0.771, 1.031, 0.553, 0.295, 0.078, 0.573, -0.176, -0.232], vi = [0.023, 0.052, 0.060, 0.115, 0.095, 0.203, 0.200, 0.211, 0.051, 0.040] }
+args = { yi = "yi", vi = "vi", method = "DL" }
+expect = { tau2 = "0.28" }
+covers = ["tau2.DL"]
+
+[case.source]
+citation = "Viechtbauer W (2005). Bias and efficiency of meta-analytic variance estimators in the random-effects model. Journal of Educational and Behavioral Statistics 30(3):261-293."
+doi = "10.3102/10769986030003261"
+locator = "section 4 (DL 0.28) and Table 1"
+read = 2026-11-12
+
+[[case]]
+id = "published.viechtbauer2005.creativity.ml"
+kind = "published"
+function = "rma_uni"
+data = { yi = [-0.581, 0.530, 0.771, 1.031, 0.553, 0.295, 0.078, 0.573, -0.176, -0.232], vi = [0.023, 0.052, 0.060, 0.115, 0.095, 0.203, 0.200, 0.211, 0.051, 0.040] }
+args = { yi = "yi", vi = "vi", method = "ML", control = { threshold = 1e-10, tol = 1e-10, maxiter = 1000 } }
+expect = { tau2 = "0.20" }
+covers = ["tau2.ML"]
+
+[case.source]
+citation = "Viechtbauer W (2005). Bias and efficiency of meta-analytic variance estimators in the random-effects model. Journal of Educational and Behavioral Statistics 30(3):261-293."
+doi = "10.3102/10769986030003261"
+locator = "section 4 (ML 0.20) and Table 1"
+read = 2026-11-12
+
+[[case]]
+id = "published.viechtbauer2005.creativity.reml"
+kind = "published"
+function = "rma_uni"
+data = { yi = [-0.581, 0.530, 0.771, 1.031, 0.553, 0.295, 0.078, 0.573, -0.176, -0.232], vi = [0.023, 0.052, 0.060, 0.115, 0.095, 0.203, 0.200, 0.211, 0.051, 0.040] }
+args = { yi = "yi", vi = "vi", method = "REML", control = { threshold = 1e-10, tol = 1e-10, maxiter = 1000 } }
+expect = { tau2 = "0.22" }
+covers = ["tau2.REML"]
+
+[case.source]
+citation = "Viechtbauer W (2005). Bias and efficiency of meta-analytic variance estimators in the random-effects model. Journal of Educational and Behavioral Statistics 30(3):261-293."
+doi = "10.3102/10769986030003261"
+locator = "section 4 (REML 0.22) and Table 1"
+read = 2026-11-12
+
+# Viechtbauer (2005), Table 2: self-concept, 18 studies. The printed table has a first row (-0.581, 0.023, 43.478) that repeats study 1 of Table 1 and
+# makes 19 rows; with it none of the printed estimates is reproduced (HS 0.031, DL 0.035). The 18 rows below, from the second row on, reproduce all of them.
+# metafopy truncates the Hedges estimator at zero as metafor does; the printed -0.002 is the untruncated value, obtained with control tau2_min = -1.
+[[case]]
+id = "published.viechtbauer2005.selfconcept.hs"
+kind = "published"
+function = "rma_uni"
+data = { yi = [0.100, -0.162, -0.090, -0.049, -0.046, -0.010, -0.431, -0.261, 0.134, 0.019, 0.175, 0.056, 0.045, 0.103, 0.121, -0.482, 0.290, 0.342], vi = [0.016, 0.015, 0.050, 0.050, 0.032, 0.052, 0.036, 0.024, 0.034, 0.033, 0.031, 0.034, 0.039, 0.167, 0.134, 0.096, 0.016, 0.035] }
+args = { yi = "yi", vi = "vi", method = "HS" }
+expect = { tau2 = "0.010" }
+covers = ["tau2.HS"]
+
+[case.source]
+citation = "Viechtbauer W (2005). Bias and efficiency of meta-analytic variance estimators in the random-effects model. Journal of Educational and Behavioral Statistics 30(3):261-293."
+doi = "10.3102/10769986030003261"
+locator = "section 4 (HS 0.010) and Table 2, rows 2 to 19 (the first printed row repeats Table 1's study 1)"
+read = 2026-11-12
+
+[[case]]
+id = "published.viechtbauer2005.selfconcept.dl"
+kind = "published"
+function = "rma_uni"
+data = { yi = [0.100, -0.162, -0.090, -0.049, -0.046, -0.010, -0.431, -0.261, 0.134, 0.019, 0.175, 0.056, 0.045, 0.103, 0.121, -0.482, 0.290, 0.342], vi = [0.016, 0.015, 0.050, 0.050, 0.032, 0.052, 0.036, 0.024, 0.034, 0.033, 0.031, 0.034, 0.039, 0.167, 0.134, 0.096, 0.016, 0.035] }
+args = { yi = "yi", vi = "vi", method = "DL" }
+expect = { tau2 = "0.013" }
+covers = ["tau2.DL"]
+
+[case.source]
+citation = "Viechtbauer W (2005). Bias and efficiency of meta-analytic variance estimators in the random-effects model. Journal of Educational and Behavioral Statistics 30(3):261-293."
+doi = "10.3102/10769986030003261"
+locator = "section 4 (DL 0.013) and Table 2, rows 2 to 19"
+read = 2026-11-12
+
+[[case]]
+id = "published.viechtbauer2005.selfconcept.ml"
+kind = "published"
+function = "rma_uni"
+data = { yi = [0.100, -0.162, -0.090, -0.049, -0.046, -0.010, -0.431, -0.261, 0.134, 0.019, 0.175, 0.056, 0.045, 0.103, 0.121, -0.482, 0.290, 0.342], vi = [0.016, 0.015, 0.050, 0.050, 0.032, 0.052, 0.036, 0.024, 0.034, 0.033, 0.031, 0.034, 0.039, 0.167, 0.134, 0.096, 0.016, 0.035] }
+args = { yi = "yi", vi = "vi", method = "ML", control = { threshold = 1e-10, tol = 1e-10, maxiter = 1000 } }
+expect = { tau2 = "0.013" }
+covers = ["tau2.ML"]
+
+[case.source]
+citation = "Viechtbauer W (2005). Bias and efficiency of meta-analytic variance estimators in the random-effects model. Journal of Educational and Behavioral Statistics 30(3):261-293."
+doi = "10.3102/10769986030003261"
+locator = "section 4 (ML 0.013) and Table 2, rows 2 to 19"
+read = 2026-11-12
+
+[[case]]
+id = "published.viechtbauer2005.selfconcept.reml"
+kind = "published"
+function = "rma_uni"
+data = { yi = [0.100, -0.162, -0.090, -0.049, -0.046, -0.010, -0.431, -0.261, 0.134, 0.019, 0.175, 0.056, 0.045, 0.103, 0.121, -0.482, 0.290, 0.342], vi = [0.016, 0.015, 0.050, 0.050, 0.032, 0.052, 0.036, 0.024, 0.034, 0.033, 0.031, 0.034, 0.039, 0.167, 0.134, 0.096, 0.016, 0.035] }
+args = { yi = "yi", vi = "vi", method = "REML", control = { threshold = 1e-10, tol = 1e-10, maxiter = 1000 } }
+expect = { tau2 = "0.016" }
+covers = ["tau2.REML"]
+
+[case.source]
+citation = "Viechtbauer W (2005). Bias and efficiency of meta-analytic variance estimators in the random-effects model. Journal of Educational and Behavioral Statistics 30(3):261-293."
+doi = "10.3102/10769986030003261"
+locator = "section 4 (REML 0.016) and Table 2, rows 2 to 19"
+read = 2026-11-12
+
+[[case]]
+id = "published.viechtbauer2005.selfconcept.he"
+kind = "published"
+function = "rma_uni"
+data = { yi = [0.100, -0.162, -0.090, -0.049, -0.046, -0.010, -0.431, -0.261, 0.134, 0.019, 0.175, 0.056, 0.045, 0.103, 0.121, -0.482, 0.290, 0.342], vi = [0.016, 0.015, 0.050, 0.050, 0.032, 0.052, 0.036, 0.024, 0.034, 0.033, 0.031, 0.034, 0.039, 0.167, 0.134, 0.096, 0.016, 0.035] }
+args = { yi = "yi", vi = "vi", method = "HE", control = { tau2_min = -1 } }
+expect = { tau2 = "-0.002" }
+covers = ["tau2.HE"]
+
+[case.source]
+citation = "Viechtbauer W (2005). Bias and efficiency of meta-analytic variance estimators in the random-effects model. Journal of Educational and Behavioral Statistics 30(3):261-293."
+doi = "10.3102/10769986030003261"
+locator = "section 4 (HE -0.002) and Table 2, rows 2 to 19"
+read = 2026-11-12
+
+# Schmidt, bare-bones meta-analysis of 21 validity studies (N = 68 each, Table 22.1). The sampling error variance is the single value 0.0135 of equation 3
+# ((1 - mean(r)^2)^2 / (N - 1)), so every study gets vi = 0.0135 and the Hunter-Schmidt estimate is the variance of r less 0.0135. The mean correlation 0.22
+# is reproduced. The printed observed variance 0.0120 (hence tau^2 = 0.0120 - 0.0135 = -0.0015) is not: the variance of the 21 printed correlations is
+# 0.0109 (0.0115 with divisor N - 1), giving -0.0026. The table's own count of significant correlations (8 of 21 above r = 0.238) agrees with the data.
+[[case]]
+id = "published.schmidt.barebones.mean"
+kind = "published"
+function = "rma_uni"
+data = { yi = [0.04, 0.14, 0.31, 0.12, 0.38, 0.27, 0.15, 0.36, 0.20, 0.02, 0.23, 0.11, 0.21, 0.37, 0.14, 0.29, 0.26, 0.17, 0.39, 0.22, 0.21], vi = [0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135] }
+args = { yi = "yi", vi = "vi", method = "HS" }
+expect = { "beta[0]" = "0.22" }
+covers = ["tau2.HS"]
+
+[case.source]
+citation = "Schmidt FL. Meta-analysis, chapter 22 (extracted as 'Methods of Meta-Analysis'; the volume's bibliographic details are not in the extracted text)."
+locator = "Table 22.1 and equation 1 (mean r = .22)"
+read = 2026-11-12
+
+[[case]]
+id = "published.schmidt.barebones.tau2"
+kind = "published"
+function = "rma_uni"
+data = { yi = [0.04, 0.14, 0.31, 0.12, 0.38, 0.27, 0.15, 0.36, 0.20, 0.02, 0.23, 0.11, 0.21, 0.37, 0.14, 0.29, 0.26, 0.17, 0.39, 0.22, 0.21], vi = [0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135] }
+args = { yi = "yi", vi = "vi", method = "HS", control = { tau2_min = -1 } }
+expect = { tau2 = "-0.0015" }
+status = "mismatch"
+reason = "Schmidt prints the variance of the 21 observed correlations as 0.0120, so tau2 = 0.0120 - 0.0135 = -0.0015; the variance of the 21 correlations printed in Table 22.1 is 0.0109, so metafopy gives -0.0026 (0.0109 - 0.0135, tolerance 0.00005). The source's own table and its printed variance disagree, so this looks like a misprint or a different dataset, not a metafopy error"
+covers = ["tau2.HS"]
+
+[case.source]
+citation = "Schmidt FL. Meta-analysis, chapter 22 (extracted as 'Methods of Meta-Analysis'; the volume's bibliographic details are not in the extracted text)."
+locator = "Table 22.1 and equations 2 to 4 (0.0120 - 0.0135 = -0.0015)"
+read = 2026-11-12
+
+# Group C: published cases from Mantel and Haenszel (1959), Yusuf et al. (1985), Hedges (1981) and Borenstein et al. (2009).
+# Draft; ids are prefixed "published.".
+
+# Mantel and Haenszel (1959) Table 1: 12 strata (3 occupations x 4 age groups) of smoking (> 1 pack a day) in women with epidermoid and
+# undifferentiated pulmonary carcinoma (cases) and controls. ai = cases who smoke, bi = cases who do not, ci = controls who smoke,
+# di = controls who do not (columns A, B, C, D). The table is garbled in the extraction; the strata were rebuilt from the columns A to D
+# and checked against the printed totals (A 18, B 46, C 13, D 236) and the printed per-stratum AD/T and BC/T.
+[[case]]
+id = "published.mh1959.table1.chisq"
+kind = "published"
+function = "rma_mh"
+args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR" }
+expect = { MH = "30.66" }
+
+[case.data]
+ai = [0, 2, 3, 0, 3, 2, 2, 0, 1, 4, 0, 1]
+bi = [2, 5, 6, 11, 0, 2, 4, 6, 0, 1, 6, 3]
+ci = [0, 1, 0, 0, 2, 2, 2, 1, 3, 1, 1, 0]
+di = [7, 24, 49, 42, 6, 18, 23, 11, 10, 12, 19, 15]
+
+[case.source]
+citation = "Mantel N, Haenszel W (1959). Statistical aspects of the analysis of data from retrospective studies of disease. Journal of the National Cancer Institute 22(4):719-748."
+locator = "Table 1, corrected chi square (1 degree of freedom), computation block at the foot of the table"
+read = 2026-11-12
+
+[[case]]
+id = "published.yusuf1985.table6.qe"
+kind = "published"
+function = "rma_peto"
+dataset = "dat.yusuf1985"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", subset = "table == '6'" }
+expect = { QE = "10.8" }
+covers = ["rma_peto"]
+
+[case.source]
+citation = "Yusuf S, Peto R, Lewis J, Collins R, Sleight P (1985). Beta blockade during and after myocardial infarction: an overview of the randomized trials. Progress in Cardiovascular Diseases 27(5):335-371."
+locator = "Table 6 (total mortality, short-term oral beta blockers), footnote: test for heterogeneity"
+read = 2026-11-12
+
+[[case]]
+id = "published.yusuf1985.table10.qe"
+kind = "published"
+function = "rma_peto"
+dataset = "dat.yusuf1985"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", subset = "table == '10'" }
+expect = { QE = "23.3" }
+covers = ["rma_peto"]
+
+[case.source]
+citation = "Yusuf S, Peto R, Lewis J, Collins R, Sleight P (1985). Beta blockade during and after myocardial infarction: an overview of the randomized trials. Progress in Cardiovascular Diseases 27(5):335-371."
+locator = "Table 10 (mortality, long-term trials), footnote: chi-square for heterogeneity of the 23 results about the pooled odds ratio"
+read = 2026-11-12
+
+[[case]]
+id = "published.yusuf1985.table11.qe"
+kind = "published"
+function = "rma_peto"
+dataset = "dat.yusuf1985"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", subset = "table == '11'" }
+expect = { QE = "15.5" }
+covers = ["rma_peto"]
+
+[case.source]
+citation = "Yusuf S, Peto R, Lewis J, Collins R, Sleight P (1985). Beta blockade during and after myocardial infarction: an overview of the randomized trials. Progress in Cardiovascular Diseases 27(5):335-371."
+locator = "Table 11 (nonfatal reinfarction), footnote: test for heterogeneity"
+read = 2026-11-12
+
+# Table 9 is the only table whose printed chi-square the dataset does not reproduce; see the reason.
+[[case]]
+id = "published.yusuf1985.table9.qe"
+kind = "published"
+function = "rma_peto"
+dataset = "dat.yusuf1985"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", subset = "table == '9'" }
+expect = { QE = "17.8" }
+status = "mismatch"
+reason = "Yusuf et al. (1985) Table 9 print the heterogeneity chi-square as 17.8; metafopy gives 18.016 (20 tables with events) from the same counts and the same one-step O - E and variance formulas that reproduce the printed 10.8, 23.3 and 15.5 of Tables 6, 10 and 11 and the printed pooled O - E (-6.3) and variance (95.0) of Table 9; recomputing Q from the paper rounded per-trial O - E and variance gives 18.3"
+covers = ["rma_peto"]
+
+[case.source]
+citation = "Yusuf S, Peto R, Lewis J, Collins R, Sleight P (1985). Beta blockade during and after myocardial infarction: an overview of the randomized trials. Progress in Cardiovascular Diseases 27(5):335-371."
+locator = "Table 9 (total mortality at one week, initial IV dose), footnote: test for heterogeneity"
+read = 2026-11-12
+
+# Hedges (1981) Table I: c(m) = g_U / g for m = n1 + n2 - 2 degrees of freedom. With a mean difference of 1 and a pooled sd of 1, g = 1 and
+# the bias-corrected estimate equals c(m). The group sizes (m, 2) only fix m; the table is for any split.
+[[case]]
+id = "published.hedges1981.table1.cm"
+kind = "published"
+function = "escalc"
+args = { measure = "SMD", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i" }
+expect = { "yi[0]" = "0.56419", "yi[1]" = "0.72360", "yi[2]" = "0.84075", "yi[3]" = "0.92275", "yi[4]" = "0.96194", "yi[5]" = "0.97475", "yi[6]" = "0.98491" }
+covers = ["escalc.yi.SMD"]
+
+[case.data]
+m1i = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+m2i = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+sd1i = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+sd2i = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+n1i = [2, 3, 5, 10, 20, 30, 50]
+n2i = [2, 2, 2, 2, 2, 2, 2]
+
+[case.source]
+citation = "Hedges LV (1981). Distribution theory for Glass's estimator of effect size and related estimators. Journal of Educational Statistics 6(2):107-128."
+doi = "10.3102/10769986006002107"
+locator = "Table I, column c(m) for m = 2, 3, 5, 10, 20, 30, 50"
+read = 2026-11-12
+
+# Hedges (1981) Table II: two school districts, group sizes (9, 9) and (7, 8), mean difference 0.154 and 0.444, pooled sd 0.979 and 1.201.
+# The mean difference goes in m1i with m2i = 0 and both sds equal to the pooled sd. The printed variances use one pooled estimate of delta
+# (0.239) in the second term, which is what vtype AV does (the average of the effect sizes in the variance).
+[[case]]
+id = "published.hedges1981.table2.gu"
+kind = "published"
+function = "escalc"
+args = { measure = "SMD", vtype = "AV", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i" }
+expect = { "yi[0]" = "0.150", "yi[1]" = "0.348", "vi[0]" = "0.224", "vi[1]" = "0.270" }
+covers = ["escalc.yi.SMD", "escalc.vi.SMD.AV"]
+
+[case.data]
+m1i = [0.154, 0.444]
+m2i = [0.0, 0.0]
+sd1i = [0.979, 1.201]
+sd2i = [0.979, 1.201]
+n1i = [9, 7]
+n2i = [9, 8]
+
+[case.source]
+citation = "Hedges LV (1981). Distribution theory for Glass's estimator of effect size and related estimators. Journal of Educational Statistics 6(2):107-128."
+doi = "10.3102/10769986006002107"
+locator = "Table II (example), rows g_U = c(m) g and Var(g_U), districts I and II"
+read = 2026-11-12
+
+# The book computes Vg = J^2 Vd with Vd = (n1+n2)/(n1 n2) + d^2/(2(n1+n2)) and J = 1 - 3/(4 df - 1). That is escalc vtype LS2; the default LS leaves
+# J^2 off the first term (0.0418).
+[[case]]
+id = "published.borenstein2009.ch4.smd"
+kind = "published"
+function = "escalc"
+args = { measure = "SMD", vtype = "LS2", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i" }
+expect = { "yi[0]" = "0.5924", "vi[0]" = "0.0411" }
+covers = ["escalc.yi.SMD", "escalc.vi.SMD.LS2"]
+
+[case.data]
+m1i = [103.0]
+m2i = [100.0]
+sd1i = [5.5]
+sd2i = [4.5]
+n1i = [50]
+n2i = [50]
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Chichester: John Wiley & Sons. ISBN 978-0-470-05724-7."
+locator = "Chapter 4, worked example for independent groups (Hedges g and its variance, equations 4.18-4.25)"
+read = 2026-11-12
+
+# The sd within groups is imputed in the book from Sdiff = 5.5 and r = 0.7 as 7.1005 (printed). The book's variance 0.0127 (Vd = (1/n + d^2/2n) 2(1-r))
+# is a different approximation from the one escalc uses for SMCR (2(1-r)/n + d^2/2n: 0.0137 for LS, 0.0134 for LS2), so only the effect size is a case.
+[[case]]
+id = "published.borenstein2009.ch4.smcr"
+kind = "published"
+function = "escalc"
+args = { measure = "SMCR", m1i = "m1i", m2i = "m2i", sd1i = "sd1i", ni = "ni", ri = "ri" }
+expect = { "yi[0]" = "0.4160" }
+covers = ["escalc.yi.SMCR"]
+
+[case.data]
+m1i = [103.0]
+m2i = [100.0]
+sd1i = [7.1005]
+ni = [50]
+ri = [0.7]
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Chichester: John Wiley & Sons. ISBN 978-0-470-05724-7."
+locator = "Chapter 4, worked example for pre-post scores (Hedges g, equation 4.23)"
+read = 2026-11-12
+
+# The book's log response ratio is ln(X1/X2) with no bias correction, so correct = False (escalc corrects ROM by default). The book prints lnR as 0.1871 from the rounded R = 1.2058; unrounded it is 0.18716, so only the variance is a case.
+[[case]]
+id = "published.borenstein2009.ch4.rom"
+kind = "published"
+function = "escalc"
+args = { measure = "ROM", correct = false, m1i = "m1i", m2i = "m2i", sd1i = "sd1i", sd2i = "sd2i", n1i = "n1i", n2i = "n2i" }
+expect = { "vi[0]" = "0.0246" }
+covers = ["escalc.vi.ROM.LS"]
+
+[case.data]
+m1i = [61.515]
+m2i = [51.015]
+sd1i = [19.475]
+sd2i = [19.475]
+n1i = [10]
+n2i = [10]
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Chichester: John Wiley & Sons. ISBN 978-0-470-05724-7."
+locator = "Chapter 4, worked example for the response ratio (equations 4.31-4.32)"
+read = 2026-11-12
+
+# The book prints the log risk ratio as 0.6932 (with a minus sign dropped by the extraction); ln 0.5 = -0.693147 rounds to -0.6931, so the
+# printed 0.6932 is a rounding slip in the book and only the variance is a case.
+[[case]]
+id = "published.borenstein2009.ch5.rr"
+kind = "published"
+function = "escalc"
+args = { measure = "RR", ai = "ai", bi = "bi", ci = "ci", di = "di" }
+expect = { "vi[0]" = "0.2800" }
+covers = ["escalc.vi.RR.LS"]
+
+[case.data]
+ai = [5]
+bi = [95]
+ci = [10]
+di = [90]
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Chichester: John Wiley & Sons. ISBN 978-0-470-05724-7."
+locator = "Chapter 5, Table 5.2 data: log risk ratio and its variance (equations 5.2-5.3)"
+read = 2026-11-12
+
+[[case]]
+id = "published.borenstein2009.ch5.or"
+kind = "published"
+function = "escalc"
+args = { measure = "OR", ai = "ai", bi = "bi", ci = "ci", di = "di" }
+expect = { "yi[0]" = "-0.7472", "vi[0]" = "0.3216" }
+covers = ["escalc.yi.OR", "escalc.vi.OR.LS"]
+
+[case.data]
+ai = [5]
+bi = [95]
+ci = [10]
+di = [90]
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Chichester: John Wiley & Sons. ISBN 978-0-470-05724-7."
+locator = "Chapter 5, Table 5.2 data: log odds ratio and its variance (equations 5.9-5.10)"
+read = 2026-11-12
+
+# The book prints the variance as 0.0014 and, in the standard error, as 0.00138; the three-digit form is used.
+[[case]]
+id = "published.borenstein2009.ch5.rd"
+kind = "published"
+function = "escalc"
+args = { measure = "RD", ai = "ai", bi = "bi", ci = "ci", di = "di" }
+expect = { "yi[0]" = "-0.0500", "vi[0]" = "0.00138" }
+covers = ["escalc.yi.RD", "escalc.vi.RD.LS"]
+
+[case.data]
+ai = [5]
+bi = [95]
+ci = [10]
+di = [90]
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Chichester: John Wiley & Sons. ISBN 978-0-470-05724-7."
+locator = "Chapter 5, Table 5.2 data: risk difference and its variance (equations 5.15-5.16)"
+read = 2026-11-12
+
+[[case]]
+id = "published.borenstein2009.ch6.zcor"
+kind = "published"
+function = "escalc"
+args = { measure = "ZCOR", ri = "ri", ni = "ni" }
+expect = { "yi[0]" = "0.5493", "vi[0]" = "0.0103" }
+covers = ["escalc.yi.ZCOR", "escalc.vi.ZCOR.LS"]
+
+[case.data]
+ri = [0.5]
+ni = [100]
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Chichester: John Wiley & Sons. ISBN 978-0-470-05724-7."
+locator = "Chapter 6, worked example: Fisher's z of r = 0.50, n = 100 and its variance (equations 6.2-6.3)"
+read = 2026-11-12
+
+[[case]]
+id = "published.borenstein2009.ch14.d1.yivi"
+kind = "published"
+function = "escalc"
+args = { measure = "SMD", vtype = "LS2", m1i = "m1i", sd1i = "sd1i", n1i = "n1i", m2i = "m2i", sd2i = "sd2i", n2i = "n2i" }
+expect = { "yi[0]" = "0.0945", "vi[0]" = "0.0329", "yi[1]" = "0.277", "yi[2]" = "0.367", "yi[3]" = "0.664", "yi[4]" = "0.462", "yi[5]" = "0.185", "vi[1]" = "0.031", "vi[2]" = "0.050", "vi[3]" = "0.011", "vi[4]" = "0.043", "vi[5]" = "0.023" }
+covers = ["escalc.yi.SMD", "escalc.vi.SMD.LS2"]
+
+[case.data]
+m1i = [94.0, 98.0, 98.0, 94.0, 98.0, 96.0]
+sd1i = [22.0, 21.0, 28.0, 19.0, 21.0, 21.0]
+n1i = [60, 65, 40, 200, 50, 85]
+m2i = [92.0, 92.0, 88.0, 82.0, 88.0, 92.0]
+sd2i = [20.0, 22.0, 26.0, 17.0, 22.0, 22.0]
+n2i = [60, 65, 40, 200, 45, 85]
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Chichester: John Wiley & Sons. ISBN 978-0-470-05724-7."
+locator = "Chapter 14, Dataset 1 (Table 14.1 data), Table 14.2 columns Y and V_Y (Carroll to 4 digits from the text)"
+read = 2026-11-12
+
+[[case]]
+id = "published.borenstein2009.ch14.d1.fe"
+kind = "published"
+function = "rma_uni"
+setup = { escalc = { measure = "SMD", vtype = "LS2", m1i = "m1i", sd1i = "sd1i", n1i = "n1i", m2i = "m2i", sd2i = "sd2i", n2i = "n2i" } }
+args = { method = "FE" }
+expect = { beta = "0.4143", se = "0.0640", ci_lb = "0.2889", ci_ub = "0.5397", zval = "6.4739", QE = "12.0033", QEp = "0.035" }
+
+[case.data]
+m1i = [94.0, 98.0, 98.0, 94.0, 98.0, 96.0]
+sd1i = [22.0, 21.0, 28.0, 19.0, 21.0, 21.0]
+n1i = [60, 65, 40, 200, 50, 85]
+m2i = [92.0, 92.0, 88.0, 82.0, 88.0, 92.0]
+sd2i = [20.0, 22.0, 26.0, 17.0, 22.0, 22.0]
+n2i = [60, 65, 40, 200, 45, 85]
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Chichester: John Wiley & Sons. ISBN 978-0-470-05724-7."
+locator = "Chapter 14 (fixed-effect summary) and Chapter 18 (Q and its p-value), Dataset 1"
+read = 2026-11-12
+
+[[case]]
+id = "published.borenstein2009.ch14.d1.dl"
+kind = "published"
+function = "rma_uni"
+setup = { escalc = { measure = "SMD", vtype = "LS2", m1i = "m1i", sd1i = "sd1i", n1i = "n1i", m2i = "m2i", sd2i = "sd2i", n2i = "n2i" } }
+args = { method = "DL" }
+expect = { tau2 = "0.0373", I2 = "58.34", se_tau2 = "0.0420", beta = "0.3582", se = "0.1052", ci_lb = "0.1520", ci_ub = "0.5645", zval = "3.4038" }
+covers = ["tau2.DL", "heterogeneity.I2"]
+
+[case.data]
+m1i = [94.0, 98.0, 98.0, 94.0, 98.0, 96.0]
+sd1i = [22.0, 21.0, 28.0, 19.0, 21.0, 21.0]
+n1i = [60, 65, 40, 200, 50, 85]
+m2i = [92.0, 92.0, 88.0, 82.0, 88.0, 92.0]
+sd2i = [20.0, 22.0, 26.0, 17.0, 22.0, 22.0]
+n2i = [60, 65, 40, 200, 45, 85]
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Chichester: John Wiley & Sons. ISBN 978-0-470-05724-7."
+locator = "Chapter 14 equation 14.1 and following (random-effects summary) and Chapter 18 (T2, I2, SE of T2), Dataset 1"
+read = 2026-11-12
+
+# The extraction drops the minus signs of the log odds ratios; every study has an odds ratio below 1 (Table 14.4), so the signs are negative.
+[[case]]
+id = "published.borenstein2009.ch14.d2.yivi"
+kind = "published"
+function = "escalc"
+args = { measure = "OR", ai = "ai", bi = "bi", ci = "ci", di = "di" }
+expect = { "yi[0]" = "-0.3662", "vi[0]" = "0.1851", "yi[1]" = "-0.288", "yi[2]" = "-0.384", "yi[3]" = "-1.322", "yi[4]" = "-0.417", "yi[5]" = "-0.159", "vi[1]" = "0.290", "vi[2]" = "0.156", "vi[3]" = "0.058", "vi[4]" = "0.282", "vi[5]" = "0.160" }
+covers = ["escalc.yi.OR", "escalc.vi.OR.LS"]
+
+[case.data]
+ai = [12, 8, 14, 25, 8, 16]
+bi = [53, 32, 66, 375, 32, 49]
+ci = [16, 10, 19, 80, 11, 18]
+di = [49, 30, 61, 320, 29, 47]
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Chichester: John Wiley & Sons. ISBN 978-0-470-05724-7."
+locator = "Chapter 14, Dataset 2 (Table 14.4 data), Table 14.5 columns Y and V_Y (Saint to 4 digits from the text)"
+read = 2026-11-12
+
+[[case]]
+id = "published.borenstein2009.ch14.d2.fe"
+kind = "published"
+function = "rma_uni"
+setup = { escalc = { measure = "OR", ai = "ai", bi = "bi", ci = "ci", di = "di" } }
+args = { method = "FE" }
+expect = { beta = "-0.7241", se = "0.1539", ci_lb = "-1.0257", ci_ub = "-0.4226", zval = "-4.7068", QE = "10.5512", QEp = "0.0610" }
+
+[case.data]
+ai = [12, 8, 14, 25, 8, 16]
+bi = [53, 32, 66, 375, 32, 49]
+ci = [16, 10, 19, 80, 11, 18]
+di = [49, 30, 61, 320, 29, 47]
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Chichester: John Wiley & Sons. ISBN 978-0-470-05724-7."
+locator = "Chapter 14 (fixed-effect summary) and Chapter 18 (Q and its p-value), Dataset 2"
+read = 2026-11-12
+
+[[case]]
+id = "published.borenstein2009.ch14.d2.dl"
+kind = "published"
+function = "rma_uni"
+setup = { escalc = { measure = "OR", ai = "ai", bi = "bi", ci = "ci", di = "di" } }
+args = { method = "DL" }
+expect = { tau2 = "0.1729", I2 = "52.61", se_tau2 = "0.2148", beta = "-0.5663", se = "0.2388", ci_lb = "-1.0344", ci_ub = "-0.0982", zval = "-2.3711" }
+covers = ["tau2.DL", "heterogeneity.I2"]
+
+[case.data]
+ai = [12, 8, 14, 25, 8, 16]
+bi = [53, 32, 66, 375, 32, 49]
+ci = [16, 10, 19, 80, 11, 18]
+di = [49, 30, 61, 320, 29, 47]
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Chichester: John Wiley & Sons. ISBN 978-0-470-05724-7."
+locator = "Chapter 14 equation 14.3 and following (random-effects summary) and Chapter 18 (T2, I2, SE of T2), Dataset 2"
+read = 2026-11-12
+
+[[case]]
+id = "published.borenstein2009.ch14.d3.yivi"
+kind = "published"
+function = "escalc"
+args = { measure = "ZCOR", ri = "ri", ni = "ni" }
+expect = { "yi[0]" = "0.5493", "yi[1]" = "0.6931", "yi[2]" = "0.4236", "yi[3]" = "0.2027", "yi[4]" = "0.8673", "yi[5]" = "0.4847", "vi[0]" = "0.0270", "vi[1]" = "0.0115", "vi[2]" = "0.0455", "vi[3]" = "0.0025", "vi[4]" = "0.0175", "vi[5]" = "0.0213" }
+covers = ["escalc.yi.ZCOR", "escalc.vi.ZCOR.LS"]
+
+[case.data]
+ri = [0.5, 0.6, 0.4, 0.2, 0.7, 0.45]
+ni = [40, 90, 25, 400, 60, 50]
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Chichester: John Wiley & Sons. ISBN 978-0-470-05724-7."
+locator = "Chapter 14, Dataset 3 (Table 14.7 data), Table 14.8 columns Y and V_Y"
+read = 2026-11-12
+
+[[case]]
+id = "published.borenstein2009.ch14.d3.fe"
+kind = "published"
+function = "rma_uni"
+setup = { escalc = { measure = "ZCOR", ri = "ri", ni = "ni" } }
+args = { method = "FE" }
+expect = { beta = "0.3750", se = "0.0393", ci_lb = "0.2980", ci_ub = "0.4521", zval = "9.5396", QE = "36.1437" }
+
+[case.data]
+ri = [0.5, 0.6, 0.4, 0.2, 0.7, 0.45]
+ni = [40, 90, 25, 400, 60, 50]
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Chichester: John Wiley & Sons. ISBN 978-0-470-05724-7."
+locator = "Chapter 14 (fixed-effect summary) and Chapter 18 (Q), Dataset 3"
+read = 2026-11-12
+
+[[case]]
+id = "published.borenstein2009.ch14.d3.dl"
+kind = "published"
+function = "rma_uni"
+setup = { escalc = { measure = "ZCOR", ri = "ri", ni = "ni" } }
+args = { method = "DL" }
+expect = { tau2 = "0.0819", I2 = "86.17", se_tau2 = "0.0727", beta = "0.5328", se = "0.1298", ci_lb = "0.2784", ci_ub = "0.7872", zval = "4.1045" }
+covers = ["tau2.DL", "heterogeneity.I2"]
+
+[case.data]
+ri = [0.5, 0.6, 0.4, 0.2, 0.7, 0.45]
+ni = [40, 90, 25, 400, 60, 50]
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Chichester: John Wiley & Sons. ISBN 978-0-470-05724-7."
+locator = "Chapter 14 equation 14.5 and following (random-effects summary) and Chapter 18 (T2, I2, SE of T2), Dataset 3"
+read = 2026-11-12
+
+[[case]]
+id = "published.borenstein2009.ch19.all.fe"
+kind = "published"
+function = "rma_uni"
+args = { method = "FE", yi = "y", vi = "v" }
+expect = { beta = "0.4581", se = "0.0390", ci_lb = "0.3816", ci_ub = "0.5346", zval = "11.7396", QE = "26.4371", QEp = "0.0017" }
+
+[case.data]
+y = [0.11, 0.224, 0.338, 0.451, 0.48, 0.44, 0.492, 0.651, 0.71, 0.74]
+v = [0.01, 0.03, 0.02, 0.015, 0.01, 0.015, 0.02, 0.015, 0.025, 0.012]
+grp = [0, 0, 0, 0, 0, 1, 1, 1, 1, 1]
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Chichester: John Wiley & Sons. ISBN 978-0-470-05724-7."
+locator = "Chapter 19, Table 19.1 data; equations 19.3-19.5 and Table 19.2, column Combined (fixed effect, all ten studies)"
+read = 2026-11-12
+
+[[case]]
+id = "published.borenstein2009.ch19.all.dl"
+kind = "published"
+function = "rma_uni"
+args = { method = "DL", yi = "y", vi = "v" }
+expect = { tau2 = "0.0299", I2 = "65.9569" }
+covers = ["tau2.DL"]
+
+[case.data]
+y = [0.11, 0.224, 0.338, 0.451, 0.48, 0.44, 0.492, 0.651, 0.71, 0.74]
+v = [0.01, 0.03, 0.02, 0.015, 0.01, 0.015, 0.02, 0.015, 0.025, 0.012]
+grp = [0, 0, 0, 0, 0, 1, 1, 1, 1, 1]
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Chichester: John Wiley & Sons. ISBN 978-0-470-05724-7."
+locator = "Chapter 19, equation 19.5 and following, Table 19.2 (T2 and I2 of all ten studies, DerSimonian-Laird)"
+read = 2026-11-12
+
+[[case]]
+id = "published.borenstein2009.ch19.a.fe"
+kind = "published"
+function = "rma_uni"
+args = { method = "FE", subset = "grp == 0", yi = "y", vi = "v" }
+expect = { beta = "0.3241", se = "0.0535", ci_lb = "0.2193", ci_ub = "0.4289", zval = "6.0633", QE = "8.4316", QEp = "0.0770" }
+
+[case.data]
+y = [0.11, 0.224, 0.338, 0.451, 0.48, 0.44, 0.492, 0.651, 0.71, 0.74]
+v = [0.01, 0.03, 0.02, 0.015, 0.01, 0.015, 0.02, 0.015, 0.025, 0.012]
+grp = [0, 0, 0, 0, 0, 1, 1, 1, 1, 1]
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Chichester: John Wiley & Sons. ISBN 978-0-470-05724-7."
+locator = "Chapter 19, fixed-effect computations for the A studies, equation 19.1 and Table 19.2, column A"
+read = 2026-11-12
+
+[[case]]
+id = "published.borenstein2009.ch19.a.dl"
+kind = "published"
+function = "rma_uni"
+args = { method = "DL", subset = "grp == 0", yi = "y", vi = "v" }
+expect = { tau2 = "0.0164", I2 = "52.5594" }
+covers = ["tau2.DL"]
+
+[case.data]
+y = [0.11, 0.224, 0.338, 0.451, 0.48, 0.44, 0.492, 0.651, 0.71, 0.74]
+v = [0.01, 0.03, 0.02, 0.015, 0.01, 0.015, 0.02, 0.015, 0.025, 0.012]
+grp = [0, 0, 0, 0, 0, 1, 1, 1, 1, 1]
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Chichester: John Wiley & Sons. ISBN 978-0-470-05724-7."
+locator = "Chapter 19, T2 and I2 of the A studies (Table 19.2, column A)"
+read = 2026-11-12
+
+[[case]]
+id = "published.borenstein2009.ch19.b.fe"
+kind = "published"
+function = "rma_uni"
+args = { method = "FE", subset = "grp == 1", yi = "y", vi = "v" }
+expect = { beta = "0.6111", se = "0.0571", ci_lb = "0.4992", ci_ub = "0.7230", zval = "10.7013", QE = "4.5429", QEp = "0.3375" }
+
+[case.data]
+y = [0.11, 0.224, 0.338, 0.451, 0.48, 0.44, 0.492, 0.651, 0.71, 0.74]
+v = [0.01, 0.03, 0.02, 0.015, 0.01, 0.015, 0.02, 0.015, 0.025, 0.012]
+grp = [0, 0, 0, 0, 0, 1, 1, 1, 1, 1]
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Chichester: John Wiley & Sons. ISBN 978-0-470-05724-7."
+locator = "Chapter 19, fixed-effect computations for the B studies, equation 19.2 and Table 19.2, column B"
+read = 2026-11-12
+
+[[case]]
+id = "published.borenstein2009.ch19.b.dl"
+kind = "published"
+function = "rma_uni"
+args = { method = "DL", subset = "grp == 1", yi = "y", vi = "v" }
+expect = { tau2 = "0.0022", I2 = "11.9506" }
+covers = ["tau2.DL"]
+
+[case.data]
+y = [0.11, 0.224, 0.338, 0.451, 0.48, 0.44, 0.492, 0.651, 0.71, 0.74]
+v = [0.01, 0.03, 0.02, 0.015, 0.01, 0.015, 0.02, 0.015, 0.025, 0.012]
+grp = [0, 0, 0, 0, 0, 1, 1, 1, 1, 1]
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Chichester: John Wiley & Sons. ISBN 978-0-470-05724-7."
+locator = "Chapter 19, T2 and I2 of the B studies (Table 19.2, column B)"
+read = 2026-11-12
+
+[[case]]
+id = "published.borenstein2009.ch19.group.fe"
+kind = "published"
+function = "rma_uni"
+args = { method = "FE", mods = "~ grp", yi = "y", vi = "v" }
+expect = { QM = "13.4626", QE = "12.9745" }
+covers = ["heterogeneity.QM", "heterogeneity.QE"]
+
+[case.data]
+y = [0.11, 0.224, 0.338, 0.451, 0.48, 0.44, 0.492, 0.651, 0.71, 0.74]
+v = [0.01, 0.03, 0.02, 0.015, 0.01, 0.015, 0.02, 0.015, 0.025, 0.012]
+grp = [0, 0, 0, 0, 0, 1, 1, 1, 1, 1]
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Chichester: John Wiley & Sons. ISBN 978-0-470-05724-7."
+locator = "Chapter 19, Table 19.3: Q between groups (13.4626) and Q within groups (12.9745), fixed-effect ANOVA"
+read = 2026-11-12
+
+# The book prints the pooled T2 as 0.00974 in equation 19.39, but (12.9745 - 8)/511.508 = 0.009725; Table 19.10 uses 0.0097, which is the value used here.
+# Mixed-effects model with a common T2 (pooled over the two subgroups) is a DL meta-regression on the subgroup indicator. The intercept is the A mean,
+# the slope is the difference B - A (0.6083 - 0.3247 = 0.2835 in the book, SE_diff 0.1013). The printed Z 2.7986 comes from the rounded difference and SE (0.2835/0.1013); unrounded it is 2.79865, so it is not a case.
+[[case]]
+id = "published.borenstein2009.ch19.group.dl"
+kind = "published"
+function = "rma_uni"
+args = { method = "DL", mods = "~ grp", yi = "y", vi = "v" }
+expect = { tau2 = "0.0097", QM = "7.8324", QE = "12.9745", "beta[0]" = "0.3247", "beta[1]" = "0.2835", "se[0]" = "0.0706", "se[1]" = "0.1013" }
+covers = ["tau2.DL", "heterogeneity.QM"]
+
+[case.data]
+y = [0.11, 0.224, 0.338, 0.451, 0.48, 0.44, 0.492, 0.651, 0.71, 0.74]
+v = [0.01, 0.03, 0.02, 0.015, 0.01, 0.015, 0.02, 0.015, 0.025, 0.012]
+grp = [0, 0, 0, 0, 0, 1, 1, 1, 1, 1]
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Chichester: John Wiley & Sons. ISBN 978-0-470-05724-7."
+locator = "Chapter 19, pooled estimate of T2 (equation 19.39), Table 19.11 (subgroup A mean and SE), and the comparison of B with A (Q between 7.8324)"
+read = 2026-11-12
+
+# The extraction drops the minus signs of the slope and its limits; the slope is negative (text: "a decrease of 0.0292 units").
+[[case]]
+id = "published.borenstein2009.ch20.bcg.fe"
+kind = "published"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "FE", mods = "~ ablat" }
+expect = { "beta[0]" = "0.34356", "beta[1]" = "-0.02924", "se[0]" = "0.08105", "se[1]" = "0.00265", "ci_lb[0]" = "0.18471", "ci_ub[0]" = "0.50242", "ci_lb[1]" = "-0.03444", "ci_ub[1]" = "-0.02404", "zval[0]" = "4.23899", "zval[1]" = "-11.02270", QM = "121.49992", QE = "30.73309", QEp = "0.00121" }
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Chichester: John Wiley & Sons. ISBN 978-0-470-05724-7."
+locator = "Chapter 20, Tables 20.2 and 20.3 (fixed-effect regression of the log risk ratio on absolute latitude)"
+read = 2026-11-12
+
+[[case]]
+id = "published.borenstein2009.ch20.bcg.dl"
+kind = "published"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "DL", mods = "~ ablat" }
+expect = { "beta[0]" = "0.25954", "beta[1]" = "-0.02923", "se[0]" = "0.23231", "se[1]" = "0.00673", "ci_lb[1]" = "-0.04243", "ci_ub[1]" = "-0.01603", "zval[1]" = "-4.34111", QM = "18.8452", tau2 = "0.063", QE = "30.733" }
+covers = ["tau2.DL"]
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Chichester: John Wiley & Sons. ISBN 978-0-470-05724-7."
+locator = "Chapter 20, Tables 20.4 and 20.5 (random-effects regression: DerSimonian-Laird residual T2 = 0.063, Q model = 18.8452)"
+read = 2026-11-12
+
+[[case]]
+id = "published.borenstein2009.ch33.vanhowe.fe"
+kind = "published"
+function = "rma_uni"
+dataset = "dat.vanhowe1999"
+setup = { escalc = { measure = "OR", ai = "non.pos", bi = "non.neg", ci = "cir.pos", di = "cir.neg" } }
+args = { yi = "yi", vi = "vi", method = "FE" }
+expect = { zval = "8.43", QE = "419" }
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Chichester: John Wiley & Sons. ISBN 978-0-470-05724-7."
+locator = "Chapter 33, text under Table 33.3: fixed-effect odds ratio 1.40 (1.29 to 1.51), Z = 8.43; Q = 419 on 32 df"
+read = 2026-11-12
+
+# The book does not name the between-studies estimator; DerSimonian-Laird is the one used throughout the book.
+[[case]]
+id = "published.borenstein2009.ch33.vanhowe.dl"
+kind = "published"
+function = "rma_uni"
+dataset = "dat.vanhowe1999"
+setup = { escalc = { measure = "OR", ai = "non.pos", bi = "non.neg", ci = "cir.pos", di = "cir.neg" } }
+args = { yi = "yi", vi = "vi", method = "DL" }
+expect = { zval = "3.42" }
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Chichester: John Wiley & Sons. ISBN 978-0-470-05724-7."
+locator = "Chapter 33, text under Table 33.3: random-effects odds ratio 1.67 (1.25 to 2.24), Z = 3.42"
+read = 2026-11-12
+
+# The extraction drops the minus signs of the log odds ratio and its limits; the odds ratio 0.4705 is below 1. The upper limit is printed as 0.45951
+# in one place and exp(0.4596) = 0.6315 in the next; 0.4596 follows from -0.7539 + 1.96 x 0.1502.
+[[case]]
+id = "published.borenstein2009.ch37.mh"
+kind = "published"
+function = "rma_mh"
+args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR" }
+expect = { beta = "-0.7539", se = "0.1502", ci_lb = "-1.0482", ci_ub = "-0.4596", zval = "-5.0211", pval = "0.00000051" }
+covers = ["rma_mh.OR.estimate", "rma_mh.OR.variance"]
+
+[case.data]
+ai = [12, 8, 14, 25, 8, 16]
+bi = [53, 32, 66, 375, 32, 49]
+ci = [16, 10, 19, 80, 11, 18]
+di = [49, 30, 61, 320, 29, 47]
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Chichester: John Wiley & Sons. ISBN 978-0-470-05724-7."
+locator = "Chapter 37, Tables 37.2-37.3 and the text after them (Mantel-Haenszel odds ratio 0.4705 and variance of its log, equation 37.12), Dataset 2"
+read = 2026-11-12
+
+# The extraction drops the minus signs; O - E is negative for every study (O < E in Table 37.4).
+[[case]]
+id = "published.borenstein2009.ch37.peto.yi"
+kind = "published"
+function = "escalc"
+args = { measure = "PETO", ai = "ai", bi = "bi", ci = "ci", di = "di" }
+expect = { "yi[0]" = "-0.3613", "yi[1]" = "-0.2832", "yi[2]" = "-0.3794", "yi[3]" = "-1.2044", "yi[4]" = "-0.4090", "yi[5]" = "-0.1581" }
+covers = ["escalc.yi.PETO"]
+
+[case.data]
+ai = [12, 8, 14, 25, 8, 16]
+bi = [53, 32, 66, 375, 32, 49]
+ci = [16, 10, 19, 80, 11, 18]
+di = [49, 30, 61, 320, 29, 47]
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Chichester: John Wiley & Sons. ISBN 978-0-470-05724-7."
+locator = "Chapter 37, Table 37.4, column Y = (O - E)/I"
+read = 2026-11-12
+
+[[case]]
+id = "published.borenstein2009.ch37.peto"
+kind = "published"
+function = "rma_peto"
+args = { ai = "ai", bi = "bi", ci = "ci", di = "di" }
+expect = { beta = "-0.7322", se = "0.1436", ci_lb = "-1.0137", ci_ub = "-0.4507", zval = "-5.098" }
+covers = ["rma_peto"]
+
+[case.data]
+ai = [12, 8, 14, 25, 8, 16]
+bi = [53, 32, 66, 375, 32, 49]
+ci = [16, 10, 19, 80, 11, 18]
+di = [49, 30, 61, 320, 29, 47]
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Chichester: John Wiley & Sons. ISBN 978-0-470-05724-7."
+locator = "Chapter 37, Table 37.4 and the text after it (one-step log odds ratio, equations 37.28-37.33), Dataset 2"
+read = 2026-11-12
+
+# The text prints the mean correlation as 0.2518, but 98.35/390 = 0.252179 (the value in the r column of Table 38.2) is used. Table 38.2 uses sampling variances (1 - rbar^2)^2/(n_i - 1) around the weighted mean correlation rbar (vtype AV) and weights n_i.
+[[case]]
+id = "published.borenstein2009.ch38.hs"
+kind = "published"
+function = "rma_uni"
+args = { measure = "COR", vtype = "AV", ri = "ri", ni = "ni", method = "HS", weights = [130, 90, 30, 25, 50, 65] }
+expect = { beta = "0.252179", tau2 = "0.0069" }
+covers = ["tau2.HS"]
+
+[case.data]
+ri = [0.24, 0.11, 0.05, 0.17, 0.38, 0.5]
+ni = [130, 90, 30, 25, 50, 65]
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Chichester: John Wiley & Sons. ISBN 978-0-470-05724-7."
+locator = "Chapter 38, Table 38.2 and the text after it (mean observed correlation 0.2518, T2 = 0.0069; Hunter-Schmidt, weights n_i)"
+read = 2026-11-12

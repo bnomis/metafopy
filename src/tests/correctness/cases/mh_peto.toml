@@ -1,0 +1,127 @@
+# Correctness cases for rma_mh (coverage items `rma_mh.<measure>.estimate` and `rma_mh.<measure>.variance`) and rma_peto (`rma_peto`).
+#
+# `derived` cases for the pooled estimate (`beta`) and its standard error (`se`) from the formulas in `formulas.py`, coded from the publications: Mantel
+# and Haenszel (1959) and Robins, Breslow and Greenland (1986) for the odds ratio, Greenland and Robins (1985) for the risk ratio and the incidence
+# measures, Sato, Greenland and Robins (1989) for the risk difference variance and Yusuf et al. (1985) for Peto. The 2x2 cases run on dat.bcg and on
+# small tables with a zero cell; the rate cases on small rate tables with a zero count. Nothing is added to the counts entering the pooled estimate
+# (the default), so the formulas take the tables as given.
+
+[[case]]
+id = "rma_mh.or.bcg"
+kind = "derived"
+function = "rma_mh"
+dataset = "dat.bcg"
+args = { ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg", measure = "OR" }
+expect = { beta = "formulas.mh_or_beta", se = "formulas.mh_or_se" }
+covers = ["rma_mh.OR.estimate", "rma_mh.OR.variance"]
+
+[[case]]
+id = "rma_mh.or.zero-cell"
+kind = "derived"
+function = "rma_mh"
+args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR" }
+expect = { beta = "formulas.mh_or_beta", se = "formulas.mh_or_se" }
+covers = ["rma_mh.OR.estimate", "rma_mh.OR.variance"]
+
+[case.data]
+ai = [0, 3, 6, 2, 9]
+bi = [28, 47, 34, 58, 41]
+ci = [2, 5, 8, 0, 10]
+di = [30, 45, 32, 60, 39]
+
+[[case]]
+id = "rma_mh.rr.bcg"
+kind = "derived"
+function = "rma_mh"
+dataset = "dat.bcg"
+args = { ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg", measure = "RR" }
+expect = { beta = "formulas.mh_rr_beta", se = "formulas.mh_rr_se" }
+covers = ["rma_mh.RR.estimate", "rma_mh.RR.variance"]
+
+[[case]]
+id = "rma_mh.rr.zero-cell"
+kind = "derived"
+function = "rma_mh"
+args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "RR" }
+expect = { beta = "formulas.mh_rr_beta", se = "formulas.mh_rr_se" }
+covers = ["rma_mh.RR.estimate", "rma_mh.RR.variance"]
+
+[case.data]
+ai = [0, 3, 6, 2, 9]
+bi = [28, 47, 34, 58, 41]
+ci = [2, 5, 8, 0, 10]
+di = [30, 45, 32, 60, 39]
+
+[[case]]
+id = "rma_mh.rd.bcg"
+kind = "derived"
+function = "rma_mh"
+dataset = "dat.bcg"
+args = { ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg", measure = "RD" }
+expect = { beta = "formulas.mh_rd_beta", se = "formulas.mh_rd_se" }
+covers = ["rma_mh.RD.estimate", "rma_mh.RD.variance"]
+
+[[case]]
+id = "rma_mh.rd.zero-cell"
+kind = "derived"
+function = "rma_mh"
+args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "RD" }
+expect = { beta = "formulas.mh_rd_beta", se = "formulas.mh_rd_se" }
+covers = ["rma_mh.RD.estimate", "rma_mh.RD.variance"]
+
+[case.data]
+ai = [0, 3, 6, 2, 9]
+bi = [28, 47, 34, 58, 41]
+ci = [2, 5, 8, 0, 10]
+di = [30, 45, 32, 60, 39]
+
+[[case]]
+id = "rma_mh.irr.zero-count"
+kind = "derived"
+function = "rma_mh"
+args = { x1i = "x1i", x2i = "x2i", t1i = "t1i", t2i = "t2i", measure = "IRR" }
+expect = { beta = "formulas.mh_irr_beta", se = "formulas.mh_irr_se" }
+covers = ["rma_mh.IRR.estimate", "rma_mh.IRR.variance"]
+
+[case.data]
+x1i = [10, 7, 0, 15, 4]
+x2i = [14, 9, 3, 20, 6]
+t1i = [1200, 800, 500, 1500, 600]
+t2i = [1100, 900, 550, 1400, 700]
+
+[[case]]
+id = "rma_mh.ird.zero-count"
+kind = "derived"
+function = "rma_mh"
+args = { x1i = "x1i", x2i = "x2i", t1i = "t1i", t2i = "t2i", measure = "IRD" }
+expect = { beta = "formulas.mh_ird_beta", se = "formulas.mh_ird_se" }
+covers = ["rma_mh.IRD.estimate", "rma_mh.IRD.variance"]
+
+[case.data]
+x1i = [10, 7, 0, 15, 4]
+x2i = [14, 9, 3, 20, 6]
+t1i = [1200, 800, 500, 1500, 600]
+t2i = [1100, 900, 550, 1400, 700]
+
+[[case]]
+id = "rma_peto.bcg"
+kind = "derived"
+function = "rma_peto"
+dataset = "dat.bcg"
+args = { ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" }
+expect = { beta = "formulas.peto_beta", se = "formulas.peto_se" }
+covers = ["rma_peto"]
+
+[[case]]
+id = "rma_peto.zero-cell"
+kind = "derived"
+function = "rma_peto"
+args = { ai = "ai", bi = "bi", ci = "ci", di = "di" }
+expect = { beta = "formulas.peto_beta", se = "formulas.peto_se" }
+covers = ["rma_peto"]
+
+[case.data]
+ai = [0, 3, 6, 2, 9]
+bi = [28, 47, 34, 58, 41]
+ci = [2, 5, 8, 0, 10]
+di = [30, 45, 32, 60, 39]

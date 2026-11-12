@@ -1,0 +1,588 @@
+# Correctness cases for rma_uni inference: the tests (coverage items `test.<name>`), the tau2 confidence intervals (`confint.<type>`) and prediction
+# intervals (`predict.pi`).
+#
+# `derived` cases on dat.bcg (log risk ratio) under the REML and DL fits, with and without the moderator `ablat`. The coefficient tests and
+# intervals come from `formulas.rma_zval` and its siblings, coded from the Wald and Knapp-Hartung (2003) equations; the intervals for tau2 and the
+# prediction intervals are compared by the `check` functions of `test_derived.py`, which call `metafopy.confint` and `metafopy.predict` on the fit.
+
+[[case]]
+id = "test.z.reml.bcg.none"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "REML", test = "z", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { zval = "formulas.rma_zval", pval = "formulas.rma_pval", ci_lb = "formulas.rma_ci_lb", ci_ub = "formulas.rma_ci_ub" }
+covers = ["test.z"]
+
+[[case]]
+id = "test.z.reml.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "REML", test = "z", mods = "~ ablat", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { zval = "formulas.rma_zval", pval = "formulas.rma_pval", ci_lb = "formulas.rma_ci_lb", ci_ub = "formulas.rma_ci_ub" }
+covers = ["test.z"]
+
+[[case]]
+id = "test.z.dl.bcg.none"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "DL", test = "z" }
+expect = { zval = "formulas.rma_zval", pval = "formulas.rma_pval", ci_lb = "formulas.rma_ci_lb", ci_ub = "formulas.rma_ci_ub" }
+covers = ["test.z"]
+
+[[case]]
+id = "test.z.dl.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "DL", test = "z", mods = "~ ablat" }
+expect = { zval = "formulas.rma_zval", pval = "formulas.rma_pval", ci_lb = "formulas.rma_ci_lb", ci_ub = "formulas.rma_ci_ub" }
+covers = ["test.z"]
+
+[[case]]
+id = "test.t.reml.bcg.none"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "REML", test = "t", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { zval = "formulas.rma_zval", pval = "formulas.rma_pval", ci_lb = "formulas.rma_ci_lb", ci_ub = "formulas.rma_ci_ub" }
+covers = ["test.t"]
+
+[[case]]
+id = "test.t.reml.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "REML", test = "t", mods = "~ ablat", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { zval = "formulas.rma_zval", pval = "formulas.rma_pval", ci_lb = "formulas.rma_ci_lb", ci_ub = "formulas.rma_ci_ub" }
+covers = ["test.t"]
+
+[[case]]
+id = "test.t.dl.bcg.none"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "DL", test = "t" }
+expect = { zval = "formulas.rma_zval", pval = "formulas.rma_pval", ci_lb = "formulas.rma_ci_lb", ci_ub = "formulas.rma_ci_ub" }
+covers = ["test.t"]
+
+[[case]]
+id = "test.t.dl.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "DL", test = "t", mods = "~ ablat" }
+expect = { zval = "formulas.rma_zval", pval = "formulas.rma_pval", ci_lb = "formulas.rma_ci_lb", ci_ub = "formulas.rma_ci_ub" }
+covers = ["test.t"]
+
+[[case]]
+id = "test.knha.reml.bcg.none"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "REML", test = "knha", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { zval = "formulas.rma_zval", pval = "formulas.rma_pval", ci_lb = "formulas.rma_ci_lb", ci_ub = "formulas.rma_ci_ub" }
+covers = ["test.knha"]
+
+[[case]]
+id = "test.knha.reml.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "REML", test = "knha", mods = "~ ablat", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { zval = "formulas.rma_zval", pval = "formulas.rma_pval", ci_lb = "formulas.rma_ci_lb", ci_ub = "formulas.rma_ci_ub" }
+covers = ["test.knha"]
+
+[[case]]
+id = "test.knha.dl.bcg.none"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "DL", test = "knha" }
+expect = { zval = "formulas.rma_zval", pval = "formulas.rma_pval", ci_lb = "formulas.rma_ci_lb", ci_ub = "formulas.rma_ci_ub" }
+covers = ["test.knha"]
+
+[[case]]
+id = "test.knha.dl.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "DL", test = "knha", mods = "~ ablat" }
+expect = { zval = "formulas.rma_zval", pval = "formulas.rma_pval", ci_lb = "formulas.rma_ci_lb", ci_ub = "formulas.rma_ci_ub" }
+covers = ["test.knha"]
+
+[[case]]
+id = "test.adhoc.reml.bcg.none"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "REML", test = "adhoc", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { zval = "formulas.rma_zval", pval = "formulas.rma_pval", ci_lb = "formulas.rma_ci_lb", ci_ub = "formulas.rma_ci_ub" }
+covers = ["test.adhoc"]
+
+[[case]]
+id = "test.adhoc.reml.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "REML", test = "adhoc", mods = "~ ablat", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { zval = "formulas.rma_zval", pval = "formulas.rma_pval", ci_lb = "formulas.rma_ci_lb", ci_ub = "formulas.rma_ci_ub" }
+covers = ["test.adhoc"]
+
+[[case]]
+id = "test.adhoc.dl.bcg.none"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "DL", test = "adhoc" }
+expect = { zval = "formulas.rma_zval", pval = "formulas.rma_pval", ci_lb = "formulas.rma_ci_lb", ci_ub = "formulas.rma_ci_ub" }
+covers = ["test.adhoc"]
+
+[[case]]
+id = "test.adhoc.dl.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "DL", test = "adhoc", mods = "~ ablat" }
+expect = { zval = "formulas.rma_zval", pval = "formulas.rma_pval", ci_lb = "formulas.rma_ci_lb", ci_ub = "formulas.rma_ci_ub" }
+covers = ["test.adhoc"]
+
+[[case]]
+id = "predict.pi.z.reml.bcg.none"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "REML", test = "z", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = {}
+check = "test_derived.predict_pi"
+covers = ["predict.pi"]
+
+[[case]]
+id = "predict.pi.z.reml.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "REML", test = "z", mods = "~ ablat", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = {}
+check = "test_derived.predict_pi"
+covers = ["predict.pi"]
+
+[[case]]
+id = "predict.pi.z.dl.bcg.none"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "DL", test = "z" }
+expect = {}
+check = "test_derived.predict_pi"
+covers = ["predict.pi"]
+
+[[case]]
+id = "predict.pi.z.dl.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "DL", test = "z", mods = "~ ablat" }
+expect = {}
+check = "test_derived.predict_pi"
+covers = ["predict.pi"]
+
+[[case]]
+id = "predict.pi.t.reml.bcg.none"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "REML", test = "t", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = {}
+check = "test_derived.predict_pi"
+covers = ["predict.pi"]
+
+[[case]]
+id = "predict.pi.t.reml.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "REML", test = "t", mods = "~ ablat", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = {}
+check = "test_derived.predict_pi"
+covers = ["predict.pi"]
+
+[[case]]
+id = "predict.pi.t.dl.bcg.none"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "DL", test = "t" }
+expect = {}
+check = "test_derived.predict_pi"
+covers = ["predict.pi"]
+
+[[case]]
+id = "predict.pi.t.dl.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "DL", test = "t", mods = "~ ablat" }
+expect = {}
+check = "test_derived.predict_pi"
+covers = ["predict.pi"]
+
+[[case]]
+id = "predict.pi.knha.reml.bcg.none"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "REML", test = "knha", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = {}
+check = "test_derived.predict_pi"
+covers = ["predict.pi"]
+
+[[case]]
+id = "predict.pi.knha.reml.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "REML", test = "knha", mods = "~ ablat", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = {}
+check = "test_derived.predict_pi"
+covers = ["predict.pi"]
+
+[[case]]
+id = "predict.pi.knha.dl.bcg.none"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "DL", test = "knha" }
+expect = {}
+check = "test_derived.predict_pi"
+covers = ["predict.pi"]
+
+[[case]]
+id = "predict.pi.knha.dl.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "DL", test = "knha", mods = "~ ablat" }
+expect = {}
+check = "test_derived.predict_pi"
+covers = ["predict.pi"]
+
+[[case]]
+id = "confint.qp.reml.bcg.none"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "REML", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = {}
+check = "test_derived.confint_qp"
+tolerance = 1e-8
+covers = ["confint.qp"]
+
+[[case]]
+id = "confint.qp.reml.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "REML", mods = "~ ablat", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = {}
+check = "test_derived.confint_qp"
+tolerance = 1e-8
+covers = ["confint.qp"]
+
+[[case]]
+id = "confint.qp.dl.bcg.none"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "DL" }
+expect = {}
+check = "test_derived.confint_qp"
+tolerance = 1e-8
+covers = ["confint.qp"]
+
+[[case]]
+id = "confint.qp.dl.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "DL", mods = "~ ablat" }
+expect = {}
+check = "test_derived.confint_qp"
+tolerance = 1e-8
+covers = ["confint.qp"]
+
+[[case]]
+id = "confint.pl.reml.bcg.none"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "REML", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = {}
+check = "test_derived.confint_pl"
+tolerance = 1e-7
+covers = ["confint.pl"]
+
+[[case]]
+id = "confint.pl.reml.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "REML", mods = "~ ablat", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = {}
+check = "test_derived.confint_pl"
+tolerance = 1e-7
+covers = ["confint.pl"]
+
+[[case]]
+id = "confint.pl.ml.bcg.none"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "ML", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = {}
+check = "test_derived.confint_pl"
+tolerance = 1e-7
+covers = ["confint.pl"]
+
+[[case]]
+id = "confint.pl.ml.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "ML", mods = "~ ablat", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = {}
+check = "test_derived.confint_pl"
+tolerance = 1e-7
+covers = ["confint.pl"]
+
+[[case]]
+id = "confint.ht.reml.bcg.none"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "REML", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = {}
+check = "test_derived.confint_ht"
+tolerance = 1e-8
+status = "mismatch"
+reason = "Higgins and Thompson (2002) centre the interval on H from Q: tau2 bounds 0.19972 and 0.47038; metafopy centres on H2 of the REML fit (12.856 against Q/(k-1) = 12.686): 0.20274 and 0.47703"
+covers = ["confint.ht"]
+
+[[case]]
+id = "confint.ht.dl.bcg.none"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "DL" }
+expect = {}
+check = "test_derived.confint_ht"
+tolerance = 1e-8
+covers = ["confint.ht"]
+
+[[case]]
+id = "confint.wald.reml.bcg.none"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "REML", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = {}
+check = "test_derived.confint_wald"
+tolerance = 1e-8
+covers = ["confint.wald"]
+
+[[case]]
+id = "confint.wald.reml.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "REML", mods = "~ ablat", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = {}
+check = "test_derived.confint_wald"
+tolerance = 1e-8
+covers = ["confint.wald"]
+
+[[case]]
+id = "confint.wald.ml.bcg.none"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "ML", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = {}
+check = "test_derived.confint_wald"
+tolerance = 1e-8
+covers = ["confint.wald"]
+
+[[case]]
+id = "confint.wald.ml.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "ML", mods = "~ ablat", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = {}
+check = "test_derived.confint_wald"
+tolerance = 1e-8
+covers = ["confint.wald"]
+
+[[case]]
+id = "confint.wald.log.reml.bcg.none"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "REML", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = {}
+check = "test_derived.confint_wald_log"
+tolerance = 1e-8
+covers = ["confint.wald.log"]
+
+[[case]]
+id = "confint.wald.log.reml.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "REML", mods = "~ ablat", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = {}
+check = "test_derived.confint_wald_log"
+tolerance = 1e-8
+covers = ["confint.wald.log"]
+
+[[case]]
+id = "confint.wald.log.ml.bcg.none"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "ML", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = {}
+check = "test_derived.confint_wald_log"
+tolerance = 1e-8
+covers = ["confint.wald.log"]
+
+[[case]]
+id = "confint.wald.log.ml.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "ML", mods = "~ ablat", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = {}
+check = "test_derived.confint_wald_log"
+tolerance = 1e-8
+covers = ["confint.wald.log"]
+
+[[case]]
+id = "confint.wald.sqrt.reml.bcg.none"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "REML", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = {}
+check = "test_derived.confint_wald_sqrt"
+tolerance = 1e-8
+covers = ["confint.wald.sqrt"]
+
+[[case]]
+id = "confint.wald.sqrt.reml.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "REML", mods = "~ ablat", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = {}
+check = "test_derived.confint_wald_sqrt"
+tolerance = 1e-8
+covers = ["confint.wald.sqrt"]
+
+[[case]]
+id = "confint.wald.sqrt.ml.bcg.none"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "ML", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = {}
+check = "test_derived.confint_wald_sqrt"
+tolerance = 1e-8
+covers = ["confint.wald.sqrt"]
+
+[[case]]
+id = "confint.wald.sqrt.ml.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "ML", mods = "~ ablat", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = {}
+check = "test_derived.confint_wald_sqrt"
+tolerance = 1e-8
+covers = ["confint.wald.sqrt"]
+
+[[case]]
+id = "confint.genq.genq.bcg.none"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "GENQ", weights = "tpos" }
+expect = {}
+check = "test_derived.confint_genq"
+tolerance = 1e-4
+covers = ["confint.genq"]
+
+[[case]]
+id = "confint.genq.genq.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "GENQ", weights = "tpos", mods = "~ ablat" }
+expect = {}
+check = "test_derived.confint_genq"
+tolerance = 1e-4
+covers = ["confint.genq"]

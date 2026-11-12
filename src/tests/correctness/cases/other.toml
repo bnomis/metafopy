@@ -1,0 +1,219 @@
+# Other-software cases from R meta, written by src/tests/correctness/r/other_software.R; do not edit by hand.
+#
+# meta's effect sizes, Mantel-Haenszel and Peto estimates are its own code. Its tau2 comes from metafor::rma.uni, so the rma_uni cases check
+# the weights, Q and Knapp-Hartung intervals around tau2, not the estimator.
+
+[[case]]
+id = "other.escalc.rr.bcg"
+kind = "other"
+function = "escalc"
+dataset = "dat.bcg"
+args = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" }
+expect = { "yi[0]" = -0.88931133392020545, "yi[1]" = -1.5853886572014306, "yi[2]" = -1.348073148299693, "yi[3]" = -1.4415511900213054, "yi[4]" = -0.21754732221129569, "yi[5]" = -0.78611558581886398, "yi[6]" = -1.6208982235983924, "yi[7]" = 0.011952333523841173, "yi[8]" = -0.46941764873814867, "yi[9]" = -1.3713448034727846, "yi[10]" = -0.33935882833839015, "yi[11]" = 0.44591340057137829, "yi[12]" = -0.017313948216879493, "vi[0]" = 0.32558476500396127, "vi[1]" = 0.19458112139814382, "vi[2]" = 0.41536796536796539, "vi[3]" = 0.020010031902247573, "vi[4]" = 0.051210172169630863, "vi[5]" = 0.0069056184559087583, "vi[6]" = 0.22301724757231517, "vi[7]" = 0.0039615792978177295, "vi[8]" = 0.056434210463248966, "vi[9]" = 0.073024793613028924, "vi[10]" = 0.01241221397155972, "vi[11]" = 0.53250584520015276, "vi[12]" = 0.071404659683986293 }
+
+[case.source]
+citation = "R package meta 8.5-0 (Balduzzi S, Ruecker G, Schwarzer G (2019). How to perform a meta-analysis with R: a practical tutorial. Evidence-Based Mental Health 22:153-160), run on R 4.6.2."
+locator = "metabin(sm = 'RR', method = 'Inverse'): TE and seTE^2"
+read = 2026-11-12
+url = "https://cran.r-project.org/package=meta"
+
+[[case]]
+id = "other.escalc.or.bcg"
+kind = "other"
+function = "escalc"
+dataset = "dat.bcg"
+args = { measure = "OR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" }
+expect = { "yi[0]" = -0.93869414087039216, "yi[1]" = -1.6661907290265499, "yi[2]" = -1.3862943611198906, "yi[3]" = -1.4564435493129846, "yi[4]" = -0.219141085675433, "yi[5]" = -0.95812204077626761, "yi[6]" = -1.6337758382288956, "yi[7]" = 0.012020601452732425, "yi[8]" = -0.47174603583869629, "yi[9]" = -1.4012101392834806, "yi[10]" = -0.3408496463662109, "yi[11]" = 0.44663468227444647, "yi[12]" = -0.017341873929093476, "vi[0]" = 0.35712495225362872, "vi[1]" = 0.208132393657186, "vi[2]" = 0.43341307814992025, "vi[3]" = 0.020314412973197363, "vi[4]" = 0.051951777317120279, "vi[5]" = 0.0099052655153382407, "vi[6]" = 0.22700967522349361, "vi[7]" = 0.0040069620121488299, "vi[8]" = 0.056977123987762661, "vi[9]" = 0.07542172631492039, "vi[10]" = 0.01252513382021552, "vi[11]" = 0.53416217247471709, "vi[12]" = 0.071635117295658732 }
+
+[case.source]
+citation = "R package meta 8.5-0 (Balduzzi S, Ruecker G, Schwarzer G (2019). How to perform a meta-analysis with R: a practical tutorial. Evidence-Based Mental Health 22:153-160), run on R 4.6.2."
+locator = "metabin(sm = 'OR', method = 'Inverse'): TE and seTE^2"
+read = 2026-11-12
+url = "https://cran.r-project.org/package=meta"
+
+[[case]]
+id = "other.escalc.rd.bcg"
+kind = "other"
+function = "escalc"
+dataset = "dat.bcg"
+args = { measure = "RD", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" }
+expect = { "yi[0]" = -0.046616365444229972, "yi[1]" = -0.076101727819840814, "yi[2]" = -0.037012987012987011, "yi[3]" = -0.014714618026393848, "yi[4]" = -0.0015821267065460826, "yi[5]" = -0.13956764584472833, "yi[6]" = -0.012754832724785342, "yi[7]" = 6.7880214048941963e-05, "yi[8]" = -0.002316684687178207, "yi[9]" = -0.029132279132279136, "yi[10]" = -0.0014842349885014817, "yi[11]" = 0.00072009765009786535, "yi[12]" = -2.7880742167009798e-05, "vi[0]" = 0.00078006866485593785, "vi[1]" = 0.00034846257472658307, "vi[2]" = 0.00027139978563068455, "vi[3]" = 1.8028549353363771e-06, "vi[4]" = 2.6579724826031939e-06, "vi[5]" = 0.00019833565414980581, "vi[6]" = 2.6104856229552045e-05, "vi[7]" = 1.2777444567839111e-07, "vi[8]" = 1.358226306043311e-06, "vi[9]" = 2.8247503707642771e-05, "vi[10]" = 2.5997146918559678e-07, "vi[11]" = 1.3463933597368239e-06, "vi[12]" = 1.8506680125160205e-07 }
+
+[case.source]
+citation = "R package meta 8.5-0 (Balduzzi S, Ruecker G, Schwarzer G (2019). How to perform a meta-analysis with R: a practical tutorial. Evidence-Based Mental Health 22:153-160), run on R 4.6.2."
+locator = "metabin(sm = 'RD', method = 'Inverse'): TE and seTE^2"
+read = 2026-11-12
+url = "https://cran.r-project.org/package=meta"
+
+[[case]]
+id = "other.escalc.md.normand1999"
+kind = "other"
+function = "escalc"
+dataset = "dat.normand1999"
+args = { measure = "MD", m1i = "m1i", sd1i = "sd1i", n1i = "n1i", m2i = "m2i", sd2i = "sd2i", n2i = "n2i" }
+expect = { "yi[0]" = -20, "yi[1]" = -2, "yi[2]" = -55, "yi[3]" = -71, "yi[4]" = -4, "yi[5]" = 1, "yi[6]" = 11, "yi[7]" = -10, "yi[8]" = 7, "vi[0]" = 40.50802315963606, "vi[1]" = 2.0806451612903225, "vi[2]" = 15.698403755868545, "vi[3]" = 150.22222222222223, "vi[4]" = 17.307692307692303, "vi[5]" = 1.1673414304993253, "vi[6]" = 94.589126559714799, "vi[7]" = 6.3108792846497765, "vi[8]" = 19.842307692307692 }
+
+[case.source]
+citation = "R package meta 8.5-0 (Balduzzi S, Ruecker G, Schwarzer G (2019). How to perform a meta-analysis with R: a practical tutorial. Evidence-Based Mental Health 22:153-160), run on R 4.6.2."
+locator = "metacont(sm = 'MD', method.smd = 'Hedges', exact.smd = TRUE): TE and seTE^2"
+read = 2026-11-12
+url = "https://cran.r-project.org/package=meta"
+
+[[case]]
+id = "other.escalc.smd.normand1999"
+kind = "other"
+function = "escalc"
+dataset = "dat.normand1999"
+args = { measure = "SMD", m1i = "m1i", sd1i = "sd1i", n1i = "n1i", m2i = "m2i", sd2i = "sd2i", n2i = "n2i", vtype = "UB" }
+expect = { "yi[0]" = -0.35516964094010689, "yi[1]" = -0.34794002273910346, "yi[2]" = -2.3175691601638624, "yi[3]" = -1.8879822529368466, "yi[4]" = -0.38396414116970129, "yi[5]" = 0.17214866906959103, "yi[6]" = 0.27205207385292807, "yi[7]" = -0.42459627189421256, "yi[8]" = 0.28955623008075509, "vi[0]" = 0.013067150392568333, "vi[1]" = 0.064529632179898266, "vi[2]" = 0.046296845500673263, "vi[3]" = 0.16636429064925967, "vi[4]" = 0.20619364389042111, "vi[5]" = 0.0369154111198517, "vi[6]" = 0.060299845200751885, "vi[7]" = 0.014867026248272795, "vi[8]" = 0.036284694400157587 }
+
+[case.source]
+citation = "R package meta 8.5-0 (Balduzzi S, Ruecker G, Schwarzer G (2019). How to perform a meta-analysis with R: a practical tutorial. Evidence-Based Mental Health 22:153-160), run on R 4.6.2."
+locator = "metacont(sm = 'SMD', method.smd = 'Hedges', exact.smd = TRUE): TE and seTE^2; meta's variance is the unbiased estimator, metafor's vtype = 'UB'"
+read = 2026-11-12
+url = "https://cran.r-project.org/package=meta"
+
+[[case]]
+id = "other.rma_mh.or.bcg"
+kind = "other"
+function = "rma_mh"
+dataset = "dat.bcg"
+args = { ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg", measure = "OR" }
+expect = { "beta" = -0.47341098838858547, "se" = 0.041007778404231449 }
+
+[case.source]
+citation = "R package meta 8.5-0 (Balduzzi S, Ruecker G, Schwarzer G (2019). How to perform a meta-analysis with R: a practical tutorial. Evidence-Based Mental Health 22:153-160), run on R 4.6.2."
+locator = "metabin(sm = 'OR', method = 'MH'): TE.common and seTE.common"
+read = 2026-11-12
+url = "https://cran.r-project.org/package=meta"
+
+[[case]]
+id = "other.rma_mh.rr.bcg"
+kind = "other"
+function = "rma_mh"
+dataset = "dat.bcg"
+args = { ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg", measure = "RR" }
+expect = { "beta" = -0.45370960468375404, "se" = 0.039337366871294382 }
+
+[case.source]
+citation = "R package meta 8.5-0 (Balduzzi S, Ruecker G, Schwarzer G (2019). How to perform a meta-analysis with R: a practical tutorial. Evidence-Based Mental Health 22:153-160), run on R 4.6.2."
+locator = "metabin(sm = 'RR', method = 'MH'): TE.common and seTE.common"
+read = 2026-11-12
+url = "https://cran.r-project.org/package=meta"
+
+[[case]]
+id = "other.rma_mh.rd.bcg"
+kind = "other"
+function = "rma_mh"
+dataset = "dat.bcg"
+args = { ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg", measure = "RD" }
+expect = { "beta" = -0.0032881818326129988 }
+
+[case.source]
+citation = "R package meta 8.5-0 (Balduzzi S, Ruecker G, Schwarzer G (2019). How to perform a meta-analysis with R: a practical tutorial. Evidence-Based Mental Health 22:153-160), run on R 4.6.2."
+locator = "metabin(sm = 'RD', method = 'MH'): TE.common only; meta's seTE.common is the Greenland and Robins (1985) variance, metafor documents Sato, Greenland and Robins (1989)"
+read = 2026-11-12
+url = "https://cran.r-project.org/package=meta"
+
+[[case]]
+id = "other.rma_peto.bcg"
+kind = "other"
+function = "rma_peto"
+dataset = "dat.bcg"
+args = { ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" }
+expect = { "beta" = -0.47444631094063655, "se" = 0.040659080744648288 }
+
+[case.source]
+citation = "R package meta 8.5-0 (Balduzzi S, Ruecker G, Schwarzer G (2019). How to perform a meta-analysis with R: a practical tutorial. Evidence-Based Mental Health 22:153-160), run on R 4.6.2."
+locator = "metabin(sm = 'OR', method = 'Peto'): TE.common and seTE.common"
+read = 2026-11-12
+url = "https://cran.r-project.org/package=meta"
+
+[[case]]
+id = "other.rma_mh.irr.hart1999"
+kind = "other"
+function = "rma_mh"
+dataset = "dat.hart1999"
+args = { x1i = "x1i", t1i = "t1i", x2i = "x2i", t2i = "t2i", measure = "IRR" }
+expect = { "beta" = -1.0295745969374048, "se" = 0.16209490033930782 }
+
+[case.source]
+citation = "R package meta 8.5-0 (Balduzzi S, Ruecker G, Schwarzer G (2019). How to perform a meta-analysis with R: a practical tutorial. Evidence-Based Mental Health 22:153-160), run on R 4.6.2."
+locator = "metainc(sm = 'IRR', method = 'MH'): TE.common and seTE.common"
+read = 2026-11-12
+url = "https://cran.r-project.org/package=meta"
+
+[[case]]
+id = "other.rma_mh.ird.hart1999"
+kind = "other"
+function = "rma_mh"
+dataset = "dat.hart1999"
+args = { x1i = "x1i", t1i = "t1i", x2i = "x2i", t2i = "t2i", measure = "IRD" }
+expect = { "beta" = -0.039351346850971018, "se" = 0.0061049838708695046 }
+
+[case.source]
+citation = "R package meta 8.5-0 (Balduzzi S, Ruecker G, Schwarzer G (2019). How to perform a meta-analysis with R: a practical tutorial. Evidence-Based Mental Health 22:153-160), run on R 4.6.2."
+locator = "metainc(sm = 'IRD', method = 'MH'): TE.common and seTE.common"
+read = 2026-11-12
+url = "https://cran.r-project.org/package=meta"
+
+[[case]]
+id = "other.rma_uni.dl.z.bcg"
+kind = "other"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "DL", test = "z" }
+expect = { "beta" = -0.71411722207322714, "se" = 0.17874208953540316, "tau2" = 0.3087602628623764, "QE" = 152.2330080823734, "I2" = 92.117346854562058 }
+
+[case.source]
+citation = "R package meta 8.5-0 (Balduzzi S, Ruecker G, Schwarzer G (2019). How to perform a meta-analysis with R: a practical tutorial. Evidence-Based Mental Health 22:153-160), run on R 4.6.2."
+locator = "metagen(method.tau = 'DL'): TE.random, seTE.random, tau2, Q, I2 (as a percentage)"
+read = 2026-11-12
+url = "https://cran.r-project.org/package=meta"
+
+[[case]]
+id = "other.rma_uni.dl.knha.bcg"
+kind = "other"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "DL", test = "knha" }
+expect = { "se" = 0.18069662833554748, "ci_lb" = -1.1078213541683288, "ci_ub" = -0.32041308997812545 }
+
+[case.source]
+citation = "R package meta 8.5-0 (Balduzzi S, Ruecker G, Schwarzer G (2019). How to perform a meta-analysis with R: a practical tutorial. Evidence-Based Mental Health 22:153-160), run on R 4.6.2."
+locator = "metagen(method.tau = 'DL', method.random.ci = 'HK'): seTE.random, lower.random, upper.random"
+read = 2026-11-12
+url = "https://cran.r-project.org/package=meta"
+
+[[case]]
+id = "other.rma_uni.reml.z.bcg"
+kind = "other"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "REML", test = "z" }
+expect = { "beta" = -0.71453234836510116, "se" = 0.17978153178036152, "tau2" = 0.31324332598089522, "QE" = 152.2330080823734 }
+
+[case.source]
+citation = "R package meta 8.5-0 (Balduzzi S, Ruecker G, Schwarzer G (2019). How to perform a meta-analysis with R: a practical tutorial. Evidence-Based Mental Health 22:153-160), run on R 4.6.2."
+locator = "metagen(method.tau = 'REML'): TE.random, seTE.random, tau2, Q"
+read = 2026-11-12
+url = "https://cran.r-project.org/package=meta"
+
+[[case]]
+id = "other.rma_uni.reml.knha.bcg"
+kind = "other"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "REML", test = "knha" }
+expect = { "se" = 0.18079174551910043, "ci_lb" = -1.1084437230000499, "ci_ub" = -0.32062097373015247 }
+
+[case.source]
+citation = "R package meta 8.5-0 (Balduzzi S, Ruecker G, Schwarzer G (2019). How to perform a meta-analysis with R: a practical tutorial. Evidence-Based Mental Health 22:153-160), run on R 4.6.2."
+locator = "metagen(method.tau = 'REML', method.random.ci = 'HK'): seTE.random, lower.random, upper.random"
+read = 2026-11-12
+url = "https://cran.r-project.org/package=meta"
+

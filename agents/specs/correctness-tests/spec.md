@@ -1,7 +1,7 @@
 # Correctness tests
 
 **Version:** 1.1
-**Status:** proposed
+**Status:** implemented
 **Date:** 2026-11-11
 
 Every numeric test in `src/tests/` today compares metafopy with R metafor: the JSON fixtures in `src/tests/reference/` are written by `src/tests/r/*.R`, and
@@ -96,13 +96,16 @@ class Case:
     status: typing.Literal['pass', 'mismatch']
     source: Source | None
     dataset: str | None = None
+    data: dict[str, list[float]] | None = None  # inline columns, instead of a dataset
     setup: dict[str, typing.Any] | None = None
     reason: str = ''
     tolerance: float | None = None
     check: str | None = None
+    covers: tuple[str, ...] = ()  # the coverage items the case checks (see Coverage list)
+    file: str = ''  # the case file, for messages
 
 
-def load_cases(kind: str | None = None) -> list[Case]:
+def load_cases(kind: str | None = None, *, directory: pathlib.Path | None = None) -> list[Case]:
     """Read every ``cases/*.toml`` file, validate each case, and return them (filtered by ``kind``)."""
 
 
@@ -121,6 +124,12 @@ def check_case(case: Case, result: typing.Any) -> None:
 def case_params(kind: str) -> list[pytest.param]:
     """Cases of one kind as pytest params, id = case id; a ``mismatch`` case is marked ``xfail(strict=True, reason=...)``."""
 ```
+
+A `derived` case's `expect` value is a float or `"formulas.<name>"`, a function called with the arguments of the case that it declares (a column name
+replaced by the column). A case lists in `covers` the coverage items it checks, such as `escalc.yi.RD`, `escalc.vi.RD.LS`, `tau2.DL`, `test.knha`,
+`confint.pl`, `predict.pi`, `heterogeneity.I2`, `rma_mh.OR.estimate`, `rma_mh.OR.variance` or `rma_peto`; the gate counts only the `covers` of `published`
+and `derived` cases. `load_cases` takes a `directory` keyword for tests of the harness, and `[[exempt]]` entries (`item`, `reason`) and the `escalc` `vtypes`
+table (a `vtypes` array of `{ measure, vtype = [...] }`, the same data as `[[vtypes]]` entries) are read by `load_exemptions` and `load_vtypes`.
 
 `derived` and `property` cases whose check is not a single call carry `function = "formulas.<name>"` or a test-module function named in `check`; the
 loader resolves both and refuses anything else.
