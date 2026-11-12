@@ -538,7 +538,7 @@ answer.
 
 ## Task 14: File the answers and close the spec
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Mismatches (follow-up)
@@ -547,25 +547,25 @@ answer.
 
 **Subtasks:**
 
-- [ ] Read the answers from the Answers section of `agents/specs/correctness-tests/mismatches.md`, never from the page. Stop as `blocked`, naming the
+- [x] Read the answers from the Answers section of `agents/specs/correctness-tests/mismatches.md`, never from the page. Stop as `blocked`, naming the
       missing items, if the section is empty or incomplete
-- [ ] *Keep metafor*: correct the case to the convention metafor documents, cite where it documents it, and set `status = "pass"`
-- [ ] *Follow the reference*: add a `TODO.md` item for each with the `todo-add` skill. The item names the case, the fix, the R parity fixtures and
+- [x] *Keep metafor*: correct the case to the convention metafor documents, cite where it documents it, and set `status = "pass"`
+- [x] *Follow the reference*: add a `TODO.md` item for each with the `todo-add` skill. The item names the case, the fix, the R parity fixtures and
       `known.toml` entries to mark, and the `docs/differences.md` section "Where metafor departs from its reference" to add
-- [ ] *Investigate*: a `TODO.md` item naming what is in doubt
-- [ ] A source the user supplied: write its `published` cases as in Task 9
-- [ ] Set the spec's `**Status:**` to `implemented`, and its entry in `agents/specs/index.md` to say so
+- [x] *Investigate*: a `TODO.md` item naming what is in doubt
+- [x] A source the user supplied: write its `published` cases as in Task 9
+- [x] Set the spec's `**Status:**` to `implemented`, and its entry in `agents/specs/index.md` to say so
 
 **Acceptance Criteria:**
 
-- [ ] Every answered item has a case change or a `TODO.md` item
+- [x] Every answered item has a case change or a `TODO.md` item
 
 **Definition of Done:**
 
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness` passes, `slow` tests included
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness` passes, `slow` tests included
 
 **Notes:**
 

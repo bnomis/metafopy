@@ -132,3 +132,26 @@ Sources needed: every source is *supply*. The files are in `/Users/simonb/src/me
 - Hedges (1981): *supply*.
 - Hedges, Gurevitch & Curtis (1999): *supply*.
 - Borenstein et al. (2009), Normand (1999), and Raudenbush (2009) as chapter 16 of the Handbook of Research Synthesis and Meta-Analysis, 2nd ed.: *supply*.
+
+## Follow-up of the answers (Task 14, 2026-11-12)
+
+- **`ht` interval under REML:** *follow the reference* is filed as the `TODO.md` item "confint type "ht" of a REML fit centres on the fit's H2, not on H
+  from Q". The case `confint.ht.reml.bcg.none` stays a strict expected failure until that fix flips it to `pass`.
+- **Supplied sources:** the `published` cases are in `src/tests/correctness/cases/published.toml`, each with its table or equation. Sources that print no
+  usable worked example were read and give no case:
+  - Robins, Breslow & Greenland (1986): summary estimates for data sets that are only cited.
+  - Sidik & Jonkman (2005): the stomach ulcer and asthma data appear only in a figure and are in no metafopy dataset.
+  - Morris (1983): the baseball data appear only in figures.
+  - Hunter & Schmidt (Handbook chapter 17): summary results without study-level data.
+  - Veroniki et al. (2016) with Bowden et al. (2011): Bowden prints no trial-level effects or variances.
+  - Hedges, Gurevitch & Curtis (1999): `dat.curtis1998` does not reproduce the paper's tau2, Q and L*, and the paper's own counts differ from the
+    dataset, so the dataset is not the paper's data.
+  - DerSimonian & Laird (1986): the per-study data of the reviews are not printed.
+- **Two new mismatches from the supplied sources**, committed as strict expected failures (`status = "mismatch"`); both look like misprints in the source
+  and the recommendation is *keep metafor*. They await the user's answer:
+  - `published.schmidt.barebones.tau2`: Schmidt prints tau2 = 0.0120 - 0.0135 = -0.0015; the 21 correlations of Table 22.1 have variance 0.0109, so
+    metafopy gives -0.0026.
+  - `published.yusuf1985.table9.qe`: Yusuf et al. print a heterogeneity chi-square of 17.8; metafopy gives 18.016 from the same counts and the formulas that
+    reproduce the printed values of Tables 6, 10 and 11 and Table 9's own O - E and variance.
+- **Harness limits left for later:** `expect` cannot compare `exp(beta)`, so printed pooled ratios (Mantel-Haenszel R = 10.68, Yusuf's pooled odds
+  ratios) are not cases; prediction intervals and test-based tau2 and I2 intervals need new `check` functions.

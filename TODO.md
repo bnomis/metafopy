@@ -13,3 +13,17 @@ Found on 2026-11-12 by the property tests of the correctness-tests task list (Ta
 
 Fix direction: give `I2` the value 0 when `QE` is 0 (as R does), keep `H2 = QE / (k - p)`, and add a regression test with identical effects for each
 of `EE`, `FE` and `CE`. Check the random-effects branch and `rma_mh`, `rma_peto` for the same division.
+
+## confint type "ht" of a REML fit centres on the fit's H2, not on H from Q
+
+Found on 2026-11-12 by the correctness tests (case `confint.ht.reml.bcg.none` in `src/tests/correctness/cases/inference.toml`, strict expected failure);
+the user answered *follow the reference* on 2026-11-12 (`agents/specs/correctness-tests/mismatches.md`, Answers).
+Higgins and Thompson (2002, equations 24 and 25), and Borenstein et al. (2009, equations 16.14 to 16.19), build the interval on `ln H` with H from
+`Q = (k - 1) H^2`. For `dat.bcg` log risk ratios the tau2 interval is 0.19972 to 0.47038. The `ht` branch of `src/metafopy/methods/confint.py` centres on
+`H2` of the fit (12.856 under REML against `Q / (k - 1)` = 12.686), giving 0.20274 to 0.47703. R metafor 5.2-1 gives the same as metafopy
+(`confint.rma.uni` centres on `log(x$H2)`), so with DL, where the two agree, there is no difference.
+
+Fix direction: centre on `H = sqrt(Q / (k - 1))` for every method; flip the case to `status = "pass"` and drop its `reason`; mark the R parity
+fixture value `ht_ci` in `src/tests/reference/extras/rma_uni_help.json` (read by `test_confint_types` in `src/tests/test_rma_uni_help.py`) as differing
+for the reason; add a `src/audit/data/known.toml` entry so `bin/metafor-audit.sh` accepts the difference; add the section "Where metafor departs from its
+reference" to `docs/differences.md` (the heading does not exist yet), naming this interval.

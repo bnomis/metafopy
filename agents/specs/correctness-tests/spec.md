@@ -1,7 +1,7 @@
 # Correctness tests
 
 **Version:** 1.1
-**Status:** proposed
+**Status:** implemented
 **Date:** 2026-11-11
 
 Every numeric test in `src/tests/` today compares metafopy with R metafor: the JSON fixtures in `src/tests/reference/` are written by `src/tests/r/*.R`, and
