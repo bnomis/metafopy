@@ -27,7 +27,11 @@ list stops until every item has an answer.
   `ln H +- z se` with H from Q (`H2 = Q / (k - 1)` = 12.686), as the paper defines it.
 - **metafopy:** 0.20274 to 0.47703. Its bounds are centred on the `H2` of the REML fit (12.856), with the standard error computed from Q. With a DL fit
   (where `H2` equals `Q / (k - 1)`) the two agree, case `confint.ht.dl.bcg.none` passes.
-- **metafor:** not checked. R `metafor` is not installed in the library this session can reach, and `src/tests/reference/` holds no `ht` fixture.
+- **metafor:** 5.2-1 gives 0.20274 to 0.47703, the same as metafopy (checked 2026-11-12 with the audit's R library). `confint.rma.uni`'s `ht` branch
+  computes `se[ln H]` from Q and k as the paper does, then centres on `log(x$H2)`, the REML fit's H2, not `Q / (k - 1)`.
+- **The paper:** section 4.1.1 and Appendix method III build the interval "involving only Q and k", with `Q = (k - 1) H^2`, so H is from Q. The
+  conversion from the H interval to a tau2 interval (`tau2 = I2 v / (1 - I2)`) is metafor's; the paper gives intervals for H and I2 only, and the
+  reference value applies the same conversion to the paper's H.
 - **Options:** follow the reference; keep metafor (the REML-centred form is a deliberate generalisation of the paper); investigate (run metafor, then
   decide).
 
@@ -35,13 +39,14 @@ list stops until every item has an answer.
 
 - **What is decided:** which interval `confint(type='ht')` returns for a REML fit.
 - **Background:** the case is a strict expected failure. The DL fit agrees with the paper; the REML fit centres on the REML `H2`, a generalisation
-  of the paper rather than its definition. Metafor has not been run on this case.
+  of the paper rather than its definition. Metafor 5.2-1 does the same as metafopy (run on 2026-11-12), and does not document it.
 - **What it affects:** the `ht` branch of `src/metafopy/methods/confint.py`, `docs/differences.md`, and the R parity fixtures if metafor has the type.
 - **Options:**
   - *Follow the reference*: a `TODO.md` item to centre on `H` from Q; the case passes after the fix.
-  - *Keep metafor*: the case is corrected to metafor's convention, with the place metafor documents it cited. Needs metafor run first.
-  - *Investigate*: a `TODO.md` item to run metafor on the case, then decide.
-- **Recommendation:** *investigate*, because neither other option has metafor's evidence yet.
+  - *Keep metafor*: the case is rewritten to the REML-centred convention; no source supports it.
+  - *Investigate*: the case stays a strict expected failure and nothing is filed; metafor has already been run and its code read.
+- **Recommendation:** *follow the reference* (revised on 2026-11-12 from *investigate*, once metafor had been run and the paper read). The paper is
+  unambiguous and `NOTES.md` puts correct algorithms above reproducing metafor; `docs/differences.md` records the difference from metafor.
 
 ## Sources needed
 
@@ -87,6 +92,10 @@ against a registry.
 - Hedges LV (1981). Distribution theory for Glass's estimator of effect size and related estimators. Journal of Educational Statistics 6(2):107-128. doi:10.3102/10769986006002107
 - Hedges LV, Gurevitch J, Curtis PS (1999). The meta-analysis of response ratios in experimental ecology. Ecology 80(4):1150-1156. doi:10.1890/0012-9658(1999)080[1150:TMAORR]2.0.CO;2
 - Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Wiley, Chichester. Normand SLT (1999). Meta-analysis: formulating, evaluating, combining, and reporting. Statistics in Medicine 18(3):321-359. Raudenbush SW (2009). Analyzing effect sizes: random-effects models. In Cooper H, Hedges LV, Valentine JC (eds), The Handbook of Research Synthesis and Meta-Analysis, 2nd ed., pp. 295-315. Russell Sage Foundation, New York. doi:10.1002/9780470743386 doi:10.1002/(SICI)1097-0258(19990215)18:3<321::AID-SIM28>3.0.CO;2-P
+
+On 2026-11-12 the user saved the sources in `/Users/simonb/src/metafopy papers` (outside the repository; the papers are not committed).
+Every row has its paper there except: Raudenbush (2009), not supplied; Hunter & Schmidt (2004), for which the file is Schmidt's chapter
+"Meta-Analysis" (chapter 22 of a Wiley handbook), not the 2004 book.
 
 Each source row is a decision: supply the source, or drop it. Recommendation for every row: drop it unless you already hold the source; the
 estimators have metafor parity, derived, property and simulation cases.
