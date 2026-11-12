@@ -32,6 +32,12 @@ list stops until every item has an answer.
 - **The paper:** section 4.1.1 and Appendix method III build the interval "involving only Q and k", with `Q = (k - 1) H^2`, so H is from Q. The
   conversion from the H interval to a tau2 interval (`tau2 = I2 v / (1 - I2)`) is metafor's; the paper gives intervals for H and I2 only, and the
   reference value applies the same conversion to the paper's H.
+- **metafor's documentation** (read 2026-11-12, metafor 5.2-1): `?print.rma` (Note) documents `H2 = (tau2 + v) / v` as a deliberate, more general
+  definition for the printed H2 and I2, so that they agree with the estimated tau2, and says it equals `Q / (k - 1)` under DL. `?confint.rma` says
+  `type="HT"` uses method III of Higgins & Thompson (2002), "see also Borenstein et al., 2009, chapter 16", and says nothing about centring the
+  interval on the fit's H2. Borenstein et al. (2009) equations 16.14 to 16.19 centre on `ln(Q / df)` and map to tau2 with `df (L^2 - 1) / C`
+  (`df / C` is the paper's `v`), which gives the reference value exactly. So both sources metafor cites centre on Q; the REML centring looks like
+  the general H2 carried into `confint` without comment.
 - **Options:** follow the reference; keep metafor (the REML-centred form is a deliberate generalisation of the paper); investigate (run metafor, then
   decide).
 
@@ -43,7 +49,7 @@ list stops until every item has an answer.
 - **What it affects:** the `ht` branch of `src/metafopy/methods/confint.py`, `docs/differences.md`, and the R parity fixtures if metafor has the type.
 - **Options:**
   - *Follow the reference*: a `TODO.md` item to centre on `H` from Q; the case passes after the fix.
-  - *Keep metafor*: the case is rewritten to the REML-centred convention; no source supports it.
+  - *Keep metafor*: the case is rewritten to the REML-centred convention; its only support is metafor's general H2 for printed statistics.
   - *Investigate*: the case stays a strict expected failure and nothing is filed; metafor has already been run and its code read.
 - **Recommendation:** *follow the reference* (revised on 2026-11-12 from *investigate*, once metafor had been run and the paper read). The paper is
   unambiguous and `NOTES.md` puts correct algorithms above reproducing metafor; `docs/differences.md` records the difference from metafor.
