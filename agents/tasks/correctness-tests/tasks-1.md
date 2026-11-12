@@ -447,7 +447,7 @@ cases. With them the coverage gate passes.
 
 ## Task 12: Other-software cases from R meta
 
-**Status:** in-progress
+**Status:** done
 **Priority:** low
 **Complexity:** medium
 **Spec Reference:** Implementation step 6; Kinds of evidence (`other`); Error handling (generator)
@@ -456,33 +456,40 @@ cases. With them the coverage gate passes.
 
 **Subtasks:**
 
-- [ ] If `METAFOPY_CORRECTNESS_RLIB` is unset, or the library it names has no `meta`, stop as `blocked`. The message names the variable and says
+- [x] If `METAFOPY_CORRECTNESS_RLIB` is unset, or the library it names has no `meta`, stop as `blocked`. The message names the variable and says
       that the operator installs `meta` there outside this repository (`install.packages('meta', lib = Sys.getenv('METAFOPY_CORRECTNESS_RLIB'))`)
-- [ ] Write `src/tests/correctness/r/other_software.R`:
+- [x] Write `src/tests/correctness/r/other_software.R`:
   - it pins `meta`'s version at its top and stops on any other version;
   - it writes `cases/other.toml` with `kind = "other"`;
   - it records `meta`'s and R's versions in each case's `source`.
-- [ ] Run it with `LC_ALL=C.UTF-8 Rscript` and commit the output
-- [ ] `test_other_software.py`, parametrised over `case_params('other')`
-- [ ] Record any mismatch as the header says
+- [x] Run it with `LC_ALL=C.UTF-8 Rscript` and commit the output
+- [x] `test_other_software.py`, parametrised over `case_params('other')`
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] Every `other` case names `meta`'s version
-- [ ] Tests never run R
+- [x] Every `other` case names `meta`'s version
+- [x] Tests never run R
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness` passes
 
 **Notes:**
 
 - Depends on Task 2
-- Checked by hand: with the default truncation DL averages 0.098 and HE 0.099 against a true 0.04 (standard error 0.003), and `g` without `J` (`correct=False`) averages 0.531 against 0.5 (standard error 0.0012), so each test fails for its stand-in. `tau2_min=-1e6` turns the truncation off.
 - Prerequisite outside this repository: R `meta` in the library named by `METAFOPY_CORRECTNESS_RLIB`. Do not install it into the audit's pinned
   library; `src/audit/data/r-versions.json` must not change
+- Unblocked 2026-11-12 by an operator session: `meta` 8.5-0 installed into `/Users/simonb/.local/share/metafopy/r-correctness-lib` (outside the
+  repository) with its dependencies taken from the audit's library through `R_LIBS`, so only `meta` was written and the audit library is unchanged.
+  Run: `METAFOPY_CORRECTNESS_RLIB=<that library> R_LIBS=<audit library> LC_ALL=C.UTF-8 Rscript src/tests/correctness/r/other_software.R`
+- `meta` takes tau2 from `metafor::rma.uni`, so the `rma_uni` cases check the weights, Q and Knapp-Hartung intervals around tau2, not the
+  estimator; its effect sizes, Mantel-Haenszel and Peto code are its own
+- No mismatch. Two first-run differences were conventions, pinned in the generator: `meta`'s SMD variance with `exact.smd = TRUE` is metafor's
+  `vtype = 'UB'`; its MH risk-difference SE is the Greenland and Robins (1985) variance (reproduced by hand to 1e-16), while metafor documents
+  Sato, Greenland and Robins (1989), already checked by a `derived` case, so that case compares the estimate only
 
 ---
 
