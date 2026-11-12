@@ -148,10 +148,20 @@ Sources needed: every source is *supply*. The files are in `/Users/simonb/src/me
     dataset, so the dataset is not the paper's data.
   - DerSimonian & Laird (1986): the per-study data of the reviews are not printed.
 - **Two new mismatches from the supplied sources**, committed as strict expected failures (`status = "mismatch"`); both look like misprints in the source
-  and the recommendation is *keep metafor*. They await the user's answer:
+  and the recommendation was *keep metafor*. The review page offered *treat it as a misprint* instead; the answers are below:
   - `published.schmidt.barebones.tau2`: Schmidt prints tau2 = 0.0120 - 0.0135 = -0.0015; the 21 correlations of Table 22.1 have variance 0.0109, so
     metafopy gives -0.0026.
   - `published.yusuf1985.table9.qe`: Yusuf et al. print a heterogeneity chi-square of 17.8; metafopy gives 18.016 from the same counts and the formulas that
     reproduce the printed values of Tables 6, 10 and 11 and Table 9's own O - E and variance.
 - **Harness limits left for later:** `expect` cannot compare `exp(beta)`, so printed pooled ratios (Mantel-Haenszel R = 10.68, Yusuf's pooled odds
   ratios) are not cases; prediction intervals and test-based tau2 and I2 intervals need new `check` functions.
+
+### Answers to the two mismatches from the supplied sources
+
+Answered by the user on the review page on 2026-11-12 and copied here the same day. Both cases were removed from
+`src/tests/correctness/cases/published.toml`.
+
+- **`published.schmidt.barebones.tau2`** (Schmidt prints tau2 = -0.0015; the printed Table 22.1 gives -0.0026): *treat it as a misprint*. The variance of
+  the table's 21 correlations is 0.0109 (0.0115 with divisor k - 1), never the printed 0.0120. No comment.
+- **`published.yusuf1985.table9.qe`** (Yusuf et al. print Q = 17.8; `dat.yusuf1985` gives 18.016): *treat it as a misprint*. The same formulas reproduce
+  every other printed chi-square and Table 9's own pooled O - E and variance. No comment.

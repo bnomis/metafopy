@@ -536,6 +536,7 @@ read = 2026-11-12
 # ((1 - mean(r)^2)^2 / (N - 1)), so every study gets vi = 0.0135 and the Hunter-Schmidt estimate is the variance of r less 0.0135. The mean correlation 0.22
 # is reproduced. The printed observed variance 0.0120 (hence tau^2 = 0.0120 - 0.0135 = -0.0015) is not: the variance of the 21 printed correlations is
 # 0.0109 (0.0115 with divisor N - 1), giving -0.0026. The table's own count of significant correlations (8 of 21 above r = 0.238) agrees with the data.
+# The printed 0.0120 is treated as a misprint (the user's answer of 2026-11-12 in agents/specs/correctness-tests/mismatches.md), so there is no tau2 case.
 [[case]]
 id = "published.schmidt.barebones.mean"
 kind = "published"
@@ -548,22 +549,6 @@ covers = ["tau2.HS"]
 [case.source]
 citation = "Schmidt FL. Meta-analysis, chapter 22 (extracted as 'Methods of Meta-Analysis'; the volume's bibliographic details are not in the extracted text)."
 locator = "Table 22.1 and equation 1 (mean r = .22)"
-read = 2026-11-12
-
-[[case]]
-id = "published.schmidt.barebones.tau2"
-kind = "published"
-function = "rma_uni"
-data = { yi = [0.04, 0.14, 0.31, 0.12, 0.38, 0.27, 0.15, 0.36, 0.20, 0.02, 0.23, 0.11, 0.21, 0.37, 0.14, 0.29, 0.26, 0.17, 0.39, 0.22, 0.21], vi = [0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135, 0.0135] }
-args = { yi = "yi", vi = "vi", method = "HS", control = { tau2_min = -1 } }
-expect = { tau2 = "-0.0015" }
-status = "mismatch"
-reason = "Schmidt prints the variance of the 21 observed correlations as 0.0120, so tau2 = 0.0120 - 0.0135 = -0.0015; the variance of the 21 correlations printed in Table 22.1 is 0.0109, so metafopy gives -0.0026 (0.0109 - 0.0135, tolerance 0.00005). The source's own table and its printed variance disagree, so this looks like a misprint or a different dataset, not a metafopy error"
-covers = ["tau2.HS"]
-
-[case.source]
-citation = "Schmidt FL. Meta-analysis, chapter 22 (extracted as 'Methods of Meta-Analysis'; the volume's bibliographic details are not in the extracted text)."
-locator = "Table 22.1 and equations 2 to 4 (0.0120 - 0.0135 = -0.0015)"
 read = 2026-11-12
 
 # Group C: published cases from Mantel and Haenszel (1959), Yusuf et al. (1985), Hedges (1981) and Borenstein et al. (2009).
@@ -631,23 +616,6 @@ covers = ["rma_peto"]
 [case.source]
 citation = "Yusuf S, Peto R, Lewis J, Collins R, Sleight P (1985). Beta blockade during and after myocardial infarction: an overview of the randomized trials. Progress in Cardiovascular Diseases 27(5):335-371."
 locator = "Table 11 (nonfatal reinfarction), footnote: test for heterogeneity"
-read = 2026-11-12
-
-# Table 9 is the only table whose printed chi-square the dataset does not reproduce; see the reason.
-[[case]]
-id = "published.yusuf1985.table9.qe"
-kind = "published"
-function = "rma_peto"
-dataset = "dat.yusuf1985"
-args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", subset = "table == '9'" }
-expect = { QE = "17.8" }
-status = "mismatch"
-reason = "Yusuf et al. (1985) Table 9 print the heterogeneity chi-square as 17.8; metafopy gives 18.016 (20 tables with events) from the same counts and the same one-step O - E and variance formulas that reproduce the printed 10.8, 23.3 and 15.5 of Tables 6, 10 and 11 and the printed pooled O - E (-6.3) and variance (95.0) of Table 9; recomputing Q from the paper rounded per-trial O - E and variance gives 18.3"
-covers = ["rma_peto"]
-
-[case.source]
-citation = "Yusuf S, Peto R, Lewis J, Collins R, Sleight P (1985). Beta blockade during and after myocardial infarction: an overview of the randomized trials. Progress in Cardiovascular Diseases 27(5):335-371."
-locator = "Table 9 (total mortality at one week, initial IV dose), footnote: test for heterogeneity"
 read = 2026-11-12
 
 # Hedges (1981) Table I: c(m) = g_U / g for m = n1 + n2 - 2 degrees of freedom. With a mean difference of 1 and a pooled sd of 1, g = 1 and
