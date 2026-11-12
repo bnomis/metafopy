@@ -495,7 +495,7 @@ cases. With them the coverage gate passes.
 
 ## Task 13: Review the mismatches and the sources needed
 
-**Status:** todo
+**Status:** in-progress
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Mismatches; Implementation step 8
@@ -505,7 +505,7 @@ answer.
 
 **Subtasks:**
 
-- [ ] Write `agents/specs/correctness-tests/mismatches.md` in the review-document layout of the shared `reviews.md` rule:
+- [x] Write `agents/specs/correctness-tests/mismatches.md` in the review-document layout of the shared `reviews.md` rule:
   - what is reviewed and how;
   - automatic checks: the gate passes, and every `mismatch` case has an item;
   - each mismatch, with source, locator and the three values;
@@ -519,7 +519,7 @@ answer.
 
 **Acceptance Criteria:**
 
-- [ ] Every `mismatch` case in `cases/*.toml` has an item on the page
+- [x] Every `mismatch` case in `cases/*.toml` has an item on the page
 
 **Definition of Done:**
 
@@ -529,6 +529,8 @@ answer.
 
 **Notes:**
 
+- Page not published: this session has no tool to publish an interactive page. The operator publishes it, puts the URL in the document header, and
+  collects the answers.
 - Depends on Tasks 3 to 12
 
 ---

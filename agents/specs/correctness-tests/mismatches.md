@@ -1,8 +1,22 @@
 # Correctness tests: mismatches and sources needed
 
 **Spec:** `agents/specs/correctness-tests/spec.md`
-**Status:** items are being collected by the case-writing tasks; Task 13 of `agents/tasks/correctness-tests/tasks-1.md` completes this document in the
-review-document layout and publishes its page.
+**Task list:** `agents/tasks/correctness-tests/tasks-1.md` (Task 13)
+**Review page:** not published: the session that wrote this document has no tool for publishing an interactive page. The operator publishes it
+(see Answers) before the list restarts.
+
+## What is reviewed and how
+
+The case-writing tasks compared metafopy with the defining publications first and R metafor second. This document holds every case where the
+reference and metafopy disagree (one mismatch), and every published source that could not be read (the table of sources needed). For each mismatch
+you choose *follow the reference*, *keep metafor* or *investigate*. For each source needed you supply the table or example, or drop the source. The
+list stops until every item has an answer.
+
+## Automatic checks
+
+- Every `mismatch` case has an item: `grep -rn 'status = "mismatch"' src/tests/correctness/cases` finds one case, `confint.ht.reml.bcg.none`, and
+  the item below covers it.
+- The correctness gate: run `pytest src/tests/correctness -m 'not slow'` (result recorded in the Task 13 commit).
 
 ## Mismatches
 
@@ -17,6 +31,18 @@ review-document layout and publishes its page.
 - **metafor:** not checked. R `metafor` is not installed in the library this session can reach, and `src/tests/reference/` holds no `ht` fixture.
 - **Options:** follow the reference; keep metafor (the REML-centred form is a deliberate generalisation of the paper); investigate (run metafor, then
   decide).
+
+### Decision: what to do with the `ht` interval under REML
+
+- **What is decided:** which interval `confint(type='ht')` returns for a REML fit.
+- **Background:** the case is a strict expected failure. The DL fit agrees with the paper; the REML fit centres on the REML `H2`, a generalisation
+  of the paper rather than its definition. Metafor has not been run on this case.
+- **What it affects:** the `ht` branch of `src/metafopy/methods/confint.py`, `docs/differences.md`, and the R parity fixtures if metafor has the type.
+- **Options:**
+  - *Follow the reference*: a `TODO.md` item to centre on `H` from Q; the case passes after the fix.
+  - *Keep metafor*: the case is corrected to metafor's convention, with the place metafor documents it cited. Needs metafor run first.
+  - *Investigate*: a `TODO.md` item to run metafor on the case, then decide.
+- **Recommendation:** *investigate*, because neither other option has metafor's evidence yet.
 
 ## Sources needed
 
@@ -41,3 +67,10 @@ none of the sources below met both. The user is asked to supply the table or exa
 | Hedges (1981), JEBS 6:107-128 | Worked example for SMD | Not open access. |
 | Hedges, Gurevitch & Curtis (1999), Ecology 80:1150-1156 | ROM on `dat.curtis1998` | Not open access. |
 | Borenstein et al., Introduction to Meta-Analysis; Normand (1999), Stat Med 18:321-359; Raudenbush (2009) | Worked examples on `dat.normand1999`, `dat.raudenbush1985` | Textbooks and paywalled papers. |
+
+Each source row is a decision: supply the source, or drop it. Recommendation for every row: drop it unless you already hold the source; the
+estimators have metafor parity, derived, property and simulation cases.
+
+## Answers
+
+Left empty. The operator reads the page answers, copies each here with the date, and commits that before the list restarts.
