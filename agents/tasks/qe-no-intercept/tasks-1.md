@@ -50,7 +50,7 @@ and the test files that import it, and `src/tests/correctness`.
 
 ## Task 1: Derived and property cases, written before the fix
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item's fix direction (the derived and property cases)
@@ -60,32 +60,34 @@ the fix in Task 2 is seen to turn them from mismatches into passes.
 
 **Subtasks:**
 
-- [ ] Re-check the starting point: `grep -n 'ymc = yi - yi.mean()' src/metafopy/models/tau2.py src/metafopy/models/rma_uni.py
+- [x] Re-check the starting point: `grep -n 'ymc = yi - yi.mean()' src/metafopy/models/tau2.py src/metafopy/models/rma_uni.py
       src/metafopy/models/rma_ls_fit.py` finds one line in each, and the `## Where metafor departs from its reference` heading exists in
       `docs/differences.md`. Stop as `blocked`, naming what differs, if not
-- [ ] Give `model_matrix` and `rma_tau2` in `src/tests/correctness/formulas.py` an `intercept: bool = True` argument (no column of ones when
+- [x] Give `model_matrix` and `rma_tau2` in `src/tests/correctness/formulas.py` an `intercept: bool = True` argument (no column of ones when
       false), and pass it on wherever those functions build X for a tau2 estimator or Cochran's Q
-- [ ] Add `derived` cases on `dat.bangertdrowns2004` with `mods = '~ ni'` and `intercept = false` (`ni` rather than `ni/100`: scaling a column does
+- [x] Add `derived` cases on `dat.bangertdrowns2004` with `mods = '~ ni'` and `intercept = false` (`ni` rather than `ni/100`: scaling a column does
       not change the projection, and the formula parser takes column names): `QE` against Cochran's `y' P y`, and `tau2` for every estimator in
       `metafopy.models.tau2.ESTIMATORS`, with `weights = ni` for `GENQ` and `GENQM`. Put them in `src/tests/correctness/cases/heterogeneity.toml`
       and `tau2.toml`, beside the cases with an intercept
-- [ ] Add a `property` case: QE and tau2 of a model with an intercept are unchanged when `yi` is shifted by a constant, and QE of a no-intercept
+- [x] Add a `property` case: QE and tau2 of a model with an intercept are unchanged when `yi` is shifted by a constant, and QE of a no-intercept
       model whose columns span the constant (`~ factor(alloc) - 1` on `dat.bcg`) equals QE of the same model with an intercept
-- [ ] Commit the new no-intercept derived cases with `status = "mismatch"` and a `reason` naming both values, as the harness requires for a case that
+- [x] Commit the new no-intercept derived cases with `status = "mismatch"` and a `reason` naming both values, as the harness requires for a case that
       fails today; Task 2 flips them. Record the GENQ and GENQM values measured here in this task's Notes
 
 **Acceptance Criteria:**
 
-- [ ] `pytest src/tests/correctness` passes, with the new no-intercept cases as strict expected failures and the property case passing
+- [x] `pytest src/tests/correctness` passes, with the new no-intercept cases as strict expected failures and the property case passing
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_properties.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_properties.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 
+- Measured on 2026-11-14 with `mods = '~ ni'`, `intercept = false`, `weights = ni` (the model of the new cases, so its figures differ from the header's `ni/100` model): QE
+  95.13523 -> 135.99842; GENQ tau2 0.04351 -> 0.07667; GENQM tau2 0.04539 -> 0.07976. EE, FE and CE give tau2 0 before and after, so their cases pass today
 - Depends on `agents/tasks/confint-ht-centre/tasks-1.md` (it creates the `docs/differences.md` section Task 3 adds to)
 - These cases record a mismatch the user has already decided (D1), so they do not go to a review; they exist so that the fix is checked
 - Key files: `src/tests/correctness/formulas.py`, `src/tests/correctness/cases/heterogeneity.toml`, `src/tests/correctness/cases/tau2.toml`,

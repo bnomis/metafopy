@@ -784,3 +784,219 @@ args = { yi = "yi", vi = "vi", method = "GENQM", mods = "~ weeks", weights = "n1
 expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
 tolerance = 1e-6
 covers = ["tau2.GENQM"]
+
+[[case]]
+id = "tau2.ee.bangertdrowns.nointercept"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", method = "EE", mods = "~ ni", intercept = false }
+expect = { tau2 = "formulas.rma_tau2" }
+covers = ["tau2.EE"]
+
+[[case]]
+id = "tau2.fe.bangertdrowns.nointercept"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", method = "FE", mods = "~ ni", intercept = false }
+expect = { tau2 = "formulas.rma_tau2" }
+covers = ["tau2.FE"]
+
+[[case]]
+id = "tau2.ce.bangertdrowns.nointercept"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", method = "CE", mods = "~ ni", intercept = false }
+expect = { tau2 = "formulas.rma_tau2" }
+covers = ["tau2.CE"]
+
+[[case]]
+id = "tau2.dl.bangertdrowns.nointercept"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", method = "DL", mods = "~ ni", intercept = false }
+expect = { tau2 = "formulas.rma_tau2" }
+status = "mismatch"
+reason = "metafopy centres yi, so its tau2 is 0.03981; the DL equation on y gives 0.07008 (Task 2 of agents/tasks/qe-no-intercept/tasks-1.md fixes it)"
+covers = ["tau2.DL"]
+
+[[case]]
+id = "tau2.dlit.bangertdrowns.nointercept"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", method = "DLIT", mods = "~ ni", intercept = false, control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2" }
+status = "mismatch"
+reason = "metafopy centres yi, so its tau2 is 0.06163; the DLIT equation on y gives 0.11864 (Task 2 of agents/tasks/qe-no-intercept/tasks-1.md fixes it)"
+covers = ["tau2.DLIT"]
+
+[[case]]
+id = "tau2.he.bangertdrowns.nointercept"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", method = "HE", mods = "~ ni", intercept = false }
+expect = { tau2 = "formulas.rma_tau2" }
+status = "mismatch"
+reason = "metafopy centres yi, so its tau2 is 0.08183; the HE equation on y gives 0.13999 (Task 2 of agents/tasks/qe-no-intercept/tasks-1.md fixes it)"
+covers = ["tau2.HE"]
+
+[[case]]
+id = "tau2.co.bangertdrowns.nointercept"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", method = "CO", mods = "~ ni", intercept = false }
+expect = { tau2 = "formulas.rma_tau2" }
+status = "mismatch"
+reason = "metafopy centres yi, so its tau2 is 0.08183; the CO equation on y gives 0.13999 (Task 2 of agents/tasks/qe-no-intercept/tasks-1.md fixes it)"
+covers = ["tau2.CO"]
+
+[[case]]
+id = "tau2.vc.bangertdrowns.nointercept"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", method = "VC", mods = "~ ni", intercept = false }
+expect = { tau2 = "formulas.rma_tau2" }
+status = "mismatch"
+reason = "metafopy centres yi, so its tau2 is 0.08183; the VC equation on y gives 0.13999 (Task 2 of agents/tasks/qe-no-intercept/tasks-1.md fixes it)"
+covers = ["tau2.VC"]
+
+[[case]]
+id = "tau2.hs.bangertdrowns.nointercept"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", method = "HS", mods = "~ ni", intercept = false }
+expect = { tau2 = "formulas.rma_tau2" }
+status = "mismatch"
+reason = "metafopy centres yi, so its tau2 is 0.03419; the HS equation on y gives 0.06383 (Task 2 of agents/tasks/qe-no-intercept/tasks-1.md fixes it)"
+covers = ["tau2.HS"]
+
+[[case]]
+id = "tau2.hsk.bangertdrowns.nointercept"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", method = "HSk", mods = "~ ni", intercept = false }
+expect = { tau2 = "formulas.rma_tau2" }
+status = "mismatch"
+reason = "metafopy centres yi, so its tau2 is 0.03719; the HSk equation on y gives 0.06592 (Task 2 of agents/tasks/qe-no-intercept/tasks-1.md fixes it)"
+covers = ["tau2.HSk"]
+
+[[case]]
+id = "tau2.sj.bangertdrowns.nointercept"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", method = "SJ", mods = "~ ni", intercept = false }
+expect = { tau2 = "formulas.rma_tau2" }
+status = "mismatch"
+reason = "metafopy centres yi, so its tau2 is 0.09323; the SJ equation on y gives 0.13086 (Task 2 of agents/tasks/qe-no-intercept/tasks-1.md fixes it)"
+covers = ["tau2.SJ"]
+
+[[case]]
+id = "tau2.sjit.bangertdrowns.nointercept"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", method = "SJIT", mods = "~ ni", intercept = false, control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2" }
+status = "mismatch"
+reason = "metafopy centres yi, so its tau2 is 0.06163; the SJIT equation on y gives 0.11864 (Task 2 of agents/tasks/qe-no-intercept/tasks-1.md fixes it)"
+covers = ["tau2.SJIT"]
+
+[[case]]
+id = "tau2.ml.bangertdrowns.nointercept"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", method = "ML", mods = "~ ni", intercept = false, control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2" }
+status = "mismatch"
+reason = "metafopy centres yi, so its tau2 is 0.03462; the ML equation on y gives 0.08738 (Task 2 of agents/tasks/qe-no-intercept/tasks-1.md fixes it)"
+covers = ["tau2.ML"]
+
+[[case]]
+id = "tau2.reml.bangertdrowns.nointercept"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", method = "REML", mods = "~ ni", intercept = false, control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2" }
+status = "mismatch"
+reason = "metafopy centres yi, so its tau2 is 0.04109; the REML equation on y gives 0.09303 (Task 2 of agents/tasks/qe-no-intercept/tasks-1.md fixes it)"
+covers = ["tau2.REML"]
+
+[[case]]
+id = "tau2.eb.bangertdrowns.nointercept"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", method = "EB", mods = "~ ni", intercept = false, control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2" }
+status = "mismatch"
+reason = "metafopy centres yi, so its tau2 is 0.06163; the EB equation on y gives 0.11864 (Task 2 of agents/tasks/qe-no-intercept/tasks-1.md fixes it)"
+covers = ["tau2.EB"]
+
+[[case]]
+id = "tau2.pm.bangertdrowns.nointercept"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", method = "PM", mods = "~ ni", intercept = false, control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2" }
+status = "mismatch"
+reason = "metafopy centres yi, so its tau2 is 0.06163; the PM equation on y gives 0.11864 (Task 2 of agents/tasks/qe-no-intercept/tasks-1.md fixes it)"
+covers = ["tau2.PM"]
+
+[[case]]
+id = "tau2.mp.bangertdrowns.nointercept"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", method = "MP", mods = "~ ni", intercept = false, control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2" }
+status = "mismatch"
+reason = "metafopy centres yi, so its tau2 is 0.06163; the MP equation on y gives 0.11864 (Task 2 of agents/tasks/qe-no-intercept/tasks-1.md fixes it)"
+covers = ["tau2.MP"]
+
+[[case]]
+id = "tau2.pmm.bangertdrowns.nointercept"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", method = "PMM", mods = "~ ni", intercept = false, control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2" }
+status = "mismatch"
+reason = "metafopy centres yi, so its tau2 is 0.06363; the PMM equation on y gives 0.12152 (Task 2 of agents/tasks/qe-no-intercept/tasks-1.md fixes it)"
+covers = ["tau2.PMM"]
+
+[[case]]
+id = "tau2.genq.bangertdrowns.nointercept"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", method = "GENQ", mods = "~ ni", intercept = false, weights = "ni", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2" }
+status = "mismatch"
+reason = "metafopy centres yi, so its tau2 is 0.04351; the GENQ equation on y gives 0.07667 (Task 2 of agents/tasks/qe-no-intercept/tasks-1.md fixes it)"
+tolerance = 1e-6
+covers = ["tau2.GENQ"]
+
+[[case]]
+id = "tau2.genqm.bangertdrowns.nointercept"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", method = "GENQM", mods = "~ ni", intercept = false, weights = "ni", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2" }
+status = "mismatch"
+reason = "metafopy centres yi, so its tau2 is 0.04539; the GENQM equation on y gives 0.07976 (Task 2 of agents/tasks/qe-no-intercept/tasks-1.md fixes it)"
+tolerance = 1e-6
+covers = ["tau2.GENQM"]
