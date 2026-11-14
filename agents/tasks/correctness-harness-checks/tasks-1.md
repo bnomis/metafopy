@@ -165,7 +165,7 @@ values a source prints.
 
 ## Task 4: Review the new mismatches (stop for the operator only if there is one)
 
-**Status:** in-progress
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** `claude/rules/metafopy.md` (metafopy's output changes only after the user confirms it)
@@ -190,13 +190,13 @@ values a source prints.
 - [x] With a mismatch: publish its interactive page (answers saved to the artifact's database as each is clicked, an accept-all button for the
       recommendations), and put `**Review page:** <URL>` in the document's header. If the queue session has no tool to publish a page, leave the
       header line as `**Review page:** to be published by the operator session` and say so in the stop message
-- [ ] With a mismatch: stop the list for the operator (`blocked`, waiting for the answers to every decision in
+- [x] With a mismatch: stop the list for the operator (`blocked`, waiting for the answers to every decision in
       `agents/reviews/correctness-harness-checks-mismatches.md`). Once every item has an answer, an operator session reads the page's answers,
       copies each into the document's Answers section with the date, commits that, and only then restarts the list
 
 **Acceptance Criteria:**
 
-- [ ] Every new `mismatch` case has an item and a decision in the review document, or the document says there is none
+- [x] Every new `mismatch` case has an item and a decision in the review document, or the document says there is none
 
 **Definition of Done:**
 
