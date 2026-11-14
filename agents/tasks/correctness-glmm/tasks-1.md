@@ -91,7 +91,7 @@ directory cannot be read from the queue's session, the task stops as `blocked` a
 
 ## Task 2: glmm_formulas.py - likelihoods and the three integration rules
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** Kinds of evidence (derived, integration as a convention); API; Error handling; Implementation step 2
@@ -101,31 +101,33 @@ Laplace approximation, each coded from its paper.
 
 **Subtasks:**
 
-- [ ] `binomial_loglik` and a Poisson counterpart, with each link of `LINKS` and the family constants that `logLik()` reports, from Stijnen et al.
+- [x] `binomial_loglik` and a Poisson counterpart, with each link of `LINKS` and the family constants that `logLik()` reports, from Stijnen et al.
       (2010) and Bagos and Nikolopoulos (2009)
-- [ ] `nchg_loglik`: Fisher's non-central hypergeometric log-probability by direct summation over the support (van Houwelingen et al. 1993; Stijnen et
+- [x] `nchg_loglik`: Fisher's non-central hypergeometric log-probability by direct summation over the support (van Houwelingen et al. 1993; Stijnen et
       al. 2010), and the approximate (binomial) conditional likelihood of `CM.AL`
-- [ ] `marginal_loglik` with `rule` `'exact'` (`scipy.integrate.quad`; `dblquad` for the bivariate `UM.RS` effects), `'agq'` (`points`, centred at
+- [x] `marginal_loglik` with `rule` `'exact'` (`scipy.integrate.quad`; `dblquad` for the bivariate `UM.RS` effects), `'agq'` (`points`, centred at
       the conditional mode, scaled by its curvature) and `'laplace'`, from Pinheiro and Bates (1995)
-- [ ] Turn `scipy.integrate.IntegrationWarning` and a non-converged `scipy.optimize` result into `ArithmeticError` naming the model
-- [ ] `src/tests/correctness/test_glmm_formulas.py`: the three rules agree to `1e-6` on a dataset where they should (a random-intercept logistic model
+- [x] Turn `scipy.integrate.IntegrationWarning` and a non-converged `scipy.optimize` result into `ArithmeticError` naming the model
+- [x] `src/tests/correctness/test_glmm_formulas.py`: the three rules agree to `1e-6` on a dataset where they should (a random-intercept logistic model
       with large counts); `agq` with one point equals `laplace`; a binomial log-likelihood against `scipy.stats.binom.logpmf`; `nchg_loglik` against
       `scipy.stats.nchypergeom_fisher.logpmf`; a forced integration failure raises `ArithmeticError`
 
 **Acceptance Criteria:**
 
-- [ ] Every function's docstring names its source and equation
-- [ ] `glmm_formulas.py` imports `numpy` and `scipy` only
+- [x] Every function's docstring names its source and equation
+- [x] `glmm_formulas.py` imports `numpy` and `scipy` only
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_glmm_formulas.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_glmm_formulas.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 
 - Depends on Task 1
+- `marginal_loglik` takes keyword-only `studies` (the conditional maps one effect per study) and `model`; `bivariate_marginal_loglik` is the `UM.RS` counterpart with `dblquad`; the spec's API block records the signature
+- The three rules agree to `1e-6` only for a small `tau2` (the Laplace error is of order tau2 times the counts' curvature); the unit test uses `tau2 = 1e-6`
 - The spec names no test file for the formulas' own unit checks; `test_glmm_formulas.py` is this list's choice (see the closing report)
 - Read for option names only, never for formulas: `src/metafopy/models/glmm_fit.py`, `src/metafopy/models/rma_glmm.py`
 

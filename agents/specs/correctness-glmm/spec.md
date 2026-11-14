@@ -145,8 +145,10 @@ def nchg_loglik(ai: FloatArray, n1i: FloatArray, ci: FloatArray, n2i: FloatArray
     """Sum of Fisher's non-central hypergeometric log-probabilities of ``ai`` given the margins (van Houwelingen et al. 1993)."""
 
 
-def marginal_loglik(conditional: collections.abc.Callable[[FloatArray], FloatArray], tau2: float, rule: str, points: int = 7) -> float:
-    """Normal-mixture log-likelihood of a random-intercept model; ``rule`` is ``'exact'``, ``'agq'`` (``points``) or ``'laplace'``."""
+def marginal_loglik(
+    conditional: collections.abc.Callable[[FloatArray], FloatArray], tau2: float, rule: str, points: int = 7, *, studies: int, model: str = 'marginal'
+) -> float:
+    """Normal-mixture log-likelihood of a random-intercept model over ``studies`` studies; ``rule`` is ``'exact'``, ``'agq'`` (``points``) or ``'laplace'``."""
 
 
 def glmm_fit(ai: FloatArray, bi: FloatArray, ci: FloatArray, di: FloatArray, model: str, method: str, rule: str = 'agq', points: int = 7) -> GLMMReference:
