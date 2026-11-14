@@ -518,7 +518,7 @@ them the gate passes for every item.
 
 ## Task 12: Review the mismatches
 
-**Status:** todo
+**Status:** in-progress
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation step 11

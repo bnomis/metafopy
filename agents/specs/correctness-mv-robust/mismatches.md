@@ -1,13 +1,20 @@
 # Correctness tests for rma_mv and robust: mismatches and sources needed
 
 **Task list:** `agents/tasks/correctness-mv-robust/tasks-1.md` (completed in Task 12)
-**Review page:** none yet (published in Task 12)
+**Review page:** not published: the session that ran Task 12 has no tool to publish an interactive page. The operator session publishes it from this document.
 
 ## What is reviewed and how
 
 Each item below is a `derived` or `published` case whose reference, coded from the cited publication, disagrees with metafopy. The case is committed
 with `status = "mismatch"` (a strict expected failure) and a reason naming both values. For each item you choose whether metafopy follows the reference,
-keeps metafor's behaviour, or the difference is investigated further. Task 12 completes this document (automatic checks, decisions, answers).
+keeps metafor's behaviour, or the difference is investigated further. The two items below are the only mismatches.
+
+## Automatic checks
+
+Checked 2026-11-14:
+
+- **Pass:** `pytest src/tests/correctness -m 'not slow'` passes: the two cases below are strict expected failures and nothing else fails.
+- **Pass:** every `status = "mismatch"` case in `src/tests/correctness/cases/*.toml` (`robust.club.vcov.CR1S`, `robust.club.coef_test.saddlepoint`) has an item below.
 
 ## Mismatches
 
@@ -34,8 +41,38 @@ keeps metafor's behaviour, or the difference is investigated further. Task 12 co
 - **Not a gap in the reference:** a simulation of the quadratic form (two million draws) gives 0.1962, 0.3478 and 0.0577; both forms approximate it and
   neither is exact, so the case records the difference and does not decide which form is right.
 
+## Decisions
+
+### D1: CR1S, which small-sample factor does `robust` use?
+
+- **What is decided:** whether metafopy keeps `sqrt(m (N - 1) / ((m - 1)(N - p)))` or changes to the paper's `sqrt(m N / ((m - 1)(N - p)))`.
+- **Background:** the paper gives the N form; metafopy matches clubSandwich 0.7.0 (the R package by the paper's own authors), which uses N - 1, and metafor's
+  `robust` follows clubSandwich. The N - 1 factor is Stata's.
+- **What it affects:** every CR1S variance differs by 112/113 on this data; `robust.py` and the parity cases would change if the reference is followed.
+- **Options:**
+  - *Keep metafor (Recommended):* the case is corrected to the N - 1 factor, cites where clubSandwich documents it, and passes. No code change.
+  - *Follow the reference:* a `TODO.md` item changes `robust.py`, flips the case, marks the R parity fixtures and adds a `known.toml` entry and a
+    `docs/differences.md` section; metafopy then departs from clubSandwich.
+  - *Investigate:* a `TODO.md` item records what is in doubt, and the case stays an expected failure.
+- **Recommendation:** keep metafor, since the package of the paper's authors is the practical reference and metafopy ports metafor.
+
+### D2: saddlepoint, which approximation form is used?
+
+- **What is decided:** whether metafopy keeps the Lugannani-Rice form or changes to Kuonen's equation 3.
+- **Background:** the paper calls the forms "usually indistinguishable in practice"; neither matches a simulation exactly, and clubSandwich 0.7.0 uses
+  Lugannani-Rice.
+- **What it affects:** p-values differ in the third decimal at most (0.198807 against 0.201118 at the largest).
+- **Options:** the same three as D1 (*keep metafor*, *follow the reference*, *investigate*), with the same consequences.
+- **Recommendation:** keep metafor, for the reason in D1.
+
 ## Sources needed
 
 None, checked 2026-11-14. Every seed source is in the user's papers folder or was read open access (nothing saved in the repository): Assink and
 Wibbelink (2016) from tqmp.org, Jackson, Riley and White (2011) from PMC3470931, Bell and McCaffrey (2002) from Statistics Canada, and SAS/STAT PROC MIXED
 `DDFM=CONTAIN` from the SAS documentation (smallest rank contribution among the random effects containing the fixed effect; residual df if none does).
+
+## Answers
+
+### Mismatches
+
+(Empty: left for the operator's copy of the page's answers, with the date.)
