@@ -165,7 +165,7 @@ values a source prints.
 
 ## Task 4: Review the new mismatches (stop for the operator only if there is one)
 
-**Status:** todo
+**Status:** in-progress
 **Priority:** high
 **Complexity:** small
 **Source Reference:** `claude/rules/metafopy.md` (metafopy's output changes only after the user confirms it)
@@ -174,11 +174,11 @@ values a source prints.
 
 **Subtasks:**
 
-- [ ] Count the cases with `status = "mismatch"` that Tasks 2 and 3 added (`git diff main -- src/tests/correctness/cases/` on the branch)
-- [ ] If there are none: write `agents/reviews/correctness-harness-checks-mismatches.md` with the automatic checks, the line "No mismatch: every new
+- [x] Count the cases with `status = "mismatch"` that Tasks 2 and 3 added (`git diff main -- src/tests/correctness/cases/` on the branch)
+- [x] If there are none: write `agents/reviews/correctness-harness-checks-mismatches.md` with the automatic checks, the line "No mismatch: every new
       published case agrees with metafopy", and any "Sources without a usable value"; mark this task done without stopping, and say in its Notes
       that no stop was needed
-- [ ] If there is at least one: write `agents/reviews/correctness-harness-checks-mismatches.md` in the layout of
+- [x] If there is at least one: write `agents/reviews/correctness-harness-checks-mismatches.md` in the layout of
       `agents/specs/correctness-tests/mismatches.md`:
   - what is reviewed and how;
   - automatic checks: `pytest src/tests/correctness` passes, every `mismatch` case has an item;
@@ -187,7 +187,7 @@ values a source prints.
   - decisions, one per mismatch, with options *follow the reference*, *keep metafor*, *treat it as a misprint* and *investigate*, each with its
     consequence, and a recommendation with its reason;
   - an empty Answers section.
-- [ ] With a mismatch: publish its interactive page (answers saved to the artifact's database as each is clicked, an accept-all button for the
+- [x] With a mismatch: publish its interactive page (answers saved to the artifact's database as each is clicked, an accept-all button for the
       recommendations), and put `**Review page:** <URL>` in the document's header. If the queue session has no tool to publish a page, leave the
       header line as `**Review page:** to be published by the operator session` and say so in the stop message
 - [ ] With a mismatch: stop the list for the operator (`blocked`, waiting for the answers to every decision in
@@ -207,6 +207,7 @@ values a source prints.
 **Notes:**
 
 - Depends on Tasks 2 and 3
+- One mismatch was recorded (the I2 upper limit of Borenstein et al. Dataset 2), so the list stops here for the operator.
 - This is the list's only stop for the operator, and it happens only when Tasks 2 or 3 recorded a mismatch
 
 ---
