@@ -5,6 +5,7 @@ __pycache__/
 .coverage
 .envrc
 .hypothesis/
+.mypy_cache/
 .pytest_cache/
 .Rhistory
 .ruff_cache/
