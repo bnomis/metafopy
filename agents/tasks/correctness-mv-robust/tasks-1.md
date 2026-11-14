@@ -437,7 +437,7 @@ them the gate passes for every item.
 
 ## Task 10: Sources - fetch the open ones and stop for any still needed
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Seed sources; Implementation step 7
@@ -446,27 +446,27 @@ them the gate passes for every item.
 
 **Subtasks:**
 
-- [ ] Check that `/Users/simonb/src/metafopy papers` can be read; stop as `blocked` if not
-- [ ] For each row of the spec's Seed sources, find its file through `download_report.md` in that directory. Fetch the open-access rows not in it
+- [x] Check that `/Users/simonb/src/metafopy papers` can be read; stop as `blocked` if not
+- [x] For each row of the spec's Seed sources, find its file through `download_report.md` in that directory. Fetch the open-access rows not in it
       (Assink and Wibbelink 2016, Jackson, Riley and White 2011 at PMC3470931, the SAS/STAT PROC MIXED `DDFM=CONTAIN` page, Bell and McCaffrey 2002)
       with the connected PubMed, Paperclip or alphaXiv tools or the web, reading them without saving them in the repository
-- [ ] If every source is present or fetched, write that under "Sources needed" in `agents/specs/correctness-mv-robust/mismatches.md` ("none, checked
+- [x] If every source is present or fetched, write that under "Sources needed" in `agents/specs/correctness-mv-robust/mismatches.md` ("none, checked
       <date>"), commit, and continue to Task 11 without stopping
-- [ ] Otherwise list each missing source under "Sources needed" with its citation and the table or example wanted, and options *supplied* and *drop*;
+- [x] Otherwise list each missing source under "Sources needed" with its citation and the table or example wanted, and options *supplied* and *drop*;
       publish the page for those items per the shared `reviews.md` rule (answers saved to the artifact's database) with `**Review page:** <URL>` in
       the document's header. If this session has no tool to publish the page, say so in the stop message, for the operator session to publish it
-- [ ] Stop the list for the operator. Once every source item has an answer, an operator session reads the page's answers, copies each into the
+- [x] Stop the list for the operator. Once every source item has an answer, an operator session reads the page's answers, copies each into the
       Answers section of `mismatches.md` under "Sources", with the date, commits that, and only then restarts the list
 
 **Acceptance Criteria:**
 
-- [ ] Every seed source is read, or listed under "Sources needed" with what is wanted
+- [x] Every seed source is read, or listed under "Sources needed" with what is wanted
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness -m 'not slow'` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness -m 'not slow'` passes
 
 **Notes:**
 

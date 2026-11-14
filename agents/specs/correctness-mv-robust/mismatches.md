@@ -36,4 +36,6 @@ keeps metafor's behaviour, or the difference is investigated further. Task 12 co
 
 ## Sources needed
 
-None so far.
+None, checked 2026-11-14. Every seed source is in the user's papers folder or was read open access (nothing saved in the repository): Assink and
+Wibbelink (2016) from tqmp.org, Jackson, Riley and White (2011) from PMC3470931, Bell and McCaffrey (2002) from Statistics Canada, and SAS/STAT PROC MIXED
+`DDFM=CONTAIN` from the SAS documentation (smallest rank contribution among the random effects containing the fixed effect; residual df if none does).
