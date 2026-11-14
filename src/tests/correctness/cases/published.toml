@@ -1327,3 +1327,151 @@ ni = [130, 90, 30, 25, 50, 65]
 citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Chichester: John Wiley & Sons. ISBN 978-0-470-05724-7."
 locator = "Chapter 38, Table 38.2 and the text after it (mean observed correlation 0.2518, T2 = 0.0069; Hunter-Schmidt, weights n_i)"
 read = 2026-11-12
+
+# Borenstein et al. (2009), chapters 16 to 18: the worked prediction intervals (equations 17.7 and 17.8) and the test-based intervals of tau2 and I2
+# (equations 16.14 to 16.25) on the three datasets of chapter 14. The book fits DerSimonian and Laird and takes t on k - 2 degrees of freedom for the
+# prediction interval. A lower limit the text "sets to zero" is written as 0. The extraction drops minus signs; each is restored from the arithmetic printed.
+
+[[case]]
+id = "published.borenstein2009.ch18.d1.pi"
+kind = "published"
+function = "rma_uni"
+setup = { escalc = { measure = "SMD", vtype = "LS2", m1i = "m1i", sd1i = "sd1i", n1i = "n1i", m2i = "m2i", sd2i = "sd2i", n2i = "n2i" } }
+args = { method = "DL", test = "t" }
+check = "test_published.prediction_interval"
+printed = { pred = "0.3582", pi_lb = "-0.2525", pi_ub = "0.9690" }
+
+[case.data]
+m1i = [94.0, 98.0, 98.0, 94.0, 98.0, 96.0]
+sd1i = [22.0, 21.0, 28.0, 19.0, 21.0, 21.0]
+n1i = [60, 65, 40, 200, 50, 85]
+m2i = [92.0, 92.0, 88.0, 82.0, 88.0, 92.0]
+sd2i = [20.0, 22.0, 26.0, 17.0, 22.0, 22.0]
+n2i = [60, 65, 40, 200, 45, 85]
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Chichester: John Wiley & Sons. ISBN 978-0-470-05724-7."
+locator = "Chapter 18, equations 17.7 and 17.8 (prediction interval of the true standardized mean difference), Dataset 1"
+read = 2026-11-14
+
+[[case]]
+id = "published.borenstein2009.ch18.d1.ci"
+kind = "published"
+function = "rma_uni"
+setup = { escalc = { measure = "SMD", vtype = "LS2", m1i = "m1i", sd1i = "sd1i", n1i = "n1i", m2i = "m2i", sd2i = "sd2i", n2i = "n2i" } }
+args = { method = "DL" }
+check = "test_published.confint_ht"
+printed = { tau2_lb = "0", tau2_ub = "0.1312", I2_lb = "0", I2_ub = "83.12" }
+
+[case.data]
+m1i = [94.0, 98.0, 98.0, 94.0, 98.0, 96.0]
+sd1i = [22.0, 21.0, 28.0, 19.0, 21.0, 21.0]
+n1i = [60, 65, 40, 200, 50, 85]
+m2i = [92.0, 92.0, 88.0, 82.0, 88.0, 92.0]
+sd2i = [20.0, 22.0, 26.0, 17.0, 22.0, 22.0]
+n2i = [60, 65, 40, 200, 45, 85]
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Chichester: John Wiley & Sons. ISBN 978-0-470-05724-7."
+locator = "Chapter 18, equations 16.14 to 16.25 (intervals of T2 and I2), Dataset 1"
+read = 2026-11-14
+
+[[case]]
+id = "published.borenstein2009.ch18.d2.pi"
+kind = "published"
+function = "rma_uni"
+setup = { escalc = { measure = "OR", ai = "ai", bi = "bi", ci = "ci", di = "di" } }
+args = { method = "DL", test = "t" }
+check = "test_published.prediction_interval"
+printed = { pred = "-0.5663", pi_lb = "-1.8977", pi_ub = "0.7651", exp_pi_lb = "0.1499", exp_pi_ub = "2.1492" }
+
+[case.data]
+ai = [12, 8, 14, 25, 8, 16]
+bi = [53, 32, 66, 375, 32, 49]
+ci = [16, 10, 19, 80, 11, 18]
+di = [49, 30, 61, 320, 29, 47]
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Chichester: John Wiley & Sons. ISBN 978-0-470-05724-7."
+locator = "Chapter 18, equations 17.7 and 17.8 (prediction interval of the true log odds ratio), Dataset 2"
+read = 2026-11-14
+
+[[case]]
+id = "published.borenstein2009.ch18.d2.ci"
+kind = "published"
+function = "rma_uni"
+setup = { escalc = { measure = "OR", ai = "ai", bi = "bi", ci = "ci", di = "di" } }
+args = { method = "DL" }
+check = "test_published.confint_ht"
+printed = { tau2_lb = "0", tau2_ub = "0.6676", I2_lb = "0" }
+
+[case.data]
+ai = [12, 8, 14, 25, 8, 16]
+bi = [53, 32, 66, 375, 32, 49]
+ci = [16, 10, 19, 80, 11, 18]
+di = [49, 30, 61, 320, 29, 47]
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Chichester: John Wiley & Sons. ISBN 978-0-470-05724-7."
+locator = "Chapter 18, equations 16.14 to 16.25 (intervals of T2 and I2), Dataset 2"
+read = 2026-11-14
+
+[[case]]
+id = "published.borenstein2009.ch18.d3.pi"
+kind = "published"
+function = "rma_uni"
+setup = { escalc = { measure = "ZCOR", ri = "ri", ni = "ni" } }
+args = { method = "DL", test = "t" }
+check = "test_published.prediction_interval"
+printed = { pred = "0.5328", pi_lb = "-0.3396", pi_ub = "1.4051" }
+
+[case.data]
+ri = [0.5, 0.6, 0.4, 0.2, 0.7, 0.45]
+ni = [40, 90, 25, 400, 60, 50]
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Chichester: John Wiley & Sons. ISBN 978-0-470-05724-7."
+locator = "Chapter 18, equations 17.7 and 17.8 (prediction interval of the true Fisher's z), Dataset 3"
+read = 2026-11-14
+
+[[case]]
+id = "published.borenstein2009.ch18.d3.ci"
+kind = "published"
+function = "rma_uni"
+setup = { escalc = { measure = "ZCOR", ri = "ri", ni = "ni" } }
+args = { method = "DL" }
+check = "test_published.confint_ht"
+printed = { tau2_lb = "0.0338", tau2_ub = "0.1791", I2_lb = "72.01", I2_ub = "93.16" }
+
+[case.data]
+ri = [0.5, 0.6, 0.4, 0.2, 0.7, 0.45]
+ni = [40, 90, 25, 400, 60, 50]
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Chichester: John Wiley & Sons. ISBN 978-0-470-05724-7."
+locator = "Chapter 18, equations 16.14 to 16.25 (intervals of T2 and I2), Dataset 3"
+read = 2026-11-14
+
+# The upper limit of I2 on Dataset 2: the book prints 81.09 from L and U rounded to four digits (U = 2.2993). From the unrounded Q the same equations give 81.0849,
+# which is 81.08 printed to two digits; the difference from the printed value is 0.0051 against a tolerance of 0.005.
+[[case]]
+id = "published.borenstein2009.ch18.d2.ci.i2ub"
+kind = "published"
+status = "mismatch"
+reason = "the book prints 81.09; metafopy gives 81.0849 (equation 16.25 on the unrounded Q = 10.5512); the book rounds L and U to four digits first"
+function = "rma_uni"
+setup = { escalc = { measure = "OR", ai = "ai", bi = "bi", ci = "ci", di = "di" } }
+args = { method = "DL" }
+check = "test_published.confint_ht"
+printed = { I2_ub = "81.09" }
+
+[case.data]
+ai = [12, 8, 14, 25, 8, 16]
+bi = [53, 32, 66, 375, 32, 49]
+ci = [16, 10, 19, 80, 11, 18]
+di = [49, 30, 61, 320, 29, 47]
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Chichester: John Wiley & Sons. ISBN 978-0-470-05724-7."
+locator = "Chapter 18, equation 16.25 (upper limit of I2, 81.09%), Dataset 2"
+read = 2026-11-14

@@ -41,8 +41,11 @@ def back_transformed(case: correctness.cases.Case, result: typing.Any) -> None:
 
 
 def prediction_interval(case: correctness.cases.Case, result: typing.Any) -> None:
-    """The prediction interval of the pooled effect, ``predict(result)`` (Borenstein et al., 2009, chapter 17, "Prediction intervals")."""
-    predicted = metafopy.predict(result)
+    """The prediction interval of the pooled effect, ``predict(result, predtype='riley')`` (Borenstein et al., 2009, chapter 17, equations 17.7 and 17.8).
+
+    The book takes t on k - 2 degrees of freedom, which is the ``'riley'`` interval of an intercept-only fit with the t test.
+    """
+    predicted = metafopy.predict(result, predtype='riley')
     values = {'pred': scalar(predicted.pred), 'pi_lb': scalar(predicted.pi_lb), 'pi_ub': scalar(predicted.pi_ub)}
     values.update({f'exp_{name}': float(numpy.exp(value)) for name, value in list(values.items())})
     check_values(case, values)

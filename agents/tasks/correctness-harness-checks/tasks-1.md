@@ -126,7 +126,7 @@ values a source prints.
 
 ## Task 3: Published cases for prediction intervals and test-based intervals
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Source Reference:** the item (prediction intervals; Higgins and Thompson 2002; Borenstein et al. 2009)
@@ -135,25 +135,25 @@ values a source prints.
 
 **Subtasks:**
 
-- [ ] Check that `/Users/simonb/src/metafopy papers` can be read (`ls`); stop as `blocked` if not
-- [ ] Borenstein et al. (2009), chapter 17: the worked prediction interval, on the metafopy dataset that holds the chapter's data or inline data with
+- [x] Check that `/Users/simonb/src/metafopy papers` can be read (`ls`); stop as `blocked` if not
+- [x] Borenstein et al. (2009), chapter 17: the worked prediction interval, on the metafopy dataset that holds the chapter's data or inline data with
       its locator, `check = "test_published.prediction_interval"`
-- [ ] Borenstein et al. (2009), chapter 16 (equations 16.14 to 16.19): the worked intervals of tau2, I2 and H, `check = "test_published.confint_ht"`
-- [ ] Higgins and Thompson (2002): any example whose study data are printed or held by a metafopy dataset, with its H and I2 intervals. The
+- [x] Borenstein et al. (2009), chapter 16 (equations 16.14 to 16.19): the worked intervals of tau2, I2 and H, `check = "test_published.confint_ht"`
+- [x] Higgins and Thompson (2002): any example whose study data are printed or held by a metafopy dataset, with its H and I2 intervals. The
       sclerotherapy example of Table I prints no study data (see the comment above `published.higgins2002.sclerotherapy`), so it cannot be a case;
       note each such example under "Sources without a usable value"
-- [ ] Record any mismatch as the header says
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] Every new case has `citation`, `locator` and `read`, and its values as printed
-- [ ] Each source named here has cases or a "Sources without a usable value" entry
+- [x] Every new case has `citation`, `locator` and `read`, and its values as printed
+- [x] Each source named here has cases or a "Sources without a usable value" entry
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_published.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_published.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 
