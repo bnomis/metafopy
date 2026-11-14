@@ -22,6 +22,7 @@ import tomllib
 import typing
 
 import numpy
+import numpy.typing
 import pandas
 import pytest
 
@@ -31,6 +32,7 @@ import metafopy.datasets
 
 type Kind = typing.Literal['published', 'derived', 'property', 'simulation', 'other']
 type Status = typing.Literal['pass', 'mismatch']
+type FloatArray = numpy.typing.NDArray[numpy.float64]
 
 CASES_DIR = pathlib.Path(__file__).parent / 'cases'
 KINDS: tuple[Kind, ...] = typing.get_args(Kind.__value__)
@@ -45,8 +47,32 @@ FORMULA_PREFIX = 'formulas.'
 
 # auditme: accept[non-alphabetical-literal] order follows the spec's description of a case
 CASE_KEYS = frozenset(
-    {'args', 'check', 'covers', 'data', 'dataset', 'expect', 'function', 'id', 'kind', 'printed', 'reason', 'setup', 'source', 'status', 'tolerance'}
+    {
+        'args',
+        'check',
+        'covers',
+        'data',
+        'dataset',
+        'expect',
+        'function',
+        'id',
+        'kind',
+        'printed',
+        'reason',
+        'setup',
+        'source',
+        'status',
+        'then',
+        'tolerance',
+    }
 )
+SETUP_KEYS = frozenset({'escalc', 'subset', 'tree_r', 'vblocks', 'vconst'})
+STEP_KEYS = frozenset({'args', 'function'})
+VBLOCKS_KEYS = frozenset({'cluster', 'columns'})
+VCONST_KEYS = frozenset({'cluster', 'rho', 'vi'})
+SUBSET_KEYS = frozenset({'column', 'equals'})
+TREE_R_KEYS = frozenset({'factor', 'tree'})
+SYMMETRY_TOLERANCE = 1e-12
 SOURCE_KEYS = frozenset({'citation', 'doi', 'locator', 'read', 'url'})
 TOP_KEYS = frozenset({'case', 'exempt', 'vtypes'})
 DERIVED_TOLERANCE = 1e-10
@@ -63,6 +89,14 @@ class Source:
     read: datetime.date
     doi: str | None = None
     url: str | None = None
+
+
+@dataclasses.dataclass(frozen=True)
+class Step:
+    """A follow-on call: ``metafopy.<function>(result, **args)`` on the result of the case's own call."""
+
+    function: str
+    args: dict[str, typing.Any] = dataclasses.field(default_factory=dict)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -90,6 +124,7 @@ class Case:
     covers: tuple[str, ...] = ()
     file: str = ''
     printed: dict[str, str] = dataclasses.field(default_factory=dict)
+    then: Step | None = None
 
 
 @dataclasses.dataclass(frozen=True)
@@ -186,6 +221,57 @@ def parse_printed(raw: object, kind: str, check: str | None, where: str) -> dict
     return printed
 
 
+def parse_setup(setup: object, where: str, *, has_data: bool) -> None:
+    """Check a case's ``setup``: an ``escalc`` call and at most one of ``vblocks`` and ``vconst``, each with its ``cluster``."""
+    if not isinstance(setup, dict) or not setup or not set(setup) <= SETUP_KEYS:
+        fail(where, 'setup must be a table with escalc, subset, tree_r, vblocks or vconst')
+    if not all(isinstance(value, dict) for value in setup.values()):
+        fail(where, 'each setup entry (escalc, vblocks, vconst) must be a table')
+    if 'vblocks' in setup and 'vconst' in setup:
+        fail(where, 'setup has both vblocks and vconst; give one')
+    for key, allowed in (('vblocks', VBLOCKS_KEYS), ('vconst', VCONST_KEYS)):
+        if key not in setup:
+            continue
+        if 'cluster' not in setup[key]:
+            fail(where, f'setup.{key} has no cluster')
+        unknown = set(setup[key]) - allowed
+        missing = allowed - set(setup[key])
+        if unknown or missing:
+            fail(where, f'setup.{key} takes exactly {sorted(allowed)}; unknown {sorted(unknown)}, missing {sorted(missing)}')
+        if not has_data:
+            fail(where, f'setup.{key} needs a dataset or inline data')
+    if 'subset' in setup:
+        if set(setup['subset']) != SUBSET_KEYS or not all(isinstance(value, str) and value for value in setup['subset'].values()):
+            fail(where, f'setup.subset takes exactly {sorted(SUBSET_KEYS)}, each a text')
+        if not has_data:
+            fail(where, 'setup.subset needs a dataset or inline data')
+    if 'tree_r' in setup:
+        spec = setup['tree_r']
+        if set(spec) != TREE_R_KEYS or not all(isinstance(value, str) and value for value in spec.values()):
+            fail(where, f'setup.tree_r takes exactly {sorted(TREE_R_KEYS)}, each a name')
+        if not has_data:
+            fail(where, 'setup.tree_r needs a dataset or inline data')
+    if 'vblocks' in setup:
+        columns = setup['vblocks']['columns']
+        if not isinstance(columns, list) or not columns or not all(isinstance(c, str) for c in columns):
+            fail(where, 'setup.vblocks.columns must be a non-empty list of column names')
+
+
+def parse_then(raw: object, where: str) -> Step:
+    if not isinstance(raw, dict):
+        fail(where, 'then must be a table')
+    unknown = set(raw) - STEP_KEYS
+    if unknown:
+        fail(where, f'then: unknown key(s) {sorted(unknown)}; only function and args')
+    function = raw.get('function')
+    if not isinstance(function, str) or not FUNCTION_PATTERN.fullmatch(function) or function.startswith(FORMULA_PREFIX):
+        fail(where, f'then: function {function!r} must be a metafopy function name')
+    args = raw.get('args', {})
+    if not isinstance(args, dict):
+        fail(where, 'then: args must be a table')
+    return Step(function=function, args=dict(args))
+
+
 def parse_case(raw: object, name: str, index: int) -> Case:
     if not isinstance(raw, dict):
         fail(name, f'case {index} must be a table')
@@ -229,13 +315,14 @@ def parse_case(raw: object, name: str, index: int) -> Case:
     if kind == 'simulation' and tolerance is None:
         fail(name, f'case {ident}: a simulation case states its tolerance')
     setup = raw.get('setup')
-    if setup is not None and (not isinstance(setup, dict) or set(setup) != {'escalc'} or not isinstance(setup['escalc'], dict)):
-        fail(name, f'case {ident}: setup must be {{ escalc = {{ ... }} }}')
     data = raw.get('data')
     if data is not None and not isinstance(data, dict):
         fail(name, f'case {ident}: data must be a table of columns')
     if data is not None and 'dataset' in raw:
         fail(name, f'case {ident}: give a dataset or inline data, not both')
+    if setup is not None:
+        parse_setup(setup, where, has_data=data is not None or 'dataset' in raw)
+    then = parse_then(raw['then'], where) if 'then' in raw else None
     covers = raw.get('covers', [])
     if not isinstance(covers, list) or not all(isinstance(c, str) for c in covers):
         fail(name, f'case {ident}: covers must be a list of coverage items')
@@ -256,6 +343,7 @@ def parse_case(raw: object, name: str, index: int) -> Case:
         covers=tuple(covers),
         file=name,
         printed=printed,
+        then=then,
     )
 
 
@@ -327,16 +415,65 @@ def load_vtypes(directory: pathlib.Path | None = None) -> list[MeasureVtypes]:
 
 
 def case_frame(case: Case) -> pandas.DataFrame | None:
-    """The case's data: the bundled dataset or the inline columns, with the ``escalc`` of ``setup`` applied."""
+    """The case's data: the bundled dataset or the inline columns, with the ``escalc`` of ``setup`` applied, then the rows ``subset`` keeps."""
     if case.dataset is not None:
         frame = metafopy.datasets.load(case.dataset)
     elif case.data is not None:
         frame = pandas.DataFrame(case.data)
     else:
         return None
-    if case.setup is not None:
+    if case.setup is not None and 'escalc' in case.setup:
         frame = metafopy.escalc(data=frame, **case.setup['escalc'])
+    if case.setup is not None and 'subset' in case.setup:
+        frame = frame[frame[case.setup['subset']['column']] == case.setup['subset']['equals']].reset_index(drop=True)
     return frame
+
+
+def build_v(frame: pandas.DataFrame, setup: dict[str, typing.Any], where: str) -> FloatArray:
+    """The ``V`` matrix a ``vblocks`` or ``vconst`` setup describes, rows in data order, computed with numpy and pandas alone.
+
+    ``vblocks`` is block-diagonal: the block of a cluster has one row per row of the cluster and one column per name in ``columns``, so that entry
+    ``[i, l]`` is ``frame[columns[l]]`` at the cluster's ``i``-th row. ``vconst`` puts ``vi`` on the diagonal and ``rho * sqrt(vi[i] * vi[l])`` between
+    two rows of a cluster.
+    """
+    spec = setup['vblocks'] if 'vblocks' in setup else setup['vconst']
+    labels = frame[spec['cluster']].to_numpy()
+    k = len(frame)
+    matrix = numpy.zeros((k, k), dtype=numpy.float64)
+    for label in pandas.unique(labels).tolist():
+        rows = numpy.flatnonzero(labels == label)
+        if 'vblocks' in setup:
+            columns = spec['columns']
+            if len(rows) != len(columns):
+                raise ValueError(f'{where}: cluster {label!r} has {len(rows)} rows but vblocks names {len(columns)} columns')
+            block = frame[columns].to_numpy(dtype=numpy.float64)[rows]
+            if not numpy.allclose(block, block.T, rtol=SYMMETRY_TOLERANCE, atol=SYMMETRY_TOLERANCE):
+                raise ValueError(f'{where}: the block of cluster {label!r} is not symmetric')
+        else:
+            vi = frame[spec['vi']].to_numpy(dtype=numpy.float64)[rows]
+            block = spec['rho'] * numpy.sqrt(numpy.outer(vi, vi))
+            numpy.fill_diagonal(block, vi)
+        matrix[numpy.ix_(rows, rows)] = block
+    return matrix
+
+
+def build_tree_r(tree: str) -> pandas.DataFrame:
+    """The covariance matrix of a Brownian-motion trait along a bundled tree: entry ``(i, j)`` is the length of the edges that the root-to-tip paths
+    of tips ``i`` and ``j`` share, computed with numpy from the edge table alone (Hadfield and Nakagawa 2010), rows and columns labelled by the tips."""
+    edges = metafopy.datasets.load_tree(tree).edges
+    parent = dict(zip(edges['child'], edges['parent'], strict=True))
+    length = dict(zip(edges['child'], edges['length'], strict=True))
+    column = {child: position for position, child in enumerate(edges['child'])}
+    tips = sorted(set(edges['child']) - set(edges['parent']))
+    paths = numpy.zeros((len(tips), len(column)))
+    for row, tip in enumerate(tips):
+        node = tip
+        while node in parent:
+            paths[row, column[node]] = length[node]
+            node = parent[node]
+    shared = (paths > 0).astype(numpy.float64)
+    labels = edges.set_index('child').loc[tips, 'child_label'].astype(str).tolist()
+    return pandas.DataFrame((shared * numpy.array([length[child] for child in edges['child']])) @ shared.T, index=labels, columns=labels)
 
 
 def resolve_formula(name: str, where: str) -> collections.abc.Callable[..., typing.Any]:
@@ -364,7 +501,11 @@ def formula_value(case: Case, name: str, frame: pandas.DataFrame | None) -> typi
 
 
 def run_case(case: Case) -> typing.Any:
-    """Load the dataset, apply ``setup`` (an ``escalc`` call), and call ``metafopy.<function>(**args)`` (``formulas.<name>`` for a formula)."""
+    """Load the dataset, apply ``setup``, call ``metafopy.<function>(**args)`` (``formulas.<name>`` for a formula), then apply ``then`` to the fit.
+
+    ``setup`` is an ``escalc`` call, for ``vblocks`` or ``vconst`` the ``V`` passed to the call, and for ``tree_r`` the ``R`` passed to it (the
+    unscaled tree covariance matrix of the named factor). The result of ``then`` is returned.
+    """
     frame = case_frame(case)
     if case.function.startswith(FORMULA_PREFIX):
         return formula_value(case, case.function, frame)
@@ -374,7 +515,17 @@ def run_case(case: Case) -> typing.Any:
     kwargs = dict(case.args)
     if frame is not None:
         kwargs['data'] = frame
-    return func(**kwargs)
+        if case.setup is not None and ('vblocks' in case.setup or 'vconst' in case.setup):
+            kwargs['V'] = build_v(frame, case.setup, f'{case.file}: case {case.id}')
+        if case.setup is not None and 'tree_r' in case.setup:
+            kwargs['R'] = {case.setup['tree_r']['factor']: build_tree_r(case.setup['tree_r']['tree'])}
+    result = func(**kwargs)
+    if case.then is None:
+        return result
+    follow = getattr(metafopy, case.then.function, None)
+    if not callable(follow):
+        raise LookupError(f'{case.file}: case {case.id}: metafopy has no follow-on function {case.then.function!r}')
+    return follow(result, **case.then.args)
 
 
 def fetch(result: typing.Any, key: str, where: str) -> typing.Any:

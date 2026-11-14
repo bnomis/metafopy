@@ -77,7 +77,7 @@ DEFAULT_CASES: dict[str, tuple[str, str, dict[str, typing.Any]]] = {
 CS_CASES: dict[str, tuple[str, str, dict[str, typing.Any]]] = {}
 for family in ('uni', 'mv'):
     for suffix, model in (('int', f'{family}_int'), ('mods', f'{family}_mods')):
-        for vcov in ('CR0', 'CR1', 'CR1p', 'CR1S', 'CR2', 'CR3'):
+        for vcov in ('CR0', 'CR1', 'CR1p', 'CR1S', 'CR2', 'CR3'):  # auditme: accept[literal-duplication] the same tuple as the correctness formulas
             CS_CASES[f'{family}_cs_{suffix}_{vcov}'] = (model, 'district', {'club_sandwich': True, 'vcov': vcov})
     for ct in ('z', 'naive-t', 'naive-tp'):
         CS_CASES[f'{family}_cs_coef_{ct}'] = (f'{family}_mods', 'district', {'club_sandwich': True, 'coef_test': ct})

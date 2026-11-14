@@ -1,7 +1,7 @@
 # Correctness tests: rma_mv and robust
 
 **Version:** 1.1
-**Status:** proposed
+**Status:** implemented
 **Date:** 2026-11-12
 
 Found on 2026-11-12 while reviewing `TODO.md` (item "Extend the correctness tests beyond the core models"): the introduction of the
@@ -78,7 +78,7 @@ def struct_matrix(struct: str, inner: FloatArray, tau2: FloatArray, rho: FloatAr
     distances (Cressie 1993, section 2.3.1), GEN and GDIAG (random coefficients, Laird and Ware 1982)."""
 
 
-def mv_loglik(yi: FloatArray, V: FloatArray, X: FloatArray, M_extra: FloatArray, method: str) -> float:
+def mv_loglik(yi: FloatArray, V: FloatArray, X: FloatArray, M_extra: FloatArray, method: str, W: FloatArray | None = None) -> float:
     """The ML or REML log-likelihood of y ~ N(X b, V + M_extra) at the GLS b (Harville 1977, equations for the restricted likelihood)."""
 
 

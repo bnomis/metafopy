@@ -40,7 +40,7 @@ the order use `METAFOPY_CORRECTNESS_RLIB` plus `R_LIBS`. This list uses the latt
 
 ## Task 1: Option constants and the new coverage items
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** API (constants); Coverage list; Implementation steps 1 and 10
@@ -50,34 +50,34 @@ hiding the core items that already pass.
 
 **Subtasks:**
 
-- [ ] Starting-point check: stop as `blocked` if any of these already exists, naming it:
+- [x] Starting-point check: stop as `blocked` if any of these already exists, naming it:
       `grep -nE '^(METHODS|TESTS|DFS) = ' src/metafopy/models/rma_mv.py`, `grep -nE '^ADJUST = ' src/metafopy/methods/robust.py`,
       `grep -nwE 'build_v|vblocks|vconst' src/tests/correctness/cases.py`, `ls src/tests/correctness/cases/rma_mv.toml src/tests/correctness/cases/robust.toml`.
       (A `METHODS` in another module, such as `metafopy.methods.emm_contrasts`, is not a clash)
-- [ ] In `src/metafopy/models/rma_mv.py` add `METHODS = (*FIXED_METHODS, 'ML', 'REML')`, `TESTS = ('z', 't', 'knha', 'adhoc')` and
+- [x] In `src/metafopy/models/rma_mv.py` add `METHODS = (*FIXED_METHODS, 'ML', 'REML')`, `TESTS = ('z', 't', 'knha', 'adhoc')` and
       `DFS = ('residual', 'contain')`, and use them in place of the literals in the `method` and `dfs` validation and the `test` check after the
       `'hksj'` alias is mapped to `'knha'`. Error messages stay word for word
-- [ ] In `src/metafopy/methods/robust.py` add `ADJUST = (False, True, 'Stata1', 'Stata2')` and use it in `check_adjust` and `default_inference`;
+- [x] In `src/metafopy/methods/robust.py` add `ADJUST = (False, True, 'Stata1', 'Stata2')` and use it in `check_adjust` and `default_inference`;
       `'Stata'` stays an accepted alias of `'Stata1'`, not an item. Add the new names to each module's `__all__` if it has one
-- [ ] In `src/tests/correctness/test_coverage.py`, `coverage_items()` gains every item of the spec's Coverage list, each list read at test time:
+- [x] In `src/tests/correctness/test_coverage.py`, `coverage_items()` gains every item of the spec's Coverage list, each list read at test time:
       `rma_mv.METHODS`, `metafopy.models.mv_structs.STRUCTS`, `rma_mv.RSCALES`, `rma_mv.TESTS`, `rma_mv.DFS`, the named `rma_mv` items,
       `robust.rma_uni`, `robust.rma_mv`, `robust.adjust.<str(a)>` for `robust.ADJUST`, `metafopy.core.clubsandwich.CR_TYPES`, `robust.COEF_TESTS`,
       `robust.CONF_TESTS` and `metafopy.core.clubsandwich.WALD_TESTS`
-- [ ] Keep the existing gate passing for the core items: it skips items starting `rma_mv.` or `robust.` while a module constant
+- [x] Keep the existing gate passing for the core items: it skips items starting `rma_mv.` or `robust.` while a module constant
       `PENDING_PREFIXES = ('rma_mv.', 'robust.')` is set, and a second test `test_gate_mv_robust` lists the missing items under those prefixes,
       marked `xfail(strict=True, reason='coverage incomplete; see agents/tasks/correctness-mv-robust/tasks-1.md')` until Task 7 removes both
-- [ ] Create `src/tests/correctness/cases/rma_mv.toml` and `cases/robust.toml`, empty except a header comment
+- [x] Create `src/tests/correctness/cases/rma_mv.toml` and `cases/robust.toml`, empty except a header comment
 
 **Acceptance Criteria:**
 
-- [ ] The existing `rma_mv` and `robust` tests pass unchanged
-- [ ] `test_gate_mv_robust` is an expected failure that lists the new items; the core gate passes
+- [x] The existing `rma_mv` and `robust` tests pass unchanged
+- [x] `test_gate_mv_robust` is an expected failure that lists the new items; the core gate passes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_coverage.py src/tests/test_rma_mv.py src/tests/test_rma_mv_extras.py src/tests/test_robust.py src/tests/test_robust_extras.py src/tests/test_audit8_crashes.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_coverage.py src/tests/test_rma_mv.py src/tests/test_rma_mv_extras.py src/tests/test_robust.py src/tests/test_robust_extras.py src/tests/test_audit8_crashes.py` passes
 
 **Notes:**
 
@@ -90,7 +90,7 @@ hiding the core items that already pass.
 
 ## Task 2: Harness - the `then` follow-on call and the `vblocks` and `vconst` setups
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** API (case-file additions); Error handling; Implementation step 2
@@ -100,27 +100,27 @@ within-cluster correlation, computed with numpy and pandas, never metafopy.
 
 **Subtasks:**
 
-- [ ] In `src/tests/correctness/cases.py`: the frozen dataclass `Step(function, args)`; `Case` gains `then: Step | None = None`; `then` joins
+- [x] In `src/tests/correctness/cases.py`: the frozen dataclass `Step(function, args)`; `Case` gains `then: Step | None = None`; `then` joins
       `CASE_KEYS`; `run_case` applies it as `metafopy.<function>(result, **args)` and returns the follow-on result, which `expect` and `check` see
-- [ ] `setup` accepts `escalc`, `vblocks` and `vconst` (at most one of the last two). `build_v(frame, setup, where)` returns the `V` matrix in data
+- [x] `setup` accepts `escalc`, `vblocks` and `vconst` (at most one of the last two). `build_v(frame, setup, where)` returns the `V` matrix in data
       order: `vblocks = { cluster, columns }` is block-diagonal with block j the named columns of cluster j's rows; `vconst = { cluster, vi, rho }`
       has `vi` on the diagonal and `rho * sqrt(vi[i] * vi[l])` within a cluster. It is passed to the call as `V`, after any `escalc`
-- [ ] Errors as in the spec's Error handling: `then` with keys other than `function` and `args`, both `vblocks` and `vconst`, either without
+- [x] Errors as in the spec's Error handling: `then` with keys other than `function` and `args`, both `vblocks` and `vconst`, either without
       `cluster`, raise `ValueError` naming the file and case id; an unknown follow-on function raises `LookupError` naming it; `build_v` raises
       `ValueError` naming the case when a `vblocks` cluster's row count differs from the number of `columns` or a block is not symmetric
-- [ ] Inline-TOML tests in `src/tests/correctness/test_coverage.py`: a valid case of each new form (checked against a `V` written out by hand), and
+- [x] Inline-TOML tests in `src/tests/correctness/test_coverage.py`: a valid case of each new form (checked against a `V` written out by hand), and
       each malformed form above
 
 **Acceptance Criteria:**
 
-- [ ] A `then = { function = "robust", args = { cluster = "district" } }` case on an inline `rma_uni` fit returns the `robust` result
-- [ ] Every error above is raised with the file and case id in its message
+- [x] A `then = { function = "robust", args = { cluster = "district" } }` case on an inline `rma_uni` fit returns the `robust` result
+- [x] Every error above is raised with the file and case id in its message
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 
@@ -131,7 +131,7 @@ within-cluster correlation, computed with numpy and pandas, never metafopy.
 
 ## Task 3: rma_mv - likelihood, GLS and the basic structures
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** API (`formulas.py`: `struct_matrix`, `mv_loglik`, `mv_fit`); Implementation steps 3 and 4; Coverage list (methods, random forms,
@@ -142,28 +142,28 @@ and each `rma_mv.method.*`, `rma_mv.random.sigma2`, `rma_mv.random.nested`, `rma
 
 **Subtasks:**
 
-- [ ] `src/tests/correctness/formulas.py` (numpy and scipy only): the frozen dataclasses `RandomTerm` and `MVFit`; `struct_matrix` for `ID`, `CS`,
+- [x] `src/tests/correctness/formulas.py` (numpy and scipy only): the frozen dataclasses `RandomTerm` and `MVFit`; `struct_matrix` for `ID`, `CS`,
       `HCS`, `UN`, `DIAG` (Wolfinger 1993); `mv_loglik` (Harville 1977, the restricted likelihood); the GLS `b` and `vb = (X' M^-1 X)^-1`, with the
       weighted form for `W`; `mv_fit` (BFGS on log variances and atanh correlations, with the convergence check of the spec's Error handling: a fit
       with `success` false or gradient norm above `1e-6` fails the case naming the structure and the optimiser message)
-- [ ] In `src/tests/correctness/test_derived.py`, a check function that reads the case's `random`, `struct`, `mods` and data, builds `X`, the grouping
+- [x] In `src/tests/correctness/test_derived.py`, a check function that reads the case's `random`, `struct`, `mods` and data, builds `X`, the grouping
       codes and the inner levels with `pandas.factorize` and a regular expression for `~ 1 | a`, `~ 1 | a/b`, `~ inner | outer`, `~ inner || outer`,
       and makes the spec's three comparisons: log-likelihood at metafopy's components (`rtol=1e-10`), `beta` and `se` from GLS at metafopy's
       components (`1e-10`), and `mv_fit`'s optimum (components `rtol=1e-6`, log-likelihood no more than `1e-8` above metafopy's)
-- [ ] Derived cases in `cases/rma_mv.toml`: `EE`, `FE`, `CE`, `ML`, `REML`; `~ 1 | f` and `~ 1 | a/b` on `dat.konstantopoulos2011`; `UN` and `CS`
+- [x] Derived cases in `cases/rma_mv.toml`: `EE`, `FE`, `CE`, `ML`, `REML`; `~ 1 | f` and `~ 1 | a/b` on `dat.konstantopoulos2011`; `UN` and `CS`
       and `HCS` and `DIAG` and `ID` on `dat.berkey1998` with `setup.vblocks`; a G and an H term together; a `W` case
-- [ ] Record any mismatch as the header says
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] `test_gate_mv_robust`'s missing list no longer names `rma_mv.method.*`, these five structures, or the four named items above
-- [ ] Each new `formulas.py` function names its source and equation in its docstring
+- [x] `test_gate_mv_robust`'s missing list no longer names `rma_mv.method.*`, these five structures, or the four named items above
+- [x] Each new `formulas.py` function names its source and equation in its docstring
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 
@@ -176,7 +176,7 @@ and each `rma_mv.method.*`, `rma_mv.random.sigma2`, `rma_mv.random.nested`, `rma
 
 ## Task 4: rma_mv - serial, spatial and general structures, and `R`
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** API (`struct_matrix`); Implementation steps 3 and 4; Decisions (D2, `Rscale`); Coverage list (structures, `Rscale`,
@@ -187,29 +187,29 @@ an `[[exempt]]` entry.
 
 **Subtasks:**
 
-- [ ] `struct_matrix` gains `AR`, `HAR` (Wolfinger 1993), `CAR` (`rho ** |t_i - t_j|`), `SPEXP`, `SPGAU`, `SPLIN`, `SPRAT`, `SPSPH` from distances
+- [x] `struct_matrix` gains `AR`, `HAR` (Wolfinger 1993), `CAR` (`rho ** |t_i - t_j|`), `SPEXP`, `SPGAU`, `SPLIN`, `SPRAT`, `SPSPH` from distances
       (Cressie 1993, section 2.3.1), `GEN` and `GDIAG` (Laird and Ware 1982). Spatial structures use metafor's documented parametrisation by range
       where it differs from Cressie's; the case's `source` says which, as a convention, not a mismatch
-- [ ] Derived cases: `AR`, `HAR` and `CAR` on long-format inline data from `dat.ishak2007`; each spatial structure on a small inline dataset with
+- [x] Derived cases: `AR`, `HAR` and `CAR` on long-format inline data from `dat.ishak2007`; each spatial structure on a small inline dataset with
       coordinates; `GEN` and `GDIAG` as random coefficients
-- [ ] `R` and `Rscale` on `dat.moura2021` with its tree (`dat.moura2021.tree`): the correlation matrix built in the test with numpy from the tree's
+- [x] `R` and `Rscale` on `dat.moura2021` with its tree (`dat.moura2021.tree`): the correlation matrix built in the test with numpy from the tree's
       branch lengths (Hadfield and Nakagawa 2010), each `RSCALES` value rescaled by the formula in metafor's `rma.mv` help page, the `source` naming
       the help page and saying the convention is metafor's (D2). Read the help page from the audit library, for example
       `R_LIBS=/Users/simonb/src/metafopy/.audit/Rlib Rscript -e 'tools::Rd2txt(tools::Rd_db("metafor")[["rma.mv.Rd"]])'`
-- [ ] A `RSCALES` value whose rescaling the help page does not write down gets an `[[exempt]]` entry in `cases/rma_mv.toml` with the reason
+- [x] A `RSCALES` value whose rescaling the help page does not write down gets an `[[exempt]]` entry in `cases/rma_mv.toml` with the reason
       "defined only in metafor's code; R parity covers it". Apply D2 only to the `Rscale` values here; any other option met without a written formula
       stops the task as `blocked`, naming it
-- [ ] Record any mismatch as the header says
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] `test_gate_mv_robust`'s missing list names no `rma_mv.struct.*`, no `rma_mv.Rscale.*` and not `rma_mv.random.R`
+- [x] `test_gate_mv_robust`'s missing list names no `rma_mv.struct.*`, no `rma_mv.Rscale.*` and not `rma_mv.random.R`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 
@@ -222,7 +222,7 @@ an `[[exempt]]` entry.
 
 ## Task 5: rma_mv - inference, QE, QM, profile intervals and prediction intervals
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** Implementation steps 3 and 4; Decisions (D2, `knha`, `adhoc`, `contain`); Prerequisite; Coverage list (tests, dfs, `QE`, `QM`,
@@ -233,29 +233,29 @@ prediction interval have `derived` cases.
 
 **Subtasks:**
 
-- [ ] `formulas.py`: the Wald `z` and `t` tests; the Knapp-Hartung factor `r' M^-1 r / (k - p)` and its ad hoc floor at 1, coded from metafor's
+- [x] `formulas.py`: the Wald `z` and `t` tests; the Knapp-Hartung factor `r' M^-1 r / (k - p)` and its ad hoc floor at 1, coded from metafor's
       `rma.mv` help page (the `rma_mv` form is metafor's generalisation of Knapp and Hartung 2003); containment degrees of freedom from the SAS/STAT
       PROC MIXED documentation of `DDFM=CONTAIN`; `QE` and `QM`; profile bounds (Hardy and Thompson 1996: the component where the likelihood ratio
       statistic equals the chi-square(1) quantile, solved with `scipy.optimize.brentq` over `mv_loglik` maximised in the other components)
-- [ ] Per D2, each `knha`, `adhoc` and `contain` case's `source` names the documentation and says the convention is that software's
-- [ ] Derived cases: each `rma_mv.TESTS` value and each `rma_mv.DFS` value; `QE` and `QM` on `dat.berkey1998`; `confint` profile intervals of a
+- [x] Per D2, each `knha`, `adhoc` and `contain` case's `source` names the documentation and says the convention is that software's
+- [x] Derived cases: each `rma_mv.TESTS` value and each `rma_mv.DFS` value; `QE` and `QM` on `dat.berkey1998`; `confint` profile intervals of a
       `sigma2`, a `tau2` and a `rho`; `confint` of the fixed effects; a `derived` `predict` interval case using the existing
       `test_derived.predict_pi` pattern
-- [ ] Prerequisite check: if the `TODO.md` heading "The correctness harness cannot check exp(beta), prediction intervals or test-based tau2 and I2
+- [x] Prerequisite check: if the `TODO.md` heading "The correctness harness cannot check exp(beta), prediction intervals or test-based tau2 and I2
       intervals" is in `DONE.md` and its `predict` check function exists in `src/tests/correctness/`, note it for Task 11's `published` prediction
       interval cases; if not, Task 13 files those cases as a `TODO.md` item
-- [ ] Record any mismatch as the header says
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] `test_gate_mv_robust`'s missing list names no `rma_mv.test.*`, no `rma_mv.dfs.*` and none of `rma_mv.QE`, `rma_mv.QM`, `rma_mv.confint.pl`,
+- [x] `test_gate_mv_robust`'s missing list names no `rma_mv.test.*`, no `rma_mv.dfs.*` and none of `rma_mv.QE`, `rma_mv.QM`, `rma_mv.confint.pl`,
       `rma_mv.confint.fixed`, `rma_mv.predict.pi`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 
@@ -267,7 +267,7 @@ prediction interval have `derived` cases.
 
 ## Task 6: robust - the plain sandwich and its adjustments
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** API (`cluster_robust_vcov`); Implementation steps 3 and 4; Decisions (D2, Stata adjustments); Coverage list (`robust.rma_uni`,
@@ -277,24 +277,24 @@ prediction interval have `derived` cases.
 
 **Subtasks:**
 
-- [ ] `formulas.py`: `cluster_robust_vcov` for `CR0` and `CR1` (Hedges, Tipton and Johnson 2010, equations 6 and 8) and the Stata factors
+- [x] `formulas.py`: `cluster_robust_vcov` for `CR0` and `CR1` (Hedges, Tipton and Johnson 2010, equations 6 and 8) and the Stata factors
       (Cameron and Miller 2015, section VI.B)
-- [ ] A check function in `test_derived.py` that rebuilds `X`, the weights, residuals and cluster codes from the case and compares `vb`, `se`, the
+- [x] A check function in `test_derived.py` that rebuilds `X`, the weights, residuals and cluster codes from the case and compares `vb`, `se`, the
       test statistics and `ddf` of the `robust` result reached through `then`
-- [ ] Derived cases in `cases/robust.toml`: `robust` on an `rma_uni` fit (Sidik and Jonkman 2005) and on an `rma_mv` fit of
+- [x] Derived cases in `cases/robust.toml`: `robust` on an `rma_uni` fit (Sidik and Jonkman 2005) and on an `rma_mv` fit of
       `dat.tannersmith2016` with `setup.vconst`; each `robust.ADJUST` value. The Stata cases' `source` names the Stata manual and says the
       convention is Stata's (D2)
-- [ ] Record any mismatch as the header says
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] `test_gate_mv_robust`'s missing list names neither `robust.rma_uni` nor `robust.rma_mv` and no `robust.adjust.*`
+- [x] `test_gate_mv_robust`'s missing list names neither `robust.rma_uni` nor `robust.rma_mv` and no `robust.adjust.*`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 
@@ -306,7 +306,7 @@ prediction interval have `derived` cases.
 
 ## Task 7: robust - club_sandwich estimators and tests, then close the gate
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** API (`cluster_robust_vcov`, `satterthwaite_dfs`, `hotelling_wald`, `saddlepoint_pvalue`); Implementation steps 3, 4 and 10;
@@ -317,24 +317,24 @@ them the gate passes for every item.
 
 **Subtasks:**
 
-- [ ] `formulas.py`: `cluster_robust_vcov` gains `CR1p`, `CR1S`, `CR2` (Bell and McCaffrey 2002; Pustejovsky and Tipton 2018, equation 6) and `CR3`
+- [x] `formulas.py`: `cluster_robust_vcov` gains `CR1p`, `CR1S`, `CR2` (Bell and McCaffrey 2002; Pustejovsky and Tipton 2018, equation 6) and `CR3`
       (MacKinnon and White 1985, the jackknife form); `satterthwaite_dfs` (Tipton 2015, equation 11; Pustejovsky and Tipton 2018, section 3);
       `hotelling_wald` (HTA, HTB, HTZ, EDF, EDT of Tipton and Pustejovsky 2015, section 3), plus the `chi-sq`, `Naive-F` and `Naive-Fp` forms;
       `saddlepoint_pvalue` (Kuonen 1999, equations 2 to 4). Never import `metafopy.core.clubsandwich`
-- [ ] Derived cases in `cases/robust.toml` for each value, on `dat.tannersmith2016` (`vconst`) and one `rma_uni` fit
-- [ ] Record any mismatch as the header says
-- [ ] Remove `PENDING_PREFIXES` and `test_gate_mv_robust` from `test_coverage.py`, so the one gate covers every item. If any item is still missing,
+- [x] Derived cases in `cases/robust.toml` for each value, on `dat.tannersmith2016` (`vconst`) and one `rma_uni` fit
+- [x] Record any mismatch as the header says
+- [x] Remove `PENDING_PREFIXES` and `test_gate_mv_robust` from `test_coverage.py`, so the one gate covers every item. If any item is still missing,
       stop as `blocked`, naming it
 
 **Acceptance Criteria:**
 
-- [ ] The gate passes with no xfail mark and every new item in its list
+- [x] The gate passes with no xfail mark and every new item in its list
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 
@@ -351,7 +351,7 @@ them the gate passes for every item.
 
 ## Task 8: Property and simulation cases
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** medium
 **Spec Reference:** Implementation steps 5 and 6
@@ -360,25 +360,29 @@ them the gate passes for every item.
 
 **Subtasks:**
 
-- [ ] Property cases in `src/tests/correctness/test_properties.py` and `cases/properties.toml`: `rma_mv` with `~ 1 | id` (one row per id) equals
+- [x] Property cases in `src/tests/correctness/test_properties.py` and `cases/properties.toml`: `rma_mv` with `~ 1 | id` (one row per id) equals
       `rma_uni` (beta, se, tau2, log-likelihood); a three-level fit with one level's sigma2 fixed at 0 equals the two-level fit; with two inner levels
       `UN` and `HCS` give the same fit; `AR` equals `CAR` at equally spaced times; location and scale invariance; the REML and ML score is zero at
       metafopy's optimum; `optbeta=True` reaches the same optimum; `CR0` with one row per cluster equals the HC0 sandwich; `CR2` is exactly unbiased
       when the working model is the true one (Pustejovsky and Tipton 2018, theorem 1), checked in closed form from `(I - H) M (I - H)'`
-- [ ] Simulation cases in `src/tests/correctness/test_simulation.py`, each marked `slow`, using `numpy.random.default_rng(seed)` with a fixed seed and
+- [x] Simulation cases in `src/tests/correctness/test_simulation.py`, each marked `slow`, using `numpy.random.default_rng(seed)` with a fixed seed and
       stated replicates, asserting at 4 standard errors: exact coverage of the `method="FE"` Wald interval with known `V`; unbiasedness of the GLS
       estimate
-- [ ] Check once by hand that each simulation fails for a biased stand-in (for example `V` scaled by 2 in the interval), and note the figures here
+- [x] Check once by hand that each simulation fails for a biased stand-in (for example `V` scaled by 2 in the interval), and note the figures here.
+      Done: with `V` doubled in the fit the intercept's coverage is 0.994 over 2000 replicates against 0.95 (standard error 0.0049, a 9-error miss);
+      with the estimate shifted by 0.02 the intercept's mean is 0.3224 against 0.3 (standard error 0.0026). The property checks were run the same
+      way: `CR2` unbiasedness fails for the `CR0` and `CR1` estimators, the `HC0` check fails for `CR1`, and the one-row-per-id check fails when
+      rows share a group
 
 **Acceptance Criteria:**
 
-- [ ] `pytest -m slow src/tests/correctness/test_simulation.py` passes
+- [x] `pytest -m slow src/tests/correctness/test_simulation.py` passes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_properties.py src/tests/correctness/test_simulation.py` passes, `slow` cases included
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_properties.py src/tests/correctness/test_simulation.py` passes, `slow` cases included
 
 **Notes:**
 
@@ -388,7 +392,7 @@ them the gate passes for every item.
 
 ## Task 9: Other-software cases from mvmeta, nlme, robumeta and sandwich
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** medium
 **Spec Reference:** Implementation step 9; External dependencies; Error handling (generator)
@@ -397,31 +401,31 @@ them the gate passes for every item.
 
 **Subtasks:**
 
-- [ ] Check that `/Users/simonb/src/metafopy/.audit/Rlib` holds `mvmeta` 1.0.3, `nlme` 3.1-171, `robumeta` 2.1 and `sandwich` 3.1-3 (the versions in
+- [x] Check that `/Users/simonb/src/metafopy/.audit/Rlib` holds `mvmeta` 1.0.3, `nlme` 3.1-171, `robumeta` 2.1 and `sandwich` 3.1-3 (the versions in
       `src/audit/data/r-versions.json`); stop as `blocked`, naming what is missing, if not. Install nothing
-- [ ] Write `src/tests/correctness/r/other_software_mv.R`, modelled on `r/other_software.R`: it reads `METAFOPY_CORRECTNESS_RLIB` and prepends it with
+- [x] Write `src/tests/correctness/r/other_software_mv.R`, modelled on `r/other_software.R`: it reads `METAFOPY_CORRECTNESS_RLIB` and prepends it with
       `.libPaths(c(lib, .libPaths()))`; it pins each package version at its top and stops on any other; it stops unless
       `tools::package_dependencies(c("mvmeta", "nlme", "robumeta", "sandwich"), db = installed.packages(), recursive = TRUE)` shows none depends on
       metafor; it writes `cases/other_mv.toml` with `kind = "other"`, each case's `source` naming the package's and R's versions
-- [ ] Cases: `mvmeta` (`UN` on `dat.berkey1998`); `nlme` (`lme` with `varFixed(~ vi)` and `sigma` fixed at 1, the three-level fit); `robumeta`
+- [x] Cases: `mvmeta` (`UN` on `dat.berkey1998`); `nlme` (`lme` with `varFixed(~ vi)` and `sigma` fixed at 1, the three-level fit); `robumeta`
       (correlated-effects RVE with Tipton's correction on `dat.tannersmith2016`, compared with `robust(club_sandwich=True)` given robumeta's weights as
       `W`); `sandwich::vcovCL` (CR0, CR1 and the Stata factors on a weighted `lm`)
-- [ ] Run it as `METAFOPY_CORRECTNESS_RLIB=/Users/simonb/.local/share/metafopy/r-correctness-lib R_LIBS=/Users/simonb/src/metafopy/.audit/Rlib LC_ALL=C.UTF-8 Rscript src/tests/correctness/r/other_software_mv.R`
+- [x] Run it as `METAFOPY_CORRECTNESS_RLIB=/Users/simonb/.local/share/metafopy/r-correctness-lib R_LIBS=/Users/simonb/src/metafopy/.audit/Rlib LC_ALL=C.UTF-8 Rscript src/tests/correctness/r/other_software_mv.R`
       and commit the output
-- [ ] Check `git diff --exit-code src/audit/data/r-versions.json`
-- [ ] Record any mismatch as the header says; a difference that is a documented convention is pinned in the generator with a comment, as Task 12 of
+- [x] Check `git diff --exit-code src/audit/data/r-versions.json`
+- [x] Record any mismatch as the header says; a difference that is a documented convention is pinned in the generator with a comment, as Task 12 of
       the correctness-tests list did
 
 **Acceptance Criteria:**
 
-- [ ] Every case in `cases/other_mv.toml` names its package's version
-- [ ] `src/tests/correctness/test_other_software.py` runs the new cases (extend its parametrisation if it reads only `other.toml`)
+- [x] Every case in `cases/other_mv.toml` names its package's version
+- [x] `src/tests/correctness/test_other_software.py` runs the new cases (extend its parametrisation if it reads only `other.toml`)
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_other_software.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_other_software.py` passes
 
 **Notes:**
 
@@ -433,7 +437,7 @@ them the gate passes for every item.
 
 ## Task 10: Sources - fetch the open ones and stop for any still needed
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Seed sources; Implementation step 7
@@ -442,27 +446,27 @@ them the gate passes for every item.
 
 **Subtasks:**
 
-- [ ] Check that `/Users/simonb/src/metafopy papers` can be read; stop as `blocked` if not
-- [ ] For each row of the spec's Seed sources, find its file through `download_report.md` in that directory. Fetch the open-access rows not in it
+- [x] Check that `/Users/simonb/src/metafopy papers` can be read; stop as `blocked` if not
+- [x] For each row of the spec's Seed sources, find its file through `download_report.md` in that directory. Fetch the open-access rows not in it
       (Assink and Wibbelink 2016, Jackson, Riley and White 2011 at PMC3470931, the SAS/STAT PROC MIXED `DDFM=CONTAIN` page, Bell and McCaffrey 2002)
       with the connected PubMed, Paperclip or alphaXiv tools or the web, reading them without saving them in the repository
-- [ ] If every source is present or fetched, write that under "Sources needed" in `agents/specs/correctness-mv-robust/mismatches.md` ("none, checked
+- [x] If every source is present or fetched, write that under "Sources needed" in `agents/specs/correctness-mv-robust/mismatches.md` ("none, checked
       <date>"), commit, and continue to Task 11 without stopping
-- [ ] Otherwise list each missing source under "Sources needed" with its citation and the table or example wanted, and options *supplied* and *drop*;
+- [x] Otherwise list each missing source under "Sources needed" with its citation and the table or example wanted, and options *supplied* and *drop*;
       publish the page for those items per the shared `reviews.md` rule (answers saved to the artifact's database) with `**Review page:** <URL>` in
       the document's header. If this session has no tool to publish the page, say so in the stop message, for the operator session to publish it
-- [ ] Stop the list for the operator. Once every source item has an answer, an operator session reads the page's answers, copies each into the
+- [x] Stop the list for the operator. Once every source item has an answer, an operator session reads the page's answers, copies each into the
       Answers section of `mismatches.md` under "Sources", with the date, commits that, and only then restarts the list
 
 **Acceptance Criteria:**
 
-- [ ] Every seed source is read, or listed under "Sources needed" with what is wanted
+- [x] Every seed source is read, or listed under "Sources needed" with what is wanted
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness -m 'not slow'` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness -m 'not slow'` passes
 
 **Notes:**
 
@@ -474,7 +478,7 @@ them the gate passes for every item.
 
 ## Task 11: Published cases
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** Seed sources; Implementation step 8; Kinds of evidence (`published`)
@@ -483,26 +487,26 @@ them the gate passes for every item.
 
 **Subtasks:**
 
-- [ ] If "Sources needed" in `agents/specs/correctness-mv-robust/mismatches.md` lists any source, read its answers from the Answers section of that
+- [x] If "Sources needed" in `agents/specs/correctness-mv-robust/mismatches.md` lists any source, read its answers from the Answers section of that
       document, never from the page; stop as `blocked`, naming the missing answers, if that section has no answer for each listed source
-- [ ] One source at a time (Berkey et al. 1998, Konstantopoulos 2011, Assink and Wibbelink 2016, Kalaian and Raudenbush 1996, Ishak et al. 2007,
+- [x] One source at a time (Berkey et al. 1998, Konstantopoulos 2011, Assink and Wibbelink 2016, Kalaian and Raudenbush 1996, Ishak et al. 2007,
       van Houwelingen et al. 2002, Gleser and Olkin 2009 in the Handbook PDF, Moura et al. via Nakagawa and Santos 2012 where its example applies,
       Sidik and Jonkman 2005, Hedges, Tipton and Johnson 2010, Tipton 2015, Tipton and Pustejovsky 2015, Tanner-Smith et al. 2016): find its worked
       example, the dataset that holds the same data (or inline data with its locator), and add `published` cases with values as printed, as strings,
       each with `citation`, `locator` and `read`
-- [ ] `published` prediction-interval cases only if Task 5 found the harness `predict` check function; otherwise leave them for Task 13
-- [ ] A source with no usable worked example: note it in the case file's header comment, with the reason
-- [ ] Record any mismatch as the header says
+- [x] `published` prediction-interval cases only if Task 5 found the harness `predict` check function; otherwise leave them for Task 13
+- [x] A source with no usable worked example: note it in the case file's header comment, with the reason
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] Every source with a worked example has `published` cases; every `published` case has `citation`, `locator` and `read`
+- [x] Every source with a worked example has `published` cases; every `published` case has `citation`, `locator` and `read`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_published.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_published.py` passes
 
 **Notes:**
 
@@ -514,7 +518,7 @@ them the gate passes for every item.
 
 ## Task 12: Review the mismatches
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation step 11
@@ -523,26 +527,26 @@ them the gate passes for every item.
 
 **Subtasks:**
 
-- [ ] Complete `agents/specs/correctness-mv-robust/mismatches.md` in the review-document layout of the shared `reviews.md` rule (read the rule from
+- [x] Complete `agents/specs/correctness-mv-robust/mismatches.md` in the review-document layout of the shared `reviews.md` rule (read the rule from
       disk first): what is reviewed and how; automatic checks (the gate passes, every `mismatch` case has an item); each mismatch with source,
       locator, reference, metafopy and metafor values; decisions with options *follow the reference*, *keep metafor* and *investigate*, each with a
       recommendation; an empty Answers section under "Mismatches"
-- [ ] Publish its interactive page, with answers saved to the artifact's database and a button accepting every recommendation, and put
+- [x] Publish its interactive page, with answers saved to the artifact's database and a button accepting every recommendation, and put
       `**Review page:** <URL>` in the document's header. If this session has no tool to publish the page, say so in the stop message, for the
       operator session to publish it
-- [ ] If there are no mismatches, write that in the document, skip the page, and continue to Task 13 without stopping
-- [ ] Otherwise stop the list for the operator. Once every item has an answer, an operator session reads the page's answers, copies each into the
+- [x] If there are no mismatches, write that in the document, skip the page, and continue to Task 13 without stopping
+- [x] Otherwise stop the list for the operator. Once every item has an answer, an operator session reads the page's answers, copies each into the
       Answers section of `mismatches.md` under "Mismatches", with the date, commits that, and only then restarts the list
 
 **Acceptance Criteria:**
 
-- [ ] Every `mismatch` case in `src/tests/correctness/cases/*.toml` from this list has an item in the document and on the page
+- [x] Every `mismatch` case in `src/tests/correctness/cases/*.toml` from this list has an item in the document and on the page
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness -m 'not slow'` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness -m 'not slow'` passes
 
 **Notes:**
 
@@ -552,7 +556,7 @@ them the gate passes for every item.
 
 ## Task 13: File the answers and close the spec
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation step 12
@@ -562,31 +566,31 @@ list.
 
 **Subtasks:**
 
-- [ ] Read the answers from the Answers section of `agents/specs/correctness-mv-robust/mismatches.md`, never from the page. If Task 12 recorded
+- [x] Read the answers from the Answers section of `agents/specs/correctness-mv-robust/mismatches.md`, never from the page. If Task 12 recorded
       mismatches, stop as `blocked`, naming the missing items, if that section is empty or incomplete
-- [ ] *Keep metafor*: correct the case to the convention metafor documents, cite where it documents it, and set `status = "pass"`
-- [ ] *Follow the reference*: add a `TODO.md` item for each with the `todo-add` skill, naming the case, the fix, the case to flip, the R parity
+- [x] *Keep metafor*: correct the case to the convention metafor documents, cite where it documents it, and set `status = "pass"`
+- [x] *Follow the reference*: add a `TODO.md` item for each with the `todo-add` skill, naming the case, the fix, the case to flip, the R parity
       fixtures and `src/audit/data/known.toml` entries to mark, and the `docs/differences.md` section "Where metafor departs from its reference" to add
-- [ ] *Investigate*: a `TODO.md` item with the `todo-add` skill naming what is in doubt
-- [ ] If Task 5 found no harness `predict` check function, a `TODO.md` item with the `todo-add` skill for the `published` cases of
+- [x] *Investigate*: a `TODO.md` item with the `todo-add` skill naming what is in doubt
+- [x] If Task 5 found no harness `predict` check function, a `TODO.md` item with the `todo-add` skill for the `published` cases of
       `rma_mv.predict.pi`
-- [ ] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` to say so (leave the umbrella `TODO.md` item "Extend the
+- [x] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` to say so (leave the umbrella `TODO.md` item "Extend the
       correctness tests beyond the core models" where it is; the publication-bias list moves it)
-- [ ] Run the final test selection from the worktree:
+- [x] Run the final test selection from the worktree:
       `main=$(git worktree list --porcelain | sed -n '1s/^worktree //p'); mkdir -p "$main/ralpher-logs/correctness-mv-robust/tasks-1" && pytest src/tests/correctness src/tests/test_rma_mv.py src/tests/test_rma_mv_extras.py src/tests/test_robust.py src/tests/test_robust_extras.py src/tests/test_audit8_crashes.py 2>&1 | tee "$main/ralpher-logs/correctness-mv-robust/tasks-1/final-tests.log"`
       (`slow` cases included), judged by its exit status
 
 **Acceptance Criteria:**
 
-- [ ] Every answered item has a case change or a `TODO.md` item
-- [ ] `src/audit/data/r-versions.json` is unchanged from `main` (`git diff --exit-code main -- src/audit/data/r-versions.json`)
+- [x] Every answered item has a case change or a `TODO.md` item
+- [x] `src/audit/data/r-versions.json` is unchanged from `main` (`git diff --exit-code main -- src/audit/data/r-versions.json`)
 
 **Definition of Done:**
 
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness src/tests/test_rma_mv.py src/tests/test_rma_mv_extras.py src/tests/test_robust.py src/tests/test_robust_extras.py src/tests/test_audit8_crashes.py` passes, `slow` cases included (the last subtask's run)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness src/tests/test_rma_mv.py src/tests/test_rma_mv_extras.py src/tests/test_robust.py src/tests/test_robust_extras.py src/tests/test_audit8_crashes.py` passes, `slow` cases included (the last subtask's run)
 
 **Notes:**
 

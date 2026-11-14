@@ -8,6 +8,7 @@ A ``derived`` case names a function here as the value of an ``expect`` key. The 
 """
 
 import collections.abc
+import dataclasses
 import functools
 import math
 import typing
@@ -21,6 +22,9 @@ import scipy.special
 import scipy.stats
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
+type IntArray = numpy.typing.NDArray[numpy.intp]
+
+KNAPP_HARTUNG_TESTS = ('adhoc', 'knha')
 
 
 def risk_difference_yi(ai: FloatArray, bi: FloatArray, ci: FloatArray, di: FloatArray) -> FloatArray:
@@ -1413,7 +1417,7 @@ def coefficient_covariance(
     w = numpy.diag(1 / (vi + tau2))
     cov = numpy.linalg.inv(design.T @ w @ design)
     beta = cov @ design.T @ w @ yi
-    if test in ('knha', 'adhoc'):
+    if test in KNAPP_HARTUNG_TESTS:
         s2 = random_effects_q(yi, vi, design, tau2) / df
         cov = cov * (max(1.0, s2) if test == 'adhoc' else s2)
     return beta, cov, math.inf if test == 'z' else float(df)
@@ -1774,3 +1778,749 @@ def peto_beta(ai: FloatArray, bi: FloatArray, ci: FloatArray, di: FloatArray) ->
 def peto_se(ai: FloatArray, bi: FloatArray, ci: FloatArray, di: FloatArray) -> float:
     """Standard error ``1 / sqrt(sum(V))`` of Peto's pooled log odds ratio (Yusuf et al. 1985)."""
     return 1 / math.sqrt(float(numpy.sum(peto_terms(ai, bi, ci, di)[1])))
+
+
+# Multivariate and multilevel models (rma_mv): the marginal model y ~ N(X b, M), M = V + the sum of the random-effects matrices of the terms.
+
+SIGMA2 = 'SIGMA2'
+MV_GRADIENT_LIMIT = 1e-6
+
+
+UNSTRUCTURED = ('GEN', 'UN')
+PER_LEVEL_VARIANCES = ('DIAG', 'GDIAG', 'GEN', 'HAR', 'HCS', 'UN')
+SPATIAL_STRUCTS = ('SPEXP', 'SPGAU', 'SPLIN', 'SPRAT', 'SPSPH')
+COEFFICIENT_STRUCTS = ('GDIAG', 'GEN')
+
+
+@dataclasses.dataclass(frozen=True)
+class RandomTerm:
+    """One random-effects term of ``rma_mv``: a ``sigma2`` term (``~ 1 | outer``, ``struct`` is ``SIGMA2``) or a structured ``~ inner | outer`` term.
+
+    ``outer`` and ``inner`` hold one level code per row; rows share the random effect when their ``outer`` codes agree. ``n_inner`` is the number of
+    inner levels (1 for a ``sigma2`` term, the number of random coefficients for ``GEN`` and ``GDIAG``). ``levels`` holds the value of each inner level
+    (the time points of ``CAR``), ``design`` the ``k x p`` matrix of random coefficients (``GEN``, ``GDIAG``), ``dist`` the ``k x k`` distances between
+    rows (the spatial structures) and ``R`` the known correlation matrix of the outer levels (a ``sigma2`` term). ``fixed_variances`` and
+    ``fixed_correlations`` hold values held fixed (``nan`` where estimated); a ``UN`` or ``GEN`` matrix cannot have fixed values.
+    """
+
+    struct: str
+    outer: IntArray
+    inner: IntArray
+    n_inner: int
+    levels: FloatArray | None = None
+    design: FloatArray | None = None
+    dist: FloatArray | None = None
+    R: FloatArray | None = None
+    fixed_variances: FloatArray | None = None
+    fixed_correlations: FloatArray | None = None
+
+    def n_variances(self) -> int:
+        return self.n_inner if self.struct in PER_LEVEL_VARIANCES else 1
+
+    def n_correlations(self) -> int:
+        if self.struct in UNSTRUCTURED:
+            return self.n_inner * (self.n_inner - 1) // 2
+        return 1 if self.struct in ('AR', 'CAR', 'CS', 'HAR', 'HCS', *SPATIAL_STRUCTS) else 0
+
+
+@dataclasses.dataclass(frozen=True)
+class MVFit:
+    """The optimum of ``mv_fit``: the variances and correlations of each term, ``b``, ``vb = (X' M^-1 X)^-1``, the log-likelihood and convergence."""
+
+    variances: tuple[FloatArray, ...]
+    correlations: tuple[FloatArray, ...]
+    b: FloatArray
+    vb: FloatArray
+    loglik: float
+    success: bool
+    gradient_norm: float
+    message: str
+
+
+def spatial_correlation(struct: str, dist: FloatArray, scale: float) -> FloatArray:
+    """The correlation of two points at distance ``dist`` (the equations of the table in the ``rma.mv`` help page, after Pinheiro and Bates 2000).
+
+    Exponential ``exp(-d/r)``, Gaussian ``exp(-d^2/r^2)``, linear ``(1 - d/r) I(d < r)``, rational quadratic ``1 - (d/r)^2 / (1 + (d/r)^2)``,
+    spherical ``(1 - 1.5 d/r + 0.5 (d/r)^3) I(d < r)``, with the range ``r``. Cressie (1993, section 2.3.1) gives the same shapes with the range
+    scaled by a constant for some of them (the Gaussian and exponential reach 95 per cent of the sill at a multiple of ``r``); the parametrisation here is
+    the software's convention, not a difference of the models.
+    """
+    ratio = dist / scale
+    if struct == 'SPEXP':
+        return numpy.asarray(numpy.exp(-ratio), dtype=numpy.float64)
+    if struct == 'SPGAU':
+        return numpy.asarray(numpy.exp(-(ratio**2)), dtype=numpy.float64)
+    if struct == 'SPLIN':
+        return numpy.asarray((1 - ratio) * (ratio < 1), dtype=numpy.float64)
+    if struct == 'SPRAT':
+        return numpy.asarray(1 - ratio**2 / (1 + ratio**2), dtype=numpy.float64)
+    if struct == 'SPSPH':
+        return numpy.asarray((1 - 1.5 * ratio + 0.5 * ratio**3) * (ratio < 1), dtype=numpy.float64)
+    raise ValueError(f'spatial_correlation: unknown structure {struct!r}')
+
+
+def struct_matrix(struct: str, inner: FloatArray, tau2: FloatArray, rho: FloatArray, dist: FloatArray | None = None) -> FloatArray:
+    """``G`` for one outer level, the covariance matrix of the effects at the ``len(inner)`` inner levels (Wolfinger 1993, table 1).
+
+    ``ID``: ``tau2 I``. ``DIAG``: ``diag(tau2_1, ...)``. ``CS``: ``tau2`` on the diagonal and ``rho tau2`` off it. ``HCS``: ``tau2_j`` on the
+    diagonal and ``rho sqrt(tau2_i tau2_j)`` off it. ``UN``: ``tau2_j`` on the diagonal and ``rho_il sqrt(tau2_i tau2_l)`` off it. The ``rho`` of
+    ``UN`` runs down the columns of the lower triangle (the order is the software's convention, not Wolfinger's). ``AR``: ``tau2 rho^|i - l|`` for
+    the ordinal positions ``i`` and ``l`` of the inner levels (the values of ``inner`` do not matter, as the ``rma.mv`` help page says), ``HAR``: the
+    same correlations with ``tau2_j`` on the diagonal (Wolfinger 1993). ``CAR``: ``tau2 rho^|t_i - t_l|`` for the time points ``t`` in ``inner``.
+    ``GEN`` and ``GDIAG``: the covariance matrix ``D`` of the random coefficients of the model of Laird and Ware (1982, equation 2.1), unstructured
+    (as ``UN``) or diagonal. With ``dist``, the spatial structures: ``tau2`` times the correlation of the distances (``spatial_correlation``).
+    """
+    n = len(inner)
+    if struct in SPATIAL_STRUCTS:
+        if dist is None:
+            raise ValueError(f'struct_matrix: {struct} needs distances')
+        return float(tau2[0]) * spatial_correlation(struct, dist, float(rho[0]))
+    if dist is not None:
+        raise ValueError(f'struct_matrix: {struct} takes no distances')
+    if struct == 'ID':
+        return float(tau2[0]) * numpy.eye(n)
+    if struct in ('DIAG', 'GDIAG'):
+        return numpy.diag(tau2)
+    if struct == 'CS':
+        return float(tau2[0]) * (float(rho[0]) * numpy.ones((n, n)) + (1.0 - float(rho[0])) * numpy.eye(n))
+    if struct in ('AR', 'CAR'):
+        gaps = numpy.abs(numpy.subtract.outer(inner, inner)) if struct == 'CAR' else numpy.abs(numpy.subtract.outer(numpy.arange(n), numpy.arange(n)))
+        return float(tau2[0]) * numpy.power(float(rho[0]), gaps)
+    scale = numpy.sqrt(tau2)
+    if struct == 'HAR':
+        corr = numpy.power(float(rho[0]), numpy.abs(numpy.subtract.outer(numpy.arange(n), numpy.arange(n))))
+    elif struct == 'HCS':
+        corr = float(rho[0]) * numpy.ones((n, n)) + (1.0 - float(rho[0])) * numpy.eye(n)
+    elif struct in UNSTRUCTURED:
+        corr = numpy.eye(n)
+        position = 0
+        for column in range(n):
+            for row in range(column + 1, n):
+                corr[row, column] = corr[column, row] = rho[position]
+                position += 1
+    else:
+        raise ValueError(f'struct_matrix: unknown or unsupported structure {struct!r}')
+    return scale[:, None] * corr * scale[None, :]
+
+
+def term_matrix(term: RandomTerm, variances: FloatArray, correlations: FloatArray) -> FloatArray:
+    """The ``k x k`` matrix a term adds to ``M``.
+
+    ``sigma2``: ``sigma2`` times ``1`` for two rows of an outer level (times the known correlation of their outer levels when ``R`` is given). The
+    factor structures: ``G[inner_i, inner_l]`` when rows ``i`` and ``l`` share an outer level, else 0. ``GEN`` and ``GDIAG``: ``Z G Z'`` of the random
+    coefficients ``Z`` (Laird and Ware 1982) within an outer level. The spatial structures: the correlation of the distance times ``tau2`` within one.
+    """
+    same = (term.outer[:, None] == term.outer[None, :]).astype(numpy.float64)
+    if term.struct == SIGMA2:
+        known = same if term.R is None else term.R[term.outer[:, None], term.outer[None, :]]
+        return numpy.asarray(float(variances[0]) * known, dtype=numpy.float64)
+    if term.struct in SPATIAL_STRUCTS:
+        return numpy.asarray(struct_matrix(term.struct, numpy.zeros(0), variances, correlations, term.dist) * same, dtype=numpy.float64)
+    if term.struct in COEFFICIENT_STRUCTS:
+        assert term.design is not None
+        d = struct_matrix(term.struct, numpy.arange(term.n_inner, dtype=numpy.float64), variances, correlations)
+        return numpy.asarray((term.design @ d @ term.design.T) * same, dtype=numpy.float64)
+    levels = numpy.arange(term.n_inner, dtype=numpy.float64) if term.levels is None else term.levels
+    g = struct_matrix(term.struct, levels, variances, correlations)
+    return numpy.asarray(g[term.inner[:, None], term.inner[None, :]] * same, dtype=numpy.float64)
+
+
+def rescale_r(R: FloatArray, rscale: str) -> FloatArray:
+    """A known matrix ``R`` rescaled as the ``Rscale`` text of the ``rma.mv`` help page says (the convention of that software).
+
+    ``none``: no scaling. ``cor``: ``cov2cor``, ``R_il / sqrt(R_ii R_ll)``. ``cor0``: ``cov2cor`` and then ``(R - min(R)) / (1 - min(R))``, which puts
+    a correlation of zero at the split at the root of the tree of the species analysed. ``cov0``: ``R - min(R)``, which roots a covariance matrix at
+    its lowest split.
+    """
+    if rscale not in ('cor', 'cor0', 'cov0', 'none'):
+        raise ValueError(f'rescale_r: unknown Rscale {rscale!r}')
+    if rscale == 'none':
+        return R
+    if rscale == 'cov0':
+        return R - float(R.min())
+    scale = numpy.sqrt(numpy.diag(R))
+    corr = R / scale[:, None] / scale[None, :]
+    if rscale == 'cor':
+        return numpy.asarray(corr, dtype=numpy.float64)
+    low = float(corr.min())
+    return numpy.asarray((corr - low) / (1 - low), dtype=numpy.float64)
+
+
+def gls(yi: FloatArray, M: FloatArray, X: FloatArray, W: FloatArray | None = None) -> tuple[FloatArray, FloatArray]:
+    """The generalised least squares ``b = (X' W X)^-1 X' W y`` with ``W = M^-1`` unless given, and its variance.
+
+    For ``W = M^-1`` the variance is ``(X' M^-1 X)^-1``; for another ``W`` it is the sandwich ``(X' W X)^-1 X' W M W X (X' W X)^-1``.
+    """
+    if W is None:
+        weight = numpy.linalg.inv(M)
+        bread = numpy.linalg.inv(X.T @ weight @ X)
+        return bread @ X.T @ weight @ yi, bread
+    bread = numpy.linalg.inv(X.T @ W @ X)
+    return bread @ X.T @ W @ yi, bread @ X.T @ W @ M @ W @ X @ bread
+
+
+def mv_loglik(yi: FloatArray, V: FloatArray, X: FloatArray, M_extra: FloatArray, method: str, W: FloatArray | None = None) -> float:
+    """The log-likelihood of ``y ~ N(X b, M)``, ``M = V + M_extra``, at the generalised least squares ``b`` (Harville 1977, section 3).
+
+    ``ML``: ``-(k log 2 pi + log|M| + r' M^-1 r) / 2`` with ``r = y - X b``. ``REML``: ``-((k - p) log 2 pi - log|X'X| + log|M| + log|X' M^-1 X| +
+    r' M^-1 r) / 2``, the restricted likelihood of the ``k - p`` error contrasts, which carries ``log|X'X|`` so that it does not depend on the choice
+    of contrasts (that constant is the software's convention). The fixed-effects methods are scored as ``ML`` with ``M = V``.
+    """
+    k, p = X.shape
+    M = V + M_extra
+    b, _ = gls(yi, M, X, W)
+    resid = yi - X @ b
+    sign, logdet = numpy.linalg.slogdet(M)
+    if sign <= 0:
+        return float('-inf')
+    quad = float(resid @ numpy.linalg.solve(M, resid))
+    if method == 'ML':
+        return float(-0.5 * (k * math.log(2 * math.pi) + logdet + quad))
+    if method == 'REML':
+        info = X.T @ numpy.linalg.solve(M, X)
+        return float(-0.5 * ((k - p) * math.log(2 * math.pi) - numpy.linalg.slogdet(X.T @ X)[1] + logdet + numpy.linalg.slogdet(info)[1] + quad))
+    raise ValueError(f'mv_loglik: method must be ML or REML, not {method!r}')
+
+
+def n_free(term: RandomTerm) -> int:
+    """The number of unconstrained parameters of a term in ``mv_fit`` (a ``UN`` or ``GEN`` matrix uses its Cholesky factor)."""
+    n = term.n_inner
+    return n * (n + 1) // 2 if term.struct in UNSTRUCTURED else term.n_variances() + term.n_correlations()
+
+
+def correlation_transform(struct: str, values: FloatArray) -> FloatArray:
+    """The correlation parameter from its unconstrained value: ``tanh`` in (-1, 1), the logistic function in (0, 1) for ``CAR``, ``exp`` for a range."""
+    if struct == 'CAR':
+        return numpy.asarray(scipy.special.expit(values), dtype=numpy.float64)
+    if struct in SPATIAL_STRUCTS:
+        return numpy.exp(values)
+    return numpy.tanh(values)
+
+
+def fixed_mask(terms: list[RandomTerm]) -> FloatArray:
+    """Whether each unconstrained parameter of ``mv_fit`` is estimated (1) or held at a fixed value (0)."""
+    parts: list[FloatArray] = []
+    for term in terms:
+        if term.struct in UNSTRUCTURED:
+            parts.append(numpy.ones(n_free(term)))
+            continue
+        variances = numpy.ones(term.n_variances()) if term.fixed_variances is None else numpy.isnan(term.fixed_variances).astype(numpy.float64)
+        correlations = numpy.ones(term.n_correlations()) if term.fixed_correlations is None else numpy.isnan(term.fixed_correlations).astype(numpy.float64)
+        parts.append(numpy.concatenate([variances, correlations[: term.n_correlations()]]))
+    return numpy.concatenate(parts) if parts else numpy.zeros(0)
+
+
+def unpack_terms(terms: list[RandomTerm], theta: FloatArray) -> tuple[list[FloatArray], list[FloatArray]]:
+    """The variances and correlations of each term from the unconstrained vector of ``mv_fit``.
+
+    A variance is ``exp`` of its entry, a correlation is ``correlation_transform`` of its entry, and a ``UN`` or ``GEN`` matrix is ``L L'`` for a lower
+    triangular ``L`` whose diagonal is ``exp`` of its entries (the Cholesky parametrisation, which keeps the matrix positive definite). A fixed value
+    replaces the entry's value.
+    """
+    variances: list[FloatArray] = []
+    correlations: list[FloatArray] = []
+    position = 0
+    for term in terms:
+        part = theta[position : position + n_free(term)]
+        position += n_free(term)
+        if term.struct in UNSTRUCTURED:
+            n = term.n_inner
+            low = numpy.zeros((n, n))
+            numpy.fill_diagonal(low, numpy.exp(part[:n]))
+            entries = iter(part[n:])
+            for column in range(n):
+                for row in range(column + 1, n):
+                    low[row, column] = next(entries)
+            cov = low @ low.T
+            scale = numpy.sqrt(numpy.diag(cov))
+            corr = cov / scale[:, None] / scale[None, :]
+            variances.append(numpy.diag(cov).copy())
+            correlations.append(numpy.array([corr[row, column] for column in range(n) for row in range(column + 1, n)]))
+            continue
+        var = numpy.exp(part[: term.n_variances()])
+        cor = correlation_transform(term.struct, part[term.n_variances() :])
+        if term.fixed_variances is not None:
+            var = numpy.where(numpy.isnan(term.fixed_variances), var, term.fixed_variances)
+        if term.fixed_correlations is not None:
+            cor = numpy.where(numpy.isnan(term.fixed_correlations[: len(cor)]), cor, term.fixed_correlations[: len(cor)])
+        variances.append(var)
+        correlations.append(cor)
+    return variances, correlations
+
+
+def mv_fit(yi: FloatArray, V: FloatArray, X: FloatArray, terms: list[RandomTerm], method: str, W: FloatArray | None = None) -> MVFit:
+    """Maximise ``mv_loglik`` over the components of ``terms`` with ``scipy.optimize.minimize`` (BFGS on log variances and atanh correlations).
+
+    It starts from variances of ``var(y) / (2 n_terms)`` and zero correlations (a range starts at 1), restarts BFGS from its own optimum until the
+    objective stops improving, polishes with Newton steps, and reports the norm of the central-difference gradient of the negative log-likelihood at
+    the optimum, over the parameters that are not fixed.
+    """
+    count = sum(n_free(term) for term in terms)
+    theta = numpy.zeros(count)
+    position = 0
+    start = math.log(float(numpy.var(yi)) / (2 * max(len(terms), 1)))
+    for term in terms:
+        theta[position : position + term.n_variances()] = start
+        position += n_free(term)
+    free = numpy.flatnonzero(fixed_mask(terms) > 0)
+
+    def extra_of(values: FloatArray) -> FloatArray:
+        variances, correlations = unpack_terms(terms, values)
+        extra = numpy.zeros_like(V)
+        for term, var, cor in zip(terms, variances, correlations, strict=True):
+            extra = extra + term_matrix(term, var, cor)
+        return extra
+
+    def embed(part: FloatArray) -> FloatArray:
+        full = theta.copy()
+        full[free] = part
+        return full
+
+    def negative(part: FloatArray) -> float:
+        value = mv_loglik(yi, V, X, extra_of(embed(part)), method, W)
+        return -value if math.isfinite(value) else 1e300
+
+    def gradient_of(part: FloatArray) -> FloatArray:
+        step = 1e-4
+        return numpy.array([(negative(part + step * unit) - negative(part - step * unit)) / (2 * step) for unit in numpy.eye(len(free))])
+
+    x = theta[free]
+    message = 'no random effects'
+    if len(free):
+        outcome = scipy.optimize.minimize(negative, x, method='BFGS', jac=gradient_of, options={'gtol': 1e-9, 'maxiter': 10000})
+        previous = math.inf
+        for _ in range(20):
+            if abs(previous - outcome.fun) < 1e-13:
+                break
+            previous = outcome.fun
+            outcome = scipy.optimize.minimize(negative, outcome.x, method='BFGS', jac=gradient_of, options={'gtol': 1e-9, 'maxiter': 10000})
+        x, message = outcome.x, str(outcome.message)
+        for _ in range(10):
+            gradient = gradient_of(x)
+            if numpy.linalg.norm(gradient) < 1e-9:
+                break
+            hessian = numpy.array([(gradient_of(x + 1e-3 * unit) - gradient_of(x - 1e-3 * unit)) / 2e-3 for unit in numpy.eye(len(free))])
+            candidate = x - numpy.linalg.solve((hessian + hessian.T) / 2, gradient)
+            if negative(candidate) > negative(x) + 1e-10:
+                break
+            x = candidate
+    norm = float(numpy.linalg.norm(gradient_of(x))) if len(free) else 0.0
+    optimum = embed(x)
+    variances, correlations = unpack_terms(terms, optimum)
+    extra = extra_of(optimum)
+    b, vb = gls(yi, V + extra, X, W)
+    return MVFit(tuple(variances), tuple(correlations), b, vb, mv_loglik(yi, V, X, extra, method, W), norm <= MV_GRADIENT_LIMIT, norm, message)
+
+
+# rma_mv: inference on the coefficients, QE and QM, containment degrees of freedom, and profile-likelihood intervals of the components.
+
+
+@dataclasses.dataclass(frozen=True)
+class MVTests:
+    """The tests of the coefficients of an ``rma_mv`` fit: standard errors, test statistics, p-values, interval bounds, ``QM`` with its p-value, and the
+    degrees of freedom of each coefficient (``nan`` for a z test)."""
+
+    se: FloatArray
+    zval: FloatArray
+    pval: FloatArray
+    ci_lb: FloatArray
+    ci_ub: FloatArray
+    QM: float
+    QMp: float
+    ddf: FloatArray
+
+
+def knapp_hartung_factor(yi: FloatArray, M: FloatArray, X: FloatArray, ad_hoc: bool) -> float:
+    """The Knapp-Hartung variance factor ``r' M^-1 r / (k - p)`` (Knapp and Hartung 2003, equation 2, generalised from ``M = diag(vi + tau2)`` to a full
+    marginal covariance matrix, as in the ``rma.mv`` help page), with ``r = y - X b`` at the generalised least squares ``b``. The ad hoc version
+    (``adhoc``) floors the factor at 1, so that the standard errors are never below the Wald ones."""
+    k, p = X.shape
+    b, _ = gls(yi, M, X)
+    resid = yi - X @ b
+    factor = float(resid @ numpy.linalg.solve(M, resid)) / (k - p)
+    return float(max(factor, 1.0) if ad_hoc else factor)
+
+
+def contain_ddf(X: FloatArray, groupings: list[IntArray]) -> FloatArray:
+    """Containment degrees of freedom (the SAS/STAT ``PROC MIXED`` option ``DDFM=CONTAIN``): a coefficient's column is contained in a random effect when
+    it is constant within each level of that effect's grouping; its degrees of freedom are the number of levels of the smallest such grouping minus
+    the number of coefficients, at least 1. A column contained in no grouping has ``k - p``.
+
+    ``groupings`` holds one level code per row for each grouping variable: the outer variable of each term and, for a structured term, the
+    inner-by-outer combination. Making the numbers of levels the degrees of freedom is the software's reading of SAS's rank condition.
+    """
+    k, p = X.shape
+    ddf = numpy.full(p, float(k - p))
+    for j in range(p):
+        for codes in groupings:
+            levels = numpy.unique(codes)
+            if all(numpy.unique(X[codes == level, j]).shape[0] == 1 for level in levels):
+                ddf[j] = min(ddf[j], len(levels) - p)
+        ddf[j] = max(ddf[j], 1.0)
+    return ddf
+
+
+def mv_tests(yi: FloatArray, M: FloatArray, X: FloatArray, test: str, ddf: FloatArray, btt: list[int], level: float = 95) -> MVTests:
+    """Wald (``z``), ``t``, Knapp-Hartung (``knha``) and ad hoc (``adhoc``) tests of the coefficients at the generalised least squares estimate.
+
+    ``z`` uses the normal distribution and ``QM`` against chi-square(m); the others scale the variance by the Knapp-Hartung factor (``t`` does not) and
+    use the t distribution with ``ddf`` degrees of freedom for each coefficient, and ``QM / m`` against F(m, min ``ddf`` over ``btt``).
+    """
+    b, vb = gls(yi, M, X)
+    if test in KNAPP_HARTUNG_TESTS:
+        vb = knapp_hartung_factor(yi, M, X, test == 'adhoc') * vb
+    se = numpy.sqrt(numpy.diag(vb))
+    zval = b / se
+    qm = float(b[btt] @ numpy.linalg.solve(vb[numpy.ix_(btt, btt)], b[btt]))
+    half = alpha_of(level) / 2
+    if test == 'z':
+        crit = numpy.full(len(b), float(scipy.stats.norm.ppf(1 - half)))
+        pval = 2 * scipy.stats.norm.sf(numpy.abs(zval))
+        return MVTests(se, zval, pval, b - crit * se, b + crit * se, qm, float(scipy.stats.chi2.sf(qm, len(btt))), numpy.full(len(b), math.nan))
+    crit = numpy.asarray(scipy.stats.t.ppf(1 - half, ddf), dtype=numpy.float64)
+    pval = numpy.asarray(2 * scipy.stats.t.sf(numpy.abs(zval), ddf), dtype=numpy.float64)
+    m = len(btt)
+    qm = qm / m
+    return MVTests(se, zval, pval, b - crit * se, b + crit * se, qm, float(scipy.stats.f.sf(qm, m, float(numpy.min(ddf[btt])))), ddf)
+
+
+def mv_qe(yi: FloatArray, V: FloatArray, X: FloatArray) -> tuple[float, float]:
+    """The test for residual heterogeneity: ``QE = r' V^-1 r`` with ``r`` the residuals of the generalised least squares fit with weights ``V^-1`` (no
+    random effects), and its p-value from chi-square(k - p) (Cochran 1954; Hedges and Olkin 1985, chapter 7)."""
+    k, p = X.shape
+    b, _ = gls(yi, V, X)
+    resid = yi - X @ b
+    q = float(resid @ numpy.linalg.solve(V, resid))
+    return q, float(scipy.stats.chi2.sf(q, k - p))
+
+
+def fix_component(terms: list[RandomTerm], index: int, kind: str, position: int, value: float) -> list[RandomTerm]:
+    """``terms`` with the variance (``kind`` ``variance``) or correlation (``correlation``) at ``position`` of term ``index`` held at ``value``."""
+    term = terms[index]
+    if kind == 'variance':
+        held = numpy.full(term.n_variances(), math.nan) if term.fixed_variances is None else term.fixed_variances.copy()
+        held[position] = value
+        return [*terms[:index], dataclasses.replace(term, fixed_variances=held), *terms[index + 1 :]]
+    held = numpy.full(term.n_correlations(), math.nan) if term.fixed_correlations is None else term.fixed_correlations.copy()
+    held[position] = value
+    return [*terms[:index], dataclasses.replace(term, fixed_correlations=held), *terms[index + 1 :]]
+
+
+def mv_profile_bounds(
+    yi: FloatArray,
+    V: FloatArray,
+    X: FloatArray,
+    terms: list[RandomTerm],
+    method: str,
+    index: int,
+    kind: str,
+    position: int,
+    level: float = 95,
+) -> FloatArray:
+    """Profile-likelihood interval of one variance or correlation component (Hardy and Thompson 1996): the values either side of the estimate at which
+    twice the drop of the log-likelihood, maximised over the other components, equals the ``level`` quantile of chi-square(1). The lower end of a
+    variance is 0 and that of a correlation -1 where the drop there is below the quantile; the upper end of a correlation is 1 likewise.
+    """
+    full = mv_fit(yi, V, X, terms, method)
+    estimate = float((full.variances if kind == 'variance' else full.correlations)[index][position])
+    crit = float(scipy.stats.chi2.ppf(level / 100, 1))
+
+    def excess(value: float) -> float:
+        held = fix_component(terms, index, kind, position, value)
+        return 2 * (full.loglik - mv_fit(yi, V, X, held, method).loglik) - crit
+
+    low_end, high_end = (0.0, math.inf) if kind == 'variance' else (-1 + 1e-9, 1 - 1e-9)
+    lower = low_end if excess(low_end) < 0 else float(scipy.optimize.brentq(excess, low_end, estimate, xtol=1e-13, rtol=1e-13))
+    if kind == 'variance':
+        high_end = max(1.0, 2 * estimate)
+        while excess(high_end) < 0:
+            high_end *= 2
+    upper = high_end if excess(high_end) < 0 else float(scipy.optimize.brentq(excess, estimate, high_end, xtol=1e-13, rtol=1e-13))
+    return numpy.array([lower, upper])
+
+
+def mv_prediction_interval(
+    yi: FloatArray, M: FloatArray, X: FloatArray, test: str, ddf: FloatArray, rows: FloatArray, component_variance: float, level: float = 95
+) -> tuple[FloatArray, FloatArray]:
+    """The prediction interval at the model-matrix ``rows`` of an ``rma_mv`` fit with ``sigma2`` components only (Riley, Higgins and Deeks 2011,
+    equation 4, generalised): ``x'b +- crit sqrt(x' vb x + sum of the sigma2)``, with ``crit`` from the normal distribution for ``z`` and from the t
+    distribution with the smallest ``ddf`` of the coefficients the row involves otherwise."""
+    b, vb = gls(yi, M, X)
+    if test in KNAPP_HARTUNG_TESTS:
+        vb = knapp_hartung_factor(yi, M, X, test == 'adhoc') * vb
+    spread = numpy.sqrt(numpy.einsum('ij,jk,ik->i', rows, vb, rows) + component_variance)
+    half = alpha_of(level) / 2
+    if test == 'z':
+        crit = numpy.full(len(rows), float(scipy.stats.norm.ppf(1 - half)))
+    else:
+        crit = numpy.asarray(scipy.stats.t.ppf(1 - half, numpy.array([numpy.min(ddf[row != 0]) for row in rows])), dtype=numpy.float64)
+    centre = rows @ b
+    return centre - crit * spread, centre + crit * spread
+
+
+# auditme: accept[non-alphabetical-literal] the documented option order, as in the code under test
+CR_TYPES = ('CR0', 'CR1', 'CR1p', 'CR1S', 'CR2', 'CR3')  # auditme: accept[literal-duplication] the same tuple as the code under test
+EDF_MIN_DF = 4.1
+
+
+def pseudo_inverse_root(a: FloatArray, power: float) -> FloatArray:
+    """``a ** power`` of a symmetric positive semi-definite matrix through its spectral decomposition, with the null space left at zero (the
+    Moore-Penrose form of Pustejovsky and Tipton 2018, equation 7)."""
+    values, vectors = numpy.linalg.eigh((a + a.T) / 2)
+    keep = values > 1e-12 * max(1.0, float(values.max()))
+    powered = numpy.zeros_like(values)
+    powered[keep] = values[keep] ** power
+    return numpy.asarray((vectors * powered) @ vectors.T, dtype=numpy.float64)
+
+
+def adjustment_matrices(X: FloatArray, W: FloatArray, theta: FloatArray, cluster: IntArray, vcov: str) -> list[FloatArray]:
+    """The adjustment matrix ``A_j`` of each cluster for the estimators of Pustejovsky and Tipton (2018, section 2), with ``X``, the weights ``W`` and the
+    working covariance ``theta`` (``Phi``) as full matrices, block-diagonal over the clusters.
+
+    ``CR0`` the identity (Liang and Zeger 1986); ``CR1`` ``sqrt(m / (m - 1))``; ``CR1S``
+    ``sqrt(m (N - 1) / ((m - 1) (N - p)))`` (Stata's factor, Cameron and Miller 2015, equation 12; the paper's ``c_S`` prints ``N`` for ``N - 1``);
+    ``CR1p`` ``sqrt(m / (m - p))`` (the ``clubSandwich`` documentation's variant that uses ``p`` in place of one); ``CR2`` ``D' B^(+1/2) D`` with ``D``
+    the upper Cholesky factor of ``Phi_j`` and ``B = D (I - H) Phi (I - H)' D'`` (equations 7 and 8); ``CR3`` ``(I - X_j M X_j' W_j)^-1``
+    (MacKinnon and White 1985, the jackknife form of the paper's section 2).
+    """
+    N, p = X.shape
+    m = int(cluster.max()) + 1
+    bread = numpy.linalg.inv(X.T @ W @ X)
+    ih = numpy.eye(N) - X @ bread @ X.T @ W
+    scale = {'CR0': 1.0, 'CR1': math.sqrt(m / (m - 1)), 'CR1p': math.sqrt(m / (m - p)), 'CR1S': math.sqrt(m * (N - 1) / ((m - 1) * (N - p)))}
+    out: list[FloatArray] = []
+    for j in range(m):
+        rows = numpy.flatnonzero(cluster == j)
+        if vcov in scale:
+            out.append(scale[vcov] * numpy.eye(len(rows)))
+        elif vcov == 'CR3':
+            out.append(numpy.linalg.inv(numpy.eye(len(rows)) - X[rows] @ bread @ X[rows].T @ W[numpy.ix_(rows, rows)]))
+        elif vcov == 'CR2':
+            D = numpy.linalg.cholesky(theta[numpy.ix_(rows, rows)]).T
+            B = D @ ih[rows] @ theta @ ih[rows].T @ D.T
+            out.append(D.T @ pseudo_inverse_root(B, -0.5) @ D)
+        else:
+            raise ValueError(f'unknown estimator {vcov!r}')
+    return out
+
+
+def cluster_robust_vcov(X: FloatArray, W: FloatArray, resid: FloatArray, cluster: IntArray, vcov: str, working: FloatArray | None = None) -> FloatArray:
+    """The cluster-robust variance ``(X'WX)^-1 [sum_j X_j' W_j A_j e_j e_j' A_j' W_j X_j] (X'WX)^-1`` of the weighted least squares ``b`` (Hedges, Tipton
+    and Johnson 2010, equation 6; Pustejovsky and Tipton 2018, equation 4 with adjustment matrices ``A_j``).
+
+    ``vcov`` is a factor of the meta-regression papers or one of the ``CR_TYPES``. The factors multiply the variance: ``CR0`` none; ``Hedges``
+    ``n / (n - p)`` (Hedges et al., the degrees-of-freedom correction after equation 6); ``Stata1`` ``n / (n - 1) * (k - 1) / (k - p)`` (Cameron and
+    Miller 2015, equation 12) and ``Stata2`` ``n / (n - 1)`` (the same section's ``G / (G - 1)``); both are Stata's convention, not the meta-analysis
+    papers'. The ``CR_TYPES`` use the adjustment matrices of :func:`adjustment_matrices`, which need ``working`` (the working covariance, the inverse of
+    ``W`` for an inverse-variance working model).
+
+    ``W`` is the full weight matrix, block-diagonal over the clusters, and ``W_j`` its block of cluster ``j``; ``n`` is the number of clusters, ``k`` the
+    number of rows and ``p`` the number of coefficients.
+    """
+    k, p = X.shape
+    n = int(cluster.max()) + 1
+    bread = numpy.linalg.inv(X.T @ W @ X)
+    meat = numpy.zeros((p, p))
+    covered = numpy.zeros(W.shape, dtype=bool)
+    if vcov in CR_TYPES and vcov != 'CR0':
+        if working is None:
+            raise ValueError('the CR estimators need the working covariance')
+        adjustments = adjustment_matrices(X, W, working, cluster, vcov)
+    else:
+        adjustments = [numpy.eye(int((cluster == j).sum())) for j in range(n)]
+    for j in range(n):
+        rows = numpy.flatnonzero(cluster == j)
+        covered[numpy.ix_(rows, rows)] = True
+        score = X[rows].T @ W[numpy.ix_(rows, rows)] @ adjustments[j] @ resid[rows]
+        meat += numpy.outer(score, score)
+    if numpy.any(W[~covered] != 0):
+        raise ValueError('the weight matrix is not block-diagonal over the clusters')
+    factors = {'CR0': 1.0, 'Hedges': n / (n - p), 'Stata1': n / (n - 1) * (k - 1) / (k - p), 'Stata2': n / (n - 1)}
+    return numpy.asarray(factors.get(vcov, 1.0) * bread @ meat @ bread, dtype=numpy.float64)
+
+
+def robust_tests(b: FloatArray, vb: FloatArray, n: int, btt: list[int], level: float = 95) -> MVTests:
+    """The tests of the coefficients ``b`` with the cluster-robust variance ``vb`` over ``n`` clusters: t with ``n - p`` degrees of freedom for each
+    coefficient (Hedges, Tipton and Johnson 2010, section 2) and ``QM / m`` against F(m, n - p) for the ``btt`` coefficients."""
+    p = len(b)
+    ddf = numpy.full(p, float(n - p))
+    se = numpy.sqrt(numpy.diag(vb))
+    zval = b / se
+    half = alpha_of(level) / 2
+    crit = float(scipy.stats.t.ppf(1 - half, n - p))
+    m = len(btt)
+    qm = float(b[btt] @ numpy.linalg.solve(vb[numpy.ix_(btt, btt)], b[btt])) / m
+    pval = numpy.asarray(2 * scipy.stats.t.sf(numpy.abs(zval), n - p), dtype=numpy.float64)
+    return MVTests(se, zval, pval, b - crit * se, b + crit * se, qm, float(scipy.stats.f.sf(qm, m, n - p)), ddf)
+
+
+def club_components(
+    X: FloatArray, W: FloatArray, theta: FloatArray, cluster: IntArray, vcov: str, C: FloatArray
+) -> tuple[list[FloatArray], FloatArray, FloatArray]:
+    """The matrices ``B_j = C M X_j' W_j A_j (I - X M X' W)_j`` (``q x N``, the rows of cluster ``j`` of the last factor; Tipton and Pustejovsky 2015,
+    equation 9, before the standardisation by ``Omega^(-1/2)``) with ``Omega = sum_j B_j Theta B_j'``, the expected value of ``C V^R C'`` under the working
+    model ``Theta`` (equation 7), and the whitening matrix ``Omega^(-1/2)``. Returns ``(B, Omega, Omega^(-1/2))``."""
+    N = X.shape[0]
+    M = numpy.linalg.inv(X.T @ W @ X)
+    ih = numpy.eye(N) - X @ M @ X.T @ W
+    adjustments = adjustment_matrices(X, W, theta, cluster, vcov)
+    B = []
+    for j, A in enumerate(adjustments):
+        rows = numpy.flatnonzero(cluster == j)
+        B.append(C @ M @ X[rows].T @ W[numpy.ix_(rows, rows)] @ A @ ih[rows])
+    omega = numpy.sum([b @ theta @ b.T for b in B], axis=0)
+    return B, omega, pseudo_inverse_root(omega, -0.5)
+
+
+def covariance_of_d(B: list[FloatArray], theta: FloatArray, whiten: FloatArray) -> FloatArray:
+    """``Cov(d_st, d_uv)`` as the array ``[s, t, u, v]`` for ``D = Omega^(-1/2) C V^R C' Omega^(-1/2)`` under normal errors with covariance ``theta``
+    (Tipton and Pustejovsky 2015, equation 8 with the unit vectors ``u1 = j_s``, ``u2 = j_t``, ``u3 = j_u``, ``u4 = j_v``)."""
+    scaled = [whiten @ b for b in B]
+    q = whiten.shape[0]
+    cov = numpy.zeros((q, q, q, q))
+    for bi in scaled:
+        for bj in scaled:
+            G = bi @ theta @ bj.T
+            cov += numpy.einsum('sv,tu->stuv', G, G) + numpy.einsum('su,tv->stuv', G, G)
+    return cov
+
+
+def satterthwaite_dfs(X: FloatArray, W: FloatArray, theta: FloatArray, cluster: IntArray, vcov: str) -> FloatArray:
+    """The Satterthwaite degrees of freedom of the t test of each coefficient, ``eta = 2 / Var(d_11)`` (Tipton and Pustejovsky 2015, after equation 14;
+    Pustejovsky and Tipton 2018, section 3), with ``Var(d_11)`` from equation 8 of the first paper at ``C`` the unit row of the coefficient."""
+    p = X.shape[1]
+    out = numpy.zeros(p)
+    for s in range(p):
+        C = numpy.eye(p)[[s]]
+        B, _, whiten = club_components(X, W, theta, cluster, vcov, C)
+        out[s] = 2 / covariance_of_d(B, theta, whiten)[0, 0, 0, 0]
+    return out
+
+
+@dataclasses.dataclass(frozen=True)
+class WaldTest:
+    """A cluster-robust Wald test: the statistic on the scale of ``QM`` (``F``), its degrees of freedom (the denominator ``inf`` for a chi-square) and
+    its p-value."""
+
+    QM: float
+    df_num: int
+    df_denom: float
+    pval: float
+
+
+def hotelling_eta(cov: FloatArray, test: str) -> float:
+    """The degrees of freedom ``eta`` of the approximating Hotelling's T-squared distribution (Tipton and Pustejovsky 2015): ``HTA`` equation 12,
+    ``HTB`` equation 13 and ``HTZ`` equation 14, from the covariances ``cov[s, t, u, v]`` of the entries of ``D``. The squares of the covariances in
+    equations 12 and 13 are the least-squares criterion the equations solve: ``eta`` minimises the squared differences of ``eta Cov`` from the
+    Wishart's ``I(s = u) I(t = v) + I(s = v) I(t = u)``."""
+    q = cov.shape[0]
+    var = numpy.array([[cov[s, t, s, t] for t in range(q)] for s in range(q)])
+    if test == 'HTZ':
+        return float(q * (q + 1) / var.sum())
+    if test == 'HTA':
+        return 2 * float(var.sum()) / float(numpy.sum(cov**2))
+    top = 0.0
+    bottom = 0.0
+    for s in range(q):
+        for t in range(s + 1):
+            top += var[s, t]
+            for u in range(s):
+                for v in range(u + 1):
+                    bottom += cov[s, t, u, v] ** 2
+            for v in range(t + 1):
+                bottom += cov[s, t, s, v] ** 2
+    return 2 * top / bottom
+
+
+def hill_transform(t: FloatArray, f: FloatArray) -> FloatArray:
+    """Hill's (1970) normalising transformation of a t variate with ``f`` degrees of freedom (Tipton and Pustejovsky 2015, equation 18 and after)."""
+    a = f - 0.5
+    b = 48 * a**2
+    c = numpy.sqrt(a * numpy.log(1 + t**2 / f))
+    return numpy.asarray(c + (c**3 + 3 * c) / b - (4 * c**7 + 33 * c**5 + 240 * c**3 + 855 * c) / (10 * b**2 + 8 * b * c**4 + 1000 * b))
+
+
+def hotelling_wald(
+    X: FloatArray, W: FloatArray, theta: FloatArray, cluster: IntArray, vcov: str, beta: FloatArray, vb: FloatArray, C: FloatArray, test: str
+) -> WaldTest:
+    """The cluster-robust Wald test of ``C beta = 0`` (Tipton and Pustejovsky 2015, equations 10 to 18; Pustejovsky and Tipton 2018, section 3).
+
+    ``vb`` is the robust variance of ``beta``. ``chi-sq`` compares ``Q`` to a chi-square with ``q`` degrees of freedom, ``Naive-F`` ``Q / q`` to
+    ``F(q, m - 1)`` and ``Naive-Fp`` to ``F(q, m - p)`` (the ``clubSandwich`` documentation; Hedges et al. 2010 use ``m - p``); ``HTA``, ``HTB`` and
+    ``HTZ`` compare ``(eta - q + 1) Q / (eta q)`` to ``F(q, eta - q + 1)`` (equation 10); ``EDF`` and ``EDT`` are the eigen-decomposition tests of
+    equations 15 to 18. ``QM`` is ``Q / q`` for the chi-square and naive tests, as metafor reports it, and the scaled statistic of the test otherwise.
+    """
+    q = C.shape[0]
+    m = int(cluster.max()) + 1
+    p = X.shape[1]
+    cb = C @ beta
+    cvc = C @ vb @ C.T
+    Q = float(cb @ numpy.linalg.solve(cvc, cb))
+    if test == 'chi-sq':
+        return WaldTest(Q / q, q, math.inf, float(scipy.stats.chi2.sf(Q, q)))
+    if test in ('Naive-F', 'Naive-Fp'):
+        df = m - 1 if test == 'Naive-F' else m - p
+        return WaldTest(Q / q, q, float(df), float(scipy.stats.f.sf(Q / q, q, df)))
+    B, _, whiten = club_components(X, W, theta, cluster, vcov, C)
+    cov = covariance_of_d(B, theta, whiten)
+    if test in ('HTA', 'HTB', 'HTZ'):
+        eta = hotelling_eta(cov, test)
+        df = eta - q + 1
+        stat = df * Q / (eta * q)
+        return WaldTest(stat, q, df, float(scipy.stats.f.sf(stat, q, df)))
+    lam, vectors = numpy.linalg.eigh(whiten @ cvc @ whiten)
+    scaled = [whiten @ b for b in B]
+    f = numpy.zeros(q)
+    for s in range(q):
+        ps = vectors[:, s]
+        f[s] = 1 / sum(float(ps @ bi @ theta @ bj.T @ ps) ** 2 for bi in scaled for bj in scaled)
+    if test == 'EDF':
+        g = numpy.maximum(f, EDF_MIN_DF)
+        EQ = float(numpy.sum(g / (g - 2)))
+        VQ = float(2 * numpy.sum(g**2 * (g - 1) / ((g - 2) ** 2 * (g - 4))))
+        if q * VQ <= 2 * EQ**2:
+            raise ValueError('equation 17 has no solution: q VQ <= 2 EQ^2')
+        delta = (EQ**2 * (q - 2) + 2 * q * VQ) / (EQ * (VQ + EQ**2))  # the printed q in the denominator breaks E[delta Q / q] = nu / (nu - 2)
+        df = 4 + 2 * EQ**2 * (q + 2) / (q * VQ - 2 * EQ**2)
+        stat = delta * Q / q
+        return WaldTest(stat, q, df, float(scipy.stats.f.sf(stat, q, df)))
+    if test == 'EDT':
+        t = (vectors.T @ whiten @ cb) / numpy.sqrt(lam)
+        total = float(numpy.sum(hill_transform(t, f) ** 2))
+        return WaldTest(total / q, q, math.inf, float(scipy.stats.chi2.sf(total, q)))
+    raise ValueError(f'unknown Wald test {test!r}')
+
+
+def saddlepoint_pvalue(X: FloatArray, W: FloatArray, theta: FloatArray, cluster: IntArray, vcov: str, beta: FloatArray, vb: FloatArray) -> FloatArray:
+    """The saddlepoint p-value of the t test of each coefficient (Kuonen 1999; the application of section 5, equation 4, to ``T = c'b / sqrt(V^R)``).
+
+    Under the working model ``e ~ N(0, Theta)`` and ``c'(b - beta) = a'e`` with ``a = W X M c``, and ``V^R = e'Q e`` with ``Q = sum_j b_j' b_j`` for
+    the rows ``b_j`` of ``C M X_j' W_j A_j (I - H)_j``. The two-sided p-value of the observed ``t`` is ``pr(e'U e > 0)`` with ``U = a a' - t^2 Q``
+    (equation 4 of Kuonen with ``T^2`` for ``T``), approximated by the Lugannani-Rice form Kuonen names after equation 3: ``1 - Phi(w) + phi(w) (1 / v
+    - 1 / w)``, ``w = sign(s) sqrt(-2 K(s))``, ``v = s sqrt(K''(s))`` and ``K'(s) = 0``, for the central form ``K(s) = -1/2 sum log(1 - 2 l s)`` over
+    the eigenvalues ``l`` of ``Theta^(1/2) U Theta^(1/2)`` (section 2). The form is Lugannani-Rice, the one clubSandwich uses, not equation 3 itself;
+    the paper calls them "usually indistinguishable in practice".
+    """
+    p = X.shape[1]
+    M = numpy.linalg.inv(X.T @ W @ X)
+    root = numpy.linalg.cholesky(theta)
+    out = numpy.zeros(p)
+    for s in range(p):
+        C = numpy.eye(p)[[s]]
+        B, _, _ = club_components(X, W, theta, cluster, vcov, C)
+        Q = sum(b.T @ b for b in B)
+        a = W @ X @ M @ C.T
+        t2 = float(beta[s] ** 2 / vb[s, s])
+        lam = numpy.linalg.eigvalsh(root.T @ (a @ a.T - t2 * Q) @ root)
+        lam = lam[numpy.abs(lam) > 1e-12 * numpy.abs(lam).max()]
+
+        def slope(z: float, lam: FloatArray = lam) -> float:
+            return float(numpy.sum(lam / (1 - 2 * lam * z)))
+
+        lo, hi = 1 / (2 * float(lam.min())), 1 / (2 * float(lam.max()))
+        gap = 1e-9 * (hi - lo)
+        z = float(scipy.optimize.brentq(slope, lo + gap, hi - gap, xtol=1e-14, rtol=1e-14))
+        w = math.copysign(math.sqrt(float(numpy.sum(numpy.log(1 - 2 * lam * z)))), z)
+        v = z * math.sqrt(2 * float(numpy.sum(lam**2 / (1 - 2 * lam * z) ** 2)))
+        out[s] = float(scipy.stats.norm.sf(w) + scipy.stats.norm.pdf(w) * (1 / v - 1 / w))
+    return out

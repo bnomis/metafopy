@@ -38,7 +38,7 @@ import metafopy.models.mv_structs
 import metafopy.models.rma_uni
 import metafopy.models.sel_opt
 
-__all__ = ['MVControl', 'rma_mv']
+__all__ = ['DFS', 'METHODS', 'RSCALES', 'TESTS', 'MVControl', 'rma_mv']
 
 # auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
 CVVC_OPTIONS = ('varcor', 'varcov', 'transf')
@@ -51,6 +51,10 @@ type Mat = FloatArray | scipy.sparse.csc_array
 
 EPS = float(numpy.finfo(float).eps)
 FIXED_METHODS = ('CE', 'EE', 'FE')
+METHODS = (*FIXED_METHODS, 'ML', 'REML')
+# auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
+TESTS = ('z', 't', 'knha', 'adhoc')  # auditme: accept[literal-duplication] option lists repeat as metafor repeats them
+DFS = ('residual', 'contain')  # auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
 RSCALES = ('cor', 'cor0', 'cov0', 'none')
 # auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
 INIT_NAMES = ('sigma2_init', 'tau2_init', 'rho_init', 'gamma2_init', 'phi_init')
@@ -673,7 +677,7 @@ def rma_mv(
         'control': control,
         'na_action': na_action,
     }
-    if method not in (*FIXED_METHODS, 'ML', 'REML'):
+    if method not in METHODS:
         raise metafopy.errors.InputError("Unknown 'method' specified.")
     con = make_control(control)
     vlevel = int(verbose)
@@ -703,10 +707,9 @@ def rma_mv(
     test_l = test.lower()
     if test_l == 'hksj':
         test_l = 'knha'
-    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
-    if test_l not in ('z', 't', 'knha', 'adhoc'):
+    if test_l not in TESTS:
         raise metafopy.errors.InputError("Unknown option specified for the 'test' argument.")
-    if isinstance(dfs, str) and dfs not in ('residual', 'contain'):
+    if isinstance(dfs, str) and dfs not in DFS:
         raise metafopy.errors.InputError("Argument 'dfs' must be 'residual', 'contain' or numeric.")
     dfs_numeric = not isinstance(dfs, str)
     if test_l == 'z' and (dfs_numeric or dfs == 'contain'):

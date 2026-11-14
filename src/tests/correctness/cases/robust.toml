@@ -1,0 +1,403 @@
+# Correctness cases for robust; see agents/specs/correctness-mv-robust/spec.md
+#
+# `derived` cases: the `robust_sandwich` check (test_derived.py) rebuilds y, X and the weights from the case and compares the `robust` result reached
+# through `then` (variance, standard errors, t statistics, intervals, omnibus test and degrees of freedom) with `formulas.cluster_robust_vcov` and
+# `formulas.robust_tests`, coded from Sidik and Jonkman (2005) and Hedges, Tipton and Johnson (2010).
+#
+# The `Stata1` and `Stata2` adjustments are Stata's conventions, not those of the papers (Cameron and Miller 2015, section VI.B; Stata's `vce(cluster)`
+# small-sample factors); their cases say so in `source`.
+
+[[case]]
+id = "robust.uni.default.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "REML", mods = "~ ablat" }
+check = "test_derived.robust_sandwich"
+covers = ["robust.rma_uni", "robust.adjust.True"]
+then = { function = "robust", args = { cluster = "trial" } }
+
+[case.source]
+citation = "Sidik K, Jonkman JN (2005). A note on variance estimation in random effects meta-regression. Journal of Biopharmaceutical Statistics 15:823-838; Hedges LV, Tipton E, Johnson MC (2010). Robust variance estimation in meta-regression with dependent effect size estimates. Research Synthesis Methods 1:39-65"
+locator = "Hedges et al.: equation 6 and the m / (m - p) correction after it; equation 8 for the t test"
+read = 2026-11-14
+doi = "10.1002/jrsm.5"
+
+[[case]]
+id = "robust.mv.default.tannersmith"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.tannersmith2016"
+setup = { vconst = { cluster = "studyid", vi = "vi", rho = 0.6 } }
+args = { yi = "yi", random = "~ 1 | studyid", mods = "~ propmale", method = "REML" }
+check = "test_derived.robust_sandwich"
+covers = ["robust.rma_mv", "robust.adjust.True"]
+then = { function = "robust", args = { cluster = "studyid" } }
+
+[case.source]
+citation = "Hedges LV, Tipton E, Johnson MC (2010). Robust variance estimation in meta-regression with dependent effect size estimates. Research Synthesis Methods 1:39-65"
+locator = "equation 6, the m / (m - p) correction after it, and equation 8"
+read = 2026-11-14
+doi = "10.1002/jrsm.5"
+
+[[case]]
+id = "robust.adjust.false.tannersmith"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.tannersmith2016"
+setup = { vconst = { cluster = "studyid", vi = "vi", rho = 0.6 } }
+args = { yi = "yi", random = "~ 1 | studyid", mods = "~ propmale", method = "REML" }
+check = "test_derived.robust_sandwich"
+covers = ["robust.adjust.False"]
+then = { function = "robust", args = { cluster = "studyid", adjust = false } }
+
+[case.source]
+citation = "Hedges LV, Tipton E, Johnson MC (2010). Robust variance estimation in meta-regression with dependent effect size estimates. Research Synthesis Methods 1:39-65"
+locator = "equation 6 (no small-sample factor)"
+read = 2026-11-14
+doi = "10.1002/jrsm.5"
+
+[[case]]
+id = "robust.adjust.stata1.tannersmith"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.tannersmith2016"
+setup = { vconst = { cluster = "studyid", vi = "vi", rho = 0.6 } }
+args = { yi = "yi", random = "~ 1 | studyid", mods = "~ propmale", method = "REML" }
+check = "test_derived.robust_sandwich"
+covers = ["robust.adjust.Stata1"]
+then = { function = "robust", args = { cluster = "studyid", adjust = "Stata1" } }
+
+[case.source]
+citation = "Cameron AC, Miller DL (2015). A practitioner's guide to cluster-robust inference. Journal of Human Resources 50:317-372. The factor n/(n-1) * (k-1)/(k-p) is Stata's convention (Stata Reference Manual, Methods and formulas of regress with vce(cluster)), not the papers'"
+locator = "section VI.B, equation 12 and the factor G / (G - 1)"
+read = 2026-11-14
+doi = "10.3368/jhr.50.2.317"
+
+[[case]]
+id = "robust.adjust.stata2.tannersmith"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.tannersmith2016"
+setup = { vconst = { cluster = "studyid", vi = "vi", rho = 0.6 } }
+args = { yi = "yi", random = "~ 1 | studyid", mods = "~ propmale", method = "REML" }
+check = "test_derived.robust_sandwich"
+covers = ["robust.adjust.Stata2"]
+then = { function = "robust", args = { cluster = "studyid", adjust = "Stata2" } }
+
+[case.source]
+citation = "Cameron AC, Miller DL (2015). A practitioner's guide to cluster-robust inference. Journal of Human Resources 50:317-372. The factor n/(n-1) is Stata's convention (Stata Reference Manual, Methods and formulas of xtreg and regress with vce(cluster)), not the papers'"
+locator = "section VI.B, equation 12 and the factor G / (G - 1)"
+read = 2026-11-14
+doi = "10.3368/jhr.50.2.317"
+
+# club_sandwich cases: the `robust_club` check (test_derived.py) rebuilds the working model of the fit (Theta its marginal covariance, W its inverse)
+# and compares the `robust(club_sandwich=True)` result with `formulas.cluster_robust_vcov`, `satterthwaite_dfs`, `saddlepoint_pvalue` and
+# `hotelling_wald`, coded from Tipton and Pustejovsky (2015), Pustejovsky and Tipton (2018) and Kuonen (1999); never from `metafopy.core.clubsandwich`.
+
+[[case]]
+id = "robust.club.vcov.CR0"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.tannersmith2016"
+setup = { vconst = { cluster = "studyid", vi = "vi", rho = 0.6 } }
+args = { yi = "yi", random = "~ 1 | studyid", mods = "~ aget1 + aget2", method = "REML" }
+check = "test_derived.robust_club"
+covers = ["robust.vcov.CR0"]
+then = { function = "robust", args = { cluster = "studyid", club_sandwich = true, vcov = "CR0" } }
+
+[case.source]
+citation = "Pustejovsky JE, Tipton E (2018). Small-sample methods for cluster-robust variance estimation and hypothesis testing in fixed effects models. Journal of Business and Economic Statistics 36:672-683"
+locator = "section 2, equation 4 with A_j = I (Liang and Zeger 1986)"
+read = 2026-11-14
+doi = "10.1080/07350015.2016.1247004"
+
+[[case]]
+id = "robust.club.vcov.CR1"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.tannersmith2016"
+setup = { vconst = { cluster = "studyid", vi = "vi", rho = 0.6 } }
+args = { yi = "yi", random = "~ 1 | studyid", mods = "~ aget1 + aget2", method = "REML" }
+check = "test_derived.robust_club"
+covers = ["robust.vcov.CR1"]
+then = { function = "robust", args = { cluster = "studyid", club_sandwich = true, vcov = "CR1" } }
+
+[case.source]
+citation = "Pustejovsky JE, Tipton E (2018). Small-sample methods for cluster-robust variance estimation and hypothesis testing in fixed effects models. Journal of Business and Economic Statistics 36:672-683"
+locator = "section 2, A_j = sqrt(m / (m - 1)) I"
+read = 2026-11-14
+doi = "10.1080/07350015.2016.1247004"
+
+[[case]]
+id = "robust.club.vcov.CR1p"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.tannersmith2016"
+setup = { vconst = { cluster = "studyid", vi = "vi", rho = 0.6 } }
+args = { yi = "yi", random = "~ 1 | studyid", mods = "~ aget1 + aget2", method = "REML" }
+check = "test_derived.robust_club"
+covers = ["robust.vcov.CR1p"]
+then = { function = "robust", args = { cluster = "studyid", club_sandwich = true, vcov = "CR1p" } }
+
+[case.source]
+citation = "Pustejovsky JE, Tipton E (2018). Small-sample methods for cluster-robust variance estimation and hypothesis testing in fixed effects models. Journal of Business and Economic Statistics 36:672-683; the clubSandwich documentation for CR1p (A_j = sqrt(m / (m - p)) I)"
+locator = "section 2, the CR1 form with p in place of one"
+read = 2026-11-14
+doi = "10.1080/07350015.2016.1247004"
+
+[[case]]
+id = "robust.club.vcov.CR1S"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.tannersmith2016"
+setup = { vconst = { cluster = "studyid", vi = "vi", rho = 0.6 } }
+args = { yi = "yi", random = "~ 1 | studyid", mods = "~ aget1 + aget2", method = "REML" }
+check = "test_derived.robust_club"
+covers = ["robust.vcov.CR1S"]
+then = { function = "robust", args = { cluster = "studyid", club_sandwich = true, vcov = "CR1S" } }
+
+[case.source]
+citation = "Pustejovsky JE, Tipton E (2018). Small-sample methods for cluster-robust variance estimation and hypothesis testing in fixed effects models. Journal of Business and Economic Statistics 36:672-683; Cameron AC, Miller DL (2015). A practitioner's guide to cluster-robust inference. Journal of Human Resources 50:317-372"
+locator = "section 2, c_S, with N - 1 for the printed N as in Cameron and Miller (2015) equation 12 (Stata's factor, which the paper says it describes)"
+read = 2026-11-14
+doi = "10.1080/07350015.2016.1247004"
+
+[[case]]
+id = "robust.club.vcov.CR2"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.tannersmith2016"
+setup = { vconst = { cluster = "studyid", vi = "vi", rho = 0.6 } }
+args = { yi = "yi", random = "~ 1 | studyid", mods = "~ aget1 + aget2", method = "REML" }
+check = "test_derived.robust_club"
+covers = ["robust.vcov.CR2", "robust.coef_test.Satterthwaite", "robust.conf_test.Satterthwaite", "robust.wald_test.HTZ"]
+then = { function = "robust", args = { cluster = "studyid", club_sandwich = true, vcov = "CR2" } }
+
+[case.source]
+citation = "Pustejovsky JE, Tipton E (2018). Small-sample methods for cluster-robust variance estimation and hypothesis testing in fixed effects models. Journal of Business and Economic Statistics 36:672-683; Tipton E, Pustejovsky JE (2015). Small-sample adjustments for tests of moderators and model fit using robust variance estimation in meta-regression. Journal of Educational and Behavioral Statistics 40:604-634"
+locator = "PT18 equations 6 to 8 (CR2); TP15 equations 8 to 14 (Satterthwaite degrees of freedom, AHZ test)"
+read = 2026-11-14
+doi = "10.1080/07350015.2016.1247004"
+
+[[case]]
+id = "robust.club.vcov.CR3"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.tannersmith2016"
+setup = { vconst = { cluster = "studyid", vi = "vi", rho = 0.6 } }
+args = { yi = "yi", random = "~ 1 | studyid", mods = "~ aget1 + aget2", method = "REML" }
+check = "test_derived.robust_club"
+covers = ["robust.vcov.CR3"]
+then = { function = "robust", args = { cluster = "studyid", club_sandwich = true, vcov = "CR3" } }
+
+[case.source]
+citation = "MacKinnon JG, White H (1985). Some heteroskedasticity-consistent covariance matrix estimators with improved finite sample properties. Journal of Econometrics 29:305-325; Pustejovsky JE, Tipton E (2018). Small-sample methods for cluster-robust variance estimation and hypothesis testing in fixed effects models. Journal of Business and Economic Statistics 36:672-683"
+locator = "MacKinnon and White: the jackknife form (HC3); PT18 section 2, A_j = (I - X_j M X_j' W_j)^-1"
+read = 2026-11-14
+doi = "10.1016/0304-4076(85)90158-7"
+
+[[case]]
+id = "robust.club.coef_test.z"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.tannersmith2016"
+setup = { vconst = { cluster = "studyid", vi = "vi", rho = 0.6 } }
+args = { yi = "yi", random = "~ 1 | studyid", mods = "~ aget1 + aget2", method = "REML" }
+check = "test_derived.robust_club"
+covers = ["robust.coef_test.z", "robust.conf_test.z"]
+then = { function = "robust", args = { cluster = "studyid", club_sandwich = true, coef_test = "z" } }
+
+[case.source]
+citation = "Pustejovsky JE, Tipton E (2018). Small-sample methods for cluster-robust variance estimation and hypothesis testing in fixed effects models. Journal of Business and Economic Statistics 36:672-683"
+locator = "section 3, the z, m - 1 and m - p reference distributions"
+read = 2026-11-14
+doi = "10.1080/07350015.2016.1247004"
+
+[[case]]
+id = "robust.club.coef_test.naive-t"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.tannersmith2016"
+setup = { vconst = { cluster = "studyid", vi = "vi", rho = 0.6 } }
+args = { yi = "yi", random = "~ 1 | studyid", mods = "~ aget1 + aget2", method = "REML" }
+check = "test_derived.robust_club"
+covers = ["robust.coef_test.naive-t", "robust.conf_test.naive-t"]
+then = { function = "robust", args = { cluster = "studyid", club_sandwich = true, coef_test = "naive-t" } }
+
+[case.source]
+citation = "Pustejovsky JE, Tipton E (2018). Small-sample methods for cluster-robust variance estimation and hypothesis testing in fixed effects models. Journal of Business and Economic Statistics 36:672-683"
+locator = "section 3, the z, m - 1 and m - p reference distributions"
+read = 2026-11-14
+doi = "10.1080/07350015.2016.1247004"
+
+[[case]]
+id = "robust.club.coef_test.naive-tp"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.tannersmith2016"
+setup = { vconst = { cluster = "studyid", vi = "vi", rho = 0.6 } }
+args = { yi = "yi", random = "~ 1 | studyid", mods = "~ aget1 + aget2", method = "REML" }
+check = "test_derived.robust_club"
+covers = ["robust.coef_test.naive-tp", "robust.conf_test.naive-tp"]
+then = { function = "robust", args = { cluster = "studyid", club_sandwich = true, coef_test = "naive-tp" } }
+
+[case.source]
+citation = "Pustejovsky JE, Tipton E (2018). Small-sample methods for cluster-robust variance estimation and hypothesis testing in fixed effects models. Journal of Business and Economic Statistics 36:672-683"
+locator = "section 3, the z, m - 1 and m - p reference distributions"
+read = 2026-11-14
+doi = "10.1080/07350015.2016.1247004"
+
+[[case]]
+id = "robust.club.coef_test.saddlepoint"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.tannersmith2016"
+setup = { vconst = { cluster = "studyid", vi = "vi", rho = 0.6 } }
+args = { yi = "yi", random = "~ 1 | studyid", mods = "~ aget1 + aget2", method = "REML" }
+check = "test_derived.robust_club"
+tolerance = 3e-4  # metafopy finds the saddlepoint root to the tolerance of R's uniroot, so the p-values agree to about 1e-4
+covers = ["robust.coef_test.saddlepoint"]
+then = { function = "robust", args = { cluster = "studyid", club_sandwich = true, coef_test = "saddlepoint" } }
+
+[case.source]
+citation = "Kuonen D (1999). Saddlepoint approximations for distributions of quadratic forms in normal variables. Biometrika 86:929-935; Pustejovsky JE, Tipton E (2018). Small-sample methods for cluster-robust variance estimation and hypothesis testing in fixed effects models. Journal of Business and Economic Statistics 36:672-683"
+locator = "Kuonen equations 2 to 4 and the Lugannani-Rice form named after equation 3 (the p-value of a ratio of quadratic forms); PT18 section 1 for its use with the CR estimators"
+read = 2026-11-14
+doi = "10.1093/biomet/86.4.929"
+
+[[case]]
+id = "robust.club.wald_test.chi-sq"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.tannersmith2016"
+setup = { vconst = { cluster = "studyid", vi = "vi", rho = 0.6 } }
+args = { yi = "yi", random = "~ 1 | studyid", mods = "~ aget1 + aget2", method = "REML" }
+check = "test_derived.robust_club"
+covers = ["robust.wald_test.chi-sq"]
+then = { function = "robust", args = { cluster = "studyid", club_sandwich = true, wald_test = "chi-sq" } }
+
+[case.source]
+citation = "Tipton E, Pustejovsky JE (2015). Small-sample adjustments for tests of moderators and model fit using robust variance estimation in meta-regression. Journal of Educational and Behavioral Statistics 40:604-634"
+locator = "equation 5 (Q against a chi-square with q degrees of freedom)"
+read = 2026-11-14
+doi = "10.3102/1076998615606099"
+
+[[case]]
+id = "robust.club.wald_test.Naive-F"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.tannersmith2016"
+setup = { vconst = { cluster = "studyid", vi = "vi", rho = 0.6 } }
+args = { yi = "yi", random = "~ 1 | studyid", mods = "~ aget1 + aget2", method = "REML" }
+check = "test_derived.robust_club"
+covers = ["robust.wald_test.Naive-F"]
+then = { function = "robust", args = { cluster = "studyid", club_sandwich = true, wald_test = "Naive-F" } }
+
+[case.source]
+citation = "Tipton E, Pustejovsky JE (2015). Small-sample adjustments for tests of moderators and model fit using robust variance estimation in meta-regression. Journal of Educational and Behavioral Statistics 40:604-634; clubSandwich documentation for the F reference distribution"
+locator = "the naive F test (Q / q against an F distribution with q and m - 1 or m - p degrees of freedom)"
+read = 2026-11-14
+doi = "10.3102/1076998615606099"
+
+[[case]]
+id = "robust.club.wald_test.Naive-Fp"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.tannersmith2016"
+setup = { vconst = { cluster = "studyid", vi = "vi", rho = 0.6 } }
+args = { yi = "yi", random = "~ 1 | studyid", mods = "~ aget1 + aget2", method = "REML" }
+check = "test_derived.robust_club"
+covers = ["robust.wald_test.Naive-Fp"]
+then = { function = "robust", args = { cluster = "studyid", club_sandwich = true, wald_test = "Naive-Fp" } }
+
+[case.source]
+citation = "Tipton E, Pustejovsky JE (2015). Small-sample adjustments for tests of moderators and model fit using robust variance estimation in meta-regression. Journal of Educational and Behavioral Statistics 40:604-634; clubSandwich documentation for the F reference distribution"
+locator = "the naive F test (Q / q against an F distribution with q and m - 1 or m - p degrees of freedom)"
+read = 2026-11-14
+doi = "10.3102/1076998615606099"
+
+[[case]]
+id = "robust.club.wald_test.HTA"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.tannersmith2016"
+setup = { vconst = { cluster = "studyid", vi = "vi", rho = 0.6 } }
+args = { yi = "yi", random = "~ 1 | studyid", mods = "~ aget1 + aget2", method = "REML" }
+check = "test_derived.robust_club"
+covers = ["robust.wald_test.HTA"]
+then = { function = "robust", args = { cluster = "studyid", club_sandwich = true, wald_test = "HTA" } }
+
+[case.source]
+citation = "Tipton E, Pustejovsky JE (2015). Small-sample adjustments for tests of moderators and model fit using robust variance estimation in meta-regression. Journal of Educational and Behavioral Statistics 40:604-634"
+locator = "equations 10 and 12"
+read = 2026-11-14
+doi = "10.3102/1076998615606099"
+
+[[case]]
+id = "robust.club.wald_test.HTB"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.tannersmith2016"
+setup = { vconst = { cluster = "studyid", vi = "vi", rho = 0.6 } }
+args = { yi = "yi", random = "~ 1 | studyid", mods = "~ aget1 + aget2", method = "REML" }
+check = "test_derived.robust_club"
+covers = ["robust.wald_test.HTB"]
+then = { function = "robust", args = { cluster = "studyid", club_sandwich = true, wald_test = "HTB" } }
+
+[case.source]
+citation = "Tipton E, Pustejovsky JE (2015). Small-sample adjustments for tests of moderators and model fit using robust variance estimation in meta-regression. Journal of Educational and Behavioral Statistics 40:604-634"
+locator = "equations 10 and 13"
+read = 2026-11-14
+doi = "10.3102/1076998615606099"
+
+[[case]]
+id = "robust.club.wald_test.EDF"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.tannersmith2016"
+setup = { vconst = { cluster = "studyid", vi = "vi", rho = 0.6 } }
+args = { yi = "yi", random = "~ 1 | studyid", mods = "~ aget1 + aget2", method = "REML" }
+check = "test_derived.robust_club"
+covers = ["robust.wald_test.EDF"]
+then = { function = "robust", args = { cluster = "studyid", club_sandwich = true, wald_test = "EDF" } }
+
+[case.source]
+citation = "Tipton E, Pustejovsky JE (2015). Small-sample adjustments for tests of moderators and model fit using robust variance estimation in meta-regression. Journal of Educational and Behavioral Statistics 40:604-634"
+locator = "equations 15 to 17 (the printed denominator of delta carries an extra q that contradicts the moment match; see formulas.hotelling_wald)"
+read = 2026-11-14
+doi = "10.3102/1076998615606099"
+
+[[case]]
+id = "robust.club.wald_test.EDT"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.tannersmith2016"
+setup = { vconst = { cluster = "studyid", vi = "vi", rho = 0.6 } }
+args = { yi = "yi", random = "~ 1 | studyid", mods = "~ aget1 + aget2", method = "REML" }
+check = "test_derived.robust_club"
+covers = ["robust.wald_test.EDT"]
+then = { function = "robust", args = { cluster = "studyid", club_sandwich = true, wald_test = "EDT" } }
+
+[case.source]
+citation = "Tipton E, Pustejovsky JE (2015). Small-sample adjustments for tests of moderators and model fit using robust variance estimation in meta-regression. Journal of Educational and Behavioral Statistics 40:604-634"
+locator = "equations 15 and 18 with Hill's (1970) transformation"
+read = 2026-11-14
+doi = "10.3102/1076998615606099"
+
+[[case]]
+id = "robust.club.rma_uni.CR2"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.tannersmith2016"
+args = { yi = "yi", vi = "vi", mods = "~ aget1 + aget2", method = "REML" }
+check = "test_derived.robust_club"
+covers = ["robust.vcov.CR2"]
+then = { function = "robust", args = { cluster = "studyid", club_sandwich = true, vcov = "CR2" } }
+
+[case.source]
+citation = "Pustejovsky JE, Tipton E (2018). Small-sample methods for cluster-robust variance estimation and hypothesis testing in fixed effects models. Journal of Business and Economic Statistics 36:672-683"
+locator = "equations 6 to 8"
+read = 2026-11-14
+doi = "10.1080/07350015.2016.1247004"

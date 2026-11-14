@@ -4,6 +4,8 @@ Each test draws from ``numpy.random.default_rng(seed)`` with a fixed seed and a 
 standard errors of the Monte Carlo mean or proportion. Only what holds exactly is tested, not asymptotic behaviour.
 """
 
+import typing
+
 import numpy
 import numpy.typing
 import pandas
@@ -83,3 +85,65 @@ def test_equal_effects_interval_covers_exactly() -> None:
     assert abs(proportion - level) <= STANDARD_ERRORS * error, (
         f'coverage {proportion!r} over {replicates} replicates, expected {level!r}, standard error {error!r}'
     )
+
+
+COEFFICIENTS = ('intercept', 'slope')
+TRUTH = numpy.array([0.3, -0.2])
+
+
+class FixedEffectsDraws(typing.NamedTuple):
+    """The estimates and 95% interval bounds of each coefficient over the replicates, one row per replicate."""
+
+    beta: FloatArray
+    ci_lb: FloatArray
+    ci_ub: FloatArray
+
+
+def fixed_effects_draws(*, seed: int, replicates: int) -> FixedEffectsDraws:
+    """``replicates`` fits of the ``method='FE'`` model ``y = 0.3 - 0.2 x + e`` with known, correlated ``e ~ N(0, V)``.
+
+    Eight clusters of three rows; within a cluster the correlation is 0.5 and the variances differ, so ``V`` is block diagonal and not a multiple
+    of the identity.
+    """
+    rng = numpy.random.default_rng(seed)
+    clusters, size = 8, 3
+    variances = numpy.linspace(0.05, 0.25, clusters * size)
+    sd = numpy.sqrt(variances)
+    V = numpy.zeros((clusters * size, clusters * size))
+    for cluster in range(clusters):
+        rows = slice(cluster * size, (cluster + 1) * size)
+        block = 0.5 * numpy.outer(sd[rows], sd[rows])
+        numpy.fill_diagonal(block, variances[rows])
+        V[rows, rows] = block
+    frame = pandas.DataFrame({'x': numpy.linspace(-1, 1, clusters * size)})
+    mean = TRUTH[0] + TRUTH[1] * frame['x'].to_numpy()
+    factor = numpy.linalg.cholesky(V)
+    beta, ci_lb, ci_ub = (numpy.empty((replicates, 2)) for _ in range(3))
+    for index in range(replicates):
+        frame['yi'] = mean + factor @ rng.standard_normal(len(mean))
+        fit = metafopy.rma_mv(yi='yi', V=V, mods='~ x', data=frame, method='FE')
+        beta[index], ci_lb[index], ci_ub[index] = fit.beta, fit.ci_lb, fit.ci_ub
+    return FixedEffectsDraws(beta, ci_lb, ci_ub)
+
+
+@pytest.mark.slow
+def test_gls_estimate_is_unbiased() -> None:
+    """The generalised least squares estimate of a fixed-effects ``rma_mv`` model with known correlated errors is unbiased for each coefficient
+    (Aitken 1935; 2000 replicates)."""
+    draws = fixed_effects_draws(seed=20261115, replicates=2000)
+    for position, name in enumerate(COEFFICIENTS):
+        assert_mean_within(f'GLS {name}', draws.beta[:, position], float(TRUTH[position]))
+
+
+@pytest.mark.slow
+def test_fixed_effects_interval_covers_exactly_with_known_v() -> None:
+    """With known ``V`` the 95% Wald interval of each coefficient of the ``method='FE'`` fit covers its true value 95% of the time: the estimate is
+    exactly normal with the variance the fit reports (2000 replicates)."""
+    replicates, level = 2000, 0.95
+    draws = fixed_effects_draws(seed=20261116, replicates=replicates)
+    covered = ((draws.ci_lb <= TRUTH) & (draws.ci_ub >= TRUTH)).mean(axis=0)
+    error = float(numpy.sqrt(level * (1 - level) / replicates))
+    for position, name in enumerate(COEFFICIENTS):
+        assert abs(covered[position] - level) <= STANDARD_ERRORS * error, (
+            f'{name}: coverage {covered[position]!r} over {replicates} replicates, expected {level!r}, standard error {error!r}'
+        )
