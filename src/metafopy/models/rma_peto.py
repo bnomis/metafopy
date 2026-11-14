@@ -23,6 +23,7 @@ import metafopy.models.binary
 import metafopy.models.call
 import metafopy.models.rma_uni
 import metafopy.models.tables
+import metafopy.models.tau2
 
 __all__ = ['PetoResult', 'rma_peto']
 
@@ -154,7 +155,7 @@ def rma_peto(
     k_yi = tab.k_yi
     if k_pos > 1:
         qep = float(scipy.stats.chi2.sf(qe, k_yi - 1))
-        i2 = max(0.0, 100 * (qe - (k_yi - 1)) / qe) if qe != 0 else math.nan
+        i2 = metafopy.models.tau2.i2_from_q(qe, k_yi - 1)
         h2 = qe / (k_yi - 1)
     else:
         qep, i2, h2 = 1.0, 0.0, 1.0

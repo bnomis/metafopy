@@ -203,3 +203,14 @@ def test_errors() -> None:
         metafopy.rma_mh(ai=1, bi=2, ci=3, di=4, measure='SMD')
     with pytest.raises(metafopy.errors.InputError, match='never occurred'):
         metafopy.rma_peto(ai=[0, 0], bi=[5, 6], ci=[0, 0], di=[5, 6])
+
+
+@pytest.mark.parametrize('measure', ['OR', 'RR', 'RD'])
+def test_identical_tables_mh_i2_is_zero(measure: str) -> None:
+    fit = metafopy.rma_mh(ai=[1, 2, 3], n1i=[10, 20, 30], ci=[1, 2, 3], n2i=[10, 20, 30], measure=measure)
+    assert fit.I2 == 0.0
+
+
+def test_identical_tables_peto_i2_is_zero() -> None:
+    fit = metafopy.rma_peto(ai=[1, 2, 3], n1i=[10, 20, 30], ci=[1, 2, 3], n2i=[10, 20, 30])
+    assert fit.I2 == 0.0

@@ -24,7 +24,7 @@ file that imports a changed module, and `src/tests/correctness`.
 
 ## Task 1: I2 is 0 when QE is 0, in every heterogeneity block
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item's fix direction
@@ -34,32 +34,32 @@ file that imports a changed module, and `src/tests/correctness`.
 
 **Subtasks:**
 
-- [ ] Re-check the starting point: run the calls in the header table and stop as `blocked`, naming the call, if any of them no longer behaves as
+- [x] Re-check the starting point: run the calls in the header table and stop as `blocked`, naming the call, if any of them no longer behaves as
       the table says
-- [ ] Add one helper to `src/metafopy/models/tau2.py`, which `rma_uni` and `gosh` already import and which `rma_mh` and `rma_peto` load through
+- [x] Add one helper to `src/metafopy/models/tau2.py`, which `rma_uni` and `gosh` already import and which `rma_mh` and `rma_peto` load through
       `metafopy.models.rma_uni` (so importing it there adds no cycle): `i2_from_q(q, df)` returns `max(0.0, 100 * (q - df) / q)`, and 0 when
       `q == 0`. Its docstring cites Higgins and Thompson (2002) and the `I2` lines of metafor's `rma.uni`, `rma.mh` and `rma.peto`
-- [ ] Use it in the equal-effects branch of the heterogeneity block of `src/metafopy/models/rma_uni.py`, in `src/metafopy/models/rma_mh.py`, in
+- [x] Use it in the equal-effects branch of the heterogeneity block of `src/metafopy/models/rma_uni.py`, in `src/metafopy/models/rma_mh.py`, in
       `src/metafopy/models/rma_peto.py` and in `closed_form` of `src/metafopy/methods/gosh.py`. Keep `H2 = Q / df` unchanged
-- [ ] Check that nothing else divides by a Q statistic: `grep -rnE '/ *(QE|qe|Q)\b' src/metafopy`. Fix any further hit the same way, and name it
+- [x] Check that nothing else divides by a Q statistic: `grep -rnE '/ *(QE|qe|Q)\b' src/metafopy`. Fix any further hit the same way, and name it
       in the commit body
-- [ ] Regression tests in `src/tests/test_rma_uni_extras.py`: identical effects for each of `EE`, `FE` and `CE` give `I2 == 0`, `H2 == 0`,
+- [x] Regression tests in `src/tests/test_rma_uni_extras.py`: identical effects for each of `EE`, `FE` and `CE` give `I2 == 0`, `H2 == 0`,
       `QE == 0`, and `REML` gives `I2 == 0`, `H2 == 1`
-- [ ] Regression tests in `src/tests/test_rma_mh_peto.py`: the tables in the header give `I2 == 0` for `rma_mh` (`OR`, `RR`, `RD`) and for
+- [x] Regression tests in `src/tests/test_rma_mh_peto.py`: the tables in the header give `I2 == 0` for `rma_mh` (`OR`, `RR`, `RD`) and for
       `rma_peto`
-- [ ] Regression test for `gosh` in `src/tests/test_diagnostics.py`: an `EE` fit to
+- [x] Regression test for `gosh` in `src/tests/test_diagnostics.py`: an `EE` fit to
       `yi = [0, 0, 0, 1]`, `vi = [0.1, 0.2, 0.3, 0.4]` runs, and every subset whose effects are equal has `I2 == 0`
 
 **Acceptance Criteria:**
 
-- [ ] Every call in the header table returns `I2 = 0`, matching R metafor 5.2-1
-- [ ] No fitting function under `src/metafopy` divides by a Q statistic without the helper
+- [x] Every call in the header table returns `I2 = 0`, matching R metafor 5.2-1
+- [x] No fitting function under `src/metafopy` divides by a Q statistic without the helper
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_rma_uni_extras.py src/tests/test_rma_uni_help.py src/tests/test_rma_uni_parity.py src/tests/test_rma_mh_peto.py src/tests/test_diagnostics.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_rma_uni_extras.py src/tests/test_rma_uni_help.py src/tests/test_rma_uni_parity.py src/tests/test_rma_mh_peto.py src/tests/test_diagnostics.py` passes
 
 **Notes:**
 

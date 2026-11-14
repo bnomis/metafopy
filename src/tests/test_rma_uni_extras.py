@@ -12,6 +12,7 @@ import pytest
 import metafopy
 import metafopy.datasets
 import metafopy.models.rma_uni
+import metafopy.models.tau2
 
 REF: dict[str, typing.Any] = json.loads((pathlib.Path(__file__).parent / 'reference' / 'extras' / 'rma_uni.json').read_text())
 RTOL = 1e-7
@@ -172,3 +173,14 @@ def test_print_matches_metafor_layout(dat: pandas.DataFrame) -> None:
 def test_too_many_parameters() -> None:
     with pytest.raises(ValueError, match='larger than the number of observations'):
         metafopy.rma([0.1, 0.2], [0.01, 0.01], mods=[1.0, 2.0])
+
+
+@pytest.mark.parametrize('method', metafopy.models.tau2.FIXED_EFFECTS)
+def test_identical_effects_equal_effects_i2_is_zero(method: str) -> None:
+    fit = metafopy.rma_uni(yi=[0.0, 0.0, 0.0, 0.0], vi=[0.1, 0.2, 0.3, 0.4], method=method)
+    assert (fit.QE, fit.I2, fit.H2) == (0.0, 0.0, 0.0)
+
+
+def test_identical_effects_reml_i2_is_zero() -> None:
+    fit = metafopy.rma_uni(yi=[0.0, 0.0, 0.0, 0.0], vi=[0.1, 0.2, 0.3, 0.4], method='REML')
+    assert (fit.I2, fit.H2) == (0.0, 1.0)
