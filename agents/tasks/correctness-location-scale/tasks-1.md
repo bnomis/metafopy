@@ -105,7 +105,7 @@ item, before any case is written.
 
 ## Task 2: Sources for this list
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Evidence; External dependencies; Implementation step 6
@@ -115,8 +115,8 @@ Tasks 3 to 6, so this check comes before them, not at the spec's step 6. When ev
 
 **Subtasks:**
 
-- [ ] Check that `/Users/simonb/src/metafopy papers` can be read (`ls "/Users/simonb/src/metafopy papers"`); stop as `blocked` saying so if not
-- [ ] Check that each of these PDFs is there and gives text with `pdftotext` (first page, `-l 1`):
+- [x] Check that `/Users/simonb/src/metafopy papers` can be read (`ls "/Users/simonb/src/metafopy papers"`); stop as `blocked` saying so if not
+- [x] Check that each of these PDFs is there and gives text with `pdftotext` (first page, `-l 1`):
   - `Viechtbauer_2022_Locationscale_models_for_metaanalysis.pdf` (Viechtbauer and Lopez-Lopez 2022);
   - `Modelling Variance Heterogeneity- Residual Maximum Likelihood and Diagnostics.pdf` (Verbyla 1993);
   - `Generalized Linear Models with Varying Dispersion.pdf` (Smyth 1989);
@@ -127,25 +127,25 @@ Tasks 3 to 6, so this check comes before them, not at the spec's step 6. When ev
   - `Quantifying heterogeneity in a meta-analysis.pdf` (Higgins and Thompson 2002);
   - `Controlling the risk of spurious findings from meta-regression.pdf` (Higgins and Thompson 2004);
   - `Valid Inference in Random Effects Meta- Analysis.pdf` (Follmann and Proschan 1999).
-- [ ] Check that the Viechtbauer and Lopez-Lopez PDF holds Tables 1, 2 and 3 with their numbers (`pdftotext -layout`, search for `Table 1`) and that its
+- [x] Check that the Viechtbauer and Lopez-Lopez PDF holds Tables 1, 2 and 3 with their numbers (`pdftotext -layout`, search for `Table 1`) and that its
       authors' analysis code link is readable (fetch it; it gives the recoding of `subject` and the rescaling of `ni`)
-- [ ] If all are present, mark this task done and go on. Otherwise:
+- [x] If all are present, mark this task done and go on. Otherwise:
   - write the missing ones under "Sources needed" in `agents/specs/correctness-location-scale/mismatches.md` (citation with DOI, what is wanted from
     it, and which tasks wait for it), in the layout of Task 11;
   - stop the list for the operator. Once each source is in the folder, or the operator has written in the document's Answers section that it is
     dropped, an operator session commits that and only then restarts the list.
-- [ ] On a restart, read the Answers section of `mismatches.md`: a source marked dropped is not used, and every case that needed it is left out with
+- [x] On a restart, read the Answers section of `mismatches.md`: a source marked dropped is not used, and every case that needed it is left out with
       an `[[exempt]]` entry only where no `derived` case can cover its item; a source neither present nor answered stops the task as `blocked`, naming it
 
 **Acceptance Criteria:**
 
-- [ ] Every source in the spec's Evidence table except the open glmmTMB paper (Brooks et al. 2017) is present and readable, or answered as dropped
+- [x] Every source in the spec's Evidence table except the open glmmTMB paper (Brooks et al. 2017) is present and readable, or answered as dropped
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`), if it commits anything
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness -m 'not slow'` passes (a task that may stop for the operator)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`), if it commits anything
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness -m 'not slow'` passes (a task that may stop for the operator)
 
 **Notes:**
 
