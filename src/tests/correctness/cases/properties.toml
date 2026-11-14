@@ -112,6 +112,28 @@ args = { yi = "yi", vi = "vi", method = "PM", control = { threshold = 1e-13, tol
 expect = {}
 check = "test_properties.pm_q_is_k_minus_p"
 
+# With an intercept, adding a constant to every effect changes neither QE nor tau2 (the constant lies in the column space of X, so P y is unchanged).
+[[case]]
+id = "property.shift.intercept.bangertdrowns"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", method = "DL", mods = "~ ni" }
+expect = {}
+check = "test_properties.shift_leaves_qe_and_tau2"
+
+# A model without an intercept whose columns span the constant (one dummy column per level) has the same projection as the model with an intercept,
+# so the same QE.
+[[case]]
+id = "property.qe.spanning-dummies.bcg"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "DL", mods = "~ factor(alloc) - 1", intercept = false }
+expect = {}
+check = "test_properties.qe_of_spanning_dummies_equals_intercept_model"
+
 [[case]]
 id = "property.pm-q.bcg.ablat"
 kind = "property"

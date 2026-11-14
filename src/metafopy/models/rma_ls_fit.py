@@ -692,8 +692,7 @@ def fit_rma_ls(
             w_fe = 1.0 / vi
             WX = w_fe[:, None] * X
             P = numpy.diag(w_fe) - WX @ metafopy.core.linalg.invcalc(X, w_fe) @ WX.T
-            ymc = yi - yi.mean()
-            QE = max(0.0, float(ymc @ P @ ymc))
+            QE = max(0.0, float(yi @ P @ yi))
             QEp = float(scipy.stats.chi2.sf(QE, k - p))
             vt = (k - p) / float(numpy.trace(P))
             I2 = 100 * tau2 / (vt + tau2)

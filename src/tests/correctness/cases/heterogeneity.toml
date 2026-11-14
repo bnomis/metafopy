@@ -73,3 +73,14 @@ setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di =
 args = { yi = "yi", vi = "vi", method = "DL" }
 expect = {}
 check = "test_properties.i2_follows_h2"
+
+# A model without an intercept: QE is Cochran's Q, y' P y, with no centring of y first. metafor centres y first, which changes QE when the columns of X do not
+# span the constant; metafopy does not.
+[[case]]
+id = "heterogeneity.qe.bangertdrowns.nointercept"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", method = "DL", mods = "~ ni - 1" }
+expect = { QE = "formulas.rma_QE" }
+covers = ["heterogeneity.QE"]

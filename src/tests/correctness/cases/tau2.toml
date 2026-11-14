@@ -784,3 +784,185 @@ args = { yi = "yi", vi = "vi", method = "GENQM", mods = "~ weeks", weights = "n1
 expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
 tolerance = 1e-6
 covers = ["tau2.GENQM"]
+
+[[case]]
+id = "tau2.ee.bangertdrowns.nointercept"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", method = "EE", mods = "~ ni - 1" }
+expect = { tau2 = "formulas.rma_tau2" }
+covers = ["tau2.EE"]
+
+[[case]]
+id = "tau2.fe.bangertdrowns.nointercept"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", method = "FE", mods = "~ ni - 1" }
+expect = { tau2 = "formulas.rma_tau2" }
+covers = ["tau2.FE"]
+
+[[case]]
+id = "tau2.ce.bangertdrowns.nointercept"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", method = "CE", mods = "~ ni - 1" }
+expect = { tau2 = "formulas.rma_tau2" }
+covers = ["tau2.CE"]
+
+[[case]]
+id = "tau2.dl.bangertdrowns.nointercept"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", method = "DL", mods = "~ ni - 1" }
+expect = { tau2 = "formulas.rma_tau2" }
+covers = ["tau2.DL"]
+
+[[case]]
+id = "tau2.dlit.bangertdrowns.nointercept"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", method = "DLIT", mods = "~ ni - 1", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2" }
+covers = ["tau2.DLIT"]
+
+[[case]]
+id = "tau2.he.bangertdrowns.nointercept"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", method = "HE", mods = "~ ni - 1" }
+expect = { tau2 = "formulas.rma_tau2" }
+covers = ["tau2.HE"]
+
+[[case]]
+id = "tau2.co.bangertdrowns.nointercept"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", method = "CO", mods = "~ ni - 1" }
+expect = { tau2 = "formulas.rma_tau2" }
+covers = ["tau2.CO"]
+
+[[case]]
+id = "tau2.vc.bangertdrowns.nointercept"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", method = "VC", mods = "~ ni - 1" }
+expect = { tau2 = "formulas.rma_tau2" }
+covers = ["tau2.VC"]
+
+[[case]]
+id = "tau2.hs.bangertdrowns.nointercept"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", method = "HS", mods = "~ ni - 1" }
+expect = { tau2 = "formulas.rma_tau2" }
+covers = ["tau2.HS"]
+
+[[case]]
+id = "tau2.hsk.bangertdrowns.nointercept"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", method = "HSk", mods = "~ ni - 1" }
+expect = { tau2 = "formulas.rma_tau2" }
+covers = ["tau2.HSk"]
+
+[[case]]
+id = "tau2.sj.bangertdrowns.nointercept"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", method = "SJ", mods = "~ ni - 1" }
+expect = { tau2 = "formulas.rma_tau2" }
+covers = ["tau2.SJ"]
+
+[[case]]
+id = "tau2.sjit.bangertdrowns.nointercept"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", method = "SJIT", mods = "~ ni - 1", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2" }
+covers = ["tau2.SJIT"]
+
+[[case]]
+id = "tau2.ml.bangertdrowns.nointercept"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", method = "ML", mods = "~ ni - 1", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2" }
+covers = ["tau2.ML"]
+
+[[case]]
+id = "tau2.reml.bangertdrowns.nointercept"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", method = "REML", mods = "~ ni - 1", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2" }
+covers = ["tau2.REML"]
+
+[[case]]
+id = "tau2.eb.bangertdrowns.nointercept"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", method = "EB", mods = "~ ni - 1", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2" }
+covers = ["tau2.EB"]
+
+[[case]]
+id = "tau2.pm.bangertdrowns.nointercept"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", method = "PM", mods = "~ ni - 1", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2" }
+covers = ["tau2.PM"]
+
+[[case]]
+id = "tau2.mp.bangertdrowns.nointercept"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", method = "MP", mods = "~ ni - 1", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2" }
+covers = ["tau2.MP"]
+
+[[case]]
+id = "tau2.pmm.bangertdrowns.nointercept"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", method = "PMM", mods = "~ ni - 1", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2" }
+covers = ["tau2.PMM"]
+
+[[case]]
+id = "tau2.genq.bangertdrowns.nointercept"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", method = "GENQ", mods = "~ ni - 1", weights = "ni", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2" }
+tolerance = 1e-6
+covers = ["tau2.GENQ"]
+
+[[case]]
+id = "tau2.genqm.bangertdrowns.nointercept"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", method = "GENQM", mods = "~ ni - 1", weights = "ni", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2" }
+tolerance = 1e-6
+covers = ["tau2.GENQM"]

@@ -1550,6 +1550,56 @@ H^2     12.8558  8.5590 18.8032
 </div>
 </div>
 
+### QE and tau2 of a model without an intercept
+
+`QE` is Cochran's `Q = y' P y = sum w (y - X b)^2` for every design. metafor centres `yi` once (`ymci` in `rma.uni`) and computes `QE`
+and the estimators of `tau2` (moment, `ML`, `REML`, `EB`, `PM`, `MP`, `PMM`) from the centred values. That changes nothing when the columns of
+`X` span the constant (an intercept, or a full set of dummy columns), but when they do not, as with `~ x - 1`, metafor's `QE` is smaller and
+its `tau2` is smaller too. On `dat.bangertdrowns2004` (rows with `ni` and `yi`) with `~ I(ni/100) - 1`, metafopy gives `QE` 135.998 and the `DL`
+`tau2` 0.07008, and metafor 95.742 and 0.03838; the `REML` `tau2` is 0.09303 in metafopy and 0.03876 in metafor. The correctness cases
+are the no-intercept cases of `QE` and `tau2` in `src/tests/correctness/cases`.
+
+*Why:* Cochran (1954) defines `Q` as the weighted sum of squared residuals, and the residuals of a model without a constant are not those of
+the centred data. The likelihoods of `ML`, `REML` and `EB` are likewise functions of `y' P y` (checked 2026-11-14, R 4.6.2, metafor 5.2-1).
+
+<div class="compare" markdown>
+<div markdown>
+
+**R, metafor 5.2-1**
+
+```r
+library(metafor)
+dat <- dat.bangertdrowns2004[!is.na(dat.bangertdrowns2004$ni), ]
+res <- rma(yi, vi, mods = ~ I(ni/100) - 1, data = dat, method = "DL")
+c(QE = res$QE, tau2 = res$tau2)
+```
+
+```text
+      QE     tau2
+95.74239  0.03838
+```
+
+</div>
+<div markdown>
+
+**Python, metafopy**
+
+```python
+from metafopy import datasets, rma
+
+dat = datasets.load('dat.bangertdrowns2004')
+dat = dat.dropna(subset=['ni', 'yi'])
+res = rma('yi', 'vi', mods='~ I(ni/100) - 1', data=dat, method='DL')
+print(res.QE, res.tau2)
+```
+
+```text
+135.99842 0.07008
+```
+
+</div>
+</div>
+
 ## Everything else
 
 The [detailed notes](differences-notes.md) hold the rest, grouped by topic:

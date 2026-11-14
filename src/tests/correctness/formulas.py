@@ -1223,11 +1223,16 @@ def squared_correlation_yi(r2i: FloatArray) -> FloatArray:
 # W(tau2) = diag(1 / (v + tau2)).
 
 
-def model_matrix(count: int, mods: str | None, data: object | None) -> FloatArray:
-    """``X``: a column of ones, then the columns of the one-sided formula ``mods`` (``'~ ablat + year'``) read from the data frame ``data``."""
-    columns = [numpy.ones(count)]
+def model_matrix(count: int, mods: str | None, data: object | None, intercept: bool = True) -> FloatArray:
+    """``X``: a column of ones (unless ``intercept`` is false or the formula ends in ``- 1``), then the columns of the one-sided formula ``mods``
+    (``'~ ablat + year'``) read from ``data``."""
+    terms = (mods or '').replace('~', '')
+    if terms.rstrip().endswith('- 1'):
+        terms = terms.rstrip()[:-3]
+        intercept = False
+    columns = [numpy.ones(count)] if intercept else []
     if mods:
-        for name in mods.replace('~', '').split('+'):
+        for name in terms.split('+'):
             columns.append(numpy.asarray(data[name.strip()], dtype=numpy.float64))  # type: ignore[index]
     return numpy.column_stack(columns)
 
@@ -1295,7 +1300,15 @@ def median_unbiased_general_q(yi: FloatArray, vi: FloatArray, design: FloatArray
     return solve_decreasing(lambda tau2: observed - median(tau2))
 
 
-def rma_tau2(yi: FloatArray, vi: FloatArray, method: str, weights: FloatArray | None = None, mods: str | None = None, data: object | None = None) -> float:
+def rma_tau2(
+    yi: FloatArray,
+    vi: FloatArray,
+    method: str,
+    weights: FloatArray | None = None,
+    mods: str | None = None,
+    data: object | None = None,
+    intercept: bool = True,
+) -> float:
     """The estimate of ``tau2`` of ``method``, written from the estimating equation or moment equation of its publication.
 
     ``DL``, ``HE`` (and ``CO``, ``VC``, which the metafor documentation lists as Hedges' variance component estimator), ``HS``, ``HSk``, ``SJ`` closed
@@ -1303,7 +1316,7 @@ def rma_tau2(yi: FloatArray, vi: FloatArray, method: str, weights: FloatArray | 
     with the given ``weights``; the equal-effects methods ``EE``, ``FE`` and ``CE`` fix ``tau2 = 0``.
     """
     k = len(yi)
-    design = model_matrix(k, mods, data)
+    design = model_matrix(k, mods, data, intercept)
     df: int = k - int(design.shape[1])
     w0 = 1 / vi
     if method in ('EE', 'FE', 'CE'):
@@ -1474,9 +1487,9 @@ def prediction_ub(
 # vt = (k - p) / tr(P(W(0))): H2 = (vt + tau2) / vt and I2 = 100 tau2 / (vt + tau2).
 
 
-def rma_QE(yi: FloatArray, vi: FloatArray, mods: str | None = None, data: object | None = None) -> float:
+def rma_QE(yi: FloatArray, vi: FloatArray, mods: str | None = None, data: object | None = None, intercept: bool = True) -> float:
     """Cochran's Q: the weighted residual sum of squares with the inverse-variance weights."""
-    return random_effects_q(yi, vi, model_matrix(len(yi), mods, data), 0.0)
+    return random_effects_q(yi, vi, model_matrix(len(yi), mods, data, intercept), 0.0)
 
 
 def rma_QM(yi: FloatArray, vi: FloatArray, method: str, test: str = 'z', mods: str | None = None, data: object | None = None) -> float:

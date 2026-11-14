@@ -136,6 +136,28 @@ def pm_q_is_k_minus_p(case: correctness.cases.Case, result: typing.Any) -> None:
     close(case.id, 'Q(tau2)', q, result.yi.size - result.X.shape[1], case.tolerance)
 
 
+def shift_leaves_qe_and_tau2(case: correctness.cases.Case, result: typing.Any) -> None:
+    """With an intercept the constant lies in the column space of ``X``, so ``P (y + c) = P y``: a shift of every effect changes neither QE nor tau2."""
+    frame = correctness.cases.case_frame(case)
+    assert frame is not None
+    shifted = frame.assign(yi=frame['yi'] + 1.7)
+    for method in metafopy.models.tau2.ESTIMATORS:
+        kwargs: dict[str, typing.Any] = {'weights': frame['ni'].to_numpy(dtype=numpy.float64)} if method in SUPPLIED_WEIGHTS else {}
+        args = {**case.args, 'method': method, 'control': CONTROL, **kwargs}
+        before = metafopy.rma_uni(data=frame, **args)
+        after = metafopy.rma_uni(data=shifted, **args)
+        close(case.id, f'{method} QE', after.QE, before.QE, case.tolerance)
+        close(case.id, f'{method} tau2', after.tau2, before.tau2, case.tolerance)
+
+
+def qe_of_spanning_dummies_equals_intercept_model(case: correctness.cases.Case, result: typing.Any) -> None:
+    """A full set of dummy columns spans the constant, so ``P`` and hence QE are those of the same model with an intercept."""
+    frame = correctness.cases.case_frame(case)
+    assert frame is not None
+    with_intercept = metafopy.rma_uni(data=frame, **{**case.args, 'mods': '~ factor(alloc)', 'intercept': True})
+    close(case.id, 'QE', result.QE, with_intercept.QE, case.tolerance)
+
+
 def i2_follows_h2_every_estimator(case: correctness.cases.Case, result: typing.Any) -> None:
     """``I2 = 100 (H2 - 1) / H2`` for the fit of every estimator in ``ESTIMATORS``."""
     frame = correctness.cases.case_frame(case)
