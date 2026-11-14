@@ -211,9 +211,9 @@ def parse_case(raw: object, name: str, index: int) -> Case:
     if 'expect' not in raw and check is None:
         fail(name, f'case {ident}: missing "expect" (or a "check")')
     expect = parse_expect(kind, raw.get('expect', {}), where)
-    if kind == 'published' and not expect:
-        fail(name, f'case {ident}: a published case needs expect values')
     printed = parse_printed(raw.get('printed', {}), kind, check, where)
+    if kind == 'published' and not expect and not printed:
+        fail(name, f'case {ident}: a published case needs expect or printed values')
     status = raw.get('status', 'pass')
     if status not in STATUSES:
         fail(name, f'case {ident}: status {status!r} must be "pass" or "mismatch"')

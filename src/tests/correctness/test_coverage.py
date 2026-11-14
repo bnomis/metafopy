@@ -222,6 +222,17 @@ def test_a_published_check_refuses_a_printed_name_it_does_not_know() -> None:
         correctness.test_published.back_transformed(case, fit)
 
 
+def test_a_published_case_with_printed_values_alone_loads_and_with_neither_is_refused() -> None:
+    (case,) = correctness.cases.parse_cases(
+        broken('expect = { "yi[0]" = "2.0", "vi[0]" = "0.5" }', 'check = "test_published.back_transformed"\nprinted = { exp_beta = "1.0" }'),
+        'inline.toml',
+    )
+    assert case.printed == {'exp_beta': '1.0'}
+    assert not case.expect
+    with pytest.raises(ValueError, match='needs expect or printed values'):
+        correctness.cases.parse_cases(broken('expect = { "yi[0]" = "2.0", "vi[0]" = "0.5" }', 'expect = {}'), 'inline.toml')
+
+
 def test_back_transformed_compares_exp_of_the_fit() -> None:
     (case,) = correctness.cases.parse_cases(
         broken('covers = ["escalc.yi.MD"]', 'check = "test_published.back_transformed"\nprinted = { exp_beta = "2.72", exp_ci_ub = "7.4" }'),

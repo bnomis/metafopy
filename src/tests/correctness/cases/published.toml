@@ -577,6 +577,25 @@ locator = "Table 1, corrected chi square (1 degree of freedom), computation bloc
 read = 2026-11-12
 
 [[case]]
+id = "published.mh1959.table1.or"
+kind = "published"
+function = "rma_mh"
+args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR" }
+check = "test_published.back_transformed"
+printed = { exp_beta = "10.68" }
+
+[case.data]
+ai = [0, 2, 3, 0, 3, 2, 2, 0, 1, 4, 0, 1]
+bi = [2, 5, 6, 11, 0, 2, 4, 6, 0, 1, 6, 3]
+ci = [0, 1, 0, 0, 2, 2, 2, 1, 3, 1, 1, 0]
+di = [7, 24, 49, 42, 6, 18, 23, 11, 10, 12, 19, 15]
+
+[case.source]
+citation = "Mantel N, Haenszel W (1959). Statistical aspects of the analysis of data from retrospective studies of disease. Journal of the National Cancer Institute 22(4):719-748."
+locator = "Table 1, computation block at the foot of the table: relative risk R = 10.68"
+read = 2026-11-14
+
+[[case]]
 id = "published.yusuf1985.table6.qe"
 kind = "published"
 function = "rma_peto"
@@ -617,6 +636,48 @@ covers = ["rma_peto"]
 citation = "Yusuf S, Peto R, Lewis J, Collins R, Sleight P (1985). Beta blockade during and after myocardial infarction: an overview of the randomized trials. Progress in Cardiovascular Diseases 27(5):335-371."
 locator = "Table 11 (nonfatal reinfarction), footnote: test for heterogeneity"
 read = 2026-11-12
+
+[[case]]
+id = "published.yusuf1985.table6.or"
+kind = "published"
+function = "rma_peto"
+dataset = "dat.yusuf1985"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", subset = "table == '6'" }
+check = "test_published.back_transformed"
+printed = { exp_beta = "0.93", exp_ci_lb = "0.74", exp_ci_ub = "1.18" }
+
+[case.source]
+citation = "Yusuf S, Peto R, Lewis J, Collins R, Sleight P (1985). Beta blockade during and after myocardial infarction: an overview of the randomized trials. Progress in Cardiovascular Diseases 27(5):335-371."
+locator = "Table 6 footnote: pooled odds ratio of 0.93 with 95% confidence interval of 0.74-1.18"
+read = 2026-11-14
+
+[[case]]
+id = "published.yusuf1985.table10.or"
+kind = "published"
+function = "rma_peto"
+dataset = "dat.yusuf1985"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", subset = "table == '10'" }
+check = "test_published.back_transformed"
+printed = { exp_beta = "0.77", exp_ci_lb = "0.70", exp_ci_ub = "0.85" }
+
+[case.source]
+citation = "Yusuf S, Peto R, Lewis J, Collins R, Sleight P (1985). Beta blockade during and after myocardial infarction: an overview of the randomized trials. Progress in Cardiovascular Diseases 27(5):335-371."
+locator = "Table 10 footnote (pooled odds ratio 0.77) and the text (95% confidence interval 0.70-0.85)"
+read = 2026-11-14
+
+[[case]]
+id = "published.yusuf1985.table11.or"
+kind = "published"
+function = "rma_peto"
+dataset = "dat.yusuf1985"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", subset = "table == '11'" }
+check = "test_published.back_transformed"
+printed = { exp_beta = "0.74", exp_ci_ub = "0.83" }
+
+[case.source]
+citation = "Yusuf S, Peto R, Lewis J, Collins R, Sleight P (1985). Beta blockade during and after myocardial infarction: an overview of the randomized trials. Progress in Cardiovascular Diseases 27(5):335-371."
+locator = "Table 11 footnote: pooled odds ratio of 0.74, upper confidence limit 0.83 (the lower limit is unreadable in the extracted text, so it is not used)"
+read = 2026-11-14
 
 # Hedges (1981) Table I: c(m) = g_U / g for m = n1 + n2 - 2 degrees of freedom. With a mean difference of 1 and a pooled sd of 1, g = 1 and
 # the bias-corrected estimate equals c(m). The group sizes (m, 2) only fix m; the table is for any split.

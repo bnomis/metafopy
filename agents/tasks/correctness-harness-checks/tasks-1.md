@@ -87,7 +87,7 @@ values a source prints.
 
 ## Task 2: Published cases for back-transformed estimates
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Source Reference:** the item (Mantel and Haenszel 1959, Yusuf et al. 1985)
@@ -96,24 +96,24 @@ values a source prints.
 
 **Subtasks:**
 
-- [ ] Check that `/Users/simonb/src/metafopy papers` can be read (`ls`); stop as `blocked` if not
-- [ ] Mantel and Haenszel (1959): the pooled relative risk `R = 10.68` of Table 1, as `published.mh1959.table1.or` beside
+- [x] Check that `/Users/simonb/src/metafopy papers` can be read (`ls`); stop as `blocked` if not
+- [x] Mantel and Haenszel (1959): the pooled relative risk `R = 10.68` of Table 1, as `published.mh1959.table1.or` beside
       `published.mh1959.table1.chisq` in `src/tests/correctness/cases/published.toml`, reusing that case's inline strata, `function = "rma_mh"`,
       `check = "test_published.back_transformed"`, `printed = { exp_beta = "10.68" }`
-- [ ] Yusuf et al. (1985): the pooled odds ratios the tables print for the `dat.yusuf1985` subsets the existing `published.yusuf1985.*` cases use,
+- [x] Yusuf et al. (1985): the pooled odds ratios the tables print for the `dat.yusuf1985` subsets the existing `published.yusuf1985.*` cases use,
       with `function = "rma_peto"`, one case per table, with the confidence bounds where printed
-- [ ] Record any mismatch as the header says
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] Every new case has `citation`, `locator` and `read`, and its values as printed
-- [ ] No source text or table is copied into the repository beyond the numbers used
+- [x] Every new case has `citation`, `locator` and `read`, and its values as printed
+- [x] No source text or table is copied into the repository beyond the numbers used
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_published.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_published.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 
