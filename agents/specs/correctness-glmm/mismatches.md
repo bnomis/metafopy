@@ -107,10 +107,10 @@ person-times, so no Poisson case could be written from it. Its data come from tw
 
 - Hooper L, Summerbell CD, Higgins JP, Thompson RL, Capps NE, Smith GD, Riemersma RA, Ebrahim S (2001). Dietary fat intake and prevention of
   cardiovascular disease: systematic review. BMJ 322(7289):757-763. Wanted: the per-trial combined cardiovascular events and person-years of the
-  intervention and control groups (10 trials). File name: `Hooper_2001_Dietary_fat_intake_and_prevention_of_cardiovascular_disease.pdf`.
+  intervention and control groups (10 trials). File name: `Hooper_2001_Dietary_fat_intake_and_prevention_of_cardiovascular_disease.pdf`. **Supplied 2026-11-14** (saved by the operator from PubMed Central).
 - Wolf FM, Guevara JP, Grum CM, Clark NM, Cates CJ (2003). Educational interventions for asthma in children. Cochrane Database Syst Rev (1):CD000326.
   Wanted: the per-study school absences and ER visits with person-months for each group. File name:
-  `Wolf_2003_Educational_interventions_for_asthma_in_children.pdf`.
+  `Wolf_2003_Educational_interventions_for_asthma_in_children.pdf`. **Supplied 2026-11-14** (saved by the operator from PubMed Central).
 
 With them the wanted values are Table 5 of Bagos and Nikolopoulos (random study effects, `z` 0/1 and bivariate rows: Hooper 0.746 (0.592, 0.940), school
 absences 0.721 (0.579, 0.897), ER visits 0.525 (0.361, 0.764), as printed IRRs).
