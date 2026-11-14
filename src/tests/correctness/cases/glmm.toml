@@ -1,1 +1,423 @@
 # Correctness cases for rma_glmm: derived and property cases; see agents/specs/correctness-glmm/spec.md
+
+# Task 4: OR fit cases. Each case reads the formulas' own fit of the same call (glmm_formulas.rma_glmm_*); a mixed fit also runs
+# test_derived.glmm_likelihood_at_estimate. UM.RS with ML uses the Laplace approximation (lme4 allows no more with two random effects), CM.EL the
+# exact integral (control int_rel_tol tightened) and the other fits adaptive quadrature with nAGQ = 7. The CM.EL standard errors are recorded as
+# mismatches in agents/specs/correctness-glmm/mismatches.md. UM.RS with ML has no case on dat.nielweise2007: that fit is nearly unidentifiable
+# (R metafor warns of it too) and the formulas' search stops at a score of 1.3e-6, above the 1e-6 it requires.
+
+[[case]]
+id = "glmm.fit.or.cm.al.fe.nielweise2007.beta"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.AL", method = "FE" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta" }
+tolerance = 1e-8
+covers = ["rma_glmm.fit.OR.CM.AL.FE"]
+
+[[case]]
+id = "glmm.fit.or.cm.al.fe.nielweise2007.se"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.AL", method = "FE" }
+expect = { "se[0]" = "glmm_formulas.rma_glmm_se" }
+tolerance = 1e-6
+covers = ["rma_glmm.fit.OR.CM.AL.FE"]
+
+[[case]]
+id = "glmm.fit.or.cm.al.ml.nielweise2007"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.AL", method = "ML" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", "se[0]" = "glmm_formulas.rma_glmm_se", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-5
+check = "test_derived.glmm_likelihood_at_estimate"
+covers = ["rma_glmm.fit.OR.CM.AL.ML"]
+
+[[case]]
+id = "glmm.fit.or.cm.el.fe.nielweise2007.beta"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.EL", method = "FE" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta" }
+tolerance = 1e-8
+covers = ["rma_glmm.fit.OR.CM.EL.FE"]
+
+[[case]]
+id = "glmm.fit.or.cm.el.fe.nielweise2007.se"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.EL", method = "FE" }
+expect = { "se[0]" = "glmm_formulas.rma_glmm_se" }
+tolerance = 1e-6
+status = "mismatch"
+reason = "metafopy gives se 0.22403812206, the formulas (observed information of the exact conditional likelihood) 0.22403481655, and R metafor 5.2-1 0.2240349774"
+covers = ["rma_glmm.fit.OR.CM.EL.FE"]
+
+[[case]]
+id = "glmm.fit.or.cm.el.ml.nielweise2007.se"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.EL", method = "ML", control = { int_rel_tol = 1e-10 } }
+expect = { "se[0]" = "glmm_formulas.rma_glmm_se" }
+tolerance = 1e-5
+status = "mismatch"
+reason = "metafopy gives se 0.35126655007, the formulas (observed information of the exact conditional likelihood) 0.35104032913, and R metafor 5.2-1 0.3511061238"
+covers = ["rma_glmm.fit.OR.CM.EL.ML"]
+
+[[case]]
+id = "glmm.fit.or.cm.el.ml.nielweise2007"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.EL", method = "ML", control = { int_rel_tol = 1e-10 } }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-5
+check = "test_derived.glmm_likelihood_at_estimate"
+covers = ["rma_glmm.fit.OR.CM.EL.ML"]
+
+[[case]]
+id = "glmm.fit.or.um.fs.fe.nielweise2007.beta"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "UM.FS", method = "FE" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta" }
+tolerance = 1e-8
+covers = ["rma_glmm.fit.OR.UM.FS.FE"]
+
+[[case]]
+id = "glmm.fit.or.um.fs.fe.nielweise2007.se"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "UM.FS", method = "FE" }
+expect = { "se[0]" = "glmm_formulas.rma_glmm_se" }
+tolerance = 1e-6
+covers = ["rma_glmm.fit.OR.UM.FS.FE"]
+
+[[case]]
+id = "glmm.fit.or.um.fs.ml.nielweise2007"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "UM.FS", method = "ML" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", "se[0]" = "glmm_formulas.rma_glmm_se", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-5
+check = "test_derived.glmm_likelihood_at_estimate"
+covers = ["rma_glmm.fit.OR.UM.FS.ML"]
+
+[[case]]
+id = "glmm.fit.or.um.rs.fe.nielweise2007.beta"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "UM.RS", method = "FE" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta" }
+tolerance = 1e-8
+covers = ["rma_glmm.fit.OR.UM.RS.FE"]
+
+[[case]]
+id = "glmm.fit.or.um.rs.fe.nielweise2007.se"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "UM.RS", method = "FE" }
+expect = { "se[0]" = "glmm_formulas.rma_glmm_se" }
+tolerance = 1e-6
+covers = ["rma_glmm.fit.OR.UM.RS.FE"]
+
+[[case]]
+id = "glmm.fit.or.cm.al.fe.collins1985a.beta"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.collins1985a"
+args = { ai = "b.xti", n1i = "nti", ci = "b.xci", n2i = "nci", measure = "OR", model = "CM.AL", method = "FE" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta" }
+tolerance = 1e-8
+covers = ["rma_glmm.fit.OR.CM.AL.FE"]
+
+[[case]]
+id = "glmm.fit.or.cm.al.fe.collins1985a.se"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.collins1985a"
+args = { ai = "b.xti", n1i = "nti", ci = "b.xci", n2i = "nci", measure = "OR", model = "CM.AL", method = "FE" }
+expect = { "se[0]" = "glmm_formulas.rma_glmm_se" }
+tolerance = 1e-6
+covers = ["rma_glmm.fit.OR.CM.AL.FE"]
+
+[[case]]
+id = "glmm.fit.or.cm.al.ml.collins1985a"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.collins1985a"
+args = { ai = "b.xti", n1i = "nti", ci = "b.xci", n2i = "nci", measure = "OR", model = "CM.AL", method = "ML" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", "se[0]" = "glmm_formulas.rma_glmm_se", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-5
+check = "test_derived.glmm_likelihood_at_estimate"
+covers = ["rma_glmm.fit.OR.CM.AL.ML"]
+
+[[case]]
+id = "glmm.fit.or.cm.el.fe.collins1985a.beta"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.collins1985a"
+args = { ai = "b.xti", n1i = "nti", ci = "b.xci", n2i = "nci", measure = "OR", model = "CM.EL", method = "FE" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta" }
+tolerance = 1e-8
+covers = ["rma_glmm.fit.OR.CM.EL.FE"]
+
+[[case]]
+id = "glmm.fit.or.cm.el.fe.collins1985a.se"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.collins1985a"
+args = { ai = "b.xti", n1i = "nti", ci = "b.xci", n2i = "nci", measure = "OR", model = "CM.EL", method = "FE" }
+expect = { "se[0]" = "glmm_formulas.rma_glmm_se" }
+tolerance = 1e-6
+status = "mismatch"
+reason = "metafopy gives se 0.09940438923, the formulas (observed information of the exact conditional likelihood) 0.09955789399, and R metafor 5.2-1 0.09952916761"
+covers = ["rma_glmm.fit.OR.CM.EL.FE"]
+
+[[case]]
+id = "glmm.fit.or.cm.el.ml.collins1985a.se"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.collins1985a"
+args = { ai = "b.xti", n1i = "nti", ci = "b.xci", n2i = "nci", measure = "OR", model = "CM.EL", method = "ML", control = { int_rel_tol = 1e-10 } }
+expect = { "se[0]" = "glmm_formulas.rma_glmm_se" }
+tolerance = 1e-5
+status = "mismatch"
+reason = "metafopy gives se 0.13635526517, the formulas (observed information of the exact conditional likelihood) 0.13638547729, and R metafor 5.2-1 0.1364815073"
+covers = ["rma_glmm.fit.OR.CM.EL.ML"]
+
+[[case]]
+id = "glmm.fit.or.cm.el.ml.collins1985a"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.collins1985a"
+args = { ai = "b.xti", n1i = "nti", ci = "b.xci", n2i = "nci", measure = "OR", model = "CM.EL", method = "ML", control = { int_rel_tol = 1e-10 } }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-5
+check = "test_derived.glmm_likelihood_at_estimate"
+covers = ["rma_glmm.fit.OR.CM.EL.ML"]
+
+[[case]]
+id = "glmm.fit.or.um.fs.fe.collins1985a.beta"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.collins1985a"
+args = { ai = "b.xti", n1i = "nti", ci = "b.xci", n2i = "nci", measure = "OR", model = "UM.FS", method = "FE" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta" }
+tolerance = 1e-8
+covers = ["rma_glmm.fit.OR.UM.FS.FE"]
+
+[[case]]
+id = "glmm.fit.or.um.fs.fe.collins1985a.se"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.collins1985a"
+args = { ai = "b.xti", n1i = "nti", ci = "b.xci", n2i = "nci", measure = "OR", model = "UM.FS", method = "FE" }
+expect = { "se[0]" = "glmm_formulas.rma_glmm_se" }
+tolerance = 1e-6
+covers = ["rma_glmm.fit.OR.UM.FS.FE"]
+
+[[case]]
+id = "glmm.fit.or.um.fs.ml.collins1985a"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.collins1985a"
+args = { ai = "b.xti", n1i = "nti", ci = "b.xci", n2i = "nci", measure = "OR", model = "UM.FS", method = "ML" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", "se[0]" = "glmm_formulas.rma_glmm_se", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-5
+check = "test_derived.glmm_likelihood_at_estimate"
+covers = ["rma_glmm.fit.OR.UM.FS.ML"]
+
+[[case]]
+id = "glmm.fit.or.um.rs.fe.collins1985a.beta"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.collins1985a"
+args = { ai = "b.xti", n1i = "nti", ci = "b.xci", n2i = "nci", measure = "OR", model = "UM.RS", method = "FE" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta" }
+tolerance = 1e-8
+covers = ["rma_glmm.fit.OR.UM.RS.FE"]
+
+[[case]]
+id = "glmm.fit.or.um.rs.fe.collins1985a.se"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.collins1985a"
+args = { ai = "b.xti", n1i = "nti", ci = "b.xci", n2i = "nci", measure = "OR", model = "UM.RS", method = "FE" }
+expect = { "se[0]" = "glmm_formulas.rma_glmm_se" }
+tolerance = 1e-6
+covers = ["rma_glmm.fit.OR.UM.RS.FE"]
+
+[[case]]
+id = "glmm.fit.or.um.rs.ml.collins1985a"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.collins1985a"
+args = { ai = "b.xti", n1i = "nti", ci = "b.xci", n2i = "nci", measure = "OR", model = "UM.RS", method = "ML" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", "se[0]" = "glmm_formulas.rma_glmm_se", tau2 = "glmm_formulas.rma_glmm_tau2", sigma2 = "glmm_formulas.rma_glmm_sigma2" }
+tolerance = 1e-5
+check = "test_derived.glmm_likelihood_at_estimate"
+covers = ["rma_glmm.fit.OR.UM.RS.ML"]
+
+[[case]]
+id = "glmm.fit.or.cm.al.fe.jackson2018.pneumonia.beta"
+kind = "derived"
+function = "rma_glmm"
+data = { ai = [1, 0, 1, 13, 2, 4, 6], bi = [155, 89, 43, 64, 157, 43, 76], ci = [12, 3, 6, 27, 5, 6, 0], di = [69, 40, 32, 53, 165, 43, 148] }
+source = { citation = "Jackson D, Law M, Stijnen T, Viechtbauer W, White IR (2018). A comparison of seven random-effects models for meta-analyses that estimate the summary odds ratio. Stat Med 37(7):1059-1085", doi = "10.1002/sim.7588", locator = "Table 3, outcome 1 (pneumonia), columns A, B, C, D", read = 2026-11-14 }
+args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "CM.AL", method = "FE" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta" }
+tolerance = 1e-8
+covers = ["rma_glmm.fit.OR.CM.AL.FE"]
+
+[[case]]
+id = "glmm.fit.or.cm.al.fe.jackson2018.pneumonia.se"
+kind = "derived"
+function = "rma_glmm"
+data = { ai = [1, 0, 1, 13, 2, 4, 6], bi = [155, 89, 43, 64, 157, 43, 76], ci = [12, 3, 6, 27, 5, 6, 0], di = [69, 40, 32, 53, 165, 43, 148] }
+source = { citation = "Jackson D, Law M, Stijnen T, Viechtbauer W, White IR (2018). A comparison of seven random-effects models for meta-analyses that estimate the summary odds ratio. Stat Med 37(7):1059-1085", doi = "10.1002/sim.7588", locator = "Table 3, outcome 1 (pneumonia), columns A, B, C, D", read = 2026-11-14 }
+args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "CM.AL", method = "FE" }
+expect = { "se[0]" = "glmm_formulas.rma_glmm_se" }
+tolerance = 1e-6
+covers = ["rma_glmm.fit.OR.CM.AL.FE"]
+
+[[case]]
+id = "glmm.fit.or.cm.al.ml.jackson2018.pneumonia"
+kind = "derived"
+function = "rma_glmm"
+data = { ai = [1, 0, 1, 13, 2, 4, 6], bi = [155, 89, 43, 64, 157, 43, 76], ci = [12, 3, 6, 27, 5, 6, 0], di = [69, 40, 32, 53, 165, 43, 148] }
+source = { citation = "Jackson D, Law M, Stijnen T, Viechtbauer W, White IR (2018). A comparison of seven random-effects models for meta-analyses that estimate the summary odds ratio. Stat Med 37(7):1059-1085", doi = "10.1002/sim.7588", locator = "Table 3, outcome 1 (pneumonia), columns A, B, C, D", read = 2026-11-14 }
+args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "CM.AL", method = "ML" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", "se[0]" = "glmm_formulas.rma_glmm_se", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-5
+check = "test_derived.glmm_likelihood_at_estimate"
+covers = ["rma_glmm.fit.OR.CM.AL.ML"]
+
+[[case]]
+id = "glmm.fit.or.cm.el.fe.jackson2018.pneumonia.beta"
+kind = "derived"
+function = "rma_glmm"
+data = { ai = [1, 0, 1, 13, 2, 4, 6], bi = [155, 89, 43, 64, 157, 43, 76], ci = [12, 3, 6, 27, 5, 6, 0], di = [69, 40, 32, 53, 165, 43, 148] }
+source = { citation = "Jackson D, Law M, Stijnen T, Viechtbauer W, White IR (2018). A comparison of seven random-effects models for meta-analyses that estimate the summary odds ratio. Stat Med 37(7):1059-1085", doi = "10.1002/sim.7588", locator = "Table 3, outcome 1 (pneumonia), columns A, B, C, D", read = 2026-11-14 }
+args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "CM.EL", method = "FE" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta" }
+tolerance = 1e-8
+covers = ["rma_glmm.fit.OR.CM.EL.FE"]
+
+[[case]]
+id = "glmm.fit.or.cm.el.fe.jackson2018.pneumonia.se"
+kind = "derived"
+function = "rma_glmm"
+data = { ai = [1, 0, 1, 13, 2, 4, 6], bi = [155, 89, 43, 64, 157, 43, 76], ci = [12, 3, 6, 27, 5, 6, 0], di = [69, 40, 32, 53, 165, 43, 148] }
+source = { citation = "Jackson D, Law M, Stijnen T, Viechtbauer W, White IR (2018). A comparison of seven random-effects models for meta-analyses that estimate the summary odds ratio. Stat Med 37(7):1059-1085", doi = "10.1002/sim.7588", locator = "Table 3, outcome 1 (pneumonia), columns A, B, C, D", read = 2026-11-14 }
+args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "CM.EL", method = "FE" }
+expect = { "se[0]" = "glmm_formulas.rma_glmm_se" }
+tolerance = 1e-6
+status = "mismatch"
+reason = "metafopy gives se 0.25175750395, the formulas (observed information of the exact conditional likelihood) 0.25175350296, and R metafor 5.2-1 0.2517466148"
+covers = ["rma_glmm.fit.OR.CM.EL.FE"]
+
+[[case]]
+id = "glmm.fit.or.cm.el.ml.jackson2018.pneumonia.se"
+kind = "derived"
+function = "rma_glmm"
+data = { ai = [1, 0, 1, 13, 2, 4, 6], bi = [155, 89, 43, 64, 157, 43, 76], ci = [12, 3, 6, 27, 5, 6, 0], di = [69, 40, 32, 53, 165, 43, 148] }
+source = { citation = "Jackson D, Law M, Stijnen T, Viechtbauer W, White IR (2018). A comparison of seven random-effects models for meta-analyses that estimate the summary odds ratio. Stat Med 37(7):1059-1085", doi = "10.1002/sim.7588", locator = "Table 3, outcome 1 (pneumonia), columns A, B, C, D", read = 2026-11-14 }
+args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "CM.EL", method = "ML", control = { int_rel_tol = 1e-10 } }
+expect = { "se[0]" = "glmm_formulas.rma_glmm_se" }
+tolerance = 1e-5
+status = "mismatch"
+reason = "metafopy gives se 0.88813349, the formulas (observed information of the exact conditional likelihood) 0.88810230, and R metafor 5.2-1 0.8881240252"
+covers = ["rma_glmm.fit.OR.CM.EL.ML"]
+
+[[case]]
+id = "glmm.fit.or.cm.el.ml.jackson2018.pneumonia"
+kind = "derived"
+function = "rma_glmm"
+data = { ai = [1, 0, 1, 13, 2, 4, 6], bi = [155, 89, 43, 64, 157, 43, 76], ci = [12, 3, 6, 27, 5, 6, 0], di = [69, 40, 32, 53, 165, 43, 148] }
+source = { citation = "Jackson D, Law M, Stijnen T, Viechtbauer W, White IR (2018). A comparison of seven random-effects models for meta-analyses that estimate the summary odds ratio. Stat Med 37(7):1059-1085", doi = "10.1002/sim.7588", locator = "Table 3, outcome 1 (pneumonia), columns A, B, C, D", read = 2026-11-14 }
+args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "CM.EL", method = "ML", control = { int_rel_tol = 1e-10 } }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-5
+check = "test_derived.glmm_likelihood_at_estimate"
+covers = ["rma_glmm.fit.OR.CM.EL.ML"]
+
+[[case]]
+id = "glmm.fit.or.um.fs.fe.jackson2018.pneumonia.beta"
+kind = "derived"
+function = "rma_glmm"
+data = { ai = [1, 0, 1, 13, 2, 4, 6], bi = [155, 89, 43, 64, 157, 43, 76], ci = [12, 3, 6, 27, 5, 6, 0], di = [69, 40, 32, 53, 165, 43, 148] }
+source = { citation = "Jackson D, Law M, Stijnen T, Viechtbauer W, White IR (2018). A comparison of seven random-effects models for meta-analyses that estimate the summary odds ratio. Stat Med 37(7):1059-1085", doi = "10.1002/sim.7588", locator = "Table 3, outcome 1 (pneumonia), columns A, B, C, D", read = 2026-11-14 }
+args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "UM.FS", method = "FE" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta" }
+tolerance = 1e-8
+covers = ["rma_glmm.fit.OR.UM.FS.FE"]
+
+[[case]]
+id = "glmm.fit.or.um.fs.fe.jackson2018.pneumonia.se"
+kind = "derived"
+function = "rma_glmm"
+data = { ai = [1, 0, 1, 13, 2, 4, 6], bi = [155, 89, 43, 64, 157, 43, 76], ci = [12, 3, 6, 27, 5, 6, 0], di = [69, 40, 32, 53, 165, 43, 148] }
+source = { citation = "Jackson D, Law M, Stijnen T, Viechtbauer W, White IR (2018). A comparison of seven random-effects models for meta-analyses that estimate the summary odds ratio. Stat Med 37(7):1059-1085", doi = "10.1002/sim.7588", locator = "Table 3, outcome 1 (pneumonia), columns A, B, C, D", read = 2026-11-14 }
+args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "UM.FS", method = "FE" }
+expect = { "se[0]" = "glmm_formulas.rma_glmm_se" }
+tolerance = 1e-6
+covers = ["rma_glmm.fit.OR.UM.FS.FE"]
+
+[[case]]
+id = "glmm.fit.or.um.fs.ml.jackson2018.pneumonia"
+kind = "derived"
+function = "rma_glmm"
+data = { ai = [1, 0, 1, 13, 2, 4, 6], bi = [155, 89, 43, 64, 157, 43, 76], ci = [12, 3, 6, 27, 5, 6, 0], di = [69, 40, 32, 53, 165, 43, 148] }
+source = { citation = "Jackson D, Law M, Stijnen T, Viechtbauer W, White IR (2018). A comparison of seven random-effects models for meta-analyses that estimate the summary odds ratio. Stat Med 37(7):1059-1085", doi = "10.1002/sim.7588", locator = "Table 3, outcome 1 (pneumonia), columns A, B, C, D", read = 2026-11-14 }
+args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "UM.FS", method = "ML" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", "se[0]" = "glmm_formulas.rma_glmm_se", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-5
+check = "test_derived.glmm_likelihood_at_estimate"
+covers = ["rma_glmm.fit.OR.UM.FS.ML"]
+
+[[case]]
+id = "glmm.fit.or.um.rs.fe.jackson2018.pneumonia.beta"
+kind = "derived"
+function = "rma_glmm"
+data = { ai = [1, 0, 1, 13, 2, 4, 6], bi = [155, 89, 43, 64, 157, 43, 76], ci = [12, 3, 6, 27, 5, 6, 0], di = [69, 40, 32, 53, 165, 43, 148] }
+source = { citation = "Jackson D, Law M, Stijnen T, Viechtbauer W, White IR (2018). A comparison of seven random-effects models for meta-analyses that estimate the summary odds ratio. Stat Med 37(7):1059-1085", doi = "10.1002/sim.7588", locator = "Table 3, outcome 1 (pneumonia), columns A, B, C, D", read = 2026-11-14 }
+args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "UM.RS", method = "FE" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta" }
+tolerance = 1e-8
+covers = ["rma_glmm.fit.OR.UM.RS.FE"]
+
+[[case]]
+id = "glmm.fit.or.um.rs.fe.jackson2018.pneumonia.se"
+kind = "derived"
+function = "rma_glmm"
+data = { ai = [1, 0, 1, 13, 2, 4, 6], bi = [155, 89, 43, 64, 157, 43, 76], ci = [12, 3, 6, 27, 5, 6, 0], di = [69, 40, 32, 53, 165, 43, 148] }
+source = { citation = "Jackson D, Law M, Stijnen T, Viechtbauer W, White IR (2018). A comparison of seven random-effects models for meta-analyses that estimate the summary odds ratio. Stat Med 37(7):1059-1085", doi = "10.1002/sim.7588", locator = "Table 3, outcome 1 (pneumonia), columns A, B, C, D", read = 2026-11-14 }
+args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "UM.RS", method = "FE" }
+expect = { "se[0]" = "glmm_formulas.rma_glmm_se" }
+tolerance = 1e-6
+covers = ["rma_glmm.fit.OR.UM.RS.FE"]
+
+[[case]]
+id = "glmm.fit.or.um.rs.ml.jackson2018.pneumonia"
+kind = "derived"
+function = "rma_glmm"
+data = { ai = [1, 0, 1, 13, 2, 4, 6], bi = [155, 89, 43, 64, 157, 43, 76], ci = [12, 3, 6, 27, 5, 6, 0], di = [69, 40, 32, 53, 165, 43, 148] }
+source = { citation = "Jackson D, Law M, Stijnen T, Viechtbauer W, White IR (2018). A comparison of seven random-effects models for meta-analyses that estimate the summary odds ratio. Stat Med 37(7):1059-1085", doi = "10.1002/sim.7588", locator = "Table 3, outcome 1 (pneumonia), columns A, B, C, D", read = 2026-11-14 }
+args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "UM.RS", method = "ML" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", "se[0]" = "glmm_formulas.rma_glmm_se", tau2 = "glmm_formulas.rma_glmm_tau2", sigma2 = "glmm_formulas.rma_glmm_sigma2" }
+tolerance = 1e-5
+check = "test_derived.glmm_likelihood_at_estimate"
+covers = ["rma_glmm.fit.OR.UM.RS.ML"]

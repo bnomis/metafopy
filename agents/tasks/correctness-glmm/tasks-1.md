@@ -175,7 +175,7 @@ Laplace approximation, each coded from its paper.
 
 ## Task 4: Derived fit cases for OR
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** Coverage list (`rma_glmm.fit`); Kinds of evidence (optimiser dependence); Implementation step 3
@@ -185,25 +185,25 @@ estimates themselves.
 
 **Subtasks:**
 
-- [ ] `src/tests/correctness/test_derived.py`: `glmm_likelihood_at_estimate` as in the spec's API - the formulas' log-likelihood at metafopy's
+- [x] `src/tests/correctness/test_derived.py`: `glmm_likelihood_at_estimate` as in the spec's API - the formulas' log-likelihood at metafopy's
       reported estimates equals `result.fit_stats_ml.ll` and the formulas' maximum (`rtol=1e-8`), and its gradient there is below `1e-4`; and a check
       that the estimates (`beta`, `se`, `tau2`, `sigma2` for `UM.RS`) agree with the formulas' optimum at the case's stated tolerance (`1e-5` for
       `nlminb` and the mixed models; `1e-8` relative on `FE` `beta`; `1e-6` on the `CM.EL` `FE` standard error)
-- [ ] `src/tests/correctness/cases.py`: `formula_value` passes `rma_glmm`'s own arguments by name, as it does for `escalc`, if Task 1 left it unable to
-- [ ] Cases in `cases/glmm.toml` for `OR` with each model of `MODELS` and `FE`, `ML` on `dat.nielweise2007` and `dat.collins1985a`, and on the
+- [x] `src/tests/correctness/cases.py`: `formula_value` passes `rma_glmm`'s own arguments by name, as it does for `escalc`, if Task 1 left it unable to
+- [x] Cases in `cases/glmm.toml` for `OR` with each model of `MODELS` and `FE`, `ML` on `dat.nielweise2007` and `dat.collins1985a`, and on the
       Jackson et al. (2018) measles data inline in `[case.data]` with its locator (Table 3); each states its tolerance
-- [ ] Record any mismatch as the header says
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] The gate's missing list names no `rma_glmm.fit.OR.*` item
-- [ ] Each `ML` case runs both checks
+- [x] The gate's missing list names no `rma_glmm.fit.OR.*` item
+- [x] Each `ML` case runs both checks
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py src/tests/correctness/test_glmm_formulas.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py src/tests/correctness/test_glmm_formulas.py` passes
 
 **Notes:**
 

@@ -10,6 +10,7 @@ it declares (see ``cases.formula_value``). See ``agents/specs/correctness-glmm/s
 import collections.abc
 import contextlib
 import dataclasses
+import functools
 import math
 import typing
 import warnings
@@ -918,3 +919,104 @@ def profile_loglik_at(
     free = numpy.zeros(theta.size, dtype=bool)
     free[st.p : st.start.size] = True
     return loglik(maximise(loglik, theta, st, free=free))
+
+
+def rma_glmm_rule(model: str, method: str, nagq: int) -> tuple[str, int]:
+    """The approximation ``rma_glmm`` documents for a fit: Laplace for ``UM.RS`` with ``ML`` (two random effects, which ``glmer`` allows no more
+    than one quadrature point for), the exact integral for ``CM.EL`` (``control`` ``int_rel_tol`` tightened in the cases) and adaptive quadrature
+    with ``nAGQ`` points otherwise (Pinheiro and Bates 1995)."""
+    if model == 'UM.RS' and method == 'ML':
+        return 'laplace', 1
+    if model == 'CM.EL':
+        return 'exact', nagq
+    return 'agq', nagq
+
+
+def rma_glmm_counts(
+    ai: FloatArray, bi: FloatArray | None, ci: FloatArray, di: FloatArray | None, n1i: FloatArray | None, n2i: FloatArray | None, *, drop00: bool = True
+) -> tuple[FloatArray, FloatArray, FloatArray, FloatArray]:
+    """The 2x2 counts ``rma_glmm`` fits for ``OR`` from ``ai, bi, ci, di`` or ``ai, n1i, ci, n2i``: incomplete studies omitted, and with ``drop00``
+    the studies without an event or without a non-event in both groups dropped (Stijnen et al. 2010; they carry no information on the odds ratio)."""
+    a, c = numpy.asarray(ai, dtype=numpy.float64), numpy.asarray(ci, dtype=numpy.float64)
+    b = numpy.asarray(n1i, dtype=numpy.float64) - a if bi is None else numpy.asarray(bi, dtype=numpy.float64)
+    d = numpy.asarray(n2i, dtype=numpy.float64) - c if di is None else numpy.asarray(di, dtype=numpy.float64)
+    keep = numpy.isfinite(a + b + c + d)
+    if drop00:
+        keep &= ~(((a == 0) & (c == 0)) | ((b == 0) & (d == 0)))
+    return a[keep], b[keep], c[keep], d[keep]
+
+
+def rma_glmm_problem(
+    ai: FloatArray,
+    ci: FloatArray,
+    model: str,
+    method: str = 'ML',
+    nAGQ: int = 7,
+    coding: float = 0.5,
+    cor: bool = False,
+    drop00: bool = True,
+    bi: FloatArray | None = None,
+    di: FloatArray | None = None,
+    n1i: FloatArray | None = None,
+    n2i: FloatArray | None = None,
+) -> tuple[Problem, str, int]:
+    """The problem, rule and quadrature points of a ``measure = 'OR'`` call of ``rma_glmm``, from its own arguments."""
+    a, b, c, d = rma_glmm_counts(ai, bi, ci, di, n1i, n2i, drop00=drop00)
+    rule, points = rma_glmm_rule(model, method, nAGQ)
+    return glmm_problem(a, b, c, d, model, coding=coding, cor=cor), rule, points
+
+
+FIT_CACHE: dict[tuple[typing.Any, ...], GLMMReference] = {}
+
+
+def rma_glmm_fit(
+    ai: FloatArray,
+    ci: FloatArray,
+    model: str,
+    method: str = 'ML',
+    nAGQ: int = 7,
+    coding: float = 0.5,
+    cor: bool = False,
+    drop00: bool = True,
+    bi: FloatArray | None = None,
+    di: FloatArray | None = None,
+    n1i: FloatArray | None = None,
+    n2i: FloatArray | None = None,
+) -> GLMMReference:
+    """The formulas' own fit of an ``rma_glmm`` call, kept for the other ``rma_glmm_*`` formulas of the same case."""
+    problem, rule, points = rma_glmm_problem(ai, ci, model, method, nAGQ, coding, cor, drop00, bi, di, n1i, n2i)
+    key = (problem.y.tobytes(), problem.size.tobytes(), model, method, rule, points, coding, cor)
+    if key not in FIT_CACHE:
+        FIT_CACHE[key] = fit_problem(problem, method, rule, points)
+    return FIT_CACHE[key]
+
+
+def reference_field(name: str) -> collections.abc.Callable[..., typing.Any]:
+    """A formula giving one field of ``rma_glmm_fit`` (``beta``, ``se``, ``tau2``, ``sigma2``), called with the same arguments."""
+
+    @functools.wraps(rma_glmm_fit)
+    def field(*args: typing.Any, **kwargs: typing.Any) -> typing.Any:
+        return getattr(rma_glmm_fit(*args, **kwargs), name)
+
+    field.__doc__ = f"The ``{name}`` of the formulas' own fit of an ``rma_glmm`` call."
+    return field
+
+
+rma_glmm_beta = reference_field('beta')
+rma_glmm_se = reference_field('se')
+rma_glmm_sigma2 = reference_field('sigma2')
+rma_glmm_tau2 = reference_field('tau2')
+
+
+def profile_check(problem: Problem, method: str, beta: FloatArray, tau2: float, sigma2: float, rho: float, rule: str, points: int) -> tuple[float, float]:
+    """The log-likelihood at given ``beta`` and variances, maximised over the parameters a fit does not report, and the largest score of the
+    reported parameters there."""
+    st, loglik = loglik_function(problem, method, rule, points)
+    theta = parameter_vector(st, beta, tau2, sigma2, rho)
+    free = numpy.zeros(theta.size, dtype=bool)
+    free[st.p : st.start.size] = True
+    if free.any():
+        theta = maximise(loglik, theta, st, free=free)
+    reported = numpy.ones(theta.size, dtype=bool)
+    reported[st.p : st.start.size] = False
+    return loglik(theta), float(numpy.max(numpy.abs(gradient_at(loglik, theta)[reported])))

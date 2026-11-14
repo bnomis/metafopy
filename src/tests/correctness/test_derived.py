@@ -1,6 +1,7 @@
 """``derived`` cases: expected values from ``formulas.py``, coded from the publications' equations."""
 
 import dataclasses
+import math
 import re
 import typing
 
@@ -12,6 +13,7 @@ import scipy.stats
 
 import correctness.cases
 import correctness.formulas
+import correctness.glmm_formulas
 import metafopy
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
@@ -478,3 +480,35 @@ def robust_club(case: correctness.cases.Case, result: typing.Any) -> None:
         infinite_agree(case, 'dfs', result.robust.dfs, coef_df, ROBUST_TOLERANCE)
     mv_agree(case, 'pval', result.pval, pval, tolerance)
     mv_agree(case, 'QMp', result.QMp, wald.pval, ROBUST_TOLERANCE)
+
+
+GLMM_LIKELIHOOD_RTOL = 1e-8
+GLMM_GRADIENT_TOLERANCE = 1e-4
+GLMM_CONDITIONAL_DEVIANCE_FITS = frozenset({('CM.AL', 'ML'), ('UM.FS', 'ML'), ('UM.RS', 'FE'), ('UM.RS', 'ML')})
+
+
+def glmm_likelihood_at_estimate(case: correctness.cases.Case, result: typing.Any) -> None:
+    """The formulas' log-likelihood at the reported estimates equals the formulas' maximum and, where ``rma_glmm`` reports the marginal
+    log-likelihood, ``result.fit_stats_ml.ll``; the score there is small.
+
+    ``lme4`` fits (the mixed models other than ``CM.EL``) report metafor's saturated model log-likelihood minus half the conditional deviance, not the
+    marginal log-likelihood, so ``ll`` is compared only where it is the marginal one; the other two checks hold for every fit.
+    """
+    frame = correctness.cases.case_frame(case)
+    problem, rule, points = correctness.cases.formula_value(case, 'glmm_formulas.rma_glmm_problem', frame)
+    reference = correctness.cases.formula_value(case, 'glmm_formulas.rma_glmm_fit', frame)
+    method = case.args.get('method', 'ML')
+    sigma2 = float(result.sigma2) if problem.model == 'UM.RS' else math.nan
+    rho = float(result.rho) if problem.cor and problem.model == 'UM.RS' else math.nan
+    loglik, score = correctness.glmm_formulas.profile_check(problem, method, result.beta, float(result.tau2), sigma2, rho, rule, points)
+    where = f"{case.id}: the formulas' log-likelihood at the estimates of metafopy"
+    if not loglik <= reference.loglik + GLMM_LIKELIHOOD_RTOL * abs(reference.loglik):
+        raise AssertionError(f"{where} is {loglik!r}, above the formulas' maximum {reference.loglik!r}")
+    if not reference.loglik - loglik <= GLMM_LIKELIHOOD_RTOL * abs(reference.loglik):
+        raise AssertionError(f"{where} is {loglik!r}, not the formulas' maximum {reference.loglik!r} (rtol {GLMM_LIKELIHOOD_RTOL:g})")
+    if not score <= GLMM_GRADIENT_TOLERANCE:
+        raise AssertionError(f'{where} has a score of {score:.3g}, not below {GLMM_GRADIENT_TOLERANCE:g}')
+    if (problem.model, method) not in GLMM_CONDITIONAL_DEVIANCE_FITS:
+        reported = float(result.fit_stats_ml.ll)
+        if not abs(reported - loglik) <= GLMM_LIKELIHOOD_RTOL * abs(loglik):
+            raise AssertionError(f'{case.id}: metafopy reports ll {reported!r}, the formulas give {loglik!r} at its estimates')
