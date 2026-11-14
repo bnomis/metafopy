@@ -368,7 +368,7 @@ them the gate passes.
 
 ## Task 9: Published cases
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** Seed sources; Decisions 1; Implementation step 5
@@ -377,29 +377,29 @@ them the gate passes.
 
 **Subtasks:**
 
-- [ ] Check that `/Users/simonb/src/metafopy papers` can be read; stop as `blocked` if not
-- [ ] Prerequisite check: `grep -n '^def ' src/tests/correctness/test_derived.py` lists a back-transform check beside `predict_pi`. If it does not,
+- [x] Check that `/Users/simonb/src/metafopy papers` can be read; stop as `blocked` if not
+- [x] Prerequisite check: `grep -n '^def ' src/tests/correctness/test_derived.py` lists a back-transform check beside `predict_pi`. If it does not,
       write no case that needs `exp(beta)`, and list each such value in `mismatches.md` under "Harness limits" with its locator
-- [ ] Jackson et al. (2018) Table 4: log odds ratio, its SE and `tau2` per model for outcomes 1, 2, 4 and 4b (4b drops the double-zero study, a
+- [x] Jackson et al. (2018) Table 4: log odds ratio, its SE and `tau2` per model for outcomes 1, 2, 4 and 4b (4b drops the double-zero study, a
       `drop00` check), on the Table 3 data inline
-- [ ] Then each other seed source the spec's table lists (Stijnen et al. 2010; Simmonds and Higgins 2016; Turner et al. 2000; van Houwelingen et al.
+- [x] Then each other seed source the spec's table lists (Stijnen et al. 2010; Simmonds and Higgins 2016; Turner et al. 2000; van Houwelingen et al.
       1993; Bagos and Nikolopoulos 2009; Hamza et al. 2008 and Zhou et al. 1999; Pinheiro and Bates 1995; Breslow 1981; Higgins and Thompson 2002): find
       its worked example and the metafopy dataset holding the same data (inline data with its locator otherwise), and add `published` cases in
       `cases/glmm_published.toml`, values as printed strings. A source with formulas only gets none, and that is said in the case file's header
-- [ ] A source that cannot be read, or whose example needs a source not in the folder, goes under "Sources needed" in `mismatches.md` with its
+- [x] A source that cannot be read, or whose example needs a source not in the folder, goes under "Sources needed" in `mismatches.md` with its
       citation and the table or example wanted
-- [ ] Record any mismatch as the header says
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] Every seed source has `published` cases, a "formulas only" note, or a "Sources needed" entry
-- [ ] Every `published` case has `citation`, `locator` and `read`
+- [x] Every seed source has `published` cases, a "formulas only" note, or a "Sources needed" entry
+- [x] Every `published` case has `citation`, `locator` and `read`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_published.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_published.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 

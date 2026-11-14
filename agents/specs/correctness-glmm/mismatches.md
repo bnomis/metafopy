@@ -44,6 +44,32 @@ differs from both (the metafopy documentation says the statistic is ill-conditio
 For comparison the same data give `QE_Wld` 147.906 with `CM.AL` and 163.165 with `UM.FS` in both metafopy and the formulas, and `QE_LRT` 176.8738393
 with `CM.EL` in all three.
 
+### Published values (Task 9, `src/tests/correctness/cases/glmm_published.toml`)
+
+Each row is a `.mismatch` case beside the case of the values that agree. R metafor 5.2-1 was run with the audit's pinned library and gives the same
+value as metafopy in every row, so none is a metafopy-only difference: the sources used other software (Jackson et al. 2018: metafor 1.9-9 and lme4
+1.1-12; Stijnen et al. 2010: SAS Proc NLMIXED; Simmonds and Higgins 2016: `glmer`).
+
+| Case | Value | Printed | metafopy | R metafor |
+|---|---|---|---|---|
+| Jackson et al. (2018) Table 4, Model 4 (`UM.FS`), outcome 1 | tau2 | 2.664 | 2.6628 | 2.66292 |
+| Jackson et al. Table 4, Model 5 (`UM.RS`), outcome 2 | SE; tau2 | 0.413; 0.119 | 0.4214; 0.1196 | 0.42136; 0.11956 |
+| Jackson et al. Table 4, Model 5, outcome 4 | SE | 0.396 | 0.3972 | 0.39719 |
+| Jackson et al. Table 4, Model 5, outcome 4b | SE | 0.396 | 0.3970 | 0.39703 |
+| Jackson et al. Table 4, Model 7 (`CM.EL`), outcome 1 | tau2 | 4.341 | 4.3416 | 4.34164 |
+| Jackson et al. Table 4, Model 7, outcomes 4 and 4b (starred: Nelder-Mead, `maxit` 20000, `reltol` 1e-4) | log OR; tau2 | -0.793; 0.001 | -0.8015; 0.0000 | -0.80149; 0.00003 |
+| Stijnen et al. (2010) Table III, HN (`CM.EL`) | median OR | 0.25 | 0.2584 | exp of the printed -1.353 is 0.258, so the printed 0.25 is inconsistent within the paper |
+| Stijnen et al. Table III, BN (`CM.AL`) | SD of tau | 0.77 | 0.77504 | 0.77504 |
+| Stijnen et al. Table VII, control, PN (`IRLN`) | tau2 | 0.316 | 0.31660 | 0.31659 |
+| Stijnen et al. Table VII, treated, PN | log rate; SE; tau2 | 0.850; 0.330; 0.654 | 0.81997; 0.31962; 0.59899 | 0.81997; 0.31962; 0.59898 |
+| Simmonds and Higgins (2016) Fig 1, one-stage random (`UM.FS`, `ML`) | OR; CI | 1.74 (0.59, 5.17) | 1.79068 (0.54155, 5.92107) | 1.7907 (0.5415, 5.9211) |
+| Turner et al. (2000) Table IV, fixed effect, pre-eclampsia (`UM.FS`, `FE`) | CI | (-0.59, -0.23) | (-0.58398, -0.23688) | (-0.58398, -0.23688) |
+
+Several rows differ by one unit of the last printed digit and are rounding or optimiser differences (the Jackson `tau2` rows, Stijnen BN and control
+rows); the Stijnen treated row (Table VII) and the Simmonds and Higgins random-effects row are larger. In the Simmonds and Higgins case the paper's
+random-effects result equals its fixed-effect result (1.74), which metafopy and R metafor reproduce for `FE` (1.74126) but not for `ML`
+(`tau2` 0.21307).
+
 ## Conventions
 
 ### The saturated-model Wald statistic of a moderator model
@@ -76,7 +102,18 @@ one-group `FE` fits the closed-form and numerical standard errors agree with R m
 
 ## Sources needed
 
-None found by Task 4.
+Found by Task 9 (read 2026-11-14): Bagos and Nikolopoulos (2009) prints pooled totals and back-transformed rate ratios only, never per-study counts and
+person-times, so no Poisson case could be written from it. Its data come from two reviews that are not in `/Users/simonb/src/metafopy papers`:
+
+- Hooper L, Summerbell CD, Higgins JP, Thompson RL, Capps NE, Smith GD, Riemersma RA, Ebrahim S (2001). Dietary fat intake and prevention of
+  cardiovascular disease: systematic review. BMJ 322(7289):757-763. Wanted: the per-trial combined cardiovascular events and person-years of the
+  intervention and control groups (10 trials). File name: `Hooper_2001_Dietary_fat_intake_and_prevention_of_cardiovascular_disease.pdf`.
+- Wolf FM, Guevara JP, Grum CM, Clark NM, Cates CJ (2003). Educational interventions for asthma in children. Cochrane Database Syst Rev (1):CD000326.
+  Wanted: the per-study school absences and ER visits with person-months for each group. File name:
+  `Wolf_2003_Educational_interventions_for_asthma_in_children.pdf`.
+
+With them the wanted values are Table 5 of Bagos and Nikolopoulos (random study effects, `z` 0/1 and bivariate rows: Hooper 0.746 (0.592, 0.940), school
+absences 0.721 (0.579, 0.897), ER visits 0.525 (0.361, 0.764), as printed IRRs).
 
 ## Harness limits
 
