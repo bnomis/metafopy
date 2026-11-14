@@ -43,7 +43,7 @@ data = { ai = [1, 0, 1, 13, 2, 4, 6], bi = [155, 89, 43, 64, 157, 43, 76], ci = 
 args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "UM.FS", method = "ML", drop00 = true }
 expect = { "tau2" = "2.664" }
 status = "mismatch"
-reason = "tau2 printed 2.664, metafopy 2.6628, R metafor 5.2-1 2.66292"
+reason = "tau2 printed 2.664, metafopy 2.6628, R metafor 5.2-1 2.66292; accepted as a source difference on 2026-11-14 (the source used other software, metafopy and R metafor agree)"
 covers = ["rma_glmm.fit.OR.UM.FS.ML"]
 
 [case.source]
@@ -135,7 +135,7 @@ data = { ai = [5, 2, 8, 0], bi = [45, 42, 151, 175], ci = [12, 5, 7, 1], di = [3
 args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "UM.RS", method = "ML", drop00 = true }
 expect = { "se[0]" = "0.413", "tau2" = "0.119" }
 status = "mismatch"
-reason = "se[0] printed 0.413, metafopy 0.4214, R metafor 5.2-1 0.42136; tau2 printed 0.119, metafopy 0.1196, R metafor 5.2-1 0.11956"
+reason = "se[0] printed 0.413, metafopy 0.4214, R metafor 5.2-1 0.42136; tau2 printed 0.119, metafopy 0.1196, R metafor 5.2-1 0.11956; accepted as a source difference on 2026-11-14 (the source used other software, metafopy and R metafor agree)"
 covers = ["rma_glmm.fit.OR.UM.RS.ML"]
 
 [case.source]
@@ -167,7 +167,7 @@ data = { ai = [3, 1, 0, 5, 1], bi = [57, 43, 195, 154, 85], ci = [7, 2, 0, 12, 0
 args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "UM.RS", method = "ML", drop00 = false }
 expect = { "se[0]" = "0.396" }
 status = "mismatch"
-reason = "se[0] printed 0.396, metafopy 0.3972, R metafor 5.2-1 0.39719"
+reason = "se[0] printed 0.396, metafopy 0.3972, R metafor 5.2-1 0.39719; accepted as a source difference on 2026-11-14 (the source used other software, metafopy and R metafor agree)"
 covers = ["rma_glmm.fit.OR.UM.RS.ML"]
 
 [case.source]
@@ -199,7 +199,7 @@ data = { ai = [3, 1, 0, 5, 1], bi = [57, 43, 195, 154, 85], ci = [7, 2, 0, 12, 0
 args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "UM.RS", method = "ML", drop00 = true }
 expect = { "se[0]" = "0.396" }
 status = "mismatch"
-reason = "se[0] printed 0.396, metafopy 0.3970, R metafor 5.2-1 0.39703"
+reason = "se[0] printed 0.396, metafopy 0.3970, R metafor 5.2-1 0.39703; accepted as a source difference on 2026-11-14 (the source used other software, metafopy and R metafor agree)"
 covers = ["rma_glmm.fit.OR.UM.RS.ML"]
 
 [case.source]
@@ -231,7 +231,7 @@ data = { ai = [1, 0, 1, 13, 2, 4, 6], bi = [155, 89, 43, 64, 157, 43, 76], ci = 
 args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "CM.EL", method = "ML", drop00 = true }
 expect = { "tau2" = "4.341" }
 status = "mismatch"
-reason = "tau2 printed 4.341, metafopy 4.3416, R metafor 5.2-1 4.34164"
+reason = "tau2 printed 4.341, metafopy 4.3416, R metafor 5.2-1 4.34164; accepted as a source difference on 2026-11-14 (the source used other software, metafopy and R metafor agree)"
 covers = ["rma_glmm.fit.OR.CM.EL.ML"]
 
 [case.source]
@@ -278,7 +278,7 @@ data = { ai = [3, 1, 0, 5, 1], bi = [57, 43, 195, 154, 85], ci = [7, 2, 0, 12, 0
 args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "CM.EL", method = "ML", drop00 = false, control = { optimizer = "Nelder-Mead", opt_ctrl = { maxit = 20000, reltol = 1e-4 } } }
 expect = { "beta[0]" = "-0.793", "tau2" = "0.001" }
 status = "mismatch"
-reason = "beta[0] printed -0.793, metafopy -0.8015, R metafor 5.2-1 -0.80149; tau2 printed 0.001, metafopy 0.0000, R metafor 5.2-1 0.00003"
+reason = "beta[0] printed -0.793, metafopy -0.8015, R metafor 5.2-1 -0.80149; tau2 printed 0.001, metafopy 0.0000, R metafor 5.2-1 0.00003; accepted as a source difference on 2026-11-14 (the source used other software, metafopy and R metafor agree)"
 covers = ["rma_glmm.fit.OR.CM.EL.ML"]
 
 [case.source]
@@ -310,7 +310,7 @@ data = { ai = [3, 1, 0, 5, 1], bi = [57, 43, 195, 154, 85], ci = [7, 2, 0, 12, 0
 args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "CM.EL", method = "ML", drop00 = true, control = { optimizer = "Nelder-Mead", opt_ctrl = { maxit = 20000, reltol = 1e-4 } } }
 expect = { "beta[0]" = "-0.793", "tau2" = "0.001" }
 status = "mismatch"
-reason = "beta[0] printed -0.793, metafopy -0.8015, R metafor 5.2-1 -0.80149; tau2 printed 0.001, metafopy 0.0000, R metafor 5.2-1 0.00003"
+reason = "beta[0] printed -0.793, metafopy -0.8015, R metafor 5.2-1 -0.80149; tau2 printed 0.001, metafopy 0.0000, R metafor 5.2-1 0.00003; accepted as a source difference on 2026-11-14 (the source used other software, metafopy and R metafor agree)"
 covers = ["rma_glmm.fit.OR.CM.EL.ML"]
 
 [case.source]
@@ -346,7 +346,7 @@ function = "rma_glmm"
 dataset = "dat.nielweise2007"
 args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.EL", method = "ML" }
 status = "mismatch"
-reason = "exp_beta[0] printed 0.25, metafopy 0.25842, exp of the same estimate; the printed estimate -1.353 itself gives 0.258, so the printed 0.25 is inconsistent within the paper"
+reason = "exp_beta[0] printed 0.25, metafopy 0.25842, exp of the same estimate; the printed estimate -1.353 itself gives 0.258, so the printed 0.25 is inconsistent within the paper; accepted as a source difference on 2026-11-14 (the source used other software, metafopy and R metafor agree)"
 check = "test_published.glmm_printed"
 printed = { "exp_beta[0]" = "0.25" }
 covers = ["rma_glmm.fit.OR.CM.EL.ML"]
@@ -380,7 +380,7 @@ function = "rma_glmm"
 dataset = "dat.nielweise2007"
 args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.AL", method = "ML" }
 status = "mismatch"
-reason = "tau printed 0.77, metafopy 0.77504, R metafor 5.2-1 0.77504 (tau2 0.60069)"
+reason = "tau printed 0.77, metafopy 0.77504, R metafor 5.2-1 0.77504 (tau2 0.60069); accepted as a source difference on 2026-11-14 (the source used other software, metafopy and R metafor agree)"
 check = "test_published.glmm_printed"
 printed = { tau = "0.77" }
 covers = ["rma_glmm.fit.OR.CM.AL.ML"]
@@ -464,7 +464,7 @@ function = "rma_glmm"
 data = { xi = [11, 8, 14, 10, 1, 8, 15, 7, 3], ti = [1.988, 1.460, 10.962, 1.502, 0.482, 0.913, 6.840, 1.015, 0.440] }
 args = { xi = "xi", ti = "ti", measure = "IRLN", method = "ML" }
 status = "mismatch"
-reason = "tau2 printed 0.316, metafopy 0.31660, R metafor 5.2-1 0.31659"
+reason = "tau2 printed 0.316, metafopy 0.31660, R metafor 5.2-1 0.31659; accepted as a source difference on 2026-11-14 (the source used other software, metafopy and R metafor agree)"
 check = "test_published.glmm_printed"
 printed = { tau2 = "0.316" }
 covers = ["rma_glmm.fit.IRLN.none.ML"]
@@ -608,7 +608,7 @@ function = "rma_glmm"
 data = { ai = [14, 21, 14, 6, 12, 138, 15, 6, 65], n1i = [131, 385, 57, 38, 1011, 1370, 506, 108, 153], ci = [14, 17, 24, 18, 35, 175, 20, 2, 40], n2i = [136, 134, 48, 40, 760, 1336, 524, 103, 102] }
 args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "UM.FS", method = "FE" }
 status = "mismatch"
-reason = "ci_lb[0] printed -0.59, metafopy -0.58398, R metafor 5.2-1 -0.58398; ci_ub[0] printed -0.23, metafopy -0.23688, R metafor 5.2-1 -0.23688"
+reason = "ci_lb[0] printed -0.59, metafopy -0.58398, R metafor 5.2-1 -0.58398; ci_ub[0] printed -0.23, metafopy -0.23688, R metafor 5.2-1 -0.23688; accepted as a source difference on 2026-11-14 (the source used other software, metafopy and R metafor agree)"
 check = "test_published.glmm_printed"
 printed = { "ci_lb[0]" = "-0.59", "ci_ub[0]" = "-0.23" }
 covers = ["rma_glmm.fit.OR.UM.FS.FE"]

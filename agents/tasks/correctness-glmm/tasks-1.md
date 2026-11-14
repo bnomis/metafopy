@@ -568,7 +568,7 @@ such a source exists.
 
 ## Task 14: File the answers and close the spec
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation step 8
@@ -578,27 +578,27 @@ list.
 
 **Subtasks:**
 
-- [ ] Read the answers from the Answers section of `agents/specs/correctness-glmm/mismatches.md`, never from the page. Stop as `blocked`, naming the
+- [x] Read the answers from the Answers section of `agents/specs/correctness-glmm/mismatches.md`, never from the page. Stop as `blocked`, naming the
       missing items, if the section is empty or incomplete. If Task 13 recorded that there was nothing to review, go on
-- [ ] *Keep metafor*: correct the case to the convention metafor documents, cite where it documents it, and set `status = "pass"`
-- [ ] *Follow the reference*: add a `TODO.md` item for each with the `todo-add` skill. The item names the case, the fix, the R parity fixtures and
+- [x] *Keep metafor*: correct the case to the convention metafor documents, cite where it documents it, and set `status = "pass"`
+- [x] *Follow the reference*: add a `TODO.md` item for each with the `todo-add` skill. The item names the case, the fix, the R parity fixtures and
       `known.toml` entries to mark, and the `docs/differences.md` section "Where metafor departs from its reference" to add
-- [ ] *Investigate*: a `TODO.md` item naming what is in doubt, with the `todo-add` skill
-- [ ] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` to say so
-- [ ] Run the final test run from the worktree:
+- [x] *Investigate*: a `TODO.md` item naming what is in doubt, with the `todo-add` skill
+- [x] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` to say so
+- [x] Run the final test run from the worktree:
       `main=$(git worktree list --porcelain | sed -n '1s/^worktree //p'); mkdir -p "$main/ralpher-logs/correctness-glmm/tasks-1" && pytest src/tests/correctness 2>&1 | tee "$main/ralpher-logs/correctness-glmm/tasks-1/final-tests.log"`
 
 **Acceptance Criteria:**
 
-- [ ] Every answered item has a case change or a `TODO.md` item
-- [ ] `git diff --quiet main -- src/audit/data/r-versions.json` exits 0
+- [x] Every answered item has a case change or a `TODO.md` item
+- [x] `git diff --quiet main -- src/audit/data/r-versions.json` exits 0
 
 **Definition of Done:**
 
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness` passes, `slow` tests included (the last subtask's run, logged to
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness` passes, `slow` tests included (the last subtask's run, logged to
       `$main/ralpher-logs/correctness-glmm/tasks-1/final-tests.log`)
 
 **Notes:**

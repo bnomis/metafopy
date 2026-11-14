@@ -1,7 +1,7 @@
 # Correctness tests for rma_glmm
 
 **Version:** 1.1
-**Status:** proposed
+**Status:** implemented
 **Date:** 2026-11-12
 
 `rma_glmm` fits generalised linear mixed models to binomial and Poisson counts: the unconditional models with fixed or random study effects (`UM.FS`,
