@@ -413,7 +413,7 @@ them the gate passes.
 
 ## Task 10: Stop for sources needed
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation step 5 (stop for the operator)
@@ -423,27 +423,29 @@ such a source exists.
 
 **Subtasks:**
 
-- [ ] If "Sources needed" in `agents/specs/correctness-glmm/mismatches.md` is absent or empty, write "No source needed" in that section, mark this
+- [x] (Not applicable: two sources were needed.) If "Sources needed" in `agents/specs/correctness-glmm/mismatches.md` is absent or empty, write "No source needed" in that section, mark this
       task done and go on: there is nothing to stop for
-- [ ] Otherwise: each entry names the citation, the table or example wanted, and the file name to save it under in
+- [x] Otherwise: each entry names the citation, the table or example wanted, and the file name to save it under in
       `/Users/simonb/src/metafopy papers`; stop the list for the operator
-- [ ] Once every entry has an answer, an operator session saves each supplied PDF in `/Users/simonb/src/metafopy papers` (never in the repository),
+- [x] Once every entry has an answer, an operator session saves each supplied PDF in `/Users/simonb/src/metafopy papers` (never in the repository),
       writes `supplied <date>` or `dropped <date>` beside each entry in `mismatches.md`, commits that, and only then restarts the list
 
 **Acceptance Criteria:**
 
-- [ ] Every "Sources needed" entry names the table or example wanted
+- [x] Every "Sources needed" entry names the table or example wanted
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness -m 'not slow'` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness -m 'not slow'` passes
 
 **Notes:**
 
 - Depends on Task 9
 - Every seed source was in the folder on 2026-11-14, so this stop is expected to pass through
+- Stopped on 2026-11-14 for Hooper et al. (2001) and Wolf et al. (2003); the operator saved both in the papers folder the same day and
+  `mismatches.md` marks them supplied. Task 11 writes their cases.
 
 ---
 
