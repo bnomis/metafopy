@@ -421,3 +421,624 @@ expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", "se[0]" = "glmm_formulas.r
 tolerance = 1e-5
 check = "test_derived.glmm_likelihood_at_estimate"
 covers = ["rma_glmm.fit.OR.UM.RS.ML"]
+
+# Task 5: IRR, one-group, RR and RD fit cases; method and link cases. Each reads the formulas' own fit of the same call. IRR is on
+# dat.nielweise2008 (Stijnen et al. 2010). CM.AL with IRR is fitted as CM.EL: its cases read the CM.EL formulas and a check compares the two calls.
+
+[[case]]
+id = "glmm.fit.irr.um.fs.fe.nielweise2008.beta"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2008"
+args = { x1i = "x1i", t1i = "t1i", x2i = "x2i", t2i = "t2i", measure = "IRR", model = "UM.FS", method = "FE" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta" }
+tolerance = 1e-08
+covers = ["rma_glmm.fit.IRR.UM.FS.FE"]
+
+[[case]]
+id = "glmm.fit.irr.um.fs.fe.nielweise2008.se"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2008"
+args = { x1i = "x1i", t1i = "t1i", x2i = "x2i", t2i = "t2i", measure = "IRR", model = "UM.FS", method = "FE" }
+expect = { "se[0]" = "glmm_formulas.rma_glmm_se" }
+tolerance = 1e-06
+covers = ["rma_glmm.fit.IRR.UM.FS.FE"]
+
+[[case]]
+id = "glmm.fit.irr.um.fs.ml.nielweise2008"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2008"
+args = { x1i = "x1i", t1i = "t1i", x2i = "x2i", t2i = "t2i", measure = "IRR", model = "UM.FS", method = "ML" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", "se[0]" = "glmm_formulas.rma_glmm_se", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-05
+check = "test_derived.glmm_likelihood_at_estimate"
+covers = ["rma_glmm.fit.IRR.UM.FS.ML"]
+
+[[case]]
+id = "glmm.fit.irr.um.rs.fe.nielweise2008.beta"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2008"
+args = { x1i = "x1i", t1i = "t1i", x2i = "x2i", t2i = "t2i", measure = "IRR", model = "UM.RS", method = "FE" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta" }
+tolerance = 1e-08
+covers = ["rma_glmm.fit.IRR.UM.RS.FE"]
+
+[[case]]
+id = "glmm.fit.irr.um.rs.fe.nielweise2008.se"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2008"
+args = { x1i = "x1i", t1i = "t1i", x2i = "x2i", t2i = "t2i", measure = "IRR", model = "UM.RS", method = "FE" }
+expect = { "se[0]" = "glmm_formulas.rma_glmm_se" }
+tolerance = 1e-06
+covers = ["rma_glmm.fit.IRR.UM.RS.FE"]
+
+[[case]]
+id = "glmm.fit.irr.um.rs.ml.nielweise2008"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2008"
+args = { x1i = "x1i", t1i = "t1i", x2i = "x2i", t2i = "t2i", measure = "IRR", model = "UM.RS", method = "ML" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", "se[0]" = "glmm_formulas.rma_glmm_se", tau2 = "glmm_formulas.rma_glmm_tau2", sigma2 = "glmm_formulas.rma_glmm_sigma2" }
+tolerance = 1e-05
+check = "test_derived.glmm_likelihood_at_estimate"
+covers = ["rma_glmm.fit.IRR.UM.RS.ML"]
+
+[[case]]
+id = "glmm.fit.irr.cm.el.fe.nielweise2008.beta"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2008"
+args = { x1i = "x1i", t1i = "t1i", x2i = "x2i", t2i = "t2i", measure = "IRR", model = "CM.EL", method = "FE" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta" }
+tolerance = 1e-08
+covers = ["rma_glmm.fit.IRR.CM.EL.FE"]
+
+[[case]]
+id = "glmm.fit.irr.cm.el.fe.nielweise2008.se"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2008"
+args = { x1i = "x1i", t1i = "t1i", x2i = "x2i", t2i = "t2i", measure = "IRR", model = "CM.EL", method = "FE" }
+expect = { "se[0]" = "glmm_formulas.rma_glmm_se" }
+tolerance = 1e-06
+covers = ["rma_glmm.fit.IRR.CM.EL.FE"]
+
+[[case]]
+id = "glmm.fit.irr.cm.el.ml.nielweise2008"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2008"
+args = { x1i = "x1i", t1i = "t1i", x2i = "x2i", t2i = "t2i", measure = "IRR", model = "CM.EL", method = "ML" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", "se[0]" = "glmm_formulas.rma_glmm_se", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-05
+check = "test_derived.glmm_likelihood_at_estimate"
+covers = ["rma_glmm.fit.IRR.CM.EL.ML"]
+
+[[case]]
+id = "glmm.fit.irr.cm.al.fe.nielweise2008.beta"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2008"
+args = { x1i = "x1i", t1i = "t1i", x2i = "x2i", t2i = "t2i", measure = "IRR", model = "CM.AL", method = "FE" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta" }
+tolerance = 1e-08
+covers = ["rma_glmm.fit.IRR.CM.AL.FE"]
+
+[[case]]
+id = "glmm.fit.irr.cm.al.fe.nielweise2008.se"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2008"
+args = { x1i = "x1i", t1i = "t1i", x2i = "x2i", t2i = "t2i", measure = "IRR", model = "CM.AL", method = "FE" }
+expect = { "se[0]" = "glmm_formulas.rma_glmm_se" }
+tolerance = 1e-06
+covers = ["rma_glmm.fit.IRR.CM.AL.FE"]
+
+[[case]]
+id = "glmm.fit.irr.cm.al.ml.nielweise2008"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2008"
+args = { x1i = "x1i", t1i = "t1i", x2i = "x2i", t2i = "t2i", measure = "IRR", model = "CM.AL", method = "ML" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", "se[0]" = "glmm_formulas.rma_glmm_se", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-05
+check = "test_derived.glmm_likelihood_at_estimate"
+covers = ["rma_glmm.fit.IRR.CM.AL.ML"]
+
+[[case]]
+id = "glmm.fit.irr.cm.al.is.cm.el.fe.nielweise2008"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2008"
+args = { x1i = "x1i", t1i = "t1i", x2i = "x2i", t2i = "t2i", measure = "IRR", model = "CM.AL", method = "FE" }
+check = "test_derived.irr_cm_al_is_cm_el"
+covers = ["rma_glmm.fit.IRR.CM.AL.FE"]
+
+[[case]]
+id = "glmm.fit.irr.cm.al.is.cm.el.ml.nielweise2008"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2008"
+args = { x1i = "x1i", t1i = "t1i", x2i = "x2i", t2i = "t2i", measure = "IRR", model = "CM.AL", method = "ML" }
+check = "test_derived.irr_cm_al_is_cm_el"
+covers = ["rma_glmm.fit.IRR.CM.AL.ML"]
+
+[[case]]
+id = "glmm.fit.plo.none.fe.pritz1997.beta"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.pritz1997"
+args = { xi = "xi", ni = "ni", measure = "PLO", method = "FE" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta" }
+tolerance = 1e-08
+covers = ["rma_glmm.fit.PLO.none.FE"]
+
+[[case]]
+id = "glmm.fit.plo.none.fe.pritz1997.se"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.pritz1997"
+args = { xi = "xi", ni = "ni", measure = "PLO", method = "FE" }
+expect = { "se[0]" = "glmm_formulas.rma_glmm_se" }
+tolerance = 1e-05
+covers = ["rma_glmm.fit.PLO.none.FE"]
+
+[[case]]
+id = "glmm.fit.pr.none.fe.pritz1997.beta"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.pritz1997"
+args = { xi = "xi", ni = "ni", measure = "PR", method = "FE" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta" }
+tolerance = 1e-08
+covers = ["rma_glmm.fit.PR.none.FE"]
+
+[[case]]
+id = "glmm.fit.pr.none.fe.pritz1997.se"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.pritz1997"
+args = { xi = "xi", ni = "ni", measure = "PR", method = "FE" }
+expect = { "se[0]" = "glmm_formulas.rma_glmm_se" }
+tolerance = 1e-05
+covers = ["rma_glmm.fit.PR.none.FE"]
+
+[[case]]
+id = "glmm.fit.pln.none.fe.pritz1997.beta"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.pritz1997"
+args = { xi = "xi", ni = "ni", measure = "PLN", method = "FE" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta" }
+tolerance = 1e-08
+covers = ["rma_glmm.fit.PLN.none.FE"]
+
+[[case]]
+id = "glmm.fit.pln.none.fe.pritz1997.se"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.pritz1997"
+args = { xi = "xi", ni = "ni", measure = "PLN", method = "FE" }
+expect = { "se[0]" = "glmm_formulas.rma_glmm_se" }
+tolerance = 1e-05
+covers = ["rma_glmm.fit.PLN.none.FE"]
+
+[[case]]
+id = "glmm.fit.plo.none.ml.pritz1997"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.pritz1997"
+args = { xi = "xi", ni = "ni", measure = "PLO", method = "ML" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", "se[0]" = "glmm_formulas.rma_glmm_se", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-05
+check = "test_derived.glmm_likelihood_at_estimate"
+covers = ["rma_glmm.fit.PLO.none.ML"]
+
+# PR and PLN with ML are not fitted to all of dat.pritz1997: R metafor 5.2-1 cannot fit them there, and the formulas treat a node with a
+# mean above one as impossible, which glmer does not. These two cases use treated-arm counts of dat.hine1989 (PR; tau2 is zero there) and the
+# control-arm counts of dat.nielweise2007 (PLN), where every mean stays far from one.
+
+[[case]]
+id = "glmm.fit.pr.none.ml.hine1989"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.hine1989"
+args = { xi = "ai", ni = "n1i", measure = "PR", method = "ML" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", "se[0]" = "glmm_formulas.rma_glmm_se", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-05
+check = "test_derived.glmm_likelihood_at_estimate"
+covers = ["rma_glmm.fit.PR.none.ML"]
+
+[[case]]
+id = "glmm.fit.pln.none.ml.nielweise2007"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { xi = "ci", ni = "n2i", measure = "PLN", method = "ML" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", "se[0]" = "glmm_formulas.rma_glmm_se", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 3e-05
+check = "test_derived.glmm_likelihood_at_estimate"
+covers = ["rma_glmm.fit.PLN.none.ML"]
+
+[[case]]
+id = "glmm.fit.irln.none.fe.nielweise2008.beta"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2008"
+args = { xi = "x1i", ti = "t1i", measure = "IRLN", method = "FE" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta" }
+tolerance = 1e-08
+covers = ["rma_glmm.fit.IRLN.none.FE"]
+
+[[case]]
+id = "glmm.fit.irln.none.fe.nielweise2008.se"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2008"
+args = { xi = "x1i", ti = "t1i", measure = "IRLN", method = "FE" }
+expect = { "se[0]" = "glmm_formulas.rma_glmm_se" }
+tolerance = 1e-05
+covers = ["rma_glmm.fit.IRLN.none.FE"]
+
+[[case]]
+id = "glmm.fit.irln.none.ml.nielweise2008"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2008"
+args = { xi = "x1i", ti = "t1i", measure = "IRLN", method = "ML" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", "se[0]" = "glmm_formulas.rma_glmm_se", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-05
+check = "test_derived.glmm_likelihood_at_estimate"
+covers = ["rma_glmm.fit.IRLN.none.ML"]
+
+
+# RR and RD have log and identity links, which are not canonical: where a fit has no random effect (FE with UM.FS, or a zero variance) metafopy
+# reports the standard errors of glm(), from the expected information, so those cases read rma_glmm_se_expected. RR is on dat.nielweise2007; RD cannot be
+# fitted to it (R metafor 5.2-1 stops with "Cannot fit FE model", as metafopy does), so RD is on dat.hine1989, where the variances are zero.
+
+[[case]]
+id = "glmm.fit.rr.um.fs.fe.nielweise2007.beta"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "RR", model = "UM.FS", method = "FE" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta" }
+tolerance = 1e-06
+covers = ["rma_glmm.fit.RR.UM.FS.FE"]
+
+[[case]]
+id = "glmm.fit.rr.um.fs.fe.nielweise2007.se"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "RR", model = "UM.FS", method = "FE" }
+expect = { "se[0]" = "glmm_formulas.rma_glmm_se_expected" }
+tolerance = 1e-05
+covers = ["rma_glmm.fit.RR.UM.FS.FE"]
+
+[[case]]
+id = "glmm.fit.rr.um.fs.ml.nielweise2007"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "RR", model = "UM.FS", method = "ML" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", "se[0]" = "glmm_formulas.rma_glmm_se", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-05
+check = "test_derived.glmm_likelihood_at_estimate"
+covers = ["rma_glmm.fit.RR.UM.FS.ML"]
+
+[[case]]
+id = "glmm.fit.rr.um.rs.fe.nielweise2007.beta"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "RR", model = "UM.RS", method = "FE" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta" }
+tolerance = 1e-06
+covers = ["rma_glmm.fit.RR.UM.RS.FE"]
+
+[[case]]
+id = "glmm.fit.rr.um.rs.fe.nielweise2007.se"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "RR", model = "UM.RS", method = "FE" }
+expect = { "se[0]" = "glmm_formulas.rma_glmm_se" }
+tolerance = 1e-05
+covers = ["rma_glmm.fit.RR.UM.RS.FE"]
+
+# UM.RS with ML on dat.nielweise2007 has no case: the formulas' search stops at a score of 1.07e-6, above the 1e-6 it requires, and the formulas'
+# likelihood has a score of 0.027 at the estimates that metafopy and R metafor 5.2-1 agree on (the formulas treat a quadrature node with a mean above one
+# as impossible, as glmer does not). dat.hine1989 keeps every mean far from one; its variances are zero.
+
+[[case]]
+id = "glmm.fit.rr.um.rs.ml.hine1989"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.hine1989"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "RR", model = "UM.RS", method = "ML" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", "se[0]" = "glmm_formulas.rma_glmm_se", tau2 = "glmm_formulas.rma_glmm_tau2", sigma2 = "glmm_formulas.rma_glmm_sigma2" }
+tolerance = 1e-05
+check = "test_derived.glmm_likelihood_at_estimate"
+covers = ["rma_glmm.fit.RR.UM.RS.ML"]
+
+[[case]]
+id = "glmm.fit.rd.um.fs.fe.hine1989.beta"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.hine1989"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "RD", model = "UM.FS", method = "FE" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta" }
+tolerance = 1e-06
+covers = ["rma_glmm.fit.RD.UM.FS.FE"]
+
+[[case]]
+id = "glmm.fit.rd.um.fs.fe.hine1989.se"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.hine1989"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "RD", model = "UM.FS", method = "FE" }
+expect = { "se[0]" = "glmm_formulas.rma_glmm_se_expected" }
+tolerance = 1e-05
+covers = ["rma_glmm.fit.RD.UM.FS.FE"]
+
+[[case]]
+id = "glmm.fit.rd.um.fs.ml.hine1989"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.hine1989"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "RD", model = "UM.FS", method = "ML" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", "se[0]" = "glmm_formulas.rma_glmm_se_expected", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-05
+covers = ["rma_glmm.fit.RD.UM.FS.ML"]
+
+[[case]]
+id = "glmm.fit.rd.um.rs.fe.hine1989.beta"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.hine1989"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "RD", model = "UM.RS", method = "FE" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta" }
+tolerance = 1e-06
+covers = ["rma_glmm.fit.RD.UM.RS.FE"]
+
+[[case]]
+id = "glmm.fit.rd.um.rs.fe.hine1989.se"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.hine1989"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "RD", model = "UM.RS", method = "FE" }
+expect = { "se[0]" = "glmm_formulas.rma_glmm_se_expected" }
+tolerance = 1e-05
+covers = ["rma_glmm.fit.RD.UM.RS.FE"]
+
+[[case]]
+id = "glmm.fit.rd.um.rs.ml.hine1989"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.hine1989"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "RD", model = "UM.RS", method = "ML" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", "se[0]" = "glmm_formulas.rma_glmm_se_expected", tau2 = "glmm_formulas.rma_glmm_tau2", sigma2 = "glmm_formulas.rma_glmm_sigma2" }
+tolerance = 1e-05
+covers = ["rma_glmm.fit.RD.UM.RS.ML"]
+
+
+# method: EE and CE are the FE fit; FE and ML are the two methods the fit cases above use, here on one model.
+
+[[case]]
+id = "glmm.method.fe.irr.um.fs.nielweise2008.beta"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2008"
+args = { x1i = "x1i", t1i = "t1i", x2i = "x2i", t2i = "t2i", measure = "IRR", model = "UM.FS", method = "FE" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta" }
+tolerance = 1e-08
+covers = ["rma_glmm.method.FE"]
+
+[[case]]
+id = "glmm.method.fe.irr.um.fs.nielweise2008.se"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2008"
+args = { x1i = "x1i", t1i = "t1i", x2i = "x2i", t2i = "t2i", measure = "IRR", model = "UM.FS", method = "FE" }
+expect = { "se[0]" = "glmm_formulas.rma_glmm_se" }
+tolerance = 1e-06
+covers = ["rma_glmm.method.FE"]
+
+[[case]]
+id = "glmm.method.ee.irr.um.fs.nielweise2008.beta"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2008"
+args = { x1i = "x1i", t1i = "t1i", x2i = "x2i", t2i = "t2i", measure = "IRR", model = "UM.FS", method = "EE" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta" }
+tolerance = 1e-08
+covers = ["rma_glmm.method.EE"]
+
+[[case]]
+id = "glmm.method.ee.irr.um.fs.nielweise2008.se"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2008"
+args = { x1i = "x1i", t1i = "t1i", x2i = "x2i", t2i = "t2i", measure = "IRR", model = "UM.FS", method = "EE" }
+expect = { "se[0]" = "glmm_formulas.rma_glmm_se" }
+tolerance = 1e-06
+covers = ["rma_glmm.method.EE"]
+
+[[case]]
+id = "glmm.method.ce.irr.um.fs.nielweise2008.beta"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2008"
+args = { x1i = "x1i", t1i = "t1i", x2i = "x2i", t2i = "t2i", measure = "IRR", model = "UM.FS", method = "CE" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta" }
+tolerance = 1e-08
+covers = ["rma_glmm.method.CE"]
+
+[[case]]
+id = "glmm.method.ce.irr.um.fs.nielweise2008.se"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2008"
+args = { x1i = "x1i", t1i = "t1i", x2i = "x2i", t2i = "t2i", measure = "IRR", model = "UM.FS", method = "CE" }
+expect = { "se[0]" = "glmm_formulas.rma_glmm_se" }
+tolerance = 1e-06
+covers = ["rma_glmm.method.CE"]
+
+[[case]]
+id = "glmm.method.ml.irr.um.fs.nielweise2008"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2008"
+args = { x1i = "x1i", t1i = "t1i", x2i = "x2i", t2i = "t2i", measure = "IRR", model = "UM.FS", method = "ML" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", "se[0]" = "glmm_formulas.rma_glmm_se", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-05
+check = "test_derived.glmm_likelihood_at_estimate"
+covers = ["rma_glmm.method.ML"]
+
+
+# link: PLO of dat.pritz1997 with each link and the FE method; the formulas fit the same binomial model with that link.
+
+[[case]]
+id = "glmm.link.logit.plo.pritz1997.beta"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.pritz1997"
+args = { xi = "xi", ni = "ni", measure = "PLO", method = "FE", link = "logit" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta" }
+tolerance = 1e-08
+covers = ["rma_glmm.link.logit"]
+
+[[case]]
+id = "glmm.link.logit.plo.pritz1997.se"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.pritz1997"
+args = { xi = "xi", ni = "ni", measure = "PLO", method = "FE", link = "logit" }
+expect = { "se[0]" = "glmm_formulas.rma_glmm_se" }
+tolerance = 1e-05
+covers = ["rma_glmm.link.logit"]
+
+[[case]]
+id = "glmm.link.probit.plo.pritz1997.beta"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.pritz1997"
+args = { xi = "xi", ni = "ni", measure = "PLO", method = "FE", link = "probit" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta" }
+tolerance = 1e-08
+covers = ["rma_glmm.link.probit"]
+
+[[case]]
+id = "glmm.link.probit.plo.pritz1997.se"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.pritz1997"
+args = { xi = "xi", ni = "ni", measure = "PLO", method = "FE", link = "probit" }
+expect = { "se[0]" = "glmm_formulas.rma_glmm_se" }
+tolerance = 1e-05
+covers = ["rma_glmm.link.probit"]
+
+[[case]]
+id = "glmm.link.cauchit.plo.pritz1997.beta"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.pritz1997"
+args = { xi = "xi", ni = "ni", measure = "PLO", method = "FE", link = "cauchit" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta" }
+tolerance = 1e-08
+covers = ["rma_glmm.link.cauchit"]
+
+[[case]]
+id = "glmm.link.cauchit.plo.pritz1997.se"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.pritz1997"
+args = { xi = "xi", ni = "ni", measure = "PLO", method = "FE", link = "cauchit" }
+expect = { "se[0]" = "glmm_formulas.rma_glmm_se" }
+tolerance = 1e-05
+covers = ["rma_glmm.link.cauchit"]
+
+[[case]]
+id = "glmm.link.cloglog.plo.pritz1997.beta"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.pritz1997"
+args = { xi = "xi", ni = "ni", measure = "PLO", method = "FE", link = "cloglog" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta" }
+tolerance = 1e-08
+covers = ["rma_glmm.link.cloglog"]
+
+[[case]]
+id = "glmm.link.cloglog.plo.pritz1997.se"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.pritz1997"
+args = { xi = "xi", ni = "ni", measure = "PLO", method = "FE", link = "cloglog" }
+expect = { "se[0]" = "glmm_formulas.rma_glmm_se" }
+tolerance = 1e-05
+covers = ["rma_glmm.link.cloglog"]
+
+[[case]]
+id = "glmm.link.log.plo.pritz1997.beta"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.pritz1997"
+args = { xi = "xi", ni = "ni", measure = "PLO", method = "FE", link = "log" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta" }
+tolerance = 1e-08
+covers = ["rma_glmm.link.log"]
+
+[[case]]
+id = "glmm.link.log.plo.pritz1997.se"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.pritz1997"
+args = { xi = "xi", ni = "ni", measure = "PLO", method = "FE", link = "log" }
+expect = { "se[0]" = "glmm_formulas.rma_glmm_se" }
+tolerance = 1e-05
+covers = ["rma_glmm.link.log"]
+
+[[case]]
+id = "glmm.link.identity.plo.pritz1997.beta"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.pritz1997"
+args = { xi = "xi", ni = "ni", measure = "PLO", method = "FE", link = "identity" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta" }
+tolerance = 1e-08
+covers = ["rma_glmm.link.identity"]
+
+[[case]]
+id = "glmm.link.identity.plo.pritz1997.se"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.pritz1997"
+args = { xi = "xi", ni = "ni", measure = "PLO", method = "FE", link = "identity" }
+expect = { "se[0]" = "glmm_formulas.rma_glmm_se" }
+tolerance = 1e-05
+covers = ["rma_glmm.link.identity"]
+
+[[case]]
+id = "glmm.link.sqrt.plo.pritz1997.beta"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.pritz1997"
+args = { xi = "xi", ni = "ni", measure = "PLO", method = "FE", link = "sqrt" }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta" }
+tolerance = 1e-08
+covers = ["rma_glmm.link.sqrt"]
+
+[[case]]
+id = "glmm.link.sqrt.plo.pritz1997.se"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.pritz1997"
+args = { xi = "xi", ni = "ni", measure = "PLO", method = "FE", link = "sqrt" }
+expect = { "se[0]" = "glmm_formulas.rma_glmm_se" }
+tolerance = 1e-05
+covers = ["rma_glmm.link.sqrt"]

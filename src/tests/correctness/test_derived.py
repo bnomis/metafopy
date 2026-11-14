@@ -508,7 +508,31 @@ def glmm_likelihood_at_estimate(case: correctness.cases.Case, result: typing.Any
         raise AssertionError(f"{where} is {loglik!r}, not the formulas' maximum {reference.loglik!r} (rtol {GLMM_LIKELIHOOD_RTOL:g})")
     if not score <= GLMM_GRADIENT_TOLERANCE:
         raise AssertionError(f'{where} has a score of {score:.3g}, not below {GLMM_GRADIENT_TOLERANCE:g}')
-    if (problem.model, method) not in GLMM_CONDITIONAL_DEVIANCE_FITS:
+    conditional_deviance = (problem.model, method) in GLMM_CONDITIONAL_DEVIANCE_FITS or problem.kind == 'one_group' or problem.family == 'poisson'
+    if not conditional_deviance:
         reported = float(result.fit_stats_ml.ll)
         if not abs(reported - loglik) <= GLMM_LIKELIHOOD_RTOL * abs(loglik):
             raise AssertionError(f'{case.id}: metafopy reports ll {reported!r}, the formulas give {loglik!r} at its estimates')
+
+
+def glmm_score_at_estimate(case: correctness.cases.Case, result: typing.Any) -> None:
+    """The score of the formulas' log-likelihood at the reported estimates is small, for a fit whose own maximum the formulas cannot find."""
+    frame = correctness.cases.case_frame(case)
+    problem, rule, points = correctness.cases.formula_value(case, 'glmm_formulas.rma_glmm_problem', frame)
+    sigma2 = float(result.sigma2) if problem.model == 'UM.RS' else math.nan
+    rho = float(result.rho) if problem.cor and problem.model == 'UM.RS' else math.nan
+    _, score = correctness.glmm_formulas.profile_check(problem, case.args.get('method', 'ML'), result.beta, float(result.tau2), sigma2, rho, rule, points)
+    if not score <= GLMM_GRADIENT_TOLERANCE:
+        raise AssertionError(f'{case.id}: the formulas have a score of {score:.3g} at the estimates of metafopy, not below {GLMM_GRADIENT_TOLERANCE:g}')
+
+
+def irr_cm_al_is_cm_el(case: correctness.cases.Case, result: typing.Any) -> None:
+    """``IRR`` with ``CM.AL`` is fitted as ``CM.EL`` (the conditional model of two Poisson counts is binomial for both): the same coefficients,
+    standard errors, ``tau2`` and log-likelihood as the call with ``model='CM.EL'``."""
+    frame = correctness.cases.case_frame(case)
+    exact = metafopy.rma_glmm(**{**case.args, 'data': frame, 'model': 'CM.EL'})
+    for name in ('beta', 'se', 'tau2'):
+        if not numpy.array_equal(getattr(result, name), getattr(exact, name)):
+            raise AssertionError(f'{case.id}: {name} of CM.AL is {getattr(result, name)!r}, of CM.EL {getattr(exact, name)!r}')
+    if result.fit_stats_ml.ll != exact.fit_stats_ml.ll:
+        raise AssertionError(f'{case.id}: ll of CM.AL is {result.fit_stats_ml.ll!r}, of CM.EL {exact.fit_stats_ml.ll!r}')

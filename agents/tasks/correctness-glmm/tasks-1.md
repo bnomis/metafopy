@@ -214,7 +214,7 @@ estimates themselves.
 
 ## Task 5: Derived fit cases for IRR, the one-group and the experimental measures; methods and links
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** Coverage list (`rma_glmm.fit`, `method`, `link`); Implementation step 3
@@ -223,23 +223,23 @@ estimates themselves.
 
 **Subtasks:**
 
-- [ ] `IRR` with each model on `dat.nielweise2008`; the `IRR` `CM.AL` case shows it is fitted as `CM.EL` (same `beta`, `se`, `ll`)
-- [ ] The one-group measures in `ONE_GROUP` with model `none`, `FE` and `ML`: `PLO`, `PR`, `PLN` on `dat.pritz1997`, `IRLN` on `dat.nielweise2008`'s
+- [x] `IRR` with each model on `dat.nielweise2008`; the `IRR` `CM.AL` case shows it is fitted as `CM.EL` (same `beta`, `se`, `ll`)
+- [x] The one-group measures in `ONE_GROUP` with model `none`, `FE` and `ML`: `PLO`, `PR`, `PLN` on `dat.pritz1997`, `IRLN` on `dat.nielweise2008`'s
       one arm (or inline data with its locator)
-- [ ] The experimental two-group measures `RR`, `RD` with `UM.FS`, `UM.RS` only (`UNCONDITIONAL_ONLY`), on `dat.nielweise2007`
-- [ ] `rma_glmm.method.<m>` for each of `METHODS`: `EE` and `CE` give the `FE` fit
-- [ ] `rma_glmm.link.<link>` for each value of `LINKS`, on the unconditional and one-group models that accept it
-- [ ] Record any mismatch as the header says
+- [x] The experimental two-group measures `RR`, `RD` with `UM.FS`, `UM.RS` only (`UNCONDITIONAL_ONLY`), on `dat.nielweise2007`
+- [x] `rma_glmm.method.<m>` for each of `METHODS`: `EE` and `CE` give the `FE` fit
+- [x] `rma_glmm.link.<link>` for each value of `LINKS`, on the unconditional and one-group models that accept it
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] The gate's missing list names no `rma_glmm.fit`, `rma_glmm.method` or `rma_glmm.link` item
+- [x] The gate's missing list names no `rma_glmm.fit`, `rma_glmm.method` or `rma_glmm.link` item
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 

@@ -655,7 +655,8 @@ def structure(problem: Problem, method: str) -> Structure:
         raise ValueError(f'unsupported method: {method}')
     k, p = problem.X.shape
     ml = method == 'ML'
-    one_variance = numpy.array([0.3]) if ml else numpy.zeros(0)
+    scale = 0.01 if problem.link == 'identity' else 1.0
+    one_variance = numpy.array([0.3 * scale]) if ml else numpy.zeros(0)
     if problem.kind == 'one_group':
         start = numpy.concatenate([[float(numpy.mean(mean_start(problem, 0)))], numpy.zeros(p - 1)])
 
@@ -690,6 +691,7 @@ def structure(problem: Problem, method: str) -> Structure:
 
     correlated = problem.cor and problem.model == 'UM.RS' and ml
     variance = numpy.array([0.3] if d == 1 and fixed_study else ([0.5] if d == 1 else ([0.5, 0.3, 0.0] if correlated else [0.5, 0.3])))
+    variance[: min(d, 2)] *= scale
     if d == 0:
         variance = numpy.zeros(0)
     return Structure(problem.model, method, p, k, d, start3, cond3, variance, correlated=correlated)
@@ -933,7 +935,14 @@ def rma_glmm_rule(model: str, method: str, nagq: int) -> tuple[str, int]:
 
 
 def rma_glmm_counts(
-    ai: FloatArray, bi: FloatArray | None, ci: FloatArray, di: FloatArray | None, n1i: FloatArray | None, n2i: FloatArray | None, *, drop00: bool = True
+    ai: FloatArray | None,
+    bi: FloatArray | None,
+    ci: FloatArray | None,
+    di: FloatArray | None,
+    n1i: FloatArray | None,
+    n2i: FloatArray | None,
+    *,
+    drop00: bool = True,
 ) -> tuple[FloatArray, FloatArray, FloatArray, FloatArray]:
     """The 2x2 counts ``rma_glmm`` fits for ``OR`` from ``ai, bi, ci, di`` or ``ai, n1i, ci, n2i``: incomplete studies omitted, and with ``drop00``
     the studies without an event or without a non-event in both groups dropped (Stijnen et al. 2010; they carry no information on the odds ratio)."""
@@ -946,46 +955,102 @@ def rma_glmm_counts(
     return a[keep], b[keep], c[keep], d[keep]
 
 
+LINK_OF_MEASURE = {'IRLN': 'log', 'IRR': 'log', 'OR': 'logit', 'PLN': 'log', 'PLO': 'logit', 'PR': 'identity', 'RD': 'identity', 'RR': 'log'}
+ONE_GROUP_MEASURES = ('IRLN', 'PLN', 'PLO', 'PR')
+
+
+def fit_method(method: str) -> str:
+    """The method a fit uses: ``EE`` and ``CE`` are the ``FE`` fit."""
+    return 'FE' if method in ('CE', 'EE') else method
+
+
 def rma_glmm_problem(
-    ai: FloatArray,
-    ci: FloatArray,
-    model: str,
+    measure: str = 'OR',
+    model: str = 'UM.FS',
     method: str = 'ML',
     nAGQ: int = 7,
     coding: float = 0.5,
     cor: bool = False,
     drop00: bool = True,
+    link: str | None = None,
+    ai: FloatArray | None = None,
     bi: FloatArray | None = None,
+    ci: FloatArray | None = None,
     di: FloatArray | None = None,
     n1i: FloatArray | None = None,
     n2i: FloatArray | None = None,
+    x1i: FloatArray | None = None,
+    x2i: FloatArray | None = None,
+    t1i: FloatArray | None = None,
+    t2i: FloatArray | None = None,
+    xi: FloatArray | None = None,
+    mi: FloatArray | None = None,
+    ni: FloatArray | None = None,
+    ti: FloatArray | None = None,
 ) -> tuple[Problem, str, int]:
-    """The problem, rule and quadrature points of a ``measure = 'OR'`` call of ``rma_glmm``, from its own arguments."""
+    """The problem, rule and quadrature points of a call of ``rma_glmm`` for ``measure``, from its own arguments.
+
+    ``OR``, ``RR`` and ``RD`` read the 2x2 counts, ``IRR`` the events and person-times of two groups, ``PLO``, ``PR`` and ``PLN`` ``xi`` with ``mi``
+    or ``ni``, ``IRLN`` ``xi`` and ``ti``. ``link`` replaces the measure's own link (``rma_glmm``'s ``link`` argument); ``IRR`` with ``CM.AL`` is the
+    ``CM.EL`` fit, as ``rma_glmm`` fits it.
+    """
+    method = fit_method(method)
+    chosen = link or LINK_OF_MEASURE[measure]
+    if measure in ONE_GROUP_MEASURES:
+        x = numpy.asarray(xi, dtype=numpy.float64)
+        if measure == 'IRLN':
+            size, family = numpy.asarray(ti, dtype=numpy.float64), 'poisson'
+        else:
+            size, family = (x + numpy.asarray(mi, dtype=numpy.float64) if ni is None else numpy.asarray(ni, dtype=numpy.float64)), 'binomial'
+        keep = numpy.isfinite(x + size)
+        rule, points = rma_glmm_rule('none', method, nAGQ)
+        return one_group_problem(x[keep], size[keep], family, chosen), rule, points
+    if measure == 'IRR':
+        x1, x2, t1, t2 = (numpy.asarray(v, dtype=numpy.float64) for v in (x1i, x2i, t1i, t2i))
+        keep = numpy.isfinite(x1 + x2 + t1 + t2)
+        if drop00:
+            keep &= ~((x1 == 0) & (x2 == 0))
+        resolved = 'CM.EL' if model == 'CM.AL' else model
+        rule, points = rma_glmm_rule(resolved, method, nAGQ)
+        return poisson_problem(x1[keep], x2[keep], t1[keep], t2[keep], resolved, coding=coding, cor=cor, link=chosen), rule, points
     a, b, c, d = rma_glmm_counts(ai, bi, ci, di, n1i, n2i, drop00=drop00)
     rule, points = rma_glmm_rule(model, method, nAGQ)
-    return glmm_problem(a, b, c, d, model, coding=coding, cor=cor), rule, points
+    return glmm_problem(a, b, c, d, model, coding=coding, cor=cor, link=chosen), rule, points
 
 
 FIT_CACHE: dict[tuple[typing.Any, ...], GLMMReference] = {}
 
 
 def rma_glmm_fit(
-    ai: FloatArray,
-    ci: FloatArray,
-    model: str,
+    measure: str = 'OR',
+    model: str = 'UM.FS',
     method: str = 'ML',
     nAGQ: int = 7,
     coding: float = 0.5,
     cor: bool = False,
     drop00: bool = True,
+    link: str | None = None,
+    ai: FloatArray | None = None,
     bi: FloatArray | None = None,
+    ci: FloatArray | None = None,
     di: FloatArray | None = None,
     n1i: FloatArray | None = None,
     n2i: FloatArray | None = None,
+    x1i: FloatArray | None = None,
+    x2i: FloatArray | None = None,
+    t1i: FloatArray | None = None,
+    t2i: FloatArray | None = None,
+    xi: FloatArray | None = None,
+    mi: FloatArray | None = None,
+    ni: FloatArray | None = None,
+    ti: FloatArray | None = None,
 ) -> GLMMReference:
     """The formulas' own fit of an ``rma_glmm`` call, kept for the other ``rma_glmm_*`` formulas of the same case."""
-    problem, rule, points = rma_glmm_problem(ai, ci, model, method, nAGQ, coding, cor, drop00, bi, di, n1i, n2i)
-    key = (problem.y.tobytes(), problem.size.tobytes(), model, method, rule, points, coding, cor)
+    method = fit_method(method)
+    data = (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi, ni, ti)
+    problem, rule, points = rma_glmm_problem(measure, model, method, nAGQ, coding, cor, drop00, link, *data)
+    key: tuple[typing.Any, ...] = (problem.kind, problem.family, problem.link, problem.y.tobytes(), problem.size.tobytes(), problem.offset.tobytes())
+    key += (problem.model, method, rule, points, coding, cor)
     if key not in FIT_CACHE:
         FIT_CACHE[key] = fit_problem(problem, method, rule, points)
     return FIT_CACHE[key]
@@ -1020,3 +1085,43 @@ def profile_check(problem: Problem, method: str, beta: FloatArray, tau2: float, 
     reported = numpy.ones(theta.size, dtype=bool)
     reported[st.p : st.start.size] = False
     return loglik(theta), float(numpy.max(numpy.abs(gradient_at(loglik, theta)[reported])))
+
+
+def expected_information(problem: Problem, fixed: FloatArray) -> FloatArray:
+    """Expected (Fisher) information of the fixed coefficients of an unconditional two-group fit with no random effects (McCullagh and Nelder 1989,
+    section 2.5): ``sum w x x'`` with working weight ``w = (dmu/deta)^2 / Var(y)``, the mean ``mu`` taken for a count (a binomial count has mean ``n p``).
+
+    ``fixed`` is ``(beta, intercepts)``: one intercept per study for ``UM.FS``, a shared one for ``UM.RS``. For a canonical link the expected and the
+    observed information agree; for the others they differ, and ``glm()`` reports the expected one.
+    """
+    k, p = problem.X.shape
+    rows: list[FloatArray] = []
+    weights: list[float] = []
+    for i in range(k):
+        for j in range(2):
+            intercept = numpy.eye(k)[i] if problem.model == 'UM.FS' else numpy.ones(1)
+            row = numpy.concatenate([problem.X[i] if j == 0 else numpy.zeros(p), intercept])
+            eta = float(row @ fixed) + float(problem.offset[i, j])
+            step = 1e-6 * max(1.0, abs(eta))
+            slope = float(inverse_link(numpy.array(eta + step), problem.link) - inverse_link(numpy.array(eta - step), problem.link)) / (2 * step)
+            prob = float(inverse_link(numpy.array(eta), problem.link))
+            if problem.family == 'binomial':
+                size = float(problem.size[i, j])
+                weights.append(size * slope**2 / (prob * (1 - prob)))
+            else:
+                weights.append(slope**2 / prob)
+            rows.append(row)
+    design_matrix = numpy.array(rows)
+    return design_matrix.T @ (numpy.array(weights)[:, None] * design_matrix)
+
+
+@functools.wraps(rma_glmm_fit)
+def rma_glmm_se_expected(*args: typing.Any, **kwargs: typing.Any) -> FloatArray:
+    """Standard errors of the coefficients from the expected information at the formulas' estimates, as ``glm()`` reports them: the reference of a
+    fit whose random-effect variances are zero, where ``rma_glmm`` reports the fixed-effects model's standard errors."""
+    problem, _, _ = rma_glmm_problem(*args, **kwargs)
+    reference = rma_glmm_fit(*args, **kwargs)
+    p = problem.X.shape[1]
+    nf = p + (problem.X.shape[0] if problem.model == 'UM.FS' else 1)
+    info = expected_information(problem, reference.theta[:nf])
+    return numpy.sqrt(numpy.diag(numpy.linalg.inv(info))[:p])
