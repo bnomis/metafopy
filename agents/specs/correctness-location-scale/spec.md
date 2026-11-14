@@ -52,7 +52,7 @@ def ls_loglik(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, alph
     """The profile log-likelihood (eq. 7, beta at its WLS value, eq. 6) or the restricted log-likelihood (eq. 9) at alpha."""
 
 
-def ls_reference_fit(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, link: str, method: str) -> dict[str, typing.Any]:
+def ls_reference_fit(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, link: str, method: str, maxiter: int = 2000) -> dict[str, typing.Any]:
     """Maximise ls_loglik with scipy.optimize (BFGS from several starts, then Nelder-Mead; SLSQP with Z alpha >= 0 for the identity link).
 
     Returns alpha, beta, vb (eq. 10), tau2, ll and the analytic observed information of alpha (va), independent of metafopy's numerical Hessian.

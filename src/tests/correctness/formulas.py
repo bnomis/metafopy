@@ -2524,3 +2524,174 @@ def saddlepoint_pvalue(X: FloatArray, W: FloatArray, theta: FloatArray, cluster:
         v = z * math.sqrt(2 * float(numpy.sum(lam**2 / (1 - 2 * lam * z) ** 2)))
         out[s] = float(scipy.stats.norm.sf(w) + scipy.stats.norm.pdf(w) * (1 / v - 1 / w))
     return out
+
+
+# --- Location-scale models: Viechtbauer and Lopez-Lopez (2022), Res Synth Methods 13:697-715, doi:10.1002/jrsm.1562 ---
+
+
+def ls_tau2(Z: FloatArray, alpha: FloatArray, link: str) -> FloatArray:
+    """The scale model ``tau2_i = exp(z_i' alpha)`` (log link) or ``z_i' alpha`` (identity link): equations 2 and 3 of Viechtbauer and Lopez-Lopez (2022).
+
+    The log-linear form of the dispersion is that of Harvey (1976) and Smyth (1989).
+    """
+    eta = Z @ alpha
+    if link == 'log':
+        return numpy.exp(eta)
+    if link == 'identity':
+        return eta
+    raise ValueError(f'unknown link {link!r}')
+
+
+def ls_derivatives(Z: FloatArray, alpha: FloatArray, link: str) -> tuple[FloatArray, FloatArray]:
+    """``d tau2_i / d eta_i`` and ``d2 tau2_i / d eta_i^2`` for ``eta = Z alpha``: both ``tau2_i`` for the log link, ``1`` and ``0`` for the identity link."""
+    if link == 'log':
+        t = numpy.exp(Z @ alpha)
+        return t, t
+    if link == 'identity':
+        return numpy.ones(Z.shape[0]), numpy.zeros(Z.shape[0])
+    raise ValueError(f'unknown link {link!r}')
+
+
+def ls_components(
+    yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, alpha: FloatArray, link: str
+) -> tuple[FloatArray, FloatArray, FloatArray, FloatArray, FloatArray] | None:
+    """``M = V + diag(tau2)`` (its diagonal), ``W = M^-1``, ``(X'WX)^-1``, ``beta`` (equation 6) and ``P`` (equation 8); ``None`` when ``M`` is not positive."""
+    m = vi + ls_tau2(Z, alpha, link)
+    if not bool(numpy.all(numpy.isfinite(m))) or not bool(numpy.all(m > 0)):
+        return None
+    W = numpy.diag(1 / m)
+    A_inv = numpy.linalg.inv(X.T @ W @ X)
+    beta = A_inv @ X.T @ W @ yi
+    P = W - W @ X @ A_inv @ X.T @ W
+    return m, W, A_inv, beta, P
+
+
+def ls_loglik(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, alpha: FloatArray, link: str, method: str) -> float:
+    """The profile log-likelihood (equation 7, ``beta`` at its value from equation 6) for ``ML`` or the restricted log-likelihood (equation 9) for ``REML``.
+
+    ``ll_P = -k/2 ln 2pi - 1/2 ln|M| - 1/2 y'Py`` and
+    ``ll_R = -(k-p)/2 ln 2pi + 1/2 ln|X'X| - 1/2 ln|M| - 1/2 ln|X'WX| - 1/2 y'Py`` with ``p`` the number of columns of ``X`` (the paper's ``p + 1``).
+    The restricted form is that of Verbyla (1993). Returns ``-inf`` where ``M`` is not positive (identity link outside ``Z alpha >= 0``).
+    """
+    parts = ls_components(yi, vi, X, Z, alpha, link)
+    if parts is None:
+        return -math.inf
+    m, W, _, _, P = parts
+    k, p = X.shape
+    quad = float(yi @ P @ yi)
+    logdet_m = float(numpy.sum(numpy.log(m)))
+    if method == 'ML':
+        return float(-k / 2 * math.log(2 * math.pi) - logdet_m / 2 - quad / 2)
+    if method == 'REML':
+        logdet_xx = float(numpy.linalg.slogdet(X.T @ X)[1])
+        logdet_xwx = float(numpy.linalg.slogdet(X.T @ W @ X)[1])
+        return float(-(k - p) / 2 * math.log(2 * math.pi) + logdet_xx / 2 - logdet_m / 2 - logdet_xwx / 2 - quad / 2)
+    raise ValueError(f'unknown method {method!r}')
+
+
+def ls_score(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, alpha: FloatArray, link: str, method: str) -> FloatArray:
+    """The analytic gradient of ``ls_loglik`` in ``alpha``, derived from equations 7 and 9 with ``dP = -P (dM) P``.
+
+    ``d ll / d alpha_j = -1/2 tr(T D_j) + 1/2 y'P D_j P y`` with ``D_j = diag(tau2'_i z_ij)`` and ``T = W`` (ML) or ``T = P`` (REML), because
+    ``d ln|X'WX| = -tr(W X (X'WX)^-1 X' W dM)`` turns the trace of ``W`` into the trace of ``P`` in the restricted case.
+    """
+    parts = ls_components(yi, vi, X, Z, alpha, link)
+    if parts is None:
+        raise ValueError('M is not positive at alpha')
+    _, W, _, _, P = parts
+    T = W if method == 'ML' else P
+    d1, _ = ls_derivatives(Z, alpha, link)
+    Py = P @ yi
+    out = numpy.zeros(Z.shape[1])
+    for j in range(Z.shape[1]):
+        dj = d1 * Z[:, j]
+        out[j] = -0.5 * float(numpy.sum(numpy.diag(T) * dj)) + 0.5 * float(numpy.sum(Py**2 * dj))
+    return out
+
+
+def ls_information(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, alpha: FloatArray, link: str, method: str) -> FloatArray:
+    """The analytic observed information (minus the Hessian of ``ls_loglik``) in ``alpha``, differentiating ``ls_score`` once more.
+
+    ``-d2 ll / d alpha_j d alpha_l = -1/2 tr(T D_l T D_j) + 1/2 tr(T D_jl) + y'P D_l P D_j P y - 1/2 y'P D_jl P y``,
+    where ``D_jl = diag(tau2''_i z_ij z_il)`` and ``T`` is as in ``ls_score`` (``dW = -W dM W`` and ``dP = -P dM P``).
+    The inverse of this matrix is the covariance of the scale coefficients.
+    """
+    parts = ls_components(yi, vi, X, Z, alpha, link)
+    if parts is None:
+        raise ValueError('M is not positive at alpha')
+    _, W, _, _, P = parts
+    T = W if method == 'ML' else P
+    d1, d2 = ls_derivatives(Z, alpha, link)
+    Py = P @ yi
+    q = Z.shape[1]
+    out = numpy.zeros((q, q))
+    for j in range(q):
+        for ell in range(q):
+            dj, dl = d1 * Z[:, j], d1 * Z[:, ell]
+            djl = d2 * Z[:, j] * Z[:, ell]
+            tr_cross = float(numpy.trace(T @ numpy.diag(dl) @ T @ numpy.diag(dj)))
+            out[j, ell] = 0.5 * tr_cross - 0.5 * float(numpy.sum(numpy.diag(T) * djl)) - float((Py * dl) @ P @ (dj * Py)) + 0.5 * float(numpy.sum(Py**2 * djl))
+    return -out
+
+
+def ls_starts(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, link: str) -> list[FloatArray]:
+    """Starting values for ``ls_reference_fit``: a moment-based intercept, scaled up and down, with zero slopes."""
+    resid = yi - X @ numpy.linalg.lstsq(X, yi, rcond=None)[0]
+    t0 = max(float(numpy.sum(resid**2)) / max(len(yi) - X.shape[1], 1) - float(numpy.mean(vi)), 1e-3)
+    out = []
+    for factor in (1.0, 0.1, 10.0):
+        alpha = numpy.zeros(Z.shape[1])
+        alpha[0] = math.log(t0 * factor) if link == 'log' else t0 * factor
+        out.append(alpha)
+    return out
+
+
+def ls_reference_fit(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, link: str, method: str, maxiter: int = 2000) -> dict[str, typing.Any]:
+    """Maximise ``ls_loglik`` with ``scipy.optimize``, independently of metafopy.
+
+    BFGS with the analytic ``ls_score`` from several starts (SLSQP with the constraint ``Z alpha >= 0`` for the identity link, as Viechtbauer and Lopez-Lopez
+    2022 suggest after equation 8), then Nelder-Mead from the best of them. Returns ``alpha``, ``beta`` (equation 6), ``vb`` (equation 10), ``tau2``, ``ll``
+    and ``va`` (the inverse of the analytic observed information). Raises ``RuntimeError`` with the optimiser's message when no start converges.
+    """
+
+    def negative(alpha: FloatArray) -> float:
+        value = ls_loglik(yi, vi, X, Z, alpha, link, method)
+        return math.inf if value == -math.inf else -value
+
+    def gradient(alpha: FloatArray) -> FloatArray:
+        return -ls_score(yi, vi, X, Z, alpha, link, method)
+
+    converged: list[scipy.optimize.OptimizeResult] = []
+    messages: list[str] = []
+    for start in ls_starts(yi, vi, X, Z, link):
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            if link == 'log':
+                res = scipy.optimize.minimize(negative, start, jac=gradient, method='BFGS', options={'maxiter': maxiter, 'gtol': 1e-9})
+            else:
+                feasible = scipy.optimize.LinearConstraint(Z, 0.0, numpy.inf)
+                res = scipy.optimize.minimize(
+                    negative, start, jac=gradient, method='SLSQP', constraints=[feasible], options={'maxiter': maxiter, 'ftol': 1e-14}
+                )
+        if res.success and numpy.isfinite(res.fun):
+            converged.append(res)
+        else:
+            messages.append(str(res.message))
+    if not converged:
+        raise RuntimeError(f'ls_reference_fit: no start converged ({link} link, {method}): {"; ".join(messages)}')
+    best = min(converged, key=lambda r: float(r.fun))
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        polish = scipy.optimize.minimize(negative, best.x, method='Nelder-Mead', options={'maxiter': maxiter * 10, 'xatol': 1e-11, 'fatol': 1e-13})
+    alpha = polish.x if polish.fun <= best.fun else best.x
+    parts = ls_components(yi, vi, X, Z, alpha, link)
+    assert parts is not None
+    _, _, A_inv, beta, _ = parts
+    return {
+        'alpha': alpha,
+        'beta': beta,
+        'vb': A_inv,
+        'tau2': ls_tau2(Z, alpha, link),
+        'll': ls_loglik(yi, vi, X, Z, alpha, link, method),
+        'va': numpy.linalg.inv(ls_information(yi, vi, X, Z, alpha, link, method)),
+    }

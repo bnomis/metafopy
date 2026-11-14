@@ -158,7 +158,7 @@ Tasks 3 to 6, so this check comes before them, not at the spec's step 6. When ev
 
 ## Task 3: The location-scale likelihood and its reference fit
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** API (`ls_tau2`, `ls_loglik`, `ls_reference_fit`); Error handling; Implementation step 2
@@ -168,35 +168,37 @@ information, and maximises it independently of metafopy.
 
 **Subtasks:**
 
-- [ ] `formulas.ls_tau2(Z, alpha, link)`: `exp(Z alpha)` (log link) or `Z alpha` (identity link), citing the paper's equation
-- [ ] `formulas.ls_loglik(yi, vi, X, Z, alpha, link, method)`: the profile log-likelihood (eq. 7, beta at its WLS value, eq. 6) for `ML`, the
+- [x] `formulas.ls_tau2(Z, alpha, link)`: `exp(Z alpha)` (log link) or `Z alpha` (identity link), citing the paper's equation
+- [x] `formulas.ls_loglik(yi, vi, X, Z, alpha, link, method)`: the profile log-likelihood (eq. 7, beta at its WLS value, eq. 6) for `ML`, the
       restricted log-likelihood (eq. 9) for `REML`, citing Verbyla (1993) for REML and Smyth (1989) / Harvey (1976) for the log-linear dispersion
-- [ ] The analytic score and observed information of `ls_loglik` in alpha, coded by hand from the equations for both methods and links (helper names
+- [x] The analytic score and observed information of `ls_loglik` in alpha, coded by hand from the equations for both methods and links (helper names
       without a leading underscore, e.g. `ls_score`, `ls_information`)
-- [ ] `formulas.ls_reference_fit(yi, vi, X, Z, link, method)`: BFGS (with the analytic score) from several starts, then Nelder-Mead from the best;
+- [x] `formulas.ls_reference_fit(yi, vi, X, Z, link, method)`: BFGS (with the analytic score) from several starts, then Nelder-Mead from the best;
       SLSQP with `Z alpha >= 0` for the identity link. Returns `alpha`, `beta`, `vb` (eq. 10), `tau2`, `ll` and `va` (inverse of the analytic observed
       information). Raises `RuntimeError` with the optimiser's message when no start converges, never returning a non-optimum
-- [ ] Harness tests in `src/tests/correctness/test_formulas_ls.py`: the analytic score and information agree with `scipy.optimize.approx_fprime` at
+- [x] Harness tests in `src/tests/correctness/test_formulas_ls.py`: the analytic score and information agree with `scipy.optimize.approx_fprime` at
       several alpha on `dat.bcg` and `dat.bangertdrowns2004`, both methods, both links; `ls_reference_fit` raises `RuntimeError` on a case built not to
       converge (for example `maxiter=1`); the test module imports nothing from metafopy except the datasets it loads
-- [ ] `test_coverage.py`'s import ban on `formulas.py` still passes
+- [x] `test_coverage.py`'s import ban on `formulas.py` still passes
 
 **Acceptance Criteria:**
 
-- [ ] Each new `formulas.py` function names its source and equation in its docstring
-- [ ] The score test fails if the information is replaced by a numerical Hessian of the wrong sign (checked once by hand, noted here)
+- [x] Each new `formulas.py` function names its source and equation in its docstring
+- [x] The score test fails if the information is replaced by a numerical Hessian of the wrong sign (checked once by hand, noted here)
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_formulas_ls.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_formulas_ls.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 
 - Depends on Task 2
 - Key files: `src/tests/correctness/formulas.py` (numpy and scipy only, no metafopy import)
 - Read metafopy's `rma_ls_fit.py` for option names only, never for the formulas
+- The wrong-sign check was done once by hand: `test_information_of_the_wrong_sign_is_caught` shows the information does not match the numerical Hessian (it matches minus it), so the score test fails if the sign is flipped
+- `ls_reference_fit` takes an optional `maxiter` (default 2000), added to the spec API; the audit flagged the drift and the spec line now matches
 
 ---
 
