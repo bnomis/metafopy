@@ -9,6 +9,7 @@ import pathlib
 import types
 import typing
 
+import numpy
 import pytest
 
 import correctness.cases
@@ -388,3 +389,142 @@ def test_the_gate_lists_an_item_until_a_published_or_derived_case_covers_it() ->
     exempt = [correctness.cases.Exemption(item=odds_ratio, reason='no formula in the defining paper', file='inline.toml')]
     assert missing_items([prop], exempt, items) == [md, rr]
     assert missing_items([published, prop], exempt, items) == [rr]
+
+
+# ---- the `then` follow-on call and the `vblocks` and `vconst` setups
+
+THEN_CASE = """
+[[case]]
+id = "unit.then"
+kind = "property"
+function = "rma_uni"
+args = { yi = "yi", vi = "vi", method = "FE" }
+then = { function = "robust", args = { cluster = "district" } }
+expect = { "beta[0]" = 0.0 }
+
+[case.data]
+yi = [0.1, 0.4, 0.2, 0.5]
+vi = [0.02, 0.03, 0.025, 0.04]
+district = [1.0, 1.0, 2.0, 2.0]
+"""
+
+VBLOCKS_CASE = """
+[[case]]
+id = "unit.vblocks"
+kind = "property"
+function = "rma_mv"
+args = { yi = "yi", method = "FE" }
+setup = { vblocks = { cluster = "trial", columns = ["v1i", "v2i"] } }
+expect = { "beta[0]" = 0.0 }
+
+[case.data]
+yi = [0.1, 0.4, 0.2, 0.5]
+trial = [1.0, 1.0, 2.0, 2.0]
+v1i = [0.02, 0.01, 0.03, 0.005]
+v2i = [0.01, 0.03, 0.005, 0.02]
+"""
+
+VCONST_CASE = """
+[[case]]
+id = "unit.vconst"
+kind = "property"
+function = "rma_mv"
+args = { yi = "yi", method = "FE" }
+setup = { vconst = { cluster = "study", vi = "vi", rho = 0.5 } }
+expect = { "beta[0]" = 0.0 }
+
+[case.data]
+yi = [0.1, 0.4, 0.2]
+study = [1.0, 1.0, 2.0]
+vi = [0.04, 0.09, 0.16]
+"""
+
+
+def one_case(text: str) -> correctness.cases.Case:
+    return correctness.cases.parse_cases(text, 'inline.toml')[0]
+
+
+def test_then_calls_robust_on_the_fit() -> None:
+    case = one_case(THEN_CASE)
+    assert case.then == correctness.cases.Step(function='robust', args={'cluster': 'district'})
+    plain = correctness.cases.run_case(dataclasses.replace(case, then=None))
+    result = correctness.cases.run_case(case)
+    assert type(result) is type(plain)
+    assert result.robust is not None
+    assert plain.robust is None
+
+
+def test_vblocks_builds_the_block_diagonal_matrix() -> None:
+    case = one_case(VBLOCKS_CASE)
+    assert case.setup is not None
+    frame = correctness.cases.case_frame(case)
+    assert frame is not None
+    expected = numpy.array(
+        [
+            [0.02, 0.01, 0.0, 0.0],
+            [0.01, 0.03, 0.0, 0.0],
+            [0.0, 0.0, 0.03, 0.005],
+            [0.0, 0.0, 0.005, 0.02],
+        ]
+    )
+    actual = correctness.cases.build_v(frame, case.setup, 'inline.toml: case unit.vblocks')
+    numpy.testing.assert_array_equal(actual, expected)
+
+
+def test_vconst_builds_a_constant_within_cluster_correlation() -> None:
+    case = one_case(VCONST_CASE)
+    assert case.setup is not None
+    frame = correctness.cases.case_frame(case)
+    assert frame is not None
+    covariance = 0.5 * numpy.sqrt(0.04 * 0.09)
+    expected = numpy.array([[0.04, covariance, 0.0], [covariance, 0.09, 0.0], [0.0, 0.0, 0.16]])
+    numpy.testing.assert_allclose(correctness.cases.build_v(frame, case.setup, 'inline.toml: case unit.vconst'), expected, rtol=0, atol=1e-15)
+
+
+@pytest.mark.parametrize('text', [VBLOCKS_CASE, VCONST_CASE])
+def test_a_v_setup_is_passed_to_the_call_as_v(text: str) -> None:
+    case = one_case(text)
+    frame = correctness.cases.case_frame(case)
+    assert frame is not None
+    assert case.setup is not None
+    result = correctness.cases.run_case(case)
+    assert result.k == len(correctness.cases.build_v(frame, case.setup, 'inline.toml'))
+
+
+@pytest.mark.parametrize(
+    ('text', 'pattern'),
+    [
+        (THEN_CASE.replace('then = { function', 'then = { colour = 1, function'), r'inline\.toml: case unit\.then: then: unknown key\(s\) \[.colour.\]'),
+        (THEN_CASE.replace('function = "robust", ', ''), r'inline\.toml: case unit\.then: then: function None'),
+        (
+            VBLOCKS_CASE.replace('setup = {', 'setup = { vconst = { cluster = "trial", vi = "v1i", rho = 0.5 },'),
+            r'inline\.toml: case unit\.vblocks: setup has both vblocks and vconst',
+        ),
+        (VBLOCKS_CASE.replace('cluster = "trial", ', ''), r'inline\.toml: case unit\.vblocks: setup\.vblocks has no cluster'),
+        (VCONST_CASE.replace('cluster = "study", ', ''), r'inline\.toml: case unit\.vconst: setup\.vconst has no cluster'),
+        (VCONST_CASE.replace(', rho = 0.5', ''), r'inline\.toml: case unit\.vconst: setup\.vconst takes exactly'),
+    ],
+)
+def test_a_malformed_then_or_v_setup_raises_naming_file_and_case(text: str, pattern: str) -> None:
+    with pytest.raises(ValueError, match=pattern):
+        correctness.cases.parse_cases(text, 'inline.toml')
+
+
+def test_an_unknown_follow_on_function_raises_naming_it() -> None:
+    case = dataclasses.replace(one_case(THEN_CASE), then=correctness.cases.Step(function='no_such_follow_on'))
+    with pytest.raises(LookupError, match='no_such_follow_on'):
+        correctness.cases.run_case(case)
+
+
+def test_build_v_refuses_a_block_of_the_wrong_size_or_one_not_symmetric() -> None:
+    case = one_case(VBLOCKS_CASE)
+    assert case.setup is not None
+    frame = correctness.cases.case_frame(case)
+    assert frame is not None
+    where = 'inline.toml: case unit.vblocks'
+    with pytest.raises(ValueError, match=r'inline\.toml: case unit\.vblocks: cluster 2\.0 has 1 rows but vblocks names 2 columns'):
+        correctness.cases.build_v(frame.iloc[:3], case.setup, where)
+    asymmetric = frame.copy()
+    asymmetric.loc[1, 'v1i'] = 0.5
+    with pytest.raises(ValueError, match=r'inline\.toml: case unit\.vblocks: the block of cluster 1\.0 is not symmetric'):
+        correctness.cases.build_v(asymmetric, case.setup, where)

@@ -90,7 +90,7 @@ hiding the core items that already pass.
 
 ## Task 2: Harness - the `then` follow-on call and the `vblocks` and `vconst` setups
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** API (case-file additions); Error handling; Implementation step 2
@@ -100,27 +100,27 @@ within-cluster correlation, computed with numpy and pandas, never metafopy.
 
 **Subtasks:**
 
-- [ ] In `src/tests/correctness/cases.py`: the frozen dataclass `Step(function, args)`; `Case` gains `then: Step | None = None`; `then` joins
+- [x] In `src/tests/correctness/cases.py`: the frozen dataclass `Step(function, args)`; `Case` gains `then: Step | None = None`; `then` joins
       `CASE_KEYS`; `run_case` applies it as `metafopy.<function>(result, **args)` and returns the follow-on result, which `expect` and `check` see
-- [ ] `setup` accepts `escalc`, `vblocks` and `vconst` (at most one of the last two). `build_v(frame, setup, where)` returns the `V` matrix in data
+- [x] `setup` accepts `escalc`, `vblocks` and `vconst` (at most one of the last two). `build_v(frame, setup, where)` returns the `V` matrix in data
       order: `vblocks = { cluster, columns }` is block-diagonal with block j the named columns of cluster j's rows; `vconst = { cluster, vi, rho }`
       has `vi` on the diagonal and `rho * sqrt(vi[i] * vi[l])` within a cluster. It is passed to the call as `V`, after any `escalc`
-- [ ] Errors as in the spec's Error handling: `then` with keys other than `function` and `args`, both `vblocks` and `vconst`, either without
+- [x] Errors as in the spec's Error handling: `then` with keys other than `function` and `args`, both `vblocks` and `vconst`, either without
       `cluster`, raise `ValueError` naming the file and case id; an unknown follow-on function raises `LookupError` naming it; `build_v` raises
       `ValueError` naming the case when a `vblocks` cluster's row count differs from the number of `columns` or a block is not symmetric
-- [ ] Inline-TOML tests in `src/tests/correctness/test_coverage.py`: a valid case of each new form (checked against a `V` written out by hand), and
+- [x] Inline-TOML tests in `src/tests/correctness/test_coverage.py`: a valid case of each new form (checked against a `V` written out by hand), and
       each malformed form above
 
 **Acceptance Criteria:**
 
-- [ ] A `then = { function = "robust", args = { cluster = "district" } }` case on an inline `rma_uni` fit returns the `robust` result
-- [ ] Every error above is raised with the file and case id in its message
+- [x] A `then = { function = "robust", args = { cluster = "district" } }` case on an inline `rma_uni` fit returns the `robust` result
+- [x] Every error above is raised with the file and case id in its message
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 
