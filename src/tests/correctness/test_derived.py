@@ -8,10 +8,13 @@ import numpy
 import numpy.typing
 import pandas
 import pytest
+import scipy.stats
 
 import correctness.cases
 import correctness.formulas
 import metafopy
+
+type FloatArray = numpy.typing.NDArray[numpy.float64]
 
 
 @pytest.mark.parametrize('case', correctness.cases.case_params('derived'))
@@ -368,7 +371,27 @@ def mv_predict_pi(case: correctness.cases.Case, result: typing.Any) -> None:
     mv_agree(case, 'pi_ub', result.pi_ub, ub, MV_TIGHT_TOLERANCE)
 
 
-ROBUST_ADJUSTMENTS: dict[bool | str, str] = {False: 'CR0', True: 'CR1', 'Stata': 'Stata1', 'Stata1': 'Stata1', 'Stata2': 'Stata2'}
+ROBUST_TOLERANCE = 1e-8
+
+
+def robust_inputs(
+    case: correctness.cases.Case,
+) -> tuple[typing.Any, FloatArray, FloatArray, FloatArray, FloatArray, pandas.DataFrame]:
+    """The fit of a ``robust`` case and the working model it implies: ``y``, ``X``, the weights ``W`` (the inverse of the marginal covariance, or the user's
+    ``W``), the working covariance ``Theta`` (the marginal covariance: ``V`` plus the random-effects matrices, or ``vi + tau2`` on the diagonal) and the
+    data."""
+    fit = refit(case)
+    if case.function == 'rma_mv':
+        s = mv_setup(case, fit)
+        theta = s.V + s.extra()
+        return fit, s.yi, s.X, s.W if s.W is not None else numpy.linalg.inv(theta), theta, s.frame
+    frame = correctness.cases.case_frame(case)
+    assert frame is not None
+    theta = numpy.diag(frame[case.args['vi']].to_numpy(dtype=numpy.float64) + float(fit.tau2))
+    return fit, frame[case.args['yi']].to_numpy(dtype=numpy.float64), design_matrix(frame, case.args.get('mods')), numpy.linalg.inv(theta), theta, frame
+
+
+ROBUST_ADJUSTMENTS: dict[bool | str, str] = {False: 'CR0', True: 'Hedges', 'Stata': 'Stata1', 'Stata1': 'Stata1', 'Stata2': 'Stata2'}
 
 
 def robust_sandwich(case: correctness.cases.Case, result: typing.Any) -> None:
@@ -379,18 +402,7 @@ def robust_sandwich(case: correctness.cases.Case, result: typing.Any) -> None:
     ``V`` plus the random-effects matrices (or the user's ``W``) for ``rma_mv``.
     """
     assert case.then is not None
-    fit = refit(case)
-    if case.function == 'rma_mv':
-        s = mv_setup(case, fit)
-        yi, X, frame = s.yi, s.X, s.frame
-        W = s.W if s.W is not None else numpy.linalg.inv(s.V + s.extra())
-    else:
-        loaded = correctness.cases.case_frame(case)
-        assert loaded is not None
-        frame = loaded
-        yi = frame[case.args['yi']].to_numpy(dtype=numpy.float64)
-        X = design_matrix(frame, case.args.get('mods'))
-        W = numpy.diag(1 / (frame[case.args['vi']].to_numpy(dtype=numpy.float64) + float(fit.tau2)))
+    fit, yi, X, W, _, frame = robust_inputs(case)
     beta = numpy.linalg.solve(X.T @ W @ X, X.T @ W @ yi)
     codes = pandas.factorize(frame[case.then.args['cluster']], sort=True)[0].astype(numpy.intp)
     adjust = ROBUST_ADJUSTMENTS[case.then.args.get('adjust', True)]
@@ -409,3 +421,60 @@ def robust_sandwich(case: correctness.cases.Case, result: typing.Any) -> None:
         ('ddf', result.ddf, tests.ddf),
     ):
         mv_agree(case, name, actual, expected, MV_TIGHT_TOLERANCE)
+
+
+def infinite_agree(case: correctness.cases.Case, name: str, actual: typing.Any, expected: typing.Any, tolerance: float) -> None:
+    """``mv_agree`` where infinite values (the degrees of freedom of a z or chi-square test) must be infinite in both."""
+    got, want = numpy.asarray(actual, dtype=numpy.float64), numpy.asarray(expected, dtype=numpy.float64)
+    if not numpy.array_equal(numpy.isinf(got), numpy.isinf(want)):
+        raise AssertionError(f'{case.id}: {name}: metafopy gives {actual!r}, the reference gives {expected!r}')
+    finite = ~numpy.isinf(want)
+    mv_agree(case, name, got[finite], want[finite], tolerance)
+
+
+def robust_club(case: correctness.cases.Case, result: typing.Any) -> None:
+    """The ``club_sandwich`` fit of ``robust``: the variance of ``vcov``, the degrees of freedom, p-values and intervals of ``coef_test`` and
+    ``conf_test`` and the omnibus ``wald_test`` of Tipton and Pustejovsky (2015) and Pustejovsky and Tipton (2018), from ``formulas``. The working model
+    is the fit's own (``Theta`` the marginal covariance, ``W`` its inverse)."""
+    assert case.then is not None
+    args = case.then.args
+    vcov = args.get('vcov', 'CR2')
+    coef_test = args.get('coef_test', 'Satterthwaite')
+    conf_test = args.get('conf_test', 'Satterthwaite' if coef_test == 'saddlepoint' else coef_test)
+    wald_test = args.get('wald_test', 'HTZ')
+    fit, yi, X, W, theta, frame = robust_inputs(case)
+    beta = numpy.linalg.solve(X.T @ W @ X, X.T @ W @ yi)
+    codes = pandas.factorize(frame[args['cluster']], sort=True)[0].astype(numpy.intp)
+    vb = correctness.formulas.cluster_robust_vcov(X, W, yi - X @ beta, codes, vcov, theta)
+    m, p = int(codes.max()) + 1, X.shape[1]
+    se = numpy.sqrt(numpy.diag(vb))
+    zval = beta / se
+    satterthwaite = correctness.formulas.satterthwaite_dfs(X, W, theta, codes, vcov)
+    named = {'z': numpy.full(p, numpy.inf), 'naive-t': numpy.full(p, m - 1.0), 'naive-tp': numpy.full(p, m - p * 1.0), 'Satterthwaite': satterthwaite}
+    if coef_test == 'saddlepoint':
+        pval = correctness.formulas.saddlepoint_pvalue(X, W, theta, codes, vcov, beta, vb)
+        coef_df = numpy.full(p, numpy.nan)
+    else:
+        coef_df = named[coef_test]
+        pval = numpy.asarray(2 * scipy.stats.t.sf(numpy.abs(zval), coef_df), dtype=numpy.float64)
+    half = (1 - float(case.args.get('level', 95)) / 100) / 2
+    crit = scipy.stats.t.isf(half, named[conf_test])
+    btt = list(fit.btt)
+    wald = correctness.formulas.hotelling_wald(X, W, theta, codes, vcov, beta, vb, numpy.eye(p)[btt], wald_test)
+    tolerance = case.tolerance or ROBUST_TOLERANCE
+    for name, actual, expected in (
+        ('vb', result.vb, vb),
+        ('se', result.se, se),
+        ('zval', result.zval, zval),
+        ('ci_lb', result.ci_lb, beta - crit * se),
+        ('ci_ub', result.ci_ub, beta + crit * se),
+        ('QM', result.QM, wald.QM),
+        ('QMdf', result.QMdf[1], wald.df_denom),
+    ):
+        infinite_agree(case, name, actual, expected, ROBUST_TOLERANCE)
+    if coef_test == 'saddlepoint':
+        assert numpy.isnan(result.robust.dfs).all(), case.id
+    else:
+        infinite_agree(case, 'dfs', result.robust.dfs, coef_df, ROBUST_TOLERANCE)
+    mv_agree(case, 'pval', result.pval, pval, tolerance)
+    mv_agree(case, 'QMp', result.QMp, wald.pval, ROBUST_TOLERANCE)

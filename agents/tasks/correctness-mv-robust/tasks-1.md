@@ -306,7 +306,7 @@ prediction interval have `derived` cases.
 
 ## Task 7: robust - club_sandwich estimators and tests, then close the gate
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** API (`cluster_robust_vcov`, `satterthwaite_dfs`, `hotelling_wald`, `saddlepoint_pvalue`); Implementation steps 3, 4 and 10;
@@ -317,24 +317,24 @@ them the gate passes for every item.
 
 **Subtasks:**
 
-- [ ] `formulas.py`: `cluster_robust_vcov` gains `CR1p`, `CR1S`, `CR2` (Bell and McCaffrey 2002; Pustejovsky and Tipton 2018, equation 6) and `CR3`
+- [x] `formulas.py`: `cluster_robust_vcov` gains `CR1p`, `CR1S`, `CR2` (Bell and McCaffrey 2002; Pustejovsky and Tipton 2018, equation 6) and `CR3`
       (MacKinnon and White 1985, the jackknife form); `satterthwaite_dfs` (Tipton 2015, equation 11; Pustejovsky and Tipton 2018, section 3);
       `hotelling_wald` (HTA, HTB, HTZ, EDF, EDT of Tipton and Pustejovsky 2015, section 3), plus the `chi-sq`, `Naive-F` and `Naive-Fp` forms;
       `saddlepoint_pvalue` (Kuonen 1999, equations 2 to 4). Never import `metafopy.core.clubsandwich`
-- [ ] Derived cases in `cases/robust.toml` for each value, on `dat.tannersmith2016` (`vconst`) and one `rma_uni` fit
-- [ ] Record any mismatch as the header says
-- [ ] Remove `PENDING_PREFIXES` and `test_gate_mv_robust` from `test_coverage.py`, so the one gate covers every item. If any item is still missing,
+- [x] Derived cases in `cases/robust.toml` for each value, on `dat.tannersmith2016` (`vconst`) and one `rma_uni` fit
+- [x] Record any mismatch as the header says
+- [x] Remove `PENDING_PREFIXES` and `test_gate_mv_robust` from `test_coverage.py`, so the one gate covers every item. If any item is still missing,
       stop as `blocked`, naming it
 
 **Acceptance Criteria:**
 
-- [ ] The gate passes with no xfail mark and every new item in its list
+- [x] The gate passes with no xfail mark and every new item in its list
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 

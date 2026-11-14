@@ -26,8 +26,6 @@ import metafopy.models.rma_uni
 import metafopy.models.tau2
 
 HETEROGENEITY = ('H2', 'I2', 'QE', 'QM')
-# the new rma_mv and robust items stay out of the core gate until the last task of the correctness-mv-robust list removes this
-PENDING_PREFIXES = ('rma_mv.', 'robust.')
 MH_MEASURES = ('IRD', 'IRR', 'OR', 'RD', 'RR')
 FORMULAS = pathlib.Path(__file__).parent / 'formulas.py'
 
@@ -170,15 +168,7 @@ def test_escalc_accepts_each_listed_vtype(measure: str, vtype: str) -> None:
 
 
 def test_every_core_item_has_a_case() -> None:
-    items = [item for item in coverage_items() if not item.startswith(PENDING_PREFIXES)]
-    missing = missing_items(correctness.cases.load_cases(), correctness.cases.load_exemptions(), items)
-    assert not missing, f'{len(missing)} items have no published or derived case: {", ".join(missing)}'
-
-
-@pytest.mark.xfail(strict=True, reason='coverage incomplete; see agents/tasks/correctness-mv-robust/tasks-1.md')
-def test_gate_mv_robust() -> None:
-    items = [item for item in coverage_items() if item.startswith(PENDING_PREFIXES)]
-    missing = missing_items(correctness.cases.load_cases(), correctness.cases.load_exemptions(), items)
+    missing = missing_items(correctness.cases.load_cases(), correctness.cases.load_exemptions())
     assert not missing, f'{len(missing)} items have no published or derived case: {", ".join(missing)}'
 
 

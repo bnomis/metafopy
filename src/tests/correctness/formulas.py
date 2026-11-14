@@ -2258,34 +2258,84 @@ def mv_prediction_interval(
     return centre - crit * spread, centre + crit * spread
 
 
-CR_ADJUSTMENTS = ('CR0', 'CR1', 'Stata1', 'Stata2')
+# auditme: accept[non-alphabetical-literal] the documented option order, as in the code under test
+CR_TYPES = ('CR0', 'CR1', 'CR1p', 'CR1S', 'CR2', 'CR3')  # auditme: accept[literal-duplication] the same tuple as the code under test
+EDF_MIN_DF = 4.1
+
+
+def pseudo_inverse_root(a: FloatArray, power: float) -> FloatArray:
+    """``a ** power`` of a symmetric positive semi-definite matrix through its spectral decomposition, with the null space left at zero (the
+    Moore-Penrose form of Pustejovsky and Tipton 2018, equation 7)."""
+    values, vectors = numpy.linalg.eigh((a + a.T) / 2)
+    keep = values > 1e-12 * max(1.0, float(values.max()))
+    powered = numpy.zeros_like(values)
+    powered[keep] = values[keep] ** power
+    return numpy.asarray((vectors * powered) @ vectors.T, dtype=numpy.float64)
+
+
+def adjustment_matrices(X: FloatArray, W: FloatArray, theta: FloatArray, cluster: IntArray, vcov: str) -> list[FloatArray]:
+    """The adjustment matrix ``A_j`` of each cluster for the estimators of Pustejovsky and Tipton (2018, section 2), with ``X``, the weights ``W`` and the
+    working covariance ``theta`` (``Phi``) as full matrices, block-diagonal over the clusters.
+
+    ``CR0`` the identity (Liang and Zeger 1986); ``CR1`` ``sqrt(m / (m - 1))``; ``CR1S`` ``sqrt(m N / ((m - 1) (N - p)))`` (the paper's ``c_S``);
+    ``CR1p`` ``sqrt(m / (m - p))`` (the ``clubSandwich`` documentation's variant that uses ``p`` in place of one); ``CR2`` ``D' B^(+1/2) D`` with ``D``
+    the upper Cholesky factor of ``Phi_j`` and ``B = D (I - H) Phi (I - H)' D'`` (equations 7 and 8); ``CR3`` ``(I - X_j M X_j' W_j)^-1``
+    (MacKinnon and White 1985, the jackknife form of the paper's section 2).
+    """
+    N, p = X.shape
+    m = int(cluster.max()) + 1
+    bread = numpy.linalg.inv(X.T @ W @ X)
+    ih = numpy.eye(N) - X @ bread @ X.T @ W
+    scale = {'CR0': 1.0, 'CR1': math.sqrt(m / (m - 1)), 'CR1p': math.sqrt(m / (m - p)), 'CR1S': math.sqrt(m * N / ((m - 1) * (N - p)))}
+    out: list[FloatArray] = []
+    for j in range(m):
+        rows = numpy.flatnonzero(cluster == j)
+        if vcov in scale:
+            out.append(scale[vcov] * numpy.eye(len(rows)))
+        elif vcov == 'CR3':
+            out.append(numpy.linalg.inv(numpy.eye(len(rows)) - X[rows] @ bread @ X[rows].T @ W[numpy.ix_(rows, rows)]))
+        elif vcov == 'CR2':
+            D = numpy.linalg.cholesky(theta[numpy.ix_(rows, rows)]).T
+            B = D @ ih[rows] @ theta @ ih[rows].T @ D.T
+            out.append(D.T @ pseudo_inverse_root(B, -0.5) @ D)
+        else:
+            raise ValueError(f'unknown estimator {vcov!r}')
+    return out
 
 
 def cluster_robust_vcov(X: FloatArray, W: FloatArray, resid: FloatArray, cluster: IntArray, vcov: str, working: FloatArray | None = None) -> FloatArray:
-    """The cluster-robust variance ``(X'WX)^-1 [sum_j X_j' W_j e_j e_j' W_j X_j] (X'WX)^-1`` of the weighted least squares ``b`` (Hedges, Tipton and
-    Johnson 2010, equation 6), times the factor of ``vcov``: ``CR0`` none; ``CR1`` ``n / (n - p)`` (Hedges et al., the degrees-of-freedom correction after
-    equation 6); ``Stata1`` ``n / (n - 1) * (k - 1) / (k - p)`` (Cameron and Miller 2015, equation 12) and ``Stata2`` ``n / (n - 1)`` (the same section's
-    ``G / (G - 1)``); both are Stata's convention, not the meta-analysis papers'.
+    """The cluster-robust variance ``(X'WX)^-1 [sum_j X_j' W_j A_j e_j e_j' A_j' W_j X_j] (X'WX)^-1`` of the weighted least squares ``b`` (Hedges, Tipton
+    and Johnson 2010, equation 6; Pustejovsky and Tipton 2018, equation 4 with adjustment matrices ``A_j``).
+
+    ``vcov`` is a factor of the meta-regression papers or one of the ``CR_TYPES``. The factors multiply the variance: ``CR0`` none; ``Hedges``
+    ``n / (n - p)`` (Hedges et al., the degrees-of-freedom correction after equation 6); ``Stata1`` ``n / (n - 1) * (k - 1) / (k - p)`` (Cameron and
+    Miller 2015, equation 12) and ``Stata2`` ``n / (n - 1)`` (the same section's ``G / (G - 1)``); both are Stata's convention, not the meta-analysis
+    papers'. The ``CR_TYPES`` use the adjustment matrices of :func:`adjustment_matrices`, which need ``working`` (the working covariance, the inverse of
+    ``W`` for an inverse-variance working model).
 
     ``W`` is the full weight matrix, block-diagonal over the clusters, and ``W_j`` its block of cluster ``j``; ``n`` is the number of clusters, ``k`` the
     number of rows and ``p`` the number of coefficients.
     """
     k, p = X.shape
-    if working is not None:
-        raise ValueError('working matrices are used by CR2 and CR3 only')
     n = int(cluster.max()) + 1
     bread = numpy.linalg.inv(X.T @ W @ X)
     meat = numpy.zeros((p, p))
     covered = numpy.zeros(W.shape, dtype=bool)
+    if vcov in CR_TYPES and vcov != 'CR0':
+        if working is None:
+            raise ValueError('the CR estimators need the working covariance')
+        adjustments = adjustment_matrices(X, W, working, cluster, vcov)
+    else:
+        adjustments = [numpy.eye(int((cluster == j).sum())) for j in range(n)]
     for j in range(n):
         rows = numpy.flatnonzero(cluster == j)
         covered[numpy.ix_(rows, rows)] = True
-        score = X[rows].T @ W[numpy.ix_(rows, rows)] @ resid[rows]
+        score = X[rows].T @ W[numpy.ix_(rows, rows)] @ adjustments[j] @ resid[rows]
         meat += numpy.outer(score, score)
     if numpy.any(W[~covered] != 0):
         raise ValueError('the weight matrix is not block-diagonal over the clusters')
-    factors = {'CR0': 1.0, 'CR1': n / (n - p), 'Stata1': n / (n - 1) * (k - 1) / (k - p), 'Stata2': n / (n - 1)}
-    return numpy.asarray(factors[vcov] * bread @ meat @ bread, dtype=numpy.float64)
+    factors = {'CR0': 1.0, 'Hedges': n / (n - p), 'Stata1': n / (n - 1) * (k - 1) / (k - p), 'Stata2': n / (n - 1)}
+    return numpy.asarray(factors.get(vcov, 1.0) * bread @ meat @ bread, dtype=numpy.float64)
 
 
 def robust_tests(b: FloatArray, vb: FloatArray, n: int, btt: list[int], level: float = 95) -> MVTests:
@@ -2301,3 +2351,175 @@ def robust_tests(b: FloatArray, vb: FloatArray, n: int, btt: list[int], level: f
     qm = float(b[btt] @ numpy.linalg.solve(vb[numpy.ix_(btt, btt)], b[btt])) / m
     pval = numpy.asarray(2 * scipy.stats.t.sf(numpy.abs(zval), n - p), dtype=numpy.float64)
     return MVTests(se, zval, pval, b - crit * se, b + crit * se, qm, float(scipy.stats.f.sf(qm, m, n - p)), ddf)
+
+
+def club_components(
+    X: FloatArray, W: FloatArray, theta: FloatArray, cluster: IntArray, vcov: str, C: FloatArray
+) -> tuple[list[FloatArray], FloatArray, FloatArray]:
+    """The matrices ``B_j = C M X_j' W_j A_j (I - X M X' W)_j`` (``q x N``, the rows of cluster ``j`` of the last factor; Tipton and Pustejovsky 2015,
+    equation 9, before the standardisation by ``Omega^(-1/2)``) with ``Omega = sum_j B_j Theta B_j'``, the expected value of ``C V^R C'`` under the working
+    model ``Theta`` (equation 7), and the whitening matrix ``Omega^(-1/2)``. Returns ``(B, Omega, Omega^(-1/2))``."""
+    N = X.shape[0]
+    M = numpy.linalg.inv(X.T @ W @ X)
+    ih = numpy.eye(N) - X @ M @ X.T @ W
+    adjustments = adjustment_matrices(X, W, theta, cluster, vcov)
+    B = []
+    for j, A in enumerate(adjustments):
+        rows = numpy.flatnonzero(cluster == j)
+        B.append(C @ M @ X[rows].T @ W[numpy.ix_(rows, rows)] @ A @ ih[rows])
+    omega = numpy.sum([b @ theta @ b.T for b in B], axis=0)
+    return B, omega, pseudo_inverse_root(omega, -0.5)
+
+
+def covariance_of_d(B: list[FloatArray], theta: FloatArray, whiten: FloatArray) -> FloatArray:
+    """``Cov(d_st, d_uv)`` as the array ``[s, t, u, v]`` for ``D = Omega^(-1/2) C V^R C' Omega^(-1/2)`` under normal errors with covariance ``theta``
+    (Tipton and Pustejovsky 2015, equation 8 with the unit vectors ``u1 = j_s``, ``u2 = j_t``, ``u3 = j_u``, ``u4 = j_v``)."""
+    scaled = [whiten @ b for b in B]
+    q = whiten.shape[0]
+    cov = numpy.zeros((q, q, q, q))
+    for bi in scaled:
+        for bj in scaled:
+            G = bi @ theta @ bj.T
+            cov += numpy.einsum('sv,tu->stuv', G, G) + numpy.einsum('su,tv->stuv', G, G)
+    return cov
+
+
+def satterthwaite_dfs(X: FloatArray, W: FloatArray, theta: FloatArray, cluster: IntArray, vcov: str) -> FloatArray:
+    """The Satterthwaite degrees of freedom of the t test of each coefficient, ``eta = 2 / Var(d_11)`` (Tipton and Pustejovsky 2015, after equation 14;
+    Pustejovsky and Tipton 2018, section 3), with ``Var(d_11)`` from equation 8 of the first paper at ``C`` the unit row of the coefficient."""
+    p = X.shape[1]
+    out = numpy.zeros(p)
+    for s in range(p):
+        C = numpy.eye(p)[[s]]
+        B, _, whiten = club_components(X, W, theta, cluster, vcov, C)
+        out[s] = 2 / covariance_of_d(B, theta, whiten)[0, 0, 0, 0]
+    return out
+
+
+@dataclasses.dataclass(frozen=True)
+class WaldTest:
+    """A cluster-robust Wald test: the statistic on the scale of ``QM`` (``F``), its degrees of freedom (the denominator ``inf`` for a chi-square) and
+    its p-value."""
+
+    QM: float
+    df_num: int
+    df_denom: float
+    pval: float
+
+
+def hotelling_eta(cov: FloatArray, test: str) -> float:
+    """The degrees of freedom ``eta`` of the approximating Hotelling's T-squared distribution (Tipton and Pustejovsky 2015): ``HTA`` equation 12,
+    ``HTB`` equation 13 and ``HTZ`` equation 14, from the covariances ``cov[s, t, u, v]`` of the entries of ``D``. The squares of the covariances in
+    equations 12 and 13 are the least-squares criterion the equations solve: ``eta`` minimises the squared differences of ``eta Cov`` from the
+    Wishart's ``I(s = u) I(t = v) + I(s = v) I(t = u)``."""
+    q = cov.shape[0]
+    var = numpy.array([[cov[s, t, s, t] for t in range(q)] for s in range(q)])
+    if test == 'HTZ':
+        return float(q * (q + 1) / var.sum())
+    if test == 'HTA':
+        return 2 * float(var.sum()) / float(numpy.sum(cov**2))
+    top = 0.0
+    bottom = 0.0
+    for s in range(q):
+        for t in range(s + 1):
+            top += var[s, t]
+            for u in range(s):
+                for v in range(u + 1):
+                    bottom += cov[s, t, u, v] ** 2
+            for v in range(t + 1):
+                bottom += cov[s, t, s, v] ** 2
+    return 2 * top / bottom
+
+
+def hill_transform(t: FloatArray, f: FloatArray) -> FloatArray:
+    """Hill's (1970) normalising transformation of a t variate with ``f`` degrees of freedom (Tipton and Pustejovsky 2015, equation 18 and after)."""
+    a = f - 0.5
+    b = 48 * a**2
+    c = numpy.sqrt(a * numpy.log(1 + t**2 / f))
+    return numpy.asarray(c + (c**3 + 3 * c) / b - (4 * c**7 + 33 * c**5 + 240 * c**3 + 855 * c) / (10 * b**2 + 8 * b * c**4 + 1000 * b))
+
+
+def hotelling_wald(
+    X: FloatArray, W: FloatArray, theta: FloatArray, cluster: IntArray, vcov: str, beta: FloatArray, vb: FloatArray, C: FloatArray, test: str
+) -> WaldTest:
+    """The cluster-robust Wald test of ``C beta = 0`` (Tipton and Pustejovsky 2015, equations 10 to 18; Pustejovsky and Tipton 2018, section 3).
+
+    ``vb`` is the robust variance of ``beta``. ``chi-sq`` compares ``Q`` to a chi-square with ``q`` degrees of freedom, ``Naive-F`` ``Q / q`` to
+    ``F(q, m - 1)`` and ``Naive-Fp`` to ``F(q, m - p)`` (the ``clubSandwich`` documentation; Hedges et al. 2010 use ``m - p``); ``HTA``, ``HTB`` and
+    ``HTZ`` compare ``(eta - q + 1) Q / (eta q)`` to ``F(q, eta - q + 1)`` (equation 10); ``EDF`` and ``EDT`` are the eigen-decomposition tests of
+    equations 15 to 18. ``QM`` is ``Q / q`` for the chi-square and naive tests, as metafor reports it, and the scaled statistic of the test otherwise.
+    """
+    q = C.shape[0]
+    m = int(cluster.max()) + 1
+    p = X.shape[1]
+    cb = C @ beta
+    cvc = C @ vb @ C.T
+    Q = float(cb @ numpy.linalg.solve(cvc, cb))
+    if test == 'chi-sq':
+        return WaldTest(Q / q, q, math.inf, float(scipy.stats.chi2.sf(Q, q)))
+    if test in ('Naive-F', 'Naive-Fp'):
+        df = m - 1 if test == 'Naive-F' else m - p
+        return WaldTest(Q / q, q, float(df), float(scipy.stats.f.sf(Q / q, q, df)))
+    B, _, whiten = club_components(X, W, theta, cluster, vcov, C)
+    cov = covariance_of_d(B, theta, whiten)
+    if test in ('HTA', 'HTB', 'HTZ'):
+        eta = hotelling_eta(cov, test)
+        df = eta - q + 1
+        stat = df * Q / (eta * q)
+        return WaldTest(stat, q, df, float(scipy.stats.f.sf(stat, q, df)))
+    lam, vectors = numpy.linalg.eigh(whiten @ cvc @ whiten)
+    scaled = [whiten @ b for b in B]
+    f = numpy.zeros(q)
+    for s in range(q):
+        ps = vectors[:, s]
+        f[s] = 1 / sum(float(ps @ bi @ theta @ bj.T @ ps) ** 2 for bi in scaled for bj in scaled)
+    if test == 'EDF':
+        g = numpy.maximum(f, EDF_MIN_DF)
+        EQ = float(numpy.sum(g / (g - 2)))
+        VQ = float(2 * numpy.sum(g**2 * (g - 1) / ((g - 2) ** 2 * (g - 4))))
+        if q * VQ <= 2 * EQ**2:
+            raise ValueError('equation 17 has no solution: q VQ <= 2 EQ^2')
+        delta = (EQ**2 * (q - 2) + 2 * q * VQ) / (EQ * (VQ + EQ**2))  # the printed q in the denominator breaks E[delta Q / q] = nu / (nu - 2)
+        df = 4 + 2 * EQ**2 * (q + 2) / (q * VQ - 2 * EQ**2)
+        stat = delta * Q / q
+        return WaldTest(stat, q, df, float(scipy.stats.f.sf(stat, q, df)))
+    if test == 'EDT':
+        t = (vectors.T @ whiten @ cb) / numpy.sqrt(lam)
+        total = float(numpy.sum(hill_transform(t, f) ** 2))
+        return WaldTest(total / q, q, math.inf, float(scipy.stats.chi2.sf(total, q)))
+    raise ValueError(f'unknown Wald test {test!r}')
+
+
+def saddlepoint_pvalue(X: FloatArray, W: FloatArray, theta: FloatArray, cluster: IntArray, vcov: str, beta: FloatArray, vb: FloatArray) -> FloatArray:
+    """The saddlepoint p-value of the t test of each coefficient (Kuonen 1999; the application of section 5, equation 4, to ``T = c'b / sqrt(V^R)``).
+
+    Under the working model ``e ~ N(0, Theta)`` and ``c'(b - beta) = a'e`` with ``a = W X M c``, and ``V^R = e'Q e`` with ``Q = sum_j b_j' b_j`` for
+    the rows ``b_j`` of ``C M X_j' W_j A_j (I - H)_j``. The two-sided p-value of the observed ``t`` is ``pr(e'U e > 0)`` with ``U = a a' - t^2 Q``
+    (equation 4 of Kuonen with ``T^2`` for ``T``), approximated by equation 3 with ``q = 0``: ``1 - Phi(w + log(v / w) / w)``, ``w = sign(s)
+    sqrt(-2 K(s))``, ``v = s sqrt(K''(s))`` and ``K'(s) = 0``, for the central form ``K(s) = -1/2 sum log(1 - 2 l s)`` over the eigenvalues ``l`` of
+    ``Theta^(1/2) U Theta^(1/2)`` (section 2). The approximation is Kuonen's equation 3, not the Lugannani-Rice form his section 3 names as its
+    alternative.
+    """
+    p = X.shape[1]
+    M = numpy.linalg.inv(X.T @ W @ X)
+    root = numpy.linalg.cholesky(theta)
+    out = numpy.zeros(p)
+    for s in range(p):
+        C = numpy.eye(p)[[s]]
+        B, _, _ = club_components(X, W, theta, cluster, vcov, C)
+        Q = sum(b.T @ b for b in B)
+        a = W @ X @ M @ C.T
+        t2 = float(beta[s] ** 2 / vb[s, s])
+        lam = numpy.linalg.eigvalsh(root.T @ (a @ a.T - t2 * Q) @ root)
+        lam = lam[numpy.abs(lam) > 1e-12 * numpy.abs(lam).max()]
+
+        def slope(z: float, lam: FloatArray = lam) -> float:
+            return float(numpy.sum(lam / (1 - 2 * lam * z)))
+
+        lo, hi = 1 / (2 * float(lam.min())), 1 / (2 * float(lam.max()))
+        gap = 1e-9 * (hi - lo)
+        z = float(scipy.optimize.brentq(slope, lo + gap, hi - gap, xtol=1e-14, rtol=1e-14))
+        w = math.copysign(math.sqrt(float(numpy.sum(numpy.log(1 - 2 * lam * z)))), z)
+        v = z * math.sqrt(2 * float(numpy.sum(lam**2 / (1 - 2 * lam * z) ** 2)))
+        out[s] = float(scipy.stats.norm.sf(w + math.log(v / w) / w))
+    return out
