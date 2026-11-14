@@ -319,3 +319,112 @@ check = "test_derived.mv_model"
 covers = ["rma_mv.Rscale.none"]
 source = { citation = "metafor 5.2-1, help page rma.mv (Rscale argument)", locator = "Details, the paragraph on the Rscale argument; the rescaling is that software's convention (Hadfield and Nakagawa 2010 give the phylogenetic correlation matrix itself)", read = 2026-11-14 }
 
+
+
+# Inference on the coefficients, QE, QM, profile intervals and prediction intervals. The `mv_tests` check rebuilds the tests from
+# `formulas.mv_tests` and `formulas.mv_qe` at metafopy's components. The Knapp-Hartung, ad hoc and containment conventions are those of the software
+# documentation named in each case's source, not of a publication.
+
+[[case]]
+id = "mv.test.z.berkey"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.berkey1998"
+setup = { vblocks = { cluster = "trial", columns = ["v1i", "v2i"] } }
+args = { yi = "yi", mods = "~ 0 + outcome", random = "~ outcome | trial", struct = "UN" }
+check = "test_derived.mv_tests"
+covers = ["rma_mv.test.z", "rma_mv.QE", "rma_mv.QM"]
+
+[[case]]
+id = "mv.test.t.kon"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.konstantopoulos2011"
+args = { yi = "yi", V = "vi", random = "~ 1 | district/school", mods = "~ year", test = "t" }
+check = "test_derived.mv_tests"
+covers = ["rma_mv.test.t", "rma_mv.dfs.residual"]
+
+[[case]]
+id = "mv.test.knha.kon"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.konstantopoulos2011"
+args = { yi = "yi", V = "vi", random = "~ 1 | district/school", mods = "~ year", test = "knha" }
+check = "test_derived.mv_tests"
+covers = ["rma_mv.test.knha"]
+source = { citation = "metafor 5.2-1, help page rma.mv (test argument); Knapp G, Hartung J (2003). Improved tests for a random effects meta-regression with a single covariate. Stat Med 22:2693-2710", locator = "rma.mv, Details: the Knapp-Hartung adjustment of the variance-covariance matrix of the coefficients by r' M^-1 r / (k - p), a generalisation to rma_mv that is that software's convention", read = 2026-11-14 }
+
+[[case]]
+id = "mv.test.adhoc.kon"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.konstantopoulos2011"
+args = { yi = "yi", V = "vi", random = "~ 1 | district/school", mods = "~ year", test = "adhoc" }
+check = "test_derived.mv_tests"
+covers = ["rma_mv.test.adhoc"]
+source = { citation = "metafor 5.2-1, help page rma.mv (test argument); Knapp G, Hartung J (2003). Improved tests for a random effects meta-regression with a single covariate. Stat Med 22:2693-2710", locator = "rma.mv, Details: the ad hoc version keeps the Knapp-Hartung factor at 1 or above; the generalisation to rma_mv is that software's convention", read = 2026-11-14 }
+
+[[case]]
+id = "mv.dfs.contain.kon"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.konstantopoulos2011"
+args = { yi = "yi", V = "vi", random = "~ 1 | district/school", mods = "~ year", test = "t", dfs = "contain" }
+check = "test_derived.mv_tests"
+covers = ["rma_mv.dfs.contain"]
+source = { citation = "SAS Institute Inc., SAS/STAT User's Guide, the MIXED procedure, MODEL statement, option DDFM=CONTAIN; metafor 5.2-1, help page rma.mv (dfs argument)", locator = "DDFM=CONTAIN: degrees of freedom from the smallest random effect that contains the fixed effect; the count of grouping levels minus the number of coefficients is that software's reading of SAS's rank condition", read = 2026-11-14 }
+
+[[case]]
+id = "mv.confint.pl.sigma2.kon"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.konstantopoulos2011"
+args = { yi = "yi", V = "vi", random = "~ 1 | district/school" }
+check = "test_derived.mv_confint_pl"
+covers = ["rma_mv.confint.pl"]
+then = { function = "confint", args = { sigma2 = 1, tol = 1e-12 } }
+tolerance = 1e-5
+
+[[case]]
+id = "mv.confint.pl.tau2.berkey"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.berkey1998"
+setup = { vblocks = { cluster = "trial", columns = ["v1i", "v2i"] } }
+args = { yi = "yi", mods = "~ 0 + outcome", random = "~ outcome | trial", struct = "HCS" }
+check = "test_derived.mv_confint_pl"
+covers = ["rma_mv.confint.pl"]
+then = { function = "confint", args = { tau2 = 0, tol = 1e-12 } }
+tolerance = 1e-5
+
+[[case]]
+id = "mv.confint.pl.rho.berkey"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.berkey1998"
+setup = { vblocks = { cluster = "trial", columns = ["v1i", "v2i"] } }
+args = { yi = "yi", mods = "~ 0 + outcome", random = "~ outcome | trial", struct = "CS" }
+check = "test_derived.mv_confint_pl"
+covers = ["rma_mv.confint.pl"]
+then = { function = "confint", args = { rho = 0, tol = 1e-12 } }
+tolerance = 1e-5
+
+[[case]]
+id = "mv.confint.fixed.kon"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.konstantopoulos2011"
+args = { yi = "yi", V = "vi", random = "~ 1 | district/school", mods = "~ year", test = "t" }
+check = "test_derived.mv_confint_fixed"
+covers = ["rma_mv.confint.fixed"]
+then = { function = "confint", args = { fixed = true } }
+
+[[case]]
+id = "mv.predict.pi.kon"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.konstantopoulos2011"
+args = { yi = "yi", V = "vi", random = "~ 1 | district/school", mods = "~ year", test = "t" }
+check = "test_derived.mv_predict_pi"
+covers = ["rma_mv.predict.pi"]
+then = { function = "predict", args = {} }

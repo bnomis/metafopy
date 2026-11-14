@@ -24,6 +24,8 @@ import scipy.stats
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type IntArray = numpy.typing.NDArray[numpy.intp]
 
+KNAPP_HARTUNG_TESTS = ('adhoc', 'knha')
+
 
 def risk_difference_yi(ai: FloatArray, bi: FloatArray, ci: FloatArray, di: FloatArray) -> FloatArray:
     """Risk difference ``p1 - p2`` of two independent proportions, ``p1 = ai / (ai + bi)`` and ``p2 = ci / (ci + di)`` (the definition)."""
@@ -1415,7 +1417,7 @@ def coefficient_covariance(
     w = numpy.diag(1 / (vi + tau2))
     cov = numpy.linalg.inv(design.T @ w @ design)
     beta = cov @ design.T @ w @ yi
-    if test in ('knha', 'adhoc'):
+    if test in KNAPP_HARTUNG_TESTS:
         s2 = random_effects_q(yi, vi, design, tau2) / df
         cov = cov * (max(1.0, s2) if test == 'adhoc' else s2)
     return beta, cov, math.inf if test == 'z' else float(df)
@@ -2108,3 +2110,149 @@ def mv_fit(yi: FloatArray, V: FloatArray, X: FloatArray, terms: list[RandomTerm]
     extra = extra_of(optimum)
     b, vb = gls(yi, V + extra, X, W)
     return MVFit(tuple(variances), tuple(correlations), b, vb, mv_loglik(yi, V, X, extra, method, W), norm <= MV_GRADIENT_LIMIT, norm, message)
+
+
+# rma_mv: inference on the coefficients, QE and QM, containment degrees of freedom, and profile-likelihood intervals of the components.
+
+
+@dataclasses.dataclass(frozen=True)
+class MVTests:
+    """The tests of the coefficients of an ``rma_mv`` fit: standard errors, test statistics, p-values, interval bounds, ``QM`` with its p-value, and the
+    degrees of freedom of each coefficient (``nan`` for a z test)."""
+
+    se: FloatArray
+    zval: FloatArray
+    pval: FloatArray
+    ci_lb: FloatArray
+    ci_ub: FloatArray
+    QM: float
+    QMp: float
+    ddf: FloatArray
+
+
+def knapp_hartung_factor(yi: FloatArray, M: FloatArray, X: FloatArray, ad_hoc: bool) -> float:
+    """The Knapp-Hartung variance factor ``r' M^-1 r / (k - p)`` (Knapp and Hartung 2003, equation 2, generalised from ``M = diag(vi + tau2)`` to a full
+    marginal covariance matrix, as in the ``rma.mv`` help page), with ``r = y - X b`` at the generalised least squares ``b``. The ad hoc version
+    (``adhoc``) floors the factor at 1, so that the standard errors are never below the Wald ones."""
+    k, p = X.shape
+    b, _ = gls(yi, M, X)
+    resid = yi - X @ b
+    factor = float(resid @ numpy.linalg.solve(M, resid)) / (k - p)
+    return float(max(factor, 1.0) if ad_hoc else factor)
+
+
+def contain_ddf(X: FloatArray, groupings: list[IntArray]) -> FloatArray:
+    """Containment degrees of freedom (the SAS/STAT ``PROC MIXED`` option ``DDFM=CONTAIN``): a coefficient's column is contained in a random effect when
+    it is constant within each level of that effect's grouping; its degrees of freedom are the number of levels of the smallest such grouping minus
+    the number of coefficients, at least 1. A column contained in no grouping has ``k - p``.
+
+    ``groupings`` holds one level code per row for each grouping variable: the outer variable of each term and, for a structured term, the
+    inner-by-outer combination. Making the numbers of levels the degrees of freedom is the software's reading of SAS's rank condition.
+    """
+    k, p = X.shape
+    ddf = numpy.full(p, float(k - p))
+    for j in range(p):
+        for codes in groupings:
+            levels = numpy.unique(codes)
+            if all(numpy.unique(X[codes == level, j]).shape[0] == 1 for level in levels):
+                ddf[j] = min(ddf[j], len(levels) - p)
+        ddf[j] = max(ddf[j], 1.0)
+    return ddf
+
+
+def mv_tests(yi: FloatArray, M: FloatArray, X: FloatArray, test: str, ddf: FloatArray, btt: list[int], level: float = 95) -> MVTests:
+    """Wald (``z``), ``t``, Knapp-Hartung (``knha``) and ad hoc (``adhoc``) tests of the coefficients at the generalised least squares estimate.
+
+    ``z`` uses the normal distribution and ``QM`` against chi-square(m); the others scale the variance by the Knapp-Hartung factor (``t`` does not) and
+    use the t distribution with ``ddf`` degrees of freedom for each coefficient, and ``QM / m`` against F(m, min ``ddf`` over ``btt``).
+    """
+    b, vb = gls(yi, M, X)
+    if test in KNAPP_HARTUNG_TESTS:
+        vb = knapp_hartung_factor(yi, M, X, test == 'adhoc') * vb
+    se = numpy.sqrt(numpy.diag(vb))
+    zval = b / se
+    qm = float(b[btt] @ numpy.linalg.solve(vb[numpy.ix_(btt, btt)], b[btt]))
+    half = alpha_of(level) / 2
+    if test == 'z':
+        crit = numpy.full(len(b), float(scipy.stats.norm.ppf(1 - half)))
+        pval = 2 * scipy.stats.norm.sf(numpy.abs(zval))
+        return MVTests(se, zval, pval, b - crit * se, b + crit * se, qm, float(scipy.stats.chi2.sf(qm, len(btt))), numpy.full(len(b), math.nan))
+    crit = numpy.asarray(scipy.stats.t.ppf(1 - half, ddf), dtype=numpy.float64)
+    pval = numpy.asarray(2 * scipy.stats.t.sf(numpy.abs(zval), ddf), dtype=numpy.float64)
+    m = len(btt)
+    qm = qm / m
+    return MVTests(se, zval, pval, b - crit * se, b + crit * se, qm, float(scipy.stats.f.sf(qm, m, float(numpy.min(ddf[btt])))), ddf)
+
+
+def mv_qe(yi: FloatArray, V: FloatArray, X: FloatArray) -> tuple[float, float]:
+    """The test for residual heterogeneity: ``QE = r' V^-1 r`` with ``r`` the residuals of the generalised least squares fit with weights ``V^-1`` (no
+    random effects), and its p-value from chi-square(k - p) (Cochran 1954; Hedges and Olkin 1985, chapter 7)."""
+    k, p = X.shape
+    b, _ = gls(yi, V, X)
+    resid = yi - X @ b
+    q = float(resid @ numpy.linalg.solve(V, resid))
+    return q, float(scipy.stats.chi2.sf(q, k - p))
+
+
+def fix_component(terms: list[RandomTerm], index: int, kind: str, position: int, value: float) -> list[RandomTerm]:
+    """``terms`` with the variance (``kind`` ``variance``) or correlation (``correlation``) at ``position`` of term ``index`` held at ``value``."""
+    term = terms[index]
+    if kind == 'variance':
+        held = numpy.full(term.n_variances(), math.nan) if term.fixed_variances is None else term.fixed_variances.copy()
+        held[position] = value
+        return [*terms[:index], dataclasses.replace(term, fixed_variances=held), *terms[index + 1 :]]
+    held = numpy.full(term.n_correlations(), math.nan) if term.fixed_correlations is None else term.fixed_correlations.copy()
+    held[position] = value
+    return [*terms[:index], dataclasses.replace(term, fixed_correlations=held), *terms[index + 1 :]]
+
+
+def mv_profile_bounds(
+    yi: FloatArray,
+    V: FloatArray,
+    X: FloatArray,
+    terms: list[RandomTerm],
+    method: str,
+    index: int,
+    kind: str,
+    position: int,
+    level: float = 95,
+) -> FloatArray:
+    """Profile-likelihood interval of one variance or correlation component (Hardy and Thompson 1996): the values either side of the estimate at which
+    twice the drop of the log-likelihood, maximised over the other components, equals the ``level`` quantile of chi-square(1). The lower end of a
+    variance is 0 and that of a correlation -1 where the drop there is below the quantile; the upper end of a correlation is 1 likewise.
+    """
+    full = mv_fit(yi, V, X, terms, method)
+    estimate = float((full.variances if kind == 'variance' else full.correlations)[index][position])
+    crit = float(scipy.stats.chi2.ppf(level / 100, 1))
+
+    def excess(value: float) -> float:
+        held = fix_component(terms, index, kind, position, value)
+        return 2 * (full.loglik - mv_fit(yi, V, X, held, method).loglik) - crit
+
+    low_end, high_end = (0.0, math.inf) if kind == 'variance' else (-1 + 1e-9, 1 - 1e-9)
+    lower = low_end if excess(low_end) < 0 else float(scipy.optimize.brentq(excess, low_end, estimate, xtol=1e-13, rtol=1e-13))
+    if kind == 'variance':
+        high_end = max(1.0, 2 * estimate)
+        while excess(high_end) < 0:
+            high_end *= 2
+    upper = high_end if excess(high_end) < 0 else float(scipy.optimize.brentq(excess, estimate, high_end, xtol=1e-13, rtol=1e-13))
+    return numpy.array([lower, upper])
+
+
+def mv_prediction_interval(
+    yi: FloatArray, M: FloatArray, X: FloatArray, test: str, ddf: FloatArray, rows: FloatArray, component_variance: float, level: float = 95
+) -> tuple[FloatArray, FloatArray]:
+    """The prediction interval at the model-matrix ``rows`` of an ``rma_mv`` fit with ``sigma2`` components only (Riley, Higgins and Deeks 2011,
+    equation 4, generalised): ``x'b +- crit sqrt(x' vb x + sum of the sigma2)``, with ``crit`` from the normal distribution for ``z`` and from the t
+    distribution with the smallest ``ddf`` of the coefficients the row involves otherwise."""
+    b, vb = gls(yi, M, X)
+    if test in KNAPP_HARTUNG_TESTS:
+        vb = knapp_hartung_factor(yi, M, X, test == 'adhoc') * vb
+    spread = numpy.sqrt(numpy.einsum('ij,jk,ik->i', rows, vb, rows) + component_variance)
+    half = alpha_of(level) / 2
+    if test == 'z':
+        crit = numpy.full(len(rows), float(scipy.stats.norm.ppf(1 - half)))
+    else:
+        crit = numpy.asarray(scipy.stats.t.ppf(1 - half, numpy.array([numpy.min(ddf[row != 0]) for row in rows])), dtype=numpy.float64)
+    centre = rows @ b
+    return centre - crit * spread, centre + crit * spread

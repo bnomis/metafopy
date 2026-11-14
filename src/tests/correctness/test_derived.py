@@ -202,15 +202,30 @@ def mv_agree(case: correctness.cases.Case, name: str, actual: typing.Any, expect
         raise AssertionError(f'{case.id}: {name}: metafopy gives {actual!r}, the reference gives {expected!r} (tolerance {tolerance:g})')
 
 
-def mv_model(case: correctness.cases.Case, result: typing.Any) -> None:
-    """The likelihood, the generalised least squares estimate and the optimum of an ``rma_mv`` fit (Harville 1977; Wolfinger 1993).
+@dataclasses.dataclass(frozen=True)
+class MVSetup:
+    """The marginal model of a case rebuilt from its data: ``y``, ``V``, ``X``, the optional ``W``, the terms and the components of metafopy's fit."""
 
-    The case's ``random``, ``struct``, ``mods``, ``method`` and data give ``y``, ``V``, ``X`` and the terms; the checks are the log-likelihood at
-    metafopy's components (1e-10), ``beta`` and ``se`` by generalised least squares at them (1e-10), and the optimum of ``formulas.mv_fit``
-    (components within the case's tolerance, 1e-6 by default, and a log-likelihood no more than 1e-8 above metafopy's). A user ``W`` changes only
-    ``beta`` and ``se``: the components are those of the fit without it (the software's convention; its R parity fixture gives the same ``sigma2``
-    with and without ``W``).
-    """
+    frame: pandas.DataFrame
+    yi: numpy.typing.NDArray[numpy.float64]
+    V: numpy.typing.NDArray[numpy.float64]
+    X: numpy.typing.NDArray[numpy.float64]
+    W: numpy.typing.NDArray[numpy.float64] | None
+    method: str
+    scored: str
+    terms: list[correctness.formulas.RandomTerm]
+    variances: list[numpy.typing.NDArray[numpy.float64]]
+    correlations: list[numpy.typing.NDArray[numpy.float64]]
+
+    def extra(self) -> numpy.typing.NDArray[numpy.float64]:
+        """The sum of the random-effects matrices of the terms at metafopy's components."""
+        total = numpy.zeros_like(self.V)
+        for term, var, cor in zip(self.terms, self.variances, self.correlations, strict=True):
+            total = total + correctness.formulas.term_matrix(term, var, cor)
+        return total
+
+
+def mv_setup(case: correctness.cases.Case, result: typing.Any) -> MVSetup:
     frame = correctness.cases.case_frame(case)
     assert frame is not None
     yi = frame[case.args['yi']].to_numpy(dtype=numpy.float64)
@@ -223,18 +238,30 @@ def mv_model(case: correctness.cases.Case, result: typing.Any) -> None:
     method = case.args.get('method', 'REML')
     fixed = method in MV_FIXED_METHODS
     terms = [] if fixed else mv_terms(case, frame)
-    scored = 'ML' if fixed else method
-    stats = result.fit_stats_reml if scored == 'REML' else result.fit_stats_ml
     variances, correlations = mv_components(result, terms)
-    extra = numpy.zeros_like(V)
-    for term, var, cor in zip(terms, variances, correlations, strict=True):
-        extra = extra + correctness.formulas.term_matrix(term, var, cor)
+    return MVSetup(frame, yi, V, X, W, method, 'ML' if fixed else method, terms, variances, correlations)
+
+
+def mv_model(case: correctness.cases.Case, result: typing.Any) -> None:
+    """The likelihood, the generalised least squares estimate and the optimum of an ``rma_mv`` fit (Harville 1977; Wolfinger 1993).
+
+    The case's ``random``, ``struct``, ``mods``, ``method`` and data give ``y``, ``V``, ``X`` and the terms; the checks are the log-likelihood at
+    metafopy's components (1e-10), ``beta`` and ``se`` by generalised least squares at them (1e-10), and the optimum of ``formulas.mv_fit``
+    (components within the case's tolerance, 1e-6 by default, and a log-likelihood no more than 1e-8 above metafopy's). A user ``W`` changes only
+    ``beta`` and ``se``: the components are those of the fit without it (the software's convention; its R parity fixture gives the same ``sigma2``
+    with and without ``W``).
+    """
+    s = mv_setup(case, result)
+    yi, V, X, W, terms, scored = s.yi, s.V, s.X, s.W, s.terms, s.scored
+    variances, correlations = s.variances, s.correlations
+    stats = result.fit_stats_reml if scored == 'REML' else result.fit_stats_ml
+    extra = s.extra()
     mv_agree(case, 'log-likelihood', correctness.formulas.mv_loglik(yi, V, X, extra, scored, W), stats.ll, MV_TIGHT_TOLERANCE)
     b, vb = correctness.formulas.gls(yi, V + extra, X, W)
     mv_agree(case, 'beta', result.beta, b, MV_TIGHT_TOLERANCE)
     mv_agree(case, 'se', result.se, numpy.sqrt(numpy.diag(vb)), MV_TIGHT_TOLERANCE)
     fit = correctness.formulas.mv_fit(yi, V, X, terms, scored)
-    structure = ', '.join(term.struct for term in terms) or method
+    structure = ', '.join(term.struct for term in terms) or s.method
     if not fit.success:
         raise AssertionError(f'{case.id}: mv_fit ({structure}) did not converge: gradient norm {fit.gradient_norm:g}; optimiser: {fit.message}')
     tolerance = case.tolerance or MV_COMPONENT_TOLERANCE
@@ -251,3 +278,91 @@ def mv_model(case: correctness.cases.Case, result: typing.Any) -> None:
         raise AssertionError(
             f"{case.id}: the reference optimum {reference!r} is above metafopy's log-likelihood {stats.ll!r} by more than {MV_LOGLIK_EXCESS:g}"
         )
+
+
+def mv_expected_tests(case: correctness.cases.Case, fit: typing.Any) -> tuple[MVSetup, correctness.formulas.MVTests, str]:
+    """The tests of the coefficients of ``fit`` from ``formulas.mv_tests`` at metafopy's components, with the test used: ``z`` with ``dfs`` other than
+    ``residual`` is a ``t`` test, as the software defines it. The degrees of freedom are ``k - p`` for ``residual`` and ``formulas.contain_ddf`` over
+    the grouping of each random term for ``contain``."""
+    s = mv_setup(case, fit)
+    test = case.args.get('test', 'z')
+    dfs = case.args.get('dfs', 'residual')
+    if test == 'z' and dfs != 'residual':
+        test = 't'
+    k, p = s.X.shape
+    if dfs == 'residual':
+        ddf = numpy.full(p, float(k - p))
+    else:
+        groupings: list[numpy.typing.NDArray[numpy.intp]] = []
+        for term in s.terms:
+            groupings.append(term.outer)
+            if term.struct != correctness.formulas.SIGMA2:
+                pairs = pandas.Series(list(zip(term.inner.tolist(), term.outer.tolist(), strict=True)))
+                groupings.append(pandas.factorize(pairs)[0].astype(numpy.intp))
+        ddf = correctness.formulas.contain_ddf(s.X, groupings)
+    tests = correctness.formulas.mv_tests(s.yi, s.V + s.extra(), s.X, test, ddf, list(fit.btt), float(case.args.get('level', 95)))
+    return s, tests, test
+
+
+def mv_tests(case: correctness.cases.Case, result: typing.Any) -> None:
+    """The tests of the coefficients, ``QM`` and ``QE`` of an ``rma_mv`` fit (Wald, t, Knapp-Hartung and ad hoc; containment degrees of freedom;
+    Cochran 1954), by ``formulas.mv_tests`` and ``formulas.mv_qe`` at metafopy's components."""
+    s, tests, test = mv_expected_tests(case, result)
+    for name, actual, expected in (
+        ('se', result.se, tests.se),
+        ('zval', result.zval, tests.zval),
+        ('pval', result.pval, tests.pval),
+        ('ci_lb', result.ci_lb, tests.ci_lb),
+        ('ci_ub', result.ci_ub, tests.ci_ub),
+        ('QM', result.QM, tests.QM),
+        ('QMp', result.QMp, tests.QMp),
+    ):
+        mv_agree(case, name, actual, expected, MV_TIGHT_TOLERANCE)
+    if test != 'z':
+        mv_agree(case, 'ddf', result.ddf, tests.ddf, MV_TIGHT_TOLERANCE)
+    qe, qep = correctness.formulas.mv_qe(s.yi, s.V, s.X)
+    mv_agree(case, 'QE', result.QE, qe, MV_TIGHT_TOLERANCE)
+    mv_agree(case, 'QEp', result.QEp, qep, MV_TIGHT_TOLERANCE)
+
+
+def refit(case: correctness.cases.Case) -> typing.Any:
+    """The ``rma_mv`` fit of a case that has a ``then`` follow-on call."""
+    return correctness.cases.run_case(dataclasses.replace(case, then=None))
+
+
+def mv_confint_fixed(case: correctness.cases.Case, result: typing.Any) -> None:
+    """The Wald-type intervals of the coefficients from ``confint(fit, fixed=True)``: the t distribution with the degrees of freedom of each
+    coefficient unless the test is ``z``."""
+    _, tests, _ = mv_expected_tests(case, refit(case))
+    mv_agree(case, 'ci.lb', result.fixed['ci.lb'].to_numpy(), tests.ci_lb, MV_TIGHT_TOLERANCE)
+    mv_agree(case, 'ci.ub', result.fixed['ci.ub'].to_numpy(), tests.ci_ub, MV_TIGHT_TOLERANCE)
+
+
+def mv_confint_pl(case: correctness.cases.Case, result: typing.Any) -> None:
+    """The profile-likelihood interval of the ``sigma2``, ``tau2`` or ``rho`` component the case's ``then`` names (Hardy and Thompson 1996)."""
+    assert case.then is not None
+    fit = refit(case)
+    s = mv_setup(case, fit)
+    (name,) = [n for n in ('sigma2', 'tau2', 'rho') if n in case.then.args]
+    position = int(case.then.args[name])
+    if name == 'sigma2':
+        index, kind, where = [i for i, t in enumerate(s.terms) if t.struct == correctness.formulas.SIGMA2][position], 'variance', 0
+    else:
+        index = next(i for i, t in enumerate(s.terms) if t.struct != correctness.formulas.SIGMA2)
+        kind, where = ('variance' if name == 'tau2' else 'correlation'), position
+    bounds = correctness.formulas.mv_profile_bounds(s.yi, s.V, s.X, s.terms, s.scored, index, kind, where)
+    assert result.random is not None
+    tolerance = case.tolerance or MV_COMPONENT_TOLERANCE
+    mv_agree(case, f'confint {name}', [result.random['ci.lb'].iloc[0], result.random['ci.ub'].iloc[0]], bounds, tolerance)
+
+
+def mv_predict_pi(case: correctness.cases.Case, result: typing.Any) -> None:
+    """The prediction interval at each row of the model matrix of an ``rma_mv`` fit with ``sigma2`` components only."""
+    fit = refit(case)
+    s, tests, test = mv_expected_tests(case, fit)
+    if any(t.struct != correctness.formulas.SIGMA2 for t in s.terms):
+        raise ValueError(f'{case.id}: mv_predict_pi covers sigma2 components only')
+    total = float(sum(v.sum() for v in s.variances))
+    lb, ub = correctness.formulas.mv_prediction_interval(s.yi, s.V + s.extra(), s.X, test, tests.ddf, s.X, total)
+    mv_agree(case, 'pi_lb', result.pi_lb, lb, MV_TIGHT_TOLERANCE)
+    mv_agree(case, 'pi_ub', result.pi_ub, ub, MV_TIGHT_TOLERANCE)

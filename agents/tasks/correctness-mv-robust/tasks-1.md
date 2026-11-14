@@ -222,7 +222,7 @@ an `[[exempt]]` entry.
 
 ## Task 5: rma_mv - inference, QE, QM, profile intervals and prediction intervals
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** Implementation steps 3 and 4; Decisions (D2, `knha`, `adhoc`, `contain`); Prerequisite; Coverage list (tests, dfs, `QE`, `QM`,
@@ -233,29 +233,29 @@ prediction interval have `derived` cases.
 
 **Subtasks:**
 
-- [ ] `formulas.py`: the Wald `z` and `t` tests; the Knapp-Hartung factor `r' M^-1 r / (k - p)` and its ad hoc floor at 1, coded from metafor's
+- [x] `formulas.py`: the Wald `z` and `t` tests; the Knapp-Hartung factor `r' M^-1 r / (k - p)` and its ad hoc floor at 1, coded from metafor's
       `rma.mv` help page (the `rma_mv` form is metafor's generalisation of Knapp and Hartung 2003); containment degrees of freedom from the SAS/STAT
       PROC MIXED documentation of `DDFM=CONTAIN`; `QE` and `QM`; profile bounds (Hardy and Thompson 1996: the component where the likelihood ratio
       statistic equals the chi-square(1) quantile, solved with `scipy.optimize.brentq` over `mv_loglik` maximised in the other components)
-- [ ] Per D2, each `knha`, `adhoc` and `contain` case's `source` names the documentation and says the convention is that software's
-- [ ] Derived cases: each `rma_mv.TESTS` value and each `rma_mv.DFS` value; `QE` and `QM` on `dat.berkey1998`; `confint` profile intervals of a
+- [x] Per D2, each `knha`, `adhoc` and `contain` case's `source` names the documentation and says the convention is that software's
+- [x] Derived cases: each `rma_mv.TESTS` value and each `rma_mv.DFS` value; `QE` and `QM` on `dat.berkey1998`; `confint` profile intervals of a
       `sigma2`, a `tau2` and a `rho`; `confint` of the fixed effects; a `derived` `predict` interval case using the existing
       `test_derived.predict_pi` pattern
-- [ ] Prerequisite check: if the `TODO.md` heading "The correctness harness cannot check exp(beta), prediction intervals or test-based tau2 and I2
+- [x] Prerequisite check: if the `TODO.md` heading "The correctness harness cannot check exp(beta), prediction intervals or test-based tau2 and I2
       intervals" is in `DONE.md` and its `predict` check function exists in `src/tests/correctness/`, note it for Task 11's `published` prediction
       interval cases; if not, Task 13 files those cases as a `TODO.md` item
-- [ ] Record any mismatch as the header says
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] `test_gate_mv_robust`'s missing list names no `rma_mv.test.*`, no `rma_mv.dfs.*` and none of `rma_mv.QE`, `rma_mv.QM`, `rma_mv.confint.pl`,
+- [x] `test_gate_mv_robust`'s missing list names no `rma_mv.test.*`, no `rma_mv.dfs.*` and none of `rma_mv.QE`, `rma_mv.QM`, `rma_mv.confint.pl`,
       `rma_mv.confint.fixed`, `rma_mv.predict.pi`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 
