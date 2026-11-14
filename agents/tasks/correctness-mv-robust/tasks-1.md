@@ -556,7 +556,7 @@ them the gate passes for every item.
 
 ## Task 13: File the answers and close the spec
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation step 12
@@ -566,31 +566,31 @@ list.
 
 **Subtasks:**
 
-- [ ] Read the answers from the Answers section of `agents/specs/correctness-mv-robust/mismatches.md`, never from the page. If Task 12 recorded
+- [x] Read the answers from the Answers section of `agents/specs/correctness-mv-robust/mismatches.md`, never from the page. If Task 12 recorded
       mismatches, stop as `blocked`, naming the missing items, if that section is empty or incomplete
-- [ ] *Keep metafor*: correct the case to the convention metafor documents, cite where it documents it, and set `status = "pass"`
-- [ ] *Follow the reference*: add a `TODO.md` item for each with the `todo-add` skill, naming the case, the fix, the case to flip, the R parity
+- [x] *Keep metafor*: correct the case to the convention metafor documents, cite where it documents it, and set `status = "pass"`
+- [x] *Follow the reference*: add a `TODO.md` item for each with the `todo-add` skill, naming the case, the fix, the case to flip, the R parity
       fixtures and `src/audit/data/known.toml` entries to mark, and the `docs/differences.md` section "Where metafor departs from its reference" to add
-- [ ] *Investigate*: a `TODO.md` item with the `todo-add` skill naming what is in doubt
-- [ ] If Task 5 found no harness `predict` check function, a `TODO.md` item with the `todo-add` skill for the `published` cases of
+- [x] *Investigate*: a `TODO.md` item with the `todo-add` skill naming what is in doubt
+- [x] If Task 5 found no harness `predict` check function, a `TODO.md` item with the `todo-add` skill for the `published` cases of
       `rma_mv.predict.pi`
-- [ ] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` to say so (leave the umbrella `TODO.md` item "Extend the
+- [x] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` to say so (leave the umbrella `TODO.md` item "Extend the
       correctness tests beyond the core models" where it is; the publication-bias list moves it)
-- [ ] Run the final test selection from the worktree:
+- [x] Run the final test selection from the worktree:
       `main=$(git worktree list --porcelain | sed -n '1s/^worktree //p'); mkdir -p "$main/ralpher-logs/correctness-mv-robust/tasks-1" && pytest src/tests/correctness src/tests/test_rma_mv.py src/tests/test_rma_mv_extras.py src/tests/test_robust.py src/tests/test_robust_extras.py src/tests/test_audit8_crashes.py 2>&1 | tee "$main/ralpher-logs/correctness-mv-robust/tasks-1/final-tests.log"`
       (`slow` cases included), judged by its exit status
 
 **Acceptance Criteria:**
 
-- [ ] Every answered item has a case change or a `TODO.md` item
-- [ ] `src/audit/data/r-versions.json` is unchanged from `main` (`git diff --exit-code main -- src/audit/data/r-versions.json`)
+- [x] Every answered item has a case change or a `TODO.md` item
+- [x] `src/audit/data/r-versions.json` is unchanged from `main` (`git diff --exit-code main -- src/audit/data/r-versions.json`)
 
 **Definition of Done:**
 
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness src/tests/test_rma_mv.py src/tests/test_rma_mv_extras.py src/tests/test_robust.py src/tests/test_robust_extras.py src/tests/test_audit8_crashes.py` passes, `slow` cases included (the last subtask's run)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness src/tests/test_rma_mv.py src/tests/test_rma_mv_extras.py src/tests/test_robust.py src/tests/test_robust_extras.py src/tests/test_audit8_crashes.py` passes, `slow` cases included (the last subtask's run)
 
 **Notes:**
 

@@ -155,14 +155,12 @@ dataset = "dat.tannersmith2016"
 setup = { vconst = { cluster = "studyid", vi = "vi", rho = 0.6 } }
 args = { yi = "yi", random = "~ 1 | studyid", mods = "~ aget1 + aget2", method = "REML" }
 check = "test_derived.robust_club"
-status = "mismatch"
-reason = "CR1S: the reference variance of the intercept is 0.220873 (c_S = sqrt(m N / ((m - 1)(N - p))), Pustejovsky and Tipton 2018, section 2) and metafopy gives 0.218918, smaller by the factor (N - 1) / N = 112 / 113: metafopy and metafor (clubSandwich 0.7.0, the parity case of test_robust_extras) use sqrt(m (N - 1) / ((m - 1)(N - p))), Stata's factor"
 covers = ["robust.vcov.CR1S"]
 then = { function = "robust", args = { cluster = "studyid", club_sandwich = true, vcov = "CR1S" } }
 
 [case.source]
-citation = "Pustejovsky JE, Tipton E (2018). Small-sample methods for cluster-robust variance estimation and hypothesis testing in fixed effects models. Journal of Business and Economic Statistics 36:672-683"
-locator = "section 2, c_S = sqrt(m N / ((m - 1)(N - p)))"
+citation = "Pustejovsky JE, Tipton E (2018). Small-sample methods for cluster-robust variance estimation and hypothesis testing in fixed effects models. Journal of Business and Economic Statistics 36:672-683; Cameron AC, Miller DL (2015). A practitioner's guide to cluster-robust inference. Journal of Human Resources 50:317-372"
+locator = "section 2, c_S, with N - 1 for the printed N as in Cameron and Miller (2015) equation 12 (Stata's factor, which the paper says it describes)"
 read = 2026-11-14
 doi = "10.1080/07350015.2016.1247004"
 
@@ -259,14 +257,13 @@ dataset = "dat.tannersmith2016"
 setup = { vconst = { cluster = "studyid", vi = "vi", rho = 0.6 } }
 args = { yi = "yi", random = "~ 1 | studyid", mods = "~ aget1 + aget2", method = "REML" }
 check = "test_derived.robust_club"
-status = "mismatch"
-reason = "saddlepoint: the reference p-values (Kuonen 1999, equation 3) are 0.201118, 0.385678 and 0.060665 and metafopy gives 0.198807, 0.385766 and 0.060105; metafopy and metafor use the Lugannani-Rice form of the approximation (which gives 0.198863, 0.385664 and 0.060117 here), the alternative that Kuonen names after equation 3"
+tolerance = 3e-4  # metafopy finds the saddlepoint root to the tolerance of R's uniroot, so the p-values agree to about 1e-4
 covers = ["robust.coef_test.saddlepoint"]
 then = { function = "robust", args = { cluster = "studyid", club_sandwich = true, coef_test = "saddlepoint" } }
 
 [case.source]
 citation = "Kuonen D (1999). Saddlepoint approximations for distributions of quadratic forms in normal variables. Biometrika 86:929-935; Pustejovsky JE, Tipton E (2018). Small-sample methods for cluster-robust variance estimation and hypothesis testing in fixed effects models. Journal of Business and Economic Statistics 36:672-683"
-locator = "Kuonen equations 2 to 4 (the p-value of a ratio of quadratic forms); PT18 section 1 for its use with the CR estimators"
+locator = "Kuonen equations 2 to 4 and the Lugannani-Rice form named after equation 3 (the p-value of a ratio of quadratic forms); PT18 section 1 for its use with the CR estimators"
 read = 2026-11-14
 doi = "10.1093/biomet/86.4.929"
 

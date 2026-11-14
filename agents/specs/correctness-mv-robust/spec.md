@@ -1,7 +1,7 @@
 # Correctness tests: rma_mv and robust
 
 **Version:** 1.1
-**Status:** proposed
+**Status:** implemented
 **Date:** 2026-11-12
 
 Found on 2026-11-12 while reviewing `TODO.md` (item "Extend the correctness tests beyond the core models"): the introduction of the

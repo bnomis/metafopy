@@ -2277,7 +2277,8 @@ def adjustment_matrices(X: FloatArray, W: FloatArray, theta: FloatArray, cluster
     """The adjustment matrix ``A_j`` of each cluster for the estimators of Pustejovsky and Tipton (2018, section 2), with ``X``, the weights ``W`` and the
     working covariance ``theta`` (``Phi``) as full matrices, block-diagonal over the clusters.
 
-    ``CR0`` the identity (Liang and Zeger 1986); ``CR1`` ``sqrt(m / (m - 1))``; ``CR1S`` ``sqrt(m N / ((m - 1) (N - p)))`` (the paper's ``c_S``);
+    ``CR0`` the identity (Liang and Zeger 1986); ``CR1`` ``sqrt(m / (m - 1))``; ``CR1S``
+    ``sqrt(m (N - 1) / ((m - 1) (N - p)))`` (Stata's factor, Cameron and Miller 2015, equation 12; the paper's ``c_S`` prints ``N`` for ``N - 1``);
     ``CR1p`` ``sqrt(m / (m - p))`` (the ``clubSandwich`` documentation's variant that uses ``p`` in place of one); ``CR2`` ``D' B^(+1/2) D`` with ``D``
     the upper Cholesky factor of ``Phi_j`` and ``B = D (I - H) Phi (I - H)' D'`` (equations 7 and 8); ``CR3`` ``(I - X_j M X_j' W_j)^-1``
     (MacKinnon and White 1985, the jackknife form of the paper's section 2).
@@ -2286,7 +2287,7 @@ def adjustment_matrices(X: FloatArray, W: FloatArray, theta: FloatArray, cluster
     m = int(cluster.max()) + 1
     bread = numpy.linalg.inv(X.T @ W @ X)
     ih = numpy.eye(N) - X @ bread @ X.T @ W
-    scale = {'CR0': 1.0, 'CR1': math.sqrt(m / (m - 1)), 'CR1p': math.sqrt(m / (m - p)), 'CR1S': math.sqrt(m * N / ((m - 1) * (N - p)))}
+    scale = {'CR0': 1.0, 'CR1': math.sqrt(m / (m - 1)), 'CR1p': math.sqrt(m / (m - p)), 'CR1S': math.sqrt(m * (N - 1) / ((m - 1) * (N - p)))}
     out: list[FloatArray] = []
     for j in range(m):
         rows = numpy.flatnonzero(cluster == j)
@@ -2495,10 +2496,10 @@ def saddlepoint_pvalue(X: FloatArray, W: FloatArray, theta: FloatArray, cluster:
 
     Under the working model ``e ~ N(0, Theta)`` and ``c'(b - beta) = a'e`` with ``a = W X M c``, and ``V^R = e'Q e`` with ``Q = sum_j b_j' b_j`` for
     the rows ``b_j`` of ``C M X_j' W_j A_j (I - H)_j``. The two-sided p-value of the observed ``t`` is ``pr(e'U e > 0)`` with ``U = a a' - t^2 Q``
-    (equation 4 of Kuonen with ``T^2`` for ``T``), approximated by equation 3 with ``q = 0``: ``1 - Phi(w + log(v / w) / w)``, ``w = sign(s)
-    sqrt(-2 K(s))``, ``v = s sqrt(K''(s))`` and ``K'(s) = 0``, for the central form ``K(s) = -1/2 sum log(1 - 2 l s)`` over the eigenvalues ``l`` of
-    ``Theta^(1/2) U Theta^(1/2)`` (section 2). The approximation is Kuonen's equation 3, not the Lugannani-Rice form his section 3 names as its
-    alternative.
+    (equation 4 of Kuonen with ``T^2`` for ``T``), approximated by the Lugannani-Rice form Kuonen names after equation 3: ``1 - Phi(w) + phi(w) (1 / v
+    - 1 / w)``, ``w = sign(s) sqrt(-2 K(s))``, ``v = s sqrt(K''(s))`` and ``K'(s) = 0``, for the central form ``K(s) = -1/2 sum log(1 - 2 l s)`` over
+    the eigenvalues ``l`` of ``Theta^(1/2) U Theta^(1/2)`` (section 2). The form is Lugannani-Rice, the one clubSandwich uses, not equation 3 itself;
+    the paper calls them "usually indistinguishable in practice".
     """
     p = X.shape[1]
     M = numpy.linalg.inv(X.T @ W @ X)
@@ -2521,5 +2522,5 @@ def saddlepoint_pvalue(X: FloatArray, W: FloatArray, theta: FloatArray, cluster:
         z = float(scipy.optimize.brentq(slope, lo + gap, hi - gap, xtol=1e-14, rtol=1e-14))
         w = math.copysign(math.sqrt(float(numpy.sum(numpy.log(1 - 2 * lam * z)))), z)
         v = z * math.sqrt(2 * float(numpy.sum(lam**2 / (1 - 2 * lam * z) ** 2)))
-        out[s] = float(scipy.stats.norm.sf(w + math.log(v / w) / w))
+        out[s] = float(scipy.stats.norm.sf(w) + scipy.stats.norm.pdf(w) * (1 / v - 1 / w))
     return out
