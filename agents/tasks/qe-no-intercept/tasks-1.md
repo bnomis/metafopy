@@ -151,7 +151,7 @@ the fix in Task 2 is seen to turn them from mismatches into passes.
 
 ## Task 3: Record the difference, the full test run and closing the item
 
-**Status:** in-progress
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item's fix direction (`known.toml`, `docs/differences.md`) and the item as a whole
@@ -161,45 +161,46 @@ once, and the item moves to `DONE.md`.
 
 **Subtasks:**
 
-- [ ] Run the audit on the no-intercept constructions from the worktree, against the main checkout's R oracle, in the background:
+- [x] Run the audit on the no-intercept constructions from the worktree, against the main checkout's R oracle, in the background:
       `main=$(git worktree list --porcelain | sed -n '1s/^worktree //p'); METAFOPY_AUDIT_WORK="$main/.audit" bin/metafor-audit.sh --only 'construct/*/intercept=false'`.
       If `check-r` reports that the R library is missing or differs from `src/audit/data/r-versions.json`, stop as `blocked` and say so; never
       pass `--allow-r-drift`
-- [ ] For each finding it reports on `QE`, `QEp`, `I2`, `H2`, `tau2` or a value that follows from tau2 (`se`, `beta`, the fit statistics, and so on),
+- [x] For each finding it reports on `QE`, `QEp`, `I2`, `H2`, `tau2` or a value that follows from tau2 (`se`, `beta`, the fit statistics, and so on),
       check that the fixture's design lacks the constant, and add a `[[known]]` entry to `src/audit/data/known.toml` matching exactly those case
       ids, with `kind`, `path`, a `reason` (metafor centres `yi` once, `ymci` in `rma.uni`, so its QE is not Cochran's Q when the design does not
       span the constant; metafopy uses `y' P y`) and `ref = "docs/differences.md"`. Add no entry for a finding the run does not report. Stop as
       `blocked`, naming it, for a finding on a fixture whose design spans the constant
-- [ ] Rerun the same command and check that its report lists no finding left from this change
-- [ ] Add a subsection `### QE and tau2 of a model without an intercept` to the section "Where metafor departs from its reference" of
+- [x] Rerun the same command and check that its report lists no finding left from this change
+- [x] Add a subsection `### QE and tau2 of a model without an intercept` to the section "Where metafor departs from its reference" of
       `docs/differences.md`: a short summary, the same call in R and in Python with the output of both (the model in the header), and *Why:*
       Cochran's Q is `sum w (y - X b)^2`, which centring changes only when X does not span the constant. Produce the R output with
       `R_LIBS="$main/.audit/Rlib" LC_ALL=C.UTF-8 Rscript -e '<the R block>'`
-- [ ] Move the item from `TODO.md` to `DONE.md`: append its heading and body unchanged at the end of `DONE.md`, then a line
+- [x] Move the item from `TODO.md` to `DONE.md`: append its heading and body unchanged at the end of `DONE.md`, then a line
       `Done: 2026-MM-DD, agents/tasks/qe-no-intercept/tasks-1.md` with the date of the commit
-- [ ] Run the final tests from the worktree and save their output for the merge gate:
+- [x] Run the final tests from the worktree and save their output for the merge gate:
       `main=$(git worktree list --porcelain | sed -n '1s/^worktree //p'); mkdir -p "$main/ralpher-logs/qe-no-intercept/tasks-1" && pytest src/tests/test_rma_uni_parity.py src/tests/test_rma_uni_help.py src/tests/test_rma_uni_extras.py src/tests/test_rma_ls.py src/tests/test_fits.py src/tests/test_audit13_fixes.py src/tests/test_audit4_predict.py src/tests/test_audit8_values_a.py src/tests/test_audit8_refusals.py src/tests/test_audit9_fixes.py src/tests/test_hettest.py src/tests/test_docs_examples.py src/tests/correctness 2>&1 | tee "$main/ralpher-logs/qe-no-intercept/tasks-1/final-tests.log"`
 
 **Acceptance Criteria:**
 
-- [ ] The audit run on `construct/*/intercept=false` reports no finding from this change, and every new `known.toml` entry matches at least one case
+- [x] The audit run on `construct/*/intercept=false` reports no finding from this change, and every new `known.toml` entry matches at least one case
       of that run
-- [ ] `docs/differences.md` names the difference under "Where metafor departs from its reference"
-- [ ] The item is in `DONE.md` with its body unchanged, and no longer in `TODO.md`
+- [x] `docs/differences.md` names the difference under "Where metafor departs from its reference"
+- [x] The item is in `DONE.md` with its body unchanged, and no longer in `TODO.md`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] The final test run above passes, `slow` tests included
-- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/qe-no-intercept/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] The final test run above passes, `slow` tests included
+- [x] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/qe-no-intercept/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
       `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0 (`<scratch>` is the session's scratch
       directory, outside the repository)
 
 **Notes:**
 
+- Audit run on 2026-11-14 (`construct/*/intercept=false`): no finding on QE, tau2 or what follows from them, so no `known.toml` entry was added. These fixtures pass `mods` as a formula, which ignores `intercept=` (as metafor does), so their designs hold the constant; the difference is checked by the correctness cases and shown in `docs/differences.md`
 - Depends on Task 2
 - Prerequisite outside this repository: R metafor 5.2-1 and the pinned packages in the main checkout's `.audit/Rlib` (present on 2026-11-14)
 - The audit's no-intercept constructions are `construct/<fixture>/intercept=false` (seen in `.audit/runs/20261102-223017/findings.json`:
