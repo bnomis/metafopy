@@ -66,10 +66,12 @@ CASE_KEYS = frozenset(
         'tolerance',
     }
 )
-SETUP_KEYS = frozenset({'escalc', 'vblocks', 'vconst'})
+SETUP_KEYS = frozenset({'escalc', 'subset', 'tree_r', 'vblocks', 'vconst'})
 STEP_KEYS = frozenset({'args', 'function'})
 VBLOCKS_KEYS = frozenset({'cluster', 'columns'})
 VCONST_KEYS = frozenset({'cluster', 'rho', 'vi'})
+SUBSET_KEYS = frozenset({'column', 'equals'})
+TREE_R_KEYS = frozenset({'factor', 'tree'})
 SYMMETRY_TOLERANCE = 1e-12
 SOURCE_KEYS = frozenset({'citation', 'doi', 'locator', 'read', 'url'})
 TOP_KEYS = frozenset({'case', 'exempt', 'vtypes'})
@@ -222,7 +224,7 @@ def parse_printed(raw: object, kind: str, check: str | None, where: str) -> dict
 def parse_setup(setup: object, where: str, *, has_data: bool) -> None:
     """Check a case's ``setup``: an ``escalc`` call and at most one of ``vblocks`` and ``vconst``, each with its ``cluster``."""
     if not isinstance(setup, dict) or not setup or not set(setup) <= SETUP_KEYS:
-        fail(where, 'setup must be a table with escalc, vblocks or vconst')
+        fail(where, 'setup must be a table with escalc, subset, tree_r, vblocks or vconst')
     if not all(isinstance(value, dict) for value in setup.values()):
         fail(where, 'each setup entry (escalc, vblocks, vconst) must be a table')
     if 'vblocks' in setup and 'vconst' in setup:
@@ -238,6 +240,17 @@ def parse_setup(setup: object, where: str, *, has_data: bool) -> None:
             fail(where, f'setup.{key} takes exactly {sorted(allowed)}; unknown {sorted(unknown)}, missing {sorted(missing)}')
         if not has_data:
             fail(where, f'setup.{key} needs a dataset or inline data')
+    if 'subset' in setup:
+        if set(setup['subset']) != SUBSET_KEYS or not all(isinstance(value, str) and value for value in setup['subset'].values()):
+            fail(where, f'setup.subset takes exactly {sorted(SUBSET_KEYS)}, each a text')
+        if not has_data:
+            fail(where, 'setup.subset needs a dataset or inline data')
+    if 'tree_r' in setup:
+        spec = setup['tree_r']
+        if set(spec) != TREE_R_KEYS or not all(isinstance(value, str) and value for value in spec.values()):
+            fail(where, f'setup.tree_r takes exactly {sorted(TREE_R_KEYS)}, each a name')
+        if not has_data:
+            fail(where, 'setup.tree_r needs a dataset or inline data')
     if 'vblocks' in setup:
         columns = setup['vblocks']['columns']
         if not isinstance(columns, list) or not columns or not all(isinstance(c, str) for c in columns):
@@ -402,7 +415,7 @@ def load_vtypes(directory: pathlib.Path | None = None) -> list[MeasureVtypes]:
 
 
 def case_frame(case: Case) -> pandas.DataFrame | None:
-    """The case's data: the bundled dataset or the inline columns, with the ``escalc`` of ``setup`` applied."""
+    """The case's data: the bundled dataset or the inline columns, with the ``escalc`` of ``setup`` applied, then the rows ``subset`` keeps."""
     if case.dataset is not None:
         frame = metafopy.datasets.load(case.dataset)
     elif case.data is not None:
@@ -411,6 +424,8 @@ def case_frame(case: Case) -> pandas.DataFrame | None:
         return None
     if case.setup is not None and 'escalc' in case.setup:
         frame = metafopy.escalc(data=frame, **case.setup['escalc'])
+    if case.setup is not None and 'subset' in case.setup:
+        frame = frame[frame[case.setup['subset']['column']] == case.setup['subset']['equals']].reset_index(drop=True)
     return frame
 
 
@@ -442,6 +457,25 @@ def build_v(frame: pandas.DataFrame, setup: dict[str, typing.Any], where: str) -
     return matrix
 
 
+def build_tree_r(tree: str) -> pandas.DataFrame:
+    """The covariance matrix of a Brownian-motion trait along a bundled tree: entry ``(i, j)`` is the length of the edges that the root-to-tip paths
+    of tips ``i`` and ``j`` share, computed with numpy from the edge table alone (Hadfield and Nakagawa 2010), rows and columns labelled by the tips."""
+    edges = metafopy.datasets.load_tree(tree).edges
+    parent = dict(zip(edges['child'], edges['parent'], strict=True))
+    length = dict(zip(edges['child'], edges['length'], strict=True))
+    column = {child: position for position, child in enumerate(edges['child'])}
+    tips = sorted(set(edges['child']) - set(edges['parent']))
+    paths = numpy.zeros((len(tips), len(column)))
+    for row, tip in enumerate(tips):
+        node = tip
+        while node in parent:
+            paths[row, column[node]] = length[node]
+            node = parent[node]
+    shared = (paths > 0).astype(numpy.float64)
+    labels = edges.set_index('child').loc[tips, 'child_label'].astype(str).tolist()
+    return pandas.DataFrame((shared * numpy.array([length[child] for child in edges['child']])) @ shared.T, index=labels, columns=labels)
+
+
 def resolve_formula(name: str, where: str) -> collections.abc.Callable[..., typing.Any]:
     func = getattr(correctness.formulas, name.removeprefix(FORMULA_PREFIX), None)
     if not callable(func):
@@ -469,7 +503,8 @@ def formula_value(case: Case, name: str, frame: pandas.DataFrame | None) -> typi
 def run_case(case: Case) -> typing.Any:
     """Load the dataset, apply ``setup``, call ``metafopy.<function>(**args)`` (``formulas.<name>`` for a formula), then apply ``then`` to the fit.
 
-    ``setup`` is an ``escalc`` call and, for ``vblocks`` or ``vconst``, the ``V`` passed to the call. The result of ``then`` is returned.
+    ``setup`` is an ``escalc`` call, for ``vblocks`` or ``vconst`` the ``V`` passed to the call, and for ``tree_r`` the ``R`` passed to it (the
+    unscaled tree covariance matrix of the named factor). The result of ``then`` is returned.
     """
     frame = case_frame(case)
     if case.function.startswith(FORMULA_PREFIX):
@@ -482,6 +517,8 @@ def run_case(case: Case) -> typing.Any:
         kwargs['data'] = frame
         if case.setup is not None and ('vblocks' in case.setup or 'vconst' in case.setup):
             kwargs['V'] = build_v(frame, case.setup, f'{case.file}: case {case.id}')
+        if case.setup is not None and 'tree_r' in case.setup:
+            kwargs['R'] = {case.setup['tree_r']['factor']: build_tree_r(case.setup['tree_r']['tree'])}
     result = func(**kwargs)
     if case.then is None:
         return result

@@ -1784,24 +1784,41 @@ SIGMA2 = 'SIGMA2'
 MV_GRADIENT_LIMIT = 1e-6
 
 
+UNSTRUCTURED = ('GEN', 'UN')
+PER_LEVEL_VARIANCES = ('DIAG', 'GDIAG', 'GEN', 'HAR', 'HCS', 'UN')
+SPATIAL_STRUCTS = ('SPEXP', 'SPGAU', 'SPLIN', 'SPRAT', 'SPSPH')
+COEFFICIENT_STRUCTS = ('GDIAG', 'GEN')
+
+
 @dataclasses.dataclass(frozen=True)
 class RandomTerm:
     """One random-effects term of ``rma_mv``: a ``sigma2`` term (``~ 1 | outer``, ``struct`` is ``SIGMA2``) or a structured ``~ inner | outer`` term.
 
     ``outer`` and ``inner`` hold one level code per row; rows share the random effect when their ``outer`` codes agree. ``n_inner`` is the number of
-    inner levels (1 for a ``sigma2`` term).
+    inner levels (1 for a ``sigma2`` term, the number of random coefficients for ``GEN`` and ``GDIAG``). ``levels`` holds the value of each inner level
+    (the time points of ``CAR``), ``design`` the ``k x p`` matrix of random coefficients (``GEN``, ``GDIAG``), ``dist`` the ``k x k`` distances between
+    rows (the spatial structures) and ``R`` the known correlation matrix of the outer levels (a ``sigma2`` term). ``fixed_variances`` and
+    ``fixed_correlations`` hold values held fixed (``nan`` where estimated); a ``UN`` or ``GEN`` matrix cannot have fixed values.
     """
 
     struct: str
     outer: IntArray
     inner: IntArray
     n_inner: int
+    levels: FloatArray | None = None
+    design: FloatArray | None = None
+    dist: FloatArray | None = None
+    R: FloatArray | None = None
+    fixed_variances: FloatArray | None = None
+    fixed_correlations: FloatArray | None = None
 
     def n_variances(self) -> int:
-        return self.n_inner if self.struct in ('DIAG', 'HCS', 'UN') else 1
+        return self.n_inner if self.struct in PER_LEVEL_VARIANCES else 1
 
     def n_correlations(self) -> int:
-        return {'CS': 1, 'HCS': 1, 'UN': self.n_inner * (self.n_inner - 1) // 2}.get(self.struct, 0)
+        if self.struct in UNSTRUCTURED:
+            return self.n_inner * (self.n_inner - 1) // 2
+        return 1 if self.struct in ('AR', 'CAR', 'CS', 'HAR', 'HCS', *SPATIAL_STRUCTS) else 0
 
 
 @dataclasses.dataclass(frozen=True)
@@ -1818,27 +1835,61 @@ class MVFit:
     message: str
 
 
+def spatial_correlation(struct: str, dist: FloatArray, scale: float) -> FloatArray:
+    """The correlation of two points at distance ``dist`` (the equations of the table in the ``rma.mv`` help page, after Pinheiro and Bates 2000).
+
+    Exponential ``exp(-d/r)``, Gaussian ``exp(-d^2/r^2)``, linear ``(1 - d/r) I(d < r)``, rational quadratic ``1 - (d/r)^2 / (1 + (d/r)^2)``,
+    spherical ``(1 - 1.5 d/r + 0.5 (d/r)^3) I(d < r)``, with the range ``r``. Cressie (1993, section 2.3.1) gives the same shapes with the range
+    scaled by a constant for some of them (the Gaussian and exponential reach 95 per cent of the sill at a multiple of ``r``); the parametrisation here is
+    the software's convention, not a difference of the models.
+    """
+    ratio = dist / scale
+    if struct == 'SPEXP':
+        return numpy.asarray(numpy.exp(-ratio), dtype=numpy.float64)
+    if struct == 'SPGAU':
+        return numpy.asarray(numpy.exp(-(ratio**2)), dtype=numpy.float64)
+    if struct == 'SPLIN':
+        return numpy.asarray((1 - ratio) * (ratio < 1), dtype=numpy.float64)
+    if struct == 'SPRAT':
+        return numpy.asarray(1 - ratio**2 / (1 + ratio**2), dtype=numpy.float64)
+    if struct == 'SPSPH':
+        return numpy.asarray((1 - 1.5 * ratio + 0.5 * ratio**3) * (ratio < 1), dtype=numpy.float64)
+    raise ValueError(f'spatial_correlation: unknown structure {struct!r}')
+
+
 def struct_matrix(struct: str, inner: FloatArray, tau2: FloatArray, rho: FloatArray, dist: FloatArray | None = None) -> FloatArray:
     """``G`` for one outer level, the covariance matrix of the effects at the ``len(inner)`` inner levels (Wolfinger 1993, table 1).
 
     ``ID``: ``tau2 I``. ``DIAG``: ``diag(tau2_1, ...)``. ``CS``: ``tau2`` on the diagonal and ``rho tau2`` off it. ``HCS``: ``tau2_j`` on the
     diagonal and ``rho sqrt(tau2_i tau2_j)`` off it. ``UN``: ``tau2_j`` on the diagonal and ``rho_il sqrt(tau2_i tau2_l)`` off it. The ``rho`` of
-    ``UN`` runs down the columns of the lower triangle (the order is the software's convention, not Wolfinger's). The structures that need
-    ``dist`` are not coded here yet.
+    ``UN`` runs down the columns of the lower triangle (the order is the software's convention, not Wolfinger's). ``AR``: ``tau2 rho^|i - l|`` for
+    the ordinal positions ``i`` and ``l`` of the inner levels (the values of ``inner`` do not matter, as the ``rma.mv`` help page says), ``HAR``: the
+    same correlations with ``tau2_j`` on the diagonal (Wolfinger 1993). ``CAR``: ``tau2 rho^|t_i - t_l|`` for the time points ``t`` in ``inner``.
+    ``GEN`` and ``GDIAG``: the covariance matrix ``D`` of the random coefficients of the model of Laird and Ware (1982, equation 2.1), unstructured
+    (as ``UN``) or diagonal. With ``dist``, the spatial structures: ``tau2`` times the correlation of the distances (``spatial_correlation``).
     """
     n = len(inner)
+    if struct in SPATIAL_STRUCTS:
+        if dist is None:
+            raise ValueError(f'struct_matrix: {struct} needs distances')
+        return float(tau2[0]) * spatial_correlation(struct, dist, float(rho[0]))
     if dist is not None:
-        raise ValueError('struct_matrix: the distance structures are not coded yet')
+        raise ValueError(f'struct_matrix: {struct} takes no distances')
     if struct == 'ID':
         return float(tau2[0]) * numpy.eye(n)
-    if struct == 'DIAG':
+    if struct in ('DIAG', 'GDIAG'):
         return numpy.diag(tau2)
     if struct == 'CS':
         return float(tau2[0]) * (float(rho[0]) * numpy.ones((n, n)) + (1.0 - float(rho[0])) * numpy.eye(n))
+    if struct in ('AR', 'CAR'):
+        gaps = numpy.abs(numpy.subtract.outer(inner, inner)) if struct == 'CAR' else numpy.abs(numpy.subtract.outer(numpy.arange(n), numpy.arange(n)))
+        return float(tau2[0]) * numpy.power(float(rho[0]), gaps)
     scale = numpy.sqrt(tau2)
-    if struct == 'HCS':
+    if struct == 'HAR':
+        corr = numpy.power(float(rho[0]), numpy.abs(numpy.subtract.outer(numpy.arange(n), numpy.arange(n))))
+    elif struct == 'HCS':
         corr = float(rho[0]) * numpy.ones((n, n)) + (1.0 - float(rho[0])) * numpy.eye(n)
-    elif struct == 'UN':
+    elif struct in UNSTRUCTURED:
         corr = numpy.eye(n)
         position = 0
         for column in range(n):
@@ -1851,12 +1902,46 @@ def struct_matrix(struct: str, inner: FloatArray, tau2: FloatArray, rho: FloatAr
 
 
 def term_matrix(term: RandomTerm, variances: FloatArray, correlations: FloatArray) -> FloatArray:
-    """The ``k x k`` matrix a term adds to ``M``: ``G[inner_i, inner_l]`` when rows ``i`` and ``l`` share an outer level, else 0."""
+    """The ``k x k`` matrix a term adds to ``M``.
+
+    ``sigma2``: ``sigma2`` times ``1`` for two rows of an outer level (times the known correlation of their outer levels when ``R`` is given). The
+    factor structures: ``G[inner_i, inner_l]`` when rows ``i`` and ``l`` share an outer level, else 0. ``GEN`` and ``GDIAG``: ``Z G Z'`` of the random
+    coefficients ``Z`` (Laird and Ware 1982) within an outer level. The spatial structures: the correlation of the distance times ``tau2`` within one.
+    """
     same = (term.outer[:, None] == term.outer[None, :]).astype(numpy.float64)
     if term.struct == SIGMA2:
-        return numpy.asarray(float(variances[0]) * same, dtype=numpy.float64)
-    g = struct_matrix(term.struct, numpy.arange(term.n_inner, dtype=numpy.float64), variances, correlations)
+        known = same if term.R is None else term.R[term.outer[:, None], term.outer[None, :]]
+        return numpy.asarray(float(variances[0]) * known, dtype=numpy.float64)
+    if term.struct in SPATIAL_STRUCTS:
+        return numpy.asarray(struct_matrix(term.struct, numpy.zeros(0), variances, correlations, term.dist) * same, dtype=numpy.float64)
+    if term.struct in COEFFICIENT_STRUCTS:
+        assert term.design is not None
+        d = struct_matrix(term.struct, numpy.arange(term.n_inner, dtype=numpy.float64), variances, correlations)
+        return numpy.asarray((term.design @ d @ term.design.T) * same, dtype=numpy.float64)
+    levels = numpy.arange(term.n_inner, dtype=numpy.float64) if term.levels is None else term.levels
+    g = struct_matrix(term.struct, levels, variances, correlations)
     return numpy.asarray(g[term.inner[:, None], term.inner[None, :]] * same, dtype=numpy.float64)
+
+
+def rescale_r(R: FloatArray, rscale: str) -> FloatArray:
+    """A known matrix ``R`` rescaled as the ``Rscale`` text of the ``rma.mv`` help page says (the convention of that software).
+
+    ``none``: no scaling. ``cor``: ``cov2cor``, ``R_il / sqrt(R_ii R_ll)``. ``cor0``: ``cov2cor`` and then ``(R - min(R)) / (1 - min(R))``, which puts
+    a correlation of zero at the split at the root of the tree of the species analysed. ``cov0``: ``R - min(R)``, which roots a covariance matrix at
+    its lowest split.
+    """
+    if rscale not in ('cor', 'cor0', 'cov0', 'none'):
+        raise ValueError(f'rescale_r: unknown Rscale {rscale!r}')
+    if rscale == 'none':
+        return R
+    if rscale == 'cov0':
+        return R - float(R.min())
+    scale = numpy.sqrt(numpy.diag(R))
+    corr = R / scale[:, None] / scale[None, :]
+    if rscale == 'cor':
+        return numpy.asarray(corr, dtype=numpy.float64)
+    low = float(corr.min())
+    return numpy.asarray((corr - low) / (1 - low), dtype=numpy.float64)
 
 
 def gls(yi: FloatArray, M: FloatArray, X: FloatArray, W: FloatArray | None = None) -> tuple[FloatArray, FloatArray]:
@@ -1896,16 +1981,39 @@ def mv_loglik(yi: FloatArray, V: FloatArray, X: FloatArray, M_extra: FloatArray,
 
 
 def n_free(term: RandomTerm) -> int:
-    """The number of unconstrained parameters of a term in ``mv_fit`` (a ``UN`` matrix uses its Cholesky factor)."""
+    """The number of unconstrained parameters of a term in ``mv_fit`` (a ``UN`` or ``GEN`` matrix uses its Cholesky factor)."""
     n = term.n_inner
-    return n * (n + 1) // 2 if term.struct == 'UN' else term.n_variances() + term.n_correlations()
+    return n * (n + 1) // 2 if term.struct in UNSTRUCTURED else term.n_variances() + term.n_correlations()
+
+
+def correlation_transform(struct: str, values: FloatArray) -> FloatArray:
+    """The correlation parameter from its unconstrained value: ``tanh`` in (-1, 1), the logistic function in (0, 1) for ``CAR``, ``exp`` for a range."""
+    if struct == 'CAR':
+        return numpy.asarray(scipy.special.expit(values), dtype=numpy.float64)
+    if struct in SPATIAL_STRUCTS:
+        return numpy.exp(values)
+    return numpy.tanh(values)
+
+
+def fixed_mask(terms: list[RandomTerm]) -> FloatArray:
+    """Whether each unconstrained parameter of ``mv_fit`` is estimated (1) or held at a fixed value (0)."""
+    parts: list[FloatArray] = []
+    for term in terms:
+        if term.struct in UNSTRUCTURED:
+            parts.append(numpy.ones(n_free(term)))
+            continue
+        variances = numpy.ones(term.n_variances()) if term.fixed_variances is None else numpy.isnan(term.fixed_variances).astype(numpy.float64)
+        correlations = numpy.ones(term.n_correlations()) if term.fixed_correlations is None else numpy.isnan(term.fixed_correlations).astype(numpy.float64)
+        parts.append(numpy.concatenate([variances, correlations[: term.n_correlations()]]))
+    return numpy.concatenate(parts) if parts else numpy.zeros(0)
 
 
 def unpack_terms(terms: list[RandomTerm], theta: FloatArray) -> tuple[list[FloatArray], list[FloatArray]]:
     """The variances and correlations of each term from the unconstrained vector of ``mv_fit``.
 
-    A variance is ``exp`` of its entry, a correlation of ``CS`` or ``HCS`` is ``tanh`` of its entry, and a ``UN`` matrix is ``L L'`` for a lower
-    triangular ``L`` whose diagonal is ``exp`` of its entries (the Cholesky parametrisation, which keeps the matrix positive definite).
+    A variance is ``exp`` of its entry, a correlation is ``correlation_transform`` of its entry, and a ``UN`` or ``GEN`` matrix is ``L L'`` for a lower
+    triangular ``L`` whose diagonal is ``exp`` of its entries (the Cholesky parametrisation, which keeps the matrix positive definite). A fixed value
+    replaces the entry's value.
     """
     variances: list[FloatArray] = []
     correlations: list[FloatArray] = []
@@ -1913,7 +2021,7 @@ def unpack_terms(terms: list[RandomTerm], theta: FloatArray) -> tuple[list[Float
     for term in terms:
         part = theta[position : position + n_free(term)]
         position += n_free(term)
-        if term.struct == 'UN':
+        if term.struct in UNSTRUCTURED:
             n = term.n_inner
             low = numpy.zeros((n, n))
             numpy.fill_diagonal(low, numpy.exp(part[:n]))
@@ -1926,17 +2034,24 @@ def unpack_terms(terms: list[RandomTerm], theta: FloatArray) -> tuple[list[Float
             corr = cov / scale[:, None] / scale[None, :]
             variances.append(numpy.diag(cov).copy())
             correlations.append(numpy.array([corr[row, column] for column in range(n) for row in range(column + 1, n)]))
-        else:
-            variances.append(numpy.exp(part[: term.n_variances()]))
-            correlations.append(numpy.tanh(part[term.n_variances() :]))
+            continue
+        var = numpy.exp(part[: term.n_variances()])
+        cor = correlation_transform(term.struct, part[term.n_variances() :])
+        if term.fixed_variances is not None:
+            var = numpy.where(numpy.isnan(term.fixed_variances), var, term.fixed_variances)
+        if term.fixed_correlations is not None:
+            cor = numpy.where(numpy.isnan(term.fixed_correlations[: len(cor)]), cor, term.fixed_correlations[: len(cor)])
+        variances.append(var)
+        correlations.append(cor)
     return variances, correlations
 
 
 def mv_fit(yi: FloatArray, V: FloatArray, X: FloatArray, terms: list[RandomTerm], method: str, W: FloatArray | None = None) -> MVFit:
     """Maximise ``mv_loglik`` over the components of ``terms`` with ``scipy.optimize.minimize`` (BFGS on log variances and atanh correlations).
 
-    It starts from variances of ``var(y) / (2 n_terms)`` and zero correlations, restarts BFGS from its own optimum until the objective stops
-    improving, and reports the norm of the central-difference gradient of the negative log-likelihood at the optimum.
+    It starts from variances of ``var(y) / (2 n_terms)`` and zero correlations (a range starts at 1), restarts BFGS from its own optimum until the
+    objective stops improving, polishes with Newton steps, and reports the norm of the central-difference gradient of the negative log-likelihood at
+    the optimum, over the parameters that are not fixed.
     """
     count = sum(n_free(term) for term in terms)
     theta = numpy.zeros(count)
@@ -1945,6 +2060,7 @@ def mv_fit(yi: FloatArray, V: FloatArray, X: FloatArray, terms: list[RandomTerm]
     for term in terms:
         theta[position : position + term.n_variances()] = start
         position += n_free(term)
+    free = numpy.flatnonzero(fixed_mask(terms) > 0)
 
     def extra_of(values: FloatArray) -> FloatArray:
         variances, correlations = unpack_terms(terms, values)
@@ -1953,35 +2069,42 @@ def mv_fit(yi: FloatArray, V: FloatArray, X: FloatArray, terms: list[RandomTerm]
             extra = extra + term_matrix(term, var, cor)
         return extra
 
-    def negative(values: FloatArray) -> float:
-        value = mv_loglik(yi, V, X, extra_of(values), method, W)
+    def embed(part: FloatArray) -> FloatArray:
+        full = theta.copy()
+        full[free] = part
+        return full
+
+    def negative(part: FloatArray) -> float:
+        value = mv_loglik(yi, V, X, extra_of(embed(part)), method, W)
         return -value if math.isfinite(value) else 1e300
 
-    def gradient_of(values: FloatArray) -> FloatArray:
+    def gradient_of(part: FloatArray) -> FloatArray:
         step = 1e-4
-        return numpy.array([(negative(values + step * unit) - negative(values - step * unit)) / (2 * step) for unit in numpy.eye(count)])
+        return numpy.array([(negative(part + step * unit) - negative(part - step * unit)) / (2 * step) for unit in numpy.eye(len(free))])
 
+    x = theta[free]
     message = 'no random effects'
-    if count:
-        outcome = scipy.optimize.minimize(negative, theta, method='BFGS', jac=gradient_of, options={'gtol': 1e-9, 'maxiter': 10000})
+    if len(free):
+        outcome = scipy.optimize.minimize(negative, x, method='BFGS', jac=gradient_of, options={'gtol': 1e-9, 'maxiter': 10000})
         previous = math.inf
         for _ in range(20):
             if abs(previous - outcome.fun) < 1e-13:
                 break
             previous = outcome.fun
             outcome = scipy.optimize.minimize(negative, outcome.x, method='BFGS', jac=gradient_of, options={'gtol': 1e-9, 'maxiter': 10000})
-        theta, message = outcome.x, str(outcome.message)
+        x, message = outcome.x, str(outcome.message)
         for _ in range(10):
-            gradient = gradient_of(theta)
+            gradient = gradient_of(x)
             if numpy.linalg.norm(gradient) < 1e-9:
                 break
-            hessian = numpy.array([(gradient_of(theta + 1e-3 * unit) - gradient_of(theta - 1e-3 * unit)) / 2e-3 for unit in numpy.eye(count)])
-            candidate = theta - numpy.linalg.solve((hessian + hessian.T) / 2, gradient)
-            if negative(candidate) > negative(theta) + 1e-10:
+            hessian = numpy.array([(gradient_of(x + 1e-3 * unit) - gradient_of(x - 1e-3 * unit)) / 2e-3 for unit in numpy.eye(len(free))])
+            candidate = x - numpy.linalg.solve((hessian + hessian.T) / 2, gradient)
+            if negative(candidate) > negative(x) + 1e-10:
                 break
-            theta = candidate
-    norm = float(numpy.linalg.norm(gradient_of(theta))) if count else 0.0
-    variances, correlations = unpack_terms(terms, theta)
-    extra = extra_of(theta)
+            x = candidate
+    norm = float(numpy.linalg.norm(gradient_of(x))) if len(free) else 0.0
+    optimum = embed(x)
+    variances, correlations = unpack_terms(terms, optimum)
+    extra = extra_of(optimum)
     b, vb = gls(yi, V + extra, X, W)
     return MVFit(tuple(variances), tuple(correlations), b, vb, mv_loglik(yi, V, X, extra, method, W), norm <= MV_GRADIENT_LIMIT, norm, message)

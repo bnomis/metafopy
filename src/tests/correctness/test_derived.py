@@ -1,5 +1,6 @@
 """``derived`` cases: expected values from ``formulas.py``, coded from the publications' equations."""
 
+import dataclasses
 import re
 import typing
 
@@ -75,7 +76,7 @@ def predict_pi(case: correctness.cases.Case, result: typing.Any) -> None:
         numbers_agree(case, name, actual, correctness.cases.formula_value(case, f'formulas.{formula}', frame))
 
 
-MV_TERM = re.compile(r'~\s*(\w+)\s*\|\s*(\w+)(?:\s*/\s*(\w+))?')
+MV_TERM = re.compile(r'~\s*([\w.]+(?:\s*\+\s*[\w.]+)*)\s*\|\s*([\w.]+)(?:\s*/\s*([\w.]+))?')
 MV_COMPONENT_TOLERANCE = 1e-6
 MV_LOGLIK_EXCESS = 1e-8
 MV_TIGHT_TOLERANCE = 1e-10
@@ -101,33 +102,75 @@ def design_matrix(frame: pandas.DataFrame, mods: str | None) -> numpy.typing.NDA
     return numpy.column_stack(columns)
 
 
-def mv_terms(frame: pandas.DataFrame, random: str | list[str] | None, struct: str | list[str] | None) -> list[correctness.formulas.RandomTerm]:
-    """The random-effects terms of ``random`` and ``struct``: ``~ 1 | a``, ``~ 1 | a/b`` (two ``sigma2`` terms) and ``~ inner | outer``."""
-    formulas = [] if random is None else [random] if isinstance(random, str) else random
-    structs = [] if struct is None else [struct] if isinstance(struct, str) else list(struct)
+def fixed_values(args: dict[str, typing.Any], name: str, length: int) -> numpy.typing.NDArray[numpy.float64] | None:
+    """The values held fixed through the ``name`` argument (``nan`` where estimated), a single value repeated to ``length``."""
+    if name not in args:
+        return None
+    values = numpy.atleast_1d(numpy.asarray(args[name], dtype=numpy.float64))
+    return numpy.full(length, values[0]) if len(values) == 1 else values
+
+
+def mv_terms(case: correctness.cases.Case, frame: pandas.DataFrame) -> list[correctness.formulas.RandomTerm]:
+    """The random-effects terms of the case's ``random`` and ``struct``: ``~ 1 | a``, ``~ 1 | a/b`` (two ``sigma2`` terms) and ``~ inner | outer``.
+
+    The inner part is one variable (the factor structures; ``CAR`` takes its values as time points), a sum of coordinates (the spatial structures,
+    Euclidean distances) or the variables of the random coefficients (``GEN`` and ``GDIAG``, with an intercept). The ``sigma2``, ``tau2``, ``rho``,
+    ``gamma2`` and ``phi`` arguments give fixed values, and ``setup.tree_r`` the known matrix of its factor, rescaled by ``Rscale``.
+    """
+    args = case.args
+    formulas = [] if args.get('random') is None else [args['random']] if isinstance(args['random'], str) else args['random']
+    structs = [] if args.get('struct') is None else [args['struct']] if isinstance(args['struct'], str) else list(args['struct'])
+    names = [('sigma2', None), ('tau2', 'rho'), ('gamma2', 'phi')]
+    sigma2 = iter(numpy.atleast_1d(numpy.asarray(args['sigma2'], dtype=numpy.float64)).tolist() if 'sigma2' in args else [])
     terms: list[correctness.formulas.RandomTerm] = []
+
+    def sigma2_term(codes: numpy.typing.NDArray[numpy.intp], known: numpy.typing.NDArray[numpy.float64] | None) -> correctness.formulas.RandomTerm:
+        fixed = next(sigma2, None)
+        return correctness.formulas.RandomTerm(
+            correctness.formulas.SIGMA2,
+            codes,
+            numpy.zeros(len(frame), dtype=numpy.intp),
+            1,
+            R=known,
+            fixed_variances=None if fixed is None else numpy.array([fixed]),
+        )
+
     for text in formulas:
         match = MV_TERM.fullmatch(text.strip())
         if match is None:
             raise ValueError(f'unsupported random formula {text!r}')
         inner, outer, nested = match.groups()
-        codes = pandas.factorize(frame[outer], sort=True)[0].astype(numpy.intp)
+        codes, labels = pandas.factorize(frame[outer], sort=True)
+        codes = codes.astype(numpy.intp)
         if inner == '1':
-            terms.append(correctness.formulas.RandomTerm(correctness.formulas.SIGMA2, codes, numpy.zeros(len(frame), dtype=numpy.intp), 1))
+            known = None
+            if case.setup is not None and 'tree_r' in case.setup and case.setup['tree_r']['factor'] == outer:
+                tree = correctness.cases.build_tree_r(case.setup['tree_r']['tree'])
+                known = correctness.formulas.rescale_r(tree.loc[labels.astype(str), labels.astype(str)].to_numpy(), str(args.get('Rscale', 'cor')))
+            terms.append(sigma2_term(codes, known))
             if nested is not None:
                 pairs = frame[outer].astype(str) + '/' + frame[nested].astype(str)
-                terms.append(
-                    correctness.formulas.RandomTerm(
-                        correctness.formulas.SIGMA2, pandas.factorize(pairs, sort=True)[0].astype(numpy.intp), numpy.zeros(len(frame), dtype=numpy.intp), 1
-                    )
-                )
+                terms.append(sigma2_term(pandas.factorize(pairs, sort=True)[0].astype(numpy.intp), None))
             continue
-        inner_codes = pandas.factorize(frame[inner], sort=True)[0].astype(numpy.intp)
-        terms.append(
-            correctness.formulas.RandomTerm(
-                structs[sum(t.struct != correctness.formulas.SIGMA2 for t in terms)], codes, inner_codes, int(inner_codes.max()) + 1
-            )
-        )
+        struct = structs[sum(t.struct != correctness.formulas.SIGMA2 for t in terms)]
+        position = sum(t.struct != correctness.formulas.SIGMA2 for t in terms) + 1
+        variances_name, correlations_name = names[position]
+        columns = [name.strip() for name in inner.split('+')]
+        zeros = numpy.zeros(len(frame), dtype=numpy.intp)
+        if struct in correctness.formulas.SPATIAL_STRUCTS:
+            points = frame[columns].to_numpy(dtype=numpy.float64)
+            dist = numpy.sqrt(((points[:, None, :] - points[None, :, :]) ** 2).sum(axis=2))
+            term = correctness.formulas.RandomTerm(struct, codes, zeros, 1, dist=dist)
+        elif struct in correctness.formulas.COEFFICIENT_STRUCTS:
+            design = design_matrix(frame, '~ ' + inner)
+            term = correctness.formulas.RandomTerm(struct, codes, zeros, design.shape[1], design=design)
+        else:
+            inner_codes, inner_labels = pandas.factorize(frame[inner], sort=True)
+            levels = numpy.asarray(inner_labels, dtype=numpy.float64) if struct == 'CAR' else None
+            term = correctness.formulas.RandomTerm(struct, codes, inner_codes.astype(numpy.intp), len(inner_labels), levels=levels)
+        fixed_v = fixed_values(args, variances_name, term.n_variances())
+        fixed_c = fixed_values(args, correlations_name, term.n_correlations()) if correlations_name else None
+        terms.append(dataclasses.replace(term, fixed_variances=fixed_v, fixed_correlations=fixed_c))
     return terms
 
 
@@ -179,7 +222,7 @@ def mv_model(case: correctness.cases.Case, result: typing.Any) -> None:
     W = numpy.diag(frame[case.args['W']].to_numpy(dtype=numpy.float64)) if 'W' in case.args else None
     method = case.args.get('method', 'REML')
     fixed = method in MV_FIXED_METHODS
-    terms = [] if fixed else mv_terms(frame, case.args.get('random'), case.args.get('struct'))
+    terms = [] if fixed else mv_terms(case, frame)
     scored = 'ML' if fixed else method
     stats = result.fit_stats_reml if scored == 'REML' else result.fit_stats_ml
     variances, correlations = mv_components(result, terms)

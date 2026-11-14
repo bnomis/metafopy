@@ -176,7 +176,7 @@ and each `rma_mv.method.*`, `rma_mv.random.sigma2`, `rma_mv.random.nested`, `rma
 
 ## Task 4: rma_mv - serial, spatial and general structures, and `R`
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** API (`struct_matrix`); Implementation steps 3 and 4; Decisions (D2, `Rscale`); Coverage list (structures, `Rscale`,
@@ -187,29 +187,29 @@ an `[[exempt]]` entry.
 
 **Subtasks:**
 
-- [ ] `struct_matrix` gains `AR`, `HAR` (Wolfinger 1993), `CAR` (`rho ** |t_i - t_j|`), `SPEXP`, `SPGAU`, `SPLIN`, `SPRAT`, `SPSPH` from distances
+- [x] `struct_matrix` gains `AR`, `HAR` (Wolfinger 1993), `CAR` (`rho ** |t_i - t_j|`), `SPEXP`, `SPGAU`, `SPLIN`, `SPRAT`, `SPSPH` from distances
       (Cressie 1993, section 2.3.1), `GEN` and `GDIAG` (Laird and Ware 1982). Spatial structures use metafor's documented parametrisation by range
       where it differs from Cressie's; the case's `source` says which, as a convention, not a mismatch
-- [ ] Derived cases: `AR`, `HAR` and `CAR` on long-format inline data from `dat.ishak2007`; each spatial structure on a small inline dataset with
+- [x] Derived cases: `AR`, `HAR` and `CAR` on long-format inline data from `dat.ishak2007`; each spatial structure on a small inline dataset with
       coordinates; `GEN` and `GDIAG` as random coefficients
-- [ ] `R` and `Rscale` on `dat.moura2021` with its tree (`dat.moura2021.tree`): the correlation matrix built in the test with numpy from the tree's
+- [x] `R` and `Rscale` on `dat.moura2021` with its tree (`dat.moura2021.tree`): the correlation matrix built in the test with numpy from the tree's
       branch lengths (Hadfield and Nakagawa 2010), each `RSCALES` value rescaled by the formula in metafor's `rma.mv` help page, the `source` naming
       the help page and saying the convention is metafor's (D2). Read the help page from the audit library, for example
       `R_LIBS=/Users/simonb/src/metafopy/.audit/Rlib Rscript -e 'tools::Rd2txt(tools::Rd_db("metafor")[["rma.mv.Rd"]])'`
-- [ ] A `RSCALES` value whose rescaling the help page does not write down gets an `[[exempt]]` entry in `cases/rma_mv.toml` with the reason
+- [x] A `RSCALES` value whose rescaling the help page does not write down gets an `[[exempt]]` entry in `cases/rma_mv.toml` with the reason
       "defined only in metafor's code; R parity covers it". Apply D2 only to the `Rscale` values here; any other option met without a written formula
       stops the task as `blocked`, naming it
-- [ ] Record any mismatch as the header says
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] `test_gate_mv_robust`'s missing list names no `rma_mv.struct.*`, no `rma_mv.Rscale.*` and not `rma_mv.random.R`
+- [x] `test_gate_mv_robust`'s missing list names no `rma_mv.struct.*`, no `rma_mv.Rscale.*` and not `rma_mv.random.R`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 

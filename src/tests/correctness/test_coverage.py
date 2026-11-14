@@ -16,6 +16,7 @@ import correctness.cases
 import correctness.test_published
 import metafopy
 import metafopy.core.clubsandwich
+import metafopy.datasets
 import metafopy.effects.measures
 import metafopy.methods.confint
 import metafopy.methods.robust
@@ -440,6 +441,10 @@ vi = [0.04, 0.09, 0.16]
 """
 
 
+# auditme: accept[non-alphabetical-literal] the order is the order of the test's parameters
+TEXT_PATTERN = ('text', 'pattern')
+
+
 def one_case(text: str) -> correctness.cases.Case:
     return correctness.cases.parse_cases(text, 'inline.toml')[0]
 
@@ -492,7 +497,7 @@ def test_a_v_setup_is_passed_to_the_call_as_v(text: str) -> None:
 
 
 @pytest.mark.parametrize(
-    ('text', 'pattern'),
+    TEXT_PATTERN,
     [
         (THEN_CASE.replace('then = { function', 'then = { colour = 1, function'), r'inline\.toml: case unit\.then: then: unknown key\(s\) \[.colour.\]'),
         (THEN_CASE.replace('function = "robust", ', ''), r'inline\.toml: case unit\.then: then: function None'),
@@ -528,3 +533,66 @@ def test_build_v_refuses_a_block_of_the_wrong_size_or_one_not_symmetric() -> Non
     asymmetric.loc[1, 'v1i'] = 0.5
     with pytest.raises(ValueError, match=r'inline\.toml: case unit\.vblocks: the block of cluster 1\.0 is not symmetric'):
         correctness.cases.build_v(asymmetric, case.setup, where)
+
+
+# ---- the `subset` and `tree_r` setups
+
+SUBSET_CASE = """
+[[case]]
+id = "unit.subset"
+kind = "property"
+function = "rma_uni"
+args = { yi = "yi", vi = "vi", method = "FE" }
+setup = { subset = { column = "group", equals = "b" } }
+expect = { "beta[0]" = 0.0 }
+
+[case.data]
+yi = [0.1, 0.4, 0.2, 0.5]
+vi = [0.02, 0.03, 0.025, 0.04]
+group = ["a", "b", "a", "b"]
+"""
+
+TREE_R_CASE = """
+[[case]]
+id = "unit.tree_r"
+kind = "property"
+function = "rma_mv"
+args = { yi = "yi", V = "vi", random = "~ 1 | species.id", sigma2 = 0.01 }
+setup = { tree_r = { tree = "moura2021", factor = "species.id" } }
+expect = { "beta[0]" = 0.0 }
+
+[case.data]
+yi = [0.1, 0.4]
+vi = [0.02, 0.03]
+"species.id" = ["Gammarus_pulex_gallicus_ott1024016", "Trapezia_bidentata_ott787242"]
+"""
+
+
+def test_subset_keeps_the_rows_that_match() -> None:
+    case = one_case(SUBSET_CASE)
+    frame = correctness.cases.case_frame(case)
+    assert frame is not None
+    assert frame['yi'].tolist() == [0.4, 0.5]
+    assert frame.index.tolist() == [0, 1]
+    assert correctness.cases.run_case(case).k == 2
+
+
+def test_tree_r_is_the_shared_branch_length_of_the_tips() -> None:
+    reference = metafopy.datasets.load_tree('moura2021').vcv()
+    built = correctness.cases.build_tree_r('moura2021')
+    assert list(built.index) == list(reference.index)
+    numpy.testing.assert_allclose(built.to_numpy(), reference.to_numpy(), rtol=0, atol=1e-12)
+    assert correctness.cases.run_case(one_case(TREE_R_CASE)).k == 2
+
+
+@pytest.mark.parametrize(
+    TEXT_PATTERN,
+    [
+        (SUBSET_CASE.replace(', equals = "b"', ''), r'inline\.toml: case unit\.subset: setup\.subset takes exactly'),
+        (TREE_R_CASE.replace(', factor = "species.id"', ''), r'inline\.toml: case unit\.tree_r: setup\.tree_r takes exactly'),
+        (TREE_R_CASE.replace('tree = "moura2021"', 'tree = 3'), r'inline\.toml: case unit\.tree_r: setup\.tree_r takes exactly'),
+    ],
+)
+def test_a_malformed_subset_or_tree_setup_raises_naming_file_and_case(text: str, pattern: str) -> None:
+    with pytest.raises(ValueError, match=pattern):
+        correctness.cases.parse_cases(text, 'inline.toml')
