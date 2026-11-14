@@ -518,7 +518,7 @@ them the gate passes for every item.
 
 ## Task 12: Review the mismatches
 
-**Status:** in-progress
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation step 11
@@ -527,26 +527,26 @@ them the gate passes for every item.
 
 **Subtasks:**
 
-- [ ] Complete `agents/specs/correctness-mv-robust/mismatches.md` in the review-document layout of the shared `reviews.md` rule (read the rule from
+- [x] Complete `agents/specs/correctness-mv-robust/mismatches.md` in the review-document layout of the shared `reviews.md` rule (read the rule from
       disk first): what is reviewed and how; automatic checks (the gate passes, every `mismatch` case has an item); each mismatch with source,
       locator, reference, metafopy and metafor values; decisions with options *follow the reference*, *keep metafor* and *investigate*, each with a
       recommendation; an empty Answers section under "Mismatches"
-- [ ] Publish its interactive page, with answers saved to the artifact's database and a button accepting every recommendation, and put
+- [x] Publish its interactive page, with answers saved to the artifact's database and a button accepting every recommendation, and put
       `**Review page:** <URL>` in the document's header. If this session has no tool to publish the page, say so in the stop message, for the
       operator session to publish it
-- [ ] If there are no mismatches, write that in the document, skip the page, and continue to Task 13 without stopping
-- [ ] Otherwise stop the list for the operator. Once every item has an answer, an operator session reads the page's answers, copies each into the
+- [x] If there are no mismatches, write that in the document, skip the page, and continue to Task 13 without stopping
+- [x] Otherwise stop the list for the operator. Once every item has an answer, an operator session reads the page's answers, copies each into the
       Answers section of `mismatches.md` under "Mismatches", with the date, commits that, and only then restarts the list
 
 **Acceptance Criteria:**
 
-- [ ] Every `mismatch` case in `src/tests/correctness/cases/*.toml` from this list has an item in the document and on the page
+- [x] Every `mismatch` case in `src/tests/correctness/cases/*.toml` from this list has an item in the document and on the page
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness -m 'not slow'` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness -m 'not slow'` passes
 
 **Notes:**
 

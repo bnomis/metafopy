@@ -79,4 +79,9 @@ Wibbelink (2016) from tqmp.org, Jackson, Riley and White (2011) from PMC3470931,
 
 ### Mismatches
 
-(Empty: left for the operator's copy of the page's answers, with the date.)
+Copied on 2026-11-14 from the review page (both answers saved 2026-11-14T17:37:45Z, by the accept-all button or by hand; no comments).
+
+- **D1, CR1S, which small-sample factor `robust` uses** (`robust.club.vcov.CR1S`): **keep metafor**, the recommended option. The case's reference is
+  recomputed with the N - 1 factor, citing Cameron and Miller (2015) equation 12 beside the paper, and it passes. No code change.
+- **D2, saddlepoint, which approximation form is used** (`robust.club.coef_test.saddlepoint`): **keep metafor**, the recommended option. The case's
+  reference is recomputed with the Lugannani-Rice form the paper names after equation 3, and it passes. No code change.
