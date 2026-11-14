@@ -39,7 +39,7 @@ values (`sed -n 's/^export \([A-Z_]*\)=.*/\1/p'`). Never match a generic token (
 
 ## Task 1: Starting checks, `LS_METHODS`, the coverage items and the derived-case gate
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Module location; API (`LS_METHODS`); Coverage list; Decisions (derived case for every item); Implementation step 1
@@ -49,23 +49,23 @@ item, before any case is written.
 
 **Subtasks:**
 
-- [ ] Starting checks; stop as `blocked`, naming what fired, if any of them fails:
+- [x] Starting checks; stop as `blocked`, naming what fired, if any of them fails:
   - the TODO item "QE and the moment tau2 estimators centre yi in models without an intercept" is a heading in `DONE.md`
     (`grep -n '^## QE and the moment tau2 estimators centre yi' DONE.md`), so the `qe-no-intercept` list has merged;
   - the new names do not exist in the package or the correctness suite:
     `grep -rnwE 'LS_METHODS' src/metafopy` and `grep -rnwE 'ls_tau2|ls_loglik|ls_reference_fit|ls_wald|ls_knha_s2w|ls_profile_bounds|ls_lrt|ls_predict|ls_exact_permutation_p' src/tests/correctness/formulas.py`
     print nothing (`metafopy.methods.ls_predict` is a module, not a clash: the second search reads `formulas.py` only);
   - `src/tests/correctness/cases/location_scale.toml` does not exist.
-- [ ] `src/metafopy/models/rma_ls_fit.py`: add `LS_METHODS: tuple[str, ...] = ('ML', 'REML')` and make `fit_rma_ls`'s check
+- [x] `src/metafopy/models/rma_ls_fit.py`: add `LS_METHODS: tuple[str, ...] = ('ML', 'REML')` and make `fit_rma_ls`'s check
       `if method not in LS_METHODS:`; the message is unchanged
-- [ ] The per-file derived requirement: if `src/tests/correctness/cases.py` already has a per-file setting that makes the gate require a `derived` case
+- [x] The per-file derived requirement: if `src/tests/correctness/cases.py` already has a per-file setting that makes the gate require a `derived` case
       (an earlier list of the order may add one; `grep -n 'TOP_KEYS' src/tests/correctness/cases.py`), use it unchanged. Otherwise add a top-level key
       `derived_required` to `TOP_KEYS`: a list of coverage-item prefixes; an item starting with one of them is missing until a `derived` case covers it
       or an `[[exempt]]` entry names it, a `published` case alone not being enough. Validate it as the loader validates other keys (a list of non-empty
       strings, else `ValueError` naming the file), and return it from a `load_derived_required()` beside `load_exemptions()`
-- [ ] Create `src/tests/correctness/cases/location_scale.toml` with a header comment (what the file covers, the sources, the two decisions) and
+- [x] Create `src/tests/correctness/cases/location_scale.toml` with a header comment (what the file covers, the sources, the two decisions) and
       `derived_required = ["ls."]`
-- [ ] `src/tests/correctness/test_coverage.py`: extend `coverage_items()` exactly as the spec's Coverage list says:
+- [x] `src/tests/correctness/test_coverage.py`: extend `coverage_items()` exactly as the spec's Coverage list says:
   - `ls.fit.<method>.<link>` over `metafopy.models.rma_ls_fit.LS_METHODS` and
     `typing.get_args(inspect.signature(metafopy.rma_uni).parameters['link'].annotation)`;
   - `ls.test.<test>` over `typing.get_args(metafopy.models.rma_uni.Test.__value__)` (`Test` is a PEP 695 alias);
@@ -76,22 +76,22 @@ item, before any case is written.
     `metafopy.methods.ls_predict` docstring names;
   - `ls.anova.<form>` over a constant `LS_ANOVA = ('X', 'Z', 'att', 'btt', 'lrt.ML', 'lrt.REML')`;
   - `ls.permutest.location.exact`, `ls.permutest.scale.exact`.
-- [ ] Add a gate test that lists every item under a `derived_required` prefix lacking a `derived` case or an exemption. Mark it and the existing
+- [x] Add a gate test that lists every item under a `derived_required` prefix lacking a `derived` case or an exemption. Mark it and the existing
       `test_every_core_item_has_a_case` `xfail(strict=True, reason='location-scale coverage incomplete; see agents/tasks/correctness-location-scale/tasks-1.md')`
       until Task 7 removes both marks
-- [ ] Unit tests on inline TOML strings: a `derived_required` file whose item has only a `published` case is listed; a `derived` case clears it; an
+- [x] Unit tests on inline TOML strings: a `derived_required` file whose item has only a `published` case is listed; a `derived` case clears it; an
       `[[exempt]]` entry clears it; an invalid `derived_required` value raises naming the file (skip those the setting's earlier list already tests)
 
 **Acceptance Criteria:**
 
-- [ ] Both gate tests are expected failures whose message names every `ls.` item and no other item
-- [ ] `fit_rma_ls(method='EB', ...)` still raises `InputError` with the same message (`src/tests/test_rma_ls.py` passes unchanged)
+- [x] Both gate tests are expected failures whose message names every `ls.` item and no other item
+- [x] `fit_rma_ls(method='EB', ...)` still raises `InputError` with the same message (`src/tests/test_rma_ls.py` passes unchanged)
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_coverage.py src/tests/test_rma_ls.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_coverage.py src/tests/test_rma_ls.py` passes
 
 **Notes:**
 

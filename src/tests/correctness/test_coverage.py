@@ -5,6 +5,7 @@ The gate names every item of the core that has no ``published`` or ``derived`` c
 
 import ast
 import dataclasses
+import inspect
 import pathlib
 import types
 import typing
@@ -26,11 +27,16 @@ import metafopy.methods.robust
 import metafopy.models.glmm_fit
 import metafopy.models.mv_structs
 import metafopy.models.rma_glmm
+import metafopy.models.rma_ls_fit
 import metafopy.models.rma_mv
 import metafopy.models.rma_uni
 import metafopy.models.tau2
 
 HETEROGENEITY = ('H2', 'I2', 'QE', 'QM')
+LS_HETEROGENEITY = ('H2', 'I2', 'QE')
+LS_PREFIXES = ('ls.',)
+LS_PREDICT = ('both', 'fitted', 'newmods', 'newscale')
+LS_ANOVA = ('X', 'Z', 'att', 'btt', 'lrt.ML', 'lrt.REML')
 MH_MEASURES = ('IRD', 'IRR', 'OR', 'RD', 'RR')
 FORMULA_FILES = tuple(pathlib.Path(__file__).parent / f'{module}.py' for module in correctness.cases.FORMULA_MODULES)
 
@@ -109,6 +115,21 @@ def coverage_items() -> list[str]:
     items += ['rma_peto']
     items += mv_robust_items()
     items += glmm_items()
+    items += ls_items()
+    return items
+
+
+def ls_items() -> list[str]:
+    """The location-scale items, each option list read from the code where the code lists it."""
+    links = typing.get_args(inspect.signature(metafopy.rma_uni).parameters['link'].annotation)
+    items = [f'ls.fit.{method}.{link}' for method in metafopy.models.rma_ls_fit.LS_METHODS for link in links]
+    items += [f'ls.test.{test}' for test in typing.get_args(metafopy.models.rma_uni.Test.__value__)]
+    items += ['ls.optbeta', 'ls.scale.vcov', 'ls.scale.QS', 'ls.fitstats.ML', 'ls.fitstats.REML']
+    items += [f'ls.heterogeneity.{statistic}' for statistic in LS_HETEROGENEITY]
+    items += ['ls.confint.scale', 'ls.confint.location']
+    items += [f'ls.predict.{situation}' for situation in LS_PREDICT]
+    items += [f'ls.anova.{form}' for form in LS_ANOVA]
+    items += ['ls.permutest.location.exact', 'ls.permutest.scale.exact']
     return items
 
 
@@ -234,6 +255,54 @@ def test_escalc_accepts_each_listed_vtype(measure: str, vtype: str) -> None:
     assert len(out['yi']) == len(out['vi']) == 3
 
 
+LS_XFAIL = pytest.mark.xfail(strict=True, reason='location-scale coverage incomplete; see agents/tasks/correctness-location-scale/tasks-1.md')
+
+
+def derived_missing(
+    cases: list[correctness.cases.Case],
+    exemptions: list[correctness.cases.Exemption],
+    prefixes: list[str],
+    items: list[str] | None = None,
+) -> list[str]:
+    """The items under a ``derived_required`` prefix with no ``derived`` case and no exemption."""
+    covered = {item for c in cases if c.kind == 'derived' for item in c.covers}
+    exempt = {e.item for e in exemptions}
+    return [item for item in (coverage_items() if items is None else items) if item.startswith(tuple(prefixes)) and item not in covered and item not in exempt]
+
+
+@LS_XFAIL
+def test_every_location_scale_item_has_a_derived_case() -> None:
+    missing = derived_missing(correctness.cases.load_cases(), correctness.cases.load_exemptions(), correctness.cases.load_derived_required())
+    assert not missing, f'{len(missing)} items have no derived case: {", ".join(missing)}'
+
+
+def test_a_derived_required_item_needs_a_derived_case_or_an_exemption() -> None:
+    (published,) = correctness.cases.parse_cases(VALID, 'inline.toml')
+    x_item, y_item, other = 'ls.x', 'ls.y', 'other.z'
+    prefixes = list(LS_PREFIXES)
+    published_only = dataclasses.replace(published, covers=(x_item,))
+    derived = valid_case(id='unit.derived', kind='derived', source=None, covers=(x_item,))
+    exempt = [correctness.cases.Exemption(item=y_item, reason='nothing to derive', file='inline.toml')]
+    items = [x_item, y_item, other]
+    assert derived_missing([published_only], [], prefixes, items) == [x_item, y_item]
+    assert derived_missing([published_only, derived], [], prefixes, items) == [y_item]
+    assert derived_missing([published_only], exempt, prefixes, items) == [x_item]
+
+
+def test_an_invalid_derived_required_raises_naming_the_file(tmp_path: pathlib.Path) -> None:
+    (tmp_path / 'bad.toml').write_text('derived_required = "ls."\n', encoding='utf-8')
+    with pytest.raises(ValueError, match=r'bad\.toml'):
+        correctness.cases.load_derived_required(tmp_path)
+
+
+def test_derived_required_is_read_from_every_file(tmp_path: pathlib.Path) -> None:
+    prefixes = list(LS_PREFIXES)
+    (tmp_path / 'a.toml').write_text(f'derived_required = {prefixes!r}\n'.replace("'", '"'), encoding='utf-8')
+    (tmp_path / 'b.toml').write_text('', encoding='utf-8')
+    assert correctness.cases.load_derived_required(tmp_path) == prefixes
+
+
+@LS_XFAIL
 def test_every_core_item_has_a_case() -> None:
     missing = missing_items(correctness.cases.load_cases(), correctness.cases.load_exemptions())
     assert not missing, f'{len(missing)} items have no published or derived case: {", ".join(missing)}'

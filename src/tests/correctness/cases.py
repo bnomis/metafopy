@@ -78,7 +78,7 @@ SUBSET_KEYS = frozenset({'column', 'equals'})
 TREE_R_KEYS = frozenset({'factor', 'tree'})
 SYMMETRY_TOLERANCE = 1e-12
 SOURCE_KEYS = frozenset({'citation', 'doi', 'locator', 'read', 'url'})
-TOP_KEYS = frozenset({'case', 'exempt', 'vtypes'})
+TOP_KEYS = frozenset({'case', 'derived_required', 'exempt', 'vtypes'})
 DERIVED_TOLERANCE = 1e-10
 PROPERTY_TOLERANCE = 1e-8
 OTHER_TOLERANCE = 1e-6
@@ -404,6 +404,17 @@ def load_exemptions(directory: pathlib.Path | None = None) -> list[Exemption]:
             if not isinstance(raw, dict) or set(raw) != {'item', 'reason'} or not all(isinstance(v, str) and v.strip() for v in raw.values()):
                 fail(path.name, f'an [[exempt]] entry needs a non-empty "item" and "reason", got {raw!r}')
             out.append(Exemption(item=raw['item'], reason=raw['reason'], file=path.name))
+    return out
+
+
+def load_derived_required(directory: pathlib.Path | None = None) -> list[str]:
+    """The ``derived_required`` prefixes of every case file: an item starting with one needs a ``derived`` case, a ``published`` one alone not enough."""
+    out: list[str] = []
+    for path in case_files(directory):
+        raw = parse_document(path.read_text(encoding='utf-8'), path.name).get('derived_required', [])
+        if not isinstance(raw, list) or not all(isinstance(v, str) and v.strip() for v in raw):
+            fail(path.name, f'derived_required must be a list of non-empty strings, got {raw!r}')
+        out += raw
     return out
 
 

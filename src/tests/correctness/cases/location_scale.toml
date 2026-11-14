@@ -1,0 +1,7 @@
+# Correctness cases for location-scale models (rma_uni with scale): published and derived cases; see agents/specs/correctness-location-scale/spec.md
+#
+# Sources: Viechtbauer and Lopez-Lopez (2022), doi:10.1002/jrsm.1562 (printed values, kind published); formulas in correctness.formulas (kind derived);
+# R glmmTMB (kind other). Two decisions of the spec: the paper's printed values count as published, and every location-scale item needs a derived
+# case as well, so the file sets derived_required below.
+
+derived_required = ["ls."]
