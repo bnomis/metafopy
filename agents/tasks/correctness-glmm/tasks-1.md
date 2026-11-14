@@ -451,7 +451,7 @@ such a source exists.
 
 ## Task 11: Published cases from supplied sources
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** medium
 **Spec Reference:** Implementation step 5
@@ -460,24 +460,25 @@ such a source exists.
 
 **Subtasks:**
 
-- [ ] Read "Sources needed" in `agents/specs/correctness-glmm/mismatches.md`. If it says "No source needed", mark this task done. If any entry has
+- [x] Read "Sources needed" in `agents/specs/correctness-glmm/mismatches.md`. If it says "No source needed", mark this task done. If any entry has
       neither `supplied` nor `dropped` beside it, stop as `blocked`, naming the entries
-- [ ] For each supplied source, write its `published` cases as in Task 9; a dropped source keeps its entry and gets no case
-- [ ] Record any mismatch as the header says
+- [x] For each supplied source, write its `published` cases as in Task 9; a dropped source keeps its entry and gets no case
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] Every supplied source has `published` cases or a note in its entry saying why none could be written
+- [x] Every supplied source has `published` cases or a note in its entry saying why none could be written
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_published.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_published.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 
 - Depends on Task 10
+- Read 2026-11-14: Hooper et al. (2001) Table 1 does not reproduce Bagos and Nikolopoulos's event totals and Wolf et al. (2003) prints means, not counts and person-months, so neither gives a `published` case; both entries in `mismatches.md` say why
 
 ---
 

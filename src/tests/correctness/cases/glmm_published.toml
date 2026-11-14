@@ -17,6 +17,8 @@
 # fits in MLwiN, not maximum likelihood, so they are not compared); Hamza et al. (2008) Table 3, exact method. Zhou et al. (1999): Table IV prints the
 # weighted average, GEE and CIHM estimates on the proportion scale, none a generalised linear mixed model, so no case. Bagos and Nikolopoulos (2009) prints
 # no per-study data: listed under "Sources needed" in agents/specs/correctness-glmm/mismatches.md.
+# Task 11 read the two reviews it uses (Hooper et al. 2001; Wolf et al. 2003) and found no per-study counts and person-time that reproduce its Table 5, so it has
+# no case either: see the same entries.
 
 [[case]]
 id = "glmm.published.jackson2018.table4.model4.outcome1"
