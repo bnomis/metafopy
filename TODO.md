@@ -4,20 +4,6 @@ Open work only, in implementation order, nearest first. Finished items move to
 `DONE.md` unchanged. See the shared `todo-add` and `todo-review` skills for
 the shape of an item.
 
-## The correctness harness cannot check exp(beta), prediction intervals or test-based tau2 and I2 intervals
-
-Found on 2026-11-12 by Task 14 of the correctness-tests task list (`agents/tasks/correctness-tests/tasks-1.md`), recorded in
-`agents/specs/correctness-tests/mismatches.md` under "Harness limits left for later". `expect` in a case compares a value fetched from the result by
-key (`fetch` and `check_case` in `src/tests/correctness/cases.py`), so a value a source prints on another scale or that no single result attribute holds
-cannot be a case: the printed pooled ratios of Mantel and Haenszel (1959, R = 10.68) and Yusuf et al. (1985, pooled odds ratios) were left out, and so
-were prediction intervals and the test-based tau2 and I2 intervals of Higgins and Thompson (2002) and Borenstein et al. (2009).
-
-Fix direction: add `check` functions (the `"<test module>.<function>"` form `parse_case` already accepts) for a back-transformed estimate, for
-`predict` intervals and for the `confint` I2 and H2 bounds, then write the published cases the supplied sources in `/Users/simonb/src/metafopy papers`
-support.
-
-Spec: none (small item); tasks: `agents/tasks/correctness-harness-checks/tasks-1.md`.
-
 ## QE and the moment tau2 estimators centre yi in models without an intercept
 
 Found on 2026-11-12 while writing the location-scale correctness spec (`agents/specs/correctness-location-scale/spec.md`, Implementation step 3); the

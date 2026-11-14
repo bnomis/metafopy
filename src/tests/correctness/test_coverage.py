@@ -6,11 +6,13 @@ The gate names every item of the core that has no ``published`` or ``derived`` c
 import ast
 import dataclasses
 import pathlib
+import types
 import typing
 
 import pytest
 
 import correctness.cases
+import correctness.test_published
 import metafopy
 import metafopy.effects.measures
 import metafopy.methods.confint
@@ -200,6 +202,50 @@ def test_a_value_outside_the_printed_digit_fails_naming_case_key_and_source() ->
         correctness.cases.check_case(case, correctness.cases.run_case(case))
 
 
+def test_check_printed_passes_inside_and_fails_outside_the_printed_tolerance() -> None:
+    case = valid_case(printed={'x': '2.0'})
+    correctness.cases.check_printed(case, 'x', 2.049)
+    with pytest.raises(AssertionError, match=r'unit\.md: x: metafopy gives 2\.06.*2\.0.*A unit test, none'):
+        correctness.cases.check_printed(case, 'x', 2.06)
+    with pytest.raises(LookupError, match='no printed value'):
+        correctness.cases.check_printed(case, 'y', 2.0)
+
+
+def test_a_published_check_refuses_a_printed_name_it_does_not_know() -> None:
+    (case,) = correctness.cases.parse_cases(
+        broken('covers = ["escalc.yi.MD"]', 'check = "test_published.back_transformed"\nprinted = { exp_beta = "1.0", nonsense = "1.0" }'),
+        'inline.toml',
+    )
+
+    fit = types.SimpleNamespace(beta=[0.0], ci_lb=[0.0], ci_ub=[0.0])
+    with pytest.raises(LookupError, match='nonsense'):
+        correctness.test_published.back_transformed(case, fit)
+
+
+def test_a_published_case_with_printed_values_alone_loads_and_with_neither_is_refused() -> None:
+    (case,) = correctness.cases.parse_cases(
+        broken('expect = { "yi[0]" = "2.0", "vi[0]" = "0.5" }', 'check = "test_published.back_transformed"\nprinted = { exp_beta = "1.0" }'),
+        'inline.toml',
+    )
+    assert case.printed == {'exp_beta': '1.0'}
+    assert not case.expect
+    with pytest.raises(ValueError, match='needs expect or printed values'):
+        correctness.cases.parse_cases(broken('expect = { "yi[0]" = "2.0", "vi[0]" = "0.5" }', 'expect = {}'), 'inline.toml')
+
+
+def test_back_transformed_compares_exp_of_the_fit() -> None:
+    (case,) = correctness.cases.parse_cases(
+        broken('covers = ["escalc.yi.MD"]', 'check = "test_published.back_transformed"\nprinted = { exp_beta = "2.72", exp_ci_ub = "7.4" }'),
+        'inline.toml',
+    )
+
+    fit = types.SimpleNamespace(beta=[1.0], ci_lb=[0.0], ci_ub=[2.0])
+    correctness.test_published.back_transformed(case, fit)
+    fit.beta = [1.5]
+    with pytest.raises(AssertionError, match='exp_beta'):
+        correctness.test_published.back_transformed(case, fit)
+
+
 def test_a_derived_case_takes_its_value_from_a_formula() -> None:
     case = correctness.cases.parse_cases(
         """
@@ -263,6 +309,21 @@ def broken(old: str, new: str) -> str:
         (broken('covers = ["escalc.yi.MD"]', 'check = "properties.f"'), r'case unit\.md: check'),
         (broken('covers = ["escalc.yi.MD"]', 'dataset = "dat.bcg"'), r'a dataset or inline data, not both'),
         (broken('covers = ["escalc.yi.MD"]', 'tolerance = -1'), r'tolerance must be a positive number'),
+        (broken('covers = ["escalc.yi.MD"]', 'printed = { x = "1.0" }'), r'inline\.toml: case unit\.md: printed is allowed only with'),
+        (
+            broken('kind = "published"', 'kind = "derived"')
+            .replace('"yi[0]" = "2.0", "vi[0]" = "0.5"', '"yi[0]" = 2.0, "vi[0]" = 0.5')
+            .replace('covers = ["escalc.yi.MD"]', 'check = "test_published.back_transformed"\nprinted = { x = "1.0" }'),
+            r'inline\.toml: case unit\.md: printed is allowed only with',
+        ),
+        (
+            broken('covers = ["escalc.yi.MD"]', 'check = "test_published.back_transformed"\nprinted = { x = "one" }'),
+            r'inline\.toml: case unit\.md: printed value of .x. \(.one.\) is not a printed number',
+        ),
+        (
+            broken('covers = ["escalc.yi.MD"]', 'check = "test_published.back_transformed"\nprinted = { x = 1.0 }'),
+            r'inline\.toml: case unit\.md: printed value of .x. must be a string',
+        ),
         (VALID + VALID, r"inline\.toml: duplicate case id 'unit\.md'"),
         ('[[case]\nid = 1', r'inline\.toml: invalid TOML'),
         ('[mystery]\nx = 1', r'inline\.toml: unknown top-level key'),

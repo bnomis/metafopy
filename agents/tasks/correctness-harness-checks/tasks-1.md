@@ -37,7 +37,7 @@ runs `src/tests/correctness`, `slow` cases included.
 
 ## Task 1: The `printed` key and the three check functions
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Source Reference:** the item's fix direction (the `check` functions)
@@ -47,14 +47,14 @@ values a source prints.
 
 **Subtasks:**
 
-- [ ] Re-check the starting point: `grep -nw 'printed' src/tests/correctness/cases.py` finds nothing, and `CASE_KEYS` has no `printed`. Stop as
+- [x] Re-check the starting point: `grep -nw 'printed' src/tests/correctness/cases.py` finds nothing, and `CASE_KEYS` has no `printed`. Stop as
       `blocked` if it does
-- [ ] In `src/tests/correctness/cases.py`: add `printed` to `CASE_KEYS` and a `printed: dict[str, str]` field to `Case`; validate it in
+- [x] In `src/tests/correctness/cases.py`: add `printed` to `CASE_KEYS` and a `printed: dict[str, str]` field to `Case`; validate it in
       `parse_case` (a table of string values; only with `kind = "published"` and a `check`; every value parses as a number), raising `ValueError`
       naming the file and case id as the other validations do. Add a helper `check_printed(case, name, actual)` that compares `actual` with
       `float(case.printed[name])` at `published_tolerance` and raises `AssertionError` naming the case, the name, both values and the source, as
       `check_case` does
-- [ ] In `src/tests/correctness/test_published.py`, three check functions, each comparing every `printed` name it knows and refusing an unknown
+- [x] In `src/tests/correctness/test_published.py`, three check functions, each comparing every `printed` name it knows and refusing an unknown
       one:
   - `back_transformed`: `exp(beta)`, `exp(ci_lb)` and `exp(ci_ub)` of the fit (names `exp_beta`, `exp_ci_lb`, `exp_ci_ub`);
   - `prediction_interval`: `metafopy.predict(result)` (names `pred`, `pi_lb`, `pi_ub`, and their `exp_` forms for a ratio measure);
@@ -62,20 +62,20 @@ values a source prints.
     `H2_lb`, `H2_ub`, and `H_lb`, `H_ub` as the square roots of the H2 bounds, since Higgins and Thompson print H). The interval type is in the
     function's name because a case's `args` go to the fitting function, not to `confint`; add a sibling for another type only when a source
     prints one
-- [ ] Unit tests of the harness on inline TOML strings, beside the existing ones in `src/tests/correctness/test_coverage.py`: `printed` without a
+- [x] Unit tests of the harness on inline TOML strings, beside the existing ones in `src/tests/correctness/test_coverage.py`: `printed` without a
       `check`, with `kind = "derived"`, and with a non-numeric value each raise `ValueError` naming the file; `check_printed` passes inside and
       fails outside the published tolerance
 
 **Acceptance Criteria:**
 
-- [ ] `pytest src/tests/correctness` passes, and every existing case loads unchanged
-- [ ] Each check function names its source equation or printed table in its docstring
+- [x] `pytest src/tests/correctness` passes, and every existing case loads unchanged
+- [x] Each check function names its source equation or printed table in its docstring
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_coverage.py src/tests/correctness/test_published.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_coverage.py src/tests/correctness/test_published.py` passes
 
 **Notes:**
 
@@ -87,7 +87,7 @@ values a source prints.
 
 ## Task 2: Published cases for back-transformed estimates
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Source Reference:** the item (Mantel and Haenszel 1959, Yusuf et al. 1985)
@@ -96,24 +96,24 @@ values a source prints.
 
 **Subtasks:**
 
-- [ ] Check that `/Users/simonb/src/metafopy papers` can be read (`ls`); stop as `blocked` if not
-- [ ] Mantel and Haenszel (1959): the pooled relative risk `R = 10.68` of Table 1, as `published.mh1959.table1.or` beside
+- [x] Check that `/Users/simonb/src/metafopy papers` can be read (`ls`); stop as `blocked` if not
+- [x] Mantel and Haenszel (1959): the pooled relative risk `R = 10.68` of Table 1, as `published.mh1959.table1.or` beside
       `published.mh1959.table1.chisq` in `src/tests/correctness/cases/published.toml`, reusing that case's inline strata, `function = "rma_mh"`,
       `check = "test_published.back_transformed"`, `printed = { exp_beta = "10.68" }`
-- [ ] Yusuf et al. (1985): the pooled odds ratios the tables print for the `dat.yusuf1985` subsets the existing `published.yusuf1985.*` cases use,
+- [x] Yusuf et al. (1985): the pooled odds ratios the tables print for the `dat.yusuf1985` subsets the existing `published.yusuf1985.*` cases use,
       with `function = "rma_peto"`, one case per table, with the confidence bounds where printed
-- [ ] Record any mismatch as the header says
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] Every new case has `citation`, `locator` and `read`, and its values as printed
-- [ ] No source text or table is copied into the repository beyond the numbers used
+- [x] Every new case has `citation`, `locator` and `read`, and its values as printed
+- [x] No source text or table is copied into the repository beyond the numbers used
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_published.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_published.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 
@@ -126,7 +126,7 @@ values a source prints.
 
 ## Task 3: Published cases for prediction intervals and test-based intervals
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Source Reference:** the item (prediction intervals; Higgins and Thompson 2002; Borenstein et al. 2009)
@@ -135,25 +135,25 @@ values a source prints.
 
 **Subtasks:**
 
-- [ ] Check that `/Users/simonb/src/metafopy papers` can be read (`ls`); stop as `blocked` if not
-- [ ] Borenstein et al. (2009), chapter 17: the worked prediction interval, on the metafopy dataset that holds the chapter's data or inline data with
+- [x] Check that `/Users/simonb/src/metafopy papers` can be read (`ls`); stop as `blocked` if not
+- [x] Borenstein et al. (2009), chapter 17: the worked prediction interval, on the metafopy dataset that holds the chapter's data or inline data with
       its locator, `check = "test_published.prediction_interval"`
-- [ ] Borenstein et al. (2009), chapter 16 (equations 16.14 to 16.19): the worked intervals of tau2, I2 and H, `check = "test_published.confint_ht"`
-- [ ] Higgins and Thompson (2002): any example whose study data are printed or held by a metafopy dataset, with its H and I2 intervals. The
+- [x] Borenstein et al. (2009), chapter 16 (equations 16.14 to 16.19): the worked intervals of tau2, I2 and H, `check = "test_published.confint_ht"`
+- [x] Higgins and Thompson (2002): any example whose study data are printed or held by a metafopy dataset, with its H and I2 intervals. The
       sclerotherapy example of Table I prints no study data (see the comment above `published.higgins2002.sclerotherapy`), so it cannot be a case;
       note each such example under "Sources without a usable value"
-- [ ] Record any mismatch as the header says
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] Every new case has `citation`, `locator` and `read`, and its values as printed
-- [ ] Each source named here has cases or a "Sources without a usable value" entry
+- [x] Every new case has `citation`, `locator` and `read`, and its values as printed
+- [x] Each source named here has cases or a "Sources without a usable value" entry
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_published.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_published.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 
@@ -165,7 +165,7 @@ values a source prints.
 
 ## Task 4: Review the new mismatches (stop for the operator only if there is one)
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** `claude/rules/metafopy.md` (metafopy's output changes only after the user confirms it)
@@ -174,11 +174,11 @@ values a source prints.
 
 **Subtasks:**
 
-- [ ] Count the cases with `status = "mismatch"` that Tasks 2 and 3 added (`git diff main -- src/tests/correctness/cases/` on the branch)
-- [ ] If there are none: write `agents/reviews/correctness-harness-checks-mismatches.md` with the automatic checks, the line "No mismatch: every new
+- [x] Count the cases with `status = "mismatch"` that Tasks 2 and 3 added (`git diff main -- src/tests/correctness/cases/` on the branch)
+- [x] If there are none: write `agents/reviews/correctness-harness-checks-mismatches.md` with the automatic checks, the line "No mismatch: every new
       published case agrees with metafopy", and any "Sources without a usable value"; mark this task done without stopping, and say in its Notes
       that no stop was needed
-- [ ] If there is at least one: write `agents/reviews/correctness-harness-checks-mismatches.md` in the layout of
+- [x] If there is at least one: write `agents/reviews/correctness-harness-checks-mismatches.md` in the layout of
       `agents/specs/correctness-tests/mismatches.md`:
   - what is reviewed and how;
   - automatic checks: `pytest src/tests/correctness` passes, every `mismatch` case has an item;
@@ -187,33 +187,34 @@ values a source prints.
   - decisions, one per mismatch, with options *follow the reference*, *keep metafor*, *treat it as a misprint* and *investigate*, each with its
     consequence, and a recommendation with its reason;
   - an empty Answers section.
-- [ ] With a mismatch: publish its interactive page (answers saved to the artifact's database as each is clicked, an accept-all button for the
+- [x] With a mismatch: publish its interactive page (answers saved to the artifact's database as each is clicked, an accept-all button for the
       recommendations), and put `**Review page:** <URL>` in the document's header. If the queue session has no tool to publish a page, leave the
       header line as `**Review page:** to be published by the operator session` and say so in the stop message
-- [ ] With a mismatch: stop the list for the operator (`blocked`, waiting for the answers to every decision in
+- [x] With a mismatch: stop the list for the operator (`blocked`, waiting for the answers to every decision in
       `agents/reviews/correctness-harness-checks-mismatches.md`). Once every item has an answer, an operator session reads the page's answers,
       copies each into the document's Answers section with the date, commits that, and only then restarts the list
 
 **Acceptance Criteria:**
 
-- [ ] Every new `mismatch` case has an item and a decision in the review document, or the document says there is none
+- [x] Every new `mismatch` case has an item and a decision in the review document, or the document says there is none
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness` passes, `slow` tests skipped (`-m 'not slow'`)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness` passes, `slow` tests skipped (`-m 'not slow'`)
 
 **Notes:**
 
 - Depends on Tasks 2 and 3
+- One mismatch was recorded (the I2 upper limit of Borenstein et al. Dataset 2), so the list stops here for the operator.
 - This is the list's only stop for the operator, and it happens only when Tasks 2 or 3 recorded a mismatch
 
 ---
 
 ## Task 5: Apply the answers, the full test run and closing the item
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item as a whole
@@ -222,32 +223,32 @@ values a source prints.
 
 **Subtasks:**
 
-- [ ] If Task 4 recorded no mismatch, skip to the `TODO.md` subtask. Otherwise read the answers from the Answers section of
+- [x] If Task 4 recorded no mismatch, skip to the `TODO.md` subtask. Otherwise read the answers from the Answers section of
       `agents/reviews/correctness-harness-checks-mismatches.md`, never from the page; stop as `blocked`, naming the missing items, if the section is
       empty or incomplete
-- [ ] *Keep metafor*: correct the case to the convention metafor documents, cite where it documents it, and set `status = "pass"`
-- [ ] *Treat it as a misprint*: remove the case and record the answer in the review document, as `agents/specs/correctness-tests/mismatches.md` does
-- [ ] *Follow the reference* or *investigate*: add a `TODO.md` item for each with the `todo-add` skill, naming the case, the fix or what is in
+- [x] *Keep metafor*: correct the case to the convention metafor documents, cite where it documents it, and set `status = "pass"`
+- [x] *Treat it as a misprint*: remove the case and record the answer in the review document, as `agents/specs/correctness-tests/mismatches.md` does
+- [x] *Follow the reference* or *investigate*: add a `TODO.md` item for each with the `todo-add` skill, naming the case, the fix or what is in
       doubt, the R parity fixtures and `known.toml` entries to mark, and the `docs/differences.md` section "Where metafor departs from its
       reference". The case stays `status = "mismatch"` until that item is done
-- [ ] Move the item from `TODO.md` to `DONE.md`: append its heading and body unchanged at the end of `DONE.md`, then a line
+- [x] Move the item from `TODO.md` to `DONE.md`: append its heading and body unchanged at the end of `DONE.md`, then a line
       `Done: 2026-MM-DD, agents/tasks/correctness-harness-checks/tasks-1.md` with the date of the commit
-- [ ] Run the final tests from the worktree and save their output for the merge gate:
+- [x] Run the final tests from the worktree and save their output for the merge gate:
       `main=$(git worktree list --porcelain | sed -n '1s/^worktree //p'); mkdir -p "$main/ralpher-logs/correctness-harness-checks/tasks-1" && pytest src/tests/correctness 2>&1 | tee "$main/ralpher-logs/correctness-harness-checks/tasks-1/final-tests.log"`
 
 **Acceptance Criteria:**
 
-- [ ] Every answered item has a case change or a `TODO.md` item
-- [ ] The item is in `DONE.md` with its body unchanged, and no longer in `TODO.md`
+- [x] Every answered item has a case change or a `TODO.md` item
+- [x] The item is in `DONE.md` with its body unchanged, and no longer in `TODO.md`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] The final test run above passes, `slow` tests included
-- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/correctness-harness-checks/tasks-1.md):TODO.md > <scratch>/todo-before.md`
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] The final test run above passes, `slow` tests included
+- [x] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/correctness-harness-checks/tasks-1.md):TODO.md > <scratch>/todo-before.md`
       and `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0 (`<scratch>` is the session's
       scratch directory, outside the repository)
 
