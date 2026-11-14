@@ -366,3 +366,46 @@ def mv_predict_pi(case: correctness.cases.Case, result: typing.Any) -> None:
     lb, ub = correctness.formulas.mv_prediction_interval(s.yi, s.V + s.extra(), s.X, test, tests.ddf, s.X, total)
     mv_agree(case, 'pi_lb', result.pi_lb, lb, MV_TIGHT_TOLERANCE)
     mv_agree(case, 'pi_ub', result.pi_ub, ub, MV_TIGHT_TOLERANCE)
+
+
+ROBUST_ADJUSTMENTS: dict[bool | str, str] = {False: 'CR0', True: 'CR1', 'Stata': 'Stata1', 'Stata1': 'Stata1', 'Stata2': 'Stata2'}
+
+
+def robust_sandwich(case: correctness.cases.Case, result: typing.Any) -> None:
+    """The default ``robust`` fit (the cluster-robust variance, its tests, intervals and omnibus test) of an ``rma_uni`` or ``rma_mv`` fit, from
+    ``formulas.cluster_robust_vcov`` and ``formulas.robust_tests`` (Sidik and Jonkman 2005; Hedges, Tipton and Johnson 2010; Cameron and Miller 2015).
+
+    ``y``, ``X`` and the weights are rebuilt from the case at metafopy's variance components: ``1 / (vi + tau2)`` for ``rma_uni``, the inverse of
+    ``V`` plus the random-effects matrices (or the user's ``W``) for ``rma_mv``.
+    """
+    assert case.then is not None
+    fit = refit(case)
+    if case.function == 'rma_mv':
+        s = mv_setup(case, fit)
+        yi, X, frame = s.yi, s.X, s.frame
+        W = s.W if s.W is not None else numpy.linalg.inv(s.V + s.extra())
+    else:
+        loaded = correctness.cases.case_frame(case)
+        assert loaded is not None
+        frame = loaded
+        yi = frame[case.args['yi']].to_numpy(dtype=numpy.float64)
+        X = design_matrix(frame, case.args.get('mods'))
+        W = numpy.diag(1 / (frame[case.args['vi']].to_numpy(dtype=numpy.float64) + float(fit.tau2)))
+    beta = numpy.linalg.solve(X.T @ W @ X, X.T @ W @ yi)
+    codes = pandas.factorize(frame[case.then.args['cluster']], sort=True)[0].astype(numpy.intp)
+    adjust = ROBUST_ADJUSTMENTS[case.then.args.get('adjust', True)]
+    vb = correctness.formulas.cluster_robust_vcov(X, W, yi - X @ beta, codes, adjust)
+    n = int(codes.max()) + 1
+    tests = correctness.formulas.robust_tests(beta, vb, n, list(fit.btt), float(case.args.get('level', 95)))
+    for name, actual, expected in (
+        ('vb', result.vb, vb),
+        ('se', result.se, tests.se),
+        ('zval', result.zval, tests.zval),
+        ('pval', result.pval, tests.pval),
+        ('ci_lb', result.ci_lb, tests.ci_lb),
+        ('ci_ub', result.ci_ub, tests.ci_ub),
+        ('QM', result.QM, tests.QM),
+        ('QMp', result.QMp, tests.QMp),
+        ('ddf', result.ddf, tests.ddf),
+    ):
+        mv_agree(case, name, actual, expected, MV_TIGHT_TOLERANCE)

@@ -1,1 +1,93 @@
 # Correctness cases for robust; see agents/specs/correctness-mv-robust/spec.md
+#
+# `derived` cases: the `robust_sandwich` check (test_derived.py) rebuilds y, X and the weights from the case and compares the `robust` result reached
+# through `then` (variance, standard errors, t statistics, intervals, omnibus test and degrees of freedom) with `formulas.cluster_robust_vcov` and
+# `formulas.robust_tests`, coded from Sidik and Jonkman (2005) and Hedges, Tipton and Johnson (2010).
+#
+# The `Stata1` and `Stata2` adjustments are Stata's conventions, not those of the papers (Cameron and Miller 2015, section VI.B; Stata's `vce(cluster)`
+# small-sample factors); their cases say so in `source`.
+
+[[case]]
+id = "robust.uni.default.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "REML", mods = "~ ablat" }
+check = "test_derived.robust_sandwich"
+covers = ["robust.rma_uni", "robust.adjust.True"]
+then = { function = "robust", args = { cluster = "trial" } }
+
+[case.source]
+citation = "Sidik K, Jonkman JN (2005). A note on variance estimation in random effects meta-regression. Journal of Biopharmaceutical Statistics 15:823-838; Hedges LV, Tipton E, Johnson MC (2010). Robust variance estimation in meta-regression with dependent effect size estimates. Research Synthesis Methods 1:39-65"
+locator = "Hedges et al.: equation 6 and the m / (m - p) correction after it; equation 8 for the t test"
+read = 2026-11-14
+doi = "10.1002/jrsm.5"
+
+[[case]]
+id = "robust.mv.default.tannersmith"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.tannersmith2016"
+setup = { vconst = { cluster = "studyid", vi = "vi", rho = 0.6 } }
+args = { yi = "yi", random = "~ 1 | studyid", mods = "~ propmale", method = "REML" }
+check = "test_derived.robust_sandwich"
+covers = ["robust.rma_mv", "robust.adjust.True"]
+then = { function = "robust", args = { cluster = "studyid" } }
+
+[case.source]
+citation = "Hedges LV, Tipton E, Johnson MC (2010). Robust variance estimation in meta-regression with dependent effect size estimates. Research Synthesis Methods 1:39-65"
+locator = "equation 6, the m / (m - p) correction after it, and equation 8"
+read = 2026-11-14
+doi = "10.1002/jrsm.5"
+
+[[case]]
+id = "robust.adjust.false.tannersmith"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.tannersmith2016"
+setup = { vconst = { cluster = "studyid", vi = "vi", rho = 0.6 } }
+args = { yi = "yi", random = "~ 1 | studyid", mods = "~ propmale", method = "REML" }
+check = "test_derived.robust_sandwich"
+covers = ["robust.adjust.False"]
+then = { function = "robust", args = { cluster = "studyid", adjust = false } }
+
+[case.source]
+citation = "Hedges LV, Tipton E, Johnson MC (2010). Robust variance estimation in meta-regression with dependent effect size estimates. Research Synthesis Methods 1:39-65"
+locator = "equation 6 (no small-sample factor)"
+read = 2026-11-14
+doi = "10.1002/jrsm.5"
+
+[[case]]
+id = "robust.adjust.stata1.tannersmith"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.tannersmith2016"
+setup = { vconst = { cluster = "studyid", vi = "vi", rho = 0.6 } }
+args = { yi = "yi", random = "~ 1 | studyid", mods = "~ propmale", method = "REML" }
+check = "test_derived.robust_sandwich"
+covers = ["robust.adjust.Stata1"]
+then = { function = "robust", args = { cluster = "studyid", adjust = "Stata1" } }
+
+[case.source]
+citation = "Cameron AC, Miller DL (2015). A practitioner's guide to cluster-robust inference. Journal of Human Resources 50:317-372. The factor n/(n-1) * (k-1)/(k-p) is Stata's convention (Stata Reference Manual, Methods and formulas of regress with vce(cluster)), not the papers'"
+locator = "section VI.B, equation 12 and the factor G / (G - 1)"
+read = 2026-11-14
+doi = "10.3368/jhr.50.2.317"
+
+[[case]]
+id = "robust.adjust.stata2.tannersmith"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.tannersmith2016"
+setup = { vconst = { cluster = "studyid", vi = "vi", rho = 0.6 } }
+args = { yi = "yi", random = "~ 1 | studyid", mods = "~ propmale", method = "REML" }
+check = "test_derived.robust_sandwich"
+covers = ["robust.adjust.Stata2"]
+then = { function = "robust", args = { cluster = "studyid", adjust = "Stata2" } }
+
+[case.source]
+citation = "Cameron AC, Miller DL (2015). A practitioner's guide to cluster-robust inference. Journal of Human Resources 50:317-372. The factor n/(n-1) is Stata's convention (Stata Reference Manual, Methods and formulas of xtreg and regress with vce(cluster)), not the papers'"
+locator = "section VI.B, equation 12 and the factor G / (G - 1)"
+read = 2026-11-14
+doi = "10.3368/jhr.50.2.317"

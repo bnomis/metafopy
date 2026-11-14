@@ -267,7 +267,7 @@ prediction interval have `derived` cases.
 
 ## Task 6: robust - the plain sandwich and its adjustments
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** API (`cluster_robust_vcov`); Implementation steps 3 and 4; Decisions (D2, Stata adjustments); Coverage list (`robust.rma_uni`,
@@ -277,24 +277,24 @@ prediction interval have `derived` cases.
 
 **Subtasks:**
 
-- [ ] `formulas.py`: `cluster_robust_vcov` for `CR0` and `CR1` (Hedges, Tipton and Johnson 2010, equations 6 and 8) and the Stata factors
+- [x] `formulas.py`: `cluster_robust_vcov` for `CR0` and `CR1` (Hedges, Tipton and Johnson 2010, equations 6 and 8) and the Stata factors
       (Cameron and Miller 2015, section VI.B)
-- [ ] A check function in `test_derived.py` that rebuilds `X`, the weights, residuals and cluster codes from the case and compares `vb`, `se`, the
+- [x] A check function in `test_derived.py` that rebuilds `X`, the weights, residuals and cluster codes from the case and compares `vb`, `se`, the
       test statistics and `ddf` of the `robust` result reached through `then`
-- [ ] Derived cases in `cases/robust.toml`: `robust` on an `rma_uni` fit (Sidik and Jonkman 2005) and on an `rma_mv` fit of
+- [x] Derived cases in `cases/robust.toml`: `robust` on an `rma_uni` fit (Sidik and Jonkman 2005) and on an `rma_mv` fit of
       `dat.tannersmith2016` with `setup.vconst`; each `robust.ADJUST` value. The Stata cases' `source` names the Stata manual and says the
       convention is Stata's (D2)
-- [ ] Record any mismatch as the header says
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] `test_gate_mv_robust`'s missing list names neither `robust.rma_uni` nor `robust.rma_mv` and no `robust.adjust.*`
+- [x] `test_gate_mv_robust`'s missing list names neither `robust.rma_uni` nor `robust.rma_mv` and no `robust.adjust.*`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 

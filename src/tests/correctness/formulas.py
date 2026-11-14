@@ -2256,3 +2256,48 @@ def mv_prediction_interval(
         crit = numpy.asarray(scipy.stats.t.ppf(1 - half, numpy.array([numpy.min(ddf[row != 0]) for row in rows])), dtype=numpy.float64)
     centre = rows @ b
     return centre - crit * spread, centre + crit * spread
+
+
+CR_ADJUSTMENTS = ('CR0', 'CR1', 'Stata1', 'Stata2')
+
+
+def cluster_robust_vcov(X: FloatArray, W: FloatArray, resid: FloatArray, cluster: IntArray, vcov: str, working: FloatArray | None = None) -> FloatArray:
+    """The cluster-robust variance ``(X'WX)^-1 [sum_j X_j' W_j e_j e_j' W_j X_j] (X'WX)^-1`` of the weighted least squares ``b`` (Hedges, Tipton and
+    Johnson 2010, equation 6), times the factor of ``vcov``: ``CR0`` none; ``CR1`` ``n / (n - p)`` (Hedges et al., the degrees-of-freedom correction after
+    equation 6); ``Stata1`` ``n / (n - 1) * (k - 1) / (k - p)`` (Cameron and Miller 2015, equation 12) and ``Stata2`` ``n / (n - 1)`` (the same section's
+    ``G / (G - 1)``); both are Stata's convention, not the meta-analysis papers'.
+
+    ``W`` is the full weight matrix, block-diagonal over the clusters, and ``W_j`` its block of cluster ``j``; ``n`` is the number of clusters, ``k`` the
+    number of rows and ``p`` the number of coefficients.
+    """
+    k, p = X.shape
+    if working is not None:
+        raise ValueError('working matrices are used by CR2 and CR3 only')
+    n = int(cluster.max()) + 1
+    bread = numpy.linalg.inv(X.T @ W @ X)
+    meat = numpy.zeros((p, p))
+    covered = numpy.zeros(W.shape, dtype=bool)
+    for j in range(n):
+        rows = numpy.flatnonzero(cluster == j)
+        covered[numpy.ix_(rows, rows)] = True
+        score = X[rows].T @ W[numpy.ix_(rows, rows)] @ resid[rows]
+        meat += numpy.outer(score, score)
+    if numpy.any(W[~covered] != 0):
+        raise ValueError('the weight matrix is not block-diagonal over the clusters')
+    factors = {'CR0': 1.0, 'CR1': n / (n - p), 'Stata1': n / (n - 1) * (k - 1) / (k - p), 'Stata2': n / (n - 1)}
+    return numpy.asarray(factors[vcov] * bread @ meat @ bread, dtype=numpy.float64)
+
+
+def robust_tests(b: FloatArray, vb: FloatArray, n: int, btt: list[int], level: float = 95) -> MVTests:
+    """The tests of the coefficients ``b`` with the cluster-robust variance ``vb`` over ``n`` clusters: t with ``n - p`` degrees of freedom for each
+    coefficient (Hedges, Tipton and Johnson 2010, section 2) and ``QM / m`` against F(m, n - p) for the ``btt`` coefficients."""
+    p = len(b)
+    ddf = numpy.full(p, float(n - p))
+    se = numpy.sqrt(numpy.diag(vb))
+    zval = b / se
+    half = alpha_of(level) / 2
+    crit = float(scipy.stats.t.ppf(1 - half, n - p))
+    m = len(btt)
+    qm = float(b[btt] @ numpy.linalg.solve(vb[numpy.ix_(btt, btt)], b[btt])) / m
+    pval = numpy.asarray(2 * scipy.stats.t.sf(numpy.abs(zval), n - p), dtype=numpy.float64)
+    return MVTests(se, zval, pval, b - crit * se, b + crit * se, qm, float(scipy.stats.f.sf(qm, m, n - p)), ddf)
