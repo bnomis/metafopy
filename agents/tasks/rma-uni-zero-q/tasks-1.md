@@ -73,7 +73,7 @@ file that imports a changed module, and `src/tests/correctness`.
 
 ## Task 2: A correctness case, the full test run and closing the item
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item as a whole
@@ -82,26 +82,26 @@ file that imports a changed module, and `src/tests/correctness`.
 
 **Subtasks:**
 
-- [ ] Add a `property` case to `src/tests/correctness/cases/properties.toml`, beside the `I2 = 100 (H2 - 1) / H2` case: for each estimator in `metafopy.models.tau2.ESTIMATORS` that runs on identical effects, `I2` is 0. Read the estimators from
+- [x] Add a `property` case to `src/tests/correctness/cases/properties.toml`, beside the `I2 = 100 (H2 - 1) / H2` case: for each estimator in `metafopy.models.tau2.ESTIMATORS` that runs on identical effects, `I2` is 0. Read the estimators from
       `ESTIMATORS` at test time, as the other property cases do
-- [ ] Move the item from `TODO.md` to `DONE.md`: append its heading and body unchanged at the end of `DONE.md`, then a line
+- [x] Move the item from `TODO.md` to `DONE.md`: append its heading and body unchanged at the end of `DONE.md`, then a line
       `Done: 2026-MM-DD, agents/tasks/rma-uni-zero-q/tasks-1.md` with the date of the commit
-- [ ] Run the final tests from the worktree and save their output for the merge gate:
+- [x] Run the final tests from the worktree and save their output for the merge gate:
       `main=$(git worktree list --porcelain | sed -n '1s/^worktree //p'); mkdir -p "$main/ralpher-logs/rma-uni-zero-q/tasks-1" && pytest src/tests/test_rma_uni_extras.py src/tests/test_rma_uni_help.py src/tests/test_rma_uni_parity.py src/tests/test_rma_mh_peto.py src/tests/test_audit13_fixes.py src/tests/test_audit4_predict.py src/tests/test_audit8_values_a.py src/tests/test_audit8_refusals.py src/tests/test_audit9_fixes.py src/tests/test_fits.py src/tests/test_hettest.py src/tests/test_diagnostics.py src/tests/test_audit3_misc.py src/tests/test_audit8_crashes.py src/tests/test_audit8_args.py src/tests/test_audit8_fields.py src/tests/correctness 2>&1 | tee "$main/ralpher-logs/rma-uni-zero-q/tasks-1/final-tests.log"`
 
 **Acceptance Criteria:**
 
-- [ ] The property case passes for every estimator it runs over
-- [ ] The item is in `DONE.md` with its body unchanged, and no longer in `TODO.md`
+- [x] The property case passes for every estimator it runs over
+- [x] The item is in `DONE.md` with its body unchanged, and no longer in `TODO.md`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] The final test run above passes, `slow` tests included
-- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/rma-uni-zero-q/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] The final test run above passes, `slow` tests included
+- [x] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/rma-uni-zero-q/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
       `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0 (`<scratch>` is the session's scratch
       directory, outside the repository)
 

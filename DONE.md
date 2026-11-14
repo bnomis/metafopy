@@ -705,3 +705,17 @@ Note 2026-11-07: the print of `regplot()`'s result (`matrix/print/regplot_mods`,
 Note 2026-11-07: fixed the print of `rcalc(simplify=FALSE)` (the 2026-11-02 cause "R prints the elements under $names, Python prints the repr of a dict"): an element that is itself one of R's lists prints under its own tag, as `print.default` does (`list_text` and the `RList` protocol in `src/metafopy/core/labelled.py`), `RCalcResult` prints as its list of `dat` and `V`, and `simplify=False` returns a `NamedList` (`src/metafopy/methods/rcalc.py`); test `test_vcalc.py::test_rcalc_without_simplify_prints_as_r_list` against R's lines. The slice `.audit/runs/20261107-084933` (local, `--only rcalc`, standalone step, 16 cases) lists no finding. Line 315 of `vcalc(sparse=TRUE)` remains.
 
 Done: 2026-11-07 - every cause is fixed or accepted: the printed call of `update(evaluate=False)` accepted as by design (`35700fb`); the `predict` row and column names (`5ea8c81`); R's failed print of `leave1out` under `na.action="na.fail"` accepted as an error of metafor's own code (`81df418`); the `escalc` print of `$<-` and of `ks_dat` (`989a03c`); the `regplot` print accepted as by design (`6d97542`); `rcalc(simplify=FALSE)` (`a5dc72a`); and, in this commit, line 315 of `vcalc(sparse=TRUE)`: the sparse print takes R's scientific notation per column and Matrix's `formatSparseM` alignment (`src/metafopy/core/labelled.py`, test `test_vcalc.py::test_sparse_vcalc_prints_scientific_columns_as_r`); the print of the case now equals R's line for line. The slice `.audit/runs/20261107-091529` (local, `--only vcalc`, standalone step, 19 cases) lists no finding.
+
+## rma_uni raises ZeroDivisionError for an equal-effects fit when every effect is identical
+
+Found on 2026-11-12 by the property tests of the correctness-tests task list (Task 10, location and scale invariance).
+`metafopy.rma_uni(yi=[0, 0, 0, 0], vi=[0.1, 0.2, 0.3, 0.4], method='EE')` stops with `ZeroDivisionError` at
+`src/metafopy/models/rma_uni.py` in the heterogeneity block (`I2 = max(0.0, 100 * (QE - (k - p)) / QE)`), because `QE` is 0. The same holds for
+`FE` and `CE`. R metafor evaluates the same line in floating point, where `(0 - (k - p)) / 0` is `-Inf` and `max(0, -Inf)` is 0, so `I2` is 0 there.
+
+Fix direction: give `I2` the value 0 when `QE` is 0 (as R does), keep `H2 = QE / (k - p)`, and add a regression test with identical effects for each
+of `EE`, `FE` and `CE`. Check the random-effects branch and `rma_mh`, `rma_peto` for the same division.
+
+Spec: none (small item); tasks: `agents/tasks/rma-uni-zero-q/tasks-1.md`.
+
+Done: 2026-11-14, agents/tasks/rma-uni-zero-q/tasks-1.md
