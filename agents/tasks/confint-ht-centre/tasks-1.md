@@ -126,7 +126,7 @@ section "Where metafor departs from its reference".
 
 ## Task 3: The full test run and closing the item
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item as a whole
@@ -135,23 +135,23 @@ section "Where metafor departs from its reference".
 
 **Subtasks:**
 
-- [ ] Move the item from `TODO.md` to `DONE.md`: append its heading and body unchanged at the end of `DONE.md`, then a line
+- [x] Move the item from `TODO.md` to `DONE.md`: append its heading and body unchanged at the end of `DONE.md`, then a line
       `Done: 2026-MM-DD, agents/tasks/confint-ht-centre/tasks-1.md` with the date of the commit
-- [ ] Run the final tests from the worktree and save their output for the merge gate:
+- [x] Run the final tests from the worktree and save their output for the merge gate:
       `main=$(git worktree list --porcelain | sed -n '1s/^worktree //p'); mkdir -p "$main/ralpher-logs/confint-ht-centre/tasks-1" && pytest src/tests/test_rma_uni_help.py src/tests/test_audit5_plots.py src/tests/test_audit5_printing.py src/tests/test_docs_examples.py src/tests/correctness 2>&1 | tee "$main/ralpher-logs/confint-ht-centre/tasks-1/final-tests.log"`
 
 **Acceptance Criteria:**
 
-- [ ] The item is in `DONE.md` with its body unchanged, and no longer in `TODO.md`
+- [x] The item is in `DONE.md` with its body unchanged, and no longer in `TODO.md`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] The final test run above passes, `slow` tests included
-- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/confint-ht-centre/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] The final test run above passes, `slow` tests included
+- [x] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/confint-ht-centre/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
       `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0 (`<scratch>` is the session's scratch
       directory, outside the repository)
 
