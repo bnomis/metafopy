@@ -2,6 +2,24 @@
 
 **Spec:** `agents/specs/correctness-glmm/spec.md`
 **Created:** 2026-11-14 (started by Task 4; Task 13 of `agents/tasks/correctness-glmm/tasks-1.md` completes and publishes it)
+**Review page:** not yet published (the queue session had no Artifact tool; an operator session publishes it and puts its URL here)
+
+## What is being reviewed and how
+
+The `rma_glmm` correctness cases compare metafopy with a reference derived from the published likelihood formulas, with the values printed in
+publications, and with R metafor 5.2-1. Where they disagree, the case is recorded with `status = "mismatch"` and nothing in `src/metafopy/` was
+changed. Each item below is either approved (the difference is understood and the case stays as it is) or flagged. Each decision below has options
+and a recommendation. Once every item and decision has an answer, an operator session copies the answers into "Answers" with the date; Task 14 then
+files each answer as a case change or a `TODO.md` item.
+
+## Automatic checks
+
+Run 2026-11-14 in the worktree `/Users/simonb/src/metafopy/.claude/worktrees/correctness-glmm-tasks-1`:
+
+- Every `status = "mismatch"` case in `src/tests/correctness/cases/glmm.toml` (the six `CM.EL` standard errors and the `CM.EL` `QE_Wld`) and in
+  `src/tests/correctness/cases/glmm_published.toml` (the `.mismatch` cases) has an item in "Mismatches" below: **pass**. `glmm_other.toml` has none.
+- `src/audit/data/r-versions.json` is unchanged against `main` (`git diff --name-only main` does not list it): **pass**.
+- The gate (`pytest src/tests/correctness -m 'not slow'`) and `mypy`: see the commit of this task.
 
 This file collects every disagreement the `rma_glmm` correctness cases found, each convention difference that changes a printed digit, the sources
 still needed, and the limits of the harness. Items are appended by the tasks that write cases.
@@ -135,6 +153,58 @@ absences 0.721 (0.579, 0.897), ER visits 0.525 (0.361, 0.764), as printed IRRs).
   impossible, which `glmer` does not (the same holds for `RR` on `dat.damico2009` with `ML`). The case uses `dat.hine1989`.
 - `PR` and `PLN` with `ML` on `dat.pritz1997`: R metafor 5.2-1 cannot fit them, and the formulas disagree with metafopy for the same reason. The cases use
   `dat.hine1989` (`PR`; zero variance) and the control arm of `dat.nielweise2007` (`PLN`).
+
+## Decisions
+
+### D1. The `CM.EL` standard error (six cases in "CM.EL standard error of the log odds ratio")
+
+**What is decided:** whether metafopy's standard error of the `CM.EL` log odds ratio is a fault to fix.
+
+**Background:** coefficients and `tau2` agree with the formulas; the standard error differs in the fourth to sixth digit, by up to 1.6e-4 relative
+for `FE` on `dat.collins1985a`. R metafor 5.2-1 also differs from the formulas (its `clogit` and `numDeriv` results are numerical), so there is no
+single exact value; metafopy sits between or beyond the other two.
+
+**What it affects:** six cases; a fix changes `src/metafopy/models/glmm_fit.py` and the R parity fixtures, which is outside this list.
+
+**Options:**
+
+- *Follow the reference*: a `TODO.md` item to make metafopy's standard error match the formulas; the cases become `pass` after the fix.
+- *Keep metafor*: tighten nothing; set the cases to compare with R metafor at a looser tolerance and cite metafor's own numerical method.
+- *Investigate*: a `TODO.md` item to find which of the three is nearest the true observed information first.
+
+**Recommendation:** *Investigate*, because the three values disagree with each other and no one is known to be exact.
+
+### D2. The `CM.EL` saturated-model Wald statistic (`glmm.heterogeneity.qe-wld.cm.el.fe.bcg`)
+
+**What is decided:** whether to treat metafopy's 191.71 (formulas 163.09, R metafor 268.60) as a fault.
+
+**Background:** all three disagree widely; the metafopy documentation already says the statistic is ill-conditioned for `CM.EL` and differs between
+optimisers in R. `QE_LRT` agrees in all three.
+
+**What it affects:** one case; documentation in `docs/differences.md`.
+
+**Options:**
+
+- *Keep metafor*: record the statistic as ill-conditioned, keep the case as a documented mismatch.
+- *Follow the reference*: a `TODO.md` item to compute the statistic from the analytic information, as the formulas do.
+- *Investigate*: a `TODO.md` item naming the doubt.
+
+**Recommendation:** *Keep metafor*: the statistic is unstable in R as well, and `QE_LRT` is the usable test.
+
+### D3. Table 5 of Bagos and Nikolopoulos (2009) has no case
+
+**What is decided:** whether to keep looking for its per-study counts.
+
+**Background:** neither supplied source (Hooper et al. 2001, Wolf et al. 2003) gives data that reproduce Table 5 (see "Sources needed").
+
+**What it affects:** one published table with no case; no other test.
+
+**Options:**
+
+- *Drop it*: leave the sources listed as supplied and write no case.
+- *Investigate*: a `TODO.md` item to find the original trial data.
+
+**Recommendation:** *Drop it*: the Poisson models are already covered by the Stijnen et al. (2010) cases and the derived cases.
 
 ## Answers
 
