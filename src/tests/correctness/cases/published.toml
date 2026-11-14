@@ -1452,13 +1452,13 @@ citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduct
 locator = "Chapter 18, equations 16.14 to 16.25 (intervals of T2 and I2), Dataset 3"
 read = 2026-11-14
 
-# The upper limit of I2 on Dataset 2: the book prints 81.09 from L and U rounded to four digits (U = 2.2993). From the unrounded Q the same equations give 81.0849,
+# The upper limit of I2 on Dataset 2: the book prints 81.09 from ln H and B rounded to four digits with z = 1.96 (U = 2.2994). From the unrounded Q the same equations give 81.0849,
 # which is 81.08 printed to two digits; the difference from the printed value is 0.0051 against a tolerance of 0.005.
 [[case]]
 id = "published.borenstein2009.ch18.d2.ci.i2ub"
 kind = "published"
 status = "mismatch"
-reason = "the book prints 81.09; metafopy gives 81.0849 (equation 16.25 on the unrounded Q = 10.5512); the book rounds L and U to four digits first"
+reason = "the book prints 81.09; metafopy gives 81.0849 (equation 16.25 on the unrounded Q = 10.5512); the book rounds ln H and B to four digits and uses z = 1.96, giving U = 2.2994 and 81.0865"
 function = "rma_uni"
 setup = { escalc = { measure = "OR", ai = "ai", bi = "bi", ci = "ci", di = "di" } }
 args = { method = "DL" }

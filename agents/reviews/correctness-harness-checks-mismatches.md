@@ -1,7 +1,7 @@
 # Correctness harness checks: mismatches and sources without a usable value
 
 **Task list:** `agents/tasks/correctness-harness-checks/tasks-1.md` (Task 4)
-**Review page:** to be published by the operator session
+**Review page:** https://claude.ai/artifact/Sg3dT3n2jFbFic4kVkYcM8
 
 ## What is reviewed and how
 
@@ -26,8 +26,10 @@ information.
 - **metafopy:** 81.0849 (`confint(type='ht')`, DL fit). Every other printed value of the chapter's three datasets agrees: the tau2 limits, the other
   I2 limits and the prediction intervals.
 - **metafor:** not run; metafopy's `ht` interval is the metafor formula, centred on H from Q since the confint-ht-centre list.
-- **Cause:** the book rounds the intermediate U to four digits (2.2993) before computing 1 - 1/U^2; from the unrounded Q the value is 81.08 to two
-  digits. The difference from the printed value is 0.0051 against a tolerance of 0.005.
+- **Cause:** intermediate rounding in the book. With ln H and B rounded to four digits (0.3734 and 0.2343) and z = 1.96, U is 2.2994 and the
+  upper limit 81.0865, printed as 81.09. Unrounded, U is 2.29930 and the limit 81.0850 (81.08 to two digits); rounding U alone to 2.2993 still
+  gives 81.0849. Checked by the operator session on 2026-11-14, correcting the first explanation (U rounded to four digits), which does not
+  reproduce 81.09. The difference from the printed value is 0.0051 against a tolerance of 0.005.
 
 ## Sources without a usable value
 
@@ -39,7 +41,7 @@ information.
 ### Decision: what to do with the I2 upper limit that the book rounds
 
 - **What is decided:** how the case `published.borenstein2009.ch18.d2.ci.i2ub` ends: as a recorded difference, or removed.
-- **Background:** the book computes the limit from intermediate values rounded to four digits, so its last printed digit differs from the exact
+- **Background:** the book computes the limit from ln H and B rounded to four digits, with z = 1.96, so its last printed digit differs from the exact
   result by 0.0051. All other values of the same chapter agree with metafopy. Metafopy's value follows equation 16.25 exactly.
 - **What it affects:** one case in `src/tests/correctness/cases/published.toml`; with *follow the reference* also the `ht` branch of
   `src/metafopy/methods/confint.py`, the R parity fixtures and `docs/differences.md`.
