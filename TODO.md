@@ -14,6 +14,8 @@ Found on 2026-11-12 by the property tests of the correctness-tests task list (Ta
 Fix direction: give `I2` the value 0 when `QE` is 0 (as R does), keep `H2 = QE / (k - p)`, and add a regression test with identical effects for each
 of `EE`, `FE` and `CE`. Check the random-effects branch and `rma_mh`, `rma_peto` for the same division.
 
+Spec: none (small item); tasks: `agents/tasks/rma-uni-zero-q/tasks-1.md`.
+
 ## confint type "ht" of a REML fit centres on the fit's H2, not on H from Q
 
 Found on 2026-11-12 by the correctness tests (case `confint.ht.reml.bcg.none` in `src/tests/correctness/cases/inference.toml`, strict expected failure);
@@ -28,6 +30,8 @@ fixture value `ht_ci` in `src/tests/reference/extras/rma_uni_help.json` (read by
 for the reason; add a `src/audit/data/known.toml` entry so `bin/metafor-audit.sh` accepts the difference; add the section "Where metafor departs from its
 reference" to `docs/differences.md` (the heading does not exist yet), naming this interval.
 
+Spec: none (small item); tasks: `agents/tasks/confint-ht-centre/tasks-1.md`.
+
 ## The correctness harness cannot check exp(beta), prediction intervals or test-based tau2 and I2 intervals
 
 Found on 2026-11-12 by Task 14 of the correctness-tests task list (`agents/tasks/correctness-tests/tasks-1.md`), recorded in
@@ -39,6 +43,8 @@ were prediction intervals and the test-based tau2 and I2 intervals of Higgins an
 Fix direction: add `check` functions (the `"<test module>.<function>"` form `parse_case` already accepts) for a back-transformed estimate, for
 `predict` intervals and for the `confint` I2 and H2 bounds, then write the published cases the supplied sources in `/Users/simonb/src/metafopy papers`
 support.
+
+Spec: none (small item); tasks: `agents/tasks/correctness-harness-checks/tasks-1.md`.
 
 ## QE and the moment tau2 estimators centre yi in models without an intercept
 
@@ -57,6 +63,8 @@ change); add a derived correctness case for QE and each moment estimator on the 
 mark the R parity fixtures that hold a no-intercept QE or tau2 as differing; add a `src/audit/data/known.toml` entry, and name the difference in
 `docs/differences.md` under "Where metafor departs from its reference" (the section the `ht` item above adds).
 
+Spec: none (small item); tasks: `agents/tasks/qe-no-intercept/tasks-1.md`.
+
 ## Extend the correctness tests beyond the core models
 
 Found on 2026-11-12 while reviewing `TODO.md`: the correctness-tests spec (`agents/specs/correctness-tests/spec.md`, introduction) covers `escalc`,
@@ -65,3 +73,8 @@ Found on 2026-11-12 while reviewing `TODO.md`: the correctness-tests spec (`agen
 
 Fix direction: one spec per area with `/specdev`, each listing its defining references, the sources to fetch or ask the user for, and its coverage items in
 `src/tests/correctness/test_coverage.py`; do the harness item above first, since several of these areas report back-transformed or interval values.
+
+Spec: `agents/specs/correctness-mv-robust/spec.md`; tasks: `agents/tasks/correctness-mv-robust/tasks-1.md`. Spec:
+`agents/specs/correctness-glmm/spec.md`; tasks: `agents/tasks/correctness-glmm/tasks-1.md`. Spec: `agents/specs/correctness-location-scale/spec.md`;
+tasks: `agents/tasks/correctness-location-scale/tasks-1.md`. Spec: `agents/specs/correctness-publication-bias/spec.md`; tasks:
+`agents/tasks/correctness-publication-bias/tasks-1.md`.

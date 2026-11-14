@@ -131,3 +131,7 @@ Read from the review page on 2026-11-13 (answers saved 06:14 UTC); no comments w
 
 Applied on 2026-11-13: each spec is at version 1.1, with its answered decisions under a "Decisions" section. R `glmmML` 1.1.7 and `weightr` 2.0.2 were
 installed in `/Users/simonb/.local/share/metafopy/r-correctness-lib`; `src/audit/data/r-versions.json` is unchanged.
+
+On 2026-11-14, asked in chat after the task list for the QE fix measured its extent, the user widened D1: the fix also covers the ML, REML and EB
+estimators, whose Fisher scoring steps use the same centred `yi`. On `dat.bangertdrowns2004` with `mods = ni/100` and no intercept, metafopy's REML
+tau2 is 0.0388 and ML 0.0346, while the REML and ML likelihoods of the uncentred data peak at 0.0930 and 0.0874.
