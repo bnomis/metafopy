@@ -4,6 +4,8 @@ The data come from the bundled datasets only; the effect sizes of ``dat.bcg`` ar
 """
 
 import itertools
+import pathlib
+import tomllib
 
 import numpy
 import numpy.typing
@@ -105,3 +107,14 @@ def test_reference_fit_raises_when_nothing_converges() -> None:
     yi, vi, X, Z = bcg()
     with pytest.raises(RuntimeError, match='no start converged'):
         correctness.formulas.ls_reference_fit(yi, vi, X, Z, 'log', 'ML', maxiter=1)
+
+
+def test_inline_columns_are_the_recoding_of_the_dataset() -> None:
+    """The inline ``yi``, ``vi`` and ``ni100`` of the no-intercept heterogeneity case are the dataset's ``yi`` and ``vi`` and ``ni / 100``."""
+    path = pathlib.Path(__file__).parent / 'cases' / 'location_scale.toml'
+    cases = tomllib.loads(path.read_text(encoding='utf-8'))['case']
+    inline = next(c['data'] for c in cases if c['id'] == 'ls.heterogeneity.bdni')
+    frame = metafopy.datasets.load('dat.bangertdrowns2004')
+    assert inline['yi'] == frame['yi'].tolist()
+    assert inline['vi'] == frame['vi'].tolist()
+    assert inline['ni100'] == pytest.approx((frame['ni'] / 100).tolist(), rel=1e-15)

@@ -421,3 +421,11 @@ def cr2_is_unbiased_under_the_working_model(case: correctness.cases.Case, result
         shocked = refit_with(case, yi=factor[:, column])
         total += metafopy.robust(shocked, **case.then.args).vb
     close(case.id, 'expected CR2 variance', total, bread, case.tolerance or ROBUST_AGREEMENT)
+
+
+def ls_loglik_not_below_reference(case: correctness.cases.Case, result: typing.Any) -> None:
+    """metafopy's log-likelihood is at least that of the independent maximisation, less ``1e-9``: a fit below it has stopped short of the maximum."""
+    reference = correctness.test_derived.ls_reference(case)
+    actual = float(result.logLik(REML=case.args['method'] == 'REML'))
+    if actual < reference['ll'] - correctness.test_derived.LS_LOGLIK:
+        raise AssertionError(f'{case.id}: metafopy gives log-likelihood {actual!r}, below the reference maximum {reference["ll"]!r}')

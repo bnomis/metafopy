@@ -1,0 +1,77 @@
+# Correctness tests, location-scale models: mismatches and sources needed
+
+**Spec:** `agents/specs/correctness-location-scale/spec.md`
+**Task list:** `agents/tasks/correctness-location-scale/tasks-1.md` (Task 11 completes this document and publishes its page)
+**Review page:** not yet published (Task 11 publishes it, once Tasks 4 to 10 have appended their items)
+
+## What is reviewed and how
+
+The case-writing tasks compared metafopy with the defining publication first and R metafor second. This document holds every case where the
+reference and metafopy disagree (one mismatch item may cover several cases with one cause), and every source that could not be read. For each mismatch
+you choose *follow the reference*, *keep metafor* or *investigate*. The list stops until every item has an answer.
+
+## Automatic checks
+
+Left for Task 11, which runs them once every task has appended its items.
+
+## Mismatches
+
+### The identity-link fit stops about 1e-5 short of the maximum
+
+- **Cases** (all in `src/tests/correctness/cases/location_scale.toml`, strict expected failures): `ls.fit.ML.identity.bd`, `ls.fit.REML.identity.bd`,
+  `ls.fit.ML.identity.bcg`, `ls.fit.REML.identity.bcg` (the fit against the reference) and `property.ls.fit.ML.identity.bd`,
+  `property.ls.fit.REML.identity.bd`, `property.ls.fit.ML.identity.bcg`, `property.ls.fit.REML.identity.bcg` (metafopy's log-likelihood is not below
+  the reference's by more than 1e-9).
+- **Source:** Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Res Synth Methods 13:697-715, doi:10.1002/jrsm.1562,
+  equations 3 (identity link), 7 (ML) and 9 (REML); the reference is `formulas.ls_reference_fit` (BFGS, SLSQP with `Z alpha >= 0` for the identity
+  link, then Nelder-Mead), which checks its own result against the analytic score.
+- **Reference values** (`dat.bangertdrowns2004` with `imag` in both parts, and `dat.bcg` log risk ratio with `ablat` in both parts):
+
+  | Case | alpha, reference | alpha, metafopy | log-likelihood, reference | log-likelihood, metafopy |
+  |---|---|---|---|---|
+  | ML, `bd` | 0.03402053, 0.23031694 | 0.03401541, 0.23040472 | -17.058054672888 | -17.058054743801 |
+  | REML, `bd` | 0.03699443, 0.42990534 | 0.03698802, 0.42979705 | -16.893376921444 | -16.893376988271 |
+  | ML, `bcg` | -0.02665867, 0.00205067 | -0.02667603, 0.002052 | -7.139288817730 | -7.139288984088 |
+  | REML, `bcg` | 0.33913546, -0.0061661 | 0.33905883, -0.00616471 | -7.988765268276 | -7.988765308005 |
+
+  The coefficients differ by about 1e-5 relative to the largest (the case tolerance is 1e-6) and the log-likelihood by 1e-8 to 2e-7 (the tolerance is
+  1e-9). Under the log link every comparison agrees to better than 1e-9. The reference ends at a higher log-likelihood than metafopy in all four fits,
+  and it satisfies `Z alpha >= 0` (the `bcg` ML optimum is on the boundary, `tau2_i = 0` for the study with the smallest `ablat`, in both fits).
+- **metafor:** no parity fixture in `src/tests/reference/phase5/location_scale.json` fits these models with the identity link, so metafor's own
+  values are not on record here; `src/tests/test_rma_ls.py` accepts the identity-link fits at `OPT = 1e-4` against metafor. Task 10 runs R only for
+  glmmTMB, which has no identity link. The convergence setting of metafopy's identity-link optimiser follows metafor's `constrOptim`.
+- **Options:** follow the reference (a `TODO.md` item to polish the identity-link optimum, for example by a final Newton step on the score, after
+  which the cases pass); keep metafor (the cases are loosened to 1e-4, the tolerance the metafor parity tests use, so the optimiser stays as
+  metafor's); investigate (run metafor's identity-link fit on these four models, compare its log-likelihood with the reference, then decide).
+
+### Decision: how close the identity-link fit must be to the maximum
+
+- **What is decided:** whether metafopy's identity-link fit must reach the maximum to 1e-9 in the log-likelihood, as the log-link fit does, or only to
+  the tolerance of metafor's optimiser.
+- **Background:** the cases are strict expected failures. The spec sets 1e-6 relative for coefficients and 1e-9 for the log-likelihood, a tolerance it
+  chose for a maximum the optimiser reaches; the log-link fit meets it. The identity-link fit is constrained, and metafopy's constrained optimiser stops
+  earlier (dated 2026-11-15, on the four fits above).
+- **What it affects:** `src/metafopy/models/rma_ls_opt.py` and `rma_ls_fit.py` (if followed), the identity-link tolerance of the parity tests, and
+  `docs/differences.md`.
+- **Options:**
+  - *Follow the reference*: a `TODO.md` item to tighten the identity-link optimum; the eight cases pass after the fix.
+  - *Keep metafor*: the cases are rewritten at 1e-4; the optimiser stays as metafor's, and `docs/differences.md` records the tolerance.
+  - *Investigate*: the cases stay strict expected failures and nothing is filed; metafor's value is read first.
+- **Recommendation:** *investigate*, because metafor's own identity-link log-likelihood on these four models is not on record, and the answer decides
+  whether this is a metafopy defect or the shared optimiser's tolerance.
+
+## Left for a later spec
+
+- `optbeta=True` under REML: `ls_reference_fit` has no joint objective, and a joint maximisation over beta and alpha under REML is a different
+  objective from equation 9, so `ls.optbeta` is derived under ML only.
+- The deviance of `ls.fitstats.*`: the paper defines none, so the derived cases compare the log-likelihood, AIC, BIC and AICc only.
+- `vb` of an `optbeta=True` fit: metafopy takes it from the joint information matrix; no reference covers that matrix, so the `ls.optbeta` cases compare
+  `alpha`, `beta`, `tau2` and the log-likelihood.
+
+## Sources needed
+
+None so far (Task 2 found every source present).
+
+## Answers
+
+Left empty for the user's verdicts.

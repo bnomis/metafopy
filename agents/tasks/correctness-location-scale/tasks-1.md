@@ -204,7 +204,7 @@ information, and maximises it independently of metafopy.
 
 ## Task 4: Derived cases for the fits, fit statistics and heterogeneity
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** Coverage list (`ls.fit.*`, `ls.optbeta`, `ls.fitstats.*`, `ls.heterogeneity.*`); Implementation step 3
@@ -213,32 +213,32 @@ information, and maximises it independently of metafopy.
 
 **Subtasks:**
 
-- [ ] Check functions in `src/tests/correctness/test_derived.py`, in the pattern of the existing `confint_*` checks: one fitting the reference with the
+- [x] Check functions in `src/tests/correctness/test_derived.py`, in the pattern of the existing `confint_*` checks: one fitting the reference with the
       case's data, method and link and comparing `alpha`, `beta`, `vb`, `tau2` and the log-likelihood; one for the fit statistics; one for `QE`, `I2`,
       `H2`
-- [ ] `ls.fit.<method>.<link>` for each method and link: one moderator in both parts, on `dat.bangertdrowns2004` and on `dat.bcg` (log risk ratio,
+- [x] `ls.fit.<method>.<link>` for each method and link: one moderator in both parts, on `dat.bangertdrowns2004` and on `dat.bcg` (log risk ratio,
       `ablat`). Tolerances: `1e-6` relative for alpha, beta and their variances, `1e-9` for the log-likelihood
-- [ ] A `property` case per fit item: metafopy's log-likelihood is not below `ls_reference_fit`'s by more than `1e-9`
-- [ ] `ls.optbeta`: `optbeta=True` under `ML`, against `ls_reference_fit` (the joint and the profile ML maximum coincide)
-- [ ] `ls.fitstats.ML`, `ls.fitstats.REML`: log-likelihood, AIC, BIC and AICc from `ls_loglik` at the reference optimum and the parameter count (AICc
+- [x] A `property` case per fit item: metafopy's log-likelihood is not below `ls_reference_fit`'s by more than `1e-9`
+- [x] `ls.optbeta`: `optbeta=True` under `ML`, against `ls_reference_fit` (the joint and the profile ML maximum coincide)
+- [x] `ls.fitstats.ML`, `ls.fitstats.REML`: log-likelihood, AIC, BIC and AICc from `ls_loglik` at the reference optimum and the parameter count (AICc
       with `k - p` observations under REML), each formula citing its source; the deviance as below
-- [ ] `ls.heterogeneity.QE` as Cochran's `y' P y` with `P` at the fitted `tau2_i`, with and without an intercept; the no-intercept case is
+- [x] `ls.heterogeneity.QE` as Cochran's `y' P y` with `P` at the fitted `tau2_i`, with and without an intercept; the no-intercept case is
       `dat.bangertdrowns2004` with `mods = ni/100`, `intercept=False` (Cochran's value 135.998 on 2026-11-12). `I2` and `H2` per study, from Higgins and
       Thompson (2002) with the typical within-study variance
-- [ ] Rescaled and recoded columns (`ni/100`, the `subject` indicators) go in the case as inline `[case.data]` columns, with a comment naming the
+- [x] Rescaled and recoded columns (`ni/100`, the `subject` indicators) go in the case as inline `[case.data]` columns, with a comment naming the
       authors' code they come from; add a harness test that the inline columns equal the recoding of `dat.bangertdrowns2004`
-- [ ] Record any mismatch as the header says
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] The derived gate lists none of these items
-- [ ] The no-intercept QE case expects Cochran's value; if metafopy gives another, the case is a mismatch, not a changed expectation
+- [x] The derived gate lists none of these items
+- [x] The no-intercept QE case expects Cochran's value; if metafopy gives another, the case is a mismatch, not a changed expectation
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_properties.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_properties.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 
@@ -249,6 +249,7 @@ information, and maximises it independently of metafopy.
 - **Caveat:** spec unclear: the deviance's definition is not given. Decided: take it from the paper if it defines one; otherwise leave the deviance
   out of the derived case, say so in the case's comment, and compare log-likelihood, AIC, BIC and AICc only
 - `QE` of the no-intercept model is computed in `rma_ls_fit.py` (the heterogeneity block); the `qe-no-intercept` list changes it there
+- Done 2026-11-15. QE is Cochran Q with the inverse-variance weights (135.998 for the no-intercept case, which metafopy now returns), not the quadratic form at the fitted `tau2_i`; the subtask's wording was loose. The identity-link cases (four fit cases and four property cases) are mismatches, one item in `mismatches.md`. `ls.optbeta` leaves `vb` out (the joint fit takes it from the joint information matrix). `ls_reference_fit` gained starts from the log-link optimum for the identity link, an infeasibility guard for `Z alpha < 0` in its polish, and a return of `None` from `ls_components` for a singular `X'WX`, so a line search that overshoots no longer raises.
 
 ---
 

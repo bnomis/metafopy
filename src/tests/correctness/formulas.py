@@ -2529,6 +2529,9 @@ def saddlepoint_pvalue(X: FloatArray, W: FloatArray, theta: FloatArray, cluster:
 # --- Location-scale models: Viechtbauer and Lopez-Lopez (2022), Res Synth Methods 13:697-715, doi:10.1002/jrsm.1562 ---
 
 
+IDENTITY_SLACK = 1e-10  # the amount by which SLSQP may leave Z alpha >= 0 before the reference treats alpha as infeasible
+
+
 def ls_tau2(Z: FloatArray, alpha: FloatArray, link: str) -> FloatArray:
     """The scale model ``tau2_i = exp(z_i' alpha)`` (log link) or ``z_i' alpha`` (identity link): equations 2 and 3 of Viechtbauer and Lopez-Lopez (2022).
 
@@ -2555,12 +2558,18 @@ def ls_derivatives(Z: FloatArray, alpha: FloatArray, link: str) -> tuple[FloatAr
 def ls_components(
     yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, alpha: FloatArray, link: str
 ) -> tuple[FloatArray, FloatArray, FloatArray, FloatArray, FloatArray] | None:
-    """``M = V + diag(tau2)`` (its diagonal), ``W = M^-1``, ``(X'WX)^-1``, ``beta`` (equation 6) and ``P`` (equation 8); ``None`` when ``M`` is not positive."""
+    """``M = V + diag(tau2)`` (its diagonal), ``W = M^-1``, ``(X'WX)^-1``, ``beta`` (equation 6) and ``P`` (equation 8).
+
+    ``None`` when ``M`` is not positive or ``X'WX`` is singular.
+    """
     m = vi + ls_tau2(Z, alpha, link)
     if not bool(numpy.all(numpy.isfinite(m))) or not bool(numpy.all(m > 0)):
         return None
     W = numpy.diag(1 / m)
-    A_inv = numpy.linalg.inv(X.T @ W @ X)
+    try:
+        A_inv = numpy.linalg.inv(X.T @ W @ X)
+    except numpy.linalg.LinAlgError:
+        return None
     beta = A_inv @ X.T @ W @ yi
     P = W - W @ X @ A_inv @ X.T @ W
     return m, W, A_inv, beta, P
@@ -2646,6 +2655,19 @@ def ls_starts(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, link
     return out
 
 
+def ls_identity_starts(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, method: str) -> list[FloatArray]:
+    """Starting values for the identity link from the log-link optimum: ``alpha`` that reproduces its ``tau2_i`` by least squares, and the same with a
+    boundary-ward shift. The restricted likelihood of the identity link can have several optima, and the moment-based starts reach only one."""
+    try:
+        fitted = ls_reference_fit(yi, vi, X, Z, 'log', method)
+    except RuntimeError:
+        return []
+    alpha = numpy.linalg.lstsq(Z, fitted['tau2'], rcond=None)[0]
+    shifted = alpha.copy()
+    shifted[0] -= float(numpy.min(Z @ alpha))
+    return [alpha, shifted]
+
+
 def ls_reference_fit(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, link: str, method: str, maxiter: int = 2000) -> dict[str, typing.Any]:
     """Maximise ``ls_loglik`` with ``scipy.optimize``, independently of metafopy.
 
@@ -2655,15 +2677,22 @@ def ls_reference_fit(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArra
     """
 
     def negative(alpha: FloatArray) -> float:
+        if link == 'identity' and float(numpy.min(Z @ alpha)) < -IDENTITY_SLACK:
+            return math.inf
         value = ls_loglik(yi, vi, X, Z, alpha, link, method)
         return math.inf if value == -math.inf else -value
 
     def gradient(alpha: FloatArray) -> FloatArray:
+        if ls_components(yi, vi, X, Z, alpha, link) is None:
+            return numpy.full(len(alpha), numpy.nan)
         return -ls_score(yi, vi, X, Z, alpha, link, method)
 
     converged: list[scipy.optimize.OptimizeResult] = []
     messages: list[str] = []
-    for start in ls_starts(yi, vi, X, Z, link):
+    starts = ls_starts(yi, vi, X, Z, link)
+    if link == 'identity':
+        starts.extend(ls_identity_starts(yi, vi, X, Z, method))
+    for start in starts:
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             if link == 'log':
@@ -2694,4 +2723,42 @@ def ls_reference_fit(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArra
         'tau2': ls_tau2(Z, alpha, link),
         'll': ls_loglik(yi, vi, X, Z, alpha, link, method),
         'va': numpy.linalg.inv(ls_information(yi, vi, X, Z, alpha, link, method)),
+    }
+
+
+def ls_cochran_q(yi: FloatArray, vi: FloatArray, X: FloatArray) -> float:
+    """Cochran's ``Q = y' P(W(0)) y`` with ``W(0) = diag(1 / vi)``: the heterogeneity statistic ``QE`` of a location model, with or without an intercept.
+
+    Cochran (1954); the quadratic form is that of equation 8 of Viechtbauer and Lopez-Lopez (2022) at ``tau2 = 0``. It does not centre ``yi``.
+    """
+    return float(yi @ projection(1 / vi, X) @ yi)
+
+
+def ls_typical_variance(vi: FloatArray, X: FloatArray) -> float:
+    """The typical within-study variance ``vt = (k - p) / tr(P(W(0)))`` of Higgins and Thompson (2002), Stat Med 21:1539-1558, equation 9."""
+    return float(X.shape[0] - X.shape[1]) / float(numpy.trace(projection(1 / vi, X)))
+
+
+def ls_i2(tau2: FloatArray, vt: float) -> FloatArray:
+    """``I2_i = 100 tau2_i / (vt + tau2_i)`` per study, in percent: Higgins and Thompson (2002), equation 9, with the heterogeneity of study ``i``."""
+    return 100 * tau2 / (vt + tau2)
+
+
+def ls_h2(tau2: FloatArray, vt: float) -> FloatArray:
+    """``H2_i = (vt + tau2_i) / vt`` per study: Higgins and Thompson (2002), equation 7, with the heterogeneity of study ``i``."""
+    return (vt + tau2) / vt
+
+
+def ls_fitstats(ll: float, parms: int, n: int) -> dict[str, float]:
+    """The information criteria of a fit with log-likelihood ``ll`` and ``parms`` estimated parameters on ``n`` observations.
+
+    ``AIC = -2 ll + 2 parms`` (Akaike, 1974), ``BIC = -2 ll + parms ln n`` (Schwarz, 1978) and
+    ``AICc = -2 ll + 2 parms n / (n - parms - 1)`` (Hurvich and Tsai, 1989). ``n`` is ``k`` under ML and ``k - p`` under REML, as in Table 3 of
+    Viechtbauer and Lopez-Lopez (2022).
+    """
+    return {
+        'll': ll,
+        'AIC': -2 * ll + 2 * parms,
+        'BIC': -2 * ll + parms * math.log(n),
+        'AICc': -2 * ll + 2 * parms * n / (n - parms - 1),
     }

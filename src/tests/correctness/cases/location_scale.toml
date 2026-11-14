@@ -5,3 +5,266 @@
 # case as well, so the file sets derived_required below.
 
 derived_required = ["ls."]
+
+# Task 4 of agents/tasks/correctness-location-scale/tasks-1.md: the fits, the fit statistics and the heterogeneity statistics, each against
+# formulas.ls_reference_fit (BFGS and Nelder-Mead on the likelihood of equations 7 and 9, with the identity link constrained to tau2_i >= 0).
+# Datasets: dat.bangertdrowns2004 with the moderator imag in both parts, dat.bcg (log risk ratio) with ablat in both parts. The identity-link fits
+# are mismatches: metafopy stops about 1e-5 short of the maximum there (see agents/specs/correctness-location-scale/mismatches.md).
+# ls.optbeta is derived under ML only (see the check ls_optbeta). The deviance of ls.fitstats.* is not compared: the paper defines none, so only the
+# log-likelihood, AIC, BIC and AICc are. QE is Cochran Q with the inverse-variance weights, not the quadratic form at the fitted tau2_i. The inline
+# columns of ls.heterogeneity.bdni are dat.bangertdrowns2004 yi and vi, with ni100 = ni / 100 (the rescaling the paper's authors apply to total sample size);
+# test_formulas_ls.py checks them against the dataset.
+
+[[case]]
+id = "ls.fit.ML.log.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log" }
+check = "test_derived.ls_fit"
+covers = ["ls.fit.ML.log"]
+
+[[case]]
+id = "ls.fit.ML.identity.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "identity" }
+check = "test_derived.ls_fit"
+covers = ["ls.fit.ML.identity"]
+status = "mismatch"
+reason = "ls.fit.ML.identity.bd: alpha: metafopy gives array([0.03401541, 0.23040472]), the reference gives array([0.03402053, 0.23031694]) (tolerance 1e-06)"
+
+[[case]]
+id = "ls.fit.REML.log.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log" }
+check = "test_derived.ls_fit"
+covers = ["ls.fit.REML.log"]
+
+[[case]]
+id = "ls.fit.REML.identity.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "identity" }
+check = "test_derived.ls_fit"
+covers = ["ls.fit.REML.identity"]
+status = "mismatch"
+reason = "ls.fit.REML.identity.bd: alpha: metafopy gives array([0.03698802, 0.42979705]), the reference gives array([0.03699443, 0.42990534]) (tolerance 1e-06)"
+
+[[case]]
+id = "ls.fit.ML.log.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log" }
+check = "test_derived.ls_fit"
+covers = ["ls.fit.ML.log"]
+
+[[case]]
+id = "ls.fit.ML.identity.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "identity" }
+check = "test_derived.ls_fit"
+covers = ["ls.fit.ML.identity"]
+status = "mismatch"
+reason = "ls.fit.ML.identity.bcg: alpha: metafopy gives array([-0.02667603, 0.002052 ]), the reference gives array([-0.02665867, 0.00205067]) (tolerance 1e-06)"
+
+[[case]]
+id = "ls.fit.REML.log.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log" }
+check = "test_derived.ls_fit"
+covers = ["ls.fit.REML.log"]
+
+[[case]]
+id = "ls.fit.REML.identity.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "identity" }
+check = "test_derived.ls_fit"
+covers = ["ls.fit.REML.identity"]
+status = "mismatch"
+reason = "ls.fit.REML.identity.bcg: alpha: metafopy gives array([ 0.33905883, -0.00616471]), the reference gives array([ 0.33913546, -0.0061661 ]) (tolerance 1e-06)"
+
+[[case]]
+id = "property.ls.fit.ML.log.bd"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log" }
+check = "test_properties.ls_loglik_not_below_reference"
+covers = ["ls.fit.ML.log"]
+
+[[case]]
+id = "property.ls.fit.ML.identity.bd"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "identity" }
+check = "test_properties.ls_loglik_not_below_reference"
+covers = ["ls.fit.ML.identity"]
+status = "mismatch"
+reason = "property.ls.fit.ML.identity.bd: metafopy gives log-likelihood -17.058054743801463, below the reference maximum -17.058054672888463"
+
+[[case]]
+id = "property.ls.fit.REML.log.bd"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log" }
+check = "test_properties.ls_loglik_not_below_reference"
+covers = ["ls.fit.REML.log"]
+
+[[case]]
+id = "property.ls.fit.REML.identity.bd"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "identity" }
+check = "test_properties.ls_loglik_not_below_reference"
+covers = ["ls.fit.REML.identity"]
+status = "mismatch"
+reason = "property.ls.fit.REML.identity.bd: metafopy gives log-likelihood -16.89337698827091, below the reference maximum -16.893376921444037"
+
+[[case]]
+id = "property.ls.fit.ML.log.bcg"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log" }
+check = "test_properties.ls_loglik_not_below_reference"
+covers = ["ls.fit.ML.log"]
+
+[[case]]
+id = "property.ls.fit.ML.identity.bcg"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "identity" }
+check = "test_properties.ls_loglik_not_below_reference"
+covers = ["ls.fit.ML.identity"]
+status = "mismatch"
+reason = "property.ls.fit.ML.identity.bcg: metafopy gives log-likelihood -7.139288984087829, below the reference maximum -7.1392888177296445"
+
+[[case]]
+id = "property.ls.fit.REML.log.bcg"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log" }
+check = "test_properties.ls_loglik_not_below_reference"
+covers = ["ls.fit.REML.log"]
+
+[[case]]
+id = "property.ls.fit.REML.identity.bcg"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "identity" }
+check = "test_properties.ls_loglik_not_below_reference"
+covers = ["ls.fit.REML.identity"]
+status = "mismatch"
+reason = "property.ls.fit.REML.identity.bcg: metafopy gives log-likelihood -7.988765308004603, below the reference maximum -7.988765268275909"
+
+[[case]]
+id = "ls.optbeta.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log", optbeta = true }
+check = "test_derived.ls_optbeta"
+covers = ["ls.optbeta"]
+
+[[case]]
+id = "ls.optbeta.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log", optbeta = true }
+check = "test_derived.ls_optbeta"
+covers = ["ls.optbeta"]
+
+[[case]]
+id = "ls.fitstats.ML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log" }
+check = "test_derived.ls_fitstats"
+covers = ["ls.fitstats.ML"]
+
+[[case]]
+id = "ls.fitstats.REML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log" }
+check = "test_derived.ls_fitstats"
+covers = ["ls.fitstats.REML"]
+
+[[case]]
+id = "ls.fitstats.ML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log" }
+check = "test_derived.ls_fitstats"
+covers = ["ls.fitstats.ML"]
+
+[[case]]
+id = "ls.fitstats.REML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log" }
+check = "test_derived.ls_fitstats"
+covers = ["ls.fitstats.REML"]
+
+[[case]]
+id = "ls.heterogeneity.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log" }
+check = "test_derived.ls_heterogeneity"
+covers = ["ls.heterogeneity.QE", "ls.heterogeneity.I2", "ls.heterogeneity.H2"]
+
+[[case]]
+id = "ls.heterogeneity.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log" }
+check = "test_derived.ls_heterogeneity"
+covers = ["ls.heterogeneity.QE", "ls.heterogeneity.I2", "ls.heterogeneity.H2"]
+
+[[case]]
+id = "ls.heterogeneity.bdni"
+kind = "derived"
+function = "rma_uni"
+data = { yi = [0.65, -0.75, -0.21, -0.04, 0.23, 0.03, 0.26, 0.06, 0.06, 0.12, 0.77, 0.0, 0.52, 0.54, 0.2, 0.2, -0.16, 0.42, 0.6, 0.51, 0.58, 0.54, 0.09, 0.37, -0.01, -0.13, 0.18, 0.27, -0.02, 0.33, 0.59, 0.84, -0.32, 0.12, 1.12, -0.12, -0.44, -0.07, 0.7, 0.49, 0.2, 0.58, 0.15, 0.63, 0.04, 1.46, 0.04, 0.25], vi = [0.07, 0.126, 0.042, 0.019, 0.022, 0.009, 0.106, 0.007, 0.04, 0.052, 0.107, 0.021, 0.037, 0.083, 0.086, 0.091, 0.167, 0.052, 0.091, 0.065, 0.073, 0.061, 0.1, 0.06, 0.083, 0.037, 0.069, 0.018, 0.009, 0.053, 0.017, 0.112, 0.06, 0.044, 0.129, 0.023, 0.205, 0.033, 0.265, 0.039, 0.021, 0.067, 0.014, 0.168, 0.016, 0.099, 0.087, 0.072], ni100 = [0.6, 0.34, 0.95, 2.09, 1.82, 4.62, 0.38, 5.42, 0.99, 0.77, 0.4, 1.9, 1.13, 0.5, 0.47, 0.44, 0.24, 0.78, 0.46, 0.64, 0.57, 0.68, 0.4, 0.68, 0.48, 1.07, 0.58, 2.25, 4.46, 0.77, 2.43, 0.39, 0.67, 0.91, 0.36, 1.77, 0.2, 1.2, 0.16, 1.05, 1.95, 0.62, 2.89, 0.25, 2.5, 0.51, 0.46, 0.56] }
+args = { yi = "yi", vi = "vi", mods = "~ 0 + ni100", scale = "~ 1", method = "ML", link = "log" }
+check = "test_derived.ls_heterogeneity"
+covers = ["ls.heterogeneity.QE", "ls.heterogeneity.I2", "ls.heterogeneity.H2"]
+

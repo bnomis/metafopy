@@ -544,3 +544,75 @@ def irr_cm_al_is_cm_el(case: correctness.cases.Case, result: typing.Any) -> None
             raise AssertionError(f'{case.id}: {name} of CM.AL is {getattr(result, name)!r}, of CM.EL {getattr(exact, name)!r}')
     if result.fit_stats_ml.ll != exact.fit_stats_ml.ll:
         raise AssertionError(f'{case.id}: ll of CM.AL is {result.fit_stats_ml.ll!r}, of CM.EL {exact.fit_stats_ml.ll!r}')
+
+
+LS_RELATIVE = 1e-6
+LS_LOGLIK = 1e-9
+
+
+def ls_inputs(case: correctness.cases.Case) -> tuple[FloatArray, FloatArray, FloatArray, FloatArray]:
+    """``yi``, ``vi`` and the location and scale model matrices of a location-scale case, built from the case's data and its ``mods`` and ``scale``."""
+    frame = correctness.cases.case_frame(case)
+    assert frame is not None
+    yi, vi = frame[case.args['yi']].to_numpy(dtype=numpy.float64), frame[case.args['vi']].to_numpy(dtype=numpy.float64)
+    return yi, vi, design_matrix(frame, case.args.get('mods')), design_matrix(frame, case.args.get('scale'))
+
+
+def ls_reference(case: correctness.cases.Case) -> dict[str, typing.Any]:
+    """``formulas.ls_reference_fit`` for the case's data, ``method`` and ``link``; a failure to converge names the case and the step."""
+    yi, vi, X, Z = ls_inputs(case)
+    try:
+        return correctness.formulas.ls_reference_fit(yi, vi, X, Z, case.args.get('link', 'log'), case.args['method'])
+    except RuntimeError as err:
+        raise AssertionError(f'{case.id}: the reference fit did not converge (the optimiser messages are in the chained error)') from err
+
+
+def ls_agree(case: correctness.cases.Case, name: str, actual: typing.Any, expected: typing.Any, tolerance: float) -> None:
+    """``actual`` equals ``expected`` to ``tolerance`` of the largest absolute value in ``expected``."""
+    actual_array, expected_array = numpy.asarray(actual, dtype=numpy.float64), numpy.asarray(expected, dtype=numpy.float64)
+    allowed = tolerance * float(numpy.max(numpy.abs(expected_array)))
+    if not numpy.all(numpy.abs(actual_array - expected_array) <= allowed):
+        raise AssertionError(f'{case.id}: {name}: metafopy gives {actual!r}, the reference gives {expected!r} (tolerance {tolerance:g})')
+
+
+def ls_fit(case: correctness.cases.Case, result: typing.Any) -> None:
+    """The coefficients, their covariance, ``tau2_i`` and the log-likelihood against the independent maximisation of equations 7 and 9."""
+    reference = ls_reference(case)
+    ls_agree(case, 'alpha', result.alpha, reference['alpha'], LS_RELATIVE)
+    ls_agree(case, 'beta', result.beta, reference['beta'], LS_RELATIVE)
+    ls_agree(case, 'vb', result.vb, reference['vb'], LS_RELATIVE)
+    ls_agree(case, 'tau2', result.tau2, reference['tau2'], LS_RELATIVE)
+    ls_agree(case, 'logLik', float(result.logLik(REML=case.args['method'] == 'REML')), reference['ll'], LS_LOGLIK)
+
+
+def ls_optbeta(case: correctness.cases.Case, result: typing.Any) -> None:
+    """With ``optbeta=True`` the joint and the profile ML maximum coincide, so ``alpha``, ``beta``, ``tau2_i`` and the log-likelihood match the profile fit.
+
+    ``vb`` is not compared: the joint fit takes it from the information matrix of ``beta`` and ``alpha`` together, not from equation 10, which is the
+    covariance of ``beta`` with ``alpha`` held at its estimate.
+    """
+    reference = ls_reference(case)
+    for name in ('alpha', 'beta', 'tau2'):
+        ls_agree(case, name, getattr(result, name), reference[name], LS_RELATIVE)
+    ls_agree(case, 'logLik', float(result.logLik(REML=False)), reference['ll'], LS_LOGLIK)
+
+
+def ls_fitstats(case: correctness.cases.Case, result: typing.Any) -> None:
+    """Log-likelihood, AIC, BIC and AICc against the formulas at the reference optimum; the deviance is not compared, as the paper defines none."""
+    reference = ls_reference(case)
+    yi, _, X, Z = ls_inputs(case)
+    reml = case.args['method'] == 'REML'
+    expected = correctness.formulas.ls_fitstats(reference['ll'], X.shape[1] + Z.shape[1], len(yi) - X.shape[1] if reml else len(yi))
+    actual = result.fit_stats_reml if reml else result.fit_stats_ml
+    for name, value in expected.items():
+        ls_agree(case, name, getattr(actual, name), value, LS_LOGLIK)
+
+
+def ls_heterogeneity(case: correctness.cases.Case, result: typing.Any) -> None:
+    """``QE`` as Cochran's ``y' P y`` with the inverse-variance weights, and ``I2`` and ``H2`` per study at the reference ``tau2_i``."""
+    reference = ls_reference(case)
+    yi, vi, X, _ = ls_inputs(case)
+    vt = correctness.formulas.ls_typical_variance(vi, X)
+    ls_agree(case, 'QE', result.QE, correctness.formulas.ls_cochran_q(yi, vi, X), LS_RELATIVE)
+    ls_agree(case, 'I2', result.I2, correctness.formulas.ls_i2(reference['tau2'], vt), LS_RELATIVE)
+    ls_agree(case, 'H2', result.H2, correctness.formulas.ls_h2(reference['tau2'], vt), LS_RELATIVE)
