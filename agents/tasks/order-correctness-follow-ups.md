@@ -47,7 +47,7 @@ restarts.
 
 | # | Task list | Waits for | Stops for you | Status |
 |---|---|---|---|---|
-| 1 | `rma-uni-zero-q/tasks-1.md` | - | - | running |
+| 1 | `rma-uni-zero-q/tasks-1.md` | - | - | merged d58e1a3 |
 | 2 | `confint-ht-centre/tasks-1.md` | - | - | todo |
 | 3 | `correctness-harness-checks/tasks-1.md` | 2 | the mismatch review, only if there is a mismatch (Task 4) | todo |
 | 4 | `qe-no-intercept/tasks-1.md` | 2 | - | todo |
