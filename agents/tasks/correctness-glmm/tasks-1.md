@@ -484,7 +484,7 @@ such a source exists.
 
 ## Task 12: Other-software cases from base R and glmmML
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** medium
 **Spec Reference:** Other software; Error handling (generator); Decisions 2; Implementation step 6
@@ -493,28 +493,28 @@ such a source exists.
 
 **Subtasks:**
 
-- [ ] If `/Users/simonb/.local/share/metafopy/r-correctness-lib` has no `glmmML` 1.1.7 (`grep -m1 '^Version' .../glmmML/DESCRIPTION`), stop as
+- [x] If `/Users/simonb/.local/share/metafopy/r-correctness-lib` has no `glmmML` 1.1.7 (`grep -m1 '^Version' .../glmmML/DESCRIPTION`), stop as
       `blocked`, saying that the operator installs it there outside this repository
-- [ ] Write `src/tests/correctness/r/other_software_glmm.R`, modelled on `r/other_software.R`:
+- [x] Write `src/tests/correctness/r/other_software_glmm.R`, modelled on `r/other_software.R`:
   - it pins `glmmML` 1.1.7 at its top, reads `METAFOPY_CORRECTNESS_RLIB` and runs `.libPaths(c(lib, .libPaths()))`, and stops when the variable is
     unset or the library holds another `glmmML` version;
   - `mantelhaen.test(exact = TRUE)`: `CM.EL` with `FE` on `dat.nielweise2007`, `dat.collins1985a` and the Jackson data (estimate and exact interval);
   - `glmmML`: the one-group models and `CM.AL`;
   - it writes `cases/glmm_other.toml` with `kind = "other"`, and `glmmML`'s and R's versions in each case's `source`.
-- [ ] Run it as `METAFOPY_CORRECTNESS_RLIB=/Users/simonb/.local/share/metafopy/r-correctness-lib R_LIBS="$main/.audit/Rlib" LC_ALL=C.UTF-8 Rscript
+- [x] Run it as `METAFOPY_CORRECTNESS_RLIB=/Users/simonb/.local/share/metafopy/r-correctness-lib R_LIBS="$main/.audit/Rlib" LC_ALL=C.UTF-8 Rscript
       src/tests/correctness/r/other_software_glmm.R` (`main` as in the header) and commit the output
-- [ ] Record any mismatch as the header says
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] Every `glmmML` case names `glmmML`'s version; tests never run R
-- [ ] `git diff --quiet main -- src/audit/data/r-versions.json` exits 0
+- [x] Every `glmmML` case names `glmmML`'s version; tests never run R
+- [x] `git diff --quiet main -- src/audit/data/r-versions.json` exits 0
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_other_software.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_other_software.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 
