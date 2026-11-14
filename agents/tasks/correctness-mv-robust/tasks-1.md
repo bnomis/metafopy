@@ -478,7 +478,7 @@ them the gate passes for every item.
 
 ## Task 11: Published cases
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** Seed sources; Implementation step 8; Kinds of evidence (`published`)
@@ -487,26 +487,26 @@ them the gate passes for every item.
 
 **Subtasks:**
 
-- [ ] If "Sources needed" in `agents/specs/correctness-mv-robust/mismatches.md` lists any source, read its answers from the Answers section of that
+- [x] If "Sources needed" in `agents/specs/correctness-mv-robust/mismatches.md` lists any source, read its answers from the Answers section of that
       document, never from the page; stop as `blocked`, naming the missing answers, if that section has no answer for each listed source
-- [ ] One source at a time (Berkey et al. 1998, Konstantopoulos 2011, Assink and Wibbelink 2016, Kalaian and Raudenbush 1996, Ishak et al. 2007,
+- [x] One source at a time (Berkey et al. 1998, Konstantopoulos 2011, Assink and Wibbelink 2016, Kalaian and Raudenbush 1996, Ishak et al. 2007,
       van Houwelingen et al. 2002, Gleser and Olkin 2009 in the Handbook PDF, Moura et al. via Nakagawa and Santos 2012 where its example applies,
       Sidik and Jonkman 2005, Hedges, Tipton and Johnson 2010, Tipton 2015, Tipton and Pustejovsky 2015, Tanner-Smith et al. 2016): find its worked
       example, the dataset that holds the same data (or inline data with its locator), and add `published` cases with values as printed, as strings,
       each with `citation`, `locator` and `read`
-- [ ] `published` prediction-interval cases only if Task 5 found the harness `predict` check function; otherwise leave them for Task 13
-- [ ] A source with no usable worked example: note it in the case file's header comment, with the reason
-- [ ] Record any mismatch as the header says
+- [x] `published` prediction-interval cases only if Task 5 found the harness `predict` check function; otherwise leave them for Task 13
+- [x] A source with no usable worked example: note it in the case file's header comment, with the reason
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] Every source with a worked example has `published` cases; every `published` case has `citation`, `locator` and `read`
+- [x] Every source with a worked example has `published` cases; every `published` case has `citation`, `locator` and `read`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_published.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_published.py` passes
 
 **Notes:**
 

@@ -1451,3 +1451,170 @@ ni = [40, 90, 25, 400, 60, 50]
 citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Chichester: John Wiley & Sons. ISBN 978-0-470-05724-7."
 locator = "Chapter 18, equations 16.14 to 16.25 (intervals of T2 and I2), Dataset 3"
 read = 2026-11-14
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------
+# rma_mv and robust (agents/specs/correctness-mv-robust/spec.md, Task 11). Printed values, as strings.
+#
+# Sources read with a worked example that is not written as a case here, and why (each is a convention or data difference, not a mismatch):
+# - Konstantopoulos (2011, preprint): Tables 4 and 5 match ML for the three-level model and REML for the unconditional two-level model only; the table
+#   mixes estimators and centres year on an unstated value.
+# - Kalaian and Raudenbush (1996): Table 2 is not reproduced under any within-study correlation or treatment of the missing hours (the paper states neither).
+# - Ishak et al. (2007): Table 1 reproduces for REML, but the data are wide and the multivariate rows need a hand-built V with a profiled correlation;
+#   Table 2 needs a 44-study subset the bundled data lack.
+# - Assink and Wibbelink (2016): QE and one likelihood-ratio statistic differ because the paper used unrounded data; only the fit values are written.
+# - van Houwelingen et al. (2002), Gleser and Olkin (2009): reproduce, but need inline arm-level data or chapter tables; left for Task 13.
+# - Hedges, Tipton and Johnson (2010): the Table IV robust row reproduces only with the paper's own method-of-moments weights (179 inline rows); its
+#   fixed and random effects rows cannot be reproduced from the printed synthetic effects.
+# - Tipton (2015) Table 6 and Tipton and Pustejovsky (2015) Table 1: data not available (the author's blog; the dropout-prevention data), and the
+#   other printed results are simulation summaries. Only the deterministic degrees of freedom of Tipton (2015) Table 2 are written.
+# - Tanner-Smith et al. (2016) Table 2: coefficients agree to about the printed digit, degrees of freedom differ by 0.01 to 3 (an older robumeta).
+# - Nakagawa and Santos (2012): a review with no worked example for dat.moura2021.
+# - Sidik and Jonkman (2005): the REML, R(E)MM and E(E)MM rows use the paper's own estimators.
+
+[[case]]
+id = "published.berkey1998.ml.un"
+kind = "published"
+function = "rma_mv"
+dataset = "dat.berkey1998"
+setup = { vblocks = { cluster = "trial", columns = ["v1i", "v2i"] } }
+args = { yi = "yi", mods = "~ 0 + outcome + outcome:I(year - 1983)", random = "~ outcome | trial", struct = "UN", method = "ML" }
+expect = { "beta[0]" = "-0.335", "se[0]" = "0.079", "beta[1]" = "0.348", "se[1]" = "0.052", "beta[2]" = "-0.011", "se[2]" = "0.024", "beta[3]" = "0.001", "se[3]" = "0.015", "tau2[0]" = "0.025", "tau2[1]" = "0.008" }
+covers = []
+
+[case.source]
+citation = "Berkey CS, Hoaglin DC, Antczak-Bouckoms A, Mosteller F, Colditz GA (1998). Meta-analysis of multiple outcomes by regression with random effects. Statistics in Medicine 17:2537-2550."
+locator = "Table II, multiple outcomes MML column (maximum marginal likelihood is ML), data of Table I; order AL then PD"
+read = 2026-11-14
+
+[[case]]
+id = "published.assink2016.overall"
+kind = "published"
+function = "rma_mv"
+dataset = "dat.assink2016"
+args = { yi = "yi", V = "vi", random = ["~ 1 | id", "~ 1 | study"], method = "REML", test = "t" }
+expect = { "beta[0]" = "0.427", "se[0]" = "0.118", "sigma2[0]" = "0.112", "sigma2[1]" = "0.188" }
+covers = []
+
+[case.source]
+citation = "Assink M, Wibbelink CJM (2016). Fitting three-level meta-analytic models in R: a step-by-step tutorial. The Quantitative Methods for Psychology 12:154-174."
+locator = "Output 1 (overall estimate and variance components), p. 160"
+read = 2026-11-14
+
+[[case]]
+id = "published.sidik2005.dl.covariate"
+kind = "published"
+function = "rma_uni"
+dataset = "dat.colditz1994"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "DL", mods = "~ ablat" }
+expect = { tau2 = "0.0633", "beta[0]" = "0.2595", "beta[1]" = "-0.0292" }
+covers = []
+
+[case.source]
+citation = "Sidik K, Jonkman JN (2005). A note on variance estimation in random effects meta-regression. Journal of Biopharmaceutical Statistics 15:823-838."
+locator = "Table 1, BCG data with latitude, MM (DerSimonian-Laird) rows; log risk ratio"
+read = 2026-11-14
+
+[[case]]
+id = "published.tannersmith2016.naive"
+kind = "published"
+function = "rma_uni"
+dataset = "dat.tannersmith2016"
+args = { yi = "yi", vi = "vi", method = "REML" }
+expect = { "beta[0]" = "0.12", "se[0]" = "0.01", tau2 = "0.01" }
+covers = []
+
+[case.source]
+citation = "Tanner-Smith EE, Tipton E, Polanin JR (2016). Handling complex meta-analytic data structures using robust variance estimates: a tutorial in R. Journal of Developmental and Life-Course Criminology 2:85-112."
+locator = "Table 1, naive random-effects row; data of Appendix B Table 3"
+read = 2026-11-14
+
+[[case]]
+id = "published.tipton2015.df.hs.m40"
+kind = "published"
+function = "rma_mv"
+data = { id = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39], yi = [0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0], vi = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], x = [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }
+args = { yi = "yi", V = "vi", mods = "~ x", method = "FE" }
+expect = { "dfs[1]" = "5.49" }
+then = { function = "robust", args = { cluster = "id", club_sandwich = true, vcov = "CR1" } }
+covers = []
+
+[case.source]
+citation = "Tipton E (2015). Small sample adjustments for robust variance estimation with meta-regression. Psychological Methods 20:375-393."
+locator = "Table 2, X1r column, 40 studies with 5 at the covariate level, HS row (CR1); one effect size per study, equal weights (the degrees of freedom do not depend on the data)"
+read = 2026-11-14
+
+[[case]]
+id = "published.tipton2015.df.mbbs.m40"
+kind = "published"
+function = "rma_mv"
+data = { id = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39], yi = [0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0], vi = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], x = [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }
+args = { yi = "yi", V = "vi", mods = "~ x", method = "FE" }
+expect = { "dfs[1]" = "5.21" }
+then = { function = "robust", args = { cluster = "id", club_sandwich = true, vcov = "CR2" } }
+covers = []
+
+[case.source]
+citation = "Tipton E (2015). Small sample adjustments for robust variance estimation with meta-regression. Psychological Methods 20:375-393."
+locator = "Table 2, X1r column, 40 studies with 5 at the covariate level, MBBS row (CR2); one effect size per study, equal weights (the degrees of freedom do not depend on the data)"
+read = 2026-11-14
+
+[[case]]
+id = "published.tipton2015.df.jks.m40"
+kind = "published"
+function = "rma_mv"
+data = { id = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39], yi = [0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0], vi = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], x = [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }
+args = { yi = "yi", V = "vi", mods = "~ x", method = "FE" }
+expect = { "dfs[1]" = "4.99" }
+then = { function = "robust", args = { cluster = "id", club_sandwich = true, vcov = "CR3" } }
+covers = []
+
+[case.source]
+citation = "Tipton E (2015). Small sample adjustments for robust variance estimation with meta-regression. Psychological Methods 20:375-393."
+locator = "Table 2, X1r column, 40 studies with 5 at the covariate level, JKS row (CR3); one effect size per study, equal weights (the degrees of freedom do not depend on the data)"
+read = 2026-11-14
+
+[[case]]
+id = "published.tipton2015.df.hs.m20"
+kind = "published"
+function = "rma_mv"
+data = { id = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19], yi = [0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1], vi = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], x = [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }
+args = { yi = "yi", V = "vi", mods = "~ x", method = "FE" }
+expect = { "dfs[1]" = "3.10" }
+then = { function = "robust", args = { cluster = "id", club_sandwich = true, vcov = "CR1" } }
+covers = []
+
+[case.source]
+citation = "Tipton E (2015). Small sample adjustments for robust variance estimation with meta-regression. Psychological Methods 20:375-393."
+locator = "Table 2, X1r column, 20 studies with 3 at the covariate level, HS row (CR1); one effect size per study, equal weights (the degrees of freedom do not depend on the data)"
+read = 2026-11-14
+
+[[case]]
+id = "published.tipton2015.df.mbbs.m20"
+kind = "published"
+function = "rma_mv"
+data = { id = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19], yi = [0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1], vi = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], x = [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }
+args = { yi = "yi", V = "vi", mods = "~ x", method = "FE" }
+expect = { "dfs[1]" = "2.76" }
+then = { function = "robust", args = { cluster = "id", club_sandwich = true, vcov = "CR2" } }
+covers = []
+
+[case.source]
+citation = "Tipton E (2015). Small sample adjustments for robust variance estimation with meta-regression. Psychological Methods 20:375-393."
+locator = "Table 2, X1r column, 20 studies with 3 at the covariate level, MBBS row (CR2); one effect size per study, equal weights (the degrees of freedom do not depend on the data)"
+read = 2026-11-14
+
+[[case]]
+id = "published.tipton2015.df.jks.m20"
+kind = "published"
+function = "rma_mv"
+data = { id = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19], yi = [0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1, 0.2, 0.0, 0.1], vi = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], x = [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }
+args = { yi = "yi", V = "vi", mods = "~ x", method = "FE" }
+expect = { "dfs[1]" = "2.53" }
+then = { function = "robust", args = { cluster = "id", club_sandwich = true, vcov = "CR3" } }
+covers = []
+
+[case.source]
+citation = "Tipton E (2015). Small sample adjustments for robust variance estimation with meta-regression. Psychological Methods 20:375-393."
+locator = "Table 2, X1r column, 20 studies with 3 at the covariate level, JKS row (CR3); one effect size per study, equal weights (the degrees of freedom do not depend on the data)"
+read = 2026-11-14
