@@ -2,7 +2,7 @@
 
 **Spec:** `agents/specs/correctness-glmm/spec.md`
 **Created:** 2026-11-14 (started by Task 4; Task 13 of `agents/tasks/correctness-glmm/tasks-1.md` completes and publishes it)
-**Review page:** not yet published (the queue session had no Artifact tool; an operator session publishes it and puts its URL here)
+**Review page:** https://claude.ai/artifact/YbL1vqAy8VkxHuh9xbsAHX (published 2026-11-14 by the operator session)
 
 ## What is being reviewed and how
 
@@ -205,6 +205,14 @@ optimisers in R. `QE_LRT` agrees in all three.
 - *Investigate*: a `TODO.md` item to find the original trial data.
 
 **Recommendation:** *Drop it*: the Poisson models are already covered by the Stijnen et al. (2010) cases and the derived cases.
+
+### Recommendations on the page (operator session, 2026-11-14)
+
+The page splits D1 into D1a (`FE`, three cases) and D1b (`ML`, three cases), gives every published row and convention its own item, and changes two
+recommendations: D1a *follow the reference* (the `FE` information of the exact conditional likelihood is analytic, and metafopy is furthest from it,
+1.5e-3 relative on `dat.collins1985a`); D2 *follow the reference* (the analytic information gives a well-defined statistic, and metafopy already differs
+from R metafor, so *keep metafor* keeps nothing). D1b stays *investigate*, D3 *drop it*. Published rows: *accept as a source difference*, except the
+Stijnen Table VII treated row and the Simmonds and Higgins random-effects row, *investigate*. Conventions: *approve*.
 
 ## Answers
 
