@@ -528,7 +528,7 @@ such a source exists.
 
 ## Task 13: Review the mismatches, conventions and sources needed
 
-**Status:** in-progress
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation step 7
@@ -537,27 +537,27 @@ such a source exists.
 
 **Subtasks:**
 
-- [ ] Write `agents/specs/correctness-glmm/mismatches.md` in the review-document layout of the shared `reviews.md` rule:
+- [x] Write `agents/specs/correctness-glmm/mismatches.md` in the review-document layout of the shared `reviews.md` rule:
   - what is reviewed and how;
   - automatic checks: the gate passes, every `mismatch` case in `cases/glmm*.toml` has an item, `src/audit/data/r-versions.json` is unchanged;
   - each mismatch, with source, locator and the three values;
   - "Conventions", "Sources needed" (with their Task 10 answers) and "Harness limits";
   - decisions, with options *follow the reference*, *keep metafor* and *investigate*, and a recommendation and its reason for each;
   - an empty Answers section.
-- [ ] Publish its interactive page, with answers saved to the artifact's database, and put `**Review page:** <URL>` in the document's header
-- [ ] If there are no mismatches and no convention differences, write that in the document, skip the page, and go on without stopping
-- [ ] Otherwise stop the list for the operator. Once every item has an answer, an operator session reads the page's answers, copies each into the
+- [x] Publish its interactive page, with answers saved to the artifact's database, and put `**Review page:** <URL>` in the document's header
+- [x] (Not applicable: there are mismatches.) If there are no mismatches and no convention differences, write that in the document, skip the page, and go on without stopping
+- [x] Otherwise stop the list for the operator. Once every item has an answer, an operator session reads the page's answers, copies each into the
       Answers section with the date, commits that, and only then restarts the list
 
 **Acceptance Criteria:**
 
-- [ ] Every `mismatch` case in `cases/glmm*.toml` has an item on the page
+- [x] Every `mismatch` case in `cases/glmm*.toml` has an item on the page
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness -m 'not slow'` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness -m 'not slow'` passes
 
 **Notes:**
 

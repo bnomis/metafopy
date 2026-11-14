@@ -216,4 +216,27 @@ Stijnen Table VII treated row and the Simmonds and Higgins random-effects row, *
 
 ## Answers
 
-Left empty for the user's verdicts.
+Copied on 2026-11-14 from the review page https://claude.ai/artifact/YbL1vqAy8VkxHuh9xbsAHX (answers saved 2026-11-14 between 21:59 and 22:04 UTC;
+no comments). Each option's consequence is the one the page gave: *follow the reference* files a `TODO.md` item to change metafopy and the case stays
+a strict expected failure until the fix; *investigate* keeps the case a strict expected failure and files a `TODO.md` item naming the doubt; *accept as
+a source difference* keeps the case as a recorded difference with its reason in the case, no code change; *approve* keeps the convention as described.
+
+Decisions on metafopy's own values:
+
+- **D1a, `CM.EL` standard error of the `FE` fits** (`glmm.fit.or.cm.el.fe.{nielweise2007,collins1985a,jackson2018.pneumonia}.se`): **follow the reference**.
+- **D1b, `CM.EL` standard error of the `ML` fits** (`glmm.fit.or.cm.el.ml.{nielweise2007,collins1985a,jackson2018.pneumonia}.se`): **investigate**.
+- **D2, `CM.EL` `QE_Wld`** (`glmm.heterogeneity.qe-wld.cm.el.fe.bcg`): **follow the reference** (the analytic information of the formulas).
+- **D3, Bagos and Nikolopoulos (2009) Table 5**: **investigate** (not the recommended *drop it*): a `TODO.md` item to find the original per-trial
+  counts and person-times that reproduce Table 5.
+
+Published values (metafopy and R metafor agree, the source differs):
+
+- Jackson et al. (2018) Table 4: Model 4 outcome 1, Model 5 outcomes 2, 4 and 4b, Model 7 outcome 1, Model 7 outcomes 4 and 4b: **accept as a source
+  difference** (each).
+- Stijnen et al. (2010) Table III HN and BN, Table VII control arm: **accept as a source difference** (each).
+- Stijnen et al. (2010) Table VII, treated arm, PN: **investigate**.
+- Simmonds and Higgins (2016) Fig 1, one-stage random effects: **investigate** (compare the marginal likelihood at `tau2 = 0` and at 0.213).
+- Turner et al. (2000) Table IV, fixed effect, pre-eclampsia: **accept as a source difference**.
+
+Conventions: the moderator-model `QE_Wld` tolerance, the `ll` of the `lme4` fits (OR, and IRR and the one-group measures), and the expected-information
+standard errors of zero-variance `RR` and `RD` fits: **approve** (each).
