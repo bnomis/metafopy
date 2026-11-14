@@ -1,0 +1,126 @@
+# Other-software cases for rma_glmm from base R's mantelhaen.test and glmmML, written by src/tests/correctness/r/other_software_glmm.R; do not
+# edit by hand.
+#
+# mantelhaen.test(exact = TRUE) and glmmML do not depend on metafor or lme4, so these values are independent of them. glmmML integrates by plain
+# Gauss-Hermite quadrature; see the script for the conventions it pins.
+
+[[case]]
+id = "other.glmm.cm.el.fe.nielweise2007"
+kind = "other"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.EL", method = "FE" }
+expect = { "beta[0]" = -1.2235589235652995 }
+tolerance = 1.0000000000000001e-05
+
+[case.source]
+citation = "stats::mantelhaen.test(exact = TRUE), base R, run on R 4.6.2"
+locator = "mantelhaen.test(array of 2 x 2 tables, exact = TRUE)$estimate, the conditional maximum likelihood estimate of the common odds ratio, on the log scale; the exact interval is not compared (metafopy gives a Wald interval)"
+read = 2026-11-14
+url = "https://stat.ethz.ch/R-manual/R-devel/library/stats/html/mantelhaen.test.html"
+
+[[case]]
+id = "other.glmm.cm.el.fe.collins1985a"
+kind = "other"
+function = "rma_glmm"
+dataset = "dat.collins1985a"
+args = { ai = "b.xti", n1i = "nti", ci = "b.xci", n2i = "nci", measure = "OR", model = "CM.EL", method = "FE" }
+expect = { "beta[0]" = -0.12158785726516173 }
+tolerance = 1.0000000000000001e-05
+
+[case.source]
+citation = "stats::mantelhaen.test(exact = TRUE), base R, run on R 4.6.2"
+locator = "mantelhaen.test(array of 2 x 2 tables, exact = TRUE)$estimate, the conditional maximum likelihood estimate of the common odds ratio, on the log scale; the exact interval is not compared (metafopy gives a Wald interval)"
+read = 2026-11-14
+url = "https://stat.ethz.ch/R-manual/R-devel/library/stats/html/mantelhaen.test.html"
+
+[[case]]
+id = "other.glmm.cm.el.fe.jackson2018.pneumonia"
+kind = "other"
+function = "rma_glmm"
+data = { ai = [1, 0, 1, 13, 2, 4, 6], bi = [155, 89, 43, 64, 157, 43, 76], ci = [12, 3, 6, 27, 5, 6, 0], di = [69, 40, 32, 53, 165, 43, 148] }
+args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "CM.EL", method = "FE" }
+expect = { "beta[0]" = -1.0076317238027876 }
+tolerance = 1.0000000000000001e-05
+
+[case.source]
+citation = "stats::mantelhaen.test(exact = TRUE), base R, run on R 4.6.2. Data: Jackson D, Law M, Stijnen T, Viechtbauer W, White IR (2018). A comparison of seven random-effects models for meta-analyses that estimate the summary odds ratio. Stat Med 37(7):1059-1085, Table 3, outcome 1 (pneumonia), columns A, B, C, D (data only)"
+locator = "mantelhaen.test(array of 2 x 2 tables, exact = TRUE)$estimate, the conditional maximum likelihood estimate of the common odds ratio, on the log scale; the exact interval is not compared (metafopy gives a Wald interval)"
+read = 2026-11-14
+url = "https://stat.ethz.ch/R-manual/R-devel/library/stats/html/mantelhaen.test.html"
+
+[[case]]
+id = "other.glmm.plo.none.ml.pritz1997"
+kind = "other"
+function = "rma_glmm"
+dataset = "dat.pritz1997"
+args = { xi = "xi", ni = "ni", measure = "PLO", method = "ML", nAGQ = 41 }
+expect = { "beta[0]" = 1.3765611344968811, "se[0]" = 0.28836505612395774, "tau2" = 0.58924221306377078 }
+tolerance = 0.00029999999999999997
+
+[case.source]
+citation = "glmmML 1.1.7, run on R 4.6.2"
+locator = "glmmML(cbind(xi, ni - xi) ~ 1, family = binomial): coefficients[1], coef.sd[1], sigma^2 (method = 'ghq', n.points = 64, a plain Gauss-Hermite rule)"
+read = 2026-11-14
+url = "https://cran.r-project.org/package=glmmML"
+
+[[case]]
+id = "other.glmm.irln.none.ml.nielweise2008"
+kind = "other"
+function = "rma_glmm"
+dataset = "dat.nielweise2008"
+args = { xi = "x1i", ti = "t1i", measure = "IRLN", method = "ML", nAGQ = 41 }
+expect = { "beta[0]" = -6.0583450142496291, "se[0]" = 0.33023948628901073, "tau2" = 0.65415210554812875 }
+tolerance = 0.00029999999999999997
+
+[case.source]
+citation = "glmmML 1.1.7, run on R 4.6.2"
+locator = "glmmML(x1i ~ 1 + offset(log(t1i / 1000)), family = poisson), intercept shifted back by log(1000): coefficients[1], coef.sd[1], sigma^2 (method = 'ghq', n.points = 64, a plain Gauss-Hermite rule)"
+read = 2026-11-14
+url = "https://cran.r-project.org/package=glmmML"
+
+[[case]]
+id = "other.glmm.cm.al.ml.nielweise2007"
+kind = "other"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.AL", method = "ML", nAGQ = 41 }
+expect = { "beta[0]" = -1.3026431375177423, "se[0]" = 0.33863363830891607, "tau2" = 0.60067032065878012 }
+tolerance = 0.00029999999999999997
+
+[case.source]
+citation = "glmmML 1.1.7, run on R 4.6.2"
+locator = "glmmML(cbind(ai, ci) ~ 1 + offset(log(n1i / n2i)), family = binomial): coefficients[1], coef.sd[1], sigma^2 (method = 'ghq', n.points = 64, a plain Gauss-Hermite rule)"
+read = 2026-11-14
+url = "https://cran.r-project.org/package=glmmML"
+
+[[case]]
+id = "other.glmm.cm.al.ml.collins1985a"
+kind = "other"
+function = "rma_glmm"
+dataset = "dat.collins1985a"
+args = { ai = "b.xti", n1i = "nti", ci = "b.xci", n2i = "nci", measure = "OR", model = "CM.AL", method = "ML", nAGQ = 41 }
+expect = { "beta[0]" = -0.099917191671405073, "se[0]" = 0.1037572920003292, "tau2" = 0.0070575626997678269 }
+tolerance = 0.00029999999999999997
+
+[case.source]
+citation = "glmmML 1.1.7, run on R 4.6.2"
+locator = "glmmML(cbind(ai, ci) ~ 1 + offset(log(n1i / n2i)), family = binomial): coefficients[1], coef.sd[1], sigma^2 (method = 'ghq', n.points = 64, a plain Gauss-Hermite rule)"
+read = 2026-11-14
+url = "https://cran.r-project.org/package=glmmML"
+
+[[case]]
+id = "other.glmm.cm.al.ml.jackson2018.pneumonia"
+kind = "other"
+function = "rma_glmm"
+data = { ai = [1, 0, 1, 13, 2, 4, 6], bi = [155, 89, 43, 64, 157, 43, 76], ci = [12, 3, 6, 27, 5, 6, 0], di = [69, 40, 32, 53, 165, 43, 148] }
+args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "CM.AL", method = "ML", nAGQ = 41 }
+expect = { "beta[0]" = -1.059764547145202, "se[0]" = 0.85702681845829398, "tau2" = 4.0207892365642817 }
+tolerance = 0.00029999999999999997
+
+[case.source]
+citation = "glmmML 1.1.7, run on R 4.6.2. Data: Jackson D, Law M, Stijnen T, Viechtbauer W, White IR (2018). A comparison of seven random-effects models for meta-analyses that estimate the summary odds ratio. Stat Med 37(7):1059-1085, Table 3, outcome 1 (pneumonia), columns A, B, C, D (data only)"
+locator = "glmmML(cbind(ai, ci) ~ 1 + offset(log(n1i / n2i)), family = binomial): coefficients[1], coef.sd[1], sigma^2 (method = 'ghq', n.points = 64, a plain Gauss-Hermite rule)"
+read = 2026-11-14
+url = "https://cran.r-project.org/package=glmmML"
+

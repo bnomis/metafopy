@@ -1,0 +1,654 @@
+# Correctness cases for rma_glmm: published cases; see agents/specs/correctness-glmm/spec.md
+#
+# Jackson et al. (2018), Table 4: the log odds ratio, its standard error and tau2 of the models rma_glmm fits (Model 4 is UM.FS, Model 5 UM.RS, Model 7
+# CM.EL), on the Table 3 data. Models 1 (rma_uni), 2, 3 and 6 are not fits of rma_glmm, so they have no case. The paper computed Table 4 with metafor 1.9-9
+# and lme4 1.1-12; a value that differs from metafopy by more than half a unit of its last printed digit is a mismatch case beside the case of the values
+# that agree. "Outcome 4" includes the double-zero study (drop00 = false) and "outcome 4b" drops it (drop00 = true, the default). The paper prints a
+# tau2 of 0 as "0", whose tolerance is 0.5; the derived cases check the boundary tightly. Outcome 4, Model 7 is the starred fit of Section 5.2
+# (Nelder-Mead, maxit 20000, reltol 1e-4).
+#
+# Sources with formulas only, and so no published case: Pinheiro and Bates (1995) and Breslow (1981) print no worked example this suite uses, and
+# Higgins and Thompson (2002) is a formula for the typical within-study variance (covered by the heterogeneity cases of the derived kind).
+#
+# Other sources: Stijnen et al. (2010) Tables II, III, VII and VIII (the bivariate and trivariate models and the network model are not rma_glmm fits);
+# van Houwelingen et al. (1993) Sections 3 and 4 (the paper models control against treatment, so the sign is reversed; its bivariate and non-parametric fits
+# are not rma_glmm fits); Simmonds and Higgins (2016) Fig 1 (the BCG and network examples are not written: the paper prints no tau2 or standard error, and its
+# BCG tables give odds ratios to two or three decimals only);Turner et al. (2000) fixed-effect rows of Tables III and IV (its random-effects rows are quasi-likelihood
+# fits in MLwiN, not maximum likelihood, so they are not compared); Hamza et al. (2008) Table 3, exact method. Zhou et al. (1999): Table IV prints the
+# weighted average, GEE and CIHM estimates on the proportion scale, none a generalised linear mixed model, so no case. Bagos and Nikolopoulos (2009) prints
+# no per-study data: listed under "Sources needed" in agents/specs/correctness-glmm/mismatches.md.
+# Task 11 read the two reviews it uses (Hooper et al. 2001; Wolf et al. 2003) and found no per-study counts and person-time that reproduce its Table 5, so it has
+# no case either: see the same entries.
+
+[[case]]
+id = "glmm.published.jackson2018.table4.model4.outcome1"
+kind = "published"
+function = "rma_glmm"
+data = { ai = [1, 0, 1, 13, 2, 4, 6], bi = [155, 89, 43, 64, 157, 43, 76], ci = [12, 3, 6, 27, 5, 6, 0], di = [69, 40, 32, 53, 165, 43, 148] }
+args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "UM.FS", method = "ML", drop00 = true }
+expect = { "beta[0]" = "-1.024", "se[0]" = "0.708" }
+covers = ["rma_glmm.fit.OR.UM.FS.ML"]
+
+[case.source]
+citation = "Jackson D, Law M, Stijnen T, Viechtbauer W, White IR (2018). A comparison of seven random-effects models for meta-analyses that estimate the summary odds ratio. Stat Med 37(7):1059-1085"
+doi = "10.1002/sim.7588"
+locator = "Table 4, Model 4, outcome 1; data of Table 3, outcome 1 (pneumonia)"
+read = 2026-11-14
+
+[[case]]
+id = "glmm.published.jackson2018.table4.model4.outcome1.mismatch"
+kind = "published"
+function = "rma_glmm"
+data = { ai = [1, 0, 1, 13, 2, 4, 6], bi = [155, 89, 43, 64, 157, 43, 76], ci = [12, 3, 6, 27, 5, 6, 0], di = [69, 40, 32, 53, 165, 43, 148] }
+args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "UM.FS", method = "ML", drop00 = true }
+expect = { "tau2" = "2.664" }
+status = "mismatch"
+reason = "tau2 printed 2.664, metafopy 2.6628, R metafor 5.2-1 2.66292; accepted as a source difference on 2026-11-14 (the source used other software, metafopy and R metafor agree)"
+covers = ["rma_glmm.fit.OR.UM.FS.ML"]
+
+[case.source]
+citation = "Jackson D, Law M, Stijnen T, Viechtbauer W, White IR (2018). A comparison of seven random-effects models for meta-analyses that estimate the summary odds ratio. Stat Med 37(7):1059-1085"
+doi = "10.1002/sim.7588"
+locator = "Table 4, Model 4, outcome 1; data of Table 3, outcome 1 (pneumonia)"
+read = 2026-11-14
+
+[[case]]
+id = "glmm.published.jackson2018.table4.model4.outcome2"
+kind = "published"
+function = "rma_glmm"
+data = { ai = [5, 2, 8, 0], bi = [45, 42, 151, 175], ci = [12, 5, 7, 1], di = [38, 32, 163, 80] }
+args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "UM.FS", method = "ML", drop00 = true }
+expect = { "beta[0]" = "-0.629", "se[0]" = "0.402", "tau2" = "0.085" }
+covers = ["rma_glmm.fit.OR.UM.FS.ML"]
+
+[case.source]
+citation = "Jackson D, Law M, Stijnen T, Viechtbauer W, White IR (2018). A comparison of seven random-effects models for meta-analyses that estimate the summary odds ratio. Stat Med 37(7):1059-1085"
+doi = "10.1002/sim.7588"
+locator = "Table 4, Model 4, outcome 2; data of Table 3, outcome 2 (diarrhoea)"
+read = 2026-11-14
+
+[[case]]
+id = "glmm.published.jackson2018.table4.model4.outcome4"
+kind = "published"
+function = "rma_glmm"
+data = { ai = [3, 1, 0, 5, 1], bi = [57, 43, 195, 154, 85], ci = [7, 2, 0, 12, 0], di = [52, 35, 180, 158, 38] }
+args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "UM.FS", method = "ML", drop00 = false }
+expect = { "beta[0]" = "-0.803", "se[0]" = "0.396", "tau2" = "0" }
+covers = ["rma_glmm.fit.OR.UM.FS.ML"]
+
+[case.source]
+citation = "Jackson D, Law M, Stijnen T, Viechtbauer W, White IR (2018). A comparison of seven random-effects models for meta-analyses that estimate the summary odds ratio. Stat Med 37(7):1059-1085"
+doi = "10.1002/sim.7588"
+locator = "Table 4, Model 4, outcome 4; data of Table 3, outcome 4 (otitis media)"
+read = 2026-11-14
+
+[[case]]
+id = "glmm.published.jackson2018.table4.model4.outcome4b"
+kind = "published"
+function = "rma_glmm"
+data = { ai = [3, 1, 0, 5, 1], bi = [57, 43, 195, 154, 85], ci = [7, 2, 0, 12, 0], di = [52, 35, 180, 158, 38] }
+args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "UM.FS", method = "ML", drop00 = true }
+expect = { "beta[0]" = "-0.803", "se[0]" = "0.396", "tau2" = "0" }
+covers = ["rma_glmm.fit.OR.UM.FS.ML"]
+
+[case.source]
+citation = "Jackson D, Law M, Stijnen T, Viechtbauer W, White IR (2018). A comparison of seven random-effects models for meta-analyses that estimate the summary odds ratio. Stat Med 37(7):1059-1085"
+doi = "10.1002/sim.7588"
+locator = "Table 4, Model 4, outcome 4b; data of Table 3, outcome 4b (otitis media without the double-zero study)"
+read = 2026-11-14
+
+[[case]]
+id = "glmm.published.jackson2018.table4.model5.outcome1"
+kind = "published"
+function = "rma_glmm"
+data = { ai = [1, 0, 1, 13, 2, 4, 6], bi = [155, 89, 43, 64, 157, 43, 76], ci = [12, 3, 6, 27, 5, 6, 0], di = [69, 40, 32, 53, 165, 43, 148] }
+args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "UM.RS", method = "ML", drop00 = true }
+expect = { "beta[0]" = "-1.071", "se[0]" = "0.717", "tau2" = "2.791" }
+covers = ["rma_glmm.fit.OR.UM.RS.ML"]
+
+[case.source]
+citation = "Jackson D, Law M, Stijnen T, Viechtbauer W, White IR (2018). A comparison of seven random-effects models for meta-analyses that estimate the summary odds ratio. Stat Med 37(7):1059-1085"
+doi = "10.1002/sim.7588"
+locator = "Table 4, Model 5, outcome 1; data of Table 3, outcome 1 (pneumonia)"
+read = 2026-11-14
+
+[[case]]
+id = "glmm.published.jackson2018.table4.model5.outcome2"
+kind = "published"
+function = "rma_glmm"
+data = { ai = [5, 2, 8, 0], bi = [45, 42, 151, 175], ci = [12, 5, 7, 1], di = [38, 32, 163, 80] }
+args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "UM.RS", method = "ML", drop00 = true }
+expect = { "beta[0]" = "-0.673" }
+covers = ["rma_glmm.fit.OR.UM.RS.ML"]
+
+[case.source]
+citation = "Jackson D, Law M, Stijnen T, Viechtbauer W, White IR (2018). A comparison of seven random-effects models for meta-analyses that estimate the summary odds ratio. Stat Med 37(7):1059-1085"
+doi = "10.1002/sim.7588"
+locator = "Table 4, Model 5, outcome 2; data of Table 3, outcome 2 (diarrhoea)"
+read = 2026-11-14
+
+[[case]]
+id = "glmm.published.jackson2018.table4.model5.outcome2.mismatch"
+kind = "published"
+function = "rma_glmm"
+data = { ai = [5, 2, 8, 0], bi = [45, 42, 151, 175], ci = [12, 5, 7, 1], di = [38, 32, 163, 80] }
+args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "UM.RS", method = "ML", drop00 = true }
+expect = { "se[0]" = "0.413", "tau2" = "0.119" }
+status = "mismatch"
+reason = "se[0] printed 0.413, metafopy 0.4214, R metafor 5.2-1 0.42136; tau2 printed 0.119, metafopy 0.1196, R metafor 5.2-1 0.11956; accepted as a source difference on 2026-11-14 (the source used other software, metafopy and R metafor agree)"
+covers = ["rma_glmm.fit.OR.UM.RS.ML"]
+
+[case.source]
+citation = "Jackson D, Law M, Stijnen T, Viechtbauer W, White IR (2018). A comparison of seven random-effects models for meta-analyses that estimate the summary odds ratio. Stat Med 37(7):1059-1085"
+doi = "10.1002/sim.7588"
+locator = "Table 4, Model 5, outcome 2; data of Table 3, outcome 2 (diarrhoea)"
+read = 2026-11-14
+
+[[case]]
+id = "glmm.published.jackson2018.table4.model5.outcome4"
+kind = "published"
+function = "rma_glmm"
+data = { ai = [3, 1, 0, 5, 1], bi = [57, 43, 195, 154, 85], ci = [7, 2, 0, 12, 0], di = [52, 35, 180, 158, 38] }
+args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "UM.RS", method = "ML", drop00 = false }
+expect = { "beta[0]" = "-0.815", "tau2" = "0" }
+covers = ["rma_glmm.fit.OR.UM.RS.ML"]
+
+[case.source]
+citation = "Jackson D, Law M, Stijnen T, Viechtbauer W, White IR (2018). A comparison of seven random-effects models for meta-analyses that estimate the summary odds ratio. Stat Med 37(7):1059-1085"
+doi = "10.1002/sim.7588"
+locator = "Table 4, Model 5, outcome 4; data of Table 3, outcome 4 (otitis media)"
+read = 2026-11-14
+
+[[case]]
+id = "glmm.published.jackson2018.table4.model5.outcome4.mismatch"
+kind = "published"
+function = "rma_glmm"
+data = { ai = [3, 1, 0, 5, 1], bi = [57, 43, 195, 154, 85], ci = [7, 2, 0, 12, 0], di = [52, 35, 180, 158, 38] }
+args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "UM.RS", method = "ML", drop00 = false }
+expect = { "se[0]" = "0.396" }
+status = "mismatch"
+reason = "se[0] printed 0.396, metafopy 0.3972, R metafor 5.2-1 0.39719; accepted as a source difference on 2026-11-14 (the source used other software, metafopy and R metafor agree)"
+covers = ["rma_glmm.fit.OR.UM.RS.ML"]
+
+[case.source]
+citation = "Jackson D, Law M, Stijnen T, Viechtbauer W, White IR (2018). A comparison of seven random-effects models for meta-analyses that estimate the summary odds ratio. Stat Med 37(7):1059-1085"
+doi = "10.1002/sim.7588"
+locator = "Table 4, Model 5, outcome 4; data of Table 3, outcome 4 (otitis media)"
+read = 2026-11-14
+
+[[case]]
+id = "glmm.published.jackson2018.table4.model5.outcome4b"
+kind = "published"
+function = "rma_glmm"
+data = { ai = [3, 1, 0, 5, 1], bi = [57, 43, 195, 154, 85], ci = [7, 2, 0, 12, 0], di = [52, 35, 180, 158, 38] }
+args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "UM.RS", method = "ML", drop00 = true }
+expect = { "beta[0]" = "-0.878", "tau2" = "0" }
+covers = ["rma_glmm.fit.OR.UM.RS.ML"]
+
+[case.source]
+citation = "Jackson D, Law M, Stijnen T, Viechtbauer W, White IR (2018). A comparison of seven random-effects models for meta-analyses that estimate the summary odds ratio. Stat Med 37(7):1059-1085"
+doi = "10.1002/sim.7588"
+locator = "Table 4, Model 5, outcome 4b; data of Table 3, outcome 4b (otitis media without the double-zero study)"
+read = 2026-11-14
+
+[[case]]
+id = "glmm.published.jackson2018.table4.model5.outcome4b.mismatch"
+kind = "published"
+function = "rma_glmm"
+data = { ai = [3, 1, 0, 5, 1], bi = [57, 43, 195, 154, 85], ci = [7, 2, 0, 12, 0], di = [52, 35, 180, 158, 38] }
+args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "UM.RS", method = "ML", drop00 = true }
+expect = { "se[0]" = "0.396" }
+status = "mismatch"
+reason = "se[0] printed 0.396, metafopy 0.3970, R metafor 5.2-1 0.39703; accepted as a source difference on 2026-11-14 (the source used other software, metafopy and R metafor agree)"
+covers = ["rma_glmm.fit.OR.UM.RS.ML"]
+
+[case.source]
+citation = "Jackson D, Law M, Stijnen T, Viechtbauer W, White IR (2018). A comparison of seven random-effects models for meta-analyses that estimate the summary odds ratio. Stat Med 37(7):1059-1085"
+doi = "10.1002/sim.7588"
+locator = "Table 4, Model 5, outcome 4b; data of Table 3, outcome 4b (otitis media without the double-zero study)"
+read = 2026-11-14
+
+[[case]]
+id = "glmm.published.jackson2018.table4.model7.outcome1"
+kind = "published"
+function = "rma_glmm"
+data = { ai = [1, 0, 1, 13, 2, 4, 6], bi = [155, 89, 43, 64, 157, 43, 76], ci = [12, 3, 6, 27, 5, 6, 0], di = [69, 40, 32, 53, 165, 43, 148] }
+args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "CM.EL", method = "ML", drop00 = true }
+expect = { "beta[0]" = "-1.143", "se[0]" = "0.888" }
+covers = ["rma_glmm.fit.OR.CM.EL.ML"]
+
+[case.source]
+citation = "Jackson D, Law M, Stijnen T, Viechtbauer W, White IR (2018). A comparison of seven random-effects models for meta-analyses that estimate the summary odds ratio. Stat Med 37(7):1059-1085"
+doi = "10.1002/sim.7588"
+locator = "Table 4, Model 7, outcome 1; data of Table 3, outcome 1 (pneumonia)"
+read = 2026-11-14
+
+[[case]]
+id = "glmm.published.jackson2018.table4.model7.outcome1.mismatch"
+kind = "published"
+function = "rma_glmm"
+data = { ai = [1, 0, 1, 13, 2, 4, 6], bi = [155, 89, 43, 64, 157, 43, 76], ci = [12, 3, 6, 27, 5, 6, 0], di = [69, 40, 32, 53, 165, 43, 148] }
+args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "CM.EL", method = "ML", drop00 = true }
+expect = { "tau2" = "4.341" }
+status = "mismatch"
+reason = "tau2 printed 4.341, metafopy 4.3416, R metafor 5.2-1 4.34164; accepted as a source difference on 2026-11-14 (the source used other software, metafopy and R metafor agree)"
+covers = ["rma_glmm.fit.OR.CM.EL.ML"]
+
+[case.source]
+citation = "Jackson D, Law M, Stijnen T, Viechtbauer W, White IR (2018). A comparison of seven random-effects models for meta-analyses that estimate the summary odds ratio. Stat Med 37(7):1059-1085"
+doi = "10.1002/sim.7588"
+locator = "Table 4, Model 7, outcome 1; data of Table 3, outcome 1 (pneumonia)"
+read = 2026-11-14
+
+[[case]]
+id = "glmm.published.jackson2018.table4.model7.outcome2"
+kind = "published"
+function = "rma_glmm"
+data = { ai = [5, 2, 8, 0], bi = [45, 42, 151, 175], ci = [12, 5, 7, 1], di = [38, 32, 163, 80] }
+args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "CM.EL", method = "ML", drop00 = true }
+expect = { "beta[0]" = "-0.635", "se[0]" = "0.416", "tau2" = "0.099" }
+covers = ["rma_glmm.fit.OR.CM.EL.ML"]
+
+[case.source]
+citation = "Jackson D, Law M, Stijnen T, Viechtbauer W, White IR (2018). A comparison of seven random-effects models for meta-analyses that estimate the summary odds ratio. Stat Med 37(7):1059-1085"
+doi = "10.1002/sim.7588"
+locator = "Table 4, Model 7, outcome 2; data of Table 3, outcome 2 (diarrhoea)"
+read = 2026-11-14
+
+[[case]]
+id = "glmm.published.jackson2018.table4.model7.outcome4"
+kind = "published"
+function = "rma_glmm"
+data = { ai = [3, 1, 0, 5, 1], bi = [57, 43, 195, 154, 85], ci = [7, 2, 0, 12, 0], di = [52, 35, 180, 158, 38] }
+args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "CM.EL", method = "ML", drop00 = false, control = { optimizer = "Nelder-Mead", opt_ctrl = { maxit = 20000, reltol = 1e-4 } } }
+expect = { "se[0]" = "0.395" }
+covers = ["rma_glmm.fit.OR.CM.EL.ML"]
+
+[case.source]
+citation = "Jackson D, Law M, Stijnen T, Viechtbauer W, White IR (2018). A comparison of seven random-effects models for meta-analyses that estimate the summary odds ratio. Stat Med 37(7):1059-1085"
+doi = "10.1002/sim.7588"
+locator = "Table 4, Model 7, outcome 4; data of Table 3, outcome 4 (otitis media) (starred: nondefault arguments, Section 5.2)"
+read = 2026-11-14
+
+[[case]]
+id = "glmm.published.jackson2018.table4.model7.outcome4.mismatch"
+kind = "published"
+function = "rma_glmm"
+data = { ai = [3, 1, 0, 5, 1], bi = [57, 43, 195, 154, 85], ci = [7, 2, 0, 12, 0], di = [52, 35, 180, 158, 38] }
+args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "CM.EL", method = "ML", drop00 = false, control = { optimizer = "Nelder-Mead", opt_ctrl = { maxit = 20000, reltol = 1e-4 } } }
+expect = { "beta[0]" = "-0.793", "tau2" = "0.001" }
+status = "mismatch"
+reason = "beta[0] printed -0.793, metafopy -0.8015, R metafor 5.2-1 -0.80149; tau2 printed 0.001, metafopy 0.0000, R metafor 5.2-1 0.00003; accepted as a source difference on 2026-11-14 (the source used other software, metafopy and R metafor agree)"
+covers = ["rma_glmm.fit.OR.CM.EL.ML"]
+
+[case.source]
+citation = "Jackson D, Law M, Stijnen T, Viechtbauer W, White IR (2018). A comparison of seven random-effects models for meta-analyses that estimate the summary odds ratio. Stat Med 37(7):1059-1085"
+doi = "10.1002/sim.7588"
+locator = "Table 4, Model 7, outcome 4; data of Table 3, outcome 4 (otitis media) (starred: nondefault arguments, Section 5.2)"
+read = 2026-11-14
+
+[[case]]
+id = "glmm.published.jackson2018.table4.model7.outcome4b"
+kind = "published"
+function = "rma_glmm"
+data = { ai = [3, 1, 0, 5, 1], bi = [57, 43, 195, 154, 85], ci = [7, 2, 0, 12, 0], di = [52, 35, 180, 158, 38] }
+args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "CM.EL", method = "ML", drop00 = true, control = { optimizer = "Nelder-Mead", opt_ctrl = { maxit = 20000, reltol = 1e-4 } } }
+expect = { "se[0]" = "0.395" }
+covers = ["rma_glmm.fit.OR.CM.EL.ML"]
+
+[case.source]
+citation = "Jackson D, Law M, Stijnen T, Viechtbauer W, White IR (2018). A comparison of seven random-effects models for meta-analyses that estimate the summary odds ratio. Stat Med 37(7):1059-1085"
+doi = "10.1002/sim.7588"
+locator = "Table 4, Model 7, outcome 4b; data of Table 3, outcome 4b (otitis media without the double-zero study) (starred: nondefault arguments, Section 5.2)"
+read = 2026-11-14
+
+[[case]]
+id = "glmm.published.jackson2018.table4.model7.outcome4b.mismatch"
+kind = "published"
+function = "rma_glmm"
+data = { ai = [3, 1, 0, 5, 1], bi = [57, 43, 195, 154, 85], ci = [7, 2, 0, 12, 0], di = [52, 35, 180, 158, 38] }
+args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "CM.EL", method = "ML", drop00 = true, control = { optimizer = "Nelder-Mead", opt_ctrl = { maxit = 20000, reltol = 1e-4 } } }
+expect = { "beta[0]" = "-0.793", "tau2" = "0.001" }
+status = "mismatch"
+reason = "beta[0] printed -0.793, metafopy -0.8015, R metafor 5.2-1 -0.80149; tau2 printed 0.001, metafopy 0.0000, R metafor 5.2-1 0.00003; accepted as a source difference on 2026-11-14 (the source used other software, metafopy and R metafor agree)"
+covers = ["rma_glmm.fit.OR.CM.EL.ML"]
+
+[case.source]
+citation = "Jackson D, Law M, Stijnen T, Viechtbauer W, White IR (2018). A comparison of seven random-effects models for meta-analyses that estimate the summary odds ratio. Stat Med 37(7):1059-1085"
+doi = "10.1002/sim.7588"
+locator = "Table 4, Model 7, outcome 4b; data of Table 3, outcome 4b (otitis media without the double-zero study) (starred: nondefault arguments, Section 5.2)"
+read = 2026-11-14
+
+
+# Stijnen, Hamza and Ozdemir (2010): HN is CM.EL, BN is CM.AL (maximum likelihood by adaptive quadrature in SAS Proc NLMIXED); Table III prints the across-studies
+# standard deviation, which `tau` checks.
+
+[[case]]
+id = "glmm.published.stijnen2010.table3.hn"
+kind = "published"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.EL", method = "ML" }
+check = "test_published.glmm_printed"
+printed = { "beta[0]" = "-1.353", "se[0]" = "0.351", tau = "0.83", "exp_ci_lb[0]" = "0.13", "exp_ci_ub[0]" = "0.51" }
+covers = ["rma_glmm.fit.OR.CM.EL.ML"]
+
+[case.source]
+citation = "Stijnen T, Hamza TH, Ozdemir P (2010). Random effects meta-analysis of event outcome in the framework of the generalized linear mixed model with applications in sparse data. Stat Med 29(29):3046-3067"
+doi = "10.1002/sim.4040"
+locator = "Table III, HN column (data of Table I, catheter trials)"
+read = 2026-11-14
+
+[[case]]
+id = "glmm.published.stijnen2010.table3.hn.mismatch"
+kind = "published"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.EL", method = "ML" }
+status = "mismatch"
+reason = "exp_beta[0] printed 0.25, metafopy 0.25842, exp of the same estimate; the printed estimate -1.353 itself gives 0.258, so the printed 0.25 is inconsistent within the paper; accepted as a source difference on 2026-11-14 (the source used other software, metafopy and R metafor agree)"
+check = "test_published.glmm_printed"
+printed = { "exp_beta[0]" = "0.25" }
+covers = ["rma_glmm.fit.OR.CM.EL.ML"]
+
+[case.source]
+citation = "Stijnen T, Hamza TH, Ozdemir P (2010). Random effects meta-analysis of event outcome in the framework of the generalized linear mixed model with applications in sparse data. Stat Med 29(29):3046-3067"
+doi = "10.1002/sim.4040"
+locator = "Table III, HN column (data of Table I, catheter trials)"
+read = 2026-11-14
+
+[[case]]
+id = "glmm.published.stijnen2010.table3.bn"
+kind = "published"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.AL", method = "ML" }
+check = "test_published.glmm_printed"
+printed = { "beta[0]" = "-1.303", "se[0]" = "0.339", "exp_beta[0]" = "0.27", "exp_ci_lb[0]" = "0.14", "exp_ci_ub[0]" = "0.53" }
+covers = ["rma_glmm.fit.OR.CM.AL.ML"]
+
+[case.source]
+citation = "Stijnen T, Hamza TH, Ozdemir P (2010). Random effects meta-analysis of event outcome in the framework of the generalized linear mixed model with applications in sparse data. Stat Med 29(29):3046-3067"
+doi = "10.1002/sim.4040"
+locator = "Table III, BN column (data of Table I, catheter trials)"
+read = 2026-11-14
+
+[[case]]
+id = "glmm.published.stijnen2010.table3.bn.mismatch"
+kind = "published"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.AL", method = "ML" }
+status = "mismatch"
+reason = "tau printed 0.77, metafopy 0.77504, R metafor 5.2-1 0.77504 (tau2 0.60069); accepted as a source difference on 2026-11-14 (the source used other software, metafopy and R metafor agree)"
+check = "test_published.glmm_printed"
+printed = { tau = "0.77" }
+covers = ["rma_glmm.fit.OR.CM.AL.ML"]
+
+[case.source]
+citation = "Stijnen T, Hamza TH, Ozdemir P (2010). Random effects meta-analysis of event outcome in the framework of the generalized linear mixed model with applications in sparse data. Stat Med 29(29):3046-3067"
+doi = "10.1002/sim.4040"
+locator = "Table III, BN column (data of Table I, catheter trials)"
+read = 2026-11-14
+
+[[case]]
+id = "glmm.published.stijnen2010.table8.bn"
+kind = "published"
+function = "rma_glmm"
+dataset = "dat.nielweise2008"
+args = { x1i = "x1i", t1i = "t1i", x2i = "x2i", t2i = "t2i", measure = "IRR", model = "CM.AL", method = "ML" }
+check = "test_published.glmm_printed"
+printed = { "beta[0]" = "-0.476", "se[0]" = "0.238", tau = "0.35", "exp_beta[0]" = "0.62", "exp_ci_lb[0]" = "0.39", "exp_ci_ub[0]" = "0.99" }
+covers = ["rma_glmm.fit.IRR.CM.AL.ML"]
+
+[case.source]
+citation = "Stijnen T, Hamza TH, Ozdemir P (2010). Random effects meta-analysis of event outcome in the framework of the generalized linear mixed model with applications in sparse data. Stat Med 29(29):3046-3067"
+doi = "10.1002/sim.4040"
+locator = "Table VIII, BN row (data of Table VI, catheter-days)"
+read = 2026-11-14
+
+[[case]]
+id = "glmm.published.stijnen2010.table2.bn.standard"
+kind = "published"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { xi = "ci", ni = "n2i", measure = "PLO", method = "ML" }
+check = "test_published.glmm_printed"
+printed = { "beta[0]" = "-3.50", "se[0]" = "0.26", tau2 = "0.81" }
+covers = ["rma_glmm.fit.PLO.none.ML"]
+
+[case.source]
+citation = "Stijnen T, Hamza TH, Ozdemir P (2010). Random effects meta-analysis of event outcome in the framework of the generalized linear mixed model with applications in sparse data. Stat Med 29(29):3046-3067"
+doi = "10.1002/sim.4040"
+locator = "Table II, standard catheter, BN column"
+read = 2026-11-14
+
+[[case]]
+id = "glmm.published.stijnen2010.table2.bn.antiinfective"
+kind = "published"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { xi = "ai", ni = "n1i", measure = "PLO", method = "ML" }
+check = "test_published.glmm_printed"
+printed = { "beta[0]" = "-4.81", "se[0]" = "0.36", tau2 = "0.83" }
+covers = ["rma_glmm.fit.PLO.none.ML"]
+
+[case.source]
+citation = "Stijnen T, Hamza TH, Ozdemir P (2010). Random effects meta-analysis of event outcome in the framework of the generalized linear mixed model with applications in sparse data. Stat Med 29(29):3046-3067"
+doi = "10.1002/sim.4040"
+locator = "Table II, anti-infective catheter, BN column"
+read = 2026-11-14
+
+# Table VII prints the log incidence rate per 1000 catheter days, so the person-times below are the Table VI catheter-days divided by 1000.
+
+[[case]]
+id = "glmm.published.stijnen2010.table7.pn.control"
+kind = "published"
+function = "rma_glmm"
+data = { xi = [11, 8, 14, 10, 1, 8, 15, 7, 3], ti = [1.988, 1.460, 10.962, 1.502, 0.482, 0.913, 6.840, 1.015, 0.440] }
+args = { xi = "xi", ti = "ti", measure = "IRLN", method = "ML" }
+check = "test_published.glmm_printed"
+printed = { "beta[0]" = "1.401", "se[0]" = "0.231" }
+covers = ["rma_glmm.fit.IRLN.none.ML"]
+
+[case.source]
+citation = "Stijnen T, Hamza TH, Ozdemir P (2010). Random effects meta-analysis of event outcome in the framework of the generalized linear mixed model with applications in sparse data. Stat Med 29(29):3046-3067"
+doi = "10.1002/sim.4040"
+locator = "Table VII, not-treated, PN row (data of Table VI)"
+read = 2026-11-14
+
+[[case]]
+id = "glmm.published.stijnen2010.table7.pn.control.mismatch"
+kind = "published"
+function = "rma_glmm"
+data = { xi = [11, 8, 14, 10, 1, 8, 15, 7, 3], ti = [1.988, 1.460, 10.962, 1.502, 0.482, 0.913, 6.840, 1.015, 0.440] }
+args = { xi = "xi", ti = "ti", measure = "IRLN", method = "ML" }
+status = "mismatch"
+reason = "tau2 printed 0.316, metafopy 0.31660, R metafor 5.2-1 0.31659; accepted as a source difference on 2026-11-14 (the source used other software, metafopy and R metafor agree)"
+check = "test_published.glmm_printed"
+printed = { tau2 = "0.316" }
+covers = ["rma_glmm.fit.IRLN.none.ML"]
+
+[case.source]
+citation = "Stijnen T, Hamza TH, Ozdemir P (2010). Random effects meta-analysis of event outcome in the framework of the generalized linear mixed model with applications in sparse data. Stat Med 29(29):3046-3067"
+doi = "10.1002/sim.4040"
+locator = "Table VII, not-treated, PN row (data of Table VI)"
+read = 2026-11-14
+
+[[case]]
+id = "glmm.published.stijnen2010.table7.pn.treated.mismatch"
+kind = "published"
+function = "rma_glmm"
+data = { xi = [7, 8, 3, 6, 1, 1, 17, 3, 2], ti = [1.491, 1.638, 11.484, 1.446, 0.370, 0.786, 6.840, 1.156, 0.400] }
+args = { xi = "xi", ti = "ti", measure = "IRLN", method = "ML" }
+status = "mismatch"
+reason = "beta[0] printed 0.850, metafopy 0.81997, R metafor 5.2-1 0.81997; se[0] printed 0.330, metafopy 0.31962, R metafor 5.2-1 0.31962; tau2 printed 0.654, metafopy 0.59899, R metafor 5.2-1 0.59898"
+check = "test_published.glmm_printed"
+printed = { "beta[0]" = "0.850", "se[0]" = "0.330", tau2 = "0.654" }
+covers = ["rma_glmm.fit.IRLN.none.ML"]
+
+[case.source]
+citation = "Stijnen T, Hamza TH, Ozdemir P (2010). Random effects meta-analysis of event outcome in the framework of the generalized linear mixed model with applications in sparse data. Stat Med 29(29):3046-3067"
+doi = "10.1002/sim.4040"
+locator = "Table VII, treated, PN row (data of Table VI)"
+read = 2026-11-14
+
+# van Houwelingen, Zwinderman and Stijnen (1993) model omega = theta_C - theta_T, control against treatment: the opposite sign to metafor's log odds ratio.
+
+[[case]]
+id = "glmm.published.vanhouwelingen1993.fixed"
+kind = "published"
+function = "rma_glmm"
+dataset = "dat.collins1985a"
+args = { ai = "b.xti", n1i = "nti", ci = "b.xci", n2i = "nci", measure = "OR", model = "CM.EL", method = "FE" }
+check = "test_published.glmm_printed"
+printed = { "neg_beta[0]" = "0.12" }
+covers = ["rma_glmm.fit.OR.CM.EL.FE"]
+
+[case.source]
+citation = "van Houwelingen HC, Zwinderman KH, Stijnen T (1993). A bivariate approach to meta-analysis. Stat Med 12(24):2273-2284"
+doi = "10.1002/sim.4780122405"
+locator = "Section 3, fixed effect (Table I data), omega-hat"
+read = 2026-11-14
+
+[[case]]
+id = "glmm.published.vanhouwelingen1993.normal"
+kind = "published"
+function = "rma_glmm"
+dataset = "dat.collins1985a"
+args = { ai = "b.xti", n1i = "nti", ci = "b.xci", n2i = "nci", measure = "OR", model = "CM.EL", method = "ML" }
+check = "test_published.glmm_printed"
+printed = { "neg_beta[0]" = "0.17", tau = "0.35" }
+covers = ["rma_glmm.fit.OR.CM.EL.ML"]
+
+[case.source]
+citation = "van Houwelingen HC, Zwinderman KH, Stijnen T (1993). A bivariate approach to meta-analysis. Stat Med 12(24):2273-2284"
+doi = "10.1002/sim.4780122405"
+locator = "Section 4, normal random effect: mu-hat and sigma-hat"
+read = 2026-11-14
+
+# Simmonds and Higgins (2016), Fig 1: hormone replacement therapy and cardiovascular disease (Table 1), one-stage model (glmer, fixed study effects, random
+# treatment effect); the paper prints odds ratios to two decimals.
+
+[[case]]
+id = "glmm.published.simmonds2016.hrt.random.mismatch"
+kind = "published"
+function = "rma_glmm"
+data = { ai = [5, 0, 1, 1, 1, 1, 3], n1i = [701, 15, 15, 20, 29, 84, 68], ci = [0, 1, 0, 1, 0, 3, 0], n2i = [174, 14, 16, 20, 26, 84, 66] }
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "UM.FS", method = "ML" }
+status = "mismatch"
+reason = "exp_beta[0] printed 1.74, metafopy 1.79068, R metafor 5.2-1 1.7907; exp_ci_lb[0] printed 0.59, metafopy 0.54155, R metafor 5.2-1 0.5415; exp_ci_ub[0] printed 5.17, metafopy 5.92107, R metafor 5.2-1 5.9211"
+check = "test_published.glmm_printed"
+printed = { "exp_beta[0]" = "1.74", "exp_ci_lb[0]" = "0.59", "exp_ci_ub[0]" = "5.17" }
+covers = ["rma_glmm.fit.OR.UM.FS.ML"]
+
+[case.source]
+citation = "Simmonds MC, Higgins JPT (2016). A general framework for the use of logistic regression models in meta-analysis. Stat Methods Med Res 25(6):2858-2877"
+doi = "10.1177/0962280214534409"
+locator = "Fig 1 (read from the page image), one-stage model, random effects; data of Table 1"
+read = 2026-11-14
+
+[[case]]
+id = "glmm.published.simmonds2016.hrt.fixed"
+kind = "published"
+function = "rma_glmm"
+data = { ai = [5, 0, 1, 1, 1, 1, 3], n1i = [701, 15, 15, 20, 29, 84, 68], ci = [0, 1, 0, 1, 0, 3, 0], n2i = [174, 14, 16, 20, 26, 84, 66] }
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "UM.FS", method = "FE" }
+check = "test_published.glmm_printed"
+printed = { "exp_beta[0]" = "1.74", "exp_ci_lb[0]" = "0.59", "exp_ci_ub[0]" = "5.17" }
+covers = ["rma_glmm.fit.OR.UM.FS.FE"]
+
+[case.source]
+citation = "Simmonds MC, Higgins JPT (2016). A general framework for the use of logistic regression models in meta-analysis. Stat Methods Med Res 25(6):2858-2877"
+doi = "10.1177/0962280214534409"
+locator = "Fig 1 (read from the page image), one-stage model, fixed effect; data of Table 1"
+read = 2026-11-14
+
+# Turner et al. (2000): the individual-data fixed-effect fit with fixed trial effects is an exact-likelihood logistic regression. The paper's random-effects rows
+# are quasi-likelihood fits in MLwiN (MQL or PQL), not maximum likelihood, so they have no case.
+
+[[case]]
+id = "glmm.published.turner2000.table3.fixed"
+kind = "published"
+function = "rma_glmm"
+data = { ai = [7, 4, 20, 1, 10, 2, 12, 1, 1, 22, 25, 31, 9, 22, 0, 31, 4, 31, 7, 3, 14, 3], n1i = [47, 38, 96, 14, 48, 101, 161, 28, 19, 49, 162, 200, 39, 193, 45, 131, 75, 220, 55, 91, 25, 65], ci = [25, 24, 37, 11, 26, 13, 38, 29, 9, 44, 30, 40, 10, 40, 4, 60, 12, 42, 26, 17, 23, 6], n2i = [54, 41, 95, 17, 49, 84, 170, 60, 20, 47, 160, 185, 41, 185, 46, 140, 75, 225, 57, 92, 23, 68] }
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "UM.FS", method = "FE" }
+check = "test_published.glmm_printed"
+printed = { "beta[0]" = "-1.06", "ci_lb[0]" = "-1.24", "ci_ub[0]" = "-0.89" }
+covers = ["rma_glmm.fit.OR.UM.FS.FE"]
+
+[case.source]
+citation = "Turner RM, Omar RZ, Yang M, Goldstein H, Thompson SG (2000). A multilevel model framework for meta-analysis of clinical trials with binary outcomes. Stat Med 19(24):3417-3432"
+doi = "10.1002/1097-0258(20001230)19:24<3417::AID-SIM614>3.0.CO;2-L"
+locator = "Table III, individual data, fixed trial effects, fixed effect (data of Table I, respiratory tract infections)"
+read = 2026-11-14
+
+[[case]]
+id = "glmm.published.turner2000.table4.fixed"
+kind = "published"
+function = "rma_glmm"
+data = { ai = [14, 21, 14, 6, 12, 138, 15, 6, 65], n1i = [131, 385, 57, 38, 1011, 1370, 506, 108, 153], ci = [14, 17, 24, 18, 35, 175, 20, 2, 40], n2i = [136, 134, 48, 40, 760, 1336, 524, 103, 102] }
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "UM.FS", method = "FE" }
+check = "test_published.glmm_printed"
+printed = { "beta[0]" = "-0.41" }
+covers = ["rma_glmm.fit.OR.UM.FS.FE"]
+
+[case.source]
+citation = "Turner RM, Omar RZ, Yang M, Goldstein H, Thompson SG (2000). A multilevel model framework for meta-analysis of clinical trials with binary outcomes. Stat Med 19(24):3417-3432"
+doi = "10.1002/1097-0258(20001230)19:24<3417::AID-SIM614>3.0.CO;2-L"
+locator = "Table IV, individual data, fixed trial effects, fixed effect (data of Table II, pre-eclampsia)"
+read = 2026-11-14
+
+# Hamza, van Houwelingen and Stijnen (2008), Table 3, exact binomial-normal likelihood: sensitivity and specificity of the nine studies of the appendix (p. 49).
+
+[[case]]
+id = "glmm.published.turner2000.table4.fixed.mismatch"
+kind = "published"
+function = "rma_glmm"
+data = { ai = [14, 21, 14, 6, 12, 138, 15, 6, 65], n1i = [131, 385, 57, 38, 1011, 1370, 506, 108, 153], ci = [14, 17, 24, 18, 35, 175, 20, 2, 40], n2i = [136, 134, 48, 40, 760, 1336, 524, 103, 102] }
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "UM.FS", method = "FE" }
+status = "mismatch"
+reason = "ci_lb[0] printed -0.59, metafopy -0.58398, R metafor 5.2-1 -0.58398; ci_ub[0] printed -0.23, metafopy -0.23688, R metafor 5.2-1 -0.23688; accepted as a source difference on 2026-11-14 (the source used other software, metafopy and R metafor agree)"
+check = "test_published.glmm_printed"
+printed = { "ci_lb[0]" = "-0.59", "ci_ub[0]" = "-0.23" }
+covers = ["rma_glmm.fit.OR.UM.FS.FE"]
+
+[case.source]
+citation = "Turner RM, Omar RZ, Yang M, Goldstein H, Thompson SG (2000). A multilevel model framework for meta-analysis of clinical trials with binary outcomes. Stat Med 19(24):3417-3432"
+doi = "10.1002/1097-0258(20001230)19:24<3417::AID-SIM614>3.0.CO;2-L"
+locator = "Table IV, individual data, fixed trial effects, fixed effect (data of Table II, pre-eclampsia)"
+read = 2026-11-14
+
+# Hamza, van Houwelingen and Stijnen (2008), Table 3, exact binomial-normal likelihood: sensitivity and specificity of the nine studies of the appendix (p. 49).
+
+[[case]]
+id = "glmm.published.hamza2008.table3.sensitivity"
+kind = "published"
+function = "rma_glmm"
+data = { xi = [33, 18, 20, 19, 44, 18, 27, 21, 18], ni = [39, 24, 33, 19, 50, 21, 28, 21, 19] }
+args = { xi = "xi", ni = "ni", measure = "PLO", method = "ML" }
+check = "test_published.glmm_printed"
+printed = { "beta[0]" = "2.20", "se[0]" = "0.44", tau2 = "0.97", "expit_beta[0]" = "0.90" }
+covers = ["rma_glmm.fit.PLO.none.ML"]
+
+[case.source]
+citation = "Hamza TH, van Houwelingen HC, Stijnen T (2008). The binomial distribution of meta-analysis was preferred to model within-study variability. J Clin Epidemiol 61(1):41-51"
+doi = "10.1016/j.jclinepi.2007.03.016"
+locator = "Table 3, exact method, logit(sensitivity); data of the appendix (read from the page image)"
+read = 2026-11-14
+
+[[case]]
+id = "glmm.published.hamza2008.table3.specificity"
+kind = "published"
+function = "rma_glmm"
+data = { xi = [35, 10, 41, 19, 19, 9, 21, 9, 20], ni = [40, 15, 41, 19, 29, 10, 25, 10, 21] }
+args = { xi = "xi", ni = "ni", measure = "PLO", method = "ML" }
+check = "test_published.glmm_printed"
+printed = { "beta[0]" = "2.27", "se[0]" = "0.49", tau2 = "1.23", "expit_beta[0]" = "0.91" }
+covers = ["rma_glmm.fit.PLO.none.ML"]
+
+[case.source]
+citation = "Hamza TH, van Houwelingen HC, Stijnen T (2008). The binomial distribution of meta-analysis was preferred to model within-study variability. J Clin Epidemiol 61(1):41-51"
+doi = "10.1016/j.jclinepi.2007.03.016"
+locator = "Table 3, exact method, logit(specificity); data of the appendix (read from the page image)"
+read = 2026-11-14

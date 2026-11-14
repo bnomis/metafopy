@@ -63,3 +63,20 @@ def confint_ht(case: correctness.cases.Case, result: typing.Any) -> None:
     values['H_lb'] = float(numpy.sqrt(values['H2_lb']))
     values['H_ub'] = float(numpy.sqrt(values['H2_ub']))
     check_values(case, values)
+
+
+def glmm_printed(case: correctness.cases.Case, result: typing.Any) -> None:
+    """The coefficients of an ``rma_glmm`` fit on the scales a source prints.
+
+    ``beta[j]``, ``se[j]``, ``ci_lb[j]`` and ``ci_ub[j]`` are the fit's; ``exp_``, ``neg_`` and ``expit_`` prefix the odds-ratio scale, the opposite
+    sign (a source that models control against treatment) and a proportion; ``tau`` is the between-study standard deviation, ``tau2`` the variance.
+    """
+    values: dict[str, float] = {'tau2': scalar(result.tau2), 'tau': float(numpy.sqrt(scalar(result.tau2)))}
+    for index in range(numpy.asarray(result.beta).size):
+        for name in ('beta', 'se', 'ci_lb', 'ci_ub'):
+            raw = float(numpy.asarray(getattr(result, name), dtype=numpy.float64).reshape(-1)[index])
+            values[f'{name}[{index}]'] = raw
+            values[f'neg_{name}[{index}]'] = -raw
+            values[f'exp_{name}[{index}]'] = float(numpy.exp(raw))
+            values[f'expit_{name}[{index}]'] = float(1.0 / (1.0 + numpy.exp(-raw)))
+    check_values(case, values)

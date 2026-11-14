@@ -38,7 +38,7 @@ directory cannot be read from the queue's session, the task stops as `blocked` a
 
 ## Task 1: Harness - formula modules, rma_glmm coverage items, optimiser exemption test
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Module location; Coverage list; Error handling; Implementation step 1
@@ -47,16 +47,16 @@ directory cannot be read from the queue's session, the task stops as `blocked` a
 
 **Subtasks:**
 
-- [ ] Starting-point check: `ls src/tests/correctness/glmm_formulas.py src/tests/correctness/cases/glmm*.toml` finds nothing, and
+- [x] Starting-point check: `ls src/tests/correctness/glmm_formulas.py src/tests/correctness/cases/glmm*.toml` finds nothing, and
       `grep -rnw 'rma_glmm' src/tests/correctness/test_coverage.py` finds no coverage item. Stop as `blocked`, naming what exists, if either fires.
       `FORMULA_MODULES` already present in `src/tests/correctness/cases.py` (made by a sibling list) is not a clash: then only add `'glmm_formulas'`
       to it
-- [ ] `src/tests/correctness/cases.py`: a `FORMULA_MODULES = ('formulas', 'glmm_formulas')` tuple; a formula is named `"<module>.<name>"` and resolved
+- [x] `src/tests/correctness/cases.py`: a `FORMULA_MODULES = ('formulas', 'glmm_formulas')` tuple; a formula is named `"<module>.<name>"` and resolved
       in its module; the loader refuses a module not in the tuple with `ValueError` naming file and case. Update the module docstring and the error
       messages that say `"formulas.<name>"`
-- [ ] Create `src/tests/correctness/glmm_formulas.py` holding only its module docstring (no `metafopy` import; each function cites its equation), and
+- [x] Create `src/tests/correctness/glmm_formulas.py` holding only its module docstring (no `metafopy` import; each function cites its equation), and
       `cases/glmm.toml`, `cases/glmm_published.toml`, each empty except a header comment
-- [ ] `src/tests/correctness/test_coverage.py`:
+- [x] `src/tests/correctness/test_coverage.py`:
   - the `ast` import check runs over every module of `FORMULA_MODULES`;
   - `coverage_items()` adds the `rma_glmm` items of the spec's Coverage list, read from `metafopy.models.rma_glmm.SUPPORTED`, `EXPERIMENTAL`,
     `MODELS`, `UNCONDITIONAL_ONLY`, `METHODS`, `metafopy.models.glmm_fit.ONE_GROUP`, `PACKAGES`, `OPTIMIZERS` and
@@ -66,19 +66,19 @@ directory cannot be read from the queue's session, the task stops as `blocked` a
     fit of `dat.nielweise2007`, failing with the item's name when it does not;
   - mark `test_every_core_item_has_a_case` `xfail(strict=True, reason='rma_glmm coverage incomplete; see agents/tasks/correctness-glmm/tasks-1.md')`
     until Task 7 removes the mark
-- [ ] Inline-TOML unit tests in `test_coverage.py`: a `glmm_formulas.<name>` formula resolves; a formula in an unknown module is refused, naming file
+- [x] Inline-TOML unit tests in `test_coverage.py`: a `glmm_formulas.<name>` formula resolves; a formula in an unknown module is refused, naming file
       and case
 
 **Acceptance Criteria:**
 
-- [ ] The gate's missing list names every `rma_glmm` item and no other new item
-- [ ] A `glmm_formulas.py` that imports `metafopy` fails `test_coverage.py`
+- [x] The gate's missing list names every `rma_glmm` item and no other new item
+- [x] A `glmm_formulas.py` that imports `metafopy` fails `test_coverage.py`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_coverage.py src/tests/correctness/test_derived.py src/tests/correctness/test_properties.py src/tests/correctness/test_published.py src/tests/correctness/test_other_software.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_coverage.py src/tests/correctness/test_derived.py src/tests/correctness/test_properties.py src/tests/correctness/test_published.py src/tests/correctness/test_other_software.py` passes
 
 **Notes:**
 
@@ -91,7 +91,7 @@ directory cannot be read from the queue's session, the task stops as `blocked` a
 
 ## Task 2: glmm_formulas.py - likelihoods and the three integration rules
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** Kinds of evidence (derived, integration as a convention); API; Error handling; Implementation step 2
@@ -101,31 +101,33 @@ Laplace approximation, each coded from its paper.
 
 **Subtasks:**
 
-- [ ] `binomial_loglik` and a Poisson counterpart, with each link of `LINKS` and the family constants that `logLik()` reports, from Stijnen et al.
+- [x] `binomial_loglik` and a Poisson counterpart, with each link of `LINKS` and the family constants that `logLik()` reports, from Stijnen et al.
       (2010) and Bagos and Nikolopoulos (2009)
-- [ ] `nchg_loglik`: Fisher's non-central hypergeometric log-probability by direct summation over the support (van Houwelingen et al. 1993; Stijnen et
+- [x] `nchg_loglik`: Fisher's non-central hypergeometric log-probability by direct summation over the support (van Houwelingen et al. 1993; Stijnen et
       al. 2010), and the approximate (binomial) conditional likelihood of `CM.AL`
-- [ ] `marginal_loglik` with `rule` `'exact'` (`scipy.integrate.quad`; `dblquad` for the bivariate `UM.RS` effects), `'agq'` (`points`, centred at
+- [x] `marginal_loglik` with `rule` `'exact'` (`scipy.integrate.quad`; `dblquad` for the bivariate `UM.RS` effects), `'agq'` (`points`, centred at
       the conditional mode, scaled by its curvature) and `'laplace'`, from Pinheiro and Bates (1995)
-- [ ] Turn `scipy.integrate.IntegrationWarning` and a non-converged `scipy.optimize` result into `ArithmeticError` naming the model
-- [ ] `src/tests/correctness/test_glmm_formulas.py`: the three rules agree to `1e-6` on a dataset where they should (a random-intercept logistic model
+- [x] Turn `scipy.integrate.IntegrationWarning` and a non-converged `scipy.optimize` result into `ArithmeticError` naming the model
+- [x] `src/tests/correctness/test_glmm_formulas.py`: the three rules agree to `1e-6` on a dataset where they should (a random-intercept logistic model
       with large counts); `agq` with one point equals `laplace`; a binomial log-likelihood against `scipy.stats.binom.logpmf`; `nchg_loglik` against
       `scipy.stats.nchypergeom_fisher.logpmf`; a forced integration failure raises `ArithmeticError`
 
 **Acceptance Criteria:**
 
-- [ ] Every function's docstring names its source and equation
-- [ ] `glmm_formulas.py` imports `numpy` and `scipy` only
+- [x] Every function's docstring names its source and equation
+- [x] `glmm_formulas.py` imports `numpy` and `scipy` only
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_glmm_formulas.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_glmm_formulas.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 
 - Depends on Task 1
+- `marginal_loglik` takes keyword-only `studies` (the conditional maps one effect per study) and `model`; `bivariate_marginal_loglik` is the `UM.RS` counterpart with `dblquad`; the spec's API block records the signature
+- The three rules agree to `1e-6` only for a small `tau2` (the Laplace error is of order tau2 times the counts' curvature); the unit test uses `tau2 = 1e-6`
 - The spec names no test file for the formulas' own unit checks; `test_glmm_formulas.py` is this list's choice (see the closing report)
 - Read for option names only, never for formulas: `src/metafopy/models/glmm_fit.py`, `src/metafopy/models/rma_glmm.py`
 
@@ -133,7 +135,7 @@ Laplace approximation, each coded from its paper.
 
 ## Task 3: glmm_formulas.py - the formulas' own fits
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** Kinds of evidence (derived, fixed-effects fits, optimiser dependence); API; Implementation step 2
@@ -142,26 +144,26 @@ Laplace approximation, each coded from its paper.
 
 **Subtasks:**
 
-- [ ] `GLMMReference` (frozen dataclass): estimates, standard errors from the observed information, `tau2` (and `sigma2`, `rho` for `UM.RS`),
+- [x] `GLMMReference` (frozen dataclass): estimates, standard errors from the observed information, `tau2` (and `sigma2`, `rho` for `UM.RS`),
       log-likelihood, gradient norm at the optimum
-- [ ] `glmm_fit` for the two-group binomial models (`UM.FS`, `UM.RS`, `CM.AL`, `CM.EL`) with `method` `FE` and `ML`, `rule` and `points`; and the
+- [x] `glmm_fit` for the two-group binomial models (`UM.FS`, `UM.RS`, `CM.AL`, `CM.EL`) with `method` `FE` and `ML`, `rule` and `points`; and the
       `poisson_`, `one_group_` and `conditional_` entry points with their measure's arguments (person-times for `IRR`, `IRLN`; one group for `PLO`,
       `PR`, `PLN`)
-- [ ] Fixed-effects fits: the closed forms `logit(sum xi / sum ni)` (`PLO`) and `log(sum xi / sum ti)` (`IRLN`) without moderators; otherwise the
+- [x] Fixed-effects fits: the closed forms `logit(sum xi / sum ni)` (`PLO`) and `log(sum xi / sum ti)` (`IRLN`) without moderators; otherwise the
       score equations solved with `scipy.optimize.root`. The `CM.EL` `FE` standard error from the analytic conditional information (the sum of the
       conditional variances)
-- [ ] A function giving the formulas' log-likelihood and its gradient at given estimates, for Task 4's check
-- [ ] Unit checks in `test_glmm_formulas.py`: the closed forms equal the `root` solution; the gradient at each fit's optimum is below `1e-6`
+- [x] A function giving the formulas' log-likelihood and its gradient at given estimates, for Task 4's check
+- [x] Unit checks in `test_glmm_formulas.py`: the closed forms equal the `root` solution; the gradient at each fit's optimum is below `1e-6`
 
 **Acceptance Criteria:**
 
-- [ ] No fit starts from, or calls, metafopy
+- [x] No fit starts from, or calls, metafopy
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_glmm_formulas.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_glmm_formulas.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 
@@ -173,7 +175,7 @@ Laplace approximation, each coded from its paper.
 
 ## Task 4: Derived fit cases for OR
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** Coverage list (`rma_glmm.fit`); Kinds of evidence (optimiser dependence); Implementation step 3
@@ -183,25 +185,25 @@ estimates themselves.
 
 **Subtasks:**
 
-- [ ] `src/tests/correctness/test_derived.py`: `glmm_likelihood_at_estimate` as in the spec's API - the formulas' log-likelihood at metafopy's
+- [x] `src/tests/correctness/test_derived.py`: `glmm_likelihood_at_estimate` as in the spec's API - the formulas' log-likelihood at metafopy's
       reported estimates equals `result.fit_stats_ml.ll` and the formulas' maximum (`rtol=1e-8`), and its gradient there is below `1e-4`; and a check
       that the estimates (`beta`, `se`, `tau2`, `sigma2` for `UM.RS`) agree with the formulas' optimum at the case's stated tolerance (`1e-5` for
       `nlminb` and the mixed models; `1e-8` relative on `FE` `beta`; `1e-6` on the `CM.EL` `FE` standard error)
-- [ ] `src/tests/correctness/cases.py`: `formula_value` passes `rma_glmm`'s own arguments by name, as it does for `escalc`, if Task 1 left it unable to
-- [ ] Cases in `cases/glmm.toml` for `OR` with each model of `MODELS` and `FE`, `ML` on `dat.nielweise2007` and `dat.collins1985a`, and on the
+- [x] `src/tests/correctness/cases.py`: `formula_value` passes `rma_glmm`'s own arguments by name, as it does for `escalc`, if Task 1 left it unable to
+- [x] Cases in `cases/glmm.toml` for `OR` with each model of `MODELS` and `FE`, `ML` on `dat.nielweise2007` and `dat.collins1985a`, and on the
       Jackson et al. (2018) measles data inline in `[case.data]` with its locator (Table 3); each states its tolerance
-- [ ] Record any mismatch as the header says
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] The gate's missing list names no `rma_glmm.fit.OR.*` item
-- [ ] Each `ML` case runs both checks
+- [x] The gate's missing list names no `rma_glmm.fit.OR.*` item
+- [x] Each `ML` case runs both checks
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py src/tests/correctness/test_glmm_formulas.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py src/tests/correctness/test_glmm_formulas.py` passes
 
 **Notes:**
 
@@ -212,7 +214,7 @@ estimates themselves.
 
 ## Task 5: Derived fit cases for IRR, the one-group and the experimental measures; methods and links
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** Coverage list (`rma_glmm.fit`, `method`, `link`); Implementation step 3
@@ -221,23 +223,23 @@ estimates themselves.
 
 **Subtasks:**
 
-- [ ] `IRR` with each model on `dat.nielweise2008`; the `IRR` `CM.AL` case shows it is fitted as `CM.EL` (same `beta`, `se`, `ll`)
-- [ ] The one-group measures in `ONE_GROUP` with model `none`, `FE` and `ML`: `PLO`, `PR`, `PLN` on `dat.pritz1997`, `IRLN` on `dat.nielweise2008`'s
+- [x] `IRR` with each model on `dat.nielweise2008`; the `IRR` `CM.AL` case shows it is fitted as `CM.EL` (same `beta`, `se`, `ll`)
+- [x] The one-group measures in `ONE_GROUP` with model `none`, `FE` and `ML`: `PLO`, `PR`, `PLN` on `dat.pritz1997`, `IRLN` on `dat.nielweise2008`'s
       one arm (or inline data with its locator)
-- [ ] The experimental two-group measures `RR`, `RD` with `UM.FS`, `UM.RS` only (`UNCONDITIONAL_ONLY`), on `dat.nielweise2007`
-- [ ] `rma_glmm.method.<m>` for each of `METHODS`: `EE` and `CE` give the `FE` fit
-- [ ] `rma_glmm.link.<link>` for each value of `LINKS`, on the unconditional and one-group models that accept it
-- [ ] Record any mismatch as the header says
+- [x] The experimental two-group measures `RR`, `RD` with `UM.FS`, `UM.RS` only (`UNCONDITIONAL_ONLY`), on `dat.nielweise2007`
+- [x] `rma_glmm.method.<m>` for each of `METHODS`: `EE` and `CE` give the `FE` fit
+- [x] `rma_glmm.link.<link>` for each value of `LINKS`, on the unconditional and one-group models that accept it
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] The gate's missing list names no `rma_glmm.fit`, `rma_glmm.method` or `rma_glmm.link` item
+- [x] The gate's missing list names no `rma_glmm.fit`, `rma_glmm.method` or `rma_glmm.link` item
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 
@@ -248,7 +250,7 @@ estimates themselves.
 
 ## Task 6: Derived package and optimiser cases
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Coverage list (`package`, `optimizer`); Kinds of evidence (integration as a convention, optimiser dependence)
@@ -257,25 +259,25 @@ estimates themselves.
 
 **Subtasks:**
 
-- [ ] `rma_glmm.package.<p>` for each of `PACKAGES`: the log-likelihood at the estimates equals the formulas' approximation of the same kind -
+- [x] `rma_glmm.package.<p>` for each of `PACKAGES`: the log-likelihood at the estimates equals the formulas' approximation of the same kind -
       adaptive quadrature with `nAGQ` points for `lme4` and `GLMMadaptive`, Laplace for `glmmTMB` and for `lme4` with `UM.RS`
-- [ ] Accurate-integral cases: `GLMMadaptive` with a large `nAGQ`, and `CM.EL` with `control` `int_rel_tol = 1e-10`, against the `'exact'` rule
-- [ ] `rma_glmm.optimizer.<o>` for each of `OPTIMIZERS`, on `CM.EL` `OR`, estimates at `1e-4`; an optimiser that raises `NotSupportedError` gets an
+- [x] Accurate-integral cases: `GLMMadaptive` with a large `nAGQ`, and `CM.EL` with `control` `int_rel_tol = 1e-10`, against the `'exact'` rule
+- [x] `rma_glmm.optimizer.<o>` for each of `OPTIMIZERS`, on `CM.EL` `OR`, estimates at `1e-4`; an optimiser that raises `NotSupportedError` gets an
       `[[exempt]]` entry saying so (checked by Task 1's exemption test)
-- [ ] A difference between an approximation and the exact fit that changes a printed digit of a published value goes under "Conventions" in
+- [x] A difference between an approximation and the exact fit that changes a printed digit of a published value goes under "Conventions" in
       `mismatches.md`, as the header says
-- [ ] Record any mismatch as the header says
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] The gate's missing list names no `package` or `optimizer` item
-- [ ] Task 1's exemption test passes on every optimiser exemption
+- [x] The gate's missing list names no `package` or `optimizer` item
+- [x] Task 1's exemption test passes on every optimiser exemption
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 
@@ -288,7 +290,7 @@ estimates themselves.
 
 ## Task 7: Derived inference and heterogeneity cases, then close the gate
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** Coverage list (inference); Implementation step 2 (heterogeneity statistics) and step 3
@@ -298,26 +300,26 @@ them the gate passes.
 
 **Subtasks:**
 
-- [ ] `glmm_formulas.py`: the saturated-model log-likelihoods for `QE_LRT`, the Wald statistic for `QE_Wld`, `QM`, the typical within-study variance
+- [x] `glmm_formulas.py`: the saturated-model log-likelihoods for `QE_LRT`, the Wald statistic for `QE_Wld`, `QM`, the typical within-study variance
       for `I2`/`H2` (`i2def='1'`, Higgins and Thompson 2002), `1 / mean(1 / vi)` (`i2def='2'`), the Wald interval on `log tau2` of `CM.EL` with `ML`,
       and the prediction interval
-- [ ] Unit checks of these in `test_glmm_formulas.py`
-- [ ] Cases: `rma_glmm.test.z`, `rma_glmm.test.t`; `rma_glmm.coding.<c>` for `0.5`, `1`, `0`; `rma_glmm.cor` (`UM.RS`, `cor=True`, `rho`);
+- [x] Unit checks of these in `test_glmm_formulas.py`
+- [x] Cases: `rma_glmm.test.z`, `rma_glmm.test.t`; `rma_glmm.coding.<c>` for `0.5`, `1`, `0`; `rma_glmm.cor` (`UM.RS`, `cor=True`, `rho`);
       `rma_glmm.heterogeneity.<s>` for `QE_Wld`, `QE_LRT`, `QM`, `I2`, `H2`; `rma_glmm.i2def.<d>`; `rma_glmm.tau2_ci` (`se_tau2`, `ci_lb_tau2`,
       `ci_ub_tau2`); `rma_glmm.predict.pi` with the existing `predict_pi` check or the `predict` check the `correctness-harness-checks` list added
-- [ ] `i2def='2'` is metafor's definition: look for a published source; if none is found, exempt `rma_glmm.i2def.2` with that reason
-- [ ] Record any mismatch as the header says
-- [ ] Remove the `xfail` mark from `test_every_core_item_has_a_case`
+- [x] `i2def='2'` is metafor's definition: look for a published source; if none is found, exempt `rma_glmm.i2def.2` with that reason
+- [x] Record any mismatch as the header says
+- [x] Remove the `xfail` mark from `test_every_core_item_has_a_case`
 
 **Acceptance Criteria:**
 
-- [ ] The gate passes with no xfail mark
+- [x] The gate passes with no xfail mark
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py src/tests/correctness/test_glmm_formulas.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py src/tests/correctness/test_glmm_formulas.py` passes
 
 **Notes:**
 
@@ -328,7 +330,7 @@ them the gate passes.
 
 ## Task 8: Property cases
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** medium
 **Spec Reference:** Kinds of evidence (property); Implementation step 4
@@ -337,7 +339,7 @@ them the gate passes.
 
 **Subtasks:**
 
-- [ ] `check` functions in `src/tests/correctness/test_properties.py` and `property` cases in `cases/glmm.toml`:
+- [x] `check` functions in `src/tests/correctness/test_properties.py` and `property` cases in `cases/glmm.toml`:
   - swapping the groups negates `beta` and keeps `tau2` (`UM.FS` with coding `0.5`, `CM.AL`, `CM.EL`);
   - swapping events and non-events negates the log odds ratio;
   - multiplying both person-times by one constant leaves `IRR` unchanged;
@@ -345,17 +347,17 @@ them the gate passes.
   - the codings give one `FE` fit;
   - `ML` with `tau2` below `tau2tol` gives the `FE` estimates;
   - `I2 = 100 (H2 - 1) / H2`.
-- [ ] Record any failing property as a mismatch, as the header says
+- [x] Record any failing property as a mismatch, as the header says
 
 **Acceptance Criteria:**
 
-- [ ] Each property names the models or measures it runs over, read from the code's tuples where they exist
+- [x] Each property names the models or measures it runs over, read from the code's tuples where they exist
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_properties.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_properties.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 
@@ -366,7 +368,7 @@ them the gate passes.
 
 ## Task 9: Published cases
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** Seed sources; Decisions 1; Implementation step 5
@@ -375,29 +377,29 @@ them the gate passes.
 
 **Subtasks:**
 
-- [ ] Check that `/Users/simonb/src/metafopy papers` can be read; stop as `blocked` if not
-- [ ] Prerequisite check: `grep -n '^def ' src/tests/correctness/test_derived.py` lists a back-transform check beside `predict_pi`. If it does not,
+- [x] Check that `/Users/simonb/src/metafopy papers` can be read; stop as `blocked` if not
+- [x] Prerequisite check: `grep -n '^def ' src/tests/correctness/test_derived.py` lists a back-transform check beside `predict_pi`. If it does not,
       write no case that needs `exp(beta)`, and list each such value in `mismatches.md` under "Harness limits" with its locator
-- [ ] Jackson et al. (2018) Table 4: log odds ratio, its SE and `tau2` per model for outcomes 1, 2, 4 and 4b (4b drops the double-zero study, a
+- [x] Jackson et al. (2018) Table 4: log odds ratio, its SE and `tau2` per model for outcomes 1, 2, 4 and 4b (4b drops the double-zero study, a
       `drop00` check), on the Table 3 data inline
-- [ ] Then each other seed source the spec's table lists (Stijnen et al. 2010; Simmonds and Higgins 2016; Turner et al. 2000; van Houwelingen et al.
+- [x] Then each other seed source the spec's table lists (Stijnen et al. 2010; Simmonds and Higgins 2016; Turner et al. 2000; van Houwelingen et al.
       1993; Bagos and Nikolopoulos 2009; Hamza et al. 2008 and Zhou et al. 1999; Pinheiro and Bates 1995; Breslow 1981; Higgins and Thompson 2002): find
       its worked example and the metafopy dataset holding the same data (inline data with its locator otherwise), and add `published` cases in
       `cases/glmm_published.toml`, values as printed strings. A source with formulas only gets none, and that is said in the case file's header
-- [ ] A source that cannot be read, or whose example needs a source not in the folder, goes under "Sources needed" in `mismatches.md` with its
+- [x] A source that cannot be read, or whose example needs a source not in the folder, goes under "Sources needed" in `mismatches.md` with its
       citation and the table or example wanted
-- [ ] Record any mismatch as the header says
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] Every seed source has `published` cases, a "formulas only" note, or a "Sources needed" entry
-- [ ] Every `published` case has `citation`, `locator` and `read`
+- [x] Every seed source has `published` cases, a "formulas only" note, or a "Sources needed" entry
+- [x] Every `published` case has `citation`, `locator` and `read`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_published.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_published.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 
@@ -411,7 +413,7 @@ them the gate passes.
 
 ## Task 10: Stop for sources needed
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation step 5 (stop for the operator)
@@ -421,33 +423,35 @@ such a source exists.
 
 **Subtasks:**
 
-- [ ] If "Sources needed" in `agents/specs/correctness-glmm/mismatches.md` is absent or empty, write "No source needed" in that section, mark this
+- [x] (Not applicable: two sources were needed.) If "Sources needed" in `agents/specs/correctness-glmm/mismatches.md` is absent or empty, write "No source needed" in that section, mark this
       task done and go on: there is nothing to stop for
-- [ ] Otherwise: each entry names the citation, the table or example wanted, and the file name to save it under in
+- [x] Otherwise: each entry names the citation, the table or example wanted, and the file name to save it under in
       `/Users/simonb/src/metafopy papers`; stop the list for the operator
-- [ ] Once every entry has an answer, an operator session saves each supplied PDF in `/Users/simonb/src/metafopy papers` (never in the repository),
+- [x] Once every entry has an answer, an operator session saves each supplied PDF in `/Users/simonb/src/metafopy papers` (never in the repository),
       writes `supplied <date>` or `dropped <date>` beside each entry in `mismatches.md`, commits that, and only then restarts the list
 
 **Acceptance Criteria:**
 
-- [ ] Every "Sources needed" entry names the table or example wanted
+- [x] Every "Sources needed" entry names the table or example wanted
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness -m 'not slow'` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness -m 'not slow'` passes
 
 **Notes:**
 
 - Depends on Task 9
 - Every seed source was in the folder on 2026-11-14, so this stop is expected to pass through
+- Stopped on 2026-11-14 for Hooper et al. (2001) and Wolf et al. (2003); the operator saved both in the papers folder the same day and
+  `mismatches.md` marks them supplied. Task 11 writes their cases.
 
 ---
 
 ## Task 11: Published cases from supplied sources
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** medium
 **Spec Reference:** Implementation step 5
@@ -456,30 +460,31 @@ such a source exists.
 
 **Subtasks:**
 
-- [ ] Read "Sources needed" in `agents/specs/correctness-glmm/mismatches.md`. If it says "No source needed", mark this task done. If any entry has
+- [x] Read "Sources needed" in `agents/specs/correctness-glmm/mismatches.md`. If it says "No source needed", mark this task done. If any entry has
       neither `supplied` nor `dropped` beside it, stop as `blocked`, naming the entries
-- [ ] For each supplied source, write its `published` cases as in Task 9; a dropped source keeps its entry and gets no case
-- [ ] Record any mismatch as the header says
+- [x] For each supplied source, write its `published` cases as in Task 9; a dropped source keeps its entry and gets no case
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] Every supplied source has `published` cases or a note in its entry saying why none could be written
+- [x] Every supplied source has `published` cases or a note in its entry saying why none could be written
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_published.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_published.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 
 - Depends on Task 10
+- Read 2026-11-14: Hooper et al. (2001) Table 1 does not reproduce Bagos and Nikolopoulos's event totals and Wolf et al. (2003) prints means, not counts and person-months, so neither gives a `published` case; both entries in `mismatches.md` say why
 
 ---
 
 ## Task 12: Other-software cases from base R and glmmML
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** medium
 **Spec Reference:** Other software; Error handling (generator); Decisions 2; Implementation step 6
@@ -488,28 +493,28 @@ such a source exists.
 
 **Subtasks:**
 
-- [ ] If `/Users/simonb/.local/share/metafopy/r-correctness-lib` has no `glmmML` 1.1.7 (`grep -m1 '^Version' .../glmmML/DESCRIPTION`), stop as
+- [x] If `/Users/simonb/.local/share/metafopy/r-correctness-lib` has no `glmmML` 1.1.7 (`grep -m1 '^Version' .../glmmML/DESCRIPTION`), stop as
       `blocked`, saying that the operator installs it there outside this repository
-- [ ] Write `src/tests/correctness/r/other_software_glmm.R`, modelled on `r/other_software.R`:
+- [x] Write `src/tests/correctness/r/other_software_glmm.R`, modelled on `r/other_software.R`:
   - it pins `glmmML` 1.1.7 at its top, reads `METAFOPY_CORRECTNESS_RLIB` and runs `.libPaths(c(lib, .libPaths()))`, and stops when the variable is
     unset or the library holds another `glmmML` version;
   - `mantelhaen.test(exact = TRUE)`: `CM.EL` with `FE` on `dat.nielweise2007`, `dat.collins1985a` and the Jackson data (estimate and exact interval);
   - `glmmML`: the one-group models and `CM.AL`;
   - it writes `cases/glmm_other.toml` with `kind = "other"`, and `glmmML`'s and R's versions in each case's `source`.
-- [ ] Run it as `METAFOPY_CORRECTNESS_RLIB=/Users/simonb/.local/share/metafopy/r-correctness-lib R_LIBS="$main/.audit/Rlib" LC_ALL=C.UTF-8 Rscript
+- [x] Run it as `METAFOPY_CORRECTNESS_RLIB=/Users/simonb/.local/share/metafopy/r-correctness-lib R_LIBS="$main/.audit/Rlib" LC_ALL=C.UTF-8 Rscript
       src/tests/correctness/r/other_software_glmm.R` (`main` as in the header) and commit the output
-- [ ] Record any mismatch as the header says
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] Every `glmmML` case names `glmmML`'s version; tests never run R
-- [ ] `git diff --quiet main -- src/audit/data/r-versions.json` exits 0
+- [x] Every `glmmML` case names `glmmML`'s version; tests never run R
+- [x] `git diff --quiet main -- src/audit/data/r-versions.json` exits 0
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_other_software.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_other_software.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 
@@ -523,7 +528,7 @@ such a source exists.
 
 ## Task 13: Review the mismatches, conventions and sources needed
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation step 7
@@ -532,27 +537,27 @@ such a source exists.
 
 **Subtasks:**
 
-- [ ] Write `agents/specs/correctness-glmm/mismatches.md` in the review-document layout of the shared `reviews.md` rule:
+- [x] Write `agents/specs/correctness-glmm/mismatches.md` in the review-document layout of the shared `reviews.md` rule:
   - what is reviewed and how;
   - automatic checks: the gate passes, every `mismatch` case in `cases/glmm*.toml` has an item, `src/audit/data/r-versions.json` is unchanged;
   - each mismatch, with source, locator and the three values;
   - "Conventions", "Sources needed" (with their Task 10 answers) and "Harness limits";
   - decisions, with options *follow the reference*, *keep metafor* and *investigate*, and a recommendation and its reason for each;
   - an empty Answers section.
-- [ ] Publish its interactive page, with answers saved to the artifact's database, and put `**Review page:** <URL>` in the document's header
-- [ ] If there are no mismatches and no convention differences, write that in the document, skip the page, and go on without stopping
-- [ ] Otherwise stop the list for the operator. Once every item has an answer, an operator session reads the page's answers, copies each into the
+- [x] Publish its interactive page, with answers saved to the artifact's database, and put `**Review page:** <URL>` in the document's header
+- [x] (Not applicable: there are mismatches.) If there are no mismatches and no convention differences, write that in the document, skip the page, and go on without stopping
+- [x] Otherwise stop the list for the operator. Once every item has an answer, an operator session reads the page's answers, copies each into the
       Answers section with the date, commits that, and only then restarts the list
 
 **Acceptance Criteria:**
 
-- [ ] Every `mismatch` case in `cases/glmm*.toml` has an item on the page
+- [x] Every `mismatch` case in `cases/glmm*.toml` has an item on the page
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness -m 'not slow'` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness -m 'not slow'` passes
 
 **Notes:**
 
@@ -563,7 +568,7 @@ such a source exists.
 
 ## Task 14: File the answers and close the spec
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation step 8
@@ -573,27 +578,27 @@ list.
 
 **Subtasks:**
 
-- [ ] Read the answers from the Answers section of `agents/specs/correctness-glmm/mismatches.md`, never from the page. Stop as `blocked`, naming the
+- [x] Read the answers from the Answers section of `agents/specs/correctness-glmm/mismatches.md`, never from the page. Stop as `blocked`, naming the
       missing items, if the section is empty or incomplete. If Task 13 recorded that there was nothing to review, go on
-- [ ] *Keep metafor*: correct the case to the convention metafor documents, cite where it documents it, and set `status = "pass"`
-- [ ] *Follow the reference*: add a `TODO.md` item for each with the `todo-add` skill. The item names the case, the fix, the R parity fixtures and
+- [x] *Keep metafor*: correct the case to the convention metafor documents, cite where it documents it, and set `status = "pass"`
+- [x] *Follow the reference*: add a `TODO.md` item for each with the `todo-add` skill. The item names the case, the fix, the R parity fixtures and
       `known.toml` entries to mark, and the `docs/differences.md` section "Where metafor departs from its reference" to add
-- [ ] *Investigate*: a `TODO.md` item naming what is in doubt, with the `todo-add` skill
-- [ ] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` to say so
-- [ ] Run the final test run from the worktree:
+- [x] *Investigate*: a `TODO.md` item naming what is in doubt, with the `todo-add` skill
+- [x] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` to say so
+- [x] Run the final test run from the worktree:
       `main=$(git worktree list --porcelain | sed -n '1s/^worktree //p'); mkdir -p "$main/ralpher-logs/correctness-glmm/tasks-1" && pytest src/tests/correctness 2>&1 | tee "$main/ralpher-logs/correctness-glmm/tasks-1/final-tests.log"`
 
 **Acceptance Criteria:**
 
-- [ ] Every answered item has a case change or a `TODO.md` item
-- [ ] `git diff --quiet main -- src/audit/data/r-versions.json` exits 0
+- [x] Every answered item has a case change or a `TODO.md` item
+- [x] `git diff --quiet main -- src/audit/data/r-versions.json` exits 0
 
 **Definition of Done:**
 
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness` passes, `slow` tests included (the last subtask's run, logged to
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness` passes, `slow` tests included (the last subtask's run, logged to
       `$main/ralpher-logs/correctness-glmm/tasks-1/final-tests.log`)
 
 **Notes:**

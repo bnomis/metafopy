@@ -13,21 +13,26 @@ import numpy
 import pytest
 
 import correctness.cases
+import correctness.glmm_formulas
 import correctness.test_published
 import metafopy
 import metafopy.core.clubsandwich
+import metafopy.core.glm
 import metafopy.datasets
 import metafopy.effects.measures
+import metafopy.errors
 import metafopy.methods.confint
 import metafopy.methods.robust
+import metafopy.models.glmm_fit
 import metafopy.models.mv_structs
+import metafopy.models.rma_glmm
 import metafopy.models.rma_mv
 import metafopy.models.rma_uni
 import metafopy.models.tau2
 
 HETEROGENEITY = ('H2', 'I2', 'QE', 'QM')
 MH_MEASURES = ('IRD', 'IRR', 'OR', 'RD', 'RR')
-FORMULAS = pathlib.Path(__file__).parent / 'formulas.py'
+FORMULA_FILES = tuple(pathlib.Path(__file__).parent / f'{module}.py' for module in correctness.cases.FORMULA_MODULES)
 
 # every argument escalc takes from the data, as one small dataset; escalc ignores the ones a measure does not use
 BASE_INPUTS: dict[str, typing.Any] = {
@@ -103,6 +108,33 @@ def coverage_items() -> list[str]:
     items += [f'rma_mh.{m}.{part}' for m in MH_MEASURES for part in ('estimate', 'variance')]
     items += ['rma_peto']
     items += mv_robust_items()
+    items += glmm_items()
+    return items
+
+
+def glmm_items() -> list[str]:
+    """The ``rma_glmm`` items: each option list read from the code, the literals inside ``check_arguments`` and ``i2_h2`` listed here."""
+    glmm = metafopy.models.rma_glmm
+    items: list[str] = []
+    for measure in (*glmm.SUPPORTED, *glmm.EXPERIMENTAL):
+        if measure in metafopy.models.glmm_fit.ONE_GROUP:
+            models: tuple[str, ...] = ('none',)
+        elif measure in glmm.UNCONDITIONAL_ONLY:
+            models = ('UM.FS', 'UM.RS')
+        else:
+            models = glmm.MODELS
+        items += [f'rma_glmm.fit.{measure}.{model}.{method}' for model in models for method in correctness.glmm_formulas.METHODS]
+    items += [f'rma_glmm.method.{m}' for m in glmm.METHODS]
+    items += [f'rma_glmm.link.{link}' for link in metafopy.core.glm.LINKS]
+    items += [f'rma_glmm.package.{p}' for p in metafopy.models.glmm_fit.PACKAGES]
+    items += [f'rma_glmm.optimizer.{o}' for o in metafopy.models.glmm_fit.OPTIMIZERS]
+    items += ['rma_glmm.test.z', 'rma_glmm.test.t']
+    items += [f'rma_glmm.coding.{c}' for c in ('0.5', '1', '0')]
+    items += ['rma_glmm.cor']
+    items += [f'rma_glmm.heterogeneity.{s}' for s in ('QE_Wld', 'QE_LRT', 'QM', 'I2', 'H2')]
+    # auditme: accept[literal-duplication] the values are the literals inside i2_h2, listed again here by the spec's design
+    items += [f'rma_glmm.i2def.{d}' for d in ('1', '2')]
+    items += ['rma_glmm.tau2_ci', 'rma_glmm.predict.pi']
     return items
 
 
@@ -144,14 +176,49 @@ def test_covers_and_exemptions_name_known_items() -> None:
     assert sorted(set(named) - known) == []
 
 
-def test_formulas_import_nothing_from_metafopy() -> None:
+def metafopy_imports(source: str) -> list[str]:
     modules: list[str] = []
-    for node in ast.walk(ast.parse(FORMULAS.read_text(encoding='utf-8'))):
+    for node in ast.walk(ast.parse(source)):
         if isinstance(node, ast.Import):
             modules += [alias.name for alias in node.names]
         elif isinstance(node, ast.ImportFrom):
             modules.append(node.module or '')
-    assert [m for m in modules if m.split('.')[0] == 'metafopy'] == []
+    return [m for m in modules if m.split('.')[0] == 'metafopy']
+
+
+@pytest.mark.parametrize('path', FORMULA_FILES, ids=[path.name for path in FORMULA_FILES])
+def test_formulas_import_nothing_from_metafopy(path: pathlib.Path) -> None:
+    assert metafopy_imports(path.read_text(encoding='utf-8')) == []
+
+
+def test_a_formula_module_that_imports_metafopy_is_caught() -> None:
+    assert metafopy_imports('import metafopy.models.rma_glmm\nimport numpy\n') == ['metafopy.models.rma_glmm']
+    assert metafopy_imports('from metafopy import escalc\n') == ['metafopy']
+    assert metafopy_imports('import numpy\nimport scipy.stats\n') == []
+
+
+def test_each_unsupported_optimizer_exemption_still_raises() -> None:
+    prefix = 'rma_glmm.optimizer.'
+    stale: list[str] = []
+    for exemption in correctness.cases.load_exemptions():
+        if not exemption.item.startswith(prefix) or 'NotSupportedError' not in exemption.reason:
+            continue
+        try:
+            metafopy.rma_glmm(
+                ai='ai',
+                n1i='n1i',
+                ci='ci',
+                n2i='n2i',
+                data=metafopy.datasets.load('dat.nielweise2007'),
+                measure='OR',
+                model='CM.EL',
+                method='ML',
+                control={'optimizer': exemption.item.removeprefix(prefix)},
+            )
+        except metafopy.errors.NotSupportedError:
+            continue
+        stale.append(exemption.item)
+    assert not stale, f'exempted as NotSupportedError but no longer raising it; replace the exemption with a case: {", ".join(stale)}'
 
 
 def test_vtype_table_lists_every_measure_once() -> None:
@@ -302,6 +369,16 @@ def test_an_unknown_function_or_attribute_names_what_it_could_not_resolve() -> N
         correctness.cases.check_case(case, correctness.cases.run_case(case))
     with pytest.raises(LookupError, match='no_such_formula'):
         correctness.cases.run_case(valid_case(function='formulas.no_such_formula'))
+
+
+def test_a_glmm_formula_resolves_and_an_unknown_module_is_refused(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(correctness.glmm_formulas, 'probe', lambda: 1.0, raising=False)
+    func = correctness.cases.resolve_formula('glmm_formulas.probe', 'unit')
+    assert func() == 1.0
+    with pytest.raises(LookupError, match=r'glmm_formulas\.py has no function'):
+        correctness.cases.resolve_formula('glmm_formulas.no_such_formula', 'unit')
+    with pytest.raises(ValueError, match=r'inline\.toml: case unit\.bad: function .other_formulas\.f. must be'):
+        correctness.cases.parse_cases('[[case]]\nid = "unit.bad"\nkind = "derived"\nfunction = "other_formulas.f"\nexpect = { yi = 1.0 }\n', 'inline.toml')
 
 
 def test_a_mismatch_case_becomes_a_strict_xfail() -> None:
