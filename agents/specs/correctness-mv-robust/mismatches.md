@@ -1,7 +1,7 @@
 # Correctness tests for rma_mv and robust: mismatches and sources needed
 
 **Task list:** `agents/tasks/correctness-mv-robust/tasks-1.md` (completed in Task 12)
-**Review page:** not published: the session that ran Task 12 has no tool to publish an interactive page. The operator session publishes it from this document.
+**Review page:** https://claude.ai/artifact/MAECYpLWXXsWsT6q2grWPk (published 2026-11-14 by the operator session)
 
 ## What is reviewed and how
 
@@ -48,6 +48,10 @@ Checked 2026-11-14:
 - **What is decided:** whether metafopy keeps `sqrt(m (N - 1) / ((m - 1)(N - p)))` or changes to the paper's `sqrt(m N / ((m - 1)(N - p)))`.
 - **Background:** the paper gives the N form; metafopy matches clubSandwich 0.7.0 (the R package by the paper's own authors), which uses N - 1, and metafor's
   `robust` follows clubSandwich. The N - 1 factor is Stata's.
+  The paper introduces CR1S as the factor "some functions in Stata use", and the source it cites for Stata's practice, Cameron and Miller
+  (2015), Journal of Human Resources 50:317-372, equation 12, gives that factor as `G/(G - 1) (N - 1)/(N - K)` (checked 2026-11-14 in the papers
+  folder, `Cameron_2015_A_practitioners_guide_to_clusterrobust.pdf`). The printed N therefore looks like a slip in describing Stata's factor, not a
+  different method.
 - **What it affects:** every CR1S variance differs by 112/113 on this data; `robust.py` and the parity cases would change if the reference is followed.
 - **Options:**
   - *Keep metafor (Recommended):* the case is corrected to the N - 1 factor, cites where clubSandwich documents it, and passes. No code change.
