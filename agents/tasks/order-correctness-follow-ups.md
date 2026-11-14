@@ -49,7 +49,7 @@ restarts.
 |---|---|---|---|---|
 | 1 | `rma-uni-zero-q/tasks-1.md` | - | - | merged d58e1a3 |
 | 2 | `confint-ht-centre/tasks-1.md` | - | - | merged 04e6ef5 |
-| 3 | `correctness-harness-checks/tasks-1.md` | 2 | the mismatch review, only if there is a mismatch (Task 4) | running |
+| 3 | `correctness-harness-checks/tasks-1.md` | 2 | the mismatch review, only if there is a mismatch (Task 4) | merged 885f0b3 |
 | 4 | `qe-no-intercept/tasks-1.md` | 2 | - | todo |
 | 5 | `correctness-mv-robust/tasks-1.md` | 3, 4 | sources still missing (Task 10); the mismatch review (Task 12) | todo |
 | 6 | `correctness-glmm/tasks-1.md` | 3, 5 | sources still missing (Task 10); the mismatch and conventions review (Task 13) | todo |
