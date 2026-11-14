@@ -144,3 +144,20 @@ def i2_follows_h2_every_estimator(case: correctness.cases.Case, result: typing.A
     for method in metafopy.models.tau2.ESTIMATORS:
         fitted = fit(yi, vi, method)
         close(case.id, f'{method} I2', fitted.I2, 100 * (fitted.H2 - 1) / fitted.H2, case.tolerance)
+
+
+def i2_is_zero_for_identical_effects(case: correctness.cases.Case, result: typing.Any) -> None:
+    """``I2 = 0`` for effects that are all equal, for every estimator in ``ESTIMATORS`` that fits them (Higgins and Thompson, 2002)."""
+    frame = correctness.cases.case_frame(case)
+    assert frame is not None
+    yi, vi = frame['yi'].to_numpy(dtype=numpy.float64), frame['vi'].to_numpy(dtype=numpy.float64)
+    ran = 0
+    for method in metafopy.models.tau2.ESTIMATORS:
+        try:
+            fitted = fit(yi, vi, method)
+        except metafopy.errors.EstimationError:
+            continue
+        ran += 1
+        close(case.id, f'{method} I2', fitted.I2, 0.0, case.tolerance)
+    if not ran:
+        raise AssertionError(f'{case.id}: no estimator fitted the identical effects')

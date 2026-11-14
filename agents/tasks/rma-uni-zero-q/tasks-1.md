@@ -24,7 +24,7 @@ file that imports a changed module, and `src/tests/correctness`.
 
 ## Task 1: I2 is 0 when QE is 0, in every heterogeneity block
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item's fix direction
@@ -34,32 +34,32 @@ file that imports a changed module, and `src/tests/correctness`.
 
 **Subtasks:**
 
-- [ ] Re-check the starting point: run the calls in the header table and stop as `blocked`, naming the call, if any of them no longer behaves as
+- [x] Re-check the starting point: run the calls in the header table and stop as `blocked`, naming the call, if any of them no longer behaves as
       the table says
-- [ ] Add one helper to `src/metafopy/models/tau2.py`, which `rma_uni` and `gosh` already import and which `rma_mh` and `rma_peto` load through
+- [x] Add one helper to `src/metafopy/models/tau2.py`, which `rma_uni` and `gosh` already import and which `rma_mh` and `rma_peto` load through
       `metafopy.models.rma_uni` (so importing it there adds no cycle): `i2_from_q(q, df)` returns `max(0.0, 100 * (q - df) / q)`, and 0 when
       `q == 0`. Its docstring cites Higgins and Thompson (2002) and the `I2` lines of metafor's `rma.uni`, `rma.mh` and `rma.peto`
-- [ ] Use it in the equal-effects branch of the heterogeneity block of `src/metafopy/models/rma_uni.py`, in `src/metafopy/models/rma_mh.py`, in
+- [x] Use it in the equal-effects branch of the heterogeneity block of `src/metafopy/models/rma_uni.py`, in `src/metafopy/models/rma_mh.py`, in
       `src/metafopy/models/rma_peto.py` and in `closed_form` of `src/metafopy/methods/gosh.py`. Keep `H2 = Q / df` unchanged
-- [ ] Check that nothing else divides by a Q statistic: `grep -rnE '/ *(QE|qe|Q)\b' src/metafopy`. Fix any further hit the same way, and name it
+- [x] Check that nothing else divides by a Q statistic: `grep -rnE '/ *(QE|qe|Q)\b' src/metafopy`. Fix any further hit the same way, and name it
       in the commit body
-- [ ] Regression tests in `src/tests/test_rma_uni_extras.py`: identical effects for each of `EE`, `FE` and `CE` give `I2 == 0`, `H2 == 0`,
+- [x] Regression tests in `src/tests/test_rma_uni_extras.py`: identical effects for each of `EE`, `FE` and `CE` give `I2 == 0`, `H2 == 0`,
       `QE == 0`, and `REML` gives `I2 == 0`, `H2 == 1`
-- [ ] Regression tests in `src/tests/test_rma_mh_peto.py`: the tables in the header give `I2 == 0` for `rma_mh` (`OR`, `RR`, `RD`) and for
+- [x] Regression tests in `src/tests/test_rma_mh_peto.py`: the tables in the header give `I2 == 0` for `rma_mh` (`OR`, `RR`, `RD`) and for
       `rma_peto`
-- [ ] Regression test for `gosh` in `src/tests/test_diagnostics.py`: an `EE` fit to
+- [x] Regression test for `gosh` in `src/tests/test_diagnostics.py`: an `EE` fit to
       `yi = [0, 0, 0, 1]`, `vi = [0.1, 0.2, 0.3, 0.4]` runs, and every subset whose effects are equal has `I2 == 0`
 
 **Acceptance Criteria:**
 
-- [ ] Every call in the header table returns `I2 = 0`, matching R metafor 5.2-1
-- [ ] No fitting function under `src/metafopy` divides by a Q statistic without the helper
+- [x] Every call in the header table returns `I2 = 0`, matching R metafor 5.2-1
+- [x] No fitting function under `src/metafopy` divides by a Q statistic without the helper
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_rma_uni_extras.py src/tests/test_rma_uni_help.py src/tests/test_rma_uni_parity.py src/tests/test_rma_mh_peto.py src/tests/test_diagnostics.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_rma_uni_extras.py src/tests/test_rma_uni_help.py src/tests/test_rma_uni_parity.py src/tests/test_rma_mh_peto.py src/tests/test_diagnostics.py` passes
 
 **Notes:**
 
@@ -73,7 +73,7 @@ file that imports a changed module, and `src/tests/correctness`.
 
 ## Task 2: A correctness case, the full test run and closing the item
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item as a whole
@@ -82,26 +82,26 @@ file that imports a changed module, and `src/tests/correctness`.
 
 **Subtasks:**
 
-- [ ] Add a `property` case to `src/tests/correctness/cases/properties.toml`, beside the `I2 = 100 (H2 - 1) / H2` case: for each estimator in `metafopy.models.tau2.ESTIMATORS` that runs on identical effects, `I2` is 0. Read the estimators from
+- [x] Add a `property` case to `src/tests/correctness/cases/properties.toml`, beside the `I2 = 100 (H2 - 1) / H2` case: for each estimator in `metafopy.models.tau2.ESTIMATORS` that runs on identical effects, `I2` is 0. Read the estimators from
       `ESTIMATORS` at test time, as the other property cases do
-- [ ] Move the item from `TODO.md` to `DONE.md`: append its heading and body unchanged at the end of `DONE.md`, then a line
+- [x] Move the item from `TODO.md` to `DONE.md`: append its heading and body unchanged at the end of `DONE.md`, then a line
       `Done: 2026-MM-DD, agents/tasks/rma-uni-zero-q/tasks-1.md` with the date of the commit
-- [ ] Run the final tests from the worktree and save their output for the merge gate:
+- [x] Run the final tests from the worktree and save their output for the merge gate:
       `main=$(git worktree list --porcelain | sed -n '1s/^worktree //p'); mkdir -p "$main/ralpher-logs/rma-uni-zero-q/tasks-1" && pytest src/tests/test_rma_uni_extras.py src/tests/test_rma_uni_help.py src/tests/test_rma_uni_parity.py src/tests/test_rma_mh_peto.py src/tests/test_audit13_fixes.py src/tests/test_audit4_predict.py src/tests/test_audit8_values_a.py src/tests/test_audit8_refusals.py src/tests/test_audit9_fixes.py src/tests/test_fits.py src/tests/test_hettest.py src/tests/test_diagnostics.py src/tests/test_audit3_misc.py src/tests/test_audit8_crashes.py src/tests/test_audit8_args.py src/tests/test_audit8_fields.py src/tests/correctness 2>&1 | tee "$main/ralpher-logs/rma-uni-zero-q/tasks-1/final-tests.log"`
 
 **Acceptance Criteria:**
 
-- [ ] The property case passes for every estimator it runs over
-- [ ] The item is in `DONE.md` with its body unchanged, and no longer in `TODO.md`
+- [x] The property case passes for every estimator it runs over
+- [x] The item is in `DONE.md` with its body unchanged, and no longer in `TODO.md`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] The final test run above passes, `slow` tests included
-- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/rma-uni-zero-q/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] The final test run above passes, `slow` tests included
+- [x] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/rma-uni-zero-q/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
       `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0 (`<scratch>` is the session's scratch
       directory, outside the repository)
 

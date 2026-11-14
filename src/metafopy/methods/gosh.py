@@ -301,7 +301,7 @@ def closed_form(x: metafopy.models.rma_uni.RMAResult, mask: numpy.typing.NDArray
     Q, I2, H2, tau2 = 0.0, 0.0, 1.0, 0.0
     if k > 1:
         Q = float(numpy.sum(wi * (yi - est) ** 2))
-        I2 = max(0.0, 100 * (Q - (k - 1)) / Q)
+        I2 = metafopy.models.tau2.i2_from_q(Q, k - 1)
         H2 = Q / (k - 1)
         if model == 2:
             tau2 = max(0.0, (Q - (k - 1)) / (sumwi - float(numpy.sum(wi**2)) / sumwi))

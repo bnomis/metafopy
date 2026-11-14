@@ -1177,7 +1177,7 @@ def fit_rma_uni(
             QEp = float(scipy.stats.chi2.sf(QE, k - p))
             vt = (k - p) / float(numpy.trace(P)) if i2def == '1' else float(1 / numpy.mean(1 / vi))
             if used in metafopy.models.tau2.FIXED_EFFECTS:
-                I2 = max(0.0, 100 * (QE - (k - p)) / QE)
+                I2 = metafopy.models.tau2.i2_from_q(QE, k - p)
                 H2 = QE / (k - p)
             else:
                 I2 = 100 * tau2_hat / (vt + tau2_hat)

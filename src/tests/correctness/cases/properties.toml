@@ -33,6 +33,16 @@ args = { yi = "yi", vi = "vi", method = "DL" }
 expect = {}
 check = "test_properties.i2_follows_h2_every_estimator"
 
+# I2 is 0 for identical effects, for every estimator that runs on them (Higgins and Thompson, 2002: I2 is truncated at 0 whenever Q < df).
+[[case]]
+id = "property.i2-zero-q.identical"
+kind = "property"
+function = "rma_uni"
+data = { yi = [0.0, 0.0, 0.0, 0.0], vi = [0.1, 0.2, 0.3, 0.4] }
+args = { yi = "yi", vi = "vi", method = "DL" }
+expect = {}
+check = "test_properties.i2_is_zero_for_identical_effects"
+
 # Estimating equations at metafopy's optimum, with the convergence settings tightened so that the stopping rule does not enter.
 [[case]]
 id = "property.reml-score.bcg"

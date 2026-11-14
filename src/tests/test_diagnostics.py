@@ -518,3 +518,11 @@ def test_gosh_keeps_the_digits_of_the_fit(fits: dict[str, typing.Any]) -> None:
     assert out.digits == 2
     k_line = next(line for line in str(out).splitlines() if line.startswith('k '))
     assert all(len(v.split('.')[1]) == 2 for v in k_line.split()[1:])
+
+
+def test_gosh_subsets_of_identical_effects_have_zero_i2() -> None:
+    fit = metafopy.rma_uni(yi=[0.0, 0.0, 0.0, 1.0], vi=[0.1, 0.2, 0.3, 0.4], method='EE')
+    het = metafopy.gosh(fit, seed=1).res
+    equal = het[(het['k'] > 1) & (het['QE'] == 0.0)]
+    assert len(equal) > 0
+    assert (equal['I2'] == 0.0).all()

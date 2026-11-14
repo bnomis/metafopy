@@ -27,6 +27,7 @@ import metafopy.mfopt
 import metafopy.models.binary
 import metafopy.models.call
 import metafopy.models.tables
+import metafopy.models.tau2
 import metafopy.printing
 
 __all__ = ['MHResult', 'rma_mh']
@@ -351,7 +352,7 @@ def rma_mh(
         if k_yi > 1:
             qe = metafopy.models.binary.positive_max(float(numpy.sum(wi * (yi - beta) ** 2)))
             qep = float(scipy.stats.chi2.sf(qe, k_yi - 1)) if not math.isnan(qe) else NAN
-            i2 = metafopy.models.binary.positive_max(100 * (qe - (k_yi - 1)) / qe) if qe != 0 else NAN
+            i2 = metafopy.models.tau2.i2_from_q(qe, k_yi - 1)
             h2 = qe / (k_yi - 1)
         else:
             qe, qep, i2, h2 = 0.0, 1.0, 0.0, 1.0

@@ -90,6 +90,19 @@ class Tau2Fit:
     iterations: int
 
 
+def i2_from_q(q: float, df: float) -> float:
+    """``I2 = max(0, 100 (Q - df) / Q)``, 0 when ``Q`` is 0 and ``nan`` for a ``nan`` ``Q``.
+
+    Higgins and Thompson (2002) truncate ``(Q - df) / Q`` at 0 whenever ``Q < df``; metafor's ``rma.uni``, ``rma.mh`` and ``rma.peto`` evaluate
+    ``max(0, 100 * (QE - df) / QE)`` in floating point, where ``Q = 0`` gives ``-Inf`` and so 0.
+    """
+    if math.isnan(q):
+        return math.nan
+    if q == 0:
+        return 0.0
+    return max(0.0, 100 * (q - df) / q)
+
+
 def projection(X: FloatArray, w: FloatArray) -> FloatArray:
     """``W - W X (X'WX)^-1 X' W`` for ``W = diag(w)``."""
     WX = w[:, None] * X
