@@ -131,7 +131,7 @@ within-cluster correlation, computed with numpy and pandas, never metafopy.
 
 ## Task 3: rma_mv - likelihood, GLS and the basic structures
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** API (`formulas.py`: `struct_matrix`, `mv_loglik`, `mv_fit`); Implementation steps 3 and 4; Coverage list (methods, random forms,
@@ -142,28 +142,28 @@ and each `rma_mv.method.*`, `rma_mv.random.sigma2`, `rma_mv.random.nested`, `rma
 
 **Subtasks:**
 
-- [ ] `src/tests/correctness/formulas.py` (numpy and scipy only): the frozen dataclasses `RandomTerm` and `MVFit`; `struct_matrix` for `ID`, `CS`,
+- [x] `src/tests/correctness/formulas.py` (numpy and scipy only): the frozen dataclasses `RandomTerm` and `MVFit`; `struct_matrix` for `ID`, `CS`,
       `HCS`, `UN`, `DIAG` (Wolfinger 1993); `mv_loglik` (Harville 1977, the restricted likelihood); the GLS `b` and `vb = (X' M^-1 X)^-1`, with the
       weighted form for `W`; `mv_fit` (BFGS on log variances and atanh correlations, with the convergence check of the spec's Error handling: a fit
       with `success` false or gradient norm above `1e-6` fails the case naming the structure and the optimiser message)
-- [ ] In `src/tests/correctness/test_derived.py`, a check function that reads the case's `random`, `struct`, `mods` and data, builds `X`, the grouping
+- [x] In `src/tests/correctness/test_derived.py`, a check function that reads the case's `random`, `struct`, `mods` and data, builds `X`, the grouping
       codes and the inner levels with `pandas.factorize` and a regular expression for `~ 1 | a`, `~ 1 | a/b`, `~ inner | outer`, `~ inner || outer`,
       and makes the spec's three comparisons: log-likelihood at metafopy's components (`rtol=1e-10`), `beta` and `se` from GLS at metafopy's
       components (`1e-10`), and `mv_fit`'s optimum (components `rtol=1e-6`, log-likelihood no more than `1e-8` above metafopy's)
-- [ ] Derived cases in `cases/rma_mv.toml`: `EE`, `FE`, `CE`, `ML`, `REML`; `~ 1 | f` and `~ 1 | a/b` on `dat.konstantopoulos2011`; `UN` and `CS`
+- [x] Derived cases in `cases/rma_mv.toml`: `EE`, `FE`, `CE`, `ML`, `REML`; `~ 1 | f` and `~ 1 | a/b` on `dat.konstantopoulos2011`; `UN` and `CS`
       and `HCS` and `DIAG` and `ID` on `dat.berkey1998` with `setup.vblocks`; a G and an H term together; a `W` case
-- [ ] Record any mismatch as the header says
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] `test_gate_mv_robust`'s missing list no longer names `rma_mv.method.*`, these five structures, or the four named items above
-- [ ] Each new `formulas.py` function names its source and equation in its docstring
+- [x] `test_gate_mv_robust`'s missing list no longer names `rma_mv.method.*`, these five structures, or the four named items above
+- [x] Each new `formulas.py` function names its source and equation in its docstring
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 

@@ -8,6 +8,7 @@ A ``derived`` case names a function here as the value of an ``expect`` key. The 
 """
 
 import collections.abc
+import dataclasses
 import functools
 import math
 import typing
@@ -21,6 +22,7 @@ import scipy.special
 import scipy.stats
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
+type IntArray = numpy.typing.NDArray[numpy.intp]
 
 
 def risk_difference_yi(ai: FloatArray, bi: FloatArray, ci: FloatArray, di: FloatArray) -> FloatArray:
@@ -1774,3 +1776,212 @@ def peto_beta(ai: FloatArray, bi: FloatArray, ci: FloatArray, di: FloatArray) ->
 def peto_se(ai: FloatArray, bi: FloatArray, ci: FloatArray, di: FloatArray) -> float:
     """Standard error ``1 / sqrt(sum(V))`` of Peto's pooled log odds ratio (Yusuf et al. 1985)."""
     return 1 / math.sqrt(float(numpy.sum(peto_terms(ai, bi, ci, di)[1])))
+
+
+# Multivariate and multilevel models (rma_mv): the marginal model y ~ N(X b, M), M = V + the sum of the random-effects matrices of the terms.
+
+SIGMA2 = 'SIGMA2'
+MV_GRADIENT_LIMIT = 1e-6
+
+
+@dataclasses.dataclass(frozen=True)
+class RandomTerm:
+    """One random-effects term of ``rma_mv``: a ``sigma2`` term (``~ 1 | outer``, ``struct`` is ``SIGMA2``) or a structured ``~ inner | outer`` term.
+
+    ``outer`` and ``inner`` hold one level code per row; rows share the random effect when their ``outer`` codes agree. ``n_inner`` is the number of
+    inner levels (1 for a ``sigma2`` term).
+    """
+
+    struct: str
+    outer: IntArray
+    inner: IntArray
+    n_inner: int
+
+    def n_variances(self) -> int:
+        return self.n_inner if self.struct in ('DIAG', 'HCS', 'UN') else 1
+
+    def n_correlations(self) -> int:
+        return {'CS': 1, 'HCS': 1, 'UN': self.n_inner * (self.n_inner - 1) // 2}.get(self.struct, 0)
+
+
+@dataclasses.dataclass(frozen=True)
+class MVFit:
+    """The optimum of ``mv_fit``: the variances and correlations of each term, ``b``, ``vb = (X' M^-1 X)^-1``, the log-likelihood and convergence."""
+
+    variances: tuple[FloatArray, ...]
+    correlations: tuple[FloatArray, ...]
+    b: FloatArray
+    vb: FloatArray
+    loglik: float
+    success: bool
+    gradient_norm: float
+    message: str
+
+
+def struct_matrix(struct: str, inner: FloatArray, tau2: FloatArray, rho: FloatArray, dist: FloatArray | None = None) -> FloatArray:
+    """``G`` for one outer level, the covariance matrix of the effects at the ``len(inner)`` inner levels (Wolfinger 1993, table 1).
+
+    ``ID``: ``tau2 I``. ``DIAG``: ``diag(tau2_1, ...)``. ``CS``: ``tau2`` on the diagonal and ``rho tau2`` off it. ``HCS``: ``tau2_j`` on the
+    diagonal and ``rho sqrt(tau2_i tau2_j)`` off it. ``UN``: ``tau2_j`` on the diagonal and ``rho_il sqrt(tau2_i tau2_l)`` off it. The ``rho`` of
+    ``UN`` runs down the columns of the lower triangle (the order is the software's convention, not Wolfinger's). The structures that need
+    ``dist`` are not coded here yet.
+    """
+    n = len(inner)
+    if dist is not None:
+        raise ValueError('struct_matrix: the distance structures are not coded yet')
+    if struct == 'ID':
+        return float(tau2[0]) * numpy.eye(n)
+    if struct == 'DIAG':
+        return numpy.diag(tau2)
+    if struct == 'CS':
+        return float(tau2[0]) * (float(rho[0]) * numpy.ones((n, n)) + (1.0 - float(rho[0])) * numpy.eye(n))
+    scale = numpy.sqrt(tau2)
+    if struct == 'HCS':
+        corr = float(rho[0]) * numpy.ones((n, n)) + (1.0 - float(rho[0])) * numpy.eye(n)
+    elif struct == 'UN':
+        corr = numpy.eye(n)
+        position = 0
+        for column in range(n):
+            for row in range(column + 1, n):
+                corr[row, column] = corr[column, row] = rho[position]
+                position += 1
+    else:
+        raise ValueError(f'struct_matrix: unknown or unsupported structure {struct!r}')
+    return scale[:, None] * corr * scale[None, :]
+
+
+def term_matrix(term: RandomTerm, variances: FloatArray, correlations: FloatArray) -> FloatArray:
+    """The ``k x k`` matrix a term adds to ``M``: ``G[inner_i, inner_l]`` when rows ``i`` and ``l`` share an outer level, else 0."""
+    same = (term.outer[:, None] == term.outer[None, :]).astype(numpy.float64)
+    if term.struct == SIGMA2:
+        return numpy.asarray(float(variances[0]) * same, dtype=numpy.float64)
+    g = struct_matrix(term.struct, numpy.arange(term.n_inner, dtype=numpy.float64), variances, correlations)
+    return numpy.asarray(g[term.inner[:, None], term.inner[None, :]] * same, dtype=numpy.float64)
+
+
+def gls(yi: FloatArray, M: FloatArray, X: FloatArray, W: FloatArray | None = None) -> tuple[FloatArray, FloatArray]:
+    """The generalised least squares ``b = (X' W X)^-1 X' W y`` with ``W = M^-1`` unless given, and its variance.
+
+    For ``W = M^-1`` the variance is ``(X' M^-1 X)^-1``; for another ``W`` it is the sandwich ``(X' W X)^-1 X' W M W X (X' W X)^-1``.
+    """
+    if W is None:
+        weight = numpy.linalg.inv(M)
+        bread = numpy.linalg.inv(X.T @ weight @ X)
+        return bread @ X.T @ weight @ yi, bread
+    bread = numpy.linalg.inv(X.T @ W @ X)
+    return bread @ X.T @ W @ yi, bread @ X.T @ W @ M @ W @ X @ bread
+
+
+def mv_loglik(yi: FloatArray, V: FloatArray, X: FloatArray, M_extra: FloatArray, method: str, W: FloatArray | None = None) -> float:
+    """The log-likelihood of ``y ~ N(X b, M)``, ``M = V + M_extra``, at the generalised least squares ``b`` (Harville 1977, section 3).
+
+    ``ML``: ``-(k log 2 pi + log|M| + r' M^-1 r) / 2`` with ``r = y - X b``. ``REML``: ``-((k - p) log 2 pi - log|X'X| + log|M| + log|X' M^-1 X| +
+    r' M^-1 r) / 2``, the restricted likelihood of the ``k - p`` error contrasts, which carries ``log|X'X|`` so that it does not depend on the choice
+    of contrasts (that constant is the software's convention). The fixed-effects methods are scored as ``ML`` with ``M = V``.
+    """
+    k, p = X.shape
+    M = V + M_extra
+    b, _ = gls(yi, M, X, W)
+    resid = yi - X @ b
+    sign, logdet = numpy.linalg.slogdet(M)
+    if sign <= 0:
+        return float('-inf')
+    quad = float(resid @ numpy.linalg.solve(M, resid))
+    if method == 'ML':
+        return float(-0.5 * (k * math.log(2 * math.pi) + logdet + quad))
+    if method == 'REML':
+        info = X.T @ numpy.linalg.solve(M, X)
+        return float(-0.5 * ((k - p) * math.log(2 * math.pi) - numpy.linalg.slogdet(X.T @ X)[1] + logdet + numpy.linalg.slogdet(info)[1] + quad))
+    raise ValueError(f'mv_loglik: method must be ML or REML, not {method!r}')
+
+
+def n_free(term: RandomTerm) -> int:
+    """The number of unconstrained parameters of a term in ``mv_fit`` (a ``UN`` matrix uses its Cholesky factor)."""
+    n = term.n_inner
+    return n * (n + 1) // 2 if term.struct == 'UN' else term.n_variances() + term.n_correlations()
+
+
+def unpack_terms(terms: list[RandomTerm], theta: FloatArray) -> tuple[list[FloatArray], list[FloatArray]]:
+    """The variances and correlations of each term from the unconstrained vector of ``mv_fit``.
+
+    A variance is ``exp`` of its entry, a correlation of ``CS`` or ``HCS`` is ``tanh`` of its entry, and a ``UN`` matrix is ``L L'`` for a lower
+    triangular ``L`` whose diagonal is ``exp`` of its entries (the Cholesky parametrisation, which keeps the matrix positive definite).
+    """
+    variances: list[FloatArray] = []
+    correlations: list[FloatArray] = []
+    position = 0
+    for term in terms:
+        part = theta[position : position + n_free(term)]
+        position += n_free(term)
+        if term.struct == 'UN':
+            n = term.n_inner
+            low = numpy.zeros((n, n))
+            numpy.fill_diagonal(low, numpy.exp(part[:n]))
+            entries = iter(part[n:])
+            for column in range(n):
+                for row in range(column + 1, n):
+                    low[row, column] = next(entries)
+            cov = low @ low.T
+            scale = numpy.sqrt(numpy.diag(cov))
+            corr = cov / scale[:, None] / scale[None, :]
+            variances.append(numpy.diag(cov).copy())
+            correlations.append(numpy.array([corr[row, column] for column in range(n) for row in range(column + 1, n)]))
+        else:
+            variances.append(numpy.exp(part[: term.n_variances()]))
+            correlations.append(numpy.tanh(part[term.n_variances() :]))
+    return variances, correlations
+
+
+def mv_fit(yi: FloatArray, V: FloatArray, X: FloatArray, terms: list[RandomTerm], method: str, W: FloatArray | None = None) -> MVFit:
+    """Maximise ``mv_loglik`` over the components of ``terms`` with ``scipy.optimize.minimize`` (BFGS on log variances and atanh correlations).
+
+    It starts from variances of ``var(y) / (2 n_terms)`` and zero correlations, restarts BFGS from its own optimum until the objective stops
+    improving, and reports the norm of the central-difference gradient of the negative log-likelihood at the optimum.
+    """
+    count = sum(n_free(term) for term in terms)
+    theta = numpy.zeros(count)
+    position = 0
+    start = math.log(float(numpy.var(yi)) / (2 * max(len(terms), 1)))
+    for term in terms:
+        theta[position : position + term.n_variances()] = start
+        position += n_free(term)
+
+    def extra_of(values: FloatArray) -> FloatArray:
+        variances, correlations = unpack_terms(terms, values)
+        extra = numpy.zeros_like(V)
+        for term, var, cor in zip(terms, variances, correlations, strict=True):
+            extra = extra + term_matrix(term, var, cor)
+        return extra
+
+    def negative(values: FloatArray) -> float:
+        value = mv_loglik(yi, V, X, extra_of(values), method, W)
+        return -value if math.isfinite(value) else 1e300
+
+    def gradient_of(values: FloatArray) -> FloatArray:
+        step = 1e-4
+        return numpy.array([(negative(values + step * unit) - negative(values - step * unit)) / (2 * step) for unit in numpy.eye(count)])
+
+    message = 'no random effects'
+    if count:
+        outcome = scipy.optimize.minimize(negative, theta, method='BFGS', jac=gradient_of, options={'gtol': 1e-9, 'maxiter': 10000})
+        previous = math.inf
+        for _ in range(20):
+            if abs(previous - outcome.fun) < 1e-13:
+                break
+            previous = outcome.fun
+            outcome = scipy.optimize.minimize(negative, outcome.x, method='BFGS', jac=gradient_of, options={'gtol': 1e-9, 'maxiter': 10000})
+        theta, message = outcome.x, str(outcome.message)
+        for _ in range(10):
+            gradient = gradient_of(theta)
+            if numpy.linalg.norm(gradient) < 1e-9:
+                break
+            hessian = numpy.array([(gradient_of(theta + 1e-3 * unit) - gradient_of(theta - 1e-3 * unit)) / 2e-3 for unit in numpy.eye(count)])
+            candidate = theta - numpy.linalg.solve((hessian + hessian.T) / 2, gradient)
+            if negative(candidate) > negative(theta) + 1e-10:
+                break
+            theta = candidate
+    norm = float(numpy.linalg.norm(gradient_of(theta))) if count else 0.0
+    variances, correlations = unpack_terms(terms, theta)
+    extra = extra_of(theta)
+    b, vb = gls(yi, V + extra, X, W)
+    return MVFit(tuple(variances), tuple(correlations), b, vb, mv_loglik(yi, V, X, extra, method, W), norm <= MV_GRADIENT_LIMIT, norm, message)

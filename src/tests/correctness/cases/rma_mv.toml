@@ -1,1 +1,128 @@
 # Correctness cases for rma_mv; see agents/specs/correctness-mv-robust/spec.md
+#
+# `derived` cases: the `mv_model` check (test_derived.py) builds y, V, X and the random-effects terms from the case and compares metafopy's fit with
+# `formulas.mv_loglik`, the generalised least squares formula and `formulas.mv_fit`, coded from Harville (1977) and Wolfinger (1993).
+# Conventions of the software, not of the papers: the REML constant log|X'X| (as metafor's default REMLf), and the order of the UN correlations.
+
+[[case]]
+id = "mv.method.ee.kon"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.konstantopoulos2011"
+args = { yi = "yi", V = "vi", method = "EE" }
+check = "test_derived.mv_model"
+covers = ["rma_mv.method.EE"]
+
+[[case]]
+id = "mv.method.fe.kon"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.konstantopoulos2011"
+args = { yi = "yi", V = "vi", method = "FE", mods = "~ year" }
+check = "test_derived.mv_model"
+covers = ["rma_mv.method.FE"]
+
+[[case]]
+id = "mv.method.ce.kon"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.konstantopoulos2011"
+args = { yi = "yi", V = "vi", method = "CE" }
+check = "test_derived.mv_model"
+covers = ["rma_mv.method.CE"]
+
+[[case]]
+id = "mv.method.reml.kon"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.konstantopoulos2011"
+args = { yi = "yi", V = "vi", method = "REML", random = "~ 1 | district" }
+check = "test_derived.mv_model"
+covers = ["rma_mv.method.REML", "rma_mv.random.sigma2"]
+
+[[case]]
+id = "mv.method.ml.kon"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.konstantopoulos2011"
+args = { yi = "yi", V = "vi", method = "ML", random = "~ 1 | district" }
+check = "test_derived.mv_model"
+covers = ["rma_mv.method.ML", "rma_mv.random.sigma2"]
+
+[[case]]
+id = "mv.nested.kon"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.konstantopoulos2011"
+args = { yi = "yi", V = "vi", random = "~ 1 | district/school", mods = "~ year" }
+check = "test_derived.mv_model"
+covers = ["rma_mv.random.nested"]
+
+[[case]]
+id = "mv.two_terms.berkey"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.berkey1998"
+setup = { vblocks = { cluster = "trial", columns = ["v1i", "v2i"] } }
+args = { yi = "yi", mods = "~ 0 + outcome", random = ["~ outcome | trial", "~ outcome | author"], struct = ["ID", "ID"] }
+check = "test_derived.mv_model"
+covers = ["rma_mv.random.two_terms"]
+
+[[case]]
+id = "mv.struct.un.berkey"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.berkey1998"
+setup = { vblocks = { cluster = "trial", columns = ["v1i", "v2i"] } }
+args = { yi = "yi", mods = "~ 0 + outcome", random = "~ outcome | trial", struct = "UN" }
+check = "test_derived.mv_model"
+covers = ["rma_mv.struct.UN"]
+
+[[case]]
+id = "mv.struct.cs.berkey"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.berkey1998"
+setup = { vblocks = { cluster = "trial", columns = ["v1i", "v2i"] } }
+args = { yi = "yi", mods = "~ 0 + outcome", random = "~ outcome | trial", struct = "CS" }
+check = "test_derived.mv_model"
+covers = ["rma_mv.struct.CS"]
+
+[[case]]
+id = "mv.struct.hcs.berkey"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.berkey1998"
+setup = { vblocks = { cluster = "trial", columns = ["v1i", "v2i"] } }
+args = { yi = "yi", mods = "~ 0 + outcome", random = "~ outcome | trial", struct = "HCS" }
+check = "test_derived.mv_model"
+covers = ["rma_mv.struct.HCS"]
+
+[[case]]
+id = "mv.struct.diag.berkey"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.berkey1998"
+setup = { vblocks = { cluster = "trial", columns = ["v1i", "v2i"] } }
+args = { yi = "yi", mods = "~ 0 + outcome", random = "~ outcome | trial", struct = "DIAG" }
+check = "test_derived.mv_model"
+covers = ["rma_mv.struct.DIAG"]
+
+[[case]]
+id = "mv.struct.id.berkey"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.berkey1998"
+setup = { vblocks = { cluster = "trial", columns = ["v1i", "v2i"] } }
+args = { yi = "yi", mods = "~ 0 + outcome", random = "~ outcome | trial", struct = "ID" }
+check = "test_derived.mv_model"
+covers = ["rma_mv.struct.ID"]
+
+[[case]]
+id = "mv.weights.kon"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.konstantopoulos2011"
+args = { yi = "yi", V = "vi", W = "vi", method = "ML", random = "~ 1 | district" }
+check = "test_derived.mv_model"
+covers = ["rma_mv.weights"]
