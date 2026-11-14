@@ -97,7 +97,7 @@ the fix in Task 2 is seen to turn them from mismatches into passes.
 
 ## Task 2: Use yi, not the centred yi, in each quadratic form and likelihood
 
-**Status:** in-progress
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item's fix direction (the code change, the R parity fixtures)
@@ -151,7 +151,7 @@ the fix in Task 2 is seen to turn them from mismatches into passes.
 
 ## Task 3: Record the difference, the full test run and closing the item
 
-**Status:** done
+**Status:** in-progress
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item's fix direction (`known.toml`, `docs/differences.md`) and the item as a whole
