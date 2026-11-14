@@ -200,9 +200,9 @@ values a source prints.
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness` passes, `slow` tests skipped (`-m 'not slow'`)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness` passes, `slow` tests skipped (`-m 'not slow'`)
 
 **Notes:**
 
@@ -214,7 +214,7 @@ values a source prints.
 
 ## Task 5: Apply the answers, the full test run and closing the item
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item as a whole
@@ -223,32 +223,32 @@ values a source prints.
 
 **Subtasks:**
 
-- [ ] If Task 4 recorded no mismatch, skip to the `TODO.md` subtask. Otherwise read the answers from the Answers section of
+- [x] If Task 4 recorded no mismatch, skip to the `TODO.md` subtask. Otherwise read the answers from the Answers section of
       `agents/reviews/correctness-harness-checks-mismatches.md`, never from the page; stop as `blocked`, naming the missing items, if the section is
       empty or incomplete
-- [ ] *Keep metafor*: correct the case to the convention metafor documents, cite where it documents it, and set `status = "pass"`
-- [ ] *Treat it as a misprint*: remove the case and record the answer in the review document, as `agents/specs/correctness-tests/mismatches.md` does
-- [ ] *Follow the reference* or *investigate*: add a `TODO.md` item for each with the `todo-add` skill, naming the case, the fix or what is in
+- [x] *Keep metafor*: correct the case to the convention metafor documents, cite where it documents it, and set `status = "pass"`
+- [x] *Treat it as a misprint*: remove the case and record the answer in the review document, as `agents/specs/correctness-tests/mismatches.md` does
+- [x] *Follow the reference* or *investigate*: add a `TODO.md` item for each with the `todo-add` skill, naming the case, the fix or what is in
       doubt, the R parity fixtures and `known.toml` entries to mark, and the `docs/differences.md` section "Where metafor departs from its
       reference". The case stays `status = "mismatch"` until that item is done
-- [ ] Move the item from `TODO.md` to `DONE.md`: append its heading and body unchanged at the end of `DONE.md`, then a line
+- [x] Move the item from `TODO.md` to `DONE.md`: append its heading and body unchanged at the end of `DONE.md`, then a line
       `Done: 2026-MM-DD, agents/tasks/correctness-harness-checks/tasks-1.md` with the date of the commit
-- [ ] Run the final tests from the worktree and save their output for the merge gate:
+- [x] Run the final tests from the worktree and save their output for the merge gate:
       `main=$(git worktree list --porcelain | sed -n '1s/^worktree //p'); mkdir -p "$main/ralpher-logs/correctness-harness-checks/tasks-1" && pytest src/tests/correctness 2>&1 | tee "$main/ralpher-logs/correctness-harness-checks/tasks-1/final-tests.log"`
 
 **Acceptance Criteria:**
 
-- [ ] Every answered item has a case change or a `TODO.md` item
-- [ ] The item is in `DONE.md` with its body unchanged, and no longer in `TODO.md`
+- [x] Every answered item has a case change or a `TODO.md` item
+- [x] The item is in `DONE.md` with its body unchanged, and no longer in `TODO.md`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] The final test run above passes, `slow` tests included
-- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/correctness-harness-checks/tasks-1.md):TODO.md > <scratch>/todo-before.md`
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] The final test run above passes, `slow` tests included
+- [x] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/correctness-harness-checks/tasks-1.md):TODO.md > <scratch>/todo-before.md`
       and `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0 (`<scratch>` is the session's
       scratch directory, outside the repository)
 

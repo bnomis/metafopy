@@ -59,3 +59,5 @@ information.
 Copied on 2026-11-14 from the review page (answer saved 2026-11-14T12:49:47Z).
 
 - **The I2 upper limit on Borenstein et al. (2009) Dataset 2** (`published.borenstein2009.ch18.d2.ci.i2ub`, decision `d1_i2ub`): **treat it as a misprint**, the recommended option. No comment. The case is removed; the chapter's other printed values stay as cases.
+
+Applied on 2026-11-14 (Task 5 of the task list): the case `published.borenstein2009.ch18.d2.ci.i2ub` is removed from `src/tests/correctness/cases/published.toml`; the chapter's other printed values stay as cases.
