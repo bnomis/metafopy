@@ -538,6 +538,7 @@ def irr_cm_al_is_cm_el(case: correctness.cases.Case, result: typing.Any) -> None
     standard errors, ``tau2`` and log-likelihood as the call with ``model='CM.EL'``."""
     frame = correctness.cases.case_frame(case)
     exact = metafopy.rma_glmm(**{**case.args, 'data': frame, 'model': 'CM.EL'})
+    # auditme: accept[literal-duplication] the attributes of a fit that two calls must share; a test module names its own
     for name in ('beta', 'se', 'tau2'):
         if not numpy.array_equal(getattr(result, name), getattr(exact, name)):
             raise AssertionError(f'{case.id}: {name} of CM.AL is {getattr(result, name)!r}, of CM.EL {getattr(exact, name)!r}')

@@ -20,6 +20,7 @@ import correctness.formulas
 import correctness.test_derived
 import metafopy
 import metafopy.errors
+import metafopy.models.rma_glmm
 import metafopy.models.tau2
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
@@ -313,6 +314,94 @@ def cr0_with_singleton_clusters_is_hc0(case: correctness.cases.Case, result: typ
     resid = yi - x @ (bread @ (x.T @ (weights * yi)))
     hc0 = bread @ (x.T @ (((weights * resid) ** 2)[:, None] * x)) @ bread
     close(case.id, 'vb', result.vb, hc0, case.tolerance or ROBUST_AGREEMENT)
+
+
+# The unconditional model with study-specific random effects (``UM.RS``) is left out of the invariances below: its Laplace approximation is not
+# invariant to the reparametrisation, so only the models whose integral is exact or adaptive are asserted. Read from the library's own list.
+GLMM_INVARIANT_MODELS = tuple(m for m in metafopy.models.rma_glmm.MODELS if m != 'UM.RS')
+# the approximate conditional likelihood ``CM.AL`` (Stijnen et al. 2010) is not symmetric in events and non-events, in R metafor 5.2-1 too, so the
+# outcome swap runs over the models whose likelihood is exact
+OUTCOME_SWAP_MODELS = tuple(m for m in GLMM_INVARIANT_MODELS if m != 'CM.AL')
+# each cell argument and the one it swaps with: the groups swap ``ai`` with ``ci`` and ``bi`` with ``di``; the outcomes swap ``ai`` with ``bi``
+GROUP_SWAP = {'ai': 'ci', 'bi': 'di', 'ci': 'ai', 'di': 'bi'}
+OUTCOME_SWAP = {'ai': 'bi', 'bi': 'ai', 'ci': 'di', 'di': 'ci'}
+GLMM_AGREEMENT = 1e-5
+SCALE_FACTOR = 7.0
+# the person-time columns of a two-group rate-ratio call
+PERSON_TIME = ('t1i', 't2i')
+CODINGS = (0.5, 1, 0)
+
+
+def swapped(case: correctness.cases.Case, mapping: dict[str, str]) -> dict[str, typing.Any]:
+    """The case's ``args`` with each cell argument in ``mapping`` pointing at the column of the argument it swaps with."""
+    return {name: case.args[other] for name, other in mapping.items()}
+
+
+def glmm_agree(case: correctness.cases.Case, name: str, actual: typing.Any, expected: typing.Any) -> None:
+    close(case.id, name, actual, expected, case.tolerance or GLMM_AGREEMENT)
+
+
+def swapping_groups_negates_beta(case: correctness.cases.Case, result: typing.Any) -> None:
+    """Swapping the two groups swaps treatment and control, so the coefficient changes sign and ``tau2`` stays. Run over every model in
+    ``GLMM_INVARIANT_MODELS`` with the unconditional model's coding 0.5, the coding that treats the groups alike (``coding`` 1 and 0 make one
+    group the reference, so the random-effects structure is not the same after a swap)."""
+    for model in GLMM_INVARIANT_MODELS:
+        before = refit_with(case, model=model, coding=0.5)
+        after = refit_with(case, model=model, coding=0.5, **swapped(case, GROUP_SWAP))
+        glmm_agree(case, f'{model} beta after swapping the groups', after.beta, -before.beta)
+        glmm_agree(case, f'{model} tau2 after swapping the groups', after.tau2, before.tau2)
+
+
+def swapping_outcomes_negates_beta(case: correctness.cases.Case, result: typing.Any) -> None:
+    """Swapping events and non-events replaces each probability ``p`` by ``1 - p``, so every log odds changes sign and the log odds ratio with it;
+    ``tau2`` stays. Run over every model in ``OUTCOME_SWAP_MODELS``."""
+    for model in OUTCOME_SWAP_MODELS:
+        before = refit_with(case, model=model)
+        after = refit_with(case, model=model, **swapped(case, OUTCOME_SWAP))
+        glmm_agree(case, f'{model} beta after swapping events and non-events', after.beta, -before.beta)
+        glmm_agree(case, f'{model} tau2 after swapping events and non-events', after.tau2, before.tau2)
+
+
+def scaling_person_time_leaves_irr(case: correctness.cases.Case, result: typing.Any) -> None:
+    """Multiplying both person-times by one constant is a change of the time unit: the rate ratio, and so ``beta`` and ``tau2``, are unchanged.
+    Run over every model in ``GLMM_INVARIANT_MODELS``."""
+    frame = correctness.cases.case_frame(case)
+    assert frame is not None
+    scaled = frame.assign(**{case.args[name]: frame[case.args[name]] * SCALE_FACTOR for name in PERSON_TIME})
+    rescaled = dataclasses.replace(case, dataset=None, data=as_columns(scaled), setup=None, then=None)
+    for model in GLMM_INVARIANT_MODELS:
+        before = refit_with(case, model=model)
+        after = correctness.cases.run_case(dataclasses.replace(rescaled, args={**case.args, 'model': model}))
+        glmm_agree(case, f'{model} beta after rescaling the person-time', after.beta, before.beta)
+        glmm_agree(case, f'{model} tau2 after rescaling the person-time', after.tau2, before.tau2)
+
+
+def irr_cm_al_equals_cm_el(case: correctness.cases.Case, result: typing.Any) -> None:
+    """For the rate ratio the conditional model is binomial in the first group's count whichever likelihood is asked for (Stijnen et al. 2010), so
+    ``CM.AL`` and ``CM.EL`` fit one model: the coefficient, its standard error and ``tau2`` agree."""
+    al, el = refit_with(case, model='CM.AL'), refit_with(case, model='CM.EL')
+    # auditme: accept[literal-duplication] the attributes of a fit that two calls must share; a test module names its own
+    for name in ('beta', 'se', 'tau2'):
+        glmm_agree(case, f'CM.AL and CM.EL {name}', getattr(al, name), getattr(el, name))
+
+
+def codings_give_one_fe_fit(case: correctness.cases.Case, result: typing.Any) -> None:
+    """With ``method='FE'`` there is no random effect, so the coding of the group in the random-effects structure changes nothing: the codings in
+    ``CODINGS`` give one fit."""
+    first = refit_with(case, coding=CODINGS[0])
+    for coding in CODINGS[1:]:
+        other = refit_with(case, coding=coding)
+        glmm_agree(case, f'beta with coding {coding}', other.beta, first.beta)
+        glmm_agree(case, f'se with coding {coding}', other.se, first.se)
+
+
+def ml_below_tau2tol_is_fe(case: correctness.cases.Case, result: typing.Any) -> None:
+    """When the ML estimate of ``tau2`` is below ``tau2tol`` the exact conditional fit (``CM.EL``, the one model that uses ``tau2tol``, in metafor
+    too) takes the fixed-effects fit (the case sets ``tau2tol`` above the estimate): the coefficient and its standard error are those of ``FE``."""
+    assert result.tau2 < case.args['control']['tau2tol'], f'{case.id}: tau2 is not below tau2tol'
+    fixed = refit_with(case, method='FE', control=None)
+    for name in ('beta', 'se'):
+        glmm_agree(case, name, getattr(result, name), getattr(fixed, name))
 
 
 def cr2_is_unbiased_under_the_working_model(case: correctness.cases.Case, result: typing.Any) -> None:

@@ -1627,3 +1627,67 @@ reason = "NotSupportedError: optimizer 'optim' (method 'SANN') is not available 
 [[exempt]]
 item = "rma_glmm.optimizer.Brent"
 reason = "NotSupportedError: optimizer 'optim' (method 'Brent') is not available (one-dimensional search only, the model has two parameters): rma_glmm raises NotSupportedError"
+
+# Task 8: property cases for rma_glmm. Each check names the models it runs over in test_properties.py (GLMM_INVARIANT_MODELS, CODINGS).
+[[case]]
+id = "property.glmm.swap-groups.bcg"
+kind = "property"
+function = "rma_glmm"
+dataset = "dat.bcg"
+args = { ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg", measure = "OR", model = "CM.AL", method = "ML" }
+expect = {}
+check = "test_properties.swapping_groups_negates_beta"
+
+[[case]]
+id = "property.glmm.swap-outcomes.bcg"
+kind = "property"
+function = "rma_glmm"
+dataset = "dat.bcg"
+args = { ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg", measure = "OR", model = "CM.AL", method = "ML" }
+expect = {}
+check = "test_properties.swapping_outcomes_negates_beta"
+
+[[case]]
+id = "property.glmm.scale-person-time.nielweise2008"
+kind = "property"
+function = "rma_glmm"
+dataset = "dat.nielweise2008"
+args = { x1i = "x1i", t1i = "t1i", x2i = "x2i", t2i = "t2i", measure = "IRR", model = "UM.FS", method = "ML" }
+expect = {}
+check = "test_properties.scaling_person_time_leaves_irr"
+
+[[case]]
+id = "property.glmm.irr-cm-al-is-cm-el.nielweise2008"
+kind = "property"
+function = "rma_glmm"
+dataset = "dat.nielweise2008"
+args = { x1i = "x1i", t1i = "t1i", x2i = "x2i", t2i = "t2i", measure = "IRR", model = "CM.AL", method = "ML" }
+expect = {}
+check = "test_properties.irr_cm_al_equals_cm_el"
+
+[[case]]
+id = "property.glmm.codings-fe.bcg"
+kind = "property"
+function = "rma_glmm"
+dataset = "dat.bcg"
+args = { ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg", measure = "OR", model = "UM.FS", method = "FE" }
+expect = {}
+check = "test_properties.codings_give_one_fe_fit"
+
+[[case]]
+id = "property.glmm.ml-below-tau2tol.bcg"
+kind = "property"
+function = "rma_glmm"
+dataset = "dat.bcg"
+args = { ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg", measure = "OR", model = "CM.EL", method = "ML", control = { tau2tol = 1000.0 } }
+expect = {}
+check = "test_properties.ml_below_tau2tol_is_fe"
+
+[[case]]
+id = "property.glmm.i2-from-h2.bcg"
+kind = "property"
+function = "rma_glmm"
+dataset = "dat.bcg"
+args = { ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg", measure = "OR", model = "UM.FS", method = "ML" }
+expect = {}
+check = "test_properties.i2_follows_h2"

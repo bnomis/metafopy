@@ -330,7 +330,7 @@ them the gate passes.
 
 ## Task 8: Property cases
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** medium
 **Spec Reference:** Kinds of evidence (property); Implementation step 4
@@ -339,7 +339,7 @@ them the gate passes.
 
 **Subtasks:**
 
-- [ ] `check` functions in `src/tests/correctness/test_properties.py` and `property` cases in `cases/glmm.toml`:
+- [x] `check` functions in `src/tests/correctness/test_properties.py` and `property` cases in `cases/glmm.toml`:
   - swapping the groups negates `beta` and keeps `tau2` (`UM.FS` with coding `0.5`, `CM.AL`, `CM.EL`);
   - swapping events and non-events negates the log odds ratio;
   - multiplying both person-times by one constant leaves `IRR` unchanged;
@@ -347,17 +347,17 @@ them the gate passes.
   - the codings give one `FE` fit;
   - `ML` with `tau2` below `tau2tol` gives the `FE` estimates;
   - `I2 = 100 (H2 - 1) / H2`.
-- [ ] Record any failing property as a mismatch, as the header says
+- [x] Record any failing property as a mismatch, as the header says
 
 **Acceptance Criteria:**
 
-- [ ] Each property names the models or measures it runs over, read from the code's tuples where they exist
+- [x] Each property names the models or measures it runs over, read from the code's tuples where they exist
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_properties.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_properties.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 
