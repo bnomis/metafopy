@@ -37,7 +37,7 @@ runs `src/tests/correctness`, `slow` cases included.
 
 ## Task 1: The `printed` key and the three check functions
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Source Reference:** the item's fix direction (the `check` functions)
@@ -47,14 +47,14 @@ values a source prints.
 
 **Subtasks:**
 
-- [ ] Re-check the starting point: `grep -nw 'printed' src/tests/correctness/cases.py` finds nothing, and `CASE_KEYS` has no `printed`. Stop as
+- [x] Re-check the starting point: `grep -nw 'printed' src/tests/correctness/cases.py` finds nothing, and `CASE_KEYS` has no `printed`. Stop as
       `blocked` if it does
-- [ ] In `src/tests/correctness/cases.py`: add `printed` to `CASE_KEYS` and a `printed: dict[str, str]` field to `Case`; validate it in
+- [x] In `src/tests/correctness/cases.py`: add `printed` to `CASE_KEYS` and a `printed: dict[str, str]` field to `Case`; validate it in
       `parse_case` (a table of string values; only with `kind = "published"` and a `check`; every value parses as a number), raising `ValueError`
       naming the file and case id as the other validations do. Add a helper `check_printed(case, name, actual)` that compares `actual` with
       `float(case.printed[name])` at `published_tolerance` and raises `AssertionError` naming the case, the name, both values and the source, as
       `check_case` does
-- [ ] In `src/tests/correctness/test_published.py`, three check functions, each comparing every `printed` name it knows and refusing an unknown
+- [x] In `src/tests/correctness/test_published.py`, three check functions, each comparing every `printed` name it knows and refusing an unknown
       one:
   - `back_transformed`: `exp(beta)`, `exp(ci_lb)` and `exp(ci_ub)` of the fit (names `exp_beta`, `exp_ci_lb`, `exp_ci_ub`);
   - `prediction_interval`: `metafopy.predict(result)` (names `pred`, `pi_lb`, `pi_ub`, and their `exp_` forms for a ratio measure);
@@ -62,20 +62,20 @@ values a source prints.
     `H2_lb`, `H2_ub`, and `H_lb`, `H_ub` as the square roots of the H2 bounds, since Higgins and Thompson print H). The interval type is in the
     function's name because a case's `args` go to the fitting function, not to `confint`; add a sibling for another type only when a source
     prints one
-- [ ] Unit tests of the harness on inline TOML strings, beside the existing ones in `src/tests/correctness/test_coverage.py`: `printed` without a
+- [x] Unit tests of the harness on inline TOML strings, beside the existing ones in `src/tests/correctness/test_coverage.py`: `printed` without a
       `check`, with `kind = "derived"`, and with a non-numeric value each raise `ValueError` naming the file; `check_printed` passes inside and
       fails outside the published tolerance
 
 **Acceptance Criteria:**
 
-- [ ] `pytest src/tests/correctness` passes, and every existing case loads unchanged
-- [ ] Each check function names its source equation or printed table in its docstring
+- [x] `pytest src/tests/correctness` passes, and every existing case loads unchanged
+- [x] Each check function names its source equation or printed table in its docstring
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_coverage.py src/tests/correctness/test_published.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_coverage.py src/tests/correctness/test_published.py` passes
 
 **Notes:**
 

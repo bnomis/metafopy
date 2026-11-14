@@ -44,7 +44,9 @@ CHECK_PATTERN = re.compile(r'test_[a-z0-9_]+\.[A-Za-z_][A-Za-z0-9_]*')
 FORMULA_PREFIX = 'formulas.'
 
 # auditme: accept[non-alphabetical-literal] order follows the spec's description of a case
-CASE_KEYS = frozenset({'args', 'check', 'covers', 'data', 'dataset', 'expect', 'function', 'id', 'kind', 'reason', 'setup', 'source', 'status', 'tolerance'})
+CASE_KEYS = frozenset(
+    {'args', 'check', 'covers', 'data', 'dataset', 'expect', 'function', 'id', 'kind', 'printed', 'reason', 'setup', 'source', 'status', 'tolerance'}
+)
 SOURCE_KEYS = frozenset({'citation', 'doi', 'locator', 'read', 'url'})
 TOP_KEYS = frozenset({'case', 'exempt', 'vtypes'})
 DERIVED_TOLERANCE = 1e-10
@@ -68,7 +70,8 @@ class Case:
     """One correctness case from a ``cases/*.toml`` file.
 
     ``covers`` names the coverage items (see ``test_coverage.py``) the case checks. ``data`` is an inline dataset, used when ``dataset`` is not given.
-    ``file`` is the name of the case file, for messages.
+    ``file`` is the name of the case file, for messages. ``printed`` holds values a source prints that no attribute of the result holds (a value on
+    another scale, an interval of ``predict`` or ``confint``), as printed; the case's ``check`` function compares them with ``check_printed``.
     """
 
     id: str
@@ -86,6 +89,7 @@ class Case:
     check: str | None = None
     covers: tuple[str, ...] = ()
     file: str = ''
+    printed: dict[str, str] = dataclasses.field(default_factory=dict)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -165,6 +169,23 @@ def parse_expect(kind: str, raw: object, where: str) -> dict[str, str | float]:
     return expect
 
 
+def parse_printed(raw: object, kind: str, check: str | None, where: str) -> dict[str, str]:
+    if not isinstance(raw, dict):
+        fail(where, 'printed must be a table')
+    if raw and (kind != 'published' or check is None):
+        fail(where, 'printed is allowed only with kind "published" and a check')
+    printed: dict[str, str] = {}
+    for key, value in raw.items():
+        if not isinstance(value, str):
+            fail(where, f'printed value of {key!r} must be a string, as printed in the source')
+        try:
+            published_tolerance(value)
+        except ValueError:
+            fail(where, f'printed value of {key!r} ({value!r}) is not a printed number')
+        printed[key] = value
+    return printed
+
+
 def parse_case(raw: object, name: str, index: int) -> Case:
     if not isinstance(raw, dict):
         fail(name, f'case {index} must be a table')
@@ -192,6 +213,7 @@ def parse_case(raw: object, name: str, index: int) -> Case:
     expect = parse_expect(kind, raw.get('expect', {}), where)
     if kind == 'published' and not expect:
         fail(name, f'case {ident}: a published case needs expect values')
+    printed = parse_printed(raw.get('printed', {}), kind, check, where)
     status = raw.get('status', 'pass')
     if status not in STATUSES:
         fail(name, f'case {ident}: status {status!r} must be "pass" or "mismatch"')
@@ -233,6 +255,7 @@ def parse_case(raw: object, name: str, index: int) -> Case:
         check=check,
         covers=tuple(covers),
         file=name,
+        printed=printed,
     )
 
 
@@ -419,6 +442,18 @@ def check_case(case: Case, result: typing.Any) -> None:
         if not callable(func):
             raise LookupError(f'{case.id}: {module_name} has no check function {function_name!r}')
         func(case, result)
+
+
+def check_printed(case: Case, name: str, actual: float) -> None:
+    """Compare ``actual`` with the printed value ``name`` of the case at the printed tolerance; raise AssertionError naming case, name, both and the source."""
+    if name not in case.printed:
+        raise LookupError(f'{case.id}: no printed value {name!r}')
+    assert case.source is not None
+    raw = case.printed[name]
+    expected, tolerance = float(raw), published_tolerance(raw)
+    if not abs(actual - expected) <= tolerance:
+        origin = f'{case.source.citation}, {case.source.locator}, read {case.source.read}'
+        raise AssertionError(f'{case.id}: {name}: metafopy gives {actual!r}, the reference gives {expected!r} (tolerance {tolerance:g}; source: {origin})')
 
 
 def case_param(case: Case) -> typing.Any:
