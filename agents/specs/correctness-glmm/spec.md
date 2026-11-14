@@ -151,7 +151,21 @@ def marginal_loglik(
     """Normal-mixture log-likelihood of a random-intercept model over ``studies`` studies; ``rule`` is ``'exact'``, ``'agq'`` (``points``) or ``'laplace'``."""
 
 
-def glmm_fit(ai: FloatArray, bi: FloatArray, ci: FloatArray, di: FloatArray, model: str, method: str, rule: str = 'agq', points: int = 7) -> GLMMReference:
+def glmm_fit(
+    ai: FloatArray,
+    bi: FloatArray,
+    ci: FloatArray,
+    di: FloatArray,
+    model: str,
+    method: str,
+    rule: str = 'agq',
+    points: int = 7,
+    *,
+    X: FloatArray | None = None,
+    coding: float = 0.5,
+    cor: bool = False,
+    link: str = 'logit',
+) -> GLMMReference:
     """The formulas' own maximum likelihood fit: estimates, standard errors from the observed information, ``tau2``, log-likelihood."""
 
 

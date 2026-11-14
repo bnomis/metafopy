@@ -135,7 +135,7 @@ Laplace approximation, each coded from its paper.
 
 ## Task 3: glmm_formulas.py - the formulas' own fits
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** Kinds of evidence (derived, fixed-effects fits, optimiser dependence); API; Implementation step 2
@@ -144,26 +144,26 @@ Laplace approximation, each coded from its paper.
 
 **Subtasks:**
 
-- [ ] `GLMMReference` (frozen dataclass): estimates, standard errors from the observed information, `tau2` (and `sigma2`, `rho` for `UM.RS`),
+- [x] `GLMMReference` (frozen dataclass): estimates, standard errors from the observed information, `tau2` (and `sigma2`, `rho` for `UM.RS`),
       log-likelihood, gradient norm at the optimum
-- [ ] `glmm_fit` for the two-group binomial models (`UM.FS`, `UM.RS`, `CM.AL`, `CM.EL`) with `method` `FE` and `ML`, `rule` and `points`; and the
+- [x] `glmm_fit` for the two-group binomial models (`UM.FS`, `UM.RS`, `CM.AL`, `CM.EL`) with `method` `FE` and `ML`, `rule` and `points`; and the
       `poisson_`, `one_group_` and `conditional_` entry points with their measure's arguments (person-times for `IRR`, `IRLN`; one group for `PLO`,
       `PR`, `PLN`)
-- [ ] Fixed-effects fits: the closed forms `logit(sum xi / sum ni)` (`PLO`) and `log(sum xi / sum ti)` (`IRLN`) without moderators; otherwise the
+- [x] Fixed-effects fits: the closed forms `logit(sum xi / sum ni)` (`PLO`) and `log(sum xi / sum ti)` (`IRLN`) without moderators; otherwise the
       score equations solved with `scipy.optimize.root`. The `CM.EL` `FE` standard error from the analytic conditional information (the sum of the
       conditional variances)
-- [ ] A function giving the formulas' log-likelihood and its gradient at given estimates, for Task 4's check
-- [ ] Unit checks in `test_glmm_formulas.py`: the closed forms equal the `root` solution; the gradient at each fit's optimum is below `1e-6`
+- [x] A function giving the formulas' log-likelihood and its gradient at given estimates, for Task 4's check
+- [x] Unit checks in `test_glmm_formulas.py`: the closed forms equal the `root` solution; the gradient at each fit's optimum is below `1e-6`
 
 **Acceptance Criteria:**
 
-- [ ] No fit starts from, or calls, metafopy
+- [x] No fit starts from, or calls, metafopy
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_glmm_formulas.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_glmm_formulas.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 

@@ -123,7 +123,7 @@ def glmm_items() -> list[str]:
             models = ('UM.FS', 'UM.RS')
         else:
             models = glmm.MODELS
-        items += [f'rma_glmm.fit.{measure}.{model}.{method}' for model in models for method in ('FE', 'ML')]
+        items += [f'rma_glmm.fit.{measure}.{model}.{method}' for model in models for method in correctness.glmm_formulas.METHODS]
     items += [f'rma_glmm.method.{m}' for m in glmm.METHODS]
     items += [f'rma_glmm.link.{link}' for link in metafopy.core.glm.LINKS]
     items += [f'rma_glmm.package.{p}' for p in metafopy.models.glmm_fit.PACKAGES]
