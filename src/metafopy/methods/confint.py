@@ -199,8 +199,11 @@ def confint_rma_uni(
             [doi:10.1002/jrsm.1081](https://doi.org/10.1002/jrsm.1081); needs a ``GENQ`` or ``GENQM`` fit), ``'pl'`` (profile likelihood, which metafor
             suggests for ML and REML fits; the likelihood used is the REML one for ``method='REML'`` and the ML one otherwise), ``'ht'`` (the
             test-based method of Higgins and Thompson, 2002, [doi:10.1002/sim.1186](https://doi.org/10.1002/sim.1186); only for models without
-            moderators and ``k > 2``), or a Wald type ``'wald'``, ``'wald.log'`` or ``'wald.sqrt'`` (in the metafor source but not described on its
-            reference page). Default: ``'genq'`` for ``GENQ`` and ``GENQM`` fits, else ``'qp'``.
+            moderators and ``k > 2``; centred on ``H`` from ``Q = (k - 1) H^2`` for every method, as in Higgins and Thompson and in Borenstein et al.,
+            2009, which differs from metafor's ``confint.rma.uni``, which centres on the fit's ``H2``, see
+            [docs/differences.md](../../../docs/differences.md#where-metafor-departs-from-its-reference)), or a Wald
+            type ``'wald'``, ``'wald.log'`` or ``'wald.sqrt'`` (in the metafor source but not described on its reference page).
+            Default: ``'genq'`` for ``GENQ`` and ``GENQM`` fits, else ``'qp'``.
         level: Confidence level in percent (``95`` is 95%). As in metafor, a value below 1 is read as the confidence level if it is above 0.5
             (``0.95``) and as the significance level otherwise (``0.05``). Default: the level of the model.
         transf: Function applied to each coefficient and bound of the ``fixed`` table separately, for example ``numpy.exp``; the bounds are put in order.
@@ -407,8 +410,9 @@ def confint_rma_uni(
                 se_lnH = math.sqrt(1 / (2 * (k - 2)) * (1 - 1 / (3 * (k - 2) ** 2)))
             crit = float(scipy.stats.norm.isf(alpha / 2))
             lb_conv = ub_conv = True
-            H2_lb = math.exp(math.log(x.H2) - crit * 2 * se_lnH)
-            H2_ub = math.exp(math.log(x.H2) + crit * 2 * se_lnH)
+            H2_q = x.QE / (k - 1)
+            H2_lb = math.exp(math.log(H2_q) - crit * 2 * se_lnH)
+            H2_ub = math.exp(math.log(H2_q) + crit * 2 * se_lnH)
             I2_lb = (H2_lb - 1) / H2_lb
             I2_ub = (H2_ub - 1) / H2_ub
             tau2_lb = max(0.0, I2_lb * x.vt / (1 - I2_lb))

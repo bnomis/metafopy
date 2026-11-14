@@ -403,8 +403,7 @@ args = { yi = "yi", vi = "vi", method = "REML", control = { threshold = 1e-13, t
 expect = {}
 check = "test_derived.confint_ht"
 tolerance = 1e-8
-status = "mismatch"
-reason = "Higgins and Thompson (2002) centre the interval on H from Q: tau2 bounds 0.19972 and 0.47038; metafopy centres on H2 of the REML fit (12.856 against Q/(k-1) = 12.686): 0.20274 and 0.47703"
+status = "pass"
 covers = ["confint.ht"]
 
 [[case]]

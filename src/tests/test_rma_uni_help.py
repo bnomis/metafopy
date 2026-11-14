@@ -176,8 +176,25 @@ def case_ci(ci: typing.Any, key: str, rtol: float = RTOL) -> None:
 def test_confint_types(dat: pandas.DataFrame, re: metafopy.models.rma_uni.RMAResult) -> None:
     case_ci(metafopy.methods.confint.confint(re), 'qp_ci')
     case_ci(metafopy.methods.confint.confint(re, type='PL'), 'pl_ci')
-    case_ci(metafopy.methods.confint.confint(re, type='HT'), 'ht_ci')
+    # The bounds of type 'HT' differ from metafor's by design (correctness case confint.ht.reml.bcg.none, docs/differences.md, "Where metafor departs
+    # from its reference"): only the estimate column is compared with the fixture, the bounds with Higgins and Thompson (2002).
+    ht = metafopy.methods.confint.confint(re, type='HT').random
+    ref = case_ref()['ht_ci']
+    close(ht['estimate'], ref['estimate'])
+    numpy.testing.assert_allclose(ht['ci.lb'].iloc[0], 0.19972, rtol=0, atol=5e-6)
+    numpy.testing.assert_allclose(ht['ci.ub'].iloc[0], 0.47038, rtol=0, atol=5e-6)
+    assert not numpy.allclose(arr(ht['ci.lb']), arr(ref['ci_lb']), rtol=RTOL)
     case_ci(metafopy.methods.confint.confint(metafopy.rma('yi', 'vi', mods='~ ablat', data=dat, method='ML'), type='PL'), 'pl_ci_ml')
+
+
+def test_confint_ht_bounds_do_not_depend_on_estimator(dat: pandas.DataFrame) -> None:
+    ref = metafopy.methods.confint.confint(metafopy.rma('yi', 'vi', data=dat, method='DL'), type='HT').random
+    for method in ('REML', 'ML', 'PM'):
+        fit = metafopy.rma('yi', 'vi', data=dat, method=method)
+        tab = metafopy.methods.confint.confint(fit, type='HT').random
+        close(tab['ci.lb'], ref['ci.lb'], 1e-9)
+        close(tab['ci.ub'], ref['ci.ub'], 1e-9)
+        close(tab['estimate'], [fit.tau2, math.sqrt(fit.tau2), fit.I2, fit.H2], 1e-9)
 
 
 def test_confint_transf(re: metafopy.models.rma_uni.RMAResult) -> None:
