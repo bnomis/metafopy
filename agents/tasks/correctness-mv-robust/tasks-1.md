@@ -351,7 +351,7 @@ them the gate passes for every item.
 
 ## Task 8: Property and simulation cases
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** medium
 **Spec Reference:** Implementation steps 5 and 6
@@ -360,25 +360,29 @@ them the gate passes for every item.
 
 **Subtasks:**
 
-- [ ] Property cases in `src/tests/correctness/test_properties.py` and `cases/properties.toml`: `rma_mv` with `~ 1 | id` (one row per id) equals
+- [x] Property cases in `src/tests/correctness/test_properties.py` and `cases/properties.toml`: `rma_mv` with `~ 1 | id` (one row per id) equals
       `rma_uni` (beta, se, tau2, log-likelihood); a three-level fit with one level's sigma2 fixed at 0 equals the two-level fit; with two inner levels
       `UN` and `HCS` give the same fit; `AR` equals `CAR` at equally spaced times; location and scale invariance; the REML and ML score is zero at
       metafopy's optimum; `optbeta=True` reaches the same optimum; `CR0` with one row per cluster equals the HC0 sandwich; `CR2` is exactly unbiased
       when the working model is the true one (Pustejovsky and Tipton 2018, theorem 1), checked in closed form from `(I - H) M (I - H)'`
-- [ ] Simulation cases in `src/tests/correctness/test_simulation.py`, each marked `slow`, using `numpy.random.default_rng(seed)` with a fixed seed and
+- [x] Simulation cases in `src/tests/correctness/test_simulation.py`, each marked `slow`, using `numpy.random.default_rng(seed)` with a fixed seed and
       stated replicates, asserting at 4 standard errors: exact coverage of the `method="FE"` Wald interval with known `V`; unbiasedness of the GLS
       estimate
-- [ ] Check once by hand that each simulation fails for a biased stand-in (for example `V` scaled by 2 in the interval), and note the figures here
+- [x] Check once by hand that each simulation fails for a biased stand-in (for example `V` scaled by 2 in the interval), and note the figures here.
+      Done: with `V` doubled in the fit the intercept's coverage is 0.994 over 2000 replicates against 0.95 (standard error 0.0049, a 9-error miss);
+      with the estimate shifted by 0.02 the intercept's mean is 0.3224 against 0.3 (standard error 0.0026). The property checks were run the same
+      way: `CR2` unbiasedness fails for the `CR0` and `CR1` estimators, the `HC0` check fails for `CR1`, and the one-row-per-id check fails when
+      rows share a group
 
 **Acceptance Criteria:**
 
-- [ ] `pytest -m slow src/tests/correctness/test_simulation.py` passes
+- [x] `pytest -m slow src/tests/correctness/test_simulation.py` passes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_properties.py src/tests/correctness/test_simulation.py` passes, `slow` cases included
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_properties.py src/tests/correctness/test_simulation.py` passes, `slow` cases included
 
 **Notes:**
 

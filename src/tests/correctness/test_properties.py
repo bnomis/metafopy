@@ -5,16 +5,19 @@ A case that is not a comparison of values names a ``check`` function of this mod
 """
 
 import collections.abc
+import dataclasses
 import typing
 
 import hypothesis
 import hypothesis.strategies
 import numpy
 import numpy.typing
+import pandas
 import pytest
 
 import correctness.cases
 import correctness.formulas
+import correctness.test_derived
 import metafopy
 import metafopy.errors
 import metafopy.models.tau2
@@ -183,3 +186,149 @@ def i2_is_zero_for_identical_effects(case: correctness.cases.Case, result: typin
         close(case.id, f'{method} I2', fitted.I2, 0.0, case.tolerance)
     if not ran:
         raise AssertionError(f'{case.id}: no estimator fitted the identical effects')
+
+
+MV_CONTROL = {'gtol': 1e-12, 'maxiter': 10000}
+MV_AGREEMENT = 1e-6
+# what two fits of one structured model share: the REML log-likelihood, the coefficients, the variances and the correlation
+STRUCTURED_FIT = ('beta', 'll', 'rho', 'tau2')
+ROBUST_AGREEMENT = 1e-8
+
+
+def refit_with(case: correctness.cases.Case, **changes: typing.Any) -> typing.Any:
+    """The case's fit again, with the ``args`` in ``changes`` replacing or adding to its own (``None`` removes one) and no ``then`` call."""
+    args = {**case.args, **changes}
+    return correctness.cases.run_case(dataclasses.replace(case, args={k: v for k, v in args.items() if v is not None}, then=None))
+
+
+def mv_score_is_zero(case: correctness.cases.Case, result: typing.Any) -> None:
+    """At the optimum of an ``rma_mv`` fit with ``sigma2`` components, the score of each is zero (Harville 1977; Hardy and Thompson 1996).
+
+    With ``M = V + sum(sigma2_j Z_j Z_j')`` and ``P = M^-1 - M^-1 X (X' M^-1 X)^-1 X' M^-1``, the REML score of ``sigma2_j`` is
+    ``y' P Z_j Z_j' P y - tr(P Z_j Z_j')`` and the ML score has ``tr(M^-1 Z_j Z_j')`` for the trace; both are zero at an interior optimum.
+    """
+    fit = refit_with(case, control=MV_CONTROL)
+    s = correctness.test_derived.mv_setup(case, fit)
+    inverse = numpy.linalg.inv(s.V + s.extra())
+    p = inverse - inverse @ s.X @ numpy.linalg.solve(s.X.T @ inverse @ s.X, s.X.T @ inverse)
+    for position, term in enumerate(s.terms):
+        if term.struct != correctness.formulas.SIGMA2:
+            raise ValueError(f'{case.id}: mv_score_is_zero covers sigma2 components only')
+        z = correctness.formulas.term_matrix(term, numpy.ones(1), numpy.zeros(0))
+        trace = numpy.trace((p if s.scored == 'REML' else inverse) @ z)
+        close(case.id, f'{s.scored} score of sigma2[{position}]', s.yi @ p @ z @ p @ s.yi - trace, 0.0, case.tolerance)
+
+
+def fit_summary(fit: typing.Any) -> dict[str, typing.Any]:
+    """What two fits of one model must share: the REML log-likelihood, the coefficients and every variance component."""
+    parts: dict[str, typing.Any] = {'ll': fit.fit_stats_reml.ll, 'beta': fit.beta}
+    for name in ('gamma2', 'phi', 'rho', 'sigma2', 'tau2'):
+        value = getattr(fit, name)
+        if value is not None:
+            parts[name] = numpy.atleast_1d(value)
+    return parts
+
+
+def same_fit(case: correctness.cases.Case, first: typing.Any, second: typing.Any, names: tuple[str, ...]) -> None:
+    one, two = fit_summary(first), fit_summary(second)
+    for name in names:
+        close(case.id, name, one[name], two[name], case.tolerance or MV_AGREEMENT)
+
+
+def mv_one_row_per_id_equals_uni(case: correctness.cases.Case, result: typing.Any) -> None:
+    """``rma_mv`` with ``~ 1 | id`` and one row per ``id`` is ``rma_uni``: ``sigma2`` is ``tau2`` and the coefficients, standard errors and the
+    log-likelihood are those of the random-effects model (both fit the one marginal model ``N(Xb, diag(vi) + tau2 I)``)."""
+    frame = correctness.cases.case_frame(case)
+    assert frame is not None
+    uni = metafopy.rma_uni(yi=case.args['yi'], vi=case.args['V'], mods=case.args.get('mods'), data=frame, method='REML', control=CONTROL)
+    tolerance = case.tolerance or MV_AGREEMENT
+    close(case.id, 'beta', result.beta, uni.beta, tolerance)
+    close(case.id, 'se', result.se, uni.se, tolerance)
+    close(case.id, 'tau2', result.sigma2[0], uni.tau2, tolerance)
+    close(case.id, 'log-likelihood', result.fit_stats_reml.ll, uni.fit_stats_reml.ll, tolerance)
+
+
+def mv_zero_component_equals_reduced_model(case: correctness.cases.Case, result: typing.Any) -> None:
+    """A three-level fit with the lowest level's ``sigma2`` held at 0 is the two-level fit of the levels above it: a zero variance adds nothing to
+    the marginal covariance, so the likelihood, coefficients and the remaining variance are those of the model without the term."""
+    reduced = refit_with(case, random=case.args['random'].split('/')[0], sigma2=None)
+    fixed = result.sigma2
+    assert fixed[-1] == 0.0, f'{case.id}: the case must fix the last sigma2 at 0'
+    tolerance = case.tolerance or MV_AGREEMENT
+    close(case.id, 'log-likelihood', result.fit_stats_reml.ll, reduced.fit_stats_reml.ll, tolerance)
+    close(case.id, 'beta', result.beta, reduced.beta, tolerance)
+    close(case.id, 'sigma2', fixed[:-1], reduced.sigma2, tolerance)
+
+
+def mv_un_equals_hcs_for_two_levels(case: correctness.cases.Case, result: typing.Any) -> None:
+    """With two inner levels, ``UN`` (two variances and one correlation) and ``HCS`` (two variances and one common correlation) are the same model,
+    so they reach the same optimum."""
+    same_fit(case, result, refit_with(case, struct='HCS'), STRUCTURED_FIT)
+
+
+def mv_ar_equals_car_at_equal_spacing(case: correctness.cases.Case, result: typing.Any) -> None:
+    """``CAR`` has correlation ``rho ** |t_i - t_j|``; at times one apart that is ``AR``'s ``rho ** |i - j|``, so the fits agree."""
+    same_fit(case, result, refit_with(case, struct='CAR'), STRUCTURED_FIT)
+
+
+def mv_optbeta_reaches_same_optimum(case: correctness.cases.Case, result: typing.Any) -> None:
+    """Optimising the coefficients with the variance components (``optbeta=True``) reaches the optimum that profiling them out by generalised least
+    squares reaches: the REML estimating equations have one solution at an interior optimum."""
+    same_fit(case, result, refit_with(case, optbeta=True), ('ll', 'beta', 'sigma2'))
+
+
+def as_columns(frame: pandas.DataFrame) -> dict[str, list[float]]:
+    return {str(name): column.tolist() for name, column in frame.items()}
+
+
+def mv_location_and_scale_invariance(case: correctness.cases.Case, result: typing.Any) -> None:
+    """Adding ``c`` to every effect adds ``c`` to the intercept only; multiplying every effect by ``c`` and ``V`` by ``c^2`` multiplies the coefficients
+    by ``c`` and the variance components by ``c^2`` (the model is a location-scale family in ``y``)."""
+    frame = correctness.cases.case_frame(case)
+    assert frame is not None
+    yi, vi = case.args['yi'], case.args['V']
+    shift, scale = 3.1, 2.5
+    shifted_frame = frame.assign(**{yi: frame[yi] + shift})
+    scaled_frame = frame.assign(**{yi: frame[yi] * scale, vi: frame[vi] * scale**2})
+    shifted = correctness.cases.run_case(dataclasses.replace(case, then=None, dataset=None, data=as_columns(shifted_frame)))
+    scaled = correctness.cases.run_case(dataclasses.replace(case, then=None, dataset=None, data=as_columns(scaled_frame)))
+    tolerance = case.tolerance or MV_AGREEMENT
+    close(case.id, 'sigma2 after a shift', shifted.sigma2, result.sigma2, tolerance)
+    close(case.id, 'beta after a shift', shifted.beta, result.beta + numpy.eye(len(result.beta))[0] * shift, tolerance)
+    close(case.id, 'sigma2 after scaling', scaled.sigma2, result.sigma2 * scale**2, tolerance)
+    close(case.id, 'beta after scaling', scaled.beta, result.beta * scale, tolerance)
+    close(case.id, 'se after scaling', scaled.se, result.se * scale, tolerance)
+
+
+def cr0_with_singleton_clusters_is_hc0(case: correctness.cases.Case, result: typing.Any) -> None:
+    """With one row per cluster, ``CR0`` is the heteroskedasticity-consistent sandwich ``HC0`` (White 1980; Liang and Zeger 1986):
+    ``(X'WX)^-1 X'W diag(e^2) W X (X'WX)^-1`` for the diagonal weights ``W`` of the fit and its residuals ``e``."""
+    fit = refit_with(case)
+    frame = correctness.cases.case_frame(case)
+    assert frame is not None
+    yi = frame[case.args['yi']].to_numpy(dtype=numpy.float64)
+    x = correctness.test_derived.design_matrix(frame, case.args.get('mods'))
+    weights = 1 / (frame[case.args['vi']].to_numpy(dtype=numpy.float64) + float(fit.tau2))
+    bread = numpy.linalg.inv(x.T @ (weights[:, None] * x))
+    resid = yi - x @ (bread @ (x.T @ (weights * yi)))
+    hc0 = bread @ (x.T @ (((weights * resid) ** 2)[:, None] * x)) @ bread
+    close(case.id, 'vb', result.vb, hc0, case.tolerance or ROBUST_AGREEMENT)
+
+
+def cr2_is_unbiased_under_the_working_model(case: correctness.cases.Case, result: typing.Any) -> None:
+    """When the working model is the true one, ``CR2`` is unbiased for the variance of the estimate (Pustejovsky and Tipton 2018, theorem 1).
+
+    The estimate is ``vb(y)``, a quadratic form in the residuals ``(I - H) y``, so its expectation under ``y ~ N(Xb, Theta)`` is the sum of
+    ``vb(L e_i)`` over the unit vectors ``e_i`` for any ``L`` with ``L L' = Theta`` - exact, no simulation. It must equal
+    ``(X'WX)^-1 X'W Theta W X (X'WX)^-1``, ``W = Theta^-1``. The fit holds its variance components fixed, so ``W`` does not move with ``y``.
+    """
+    assert case.then is not None
+    s = correctness.test_derived.mv_setup(case, result)
+    theta = s.V + s.extra()
+    bread = numpy.linalg.inv(s.X.T @ numpy.linalg.solve(theta, s.X))
+    factor = numpy.linalg.cholesky(theta)
+    total = numpy.zeros_like(bread)
+    for column in range(len(s.yi)):
+        shocked = refit_with(case, yi=factor[:, column])
+        total += metafopy.robust(shocked, **case.then.args).vb
+    close(case.id, 'expected CR2 variance', total, bread, case.tolerance or ROBUST_AGREEMENT)
