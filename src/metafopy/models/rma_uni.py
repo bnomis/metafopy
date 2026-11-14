@@ -720,6 +720,9 @@ def rma_uni(
             [RMALSResult][metafopy.models.rma_ls_result.RMALSResult] when ``scale`` is given). Estimates are in ``beta``, ``se``, ``zval``, ``pval``,
             ``ci_lb`` and ``ci_ub``; heterogeneity statistics in ``tau2``, ``I2``, ``H2``, ``QE`` and ``QEp`` (arrays with one value per study
             for a location-scale model, except ``QE`` and ``QEp``); ``summary()`` returns the printout as a string.
+            ``QE`` is Cochran's ``y' P y`` for every design;
+            metafor centres ``yi`` first, which gives a different ``QE`` and ``tau2`` when the columns of the design do not span
+            the constant (a model without an intercept), see "QE and tau2 of a model without an intercept" in ``docs/differences.md``.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
@@ -1172,8 +1175,7 @@ def fit_rma_uni(
             w_fe = 1.0 / vi
             WX = w_fe[:, None] * X
             P = numpy.diag(w_fe) - WX @ metafopy.core.linalg.invcalc(X, w_fe) @ WX.T
-            ymc = yi - yi.mean()
-            QE = max(0.0, float(ymc @ P @ ymc))
+            QE = max(0.0, float(yi @ P @ yi))
             QEp = float(scipy.stats.chi2.sf(QE, k - p))
             vt = (k - p) / float(numpy.trace(P)) if i2def == '1' else float(1 / numpy.mean(1 / vi))
             if used in metafopy.models.tau2.FIXED_EFFECTS:

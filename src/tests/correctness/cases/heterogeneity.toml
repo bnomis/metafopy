@@ -74,15 +74,13 @@ args = { yi = "yi", vi = "vi", method = "DL" }
 expect = {}
 check = "test_properties.i2_follows_h2"
 
-# A model without an intercept: QE is Cochran's Q, y' P y, with no centring of y first. metafopy centres y, which changes QE when the columns of X do not
-# span the constant (Task 2 of agents/tasks/qe-no-intercept/tasks-1.md fixes it).
+# A model without an intercept: QE is Cochran's Q, y' P y, with no centring of y first. metafor centres y first, which changes QE when the columns of X do not
+# span the constant; metafopy does not.
 [[case]]
 id = "heterogeneity.qe.bangertdrowns.nointercept"
 kind = "derived"
 function = "rma_uni"
 dataset = "dat.bangertdrowns2004"
-args = { yi = "yi", vi = "vi", method = "DL", mods = "~ ni", intercept = false }
+args = { yi = "yi", vi = "vi", method = "DL", mods = "~ ni - 1" }
 expect = { QE = "formulas.rma_QE" }
-status = "mismatch"
-reason = "metafopy centres yi, so its QE is 95.13523; Cochran's y' P y on yi gives 135.99842"
 covers = ["heterogeneity.QE"]

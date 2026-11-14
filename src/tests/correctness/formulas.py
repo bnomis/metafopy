@@ -1224,10 +1224,15 @@ def squared_correlation_yi(r2i: FloatArray) -> FloatArray:
 
 
 def model_matrix(count: int, mods: str | None, data: object | None, intercept: bool = True) -> FloatArray:
-    """``X``: a column of ones (unless ``intercept`` is false), then the columns of the one-sided formula ``mods`` (``'~ ablat + year'``) read from ``data``."""
+    """``X``: a column of ones (unless ``intercept`` is false or the formula ends in ``- 1``), then the columns of the one-sided formula ``mods``
+    (``'~ ablat + year'``) read from ``data``."""
+    terms = (mods or '').replace('~', '')
+    if terms.rstrip().endswith('- 1'):
+        terms = terms.rstrip()[:-3]
+        intercept = False
     columns = [numpy.ones(count)] if intercept else []
     if mods:
-        for name in mods.replace('~', '').split('+'):
+        for name in terms.split('+'):
             columns.append(numpy.asarray(data[name.strip()], dtype=numpy.float64))  # type: ignore[index]
     return numpy.column_stack(columns)
 

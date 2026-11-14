@@ -97,7 +97,7 @@ the fix in Task 2 is seen to turn them from mismatches into passes.
 
 ## Task 2: Use yi, not the centred yi, in each quadratic form and likelihood
 
-**Status:** todo
+**Status:** in-progress
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item's fix direction (the code change, the R parity fixtures)
@@ -106,34 +106,34 @@ the fix in Task 2 is seen to turn them from mismatches into passes.
 
 **Subtasks:**
 
-- [ ] In `estimate_tau2` (`src/metafopy/models/tau2.py`), use `yi` in every quadratic form, in the `qe(...)` calls of PM, MP and PMM, in the Fisher
+- [x] In `estimate_tau2` (`src/metafopy/models/tau2.py`), use `yi` in every quadratic form, in the `qe(...)` calls of PM, MP and PMM, in the Fisher
       scoring steps and in the `ll0check` likelihoods. Keep the SJ and SJIT starting value as it is, `numpy.mean((yi - yi.mean()) ** 2)`: it is
       Sidik and Jonkman's initial estimate, a variance about the mean and not a quadratic form in P, and changing it changes SJ with an intercept
       (0.09323 -> 0.10501 on the model in the header, measured 2026-11-14). Keep that one centred expression under a name that says what it is
       (`sj_start`), and drop `ymc`
-- [ ] In the heterogeneity blocks of `src/metafopy/models/rma_uni.py` and `src/metafopy/models/rma_ls_fit.py`, compute QE from `yi`
-- [ ] Update the docstrings that describe QE or the estimators to say that QE is `y' P y` (Cochran's Q) for every design, and that metafor centres
+- [x] In the heterogeneity blocks of `src/metafopy/models/rma_uni.py` and `src/metafopy/models/rma_ls_fit.py`, compute QE from `yi`
+- [x] Update the docstrings that describe QE or the estimators to say that QE is `y' P y` (Cochran's Q) for every design, and that metafor centres
       `yi` (`ymci` in `rma.uni`), which differs for designs without the constant; link the `docs/differences.md` section
-- [ ] Flip the no-intercept cases of Task 1 to `status = "pass"` and drop their `reason`
-- [ ] Run the R parity tests (`pytest src/tests/test_rma_uni_parity.py src/tests/test_rma_uni_help.py src/tests/test_rma_uni_extras.py
+- [x] Flip the no-intercept cases of Task 1 to `status = "pass"` and drop their `reason`
+- [x] Run the R parity tests (`pytest src/tests/test_rma_uni_parity.py src/tests/test_rma_uni_help.py src/tests/test_rma_uni_extras.py
       src/tests/test_rma_ls.py src/tests/test_fits.py`). For each failure, check that the fit has no intercept and that its columns do not span the
       constant; mark that fixture value as differing as `agents/tasks/confint-ht-centre/tasks-1.md` Task 1 marks `ht_ci` (the JSON stays as R wrote
       it; the test compares the value with the derived reference and asserts that R's differs, with a comment naming the section). A failure on a
       fit with an intercept, or with columns that span the constant, is a bug in this change: fix it, never mark it
-- [ ] Measure `rma_ls` without an intercept in the location part (`intercept=False`) before and after, and record both QE values in this task's
+- [x] Measure `rma_ls` without an intercept in the location part (`intercept=False`) before and after, and record both QE values in this task's
       Notes
 
 **Acceptance Criteria:**
 
-- [ ] `grep -n 'ymc' src/metafopy/models/tau2.py src/metafopy/models/rma_uni.py src/metafopy/models/rma_ls_fit.py` finds nothing
-- [ ] Every fit with an intercept gives the same QE and tau2 as before (the R parity tests of such fits pass unchanged)
-- [ ] The no-intercept correctness cases pass
+- [x] `grep -n 'ymc' src/metafopy/models/tau2.py src/metafopy/models/rma_uni.py src/metafopy/models/rma_ls_fit.py` finds nothing
+- [x] Every fit with an intercept gives the same QE and tau2 as before (the R parity tests of such fits pass unchanged)
+- [x] The no-intercept correctness cases pass
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_rma_uni_parity.py src/tests/test_rma_uni_help.py src/tests/test_rma_uni_extras.py src/tests/test_rma_ls.py src/tests/correctness/test_derived.py src/tests/correctness/test_properties.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_rma_uni_parity.py src/tests/test_rma_uni_help.py src/tests/test_rma_uni_extras.py src/tests/test_rma_ls.py src/tests/correctness/test_derived.py src/tests/correctness/test_properties.py` passes
 
 **Notes:**
 
@@ -142,12 +142,16 @@ the fix in Task 2 is seen to turn them from mismatches into passes.
   and EB as well as QE and the moment estimators, since their Fisher scoring steps use the centred `yi` (REML 0.0388 -> 0.0930 on the model in the
   header, where the uncentred REML likelihood peaks at 0.0930)
 - `src/metafopy/models/tau2.py` has no test file of its own; `rma_uni`'s tests reach it
+- Measured on 2026-11-14, `rma_uni(..., mods='~ ni - 1', scale='~ 1')` on `dat.bangertdrowns2004`: QE 95.74239 before, 135.99842 after (no-intercept location part)
+- Task 1's cases passed `mods = '~ ni', intercept = false`, but `rma_uni` ignores `intercept` when `mods` is a formula (as metafor does), so metafopy fitted an intercept model
+  and the cases' reasons (tau2 0.03981 for DL) were of that model. The cases now use `mods = '~ ni - 1'`, and `formulas.model_matrix` reads the `- 1`
+- The R parity tests of Task 2's subtask pass unchanged: none of their fixtures fits a design without the constant, so no fixture value is marked as differing
 
 ---
 
 ## Task 3: Record the difference, the full test run and closing the item
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item's fix direction (`known.toml`, `docs/differences.md`) and the item as a whole

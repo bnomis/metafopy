@@ -1,9 +1,12 @@
 """Heterogeneity (tau^2) estimators for the normal-normal random-effects model.
 
 Each estimator follows metafor's ``rma.uni()`` code path exactly, including its
-quirks: estimation works on mean-centred effect sizes, ML/REML/EB use Fisher
+quirks: ML/REML/EB use Fisher
 scoring started from the Hedges estimate with step-halving at ``tau2_min``,
 and PM/PMM search with R's ``uniroot()`` (ported in :mod:`metafopy.core.zeroin`).
+
+Unlike metafor, which centres ``yi`` once in ``rma.uni``, every quadratic form here is Cochran's ``y' P y`` on ``yi``. The two differ only when
+the columns of X do not span the constant (see "QE and tau2 of a model without an intercept" in ``docs/differences.md``).
 
 References
 ----------
@@ -138,7 +141,7 @@ def estimate_tau2(
         metafopy.errors.InternalError: a weight matrix the estimator needs is missing.
     """
     k, p = X.shape
-    ymc = yi - yi.mean()
+    sj_start = float(numpy.mean((yi - yi.mean()) ** 2))
     fix = tau2_fixed is not None
 
     def pick(value: float) -> float:
@@ -160,7 +163,7 @@ def estimate_tau2(
             raise metafopy.errors.EstimationError(f'{method} estimator cannot be used when there are non-positive sampling variances.')
         wi = 1.0 / vi
         P = projection(X, wi)
-        RSS = float(ymc @ P @ ymc)
+        RSS = float(yi @ P @ yi)
         if method == 'HS':
             tau2 = pick((RSS - k) / wi.sum())
         else:
@@ -168,7 +171,7 @@ def estimate_tau2(
 
     if method in ('HE', 'CO', 'VC', 'ML', 'REML', 'EB'):
         P = numpy.eye(k) - X @ metafopy.core.linalg.invcalc(X, numpy.ones(k)) @ X.T
-        RSS = float(ymc @ P @ ymc)
+        RSS = float(yi @ P @ yi)
         PV = P * vi[None, :]
         trPV = float(numpy.trace(PV))
         tau2 = pick((RSS - trPV) / (k - p))
@@ -178,7 +181,7 @@ def estimate_tau2(
             raise metafopy.errors.EstimationError('DL estimator cannot be used when there are non-positive sampling variances.')
         wi = 1.0 / vi
         P = projection(X, wi)
-        RSS = float(ymc @ P @ ymc)
+        RSS = float(yi @ P @ yi)
         trP = float(numpy.trace(P))
         tau2 = pick((RSS - (k - p)) / trP)
 
@@ -196,7 +199,7 @@ def estimate_tau2(
             P = projection(X, wi)
             trP = float(numpy.trace(P))
             trPV = float(numpy.sum(numpy.diag(P) * vi))
-            RSS = float(ymc @ P @ ymc)
+            RSS = float(yi @ P @ yi)
             tau2 = pick((RSS - trPV) / trP)
             tau2 = max(tau2, con.tau2_min)
             change = abs(old - tau2)
@@ -210,7 +213,7 @@ def estimate_tau2(
         PV = P * vi[None, :]
         trP = float(numpy.trace(P))
         trPV = float(numpy.trace(PV))
-        RSS = float(ymc @ P @ ymc)
+        RSS = float(yi @ P @ yi)
         tau2 = pick((RSS - trPV) / trP)
 
     if method == 'GENQM':
@@ -223,7 +226,7 @@ def estimate_tau2(
         if fix:
             tau2 = float(tau2_fixed)  # type: ignore[arg-type]
         else:
-            RSS = float(ymc @ P @ ymc)
+            RSS = float(yi @ P @ yi)
             if genq_func(con.tau2_min, Pg, vi, RSS, 0.0, k, p, getlower=True) > 0.5:
                 tau2 = con.tau2_min
             elif genq_func(con.tau2_max, Pg, vi, RSS, 0.0, k, p, getlower=True) < 0.5:
@@ -243,15 +246,15 @@ def estimate_tau2(
                 iterations = res.iterations
 
     if method == 'SJ':
-        tau2_0 = con.tau2_init if con.tau2_init is not None else float(numpy.mean(ymc**2))
+        tau2_0 = con.tau2_init if con.tau2_init is not None else sj_start
         wi = 1.0 / (vi + tau2_0)
         P = projection(X, wi)
-        RSS = float(ymc @ P @ ymc)
+        RSS = float(yi @ P @ yi)
         PV = P * vi[None, :]
         tau2 = pick(tau2_0 * RSS / (k - p))
 
     if method == 'SJIT':
-        tau2 = con.tau2_init if con.tau2_init is not None else float(numpy.mean(ymc**2))
+        tau2 = con.tau2_init if con.tau2_init is not None else sj_start
         change = con.threshold + 1
         while change > con.threshold:
             if verbose:
@@ -260,7 +263,7 @@ def estimate_tau2(
             old = tau2
             wi = 1.0 / (vi + tau2)
             P = projection(X, wi)
-            RSS = float(ymc @ P @ ymc)
+            RSS = float(yi @ P @ yi)
             tau2 = pick(tau2 * RSS / (k - p))
             change = abs(old - tau2)
             if iterations > con.maxiter:
@@ -272,14 +275,14 @@ def estimate_tau2(
         target = float(scipy.stats.chi2.ppf(0.5, k - p)) if method == 'PMM' else float(k - p)
         if fix:
             tau2 = float(tau2_fixed)  # type: ignore[arg-type]
-        elif qe(con.tau2_min, ymc, vi, X) < target:
+        elif qe(con.tau2_min, yi, vi, X) < target:
             tau2 = con.tau2_min
-        elif qe(con.tau2_max, ymc, vi, X) > target:
+        elif qe(con.tau2_max, yi, vi, X) > target:
             raise metafopy.errors.EstimationError("Value of 'tau2_max' too low. Try increasing 'tau2_max' or switch to another method.")
         else:
             try:
                 res = metafopy.core.zeroin.uniroot(
-                    lambda t: log_objective(t, qe(t, ymc, vi, X) - target, '  RSS - objective =', verbose, digits),
+                    lambda t: log_objective(t, qe(t, yi, vi, X) - target, '  RSS - objective =', verbose, digits),
                     con.tau2_min,
                     con.tau2_max,
                     tol=con.tol,
@@ -306,12 +309,12 @@ def estimate_tau2(
             P = projection(X, wi)
             if method == 'ML':
                 PP = P @ P
-                adj = (float(ymc @ PP @ ymc) - float(wi.sum())) / float(numpy.sum(wi**2))
+                adj = (float(yi @ PP @ yi) - float(wi.sum())) / float(numpy.sum(wi**2))
             elif method == 'REML':
                 PP = P @ P
-                adj = (float(ymc @ PP @ ymc) - float(numpy.trace(P))) / float(numpy.trace(PP))
+                adj = (float(yi @ PP @ yi) - float(numpy.trace(P))) / float(numpy.trace(PP))
             else:
-                adj = (float(ymc @ P @ ymc) * k / (k - p) - k) / float(wi.sum())
+                adj = (float(yi @ P @ yi) * k / (k - p) - k) / float(wi.sum())
             adj *= con.stepadj
             if math.isnan(adj):
                 adj = 0.0
@@ -324,8 +327,8 @@ def estimate_tau2(
 
         # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
         if method in ('ML', 'REML') and con.ll0check and allvipos and not fix:
-            ll0 = log_likelihood(method, ymc, vi, X, 0.0)
-            ll = log_likelihood(method, ymc, vi, X, tau2)
+            ll0 = log_likelihood(method, yi, vi, X, 0.0)
+            ll = log_likelihood(method, yi, vi, X, tau2)
             if ll0 - ll > con.tol and tau2 > con.threshold:
                 # metafor warns: Fisher scoring may have gotten stuck at a local maximum
                 tau2 = 0.0
