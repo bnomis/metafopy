@@ -43,7 +43,7 @@ restarts.
 | test pass line | `passed` |
 | test fail pattern | `FAILED\|ERROR` |
 | always wait for | `claude/rules/metafopy.md` |
-| progress page | |
+| progress page | https://claude.ai/artifact/JXkwFEMSuvsbQkhv1trWaS |
 
 | # | Task list | Waits for | Stops for you | Status |
 |---|---|---|---|---|
