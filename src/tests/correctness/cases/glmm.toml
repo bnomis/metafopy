@@ -1042,3 +1042,304 @@ args = { xi = "xi", ni = "ni", measure = "PLO", method = "FE", link = "sqrt" }
 expect = { "se[0]" = "glmm_formulas.rma_glmm_se" }
 tolerance = 1e-05
 covers = ["rma_glmm.link.sqrt"]
+
+# Task 6: package and optimiser cases. A package case reads the formulas' log-likelihood of the approximation the package uses (adaptive quadrature
+# with nAGQ = 7 points for lme4 and GLMMadaptive, the Laplace approximation for glmmTMB), maximised by the formulas' own search, and the check
+# test_derived.glmm_likelihood_at_estimate compares it with the log-likelihood at the estimates of metafopy. The accurate-integral cases fit with
+# many quadrature points (GLMMadaptive) or a tight int_rel_tol (CM.EL) and compare with the exact integral. An optimiser case fits CM.EL for OR
+# on dat.nielweise2007 with each optimiser of metafor's control$optimizer and compares the estimates with the exact fit at 1e-4;
+# clogit and clogistic fit the fixed-effects model only.
+
+[[case]]
+id = "glmm.package.lme4.um.fs.ml.nielweise2007"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "UM.FS", method = "ML", control = { package = "lme4" } }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", "se[0]" = "glmm_formulas.rma_glmm_se", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-5
+check = "test_derived.glmm_likelihood_at_estimate"
+covers = ["rma_glmm.package.lme4"]
+
+# GLMMadaptive stops at relative tolerances of 1e-5 to 1e-8 (R's own rule, followed by metafopy): tau2 is 0.3227 against the maximum 0.3195.
+[[case]]
+id = "glmm.package.glmmadaptive.um.fs.ml.nielweise2007"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "UM.FS", method = "ML", control = { package = "GLMMadaptive" } }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", "se[0]" = "glmm_formulas.rma_glmm_se", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-2
+check = "test_derived.glmm_likelihood_at_estimate"
+covers = ["rma_glmm.package.GLMMadaptive"]
+
+[[case]]
+id = "glmm.package.glmmtmb.um.fs.ml.nielweise2007"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "UM.FS", method = "ML", control = { package = "glmmTMB" } }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", "se[0]" = "glmm_formulas.rma_glmm_se", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-5
+check = "test_derived.glmm_likelihood_at_estimate"
+covers = ["rma_glmm.package.glmmTMB"]
+
+# 41 quadrature points make the integral exact to well below the tolerance; the 3e-3 gap in tau2 is GLMMadaptive's early stop, as in the package case.
+[[case]]
+id = "glmm.accurate.nagq.um.fs.ml.nielweise2007"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "UM.FS", method = "ML", nAGQ = 41, control = { package = "GLMMadaptive" } }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_exact_beta", tau2 = "glmm_formulas.rma_glmm_exact_tau2" }
+tolerance = 1e-2
+covers = ["rma_glmm.package.GLMMadaptive"]
+
+[[case]]
+id = "glmm.accurate.int-rel-tol.cm.el.ml.nielweise2007"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.EL", method = "ML", control = { int_rel_tol = 1e-10 } }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_exact_beta", tau2 = "glmm_formulas.rma_glmm_exact_tau2" }
+tolerance = 1e-5
+covers = ["rma_glmm.fit.OR.CM.EL.ML"]
+
+[[case]]
+id = "glmm.optimizer.optim.cm.el.ml.nielweise2007"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.EL", method = "ML", control = { optimizer = "optim", int_rel_tol = 1e-10 } }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-4
+covers = ["rma_glmm.optimizer.optim"]
+
+[[case]]
+id = "glmm.optimizer.nlminb.cm.el.ml.nielweise2007"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.EL", method = "ML", control = { optimizer = "nlminb", int_rel_tol = 1e-10 } }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-4
+covers = ["rma_glmm.optimizer.nlminb"]
+
+[[case]]
+id = "glmm.optimizer.uobyqa.cm.el.ml.nielweise2007"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.EL", method = "ML", control = { optimizer = "uobyqa", int_rel_tol = 1e-10 } }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-4
+covers = ["rma_glmm.optimizer.uobyqa"]
+
+[[case]]
+id = "glmm.optimizer.newuoa.cm.el.ml.nielweise2007"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.EL", method = "ML", control = { optimizer = "newuoa", int_rel_tol = 1e-10 } }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-4
+covers = ["rma_glmm.optimizer.newuoa"]
+
+[[case]]
+id = "glmm.optimizer.bobyqa.cm.el.ml.nielweise2007"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.EL", method = "ML", control = { optimizer = "bobyqa", int_rel_tol = 1e-10 } }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-4
+covers = ["rma_glmm.optimizer.bobyqa"]
+
+[[case]]
+id = "glmm.optimizer.nloptr.cm.el.ml.nielweise2007"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.EL", method = "ML", control = { optimizer = "nloptr", int_rel_tol = 1e-10 } }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-4
+covers = ["rma_glmm.optimizer.nloptr"]
+
+[[case]]
+id = "glmm.optimizer.nlm.cm.el.ml.nielweise2007"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.EL", method = "ML", control = { optimizer = "nlm", int_rel_tol = 1e-10 } }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-4
+covers = ["rma_glmm.optimizer.nlm"]
+
+[[case]]
+id = "glmm.optimizer.hjk.cm.el.ml.nielweise2007"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.EL", method = "ML", control = { optimizer = "hjk", int_rel_tol = 1e-10 } }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-4
+covers = ["rma_glmm.optimizer.hjk"]
+
+[[case]]
+id = "glmm.optimizer.nmk.cm.el.ml.nielweise2007"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.EL", method = "ML", control = { optimizer = "nmk", int_rel_tol = 1e-10 } }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-4
+covers = ["rma_glmm.optimizer.nmk"]
+
+[[case]]
+id = "glmm.optimizer.mads.cm.el.ml.nielweise2007"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.EL", method = "ML", control = { optimizer = "mads", int_rel_tol = 1e-10 } }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-4
+covers = ["rma_glmm.optimizer.mads"]
+
+[[case]]
+id = "glmm.optimizer.ucminf.cm.el.ml.nielweise2007"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.EL", method = "ML", control = { optimizer = "ucminf", int_rel_tol = 1e-10 } }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-4
+covers = ["rma_glmm.optimizer.ucminf"]
+
+[[case]]
+id = "glmm.optimizer.lbfgsb3c.cm.el.ml.nielweise2007"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.EL", method = "ML", control = { optimizer = "lbfgsb3c", int_rel_tol = 1e-10 } }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-4
+covers = ["rma_glmm.optimizer.lbfgsb3c"]
+
+[[case]]
+id = "glmm.optimizer.subplex.cm.el.ml.nielweise2007"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.EL", method = "ML", control = { optimizer = "subplex", int_rel_tol = 1e-10 } }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-4
+covers = ["rma_glmm.optimizer.subplex"]
+
+[[case]]
+id = "glmm.optimizer.bboptim.cm.el.ml.nielweise2007"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.EL", method = "ML", control = { optimizer = "BBoptim", int_rel_tol = 1e-10 } }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-4
+covers = ["rma_glmm.optimizer.BBoptim"]
+
+[[case]]
+id = "glmm.optimizer.optimparallel.cm.el.ml.nielweise2007"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.EL", method = "ML", control = { optimizer = "optimParallel", int_rel_tol = 1e-10 } }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-4
+covers = ["rma_glmm.optimizer.optimParallel"]
+
+[[case]]
+id = "glmm.optimizer.clogit.cm.el.fe.nielweise2007"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.EL", method = "FE", control = { optimizer = "clogit" } }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta" }
+tolerance = 1e-4
+covers = ["rma_glmm.optimizer.clogit"]
+
+[[case]]
+id = "glmm.optimizer.clogistic.cm.el.fe.nielweise2007"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.EL", method = "FE", control = { optimizer = "clogistic" } }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta" }
+tolerance = 1e-4
+covers = ["rma_glmm.optimizer.clogistic"]
+
+# The simplex of Nelder-Mead (a port of R's optim) stops at reltol 1e-8 on the likelihood, which leaves beta 1.3e-4 from the maximum.
+[[case]]
+id = "glmm.optimizer.nelder-mead.cm.el.ml.nielweise2007"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.EL", method = "ML", control = { optimizer = "Nelder-Mead", int_rel_tol = 1e-10 } }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-3
+covers = ["rma_glmm.optimizer.Nelder-Mead"]
+
+[[case]]
+id = "glmm.optimizer.bfgs.cm.el.ml.nielweise2007"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.EL", method = "ML", control = { optimizer = "BFGS", int_rel_tol = 1e-10 } }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-4
+covers = ["rma_glmm.optimizer.BFGS"]
+
+[[case]]
+id = "glmm.optimizer.cg.cm.el.ml.nielweise2007"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.EL", method = "ML", control = { optimizer = "CG", int_rel_tol = 1e-10 } }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-4
+covers = ["rma_glmm.optimizer.CG"]
+
+[[case]]
+id = "glmm.optimizer.l-bfgs-b.cm.el.ml.nielweise2007"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.EL", method = "ML", control = { optimizer = "L-BFGS-B", int_rel_tol = 1e-10 } }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-4
+covers = ["rma_glmm.optimizer.L-BFGS-B"]
+
+[[case]]
+id = "glmm.optimizer.rcgmin.cm.el.ml.nielweise2007"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.EL", method = "ML", control = { optimizer = "Rcgmin", int_rel_tol = 1e-10 } }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-4
+covers = ["rma_glmm.optimizer.Rcgmin"]
+
+[[case]]
+id = "glmm.optimizer.rvmmin.cm.el.ml.nielweise2007"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.EL", method = "ML", control = { optimizer = "Rvmmin", int_rel_tol = 1e-10 } }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-4
+covers = ["rma_glmm.optimizer.Rvmmin"]
+
+[[exempt]]
+item = "rma_glmm.optimizer.SANN"
+reason = "NotSupportedError: optimizer 'optim' (method 'SANN') is not available (simulated annealing has no counterpart here): rma_glmm raises NotSupportedError"
+
+[[exempt]]
+item = "rma_glmm.optimizer.Brent"
+reason = "NotSupportedError: optimizer 'optim' (method 'Brent') is not available (one-dimensional search only, the model has two parameters): rma_glmm raises NotSupportedError"

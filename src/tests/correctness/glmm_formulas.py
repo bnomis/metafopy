@@ -11,6 +11,7 @@ import collections.abc
 import contextlib
 import dataclasses
 import functools
+import inspect
 import math
 import typing
 import warnings
@@ -923,14 +924,14 @@ def profile_loglik_at(
     return loglik(maximise(loglik, theta, st, free=free))
 
 
-def rma_glmm_rule(model: str, method: str, nagq: int) -> tuple[str, int]:
-    """The approximation ``rma_glmm`` documents for a fit: Laplace for ``UM.RS`` with ``ML`` (two random effects, which ``glmer`` allows no more
-    than one quadrature point for), the exact integral for ``CM.EL`` (``control`` ``int_rel_tol`` tightened in the cases) and adaptive quadrature
-    with ``nAGQ`` points otherwise (Pinheiro and Bates 1995)."""
-    if model == 'UM.RS' and method == 'ML':
-        return 'laplace', 1
+def rma_glmm_rule(model: str, method: str, nagq: int, package: str = 'lme4') -> tuple[str, int]:
+    """The approximation ``rma_glmm`` documents for a fit: the exact integral for ``CM.EL`` (``control`` ``int_rel_tol`` tightened in the cases),
+    the Laplace approximation for ``glmmTMB`` (Brooks et al. 2017) and for ``lme4`` with ``UM.RS`` and ``ML`` (two random effects, which ``glmer``
+    allows no more than one quadrature point for), and adaptive quadrature with ``nAGQ`` points otherwise (Pinheiro and Bates 1995)."""
     if model == 'CM.EL':
         return 'exact', nagq
+    if package == 'glmmTMB' or (model == 'UM.RS' and method == 'ML' and package == 'lme4'):
+        return 'laplace', 1
     return 'agq', nagq
 
 
@@ -987,14 +988,16 @@ def rma_glmm_problem(
     mi: FloatArray | None = None,
     ni: FloatArray | None = None,
     ti: FloatArray | None = None,
+    control: collections.abc.Mapping[str, typing.Any] | None = None,
 ) -> tuple[Problem, str, int]:
     """The problem, rule and quadrature points of a call of ``rma_glmm`` for ``measure``, from its own arguments.
 
     ``OR``, ``RR`` and ``RD`` read the 2x2 counts, ``IRR`` the events and person-times of two groups, ``PLO``, ``PR`` and ``PLN`` ``xi`` with ``mi``
     or ``ni``, ``IRLN`` ``xi`` and ``ti``. ``link`` replaces the measure's own link (``rma_glmm``'s ``link`` argument); ``IRR`` with ``CM.AL`` is the
-    ``CM.EL`` fit, as ``rma_glmm`` fits it.
+    ``CM.EL`` fit, as ``rma_glmm`` fits it. ``control`` is read for its ``package`` only.
     """
     method = fit_method(method)
+    package = str((control or {}).get('package', 'lme4'))
     chosen = link or LINK_OF_MEASURE[measure]
     if measure in ONE_GROUP_MEASURES:
         x = numpy.asarray(xi, dtype=numpy.float64)
@@ -1003,7 +1006,7 @@ def rma_glmm_problem(
         else:
             size, family = (x + numpy.asarray(mi, dtype=numpy.float64) if ni is None else numpy.asarray(ni, dtype=numpy.float64)), 'binomial'
         keep = numpy.isfinite(x + size)
-        rule, points = rma_glmm_rule('none', method, nAGQ)
+        rule, points = rma_glmm_rule('none', method, nAGQ, package)
         return one_group_problem(x[keep], size[keep], family, chosen), rule, points
     if measure == 'IRR':
         x1, x2, t1, t2 = (numpy.asarray(v, dtype=numpy.float64) for v in (x1i, x2i, t1i, t2i))
@@ -1011,10 +1014,10 @@ def rma_glmm_problem(
         if drop00:
             keep &= ~((x1 == 0) & (x2 == 0))
         resolved = 'CM.EL' if model == 'CM.AL' else model
-        rule, points = rma_glmm_rule(resolved, method, nAGQ)
+        rule, points = rma_glmm_rule(resolved, method, nAGQ, package)
         return poisson_problem(x1[keep], x2[keep], t1[keep], t2[keep], resolved, coding=coding, cor=cor, link=chosen), rule, points
     a, b, c, d = rma_glmm_counts(ai, bi, ci, di, n1i, n2i, drop00=drop00)
-    rule, points = rma_glmm_rule(model, method, nAGQ)
+    rule, points = rma_glmm_rule(model, method, nAGQ, package)
     return glmm_problem(a, b, c, d, model, coding=coding, cor=cor, link=chosen), rule, points
 
 
@@ -1044,13 +1047,19 @@ def rma_glmm_fit(
     mi: FloatArray | None = None,
     ni: FloatArray | None = None,
     ti: FloatArray | None = None,
+    control: collections.abc.Mapping[str, typing.Any] | None = None,
 ) -> GLMMReference:
     """The formulas' own fit of an ``rma_glmm`` call, kept for the other ``rma_glmm_*`` formulas of the same case."""
-    method = fit_method(method)
-    data = (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi, ni, ti)
-    problem, rule, points = rma_glmm_problem(measure, model, method, nAGQ, coding, cor, drop00, link, *data)
+    return fit_with_rule(None, locals())
+
+
+def fit_with_rule(rule_override: str | None, call: collections.abc.Mapping[str, typing.Any]) -> GLMMReference:
+    """The formulas' fit of the ``rma_glmm`` call ``call`` (its arguments by name), with the integration ``rule_override`` where one is given."""
+    method = fit_method(call['method'])
+    problem, rule, points = rma_glmm_problem(**{**call, 'method': method})
+    rule = rule_override or rule
     key: tuple[typing.Any, ...] = (problem.kind, problem.family, problem.link, problem.y.tobytes(), problem.size.tobytes(), problem.offset.tobytes())
-    key += (problem.model, method, rule, points, coding, cor)
+    key += (problem.model, method, rule, points, call['coding'], call['cor'])
     if key not in FIT_CACHE:
         FIT_CACHE[key] = fit_problem(problem, method, rule, points)
     return FIT_CACHE[key]
@@ -1071,6 +1080,23 @@ rma_glmm_beta = reference_field('beta')
 rma_glmm_se = reference_field('se')
 rma_glmm_sigma2 = reference_field('sigma2')
 rma_glmm_tau2 = reference_field('tau2')
+
+
+def exact_field(name: str) -> collections.abc.Callable[..., typing.Any]:
+    """A formula giving one field of the formulas' fit of an ``rma_glmm`` call with the exact integral, whatever approximation the call uses."""
+
+    @functools.wraps(rma_glmm_fit)
+    def field(*args: typing.Any, **kwargs: typing.Any) -> typing.Any:
+        bound = inspect.signature(rma_glmm_fit).bind(*args, **kwargs)
+        bound.apply_defaults()
+        return getattr(fit_with_rule('exact', bound.arguments), name)
+
+    field.__doc__ = f"The ``{name}`` of the formulas' fit of an ``rma_glmm`` call with the exact integral."
+    return field
+
+
+rma_glmm_exact_beta = exact_field('beta')
+rma_glmm_exact_tau2 = exact_field('tau2')
 
 
 def profile_check(problem: Problem, method: str, beta: FloatArray, tau2: float, sigma2: float, rho: float, rule: str, points: int) -> tuple[float, float]:

@@ -250,7 +250,7 @@ estimates themselves.
 
 ## Task 6: Derived package and optimiser cases
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Coverage list (`package`, `optimizer`); Kinds of evidence (integration as a convention, optimiser dependence)
@@ -259,25 +259,25 @@ estimates themselves.
 
 **Subtasks:**
 
-- [ ] `rma_glmm.package.<p>` for each of `PACKAGES`: the log-likelihood at the estimates equals the formulas' approximation of the same kind -
+- [x] `rma_glmm.package.<p>` for each of `PACKAGES`: the log-likelihood at the estimates equals the formulas' approximation of the same kind -
       adaptive quadrature with `nAGQ` points for `lme4` and `GLMMadaptive`, Laplace for `glmmTMB` and for `lme4` with `UM.RS`
-- [ ] Accurate-integral cases: `GLMMadaptive` with a large `nAGQ`, and `CM.EL` with `control` `int_rel_tol = 1e-10`, against the `'exact'` rule
-- [ ] `rma_glmm.optimizer.<o>` for each of `OPTIMIZERS`, on `CM.EL` `OR`, estimates at `1e-4`; an optimiser that raises `NotSupportedError` gets an
+- [x] Accurate-integral cases: `GLMMadaptive` with a large `nAGQ`, and `CM.EL` with `control` `int_rel_tol = 1e-10`, against the `'exact'` rule
+- [x] `rma_glmm.optimizer.<o>` for each of `OPTIMIZERS`, on `CM.EL` `OR`, estimates at `1e-4`; an optimiser that raises `NotSupportedError` gets an
       `[[exempt]]` entry saying so (checked by Task 1's exemption test)
-- [ ] A difference between an approximation and the exact fit that changes a printed digit of a published value goes under "Conventions" in
+- [x] A difference between an approximation and the exact fit that changes a printed digit of a published value goes under "Conventions" in
       `mismatches.md`, as the header says
-- [ ] Record any mismatch as the header says
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] The gate's missing list names no `package` or `optimizer` item
-- [ ] Task 1's exemption test passes on every optimiser exemption
+- [x] The gate's missing list names no `package` or `optimizer` item
+- [x] Task 1's exemption test passes on every optimiser exemption
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 

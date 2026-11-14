@@ -484,6 +484,7 @@ def robust_club(case: correctness.cases.Case, result: typing.Any) -> None:
 
 GLMM_LIKELIHOOD_RTOL = 1e-8
 GLMM_GRADIENT_TOLERANCE = 1e-4
+GLMMADAPTIVE_LIKELIHOOD_RTOL = 1e-5
 GLMM_CONDITIONAL_DEVIANCE_FITS = frozenset({('CM.AL', 'ML'), ('UM.FS', 'ML'), ('UM.RS', 'FE'), ('UM.RS', 'ML')})
 
 
@@ -492,7 +493,8 @@ def glmm_likelihood_at_estimate(case: correctness.cases.Case, result: typing.Any
     log-likelihood, ``result.fit_stats_ml.ll``; the score there is small.
 
     ``lme4`` fits (the mixed models other than ``CM.EL``) report metafor's saturated model log-likelihood minus half the conditional deviance, not the
-    marginal log-likelihood, so ``ll`` is compared only where it is the marginal one; the other two checks hold for every fit.
+    marginal log-likelihood, so ``ll`` is compared only where it is the marginal one (``CM.EL``, ``GLMMadaptive`` and ``glmmTMB``);
+    the other two checks hold for every fit.
     """
     frame = correctness.cases.case_frame(case)
     problem, rule, points = correctness.cases.formula_value(case, 'glmm_formulas.rma_glmm_problem', frame)
@@ -502,13 +504,18 @@ def glmm_likelihood_at_estimate(case: correctness.cases.Case, result: typing.Any
     rho = float(result.rho) if problem.cor and problem.model == 'UM.RS' else math.nan
     loglik, score = correctness.glmm_formulas.profile_check(problem, method, result.beta, float(result.tau2), sigma2, rho, rule, points)
     where = f"{case.id}: the formulas' log-likelihood at the estimates of metafopy"
-    if not loglik <= reference.loglik + GLMM_LIKELIHOOD_RTOL * abs(reference.loglik):
+    package = (case.args.get('control') or {}).get('package', 'lme4')
+    # GLMMadaptive stops its EM and quasi-Newton iterations at relative tolerances of 1e-5 to 1e-8 (R's own stopping rule, which metafopy follows),
+    # so its estimates sit near, not at, the maximum: the log-likelihood there is compared at 1e-5 and the score is not required to vanish.
+    rtol = GLMMADAPTIVE_LIKELIHOOD_RTOL if package == 'GLMMadaptive' else GLMM_LIKELIHOOD_RTOL
+    if not loglik <= reference.loglik + rtol * abs(reference.loglik):
         raise AssertionError(f"{where} is {loglik!r}, above the formulas' maximum {reference.loglik!r}")
-    if not reference.loglik - loglik <= GLMM_LIKELIHOOD_RTOL * abs(reference.loglik):
-        raise AssertionError(f"{where} is {loglik!r}, not the formulas' maximum {reference.loglik!r} (rtol {GLMM_LIKELIHOOD_RTOL:g})")
-    if not score <= GLMM_GRADIENT_TOLERANCE:
+    if not reference.loglik - loglik <= rtol * abs(reference.loglik):
+        raise AssertionError(f"{where} is {loglik!r}, not the formulas' maximum {reference.loglik!r} (rtol {rtol:g})")
+    if package != 'GLMMadaptive' and not score <= GLMM_GRADIENT_TOLERANCE:
         raise AssertionError(f'{where} has a score of {score:.3g}, not below {GLMM_GRADIENT_TOLERANCE:g}')
-    conditional_deviance = (problem.model, method) in GLMM_CONDITIONAL_DEVIANCE_FITS or problem.kind == 'one_group' or problem.family == 'poisson'
+    lme4 = (case.args.get('control') or {}).get('package', 'lme4') == 'lme4'
+    conditional_deviance = lme4 and ((problem.model, method) in GLMM_CONDITIONAL_DEVIANCE_FITS or problem.kind == 'one_group' or problem.family == 'poisson')
     if not conditional_deviance:
         reported = float(result.fit_stats_ml.ll)
         if not abs(reported - loglik) <= GLMM_LIKELIHOOD_RTOL * abs(loglik):

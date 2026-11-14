@@ -206,9 +206,9 @@ def test_each_unsupported_optimizer_exemption_still_raises() -> None:
         try:
             metafopy.rma_glmm(
                 ai='ai',
-                bi='bi',
+                n1i='n1i',
                 ci='ci',
-                di='di',
+                n2i='n2i',
                 data=metafopy.datasets.load('dat.nielweise2007'),
                 measure='OR',
                 model='CM.EL',
