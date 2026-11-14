@@ -14,12 +14,18 @@ import pytest
 import correctness.cases
 import correctness.test_published
 import metafopy
+import metafopy.core.clubsandwich
 import metafopy.effects.measures
 import metafopy.methods.confint
+import metafopy.methods.robust
+import metafopy.models.mv_structs
+import metafopy.models.rma_mv
 import metafopy.models.rma_uni
 import metafopy.models.tau2
 
 HETEROGENEITY = ('H2', 'I2', 'QE', 'QM')
+# the new rma_mv and robust items stay out of the core gate until the last task of the correctness-mv-robust list removes this
+PENDING_PREFIXES = ('rma_mv.', 'robust.')
 MH_MEASURES = ('IRD', 'IRR', 'OR', 'RD', 'RR')
 FORMULAS = pathlib.Path(__file__).parent / 'formulas.py'
 
@@ -96,6 +102,25 @@ def coverage_items() -> list[str]:
     items += [f'heterogeneity.{statistic}' for statistic in HETEROGENEITY]
     items += [f'rma_mh.{m}.{part}' for m in MH_MEASURES for part in ('estimate', 'variance')]
     items += ['rma_peto']
+    items += mv_robust_items()
+    return items
+
+
+def mv_robust_items() -> list[str]:
+    """The rma_mv and robust items, each option list read from the code."""
+    items = [f'rma_mv.method.{m}' for m in metafopy.models.rma_mv.METHODS]
+    items += [f'rma_mv.struct.{s}' for s in metafopy.models.mv_structs.STRUCTS]
+    items += [f'rma_mv.Rscale.{r}' for r in metafopy.models.rma_mv.RSCALES]
+    items += [f'rma_mv.test.{t}' for t in metafopy.models.rma_mv.TESTS]
+    items += [f'rma_mv.dfs.{d}' for d in metafopy.models.rma_mv.DFS]
+    items += ['rma_mv.random.sigma2', 'rma_mv.random.nested', 'rma_mv.random.two_terms', 'rma_mv.random.R', 'rma_mv.weights']
+    items += ['rma_mv.QE', 'rma_mv.QM', 'rma_mv.confint.pl', 'rma_mv.confint.fixed', 'rma_mv.predict.pi']
+    items += ['robust.rma_uni', 'robust.rma_mv']
+    items += [f'robust.adjust.{a}' for a in metafopy.methods.robust.ADJUST]
+    items += [f'robust.vcov.{v}' for v in metafopy.core.clubsandwich.CR_TYPES]
+    items += [f'robust.coef_test.{t}' for t in metafopy.methods.robust.COEF_TESTS]
+    items += [f'robust.conf_test.{t}' for t in metafopy.methods.robust.CONF_TESTS]
+    items += [f'robust.wald_test.{w}' for w in metafopy.core.clubsandwich.WALD_TESTS]
     return items
 
 
@@ -143,7 +168,15 @@ def test_escalc_accepts_each_listed_vtype(measure: str, vtype: str) -> None:
 
 
 def test_every_core_item_has_a_case() -> None:
-    missing = missing_items(correctness.cases.load_cases(), correctness.cases.load_exemptions())
+    items = [item for item in coverage_items() if not item.startswith(PENDING_PREFIXES)]
+    missing = missing_items(correctness.cases.load_cases(), correctness.cases.load_exemptions(), items)
+    assert not missing, f'{len(missing)} items have no published or derived case: {", ".join(missing)}'
+
+
+@pytest.mark.xfail(strict=True, reason='coverage incomplete; see agents/tasks/correctness-mv-robust/tasks-1.md')
+def test_gate_mv_robust() -> None:
+    items = [item for item in coverage_items() if item.startswith(PENDING_PREFIXES)]
+    missing = missing_items(correctness.cases.load_cases(), correctness.cases.load_exemptions(), items)
     assert not missing, f'{len(missing)} items have no published or derived case: {", ".join(missing)}'
 
 

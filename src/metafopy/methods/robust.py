@@ -30,11 +30,13 @@ import metafopy.models.mv_result
 import metafopy.models.rma_uni
 import metafopy.models.robust_info
 
-__all__ = ['robust']
+__all__ = ['ADJUST', 'COEF_TESTS', 'CONF_TESTS', 'robust']
 
 FloatArray = numpy.typing.NDArray[numpy.float64]
 IntArray = numpy.typing.NDArray[numpy.intp]
 Cluster = str | collections.abc.Sequence[typing.Any] | numpy.typing.NDArray[typing.Any] | pandas.Series
+# auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
+ADJUST = (False, True, 'Stata1', 'Stata2')
 # auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
 COEF_TESTS = ('z', 'naive-t', 'naive-tp', 'Satterthwaite', 'saddlepoint')
 # auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
@@ -250,7 +252,7 @@ def default_inference(
 
 
 def check_adjust(adjust: bool | str) -> None:
-    if isinstance(adjust, str) and adjust not in ('Stata', 'Stata1', 'Stata2'):
+    if isinstance(adjust, str) and adjust not in (*ADJUST, 'Stata'):
         raise metafopy.errors.InputError(f"Unknown 'adjust' value {adjust!r}.")
 
 

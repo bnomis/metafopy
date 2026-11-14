@@ -40,7 +40,7 @@ the order use `METAFOPY_CORRECTNESS_RLIB` plus `R_LIBS`. This list uses the latt
 
 ## Task 1: Option constants and the new coverage items
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** API (constants); Coverage list; Implementation steps 1 and 10
@@ -50,34 +50,34 @@ hiding the core items that already pass.
 
 **Subtasks:**
 
-- [ ] Starting-point check: stop as `blocked` if any of these already exists, naming it:
+- [x] Starting-point check: stop as `blocked` if any of these already exists, naming it:
       `grep -nE '^(METHODS|TESTS|DFS) = ' src/metafopy/models/rma_mv.py`, `grep -nE '^ADJUST = ' src/metafopy/methods/robust.py`,
       `grep -nwE 'build_v|vblocks|vconst' src/tests/correctness/cases.py`, `ls src/tests/correctness/cases/rma_mv.toml src/tests/correctness/cases/robust.toml`.
       (A `METHODS` in another module, such as `metafopy.methods.emm_contrasts`, is not a clash)
-- [ ] In `src/metafopy/models/rma_mv.py` add `METHODS = (*FIXED_METHODS, 'ML', 'REML')`, `TESTS = ('z', 't', 'knha', 'adhoc')` and
+- [x] In `src/metafopy/models/rma_mv.py` add `METHODS = (*FIXED_METHODS, 'ML', 'REML')`, `TESTS = ('z', 't', 'knha', 'adhoc')` and
       `DFS = ('residual', 'contain')`, and use them in place of the literals in the `method` and `dfs` validation and the `test` check after the
       `'hksj'` alias is mapped to `'knha'`. Error messages stay word for word
-- [ ] In `src/metafopy/methods/robust.py` add `ADJUST = (False, True, 'Stata1', 'Stata2')` and use it in `check_adjust` and `default_inference`;
+- [x] In `src/metafopy/methods/robust.py` add `ADJUST = (False, True, 'Stata1', 'Stata2')` and use it in `check_adjust` and `default_inference`;
       `'Stata'` stays an accepted alias of `'Stata1'`, not an item. Add the new names to each module's `__all__` if it has one
-- [ ] In `src/tests/correctness/test_coverage.py`, `coverage_items()` gains every item of the spec's Coverage list, each list read at test time:
+- [x] In `src/tests/correctness/test_coverage.py`, `coverage_items()` gains every item of the spec's Coverage list, each list read at test time:
       `rma_mv.METHODS`, `metafopy.models.mv_structs.STRUCTS`, `rma_mv.RSCALES`, `rma_mv.TESTS`, `rma_mv.DFS`, the named `rma_mv` items,
       `robust.rma_uni`, `robust.rma_mv`, `robust.adjust.<str(a)>` for `robust.ADJUST`, `metafopy.core.clubsandwich.CR_TYPES`, `robust.COEF_TESTS`,
       `robust.CONF_TESTS` and `metafopy.core.clubsandwich.WALD_TESTS`
-- [ ] Keep the existing gate passing for the core items: it skips items starting `rma_mv.` or `robust.` while a module constant
+- [x] Keep the existing gate passing for the core items: it skips items starting `rma_mv.` or `robust.` while a module constant
       `PENDING_PREFIXES = ('rma_mv.', 'robust.')` is set, and a second test `test_gate_mv_robust` lists the missing items under those prefixes,
       marked `xfail(strict=True, reason='coverage incomplete; see agents/tasks/correctness-mv-robust/tasks-1.md')` until Task 7 removes both
-- [ ] Create `src/tests/correctness/cases/rma_mv.toml` and `cases/robust.toml`, empty except a header comment
+- [x] Create `src/tests/correctness/cases/rma_mv.toml` and `cases/robust.toml`, empty except a header comment
 
 **Acceptance Criteria:**
 
-- [ ] The existing `rma_mv` and `robust` tests pass unchanged
-- [ ] `test_gate_mv_robust` is an expected failure that lists the new items; the core gate passes
+- [x] The existing `rma_mv` and `robust` tests pass unchanged
+- [x] `test_gate_mv_robust` is an expected failure that lists the new items; the core gate passes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_coverage.py src/tests/test_rma_mv.py src/tests/test_rma_mv_extras.py src/tests/test_robust.py src/tests/test_robust_extras.py src/tests/test_audit8_crashes.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_coverage.py src/tests/test_rma_mv.py src/tests/test_rma_mv_extras.py src/tests/test_robust.py src/tests/test_robust_extras.py src/tests/test_audit8_crashes.py` passes
 
 **Notes:**
 
