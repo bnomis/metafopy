@@ -73,7 +73,7 @@ differs from R metafor.
 
 ## Task 2: Record the difference in the audit ledger and the user guide
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item's fix direction (`known.toml`, `docs/differences.md`)
@@ -83,34 +83,34 @@ section "Where metafor departs from its reference".
 
 **Subtasks:**
 
-- [ ] Run the audit on the `confint` cases from the worktree, against the main checkout's R oracle, in the background:
+- [x] Run the audit on the `confint` cases from the worktree, against the main checkout's R oracle, in the background:
       `main=$(git worktree list --porcelain | sed -n '1s/^worktree //p'); METAFOPY_AUDIT_WORK="$main/.audit" bin/metafor-audit.sh --only '*confint*'`.
       If `check-r` reports that the R library is missing or differs from `src/audit/data/r-versions.json`, stop as `blocked` and say so; never
       pass `--allow-r-drift`
-- [ ] For each finding the run reports for an `ht` interval (a case id with `type=` set to `HT`, or a script unit calling `confint(..., type = "HT")`),
+- [x] For each finding the run reports for an `ht` interval (a case id with `type=` set to `HT`, or a script unit calling `confint(..., type = "HT")`),
       add a `[[known]]` entry to `src/audit/data/known.toml` that matches exactly those case ids, with `kind`, `path` and a `reason` naming the
       centring (R centres on the fit's `H2`; metafopy on `Q / (k - 1)`, as Higgins and Thompson (2002) and Borenstein et al. (2009)) and
       `ref = "docs/differences.md"`. Add no entry for a finding the run does not report: an entry that matches nothing is reported as stale
-- [ ] Rerun the same command and check that its report lists no `ht` finding. If it lists any other finding, look for it in the newest earlier
+- [x] Rerun the same command and check that its report lists no `ht` finding. If it lists any other finding, look for it in the newest earlier
       report under `$main/.audit/runs/`; one that is not there is new with this list, so stop as `blocked` naming it
-- [ ] Add the section `## Where metafor departs from its reference` to `docs/differences.md`, before `## Everything else`. Open it with two
+- [x] Add the section `## Where metafor departs from its reference` to `docs/differences.md`, before `## Everything else`. Open it with two
       sentences: metafopy follows the publication that defines a method where metafor departs from it, after the user has confirmed each case,
       and the correctness case that checks it is named. Then a `### confint(type="ht") of a fit other than DL` subsection in the page's layout:
       a short summary, the same call in R and in Python with the output of both (the `REML` fit of `dat.bcg` log risk ratios), and *Why:*
       naming Higgins and Thompson (2002) and Borenstein et al. (2009)
-- [ ] Produce the R output of that example with the main checkout's R oracle
+- [x] Produce the R output of that example with the main checkout's R oracle
       (`R_LIBS="$main/.audit/Rlib" LC_ALL=C.UTF-8 Rscript -e '<the R block>'`) and the Python output with metafopy, and paste both as printed
 
 **Acceptance Criteria:**
 
-- [ ] The audit run on `*confint*` reports no `ht` finding, and every new `known.toml` entry matches at least one case of that run
-- [ ] `docs/differences.md` has the section "Where metafor departs from its reference" with the `ht` subsection
+- [x] The audit run on `*confint*` reports no `ht` finding, and every new `known.toml` entry matches at least one case of that run
+- [x] `docs/differences.md` has the section "Where metafor departs from its reference" with the `ht` subsection
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_docs_examples.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_docs_examples.py` passes
 
 **Notes:**
 

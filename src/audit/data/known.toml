@@ -1799,3 +1799,17 @@ kind = "print-diff"
 detail = "line 1: R '*(*', Python \"*(*\""
 reason = "update(evaluate = FALSE) returns the call. metafopy's prints in Python syntax (rma_uni(yi='yi', vi='vi', data=<EscalcFrame>, method='DL')), which cannot equal R's. R's side is also a harness artefact: runcases.R builds each fit with do.call() on the function object and the evaluated arguments, so R's call deparses as the function source ('(function (yi, vi, sei, ...') or with the data inlined, where a call by name prints rma(yi = yi, vi = vi, data = dat, method = \"DL\"). Accepted as by design by decision of the operator (checked 2026-11-05, R 4.6.2, metafor 5.2-1)."
 ref = "docs/differences.md"
+
+[[known]]
+match = 'options/confint/*/type="ht"'
+kind = "value-diff"
+path = "$random"
+reason = "confint(type = 'HT') of a fit whose tau2 estimator is not DL: R centres the interval on log(H2) of the fit, metafopy on H from Q (H^2 = Q / (k - 1)), as Higgins and Thompson (2002, section 4.1.1 and Appendix, method III) and Borenstein et al. (2009, equations 16.14 to 16.19) do. The two agree for DL, where the fit's H2 equals Q / (k - 1). Accepted as a departure of metafor from its reference by decision of the operator (answered 2026-11-12, checked 2026-11-14, R 4.6.2, metafor 5.2-1)."
+ref = "docs/differences.md"
+
+[[known]]
+match = 'options/confint/*/type="ht"'
+kind = "print-diff"
+detail = "line 2: R 'tau^2 *', Python 'tau^2 *'"
+reason = "The printed tau^2 limits of confint(type = 'HT') of a fit whose tau2 estimator is not DL: R centres on log(H2) of the fit, metafopy on H from Q, as Higgins and Thompson (2002) and Borenstein et al. (2009); the accepted value-diff of the entry above."
+ref = "docs/differences.md"

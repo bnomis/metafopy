@@ -1489,6 +1489,67 @@ NotSupportedError: Method not available for objects of class "robust.rma".
 </div>
 </div>
 
+## Where metafor departs from its reference
+
+metafopy follows the publication that defines a method where metafor departs from it, after the user has confirmed each case.
+The correctness case that checks the method against the publication is named under each difference.
+
+### confint(type="ht") of a fit other than DL
+
+The Higgins and Thompson interval of `confint()` is centred on `H` from `Q`, with `H^2 = Q / (k - 1)`, for every estimator of
+`tau2`. metafor centres it on `log(H2)` of the fit, and the fit's `H2` equals `Q / (k - 1)` only for `DL`, so for `REML`, `ML`,
+`PM` and the other estimators the bounds differ. The estimate column (the fit's `tau2`, `tau`, `I2` and `H2`) is the same in both.
+On the `REML` fit of `dat.bcg` log risk ratios metafopy gives the `tau^2` bounds 0.1997 to 0.4704, the same for every estimator,
+and metafor 0.2027 to 0.4770. The correctness case is `confint.ht.reml.bcg.none`.
+
+*Why:* Higgins and Thompson (2002, section 4.1.1 and Appendix, method III) and Borenstein et al. (2009, equations 16.14 to 16.19)
+build the interval on `ln H` with `H^2 = Q / (k - 1)`, so it depends on `Q` and `k` only. A bound that moves with the estimator
+of `tau2` is not the published interval (checked 2026-11-14, R 4.6.2, metafor 5.2-1).
+
+<div class="compare" markdown>
+<div markdown>
+
+**R, metafor 5.2-1**
+
+```r
+library(metafor)
+dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
+res <- rma(yi, vi, data=dat)
+confint(res, type="HT")
+```
+
+```text
+       estimate   ci.lb   ci.ub 
+tau^2    0.3132  0.2027  0.4770 
+tau      0.5597  0.4503  0.6907 
+I^2(%)  92.2214 88.4706 94.7520 
+H^2     12.8558  8.6735 19.0547 
+```
+
+</div>
+<div markdown>
+
+**Python, metafopy**
+
+```python
+from metafopy import confint, datasets, escalc, rma
+
+dat = escalc(measure='RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=datasets.load('dat.bcg'))
+res = rma('yi', 'vi', data=dat)
+print(confint(res, type='ht'))
+```
+
+```text
+       estimate   ci.lb   ci.ub
+tau^2    0.3132  0.1997  0.4704
+tau      0.5597  0.4469  0.6858
+I^2(%)  92.2214 88.3164 94.6818
+H^2     12.8558  8.5590 18.8032
+```
+
+</div>
+</div>
+
 ## Everything else
 
 The [detailed notes](differences-notes.md) hold the rest, grouped by topic:
