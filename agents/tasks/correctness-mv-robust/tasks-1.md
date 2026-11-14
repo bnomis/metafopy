@@ -392,7 +392,7 @@ them the gate passes for every item.
 
 ## Task 9: Other-software cases from mvmeta, nlme, robumeta and sandwich
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** medium
 **Spec Reference:** Implementation step 9; External dependencies; Error handling (generator)
@@ -401,31 +401,31 @@ them the gate passes for every item.
 
 **Subtasks:**
 
-- [ ] Check that `/Users/simonb/src/metafopy/.audit/Rlib` holds `mvmeta` 1.0.3, `nlme` 3.1-171, `robumeta` 2.1 and `sandwich` 3.1-3 (the versions in
+- [x] Check that `/Users/simonb/src/metafopy/.audit/Rlib` holds `mvmeta` 1.0.3, `nlme` 3.1-171, `robumeta` 2.1 and `sandwich` 3.1-3 (the versions in
       `src/audit/data/r-versions.json`); stop as `blocked`, naming what is missing, if not. Install nothing
-- [ ] Write `src/tests/correctness/r/other_software_mv.R`, modelled on `r/other_software.R`: it reads `METAFOPY_CORRECTNESS_RLIB` and prepends it with
+- [x] Write `src/tests/correctness/r/other_software_mv.R`, modelled on `r/other_software.R`: it reads `METAFOPY_CORRECTNESS_RLIB` and prepends it with
       `.libPaths(c(lib, .libPaths()))`; it pins each package version at its top and stops on any other; it stops unless
       `tools::package_dependencies(c("mvmeta", "nlme", "robumeta", "sandwich"), db = installed.packages(), recursive = TRUE)` shows none depends on
       metafor; it writes `cases/other_mv.toml` with `kind = "other"`, each case's `source` naming the package's and R's versions
-- [ ] Cases: `mvmeta` (`UN` on `dat.berkey1998`); `nlme` (`lme` with `varFixed(~ vi)` and `sigma` fixed at 1, the three-level fit); `robumeta`
+- [x] Cases: `mvmeta` (`UN` on `dat.berkey1998`); `nlme` (`lme` with `varFixed(~ vi)` and `sigma` fixed at 1, the three-level fit); `robumeta`
       (correlated-effects RVE with Tipton's correction on `dat.tannersmith2016`, compared with `robust(club_sandwich=True)` given robumeta's weights as
       `W`); `sandwich::vcovCL` (CR0, CR1 and the Stata factors on a weighted `lm`)
-- [ ] Run it as `METAFOPY_CORRECTNESS_RLIB=/Users/simonb/.local/share/metafopy/r-correctness-lib R_LIBS=/Users/simonb/src/metafopy/.audit/Rlib LC_ALL=C.UTF-8 Rscript src/tests/correctness/r/other_software_mv.R`
+- [x] Run it as `METAFOPY_CORRECTNESS_RLIB=/Users/simonb/.local/share/metafopy/r-correctness-lib R_LIBS=/Users/simonb/src/metafopy/.audit/Rlib LC_ALL=C.UTF-8 Rscript src/tests/correctness/r/other_software_mv.R`
       and commit the output
-- [ ] Check `git diff --exit-code src/audit/data/r-versions.json`
-- [ ] Record any mismatch as the header says; a difference that is a documented convention is pinned in the generator with a comment, as Task 12 of
+- [x] Check `git diff --exit-code src/audit/data/r-versions.json`
+- [x] Record any mismatch as the header says; a difference that is a documented convention is pinned in the generator with a comment, as Task 12 of
       the correctness-tests list did
 
 **Acceptance Criteria:**
 
-- [ ] Every case in `cases/other_mv.toml` names its package's version
-- [ ] `src/tests/correctness/test_other_software.py` runs the new cases (extend its parametrisation if it reads only `other.toml`)
+- [x] Every case in `cases/other_mv.toml` names its package's version
+- [x] `src/tests/correctness/test_other_software.py` runs the new cases (extend its parametrisation if it reads only `other.toml`)
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_other_software.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_other_software.py` passes
 
 **Notes:**
 
