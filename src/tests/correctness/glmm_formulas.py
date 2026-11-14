@@ -935,6 +935,28 @@ def rma_glmm_rule(model: str, method: str, nagq: int, package: str = 'lme4') -> 
     return 'agq', nagq
 
 
+def rma_glmm_rows(
+    ai: FloatArray | None,
+    bi: FloatArray | None,
+    ci: FloatArray | None,
+    di: FloatArray | None,
+    n1i: FloatArray | None,
+    n2i: FloatArray | None,
+    *,
+    drop00: bool = True,
+) -> tuple[FloatArray, FloatArray, FloatArray, FloatArray, numpy.typing.NDArray[numpy.bool_]]:
+    """The 2x2 counts ``rma_glmm`` fits for ``OR`` from ``ai, bi, ci, di`` or ``ai, n1i, ci, n2i``, and the rows they come from: incomplete studies
+    omitted, and with ``drop00`` the studies without an event or without a non-event in both groups dropped (Stijnen et al. 2010; they carry no
+    information on the odds ratio)."""
+    a, c = numpy.asarray(ai, dtype=numpy.float64), numpy.asarray(ci, dtype=numpy.float64)
+    b = numpy.asarray(n1i, dtype=numpy.float64) - a if bi is None else numpy.asarray(bi, dtype=numpy.float64)
+    d = numpy.asarray(n2i, dtype=numpy.float64) - c if di is None else numpy.asarray(di, dtype=numpy.float64)
+    keep = numpy.isfinite(a + b + c + d)
+    if drop00:
+        keep &= ~(((a == 0) & (c == 0)) | ((b == 0) & (d == 0)))
+    return a[keep], b[keep], c[keep], d[keep], keep
+
+
 def rma_glmm_counts(
     ai: FloatArray | None,
     bi: FloatArray | None,
@@ -945,15 +967,18 @@ def rma_glmm_counts(
     *,
     drop00: bool = True,
 ) -> tuple[FloatArray, FloatArray, FloatArray, FloatArray]:
-    """The 2x2 counts ``rma_glmm`` fits for ``OR`` from ``ai, bi, ci, di`` or ``ai, n1i, ci, n2i``: incomplete studies omitted, and with ``drop00``
-    the studies without an event or without a non-event in both groups dropped (Stijnen et al. 2010; they carry no information on the odds ratio)."""
-    a, c = numpy.asarray(ai, dtype=numpy.float64), numpy.asarray(ci, dtype=numpy.float64)
-    b = numpy.asarray(n1i, dtype=numpy.float64) - a if bi is None else numpy.asarray(bi, dtype=numpy.float64)
-    d = numpy.asarray(n2i, dtype=numpy.float64) - c if di is None else numpy.asarray(di, dtype=numpy.float64)
-    keep = numpy.isfinite(a + b + c + d)
-    if drop00:
-        keep &= ~(((a == 0) & (c == 0)) | ((b == 0) & (d == 0)))
-    return a[keep], b[keep], c[keep], d[keep]
+    """The 2x2 counts of ``rma_glmm_rows``, without the rows."""
+    a, b, c, d, _ = rma_glmm_rows(ai, bi, ci, di, n1i, n2i, drop00=drop00)
+    return a, b, c, d
+
+
+def moderator_matrix(mods: FloatArray | None, keep: numpy.typing.NDArray[numpy.bool_]) -> FloatArray | None:
+    """The model matrix of ``rma_glmm``'s ``mods`` (an intercept and one column per moderator) on the rows of a fit, ``None`` without moderators."""
+    if mods is None:
+        return None
+    values = numpy.asarray(mods, dtype=numpy.float64)
+    values = values.reshape(values.shape[0], -1)
+    return numpy.column_stack([numpy.ones(values.shape[0]), values])[keep]
 
 
 LINK_OF_MEASURE = {'IRLN': 'log', 'IRR': 'log', 'OR': 'logit', 'PLN': 'log', 'PLO': 'logit', 'PR': 'identity', 'RD': 'identity', 'RR': 'log'}
@@ -989,12 +1014,14 @@ def rma_glmm_problem(
     ni: FloatArray | None = None,
     ti: FloatArray | None = None,
     control: collections.abc.Mapping[str, typing.Any] | None = None,
+    mods: FloatArray | None = None,
 ) -> tuple[Problem, str, int]:
     """The problem, rule and quadrature points of a call of ``rma_glmm`` for ``measure``, from its own arguments.
 
     ``OR``, ``RR`` and ``RD`` read the 2x2 counts, ``IRR`` the events and person-times of two groups, ``PLO``, ``PR`` and ``PLN`` ``xi`` with ``mi``
     or ``ni``, ``IRLN`` ``xi`` and ``ti``. ``link`` replaces the measure's own link (``rma_glmm``'s ``link`` argument); ``IRR`` with ``CM.AL`` is the
-    ``CM.EL`` fit, as ``rma_glmm`` fits it. ``control`` is read for its ``package`` only.
+    ``CM.EL`` fit, as ``rma_glmm`` fits it. ``control`` is read for its ``package`` only; ``mods`` is the moderator column (or columns), and the
+    model matrix an intercept and those.
     """
     method = fit_method(method)
     package = str((control or {}).get('package', 'lme4'))
@@ -1007,7 +1034,7 @@ def rma_glmm_problem(
             size, family = (x + numpy.asarray(mi, dtype=numpy.float64) if ni is None else numpy.asarray(ni, dtype=numpy.float64)), 'binomial'
         keep = numpy.isfinite(x + size)
         rule, points = rma_glmm_rule('none', method, nAGQ, package)
-        return one_group_problem(x[keep], size[keep], family, chosen), rule, points
+        return one_group_problem(x[keep], size[keep], family, chosen, X=moderator_matrix(mods, keep)), rule, points
     if measure == 'IRR':
         x1, x2, t1, t2 = (numpy.asarray(v, dtype=numpy.float64) for v in (x1i, x2i, t1i, t2i))
         keep = numpy.isfinite(x1 + x2 + t1 + t2)
@@ -1015,10 +1042,14 @@ def rma_glmm_problem(
             keep &= ~((x1 == 0) & (x2 == 0))
         resolved = 'CM.EL' if model == 'CM.AL' else model
         rule, points = rma_glmm_rule(resolved, method, nAGQ, package)
-        return poisson_problem(x1[keep], x2[keep], t1[keep], t2[keep], resolved, coding=coding, cor=cor, link=chosen), rule, points
-    a, b, c, d = rma_glmm_counts(ai, bi, ci, di, n1i, n2i, drop00=drop00)
+        return (
+            poisson_problem(x1[keep], x2[keep], t1[keep], t2[keep], resolved, X=moderator_matrix(mods, keep), coding=coding, cor=cor, link=chosen),
+            rule,
+            points,
+        )
+    a, b, c, d, keep = rma_glmm_rows(ai, bi, ci, di, n1i, n2i, drop00=drop00)
     rule, points = rma_glmm_rule(model, method, nAGQ, package)
-    return glmm_problem(a, b, c, d, model, coding=coding, cor=cor, link=chosen), rule, points
+    return glmm_problem(a, b, c, d, model, X=moderator_matrix(mods, keep), coding=coding, cor=cor, link=chosen), rule, points
 
 
 FIT_CACHE: dict[tuple[typing.Any, ...], GLMMReference] = {}
@@ -1048,17 +1079,34 @@ def rma_glmm_fit(
     ni: FloatArray | None = None,
     ti: FloatArray | None = None,
     control: collections.abc.Mapping[str, typing.Any] | None = None,
+    mods: FloatArray | None = None,
+    test: str = 'z',
+    level: float = 95,
+    i2def: str = '1',
 ) -> GLMMReference:
-    """The formulas' own fit of an ``rma_glmm`` call, kept for the other ``rma_glmm_*`` formulas of the same case."""
+    """The formulas' own fit of an ``rma_glmm`` call, kept for the other ``rma_glmm_*`` formulas of the same case.
+
+    ``test``, ``level`` and ``i2def`` do not change the fit; the inference formulas (``rma_glmm_pval``, ``rma_glmm_i2``, ...) read them.
+    """
     return fit_with_rule(None, locals())
+
+
+INFERENCE_ARGUMENTS = ('i2def', 'level', 'test')
+
+
+def problem_of(call: collections.abc.Mapping[str, typing.Any]) -> tuple[Problem, str, int]:
+    """The problem, rule and quadrature points of the ``rma_glmm_fit`` call ``call``, without the arguments that only the inference formulas read."""
+    arguments = {name: value for name, value in call.items() if name not in INFERENCE_ARGUMENTS}
+    return rma_glmm_problem(**{**arguments, 'method': fit_method(call['method'])})
 
 
 def fit_with_rule(rule_override: str | None, call: collections.abc.Mapping[str, typing.Any]) -> GLMMReference:
     """The formulas' fit of the ``rma_glmm`` call ``call`` (its arguments by name), with the integration ``rule_override`` where one is given."""
     method = fit_method(call['method'])
-    problem, rule, points = rma_glmm_problem(**{**call, 'method': method})
+    problem, rule, points = problem_of(call)
     rule = rule_override or rule
     key: tuple[typing.Any, ...] = (problem.kind, problem.family, problem.link, problem.y.tobytes(), problem.size.tobytes(), problem.offset.tobytes())
+    key += (problem.X.tobytes(),)
     key += (problem.model, method, rule, points, call['coding'], call['cor'])
     if key not in FIT_CACHE:
         FIT_CACHE[key] = fit_problem(problem, method, rule, points)
@@ -1078,6 +1126,7 @@ def reference_field(name: str) -> collections.abc.Callable[..., typing.Any]:
 
 rma_glmm_beta = reference_field('beta')
 rma_glmm_se = reference_field('se')
+rma_glmm_rho = reference_field('rho')
 rma_glmm_sigma2 = reference_field('sigma2')
 rma_glmm_tau2 = reference_field('tau2')
 
@@ -1151,3 +1200,215 @@ def rma_glmm_se_expected(*args: typing.Any, **kwargs: typing.Any) -> FloatArray:
     nf = p + (problem.X.shape[0] if problem.model == 'UM.FS' else 1)
     info = expected_information(problem, reference.theta[:nf])
     return numpy.sqrt(numpy.diag(numpy.linalg.inv(info))[:p])
+
+
+# ---- inference and heterogeneity: tests, intervals and statistics from the formulas' own fit
+
+
+def inference_call(args: tuple[typing.Any, ...], kwargs: dict[str, typing.Any]) -> dict[str, typing.Any]:
+    """The arguments of an ``rma_glmm_fit``-style call by name, defaults filled in."""
+    bound = inspect.signature(rma_glmm_fit).bind(*args, **kwargs)
+    bound.apply_defaults()
+    return dict(bound.arguments)
+
+
+def critical_value(test: str, level: float, df: int) -> float:
+    """The two-sided critical value of the Wald test (``'z'``: normal) or its ``t`` version with ``df`` degrees of freedom at confidence ``level`` (percent)."""
+    tail = (1 - level / 100) / 2
+    if test == 't':
+        return float(scipy.stats.t.isf(tail, df))
+    if test == 'z':
+        return float(scipy.stats.norm.isf(tail))
+    raise ValueError(f'unsupported test: {test}')
+
+
+def wald_statistic(beta: FloatArray, vb: FloatArray) -> float:
+    """``beta' V^-1 beta``, the Wald statistic of ``beta = 0`` (``V`` the covariance matrix of ``beta``)."""
+    return float(beta @ numpy.linalg.solve(vb, beta))
+
+
+def tested_coefficients(p: int) -> numpy.typing.NDArray[numpy.intp]:
+    """The coefficients the omnibus test ``QM`` tests by default: all but the intercept, or the intercept of an intercept-only model."""
+    return numpy.arange(1, p) if p > 1 else numpy.arange(p)
+
+
+def coefficient_field(name: str) -> collections.abc.Callable[..., typing.Any]:
+    """A formula giving one Wald-test quantity of the coefficients of the formulas' own fit of an ``rma_glmm`` call: ``zval``, ``pval``, ``ci_lb``,
+    ``ci_ub`` (a z test, or with ``test='t'`` a t test on ``k - p`` degrees of freedom), ``QM`` or ``QMp`` (Wald statistic of the default
+    ``btt``, divided by its degrees of freedom and F-distributed with ``test='t'``)."""
+
+    @functools.wraps(rma_glmm_fit)
+    def field(*args: typing.Any, **kwargs: typing.Any) -> typing.Any:
+        call = inference_call(args, kwargs)
+        problem, _, _ = problem_of(call)
+        reference = fit_with_rule(None, call)
+        k, p = problem.X.shape
+        df = k - p
+        test, level = call['test'], call['level']
+        z = reference.beta / reference.se
+        if name == 'zval':
+            return z
+        if name == 'pval':
+            return 2 * (scipy.stats.t.sf(numpy.abs(z), df) if test == 't' else scipy.stats.norm.sf(numpy.abs(z)))
+        if name in ('ci_lb', 'ci_ub'):
+            crit = critical_value(test, level, df)
+            return reference.beta + (-crit if name == 'ci_lb' else crit) * reference.se
+        idx = tested_coefficients(p)
+        statistic = wald_statistic(reference.beta[idx], reference.vb[numpy.ix_(idx, idx)])
+        if test == 't':
+            statistic /= idx.size
+            return statistic if name == 'QM' else float(scipy.stats.f.sf(statistic, idx.size, df))
+        return statistic if name == 'QM' else float(scipy.stats.chi2.sf(statistic, idx.size))
+
+    field.__doc__ = f"The ``{name}`` of the coefficients of the formulas' own fit of an ``rma_glmm`` call."
+    return field
+
+
+rma_glmm_zval = coefficient_field('zval')
+rma_glmm_pval = coefficient_field('pval')
+rma_glmm_ci_lb = coefficient_field('ci_lb')
+rma_glmm_ci_ub = coefficient_field('ci_ub')
+rma_glmm_qm = coefficient_field('QM')
+rma_glmm_qmp = coefficient_field('QMp')
+
+
+def saturated_design(X: FloatArray) -> FloatArray:
+    """``X`` with as many study indicator columns appended as make it of full rank ``k``: the saturated model of the heterogeneity tests, one
+    coefficient per study beyond the moderators (Stijnen et al. 2010, section on heterogeneity)."""
+    k = X.shape[0]
+    columns = [X]
+    rank = numpy.linalg.matrix_rank(X)
+    for j in range(k):
+        trial = numpy.column_stack([*columns, numpy.eye(k)[:, j]])
+        if numpy.linalg.matrix_rank(trial) > rank:
+            columns.append(numpy.eye(k)[:, [j]])
+            rank += 1
+    return numpy.column_stack(columns)
+
+
+def saturated_fits(call: collections.abc.Mapping[str, typing.Any]) -> tuple[GLMMReference, GLMMReference, int]:
+    """The formulas' fixed-effects fit of an ``rma_glmm`` call, its saturated counterpart and ``p``, for models whose saturated fit is finite."""
+    problem, rule, points = problem_of(call)
+    if problem.model == 'UM.RS':
+        raise ValueError('the saturated fit of UM.RS is not coded here')
+    fixed = fit_problem(problem, 'FE', rule, points)
+    saturated = fit_problem(dataclasses.replace(problem, X=saturated_design(problem.X)), 'FE', rule, points)
+    return fixed, saturated, problem.X.shape[1]
+
+
+def heterogeneity_field(name: str) -> collections.abc.Callable[..., typing.Any]:
+    """``QE_LRT`` (twice the log-likelihood the saturated model gains over the fixed-effects model) or ``QE_Wld`` (the Wald statistic of the
+    saturated model's coefficients beyond the moderators) of an ``rma_glmm`` call, from the formulas' own fits."""
+
+    @functools.wraps(rma_glmm_fit)
+    def field(*args: typing.Any, **kwargs: typing.Any) -> float:
+        fixed, saturated, p = saturated_fits(inference_call(args, kwargs))
+        if name == 'QE_LRT':
+            return max(0.0, 2 * (saturated.loglik - fixed.loglik))
+        return max(0.0, wald_statistic(saturated.beta[p:], saturated.vb[p:, p:]))
+
+    field.__doc__ = f"The ``{name}`` of an ``rma_glmm`` call from the formulas' own fixed-effects and saturated fits."
+    return field
+
+
+rma_glmm_qe_lrt = heterogeneity_field('QE_LRT')
+rma_glmm_qe_wld = heterogeneity_field('QE_Wld')
+
+
+def typical_variance(call: collections.abc.Mapping[str, typing.Any], problem: Problem) -> float:
+    """The typical within-study variance of the log odds ratios (Higgins and Thompson 2002, equation 9, for the model matrix ``X`` of the fit):
+    ``(k - p) / trace(P)`` with ``P = W - W X (X'WX)^-1 X'W`` and ``W = diag(1 / vi)`` (``i2def='1'``), or ``1 / mean(1 / vi)`` (``i2def='2'``,
+    metafor's definition). ``vi`` is ``1/a + 1/b + 1/c + 1/d``, with 1/2 added to the four cells of a study with a zero cell."""
+    if call['measure'] != 'OR':
+        raise ValueError(f'the typical variance is coded for OR, not {call["measure"]}')
+    cells = numpy.column_stack(rma_glmm_counts(call['ai'], call['bi'], call['ci'], call['di'], call['n1i'], call['n2i'], drop00=call['drop00']))
+    cells = numpy.where(numpy.any(cells == 0, axis=1, keepdims=True), cells + 0.5, cells)
+    weights = 1.0 / numpy.sum(1.0 / cells, axis=1)
+    if call['i2def'] == '2':
+        return float(1.0 / numpy.mean(weights))
+    if call['i2def'] != '1':
+        raise ValueError(f'unsupported i2def: {call["i2def"]}')
+    X = problem.X
+    WX = weights[:, None] * X
+    P = numpy.diag(weights) - WX @ numpy.linalg.inv(X.T @ WX) @ WX.T
+    return float((X.shape[0] - X.shape[1]) / numpy.trace(P))
+
+
+def typical_variance_field(name: str) -> collections.abc.Callable[..., float]:
+    """``vt``, ``I2`` (``100 tau2 / (vt + tau2)``) or ``H2`` (``tau2 / vt + 1``) of an ``rma_glmm`` call for ``OR``, with ``tau2`` of the formulas' fit."""
+
+    @functools.wraps(rma_glmm_fit)
+    def field(*args: typing.Any, **kwargs: typing.Any) -> float:
+        call = inference_call(args, kwargs)
+        problem, _, _ = problem_of(call)
+        vt = typical_variance(call, problem)
+        tau2 = fit_with_rule(None, call).tau2
+        return {'vt': vt, 'I2': 100 * tau2 / (vt + tau2), 'H2': tau2 / vt + 1}[name]
+
+    field.__doc__ = f"The ``{name}`` of an ``rma_glmm`` call for ``OR``, from the formulas' fit and the sampling variances."
+    return field
+
+
+rma_glmm_vt = typical_variance_field('vt')
+rma_glmm_i2 = typical_variance_field('I2')
+rma_glmm_h2 = typical_variance_field('H2')
+
+
+def tau2_interval(call: collections.abc.Mapping[str, typing.Any]) -> tuple[float, float, float]:
+    """``(se_tau2, ci_lb_tau2, ci_ub_tau2)`` of the exact conditional ``CM.EL`` fit with ``method='ML'``: the Wald interval on ``log tau2``,
+    ``exp(log tau2 +- z * se)``, with ``se`` from the observed information of ``(beta, log tau2)``; ``se_tau2`` is ``se * tau2`` (delta method)."""
+    problem, rule, points = problem_of(call)
+    if problem.model != 'CM.EL' or fit_method(call['method']) != 'ML':
+        raise ValueError('the tau2 interval is coded for CM.EL with method ML')
+    reference = fit_with_rule(None, call)
+    st, loglik = loglik_function(problem, 'ML', rule, points)
+    p = st.p
+    theta = reference.theta.copy()
+
+    def on_log_tau2(x: FloatArray) -> float:
+        full = theta.copy()
+        full[:p] = x[:p]
+        full[p] = math.exp(x[p] / 2)
+        return loglik(full)
+
+    centre = numpy.concatenate([reference.beta, [2 * math.log(abs(theta[p]))]])
+    variance = float(numpy.linalg.inv(-fd_hessian(on_log_tau2, centre, 5e-3))[p, p])
+    spread = critical_value('z', call['level'], 0) * math.sqrt(variance)
+    return math.sqrt(variance) * reference.tau2, math.exp(centre[p] - spread), math.exp(centre[p] + spread)
+
+
+def tau2_interval_field(index: int) -> collections.abc.Callable[..., float]:
+    """One of ``se_tau2``, ``ci_lb_tau2`` and ``ci_ub_tau2`` of the exact conditional ``CM.EL`` fit with ``ML``, by its index in ``tau2_interval``."""
+
+    @functools.wraps(rma_glmm_fit)
+    def field(*args: typing.Any, **kwargs: typing.Any) -> float:
+        return tau2_interval(inference_call(args, kwargs))[index]
+
+    return field
+
+
+rma_glmm_se_tau2 = tau2_interval_field(0)
+rma_glmm_ci_lb_tau2 = tau2_interval_field(1)
+rma_glmm_ci_ub_tau2 = tau2_interval_field(2)
+
+
+def prediction_field(sign: int) -> collections.abc.Callable[..., FloatArray]:
+    """The prediction interval of the formulas' fit at each row of the model matrix (Riley, Higgins and Deeks 2011, equation 12):
+    ``x beta +- crit * sqrt(x V x' + tau2)``, ``crit`` normal, or ``t`` with ``k - p`` degrees of freedom for ``test='t'``."""
+
+    @functools.wraps(rma_glmm_fit)
+    def field(*args: typing.Any, **kwargs: typing.Any) -> FloatArray:
+        call = inference_call(args, kwargs)
+        problem, _, _ = problem_of(call)
+        reference = fit_with_rule(None, call)
+        X = problem.X
+        centre = X @ reference.beta
+        variance = numpy.einsum('ij,jl,il->i', X, reference.vb, X)
+        crit = critical_value(call['test'], call['level'], X.shape[0] - X.shape[1])
+        return numpy.asarray(centre + sign * crit * numpy.sqrt(variance + reference.tau2), dtype=numpy.float64)
+
+    return field
+
+
+rma_glmm_pi_lb = prediction_field(-1)
+rma_glmm_pi_ub = prediction_field(1)

@@ -188,3 +188,87 @@ def test_unrelated_estimates_have_a_lower_profile_loglik() -> None:
     reference = fit('UM.FS', 'ML')
     problem = correctness.glmm_formulas.glmm_problem(AI, N1 - AI, CI, N2 - CI, 'UM.FS')
     assert correctness.glmm_formulas.profile_loglik_at(problem, 'ML', reference.beta + 0.5, reference.tau2) < reference.loglik - 0.1
+
+
+COUNTS = {'ai': AI, 'bi': N1 - AI, 'ci': CI, 'di': N2 - CI, 'measure': 'OR'}
+
+
+def test_critical_values() -> None:
+    assert correctness.glmm_formulas.critical_value('z', 95, 0) == pytest.approx(1.959963984540054, abs=1e-12)
+    assert correctness.glmm_formulas.critical_value('t', 95, 10) == pytest.approx(2.228138851986274, abs=1e-9)
+    with pytest.raises(ValueError, match='unsupported test'):
+        correctness.glmm_formulas.critical_value('F', 95, 3)
+
+
+def test_wald_statistic_of_a_diagonal_covariance() -> None:
+    assert correctness.glmm_formulas.wald_statistic(numpy.array([1.0, 2.0]), numpy.diag([1.0, 4.0])) == pytest.approx(2.0, abs=1e-14)
+
+
+def test_saturated_design_has_full_rank_and_keeps_the_model_matrix() -> None:
+    saturated = correctness.glmm_formulas.saturated_design(MODERATOR)
+    assert saturated.shape == (5, 5)
+    assert numpy.linalg.matrix_rank(saturated) == 5
+    assert numpy.array_equal(saturated[:, :2], MODERATOR)
+
+
+def test_typical_variance_of_an_intercept_only_model_is_higgins_and_thompsons() -> None:
+    weights = 1.0 / (1.0 / AI + 1.0 / (N1 - AI) + 1.0 / CI + 1.0 / (N2 - CI))
+    call = correctness.glmm_formulas.inference_call((), {**COUNTS, 'method': 'FE'})
+    problem, _, _ = correctness.glmm_formulas.problem_of(call)
+    expected = (5 - 1) / (weights.sum() - (weights**2).sum() / weights.sum())
+    assert correctness.glmm_formulas.typical_variance(call, problem) == pytest.approx(expected, rel=1e-12)
+    second = correctness.glmm_formulas.inference_call((), {**COUNTS, 'method': 'FE', 'i2def': '2'})
+    assert correctness.glmm_formulas.typical_variance(second, problem) == pytest.approx(1.0 / weights.mean(), rel=1e-12)
+
+
+def test_typical_variance_refuses_other_measures_and_definitions() -> None:
+    call = correctness.glmm_formulas.inference_call((), {**COUNTS, 'method': 'FE'})
+    problem, _, _ = correctness.glmm_formulas.problem_of(call)
+    with pytest.raises(ValueError, match='coded for OR'):
+        correctness.glmm_formulas.typical_variance({**call, 'measure': 'RR'}, problem)
+    with pytest.raises(ValueError, match='unsupported i2def'):
+        correctness.glmm_formulas.typical_variance({**call, 'i2def': '3'}, problem)
+
+
+def test_identical_studies_have_no_heterogeneity() -> None:
+    same = {'ai': numpy.full(4, 6.0), 'bi': numpy.full(4, 34.0), 'ci': numpy.full(4, 12.0), 'di': numpy.full(4, 28.0), 'measure': 'OR', 'model': 'CM.AL'}
+    assert correctness.glmm_formulas.rma_glmm_qe_lrt(**same, method='FE') == pytest.approx(0.0, abs=1e-6)
+    assert correctness.glmm_formulas.rma_glmm_qe_wld(**same, method='FE') == pytest.approx(0.0, abs=1e-3)
+
+
+def test_unconditional_random_study_has_no_saturated_fit() -> None:
+    with pytest.raises(ValueError, match=r'UM\.RS is not coded'):
+        correctness.glmm_formulas.rma_glmm_qe_lrt(**COUNTS, model='UM.RS', method='FE')
+
+
+def test_tau2_interval_needs_the_exact_conditional_mixed_model() -> None:
+    with pytest.raises(ValueError, match=r'CM\.EL with method ML'):
+        correctness.glmm_formulas.rma_glmm_se_tau2(**COUNTS, model='CM.AL', method='ML')
+
+
+def test_the_test_statistics_follow_the_fit() -> None:
+    z = correctness.glmm_formulas.rma_glmm_zval(**COUNTS, model='CM.AL', method='FE')
+    reference = correctness.glmm_formulas.rma_glmm_fit(**COUNTS, model='CM.AL', method='FE')
+    assert z == pytest.approx(reference.beta / reference.se, rel=1e-14)
+    assert correctness.glmm_formulas.rma_glmm_qm(**COUNTS, model='CM.AL', method='FE') == pytest.approx(float(z[0]) ** 2, rel=1e-12)
+    chi = correctness.glmm_formulas.rma_glmm_pval(**COUNTS, model='CM.AL', method='FE', test='z')
+    student = correctness.glmm_formulas.rma_glmm_pval(**COUNTS, model='CM.AL', method='FE', test='t')
+    assert chi == pytest.approx(2 * scipy.stats.norm.sf(abs(z)), rel=1e-12)
+    assert student > chi
+
+
+def test_prediction_interval_widens_with_the_variance_and_with_t() -> None:
+    lower = correctness.glmm_formulas.rma_glmm_pi_lb(**COUNTS, model='CM.AL', method='ML')
+    upper = correctness.glmm_formulas.rma_glmm_pi_ub(**COUNTS, model='CM.AL', method='ML')
+    ci_lb = correctness.glmm_formulas.rma_glmm_ci_lb(**COUNTS, model='CM.AL', method='ML')
+    assert numpy.all(lower < ci_lb)
+    assert numpy.all(upper > correctness.glmm_formulas.rma_glmm_ci_ub(**COUNTS, model='CM.AL', method='ML'))
+    wide = correctness.glmm_formulas.rma_glmm_pi_ub(**COUNTS, model='CM.AL', method='ML', test='t')
+    assert numpy.all(wide > upper)
+
+
+def test_moderator_columns_enter_the_model_matrix_of_a_call() -> None:
+    mods = numpy.array([0.0, 1.0, 2.0, 3.0, 1.0])
+    problem, _, _ = correctness.glmm_formulas.rma_glmm_problem(**COUNTS, model='CM.AL', method='ML', mods=mods)
+    assert numpy.array_equal(problem.X, MODERATOR)
+    assert correctness.glmm_formulas.rma_glmm_beta(**COUNTS, model='CM.AL', method='ML', mods=mods).shape == (2,)

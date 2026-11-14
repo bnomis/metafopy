@@ -1336,6 +1336,290 @@ expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", tau2 = "glmm_formulas.rma_
 tolerance = 1e-4
 covers = ["rma_glmm.optimizer.Rvmmin"]
 
+# Task 7: inference and heterogeneity cases on dat.bcg (no zero cell, so every fit is finite and no study is dropped), with the study's latitude
+# `ablat` as the moderator. The expected values come from glmm_formulas.rma_glmm_* (Wald tests, the saturated model, Higgins and Thompson's typical
+# variance, the Wald interval on log tau2, Riley, Higgins and Deeks' prediction interval), each computed from the formulas' own fit of the same call.
+# A moderator model has no CM.EL case: its exact-likelihood fit raises "Cannot compute var-cov matrix of the fixed effects" in metafopy.
+
+[[case]]
+id = "glmm.test.z.um.fs.ml.mods.bcg"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.bcg"
+args = { ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg", measure = "OR", model = "UM.FS", method = "ML", mods = "ablat", test = "z" }
+expect = { zval = "glmm_formulas.rma_glmm_zval", pval = "glmm_formulas.rma_glmm_pval", ci_lb = "glmm_formulas.rma_glmm_ci_lb", ci_ub = "glmm_formulas.rma_glmm_ci_ub" }
+tolerance = 1e-4
+covers = ["rma_glmm.test.z"]
+
+[[case]]
+id = "glmm.test.z.cm.al.fe.bcg"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.bcg"
+args = { ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg", measure = "OR", model = "CM.AL", method = "FE", test = "z" }
+expect = { zval = "glmm_formulas.rma_glmm_zval", pval = "glmm_formulas.rma_glmm_pval", ci_lb = "glmm_formulas.rma_glmm_ci_lb", ci_ub = "glmm_formulas.rma_glmm_ci_ub" }
+tolerance = 1e-5
+covers = ["rma_glmm.test.z"]
+
+[[case]]
+id = "glmm.test.t.cm.al.ml.mods.bcg"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.bcg"
+args = { ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg", measure = "OR", model = "CM.AL", method = "ML", mods = "ablat", test = "t" }
+expect = { zval = "glmm_formulas.rma_glmm_zval", pval = "glmm_formulas.rma_glmm_pval", ci_lb = "glmm_formulas.rma_glmm_ci_lb", ci_ub = "glmm_formulas.rma_glmm_ci_ub" }
+tolerance = 1e-5
+covers = ["rma_glmm.test.t"]
+
+[[case]]
+id = "glmm.test.t.um.fs.fe.bcg"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.bcg"
+args = { ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg", measure = "OR", model = "UM.FS", method = "FE", test = "t" }
+expect = { zval = "glmm_formulas.rma_glmm_zval", pval = "glmm_formulas.rma_glmm_pval", ci_lb = "glmm_formulas.rma_glmm_ci_lb", ci_ub = "glmm_formulas.rma_glmm_ci_ub" }
+tolerance = 1e-5
+covers = ["rma_glmm.test.t"]
+
+# coding: the group coding of the unconditional model; the fits are the formulas' own with the same coding
+[[case]]
+id = "glmm.coding.0.5.um.fs.ml.bcg"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.bcg"
+args = { ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg", measure = "OR", model = "UM.FS", method = "ML", coding = 0.5 }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", "se[0]" = "glmm_formulas.rma_glmm_se", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-5
+check = "test_derived.glmm_likelihood_at_estimate"
+covers = ["rma_glmm.coding.0.5"]
+
+[[case]]
+id = "glmm.coding.1.um.fs.ml.bcg"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.bcg"
+args = { ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg", measure = "OR", model = "UM.FS", method = "ML", coding = 1 }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", "se[0]" = "glmm_formulas.rma_glmm_se", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-5
+check = "test_derived.glmm_likelihood_at_estimate"
+covers = ["rma_glmm.coding.1"]
+
+[[case]]
+id = "glmm.coding.0.um.fs.ml.bcg"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.bcg"
+args = { ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg", measure = "OR", model = "UM.FS", method = "ML", coding = 0 }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", "se[0]" = "glmm_formulas.rma_glmm_se", tau2 = "glmm_formulas.rma_glmm_tau2" }
+tolerance = 1e-5
+check = "test_derived.glmm_likelihood_at_estimate"
+covers = ["rma_glmm.coding.0"]
+
+# cor: UM.RS with correlated random effects (Laplace approximation, as lme4 allows for two random effects)
+[[case]]
+id = "glmm.cor.um.rs.ml.bcg"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.bcg"
+args = { ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg", measure = "OR", model = "UM.RS", method = "ML", cor = true }
+expect = { "beta[0]" = "glmm_formulas.rma_glmm_beta", "se[0]" = "glmm_formulas.rma_glmm_se", tau2 = "glmm_formulas.rma_glmm_tau2", sigma2 = "glmm_formulas.rma_glmm_sigma2", rho = "glmm_formulas.rma_glmm_rho" }
+tolerance = 1e-4
+check = "test_derived.glmm_likelihood_at_estimate"
+covers = ["rma_glmm.cor"]
+
+# heterogeneity tests: the saturated model (one coefficient per study) against the fixed-effects model
+[[case]]
+id = "glmm.heterogeneity.qe-lrt.cm.al.fe.bcg"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.bcg"
+args = { ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg", measure = "OR", model = "CM.AL", method = "FE" }
+expect = { QE_LRT = "glmm_formulas.rma_glmm_qe_lrt" }
+tolerance = 1e-8
+covers = ["rma_glmm.heterogeneity.QE_LRT"]
+
+[[case]]
+id = "glmm.heterogeneity.qe-lrt.cm.al.ml.mods.bcg"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.bcg"
+args = { ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg", measure = "OR", model = "CM.AL", method = "ML", mods = "ablat" }
+expect = { QE_LRT = "glmm_formulas.rma_glmm_qe_lrt" }
+tolerance = 1e-8
+covers = ["rma_glmm.heterogeneity.QE_LRT"]
+
+[[case]]
+id = "glmm.heterogeneity.qe-lrt.um.fs.fe.bcg"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.bcg"
+args = { ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg", measure = "OR", model = "UM.FS", method = "FE" }
+expect = { QE_LRT = "glmm_formulas.rma_glmm_qe_lrt" }
+tolerance = 1e-8
+covers = ["rma_glmm.heterogeneity.QE_LRT"]
+
+[[case]]
+id = "glmm.heterogeneity.qe-lrt.cm.el.fe.bcg"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.bcg"
+args = { ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg", measure = "OR", model = "CM.EL", method = "FE" }
+expect = { QE_LRT = "glmm_formulas.rma_glmm_qe_lrt" }
+tolerance = 1e-8
+covers = ["rma_glmm.heterogeneity.QE_LRT"]
+
+[[case]]
+id = "glmm.heterogeneity.qe-wld.cm.al.fe.bcg"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.bcg"
+args = { ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg", measure = "OR", model = "CM.AL", method = "FE" }
+expect = { QE_Wld = "glmm_formulas.rma_glmm_qe_wld" }
+tolerance = 1e-5
+covers = ["rma_glmm.heterogeneity.QE_Wld"]
+
+[[case]]
+id = "glmm.heterogeneity.qe-wld.um.fs.fe.bcg"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.bcg"
+args = { ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg", measure = "OR", model = "UM.FS", method = "FE" }
+expect = { QE_Wld = "glmm_formulas.rma_glmm_qe_wld" }
+tolerance = 1e-5
+covers = ["rma_glmm.heterogeneity.QE_Wld"]
+
+# the Wald statistic of the saturated model of a moderator model comes from a finite-difference information over eleven more coefficients
+[[case]]
+id = "glmm.heterogeneity.qe-wld.cm.al.fe.mods.bcg"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.bcg"
+args = { ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg", measure = "OR", model = "CM.AL", method = "FE", mods = "ablat" }
+expect = { QE_Wld = "glmm_formulas.rma_glmm_qe_wld" }
+tolerance = 1e-3
+covers = ["rma_glmm.heterogeneity.QE_Wld"]
+
+# QM: the Wald statistic of the moderator coefficients (the intercept of an intercept-only model)
+[[case]]
+id = "glmm.heterogeneity.qm.cm.al.ml.mods.bcg"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.bcg"
+args = { ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg", measure = "OR", model = "CM.AL", method = "ML", mods = "ablat" }
+expect = { QM = "glmm_formulas.rma_glmm_qm", QMp = "glmm_formulas.rma_glmm_qmp" }
+tolerance = 1e-5
+covers = ["rma_glmm.heterogeneity.QM"]
+
+[[case]]
+id = "glmm.heterogeneity.qm.um.fs.fe.bcg"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.bcg"
+args = { ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg", measure = "OR", model = "UM.FS", method = "FE" }
+expect = { QM = "glmm_formulas.rma_glmm_qm", QMp = "glmm_formulas.rma_glmm_qmp" }
+tolerance = 1e-5
+covers = ["rma_glmm.heterogeneity.QM"]
+
+[[case]]
+id = "glmm.heterogeneity.qm.cm.al.ml.mods.t.bcg"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.bcg"
+args = { ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg", measure = "OR", model = "CM.AL", method = "ML", mods = "ablat", test = "t" }
+expect = { QM = "glmm_formulas.rma_glmm_qm", QMp = "glmm_formulas.rma_glmm_qmp" }
+tolerance = 1e-5
+covers = ["rma_glmm.heterogeneity.QM"]
+
+# I2 and H2: the typical within-study variance of Higgins and Thompson (2002) and tau2 of the formulas' fit
+[[case]]
+id = "glmm.heterogeneity.i2-h2.cm.al.ml.mods.bcg"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.bcg"
+args = { ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg", measure = "OR", model = "CM.AL", method = "ML", mods = "ablat" }
+expect = { vt = "glmm_formulas.rma_glmm_vt", I2 = "glmm_formulas.rma_glmm_i2", H2 = "glmm_formulas.rma_glmm_h2" }
+tolerance = 1e-6
+covers = ["rma_glmm.heterogeneity.I2", "rma_glmm.heterogeneity.H2", "rma_glmm.i2def.1"]
+
+# dat.nielweise2007 has studies with a zero cell, which get 1/2 added to each cell for the sampling variances
+[[case]]
+id = "glmm.heterogeneity.i2-h2.cm.el.ml.nielweise2007"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.EL", method = "ML", i2def = "1", control = { int_rel_tol = 1e-10 } }
+expect = { vt = "glmm_formulas.rma_glmm_vt", I2 = "glmm_formulas.rma_glmm_i2", H2 = "glmm_formulas.rma_glmm_h2" }
+tolerance = 1e-6
+covers = ["rma_glmm.heterogeneity.I2", "rma_glmm.heterogeneity.H2", "rma_glmm.i2def.1"]
+
+[[case]]
+id = "glmm.i2def.2.cm.el.ml.nielweise2007"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.nielweise2007"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.EL", method = "ML", i2def = "2", control = { int_rel_tol = 1e-10 } }
+expect = { vt = "glmm_formulas.rma_glmm_vt", I2 = "glmm_formulas.rma_glmm_i2", H2 = "glmm_formulas.rma_glmm_h2" }
+tolerance = 1e-6
+covers = ["rma_glmm.i2def.2"]
+
+[[case]]
+id = "glmm.i2def.2.cm.al.ml.mods.bcg"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.bcg"
+args = { ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg", measure = "OR", model = "CM.AL", method = "ML", mods = "ablat", i2def = "2" }
+expect = { vt = "glmm_formulas.rma_glmm_vt", I2 = "glmm_formulas.rma_glmm_i2", H2 = "glmm_formulas.rma_glmm_h2" }
+tolerance = 1e-6
+covers = ["rma_glmm.i2def.2"]
+
+# tau2 interval: the Wald interval on log tau2 of CM.EL with ML. The standard error and the bounds come from a finite-difference Hessian of
+# the exact integral in both metafopy and the formulas, which agree to 1e-4 and no closer (R metafor 5.2-1 differs from each by about as much). The
+# default int_rel_tol is kept: tightening it to 1e-10 moves metafopy's upper bound a further 4e-4 from the formulas', through the Hessian only.
+[[case]]
+id = "glmm.tau2-ci.cm.el.ml.bcg"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.bcg"
+args = { ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg", measure = "OR", model = "CM.EL", method = "ML" }
+expect = { se_tau2 = "glmm_formulas.rma_glmm_se_tau2", ci_lb_tau2 = "glmm_formulas.rma_glmm_ci_lb_tau2", ci_ub_tau2 = "glmm_formulas.rma_glmm_ci_ub_tau2" }
+tolerance = 1e-4
+covers = ["rma_glmm.tau2_ci"]
+
+# prediction interval at each row of the model matrix
+[[case]]
+id = "glmm.predict.pi.cm.al.ml.mods.bcg"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.bcg"
+args = { ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg", measure = "OR", model = "CM.AL", method = "ML", mods = "ablat" }
+then = { function = "predict", args = {} }
+expect = { pi_lb = "glmm_formulas.rma_glmm_pi_lb", pi_ub = "glmm_formulas.rma_glmm_pi_ub" }
+tolerance = 1e-5
+covers = ["rma_glmm.predict.pi"]
+
+[[case]]
+id = "glmm.predict.pi.cm.al.ml.t.bcg"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.bcg"
+args = { ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg", measure = "OR", model = "CM.AL", method = "ML", test = "t" }
+then = { function = "predict", args = {} }
+expect = { pi_lb = "glmm_formulas.rma_glmm_pi_lb", pi_ub = "glmm_formulas.rma_glmm_pi_ub" }
+tolerance = 1e-5
+covers = ["rma_glmm.predict.pi"]
+
+[[case]]
+id = "glmm.heterogeneity.qe-wld.cm.el.fe.bcg"
+kind = "derived"
+function = "rma_glmm"
+dataset = "dat.bcg"
+args = { ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg", measure = "OR", model = "CM.EL", method = "FE" }
+expect = { QE_Wld = "glmm_formulas.rma_glmm_qe_wld" }
+tolerance = 1e-5
+status = "mismatch"
+reason = "metafopy gives QE_Wld 191.71241948, the formulas (Wald statistic of the saturated exact-likelihood fit) 163.08947856, and R metafor 5.2-1 268.5989693"
+covers = ["rma_glmm.heterogeneity.QE_Wld"]
+
 [[exempt]]
 item = "rma_glmm.optimizer.SANN"
 reason = "NotSupportedError: optimizer 'optim' (method 'SANN') is not available (simulated annealing has no counterpart here): rma_glmm raises NotSupportedError"

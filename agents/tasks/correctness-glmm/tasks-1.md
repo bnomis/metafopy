@@ -290,7 +290,7 @@ estimates themselves.
 
 ## Task 7: Derived inference and heterogeneity cases, then close the gate
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** Coverage list (inference); Implementation step 2 (heterogeneity statistics) and step 3
@@ -300,26 +300,26 @@ them the gate passes.
 
 **Subtasks:**
 
-- [ ] `glmm_formulas.py`: the saturated-model log-likelihoods for `QE_LRT`, the Wald statistic for `QE_Wld`, `QM`, the typical within-study variance
+- [x] `glmm_formulas.py`: the saturated-model log-likelihoods for `QE_LRT`, the Wald statistic for `QE_Wld`, `QM`, the typical within-study variance
       for `I2`/`H2` (`i2def='1'`, Higgins and Thompson 2002), `1 / mean(1 / vi)` (`i2def='2'`), the Wald interval on `log tau2` of `CM.EL` with `ML`,
       and the prediction interval
-- [ ] Unit checks of these in `test_glmm_formulas.py`
-- [ ] Cases: `rma_glmm.test.z`, `rma_glmm.test.t`; `rma_glmm.coding.<c>` for `0.5`, `1`, `0`; `rma_glmm.cor` (`UM.RS`, `cor=True`, `rho`);
+- [x] Unit checks of these in `test_glmm_formulas.py`
+- [x] Cases: `rma_glmm.test.z`, `rma_glmm.test.t`; `rma_glmm.coding.<c>` for `0.5`, `1`, `0`; `rma_glmm.cor` (`UM.RS`, `cor=True`, `rho`);
       `rma_glmm.heterogeneity.<s>` for `QE_Wld`, `QE_LRT`, `QM`, `I2`, `H2`; `rma_glmm.i2def.<d>`; `rma_glmm.tau2_ci` (`se_tau2`, `ci_lb_tau2`,
       `ci_ub_tau2`); `rma_glmm.predict.pi` with the existing `predict_pi` check or the `predict` check the `correctness-harness-checks` list added
-- [ ] `i2def='2'` is metafor's definition: look for a published source; if none is found, exempt `rma_glmm.i2def.2` with that reason
-- [ ] Record any mismatch as the header says
-- [ ] Remove the `xfail` mark from `test_every_core_item_has_a_case`
+- [x] `i2def='2'` is metafor's definition: look for a published source; if none is found, exempt `rma_glmm.i2def.2` with that reason
+- [x] Record any mismatch as the header says
+- [x] Remove the `xfail` mark from `test_every_core_item_has_a_case`
 
 **Acceptance Criteria:**
 
-- [ ] The gate passes with no xfail mark
+- [x] The gate passes with no xfail mark
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py src/tests/correctness/test_glmm_formulas.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py src/tests/correctness/test_glmm_formulas.py` passes
 
 **Notes:**
 

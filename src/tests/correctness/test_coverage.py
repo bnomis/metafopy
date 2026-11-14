@@ -234,7 +234,6 @@ def test_escalc_accepts_each_listed_vtype(measure: str, vtype: str) -> None:
     assert len(out['yi']) == len(out['vi']) == 3
 
 
-@pytest.mark.xfail(strict=True, reason='rma_glmm coverage incomplete; see agents/tasks/correctness-glmm/tasks-1.md')
 def test_every_core_item_has_a_case() -> None:
     missing = missing_items(correctness.cases.load_cases(), correctness.cases.load_exemptions())
     assert not missing, f'{len(missing)} items have no published or derived case: {", ".join(missing)}'

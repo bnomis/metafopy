@@ -30,7 +30,27 @@ R metafor itself differs from the formulas (its `clogit` and `numDeriv` results 
 both than they are from each other. The `ML` rows of metafor use `control = list(intCtrl = list(rel.tol = 1e-10))`, as the cases do (`int_rel_tol`).
 Jackson et al. (2018) Table 3, outcome 1 (pneumonia), is the data of the Jackson rows.
 
+### CM.EL Wald statistic of the saturated model, `QE_Wld`
+
+The reference is the Wald statistic of the study coefficients of the saturated exact-likelihood fit of the formulas (analytic information of the
+non-central hypergeometric likelihood; `saturated_fits` in `src/tests/correctness/glmm_formulas.py`). The same statistic from the formulas agrees with
+`CM.AL` and `UM.FS` to the case tolerance, and `QE_LRT` of `CM.EL` agrees to 1e-14, so only the Wald statistic of `CM.EL` disagrees. R metafor 5.2-1
+differs from both (the metafopy documentation says the statistic is ill-conditioned for `CM.EL` and differs between optimisers in R as well).
+
+| Case | Tolerance | metafopy | formulas | R metafor |
+|---|---|---|---|---|
+| `glmm.heterogeneity.qe-wld.cm.el.fe.bcg` (`dat.bcg`, `OR`, `CM.EL`, `FE`) | 1e-5 | 191.71241948 | 163.08947856 | 268.5989693 |
+
+For comparison the same data give `QE_Wld` 147.906 with `CM.AL` and 163.165 with `UM.FS` in both metafopy and the formulas, and `QE_LRT` 176.8738393
+with `CM.EL` in all three.
+
 ## Conventions
+
+### The saturated-model Wald statistic of a moderator model
+
+`QE_Wld` of a model with a moderator (`glmm.heterogeneity.qe-wld.cm.al.fe.mods.bcg`) is compared at 1e-3, not 1e-5: the statistic comes from an
+information matrix over one coefficient for each study beyond the moderators, and metafopy and the formulas each build that matrix by finite
+differences (29.8946 and 29.9013). An intercept-only model agrees to better than 1e-6 (147.90608 and 147.90607 for `CM.AL`).
 
 ### `ll` of the `lme4` mixed fits
 
