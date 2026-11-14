@@ -1,13 +1,14 @@
 """Loader and comparison helpers for the correctness cases in ``cases/*.toml``.
 
 A case names a metafopy function, the data and arguments to call it with, and the values it must return. The values come from outside metafopy and
-metafor: a number printed in the defining publication (``published``), a formula coded from the publication in ``formulas.py`` (``derived``), an identity
-theory guarantees (``property``), a seeded Monte Carlo check (``simulation``) or another implementation (``other``). See
+metafor: a number printed in the defining publication (``published``), a formula coded from the publication in ``formulas.py`` or ``glmm_formulas.py``
+(``derived``), an identity theory guarantees (``property``), a seeded Monte Carlo check (``simulation``) or another implementation (``other``). See
 ``agents/specs/correctness-tests/spec.md``.
 
 An ``expect`` key names a result attribute (``tau2``), a column of an ``escalc`` frame (``yi``) or one element of either (``yi[0]``, 0-based). The value
 of a ``published`` key is the string as printed, so that the tolerance follows from its last digit. The value of a ``derived`` key is a float or the
-name of a function in ``formulas.py`` (``formulas.rd_yi``), which is called with the case's ``args`` it declares, a column name replaced by the column.
+name of a function in a module of ``FORMULA_MODULES`` (``formulas.rd_yi``, ``glmm_formulas.<name>``), which is called with the case's ``args`` it
+declares, a column name replaced by the column.
 """
 
 import collections.abc
@@ -27,6 +28,7 @@ import pandas
 import pytest
 
 import correctness.formulas
+import correctness.glmm_formulas
 import metafopy
 import metafopy.datasets
 
@@ -34,6 +36,7 @@ type Kind = typing.Literal['published', 'derived', 'property', 'simulation', 'ot
 type Status = typing.Literal['pass', 'mismatch']
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 
+FORMULA_MODULE_OBJECTS = {'formulas': correctness.formulas, 'glmm_formulas': correctness.glmm_formulas}
 CASES_DIR = pathlib.Path(__file__).parent / 'cases'
 KINDS: tuple[Kind, ...] = typing.get_args(Kind.__value__)
 STATUSES: tuple[Status, ...] = typing.get_args(Status.__value__)
@@ -41,9 +44,10 @@ GATE_KINDS: tuple[Kind, ...] = ('derived', 'published')
 
 ID_PATTERN = re.compile(r'[A-Za-z0-9._-]+')
 ACCESSOR = re.compile(r'([A-Za-z_][A-Za-z0-9_]*)(?:\[(\d+)\])?')
-FUNCTION_PATTERN = re.compile(r'(?:formulas\.)?[A-Za-z_][A-Za-z0-9_]*')
+FUNCTION_PATTERN = re.compile(r'(?:[a-z_]+\.)?[A-Za-z_][A-Za-z0-9_]*')
 CHECK_PATTERN = re.compile(r'test_[a-z0-9_]+\.[A-Za-z_][A-Za-z0-9_]*')
-FORMULA_PREFIX = 'formulas.'
+# auditme: accept[non-alphabetical-literal] the order is the order the modules were added
+FORMULA_MODULES = ('formulas', 'glmm_formulas')
 
 # auditme: accept[non-alphabetical-literal] order follows the spec's description of a case
 CASE_KEYS = frozenset(
@@ -196,8 +200,9 @@ def parse_expect(kind: str, raw: object, where: str) -> dict[str, str | float]:
                 fail(where, f'published value of {key!r} must be a string, as printed in the source')
             published_tolerance(value)
         elif kind == 'derived' and isinstance(value, str):
-            if not value.startswith(FORMULA_PREFIX) or not FUNCTION_PATTERN.fullmatch(value):
-                fail(where, f'derived value of {key!r} must be a float or the name of a function "formulas.<name>"')
+            if not is_formula(value) or not FUNCTION_PATTERN.fullmatch(value):
+                fail(where, f'derived value of {key!r} must be a float or the name of a function "<module>.<name>"')
+            check_formula_module(value, where)
         elif isinstance(value, bool) or not isinstance(value, int | float):
             fail(where, f'value of {key!r} must be a float')
         expect[key] = value
@@ -264,7 +269,7 @@ def parse_then(raw: object, where: str) -> Step:
     if unknown:
         fail(where, f'then: unknown key(s) {sorted(unknown)}; only function and args')
     function = raw.get('function')
-    if not isinstance(function, str) or not FUNCTION_PATTERN.fullmatch(function) or function.startswith(FORMULA_PREFIX):
+    if not isinstance(function, str) or not FUNCTION_PATTERN.fullmatch(function) or is_formula(function):
         fail(where, f'then: function {function!r} must be a metafopy function name')
     args = raw.get('args', {})
     if not isinstance(args, dict):
@@ -290,7 +295,9 @@ def parse_case(raw: object, name: str, index: int) -> Case:
         fail(name, f'case {ident}: unknown kind {kind!r}')
     function = raw['function']
     if not isinstance(function, str) or not FUNCTION_PATTERN.fullmatch(function):
-        fail(name, f'case {ident}: function {function!r} must be a metafopy function name or "formulas.<name>"')
+        fail(name, f'case {ident}: function {function!r} must be a metafopy function name or "<module>.<name>"')
+    if is_formula(function):
+        check_formula_module(function, f'{name}: case {ident}')
     check = raw.get('check')
     if check is not None and (not isinstance(check, str) or not CHECK_PATTERN.fullmatch(check)):
         fail(name, f'case {ident}: check {check!r} must be "<test module>.<function>" in src/tests/correctness')
@@ -476,10 +483,24 @@ def build_tree_r(tree: str) -> pandas.DataFrame:
     return pandas.DataFrame((shared * numpy.array([length[child] for child in edges['child']])) @ shared.T, index=labels, columns=labels)
 
 
+def is_formula(name: str) -> bool:
+    """A dotted function name is a formula in a module of ``FORMULA_MODULES``; a metafopy function name has no dot."""
+    return '.' in name
+
+
+def check_formula_module(name: str, where: str) -> None:
+    """Refuse a formula whose module is not in ``FORMULA_MODULES``."""
+    module_name = name.partition('.')[0]
+    if module_name not in FORMULA_MODULES:
+        fail(where, f'function {name!r} must be a metafopy function name or "<module>.<name>" with a module in {list(FORMULA_MODULES)}')
+
+
 def resolve_formula(name: str, where: str) -> collections.abc.Callable[..., typing.Any]:
-    func = getattr(correctness.formulas, name.removeprefix(FORMULA_PREFIX), None)
+    module_name, _, function = name.partition('.')
+    check_formula_module(name, where)
+    func = getattr(FORMULA_MODULE_OBJECTS[module_name], function, None)
     if not callable(func):
-        raise LookupError(f'{where}: formulas.py has no function {name.removeprefix(FORMULA_PREFIX)!r}')
+        raise LookupError(f'{where}: {module_name}.py has no function {function!r}')
     return typing.cast(collections.abc.Callable[..., typing.Any], func)
 
 
@@ -501,13 +522,13 @@ def formula_value(case: Case, name: str, frame: pandas.DataFrame | None) -> typi
 
 
 def run_case(case: Case) -> typing.Any:
-    """Load the dataset, apply ``setup``, call ``metafopy.<function>(**args)`` (``formulas.<name>`` for a formula), then apply ``then`` to the fit.
+    """Load the dataset, apply ``setup``, call ``metafopy.<function>(**args)`` (``<module>.<name>`` for a formula), then apply ``then`` to the fit.
 
     ``setup`` is an ``escalc`` call, for ``vblocks`` or ``vconst`` the ``V`` passed to the call, and for ``tree_r`` the ``R`` passed to it (the
     unscaled tree covariance matrix of the named factor). The result of ``then`` is returned.
     """
     frame = case_frame(case)
-    if case.function.startswith(FORMULA_PREFIX):
+    if is_formula(case.function):
         return formula_value(case, case.function, frame)
     func = getattr(metafopy, case.function, None)
     if not callable(func):
@@ -571,7 +592,7 @@ def formula_element(value: typing.Any, key: str) -> typing.Any:
 
 def check_case(case: Case, result: typing.Any) -> None:
     """Compare each ``expect`` key with the result at the kind's tolerance; raise AssertionError naming case, key, both values and the source."""
-    frame = case_frame(case) if any(isinstance(v, str) and v.startswith(FORMULA_PREFIX) for v in case.expect.values()) else None
+    frame = case_frame(case) if any(isinstance(v, str) and is_formula(v) for v in case.expect.values()) else None
     for key in case.expect:
         actual = fetch(result, key, case.id)
         expected, tolerance, origin = expected_value(case, key, frame)

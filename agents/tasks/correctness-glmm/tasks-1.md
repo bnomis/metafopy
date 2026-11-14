@@ -38,7 +38,7 @@ directory cannot be read from the queue's session, the task stops as `blocked` a
 
 ## Task 1: Harness - formula modules, rma_glmm coverage items, optimiser exemption test
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Module location; Coverage list; Error handling; Implementation step 1
@@ -47,16 +47,16 @@ directory cannot be read from the queue's session, the task stops as `blocked` a
 
 **Subtasks:**
 
-- [ ] Starting-point check: `ls src/tests/correctness/glmm_formulas.py src/tests/correctness/cases/glmm*.toml` finds nothing, and
+- [x] Starting-point check: `ls src/tests/correctness/glmm_formulas.py src/tests/correctness/cases/glmm*.toml` finds nothing, and
       `grep -rnw 'rma_glmm' src/tests/correctness/test_coverage.py` finds no coverage item. Stop as `blocked`, naming what exists, if either fires.
       `FORMULA_MODULES` already present in `src/tests/correctness/cases.py` (made by a sibling list) is not a clash: then only add `'glmm_formulas'`
       to it
-- [ ] `src/tests/correctness/cases.py`: a `FORMULA_MODULES = ('formulas', 'glmm_formulas')` tuple; a formula is named `"<module>.<name>"` and resolved
+- [x] `src/tests/correctness/cases.py`: a `FORMULA_MODULES = ('formulas', 'glmm_formulas')` tuple; a formula is named `"<module>.<name>"` and resolved
       in its module; the loader refuses a module not in the tuple with `ValueError` naming file and case. Update the module docstring and the error
       messages that say `"formulas.<name>"`
-- [ ] Create `src/tests/correctness/glmm_formulas.py` holding only its module docstring (no `metafopy` import; each function cites its equation), and
+- [x] Create `src/tests/correctness/glmm_formulas.py` holding only its module docstring (no `metafopy` import; each function cites its equation), and
       `cases/glmm.toml`, `cases/glmm_published.toml`, each empty except a header comment
-- [ ] `src/tests/correctness/test_coverage.py`:
+- [x] `src/tests/correctness/test_coverage.py`:
   - the `ast` import check runs over every module of `FORMULA_MODULES`;
   - `coverage_items()` adds the `rma_glmm` items of the spec's Coverage list, read from `metafopy.models.rma_glmm.SUPPORTED`, `EXPERIMENTAL`,
     `MODELS`, `UNCONDITIONAL_ONLY`, `METHODS`, `metafopy.models.glmm_fit.ONE_GROUP`, `PACKAGES`, `OPTIMIZERS` and
@@ -66,19 +66,19 @@ directory cannot be read from the queue's session, the task stops as `blocked` a
     fit of `dat.nielweise2007`, failing with the item's name when it does not;
   - mark `test_every_core_item_has_a_case` `xfail(strict=True, reason='rma_glmm coverage incomplete; see agents/tasks/correctness-glmm/tasks-1.md')`
     until Task 7 removes the mark
-- [ ] Inline-TOML unit tests in `test_coverage.py`: a `glmm_formulas.<name>` formula resolves; a formula in an unknown module is refused, naming file
+- [x] Inline-TOML unit tests in `test_coverage.py`: a `glmm_formulas.<name>` formula resolves; a formula in an unknown module is refused, naming file
       and case
 
 **Acceptance Criteria:**
 
-- [ ] The gate's missing list names every `rma_glmm` item and no other new item
-- [ ] A `glmm_formulas.py` that imports `metafopy` fails `test_coverage.py`
+- [x] The gate's missing list names every `rma_glmm` item and no other new item
+- [x] A `glmm_formulas.py` that imports `metafopy` fails `test_coverage.py`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_coverage.py src/tests/correctness/test_derived.py src/tests/correctness/test_properties.py src/tests/correctness/test_published.py src/tests/correctness/test_other_software.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_coverage.py src/tests/correctness/test_derived.py src/tests/correctness/test_properties.py src/tests/correctness/test_published.py src/tests/correctness/test_other_software.py` passes
 
 **Notes:**
 
