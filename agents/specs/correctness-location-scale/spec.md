@@ -1,7 +1,7 @@
 # Correctness tests: location-scale models
 
 **Version:** 1.1
-**Status:** proposed
+**Status:** implemented
 **Date:** 2026-11-12
 
 Location-scale models (`rma_uni(..., scale=...)`, metafor's `rma.ls`) are today checked only against R metafor: the parity fixtures and

@@ -556,7 +556,7 @@ formulas share, not copy, what `formulas.py` already has.
 
 ## Task 12: File the answers and close the spec
 
-**Status:** todo
+**Status:** in-progress
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation step 8 (follow-up)
@@ -627,3 +627,28 @@ formulas share, not copy, what `formulas.py` already has.
   unscaled data. `pytest src/tests/correctness -m 'not slow'`: 1164 passed, 34 xfailed
 - Not a location-scale case; Task 11 stops on it because its Definition of Done needs that run to pass
 
+
+---
+
+## Task 14: Fix the VIF test failures found by Task 12's final test run
+
+**Status:** todo
+**Priority:** high
+**Complexity:** small
+**Spec Reference:** none (found by the final test run of Task 12)
+
+**Technical Goal:** `src/tests/test_audit4_plots.py::test_vif_uni_intercept`, `src/tests/test_audit4_plots.py::test_vif_ls_intercept_and_fixed` and
+`src/tests/test_ls_vif.py::test_sim_permutes_the_data_variables_as_r[stream]` pass again, or each is recorded as a known difference with its reason.
+
+**Subtasks:**
+
+- [ ] Reproduce: `test_vif_uni_intercept` fails at `metafopy.vif(uni, intercept=True, reestimate=True)`: the second VIF is 10.209 against the R
+      fixture 4.2266, the third 25681.9 against 25834.4; the stream test returns `nan` where the fixture has a number
+- [ ] Find the cause in `src/metafopy/methods/ls_vif.py` (`make_refit`, `reestimate`) and fix it, or, if metafor's fixture is the one that differs from its
+      reference, record the difference (`src/audit/data/known.toml`, `docs/differences.md`)
+- [ ] Run `pytest src/tests/test_audit4_plots.py src/tests/test_ls_vif.py src/tests/test_ls_vif_sim.py` to a pass
+
+**Notes:**
+
+- 2026-11-15: the three failures also occur on commit `38c4277` (the start of this list, `git archive` copy run with the same venv: numpy 2.5.4, scipy 1.18.1, as `uv.lock`), so no task of this list caused them. The only `src/metafopy/` change of the list is the `LS_METHODS` constant in `rma_ls_fit.py`
+- Task 12 waits for this task: its Definition of Done needs the final test run to pass

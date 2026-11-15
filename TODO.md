@@ -88,6 +88,68 @@ Found on 2026-11-14 by the case `glmm.published.simmonds2016.hrt.random.mismatch
 Fix direction: compare the marginal likelihood at `tau2 = 0` and at 0.213 with the formulas of `src/tests/correctness/glmm_formulas.py`; if the
 likelihood is higher at 0.213, record the printed value as a source difference (a `glmer` that stopped at `tau2 = 0`); otherwise fix metafopy.
 
+## The location-scale identity-link fit stops about 1e-5 short of the maximum
+
+<!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
+Found on 2026-11-15 by the location-scale correctness cases (`agents/specs/correctness-location-scale/mismatches.md`, item `ls_identity_opt`); the user
+answered *follow the reference* on 2026-11-15. The strict expected failures `ls.fit.{ML,REML}.identity.{bd,bcg}` and
+`property.ls.fit.{ML,REML}.identity.{bd,bcg}` in `src/tests/correctness/cases/location_scale.toml`, and `property.ls.links.{ML,REML}.bd` (the
+identity-link and log-link fits of one two-group scale model span the same variances), show that the identity-link `alpha` differs from the independent
+reference (`formulas.ls_reference_fit`) by about 1e-5 relative (tolerance 1e-6) and the log-likelihood by 1e-8 to 2e-7 (tolerance 1e-9). On
+`dat.bangertdrowns2004` with `imag` in both parts the ML log-likelihood is -17.058054743801 in metafopy against -17.058054672888 in the reference; on
+`dat.bcg` with `ablat` in both parts, -7.139288984088 against -7.139288817730. The reference ends higher in all four fits and satisfies
+`Z alpha >= 0`. The log-link fits agree to better than 1e-9. metafor's own identity-link values are not on record: no parity fixture in
+`src/tests/reference/phase5/location_scale.json` fits these models.
+<!-- doc-counts: accept-end -->
+
+Suspected cause (not confirmed): `constr_optim` in `src/metafopy/models/rma_ls_opt.py` is a port of R's `constrOptim` (adaptive log barrier around
+Nelder-Mead), which stops at its own convergence tolerance, and metafopy's identity-link path in `src/metafopy/models/rma_ls_fit.py` takes the result
+without a final polish.
+
+Fix direction: polish the identity-link optimum, for example by a final Newton or BFGS step on the analytic score inside the feasible region, then set
+the ten cases to `pass`. Mark the R parity fixtures that hold an identity-link fit as differing at the 1e-4 level `src/tests/test_rma_ls.py` accepts,
+add the matching `src/audit/data/known.toml` entries, and add the difference to `docs/differences.md` under "Where metafor departs from its
+reference". A change to `src/metafopy/` goes through a spec first, or a small task list if the fix is local.
+
+## The location-scale profile-likelihood intervals of the scale coefficients are not crossings where the profile is flat
+
+<!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
+Found on 2026-11-15 by the location-scale correctness cases (`agents/specs/correctness-location-scale/mismatches.md`, items `ls_plci_bcg` and
+`ls_plci_vl2022`); the user answered *follow the reference* for both on 2026-11-15. metafopy's profile-likelihood bounds for a scale coefficient
+(`confint` of `rma_uni(..., scale=)`, `src/metafopy/methods/ls_profile.py` and `src/metafopy/methods/ls_confint.py`) differ from the independent
+reference `formulas.ls_profile_bounds` (a root of `2 (ll_max - ll_j(a)) = chi2_{1, 0.95}`, the other alpha re-maximised at each `a`) and from the
+printed values of Viechtbauer and Lopez-Lopez (2022), which were computed with metafor.
+<!-- doc-counts: accept-end -->
+
+### dat.bcg scale intercept, ML and REML
+
+<!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
+Cases `ls.confint.scale.ML.bcg` and `ls.confint.scale.REML.bcg` in `src/tests/correctness/cases/location_scale.toml`, strict expected failures (the
+same check passes on `dat.bangertdrowns2004`). Log link, `ablat` in both parts, alpha.1 the intercept. ML lower bound: reference `nan` (not crossed
+within 20 standard errors), metafopy -23.309450; ML upper 1.803009 against 1.022354; REML upper 3.402673 against 3.286219 (REML lower agrees,
+-16.010862). At a = 1.0 the reference profile gives 3.04, below the 3.84 cut-off, so metafopy's ML upper bound lies where the profile has not crossed.
+<!-- doc-counts: accept-end -->
+
+### Viechtbauer and Lopez-Lopez (2022) Tables 1 and 2
+
+<!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
+Cases `published.vl2022.table1.plci.size` and `published.vl2022.table2.plci.soc`, strict expected failures; the bounds metafopy does reproduce are in
+the passing `published.vl2022.table1.plci` and `published.vl2022.table2.plci`. Table 1 sample size lower bound: paper -7.159, metafopy -5.93003,
+reference -7.159061 (so a metafopy defect, not a misprint). Table 1 social sciences vs. math: paper `< -10` and `> 10`, metafopy -3.61002 and 4.41224,
+reference no crossing. Table 2 social sciences vs. math: upper bound paper 7.700, metafopy 5.72067; lower paper `< -10`, metafopy -4.68066. The
+Table 2 reference fit does not converge, so no independent value was computed there.
+<!-- doc-counts: accept-end -->
+
+Suspected cause (not confirmed): where the profile is flat, the refit of the other coefficients at a fixed `a` ends at a lower log-likelihood than the
+reference's (which starts from two points, one keeping the fitted line of `Z alpha`), so the root search stops before the true crossing. Read
+`src/metafopy/methods/ls_profile.py` for the starting values and the bracket.
+
+Fix direction: refit the profile as metafor and the reference do, starting from the fitted line and re-maximising from more than one start, then set the
+four cases to `pass`. Check metafor's `confint` on the Table 2 model to read the bound the paper prints. Mark the R parity fixtures that hold a
+location-scale profile interval as differing where they do, add the matching `src/audit/data/known.toml` entries, and add the difference to
+`docs/differences.md` under "Where metafor departs from its reference". A change to `src/metafopy/` goes through a spec first, or a small task list
+if the fix is local.
+
 ## Extend the correctness tests beyond the core models
 
 Found on 2026-11-12 while reviewing `TODO.md`: the correctness-tests spec (`agents/specs/correctness-tests/spec.md`, introduction) covers `escalc`,
