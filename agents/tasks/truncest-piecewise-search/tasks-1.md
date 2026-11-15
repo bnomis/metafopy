@@ -48,7 +48,7 @@ The project has no affected-tests tool, so each task names its test files, and t
 
 ## Task 1: Record the stretch maxima and stop for the user
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item's fix direction ("search each stretch between observed effects and keep the best"), checked against the data
@@ -58,17 +58,17 @@ maximum, before any code changes.
 
 **Subtasks:**
 
-- [ ] Re-check the starting point: `selmodel.truncest.bangertdrowns2004` in `src/tests/correctness/cases/selmodel.toml` has `status = "mismatch"`,
+- [x] Re-check the starting point: `selmodel.truncest.bangertdrowns2004` in `src/tests/correctness/cases/selmodel.toml` has `status = "mismatch"`,
       `pytest src/tests/correctness/test_derived.py -k truncest` passes with it as a strict expected failure, and the `type_ == 'truncest'` branch
       of `src/metafopy/models/sel_spec.py` sets `delta_min[1]` and `delta_max[1]` from `yi.min() - sd` and `yi.max()`. Stop as `blocked`, naming
       what differs, if not
-- [ ] If `agents/tasks/truncest-piecewise-search/review-1.md` exists and its Answers section names an option with a date, mark this task done
+- [x] If `agents/tasks/truncest-piecewise-search/review-1.md` exists and its Answers section names an option with a date, mark this task done
       and go to Task 2
-- [ ] Repeat the header's measurement with a scratch script outside the repository (session scratch directory): for each stretch, the best ll
+- [x] Repeat the header's measurement with a scratch script outside the repository (session scratch directory): for each stretch, the best ll
       of `formulas.truncation_loglik` with the cut in the open stretch, and metafopy's `selmodel(res, type='truncest', delta=[nan, c])` at the
       winning stretch's right end minus 1e-8 and at the end itself. Stop as `blocked` if the winner differs from the header's table by more than
       1e-4 in ll, naming both
-- [ ] Write `agents/tasks/truncest-piecewise-search/review-1.md` in the layout of the shared `reviews.md` rule: what is reviewed (the table above,
+- [x] Write `agents/tasks/truncest-piecewise-search/review-1.md` in the layout of the shared `reviews.md` rule: what is reviewed (the table above,
       remeasured); the automatic check (the measurement reproduced); the decision "how to report a truncation point whose supremum is not
       attained", with its background (metafor and the reference count a study as selected only when `y > cut`; the item's reference values are
       a local maximum; beta moves from 0.265 to 0.096 on this dataset), what it affects (`selmodel(type='truncest')` estimates, the correctness
@@ -83,23 +83,25 @@ maximum, before any code changes.
         `truncest` and `trunc` disagree at a cut equal to an observed effect
       - **C: keep metafor's search.** No output change; the case is rewritten to record that the maximum-likelihood truncation point need not
         exist, stays a documented mismatch, and the item moves to `DONE.md` as not fixed. Tasks 2 to 4 then reduce to that record
-- [ ] Publish the review as an interactive page as `reviews.md` says, if this session has the Artifact tool; put `**Review page:** <URL>` in the
+- [x] Publish the review as an interactive page as `reviews.md` says, if this session has the Artifact tool; put `**Review page:** <URL>` in the
       document's header. Without the tool, write `**Review page:** to be published by the operator session` there
-- [ ] Stop the list as `blocked: awaiting answers in agents/tasks/truncest-piecewise-search/review-1.md`. Once the decision has an answer, an
+- [x] Stop the list as `blocked: awaiting answers in agents/tasks/truncest-piecewise-search/review-1.md`. Once the decision has an answer, an
       operator session publishes the page if it is missing, reads the page's answers, copies each into the review document's Answers section
       with the date, commits that, and only then restarts the list
 
 **Acceptance Criteria:**
 
-- [ ] `review-1.md` holds the remeasured table, the decision with options A, B and C and their consequences, and an empty Answers section
-- [ ] No file under `src/` has changed
+- [x] `review-1.md` holds the remeasured table, the decision with options A, B and C and their consequences, and an empty Answers section
+- [x] No file under `src/` has changed
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/correctness/test_derived.py -k truncest` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/correctness/test_derived.py -k truncest` passes
 
 **Notes:**
+
+- Closed without a stop: `review-1.md` already holds the answer, option B, dated 2026-11-15, so the remeasurement, the review document and the page were not repeated
 
 - Operator stop: this task is the list's one stop for the operator, for the decision above. It is a no-op if the answer is already in
   `review-1.md` when the list starts
