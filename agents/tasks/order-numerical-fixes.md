@@ -43,11 +43,11 @@ case is reported before it is set to `mismatch`. A probe of those cases passed o
 | test pass line | `passed` |
 | test fail pattern | `FAILED\|ERROR` |
 | always wait for | `claude/rules/metafopy.md` |
-| progress page | |
+| progress page | https://claude.ai/artifact/MJd2KMeDVf7GwRuYm4FQvG |
 
 | # | Task list | Waits for | Stops for you | Status |
 |---|---|---|---|---|
-| 1 | `audit-no-intercept/tasks-1.md` | - | - | todo |
+| 1 | `audit-no-intercept/tasks-1.md` | - | - | running |
 | 2 | `fsn-integer-search/tasks-1.md` | - | - | todo |
 | 3 | `truncest-piecewise-search/tasks-1.md` | - | the truncation-point decision, answered on 2026-11-15, so a no-op (Task 1) | todo |
 | 4 | `cm-el-information/tasks-1.md` | - | - | todo |
