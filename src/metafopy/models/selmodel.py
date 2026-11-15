@@ -314,7 +314,8 @@ def search_truncation_stretches(
 
     def refit(problem: metafopy.models.sel_lik.Problem, start: FloatArray) -> tuple[FloatArray, float] | None:
         def fn(x: FloatArray) -> float:
-            return metafopy.models.sel_lik.negative_loglik(problem, x, delta_transf=True, tau2_transf=tau2_transf)
+            with numpy.errstate(all='ignore'):  # a trial point at an extreme cut gives a NaN term, which the optimiser treats as a failed step
+                return metafopy.models.sel_lik.negative_loglik(problem, x, delta_transf=True, tau2_transf=tau2_transf)
 
         try:
             x = metafopy.models.sel_opt.minimize(fn, start, choice, optcontrol, None)

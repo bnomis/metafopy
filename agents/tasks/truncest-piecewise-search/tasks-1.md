@@ -178,7 +178,7 @@ option says, and the correctness case checks it against a reference that searche
 
 ## Task 3: Record the difference in the audit ledger and the user guide
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item's fix direction (`known.toml`, `docs/differences.md`)
@@ -188,25 +188,25 @@ option says, and the correctness case checks it against a reference that searche
 
 **Subtasks:**
 
-- [ ] Under option C, add no `known.toml` entry and no `docs/differences.md` subsection; run only the `--recall` subtask below
-- [ ] Run the audit slice for `truncest` from the worktree, against the main checkout's R library, in the background:
+- [x] Under option C, add no `known.toml` entry and no `docs/differences.md` subsection; run only the `--recall` subtask below
+- [x] Run the audit slice for `truncest` from the worktree, against the main checkout's R library, in the background:
       `main=$(git worktree list --porcelain | sed -n '1s/^worktree //p'); METAFOPY_AUDIT_WORK="$main/.audit" METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib bin/metafor-audit.sh --only 'options/selmodel/*/type="truncest"' --steps options`
       and, the same way, `--only scripts/selmodel/ --only scripts/misc_selmodel/ --only scripts/plot.rma.uni.selmodel/ --steps scripts` (the main
       checkout is the first entry of `git worktree list --porcelain`). If `check-r` reports that the R library is missing or differs from
       `src/audit/data/r-versions.json`, stop as `blocked` and say so; never pass `--allow-r-drift`
-- [ ] For each finding on a `truncest` fit with a free truncation point (the `options/selmodel/<fixture>/type="truncest"` cases; the script
+- [x] For each finding on a `truncest` fit with a free truncation point (the `options/selmodel/<fixture>/type="truncest"` cases; the script
       units of metafor's tests and examples that call `selmodel(..., type = "truncest")` without fixing `delta[2]`), add a `[[known]]` entry to
       `src/audit/data/known.toml` that matches exactly those case ids, with `kind`, `path`, a `reason` (metafor's optimiser stops inside one
       piece of a likelihood that is a step function of the truncation point; metafopy searches each stretch between observed effects) and
       `ref = "docs/differences.md"`. Add no entry for a finding the run does not report: an entry that matches nothing is reported as stale.
       Check the existing `truncest` entries (the `optimizer = "mads"` entry on `scripts/misc_selmodel/*` and the flat-likelihood entry naming
       `truncest`); narrow or remove one the new entries make stale, and say so in this task's Notes
-- [ ] Rerun the same commands and check that the reports list no `truncest` finding. A finding on another type, or one that is not in the
+- [x] Rerun the same commands and check that the reports list no `truncest` finding. A finding on another type, or one that is not in the
       newest earlier report under `$main/.audit/runs/`, is new with this list: stop as `blocked`, naming it
-- [ ] Run `main=...; METAFOPY_AUDIT_WORK="$main/.audit" METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib bin/metafor-audit.sh --recall`
+- [x] Run `main=...; METAFOPY_AUDIT_WORK="$main/.audit" METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib bin/metafor-audit.sh --recall`
       in the background and check that it reproduces every item it reproduced before. A miss is fixed in the harness (`src/audit/data/`), not
       in a report; stop as `blocked` if the fix is not a ledger entry this task added
-- [ ] Add a subsection `### selmodel(type="truncest"): the truncation point` to the section "Where metafor departs from its reference" of
+- [x] Add a subsection `### selmodel(type="truncest"): the truncation point` to the section "Where metafor departs from its reference" of
       `docs/differences.md`, in the page's layout: a short summary, the same call in R and in Python with the output of both (the `ML` fit of
       `dat.bangertdrowns2004`), the name of the correctness case, and *Why:* the likelihood is a step function of the truncation point with a
       jump at each observed effect, and how metafopy reports the answered option. Produce the R output with
@@ -215,19 +215,30 @@ option says, and the correctness case checks it against a reference that searche
 
 **Acceptance Criteria:**
 
-- [ ] The audit slices report no `truncest` finding, and every new `known.toml` entry matches at least one case of those runs
-- [ ] `--recall` reproduces every item it reproduced before this list
-- [ ] `docs/differences.md` names the difference under "Where metafor departs from its reference" (not under option C)
+- [x] The audit slices report no `truncest` finding, and every new `known.toml` entry matches at least one case of those runs
+- [x] `--recall` reproduces every item it reproduced before this list
+- [x] `docs/differences.md` names the difference under "Where metafor departs from its reference" (not under option C)
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_docs_examples.py src/tests/test_harness_accounts.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_docs_examples.py src/tests/test_harness_accounts.py` passes
 
 **Notes:**
 
 - Depends on Task 2
+- Done 2026-11-15. The first options slice showed one new warning on `options/selmodel/sel_bcg/type="truncest"` ("invalid value encountered in
+  reduce"): the stretch search tries extreme cuts, where `ll_trunc` sums a NaN term outside its `errstate`. Fixed in the search's objective
+  in `src/metafopy/models/selmodel.py` (`numpy.errstate(all='ignore')` around the likelihood in `refit`), so `sel_lik.py` is unchanged; the
+  joint fit is as before. Both slices were rerun after it.
+- Ledger: four `[[known]]` entries at the end of `src/audit/data/known.toml` for the nine `options/selmodel/*/type="truncest"` cases (value-diff,
+  print-diff, and two warning-extra: delta at a bound, and the truncation point at an observed effect) and two for
+  `scripts/misc_selmodel/test/127` (value-diff, warning-extra). No existing `truncest` entry became stale (the slices and
+  `test_harness_accounts.py` report none). The script slice needs `--only scripts/selmodel` (a substring: the `scripts/` prefix is stripped and
+  `*` removed), not the trailing-slash form of the subtask, which matched no unit.
+- Worktrees have no `.venv`; a symlink `.venv` to the main checkout's venv (untracked, not committed) let `bin/metafor-audit.sh` run.
+- `--recall` reproduces 176 of 176 items, with the same one item the pinned R does not show (`a6-glmm-um-rs`) as in the earlier recall runs.
 - Prerequisite outside this repository: R metafor 5.2-1 and the pinned packages in `/Users/simonb/src/metafopy/.audit/Rlib` (worktrees have no
   `.audit/Rlib`, hence `METAFOPY_AUDIT_RLIB` on every call)
 - The audit's `truncest` cases, seen in `.audit/runs/20261102-223017/findings.json`: `options/selmodel/<fixture>/type="truncest"` on `sel_bcg`,
@@ -248,25 +259,25 @@ option says, and the correctness case checks it against a reference that searche
 
 **Subtasks:**
 
-- [ ] Move the item from `TODO.md` to `DONE.md`: append its heading and body unchanged at the end of `DONE.md`, then a line
+- [x] Move the item from `TODO.md` to `DONE.md`: append its heading and body unchanged at the end of `DONE.md`, then a line
       `Done: 2026-MM-DD, agents/tasks/truncest-piecewise-search/tasks-1.md` with the date of the commit (under option C, add `(not fixed: the
       answer in agents/tasks/truncest-piecewise-search/review-1.md)` to that line)
-- [ ] Run the full test suite from the worktree and save its whole output for the merge gate (the main checkout is the first entry of
+- [x] Run the full test suite from the worktree and save its whole output for the merge gate (the main checkout is the first entry of
       `git worktree list --porcelain`):
       `main=$(git worktree list --porcelain | sed -n '1s/^worktree //p'); mkdir -p "$main/ralpher-logs/truncest-piecewise-search/tasks-1" && source bin/activate.sh && pytest src/tests 2>&1 | tee "$main/ralpher-logs/truncest-piecewise-search/tasks-1/final-tests.log"`
 
 **Acceptance Criteria:**
 
-- [ ] The item is in `DONE.md` with its body unchanged, and no longer in `TODO.md`
+- [x] The item is in `DONE.md` with its body unchanged, and no longer in `TODO.md`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] The full test run above passes, `slow` tests included, and its log is saved
-- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/truncest-piecewise-search/tasks-1.md):TODO.md > <scratch>/todo-before.md`
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] The full test run above passes, `slow` tests included, and its log is saved
+- [x] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/truncest-piecewise-search/tasks-1.md):TODO.md > <scratch>/todo-before.md`
       and `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0 (`<scratch>` is the
       session's scratch directory, outside the repository; the baseline is `TODO.md` as it stood when the list started)
 

@@ -1665,6 +1665,99 @@ Fail-safe N: 48
 *Why:* Becker (2005) and Viechtbauer (2024) count added studies, so N is an integer and the criterion is a step function of it, for which
 the answer is the least integer that satisfies it (checked 2026-11-15, R 4.6.2, metafor 5.2-1).
 
+### selmodel(type="truncest"): the truncation point
+
+With the truncation point free, the likelihood of `type="truncest"` is a step function of the cut: a study counts as selected only when its
+effect lies above the cut, so the likelihood jumps at each observed effect. metafor's optimiser starts from the observed effects and stops at a
+local maximum inside one stretch between two observed effects. metafopy runs that fit first, then refits inside every stretch that meets
+`delta.min[1]` and `delta.max[1]` and keeps the fit with the highest log-likelihood, so its log-likelihood is never lower than metafor's. On the
+`ML` fit of `dat.bangertdrowns2004` the best stretch lies below the effect 0.49, and the likelihood keeps rising towards it: there is no
+maximum, only a supremum at the observed effect. metafopy then reports the cut a step of 1e-8 inside the stretch and warns that the truncation
+point sits at an observed effect; the cut is left out of the Hessian, so its standard error, z value, p-value and interval are `NA`. A fixed
+truncation point (`delta=[nan, c]`) runs no search. The correctness case is `selmodel.truncest.bangertdrowns2004`.
+
+<div class="compare" markdown>
+<div markdown>
+
+**R, metafor 5.2-1**
+
+```r
+library(metafor)
+res <- rma(yi, vi, data=dat.bangertdrowns2004, method="ML")
+selmodel(res, type="truncest")
+```
+
+```text
+Random-Effects Model (k = 48; tau^2 estimator: ML)
+
+tau^2 (estimated amount of total heterogeneity): 0.0542 (SE = 0.0256)
+tau (square root of estimated tau^2 value):      0.2328
+
+Test for Heterogeneity:
+LRT(df = 1) = 0.0000, p-val = 1.0000
+
+Model Results:
+
+estimate      se    zval    pval   ci.lb   ci.ub     
+  0.2649  0.0873  3.0352  0.0024  0.0938  0.4360  ** 
+
+Test for Selection Model Parameters:
+LRT(df = 1) = 0.9426, p-val = 0.3316
+
+Selection Model Results:
+
+         estimate      se      zval    pval   ci.lb   ci.ub      
+delta.1    1.4223  0.7402    0.5705  0.5684  0.0000  2.8731      
+delta.2    0.2707  0.0013  201.6020  <.0001  0.2681  0.2734  *** 
+```
+
+</div>
+<div markdown>
+
+**Python, metafopy**
+
+```python
+from metafopy import datasets, rma, selmodel
+
+dat = datasets.load('dat.bangertdrowns2004')
+res = rma('yi', 'vi', data=dat, method='ML')
+print(selmodel(res, type='truncest'))
+```
+
+```text
+Random-Effects Model (k = 48; tau^2 estimator: ML)
+
+tau^2 (estimated amount of total heterogeneity): 0.0097 (SE = 0.0081)
+tau (square root of estimated tau^2 value):      0.0983
+
+Test for Heterogeneity:
+LRT(df = 1) = 2.4316, p-val = 0.1189
+
+Model Results:
+
+estimate      se    zval    pval   ci.lb   ci.ub
+  0.0961  0.0360  2.6660  0.0077  0.0255  0.1668  **
+
+Test for Selection Model Parameters:
+LRT(df = 1) = 15.2206, p-val < .0001
+
+Selection Model Results:
+
+         estimate      se      zval    pval   ci.lb   ci.ub
+delta.1    0.1275  0.0600  -14.5376  <.0001  0.0098  0.2451  ***
+delta.2    0.4900      NA        NA      NA      NA      NA
+```
+
+The call also warns: "The truncation point sits at an observed effect: the likelihood has no maximum there, only a supremum approached from
+inside the stretch (the estimate is 0.48999999, a step of 1e-08 inside). Treat results with caution."
+
+</div>
+</div>
+
+*Why:* the maximum-likelihood estimate of the truncation point is the cut with the highest likelihood over all cuts, and a local maximum inside
+one stretch is not it: the log-likelihood is -10.652 in metafopy against -17.791 in metafor on these data (checked 2026-11-15, R 4.6.2,
+metafor 5.2-1). metafopy follows the maximum over all stretches (decided 2026-11-15).
+
 ## Everything else
 
 The [detailed notes](differences-notes.md) hold the rest, grouped by topic:
