@@ -1872,3 +1872,44 @@ path = [
 ]
 reason = "The testthat file test_misc_predict.r fits rma(yi ~ 0 + ablat, vi, data = dat) (test 50) and predicts from it (tests 51 to 53): a location design without the constant, so the accepted QE and tau2 difference of the entry on mods = ~ ablat - 1 applies to the fit, and predict() values follow from its tau2. Reproduced 2026-11-15 (R 4.6.2, metafor 5.2-1): R QE 209.6856 and tau2 0.2986, Python QE 48.7021 and tau2 0.0865. Accepted as a departure of metafor from its reference by decision of the operator (answered 2026-11-13)."
 ref = "docs/differences.md"
+
+[[known]]
+match = [
+  "construct/fsn_*",
+  "matrix/fsn/*",
+  "matrix/print/fsn_*",
+  "options/fsn/*",
+  "scripts/fsn/rd/*",
+  "standalone/fsn.data/type=\"General\"",
+]
+kind = "value-diff"
+path = ["$est.fsn", "$tau2.fsn", "$pval.fsn"]
+reason = "fsn() of the General type: metafor finds a real root of a step function of N with uniroot and rounds it up, which can be one above the least integer N whose criterion holds (R 26 and metafopy 25 on dat.bcg with the default REML fit, where the p-value is 0.0513 at 25 and 0.0483 at 24). metafopy returns that least integer, as Becker (2005) and Viechtbauer (2024) define it, so the values refitted with N file-drawer studies differ from R's. Reproduced 2026-11-15 (R 4.6.2, metafor 5.2-1)."
+ref = "docs/differences.md"
+
+[[known]]
+match = [
+  "construct/fsn_*",
+  "matrix/fsn/*",
+  "matrix/print/fsn_*",
+  "options/fsn/*",
+  "standalone/fsn.data/type=\"General\"",
+]
+kind = "print-diff"
+detail = "line [23]: R '*with file drawer*"
+reason = "The printed values with the file drawer follow from the fail-safe N of the General type: see the value-diff entry above, and docs/differences.md."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/fsn/*/maxint=*"
+kind = "value-diff"
+path = ["$fsnum", "$ub.sign"]
+reason = "fsn() of the General type with maxint = 100: metafor defines the criterion difference as 0 at N = maxint, so its root search over real N ends at the upper end of the interval and returns 100 with ub.sign '>', although the criterion holds from a smaller integer (25 on dat.bcg with the default REML fit, where R without maxint gives 26). metafopy returns the least integer N whose criterion holds, and no cut-off. Reproduced 2026-11-15 (R 4.6.2, metafor 5.2-1)."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["scripts/misc_fsn/test/5", "scripts/misc_fsn/test/6"]
+kind = "value-diff"
+path = ["$fsnum", ""]
+reason = "fsn(yi, vi, data = dat.raudenbush1985, pool = 'Fisher'): metafor gives 40, metafopy 41. The Fisher statistic adds 2 ln 2 per added study and is below its critical value at N = 40 (-0.0017) and above it at N = 41 (0.0032), so 41 is the least integer N; metafor's root search over real N, with the degrees of freedom taken at the real N, rounds to 40. Reproduced 2026-11-15 (R 4.6.2, metafor 5.2-1)."
+ref = "docs/differences.md"

@@ -133,7 +133,7 @@ with and without a target, and the tests say where that differs from R metafor.
 
 ## Task 2: Record the difference in the audit ledger and the documentation
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item's fix direction (`known.toml`, `docs/differences.md`)
@@ -143,18 +143,18 @@ and the printed examples in the manual show the new values.
 
 **Subtasks:**
 
-- [ ] Run the audit slice for `fsn` from the worktree, against the main checkout's R library, in the background:
+- [x] Run the audit slice for `fsn` from the worktree, against the main checkout's R library, in the background:
       `METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib bin/metafor-audit.sh --only fsn` (`--only` keeps the cases whose id contains
       the text: `matrix/fsn/*`, `standalone/fsn*` and their sweeps). If `check-r` reports that the R library is missing or differs from
       `src/audit/data/r-versions.json`, stop as `blocked` and say so; never pass `--allow-r-drift`
-- [ ] For each finding on `fsnum`, `est.fsn`, `tau2.fsn`, `pval.fsn` or the printed output (`Fail-safe N:` and the "with file drawer" values) of a
+- [x] For each finding on `fsnum`, `est.fsn`, `tau2.fsn`, `pval.fsn` or the printed output (`Fail-safe N:` and the "with file drawer" values) of a
       Rosenthal (Fisher) or General call, check that metafopy's N meets the criterion and N - 1 does not, and add a `[[known]]` entry to
       `src/audit/data/known.toml` matching exactly those case ids, with `kind`, `path` (or `detail` for a print-diff), a `reason` (metafor finds a
       real root of a step function with `uniroot` and rounds it up; metafopy returns the least integer N whose criterion holds, as Becker 2005 and
       Viechtbauer 2024 define it) and `ref = "docs/differences.md"`. Add no entry for a finding the run does not report. Stop as `blocked`, naming
       it, for a finding on a Stouffer, Orwin, Rosenberg or Binomial call, or one whose N fails the criterion check
-- [ ] Rerun the same command and check that its report lists no finding left from this change
-- [ ] Add a subsection `### fsn(): Fisher pooling and the General type` to the section "Where metafor departs from its reference" of
+- [x] Rerun the same command and check that its report lists no finding left from this change
+- [x] Add a subsection `### fsn(): Fisher pooling and the General type` to the section "Where metafor departs from its reference" of
       `docs/differences.md`, after the existing subsections: a short summary (the fail-safe N is the least integer whose criterion holds; metafor's
       root search over real N can give one more or one fewer on these step functions; the other types are unchanged), the Fisher example of
       `bias.fsn.egger2001.rosenthal.fisher` in R and in Python with the output of both, naming both correctness cases, and *Why:* Becker (2005)
@@ -162,21 +162,21 @@ and the printed examples in the manual show the new values.
       `R_LIBS=/Users/simonb/src/metafopy/.audit/Rlib LC_ALL=C.UTF-8 Rscript -e '<the R block>'` (R block:
       `library(metafor); dat <- escalc(measure="RR", ai=ai, n1i=n1i, ci=ci, n2i=n2i, data=dat.egger2001[-c(8,16),], add=1/2, to="all"); fsn(yi, vi, data=dat, pool="fisher")`),
       and the Python output with metafopy; give the date, R and metafor versions in the *Why* line as the other subsections do
-- [ ] Rerun the printed `fsn` examples of the manual and update each output block that changed: `docs/guide/bias.md` (section "Fail-safe N",
+- [x] Rerun the printed `fsn` examples of the manual and update each output block that changed: `docs/guide/bias.md` (section "Fail-safe N",
       `print(fsn(res))`) and `docs/analyses.md` (`print(fsn(res))`). Search `docs/` for `Fail-safe N:` for any other printed copy and update it in
       the same way
 
 **Acceptance Criteria:**
 
-- [ ] The audit run with `--only fsn` reports no finding from this change, and every new `known.toml` entry matches at least one case of that run
-- [ ] `docs/differences.md` names the difference under "Where metafor departs from its reference"
-- [ ] Every printed `fsn` output in `docs/` is what metafopy prints now
+- [x] The audit run with `--only fsn` reports no finding from this change, and every new `known.toml` entry matches at least one case of that run
+- [x] `docs/differences.md` names the difference under "Where metafor departs from its reference"
+- [x] Every printed `fsn` output in `docs/` is what metafopy prints now
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_docs_examples.py src/tests/test_harness_accounts.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_docs_examples.py src/tests/test_harness_accounts.py` passes
 
 **Notes:**
 

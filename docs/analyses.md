@@ -375,12 +375,12 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Fail-safe N Calculation Using the General Approach
 
-Average Effect Size:         0.2171 (with file drawer: 0.0458)
-Amount of Heterogeneity:     0.0204 (with file drawer: 0.0289)
-Observed Significance Level: <.0001 (with file drawer: 0.0511)
+Average Effect Size:         0.2171 (with file drawer: 0.0461)
+Amount of Heterogeneity:     0.0204 (with file drawer: 0.0290)
+Observed Significance Level: <.0001 (with file drawer: 0.0504)
 Target Significance Level:   0.05
 
-Fail-safe N: 116
+Fail-safe N: 115
 
 
 Random-Effects Model (k = 37; tau^2 estimator: ML)
