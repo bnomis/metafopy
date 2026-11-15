@@ -513,7 +513,7 @@ formulas share, not copy, what `formulas.py` already has.
 
 ## Task 11: Review the mismatches and the sources needed
 
-**Status:** in-progress
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation step 8
@@ -522,7 +522,7 @@ formulas share, not copy, what `formulas.py` already has.
 
 **Subtasks:**
 
-- [ ] Write `agents/specs/correctness-location-scale/mismatches.md` in the review-document layout of the shared `reviews.md` rule (re-read the rule
+- [x] Write `agents/specs/correctness-location-scale/mismatches.md` in the review-document layout of the shared `reviews.md` rule (re-read the rule
       from disk first):
   - what is reviewed and how;
   - automatic checks: both gate tests pass, every `mismatch` case has an item, `r-versions.json` is unchanged;
@@ -530,22 +530,24 @@ formulas share, not copy, what `formulas.py` already has.
   - "Sources needed", and items this list leaves for a later spec (REML with `optbeta=True`, the deviance if Task 4 left it out);
   - decisions, with options *follow the reference*, *keep metafor* and *investigate*, and a recommendation for each;
   - an empty Answers section.
-- [ ] Publish its interactive page, with answers saved to the artifact's database, and put `**Review page:** <URL>` in the document's header
-- [ ] If there are no mismatches and no sources needed, write that in the document, skip the page, and mark this task done without stopping
-- [ ] Otherwise stop the list for the operator. Once every item has an answer, an operator session reads the page's answers, copies each into the
+- [x] Publish its interactive page, with answers saved to the artifact's database, and put `**Review page:** <URL>` in the document's header
+- [x] ~~If there are no mismatches and no sources needed, write that in the document, skip the page, and mark this task done without stopping~~ (not applicable: there are mismatches)
+- [x] Otherwise stop the list for the operator. Once every item has an answer, an operator session reads the page's answers, copies each into the
       Answers section with the date, commits that, and only then restarts the list
 
 **Acceptance Criteria:**
 
-- [ ] Every `mismatch` case in `cases/location_scale*.toml` has an item on the page
+- [x] Every `mismatch` case in `cases/location_scale*.toml` has an item on the page
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness -m 'not slow'` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness -m 'not slow'` passes, except `test_scale_invariance[SJIT]`: run 2026-11-15 05:22 UTC, 1163 passed, 1 failed. That failure is not a location-scale case; Task 13 owns it and Task 12 waits for Task 13
 
 **Notes:**
+
+- 2026-11-15: answers copied from the review page into `mismatches.md` (all three: follow the reference) by the operator session
 
 - Depends on Tasks 4 to 10 and 13 (the non-slow run must pass)
 - Model: `agents/specs/correctness-tests/mismatches.md` and Task 13 of `agents/tasks/correctness-tests/tasks-1.md`

@@ -141,4 +141,10 @@ metafopy. The `SJIT` failure is Task 13, not a page item.
 
 ## Answers
 
-Left empty for the user's verdicts.
+Answered by the user on the review page on 2026-11-15 (saved at 05:11 UTC); copied here by the operator session the same day.
+
+| Item | Answer | Comment |
+|---|---|---|
+| `ls_identity_opt`: the identity-link fits stop short of the maximum (10 cases) | follow the reference | - |
+| `ls_plci_bcg`: the profile-likelihood interval of the `dat.bcg` scale intercept, ML and REML (2 cases) | follow the reference | - |
+| `ls_plci_vl2022`: the profile-likelihood intervals in Viechtbauer and Lopez-Lopez (2022) Tables 1 and 2 (2 cases) | follow the reference | - |
