@@ -9,7 +9,8 @@ derived_required = ["ls."]
 # Task 4 of agents/tasks/correctness-location-scale/tasks-1.md: the fits, the fit statistics and the heterogeneity statistics, each against
 # formulas.ls_reference_fit (BFGS and Nelder-Mead on the likelihood of equations 7 and 9, with the identity link constrained to tau2_i >= 0).
 # Datasets: dat.bangertdrowns2004 with the moderator imag in both parts, dat.bcg (log risk ratio) with ablat in both parts. The identity-link fits
-# are mismatches: metafopy stops about 1e-5 short of the maximum there (see agents/specs/correctness-location-scale/mismatches.md).
+# are polished on the analytic score within tau2_i >= 0 (R's constrOptim stops about 1e-5 short of the maximum there, see
+# agents/specs/correctness-location-scale/mismatches.md and docs/differences.md).
 # ls.optbeta is derived under ML only (see the check ls_optbeta). The deviance of ls.fitstats.* is not compared: the paper defines none, so only the
 # log-likelihood, AIC, BIC and AICc are. QE is Cochran Q with the inverse-variance weights, not the quadratic form at the fitted tau2_i. The inline
 # columns of ls.heterogeneity.bdni are dat.bangertdrowns2004 yi and vi, with ni100 = ni / 100 (the rescaling the paper's authors apply to total sample size);
@@ -32,8 +33,6 @@ dataset = "dat.bangertdrowns2004"
 args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "identity" }
 check = "test_derived.ls_fit"
 covers = ["ls.fit.ML.identity"]
-status = "mismatch"
-reason = "ls.fit.ML.identity.bd: alpha: metafopy gives array([0.03401541, 0.23040472]), the reference gives array([0.03402053, 0.23031694]) (tolerance 1e-06)"
 
 [[case]]
 id = "ls.fit.REML.log.bd"
@@ -52,8 +51,6 @@ dataset = "dat.bangertdrowns2004"
 args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "identity" }
 check = "test_derived.ls_fit"
 covers = ["ls.fit.REML.identity"]
-status = "mismatch"
-reason = "ls.fit.REML.identity.bd: alpha: metafopy gives array([0.03698802, 0.42979705]), the reference gives array([0.03699443, 0.42990534]) (tolerance 1e-06)"
 
 [[case]]
 id = "ls.fit.ML.log.bcg"
@@ -74,8 +71,6 @@ setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di =
 args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "identity" }
 check = "test_derived.ls_fit"
 covers = ["ls.fit.ML.identity"]
-status = "mismatch"
-reason = "ls.fit.ML.identity.bcg: alpha: metafopy gives array([-0.02667603, 0.002052 ]), the reference gives array([-0.02665867, 0.00205067]) (tolerance 1e-06)"
 
 [[case]]
 id = "ls.fit.REML.log.bcg"
@@ -96,8 +91,6 @@ setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di =
 args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "identity" }
 check = "test_derived.ls_fit"
 covers = ["ls.fit.REML.identity"]
-status = "mismatch"
-reason = "ls.fit.REML.identity.bcg: alpha: metafopy gives array([ 0.33905883, -0.00616471]), the reference gives array([ 0.33913546, -0.0061661 ]) (tolerance 1e-06)"
 
 [[case]]
 id = "property.ls.fit.ML.log.bd"
@@ -116,8 +109,6 @@ dataset = "dat.bangertdrowns2004"
 args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "identity" }
 check = "test_properties.ls_loglik_not_below_reference"
 covers = ["ls.fit.ML.identity"]
-status = "mismatch"
-reason = "property.ls.fit.ML.identity.bd: metafopy gives log-likelihood -17.058054743801463, below the reference maximum -17.058054672888463"
 
 [[case]]
 id = "property.ls.fit.REML.log.bd"
@@ -136,8 +127,6 @@ dataset = "dat.bangertdrowns2004"
 args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "identity" }
 check = "test_properties.ls_loglik_not_below_reference"
 covers = ["ls.fit.REML.identity"]
-status = "mismatch"
-reason = "property.ls.fit.REML.identity.bd: metafopy gives log-likelihood -16.89337698827091, below the reference maximum -16.893376921444037"
 
 [[case]]
 id = "property.ls.fit.ML.log.bcg"
@@ -158,8 +147,6 @@ setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di =
 args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "identity" }
 check = "test_properties.ls_loglik_not_below_reference"
 covers = ["ls.fit.ML.identity"]
-status = "mismatch"
-reason = "property.ls.fit.ML.identity.bcg: metafopy gives log-likelihood -7.139288984087829, below the reference maximum -7.1392888177296445"
 
 [[case]]
 id = "property.ls.fit.REML.log.bcg"
@@ -180,8 +167,6 @@ setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di =
 args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "identity" }
 check = "test_properties.ls_loglik_not_below_reference"
 covers = ["ls.fit.REML.identity"]
-status = "mismatch"
-reason = "property.ls.fit.REML.identity.bcg: metafopy gives log-likelihood -7.988765308004603, below the reference maximum -7.988765268275909"
 
 [[case]]
 id = "ls.optbeta.bd"
@@ -270,7 +255,7 @@ covers = ["ls.heterogeneity.QE", "ls.heterogeneity.I2", "ls.heterogeneity.H2"]
 
 
 # Task 5 of agents/tasks/correctness-location-scale/tasks-1.md: the tests, the covariance and omnibus test of the scale part and both kinds of
-# interval, against formulas.ls_reference_fit with the log link (the identity link stops short of the maximum, see the mismatch note above).
+# interval, against formulas.ls_reference_fit with the log link (the identity link is polished to the maximum, see the note above).
 # The scale covariance is compared with the inverse of the analytic observed information, so its tolerance is that of metafopy's numerical Hessian.
 
 [[case]]
@@ -1022,8 +1007,6 @@ function = "rma_uni"
 dataset = "dat.bangertdrowns2004"
 args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log" }
 check = "test_properties.ls_links_agree_for_group_indicators"
-status = "mismatch"
-reason = "property.ls.links.ML.bd: beta: the identity link gives [0.20520075, 0.00347308], the log link [0.20520475, 0.00348536]"
 
 [[case]]
 id = "property.ls.links.REML.bd"
@@ -1032,8 +1015,6 @@ function = "rma_uni"
 dataset = "dat.bangertdrowns2004"
 args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log" }
 check = "test_properties.ls_links_agree_for_group_indicators"
-status = "mismatch"
-reason = "property.ls.links.REML.bd: beta: the identity link gives [0.20742984, -0.0239243], the log link [0.20743445, -0.02393794]"
 
 # Task 9 of agents/tasks/correctness-location-scale/tasks-1.md: the values Viechtbauer and Lopez-Lopez (2022) print for dat.bangertdrowns2004 (published cases).
 # The inline columns are yi and vi of the dataset, ni100 = ni / 100, and sci and soc the indicators of the three subject groups (math 28, science 9, social

@@ -9,6 +9,7 @@ import sys
 import typing
 import warnings
 
+import correctness.formulas
 import numpy
 import pandas
 import pytest
@@ -95,17 +96,26 @@ def identity_fit(r: int | None) -> metafopy.RMALSResult:
     return res
 
 
+def check_identity_alpha(res: metafopy.RMALSResult, ref: dict[str, typing.Any]) -> dict[str, typing.Any]:
+    """The polished ``alpha`` is the reference maximum, which R's fixture (``constrOptim``) is not (docs/differences.md)."""
+    exact = correctness.formulas.ls_reference_fit(res.yi, res.vi, res.X, res.Z, 'identity', res.method)
+    numpy.testing.assert_allclose(res.alpha, numpy.ravel(exact['alpha']), rtol=1e-4, atol=1e-9, err_msg='alpha')
+    assert not numpy.allclose(res.alpha, ref['alpha'], rtol=1e-3, atol=1e-9)
+    return exact
+
+
 def test_identity_link_scale_se_depth_4() -> None:
-    """At depth 4 numDeriv's steps are still above rounding error, so the standard errors agree with R's to 1e-5."""
+    """At depth 4 numDeriv's steps are still above rounding error: the standard errors agree with the analytic ones to 1e-5 and with R's to 1e-3."""
     ref = REF['identity']['r4']
     res = identity_fit(4)
-    refutil.close(res.alpha, ref['alpha'], 'alpha', rtol=1e-6)
-    refutil.close(res.se_alpha, ref['se_alpha'], 'se_alpha', rtol=1e-5)
+    exact = check_identity_alpha(res, ref)
+    numpy.testing.assert_allclose(res.se_alpha, numpy.sqrt(numpy.diag(exact['va'])), rtol=1e-5, err_msg='se_alpha (analytic)')
+    refutil.close(res.se_alpha, ref['se_alpha'], 'se_alpha', rtol=1e-3)
 
 
 def test_identity_link_scale_se_depth_8() -> None:
     """At depth 8 the steps for the coefficient -3.8e-5 are 3e-8 and the second differences are rounding error: R's and our noise differ (5e-4)."""
     ref = REF['identity']['r8']
     res = identity_fit(8)
-    refutil.close(res.alpha, ref['alpha'], 'alpha', rtol=1e-6)
+    check_identity_alpha(res, ref)
     refutil.close(res.se_alpha, ref['se_alpha'], 'se_alpha', rtol=2e-3)

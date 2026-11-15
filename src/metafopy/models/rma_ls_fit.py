@@ -218,6 +218,33 @@ class LSProblem:
     def negloglik(self, par: FloatArray, alpha_arg: FloatArray, beta_arg: FloatArray, *, alpha_transf: bool) -> float:
         return -self.loglik(par, alpha_arg, beta_arg, alpha_transf=alpha_transf)
 
+    def score_parts(self, alpha: FloatArray) -> tuple[FloatArray, FloatArray, FloatArray]:
+        """``d``, ``M`` and ``e = P y`` of the identity-link score at ``alpha`` (``tau2 = Z alpha``, ``W = diag(1 / (v + tau2))``).
+
+        ``P = W - W X (X' W X)^-1 X' W``. ``d`` and ``M`` are ``diag(W)`` and ``W`` under ML and ``diag(P)`` and ``P`` under REML.
+        """
+        w = 1.0 / (self.vi + self.Z @ alpha)
+        XtW = self.X.T * w
+        P = numpy.diag(w) - XtW.T @ metafopy.core.linalg.invcalc(self.X, w) @ XtW
+        e = P @ self.yi
+        if self.reml:
+            return numpy.diag(P).copy(), P, e
+        return w, numpy.diag(w), e
+
+    def ls_score(self, alpha: FloatArray) -> FloatArray:
+        """Score ``-1/2 Z' (d - e^2)`` of the scale coefficients with the identity link, the gradient of :meth:`loglik`.
+
+        Viechtbauer and Lopez-Lopez (2022, equations 7 to 9, <https://doi.org/10.1002/jrsm.1564>) give the (restricted) likelihood; the
+        derivative follows Harville (1977, <https://doi.org/10.1080/01621459.1977.10480998>).
+        """
+        d, _, e = self.score_parts(alpha)
+        return numpy.asarray(-0.5 * self.Z.T @ (d - e**2), dtype=numpy.float64)
+
+    def ls_information(self, alpha: FloatArray) -> FloatArray:
+        """Expected information ``1/2 Z' (M o M) Z`` of the scale coefficients with the identity link (``o`` the elementwise product)."""
+        _, M, _ = self.score_parts(alpha)
+        return numpy.asarray(0.5 * self.Z.T @ (M * M) @ self.Z, dtype=numpy.float64)
+
 
 def pos_chol_inverse(A: FloatArray) -> FloatArray | None:
     """``chol2inv(chol(A))``, or ``None`` when ``A`` is not positive definite or not finite."""
@@ -345,6 +372,10 @@ def fit_rma_ls(
     abbrev: bool = False,
 ) -> metafopy.models.rma_ls_result.RMALSResult:
     """Fit a location-scale model to normalised inputs: ``md`` (``yi``, ``vi``, ``X``) and the scale model matrix ``Z``.
+
+    With ``link='identity'`` the optimum of every optimiser is polished on the analytic score within ``Z alpha >= 0``
+    (:func:`metafopy.models.rma_ls_opt.polish_identity`): R's ``constrOptim`` stops about 1e-5 short of the maximum, and metafor does not polish
+    (see "Location-scale fits with link=\"identity\"" in ``docs/differences.md``). Fits with ``optbeta=True`` are not polished.
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
@@ -566,6 +597,21 @@ def fit_rma_ls(
         choice = metafopy.models.sel_opt.OptimizerChoice(optimizer, 'BFGS')
         par_opt = par0.copy()
         par_opt[free] = minimise_standin(objective, par0[free], choice, con, None)
+
+    if link == 'identity' and not optbeta:
+        full = numpy.where(numpy.isnan(alpha_arg), par_opt, alpha_arg)
+        par_opt = numpy.where(
+            numpy.isnan(alpha_arg),
+            metafopy.models.rma_ls_opt.polish_identity(
+                full,
+                lambda a: problem.loglik(a, alpha_arg, beta_arg, alpha_transf=False),
+                problem.ls_score,
+                problem.ls_information,
+                Z,
+                numpy.isnan(alpha_arg),
+            ),
+            alpha_arg,
+        )
 
     pos_beta = numpy.arange(p) if optbeta else numpy.arange(0)
     pos_alpha = numpy.arange(p, p + q) if optbeta else numpy.arange(q)
