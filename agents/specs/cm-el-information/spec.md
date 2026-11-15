@@ -1,7 +1,7 @@
 # CM.EL information
 
 **Version:** 1.1
-**Status:** approved (2026-11-15, `agents/reviews/order-numerical-fixes-specs.md`)
+**Status:** implemented (2026-11-15)
 **Date:** 2026-11-15
 
 `rma_glmm(measure='OR', model='CM.EL')` with the default optimiser maximises the exact conditional (non-central hypergeometric) likelihood of van

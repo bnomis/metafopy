@@ -304,7 +304,7 @@ say what the default now is.
 
 ## Task 6: Close the spec and the item, and the full checks
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** the spec as a whole; the `TODO.md` item it comes from
@@ -313,28 +313,28 @@ say what the default now is.
 
 **Subtasks:**
 
-- [ ] Set the spec's `**Status:**` (`agents/specs/cm-el-information/spec.md`) to `implemented`, and its row in `agents/specs/index.md` to say so
-- [ ] Move the `TODO.md` item "The CM.EL information is taken by finite differences of the exact likelihood" with all its `###` findings (down to
+- [x] Set the spec's `**Status:**` (`agents/specs/cm-el-information/spec.md`) to `implemented`, and its row in `agents/specs/index.md` to say so
+- [x] Move the `TODO.md` item "The CM.EL information is taken by finite differences of the exact likelihood" with all its `###` findings (down to
       the next `##` heading) to `DONE.md`: append its heading and body unchanged at the end of `DONE.md`, then a line
       `Done: 2026-MM-DD, agents/specs/cm-el-information/spec.md, agents/tasks/cm-el-information/tasks-1.md` with the date of the commit
-- [ ] Run the full test suite from the worktree and save its whole output for the merge gate (the main checkout is the first entry of
+- [x] Run the full test suite from the worktree and save its whole output for the merge gate (the main checkout is the first entry of
       `git worktree list --porcelain`):
       `mkdir -p /Users/simonb/src/metafopy/ralpher-logs/cm-el-information/tasks-1 && source bin/activate.sh && pytest src/tests 2>&1 | tee /Users/simonb/src/metafopy/ralpher-logs/cm-el-information/tasks-1/final-tests.log`
 
 **Acceptance Criteria:**
 
-- [ ] The item is in `DONE.md` with its body unchanged, and no longer in `TODO.md`
-- [ ] The spec says `implemented`
+- [x] The item is in `DONE.md` with its body unchanged, and no longer in `TODO.md`
+- [x] The spec says `implemented`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] The full test run above passes, `slow` tests included, judged by pytest's exit status (`${PIPESTATUS[0]}` after the `tee`) and by grepping
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] The full test run above passes, `slow` tests included, judged by pytest's exit status (`${PIPESTATUS[0]}` after the `tee`) and by grepping
       the whole log for `failed` and `error`, never by a `tail` of it
-- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/cm-el-information/tasks-1.md):TODO.md > <scratch>/todo-before.md` (the
+- [x] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/cm-el-information/tasks-1.md):TODO.md > <scratch>/todo-before.md` (the
       `TODO.md` at the list's start) and `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0
       (`<scratch>` is the session's scratch directory, outside the repository)
 
