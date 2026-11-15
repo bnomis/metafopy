@@ -1505,10 +1505,14 @@ def rma_QM(yi: FloatArray, vi: FloatArray, method: str, test: str = 'z', mods: s
     return stat if test == 'z' else stat / len(b)
 
 
+def design_typical_variance(vi: FloatArray, design: FloatArray) -> float:
+    """``vt = (k - p) / tr(P(W(0)))`` for the model matrix ``design``: the typical within-study variance of Higgins and Thompson (2002), equation 9."""
+    return float(design.shape[0] - design.shape[1]) / float(numpy.trace(projection(1 / vi, design)))
+
+
 def typical_variance(yi: FloatArray, vi: FloatArray, mods: str | None, data: object | None) -> float:
     """``vt = (k - p) / tr(P(W(0)))``, the typical sampling variance."""
-    design = model_matrix(len(yi), mods, data)
-    return float(len(yi) - design.shape[1]) / float(numpy.trace(projection(1 / vi, design)))
+    return design_typical_variance(vi, model_matrix(len(yi), mods, data))
 
 
 def rma_I2(yi: FloatArray, vi: FloatArray, method: str, mods: str | None = None, data: object | None = None) -> float:
@@ -2524,3 +2528,436 @@ def saddlepoint_pvalue(X: FloatArray, W: FloatArray, theta: FloatArray, cluster:
         v = z * math.sqrt(2 * float(numpy.sum(lam**2 / (1 - 2 * lam * z) ** 2)))
         out[s] = float(scipy.stats.norm.sf(w) + scipy.stats.norm.pdf(w) * (1 / v - 1 / w))
     return out
+
+
+# --- Location-scale models: Viechtbauer and Lopez-Lopez (2022), Res Synth Methods 13:697-715, doi:10.1002/jrsm.1562 ---
+
+
+IDENTITY_SLACK = 1e-10  # the amount by which SLSQP may leave Z alpha >= 0 before the reference treats alpha as infeasible
+
+
+def ls_tau2(Z: FloatArray, alpha: FloatArray, link: str) -> FloatArray:
+    """The scale model ``tau2_i = exp(z_i' alpha)`` (log link) or ``z_i' alpha`` (identity link): equations 2 and 3 of Viechtbauer and Lopez-Lopez (2022).
+
+    The log-linear form of the dispersion is that of Harvey (1976) and Smyth (1989).
+    """
+    eta = Z @ alpha
+    if link == 'log':
+        return numpy.exp(eta)
+    if link == 'identity':
+        return eta
+    raise ValueError(f'unknown link {link!r}')
+
+
+def ls_derivatives(Z: FloatArray, alpha: FloatArray, link: str) -> tuple[FloatArray, FloatArray]:
+    """``d tau2_i / d eta_i`` and ``d2 tau2_i / d eta_i^2`` for ``eta = Z alpha``: both ``tau2_i`` for the log link, ``1`` and ``0`` for the identity link."""
+    if link == 'log':
+        t = numpy.exp(Z @ alpha)
+        return t, t
+    if link == 'identity':
+        return numpy.ones(Z.shape[0]), numpy.zeros(Z.shape[0])
+    raise ValueError(f'unknown link {link!r}')
+
+
+def ls_components(
+    yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, alpha: FloatArray, link: str
+) -> tuple[FloatArray, FloatArray, FloatArray, FloatArray, FloatArray] | None:
+    """``M = V + diag(tau2)`` (its diagonal), ``W = M^-1``, ``(X'WX)^-1``, ``beta`` (equation 6) and ``P`` (equation 8).
+
+    ``None`` when ``M`` is not positive or ``X'WX`` is singular.
+    """
+    m = vi + ls_tau2(Z, alpha, link)
+    if not bool(numpy.all(numpy.isfinite(m))) or not bool(numpy.all(m > 0)):
+        return None
+    W = numpy.diag(1 / m)
+    try:
+        A_inv = numpy.linalg.inv(X.T @ W @ X)
+    except numpy.linalg.LinAlgError:
+        return None
+    beta = A_inv @ X.T @ W @ yi
+    P = W - W @ X @ A_inv @ X.T @ W
+    return m, W, A_inv, beta, P
+
+
+def ls_loglik(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, alpha: FloatArray, link: str, method: str) -> float:
+    """The profile log-likelihood (equation 7, ``beta`` at its value from equation 6) for ``ML`` or the restricted log-likelihood (equation 9) for ``REML``.
+
+    ``ll_P = -k/2 ln 2pi - 1/2 ln|M| - 1/2 y'Py`` and
+    ``ll_R = -(k-p)/2 ln 2pi + 1/2 ln|X'X| - 1/2 ln|M| - 1/2 ln|X'WX| - 1/2 y'Py`` with ``p`` the number of columns of ``X`` (the paper's ``p + 1``).
+    The restricted form is that of Verbyla (1993). Returns ``-inf`` where ``M`` is not positive (identity link outside ``Z alpha >= 0``).
+    """
+    parts = ls_components(yi, vi, X, Z, alpha, link)
+    if parts is None:
+        return -math.inf
+    m, W, _, _, P = parts
+    k, p = X.shape
+    quad = float(yi @ P @ yi)
+    logdet_m = float(numpy.sum(numpy.log(m)))
+    if method == 'ML':
+        return float(-k / 2 * math.log(2 * math.pi) - logdet_m / 2 - quad / 2)
+    if method == 'REML':
+        logdet_xx = float(numpy.linalg.slogdet(X.T @ X)[1])
+        logdet_xwx = float(numpy.linalg.slogdet(X.T @ W @ X)[1])
+        return float(-(k - p) / 2 * math.log(2 * math.pi) + logdet_xx / 2 - logdet_m / 2 - logdet_xwx / 2 - quad / 2)
+    raise ValueError(f'unknown method {method!r}')
+
+
+def ls_score(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, alpha: FloatArray, link: str, method: str) -> FloatArray:
+    """The analytic gradient of ``ls_loglik`` in ``alpha``, derived from equations 7 and 9 with ``dP = -P (dM) P``.
+
+    ``d ll / d alpha_j = -1/2 tr(T D_j) + 1/2 y'P D_j P y`` with ``D_j = diag(tau2'_i z_ij)`` and ``T = W`` (ML) or ``T = P`` (REML), because
+    ``d ln|X'WX| = -tr(W X (X'WX)^-1 X' W dM)`` turns the trace of ``W`` into the trace of ``P`` in the restricted case.
+    """
+    parts = ls_components(yi, vi, X, Z, alpha, link)
+    if parts is None:
+        raise ValueError('M is not positive at alpha')
+    _, W, _, _, P = parts
+    T = W if method == 'ML' else P
+    d1, _ = ls_derivatives(Z, alpha, link)
+    Py = P @ yi
+    out = numpy.zeros(Z.shape[1])
+    for j in range(Z.shape[1]):
+        dj = d1 * Z[:, j]
+        out[j] = -0.5 * float(numpy.sum(numpy.diag(T) * dj)) + 0.5 * float(numpy.sum(Py**2 * dj))
+    return out
+
+
+def ls_information(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, alpha: FloatArray, link: str, method: str) -> FloatArray:
+    """The analytic observed information (minus the Hessian of ``ls_loglik``) in ``alpha``, differentiating ``ls_score`` once more.
+
+    ``-d2 ll / d alpha_j d alpha_l = -1/2 tr(T D_l T D_j) + 1/2 tr(T D_jl) + y'P D_l P D_j P y - 1/2 y'P D_jl P y``,
+    where ``D_jl = diag(tau2''_i z_ij z_il)`` and ``T`` is as in ``ls_score`` (``dW = -W dM W`` and ``dP = -P dM P``).
+    The inverse of this matrix is the covariance of the scale coefficients.
+    """
+    parts = ls_components(yi, vi, X, Z, alpha, link)
+    if parts is None:
+        raise ValueError('M is not positive at alpha')
+    _, W, _, _, P = parts
+    T = W if method == 'ML' else P
+    d1, d2 = ls_derivatives(Z, alpha, link)
+    Py = P @ yi
+    q = Z.shape[1]
+    out = numpy.zeros((q, q))
+    for j in range(q):
+        for ell in range(q):
+            dj, dl = d1 * Z[:, j], d1 * Z[:, ell]
+            djl = d2 * Z[:, j] * Z[:, ell]
+            tr_cross = float(numpy.trace(T @ numpy.diag(dl) @ T @ numpy.diag(dj)))
+            out[j, ell] = 0.5 * tr_cross - 0.5 * float(numpy.sum(numpy.diag(T) * djl)) - float((Py * dl) @ P @ (dj * Py)) + 0.5 * float(numpy.sum(Py**2 * djl))
+    return -out
+
+
+def ls_starts(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, link: str) -> list[FloatArray]:
+    """Starting values for ``ls_reference_fit``: a moment-based intercept, scaled up and down, with zero slopes."""
+    resid = yi - X @ numpy.linalg.lstsq(X, yi, rcond=None)[0]
+    t0 = max(float(numpy.sum(resid**2)) / max(len(yi) - X.shape[1], 1) - float(numpy.mean(vi)), 1e-3)
+    out = []
+    for factor in (1.0, 0.1, 10.0):
+        alpha = numpy.zeros(Z.shape[1])
+        alpha[0] = math.log(t0 * factor) if link == 'log' else t0 * factor
+        out.append(alpha)
+    return out
+
+
+def ls_identity_starts(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, method: str) -> list[FloatArray]:
+    """Starting values for the identity link from the log-link optimum: ``alpha`` that reproduces its ``tau2_i`` by least squares, and the same with a
+    boundary-ward shift. The restricted likelihood of the identity link can have several optima, and the moment-based starts reach only one."""
+    try:
+        fitted = ls_reference_fit(yi, vi, X, Z, 'log', method)
+    except RuntimeError:
+        return []
+    alpha = numpy.linalg.lstsq(Z, fitted['tau2'], rcond=None)[0]
+    shifted = alpha.copy()
+    shifted[0] -= float(numpy.min(Z @ alpha))
+    return [alpha, shifted]
+
+
+def ls_reference_fit(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, link: str, method: str, maxiter: int = 2000) -> dict[str, typing.Any]:
+    """Maximise ``ls_loglik`` with ``scipy.optimize``, independently of metafopy.
+
+    BFGS with the analytic ``ls_score`` from several starts (SLSQP with the constraint ``Z alpha >= 0`` for the identity link, as Viechtbauer and Lopez-Lopez
+    2022 suggest after equation 8), then Nelder-Mead from the best of them. Returns ``alpha``, ``beta`` (equation 6), ``vb`` (equation 10), ``tau2``, ``ll``
+    and ``va`` (the inverse of the analytic observed information). Raises ``RuntimeError`` with the optimiser's message when no start converges.
+    """
+
+    def negative(alpha: FloatArray) -> float:
+        if link == 'identity' and float(numpy.min(Z @ alpha)) < -IDENTITY_SLACK:
+            return math.inf
+        value = ls_loglik(yi, vi, X, Z, alpha, link, method)
+        return math.inf if value == -math.inf else -value
+
+    def gradient(alpha: FloatArray) -> FloatArray:
+        if ls_components(yi, vi, X, Z, alpha, link) is None:
+            return numpy.full(len(alpha), numpy.nan)
+        return -ls_score(yi, vi, X, Z, alpha, link, method)
+
+    converged: list[scipy.optimize.OptimizeResult] = []
+    messages: list[str] = []
+    starts = ls_starts(yi, vi, X, Z, link)
+    if link == 'identity':
+        starts.extend(ls_identity_starts(yi, vi, X, Z, method))
+    for start in starts:
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            if link == 'log':
+                res = scipy.optimize.minimize(negative, start, jac=gradient, method='BFGS', options={'maxiter': maxiter, 'gtol': 1e-9})
+            else:
+                feasible = scipy.optimize.LinearConstraint(Z, 0.0, numpy.inf)
+                res = scipy.optimize.minimize(
+                    negative, start, jac=gradient, method='SLSQP', constraints=[feasible], options={'maxiter': maxiter, 'ftol': 1e-14}
+                )
+        if res.success and numpy.isfinite(res.fun):
+            converged.append(res)
+        else:
+            messages.append(str(res.message))
+    if not converged:
+        raise RuntimeError(f'ls_reference_fit: no start converged ({link} link, {method}): {"; ".join(messages)}')
+    best = min(converged, key=lambda r: float(r.fun))
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        polish = scipy.optimize.minimize(negative, best.x, method='Nelder-Mead', options={'maxiter': maxiter * 10, 'xatol': 1e-11, 'fatol': 1e-13})
+    alpha = polish.x if polish.fun <= best.fun else best.x
+    parts = ls_components(yi, vi, X, Z, alpha, link)
+    assert parts is not None
+    _, _, A_inv, beta, _ = parts
+    return {
+        'alpha': alpha,
+        'beta': beta,
+        'vb': A_inv,
+        'tau2': ls_tau2(Z, alpha, link),
+        'll': ls_loglik(yi, vi, X, Z, alpha, link, method),
+        'va': numpy.linalg.inv(ls_information(yi, vi, X, Z, alpha, link, method)),
+    }
+
+
+def ls_i2(tau2: FloatArray, vt: float) -> FloatArray:
+    """``I2_i = 100 tau2_i / (vt + tau2_i)`` per study, in percent: Higgins and Thompson (2002), equation 9, with the heterogeneity of study ``i``."""
+    return 100 * tau2 / (vt + tau2)
+
+
+def ls_h2(tau2: FloatArray, vt: float) -> FloatArray:
+    """``H2_i = (vt + tau2_i) / vt`` per study: Higgins and Thompson (2002), equation 7, with the heterogeneity of study ``i``."""
+    return (vt + tau2) / vt
+
+
+def ls_fitstats(ll: float, parms: int, n: int) -> dict[str, float]:
+    """The information criteria of a fit with log-likelihood ``ll`` and ``parms`` estimated parameters on ``n`` observations.
+
+    ``AIC = -2 ll + 2 parms`` (Akaike, 1974), ``BIC = -2 ll + parms ln n`` (Schwarz, 1978) and
+    ``AICc = -2 ll + 2 parms n / (n - parms - 1)`` (Hurvich and Tsai, 1989). ``n`` is ``k`` under ML and ``k - p`` under REML, as in Table 3 of
+    Viechtbauer and Lopez-Lopez (2022).
+    """
+    return {
+        'll': ll,
+        'AIC': -2 * ll + 2 * parms,
+        'BIC': -2 * ll + parms * math.log(n),
+        'AICc': -2 * ll + 2 * parms * n / (n - parms - 1),
+    }
+
+
+def ls_wald(estimate: FloatArray, vcov: FloatArray, idx: list[int], ddf: float | None) -> tuple[float, float]:
+    """The Wald statistic ``b' V^-1 b`` over the coefficients ``idx`` and its p-value: equations 12 (location) and 14 (scale) of Viechtbauer and
+    Lopez-Lopez (2022).
+
+    Without ``ddf`` the statistic is chi-square distributed with ``len(idx)`` degrees of freedom. With ``ddf`` (the t-type tests) the statistic is divided by
+    ``len(idx)`` and has an F distribution with ``(len(idx), ddf)`` degrees of freedom, as in Knapp and Hartung (2003).
+    """
+    b = estimate[idx]
+    m = len(idx)
+    stat = float(b @ numpy.linalg.solve(vcov[numpy.ix_(idx, idx)], b))
+    if ddf is None:
+        return stat, float(scipy.stats.chi2.sf(stat, m))
+    return stat / m, float(scipy.stats.f.sf(stat / m, m, ddf))
+
+
+def ls_knha_s2w(yi: FloatArray, vi: FloatArray, X: FloatArray, tau2: FloatArray, adhoc: bool) -> float:
+    """The Knapp-Hartung factor of section 2.5.4 of Viechtbauer and Lopez-Lopez (2022): ``RSS / (k - p)``, the weighted residual sum of squares at ``tau2_i``.
+
+    ``adhoc`` raises a factor below 1 to 1 (the ad hoc correction of Knapp and Hartung, 2003, Stat Med 22:2693-2710).
+    """
+    w = 1 / (vi + tau2)
+    beta = numpy.linalg.solve(X.T @ (w[:, None] * X), X.T @ (w * yi))
+    rss = float(numpy.sum(w * (yi - X @ beta) ** 2))
+    s2w = rss / (X.shape[0] - X.shape[1])
+    return float(max(s2w, 1.0) if adhoc else s2w)
+
+
+def ls_profile_ll(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, link: str, method: str, j: int, value: float, start: FloatArray) -> float:
+    """The log-likelihood maximised over the scale coefficients other than ``j``, with ``alpha_j`` held at ``value`` (the profile of section 2.5.3).
+
+    BFGS with the analytic score (SLSQP with ``Z alpha >= 0`` for the identity link) from ``start``, then Nelder-Mead. A value that leaves no feasible
+    ``tau2_i`` gives a large negative number, so that a root search treats it as far outside the interval.
+    """
+    free = [i for i in range(Z.shape[1]) if i != j]
+
+    def full(par: FloatArray) -> FloatArray:
+        alpha = start.copy()
+        alpha[j] = value
+        alpha[free] = par
+        return alpha
+
+    def negative(par: FloatArray) -> float:
+        alpha = full(par)
+        if link == 'identity' and float(numpy.min(Z @ alpha)) < -IDENTITY_SLACK:
+            return math.inf
+        ll = ls_loglik(yi, vi, X, Z, alpha, link, method)
+        return math.inf if ll == -math.inf else -ll
+
+    def gradient(par: FloatArray) -> FloatArray:
+        alpha = full(par)
+        if ls_components(yi, vi, X, Z, alpha, link) is None:
+            return numpy.full(len(par), numpy.nan)
+        return -ls_score(yi, vi, X, Z, alpha, link, method)[free]
+
+    if not free:
+        ll = ls_loglik(yi, vi, X, Z, full(numpy.zeros(0)), link, method)
+        return ll if math.isfinite(ll) else -1e10
+    # A start that keeps the fitted line of ``Z alpha`` as close as possible to that of ``start`` with alpha_j at ``value``: the profile of a coefficient
+    # whose change the others can mostly absorb is flat, and BFGS from the unadjusted start can run to tau2 = 0.
+    adjusted = numpy.linalg.lstsq(Z[:, free], Z @ start - Z[:, j] * value, rcond=None)[0]
+    best = math.inf
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        for first in (adjusted, start[free]):
+            if link == 'log':
+                res = scipy.optimize.minimize(negative, first, jac=gradient, method='BFGS', options={'gtol': 1e-9, 'maxiter': 2000})
+            else:
+                constraint = scipy.optimize.LinearConstraint(Z[:, free], -Z[:, j] * value, numpy.inf)
+                res = scipy.optimize.minimize(negative, first, jac=gradient, method='SLSQP', constraints=[constraint], options={'ftol': 1e-14, 'maxiter': 2000})
+            polish = scipy.optimize.minimize(negative, res.x, method='Nelder-Mead', options={'xatol': 1e-11, 'fatol': 1e-13, 'maxiter': 20000})
+            best = min(best, float(res.fun), float(polish.fun))
+    return -best if math.isfinite(best) else -1e10
+
+
+def ls_profile_bounds(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, link: str, method: str, j: int, level: float) -> tuple[float, float]:
+    """The profile-likelihood interval of ``alpha_j`` (section 2.5.3 of Viechtbauer and Lopez-Lopez, 2022; Hardy and Thompson, 1996, Stat Med 15:619-629).
+
+    ``brentq`` finds the values ``a`` at which ``2 (ll_max - ll_j(a)) = chi2_{1, level}``, refitting the other coefficients at each ``a``. ``level`` is a
+    proportion (``0.95``). A bound that the profile does not cross within 20 standard errors of the estimate is ``nan``.
+    """
+    fit = ls_reference_fit(yi, vi, X, Z, link, method)
+    alpha_hat = fit['alpha']
+    se = math.sqrt(float(fit['va'][j, j]))
+    critical = float(scipy.stats.chi2.ppf(level, 1))
+
+    def excess(a: float) -> float:
+        return float(2 * (fit['ll'] - ls_profile_ll(yi, vi, X, Z, link, method, j, a, alpha_hat)) - critical)
+
+    bounds = []
+    for sign in (-1.0, 1.0):
+        end = float(alpha_hat[j]) + sign * 20 * se
+        if excess(end) < 0:
+            bounds.append(math.nan)
+            continue
+        lo, hi = sorted((float(alpha_hat[j]), end))
+        bounds.append(float(scipy.optimize.brentq(excess, lo, hi, xtol=1e-13, rtol=1e-13)))
+    return bounds[0], bounds[1]
+
+
+def ls_lrt(ll_full: float, ll_reduced: float, df: int) -> tuple[float, float]:
+    """The likelihood-ratio statistic ``2 (ll_full - ll_reduced)`` of equation 15 of Viechtbauer and Lopez-Lopez (2022) and its chi-square p-value on ``df``."""
+    stat = max(0.0, 2 * (ll_full - ll_reduced))
+    return stat, float(scipy.stats.chi2.sf(stat, df))
+
+
+def ls_predict(x0: FloatArray, z0: FloatArray, fit: dict[str, typing.Any], link: str, crit: float) -> dict[str, float]:
+    """The prediction at one row ``x0`` of the location and ``z0`` of the scale model matrix (sections 2.5.2 and 2.7 of Viechtbauer and Lopez-Lopez, 2022).
+
+    The average true effect is ``x0' beta`` with variance ``x0' vb x0`` and the interval ``pred +- crit se``; the prediction interval adds the predicted
+    ``tau2`` of ``z0`` to that variance. The scale prediction ``z0' alpha`` has variance ``z0' va z0`` and an interval on the scale of the link; ``tau2``
+    is that prediction under the inverse link (``exp`` for the log link).
+    """
+    pred = float(x0 @ fit['beta'])
+    se = math.sqrt(float(x0 @ fit['vb'] @ x0))
+    lin = float(z0 @ fit['alpha'])
+    se_lin = math.sqrt(float(z0 @ fit['va'] @ z0))
+    tau2 = math.exp(lin) if link == 'log' else max(lin, 0.0)
+    pi_half = crit * math.sqrt(se**2 + tau2)
+    return {
+        'pred': pred,
+        'se': se,
+        'ci_lb': pred - crit * se,
+        'ci_ub': pred + crit * se,
+        'pi_lb': pred - pi_half,
+        'pi_ub': pred + pi_half,
+        'scale': lin,
+        'scale_se': se_lin,
+        'scale_lb': lin - crit * se_lin,
+        'scale_ub': lin + crit * se_lin,
+        'tau2': tau2,
+    }
+
+
+def ls_exact_permutation_p(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, link: str, method: str, part: str) -> dict[str, FloatArray | float]:
+    """Exact permutation p-values of one part of a location-scale model, by enumerating every distinct permutation of the rows of its model matrix.
+
+    ``part='location'`` permutes the rows of ``X`` and ``part='scale'`` those of ``Z`` (Higgins and Thompson, 2004; Follmann and Proschan, 1999), each
+    permuted model refitted with ``ls_reference_fit``. The p-value of a coefficient is the share of permutations whose ``|z|`` reaches the observed
+    ``|z|`` (less ``comptol``), and that of the omnibus test the share whose Wald statistic over the coefficients after the intercept reaches the
+    observed one.
+
+    A permuted model whose likelihood has no finite maximum (``tau2`` tends to 0 in a group, so ``alpha`` tends to ``-inf`` under the log link, or the
+    information is singular) has no reference fit. Those permutations are counted in ``failed`` and bound each p-value instead: the reference share of
+    all ``count`` permutations lies between ``pval_low`` (none of them reaches the observed statistic) and ``pval_high`` (all of them do). Returns
+    ``pval_low`` and ``pval_high`` (per coefficient), ``omnibus_low`` and ``omnibus_high``, ``count`` (the distinct permutations) and ``failed``.
+    """
+    comptol = math.sqrt(numpy.finfo(float).eps)
+    if part == 'location':
+        matrix = X
+    elif part == 'scale':
+        matrix = Z
+    else:
+        raise ValueError(f"part must be 'location' or 'scale', not {part!r}")
+
+    def statistics(order: list[int]) -> tuple[FloatArray, float] | None:
+        try:
+            fit = ls_reference_fit(yi, vi, X[order] if part == 'location' else X, Z[order] if part == 'scale' else Z, link, method)
+            estimate, vcov = (fit['beta'], fit['vb']) if part == 'location' else (fit['alpha'], fit['va'])
+            variances = numpy.diag(vcov)
+            if not numpy.all(numpy.isfinite(variances) & (variances > 0)):
+                return None
+            return estimate / numpy.sqrt(variances), ls_wald(estimate, vcov, list(range(1, len(estimate))), None)[0]
+        except RuntimeError, numpy.linalg.LinAlgError:
+            return None
+
+    observed = statistics(list(range(len(yi))))
+    if observed is None:
+        raise RuntimeError('ls_exact_permutation_p: the observed model has no reference fit')
+    z_obs, q_obs = observed
+    groups = {row: index for index, row in enumerate(sorted({tuple(r) for r in matrix.tolist()}))}
+    labels = [groups[tuple(r)] for r in matrix.tolist()]
+    members: dict[int, list[int]] = {}
+    for index, label in enumerate(labels):
+        members.setdefault(label, []).append(index)
+    z_hits = numpy.zeros(len(z_obs))
+    q_hits = 0
+    count = failed = 0
+    for sequence in distinct_label_orders(sorted(labels)):
+        taken = {label: iter(rows) for label, rows in members.items()}
+        count += 1
+        stats = statistics([next(taken[label]) for label in sequence])
+        if stats is None:
+            failed += 1
+            continue
+        z_hits += numpy.abs(stats[0]) >= numpy.abs(z_obs) - comptol
+        q_hits += stats[1] >= q_obs - comptol
+    return {
+        'pval_low': z_hits / count,
+        'pval_high': (z_hits + failed) / count,
+        'omnibus_low': q_hits / count,
+        'omnibus_high': (q_hits + failed) / count,
+        'count': float(count),
+        'failed': float(failed),
+    }
+
+
+def distinct_label_orders(remaining: list[int]) -> collections.abc.Iterator[tuple[int, ...]]:
+    """Every distinct ordering of the multiset ``remaining`` (a sorted list of labels)."""
+    if not remaining:
+        yield ()
+        return
+    for label in sorted(set(remaining)):
+        rest = list(remaining)
+        rest.remove(label)
+        for tail in distinct_label_orders(rest):
+            yield (label, *tail)

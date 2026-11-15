@@ -1,0 +1,1333 @@
+# Correctness cases for location-scale models (rma_uni with scale): published and derived cases; see agents/specs/correctness-location-scale/spec.md
+#
+# Sources: Viechtbauer and Lopez-Lopez (2022), doi:10.1002/jrsm.1562 (printed values, kind published); formulas in correctness.formulas (kind derived);
+# R glmmTMB (kind other). Two decisions of the spec: the paper's printed values count as published, and every location-scale item needs a derived
+# case as well, so the file sets derived_required below.
+
+derived_required = ["ls."]
+
+# Task 4 of agents/tasks/correctness-location-scale/tasks-1.md: the fits, the fit statistics and the heterogeneity statistics, each against
+# formulas.ls_reference_fit (BFGS and Nelder-Mead on the likelihood of equations 7 and 9, with the identity link constrained to tau2_i >= 0).
+# Datasets: dat.bangertdrowns2004 with the moderator imag in both parts, dat.bcg (log risk ratio) with ablat in both parts. The identity-link fits
+# are mismatches: metafopy stops about 1e-5 short of the maximum there (see agents/specs/correctness-location-scale/mismatches.md).
+# ls.optbeta is derived under ML only (see the check ls_optbeta). The deviance of ls.fitstats.* is not compared: the paper defines none, so only the
+# log-likelihood, AIC, BIC and AICc are. QE is Cochran Q with the inverse-variance weights, not the quadratic form at the fitted tau2_i. The inline
+# columns of ls.heterogeneity.bdni are dat.bangertdrowns2004 yi and vi, with ni100 = ni / 100 (the rescaling the paper's authors apply to total sample size);
+# test_formulas_ls.py checks them against the dataset.
+
+[[case]]
+id = "ls.fit.ML.log.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log" }
+check = "test_derived.ls_fit"
+covers = ["ls.fit.ML.log"]
+
+[[case]]
+id = "ls.fit.ML.identity.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "identity" }
+check = "test_derived.ls_fit"
+covers = ["ls.fit.ML.identity"]
+status = "mismatch"
+reason = "ls.fit.ML.identity.bd: alpha: metafopy gives array([0.03401541, 0.23040472]), the reference gives array([0.03402053, 0.23031694]) (tolerance 1e-06)"
+
+[[case]]
+id = "ls.fit.REML.log.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log" }
+check = "test_derived.ls_fit"
+covers = ["ls.fit.REML.log"]
+
+[[case]]
+id = "ls.fit.REML.identity.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "identity" }
+check = "test_derived.ls_fit"
+covers = ["ls.fit.REML.identity"]
+status = "mismatch"
+reason = "ls.fit.REML.identity.bd: alpha: metafopy gives array([0.03698802, 0.42979705]), the reference gives array([0.03699443, 0.42990534]) (tolerance 1e-06)"
+
+[[case]]
+id = "ls.fit.ML.log.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log" }
+check = "test_derived.ls_fit"
+covers = ["ls.fit.ML.log"]
+
+[[case]]
+id = "ls.fit.ML.identity.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "identity" }
+check = "test_derived.ls_fit"
+covers = ["ls.fit.ML.identity"]
+status = "mismatch"
+reason = "ls.fit.ML.identity.bcg: alpha: metafopy gives array([-0.02667603, 0.002052 ]), the reference gives array([-0.02665867, 0.00205067]) (tolerance 1e-06)"
+
+[[case]]
+id = "ls.fit.REML.log.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log" }
+check = "test_derived.ls_fit"
+covers = ["ls.fit.REML.log"]
+
+[[case]]
+id = "ls.fit.REML.identity.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "identity" }
+check = "test_derived.ls_fit"
+covers = ["ls.fit.REML.identity"]
+status = "mismatch"
+reason = "ls.fit.REML.identity.bcg: alpha: metafopy gives array([ 0.33905883, -0.00616471]), the reference gives array([ 0.33913546, -0.0061661 ]) (tolerance 1e-06)"
+
+[[case]]
+id = "property.ls.fit.ML.log.bd"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log" }
+check = "test_properties.ls_loglik_not_below_reference"
+covers = ["ls.fit.ML.log"]
+
+[[case]]
+id = "property.ls.fit.ML.identity.bd"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "identity" }
+check = "test_properties.ls_loglik_not_below_reference"
+covers = ["ls.fit.ML.identity"]
+status = "mismatch"
+reason = "property.ls.fit.ML.identity.bd: metafopy gives log-likelihood -17.058054743801463, below the reference maximum -17.058054672888463"
+
+[[case]]
+id = "property.ls.fit.REML.log.bd"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log" }
+check = "test_properties.ls_loglik_not_below_reference"
+covers = ["ls.fit.REML.log"]
+
+[[case]]
+id = "property.ls.fit.REML.identity.bd"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "identity" }
+check = "test_properties.ls_loglik_not_below_reference"
+covers = ["ls.fit.REML.identity"]
+status = "mismatch"
+reason = "property.ls.fit.REML.identity.bd: metafopy gives log-likelihood -16.89337698827091, below the reference maximum -16.893376921444037"
+
+[[case]]
+id = "property.ls.fit.ML.log.bcg"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log" }
+check = "test_properties.ls_loglik_not_below_reference"
+covers = ["ls.fit.ML.log"]
+
+[[case]]
+id = "property.ls.fit.ML.identity.bcg"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "identity" }
+check = "test_properties.ls_loglik_not_below_reference"
+covers = ["ls.fit.ML.identity"]
+status = "mismatch"
+reason = "property.ls.fit.ML.identity.bcg: metafopy gives log-likelihood -7.139288984087829, below the reference maximum -7.1392888177296445"
+
+[[case]]
+id = "property.ls.fit.REML.log.bcg"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log" }
+check = "test_properties.ls_loglik_not_below_reference"
+covers = ["ls.fit.REML.log"]
+
+[[case]]
+id = "property.ls.fit.REML.identity.bcg"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "identity" }
+check = "test_properties.ls_loglik_not_below_reference"
+covers = ["ls.fit.REML.identity"]
+status = "mismatch"
+reason = "property.ls.fit.REML.identity.bcg: metafopy gives log-likelihood -7.988765308004603, below the reference maximum -7.988765268275909"
+
+[[case]]
+id = "ls.optbeta.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log", optbeta = true }
+check = "test_derived.ls_optbeta"
+covers = ["ls.optbeta"]
+
+[[case]]
+id = "ls.optbeta.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log", optbeta = true }
+check = "test_derived.ls_optbeta"
+covers = ["ls.optbeta"]
+
+[[case]]
+id = "ls.fitstats.ML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log" }
+check = "test_derived.ls_fitstats"
+covers = ["ls.fitstats.ML"]
+
+[[case]]
+id = "ls.fitstats.REML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log" }
+check = "test_derived.ls_fitstats"
+covers = ["ls.fitstats.REML"]
+
+[[case]]
+id = "ls.fitstats.ML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log" }
+check = "test_derived.ls_fitstats"
+covers = ["ls.fitstats.ML"]
+
+[[case]]
+id = "ls.fitstats.REML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log" }
+check = "test_derived.ls_fitstats"
+covers = ["ls.fitstats.REML"]
+
+[[case]]
+id = "ls.heterogeneity.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log" }
+check = "test_derived.ls_heterogeneity"
+covers = ["ls.heterogeneity.QE", "ls.heterogeneity.I2", "ls.heterogeneity.H2"]
+
+[[case]]
+id = "ls.heterogeneity.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log" }
+check = "test_derived.ls_heterogeneity"
+covers = ["ls.heterogeneity.QE", "ls.heterogeneity.I2", "ls.heterogeneity.H2"]
+
+[[case]]
+id = "ls.heterogeneity.bdni"
+kind = "derived"
+function = "rma_uni"
+data = { yi = [0.65, -0.75, -0.21, -0.04, 0.23, 0.03, 0.26, 0.06, 0.06, 0.12, 0.77, 0.0, 0.52, 0.54, 0.2, 0.2, -0.16, 0.42, 0.6, 0.51, 0.58, 0.54, 0.09, 0.37, -0.01, -0.13, 0.18, 0.27, -0.02, 0.33, 0.59, 0.84, -0.32, 0.12, 1.12, -0.12, -0.44, -0.07, 0.7, 0.49, 0.2, 0.58, 0.15, 0.63, 0.04, 1.46, 0.04, 0.25], vi = [0.07, 0.126, 0.042, 0.019, 0.022, 0.009, 0.106, 0.007, 0.04, 0.052, 0.107, 0.021, 0.037, 0.083, 0.086, 0.091, 0.167, 0.052, 0.091, 0.065, 0.073, 0.061, 0.1, 0.06, 0.083, 0.037, 0.069, 0.018, 0.009, 0.053, 0.017, 0.112, 0.06, 0.044, 0.129, 0.023, 0.205, 0.033, 0.265, 0.039, 0.021, 0.067, 0.014, 0.168, 0.016, 0.099, 0.087, 0.072], ni100 = [0.6, 0.34, 0.95, 2.09, 1.82, 4.62, 0.38, 5.42, 0.99, 0.77, 0.4, 1.9, 1.13, 0.5, 0.47, 0.44, 0.24, 0.78, 0.46, 0.64, 0.57, 0.68, 0.4, 0.68, 0.48, 1.07, 0.58, 2.25, 4.46, 0.77, 2.43, 0.39, 0.67, 0.91, 0.36, 1.77, 0.2, 1.2, 0.16, 1.05, 1.95, 0.62, 2.89, 0.25, 2.5, 0.51, 0.46, 0.56] }
+args = { yi = "yi", vi = "vi", mods = "~ 0 + ni100", scale = "~ 1", method = "ML", link = "log" }
+check = "test_derived.ls_heterogeneity"
+covers = ["ls.heterogeneity.QE", "ls.heterogeneity.I2", "ls.heterogeneity.H2"]
+
+
+# Task 5 of agents/tasks/correctness-location-scale/tasks-1.md: the tests, the covariance and omnibus test of the scale part and both kinds of
+# interval, against formulas.ls_reference_fit with the log link (the identity link stops short of the maximum, see the mismatch note above).
+# The scale covariance is compared with the inverse of the analytic observed information, so its tolerance is that of metafopy's numerical Hessian.
+
+[[case]]
+id = "ls.test.z.ML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log", test = "z" }
+check = "test_derived.ls_test"
+covers = ["ls.test.z"]
+
+[[case]]
+id = "ls.test.t.ML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log", test = "t" }
+check = "test_derived.ls_test"
+covers = ["ls.test.t"]
+
+[[case]]
+id = "ls.test.knha.ML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log", test = "knha" }
+check = "test_derived.ls_test"
+covers = ["ls.test.knha"]
+
+[[case]]
+id = "ls.test.adhoc.ML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log", test = "adhoc" }
+check = "test_derived.ls_test"
+covers = ["ls.test.adhoc"]
+
+[[case]]
+id = "ls.scale.vcov.ML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log" }
+check = "test_derived.ls_vcov_alpha"
+covers = ["ls.scale.vcov"]
+
+[[case]]
+id = "ls.scale.QS.ML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log" }
+check = "test_derived.ls_qs"
+covers = ["ls.scale.QS"]
+
+[[case]]
+id = "ls.confint.scale.ML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log" }
+check = "test_derived.ls_confint_scale"
+covers = ["ls.confint.scale"]
+
+[[case]]
+id = "ls.confint.location.z.ML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log", test = "z" }
+check = "test_derived.ls_confint_location"
+covers = ["ls.confint.location"]
+
+[[case]]
+id = "ls.confint.location.knha.ML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log", test = "knha" }
+check = "test_derived.ls_confint_location"
+covers = ["ls.confint.location"]
+
+[[case]]
+id = "ls.test.z.REML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log", test = "z" }
+check = "test_derived.ls_test"
+covers = ["ls.test.z"]
+
+[[case]]
+id = "ls.test.t.REML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log", test = "t" }
+check = "test_derived.ls_test"
+covers = ["ls.test.t"]
+
+[[case]]
+id = "ls.test.knha.REML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log", test = "knha" }
+check = "test_derived.ls_test"
+covers = ["ls.test.knha"]
+
+[[case]]
+id = "ls.test.adhoc.REML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log", test = "adhoc" }
+check = "test_derived.ls_test"
+covers = ["ls.test.adhoc"]
+
+[[case]]
+id = "ls.scale.vcov.REML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log" }
+check = "test_derived.ls_vcov_alpha"
+covers = ["ls.scale.vcov"]
+
+[[case]]
+id = "ls.scale.QS.REML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log" }
+check = "test_derived.ls_qs"
+covers = ["ls.scale.QS"]
+
+[[case]]
+id = "ls.confint.scale.REML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log" }
+check = "test_derived.ls_confint_scale"
+covers = ["ls.confint.scale"]
+
+[[case]]
+id = "ls.confint.location.z.REML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log", test = "z" }
+check = "test_derived.ls_confint_location"
+covers = ["ls.confint.location"]
+
+[[case]]
+id = "ls.confint.location.knha.REML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log", test = "knha" }
+check = "test_derived.ls_confint_location"
+covers = ["ls.confint.location"]
+
+[[case]]
+id = "ls.test.z.ML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log", test = "z" }
+check = "test_derived.ls_test"
+covers = ["ls.test.z"]
+
+[[case]]
+id = "ls.test.t.ML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log", test = "t" }
+check = "test_derived.ls_test"
+covers = ["ls.test.t"]
+
+[[case]]
+id = "ls.test.knha.ML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log", test = "knha" }
+check = "test_derived.ls_test"
+covers = ["ls.test.knha"]
+
+[[case]]
+id = "ls.test.adhoc.ML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log", test = "adhoc" }
+check = "test_derived.ls_test"
+covers = ["ls.test.adhoc"]
+
+[[case]]
+id = "ls.scale.vcov.ML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log" }
+check = "test_derived.ls_vcov_alpha"
+covers = ["ls.scale.vcov"]
+
+[[case]]
+id = "ls.scale.QS.ML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log" }
+check = "test_derived.ls_qs"
+covers = ["ls.scale.QS"]
+
+[[case]]
+id = "ls.confint.scale.ML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log" }
+check = "test_derived.ls_confint_scale"
+covers = ["ls.confint.scale"]
+status = "mismatch"
+reason = "ls.confint.scale.ML.bcg: confint alpha.1: metafopy gives [-23.309450210583307, 1.0223537117081194], the reference gives (nan, 1.8030085946491885) (tolerance 1e-05)"
+
+[[case]]
+id = "ls.confint.location.z.ML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log", test = "z" }
+check = "test_derived.ls_confint_location"
+covers = ["ls.confint.location"]
+
+[[case]]
+id = "ls.confint.location.knha.ML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log", test = "knha" }
+check = "test_derived.ls_confint_location"
+covers = ["ls.confint.location"]
+
+[[case]]
+id = "ls.test.z.REML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log", test = "z" }
+check = "test_derived.ls_test"
+covers = ["ls.test.z"]
+
+[[case]]
+id = "ls.test.t.REML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log", test = "t" }
+check = "test_derived.ls_test"
+covers = ["ls.test.t"]
+
+[[case]]
+id = "ls.test.knha.REML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log", test = "knha" }
+check = "test_derived.ls_test"
+covers = ["ls.test.knha"]
+
+[[case]]
+id = "ls.test.adhoc.REML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log", test = "adhoc" }
+check = "test_derived.ls_test"
+covers = ["ls.test.adhoc"]
+
+[[case]]
+id = "ls.scale.vcov.REML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log" }
+check = "test_derived.ls_vcov_alpha"
+covers = ["ls.scale.vcov"]
+
+[[case]]
+id = "ls.scale.QS.REML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log" }
+check = "test_derived.ls_qs"
+covers = ["ls.scale.QS"]
+
+[[case]]
+id = "ls.confint.scale.REML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log" }
+check = "test_derived.ls_confint_scale"
+covers = ["ls.confint.scale"]
+status = "mismatch"
+reason = "ls.confint.scale.REML.bcg: confint alpha.1: metafopy gives upper bound 3.286218891717569, the reference gives 3.4026725323940052 (lower bound -16.0108623664 agrees; tolerance 1e-05)"
+
+[[case]]
+id = "ls.confint.location.z.REML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log", test = "z" }
+check = "test_derived.ls_confint_location"
+covers = ["ls.confint.location"]
+
+[[case]]
+id = "ls.confint.location.knha.REML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log", test = "knha" }
+check = "test_derived.ls_confint_location"
+covers = ["ls.confint.location"]
+
+# Task 6 of agents/tasks/correctness-location-scale/tasks-1.md: predict (fitted, newmods, newscale, both) and anova (btt, att, X, Z, lrt) against
+# formulas.ls_predict, formulas.ls_wald and formulas.ls_lrt at the reference fit. predict uses the smallest, mean and largest values of the data.
+
+[[case]]
+id = "ls.predict.fitted.ML.z.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log", test = "z" }
+check = "test_derived.ls_predict_fitted"
+covers = ["ls.predict.fitted"]
+
+[[case]]
+id = "ls.predict.fitted.REML.knha.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log", test = "knha" }
+check = "test_derived.ls_predict_fitted"
+covers = ["ls.predict.fitted"]
+
+[[case]]
+id = "ls.predict.fitted.ML.z.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log", test = "z" }
+check = "test_derived.ls_predict_fitted"
+covers = ["ls.predict.fitted"]
+
+[[case]]
+id = "ls.predict.newmods.ML.z.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log", test = "z" }
+check = "test_derived.ls_predict_newmods"
+covers = ["ls.predict.newmods"]
+
+[[case]]
+id = "ls.predict.newmods.REML.knha.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log", test = "knha" }
+check = "test_derived.ls_predict_newmods"
+covers = ["ls.predict.newmods"]
+
+[[case]]
+id = "ls.predict.newmods.REML.t.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log", test = "t" }
+check = "test_derived.ls_predict_newmods"
+covers = ["ls.predict.newmods"]
+
+[[case]]
+id = "ls.predict.newscale.ML.z.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log", test = "z" }
+check = "test_derived.ls_predict_newscale"
+covers = ["ls.predict.newscale"]
+
+[[case]]
+id = "ls.predict.newscale.REML.knha.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log", test = "knha" }
+check = "test_derived.ls_predict_newscale"
+covers = ["ls.predict.newscale"]
+
+[[case]]
+id = "ls.predict.newscale.REML.z.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log", test = "z" }
+check = "test_derived.ls_predict_newscale"
+covers = ["ls.predict.newscale"]
+
+[[case]]
+id = "ls.predict.both.ML.z.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log", test = "z" }
+check = "test_derived.ls_predict_both"
+covers = ["ls.predict.both"]
+
+[[case]]
+id = "ls.predict.both.REML.adhoc.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log", test = "adhoc" }
+check = "test_derived.ls_predict_both"
+covers = ["ls.predict.both"]
+
+[[case]]
+id = "ls.predict.both.ML.t.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log", test = "t" }
+check = "test_derived.ls_predict_both"
+covers = ["ls.predict.both"]
+
+[[case]]
+id = "ls.anova.btt.ML.z.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log", test = "z" }
+check = "test_derived.ls_anova_btt"
+covers = ["ls.anova.btt"]
+
+[[case]]
+id = "ls.anova.btt.REML.knha.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log", test = "knha" }
+check = "test_derived.ls_anova_btt"
+covers = ["ls.anova.btt"]
+
+[[case]]
+id = "ls.anova.btt.REML.z.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log", test = "z" }
+check = "test_derived.ls_anova_btt"
+covers = ["ls.anova.btt"]
+
+[[case]]
+id = "ls.anova.att.ML.z.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log", test = "z" }
+check = "test_derived.ls_anova_att"
+covers = ["ls.anova.att"]
+
+[[case]]
+id = "ls.anova.att.REML.knha.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log", test = "knha" }
+check = "test_derived.ls_anova_att"
+covers = ["ls.anova.att"]
+
+[[case]]
+id = "ls.anova.att.REML.z.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log", test = "z" }
+check = "test_derived.ls_anova_att"
+covers = ["ls.anova.att"]
+
+[[case]]
+id = "ls.anova.X.ML.z.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log", test = "z" }
+check = "test_derived.ls_anova_X"
+covers = ["ls.anova.X"]
+
+[[case]]
+id = "ls.anova.X.REML.knha.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log", test = "knha" }
+check = "test_derived.ls_anova_X"
+covers = ["ls.anova.X"]
+
+[[case]]
+id = "ls.anova.X.ML.t.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log", test = "t" }
+check = "test_derived.ls_anova_X"
+covers = ["ls.anova.X"]
+
+[[case]]
+id = "ls.anova.Z.ML.z.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log", test = "z" }
+check = "test_derived.ls_anova_Z"
+covers = ["ls.anova.Z"]
+
+[[case]]
+id = "ls.anova.Z.REML.knha.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log", test = "knha" }
+check = "test_derived.ls_anova_Z"
+covers = ["ls.anova.Z"]
+
+[[case]]
+id = "ls.anova.Z.ML.t.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log", test = "t" }
+check = "test_derived.ls_anova_Z"
+covers = ["ls.anova.Z"]
+
+[[case]]
+id = "ls.anova.lrt.ML.ML.z.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log", test = "z" }
+check = "test_derived.ls_anova_lrt"
+covers = ["ls.anova.lrt.ML"]
+
+[[case]]
+id = "ls.anova.lrt.ML.ML.z.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log", test = "z" }
+check = "test_derived.ls_anova_lrt"
+covers = ["ls.anova.lrt.ML"]
+
+[[case]]
+id = "ls.anova.lrt.REML.REML.z.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log", test = "z" }
+check = "test_derived.ls_anova_lrt"
+covers = ["ls.anova.lrt.REML"]
+
+[[case]]
+id = "ls.anova.lrt.REML.REML.z.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log", test = "z" }
+check = "test_derived.ls_anova_lrt"
+covers = ["ls.anova.lrt.REML"]
+
+# Task 7 of agents/tasks/correctness-location-scale/tasks-1.md: the exact permutation tests of both parts against formulas.ls_exact_permutation_p, which
+# refits every distinct row permutation. The inline columns are the 2x2 counts of dat.bcg with the binary moderator lat = (ablat >= 33), so that the
+# permutations are the 1287 arrangements of 8 ones among 13 rows and not 13!; test_formulas_ls.py checks them against the dataset. The cases are slow.
+# A few permuted models have no finite maximum, so the check bounds each p-value (see the check ls_permutest_exact).
+
+[[case]]
+id = "ls.permutest.location.exact.ML.z.bcglat"
+kind = "derived"
+slow = true
+function = "rma_uni"
+data = { tpos = [4, 6, 3, 62, 33, 180, 8, 505, 29, 17, 186, 5, 27], tneg = [119, 300, 228, 13536, 5036, 1361, 2537, 87886, 7470, 1699, 50448, 2493, 16886], cpos = [11, 29, 11, 248, 47, 372, 10, 499, 45, 65, 141, 3, 29], cneg = [128, 274, 209, 12619, 5761, 1079, 619, 87892, 7232, 1600, 27197, 2338, 17825], lat = [1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1] }
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ lat", scale = "~ lat", method = "ML", link = "log", test = "z" }
+then = { function = "permutest", args = { exact = true, skip_alpha = true } }
+check = "test_derived.ls_permutest_exact"
+covers = ["ls.permutest.location.exact"]
+
+[[case]]
+id = "ls.permutest.scale.exact.ML.z.bcglat"
+kind = "derived"
+slow = true
+function = "rma_uni"
+data = { tpos = [4, 6, 3, 62, 33, 180, 8, 505, 29, 17, 186, 5, 27], tneg = [119, 300, 228, 13536, 5036, 1361, 2537, 87886, 7470, 1699, 50448, 2493, 16886], cpos = [11, 29, 11, 248, 47, 372, 10, 499, 45, 65, 141, 3, 29], cneg = [128, 274, 209, 12619, 5761, 1079, 619, 87892, 7232, 1600, 27197, 2338, 17825], lat = [1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1] }
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ lat", scale = "~ lat", method = "ML", link = "log", test = "z" }
+then = { function = "permutest", args = { exact = true, skip_beta = true } }
+check = "test_derived.ls_permutest_exact"
+covers = ["ls.permutest.scale.exact"]
+
+# Task 8 of agents/tasks/correctness-location-scale/tasks-1.md: the reductions and invariances of the location-scale fit (checks in test_properties.py).
+# dat.bangertdrowns2004 has the two-level moderator imag; dat.bcg (log risk ratio) the numeric moderator ablat.
+
+[[case]]
+id = "property.ls.reduces.ML.bd"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ 1", method = "ML", link = "log" }
+check = "test_properties.ls_reduces_to_rma_uni"
+
+[[case]]
+id = "property.ls.reduces.REML.bd"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ 1", method = "REML", link = "log" }
+check = "test_properties.ls_reduces_to_rma_uni"
+
+[[case]]
+id = "property.ls.subgroups.ML.bd"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log" }
+check = "test_properties.ls_subgroups_are_separate_fits"
+
+[[case]]
+id = "property.ls.subgroups.REML.bd"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log" }
+check = "test_properties.ls_subgroups_are_separate_fits"
+
+[[case]]
+id = "property.ls.score.ML.bd"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log" }
+check = "test_properties.ls_score_is_zero"
+
+[[case]]
+id = "property.ls.score.REML.bd"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log" }
+check = "test_properties.ls_score_is_zero"
+
+[[case]]
+id = "property.ls.score.ML.bcg"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log" }
+check = "test_properties.ls_score_is_zero"
+
+[[case]]
+id = "property.ls.invariance.ML.bcg"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log" }
+check = "test_properties.ls_invariance"
+
+[[case]]
+id = "property.ls.invariance.REML.bcg"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log" }
+check = "test_properties.ls_invariance"
+
+[[case]]
+id = "property.ls.profile.ML.bd"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log" }
+check = "test_properties.ls_profile_peaks_at_estimate"
+
+[[case]]
+id = "property.ls.profile.REML.bd"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log" }
+check = "test_properties.ls_profile_peaks_at_estimate"
+
+[[case]]
+id = "property.ls.optimisers.ML.bd"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log" }
+check = "test_properties.ls_optimisers_agree"
+
+[[case]]
+id = "property.ls.links.ML.bd"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log" }
+check = "test_properties.ls_links_agree_for_group_indicators"
+status = "mismatch"
+reason = "property.ls.links.ML.bd: beta: the identity link gives [0.20520075, 0.00347308], the log link [0.20520475, 0.00348536]"
+
+[[case]]
+id = "property.ls.links.REML.bd"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log" }
+check = "test_properties.ls_links_agree_for_group_indicators"
+status = "mismatch"
+reason = "property.ls.links.REML.bd: beta: the identity link gives [0.20742984, -0.0239243], the log link [0.20743445, -0.02393794]"
+
+# Task 9 of agents/tasks/correctness-location-scale/tasks-1.md: the values Viechtbauer and Lopez-Lopez (2022) print for dat.bangertdrowns2004 (published cases).
+# The inline columns are yi and vi of the dataset, ni100 = ni / 100, and sci and soc the indicators of the three subject groups (math 28, science 9, social
+# science 11 studies) the paper's analysis code (https://osf.io/53mtg/) collapses subject into; test_formulas_ls.py checks them against the dataset.
+# Every model is the paper's: log link, knha for the location part, t/F for the scale part. The paper's numbers were computed with metafor, so agreement shows
+# metafopy matches metafor as the paper ran it, not that the method is right. The profile-likelihood bounds the paper prints as "< -8", "> 10" and so on are
+# beyond the range of its plots and are not numbers; they are listed in agents/specs/correctness-location-scale/mismatches.md.
+
+[[case]]
+id = "published.vl2022.table1.wald"
+kind = "published"
+function = "rma_uni"
+data = { yi = [0.65, -0.75, -0.21, -0.04, 0.23, 0.03, 0.26, 0.06, 0.06, 0.12, 0.77, 0.0, 0.52, 0.54, 0.2, 0.2, -0.16, 0.42, 0.6, 0.51, 0.58, 0.54, 0.09, 0.37, -0.01, -0.13, 0.18, 0.27, -0.02, 0.33, 0.59, 0.84, -0.32, 0.12, 1.12, -0.12, -0.44, -0.07, 0.7, 0.49, 0.2, 0.58, 0.15, 0.63, 0.04, 1.46, 0.04, 0.25], vi = [0.07, 0.126, 0.042, 0.019, 0.022, 0.009, 0.106, 0.007, 0.04, 0.052, 0.107, 0.021, 0.037, 0.083, 0.086, 0.091, 0.167, 0.052, 0.091, 0.065, 0.073, 0.061, 0.1, 0.06, 0.083, 0.037, 0.069, 0.018, 0.009, 0.053, 0.017, 0.112, 0.06, 0.044, 0.129, 0.023, 0.205, 0.033, 0.265, 0.039, 0.021, 0.067, 0.014, 0.168, 0.016, 0.099, 0.087, 0.072], ni100 = [0.6, 0.34, 0.95, 2.09, 1.82, 4.62, 0.38, 5.42, 0.99, 0.77, 0.4, 1.9, 1.13, 0.5, 0.47, 0.44, 0.24, 0.78, 0.46, 0.64, 0.57, 0.68, 0.4, 0.68, 0.48, 1.07, 0.58, 2.25, 4.46, 0.77, 2.43, 0.39, 0.67, 0.91, 0.36, 1.77, 0.2, 1.2, 0.16, 1.05, 1.95, 0.62, 2.89, 0.25, 2.5, 0.51, 0.46, 0.56], sci = [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0], soc = [0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0] }
+args = { yi = "yi", vi = "vi", mods = "~ ni100 + sci + soc", scale = "~ ni100 + sci + soc", method = "REML", link = "log", test = "knha" }
+check = "test_published.vl2022_wald"
+printed = { "beta[0]" = "0.344", "ci_lb[0]" = "0.210", "ci_ub[0]" = "0.478", "beta[1]" = "-0.058", "ci_lb[1]" = "-0.099", "ci_ub[1]" = "-0.018", "beta[2]" = "-0.080", "ci_lb[2]" = "-0.487", "ci_ub[2]" = "0.327", "beta[3]" = "-0.109", "ci_lb[3]" = "-0.274", "ci_ub[3]" = "0.057", "alpha[0]" = "-3.102", "ci_lb_alpha[0]" = "-5.100", "ci_ub_alpha[0]" = "-1.105", "alpha[1]" = "-0.539", "ci_lb_alpha[1]" = "-1.682", "ci_ub_alpha[1]" = "0.604", "alpha[2]" = "2.233", "ci_lb_alpha[2]" = "0.122", "ci_ub_alpha[2]" = "4.344", "alpha[3]" = "0.401", "ci_lb_alpha[3]" = "-2.425", "ci_ub_alpha[3]" = "3.227", "pval[1]" = "0.006", "pval_alpha[1]" = "0.35", "pval_alpha[2]" = "0.039", "QM" = "3.44", "QMp" = "0.025", "QS" = "2.70", "QSp" = "0.057", "QM_subject" = "0.91", "QMp_subject" = "0.41", "QS_subject" = "2.39", "QSp_subject" = "0.10" }
+
+[case.source]
+citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Research Synthesis Methods 13(6):697-715."
+doi = "10.1002/jrsm.1562"
+locator = "Table 1 (coefficients and Wald-type intervals) and the text of section 3 (p-values, omnibus F tests on 3 and 44 df, subject-type tests on 2 and 44 df)"
+read = 2026-11-15
+
+[[case]]
+id = "published.vl2022.table1.plci"
+kind = "published"
+function = "rma_uni"
+data = { yi = [0.65, -0.75, -0.21, -0.04, 0.23, 0.03, 0.26, 0.06, 0.06, 0.12, 0.77, 0.0, 0.52, 0.54, 0.2, 0.2, -0.16, 0.42, 0.6, 0.51, 0.58, 0.54, 0.09, 0.37, -0.01, -0.13, 0.18, 0.27, -0.02, 0.33, 0.59, 0.84, -0.32, 0.12, 1.12, -0.12, -0.44, -0.07, 0.7, 0.49, 0.2, 0.58, 0.15, 0.63, 0.04, 1.46, 0.04, 0.25], vi = [0.07, 0.126, 0.042, 0.019, 0.022, 0.009, 0.106, 0.007, 0.04, 0.052, 0.107, 0.021, 0.037, 0.083, 0.086, 0.091, 0.167, 0.052, 0.091, 0.065, 0.073, 0.061, 0.1, 0.06, 0.083, 0.037, 0.069, 0.018, 0.009, 0.053, 0.017, 0.112, 0.06, 0.044, 0.129, 0.023, 0.205, 0.033, 0.265, 0.039, 0.021, 0.067, 0.014, 0.168, 0.016, 0.099, 0.087, 0.072], ni100 = [0.6, 0.34, 0.95, 2.09, 1.82, 4.62, 0.38, 5.42, 0.99, 0.77, 0.4, 1.9, 1.13, 0.5, 0.47, 0.44, 0.24, 0.78, 0.46, 0.64, 0.57, 0.68, 0.4, 0.68, 0.48, 1.07, 0.58, 2.25, 4.46, 0.77, 2.43, 0.39, 0.67, 0.91, 0.36, 1.77, 0.2, 1.2, 0.16, 1.05, 1.95, 0.62, 2.89, 0.25, 2.5, 0.51, 0.46, 0.56], sci = [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0], soc = [0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0] }
+args = { yi = "yi", vi = "vi", mods = "~ ni100 + sci + soc", scale = "~ ni100 + sci + soc", method = "REML", link = "log", test = "knha" }
+check = "test_published.vl2022_profile"
+printed = { "plci_ub[0]" = "-1.276", "plci_ub[1]" = "0.551", "plci_lb[2]" = "0.332" }
+
+[case.source]
+citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Research Synthesis Methods 13(6):697-715."
+doi = "10.1002/jrsm.1562"
+locator = "Table 1, 95% PLCI column: the bounds printed as numbers and inside the range of the paper's plots (upper bound of the intercept, upper bound of sample size, lower bound of science vs. math)"
+read = 2026-11-15
+
+# The paper's lower profile bound of sample size is also the one formulas.ls_profile_bounds finds (-7.159061); metafopy's confint stops at -5.93003.
+[[case]]
+id = "published.vl2022.table1.plci.size"
+kind = "published"
+function = "rma_uni"
+data = { yi = [0.65, -0.75, -0.21, -0.04, 0.23, 0.03, 0.26, 0.06, 0.06, 0.12, 0.77, 0.0, 0.52, 0.54, 0.2, 0.2, -0.16, 0.42, 0.6, 0.51, 0.58, 0.54, 0.09, 0.37, -0.01, -0.13, 0.18, 0.27, -0.02, 0.33, 0.59, 0.84, -0.32, 0.12, 1.12, -0.12, -0.44, -0.07, 0.7, 0.49, 0.2, 0.58, 0.15, 0.63, 0.04, 1.46, 0.04, 0.25], vi = [0.07, 0.126, 0.042, 0.019, 0.022, 0.009, 0.106, 0.007, 0.04, 0.052, 0.107, 0.021, 0.037, 0.083, 0.086, 0.091, 0.167, 0.052, 0.091, 0.065, 0.073, 0.061, 0.1, 0.06, 0.083, 0.037, 0.069, 0.018, 0.009, 0.053, 0.017, 0.112, 0.06, 0.044, 0.129, 0.023, 0.205, 0.033, 0.265, 0.039, 0.021, 0.067, 0.014, 0.168, 0.016, 0.099, 0.087, 0.072], ni100 = [0.6, 0.34, 0.95, 2.09, 1.82, 4.62, 0.38, 5.42, 0.99, 0.77, 0.4, 1.9, 1.13, 0.5, 0.47, 0.44, 0.24, 0.78, 0.46, 0.64, 0.57, 0.68, 0.4, 0.68, 0.48, 1.07, 0.58, 2.25, 4.46, 0.77, 2.43, 0.39, 0.67, 0.91, 0.36, 1.77, 0.2, 1.2, 0.16, 1.05, 1.95, 0.62, 2.89, 0.25, 2.5, 0.51, 0.46, 0.56], sci = [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0], soc = [0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0] }
+args = { yi = "yi", vi = "vi", mods = "~ ni100 + sci + soc", scale = "~ ni100 + sci + soc", method = "REML", link = "log", test = "knha" }
+check = "test_published.vl2022_profile"
+printed = { "plci_lb[1]" = "-7.159" }
+status = "mismatch"
+reason = "published.vl2022.table1.plci.size: plci_lb[1]: metafopy gives -5.93003, the paper prints -7.159 (tolerance 0.0005); formulas.ls_profile_bounds gives -7.159061"
+
+[case.source]
+citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Research Synthesis Methods 13(6):697-715."
+doi = "10.1002/jrsm.1562"
+locator = "Table 1, 95% PLCI column, lower bound of sample size"
+read = 2026-11-15
+
+[[case]]
+id = "published.vl2022.table2.wald"
+kind = "published"
+function = "rma_uni"
+data = { yi = [0.65, -0.75, -0.21, -0.04, 0.23, 0.03, 0.26, 0.06, 0.06, 0.12, 0.77, 0.0, 0.52, 0.54, 0.2, 0.2, -0.16, 0.42, 0.6, 0.51, 0.58, 0.54, 0.09, 0.37, -0.01, -0.13, 0.18, 0.27, -0.02, 0.33, 0.59, 0.84, -0.32, 0.12, 1.12, -0.12, -0.44, -0.07, 0.7, 0.49, 0.2, 0.58, 0.15, 0.63, 0.04, 1.46, 0.04, 0.25], vi = [0.07, 0.126, 0.042, 0.019, 0.022, 0.009, 0.106, 0.007, 0.04, 0.052, 0.107, 0.021, 0.037, 0.083, 0.086, 0.091, 0.167, 0.052, 0.091, 0.065, 0.073, 0.061, 0.1, 0.06, 0.083, 0.037, 0.069, 0.018, 0.009, 0.053, 0.017, 0.112, 0.06, 0.044, 0.129, 0.023, 0.205, 0.033, 0.265, 0.039, 0.021, 0.067, 0.014, 0.168, 0.016, 0.099, 0.087, 0.072], ni100 = [0.6, 0.34, 0.95, 2.09, 1.82, 4.62, 0.38, 5.42, 0.99, 0.77, 0.4, 1.9, 1.13, 0.5, 0.47, 0.44, 0.24, 0.78, 0.46, 0.64, 0.57, 0.68, 0.4, 0.68, 0.48, 1.07, 0.58, 2.25, 4.46, 0.77, 2.43, 0.39, 0.67, 0.91, 0.36, 1.77, 0.2, 1.2, 0.16, 1.05, 1.95, 0.62, 2.89, 0.25, 2.5, 0.51, 0.46, 0.56], sci = [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0], soc = [0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0] }
+args = { yi = "yi", vi = "vi", mods = "~ ni100", scale = "~ sci + soc", method = "REML", link = "log", test = "knha" }
+check = "test_published.vl2022_wald"
+printed = { "beta[0]" = "0.319", "ci_lb[0]" = "0.190", "ci_ub[0]" = "0.448", "beta[1]" = "-0.062", "ci_lb[1]" = "-0.116", "ci_ub[1]" = "-0.008", "pval[1]" = "0.026", "alpha[0]" = "-3.957", "ci_lb_alpha[0]" = "-5.511", "ci_ub_alpha[0]" = "-2.402", "alpha[1]" = "2.597", "ci_lb_alpha[1]" = "0.529", "ci_ub_alpha[1]" = "4.666", "pval_alpha[1]" = "0.015", "alpha[2]" = "0.520", "ci_lb_alpha[2]" = "-2.739", "ci_ub_alpha[2]" = "3.779", "pval_alpha[2]" = "0.75" }
+
+[case.source]
+citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Research Synthesis Methods 13(6):697-715."
+doi = "10.1002/jrsm.1562"
+locator = "Table 2 (coefficients and Wald-type intervals) and the text after it (p-values)"
+read = 2026-11-15
+
+[[case]]
+id = "published.vl2022.table2.plci"
+kind = "published"
+function = "rma_uni"
+data = { yi = [0.65, -0.75, -0.21, -0.04, 0.23, 0.03, 0.26, 0.06, 0.06, 0.12, 0.77, 0.0, 0.52, 0.54, 0.2, 0.2, -0.16, 0.42, 0.6, 0.51, 0.58, 0.54, 0.09, 0.37, -0.01, -0.13, 0.18, 0.27, -0.02, 0.33, 0.59, 0.84, -0.32, 0.12, 1.12, -0.12, -0.44, -0.07, 0.7, 0.49, 0.2, 0.58, 0.15, 0.63, 0.04, 1.46, 0.04, 0.25], vi = [0.07, 0.126, 0.042, 0.019, 0.022, 0.009, 0.106, 0.007, 0.04, 0.052, 0.107, 0.021, 0.037, 0.083, 0.086, 0.091, 0.167, 0.052, 0.091, 0.065, 0.073, 0.061, 0.1, 0.06, 0.083, 0.037, 0.069, 0.018, 0.009, 0.053, 0.017, 0.112, 0.06, 0.044, 0.129, 0.023, 0.205, 0.033, 0.265, 0.039, 0.021, 0.067, 0.014, 0.168, 0.016, 0.099, 0.087, 0.072], ni100 = [0.6, 0.34, 0.95, 2.09, 1.82, 4.62, 0.38, 5.42, 0.99, 0.77, 0.4, 1.9, 1.13, 0.5, 0.47, 0.44, 0.24, 0.78, 0.46, 0.64, 0.57, 0.68, 0.4, 0.68, 0.48, 1.07, 0.58, 2.25, 4.46, 0.77, 2.43, 0.39, 0.67, 0.91, 0.36, 1.77, 0.2, 1.2, 0.16, 1.05, 1.95, 0.62, 2.89, 0.25, 2.5, 0.51, 0.46, 0.56], sci = [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0], soc = [0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0] }
+args = { yi = "yi", vi = "vi", mods = "~ ni100", scale = "~ sci + soc", method = "REML", link = "log", test = "knha" }
+check = "test_published.vl2022_profile"
+printed = { "plci_lb[0]" = "-11.217", "plci_ub[0]" = "-2.718", "plci_lb[1]" = "0.654", "plci_ub[1]" = "9.856" }
+
+[case.source]
+citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Research Synthesis Methods 13(6):697-715."
+doi = "10.1002/jrsm.1562"
+locator = "Table 2, 95% PLCI column: the intercept and the science vs. math bounds"
+read = 2026-11-15
+
+[[case]]
+id = "published.vl2022.table2.plci.soc"
+kind = "published"
+function = "rma_uni"
+data = { yi = [0.65, -0.75, -0.21, -0.04, 0.23, 0.03, 0.26, 0.06, 0.06, 0.12, 0.77, 0.0, 0.52, 0.54, 0.2, 0.2, -0.16, 0.42, 0.6, 0.51, 0.58, 0.54, 0.09, 0.37, -0.01, -0.13, 0.18, 0.27, -0.02, 0.33, 0.59, 0.84, -0.32, 0.12, 1.12, -0.12, -0.44, -0.07, 0.7, 0.49, 0.2, 0.58, 0.15, 0.63, 0.04, 1.46, 0.04, 0.25], vi = [0.07, 0.126, 0.042, 0.019, 0.022, 0.009, 0.106, 0.007, 0.04, 0.052, 0.107, 0.021, 0.037, 0.083, 0.086, 0.091, 0.167, 0.052, 0.091, 0.065, 0.073, 0.061, 0.1, 0.06, 0.083, 0.037, 0.069, 0.018, 0.009, 0.053, 0.017, 0.112, 0.06, 0.044, 0.129, 0.023, 0.205, 0.033, 0.265, 0.039, 0.021, 0.067, 0.014, 0.168, 0.016, 0.099, 0.087, 0.072], ni100 = [0.6, 0.34, 0.95, 2.09, 1.82, 4.62, 0.38, 5.42, 0.99, 0.77, 0.4, 1.9, 1.13, 0.5, 0.47, 0.44, 0.24, 0.78, 0.46, 0.64, 0.57, 0.68, 0.4, 0.68, 0.48, 1.07, 0.58, 2.25, 4.46, 0.77, 2.43, 0.39, 0.67, 0.91, 0.36, 1.77, 0.2, 1.2, 0.16, 1.05, 1.95, 0.62, 2.89, 0.25, 2.5, 0.51, 0.46, 0.56], sci = [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0], soc = [0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0] }
+args = { yi = "yi", vi = "vi", mods = "~ ni100", scale = "~ sci + soc", method = "REML", link = "log", test = "knha" }
+check = "test_published.vl2022_profile"
+printed = { "plci_ub[2]" = "7.700" }
+status = "mismatch"
+reason = "published.vl2022.table2.plci.soc: plci_ub[2]: metafopy gives 5.72067, the paper prints 7.700 (tolerance 0.0005)"
+
+[case.source]
+citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Research Synthesis Methods 13(6):697-715."
+doi = "10.1002/jrsm.1562"
+locator = "Table 2, 95% PLCI column, upper bound of social sciences vs. math"
+read = 2026-11-15
+
+[[case]]
+id = "published.vl2022.table3.ML.null"
+kind = "published"
+function = "rma_uni"
+data = { yi = [0.65, -0.75, -0.21, -0.04, 0.23, 0.03, 0.26, 0.06, 0.06, 0.12, 0.77, 0.0, 0.52, 0.54, 0.2, 0.2, -0.16, 0.42, 0.6, 0.51, 0.58, 0.54, 0.09, 0.37, -0.01, -0.13, 0.18, 0.27, -0.02, 0.33, 0.59, 0.84, -0.32, 0.12, 1.12, -0.12, -0.44, -0.07, 0.7, 0.49, 0.2, 0.58, 0.15, 0.63, 0.04, 1.46, 0.04, 0.25], vi = [0.07, 0.126, 0.042, 0.019, 0.022, 0.009, 0.106, 0.007, 0.04, 0.052, 0.107, 0.021, 0.037, 0.083, 0.086, 0.091, 0.167, 0.052, 0.091, 0.065, 0.073, 0.061, 0.1, 0.06, 0.083, 0.037, 0.069, 0.018, 0.009, 0.053, 0.017, 0.112, 0.06, 0.044, 0.129, 0.023, 0.205, 0.033, 0.265, 0.039, 0.021, 0.067, 0.014, 0.168, 0.016, 0.099, 0.087, 0.072] }
+args = { yi = "yi", vi = "vi", mods = "~ 1", scale = "~ 1", method = "ML", link = "log", test = "knha" }
+check = "test_published.vl2022_fitstats"
+printed = { "logLik" = "-18.26", "AIC" = "40.52", "BIC" = "44.27", "AICc" = "40.79" }
+
+[case.source]
+citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Research Synthesis Methods 13(6):697-715."
+doi = "10.1002/jrsm.1562"
+locator = "Table 3, ML block, row with location ~ 1 and scale ~ 1"
+read = 2026-11-15
+
+[[case]]
+id = "published.vl2022.table3.ML.size"
+kind = "published"
+function = "rma_uni"
+data = { yi = [0.65, -0.75, -0.21, -0.04, 0.23, 0.03, 0.26, 0.06, 0.06, 0.12, 0.77, 0.0, 0.52, 0.54, 0.2, 0.2, -0.16, 0.42, 0.6, 0.51, 0.58, 0.54, 0.09, 0.37, -0.01, -0.13, 0.18, 0.27, -0.02, 0.33, 0.59, 0.84, -0.32, 0.12, 1.12, -0.12, -0.44, -0.07, 0.7, 0.49, 0.2, 0.58, 0.15, 0.63, 0.04, 1.46, 0.04, 0.25], vi = [0.07, 0.126, 0.042, 0.019, 0.022, 0.009, 0.106, 0.007, 0.04, 0.052, 0.107, 0.021, 0.037, 0.083, 0.086, 0.091, 0.167, 0.052, 0.091, 0.065, 0.073, 0.061, 0.1, 0.06, 0.083, 0.037, 0.069, 0.018, 0.009, 0.053, 0.017, 0.112, 0.06, 0.044, 0.129, 0.023, 0.205, 0.033, 0.265, 0.039, 0.021, 0.067, 0.014, 0.168, 0.016, 0.099, 0.087, 0.072], ni100 = [0.6, 0.34, 0.95, 2.09, 1.82, 4.62, 0.38, 5.42, 0.99, 0.77, 0.4, 1.9, 1.13, 0.5, 0.47, 0.44, 0.24, 0.78, 0.46, 0.64, 0.57, 0.68, 0.4, 0.68, 0.48, 1.07, 0.58, 2.25, 4.46, 0.77, 2.43, 0.39, 0.67, 0.91, 0.36, 1.77, 0.2, 1.2, 0.16, 1.05, 1.95, 0.62, 2.89, 0.25, 2.5, 0.51, 0.46, 0.56] }
+args = { yi = "yi", vi = "vi", mods = "~ ni100", scale = "~ ni100", method = "ML", link = "log", test = "knha" }
+check = "test_published.vl2022_fitstats"
+printed = { "logLik" = "-13.24", "AIC" = "34.48", "BIC" = "41.96", "AICc" = "35.41" }
+
+[case.source]
+citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Research Synthesis Methods 13(6):697-715."
+doi = "10.1002/jrsm.1562"
+locator = "Table 3, ML block, row with location ~ ni100 and scale ~ ni100"
+read = 2026-11-15
+
+[[case]]
+id = "published.vl2022.table3.ML.subject"
+kind = "published"
+function = "rma_uni"
+data = { yi = [0.65, -0.75, -0.21, -0.04, 0.23, 0.03, 0.26, 0.06, 0.06, 0.12, 0.77, 0.0, 0.52, 0.54, 0.2, 0.2, -0.16, 0.42, 0.6, 0.51, 0.58, 0.54, 0.09, 0.37, -0.01, -0.13, 0.18, 0.27, -0.02, 0.33, 0.59, 0.84, -0.32, 0.12, 1.12, -0.12, -0.44, -0.07, 0.7, 0.49, 0.2, 0.58, 0.15, 0.63, 0.04, 1.46, 0.04, 0.25], vi = [0.07, 0.126, 0.042, 0.019, 0.022, 0.009, 0.106, 0.007, 0.04, 0.052, 0.107, 0.021, 0.037, 0.083, 0.086, 0.091, 0.167, 0.052, 0.091, 0.065, 0.073, 0.061, 0.1, 0.06, 0.083, 0.037, 0.069, 0.018, 0.009, 0.053, 0.017, 0.112, 0.06, 0.044, 0.129, 0.023, 0.205, 0.033, 0.265, 0.039, 0.021, 0.067, 0.014, 0.168, 0.016, 0.099, 0.087, 0.072], sci = [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0], soc = [0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0] }
+args = { yi = "yi", vi = "vi", mods = "~ sci + soc", scale = "~ sci + soc", method = "ML", link = "log", test = "knha" }
+check = "test_published.vl2022_fitstats"
+printed = { "logLik" = "-13.20", "AIC" = "38.40", "BIC" = "49.62", "AICc" = "40.45" }
+
+[case.source]
+citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Research Synthesis Methods 13(6):697-715."
+doi = "10.1002/jrsm.1562"
+locator = "Table 3, ML block, row with location ~ sci + soc and scale ~ sci + soc"
+read = 2026-11-15
+
+[[case]]
+id = "published.vl2022.table3.ML.full"
+kind = "published"
+function = "rma_uni"
+data = { yi = [0.65, -0.75, -0.21, -0.04, 0.23, 0.03, 0.26, 0.06, 0.06, 0.12, 0.77, 0.0, 0.52, 0.54, 0.2, 0.2, -0.16, 0.42, 0.6, 0.51, 0.58, 0.54, 0.09, 0.37, -0.01, -0.13, 0.18, 0.27, -0.02, 0.33, 0.59, 0.84, -0.32, 0.12, 1.12, -0.12, -0.44, -0.07, 0.7, 0.49, 0.2, 0.58, 0.15, 0.63, 0.04, 1.46, 0.04, 0.25], vi = [0.07, 0.126, 0.042, 0.019, 0.022, 0.009, 0.106, 0.007, 0.04, 0.052, 0.107, 0.021, 0.037, 0.083, 0.086, 0.091, 0.167, 0.052, 0.091, 0.065, 0.073, 0.061, 0.1, 0.06, 0.083, 0.037, 0.069, 0.018, 0.009, 0.053, 0.017, 0.112, 0.06, 0.044, 0.129, 0.023, 0.205, 0.033, 0.265, 0.039, 0.021, 0.067, 0.014, 0.168, 0.016, 0.099, 0.087, 0.072], ni100 = [0.6, 0.34, 0.95, 2.09, 1.82, 4.62, 0.38, 5.42, 0.99, 0.77, 0.4, 1.9, 1.13, 0.5, 0.47, 0.44, 0.24, 0.78, 0.46, 0.64, 0.57, 0.68, 0.4, 0.68, 0.48, 1.07, 0.58, 2.25, 4.46, 0.77, 2.43, 0.39, 0.67, 0.91, 0.36, 1.77, 0.2, 1.2, 0.16, 1.05, 1.95, 0.62, 2.89, 0.25, 2.5, 0.51, 0.46, 0.56], sci = [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0], soc = [0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0] }
+args = { yi = "yi", vi = "vi", mods = "~ ni100 + sci + soc", scale = "~ ni100 + sci + soc", method = "ML", link = "log", test = "knha" }
+check = "test_published.vl2022_fitstats"
+printed = { "logLik" = "-10.08", "AIC" = "36.16", "BIC" = "51.13", "AICc" = "39.86" }
+
+[case.source]
+citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Research Synthesis Methods 13(6):697-715."
+doi = "10.1002/jrsm.1562"
+locator = "Table 3, ML block, row with location ~ ni100 + sci + soc and scale ~ ni100 + sci + soc"
+read = 2026-11-15
+
+[[case]]
+id = "published.vl2022.table3.ML.mixed"
+kind = "published"
+function = "rma_uni"
+data = { yi = [0.65, -0.75, -0.21, -0.04, 0.23, 0.03, 0.26, 0.06, 0.06, 0.12, 0.77, 0.0, 0.52, 0.54, 0.2, 0.2, -0.16, 0.42, 0.6, 0.51, 0.58, 0.54, 0.09, 0.37, -0.01, -0.13, 0.18, 0.27, -0.02, 0.33, 0.59, 0.84, -0.32, 0.12, 1.12, -0.12, -0.44, -0.07, 0.7, 0.49, 0.2, 0.58, 0.15, 0.63, 0.04, 1.46, 0.04, 0.25], vi = [0.07, 0.126, 0.042, 0.019, 0.022, 0.009, 0.106, 0.007, 0.04, 0.052, 0.107, 0.021, 0.037, 0.083, 0.086, 0.091, 0.167, 0.052, 0.091, 0.065, 0.073, 0.061, 0.1, 0.06, 0.083, 0.037, 0.069, 0.018, 0.009, 0.053, 0.017, 0.112, 0.06, 0.044, 0.129, 0.023, 0.205, 0.033, 0.265, 0.039, 0.021, 0.067, 0.014, 0.168, 0.016, 0.099, 0.087, 0.072], ni100 = [0.6, 0.34, 0.95, 2.09, 1.82, 4.62, 0.38, 5.42, 0.99, 0.77, 0.4, 1.9, 1.13, 0.5, 0.47, 0.44, 0.24, 0.78, 0.46, 0.64, 0.57, 0.68, 0.4, 0.68, 0.48, 1.07, 0.58, 2.25, 4.46, 0.77, 2.43, 0.39, 0.67, 0.91, 0.36, 1.77, 0.2, 1.2, 0.16, 1.05, 1.95, 0.62, 2.89, 0.25, 2.5, 0.51, 0.46, 0.56], sci = [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0], soc = [0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0] }
+args = { yi = "yi", vi = "vi", mods = "~ ni100", scale = "~ sci + soc", method = "ML", link = "log", test = "knha" }
+check = "test_published.vl2022_fitstats"
+printed = { "logLik" = "-12.50", "AIC" = "35.00", "BIC" = "44.35", "AICc" = "36.43" }
+
+[case.source]
+citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Research Synthesis Methods 13(6):697-715."
+doi = "10.1002/jrsm.1562"
+locator = "Table 3, ML block, row with location ~ ni100 and scale ~ sci + soc"
+read = 2026-11-15
+
+[[case]]
+id = "published.vl2022.table3.REML.null"
+kind = "published"
+function = "rma_uni"
+data = { yi = [0.65, -0.75, -0.21, -0.04, 0.23, 0.03, 0.26, 0.06, 0.06, 0.12, 0.77, 0.0, 0.52, 0.54, 0.2, 0.2, -0.16, 0.42, 0.6, 0.51, 0.58, 0.54, 0.09, 0.37, -0.01, -0.13, 0.18, 0.27, -0.02, 0.33, 0.59, 0.84, -0.32, 0.12, 1.12, -0.12, -0.44, -0.07, 0.7, 0.49, 0.2, 0.58, 0.15, 0.63, 0.04, 1.46, 0.04, 0.25], vi = [0.07, 0.126, 0.042, 0.019, 0.022, 0.009, 0.106, 0.007, 0.04, 0.052, 0.107, 0.021, 0.037, 0.083, 0.086, 0.091, 0.167, 0.052, 0.091, 0.065, 0.073, 0.061, 0.1, 0.06, 0.083, 0.037, 0.069, 0.018, 0.009, 0.053, 0.017, 0.112, 0.06, 0.044, 0.129, 0.023, 0.205, 0.033, 0.265, 0.039, 0.021, 0.067, 0.014, 0.168, 0.016, 0.099, 0.087, 0.072] }
+args = { yi = "yi", vi = "vi", mods = "~ 1", scale = "~ 1", method = "REML", link = "log", test = "knha" }
+check = "test_published.vl2022_fitstats"
+printed = { "logLik" = "-18.49", "AIC" = "40.99", "BIC" = "44.69", "AICc" = "41.26" }
+
+[case.source]
+citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Research Synthesis Methods 13(6):697-715."
+doi = "10.1002/jrsm.1562"
+locator = "Table 3, REML block, row with location ~ 1 and scale ~ 1"
+read = 2026-11-15
+
+[[case]]
+id = "published.vl2022.table3.REML.size"
+kind = "published"
+function = "rma_uni"
+data = { yi = [0.65, -0.75, -0.21, -0.04, 0.23, 0.03, 0.26, 0.06, 0.06, 0.12, 0.77, 0.0, 0.52, 0.54, 0.2, 0.2, -0.16, 0.42, 0.6, 0.51, 0.58, 0.54, 0.09, 0.37, -0.01, -0.13, 0.18, 0.27, -0.02, 0.33, 0.59, 0.84, -0.32, 0.12, 1.12, -0.12, -0.44, -0.07, 0.7, 0.49, 0.2, 0.58, 0.15, 0.63, 0.04, 1.46, 0.04, 0.25], vi = [0.07, 0.126, 0.042, 0.019, 0.022, 0.009, 0.106, 0.007, 0.04, 0.052, 0.107, 0.021, 0.037, 0.083, 0.086, 0.091, 0.167, 0.052, 0.091, 0.065, 0.073, 0.061, 0.1, 0.06, 0.083, 0.037, 0.069, 0.018, 0.009, 0.053, 0.017, 0.112, 0.06, 0.044, 0.129, 0.023, 0.205, 0.033, 0.265, 0.039, 0.021, 0.067, 0.014, 0.168, 0.016, 0.099, 0.087, 0.072], ni100 = [0.6, 0.34, 0.95, 2.09, 1.82, 4.62, 0.38, 5.42, 0.99, 0.77, 0.4, 1.9, 1.13, 0.5, 0.47, 0.44, 0.24, 0.78, 0.46, 0.64, 0.57, 0.68, 0.4, 0.68, 0.48, 1.07, 0.58, 2.25, 4.46, 0.77, 2.43, 0.39, 0.67, 0.91, 0.36, 1.77, 0.2, 1.2, 0.16, 1.05, 1.95, 0.62, 2.89, 0.25, 2.5, 0.51, 0.46, 0.56] }
+args = { yi = "yi", vi = "vi", mods = "~ ni100", scale = "~ ni100", method = "REML", link = "log", test = "knha" }
+check = "test_published.vl2022_fitstats"
+printed = { "logLik" = "-14.65", "AIC" = "37.30", "BIC" = "44.62", "AICc" = "38.28" }
+
+[case.source]
+citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Research Synthesis Methods 13(6):697-715."
+doi = "10.1002/jrsm.1562"
+locator = "Table 3, REML block, row with location ~ ni100 and scale ~ ni100"
+read = 2026-11-15
+
+[[case]]
+id = "published.vl2022.table3.REML.subject"
+kind = "published"
+function = "rma_uni"
+data = { yi = [0.65, -0.75, -0.21, -0.04, 0.23, 0.03, 0.26, 0.06, 0.06, 0.12, 0.77, 0.0, 0.52, 0.54, 0.2, 0.2, -0.16, 0.42, 0.6, 0.51, 0.58, 0.54, 0.09, 0.37, -0.01, -0.13, 0.18, 0.27, -0.02, 0.33, 0.59, 0.84, -0.32, 0.12, 1.12, -0.12, -0.44, -0.07, 0.7, 0.49, 0.2, 0.58, 0.15, 0.63, 0.04, 1.46, 0.04, 0.25], vi = [0.07, 0.126, 0.042, 0.019, 0.022, 0.009, 0.106, 0.007, 0.04, 0.052, 0.107, 0.021, 0.037, 0.083, 0.086, 0.091, 0.167, 0.052, 0.091, 0.065, 0.073, 0.061, 0.1, 0.06, 0.083, 0.037, 0.069, 0.018, 0.009, 0.053, 0.017, 0.112, 0.06, 0.044, 0.129, 0.023, 0.205, 0.033, 0.265, 0.039, 0.021, 0.067, 0.014, 0.168, 0.016, 0.099, 0.087, 0.072], sci = [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0], soc = [0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0] }
+args = { yi = "yi", vi = "vi", mods = "~ sci + soc", scale = "~ sci + soc", method = "REML", link = "log", test = "knha" }
+check = "test_published.vl2022_fitstats"
+printed = { "logLik" = "-13.99", "AIC" = "39.97", "BIC" = "50.81", "AICc" = "42.18" }
+
+[case.source]
+citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Research Synthesis Methods 13(6):697-715."
+doi = "10.1002/jrsm.1562"
+locator = "Table 3, REML block, row with location ~ sci + soc and scale ~ sci + soc"
+read = 2026-11-15
+
+[[case]]
+id = "published.vl2022.table3.REML.full"
+kind = "published"
+function = "rma_uni"
+data = { yi = [0.65, -0.75, -0.21, -0.04, 0.23, 0.03, 0.26, 0.06, 0.06, 0.12, 0.77, 0.0, 0.52, 0.54, 0.2, 0.2, -0.16, 0.42, 0.6, 0.51, 0.58, 0.54, 0.09, 0.37, -0.01, -0.13, 0.18, 0.27, -0.02, 0.33, 0.59, 0.84, -0.32, 0.12, 1.12, -0.12, -0.44, -0.07, 0.7, 0.49, 0.2, 0.58, 0.15, 0.63, 0.04, 1.46, 0.04, 0.25], vi = [0.07, 0.126, 0.042, 0.019, 0.022, 0.009, 0.106, 0.007, 0.04, 0.052, 0.107, 0.021, 0.037, 0.083, 0.086, 0.091, 0.167, 0.052, 0.091, 0.065, 0.073, 0.061, 0.1, 0.06, 0.083, 0.037, 0.069, 0.018, 0.009, 0.053, 0.017, 0.112, 0.06, 0.044, 0.129, 0.023, 0.205, 0.033, 0.265, 0.039, 0.021, 0.067, 0.014, 0.168, 0.016, 0.099, 0.087, 0.072], ni100 = [0.6, 0.34, 0.95, 2.09, 1.82, 4.62, 0.38, 5.42, 0.99, 0.77, 0.4, 1.9, 1.13, 0.5, 0.47, 0.44, 0.24, 0.78, 0.46, 0.64, 0.57, 0.68, 0.4, 0.68, 0.48, 1.07, 0.58, 2.25, 4.46, 0.77, 2.43, 0.39, 0.67, 0.91, 0.36, 1.77, 0.2, 1.2, 0.16, 1.05, 1.95, 0.62, 2.89, 0.25, 2.5, 0.51, 0.46, 0.56], sci = [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0], soc = [0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0] }
+args = { yi = "yi", vi = "vi", mods = "~ ni100 + sci + soc", scale = "~ ni100 + sci + soc", method = "REML", link = "log", test = "knha" }
+check = "test_published.vl2022_fitstats"
+printed = { "logLik" = "-11.89", "AIC" = "39.78", "BIC" = "54.06", "AICc" = "43.90" }
+
+[case.source]
+citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Research Synthesis Methods 13(6):697-715."
+doi = "10.1002/jrsm.1562"
+locator = "Table 3, REML block, row with location ~ ni100 + sci + soc and scale ~ ni100 + sci + soc"
+read = 2026-11-15
+
+[[case]]
+id = "published.vl2022.table3.REML.mixed"
+kind = "published"
+function = "rma_uni"
+data = { yi = [0.65, -0.75, -0.21, -0.04, 0.23, 0.03, 0.26, 0.06, 0.06, 0.12, 0.77, 0.0, 0.52, 0.54, 0.2, 0.2, -0.16, 0.42, 0.6, 0.51, 0.58, 0.54, 0.09, 0.37, -0.01, -0.13, 0.18, 0.27, -0.02, 0.33, 0.59, 0.84, -0.32, 0.12, 1.12, -0.12, -0.44, -0.07, 0.7, 0.49, 0.2, 0.58, 0.15, 0.63, 0.04, 1.46, 0.04, 0.25], vi = [0.07, 0.126, 0.042, 0.019, 0.022, 0.009, 0.106, 0.007, 0.04, 0.052, 0.107, 0.021, 0.037, 0.083, 0.086, 0.091, 0.167, 0.052, 0.091, 0.065, 0.073, 0.061, 0.1, 0.06, 0.083, 0.037, 0.069, 0.018, 0.009, 0.053, 0.017, 0.112, 0.06, 0.044, 0.129, 0.023, 0.205, 0.033, 0.265, 0.039, 0.021, 0.067, 0.014, 0.168, 0.016, 0.099, 0.087, 0.072], ni100 = [0.6, 0.34, 0.95, 2.09, 1.82, 4.62, 0.38, 5.42, 0.99, 0.77, 0.4, 1.9, 1.13, 0.5, 0.47, 0.44, 0.24, 0.78, 0.46, 0.64, 0.57, 0.68, 0.4, 0.68, 0.48, 1.07, 0.58, 2.25, 4.46, 0.77, 2.43, 0.39, 0.67, 0.91, 0.36, 1.77, 0.2, 1.2, 0.16, 1.05, 1.95, 0.62, 2.89, 0.25, 2.5, 0.51, 0.46, 0.56], sci = [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0], soc = [0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0] }
+args = { yi = "yi", vi = "vi", mods = "~ ni100", scale = "~ sci + soc", method = "REML", link = "log", test = "knha" }
+check = "test_published.vl2022_fitstats"
+printed = { "logLik" = "-13.55", "AIC" = "37.10", "BIC" = "46.24", "AICc" = "38.60" }
+
+[case.source]
+citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Research Synthesis Methods 13(6):697-715."
+doi = "10.1002/jrsm.1562"
+locator = "Table 3, REML block, row with location ~ ni100 and scale ~ sci + soc"
+read = 2026-11-15
+
+[[case]]
+id = "published.vl2022.predict.location"
+kind = "published"
+function = "rma_uni"
+data = { yi = [0.65, -0.75, -0.21, -0.04, 0.23, 0.03, 0.26, 0.06, 0.06, 0.12, 0.77, 0.0, 0.52, 0.54, 0.2, 0.2, -0.16, 0.42, 0.6, 0.51, 0.58, 0.54, 0.09, 0.37, -0.01, -0.13, 0.18, 0.27, -0.02, 0.33, 0.59, 0.84, -0.32, 0.12, 1.12, -0.12, -0.44, -0.07, 0.7, 0.49, 0.2, 0.58, 0.15, 0.63, 0.04, 1.46, 0.04, 0.25], vi = [0.07, 0.126, 0.042, 0.019, 0.022, 0.009, 0.106, 0.007, 0.04, 0.052, 0.107, 0.021, 0.037, 0.083, 0.086, 0.091, 0.167, 0.052, 0.091, 0.065, 0.073, 0.061, 0.1, 0.06, 0.083, 0.037, 0.069, 0.018, 0.009, 0.053, 0.017, 0.112, 0.06, 0.044, 0.129, 0.023, 0.205, 0.033, 0.265, 0.039, 0.021, 0.067, 0.014, 0.168, 0.016, 0.099, 0.087, 0.072], ni100 = [0.6, 0.34, 0.95, 2.09, 1.82, 4.62, 0.38, 5.42, 0.99, 0.77, 0.4, 1.9, 1.13, 0.5, 0.47, 0.44, 0.24, 0.78, 0.46, 0.64, 0.57, 0.68, 0.4, 0.68, 0.48, 1.07, 0.58, 2.25, 4.46, 0.77, 2.43, 0.39, 0.67, 0.91, 0.36, 1.77, 0.2, 1.2, 0.16, 1.05, 1.95, 0.62, 2.89, 0.25, 2.5, 0.51, 0.46, 0.56], sci = [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0], soc = [0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0] }
+args = { yi = "yi", vi = "vi", mods = "~ ni100 + sci + soc", scale = "~ ni100 + sci + soc", method = "REML", link = "log", test = "knha" }
+check = "test_published.vl2022_predict_location"
+printed = { "pred_50" = "0.32", "pi_lb_50" = "-0.08", "pi_ub_50" = "0.71", "pred_100" = "0.29", "pi_lb_100" = "-0.06", "pi_ub_100" = "0.63", "pred_150" = "0.26", "pi_lb_150" = "-0.04", "pi_ub_150" = "0.56" }
+
+[case.source]
+citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Research Synthesis Methods 13(6):697-715."
+doi = "10.1002/jrsm.1562"
+locator = "Section 3, predictions for the location part: a math study with 50, 100 and 150 participants"
+read = 2026-11-15
+
+[[case]]
+id = "published.vl2022.predict.tau2"
+kind = "published"
+function = "rma_uni"
+data = { yi = [0.65, -0.75, -0.21, -0.04, 0.23, 0.03, 0.26, 0.06, 0.06, 0.12, 0.77, 0.0, 0.52, 0.54, 0.2, 0.2, -0.16, 0.42, 0.6, 0.51, 0.58, 0.54, 0.09, 0.37, -0.01, -0.13, 0.18, 0.27, -0.02, 0.33, 0.59, 0.84, -0.32, 0.12, 1.12, -0.12, -0.44, -0.07, 0.7, 0.49, 0.2, 0.58, 0.15, 0.63, 0.04, 1.46, 0.04, 0.25], vi = [0.07, 0.126, 0.042, 0.019, 0.022, 0.009, 0.106, 0.007, 0.04, 0.052, 0.107, 0.021, 0.037, 0.083, 0.086, 0.091, 0.167, 0.052, 0.091, 0.065, 0.073, 0.061, 0.1, 0.06, 0.083, 0.037, 0.069, 0.018, 0.009, 0.053, 0.017, 0.112, 0.06, 0.044, 0.129, 0.023, 0.205, 0.033, 0.265, 0.039, 0.021, 0.067, 0.014, 0.168, 0.016, 0.099, 0.087, 0.072], ni100 = [0.6, 0.34, 0.95, 2.09, 1.82, 4.62, 0.38, 5.42, 0.99, 0.77, 0.4, 1.9, 1.13, 0.5, 0.47, 0.44, 0.24, 0.78, 0.46, 0.64, 0.57, 0.68, 0.4, 0.68, 0.48, 1.07, 0.58, 2.25, 4.46, 0.77, 2.43, 0.39, 0.67, 0.91, 0.36, 1.77, 0.2, 1.2, 0.16, 1.05, 1.95, 0.62, 2.89, 0.25, 2.5, 0.51, 0.46, 0.56], sci = [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0], soc = [0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0] }
+args = { yi = "yi", vi = "vi", mods = "~ ni100 + sci + soc", scale = "~ ni100 + sci + soc", method = "REML", link = "log", test = "knha" }
+check = "test_published.vl2022_predict_tau2"
+printed = { "math" = "0.026", "math_lb" = "0.006", "math_ub" = "0.121", "soc" = "0.039", "soc_lb" = "0.004", "soc_ub" = "0.437", "sci" = "0.245", "sci_lb" = "0.060", "sci_ub" = "1.001" }
+
+[case.source]
+citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Research Synthesis Methods 13(6):697-715."
+doi = "10.1002/jrsm.1562"
+locator = "Section 3, predictions for the scale part at 100 participants, tau2 and its confidence interval on the tau2 scale (back-transformed with exp)"
+read = 2026-11-15
+
+[[case]]
+id = "published.vl2022.lrt.ML"
+kind = "published"
+function = "rma_uni"
+data = { yi = [0.65, -0.75, -0.21, -0.04, 0.23, 0.03, 0.26, 0.06, 0.06, 0.12, 0.77, 0.0, 0.52, 0.54, 0.2, 0.2, -0.16, 0.42, 0.6, 0.51, 0.58, 0.54, 0.09, 0.37, -0.01, -0.13, 0.18, 0.27, -0.02, 0.33, 0.59, 0.84, -0.32, 0.12, 1.12, -0.12, -0.44, -0.07, 0.7, 0.49, 0.2, 0.58, 0.15, 0.63, 0.04, 1.46, 0.04, 0.25], vi = [0.07, 0.126, 0.042, 0.019, 0.022, 0.009, 0.106, 0.007, 0.04, 0.052, 0.107, 0.021, 0.037, 0.083, 0.086, 0.091, 0.167, 0.052, 0.091, 0.065, 0.073, 0.061, 0.1, 0.06, 0.083, 0.037, 0.069, 0.018, 0.009, 0.053, 0.017, 0.112, 0.06, 0.044, 0.129, 0.023, 0.205, 0.033, 0.265, 0.039, 0.021, 0.067, 0.014, 0.168, 0.016, 0.099, 0.087, 0.072], ni100 = [0.6, 0.34, 0.95, 2.09, 1.82, 4.62, 0.38, 5.42, 0.99, 0.77, 0.4, 1.9, 1.13, 0.5, 0.47, 0.44, 0.24, 0.78, 0.46, 0.64, 0.57, 0.68, 0.4, 0.68, 0.48, 1.07, 0.58, 2.25, 4.46, 0.77, 2.43, 0.39, 0.67, 0.91, 0.36, 1.77, 0.2, 1.2, 0.16, 1.05, 1.95, 0.62, 2.89, 0.25, 2.5, 0.51, 0.46, 0.56], sci = [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0], soc = [0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0] }
+args = { yi = "yi", vi = "vi", mods = "~ ni100 + sci + soc", scale = "~ ni100 + sci + soc", method = "ML", link = "log", test = "knha" }
+check = "test_published.vl2022_lrt"
+printed = { "LRT" = "4.83", "pval" = "0.18", "df" = "3" }
+
+[case.source]
+citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Research Synthesis Methods 13(6):697-715."
+doi = "10.1002/jrsm.1562"
+locator = "Section 3, the likelihood ratio test of equation 15: X2 = 4.83 on 3 df, p = 0.18, both models refitted with ML"
+read = 2026-11-15

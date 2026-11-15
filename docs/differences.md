@@ -1600,6 +1600,12 @@ print(res.QE, res.tau2)
 </div>
 </div>
 
+The difference reaches `vif(res, reestimate=True, intercept=True)` of an `rma_uni` fit: each refit uses only the columns of one coefficient set,
+without an intercept, so its `tau2` and the variance-covariance matrix differ from metafor's. On `dat.bcg` with `~ ablat + year`, the
+re-estimated VIFs of `ablat` and `year` are 10.209 and 25681.9 in metafopy and 4.2266 and 25834.4 in metafor; the `tau2` of the `ablat`-only
+refit is 0.08645, the minimum of the `REML` likelihood (checked 2026-11-15 with a separate scalar minimiser), against about 0.3 implied by metafor's
+value. The VIF of the intercept does not refit and agrees.
+
 ## Everything else
 
 The [detailed notes](differences-notes.md) hold the rest, grouped by topic:

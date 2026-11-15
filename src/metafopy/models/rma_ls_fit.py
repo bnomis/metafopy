@@ -29,11 +29,13 @@ import metafopy.models.rma_ls_result
 import metafopy.models.rma_uni
 import metafopy.models.sel_opt
 
-__all__ = ['LSProblem', 'fit_rma_ls', 'make_ls_control']
+__all__ = ['LS_METHODS', 'LSProblem', 'fit_rma_ls', 'make_ls_control']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type BoolArray = numpy.typing.NDArray[numpy.bool_]
 
+# auditme: accept[literal-duplication] the option values metafor lists, repeated as in the R source
+LS_METHODS: tuple[str, ...] = ('ML', 'REML')
 DBL_EPS = float(numpy.finfo(float).eps)
 SCIPY_METHODS = ('BFGS', 'CG', 'L-BFGS-B', 'Nelder-Mead')
 CONSTRAINED = ('constrOptim',)
@@ -350,8 +352,7 @@ def fit_rma_ls(
         metafopy.errors.NotSupportedError: the optimiser chosen in ``control`` has no counterpart here.
         metafopy.errors.InternalError: a weight matrix an estimator needs is missing.
     """
-    # auditme: accept[literal-duplication] metafor option values and column labels repeated as in the R source
-    if method not in ('ML', 'REML'):
+    if method not in LS_METHODS:
         raise metafopy.errors.InputError('Location-scale models can only be fitted with ML or REML estimation.')
     # auditme: accept[literal-duplication] metafor option values and column labels repeated as in the R source
     if link not in ('log', 'identity'):

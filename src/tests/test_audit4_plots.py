@@ -201,7 +201,11 @@ def test_vif_uni_intercept(uni: metafopy.RMAResult) -> None:
     check_vif(metafopy.vif(uni, intercept=True), VIF['uni_intercept'], 'intercept')
     out = metafopy.vif(uni, intercept=True, table=True)
     check_vif(out, VIF['uni_intercept_table'], 'intercept, table')
-    check_vif(metafopy.vif(uni, intercept=True, reestimate=True), VIF['uni_intercept_reestimate'], 'intercept, reestimate', rtol=1e-6)
+    # metafor centres yi, metafopy does not: the refits without an intercept differ (docs/differences.md, "QE and tau2 of a model without an
+    # intercept"). The intercept agrees with R; the others are det(vb[b, b]) / det(vb of the refit) with the REML minimum found by a scalar minimiser
+    again = metafopy.vif(uni, intercept=True, reestimate=True)
+    assert again.vifs.to_numpy()[0] == pytest.approx(VIF['uni_intercept_reestimate']['vif'][0], rel=1e-6)
+    assert again.vifs.to_numpy()[1:] == pytest.approx([10.2093, 25681.9], rel=1e-4)
 
 
 def test_vif_uni_intercept_sim(uni: metafopy.RMAResult) -> None:
@@ -222,7 +226,8 @@ def test_vif_uni_fixed(uni: metafopy.RMAResult) -> None:
 def test_vif_ls_intercept_and_fixed(dat: pandas.DataFrame) -> None:
     res = metafopy.rma('yi', 'vi', mods='~ ablat + year', scale='~ ablat', data=dat)
     out = typing.cast(metafopy.methods.ls_vif.LSVIFResult, metafopy.vif(res, intercept=True))
-    check_vif(out.beta, VIF['ls_intercept']['beta'], 'ls beta intercept', rtol=1e-5)
+    # the location VIFs are 1e5 (year is not centred), which magnifies the 1e-5 differences of the fit
+    check_vif(out.beta, VIF['ls_intercept']['beta'], 'ls beta intercept', rtol=1e-4)
     # the scale coefficients are almost collinear (VIF 114), which magnifies the 1e-6 differences of the scale variance-covariance matrix
     check_vif(out.alpha, VIF['ls_intercept']['alpha'], 'ls alpha intercept', rtol=5e-3)
     out = typing.cast(metafopy.methods.ls_vif.LSVIFResult, metafopy.vif(res, btt='ab', att='ab', fixed=True))

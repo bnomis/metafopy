@@ -544,3 +544,336 @@ def irr_cm_al_is_cm_el(case: correctness.cases.Case, result: typing.Any) -> None
             raise AssertionError(f'{case.id}: {name} of CM.AL is {getattr(result, name)!r}, of CM.EL {getattr(exact, name)!r}')
     if result.fit_stats_ml.ll != exact.fit_stats_ml.ll:
         raise AssertionError(f'{case.id}: ll of CM.AL is {result.fit_stats_ml.ll!r}, of CM.EL {exact.fit_stats_ml.ll!r}')
+
+
+LS_RELATIVE = 1e-6
+LS_LOGLIK = 1e-9
+
+
+def ls_inputs(case: correctness.cases.Case) -> tuple[FloatArray, FloatArray, FloatArray, FloatArray]:
+    """``yi``, ``vi`` and the location and scale model matrices of a location-scale case, built from the case's data and its ``mods`` and ``scale``."""
+    frame = correctness.cases.case_frame(case)
+    assert frame is not None
+    yi, vi = frame[case.args['yi']].to_numpy(dtype=numpy.float64), frame[case.args['vi']].to_numpy(dtype=numpy.float64)
+    return yi, vi, design_matrix(frame, case.args.get('mods')), design_matrix(frame, case.args.get('scale'))
+
+
+def ls_reference(case: correctness.cases.Case) -> dict[str, typing.Any]:
+    """``formulas.ls_reference_fit`` for the case's data, ``method`` and ``link``; a failure to converge names the case and the step."""
+    yi, vi, X, Z = ls_inputs(case)
+    try:
+        return correctness.formulas.ls_reference_fit(yi, vi, X, Z, case.args.get('link', 'log'), case.args['method'])
+    except RuntimeError as err:
+        raise AssertionError(f'{case.id}: the reference fit did not converge (the optimiser messages are in the chained error)') from err
+
+
+def ls_agree(case: correctness.cases.Case, name: str, actual: typing.Any, expected: typing.Any, tolerance: float) -> None:
+    """``actual`` equals ``expected`` to ``tolerance`` of the largest absolute value in ``expected``."""
+    actual_array, expected_array = numpy.asarray(actual, dtype=numpy.float64), numpy.asarray(expected, dtype=numpy.float64)
+    allowed = tolerance * float(numpy.max(numpy.abs(expected_array)))
+    if not numpy.all(numpy.abs(actual_array - expected_array) <= allowed):
+        raise AssertionError(f'{case.id}: {name}: metafopy gives {actual!r}, the reference gives {expected!r} (tolerance {tolerance:g})')
+
+
+def ls_fit(case: correctness.cases.Case, result: typing.Any) -> None:
+    """The coefficients, their covariance, ``tau2_i`` and the log-likelihood against the independent maximisation of equations 7 and 9."""
+    reference = ls_reference(case)
+    ls_agree(case, 'alpha', result.alpha, reference['alpha'], LS_RELATIVE)
+    ls_agree(case, 'beta', result.beta, reference['beta'], LS_RELATIVE)
+    ls_agree(case, 'vb', result.vb, reference['vb'], LS_RELATIVE)
+    ls_agree(case, 'tau2', result.tau2, reference['tau2'], LS_RELATIVE)
+    ls_agree(case, 'logLik', float(result.logLik(REML=case.args['method'] == 'REML')), reference['ll'], LS_LOGLIK)
+
+
+def ls_optbeta(case: correctness.cases.Case, result: typing.Any) -> None:
+    """With ``optbeta=True`` the joint and the profile ML maximum coincide, so ``alpha``, ``beta``, ``tau2_i`` and the log-likelihood match the profile fit.
+
+    ``vb`` is not compared: the joint fit takes it from the information matrix of ``beta`` and ``alpha`` together, not from equation 10, which is the
+    covariance of ``beta`` with ``alpha`` held at its estimate.
+    """
+    reference = ls_reference(case)
+    for name in ('alpha', 'beta', 'tau2'):
+        ls_agree(case, name, getattr(result, name), reference[name], LS_RELATIVE)
+    ls_agree(case, 'logLik', float(result.logLik(REML=False)), reference['ll'], LS_LOGLIK)
+
+
+def ls_fitstats(case: correctness.cases.Case, result: typing.Any) -> None:
+    """Log-likelihood, AIC, BIC and AICc against the formulas at the reference optimum; the deviance is not compared, as the paper defines none."""
+    reference = ls_reference(case)
+    yi, _, X, Z = ls_inputs(case)
+    reml = case.args['method'] == 'REML'
+    expected = correctness.formulas.ls_fitstats(reference['ll'], X.shape[1] + Z.shape[1], len(yi) - X.shape[1] if reml else len(yi))
+    actual = result.fit_stats_reml if reml else result.fit_stats_ml
+    for name, value in expected.items():
+        ls_agree(case, name, getattr(actual, name), value, LS_LOGLIK)
+
+
+def ls_heterogeneity(case: correctness.cases.Case, result: typing.Any) -> None:
+    """``QE`` as Cochran's ``y' P y`` with the inverse-variance weights, and ``I2`` and ``H2`` per study at the reference ``tau2_i``."""
+    reference = ls_reference(case)
+    yi, vi, X, _ = ls_inputs(case)
+    vt = correctness.formulas.design_typical_variance(vi, X)
+    ls_agree(case, 'QE', result.QE, correctness.formulas.random_effects_q(yi, vi, X, 0.0), LS_RELATIVE)
+    ls_agree(case, 'I2', result.I2, correctness.formulas.ls_i2(reference['tau2'], vt), LS_RELATIVE)
+    ls_agree(case, 'H2', result.H2, correctness.formulas.ls_h2(reference['tau2'], vt), LS_RELATIVE)
+
+
+LS_NUMERIC_HESSIAN = 1e-4  # metafopy's covariance of alpha is a numerical Hessian (Richardson, r = 4), good to about 1e-5 of the information
+LS_PROFILE = 1e-5
+LS_TDIST = ('adhoc', 'knha', 't')
+LS_CONFIDENCE_FIELDS = ('ci_lb', 'ci_ub', 'pred', 'se')
+LS_PREDICT_FIELDS = (*LS_CONFIDENCE_FIELDS, 'pi_lb', 'pi_ub')  # the prediction interval needs a predicted tau2
+
+
+def ls_location(case: correctness.cases.Case, reference: dict[str, typing.Any]) -> tuple[FloatArray, FloatArray, float]:
+    """``beta``, its covariance after the Knapp-Hartung factor of the case's ``test`` (section 2.5.4), and the factor, at the reference ``tau2_i``."""
+    yi, vi, X, _ = ls_inputs(case)
+    test = case.args.get('test', 'z')
+    s2w = correctness.formulas.ls_knha_s2w(yi, vi, X, reference['tau2'], test == 'adhoc') if test in correctness.formulas.KNAPP_HARTUNG_TESTS else 1.0
+    return reference['beta'], s2w * reference['vb'], s2w
+
+
+def ls_test(case: correctness.cases.Case, result: typing.Any) -> None:
+    """The location and scale tests of the case's ``test``: standard errors, statistics, p-values and omnibus tests against equations 12 and 14."""
+    reference = ls_reference(case)
+    _, _, X, Z = ls_inputs(case)
+    beta, vb, s2w = ls_location(case, reference)
+    k, p, q = X.shape[0], X.shape[1], Z.shape[1]
+    tdist = case.args.get('test', 'z') in LS_TDIST
+    ls_agree(case, 's2w', result.s2w, s2w, LS_RELATIVE)
+    ls_agree(case, 'se', result.se, numpy.sqrt(numpy.diag(vb)), LS_RELATIVE)
+    zval = beta / numpy.sqrt(numpy.diag(vb))
+    pval = 2 * (scipy.stats.t.sf(numpy.abs(zval), k - p) if tdist else scipy.stats.norm.sf(numpy.abs(zval)))
+    ls_agree(case, 'pval', result.pval, pval, LS_RELATIVE)
+    qm, qmp = correctness.formulas.ls_wald(beta, vb, list(range(1, p)), k - p if tdist else None)
+    ls_agree(case, 'QM', result.QM, qm, LS_RELATIVE)
+    ls_agree(case, 'QMp', result.QMp, qmp, LS_RELATIVE)
+    se_alpha = numpy.sqrt(numpy.diag(reference['va']))
+    pval_alpha = 2 * (
+        scipy.stats.t.sf(numpy.abs(reference['alpha'] / se_alpha), k - q) if tdist else scipy.stats.norm.sf(numpy.abs(reference['alpha'] / se_alpha))
+    )
+    ls_agree(case, 'pval_alpha', result.pval_alpha, pval_alpha, LS_NUMERIC_HESSIAN)
+    qs, qsp = correctness.formulas.ls_wald(reference['alpha'], reference['va'], list(range(1, q)), k - q if tdist else None)
+    ls_agree(case, 'QS', result.QS, qs, LS_NUMERIC_HESSIAN)
+    ls_agree(case, 'QSp', result.QSp, qsp, LS_NUMERIC_HESSIAN)
+
+
+def ls_vcov_alpha(case: correctness.cases.Case, result: typing.Any) -> None:
+    """``va`` against the inverse of the analytic observed information, not a numerical Hessian."""
+    ls_agree(case, 'va', result.va, ls_reference(case)['va'], LS_NUMERIC_HESSIAN)
+
+
+def ls_qs(case: correctness.cases.Case, result: typing.Any) -> None:
+    """The omnibus Wald test of the scale coefficients other than the intercept (equation 14) at the reference estimate and information."""
+    reference = ls_reference(case)
+    q = reference['alpha'].shape[0]
+    stat, pval = correctness.formulas.ls_wald(reference['alpha'], reference['va'], list(range(1, q)), None)
+    ls_agree(case, 'QS', result.QS, stat, LS_NUMERIC_HESSIAN)
+    ls_agree(case, 'QSp', result.QSp, pval, LS_NUMERIC_HESSIAN)
+
+
+def ls_confint_scale(case: correctness.cases.Case, result: typing.Any) -> None:
+    """``confint(result, alpha=j, tol=1e-12)`` against the profile-likelihood bounds of ``formulas.ls_profile_bounds`` for each scale coefficient."""
+    yi, vi, X, Z = ls_inputs(case)
+    link, method = case.args.get('link', 'log'), case.args['method']
+    for j in range(Z.shape[1]):
+        table = metafopy.confint(result, alpha=j, tol=1e-12).random
+        assert table is not None
+        expected = correctness.formulas.ls_profile_bounds(yi, vi, X, Z, link, method, j, 0.95)
+        ls_agree(case, f'confint alpha.{j + 1}', [table['ci.lb'].iloc[0], table['ci.ub'].iloc[0]], expected, LS_PROFILE)
+
+
+def ls_confint_location(case: correctness.cases.Case, result: typing.Any) -> None:
+    """``confint(result, fixed=True)`` against Wald intervals ``beta +- crit se``, with the t critical value for the t-type tests."""
+    reference = ls_reference(case)
+    yi, _, X, _ = ls_inputs(case)
+    beta, vb, _ = ls_location(case, reference)
+    se = numpy.sqrt(numpy.diag(vb))
+    crit = float(scipy.stats.t.isf(0.025, len(yi) - X.shape[1]) if case.args.get('test', 'z') in LS_TDIST else scipy.stats.norm.isf(0.025))
+    table = metafopy.confint(result, fixed=True).fixed
+    assert table is not None
+    ls_agree(case, 'ci.lb', table['ci.lb'].to_numpy(), beta - crit * se, LS_RELATIVE)
+    ls_agree(case, 'ci.ub', table['ci.ub'].to_numpy(), beta + crit * se, LS_RELATIVE)
+
+
+def ls_critical(case: correctness.cases.Case, ddf: int) -> float:
+    """The two-sided 95% critical value of the case's ``test``: t on ``ddf`` degrees of freedom for the t-type tests, else normal."""
+    return float(scipy.stats.t.isf(0.025, ddf) if case.args.get('test', 'z') in LS_TDIST else scipy.stats.norm.isf(0.025))
+
+
+def ls_fit_dict(case: correctness.cases.Case) -> dict[str, typing.Any]:
+    """The reference fit with the Knapp-Hartung factor of the case's ``test`` applied to ``vb``."""
+    reference = ls_reference(case)
+    beta, vb, _ = ls_location(case, reference)
+    return {**reference, 'beta': beta, 'vb': vb}
+
+
+def ls_new_values(X: FloatArray, Z: FloatArray) -> tuple[list[float], list[float]]:
+    """New moderator and scale values spanning the data: the smallest, the mean and the largest value of the first non-intercept column of each part."""
+    return [float(f(X[:, 1])) for f in (numpy.min, numpy.mean, numpy.max)], [float(f(Z[:, 1])) for f in (numpy.min, numpy.mean, numpy.max)]
+
+
+def ls_new_rows(values: list[float]) -> FloatArray:
+    """Model matrix rows (an intercept and one variable) for the new values."""
+    return numpy.column_stack([numpy.ones(len(values)), numpy.asarray(values)])
+
+
+def ls_predict_check(case: correctness.cases.Case, result: typing.Any, with_x: bool, with_z: bool) -> None:
+    """``predict`` for new moderator values and/or new scale values against ``formulas.ls_predict`` row by row.
+
+    Both parts are compared where given: ``pred``, ``se`` and the confidence interval for ``newmods``, the prediction interval when ``newscale`` is given
+    too (the predicted ``tau2`` of its row), and for ``newscale`` alone ``pred`` and the interval on the scale of the link, then ``tau2`` and its bounds
+    through ``transf=numpy.exp`` (the back-transform).
+    """
+    yi, _, X, Z = ls_inputs(case)
+    link = case.args.get('link', 'log')
+    fit = ls_fit_dict(case)
+    k, p, q = len(yi), X.shape[1], Z.shape[1]
+    new_x, new_z = ls_new_values(X, Z)
+    x_rows, z_rows = ls_new_rows(new_x), ls_new_rows(new_z)
+    crit_x, crit_z = ls_critical(case, k - p), ls_critical(case, k - q)
+    expected = [correctness.formulas.ls_predict(x_rows[i], z_rows[i], fit, link, crit_x) for i in range(len(new_x))]
+    scale_expected = [correctness.formulas.ls_predict(x_rows[i], z_rows[i], fit, link, crit_z) for i in range(len(new_x))]
+    if with_x and with_z:
+        predicted = metafopy.predict(result, newmods=new_x, newscale=new_z)
+        for name in LS_PREDICT_FIELDS:
+            ls_agree(case, name, getattr(predicted, name), [e[name] for e in expected], LS_RELATIVE)
+    elif with_x:
+        predicted = metafopy.predict(result, newmods=new_x)
+        for name in LS_CONFIDENCE_FIELDS:
+            ls_agree(case, name, getattr(predicted, name), [e[name] for e in expected], LS_RELATIVE)
+    else:
+        predicted = metafopy.predict(result, newscale=new_z)
+        for name, key in (('pred', 'scale'), ('se', 'scale_se'), ('ci_lb', 'scale_lb'), ('ci_ub', 'scale_ub')):
+            ls_agree(case, name, getattr(predicted, name), [e[key] for e in scale_expected], LS_NUMERIC_HESSIAN)
+        if link == 'log':
+            back = metafopy.predict(result, newscale=new_z, transf=numpy.exp)
+            ls_agree(case, 'tau2', back.pred, [e['tau2'] for e in scale_expected], LS_NUMERIC_HESSIAN)
+            ls_agree(case, 'tau2 ci_lb', back.ci_lb, numpy.exp([e['scale_lb'] for e in scale_expected]), LS_NUMERIC_HESSIAN)
+            ls_agree(case, 'tau2 ci_ub', back.ci_ub, numpy.exp([e['scale_ub'] for e in scale_expected]), LS_NUMERIC_HESSIAN)
+
+
+def ls_predict_newmods(case: correctness.cases.Case, result: typing.Any) -> None:
+    """``predict(result, newmods=...)``: the average true effects with their standard errors and confidence intervals."""
+    ls_predict_check(case, result, True, False)
+
+
+def ls_predict_newscale(case: correctness.cases.Case, result: typing.Any) -> None:
+    """``predict(result, newscale=...)``: the predicted scale on the scale of the link and ``tau2`` with its interval after ``transf=numpy.exp``."""
+    ls_predict_check(case, result, False, True)
+
+
+def ls_predict_both(case: correctness.cases.Case, result: typing.Any) -> None:
+    """``predict(result, newmods=..., newscale=...)``: the confidence and the prediction intervals with the predicted ``tau2`` of each row."""
+    ls_predict_check(case, result, True, True)
+
+
+def ls_predict_fitted(case: correctness.cases.Case, result: typing.Any) -> None:
+    """``predict(result)``: the fitted values of the studies, with the prediction interval that uses each study's ``tau2_i``."""
+    yi, _, X, Z = ls_inputs(case)
+    fit = ls_fit_dict(case)
+    crit = ls_critical(case, len(yi) - X.shape[1])
+    expected = [correctness.formulas.ls_predict(X[i], Z[i], fit, case.args.get('link', 'log'), crit) for i in range(len(yi))]
+    predicted = metafopy.predict(result)
+    for name in LS_PREDICT_FIELDS:
+        ls_agree(case, name, getattr(predicted, name), [e[name] for e in expected], LS_RELATIVE)
+
+
+def ls_wald_check(case: correctness.cases.Case, actual: typing.Any, estimate: FloatArray, vcov: FloatArray, idx: list[int], ddf: int) -> None:
+    """The omnibus statistic and p-value of an ``anova`` result against equation 12 or 14 on the coefficients ``idx`` (F with ``ddf`` for the t-type tests)."""
+    stat, pval = correctness.formulas.ls_wald(estimate, vcov, idx, ddf if case.args.get('test', 'z') in LS_TDIST else None)
+    ls_agree(case, 'stat', actual.stat, stat, LS_NUMERIC_HESSIAN)
+    ls_agree(case, 'pval_omnibus', actual.pval_omnibus, pval, LS_NUMERIC_HESSIAN)
+
+
+def ls_anova_btt(case: correctness.cases.Case, result: typing.Any) -> None:
+    """``anova(result, btt=...)``: the omnibus Wald test of the location coefficients other than the intercept (equation 12)."""
+    yi, _, X, _ = ls_inputs(case)
+    fit = ls_fit_dict(case)
+    idx = list(range(1, X.shape[1]))
+    ls_wald_check(case, metafopy.anova(result, btt=idx), fit['beta'], fit['vb'], idx, len(yi) - X.shape[1])
+
+
+def ls_anova_att(case: correctness.cases.Case, result: typing.Any) -> None:
+    """``anova(result, att=...)``: the omnibus Wald test of the scale coefficients other than the intercept (equation 14)."""
+    yi, _, _, Z = ls_inputs(case)
+    fit = ls_fit_dict(case)
+    idx = list(range(1, Z.shape[1]))
+    ls_wald_check(case, metafopy.anova(result, att=idx), fit['alpha'], fit['va'], idx, len(yi) - Z.shape[1])
+
+
+def ls_anova_combinations(case: correctness.cases.Case, actual: typing.Any, estimate: FloatArray, vcov: FloatArray, L: FloatArray, ddf: int) -> None:
+    """The linear combinations ``L b`` of an ``anova`` result: estimates, standard errors, statistics, p-values and the omnibus test of all of them."""
+    est = L @ estimate
+    cov = L @ vcov @ L.T
+    se = numpy.sqrt(numpy.diag(cov))
+    tdist = case.args.get('test', 'z') in LS_TDIST
+    pval = 2 * (scipy.stats.t.sf(numpy.abs(est / se), ddf) if tdist else scipy.stats.norm.sf(numpy.abs(est / se)))
+    ls_agree(case, 'estimate', actual.estimate, est, LS_NUMERIC_HESSIAN)
+    ls_agree(case, 'se', actual.se, se, LS_NUMERIC_HESSIAN)
+    ls_agree(case, 'zval', actual.zval, est / se, LS_NUMERIC_HESSIAN)
+    ls_agree(case, 'pval', actual.pval, pval, LS_NUMERIC_HESSIAN)
+    ls_wald_check(case, actual, est, cov, list(range(L.shape[0])), ddf)
+
+
+def ls_anova_X(case: correctness.cases.Case, result: typing.Any) -> None:
+    """``anova(result, X=...)``: the sum and the difference of the intercept and slope of the location part."""
+    yi, _, X, _ = ls_inputs(case)
+    fit = ls_fit_dict(case)
+    L = numpy.array([[1.0, 1.0], [1.0, -1.0]])
+    ls_anova_combinations(case, metafopy.anova(result, X=L), fit['beta'], fit['vb'], L, len(yi) - X.shape[1])
+
+
+def ls_anova_Z(case: correctness.cases.Case, result: typing.Any) -> None:
+    """``anova(result, Z=...)``: the sum and the difference of the intercept and slope of the scale part."""
+    yi, _, _, Z = ls_inputs(case)
+    fit = ls_fit_dict(case)
+    L = numpy.array([[1.0, 1.0], [1.0, -1.0]])
+    ls_anova_combinations(case, metafopy.anova(result, Z=L), fit['alpha'], fit['va'], L, len(yi) - Z.shape[1])
+
+
+def ls_anova_lrt(case: correctness.cases.Case, result: typing.Any) -> None:
+    """``anova(full, reduced)``: equation 15 against the reference log-likelihoods of both models.
+
+    The reduced model has a constant scale (``scale='~1'``) and, under ML, a constant location too; under REML it keeps the location part, since REML
+    likelihoods are comparable only for the same fixed effects (the paper's own condition).
+    """
+    yi, vi, X, Z = ls_inputs(case)
+    method, link = case.args['method'], case.args.get('link', 'log')
+    keep_location = method == 'REML'
+    reduced_args = {**case.args, 'scale': '~1'}
+    reduced_X = X
+    if not keep_location:
+        reduced_args.pop('mods')
+        reduced_X = numpy.ones((len(yi), 1))
+    reduced = metafopy.rma_uni(**reduced_args, data=correctness.cases.case_frame(case))
+    reduced_ll = correctness.formulas.ls_reference_fit(yi, vi, reduced_X, numpy.ones((len(yi), 1)), link, method)['ll']
+    stat, pval = correctness.formulas.ls_lrt(ls_reference(case)['ll'], reduced_ll, (X.shape[1] - reduced_X.shape[1]) + (Z.shape[1] - 1))
+    actual = metafopy.anova(result, reduced)
+    ls_agree(case, 'LRT', actual.LRT, stat, LS_NUMERIC_HESSIAN)
+    ls_agree(case, 'pval', actual.pval, pval, LS_NUMERIC_HESSIAN)
+
+
+def ls_permutest_exact(case: correctness.cases.Case, result: typing.Any) -> None:
+    """``permutest(..., exact=True)`` of one part against ``formulas.ls_exact_permutation_p``, which enumerates and refits every distinct permutation.
+
+    The p-values are shares of the same permutations. The reference has no fit for a permuted model whose likelihood has no finite maximum, so each
+    p-value is checked to lie between the share without those permutations and the share with all of them.
+    """
+    yi, vi, X, Z = ls_inputs(case)
+    part = 'scale' if result.skip_beta else 'location'
+    expected = correctness.formulas.ls_exact_permutation_p(yi, vi, X, Z, case.args.get('link', 'log'), case.args['method'], part)
+    actual_pval, actual_omnibus, count = (
+        (result.pval, result.QMp, result.exact_iter) if part == 'location' else (result.pval_alpha, result.QSp, result.Z_exact_iter)
+    )
+    ls_agree(case, 'permutations', count, expected['count'], 1e-12)
+    slack = 1e-9
+    for name, actual, low, high in (
+        (f'pval ({part})', numpy.asarray(actual_pval), expected['pval_low'], expected['pval_high']),
+        (f'omnibus p ({part})', numpy.asarray(actual_omnibus), expected['omnibus_low'], expected['omnibus_high']),
+    ):
+        if not numpy.all((actual >= numpy.asarray(low) - slack) & (actual <= numpy.asarray(high) + slack)):
+            raise AssertionError(
+                f'{case.id}: {name}: metafopy gives {actual!r}, the reference lies between {low!r} and {high!r} '
+                f'({expected["failed"]:g} of {expected["count"]:g} permutations have no reference fit)'
+            )

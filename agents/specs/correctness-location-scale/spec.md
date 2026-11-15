@@ -1,7 +1,7 @@
 # Correctness tests: location-scale models
 
 **Version:** 1.1
-**Status:** proposed
+**Status:** implemented
 **Date:** 2026-11-12
 
 Location-scale models (`rma_uni(..., scale=...)`, metafor's `rma.ls`) are today checked only against R metafor: the parity fixtures and
@@ -52,7 +52,7 @@ def ls_loglik(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, alph
     """The profile log-likelihood (eq. 7, beta at its WLS value, eq. 6) or the restricted log-likelihood (eq. 9) at alpha."""
 
 
-def ls_reference_fit(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, link: str, method: str) -> dict[str, typing.Any]:
+def ls_reference_fit(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, link: str, method: str, maxiter: int = 2000) -> dict[str, typing.Any]:
     """Maximise ls_loglik with scipy.optimize (BFGS from several starts, then Nelder-Mead; SLSQP with Z alpha >= 0 for the identity link).
 
     Returns alpha, beta, vb (eq. 10), tau2, ll and the analytic observed information of alpha (va), independent of metafopy's numerical Hessian.
@@ -79,8 +79,11 @@ def ls_predict(x0: FloatArray, z0: FloatArray, fit: dict[str, typing.Any], link:
     """pred, se, CI and PI (section 2.7) at x0 and z0, and the predicted tau2 with its CI from z0' va z0 (section 2.5.2)."""
 
 
-def ls_exact_permutation_p(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, link: str, method: str, part: str) -> FloatArray:
-    """Exact permutation p-values by enumerating every distinct row permutation of X ('location') or Z ('scale'), refitting with ls_reference_fit."""
+def ls_exact_permutation_p(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, link: str, method: str, part: str) -> dict[str, FloatArray | float]:
+    """Exact permutation p-values by enumerating every distinct row permutation of X ('location') or Z ('scale'), refitting with ls_reference_fit.
+
+    A permuted model with no finite maximum has no reference fit; the p-values are returned as bounds (pval_low, pval_high, omnibus_low, omnibus_high)
+    with the counts of permutations and of failed fits."""
 
 
 # test_derived.py (pattern of the existing confint_* checks)
