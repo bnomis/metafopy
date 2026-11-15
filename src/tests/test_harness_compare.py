@@ -304,3 +304,11 @@ def test_check_r_with_the_flag_turns_an_arithmetic_disagreement_into_a_note(monk
     monkeypatch.setattr(metafopy.core.dbinom, 'FUSED', False)
     ctx.allow_r_drift = True
     assert 'R_fma is fused' in audit.steps.check_r(ctx).notes[0]
+
+
+def test_check_r_skips_the_arithmetic_comparison_for_a_source_without_fused(monkeypatch: pytest.MonkeyPatch, tmp_path: pathlib.Path) -> None:
+    pinned = {'R': '4.6.2', 'R_fma': 'fused', 'metafor': audit.config.METAFOR_VERSION}
+    ctx = pin_environment(monkeypatch, tmp_path, pinned, pinned)
+    monkeypatch.delattr(metafopy.core.dbinom, 'FUSED')
+    outcome = audit.steps.check_r(ctx)
+    assert 'predates metafopy.core.dbinom.FUSED' in outcome.notes[0]
