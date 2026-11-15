@@ -1,6 +1,8 @@
 """``derived`` cases: expected values from ``formulas.py``, coded from the publications' equations."""
 
+import collections.abc
 import dataclasses
+import itertools
 import math
 import re
 import typing
@@ -126,6 +128,51 @@ SELMODEL_DELTA_FLOOR = 1e-6
 SELMODEL_DELTA_CEILING = 20.0
 
 
+def truncest_stretch_maximum(
+    case: correctness.cases.Case,
+    result: typing.Any,
+    negative: collections.abc.Callable[[FloatArray], float],
+    start: FloatArray,
+    bounds: list[tuple[float | None, float | None]],
+    cut_index: int,
+    maxiter: int,
+) -> scipy.optimize.OptimizeResult:
+    """The best bounded maximum of the ``truncest`` likelihood over the stretches between consecutive observed effects.
+
+    The likelihood is a step function of the truncation point, with a jump down at each observed effect (a study is selected only when ``y > cut``,
+    ``y < cut`` for ``alternative='less'``), so it is maximised within each stretch with the cut bounded by the stretch. The end of a stretch at an
+    observed effect, where the likelihood has a supremum and no maximum, is replaced by the point ``1e-8 * max(1, |end|)`` inside it.
+
+    Raises:
+        AssertionError: the optimiser converges in no stretch.
+    """
+    lower, upper = float(result.spec.delta_min[1]), float(result.spec.delta_max[1])
+    observed = sorted({float(y) for y in numpy.asarray(result.base.yi)})
+    edges = [lower, *(y for y in observed if lower < y < upper), upper]
+    greater = result.alternative == 'greater'
+    best: scipy.optimize.OptimizeResult | None = None
+    messages: list[str] = []
+    for low, high in itertools.pairwise(edges):
+        if not high > low:
+            continue
+        step = 1e-8 * max(1.0, abs(high if greater else low))
+        cut_low = low if greater or low not in observed else low + step
+        cut_high = high - step if greater and high in observed else high
+        stretch = list(bounds)
+        stretch[cut_index] = (cut_low, cut_high)
+        begin = start.copy()
+        begin[cut_index] = (cut_low + cut_high) / 2
+        fit = scipy.optimize.minimize(negative, begin, method='SLSQP', bounds=stretch, options={'maxiter': maxiter, 'ftol': 1e-15})
+        if not fit.success:
+            messages.append(str(fit.message))
+            continue
+        if best is None or fit.fun < best.fun:
+            best = fit
+    if best is None:
+        raise AssertionError(f'{case.id}: the optimiser did not converge in any stretch: {messages[:1]}')
+    return best
+
+
 def selmodel_maximum(case: correctness.cases.Case, result: typing.Any, maxiter: int = 1000) -> tuple[FloatArray, float, FloatArray, float, float]:
     """Maximise the case's selection-model log-likelihood (``formulas.selection_loglik`` for a step function or a parametric weight function,
     ``formulas.truncation_loglik`` for ``trunc`` and ``truncest``) from metafopy's start values: the coefficients, ``tau2``, the selection
@@ -177,9 +224,12 @@ def selmodel_maximum(case: correctness.cases.Case, result: typing.Any, maxiter: 
     constraints: typing.Any = []
     if result.decreasing:
         constraints = [{'type': 'ineq', 'fun': lambda par, j=j: parts(par)[2][j - 1] - parts(par)[2][j]} for j in range(1, len(given))]
-    fit = scipy.optimize.minimize(negative, start, method='SLSQP', bounds=bounds, constraints=constraints, options={'maxiter': maxiter, 'ftol': 1e-15})
-    if not fit.success:
-        raise AssertionError(f'{case.id}: the optimiser did not converge: {fit.message}')
+    if kind == 'truncest' and free[1]:
+        fit = truncest_stretch_maximum(case, result, negative, start, bounds, int(free[:1].sum()) + p + 1, maxiter)
+    else:
+        fit = scipy.optimize.minimize(negative, start, method='SLSQP', bounds=bounds, constraints=constraints, options={'maxiter': maxiter, 'ftol': 1e-15})
+        if not fit.success:
+            raise AssertionError(f'{case.id}: the optimiser did not converge: {fit.message}')
     beta, tau2, delta = parts(fit.x)
 
     def negative_plain(par: FloatArray) -> float:

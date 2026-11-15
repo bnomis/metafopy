@@ -1913,3 +1913,63 @@ kind = "value-diff"
 path = ["$fsnum", ""]
 reason = "fsn(yi, vi, data = dat.raudenbush1985, pool = 'Fisher'): metafor gives 40, metafopy 41. The Fisher statistic adds 2 ln 2 per added study and is below its critical value at N = 40 (-0.0017) and above it at N = 41 (0.0032), so 41 is the least integer N; metafor's root search over real N, with the degrees of freedom taken at the real N, rounds to 40. Reproduced 2026-11-15 (R 4.6.2, metafor 5.2-1)."
 ref = "docs/differences.md"
+
+[[known]]
+match = [
+    "options/selmodel/sel_bcg/type=\"truncest\"",
+    "options/selmodel/trimfill_bcg/type=\"truncest\"",
+    "options/selmodel/uni_counts/type=\"truncest\"",
+    "options/selmodel/uni_factor/type=\"truncest\"",
+    "options/selmodel/uni_mods/type=\"truncest\"",
+    "options/selmodel/uni_mods_na/type=\"truncest\"",
+    "options/selmodel/uni_mods_year/type=\"truncest\"",
+    "options/selmodel/uni_na/type=\"truncest\"",
+    "options/selmodel/uni_reml/type=\"truncest\"",
+]
+kind = "value-diff"
+reason = "selmodel(type = 'truncest') with the truncation point free: the likelihood is a step function of the cut with a jump at each observed effect, and metafor's optimiser stops at a local maximum inside one stretch between observed effects. metafopy refits inside every stretch and keeps the highest log-likelihood, so its log-likelihood is higher (-7.1509 against -7.1583 on dat.bcg with the REML fit, and far higher where the supremum lies at an observed effect). Reproduced 2026-11-15 (R 4.6.2, metafor 5.2-1)."
+ref = "docs/differences.md"
+
+[[known]]
+match = [
+    "options/selmodel/sel_bcg/type=\"truncest\"",
+    "options/selmodel/trimfill_bcg/type=\"truncest\"",
+    "options/selmodel/uni_counts/type=\"truncest\"",
+    "options/selmodel/uni_factor/type=\"truncest\"",
+    "options/selmodel/uni_mods/type=\"truncest\"",
+    "options/selmodel/uni_mods_na/type=\"truncest\"",
+    "options/selmodel/uni_mods_year/type=\"truncest\"",
+    "options/selmodel/uni_na/type=\"truncest\"",
+    "options/selmodel/uni_reml/type=\"truncest\"",
+]
+kind = "print-diff"
+reason = "Printed selmodel(type = 'truncest') fit: the heterogeneity and coefficient lines carry the estimates of the stretch search, which differ from metafor's local maximum (see the value-diff entry of the same cases)."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["options/selmodel/uni_mods_na/type=\"truncest\"", "options/selmodel/trimfill_bcg/type=\"truncest\""]
+kind = "warning-extra"
+detail = "*(almost) equal to their lower or upper bound*"
+reason = "selmodel(type = 'truncest'): the stretch search puts a selection parameter at its bound where metafor's local maximum does not, so metafopy warns that the delta estimate is at a bound."
+ref = "docs/differences.md"
+
+[[known]]
+match = "options/selmodel/uni_mods_na/type=\"truncest\""
+kind = "warning-extra"
+detail = "The truncation point sits at an observed effect*"
+reason = "selmodel(type = 'truncest'): the likelihood has no maximum at an observed effect, only a supremum approached from inside the stretch, and metafopy reports the cut a step inside the stretch with this warning; metafor stops at a local maximum and does not warn."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/misc_selmodel/test/127"
+kind = "value-diff"
+detail = "*[[]sav <- selmodel(res, type = \"truncest\")[]]*"
+reason = "selmodel(res, type = 'truncest') on hackshaw1998 with the truncation point free: R stops at a local maximum of a step-function likelihood (log-likelihood -7.2254, cut 0.4670 to 0.4711 in its Wald interval), metafopy searches every stretch between observed effects and reaches -5.0845 (higher), so the estimates differ; the cut is a supremum at an observed effect and has no standard error. Reproduced 2026-11-15 (R 4.6.2, metafor 5.2-1)."
+ref = "docs/differences.md"
+
+[[known]]
+match = "scripts/misc_selmodel/test/127"
+kind = "warning-extra"
+detail = "The truncation point sits at an observed effect*"
+reason = "selmodel(type = 'truncest'): metafopy reports the cut a step inside the stretch with this warning where the likelihood has only a supremum at an observed effect; metafor stops at a local maximum and does not warn."
+ref = "docs/differences.md"
