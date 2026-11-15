@@ -589,6 +589,8 @@ formulas share, not copy, what `formulas.py` already has.
 
 **Notes:**
 
+- Depends on Task 13 (added by Task 11): its `SJIT` fix or skip must land first, because this task's full test run needs the property tests to
+  pass
 - Depends on Task 11
 - This spec has no `TODO.md` item of its own to move: it is part of the umbrella item "Extend the correctness tests beyond the core models", which the
   `correctness-publication-bias` list, last in the order, moves to `DONE.md`

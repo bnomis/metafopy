@@ -2,7 +2,7 @@
 
 **Spec:** `agents/specs/correctness-location-scale/spec.md`
 **Task list:** `agents/tasks/correctness-location-scale/tasks-1.md` (Task 11 completes this document and publishes its page)
-**Review page:** not yet published: the queue session has no tool that publishes an interactive page with a shared database, so an operator session publishes it from this document
+**Review page:** https://claude.ai/artifact/B6BxeoKp7BYY9en6w6QuFf (published 2026-11-15 by the operator session)
 
 ## What is reviewed and how
 
@@ -131,6 +131,13 @@ Run 2026-11-15 from the worktree:
 ## Sources needed
 
 None so far (Task 2 found every source present).
+
+### Recommendations on the page (operator session, 2026-11-15)
+
+The page has one item per mismatch above. It recommends *follow the reference* for all three, changing the identity-link recommendation from
+*investigate*: the reference reaches a higher feasible log-likelihood than metafopy in all four fits, so metafopy's identity-link estimate is not the
+maximum whatever metafor gives. For the two profile-interval items, the paper (computed with metafor) and the independent reference agree against
+metafopy. The `SJIT` failure is Task 13, not a page item.
 
 ## Answers
 
