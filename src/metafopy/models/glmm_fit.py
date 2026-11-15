@@ -91,8 +91,11 @@ class GLMMControl:
     ``'pracma'`` or ``'calculus'``) and ``hessian_ctrl`` (metafor's ``hessianCtrl``: ``d``, ``eps``, ``r``, ``v`` for numDeriv, ``h`` for
     pracma, ``accuracy`` and ``stepsize`` for calculus) choose the numerical Hessian of the exact conditional model; ``dnchgcalc``
     (``'dFNCHypergeo'`` or ``'dnoncenhypergeom'``) and ``dnchgprec`` (the precision of ``BiasedUrn::dFNCHypergeo``, 1e-10 in
-    metafor) its density. Without either entry the Hessian uses the untruncated density; with ``dnchgcalc='dFNCHypergeo'`` or a
-    ``dnchgprec`` it uses :func:`metafopy.core.nchg.fisher_log_probability`, the port of BiasedUrn's truncating algorithm.
+    metafor) its density. ``hesspack=None`` (the default) gives the analytic information of the exact likelihood
+    (:func:`metafopy.core.nchg.fixed_information` and :func:`metafopy.core.nchg.marginal_information`); an explicit ``hesspack``, a
+    non-empty ``hessian_ctrl``, ``dnchgcalc='dFNCHypergeo'`` or a ``dnchgprec`` select metafor's numerical Hessian, with ``'numDeriv'``
+    as the package when none is named. The numerical Hessian uses the untruncated density unless ``dnchgcalc='dFNCHypergeo'`` or a
+    ``dnchgprec`` is given, when it uses :func:`metafopy.core.nchg.fisher_log_probability`, the port of BiasedUrn's truncating algorithm.
     ``package`` is the package that fits the mixed models: ``'lme4'``, ``'GLMMadaptive'`` or ``'glmmTMB'``.
     ``optimizer`` is ``'nlminb'`` (the default: a quasi-Newton maximisation of the exact likelihood of ``model='CM.EL'``),
     ``'clogit'`` or ``'clogistic'`` (``survival::clogit()`` / ``Epi::clogistic()``, only for the fixed-effects methods) or one of the
@@ -110,7 +113,7 @@ class GLMMControl:
     int_rel_tol: float = sys.float_info.epsilon**0.25
     int_subdivisions: int = 100
     hessian_r: int = 16
-    hesspack: str = 'numDeriv'
+    hesspack: str | None = None
     hessian_ctrl: collections.abc.Mapping[str, typing.Any] = dataclasses.field(default_factory=dict)
     dnchgcalc: str | None = None
     dnchgprec: float | None = None
@@ -755,17 +758,21 @@ def exact_conditional(spec: FitSpec, base: SingleLevel) -> ModelFit:
     # the truncation of BiasedUrn's density (about 1e-11) matters only to the finite differences of the Hessian, not to the search
     smooth = dataclasses.replace(integ, calc='dnoncenhypergeom')
     tight = dataclasses.replace(smooth, rel_tol=min(smooth.rel_tol, 1e-10))
-    hessian_ctrl = {'r': ctl.hessian_r, **ctl.hessian_ctrl} if ctl.hesspack == 'numDeriv' else dict(ctl.hessian_ctrl)
+    numerical = ctl.hesspack is not None or bool(ctl.hessian_ctrl) or truncating
+    hesspack = ctl.hesspack or 'numDeriv'
+    hessian_ctrl = {'r': ctl.hessian_r, **ctl.hessian_ctrl} if hesspack == 'numDeriv' else dict(ctl.hessian_ctrl)
 
     def fixed_objective(X: FloatArray, control: metafopy.core.nchg.IntegrationControl) -> collections.abc.Callable[[FloatArray], float]:
         return lambda b: metafopy.core.nchg.neg_loglik(b, tables, X, False, control)
 
-    def hess(func: collections.abc.Callable[[FloatArray], float], x: FloatArray) -> FloatArray:
-        return metafopy.core.numderiv.hessian_by_package(func, x, ctl.hesspack, hessian_ctrl)
+    def fixed_hessian(X: FloatArray, x: FloatArray) -> FloatArray:
+        if numerical:
+            return metafopy.core.numderiv.hessian_by_package(fixed_objective(X, integ), x, hesspack, hessian_ctrl)
+        return metafopy.core.nchg.fixed_information(x, tables, X)
 
     f_fe = fixed_objective(spec.X, smooth)
     x_fe, fun_fe = search(spec, f_fe, base.fe.coef[:p], 'FE', dummy=True)
-    h_fe = hess(fixed_objective(spec.X, integ), x_fe)
+    h_fe = fixed_hessian(spec.X, x_fe)
     ll_fe = -fun_fe
 
     ll_qe, b2, vb2 = NAN, numpy.zeros(0), empty_vcov()
@@ -783,7 +790,7 @@ def exact_conditional(spec: FitSpec, base: SingleLevel) -> ModelFit:
                     raise
                 warnings.warn(str(err), stacklevel=3)
             else:
-                h_qe = hess(fixed_objective(X_qe, integ), x_qe)
+                h_qe = fixed_hessian(X_qe, x_qe)
                 ll_qe = -fun_qe
                 qe_wld = saturated_wald(x_qe, h_qe, p)
                 qe_ok = True
@@ -810,7 +817,10 @@ def exact_conditional(spec: FitSpec, base: SingleLevel) -> ModelFit:
     if tau2 < ctl.tau2tol:
         vb = invert_hessian(h_fe, 'ML')
         return ModelFit(x_fe, vb, tau2, NAN, NAN, 0.0, NAN, NAN, ll_fe, ll_qe, ll_ml, b2, vb2, qe_wld, qe_ok, p + 1, p, k, 'ML')
-    h_ml = hess(f_ml_hessian, x_ml)
+    if numerical:
+        h_ml = metafopy.core.numderiv.hessian_by_package(f_ml_hessian, x_ml, hesspack, hessian_ctrl)
+    else:
+        h_ml = metafopy.core.nchg.marginal_information(x_ml, tables, spec.X, tight)
     vb_full = invert_hessian(h_ml, 'ML')
     vb = vb_full[:p, :p]
     if numpy.any(numpy.diag(vb) <= 0):

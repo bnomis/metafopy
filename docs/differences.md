@@ -741,54 +741,6 @@ print(res.se)
 </div>
 </div>
 
-### rma_glmm with CM.EL: standard errors
-
-The conditional model gives a standard error that is 0.5 % lower than R's on the Collins data (0.098986 against 0.099461).
-
-*Why:* R's Hessian is a finite-difference Hessian of an objective that is itself noisy (`integrate()` with `rel.tol` 1.2e-4 and
-the truncation of BiasedUrn), so R's value moves in the third digit under tiny shifts and cannot be matched. The default
-`dnchgcalc` of metafopy is the smooth density; see the [notes](differences-notes.md#rma_glmm) for the other options.
-
-<div class="compare" markdown>
-<div markdown>
-
-**R, metafor 5.2-1**
-
-```r
-library(metafor)
-res <- rma.glmm(ai = b.xci, n1i = nci, ci = b.xti, n2i = nti, data = dat.collins1985a,
-                measure = "OR", model = "CM.EL", method = "FE")
-res$se
-```
-
-```text
-Warning messages:
-1: 3 studies with NAs omitted from model fitting. 
-2: Some yi/vi values are NA. 
-[1] 0.09946104
-```
-
-</div>
-<div markdown>
-
-**Python, metafopy**
-
-```python
-from metafopy import datasets, rma_glmm
-
-res = rma_glmm(ai='b.xci', n1i='nci', ci='b.xti', n2i='nti', data=datasets.load('dat.collins1985a'), measure='OR', model='CM.EL', method='FE')
-print(res.se)
-```
-
-```text
-UserWarning: 3 studies with NAs omitted from model fitting.
-UserWarning: Some yi/vi values are NA.
-[0.09898644]
-```
-
-</div>
-</div>
-
 ## rma_glmm back-ends and links
 
 `rma_glmm(control={'package': ...})` takes `'lme4'` (the default), `'GLMMadaptive'` and `'glmmTMB'`, and `link=` takes the links logit, probit, cauchit, cloglog, log, identity and sqrt. The examples fit `dat.bcg` with the intercept-only model.
@@ -1757,6 +1709,62 @@ inside the stretch (the estimate is 0.48999999, a step of 1e-08 inside). Treat r
 *Why:* the maximum-likelihood estimate of the truncation point is the cut with the highest likelihood over all cuts, and a local maximum inside
 one stretch is not it: the log-likelihood is -10.652 in metafopy against -17.791 in metafor on these data (checked 2026-11-15, R 4.6.2,
 metafor 5.2-1). metafopy follows the maximum over all stretches (decided 2026-11-15).
+
+### rma_glmm with CM.EL: standard errors and QE_Wld
+
+The exact conditional model (`measure="OR"`, `model="CM.EL"`) gives standard errors, `vb`, `se_tau2`, the `tau2` interval and `QE_Wld` that differ
+from R's in the third digit or more: the standard error is 0.09955789 on the Collins data where R gives 0.09946104, and `QE_Wld` of `dat.bcg` with
+`method="FE"` is 163.0895 where R gives 191.7124. Coefficients, `tau2` and log-likelihoods are the same as R's.
+
+*Why:* metafopy reports the analytic information of the exact likelihood (van Houwelingen et al. 1993): the sum over studies of the variance of
+the cell count under the non-central hypergeometric distribution, or, for `method='ML'`, the exact Hessian from each study's posterior moments. R takes a
+numDeriv Hessian with Richardson extrapolation over 16 halvings (`r = 16`) of an objective that is itself noisy (`integrate()` with `rel.tol` 1.2e-4 and the
+truncation of BiasedUrn), so R's value moves in the third digit under tiny shifts and cannot be matched. The analytic value agrees with a central
+second difference of the exact log-likelihood to 1e-7. The correctness cases `glmm.fit.or.cm.el.{fe,ml}.*.se` and
+`glmm.heterogeneity.qe-wld.cm.el.fe.bcg` check it against the analytic value.
+
+`control={'hesspack': 'numDeriv'}` (or `'pracma'`, `'calculus'`), a non-empty `hessianCtrl`, `dnchgcalc='dFNCHypergeo'` or a `dnchgprec` restores the numerical
+Hessian of metafor; see the [notes](differences-notes.md#rma_glmm) for the other options.
+
+<div class="compare" markdown>
+<div markdown>
+
+**R, metafor 5.2-1**
+
+```r
+library(metafor)
+res <- rma.glmm(ai = b.xci, n1i = nci, ci = b.xti, n2i = nti, data = dat.collins1985a,
+                measure = "OR", model = "CM.EL", method = "FE")
+res$se
+```
+
+```text
+Warning messages:
+1: 3 studies with NAs omitted from model fitting. 
+2: Some yi/vi values are NA. 
+[1] 0.09946104
+```
+
+</div>
+<div markdown>
+
+**Python, metafopy**
+
+```python
+from metafopy import datasets, rma_glmm
+
+res = rma_glmm(ai='b.xci', n1i='nci', ci='b.xti', n2i='nti', data=datasets.load('dat.collins1985a'), measure='OR', model='CM.EL', method='FE')
+print(res.se)
+```
+
+```text
+UserWarning: 3 studies with NAs omitted from model fitting.
+UserWarning: Some yi/vi values are NA.
+[0.09955789]
+```
+
+</div>
+</div>
 
 ## Everything else
 

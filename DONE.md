@@ -851,3 +851,65 @@ its reference". A change to `src/metafopy/` goes through a spec first, or a smal
 Spec: none (small item); tasks: `agents/tasks/truncest-piecewise-search/tasks-1.md`.
 
 Done: 2026-11-15, agents/tasks/truncest-piecewise-search/tasks-1.md
+
+## The CM.EL information is taken by finite differences of the exact likelihood
+
+Both findings below share one cause: for `rma_glmm(model='CM.EL')`, metafopy takes the Hessian of the exact conditional (non-central hypergeometric)
+likelihood by finite differences, as R metafor does (`src/metafopy/models/glmm_fit.py`, `invert_hessian` and the `hesspack` options), while the
+correctness formulas (`src/tests/correctness/glmm_formulas.py`) use its analytic information. The standard error of the pooled log odds ratio (first
+finding) and the Wald statistic of the saturated model, `QE_Wld` (second finding), both come from that numerical Hessian. Consolidated on 2026-11-15 by a
+TODO review.
+
+Fix direction: compute the analytic information of the exact conditional likelihood once and use it for both the `FE` standard error and the saturated
+model's `QE_Wld`; then settle the `ML` standard error as the first finding says. Each finding's own fix direction lists the cases, the R parity fixtures,
+the `known.toml` entries and the `docs/differences.md` entry it needs. A change to `src/metafopy/` goes through a spec first.
+
+### The CM.EL standard error of the log odds ratio differs from the observed information of the exact likelihood
+
+<!-- doc-counts: accept-start found on 2026-11-14 - a dated record, not a claim about the present -->
+Found on 2026-11-14 by the `rma_glmm` correctness cases (`agents/specs/correctness-glmm/mismatches.md`, decision D1); the user answered *follow the
+reference* for the `FE` fits and *investigate* for the `ML` fits on 2026-11-14. The coefficients and `tau2` of `rma_glmm(model='CM.EL')` agree with the
+formulas of `src/tests/correctness/glmm_formulas.py` (van Houwelingen et al. 1993); only the standard error disagrees.
+
+### FE fits: follow the reference
+
+Cases `glmm.fit.or.cm.el.fe.{nielweise2007,collins1985a,jackson2018.pneumonia}.se` in `src/tests/correctness/cases/glmm.toml`, tolerance 1e-6, each a
+strict expected failure. metafopy / formulas / R metafor 5.2-1: `dat.nielweise2007` 0.22403812 / 0.22403482 / 0.22403498; `dat.collins1985a`
+0.09940439 / 0.09955789 / 0.09952917; the pneumonia outcome of Jackson et al. (2018) 0.25175750 / 0.25175350 / 0.25174661. The `FE` information of the
+exact conditional likelihood is analytic (the sum of the conditional variances), and metafopy is furthest from it, 1.5e-3 relative on
+`dat.collins1985a`.
+
+### ML fits: investigate
+
+Cases `glmm.fit.or.cm.el.ml.{nielweise2007,collins1985a,jackson2018.pneumonia}.se`, tolerance 1e-5, `int_rel_tol` 1e-10, each a strict expected
+failure. metafopy / formulas / R metafor: 0.35126655 / 0.35104033 / 0.35110612; 0.13635527 / 0.13638548 / 0.13648151; 0.88813349 / 0.88810230 /
+0.88812403. The formulas use a finite-difference Hessian of the exact marginal likelihood, as does R metafor (`numDeriv`), and the three values disagree
+with one another, so which is nearest the true observed information is not known.
+<!-- doc-counts: accept-end -->
+
+Fix direction: find the standard error code for `CM.EL` in `src/metafopy/models/glmm_fit.py`; make the `FE` standard error the analytic information of
+the exact conditional likelihood, then set the three `FE` cases to `pass`. For `ML`, compare the Hessian with a step-size sweep and a higher-order
+difference, decide which value is nearest, then either change metafopy or accept the difference with its reason. Mark the R parity fixtures that hold a
+`CM.EL` standard error as differing, add the matching `src/audit/data/known.toml` entries, and add the difference to `docs/differences.md` under "Where
+metafor departs from its reference". A change to `src/metafopy/` goes through a spec first, or a small task list if the fix is local.
+
+### The CM.EL saturated-model Wald statistic QE_Wld is ill-conditioned
+
+<!-- doc-counts: accept-start found on 2026-11-14 - a dated record, not a claim about the present -->
+Found on 2026-11-14 by the case `glmm.heterogeneity.qe-wld.cm.el.fe.bcg` (`agents/specs/correctness-glmm/mismatches.md`, decision D2); the user
+answered *follow the reference* on 2026-11-14. For `dat.bcg`, `OR`, `CM.EL`, `FE`, `QE_Wld` is 191.71241948 in metafopy, 163.08947856 in the formulas
+(Wald statistic of the study coefficients of the saturated exact-likelihood fit with the analytic information of the non-central hypergeometric
+likelihood; `saturated_fits` in `src/tests/correctness/glmm_formulas.py`) and 268.5989693 in R metafor 5.2-1. The same statistic agrees between the
+formulas, metafopy and R metafor for `CM.AL` (147.906) and `UM.FS` (163.165), and `QE_LRT` of `CM.EL` is 176.8738393 in all three.
+<!-- doc-counts: accept-end -->
+
+Metafopy takes the Hessian of the saturated `CM.EL` model by finite differences of a noisy objective, as R does; the `src/audit/data/known.toml` entries
+for `*/glmm_cm*` record it as a difference from R.
+
+Fix direction: compute the information of the saturated `CM.EL` fit analytically, as the formulas do, and set the case to `pass`. Mark the R parity
+fixtures that hold `QE_Wld` of `CM.EL` as differing, update the `known.toml` entries for `*/glmm_cm*` and add the difference to `docs/differences.md`
+under "Where metafor departs from its reference".
+
+Spec: `agents/specs/cm-el-information/spec.md`; tasks: `agents/tasks/cm-el-information/tasks-1.md`.
+
+Done: 2026-11-15, agents/specs/cm-el-information/spec.md, agents/tasks/cm-el-information/tasks-1.md

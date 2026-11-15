@@ -2,8 +2,8 @@
 
 # Task 4: OR fit cases. Each case reads the formulas' own fit of the same call (glmm_formulas.rma_glmm_*); a mixed fit also runs
 # test_derived.glmm_likelihood_at_estimate. UM.RS with ML uses the Laplace approximation (lme4 allows no more with two random effects), CM.EL the
-# exact integral (control int_rel_tol tightened) and the other fits adaptive quadrature with nAGQ = 7. The CM.EL standard errors are recorded as
-# mismatches in agents/specs/correctness-glmm/mismatches.md. UM.RS with ML has no case on dat.nielweise2007: that fit is nearly unidentifiable
+# exact integral (control int_rel_tol tightened) and the other fits adaptive quadrature with nAGQ = 7. The CM.EL standard errors and QE_Wld are the
+# analytic information of the exact likelihood (agents/specs/cm-el-information/spec.md). UM.RS with ML has no case on dat.nielweise2007: that fit is nearly unidentifiable
 # (R metafor warns of it too) and the formulas' search stops at a score of 1.3e-6, above the 1e-6 it requires.
 
 [[case]]
@@ -55,8 +55,6 @@ dataset = "dat.nielweise2007"
 args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.EL", method = "FE" }
 expect = { "se[0]" = "glmm_formulas.rma_glmm_se" }
 tolerance = 1e-6
-status = "mismatch"
-reason = "metafopy gives se 0.22403812206, the formulas (observed information of the exact conditional likelihood) 0.22403481655, and R metafor 5.2-1 0.2240349774"
 covers = ["rma_glmm.fit.OR.CM.EL.FE"]
 
 [[case]]
@@ -67,8 +65,6 @@ dataset = "dat.nielweise2007"
 args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "CM.EL", method = "ML", control = { int_rel_tol = 1e-10 } }
 expect = { "se[0]" = "glmm_formulas.rma_glmm_se" }
 tolerance = 1e-5
-status = "mismatch"
-reason = "metafopy gives se 0.35126655007, the formulas (observed information of the exact conditional likelihood) 0.35104032913, and R metafor 5.2-1 0.3511061238"
 covers = ["rma_glmm.fit.OR.CM.EL.ML"]
 
 [[case]]
@@ -182,8 +178,6 @@ dataset = "dat.collins1985a"
 args = { ai = "b.xti", n1i = "nti", ci = "b.xci", n2i = "nci", measure = "OR", model = "CM.EL", method = "FE" }
 expect = { "se[0]" = "glmm_formulas.rma_glmm_se" }
 tolerance = 1e-6
-status = "mismatch"
-reason = "metafopy gives se 0.09940438923, the formulas (observed information of the exact conditional likelihood) 0.09955789399, and R metafor 5.2-1 0.09952916761"
 covers = ["rma_glmm.fit.OR.CM.EL.FE"]
 
 [[case]]
@@ -194,8 +188,6 @@ dataset = "dat.collins1985a"
 args = { ai = "b.xti", n1i = "nti", ci = "b.xci", n2i = "nci", measure = "OR", model = "CM.EL", method = "ML", control = { int_rel_tol = 1e-10 } }
 expect = { "se[0]" = "glmm_formulas.rma_glmm_se" }
 tolerance = 1e-5
-status = "mismatch"
-reason = "metafopy gives se 0.13635526517, the formulas (observed information of the exact conditional likelihood) 0.13638547729, and R metafor 5.2-1 0.1364815073"
 covers = ["rma_glmm.fit.OR.CM.EL.ML"]
 
 [[case]]
@@ -325,8 +317,6 @@ source = { citation = "Jackson D, Law M, Stijnen T, Viechtbauer W, White IR (201
 args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "CM.EL", method = "FE" }
 expect = { "se[0]" = "glmm_formulas.rma_glmm_se" }
 tolerance = 1e-6
-status = "mismatch"
-reason = "metafopy gives se 0.25175750395, the formulas (observed information of the exact conditional likelihood) 0.25175350296, and R metafor 5.2-1 0.2517466148"
 covers = ["rma_glmm.fit.OR.CM.EL.FE"]
 
 [[case]]
@@ -338,8 +328,6 @@ source = { citation = "Jackson D, Law M, Stijnen T, Viechtbauer W, White IR (201
 args = { ai = "ai", bi = "bi", ci = "ci", di = "di", measure = "OR", model = "CM.EL", method = "ML", control = { int_rel_tol = 1e-10 } }
 expect = { "se[0]" = "glmm_formulas.rma_glmm_se" }
 tolerance = 1e-5
-status = "mismatch"
-reason = "metafopy gives se 0.88813349, the formulas (observed information of the exact conditional likelihood) 0.88810230, and R metafor 5.2-1 0.8881240252"
 covers = ["rma_glmm.fit.OR.CM.EL.ML"]
 
 [[case]]
@@ -1616,8 +1604,6 @@ dataset = "dat.bcg"
 args = { ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg", measure = "OR", model = "CM.EL", method = "FE" }
 expect = { QE_Wld = "glmm_formulas.rma_glmm_qe_wld" }
 tolerance = 1e-5
-status = "mismatch"
-reason = "metafopy gives QE_Wld 191.71241948, the formulas (Wald statistic of the saturated exact-likelihood fit) 163.08947856, and R metafor 5.2-1 268.5989693"
 covers = ["rma_glmm.heterogeneity.QE_Wld"]
 
 [[exempt]]
