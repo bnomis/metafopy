@@ -36,7 +36,7 @@ suite, as the run order requires.
 
 ## Task 1: The full audit and the known.toml entries for the no-intercept difference
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Source Reference:** the item's fix direction (run `bin/metafor-audit.sh`, add a `known.toml` entry for each finding the change explains)
@@ -46,48 +46,48 @@ suite, as the run order requires.
 
 **Subtasks:**
 
-- [ ] Re-check the starting point, and stop as `blocked`, naming what differs, if any of these is not so:
+- [x] Re-check the starting point, and stop as `blocked`, naming what differs, if any of these is not so:
       `grep -n -i -E 'without an intercept|no-intercept|centres? yi|ymci' src/audit/data/known.toml` finds nothing;
       `grep -n '^### QE and tau2 of a model without an intercept$' docs/differences.md` finds the heading; and the item
       "No audit entries record the no-intercept QE and tau2 difference" in `TODO.md` has a `tasks:` line naming
       `agents/tasks/audit-no-intercept/tasks-1.md`
-- [ ] Record the baseline for the closing check: write the output of `git rev-parse HEAD` into this task's Notes as "Baseline commit" (the commit
+- [x] Record the baseline for the closing check: write the output of `git rev-parse HEAD` into this task's Notes as "Baseline commit" (the commit
       whose `TODO.md` the last task compares with; the coordinator's commit that adds the `tasks:` line comes before the list starts)
-- [ ] Run the full audit in the background, as the header says:
+- [x] Run the full audit in the background, as the header says:
       `METAFOPY_AUDIT_RLIB="$main/.audit/Rlib" METAFOPY_AUDIT_WORK="$main/.audit" bin/metafor-audit.sh`, and record the run directory it prints
       (`$main/.audit/runs/<timestamp>`) in this task's Notes
-- [ ] Read the run's `wrong-or-missing-full.md` and the `new` list of its `findings.json`, and sort every finding, and every entry the report lists as
+- [x] Read the run's `wrong-or-missing-full.md` and the `new` list of its `findings.json`, and sort every finding, and every entry the report lists as
       stale, into two lists in this task's Notes, each with its case id, `kind`, `path` and one line of detail:
       - **Explained by the change:** a finding on `QE`, `QEp`, `I2`, `H2`, `tau2` or a value that follows from tau2 (`se`, `zval`, `pval`, `ci.lb`,
         `ci.ub`, `beta` of a random-effects fit, `fit.stats`, `vb`, the printed lines that show them) of an `rma_uni` or `rma_ls` fit whose location
         design does not span the constant (`intercept=false` with a matrix `mods`, or `mods = ~ ablat - 1`), or a finding of `vif(reestimate=true)` on
         an `rma_uni` fixture (`docs/differences.md`: each refit uses only the columns of one coefficient set, without an intercept)
       - **Not explained:** everything else, including a stale entry
-- [ ] Stop as `blocked`, naming the case, for a finding of the first kind on a fixture whose location design spans the constant (an intercept, or
+- [x] Stop as `blocked`, naming the case, for a finding of the first kind on a fixture whose location design spans the constant (an intercept, or
       a full set of dummy columns such as `~ 0 + alloc`): `y' P y` equals metafor's centred form there, so such a finding is a bug in `64bc719`, not
       the accepted difference. `rma_mv` and `rma_glmm` do not centre `yi`, so a finding on an `mv_*` or `glmm_*` fixture is never of the first kind
-- [ ] For each finding explained by the change, reproduce R's value with an R call (the README's rule: a reason that says what R does has been
+- [x] For each finding explained by the change, reproduce R's value with an R call (the README's rule: a reason that says what R does has been
       reproduced in R) and show metafopy's value from Python; record both in this task's Notes
-- [ ] Add `[[known]]` entries to `src/audit/data/known.toml`, grouped by cause, each naming its fixtures and paths (`match` and `path` as lists where
+- [x] Add `[[known]]` entries to `src/audit/data/known.toml`, grouped by cause, each naming its fixtures and paths (`match` and `path` as lists where
       needed, never a glob wider than the reason, such as `*/uni_*`): `kind`, `path`, a `reason` (metafor centres `yi` once, `ymci` in `rma.uni`, so
       its QE is not Cochran's Q when the design does not span the constant and its tau2 differs with it; metafopy uses `y' P y`, for
       `vif(reestimate=TRUE)` each refit has no intercept; the R and Python values measured, with the date and "R 4.6.2, metafor 5.2-1") and
       `ref = "docs/differences.md"`. Escape a literal `[` or `]` in a glob as `[[]` and `[]]`. Add no entry for a finding the run does not report
-- [ ] Re-render the report with the new ledger (seconds, no R):
+- [x] Re-render the report with the new ledger (seconds, no R):
       `METAFOPY_AUDIT_WORK="$main/.audit" bin/metafor-audit.sh --rerender "$main/.audit/runs/<timestamp>"`, and check that it lists no finding of
       the first list and no new entry as stale, and that the findings it lists are exactly the second list
 
 **Acceptance Criteria:**
 
-- [ ] The re-rendered report of the full run lists no finding the no-intercept change explains
-- [ ] Every new `known.toml` entry matches at least one finding of the full run, and none matches a finding of the "Not explained" list
-- [ ] This task's Notes hold the baseline commit, the run directory and both lists
+- [x] The re-rendered report of the full run lists no finding the no-intercept change explains
+- [x] Every new `known.toml` entry matches at least one finding of the full run, and none matches a finding of the "Not explained" list
+- [x] This task's Notes hold the baseline commit, the run directory and both lists
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_harness_accounts.py src/tests/test_harness_compare.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_harness_accounts.py src/tests/test_harness_compare.py` passes
 
 **Notes:**
 
@@ -102,6 +102,27 @@ suite, as the run order requires.
 - `construct/*/intercept=false` fixtures that pass `mods` as a formula ignore `intercept=` (as metafor does), so their designs hold the constant and
   give no finding from this change (Task 3 of `agents/tasks/qe-no-intercept/tasks-1.md`, 2026-11-14)
 - The existing entry `options/vif/ls_year/reestimate=true` (a print difference of the flat scale intercept) stays as it is
+- Baseline commit: `d49d5dcddb1226868bc5ee8cc81b8ee04fbd2153`
+- Run directory: `/Users/simonb/src/metafopy/.audit/runs/20261115-160207` (full run, `"full": true`; 208 unaccepted findings in 33 causes before the entries)
+- A fresh worktree has no `.venv`; `uv sync --frozen` (does not touch `uv.lock`) made one before the audit could import numpy
+- **Explained by the change** (all `rma_uni` or `rma_ls` with a location design without the constant):
+  - `construct/{uni_counts,uni_factor,uni_mods,uni_mods_na,uni_mods_year,uni_na,uni_reml}/mods={"$formula":"~ ablat - 1"}`: `value-diff` on `$QE`, `$QEp`,
+    `$I2`, `$H2`, `$tau2`, `$tau2.f`, `$se.tau2`, `$M`, `$QM`, `$QMp`, `$b`, `$beta`, `$se`, `$zval`, `$pval`, `$ci.lb`, `$ci.ub`, `$vb`, `$fit.stats$ML`,
+    `$fit.stats$REML`; and `print-diff` of the `tau^2` line (R 0.2986, Python 0.0865)
+  - `construct/{ls_bcg,ls_na,ls_year}/mods={"$formula":"~ ablat - 1"}`: `value-diff` on `$QE`, `$QEp` (R 209.6856 or 170.3341, Python 48.7021 or 40.9509)
+  - `scripts/misc_predict/test/50` to `53` (`rma(yi ~ 0 + ablat, vi, data = dat)` and `predict()` from it): `value-diff` on the same paths plus `$pred`,
+    `$pi.lb`, `$pi.ub`, `$pi.se`, `$cr.lb`, `$cr.ub`
+  - R and Python checked on 2026-11-15 with `rma(yi ~ 0 + ablat, vi, data = dat)` on `dat.bcg` (RR): R `QE` 209.6856153, `tau2` 0.2986351297; Python
+    (`metafopy.rma`) `QE` 48.70208561, `tau2` 0.08645333338
+  - No finding of `vif(reestimate=true)`, `intercept=false` or an `mv_*` or `glmm_*` fixture is new, and none is on a design that spans the constant
+- **Not explained** (8 findings after the entries; stale ledger entries listed by the report are older ones and not from this task):
+  - `options/permutest/uni_mods/exact=true`: `r-killed`, R passed the memory limit of 4 GiB
+  - `construct/ls_na/mods={"$formula":"~ ablat * alloc"}`: `accepts-where-R-refuses`, R: "No missing values allowed in 'alpha.init'."
+  - `options/selmodel/uni_factor/type="logistic"` and `type="logistic1"`: `value-diff` on `$hessian` element 11 (R -1.15e-08, Python 2.69e-15)
+  - `options/permutest/ls_bangert/digits=2` and `digits=[2,{"$na":true},1]`: `print-diff` line 12 (`0.90` against `0.88`)
+  - `construct/uni_mods_year/scale={"$formula":"~ 0 + I(1|ablat)"}`: `print-diff` line 13 (4th decimal)
+  - `options/vif/ls_na/table=true`: `print-diff` line 7 (4th decimal)
+- Re-rendered report: 8 findings in 6 causes, none from the first list, no new entry stale
 
 ---
 
