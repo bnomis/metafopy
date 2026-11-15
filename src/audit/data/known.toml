@@ -1813,3 +1813,62 @@ kind = "print-diff"
 detail = "line 2: R 'tau^2 *', Python 'tau^2 *'"
 reason = "The printed tau^2 limits of confint(type = 'HT') of a fit whose tau2 estimator is not DL: R centres on log(H2) of the fit, metafopy on H from Q, as Higgins and Thompson (2002) and Borenstein et al. (2009); the accepted value-diff of the entry above."
 ref = "docs/differences.md"
+
+[[known]]
+match = [
+  'construct/uni_counts/mods={"$formula":"~ ablat - 1"}',
+  'construct/uni_factor/mods={"$formula":"~ ablat - 1"}',
+  'construct/uni_mods/mods={"$formula":"~ ablat - 1"}',
+  'construct/uni_mods_na/mods={"$formula":"~ ablat - 1"}',
+  'construct/uni_mods_year/mods={"$formula":"~ ablat - 1"}',
+  'construct/uni_na/mods={"$formula":"~ ablat - 1"}',
+  'construct/uni_reml/mods={"$formula":"~ ablat - 1"}',
+]
+kind = "value-diff"
+path = [
+  "$QE", "$QEp", "$I2", "$H2", "$tau2", "$tau2.f", "$se.tau2", "$M", "$QM", "$QMp", "$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub",
+  "$vb", "$fit.stats$ML", "$fit.stats$REML",
+]
+reason = "rma_uni with a location design that does not span the constant (mods = ~ ablat - 1). metafor centres yi once (ymci in rma.uni), so its QE is not Cochran's Q and its tau2 differs with it; metafopy uses y' P y with the uncentred yi, so QE and every tau2 estimator are those of the model as fitted, and the values that follow from tau2 (I2, H2, se, zval, pval, the limits, vb, the fit statistics) differ with them. Reproduced 2026-11-15 (R 4.6.2, metafor 5.2-1) on dat.bcg with rma(yi ~ 0 + ablat, vi): R QE 209.6856 and tau2 0.2986, Python QE 48.7021 and tau2 0.0865. Accepted as a departure of metafor from its reference by decision of the operator (answered 2026-11-13)."
+ref = "docs/differences.md"
+
+[[known]]
+match = [
+  'construct/uni_counts/mods={"$formula":"~ ablat - 1"}',
+  'construct/uni_factor/mods={"$formula":"~ ablat - 1"}',
+  'construct/uni_mods/mods={"$formula":"~ ablat - 1"}',
+  'construct/uni_mods_na/mods={"$formula":"~ ablat - 1"}',
+  'construct/uni_mods_year/mods={"$formula":"~ ablat - 1"}',
+  'construct/uni_na/mods={"$formula":"~ ablat - 1"}',
+  'construct/uni_reml/mods={"$formula":"~ ablat - 1"}',
+]
+kind = "print-diff"
+detail = "line 2: R 'tau^2 (estimated amount of residual heterogeneity): *', Python 'tau^2 (estimated amount of residual heterogeneity): *'"
+reason = "The printed tau^2 line of an rma_uni fit with mods = ~ ablat - 1: the accepted tau2 difference of the entry above (R tau2 0.2986, Python 0.0865 on dat.bcg, reproduced 2026-11-15, R 4.6.2, metafor 5.2-1)."
+ref = "docs/differences.md"
+
+[[known]]
+match = [
+  'construct/ls_bcg/mods={"$formula":"~ ablat - 1"}',
+  'construct/ls_na/mods={"$formula":"~ ablat - 1"}',
+  'construct/ls_year/mods={"$formula":"~ ablat - 1"}',
+]
+kind = "value-diff"
+path = ["$QE", "$QEp"]
+reason = "rma_ls with a location design that does not span the constant (mods = ~ ablat - 1): metafor's QE uses the centred yi, metafopy's y' P y with the uncentred yi, so QE and QEp differ (the location-scale fit's tau2 is a scale model and does not change). Reproduced 2026-11-15 (R 4.6.2, metafor 5.2-1) on dat.bcg: R QE 209.6856, Python QE 48.7021, the values of the rma_uni fit of the same location design. Accepted as a departure of metafor from its reference by decision of the operator (answered 2026-11-13)."
+ref = "docs/differences.md"
+
+[[known]]
+match = [
+  "scripts/misc_predict/test/50",
+  "scripts/misc_predict/test/51",
+  "scripts/misc_predict/test/52",
+  "scripts/misc_predict/test/53",
+]
+kind = "value-diff"
+path = [
+  "$QE", "$QEp", "$I2", "$H2", "$tau2", "$tau2.f", "$se.tau2", "$M", "$QM", "$QMp", "$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub",
+  "$vb", "$fit.stats$ML", "$fit.stats$REML", "$pred", "$pi.lb", "$pi.ub", "$pi.se", "$cr.lb", "$cr.ub",
+]
+reason = "The testthat file test_misc_predict.r fits rma(yi ~ 0 + ablat, vi, data = dat) (test 50) and predicts from it (tests 51 to 53): a location design without the constant, so the accepted QE and tau2 difference of the entry on mods = ~ ablat - 1 applies to the fit, and predict() values follow from its tau2. Reproduced 2026-11-15 (R 4.6.2, metafor 5.2-1): R QE 209.6856 and tau2 0.2986, Python QE 48.7021 and tau2 0.0865. Accepted as a departure of metafor from its reference by decision of the operator (answered 2026-11-13)."
+ref = "docs/differences.md"

@@ -790,3 +790,21 @@ tasks: `agents/tasks/correctness-location-scale/tasks-1.md`. Spec: `agents/specs
 `agents/tasks/correctness-publication-bias/tasks-1.md`.
 
 Done: 2026-11-15, agents/specs/correctness-mv-robust/spec.md, agents/specs/correctness-glmm/spec.md, agents/specs/correctness-location-scale/spec.md and agents/specs/correctness-publication-bias/spec.md
+
+## No audit entries record the no-intercept QE and tau2 difference
+
+<!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
+Found on 2026-11-15 by a TODO review. The item "QE and the moment tau2 estimators centre yi in models without an intercept" in `DONE.md` asked for a
+`src/audit/data/known.toml` entry; Task 3 of `agents/tasks/qe-no-intercept/tasks-1.md` ran the audit on `construct/*/intercept=false` only and added
+none. Task 14 of `agents/tasks/correctness-location-scale/tasks-1.md` then found that `vif(reestimate=True)` refits without an intercept, so its values
+differ from R by design (recorded in `docs/differences.md`, "QE and tau2 of a model without an intercept"), and notes "No `known.toml` entry: R metafor
+is not installed here, so the audit cases could not be run to name them". `known.toml` has no entry for the change; fits written as formulas with
+`- 1` (the `"~ ablat - 1"` domain in `src/audit/data/domains.toml`) may differ too. Not yet confirmed by an audit run.
+<!-- doc-counts: accept-end -->
+
+Fix direction: run `bin/metafor-audit.sh` in a session with R metafor 5.2-1, and add a `known.toml` entry, citing the `docs/differences.md` section,
+for each finding the no-intercept change explains (the `vif` reestimate options, no-intercept and `- 1` fits); fix any other finding as its own item.
+
+Spec: none (small item); tasks: `agents/tasks/audit-no-intercept/tasks-1.md`.
+
+Done: 2026-11-15, agents/tasks/audit-no-intercept/tasks-1.md

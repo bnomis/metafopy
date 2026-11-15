@@ -4,21 +4,61 @@ Open work only, in implementation order, nearest first. Finished items move to
 `DONE.md` unchanged. See the shared `todo-add` and `todo-review` skills for
 the shape of an item.
 
-## No audit entries record the no-intercept QE and tau2 difference
+## The audit lists the exact permutest of uni_mods as an R kill and has no entry for it
 
 <!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
-Found on 2026-11-15 by a TODO review. The item "QE and the moment tau2 estimators centre yi in models without an intercept" in `DONE.md` asked for a
-`src/audit/data/known.toml` entry; Task 3 of `agents/tasks/qe-no-intercept/tasks-1.md` ran the audit on `construct/*/intercept=false` only and added
-none. Task 14 of `agents/tasks/correctness-location-scale/tasks-1.md` then found that `vif(reestimate=True)` refits without an intercept, so its values
-differ from R by design (recorded in `docs/differences.md`, "QE and tau2 of a model without an intercept"), and notes "No `known.toml` entry: R metafor
-is not installed here, so the audit cases could not be run to name them". `known.toml` has no entry for the change; fits written as formulas with
-`- 1` (the `"~ ablat - 1"` domain in `src/audit/data/domains.toml`) may differ too. Not yet confirmed by an audit run.
+Found on 2026-11-15 by the full audit `.audit/runs/20261115-160207` (`findings.json`, `new` list): the case `options/permutest/uni_mods/exact=true` has kind
+`r-killed`, detail "R passed the memory limit of 4 GiB (killed)". `src/audit/data/known.toml` accepts the same kind for
+`options/permutest/ls_bcg/exact=true` only.
 <!-- doc-counts: accept-end -->
 
-Fix direction: run `bin/metafor-audit.sh` in a session with R metafor 5.2-1, and add a `known.toml` entry, citing the `docs/differences.md` section,
-for each finding the no-intercept change explains (the `vif` reestimate options, no-intercept and `- 1` fits); fix any other finding as its own item.
+Cause: `permutest(exact = TRUE)` enumerates every permutation of the covariate in R, which passes the harness's 4 GiB limit, so R gives nothing to compare
+with (the same cause as the `ls_bcg` entry). Not yet checked that metafopy refuses or finishes on this fixture.
 
-Spec: none (small item); tasks: `agents/tasks/audit-no-intercept/tasks-1.md`.
+Fix direction: run the case by hand in metafopy; if it refuses with R's "Number of iterations requested too large." or finishes, add the case to the
+`r-killed` entry of `options/permutest/ls_bcg/exact=true` in `src/audit/data/known.toml` with the measurement and date.
+
+## The audit lists a selmodel logistic Hessian element that is zero in both R and metafopy
+
+<!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
+Found on 2026-11-15 by the full audit `.audit/runs/20261115-160207` (`findings.json`, `new` list): `options/selmodel/uni_factor/type="logistic"` and
+`type="logistic1"` have a `value-diff` on `$hessian`, element 11: R -1.15258004719678e-08, Python 2.69121241741294e-15 (relative 1). Every other element
+of the matrix agrees.
+<!-- doc-counts: accept-end -->
+
+Cause: both values are zero to rounding, so the relative difference is 1. The ledger entry for `options/selmodel/*` `$hessian` covers differences with detail
+`*(relative 0.00*` only. Not yet checked that the other elements agree to that level on both cases.
+
+Fix direction: check the two cases in R and Python, then widen the `detail` of that entry or add an entry for these two cases, with the values and date.
+
+## The audit lists printed fits of flat location-scale models that differ in the last digit
+
+<!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
+Found on 2026-11-15 by the full audit `.audit/runs/20261115-160207` (`findings.json`, `new` list), four `print-diff` findings: `options/vif/ls_na/table=true`
+line 7 (`5.5982` against `5.5980`); `options/permutest/ls_bangert/digits=2` and `digits=[2,{"$na":true},1]` line 12 (permutation p-value `0.90` against
+`0.88`); `construct/uni_mods_year/scale={"$formula":"~ 0 + I(1|ablat)"}` line 13 (`-73.4722` against `-73.4724`).
+<!-- doc-counts: accept-end -->
+
+Cause: suspected, not confirmed: the stop points of R's `nlminb` and metafopy's optimiser on a flat scale likelihood, which `known.toml` already accepts for
+other printed fits of `ls_na`, `ls_bangert` and `uni_*` (`docs/differences.md`, "Refits of a location-scale model that R's optimiser leaves short"); the
+entries do not match these rows or options.
+
+Fix direction: compare the log-likelihoods of R and metafopy for each case; where they agree to 1e-6 add the case to the existing entry with the values
+and date, and file any that does not as a defect.
+
+## The audit has no entry for ls_na with an interaction formula that R refuses
+
+<!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
+Found on 2026-11-15 by the full audit `.audit/runs/20261115-160207` (`findings.json`, `new` list): `construct/ls_na/mods={"$formula":"~ ablat * alloc"}` has
+kind `accepts-where-R-refuses`; R stops with "No missing values allowed in 'alpha.init'." and metafopy returns a fit.
+<!-- doc-counts: accept-end -->
+
+Cause: suspected, not confirmed: the starting values of the scale model are computed from a location fit that has NA coefficients (`alloc` is collinear
+with `ablat` on the rows of `ls_na` that remain), which R refuses and metafopy handles (`start_alpha` in `src/metafopy/models/rma_ls_fit.py`).
+
+Fix direction: reproduce the R message with `rma(..., mods = ~ ablat * alloc, scale = ...)` on the `ls_na` data, read why `alpha.init` has NA, then either
+make metafopy refuse with the same error or accept the difference in `src/audit/data/known.toml` and `docs/differences.md`. A change to `src/metafopy/`
+goes through a spec first, or a small task list if the fix is local.
 
 ## The fail-safe N root search rounds up one too far on a step function
 

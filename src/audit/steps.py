@@ -91,8 +91,11 @@ def check_r(ctx: Context) -> Outcome:
     lock: Json = json.loads(lock_path.read_text())
     drift = library_drift(lock, versions)
     pinned_fma = lock.get('R_fma')
-    python_fma = 'fused' if metafopy.core.dbinom.FUSED else 'unfused'
-    if pinned_fma is not None and pinned_fma != python_fma:
+    fused: bool | None = getattr(metafopy.core.dbinom, 'FUSED', None)
+    python_fma = 'fused' if fused else 'unfused'
+    if fused is None:
+        out.notes.append('the audited source predates metafopy.core.dbinom.FUSED: the fused-arithmetic comparison is skipped')
+    elif pinned_fma is not None and pinned_fma != python_fma:
         message = (
             f'the pinned R_fma is {pinned_fma} but metafopy.core.dbinom.FUSED is {python_fma} (platform {platform.machine()}): '
             'random gosh subsets would differ from R. Either run on the platform the pin was made on, or reinstall an R build that matches '
