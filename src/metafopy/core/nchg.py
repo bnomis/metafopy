@@ -40,6 +40,7 @@ __all__ = [
     'conditional_moments',
     'fisher_log_probability',
     'fixed_information',
+    'marginal_information',
     'neg_loglik',
     'study_loglik',
 ]
@@ -345,3 +346,66 @@ def fixed_information(beta: FloatArray, tables: Tables, X: FloatArray) -> FloatA
     mu = X @ beta
     weights = numpy.array([conditional_moments(tables, i, float(mu[i]))[1] for i in range(tables.k)])
     return numpy.asarray((X * weights[:, None]).T @ X, dtype=numpy.float64)
+
+
+def posterior_moments(tables: Tables, i: int, mu: float, tau2: float, control: IntegrationControl) -> tuple[float, float, float, float]:
+    """``E[(theta - mu)^m]``, ``m = 1..4``, under the posterior of the log odds ratio of table ``i`` given its counts.
+
+    The posterior is ``g_i(theta) phi(theta; mu, tau2) / L_i`` with ``g_i`` the smooth probability of :func:`log_probability`, clamped as
+    :func:`study_loglik` clamps it.
+
+    Raises:
+        metafopy.errors.EstimationError: an integral is not finite or ``L_i`` is zero.
+    """
+    sd = math.sqrt(tau2)
+
+    def integral(power: int) -> float:
+        def integrand(t: float) -> float:
+            lo = min(max(t, -LOG_ODDS_BOUND), LOG_ODDS_BOUND)
+            # auditme: accept[redundant-sink-caller-plus-callee] each power is a separate quad call, so the density is evaluated once per call
+            density = math.exp(log_probability(tables, i, lo, control) - 0.5 * ((lo - mu) / sd) ** 2) / (sd * SQRT_2PI)
+            return (lo - mu) ** power * density
+
+        return float(scipy.integrate.quad(integrand, -math.inf, math.inf, epsabs=control.rel_tol, epsrel=control.rel_tol, limit=control.subdivisions)[0])
+
+    total = integral(0)
+    if not math.isfinite(total) or total <= 0:
+        raise metafopy.errors.EstimationError(f'The marginal likelihood of table {i} is not positive and finite.')
+    moments = tuple(integral(m) / total for m in (1, 2, 3, 4))
+    if not all(math.isfinite(v) for v in moments):
+        raise metafopy.errors.EstimationError(f'The posterior moments of table {i} are not finite.')
+    return moments[0], moments[1], moments[2], moments[3]
+
+
+def marginal_information(parms: FloatArray, tables: Tables, X: FloatArray, control: IntegrationControl) -> FloatArray:
+    """Hessian of ``neg_loglik(parms, tables, X, True, control)`` in ``(beta, log(tau2))``, ``(p + 1) x (p + 1)``.
+
+    Each study contributes the second derivatives of ``log L_i`` in ``mu`` and ``tau2`` written with the posterior moments
+    ``E[(theta - mu_i)^m]`` (van Houwelingen et al. 1993, doi:10.1002/sim.4780122405): the derivatives of the normal mixing density
+    are taken under the integral. The change to ``log(tau2)`` keeps the score term, so the matrix is exact away from the optimum.
+
+    Raises:
+        metafopy.errors.EstimationError: an integral is not finite or a study's marginal likelihood is zero.
+    """
+    p = X.shape[1]
+    mu = X @ parms[:p]
+    s = math.exp(parms[p])
+    h_bb = numpy.zeros((p, p))
+    h_bphi = numpy.zeros(p)
+    h_phiphi = 0.0
+    for i in range(tables.k):
+        e1, e2, e3, e4 = posterior_moments(tables, i, float(mu[i]), s, control)
+        s_mu = e1 / s
+        s_s = e2 / (2 * s**2) - 1 / (2 * s)
+        h_mumu = e2 / s**2 - 1 / s - s_mu**2
+        h_mus = e3 / (2 * s**3) - 3 * e1 / (2 * s**2) - s_mu * s_s
+        h_ss = e4 / (4 * s**4) - 3 * e2 / (2 * s**3) + 3 / (4 * s**2) - s_s**2
+        h_bb += h_mumu * numpy.outer(X[i], X[i])
+        h_bphi += s * h_mus * X[i]
+        h_phiphi += s**2 * h_ss + s * s_s
+    out = numpy.zeros((p + 1, p + 1))
+    out[:p, :p] = h_bb
+    out[:p, p] = h_bphi
+    out[p, :p] = h_bphi
+    out[p, p] = h_phiphi
+    return -out

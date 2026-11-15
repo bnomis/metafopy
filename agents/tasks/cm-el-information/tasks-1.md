@@ -84,7 +84,7 @@ difference of `neg_loglik` and against the spec's measurement.
 
 ## Task 2: The marginal information of the ML fit
 
-**Status:** in-progress
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** API (`marginal_information`); Implementation (ML fit); Error handling; Tests (`test_nchg.py`)
@@ -94,19 +94,19 @@ difference of `neg_loglik` and against the spec's measurement.
 
 **Subtasks:**
 
-- [ ] `marginal_information(parms, tables, X, control)` as in the spec's API and Implementation: for each study `L_i` by `scipy.integrate.quad` over
+- [x] `marginal_information(parms, tables, X, control)` as in the spec's API and Implementation: for each study `L_i` by `scipy.integrate.quad` over
       `(-inf, inf)` with the limits and `subdivisions` of `study_loglik`, then `e_m = E[(theta - mu_i)^m]`, `m = 1..4`, each one `quad` of the
       integrand divided by `L_i`; the scores and second derivatives in `mu` and `s = tau2` of the spec's formulas; the change to `phi = log(tau2)`
       keeping the score term; summed over studies with `x_i`; return minus the sum, `(p + 1) x (p + 1)`. The density is the smooth `log_probability`,
       clamped as `study_loglik` clamps it
-- [ ] Raise `metafopy.errors.EstimationError` when an integral is not finite or `L_i` is 0
-- [ ] Docstring cites van Houwelingen et al. (1993) and says the derivatives of the normal mixing density are taken under the integral
-- [ ] `src/tests/test_nchg.py`:
+- [x] Raise `metafopy.errors.EstimationError` when an integral is not finite or `L_i` is 0
+- [x] Docstring cites van Houwelingen et al. (1993) and says the derivatives of the normal mixing density are taken under the integral
+- [x] `src/tests/test_nchg.py`:
   - `marginal_information` against a central second difference of `neg_loglik(..., random=True, tight control)` with step 3e-4, to 1e-7 relative,
     on `dat.nielweise2007` intercept-only and with one moderator, at the ML estimate and at a point away from it (the score term is kept, so the
     matrix is exact there too);
   - the `EstimationError` path, with a monkeypatched integral that returns `nan`
-- [ ] Contradiction check against the spec: at each ML optimum of `rma_glmm(measure='OR', model='CM.EL', method='ML')` found with tight
+- [x] Contradiction check against the spec: at each ML optimum of `rma_glmm(measure='OR', model='CM.EL', method='ML')` found with tight
       integrals and a converged search (as the Blocked note below did with Nelder-Mead), the standard error of the log odds ratio from
       `invert_hessian(marginal_information(...))` equals the spec's "analytic" column (0.35104032933, 0.13638547727, 0.88810229648) to 1e-8
       relative; at the default-control estimates it agrees with that column to 1e-5 relative (the tolerance of the `glmm.fit.or.cm.el.ml.*.se`
@@ -114,17 +114,20 @@ difference of `neg_loglik` and against the spec's measurement.
 
 **Acceptance Criteria:**
 
-- [ ] `marginal_information` agrees with the second difference to 1e-7 relative on both designs and at both points
-- [ ] The three ML standard errors match the spec's measurement to 1e-8 relative at the tight optimum, and to 1e-5 at the default-control estimates
+- [x] `marginal_information` agrees with the second difference to 1e-7 relative on both designs and at both points
+- [x] The three ML standard errors match the spec's measurement to 1e-8 relative at the tight optimum, and to 1e-5 at the default-control estimates
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_nchg.py src/tests/test_audit5_numerics.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_nchg.py src/tests/test_audit5_numerics.py` passes
 
 **Notes:**
 
+- Contradiction check (2026-11-15), standard error of the log odds ratio, `dat.nielweise2007` / `dat.collins1985a` / pneumonia. Default-control
+  estimates: 0.35104049278, 0.13638548456, 0.88810318496 (within 1e-5 of the spec's analytic column). Tight optimum (Nelder-Mead, `xatol` 1e-11,
+  `fatol` 1e-14, tight integrals): 0.35104032970, 0.13638547730, 0.88810230224 (within 1e-8 of 0.35104032933, 0.13638547727, 0.88810229648)
 - Depends on Task 1
 - The tolerance of the integrals is `min(int_rel_tol, 1e-10)`: the caller passes the `tight` control `exact_conditional` already builds (Task 3)
 - The spec measured with 100- and 200-node Gauss-Hermite quadrature about each posterior mode; `quad` over the real line must give the same values. A
