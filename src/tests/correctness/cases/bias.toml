@@ -313,8 +313,6 @@ dataset = "dat.egger2001"
 setup = { drop = [7, 15], escalc = { measure = "RR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", add = 0.5, to = "all" } }
 args = { x = "yi", vi = "vi", type = "Rosenthal", pool = "fisher" }
 expect = { fsnum = "formulas.fsn_number" }
-status = "mismatch"
-reason = "Becker's criterion (Fisher's p-value of the studies and N null studies at least 0.05) first holds at N = 48 (p = 0.0541; at N = 47 p = 0.0493); metafopy gives 47: its root search treats N as a real number (the degrees of freedom 2 (k + N) are real, the number of null studies in the statistic is int(N)), so the root lies between 46 and 47. R metafor 5.2-1 is not installed in the session's R and no parity fixture holds this case; R metafor 5.2-1 gives the same (operator session, 2026-11-15); answered follow the reference 2026-11-15, see the TODO.md item on the fail-safe N root search"
 covers = ["fsn.Rosenthal", "fsn.pool.fisher"]
 
 [[case]]
@@ -396,8 +394,6 @@ dataset = "dat.egger2001"
 setup = { drop = [7, 15], escalc = { measure = "RR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", add = 0.5, to = "all" } }
 args = { x = "yi", vi = "vi", type = "General", method = "REML", exact = true, target = -0.05129329438755058 }
 expect = { fsnum = "formulas.fsn_number" }
-status = "mismatch"
-reason = "the average effect first reaches the target log(0.95) at N = 116 (-0.05112 against -0.05129; at N = 115 -0.05154), which metafopy gives when its root search tolerance is tightened (tol = 1e-10, case bias.fsn.egger2001.general.target.tight); at the default tolerance it gives 117, as Viechtbauer's talk prints: the refitted estimate is a step function of N (floor(N) studies), the root search stops just above the step at 116 and the result is rounded up. R metafor 5.2-1 is not installed in the session's R and no parity fixture holds this case; R metafor 5.2-1 gives the same (operator session, 2026-11-15); answered follow the reference 2026-11-15, see the TODO.md item on the fail-safe N root search"
 covers = ["fsn.General"]
 
 [[case]]

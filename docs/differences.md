@@ -1606,6 +1606,65 @@ re-estimated VIFs of `ablat` and `year` are 10.209 and 25681.9 in metafopy and 4
 refit is 0.08645, the minimum of the `REML` likelihood (checked 2026-11-15 with a separate scalar minimiser), against about 0.3 implied by metafor's
 value. The VIF of the intercept does not refit and agrees.
 
+### fsn(): Fisher pooling and the General type
+
+The fail-safe N of Rosenthal's type with `pool='fisher'` and of the General type is the least integer N whose criterion holds: the Fisher
+statistic reaches its critical value, or the p-value of the refit with N added studies reaches `alpha` (with a `target`, the estimate falls
+to it). metafor treats N as a real number over what is a step function of N, finds a root with `uniroot` and rounds it up, so its result can
+be one above the least integer (General: 26 against 25 on `dat.bcg` with a default fit) or one below it (Fisher: 47 against 48 below). With
+`maxint = 100` on that fit, metafor's search ends at the upper end of the interval and returns 100 with `ub.sign` `>`, where metafopy
+returns 25. The other types (Stouffer, Orwin, Rosenberg, Binomial) compute N in closed form and agree. The correctness
+cases are `bias.fsn.egger2001.rosenthal.fisher` and `bias.fsn.egger2001.general.target`.
+
+<div class="compare" markdown>
+<div markdown>
+
+**R, metafor 5.2-1**
+
+```r
+library(metafor)
+dat <- escalc(measure="RR", ai=ai, n1i=n1i, ci=ci, n2i=n2i,
+              data=dat.egger2001[-c(8,16),], add=1/2, to="all")
+fsn(yi, vi, data=dat, pool="fisher")
+```
+
+```text
+Fail-safe N Calculation Using the Rosenthal Approach
+
+Observed Significance Level: <.0001
+Target Significance Level:   0.05
+
+Fail-safe N: 47
+```
+
+</div>
+<div markdown>
+
+**Python, metafopy**
+
+```python
+from metafopy import datasets, escalc, fsn
+
+dat = datasets.load('dat.egger2001').drop(index=[7, 15])
+dat = escalc(measure='RR', ai='ai', n1i='n1i', ci='ci', n2i='n2i', data=dat, add=0.5, to='all')
+print(fsn('yi', 'vi', data=dat, pool='fisher'))
+```
+
+```text
+Fail-safe N Calculation Using the Rosenthal Approach
+
+Observed Significance Level: <.0001
+Target Significance Level:   0.05
+
+Fail-safe N: 48
+```
+
+</div>
+</div>
+
+*Why:* Becker (2005) and Viechtbauer (2024) count added studies, so N is an integer and the criterion is a step function of it, for which
+the answer is the least integer that satisfies it (checked 2026-11-15, R 4.6.2, metafor 5.2-1).
+
 ## Everything else
 
 The [detailed notes](differences-notes.md) hold the rest, grouped by topic:

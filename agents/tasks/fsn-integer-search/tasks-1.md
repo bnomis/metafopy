@@ -54,7 +54,7 @@ The project has no affected-tests tool, so each task names its test files, and t
 
 ## Task 1: Search the integers in the Rosenthal (Fisher) and General branches
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Source Reference:** the item's fix direction (the integer search, the General step resolved before rounding, the two cases, the R parity fixtures)
@@ -64,58 +64,58 @@ with and without a target, and the tests say where that differs from R metafor.
 
 **Subtasks:**
 
-- [ ] Re-check the starting point: `bias.fsn.egger2001.rosenthal.fisher` and `bias.fsn.egger2001.general.target` in
+- [x] Re-check the starting point: `bias.fsn.egger2001.rosenthal.fisher` and `bias.fsn.egger2001.general.target` in
       `src/tests/correctness/cases/bias.toml` have `status = "mismatch"`, `grep -c 'metafopy.core.zeroin.uniroot' src/metafopy/bias/fsn.py`
       prints 2, and `grep -rnwE 'fsn_search' src/metafopy` finds nothing. Stop as `blocked`, naming what differs, if any is not so
-- [ ] Confirm that both cases fail today: `pytest src/tests/correctness/test_derived.py -k 'egger2001 and (rosenthal.fisher or general.target)' -rxX`
+- [x] Confirm that both cases fail today: `pytest src/tests/correctness/test_derived.py -k 'egger2001 and (rosenthal.fisher or general.target)' -rxX`
       reports each of the two as `XFAIL` (the strict expected failure of a case that fails). Stop as `blocked` if either is reported as passing
-- [ ] Add `fsn_search(satisfied, lower, upper, maxint, maxiter)` to `src/metafopy/bias/fsn.py`: the least integer `n` in `[ceil(lower), maxint]`
+- [x] Add `fsn_search(satisfied, lower, upper, maxint, maxiter)` to `src/metafopy/bias/fsn.py`: the least integer `n` in `[ceil(lower), maxint]`
       with `satisfied(n)`, for a predicate that stays true once true (the search of `formulas.smallest_integer`, starting from the bracket
       `interval` gives). Extend `upper` by doubling until `satisfied(upper)` or `upper` reaches `maxint`, then bisect on the integers; return
       `maxint` when the criterion does not hold below it. Raise `metafopy.errors.InputError('Could not find fail-safe N ...')` (the message of
       the branch it serves) when the extensions and bisection steps together exceed `maxiter`
-- [ ] In the `Rosenthal` branch with Fisher pooling, replace the `uniroot` call by `fsn_search(lambda n: fsn_fisher(n, pi, alpha) >= 0, ...)`, so
+- [x] In the `Rosenthal` branch with Fisher pooling, replace the `uniroot` call by `fsn_search(lambda n: fsn_fisher(n, pi, alpha) >= 0, ...)`, so
       the number of added studies and the degrees of freedom are both the integer N
-- [ ] In the `General` branch, replace `root_of` by the integer search: without a target the criterion is `pval_fsn >= alpha`, with a target it is
+- [x] In the `General` branch, replace `root_of` by the integer search: without a target the criterion is `pval_fsn >= alpha`, with a target it is
       `abs(est_fsn) <= abs(tgt)` (as `formulas.fsn_of` states them), both from `fsn_gen(..., newest=True)` at the integer N, so the step is resolved
       before any rounding and `est_fsn`, `tau2_fsn` and `pval_fsn` are those of the returned N. Keep `ub_sign = '>'` when the result is `maxint`,
       and keep the `InputError('Could not find fail-safe N based on a random-effects model.')` for a refit that fails. Keep the `verbose` trace of
       `fsn_gen`: one line per N tried
-- [ ] Leave the Stouffer, Orwin, Rosenberg and Binomial branches unchanged (see the header)
-- [ ] Update `fsn`'s docstring: the fail-safe N of the Rosenthal (Fisher) and General types is the least integer whose criterion holds, found by a
+- [x] Leave the Stouffer, Orwin, Rosenberg and Binomial branches unchanged (see the header)
+- [x] Update `fsn`'s docstring: the fail-safe N of the Rosenthal (Fisher) and General types is the least integer whose criterion holds, found by a
       search over the integers, as in Becker (2005, doi:10.1002/0470870168.ch7) and Viechtbauer (2024); metafor finds a real root with `uniroot`
       and rounds it up, which can be one off on these step functions; `interval` is the starting bracket, `maxiter` bounds the search, `tol` has no
       effect on these types. Link the `docs/differences.md` subsection Task 2 adds (heading `### fsn(): Fisher pooling and the General type`, linked
       the way the `confint` docstring links its subsection)
-- [ ] In `src/tests/correctness/cases/bias.toml`, set `bias.fsn.egger2001.rosenthal.fisher` and `bias.fsn.egger2001.general.target` to
+- [x] In `src/tests/correctness/cases/bias.toml`, set `bias.fsn.egger2001.rosenthal.fisher` and `bias.fsn.egger2001.general.target` to
       `status = "pass"` and drop their `reason`. `bias.fsn.egger2001.general.target.tight` stays a pass case
-- [ ] Run `pytest src/tests/test_bias.py src/tests/test_verbose.py`. For each `FSN_CASES` key of `test_fsn` whose R fixture `fsnum` now differs,
+- [x] Run `pytest src/tests/test_bias.py src/tests/test_verbose.py`. For each `FSN_CASES` key of `test_fsn` whose R fixture `fsnum` now differs,
       check that metafopy's N meets the criterion and N - 1 does not (with `fsn_fisher` or `fsn_gen` directly), then mark it as differing in
       `src/tests/test_bias.py`: a module-level `FSN_DIFFERS: dict[str, int]` mapping the key to metafopy's N, with a comment naming the
       correctness cases and the `docs/differences.md` subsection. For such a key `test_fsn` compares `type`, `est`, `tau2`, `pval`, `target` and
       `ub_sign` with the fixture, asserts that `out.fsnum` equals the mapped N and that the fixture's `fsnum` differs, and compares `est_fsn`,
       `tau2_fsn` and `pval_fsn` with `fsn_gen` at N instead of the fixture; it does not compare the printed text. A key whose N meets the criterion
       at N - 1 too is a bug in this change: fix it, never mark it
-- [ ] If the `fsn` key of `test_verbose_matches_r` in `src/tests/test_verbose.py` now fails (the search tries other values of N than uniroot),
+- [x] If the `fsn` key of `test_verbose_matches_r` in `src/tests/test_verbose.py` now fails (the search tries other values of N than uniroot),
       take it out of that parametrisation and add `test_verbose_fsn`, which checks, as `test_verbose_mv` does for its trace, that every stdout line
       has the form of R's lines (`fsnum = <N>  est = ...  diff = ...`), that the N values tried are integers, that stderr equals R's, and that the
       last line printed is for the returned N or a neighbour of it; with a comment naming the `docs/differences.md` subsection
-- [ ] Add regression tests to `src/tests/test_bias.py`: on `dat.egger2001` without rows 8 and 16 (0-based 7 and 15), log risk ratios with
+- [x] Add regression tests to `src/tests/test_bias.py`: on `dat.egger2001` without rows 8 and 16 (0-based 7 and 15), log risk ratios with
       `add=0.5, to='all'` (the setup of the two cases), `fsn(yi, vi, pool='fisher')` gives 48 and
       `fsn(yi, vi, type='General', method='REML', exact=True, target=math.log(0.95))` gives 116; the General result is the same for `tol` 1e-10
       and the default; and, for the General type with `exact=True`, `fsnum`, `est_fsn`, `tau2_fsn` and `pval_fsn` are the same for two seeds
 
 **Acceptance Criteria:**
 
-- [ ] `grep -c 'metafopy.core.zeroin.uniroot' src/metafopy/bias/fsn.py` prints 0 (and the import of `metafopy.core.zeroin` is gone if unused)
-- [ ] Both cases pass with `status = "pass"`, and every other `bias.fsn.*` case still passes
-- [ ] Every `FSN_DIFFERS` key meets its criterion at its N and not at N - 1, and no other `test_fsn` key changed
+- [x] `grep -c 'metafopy.core.zeroin.uniroot' src/metafopy/bias/fsn.py` prints 0 (and the import of `metafopy.core.zeroin` is gone if unused)
+- [x] Both cases pass with `status = "pass"`, and every other `bias.fsn.*` case still passes
+- [x] Every `FSN_DIFFERS` key meets its criterion at its N and not at N - 1, and no other `test_fsn` key changed
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_bias.py src/tests/test_verbose.py src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_bias.py src/tests/test_verbose.py src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 
@@ -133,7 +133,7 @@ with and without a target, and the tests say where that differs from R metafor.
 
 ## Task 2: Record the difference in the audit ledger and the documentation
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item's fix direction (`known.toml`, `docs/differences.md`)
@@ -143,18 +143,18 @@ and the printed examples in the manual show the new values.
 
 **Subtasks:**
 
-- [ ] Run the audit slice for `fsn` from the worktree, against the main checkout's R library, in the background:
+- [x] Run the audit slice for `fsn` from the worktree, against the main checkout's R library, in the background:
       `METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib bin/metafor-audit.sh --only fsn` (`--only` keeps the cases whose id contains
       the text: `matrix/fsn/*`, `standalone/fsn*` and their sweeps). If `check-r` reports that the R library is missing or differs from
       `src/audit/data/r-versions.json`, stop as `blocked` and say so; never pass `--allow-r-drift`
-- [ ] For each finding on `fsnum`, `est.fsn`, `tau2.fsn`, `pval.fsn` or the printed output (`Fail-safe N:` and the "with file drawer" values) of a
+- [x] For each finding on `fsnum`, `est.fsn`, `tau2.fsn`, `pval.fsn` or the printed output (`Fail-safe N:` and the "with file drawer" values) of a
       Rosenthal (Fisher) or General call, check that metafopy's N meets the criterion and N - 1 does not, and add a `[[known]]` entry to
       `src/audit/data/known.toml` matching exactly those case ids, with `kind`, `path` (or `detail` for a print-diff), a `reason` (metafor finds a
       real root of a step function with `uniroot` and rounds it up; metafopy returns the least integer N whose criterion holds, as Becker 2005 and
       Viechtbauer 2024 define it) and `ref = "docs/differences.md"`. Add no entry for a finding the run does not report. Stop as `blocked`, naming
       it, for a finding on a Stouffer, Orwin, Rosenberg or Binomial call, or one whose N fails the criterion check
-- [ ] Rerun the same command and check that its report lists no finding left from this change
-- [ ] Add a subsection `### fsn(): Fisher pooling and the General type` to the section "Where metafor departs from its reference" of
+- [x] Rerun the same command and check that its report lists no finding left from this change
+- [x] Add a subsection `### fsn(): Fisher pooling and the General type` to the section "Where metafor departs from its reference" of
       `docs/differences.md`, after the existing subsections: a short summary (the fail-safe N is the least integer whose criterion holds; metafor's
       root search over real N can give one more or one fewer on these step functions; the other types are unchanged), the Fisher example of
       `bias.fsn.egger2001.rosenthal.fisher` in R and in Python with the output of both, naming both correctness cases, and *Why:* Becker (2005)
@@ -162,21 +162,21 @@ and the printed examples in the manual show the new values.
       `R_LIBS=/Users/simonb/src/metafopy/.audit/Rlib LC_ALL=C.UTF-8 Rscript -e '<the R block>'` (R block:
       `library(metafor); dat <- escalc(measure="RR", ai=ai, n1i=n1i, ci=ci, n2i=n2i, data=dat.egger2001[-c(8,16),], add=1/2, to="all"); fsn(yi, vi, data=dat, pool="fisher")`),
       and the Python output with metafopy; give the date, R and metafor versions in the *Why* line as the other subsections do
-- [ ] Rerun the printed `fsn` examples of the manual and update each output block that changed: `docs/guide/bias.md` (section "Fail-safe N",
+- [x] Rerun the printed `fsn` examples of the manual and update each output block that changed: `docs/guide/bias.md` (section "Fail-safe N",
       `print(fsn(res))`) and `docs/analyses.md` (`print(fsn(res))`). Search `docs/` for `Fail-safe N:` for any other printed copy and update it in
       the same way
 
 **Acceptance Criteria:**
 
-- [ ] The audit run with `--only fsn` reports no finding from this change, and every new `known.toml` entry matches at least one case of that run
-- [ ] `docs/differences.md` names the difference under "Where metafor departs from its reference"
-- [ ] Every printed `fsn` output in `docs/` is what metafopy prints now
+- [x] The audit run with `--only fsn` reports no finding from this change, and every new `known.toml` entry matches at least one case of that run
+- [x] `docs/differences.md` names the difference under "Where metafor departs from its reference"
+- [x] Every printed `fsn` output in `docs/` is what metafopy prints now
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_docs_examples.py src/tests/test_harness_accounts.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_docs_examples.py src/tests/test_harness_accounts.py` passes
 
 **Notes:**
 
@@ -189,7 +189,7 @@ and the printed examples in the manual show the new values.
 
 ## Task 3: Recall check, the full test run and closing the item
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item as a whole
@@ -198,29 +198,29 @@ and the printed examples in the manual show the new values.
 
 **Subtasks:**
 
-- [ ] Run the recall check in the background: `METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib bin/metafor-audit.sh --recall`.
+- [x] Run the recall check in the background: `METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib bin/metafor-audit.sh --recall`.
       Compare its summary with the newest `recall.md` under `/Users/simonb/src/metafopy/.audit/runs/recall-*/`: every item reproduced there is
       reproduced again. Stop as `blocked`, naming the item, if one is newly missed
-- [ ] Move the item from `TODO.md` to `DONE.md`: append its heading and body unchanged at the end of `DONE.md`, then a line
+- [x] Move the item from `TODO.md` to `DONE.md`: append its heading and body unchanged at the end of `DONE.md`, then a line
       `Done: 2026-MM-DD, agents/tasks/fsn-integer-search/tasks-1.md` with the date of the commit
-- [ ] Run the full test suite from the worktree and save its whole output for the merge gate, in the main checkout (the first entry of
+- [x] Run the full test suite from the worktree and save its whole output for the merge gate, in the main checkout (the first entry of
       `git worktree list --porcelain`, `/Users/simonb/src/metafopy`):
       `mkdir -p /Users/simonb/src/metafopy/ralpher-logs/fsn-integer-search/tasks-1 && source bin/activate.sh && pytest src/tests 2>&1 | tee /Users/simonb/src/metafopy/ralpher-logs/fsn-integer-search/tasks-1/final-tests.log`
 
 **Acceptance Criteria:**
 
-- [ ] The recall check reproduces every item the newest recall report reproduced
-- [ ] The item is in `DONE.md` with its body unchanged and a `Done:` line naming this list, and no longer in `TODO.md`
-- [ ] `/Users/simonb/src/metafopy/ralpher-logs/fsn-integer-search/tasks-1/final-tests.log` holds the whole output of the full run
+- [x] The recall check reproduces every item the newest recall report reproduced
+- [x] The item is in `DONE.md` with its body unchanged and a `Done:` line naming this list, and no longer in `TODO.md`
+- [x] `/Users/simonb/src/metafopy/ralpher-logs/fsn-integer-search/tasks-1/final-tests.log` holds the whole output of the full run
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] The full test run above passes, `slow` tests included
-- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/fsn-integer-search/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] The full test run above passes, `slow` tests included
+- [x] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/fsn-integer-search/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
       `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0 (`<scratch>` is the session's
       scratch directory, outside the repository; the commit that adds this list is `HEAD` at the list's start, so this is `git show HEAD:TODO.md`
       taken then)

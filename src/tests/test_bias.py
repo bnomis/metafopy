@@ -213,33 +213,45 @@ def test_trimfill_needs_intercept_only_model(models: dict[str, typing.Any]) -> N
 
 # auditme: accept[non-alphabetical-dict-keys] order follows the R script that generates the fixtures
 FSN_CASES: dict[str, collections.abc.Callable[..., typing.Any]] = {
-    'fsn_rosenthal': lambda m, d, h: metafopy.bias.fsn(d.yi, d.vi),
-    'fsn_rosenthal_hack': lambda m, d, h: metafopy.bias.fsn(h.yi, h.vi),
-    'fsn_fisher': lambda m, d, h: metafopy.bias.fsn(h.yi, h.vi, pool='fisher'),
-    'fsn_rosenthal_alpha': lambda m, d, h: metafopy.bias.fsn(d.yi, d.vi, alpha=0.01),
-    'fsn_binomial': lambda m, d, h: metafopy.bias.fsn(h.yi, h.vi, type='Binomial'),
-    'fsn_orwin': lambda m, d, h: metafopy.bias.fsn(d.yi, d.vi, type='Orwin'),
-    'fsn_orwin_target': lambda m, d, h: metafopy.bias.fsn(d.yi, d.vi, type='Orwin', target=-0.1),
-    'fsn_orwin_unw': lambda m, d, h: metafopy.bias.fsn(d.yi, type='Orwin', weighted=False),
-    'fsn_orwin_unw_target': lambda m, d, h: metafopy.bias.fsn(d.yi, type='Orwin', weighted=False, target=-0.2),
-    'fsn_rosenberg': lambda m, d, h: metafopy.bias.fsn(d.yi, d.vi, type='Rosenberg'),
-    'fsn_general': lambda m, d, h: metafopy.bias.fsn(m['res']),
-    'fsn_general_hack': lambda m, d, h: metafopy.bias.fsn(m['hack']),
-    'fsn_general_ee': lambda m, d, h: metafopy.bias.fsn(m['ee']),
-    'fsn_general_dl': lambda m, d, h: metafopy.bias.fsn(m['hack_dl']),
-    'fsn_general_target': lambda m, d, h: metafopy.bias.fsn(m['res'], target=-0.3),
-    'fsn_general_target_pos': lambda m, d, h: metafopy.bias.fsn(m['sim'], target=0.1),
-    'fsn_general_vec': lambda m, d, h: metafopy.bias.fsn(h.yi, h.vi, type='General'),
-    'fsn_general_vec_method': lambda m, d, h: metafopy.bias.fsn(h.yi, h.vi, type='General', method='DL'),
-    'fsn_general_knha': lambda m, d, h: metafopy.bias.fsn(m['hack_knha']),
-    'fsn_general_weighted': lambda m, d, h: metafopy.bias.fsn(h.yi, h.vi, type='General', weighted=False),
-    'fsn_general_tau2': lambda m, d, h: metafopy.bias.fsn(h.yi, h.vi, type='General', tau2=0.05),
-    'fsn_general_mumiss': lambda m, d, h: metafopy.bias.fsn(m['hack'], mumiss=0.1),
-    'fsn_general_interval': lambda m, d, h: metafopy.bias.fsn(m['hack'], interval=(0, 2000)),
-    'fsn_general_exact': lambda m, d, h: metafopy.bias.fsn(m['res'], exact=True, seed=42),
-    'fsn_general_exact_target': lambda m, d, h: metafopy.bias.fsn(m['res'], exact=True, target=-0.3, seed=42),
-    'fsn_general_exact_hack': lambda m, d, h: metafopy.bias.fsn(m['hack'], exact=True, seed=7),
-    'fsn_general_maxint': lambda m, d, h: metafopy.bias.fsn(m['hack'], target=0.001, maxint=1000),
+    'fsn_rosenthal': lambda m, d, h, **kw: metafopy.bias.fsn(d.yi, d.vi, **kw),
+    'fsn_rosenthal_hack': lambda m, d, h, **kw: metafopy.bias.fsn(h.yi, h.vi, **kw),
+    'fsn_fisher': lambda m, d, h, **kw: metafopy.bias.fsn(h.yi, h.vi, pool='fisher', **kw),
+    'fsn_rosenthal_alpha': lambda m, d, h, **kw: metafopy.bias.fsn(d.yi, d.vi, alpha=0.01, **kw),
+    'fsn_binomial': lambda m, d, h, **kw: metafopy.bias.fsn(h.yi, h.vi, type='Binomial', **kw),
+    'fsn_orwin': lambda m, d, h, **kw: metafopy.bias.fsn(d.yi, d.vi, type='Orwin', **kw),
+    'fsn_orwin_target': lambda m, d, h, **kw: metafopy.bias.fsn(d.yi, d.vi, type='Orwin', target=-0.1, **kw),
+    'fsn_orwin_unw': lambda m, d, h, **kw: metafopy.bias.fsn(d.yi, type='Orwin', weighted=False, **kw),
+    'fsn_orwin_unw_target': lambda m, d, h, **kw: metafopy.bias.fsn(d.yi, type='Orwin', weighted=False, target=-0.2, **kw),
+    'fsn_rosenberg': lambda m, d, h, **kw: metafopy.bias.fsn(d.yi, d.vi, type='Rosenberg', **kw),
+    'fsn_general': lambda m, d, h, **kw: metafopy.bias.fsn(m['res'], **kw),
+    'fsn_general_hack': lambda m, d, h, **kw: metafopy.bias.fsn(m['hack'], **kw),
+    'fsn_general_ee': lambda m, d, h, **kw: metafopy.bias.fsn(m['ee'], **kw),
+    'fsn_general_dl': lambda m, d, h, **kw: metafopy.bias.fsn(m['hack_dl'], **kw),
+    'fsn_general_target': lambda m, d, h, **kw: metafopy.bias.fsn(m['res'], target=-0.3, **kw),
+    'fsn_general_target_pos': lambda m, d, h, **kw: metafopy.bias.fsn(m['sim'], target=0.1, **kw),
+    'fsn_general_vec': lambda m, d, h, **kw: metafopy.bias.fsn(h.yi, h.vi, type='General', **kw),
+    'fsn_general_vec_method': lambda m, d, h, **kw: metafopy.bias.fsn(h.yi, h.vi, type='General', method='DL', **kw),
+    'fsn_general_knha': lambda m, d, h, **kw: metafopy.bias.fsn(m['hack_knha'], **kw),
+    'fsn_general_weighted': lambda m, d, h, **kw: metafopy.bias.fsn(h.yi, h.vi, type='General', weighted=False, **kw),
+    'fsn_general_tau2': lambda m, d, h, **kw: metafopy.bias.fsn(h.yi, h.vi, type='General', tau2=0.05, **kw),
+    'fsn_general_mumiss': lambda m, d, h, **kw: metafopy.bias.fsn(m['hack'], mumiss=0.1, **kw),
+    'fsn_general_interval': lambda m, d, h, **kw: metafopy.bias.fsn(m['hack'], interval=(0, 2000), **kw),
+    'fsn_general_exact': lambda m, d, h, **kw: metafopy.bias.fsn(m['res'], exact=True, seed=42, **kw),
+    'fsn_general_exact_target': lambda m, d, h, **kw: metafopy.bias.fsn(m['res'], exact=True, target=-0.3, seed=42, **kw),
+    'fsn_general_exact_hack': lambda m, d, h, **kw: metafopy.bias.fsn(m['hack'], exact=True, seed=7, **kw),
+    'fsn_general_maxint': lambda m, d, h, **kw: metafopy.bias.fsn(m['hack'], target=0.001, maxint=1000, **kw),
+}
+
+
+# Keys whose fail-safe N is one below R's (a step function of N that R's root search rounds up), with metafopy's N.
+FSN_DIFFERS: dict[str, int] = {
+    'fsn_general': 25,
+    'fsn_general_dl': 120,
+    'fsn_general_exact': 26,
+    'fsn_general_knha': 114,
+    'fsn_general_target_pos': 203,
+    'fsn_general_vec_method': 120,
+    'fsn_general_weighted': 302,
 }
 
 
@@ -252,16 +264,42 @@ def test_fsn(key: str, models: dict[str, typing.Any], dat: pandas.DataFrame, hac
         return
     out = FSN_CASES[key](models, dat, hack)
     assert out.type == ref['type']
-    refutil.close(out.fsnum, ref['fsnum'], f'{key}: fsnum', rtol=0, atol=0)
     refutil.close(out.est, ref['est'], f'{key}: est')
     refutil.close(out.tau2, ref['tau2'], f'{key}: tau2')
     refutil.close(out.pval, ref['pval'], f'{key}: pval')
     refutil.close(out.target, ref['target'], f'{key}: target')
+    assert out.ub_sign == ref['ub.sign']
+    if key in FSN_DIFFERS:
+        # metafopy returns the least integer N whose criterion holds, R's uniroot one more: docs/differences.md, "fsn(): Fisher pooling and the
+        # General type", and the correctness cases bias.fsn.egger2001.rosenthal.fisher and bias.fsn.egger2001.general.target.
+        assert out.fsnum == FSN_DIFFERS[key]
+        assert ref['fsnum'] != out.fsnum
+        below = FSN_CASES[key](models, dat, hack, maxint=out.fsnum - 1)
+        assert below.ub_sign == '>'
+        if math.isnan(out.target):
+            assert out.pval_fsn >= out.alpha > below.pval_fsn
+        else:
+            assert abs(out.est_fsn) <= abs(out.target) < abs(below.est_fsn)
+        return
+    refutil.close(out.fsnum, ref['fsnum'], f'{key}: fsnum', rtol=0, atol=0)
     refutil.close(out.est_fsn, ref['est.fsn'], f'{key}: est.fsn', rtol=1e-6)
     refutil.close(out.tau2_fsn, ref['tau2.fsn'], f'{key}: tau2.fsn', rtol=1e-6)
     refutil.close(out.pval_fsn, ref['pval.fsn'], f'{key}: pval.fsn', rtol=1e-6)
-    assert out.ub_sign == ref['ub.sign']
     same_text(str(out), ref['print'])
+
+
+def test_fsn_regression_integer_search() -> None:
+    data = metafopy.datasets.load('egger2001').drop(index=[7, 15])
+    esc = metafopy.escalc(measure='RR', ai='ai', n1i='n1i', ci='ci', n2i='n2i', data=data, add=0.5, to='all')
+    yi, vi = numpy.asarray(esc['yi'], dtype=float), numpy.asarray(esc['vi'], dtype=float)
+    assert metafopy.bias.fsn(yi, vi, pool='fisher').fsnum == 48
+    target = math.log(0.95)
+    default = metafopy.bias.fsn(yi, vi, type='General', method='REML', exact=True, target=target, seed=1)
+    assert default.fsnum == 116
+    assert metafopy.bias.fsn(yi, vi, type='General', method='REML', exact=True, target=target, seed=1, tol=1e-10).fsnum == 116
+    other = metafopy.bias.fsn(yi, vi, type='General', method='REML', exact=True, target=target, seed=2)
+    for name in ('fsnum', 'est_fsn', 'tau2_fsn', 'pval_fsn'):
+        refutil.close(getattr(other, name), getattr(default, name), f'seed: {name}', rtol=1e-9)
 
 
 def test_fsn_errors(models: dict[str, typing.Any], dat: pandas.DataFrame) -> None:
