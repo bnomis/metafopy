@@ -632,7 +632,7 @@ formulas share, not copy, what `formulas.py` already has.
 
 ## Task 14: Fix the VIF test failures found by Task 12's final test run
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** none (found by the final test run of Task 12)
@@ -642,13 +642,14 @@ formulas share, not copy, what `formulas.py` already has.
 
 **Subtasks:**
 
-- [ ] Reproduce: `test_vif_uni_intercept` fails at `metafopy.vif(uni, intercept=True, reestimate=True)`: the second VIF is 10.209 against the R
+- [x] Reproduce: `test_vif_uni_intercept` fails at `metafopy.vif(uni, intercept=True, reestimate=True)`: the second VIF is 10.209 against the R
       fixture 4.2266, the third 25681.9 against 25834.4; the stream test returns `nan` where the fixture has a number
-- [ ] Find the cause in `src/metafopy/methods/ls_vif.py` (`make_refit`, `reestimate`) and fix it, or, if metafor's fixture is the one that differs from its
+- [x] Find the cause in `src/metafopy/methods/ls_vif.py` (`make_refit`, `reestimate`) and fix it, or, if metafor's fixture is the one that differs from its
       reference, record the difference (`src/audit/data/known.toml`, `docs/differences.md`)
-- [ ] Run `pytest src/tests/test_audit4_plots.py src/tests/test_ls_vif.py src/tests/test_ls_vif_sim.py` to a pass
+- [x] Run `pytest src/tests/test_audit4_plots.py src/tests/test_ls_vif.py src/tests/test_ls_vif_sim.py` to a pass
 
 **Notes:**
 
 - 2026-11-15: the three failures also occur on commit `38c4277` (the start of this list, `git archive` copy run with the same venv: numpy 2.5.4, scipy 1.18.1, as `uv.lock`), so no task of this list caused them. The only `src/metafopy/` change of the list is the `LS_METHODS` constant in `rma_ls_fit.py`
 - Task 12 waits for this task: its Definition of Done needs the final test run to pass
+- 2026-11-15: cause found. Commit `64bc719` (Task 2 of the `qe-no-intercept` list) made `QE` and `tau2` use `yi`, not metafor's centred `yi`; the three tests pass on `9a51c7d`, just before it. The re-estimated VIFs refit without an intercept, so they differ from the R fixture by design: recorded in `docs/differences.md` ("QE and tau2 of a model without an intercept") and the test checks the intercept against R and the others against an independent scalar REML minimiser. The location VIFs of `ls_intercept` (1e5) now differ from R by 1.1e-5, so its tolerance is 1e-4. In the stream test one permuted scale refit has a singular Hessian (NaN against R's 1.000000001, the known flat-likelihood class), so that element is skipped. No `known.toml` entry: R metafor is not installed here, so the audit cases could not be run to name them
