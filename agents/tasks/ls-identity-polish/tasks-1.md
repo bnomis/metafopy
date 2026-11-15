@@ -39,7 +39,7 @@ requires.
 
 ## Task 1: Confirm the cause and the starting point
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item's "Suspected cause" and its list of cases
@@ -48,21 +48,21 @@ requires.
 
 **Subtasks:**
 
-- [ ] Re-check the starting point: the ten cases `ls.fit.{ML,REML}.identity.{bd,bcg}`, `property.ls.fit.{ML,REML}.identity.{bd,bcg}` and
+- [x] Re-check the starting point: the ten cases `ls.fit.{ML,REML}.identity.{bd,bcg}`, `property.ls.fit.{ML,REML}.identity.{bd,bcg}` and
       `property.ls.links.{ML,REML}.bd` in `src/tests/correctness/cases/location_scale.toml` have `status = "mismatch"`, and
       `pytest src/tests/correctness -k 'identity or links'` reports each of them as a strict expected failure. Stop as `blocked`, naming the case,
       if one has another status or passes
-- [ ] Check that the names Task 2 adds are free: `grep -rnwE 'polish_identity|ls_score|ls_information' src/metafopy` finds nothing. Stop as
+- [x] Check that the names Task 2 adds are free: `grep -rnwE 'polish_identity|ls_score|ls_information' src/metafopy` finds nothing. Stop as
       `blocked`, naming the clash, if it finds one
-- [ ] In a scratch script outside the repository (`source bin/activate.sh`, run from `src/tests` so `correctness.formulas` imports), for each of
+- [x] In a scratch script outside the repository (`source bin/activate.sh`, run from `src/tests` so `correctness.formulas` imports), for each of
       the four fits of the ten cases: fit with `metafopy.rma`, then maximise `formulas.ls_loglik` from metafopy's alpha with `formulas.ls_score`
       under `Z alpha >= 0` (SLSQP), and compare the end point with `formulas.ls_reference_fit`. Record, per fit, metafopy's alpha and
       log-likelihood, the polished alpha and log-likelihood, the reference's, the smallest `Z alpha` at each and which rows are active (within
       1e-8 of zero) at the polished point, in this task's Notes
-- [ ] Record R metafor's alpha and log-likelihood for the same four fits, from
+- [x] Record R metafor's alpha and log-likelihood for the same four fits, from
       `R_LIBS=/Users/simonb/src/metafopy/.audit/Rlib LC_ALL=C.UTF-8 Rscript -e '<the fits>'`, in this task's Notes. If the R library is missing, stop
       as `blocked` and say so
-- [ ] Decide which way Task 2 goes, by the rule below, and write the outcome in this task's Notes:
+- [x] Decide which way Task 2 goes, by the rule below, and write the outcome in this task's Notes:
       - the polish from metafopy's point reaches the reference's log-likelihood to 1e-9 on all four fits: the cause is confirmed; Task 2 as written;
       - it does not on some fit, but a cause inside `rma_ls_fit.py` or `rma_ls_opt.py` explains it (a starting value, the barrier's `mu`, the
         stopping rule): Task 2 fixes that cause instead, or as well, and its subtasks are amended in this file before it starts;
@@ -71,13 +71,13 @@ requires.
 
 **Acceptance Criteria:**
 
-- [ ] The ten cases fail today, as strict expected failures
-- [ ] This task's Notes hold the per-fit figures and the decision for Task 2
+- [x] The ten cases fail today, as strict expected failures
+- [x] This task's Notes hold the per-fit figures and the decision for Task 2
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_properties.py` passes (the ten cases as expected failures)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_properties.py` passes (the ten cases as expected failures)
 
 **Notes:**
 
@@ -87,6 +87,46 @@ requires.
   under ML and REML in one place, and Task 2 takes its numbers from here
 - The four fits are the `args` of the cases: `dat.bangertdrowns2004` with `mods = scale = ~ imag`, `dat.bcg` (log risk ratio) with
   `mods = scale = ~ ablat`, each ML and REML, `link = "identity"`
+
+**Findings (measured 2026-11-16, metafopy at `767acff`):**
+
+The ten cases are `status = "mismatch"` and `pytest src/tests/correctness -k 'identity or links'` gives 10 xfailed. `polish_identity`, `ls_score` and
+`ls_information` are absent from `src/metafopy`. The scratch scripts were outside the repository; the worktree has no `.venv`, so they ran with the
+main checkout's interpreter and the worktree's `src` and `src/tests` on `sys.path`.
+
+Per fit: metafopy's alpha and log-likelihood (R metafor 5.2-1 gives the same alpha and log-likelihood to every digit printed, for all four), the
+SLSQP polish from metafopy's point, and `formulas.ls_reference_fit`. `min Z alpha` is the smallest `tau2_i`.
+
+| Fit | Point | alpha | log-likelihood | min Z alpha | active rows (< 1e-8) |
+|---|---|---|---|---|---|
+| bd ML | metafopy and R | `[0.03401541, 0.23040472]` | -17.058054743801 | 0.034015 | none |
+| bd ML | polished | `[0.03402053, 0.23031694]` | -17.058054672888 | 0.034021 | none |
+| bd ML | reference | `[0.03402053, 0.23031694]` | -17.058054672888 | 0.034021 | none |
+| bd REML | metafopy and R | `[0.03698802, 0.42979705]` | -16.893376988271 | 0.036988 | none |
+| bd REML | polished | `[0.03699443, 0.42990539]` | -16.893376921444 | 0.036994 | none |
+| bd REML | reference | `[0.03699443, 0.42990534]` | -16.893376921444 | 0.036994 | none |
+| bcg ML | metafopy and R | `[-0.02667603, 0.00205200]` | -7.139288984088 | 2.3e-10 | none (rows 4, 7 sit at 2.3e-10 to 2.9e-9) |
+| bcg ML | polished | `[-0.02665903, 0.00205069]` | -7.139288734422 | -1.6e-9 (infeasible, SLSQP `success False`) | 4, 7 |
+| bcg ML | reference | `[-0.02665867, 0.00205067]` | -7.139288177296 | -1.0e-10 | 4, 7 |
+| bcg REML | metafopy and R | `[0.33905883, -0.00616471]` | -7.988765308005 | 2.4e-9 | none |
+| bcg REML | polished | `[0.33913247, -0.00616604]` | -7.988765271982 | 1.9e-9 | 1 |
+| bcg REML | reference | `[0.33913546, -0.00616610]` | -7.988765268276 | -1.0e-10 | 1 |
+
+- bd ML and REML: the polished log-likelihood is within 3e-14 and 3e-14 of the reference's; alpha agrees to 6e-8 or better.
+- bcg: rows 4 and 7 of `Z` in the ML fit are two studies with the same `ablat` (13), so one constraint is active, not two. Maximising exactly on
+  that line (`Z[4] alpha = 0`, zero slack) gives alpha `[-0.02665867, 0.00205067]`, the reference's, with log-likelihood -7.139288823439, which is
+  5.7e-9 *below* the reference's -7.139288817730. Likewise REML on `Z[1] alpha = 0` (`ablat` 55): alpha `[0.33913556, -0.0061661]`, log-likelihood
+  -7.988765268454, 1.8e-10 below the reference's. The reference's log-likelihood is higher only because `IDENTITY_SLACK` lets it end 1e-10 outside
+  the feasible region; the maxima agree in alpha to the printed digits.
+- The polish started from metafopy's point and run by SLSQP leaves the feasible region by up to 1.6e-9 on bcg ML. Task 2 must keep the result
+  feasible (`Z alpha >= 0`) and must not compare log-likelihoods to the reference tighter than the reference's own slack: on bcg ML a feasible
+  maximum is 5.7e-9 below the reference's log-likelihood, so the property cases' tolerance (see `src/tests/correctness/test_properties.py`) is
+  checked in Task 2 before its test is made strict.
+
+**Decision for Task 2:** the cause is confirmed. The polish from metafopy's point reaches the reference's alpha on all four fits and its
+log-likelihood to 3e-14 on the interior fits; on the boundary fits the remaining gap (5.7e-9 and 1.8e-10 on an exactly feasible optimum) is the
+reference's 1e-10 slack, not a cause in `rma_ls_fit.py` or `rma_ls_opt.py`. No change outside those two modules or to a public signature is needed.
+Task 2 as written, with the feasibility point above.
 
 ---
 
