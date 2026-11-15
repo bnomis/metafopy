@@ -65,6 +65,53 @@ and the page; the items below are appended by the case-writing tasks as they fin
   keep metafor (the four cases become exemptions "defined only in metafor's code; R parity covers it", and the continuous types carry the `prec` coverage in
   Task 6); investigate (run R metafor on these cases first).
 
+### Selection models: `truncest` stops at a local maximum of a likelihood that is a step function of the truncation point
+
+- **Cases** (strict expected failure in `src/tests/correctness/cases/selmodel.toml`): `selmodel.truncest.bangertdrowns2004`. The sibling case
+  `selmodel.trunc.bangertdrowns2004` (truncation point fixed at 0) passes.
+- **Source:** none defines an estimated truncation point. The reference is `formulas.truncation_loglik` (the truncation weight function of metafor's
+  `?selmodel`, 5.2-1, after Hedges 1984), maximised by `scipy.optimize` over the coefficients, `tau2`, `delta` and the truncation point.
+- **Reference values** (`dat.bangertdrowns2004`, ML):
+
+  | Quantity | metafopy | reference |
+  |---|---|---|
+  | beta | 0.26491 | 0.27598 |
+  | tau2 | 0.054216 | 0.054737 |
+  | delta | 1.42227 | 1.48969 |
+  | truncation point | 0.27073 | 0.20001 |
+  | ll | -17.7909 | -17.7406 |
+
+  The reference function reproduces metafopy's own log-likelihood at metafopy's estimate to 1e-12, so the two compute the same likelihood; the
+  reference estimate has the higher value, so metafopy has not reached the maximum.
+- **Cause:** the likelihood jumps at every observed effect (an effect on one side of the truncation point has weight 1, on the other weight `delta`),
+  so it has a local maximum inside each stretch between two observed effects. metafopy's gradient-based search stops at one in the stretch holding its
+  start value, the reference reaches a higher one at the left end of the stretch that starts at an observed effect of 0.2.
+- **metafor:** the R parity fixture `src/tests/reference/phase5/selmodel.json`, fit `hack_truncest`, fixes the truncation point (`delta = [NA, 0.1]`), so
+  metafor's behaviour with an estimated truncation point is not pinned by any fixture, and R metafor is not installed in the session's R.
+- **Options:** follow the reference (a `TODO.md` item: search each stretch between observed effects, which changes metafopy from metafor); keep metafor
+  (the case becomes an exemption "defined only in metafor's code; R parity covers it", with a note that the optimum is local); investigate (install R
+  metafor and run this case first).
+
+## Decisions
+
+Added by Task 6; Task 13 completes the section with background and the page.
+
+### `negexppow`: how is it checked?
+
+- **What is decided:** the spec's decisions name neither `negexppow` nor `stepcon`, so neither has a case. `negexppow` is on metafor's `?selmodel` help
+  page (the weight `exp(-delta[0] * preci * p ** (1 / delta[1]))`); `src/tests/correctness/cases/selmodel.toml` holds a temporary exemption "pending the
+  user's answer in mismatches.md".
+- **Options:** derive from metafor's help (a `derived` case through `selmodel_fit`, as for `halfnorm`; recommended, since the help page defines it);
+  exempt as code-only ("defined only in metafor's code; R parity covers it"); name a source (a publication to derive it from).
+
+### `stepcon`: how is it checked?
+
+- **What is decided:** `stepcon` is a step function whose weights are constrained to lie in (0, 1) (a logistic transform of each weight; metafopy's
+  `src/metafopy/models/sel_spec.py`), and does not appear on metafor's help page as read for metafopy's docstring. The same temporary exemption is in
+  `selmodel.toml`.
+- **Options:** derive from metafor's help (only if the help defines it; check the page first); exempt as code-only (recommended: no publication or help
+  page defines it, and the step-function likelihood it shares is already derived); name a source.
+
 ## Sources needed
 
 None found by Task 4.

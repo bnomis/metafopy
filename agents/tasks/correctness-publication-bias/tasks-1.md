@@ -264,7 +264,7 @@ common to every `selmodel` type.
 
 ## Task 6: Derived cases - parametric and truncation `selmodel` types, then close the gate
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** Coverage list (selmodel types); Decisions; Implementation step 2
@@ -273,26 +273,26 @@ common to every `selmodel` type.
 
 **Subtasks:**
 
-- [ ] `formulas.py`: the weight functions `beta` (Citkowicz and Vevea 2017, as the dissertation and Pustejovsky's 2024 post state it), `halfnorm`,
+- [x] `formulas.py`: the weight functions `beta` (Citkowicz and Vevea 2017, as the dissertation and Pustejovsky's 2024 post state it), `halfnorm`,
       `negexp`, `logistic`, `power` (Preston et al. 2004), and `trunc`, `truncest` from metafor's `?selmodel` help (5.2-1)
-- [ ] `derived` cases through `selmodel_fit` for those types; `beta` on a dataset with a well-defined optimum (`docs/differences.md` records a flat
+- [x] `derived` cases through `selmodel_fit` for those types; `beta` on a dataset with a well-defined optimum (`docs/differences.md` records a flat
       likelihood on `dat.baskerville2012`)
-- [ ] `[[exempt]]` entries for `halfnorm1`, `negexp1`, `logistic1`, `power1`, `halfnorm2`, `negexp2`, `logistic2`, `power2`: "defined only in
+- [x] `[[exempt]]` entries for `halfnorm1`, `negexp1`, `logistic1`, `power1`, `halfnorm2`, `negexp2`, `logistic2`, `power2`: "defined only in
       metafor's code; R parity covers it"
-- [ ] `negexppow` and `stepcon`: a temporary `[[exempt]]` entry for each reading "pending the user's answer in mismatches.md", and a decision item for
+- [x] `negexppow` and `stepcon`: a temporary `[[exempt]]` entry for each reading "pending the user's answer in mismatches.md", and a decision item for
       each in `mismatches.md` (options: derive from metafor's help, exempt as code-only, or name a source)
-- [ ] Record any mismatch as the header says
-- [ ] Remove the `xfail` mark from `test_every_bias_item_has_a_case`
+- [x] Record any mismatch as the header says
+- [x] Remove the `xfail` mark from `test_every_bias_item_has_a_case`
 
 **Acceptance Criteria:**
 
-- [ ] The bias gate passes with no xfail mark
+- [x] The bias gate passes with no xfail mark
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 

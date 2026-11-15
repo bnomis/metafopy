@@ -3803,3 +3803,77 @@ def selection_loglik(
         w_i = weight(one_sided_p(float(yi[i]), float(vi[i]), alternative), float(ones[i]))
         total += math.log(w_i) + float(scipy.stats.norm.logpdf(yi[i], mean, sd)) - math.log(a)
     return total
+
+
+def no_selection(p: float, preci: float) -> float:
+    """The weight function of a model without selection: every study is observed with weight 1."""
+    return 1.0 if p >= 0 and preci > 0 else math.nan
+
+
+PARAMETRIC_PVAL_MIN = {'beta': 1e-5, 'power': 1e-5}
+PARAMETRIC_KINDS = ('beta', 'halfnorm', 'logistic', 'negexp', 'power')
+
+
+def parametric_weight(kind: str, delta: FloatArray) -> Weight:
+    """The weight function of one parametric selection model, with the p-value cut off at ``PARAMETRIC_PVAL_MIN`` (1e-5 for ``beta`` and ``power``,
+    where the function is infinite or zero at 0 or 1; metafor's ``pval.min``, ``?selmodel`` 5.2-1) and ``preci`` the study's precision measure (1 for
+    none):
+
+    - ``beta``: ``p ** (delta[0] - 1) * (1 - p) ** (delta[1] - 1)`` (Citkowicz and Vevea, 2017, Psychological Methods 22:28-41,
+      doi:10.1037/met0000119, as the 2012 dissertation "A parsimonious weight function for modeling publication bias" and Pustejovsky's 2024 post
+      state it);
+    - ``halfnorm``: ``exp(-delta * preci * p ** 2)`` (half-normal; Preston, Ashby and Smyth, 2004, Journal of Evaluation in Clinical Practice
+      10:313-322, doi:10.1111/j.1365-2753.2003.00457.x);
+    - ``negexp``: ``exp(-delta * preci * p)`` (negative exponential, Preston et al. 2004);
+    - ``logistic``: ``2 exp(-delta * preci * p) / (1 + exp(-delta * preci * p))`` (logistic, Preston et al. 2004);
+    - ``power``: ``(1 - p) ** (delta * preci)`` (Preston et al. 2004).
+
+    Only the ratio of the weight to its integral enters the likelihood, so a constant factor is immaterial.
+    """
+    pmin = PARAMETRIC_PVAL_MIN.get(kind, 0.0)
+
+    def weight(p: float, preci: float) -> float:
+        q = min(max(p, pmin), 1 - pmin)
+        if kind == 'beta':
+            return float(q ** (delta[0] - 1) * (1 - q) ** (delta[1] - 1))
+        if kind == 'halfnorm':
+            return math.exp(-float(delta[0]) * preci * q * q)
+        if kind == 'negexp':
+            return math.exp(-float(delta[0]) * preci * q)
+        if kind == 'logistic':
+            e = math.exp(-float(delta[0]) * preci * q)
+            return 2 * e / (1 + e)
+        if kind == 'power':
+            return float((1 - q) ** (preci * float(delta[0])))
+        raise ValueError(f'unknown parametric selection model {kind!r}')
+
+    return weight
+
+
+def parametric_cuts(kind: str) -> list[float]:
+    """The p-values where ``parametric_weight`` has a kink, so ``selection_loglik`` integrates it in pieces."""
+    pmin = PARAMETRIC_PVAL_MIN.get(kind, 0.0)
+    return [pmin, 1 - pmin] if pmin > 0 else []
+
+
+def truncation_loglik(
+    yi: FloatArray, vi: FloatArray, X: FloatArray, beta: FloatArray, tau2: float, delta: float, cut: float, alternative: str = 'greater'
+) -> float:
+    """The log-likelihood of a truncated selection model (metafor's ``?selmodel`` 5.2-1, types ``trunc`` and ``truncest``; after the truncation
+    model of Hedges 1984, Journal of Educational Statistics 9:61-85, doi:10.3102/10769986009001061): ``w(y) = 1`` for ``y > cut`` (``y < cut`` for
+    ``alternative = 'less'``) and ``delta`` otherwise, so the density of an observed ``y_i`` is ``w(y_i) f(y_i) / A_i`` with
+    ``A_i = P(Y > cut) + delta * P(Y <= cut)`` and ``Y ~ N(x_i' beta, v_i + tau2)``."""
+    total = 0.0
+    for i in range(len(yi)):
+        mean = float(X[i] @ beta)
+        sd = math.sqrt(float(vi[i]) + tau2)
+        below = float(scipy.stats.norm.cdf(cut, mean, sd))
+        if alternative == 'greater':
+            kept = yi[i] > cut
+            a = (1 - below) + delta * below
+        else:
+            kept = yi[i] < cut
+            a = below + delta * (1 - below)
+        w_i = 1.0 if kept else delta
+        total += math.log(w_i) + float(scipy.stats.norm.logpdf(yi[i], mean, sd)) - math.log(a)
+    return total

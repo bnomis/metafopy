@@ -351,7 +351,6 @@ def test_every_core_item_has_a_case() -> None:
     assert not missing, f'{len(missing)} items have no published or derived case: {", ".join(missing)}'
 
 
-@pytest.mark.xfail(strict=True, reason='coverage incomplete; see agents/tasks/correctness-publication-bias/tasks-1.md')
 def test_every_bias_item_has_a_case() -> None:
     missing = missing_items(correctness.cases.load_cases(), correctness.cases.load_exemptions(), bias_items())
     assert not missing, f'{len(missing)} items have no published or derived case: {", ".join(missing)}'

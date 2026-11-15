@@ -121,11 +121,14 @@ def hc_interval(case: correctness.cases.Case, result: typing.Any) -> None:
 
 
 SELMODEL_LL_TOLERANCE = 1e-8
+SELMODEL_FLAT_LL_TOLERANCE = 1e-6  # a case whose likelihood is flat in delta (tolerance above 1e-3) stops the optimisers 1e-7 apart in ll
 SELMODEL_DELTA_FLOOR = 1e-6
+SELMODEL_DELTA_CEILING = 20.0
 
 
 def selmodel_maximum(case: correctness.cases.Case, result: typing.Any, maxiter: int = 1000) -> tuple[FloatArray, float, FloatArray, float, float]:
-    """Maximise ``formulas.selection_loglik`` for the case's step-function model from metafopy's start values: the coefficients, ``tau2``, the selection
+    """Maximise the case's selection-model log-likelihood (``formulas.selection_loglik`` for a step function or a parametric weight function,
+    ``formulas.truncation_loglik`` for ``trunc`` and ``truncest``) from metafopy's start values: the coefficients, ``tau2``, the selection
     parameters, the log-likelihood, and the log-likelihood of the model without selection (every weight 1).
 
     Raises:
@@ -144,19 +147,33 @@ def selmodel_maximum(case: correctness.cases.Case, result: typing.Any, maxiter: 
     p = X.shape[1]
     start = numpy.concatenate([base.beta, [base.tau2 + 1e-3], numpy.asarray(result.spec.delta_init)[free]])
     alternative = result.alternative
-    cuts = steps[:-1].tolist()
+    kind = result.spec.type
+    truncated = kind in ('trunc', 'truncest')
+    stepped = kind in ('stepfun', 'stepcon')
+    cuts = steps[:-1].tolist() if stepped else correctness.formulas.parametric_cuts(kind)
 
     def parts(par: FloatArray) -> tuple[FloatArray, float, FloatArray]:
         delta = given.copy()
         delta[free] = par[p + 1 :]
         return par[:p], float(par[p]), delta
 
+    def loglik(beta: FloatArray, tau2: float, delta: FloatArray) -> float:
+        if truncated:
+            cut = float(delta[1]) if kind == 'truncest' else float(steps[0])
+            return correctness.formulas.truncation_loglik(yi, vi, X, beta, tau2, float(delta[0]), cut, alternative)
+        weight = correctness.formulas.step_weight(steps, delta) if stepped else correctness.formulas.parametric_weight(kind, delta)
+        return correctness.formulas.selection_loglik(yi, vi, X, beta, tau2, weight, alternative, preci, cuts=cuts)
+
     def negative(par: FloatArray) -> float:
-        beta, tau2, delta = parts(par)
-        return -correctness.formulas.selection_loglik(yi, vi, X, beta, tau2, correctness.formulas.step_weight(steps, delta), alternative, preci, cuts=cuts)
+        return -loglik(*parts(par))
 
     bounds: list[tuple[float | None, float | None]] = [(None, None) for _ in range(p)]
-    bounds += [(0.0, None)] + [(SELMODEL_DELTA_FLOOR, None) for _ in range(int(free.sum()))]
+    bounds += [(0.0, None)]
+    for index in numpy.flatnonzero(free):
+        if kind == 'truncest' and index == 1:
+            bounds.append((float(result.spec.delta_min[1]), float(result.spec.delta_max[1])))
+        else:
+            bounds.append((SELMODEL_DELTA_FLOOR, SELMODEL_DELTA_CEILING if kind in correctness.formulas.PARAMETRIC_KINDS else None))
     constraints: typing.Any = []
     if result.decreasing:
         constraints = [{'type': 'ineq', 'fun': lambda par, j=j: parts(par)[2][j - 1] - parts(par)[2][j]} for j in range(1, len(given))]
@@ -164,12 +181,11 @@ def selmodel_maximum(case: correctness.cases.Case, result: typing.Any, maxiter: 
     if not fit.success:
         raise AssertionError(f'{case.id}: the optimiser did not converge: {fit.message}')
     beta, tau2, delta = parts(fit.x)
-    ones = numpy.ones(len(delta))
 
     def negative_plain(par: FloatArray) -> float:
-        return -correctness.formulas.selection_loglik(
-            yi, vi, X, par[:p], float(par[p]), correctness.formulas.step_weight(steps, ones), alternative, preci, cuts=cuts
-        )
+        if truncated:
+            return -correctness.formulas.truncation_loglik(yi, vi, X, par[:p], float(par[p]), 1.0, 0.0, alternative)
+        return -correctness.formulas.selection_loglik(yi, vi, X, par[:p], float(par[p]), correctness.formulas.no_selection, alternative, preci)
 
     plain_bounds: list[tuple[float | None, float | None]] = bounds[: p + 1]
     plain = scipy.optimize.minimize(negative_plain, start[: p + 1], method='SLSQP', bounds=plain_bounds, options={'maxiter': maxiter, 'ftol': 1e-15})
@@ -179,14 +195,14 @@ def selmodel_maximum(case: correctness.cases.Case, result: typing.Any, maxiter: 
 
 
 def selmodel_fit(case: correctness.cases.Case, result: typing.Any) -> None:
-    """The fit of a step-function selection model (Vevea and Hedges, 1995; Hedges and Vevea, 2005), by maximising ``formulas.selection_loglik`` with
-    ``scipy.optimize`` from metafopy's start values: ``beta``, ``tau2`` and ``delta`` at the case's tolerance, ``ll`` at 1e-8 and the likelihood
-    ratio test statistic ``LRT`` against the fit without selection."""
+    """The fit of a selection model (Vevea and Hedges, 1995; Hedges and Vevea, 2005; the weight functions of ``formulas``), by maximising its
+    log-likelihood with ``scipy.optimize`` from the start values of metafopy: ``beta``, ``tau2`` and ``delta`` at the case tolerance, ``ll`` at 1e-8
+    and the likelihood ratio test statistic ``LRT`` against the fit without selection."""
     beta, tau2, delta, loglik, plain = selmodel_maximum(case, result)
     numbers_agree(case, 'beta', result.beta, beta)
     numbers_agree(case, 'tau2', result.tau2, tau2)
     numbers_agree(case, 'delta', result.delta, delta)
-    allowed = SELMODEL_LL_TOLERANCE * max(1.0, abs(loglik))
+    allowed = (SELMODEL_FLAT_LL_TOLERANCE if (case.tolerance or 0.0) > 1e-3 else SELMODEL_LL_TOLERANCE) * max(1.0, abs(loglik))
     if abs(result.ll - loglik) > allowed:
         raise AssertionError(f'{case.id}: ll: metafopy gives {result.ll!r}, the reference gives {loglik!r}')
     lrt = max(0.0, 2 * (loglik - plain))
