@@ -2,7 +2,7 @@
 
 **Spec:** `agents/specs/correctness-location-scale/spec.md`
 **Task list:** `agents/tasks/correctness-location-scale/tasks-1.md` (Task 11 completes this document and publishes its page)
-**Review page:** not yet published (Task 11 publishes it, once Tasks 4 to 10 have appended their items)
+**Review page:** not yet published: the queue session has no tool that publishes an interactive page with a shared database, so an operator session publishes it from this document
 
 ## What is reviewed and how
 
@@ -12,7 +12,15 @@ you choose *follow the reference*, *keep metafor* or *investigate*. The list sto
 
 ## Automatic checks
 
-Left for Task 11, which runs them once every task has appended its items.
+Run 2026-11-15 from the worktree:
+
+| Check | Result |
+|---|---|
+| Every `status = "mismatch"` case in `cases/location_scale*.toml` has an item above | pass: the 14 cases (`ls.fit.*.identity.*`, `property.ls.fit.*.identity.*`, `property.ls.links.*`, `ls.confint.scale.*.bcg`, `published.vl2022.table1.plci.size`, `published.vl2022.table2.plci.soc`) are all named; `cases/location_scale_other.toml` has none |
+| `git diff main -- src/audit/data/r-versions.json` is empty | pass |
+| `mypy` | pass |
+| `pytest src/tests/correctness -m 'not slow'` | **fail**: `test_properties.py::test_scale_invariance[SJIT]` raises `EstimationError: Iterative SJ estimator did not converge` on a Hypothesis example (`yi = [0, -0.5625, 0, 0.875, -0.7734375, 0]`, `vi = [0.5, 0.625, 0.5, 0.5, 0.125, 1]`, scale 2.0). It is not a location-scale case and no location-scale module is involved; it is filed as Task 13 of the task list |
+| Both gate tests (derived-case gate, coverage) | pass, inside the run above |
 
 ## Mismatches
 

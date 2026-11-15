@@ -513,7 +513,7 @@ formulas share, not copy, what `formulas.py` already has.
 
 ## Task 11: Review the mismatches and the sources needed
 
-**Status:** todo
+**Status:** in-progress
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation step 8
@@ -547,7 +547,7 @@ formulas share, not copy, what `formulas.py` already has.
 
 **Notes:**
 
-- Depends on Tasks 4 to 10
+- Depends on Tasks 4 to 10 and 13 (the non-slow run must pass)
 - Model: `agents/specs/correctness-tests/mismatches.md` and Task 13 of `agents/tasks/correctness-tests/tasks-1.md`
 
 ---
@@ -594,3 +594,27 @@ formulas share, not copy, what `formulas.py` already has.
   `correctness-publication-bias` list, last in the order, moves to `DONE.md`
 - Before running, re-check the importer list: `grep -rlE 'metafopy\.models\.rma_ls|methods\.ls_|methods\.location_scale' src/tests` and add any new
   file to the selection
+
+---
+
+## Task 13: Fix the `SJIT` scale-invariance failure found by Task 11's test run
+
+**Status:** todo
+**Priority:** high
+**Complexity:** small
+**Spec Reference:** none (found by the `pytest src/tests/correctness -m 'not slow'` run of Task 11)
+
+**Technical Goal:** `src/tests/correctness/test_properties.py::test_scale_invariance[SJIT]` passes again, or its failure is recorded as a mismatch.
+
+**Subtasks:**
+
+- [ ] Reproduce with `yi = [0, -0.5625, 0, 0.875, -0.7734375, 0]`, `vi = [0.5, 0.625, 0.5, 0.5, 0.125, 1]`, scale 2.0: `rma_uni` with `method='SJIT'` raises
+      `EstimationError: Iterative SJ estimator did not converge` (`src/metafopy/models/rma_uni.py:1126`)
+- [ ] Check whether metafor's `rma(..., method="SJIT")` converges on the same data. If it does, add a `TODO.md` item (the `todo-add` skill) for the
+      iteration; if it does not, change the property test to skip data on which the estimator does not converge
+- [ ] Run `pytest src/tests/correctness -m 'not slow'` to a pass
+
+**Notes:**
+
+- Not a location-scale case; Task 11 stops on it because its Definition of Done needs that run to pass
+
