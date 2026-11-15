@@ -268,3 +268,353 @@ args = { yi = "yi", vi = "vi", mods = "~ 0 + ni100", scale = "~ 1", method = "ML
 check = "test_derived.ls_heterogeneity"
 covers = ["ls.heterogeneity.QE", "ls.heterogeneity.I2", "ls.heterogeneity.H2"]
 
+
+# Task 5 of agents/tasks/correctness-location-scale/tasks-1.md: the tests, the covariance and omnibus test of the scale part and both kinds of
+# interval, against formulas.ls_reference_fit with the log link (the identity link stops short of the maximum, see the mismatch note above).
+# The scale covariance is compared with the inverse of the analytic observed information, so its tolerance is that of metafopy's numerical Hessian.
+
+[[case]]
+id = "ls.test.z.ML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log", test = "z" }
+check = "test_derived.ls_test"
+covers = ["ls.test.z"]
+
+[[case]]
+id = "ls.test.t.ML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log", test = "t" }
+check = "test_derived.ls_test"
+covers = ["ls.test.t"]
+
+[[case]]
+id = "ls.test.knha.ML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log", test = "knha" }
+check = "test_derived.ls_test"
+covers = ["ls.test.knha"]
+
+[[case]]
+id = "ls.test.adhoc.ML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log", test = "adhoc" }
+check = "test_derived.ls_test"
+covers = ["ls.test.adhoc"]
+
+[[case]]
+id = "ls.scale.vcov.ML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log" }
+check = "test_derived.ls_vcov_alpha"
+covers = ["ls.scale.vcov"]
+
+[[case]]
+id = "ls.scale.QS.ML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log" }
+check = "test_derived.ls_qs"
+covers = ["ls.scale.QS"]
+
+[[case]]
+id = "ls.confint.scale.ML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log" }
+check = "test_derived.ls_confint_scale"
+covers = ["ls.confint.scale"]
+
+[[case]]
+id = "ls.confint.location.z.ML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log", test = "z" }
+check = "test_derived.ls_confint_location"
+covers = ["ls.confint.location"]
+
+[[case]]
+id = "ls.confint.location.knha.ML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log", test = "knha" }
+check = "test_derived.ls_confint_location"
+covers = ["ls.confint.location"]
+
+[[case]]
+id = "ls.test.z.REML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log", test = "z" }
+check = "test_derived.ls_test"
+covers = ["ls.test.z"]
+
+[[case]]
+id = "ls.test.t.REML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log", test = "t" }
+check = "test_derived.ls_test"
+covers = ["ls.test.t"]
+
+[[case]]
+id = "ls.test.knha.REML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log", test = "knha" }
+check = "test_derived.ls_test"
+covers = ["ls.test.knha"]
+
+[[case]]
+id = "ls.test.adhoc.REML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log", test = "adhoc" }
+check = "test_derived.ls_test"
+covers = ["ls.test.adhoc"]
+
+[[case]]
+id = "ls.scale.vcov.REML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log" }
+check = "test_derived.ls_vcov_alpha"
+covers = ["ls.scale.vcov"]
+
+[[case]]
+id = "ls.scale.QS.REML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log" }
+check = "test_derived.ls_qs"
+covers = ["ls.scale.QS"]
+
+[[case]]
+id = "ls.confint.scale.REML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log" }
+check = "test_derived.ls_confint_scale"
+covers = ["ls.confint.scale"]
+
+[[case]]
+id = "ls.confint.location.z.REML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log", test = "z" }
+check = "test_derived.ls_confint_location"
+covers = ["ls.confint.location"]
+
+[[case]]
+id = "ls.confint.location.knha.REML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log", test = "knha" }
+check = "test_derived.ls_confint_location"
+covers = ["ls.confint.location"]
+
+[[case]]
+id = "ls.test.z.ML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log", test = "z" }
+check = "test_derived.ls_test"
+covers = ["ls.test.z"]
+
+[[case]]
+id = "ls.test.t.ML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log", test = "t" }
+check = "test_derived.ls_test"
+covers = ["ls.test.t"]
+
+[[case]]
+id = "ls.test.knha.ML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log", test = "knha" }
+check = "test_derived.ls_test"
+covers = ["ls.test.knha"]
+
+[[case]]
+id = "ls.test.adhoc.ML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log", test = "adhoc" }
+check = "test_derived.ls_test"
+covers = ["ls.test.adhoc"]
+
+[[case]]
+id = "ls.scale.vcov.ML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log" }
+check = "test_derived.ls_vcov_alpha"
+covers = ["ls.scale.vcov"]
+
+[[case]]
+id = "ls.scale.QS.ML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log" }
+check = "test_derived.ls_qs"
+covers = ["ls.scale.QS"]
+
+[[case]]
+id = "ls.confint.scale.ML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log" }
+check = "test_derived.ls_confint_scale"
+covers = ["ls.confint.scale"]
+status = "mismatch"
+reason = "ls.confint.scale.ML.bcg: confint alpha.1: metafopy gives [-23.309450210583307, 1.0223537117081194], the reference gives (nan, 1.8030085946491885) (tolerance 1e-05)"
+
+[[case]]
+id = "ls.confint.location.z.ML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log", test = "z" }
+check = "test_derived.ls_confint_location"
+covers = ["ls.confint.location"]
+
+[[case]]
+id = "ls.confint.location.knha.ML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log", test = "knha" }
+check = "test_derived.ls_confint_location"
+covers = ["ls.confint.location"]
+
+[[case]]
+id = "ls.test.z.REML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log", test = "z" }
+check = "test_derived.ls_test"
+covers = ["ls.test.z"]
+
+[[case]]
+id = "ls.test.t.REML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log", test = "t" }
+check = "test_derived.ls_test"
+covers = ["ls.test.t"]
+
+[[case]]
+id = "ls.test.knha.REML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log", test = "knha" }
+check = "test_derived.ls_test"
+covers = ["ls.test.knha"]
+
+[[case]]
+id = "ls.test.adhoc.REML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log", test = "adhoc" }
+check = "test_derived.ls_test"
+covers = ["ls.test.adhoc"]
+
+[[case]]
+id = "ls.scale.vcov.REML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log" }
+check = "test_derived.ls_vcov_alpha"
+covers = ["ls.scale.vcov"]
+
+[[case]]
+id = "ls.scale.QS.REML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log" }
+check = "test_derived.ls_qs"
+covers = ["ls.scale.QS"]
+
+[[case]]
+id = "ls.confint.scale.REML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log" }
+check = "test_derived.ls_confint_scale"
+covers = ["ls.confint.scale"]
+status = "mismatch"
+reason = "ls.confint.scale.REML.bcg: confint alpha.1: metafopy gives upper bound 3.286218891717569, the reference gives 3.4026725323940052 (lower bound -16.0108623664 agrees; tolerance 1e-05)"
+
+[[case]]
+id = "ls.confint.location.z.REML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log", test = "z" }
+check = "test_derived.ls_confint_location"
+covers = ["ls.confint.location"]
+
+[[case]]
+id = "ls.confint.location.knha.REML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log", test = "knha" }
+check = "test_derived.ls_confint_location"
+covers = ["ls.confint.location"]

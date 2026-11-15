@@ -2762,3 +2762,102 @@ def ls_fitstats(ll: float, parms: int, n: int) -> dict[str, float]:
         'BIC': -2 * ll + parms * math.log(n),
         'AICc': -2 * ll + 2 * parms * n / (n - parms - 1),
     }
+
+
+def ls_wald(estimate: FloatArray, vcov: FloatArray, idx: list[int], ddf: float | None) -> tuple[float, float]:
+    """The Wald statistic ``b' V^-1 b`` over the coefficients ``idx`` and its p-value: equations 12 (location) and 14 (scale) of Viechtbauer and
+    Lopez-Lopez (2022).
+
+    Without ``ddf`` the statistic is chi-square distributed with ``len(idx)`` degrees of freedom. With ``ddf`` (the t-type tests) the statistic is divided by
+    ``len(idx)`` and has an F distribution with ``(len(idx), ddf)`` degrees of freedom, as in Knapp and Hartung (2003).
+    """
+    b = estimate[idx]
+    m = len(idx)
+    stat = float(b @ numpy.linalg.solve(vcov[numpy.ix_(idx, idx)], b))
+    if ddf is None:
+        return stat, float(scipy.stats.chi2.sf(stat, m))
+    return stat / m, float(scipy.stats.f.sf(stat / m, m, ddf))
+
+
+def ls_knha_s2w(yi: FloatArray, vi: FloatArray, X: FloatArray, tau2: FloatArray, adhoc: bool) -> float:
+    """The Knapp-Hartung factor of section 2.5.4 of Viechtbauer and Lopez-Lopez (2022): ``RSS / (k - p)``, the weighted residual sum of squares at ``tau2_i``.
+
+    ``adhoc`` raises a factor below 1 to 1 (the ad hoc correction of Knapp and Hartung, 2003, Stat Med 22:2693-2710).
+    """
+    w = 1 / (vi + tau2)
+    beta = numpy.linalg.solve(X.T @ (w[:, None] * X), X.T @ (w * yi))
+    rss = float(numpy.sum(w * (yi - X @ beta) ** 2))
+    s2w = rss / (X.shape[0] - X.shape[1])
+    return float(max(s2w, 1.0) if adhoc else s2w)
+
+
+def ls_profile_ll(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, link: str, method: str, j: int, value: float, start: FloatArray) -> float:
+    """The log-likelihood maximised over the scale coefficients other than ``j``, with ``alpha_j`` held at ``value`` (the profile of section 2.5.3).
+
+    BFGS with the analytic score (SLSQP with ``Z alpha >= 0`` for the identity link) from ``start``, then Nelder-Mead. A value that leaves no feasible
+    ``tau2_i`` gives a large negative number, so that a root search treats it as far outside the interval.
+    """
+    free = [i for i in range(Z.shape[1]) if i != j]
+
+    def full(par: FloatArray) -> FloatArray:
+        alpha = start.copy()
+        alpha[j] = value
+        alpha[free] = par
+        return alpha
+
+    def negative(par: FloatArray) -> float:
+        alpha = full(par)
+        if link == 'identity' and float(numpy.min(Z @ alpha)) < -IDENTITY_SLACK:
+            return math.inf
+        ll = ls_loglik(yi, vi, X, Z, alpha, link, method)
+        return math.inf if ll == -math.inf else -ll
+
+    def gradient(par: FloatArray) -> FloatArray:
+        alpha = full(par)
+        if ls_components(yi, vi, X, Z, alpha, link) is None:
+            return numpy.full(len(par), numpy.nan)
+        return -ls_score(yi, vi, X, Z, alpha, link, method)[free]
+
+    if not free:
+        ll = ls_loglik(yi, vi, X, Z, full(numpy.zeros(0)), link, method)
+        return ll if math.isfinite(ll) else -1e10
+    # A start that keeps the fitted line of ``Z alpha`` as close as possible to that of ``start`` with alpha_j at ``value``: the profile of a coefficient
+    # whose change the others can mostly absorb is flat, and BFGS from the unadjusted start can run to tau2 = 0.
+    adjusted = numpy.linalg.lstsq(Z[:, free], Z @ start - Z[:, j] * value, rcond=None)[0]
+    best = math.inf
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        for first in (adjusted, start[free]):
+            if link == 'log':
+                res = scipy.optimize.minimize(negative, first, jac=gradient, method='BFGS', options={'gtol': 1e-9, 'maxiter': 2000})
+            else:
+                constraint = scipy.optimize.LinearConstraint(Z[:, free], -Z[:, j] * value, numpy.inf)
+                res = scipy.optimize.minimize(negative, first, jac=gradient, method='SLSQP', constraints=[constraint], options={'ftol': 1e-14, 'maxiter': 2000})
+            polish = scipy.optimize.minimize(negative, res.x, method='Nelder-Mead', options={'xatol': 1e-11, 'fatol': 1e-13, 'maxiter': 20000})
+            best = min(best, float(res.fun), float(polish.fun))
+    return -best if math.isfinite(best) else -1e10
+
+
+def ls_profile_bounds(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, link: str, method: str, j: int, level: float) -> tuple[float, float]:
+    """The profile-likelihood interval of ``alpha_j`` (section 2.5.3 of Viechtbauer and Lopez-Lopez, 2022; Hardy and Thompson, 1996, Stat Med 15:619-629).
+
+    ``brentq`` finds the values ``a`` at which ``2 (ll_max - ll_j(a)) = chi2_{1, level}``, refitting the other coefficients at each ``a``. ``level`` is a
+    proportion (``0.95``). A bound that the profile does not cross within 20 standard errors of the estimate is ``nan``.
+    """
+    fit = ls_reference_fit(yi, vi, X, Z, link, method)
+    alpha_hat = fit['alpha']
+    se = math.sqrt(float(fit['va'][j, j]))
+    critical = float(scipy.stats.chi2.ppf(level, 1))
+
+    def excess(a: float) -> float:
+        return float(2 * (fit['ll'] - ls_profile_ll(yi, vi, X, Z, link, method, j, a, alpha_hat)) - critical)
+
+    bounds = []
+    for sign in (-1.0, 1.0):
+        end = float(alpha_hat[j]) + sign * 20 * se
+        if excess(end) < 0:
+            bounds.append(math.nan)
+            continue
+        lo, hi = sorted((float(alpha_hat[j]), end))
+        bounds.append(float(scipy.optimize.brentq(excess, lo, hi, xtol=1e-13, rtol=1e-13)))
+    return bounds[0], bounds[1]

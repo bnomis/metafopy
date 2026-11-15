@@ -255,7 +255,7 @@ information, and maximises it independently of metafopy.
 
 ## Task 5: Derived cases for tests, the scale covariance and confidence intervals
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** API (`ls_wald`, `ls_knha_s2w`, `ls_profile_bounds`, `ls_confint_scale`); Coverage list (`ls.test.*`, `ls.scale.*`, `ls.confint.*`);
@@ -265,32 +265,33 @@ Error handling (`nan` bounds)
 
 **Subtasks:**
 
-- [ ] `formulas.ls_wald` (eq. 12/14: chi-square, or F with `(m, ddf)` after division by `m` for the t-type tests) and `formulas.ls_knha_s2w`
+- [x] `formulas.ls_wald` (eq. 12/14: chi-square, or F with `(m, ddf)` after division by `m` for the t-type tests) and `formulas.ls_knha_s2w`
       (section 2.5.4: `RSS / (k - p)`, at least 1 with `adhoc`, citing Knapp and Hartung 2003)
-- [ ] `formulas.ls_profile_bounds` (section 2.5.3, Hardy and Thompson 1996): `brentq` on `2 (ll_max - ll_j(a)) = chi2_{1, level}`, refitting the other
+- [x] `formulas.ls_profile_bounds` (section 2.5.3, Hardy and Thompson 1996): `brentq` on `2 (ll_max - ll_j(a)) = chi2_{1, level}`, refitting the other
       alphas each time; `nan` for a bound not crossed within `+-` 20 standard errors
-- [ ] Check functions `ls_vcov_alpha` (metafopy's `va` against the analytic observed information), `ls_qs`, `ls_confint_scale`
+- [x] Check functions `ls_vcov_alpha` (metafopy's `va` against the analytic observed information), `ls_qs`, `ls_confint_scale`
       (`confint(result, tol=1e-12)` for each alpha) and one for `confint(result, fixed=True)` (Wald location intervals) in `test_derived.py`
-- [ ] Cases: `ls.test.<test>` for each `Test` value (location Knapp-Hartung factor and the t/F reference for both parts); `ls.scale.vcov`, `ls.scale.QS`;
+- [x] Cases: `ls.test.<test>` for each `Test` value (location Knapp-Hartung factor and the t/F reference for both parts); `ls.scale.vcov`, `ls.scale.QS`;
       `ls.confint.scale`, `ls.confint.location`; on both datasets, `REML` and `ML`
-- [ ] A case expects a `nan` bound only where the source says the profile is flat
-- [ ] Record any mismatch as the header says
+- [x] A case expects a `nan` bound only where the source says the profile is flat
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] The derived gate lists none of these items
-- [ ] `ls.scale.vcov` compares with the analytic information, not a numerical Hessian
+- [x] The derived gate lists none of these items
+- [x] `ls.scale.vcov` compares with the analytic information, not a numerical Hessian
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_formulas_ls.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_formulas_ls.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 
 - Depends on Task 3
 - Key files: `src/metafopy/methods/ls_confint.py` (`confint_rma_ls`, `fixed`), `src/metafopy/methods/ls_anova.py` (`QS`)
+- Done 2026-11-15. Cases use the log link only (the identity-link fit stops short of the maximum, see `mismatches.md`). The scale covariance, QS and scale p-values compare at 1e-4, the accuracy of metafopy's numerical Hessian against the analytic information. `ls.confint.scale.ML.bcg` and `ls.confint.scale.REML.bcg` are mismatches (one item in `mismatches.md`). `ls_profile_ll` starts from a line-preserving alpha as well as the fitted one, because BFGS from the fitted alpha ran to `tau2 = 0` on a flat profile.
 
 ---
 

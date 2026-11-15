@@ -616,3 +616,79 @@ def ls_heterogeneity(case: correctness.cases.Case, result: typing.Any) -> None:
     ls_agree(case, 'QE', result.QE, correctness.formulas.ls_cochran_q(yi, vi, X), LS_RELATIVE)
     ls_agree(case, 'I2', result.I2, correctness.formulas.ls_i2(reference['tau2'], vt), LS_RELATIVE)
     ls_agree(case, 'H2', result.H2, correctness.formulas.ls_h2(reference['tau2'], vt), LS_RELATIVE)
+
+
+LS_NUMERIC_HESSIAN = 1e-4  # metafopy's covariance of alpha is a numerical Hessian (Richardson, r = 4), good to about 1e-5 of the information
+LS_PROFILE = 1e-5
+LS_TDIST = ('adhoc', 'knha', 't')
+
+
+def ls_location(case: correctness.cases.Case, reference: dict[str, typing.Any]) -> tuple[FloatArray, FloatArray, float]:
+    """``beta``, its covariance after the Knapp-Hartung factor of the case's ``test`` (section 2.5.4), and the factor, at the reference ``tau2_i``."""
+    yi, vi, X, _ = ls_inputs(case)
+    test = case.args.get('test', 'z')
+    s2w = correctness.formulas.ls_knha_s2w(yi, vi, X, reference['tau2'], test == 'adhoc') if test in correctness.formulas.KNAPP_HARTUNG_TESTS else 1.0
+    return reference['beta'], s2w * reference['vb'], s2w
+
+
+def ls_test(case: correctness.cases.Case, result: typing.Any) -> None:
+    """The location and scale tests of the case's ``test``: standard errors, statistics, p-values and omnibus tests against equations 12 and 14."""
+    reference = ls_reference(case)
+    _, _, X, Z = ls_inputs(case)
+    beta, vb, s2w = ls_location(case, reference)
+    k, p, q = X.shape[0], X.shape[1], Z.shape[1]
+    tdist = case.args.get('test', 'z') in LS_TDIST
+    ls_agree(case, 's2w', result.s2w, s2w, LS_RELATIVE)
+    ls_agree(case, 'se', result.se, numpy.sqrt(numpy.diag(vb)), LS_RELATIVE)
+    zval = beta / numpy.sqrt(numpy.diag(vb))
+    pval = 2 * (scipy.stats.t.sf(numpy.abs(zval), k - p) if tdist else scipy.stats.norm.sf(numpy.abs(zval)))
+    ls_agree(case, 'pval', result.pval, pval, LS_RELATIVE)
+    qm, qmp = correctness.formulas.ls_wald(beta, vb, list(range(1, p)), k - p if tdist else None)
+    ls_agree(case, 'QM', result.QM, qm, LS_RELATIVE)
+    ls_agree(case, 'QMp', result.QMp, qmp, LS_RELATIVE)
+    se_alpha = numpy.sqrt(numpy.diag(reference['va']))
+    pval_alpha = 2 * (
+        scipy.stats.t.sf(numpy.abs(reference['alpha'] / se_alpha), k - q) if tdist else scipy.stats.norm.sf(numpy.abs(reference['alpha'] / se_alpha))
+    )
+    ls_agree(case, 'pval_alpha', result.pval_alpha, pval_alpha, LS_NUMERIC_HESSIAN)
+    qs, qsp = correctness.formulas.ls_wald(reference['alpha'], reference['va'], list(range(1, q)), k - q if tdist else None)
+    ls_agree(case, 'QS', result.QS, qs, LS_NUMERIC_HESSIAN)
+    ls_agree(case, 'QSp', result.QSp, qsp, LS_NUMERIC_HESSIAN)
+
+
+def ls_vcov_alpha(case: correctness.cases.Case, result: typing.Any) -> None:
+    """``va`` against the inverse of the analytic observed information, not a numerical Hessian."""
+    ls_agree(case, 'va', result.va, ls_reference(case)['va'], LS_NUMERIC_HESSIAN)
+
+
+def ls_qs(case: correctness.cases.Case, result: typing.Any) -> None:
+    """The omnibus Wald test of the scale coefficients other than the intercept (equation 14) at the reference estimate and information."""
+    reference = ls_reference(case)
+    q = reference['alpha'].shape[0]
+    stat, pval = correctness.formulas.ls_wald(reference['alpha'], reference['va'], list(range(1, q)), None)
+    ls_agree(case, 'QS', result.QS, stat, LS_NUMERIC_HESSIAN)
+    ls_agree(case, 'QSp', result.QSp, pval, LS_NUMERIC_HESSIAN)
+
+
+def ls_confint_scale(case: correctness.cases.Case, result: typing.Any) -> None:
+    """``confint(result, alpha=j, tol=1e-12)`` against the profile-likelihood bounds of ``formulas.ls_profile_bounds`` for each scale coefficient."""
+    yi, vi, X, Z = ls_inputs(case)
+    link, method = case.args.get('link', 'log'), case.args['method']
+    for j in range(Z.shape[1]):
+        table = metafopy.confint(result, alpha=j, tol=1e-12).random
+        assert table is not None
+        expected = correctness.formulas.ls_profile_bounds(yi, vi, X, Z, link, method, j, 0.95)
+        ls_agree(case, f'confint alpha.{j + 1}', [table['ci.lb'].iloc[0], table['ci.ub'].iloc[0]], expected, LS_PROFILE)
+
+
+def ls_confint_location(case: correctness.cases.Case, result: typing.Any) -> None:
+    """``confint(result, fixed=True)`` against Wald intervals ``beta +- crit se``, with the t critical value for the t-type tests."""
+    reference = ls_reference(case)
+    yi, _, X, _ = ls_inputs(case)
+    beta, vb, _ = ls_location(case, reference)
+    se = numpy.sqrt(numpy.diag(vb))
+    crit = float(scipy.stats.t.isf(0.025, len(yi) - X.shape[1]) if case.args.get('test', 'z') in LS_TDIST else scipy.stats.norm.isf(0.025))
+    table = metafopy.confint(result, fixed=True).fixed
+    assert table is not None
+    ls_agree(case, 'ci.lb', table['ci.lb'].to_numpy(), beta - crit * se, LS_RELATIVE)
+    ls_agree(case, 'ci.ub', table['ci.ub'].to_numpy(), beta + crit * se, LS_RELATIVE)

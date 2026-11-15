@@ -44,6 +44,29 @@ Left for Task 11, which runs them once every task has appended its items.
   which the cases pass); keep metafor (the cases are loosened to 1e-4, the tolerance the metafor parity tests use, so the optimiser stays as
   metafor's); investigate (run metafor's identity-link fit on these four models, compare its log-likelihood with the reference, then decide).
 
+### The profile-likelihood interval of the `dat.bcg` scale intercept differs from the reference
+
+- **Cases** (strict expected failures in `src/tests/correctness/cases/location_scale.toml`): `ls.confint.scale.ML.bcg`, `ls.confint.scale.REML.bcg`.
+  The same check passes on `dat.bangertdrowns2004` (both methods).
+- **Source:** Viechtbauer and Lopez-Lopez (2022), doi:10.1002/jrsm.1562, section 2.5.3; Hardy and Thompson (1996), Stat Med 15:619-629. The reference is
+  `formulas.ls_profile_bounds` (`brentq` on `2 (ll_max - ll_j(a)) = chi2_{1, 0.95}`, the other alpha re-maximised at each `a` from two starts, one
+  keeping the fitted line of `Z alpha`).
+- **Reference values** (log link, `ablat` in both parts, alpha.1 is the intercept, estimate -4.957 under ML):
+
+  | Case | Bound | Reference | metafopy |
+  |---|---|---|---|
+  | ML | lower | `nan` (not crossed within 20 standard errors) | -23.309450 |
+  | ML | upper | 1.803009 | 1.022354 |
+  | REML | lower | -16.010862 | -16.010862 |
+  | REML | upper | 3.402673 | 3.286219 |
+
+  At a = 1.0 the reference profile gives `2 (ll_max - ll_j(a))` = 3.04 (below the 3.84 cut-off), so metafopy's ML upper bound of 1.02 lies where the
+  profile has not yet crossed; at a = -23.3 the reference gives 1.99, so metafopy's lower bound is not a crossing either. The refit at a fixed intercept
+  appears to end at a lower log-likelihood than the reference's.
+- **metafor:** the parity fixture `src/tests/reference/phase5/location_scale.json` was not checked for a profile interval of this model in this task.
+- **Options:** follow the reference (a `TODO.md` item: refit the profile from the fitted line, as the reference does); keep metafor (the bounds come
+  from metafor's refit, whose starting values metafopy follows); investigate (run metafor's `confint` on this model and compare the two profiles).
+
 ### Decision: how close the identity-link fit must be to the maximum
 
 - **What is decided:** whether metafopy's identity-link fit must reach the maximum to 1e-9 in the log-likelihood, as the log-link fit does, or only to
