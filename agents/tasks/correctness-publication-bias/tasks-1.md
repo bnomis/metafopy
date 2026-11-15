@@ -345,7 +345,7 @@ read.
 
 ## Task 8: Stop for the operator - sources still missing
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Seed sources; Implementation step 7 (first stop)
@@ -355,26 +355,26 @@ nothing is missing.
 
 **Subtasks:**
 
-- [ ] For each `selmodel` seed source (Iyengar and Greenhouse 1988, Hedges 1992, Vevea and Hedges 1995, Vevea and Woods 2005, Hedges and Vevea 2005,
+- [x] For each `selmodel` seed source (Iyengar and Greenhouse 1988, Hedges 1992, Vevea and Hedges 1995, Vevea and Woods 2005, Hedges and Vevea 2005,
       Citkowicz and Vevea 2017, Preston et al. 2004, Rust et al. 1990, Formann 2008, Lehmann et al. 2018), check from
       `/Users/simonb/src/metafopy papers/download_report.md` and the folder that the file is present, or that it is open (PMC). A file holding a
       different work (the 2012 dissertation for Citkowicz and Vevea 2017) does not count
-- [ ] Add to "Sources needed" in `mismatches.md` every source still missing (and every row Task 7 added), with its citation, DOI and the table or
+- [x] Add to "Sources needed" in `mismatches.md` every source still missing (and every row Task 7 added), with its citation, DOI and the table or
       example wanted, and a `Status` column (`needed`, or `dropped <date>` once the operator drops it)
-- [ ] If no `selmodel` source is missing, or each missing one is marked `dropped`, mark this task done and go on
-- [ ] Otherwise stop the list for the operator, naming each missing source. The operator saves each file in `/Users/simonb/src/metafopy papers`
+- [x] If no `selmodel` source is missing, or each missing one is marked `dropped`, mark this task done and go on
+- [x] Otherwise stop the list for the operator, naming each missing source. The operator saves each file in `/Users/simonb/src/metafopy papers`
       (outside the repository) or marks its row `dropped <date>` in `mismatches.md`, commits that, and only then restarts the list, which re-runs
       this task
 
 **Acceptance Criteria:**
 
-- [ ] Every `selmodel` seed source is present, open or marked `dropped`
+- [x] Every `selmodel` seed source is present, open or marked `dropped`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness -m 'not slow'` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness -m 'not slow'` passes
 
 **Notes:**
 

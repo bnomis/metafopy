@@ -157,3 +157,12 @@ Found by Task 7 (read 2026-11-15; PDFs in `/Users/simonb/src/metafopy papers`). 
 | Rosenthal (1979) large examples; Orwin (1983) | the figures depend on a mean effect over thousands of studies (not expressible as study data) and on rounding down against metafopy's rounding up (3263 against 3264; 1236 against 1237) |
 | Rosenberg (2005) | no worked example reproducible by `fsn` |
 | Ioannidis and Trikalinos (2007) | the study-level data of its meta-analyses are not printed |
+
+### `selmodel` sources (checked by Task 8, 2026-11-15)
+
+Checked against `/Users/simonb/src/metafopy papers/download_report.md` and the folder. Every other `selmodel` seed source is present, or open
+(Lehmann et al. 2018 is on PMC, PMC10480976).
+
+| Source | Citation and DOI | Table or example wanted | Status |
+|---|---|---|---|
+| Citkowicz and Vevea (2017) | Psychological Methods 22(1), doi:10.1037/met0000119 (needs APA access; the folder holds only the 2012 dissertation) | beta weight-function estimates on `dat.baskerville2012` | dropped 2026-11-15, supplement used (the authors' R code `MCitkowicz_suppmat.docx` and Table 1 data `MCitkowicz_suppmat_data.docx`; the case checks against that likelihood code, not printed estimates) |
