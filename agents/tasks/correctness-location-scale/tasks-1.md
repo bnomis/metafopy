@@ -458,7 +458,7 @@ every location-scale item has a `derived` case.
 
 ## Task 10: Other-software cases from R glmmTMB, and deduplication
 
-**Status:** todo
+**Status:** in-progress
 **Priority:** low
 **Complexity:** medium
 **Spec Reference:** Evidence ("Other software"); Error handling (generator); Implementation step 7
