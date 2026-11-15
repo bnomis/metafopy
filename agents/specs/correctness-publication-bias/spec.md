@@ -1,7 +1,7 @@
 # Correctness tests: publication bias
 
 **Version:** 1.1
-**Status:** proposed
+**Status:** implemented
 **Date:** 2026-11-12
 
 The [correctness tests](../correctness-tests/spec.md) (implemented) check `escalc`, `rma_uni`, `rma_mh` and `rma_peto` against the publications that

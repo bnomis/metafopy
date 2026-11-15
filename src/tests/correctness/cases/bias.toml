@@ -1,0 +1,832 @@
+
+# Publication-bias cases: `derived` cases for regtest, ranktest, trimfill, fsn, tes and hc (selmodel is in selmodel.toml).
+#
+# Expected values come from `formulas.regtest_*` (Egger et al. 1997 in its original form; Sterne and Egger 2005; Macaskill et al. 2001; Peters et al.
+# 2006; Moreno et al. 2009; Stanley and Doucouliagos 2014; Pustejovsky and Rodgers 2019) and `formulas.begg_*` (Begg and Mazumdar 1994; Kendall 1970).
+# dat.egger2001 leaves out ISIS-4 (row 15) as Egger et al.'s example does. dat.hackshaw1998 has no sample sizes, so its `cases` column stands in for
+# `ni`: the regression takes any positive covariate. `model = "rma"` cases use `method = "DL"` (closed form, 1e-10); the default REML stops at its
+# convergence threshold (1e-5, as metafor does), so its cases state the tolerance 1e-4.
+[[case]]
+id = "bias.regtest.egger2001.lm.sei"
+kind = "derived"
+function = "regtest"
+dataset = "dat.egger2001"
+setup = { drop = [15], escalc = { measure = "OR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i" } }
+args = { x = "yi", vi = "vi", model = "lm", predictor = "sei" }
+expect = { zval = "formulas.regtest_zval", pval = "formulas.regtest_pval", est = "formulas.regtest_est", ci_lb = "formulas.regtest_ci_lb", ci_ub = "formulas.regtest_ci_ub" }
+covers = ["regtest.limit", "regtest.lm.sei"]
+
+[[case]]
+id = "bias.regtest.egger2001.lm.vi"
+kind = "derived"
+function = "regtest"
+dataset = "dat.egger2001"
+setup = { drop = [15], escalc = { measure = "OR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i" } }
+args = { x = "yi", vi = "vi", model = "lm", predictor = "vi" }
+expect = { zval = "formulas.regtest_zval", pval = "formulas.regtest_pval", est = "formulas.regtest_est", ci_lb = "formulas.regtest_ci_lb", ci_ub = "formulas.regtest_ci_ub" }
+covers = ["regtest.limit", "regtest.lm.vi"]
+
+[[case]]
+id = "bias.regtest.egger2001.rma.sei.dl"
+kind = "derived"
+function = "regtest"
+dataset = "dat.egger2001"
+setup = { drop = [15], escalc = { measure = "OR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i" } }
+args = { x = "yi", vi = "vi", model = "rma", predictor = "sei", method = "DL" }
+expect = { zval = "formulas.regtest_zval", pval = "formulas.regtest_pval", est = "formulas.regtest_est", ci_lb = "formulas.regtest_ci_lb", ci_ub = "formulas.regtest_ci_ub" }
+covers = ["regtest.limit", "regtest.rma.sei"]
+
+[[case]]
+id = "bias.regtest.egger2001.rma.vi.dl"
+kind = "derived"
+function = "regtest"
+dataset = "dat.egger2001"
+setup = { drop = [15], escalc = { measure = "OR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i" } }
+args = { x = "yi", vi = "vi", model = "rma", predictor = "vi", method = "DL" }
+expect = { zval = "formulas.regtest_zval", pval = "formulas.regtest_pval", est = "formulas.regtest_est", ci_lb = "formulas.regtest_ci_lb", ci_ub = "formulas.regtest_ci_ub" }
+covers = ["regtest.limit", "regtest.rma.vi"]
+
+[[case]]
+id = "bias.regtest.egger2001.rma.sei.reml"
+kind = "derived"
+function = "regtest"
+dataset = "dat.egger2001"
+setup = { drop = [15], escalc = { measure = "OR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i" } }
+args = { x = "yi", vi = "vi", model = "rma", predictor = "sei", method = "REML" }
+expect = { zval = "formulas.regtest_zval", pval = "formulas.regtest_pval", est = "formulas.regtest_est", ci_lb = "formulas.regtest_ci_lb", ci_ub = "formulas.regtest_ci_ub" }
+tolerance = 0.0001
+covers = ["regtest.limit", "regtest.rma.sei"]
+
+[[case]]
+id = "bias.regtest.hackshaw1998.lm.sei"
+kind = "derived"
+function = "regtest"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", model = "lm", predictor = "sei" }
+expect = { zval = "formulas.regtest_zval", pval = "formulas.regtest_pval", est = "formulas.regtest_est", ci_lb = "formulas.regtest_ci_lb", ci_ub = "formulas.regtest_ci_ub" }
+covers = ["regtest.limit", "regtest.lm.sei"]
+
+[[case]]
+id = "bias.regtest.hackshaw1998.lm.vi"
+kind = "derived"
+function = "regtest"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", model = "lm", predictor = "vi" }
+expect = { zval = "formulas.regtest_zval", pval = "formulas.regtest_pval", est = "formulas.regtest_est", ci_lb = "formulas.regtest_ci_lb", ci_ub = "formulas.regtest_ci_ub" }
+covers = ["regtest.limit", "regtest.lm.vi"]
+
+[[case]]
+id = "bias.regtest.hackshaw1998.lm.ni"
+kind = "derived"
+function = "regtest"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", model = "lm", predictor = "ni", ni = "cases" }
+expect = { zval = "formulas.regtest_zval", pval = "formulas.regtest_pval" }
+covers = ["regtest.lm.ni"]
+
+[[case]]
+id = "bias.regtest.hackshaw1998.lm.ninv"
+kind = "derived"
+function = "regtest"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", model = "lm", predictor = "ninv", ni = "cases" }
+expect = { zval = "formulas.regtest_zval", pval = "formulas.regtest_pval", est = "formulas.regtest_est", ci_lb = "formulas.regtest_ci_lb", ci_ub = "formulas.regtest_ci_ub" }
+covers = ["regtest.limit", "regtest.lm.ninv"]
+
+[[case]]
+id = "bias.regtest.hackshaw1998.lm.sqrtni"
+kind = "derived"
+function = "regtest"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", model = "lm", predictor = "sqrtni", ni = "cases" }
+expect = { zval = "formulas.regtest_zval", pval = "formulas.regtest_pval" }
+covers = ["regtest.lm.sqrtni"]
+
+[[case]]
+id = "bias.regtest.hackshaw1998.lm.sqrtninv"
+kind = "derived"
+function = "regtest"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", model = "lm", predictor = "sqrtninv", ni = "cases" }
+expect = { zval = "formulas.regtest_zval", pval = "formulas.regtest_pval", est = "formulas.regtest_est", ci_lb = "formulas.regtest_ci_lb", ci_ub = "formulas.regtest_ci_ub" }
+covers = ["regtest.limit", "regtest.lm.sqrtninv"]
+
+[[case]]
+id = "bias.regtest.hackshaw1998.rma.sei.dl"
+kind = "derived"
+function = "regtest"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", model = "rma", predictor = "sei", method = "DL" }
+expect = { zval = "formulas.regtest_zval", pval = "formulas.regtest_pval", est = "formulas.regtest_est", ci_lb = "formulas.regtest_ci_lb", ci_ub = "formulas.regtest_ci_ub" }
+covers = ["regtest.limit", "regtest.rma.sei"]
+
+[[case]]
+id = "bias.regtest.hackshaw1998.rma.vi.dl"
+kind = "derived"
+function = "regtest"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", model = "rma", predictor = "vi", method = "DL" }
+expect = { zval = "formulas.regtest_zval", pval = "formulas.regtest_pval", est = "formulas.regtest_est", ci_lb = "formulas.regtest_ci_lb", ci_ub = "formulas.regtest_ci_ub" }
+covers = ["regtest.limit", "regtest.rma.vi"]
+
+[[case]]
+id = "bias.regtest.hackshaw1998.rma.ni.dl"
+kind = "derived"
+function = "regtest"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", model = "rma", predictor = "ni", method = "DL", ni = "cases" }
+expect = { zval = "formulas.regtest_zval", pval = "formulas.regtest_pval" }
+covers = ["regtest.rma.ni"]
+
+[[case]]
+id = "bias.regtest.hackshaw1998.rma.ninv.dl"
+kind = "derived"
+function = "regtest"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", model = "rma", predictor = "ninv", method = "DL", ni = "cases" }
+expect = { zval = "formulas.regtest_zval", pval = "formulas.regtest_pval", est = "formulas.regtest_est", ci_lb = "formulas.regtest_ci_lb", ci_ub = "formulas.regtest_ci_ub" }
+covers = ["regtest.limit", "regtest.rma.ninv"]
+
+[[case]]
+id = "bias.regtest.hackshaw1998.rma.sqrtni.dl"
+kind = "derived"
+function = "regtest"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", model = "rma", predictor = "sqrtni", method = "DL", ni = "cases" }
+expect = { zval = "formulas.regtest_zval", pval = "formulas.regtest_pval" }
+covers = ["regtest.rma.sqrtni"]
+
+[[case]]
+id = "bias.regtest.hackshaw1998.rma.sqrtninv.dl"
+kind = "derived"
+function = "regtest"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", model = "rma", predictor = "sqrtninv", method = "DL", ni = "cases" }
+expect = { zval = "formulas.regtest_zval", pval = "formulas.regtest_pval", est = "formulas.regtest_est", ci_lb = "formulas.regtest_ci_lb", ci_ub = "formulas.regtest_ci_ub" }
+covers = ["regtest.limit", "regtest.rma.sqrtninv"]
+
+[[case]]
+id = "bias.regtest.hackshaw1998.rma.sei.reml"
+kind = "derived"
+function = "regtest"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", model = "rma", predictor = "sei", method = "REML" }
+expect = { zval = "formulas.regtest_zval", pval = "formulas.regtest_pval", est = "formulas.regtest_est", ci_lb = "formulas.regtest_ci_lb", ci_ub = "formulas.regtest_ci_ub" }
+tolerance = 0.0001
+covers = ["regtest.limit", "regtest.rma.sei"]
+
+[[case]]
+id = "bias.ranktest.egger2001.exact"
+kind = "derived"
+function = "ranktest"
+dataset = "dat.egger2001"
+setup = { drop = [15], escalc = { measure = "OR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i" } }
+args = { x = "yi", vi = "vi", exact = true }
+expect = { tau = "formulas.begg_tau", pval = "formulas.begg_pval" }
+covers = ["ranktest.pval.exact", "ranktest.tau"]
+
+[[case]]
+id = "bias.ranktest.egger2001.normal"
+kind = "derived"
+function = "ranktest"
+dataset = "dat.egger2001"
+setup = { drop = [15], escalc = { measure = "OR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i" } }
+args = { x = "yi", vi = "vi", exact = false }
+expect = { tau = "formulas.begg_tau", pval = "formulas.begg_pval" }
+check = "test_derived.kendall_z"
+covers = ["ranktest.pval.normal", "ranktest.tau"]
+
+[[case]]
+id = "bias.ranktest.hackshaw1998.exact"
+kind = "derived"
+function = "ranktest"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", exact = true }
+expect = { tau = "formulas.begg_tau", pval = "formulas.begg_pval" }
+covers = ["ranktest.pval.exact", "ranktest.tau"]
+
+[[case]]
+id = "bias.ranktest.hackshaw1998.normal"
+kind = "derived"
+function = "ranktest"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", exact = false }
+expect = { tau = "formulas.begg_tau", pval = "formulas.begg_pval" }
+check = "test_derived.kendall_z"
+covers = ["ranktest.pval.normal", "ranktest.tau"]
+
+# trimfill: Duval and Tweedie (2000) with the DerSimonian-Laird tau2 they use; the expected values come from `formulas.trimfill_*`. `beta` is the
+# pooled estimate over the observed and the mirrored studies.
+[[case]]
+id = "bias.trimfill.hackshaw1998.l0"
+kind = "derived"
+function = "trimfill"
+dataset = "dat.hackshaw1998"
+setup = { rma_uni = { method = "DL" } }
+args = { estimator = "L0" }
+expect = { k0 = "formulas.trimfill_k0", se_k0 = "formulas.trimfill_se_k0", beta = "formulas.trimfill_beta" }
+check = "test_derived.trimfill_filled"
+covers = ["trimfill.fill", "trimfill.k0.L0", "trimfill.se_k0.L0", "trimfill.side"]
+
+[[case]]
+id = "bias.trimfill.hackshaw1998.r0"
+kind = "derived"
+function = "trimfill"
+dataset = "dat.hackshaw1998"
+setup = { rma_uni = { method = "DL" } }
+args = { estimator = "R0" }
+expect = { k0 = "formulas.trimfill_k0", se_k0 = "formulas.trimfill_se_k0", p_k0 = "formulas.trimfill_p_k0", beta = "formulas.trimfill_beta" }
+check = "test_derived.trimfill_filled"
+covers = ["trimfill.fill", "trimfill.k0.R0", "trimfill.p_k0", "trimfill.se_k0.R0"]
+
+[[case]]
+id = "bias.trimfill.hackshaw1998.q0"
+kind = "derived"
+function = "trimfill"
+dataset = "dat.hackshaw1998"
+setup = { rma_uni = { method = "DL" } }
+args = { estimator = "Q0" }
+expect = { k0 = "formulas.trimfill_k0", se_k0 = "formulas.trimfill_se_k0", beta = "formulas.trimfill_beta" }
+check = "test_derived.trimfill_filled"
+covers = ["trimfill.fill", "trimfill.k0.Q0", "trimfill.se_k0.Q0"]
+
+[[case]]
+id = "bias.trimfill.bcg.r0.right"
+kind = "derived"
+function = "trimfill"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" }, rma_uni = { method = "DL" } }
+args = { estimator = "R0", side = "right" }
+expect = { k0 = "formulas.trimfill_k0", se_k0 = "formulas.trimfill_se_k0", p_k0 = "formulas.trimfill_p_k0", beta = "formulas.trimfill_beta" }
+check = "test_derived.trimfill_filled"
+covers = ["trimfill.fill"]
+
+[[case]]
+id = "bias.trimfill.bcg.l0"
+kind = "derived"
+function = "trimfill"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" }, rma_uni = { method = "DL" } }
+args = { estimator = "L0" }
+expect = { k0 = "formulas.trimfill_k0", se_k0 = "formulas.trimfill_se_k0", beta = "formulas.trimfill_beta" }
+check = "test_derived.trimfill_filled"
+covers = ["trimfill.fill", "trimfill.side"]
+
+# fsn: the criteria of Rosenthal (1979), Becker (2005), Orwin (1983), Rosenberg (2005) and Viechtbauer (2024, SRSM talk), as `formulas.fsn_*`: the fail-safe
+# N is the least number of added null studies that reaches the criterion. The egger2001 cases leave out the two studies the talk leaves out (rows 8 and 16, a
+# very small study and ISIS-4) and use its `add = 1/2, to = "all"` log risk ratios, so the talk's printed values (Rosenthal 138, Orwin 119 for the target
+# log(0.95), Rosenberg 69, General 29) are the values these cases reproduce. The General type is compared at `exact = true`: the file-drawer studies are
+# standardised, so the refitted model does not depend on the random draw. The faster approximation (`exact = false`) is not derived.
+[[case]]
+id = "bias.fsn.egger2001.rosenthal.stouffer"
+kind = "derived"
+function = "fsn"
+dataset = "dat.egger2001"
+setup = { drop = [7, 15], escalc = { measure = "RR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", add = 0.5, to = "all" } }
+args = { x = "yi", vi = "vi", type = "Rosenthal", pool = "stouffer" }
+expect = { fsnum = "formulas.fsn_number", pval = "formulas.fsn_pval" }
+covers = ["fsn.Rosenthal", "fsn.pool.stouffer"]
+
+[[case]]
+id = "bias.fsn.hackshaw1998.rosenthal.stouffer"
+kind = "derived"
+function = "fsn"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", type = "Rosenthal", pool = "stouffer" }
+expect = { fsnum = "formulas.fsn_number", pval = "formulas.fsn_pval" }
+covers = ["fsn.Rosenthal", "fsn.pool.stouffer"]
+
+[[case]]
+id = "bias.fsn.hackshaw1998.rosenthal.fisher"
+kind = "derived"
+function = "fsn"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", type = "Rosenthal", pool = "fisher" }
+expect = { fsnum = "formulas.fsn_number", pval = "formulas.fsn_pval" }
+covers = ["fsn.Rosenthal", "fsn.pool.fisher"]
+
+[[case]]
+id = "bias.fsn.egger2001.rosenthal.fisher"
+kind = "derived"
+function = "fsn"
+dataset = "dat.egger2001"
+setup = { drop = [7, 15], escalc = { measure = "RR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", add = 0.5, to = "all" } }
+args = { x = "yi", vi = "vi", type = "Rosenthal", pool = "fisher" }
+expect = { fsnum = "formulas.fsn_number" }
+status = "mismatch"
+reason = "Becker's criterion (Fisher's p-value of the studies and N null studies at least 0.05) first holds at N = 48 (p = 0.0541; at N = 47 p = 0.0493); metafopy gives 47: its root search treats N as a real number (the degrees of freedom 2 (k + N) are real, the number of null studies in the statistic is int(N)), so the root lies between 46 and 47. R metafor 5.2-1 is not installed in the session's R and no parity fixture holds this case; R metafor 5.2-1 gives the same (operator session, 2026-11-15); answered follow the reference 2026-11-15, see the TODO.md item on the fail-safe N root search"
+covers = ["fsn.Rosenthal", "fsn.pool.fisher"]
+
+[[case]]
+id = "bias.fsn.egger2001.orwin.target"
+kind = "derived"
+function = "fsn"
+dataset = "dat.egger2001"
+setup = { drop = [7, 15], escalc = { measure = "RR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", add = 0.5, to = "all" } }
+args = { x = "yi", vi = "vi", type = "Orwin", target = -0.05129329438755058 }
+expect = { fsnum = "formulas.fsn_number", est = "formulas.fsn_est" }
+covers = ["fsn.Orwin"]
+
+[[case]]
+id = "bias.fsn.hackshaw1998.orwin.default"
+kind = "derived"
+function = "fsn"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", type = "Orwin" }
+expect = { fsnum = "formulas.fsn_number", est = "formulas.fsn_est" }
+covers = ["fsn.Orwin"]
+
+[[case]]
+id = "bias.fsn.egger2001.rosenberg"
+kind = "derived"
+function = "fsn"
+dataset = "dat.egger2001"
+setup = { drop = [7, 15], escalc = { measure = "RR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", add = 0.5, to = "all" } }
+args = { x = "yi", vi = "vi", type = "Rosenberg" }
+expect = { fsnum = "formulas.fsn_number", est = "formulas.fsn_est", pval = "formulas.fsn_pval" }
+covers = ["fsn.Rosenberg"]
+
+[[case]]
+id = "bias.fsn.hackshaw1998.rosenberg"
+kind = "derived"
+function = "fsn"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", type = "Rosenberg" }
+expect = { fsnum = "formulas.fsn_number", est = "formulas.fsn_est", pval = "formulas.fsn_pval" }
+covers = ["fsn.Rosenberg"]
+
+[[case]]
+id = "bias.fsn.egger2001.general.reml"
+kind = "derived"
+function = "fsn"
+dataset = "dat.egger2001"
+setup = { drop = [7, 15], escalc = { measure = "RR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", add = 0.5, to = "all" } }
+args = { x = "yi", vi = "vi", type = "General", method = "REML", exact = true }
+expect = { fsnum = "formulas.fsn_number", est = "formulas.fsn_est", tau2 = "formulas.fsn_tau2", pval = "formulas.fsn_pval", est_fsn = "formulas.fsn_est_fsn", tau2_fsn = "formulas.fsn_tau2_fsn", pval_fsn = "formulas.fsn_pval_fsn" }
+tolerance = 0.00001
+covers = ["fsn.General"]
+
+[[case]]
+id = "bias.fsn.egger2001.general.mumiss"
+kind = "derived"
+function = "fsn"
+dataset = "dat.egger2001"
+setup = { drop = [7, 15], escalc = { measure = "RR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", add = 0.5, to = "all" } }
+args = { x = "yi", vi = "vi", type = "General", method = "REML", exact = true, mumiss = 0.04879016416943205 }
+expect = { fsnum = "formulas.fsn_number", est_fsn = "formulas.fsn_est_fsn" }
+tolerance = 0.00001
+covers = ["fsn.General"]
+
+[[case]]
+id = "bias.fsn.egger2001.general.target.tight"
+kind = "derived"
+function = "fsn"
+dataset = "dat.egger2001"
+setup = { drop = [7, 15], escalc = { measure = "RR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", add = 0.5, to = "all" } }
+args = { x = "yi", vi = "vi", type = "General", method = "REML", exact = true, target = -0.05129329438755058, tol = 1e-10 }
+expect = { fsnum = "formulas.fsn_number", est_fsn = "formulas.fsn_est_fsn", pval_fsn = "formulas.fsn_pval_fsn" }
+tolerance = 0.00001
+covers = ["fsn.General"]
+
+[[case]]
+id = "bias.fsn.egger2001.general.target"
+kind = "derived"
+function = "fsn"
+dataset = "dat.egger2001"
+setup = { drop = [7, 15], escalc = { measure = "RR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", add = 0.5, to = "all" } }
+args = { x = "yi", vi = "vi", type = "General", method = "REML", exact = true, target = -0.05129329438755058 }
+expect = { fsnum = "formulas.fsn_number" }
+status = "mismatch"
+reason = "the average effect first reaches the target log(0.95) at N = 116 (-0.05112 against -0.05129; at N = 115 -0.05154), which metafopy gives when its root search tolerance is tightened (tol = 1e-10, case bias.fsn.egger2001.general.target.tight); at the default tolerance it gives 117, as Viechtbauer's talk prints: the refitted estimate is a step function of N (floor(N) studies), the root search stops just above the step at 116 and the result is rounded up. R metafor 5.2-1 is not installed in the session's R and no parity fixture holds this case; R metafor 5.2-1 gives the same (operator session, 2026-11-15); answered follow the reference 2026-11-15, see the TODO.md item on the fail-safe N root search"
+covers = ["fsn.General"]
+
+[[case]]
+id = "bias.fsn.hackshaw1998.general.dl"
+kind = "derived"
+function = "fsn"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", type = "General", method = "DL", exact = true }
+expect = { fsnum = "formulas.fsn_number", est = "formulas.fsn_est", tau2 = "formulas.fsn_tau2", pval = "formulas.fsn_pval", est_fsn = "formulas.fsn_est_fsn", tau2_fsn = "formulas.fsn_tau2_fsn", pval_fsn = "formulas.fsn_pval_fsn" }
+covers = ["fsn.General"]
+
+[[exempt]]
+item = "fsn.Binomial"
+reason = "defined only in metafor's code; R parity covers it"
+
+# tes: Ioannidis and Trikalinos (2007) as `formulas.tes_*`: the expected number of significant studies is the sum of the powers at the weighted average;
+# the exact test is the Poisson-binomial distribution of the powers (by its characteristic function), so it does not share metafopy's recursion. The
+# limit estimate is defined by metafor's `tes` help page (5.2-1): the effect at which the p-value equals `tes_alpha`.
+[[case]]
+id = "bias.tes.hackshaw1998.exact"
+kind = "derived"
+function = "tes"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", test = "exact" }
+expect = { O = "formulas.tes_O", E = "formulas.tes_E", pval = "formulas.tes_pval" }
+covers = ["tes.E", "tes.test.exact"]
+
+[[case]]
+id = "bias.tes.hackshaw1998.chi2"
+kind = "derived"
+function = "tes"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", test = "chi2", tes_alternative = "two.sided" }
+expect = { X2 = "formulas.tes_X2", pval = "formulas.tes_pval" }
+covers = ["tes.test.chi2"]
+
+[[case]]
+id = "bias.tes.hackshaw1998.binom"
+kind = "derived"
+function = "tes"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", test = "binom" }
+expect = { pval = "formulas.tes_pval" }
+covers = ["tes.test.binom"]
+
+[[case]]
+id = "bias.tes.egger2001.exact"
+kind = "derived"
+function = "tes"
+dataset = "dat.egger2001"
+setup = { drop = [15], escalc = { measure = "OR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i" } }
+args = { x = "yi", vi = "vi", test = "exact" }
+expect = { O = "formulas.tes_O", E = "formulas.tes_E", pval = "formulas.tes_pval" }
+covers = ["tes.E", "tes.test.exact"]
+
+[[case]]
+id = "bias.tes.hackshaw1998.tau2"
+kind = "derived"
+function = "tes"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", test = "exact", tau2 = 0.1, rel_tol = 1e-10 }
+expect = { E = "formulas.tes_E", pval = "formulas.tes_pval" }
+tolerance = 0.00005
+covers = ["tes.tau2"]
+
+[[case]]
+id = "bias.tes.hackshaw1998.theta"
+kind = "derived"
+function = "tes"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", test = "exact", theta = 0.2 }
+expect = { E = "formulas.tes_E", pval = "formulas.tes_pval" }
+covers = ["tes.E"]
+
+[[case]]
+id = "bias.tes.hackshaw1998.theta_lim"
+kind = "derived"
+function = "tes"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", test = "exact" }
+expect = { "theta_lim[0]" = "formulas.tes_theta_lim" }
+tolerance = 0.0001
+covers = ["tes.theta_lim"]
+
+[case.source]
+citation = "Viechtbauer W. metafor 5.2-1, help page of tes (https://wviechtb.github.io/metafor/reference/tes.html); Ioannidis JPA, Trikalinos TA (2007). An exploratory test for an excess of significant findings. Clinical Trials 4:245-253"
+locator = "metafor help page, Details: the value of theta at which the p-value of the test of excess significance equals tes.alpha is the limit estimate; Ioannidis and Trikalinos p. 246"
+read = 2026-11-15
+doi = "10.1177/1740774507079441"
+
+# hc: Henmi and Copas (2010), equations 8 and 14 to 21, as `formulas.hc_interval`; `test_derived.hc_interval` compares the interval limits.
+[[case]]
+id = "bias.hc.lee2004.reml"
+kind = "derived"
+function = "hc"
+dataset = "dat.lee2004"
+setup = { escalc = { measure = "OR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i" }, rma_uni = { method = "REML" } }
+args = {}
+expect = { beta = "formulas.hc_beta", tau2 = "formulas.hc_tau2" }
+check = "test_derived.hc_interval"
+tolerance = 0.00001
+covers = ["hc.ci", "hc.estimate"]
+
+[[case]]
+id = "bias.hc.egger2001.dl"
+kind = "derived"
+function = "hc"
+dataset = "dat.egger2001"
+setup = { drop = [15], escalc = { measure = "OR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i" }, rma_uni = { method = "DL" } }
+args = {}
+expect = { beta = "formulas.hc_beta", tau2 = "formulas.hc_tau2" }
+check = "test_derived.hc_interval"
+tolerance = 0.00001
+covers = ["hc.ci", "hc.estimate"]
+
+# Published cases (Task 7 of the publication-bias task list). Values are written as printed; each source's data were checked against the bundled dataset
+# before the case was written (same studies and the same pooled estimate to the printed digits).
+
+[[case]]
+id = "published.borenstein2009.hackshaw1998.trimfill"
+kind = "published"
+function = "trimfill"
+dataset = "dat.hackshaw1998"
+setup = { rma_uni = { method = "FE" } }
+args = { estimator = "L0" }
+expect = { k0 = "7", beta = "0.156", ci_ub = "0.227" }
+covers = ["trimfill.k0.L0"]
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Wiley, Chichester."
+locator = "Chapter 30, Duval and Tweedie's Trim and Fill (p. 287, Figure 30.3 text): seven imputed studies; adjusted log risk ratio 0.156 (0.085, 0.227), risk ratio 1.169 (1.089, 1.254); this case holds the values metafopy reproduces"
+read = 2026-11-15
+doi = "10.1002/9780470743386"
+
+# Sutton (2009), chapter 23, on dat.raudenbush1985 (19 studies, teacher expectancy, fixed-effect model).
+[[case]]
+id = "published.sutton2009.raudenbush1985.fixed"
+kind = "published"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "FE" }
+expect = { "beta[0]" = "0.060", "se[0]" = "0.036", "ci_ub[0]" = "0.132" }
+covers = ["tau2.FE"]
+
+[case.source]
+citation = "Sutton AJ (2009). Publication bias. In Cooper H, Hedges LV, Valentine JC (eds), The Handbook of Research Synthesis and Meta-Analysis, 2nd ed., pp. 435-452. Russell Sage Foundation, New York."
+locator = "Chapter 23, Example under Trim and Fill (p. 446): fixed-effect pooled estimate 0.060 (95 percent CI -0.011 to 0.132) and Table 23.1"
+read = 2026-11-15
+
+[[case]]
+id = "published.sutton2009.raudenbush1985.regtest"
+kind = "published"
+function = "regtest"
+dataset = "dat.raudenbush1985"
+args = { x = "yi", vi = "vi", model = "lm", predictor = "sei" }
+expect = { pval = "0.057" }
+covers = ["regtest.lm.sei"]
+
+[case.source]
+citation = "Sutton AJ (2009). Publication bias. In Cooper H, Hedges LV, Valentine JC (eds), The Handbook of Research Synthesis and Meta-Analysis, 2nd ed., pp. 435-452. Russell Sage Foundation, New York."
+locator = "Chapter 23, Example: Effects of Teacher Expectancy on Pupil IQ, Egger's regression test (p. 442) and Table 23.1: p = 0.057"
+read = 2026-11-15
+
+[[case]]
+id = "published.sutton2009.raudenbush1985.rosenthal"
+kind = "published"
+function = "fsn"
+dataset = "dat.raudenbush1985"
+args = { x = "yi", vi = "vi", type = "Rosenthal", alpha = 0.025 }
+expect = { fsnum = "13" }
+covers = ["fsn.Rosenthal"]
+
+[case.source]
+citation = "Sutton AJ (2009). Publication bias. In Cooper H, Hedges LV, Valentine JC (eds), The Handbook of Research Synthesis and Meta-Analysis, 2nd ed., pp. 435-452. Russell Sage Foundation, New York."
+locator = "Chapter 23, 23.4.1 Fail Safe N, Example (p. 443): sum of z-scores 11.03, k0 = (11.03/1.96)^2 - 19, 13 studies; the chapter's two-tailed 1.96 is metafor's one-sided alpha of 0.025"
+read = 2026-11-15
+
+[[case]]
+id = "published.sutton2009.raudenbush1985.trimfill"
+kind = "published"
+function = "trimfill"
+dataset = "dat.raudenbush1985"
+setup = { rma_uni = { method = "FE" } }
+args = { estimator = "L0" }
+expect = { k0 = "3", beta = "0.025", se = "0.036", ci_ub = "0.095" }
+covers = ["trimfill.k0.L0"]
+
+[case.source]
+citation = "Sutton AJ (2009). Publication bias. In Cooper H, Hedges LV, Valentine JC (eds), The Handbook of Research Synthesis and Meta-Analysis, 2nd ed., pp. 435-452. Russell Sage Foundation, New York."
+locator = "Chapter 23, 23.4.2 Trim and Fill, Example (p. 446) and Table 23.1: three studies missing, 0.060 (s.e. 0.036) to 0.025 (s.e. 0.036), 95 percent CI after filling -0.045 to 0.095 (this case holds the values metafopy reproduces)"
+read = 2026-11-15
+
+# Henmi and Copas (2010), section 5, on dat.lee2004 (16 trials of P6 acupoint stimulation, log odds ratios, DerSimonian-Laird tau2). The paper shows the
+# trials only in its Figure 5; the dataset is matched by the trial count, the printed estimate -0.68 and the printed tau2 0.33.
+[[case]]
+id = "published.henmi2010.lee2004.dl"
+kind = "published"
+function = "rma_uni"
+dataset = "dat.lee2004"
+setup = { escalc = { measure = "OR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i" } }
+args = { yi = "yi", vi = "vi", method = "DL" }
+expect = { "beta[0]" = "-0.68", tau2 = "0.33", "ci_ub[0]" = "-0.29" }
+covers = ["tau2.DL"]
+
+[case.source]
+citation = "Henmi M, Copas JB (2010). Confidence intervals for random effects meta-analysis and robustness to publication bias. Statistics in Medicine 29(29):2969-2983."
+locator = "Section 5, p. 2978: random effects estimate -0.68, tau2 = 0.33, DerSimonian-Laird interval (-1.06, -0.29) (this case holds the values metafopy reproduces)"
+read = 2026-11-15
+doi = "10.1002/sim.4029"
+
+[[case]]
+id = "published.henmi2010.lee2004.hc"
+kind = "published"
+function = "hc"
+dataset = "dat.lee2004"
+setup = { escalc = { measure = "OR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i" }, rma_uni = { method = "DL" } }
+args = {}
+expect = { ci_lb = "-1.00", ci_ub = "-0.03" }
+covers = ["hc.ci"]
+
+[case.source]
+citation = "Henmi M, Copas JB (2010). Confidence intervals for random effects meta-analysis and robustness to publication bias. Statistics in Medicine 29(29):2969-2983."
+locator = "Section 5, p. 2978: the Henmi-Copas interval (-1.00, -0.03)"
+read = 2026-11-15
+doi = "10.1002/sim.4029"
+
+# Sterne and Egger (2005), chapter 6, Table 6.2 (p. 108-109): the rank correlation and regression tests on the passive smoking (dat.hackshaw1998, 37 studies)
+# and teacher expectancy (dat.raudenbush1985, 19 studies) reviews. The chapter does not list the studies; the datasets are matched by the printed rank
+# correlation and the p-values of the regression tests (the rank correlation of the first agrees to the printed digits).
+[[case]]
+id = "published.sterne2005.hackshaw1998.ranktest"
+kind = "published"
+function = "ranktest"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", exact = false }
+expect = { tau = "0.14", pval = "0.21" }
+covers = ["ranktest.tau", "ranktest.pval.normal"]
+
+[case.source]
+citation = "Sterne JAC, Egger M (2005). Regression methods to detect publication and other bias in meta-analysis. In Rothstein HR, Sutton AJ, Borenstein M (eds), Publication Bias in Meta-Analysis, pp. 99-110. Wiley, Chichester."
+locator = "Table 6.2, passive smoking and lung cancer: rank correlation 0.14, p = 0.21"
+read = 2026-11-15
+doi = "10.1002/0470870168.ch6"
+
+# Duval and Tweedie (2000), Biometrics 56:455-463, Example 1 (teacher expectancy, dat.raudenbush1985), DerSimonian-Laird random-effects model.
+[[case]]
+id = "published.duval2000.raudenbush1985.dl"
+kind = "published"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "DL" }
+expect = { "beta[0]" = "0.089", "ci_lb[0]" = "-0.020", "ci_ub[0]" = "0.199" }
+covers = ["tau2.DL"]
+
+[case.source]
+citation = "Duval S, Tweedie R (2000). Trim and fill: a simple funnel-plot-based method of testing and adjusting for publication bias in meta-analysis. Biometrics 56(2):455-463."
+locator = "Example 1, p. 461: random-effects overall estimate 0.089 (-0.020, 0.199)"
+read = 2026-11-15
+doi = "10.1111/j.0006-341X.2000.00455.x"
+
+[[case]]
+id = "published.duval2000.raudenbush1985.l0"
+kind = "published"
+function = "trimfill"
+dataset = "dat.raudenbush1985"
+setup = { rma_uni = { method = "DL" } }
+args = { estimator = "L0" }
+expect = { k0 = "3", se_k0 = "2.9", beta = "0.027", ci_lb = "-0.100", ci_ub = "0.155" }
+covers = ["trimfill.k0.L0", "trimfill.se_k0.L0"]
+
+[case.source]
+citation = "Duval S, Tweedie R (2000). Trim and fill: a simple funnel-plot-based method of testing and adjusting for publication bias in meta-analysis. Biometrics 56(2):455-463."
+locator = "Example 1, p. 461: L0+ = 3 (SE 2.9); estimate after filling 0.027 (-0.100, 0.155)"
+read = 2026-11-15
+doi = "10.1111/j.0006-341X.2000.00455.x"
+
+[[case]]
+id = "published.duval2000.raudenbush1985.r0"
+kind = "published"
+function = "trimfill"
+dataset = "dat.raudenbush1985"
+setup = { rma_uni = { method = "DL" } }
+args = { estimator = "R0" }
+expect = { k0 = "2", se_k0 = "2.4" }
+covers = ["trimfill.k0.R0", "trimfill.se_k0.R0"]
+
+[case.source]
+citation = "Duval S, Tweedie R (2000). Trim and fill: a simple funnel-plot-based method of testing and adjusting for publication bias in meta-analysis. Biometrics 56(2):455-463."
+locator = "Example 1, p. 461: R0+ = 2 (SE 2.4)"
+read = 2026-11-15
+doi = "10.1111/j.0006-341X.2000.00455.x"
+
+[[case]]
+id = "published.duval2000.raudenbush1985.q0"
+kind = "published"
+function = "trimfill"
+dataset = "dat.raudenbush1985"
+setup = { rma_uni = { method = "DL" } }
+args = { estimator = "Q0" }
+expect = { k0 = "6" }
+covers = ["trimfill.k0.Q0"]
+
+[case.source]
+citation = "Duval S, Tweedie R (2000). Trim and fill: a simple funnel-plot-based method of testing and adjusting for publication bias in meta-analysis. Biometrics 56(2):455-463."
+locator = "Example 1, p. 461: Q0+ = 6"
+read = 2026-11-15
+doi = "10.1111/j.0006-341X.2000.00455.x"
+
+# Duval (2005), chapter 8, Table 8.2 (passive smoking, dat.hackshaw1998, 37 studies), DerSimonian-Laird, risk ratios.
+[[case]]
+id = "published.duval2005.hackshaw1998.observed"
+kind = "published"
+function = "rma_uni"
+dataset = "dat.hackshaw1998"
+args = { yi = "yi", vi = "vi", method = "DL" }
+check = "test_published.back_transformed"
+printed = { exp_beta = "1.24", exp_ci_lb = "1.13", exp_ci_ub = "1.36" }
+covers = ["tau2.DL"]
+
+[case.source]
+citation = "Duval S (2005). The trim and fill method. In Rothstein HR, Sutton AJ, Borenstein M (eds), Publication Bias in Meta-Analysis, pp. 127-144. Wiley, Chichester."
+locator = "Table 8.2, passive smoking: observed risk ratio 1.24 (1.13, 1.36)"
+read = 2026-11-15
+doi = "10.1002/0470870168.ch8"
+
+[[case]]
+id = "published.duval2005.hackshaw1998.l0"
+kind = "published"
+function = "trimfill"
+dataset = "dat.hackshaw1998"
+setup = { rma_uni = { method = "DL" } }
+args = { estimator = "L0" }
+expect = { k0 = "7" }
+check = "test_published.back_transformed"
+printed = { exp_beta = "1.19", exp_ci_lb = "1.08", exp_ci_ub = "1.31" }
+covers = ["trimfill.k0.L0"]
+
+[case.source]
+citation = "Duval S (2005). The trim and fill method. In Rothstein HR, Sutton AJ, Borenstein M (eds), Publication Bias in Meta-Analysis, pp. 127-144. Wiley, Chichester."
+locator = "Table 8.2, passive smoking: 7 studies filled, risk ratio 1.19 (1.08, 1.31)"
+read = 2026-11-15
+doi = "10.1002/0470870168.ch8"
+
+# Duval (2005), Table 8.1: gangliosides and stroke, eleven trials with the log odds ratios and standard errors as printed (two decimals).
+[[case]]
+id = "published.duval2005.gangliosides.l0"
+kind = "published"
+function = "trimfill"
+setup = { rma_uni = { method = "DL" } }
+args = { estimator = "L0" }
+expect = { k0 = "5" }
+check = "test_published.back_transformed"
+printed = { exp_beta = "1.01", exp_ci_lb = "0.82", exp_ci_ub = "1.26" }
+covers = ["trimfill.k0.L0"]
+
+[case.data]
+yi = [-0.20, -0.07, 0.04, 0.16, 0.21, 0.27, 0.53, 0.56, 0.80, 1.08, 2.11]
+vi = [0.1681, 0.0324, 0.09, 0.2809, 0.2601, 0.1089, 0.5476, 1.1664, 0.3844, 0.4356, 2.4025]
+
+[case.source]
+citation = "Duval S (2005). The trim and fill method. In Rothstein HR, Sutton AJ, Borenstein M (eds), Publication Bias in Meta-Analysis, pp. 127-144. Wiley, Chichester."
+locator = "Table 8.1 (data: log odds ratios and standard errors, squared here) and p. 132: 5 studies filled, odds ratio 1.01 (0.82, 1.26)"
+read = 2026-11-15
+doi = "10.1002/0470870168.ch8"
+
+# Becker (2005), chapter 7, Table 7.1: the z-values of the 19 teacher expectancy studies as printed; Stouffer's Z is 10.64 / sqrt(19) = 2.44.
+[[case]]
+id = "published.becker2005.table71.rosenthal"
+kind = "published"
+function = "fsn"
+args = { x = "yi", vi = "vi", type = "Rosenthal" }
+expect = { fsnum = "23" }
+covers = ["fsn.Rosenthal"]
+
+[case.data]
+yi = [1.75, -1.44, 0.81, -0.58, -0.19, -1.13, 0.75, 0.80, -0.40, -0.36, 0.79, -0.84, -0.07, 1.64, 3.07, 2.95, 0.70, 2.15, 0.24]
+vi = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+
+[case.source]
+citation = "Becker BJ (2005). Failsafe N or file-drawer number. In Rothstein HR, Sutton AJ, Borenstein M (eds), Publication Bias in Meta-Analysis, pp. 111-125. Wiley, Chichester."
+locator = "Table 7.1 (z-values) and Table 7.3, teacher expectancy: Rosenthal's fail-safe N 22.80, that is 23"
+read = 2026-11-15
+doi = "10.1002/0470870168.ch7"
+
+# Rosenthal (1979), p. 640: two small illustrations of the file drawer number, as k studies of equal z.
+[[case]]
+id = "published.rosenthal1979.fifteen"
+kind = "published"
+function = "fsn"
+args = { x = "yi", vi = "vi", type = "Rosenthal" }
+expect = { fsnum = "6", pval = "0.026" }
+covers = ["fsn.Rosenthal"]
+
+[case.data]
+yi = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+vi = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+
+[case.source]
+citation = "Rosenthal R (1979). The file drawer problem and tolerance for null results. Psychological Bulletin 86(3):638-641."
+locator = "p. 640, illustration: 15 studies each with Z = .5 combine to p = .026, and 6 filed studies bring p above .05"
+read = 2026-11-15
+doi = "10.1037/0033-2909.86.3.638"
+
+[[case]]
+id = "published.rosenthal1979.two"
+kind = "published"
+function = "fsn"
+args = { x = "yi", vi = "vi", type = "Rosenthal" }
+expect = { fsnum = "4", pval = "0.002" }
+covers = ["fsn.Rosenthal"]
+
+[case.data]
+yi = [2.0, 2.0]
+vi = [1, 1]
+
+[case.source]
+citation = "Rosenthal R (1979). The file drawer problem and tolerance for null results. Psychological Bulletin 86(3):638-641."
+locator = "p. 640, illustration: 2 studies each with Z = 2 combine to p about .002, and 4 new studies bring p above .05"
+read = 2026-11-15
+doi = "10.1037/0033-2909.86.3.638"
+
+# Cases removed on the answer "keep metafor" (mismatches.md, answered 2026-11-15): the source printed a value metafopy, like metafor, does not reproduce.
+# Each was a strict expected failure; the values and the sources are in agents/specs/correctness-publication-bias/mismatches.md.
+#   published.borenstein2009.hackshaw1998.rosenthal
+#   published.borenstein2009.hackshaw1998.orwin
+#   published.borenstein2009.hackshaw1998.trimfill.limits
+#   published.sutton2009.raudenbush1985.ranktest
+#   published.sutton2009.raudenbush1985.trimfill.limit
+#   published.henmi2010.lee2004.dl.limit
+#   published.sterne2005.hackshaw1998.regtest
+#   published.sterne2005.raudenbush1985.ranktest
+#   published.sterne2005.raudenbush1985.regtest

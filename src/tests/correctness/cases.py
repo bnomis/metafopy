@@ -71,7 +71,7 @@ CASE_KEYS = frozenset(
         'tolerance',
     }
 )
-SETUP_KEYS = frozenset({'escalc', 'subset', 'tree_r', 'vblocks', 'vconst'})
+SETUP_KEYS = frozenset({'drop', 'escalc', 'rma_uni', 'subset', 'tree_r', 'vblocks', 'vconst', 'where'})
 STEP_KEYS = frozenset({'args', 'function'})
 VBLOCKS_KEYS = frozenset({'cluster', 'columns'})
 VCONST_KEYS = frozenset({'cluster', 'rho', 'vi'})
@@ -231,9 +231,13 @@ def parse_printed(raw: object, kind: str, check: str | None, where: str) -> dict
 def parse_setup(setup: object, where: str, *, has_data: bool) -> None:
     """Check a case's ``setup``: an ``escalc`` call and at most one of ``vblocks`` and ``vconst``, each with its ``cluster``."""
     if not isinstance(setup, dict) or not setup or not set(setup) <= SETUP_KEYS:
-        fail(where, 'setup must be a table with escalc, subset, tree_r, vblocks or vconst')
-    if not all(isinstance(value, dict) for value in setup.values()):
-        fail(where, 'each setup entry (escalc, vblocks, vconst) must be a table')
+        fail(where, f'setup must be a table whose keys are among {sorted(SETUP_KEYS)}')
+    if not all(isinstance(value, dict) for key, value in setup.items() if key != 'drop'):
+        fail(where, 'each setup entry except drop must be a table')
+    if 'drop' in setup and not (isinstance(setup['drop'], list) and all(isinstance(i, int) and not isinstance(i, bool) for i in setup['drop'])):
+        fail(where, 'setup.drop must be a list of 0-based row indices')
+    if ('where' in setup or 'drop' in setup or 'rma_uni' in setup) and not has_data:
+        fail(where, 'setup.where, setup.drop and setup.rma_uni need a dataset or inline data')
     if 'vblocks' in setup and 'vconst' in setup:
         fail(where, 'setup has both vblocks and vconst; give one')
     for key, allowed in (('vblocks', VBLOCKS_KEYS), ('vconst', VCONST_KEYS)):
@@ -439,13 +443,26 @@ def load_vtypes(directory: pathlib.Path | None = None) -> list[MeasureVtypes]:
 
 
 def case_frame(case: Case) -> pandas.DataFrame | None:
-    """The case's data: the bundled dataset or the inline columns, with the ``escalc`` of ``setup`` applied, then the rows ``subset`` keeps."""
+    """The case's data: the bundled dataset or the inline columns, the rows ``where`` keeps and ``drop`` leaves, the ``escalc`` of ``setup``, then the
+    rows ``subset`` keeps. ``where`` or ``drop`` that does not fit the data raises ``ValueError`` naming file and case."""
     if case.dataset is not None:
         frame = metafopy.datasets.load(case.dataset)
     elif case.data is not None:
         frame = pandas.DataFrame(case.data)
     else:
         return None
+    where = f'{case.file}: case {case.id}'
+    if case.setup is not None and 'where' in case.setup:
+        for column, value in case.setup['where'].items():
+            if column not in frame.columns:
+                fail(where, f'setup.where column {column!r} is not in the data')
+            frame = frame[frame[column] == value]
+        frame = frame.reset_index(drop=True)
+    if case.setup is not None and 'drop' in case.setup:
+        bad = [i for i in case.setup['drop'] if not 0 <= i < len(frame)]
+        if bad:
+            fail(where, f'setup.drop index {bad} is outside the {len(frame)} rows')
+        frame = frame.drop(index=case.setup['drop']).reset_index(drop=True)
     if case.setup is not None and 'escalc' in case.setup:
         frame = metafopy.escalc(data=frame, **case.setup['escalc'])
     if case.setup is not None and 'subset' in case.setup:
@@ -525,14 +542,15 @@ def formula_value(case: Case, name: str, frame: pandas.DataFrame | None) -> typi
     """Call a formula with the ``args`` of the case that it declares, a column name replaced by the column."""
     func = resolve_formula(name, case.id)
     kwargs: dict[str, typing.Any] = {}
-    for param in inspect.signature(func).parameters:
+    for param, signature in inspect.signature(func).parameters.items():
         if param == 'data' and frame is not None:
             kwargs[param] = frame
             continue
         if param not in case.args:
             continue
         value = case.args[param]
-        if isinstance(value, str) and frame is not None and value in frame.columns:
+        # a parameter annotated ``str`` takes the text as it is, so ``predictor = "vi"`` is not read as the column ``vi``
+        if isinstance(value, str) and signature.annotation is not str and frame is not None and value in frame.columns:
             value = frame[value].to_numpy(dtype=numpy.float64)
         kwargs[param] = value
     return func(**kwargs)
@@ -541,7 +559,8 @@ def formula_value(case: Case, name: str, frame: pandas.DataFrame | None) -> typi
 def run_case(case: Case) -> typing.Any:
     """Load the dataset, apply ``setup``, call ``metafopy.<function>(**args)`` (``<module>.<name>`` for a formula), then apply ``then`` to the fit.
 
-    ``setup`` is an ``escalc`` call, for ``vblocks`` or ``vconst`` the ``V`` passed to the call, and for ``tree_r`` the ``R`` passed to it (the
+    ``setup`` is an ``escalc`` call, ``where`` and ``drop`` row filters, for ``rma_uni`` the model fitted on ``yi`` and ``vi`` and passed as the first
+    argument in place of ``data``, for ``vblocks`` or ``vconst`` the ``V`` passed to the call, and for ``tree_r`` the ``R`` passed to it (the
     unscaled tree covariance matrix of the named factor). The result of ``then`` is returned.
     """
     frame = case_frame(case)
@@ -551,13 +570,20 @@ def run_case(case: Case) -> typing.Any:
     if not callable(func):
         raise LookupError(f'{case.id}: metafopy has no function {case.function!r}')
     kwargs = dict(case.args)
+    if frame is not None and case.setup is not None and 'rma_uni' in case.setup:
+        fit = metafopy.rma_uni(yi='yi', vi='vi', data=frame, **case.setup['rma_uni'])
+        return apply_then(case, func(fit, **kwargs))
     if frame is not None:
         kwargs['data'] = frame
         if case.setup is not None and ('vblocks' in case.setup or 'vconst' in case.setup):
             kwargs['V'] = build_v(frame, case.setup, f'{case.file}: case {case.id}')
         if case.setup is not None and 'tree_r' in case.setup:
             kwargs['R'] = {case.setup['tree_r']['factor']: build_tree_r(case.setup['tree_r']['tree'])}
-    result = func(**kwargs)
+    return apply_then(case, func(**kwargs))
+
+
+def apply_then(case: Case, result: typing.Any) -> typing.Any:
+    """The result of the case's ``then`` step on ``result``, or ``result`` when the case has none."""
     if case.then is None:
         return result
     follow = getattr(metafopy, case.then.function, None)

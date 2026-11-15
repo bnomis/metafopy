@@ -301,3 +301,181 @@ args = { yi = "yi", random = "~ 1 | studyid", sigma2 = [0.05], mods = "~ propmal
 expect = {}
 check = "test_properties.cr2_is_unbiased_under_the_working_model"
 then = { function = "robust", args = { cluster = "studyid", club_sandwich = true, vcov = "CR2" } }
+
+# Publication bias: selmodel with every delta fixed at no selection (weight 1 for every p-value) is the ML fit, for every type that has such a value.
+[[case]]
+id = "property.selmodel.no-selection.stepfun.bangertdrowns2004"
+kind = "property"
+function = "selmodel"
+dataset = "dat.bangertdrowns2004"
+setup = { rma_uni = { method = "ML" } }
+args = { type = "stepfun", steps = [0.025, 0.50, 1.0], delta = [1, 1, 1] }
+expect = {}
+check = "test_properties.selmodel_without_selection_is_ml_fit"
+
+[[case]]
+id = "property.selmodel.no-selection.beta.bangertdrowns2004"
+kind = "property"
+function = "selmodel"
+dataset = "dat.bangertdrowns2004"
+setup = { rma_uni = { method = "ML" } }
+args = { type = "beta", delta = [1, 1] }
+expect = {}
+check = "test_properties.selmodel_without_selection_is_ml_fit"
+
+[[case]]
+id = "property.selmodel.no-selection.halfnorm.bangertdrowns2004"
+kind = "property"
+function = "selmodel"
+dataset = "dat.bangertdrowns2004"
+setup = { rma_uni = { method = "ML" } }
+args = { type = "halfnorm", delta = 0 }
+expect = {}
+check = "test_properties.selmodel_without_selection_is_ml_fit"
+
+[[case]]
+id = "property.selmodel.no-selection.negexp.bangertdrowns2004"
+kind = "property"
+function = "selmodel"
+dataset = "dat.bangertdrowns2004"
+setup = { rma_uni = { method = "ML" } }
+args = { type = "negexp", delta = 0 }
+expect = {}
+check = "test_properties.selmodel_without_selection_is_ml_fit"
+
+[[case]]
+id = "property.selmodel.no-selection.logistic.bangertdrowns2004"
+kind = "property"
+function = "selmodel"
+dataset = "dat.bangertdrowns2004"
+setup = { rma_uni = { method = "ML" } }
+args = { type = "logistic", delta = 0 }
+expect = {}
+check = "test_properties.selmodel_without_selection_is_ml_fit"
+
+[[case]]
+id = "property.selmodel.no-selection.power.bangertdrowns2004"
+kind = "property"
+function = "selmodel"
+dataset = "dat.bangertdrowns2004"
+setup = { rma_uni = { method = "ML" } }
+args = { type = "power", delta = 0 }
+expect = {}
+check = "test_properties.selmodel_without_selection_is_ml_fit"
+
+[[case]]
+id = "property.selmodel.no-selection.trunc.bangertdrowns2004"
+kind = "property"
+function = "selmodel"
+dataset = "dat.bangertdrowns2004"
+setup = { rma_uni = { method = "ML" } }
+args = { type = "trunc", delta = 1 }
+expect = {}
+check = "test_properties.selmodel_without_selection_is_ml_fit"
+
+# Reflecting yi to -yi: regtest (model lm and rma, predictor sei and vi), ranktest (also a location shift) and trimfill.
+[[case]]
+id = "property.reflection.regtest.hackshaw1998"
+kind = "property"
+function = "regtest"
+dataset = "dat.hackshaw1998"
+setup = { rma_uni = { method = "DL" } }
+args = {}
+expect = {}
+check = "test_properties.reflection_negates_regtest"
+
+[[case]]
+id = "property.reflection.regtest.raudenbush1985"
+kind = "property"
+function = "regtest"
+dataset = "dat.raudenbush1985"
+setup = { rma_uni = { method = "DL" } }
+args = {}
+expect = {}
+check = "test_properties.reflection_negates_regtest"
+
+[[case]]
+id = "property.reflection-shift.ranktest.hackshaw1998"
+kind = "property"
+function = "ranktest"
+dataset = "dat.hackshaw1998"
+setup = { rma_uni = { method = "DL" } }
+args = {}
+expect = {}
+check = "test_properties.reflection_and_shift_leave_ranktest_p"
+
+[[case]]
+id = "property.reflection-shift.ranktest.raudenbush1985"
+kind = "property"
+function = "ranktest"
+dataset = "dat.raudenbush1985"
+setup = { rma_uni = { method = "DL" } }
+args = {}
+expect = {}
+check = "test_properties.reflection_and_shift_leave_ranktest_p"
+
+[[case]]
+id = "property.reflection.trimfill.l0.hackshaw1998"
+kind = "property"
+function = "trimfill"
+dataset = "dat.hackshaw1998"
+setup = { rma_uni = { method = "DL" } }
+args = { estimator = "L0" }
+expect = {}
+check = "test_properties.reflection_moves_trimfill_side"
+
+[[case]]
+id = "property.reflection.trimfill.r0.hackshaw1998"
+kind = "property"
+function = "trimfill"
+dataset = "dat.hackshaw1998"
+setup = { rma_uni = { method = "DL" } }
+args = { estimator = "R0" }
+expect = {}
+check = "test_properties.reflection_moves_trimfill_side"
+
+[[case]]
+id = "property.reflection.trimfill.q0.raudenbush1985"
+kind = "property"
+function = "trimfill"
+dataset = "dat.raudenbush1985"
+setup = { rma_uni = { method = "DL" } }
+args = { estimator = "Q0" }
+expect = {}
+check = "test_properties.reflection_moves_trimfill_side"
+
+# trimfill with no missing studies returns the input model: R0 on dat.bangertdrowns2004 finds none, and so does L0 on the side of dat.hackshaw1998 with none.
+[[case]]
+id = "property.trimfill.k0-zero.r0.bangertdrowns2004"
+kind = "property"
+function = "trimfill"
+dataset = "dat.bangertdrowns2004"
+setup = { rma_uni = { method = "DL" } }
+args = { estimator = "R0" }
+expect = {}
+check = "test_properties.trimfill_without_missing_returns_the_model"
+
+[[case]]
+id = "property.trimfill.k0-zero.l0-right.hackshaw1998"
+kind = "property"
+function = "trimfill"
+dataset = "dat.hackshaw1998"
+setup = { rma_uni = { method = "DL" } }
+args = { estimator = "L0", side = "right" }
+expect = {}
+check = "test_properties.trimfill_without_missing_returns_the_model"
+
+# hc with a DerSimonian-Laird tau2 of 0: the estimate and standard error are the equal-effects ones.
+[[case]]
+id = "property.hc.zero-tau2.estimate"
+kind = "property"
+function = "hc"
+data = { yi = [0.30, 0.31, 0.29, 0.30, 0.32, 0.28], vi = [0.10, 0.08, 0.12, 0.09, 0.11, 0.10] }
+setup = { rma_uni = { method = "DL" } }
+args = {}
+expect = {}
+check = "test_properties.hc_with_zero_tau2_is_the_equal_effects_estimate"
+
+# Cases removed on the answer "keep metafor" (mismatches.md, answered 2026-11-15): the spec's property that the Henmi-Copas interval at a DerSimonian-Laird tau2 of 0 is the equal-effects interval does not hold (the interval allows for tau2 having been estimated).
+# Each was a strict expected failure; the values and the sources are in agents/specs/correctness-publication-bias/mismatches.md.
+#   property.hc.zero-tau2.interval

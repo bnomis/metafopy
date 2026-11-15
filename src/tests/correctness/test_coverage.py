@@ -4,7 +4,9 @@ The gate names every item of the core that has no ``published`` or ``derived`` c
 """
 
 import ast
+import collections.abc
 import dataclasses
+import importlib
 import inspect
 import pathlib
 import types
@@ -30,11 +32,13 @@ import metafopy.models.rma_glmm
 import metafopy.models.rma_ls_fit
 import metafopy.models.rma_mv
 import metafopy.models.rma_uni
+import metafopy.models.sel_spec
 import metafopy.models.tau2
 
 HETEROGENEITY = ('H2', 'I2', 'QE', 'QM')
 LS_HETEROGENEITY = ('H2', 'I2', 'QE')
 LS_PREFIXES = ('ls.',)
+BIAS_PREFIXES = ('fsn.', 'hc.', 'ranktest.', 'regtest.', 'selmodel.', 'tes.', 'trimfill.')
 LS_PREDICT = ('both', 'fitted', 'newmods', 'newscale')
 LS_ANOVA = ('X', 'Z', 'att', 'btt', 'lrt.ML', 'lrt.REML')
 MH_MEASURES = ('IRD', 'IRR', 'OR', 'RD', 'RR')
@@ -116,6 +120,49 @@ def coverage_items() -> list[str]:
     items += mv_robust_items()
     items += glmm_items()
     items += ls_items()
+    items += bias_items()
+    return items
+
+
+def literal_options(func: collections.abc.Callable[..., typing.Any], parameter: str) -> tuple[str, ...]:
+    """The string values of the ``Literal`` in ``parameter``'s annotation, through a ``type`` alias and ``| None``.
+
+    Any other annotation raises ``TypeError``.
+    """
+    name = getattr(func, '__name__', repr(func))
+    annotation = inspect.signature(func).parameters[parameter].annotation
+    parts = typing.get_args(annotation) if isinstance(annotation, types.UnionType) else (annotation,)
+    values: list[str] = []
+    for part in parts:
+        if part is type(None):
+            continue
+        if isinstance(part, typing.TypeAliasType):
+            part = part.__value__
+        if typing.get_origin(part) is not typing.Literal:
+            raise TypeError(f'{name}: parameter {parameter!r} is annotated {annotation!r}, not a Literal of strings')
+        values += [value for value in typing.get_args(part) if isinstance(value, str)]
+    if not values:
+        raise TypeError(f'{name}: parameter {parameter!r} has no Literal string values in {annotation!r}')
+    return tuple(values)
+
+
+def bias_items() -> list[str]:
+    """The publication-bias items, each option list read from the code where the code lists it."""
+    selmodel = importlib.import_module('metafopy.models.selmodel')
+    models = literal_options(metafopy.regtest, 'model')
+    predictors = literal_options(metafopy.regtest, 'predictor')
+    items = [f'regtest.{model}.{predictor}' for model in models for predictor in predictors]
+    items += ['regtest.limit', 'ranktest.tau', 'ranktest.pval.exact', 'ranktest.pval.normal']
+    items += [f'trimfill.{statistic}.{estimator}' for statistic in ('k0', 'se_k0') for estimator in literal_options(metafopy.trimfill, 'estimator')]
+    items += ['trimfill.p_k0', 'trimfill.side', 'trimfill.fill']
+    items += [f'fsn.{kind}' for kind in literal_options(metafopy.fsn, 'type')]
+    items += [f'fsn.pool.{pool}' for pool in literal_options(metafopy.fsn, 'pool')]
+    items += [f'tes.test.{test}' for test in literal_options(metafopy.tes, 'test')]
+    items += ['tes.E', 'tes.tau2', 'tes.theta_lim', 'hc.estimate', 'hc.ci']
+    items += [f'selmodel.{kind}' for kind in metafopy.models.sel_spec.TYPE_OPTIONS]
+    items += [f'selmodel.alternative.{a}' for a in selmodel.ALTERNATIVES]
+    items += [f'selmodel.prec.{p}' for p in selmodel.PRECISIONS]
+    items += ['selmodel.fixed_delta', 'selmodel.decreasing', 'selmodel.LRT']
     return items
 
 
@@ -299,7 +346,13 @@ def test_derived_required_is_read_from_every_file(tmp_path: pathlib.Path) -> Non
 
 
 def test_every_core_item_has_a_case() -> None:
-    missing = missing_items(correctness.cases.load_cases(), correctness.cases.load_exemptions())
+    items = [item for item in coverage_items() if not item.startswith(BIAS_PREFIXES)]
+    missing = missing_items(correctness.cases.load_cases(), correctness.cases.load_exemptions(), items)
+    assert not missing, f'{len(missing)} items have no published or derived case: {", ".join(missing)}'
+
+
+def test_every_bias_item_has_a_case() -> None:
+    missing = missing_items(correctness.cases.load_cases(), correctness.cases.load_exemptions(), bias_items())
     assert not missing, f'{len(missing)} items have no published or derived case: {", ".join(missing)}'
 
 
@@ -727,3 +780,108 @@ def test_tree_r_is_the_shared_branch_length_of_the_tips() -> None:
 def test_a_malformed_subset_or_tree_setup_raises_naming_file_and_case(text: str, pattern: str) -> None:
     with pytest.raises(ValueError, match=pattern):
         correctness.cases.parse_cases(text, 'inline.toml')
+
+
+# ---- the `where`, `drop` and `rma_uni` setups and `literal_options`
+
+WHERE_CASE = """
+[[case]]
+id = "unit.where"
+kind = "property"
+function = "rma_uni"
+args = { yi = "yi", vi = "vi", method = "FE" }
+setup = { where = { group = "b" }, drop = [0] }
+expect = { "beta[0]" = 0.0 }
+
+[case.data]
+yi = [0.1, 0.4, 0.2, 0.5, 0.3]
+vi = [0.02, 0.03, 0.025, 0.04, 0.05]
+group = ["a", "b", "a", "b", "b"]
+"""
+
+RMA_UNI_CASE = """
+[[case]]
+id = "unit.fit"
+kind = "property"
+function = "trimfill"
+args = { estimator = "R0" }
+setup = { rma_uni = { method = "FE" } }
+expect = { k0 = 0.0 }
+dataset = "dat.hackshaw1998"
+"""
+
+
+def test_where_then_drop_keeps_the_right_rows() -> None:
+    frame = correctness.cases.case_frame(one_case(WHERE_CASE))
+    assert frame is not None
+    assert frame['yi'].tolist() == [0.5, 0.3]
+    assert frame.index.tolist() == [0, 1]
+
+
+def test_drop_alone_removes_the_named_rows() -> None:
+    case = one_case(WHERE_CASE.replace('where = { group = "b" }, ', ''))
+    frame = correctness.cases.case_frame(case)
+    assert frame is not None
+    assert frame['yi'].tolist() == [0.4, 0.2, 0.5, 0.3]
+
+
+@pytest.mark.parametrize(
+    TEXT_PATTERN,
+    [
+        (WHERE_CASE.replace('setup = {', 'setup = { colour = {},'), r'inline\.toml: case unit\.where: setup must be a table whose keys'),
+        (WHERE_CASE.replace('drop = [0]', 'drop = "x"'), r'inline\.toml: case unit\.where: setup\.drop must be a list'),
+    ],
+)
+def test_a_malformed_where_or_drop_setup_raises_naming_file_and_case(text: str, pattern: str) -> None:
+    with pytest.raises(ValueError, match=pattern):
+        correctness.cases.parse_cases(text, 'inline.toml')
+
+
+@pytest.mark.parametrize(
+    TEXT_PATTERN,
+    [
+        (WHERE_CASE.replace('group = "b"', 'colour = "b"'), r'inline\.toml: case unit\.where: setup\.where column .colour. is not in the data'),
+        (WHERE_CASE.replace('drop = [0]', 'drop = [7]'), r'inline\.toml: case unit\.where: setup\.drop index \[7\] is outside the 3 rows'),
+    ],
+)
+def test_a_where_or_drop_that_does_not_fit_the_data_raises_naming_file_and_case(text: str, pattern: str) -> None:
+    with pytest.raises(ValueError, match=pattern):
+        correctness.cases.case_frame(one_case(text))
+
+
+def test_setup_rma_uni_passes_the_fitted_model_and_no_data(monkeypatch: pytest.MonkeyPatch) -> None:
+    case = one_case(RMA_UNI_CASE)
+    seen: dict[str, typing.Any] = {}
+    real = metafopy.trimfill
+
+    def spy(*args: typing.Any, **kwargs: typing.Any) -> typing.Any:
+        seen['args'], seen['kwargs'] = args, kwargs
+        return real(*args, **kwargs)
+
+    monkeypatch.setattr(metafopy, 'trimfill', spy)
+    result = correctness.cases.run_case(case)
+    (fit,) = seen['args']
+    assert isinstance(fit, metafopy.models.rma_uni.RMAResult)
+    assert seen['kwargs'] == {'estimator': 'R0'}
+    assert hasattr(result, 'k0')
+
+
+type Colour = typing.Literal['cyan', 'magenta']
+type Shade = typing.Literal['dark', 'light']
+
+
+def probe(a: Colour, b: Shade | None, c: int) -> None:
+    del a, b, c
+
+
+def test_literal_options_reads_a_type_alias_and_an_optional_literal() -> None:
+    assert literal_options(probe, 'a') == typing.get_args(Colour.__value__)
+    assert literal_options(probe, 'b') == typing.get_args(Shade.__value__)
+    assert 'fisher' in literal_options(metafopy.fsn, 'pool')
+    predictor = importlib.import_module('metafopy.bias.regtest').Predictor
+    assert literal_options(metafopy.regtest, 'predictor') == typing.get_args(predictor.__value__)
+
+
+def test_literal_options_refuses_an_annotation_that_is_not_a_literal() -> None:
+    with pytest.raises(TypeError, match=r"probe: parameter 'c'"):
+        literal_options(probe, 'c')

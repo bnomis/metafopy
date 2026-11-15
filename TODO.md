@@ -150,16 +150,54 @@ location-scale profile interval as differing where they do, add the matching `sr
 `docs/differences.md` under "Where metafor departs from its reference". A change to `src/metafopy/` goes through a spec first, or a small task list
 if the fix is local.
 
-## Extend the correctness tests beyond the core models
+## The fail-safe N root search rounds up one too far on a step function
 
-Found on 2026-11-12 while reviewing `TODO.md`: the correctness-tests spec (`agents/specs/correctness-tests/spec.md`, introduction) covers `escalc`,
-`rma_uni`, `rma_mh` and `rma_peto`, and says "Later specs extend the same harness to `rma_mv`, `rma_glmm`, `rma_ls`, the bias methods, `selmodel` and
-`robust`." No such spec exists yet, so those functions are checked only against R metafor, not against their defining references.
+<!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
+Found on 2026-11-15 by the cases `bias.fsn.egger2001.rosenthal.fisher` and `bias.fsn.egger2001.general.target` in `src/tests/correctness/cases/bias.toml`
+(`agents/specs/correctness-publication-bias/mismatches.md`); the user answered *follow the reference* on 2026-11-15. Becker's Fisher criterion first
+holds at N = 48 (p = 0.0541; at N = 47 p = 0.0493) and metafopy gives 47; the average effect of the General type first reaches the target at N = 116 and
+metafopy gives 117. R metafor 5.2-1 gives metafopy's 47 and 117 (run by the operator session on 2026-11-15), so the difference is metafor's too.
+<!-- doc-counts: accept-end -->
 
-Fix direction: one spec per area with `/specdev`, each listing its defining references, the sources to fetch or ask the user for, and its coverage items in
-`src/tests/correctness/test_coverage.py`; do the harness item above first, since several of these areas report back-transformed or interval values.
+Cause: `fsn` finds the root of a function of N with `metafopy.core.zeroin.uniroot` (`src/metafopy/bias/fsn.py`, the `Rosenthal` and `General` branches),
+treating N as a real number, but the statistic is a step function of `int(N)` (`fsn_fisher` takes `int(fsnum)`; the General refit uses floor(N) studies), so
+the root search stops just above or below a step and the result is rounded up.
 
-Spec: `agents/specs/correctness-mv-robust/spec.md`; tasks: `agents/tasks/correctness-mv-robust/tasks-1.md`. Spec:
-`agents/specs/correctness-glmm/spec.md`; tasks: `agents/tasks/correctness-glmm/tasks-1.md`. Spec: `agents/specs/correctness-location-scale/spec.md`;
-tasks: `agents/tasks/correctness-location-scale/tasks-1.md`. Spec: `agents/specs/correctness-publication-bias/spec.md`; tasks:
-`agents/tasks/correctness-publication-bias/tasks-1.md`.
+Fix direction: search the integers (`formulas.smallest_integer` in `src/tests/correctness/formulas.py` is the reference search), resolve the General
+step before rounding, then set the two cases to `pass`. Mark the R parity fixtures that hold these values as differing, add the `src/audit/data/known.toml`
+entries, and add the difference to `docs/differences.md` under "Where metafor departs from its reference". A change to `src/metafopy/` goes through a
+spec first, or a small task list if the fix is local.
+
+## The truncest estimate stops at a local maximum of a step-function likelihood
+
+<!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
+Found on 2026-11-15 by the case `selmodel.truncest.bangertdrowns2004` in `src/tests/correctness/cases/selmodel.toml`
+(`agents/specs/correctness-publication-bias/mismatches.md`); the user answered *follow the reference* on 2026-11-15. On `dat.bangertdrowns2004`
+metafopy gives beta 0.26491, tau2 0.054216, delta 1.42227, truncation point 0.27073 and ll -17.7909; the maximum of the likelihood
+(`formulas.truncation_loglik`) gives beta 0.27598, tau2 0.054737, delta 1.48969, truncation point 0.20001 and ll -17.7406. R metafor 5.2-1 gives
+metafopy's values (operator session, 2026-11-15), so it stops at the same local maximum.
+<!-- doc-counts: accept-end -->
+
+Cause: the likelihood is a step function of the truncation point with a jump at each observed effect, so a gradient search stops inside one piece
+(`type == 'truncest'` in `src/metafopy/models/selmodel.py`).
+
+Fix direction: search each stretch between observed effects and keep the best, then set the case to `pass`. Mark the R parity fixture that holds a
+`truncest` fit as differing, add the `src/audit/data/known.toml` entry, and add the difference to `docs/differences.md` under "Where metafor departs from
+its reference". A change to `src/metafopy/` goes through a spec first, or a small task list if the fix is local.
+
+## A precision measure on a step-function selection model makes the likelihood not a density
+
+<!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
+Found on 2026-11-15 by the cases `selmodel.prec.{sei,vi,ninv,sqrtninv}.bangertdrowns2004` in `src/tests/correctness/cases/selmodel.toml`
+(`agents/specs/correctness-publication-bias/mismatches.md`); the user answered *investigate* on 2026-11-15. With `type='stepfun'` and `prec` set,
+metafopy gives beta 0.13780 (`sei`), 0.16908 (`vi`), 0.16769 (`ninv`) and 0.13711 (`sqrtninv`); the maximum of the density with weights `delta[j] /
+preci` gives beta 0.10569 and ll -17.4217 for each. R metafor 5.2-1 gives metafopy's values (operator session, 2026-11-15), and warns that the
+combination is undocumented and experimental.
+<!-- doc-counts: accept-end -->
+
+Cause: metafopy, like metafor, normalises the first interval with weight 1 but weights the observed p-value by `delta[0] / preci`, so the likelihood is
+not a density and its maximum moves with the precision measure. The consistent likelihood makes `prec` a no-op, so neither is the intended model.
+
+Fix direction: decide whether `selmodel` rejects the combination with an `InputError`, or defines it from a source (none found for step functions). Then
+set the four cases to `pass` or exempt them with the decision, mark the `hack_stepfun_sei` R parity fixture as differing if the behaviour changes, and
+name the decision in `docs/differences.md` under "Where metafor departs from its reference". A change to `src/metafopy/` goes through a spec first.

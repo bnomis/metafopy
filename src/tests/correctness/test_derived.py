@@ -9,6 +9,7 @@ import numpy
 import numpy.typing
 import pandas
 import pytest
+import scipy.optimize
 import scipy.stats
 
 import correctness.cases
@@ -79,6 +80,140 @@ def predict_pi(case: correctness.cases.Case, result: typing.Any) -> None:
     predicted = metafopy.predict(result)
     for name, formula, actual in (('pi_lb', 'prediction_lb', predicted.pi_lb), ('pi_ub', 'prediction_ub', predicted.pi_ub)):
         numbers_agree(case, name, actual, correctness.cases.formula_value(case, f'formulas.{formula}', frame))
+
+
+def kendall_z(case: correctness.cases.Case, result: typing.Any) -> None:
+    """Begg and Mazumdar's normal deviate from ``tau`` and the number of studies k (1994, p. 1089): ``Z = 3 tau sqrt(k (k - 1) / (2 (2k + 5)))``.
+
+    It is compared with the deviate the formulas compute from the data, and its two-sided normal p-value with ``pval`` of the result.
+    """
+    frame = correctness.cases.case_frame(case)
+    assert frame is not None
+    k = int(frame[case.args['x']].notna().sum())
+    z = 3 * result.tau * math.sqrt(k * (k - 1) / (2 * (2 * k + 5)))
+    numbers_agree(case, 'Z', z, correctness.cases.formula_value(case, 'formulas.begg_z', frame))
+    numbers_agree(case, 'normal p-value from Z', 2 * scipy.stats.norm.sf(abs(z)), result.pval)
+
+
+def trimfill_filled(case: correctness.cases.Case, result: typing.Any) -> None:
+    """The side chosen, and the filled effects and variances (compared order-free) of Duval and Tweedie's trim and fill (2000)."""
+    frame = correctness.cases.case_frame(case)
+    assert frame is not None
+    expected = correctness.formulas.trimfill_of(frame, case.args.get('estimator', 'L0'), case.args.get('side'))
+    if result.side != expected['side']:
+        raise AssertionError(f'{case.id}: side: metafopy gives {result.side!r}, the reference gives {expected["side"]!r}')
+    filled = numpy.asarray(result.fill, dtype=bool)
+    pairs = sorted(zip(numpy.asarray(result.yi)[filled], numpy.asarray(result.vi)[filled], strict=True))
+    reference = sorted(zip(expected['fill_yi'], expected['fill_vi'], strict=True))
+    if len(pairs) != len(reference):
+        raise AssertionError(f'{case.id}: filled studies: metafopy fills {len(pairs)}, the reference fills {len(reference)}')
+    numbers_agree(case, 'filled effects', [p[0] for p in pairs], [r[0] for r in reference])
+    numbers_agree(case, 'filled variances', [p[1] for p in pairs], [r[1] for r in reference])
+
+
+def hc_interval(case: correctness.cases.Case, result: typing.Any) -> None:
+    """The limits of Henmi and Copas's confidence interval (2010, equations 14 to 21), from their integral on the case's ``yi`` and ``vi``."""
+    frame = correctness.cases.case_frame(case)
+    assert frame is not None
+    _, _, lower, upper = correctness.formulas.hc_interval(frame['yi'].to_numpy(dtype=numpy.float64), frame['vi'].to_numpy(dtype=numpy.float64))
+    numbers_agree(case, 'ci_lb', result.ci_lb, lower)
+    numbers_agree(case, 'ci_ub', result.ci_ub, upper)
+
+
+SELMODEL_LL_TOLERANCE = 1e-8
+SELMODEL_FLAT_LL_TOLERANCE = 1e-6  # a case whose likelihood is flat in delta (tolerance above 1e-3) stops the optimisers 1e-7 apart in ll
+SELMODEL_DELTA_FLOOR = 1e-6
+SELMODEL_DELTA_CEILING = 20.0
+
+
+def selmodel_maximum(case: correctness.cases.Case, result: typing.Any, maxiter: int = 1000) -> tuple[FloatArray, float, FloatArray, float, float]:
+    """Maximise the case's selection-model log-likelihood (``formulas.selection_loglik`` for a step function or a parametric weight function,
+    ``formulas.truncation_loglik`` for ``trunc`` and ``truncest``) from metafopy's start values: the coefficients, ``tau2``, the selection
+    parameters, the log-likelihood, and the log-likelihood of the model without selection (every weight 1).
+
+    Raises:
+        AssertionError: the optimiser does not converge, naming the case and the optimiser's message.
+    """
+    frame = correctness.cases.case_frame(case)
+    assert frame is not None
+    base = result.base
+    yi, vi, X = (numpy.asarray(v, dtype=numpy.float64) for v in (base.yi, base.vi, base.X))
+    ni = frame['ni'].to_numpy(dtype=numpy.float64) if 'ni' in frame.columns else None
+    preci = correctness.formulas.precision_measure(case.args.get('prec'), vi, ni)
+    steps = numpy.asarray(result.steps, dtype=numpy.float64)
+    fixed = numpy.asarray(result.delta_fix, dtype=bool)
+    given = numpy.asarray(result.delta, dtype=numpy.float64)
+    free = ~fixed
+    p = X.shape[1]
+    start = numpy.concatenate([base.beta, [base.tau2 + 1e-3], numpy.asarray(result.spec.delta_init)[free]])
+    alternative = result.alternative
+    kind = result.spec.type
+    truncated = kind in ('trunc', 'truncest')
+    stepped = kind in ('stepfun', 'stepcon')
+    cuts = steps[:-1].tolist() if stepped else correctness.formulas.parametric_cuts(kind)
+
+    def parts(par: FloatArray) -> tuple[FloatArray, float, FloatArray]:
+        delta = given.copy()
+        delta[free] = par[p + 1 :]
+        return par[:p], float(par[p]), delta
+
+    def loglik(beta: FloatArray, tau2: float, delta: FloatArray) -> float:
+        if truncated:
+            cut = float(delta[1]) if kind == 'truncest' else float(steps[0])
+            return correctness.formulas.truncation_loglik(yi, vi, X, beta, tau2, float(delta[0]), cut, alternative)
+        weight = correctness.formulas.step_weight(steps, delta) if stepped else correctness.formulas.parametric_weight(kind, delta)
+        return correctness.formulas.selection_loglik(yi, vi, X, beta, tau2, weight, alternative, preci, cuts=cuts)
+
+    def negative(par: FloatArray) -> float:
+        return -loglik(*parts(par))
+
+    bounds: list[tuple[float | None, float | None]] = [(None, None) for _ in range(p)]
+    bounds += [(0.0, None)]
+    for index in numpy.flatnonzero(free):
+        if kind == 'truncest' and index == 1:
+            bounds.append((float(result.spec.delta_min[1]), float(result.spec.delta_max[1])))
+        else:
+            bounds.append((SELMODEL_DELTA_FLOOR, SELMODEL_DELTA_CEILING if kind in correctness.formulas.PARAMETRIC_KINDS else None))
+    constraints: typing.Any = []
+    if result.decreasing:
+        constraints = [{'type': 'ineq', 'fun': lambda par, j=j: parts(par)[2][j - 1] - parts(par)[2][j]} for j in range(1, len(given))]
+    fit = scipy.optimize.minimize(negative, start, method='SLSQP', bounds=bounds, constraints=constraints, options={'maxiter': maxiter, 'ftol': 1e-15})
+    if not fit.success:
+        raise AssertionError(f'{case.id}: the optimiser did not converge: {fit.message}')
+    beta, tau2, delta = parts(fit.x)
+
+    def negative_plain(par: FloatArray) -> float:
+        if truncated:
+            return -correctness.formulas.truncation_loglik(yi, vi, X, par[:p], float(par[p]), 1.0, 0.0, alternative)
+        return -correctness.formulas.selection_loglik(yi, vi, X, par[:p], float(par[p]), correctness.formulas.no_selection, alternative, preci)
+
+    plain_bounds: list[tuple[float | None, float | None]] = bounds[: p + 1]
+    plain = scipy.optimize.minimize(negative_plain, start[: p + 1], method='SLSQP', bounds=plain_bounds, options={'maxiter': maxiter, 'ftol': 1e-15})
+    if not plain.success:
+        raise AssertionError(f'{case.id}: the optimiser did not converge for the model without selection: {plain.message}')
+    return beta, tau2, delta, float(-fit.fun), float(-plain.fun)
+
+
+def selmodel_fit(case: correctness.cases.Case, result: typing.Any) -> None:
+    """The fit of a selection model (Vevea and Hedges, 1995; Hedges and Vevea, 2005; the weight functions of ``formulas``), by maximising its
+    log-likelihood with ``scipy.optimize`` from the start values of metafopy: ``beta``, ``tau2`` and ``delta`` at the case tolerance, ``ll`` at 1e-8
+    and the likelihood ratio test statistic ``LRT`` against the fit without selection."""
+    beta, tau2, delta, loglik, plain = selmodel_maximum(case, result)
+    numbers_agree(case, 'beta', result.beta, beta)
+    numbers_agree(case, 'tau2', result.tau2, tau2)
+    numbers_agree(case, 'delta', result.delta, delta)
+    allowed = (SELMODEL_FLAT_LL_TOLERANCE if (case.tolerance or 0.0) > 1e-3 else SELMODEL_LL_TOLERANCE) * max(1.0, abs(loglik))
+    if abs(result.ll - loglik) > allowed:
+        raise AssertionError(f'{case.id}: ll: metafopy gives {result.ll!r}, the reference gives {loglik!r}')
+    lrt = max(0.0, 2 * (loglik - plain))
+    numbers_agree(case, 'LRT', result.LRT, lrt)
+
+
+def test_selmodel_fit_names_the_case_when_the_optimiser_does_not_converge() -> None:
+    case = next(param.values[0] for param in correctness.cases.case_params('derived') if param.values[0].id == 'selmodel.stepfun.bangertdrowns2004')
+    result = correctness.cases.run_case(case)
+    with pytest.raises(AssertionError, match=r'selmodel\.stepfun\.bangertdrowns2004: the optimiser did not converge: .+'):
+        selmodel_maximum(case, result, maxiter=1)
 
 
 MV_TERM = re.compile(r'~\s*([\w.]+(?:\s*\+\s*[\w.]+)*)\s*\|\s*([\w.]+)(?:\s*/\s*([\w.]+))?')

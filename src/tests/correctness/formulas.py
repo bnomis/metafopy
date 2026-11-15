@@ -23,6 +23,7 @@ import scipy.stats
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type IntArray = numpy.typing.NDArray[numpy.intp]
+type FsnType = typing.Literal['Rosenthal', 'Orwin', 'Rosenberg', 'General']
 
 KNAPP_HARTUNG_TESTS = ('adhoc', 'knha')
 
@@ -2961,3 +2962,921 @@ def distinct_label_orders(remaining: list[int]) -> collections.abc.Iterator[tupl
         rest.remove(label)
         for tail in distinct_label_orders(rest):
             yield (label, *tail)
+
+
+# Publication bias: regression tests for funnel plot asymmetry and the rank correlation test.
+
+
+def regtest_predictor(vi: FloatArray, predictor: str, ni: FloatArray | None) -> FloatArray:
+    """The measure of precision added to the model: the standard error ``sqrt(v)`` (Egger et al., 1997, BMJ 315:629-634), the sampling variance ``v``
+    (Moreno et al., 2009, BMC Med Res Methodol 9:2), the sample size ``n`` or its inverse (Macaskill et al., 2001, Stat Med 20:641-654; Peters et al.,
+    2006, JAMA 295:676-680), or the square root of ``n`` or its inverse (Pustejovsky and Rodgers, 2019, Res Synth Methods 10:57-71)."""
+    if predictor == 'sei':
+        return numpy.sqrt(vi)
+    if predictor == 'vi':
+        return vi
+    if ni is None:
+        raise ValueError(f'the predictor {predictor!r} needs the sample sizes')
+    return {'ni': ni, 'ninv': 1 / ni, 'sqrtni': numpy.sqrt(ni), 'sqrtninv': 1 / numpy.sqrt(ni)}[predictor]
+
+
+def egger_regression(yi: FloatArray, vi: FloatArray, extra: FloatArray) -> tuple[FloatArray, FloatArray, int]:
+    """Egger's regression in its original form: the standardised effect ``yi / sei`` regressed by ordinary least squares on the precision ``1 / sei``
+    and on ``extra / sei`` (Egger et al., 1997, equation 1, where ``extra`` is the standard error and ``extra / sei`` is 1; Sterne and Egger, 2005,
+    for the other predictors). Returns the coefficients of ``(1 / sei, extra / sei)``, their standard errors from the residual variance ``RSS / (k - 2)``,
+    and ``k - 2``. The coefficient of ``extra / sei`` is the intercept of the original equation, the bias; that of ``1 / sei`` the effect at ``extra = 0``."""
+    sei = numpy.sqrt(vi)
+    design = numpy.column_stack([1 / sei, extra / sei])
+    response = yi / sei
+    gram = numpy.linalg.inv(design.T @ design)
+    coefficients = gram @ design.T @ response
+    df = len(yi) - 2
+    residual = response - design @ coefficients
+    return coefficients, numpy.sqrt(numpy.diag(gram) * float(residual @ residual) / df), df
+
+
+def meta_regression_with_predictor(
+    yi: FloatArray, vi: FloatArray, extra: FloatArray, method: str, test: str, level: float
+) -> tuple[FloatArray, FloatArray, float, float]:
+    """The meta-regression of ``yi`` on an intercept and ``extra`` with the random-effects weights ``1 / (v + tau2)`` (Sterne and Egger, 2005; Thompson and
+    Sharp, 1999, Stat Med 18:2693-2708), ``tau2`` of ``method`` estimated with the predictor in the model. Returns the coefficients, the standard errors,
+    the degrees of freedom of the test (infinite for ``z``) and the critical value of the interval."""
+    beta, cov, df = coefficient_covariance(yi, vi, method, test, '~ extra', {'extra': extra})
+    return beta, numpy.sqrt(numpy.diag(cov)), df, critical_value(test, df, level)
+
+
+def regtest_quantities(
+    x: FloatArray, vi: FloatArray, model: str, predictor: str, ni: FloatArray | None, method: str, test: str, level: float
+) -> dict[str, float]:
+    """``zval``, ``pval``, ``est``, ``ci_lb`` and ``ci_ub`` of the regression test: the statistic and p-value of the coefficient of the predictor, and the
+    limit estimate (the intercept, the effect at zero of the predictor) with its interval (Stanley and Doucouliagos, 2014, Res Synth Methods 5:60-78)."""
+    extra = regtest_predictor(vi, predictor, ni)
+    if model == 'lm':
+        coefficients, errors, df = egger_regression(x, vi, extra)
+        crit = float(scipy.stats.t.isf(alpha_of(level) / 2, df))
+        beta, se = coefficients[[1, 0]], errors[[1, 0]]
+        stat = beta / se
+        pval = 2 * scipy.stats.t.sf(abs(stat[0]), df)
+    else:
+        coefficients, errors, test_df, crit = meta_regression_with_predictor(x, vi, extra, method, test, level)
+        beta, se = coefficients[[1, 0]], errors[[1, 0]]
+        stat = beta / se
+        pval = 2 * (scipy.stats.norm.sf(abs(stat[0])) if test == 'z' else scipy.stats.t.sf(abs(stat[0]), test_df))
+    # ``beta`` is ordered (coefficient of the predictor, intercept) in both branches: index 0 is tested, index 1 is the limit estimate
+    return {'zval': float(stat[0]), 'pval': float(pval), 'est': float(beta[1]), 'ci_lb': float(beta[1] - crit * se[1]), 'ci_ub': float(beta[1] + crit * se[1])}
+
+
+def regtest_zval(
+    x: FloatArray,
+    vi: FloatArray,
+    model: str = 'rma',
+    predictor: str = 'sei',
+    ni: FloatArray | None = None,
+    method: str = 'REML',
+    test: str = 'z',
+    level: float = 95,
+) -> float:
+    """The test statistic of the coefficient of the predictor."""
+    return regtest_quantities(x, vi, model, predictor, ni, method, test, level)['zval']
+
+
+def regtest_pval(
+    x: FloatArray,
+    vi: FloatArray,
+    model: str = 'rma',
+    predictor: str = 'sei',
+    ni: FloatArray | None = None,
+    method: str = 'REML',
+    test: str = 'z',
+    level: float = 95,
+) -> float:
+    """The two-sided p-value of the coefficient of the predictor."""
+    return regtest_quantities(x, vi, model, predictor, ni, method, test, level)['pval']
+
+
+def regtest_est(
+    x: FloatArray,
+    vi: FloatArray,
+    model: str = 'rma',
+    predictor: str = 'sei',
+    ni: FloatArray | None = None,
+    method: str = 'REML',
+    test: str = 'z',
+    level: float = 95,
+) -> float:
+    """The limit estimate: the intercept, the effect at zero of the predictor."""
+    return regtest_quantities(x, vi, model, predictor, ni, method, test, level)['est']
+
+
+def regtest_ci_lb(
+    x: FloatArray,
+    vi: FloatArray,
+    model: str = 'rma',
+    predictor: str = 'sei',
+    ni: FloatArray | None = None,
+    method: str = 'REML',
+    test: str = 'z',
+    level: float = 95,
+) -> float:
+    """The lower bound of the interval of the limit estimate."""
+    return regtest_quantities(x, vi, model, predictor, ni, method, test, level)['ci_lb']
+
+
+def regtest_ci_ub(
+    x: FloatArray,
+    vi: FloatArray,
+    model: str = 'rma',
+    predictor: str = 'sei',
+    ni: FloatArray | None = None,
+    method: str = 'REML',
+    test: str = 'z',
+    level: float = 95,
+) -> float:
+    """The upper bound of the interval of the limit estimate."""
+    return regtest_quantities(x, vi, model, predictor, ni, method, test, level)['ci_ub']
+
+
+def begg_deviates(yi: FloatArray, vi: FloatArray) -> FloatArray:
+    """Begg and Mazumdar's standardised effects ``y*_i = (y_i - ybar) / sqrt(v*_i)`` with the inverse-variance mean ``ybar = sum(w y) / sum(w)`` and
+    ``v*_i = v_i - 1 / sum(w)`` (Begg and Mazumdar, 1994, Biometrics 50:1088-1101, p. 1089)."""
+    w = 1 / vi
+    pooled = float(numpy.sum(w * yi) / numpy.sum(w))
+    return (yi - pooled) / numpy.sqrt(vi - 1 / float(numpy.sum(w)))
+
+
+def tie_sizes(values: FloatArray) -> list[int]:
+    """The sizes of the groups of equal values that have more than one member."""
+    _, counts = numpy.unique(values, return_counts=True)
+    return [int(c) for c in counts if c > 1]
+
+
+def kendall_counts(a: FloatArray, b: FloatArray) -> tuple[int, int, list[int], list[int]]:
+    """The concordant and discordant pairs of ``a`` and ``b`` and the sizes of the groups of tied values of each."""
+    concordant = discordant = 0
+    for i in range(len(a) - 1):
+        product = numpy.sign(a[i + 1 :] - a[i]) * numpy.sign(b[i + 1 :] - b[i])
+        concordant += int(numpy.sum(product > 0))
+        discordant += int(numpy.sum(product < 0))
+    return concordant, discordant, tie_sizes(a), tie_sizes(b)
+
+
+def begg_tau(x: FloatArray, vi: FloatArray) -> float:
+    """Kendall's rank correlation between ``y*`` and ``v`` (Begg and Mazumdar, 1994, p. 1089; Kendall, 1970, Rank Correlation Methods, ch. 3):
+    ``tau = (C - D) / sqrt((N - Tx) (N - Ty))`` over the ``N = k (k - 1) / 2`` pairs, ``Tx`` and ``Ty`` the tied pairs (``tau-b``; it is
+    ``(C - D) / N`` without ties)."""
+    concordant, discordant, ties_a, ties_b = kendall_counts(begg_deviates(x, vi), vi)
+    k = len(x)
+    pairs = k * (k - 1) / 2
+    return (concordant - discordant) / math.sqrt((pairs - sum(t * (t - 1) / 2 for t in ties_a)) * (pairs - sum(t * (t - 1) / 2 for t in ties_b)))
+
+
+def kendall_normal_variance(k: int, ties_a: list[int], ties_b: list[int]) -> float:
+    """The variance of ``S = C - D`` under independence, with the correction for ties (Kendall, 1970, ch. 4); ``k (k - 1) (2k + 5) / 18`` without ties
+    (Begg and Mazumdar, 1994, equation 2.1)."""
+    v0 = k * (k - 1) * (2 * k + 5)
+    vt = sum(t * (t - 1) * (2 * t + 5) for t in ties_a)
+    vu = sum(u * (u - 1) * (2 * u + 5) for u in ties_b)
+    v1 = sum(t * (t - 1) for t in ties_a) * sum(u * (u - 1) for u in ties_b) / (2 * k * (k - 1))
+    v2 = sum(t * (t - 1) * (t - 2) for t in ties_a) * sum(u * (u - 1) * (u - 2) for u in ties_b) / (9 * k * (k - 1) * (k - 2))
+    return (v0 - vt - vu) / 18 + v1 + v2
+
+
+def begg_z(x: FloatArray, vi: FloatArray) -> float:
+    """Begg and Mazumdar's normal deviate ``Z = (C - D) / sqrt(k (k - 1) (2k + 5) / 18)`` (1994, p. 1089), the variance corrected for ties if any."""
+    concordant, discordant, ties_a, ties_b = kendall_counts(begg_deviates(x, vi), vi)
+    return (concordant - discordant) / math.sqrt(kendall_normal_variance(len(x), ties_a, ties_b))
+
+
+def inversion_distribution(k: int) -> list[int]:
+    """The number of the ``k!`` orderings of ``k`` items with each number ``d`` of discordant pairs (index ``d``): the coefficients of the product over
+    ``j = 1 .. k`` of ``1 + z + ... + z^(j-1)``, the distribution of Kendall's statistic under independence (Kendall, 1970, ch. 5)."""
+    counts = [1]
+    for j in range(2, k + 1):
+        grown = [0] * (len(counts) + j - 1)
+        for d, c in enumerate(counts):
+            for step in range(j):
+                grown[d + step] += c
+        counts = grown
+    return counts
+
+
+def begg_pval(x: FloatArray, vi: FloatArray, exact: bool = True) -> float:
+    """The two-sided p-value of the rank test. The exact value (without ties) doubles the smaller tail of the distribution of the number of discordant
+    pairs, capped at one (Kendall, 1970); otherwise ``2 P(|Z| >= z)`` of the normal deviate (Begg and Mazumdar, 1994)."""
+    _, discordant, ties_a, ties_b = kendall_counts(begg_deviates(x, vi), vi)
+    if exact and not ties_a and not ties_b:
+        counts = inversion_distribution(len(x))
+        total = sum(counts)
+        lower = sum(counts[: discordant + 1]) / total
+        upper = sum(counts[discordant:]) / total
+        return min(1.0, 2 * min(lower, upper))
+    return float(2 * scipy.stats.norm.sf(abs(begg_z(x, vi))))
+
+
+# Publication bias: the trim and fill method.
+
+
+def trimfill_pooled(yi: FloatArray, vi: FloatArray) -> float:
+    """The random-effects pooled estimate with the DerSimonian-Laird ``tau2`` (Duval and Tweedie, 2000, JASA 95:89-98, who use it in
+    their examples)."""
+    tau2 = rma_tau2(yi, vi, 'DL')
+    weights = 1 / (vi + tau2)
+    return float(numpy.sum(weights * yi) / numpy.sum(weights))
+
+
+def trimfill_side(yi: FloatArray, vi: FloatArray) -> str:
+    """The side of the funnel plot the studies are missing from: ``right`` when the slope of the random-effects meta-regression of the effects on their
+    standard errors is negative (small studies report smaller effects, so the larger ones are the missing), else ``left`` (the side Duval and Tweedie,
+    2000, take for their derivation; the rule that chooses between the two is the regression test of Egger et al., 1997, BMJ 315:629-634)."""
+    beta, _, _, _ = meta_regression_with_predictor(yi, vi, numpy.sqrt(vi), 'DL', 'z', 95)
+    return 'right' if beta[1] < 0 else 'left'
+
+
+def trimfill_variance_of_t(n: int, k0: float) -> float:
+    """``var[T_n]``, the variance of the sum of the ranks of the positive deviations of the ``n`` observed studies when ``k0`` are missing (Duval and
+    Tweedie, 2000, proof of Theorem 3): given the number ``g`` of the positive ranks the trimmed studies mirror, ``T_n = W + g (2n - g + 1) / 2`` with
+    ``W`` Wilcoxon-distributed over ``n - g`` ranks (mean ``m (m + 1) / 4``, variance ``m (m + 1) (2m + 1) / 24``), and ``g`` is negative binomial with
+    mean ``k0`` and variance ``2 k0``. The total variance is the mean of the Wilcoxon variance plus the variance of the conditional mean, both taken
+    over ``g`` from its raw moments, so ``k0`` need not be an integer."""
+    moments = [float(scipy.stats.nbinom(k0, 0.5).moment(order)) for order in range(5)]
+    moments[0] = 1.0
+
+    def expectation(polynomial: numpy.polynomial.Polynomial) -> float:
+        coefficients = numpy.asarray(polynomial.coef, dtype=numpy.float64)
+        return float(numpy.dot(coefficients, moments[: len(coefficients)]))
+
+    g = numpy.polynomial.Polynomial([0, 1])
+    m = n - g
+    wilcoxon_variance = m * (m + 1) * (2 * m + 1) / 24
+    conditional_mean = m * (m + 1) / 4 + g * (2 * n - g + 1) / 2
+    centred = conditional_mean - expectation(conditional_mean)
+    return expectation(wilcoxon_variance) + expectation(centred * centred)
+
+
+def trimfill_estimate(yi: FloatArray, vi: FloatArray, estimator: str, side: str | None) -> dict[str, typing.Any]:
+    """Duval and Tweedie's trim and fill (2000, Biometrics 56:455-463, JASA 95:89-98; Duval, 2005, for ``Q0``), iterated to a fixed point of the
+    rounded ``k0``: the effects are sorted so the missing studies are on the left, the ``k0`` largest are trimmed, the rest are pooled, the ranks of the
+    absolute deviations from that estimate give ``R0`` (the length of the run of positive ranks at the right end less one, ``n - r - 1`` for the
+    absolute rank ``r`` of the most negative deviation), ``L0 = (4 T - n (n + 1)) / (2n - 1)`` and ``Q0 = n - 1/2 - sqrt(2n^2 - 4T + 1/4)`` for the sum
+    ``T`` of the positive ranks (equations 5 and 6). The standard errors are ``sqrt(2 R0 + 2)`` for ``R0`` (Theorem 1a) and, from ``var[T_n]``,
+    ``4 sqrt(var) / (2n - 1)`` for ``L0`` and ``2 sqrt(var) / sqrt((n - 1/2)^2 - k0 (2n - k0 - 1))`` for ``Q0`` (equation 10). The filled studies mirror
+    the trimmed ones about the final estimate (the imputed effect ``2 mu - y`` with the variance of the study it mirrors)."""
+    chosen = trimfill_side(yi, vi) if side is None else side
+    sign = -1.0 if chosen == 'right' else 1.0
+    order = numpy.argsort(sign * yi, kind='stable')
+    x, v = sign * yi[order], vi[order]
+    n = len(x)
+    k0, previous = 0, -1
+    unrounded, se = 0.0, math.nan
+    centre = 0.0
+    while k0 != previous:
+        previous = k0
+        centre = trimfill_pooled(x[: n - k0], v[: n - k0])
+        deviation = x - centre
+        ranks = scipy.stats.rankdata(numpy.abs(deviation))
+        if estimator == 'R0':
+            negative = ranks[deviation < 0]
+            unrounded = float(n - negative.max() - 1)
+            se = math.sqrt(2 * max(0.0, unrounded) + 2)
+        else:
+            total = float(ranks[deviation > 0].sum())
+            if estimator == 'L0':
+                unrounded = (4 * total - n * (n + 1)) / (2 * n - 1)
+            else:
+                unrounded = n - 1 / 2 - math.sqrt(2 * n**2 - 4 * total + 1 / 4)
+            variance = trimfill_variance_of_t(n, unrounded)
+            if estimator == 'L0':
+                se = 4 * math.sqrt(variance) / (2 * n - 1)
+            else:
+                se = 2 * math.sqrt(variance) / math.sqrt((n - 1 / 2) ** 2 - unrounded * (2 * n - unrounded - 1))
+        k0 = max(0, round(unrounded))
+    mirrored = sign * (2 * centre - x[n - k0 :]) if k0 > 0 else numpy.zeros(0)
+    filled_v = v[n - k0 :] if k0 > 0 else numpy.zeros(0)
+    pooled = trimfill_pooled(numpy.concatenate([yi, mirrored]), numpy.concatenate([vi, filled_v]))
+    return {'k0': k0, 'se_k0': max(0.0, se), 'side': chosen, 'fill_yi': mirrored, 'fill_vi': filled_v, 'beta': pooled}
+
+
+def trimfill_of(data: typing.Any, estimator: str, side: str | None) -> dict[str, typing.Any]:
+    """``trimfill_estimate`` on the ``yi`` and ``vi`` columns of a frame."""
+    return trimfill_estimate(data['yi'].to_numpy(dtype=numpy.float64), data['vi'].to_numpy(dtype=numpy.float64), estimator, side)
+
+
+def trimfill_k0(data: typing.Any, estimator: str = 'L0', side: str | None = None) -> float:
+    """The estimated number of missing studies of ``trimfill_estimate``."""
+    return float(trimfill_of(data, estimator, side)['k0'])
+
+
+def trimfill_se_k0(data: typing.Any, estimator: str = 'L0', side: str | None = None) -> float:
+    """The standard error of the estimated number of missing studies of ``trimfill_estimate``."""
+    return float(trimfill_of(data, estimator, side)['se_k0'])
+
+
+def trimfill_beta(data: typing.Any, estimator: str = 'L0', side: str | None = None) -> float:
+    """The pooled estimate over the observed and the filled studies of ``trimfill_estimate``."""
+    return float(trimfill_of(data, estimator, side)['beta'])
+
+
+def trimfill_p_k0(data: typing.Any, estimator: str = 'R0', side: str | None = None) -> float:
+    """The p-value of the test of no missing studies with ``R0``: under ``k0 = 0`` the run ``gamma*`` of positive ranks is negative binomial with one
+    tail (``P(gamma* = g) = 2^-(g+1)``; Duval and Tweedie, 2000, Theorem 2), ``R0 = gamma* - 1``, so the p-value is ``P(gamma* >= R0 + 1)``."""
+    return float(scipy.stats.nbinom.sf(trimfill_of(data, estimator, side)['k0'], 1, 0.5))
+
+
+# Publication bias: the fail-safe N.
+
+
+def smallest_integer(satisfied: collections.abc.Callable[[int], bool]) -> int:
+    """The smallest ``n >= 0`` with ``satisfied(n)``, for a predicate that stays true once it is true: the fail-safe N is the least number of added
+    studies that reaches the criterion."""
+    if satisfied(0):
+        return 0
+    upper = 1
+    while not satisfied(upper):
+        upper *= 2
+    lower = upper // 2
+    while upper - lower > 1:
+        middle = (lower + upper) // 2
+        if satisfied(middle):
+            upper = middle
+        else:
+            lower = middle
+    return upper
+
+
+def fsn_weights(x: FloatArray, vi: FloatArray) -> tuple[float, float, float]:
+    """The sum of the inverse-variance weights, the weighted sum of the effects and the harmonic mean of the variances."""
+    weights = 1 / vi
+    return float(weights.sum()), float((weights * x).sum()), float(len(x) / weights.sum())
+
+
+def fsn_stouffer_pval(x: FloatArray, vi: FloatArray, added: int) -> float:
+    """The one-sided p-value of Stouffer's combination of the studies' normal deviates ``z = y / sqrt(v)`` with ``added`` studies of ``z = 0``
+    (Stouffer et al., 1949; Rosenthal, 1979, doi:10.1037/0033-2909.86.3.638, p. 638): ``Z = sum(z) / sqrt(k + added)``."""
+    z = x / numpy.sqrt(vi)
+    return float(scipy.stats.norm.sf(abs(z.sum()) / math.sqrt(len(x) + added)))
+
+
+def fsn_fisher_pval(x: FloatArray, vi: FloatArray, added: int) -> float:
+    """The p-value of Fisher's combination of the studies' one-sided p-values with ``added`` studies of ``p = 0.5``: ``-2 sum(ln p)`` is chi-square
+    with ``2 (k + added)`` degrees of freedom (Becker, 2005, Failsafe N or file-drawer number, in Rothstein et al., doi:10.1002/0470870168.ch7)."""
+    p = scipy.stats.norm.sf(numpy.abs(x / numpy.sqrt(vi)))
+    statistic = -2 * (numpy.log(p).sum() + added * math.log(0.5))
+    return float(scipy.stats.chi2.sf(statistic, 2 * (len(x) + added)))
+
+
+def fsn_equal_effects_pval(x: FloatArray, vi: FloatArray, added: int) -> float:
+    """The two-sided p-value of the equal-effects estimate after adding ``added`` studies with an effect of 0 and the harmonic mean ``vbar`` of the
+    variances (Rosenberg, 2005, doi:10.1111/j.0014-3820.2005.tb01004.x, equations 1 to 3; Viechtbauer, 2024, slide 16): the weights sum to
+    ``sum(w) + added / vbar`` and the weighted sum of the effects is unchanged."""
+    total, weighted_sum, vbar = fsn_weights(x, vi)
+    return float(2 * scipy.stats.norm.sf(abs(weighted_sum) / math.sqrt(total + added / vbar)))
+
+
+def fsn_orwin_target(x: FloatArray, vi: FloatArray, target: float | None) -> float:
+    """The target effect of Orwin's fail-safe N (1983, doi:10.3102/10769986008002157): half the average effect if none is given, with the sign of the
+    average effect; a target of the opposite sign is flipped."""
+    total, weighted_sum, _ = fsn_weights(x, vi)
+    average = weighted_sum / total
+    chosen = average / 2 if target is None else target
+    return -chosen if chosen != 0 and numpy.sign(chosen) != numpy.sign(average) else chosen
+
+
+def fsn_general_fit(x: FloatArray, vi: FloatArray, method: str, added: int, mumiss: float) -> tuple[float, float, float]:
+    """The estimate, ``tau2`` and p-value of a random-effects model of the studies and ``added`` file-drawer studies (Viechtbauer, 2024, slides 17 and
+    18): the file-drawer effects have the mean ``mumiss`` and the variance ``vbar + tau2`` (the harmonic mean of the variances plus the ``tau2`` of the
+    observed studies) and the sampling variance ``vbar``. They are standardised, so the model depends on them through their mean and variance
+    alone."""
+    tau2 = rma_tau2(x, vi, method)
+    vbar = fsn_weights(x, vi)[2]
+    if added > 1:
+        base = numpy.arange(added, dtype=numpy.float64)
+        spread = (base - base.mean()) / base.std(ddof=1)
+    else:
+        spread = numpy.zeros(added)
+    values = numpy.concatenate([x, mumiss + spread * math.sqrt(vbar + tau2)])
+    variances = numpy.concatenate([vi, numpy.full(added, vbar)])
+    return float(rma_beta(values, variances, method)[0]), rma_tau2(values, variances, method), float(rma_pval(values, variances, method)[0])
+
+
+def fsn_of(
+    x: FloatArray,
+    vi: FloatArray,
+    type: FsnType = 'Rosenthal',
+    pool: str = 'stouffer',
+    alpha: float = 0.05,
+    target: float | None = None,
+    method: str = 'REML',
+    mumiss: float = 0.0,
+) -> dict[str, float]:
+    """The fail-safe N of ``type`` (and ``pool`` for Rosenthal's) with the quantities metafopy reports, from the criteria of the publications: the
+    least number of added null studies for which the p-value is at least ``alpha`` (Rosenthal, Rosenberg and the general approach without a target) or
+    the average effect is no further from zero than the target (Orwin and the general approach with a target)."""
+    out = {'est': math.nan, 'tau2': math.nan, 'pval': math.nan, 'est_fsn': math.nan, 'tau2_fsn': math.nan, 'pval_fsn': math.nan}
+    if type == 'Rosenthal':
+        pval = fsn_stouffer_pval if pool == 'stouffer' else fsn_fisher_pval
+        out['pval'] = pval(x, vi, 0)
+        out['fsnum'] = smallest_integer(lambda n: pval(x, vi, n) >= alpha)
+    elif type == 'Rosenberg':
+        total, weighted_sum, _ = fsn_weights(x, vi)
+        out['est'] = weighted_sum / total
+        out['pval'] = fsn_equal_effects_pval(x, vi, 0)
+        out['fsnum'] = smallest_integer(lambda n: fsn_equal_effects_pval(x, vi, n) >= alpha)
+    elif type == 'Orwin':
+        total, weighted_sum, vbar = fsn_weights(x, vi)
+        out['est'] = weighted_sum / total
+        goal = fsn_orwin_target(x, vi, target)
+        out['fsnum'] = math.inf if goal == 0 else smallest_integer(lambda n: abs(weighted_sum / (total + n / vbar)) <= abs(goal))
+    elif type == 'General':
+        out['est'], out['tau2'], out['pval'] = fsn_general_fit(x, vi, method, 0, mumiss)
+        if target is None:
+            out['fsnum'] = smallest_integer(lambda n: fsn_general_fit(x, vi, method, n, mumiss)[2] >= alpha)
+        else:
+            goal = target if numpy.sign(target) == numpy.sign(out['est']) else -target
+            out['fsnum'] = smallest_integer(lambda n: abs(fsn_general_fit(x, vi, method, n, mumiss)[0]) <= abs(goal))
+        out['est_fsn'], out['tau2_fsn'], out['pval_fsn'] = fsn_general_fit(x, vi, method, int(out['fsnum']), mumiss)
+    else:
+        typing.assert_never(type)
+    return out
+
+
+def fsn_number(
+    x: FloatArray,
+    vi: FloatArray,
+    type: FsnType = 'Rosenthal',
+    pool: str = 'stouffer',
+    alpha: float = 0.05,
+    target: float | None = None,
+    method: str = 'REML',
+    mumiss: float = 0.0,
+) -> float:
+    """The fail-safe N of ``fsn_of``."""
+    return fsn_of(x, vi, type, pool, alpha, target, method, mumiss)['fsnum']
+
+
+def fsn_pval(
+    x: FloatArray,
+    vi: FloatArray,
+    type: FsnType = 'Rosenthal',
+    pool: str = 'stouffer',
+    alpha: float = 0.05,
+    target: float | None = None,
+    method: str = 'REML',
+    mumiss: float = 0.0,
+) -> float:
+    """The observed p-value of ``fsn_of``."""
+    return fsn_of(x, vi, type, pool, alpha, target, method, mumiss)['pval']
+
+
+def fsn_est(
+    x: FloatArray,
+    vi: FloatArray,
+    type: FsnType = 'Rosenthal',
+    pool: str = 'stouffer',
+    alpha: float = 0.05,
+    target: float | None = None,
+    method: str = 'REML',
+    mumiss: float = 0.0,
+) -> float:
+    """The average effect of ``fsn_of``."""
+    return fsn_of(x, vi, type, pool, alpha, target, method, mumiss)['est']
+
+
+def fsn_tau2(
+    x: FloatArray,
+    vi: FloatArray,
+    type: FsnType = 'Rosenthal',
+    pool: str = 'stouffer',
+    alpha: float = 0.05,
+    target: float | None = None,
+    method: str = 'REML',
+    mumiss: float = 0.0,
+) -> float:
+    """The ``tau2`` of the observed studies of ``fsn_of``."""
+    return fsn_of(x, vi, type, pool, alpha, target, method, mumiss)['tau2']
+
+
+def fsn_est_fsn(
+    x: FloatArray,
+    vi: FloatArray,
+    type: FsnType = 'Rosenthal',
+    pool: str = 'stouffer',
+    alpha: float = 0.05,
+    target: float | None = None,
+    method: str = 'REML',
+    mumiss: float = 0.0,
+) -> float:
+    """The average effect with the file-drawer studies of ``fsn_of``."""
+    return fsn_of(x, vi, type, pool, alpha, target, method, mumiss)['est_fsn']
+
+
+def fsn_tau2_fsn(
+    x: FloatArray,
+    vi: FloatArray,
+    type: FsnType = 'Rosenthal',
+    pool: str = 'stouffer',
+    alpha: float = 0.05,
+    target: float | None = None,
+    method: str = 'REML',
+    mumiss: float = 0.0,
+) -> float:
+    """The ``tau2`` with the file-drawer studies of ``fsn_of``."""
+    return fsn_of(x, vi, type, pool, alpha, target, method, mumiss)['tau2_fsn']
+
+
+def fsn_pval_fsn(
+    x: FloatArray,
+    vi: FloatArray,
+    type: FsnType = 'Rosenthal',
+    pool: str = 'stouffer',
+    alpha: float = 0.05,
+    target: float | None = None,
+    method: str = 'REML',
+    mumiss: float = 0.0,
+) -> float:
+    """The p-value with the file-drawer studies of ``fsn_of``."""
+    return fsn_of(x, vi, type, pool, alpha, target, method, mumiss)['pval_fsn']
+
+
+# Publication bias: the test of excess significance.
+
+
+def tes_power(theta: float, vi: FloatArray, h0: float, alternative: str, alpha: float, tau2: float) -> FloatArray:
+    """The power of each study's test at the true effect ``theta`` (Ioannidis and Trikalinos, 2007, doi:10.1177/1740774507079441, p. 246), averaged over
+    true effects ``N(theta, tau2)``: the deviate ``(y - h0) / sqrt(v)`` is then normal with mean ``m = (theta - h0) / sqrt(v)`` and variance
+    ``s2 = 1 + tau2 / v``, so the power is the normal probability of the rejection region."""
+    mean = (theta - h0) / numpy.sqrt(vi)
+    spread = numpy.sqrt(1 + tau2 / vi)
+    if alternative == 'two.sided':
+        crit = scipy.stats.norm.isf(alpha / 2)
+        return numpy.asarray(scipy.stats.norm.sf((crit - mean) / spread) + scipy.stats.norm.cdf((-crit - mean) / spread), dtype=numpy.float64)
+    if alternative == 'greater':
+        return numpy.asarray(scipy.stats.norm.sf((scipy.stats.norm.isf(alpha) - mean) / spread), dtype=numpy.float64)
+    return numpy.asarray(scipy.stats.norm.cdf((scipy.stats.norm.ppf(alpha) - mean) / spread), dtype=numpy.float64)
+
+
+def poisson_binomial_pmf(p: FloatArray) -> FloatArray:
+    """The distribution of the number of successes of independent trials with probabilities ``p``, from its characteristic function (Hong, 2013,
+    Computational Statistics & Data Analysis 59:41-51, doi:10.1016/j.csda.2012.10.006): ``P(S = j) = (1 / (n + 1)) sum_l exp(-i w l j) prod_m (1 - p_m +
+    p_m exp(i w l))`` with ``w = 2 pi / (n + 1)``."""
+    n = len(p)
+    frequency = 2j * math.pi * numpy.arange(n + 1) / (n + 1)
+    characteristic = numpy.prod(1 - p[None, :] + p[None, :] * numpy.exp(frequency[:, None]), axis=1)
+    pmf = numpy.real(numpy.exp(-numpy.outer(numpy.arange(n + 1), frequency)) @ characteristic) / (n + 1)
+    return numpy.clip(pmf, 0.0, 1.0)
+
+
+def tes_of(
+    x: FloatArray,
+    vi: FloatArray,
+    H0: float = 0.0,
+    alternative: str = 'two.sided',
+    alpha: float = 0.05,
+    theta: float | None = None,
+    tau2: float | None = None,
+    test: str = 'exact',
+    tes_alternative: str = 'greater',
+    tes_alpha: float = 0.1,
+) -> dict[str, typing.Any]:
+    """The test of excess significance (Ioannidis and Trikalinos, 2007, doi:10.1177/1740774507079441): the number ``O`` of significant studies, the
+    expected number ``E`` (the sum of the powers at ``theta``, the inverse-variance weighted average when none is given), the chi-square statistic
+    ``X2 = (O - E)^2 / E + (O - E)^2 / (k - E)`` and the p-value of ``test``: ``chi2`` (the normal deviate ``sign(O - E) sqrt(X2)`` for a one-sided
+    alternative), ``binom`` (the binomial distribution with ``E / k``) or ``exact`` (the Poisson-binomial distribution of the powers; Francis, 2013,
+    doi:10.1007/s11336-013-9331-1, for the two-sided rule of summing the outcomes no more probable than ``O``)."""
+    k = len(x)
+    heterogeneity = tau2 if tau2 is not None else 0.0
+    weights = 1 / (vi + heterogeneity)
+    centre = float((weights * x).sum() / weights.sum()) if theta is None else theta
+    power = tes_power(centre, vi, H0, alternative, alpha, heterogeneity)
+    z = (x - H0) / numpy.sqrt(vi)
+    if alternative == 'two.sided':
+        significant = numpy.abs(z) >= scipy.stats.norm.isf(alpha / 2)
+    elif alternative == 'greater':
+        significant = z >= scipy.stats.norm.isf(alpha)
+    else:
+        significant = z <= scipy.stats.norm.ppf(alpha)
+    observed, expected = int(significant.sum()), float(power.sum())
+    statistic = (observed - expected) ** 2 / expected + (observed - expected) ** 2 / (k - expected)
+    deviate = math.copysign(math.sqrt(statistic), observed - expected)
+    if test == 'chi2':
+        pval = {'two.sided': scipy.stats.chi2.sf(statistic, 1), 'greater': scipy.stats.norm.sf(deviate), 'less': scipy.stats.norm.cdf(deviate)}[tes_alternative]
+    else:
+        pmf = scipy.stats.binom.pmf(numpy.arange(k + 1), k, expected / k) if test == 'binom' else poisson_binomial_pmf(power)
+        slack = 1 + 1e-7
+        pval = {
+            'two.sided': pmf[pmf <= pmf[observed] * slack].sum(),
+            'greater': pmf[observed:].sum(),
+            'less': pmf[: observed + 1].sum(),
+        }[tes_alternative]
+    return {'O': observed, 'E': expected, 'X2': statistic, 'pval': min(1.0, float(pval)), 'theta': centre}
+
+
+def tes_E(
+    x: FloatArray,
+    vi: FloatArray,
+    H0: float = 0.0,
+    alternative: str = 'two.sided',
+    alpha: float = 0.05,
+    theta: float | None = None,
+    tau2: float | None = None,
+) -> float:
+    """The expected number of significant studies of ``tes_of``."""
+    return float(tes_of(x, vi, H0, alternative, alpha, theta, tau2)['E'])
+
+
+def tes_O(
+    x: FloatArray,
+    vi: FloatArray,
+    H0: float = 0.0,
+    alternative: str = 'two.sided',
+    alpha: float = 0.05,
+) -> float:
+    """The observed number of significant studies of ``tes_of``."""
+    return float(tes_of(x, vi, H0, alternative, alpha)['O'])
+
+
+def tes_X2(
+    x: FloatArray,
+    vi: FloatArray,
+    H0: float = 0.0,
+    alternative: str = 'two.sided',
+    alpha: float = 0.05,
+    theta: float | None = None,
+    tau2: float | None = None,
+) -> float:
+    """The chi-square statistic of ``tes_of``."""
+    return float(tes_of(x, vi, H0, alternative, alpha, theta, tau2)['X2'])
+
+
+def tes_pval(
+    x: FloatArray,
+    vi: FloatArray,
+    H0: float = 0.0,
+    alternative: str = 'two.sided',
+    alpha: float = 0.05,
+    theta: float | None = None,
+    tau2: float | None = None,
+    test: str = 'exact',
+    tes_alternative: str = 'greater',
+    tes_alpha: float = 0.1,
+) -> float:
+    """The p-value of the test of excess significance of ``tes_of``."""
+    return float(tes_of(x, vi, H0, alternative, alpha, theta, tau2, test, tes_alternative, tes_alpha)['pval'])
+
+
+def tes_theta_lim(
+    x: FloatArray,
+    vi: FloatArray,
+    H0: float = 0.0,
+    alternative: str = 'two.sided',
+    alpha: float = 0.05,
+    tau2: float | None = None,
+    test: str = 'exact',
+    tes_alternative: str = 'greater',
+    tes_alpha: float = 0.1,
+) -> float:
+    """The limit estimate ``theta_lim`` of Ioannidis and Trikalinos (2007, p. 246) as metafor's ``tes`` help page (5.2-1) defines it: the true effect, on
+    the side of the estimated effect, at which the p-value of the test of excess significance equals ``tes_alpha``, NaN when the p-value exceeds
+    ``tes_alpha`` even at ``theta = H0``. Found by bracketing the root from ``H0`` outwards and bisecting it. One-sided ``greater`` test only."""
+    if tes_alternative != 'greater':
+        raise ValueError("tes_theta_lim is coded for tes_alternative = 'greater'")
+
+    def gap(theta: float) -> float:
+        return float(tes_of(x, vi, H0, alternative, alpha, theta, tau2, test, tes_alternative, tes_alpha)['pval']) - tes_alpha
+
+    if gap(H0) >= 0:
+        return math.nan
+    estimate = float(tes_of(x, vi, H0, alternative, alpha, None, tau2, test, tes_alternative, tes_alpha)['theta'])
+    outer = estimate
+    while gap(outer) < 0:
+        outer = H0 + 2 * (outer - H0)
+    return float(scipy.optimize.brentq(gap, H0, outer, xtol=1e-13, rtol=1e-13))
+
+
+# Publication bias: the Henmi and Copas interval.
+
+
+def hc_interval(yi: FloatArray, vi: FloatArray, level: float = 95) -> tuple[float, float, float, float]:
+    """The pooled estimate, the DerSimonian-Laird ``tau2`` and the confidence limits of Henmi and Copas (2010, Statistics in Medicine 29:2969-2983,
+    doi:10.1002/sim.4029): the fixed-effects estimate (equation 8) with the interval ``estimate +- u sqrt(Vhat)`` (equations 14 to 16), ``u`` solving
+    ``integral_u^inf G(u, r) p(r) dr = alpha / 2`` (equation 21) where ``p`` is the ``N(0, 1 + tau2 W2)`` density of ``R``, ``G`` is the gamma
+    approximation (equation 20) of ``P(Q <= f^-1(r / u) | R = r)`` with the conditional mean (18) and variance (19) of ``Q`` and ``tau2`` replaced by its
+    estimate."""
+    n = len(yi)
+    w = 1 / vi
+    w1 = float(w.sum())
+    w2, w3, w4 = (float((w**power).sum()) / w1 for power in (2, 3, 4))
+    estimate = float((w * yi).sum()) / w1
+    q = float((w * (yi - estimate) ** 2).sum())
+    tau2 = max(0.0, (q - (n - 1)) / (w1 - w2))
+    variance_r = 1 + tau2 * w2
+    variance_hat = (tau2 * w2 + 1) / w1
+
+    def conditional_mean(r: float) -> float:
+        return (n - 1) + tau2 * (w1 - w2) + tau2**2 * (r**2 / variance_r**2 - 1 / variance_r) * (w3 - w2**2)
+
+    def conditional_variance(r: float) -> float:
+        shared = r**2 / variance_r**2 - 1 / variance_r
+        return (
+            2 * (n - 1)
+            + 4 * tau2 * (w1 - w2)
+            + 2 * tau2**2 * (w1 * w2 - 2 * w3 + w2**2)
+            + 4 * tau2**2 * shared * (w3 - w2**2)
+            + 4 * tau2**3 * shared * (w4 - 2 * w2 * w3 + w2**3)
+            + 2 * tau2**4 * (1 / variance_r**2 - 2 * r**2 / variance_r**3) * (w3 - w2**2) ** 2
+        )
+
+    def inverse_f(ratio: float) -> float:
+        return (ratio**2 - 1) * (w1 - w2) / w2 + (n - 1)
+
+    def tail(u: float) -> float:
+        def integrand(r: float) -> float:
+            mean, variance = conditional_mean(r), conditional_variance(r)
+            return float(
+                scipy.stats.gamma.cdf(inverse_f(r / u), a=mean**2 / variance, scale=variance / mean) * scipy.stats.norm.pdf(r, scale=math.sqrt(variance_r))
+            )
+
+        return float(scipy.integrate.quad(integrand, u, numpy.inf, epsabs=1e-13, epsrel=1e-13, limit=200)[0])
+
+    alpha = 1 - level / 100
+    u = float(scipy.optimize.brentq(lambda value: tail(value) - alpha / 2, 1e-6, 10 * math.sqrt(variance_r), xtol=1e-13, rtol=1e-13))
+    half = u * math.sqrt(variance_hat)
+    return estimate, tau2, estimate - half, estimate + half
+
+
+def hc_beta(data: typing.Any) -> float:
+    """The fixed-effects estimate of ``hc_interval`` on the ``yi`` and ``vi`` columns of a frame."""
+    return hc_interval(data['yi'].to_numpy(dtype=numpy.float64), data['vi'].to_numpy(dtype=numpy.float64))[0]
+
+
+def hc_tau2(data: typing.Any) -> float:
+    """The DerSimonian-Laird ``tau2`` of ``hc_interval`` on the ``yi`` and ``vi`` columns of a frame."""
+    return hc_interval(data['yi'].to_numpy(dtype=numpy.float64), data['vi'].to_numpy(dtype=numpy.float64))[1]
+
+
+# Publication bias: the selection-model likelihood.
+
+type Weight = collections.abc.Callable[[float, float], float]
+
+
+def precision_measure(name: str | None, vi: FloatArray, ni: FloatArray | None = None) -> FloatArray:
+    """The measure of precision a selection weight may depend on, rescaled by its maximum (``None`` for none): the standard error ``sei``, the
+    variance ``vi``, ``1 / ni`` or ``1 / sqrt(ni)`` for the sample sizes ``ni``."""
+    if name is None:
+        return numpy.ones(len(vi))
+    if name == 'sei':
+        measure = numpy.sqrt(vi)
+    elif name == 'vi':
+        measure = numpy.asarray(vi, dtype=numpy.float64)
+    elif ni is None:
+        raise ValueError(f'precision {name!r} needs the sample sizes')
+    elif name == 'ninv':
+        measure = 1 / ni
+    elif name == 'sqrtninv':
+        measure = 1 / numpy.sqrt(ni)
+    else:
+        raise ValueError(f'unknown precision {name!r}')
+    return numpy.asarray(measure / measure.max(), dtype=numpy.float64)
+
+
+def step_weight(steps: FloatArray, delta: FloatArray) -> Weight:
+    """The step weight function of Hedges (1992, Journal of Educational Statistics 17:279-296, doi:10.3102/10769986017004279) and Hedges and Vevea
+    (2005, in Rothstein et al., Publication Bias in Meta-Analysis, ch. 9): the weight of a study with one-sided p-value ``p`` is ``delta[j]``, ``j``
+    being the interval ``steps[j - 1] < p <= steps[j]`` that holds ``p``, divided by the study's precision measure."""
+
+    def weight(p: float, preci: float) -> float:
+        j = int(numpy.searchsorted(steps, p, side='left'))
+        return float(delta[min(j, len(delta) - 1)] / preci)
+
+    return weight
+
+
+def one_sided_p(y: float, v: float, alternative: str) -> float:
+    """The p-value of an estimate ``y`` with sampling variance ``v`` against 0: ``1 - Phi(z)`` for ``greater``, ``Phi(z)`` for ``less`` and
+    ``2 (1 - Phi(|z|))`` for ``two.sided``, ``z = y / sqrt(v)``."""
+    z = y / math.sqrt(v)
+    if alternative == 'greater':
+        return 0.5 * math.erfc(z / math.sqrt(2))
+    if alternative == 'less':
+        return 0.5 * math.erfc(-z / math.sqrt(2))
+    return math.erfc(abs(z) / math.sqrt(2))
+
+
+def selection_loglik(
+    yi: FloatArray,
+    vi: FloatArray,
+    X: FloatArray,
+    beta: FloatArray,
+    tau2: float,
+    weight: Weight,
+    alternative: str = 'greater',
+    preci: FloatArray | None = None,
+    cuts: collections.abc.Sequence[float] = (),
+) -> float:
+    """The log-likelihood of a random-effects selection model (Iyengar and Greenhouse, 1988, Statistical Science 3:109-135, doi:10.1214/ss/1177013012;
+    Vevea and Hedges, 1995, Psychometrika 60:419-435, doi:10.1007/BF02294384).
+
+    An estimate is observed with probability ``w(p)``, ``p`` its p-value, so the density of an observed ``y_i`` is ``w(p_i) f(y_i) / A_i`` with
+    ``f`` the ``N(x_i' beta, v_i + tau2)`` density and ``A_i = integral w(p(y)) f(y) dy`` (Vevea and Hedges 1995, equation 5, and the weighted density
+    of Iyengar and Greenhouse 1988, section 4). ``A_i`` is integrated numerically over ``x_i' beta`` +- 14 standard deviations, split at the values of
+    ``y`` where ``p`` equals one of the ``cuts``, so a step function is integrated exactly."""
+    ones = numpy.ones(len(yi)) if preci is None else preci
+    total = 0.0
+    for i in range(len(yi)):
+        mean = float(X[i] @ beta)
+        sd = math.sqrt(float(vi[i]) + tau2)
+        sampling_sd = math.sqrt(float(vi[i]))
+        lower, upper = mean - 14 * sd, mean + 14 * sd
+        points = []
+        for cut in cuts:
+            if alternative == 'greater':
+                found = [sampling_sd * float(scipy.stats.norm.isf(cut))]
+            elif alternative == 'less':
+                found = [sampling_sd * float(scipy.stats.norm.ppf(cut))]
+            else:
+                found = [sampling_sd * float(scipy.stats.norm.isf(cut / 2)), -sampling_sd * float(scipy.stats.norm.isf(cut / 2))]
+            points += [y for y in found if math.isfinite(y) and lower < y < upper]
+
+        def integrand(y: float, i: int = i, mean: float = mean, sd: float = sd) -> float:
+            return weight(one_sided_p(y, float(vi[i]), alternative), float(ones[i])) * math.exp(-0.5 * ((y - mean) / sd) ** 2) / (sd * math.sqrt(2 * math.pi))
+
+        a = float(scipy.integrate.quad(integrand, lower, upper, points=sorted(points) or None, epsabs=0, epsrel=1e-13, limit=400)[0])
+        w_i = weight(one_sided_p(float(yi[i]), float(vi[i]), alternative), float(ones[i]))
+        total += math.log(w_i) + float(scipy.stats.norm.logpdf(yi[i], mean, sd)) - math.log(a)
+    return total
+
+
+def no_selection(p: float, preci: float) -> float:
+    """The weight function of a model without selection: every study is observed with weight 1."""
+    return 1.0 if p >= 0 and preci > 0 else math.nan
+
+
+PARAMETRIC_PVAL_MIN = {'beta': 1e-5, 'power': 1e-5}
+PARAMETRIC_KINDS = ('beta', 'halfnorm', 'logistic', 'negexp', 'negexppow', 'power')
+
+
+def parametric_weight(kind: str, delta: FloatArray) -> Weight:
+    """The weight function of one parametric selection model, with the p-value cut off at ``PARAMETRIC_PVAL_MIN`` (1e-5 for ``beta`` and ``power``,
+    where the function is infinite or zero at 0 or 1; metafor's ``pval.min``, ``?selmodel`` 5.2-1) and ``preci`` the study's precision measure (1 for
+    none):
+
+    - ``beta``: ``p ** (delta[0] - 1) * (1 - p) ** (delta[1] - 1)`` (Citkowicz and Vevea, 2017, Psychological Methods 22:28-41,
+      doi:10.1037/met0000119, as the 2012 dissertation "A parsimonious weight function for modeling publication bias" and Pustejovsky's 2024 post
+      state it);
+    - ``halfnorm``: ``exp(-delta * preci * p ** 2)`` (half-normal; Preston, Ashby and Smyth, 2004, Journal of Evaluation in Clinical Practice
+      10:313-322, doi:10.1111/j.1365-2753.2003.00457.x);
+    - ``negexp``: ``exp(-delta * preci * p)`` (negative exponential, Preston et al. 2004);
+    - ``logistic``: ``2 exp(-delta * preci * p) / (1 + exp(-delta * preci * p))`` (logistic, Preston et al. 2004);
+    - ``power``: ``(1 - p) ** (delta * preci)`` (Preston et al. 2004);
+    - ``negexppow``: ``exp(-delta[0] * preci * p ** (1 / delta[1]))`` (metafor's ``?selmodel`` help, 5.2-1).
+
+    Only the ratio of the weight to its integral enters the likelihood, so a constant factor is immaterial.
+    """
+    pmin = PARAMETRIC_PVAL_MIN.get(kind, 0.0)
+
+    def weight(p: float, preci: float) -> float:
+        q = min(max(p, pmin), 1 - pmin)
+        if kind == 'beta':
+            return float(q ** (delta[0] - 1) * (1 - q) ** (delta[1] - 1))
+        if kind == 'halfnorm':
+            return math.exp(-float(delta[0]) * preci * q * q)
+        if kind == 'negexp':
+            return math.exp(-float(delta[0]) * preci * q)
+        if kind == 'logistic':
+            e = math.exp(-float(delta[0]) * preci * q)
+            return 2 * e / (1 + e)
+        if kind == 'power':
+            return float((1 - q) ** (preci * float(delta[0])))
+        if kind == 'negexppow':
+            return math.exp(-float(delta[0]) * preci * q ** (1 / float(delta[1])))
+        raise ValueError(f'unknown parametric selection model {kind!r}')
+
+    return weight
+
+
+def parametric_cuts(kind: str) -> list[float]:
+    """The p-values where ``parametric_weight`` has a kink, so ``selection_loglik`` integrates it in pieces."""
+    pmin = PARAMETRIC_PVAL_MIN.get(kind, 0.0)
+    return [pmin, 1 - pmin] if pmin > 0 else []
+
+
+def truncation_loglik(
+    yi: FloatArray, vi: FloatArray, X: FloatArray, beta: FloatArray, tau2: float, delta: float, cut: float, alternative: str = 'greater'
+) -> float:
+    """The log-likelihood of a truncated selection model (metafor's ``?selmodel`` 5.2-1, types ``trunc`` and ``truncest``; after the truncation
+    model of Hedges 1984, Journal of Educational Statistics 9:61-85, doi:10.3102/10769986009001061): ``w(y) = 1`` for ``y > cut`` (``y < cut`` for
+    ``alternative = 'less'``) and ``delta`` otherwise, so the density of an observed ``y_i`` is ``w(y_i) f(y_i) / A_i`` with
+    ``A_i = P(Y > cut) + delta * P(Y <= cut)`` and ``Y ~ N(x_i' beta, v_i + tau2)``."""
+    total = 0.0
+    for i in range(len(yi)):
+        mean = float(X[i] @ beta)
+        sd = math.sqrt(float(vi[i]) + tau2)
+        below = float(scipy.stats.norm.cdf(cut, mean, sd))
+        if alternative == 'greater':
+            kept = yi[i] > cut
+            a = (1 - below) + delta * below
+        else:
+            kept = yi[i] < cut
+            a = below + delta * (1 - below)
+        w_i = 1.0 if kept else delta
+        total += math.log(w_i) + float(scipy.stats.norm.logpdf(yi[i], mean, sd)) - math.log(a)
+    return total
