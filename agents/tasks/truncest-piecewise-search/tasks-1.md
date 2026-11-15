@@ -250,7 +250,7 @@ option says, and the correctness case checks it against a reference that searche
 
 ## Task 4: The full test run and closing the item
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item as a whole

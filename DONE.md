@@ -830,3 +830,24 @@ spec first, or a small task list if the fix is local.
 Spec: none (small item); tasks: `agents/tasks/fsn-integer-search/tasks-1.md`.
 
 Done: 2026-11-15, agents/tasks/fsn-integer-search/tasks-1.md
+
+## The truncest estimate stops at a local maximum of a step-function likelihood
+
+<!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
+Found on 2026-11-15 by the case `selmodel.truncest.bangertdrowns2004` in `src/tests/correctness/cases/selmodel.toml`
+(`agents/specs/correctness-publication-bias/mismatches.md`); the user answered *follow the reference* on 2026-11-15. On `dat.bangertdrowns2004`
+metafopy gives beta 0.26491, tau2 0.054216, delta 1.42227, truncation point 0.27073 and ll -17.7909; the maximum of the likelihood
+(`formulas.truncation_loglik`) gives beta 0.27598, tau2 0.054737, delta 1.48969, truncation point 0.20001 and ll -17.7406. R metafor 5.2-1 gives
+metafopy's values (operator session, 2026-11-15), so it stops at the same local maximum.
+<!-- doc-counts: accept-end -->
+
+Cause: the likelihood is a step function of the truncation point with a jump at each observed effect, so a gradient search stops inside one piece
+(`type == 'truncest'` in `src/metafopy/models/selmodel.py`).
+
+Fix direction: search each stretch between observed effects and keep the best, then set the case to `pass`. Mark the R parity fixture that holds a
+`truncest` fit as differing, add the `src/audit/data/known.toml` entry, and add the difference to `docs/differences.md` under "Where metafor departs from
+its reference". A change to `src/metafopy/` goes through a spec first, or a small task list if the fix is local.
+
+Spec: none (small item); tasks: `agents/tasks/truncest-piecewise-search/tasks-1.md`.
+
+Done: 2026-11-15, agents/tasks/truncest-piecewise-search/tasks-1.md
