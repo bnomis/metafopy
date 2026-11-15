@@ -54,7 +54,7 @@ The project has no affected-tests tool, so each task names its test files, and t
 
 ## Task 1: Search the integers in the Rosenthal (Fisher) and General branches
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Source Reference:** the item's fix direction (the integer search, the General step resolved before rounding, the two cases, the R parity fixtures)
@@ -64,58 +64,58 @@ with and without a target, and the tests say where that differs from R metafor.
 
 **Subtasks:**
 
-- [ ] Re-check the starting point: `bias.fsn.egger2001.rosenthal.fisher` and `bias.fsn.egger2001.general.target` in
+- [x] Re-check the starting point: `bias.fsn.egger2001.rosenthal.fisher` and `bias.fsn.egger2001.general.target` in
       `src/tests/correctness/cases/bias.toml` have `status = "mismatch"`, `grep -c 'metafopy.core.zeroin.uniroot' src/metafopy/bias/fsn.py`
       prints 2, and `grep -rnwE 'fsn_search' src/metafopy` finds nothing. Stop as `blocked`, naming what differs, if any is not so
-- [ ] Confirm that both cases fail today: `pytest src/tests/correctness/test_derived.py -k 'egger2001 and (rosenthal.fisher or general.target)' -rxX`
+- [x] Confirm that both cases fail today: `pytest src/tests/correctness/test_derived.py -k 'egger2001 and (rosenthal.fisher or general.target)' -rxX`
       reports each of the two as `XFAIL` (the strict expected failure of a case that fails). Stop as `blocked` if either is reported as passing
-- [ ] Add `fsn_search(satisfied, lower, upper, maxint, maxiter)` to `src/metafopy/bias/fsn.py`: the least integer `n` in `[ceil(lower), maxint]`
+- [x] Add `fsn_search(satisfied, lower, upper, maxint, maxiter)` to `src/metafopy/bias/fsn.py`: the least integer `n` in `[ceil(lower), maxint]`
       with `satisfied(n)`, for a predicate that stays true once true (the search of `formulas.smallest_integer`, starting from the bracket
       `interval` gives). Extend `upper` by doubling until `satisfied(upper)` or `upper` reaches `maxint`, then bisect on the integers; return
       `maxint` when the criterion does not hold below it. Raise `metafopy.errors.InputError('Could not find fail-safe N ...')` (the message of
       the branch it serves) when the extensions and bisection steps together exceed `maxiter`
-- [ ] In the `Rosenthal` branch with Fisher pooling, replace the `uniroot` call by `fsn_search(lambda n: fsn_fisher(n, pi, alpha) >= 0, ...)`, so
+- [x] In the `Rosenthal` branch with Fisher pooling, replace the `uniroot` call by `fsn_search(lambda n: fsn_fisher(n, pi, alpha) >= 0, ...)`, so
       the number of added studies and the degrees of freedom are both the integer N
-- [ ] In the `General` branch, replace `root_of` by the integer search: without a target the criterion is `pval_fsn >= alpha`, with a target it is
+- [x] In the `General` branch, replace `root_of` by the integer search: without a target the criterion is `pval_fsn >= alpha`, with a target it is
       `abs(est_fsn) <= abs(tgt)` (as `formulas.fsn_of` states them), both from `fsn_gen(..., newest=True)` at the integer N, so the step is resolved
       before any rounding and `est_fsn`, `tau2_fsn` and `pval_fsn` are those of the returned N. Keep `ub_sign = '>'` when the result is `maxint`,
       and keep the `InputError('Could not find fail-safe N based on a random-effects model.')` for a refit that fails. Keep the `verbose` trace of
       `fsn_gen`: one line per N tried
-- [ ] Leave the Stouffer, Orwin, Rosenberg and Binomial branches unchanged (see the header)
-- [ ] Update `fsn`'s docstring: the fail-safe N of the Rosenthal (Fisher) and General types is the least integer whose criterion holds, found by a
+- [x] Leave the Stouffer, Orwin, Rosenberg and Binomial branches unchanged (see the header)
+- [x] Update `fsn`'s docstring: the fail-safe N of the Rosenthal (Fisher) and General types is the least integer whose criterion holds, found by a
       search over the integers, as in Becker (2005, doi:10.1002/0470870168.ch7) and Viechtbauer (2024); metafor finds a real root with `uniroot`
       and rounds it up, which can be one off on these step functions; `interval` is the starting bracket, `maxiter` bounds the search, `tol` has no
       effect on these types. Link the `docs/differences.md` subsection Task 2 adds (heading `### fsn(): Fisher pooling and the General type`, linked
       the way the `confint` docstring links its subsection)
-- [ ] In `src/tests/correctness/cases/bias.toml`, set `bias.fsn.egger2001.rosenthal.fisher` and `bias.fsn.egger2001.general.target` to
+- [x] In `src/tests/correctness/cases/bias.toml`, set `bias.fsn.egger2001.rosenthal.fisher` and `bias.fsn.egger2001.general.target` to
       `status = "pass"` and drop their `reason`. `bias.fsn.egger2001.general.target.tight` stays a pass case
-- [ ] Run `pytest src/tests/test_bias.py src/tests/test_verbose.py`. For each `FSN_CASES` key of `test_fsn` whose R fixture `fsnum` now differs,
+- [x] Run `pytest src/tests/test_bias.py src/tests/test_verbose.py`. For each `FSN_CASES` key of `test_fsn` whose R fixture `fsnum` now differs,
       check that metafopy's N meets the criterion and N - 1 does not (with `fsn_fisher` or `fsn_gen` directly), then mark it as differing in
       `src/tests/test_bias.py`: a module-level `FSN_DIFFERS: dict[str, int]` mapping the key to metafopy's N, with a comment naming the
       correctness cases and the `docs/differences.md` subsection. For such a key `test_fsn` compares `type`, `est`, `tau2`, `pval`, `target` and
       `ub_sign` with the fixture, asserts that `out.fsnum` equals the mapped N and that the fixture's `fsnum` differs, and compares `est_fsn`,
       `tau2_fsn` and `pval_fsn` with `fsn_gen` at N instead of the fixture; it does not compare the printed text. A key whose N meets the criterion
       at N - 1 too is a bug in this change: fix it, never mark it
-- [ ] If the `fsn` key of `test_verbose_matches_r` in `src/tests/test_verbose.py` now fails (the search tries other values of N than uniroot),
+- [x] If the `fsn` key of `test_verbose_matches_r` in `src/tests/test_verbose.py` now fails (the search tries other values of N than uniroot),
       take it out of that parametrisation and add `test_verbose_fsn`, which checks, as `test_verbose_mv` does for its trace, that every stdout line
       has the form of R's lines (`fsnum = <N>  est = ...  diff = ...`), that the N values tried are integers, that stderr equals R's, and that the
       last line printed is for the returned N or a neighbour of it; with a comment naming the `docs/differences.md` subsection
-- [ ] Add regression tests to `src/tests/test_bias.py`: on `dat.egger2001` without rows 8 and 16 (0-based 7 and 15), log risk ratios with
+- [x] Add regression tests to `src/tests/test_bias.py`: on `dat.egger2001` without rows 8 and 16 (0-based 7 and 15), log risk ratios with
       `add=0.5, to='all'` (the setup of the two cases), `fsn(yi, vi, pool='fisher')` gives 48 and
       `fsn(yi, vi, type='General', method='REML', exact=True, target=math.log(0.95))` gives 116; the General result is the same for `tol` 1e-10
       and the default; and, for the General type with `exact=True`, `fsnum`, `est_fsn`, `tau2_fsn` and `pval_fsn` are the same for two seeds
 
 **Acceptance Criteria:**
 
-- [ ] `grep -c 'metafopy.core.zeroin.uniroot' src/metafopy/bias/fsn.py` prints 0 (and the import of `metafopy.core.zeroin` is gone if unused)
-- [ ] Both cases pass with `status = "pass"`, and every other `bias.fsn.*` case still passes
-- [ ] Every `FSN_DIFFERS` key meets its criterion at its N and not at N - 1, and no other `test_fsn` key changed
+- [x] `grep -c 'metafopy.core.zeroin.uniroot' src/metafopy/bias/fsn.py` prints 0 (and the import of `metafopy.core.zeroin` is gone if unused)
+- [x] Both cases pass with `status = "pass"`, and every other `bias.fsn.*` case still passes
+- [x] Every `FSN_DIFFERS` key meets its criterion at its N and not at N - 1, and no other `test_fsn` key changed
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_bias.py src/tests/test_verbose.py src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_bias.py src/tests/test_verbose.py src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 

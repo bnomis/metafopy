@@ -4,6 +4,7 @@ R's ``cat()`` output is compared with stdout and its ``message()`` output with s
 """
 
 import collections.abc
+import re
 import typing
 import warnings
 
@@ -49,11 +50,33 @@ def fits() -> dict[str, collections.abc.Callable[[], object]]:
     }
 
 
-@pytest.mark.parametrize('key', ['uni_reml_1', 'uni_reml_2', 'uni_pm', 'uni_dl', 'mh', 'peto', 'confint_qp', 'confint_pl', 'trimfill', 'fsn'])
+@pytest.mark.parametrize('key', ['uni_reml_1', 'uni_reml_2', 'uni_pm', 'uni_dl', 'mh', 'peto', 'confint_qp', 'confint_pl', 'trimfill'])
 def test_verbose_matches_r(key: str, capsys: pytest.CaptureFixture[str]) -> None:
     out, err = run(capsys, fits()[key])
     assert norm(out) == norm(REF[key]['stdout'])
     assert norm(err) == norm(REF[key]['stderr'])
+
+
+def test_verbose_fsn(capsys: pytest.CaptureFixture[str]) -> None:
+    # metafopy searches the integers, so it tries other values of N than R's uniroot: the lines have R's form, the N values are integers, and
+    # the search ends at the returned N or a neighbour (docs/differences.md, "fsn(): Fisher pooling and the General type")
+    res = metafopy.rma_uni('yi', 'vi', data=refutil.bcg())
+    capsys.readouterr()
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        result = metafopy.fsn(res, verbose=True)
+    got = capsys.readouterr()
+    assert norm(got.err) == norm(REF['fsn']['stderr'])
+    lines = [line for line in norm(got.out).splitlines() if line.startswith('fsnum')]
+    assert lines
+    pattern = re.compile(r'^fsnum = +(\d+)  est = [ -]\d\.\d+  tau2 = \d\.\d+  pval = \d\.\d+  alpha = \d\.\d+  diff = [ -]\d\.\d+ $')
+    tried = []
+    for line in lines:
+        matched = pattern.match(line)
+        assert matched is not None, line
+        tried.append(int(matched.group(1)))
+    assert abs(tried[-1] - result.fsnum) <= 1
+    assert result.fsnum in tried
 
 
 def test_verbose_glmm(capsys: pytest.CaptureFixture[str]) -> None:

@@ -7,6 +7,7 @@ A sign-test ('Binomial') type is in metafor's code but not on its help page. See
 https://wviechtb.github.io/metafor/reference/fsn.html.
 """
 
+import collections.abc
 import dataclasses
 import math
 import sys
@@ -21,7 +22,6 @@ import scipy.stats
 import metafopy.bias.inputs
 import metafopy.core.rng
 import metafopy.core.verbose
-import metafopy.core.zeroin
 import metafopy.errors
 import metafopy.formatters
 import metafopy.methods.common
@@ -152,6 +152,49 @@ def fsn_fisher(fsnum: float, pi: FloatArray, alpha: float) -> float:
     return float(scipy.stats.chi2.sf(x2, 2 * (pi.shape[0] + fsnum))) - alpha
 
 
+def fsn_search(
+    satisfied: collections.abc.Callable[[int], bool],
+    lower: float,
+    upper: float,
+    maxint: float,
+    maxiter: int,
+    message: str = 'Could not find fail-safe N.',
+) -> int:
+    """The least integer ``n`` from ``ceil(lower)`` with ``satisfied(n)``, for a criterion that stays true once true.
+
+    The bracket starts at ``(lower, upper)``, is extended upwards by doubling until the criterion holds or ``maxint`` is reached (then ``maxint`` is
+    returned), and is then bisected on the integers. The extensions and bisection steps together are bounded by ``maxiter``.
+
+    Raises:
+        metafopy.errors.InputError: the criterion already holds at ``lower`` (the caller has found it failing for the observed studies, so the
+            criterion is not a function of the added studies alone), or the search needs more than ``maxiter`` steps.
+    """
+    top = int(maxint)
+    low = min(max(math.ceil(lower), 0), top)
+    if satisfied(low):
+        raise metafopy.errors.InputError(message)
+    high = min(max(math.ceil(upper), low + 1), top)
+    steps = 0
+    while not satisfied(high):
+        if high >= top:
+            return top
+        low = high
+        high = min(max(2 * high, high + 1), top)
+        steps += 1
+        if steps > maxiter:
+            raise metafopy.errors.InputError(message)
+    while high - low > 1:
+        steps += 1
+        if steps > maxiter:
+            raise metafopy.errors.InputError(message)
+        middle = (low + high) // 2
+        if satisfied(middle):
+            high = middle
+        else:
+            low = middle
+    return high
+
+
 def wmean(x: FloatArray, w: FloatArray) -> float:
     return float(numpy.sum(x * w) / numpy.sum(w))
 
@@ -196,6 +239,11 @@ def fsn(
     probability of 0.5 and adds studies in pairs, one with a positive and one with a non-positive estimate, until the p-value reaches
     `alpha`; the fail-safe N is the number of studies added (0 if the observed p-value is already at least `alpha`).
 
+    For the 'Rosenthal' type with `pool='fisher'` and for the 'General' type the fail-safe N is the least integer whose criterion holds,
+    found by a search over the integers, as in Becker (2005, doi:10.1002/0470870168.ch7) and Viechtbauer (2024). metafor finds a real root
+    with `uniroot` and rounds it up, which can be one off on these step functions, see
+    [docs/differences.md](../../../docs/differences.md#fsn-fisher-pooling-and-the-general-type).
+
     Args:
         x: either a fitted model without moderators (then `type='General'` is used) or the observed effect sizes (array-like, or the name of
             a column of `data`).
@@ -221,11 +269,12 @@ def fsn(
         digits: number of decimals used when the result is printed. Default None: the digits of the model, or 4.
         pool: 'stouffer' | 'fisher': how the p-values are combined for the 'Rosenthal' type (default 'stouffer').
         mumiss: average effect of the file-drawer studies for the 'General' type (default 0).
-        interval: (lower, upper) initial interval of the root search for the fail-safe N, which is extended if the root lies outside it.
-            Default None: 0 to 50 times the number of studies.
+        interval: (lower, upper) starting bracket of the search for the fail-safe N of the 'Rosenthal' (Fisher) and 'General' types, which is
+            extended upwards if the answer lies above it. Default None: 0 to 50 times the number of studies.
         maxint: largest fail-safe N that is returned; larger values are reported as '>' that value (default 1e7).
-        tol: tolerance of the root finding (default `eps**0.25`).
-        maxiter: maximum number of iterations of the root finding (default 1000).
+        tol: kept for compatibility with metafor. It has no effect: the search over the integers of the 'Rosenthal' (Fisher) and 'General'
+            types does not use a tolerance (default `eps**0.25`).
+        maxiter: maximum number of bracket extensions and bisection steps of that search (default 1000).
         tau2: fixed value of tau^2 for the 'General' type. Default None: estimated (or the fixed value of a model `x`).
         test: test for the 'General' type: 'z' | 't' | 'knha' | 'adhoc'. Default None: the test of `x`, or 'z'.
         weighted: whether weighted estimation is used for the 'General' type (for 'Orwin', False gives the unweighted average, True requires
@@ -340,8 +389,7 @@ def fsn(
         if pval >= alpha:
             fsnum = 0.0
         else:
-            fsnum = metafopy.core.zeroin.uniroot(lambda n: fsn_fisher(n, pi, alpha), ival[0], ival[1], tol=tol, maxiter=maxiter, extend_int='upX').root
-        fsnum = rnd_fsn(fsnum)
+            fsnum = float(fsn_search(lambda n: fsn_fisher(n, pi, alpha) >= 0, ival[0], ival[1], maxint, maxiter))
         tgt = math.nan
     # auditme: accept[assert-never-missing] the value is a str that is validated against the allowed names earlier
     elif typ == 'Binomial':
@@ -395,7 +443,7 @@ def fsn(
         pval = float(tmp.pval[0])
         meth_out = meth
 
-        def gen_fn(n: float, target_: float | None, newest: bool = False) -> typing.Any:
+        def gen_fn(n: float, target_: float | None, newest: bool = False, trace: bool = False) -> typing.Any:
             return fsn_gen(
                 n,
                 yi,
@@ -416,22 +464,26 @@ def fsn(
                 gen,
                 verbose=bool(verbose),
                 upperint=max(ival),
+                trace=trace,
             )
 
-        # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
-        def root_of(extend: typing.Literal['upX', 'downX'], target_: float | None) -> float:
+        def met(n: int, target_: float | None) -> bool:
+            got_n = gen_fn(float(n), target_, True, True)
+            return bool(got_n['pval_fsn'] >= alpha) if target_ is None else bool(abs(got_n['est_fsn']) <= abs(target_))
+
+        def search_for(target_: float | None) -> float:
+            message = 'Could not find fail-safe N based on a random-effects model.'
             try:
-                r = metafopy.core.zeroin.uniroot(lambda n: gen_fn(n, target_), ival[0], ival[1], tol=tol, maxiter=maxiter, extend_int=extend).root
+                return float(fsn_search(lambda n: met(n, target_), ival[0], ival[1], maxint, maxiter, message))
             except (ValueError, ArithmeticError, numpy.linalg.LinAlgError) as exc:
-                raise metafopy.errors.InputError('Could not find fail-safe N based on a random-effects model.') from exc
-            return rnd_fsn(min(r, maxint))
+                raise metafopy.errors.InputError(message) from exc
 
         got: dict[str, float] | None = None
         if target is None:
             if pval >= alpha:
                 fsnum = 0.0
             else:
-                fsnum = root_of('upX', None)
+                fsnum = search_for(None)
                 got = gen_fn(fsnum, None, True)
             tgt = math.nan
         else:
@@ -442,7 +494,7 @@ def fsn(
             elif abs(tgt) >= abs(est):
                 fsnum = 0.0
             else:
-                fsnum = root_of('downX' if est > 0 else 'upX', tgt)
+                fsnum = search_for(tgt)
                 got = gen_fn(fsnum, tgt, True)
         if fsnum == 0:
             est_fsn, tau2_fsn, pval_fsn = est, tau2_out, pval
@@ -489,6 +541,7 @@ def fsn_gen(
     *,
     verbose: bool = False,
     upperint: float = 0.0,
+    trace: bool = False,
 ) -> typing.Any:
     """Port of metafor's internal ``.fsn.gen``: the p-value (or estimate) minus its target after adding ``fsnum`` null studies.
 
@@ -532,12 +585,12 @@ def fsn_gen(
         pval_fsn = float(2 * scipy.stats.norm.sf(abs(zval)))
         if target is None and mumiss != 0 and numpy.sign(est_fsn * mumiss) == 1:
             pval_fsn = 1.0
-    if newest:
-        return {'est_fsn': est_fsn, 'tau2_fsn': tau2_fsn, 'pval_fsn': pval_fsn}
     diff = (0.0 if n == maxint else pval_fsn - alpha) if target is None else (0.0 if n == maxint else est_fsn - target)
-    if verbose:
+    if verbose and (trace or not newest):
         fmtx = metafopy.formatters.fmtx
         width = len(metafopy.formatters.r_as_character(upperint)) + 1
         tail = f'pval = {fmtx(pval_fsn)}  alpha = {fmtx(alpha)}' if target is None else f'target = {fmtx(target)}'
         metafopy.core.verbose.cat(f'fsnum = {n:>{width}d}  est = {fmtx(est_fsn, flag=" ")}  tau2 = {fmtx(tau2_fsn)}  {tail}  diff = {fmtx(diff, flag=" ")} \n')
+    if newest:
+        return {'est_fsn': est_fsn, 'tau2_fsn': tau2_fsn, 'pval_fsn': pval_fsn}
     return diff

@@ -287,7 +287,7 @@ def test_fsn_general_with_a_numpy_target() -> None:
     dat = bcg()
     numpy_target = metafopy.fsn('yi', 'vi', data=dat, type='General', target=numpy.log(0.95))
     float_target = metafopy.fsn('yi', 'vi', data=dat, type='General', target=float(numpy.log(0.95)))
-    assert numpy_target.fsnum == float_target.fsnum == 138
+    assert numpy_target.fsnum == float_target.fsnum == 137
 
 
 # -- dfround -------------------------------------------------------------------------------------------------------------------------------------
