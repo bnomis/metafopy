@@ -2,7 +2,7 @@
 
 **Spec:** `agents/specs/correctness-publication-bias/spec.md`
 **Task list:** `agents/tasks/correctness-publication-bias/tasks-1.md` (Task 13 completes this document and publishes its page)
-**Review page:** none: the queue session that wrote this document has no tool for publishing an interactive page, so the operator session publishes one from this document (accept-all button, answers saved to the artifact database) before answering
+**Review page:** https://claude.ai/artifact/NatZgXbTRGMtdpFDCXXaaL
 
 ## What is reviewed and how
 
@@ -287,6 +287,21 @@ Found by Task 9 (read 2026-11-15). No `published` case is written for these:
 | Preston et al. (2004), Table 1 and Figure 7 | the beta estimates are in the paper's own parametrisation of the weight functions; the adjusted odds ratios are only in a figure |
 | Rust et al. (1990), J Marketing Res 27:220-226; Formann (2008), Contemp Clin Trials 29:732-739 | different models (a censored normal; a left-truncated normal on normal scores); Rust's marketing data are not bundled and Formann's estimates have no counterpart in `selmodel` `trunc` |
 | Lehmann et al. (2018), Evol Psychol 16(4), PMC10480976 | reports no selection-model estimate: its publication-bias analysis is funnel-plot regression (men rating women r = -.07 [-.36, .22], women rating men r = .52 [.23, .72]), and the 3PSM figures are not in the text |
+
+## Operator check and recommendations on the page (operator session, 2026-11-15)
+
+The operator session ran R metafor 5.2-1 from the audit's pinned library (`.audit/Rlib`) on every case above that says R metafor was not run.
+metafor gives metafopy's values in each: `fsn` Fisher pooling 47 and General target 117; the four `prec` step-function fits (for example `sei`
+beta 0.1378, ll -4.1029); `truncest` beta 0.26491, truncation point 0.27073, ll -17.7909; `hc` 0.06436 to 0.53641; `regtest` with
+`predictor = "ninv"` t -2.32297, p 0.03704. metafor's help page for `selmodel` names `negexppow` but not `stepcon`, which appears only in its code.
+
+The page follows NOTES.md (a correct algorithm ranks above reproducing metafor), so three recommendations differ from the table under
+Decisions:
+
+- Fail-safe N: *follow the reference*, not *investigate*. metafor has the same off-by-one, so running it settles nothing more.
+- `prec` on a step function: *investigate*, not *keep metafor*. metafor's likelihood is not a density, but the consistent likelihood makes `prec`
+  a no-op, so neither is the intended model; whether to reject the combination or define it from a source needs settling first.
+- `truncest`: *follow the reference*, not *keep metafor*. On the same likelihood metafopy and metafor stop at a lower local maximum.
 
 ## Answers
 
