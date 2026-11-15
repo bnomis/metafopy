@@ -675,13 +675,3 @@ def hc_with_zero_tau2_is_the_equal_effects_estimate(case: correctness.cases.Case
     assert result.tau2 == 0.0, f'{case.id}: the DerSimonian-Laird tau2 is {result.tau2!r}, the case must have 0'
     close(case.id, 'beta', result.beta, equal.beta, tolerance)
     close(case.id, 'se', result.se, equal.se, tolerance)
-
-
-def hc_with_zero_tau2_is_the_equal_effects_interval(case: correctness.cases.Case, result: typing.Any) -> None:
-    """With a DerSimonian-Laird ``tau2`` of 0 the ``hc`` interval is the equal-effects interval (the spec's property)."""
-    frame = correctness.cases.case_frame(case)
-    assert frame is not None
-    equal = metafopy.rma_uni(yi='yi', vi='vi', data=frame, method='EE')
-    tolerance = case.tolerance or BIAS_AGREEMENT
-    close(case.id, 'ci_lb', result.ci_lb, equal.ci_lb[0], tolerance)
-    close(case.id, 'ci_ub', result.ci_ub, equal.ci_ub[0], tolerance)

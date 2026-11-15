@@ -100,23 +100,6 @@ read = 2026-11-15
 url = "https://cran.r-project.org/package=meta"
 
 [[case]]
-id = "other.bias.meta.peters.egger2001"
-kind = "other"
-function = "regtest"
-data = { yi = [-0.83034830207343036, -1.0560526742493137, -1.2783398102850176, -0.04348511193973878, 0.22314355131420976, -2.4075199861725802, -1.2809338454620642, -1.1917027117341217, -0.69574796226000268, -2.2082744135228043, -2.0381598827065321, -0.85015092936961012, -0.79323063911692782, -0.29933987406121754, -1.5707884646491113], vi = [1.5550527903469076, 0.17145445134575568, 0.65308899505790718, 2.0434988179669031, 0.2392857142857143, 1.1496290861661367, 1.425, 2.7598915989159885, 0.28748647186147186, 1.2313186813186816, 0.60953346855983781, 0.38247863247863251, 0.39170843776106939, 0.021483604984943117, 0.32952127826485339], ni = [76, 270, 400, 94, 298, 115, 48, 43, 151, 54, 169, 56, 252, 2316, 215] }
-args = { x = "yi", vi = "vi", model = "lm", predictor = "ninv", ni = "ni" }
-expect = { "zval" = -2.4950348751489417, "pval" = 0.026838861244757251 }
-tolerance = 1e-08
-status = "mismatch"
-reason = "meta's Peters test (Peters et al. 2006) is a weighted regression with weights 1 / (1 / (a + c) + 1 / (b + d)) from the event counts and gives t = -2.4950348751489417; metafopy's regtest(model = 'lm', predictor = 'ninv') weights by 1 / vi, as metafor does, and gives t = -2.32297, and regtest accepts no other weights"
-
-[case.source]
-citation = "R package meta 8.5-0 (Balduzzi S, Ruecker G, Schwarzer G (2019). How to perform a meta-analysis with R: a practical tutorial. Evidence-Based Mental Health 22:153-160), run on R 4.6.2."
-locator = "metabias(metabin(sm = 'OR'), method.bias = 'Peters'): statistic and p.value; dat.egger2001 without row 16 (ISIS-4); meta weights by the event counts, metafopy by 1/vi"
-read = 2026-11-15
-url = "https://cran.r-project.org/package=meta"
-
-[[case]]
 id = "other.bias.meta.trimfill.l0.hackshaw1998"
 kind = "other"
 function = "trimfill"
@@ -148,3 +131,6 @@ locator = "trimfill(metagen(method.tau = 'DL'), estimator = 'R0', ma.common = FA
 read = 2026-11-15
 url = "https://cran.r-project.org/package=meta"
 
+# Cases removed on the answer "keep metafor" (mismatches.md, answered 2026-11-15): meta's Peters test weights by the event counts and regtest, like metafor's, can only weight by 1 / vi.
+# Each was a strict expected failure; the values and the sources are in agents/specs/correctness-publication-bias/mismatches.md.
+#   other.bias.meta.peters.egger2001

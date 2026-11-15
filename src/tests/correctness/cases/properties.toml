@@ -476,15 +476,6 @@ args = {}
 expect = {}
 check = "test_properties.hc_with_zero_tau2_is_the_equal_effects_estimate"
 
-# The spec's property that the interval is the equal-effects interval too does not hold: see mismatches.md, "hc at a tau2 of 0".
-[[case]]
-id = "property.hc.zero-tau2.interval"
-kind = "property"
-function = "hc"
-data = { yi = [0.30, 0.31, 0.29, 0.30, 0.32, 0.28], vi = [0.10, 0.08, 0.12, 0.09, 0.11, 0.10] }
-setup = { rma_uni = { method = "DL" } }
-args = {}
-expect = {}
-check = "test_properties.hc_with_zero_tau2_is_the_equal_effects_interval"
-status = "mismatch"
-reason = "the equal-effects interval is 0.0495 to 0.5513; metafopy gives 0.0644 to 0.5364 for the Henmi-Copas interval at a DerSimonian-Laird tau2 of 0, and formulas.hc_interval (Henmi and Copas 2010, equations 14 to 21) gives the same as metafopy: the interval allows for tau2 having been estimated, so it does not collapse to the equal-effects one. R metafor was not run on this case"
+# Cases removed on the answer "keep metafor" (mismatches.md, answered 2026-11-15): the spec's property that the Henmi-Copas interval at a DerSimonian-Laird tau2 of 0 is the equal-effects interval does not hold (the interval allows for tau2 having been estimated).
+# Each was a strict expected failure; the values and the sources are in agents/specs/correctness-publication-bias/mismatches.md.
+#   property.hc.zero-tau2.interval

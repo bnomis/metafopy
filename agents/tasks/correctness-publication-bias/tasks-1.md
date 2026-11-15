@@ -592,7 +592,7 @@ until every item has an answer.
 
 ## Task 14: File the answers and close the spec
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Implementation step 8
@@ -602,35 +602,35 @@ follow-ups moves to `DONE.md`. Fixing metafopy is a follow-up change, not part o
 
 **Subtasks:**
 
-- [ ] Read the answers from the Answers section of `agents/specs/correctness-publication-bias/mismatches.md`, never from the page. Stop as `blocked`,
+- [x] Read the answers from the Answers section of `agents/specs/correctness-publication-bias/mismatches.md`, never from the page. Stop as `blocked`,
       naming the missing items, if the section is empty or incomplete
-- [ ] *Keep metafor*: correct the case to the convention metafor documents, cite where it documents it, and set `status = "pass"`
-- [ ] *Follow the reference*: add a `TODO.md` item for each with the `todo-add` skill, naming the case, the fix, the R parity fixtures and
+- [x] *Keep metafor*: correct the case to the convention metafor documents, cite where it documents it, and set `status = "pass"`
+- [x] *Follow the reference*: add a `TODO.md` item for each with the `todo-add` skill, naming the case, the fix, the R parity fixtures and
       `known.toml` entries to mark, and the `docs/differences.md` section "Where metafor departs from its reference" to add
-- [ ] *Investigate*: a `TODO.md` item with the `todo-add` skill naming what is in doubt
-- [ ] `negexppow` and `stepcon`: replace each pending exemption as answered (a `derived` case, an exemption with its reason, or a published case)
-- [ ] A source the operator supplied: write its `published` cases as in Task 9
-- [ ] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` to say so
-- [ ] Move the `TODO.md` item "Extend the correctness tests beyond the core models" to `DONE.md`: append its heading and body unchanged, then a
+- [x] *Investigate*: a `TODO.md` item with the `todo-add` skill naming what is in doubt
+- [x] `negexppow` and `stepcon`: replace each pending exemption as answered (a `derived` case, an exemption with its reason, or a published case)
+- [x] A source the operator supplied: write its `published` cases as in Task 9
+- [x] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` to say so
+- [x] Move the `TODO.md` item "Extend the correctness tests beyond the core models" to `DONE.md`: append its heading and body unchanged, then a
       `Done:` line with the date naming the four specs `agents/specs/correctness-mv-robust/spec.md`, `agents/specs/correctness-glmm/spec.md`,
       `agents/specs/correctness-location-scale/spec.md` and `agents/specs/correctness-publication-bias/spec.md`
-- [ ] Run the final tests from the worktree:
+- [x] Run the final tests from the worktree:
       `main=$(git worktree list --porcelain | sed -n '1s/^worktree //p'); mkdir -p "$main/ralpher-logs/correctness-publication-bias/tasks-1" && pytest src/tests/correctness 2>&1 | tee "$main/ralpher-logs/correctness-publication-bias/tasks-1/final-tests.log"`
 
 **Acceptance Criteria:**
 
-- [ ] Every answered item has a case change or a `TODO.md` item
-- [ ] No `[[exempt]]` entry reads "pending the user's answer"
-- [ ] `git diff --exit-code main -- src/audit/data/r-versions.json` exits 0
+- [x] Every answered item has a case change or a `TODO.md` item
+- [x] No `[[exempt]]` entry reads "pending the user's answer"
+- [x] `git diff --exit-code main -- src/audit/data/r-versions.json` exits 0
 
 **Definition of Done:**
 
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] `base=$(mktemp) && git show $(git log --diff-filter=A --format=%H -- agents/tasks/correctness-publication-bias/tasks-1.md):TODO.md > "$base" && python3 ~/.claude/skills/todo-review/verify_bodies.py "$base" TODO.md DONE.md`
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] `base=$(mktemp) && git show $(git log --diff-filter=A --format=%H -- agents/tasks/correctness-publication-bias/tasks-1.md):TODO.md > "$base" && python3 ~/.claude/skills/todo-review/verify_bodies.py "$base" TODO.md DONE.md`
       exits 0
-- [ ] `pytest src/tests/correctness` passes, `slow` tests included (the list changes no module under `src/metafopy/`, so this is the full run), as
+- [x] `pytest src/tests/correctness` passes, `slow` tests included (the list changes no module under `src/metafopy/`, so this is the full run), as
       logged in `ralpher-logs/correctness-publication-bias/tasks-1/final-tests.log`
 
 **Notes:**

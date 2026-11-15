@@ -3811,7 +3811,7 @@ def no_selection(p: float, preci: float) -> float:
 
 
 PARAMETRIC_PVAL_MIN = {'beta': 1e-5, 'power': 1e-5}
-PARAMETRIC_KINDS = ('beta', 'halfnorm', 'logistic', 'negexp', 'power')
+PARAMETRIC_KINDS = ('beta', 'halfnorm', 'logistic', 'negexp', 'negexppow', 'power')
 
 
 def parametric_weight(kind: str, delta: FloatArray) -> Weight:
@@ -3826,7 +3826,8 @@ def parametric_weight(kind: str, delta: FloatArray) -> Weight:
       10:313-322, doi:10.1111/j.1365-2753.2003.00457.x);
     - ``negexp``: ``exp(-delta * preci * p)`` (negative exponential, Preston et al. 2004);
     - ``logistic``: ``2 exp(-delta * preci * p) / (1 + exp(-delta * preci * p))`` (logistic, Preston et al. 2004);
-    - ``power``: ``(1 - p) ** (delta * preci)`` (Preston et al. 2004).
+    - ``power``: ``(1 - p) ** (delta * preci)`` (Preston et al. 2004);
+    - ``negexppow``: ``exp(-delta[0] * preci * p ** (1 / delta[1]))`` (metafor's ``?selmodel`` help, 5.2-1).
 
     Only the ratio of the weight to its integral enters the likelihood, so a constant factor is immaterial.
     """
@@ -3845,6 +3846,8 @@ def parametric_weight(kind: str, delta: FloatArray) -> Weight:
             return 2 * e / (1 + e)
         if kind == 'power':
             return float((1 - q) ** (preci * float(delta[0])))
+        if kind == 'negexppow':
+            return math.exp(-float(delta[0]) * preci * q ** (1 / float(delta[1])))
         raise ValueError(f'unknown parametric selection model {kind!r}')
 
     return weight
