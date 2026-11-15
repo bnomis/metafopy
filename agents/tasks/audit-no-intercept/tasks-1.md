@@ -141,6 +141,10 @@ harness still reproduces what the earlier audits found.
 - [x] For each cause in Task 1's "Not explained" list, file it with the `todo-add` skill (verified against the run's `findings.json`, dated, the run
       directory named), never fixed here. Where `todo-add` merges a cause into an existing item, record that item's title in this task's Notes: its
       body changes on purpose, and the closing check of Task 3 must name only those titles. If the list is empty, write "none" in the Notes
+- [ ] Fix the harness so the recall check can run against checkouts older than `metafopy.core.dbinom.FUSED` (added 2026-11-03 in `5b09d65`):
+      in `check-r` (`src/audit/steps.py`), when the audited source has no `FUSED`, skip the fused-arithmetic comparison with a note in the step's
+      outcome saying the source predates it, instead of raising `AttributeError`. Add a test beside the existing `check-r` tests (find them with
+      `grep -rln check_r src/tests`) for a source without `FUSED`. Commit it as its own commit in this task
 - [ ] Run the recall check in the background, as the header says:
       `METAFOPY_AUDIT_RLIB="$main/.audit/Rlib" METAFOPY_AUDIT_WORK="$main/.audit" bin/metafor-audit.sh --recall`, and record the recall report it
       prints in this task's Notes. If it exits non-zero, stop as `blocked`, naming each item it missed: a miss is a hole in the harness, fixed in
@@ -164,7 +168,7 @@ harness still reproduces what the earlier audits found.
   an R kill and has no entry for it"; "The audit lists a selmodel logistic Hessian element that is zero in both R and metafopy"; "The audit lists printed
   fits of flat location-scale models that differ in the last digit" (the `vif` `ls_na`, `permutest` `ls_bangert` and `uni_mods_year` scale prints);
   "The audit has no entry for ls_na with an interaction formula that R refuses"
-- BLOCKED 2026-11-15: `bin/metafor-audit.sh --recall` exits 1 before any item is checked. The recall of the first audit that runs against an old
+- Unblocked 2026-11-15 by the operator: fix the harness in this task (the subtask above), then rerun the recall check. Was BLOCKED 2026-11-15: `bin/metafor-audit.sh --recall` exits 1 before any item is checked. The recall of the first audit that runs against an old
   checkout (`--metafopy-src /Users/simonb/src/metafopy/.audit/worktrees/9f165e1/src`) fails in `check-r` (`src/audit/steps.py:94`) with
   `AttributeError: module 'metafopy.core.dbinom' has no attribute 'FUSED'`: the current harness reads `metafopy.core.dbinom.FUSED` from the old source,
   which predates it. A hole in the harness (`src/audit/`), outside this item; no entry of Task 1 can cause it (recall passes `--no-ledger`). Full log:
