@@ -189,7 +189,7 @@ and the printed examples in the manual show the new values.
 
 ## Task 3: Recall check, the full test run and closing the item
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item as a whole
@@ -198,29 +198,29 @@ and the printed examples in the manual show the new values.
 
 **Subtasks:**
 
-- [ ] Run the recall check in the background: `METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib bin/metafor-audit.sh --recall`.
+- [x] Run the recall check in the background: `METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib bin/metafor-audit.sh --recall`.
       Compare its summary with the newest `recall.md` under `/Users/simonb/src/metafopy/.audit/runs/recall-*/`: every item reproduced there is
       reproduced again. Stop as `blocked`, naming the item, if one is newly missed
-- [ ] Move the item from `TODO.md` to `DONE.md`: append its heading and body unchanged at the end of `DONE.md`, then a line
+- [x] Move the item from `TODO.md` to `DONE.md`: append its heading and body unchanged at the end of `DONE.md`, then a line
       `Done: 2026-MM-DD, agents/tasks/fsn-integer-search/tasks-1.md` with the date of the commit
-- [ ] Run the full test suite from the worktree and save its whole output for the merge gate, in the main checkout (the first entry of
+- [x] Run the full test suite from the worktree and save its whole output for the merge gate, in the main checkout (the first entry of
       `git worktree list --porcelain`, `/Users/simonb/src/metafopy`):
       `mkdir -p /Users/simonb/src/metafopy/ralpher-logs/fsn-integer-search/tasks-1 && source bin/activate.sh && pytest src/tests 2>&1 | tee /Users/simonb/src/metafopy/ralpher-logs/fsn-integer-search/tasks-1/final-tests.log`
 
 **Acceptance Criteria:**
 
-- [ ] The recall check reproduces every item the newest recall report reproduced
-- [ ] The item is in `DONE.md` with its body unchanged and a `Done:` line naming this list, and no longer in `TODO.md`
-- [ ] `/Users/simonb/src/metafopy/ralpher-logs/fsn-integer-search/tasks-1/final-tests.log` holds the whole output of the full run
+- [x] The recall check reproduces every item the newest recall report reproduced
+- [x] The item is in `DONE.md` with its body unchanged and a `Done:` line naming this list, and no longer in `TODO.md`
+- [x] `/Users/simonb/src/metafopy/ralpher-logs/fsn-integer-search/tasks-1/final-tests.log` holds the whole output of the full run
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] The full test run above passes, `slow` tests included
-- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/fsn-integer-search/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] The full test run above passes, `slow` tests included
+- [x] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/fsn-integer-search/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
       `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0 (`<scratch>` is the session's
       scratch directory, outside the repository; the commit that adds this list is `HEAD` at the list's start, so this is `git show HEAD:TODO.md`
       taken then)

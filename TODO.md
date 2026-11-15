@@ -60,26 +60,6 @@ Fix direction: reproduce the R message with `rma(..., mods = ~ ablat * alloc, sc
 make metafopy refuse with the same error or accept the difference in `src/audit/data/known.toml` and `docs/differences.md`. A change to `src/metafopy/`
 goes through a spec first, or a small task list if the fix is local.
 
-## The fail-safe N root search rounds up one too far on a step function
-
-<!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
-Found on 2026-11-15 by the cases `bias.fsn.egger2001.rosenthal.fisher` and `bias.fsn.egger2001.general.target` in `src/tests/correctness/cases/bias.toml`
-(`agents/specs/correctness-publication-bias/mismatches.md`); the user answered *follow the reference* on 2026-11-15. Becker's Fisher criterion first
-holds at N = 48 (p = 0.0541; at N = 47 p = 0.0493) and metafopy gives 47; the average effect of the General type first reaches the target at N = 116 and
-metafopy gives 117. R metafor 5.2-1 gives metafopy's 47 and 117 (run by the operator session on 2026-11-15), so the difference is metafor's too.
-<!-- doc-counts: accept-end -->
-
-Cause: `fsn` finds the root of a function of N with `metafopy.core.zeroin.uniroot` (`src/metafopy/bias/fsn.py`, the `Rosenthal` and `General` branches),
-treating N as a real number, but the statistic is a step function of `int(N)` (`fsn_fisher` takes `int(fsnum)`; the General refit uses floor(N) studies), so
-the root search stops just above or below a step and the result is rounded up.
-
-Fix direction: search the integers (`formulas.smallest_integer` in `src/tests/correctness/formulas.py` is the reference search), resolve the General
-step before rounding, then set the two cases to `pass`. Mark the R parity fixtures that hold these values as differing, add the `src/audit/data/known.toml`
-entries, and add the difference to `docs/differences.md` under "Where metafor departs from its reference". A change to `src/metafopy/` goes through a
-spec first, or a small task list if the fix is local.
-
-Spec: none (small item); tasks: `agents/tasks/fsn-integer-search/tasks-1.md`.
-
 ## The truncest estimate stops at a local maximum of a step-function likelihood
 
 <!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
