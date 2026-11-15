@@ -4,7 +4,54 @@ Open work only, in implementation order, nearest first. Finished items move to
 `DONE.md` unchanged. See the shared `todo-add` and `todo-review` skills for
 the shape of an item.
 
-## The CM.EL standard error of the log odds ratio differs from the observed information of the exact likelihood
+## The fail-safe N root search rounds up one too far on a step function
+
+<!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
+Found on 2026-11-15 by the cases `bias.fsn.egger2001.rosenthal.fisher` and `bias.fsn.egger2001.general.target` in `src/tests/correctness/cases/bias.toml`
+(`agents/specs/correctness-publication-bias/mismatches.md`); the user answered *follow the reference* on 2026-11-15. Becker's Fisher criterion first
+holds at N = 48 (p = 0.0541; at N = 47 p = 0.0493) and metafopy gives 47; the average effect of the General type first reaches the target at N = 116 and
+metafopy gives 117. R metafor 5.2-1 gives metafopy's 47 and 117 (run by the operator session on 2026-11-15), so the difference is metafor's too.
+<!-- doc-counts: accept-end -->
+
+Cause: `fsn` finds the root of a function of N with `metafopy.core.zeroin.uniroot` (`src/metafopy/bias/fsn.py`, the `Rosenthal` and `General` branches),
+treating N as a real number, but the statistic is a step function of `int(N)` (`fsn_fisher` takes `int(fsnum)`; the General refit uses floor(N) studies), so
+the root search stops just above or below a step and the result is rounded up.
+
+Fix direction: search the integers (`formulas.smallest_integer` in `src/tests/correctness/formulas.py` is the reference search), resolve the General
+step before rounding, then set the two cases to `pass`. Mark the R parity fixtures that hold these values as differing, add the `src/audit/data/known.toml`
+entries, and add the difference to `docs/differences.md` under "Where metafor departs from its reference". A change to `src/metafopy/` goes through a
+spec first, or a small task list if the fix is local.
+
+## The truncest estimate stops at a local maximum of a step-function likelihood
+
+<!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
+Found on 2026-11-15 by the case `selmodel.truncest.bangertdrowns2004` in `src/tests/correctness/cases/selmodel.toml`
+(`agents/specs/correctness-publication-bias/mismatches.md`); the user answered *follow the reference* on 2026-11-15. On `dat.bangertdrowns2004`
+metafopy gives beta 0.26491, tau2 0.054216, delta 1.42227, truncation point 0.27073 and ll -17.7909; the maximum of the likelihood
+(`formulas.truncation_loglik`) gives beta 0.27598, tau2 0.054737, delta 1.48969, truncation point 0.20001 and ll -17.7406. R metafor 5.2-1 gives
+metafopy's values (operator session, 2026-11-15), so it stops at the same local maximum.
+<!-- doc-counts: accept-end -->
+
+Cause: the likelihood is a step function of the truncation point with a jump at each observed effect, so a gradient search stops inside one piece
+(`type == 'truncest'` in `src/metafopy/models/selmodel.py`).
+
+Fix direction: search each stretch between observed effects and keep the best, then set the case to `pass`. Mark the R parity fixture that holds a
+`truncest` fit as differing, add the `src/audit/data/known.toml` entry, and add the difference to `docs/differences.md` under "Where metafor departs from
+its reference". A change to `src/metafopy/` goes through a spec first, or a small task list if the fix is local.
+
+## The CM.EL information is taken by finite differences of the exact likelihood
+
+Both findings below share one cause: for `rma_glmm(model='CM.EL')`, metafopy takes the Hessian of the exact conditional (non-central hypergeometric)
+likelihood by finite differences, as R metafor does (`src/metafopy/models/glmm_fit.py`, `invert_hessian` and the `hesspack` options), while the
+correctness formulas (`src/tests/correctness/glmm_formulas.py`) use its analytic information. The standard error of the pooled log odds ratio (first
+finding) and the Wald statistic of the saturated model, `QE_Wld` (second finding), both come from that numerical Hessian. Consolidated on 2026-11-15 by a
+TODO review.
+
+Fix direction: compute the analytic information of the exact conditional likelihood once and use it for both the `FE` standard error and the saturated
+model's `QE_Wld`; then settle the `ML` standard error as the first finding says. Each finding's own fix direction lists the cases, the R parity fixtures,
+the `known.toml` entries and the `docs/differences.md` entry it needs. A change to `src/metafopy/` goes through a spec first.
+
+### The CM.EL standard error of the log odds ratio differs from the observed information of the exact likelihood
 
 <!-- doc-counts: accept-start found on 2026-11-14 - a dated record, not a claim about the present -->
 Found on 2026-11-14 by the `rma_glmm` correctness cases (`agents/specs/correctness-glmm/mismatches.md`, decision D1); the user answered *follow the
@@ -33,7 +80,7 @@ difference, decide which value is nearest, then either change metafopy or accept
 `CM.EL` standard error as differing, add the matching `src/audit/data/known.toml` entries, and add the difference to `docs/differences.md` under "Where
 metafor departs from its reference". A change to `src/metafopy/` goes through a spec first, or a small task list if the fix is local.
 
-## The CM.EL saturated-model Wald statistic QE_Wld is ill-conditioned
+### The CM.EL saturated-model Wald statistic QE_Wld is ill-conditioned
 
 <!-- doc-counts: accept-start found on 2026-11-14 - a dated record, not a claim about the present -->
 Found on 2026-11-14 by the case `glmm.heterogeneity.qe-wld.cm.el.fe.bcg` (`agents/specs/correctness-glmm/mismatches.md`, decision D2); the user
@@ -49,44 +96,6 @@ for `*/glmm_cm*` record it as a difference from R.
 Fix direction: compute the information of the saturated `CM.EL` fit analytically, as the formulas do, and set the case to `pass`. Mark the R parity
 fixtures that hold `QE_Wld` of `CM.EL` as differing, update the `known.toml` entries for `*/glmm_cm*` and add the difference to `docs/differences.md`
 under "Where metafor departs from its reference".
-
-## Find the data behind Table 5 of Bagos and Nikolopoulos (2009)
-
-<!-- doc-counts: accept-start found on 2026-11-14 - a dated record, not a claim about the present -->
-Found on 2026-11-14 by Tasks 9 and 11 of `agents/tasks/correctness-glmm/tasks-1.md` (`agents/specs/correctness-glmm/mismatches.md`, decision D3); the
-user answered *investigate* on 2026-11-14. Bagos and Nikolopoulos (2009) Table 5 prints random-study-effects incidence rate ratios (Hooper 0.746 (0.592,
-0.940), school absences 0.721 (0.579, 0.897), ER visits 0.525 (0.361, 0.764)) but no per-study counts or person-times, so no Poisson case could be
-written. The Table 1 trial rows of Hooper et al. (2001) give an IRR of 0.859 (`UM.FS`) against the printed 0.819, and Wolf et al. (2003) prints means
-and standard deviations, not counts.
-<!-- doc-counts: accept-end -->
-
-Fix direction: find the original per-trial counts and person-times that reproduce Table 5 (the authors' supplementary data, or the primary trial
-reports), then write the published cases in `src/tests/correctness/cases/glmm_published.toml`.
-
-## Stijnen et al. (2010) Table VII treated arm, PN, differs from metafopy and R metafor
-
-<!-- doc-counts: accept-start found on 2026-11-14 - a dated record, not a claim about the present -->
-Found on 2026-11-14 by the case `glmm.published.stijnen2010.table7.pn.treated.mismatch` (`agents/specs/correctness-glmm/mismatches.md`); the user
-answered *investigate* on 2026-11-14. The printed values are log rate 0.850, standard error 0.330 and `tau2` 0.654; metafopy and R metafor 5.2-1 both
-give 0.81997, 0.31962 and 0.59899 (0.59898 in R) for `measure='IRLN'`, `method='ML'` on the treated data of Table VI. The control arm agrees to one unit
-of the last digit, so the difference is larger than rounding.
-<!-- doc-counts: accept-end -->
-
-Fix direction: check the transcription of the treated rows of Table VI against the paper, then the likelihood (SAS Proc NLMIXED against a Poisson
-log-normal model with an offset) with the formulas of `src/tests/correctness/glmm_formulas.py`; either correct the data, record the source difference
-with its reason, or fix metafopy.
-
-## Simmonds and Higgins (2016) Fig 1 one-stage random effects differs from metafopy and R metafor
-
-<!-- doc-counts: accept-start found on 2026-11-14 - a dated record, not a claim about the present -->
-Found on 2026-11-14 by the case `glmm.published.simmonds2016.hrt.random.mismatch` (`agents/specs/correctness-glmm/mismatches.md`); the user answered
-*investigate* on 2026-11-14. The paper prints OR 1.74 (0.59, 5.17) for the one-stage random-effects model (`glmer`); metafopy and R metafor 5.2-1 give
-1.79068 (0.54155, 5.92107) for `UM.FS`, `ML` on the same data, with `tau2` 0.21307. The paper's random-effects result equals its fixed-effect result
-(1.74), which metafopy and R reproduce for `FE` (1.74126), so the paper's fit may have a `tau2` of zero.
-<!-- doc-counts: accept-end -->
-
-Fix direction: compare the marginal likelihood at `tau2 = 0` and at 0.213 with the formulas of `src/tests/correctness/glmm_formulas.py`; if the
-likelihood is higher at 0.213, record the printed value as a source difference (a `glmer` that stopped at `tau2 = 0`); otherwise fix metafopy.
 
 ## The location-scale identity-link fit stops about 1e-5 short of the maximum
 
@@ -150,41 +159,6 @@ location-scale profile interval as differing where they do, add the matching `sr
 `docs/differences.md` under "Where metafor departs from its reference". A change to `src/metafopy/` goes through a spec first, or a small task list
 if the fix is local.
 
-## The fail-safe N root search rounds up one too far on a step function
-
-<!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
-Found on 2026-11-15 by the cases `bias.fsn.egger2001.rosenthal.fisher` and `bias.fsn.egger2001.general.target` in `src/tests/correctness/cases/bias.toml`
-(`agents/specs/correctness-publication-bias/mismatches.md`); the user answered *follow the reference* on 2026-11-15. Becker's Fisher criterion first
-holds at N = 48 (p = 0.0541; at N = 47 p = 0.0493) and metafopy gives 47; the average effect of the General type first reaches the target at N = 116 and
-metafopy gives 117. R metafor 5.2-1 gives metafopy's 47 and 117 (run by the operator session on 2026-11-15), so the difference is metafor's too.
-<!-- doc-counts: accept-end -->
-
-Cause: `fsn` finds the root of a function of N with `metafopy.core.zeroin.uniroot` (`src/metafopy/bias/fsn.py`, the `Rosenthal` and `General` branches),
-treating N as a real number, but the statistic is a step function of `int(N)` (`fsn_fisher` takes `int(fsnum)`; the General refit uses floor(N) studies), so
-the root search stops just above or below a step and the result is rounded up.
-
-Fix direction: search the integers (`formulas.smallest_integer` in `src/tests/correctness/formulas.py` is the reference search), resolve the General
-step before rounding, then set the two cases to `pass`. Mark the R parity fixtures that hold these values as differing, add the `src/audit/data/known.toml`
-entries, and add the difference to `docs/differences.md` under "Where metafor departs from its reference". A change to `src/metafopy/` goes through a
-spec first, or a small task list if the fix is local.
-
-## The truncest estimate stops at a local maximum of a step-function likelihood
-
-<!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
-Found on 2026-11-15 by the case `selmodel.truncest.bangertdrowns2004` in `src/tests/correctness/cases/selmodel.toml`
-(`agents/specs/correctness-publication-bias/mismatches.md`); the user answered *follow the reference* on 2026-11-15. On `dat.bangertdrowns2004`
-metafopy gives beta 0.26491, tau2 0.054216, delta 1.42227, truncation point 0.27073 and ll -17.7909; the maximum of the likelihood
-(`formulas.truncation_loglik`) gives beta 0.27598, tau2 0.054737, delta 1.48969, truncation point 0.20001 and ll -17.7406. R metafor 5.2-1 gives
-metafopy's values (operator session, 2026-11-15), so it stops at the same local maximum.
-<!-- doc-counts: accept-end -->
-
-Cause: the likelihood is a step function of the truncation point with a jump at each observed effect, so a gradient search stops inside one piece
-(`type == 'truncest'` in `src/metafopy/models/selmodel.py`).
-
-Fix direction: search each stretch between observed effects and keep the best, then set the case to `pass`. Mark the R parity fixture that holds a
-`truncest` fit as differing, add the `src/audit/data/known.toml` entry, and add the difference to `docs/differences.md` under "Where metafor departs from
-its reference". A change to `src/metafopy/` goes through a spec first, or a small task list if the fix is local.
-
 ## A precision measure on a step-function selection model makes the likelihood not a density
 
 <!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
@@ -201,3 +175,41 @@ not a density and its maximum moves with the precision measure. The consistent l
 Fix direction: decide whether `selmodel` rejects the combination with an `InputError`, or defines it from a source (none found for step functions). Then
 set the four cases to `pass` or exempt them with the decision, mark the `hack_stepfun_sei` R parity fixture as differing if the behaviour changes, and
 name the decision in `docs/differences.md` under "Where metafor departs from its reference". A change to `src/metafopy/` goes through a spec first.
+## Simmonds and Higgins (2016) Fig 1 one-stage random effects differs from metafopy and R metafor
+
+<!-- doc-counts: accept-start found on 2026-11-14 - a dated record, not a claim about the present -->
+Found on 2026-11-14 by the case `glmm.published.simmonds2016.hrt.random.mismatch` (`agents/specs/correctness-glmm/mismatches.md`); the user answered
+*investigate* on 2026-11-14. The paper prints OR 1.74 (0.59, 5.17) for the one-stage random-effects model (`glmer`); metafopy and R metafor 5.2-1 give
+1.79068 (0.54155, 5.92107) for `UM.FS`, `ML` on the same data, with `tau2` 0.21307. The paper's random-effects result equals its fixed-effect result
+(1.74), which metafopy and R reproduce for `FE` (1.74126), so the paper's fit may have a `tau2` of zero.
+<!-- doc-counts: accept-end -->
+
+Fix direction: compare the marginal likelihood at `tau2 = 0` and at 0.213 with the formulas of `src/tests/correctness/glmm_formulas.py`; if the
+likelihood is higher at 0.213, record the printed value as a source difference (a `glmer` that stopped at `tau2 = 0`); otherwise fix metafopy.
+
+## Stijnen et al. (2010) Table VII treated arm, PN, differs from metafopy and R metafor
+
+<!-- doc-counts: accept-start found on 2026-11-14 - a dated record, not a claim about the present -->
+Found on 2026-11-14 by the case `glmm.published.stijnen2010.table7.pn.treated.mismatch` (`agents/specs/correctness-glmm/mismatches.md`); the user
+answered *investigate* on 2026-11-14. The printed values are log rate 0.850, standard error 0.330 and `tau2` 0.654; metafopy and R metafor 5.2-1 both
+give 0.81997, 0.31962 and 0.59899 (0.59898 in R) for `measure='IRLN'`, `method='ML'` on the treated data of Table VI. The control arm agrees to one unit
+of the last digit, so the difference is larger than rounding.
+<!-- doc-counts: accept-end -->
+
+Fix direction: check the transcription of the treated rows of Table VI against the paper, then the likelihood (SAS Proc NLMIXED against a Poisson
+log-normal model with an offset) with the formulas of `src/tests/correctness/glmm_formulas.py`; either correct the data, record the source difference
+with its reason, or fix metafopy.
+
+## Find the data behind Table 5 of Bagos and Nikolopoulos (2009)
+
+<!-- doc-counts: accept-start found on 2026-11-14 - a dated record, not a claim about the present -->
+Found on 2026-11-14 by Tasks 9 and 11 of `agents/tasks/correctness-glmm/tasks-1.md` (`agents/specs/correctness-glmm/mismatches.md`, decision D3); the
+user answered *investigate* on 2026-11-14. Bagos and Nikolopoulos (2009) Table 5 prints random-study-effects incidence rate ratios (Hooper 0.746 (0.592,
+0.940), school absences 0.721 (0.579, 0.897), ER visits 0.525 (0.361, 0.764)) but no per-study counts or person-times, so no Poisson case could be
+written. The Table 1 trial rows of Hooper et al. (2001) give an IRR of 0.859 (`UM.FS`) against the printed 0.819, and Wolf et al. (2003) prints means
+and standard deviations, not counts.
+<!-- doc-counts: accept-end -->
+
+Fix direction: find the original per-trial counts and person-times that reproduce Table 5 (the authors' supplementary data, or the primary trial
+reports), then write the published cases in `src/tests/correctness/cases/glmm_published.toml`.
+
