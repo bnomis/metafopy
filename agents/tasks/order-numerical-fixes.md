@@ -49,7 +49,7 @@ case is reported before it is set to `mismatch`. A probe of those cases passed o
 |---|---|---|---|---|
 | 1 | `audit-no-intercept/tasks-1.md` | - | - | merged 48f90df |
 | 2 | `fsn-integer-search/tasks-1.md` | - | - | merged e45bca9 |
-| 3 | `truncest-piecewise-search/tasks-1.md` | - | the truncation-point decision, answered on 2026-11-15, so a no-op (Task 1) | todo |
+| 3 | `truncest-piecewise-search/tasks-1.md` | - | the truncation-point decision, answered on 2026-11-15, so a no-op (Task 1) | running |
 | 4 | `cm-el-information/tasks-1.md` | - | - | todo |
 | 5 | `ls-identity-polish/tasks-1.md` | - | - | todo |
 | 6 | `ls-profile-crossings/tasks-1.md` | 5 | - | todo |
