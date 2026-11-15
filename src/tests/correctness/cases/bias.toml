@@ -213,3 +213,60 @@ args = { x = "yi", vi = "vi", exact = false }
 expect = { tau = "formulas.begg_tau", pval = "formulas.begg_pval" }
 check = "test_derived.kendall_z"
 covers = ["ranktest.pval.normal", "ranktest.tau"]
+
+# trimfill: Duval and Tweedie (2000) with the DerSimonian-Laird tau2 they use; the expected values come from `formulas.trimfill_*`. `beta` is the
+# pooled estimate over the observed and the mirrored studies.
+[[case]]
+id = "bias.trimfill.hackshaw1998.l0"
+kind = "derived"
+function = "trimfill"
+dataset = "dat.hackshaw1998"
+setup = { rma_uni = { method = "DL" } }
+args = { estimator = "L0" }
+expect = { k0 = "formulas.trimfill_k0", se_k0 = "formulas.trimfill_se_k0", beta = "formulas.trimfill_beta" }
+check = "test_derived.trimfill_filled"
+covers = ["trimfill.fill", "trimfill.k0.L0", "trimfill.se_k0.L0", "trimfill.side"]
+
+[[case]]
+id = "bias.trimfill.hackshaw1998.r0"
+kind = "derived"
+function = "trimfill"
+dataset = "dat.hackshaw1998"
+setup = { rma_uni = { method = "DL" } }
+args = { estimator = "R0" }
+expect = { k0 = "formulas.trimfill_k0", se_k0 = "formulas.trimfill_se_k0", p_k0 = "formulas.trimfill_p_k0", beta = "formulas.trimfill_beta" }
+check = "test_derived.trimfill_filled"
+covers = ["trimfill.fill", "trimfill.k0.R0", "trimfill.p_k0", "trimfill.se_k0.R0"]
+
+[[case]]
+id = "bias.trimfill.hackshaw1998.q0"
+kind = "derived"
+function = "trimfill"
+dataset = "dat.hackshaw1998"
+setup = { rma_uni = { method = "DL" } }
+args = { estimator = "Q0" }
+expect = { k0 = "formulas.trimfill_k0", se_k0 = "formulas.trimfill_se_k0", beta = "formulas.trimfill_beta" }
+check = "test_derived.trimfill_filled"
+covers = ["trimfill.fill", "trimfill.k0.Q0", "trimfill.se_k0.Q0"]
+
+[[case]]
+id = "bias.trimfill.bcg.r0.right"
+kind = "derived"
+function = "trimfill"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" }, rma_uni = { method = "DL" } }
+args = { estimator = "R0", side = "right" }
+expect = { k0 = "formulas.trimfill_k0", se_k0 = "formulas.trimfill_se_k0", p_k0 = "formulas.trimfill_p_k0", beta = "formulas.trimfill_beta" }
+check = "test_derived.trimfill_filled"
+covers = ["trimfill.fill"]
+
+[[case]]
+id = "bias.trimfill.bcg.l0"
+kind = "derived"
+function = "trimfill"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" }, rma_uni = { method = "DL" } }
+args = { estimator = "L0" }
+expect = { k0 = "formulas.trimfill_k0", se_k0 = "formulas.trimfill_se_k0", beta = "formulas.trimfill_beta" }
+check = "test_derived.trimfill_filled"
+covers = ["trimfill.fill", "trimfill.side"]

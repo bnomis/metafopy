@@ -3170,3 +3170,112 @@ def begg_pval(x: FloatArray, vi: FloatArray, exact: bool = True) -> float:
         upper = sum(counts[discordant:]) / total
         return min(1.0, 2 * min(lower, upper))
     return float(2 * scipy.stats.norm.sf(abs(begg_z(x, vi))))
+
+
+# Publication bias: the trim and fill method.
+
+
+def trimfill_pooled(yi: FloatArray, vi: FloatArray) -> float:
+    """The random-effects pooled estimate with the DerSimonian-Laird ``tau2`` (Duval and Tweedie, 2000, JASA 95:89-98, who use it in
+    their examples)."""
+    tau2 = rma_tau2(yi, vi, 'DL')
+    weights = 1 / (vi + tau2)
+    return float(numpy.sum(weights * yi) / numpy.sum(weights))
+
+
+def trimfill_side(yi: FloatArray, vi: FloatArray) -> str:
+    """The side of the funnel plot the studies are missing from: ``right`` when the slope of the random-effects meta-regression of the effects on their
+    standard errors is negative (small studies report smaller effects, so the larger ones are the missing), else ``left`` (the side Duval and Tweedie,
+    2000, take for their derivation; the rule that chooses between the two is the regression test of Egger et al., 1997, BMJ 315:629-634)."""
+    beta, _, _, _ = meta_regression_with_predictor(yi, vi, numpy.sqrt(vi), 'DL', 'z', 95)
+    return 'right' if beta[1] < 0 else 'left'
+
+
+def trimfill_variance_of_t(n: int, k0: float) -> float:
+    """``var[T_n]``, the variance of the sum of the ranks of the positive deviations of the ``n`` observed studies when ``k0`` are missing (Duval and
+    Tweedie, 2000, proof of Theorem 3): given the number ``g`` of the positive ranks the trimmed studies mirror, ``T_n = W + g (2n - g + 1) / 2`` with
+    ``W`` Wilcoxon-distributed over ``n - g`` ranks (mean ``m (m + 1) / 4``, variance ``m (m + 1) (2m + 1) / 24``), and ``g`` is negative binomial with
+    mean ``k0`` and variance ``2 k0``. The total variance is the mean of the Wilcoxon variance plus the variance of the conditional mean, both taken
+    over ``g`` from its raw moments, so ``k0`` need not be an integer."""
+    moments = [float(scipy.stats.nbinom(k0, 0.5).moment(order)) for order in range(5)]
+    moments[0] = 1.0
+
+    def expectation(polynomial: numpy.polynomial.Polynomial) -> float:
+        coefficients = numpy.asarray(polynomial.coef, dtype=numpy.float64)
+        return float(numpy.dot(coefficients, moments[: len(coefficients)]))
+
+    g = numpy.polynomial.Polynomial([0, 1])
+    m = n - g
+    wilcoxon_variance = m * (m + 1) * (2 * m + 1) / 24
+    conditional_mean = m * (m + 1) / 4 + g * (2 * n - g + 1) / 2
+    centred = conditional_mean - expectation(conditional_mean)
+    return expectation(wilcoxon_variance) + expectation(centred * centred)
+
+
+def trimfill_estimate(yi: FloatArray, vi: FloatArray, estimator: str, side: str | None) -> dict[str, typing.Any]:
+    """Duval and Tweedie's trim and fill (2000, Biometrics 56:455-463, JASA 95:89-98; Duval, 2005, for ``Q0``), iterated to a fixed point of the
+    rounded ``k0``: the effects are sorted so the missing studies are on the left, the ``k0`` largest are trimmed, the rest are pooled, the ranks of the
+    absolute deviations from that estimate give ``R0`` (the length of the run of positive ranks at the right end less one, ``n - r - 1`` for the
+    absolute rank ``r`` of the most negative deviation), ``L0 = (4 T - n (n + 1)) / (2n - 1)`` and ``Q0 = n - 1/2 - sqrt(2n^2 - 4T + 1/4)`` for the sum
+    ``T`` of the positive ranks (equations 5 and 6). The standard errors are ``sqrt(2 R0 + 2)`` for ``R0`` (Theorem 1a) and, from ``var[T_n]``,
+    ``4 sqrt(var) / (2n - 1)`` for ``L0`` and ``2 sqrt(var) / sqrt((n - 1/2)^2 - k0 (2n - k0 - 1))`` for ``Q0`` (equation 10). The filled studies mirror
+    the trimmed ones about the final estimate (the imputed effect ``2 mu - y`` with the variance of the study it mirrors)."""
+    chosen = trimfill_side(yi, vi) if side is None else side
+    sign = -1.0 if chosen == 'right' else 1.0
+    order = numpy.argsort(sign * yi, kind='stable')
+    x, v = sign * yi[order], vi[order]
+    n = len(x)
+    k0, previous = 0, -1
+    unrounded, se = 0.0, math.nan
+    centre = 0.0
+    while k0 != previous:
+        previous = k0
+        centre = trimfill_pooled(x[: n - k0], v[: n - k0])
+        deviation = x - centre
+        ranks = scipy.stats.rankdata(numpy.abs(deviation))
+        if estimator == 'R0':
+            negative = ranks[deviation < 0]
+            unrounded = float(n - negative.max() - 1)
+            se = math.sqrt(2 * max(0.0, unrounded) + 2)
+        else:
+            total = float(ranks[deviation > 0].sum())
+            if estimator == 'L0':
+                unrounded = (4 * total - n * (n + 1)) / (2 * n - 1)
+            else:
+                unrounded = n - 1 / 2 - math.sqrt(2 * n**2 - 4 * total + 1 / 4)
+            variance = trimfill_variance_of_t(n, unrounded)
+            if estimator == 'L0':
+                se = 4 * math.sqrt(variance) / (2 * n - 1)
+            else:
+                se = 2 * math.sqrt(variance) / math.sqrt((n - 1 / 2) ** 2 - unrounded * (2 * n - unrounded - 1))
+        k0 = max(0, round(unrounded))
+    mirrored = sign * (2 * centre - x[n - k0 :]) if k0 > 0 else numpy.zeros(0)
+    filled_v = v[n - k0 :] if k0 > 0 else numpy.zeros(0)
+    pooled = trimfill_pooled(numpy.concatenate([yi, mirrored]), numpy.concatenate([vi, filled_v]))
+    return {'k0': k0, 'se_k0': max(0.0, se), 'side': chosen, 'fill_yi': mirrored, 'fill_vi': filled_v, 'beta': pooled}
+
+
+def trimfill_of(data: typing.Any, estimator: str, side: str | None) -> dict[str, typing.Any]:
+    """``trimfill_estimate`` on the ``yi`` and ``vi`` columns of a frame."""
+    return trimfill_estimate(data['yi'].to_numpy(dtype=numpy.float64), data['vi'].to_numpy(dtype=numpy.float64), estimator, side)
+
+
+def trimfill_k0(data: typing.Any, estimator: str = 'L0', side: str | None = None) -> float:
+    """The estimated number of missing studies of ``trimfill_estimate``."""
+    return float(trimfill_of(data, estimator, side)['k0'])
+
+
+def trimfill_se_k0(data: typing.Any, estimator: str = 'L0', side: str | None = None) -> float:
+    """The standard error of the estimated number of missing studies of ``trimfill_estimate``."""
+    return float(trimfill_of(data, estimator, side)['se_k0'])
+
+
+def trimfill_beta(data: typing.Any, estimator: str = 'L0', side: str | None = None) -> float:
+    """The pooled estimate over the observed and the filled studies of ``trimfill_estimate``."""
+    return float(trimfill_of(data, estimator, side)['beta'])
+
+
+def trimfill_p_k0(data: typing.Any, estimator: str = 'R0', side: str | None = None) -> float:
+    """The p-value of the test of no missing studies with ``R0``: under ``k0 = 0`` the run ``gamma*`` of positive ranks is negative binomial with one
+    tail (``P(gamma* = g) = 2^-(g+1)``; Duval and Tweedie, 2000, Theorem 2), ``R0 = gamma* - 1``, so the p-value is ``P(gamma* >= R0 + 1)``."""
+    return float(scipy.stats.nbinom.sf(trimfill_of(data, estimator, side)['k0'], 1, 0.5))

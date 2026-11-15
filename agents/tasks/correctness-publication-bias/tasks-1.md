@@ -148,7 +148,7 @@ formulas coded from the publications.
 
 ## Task 3: Derived cases - `trimfill`
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** API (`trimfill_filled`); Coverage list (trimfill); Implementation steps 2 and 3 (`p_k0`)
@@ -158,25 +158,25 @@ formulas coded from the publications.
 
 **Subtasks:**
 
-- [ ] `formulas.py`: the L0 and R0 estimators and their standard errors (Duval and Tweedie 2000, Biometrics and JASA), Q0 (Duval 2005), the R0 null
+- [x] `formulas.py`: the L0 and R0 estimators and their standard errors (Duval and Tweedie 2000, Biometrics and JASA), Q0 (Duval 2005), the R0 null
       distribution (Duval and Tweedie 2000, JASA), the side rule, and the filling of mirrored studies
-- [ ] `test_derived.py`: `trimfill_filled`, comparing the filled effects and variances order-free
-- [ ] `derived` cases with `setup.rma_uni` on `dat.hackshaw1998` and one dataset where the missing studies are on the other side; items
+- [x] `test_derived.py`: `trimfill_filled`, comparing the filled effects and variances order-free
+- [x] `derived` cases with `setup.rma_uni` on `dat.hackshaw1998` and one dataset where the missing studies are on the other side; items
       `trimfill.k0.<estimator>`, `trimfill.se_k0.<estimator>`, `trimfill.p_k0`, `trimfill.side`, `trimfill.fill`
-- [ ] Check `p_k0` against the R0 null distribution read from the JASA paper; the code (as read 2026-11-14,
+- [x] Check `p_k0` against the R0 null distribution read from the JASA paper; the code (as read 2026-11-14,
       `src/metafopy/bias/trimfill.py`) computes it as `1 - sum(comb(m + 1, m + 1) * 0.5 ** (m + 2) for m in range(-1, k0))`, which is
       `0.5 ** (k0 + 1)`. Any disagreement is a mismatch
-- [ ] Record any mismatch as the header says
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] The bias gate's missing list names no `trimfill.*` item
+- [x] The bias gate's missing list names no `trimfill.*` item
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 

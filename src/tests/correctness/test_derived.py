@@ -94,6 +94,22 @@ def kendall_z(case: correctness.cases.Case, result: typing.Any) -> None:
     numbers_agree(case, 'normal p-value from Z', 2 * scipy.stats.norm.sf(abs(z)), result.pval)
 
 
+def trimfill_filled(case: correctness.cases.Case, result: typing.Any) -> None:
+    """The side chosen, and the filled effects and variances (compared order-free) of Duval and Tweedie's trim and fill (2000)."""
+    frame = correctness.cases.case_frame(case)
+    assert frame is not None
+    expected = correctness.formulas.trimfill_of(frame, case.args.get('estimator', 'L0'), case.args.get('side'))
+    if result.side != expected['side']:
+        raise AssertionError(f'{case.id}: side: metafopy gives {result.side!r}, the reference gives {expected["side"]!r}')
+    filled = numpy.asarray(result.fill, dtype=bool)
+    pairs = sorted(zip(numpy.asarray(result.yi)[filled], numpy.asarray(result.vi)[filled], strict=True))
+    reference = sorted(zip(expected['fill_yi'], expected['fill_vi'], strict=True))
+    if len(pairs) != len(reference):
+        raise AssertionError(f'{case.id}: filled studies: metafopy fills {len(pairs)}, the reference fills {len(reference)}')
+    numbers_agree(case, 'filled effects', [p[0] for p in pairs], [r[0] for r in reference])
+    numbers_agree(case, 'filled variances', [p[1] for p in pairs], [r[1] for r in reference])
+
+
 MV_TERM = re.compile(r'~\s*([\w.]+(?:\s*\+\s*[\w.]+)*)\s*\|\s*([\w.]+)(?:\s*/\s*([\w.]+))?')
 MV_COMPONENT_TOLERANCE = 1e-6
 MV_LOGLIK_EXCESS = 1e-8
