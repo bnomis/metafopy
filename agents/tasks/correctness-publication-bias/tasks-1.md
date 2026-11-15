@@ -303,7 +303,7 @@ common to every `selmodel` type.
 
 ## Task 7: Published cases - tests, trim and fill, fail-safe N, TES and Henmi-Copas
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** Seed sources; Implementation step 3
@@ -313,28 +313,28 @@ read.
 
 **Subtasks:**
 
-- [ ] Check the prerequisite: `grep -n 'def ' src/tests/correctness/test_derived.py` lists the back-transform check that the
+- [x] Check the prerequisite: `grep -n 'def ' src/tests/correctness/test_derived.py` lists the back-transform check that the
       `correctness-harness-checks` list adds. Stop as `blocked`, naming that list, if it does not
-- [ ] Borenstein et al. (2009) ch. 30 on `dat.hackshaw1998` (Rosenthal 398, Orwin 103, Begg, Egger, trim and fill; pooled ratios through the
+- [x] Borenstein et al. (2009) ch. 30 on `dat.hackshaw1998` (Rosenthal 398, Orwin 103, Begg, Egger, trim and fill; pooled ratios through the
       back-transform check) and Sutton (2009) ch. 23 on `dat.raudenbush1985`, from the folder
-- [ ] Egger et al. (1997, PMC2127453) on `dat.egger2001`, Moreno et al. (2009, PMC2649158), and then every other seed source of these functions in the
+- [x] Egger et al. (1997, PMC2127453) on `dat.egger2001`, Moreno et al. (2009, PMC2649158), and then every other seed source of these functions in the
       folder, one source at a time
-- [ ] A source using another convention (a two-tailed alpha for Rosenthal; Peters' weights) sets the case's `args` to it where metafopy offers it and
+- [x] A source using another convention (a two-tailed alpha for Rosenthal; Peters' weights) sets the case's `args` to it where metafopy offers it and
       its `source` says so; where metafopy cannot express it, it is a mismatch item
-- [ ] Values written as printed, as strings, in `cases/published.toml` or `cases/bias.toml`, each with `citation`, `locator` and `read`
-- [ ] A source that cannot be read or does not reproduce its data goes under "Sources needed" in `mismatches.md`
-- [ ] Record any mismatch as the header says
+- [x] Values written as printed, as strings, in `cases/published.toml` or `cases/bias.toml`, each with `citation`, `locator` and `read`
+- [x] A source that cannot be read or does not reproduce its data goes under "Sources needed" in `mismatches.md`
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] Every seed source of these functions has `published` cases or a "Sources needed" row
-- [ ] Every `published` case has `citation`, `locator` and `read`
+- [x] Every seed source of these functions has `published` cases or a "Sources needed" row
+- [x] Every `published` case has `citation`, `locator` and `read`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_published.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_published.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 

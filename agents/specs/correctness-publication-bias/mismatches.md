@@ -92,6 +92,34 @@ and the page; the items below are appended by the case-writing tasks as they fin
   (the case becomes an exemption "defined only in metafor's code; R parity covers it", with a note that the optimum is local); investigate (install R
   metafor and run this case first).
 
+### Published values that differ from metafopy in the last printed digit or two (Task 7)
+
+- **Cases** (strict expected failures in `src/tests/correctness/cases/bias.toml`): `published.borenstein2009.hackshaw1998.rosenthal`,
+  `published.borenstein2009.hackshaw1998.orwin`, `published.borenstein2009.hackshaw1998.trimfill.limits`,
+  `published.sutton2009.raudenbush1985.ranktest`, `published.sutton2009.raudenbush1985.trimfill.limit`, `published.sterne2005.hackshaw1998.regtest`,
+  `published.sterne2005.raudenbush1985.ranktest`, `published.sterne2005.raudenbush1985.regtest`, `published.henmi2010.lee2004.dl.limit`.
+- **Sources:** Borenstein et al. (2009) chapter 30 (doi:10.1002/9780470743386); Sutton (2009) chapter 23 of the Handbook of Research Synthesis and
+  Meta-Analysis; Sterne and Egger (2005) Table 6.2 (doi:10.1002/0470870168.ch6); Henmi and Copas (2010) section 5 (doi:10.1002/sim.4029).
+- **Reference and metafopy values:**
+
+  | Case | Printed | metafopy |
+  |---|---|---|
+  | Rosenthal fail-safe N, passive smoking | 398 | 393 (metafor's parity fixture `src/tests/reference/phase2/bias.json` also 393) |
+  | Orwin fail-safe N, target risk ratio 1.05 | 103 | 104 (103.9 rounded up) |
+  | trim and fill limits, passive smoking | 0.085 to 0.227 (1.089 to 1.254) | 0.0842 to 0.2270 (1.0878 to 1.2548) |
+  | rank test p, teacher expectancy (Sutton) | 0.08 (Z = 1.75) | 0.0740 (Z = 1.79) |
+  | trim and fill lower limit, teacher expectancy | -0.045 | -0.0444 |
+  | regression test p, passive smoking | 0.024 | 0.0228 |
+  | rank correlation and p, teacher expectancy (Sterne) | 0.29 and 0.086 | 0.300 and 0.0740 |
+  | regression test p, teacher expectancy (Sterne) | 0.055 | 0.0574 (Sutton prints 0.057) |
+  | DerSimonian-Laird lower limit, acupoint review | -1.06 | -1.0664 |
+
+- **Cause:** not investigated further. The sources were computed by other programs (a commercial package for the book; unknown for the rest), and two
+  of them (Sutton and Sterne) disagree with each other on the same data. Where the same source prints other values of the same fit, those agree (the
+  passing cases beside each). R metafor was not run on these cases (it is not installed in the session's R).
+- **Options:** follow the reference (a `TODO.md` item per case after finding which step differs); keep metafor (the cases become exemptions or are
+  loosened to the sources' digits, citing this item); investigate (install R metafor and run each first).
+
 ## Decisions
 
 Added by Task 6; Task 13 completes the section with background and the page.
@@ -114,4 +142,18 @@ Added by Task 6; Task 13 completes the section with background and the page.
 
 ## Sources needed
 
-None found by Task 4.
+Found by Task 7 (read 2026-11-15; PDFs in `/Users/simonb/src/metafopy papers`). No `published` case is written for these:
+
+| Source | Why no case |
+|---|---|
+| Egger et al. (1997), BMJ 315:629-634, PMC2127453 | not in the folder; the PMC page fetched by the session gave only the abstract, which prints no value of `regtest` or `ranktest` |
+| Sterne and Egger (2005), chapter 6, magnesium trials (text of the rank and regression tests) | the printed rank correlation, p-values and bias coefficient do not reproduce on `dat.egger2001` (for example p = 0.009 against metafopy's 0.0073 without ISIS-4), so the dataset is not the chapter's; the text extraction also lost its decimal points |
+| Begg and Mazumdar (1994), examples 1 and 2 | the appendix data are printed rounded and the printed Z (1.76 and 0.19) does not reproduce (1.60 and 0.26); example 3 is a stratified test metafopy does not offer |
+| Macaskill et al. (2001), Peters et al. (2006), Moreno et al. (2009), Pustejovsky and Rodgers (2019) | simulation studies with no worked example on data |
+| Stanley and Doucouliagos (2014) | worked examples use data sets that are neither bundled nor printed |
+| Duval and Tweedie (2000), JASA | the two examples' data are not printed and not bundled |
+| Duval (2005), tables 8.3 and 8.4 | the printed overall estimates of Table 8.4 match no heterogeneity estimator, and k0 disagrees in three of the four subgroups of Table 8.3; the subgroup split of Table 8.4 also needs a range filter the harness lacks |
+| Becker (2005), Fisher pooling and tables 7.2 and 7.3 | Becker's Fisher fail-safe N follows another definition (18 and 79 against metafopy's 37 and 100); the 37 rows of Table 7.2 were not typed in |
+| Rosenthal (1979) large examples; Orwin (1983) | the figures depend on a mean effect over thousands of studies (not expressible as study data) and on rounding down against metafopy's rounding up (3263 against 3264; 1236 against 1237) |
+| Rosenberg (2005) | no worked example reproducible by `fsn` |
+| Ioannidis and Trikalinos (2007) | the study-level data of its meta-analyses are not printed |

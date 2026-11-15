@@ -511,3 +511,466 @@ expect = { beta = "formulas.hc_beta", tau2 = "formulas.hc_tau2" }
 check = "test_derived.hc_interval"
 tolerance = 0.00001
 covers = ["hc.ci", "hc.estimate"]
+
+# Published cases (Task 7 of the publication-bias task list). Values are written as printed; each source's data were checked against the bundled dataset
+# before the case was written (same studies and the same pooled estimate to the printed digits).
+
+# Borenstein et al. (2009), chapter 30, on dat.hackshaw1998 (37 studies, passive smoking and lung cancer, fixed-effect model).
+[[case]]
+id = "published.borenstein2009.hackshaw1998.rosenthal"
+kind = "published"
+function = "fsn"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", type = "Rosenthal" }
+expect = { fsnum = "398" }
+status = "mismatch"
+reason = "the book prints 398; metafopy gives 393, as does the R parity fixture src/tests/reference/phase2/bias.json (metafor). The book's value comes from its own software's z-scores of the 37 studies; the same formula with metafopy's z-scores and a one-sided alpha of 0.05 gives 393"
+covers = ["fsn.Rosenthal"]
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Wiley, Chichester."
+locator = "Chapter 30, Rosenthal's Fail-safe N (p. 285) and the summary on p. 289 (passive smoking review: 398)"
+read = 2026-11-15
+doi = "10.1002/9780470743386"
+
+[[case]]
+id = "published.borenstein2009.hackshaw1998.orwin"
+kind = "published"
+function = "fsn"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", type = "Orwin", target = 0.04879016416943205, mumiss = 0 }
+expect = { fsnum = "103" }
+status = "mismatch"
+reason = "the book prints 103 for a trivial risk ratio of 1.05 (log 0.04879) and missing studies with a mean risk ratio of 1.0; metafopy gives 104 (k (0.18576 - 0.04879) / 0.04879 = 103.9, rounded up as metafor does; the book's value is that figure rounded down or computed from its own pooled estimate)"
+covers = ["fsn.Orwin"]
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Wiley, Chichester."
+locator = "Chapter 30, Orwin's Fail-safe N (p. 285) and the summary on p. 289 (passive smoking review: 103; target risk ratio 1.05, mean of missing studies 1.0)"
+read = 2026-11-15
+doi = "10.1002/9780470743386"
+
+[[case]]
+id = "published.borenstein2009.hackshaw1998.trimfill"
+kind = "published"
+function = "trimfill"
+dataset = "dat.hackshaw1998"
+setup = { rma_uni = { method = "FE" } }
+args = { estimator = "L0" }
+expect = { k0 = "7", beta = "0.156", ci_ub = "0.227" }
+covers = ["trimfill.k0.L0"]
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Wiley, Chichester."
+locator = "Chapter 30, Duval and Tweedie's Trim and Fill (p. 287, Figure 30.3 text): seven imputed studies; adjusted log risk ratio 0.156 (0.085, 0.227), risk ratio 1.169 (1.089, 1.254); this case holds the values metafopy reproduces"
+read = 2026-11-15
+doi = "10.1002/9780470743386"
+
+[[case]]
+id = "published.borenstein2009.hackshaw1998.trimfill.limits"
+kind = "published"
+function = "trimfill"
+dataset = "dat.hackshaw1998"
+setup = { rma_uni = { method = "FE" } }
+args = { estimator = "L0" }
+expect = { ci_lb = "0.085" }
+check = "test_published.back_transformed"
+printed = { exp_beta = "1.169", exp_ci_lb = "1.089", exp_ci_ub = "1.254" }
+status = "mismatch"
+reason = "the book prints the adjusted interval 0.085 to 0.227 (risk ratio 1.169, 1.089 to 1.254); metafopy gives 0.0842 to 0.2270 (1.1684, 1.0878 to 1.2548). The book's unadjusted interval 0.113 to 0.258 (1.120 to 1.295) also differs from metafopy's 0.1126 to 0.2589 (1.1192 to 1.2955) in the third digit, so the two programs' inputs (odds ratios rounded to three digits) differ slightly"
+covers = ["trimfill.k0.L0"]
+
+[case.source]
+citation = "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). Introduction to Meta-Analysis. Wiley, Chichester."
+locator = "Chapter 30, Duval and Tweedie's Trim and Fill (p. 287): the interval limits of the adjusted estimate"
+read = 2026-11-15
+doi = "10.1002/9780470743386"
+
+# Sutton (2009), chapter 23, on dat.raudenbush1985 (19 studies, teacher expectancy, fixed-effect model).
+[[case]]
+id = "published.sutton2009.raudenbush1985.fixed"
+kind = "published"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "FE" }
+expect = { "beta[0]" = "0.060", "se[0]" = "0.036", "ci_ub[0]" = "0.132" }
+covers = ["tau2.FE"]
+
+[case.source]
+citation = "Sutton AJ (2009). Publication bias. In Cooper H, Hedges LV, Valentine JC (eds), The Handbook of Research Synthesis and Meta-Analysis, 2nd ed., pp. 435-452. Russell Sage Foundation, New York."
+locator = "Chapter 23, Example under Trim and Fill (p. 446): fixed-effect pooled estimate 0.060 (95 percent CI -0.011 to 0.132) and Table 23.1"
+read = 2026-11-15
+
+[[case]]
+id = "published.sutton2009.raudenbush1985.regtest"
+kind = "published"
+function = "regtest"
+dataset = "dat.raudenbush1985"
+args = { x = "yi", vi = "vi", model = "lm", predictor = "sei" }
+expect = { pval = "0.057" }
+covers = ["regtest.lm.sei"]
+
+[case.source]
+citation = "Sutton AJ (2009). Publication bias. In Cooper H, Hedges LV, Valentine JC (eds), The Handbook of Research Synthesis and Meta-Analysis, 2nd ed., pp. 435-452. Russell Sage Foundation, New York."
+locator = "Chapter 23, Example: Effects of Teacher Expectancy on Pupil IQ, Egger's regression test (p. 442) and Table 23.1: p = 0.057"
+read = 2026-11-15
+
+[[case]]
+id = "published.sutton2009.raudenbush1985.ranktest"
+kind = "published"
+function = "ranktest"
+dataset = "dat.raudenbush1985"
+args = { x = "yi", vi = "vi", exact = false }
+expect = { pval = "0.08" }
+status = "mismatch"
+reason = "the chapter prints a rank correlation test statistic Z = 1.75 and p = 0.08; metafopy gives Kendall's tau 0.30000 and p = 0.0740 (Z = 1.79: concordant minus discordant pairs 51 against the chapter's implied 50)"
+covers = ["ranktest.pval.normal"]
+
+[case.source]
+citation = "Sutton AJ (2009). Publication bias. In Cooper H, Hedges LV, Valentine JC (eds), The Handbook of Research Synthesis and Meta-Analysis, 2nd ed., pp. 435-452. Russell Sage Foundation, New York."
+locator = "Chapter 23, Example: Effects of Teacher Expectancy on Pupil IQ, rank correlation test (p. 440): Z = 1.75, p = 0.08"
+read = 2026-11-15
+
+[[case]]
+id = "published.sutton2009.raudenbush1985.rosenthal"
+kind = "published"
+function = "fsn"
+dataset = "dat.raudenbush1985"
+args = { x = "yi", vi = "vi", type = "Rosenthal", alpha = 0.025 }
+expect = { fsnum = "13" }
+covers = ["fsn.Rosenthal"]
+
+[case.source]
+citation = "Sutton AJ (2009). Publication bias. In Cooper H, Hedges LV, Valentine JC (eds), The Handbook of Research Synthesis and Meta-Analysis, 2nd ed., pp. 435-452. Russell Sage Foundation, New York."
+locator = "Chapter 23, 23.4.1 Fail Safe N, Example (p. 443): sum of z-scores 11.03, k0 = (11.03/1.96)^2 - 19, 13 studies; the chapter's two-tailed 1.96 is metafor's one-sided alpha of 0.025"
+read = 2026-11-15
+
+[[case]]
+id = "published.sutton2009.raudenbush1985.trimfill"
+kind = "published"
+function = "trimfill"
+dataset = "dat.raudenbush1985"
+setup = { rma_uni = { method = "FE" } }
+args = { estimator = "L0" }
+expect = { k0 = "3", beta = "0.025", se = "0.036", ci_ub = "0.095" }
+covers = ["trimfill.k0.L0"]
+
+[case.source]
+citation = "Sutton AJ (2009). Publication bias. In Cooper H, Hedges LV, Valentine JC (eds), The Handbook of Research Synthesis and Meta-Analysis, 2nd ed., pp. 435-452. Russell Sage Foundation, New York."
+locator = "Chapter 23, 23.4.2 Trim and Fill, Example (p. 446) and Table 23.1: three studies missing, 0.060 (s.e. 0.036) to 0.025 (s.e. 0.036), 95 percent CI after filling -0.045 to 0.095 (this case holds the values metafopy reproduces)"
+read = 2026-11-15
+
+[[case]]
+id = "published.sutton2009.raudenbush1985.trimfill.limit"
+kind = "published"
+function = "trimfill"
+dataset = "dat.raudenbush1985"
+setup = { rma_uni = { method = "FE" } }
+args = { estimator = "L0" }
+expect = { ci_lb = "-0.045" }
+status = "mismatch"
+reason = "the chapter prints the lower limit after filling as -0.045; metafopy gives -0.0444, which prints as -0.044 (the chapter's other printed values of this fit agree)"
+covers = ["trimfill.k0.L0"]
+
+[case.source]
+citation = "Sutton AJ (2009). Publication bias. In Cooper H, Hedges LV, Valentine JC (eds), The Handbook of Research Synthesis and Meta-Analysis, 2nd ed., pp. 435-452. Russell Sage Foundation, New York."
+locator = "Chapter 23, 23.4.2 Trim and Fill, Example (p. 446): the lower limit of the adjusted interval"
+read = 2026-11-15
+
+# Henmi and Copas (2010), section 5, on dat.lee2004 (16 trials of P6 acupoint stimulation, log odds ratios, DerSimonian-Laird tau2). The paper shows the
+# trials only in its Figure 5; the dataset is matched by the trial count, the printed estimate -0.68 and the printed tau2 0.33.
+[[case]]
+id = "published.henmi2010.lee2004.dl"
+kind = "published"
+function = "rma_uni"
+dataset = "dat.lee2004"
+setup = { escalc = { measure = "OR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i" } }
+args = { yi = "yi", vi = "vi", method = "DL" }
+expect = { "beta[0]" = "-0.68", tau2 = "0.33", "ci_ub[0]" = "-0.29" }
+covers = ["tau2.DL"]
+
+[case.source]
+citation = "Henmi M, Copas JB (2010). Confidence intervals for random effects meta-analysis and robustness to publication bias. Statistics in Medicine 29(29):2969-2983."
+locator = "Section 5, p. 2978: random effects estimate -0.68, tau2 = 0.33, DerSimonian-Laird interval (-1.06, -0.29) (this case holds the values metafopy reproduces)"
+read = 2026-11-15
+doi = "10.1002/sim.4029"
+
+[[case]]
+id = "published.henmi2010.lee2004.dl.limit"
+kind = "published"
+function = "rma_uni"
+dataset = "dat.lee2004"
+setup = { escalc = { measure = "OR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i" } }
+args = { yi = "yi", vi = "vi", method = "DL" }
+expect = { "ci_lb[0]" = "-1.06" }
+status = "mismatch"
+reason = "the paper prints the lower limit of the DerSimonian-Laird interval as -1.06; metafopy gives -1.0664 (-1.07 when rounded), its upper limit -0.2911 agrees with the printed -0.29"
+covers = ["tau2.DL"]
+
+[case.source]
+citation = "Henmi M, Copas JB (2010). Confidence intervals for random effects meta-analysis and robustness to publication bias. Statistics in Medicine 29(29):2969-2983."
+locator = "Section 5, p. 2978: DerSimonian-Laird interval (-1.06, -0.29)"
+read = 2026-11-15
+doi = "10.1002/sim.4029"
+
+[[case]]
+id = "published.henmi2010.lee2004.hc"
+kind = "published"
+function = "hc"
+dataset = "dat.lee2004"
+setup = { escalc = { measure = "OR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i" }, rma_uni = { method = "DL" } }
+args = {}
+expect = { ci_lb = "-1.00", ci_ub = "-0.03" }
+covers = ["hc.ci"]
+
+[case.source]
+citation = "Henmi M, Copas JB (2010). Confidence intervals for random effects meta-analysis and robustness to publication bias. Statistics in Medicine 29(29):2969-2983."
+locator = "Section 5, p. 2978: the Henmi-Copas interval (-1.00, -0.03)"
+read = 2026-11-15
+doi = "10.1002/sim.4029"
+
+# Sterne and Egger (2005), chapter 6, Table 6.2 (p. 108-109): the rank correlation and regression tests on the passive smoking (dat.hackshaw1998, 37 studies)
+# and teacher expectancy (dat.raudenbush1985, 19 studies) reviews. The chapter does not list the studies; the datasets are matched by the printed rank
+# correlation and the p-values of the regression tests (the rank correlation of the first agrees to the printed digits).
+[[case]]
+id = "published.sterne2005.hackshaw1998.ranktest"
+kind = "published"
+function = "ranktest"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", exact = false }
+expect = { tau = "0.14", pval = "0.21" }
+covers = ["ranktest.tau", "ranktest.pval.normal"]
+
+[case.source]
+citation = "Sterne JAC, Egger M (2005). Regression methods to detect publication and other bias in meta-analysis. In Rothstein HR, Sutton AJ, Borenstein M (eds), Publication Bias in Meta-Analysis, pp. 99-110. Wiley, Chichester."
+locator = "Table 6.2, passive smoking and lung cancer: rank correlation 0.14, p = 0.21"
+read = 2026-11-15
+doi = "10.1002/0470870168.ch6"
+
+[[case]]
+id = "published.sterne2005.hackshaw1998.regtest"
+kind = "published"
+function = "regtest"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", model = "lm", predictor = "sei" }
+expect = { pval = "0.024" }
+status = "mismatch"
+reason = "Table 6.2 prints the p-value of the regression test as 0.024 (bias coefficient 0.89, 95% CI 0.13 to 1.66); metafopy gives p = 0.0228 and a coefficient of 0.902 (0.133 to 1.670) on the same 37 studies, whose rank correlation 0.14 agrees"
+covers = ["regtest.lm.sei"]
+
+[case.source]
+citation = "Sterne JAC, Egger M (2005). Regression methods to detect publication and other bias in meta-analysis. In Rothstein HR, Sutton AJ, Borenstein M (eds), Publication Bias in Meta-Analysis, pp. 99-110. Wiley, Chichester."
+locator = "Table 6.2, passive smoking and lung cancer: regression test p = 0.024"
+read = 2026-11-15
+doi = "10.1002/0470870168.ch6"
+
+[[case]]
+id = "published.sterne2005.raudenbush1985.ranktest"
+kind = "published"
+function = "ranktest"
+dataset = "dat.raudenbush1985"
+args = { x = "yi", vi = "vi", exact = false }
+expect = { tau = "0.29", pval = "0.086" }
+status = "mismatch"
+reason = "Table 6.2 prints a rank correlation of 0.29 with p = 0.086 for the teacher expectancy review; metafopy gives 0.300 and p = 0.0740 (the Handbook chapter by Sutton prints p = 0.08 for the same test, Z = 1.75)"
+covers = ["ranktest.tau", "ranktest.pval.normal"]
+
+[case.source]
+citation = "Sterne JAC, Egger M (2005). Regression methods to detect publication and other bias in meta-analysis. In Rothstein HR, Sutton AJ, Borenstein M (eds), Publication Bias in Meta-Analysis, pp. 99-110. Wiley, Chichester."
+locator = "Table 6.2, teacher expectancy: rank correlation 0.29, p = 0.086"
+read = 2026-11-15
+doi = "10.1002/0470870168.ch6"
+
+[[case]]
+id = "published.sterne2005.raudenbush1985.regtest"
+kind = "published"
+function = "regtest"
+dataset = "dat.raudenbush1985"
+args = { x = "yi", vi = "vi", model = "lm", predictor = "sei" }
+expect = { pval = "0.055" }
+status = "mismatch"
+reason = "Table 6.2 prints the p-value of the regression test as 0.055 (coefficient 1.58, 95% CI -0.04 to 3.20); metafopy gives 0.0574 (coefficient 1.624, -0.057 to 3.306), which Sutton's Handbook chapter prints as 0.057"
+covers = ["regtest.lm.sei"]
+
+[case.source]
+citation = "Sterne JAC, Egger M (2005). Regression methods to detect publication and other bias in meta-analysis. In Rothstein HR, Sutton AJ, Borenstein M (eds), Publication Bias in Meta-Analysis, pp. 99-110. Wiley, Chichester."
+locator = "Table 6.2, teacher expectancy: regression test p = 0.055"
+read = 2026-11-15
+doi = "10.1002/0470870168.ch6"
+
+# Duval and Tweedie (2000), Biometrics 56:455-463, Example 1 (teacher expectancy, dat.raudenbush1985), DerSimonian-Laird random-effects model.
+[[case]]
+id = "published.duval2000.raudenbush1985.dl"
+kind = "published"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "DL" }
+expect = { "beta[0]" = "0.089", "ci_lb[0]" = "-0.020", "ci_ub[0]" = "0.199" }
+covers = ["tau2.DL"]
+
+[case.source]
+citation = "Duval S, Tweedie R (2000). Trim and fill: a simple funnel-plot-based method of testing and adjusting for publication bias in meta-analysis. Biometrics 56(2):455-463."
+locator = "Example 1, p. 461: random-effects overall estimate 0.089 (-0.020, 0.199)"
+read = 2026-11-15
+doi = "10.1111/j.0006-341X.2000.00455.x"
+
+[[case]]
+id = "published.duval2000.raudenbush1985.l0"
+kind = "published"
+function = "trimfill"
+dataset = "dat.raudenbush1985"
+setup = { rma_uni = { method = "DL" } }
+args = { estimator = "L0" }
+expect = { k0 = "3", se_k0 = "2.9", beta = "0.027", ci_lb = "-0.100", ci_ub = "0.155" }
+covers = ["trimfill.k0.L0", "trimfill.se_k0.L0"]
+
+[case.source]
+citation = "Duval S, Tweedie R (2000). Trim and fill: a simple funnel-plot-based method of testing and adjusting for publication bias in meta-analysis. Biometrics 56(2):455-463."
+locator = "Example 1, p. 461: L0+ = 3 (SE 2.9); estimate after filling 0.027 (-0.100, 0.155)"
+read = 2026-11-15
+doi = "10.1111/j.0006-341X.2000.00455.x"
+
+[[case]]
+id = "published.duval2000.raudenbush1985.r0"
+kind = "published"
+function = "trimfill"
+dataset = "dat.raudenbush1985"
+setup = { rma_uni = { method = "DL" } }
+args = { estimator = "R0" }
+expect = { k0 = "2", se_k0 = "2.4" }
+covers = ["trimfill.k0.R0", "trimfill.se_k0.R0"]
+
+[case.source]
+citation = "Duval S, Tweedie R (2000). Trim and fill: a simple funnel-plot-based method of testing and adjusting for publication bias in meta-analysis. Biometrics 56(2):455-463."
+locator = "Example 1, p. 461: R0+ = 2 (SE 2.4)"
+read = 2026-11-15
+doi = "10.1111/j.0006-341X.2000.00455.x"
+
+[[case]]
+id = "published.duval2000.raudenbush1985.q0"
+kind = "published"
+function = "trimfill"
+dataset = "dat.raudenbush1985"
+setup = { rma_uni = { method = "DL" } }
+args = { estimator = "Q0" }
+expect = { k0 = "6" }
+covers = ["trimfill.k0.Q0"]
+
+[case.source]
+citation = "Duval S, Tweedie R (2000). Trim and fill: a simple funnel-plot-based method of testing and adjusting for publication bias in meta-analysis. Biometrics 56(2):455-463."
+locator = "Example 1, p. 461: Q0+ = 6"
+read = 2026-11-15
+doi = "10.1111/j.0006-341X.2000.00455.x"
+
+# Duval (2005), chapter 8, Table 8.2 (passive smoking, dat.hackshaw1998, 37 studies), DerSimonian-Laird, risk ratios.
+[[case]]
+id = "published.duval2005.hackshaw1998.observed"
+kind = "published"
+function = "rma_uni"
+dataset = "dat.hackshaw1998"
+args = { yi = "yi", vi = "vi", method = "DL" }
+check = "test_published.back_transformed"
+printed = { exp_beta = "1.24", exp_ci_lb = "1.13", exp_ci_ub = "1.36" }
+covers = ["tau2.DL"]
+
+[case.source]
+citation = "Duval S (2005). The trim and fill method. In Rothstein HR, Sutton AJ, Borenstein M (eds), Publication Bias in Meta-Analysis, pp. 127-144. Wiley, Chichester."
+locator = "Table 8.2, passive smoking: observed risk ratio 1.24 (1.13, 1.36)"
+read = 2026-11-15
+doi = "10.1002/0470870168.ch8"
+
+[[case]]
+id = "published.duval2005.hackshaw1998.l0"
+kind = "published"
+function = "trimfill"
+dataset = "dat.hackshaw1998"
+setup = { rma_uni = { method = "DL" } }
+args = { estimator = "L0" }
+expect = { k0 = "7" }
+check = "test_published.back_transformed"
+printed = { exp_beta = "1.19", exp_ci_lb = "1.08", exp_ci_ub = "1.31" }
+covers = ["trimfill.k0.L0"]
+
+[case.source]
+citation = "Duval S (2005). The trim and fill method. In Rothstein HR, Sutton AJ, Borenstein M (eds), Publication Bias in Meta-Analysis, pp. 127-144. Wiley, Chichester."
+locator = "Table 8.2, passive smoking: 7 studies filled, risk ratio 1.19 (1.08, 1.31)"
+read = 2026-11-15
+doi = "10.1002/0470870168.ch8"
+
+# Duval (2005), Table 8.1: gangliosides and stroke, eleven trials with the log odds ratios and standard errors as printed (two decimals).
+[[case]]
+id = "published.duval2005.gangliosides.l0"
+kind = "published"
+function = "trimfill"
+setup = { rma_uni = { method = "DL" } }
+args = { estimator = "L0" }
+expect = { k0 = "5" }
+check = "test_published.back_transformed"
+printed = { exp_beta = "1.01", exp_ci_lb = "0.82", exp_ci_ub = "1.26" }
+covers = ["trimfill.k0.L0"]
+
+[case.data]
+yi = [-0.20, -0.07, 0.04, 0.16, 0.21, 0.27, 0.53, 0.56, 0.80, 1.08, 2.11]
+vi = [0.1681, 0.0324, 0.09, 0.2809, 0.2601, 0.1089, 0.5476, 1.1664, 0.3844, 0.4356, 2.4025]
+
+[case.source]
+citation = "Duval S (2005). The trim and fill method. In Rothstein HR, Sutton AJ, Borenstein M (eds), Publication Bias in Meta-Analysis, pp. 127-144. Wiley, Chichester."
+locator = "Table 8.1 (data: log odds ratios and standard errors, squared here) and p. 132: 5 studies filled, odds ratio 1.01 (0.82, 1.26)"
+read = 2026-11-15
+doi = "10.1002/0470870168.ch8"
+
+# Becker (2005), chapter 7, Table 7.1: the z-values of the 19 teacher expectancy studies as printed; Stouffer's Z is 10.64 / sqrt(19) = 2.44.
+[[case]]
+id = "published.becker2005.table71.rosenthal"
+kind = "published"
+function = "fsn"
+args = { x = "yi", vi = "vi", type = "Rosenthal" }
+expect = { fsnum = "23" }
+covers = ["fsn.Rosenthal"]
+
+[case.data]
+yi = [1.75, -1.44, 0.81, -0.58, -0.19, -1.13, 0.75, 0.80, -0.40, -0.36, 0.79, -0.84, -0.07, 1.64, 3.07, 2.95, 0.70, 2.15, 0.24]
+vi = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+
+[case.source]
+citation = "Becker BJ (2005). Failsafe N or file-drawer number. In Rothstein HR, Sutton AJ, Borenstein M (eds), Publication Bias in Meta-Analysis, pp. 111-125. Wiley, Chichester."
+locator = "Table 7.1 (z-values) and Table 7.3, teacher expectancy: Rosenthal's fail-safe N 22.80, that is 23"
+read = 2026-11-15
+doi = "10.1002/0470870168.ch7"
+
+# Rosenthal (1979), p. 640: two small illustrations of the file drawer number, as k studies of equal z.
+[[case]]
+id = "published.rosenthal1979.fifteen"
+kind = "published"
+function = "fsn"
+args = { x = "yi", vi = "vi", type = "Rosenthal" }
+expect = { fsnum = "6", pval = "0.026" }
+covers = ["fsn.Rosenthal"]
+
+[case.data]
+yi = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+vi = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+
+[case.source]
+citation = "Rosenthal R (1979). The file drawer problem and tolerance for null results. Psychological Bulletin 86(3):638-641."
+locator = "p. 640, illustration: 15 studies each with Z = .5 combine to p = .026, and 6 filed studies bring p above .05"
+read = 2026-11-15
+doi = "10.1037/0033-2909.86.3.638"
+
+[[case]]
+id = "published.rosenthal1979.two"
+kind = "published"
+function = "fsn"
+args = { x = "yi", vi = "vi", type = "Rosenthal" }
+expect = { fsnum = "4", pval = "0.002" }
+covers = ["fsn.Rosenthal"]
+
+[case.data]
+yi = [2.0, 2.0]
+vi = [1, 1]
+
+[case.source]
+citation = "Rosenthal R (1979). The file drawer problem and tolerance for null results. Psychological Bulletin 86(3):638-641."
+locator = "p. 640, illustration: 2 studies each with Z = 2 combine to p about .002, and 4 new studies bring p above .05"
+read = 2026-11-15
+doi = "10.1037/0033-2909.86.3.638"
