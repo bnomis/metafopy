@@ -6,6 +6,10 @@ optimiser tolerance and takes its standard errors from a finite-difference Hessi
 likelihood is evaluated by R with ``BiasedUrn`` to a precision of 1e-10 that ``numDeriv`` amplifies, so those
 results agree to the tolerances in ``TOLERANCE`` (fitted at the optimum, metafopy's objective is the same or
 better, see ``test_collins_objective``).
+
+For the ``CM.EL`` fits metafopy reports the analytic information of the exact likelihood where R uses ``numDeriv``
+with ``r = 16``, so the standard errors and the Wald test of residual heterogeneity differ from R's (see the
+``docs/differences.md`` section "rma_glmm with CM.EL: standard errors and QE_Wld").
 """
 
 import json
@@ -93,6 +97,14 @@ def mask_numbers(text: str) -> str:
     return re.sub(r' +', ' ', re.sub(r'-?\d+\.\d+|<\.\d+|\d+', '#', refutil.r_print(text)))
 
 
+def mask_residual_wald(text: str) -> str:
+    """Hide the p-value of the residual-heterogeneity Wald test, whose value is a recorded difference for CM.EL.
+
+    See the ``docs/differences.md`` section "rma_glmm with CM.EL: standard errors and QE_Wld".
+    """
+    return re.sub(r'^(Wld\(df = \d+\) = [^,]*, p-val) .*$', r'\1 #', text, flags=re.MULTILINE)
+
+
 def fit(name: str) -> metafopy.GLMMResult:
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
@@ -137,8 +149,9 @@ def test_print_layout(name: str) -> None:
     """Where the numbers carry optimiser noise, the printed layout (titles, labels, rows) must still be R's."""
     ref = REF[name]
     res = fit(name)
-    assert mask_numbers(str(res)) == mask_numbers(ref['print'])
-    assert mask_numbers(res.summary(showfit=True)) == mask_numbers(ref['print_showfit'])
+    mask = (lambda text: mask_numbers(mask_residual_wald(text))) if name in NOISY_QE_WLD else mask_numbers
+    assert mask(str(res)) == mask(ref['print'])
+    assert mask(res.summary(showfit=True)) == mask(ref['print_showfit'])
 
 
 @pytest.mark.parametrize('name', ['fs_ml', 'al_ml', 'plo'])

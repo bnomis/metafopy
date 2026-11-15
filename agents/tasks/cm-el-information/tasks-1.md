@@ -201,7 +201,7 @@ caller's `control` asks for it.
 
 ## Task 4: Mark the R parity comparisons that now differ
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Tests (R parity modules)
@@ -211,27 +211,27 @@ difference.
 
 **Subtasks:**
 
-- [ ] Run `pytest src/tests/test_rma_glmm.py src/tests/test_glmm_extras.py src/tests/test_glmm_packages.py src/tests/test_glmm_links.py
+- [x] Run `pytest src/tests/test_rma_glmm.py src/tests/test_glmm_extras.py src/tests/test_glmm_packages.py src/tests/test_glmm_links.py
       src/tests/test_audit4_vcov.py src/tests/test_audit4_robust.py src/tests/test_audit5_numerics.py src/tests/test_accessors.py`
-- [ ] For each failure, check that the fit is `CM.EL` for `OR` with a default optimiser and that the value is a `se`, `vb`, `zval`, `ci`, `pval`,
+- [x] For each failure, check that the fit is `CM.EL` for `OR` with a default optimiser and that the value is a `se`, `vb`, `zval`, `ci`, `pval`,
       `se_tau2`, `tau2` interval or `QE_Wld` (or a printed line built from one). Mark it differing with the module's own mechanism (its tolerance table,
       `NOISY_QE_WLD` or skip set in `test_rma_glmm.py`), with a comment naming the `docs/differences.md` section "rma_glmm with CM.EL: standard errors
       and QE_Wld". The JSON stays as R wrote it. A failure of any other value or fit is a bug in Task 3: fix it, never mark it
-- [ ] `src/tests/test_rma_glmm.py`: its docstring says metafopy reports the analytic information of the `CM.EL` likelihood where R uses numDeriv with
+- [x] `src/tests/test_rma_glmm.py`: its docstring says metafopy reports the analytic information of the `CM.EL` likelihood where R uses numDeriv with
       `r = 16`
-- [ ] Where a tolerance was loose only because of the numerical Hessian (`LOOSE` 5e-2 on `el_*`) and the analytic value now agrees with R more
+- [x] Where a tolerance was loose only because of the numerical Hessian (`LOOSE` 5e-2 on `el_*`) and the analytic value now agrees with R more
       closely, leave it as it is: tightening tolerances is not part of this spec
 
 **Acceptance Criteria:**
 
-- [ ] The test files above pass
-- [ ] Every new mark names the `docs/differences.md` section
+- [x] The test files above pass
+- [x] Every new mark names the `docs/differences.md` section
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_rma_glmm.py src/tests/test_glmm_extras.py src/tests/test_glmm_packages.py src/tests/test_glmm_links.py src/tests/test_audit4_vcov.py src/tests/test_audit4_robust.py src/tests/test_audit5_numerics.py src/tests/test_accessors.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_rma_glmm.py src/tests/test_glmm_extras.py src/tests/test_glmm_packages.py src/tests/test_glmm_links.py src/tests/test_audit4_vcov.py src/tests/test_audit4_robust.py src/tests/test_audit5_numerics.py src/tests/test_accessors.py` passes
 
 **Notes:**
 
