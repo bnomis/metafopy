@@ -421,7 +421,7 @@ every location-scale item has a `derived` case.
 
 ## Task 9: Published cases from Viechtbauer and Lopez-Lopez (2022)
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** medium
 **Spec Reference:** Evidence ("Published values"); Decisions (printed values are `published`); Implementation step 6
@@ -430,24 +430,24 @@ every location-scale item has a `derived` case.
 
 **Subtasks:**
 
-- [ ] Read the paper's PDF with `pdftotext -layout`: Tables 1 and 2 (coefficients, CIs, profile CIs), Table 3 (log-likelihood, AIC, BIC, AICc of five
+- [x] Read the paper's PDF with `pdftotext -layout`: Tables 1 and 2 (coefficients, CIs, profile CIs), Table 3 (log-likelihood, AIC, BIC, AICc of five
       models under ML and REML), the predicted `tau2` of math and social science studies at 100 participants with CIs (0.006 to 0.121 and 0.004 to
       0.437), and the ML LRT on 3 df
-- [ ] Write them as `published` cases (values as printed, strings; `citation`, `doi = "10.1002/jrsm.1562"`, `locator`, `read`), with the model as the
+- [x] Write them as `published` cases (values as printed, strings; `citation`, `doi = "10.1002/jrsm.1562"`, `locator`, `read`), with the model as the
       paper fits it (REML, log link, KH for location, t/F for scale) and the recoded columns of Task 4
-- [ ] The predicted `tau2` and its CI on the `tau2` scale use the back-transform and interval checks of the `correctness-harness-checks` list
-- [ ] Record any mismatch as the header says
+- [x] The predicted `tau2` and its CI on the `tau2` scale use the back-transform and interval checks of the `correctness-harness-checks` list
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] Every printed value named above is a case, or has a line in `mismatches.md` saying why not (for example a misprint, with both values)
-- [ ] Every `published` case has `citation`, `locator` and `read`
+- [x] Every printed value named above is a case, or has a line in `mismatches.md` saying why not (for example a misprint, with both values)
+- [x] Every `published` case has `citation`, `locator` and `read`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_published.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_published.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 

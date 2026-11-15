@@ -85,6 +85,33 @@ Left for Task 11, which runs them once every task has appended its items.
 - **Recommendation:** *investigate*, because metafor's own identity-link log-likelihood on these four models is not on record, and the answer decides
   whether this is a metafopy defect or the shared optimiser's tolerance.
 
+### The profile-likelihood intervals of the scale coefficients differ from the paper's where the profile is flat
+
+- **Cases** (strict expected failures in `src/tests/correctness/cases/location_scale.toml`): `published.vl2022.table1.plci.size` and
+  `published.vl2022.table2.plci.soc`. The printed bounds that metafopy does reproduce are in `published.vl2022.table1.plci` and
+  `published.vl2022.table2.plci`, which pass.
+- **Source:** Viechtbauer and Lopez-Lopez (2022), doi:10.1002/jrsm.1562, Tables 1 and 2 (95% PLCI columns), read 2026-11-15 from the PDF page images
+  (the text layer loses the minus signs); fitted with the paper's models on `dat.bangertdrowns2004` (REML, log link, `knha`).
+- **Values:**
+
+  | Table | Coefficient | Bound | Paper | metafopy | Independent reference (`formulas.ls_profile_bounds`) |
+  |---|---|---|---|---|---|
+  | 1 | sample size | lower | -7.159 | -5.93003 | -7.159061 |
+  | 1 | social sciences vs. math | lower, upper | `< -10`, `> 10` | -3.61002, 4.41224 | no crossing (`nan`, `nan`) |
+  | 2 | social sciences vs. math | upper | 7.700 | 5.72067 | not computed (the reference fit of this model does not converge) |
+  | 2 | social sciences vs. math | lower | `< -10` | -4.68066 | not computed |
+
+  Bounds the paper prints as `< -8`, `> 10` and `< -10` lie beyond the range of its profile plots and are not numbers, so they have no case. metafopy
+  agrees with them where it was checked: the Table 1 intercept lower bound is -22.09 (paper `< -8`), the science vs. math upper bound is 22.76 (paper
+  `> 10`). Every Wald interval, coefficient, p-value, omnibus test, fit statistic, prediction and the likelihood ratio test of both tables agree with the
+  paper's printed digits.
+- **Cause:** the same as the `dat.bcg` item above: where the profile is flat, metafopy's bound is not a crossing of the profile. For the Table 1
+  sample-size bound the independent reference reproduces the paper (-7.159061), so this is a metafopy defect, not a misprint.
+- **metafor:** the paper's numbers were computed with metafor (`confint(res5, alpha=2, xlim=c(-8, 1))`), so metafor gives the printed values; the
+  parity fixture `src/tests/reference/phase5/location_scale.json` was not checked for this model in this task.
+- **Options:** follow the reference (a `TODO.md` item: refit the profile as metafor and the reference do, after which both cases pass); keep metafor
+  (not applicable: metafor agrees with the paper); investigate (run metafor's `confint` on the Table 2 model to read the bound the paper prints).
+
 ## Left for a later spec
 
 - `optbeta=True` under REML: `ls_reference_fit` has no joint objective, and a joint maximisation over beta and alpha under REML is a different

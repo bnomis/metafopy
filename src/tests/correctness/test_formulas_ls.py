@@ -120,6 +120,27 @@ def test_inline_columns_are_the_recoding_of_the_dataset() -> None:
     assert inline['ni100'] == pytest.approx((frame['ni'] / 100).tolist(), rel=1e-15)
 
 
+def test_inline_columns_of_the_published_cases_are_the_authors_recoding() -> None:
+    """Every ``published.vl2022`` case's inline columns are the dataset's ``yi``, ``vi``, ``ni / 100`` and the paper's three subject groups."""
+    path = pathlib.Path(__file__).parent / 'cases' / 'location_scale.toml'
+    cases = [c for c in tomllib.loads(path.read_text(encoding='utf-8'))['case'] if c['id'].startswith('published.vl2022.')]
+    assert cases
+    frame = metafopy.datasets.load('dat.bangertdrowns2004')
+    math = {'Algebra', 'Calculus', 'Math', 'Math in Science', 'Statistics'}
+    science = {'Chemistry', 'Comp Science and Chemistry', 'Biology', 'Earth Science', 'Natural Resources', 'Nursing', 'Science'}
+    expected = {
+        'yi': frame['yi'],
+        'vi': frame['vi'],
+        'ni100': frame['ni'] / 100,
+        'sci': frame['subject'].isin(science).astype(int),
+        'soc': (~frame['subject'].isin(math | science)).astype(int),
+    }
+    assert [int(expected[name].sum()) for name in ('sci', 'soc')] == [9, 11]
+    for case in cases:
+        for name, column in case['data'].items():
+            assert column == pytest.approx(expected[name].tolist(), rel=1e-15), f'{case["id"]}: {name}'
+
+
 def test_inline_counts_of_the_permutation_cases_are_the_dataset_with_a_binary_moderator() -> None:
     """The inline counts of the exact-permutation cases are those of ``dat.bcg``, and ``lat`` is ``ablat >= 33``."""
     path = pathlib.Path(__file__).parent / 'cases' / 'location_scale.toml'
