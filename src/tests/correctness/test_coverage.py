@@ -255,9 +255,6 @@ def test_escalc_accepts_each_listed_vtype(measure: str, vtype: str) -> None:
     assert len(out['yi']) == len(out['vi']) == 3
 
 
-LS_XFAIL = pytest.mark.xfail(strict=True, reason='location-scale coverage incomplete; see agents/tasks/correctness-location-scale/tasks-1.md')
-
-
 def derived_missing(
     cases: list[correctness.cases.Case],
     exemptions: list[correctness.cases.Exemption],
@@ -270,7 +267,6 @@ def derived_missing(
     return [item for item in (coverage_items() if items is None else items) if item.startswith(tuple(prefixes)) and item not in covered and item not in exempt]
 
 
-@LS_XFAIL
 def test_every_location_scale_item_has_a_derived_case() -> None:
     missing = derived_missing(correctness.cases.load_cases(), correctness.cases.load_exemptions(), correctness.cases.load_derived_required())
     assert not missing, f'{len(missing)} items have no derived case: {", ".join(missing)}'
@@ -302,7 +298,6 @@ def test_derived_required_is_read_from_every_file(tmp_path: pathlib.Path) -> Non
     assert correctness.cases.load_derived_required(tmp_path) == prefixes
 
 
-@LS_XFAIL
 def test_every_core_item_has_a_case() -> None:
     missing = missing_items(correctness.cases.load_cases(), correctness.cases.load_exemptions())
     assert not missing, f'{len(missing)} items have no published or derived case: {", ".join(missing)}'

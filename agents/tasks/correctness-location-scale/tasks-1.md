@@ -335,7 +335,7 @@ Error handling (`nan` bounds)
 
 ## Task 7: Exact and random permutation tests, then close the gate
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** medium
 **Spec Reference:** API (`ls_exact_permutation_p`); Coverage list (`ls.permutest.*`, random permutations); Implementation step 5
@@ -345,31 +345,35 @@ every location-scale item has a `derived` case.
 
 **Subtasks:**
 
-- [ ] `formulas.ls_exact_permutation_p`: every distinct row permutation of X (`'location'`) or Z (`'scale'`), refitting with `ls_reference_fit`; cite
+- [x] `formulas.ls_exact_permutation_p`: every distinct row permutation of X (`'location'`) or Z (`'scale'`), refitting with `ls_reference_fit`; cite
       Higgins and Thompson (2004) and Follmann and Proschan (1999)
-- [ ] Check function `ls_permutest_exact` in `test_derived.py`; cases `ls.permutest.location.exact` and `ls.permutest.scale.exact` on a subset of
+- [x] Check function `ls_permutest_exact` in `test_derived.py`; cases `ls.permutest.location.exact` and `ls.permutest.scale.exact` on a subset of
       `dat.bcg` small enough to enumerate, marked `slow`
-- [ ] A `simulation` case in `test_simulation.py`: the random permutation p-value (metafopy's R-exact generator, fixed seed and stated `iter`) lies
+- [x] A `simulation` case in `test_simulation.py`: the random permutation p-value (metafopy's R-exact generator, fixed seed and stated `iter`) lies
       within 4 binomial standard errors of the exact one; marked `slow`
-- [ ] Record any mismatch as the header says
-- [ ] Remove the two `xfail` marks Task 1 added to `test_coverage.py`
+- [x] Record any mismatch as the header says
+- [x] Remove the two `xfail` marks Task 1 added to `test_coverage.py`
 
 **Acceptance Criteria:**
 
-- [ ] Both gate tests pass with no xfail mark
-- [ ] `pytest -m slow src/tests/correctness/test_derived.py src/tests/correctness/test_simulation.py` passes
+- [x] Both gate tests pass with no xfail mark
+- [x] `pytest -m slow src/tests/correctness/test_derived.py src/tests/correctness/test_simulation.py` passes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_simulation.py src/tests/correctness/test_coverage.py` passes, `slow`
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_simulation.py src/tests/correctness/test_coverage.py` passes, `slow`
       tests included
 
 **Notes:**
 
 - Depends on Tasks 4, 5 and 6
 - Key files: `src/metafopy/methods/ls_permutest.py` (`exact`, `iter`, `seed`)
+- Decided here: the cases use the 13 trials of `dat.bcg` with the binary moderator `lat = ablat >= 33` as inline counts (1287 distinct permutations), not
+  a subset: the seven random-allocation trials fit at the boundary (`tau2` near 0) and a fifth of their permutations have no finite maximum. About 3% of
+  the permutations of the chosen data have none either, so the check bounds each p-value by the share of those (`failed`); no mismatch was found. The
+  cases gained a `slow` key (`cases.py`) for the mark.
 
 ---
 

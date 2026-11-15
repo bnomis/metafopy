@@ -118,3 +118,35 @@ def test_inline_columns_are_the_recoding_of_the_dataset() -> None:
     assert inline['yi'] == frame['yi'].tolist()
     assert inline['vi'] == frame['vi'].tolist()
     assert inline['ni100'] == pytest.approx((frame['ni'] / 100).tolist(), rel=1e-15)
+
+
+def test_inline_counts_of_the_permutation_cases_are_the_dataset_with_a_binary_moderator() -> None:
+    """The inline counts of the exact-permutation cases are those of ``dat.bcg``, and ``lat`` is ``ablat >= 33``."""
+    path = pathlib.Path(__file__).parent / 'cases' / 'location_scale.toml'
+    cases = [c for c in tomllib.loads(path.read_text(encoding='utf-8'))['case'] if c['id'].startswith('ls.permutest.') and '.exact.' in c['id']]
+    assert cases
+    frame = metafopy.datasets.load('dat.bcg')
+    for case in cases:
+        for name, column in case['data'].items():
+            expected = (frame['ablat'] >= 33).astype(int) if name == 'lat' else frame[name]
+            assert column == expected.tolist()
+
+
+def test_distinct_label_orders_are_the_multiset_permutations() -> None:
+    orders = list(correctness.formulas.distinct_label_orders([0, 0, 1, 1, 1]))
+    assert len(orders) == len(set(orders)) == 10
+    assert all(sorted(order) == [0, 0, 1, 1, 1] for order in orders)
+
+
+def test_exact_permutation_p_bounds_the_share_of_permutations_that_reach_the_observed_statistic() -> None:
+    yi, vi, X, _ = bcg()
+    lat = (X[:, 1] >= 33).astype(float)[:8]
+    design = numpy.column_stack([numpy.ones(8), lat])
+    exact = correctness.formulas.ls_exact_permutation_p(yi[:8], vi[:8], design, design, 'log', 'ML', 'location')
+    assert exact['count'] == 70 or exact['count'] < 70
+    low, high = numpy.asarray(exact['pval_low']), numpy.asarray(exact['pval_high'])
+    assert numpy.all(low >= 1 / exact['count'] - 1e-12)
+    assert numpy.all(high >= low)
+    assert numpy.allclose(high - low, exact['failed'] / exact['count'])
+    with pytest.raises(ValueError, match='part must be'):
+        correctness.formulas.ls_exact_permutation_p(yi[:8], vi[:8], design, design, 'log', 'ML', 'both')

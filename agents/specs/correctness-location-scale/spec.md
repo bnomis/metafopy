@@ -79,8 +79,11 @@ def ls_predict(x0: FloatArray, z0: FloatArray, fit: dict[str, typing.Any], link:
     """pred, se, CI and PI (section 2.7) at x0 and z0, and the predicted tau2 with its CI from z0' va z0 (section 2.5.2)."""
 
 
-def ls_exact_permutation_p(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, link: str, method: str, part: str) -> FloatArray:
-    """Exact permutation p-values by enumerating every distinct row permutation of X ('location') or Z ('scale'), refitting with ls_reference_fit."""
+def ls_exact_permutation_p(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, link: str, method: str, part: str) -> dict[str, FloatArray | float]:
+    """Exact permutation p-values by enumerating every distinct row permutation of X ('location') or Z ('scale'), refitting with ls_reference_fit.
+
+    A permuted model with no finite maximum has no reference fit; the p-values are returned as bounds (pval_low, pval_high, omnibus_low, omnibus_high)
+    with the counts of permutations and of failed fits."""
 
 
 # test_derived.py (pattern of the existing confint_* checks)

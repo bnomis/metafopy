@@ -11,7 +11,10 @@ import numpy.typing
 import pandas
 import pytest
 
+import correctness.cases
+import correctness.formulas
 import metafopy
+import metafopy.methods.ls_permutest
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 
@@ -85,6 +88,36 @@ def test_equal_effects_interval_covers_exactly() -> None:
     assert abs(proportion - level) <= STANDARD_ERRORS * error, (
         f'coverage {proportion!r} over {replicates} replicates, expected {level!r}, standard error {error!r}'
     )
+
+
+@pytest.mark.slow
+def test_random_permutation_p_values_follow_the_exact_ones() -> None:
+    """The random-permutation p-values of a location-scale model lie within 4 binomial standard errors of the exact ones (2000 permutations per part).
+
+    The exact p-value is the reference's share of all 1287 distinct permutations; the few permutations with no reference fit make it an interval,
+    and the distance to that interval is what is held to the standard error. The generator is metafopy's R-exact Mersenne-Twister, seeded.
+    """
+    case = next(c for c in correctness.cases.load_cases('derived') if c.id == 'ls.permutest.location.exact.ML.z.bcglat')
+    frame = correctness.cases.case_frame(case)
+    assert frame is not None
+    yi, vi = frame['yi'].to_numpy(dtype=numpy.float64), frame['vi'].to_numpy(dtype=numpy.float64)
+    X = numpy.column_stack([numpy.ones(len(yi)), frame['lat'].to_numpy(dtype=numpy.float64)])
+    fit = metafopy.rma_uni(**case.args, data=frame)
+    iterations = 2000
+    drawn = metafopy.permutest(fit, iter=iterations, seed=20261117)
+    assert isinstance(drawn, metafopy.methods.ls_permutest.LSPermutestResult)
+    for part, actual in (('location', [*drawn.pval, drawn.QMp]), ('scale', [*drawn.pval_alpha, drawn.QSp])):
+        expected = correctness.formulas.ls_exact_permutation_p(yi, vi, X, X, 'log', 'ML', part)
+        low = [*numpy.asarray(expected['pval_low']), expected['omnibus_low']]
+        high = [*numpy.asarray(expected['pval_high']), expected['omnibus_high']]
+        for index, value in enumerate(actual):
+            middle = (low[index] + high[index]) / 2
+            error = float(numpy.sqrt(middle * (1 - middle) / iterations))
+            distance = max(low[index] - value, value - high[index], 0.0)
+            assert distance <= STANDARD_ERRORS * error, (
+                f'{part} p-value {index}: {value!r} from {iterations} random permutations, exact between {low[index]!r} and {high[index]!r}, '
+                f'standard error {error!r}'
+            )
 
 
 COEFFICIENTS = ('intercept', 'slope')

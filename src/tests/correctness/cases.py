@@ -64,6 +64,7 @@ CASE_KEYS = frozenset(
         'printed',
         'reason',
         'setup',
+        'slow',
         'source',
         'status',
         'then',
@@ -129,6 +130,7 @@ class Case:
     file: str = ''
     printed: dict[str, str] = dataclasses.field(default_factory=dict)
     then: Step | None = None
+    slow: bool = False
 
 
 @dataclasses.dataclass(frozen=True)
@@ -330,6 +332,9 @@ def parse_case(raw: object, name: str, index: int) -> Case:
     if setup is not None:
         parse_setup(setup, where, has_data=data is not None or 'dataset' in raw)
     then = parse_then(raw['then'], where) if 'then' in raw else None
+    slow = raw.get('slow', False)
+    if not isinstance(slow, bool):
+        fail(name, f'case {ident}: slow must be true or false')
     covers = raw.get('covers', [])
     if not isinstance(covers, list) or not all(isinstance(c, str) for c in covers):
         fail(name, f'case {ident}: covers must be a list of coverage items')
@@ -351,6 +356,7 @@ def parse_case(raw: object, name: str, index: int) -> Case:
         file=name,
         printed=printed,
         then=then,
+        slow=slow,
     )
 
 
@@ -642,6 +648,8 @@ def check_printed(case: Case, name: str, actual: float) -> None:
 def case_param(case: Case) -> typing.Any:
     """The case as a pytest param (id = case id); a ``mismatch`` case is marked ``xfail(strict=True, reason=...)``."""
     marks = [pytest.mark.xfail(strict=True, reason=case.reason)] if case.status == 'mismatch' else []
+    if case.slow:
+        marks.append(pytest.mark.slow)
     return pytest.param(case, id=case.id, marks=marks)
 
 

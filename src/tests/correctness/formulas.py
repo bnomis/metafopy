@@ -2895,3 +2895,78 @@ def ls_predict(x0: FloatArray, z0: FloatArray, fit: dict[str, typing.Any], link:
         'scale_ub': lin + crit * se_lin,
         'tau2': tau2,
     }
+
+
+def ls_exact_permutation_p(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, link: str, method: str, part: str) -> dict[str, FloatArray | float]:
+    """Exact permutation p-values of one part of a location-scale model, by enumerating every distinct permutation of the rows of its model matrix.
+
+    ``part='location'`` permutes the rows of ``X`` and ``part='scale'`` those of ``Z`` (Higgins and Thompson, 2004; Follmann and Proschan, 1999), each
+    permuted model refitted with ``ls_reference_fit``. The p-value of a coefficient is the share of permutations whose ``|z|`` reaches the observed
+    ``|z|`` (less ``comptol``), and that of the omnibus test the share whose Wald statistic over the coefficients after the intercept reaches the
+    observed one.
+
+    A permuted model whose likelihood has no finite maximum (``tau2`` tends to 0 in a group, so ``alpha`` tends to ``-inf`` under the log link, or the
+    information is singular) has no reference fit. Those permutations are counted in ``failed`` and bound each p-value instead: the reference share of
+    all ``count`` permutations lies between ``pval_low`` (none of them reaches the observed statistic) and ``pval_high`` (all of them do). Returns
+    ``pval_low`` and ``pval_high`` (per coefficient), ``omnibus_low`` and ``omnibus_high``, ``count`` (the distinct permutations) and ``failed``.
+    """
+    comptol = math.sqrt(numpy.finfo(float).eps)
+    if part == 'location':
+        matrix = X
+    elif part == 'scale':
+        matrix = Z
+    else:
+        raise ValueError(f"part must be 'location' or 'scale', not {part!r}")
+
+    def statistics(order: list[int]) -> tuple[FloatArray, float] | None:
+        try:
+            fit = ls_reference_fit(yi, vi, X[order] if part == 'location' else X, Z[order] if part == 'scale' else Z, link, method)
+            estimate, vcov = (fit['beta'], fit['vb']) if part == 'location' else (fit['alpha'], fit['va'])
+            variances = numpy.diag(vcov)
+            if not numpy.all(numpy.isfinite(variances) & (variances > 0)):
+                return None
+            return estimate / numpy.sqrt(variances), ls_wald(estimate, vcov, list(range(1, len(estimate))), None)[0]
+        except RuntimeError, numpy.linalg.LinAlgError:
+            return None
+
+    observed = statistics(list(range(len(yi))))
+    if observed is None:
+        raise RuntimeError('ls_exact_permutation_p: the observed model has no reference fit')
+    z_obs, q_obs = observed
+    groups = {row: index for index, row in enumerate(sorted({tuple(r) for r in matrix.tolist()}))}
+    labels = [groups[tuple(r)] for r in matrix.tolist()]
+    members: dict[int, list[int]] = {}
+    for index, label in enumerate(labels):
+        members.setdefault(label, []).append(index)
+    z_hits = numpy.zeros(len(z_obs))
+    q_hits = 0
+    count = failed = 0
+    for sequence in distinct_label_orders(sorted(labels)):
+        taken = {label: iter(rows) for label, rows in members.items()}
+        count += 1
+        stats = statistics([next(taken[label]) for label in sequence])
+        if stats is None:
+            failed += 1
+            continue
+        z_hits += numpy.abs(stats[0]) >= numpy.abs(z_obs) - comptol
+        q_hits += stats[1] >= q_obs - comptol
+    return {
+        'pval_low': z_hits / count,
+        'pval_high': (z_hits + failed) / count,
+        'omnibus_low': q_hits / count,
+        'omnibus_high': (q_hits + failed) / count,
+        'count': float(count),
+        'failed': float(failed),
+    }
+
+
+def distinct_label_orders(remaining: list[int]) -> collections.abc.Iterator[tuple[int, ...]]:
+    """Every distinct ordering of the multiset ``remaining`` (a sorted list of labels)."""
+    if not remaining:
+        yield ()
+        return
+    for label in sorted(set(remaining)):
+        rest = list(remaining)
+        rest.remove(label)
+        for tail in distinct_label_orders(rest):
+            yield (label, *tail)

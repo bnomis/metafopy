@@ -883,3 +883,32 @@ setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di =
 args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log", test = "z" }
 check = "test_derived.ls_anova_lrt"
 covers = ["ls.anova.lrt.REML"]
+
+# Task 7 of agents/tasks/correctness-location-scale/tasks-1.md: the exact permutation tests of both parts against formulas.ls_exact_permutation_p, which
+# refits every distinct row permutation. The inline columns are the 2x2 counts of dat.bcg with the binary moderator lat = (ablat >= 33), so that the
+# permutations are the 1287 arrangements of 8 ones among 13 rows and not 13!; test_formulas_ls.py checks them against the dataset. The cases are slow.
+# A few permuted models have no finite maximum, so the check bounds each p-value (see the check ls_permutest_exact).
+
+[[case]]
+id = "ls.permutest.location.exact.ML.z.bcglat"
+kind = "derived"
+slow = true
+function = "rma_uni"
+data = { tpos = [4, 6, 3, 62, 33, 180, 8, 505, 29, 17, 186, 5, 27], tneg = [119, 300, 228, 13536, 5036, 1361, 2537, 87886, 7470, 1699, 50448, 2493, 16886], cpos = [11, 29, 11, 248, 47, 372, 10, 499, 45, 65, 141, 3, 29], cneg = [128, 274, 209, 12619, 5761, 1079, 619, 87892, 7232, 1600, 27197, 2338, 17825], lat = [1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1] }
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ lat", scale = "~ lat", method = "ML", link = "log", test = "z" }
+then = { function = "permutest", args = { exact = true, skip_alpha = true } }
+check = "test_derived.ls_permutest_exact"
+covers = ["ls.permutest.location.exact"]
+
+[[case]]
+id = "ls.permutest.scale.exact.ML.z.bcglat"
+kind = "derived"
+slow = true
+function = "rma_uni"
+data = { tpos = [4, 6, 3, 62, 33, 180, 8, 505, 29, 17, 186, 5, 27], tneg = [119, 300, 228, 13536, 5036, 1361, 2537, 87886, 7470, 1699, 50448, 2493, 16886], cpos = [11, 29, 11, 248, 47, 372, 10, 499, 45, 65, 141, 3, 29], cneg = [128, 274, 209, 12619, 5761, 1079, 619, 87892, 7232, 1600, 27197, 2338, 17825], lat = [1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1] }
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ lat", scale = "~ lat", method = "ML", link = "log", test = "z" }
+then = { function = "permutest", args = { exact = true, skip_beta = true } }
+check = "test_derived.ls_permutest_exact"
+covers = ["ls.permutest.scale.exact"]

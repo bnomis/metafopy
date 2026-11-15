@@ -852,3 +852,28 @@ def ls_anova_lrt(case: correctness.cases.Case, result: typing.Any) -> None:
     actual = metafopy.anova(result, reduced)
     ls_agree(case, 'LRT', actual.LRT, stat, LS_NUMERIC_HESSIAN)
     ls_agree(case, 'pval', actual.pval, pval, LS_NUMERIC_HESSIAN)
+
+
+def ls_permutest_exact(case: correctness.cases.Case, result: typing.Any) -> None:
+    """``permutest(..., exact=True)`` of one part against ``formulas.ls_exact_permutation_p``, which enumerates and refits every distinct permutation.
+
+    The p-values are shares of the same permutations. The reference has no fit for a permuted model whose likelihood has no finite maximum, so each
+    p-value is checked to lie between the share without those permutations and the share with all of them.
+    """
+    yi, vi, X, Z = ls_inputs(case)
+    part = 'scale' if result.skip_beta else 'location'
+    expected = correctness.formulas.ls_exact_permutation_p(yi, vi, X, Z, case.args.get('link', 'log'), case.args['method'], part)
+    actual_pval, actual_omnibus, count = (
+        (result.pval, result.QMp, result.exact_iter) if part == 'location' else (result.pval_alpha, result.QSp, result.Z_exact_iter)
+    )
+    ls_agree(case, 'permutations', count, expected['count'], 1e-12)
+    slack = 1e-9
+    for name, actual, low, high in (
+        (f'pval ({part})', numpy.asarray(actual_pval), expected['pval_low'], expected['pval_high']),
+        (f'omnibus p ({part})', numpy.asarray(actual_omnibus), expected['omnibus_low'], expected['omnibus_high']),
+    ):
+        if not numpy.all((actual >= numpy.asarray(low) - slack) & (actual <= numpy.asarray(high) + slack)):
+            raise AssertionError(
+                f'{case.id}: {name}: metafopy gives {actual!r}, the reference lies between {low!r} and {high!r} '
+                f'({expected["failed"]:g} of {expected["count"]:g} permutations have no reference fit)'
+            )
