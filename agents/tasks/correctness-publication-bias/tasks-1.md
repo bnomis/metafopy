@@ -470,7 +470,7 @@ nothing is missing.
 
 ## Task 11: Stop for the operator - R packages for the other-software cases
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Spec Reference:** External dependencies; Decisions (weightr installed); Implementation step 6 (its stop)
@@ -479,22 +479,22 @@ nothing is missing.
 
 **Subtasks:**
 
-- [ ] Run
+- [x] Run
       `R_LIBS=/Users/simonb/src/metafopy/.audit/Rlib LC_ALL=C.UTF-8 Rscript -e 'lib <- "/Users/simonb/.local/share/metafopy/r-correctness-lib"; .libPaths(c(lib, .libPaths())); cat(as.character(packageVersion("weightr")), as.character(packageVersion("meta")), "\n"); invisible(loadNamespace("weightr"))'`
-- [ ] If it prints `2.0.2 8.5-0` and loads `weightr`, mark this task done and go on
-- [ ] Otherwise stop the list for the operator, naming the missing or wrong package and its version. The operator installs it into
+- [x] If it prints `2.0.2 8.5-0` and loads `weightr`, mark this task done and go on
+- [x] Otherwise stop the list for the operator, naming the missing or wrong package and its version. The operator installs it into
       `/Users/simonb/.local/share/metafopy/r-correctness-lib` outside the repository, never into the audit's pinned library
       (`src/audit/data/r-versions.json` must not change), and then restarts the list
 
 **Acceptance Criteria:**
 
-- [ ] Both packages load at the pinned versions from that library
+- [x] Both packages load at the pinned versions from that library
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness -m 'not slow'` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness -m 'not slow'` passes
 
 **Notes:**
 
