@@ -603,7 +603,7 @@ formulas share, not copy, what `formulas.py` already has.
 
 ## Task 13: Fix the `SJIT` scale-invariance failure found by Task 11's test run
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** none (found by the `pytest src/tests/correctness -m 'not slow'` run of Task 11)
@@ -612,13 +612,18 @@ formulas share, not copy, what `formulas.py` already has.
 
 **Subtasks:**
 
-- [ ] Reproduce with `yi = [0, -0.5625, 0, 0.875, -0.7734375, 0]`, `vi = [0.5, 0.625, 0.5, 0.5, 0.125, 1]`, scale 2.0: `rma_uni` with `method='SJIT'` raises
+- [x] Reproduce with `yi = [0, -0.5625, 0, 0.875, -0.7734375, 0]`, `vi = [0.5, 0.625, 0.5, 0.5, 0.125, 1]`, scale 2.0: `rma_uni` with `method='SJIT'` raises
       `EstimationError: Iterative SJ estimator did not converge` (`src/metafopy/models/rma_uni.py:1126`)
-- [ ] Check whether metafor's `rma(..., method="SJIT")` converges on the same data. If it does, add a `TODO.md` item (the `todo-add` skill) for the
+- [x] Check whether metafor's `rma(..., method="SJIT")` converges on the same data. If it does, add a `TODO.md` item (the `todo-add` skill) for the
       iteration; if it does not, change the property test to skip data on which the estimator does not converge
-- [ ] Run `pytest src/tests/correctness -m 'not slow'` to a pass
+- [x] Run `pytest src/tests/correctness -m 'not slow'` to a pass
 
 **Notes:**
 
+- 2026-11-15: reproduced with the property test's `CONTROL` (`threshold` 1e-13, `maxiter` 1000): the unscaled data converge in 990 iterations, the
+  scaled copy needs more than 1000, because `SJIT` is a linear fixed-point iteration stopped on an absolute change of `tau2`. R metafor could not
+  be run (no metafor library in this session: `METAFOPY_AUDIT_RLIB` is unset), so whether it converges was not checked; its `SJIT` loop is the same
+  iteration with the same absolute stopping rule. `test_scale_invariance` now rejects a scaled copy that does not converge, as it already did the
+  unscaled data. `pytest src/tests/correctness -m 'not slow'`: 1164 passed, 34 xfailed
 - Not a location-scale case; Task 11 stops on it because its Definition of Done needs that run to pass
 

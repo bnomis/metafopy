@@ -97,10 +97,13 @@ def test_location_invariance(method: str, data: tuple[FloatArray, FloatArray], s
 @hypothesis.settings(max_examples=20, deadline=10000)
 @hypothesis.given(data=meta_data(), scale=hypothesis.strategies.floats(0.25, 4))
 def test_scale_invariance(method: str, data: tuple[FloatArray, FloatArray], scale: float) -> None:
-    """Scaling every effect by ``c`` and every variance by ``c^2`` scales ``tau2`` by ``c^2`` and the intercept by ``c``."""
+    """Scaling every effect by ``c`` and every variance by ``c^2`` scales ``tau2`` by ``c^2`` and the intercept by ``c``.
+
+    The iterative estimators stop on an absolute change in ``tau2``, so a scaled copy of data that converged in few enough iterations may need more than
+    ``maxiter``; such a copy is not an example of the property, as the unscaled data are not when they do not converge."""
     yi, vi = data
     before = fit_or_reject(yi, vi, method)
-    after = fit(yi * scale, vi * scale**2, method)
+    after = fit_or_reject(yi * scale, vi * scale**2, method)
     close(method, 'tau2', after.tau2, before.tau2 * scale**2)
     close(method, 'beta', after.beta, before.beta * scale)
 
