@@ -159,6 +159,28 @@ and the page; the items below are appended by the case-writing tasks as they fin
 - **Options:** follow the reference (nothing to change in `selmodel` is known; a `TODO.md` item to find which optimiser setting reproduces the paper);
   keep metafor (the cases become exemptions, or are loosened to the sources' digits citing this item); investigate (install R metafor and run each first).
 
+### Henmi-Copas interval at a DerSimonian-Laird tau2 of 0 is not the equal-effects interval (Task 10)
+
+- **Case** (strict expected failure in `src/tests/correctness/cases/properties.toml`): `property.hc.zero-tau2.interval`. Its sibling
+  `property.hc.zero-tau2.estimate` (the estimate and standard error equal the equal-effects ones) passes.
+- **Source:** the spec's own property, step 4 of `agents/specs/correctness-publication-bias/spec.md`: "`hc` with a DL `tau2` of 0 gives the equal-effects
+  interval". No publication states it; Henmi and Copas (2010, doi:10.1002/sim.4029, equations 14 to 21) define the interval.
+- **Reference and metafopy values** (six studies with `yi` 0.30, 0.31, 0.29, 0.30, 0.32, 0.28 and `vi` 0.10, 0.08, 0.12, 0.09, 0.11, 0.10, whose
+  DerSimonian-Laird `tau2` is 0):
+
+  | Quantity | Equal-effects interval (the property) | metafopy `hc` | `formulas.hc_interval` (the paper's integral) |
+  |---|---|---|---|
+  | lower limit | 0.0495 | 0.0644 | 0.0644 |
+  | upper limit | 0.5513 | 0.5364 | 0.5364 |
+
+- **Cause:** not a defect in `hc`. The paper's own integral, implemented independently in `formulas.hc_interval`, gives metafopy's limits to 5 digits.
+  The Henmi-Copas interval conditions on the estimated `tau2` (its quantile comes from a root search over the distribution of Q, not from the normal
+  distribution), so an estimate truncated at 0 does not make it collapse to the equal-effects interval; the spec's property is a misreading of the method.
+- **metafor:** R metafor is not installed in the session's R, so its interval for this case was not run; metafopy mirrors metafor's `hc` code, and the
+  parity fixtures under `src/tests/reference/` do not hold a `tau2` of 0.
+- **Options:** keep metafor (drop the property: the case becomes an exemption citing this item, and the estimate case stays); follow the reference
+  (nothing to change in `hc`, since the reference is the spec's wrong premise: not recommended); investigate (install R metafor and run this case first).
+
 ## Decisions
 
 Added by Task 6; Task 13 completes the section with background and the page.

@@ -180,3 +180,59 @@ def test_fixed_effects_interval_covers_exactly_with_known_v() -> None:
         assert abs(covered[position] - level) <= STANDARD_ERRORS * error, (
             f'{name}: coverage {covered[position]!r} over {replicates} replicates, expected {level!r}, standard error {error!r}'
         )
+
+
+def binomial_error(proportion: float, replicates: int) -> float:
+    """The Monte Carlo standard error of a proportion near ``proportion`` over ``replicates`` replicates."""
+    return float(numpy.sqrt(proportion * (1 - proportion) / replicates))
+
+
+def regtest_lm_rejections(alpha: float, *, seed: int, replicates: int) -> float:
+    """The share of ``replicates`` studies sets in which ``regtest(model='lm')`` rejects at ``alpha`` when the weighted normal linear model it assumes
+    holds with no asymmetry: ``yi = 0.2 + e`` with ``e ~ N(0, phi vi)``, 20 studies, dispersion ``phi = 1.7`` (the model's multiplicative dispersion)."""
+    rng = numpy.random.default_rng(seed)
+    vi = numpy.linspace(0.02, 0.2, 20)
+    phi = 1.7
+    rejected = 0
+    for _ in range(replicates):
+        yi = rng.normal(0.2, numpy.sqrt(phi * vi))
+        rejected += metafopy.regtest(yi, vi, model='lm').pval < alpha
+    return rejected / replicates
+
+
+@pytest.mark.slow
+def test_regtest_lm_has_its_nominal_size() -> None:
+    """With no asymmetry the ``regtest(model='lm')`` t-test (Egger et al. 1997) rejects at ``alpha = 0.05`` 5% of the time, within 4 binomial standard
+    errors: under the weighted normal linear model with unknown dispersion the t statistic is exactly t-distributed (4000 replicates, 20 studies)."""
+    replicates, alpha = 4000, 0.05
+    proportion = regtest_lm_rejections(alpha, seed=20261118, replicates=replicates)
+    error = binomial_error(alpha, replicates)
+    assert abs(proportion - alpha) <= STANDARD_ERRORS * error, (
+        f'rejection rate {proportion!r} over {replicates} replicates, expected {alpha!r}, standard error {error!r}'
+    )
+
+
+def tes_exact_rejections(tes_alpha: float, *, seed: int, replicates: int) -> float:
+    """The share of ``replicates`` studies sets in which the exact ``tes`` test rejects at ``tes_alpha`` with ``theta`` known (``0.3``) and the studies
+    drawn from it: ``yi ~ N(theta, vi)``, 12 studies with spread sampling variances, each tested two-sided at 0.05."""
+    rng = numpy.random.default_rng(seed)
+    vi = numpy.linspace(0.02, 0.25, 12)
+    rejected = 0
+    for _ in range(replicates):
+        yi = rng.normal(0.3, numpy.sqrt(vi))
+        result = metafopy.tes(yi, vi, theta=0.3, test='exact', tes_alpha=tes_alpha, find_lim=False)
+        rejected += result.pval < tes_alpha
+    return rejected / replicates
+
+
+@pytest.mark.slow
+def test_tes_exact_size_is_at_most_alpha() -> None:
+    """With the true ``theta`` the exact test of excess significance (Ioannidis and Trikalinos 2007) rejects at most ``tes_alpha = 0.1`` of the time, to
+    within 4 binomial standard errors: the number of significant studies is a sum of independent Bernoulli variables with the estimated powers, and
+    the exact test is the tail of that sum, so it is conservative (4000 replicates, 12 studies)."""
+    replicates, tes_alpha = 4000, 0.1
+    proportion = tes_exact_rejections(tes_alpha, seed=20261119, replicates=replicates)
+    error = binomial_error(tes_alpha, replicates)
+    assert proportion <= tes_alpha + STANDARD_ERRORS * error, (
+        f'rejection rate {proportion!r} over {replicates} replicates, expected at most {tes_alpha!r}, standard error {error!r}'
+    )

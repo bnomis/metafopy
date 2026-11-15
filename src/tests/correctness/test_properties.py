@@ -565,3 +565,123 @@ def ls_links_agree_for_group_indicators(case: correctness.cases.Case, result: ty
     close(case.id, 'log-likelihood', ls_loglik_of(other), ls_loglik_of(result), tolerance)
     close(case.id, 'beta', other.beta, result.beta, tolerance)
     close(case.id, 'tau2', other.tau2, result.tau2, tolerance)
+
+
+BIAS_AGREEMENT = 1e-6
+# the selection-model optimiser stops within about 1e-5 of the maximum, so a fit with no selection agrees with ML to about that
+SELMODEL_AGREEMENT = 1e-4
+REGTEST_MODELS: tuple[typing.Literal['lm', 'rma'], ...] = ('lm', 'rma')
+REGTEST_PREDICTORS: tuple[typing.Literal['sei', 'vi'], ...] = ('sei', 'vi')
+LOCATION_SHIFT = 3.0
+
+
+def uni_fit(case: correctness.cases.Case, frame: pandas.DataFrame) -> typing.Any:
+    """The ``rma_uni`` fit of the case's ``setup`` on ``yi`` and ``vi`` of ``frame``."""
+    assert case.setup is not None
+    return metafopy.rma_uni(yi='yi', vi='vi', data=frame, **case.setup['rma_uni'])
+
+
+def reflected_fit(case: correctness.cases.Case, shift: float = 0.0, sign: float = 1.0) -> tuple[typing.Any, typing.Any]:
+    """The case's model fitted on ``yi`` and again on ``sign * yi + shift``."""
+    frame = correctness.cases.case_frame(case)
+    assert frame is not None
+    changed = frame.assign(yi=sign * frame['yi'].to_numpy(dtype=numpy.float64) + shift)
+    return uni_fit(case, frame), uni_fit(case, changed)
+
+
+def selmodel_without_selection_is_ml_fit(case: correctness.cases.Case, result: typing.Any) -> None:
+    """``selmodel`` of any ``type`` with every ``delta`` fixed at its no-selection value (weight 1 everywhere) is the ML ``rma_uni`` fit: the same
+    ``beta``, ``tau2`` and log-likelihood (Vevea and Hedges 1995: the model reduces to the usual one when all weights are equal)."""
+    frame = correctness.cases.case_frame(case)
+    assert frame is not None
+    ml = uni_fit(case, frame)
+    tolerance = case.tolerance or SELMODEL_AGREEMENT
+    close(case.id, 'beta', result.beta, ml.beta, tolerance)
+    close(case.id, 'tau2', result.tau2, ml.tau2, tolerance)
+    close(case.id, 'log-likelihood', result.ll, float(ml.logLik()), tolerance)
+
+
+def reflection_negates_regtest(case: correctness.cases.Case, result: typing.Any) -> None:
+    """Reflecting ``yi`` to ``-yi`` negates the test statistic ``zval`` and the limit estimate ``est`` of ``regtest``, swaps and negates the limits of
+    its interval, and keeps the p-value. Run over ``model`` in ``REGTEST_MODELS`` and ``predictor`` in ``REGTEST_PREDICTORS``."""
+    before, after = reflected_fit(case, sign=-1.0)
+    tolerance = case.tolerance or BIAS_AGREEMENT
+    for model in REGTEST_MODELS:
+        for predictor in REGTEST_PREDICTORS:
+            first = metafopy.regtest(before, model=model, predictor=predictor)
+            second = metafopy.regtest(after, model=model, predictor=predictor)
+            where = f'{case.id} (model {model}, predictor {predictor})'
+            assert first.est is not None, f'{where}: no limit estimate'
+            assert first.ci_lb is not None, f'{where}: no lower limit'
+            assert first.ci_ub is not None, f'{where}: no upper limit'
+            close(where, 'zval', second.zval, -first.zval, tolerance)
+            close(where, 'pval', second.pval, first.pval, tolerance)
+            close(where, 'est', second.est, -first.est, tolerance)
+            close(where, 'ci_lb', second.ci_lb, -first.ci_ub, tolerance)
+            close(where, 'ci_ub', second.ci_ub, -first.ci_lb, tolerance)
+
+
+def reflection_and_shift_leave_ranktest_p(case: correctness.cases.Case, result: typing.Any) -> None:
+    """Reflecting ``yi`` negates Kendall's ``tau`` of ``ranktest`` and keeps its p-value, and adding a constant to ``yi`` changes neither: the
+    standardised effects ``(yi - theta) / sqrt(vi - vb)`` are the same up to sign. Run with ``exact`` True and False."""
+    tolerance = case.tolerance or BIAS_AGREEMENT
+    before, reflected = reflected_fit(case, sign=-1.0)
+    _, shifted = reflected_fit(case, shift=LOCATION_SHIFT)
+    for exact in (True, False):
+        first = metafopy.ranktest(before, exact=exact)
+        where = f'{case.id} (exact {exact})'
+        close(where, 'tau after reflection', metafopy.ranktest(reflected, exact=exact).tau, -first.tau, tolerance)
+        close(where, 'pval after reflection', metafopy.ranktest(reflected, exact=exact).pval, first.pval, tolerance)
+        close(where, 'tau after a shift', metafopy.ranktest(shifted, exact=exact).tau, first.tau, tolerance)
+        close(where, 'pval after a shift', metafopy.ranktest(shifted, exact=exact).pval, first.pval, tolerance)
+
+
+def reflection_moves_trimfill_side(case: correctness.cases.Case, result: typing.Any) -> None:
+    """Reflecting ``yi`` to ``-yi`` with ``side`` unset (estimated) gives the same ``k0``, the opposite ``side``, a negated pooled estimate and the
+    negated filled-in effects. Run with the case's ``estimator``."""
+    before, after = reflected_fit(case, sign=-1.0)
+    first = metafopy.trimfill(before, **case.args)
+    second = metafopy.trimfill(after, **case.args)
+    tolerance = case.tolerance or BIAS_AGREEMENT
+    assert second.k0 == first.k0, f'{case.id}: k0 is {second.k0} after reflection, {first.k0} before'
+    assert first.k0 > 0, f'{case.id}: the case must have missing studies'
+    assert {first.side, second.side} == {'left', 'right'}, f'{case.id}: side is {first.side!r} before and {second.side!r} after reflection'
+    close(case.id, 'beta', second.beta, -first.beta, tolerance)
+    close(case.id, 'se', second.se, first.se, tolerance)
+    close(case.id, 'filled-in effects', numpy.sort(second.yi), numpy.sort(-first.yi), tolerance)
+
+
+def trimfill_without_missing_returns_the_model(case: correctness.cases.Case, result: typing.Any) -> None:
+    """When ``trimfill`` finds no missing study (``k0 = 0``) it returns the input model: the same studies, ``beta``, ``se`` and ``tau2``, none filled in."""
+    frame = correctness.cases.case_frame(case)
+    assert frame is not None
+    fit = uni_fit(case, frame)
+    tolerance = case.tolerance or BIAS_AGREEMENT
+    assert result.k0 == 0, f'{case.id}: k0 is {result.k0}, the case must have no missing studies'
+    assert result.k == fit.k, f'{case.id}: {result.k} studies, the model has {fit.k}'
+    assert not numpy.any(result.fill), f'{case.id}: {int(numpy.sum(result.fill))} studies filled in'
+    # auditme: accept[literal-duplication] the attributes of a fit that two calls must share; a test module names its own
+    for name in ('beta', 'se', 'tau2'):
+        close(case.id, name, getattr(result, name), getattr(fit, name), tolerance)
+    close(case.id, 'yi', result.yi, fit.yi, tolerance)
+
+
+def hc_with_zero_tau2_is_the_equal_effects_estimate(case: correctness.cases.Case, result: typing.Any) -> None:
+    """With a DerSimonian-Laird ``tau2`` of 0 the ``hc`` estimate and standard error are those of the equal-effects model: the weights are ``1 / vi``."""
+    frame = correctness.cases.case_frame(case)
+    assert frame is not None
+    equal = metafopy.rma_uni(yi='yi', vi='vi', data=frame, method='EE')
+    tolerance = case.tolerance or BIAS_AGREEMENT
+    assert result.tau2 == 0.0, f'{case.id}: the DerSimonian-Laird tau2 is {result.tau2!r}, the case must have 0'
+    close(case.id, 'beta', result.beta, equal.beta, tolerance)
+    close(case.id, 'se', result.se, equal.se, tolerance)
+
+
+def hc_with_zero_tau2_is_the_equal_effects_interval(case: correctness.cases.Case, result: typing.Any) -> None:
+    """With a DerSimonian-Laird ``tau2`` of 0 the ``hc`` interval is the equal-effects interval (the spec's property)."""
+    frame = correctness.cases.case_frame(case)
+    assert frame is not None
+    equal = metafopy.rma_uni(yi='yi', vi='vi', data=frame, method='EE')
+    tolerance = case.tolerance or BIAS_AGREEMENT
+    close(case.id, 'ci_lb', result.ci_lb, equal.ci_lb[0], tolerance)
+    close(case.id, 'ci_ub', result.ci_ub, equal.ci_ub[0], tolerance)

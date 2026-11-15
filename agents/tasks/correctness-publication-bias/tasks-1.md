@@ -423,7 +423,7 @@ nothing is missing.
 
 ## Task 10: Property and simulation cases
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** medium
 **Spec Reference:** Implementation steps 4 and 5
@@ -432,30 +432,39 @@ nothing is missing.
 
 **Subtasks:**
 
-- [ ] `test_properties.py` and `cases/properties.toml`: `selmodel` with every `delta` fixed at no selection equals the ML `rma_uni` fit; reflecting
+- [x] `test_properties.py` and `cases/properties.toml`: `selmodel` with every `delta` fixed at no selection equals the ML `rma_uni` fit; reflecting
       `yi` to `-yi` negates `regtest`'s `zval` and the limit estimate, keeps `ranktest`'s p-value, and moves `trimfill`'s missing studies to the
       other side with the same `k0`; a location shift leaves `ranktest` unchanged; `trimfill` with `k0 = 0` returns the input model; `hc` with a
       DL `tau2` of 0 gives the equal-effects interval
-- [ ] `test_simulation.py`, each test marked `slow`, `numpy.random.default_rng(seed)` with a fixed seed and a stated number of replicates, asserting at
+- [x] `test_simulation.py`, each test marked `slow`, `numpy.random.default_rng(seed)` with a fixed seed and a stated number of replicates, asserting at
       4 standard errors of the Monte Carlo proportion: the size of `regtest(model='lm')` under the weighted normal linear model it assumes; the size
       of the exact TES test, at most `alpha`, with `theta` known
-- [ ] Check each simulation once by hand against a stand-in that should fail it (a test at the wrong alpha), and note the result in this task's Notes
-- [ ] Record any mismatch as the header says
+- [x] Check each simulation once by hand against a stand-in that should fail it (a test at the wrong alpha), and note the result in this task's Notes
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] `pytest -m slow src/tests/correctness/test_simulation.py` passes
-- [ ] Each property names the functions and options it runs over
+- [x] `pytest -m slow src/tests/correctness/test_simulation.py` passes
+- [x] Each property names the functions and options it runs over
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_properties.py src/tests/correctness/test_simulation.py` passes, `slow` tests included
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_properties.py src/tests/correctness/test_simulation.py` passes, `slow` tests included
 
 **Notes:**
 
 - Depends on Tasks 2 to 6
+- Stand-in checks (4000 replicates each, the assertion of the real test applied to a test run at the wrong level): `regtest(model='lm')` at 0.10
+  rejects 0.1055 of the time and at 0.01 0.00875, both outside 0.05 plus or minus 0.0138, so the test fails; the real level 0.05 gives 0.05075. The
+  exact TES test at `tes_alpha = 0.2` rejects 0.153, above the bound 0.119 for `tes_alpha = 0.1`, so the test fails; at 0.1 it rejects 0.04375
+  (conservative, as an exact test of a discrete count is).
+- The spec's `hc` property does not hold for the interval: at a DL `tau2` of 0 `hc` gives 0.0644 to 0.5364, the equal-effects interval is 0.0495 to
+  0.5513, and the paper's integral (`formulas.hc_interval`) agrees with `hc`. The case `property.hc.zero-tau2.interval` is a strict expected failure
+  and an item in `mismatches.md`; the estimate and standard error, which do equal the equal-effects ones, are checked by
+  `property.hc.zero-tau2.estimate`.
+- `trimfill` with `k0 = 0` runs on `R0` of `dat.bangertdrowns2004` and on `L0` with `side = "right"` of `dat.hackshaw1998`.
 
 ---
 
