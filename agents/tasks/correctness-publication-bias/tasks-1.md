@@ -45,7 +45,7 @@ without values (`sed -n 's/^export \([A-Z_]*\)=.*/\1/p'`). Never match a generic
 
 ## Task 1: Harness - `setup` filters and fitted models, `literal_options` and the bias coverage items
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Module location; API; Coverage list; Error handling; Implementation step 1
@@ -55,42 +55,42 @@ every publication-bias item still lacking a `published` or `derived` case, read 
 
 **Subtasks:**
 
-- [ ] Starting-point check: `grep -rnwE 'literal_options|kendall_z|trimfill_filled|selmodel_fit|hc_interval|selection_loglik' src/tests/correctness`
+- [x] Starting-point check: `grep -rnwE 'literal_options|kendall_z|trimfill_filled|selmodel_fit|hc_interval|selection_loglik' src/tests/correctness`
       prints nothing, and `ls src/tests/correctness/cases/bias.toml src/tests/correctness/cases/selmodel.toml` finds neither file. Stop as `blocked`,
       naming what was found, otherwise
-- [ ] `cases.py`: `setup` accepts `where` (a table of column = value; keep the rows equal in every column), `drop` (a list of 0-based row indices)
+- [x] `cases.py`: `setup` accepts `where` (a table of column = value; keep the rows equal in every column), `drop` (a list of 0-based row indices)
       and `rma_uni` (arguments of `metafopy.rma_uni(yi='yi', vi='vi', data=frame, **rma_uni)`), beside `escalc` and every key the earlier lists
       added. `case_frame` applies `where`, then `drop`, then `escalc`; `run_case` with `rma_uni` fits the model and calls
       `metafopy.<function>(fit, **args)` without `data`, as in the spec's API
-- [ ] Validation as in Error handling: an unknown `setup` key, a `where` column the dataset lacks, or a `drop` index out of range raises
+- [x] Validation as in Error handling: an unknown `setup` key, a `where` column the dataset lacks, or a `drop` index out of range raises
       `ValueError` naming file and case
-- [ ] `test_coverage.py`: `literal_options(func, parameter)` returns the string values of the `Literal` in the parameter's annotation, through PEP 695
+- [x] `test_coverage.py`: `literal_options(func, parameter)` returns the string values of the `Literal` in the parameter's annotation, through PEP 695
       `type` aliases (`Predictor`, `FsnType` are `type` aliases, so their values are `typing.get_args(alias.__value__)`) and `| None`; any other
       annotation raises `TypeError` naming function and parameter
-- [ ] Add the spec's Coverage list items to `coverage_items()`: `regtest.<model>.<predictor>`, `regtest.limit`, `ranktest.*`, `trimfill.*`,
+- [x] Add the spec's Coverage list items to `coverage_items()`: `regtest.<model>.<predictor>`, `regtest.limit`, `ranktest.*`, `trimfill.*`,
       `fsn.<type>`, `fsn.pool.<pool>`, `tes.*`, `hc.estimate`, `hc.ci`, `selmodel.<type>` over `metafopy.models.sel_spec.TYPE_OPTIONS`,
       `selmodel.alternative.<a>` over `metafopy.models.selmodel.ALTERNATIVES`, `selmodel.prec.<p>` over `metafopy.models.selmodel.PRECISIONS`,
       `selmodel.fixed_delta`, `selmodel.decreasing`, `selmodel.LRT`. Read module constants with `importlib.import_module` (the package re-exports
       `regtest` the function over its submodule)
-- [ ] The gate: the existing gate test keeps checking every item outside this spec. A new test `test_every_bias_item_has_a_case` checks the new
+- [x] The gate: the existing gate test keeps checking every item outside this spec. A new test `test_every_bias_item_has_a_case` checks the new
       items, marked `xfail(strict=True, reason='coverage incomplete; see agents/tasks/correctness-publication-bias/tasks-1.md')` until Task 6
       removes the mark
-- [ ] Create `cases/bias.toml` and `cases/selmodel.toml`, empty except a header comment
-- [ ] Unit tests of the harness on inline TOML strings and inline frames: each new `ValueError`; `where` and `drop` keep the right rows;
+- [x] Create `cases/bias.toml` and `cases/selmodel.toml`, empty except a header comment
+- [x] Unit tests of the harness on inline TOML strings and inline frames: each new `ValueError`; `where` and `drop` keep the right rows;
       `literal_options` through a `type` alias, through `| None`, and the `TypeError` on a non-`Literal` annotation; `run_case` with
       `setup.rma_uni` passes the fitted model as the first positional argument and no `data` (checked on `dat.hackshaw1998` with `trimfill`)
 
 **Acceptance Criteria:**
 
-- [ ] `test_every_bias_item_has_a_case` is an expected failure listing every new item
-- [ ] Every other test in `src/tests/correctness` passes, the existing gate included
-- [ ] A `setup` with an unknown key, an unknown `where` column or an out-of-range `drop` index fails naming file and case
+- [x] `test_every_bias_item_has_a_case` is an expected failure listing every new item
+- [x] Every other test in `src/tests/correctness` passes, the existing gate included
+- [x] A `setup` with an unknown key, an unknown `where` column or an out-of-range `drop` index fails naming file and case
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_coverage.py src/tests/correctness/test_derived.py src/tests/correctness/test_properties.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_coverage.py src/tests/correctness/test_derived.py src/tests/correctness/test_properties.py` passes
 
 **Notes:**
 
