@@ -181,6 +181,25 @@ and the page; the items below are appended by the case-writing tasks as they fin
 - **Options:** keep metafor (drop the property: the case becomes an exemption citing this item, and the estimate case stays); follow the reference
   (nothing to change in `hc`, since the reference is the spec's wrong premise: not recommended); investigate (install R metafor and run this case first).
 
+### Peters' test: R meta weights by the event counts, `regtest` can only weight by 1 / vi (Task 12)
+
+- **Case** (strict expected failure in `src/tests/correctness/cases/other_bias.toml`): `other.bias.meta.peters.egger2001`.
+- **Source:** R `meta` 8.5-0, `metabias(metabin(sm = "OR"), method.bias = "Peters")` on `dat.egger2001` without row 16 (ISIS-4); Peters JL et al.
+  (2006), JAMA 295:676-680, doi:10.1001/jama.295.6.676.
+- **Reference and metafopy values:**
+
+  | Quantity | R `meta` | metafopy `regtest(model = "lm", predictor = "ninv")` |
+  |---|---|---|
+  | t statistic | -2.4950 | -2.3230 |
+  | p-value | 0.02684 | 0.03704 |
+
+- **Cause:** `meta`'s source regresses the log odds ratio on 1 / n with the weights 1 / (1 / (a + c) + 1 / (b + d)) from the event counts; metafopy
+  (as metafor) weights the same regression by 1 / vi, and `regtest` has no argument that changes the weights. The regression and the predictor agree.
+- **metafor:** R metafor is not installed in the session's R, so its value was not run; metafopy mirrors metafor's `regtest`.
+- **Options:** follow the reference (a `TODO.md` item: add a weights option or a Peters predictor); keep metafor (the case becomes an exemption citing
+  this item); investigate (run metafor's `regtest` with `predictor = "ninv"` on the same data first).
+- **Not covered:** `meta`'s Harbord test has no counterpart among `regtest`'s predictors (`sei`, `vi`, `ni`, `ninv`, `sqrtni`, `sqrtninv`), so it has no case.
+
 ## Decisions
 
 Added by Task 6; Task 13 completes the section with background and the page.
