@@ -55,3 +55,5 @@ case is reported before it is set to `mismatch`. A probe of those cases passed o
 | 6 | `ls-profile-crossings/tasks-1.md` | 5 | - | todo |
 | 7 | `selmodel-prec-stepfun/tasks-1.md` | 3 | a new halfnorm precision case fails, only if one does (Task 1) | todo |
 | 8 | `sjit-scaled-convergence/tasks-1.md` | - | - | todo |
+
+Checkpoint after 3: running
