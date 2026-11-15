@@ -4,6 +4,20 @@ Open work only, in implementation order, nearest first. Finished items move to
 `DONE.md` unchanged. See the shared `todo-add` and `todo-review` skills for
 the shape of an item.
 
+## No audit entries record the no-intercept QE and tau2 difference
+
+<!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
+Found on 2026-11-15 by a TODO review. The item "QE and the moment tau2 estimators centre yi in models without an intercept" in `DONE.md` asked for a
+`src/audit/data/known.toml` entry; Task 3 of `agents/tasks/qe-no-intercept/tasks-1.md` ran the audit on `construct/*/intercept=false` only and added
+none. Task 14 of `agents/tasks/correctness-location-scale/tasks-1.md` then found that `vif(reestimate=True)` refits without an intercept, so its values
+differ from R by design (recorded in `docs/differences.md`, "QE and tau2 of a model without an intercept"), and notes "No `known.toml` entry: R metafor
+is not installed here, so the audit cases could not be run to name them". `known.toml` has no entry for the change; fits written as formulas with
+`- 1` (the `"~ ablat - 1"` domain in `src/audit/data/domains.toml`) may differ too. Not yet confirmed by an audit run.
+<!-- doc-counts: accept-end -->
+
+Fix direction: run `bin/metafor-audit.sh` in a session with R metafor 5.2-1, and add a `known.toml` entry, citing the `docs/differences.md` section,
+for each finding the no-intercept change explains (the `vif` reestimate options, no-intercept and `- 1` fits); fix any other finding as its own item.
+
 ## The fail-safe N root search rounds up one too far on a step function
 
 <!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
@@ -175,6 +189,19 @@ not a density and its maximum moves with the precision measure. The consistent l
 Fix direction: decide whether `selmodel` rejects the combination with an `InputError`, or defines it from a source (none found for step functions). Then
 set the four cases to `pass` or exempt them with the decision, mark the `hack_stepfun_sei` R parity fixture as differing if the behaviour changes, and
 name the decision in `docs/differences.md` under "Where metafor departs from its reference". A change to `src/metafopy/` goes through a spec first.
+
+## Whether R metafor's SJIT converges on the scaled scale-invariance data was never checked
+
+<!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
+Found on 2026-11-15 by a TODO review. Task 13 of `agents/tasks/correctness-location-scale/tasks-1.md` asks to check whether metafor's
+`rma(..., method="SJIT")` converges on the data that makes `test_scale_invariance[SJIT]` fail (`yi = [0, -0.5625, 0, 0.875, -0.7734375, 0]`,
+`vi = [0.5, 0.625, 0.5, 0.5, 0.125, 1]`, scale 2.0, `threshold` 1e-13, `maxiter` 1000), and to file an item if it does. R metafor could not be run,
+so it was not checked; `rma_uni` raises `EstimationError` there, and the property test now rejects scaled copies that do not converge.
+<!-- doc-counts: accept-end -->
+
+Fix direction: run the scaled data through R metafor 5.2-1 with the same control. If R converges, find why metafopy's iteration (the absolute stopping
+rule on `tau2` in `src/metafopy/models/rma_uni.py`) does not, and fix it; if R does not converge either, close this item with the result.
+
 ## Simmonds and Higgins (2016) Fig 1 one-stage random effects differs from metafopy and R metafor
 
 <!-- doc-counts: accept-start found on 2026-11-14 - a dated record, not a claim about the present -->
@@ -213,3 +240,25 @@ and standard deviations, not counts.
 Fix direction: find the original per-trial counts and person-times that reproduce Table 5 (the authors' supplementary data, or the primary trial
 reports), then write the published cases in `src/tests/correctness/cases/glmm_published.toml`.
 
+## The rma_mv funnel test still skips when rstandard is missing
+
+<!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
+Found on 2026-11-15 by a TODO review. `test_funnel_matches_metafor` in `src/tests/test_fits.py` skips the `mvm` case when `has_mv_residuals` finds no
+`rstandard` for `rma_mv` fits ("rstandard() of rma_mv fits is not available yet"), but `rstandard_rma_mv` now exists in
+`src/metafopy/methods/mv_diagnostics.py`, so the skip guards a gap that has closed.
+<!-- doc-counts: accept-end -->
+
+Fix direction: confirm the `mvm` case runs, then remove `has_mv_residuals` and the skip.
+
+## Correctness coverage the extension specs left for later
+
+<!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
+Found on 2026-11-15 by a TODO review. `agents/specs/correctness-location-scale/spec.md` (out of scope) leaves for a later spec `profile` beyond the
+property, `vif`, `blup`, `ranef`, `rstandard`, `weighted=False`, fixed `alpha` and `beta`, and `alpha_min` and `alpha_max`;
+`agents/specs/correctness-location-scale/mismatches.md` adds REML with `optbeta=True`, the deviance and `vb` of `optbeta` fits.
+`agents/specs/correctness-mv-robust/spec.md` says a later spec can add the `rma_mv` diagnostics `cooks_distance`, `dfbetas`, `rstudent` and `ranef`.
+No spec, task list or item covers them; they are checked against R metafor only.
+<!-- doc-counts: accept-end -->
+
+Fix direction: deferred. When taken up, one spec per area with `/specdev`, listing the defining references and the coverage items in
+`src/tests/correctness/test_coverage.py`.
