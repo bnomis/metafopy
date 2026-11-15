@@ -556,7 +556,7 @@ formulas share, not copy, what `formulas.py` already has.
 
 ## Task 12: File the answers and close the spec
 
-**Status:** in-progress
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation step 8 (follow-up)
@@ -565,27 +565,27 @@ formulas share, not copy, what `formulas.py` already has.
 
 **Subtasks:**
 
-- [ ] Read the answers from the Answers section of `agents/specs/correctness-location-scale/mismatches.md`, never from the page. Stop as `blocked`,
+- [x] Read the answers from the Answers section of `agents/specs/correctness-location-scale/mismatches.md`, never from the page. Stop as `blocked`,
       naming the missing items, if the section is empty or incomplete (skip this when Task 11 found nothing to review)
-- [ ] *Keep metafor*: correct the case to the convention metafor documents, cite where it documents it, and set `status = "pass"`
-- [ ] *Follow the reference*: add a `TODO.md` item for each with the `todo-add` skill. The item names the case, the fix, the R parity fixtures and
+- [x] *Keep metafor*: correct the case to the convention metafor documents, cite where it documents it, and set `status = "pass"`
+- [x] *Follow the reference*: add a `TODO.md` item for each with the `todo-add` skill. The item names the case, the fix, the R parity fixtures and
       `src/audit/data/known.toml` entries to mark, and the `docs/differences.md` section "Where metafor departs from its reference" to add to
-- [ ] *Investigate*: a `TODO.md` item naming what is in doubt, with the `todo-add` skill
-- [ ] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` to say so
-- [ ] Run the final test run from the worktree:
+- [x] *Investigate*: a `TODO.md` item naming what is in doubt, with the `todo-add` skill
+- [x] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` to say so
+- [x] Run the final test run from the worktree:
       `main=$(git worktree list --porcelain | sed -n '1s/^worktree //p'); mkdir -p "$main/ralpher-logs/correctness-location-scale/tasks-1" && pytest src/tests/correctness src/tests/test_rma_ls.py src/tests/test_ls_vif.py src/tests/test_ls_vif_sim.py src/tests/test_permutest_ls_plots.py src/tests/test_audit4_plots.py 2>&1 | tee "$main/ralpher-logs/correctness-location-scale/tasks-1/final-tests.log"`
 
 **Acceptance Criteria:**
 
-- [ ] Every answered item has a case change or a `TODO.md` item
-- [ ] The spec says `**Status:** implemented`
+- [x] Every answered item has a case change or a `TODO.md` item
+- [x] The spec says `**Status:** implemented`
 
 **Definition of Done:**
 
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] The final test run above passes: `src/tests/correctness` with `slow` cases (the project's `addopts` do not deselect them), the own tests of
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] The final test run above passes: `src/tests/correctness` with `slow` cases (the project's `addopts` do not deselect them), the own tests of
       `src/metafopy/models/rma_ls_fit.py` (`src/tests/test_rma_ls.py`) and the test files that import the location-scale modules that import it
       (`src/tests/test_ls_vif.py`, `src/tests/test_ls_vif_sim.py`, `src/tests/test_permutest_ls_plots.py`, `src/tests/test_audit4_plots.py`)
 
