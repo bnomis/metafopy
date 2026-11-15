@@ -542,14 +542,15 @@ def formula_value(case: Case, name: str, frame: pandas.DataFrame | None) -> typi
     """Call a formula with the ``args`` of the case that it declares, a column name replaced by the column."""
     func = resolve_formula(name, case.id)
     kwargs: dict[str, typing.Any] = {}
-    for param in inspect.signature(func).parameters:
+    for param, signature in inspect.signature(func).parameters.items():
         if param == 'data' and frame is not None:
             kwargs[param] = frame
             continue
         if param not in case.args:
             continue
         value = case.args[param]
-        if isinstance(value, str) and frame is not None and value in frame.columns:
+        # a parameter annotated ``str`` takes the text as it is, so ``predictor = "vi"`` is not read as the column ``vi``
+        if isinstance(value, str) and signature.annotation is not str and frame is not None and value in frame.columns:
             value = frame[value].to_numpy(dtype=numpy.float64)
         kwargs[param] = value
     return func(**kwargs)

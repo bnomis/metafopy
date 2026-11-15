@@ -1,1 +1,215 @@
-# Publication-bias cases (regtest, ranktest, trimfill, fsn, tes, hc): none yet; see agents/specs/correctness-publication-bias/spec.md
+# Publication-bias cases: regtest and ranktest `derived` cases (trimfill, fsn, tes and hc follow in later tasks).
+#
+# Expected values come from `formulas.regtest_*` (Egger et al. 1997 in its original form; Sterne and Egger 2005; Macaskill et al. 2001; Peters et al.
+# 2006; Moreno et al. 2009; Stanley and Doucouliagos 2014; Pustejovsky and Rodgers 2019) and `formulas.begg_*` (Begg and Mazumdar 1994; Kendall 1970).
+# dat.egger2001 leaves out ISIS-4 (row 15) as Egger et al.'s example does. dat.hackshaw1998 has no sample sizes, so its `cases` column stands in for
+# `ni`: the regression takes any positive covariate. `model = "rma"` cases use `method = "DL"` (closed form, 1e-10); the default REML stops at its
+# convergence threshold (1e-5, as metafor does), so its cases state the tolerance 1e-4.
+[[case]]
+id = "bias.regtest.egger2001.lm.sei"
+kind = "derived"
+function = "regtest"
+dataset = "dat.egger2001"
+setup = { drop = [15], escalc = { measure = "OR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i" } }
+args = { x = "yi", vi = "vi", model = "lm", predictor = "sei" }
+expect = { zval = "formulas.regtest_zval", pval = "formulas.regtest_pval", est = "formulas.regtest_est", ci_lb = "formulas.regtest_ci_lb", ci_ub = "formulas.regtest_ci_ub" }
+covers = ["regtest.limit", "regtest.lm.sei"]
+
+[[case]]
+id = "bias.regtest.egger2001.lm.vi"
+kind = "derived"
+function = "regtest"
+dataset = "dat.egger2001"
+setup = { drop = [15], escalc = { measure = "OR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i" } }
+args = { x = "yi", vi = "vi", model = "lm", predictor = "vi" }
+expect = { zval = "formulas.regtest_zval", pval = "formulas.regtest_pval", est = "formulas.regtest_est", ci_lb = "formulas.regtest_ci_lb", ci_ub = "formulas.regtest_ci_ub" }
+covers = ["regtest.limit", "regtest.lm.vi"]
+
+[[case]]
+id = "bias.regtest.egger2001.rma.sei.dl"
+kind = "derived"
+function = "regtest"
+dataset = "dat.egger2001"
+setup = { drop = [15], escalc = { measure = "OR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i" } }
+args = { x = "yi", vi = "vi", model = "rma", predictor = "sei", method = "DL" }
+expect = { zval = "formulas.regtest_zval", pval = "formulas.regtest_pval", est = "formulas.regtest_est", ci_lb = "formulas.regtest_ci_lb", ci_ub = "formulas.regtest_ci_ub" }
+covers = ["regtest.limit", "regtest.rma.sei"]
+
+[[case]]
+id = "bias.regtest.egger2001.rma.vi.dl"
+kind = "derived"
+function = "regtest"
+dataset = "dat.egger2001"
+setup = { drop = [15], escalc = { measure = "OR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i" } }
+args = { x = "yi", vi = "vi", model = "rma", predictor = "vi", method = "DL" }
+expect = { zval = "formulas.regtest_zval", pval = "formulas.regtest_pval", est = "formulas.regtest_est", ci_lb = "formulas.regtest_ci_lb", ci_ub = "formulas.regtest_ci_ub" }
+covers = ["regtest.limit", "regtest.rma.vi"]
+
+[[case]]
+id = "bias.regtest.egger2001.rma.sei.reml"
+kind = "derived"
+function = "regtest"
+dataset = "dat.egger2001"
+setup = { drop = [15], escalc = { measure = "OR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i" } }
+args = { x = "yi", vi = "vi", model = "rma", predictor = "sei", method = "REML" }
+expect = { zval = "formulas.regtest_zval", pval = "formulas.regtest_pval", est = "formulas.regtest_est", ci_lb = "formulas.regtest_ci_lb", ci_ub = "formulas.regtest_ci_ub" }
+tolerance = 0.0001
+covers = ["regtest.limit", "regtest.rma.sei"]
+
+[[case]]
+id = "bias.regtest.hackshaw1998.lm.sei"
+kind = "derived"
+function = "regtest"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", model = "lm", predictor = "sei" }
+expect = { zval = "formulas.regtest_zval", pval = "formulas.regtest_pval", est = "formulas.regtest_est", ci_lb = "formulas.regtest_ci_lb", ci_ub = "formulas.regtest_ci_ub" }
+covers = ["regtest.limit", "regtest.lm.sei"]
+
+[[case]]
+id = "bias.regtest.hackshaw1998.lm.vi"
+kind = "derived"
+function = "regtest"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", model = "lm", predictor = "vi" }
+expect = { zval = "formulas.regtest_zval", pval = "formulas.regtest_pval", est = "formulas.regtest_est", ci_lb = "formulas.regtest_ci_lb", ci_ub = "formulas.regtest_ci_ub" }
+covers = ["regtest.limit", "regtest.lm.vi"]
+
+[[case]]
+id = "bias.regtest.hackshaw1998.lm.ni"
+kind = "derived"
+function = "regtest"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", model = "lm", predictor = "ni", ni = "cases" }
+expect = { zval = "formulas.regtest_zval", pval = "formulas.regtest_pval" }
+covers = ["regtest.lm.ni"]
+
+[[case]]
+id = "bias.regtest.hackshaw1998.lm.ninv"
+kind = "derived"
+function = "regtest"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", model = "lm", predictor = "ninv", ni = "cases" }
+expect = { zval = "formulas.regtest_zval", pval = "formulas.regtest_pval", est = "formulas.regtest_est", ci_lb = "formulas.regtest_ci_lb", ci_ub = "formulas.regtest_ci_ub" }
+covers = ["regtest.limit", "regtest.lm.ninv"]
+
+[[case]]
+id = "bias.regtest.hackshaw1998.lm.sqrtni"
+kind = "derived"
+function = "regtest"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", model = "lm", predictor = "sqrtni", ni = "cases" }
+expect = { zval = "formulas.regtest_zval", pval = "formulas.regtest_pval" }
+covers = ["regtest.lm.sqrtni"]
+
+[[case]]
+id = "bias.regtest.hackshaw1998.lm.sqrtninv"
+kind = "derived"
+function = "regtest"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", model = "lm", predictor = "sqrtninv", ni = "cases" }
+expect = { zval = "formulas.regtest_zval", pval = "formulas.regtest_pval", est = "formulas.regtest_est", ci_lb = "formulas.regtest_ci_lb", ci_ub = "formulas.regtest_ci_ub" }
+covers = ["regtest.limit", "regtest.lm.sqrtninv"]
+
+[[case]]
+id = "bias.regtest.hackshaw1998.rma.sei.dl"
+kind = "derived"
+function = "regtest"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", model = "rma", predictor = "sei", method = "DL" }
+expect = { zval = "formulas.regtest_zval", pval = "formulas.regtest_pval", est = "formulas.regtest_est", ci_lb = "formulas.regtest_ci_lb", ci_ub = "formulas.regtest_ci_ub" }
+covers = ["regtest.limit", "regtest.rma.sei"]
+
+[[case]]
+id = "bias.regtest.hackshaw1998.rma.vi.dl"
+kind = "derived"
+function = "regtest"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", model = "rma", predictor = "vi", method = "DL" }
+expect = { zval = "formulas.regtest_zval", pval = "formulas.regtest_pval", est = "formulas.regtest_est", ci_lb = "formulas.regtest_ci_lb", ci_ub = "formulas.regtest_ci_ub" }
+covers = ["regtest.limit", "regtest.rma.vi"]
+
+[[case]]
+id = "bias.regtest.hackshaw1998.rma.ni.dl"
+kind = "derived"
+function = "regtest"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", model = "rma", predictor = "ni", method = "DL", ni = "cases" }
+expect = { zval = "formulas.regtest_zval", pval = "formulas.regtest_pval" }
+covers = ["regtest.rma.ni"]
+
+[[case]]
+id = "bias.regtest.hackshaw1998.rma.ninv.dl"
+kind = "derived"
+function = "regtest"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", model = "rma", predictor = "ninv", method = "DL", ni = "cases" }
+expect = { zval = "formulas.regtest_zval", pval = "formulas.regtest_pval", est = "formulas.regtest_est", ci_lb = "formulas.regtest_ci_lb", ci_ub = "formulas.regtest_ci_ub" }
+covers = ["regtest.limit", "regtest.rma.ninv"]
+
+[[case]]
+id = "bias.regtest.hackshaw1998.rma.sqrtni.dl"
+kind = "derived"
+function = "regtest"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", model = "rma", predictor = "sqrtni", method = "DL", ni = "cases" }
+expect = { zval = "formulas.regtest_zval", pval = "formulas.regtest_pval" }
+covers = ["regtest.rma.sqrtni"]
+
+[[case]]
+id = "bias.regtest.hackshaw1998.rma.sqrtninv.dl"
+kind = "derived"
+function = "regtest"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", model = "rma", predictor = "sqrtninv", method = "DL", ni = "cases" }
+expect = { zval = "formulas.regtest_zval", pval = "formulas.regtest_pval", est = "formulas.regtest_est", ci_lb = "formulas.regtest_ci_lb", ci_ub = "formulas.regtest_ci_ub" }
+covers = ["regtest.limit", "regtest.rma.sqrtninv"]
+
+[[case]]
+id = "bias.regtest.hackshaw1998.rma.sei.reml"
+kind = "derived"
+function = "regtest"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", model = "rma", predictor = "sei", method = "REML" }
+expect = { zval = "formulas.regtest_zval", pval = "formulas.regtest_pval", est = "formulas.regtest_est", ci_lb = "formulas.regtest_ci_lb", ci_ub = "formulas.regtest_ci_ub" }
+tolerance = 0.0001
+covers = ["regtest.limit", "regtest.rma.sei"]
+
+[[case]]
+id = "bias.ranktest.egger2001.exact"
+kind = "derived"
+function = "ranktest"
+dataset = "dat.egger2001"
+setup = { drop = [15], escalc = { measure = "OR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i" } }
+args = { x = "yi", vi = "vi", exact = true }
+expect = { tau = "formulas.begg_tau", pval = "formulas.begg_pval" }
+covers = ["ranktest.pval.exact", "ranktest.tau"]
+
+[[case]]
+id = "bias.ranktest.egger2001.normal"
+kind = "derived"
+function = "ranktest"
+dataset = "dat.egger2001"
+setup = { drop = [15], escalc = { measure = "OR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i" } }
+args = { x = "yi", vi = "vi", exact = false }
+expect = { tau = "formulas.begg_tau", pval = "formulas.begg_pval" }
+check = "test_derived.kendall_z"
+covers = ["ranktest.pval.normal", "ranktest.tau"]
+
+[[case]]
+id = "bias.ranktest.hackshaw1998.exact"
+kind = "derived"
+function = "ranktest"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", exact = true }
+expect = { tau = "formulas.begg_tau", pval = "formulas.begg_pval" }
+covers = ["ranktest.pval.exact", "ranktest.tau"]
+
+[[case]]
+id = "bias.ranktest.hackshaw1998.normal"
+kind = "derived"
+function = "ranktest"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", exact = false }
+expect = { tau = "formulas.begg_tau", pval = "formulas.begg_pval" }
+check = "test_derived.kendall_z"
+covers = ["ranktest.pval.normal", "ranktest.tau"]

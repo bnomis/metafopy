@@ -104,7 +104,7 @@ every publication-bias item still lacking a `published` or `derived` case, read 
 
 ## Task 2: Derived cases - `regtest` and `ranktest`
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** API (`kendall_z`); Coverage list (regtest, ranktest); Implementation step 2
@@ -114,28 +114,28 @@ formulas coded from the publications.
 
 **Subtasks:**
 
-- [ ] `formulas.py`, each function citing its source and equation:
+- [x] `formulas.py`, each function citing its source and equation:
   - Egger's regression in its original form (standard normal deviate on precision, ordinary least squares; Egger et al. 1997), so it checks
     metafopy's weighted form independently;
   - the weighted regression with each predictor as published (`sei`, `vi`: Moreno et al. 2009; `ni`, `ninv`: Macaskill et al. 2001, Peters et al.
     2006; `sqrtninv`: Pustejovsky and Rodgers 2019), for `model='lm'` and the random-effects `model='rma'` (Sterne and Egger 2005);
   - the limit estimate and its interval (Stanley and Doucouliagos 2014; Moreno et al. 2009);
   - Begg and Mazumdar's standardised deviates, Kendall's tau, its exact and normal p-values (Begg and Mazumdar 1994).
-- [ ] `test_derived.py`: `kendall_z`, the normal deviate from `tau` and k, naming case, quantity and both values
-- [ ] `derived` cases in `cases/bias.toml`, one or more per item, on `dat.egger2001` (`setup.drop` leaves out ISIS-4 as Egger's example does) and
+- [x] `test_derived.py`: `kendall_z`, the normal deviate from `tau` and k, naming case, quantity and both values
+- [x] `derived` cases in `cases/bias.toml`, one or more per item, on `dat.egger2001` (`setup.drop` leaves out ISIS-4 as Egger's example does) and
       `dat.hackshaw1998`. Tolerances: closed forms `1e-10`, iterative (`model='rma'`) `1e-8`
-- [ ] Record any mismatch as the header says
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] The bias gate's missing list names no `regtest.*` or `ranktest.*` item
-- [ ] Each new `formulas.py` function names its source and equation
+- [x] The bias gate's missing list names no `regtest.*` or `ranktest.*` item
+- [x] Each new `formulas.py` function names its source and equation
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 

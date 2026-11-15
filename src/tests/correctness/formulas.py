@@ -2961,3 +2961,212 @@ def distinct_label_orders(remaining: list[int]) -> collections.abc.Iterator[tupl
         rest.remove(label)
         for tail in distinct_label_orders(rest):
             yield (label, *tail)
+
+
+# Publication bias: regression tests for funnel plot asymmetry and the rank correlation test.
+
+
+def regtest_predictor(vi: FloatArray, predictor: str, ni: FloatArray | None) -> FloatArray:
+    """The measure of precision added to the model: the standard error ``sqrt(v)`` (Egger et al., 1997, BMJ 315:629-634), the sampling variance ``v``
+    (Moreno et al., 2009, BMC Med Res Methodol 9:2), the sample size ``n`` or its inverse (Macaskill et al., 2001, Stat Med 20:641-654; Peters et al.,
+    2006, JAMA 295:676-680), or the square root of ``n`` or its inverse (Pustejovsky and Rodgers, 2019, Res Synth Methods 10:57-71)."""
+    if predictor == 'sei':
+        return numpy.sqrt(vi)
+    if predictor == 'vi':
+        return vi
+    if ni is None:
+        raise ValueError(f'the predictor {predictor!r} needs the sample sizes')
+    return {'ni': ni, 'ninv': 1 / ni, 'sqrtni': numpy.sqrt(ni), 'sqrtninv': 1 / numpy.sqrt(ni)}[predictor]
+
+
+def egger_regression(yi: FloatArray, vi: FloatArray, extra: FloatArray) -> tuple[FloatArray, FloatArray, int]:
+    """Egger's regression in its original form: the standardised effect ``yi / sei`` regressed by ordinary least squares on the precision ``1 / sei``
+    and on ``extra / sei`` (Egger et al., 1997, equation 1, where ``extra`` is the standard error and ``extra / sei`` is 1; Sterne and Egger, 2005,
+    for the other predictors). Returns the coefficients of ``(1 / sei, extra / sei)``, their standard errors from the residual variance ``RSS / (k - 2)``,
+    and ``k - 2``. The coefficient of ``extra / sei`` is the intercept of the original equation, the bias; that of ``1 / sei`` the effect at ``extra = 0``."""
+    sei = numpy.sqrt(vi)
+    design = numpy.column_stack([1 / sei, extra / sei])
+    response = yi / sei
+    gram = numpy.linalg.inv(design.T @ design)
+    coefficients = gram @ design.T @ response
+    df = len(yi) - 2
+    residual = response - design @ coefficients
+    return coefficients, numpy.sqrt(numpy.diag(gram) * float(residual @ residual) / df), df
+
+
+def meta_regression_with_predictor(
+    yi: FloatArray, vi: FloatArray, extra: FloatArray, method: str, test: str, level: float
+) -> tuple[FloatArray, FloatArray, float, float]:
+    """The meta-regression of ``yi`` on an intercept and ``extra`` with the random-effects weights ``1 / (v + tau2)`` (Sterne and Egger, 2005; Thompson and
+    Sharp, 1999, Stat Med 18:2693-2708), ``tau2`` of ``method`` estimated with the predictor in the model. Returns the coefficients, the standard errors,
+    the degrees of freedom of the test (infinite for ``z``) and the critical value of the interval."""
+    beta, cov, df = coefficient_covariance(yi, vi, method, test, '~ extra', {'extra': extra})
+    return beta, numpy.sqrt(numpy.diag(cov)), df, critical_value(test, df, level)
+
+
+def regtest_quantities(
+    x: FloatArray, vi: FloatArray, model: str, predictor: str, ni: FloatArray | None, method: str, test: str, level: float
+) -> dict[str, float]:
+    """``zval``, ``pval``, ``est``, ``ci_lb`` and ``ci_ub`` of the regression test: the statistic and p-value of the coefficient of the predictor, and the
+    limit estimate (the intercept, the effect at zero of the predictor) with its interval (Stanley and Doucouliagos, 2014, Res Synth Methods 5:60-78)."""
+    extra = regtest_predictor(vi, predictor, ni)
+    if model == 'lm':
+        coefficients, errors, df = egger_regression(x, vi, extra)
+        crit = float(scipy.stats.t.isf(alpha_of(level) / 2, df))
+        beta, se = coefficients[[1, 0]], errors[[1, 0]]
+        stat = beta / se
+        pval = 2 * scipy.stats.t.sf(abs(stat[0]), df)
+    else:
+        coefficients, errors, test_df, crit = meta_regression_with_predictor(x, vi, extra, method, test, level)
+        beta, se = coefficients[[1, 0]], errors[[1, 0]]
+        stat = beta / se
+        pval = 2 * (scipy.stats.norm.sf(abs(stat[0])) if test == 'z' else scipy.stats.t.sf(abs(stat[0]), test_df))
+    # ``beta`` is ordered (coefficient of the predictor, intercept) in both branches: index 0 is tested, index 1 is the limit estimate
+    return {'zval': float(stat[0]), 'pval': float(pval), 'est': float(beta[1]), 'ci_lb': float(beta[1] - crit * se[1]), 'ci_ub': float(beta[1] + crit * se[1])}
+
+
+def regtest_zval(
+    x: FloatArray,
+    vi: FloatArray,
+    model: str = 'rma',
+    predictor: str = 'sei',
+    ni: FloatArray | None = None,
+    method: str = 'REML',
+    test: str = 'z',
+    level: float = 95,
+) -> float:
+    """The test statistic of the coefficient of the predictor."""
+    return regtest_quantities(x, vi, model, predictor, ni, method, test, level)['zval']
+
+
+def regtest_pval(
+    x: FloatArray,
+    vi: FloatArray,
+    model: str = 'rma',
+    predictor: str = 'sei',
+    ni: FloatArray | None = None,
+    method: str = 'REML',
+    test: str = 'z',
+    level: float = 95,
+) -> float:
+    """The two-sided p-value of the coefficient of the predictor."""
+    return regtest_quantities(x, vi, model, predictor, ni, method, test, level)['pval']
+
+
+def regtest_est(
+    x: FloatArray,
+    vi: FloatArray,
+    model: str = 'rma',
+    predictor: str = 'sei',
+    ni: FloatArray | None = None,
+    method: str = 'REML',
+    test: str = 'z',
+    level: float = 95,
+) -> float:
+    """The limit estimate: the intercept, the effect at zero of the predictor."""
+    return regtest_quantities(x, vi, model, predictor, ni, method, test, level)['est']
+
+
+def regtest_ci_lb(
+    x: FloatArray,
+    vi: FloatArray,
+    model: str = 'rma',
+    predictor: str = 'sei',
+    ni: FloatArray | None = None,
+    method: str = 'REML',
+    test: str = 'z',
+    level: float = 95,
+) -> float:
+    """The lower bound of the interval of the limit estimate."""
+    return regtest_quantities(x, vi, model, predictor, ni, method, test, level)['ci_lb']
+
+
+def regtest_ci_ub(
+    x: FloatArray,
+    vi: FloatArray,
+    model: str = 'rma',
+    predictor: str = 'sei',
+    ni: FloatArray | None = None,
+    method: str = 'REML',
+    test: str = 'z',
+    level: float = 95,
+) -> float:
+    """The upper bound of the interval of the limit estimate."""
+    return regtest_quantities(x, vi, model, predictor, ni, method, test, level)['ci_ub']
+
+
+def begg_deviates(yi: FloatArray, vi: FloatArray) -> FloatArray:
+    """Begg and Mazumdar's standardised effects ``y*_i = (y_i - ybar) / sqrt(v*_i)`` with the inverse-variance mean ``ybar = sum(w y) / sum(w)`` and
+    ``v*_i = v_i - 1 / sum(w)`` (Begg and Mazumdar, 1994, Biometrics 50:1088-1101, p. 1089)."""
+    w = 1 / vi
+    pooled = float(numpy.sum(w * yi) / numpy.sum(w))
+    return (yi - pooled) / numpy.sqrt(vi - 1 / float(numpy.sum(w)))
+
+
+def tie_sizes(values: FloatArray) -> list[int]:
+    """The sizes of the groups of equal values that have more than one member."""
+    _, counts = numpy.unique(values, return_counts=True)
+    return [int(c) for c in counts if c > 1]
+
+
+def kendall_counts(a: FloatArray, b: FloatArray) -> tuple[int, int, list[int], list[int]]:
+    """The concordant and discordant pairs of ``a`` and ``b`` and the sizes of the groups of tied values of each."""
+    concordant = discordant = 0
+    for i in range(len(a) - 1):
+        product = numpy.sign(a[i + 1 :] - a[i]) * numpy.sign(b[i + 1 :] - b[i])
+        concordant += int(numpy.sum(product > 0))
+        discordant += int(numpy.sum(product < 0))
+    return concordant, discordant, tie_sizes(a), tie_sizes(b)
+
+
+def begg_tau(x: FloatArray, vi: FloatArray) -> float:
+    """Kendall's rank correlation between ``y*`` and ``v`` (Begg and Mazumdar, 1994, p. 1089; Kendall, 1970, Rank Correlation Methods, ch. 3):
+    ``tau = (C - D) / sqrt((N - Tx) (N - Ty))`` over the ``N = k (k - 1) / 2`` pairs, ``Tx`` and ``Ty`` the tied pairs (``tau-b``; it is
+    ``(C - D) / N`` without ties)."""
+    concordant, discordant, ties_a, ties_b = kendall_counts(begg_deviates(x, vi), vi)
+    k = len(x)
+    pairs = k * (k - 1) / 2
+    return (concordant - discordant) / math.sqrt((pairs - sum(t * (t - 1) / 2 for t in ties_a)) * (pairs - sum(t * (t - 1) / 2 for t in ties_b)))
+
+
+def kendall_normal_variance(k: int, ties_a: list[int], ties_b: list[int]) -> float:
+    """The variance of ``S = C - D`` under independence, with the correction for ties (Kendall, 1970, ch. 4); ``k (k - 1) (2k + 5) / 18`` without ties
+    (Begg and Mazumdar, 1994, equation 2.1)."""
+    v0 = k * (k - 1) * (2 * k + 5)
+    vt = sum(t * (t - 1) * (2 * t + 5) for t in ties_a)
+    vu = sum(u * (u - 1) * (2 * u + 5) for u in ties_b)
+    v1 = sum(t * (t - 1) for t in ties_a) * sum(u * (u - 1) for u in ties_b) / (2 * k * (k - 1))
+    v2 = sum(t * (t - 1) * (t - 2) for t in ties_a) * sum(u * (u - 1) * (u - 2) for u in ties_b) / (9 * k * (k - 1) * (k - 2))
+    return (v0 - vt - vu) / 18 + v1 + v2
+
+
+def begg_z(x: FloatArray, vi: FloatArray) -> float:
+    """Begg and Mazumdar's normal deviate ``Z = (C - D) / sqrt(k (k - 1) (2k + 5) / 18)`` (1994, p. 1089), the variance corrected for ties if any."""
+    concordant, discordant, ties_a, ties_b = kendall_counts(begg_deviates(x, vi), vi)
+    return (concordant - discordant) / math.sqrt(kendall_normal_variance(len(x), ties_a, ties_b))
+
+
+def inversion_distribution(k: int) -> list[int]:
+    """The number of the ``k!`` orderings of ``k`` items with each number ``d`` of discordant pairs (index ``d``): the coefficients of the product over
+    ``j = 1 .. k`` of ``1 + z + ... + z^(j-1)``, the distribution of Kendall's statistic under independence (Kendall, 1970, ch. 5)."""
+    counts = [1]
+    for j in range(2, k + 1):
+        grown = [0] * (len(counts) + j - 1)
+        for d, c in enumerate(counts):
+            for step in range(j):
+                grown[d + step] += c
+        counts = grown
+    return counts
+
+
+def begg_pval(x: FloatArray, vi: FloatArray, exact: bool = True) -> float:
+    """The two-sided p-value of the rank test. The exact value (without ties) doubles the smaller tail of the distribution of the number of discordant
+    pairs, capped at one (Kendall, 1970); otherwise ``2 P(|Z| >= z)`` of the normal deviate (Begg and Mazumdar, 1994)."""
+    _, discordant, ties_a, ties_b = kendall_counts(begg_deviates(x, vi), vi)
+    if exact and not ties_a and not ties_b:
+        counts = inversion_distribution(len(x))
+        total = sum(counts)
+        lower = sum(counts[: discordant + 1]) / total
+        upper = sum(counts[discordant:]) / total
+        return min(1.0, 2 * min(lower, upper))
+    return float(2 * scipy.stats.norm.sf(abs(begg_z(x, vi))))

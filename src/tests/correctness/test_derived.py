@@ -81,6 +81,19 @@ def predict_pi(case: correctness.cases.Case, result: typing.Any) -> None:
         numbers_agree(case, name, actual, correctness.cases.formula_value(case, f'formulas.{formula}', frame))
 
 
+def kendall_z(case: correctness.cases.Case, result: typing.Any) -> None:
+    """Begg and Mazumdar's normal deviate from ``tau`` and the number of studies k (1994, p. 1089): ``Z = 3 tau sqrt(k (k - 1) / (2 (2k + 5)))``.
+
+    It is compared with the deviate the formulas compute from the data, and its two-sided normal p-value with ``pval`` of the result.
+    """
+    frame = correctness.cases.case_frame(case)
+    assert frame is not None
+    k = int(frame[case.args['x']].notna().sum())
+    z = 3 * result.tau * math.sqrt(k * (k - 1) / (2 * (2 * k + 5)))
+    numbers_agree(case, 'Z', z, correctness.cases.formula_value(case, 'formulas.begg_z', frame))
+    numbers_agree(case, 'normal p-value from Z', 2 * scipy.stats.norm.sf(abs(z)), result.pval)
+
+
 MV_TERM = re.compile(r'~\s*([\w.]+(?:\s*\+\s*[\w.]+)*)\s*\|\s*([\w.]+)(?:\s*/\s*([\w.]+))?')
 MV_COMPONENT_TOLERANCE = 1e-6
 MV_LOGLIK_EXCESS = 1e-8
