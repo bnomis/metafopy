@@ -1,0 +1,511 @@
+# Published selection-model cases (Task 9 of the publication-bias task list). Values are written as printed; each source's data were checked against the bundled
+# dataset before the case was written (the same studies and the same unadjusted estimate to the printed digits). Preston et al. (2004) prints no
+# selection-model estimate that maps to metafor's parameters, so its cases are the unadjusted and trim-and-fill figures; Citkowicz and Vevea (2017) is the
+# authors' own supplementary code run on its Table 1 data (the 2017 article itself was not available).
+
+[[case]]
+id = "published.vevea2005.cohen1981.unadjusted.beta"
+kind = "published"
+function = "rma_uni"
+dataset = "dat.cohen1981"
+setup = { escalc = { measure = "ZCOR", ri = "ri", ni = "ni" } }
+args = { yi = "yi", vi = "vi", method = "ML" }
+expect = { "beta[0]" = "0.38", "tau2" = "0.001" }
+covers = ["selmodel.LRT"]
+
+[case.source]
+citation = "Vevea JL, Woods CM (2005). Publication bias in research synthesis: sensitivity analysis using a priori weight functions. Psychological Methods 10(4):428-443."
+locator = "Table 2, row No selection (transformed correlation 0.38, variance component 0.001), after Fisher r-to-z"
+read = 2026-11-15
+doi = "10.1037/1082-989X.10.4.428"
+
+[[case]]
+id = "published.vevea2005.cohen1981.unadjusted.se"
+kind = "published"
+function = "rma_uni"
+dataset = "dat.cohen1981"
+setup = { escalc = { measure = "ZCOR", ri = "ri", ni = "ni" } }
+args = { yi = "yi", vi = "vi", method = "ML" }
+expect = { "se[0]" = "0.044" }
+status = "mismatch"
+reason = "the paper prints SE 0.044; metafopy gives 0.04469 (ML, tau2 0.00117), which rounds to 0.045; the printed digits are probably truncated"
+
+[case.source]
+citation = "Vevea JL, Woods CM (2005). Publication bias in research synthesis: sensitivity analysis using a priori weight functions. Psychological Methods 10(4):428-443."
+locator = "Table 2, row No selection: SE 0.044 of the mean"
+read = 2026-11-15
+doi = "10.1037/1082-989X.10.4.428"
+
+[[case]]
+id = "published.vevea2005.cohen1981.mod1.beta"
+kind = "published"
+function = "selmodel"
+dataset = "dat.cohen1981"
+setup = { escalc = { measure = "ZCOR", ri = "ri", ni = "ni" }, rma_uni = { method = "ML" } }
+args = { type = "stepfun", steps = [0.005, 0.01, 0.05, 0.1, 0.25, 0.35, 0.5, 0.65, 0.75, 0.9, 0.95, 0.99, 0.995, 1.0], delta = [1.00, 0.99, 0.95, 0.90, 0.80, 0.75, 0.65, 0.60, 0.55, 0.50, 0.50, 0.50, 0.50, 0.50], alternative = "greater" }
+expect = { "beta[0]" = "0.35" }
+status = "mismatch"
+reason = "the paper prints 0.35; metafopy gives 0.3577 with the Table 1 weights applied to one-tailed p-values (fixed delta, ML); the paper used its own optimiser and the variance component is poorly determined"
+covers = ["selmodel.fixed_delta", "selmodel.stepfun"]
+
+[case.source]
+citation = "Vevea JL, Woods CM (2005). Publication bias in research synthesis: sensitivity analysis using a priori weight functions. Psychological Methods 10(4):428-443."
+locator = "Table 2, row Moderate one-tailed selection (weights of Table 1; Fisher z mean 0.35)"
+read = 2026-11-15
+doi = "10.1037/1082-989X.10.4.428"
+
+[[case]]
+id = "published.vevea2005.cohen1981.mod1.tau2"
+kind = "published"
+function = "selmodel"
+dataset = "dat.cohen1981"
+setup = { escalc = { measure = "ZCOR", ri = "ri", ni = "ni" }, rma_uni = { method = "ML" } }
+args = { type = "stepfun", steps = [0.005, 0.01, 0.05, 0.1, 0.25, 0.35, 0.5, 0.65, 0.75, 0.9, 0.95, 0.99, 0.995, 1.0], delta = [1.00, 0.99, 0.95, 0.90, 0.80, 0.75, 0.65, 0.60, 0.55, 0.50, 0.50, 0.50, 0.50, 0.50], alternative = "greater" }
+expect = { "tau2" = "0.002" }
+status = "mismatch"
+reason = "the paper prints 0.002; metafopy gives 0.0042; the likelihood is nearly flat in the variance component (tau2 near 0.002 to 0.01 changes the log-likelihood by little)"
+covers = ["selmodel.fixed_delta", "selmodel.stepfun"]
+
+[case.source]
+citation = "Vevea JL, Woods CM (2005). Publication bias in research synthesis: sensitivity analysis using a priori weight functions. Psychological Methods 10(4):428-443."
+locator = "Table 2, row Moderate one-tailed selection: variance component 0.002"
+read = 2026-11-15
+doi = "10.1037/1082-989X.10.4.428"
+
+[[case]]
+id = "published.vevea2005.cohen1981.sev1.beta"
+kind = "published"
+function = "selmodel"
+dataset = "dat.cohen1981"
+setup = { escalc = { measure = "ZCOR", ri = "ri", ni = "ni" }, rma_uni = { method = "ML" } }
+args = { type = "stepfun", steps = [0.005, 0.01, 0.05, 0.1, 0.25, 0.35, 0.5, 0.65, 0.75, 0.9, 0.95, 0.99, 0.995, 1.0], delta = [1.00, 0.99, 0.90, 0.75, 0.60, 0.50, 0.40, 0.35, 0.30, 0.25, 0.10, 0.10, 0.10, 0.10], alternative = "greater" }
+expect = { "beta[0]" = "0.32" }
+covers = ["selmodel.fixed_delta", "selmodel.stepfun"]
+
+[case.source]
+citation = "Vevea JL, Woods CM (2005). Publication bias in research synthesis: sensitivity analysis using a priori weight functions. Psychological Methods 10(4):428-443."
+locator = "Table 2, row Severe one-tailed selection (weights of Table 1; Fisher z mean 0.32)"
+read = 2026-11-15
+doi = "10.1037/1082-989X.10.4.428"
+
+[[case]]
+id = "published.vevea2005.cohen1981.sev1.tau2"
+kind = "published"
+function = "selmodel"
+dataset = "dat.cohen1981"
+setup = { escalc = { measure = "ZCOR", ri = "ri", ni = "ni" }, rma_uni = { method = "ML" } }
+args = { type = "stepfun", steps = [0.005, 0.01, 0.05, 0.1, 0.25, 0.35, 0.5, 0.65, 0.75, 0.9, 0.95, 0.99, 0.995, 1.0], delta = [1.00, 0.99, 0.90, 0.75, 0.60, 0.50, 0.40, 0.35, 0.30, 0.25, 0.10, 0.10, 0.10, 0.10], alternative = "greater" }
+expect = { "tau2" = "0.005" }
+status = "mismatch"
+reason = "the paper prints 0.005; metafopy gives 0.0095; the likelihood is nearly flat in the variance component (tau2 near 0.002 to 0.01 changes the log-likelihood by little)"
+covers = ["selmodel.fixed_delta", "selmodel.stepfun"]
+
+[case.source]
+citation = "Vevea JL, Woods CM (2005). Publication bias in research synthesis: sensitivity analysis using a priori weight functions. Psychological Methods 10(4):428-443."
+locator = "Table 2, row Severe one-tailed selection: variance component 0.005"
+read = 2026-11-15
+doi = "10.1037/1082-989X.10.4.428"
+
+[[case]]
+id = "published.vevea2005.cohen1981.mod2.beta"
+kind = "published"
+function = "selmodel"
+dataset = "dat.cohen1981"
+setup = { escalc = { measure = "ZCOR", ri = "ri", ni = "ni" }, rma_uni = { method = "ML" } }
+args = { type = "stepfun", steps = [0.005, 0.01, 0.05, 0.1, 0.25, 0.35, 0.5, 0.65, 0.75, 0.9, 0.95, 0.99, 0.995, 1.0], delta = [1.00, 0.99, 0.95, 0.90, 0.80, 0.75, 0.60, 0.60, 0.75, 0.80, 0.90, 0.95, 0.99, 1.00], alternative = "greater" }
+expect = { "beta[0]" = "0.35" }
+status = "mismatch"
+reason = "the paper prints 0.35; metafopy gives 0.3620 with the Table 1 weights applied to one-tailed p-values (fixed delta, ML); the paper used its own optimiser and the variance component is poorly determined"
+covers = ["selmodel.fixed_delta", "selmodel.stepfun"]
+
+[case.source]
+citation = "Vevea JL, Woods CM (2005). Publication bias in research synthesis: sensitivity analysis using a priori weight functions. Psychological Methods 10(4):428-443."
+locator = "Table 2, row Moderate two-tailed selection (weights of Table 1; Fisher z mean 0.35)"
+read = 2026-11-15
+doi = "10.1037/1082-989X.10.4.428"
+
+[[case]]
+id = "published.vevea2005.cohen1981.mod2.tau2"
+kind = "published"
+function = "selmodel"
+dataset = "dat.cohen1981"
+setup = { escalc = { measure = "ZCOR", ri = "ri", ni = "ni" }, rma_uni = { method = "ML" } }
+args = { type = "stepfun", steps = [0.005, 0.01, 0.05, 0.1, 0.25, 0.35, 0.5, 0.65, 0.75, 0.9, 0.95, 0.99, 0.995, 1.0], delta = [1.00, 0.99, 0.95, 0.90, 0.80, 0.75, 0.60, 0.60, 0.75, 0.80, 0.90, 0.95, 0.99, 1.00], alternative = "greater" }
+expect = { "tau2" = "0.002" }
+status = "mismatch"
+reason = "the paper prints 0.002; metafopy gives 0.0028; the likelihood is nearly flat in the variance component (tau2 near 0.002 to 0.01 changes the log-likelihood by little)"
+covers = ["selmodel.fixed_delta", "selmodel.stepfun"]
+
+[case.source]
+citation = "Vevea JL, Woods CM (2005). Publication bias in research synthesis: sensitivity analysis using a priori weight functions. Psychological Methods 10(4):428-443."
+locator = "Table 2, row Moderate two-tailed selection: variance component 0.002"
+read = 2026-11-15
+doi = "10.1037/1082-989X.10.4.428"
+
+[[case]]
+id = "published.vevea2005.cohen1981.sev2.beta"
+kind = "published"
+function = "selmodel"
+dataset = "dat.cohen1981"
+setup = { escalc = { measure = "ZCOR", ri = "ri", ni = "ni" }, rma_uni = { method = "ML" } }
+args = { type = "stepfun", steps = [0.005, 0.01, 0.05, 0.1, 0.25, 0.35, 0.5, 0.65, 0.75, 0.9, 0.95, 0.99, 0.995, 1.0], delta = [1.00, 0.99, 0.90, 0.75, 0.60, 0.50, 0.25, 0.25, 0.50, 0.60, 0.75, 0.90, 0.99, 1.00], alternative = "greater" }
+expect = { "beta[0]" = "0.32" }
+status = "mismatch"
+reason = "the paper prints 0.32; metafopy gives 0.3322 with the Table 1 weights applied to one-tailed p-values (fixed delta, ML); the paper used its own optimiser and the variance component is poorly determined"
+covers = ["selmodel.fixed_delta", "selmodel.stepfun"]
+
+[case.source]
+citation = "Vevea JL, Woods CM (2005). Publication bias in research synthesis: sensitivity analysis using a priori weight functions. Psychological Methods 10(4):428-443."
+locator = "Table 2, row Severe two-tailed selection (weights of Table 1; Fisher z mean 0.32)"
+read = 2026-11-15
+doi = "10.1037/1082-989X.10.4.428"
+
+[[case]]
+id = "published.vevea2005.cohen1981.sev2.tau2"
+kind = "published"
+function = "selmodel"
+dataset = "dat.cohen1981"
+setup = { escalc = { measure = "ZCOR", ri = "ri", ni = "ni" }, rma_uni = { method = "ML" } }
+args = { type = "stepfun", steps = [0.005, 0.01, 0.05, 0.1, 0.25, 0.35, 0.5, 0.65, 0.75, 0.9, 0.95, 0.99, 0.995, 1.0], delta = [1.00, 0.99, 0.90, 0.75, 0.60, 0.50, 0.25, 0.25, 0.50, 0.60, 0.75, 0.90, 0.99, 1.00], alternative = "greater" }
+expect = { "tau2" = "0.004" }
+status = "mismatch"
+reason = "the paper prints 0.004; metafopy gives 0.0057; the likelihood is nearly flat in the variance component (tau2 near 0.002 to 0.01 changes the log-likelihood by little)"
+covers = ["selmodel.fixed_delta", "selmodel.stepfun"]
+
+[case.source]
+citation = "Vevea JL, Woods CM (2005). Publication bias in research synthesis: sensitivity analysis using a priori weight functions. Psychological Methods 10(4):428-443."
+locator = "Table 2, row Severe two-tailed selection: variance component 0.004"
+read = 2026-11-15
+doi = "10.1037/1082-989X.10.4.428"
+
+[[case]]
+id = "published.vevea2005.raudenbush1985.unadjusted"
+kind = "published"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", mods = "~ I(weeks > 2)", method = "FE" }
+expect = { "beta[0]" = "0.20", "beta[1]" = "-0.26", "se[0]" = "0.053" }
+
+[case.source]
+citation = "Vevea JL, Woods CM (2005). Publication bias in research synthesis: sensitivity analysis using a priori weight functions. Psychological Methods 10(4):428-443."
+locator = "Table 3, row No selection (intercept 0.20 SE 0.053, long-contact difference -0.26; 19 effects, contact over 2 weeks = 8 studies)"
+read = 2026-11-15
+doi = "10.1037/1082-989X.10.4.428"
+
+[[case]]
+id = "published.vevea2005.raudenbush1985.unadjusted.se"
+kind = "published"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", mods = "~ I(weeks > 2)", method = "FE" }
+expect = { "se[1]" = "0.079" }
+status = "mismatch"
+reason = "the paper prints SE 0.079; metafopy gives 0.0731 for the fixed-effects fit whose intercept (0.20, SE 0.0533) and difference (-0.2635) both agree with the paper"
+
+[case.source]
+citation = "Vevea JL, Woods CM (2005). Publication bias in research synthesis: sensitivity analysis using a priori weight functions. Psychological Methods 10(4):428-443."
+locator = "Table 3, row No selection: SE 0.079 of the long-contact difference"
+read = 2026-11-15
+doi = "10.1037/1082-989X.10.4.428"
+
+[[case]]
+id = "published.vevea2005.raudenbush1985.mod1"
+kind = "published"
+function = "selmodel"
+dataset = "dat.raudenbush1985"
+setup = { rma_uni = { method = "FE", mods = "~ I(weeks > 2)" } }
+args = { type = "stepfun", steps = [0.005, 0.01, 0.05, 0.1, 0.25, 0.35, 0.5, 0.65, 0.75, 0.9, 0.95, 0.99, 0.995, 1.0], delta = [1.00, 0.99, 0.95, 0.90, 0.80, 0.75, 0.65, 0.60, 0.55, 0.50, 0.50, 0.50, 0.50, 0.50], alternative = "greater" }
+expect = { "beta[0]" = "0.17", "beta[1]" = "-0.26" }
+covers = ["selmodel.fixed_delta", "selmodel.stepfun"]
+
+[case.source]
+citation = "Vevea JL, Woods CM (2005). Publication bias in research synthesis: sensitivity analysis using a priori weight functions. Psychological Methods 10(4):428-443."
+locator = "Table 3, row Moderate one-tailed selection (weights of Table 1): intercept 0.17, difference -0.26"
+read = 2026-11-15
+doi = "10.1037/1082-989X.10.4.428"
+
+[[case]]
+id = "published.vevea2005.raudenbush1985.sev1"
+kind = "published"
+function = "selmodel"
+dataset = "dat.raudenbush1985"
+setup = { rma_uni = { method = "FE", mods = "~ I(weeks > 2)" } }
+args = { type = "stepfun", steps = [0.005, 0.01, 0.05, 0.1, 0.25, 0.35, 0.5, 0.65, 0.75, 0.9, 0.95, 0.99, 0.995, 1.0], delta = [1.00, 0.99, 0.90, 0.75, 0.60, 0.50, 0.40, 0.35, 0.30, 0.25, 0.10, 0.10, 0.10, 0.10], alternative = "greater" }
+expect = { "beta[0]" = "0.14", "beta[1]" = "-0.28" }
+covers = ["selmodel.fixed_delta", "selmodel.stepfun"]
+
+[case.source]
+citation = "Vevea JL, Woods CM (2005). Publication bias in research synthesis: sensitivity analysis using a priori weight functions. Psychological Methods 10(4):428-443."
+locator = "Table 3, row Severe one-tailed selection (weights of Table 1): intercept 0.14, difference -0.28"
+read = 2026-11-15
+doi = "10.1037/1082-989X.10.4.428"
+
+[[case]]
+id = "published.vevea2005.raudenbush1985.mod2"
+kind = "published"
+function = "selmodel"
+dataset = "dat.raudenbush1985"
+setup = { rma_uni = { method = "FE", mods = "~ I(weeks > 2)" } }
+args = { type = "stepfun", steps = [0.005, 0.01, 0.05, 0.1, 0.25, 0.35, 0.5, 0.65, 0.75, 0.9, 0.95, 0.99, 0.995, 1.0], delta = [1.00, 0.99, 0.95, 0.90, 0.80, 0.75, 0.60, 0.60, 0.75, 0.80, 0.90, 0.95, 0.99, 1.00], alternative = "greater" }
+expect = { "beta[0]" = "0.18", "beta[1]" = "-0.24" }
+covers = ["selmodel.fixed_delta", "selmodel.stepfun"]
+
+[case.source]
+citation = "Vevea JL, Woods CM (2005). Publication bias in research synthesis: sensitivity analysis using a priori weight functions. Psychological Methods 10(4):428-443."
+locator = "Table 3, row Moderate two-tailed selection (weights of Table 1): intercept 0.18, difference -0.24"
+read = 2026-11-15
+doi = "10.1037/1082-989X.10.4.428"
+
+[[case]]
+id = "published.vevea2005.raudenbush1985.sev2"
+kind = "published"
+function = "selmodel"
+dataset = "dat.raudenbush1985"
+setup = { rma_uni = { method = "FE", mods = "~ I(weeks > 2)" } }
+args = { type = "stepfun", steps = [0.005, 0.01, 0.05, 0.1, 0.25, 0.35, 0.5, 0.65, 0.75, 0.9, 0.95, 0.99, 0.995, 1.0], delta = [1.00, 0.99, 0.90, 0.75, 0.60, 0.50, 0.25, 0.25, 0.50, 0.60, 0.75, 0.90, 0.99, 1.00], alternative = "greater" }
+expect = { "beta[0]" = "0.16", "beta[1]" = "-0.20" }
+covers = ["selmodel.fixed_delta", "selmodel.stepfun"]
+
+[case.source]
+citation = "Vevea JL, Woods CM (2005). Publication bias in research synthesis: sensitivity analysis using a priori weight functions. Psychological Methods 10(4):428-443."
+locator = "Table 3, row Severe two-tailed selection (weights of Table 1): intercept 0.16, difference -0.20"
+read = 2026-11-15
+doi = "10.1037/1082-989X.10.4.428"
+
+[[case]]
+id = "published.hedges2005.hackshaw1998.unadjusted.beta"
+kind = "published"
+function = "rma_uni"
+dataset = "dat.hackshaw1998"
+args = { yi = "yi", vi = "vi", method = "ML" }
+expect = { "beta[0]" = "0.22" }
+
+[case.source]
+citation = "Hedges LV, Vevea JL (2005). Selection method approaches. In Rothstein HR, Sutton AJ, Borenstein M (eds), Publication Bias in Meta-Analysis: Prevention, Assessment and Adjustments, chapter 9, pp. 145-174. Wiley, Chichester."
+locator = "Table 9.2, unadjusted pooled log odds ratio 0.22 (37 studies of Hackshaw et al. 1997)"
+read = 2026-11-15
+doi = "10.1002/0470870168.ch9"
+
+[[case]]
+id = "published.hedges2005.hackshaw1998.unadjusted.spread"
+kind = "published"
+function = "rma_uni"
+dataset = "dat.hackshaw1998"
+args = { yi = "yi", vi = "vi", method = "ML" }
+expect = { "se[0]" = "0.050", "tau2" = "0.019" }
+status = "mismatch"
+reason = "the chapter prints SE 0.050 and variance component 0.019; metafopy (ML) gives 0.0486 and 0.0204, the same estimate of the mean (0.2171 against 0.22)"
+
+[case.source]
+citation = "Hedges LV, Vevea JL (2005). Selection method approaches. In Rothstein HR, Sutton AJ, Borenstein M (eds), Publication Bias in Meta-Analysis: Prevention, Assessment and Adjustments, chapter 9, pp. 145-174. Wiley, Chichester."
+locator = "Table 9.2, unadjusted SE 0.050 and variance component 0.019"
+read = 2026-11-15
+doi = "10.1002/0470870168.ch9"
+
+[[case]]
+id = "published.hedges2005.hackshaw1998.estimated.tau2"
+kind = "published"
+function = "selmodel"
+dataset = "dat.hackshaw1998"
+setup = { rma_uni = { method = "ML" } }
+args = { type = "stepfun", steps = [0.05, 0.10, 0.50, 1.0], alternative = "greater" }
+expect = { "tau2" = "0.031" }
+covers = ["selmodel.stepfun", "selmodel.LRT"]
+
+[case.source]
+citation = "Hedges LV, Vevea JL (2005). Selection method approaches. In Rothstein HR, Sutton AJ, Borenstein M (eds), Publication Bias in Meta-Analysis: Prevention, Assessment and Adjustments, chapter 9, pp. 145-174. Wiley, Chichester."
+locator = "Table 9.2, adjusted variance component 0.031 (steps at 0.05, 0.10 and 0.50)"
+read = 2026-11-15
+doi = "10.1002/0470870168.ch9"
+
+[[case]]
+id = "published.hedges2005.hackshaw1998.estimated.beta"
+kind = "published"
+function = "selmodel"
+dataset = "dat.hackshaw1998"
+setup = { rma_uni = { method = "ML" } }
+args = { type = "stepfun", steps = [0.05, 0.10, 0.50, 1.0], alternative = "greater" }
+expect = { "beta[0]" = "0.13", "se[0]" = "0.129" }
+status = "mismatch"
+reason = "the chapter prints 0.13 (SE 0.129); metafopy gives 0.1217 (SE 0.1299); the weights are poorly estimated (SE of delta 1.7), so the maximum is sensitive to the optimiser"
+
+[case.source]
+citation = "Hedges LV, Vevea JL (2005). Selection method approaches. In Rothstein HR, Sutton AJ, Borenstein M (eds), Publication Bias in Meta-Analysis: Prevention, Assessment and Adjustments, chapter 9, pp. 145-174. Wiley, Chichester."
+locator = "Table 9.2, adjusted pooled log odds ratio 0.13 (SE 0.129)"
+read = 2026-11-15
+doi = "10.1002/0470870168.ch9"
+
+[[case]]
+id = "published.hedges2005.hackshaw1998.estimated.weights"
+kind = "published"
+function = "selmodel"
+dataset = "dat.hackshaw1998"
+setup = { rma_uni = { method = "ML" } }
+args = { type = "stepfun", steps = [0.05, 0.10, 0.50, 1.0], alternative = "greater" }
+expect = { "delta[1]" = "2.48", "delta[2]" = "1.01", "delta[3]" = "0.42", "LRT" = "7.02", "LRTp" = "0.071" }
+status = "mismatch"
+reason = "the chapter prints weights 2.48, 1.01, 0.42 and G2 7.02 (p 0.071); metafopy gives 2.42, 0.978, 0.397 and 7.066 (p 0.0698)"
+
+[case.source]
+citation = "Hedges LV, Vevea JL (2005). Selection method approaches. In Rothstein HR, Sutton AJ, Borenstein M (eds), Publication Bias in Meta-Analysis: Prevention, Assessment and Adjustments, chapter 9, pp. 145-174. Wiley, Chichester."
+locator = "Table 9.2 text: estimated weights 2.48, 1.01, 0.42 relative to the first interval, likelihood-ratio statistic G2 = 7.02 on 3 df, p = 0.071"
+read = 2026-11-15
+doi = "10.1002/0470870168.ch9"
+
+[[case]]
+id = "published.hedges2005.hackshaw1998.weak1"
+kind = "published"
+function = "selmodel"
+dataset = "dat.hackshaw1998"
+setup = { rma_uni = { method = "ML" } }
+args = { type = "stepfun", steps = [0.005, 0.01, 0.05, 0.1, 0.25, 0.35, 0.5, 0.65, 0.75, 0.9, 0.95, 0.99, 0.995, 1.0], delta = [1.00, 0.99, 0.95, 0.90, 0.80, 0.75, 0.65, 0.60, 0.55, 0.50, 0.50, 0.50, 0.50, 0.50], alternative = "greater" }
+expect = { "beta[0]" = "0.16", "tau2" = "0.019" }
+covers = ["selmodel.fixed_delta", "selmodel.stepfun"]
+
+[case.source]
+citation = "Hedges LV, Vevea JL (2005). Selection method approaches. In Rothstein HR, Sutton AJ, Borenstein M (eds), Publication Bias in Meta-Analysis: Prevention, Assessment and Adjustments, chapter 9, pp. 145-174. Wiley, Chichester."
+locator = "Table 9.4, weak one-tailed selection (weights of Table 9.3): pooled log odds ratio 0.16, variance component 0.019"
+read = 2026-11-15
+doi = "10.1002/0470870168.ch9"
+
+[[case]]
+id = "published.hedges2005.hackshaw1998.strong1"
+kind = "published"
+function = "selmodel"
+dataset = "dat.hackshaw1998"
+setup = { rma_uni = { method = "ML" } }
+args = { type = "stepfun", steps = [0.005, 0.01, 0.05, 0.1, 0.25, 0.35, 0.5, 0.65, 0.75, 0.9, 0.95, 0.99, 0.995, 1.0], delta = [1.00, 0.99, 0.90, 0.75, 0.60, 0.55, 0.50, 0.45, 0.40, 0.35, 0.30, 0.25, 0.20, 0.10], alternative = "greater" }
+expect = { "beta[0]" = "0.12", "tau2" = "0.019" }
+status = "mismatch"
+reason = "the chapter prints 0.12 and 0.019; metafopy gives 0.1260 and 0.0175 with the Table 9.3 weights applied to one-tailed p-values"
+covers = ["selmodel.fixed_delta", "selmodel.stepfun"]
+
+[case.source]
+citation = "Hedges LV, Vevea JL (2005). Selection method approaches. In Rothstein HR, Sutton AJ, Borenstein M (eds), Publication Bias in Meta-Analysis: Prevention, Assessment and Adjustments, chapter 9, pp. 145-174. Wiley, Chichester."
+locator = "Table 9.4, strong one-tailed selection (weights of Table 9.3): pooled log odds ratio 0.12, variance component 0.019"
+read = 2026-11-15
+doi = "10.1002/0470870168.ch9"
+
+[[case]]
+id = "published.hedges2005.hackshaw1998.weak2"
+kind = "published"
+function = "selmodel"
+dataset = "dat.hackshaw1998"
+setup = { rma_uni = { method = "ML" } }
+args = { type = "stepfun", steps = [0.005, 0.01, 0.05, 0.1, 0.25, 0.35, 0.5, 0.65, 0.75, 0.9, 0.95, 0.99, 0.995, 1.0], delta = [1.00, 0.99, 0.95, 0.90, 0.80, 0.75, 0.60, 0.60, 0.75, 0.80, 0.90, 0.95, 0.99, 1.00], alternative = "greater" }
+expect = { "beta[0]" = "0.18", "tau2" = "0.018" }
+status = "mismatch"
+reason = "the chapter prints 0.18 and 0.018; metafopy gives 0.1873 and 0.0153 with the Table 9.3 weights applied to one-tailed p-values"
+covers = ["selmodel.fixed_delta", "selmodel.stepfun"]
+
+[case.source]
+citation = "Hedges LV, Vevea JL (2005). Selection method approaches. In Rothstein HR, Sutton AJ, Borenstein M (eds), Publication Bias in Meta-Analysis: Prevention, Assessment and Adjustments, chapter 9, pp. 145-174. Wiley, Chichester."
+locator = "Table 9.4, weak two-tailed selection (weights of Table 9.3): pooled log odds ratio 0.18, variance component 0.018"
+read = 2026-11-15
+doi = "10.1002/0470870168.ch9"
+
+[[case]]
+id = "published.hedges2005.hackshaw1998.strong2"
+kind = "published"
+function = "selmodel"
+dataset = "dat.hackshaw1998"
+setup = { rma_uni = { method = "ML" } }
+args = { type = "stepfun", steps = [0.005, 0.01, 0.05, 0.1, 0.25, 0.35, 0.5, 0.65, 0.75, 0.9, 0.95, 0.99, 0.995, 1.0], delta = [1.00, 0.99, 0.90, 0.75, 0.60, 0.50, 0.25, 0.25, 0.50, 0.60, 0.75, 0.90, 0.99, 1.00], alternative = "greater" }
+expect = { "beta[0]" = "0.14", "tau2" = "0.018" }
+status = "mismatch"
+reason = "the chapter prints 0.14 and 0.018; metafopy gives 0.1510 and 0.0092 with the Table 9.3 weights applied to one-tailed p-values"
+covers = ["selmodel.fixed_delta", "selmodel.stepfun"]
+
+[case.source]
+citation = "Hedges LV, Vevea JL (2005). Selection method approaches. In Rothstein HR, Sutton AJ, Borenstein M (eds), Publication Bias in Meta-Analysis: Prevention, Assessment and Adjustments, chapter 9, pp. 145-174. Wiley, Chichester."
+locator = "Table 9.4, strong two-tailed selection (weights of Table 9.3): pooled log odds ratio 0.14, variance component 0.018"
+read = 2026-11-15
+doi = "10.1002/0470870168.ch9"
+
+[[case]]
+id = "published.preston2004.hahn2001.mh.or"
+kind = "published"
+function = "rma_mh"
+dataset = "dat.hahn2001"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR" }
+check = "test_published.back_transformed"
+printed = { exp_beta = "0.61" }
+
+[case.source]
+citation = "Preston C, Ashby D, Smyth R (2004). Adjusting for publication bias: modelling the selection process. Journal of Evaluation in Clinical Practice 10(2):313-322."
+locator = "Section 2 text: Mantel-Haenszel odds ratio 0.61 of the oral rehydration review (Hahn et al. 2001)"
+read = 2026-11-15
+doi = "10.1111/j.1365-2753.2003.00457.x"
+
+[[case]]
+id = "published.preston2004.hahn2001.mh.ci"
+kind = "published"
+function = "rma_mh"
+dataset = "dat.hahn2001"
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR" }
+check = "test_published.back_transformed"
+printed = { exp_ci_lb = "0.47", exp_ci_ub = "0.81" }
+status = "mismatch"
+reason = "the paper prints 0.47 to 0.81; metafopy gives 0.463 to 0.804 for the same odds ratio of 0.610 (the paper may use another variance of the Mantel-Haenszel log odds ratio)"
+
+[case.source]
+citation = "Preston C, Ashby D, Smyth R (2004). Adjusting for publication bias: modelling the selection process. Journal of Evaluation in Clinical Practice 10(2):313-322."
+locator = "Section 2 text: 95% confidence interval 0.47 to 0.81"
+read = 2026-11-15
+doi = "10.1111/j.1365-2753.2003.00457.x"
+
+[[case]]
+id = "published.preston2004.hahn2001.trimfill.k0"
+kind = "published"
+function = "trimfill"
+dataset = "dat.hahn2001"
+setup = { escalc = { measure = "OR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i" }, rma_uni = { method = "FE" } }
+args = {}
+expect = { "k0" = "2" }
+status = "mismatch"
+reason = "the paper imputes two studies; metafopy with the default estimator L0 imputes none (R0 imputes one); the paper does not name its estimator or side. The adjusted odds ratio 0.67 of a fit with two imputed studies is the part this case would check"
+
+[case.source]
+citation = "Preston C, Ashby D, Smyth R (2004). Adjusting for publication bias: modelling the selection process. Journal of Evaluation in Clinical Practice 10(2):313-322."
+locator = "Section 6 text: trim and fill suggested two missing studies (adjusted odds ratio 0.67, 0.51 to 0.88)"
+read = 2026-11-15
+doi = "10.1111/j.1365-2753.2003.00457.x"
+
+[[case]]
+id = "published.citkowicz2017.baskerville2012.unadjusted"
+kind = "published"
+function = "rma_uni"
+args = { yi = "yi", vi = "vi", method = "ML" }
+expect = { "beta[0]" = "0.595", "tau2" = "0.022" }
+
+[case.data]
+yi = [1.01, 0.82, 0.59, 0.44, 0.84, 0.73, 1.12, 0.04, 0.24, 0.32, 1.04, 1.31, 0.59, 0.66, 0.62, 0.47, 1.08, 0.98, 0.26]
+vi = [0.2704, 0.2116, 0.0529, 0.0324, 0.0841, 0.0841, 0.1296, 0.1369, 0.0225, 0.16, 0.1024, 0.3249, 0.0841, 0.0361, 0.0961, 0.0729, 0.1024, 0.1024, 0.0324]
+
+[case.source]
+citation = "Citkowicz M, Vevea JL (2017). A parsimonious weight function for modeling publication bias. Psychological Methods 22(1):28-41, supplement: R implementation of the beta density weight-function model."
+locator = "R code of the supplement (RE.models.txt, nlminb, abs.tol and rel.tol 1e-4) run on its Table 1 data (19 effects of Baskerville et al. 2012) from the starting values of its control file (a 1, b 1, vc 0, beta0 0.5): unadjusted vc 0.02247, beta0 0.59501"
+read = 2026-11-15
+doi = "10.1037/met0000119"
+
+[[case]]
+id = "published.citkowicz2017.baskerville2012.beta"
+kind = "published"
+function = "selmodel"
+setup = { rma_uni = { method = "ML" } }
+args = { type = "beta" }
+expect = { "beta[0]" = "0.116", "delta[0]" = "0.438", "delta[1]" = "4.73", "tau2" = "0.000", "LRT" = "6.72" }
+status = "mismatch"
+reason = "the supplement code gives a 0.4378, b 4.729, beta0 0.1162 and a likelihood ratio of 6.724; metafopy gives a 0.4333, b 4.805, beta0 0.1128 and 6.719. The log-likelihood is nearly flat in the weight parameters and the supplement stops at an optimiser tolerance of 1e-4 (from the starting values (2, 2, 0.05, 0.3) it stops at a different point, a 1.03, b 5.50, likelihood ratio 4.13)"
+covers = ["selmodel.beta", "selmodel.LRT"]
+
+[case.data]
+yi = [1.01, 0.82, 0.59, 0.44, 0.84, 0.73, 1.12, 0.04, 0.24, 0.32, 1.04, 1.31, 0.59, 0.66, 0.62, 0.47, 1.08, 0.98, 0.26]
+vi = [0.2704, 0.2116, 0.0529, 0.0324, 0.0841, 0.0841, 0.1296, 0.1369, 0.0225, 0.16, 0.1024, 0.3249, 0.0841, 0.0361, 0.0961, 0.0729, 0.1024, 0.1024, 0.0324]
+
+[case.source]
+citation = "Citkowicz M, Vevea JL (2017). A parsimonious weight function for modeling publication bias. Psychological Methods 22(1):28-41, supplement: R implementation of the beta density weight-function model."
+locator = "R code of the supplement (RE.models.txt, nlminb, abs.tol and rel.tol 1e-4) run on its Table 1 data (19 effects of Baskerville et al. 2012) from the starting values of its control file (a 1, b 1, vc 0, beta0 0.5): adjusted a 0.4378, b 4.729, vc 0, beta0 0.1162, likelihood ratio 6.724"
+read = 2026-11-15
+doi = "10.1037/met0000119"
+

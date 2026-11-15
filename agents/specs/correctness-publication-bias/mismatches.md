@@ -120,6 +120,45 @@ and the page; the items below are appended by the case-writing tasks as they fin
 - **Options:** follow the reference (a `TODO.md` item per case after finding which step differs); keep metafor (the cases become exemptions or are
   loosened to the sources' digits, citing this item); investigate (install R metafor and run each first).
 
+### Published selection-model values that differ from metafopy (Task 9)
+
+- **Cases** (strict expected failures in `src/tests/correctness/cases/selmodel_published.toml`): the `mod1`, `mod2` and `sev2` `beta` cases and every
+  `tau2` case of `published.vevea2005.cohen1981.*`, `published.vevea2005.cohen1981.unadjusted.se`, `published.vevea2005.raudenbush1985.unadjusted.se`,
+  `published.hedges2005.hackshaw1998.unadjusted.spread`, `.estimated.beta`, `.estimated.weights`, `.strong1`, `.weak2`, `.strong2`,
+  `published.preston2004.hahn2001.mh.ci`, `published.preston2004.hahn2001.trimfill.k0` and `published.citkowicz2017.baskerville2012.beta`.
+- **Sources:** Vevea and Woods (2005), Psychological Methods 10(4):428-443, Tables 1 to 3 (doi:10.1037/1082-989X.10.4.428); Hedges and Vevea (2005),
+  chapter 9 of Publication Bias in Meta-Analysis, Tables 9.2 to 9.4 (doi:10.1002/0470870168.ch9); Preston et al. (2004), J Eval Clin Pract 10(2):313-322;
+  the supplementary R code of Citkowicz and Vevea (2017), run on its Table 1 data.
+- **Reference and metafopy values:**
+
+  | Case | Printed (or code output) | metafopy |
+  |---|---|---|
+  | Cohen, moderate one-tailed, mean and variance | 0.35 and 0.002 | 0.3577 and 0.0042 |
+  | Cohen, severe one-tailed, variance (mean 0.32 agrees) | 0.005 | 0.0095 |
+  | Cohen, moderate two-tailed, mean and variance | 0.35 and 0.002 | 0.3620 and 0.0028 |
+  | Cohen, severe two-tailed, mean and variance | 0.32 and 0.004 | 0.3322 and 0.0057 |
+  | Cohen unadjusted SE of the mean | 0.044 | 0.0447 |
+  | Teacher expectancy unadjusted SE of the difference | 0.079 | 0.0731 |
+  | Passive smoking unadjusted SE and variance | 0.050 and 0.019 | 0.0486 and 0.0204 |
+  | Passive smoking, estimated step weights, mean (SE) | 0.13 (0.129) | 0.1217 (0.1299) |
+  | Passive smoking, estimated weights and G2 (p) | 2.48, 1.01, 0.42; 7.02 (0.071) | 2.42, 0.978, 0.397; 7.066 (0.0698) |
+  | Passive smoking, a priori weights, strong one-tailed | 0.12 and 0.019 | 0.1260 and 0.0175 |
+  | Passive smoking, a priori weights, weak two-tailed | 0.18 and 0.018 | 0.1873 and 0.0153 |
+  | Passive smoking, a priori weights, strong two-tailed | 0.14 and 0.018 | 0.1510 and 0.0092 |
+  | Oral rehydration review, Mantel-Haenszel interval | 0.47 to 0.81 | 0.463 to 0.804 |
+  | Oral rehydration review, trim and fill missing studies | 2 | 0 (estimator L0), 1 (R0) |
+  | Citkowicz code, beta weights a and b, mean, G2 | 0.4378, 4.729, 0.1162, 6.724 | 0.4333, 4.805, 0.1128, 6.719 |
+
+- **Cause:** not a defect found in `selmodel`. The agreeing cases beside them (all teacher expectancy selection fits, the passive smoking weak one-tailed
+  fit, the Cohen severe one-tailed mean) show the model and the weights are read correctly. The disagreements are in quantities the likelihood barely
+  determines: the variance component near zero (Cohen), step weights with standard errors of 1 or more (passive smoking), and the beta weights of a
+  19-study fit (the supplement's own code stops at a different point from other starting values: a 1.03, b 5.50, G2 4.13 from (2, 2, 0.05, 0.3)). The
+  papers' software and optimiser tolerances are not stated. No tolerance was loosened. Preston et al. print weight-function parameters (3.16, 2.66, 3.34
+  for the one-tailed fits) in their own parametrisation, which does not map to metafor's `delta`, and their adjusted odds ratios appear only in a figure.
+- **metafor:** R metafor is not installed in the session's R, so metafor's values for these fits were not run.
+- **Options:** follow the reference (nothing to change in `selmodel` is known; a `TODO.md` item to find which optimiser setting reproduces the paper);
+  keep metafor (the cases become exemptions, or are loosened to the sources' digits citing this item); investigate (install R metafor and run each first).
+
 ## Decisions
 
 Added by Task 6; Task 13 completes the section with background and the page.
@@ -166,3 +205,17 @@ Checked against `/Users/simonb/src/metafopy papers/download_report.md` and the f
 | Source | Citation and DOI | Table or example wanted | Status |
 |---|---|---|---|
 | Citkowicz and Vevea (2017) | Psychological Methods 22(1), doi:10.1037/met0000119 (needs APA access; the folder holds only the 2012 dissertation) | beta weight-function estimates on `dat.baskerville2012` | dropped 2026-11-15, supplement used (the authors' R code `MCitkowicz_suppmat.docx` and Table 1 data `MCitkowicz_suppmat_data.docx`; the case checks against that likelihood code, not printed estimates) |
+
+Found by Task 9 (read 2026-11-15). No `published` case is written for these:
+
+| Source | Why no case |
+|---|---|
+| Hedges (1992), Statistical Science 7:246-255, doi:10.1214/ss/1177011364 | the PDF in the folder is scanned images (no text layer) and no OCR tool is installed; its example data are not bundled |
+| Iyengar and Greenhouse (1988), Statistical Science 3:109-117, doi:10.1214/ss/1177013012 | the same: scanned images; the data are not bundled |
+| Vevea and Hedges (1995), Psychometrika 60:419-435, Tables 1 and 2 | the psychotherapy phobia subset of Smith, Glass and Miller (1980) is not bundled or printed |
+| Vevea and Woods (2005), conformity example (Table 4) | the data of Cooper and Hedges (1994), Table A.1, are not bundled or printed in the paper |
+| Hedges and Vevea (2005), employment interview and Tables 9.5 to 9.8 | the data of McDaniel et al. (1994) are not bundled; the Copas-Shi (a, b) models of Tables 9.5, 9.8 and 9.11 are not in metafopy |
+| Hedges and Vevea (2005), teacher expectancy (Tables 9.9 to 9.11, 18 studies of Raudenbush 1984) | does not reproduce its data: the unadjusted intercept 0.349 (SE 0.079) and slope -0.371 (SE 0.089) against 0.357 and -0.378 on `dat.raudenbush1985` (19 studies, contact over one week) |
+| Preston et al. (2004), Table 1 and Figure 7 | the beta estimates are in the paper's own parametrisation of the weight functions; the adjusted odds ratios are only in a figure |
+| Rust et al. (1990), J Marketing Res 27:220-226; Formann (2008), Contemp Clin Trials 29:732-739 | different models (a censored normal; a left-truncated normal on normal scores); Rust's marketing data are not bundled and Formann's estimates have no counterpart in `selmodel` `trunc` |
+| Lehmann et al. (2018), Evol Psychol 16(4), PMC10480976 | reports no selection-model estimate: its publication-bias analysis is funnel-plot regression (men rating women r = -.07 [-.36, .22], women rating men r = .52 [.23, .72]), and the 3PSM figures are not in the text |

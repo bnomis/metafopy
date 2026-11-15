@@ -386,7 +386,7 @@ nothing is missing.
 
 ## Task 9: Published cases - selection models
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** Seed sources (stepfun, fixed delta, beta, parametric, trunc, data only); Implementation step 3
@@ -395,25 +395,25 @@ nothing is missing.
 
 **Subtasks:**
 
-- [ ] One source at a time, as in Task 7: Vevea and Woods (2005) on `dat.cohen1981`; Vevea and Hedges (1995), Hedges and Vevea (2005), Hedges
+- [x] One source at a time, as in Task 7: Vevea and Woods (2005) on `dat.cohen1981`; Vevea and Hedges (1995), Hedges and Vevea (2005), Hedges
       (1992), Iyengar and Greenhouse (1988); Citkowicz and Vevea (2017) on `dat.baskerville2012` unless dropped; Preston et al. (2004) on
       `dat.hahn2001` (pooled ratios through the back-transform check); Rust et al. (1990), Formann (2008); Lehmann et al. (2018, PMC10480976) on
       `dat.lehmann2018`
-- [ ] Each case's tolerance follows the printed digits; a source whose values metafopy cannot reproduce because the likelihood is flat says so in a
+- [x] Each case's tolerance follows the printed digits; a source whose values metafopy cannot reproduce because the likelihood is flat says so in a
       mismatch item, not in a loosened tolerance
-- [ ] A source that cannot be read or does not reproduce its data goes under "Sources needed"
-- [ ] Record any mismatch as the header says
+- [x] A source that cannot be read or does not reproduce its data goes under "Sources needed"
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] Every `selmodel` seed source not marked `dropped` has `published` cases or a "Sources needed" row
-- [ ] Every `published` case has `citation`, `locator` and `read`
+- [x] Every `selmodel` seed source not marked `dropped` has `published` cases or a "Sources needed" row
+- [x] Every `published` case has `citation`, `locator` and `read`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_published.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_published.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 
