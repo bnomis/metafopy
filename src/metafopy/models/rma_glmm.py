@@ -427,11 +427,14 @@ def rma_glmm(
     ``'bobyqa'``, ...) maximise it as ``metafopy.models.sel_opt`` minimises: ``optim`` with BFGS or Nelder-Mead is R's routine
     (``optCtrl`` takes ``maxit``, ``reltol``, ``abstol`` and ``ndeps``), the others stand in with the closest SciPy method. The Wald test
     of the saturated model (``QE_Wld``) of ``'CM.EL'`` can be ill-conditioned; for some data sets it differs between optimisers in R as well.
-    The Hessian of ``'CM.EL'`` is computed as ``control={'hesspack': ..., 'hessianCtrl': {...}}`` asks (``'numDeriv'`` with ``r = 16``
-    unless ``hessianCtrl`` gives ``r``, ``'pracma'`` with ``h``, ``'calculus'`` with ``accuracy`` and ``stepsize``). Unlike metafor, whose
-    default is the density of ``BiasedUrn::dFNCHypergeo`` with precision ``dnchgprec`` (1e-10), metafopy uses the untruncated density
-    (``dnchgcalc='dnoncenhypergeom'``) by default; ``control={'dnchgcalc': 'dFNCHypergeo'}`` or a ``dnchgprec`` entry selects a port of
-    BiasedUrn's algorithm including the truncation of the tails that makes R's finite-difference standard errors noisy.
+    The standard errors, ``vb``, ``se_tau2``, the ``tau2`` interval and ``QE_Wld`` of ``'CM.EL'`` come by default from the analytic
+    information of the exact likelihood (van Houwelingen et al. 1993, doi:10.1002/sim.4780122405), not from finite differences as in
+    metafor, whose numDeriv Hessian over BiasedUrn's truncated density is noisy. ``control={'hesspack': ..., 'hessianCtrl': {...}}``,
+    ``control={'dnchgcalc': 'dFNCHypergeo'}`` or a ``dnchgprec`` entry restore metafor's numerical Hessian (``'numDeriv'`` with
+    ``r = 16`` unless ``hessianCtrl`` gives ``r``, ``'pracma'`` with ``h``, ``'calculus'`` with ``accuracy`` and ``stepsize``); metafopy
+    then uses the untruncated density (``dnchgcalc='dnoncenhypergeom'``) unless ``dnchgcalc='dFNCHypergeo'`` or a ``dnchgprec`` selects
+    a port of BiasedUrn's algorithm including the truncation of the tails. See the section "rma_glmm with CM.EL: standard errors and
+    QE_Wld" of ``docs/differences.md``.
 
     ``control={'package': ...}`` chooses the package that fits the mixed models, as in metafor:
     ``'lme4'`` (the default), ``'GLMMadaptive'`` (adaptive quadrature with ``nAGQ`` points in every

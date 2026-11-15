@@ -137,7 +137,7 @@ difference of `neg_loglik` and against the spec's measurement.
 
 ## Task 3: Use the analytic information in exact_conditional
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Implementation (FE and saturated fits, ML fit, when the numerical Hessian is kept); Settings; Error handling; Tests (the seven
@@ -148,44 +148,50 @@ caller's `control` asks for it.
 
 **Subtasks:**
 
-- [ ] `src/metafopy/models/glmm_fit.py`, `GLMMControl`: `hesspack: str | None = None`; update its docstring to say `None` is the analytic information
+- [x] `src/metafopy/models/glmm_fit.py`, `GLMMControl`: `hesspack: str | None = None`; update its docstring to say `None` is the analytic information
       and that `hesspack`, a non-empty `hessianCtrl`, `dnchgcalc='dFNCHypergeo'` or a `dnchgprec` select the numerical Hessian
-- [ ] `src/metafopy/models/rma_glmm.py`, `make_control`: an explicit `hesspack` is kept (validated as now); check that `res.control` and every reader
+- [x] `src/metafopy/models/rma_glmm.py`, `make_control`: an explicit `hesspack` is kept (validated as now); check that `res.control` and every reader
       of `GLMMControl.hesspack` accept `None` (`grep -rn 'hesspack' src/metafopy/models/glmm_fit.py src/metafopy/models/rma_glmm.py`)
-- [ ] `exact_conditional`: `numerical = ctl.hesspack is not None or bool(ctl.hessian_ctrl) or truncating`. When numerical, keep today's code
+- [x] `exact_conditional`: `numerical = ctl.hesspack is not None or bool(ctl.hessian_ctrl) or truncating`. When numerical, keep today's code
       unchanged, with the package `ctl.hesspack or 'numDeriv'` (numDeriv `r` 16 unless `hessianCtrl` gives one). Otherwise:
   - `h_fe = metafopy.core.nchg.fixed_information(x_fe, tables, spec.X)`;
   - `h_qe = metafopy.core.nchg.fixed_information(x_qe, tables, X_qe)`, passed to `saturated_wald` (signature unchanged, zero-column rule kept);
   - the `ML` branch with `tau2 < tau2tol` uses that `h_fe`;
   - `h_ml = metafopy.core.nchg.marginal_information(x_ml, tables, spec.X, tight)`; an `EstimationError` from it propagates as the numerical path's
     `invert_hessian` failure does
-- [ ] Rewrite the `rma_glmm` docstring paragraph on the `CM.EL` Hessian: the default is the analytic information of the exact likelihood (cite van
+- [x] Rewrite the `rma_glmm` docstring paragraph on the `CM.EL` Hessian: the default is the analytic information of the exact likelihood (cite van
       Houwelingen et al. 1993); `hesspack`, `hessianCtrl`, `dnchgcalc='dFNCHypergeo'` and `dnchgprec` restore metafor's numerical Hessian; link the
       `docs/differences.md` section Task 5 writes
-- [ ] `src/tests/correctness/cases/glmm.toml`: the seven cases lose `status = "mismatch"` and `reason` and pass; the comment at the top stops calling
+- [x] `src/tests/correctness/cases/glmm.toml`: the seven cases lose `status = "mismatch"` and `reason` and pass; the comment at the top stops calling
       the `CM.EL` standard errors mismatches
-- [ ] Before editing, record `beta`, `tau2`, the log-likelihoods (`fit_stats`), `QE_LRT`, `se` and `QE_Wld` of the three FE and three ML fits of the
+- [x] Before editing, record `beta`, `tau2`, the log-likelihoods (`fit_stats`), `QE_LRT`, `se` and `QE_Wld` of the three FE and three ML fits of the
       correctness cases and of `dat.bcg` FE in a JSON file in the session's scratch directory (outside the repository); after the change, `beta`,
       `tau2`, the log-likelihoods and `QE_LRT` must equal the recorded values to 1e-12 relative. Record before/after `se` and `QE_Wld` in this task's
       Notes
-- [ ] `dat.bcg`, `OR`, `CM.EL`, `FE`: `QE_Wld` equals the spec's 163.08947856 to 1e-7 relative; stop and report if not. Record it in this task's Notes
-- [ ] Time the default `CM.EL` `ML` fit of `dat.nielweise2007` before and after and record both in this task's Notes (the spec expects it faster)
+- [x] `dat.bcg`, `OR`, `CM.EL`, `FE`: `QE_Wld` equals the spec's 163.08947856 to 1e-7 relative; stop and report if not. Record it in this task's Notes
+- [x] Time the default `CM.EL` `ML` fit of `dat.nielweise2007` before and after and record both in this task's Notes (the spec expects it faster)
 
 **Acceptance Criteria:**
 
-- [ ] The seven correctness cases pass without `status = "mismatch"`
-- [ ] `test_glmm_hesspack_and_hessianctrl` and `test_glmm_hessianctrl_changes_the_hessian` in `src/tests/test_audit5_numerics.py` pass unchanged
-- [ ] Coefficients, `tau2` and log-likelihoods are unchanged
+- [x] The seven correctness cases pass without `status = "mismatch"`
+- [x] `test_glmm_hesspack_and_hessianctrl` and `test_glmm_hessianctrl_changes_the_hessian` in `src/tests/test_audit5_numerics.py` pass unchanged
+- [x] Coefficients, `tau2` and log-likelihoods are unchanged
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_nchg.py src/tests/test_audit5_numerics.py src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py src/tests/correctness/test_glmm_formulas.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_nchg.py src/tests/test_audit5_numerics.py src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py src/tests/correctness/test_glmm_formulas.py` passes
 
 **Notes:**
 
 - Depends on Tasks 1 and 2
+- Before/after (2026-11-15; `se` of the log odds ratio, then `QE_Wld`): `dat.nielweise2007` FE 0.22403812206 -> 0.22403481656, ML 0.35092521144 ->
+  0.35104049278, `QE_Wld` 11.84937073 -> 11.86630837; `dat.collins1985a` FE 0.09948424033 -> 0.09955789399, ML 0.13640706279 -> 0.13638548456,
+  `QE_Wld` 32.54412681 -> 32.51792234; pneumonia FE 0.25175750395 -> 0.25175350287, ML 0.88797904850 -> 0.88810318496, `QE_Wld` 6.45993366 ->
+  6.45481274. `beta`, `tau2`, `fit_stats` and `QE_LRT` identical (relative difference 0)
+- `dat.bcg` FE `QE_Wld` 191.71241948 -> 163.08947859 (spec 163.08947856, relative difference 2e-10)
+- Time of the default `CM.EL` `ML` fit of `dat.nielweise2007`: 1.755 s before, 0.660 s after
 - Key files: `src/metafopy/models/glmm_fit.py` (`GLMMControl`, `exact_conditional`), `src/metafopy/models/rma_glmm.py` (`make_control`, docstring),
   `src/tests/correctness/cases/glmm.toml`
 - The analytic information never uses the truncating `dFNCHypergeo` density: it is the information of the exact likelihood
