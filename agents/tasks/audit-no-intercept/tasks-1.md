@@ -128,7 +128,7 @@ suite, as the run order requires.
 
 ## Task 2: File the other findings and the recall check
 
-**Status:** in-progress
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item's fix direction ("fix any other finding as its own item") and the run order's requirement that `--recall` passes
@@ -141,25 +141,25 @@ harness still reproduces what the earlier audits found.
 - [x] For each cause in Task 1's "Not explained" list, file it with the `todo-add` skill (verified against the run's `findings.json`, dated, the run
       directory named), never fixed here. Where `todo-add` merges a cause into an existing item, record that item's title in this task's Notes: its
       body changes on purpose, and the closing check of Task 3 must name only those titles. If the list is empty, write "none" in the Notes
-- [ ] Fix the harness so the recall check can run against checkouts older than `metafopy.core.dbinom.FUSED` (added 2026-11-03 in `5b09d65`):
+- [x] Fix the harness so the recall check can run against checkouts older than `metafopy.core.dbinom.FUSED` (added 2026-11-03 in `5b09d65`):
       in `check-r` (`src/audit/steps.py`), when the audited source has no `FUSED`, skip the fused-arithmetic comparison with a note in the step's
       outcome saying the source predates it, instead of raising `AttributeError`. Add a test beside the existing `check-r` tests (find them with
       `grep -rln check_r src/tests`) for a source without `FUSED`. Commit it as its own commit in this task
-- [ ] Run the recall check in the background, as the header says:
+- [x] Run the recall check in the background, as the header says:
       `METAFOPY_AUDIT_RLIB="$main/.audit/Rlib" METAFOPY_AUDIT_WORK="$main/.audit" bin/metafor-audit.sh --recall`, and record the recall report it
       prints in this task's Notes. If it exits non-zero, stop as `blocked`, naming each item it missed: a miss is a hole in the harness, fixed in
       `src/audit/data/` (`AGENTS.md`), which is outside this item; the recall run passes `--no-ledger`, so no entry of Task 1 can cause it
 
 **Acceptance Criteria:**
 
-- [ ] Every cause in Task 1's "Not explained" list is in `TODO.md`, as its own item or merged into one by `todo-add`
-- [ ] `bin/metafor-audit.sh --recall` exits 0
+- [x] Every cause in Task 1's "Not explained" list is in `TODO.md`, as its own item or merged into one by `todo-add`
+- [x] `bin/metafor-audit.sh --recall` exits 0
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_harness_accounts.py src/tests/test_harness_compare.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_harness_accounts.py src/tests/test_harness_compare.py` passes
 
 **Notes:**
 
@@ -173,6 +173,11 @@ harness still reproduces what the earlier audits found.
   `AttributeError: module 'metafopy.core.dbinom' has no attribute 'FUSED'`: the current harness reads `metafopy.core.dbinom.FUSED` from the old source,
   which predates it. A hole in the harness (`src/audit/`), outside this item; no entry of Task 1 can cause it (recall passes `--no-ledger`). Full log:
   `/tmp/recall-aud.log`
+- Harness fix: commit `d63a516` (`check_r` skips the fused-arithmetic comparison, with a note, when the audited source has no `FUSED`; test
+  `test_check_r_skips_the_arithmetic_comparison_for_a_source_without_fused` in `src/tests/test_harness_compare.py`)
+- Recall run 2026-11-15, `bin/metafor-audit.sh --recall` exit 0, report `/Users/simonb/src/metafopy/.audit/runs/recall-20261115-172334/recall.md`:
+  176 of 176 items reproduced; 1 not shown by the pinned R (`a6-glmm-um-rs`, an oracle move of `rma_glmm` UM.RS `se`, 0.182140 against 0.182139 recorded
+  2026-11-02, already marked "Oracle moved" in `recall.toml`, not a miss)
 - Key files: `TODO.md`, `src/audit/data/recall.toml`
 
 ---
