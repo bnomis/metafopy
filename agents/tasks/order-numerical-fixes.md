@@ -48,7 +48,7 @@ case is reported before it is set to `mismatch`. A probe of those cases passed o
 | # | Task list | Waits for | Stops for you | Status |
 |---|---|---|---|---|
 | 1 | `audit-no-intercept/tasks-1.md` | - | - | merged 48f90df |
-| 2 | `fsn-integer-search/tasks-1.md` | - | - | running |
+| 2 | `fsn-integer-search/tasks-1.md` | - | - | merged e45bca9 |
 | 3 | `truncest-piecewise-search/tasks-1.md` | - | the truncation-point decision, answered on 2026-11-15, so a no-op (Task 1) | todo |
 | 4 | `cm-el-information/tasks-1.md` | - | - | todo |
 | 5 | `ls-identity-polish/tasks-1.md` | - | - | todo |
