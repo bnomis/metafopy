@@ -305,4 +305,17 @@ Decisions:
 
 ## Answers
 
-(Empty: the operator copies the page's answers here with the date, then restarts the list.)
+Answered by the user on the review page on 2026-11-15 (saved at 11:03 UTC); copied here by the operator session the same day. Every answer is
+the page's recommendation; no comments were left.
+
+| Item | Answer | What Task 14 does |
+|---|---|---|
+| Fail-safe N root search (two cases) | follow the reference | a `TODO.md` item: make the Fisher criterion integer in N and resolve the General step before rounding; record the difference from metafor (47 and 117) |
+| `prec` on a step function (four cases) | investigate | a `TODO.md` item: metafor's likelihood is not a density and the consistent one makes `prec` a no-op; decide whether to reject the combination or define it from a source |
+| `truncest` local maximum (one case) | follow the reference | a `TODO.md` item: search each stretch between observed effects; record the difference from metafor |
+| Published values off in the last digits (nine cases) | keep metafor | correct, loosen to the source's digits or exempt each case, citing this item |
+| Published selection-model values (eighteen cases) | keep metafor | the same |
+| `hc` interval at tau2 of 0 (one case) | keep metafor (drop the property) | the interval case becomes an exemption citing this item; the estimate case stays |
+| Peters' test weights (one case) | keep metafor | the case becomes an exemption citing this item |
+| `negexppow` | derive from metafor's help | a derived case through `selmodel_fit`, as for `halfnorm`, replacing the pending exemption |
+| `stepcon` | exempt as code-only | the pending exemption becomes "defined only in metafor's code; R parity covers it" (metafor's help page does not name it, checked 2026-11-15) |

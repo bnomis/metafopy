@@ -567,7 +567,7 @@ until every item has an answer.
   - decisions: each mismatch with options *follow the reference*, *keep metafor* and *investigate*; `negexppow` and `stepcon` with the options of
     Task 6; each with a recommendation and its reason;
   - an empty Answers section.
-- [ ] Publish its interactive page, with answers saved to the artifact's database and an accept-all button, and put `**Review page:** <URL>` in the
+- [x] Publish its interactive page, with answers saved to the artifact's database and an accept-all button, and put `**Review page:** <URL>` in the
       document's header
 - [x] If there are no items, write that in the document and skip the page
 - [x] Stop the list for the operator. Once every item has an answer, an operator session reads the page's answers, copies each into the Answers
@@ -586,6 +586,7 @@ until every item has an answer.
 **Notes:**
 
 - Depends on Tasks 1 to 12
+- 2026-11-15: the operator session published the page (https://claude.ai/artifact/NatZgXbTRGMtdpFDCXXaaL) and copied the answers into `mismatches.md`
 
 ---
 
