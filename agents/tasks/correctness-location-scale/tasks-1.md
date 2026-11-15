@@ -458,7 +458,7 @@ every location-scale item has a `derived` case.
 
 ## Task 10: Other-software cases from R glmmTMB, and deduplication
 
-**Status:** in-progress
+**Status:** done
 **Priority:** low
 **Complexity:** medium
 **Spec Reference:** Evidence ("Other software"); Error handling (generator); Implementation step 7
@@ -468,10 +468,10 @@ formulas share, not copy, what `formulas.py` already has.
 
 **Subtasks:**
 
-- [ ] If `METAFOPY_CORRECTNESS_RLIB` is unset (`[ -n "${METAFOPY_CORRECTNESS_RLIB:-}" ] && echo yes || echo no`), stop as `blocked` naming the variable
-- [ ] Check that `/Users/simonb/src/metafopy/.audit/Rlib/glmmTMB/DESCRIPTION` says `Version: 1.1.15.2`; stop as `blocked` if not. Install nothing
+- [x] If `METAFOPY_CORRECTNESS_RLIB` is unset (`[ -n "${METAFOPY_CORRECTNESS_RLIB:-}" ] && echo yes || echo no`), stop as `blocked` naming the variable
+- [x] Check that `/Users/simonb/src/metafopy/.audit/Rlib/glmmTMB/DESCRIPTION` says `Version: 1.1.15.2`; stop as `blocked` if not. Install nothing
       into that library; `src/audit/data/r-versions.json` must not change
-- [ ] Write `src/tests/correctness/r/other_software_ls.R` in the layout of `r/other_software.R`:
+- [x] Write `src/tests/correctness/r/other_software_ls.R` in the layout of `r/other_software.R`:
   - `lib <- Sys.getenv("METAFOPY_CORRECTNESS_RLIB")`, `.libPaths(c(lib, .libPaths()))`, glmmTMB found through `R_LIBS`;
   - it pins `GLMMTMB_VERSION <- "1.1.15.2"` and stops on any other version;
   - the known `vi` as an `equalto` covariance, the heterogeneity as the residual dispersion with `dispformula = ~ z`, ML and `REML = TRUE`;
@@ -479,25 +479,25 @@ formulas share, not copy, what `formulas.py` already has.
     factor;
   - it writes `cases/location_scale_other.toml` with `kind = "other"`, comparing `tau2_i`, `beta`, the log-likelihood and alpha, and puts glmmTMB's and
     R's versions in each case's `source`.
-- [ ] Run it: `METAFOPY_CORRECTNESS_RLIB=$METAFOPY_CORRECTNESS_RLIB R_LIBS=/Users/simonb/src/metafopy/.audit/Rlib LC_ALL=C.UTF-8 Rscript src/tests/correctness/r/other_software_ls.R`,
+- [x] Run it: `METAFOPY_CORRECTNESS_RLIB=$METAFOPY_CORRECTNESS_RLIB R_LIBS=/Users/simonb/src/metafopy/.audit/Rlib LC_ALL=C.UTF-8 Rscript src/tests/correctness/r/other_software_ls.R`,
       and commit its output
-- [ ] Record any mismatch as the header says
-- [ ] Hoist anything the location-scale formulas and checks duplicate from the core correctness functions to a single owner: grep
+- [x] Record any mismatch as the header says
+- [x] Hoist anything the location-scale formulas and checks duplicate from the core correctness functions to a single owner: grep
       `src/tests/correctness/formulas.py` and `test_derived.py` for each literal collection, constant and one-line helper the new code defines (the
       Wald and t-type p-values, the Knapp-Hartung factor, the QE quadratic form, `numbers_agree`-style comparisons), and call the existing one rather
       than a copy. Owners stay in `formulas.py` and `test_derived.py`
 
 **Acceptance Criteria:**
 
-- [ ] Every `other` case names glmmTMB's version
-- [ ] Tests never run R
-- [ ] `git diff main -- src/audit/data/r-versions.json` is empty
+- [x] Every `other` case names glmmTMB's version
+- [x] Tests never run R
+- [x] `git diff main -- src/audit/data/r-versions.json` is empty
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_other_software.py src/tests/correctness/test_derived.py src/tests/correctness/test_formulas_ls.py src/tests/correctness/test_coverage.py`
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_other_software.py src/tests/correctness/test_derived.py src/tests/correctness/test_formulas_ls.py src/tests/correctness/test_coverage.py`
       passes
 
 **Notes:**

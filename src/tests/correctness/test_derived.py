@@ -612,8 +612,8 @@ def ls_heterogeneity(case: correctness.cases.Case, result: typing.Any) -> None:
     """``QE`` as Cochran's ``y' P y`` with the inverse-variance weights, and ``I2`` and ``H2`` per study at the reference ``tau2_i``."""
     reference = ls_reference(case)
     yi, vi, X, _ = ls_inputs(case)
-    vt = correctness.formulas.ls_typical_variance(vi, X)
-    ls_agree(case, 'QE', result.QE, correctness.formulas.ls_cochran_q(yi, vi, X), LS_RELATIVE)
+    vt = correctness.formulas.design_typical_variance(vi, X)
+    ls_agree(case, 'QE', result.QE, correctness.formulas.random_effects_q(yi, vi, X, 0.0), LS_RELATIVE)
     ls_agree(case, 'I2', result.I2, correctness.formulas.ls_i2(reference['tau2'], vt), LS_RELATIVE)
     ls_agree(case, 'H2', result.H2, correctness.formulas.ls_h2(reference['tau2'], vt), LS_RELATIVE)
 

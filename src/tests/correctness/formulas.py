@@ -1505,10 +1505,14 @@ def rma_QM(yi: FloatArray, vi: FloatArray, method: str, test: str = 'z', mods: s
     return stat if test == 'z' else stat / len(b)
 
 
+def design_typical_variance(vi: FloatArray, design: FloatArray) -> float:
+    """``vt = (k - p) / tr(P(W(0)))`` for the model matrix ``design``: the typical within-study variance of Higgins and Thompson (2002), equation 9."""
+    return float(design.shape[0] - design.shape[1]) / float(numpy.trace(projection(1 / vi, design)))
+
+
 def typical_variance(yi: FloatArray, vi: FloatArray, mods: str | None, data: object | None) -> float:
     """``vt = (k - p) / tr(P(W(0)))``, the typical sampling variance."""
-    design = model_matrix(len(yi), mods, data)
-    return float(len(yi) - design.shape[1]) / float(numpy.trace(projection(1 / vi, design)))
+    return design_typical_variance(vi, model_matrix(len(yi), mods, data))
 
 
 def rma_I2(yi: FloatArray, vi: FloatArray, method: str, mods: str | None = None, data: object | None = None) -> float:
@@ -2724,19 +2728,6 @@ def ls_reference_fit(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArra
         'll': ls_loglik(yi, vi, X, Z, alpha, link, method),
         'va': numpy.linalg.inv(ls_information(yi, vi, X, Z, alpha, link, method)),
     }
-
-
-def ls_cochran_q(yi: FloatArray, vi: FloatArray, X: FloatArray) -> float:
-    """Cochran's ``Q = y' P(W(0)) y`` with ``W(0) = diag(1 / vi)``: the heterogeneity statistic ``QE`` of a location model, with or without an intercept.
-
-    Cochran (1954); the quadratic form is that of equation 8 of Viechtbauer and Lopez-Lopez (2022) at ``tau2 = 0``. It does not centre ``yi``.
-    """
-    return float(yi @ projection(1 / vi, X) @ yi)
-
-
-def ls_typical_variance(vi: FloatArray, X: FloatArray) -> float:
-    """The typical within-study variance ``vt = (k - p) / tr(P(W(0)))`` of Higgins and Thompson (2002), Stat Med 21:1539-1558, equation 9."""
-    return float(X.shape[0] - X.shape[1]) / float(numpy.trace(projection(1 / vi, X)))
 
 
 def ls_i2(tau2: FloatArray, vt: float) -> FloatArray:
