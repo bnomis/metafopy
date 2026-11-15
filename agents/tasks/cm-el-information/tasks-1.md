@@ -243,7 +243,7 @@ difference.
 
 ## Task 5: Audit records and the user documentation
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Records; Environment for tasks; Settings
@@ -253,46 +253,50 @@ say what the default now is.
 
 **Subtasks:**
 
-- [ ] `src/audit/data/known.toml`: the `*/glmm_cm*` `value-diff` and `print-diff` reasons say metafopy reports the analytic information and R a
+- [x] `src/audit/data/known.toml`: the `*/glmm_cm*` `value-diff` and `print-diff` reasons say metafopy reports the analytic information and R a
       numDeriv `r = 16` Hessian (with the spec's figures); the `warning-missing` entry (R cannot invert, metafopy can) keeps its match, reason
       reworded; the `CM.EL` figure in the `UM.FS` print-diff entry (Wld 268.5990 against 191.7124) becomes 268.5990 against metafopy's new value.
       Check every other `CM.EL` mention (`grep -n 'CM.EL' src/audit/data/known.toml`)
-- [ ] Run the slice in the background from the worktree:
+- [x] Run the slice in the background from the worktree:
       `METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib bin/metafor-audit.sh --only 'construct/glmm_cm*'`. Then:
   - remove the `construct/glmm_cm/control=*` `warning-extra` entry if the run no longer reports metafopy's warning;
   - if `res.control` lacking `hesspack` (R lists `'numDeriv'`) gives a `field-diff`, add a `[[known]]` entry matching exactly those case ids, with a
     reason and `ref = "docs/differences.md"`;
   - add no entry for a finding the run does not report; stop as `blocked`, naming it, for a finding on a fit other than `CM.EL` for `OR`;
   - rerun the slice and check it lists no finding left from this change
-- [ ] Run `METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib bin/metafor-audit.sh --recall` in the background; items
+- [x] Run `METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib bin/metafor-audit.sh --recall` in the background; items
       `a4-glmm-cmel-optimizers` and `a5-glmm-cmel-se` must still be found. A miss is fixed in the harness (`src/audit/data/`), never in a report
-- [ ] `docs/differences.md`: move the section "rma_glmm with CM.EL: standard errors" from "Optimiser stop points" to "Where metafor departs from its
+- [x] `docs/differences.md`: move the section "rma_glmm with CM.EL: standard errors" from "Optimiser stop points" to "Where metafor departs from its
       reference" as `### rma_glmm with CM.EL: standard errors and QE_Wld`: metafopy uses the analytic information; R's value comes from numDeriv's
       Richardson extrapolation over 16 halvings and BiasedUrn's truncation; the correctness cases that check it; the `control` entries that restore
       the numerical Hessian; the compare block with its Python output regenerated (keep the R block; regenerate R's output only if it is checked with
       `LC_ALL=C.UTF-8 R_LIBS=$METAFOPY_AUDIT_RLIB Rscript -e '<the R block>'` and differs). Fix every link to the old anchor
       (`grep -rn 'cm-el-standard-errors\|CM.EL: standard errors' docs src`)
-- [ ] `docs/differences-notes.md` (the `rma_glmm` `CM.EL` note on standard errors and `QE_Wld`, with the optimisers), `docs/guide/binary.md` (the
+- [x] `docs/differences-notes.md` (the `rma_glmm` `CM.EL` note on standard errors and `QE_Wld`, with the optimisers), `docs/guide/binary.md` (the
       `hesspack` and `dnchgcalc` lines: the default is the analytic information, the entries opt into the numerical Hessian): say what the default
       now is, and search the docs for every copy of the old figures (0.098986, 191.7124) and update each
 
 **Acceptance Criteria:**
 
-- [ ] The slice reports no finding from this change, and every new or changed `known.toml` entry matches at least one case of the run
-- [ ] `--recall` finds `a4-glmm-cmel-optimizers` and `a5-glmm-cmel-se`
-- [ ] `docs/differences.md` names the difference under "Where metafor departs from its reference", and no doc gives the old default
+- [x] The slice reports no finding from this change, and every new or changed `known.toml` entry matches at least one case of the run
+- [x] `--recall` finds `a4-glmm-cmel-optimizers` and `a5-glmm-cmel-se`
+- [x] `docs/differences.md` names the difference under "Where metafor departs from its reference", and no doc gives the old default
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_audit4_plots.py src/tests/test_glmm_packages.py src/tests/test_rma_uni_help.py src/tests/test_docs_examples.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_audit4_plots.py src/tests/test_glmm_packages.py src/tests/test_rma_uni_help.py src/tests/test_docs_examples.py` passes
       (the test files that read `docs/differences.md` or the guides, and the docs examples)
-- [ ] The audit slice and `--recall` above exit 0
+- [x] The audit slice and `--recall` above exit 0
 
 **Notes:**
 
 - Depends on Task 4
+- Slice run (2026-11-15): 0 findings new; the `construct/glmm_cm/control=*` `warning-extra` entry matched nothing once removed (re-render with it
+  absent still gave 0 new findings), so it is deleted; no `hesspack` field-diff appeared, so no entry was added. `--recall`: 176 of 176 reproduced,
+  including `a4-glmm-cmel-optimizers` and `a5-glmm-cmel-se`
+- The worktree has no `.venv`; the audit ran with the main checkout's `.venv/bin` on `PATH` and the worktree's `src` on `PYTHONPATH`
 - Prerequisite outside this repository: R metafor 5.2-1 and the pinned packages in `/Users/simonb/src/metafopy/.audit/Rlib` (the main checkout)
 - `src/audit/config.py` reads `METAFOPY_AUDIT_RLIB`; the work directory stays the worktree's own `.audit`
 

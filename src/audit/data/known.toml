@@ -25,21 +25,14 @@ ref = "docs/differences.md"
 [[known]]
 match = "*/glmm_cm*"
 kind = "print-diff"
-reason = "Same as the value-diff entry: the printed Wald test of the saturated model (QE_Wld) of CM.EL differs."
+reason = "Same as the value-diff entry: the printed Wald test of the saturated model (QE_Wld) of CM.EL differs, because metafopy takes the analytic information and R a numDeriv r = 16 Hessian of a noisy objective (dat.bcg, FE: QE_Wld 163.0895 against R's 191.7124)."
 ref = "docs/differences.md"
 
 [[known]]
 match = "*/glmm_cm*"
 kind = "warning-missing"
 detail = "Cannot invert the Hessian for the saturated model.*"
-reason = "R cannot invert the noisy Hessian of the saturated CM.EL model and gives NA for QE_Wld, QE_LRT and QE_df; metafopy's Hessian inverts."
-ref = "docs/differences.md"
-
-[[known]]
-match = "construct/glmm_cm/control=*"
-kind = "warning-extra"
-detail = "Cannot invert the Hessian for the saturated model.*"
-reason = "metafopy warns where R now inverts: with R 4.6.2 and lme4 2.1-0 (the pinned oracle), R inverts the noisy Hessian of the saturated CM.EL model under the optimizers lbfgsb3c, optimParallel, Rcgmin and Rvmmin and gives QE_Wld, QE_LRT and QE_df, while metafopy's Hessian does not invert and it warns."
+reason = "R cannot invert its numDeriv r = 16 Hessian of the noisy saturated CM.EL model and gives NA for QE_Wld, QE_LRT and QE_df; metafopy's analytic information inverts."
 ref = "docs/differences.md"
 
 [[known]]
@@ -291,7 +284,7 @@ ref = "docs/differences.md"
 [[known]]
 match = "*/glmm_cm*"
 kind = "value-diff"
-reason = "rma_glmm(model='CM.EL'): R's Hessian is a finite-difference one of a noisy objective, see docs/differences.md."
+reason = "rma_glmm(measure='OR', model='CM.EL'): metafopy reports the analytic information of the exact likelihood; R's is a numDeriv r = 16 finite-difference Hessian of a noisy objective (integrate() with rel.tol 1.2e-4, BiasedUrn's truncation), see docs/differences.md."
 ref = "docs/differences.md"
 
 [[known]]
@@ -1012,7 +1005,7 @@ ref = "docs/differences.md"
 match = "construct/glmm_bcg/*"
 kind = "print-diff"
 detail = "line *: R '*[0-9]*', Python '*[0-9]*'"
-reason = "The printed tests, coefficient rows and heterogeneity lines of rma_glmm(model='UM.FS') with moderators, measure, nAGQ or model variants (the value-diff entry above): R's glmer() stops before it converges for mods = ~ alloc, ~ year, ~ 0 + alloc and nAGQ = 3 (max|grad| 0.0187, 0.0137, 0.0041, 0.0050; for ~ alloc metafopy's estimates are 4.4e-5 higher on glmer's Laplace objective), and where it converges (~ I(ablat^2)) the maxima agree to 1e-8 but lme4's finite-difference Hessian is taken at estimates that differ in the sixth digit (QM 76.2183 against 76.2266). model = 'CM.EL' is the noisy saturated Hessian of the */glmm_cm* entries (Wld 268.5990 against 191.7124). Rows whose names or headings differ are not matched (checked 2026-11-04, R 4.6.2, metafor 5.2-1, lme4 2.1-0)."
+reason = "The printed tests, coefficient rows and heterogeneity lines of rma_glmm(model='UM.FS') with moderators, measure, nAGQ or model variants (the value-diff entry above): R's glmer() stops before it converges for mods = ~ alloc, ~ year, ~ 0 + alloc and nAGQ = 3 (max|grad| 0.0187, 0.0137, 0.0041, 0.0050; for ~ alloc metafopy's estimates are 4.4e-5 higher on glmer's Laplace objective), and where it converges (~ I(ablat^2)) the maxima agree to 1e-8 but lme4's finite-difference Hessian is taken at estimates that differ in the sixth digit (QM 76.2183 against 76.2266). model = 'CM.EL' is the noisy saturated Hessian of the */glmm_cm* entries (Wld 268.5990 against metafopy's 163.0895). Rows whose names or headings differ are not matched (checked 2026-11-04, R 4.6.2, metafor 5.2-1, lme4 2.1-0)."
 ref = "docs/differences.md"
 
 [[known]]
