@@ -56,6 +56,6 @@ restarts.
 | 7 | `correctness-location-scale/tasks-1.md` | 3, 4 | sources still missing (Task 2); the mismatch review (Task 11) | merged 2be9798 |
 | 8 | `correctness-publication-bias/tasks-1.md` | 3, 5, 6, 7 | the Citkowicz and Vevea (2017) PDF (Task 8); R `weightr` and `meta` if they do not load (Task 11); the review of mismatches, `negexppow` and `stepcon` (Task 13) | merged 6031488 |
 
-Checkpoint after 8: running
+Checkpoint after 8: passed 8490 passed, 37 skipped, 41 xfailed
 
 Checkpoint after 3: passed 7865 passed, 36 skipped
