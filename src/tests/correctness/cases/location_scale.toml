@@ -618,3 +618,268 @@ setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di =
 args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log", test = "knha" }
 check = "test_derived.ls_confint_location"
 covers = ["ls.confint.location"]
+
+# Task 6 of agents/tasks/correctness-location-scale/tasks-1.md: predict (fitted, newmods, newscale, both) and anova (btt, att, X, Z, lrt) against
+# formulas.ls_predict, formulas.ls_wald and formulas.ls_lrt at the reference fit. predict uses the smallest, mean and largest values of the data.
+
+[[case]]
+id = "ls.predict.fitted.ML.z.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log", test = "z" }
+check = "test_derived.ls_predict_fitted"
+covers = ["ls.predict.fitted"]
+
+[[case]]
+id = "ls.predict.fitted.REML.knha.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log", test = "knha" }
+check = "test_derived.ls_predict_fitted"
+covers = ["ls.predict.fitted"]
+
+[[case]]
+id = "ls.predict.fitted.ML.z.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log", test = "z" }
+check = "test_derived.ls_predict_fitted"
+covers = ["ls.predict.fitted"]
+
+[[case]]
+id = "ls.predict.newmods.ML.z.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log", test = "z" }
+check = "test_derived.ls_predict_newmods"
+covers = ["ls.predict.newmods"]
+
+[[case]]
+id = "ls.predict.newmods.REML.knha.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log", test = "knha" }
+check = "test_derived.ls_predict_newmods"
+covers = ["ls.predict.newmods"]
+
+[[case]]
+id = "ls.predict.newmods.REML.t.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log", test = "t" }
+check = "test_derived.ls_predict_newmods"
+covers = ["ls.predict.newmods"]
+
+[[case]]
+id = "ls.predict.newscale.ML.z.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log", test = "z" }
+check = "test_derived.ls_predict_newscale"
+covers = ["ls.predict.newscale"]
+
+[[case]]
+id = "ls.predict.newscale.REML.knha.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log", test = "knha" }
+check = "test_derived.ls_predict_newscale"
+covers = ["ls.predict.newscale"]
+
+[[case]]
+id = "ls.predict.newscale.REML.z.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log", test = "z" }
+check = "test_derived.ls_predict_newscale"
+covers = ["ls.predict.newscale"]
+
+[[case]]
+id = "ls.predict.both.ML.z.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log", test = "z" }
+check = "test_derived.ls_predict_both"
+covers = ["ls.predict.both"]
+
+[[case]]
+id = "ls.predict.both.REML.adhoc.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log", test = "adhoc" }
+check = "test_derived.ls_predict_both"
+covers = ["ls.predict.both"]
+
+[[case]]
+id = "ls.predict.both.ML.t.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log", test = "t" }
+check = "test_derived.ls_predict_both"
+covers = ["ls.predict.both"]
+
+[[case]]
+id = "ls.anova.btt.ML.z.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log", test = "z" }
+check = "test_derived.ls_anova_btt"
+covers = ["ls.anova.btt"]
+
+[[case]]
+id = "ls.anova.btt.REML.knha.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log", test = "knha" }
+check = "test_derived.ls_anova_btt"
+covers = ["ls.anova.btt"]
+
+[[case]]
+id = "ls.anova.btt.REML.z.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log", test = "z" }
+check = "test_derived.ls_anova_btt"
+covers = ["ls.anova.btt"]
+
+[[case]]
+id = "ls.anova.att.ML.z.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log", test = "z" }
+check = "test_derived.ls_anova_att"
+covers = ["ls.anova.att"]
+
+[[case]]
+id = "ls.anova.att.REML.knha.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log", test = "knha" }
+check = "test_derived.ls_anova_att"
+covers = ["ls.anova.att"]
+
+[[case]]
+id = "ls.anova.att.REML.z.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log", test = "z" }
+check = "test_derived.ls_anova_att"
+covers = ["ls.anova.att"]
+
+[[case]]
+id = "ls.anova.X.ML.z.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log", test = "z" }
+check = "test_derived.ls_anova_X"
+covers = ["ls.anova.X"]
+
+[[case]]
+id = "ls.anova.X.REML.knha.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log", test = "knha" }
+check = "test_derived.ls_anova_X"
+covers = ["ls.anova.X"]
+
+[[case]]
+id = "ls.anova.X.ML.t.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log", test = "t" }
+check = "test_derived.ls_anova_X"
+covers = ["ls.anova.X"]
+
+[[case]]
+id = "ls.anova.Z.ML.z.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log", test = "z" }
+check = "test_derived.ls_anova_Z"
+covers = ["ls.anova.Z"]
+
+[[case]]
+id = "ls.anova.Z.REML.knha.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log", test = "knha" }
+check = "test_derived.ls_anova_Z"
+covers = ["ls.anova.Z"]
+
+[[case]]
+id = "ls.anova.Z.ML.t.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log", test = "t" }
+check = "test_derived.ls_anova_Z"
+covers = ["ls.anova.Z"]
+
+[[case]]
+id = "ls.anova.lrt.ML.ML.z.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log", test = "z" }
+check = "test_derived.ls_anova_lrt"
+covers = ["ls.anova.lrt.ML"]
+
+[[case]]
+id = "ls.anova.lrt.ML.ML.z.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log", test = "z" }
+check = "test_derived.ls_anova_lrt"
+covers = ["ls.anova.lrt.ML"]
+
+[[case]]
+id = "ls.anova.lrt.REML.REML.z.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log", test = "z" }
+check = "test_derived.ls_anova_lrt"
+covers = ["ls.anova.lrt.REML"]
+
+[[case]]
+id = "ls.anova.lrt.REML.REML.z.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log", test = "z" }
+check = "test_derived.ls_anova_lrt"
+covers = ["ls.anova.lrt.REML"]

@@ -2861,3 +2861,37 @@ def ls_profile_bounds(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArr
         lo, hi = sorted((float(alpha_hat[j]), end))
         bounds.append(float(scipy.optimize.brentq(excess, lo, hi, xtol=1e-13, rtol=1e-13)))
     return bounds[0], bounds[1]
+
+
+def ls_lrt(ll_full: float, ll_reduced: float, df: int) -> tuple[float, float]:
+    """The likelihood-ratio statistic ``2 (ll_full - ll_reduced)`` of equation 15 of Viechtbauer and Lopez-Lopez (2022) and its chi-square p-value on ``df``."""
+    stat = max(0.0, 2 * (ll_full - ll_reduced))
+    return stat, float(scipy.stats.chi2.sf(stat, df))
+
+
+def ls_predict(x0: FloatArray, z0: FloatArray, fit: dict[str, typing.Any], link: str, crit: float) -> dict[str, float]:
+    """The prediction at one row ``x0`` of the location and ``z0`` of the scale model matrix (sections 2.5.2 and 2.7 of Viechtbauer and Lopez-Lopez, 2022).
+
+    The average true effect is ``x0' beta`` with variance ``x0' vb x0`` and the interval ``pred +- crit se``; the prediction interval adds the predicted
+    ``tau2`` of ``z0`` to that variance. The scale prediction ``z0' alpha`` has variance ``z0' va z0`` and an interval on the scale of the link; ``tau2``
+    is that prediction under the inverse link (``exp`` for the log link).
+    """
+    pred = float(x0 @ fit['beta'])
+    se = math.sqrt(float(x0 @ fit['vb'] @ x0))
+    lin = float(z0 @ fit['alpha'])
+    se_lin = math.sqrt(float(z0 @ fit['va'] @ z0))
+    tau2 = math.exp(lin) if link == 'log' else max(lin, 0.0)
+    pi_half = crit * math.sqrt(se**2 + tau2)
+    return {
+        'pred': pred,
+        'se': se,
+        'ci_lb': pred - crit * se,
+        'ci_ub': pred + crit * se,
+        'pi_lb': pred - pi_half,
+        'pi_ub': pred + pi_half,
+        'scale': lin,
+        'scale_se': se_lin,
+        'scale_lb': lin - crit * se_lin,
+        'scale_ub': lin + crit * se_lin,
+        'tau2': tau2,
+    }

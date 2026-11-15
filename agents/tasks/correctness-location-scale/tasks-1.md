@@ -297,7 +297,7 @@ Error handling (`nan` bounds)
 
 ## Task 6: Derived cases for predict and anova
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** API (`ls_lrt`, `ls_predict`); Coverage list (`ls.predict.*`, `ls.anova.*`); Evidence (the REML LRT needs the same location part)
@@ -306,24 +306,24 @@ Error handling (`nan` bounds)
 
 **Subtasks:**
 
-- [ ] `formulas.ls_predict` (section 2.7: pred, se, CI, PI at `x0` and `z0`; the predicted `tau2` with its CI from `z0' va z0`, section 2.5.2) and
+- [x] `formulas.ls_predict` (section 2.7: pred, se, CI, PI at `x0` and `z0`; the predicted `tau2` with its CI from `z0' va z0`, section 2.5.2) and
       `formulas.ls_lrt` (eq. 15)
-- [ ] Check functions `ls_predict_fitted`, `ls_predict_newmods`, `ls_predict_newscale`, `ls_predict_both`, and `ls_anova_btt`, `ls_anova_att`,
+- [x] Check functions `ls_predict_fitted`, `ls_predict_newmods`, `ls_predict_newscale`, `ls_predict_both`, and `ls_anova_btt`, `ls_anova_att`,
       `ls_anova_X`, `ls_anova_Z`, `ls_anova_lrt` in `test_derived.py`; where the value is a back-transformed `tau2` or an interval bound, use the
       `check` functions the `correctness-harness-checks` list added rather than a new copy
-- [ ] Cases for each `ls.predict.<situation>` and each `ls.anova.<form>`; `lrt.REML` only between models with the same location part, as the paper
+- [x] Cases for each `ls.predict.<situation>` and each `ls.anova.<form>`; `lrt.REML` only between models with the same location part, as the paper
       states
-- [ ] Record any mismatch as the header says
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] The derived gate lists none of these items
+- [x] The derived gate lists none of these items
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 
