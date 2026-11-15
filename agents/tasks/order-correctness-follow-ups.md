@@ -54,6 +54,6 @@ restarts.
 | 5 | `correctness-mv-robust/tasks-1.md` | 3, 4 | sources still missing (Task 10); the mismatch review (Task 12) | merged 8f38308 |
 | 6 | `correctness-glmm/tasks-1.md` | 3, 5 | sources still missing (Task 10); the mismatch and conventions review (Task 13) | merged 164d679 |
 | 7 | `correctness-location-scale/tasks-1.md` | 3, 4 | sources still missing (Task 2); the mismatch review (Task 11) | merged 2be9798 |
-| 8 | `correctness-publication-bias/tasks-1.md` | 3, 5, 6, 7 | the Citkowicz and Vevea (2017) PDF (Task 8); R `weightr` and `meta` if they do not load (Task 11); the review of mismatches, `negexppow` and `stepcon` (Task 13) | running |
+| 8 | `correctness-publication-bias/tasks-1.md` | 3, 5, 6, 7 | the Citkowicz and Vevea (2017) PDF (Task 8); R `weightr` and `meta` if they do not load (Task 11); the review of mismatches, `negexppow` and `stepcon` (Task 13) | merged 6031488 |
 
 Checkpoint after 3: passed 7865 passed, 36 skipped
