@@ -912,3 +912,125 @@ args = { yi = "yi", vi = "vi", mods = "~ lat", scale = "~ lat", method = "ML", l
 then = { function = "permutest", args = { exact = true, skip_beta = true } }
 check = "test_derived.ls_permutest_exact"
 covers = ["ls.permutest.scale.exact"]
+
+# Task 8 of agents/tasks/correctness-location-scale/tasks-1.md: the reductions and invariances of the location-scale fit (checks in test_properties.py).
+# dat.bangertdrowns2004 has the two-level moderator imag; dat.bcg (log risk ratio) the numeric moderator ablat.
+
+[[case]]
+id = "property.ls.reduces.ML.bd"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ 1", method = "ML", link = "log" }
+check = "test_properties.ls_reduces_to_rma_uni"
+
+[[case]]
+id = "property.ls.reduces.REML.bd"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ 1", method = "REML", link = "log" }
+check = "test_properties.ls_reduces_to_rma_uni"
+
+[[case]]
+id = "property.ls.subgroups.ML.bd"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log" }
+check = "test_properties.ls_subgroups_are_separate_fits"
+
+[[case]]
+id = "property.ls.subgroups.REML.bd"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log" }
+check = "test_properties.ls_subgroups_are_separate_fits"
+
+[[case]]
+id = "property.ls.score.ML.bd"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log" }
+check = "test_properties.ls_score_is_zero"
+
+[[case]]
+id = "property.ls.score.REML.bd"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log" }
+check = "test_properties.ls_score_is_zero"
+
+[[case]]
+id = "property.ls.score.ML.bcg"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log" }
+check = "test_properties.ls_score_is_zero"
+
+[[case]]
+id = "property.ls.invariance.ML.bcg"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log" }
+check = "test_properties.ls_invariance"
+
+[[case]]
+id = "property.ls.invariance.REML.bcg"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log" }
+check = "test_properties.ls_invariance"
+
+[[case]]
+id = "property.ls.profile.ML.bd"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log" }
+check = "test_properties.ls_profile_peaks_at_estimate"
+
+[[case]]
+id = "property.ls.profile.REML.bd"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log" }
+check = "test_properties.ls_profile_peaks_at_estimate"
+
+[[case]]
+id = "property.ls.optimisers.ML.bd"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log" }
+check = "test_properties.ls_optimisers_agree"
+
+[[case]]
+id = "property.ls.links.ML.bd"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log" }
+check = "test_properties.ls_links_agree_for_group_indicators"
+status = "mismatch"
+reason = "property.ls.links.ML.bd: beta: the identity link gives [0.20520075, 0.00347308], the log link [0.20520475, 0.00348536]"
+
+[[case]]
+id = "property.ls.links.REML.bd"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log" }
+check = "test_properties.ls_links_agree_for_group_indicators"
+status = "mismatch"
+reason = "property.ls.links.REML.bd: beta: the identity link gives [0.20742984, -0.0239243], the log link [0.20743445, -0.02393794]"

@@ -379,7 +379,7 @@ every location-scale item has a `derived` case.
 
 ## Task 8: Property cases
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** medium
 **Spec Reference:** Evidence ("Properties the paper states"); Implementation step 4
@@ -388,7 +388,7 @@ every location-scale item has a `derived` case.
 
 **Subtasks:**
 
-- [ ] Check functions in `test_properties.py`:
+- [x] Check functions in `test_properties.py`:
   - `ls_reduces_to_rma_uni`: an intercept-only scale model gives metafopy's `rma_uni` fit with the same method (`beta`, `se`,
     `tau2 = exp(alpha_0)`, log-likelihood; not the `se` of `tau2`);
   - `ls_subgroups_are_separate_fits`: one categorical moderator in both parts gives the separate `rma_uni` fits per category (`beta`, `tau2`), ML and
@@ -399,18 +399,18 @@ every location-scale item has a `derived` case.
   - `ls_optimisers_agree`: every optimiser in `metafopy.models.rma_ls_fit.OPTIMIZERS` that metafopy implements reaches the same maximum, read at test
     time; one that raises `InputError` as unavailable is skipped with its name in the message;
   - the log and identity links agree when the scale model is a set of group indicators.
-- [ ] Their cases in `location_scale.toml` with `kind = "property"`
-- [ ] Record any mismatch as the header says
+- [x] Their cases in `location_scale.toml` with `kind = "property"`
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] Each property above has at least one case
+- [x] Each property above has at least one case
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_properties.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_properties.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 

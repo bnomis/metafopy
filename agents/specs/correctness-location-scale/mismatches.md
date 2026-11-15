@@ -21,7 +21,9 @@ Left for Task 11, which runs them once every task has appended its items.
 - **Cases** (all in `src/tests/correctness/cases/location_scale.toml`, strict expected failures): `ls.fit.ML.identity.bd`, `ls.fit.REML.identity.bd`,
   `ls.fit.ML.identity.bcg`, `ls.fit.REML.identity.bcg` (the fit against the reference) and `property.ls.fit.ML.identity.bd`,
   `property.ls.fit.REML.identity.bd`, `property.ls.fit.ML.identity.bcg`, `property.ls.fit.REML.identity.bcg` (metafopy's log-likelihood is not below
-  the reference's by more than 1e-9).
+  the reference's by more than 1e-9), and `property.ls.links.ML.bd`, `property.ls.links.REML.bd` (the identity-link and log-link fits of a
+  two-group scale model, which span the same variances, differ in `beta` by about 1e-5: identity ML 0.20520075, 0.00347308 against log ML 0.20520475,
+  0.00348536; identity REML 0.20742984, -0.0239243 against log REML 0.20743445, -0.02393794; their log-likelihoods agree to 1e-6).
 - **Source:** Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Res Synth Methods 13:697-715, doi:10.1002/jrsm.1562,
   equations 3 (identity link), 7 (ML) and 9 (REML); the reference is `formulas.ls_reference_fit` (BFGS, SLSQP with `Z alpha >= 0` for the identity
   link, then Nelder-Mead), which checks its own result against the analytic score.

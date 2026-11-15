@@ -21,6 +21,7 @@ import correctness.test_derived
 import metafopy
 import metafopy.errors
 import metafopy.models.rma_glmm
+import metafopy.models.rma_ls_fit
 import metafopy.models.tau2
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
@@ -429,3 +430,135 @@ def ls_loglik_not_below_reference(case: correctness.cases.Case, result: typing.A
     actual = float(result.logLik(REML=case.args['method'] == 'REML'))
     if actual < reference['ll'] - correctness.test_derived.LS_LOGLIK:
         raise AssertionError(f'{case.id}: metafopy gives log-likelihood {actual!r}, below the reference maximum {reference["ll"]!r}')
+
+
+LS_AGREEMENT = 1e-6
+# an optimiser that cannot run on a case's link or model is unavailable, not wrong
+LS_UNAVAILABLE = (metafopy.errors.InputError, metafopy.errors.NotSupportedError)
+
+
+def ls_fit_of(case: correctness.cases.Case, frame: pandas.DataFrame, **changes: typing.Any) -> typing.Any:
+    """``rma_uni`` with the case's own arguments on ``frame``, those in ``changes`` replacing or adding to them (``None`` removes one)."""
+    args = {**case.args, 'data': frame, **changes}
+    return metafopy.rma_uni(**{k: v for k, v in args.items() if v is not None})
+
+
+def ls_loglik_of(fit: typing.Any) -> float:
+    return float(fit.logLik(REML=fit.method == 'REML'))
+
+
+def ls_column(case: correctness.cases.Case) -> str:
+    """The one moderator column of a case whose ``mods`` and ``scale`` are both ``~ <column>``."""
+    name = case.args['scale'].removeprefix('~').strip()
+    assert case.args['mods'].removeprefix('~').strip() == name, f'{case.id}: mods and scale must be the same single column'
+    return str(name)
+
+
+def ls_case_frame(case: correctness.cases.Case) -> pandas.DataFrame:
+    frame = correctness.cases.case_frame(case)
+    assert frame is not None
+    return frame
+
+
+def ls_reduces_to_rma_uni(case: correctness.cases.Case, result: typing.Any) -> None:
+    """With an intercept-only scale model, ``tau2_i = exp(alpha_0)`` is one ``tau2`` and the fit is the random-effects fit with the same method.
+
+    Both maximise one likelihood, so ``beta``, its standard error, ``tau2`` and the log-likelihood agree; the standard error of ``tau2`` is not
+    compared, because the location-scale fit gives that of ``alpha_0``.
+    """
+    uni = ls_fit_of(case, ls_case_frame(case), scale=None, link=None, control=CONTROL)
+    tolerance = case.tolerance or LS_AGREEMENT
+    close(case.id, 'beta', result.beta, uni.beta, tolerance)
+    close(case.id, 'se', result.se, uni.se, tolerance)
+    close(case.id, 'tau2', numpy.exp(result.alpha[0]), uni.tau2, tolerance)
+    close(case.id, 'log-likelihood', ls_loglik_of(result), ls_loglik_of(uni), tolerance)
+
+
+def ls_subgroups_are_separate_fits(case: correctness.cases.Case, result: typing.Any) -> None:
+    """One categorical moderator in both parts fits each category on its own: ``tau2`` and the fitted mean of a category are those of ``rma_uni`` on its rows.
+
+    The mean and the variance of each category are free parameters, so the joint likelihood is the sum of the categories' likelihoods and is
+    maximised category by category.
+    """
+    frame = ls_case_frame(case)
+    column = ls_column(case)
+    tolerance = case.tolerance or LS_AGREEMENT
+    for level in sorted(frame[column].unique()):
+        rows = (frame[column] == level).to_numpy()
+        separate = ls_fit_of(case, frame, mods=None, scale=None, link=None, subset=rows, control=CONTROL)
+        first = int(numpy.flatnonzero(rows)[0])
+        close(case.id, f'mean of {column} = {level}', float(numpy.asarray(result.X)[first] @ numpy.asarray(result.beta)), float(separate.beta[0]), tolerance)
+        close(case.id, f'tau2 of {column} = {level}', float(result.tau2[first]), float(separate.tau2), tolerance)
+
+
+def ls_score_is_zero(case: correctness.cases.Case, result: typing.Any) -> None:
+    """At the estimates, the analytic score of the log-likelihood (``formulas.ls_score``, derived from equations 7 and 9) is zero in every ``alpha_j``."""
+    yi, vi, X, Z = correctness.test_derived.ls_inputs(case)
+    alpha = numpy.asarray(result.alpha, dtype=numpy.float64)
+    score = correctness.formulas.ls_score(yi, vi, X, Z, alpha, case.args.get('link', 'log'), case.args['method'])
+    close(case.id, 'score', score, numpy.zeros_like(score), case.tolerance or 1e-4)
+
+
+def ls_invariance(case: correctness.cases.Case, result: typing.Any) -> None:
+    """Centring and rescaling the scale moderator ``z`` to ``(z - c) / s`` changes ``alpha`` linearly and nothing else.
+
+    ``alpha_0 + alpha_1 z = alpha_0 + alpha_1 c + (alpha_1 s) (z - c) / s``, so the new coefficients are ``alpha_0 + alpha_1 c`` and ``alpha_1 s``
+    (the linear predictor is the same for either link), and ``tau2_i``, ``beta`` and the log-likelihood are unchanged.
+    """
+    frame = ls_case_frame(case).copy()
+    column = case.args['scale'].removeprefix('~').strip()
+    centre, factor = float(frame[column].mean()), 2.5
+    frame['moved'] = (frame[column] - centre) / factor
+    moved = ls_fit_of(case, frame, scale='~ moved')
+    tolerance = case.tolerance or LS_AGREEMENT
+    alpha = numpy.asarray(result.alpha, dtype=numpy.float64)
+    close(case.id, 'alpha', moved.alpha, [alpha[0] + alpha[1] * centre, alpha[1] * factor], tolerance)
+    close(case.id, 'tau2', moved.tau2, result.tau2, tolerance)
+    close(case.id, 'beta', moved.beta, result.beta, tolerance)
+    close(case.id, 'log-likelihood', ls_loglik_of(moved), ls_loglik_of(result), tolerance)
+
+
+def ls_profile_peaks_at_estimate(case: correctness.cases.Case, result: typing.Any) -> None:
+    """Each ``alpha_j``'s profile log-likelihood (section 2.5.3, maximised over the other ``alpha``) is highest at the estimate and equals the fit's there."""
+    yi, vi, X, Z = correctness.test_derived.ls_inputs(case)
+    link, method = case.args.get('link', 'log'), case.args['method']
+    alpha = numpy.asarray(result.alpha, dtype=numpy.float64)
+    tolerance = case.tolerance or 1e-6
+    for j in range(len(alpha)):
+        step = 0.25 * float(result.se_alpha[j])
+        peak = correctness.formulas.ls_profile_ll(yi, vi, X, Z, link, method, j, float(alpha[j]), alpha)
+        close(case.id, f'profile log-likelihood of alpha[{j}] at the estimate', peak, ls_loglik_of(result), tolerance)
+        for side in (-step, step):
+            value = correctness.formulas.ls_profile_ll(yi, vi, X, Z, link, method, j, float(alpha[j]) + side, alpha)
+            if value > peak + tolerance:
+                raise AssertionError(f'{case.id}: the profile of alpha[{j}] is {value!r} at {alpha[j] + side!r}, above {peak!r} at the estimate {alpha[j]!r}')
+
+
+def ls_optimisers_agree(case: correctness.cases.Case, result: typing.Any) -> None:
+    """Every optimiser of ``metafopy.models.rma_ls_fit.OPTIMIZERS`` that runs on the case reaches the same maximum.
+
+    The list is read at test time. An optimiser that raises ``InputError`` or ``NotSupportedError`` (a constrained one on the log link, ``SANN`` and
+    ``Brent``) is unavailable; the available ones are compared first, and the case then skips, naming the unavailable ones, so they never look checked.
+    """
+    frame = ls_case_frame(case)
+    tolerance = case.tolerance or LS_AGREEMENT
+    unavailable: list[str] = []
+    for name in metafopy.models.rma_ls_fit.OPTIMIZERS:
+        try:
+            other = ls_fit_of(case, frame, control={'optimizer': name})
+        except LS_UNAVAILABLE:
+            unavailable.append(name)
+            continue
+        close(case.id, f'log-likelihood with optimizer {name}', ls_loglik_of(other), ls_loglik_of(result), tolerance)
+    if unavailable:
+        pytest.skip(f'{case.id}: the rest agree; unavailable on this model: {", ".join(unavailable)}')
+
+
+def ls_links_agree_for_group_indicators(case: correctness.cases.Case, result: typing.Any) -> None:
+    """When the scale model is a set of group indicators, ``tau2_g = exp(alpha_g)`` and ``tau2_g = alpha_g`` span the same variances, so the links
+    reach the same maximum: the log-likelihood, ``beta`` and ``tau2_i`` agree."""
+    other = ls_fit_of(case, ls_case_frame(case), link='identity' if case.args.get('link', 'log') == 'log' else 'log')
+    tolerance = case.tolerance or LS_AGREEMENT
+    close(case.id, 'log-likelihood', ls_loglik_of(other), ls_loglik_of(result), tolerance)
+    close(case.id, 'beta', other.beta, result.beta, tolerance)
+    close(case.id, 'tau2', other.tau2, result.tau2, tolerance)
