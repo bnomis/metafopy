@@ -1,0 +1,267 @@
+# Tasks: location-scale identity-link polish
+
+**Source:** TODO.md, "The location-scale identity-link fit stops about 1e-5 short of the maximum"
+**Created:** 2026-11-15
+**Version:** 1
+
+The user answered *follow the reference* on 2026-11-15 (`agents/specs/correctness-location-scale/mismatches.md`, item `ls_identity_opt`), so this
+list changes metafopy's output without a new review, within what that answer names: the optimum of a location-scale fit with `link='identity'`.
+
+Checked against the code on 2026-11-15 (metafopy at `89ec047`). With the identity link, `fit_rma_ls` in `src/metafopy/models/rma_ls_fit.py` calls
+`constr_optim` in `src/metafopy/models/rma_ls_opt.py` (a port of R's `constrOptim`: an adaptive log barrier around Nelder-Mead, stopped when the
+barrier objective changes by less than `outer_eps = 1e-5` relative) and takes `res.par` as the optimum, with no polish. The other identity-link
+optimisers (`solnp`, `nloptr`, `constrOptim.nl`, `auglag`) go through `minimise_standin` and are not polished either.
+
+**Measured on 2026-11-15** on a scratch run, with `formulas.ls_loglik` and `formulas.ls_score` of `src/tests/correctness/formulas.py`:
+
+- `dat.bangertdrowns2004`, `mods = scale = ~ imag`, ML: metafopy's alpha `[0.03401541, 0.23040472]`, log-likelihood -17.058054743801; the analytic
+  score there is `[0.0118, -0.00093]`, not zero. SLSQP with that score and `Z alpha >= 0`, started from metafopy's alpha, ends at
+  `[0.03402053, 0.23031694]`, -17.058054672888, the reference (`formulas.ls_reference_fit`) to every printed digit. This optimum is interior
+  (smallest `tau2_i` 0.034).
+- `dat.bcg` log risk ratios, `mods = scale = ~ ablat`: the optimum is on the boundary. metafopy's smallest `tau2_i` is 2.3e-10 (ML) and 2.4e-9
+  (REML); the reference's is -1e-10 (its `IDENTITY_SLACK`), and the score there is far from zero (`[-57.1, -742.2]` under ML), so the reference
+  maximum is a constrained (KKT) point with the constraint of the lowest-`ablat` study active. A plain Newton step on the score does not reach it.
+- R metafor 5.2-1 stops where metafopy does: the parity fixture `bcg_year_identity` of `src/tests/reference/phase5/location_scale.json` (ML,
+  `mods = ~ ablat`, `scale = ~ I(ablat/10)`, the same model up to the scaling of the slope) holds alpha `[-0.026676029, 0.020520022]` and
+  log-likelihood -7.13928898408783, which metafopy reproduces today. The reference intercept is -0.0266587, a relative change of 6.5e-4, beyond the
+  1e-4 (`OPT`) that `src/tests/test_rma_ls.py` accepts. So the polish makes metafopy depart from metafor, and this list records that under
+  "Where metafor departs from its reference" in `docs/differences.md`.
+
+The R parity fixtures that hold identity-link fits (found by `grep -n 'link = "identity"' src/tests/r/*.R` on 2026-11-15): in
+`src/tests/r/generate_location_scale.R`, `bd_int_identity`, `bd_identity`, `bd_identity_ml`, `bd_identity_ni` and `bcg_year_identity`; in
+`src/tests/r/generate_audit4_numerics.R`, the `identity` fit; in `src/tests/r/generate_ls_vif_sim.R`, `res_ml`. The fixtures are never regenerated.
+
+`agents/tasks/order-numerical-fixes.md` row 6 (the profile-likelihood crossings list) waits for this one: the profile refits the fit this list
+polishes. The project has no affected-tests tool, so each task names its test files, and the last task runs `pytest src/tests` as the run order
+requires.
+
+---
+
+## Task 1: Confirm the cause and the starting point
+
+**Status:** todo
+**Priority:** high
+**Complexity:** small
+**Source Reference:** the item's "Suspected cause" and its list of cases
+
+**Technical Goal:** the cause is confirmed on all four reference fits before any code changes, and the ten cases are seen to fail today.
+
+**Subtasks:**
+
+- [ ] Re-check the starting point: the ten cases `ls.fit.{ML,REML}.identity.{bd,bcg}`, `property.ls.fit.{ML,REML}.identity.{bd,bcg}` and
+      `property.ls.links.{ML,REML}.bd` in `src/tests/correctness/cases/location_scale.toml` have `status = "mismatch"`, and
+      `pytest src/tests/correctness -k 'identity or links'` reports each of them as a strict expected failure. Stop as `blocked`, naming the case,
+      if one has another status or passes
+- [ ] Check that the names Task 2 adds are free: `grep -rnwE 'polish_identity|ls_score|ls_information' src/metafopy` finds nothing. Stop as
+      `blocked`, naming the clash, if it finds one
+- [ ] In a scratch script outside the repository (`source bin/activate.sh`, run from `src/tests` so `correctness.formulas` imports), for each of
+      the four fits of the ten cases: fit with `metafopy.rma`, then maximise `formulas.ls_loglik` from metafopy's alpha with `formulas.ls_score`
+      under `Z alpha >= 0` (SLSQP), and compare the end point with `formulas.ls_reference_fit`. Record, per fit, metafopy's alpha and
+      log-likelihood, the polished alpha and log-likelihood, the reference's, the smallest `Z alpha` at each and which rows are active (within
+      1e-8 of zero) at the polished point, in this task's Notes
+- [ ] Record R metafor's alpha and log-likelihood for the same four fits, from
+      `R_LIBS=/Users/simonb/src/metafopy/.audit/Rlib LC_ALL=C.UTF-8 Rscript -e '<the fits>'`, in this task's Notes. If the R library is missing, stop
+      as `blocked` and say so
+- [ ] Decide which way Task 2 goes, by the rule below, and write the outcome in this task's Notes:
+      - the polish from metafopy's point reaches the reference's log-likelihood to 1e-9 on all four fits: the cause is confirmed; Task 2 as written;
+      - it does not on some fit, but a cause inside `rma_ls_fit.py` or `rma_ls_opt.py` explains it (a starting value, the barrier's `mu`, the
+        stopping rule): Task 2 fixes that cause instead, or as well, and its subtasks are amended in this file before it starts;
+      - the fix needs a change outside those two modules, or to a public signature (`rma_uni`, `rma`, `LSControl`, a result field): stop as
+        `blocked` and report the cause and the change it needs
+
+**Acceptance Criteria:**
+
+- [ ] The ten cases fail today, as strict expected failures
+- [ ] This task's Notes hold the per-fit figures and the decision for Task 2
+
+**Definition of Done:**
+
+- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [ ] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_properties.py` passes (the ten cases as expected failures)
+
+**Notes:**
+
+- Prerequisite outside the worktree: R metafor 5.2-1 and the pinned packages in `/Users/simonb/src/metafopy/.audit/Rlib` (worktrees have no
+  `.audit/Rlib`), present on 2026-11-15
+- The header's figures for `dat.bangertdrowns2004` ML and `dat.bcg` ML and REML were measured on 2026-11-15; this task measures all four fits
+  under ML and REML in one place, and Task 2 takes its numbers from here
+- The four fits are the `args` of the cases: `dat.bangertdrowns2004` with `mods = scale = ~ imag`, `dat.bcg` (log risk ratio) with
+  `mods = scale = ~ ablat`, each ML and REML, `link = "identity"`
+
+---
+
+## Task 2: Polish the identity-link optimum on the analytic score
+
+**Status:** todo
+**Priority:** high
+**Complexity:** medium
+**Source Reference:** the item's fix direction (the code change, the ten cases, the R parity fixtures)
+
+**Technical Goal:** every location-scale fit with `link='identity'` ends at the maximum of its (restricted) log-likelihood over `Z alpha >= 0`, so
+the ten cases pass, and the tests say where this departs from R metafor's fixtures.
+
+**Subtasks:**
+
+- [ ] Add the analytic score and expected information of the scale coefficients with the identity link, as methods of `LSProblem` in
+      `src/metafopy/models/rma_ls_fit.py` (`ls_score`, `ls_information`): with `tau2 = Z alpha`, `W = diag(1 / (v + tau2))`,
+      `P = W - W X (X' W X)^-1 X' W` and `e = P y`, the score is `-1/2 Z' (d - e^2)` and the information `1/2 Z' (M o M) Z`, where `d` and `M`
+      are `diag(W)` and `W` under ML and `diag(P)` and `P` under REML (`o` the elementwise product). Cite Viechtbauer and Lopez-Lopez (2022,
+      equations 7 to 9) and Harville (1977) in the docstring. Do not import or copy `src/tests/correctness/formulas.py`: it is the independent
+      reference the cases check against
+- [ ] Add `polish_identity` to `src/metafopy/models/rma_ls_opt.py`: from the optimiser's point, Fisher scoring (Newton with the expected
+      information) on the free coefficients, with an active set for the rows with `z_i' alpha = 0`: each step is projected onto the null space of
+      the active rows, cut at the first row it would take below zero (that row joins the set), halved while the log-likelihood does not rise, and
+      a row leaves the set when its KKT multiplier has the wrong sign. Stop when the projected score is below 1e-10 relative or after a fixed cap
+      of iterations (a module constant). Return the start unchanged if no step raises the log-likelihood. Every returned point satisfies
+      `Z alpha >= 0` exactly (the likelihood is `-inf` below it) and has a log-likelihood no lower than the start's
+- [ ] In `fit_rma_ls`, call `polish_identity` after the identity-link optimiser, for every identity-link optimiser (`constrOptim` and the
+      stand-ins), with `alpha` entries fixed by `alpha_arg` kept fixed. With `optbeta=True` the parameter vector holds `beta` as well; leave those
+      fits unpolished and say so in the docstring (no case or fixture fits one)
+- [ ] Update the docstrings of `rma_ls_opt.py` and `fit_rma_ls` to say that the identity-link optimum is polished, why (R's `constrOptim` stops at
+      its own tolerance, about 1e-5 short), and that metafor does not polish; link the `docs/differences.md` subsection Task 3 adds
+- [ ] Flip the ten cases to `status = "pass"` and drop their `reason`; update the comment above them in `location_scale.toml` (and the one before
+      the profile cases that says "the identity link stops short of the maximum") to say the fit is now polished
+- [ ] Add regression tests to `src/tests/test_rma_ls.py`: on `dat.bangertdrowns2004` (`mods = scale = ~ imag`, ML) the score at the fit is zero to
+      1e-6 and the log-likelihood is -17.058054672888 to 1e-9; on `dat.bcg` (`mods = scale = ~ ablat`, ML) the fit satisfies `Z alpha >= 0`, its
+      log-likelihood is at least R's -7.139288984088 plus 1e-7, and the projected score at the active set is zero to 1e-6. Run each against the
+      unpolished code first (comment out the call) and confirm it fails
+- [ ] Run the tests that hold the identity-link R fixtures: `pytest src/tests/test_rma_ls.py src/tests/test_audit4_numerics.py
+      src/tests/test_ls_vif_sim.py src/tests/test_audit5_numerics.py src/tests/test_audit5_inputs.py`. Values still within the tolerances these
+      tests use need no change. For each value outside them, check that the fit has `link='identity'` and that metafopy's log-likelihood is at
+      least R's (the fixture's `fit_ml` or `fit_reml`); mark it as differing as `agents/tasks/confint-ht-centre/tasks-1.md` Task 1 marks `ht_ci`:
+      the JSON stays as R wrote it, the test compares that value with `correctness.formulas.ls_reference_fit` (as `src/tests/test_robust.py`
+      imports `correctness`) at the tolerance the correctness cases use, asserts that R's value differs, and carries a comment naming the cases and
+      the `docs/differences.md` subsection. A value outside tolerance on a log-link fit, or an identity-link fit whose log-likelihood fell, is a bug
+      in this change: fix it, never mark it
+- [ ] Record in this task's Notes each fixture value marked, with R's, metafopy's before and after, and the reference's
+
+**Acceptance Criteria:**
+
+- [ ] The ten cases pass with `status = "pass"`
+- [ ] No identity-link fit in the test suite ends with a lower log-likelihood than before, or with `Z alpha < 0`
+- [ ] Every R fixture value that no longer matches is compared with the reference, and no log-link fixture value changes
+
+**Definition of Done:**
+
+- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [ ] `mypy` passes
+- [ ] `pytest src/tests/test_rma_ls.py src/tests/test_audit4_numerics.py src/tests/test_ls_vif_sim.py src/tests/test_audit5_numerics.py src/tests/test_audit5_inputs.py src/tests/correctness/test_derived.py src/tests/correctness/test_properties.py src/tests/correctness/test_coverage.py` passes
+
+**Notes:**
+
+- Depends on Task 1 (its Notes hold the per-fit figures and may amend this task)
+- Key files: `src/metafopy/models/rma_ls_fit.py`, `src/metafopy/models/rma_ls_opt.py`, `src/tests/test_rma_ls.py`,
+  `src/tests/correctness/cases/location_scale.toml`, `src/tests/reference/phase5/location_scale.json` (unchanged)
+- The polish is analytic Fisher scoring, not a second SciPy run: SLSQP, which the reference uses, ends slightly outside the region (the reference's
+  smallest `tau2_i` is -1e-10), where `LSProblem.loglik` is `-inf`
+- The polish runs whatever `control.polish_converged` says: that flag skips the Nelder-Mead polish of the BFGS path, and the identity polish costs a
+  few analytic steps, so `permutest` refits and the observed fit reach the same kind of optimum
+- The numerical Hessian is unchanged. At a boundary optimum its central differences step below `tau2_i = 0` and it fails as it does today on
+  `dat.bcg` (R's fixture `bcg_year_identity` has `se_alpha` `null` too); `test_audit4_numerics.py` checks the Hessian of an interior fit whose
+  scale slope is near zero, whose values move with the optimum
+- `metafopy.methods.ls_profile`, `ls_confint`, `ls_permutest` and `ls_vif` refit through `fit_rma_ls`, so their identity-link refits are polished
+  too; row 6 of the run order depends on this
+
+---
+
+## Task 3: Record the difference in the audit ledger and the user guide
+
+**Status:** todo
+**Priority:** high
+**Complexity:** small
+**Source Reference:** the item's fix direction (`known.toml`, `docs/differences.md`)
+
+**Technical Goal:** `bin/metafor-audit.sh` accepts the new difference with its reason, the recall check still passes, and `docs/differences.md`
+explains the difference under "Where metafor departs from its reference".
+
+**Subtasks:**
+
+- [ ] Run the location-scale identity-link slice of the audit from the worktree, against the main checkout's R oracle, in the background:
+      `main=$(git worktree list --porcelain | sed -n '1s/^worktree //p'); METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib METAFOPY_AUDIT_WORK="$main/.audit" bin/metafor-audit.sh --only 'construct/ls_*/link=*identity*' --only 'scripts/misc_rma_ls*'`
+      (`$main` is the main checkout, the first entry of `git worktree list --porcelain`). If `check-r` reports that the R library is missing or
+      differs from `src/audit/data/r-versions.json`, stop as `blocked` and say so; never pass `--allow-r-drift`
+- [ ] For each finding it reports on an identity-link fit (`alpha`, `tau2`, `beta` or a value that follows from them, `ll` and the fit statistics),
+      add a `[[known]]` entry to `src/audit/data/known.toml` that matches exactly those case ids, kinds and paths, with a `reason` (R's
+      `constrOptim` stops about 1e-5 short of the identity-link maximum; metafopy polishes it on the analytic score within `Z alpha >= 0`) and
+      `ref = "docs/differences.md"`. Add no entry for a finding the run does not report, and no glob wider than the findings (the README warns
+      that `*/ls_*` swallowed recall items before). Stop as `blocked`, naming it, for a finding on a log-link fit
+- [ ] Rerun the same command and check that its report lists no finding left from this change. A finding not in the newest earlier report under
+      `$main/.audit/runs/` and not from this change stops the task as `blocked`, naming it
+- [ ] Run `METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib METAFOPY_AUDIT_WORK="$main/.audit" bin/metafor-audit.sh --recall` in the
+      background and check that every item is still found, in particular `a4-ls-identity-se` (`src/audit/data/recall.toml`), whose finds are
+      `construct/ls_bcg/link=*identity*` and `construct/ls_bangert/link=*identity*`. If a new entry hides it, narrow the entry (the harness, per
+      `AGENTS.md`), never the recall item
+- [ ] Add a subsection `### Location-scale fits with link="identity"` to the section "Where metafor departs from its reference" of
+      `docs/differences.md`, after the existing subsections: a short summary (R's `constrOptim` stops at its tolerance; metafopy ends at the
+      maximum within `tau2_i >= 0`, which can lie on the boundary), the same call in R and in Python with the output of both (the ML fit of
+      `dat.bcg` log risk ratios with `mods = scale = ~ ablat`: alpha and log-likelihood), and *Why:* naming Viechtbauer and Lopez-Lopez (2022) and
+      the cases. Produce the R output with `R_LIBS=/Users/simonb/src/metafopy/.audit/Rlib LC_ALL=C.UTF-8 Rscript -e '<the R block>'` and the
+      Python output with metafopy, and paste both as printed
+- [ ] Re-run every Python example of `docs/` that fits `link='identity'` (`grep -rn "link='identity'" docs/`; on 2026-11-15 the subsection
+      "Standard errors of a location-scale model on a flat scale" of `docs/differences.md`) and update each printed output that changed, with a
+      sentence where the explanation no longer holds
+
+**Acceptance Criteria:**
+
+- [ ] The slice reports no finding from this change, and every new `known.toml` entry matches at least one case of that run
+- [ ] `--recall` finds every item
+- [ ] `docs/differences.md` names the difference under "Where metafor departs from its reference", and every printed identity-link output in
+      `docs/` is what metafopy prints now
+
+**Definition of Done:**
+
+- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [ ] `mypy` passes
+- [ ] `pytest src/tests/test_docs_examples.py src/tests/test_harness_accounts.py` passes
+
+**Notes:**
+
+- Depends on Task 2
+- Prerequisite outside the worktree: R metafor 5.2-1 and the pinned packages in `/Users/simonb/src/metafopy/.audit/Rlib`. The audit's work
+  directory `.audit/` is ignored by git and exists only in the main checkout, hence both variables
+- The audit has no identity-link fixture: the link reaches the location-scale fixtures through the `construct` step (`link` in
+  `src/audit/data/domains.toml`), as `construct/ls_<fixture>/link=...`, and metafor's own tests through `scripts/misc_rma_ls*`. A full audit run
+  is the user's call; a difference the slice does not reach surfaces in the next full run
+- `src/tests/test_docs_examples.py` runs the Python blocks of `docs/` but does not compare their printed output, hence the re-run subtask
+
+---
+
+## Task 4: The full test run and closing the item
+
+**Status:** todo
+**Priority:** high
+**Complexity:** small
+**Source Reference:** the item as a whole
+
+**Technical Goal:** the whole branch is checked once, and the item moves to `DONE.md`.
+
+**Subtasks:**
+
+- [ ] Move the item from `TODO.md` to `DONE.md`: append its heading and body unchanged at the end of `DONE.md`, then a line
+      `Done: 2026-MM-DD, agents/tasks/ls-identity-polish/tasks-1.md` with the date of the commit
+- [ ] Run the final tests from the worktree and save their whole output for the merge gate (`$main` is the main checkout,
+      `/Users/simonb/src/metafopy`, the first entry of `git worktree list --porcelain`):
+      `main=$(git worktree list --porcelain | sed -n '1s/^worktree //p'); mkdir -p "$main/ralpher-logs/ls-identity-polish/tasks-1" && source bin/activate.sh && pytest src/tests 2>&1 | tee "$main/ralpher-logs/ls-identity-polish/tasks-1/final-tests.log"`
+
+**Acceptance Criteria:**
+
+- [ ] The item is in `DONE.md` with its body unchanged, and no longer in `TODO.md`
+
+**Definition of Done:**
+
+- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [ ] `pre-commit run --all-files` passes
+- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [ ] `mypy` passes
+- [ ] The final test run above passes, `slow` tests included, judged by its exit status
+- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/ls-identity-polish/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
+      `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0 (`<scratch>` is the session's scratch
+      directory, outside the repository; the baseline is `TODO.md` as it stood at the commit that adds this list, before any of its tasks)
+
+**Notes:**
+
+- Depends on Task 3
+- `pytest src/tests` is the run order's requirement for this list's last task, wider than the project's usual scoped run
+- No version bump: the change is a numerical fix with no new or changed public API
+
+---

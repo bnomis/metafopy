@@ -18,6 +18,8 @@ is not installed here, so the audit cases could not be run to name them". `known
 Fix direction: run `bin/metafor-audit.sh` in a session with R metafor 5.2-1, and add a `known.toml` entry, citing the `docs/differences.md` section,
 for each finding the no-intercept change explains (the `vif` reestimate options, no-intercept and `- 1` fits); fix any other finding as its own item.
 
+Spec: none (small item); tasks: `agents/tasks/audit-no-intercept/tasks-1.md`.
+
 ## The fail-safe N root search rounds up one too far on a step function
 
 <!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
@@ -36,6 +38,8 @@ step before rounding, then set the two cases to `pass`. Mark the R parity fixtur
 entries, and add the difference to `docs/differences.md` under "Where metafor departs from its reference". A change to `src/metafopy/` goes through a
 spec first, or a small task list if the fix is local.
 
+Spec: none (small item); tasks: `agents/tasks/fsn-integer-search/tasks-1.md`.
+
 ## The truncest estimate stops at a local maximum of a step-function likelihood
 
 <!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
@@ -52,6 +56,8 @@ Cause: the likelihood is a step function of the truncation point with a jump at 
 Fix direction: search each stretch between observed effects and keep the best, then set the case to `pass`. Mark the R parity fixture that holds a
 `truncest` fit as differing, add the `src/audit/data/known.toml` entry, and add the difference to `docs/differences.md` under "Where metafor departs from
 its reference". A change to `src/metafopy/` goes through a spec first, or a small task list if the fix is local.
+
+Spec: none (small item); tasks: `agents/tasks/truncest-piecewise-search/tasks-1.md`.
 
 ## The CM.EL information is taken by finite differences of the exact likelihood
 
@@ -111,6 +117,8 @@ Fix direction: compute the information of the saturated `CM.EL` fit analytically
 fixtures that hold `QE_Wld` of `CM.EL` as differing, update the `known.toml` entries for `*/glmm_cm*` and add the difference to `docs/differences.md`
 under "Where metafor departs from its reference".
 
+Spec: `agents/specs/cm-el-information/spec.md`; tasks: `agents/tasks/cm-el-information/tasks-1.md`.
+
 ## The location-scale identity-link fit stops about 1e-5 short of the maximum
 
 <!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
@@ -133,6 +141,8 @@ Fix direction: polish the identity-link optimum, for example by a final Newton o
 the ten cases to `pass`. Mark the R parity fixtures that hold an identity-link fit as differing at the 1e-4 level `src/tests/test_rma_ls.py` accepts,
 add the matching `src/audit/data/known.toml` entries, and add the difference to `docs/differences.md` under "Where metafor departs from its
 reference". A change to `src/metafopy/` goes through a spec first, or a small task list if the fix is local.
+
+Spec: none (small item); tasks: `agents/tasks/ls-identity-polish/tasks-1.md`.
 
 ## The location-scale profile-likelihood intervals of the scale coefficients are not crossings where the profile is flat
 
@@ -173,6 +183,8 @@ location-scale profile interval as differing where they do, add the matching `sr
 `docs/differences.md` under "Where metafor departs from its reference". A change to `src/metafopy/` goes through a spec first, or a small task list
 if the fix is local.
 
+Spec: none (small item); tasks: `agents/tasks/ls-profile-crossings/tasks-1.md`.
+
 ## A precision measure on a step-function selection model makes the likelihood not a density
 
 <!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
@@ -190,6 +202,8 @@ Fix direction: decide whether `selmodel` rejects the combination with an `InputE
 set the four cases to `pass` or exempt them with the decision, mark the `hack_stepfun_sei` R parity fixture as differing if the behaviour changes, and
 name the decision in `docs/differences.md` under "Where metafor departs from its reference". A change to `src/metafopy/` goes through a spec first.
 
+Spec: `agents/specs/selmodel-prec-stepfun/spec.md`; tasks: `agents/tasks/selmodel-prec-stepfun/tasks-1.md`.
+
 ## Whether R metafor's SJIT converges on the scaled scale-invariance data was never checked
 
 <!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
@@ -201,6 +215,8 @@ so it was not checked; `rma_uni` raises `EstimationError` there, and the propert
 
 Fix direction: run the scaled data through R metafor 5.2-1 with the same control. If R converges, find why metafopy's iteration (the absolute stopping
 rule on `tau2` in `src/metafopy/models/rma_uni.py`) does not, and fix it; if R does not converge either, close this item with the result.
+
+Spec: none (small item); tasks: `agents/tasks/sjit-scaled-convergence/tasks-1.md`.
 
 ## Simmonds and Higgins (2016) Fig 1 one-stage random effects differs from metafopy and R metafor
 
