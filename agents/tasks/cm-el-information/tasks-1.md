@@ -29,7 +29,7 @@ full suite, as the run order requires. No version bump: the project's rules (`AG
 
 ## Task 1: Starting point, conditional moments and the fixed-effects information
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Module location; API (`conditional_moments`, `fixed_information`); Implementation (FE and saturated fits); Tests (`test_nchg.py`)
@@ -39,40 +39,42 @@ difference of `neg_loglik` and against the spec's measurement.
 
 **Subtasks:**
 
-- [ ] Starting-point check, each stopping the list as `blocked`, naming what it found, when it fires:
+- [x] Starting-point check, each stopping the list as `blocked`, naming what it found, when it fires:
   - `grep -rnwE 'conditional_moments|fixed_information|marginal_information' src/metafopy` finds nothing, and `src/tests/test_nchg.py` does not exist;
   - `grep -n "hesspack: str = 'numDeriv'" src/metafopy/models/glmm_fit.py` finds the `GLMMControl` field;
   - `source bin/activate.sh && pytest src/tests/correctness -m 'not slow' -rxX -q` reports each of the seven cases as an expected failure
     (`XFAIL`): `glmm.fit.or.cm.el.{fe,ml}.{nielweise2007,collins1985a,jackson2018.pneumonia}.se` and `glmm.heterogeneity.qe-wld.cm.el.fe.bcg`. A
     case marked `slow` is checked with the same command without `-m 'not slow'`
-- [ ] `src/metafopy/core/nchg.py`: `conditional_moments(tables, i, log_or)` as in the spec's API: the mean and variance of `ai` under the untruncated
+- [x] `src/metafopy/core/nchg.py`: `conditional_moments(tables, i, log_or)` as in the spec's API: the mean and variance of `ai` under the untruncated
       non-central hypergeometric distribution, `log_or` clamped to +-log(1e12) as `log_probability` clamps it, variance 0 outside the clamp. Compute
       it over the support with the log-probabilities normalised by their log-sum-exp, so large tables do not overflow
-- [ ] `fixed_information(beta, tables, X)`: `sum_i Var_i(ai | margins, x_i' beta) x_i x_i'`, `p x p`. Docstring cites van Houwelingen et al. (1993,
+- [x] `fixed_information(beta, tables, X)`: `sum_i Var_i(ai | margins, x_i' beta) x_i x_i'`, `p x p`. Docstring cites van Houwelingen et al. (1993,
       doi:10.1002/sim.4780122405) and Breslow (1981), and links the R source of `rma.glmm` (the `CM.EL` Hessian it replaces)
-- [ ] New `src/tests/test_nchg.py`:
+- [x] New `src/tests/test_nchg.py`:
   - `conditional_moments` against `scipy.stats.nchypergeom_fisher` mean and variance on several tables and odds ratios;
   - the clamp: variance 0 at `log_or = 40`;
   - `fixed_information` against a central second difference of `neg_loglik(..., random=False, tight control)` with step 3e-4, to 1e-7 relative, on
     `dat.nielweise2007` intercept-only and with one moderator
-- [ ] Contradiction check against the spec: with each FE fit's estimate from `rma_glmm(measure='OR', model='CM.EL', method='FE')` (default control),
+- [x] Contradiction check against the spec: with each FE fit's estimate from `rma_glmm(measure='OR', model='CM.EL', method='FE')` (default control),
       `sqrt(inv(fixed_information(...)))[0, 0]` equals the spec's "analytic" column (0.22403481656, 0.09955789399, 0.25175350287 for
       `dat.nielweise2007`, `dat.collins1985a` and the Jackson et al. 2018 pneumonia data of `src/tests/correctness/cases/glmm.toml`) to 1e-9
       relative. Stop and report if not. Record the three values in this task's Notes
 
 **Acceptance Criteria:**
 
-- [ ] `fixed_information` agrees with the second difference to 1e-7 relative on both designs
-- [ ] The three FE standard errors match the spec's measurement to 1e-9 relative
+- [x] `fixed_information` agrees with the second difference to 1e-7 relative on both designs
+- [x] The three FE standard errors match the spec's measurement to 1e-9 relative
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_nchg.py src/tests/test_audit5_numerics.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_nchg.py src/tests/test_audit5_numerics.py` passes
 
 **Notes:**
 
+- Contradiction check (2026-11-15): analytic standard errors 0.22403481656 (`dat.nielweise2007`), 0.09955789399 (`dat.collins1985a`),
+  0.25175350287 (pneumonia), each equal to the spec's column to 1e-9 relative (`test_fixed_effects_se_matches_spec_measurement`)
 - Key files: `src/metafopy/core/nchg.py`, `src/tests/test_nchg.py`
 - `src/tests/test_audit5_numerics.py` is the only existing test file importing `metafopy.core.nchg` (`grep -rlw 'metafopy.core.nchg' src/tests`,
   2026-11-15)

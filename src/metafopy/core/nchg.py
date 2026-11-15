@@ -33,7 +33,16 @@ import scipy.special
 
 import metafopy.errors
 
-__all__ = ['DNCHG_CALCS', 'IntegrationControl', 'Tables', 'fisher_log_probability', 'neg_loglik', 'study_loglik']
+__all__ = [
+    'DNCHG_CALCS',
+    'IntegrationControl',
+    'Tables',
+    'conditional_moments',
+    'fisher_log_probability',
+    'fixed_information',
+    'neg_loglik',
+    'study_loglik',
+]
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 
@@ -305,3 +314,34 @@ def neg_loglik(parms: FloatArray, tables: Tables, X: FloatArray, random: bool, c
     for i in range(tables.k):
         total += study_loglik(tables, i, float(mu[i]), tau2, random, control)
     return -total
+
+
+def conditional_moments(tables: Tables, i: int, log_or: float) -> tuple[float, float]:
+    """Mean and variance of ``ai`` for table ``i`` under the untruncated non-central hypergeometric distribution.
+
+    ``log_or`` is clamped to +-log(1e12) as :func:`log_probability` clamps it; outside the clamp the variance is 0, because the
+    derivative of the clamped value is 0. The log-probabilities over the support are normalised by their log-sum-exp, so large
+    tables do not overflow.
+    """
+    lo = min(max(log_or, -LOG_ODDS_BOUND), LOG_ODDS_BOUND)
+    y = tables.support[i]
+    w = tables.log_base[i] + y * lo
+    p = numpy.exp(w - scipy.special.logsumexp(w))
+    mean = float(p @ y)
+    variance = float(p @ (y - mean) ** 2)
+    if log_or != lo:
+        variance = 0.0
+    return mean, variance
+
+
+def fixed_information(beta: FloatArray, tables: Tables, X: FloatArray) -> FloatArray:
+    """Information of the fixed-effects exact conditional likelihood: ``sum_i Var_i(ai | margins, x_i' beta) x_i x_i'``, ``p x p``.
+
+    The second derivative of minus the log-likelihood of the conditional model ``CM.EL`` with ``random=False`` is analytic: the
+    score of table ``i`` is ``(ai - E_i(ai)) x_i`` and its derivative the conditional variance times ``x_i x_i'`` (van Houwelingen
+    et al. 1993, doi:10.1002/sim.4780122405; Breslow 1981, doi:10.1093/biomet/68.1.73). It replaces the ``numDeriv::hessian()`` of
+    ``rma.glmm`` (https://github.com/wviechtb/metafor/blob/master/R/rma.glmm.r), which differentiates the truncated probability.
+    """
+    mu = X @ beta
+    weights = numpy.array([conditional_moments(tables, i, float(mu[i]))[1] for i in range(tables.k)])
+    return numpy.asarray((X * weights[:, None]).T @ X, dtype=numpy.float64)
