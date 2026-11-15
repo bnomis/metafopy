@@ -9,6 +9,7 @@ import numpy
 import numpy.typing
 import pandas
 import pytest
+import scipy.optimize
 import scipy.stats
 
 import correctness.cases
@@ -117,6 +118,86 @@ def hc_interval(case: correctness.cases.Case, result: typing.Any) -> None:
     _, _, lower, upper = correctness.formulas.hc_interval(frame['yi'].to_numpy(dtype=numpy.float64), frame['vi'].to_numpy(dtype=numpy.float64))
     numbers_agree(case, 'ci_lb', result.ci_lb, lower)
     numbers_agree(case, 'ci_ub', result.ci_ub, upper)
+
+
+SELMODEL_LL_TOLERANCE = 1e-8
+SELMODEL_DELTA_FLOOR = 1e-6
+
+
+def selmodel_maximum(case: correctness.cases.Case, result: typing.Any, maxiter: int = 1000) -> tuple[FloatArray, float, FloatArray, float, float]:
+    """Maximise ``formulas.selection_loglik`` for the case's step-function model from metafopy's start values: the coefficients, ``tau2``, the selection
+    parameters, the log-likelihood, and the log-likelihood of the model without selection (every weight 1).
+
+    Raises:
+        AssertionError: the optimiser does not converge, naming the case and the optimiser's message.
+    """
+    frame = correctness.cases.case_frame(case)
+    assert frame is not None
+    base = result.base
+    yi, vi, X = (numpy.asarray(v, dtype=numpy.float64) for v in (base.yi, base.vi, base.X))
+    ni = frame['ni'].to_numpy(dtype=numpy.float64) if 'ni' in frame.columns else None
+    preci = correctness.formulas.precision_measure(case.args.get('prec'), vi, ni)
+    steps = numpy.asarray(result.steps, dtype=numpy.float64)
+    fixed = numpy.asarray(result.delta_fix, dtype=bool)
+    given = numpy.asarray(result.delta, dtype=numpy.float64)
+    free = ~fixed
+    p = X.shape[1]
+    start = numpy.concatenate([base.beta, [base.tau2 + 1e-3], numpy.asarray(result.spec.delta_init)[free]])
+    alternative = result.alternative
+    cuts = steps[:-1].tolist()
+
+    def parts(par: FloatArray) -> tuple[FloatArray, float, FloatArray]:
+        delta = given.copy()
+        delta[free] = par[p + 1 :]
+        return par[:p], float(par[p]), delta
+
+    def negative(par: FloatArray) -> float:
+        beta, tau2, delta = parts(par)
+        return -correctness.formulas.selection_loglik(yi, vi, X, beta, tau2, correctness.formulas.step_weight(steps, delta), alternative, preci, cuts=cuts)
+
+    bounds: list[tuple[float | None, float | None]] = [(None, None) for _ in range(p)]
+    bounds += [(0.0, None)] + [(SELMODEL_DELTA_FLOOR, None) for _ in range(int(free.sum()))]
+    constraints: typing.Any = []
+    if result.decreasing:
+        constraints = [{'type': 'ineq', 'fun': lambda par, j=j: parts(par)[2][j - 1] - parts(par)[2][j]} for j in range(1, len(given))]
+    fit = scipy.optimize.minimize(negative, start, method='SLSQP', bounds=bounds, constraints=constraints, options={'maxiter': maxiter, 'ftol': 1e-15})
+    if not fit.success:
+        raise AssertionError(f'{case.id}: the optimiser did not converge: {fit.message}')
+    beta, tau2, delta = parts(fit.x)
+    ones = numpy.ones(len(delta))
+
+    def negative_plain(par: FloatArray) -> float:
+        return -correctness.formulas.selection_loglik(
+            yi, vi, X, par[:p], float(par[p]), correctness.formulas.step_weight(steps, ones), alternative, preci, cuts=cuts
+        )
+
+    plain_bounds: list[tuple[float | None, float | None]] = bounds[: p + 1]
+    plain = scipy.optimize.minimize(negative_plain, start[: p + 1], method='SLSQP', bounds=plain_bounds, options={'maxiter': maxiter, 'ftol': 1e-15})
+    if not plain.success:
+        raise AssertionError(f'{case.id}: the optimiser did not converge for the model without selection: {plain.message}')
+    return beta, tau2, delta, float(-fit.fun), float(-plain.fun)
+
+
+def selmodel_fit(case: correctness.cases.Case, result: typing.Any) -> None:
+    """The fit of a step-function selection model (Vevea and Hedges, 1995; Hedges and Vevea, 2005), by maximising ``formulas.selection_loglik`` with
+    ``scipy.optimize`` from metafopy's start values: ``beta``, ``tau2`` and ``delta`` at the case's tolerance, ``ll`` at 1e-8 and the likelihood
+    ratio test statistic ``LRT`` against the fit without selection."""
+    beta, tau2, delta, loglik, plain = selmodel_maximum(case, result)
+    numbers_agree(case, 'beta', result.beta, beta)
+    numbers_agree(case, 'tau2', result.tau2, tau2)
+    numbers_agree(case, 'delta', result.delta, delta)
+    allowed = SELMODEL_LL_TOLERANCE * max(1.0, abs(loglik))
+    if abs(result.ll - loglik) > allowed:
+        raise AssertionError(f'{case.id}: ll: metafopy gives {result.ll!r}, the reference gives {loglik!r}')
+    lrt = max(0.0, 2 * (loglik - plain))
+    numbers_agree(case, 'LRT', result.LRT, lrt)
+
+
+def test_selmodel_fit_names_the_case_when_the_optimiser_does_not_converge() -> None:
+    case = next(param.values[0] for param in correctness.cases.case_params('derived') if param.values[0].id == 'selmodel.stepfun.bangertdrowns2004')
+    result = correctness.cases.run_case(case)
+    with pytest.raises(AssertionError, match=r'selmodel\.stepfun\.bangertdrowns2004: the optimiser did not converge: .+'):
+        selmodel_maximum(case, result, maxiter=1)
 
 
 MV_TERM = re.compile(r'~\s*([\w.]+(?:\s*\+\s*[\w.]+)*)\s*\|\s*([\w.]+)(?:\s*/\s*([\w.]+))?')

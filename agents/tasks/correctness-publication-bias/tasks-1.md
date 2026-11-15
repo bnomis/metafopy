@@ -225,7 +225,7 @@ formulas coded from the publications.
 
 ## Task 5: Derived cases - `selmodel` step functions and the selection likelihood
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** API (`selmodel_fit`); Coverage list (selmodel); Implementation step 2
@@ -235,25 +235,25 @@ common to every `selmodel` type.
 
 **Subtasks:**
 
-- [ ] `formulas.py`: `selection_loglik`, one log-likelihood taking a weight function (Iyengar and Greenhouse 1988; Vevea and Hedges 1995), and the
+- [x] `formulas.py`: `selection_loglik`, one log-likelihood taking a weight function (Iyengar and Greenhouse 1988; Vevea and Hedges 1995), and the
       step weight function (Hedges 1992; Hedges and Vevea 2005)
-- [ ] `test_derived.py`: `selmodel_fit`, maximising `formulas.selection_loglik` with `scipy.optimize` from metafopy's start values and comparing
+- [x] `test_derived.py`: `selmodel_fit`, maximising `formulas.selection_loglik` with `scipy.optimize` from metafopy's start values and comparing
       `beta`, `tau2`, `delta` and `ll`; it fails the case, naming the case and the optimiser's message, if the optimiser does not converge
-- [ ] `derived` cases in `cases/selmodel.toml` (`setup.rma_uni`) for `selmodel.stepfun`, `selmodel.fixed_delta` (a priori weights, Vevea and Woods
+- [x] `derived` cases in `cases/selmodel.toml` (`setup.rma_uni`) for `selmodel.stepfun`, `selmodel.fixed_delta` (a priori weights, Vevea and Woods
       2005, on `dat.cohen1981`), `selmodel.decreasing`, `selmodel.LRT`, `selmodel.alternative.<a>` and `selmodel.prec.<p>`. Each case states its own
       tolerance for `beta`, `tau2` and `delta`; `ll` at `1e-8`
-- [ ] Record any mismatch as the header says
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] The bias gate's missing list names none of the items above
-- [ ] A non-converging optimiser fails its case with the message (a unit test with `maxiter=1`)
+- [x] The bias gate's missing list names none of the items above
+- [x] A non-converging optimiser fails its case with the message (a unit test with `maxiter=1`)
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 

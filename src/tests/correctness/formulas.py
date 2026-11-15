@@ -3711,3 +3711,95 @@ def hc_beta(data: typing.Any) -> float:
 def hc_tau2(data: typing.Any) -> float:
     """The DerSimonian-Laird ``tau2`` of ``hc_interval`` on the ``yi`` and ``vi`` columns of a frame."""
     return hc_interval(data['yi'].to_numpy(dtype=numpy.float64), data['vi'].to_numpy(dtype=numpy.float64))[1]
+
+
+# Publication bias: the selection-model likelihood.
+
+type Weight = collections.abc.Callable[[float, float], float]
+
+
+def precision_measure(name: str | None, vi: FloatArray, ni: FloatArray | None = None) -> FloatArray:
+    """The measure of precision a selection weight may depend on, rescaled by its maximum (``None`` for none): the standard error ``sei``, the
+    variance ``vi``, ``1 / ni`` or ``1 / sqrt(ni)`` for the sample sizes ``ni``."""
+    if name is None:
+        return numpy.ones(len(vi))
+    if name == 'sei':
+        measure = numpy.sqrt(vi)
+    elif name == 'vi':
+        measure = numpy.asarray(vi, dtype=numpy.float64)
+    elif ni is None:
+        raise ValueError(f'precision {name!r} needs the sample sizes')
+    elif name == 'ninv':
+        measure = 1 / ni
+    elif name == 'sqrtninv':
+        measure = 1 / numpy.sqrt(ni)
+    else:
+        raise ValueError(f'unknown precision {name!r}')
+    return numpy.asarray(measure / measure.max(), dtype=numpy.float64)
+
+
+def step_weight(steps: FloatArray, delta: FloatArray) -> Weight:
+    """The step weight function of Hedges (1992, Journal of Educational Statistics 17:279-296, doi:10.3102/10769986017004279) and Hedges and Vevea
+    (2005, in Rothstein et al., Publication Bias in Meta-Analysis, ch. 9): the weight of a study with one-sided p-value ``p`` is ``delta[j]``, ``j``
+    being the interval ``steps[j - 1] < p <= steps[j]`` that holds ``p``, divided by the study's precision measure."""
+
+    def weight(p: float, preci: float) -> float:
+        j = int(numpy.searchsorted(steps, p, side='left'))
+        return float(delta[min(j, len(delta) - 1)] / preci)
+
+    return weight
+
+
+def one_sided_p(y: float, v: float, alternative: str) -> float:
+    """The p-value of an estimate ``y`` with sampling variance ``v`` against 0: ``1 - Phi(z)`` for ``greater``, ``Phi(z)`` for ``less`` and
+    ``2 (1 - Phi(|z|))`` for ``two.sided``, ``z = y / sqrt(v)``."""
+    z = y / math.sqrt(v)
+    if alternative == 'greater':
+        return 0.5 * math.erfc(z / math.sqrt(2))
+    if alternative == 'less':
+        return 0.5 * math.erfc(-z / math.sqrt(2))
+    return math.erfc(abs(z) / math.sqrt(2))
+
+
+def selection_loglik(
+    yi: FloatArray,
+    vi: FloatArray,
+    X: FloatArray,
+    beta: FloatArray,
+    tau2: float,
+    weight: Weight,
+    alternative: str = 'greater',
+    preci: FloatArray | None = None,
+    cuts: collections.abc.Sequence[float] = (),
+) -> float:
+    """The log-likelihood of a random-effects selection model (Iyengar and Greenhouse, 1988, Statistical Science 3:109-135, doi:10.1214/ss/1177013012;
+    Vevea and Hedges, 1995, Psychometrika 60:419-435, doi:10.1007/BF02294384).
+
+    An estimate is observed with probability ``w(p)``, ``p`` its p-value, so the density of an observed ``y_i`` is ``w(p_i) f(y_i) / A_i`` with
+    ``f`` the ``N(x_i' beta, v_i + tau2)`` density and ``A_i = integral w(p(y)) f(y) dy`` (Vevea and Hedges 1995, equation 5, and the weighted density
+    of Iyengar and Greenhouse 1988, section 4). ``A_i`` is integrated numerically over ``x_i' beta`` +- 14 standard deviations, split at the values of
+    ``y`` where ``p`` equals one of the ``cuts``, so a step function is integrated exactly."""
+    ones = numpy.ones(len(yi)) if preci is None else preci
+    total = 0.0
+    for i in range(len(yi)):
+        mean = float(X[i] @ beta)
+        sd = math.sqrt(float(vi[i]) + tau2)
+        sampling_sd = math.sqrt(float(vi[i]))
+        lower, upper = mean - 14 * sd, mean + 14 * sd
+        points = []
+        for cut in cuts:
+            if alternative == 'greater':
+                found = [sampling_sd * float(scipy.stats.norm.isf(cut))]
+            elif alternative == 'less':
+                found = [sampling_sd * float(scipy.stats.norm.ppf(cut))]
+            else:
+                found = [sampling_sd * float(scipy.stats.norm.isf(cut / 2)), -sampling_sd * float(scipy.stats.norm.isf(cut / 2))]
+            points += [y for y in found if math.isfinite(y) and lower < y < upper]
+
+        def integrand(y: float, i: int = i, mean: float = mean, sd: float = sd) -> float:
+            return weight(one_sided_p(y, float(vi[i]), alternative), float(ones[i])) * math.exp(-0.5 * ((y - mean) / sd) ** 2) / (sd * math.sqrt(2 * math.pi))
+
+        a = float(scipy.integrate.quad(integrand, lower, upper, points=sorted(points) or None, epsabs=0, epsrel=1e-13, limit=400)[0])
+        w_i = weight(one_sided_p(float(yi[i]), float(vi[i]), alternative), float(ones[i]))
+        total += math.log(w_i) + float(scipy.stats.norm.logpdf(yi[i], mean, sd)) - math.log(a)
+    return total
