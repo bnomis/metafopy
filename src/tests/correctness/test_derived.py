@@ -110,6 +110,15 @@ def trimfill_filled(case: correctness.cases.Case, result: typing.Any) -> None:
     numbers_agree(case, 'filled variances', [p[1] for p in pairs], [r[1] for r in reference])
 
 
+def hc_interval(case: correctness.cases.Case, result: typing.Any) -> None:
+    """The limits of Henmi and Copas's confidence interval (2010, equations 14 to 21), from their integral on the case's ``yi`` and ``vi``."""
+    frame = correctness.cases.case_frame(case)
+    assert frame is not None
+    _, _, lower, upper = correctness.formulas.hc_interval(frame['yi'].to_numpy(dtype=numpy.float64), frame['vi'].to_numpy(dtype=numpy.float64))
+    numbers_agree(case, 'ci_lb', result.ci_lb, lower)
+    numbers_agree(case, 'ci_ub', result.ci_ub, upper)
+
+
 MV_TERM = re.compile(r'~\s*([\w.]+(?:\s*\+\s*[\w.]+)*)\s*\|\s*([\w.]+)(?:\s*/\s*([\w.]+))?')
 MV_COMPONENT_TOLERANCE = 1e-6
 MV_LOGLIK_EXCESS = 1e-8

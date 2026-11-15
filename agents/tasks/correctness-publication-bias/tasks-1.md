@@ -186,7 +186,7 @@ formulas coded from the publications.
 
 ## Task 4: Derived cases - `fsn`, `tes` and `hc`
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** API (`hc_interval`); Coverage list (fsn, tes, hc); Decisions; Implementation step 2
@@ -196,24 +196,24 @@ formulas coded from the publications.
 
 **Subtasks:**
 
-- [ ] `formulas.py`: Rosenthal (Stouffer, Rosenthal 1979), Fisher pooling (Becker 2005), Orwin (1983), Rosenberg (2005), the General fail-safe N
+- [x] `formulas.py`: Rosenthal (Stouffer, Rosenthal 1979), Fisher pooling (Becker 2005), Orwin (1983), Rosenberg (2005), the General fail-safe N
       (Viechtbauer 2024 talk); TES powers, the chi-square, binomial and exact (Poisson-binomial) tests (Ioannidis and Trikalinos 2007); `theta_lim`
       from metafor's `?tes` help (5.2-1); Henmi and Copas's interval by their integral (Henmi and Copas 2010)
-- [ ] `test_derived.py`: `hc_interval`
-- [ ] `derived` cases for `fsn.<type>` (not `Binomial`), `fsn.pool.<pool>`, `tes.test.<test>`, `tes.E`, `tes.tau2`, `tes.theta_lim` (its `source`
+- [x] `test_derived.py`: `hc_interval`
+- [x] `derived` cases for `fsn.<type>` (not `Binomial`), `fsn.pool.<pool>`, `tes.test.<test>`, `tes.E`, `tes.tau2`, `tes.theta_lim` (its `source`
       names the help page) and `hc.estimate`, `hc.ci` (`setup.rma_uni`, on `dat.lee2004`)
-- [ ] `[[exempt]]` entry for `fsn.Binomial`: "defined only in metafor's code; R parity covers it"
-- [ ] Record any mismatch as the header says
+- [x] `[[exempt]]` entry for `fsn.Binomial`: "defined only in metafor's code; R parity covers it"
+- [x] Record any mismatch as the header says
 
 **Acceptance Criteria:**
 
-- [ ] The bias gate's missing list names no `fsn.*`, `tes.*` or `hc.*` item
+- [x] The bias gate's missing list names no `fsn.*`, `tes.*` or `hc.*` item
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 

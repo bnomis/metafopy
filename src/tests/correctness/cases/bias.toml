@@ -1,4 +1,4 @@
-# Publication-bias cases: regtest and ranktest `derived` cases (trimfill, fsn, tes and hc follow in later tasks).
+# Publication-bias cases: `derived` cases for regtest, ranktest, trimfill, fsn, tes and hc (selmodel is in selmodel.toml).
 #
 # Expected values come from `formulas.regtest_*` (Egger et al. 1997 in its original form; Sterne and Egger 2005; Macaskill et al. 2001; Peters et al.
 # 2006; Moreno et al. 2009; Stanley and Doucouliagos 2014; Pustejovsky and Rodgers 2019) and `formulas.begg_*` (Begg and Mazumdar 1994; Kendall 1970).
@@ -270,3 +270,244 @@ args = { estimator = "L0" }
 expect = { k0 = "formulas.trimfill_k0", se_k0 = "formulas.trimfill_se_k0", beta = "formulas.trimfill_beta" }
 check = "test_derived.trimfill_filled"
 covers = ["trimfill.fill", "trimfill.side"]
+
+# fsn: the criteria of Rosenthal (1979), Becker (2005), Orwin (1983), Rosenberg (2005) and Viechtbauer (2024, SRSM talk), as `formulas.fsn_*`: the fail-safe
+# N is the least number of added null studies that reaches the criterion. The egger2001 cases leave out the two studies the talk leaves out (rows 8 and 16, a
+# very small study and ISIS-4) and use its `add = 1/2, to = "all"` log risk ratios, so the talk's printed values (Rosenthal 138, Orwin 119 for the target
+# log(0.95), Rosenberg 69, General 29) are the values these cases reproduce. The General type is compared at `exact = true`: the file-drawer studies are
+# standardised, so the refitted model does not depend on the random draw. The faster approximation (`exact = false`) is not derived.
+[[case]]
+id = "bias.fsn.egger2001.rosenthal.stouffer"
+kind = "derived"
+function = "fsn"
+dataset = "dat.egger2001"
+setup = { drop = [7, 15], escalc = { measure = "RR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", add = 0.5, to = "all" } }
+args = { x = "yi", vi = "vi", type = "Rosenthal", pool = "stouffer" }
+expect = { fsnum = "formulas.fsn_number", pval = "formulas.fsn_pval" }
+covers = ["fsn.Rosenthal", "fsn.pool.stouffer"]
+
+[[case]]
+id = "bias.fsn.hackshaw1998.rosenthal.stouffer"
+kind = "derived"
+function = "fsn"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", type = "Rosenthal", pool = "stouffer" }
+expect = { fsnum = "formulas.fsn_number", pval = "formulas.fsn_pval" }
+covers = ["fsn.Rosenthal", "fsn.pool.stouffer"]
+
+[[case]]
+id = "bias.fsn.hackshaw1998.rosenthal.fisher"
+kind = "derived"
+function = "fsn"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", type = "Rosenthal", pool = "fisher" }
+expect = { fsnum = "formulas.fsn_number", pval = "formulas.fsn_pval" }
+covers = ["fsn.Rosenthal", "fsn.pool.fisher"]
+
+[[case]]
+id = "bias.fsn.egger2001.rosenthal.fisher"
+kind = "derived"
+function = "fsn"
+dataset = "dat.egger2001"
+setup = { drop = [7, 15], escalc = { measure = "RR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", add = 0.5, to = "all" } }
+args = { x = "yi", vi = "vi", type = "Rosenthal", pool = "fisher" }
+expect = { fsnum = "formulas.fsn_number" }
+status = "mismatch"
+reason = "Becker's criterion (Fisher's p-value of the studies and N null studies at least 0.05) first holds at N = 48 (p = 0.0541; at N = 47 p = 0.0493); metafopy gives 47: its root search treats N as a real number (the degrees of freedom 2 (k + N) are real, the number of null studies in the statistic is int(N)), so the root lies between 46 and 47. R metafor 5.2-1 is not installed in the session's R and no parity fixture holds this case"
+covers = ["fsn.Rosenthal", "fsn.pool.fisher"]
+
+[[case]]
+id = "bias.fsn.egger2001.orwin.target"
+kind = "derived"
+function = "fsn"
+dataset = "dat.egger2001"
+setup = { drop = [7, 15], escalc = { measure = "RR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", add = 0.5, to = "all" } }
+args = { x = "yi", vi = "vi", type = "Orwin", target = -0.05129329438755058 }
+expect = { fsnum = "formulas.fsn_number", est = "formulas.fsn_est" }
+covers = ["fsn.Orwin"]
+
+[[case]]
+id = "bias.fsn.hackshaw1998.orwin.default"
+kind = "derived"
+function = "fsn"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", type = "Orwin" }
+expect = { fsnum = "formulas.fsn_number", est = "formulas.fsn_est" }
+covers = ["fsn.Orwin"]
+
+[[case]]
+id = "bias.fsn.egger2001.rosenberg"
+kind = "derived"
+function = "fsn"
+dataset = "dat.egger2001"
+setup = { drop = [7, 15], escalc = { measure = "RR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", add = 0.5, to = "all" } }
+args = { x = "yi", vi = "vi", type = "Rosenberg" }
+expect = { fsnum = "formulas.fsn_number", est = "formulas.fsn_est", pval = "formulas.fsn_pval" }
+covers = ["fsn.Rosenberg"]
+
+[[case]]
+id = "bias.fsn.hackshaw1998.rosenberg"
+kind = "derived"
+function = "fsn"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", type = "Rosenberg" }
+expect = { fsnum = "formulas.fsn_number", est = "formulas.fsn_est", pval = "formulas.fsn_pval" }
+covers = ["fsn.Rosenberg"]
+
+[[case]]
+id = "bias.fsn.egger2001.general.reml"
+kind = "derived"
+function = "fsn"
+dataset = "dat.egger2001"
+setup = { drop = [7, 15], escalc = { measure = "RR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", add = 0.5, to = "all" } }
+args = { x = "yi", vi = "vi", type = "General", method = "REML", exact = true }
+expect = { fsnum = "formulas.fsn_number", est = "formulas.fsn_est", tau2 = "formulas.fsn_tau2", pval = "formulas.fsn_pval", est_fsn = "formulas.fsn_est_fsn", tau2_fsn = "formulas.fsn_tau2_fsn", pval_fsn = "formulas.fsn_pval_fsn" }
+tolerance = 0.00001
+covers = ["fsn.General"]
+
+[[case]]
+id = "bias.fsn.egger2001.general.mumiss"
+kind = "derived"
+function = "fsn"
+dataset = "dat.egger2001"
+setup = { drop = [7, 15], escalc = { measure = "RR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", add = 0.5, to = "all" } }
+args = { x = "yi", vi = "vi", type = "General", method = "REML", exact = true, mumiss = 0.04879016416943205 }
+expect = { fsnum = "formulas.fsn_number", est_fsn = "formulas.fsn_est_fsn" }
+tolerance = 0.00001
+covers = ["fsn.General"]
+
+[[case]]
+id = "bias.fsn.egger2001.general.target.tight"
+kind = "derived"
+function = "fsn"
+dataset = "dat.egger2001"
+setup = { drop = [7, 15], escalc = { measure = "RR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", add = 0.5, to = "all" } }
+args = { x = "yi", vi = "vi", type = "General", method = "REML", exact = true, target = -0.05129329438755058, tol = 1e-10 }
+expect = { fsnum = "formulas.fsn_number", est_fsn = "formulas.fsn_est_fsn", pval_fsn = "formulas.fsn_pval_fsn" }
+tolerance = 0.00001
+covers = ["fsn.General"]
+
+[[case]]
+id = "bias.fsn.egger2001.general.target"
+kind = "derived"
+function = "fsn"
+dataset = "dat.egger2001"
+setup = { drop = [7, 15], escalc = { measure = "RR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", add = 0.5, to = "all" } }
+args = { x = "yi", vi = "vi", type = "General", method = "REML", exact = true, target = -0.05129329438755058 }
+expect = { fsnum = "formulas.fsn_number" }
+status = "mismatch"
+reason = "the average effect first reaches the target log(0.95) at N = 116 (-0.05112 against -0.05129; at N = 115 -0.05154), which metafopy gives when its root search tolerance is tightened (tol = 1e-10, case bias.fsn.egger2001.general.target.tight); at the default tolerance it gives 117, as Viechtbauer's talk prints: the refitted estimate is a step function of N (floor(N) studies), the root search stops just above the step at 116 and the result is rounded up. R metafor 5.2-1 is not installed in the session's R and no parity fixture holds this case"
+covers = ["fsn.General"]
+
+[[case]]
+id = "bias.fsn.hackshaw1998.general.dl"
+kind = "derived"
+function = "fsn"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", type = "General", method = "DL", exact = true }
+expect = { fsnum = "formulas.fsn_number", est = "formulas.fsn_est", tau2 = "formulas.fsn_tau2", pval = "formulas.fsn_pval", est_fsn = "formulas.fsn_est_fsn", tau2_fsn = "formulas.fsn_tau2_fsn", pval_fsn = "formulas.fsn_pval_fsn" }
+covers = ["fsn.General"]
+
+[[exempt]]
+item = "fsn.Binomial"
+reason = "defined only in metafor's code; R parity covers it"
+
+# tes: Ioannidis and Trikalinos (2007) as `formulas.tes_*`: the expected number of significant studies is the sum of the powers at the weighted average;
+# the exact test is the Poisson-binomial distribution of the powers (by its characteristic function), so it does not share metafopy's recursion. The
+# limit estimate is defined by metafor's `tes` help page (5.2-1): the effect at which the p-value equals `tes_alpha`.
+[[case]]
+id = "bias.tes.hackshaw1998.exact"
+kind = "derived"
+function = "tes"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", test = "exact" }
+expect = { O = "formulas.tes_O", E = "formulas.tes_E", pval = "formulas.tes_pval" }
+covers = ["tes.E", "tes.test.exact"]
+
+[[case]]
+id = "bias.tes.hackshaw1998.chi2"
+kind = "derived"
+function = "tes"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", test = "chi2", tes_alternative = "two.sided" }
+expect = { X2 = "formulas.tes_X2", pval = "formulas.tes_pval" }
+covers = ["tes.test.chi2"]
+
+[[case]]
+id = "bias.tes.hackshaw1998.binom"
+kind = "derived"
+function = "tes"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", test = "binom" }
+expect = { pval = "formulas.tes_pval" }
+covers = ["tes.test.binom"]
+
+[[case]]
+id = "bias.tes.egger2001.exact"
+kind = "derived"
+function = "tes"
+dataset = "dat.egger2001"
+setup = { drop = [15], escalc = { measure = "OR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i" } }
+args = { x = "yi", vi = "vi", test = "exact" }
+expect = { O = "formulas.tes_O", E = "formulas.tes_E", pval = "formulas.tes_pval" }
+covers = ["tes.E", "tes.test.exact"]
+
+[[case]]
+id = "bias.tes.hackshaw1998.tau2"
+kind = "derived"
+function = "tes"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", test = "exact", tau2 = 0.1, rel_tol = 1e-10 }
+expect = { E = "formulas.tes_E", pval = "formulas.tes_pval" }
+tolerance = 0.00005
+covers = ["tes.tau2"]
+
+[[case]]
+id = "bias.tes.hackshaw1998.theta"
+kind = "derived"
+function = "tes"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", test = "exact", theta = 0.2 }
+expect = { E = "formulas.tes_E", pval = "formulas.tes_pval" }
+covers = ["tes.E"]
+
+[[case]]
+id = "bias.tes.hackshaw1998.theta_lim"
+kind = "derived"
+function = "tes"
+dataset = "dat.hackshaw1998"
+args = { x = "yi", vi = "vi", test = "exact" }
+expect = { "theta_lim[0]" = "formulas.tes_theta_lim" }
+tolerance = 0.0001
+covers = ["tes.theta_lim"]
+
+[case.source]
+citation = "Viechtbauer W. metafor 5.2-1, help page of tes (https://wviechtb.github.io/metafor/reference/tes.html); Ioannidis JPA, Trikalinos TA (2007). An exploratory test for an excess of significant findings. Clinical Trials 4:245-253"
+locator = "metafor help page, Details: the value of theta at which the p-value of the test of excess significance equals tes.alpha is the limit estimate; Ioannidis and Trikalinos p. 246"
+read = 2026-11-15
+doi = "10.1177/1740774507079441"
+
+# hc: Henmi and Copas (2010), equations 8 and 14 to 21, as `formulas.hc_interval`; `test_derived.hc_interval` compares the interval limits.
+[[case]]
+id = "bias.hc.lee2004.reml"
+kind = "derived"
+function = "hc"
+dataset = "dat.lee2004"
+setup = { escalc = { measure = "OR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i" }, rma_uni = { method = "REML" } }
+args = {}
+expect = { beta = "formulas.hc_beta", tau2 = "formulas.hc_tau2" }
+check = "test_derived.hc_interval"
+tolerance = 0.00001
+covers = ["hc.ci", "hc.estimate"]
+
+[[case]]
+id = "bias.hc.egger2001.dl"
+kind = "derived"
+function = "hc"
+dataset = "dat.egger2001"
+setup = { drop = [15], escalc = { measure = "OR", ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i" }, rma_uni = { method = "DL" } }
+args = {}
+expect = { beta = "formulas.hc_beta", tau2 = "formulas.hc_tau2" }
+check = "test_derived.hc_interval"
+tolerance = 0.00001
+covers = ["hc.ci", "hc.estimate"]
