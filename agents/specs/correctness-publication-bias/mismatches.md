@@ -2,7 +2,7 @@
 
 **Spec:** `agents/specs/correctness-publication-bias/spec.md`
 **Task list:** `agents/tasks/correctness-publication-bias/tasks-1.md` (Task 13 completes this document and publishes its page)
-**Review page:** none yet (Task 13 publishes it)
+**Review page:** none: the queue session that wrote this document has no tool for publishing an interactive page, so the operator session publishes one from this document (accept-all button, answers saved to the artifact database) before answering
 
 ## What is reviewed and how
 
@@ -10,6 +10,17 @@ The case-writing tasks compared metafopy with the defining publication first and
 and metafopy disagree (one item may cover several cases with one cause), and every source that could not be read. For each mismatch you choose
 *follow the reference*, *keep metafor* or *investigate*. The list stops until every item has an answer. Task 13 adds the automatic checks, the decisions
 and the page; the items below are appended by the case-writing tasks as they find them.
+
+## Automatic checks
+
+Run 2026-11-15 in the worktree `/Users/simonb/src/metafopy/.claude/worktrees/correctness-publication-bias-tasks-1`:
+
+| Check | Result |
+|---|---|
+| Every `status = "mismatch"` case in `src/tests/correctness/cases/bias.toml`, `other_bias.toml`, `properties.toml`, `selmodel.toml` and `selmodel_published.toml` has an item below | pass (the other case files belong to other specs) |
+| Every pending exemption ("pending the user's answer") has a decision below | pass: `negexppow` and `stepcon` in `selmodel.toml` |
+| Every source still needed has a row under "Sources needed" | pass |
+| `git diff --exit-code main -- src/audit/data/r-versions.json` | pass (unchanged) |
 
 ## Mismatches
 
@@ -202,7 +213,23 @@ and the page; the items below are appended by the case-writing tasks as they fin
 
 ## Decisions
 
-Added by Task 6; Task 13 completes the section with background and the page.
+**Rule for the recommendations:** `metafopy` mirrors metafor, and this list never changes `metafopy` output. Where the reference is a published number from
+software we cannot rerun, or the reference rests on a misreading, recommend *keep metafor*. Where the reference is an independent computation of the
+documented method that metafopy demonstrably fails, recommend *follow the reference*. *Investigate* is recommended only where R metafor can settle it.
+R metafor is not installed in the queue session's R, so every item below could go to *investigate*; that is the cost of choosing it.
+
+| Item | What is decided | Recommendation and reason |
+|---|---|---|
+| Fail-safe N root search (two cases) | whether to fix the off-by-one in `fsn`, or correct the cases to metafor's 47 and 117 | *Investigate*: the printed 117 agrees with metafopy, so run R metafor first; it settles both cases at once |
+| `prec` on a step function (four cases) | whether to normalise the first interval with the same weight | *Keep metafor*: metafor warns the combination is "undocumented and experimental", and R parity shows identical behaviour |
+| `truncest` local maximum (one case) | whether to search each stretch between observed effects | *Keep metafor*: no publication defines an estimated truncation point; note the optimum is local |
+| Published values off in the last digits (nine cases) | whether each case is loosened to the source's digits, exempted, or traced to a step | *Keep metafor*: the sources used other programs and disagree with each other (Sutton and Sterne) |
+| Published selection-model values (eighteen cases) | the same | *Keep metafor*: the passing cases show the model is read correctly; the differences are in quantities the likelihood barely determines |
+| `hc` interval at tau2 of 0 (one case) | whether to drop the spec's property | *Keep metafor*: the paper's integral reproduces metafopy to 5 digits, so the property is a misreading of the method |
+| Peters' test weights (one case) | whether to add a weights option to `regtest` | *Keep metafor*: metafor has no such option; the case becomes an exemption |
+
+For each row the answer is *follow the reference* (a `TODO.md` item, Task 14), *keep metafor* (the case is corrected or exempted, Task 14) or
+*investigate* (a `TODO.md` item naming what is in doubt). Background, consequences and values are in the items above.
 
 ### `negexppow`: how is it checked?
 
@@ -260,3 +287,7 @@ Found by Task 9 (read 2026-11-15). No `published` case is written for these:
 | Preston et al. (2004), Table 1 and Figure 7 | the beta estimates are in the paper's own parametrisation of the weight functions; the adjusted odds ratios are only in a figure |
 | Rust et al. (1990), J Marketing Res 27:220-226; Formann (2008), Contemp Clin Trials 29:732-739 | different models (a censored normal; a left-truncated normal on normal scores); Rust's marketing data are not bundled and Formann's estimates have no counterpart in `selmodel` `trunc` |
 | Lehmann et al. (2018), Evol Psychol 16(4), PMC10480976 | reports no selection-model estimate: its publication-bias analysis is funnel-plot regression (men rating women r = -.07 [-.36, .22], women rating men r = .52 [.23, .72]), and the 3PSM figures are not in the text |
+
+## Answers
+
+(Empty: the operator copies the page's answers here with the date, then restarts the list.)
