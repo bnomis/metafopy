@@ -229,8 +229,6 @@ args = { type = "truncest" }
 expect = {}
 check = "test_derived.selmodel_fit"
 tolerance = 1e-4
-status = "mismatch"
-reason = "metafopy gives beta 0.26491469, tau2 0.054216, delta 1.42227195 and truncation point 0.27073361 with ll -17.7909, the maximum of the likelihood (formulas.truncation_loglik, which reproduces metafopy's ll at metafopy's own estimate to 1e-12) gives beta 0.27597697, tau2 0.054737, delta 1.48968921 and truncation point 0.20000565 with ll -17.7406: the likelihood is a step function of the truncation point, with a jump at each observed effect, and metafopy stops at a local maximum inside one piece; no publication defines an estimated truncation point and metafor's ?selmodel offers truncest without saying how the jumps are handled; R metafor 5.2-1 gives metafopy's values; answered follow the reference 2026-11-15, see the TODO.md item on the truncest estimate"
 covers = ["selmodel.truncest"]
 
 # Types defined only by metafor's code: R parity covers them (decision D2 in agents/reviews/order-correctness-follow-ups-specs.md).

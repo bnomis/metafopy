@@ -17,6 +17,7 @@ SciPy methods, see :mod:`metafopy.models.sel_opt`.
 
 import collections.abc
 import dataclasses
+import itertools
 import math
 import sys
 import typing
@@ -271,6 +272,91 @@ def log_progress(prob: metafopy.models.sel_lik.Problem, par: FloatArray, digits:
     sys.stderr.write(f'll = {fmt(ev.ll, digits)}  beta = {beta}  tau2 = {fmt(ev.tau2, digits)}  delta = {delta}\n')
 
 
+SUPREMUM_STEP = 1e-8
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class StretchFit:
+    """The best fit of :func:`search_truncation_stretches`: the parameters on the joint fit's scale (the cut as itself) and whether the cut is the
+    step just inside an observed effect, where the likelihood has a supremum and no maximum."""
+
+    par: FloatArray
+    ll: float
+    supremum: bool
+
+
+def search_truncation_stretches(
+    prob: metafopy.models.sel_lik.Problem,
+    par: FloatArray,
+    choice: metafopy.models.sel_opt.OptimizerChoice,
+    optcontrol: collections.abc.Mapping[str, typing.Any],
+    *,
+    p: int,
+    tau2_transf: bool,
+    cut_init: float,
+) -> StretchFit:
+    """Refit ``type='truncest'`` inside each stretch between consecutive observed effects and keep the best fit, the joint fit ``par`` included.
+
+    The likelihood of the truncation point is a step function with a jump at each observed effect (a study is selected only when ``y > cut``,
+    ``y < cut`` for ``alternative='less'``), so the optimiser of the joint fit stops inside one piece, as metafor's does. In each stretch the cut is
+    mapped into the open stretch by metafor's default logistic ``.mapfun`` and the same optimiser is run from the joint fit's other estimates. Where
+    the likelihood rises towards the open end of a stretch that is an observed effect, it has a supremum there and no maximum; the cut is then fixed
+    at ``1e-8 * max(1, |end|)`` inside the stretch and the other parameters are refitted, and ``supremum`` is set.
+    """
+    spec = prob.spec
+    greater = prob.alternative == 'greater'
+    lo_bound, hi_bound = float(prob.delta_min[1]), float(prob.delta_max[1])
+    observed = numpy.unique(prob.yi[prob.subset])
+    edges = [lo_bound, *(float(u) for u in observed if lo_bound < u < hi_bound), hi_bound]
+    observed_set = {float(u) for u in observed}
+    cut_slot = p + 1 + (spec.deltas - 1)
+    best = StretchFit(par=par.copy(), ll=-metafopy.models.sel_lik.negative_loglik(prob, par, delta_transf=True, tau2_transf=tau2_transf), supremum=False)
+
+    def refit(problem: metafopy.models.sel_lik.Problem, start: FloatArray) -> tuple[FloatArray, float] | None:
+        def fn(x: FloatArray) -> float:
+            return metafopy.models.sel_lik.negative_loglik(problem, x, delta_transf=True, tau2_transf=tau2_transf)
+
+        try:
+            x = metafopy.models.sel_opt.minimize(fn, start, choice, optcontrol, None)
+            return x, -fn(x)
+        except metafopy.errors.MetafopyError, ArithmeticError, ValueError:
+            return None
+
+    for lo, hi in itertools.pairwise(edges):
+        if not hi > lo:
+            continue
+        stretch = dataclasses.replace(
+            prob,
+            mapfun=(prob.mapfun[0], None),
+            delta_min=numpy.array([prob.delta_min[0], lo]),
+            delta_max=numpy.array([prob.delta_max[0], hi]),
+        )
+        start = par.copy()
+        start[cut_slot] = metafopy.models.sel_lik.map_inverse(cut_init, lo, hi, None) if lo < cut_init < hi else 0.0
+        found = refit(stretch, start)
+        if found is None:
+            continue
+        x, ll = found
+        cut = metafopy.models.sel_lik.map_delta(float(x[cut_slot]), lo, hi, None)
+        joint = x.copy()
+        joint[cut_slot] = cut
+        if ll > best.ll:
+            best = StretchFit(par=joint, ll=ll, supremum=False)
+        end = hi if greater else lo
+        near = abs(end - cut) < 1e-2 * (hi - lo)
+        if end in observed_set and near:
+            inside = end - SUPREMUM_STEP * max(1.0, abs(end)) if greater else end + SUPREMUM_STEP * max(1.0, abs(end))
+            fixed = dataclasses.replace(prob, delta_arg=numpy.array([prob.delta_arg[0], inside]))
+            at_end = joint.copy()
+            at_end[cut_slot] = inside
+            found_end = refit(fixed, at_end)
+            if found_end is not None and found_end[1] > best.ll:
+                x_end = found_end[0].copy()
+                x_end[cut_slot] = inside
+                best = StretchFit(par=x_end, ll=found_end[1], supremum=True)
+    return best
+
+
 @metafopy.models.call.records_call
 def selmodel(
     x: Model,
@@ -338,6 +424,15 @@ def selmodel(
             ``delta``, too few studies, no sample sizes for ``prec='ninv'``).
         metafopy.errors.EstimationError: the optimiser did not converge or the likelihood could not be integrated.
         metafopy.errors.NotSupportedError: the optimiser chosen in ``control`` has no counterpart in metafopy.
+
+    ``type='truncest'`` differs from metafor when the truncation point is estimated. Its likelihood is a step function of the truncation point,
+    with a jump down at each observed effect (a study is selected only when ``y > cut``; see ``.selmodel.ll.trunc`` in
+    https://github.com/wviechtb/metafor/blob/master/R/selmodel.rma.uni.r), and metafor's optimiser stops at a local maximum inside one piece. After
+    the joint fit metafopy refits inside each stretch between consecutive observed effects (within ``delta.min[2]`` and ``delta.max[2]``) and keeps
+    the best fit. Where the likelihood rises to an observed effect it has a supremum there and no maximum: the truncation point is then reported
+    ``1e-8 * max(1, |effect|)`` inside the stretch, a warning says so, and the truncation point is left out of the Hessian (its standard error,
+    test and Wald interval are ``nan``). A fixed truncation point (``delta=[nan, c]``) runs no search. See
+    [docs/differences.md](../../../docs/differences.md#where-metafor-departs-from-its-reference).
 
     Metafor reference:
         [selmodel](https://wviechtb.github.io/metafor/reference/selmodel.html)
@@ -680,6 +775,18 @@ def selmodel(
             return numpy.asarray(-numpy.diff(d), dtype=numpy.float64)
 
     opt_par = metafopy.models.sel_opt.minimize(fn, par0, choice, optcontrol, ineq)
+    cut_init = float(delta_init[1]) if type_ == 'truncest' else math.nan
+    at_supremum = False
+    if type_ == 'truncest' and math.isnan(delta_arg[1]):
+        stretch_fit = search_truncation_stretches(prob, opt_par, choice, optcontrol, p=p, tau2_transf=True, cut_init=cut_init)
+        opt_par = stretch_fit.par
+        at_supremum = stretch_fit.supremum
+        if at_supremum:
+            warnings.warn(
+                'The truncation point sits at an observed effect: the likelihood has no maximum there, only a supremum approached from inside the stretch '
+                f'(the estimate is {float(opt_par[-1])!r}, a step of {SUPREMUM_STEP:g} inside). Treat results with caution.',
+                stacklevel=2,
+            )
     if kwargs.get('retopt'):
         return opt_par
     fit = metafopy.models.sel_lik.evaluate(prob, opt_par, delta_transf=True, tau2_transf=True)
@@ -711,7 +818,9 @@ def selmodel(
     elif type_ == 'stepfun':
         delta_hes = numpy.where(delta_hat < float(con['deltatol']), delta_hat, delta_arg)
     else:
-        delta_hes = delta_arg
+        delta_hes = delta_arg.copy()
+    if at_supremum:
+        delta_hes[1] = delta_hat[1]
     hest = numpy.concatenate([numpy.isnan(beta_hes), [math.isnan(tau2_hes)], numpy.isnan(delta_hes)])
 
     if hest.any() and not kwargs.get('skiphes'):
@@ -818,6 +927,8 @@ def selmodel(
 
         try:
             par0_fit = metafopy.models.sel_opt.minimize(fn0, par0, choice, optcontrol, ineq)
+            if type_ == 'truncest' and math.isnan(delta_arg[1]):
+                par0_fit = search_truncation_stretches(prob0, par0_fit, choice, optcontrol, p=p, tau2_transf=False, cut_init=cut_init).par
             ll0_tau2 = metafopy.models.sel_lik.evaluate(prob0, par0_fit, delta_transf=True, tau2_transf=False).ll
             LRT_tau2 = max(0.0, -2 * (ll0_tau2 - ll))
             LRTp_tau2 = float(scipy.stats.chi2.sf(LRT_tau2, 1))

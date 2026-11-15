@@ -112,7 +112,7 @@ maximum, before any code changes.
 
 ## Task 2: Search each stretch of the truncation point
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Source Reference:** the item's fix direction (the code change, the correctness case), as answered in `review-1.md`
@@ -122,29 +122,29 @@ option says, and the correctness case checks it against a reference that searche
 
 **Subtasks:**
 
-- [ ] Read the answer from the Answers section of `agents/tasks/truncest-piecewise-search/review-1.md`, never from the page. Stop as `blocked`,
+- [x] Read the answer from the Answers section of `agents/tasks/truncest-piecewise-search/review-1.md`, never from the page. Stop as `blocked`,
       naming what is missing, if the section is empty or names no option
-- [ ] Confirm the case fails today: set `selmodel.truncest.bangertdrowns2004` to `status = "pass"` on a scratch edit and run
+- [x] Confirm the case fails today: set `selmodel.truncest.bangertdrowns2004` to `status = "pass"` on a scratch edit and run
       `pytest src/tests/correctness/test_derived.py -k truncest`; it must fail on beta, delta or ll. Restore the file
-- [ ] Make the reference search the stretches: in `selmodel_maximum` of `src/tests/correctness/test_derived.py`, for `kind == 'truncest'` with
+- [x] Make the reference search the stretches: in `selmodel_maximum` of `src/tests/correctness/test_derived.py`, for `kind == 'truncest'` with
       the cut free, run the bounded SLSQP once per stretch between consecutive distinct `yi` inside `[delta_min[1], delta_max[1]]` (bounds the
       stretch ends, the right end less `1e-8 * max(1, |end|)` under option B, the closed stretch under option A, using the `y >= cut` likelihood
       that option A adds to `formulas.truncation_loglik` as an argument) and keep the best. Under option C skip this subtask
-- [ ] In `src/metafopy/models/selmodel.py`, add the stretch search after the joint fit as the header describes (a module-level function, the
+- [x] In `src/metafopy/models/selmodel.py`, add the stretch search after the joint fit as the header describes (a module-level function, the
       joint fit kept as a candidate, the same `choice` and `optcontrol`, `delta.min[1]`/`delta.max[1]` clipping the stretches, `delta.init[1]`
       as the start in its stretch), apply it to the `tau2 = 0` refit for `LRT_tau2` as well, return the winner from `retopt=True` on the joint
       fit's scale, and report the cut as the answered option says (option B: the step inside, the warning, the cut left out of the Hessian;
       option A: `y >= cut` in `sel_lik.ll_trunc` for `truncest` only). Under option C make no code change
-- [ ] Update `selmodel`'s docstring for `type='truncest'`: the stretch search, how a supremum at an observed effect is reported, that metafor
+- [x] Update `selmodel`'s docstring for `type='truncest'`: the stretch search, how a supremum at an observed effect is reported, that metafor
       stops at a local maximum, and a link to the `docs/differences.md` subsection Task 3 adds. Link the R source of `.selmodel.ll.trunc`
-- [ ] Set `selmodel.truncest.bangertdrowns2004` to `status = "pass"` and drop its `reason` (option C: rewrite the `reason` as the answer says and
+- [x] Set `selmodel.truncest.bangertdrowns2004` to `status = "pass"` and drop its `reason` (option C: rewrite the `reason` as the answer says and
       keep `status = "mismatch"`)
-- [ ] Add regression tests to `src/tests/test_selmodel.py`: on `dat.bangertdrowns2004` the `truncest` fit's ll is the best stretch's (-10.6519 in
+- [x] Add regression tests to `src/tests/test_selmodel.py`: on `dat.bangertdrowns2004` the `truncest` fit's ll is the best stretch's (-10.6519 in
       the header, to 1e-4) and no fixed cut on a grid of each stretch's midpoints gives a higher ll; a fixed truncation point
       (`delta=[nan, 0.1]` on the `hack` data, the fixture `hack_truncest`) gives the same fit as before; `delta.max=[100, 0.3]` restricts the
       search to stretches below 0.3; the warning of option B is issued. Time one `truncest` fit and one `confint()` of it; mark a test that takes
       more than 10 seconds `@pytest.mark.slow`, and record both times in this task's Notes
-- [ ] Run `pytest src/tests/test_selmodel.py`. The parity fixture `src/tests/reference/phase5/selmodel.json` holds one `truncest` fit,
+- [x] Run `pytest src/tests/test_selmodel.py`. The parity fixture `src/tests/reference/phase5/selmodel.json` holds one `truncest` fit,
       `hack_truncest`, with the truncation point fixed (`delta_fix` `[false, true]`, checked 2026-11-15), so it should pass unchanged. If a
       `truncest` value of a fit with a free cut fails, keep the JSON as R wrote it (never regenerate it) and mark that value as differing in
       the way `test_confint_types` of `src/tests/test_rma_uni_help.py` marks `ht_ci`: compare it with the reference and assert that R's
@@ -153,19 +153,21 @@ option says, and the correctness case checks it against a reference that searche
 
 **Acceptance Criteria:**
 
-- [ ] `selmodel.truncest.bangertdrowns2004` passes with `status = "pass"` (option C: stays a strict expected failure with the new reason)
-- [ ] Every `selmodel` parity test of a type other than `truncest`, and `hack_truncest`, passes unchanged
+- [x] `selmodel.truncest.bangertdrowns2004` passes with `status = "pass"` (option C: stays a strict expected failure with the new reason)
+- [x] Every `selmodel` parity test of a type other than `truncest`, and `hack_truncest`, passes unchanged
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_selmodel.py src/tests/test_stepcon.py src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py`
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_selmodel.py src/tests/test_stepcon.py src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py`
       passes
 
 **Notes:**
 
 - Depends on Task 1
+- Option B (answered 2026-11-15). Timings on 2026-11-15: one `truncest` fit of `dat.bangertdrowns2004` takes 0.75 s, one `confint()` of it 8.1 s (under 10 s, so no test is marked `slow`). The `hack_truncest` parity fixture passes unchanged.
+- The reference refits the near-end point in each stretch whose interior cut lies within 1% of an observed open end, instead of testing a 1e-6 threshold, because the optimiser stops short of the end
 - Keep the change local: the stretch search lives in `src/metafopy/models/selmodel.py`, and `sel_lik.py` changes only under option A. Check
   the new function's name against the package first (`grep -rnw '<name>' src/metafopy`)
 - The existing BFGS joint fit stops short even inside its own piece (cut fixed at its own 0.27073361 gives ll -17.7302 against -17.7909), so the

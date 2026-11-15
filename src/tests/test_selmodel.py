@@ -17,6 +17,7 @@ import refutil
 import metafopy
 import metafopy.core.bfgs
 import metafopy.core.integrate
+import metafopy.datasets
 import metafopy.errors
 import metafopy.models.sel_opt
 import metafopy.models.sel_spec
@@ -615,3 +616,56 @@ def test_optimizer_choice() -> None:
     assert metafopy.models.sel_opt.choose_optimizer('optim', 'BFGS', 'stepcon').optimizer == 'solnp'
     with pytest.raises(metafopy.errors.InputError):
         metafopy.models.sel_opt.partial_match('zzz', metafopy.models.sel_opt.OPTIMIZERS, 'optimizer')
+
+
+SUPREMUM_LL = -10.6519
+SUPREMUM_WARNING = 'sits at an observed effect'
+
+
+def bangertdrowns_ml() -> metafopy.RMAResult:
+    frame = metafopy.datasets.load('dat.bangertdrowns2004')
+    return metafopy.rma_uni(yi=frame.yi, vi=frame.vi, method='ML')
+
+
+def test_truncest_searches_every_stretch() -> None:
+    res = bangertdrowns_ml()
+    with pytest.warns(UserWarning, match=SUPREMUM_WARNING):
+        sel = metafopy.selmodel(res, type='truncest')
+    assert isinstance(sel, metafopy.SelmodelResult)
+    assert sel.ll == pytest.approx(SUPREMUM_LL, abs=1e-4)
+    assert sel.ll > -17.7
+    assert sel.delta[1] == pytest.approx(0.49, abs=1e-6)
+    assert sel.delta[1] < 0.49
+    # the cut is left out of the Hessian
+    assert math.isnan(sel.se_delta[1])
+    assert math.isnan(sel.pval_delta[1])
+    assert not math.isnan(sel.se_delta[0])
+    midpoints = (res.yi[:-1] + res.yi[1:]) / 2
+    for cut in sorted(set(numpy.round(midpoints, 6)))[::6]:
+        fixed = metafopy.selmodel(res, type='truncest', delta=[numpy.nan, float(cut)])
+        assert isinstance(fixed, metafopy.SelmodelResult)
+        assert fixed.ll <= sel.ll + 1e-6
+
+
+def test_truncest_retopt_returns_the_cut_itself() -> None:
+    res = bangertdrowns_ml()
+    with pytest.warns(UserWarning, match=SUPREMUM_WARNING):
+        par = metafopy.selmodel(res, type='truncest', retopt=True)
+    assert isinstance(par, numpy.ndarray)
+    assert par[-1] == pytest.approx(0.49, abs=1e-6)
+
+
+def test_truncest_delta_max_restricts_the_stretches() -> None:
+    res = bangertdrowns_ml()
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        sel = metafopy.selmodel(res, type='truncest', control={'delta.max': [100, 0.3]})
+    assert isinstance(sel, metafopy.SelmodelResult)
+    assert sel.delta[1] <= 0.3
+    assert sel.ll < SUPREMUM_LL - 1
+
+
+def test_truncest_fixed_cut_runs_no_search() -> None:
+    sel = fit('hack_truncest')
+    assert sel.delta[1] == 0.1
+    assert sel.ll == pytest.approx(REF['fits']['hack_truncest']['ll'], abs=1e-8)
