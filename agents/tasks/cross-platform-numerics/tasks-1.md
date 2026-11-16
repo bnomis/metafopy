@@ -62,7 +62,7 @@ Rules every task follows:
 
 ## Task 2: The Linux container
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** API (`bin/linux-tests.sh`), Linux reproduction, Error handling, Settings
@@ -72,36 +72,38 @@ architecture that reproduces CI's Linux failures is known.
 
 **Subtasks:**
 
-- [ ] Write `bin/linux-tests.Dockerfile`: `FROM ubuntu:26.04` pinned to an exact tag, the uv binary copied from `ghcr.io/astral-sh/uv:<version>` pinned to
+- [x] Write `bin/linux-tests.Dockerfile`: `FROM ubuntu:26.04` pinned to an exact tag, the uv binary copied from `ghcr.io/astral-sh/uv:<version>` pinned to
       an exact release tag (the newest outside the project's resolver quarantine, if any; read `pyproject.toml`'s uv settings)
-- [ ] Write `bin/linux-tests.sh` as the spec's API and Linux reproduction say: `--arch arm64|amd64` (default `arm64`), `--probe OUT_DIR`, `-- PYTEST_ARGS`
+- [x] Write `bin/linux-tests.sh` as the spec's API and Linux reproduction say: `--arch arm64|amd64` (default `arm64`), `--probe OUT_DIR`, `-- PYTEST_ARGS`
       (default: the group test files of Settings); `docker info` first, exiting 2 with "Docker is not running: start Docker Desktop"; the tree streamed
       in by `tar` from `git ls-files -co --exclude-standard`; named volumes `metafopy-uv-cache` and `metafopy-venv-<arch>`;
       `uv sync --locked --all-extras --python 3.14.8`, then `uv run pytest --mpl <args>` or the probe; never `uv lock`; exit with pytest's or the probe's
       status. Give it `--help`
-- [ ] Check it by running it: `--help`; a group run on arm64. (The Docker-not-running message is checked by reading the code path, since stopping the
+- [x] Check it by running it: `--help`; a group run on arm64. (The Docker-not-running message is checked by reading the code path, since stopping the
       operator's Docker is not this task's to do)
-- [ ] Compare the arm64 run's failing tests with the Linux job's `FAILED` lines of run 43883708179 (`gh run view 43883708179 --log-failed`, read-only),
+- [x] Compare the arm64 run's failing tests with the Linux job's `FAILED` lines of run 43883708179 (`gh run view 43883708179 --log-failed`, read-only),
       leaving out the harness tests the two earlier lists fixed. If the lists differ, repeat with `--arch amd64` and compare again
-- [ ] Create `agents/specs/cross-platform-numerics/measurements.md` (dated, inside `doc-counts` accept markers like the spec's dated records) with the
+- [x] Create `agents/specs/cross-platform-numerics/measurements.md` (dated, inside `doc-counts` accept markers like the spec's dated records) with the
       image digests (`docker image inspect`), the architecture that reproduces CI's Linux list (or that neither does, with both lists), and the date
-- [ ] If `uv sync --locked` fails in the container, stop as `blocked` with uv's message (the lock is not edited without instruction)
+- [x] If `uv sync --locked` fails in the container, stop as `blocked` with uv's message (the lock is not edited without instruction)
 
 **Acceptance Criteria:**
 
-- [ ] `bin/linux-tests.sh --help` prints its usage; a group run exits with pytest's status; nothing in the checkout is written by a run
-- [ ] `measurements.md` names the reproducing architecture and the image digests
+- [x] `bin/linux-tests.sh --help` prints its usage; a group run exits with pytest's status; nothing in the checkout is written by a run
+- [x] `measurements.md` names the reproducing architecture and the image digests
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `bin/linux-tests.sh -- src/tests/test_nchg.py` runs to completion and its result is recorded in `measurements.md`
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `bin/linux-tests.sh -- src/tests/test_nchg.py` runs to completion and its result is recorded in `measurements.md`
 
 **Notes:**
 
 - Depends on Task 1
 - Key files: `bin/linux-tests.sh`, `bin/linux-tests.Dockerfile`, `agents/specs/cross-platform-numerics/measurements.md`
 - An emulated amd64 run is slow; run it in the background and wait for it
+- Done on 2026-11-16: neither architecture reproduces CI's Linux list (figures in `measurements.md`); GNU tar cannot create nested directories in the emulated container, so the image installs `bsdtar` and the script extracts with it
+- The pre-push stage reports `ruff-version-drift` at `.pre-commit-config.yaml:3` (the audit's ruff differs from the pre-commit rev): the worktree has no venv of its own, so it uses the main checkout's; this task did not touch that file
 
 ---
 
