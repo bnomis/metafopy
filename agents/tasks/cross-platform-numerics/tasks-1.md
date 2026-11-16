@@ -27,7 +27,7 @@ Rules every task follows:
 
 ## Task 1: Check the prerequisites
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Scope (Prerequisite), Order of work step 1, Operator stops
@@ -36,24 +36,27 @@ Rules every task follows:
 
 **Subtasks:**
 
-- [ ] Check that the headings "A harness test runs Rscript with no skip where R is missing" and "Audit harness tests assume POSIX and fail on Windows"
+- [x] Check that the headings "A harness test runs Rscript with no skip where R is missing" and "Audit harness tests assume POSIX and fail on Windows"
       are absent from `TODO.md` and present in `DONE.md`, and that `pytest src/tests/test_harness_engine.py src/tests/test_harness_scripts.py` passes
-- [ ] Check `docker info` exits 0, and `gh auth status` exits 0
-- [ ] Check the new names do not exist yet: `ls bin/linux-tests.sh bin/linux-tests.Dockerfile bin/platform-probe.py bin/platform-probe.sh
+- [x] Check `docker info` exits 0, and `gh auth status` exits 0
+- [x] Check the new names do not exist yet: `ls bin/linux-tests.sh bin/linux-tests.Dockerfile bin/platform-probe.py bin/platform-probe.sh
       .github/workflows/platform-probe.yml src/tests/test_platform_probe.py agents/specs/cross-platform-numerics/measurements.md` finds none
-- [ ] If any check fails, stop as `blocked`, naming the check and what the operator must do (merge the list, start Docker Desktop, `gh auth login`)
+- [x] If any check fails, stop as `blocked`, naming the check and what the operator must do (merge the list, start Docker Desktop, `gh auth login`)
 
 **Acceptance Criteria:**
 
-- [ ] Every prerequisite holds, recorded in this task's Notes with the date
+- [x] Every prerequisite holds, recorded in this task's Notes with the date
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
 
 **Notes:**
 
 - Only this task list file changes
+- Checked on 2026-11-16 (21:25 UTC): both headings are in `DONE.md` and not in `TODO.md`; `pytest src/tests/test_harness_engine.py
+  src/tests/test_harness_scripts.py` passes (25 tests, run with the main checkout's venv because this worktree has none); `docker info` and
+  `gh auth status` exit 0; none of the new names exists
 
 ---
 
