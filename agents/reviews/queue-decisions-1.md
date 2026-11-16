@@ -46,4 +46,11 @@ None beyond the items: each item's approve or flag is the decision.
 
 ## Answers
 
-(Empty until the review page is answered.)
+Answered on the review page on 2026-11-16 (10:11 UTC), read back from its `answers` store:
+
+| Item | Answer | Comment |
+|---|---|---|
+| 1. The CM.EL ML standard error check (row 4 Task 2, `e958fde`) | approve | - |
+| 2. The audit findings unrelated to row 7 (row 7 Task 3, `5afc6c3`) | approve | - |
+
+Both decisions stand; no follow-up is needed.
