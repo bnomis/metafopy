@@ -153,7 +153,7 @@ environments can be compared.
 
 ## Task 4: The probe workflow and the draft pull request
 
-**Status:** in-progress
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Windows and the CI Mac, Decisions (D1 *Draft pull request*, D2 *keep*)
@@ -162,33 +162,34 @@ environments can be compared.
 
 **Subtasks:**
 
-- [ ] Write `.github/workflows/platform-probe.yml`: the `test` job's matrix of `.github/workflows/ci.yml` (`ubuntu-26.04`, `macos-26`,
+- [x] Write `.github/workflows/platform-probe.yml`: the `test` job's matrix of `.github/workflows/ci.yml` (`ubuntu-26.04`, `macos-26`,
       `windows-2025-vs2026`, Python 3.14.8, `uv sync --locked --all-extras`), running
       `uv run python bin/platform-probe.py --out probe-${{ runner.os }}.json` and uploading it with `actions/upload-artifact` pinned to its newest release
       tag (`gh api repos/actions/upload-artifact/releases/latest`; an exact tag, never a SHA, per the shared security rule); triggered by
       `workflow_dispatch` and by `pull_request` with the `paths` filter of D2 (`uv.lock`, `src/metafopy/**`, `src/tests/correctness/**`,
       `bin/platform-probe.py`, and the workflow file itself)
-- [ ] Commit, push this list's branch to `origin` (pre-push hooks run; never `--no-verify`), and open a draft pull request against `main` with
+- [x] Commit, push this list's branch to `origin` (pre-push hooks run; never `--no-verify`), and open a draft pull request against `main` with
       `gh pr create --draft`, its body saying it exists to run CI for this task list and will be closed unmerged. Record its number in this task's Notes
-- [ ] Wait for the CI and probe runs of the pull request's head commit (poll `gh run list --branch <branch>` every five minutes, for at most two hours;
+- [x] Wait for the CI and probe runs of the pull request's head commit (poll `gh run list --branch <branch>` every five minutes, for at most two hours;
       past that, stop as `blocked` naming the runs). Download the probe artifacts with `gh run download <id>` into `$TMPDIR/metafopy-platform-probe/`;
       a missing platform's artifact stops the task as `blocked`, naming the run id and job (spec, Error handling)
-- [ ] Add the three CI environments and their figures to `measurements.md`, with the run ids and the date
+- [x] Add the three CI environments and their figures to `measurements.md`, with the run ids and the date
 
 **Acceptance Criteria:**
 
-- [ ] The probe workflow ran on all three platforms; `measurements.md` holds figures from five environments
-- [ ] Exactly one draft pull request is open for this branch
+- [x] The probe workflow ran on all three platforms; `measurements.md` holds figures from five environments
+- [x] Exactly one draft pull request is open for this branch
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] The push passed the pre-push hooks
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The push passed the pre-push hooks
 
 **Notes:**
 
 - Depends on Task 3
 - Key files: `.github/workflows/platform-probe.yml`
+- Draft pull request: number 74 (https://github.com/bnomis/metafopy/pull/74); probe run 43972461382, CI run 43972460854
 - CI runs about 40 minutes on Windows (2026-11-16); this task's CI results also show whether the two harness lists' skips hold on Windows
 
 ---

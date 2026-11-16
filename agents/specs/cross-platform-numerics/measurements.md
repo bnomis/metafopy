@@ -91,3 +91,44 @@ What these two environments already show, before CI's three:
 - `mv-reml-score`: the score is 1e-09 to 1e-08 on a scale of 100 to 1000 (about 1e-11 relative) in both: rounding size.
 
 <!-- doc-counts: accept-end -->
+
+## The probe on the three CI platforms (Task 4 of `tasks-1.md`)
+
+<!-- doc-counts: accept-start measured on 2026-11-16 - a dated record, not a claim about the present -->
+
+`bin/platform-probe.py` run by `.github/workflows/platform-probe.yml` on the head commit of draft pull request 74 (branch
+`worktree-cross-platform-numerics-tasks-1`): probe run 43972461382, started on 2026-11-16 and read on 2026-11-17; the same commit's CI run is
+43972460854 (its `test` jobs fail on all three platforms, as before). Every group ran on all three platforms; Windows' `selmodel-decreasing` measurement
+recorded an assertion in its messages (the reference's SLSQP did not converge; its end point is below). `environment()`:
+
+| | CI Linux | CI Mac | CI Windows |
+|---|---|---|---|
+| `sys.platform`, machine | `linux`, `x86_64` | `darwin`, `arm64` | `win32`, `AMD64` |
+| OS | Ubuntu 26.04.1 LTS, glibc 2.43 | macOS 26.7.2 | Windows Server 2025 (10.0.26100) |
+| Python, numpy, scipy | 3.14.8, 2.5.4, 1.18.1 | 3.14.8, 2.5.4, 1.18.1 | 3.14.8, 2.5.4, 1.18.1 |
+| BLAS, LAPACK | scipy-openblas 0.3.34.106.0 | Accelerate | scipy-openblas 0.3.34.106.0 |
+
+Figures below are the probe's, to the digits shown, in the order CI Linux / CI Mac / CI Windows.
+
+| Group | Figures |
+|---|---|
+| `ls-bcg-reference` | metafopy's `ll` -7.53929 (ML) and -8.08728 (REML) on all three, equal to the reference's wherever it returns. BFGS "precision loss" starts: ML none / start1 / starts 0 and 1; REML start0 / start0 / starts 0 and 2. Windows REML start2 stops at another point (`ll` -8.35439, score 3.75), and Windows' reference ML result is that of start2, `ll` -9.47361 (alpha [-6.94693, -2.45755]) **below metafopy's -7.53929**: the reference's returned fit is a worse stationary point there |
+| `ls-identity-alpha` | metafopy equal on all three (ML `ll` -7.13929, REML -7.98877). REML reference: Linux ends at [0.0133747, 0.00162732] (`ll` -8.08078), Mac and Windows at [0.339136, -0.0061661] (`ll` -7.98877); the successful starts differ per platform; ML start2 on Linux fails with "Singular matrix E in LSQ subproblem" (`ll` infinite), on Mac reaches the point [0.202508, -0.00368196] (`ll` -7.89187) |
+| `selmodel-decreasing` | metafopy's point and `ll` -17.4217 equal on all three. The reference's SLSQP: Linux converges to metafopy's point; **Mac runs away** (beta -2248.16, tau2 2683050, `ll` -378.22); **Windows ends in "Positive directional derivative for linesearch"** at beta -3059.28, tau2 4973450 (`ll` -393.029). `ll` along the ray from metafopy's point falls to about -365 to -393 on the Mac and Windows; no end point beats metafopy's. A reference defect on the Mac and Windows |
+| `glmm-um-rs-score` | pneumonia Richardson score 7.5e-07 / 1.4e-06 / 1.9e-06; bcg 1.4e-06 / 1.7e-06 / 1.3e-06; fixed-step scores 4.7e-07 to 1.0e-05 across steps and platforms; `loglik` equal on all three |
+| `cm-el-tight-se` | `se` at the tight optimum equal to the expected values to the digits shown on all three; Nelder-Mead stops after 68 / 80 / 78 (collins1985a), 59 / 63 / 65 (nielweise2007), 64 / 64 / 63 (pneumonia) iterations; the end points agree to the digits shown |
+| `mv-reml-score` | `sigma2` [0.0722656, 0.0326501 or 0.0326502] on all three; score [5.1e-05, 1.1e-03] on Linux, [1.4e-09, -8.3e-09] on the Mac, [3.0e-07, -3.0e-08] on Windows, on a scale `tr(PZ)` of [104.475, 962.61]: relative 4.9e-07 and 1.1e-06 on Linux, 1.3e-11 and -8.6e-12 on the Mac, 2.9e-09 and -3.1e-11 on Windows |
+| `stepcon-rau-mods` | `se` [0.0681665, 0.00492571] / [0.0681667, 0.00492573] / [0.0681664, 0.00492571] (R: [0.0681675, 0.00492576]); `ci_lb` first element -0.00179123 / -0.001791 / -0.00179168 (R: -0.0017894); `delta` second element 0.637549 / 0.637554 / 0.637544 (R: 0.637582); `tau2` 3.2e-10 / 7.6e-09 / 9.0e-09; `vd` last element 0.257361 / 0.257368 / 0.257355 |
+| `ls-vif-sim` (NaN draws of the first 50) | seed: beta none on all; alpha draw 21 on Linux, none on the Mac and Windows; stream: none on all |
+| `permutest-ls-boundary` | `pval_alpha` [0.125, 0.525, 0.3] / [0.121951, 0.512195, 0.268293] / [0.15, 0.55, 0.3] (R: [0.106383, 0.489362, 0.255319]); `QSp` 0.675 / 0.634146 / 0.675 (R: 0.638298); the undefined permutations differ per platform; the boundary permutations are the same on all three; a permutation's largest absolute alpha reaches 521.1 on the Mac (draw 40) and 443.2 on Windows (draw 14) |
+| `ls-identity-maximum` | metafopy's point and `ll` -7.13929 equal on all three; the reference ends at metafopy's point on Linux and Windows and at [0.202511, -0.0368202] (`ll` -7.89187, **below metafopy's**) on the Mac, where starts 0 and 1 report "Positive directional derivative" |
+| `selmodel-print-halfnorm` | `delta` 0.000137796 (at its bound) on all three; `se` 0.104977 / 0.108272 / 0.103257; `ci_lb` 0.0113676 / 0.00490912 / 0.01474; `vd` 1.11914 / 1.21194 / 1.07183 |
+
+What the five environments show together (the development Mac and the arm64 container are in the section above):
+
+- The reference's returned fit moves with the platform in `ls-bcg-reference` (ML, Windows), `ls-identity-maximum` (Mac) and `selmodel-decreasing` (Mac and
+  Windows), and in each of them it lies below metafopy's log-likelihood: reference defect candidates, not metafopy's.
+- `mv-reml-score` is the outlier on CI's Linux only: the score is 1e-06 relative there against 1e-11 to 1e-09 elsewhere.
+- `selmodel-print-halfnorm`: `se` spreads over 0.1033 to 0.1083 across the CI platforms with `delta` at its bound.
+
+<!-- doc-counts: accept-end -->
