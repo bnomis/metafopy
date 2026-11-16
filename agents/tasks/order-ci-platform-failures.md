@@ -43,5 +43,5 @@ missing, so starting Docker before the order lets it run straight through. Rows 
 | # | Task list | Waits for | Stops for you | Status |
 |---|---|---|---|---|
 | 1 | `rscript-skip-guard/tasks-1.md` | - | - | merged e7f4567 |
-| 2 | `audit-windows-tests/tasks-1.md` | 1 | - | running |
+| 2 | `audit-windows-tests/tasks-1.md` | 1 | - | merged 77b7db7 |
 | 3 | `cross-platform-numerics/tasks-1.md` | 2 | a group whose figures show metafopy wrong, only if one does (Tasks 5-10) | todo |
