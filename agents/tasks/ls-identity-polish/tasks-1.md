@@ -221,7 +221,7 @@ the ten cases pass, and the tests say where this departs from R metafor's fixtur
 
 ## Task 3: Record the difference in the audit ledger and the user guide
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item's fix direction (`known.toml`, `docs/differences.md`)
@@ -231,43 +231,43 @@ explains the difference under "Where metafor departs from its reference".
 
 **Subtasks:**
 
-- [ ] Run the location-scale identity-link slice of the audit from the worktree, against the main checkout's R oracle, in the background:
+- [x] Run the location-scale identity-link slice of the audit from the worktree, against the main checkout's R oracle, in the background:
       `main=$(git worktree list --porcelain | sed -n '1s/^worktree //p'); METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib METAFOPY_AUDIT_WORK="$main/.audit" bin/metafor-audit.sh --only 'construct/ls_*/link=*identity*' --only 'scripts/misc_rma_ls*'`
       (`$main` is the main checkout, the first entry of `git worktree list --porcelain`). If `check-r` reports that the R library is missing or
       differs from `src/audit/data/r-versions.json`, stop as `blocked` and say so; never pass `--allow-r-drift`
-- [ ] For each finding it reports on an identity-link fit (`alpha`, `tau2`, `beta` or a value that follows from them, `ll` and the fit statistics),
+- [x] For each finding it reports on an identity-link fit (`alpha`, `tau2`, `beta` or a value that follows from them, `ll` and the fit statistics),
       add a `[[known]]` entry to `src/audit/data/known.toml` that matches exactly those case ids, kinds and paths, with a `reason` (R's
       `constrOptim` stops about 1e-5 short of the identity-link maximum; metafopy polishes it on the analytic score within `Z alpha >= 0`) and
       `ref = "docs/differences.md"`. Add no entry for a finding the run does not report, and no glob wider than the findings (the README warns
       that `*/ls_*` swallowed recall items before). Stop as `blocked`, naming it, for a finding on a log-link fit
-- [ ] Rerun the same command and check that its report lists no finding left from this change. A finding not in the newest earlier report under
+- [x] Rerun the same command and check that its report lists no finding left from this change. A finding not in the newest earlier report under
       `$main/.audit/runs/` and not from this change stops the task as `blocked`, naming it
-- [ ] Run `METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib METAFOPY_AUDIT_WORK="$main/.audit" bin/metafor-audit.sh --recall` in the
+- [x] Run `METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib METAFOPY_AUDIT_WORK="$main/.audit" bin/metafor-audit.sh --recall` in the
       background and check that every item is still found, in particular `a4-ls-identity-se` (`src/audit/data/recall.toml`), whose finds are
       `construct/ls_bcg/link=*identity*` and `construct/ls_bangert/link=*identity*`. If a new entry hides it, narrow the entry (the harness, per
       `AGENTS.md`), never the recall item
-- [ ] Add a subsection `### Location-scale fits with link="identity"` to the section "Where metafor departs from its reference" of
+- [x] Add a subsection `### Location-scale fits with link="identity"` to the section "Where metafor departs from its reference" of
       `docs/differences.md`, after the existing subsections: a short summary (R's `constrOptim` stops at its tolerance; metafopy ends at the
       maximum within `tau2_i >= 0`, which can lie on the boundary), the same call in R and in Python with the output of both (the ML fit of
       `dat.bcg` log risk ratios with `mods = scale = ~ ablat`: alpha and log-likelihood), and *Why:* naming Viechtbauer and Lopez-Lopez (2022) and
       the cases. Produce the R output with `R_LIBS=/Users/simonb/src/metafopy/.audit/Rlib LC_ALL=C.UTF-8 Rscript -e '<the R block>'` and the
       Python output with metafopy, and paste both as printed
-- [ ] Re-run every Python example of `docs/` that fits `link='identity'` (`grep -rn "link='identity'" docs/`; on 2026-11-15 the subsection
+- [x] Re-run every Python example of `docs/` that fits `link='identity'` (`grep -rn "link='identity'" docs/`; on 2026-11-15 the subsection
       "Standard errors of a location-scale model on a flat scale" of `docs/differences.md`) and update each printed output that changed, with a
       sentence where the explanation no longer holds
 
 **Acceptance Criteria:**
 
-- [ ] The slice reports no finding from this change, and every new `known.toml` entry matches at least one case of that run
-- [ ] `--recall` finds every item
-- [ ] `docs/differences.md` names the difference under "Where metafor departs from its reference", and every printed identity-link output in
+- [x] The slice reports no finding from this change, and every new `known.toml` entry matches at least one case of that run
+- [x] `--recall` finds every item
+- [x] `docs/differences.md` names the difference under "Where metafor departs from its reference", and every printed identity-link output in
       `docs/` is what metafopy prints now
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_docs_examples.py src/tests/test_harness_accounts.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_docs_examples.py src/tests/test_harness_accounts.py` passes
 
 **Notes:**
 
@@ -278,6 +278,15 @@ explains the difference under "Where metafor departs from its reference".
   `src/audit/data/domains.toml`), as `construct/ls_<fixture>/link=...`, and metafor's own tests through `scripts/misc_rma_ls*`. A full audit run
   is the user's call; a difference the slice does not reach surfaces in the next full run
 - `src/tests/test_docs_examples.py` runs the Python blocks of `docs/` but does not compare their printed output, hence the re-run subtask
+
+**Findings (2026-11-16):**
+
+- The slice reported 31 findings, all on identity-link fits: 18 on `construct/ls_bangert/link="identity"` and 13 in nine units of `scripts/misc_rma_ls`
+  (confint, profile and predict of identity-link fits: units 21, 42, 43, 65, 66, 67, 80, 82, 175). `ls_bcg` identity gave none. Two `known.toml` entries
+  cover them; the rerun of the slice lists none.
+- `--recall` reproduced 176 of 176 items, `a4-ls-identity-se` included; one item (`a6-glmm-um-rs`) is reported as "oracle moved", unrelated.
+- `se_alpha` of the flat-scale example in `docs/differences.md` moved from 0.53962141 to 0.53968806 with the polish; that section and its copy in
+  `docs/differences-notes.md` are updated.
 
 ---
 
