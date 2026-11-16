@@ -23,29 +23,30 @@ keep running. The project has no affected-tests tool, so each task names its tes
 
 **Subtasks:**
 
-- [ ] Check that no other test in `src/tests/` already has a marker for a missing `Rscript` (`grep -rnw 'Rscript' src/tests/*.py src/tests/refutil.py`);
+- [x] Check that no other test in `src/tests/` already has a marker for a missing `Rscript` (`grep -rnw 'Rscript' src/tests/*.py src/tests/refutil.py`);
       reuse one if it exists, otherwise add to `src/tests/refutil.py`, beside `linux_only` and `macos_only`:
       `needs_rscript = pytest.mark.skipif(shutil.which('Rscript') is None, reason='Rscript is not on the path (CI installs no R)')`, with `import shutil`
-- [ ] Mark `test_r_takes_the_cluster_port_it_is_given` with it (import `refutil` the way the other test modules do)
-- [ ] Check every other test in `src/tests/test_harness_engine.py` and `src/tests/test_harness_scripts.py` that calls `Rscript` for real (not a stand-in
+- [x] Mark `test_r_takes_the_cluster_port_it_is_given` with it (import `refutil` the way the other test modules do)
+- [x] Check every other test in `src/tests/test_harness_engine.py` and `src/tests/test_harness_scripts.py` that calls `Rscript` for real (not a stand-in
       Python process): `grep -n 'rscript_command\|Rscript' src/tests/test_harness_*.py`. Mark each such test too; list them in this task's Notes
-- [ ] Check the skip by hand once: `PATH=/usr/bin:/bin pytest src/tests/test_harness_engine.py -k cluster_port -rs` (with the venv's `python` called by
+- [x] Check the skip by hand once: `PATH=/usr/bin:/bin pytest src/tests/test_harness_engine.py -k cluster_port -rs` (with the venv's `python` called by
       its full path if the shortened `PATH` hides it) reports the test skipped with the reason, and the plain run reports it passed
 
 **Acceptance Criteria:**
 
-- [ ] With `Rscript` on the path the test passes; without it the test is skipped with the reason above
-- [ ] No other test changes behaviour
+- [x] With `Rscript` on the path the test passes; without it the test is skipped with the reason above
+- [x] No other test changes behaviour
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_harness_engine.py src/tests/test_harness_scripts.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_harness_engine.py src/tests/test_harness_scripts.py` passes
 
 **Notes:**
 
 - Key files: `src/tests/test_harness_engine.py`, `src/tests/refutil.py`
+- No other test marked: the only real `Rscript` call is in `test_r_takes_the_cluster_port_it_is_given`; `test_harness_scripts.py` replaces `rscript_command` with a Python stand-in
 - The next list in the order, `agents/tasks/audit-windows-tests/tasks-1.md`, also edits `src/tests/test_harness_engine.py` and waits for this one
 
 ---
