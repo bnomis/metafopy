@@ -205,6 +205,14 @@ the change, adding a `known.toml` entry only if the audit flags `selmodel` with 
   `"logistic1"` (`$hessian` element 11), `options/vif/ls_na/table=true`, `options/permutest/ls_bangert/digits=*` (printed output),
   an `rma` print line, an `rma` with `alpha.init` NA, and two `scripts` `coef(res)$alpha` values. No `known.toml` entry added; the recall run not
   started. Needs the operator to say whether these are environmental or from other merged work
+- Decision, 2026-11-16, decided by Claude, not yet reviewed: every one of the 10 findings has a cause outside this list, checked against the run's
+  `findings.json`. Eight are the four `TODO.md` items row 1 filed on 2026-11-15 ("The audit lists the exact permutest of uni_mods as an R kill",
+  "... a selmodel logistic Hessian element ...", "... printed fits of flat location-scale models ..." (`vif ls_na`, `permutest ls_bangert`,
+  `uni_mods_year`), "The audit has no entry for ls_na with an interaction formula"): they stay open there, no entry here. The two
+  `scripts/misc_rma_uni_ls/test/18` and `/21` (`coef(res)$alpha` of identity-link ML fits, 3e-4 relative) come from row 5's identity-link polish
+  (`ls-identity-polish`), whose `known.toml` entry matched only `scripts/misc_rma_ls/*`. So: add one `known.toml` entry for those two tests, with
+  the reason and `ref` of row 5's `scripts/misc_rma_ls` identity-link entry; re-render the run's report with `--rerender` to confirm only the eight
+  filed findings remain; then run the recall check and finish the task as written
 - Depends on Task 2
 - Prerequisite outside this repository: R 4.6.2 with metafor 5.2-1 and the pinned packages in `/Users/simonb/src/metafopy/.audit/Rlib`, the main
   checkout's R library (present on 2026-11-15)
