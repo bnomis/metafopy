@@ -983,3 +983,24 @@ if the fix is local.
 Spec: none (small item); tasks: `agents/tasks/ls-profile-crossings/tasks-1.md`.
 
 Done: 2026-11-16, agents/tasks/ls-profile-crossings/tasks-1.md
+
+## A precision measure on a step-function selection model makes the likelihood not a density
+
+<!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
+Found on 2026-11-15 by the cases `selmodel.prec.{sei,vi,ninv,sqrtninv}.bangertdrowns2004` in `src/tests/correctness/cases/selmodel.toml`
+(`agents/specs/correctness-publication-bias/mismatches.md`); the user answered *investigate* on 2026-11-15. With `type='stepfun'` and `prec` set,
+metafopy gives beta 0.13780 (`sei`), 0.16908 (`vi`), 0.16769 (`ninv`) and 0.13711 (`sqrtninv`); the maximum of the density with weights `delta[j] /
+preci` gives beta 0.10569 and ll -17.4217 for each. R metafor 5.2-1 gives metafopy's values (operator session, 2026-11-15), and warns that the
+combination is undocumented and experimental.
+<!-- doc-counts: accept-end -->
+
+Cause: metafopy, like metafor, normalises the first interval with weight 1 but weights the observed p-value by `delta[0] / preci`, so the likelihood is
+not a density and its maximum moves with the precision measure. The consistent likelihood makes `prec` a no-op, so neither is the intended model.
+
+Fix direction: decide whether `selmodel` rejects the combination with an `InputError`, or defines it from a source (none found for step functions). Then
+set the four cases to `pass` or exempt them with the decision, mark the `hack_stepfun_sei` R parity fixture as differing if the behaviour changes, and
+name the decision in `docs/differences.md` under "Where metafor departs from its reference". A change to `src/metafopy/` goes through a spec first.
+
+Spec: `agents/specs/selmodel-prec-stepfun/spec.md`; tasks: `agents/tasks/selmodel-prec-stepfun/tasks-1.md`.
+
+Done: 2026-11-16, agents/specs/selmodel-prec-stepfun/spec.md (option (a), reject with InputError, answered 2026-11-15 in agents/reviews/order-numerical-fixes-specs.md, D3), agents/tasks/selmodel-prec-stepfun/tasks-1.md

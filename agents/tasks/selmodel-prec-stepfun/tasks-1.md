@@ -228,7 +228,7 @@ the change, adding a `known.toml` entry only if the audit flags `selmodel` with 
 
 ## Task 4: File the fixed-delta[0] finding, the full test run and closing the spec
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Tests and records, items 4 and 5; "What the investigation found", "Related, outside this spec"; the spec as a whole
@@ -238,39 +238,39 @@ implemented and its item moves to `DONE.md`.
 
 **Subtasks:**
 
-- [ ] Re-check the related finding in both languages: `selmodel(type='stepfun', steps=[0.025, 0.5, 1], delta=[0.5, nan, nan])` on an ML fit of
+- [x] Re-check the related finding in both languages: `selmodel(type='stepfun', steps=[0.025, 0.5, 1], delta=[0.5, nan, nan])` on an ML fit of
       `dat.bangertdrowns2004` gives the estimates of `delta=[1, nan, nan]` (beta 0.10569, delta 0.40141, 0.27643 on 2026-11-15) and an ll lower by
       `n1 * log(0.5)` (-27.1257 against -17.4217), in metafopy and in R
       (`R_LIBS=/Users/simonb/src/metafopy/.audit/Rlib LC_ALL=C.UTF-8 Rscript -e '<the same call>'`)
-- [ ] If it holds, file it with the `todo-add` skill as its own item (not merged into another item, so no existing item's body changes): a
+- [x] If it holds, file it with the `todo-add` skill as its own item (not merged into another item, so no existing item's body changes): a
       user-fixed `delta[0]` other than 1 on a step-function selection model is a constant, because the first interval's weight is hard-coded to 1
       in the normalising constant; give the figures just measured, the date, the cause in `.selmodel.ll.stepfun` (`R/misc.func.hidden.selmodel.r`)
       and `ll_stepfun` (`src/metafopy/models/sel_lik.py`), and a fix direction that goes through a spec. If it no longer holds, file nothing and say
       so in this task's Notes with the values measured
-- [ ] Set the spec's `**Status:**` in `agents/specs/selmodel-prec-stepfun/spec.md` to `implemented`
-- [ ] Move the item "A precision measure on a step-function selection model makes the likelihood not a density" from `TODO.md` to `DONE.md`:
+- [x] Set the spec's `**Status:**` in `agents/specs/selmodel-prec-stepfun/spec.md` to `implemented`
+- [x] Move the item "A precision measure on a step-function selection model makes the likelihood not a density" from `TODO.md` to `DONE.md`:
       append its heading and body unchanged at the end of `DONE.md`, then a line
       `Done: 2026-MM-DD, agents/specs/selmodel-prec-stepfun/spec.md (option (a), reject with InputError, answered 2026-11-15 in agents/reviews/order-numerical-fixes-specs.md, D3), agents/tasks/selmodel-prec-stepfun/tasks-1.md`
       with the date of the commit
-- [ ] Run the final tests from the worktree and save their whole output for the merge gate, in the main checkout (the first entry of
+- [x] Run the final tests from the worktree and save their whole output for the merge gate, in the main checkout (the first entry of
       `git worktree list --porcelain`, here `/Users/simonb/src/metafopy`):
       `mkdir -p /Users/simonb/src/metafopy/ralpher-logs/selmodel-prec-stepfun/tasks-1 && source bin/activate.sh && pytest src/tests 2>&1 | tee /Users/simonb/src/metafopy/ralpher-logs/selmodel-prec-stepfun/tasks-1/final-tests.log`
 
 **Acceptance Criteria:**
 
-- [ ] The fixed-`delta[0]` finding is a `TODO.md` item of its own, or this task's Notes say why it was not filed
-- [ ] The spec's status is `implemented`
-- [ ] The item is in `DONE.md` with its body unchanged and the `Done:` line, and no longer in `TODO.md`
+- [x] The fixed-`delta[0]` finding is a `TODO.md` item of its own, or this task's Notes say why it was not filed
+- [x] The spec's status is `implemented`
+- [x] The item is in `DONE.md` with its body unchanged and the `Done:` line, and no longer in `TODO.md`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `ruff format --check`, `ruff check` and `mypy` pass
-- [ ] The final test run above passes, `slow` tests included, and its log is saved at
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `ruff format --check`, `ruff check` and `mypy` pass
+- [x] The final test run above passes, `slow` tests included, and its log is saved at
       `/Users/simonb/src/metafopy/ralpher-logs/selmodel-prec-stepfun/tasks-1/final-tests.log`
-- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/selmodel-prec-stepfun/tasks-1.md):TODO.md > <scratch>/todo-before.md` (the
+- [x] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/selmodel-prec-stepfun/tasks-1.md):TODO.md > <scratch>/todo-before.md` (the
       `TODO.md` at the list's start) and `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0
       (`<scratch>` is the session's scratch directory, outside the repository)
 
