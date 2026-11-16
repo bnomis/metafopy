@@ -7,6 +7,7 @@ import re
 import typing
 import warnings
 
+import correctness.formulas
 import numpy
 import pandas
 import pytest
@@ -20,6 +21,7 @@ import metafopy.methods.ls_permutest
 import metafopy.methods.ls_predict
 import metafopy.methods.ls_profile
 import metafopy.methods.ls_vif
+import metafopy.models.rma_ls_fit
 import metafopy.printing
 
 REF: dict[str, typing.Any] = json.loads((pathlib.Path(__file__).parent / 'reference' / 'phase5' / 'location_scale.json').read_text(encoding='utf-8'))
@@ -139,6 +141,13 @@ FITS: dict[str, Fit] = {
 FLAT = {'mo_design'}
 # the scale part of these fits is identified to about 1e-3 (the likelihood is flat in alpha), which BLAS differences expose
 LOOSE_FIT = {'bcg_ablat', 'bcg_ablat_t'}
+# The fits with link='identity': metafor stops about 1e-5 short of the maximum (its constrOptim), metafopy polishes to it, so the values that follow
+# from the scale coefficients differ from the fixtures (docs/differences.md, "Location-scale fits with link=\"identity\""). The fixtures stay as R wrote
+# them; test_identity_fit_is_the_maximum compares each fit with the independent maximisation of correctness.formulas, and test_fit allows
+# IDENTITY_FIT for the rest. A fit whose scale model puts tau^2_i near zero shifts most (bd_identity_ni).
+IDENTITY_FITS = {'bcg_year_identity', 'bd_identity', 'bd_identity_ml', 'bd_identity_ni', 'bd_int_identity'}
+IDENTITY_FIT = 5e-2
+IDENTITY_FIT_STATS = 1e-3  # the log-likelihood of the criterion that was not maximised moves with alpha
 # column names that come from formulaic's rendering of I() terms or from an unnamed matrix, not from the algorithm
 UNNAMED = {'bcg_year_identity', 'bd_matrix', 'bd_poly'}
 
@@ -147,24 +156,26 @@ UNNAMED = {'bcg_year_identity', 'bd_matrix', 'bd_poly'}
 def test_fit(name: str) -> None:
     ref = REF[name]
     res = FITS[name]()
-    OPT = 1e-3 if name in LOOSE_FIT else OPT_DEFAULT
+    OPT = 1e-3 if name in LOOSE_FIT else IDENTITY_FIT if name in IDENTITY_FITS else OPT_DEFAULT
     refutil.close(res.beta, ref['beta'], f'{name} beta', rtol=OPT, atol=1e-7)
     refutil.close(res.alpha, ref['alpha'], f'{name} alpha', rtol=OPT, atol=1e-6)
     refutil.close(res.se, ref['se'], f'{name} se', rtol=OPT, atol=1e-7)
     refutil.close(res.vb.ravel(), flat(ref['vb']), f'{name} vb', rtol=OPT, atol=1e-8)
     refutil.close(res.va.ravel(), flat(ref['va']), f'{name} va', rtol=OPT, atol=1e-6)
-    refutil.close(res.tau2, ref['tau2'], f'{name} tau2', rtol=OPT, atol=1e-8)
+    # a tau^2_i on the boundary is R's barrier value (about 1e-8), here 0
+    refutil.close(res.tau2, ref['tau2'], f'{name} tau2', rtol=OPT, atol=1e-7 if name in IDENTITY_FITS else 1e-8)
     refutil.close(res.pval, ref['pval'], f'{name} pval', rtol=OPT, atol=1e-7)
     refutil.close(res.ci_lb, ref['ci_lb'], f'{name} ci_lb', rtol=OPT, atol=1e-6)
     refutil.close(res.ci_ub, ref['ci_ub'], f'{name} ci_ub', rtol=OPT, atol=1e-6)
-    refutil.close(res.fit_stats_ml.as_tuple(), ref['fit_ml'], f'{name} fit ML', rtol=CLOSED, atol=1e-6)
-    refutil.close(res.fit_stats_reml.as_tuple(), ref['fit_reml'], f'{name} fit REML', rtol=CLOSED, atol=1e-6)
+    closed = IDENTITY_FIT_STATS if name in IDENTITY_FITS else CLOSED
+    refutil.close(res.fit_stats_ml.as_tuple(), ref['fit_ml'], f'{name} fit ML', rtol=closed, atol=1e-6)
+    refutil.close(res.fit_stats_reml.as_tuple(), ref['fit_reml'], f'{name} fit REML', rtol=closed, atol=1e-6)
     refutil.close(res.QE, ref['QE'], f'{name} QE', rtol=1e-8)
     refutil.close(res.QM, ref['QM'], f'{name} QM', rtol=OPT, atol=1e-7)
     refutil.close(res.QMp, ref['QMp'], f'{name} QMp', rtol=OPT, atol=1e-7)
     refutil.close(res.vt, ref['vt'], f'{name} vt', rtol=1e-8)
-    refutil.close(res.I2, ref['I2'], f'{name} I2', rtol=OPT, atol=1e-6)
-    refutil.close(res.H2, ref['H2'], f'{name} H2', rtol=OPT, atol=1e-6)
+    refutil.close(res.I2, ref['I2'], f'{name} I2', rtol=OPT, atol=1e-4 if name in IDENTITY_FITS else 1e-6)
+    refutil.close(res.H2, ref['H2'], f'{name} H2', rtol=OPT, atol=1e-4 if name in IDENTITY_FITS else 1e-6)
     refutil.close(res.se_alpha, ref['se_alpha'], f'{name} se_alpha', rtol=OPT, atol=1e-6)
     refutil.close(res.zval_alpha, ref['zval_alpha'], f'{name} zval_alpha', rtol=OPT, atol=1e-6)
     refutil.close(res.pval_alpha, ref['pval_alpha'], f'{name} pval_alpha', rtol=OPT, atol=1e-6)
@@ -182,6 +193,82 @@ def test_fit(name: str) -> None:
     fitted = res.fitted()
     refutil.close(fitted['location'], ref['fitted_location'], f'{name} fitted location', rtol=OPT, atol=1e-6)
     refutil.close(fitted['scale'], ref['fitted_scale'], f'{name} fitted scale', rtol=OPT, atol=1e-5)
+
+
+@pytest.mark.parametrize('name', sorted(IDENTITY_FITS))
+def test_identity_fit_is_the_maximum(name: str) -> None:
+    """The identity-link fit is the maximum within ``Z alpha >= 0``, which R's fixture is not: the reference's ``alpha``, R's log-likelihood or higher."""
+    ref = REF[name]
+    res = FITS[name]()
+    reference = correctness.formulas.ls_reference_fit(res.yi, res.vi, res.X, res.Z, 'identity', res.method)
+    numpy.testing.assert_allclose(res.alpha, numpy.ravel(reference['alpha']), rtol=1e-6, atol=1e-6, err_msg=f'{name} alpha')
+    assert not numpy.allclose(ref['alpha'], numpy.ravel(reference['alpha']), rtol=1e-6, atol=1e-6)
+    fit_stats, key = (res.fit_stats_reml, 'fit_reml') if res.method == 'REML' else (res.fit_stats_ml, 'fit_ml')
+    assert fit_stats.ll >= ref[key][0] - 1e-9
+    assert numpy.min(res.Z @ res.alpha) >= 0
+
+
+def identity_problem(res: metafopy.RMALSResult) -> metafopy.models.rma_ls_fit.LSProblem:
+    q = res.Z.shape[1]
+    return metafopy.models.rma_ls_fit.LSProblem(
+        yi=res.yi,
+        vi=res.vi,
+        X=res.X,
+        Z=res.Z,
+        reml=res.method == 'REML',
+        REMLf=True,
+        link='identity',
+        alpha_min=numpy.full(q, -numpy.inf),
+        alpha_max=numpy.full(q, numpy.inf),
+        tau2_min=0.0,
+        tau2_max=numpy.inf,
+        optbeta=False,
+    )
+
+
+@pytest.mark.parametrize('method', metafopy.models.rma_ls_fit.LS_METHODS)
+def test_identity_score_and_information(method: str) -> None:
+    """The score is the gradient of the log-likelihood (the independent ``formulas.ls_score``) and the information its expectation's negative."""
+    res = ls(bd(), '~ imag', '~ imag', link='identity', method=method)
+    problem = identity_problem(res)
+    alpha = numpy.array([0.05, 0.2])
+    score = problem.ls_score(alpha)
+    numpy.testing.assert_allclose(score, correctness.formulas.ls_score(res.yi, res.vi, res.X, res.Z, alpha, 'identity', method), rtol=1e-8)
+    step = 1e-6
+    numeric = [
+        (
+            problem.loglik(alpha + step * e, numpy.full(2, numpy.nan), numpy.full(2, numpy.nan), alpha_transf=False)
+            - problem.loglik(alpha - step * e, numpy.full(2, numpy.nan), numpy.full(2, numpy.nan), alpha_transf=False)
+        )
+        / (2 * step)
+        for e in numpy.eye(2)
+    ]
+    numpy.testing.assert_allclose(score, numeric, rtol=1e-5)
+    information = problem.ls_information(alpha)
+    assert numpy.all(numpy.linalg.eigvalsh(information) > 0)
+    numpy.testing.assert_allclose(information, information.T)
+
+
+def test_identity_fit_bd_is_a_stationary_point() -> None:
+    """On ``dat.bangertdrowns2004`` the optimum is interior: the score is zero and the log-likelihood is the maximum's, which ``constrOptim`` misses by 7e-8."""
+    res = ls(bd(), '~ imag', '~ imag', link='identity', method='ML')
+    score = correctness.formulas.ls_score(res.yi, res.vi, res.X, res.Z, res.alpha, 'identity', 'ML')
+    assert numpy.max(numpy.abs(score)) < 1e-6
+    assert res.fit_stats_ml.ll == pytest.approx(-17.058054672888, abs=1e-9)
+
+
+def test_identity_fit_bcg_is_a_constrained_maximum() -> None:
+    """On ``dat.bcg`` the optimum is on the boundary: ``Z alpha >= 0``, a log-likelihood above R's, and the score zero on the free directions."""
+    res = ls(bcg(), '~ ablat', '~ ablat', link='identity', method='ML')
+    tau2 = res.Z @ res.alpha
+    assert numpy.min(tau2) >= 0
+    assert res.fit_stats_ml.ll >= -7.139288984088 + 1e-7
+    active = tau2 <= 1e-8
+    assert active.any()
+    _, sv, vt = numpy.linalg.svd(res.Z[active])
+    free_directions = vt[int(numpy.sum(sv > 1e-10 * sv[0])) :].T
+    score = correctness.formulas.ls_score(res.yi, res.vi, res.X, res.Z, res.alpha, 'identity', 'ML')
+    assert numpy.max(numpy.abs(free_directions.T @ score)) < 1e-6
 
 
 @pytest.mark.parametrize('name', sorted(FLAT))
@@ -266,14 +353,14 @@ def result(name: str) -> metafopy.RMALSResult:
     return RESULTS[name]
 
 
-def check_predict(pr: metafopy.PredictResult, ref: dict[str, typing.Any], what: str) -> None:
-    refutil.close(pr.pred, ref['pred'], f'{what} pred', rtol=OPT, atol=1e-7)
-    refutil.close(pr.se, ref['se'], f'{what} se', rtol=OPT, atol=1e-7)
-    refutil.close(pr.ci_lb, ref['ci_lb'], f'{what} ci_lb', rtol=OPT, atol=1e-7)
-    refutil.close(pr.ci_ub, ref['ci_ub'], f'{what} ci_ub', rtol=OPT, atol=1e-7)
+def check_predict(pr: metafopy.PredictResult, ref: dict[str, typing.Any], what: str, rtol: float = OPT) -> None:
+    refutil.close(pr.pred, ref['pred'], f'{what} pred', rtol=rtol, atol=1e-7)
+    refutil.close(pr.se, ref['se'], f'{what} se', rtol=rtol, atol=1e-7)
+    refutil.close(pr.ci_lb, ref['ci_lb'], f'{what} ci_lb', rtol=rtol, atol=1e-7)
+    refutil.close(pr.ci_ub, ref['ci_ub'], f'{what} ci_ub', rtol=rtol, atol=1e-7)
     if ref.get('pi_lb') is not None:
-        refutil.close(pr.pi_lb, ref['pi_lb'], f'{what} pi_lb', rtol=OPT, atol=1e-7)
-        refutil.close(pr.pi_ub, ref['pi_ub'], f'{what} pi_ub', rtol=OPT, atol=1e-7)
+        refutil.close(pr.pi_lb, ref['pi_lb'], f'{what} pi_lb', rtol=rtol, atol=1e-7)
+        refutil.close(pr.pi_ub, ref['pi_ub'], f'{what} pi_ub', rtol=rtol, atol=1e-7)
 
 
 # auditme: accept[non-alphabetical-dict-keys] order follows the R script that generates the fixtures
@@ -314,7 +401,7 @@ def test_predict(case: str) -> None:
     pr = metafopy.predict(result(name), **kwargs)
     assert isinstance(pr, metafopy.methods.ls_predict.LSPredictResult)
     ref = REF[name][key]
-    check_predict(pr, ref, case)
+    check_predict(pr, ref, case, IDENTITY_FIT if name in IDENTITY_FITS else OPT)
     assert pr.pred_type == ref['pred_type']
     if ref.get('pi_se') is not None and pr.pi_se is not None:
         # metafor's pi.se is not subset to the studies without missing values

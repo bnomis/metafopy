@@ -1966,3 +1966,17 @@ kind = "warning-extra"
 detail = "The truncation point sits at an observed effect*"
 reason = "selmodel(type = 'truncest'): metafopy reports the cut a step inside the stretch with this warning where the likelihood has only a supremum at an observed effect; metafor stops at a local maximum and does not warn."
 ref = "docs/differences.md"
+
+[[known]]
+match = 'construct/ls_bangert/link="identity"'
+kind = "value-diff"
+path = ["$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$tau2", "$tau2.f", "$I2", "$H2", "$QM", "$QMp", "$M", "$H", "$alpha", "$fit.stats$ML"]
+reason = "rma(yi, vi, mods = ~ imag, scale = ~ imag, link = 'identity') of dat.bangertdrowns2004: R's constrOptim stops about 1e-5 short of the identity-link maximum (its alpha is 0.0374270 where the score is not zero), metafopy polishes the optimum on the analytic score within Z alpha >= 0 (alpha 0.0370908, log-likelihood higher than R's). The location and scale estimates and the statistics that follow from them differ by up to 1e-2 relative."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["scripts/misc_rma_ls/test/21", "scripts/misc_rma_ls/test/42", "scripts/misc_rma_ls/test/43", "scripts/misc_rma_ls/test/65", "scripts/misc_rma_ls/test/66", "scripts/misc_rma_ls/test/67", "scripts/misc_rma_ls/test/80", "scripts/misc_rma_ls/test/82", "scripts/misc_rma_ls/test/175"]
+kind = "value-diff"
+path = ["$random", "[]$random", "$vc", "$pred", "$se", "$ci.ub"]
+reason = "confint(), profile() and predict() of the identity-link location-scale fits of test_misc_rma_ls.r (link = 'identity'): R's constrOptim stops about 1e-5 short of the identity-link maximum, metafopy polishes the optimum on the analytic score within Z alpha >= 0, so the profile grids, intervals and predictions differ by up to 1e-2 relative."
+ref = "docs/differences.md"

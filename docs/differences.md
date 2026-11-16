@@ -478,11 +478,13 @@ metafor 5.2-1).
 ### Standard errors of a location-scale model on a flat scale
 
 With `link='identity'` the scale slope of this model is near zero, and the Hessian of the log-likelihood is computed by
-numerical differences that shrink to rounding error. R gives 0.539892 for the first scale standard error and metafopy 0.539621,
-a relative difference of 5e-4; R's own `r=8` and `r=4` Richardson depths already differ from each other by the same amount.
+numerical differences that shrink to rounding error. R gives 0.539892 for the first scale standard error and metafopy 0.539688,
+a relative difference of 4e-4; R's own `r=8` and `r=4` Richardson depths already differ from each other by 5e-4.
 
-*Why:* the value is rounding noise in both implementations. metafopy uses depth `hessian_r=4` by default, which agrees with R's
-`r=4` to about 3e-6; `control={'hessian_r': 8}` gives the noisy variant.
+*Why:* the value is rounding noise in both implementations. metafopy's optimum is also polished on the analytic score (see
+[Location-scale fits with link="identity"](#location-scale-fits-with-linkidentity)), so its slope differs slightly from R's, which
+moves the standard error; the default depth `hessian_r=4` gives 0.539688 here against R's `r=4` value of 0.539623, and
+`control={'hessian_r': 8}` gives the noisy variant.
 
 <div class="compare" markdown>
 <div markdown>
@@ -514,7 +516,7 @@ print(res.se_alpha)
 ```
 
 ```text
-[0.53962141 0.0155596 ]
+[0.53968806 0.01556356]
 ```
 
 </div>
@@ -1761,6 +1763,65 @@ print(res.se)
 UserWarning: 3 studies with NAs omitted from model fitting.
 UserWarning: Some yi/vi values are NA.
 [0.09955789]
+```
+
+</div>
+</div>
+
+### Location-scale fits with link="identity"
+
+With `link='identity'` metafor maximises the likelihood over `Z alpha >= 0` with `constrOptim`, which stops when its barrier objective
+changes by less than 1e-5 relative, so it ends about 1e-5 short of the maximum: the score of the scale coefficients is not zero there.
+metafopy takes the optimiser's point and polishes it on the analytic score of the scale coefficients (Fisher scoring with an active set for
+the rows with `tau2_i = 0`), so every identity-link fit ends at the maximum within `tau2_i >= 0`, which can lie on the boundary. On `dat.bcg`
+log risk ratios with `mods = ~ ablat` and `scale = ~ ablat` (ML) the scale intercept is -0.0266587 in metafopy and -0.0266760 in metafor, a
+relative difference of 6.5e-4, and metafopy's log-likelihood is the higher (-7.139288823 against -7.139288984). The fits of
+`dat.bangertdrowns2004` with `mods = scale = ~ imag` differ by up to 1e-2 relative in the scale coefficients. The correctness cases are
+`ls.fit.{ML,REML}.identity.{bd,bcg}`, `property.ls.fit.{ML,REML}.identity.{bd,bcg}` and `property.ls.links.{ML,REML}.bd`. `confint()`,
+`profile()`, `permutest()` and `vif()` refit through the same fit, so their identity-link refits are polished too. The fit is not polished with
+`optbeta=True`.
+
+*Why:* the maximum-likelihood estimate of Viechtbauer and Lopez-Lopez (2022, equations 7 to 9) is the maximiser of the log-likelihood, not a
+point within the optimiser's tolerance of it, and the correctness cases check the fit against an independent maximiser of the analytic
+log-likelihood (checked 2026-11-16, R 4.6.2, metafor 5.2-1).
+
+<div class="compare" markdown>
+<div markdown>
+
+**R, metafor 5.2-1**
+
+```r
+library(metafor)
+dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
+res <- rma(yi, vi, mods = ~ ablat, scale = ~ ablat, link = "identity", method = "ML", data = dat)
+res$alpha
+logLik(res)
+```
+
+```text
+                [,1]
+intrcpt -0.026676029
+ablat    0.002052002
+'log Lik.' -7.139288984 (df=4)
+```
+
+</div>
+<div markdown>
+
+**Python, metafopy**
+
+```python
+from metafopy import datasets, escalc, rma
+
+dat = escalc(measure='RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=datasets.load('dat.bcg'))
+res = rma('yi', 'vi', mods='~ ablat', scale='~ ablat', link='identity', method='ML', data=dat)
+print(res.alpha)
+print(round(float(res.fit_stats.loc['ll', 'ML']), 9))
+```
+
+```text
+[-0.02665867  0.00205067]
+-7.139288823
 ```
 
 </div>

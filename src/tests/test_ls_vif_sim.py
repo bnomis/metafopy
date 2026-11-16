@@ -56,14 +56,14 @@ def rows(sim: typing.Any) -> FloatArray:
     return numpy.array([[numpy.nan if v is None else v for v in refutil.as_list(r)] for r in sim], dtype=float)
 
 
-def check_part(out: metafopy.VIFResult, ref: dict[str, typing.Any], what: str, max_bad: int = 0) -> None:
+def check_part(out: metafopy.VIFResult, ref: dict[str, typing.Any], what: str, max_bad: int = 0, sim_rtol: float = 1e-4) -> None:
     refutil.close(out.vifs.to_numpy(), ref['vifs'], f'{what} vifs', rtol=1e-4)
     assert out.sim is not None
     assert out.prop is not None
     assert out.sim_type == ref['sim_type']
     expected = rows(ref['sim'])
     assert out.sim.shape == expected.shape
-    close = numpy.isclose(out.sim, expected, rtol=1e-4, atol=1e-6, equal_nan=True)
+    close = numpy.isclose(out.sim, expected, rtol=sim_rtol, atol=1e-6, equal_nan=True)
     bad = ~close.all(axis=1)
     assert bad.sum() <= max_bad, f'{what}: iterations {numpy.flatnonzero(bad).tolist()} differ'
     assert not (numpy.isnan(expected) & ~numpy.isnan(out.sim)).any(), what
@@ -102,7 +102,9 @@ def test_sim_three_location_predictors() -> None:
 def test_sim_ml_identity() -> None:
     out = any_vif(fit(LOCATION, method='ML', link='identity'), sim=8, seed=11, progbar=False)
     assert isinstance(out, metafopy.methods.ls_vif.LSVIFResult)
-    check_part(out.beta, REF['ml_identity']['beta'], 'ml beta', max_bad=3)
+    # every permuted refit has link='identity', which metafopy polishes to the maximum and R's constrOptim does not (docs/differences.md, "Location-scale
+    # fits with link=\"identity\""): the simulated VIFs agree to 1e-2 (measured 8e-3 at most), the observed ones to 1e-4
+    check_part(out.beta, REF['ml_identity']['beta'], 'ml beta', max_bad=0, sim_rtol=1e-2)
     # the scale Hessian of this fit is singular in R as well: no (G)VIFs and so nothing to simulate
     assert REF['ml_identity']['alpha']['sim'] is None
     assert out.alpha.sim is None

@@ -428,10 +428,14 @@ def cr2_is_unbiased_under_the_working_model(case: correctness.cases.Case, result
 
 
 def ls_loglik_not_below_reference(case: correctness.cases.Case, result: typing.Any) -> None:
-    """metafopy's log-likelihood is at least that of the independent maximisation, less ``1e-9``: a fit below it has stopped short of the maximum."""
+    """metafopy's log-likelihood is at least that of the independent maximisation, less ``1e-9`` of its magnitude: a fit below it has stopped short.
+
+    The magnitude is the scale ``ls_agree`` uses. The reference of an identity-link fit may end ``IDENTITY_SLACK`` outside ``tau2_i >= 0``, which on a
+    boundary optimum with a steep score lifts its log-likelihood above that of any feasible point by the score times the slack.
+    """
     reference = correctness.test_derived.ls_reference(case)
     actual = float(result.logLik(REML=case.args['method'] == 'REML'))
-    if actual < reference['ll'] - correctness.test_derived.LS_LOGLIK:
+    if actual < reference['ll'] - correctness.test_derived.LS_LOGLIK * abs(reference['ll']):
         raise AssertionError(f'{case.id}: metafopy gives log-likelihood {actual!r}, below the reference maximum {reference["ll"]!r}')
 
 

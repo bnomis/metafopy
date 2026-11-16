@@ -5,6 +5,7 @@ the scale model has a log link and with ``constrOptim`` (an adaptive logarithmic
 Nelder-Mead) when it has an identity link, which needs ``tau^2_i >= 0``. ``constrOptim`` is ported here
 step by step on top of the exact Nelder-Mead of :mod:`metafopy.core.optim`; ``nlminb`` is replaced by SciPy's BFGS
 followed by a Nelder-Mead polish, which reaches the same optimum to well within the parity tolerance.
+``constrOptim`` stops about 1e-5 short of the identity-link maximum, so :func:`polish_identity` finishes it on the analytic score (metafor does not).
 
 Source of ``constrOptim``: R ``src/library/stats/R/constrOptim.R`` (GPL-2 | GPL-3).
 """
@@ -23,12 +24,17 @@ import metafopy.core.optim
 import metafopy.core.stationarity
 import metafopy.errors
 
-__all__ = ['OptResult', 'constr_optim', 'minimise']
+__all__ = ['OptResult', 'constr_optim', 'minimise', 'polish_identity']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type Objective = collections.abc.Callable[[FloatArray], float]
 
 HUGE = 1e100
+ACTIVE_TOL = 1e-8  # rows of Z alpha this close to zero (relative to the largest) start in the active set
+GRAD_TOL = 1e-10  # relative size of the projected score, and of a negative multiplier, at which polish_identity stops
+SNAP = 1e-13  # the slack, relative to the largest row of Z alpha, to which an active row is brought
+CUT_MARGIN = 1e-9  # a step cut at a row stops this fraction short of it, so that rounding cannot take the row below zero
+POLISH_IDENTITY_ITERATIONS = 100  # Fisher-scoring steps of polish_identity: it converges in a handful when it converges at all
 POLISH_ITERATIONS = 2000  # the simplex polish is capped: it converges within a few hundred iterations when it improves at all, and spins on a ridge
 
 
@@ -140,3 +146,104 @@ def minimise(f: Objective, x0: FloatArray, *, method: str = 'BFGS', maxiter: int
     if best_val >= HUGE:
         raise metafopy.errors.EstimationError('Optimizer did not achieve convergence.')
     return OptResult(par=best_x, value=best_val, iterations=nit)
+
+
+def snap_to_boundary(
+    alpha: FloatArray,
+    ll: float,
+    loglik: Objective,
+    Z: FloatArray,
+    free: numpy.typing.NDArray[numpy.bool_],
+    rows: list[int],
+) -> tuple[FloatArray, float]:
+    """Move ``alpha`` by the shortest step that brings the active ``rows`` of ``Z alpha`` down to ``SNAP``, if that is feasible and no worse.
+
+    An active row that started a little inside the region would otherwise keep its slack, which costs the log-likelihood the score times the slack.
+    """
+    za = Z @ alpha
+    target = SNAP * max(1.0, float(numpy.max(numpy.abs(za))))
+    gap = numpy.minimum(za[rows], target) - za[rows]
+    if not numpy.any(gap):
+        return alpha, ll
+    cand = alpha.copy()
+    cand[free] += numpy.linalg.lstsq(Z[numpy.ix_(rows, numpy.flatnonzero(free))], gap, rcond=None)[0]
+    new_ll = loglik(cand)
+    if math.isfinite(new_ll) and new_ll >= ll:
+        return cand, new_ll
+    return alpha, ll
+
+
+def polish_identity(
+    start: FloatArray,
+    loglik: Objective,
+    score: collections.abc.Callable[[FloatArray], FloatArray],
+    information: collections.abc.Callable[[FloatArray], FloatArray],
+    Z: FloatArray,
+    free: numpy.typing.NDArray[numpy.bool_],
+) -> FloatArray:
+    """Maximise the identity-link log-likelihood from ``start`` by Fisher scoring within ``Z alpha >= 0``.
+
+    Newton steps with the expected information run on the free coefficients, projected onto the null space of the active rows (``z_i' alpha = 0``),
+    cut at the first inactive row they would take below zero (which then joins the set) and halved while the log-likelihood does not rise. A row
+    leaves the set when its KKT multiplier is negative. The result satisfies ``Z alpha >= 0`` and its log-likelihood is no lower than the start's;
+    the start is returned if it cannot be evaluated.
+    """
+    alpha = start.copy()
+    ll = loglik(alpha)
+    if not math.isfinite(ll) or not free.any():
+        return start
+    Zf = Z[:, free]
+    za0 = Z @ alpha
+    active = {i for i, v in enumerate(za0) if v <= ACTIVE_TOL * max(1.0, float(numpy.max(numpy.abs(za0))))}
+    for _ in range(POLISH_IDENTITY_ITERATIONS):
+        rows = sorted(active)
+        A = Zf[rows]
+        if rows:
+            alpha, ll = snap_to_boundary(alpha, ll, loglik, Z, free, rows)
+        g = score(alpha)[free]
+        info = information(alpha)[numpy.ix_(free, free)]
+        if rows:
+            _, sv, vt = numpy.linalg.svd(A)
+            rank = int(numpy.sum(sv > 1e-10 * sv[0]))
+            N = vt[rank:].T
+        else:
+            N = numpy.eye(Zf.shape[1])
+        gp = N.T @ g
+        tol = GRAD_TOL * (1 + numpy.linalg.norm(g))
+        if numpy.linalg.norm(gp) <= tol:
+            if not rows:
+                break
+            lam = numpy.linalg.lstsq(A.T, -g, rcond=None)[0]
+            worst = int(numpy.argmin(lam))
+            if lam[worst] >= -tol:
+                break
+            active.discard(rows[worst])
+            continue
+        step = N @ numpy.linalg.lstsq(N.T @ info @ N, gp, rcond=None)[0]
+        za = Z @ alpha
+        zd = Zf @ step
+        blocking = None
+        t_max = 1.0
+        for i in range(Z.shape[0]):
+            if i not in active and zd[i] < 0:
+                t = -za[i] / zd[i] * (1 - CUT_MARGIN)
+                if t < t_max:
+                    t_max, blocking = t, i
+        t = t_max
+        cand = alpha
+        new_ll = ll
+        improved = False
+        for _ in range(60):
+            cand = alpha.copy()
+            cand[free] += t * step
+            new_ll = loglik(cand)
+            if math.isfinite(new_ll) and new_ll >= ll:
+                improved = True
+                break
+            t /= 2
+        if not improved:
+            break
+        alpha, ll = cand, new_ll
+        if blocking is not None and t == t_max:
+            active.add(blocking)
+    return alpha

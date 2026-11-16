@@ -60,31 +60,6 @@ Fix direction: reproduce the R message with `rma(..., mods = ~ ablat * alloc, sc
 make metafopy refuse with the same error or accept the difference in `src/audit/data/known.toml` and `docs/differences.md`. A change to `src/metafopy/`
 goes through a spec first, or a small task list if the fix is local.
 
-## The location-scale identity-link fit stops about 1e-5 short of the maximum
-
-<!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
-Found on 2026-11-15 by the location-scale correctness cases (`agents/specs/correctness-location-scale/mismatches.md`, item `ls_identity_opt`); the user
-answered *follow the reference* on 2026-11-15. The strict expected failures `ls.fit.{ML,REML}.identity.{bd,bcg}` and
-`property.ls.fit.{ML,REML}.identity.{bd,bcg}` in `src/tests/correctness/cases/location_scale.toml`, and `property.ls.links.{ML,REML}.bd` (the
-identity-link and log-link fits of one two-group scale model span the same variances), show that the identity-link `alpha` differs from the independent
-reference (`formulas.ls_reference_fit`) by about 1e-5 relative (tolerance 1e-6) and the log-likelihood by 1e-8 to 2e-7 (tolerance 1e-9). On
-`dat.bangertdrowns2004` with `imag` in both parts the ML log-likelihood is -17.058054743801 in metafopy against -17.058054672888 in the reference; on
-`dat.bcg` with `ablat` in both parts, -7.139288984088 against -7.139288817730. The reference ends higher in all four fits and satisfies
-`Z alpha >= 0`. The log-link fits agree to better than 1e-9. metafor's own identity-link values are not on record: no parity fixture in
-`src/tests/reference/phase5/location_scale.json` fits these models.
-<!-- doc-counts: accept-end -->
-
-Suspected cause (not confirmed): `constr_optim` in `src/metafopy/models/rma_ls_opt.py` is a port of R's `constrOptim` (adaptive log barrier around
-Nelder-Mead), which stops at its own convergence tolerance, and metafopy's identity-link path in `src/metafopy/models/rma_ls_fit.py` takes the result
-without a final polish.
-
-Fix direction: polish the identity-link optimum, for example by a final Newton or BFGS step on the analytic score inside the feasible region, then set
-the ten cases to `pass`. Mark the R parity fixtures that hold an identity-link fit as differing at the 1e-4 level `src/tests/test_rma_ls.py` accepts,
-add the matching `src/audit/data/known.toml` entries, and add the difference to `docs/differences.md` under "Where metafor departs from its
-reference". A change to `src/metafopy/` goes through a spec first, or a small task list if the fix is local.
-
-Spec: none (small item); tasks: `agents/tasks/ls-identity-polish/tasks-1.md`.
-
 ## The location-scale profile-likelihood intervals of the scale coefficients are not crossings where the profile is flat
 
 <!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
