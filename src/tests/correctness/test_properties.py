@@ -103,6 +103,8 @@ def test_scale_invariance(method: str, data: tuple[FloatArray, FloatArray], scal
     ``maxiter``; such a copy is not an example of the property, as the unscaled data are not when they do not converge."""
     yi, vi = data
     before = fit_or_reject(yi, vi, method)
+    # R metafor 5.2-1 also stops with "Iterative SJ estimator did not converge." on the scaled copy (scale 2) of the data that made SJIT fail here, at
+    # maxiter 1000 (checked 2026-11-16, agents/tasks/sjit-scaled-convergence/tasks-1.md), so rejecting such a copy matches R.
     after = fit_or_reject(yi * scale, vi * scale**2, method)
     close(method, 'tau2', after.tau2, before.tau2 * scale**2)
     close(method, 'beta', after.beta, before.beta * scale)

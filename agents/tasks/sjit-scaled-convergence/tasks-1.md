@@ -68,7 +68,7 @@ programs give.
 
 ## Task 2: Match R where metafopy alone fails to converge, or record that R fails too
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item's fix direction (fix the iteration if R converges; otherwise close with the result)
@@ -78,40 +78,40 @@ rejected or no longer is.
 
 **Subtasks:**
 
-- [ ] Read Task 1's verdict. If it is missing, stop as `blocked`
-- [ ] **If R does not converge either:** add a comment above the `fit_or_reject` call for the scaled copy in `test_scale_invariance`
+- [x] Read Task 1's verdict. If it is missing, stop as `blocked`
+- [x] **If R does not converge either:** add a comment above the `fit_or_reject` call for the scaled copy in `test_scale_invariance`
       (`src/tests/correctness/test_properties.py`): R metafor 5.2-1 also stops with "Iterative SJ estimator did not converge." on the item's scaled
       data at `maxiter` 1000, checked on the date of this task, so rejecting such a copy matches R. Change no code, and mark the other branch's subtasks
       ("In that branch") not applicable
-- [ ] **If R converges and metafopy does not:** this is a port difference, which metafopy fixes to match R. Compare the `SJIT` branch of
+- [x] **If R converges and metafopy does not:** this is a port difference, which metafopy fixes to match R. Compare the `SJIT` branch of
       `src/metafopy/models/tau2.py` line by line with `rma.uni`'s `SJIT` loop in metafor 5.2-1 (`R/rma.uni.r` in the installed source under
       `$METAFOPY_AUDIT_RLIB/metafor`, or the CRAN 5.2-1 source), find the line where they differ (starting value, update, stopping rule or the
       `maxiter` check), and change metafopy's to R's. Fix it in `src/metafopy/models/tau2.py` (called from `src/metafopy/models/rma_uni.py`)
-- [ ] In that branch, before committing, check the change does not alter output beyond matching R: `pytest src/tests/test_rma_uni_extras.py
+- [x] (not applicable, R does not converge) In that branch, before committing, check the change does not alter output beyond matching R: `pytest src/tests/test_rma_uni_extras.py
       src/tests/test_rma_uni_parity.py src/tests/correctness` must pass unchanged. If any existing R parity value or correctness case changes, or the
       fix would change metafopy's `SJIT` result on data where it already converged, stop as `blocked` and report what changed: that needs the user
-- [ ] In that branch, add a regression test to `src/tests/test_rma_uni_extras.py`: the scaled copy with the property test's `CONTROL` gives R's `tau2`
+- [x] (not applicable, R does not converge) In that branch, add a regression test to `src/tests/test_rma_uni_extras.py`: the scaled copy with the property test's `CONTROL` gives R's `tau2`
       and `beta` (from Task 1's Notes, absolute tolerance 1e-10), with a comment naming this list and the R version
-- [ ] In that branch, if the scaled copy now converges, leave `fit_or_reject` in place (other data can still fail to converge) and update the docstring
+- [x] (not applicable, R does not converge) In that branch, if the scaled copy now converges, leave `fit_or_reject` in place (other data can still fail to converge) and update the docstring
       of `test_scale_invariance` so it no longer implies metafopy fails where R converges
 
 **Acceptance Criteria:**
 
-- [ ] R does not converge: `test_scale_invariance` carries the comment recording R's result, and no file under `src/metafopy/` changes
-- [ ] R converges: metafopy gives R's `tau2` and `beta` on the scaled copy, the regression test passes, and no existing parity value changes
+- [x] R does not converge: `test_scale_invariance` carries the comment recording R's result, and no file under `src/metafopy/` changes
+- [x] (not applicable) R converges: metafopy gives R's `tau2` and `beta` on the scaled copy, the regression test passes, and no existing parity value changes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_properties.py src/tests/test_rma_uni_extras.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_properties.py src/tests/test_rma_uni_extras.py` passes
 
 **Notes:**
 
 - Depends on Task 1
 - Key files: `src/tests/correctness/test_properties.py` (`test_scale_invariance`, `fit_or_reject`, `CONTROL`), `src/metafopy/models/tau2.py`,
   `src/tests/test_rma_uni_extras.py`
-- The 2026-11-15 probe in the header expects the first branch
+- The 2026-11-15 probe in the header expects the first branch; Task 1 confirmed it on 2026-11-16, so only the comment in `test_scale_invariance` changed
 
 ---
 
