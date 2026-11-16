@@ -4,26 +4,6 @@ Open work only, in implementation order, nearest first. Finished items move to
 `DONE.md` unchanged. See the shared `todo-add` and `todo-review` skills for
 the shape of an item.
 
-## Audit harness tests assume POSIX and fail on Windows
-
-<!-- doc-counts: accept-start found on 2026-11-16 - a dated record, not a claim about the present -->
-Found on 2026-11-16 by a TODO review in CI run 43832306599 on `ff7eb2b`, Windows job. In `src/tests/test_harness_engine.py`:
-`test_an_r_shard_process_starts_on_this_platform` ("preexec_fn is not supported on Windows platforms"), `test_a_process_past_the_memory_limit_is_killed`
-(`assert None == 'memory'`), `test_resident_bytes_of_this_process_is_positive_and_of_a_finished_one_none` (`assert None is not None`),
-`test_a_python_shard_process_streams_a_start_line_before_each_result` (`audit.pyrun` exits with status 1) and
-`test_run_cases_returns_a_result_for_every_case_when_a_python_process_dies` (exit status 1, not 3). In `src/tests/test_harness_scripts.py`:
-`test_lost_script_gives_r_killed_at_the_dead_unit_and_one_not_run` ("module 'signal' has no attribute 'SIGALRM'"),
-`test_stream_scripts_lines_read_back_and_sum_to_run_script` and `test_run_returns_every_script_when_the_python_process_dies`.
-<!-- doc-counts: accept-end -->
-
-Cause: not confirmed. The audit harness (`src/audit/`) uses `preexec_fn`, resource limits, resident-memory reads and `SIGALRM`, which Windows lacks; the
-audit runs on macOS and Linux only (`src/audit/README.md`).
-
-Fix direction: decide per test whether the harness supports Windows. Where it does not, skip the test on Windows with the reason and say so in
-`src/audit/README.md`; where it should, fix the harness (the `audit.pyrun` exit status first, since its log names the error).
-
-Spec: none (small item); tasks: `agents/tasks/audit-windows-tests/tasks-1.md`.
-
 ## Numerical tests whose results or tolerances hold only on the development machine
 
 <!-- doc-counts: accept-start found on 2026-11-16 - a dated record, not a claim about the present -->
