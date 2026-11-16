@@ -153,7 +153,7 @@ environments can be compared.
 
 ## Task 4: The probe workflow and the draft pull request
 
-**Status:** todo
+**Status:** in-progress
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Windows and the CI Mac, Decisions (D1 *Draft pull request*, D2 *keep*)

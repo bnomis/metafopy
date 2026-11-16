@@ -1,0 +1,39 @@
+name: Platform probe
+
+# Measures what each cross-platform numerical failure group compares, on every CI platform:
+# agents/specs/cross-platform-numerics/spec.md. The figures are in the probe-<OS> artifacts.
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - uv.lock
+      - src/metafopy/**
+      - src/tests/correctness/**
+      - bin/platform-probe.py
+      - .github/workflows/platform-probe.yml
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-26.04, macos-26, windows-2025-vs2026]
+        python-version: ["3.14.8"]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.1
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v10.3.0 # v10.3.0
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: uv sync --locked --all-extras
+      - run: uv run python bin/platform-probe.py --out probe-${{ runner.os }}.json
+      - name: Upload the probe output
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: probe-${{ runner.os }}
+          path: probe-${{ runner.os }}.json
