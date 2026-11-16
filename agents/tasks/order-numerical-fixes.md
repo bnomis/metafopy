@@ -56,6 +56,6 @@ case is reported before it is set to `mismatch`. A probe of those cases passed o
 | 7 | `selmodel-prec-stepfun/tasks-1.md` | 3 | a new halfnorm precision case fails, only if one does (Task 1) | merged 1e10abc |
 | 8 | `sjit-scaled-convergence/tasks-1.md` | - | - | merged 3f8a65b |
 
-Checkpoint after 8: running
+Checkpoint after 8: passed 8568 passed, 37 skipped, 14 xfailed
 
 Checkpoint after 3: passed 8499 passed, 37 skipped, 38 xfailed
