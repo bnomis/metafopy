@@ -4,6 +4,66 @@ Open work only, in implementation order, nearest first. Finished items move to
 `DONE.md` unchanged. See the shared `todo-add` and `todo-review` skills for
 the shape of an item.
 
+## A harness test runs Rscript with no skip where R is missing
+
+<!-- doc-counts: accept-start found on 2026-11-16 - a dated record, not a claim about the present -->
+Found on 2026-11-16 by a TODO review in CI run 43832306599 on `ff7eb2b` (2026-11-16 08:34). `test_r_takes_the_cluster_port_it_is_given`
+(`src/tests/test_harness_engine.py`) fails on Linux and macOS with `FileNotFoundError: [Errno 2] No such file or directory: 'Rscript'`. The CI test
+workflow installs no R (only `.github/workflows/r-fixtures.yml` does), and the test has no skip for a missing `Rscript`. CI on `main` has failed on every
+completed run since 2026-11-01 20:57 (`2fc8c6d`); the last pass was run 41344495853 on `2abba09`.
+<!-- doc-counts: accept-end -->
+
+Fix direction: skip the test when `shutil.which('Rscript')` is `None`, with the reason, as the other R-backed tests do; check that it still runs locally.
+
+## Audit harness tests assume POSIX and fail on Windows
+
+<!-- doc-counts: accept-start found on 2026-11-16 - a dated record, not a claim about the present -->
+Found on 2026-11-16 by a TODO review in CI run 43832306599 on `ff7eb2b`, Windows job. In `src/tests/test_harness_engine.py`:
+`test_an_r_shard_process_starts_on_this_platform` ("preexec_fn is not supported on Windows platforms"), `test_a_process_past_the_memory_limit_is_killed`
+(`assert None == 'memory'`), `test_resident_bytes_of_this_process_is_positive_and_of_a_finished_one_none` (`assert None is not None`),
+`test_a_python_shard_process_streams_a_start_line_before_each_result` (`audit.pyrun` exits with status 1) and
+`test_run_cases_returns_a_result_for_every_case_when_a_python_process_dies` (exit status 1, not 3). In `src/tests/test_harness_scripts.py`:
+`test_lost_script_gives_r_killed_at_the_dead_unit_and_one_not_run` ("module 'signal' has no attribute 'SIGALRM'"),
+`test_stream_scripts_lines_read_back_and_sum_to_run_script` and `test_run_returns_every_script_when_the_python_process_dies`.
+<!-- doc-counts: accept-end -->
+
+Cause: not confirmed. The audit harness (`src/audit/`) uses `preexec_fn`, resource limits, resident-memory reads and `SIGALRM`, which Windows lacks; the
+audit runs on macOS and Linux only (`src/audit/README.md`).
+
+Fix direction: decide per test whether the harness supports Windows. Where it does not, skip the test on Windows with the reason and say so in
+`src/audit/README.md`; where it should, fix the harness (the `audit.pyrun` exit status first, since its log names the error).
+
+## Numerical tests whose results or tolerances hold only on the development machine
+
+<!-- doc-counts: accept-start found on 2026-11-16 - a dated record, not a claim about the present -->
+Found on 2026-11-16 by a TODO review in CI run 43832306599 on `ff7eb2b` (Python 3.14.8; Linux `ubuntu-26.04`, macOS `macos-26`, Windows
+`windows-2025-vs2026`), while the final checkpoint of `agents/tasks/order-numerical-fixes.md` passed on the development Mac the same day. Failures
+beyond the two harness items above:
+
+- `ls.*.bcg` correctness cases: on Windows the ML reference fit ends at another optimum (`ls.fitstats.ML.bcg` ll -7.5393 against -9.4736;
+  `ls.predict.fitted.ML.z.bcg` "expected a nonnegative input, got -1.5653430049987447e+22"); on Linux every REML case says "the reference fit did not
+  converge" (`ls_reference_fit`: "no start converged (log link, REML): Desired error not necessarily achieved due to precision loss.").
+- `ls.fit.ML.identity.bcg` (Windows, Linux) and `ls.fit.REML.identity.bcg` (Linux): `alpha` off by 4e-8 to 3e-6 at tolerance 1e-6.
+- `selmodel.decreasing.bangertdrowns2004` on all three: the reference beta is -4.537 (Linux), -2248.16 (macOS) or the optimiser stops with "Positive
+  directional derivative for linesearch" (Windows); metafopy gives 0.10569.
+- `glmm.fit.or.um.rs.ml.jackson2018.pneumonia` and `glmm.cor.um.rs.ml.bcg` (Windows, Linux): "UM.RS: the score at the optimum is 1.05e-06 to 3.02e-06,
+  not below 1e-06".
+- `test_nchg.py::test_ml_se_matches_spec_measurement_at_tight_optimum`: `pneumonia` (Windows, 0.8881022865 against 0.88810229648 at 8.9e-09) and
+  `collins1985a` (Linux, 0.1363854789 against 0.13638547727 at 1.4e-09).
+- `property.mv.reml-score.kon` (Linux): REML score 1.3354e-05, theory 0.
+- `test_stepcon.py::test_inference[rau_stepcon_mods]` (Windows, Linux); `test_ls_vif.py::test_sim_permutes_the_data_variables_as_r` (all three);
+  `test_audit4_numerics.py::test_permutest_ls_boundary_fits_match_r` (all three); `test_rma_ls.py::test_identity_fit_is_the_maximum[bcg_year_identity]`
+  and `test_selmodel.py::test_print[hack_halfnorm_less]` (macOS).
+<!-- doc-counts: accept-end -->
+
+Cause: not confirmed. Suspected: the optimisers' stopping points and the floating-point results of the platforms' BLAS and libm builds differ, and the
+tests compare against a reference fit or an absolute tolerance measured on one machine. Some tests were added in the numerical fixes order on
+2026-11-15 and 2026-11-16 (the CM.EL tight-optimum check, the identity-link polish).
+
+Fix direction: reproduce one failure of each group on Linux (a container, or CI's artifacts), then decide per group whether metafopy, the reference fit
+or the tolerance is wrong: fix the code, make the reference fit robust (more starts, a tighter control), or set the tolerance from the measured spread
+across platforms with the date. A change to `src/metafopy/` goes through a spec first.
+
 ## The audit lists the exact permutest of uni_mods as an R kill and has no entry for it
 
 <!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
@@ -76,6 +136,20 @@ only adds `n1 * log(delta[0])` to the ll and never moves the estimates. See `.se
 Fix direction: decide whether `selmodel` rejects a `delta[0]` other than 1 on a step-function model, or normalises with the user's `delta[0]` (which
 departs from metafor). Name the decision in `docs/differences.md` under "Where metafor departs from its reference". A change to `src/metafopy/` goes
 through a spec first.
+
+## ls.confint.scale.ML.bcg stays an expected failure with no decision
+
+<!-- doc-counts: accept-start found on 2026-11-16 - a dated record, not a claim about the present -->
+Found on 2026-11-16 by a TODO review. Task list `agents/tasks/ls-profile-crossings/tasks-1.md` (its closing notes) left the case
+`ls.confint.scale.ML.bcg` in `src/tests/correctness/cases/location_scale.toml` as `status = "mismatch"`: for the upper bound of `alpha.2`,
+`formulas.ls_profile_ll` refits from two starts and ends on the `tau2 = 0` branch at a = 1.3169166758 (2 (ll_max - ll) 3.8686, above the cut-off
+3.8415), where metafopy keeps the continuous branch (3.6850) and returns the interval end 1.3598 with a `>` sign. Every other mismatch case is accepted as
+a source difference or has an item; this one has neither.
+<!-- doc-counts: accept-end -->
+
+Fix direction: find which branch is the profile likelihood's maximum at a = 1.3169 (refit over a grid of starts, compare both log-likelihoods). If the
+`tau2 = 0` branch is higher, metafopy's profile misses it and is a defect to fix; if the continuous branch is, the reference refit is wrong, so fix
+`formulas.ls_profile_ll` and set the case to `pass`.
 
 ## Simmonds and Higgins (2016) Fig 1 one-stage random effects differs from metafopy and R metafor
 
