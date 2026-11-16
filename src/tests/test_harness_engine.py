@@ -39,6 +39,9 @@ def test_a_process_that_exits_non_zero_by_itself_died(tmp_path: pathlib.Path, mo
     assert audit.engine.watch(proc, tmp_path / 'out.jsonl', 30, 1 << 40) == 'died'
 
 
+@refutil.posix_only(
+    'the audit caps and reads memory with resource and /proc-style resident-memory reads, which Windows lacks; the audit runs on macOS and Linux'
+)
 def test_a_process_past_the_memory_limit_is_killed(tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(audit.config, 'POLL_SECONDS', 0.1)
     code = 'import time; data = bytearray(600 * 1024**2); time.sleep(60)'
@@ -47,6 +50,7 @@ def test_a_process_past_the_memory_limit_is_killed(tmp_path: pathlib.Path, monke
     assert proc.returncode is not None
 
 
+@refutil.posix_only('the audit reads resident memory through POSIX facilities, which Windows lacks; the audit runs on macOS and Linux')
 def test_resident_bytes_of_this_process_is_positive_and_of_a_finished_one_none() -> None:
     size = audit.engine.resident_bytes(os.getpid())
     assert size is not None
@@ -83,6 +87,7 @@ def test_the_memory_cap_is_set_where_the_platform_allows_it(monkeypatch: pytest.
     assert calls == [(resource.RLIMIT_AS, (audit.config.MEMORY_LIMIT, audit.config.MEMORY_LIMIT))]
 
 
+@refutil.posix_only('the audit starts R shards with preexec_fn, which Windows lacks; the audit runs on macOS and Linux')
 def test_an_r_shard_process_starts_on_this_platform() -> None:
     proc = subprocess.run([sys.executable, '-c', 'pass'], check=False, preexec_fn=audit.rdriver.limit_memory)
     assert proc.returncode == 0
@@ -137,6 +142,7 @@ def test_a_stalled_r_shard_reason_is_still_recognised_as_a_timeout() -> None:
     assert audit.pyrun.r_timed_out('R did not return within 90s (timeout)')
 
 
+@refutil.posix_only('audit.pyrun times cases out with SIGALRM, which Windows lacks; the audit runs on macOS and Linux')
 def test_a_python_shard_process_streams_a_start_line_before_each_result(tmp_path: pathlib.Path) -> None:
     first, second = 'one', 'two'
     cases = [{'id': name, 'axis': 'x', 'call': {'fn': 'nosuchfunction'}} for name in (first, second)]
@@ -186,6 +192,9 @@ with open(sys.argv[2], 'a') as f:
 """
 
 
+@refutil.posix_only(
+    'audit.pyrun times cases out with SIGALRM and the engine reads POSIX signal exit codes, which Windows lacks; the audit runs on macOS and Linux'
+)
 def test_run_cases_returns_a_result_for_every_case_when_a_python_process_dies(tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(audit.config, 'POLL_SECONDS', 0.05)
 

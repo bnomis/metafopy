@@ -29,7 +29,7 @@ Windows exists only in CI; this list cannot run CI, so the skips are checked on 
 
 ## Task 1: Skip the audit harness tests on Windows
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item's fix direction, as settled by the approved plan (skip on Windows with the reason; say so in `src/audit/README.md`)
@@ -38,37 +38,40 @@ Windows exists only in CI; this list cannot run CI, so the skips are checked on 
 
 **Subtasks:**
 
-- [ ] Read the Windows job's log of run 43883708179 for the two tests whose cause the table does not name (`gh run view 43883708179 --log-failed`, grep
+- [x] Read the Windows job's log of run 43883708179 for the two tests whose cause the table does not name (`gh run view 43883708179 --log-failed`, grep
       for each test name and read its traceback; read-only): `test_a_python_shard_process_streams_a_start_line_before_each_result` (the `py-0.log` error
       of `audit.pyrun`) and `test_stream_scripts_lines_read_back_and_sum_to_run_script`. Record each cause in this task's Notes
-- [ ] If either cause is not a POSIX facility of the harness (`preexec_fn`, `resource` limits, resident-memory reads, `SIGALRM`, signal exit codes) -
+- [x] If either cause is not a POSIX facility of the harness (`preexec_fn`, `resource` limits, resident-memory reads, `SIGALRM`, signal exit codes) -
       for example a path or encoding bug that would also matter on POSIX - do not skip that test: stop as `blocked` and name the cause, since the
       approved plan covers only tests that need POSIX
-- [ ] Add to `src/tests/refutil.py`, beside `linux_only` and `macos_only`, a marker
+- [x] Add to `src/tests/refutil.py`, beside `linux_only` and `macos_only`, a marker
       `posix_only = pytest.mark.skipif(sys.platform == 'win32', reason=...)` taking the reason per use, or a function `posix_only(reason: str)` that
       returns the marker, so each test names its own facility
-- [ ] Mark each of the eight tests with it, the reason naming the facility (for example "the audit harness caps memory with preexec_fn and resource,
+- [x] Mark each of the eight tests with it, the reason naming the facility (for example "the audit harness caps memory with preexec_fn and resource,
       which Windows lacks; the audit runs on macOS and Linux"). If `agents/tasks/rscript-skip-guard/tasks-1.md` added `needs_rscript` to the same file,
       keep both markers where both apply
-- [ ] Add one line to `src/audit/README.md`, near the top: the audit runs on macOS and Linux; it uses `preexec_fn`, resource limits, resident-memory
+- [x] Add one line to `src/audit/README.md`, near the top: the audit runs on macOS and Linux; it uses `preexec_fn`, resource limits, resident-memory
       reads and `SIGALRM`, which Windows lacks, and its harness tests are skipped there
 
 **Acceptance Criteria:**
 
-- [ ] The eight tests carry the Windows skip with a reason each; on the development Mac they still run and pass
-- [ ] `src/audit/README.md` says which platforms the audit runs on and why not Windows
-- [ ] No test outside the eight changes, and no file under `src/audit/` other than `README.md` changes
+- [x] The eight tests carry the Windows skip with a reason each; on the development Mac they still run and pass
+- [x] `src/audit/README.md` says which platforms the audit runs on and why not Windows
+- [x] No test outside the eight changes, and no file under `src/audit/` other than `README.md` changes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_harness_engine.py src/tests/test_harness_scripts.py -rs` passes and reports no test skipped on the development Mac other
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_harness_engine.py src/tests/test_harness_scripts.py -rs` passes and reports no test skipped on the development Mac other
       than any skipped before this task
 
 **Notes:**
 
 - Depends on `agents/tasks/rscript-skip-guard/tasks-1.md` (merged): both edit `src/tests/test_harness_engine.py` and `src/tests/refutil.py`
+- Causes read from run 43883708179: both `test_a_python_shard_process_streams_a_start_line_before_each_result` and
+  `test_stream_scripts_lines_read_back_and_sum_to_run_script` fail with `AttributeError: module 'signal' has no attribute 'SIGALRM'` at
+  `src/audit/pyrun.py:124`, a POSIX facility, so both are skipped
 - Key files: `src/tests/test_harness_engine.py`, `src/tests/test_harness_scripts.py`, `src/tests/refutil.py`, `src/audit/README.md`
 
 ---
