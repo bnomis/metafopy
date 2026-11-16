@@ -25,3 +25,6 @@
 | [TODO.md: location-scale profile crossings](../../TODO.md) | [tasks-1.md](ls-profile-crossings/tasks-1.md) - confirm the two causes, the multi-start refit, the uncapped search interval, the difference recorded, closing | 1 | 2026-11-15 |
 | [selmodel: stepfun with prec](../specs/selmodel-prec-stepfun/spec.md) | [tasks-1.md](selmodel-prec-stepfun/tasks-1.md) - halfnorm precision cases, the `InputError`, the difference recorded and the audit, the fixed-`delta[0]` item, closing | 1 | 2026-11-15 |
 | [TODO.md: SJIT on scaled data](../../TODO.md) | [tasks-1.md](sjit-scaled-convergence/tasks-1.md) - the R check, match R or record, closing | 1 | 2026-11-15 |
+| [TODO.md: Rscript skip guard](../../TODO.md) | [tasks-1.md](rscript-skip-guard/tasks-1.md) - skip the cluster-port test where Rscript is missing, closing | 1 | 2026-11-16 |
+| [TODO.md: audit harness tests on Windows](../../TODO.md) | [tasks-1.md](audit-windows-tests/tasks-1.md) - skip the POSIX harness tests on Windows, the README note, closing | 1 | 2026-11-16 |
+| [Cross-platform numerics](../specs/cross-platform-numerics/spec.md) | [tasks-1.md](cross-platform-numerics/tasks-1.md) - prerequisites, the Linux container, the probe, the probe workflow and draft pull request, the failure groups, the CI round, closing | 1 | 2026-11-16 |

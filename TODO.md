@@ -15,6 +15,8 @@ completed run since 2026-11-01 20:57 (`2fc8c6d`); the last pass was run 41344495
 
 Fix direction: skip the test when `shutil.which('Rscript')` is `None`, with the reason, as the other R-backed tests do; check that it still runs locally.
 
+Spec: none (small item); tasks: `agents/tasks/rscript-skip-guard/tasks-1.md`.
+
 ## Audit harness tests assume POSIX and fail on Windows
 
 <!-- doc-counts: accept-start found on 2026-11-16 - a dated record, not a claim about the present -->
@@ -32,6 +34,8 @@ audit runs on macOS and Linux only (`src/audit/README.md`).
 
 Fix direction: decide per test whether the harness supports Windows. Where it does not, skip the test on Windows with the reason and say so in
 `src/audit/README.md`; where it should, fix the harness (the `audit.pyrun` exit status first, since its log names the error).
+
+Spec: none (small item); tasks: `agents/tasks/audit-windows-tests/tasks-1.md`.
 
 ## Numerical tests whose results or tolerances hold only on the development machine
 
@@ -63,6 +67,8 @@ tests compare against a reference fit or an absolute tolerance measured on one m
 Fix direction: reproduce one failure of each group on Linux (a container, or CI's artifacts), then decide per group whether metafopy, the reference fit
 or the tolerance is wrong: fix the code, make the reference fit robust (more starts, a tighter control), or set the tolerance from the measured spread
 across platforms with the date. A change to `src/metafopy/` goes through a spec first.
+
+Spec: `agents/specs/cross-platform-numerics/spec.md`; tasks: `agents/tasks/cross-platform-numerics/tasks-1.md`.
 
 ## The audit lists the exact permutest of uni_mods as an R kill and has no entry for it
 
