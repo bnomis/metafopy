@@ -282,7 +282,7 @@ bounds of Viechtbauer and Lopez-Lopez (2022) are found.
 
 ## Task 4: Record the difference in the audit ledger and the user guide
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Source Reference:** the item's fix direction (`known.toml`, `docs/differences.md`)
@@ -292,41 +292,41 @@ explains them under "Where metafor departs from its reference".
 
 **Subtasks:**
 
-- [ ] Run the location-scale `confint` and `profile` slice of the audit from the worktree, against the main checkout's R oracle, in the background:
+- [x] Run the location-scale `confint` and `profile` slice of the audit from the worktree, against the main checkout's R oracle, in the background:
       `main=$(git worktree list --porcelain | sed -n '1s/^worktree //p'); METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib
       METAFOPY_AUDIT_WORK="$main/.audit" bin/metafor-audit.sh --only '*/confint/ls_*' --only '*/profile/ls_*'`. If `check-r` reports that the R
       library is missing or differs from `src/audit/data/r-versions.json`, stop as `blocked` and say so; never pass `--allow-r-drift`
-- [ ] For each finding the run reports on a scale-coefficient bound or a profile log-likelihood, check that metafopy's refit has the higher
+- [x] For each finding the run reports on a scale-coefficient bound or a profile log-likelihood, check that metafopy's refit has the higher
       log-likelihood (or that the bound lies outside metafor's capped interval), then add a `[[known]]` entry to `src/audit/data/known.toml` matching
       exactly those case ids, with `kind`, `path`, a `reason` (metafor refits once from its default start and caps the interval at ten times the
       estimate; metafopy keeps the highest of three refits and searches `10 crit se`) and `ref = "docs/differences.md"`. Update the reasons of the
       existing `*/confint/ls_na*` and `*/confint/ls_bcg*` entries if their figures change, and remove an entry the rerun reports as stale. Add no
       entry for a finding the run does not report
-- [ ] Rerun the same command and check that its report lists no finding left from this list. If it lists any other finding, look for it in the
+- [x] Rerun the same command and check that its report lists no finding left from this list. If it lists any other finding, look for it in the
       newest earlier report under `$main/.audit/runs/`; one that is not there is new with this list, so stop as `blocked` naming it
-- [ ] Run `METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib METAFOPY_AUDIT_WORK="$main/.audit" bin/metafor-audit.sh --recall` in the
+- [x] Run `METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib METAFOPY_AUDIT_WORK="$main/.audit" bin/metafor-audit.sh --recall` in the
       background and check that every item it reproduced before still reproduces; an item it now misses is fixed in `src/audit/data/`, not in a report
-- [ ] Add a subsection `### Profile-likelihood bounds of the scale coefficients` to the section "Where metafor departs from its reference" of
+- [x] Add a subsection `### Profile-likelihood bounds of the scale coefficients` to the section "Where metafor departs from its reference" of
       `docs/differences.md`, after the existing subsections: a short summary of both changes, the same calls in R and in Python with the output of
       both (the ML fit of `dat.bcg` with `mods = scale = ~ ablat`, and the Table 2 model of Viechtbauer and Lopez-Lopez, 2022), and *Why:* the profile
       likelihood maximises over the other coefficients (section 2.5.3 of the paper), and the paper's own bounds lie outside metafor's default
       interval. Name the four correctness cases. Produce the R output with `LC_ALL=C.UTF-8 R_LIBS=$METAFOPY_AUDIT_RLIB Rscript -e '<the R block>'` and
       the Python output with metafopy, and paste both as printed
-- [ ] Rerun the example of the existing subsection "Refits of a location-scale model that R's optimiser leaves short" (`confint(res, alpha = 1)` on
+- [x] Rerun the example of the existing subsection "Refits of a location-scale model that R's optimiser leaves short" (`confint(res, alpha = 1)` on
       `mods = ~ ablat, scale = ~ alloc`); if metafopy's printout or the -25.1411 in its text has changed, update both to what metafopy now prints,
       with the date
 
 **Acceptance Criteria:**
 
-- [ ] The audit slice reports no finding from this list, and every new `known.toml` entry matches at least one case of that run
-- [ ] `--recall` reproduces every item it reproduced before this list
-- [ ] `docs/differences.md` names the difference under "Where metafor departs from its reference", and no figure in it is stale
+- [x] The audit slice reports no finding from this list, and every new `known.toml` entry matches at least one case of that run
+- [x] `--recall` reproduces every item it reproduced before this list
+- [x] `docs/differences.md` names the difference under "Where metafor departs from its reference", and no figure in it is stale
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_docs_examples.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_docs_examples.py` passes
 
 **Notes:**
 
@@ -336,6 +336,18 @@ explains them under "Where metafor departs from its reference".
 - `--only` is repeatable and matches case ids with `*` (`src/audit/cli.py`). A full audit run is the user's call; a difference the slice does not
   reach (a `scripts/` unit or help example that calls `confint` on a location-scale fit) surfaces in the next full run
 - `src/tests/test_docs_examples.py` runs every Python block of `docs/`, so the new example is checked
+
+**Findings (2026-11-16):**
+
+- The audit slice (`--only '*/confint/ls_*' --only '*/profile/ls_*'`) reported 92 findings in 4 causes, all on the flat fit `ls_year` (scale intercept
+  -151.33): R gives no bounds and warns "Cannot obtain lower bound", metafopy gives 300.8878 as upper bound (a crossing: `2 (ll_max - ll)` 3.84146
+  there), and with `control = list(maxiter = 5)` R's refits stop short. None was in earlier reports, so they come from this list. The existing
+  `*/confint/ls_na*` and `*/confint/ls_bcg*` entries of `src/audit/data/known.toml` now also match `*/confint/ls_year*`; no new entry was needed. The rerun
+  reports 0 findings.
+- `--recall`: 176 of 176 items reproduced, 1 not shown by the pinned R, as in the earlier recall run.
+- `docs/differences.md`: the new subsection "Profile-likelihood bounds of the scale coefficients"; the example of "Refits of a location-scale model that
+  R's optimiser leaves short" now prints `<-44.2512` for the lower bound (it was -25.1411), text and printout updated.
+- `mypy`, `pre-commit run --all-files` (both stages) and `pytest src/tests/test_docs_examples.py` pass.
 
 ---
 

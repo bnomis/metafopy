@@ -528,7 +528,8 @@ print(res.se_alpha)
 Where the scale likelihood is flat, R's `nlminb` stops some of these refits short, or fails them, and metafopy's optimiser
 finishes them. Here the lower bound for the scale intercept refits the model with that coefficient fixed. At R's bound,
 -18.7856, R's refit ends at a log-likelihood of -11.58, below the cut-off of -9.75. metafopy's refit reaches -8.01 by moving
-the other scale coefficients, so it keeps searching and finds -25.1411. In the same way, `permutest` skips a permutation whose
+the other scale coefficients, so it keeps searching and finds no crossing within its interval, which it shows as `<-44.2512`, the end of
+the interval (checked 2026-11-16). In the same way, `permutest` skips a permutation whose
 refit R fails ("did not achieve convergence") and draws the next one, while metafopy keeps it, so the later rows are shifted.
 
 *Why:* the refits run on the same likelihood, and metafopy's reach the higher value. A failure or early stop of R's optimiser
@@ -580,7 +581,7 @@ print(confint(res, alpha=0))
 
 ```text
         estimate    ci.lb  ci.ub
-alpha.1  -3.0288 -25.1411 0.4381
+alpha.1  -3.0288 <-44.2512 0.4381
 ```
 
 </div>
@@ -1822,6 +1823,83 @@ print(round(float(res.fit_stats.loc['ll', 'ML']), 9))
 ```text
 [-0.02665867  0.00205067]
 -7.139288823
+```
+
+</div>
+</div>
+
+### Profile-likelihood bounds of the scale coefficients
+
+`confint(res, alpha=j)` of a location-scale fit finds the values of the scale coefficient `j` at which twice the drop of the profile
+log-likelihood reaches the chi-square cut-off. Two things differ from metafor 5.2-1, and both make metafopy's bound a crossing of
+the profile where metafor's is not. First, the profile refits the other coefficients with `alpha_j` fixed, and metafor refits once,
+from its default start, which can end at a lower local maximum: on the ML fit of `dat.bcg` log risk ratios with `mods = scale = ~
+ablat`, R's refit at `a = 1.1` has jumped to the `tau2 = 0` branch and gives `2 (ll_max - ll)` = 3.86864, above the cut-off 3.84146,
+where the continuous branch gives 3.13614. metafor therefore reports no lower bound ("Cannot obtain lower bound") and an upper bound
+of 1.0198, and metafopy keeps the highest log-likelihood of several starts and finds 1.8030. Second, metafor searches the estimate
+plus and minus the smaller of `10 |estimate|` and `10 crit se`, so a coefficient near zero gets a narrow interval: for the social
+sciences coefficient of Table 2 of Viechtbauer and Lopez-Lopez (2022) metafor prints `<-4.6807 >5.7208`, where the paper has an
+upper bound of 7.7000. metafopy searches `10 crit se` either side, so it finds 7.7000, and shows a bound that is still not crossed
+with a `<` or `>` sign at the end of the interval, as metafor does. `confint(..., xlim=...)` reproduces metafor's interval, and
+`profile()` draws the same refits as `confint()`. The correctness cases are `ls.confint.scale.ML.bcg`, `ls.confint.scale.REML.bcg`,
+`published.vl2022.table1.plci.size` and `published.vl2022.table2.plci.soc`.
+
+*Why:* the profile likelihood of the paper (section 2.5.3) maximises the log-likelihood over the other coefficients, so a refit
+that ends below the maximum is not the profile; and the paper's own bounds lie outside metafor's default interval, which the
+paper's authors widened with `xlim` (checked 2026-11-16, R 4.6.2, metafor 5.2-1).
+
+<div class="compare" markdown>
+<div markdown>
+
+**R, metafor 5.2-1**
+
+```r
+library(metafor)
+dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
+res <- rma(yi, vi, mods = ~ ablat, scale = ~ ablat, method = "ML", data = dat)
+confint(res, alpha = 1)
+
+dat2 <- dat.bangertdrowns2004
+dat2$ni100 <- dat2$ni / 100
+dat2$sci <- as.numeric(seq_len(48) %in% c(1, 2, 17, 20, 34, 36, 37, 40, 46))
+dat2$soc <- as.numeric(seq_len(48) %in% c(6, 10, 12, 21, 25, 26, 27, 33, 35, 43, 47))
+res2 <- rma(yi, vi, mods = ~ ni100, scale = ~ sci + soc, test = "knha", data = dat2)
+confint(res2, alpha = 3)
+```
+
+```text
+        estimate ci.lb  ci.ub
+alpha.1  -4.9575    NA 1.0198
+
+        estimate    ci.lb   ci.ub
+alpha.3   0.5201 <-4.6807 >5.7208
+```
+
+</div>
+<div markdown>
+
+**Python, metafopy**
+
+```python
+from metafopy import confint, datasets, escalc, rma
+
+dat = escalc(measure='RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=datasets.load('dat.bcg'))
+res = rma('yi', 'vi', mods='~ ablat', scale='~ ablat', method='ML', data=dat)
+print(confint(res, alpha=0))
+
+dat2 = datasets.load('dat.bangertdrowns2004')
+dat2['ni100'] = dat2['ni'] / 100
+dat2['sci'] = [float(i in (1, 2, 17, 20, 34, 36, 37, 40, 46)) for i in range(1, 49)]
+dat2['soc'] = [float(i in (6, 10, 12, 21, 25, 26, 27, 33, 35, 43, 47)) for i in range(1, 49)]
+res2 = rma('yi', 'vi', mods='~ ni100', scale='~ sci + soc', test='knha', data=dat2)
+print(confint(res2, alpha=2))
+```
+
+```text
+        estimate     ci.lb  ci.ub
+alpha.1  -4.9575 <-69.0010 1.8030
+        estimate    ci.lb  ci.ub
+alpha.3   0.5201 <-31.1917 7.7000
 ```
 
 </div>

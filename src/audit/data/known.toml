@@ -781,10 +781,10 @@ reason = "R's graphics functions warn about a base-graphics parameter they do no
 ref = "docs/differences.md"
 
 [[known]]
-match = "*/confint/ls_na*"
+match = ["*/confint/ls_na*", "*/confint/ls_year*"]
 kind = "warning-missing"
 detail = "Cannot obtain lower bound of profile likelihood CI*"
-reason = "confint() of the flat fit ls_na (see */ls_na above): the likelihood profile is flat towards the boundary, R reports that its root search did not converge and metafopy finds the bound."
+reason = "confint() of the flat fits ls_na and ls_year (see */ls_na and */ls_year above): the likelihood profile is flat towards the boundary, R reports that its root search did not converge and metafopy finds the bound."
 ref = "docs/differences.md"
 
 [[known]]
@@ -967,10 +967,10 @@ reason = "The exact permutation test of ls_bcg enumerates every permutation of t
 ref = "docs/differences.md"
 
 [[known]]
-match = ["*/confint/ls_na*", "*/confint/ls_bcg*"]
+match = ["*/confint/ls_na*", "*/confint/ls_bcg*", "*/confint/ls_year*"]
 kind = "print-diff"
 detail = "*R 'alpha.*', Python 'alpha.*'"
-reason = "confint() bounds of the scale coefficients of the flat fits ls_na and ls_bcg: each bound refits the model with one scale coefficient fixed, and R's nlminb stops short on that flat surface. With the scale intercept of ls_na fixed at -27.0874 R's refit ends at log-likelihood -42.12 and metafopy's at -5.98, so R finds no lower bound (NA); for ls_bcg fixed at -18.7856 R reaches -11.58 and metafopy -8.01 (the cut-off is -9.75), so R's bound is nearer the estimate (checked 2026-11-04, R 4.6.2, metafor 5.2-1)."
+reason = "confint() bounds of the scale coefficients of the flat fits ls_na, ls_bcg and ls_year: each bound refits the model with one scale coefficient fixed, and R's nlminb stops short on that flat surface, where metafopy keeps the highest likelihood of several starts and searches 10 crit se either side of the estimate, not metafor's smaller 10 |estimate| (ls_year: the scale intercept -151.33 has the upper bound 300.8878 in metafopy, a crossing with 2 (ll_max - ll) = 3.8415, where R finds none; checked 2026-11-16). With the scale intercept of ls_na fixed at -27.0874 R's refit ends at log-likelihood -42.12 and metafopy's at -5.98, so R finds no lower bound (NA); for ls_bcg fixed at -18.7856 R reaches -11.58 and metafopy -8.01 (the cut-off is -9.75), so R's bound is nearer the estimate (checked 2026-11-04, R 4.6.2, metafor 5.2-1)."
 ref = "docs/differences.md"
 
 [[known]]
