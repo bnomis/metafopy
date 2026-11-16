@@ -138,3 +138,8 @@ def assert_bits(got: typing.Any, expected: typing.Any, exact: bool) -> None:
 linux_only = pytest.mark.skipif(not sys.platform.startswith('linux'), reason="glibc's log, log1p and exp set the last bit of R's dbinom()")
 macos_only = pytest.mark.skipif(sys.platform != 'darwin', reason="Apple's libm sets the last bit of R's dbinom()")
 needs_rscript = pytest.mark.skipif(shutil.which('Rscript') is None, reason='Rscript is not on the path (CI installs no R)')
+
+
+def posix_only(reason: str) -> pytest.MarkDecorator:
+    """Skip a test on Windows, naming the POSIX facility the audit harness needs (``preexec_fn``, ``resource``, ``SIGALRM``)."""
+    return pytest.mark.skipif(sys.platform == 'win32', reason=reason)

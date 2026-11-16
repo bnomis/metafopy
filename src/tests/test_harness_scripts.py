@@ -8,6 +8,7 @@ import subprocess
 import sys
 
 import pytest
+import refutil
 
 import audit.config
 import audit.engine
@@ -84,6 +85,7 @@ def lost_script(units: list[dict[str, object]]) -> dict[str, object]:
     return {**stub_records()[0], 'lost': True, 'units': units}
 
 
+@refutil.posix_only('the audit times scripts out with SIGALRM, which Windows lacks; the audit runs on macOS and Linux')
 def test_lost_script_gives_r_killed_at_the_dead_unit_and_one_not_run() -> None:
     dead = failed_unit('R process died on this unit (killed)')
     dead['ast'] = None
@@ -112,6 +114,7 @@ def test_lost_script_stall_counts_as_an_r_failure() -> None:
     assert tally['not run: R process died partway through the script'] == 1
 
 
+@refutil.posix_only('the audit times scripts out with SIGALRM, which Windows lacks; the audit runs on macOS and Linux')
 def test_stream_scripts_lines_read_back_and_sum_to_run_script(tmp_path: pathlib.Path) -> None:
     records = stub_records()
     (tmp_path / 'r-0.json').write_text(json.dumps({'scripts': records}))
@@ -172,6 +175,7 @@ audit.scripts.stream_scripts(pathlib.Path(job['r_path']), pathlib.Path(job['scri
 """
 
 
+@refutil.posix_only('the audit times scripts out with SIGALRM and reads POSIX signal exit codes, which Windows lacks; the audit runs on macOS and Linux')
 def test_run_returns_every_script_when_the_python_process_dies(tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(audit.config, 'POLL_SECONDS', 0.05)
     monkeypatch.setattr(audit.config, 'WORK', tmp_path / 'work')

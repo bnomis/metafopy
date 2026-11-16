@@ -11,6 +11,8 @@ bin/metafor-audit.sh --rerender .audit/runs/<run>   # the report of an earlier r
 bin/metafor-audit.sh --only 'options/vcov/*'  --steps options    # a slice, for working on one thing
 ```
 
+The audit runs on macOS and Linux. It uses `preexec_fn`, resource limits, resident-memory reads and `SIGALRM`, which Windows lacks, so its harness tests are skipped there.
+
 The harness lives in `src/audit` and is not part of the shipped package (`pyproject.toml` builds `src/metafopy` only). The report goes to
 `.audit/runs/<timestamp>/wrong-or-missing.md` (one line per cause, the most widespread causes of each kind), `wrong-or-missing-full.md` (every cause) and the raw findings in `findings.json`. A full run is slow, so run it in the background; R shards that stop answering are killed after twice the case timeout and the case is reported as a timeout.
 
