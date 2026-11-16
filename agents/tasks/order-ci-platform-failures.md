@@ -38,7 +38,7 @@ missing, so starting Docker before the order lets it run straight through. Rows 
 | test pass line | `passed` |
 | test fail pattern | `FAILED\|ERROR` |
 | always wait for | `claude/rules/metafopy.md` |
-| progress page | |
+| progress page | https://claude.ai/artifact/7H489K9ANLy1wUF4pdE6V4 |
 
 | # | Task list | Waits for | Stops for you | Status |
 |---|---|---|---|---|
