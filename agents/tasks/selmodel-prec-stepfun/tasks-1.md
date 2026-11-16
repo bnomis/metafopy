@@ -29,7 +29,7 @@ fails; otherwise the list runs to the end without the operator.
 
 ## Task 1: Re-check the starting point, and cover the precision items with halfnorm cases
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Tests and records, item 2; Motivation; Open decision (answered)
@@ -39,41 +39,41 @@ Preston et al. 2004) instead of the step function that Task 2 rejects, so the co
 
 **Subtasks:**
 
-- [ ] Check that row 3 of the run order is merged on main: in the main checkout (the first entry of `git worktree list --porcelain`,
+- [x] Check that row 3 of the run order is merged on main: in the main checkout (the first entry of `git worktree list --porcelain`,
       `main=$(git worktree list --porcelain | sed -n '1s/^worktree //p')`), `git -C "$main" show main:DONE.md` holds the heading
       `## The truncest estimate stops at a local maximum of a step-function likelihood`, `git -C "$main" show main:TODO.md` does not, and
       `git merge-base --is-ancestor main HEAD` exits 0 (this branch is based on that main). Stop as `blocked`, naming what is missing, if not
-- [ ] Re-check the starting point: `grep -n 'undocumented and experimental' src/metafopy/models/sel_spec.py` finds the one warning in the
+- [x] Re-check the starting point: `grep -n 'undocumented and experimental' src/metafopy/models/sel_spec.py` finds the one warning in the
       `'stepfun'` branch; the four cases `selmodel.prec.{sei,vi,ninv,sqrtninv}.bangertdrowns2004` in `src/tests/correctness/cases/selmodel.toml`
       have `status = "mismatch"`; `grep -nwE 'DIFFERS|test_stepfun_prec_raises' src/tests/test_selmodel.py` finds nothing; and no case id
       `selmodel.prec.*.halfnorm.bangertdrowns2004` exists. Stop as `blocked`, naming what differs, if any is not so
-- [ ] In `src/tests/correctness/cases/selmodel.toml`, remove the four `selmodel.prec.*.bangertdrowns2004` cases
-- [ ] Add the cases `selmodel.prec.{sei,vi,ninv,sqrtninv}.halfnorm.bangertdrowns2004`, beside the other `halfnorm` cases: `kind = "derived"`,
+- [x] In `src/tests/correctness/cases/selmodel.toml`, remove the four `selmodel.prec.*.bangertdrowns2004` cases
+- [x] Add the cases `selmodel.prec.{sei,vi,ninv,sqrtninv}.halfnorm.bangertdrowns2004`, beside the other `halfnorm` cases: `kind = "derived"`,
       `function = "selmodel"`, `dataset = "dat.bangertdrowns2004"`, `setup = { rma_uni = { method = "ML" } }`,
       `args = { type = "halfnorm", prec = "<p>" }` (with the `control` of `selmodel.halfnorm.bangertdrowns2004` if it needs it to pass),
       `expect = {}`, `check = "test_derived.selmodel_fit"`, `tolerance = 2e-3` (as for the other `halfnorm` cases, whose likelihood is flat in
       `delta`), `covers = ["selmodel.prec.<p>"]`, and no `status`
-- [ ] Above the new cases, a comment naming the decision: `stepfun` with `prec` is rejected (option (a), answered 2026-11-15 in
+- [x] Above the new cases, a comment naming the decision: `stepfun` with `prec` is rejected (option (a), answered 2026-11-15 in
       `agents/reviews/order-numerical-fixes-specs.md`, D3; `agents/specs/selmodel-prec-stepfun/spec.md`), so `prec` is covered by `halfnorm`, the
       model `?selmodel` defines it for (Preston et al. 2004)
-- [ ] Run `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py`. A probe of these cases on 2026-11-15 passed each
+- [x] Run `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py`. A probe of these cases on 2026-11-15 passed each
       `prec`
-- [ ] **Operator stop: a new halfnorm precision case fails.** Only if one of the new cases fails: do not set it to `mismatch`. Stop the task as
+- [x] **Operator stop: a new halfnorm precision case fails.** Only if one of the new cases fails: do not set it to `mismatch`. Stop the task as
       `blocked` and report to the operator, as the correctness specs require for a new case that fails, each failing case id with metafopy's value,
       the derived value and the tolerance. The list resumes once the operator has said what to do (fix the case, or set it to `mismatch` with a
       `reason`) in an operator session, and that answer is committed. If every new case passes, there is no stop
 
 **Acceptance Criteria:**
 
-- [ ] No case in `src/tests/correctness/cases/selmodel.toml` sets `type = "stepfun"` together with `prec`
-- [ ] Each of `selmodel.prec.sei`, `selmodel.prec.vi`, `selmodel.prec.ninv` and `selmodel.prec.sqrtninv` is covered by a passing `halfnorm` case
-- [ ] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
+- [x] No case in `src/tests/correctness/cases/selmodel.toml` sets `type = "stepfun"` together with `prec`
+- [x] Each of `selmodel.prec.sei`, `selmodel.prec.vi`, `selmodel.prec.ninv` and `selmodel.prec.sqrtninv` is covered by a passing `halfnorm` case
+- [x] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py` passes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py src/tests/correctness/test_properties.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py src/tests/correctness/test_properties.py` passes
 
 **Notes:**
 
