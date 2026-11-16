@@ -22,7 +22,7 @@ no affected-tests tool, so each task names its test files.
 
 ## Task 1: Run the scaled data through R metafor and metafopy
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item's fix direction (run the scaled data through R metafor 5.2-1 with the same control)
@@ -32,30 +32,37 @@ programs give.
 
 **Subtasks:**
 
-- [ ] Write an R script in the session's scratch directory (outside the repository) that loads metafor, prints `packageVersion("metafor")`, and for
+- [x] Write an R script in the session's scratch directory (outside the repository) that loads metafor, prints `packageVersion("metafor")`, and for
       `yi = c(0, -0.5625, 0, 0.875, -0.7734375, 0)`, `vi = c(0.5, 0.625, 0.5, 0.5, 0.125, 1)` and scale `s` in `1` and `2` runs
       `rma(yi * s, vi * s^2, method = "SJIT", control = list(maxiter = 1000, tau2.max = 1e6, threshold = 1e-13, tol = 1e-13))` inside `tryCatch`,
       printing `tau2` and `beta` with `sprintf("%.17g", ...)` or the error message
-- [ ] Run it with the main checkout's R library (the main checkout is the first entry of `git worktree list --porcelain`):
+- [x] Run it with the main checkout's R library (the main checkout is the first entry of `git worktree list --porcelain`):
       `export METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib; LC_ALL=C.UTF-8 R_LIBS=$METAFOPY_AUDIT_RLIB Rscript <script>`.
       Stop as `blocked` if metafor does not load or its version is not 5.2.1
-- [ ] Run the same fits through metafopy (`source bin/activate.sh`, then `metafopy.rma_uni(yi=yi * s, vi=vi * s**2, method='SJIT', control=CONTROL)`
+- [x] Run the same fits through metafopy (`source bin/activate.sh`, then `metafopy.rma_uni(yi=yi * s, vi=vi * s**2, method='SJIT', control=CONTROL)`
       with `CONTROL` copied from `src/tests/correctness/test_properties.py`), printing `repr(tau2)` and `beta` or the exception
-- [ ] Record in this task's Notes, dated: both programs' results for each scale, and the verdict - "R does not converge either" or "R converges and
+- [x] Record in this task's Notes, dated: both programs' results for each scale, and the verdict - "R does not converge either" or "R converges and
       metafopy does not". If the unscaled results differ beyond 1e-12 relative, stop as `blocked`: that is a different difference from this item's
 
 **Acceptance Criteria:**
 
-- [ ] This task's Notes record R's and metafopy's result on the unscaled and the scaled data, and one of the two verdicts
+- [x] This task's Notes record R's and metafopy's result on the unscaled and the scaled data, and one of the two verdicts
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
 
 **Notes:**
 
 - Only this task list file changes; no code or test changes
 - The R and Python scripts stay in the scratch directory and are not committed
+- Result, 2026-11-16 (R metafor 5.2-1 from `/Users/simonb/src/metafopy/.audit/Rlib`; metafopy at `0038b6e`; control `maxiter` 1000, `tau2_max`
+  1e6, `threshold` 1e-13, `tol` 1e-13):
+  - Unscaled (scale 1): R `tau2` 0.0055136721559805452, `beta` -0.31447636711455818; metafopy `tau2` 0.0055136721559805426, `beta`
+    -0.3144763671145582 (relative difference about 5e-16, within 1e-12)
+  - Scaled (scale 2): R stops with "Iterative SJ estimator did not converge."; metafopy raises `EstimationError: Iterative SJ estimator did not
+    converge.`
+  - Verdict: R does not converge either
 
 ---
 
