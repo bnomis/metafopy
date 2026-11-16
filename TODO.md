@@ -77,20 +77,6 @@ Fix direction: decide whether `selmodel` rejects a `delta[0]` other than 1 on a 
 departs from metafor). Name the decision in `docs/differences.md` under "Where metafor departs from its reference". A change to `src/metafopy/` goes
 through a spec first.
 
-## Whether R metafor's SJIT converges on the scaled scale-invariance data was never checked
-
-<!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
-Found on 2026-11-15 by a TODO review. Task 13 of `agents/tasks/correctness-location-scale/tasks-1.md` asks to check whether metafor's
-`rma(..., method="SJIT")` converges on the data that makes `test_scale_invariance[SJIT]` fail (`yi = [0, -0.5625, 0, 0.875, -0.7734375, 0]`,
-`vi = [0.5, 0.625, 0.5, 0.5, 0.125, 1]`, scale 2.0, `threshold` 1e-13, `maxiter` 1000), and to file an item if it does. R metafor could not be run,
-so it was not checked; `rma_uni` raises `EstimationError` there, and the property test now rejects scaled copies that do not converge.
-<!-- doc-counts: accept-end -->
-
-Fix direction: run the scaled data through R metafor 5.2-1 with the same control. If R converges, find why metafopy's iteration (the absolute stopping
-rule on `tau2` in `src/metafopy/models/rma_uni.py`) does not, and fix it; if R does not converge either, close this item with the result.
-
-Spec: none (small item); tasks: `agents/tasks/sjit-scaled-convergence/tasks-1.md`.
-
 ## Simmonds and Higgins (2016) Fig 1 one-stage random effects differs from metafopy and R metafor
 
 <!-- doc-counts: accept-start found on 2026-11-14 - a dated record, not a claim about the present -->
