@@ -54,6 +54,6 @@ case is reported before it is set to `mismatch`. A probe of those cases passed o
 | 5 | `ls-identity-polish/tasks-1.md` | - | - | merged 0cbb642 |
 | 6 | `ls-profile-crossings/tasks-1.md` | 5 | - | merged 81ea377 |
 | 7 | `selmodel-prec-stepfun/tasks-1.md` | 3 | a new halfnorm precision case fails, only if one does (Task 1) | merged 1e10abc |
-| 8 | `sjit-scaled-convergence/tasks-1.md` | - | - | running |
+| 8 | `sjit-scaled-convergence/tasks-1.md` | - | - | merged 3f8a65b |
 
 Checkpoint after 3: passed 8499 passed, 37 skipped, 38 xfailed
