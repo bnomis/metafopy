@@ -1020,3 +1020,18 @@ rule on `tau2` in `src/metafopy/models/rma_uni.py`) does not, and fix it; if R d
 Spec: none (small item); tasks: `agents/tasks/sjit-scaled-convergence/tasks-1.md`.
 
 Done: 2026-11-16, agents/tasks/sjit-scaled-convergence/tasks-1.md; R metafor 5.2-1 does not converge on the scaled data either (maxiter 1000); test_scale_invariance keeps rejecting it
+
+## A harness test runs Rscript with no skip where R is missing
+
+<!-- doc-counts: accept-start found on 2026-11-16 - a dated record, not a claim about the present -->
+Found on 2026-11-16 by a TODO review in CI run 43832306599 on `ff7eb2b` (2026-11-16 08:34). `test_r_takes_the_cluster_port_it_is_given`
+(`src/tests/test_harness_engine.py`) fails on Linux and macOS with `FileNotFoundError: [Errno 2] No such file or directory: 'Rscript'`. The CI test
+workflow installs no R (only `.github/workflows/r-fixtures.yml` does), and the test has no skip for a missing `Rscript`. CI on `main` has failed on every
+completed run since 2026-11-01 20:57 (`2fc8c6d`); the last pass was run 41344495853 on `2abba09`.
+<!-- doc-counts: accept-end -->
+
+Fix direction: skip the test when `shutil.which('Rscript')` is `None`, with the reason, as the other R-backed tests do; check that it still runs locally.
+
+Spec: none (small item); tasks: `agents/tasks/rscript-skip-guard/tasks-1.md`.
+
+Done: 2026-11-16, agents/tasks/rscript-skip-guard/tasks-1.md; the cluster-port test is skipped, with the reason, where Rscript is not on the path

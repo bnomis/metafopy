@@ -4,6 +4,7 @@ import functools
 import json
 import pathlib
 import re
+import shutil
 import sys
 import typing
 
@@ -136,3 +137,4 @@ def assert_bits(got: typing.Any, expected: typing.Any, exact: bool) -> None:
 # exp set. A fixture matches only where that library is the one that made it.
 linux_only = pytest.mark.skipif(not sys.platform.startswith('linux'), reason="glibc's log, log1p and exp set the last bit of R's dbinom()")
 macos_only = pytest.mark.skipif(sys.platform != 'darwin', reason="Apple's libm sets the last bit of R's dbinom()")
+needs_rscript = pytest.mark.skipif(shutil.which('Rscript') is None, reason='Rscript is not on the path (CI installs no R)')

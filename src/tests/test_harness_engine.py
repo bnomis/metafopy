@@ -10,6 +10,7 @@ import subprocess
 import sys
 
 import pytest
+import refutil
 
 import audit.cases
 import audit.config
@@ -277,6 +278,7 @@ def test_each_r_process_gets_its_own_free_cluster_port() -> None:
             probe.bind(('', port))
 
 
+@refutil.needs_rscript
 def test_r_takes_the_cluster_port_it_is_given(tmp_path: pathlib.Path) -> None:
     script = tmp_path / 'port.R'
     script.write_text('set.seed(1234)\ncat(parallel:::defaultClusterOptions$port)\n')
