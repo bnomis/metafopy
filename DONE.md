@@ -940,3 +940,46 @@ reference". A change to `src/metafopy/` goes through a spec first, or a small ta
 Spec: none (small item); tasks: `agents/tasks/ls-identity-polish/tasks-1.md`.
 
 Done: 2026-11-16, agents/tasks/ls-identity-polish/tasks-1.md
+
+## The location-scale profile-likelihood intervals of the scale coefficients are not crossings where the profile is flat
+
+<!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
+Found on 2026-11-15 by the location-scale correctness cases (`agents/specs/correctness-location-scale/mismatches.md`, items `ls_plci_bcg` and
+`ls_plci_vl2022`); the user answered *follow the reference* for both on 2026-11-15. metafopy's profile-likelihood bounds for a scale coefficient
+(`confint` of `rma_uni(..., scale=)`, `src/metafopy/methods/ls_profile.py` and `src/metafopy/methods/ls_confint.py`) differ from the independent
+reference `formulas.ls_profile_bounds` (a root of `2 (ll_max - ll_j(a)) = chi2_{1, 0.95}`, the other alpha re-maximised at each `a`) and from the
+printed values of Viechtbauer and Lopez-Lopez (2022), which were computed with metafor.
+<!-- doc-counts: accept-end -->
+
+### dat.bcg scale intercept, ML and REML
+
+<!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
+Cases `ls.confint.scale.ML.bcg` and `ls.confint.scale.REML.bcg` in `src/tests/correctness/cases/location_scale.toml`, strict expected failures (the
+same check passes on `dat.bangertdrowns2004`). Log link, `ablat` in both parts, alpha.1 the intercept. ML lower bound: reference `nan` (not crossed
+within 20 standard errors), metafopy -23.309450; ML upper 1.803009 against 1.022354; REML upper 3.402673 against 3.286219 (REML lower agrees,
+-16.010862). At a = 1.0 the reference profile gives 3.04, below the 3.84 cut-off, so metafopy's ML upper bound lies where the profile has not crossed.
+<!-- doc-counts: accept-end -->
+
+### Viechtbauer and Lopez-Lopez (2022) Tables 1 and 2
+
+<!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
+Cases `published.vl2022.table1.plci.size` and `published.vl2022.table2.plci.soc`, strict expected failures; the bounds metafopy does reproduce are in
+the passing `published.vl2022.table1.plci` and `published.vl2022.table2.plci`. Table 1 sample size lower bound: paper -7.159, metafopy -5.93003,
+reference -7.159061 (so a metafopy defect, not a misprint). Table 1 social sciences vs. math: paper `< -10` and `> 10`, metafopy -3.61002 and 4.41224,
+reference no crossing. Table 2 social sciences vs. math: upper bound paper 7.700, metafopy 5.72067; lower paper `< -10`, metafopy -4.68066. The
+Table 2 reference fit does not converge, so no independent value was computed there.
+<!-- doc-counts: accept-end -->
+
+Suspected cause (not confirmed): where the profile is flat, the refit of the other coefficients at a fixed `a` ends at a lower log-likelihood than the
+reference's (which starts from two points, one keeping the fitted line of `Z alpha`), so the root search stops before the true crossing. Read
+`src/metafopy/methods/ls_profile.py` for the starting values and the bracket.
+
+Fix direction: refit the profile as metafor and the reference do, starting from the fitted line and re-maximising from more than one start, then set the
+four cases to `pass`. Check metafor's `confint` on the Table 2 model to read the bound the paper prints. Mark the R parity fixtures that hold a
+location-scale profile interval as differing where they do, add the matching `src/audit/data/known.toml` entries, and add the difference to
+`docs/differences.md` under "Where metafor departs from its reference". A change to `src/metafopy/` goes through a spec first, or a small task list
+if the fix is local.
+
+Spec: none (small item); tasks: `agents/tasks/ls-profile-crossings/tasks-1.md`.
+
+Done: 2026-11-16, agents/tasks/ls-profile-crossings/tasks-1.md

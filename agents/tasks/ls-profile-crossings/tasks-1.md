@@ -353,7 +353,7 @@ explains them under "Where metafor departs from its reference".
 
 ## Task 5: The full test run and closing the item
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item as a whole
@@ -362,24 +362,24 @@ explains them under "Where metafor departs from its reference".
 
 **Subtasks:**
 
-- [ ] Move the item from `TODO.md` to `DONE.md`: append its heading and body unchanged, both `###` findings included, at the end of `DONE.md`, then a
+- [x] Move the item from `TODO.md` to `DONE.md`: append its heading and body unchanged, both `###` findings included, at the end of `DONE.md`, then a
       line `Done: 2026-MM-DD, agents/tasks/ls-profile-crossings/tasks-1.md` with the date of the commit
-- [ ] Run the final tests from the worktree and save their whole output for the merge gate. The main checkout is the first entry of `git worktree list
+- [x] Run the final tests from the worktree and save their whole output for the merge gate. The main checkout is the first entry of `git worktree list
       --porcelain` (`/Users/simonb/src/metafopy`):
       `main=$(git worktree list --porcelain | sed -n '1s/^worktree //p'); mkdir -p "$main/ralpher-logs/ls-profile-crossings/tasks-1" && source bin/activate.sh && pytest src/tests 2>&1 | tee "$main/ralpher-logs/ls-profile-crossings/tasks-1/final-tests.log"`
 
 **Acceptance Criteria:**
 
-- [ ] The item is in `DONE.md` with its body unchanged, and no longer in `TODO.md`
+- [x] The item is in `DONE.md` with its body unchanged, and no longer in `TODO.md`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] The final test run above passes, `slow` tests included, judged by its exit status
-- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/ls-profile-crossings/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] The final test run above passes, `slow` tests included, judged by its exit status
+- [x] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/ls-profile-crossings/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
       `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0 (`<scratch>` is the session's scratch
       directory, outside the repository)
 
