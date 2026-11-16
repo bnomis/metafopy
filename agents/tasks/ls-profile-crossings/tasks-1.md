@@ -53,7 +53,7 @@ src/tests`, as the run order requires.
 
 ## Task 1: Confirm the two causes and the starting point
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item's "Suspected cause" and both `###` findings
@@ -63,37 +63,37 @@ src/tests`, as the run order requires.
 
 **Subtasks:**
 
-- [ ] Check that row 5 is on `main`: `git log -n 1 --format=%H main -- agents/tasks/ls-identity-polish/tasks-1.md` prints a commit, `git show
+- [x] Check that row 5 is on `main`: `git log -n 1 --format=%H main -- agents/tasks/ls-identity-polish/tasks-1.md` prints a commit, `git show
       main:agents/tasks/ls-identity-polish/tasks-1.md | grep -cE '^\*\*Status:\*\* (todo|in-progress)'` prints 0, and `git merge-base --is-ancestor main
       HEAD` exits 0. Stop as `blocked`, naming which check failed, if not
-- [ ] Check the starting point: the four cases `ls.confint.scale.ML.bcg`, `ls.confint.scale.REML.bcg` and `published.vl2022.table1.plci.size`,
+- [x] Check the starting point: the four cases `ls.confint.scale.ML.bcg`, `ls.confint.scale.REML.bcg` and `published.vl2022.table1.plci.size`,
       `published.vl2022.table2.plci.soc` in `src/tests/correctness/cases/location_scale.toml` have `status = "mismatch"`, and `pytest
       src/tests/correctness/test_derived.py src/tests/correctness/test_published.py -rx` reports each of the four as an expected failure. Stop as
       `blocked`, naming it, for a case that passes or has another status
-- [ ] Confirm the refit cause: for the ML and REML fits of `dat.bcg` in the header, tabulate `2 (ll_max - ll(a))` from `refit_ls(r, alpha=[a, nan])`
+- [x] Confirm the refit cause: for the ML and REML fits of `dat.bcg` in the header, tabulate `2 (ll_max - ll(a))` from `refit_ls(r, alpha=[a, nan])`
       and from `formulas.ls_profile_ll` at `a` = 1.0, 1.1, 1.8, 2.3, 3.29, 3.4, with the slope each refit ends at, and record the table in this task's
       Notes. The cause is confirmed if metafopy's refit is below the reference's log-likelihood at the points where its slope has jumped
-- [ ] Confirm that a second start fixes it: at the same points, refit through `refit_ls(r, alpha=[a, nan], alpha_init=start)` from the fitted line
+- [x] Confirm that a second start fixes it: at the same points, refit through `refit_ls(r, alpha=[a, nan], alpha_init=start)` from the fitted line
       start (the other coefficients set by least squares so that `Z alpha` stays as near `Z alpha_hat` as it can with `alpha_j = a`, as in
       `ls_profile_ll`) and keep the higher log-likelihood; record that it matches the reference to 1e-6. Check that `alpha_init` reaches the
       optimiser when `alpha` fixes a coefficient (`src/metafopy/models/rma_ls_fit.py`, the `alpha_init` block)
-- [ ] Confirm the search-interval cause: `search_limits` gives -5.93003 for the Table 1 sample size coefficient and 5.72067 for the Table 2 social
+- [x] Confirm the search-interval cause: `search_limits` gives -5.93003 for the Table 1 sample size coefficient and 5.72067 for the Table 2 social
       sciences coefficient (the metafopy values in the item), and `confint(..., alpha=j, xlim=(-20, 20))` gives -7.159 and 7.700 to the paper's three
       decimals. Rerun the R check of the header in R to confirm the paper's Table 2 bound:
       `LC_ALL=C.UTF-8 R_LIBS=$METAFOPY_AUDIT_RLIB Rscript <scratch>/vl2022.R` with `METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib`, where
       the script builds the data of `published.vl2022.table2.plci.soc` and prints `confint(r2)` and `confint(r2, alpha = 3, xlim = c(-20, 20))` of
       `rma(yi, vi, mods = ~ ni100, scale = ~ sci + soc, test = "knha")`; record both printouts in the Notes
-- [ ] If either cause is not confirmed, or a fix needs a change outside `src/metafopy/methods/ls_profile.py` and `src/metafopy/methods/ls_confint.py`
+- [x] If either cause is not confirmed, or a fix needs a change outside `src/metafopy/methods/ls_profile.py` and `src/metafopy/methods/ls_confint.py`
       (other than tests, `src/audit/data/known.toml` and `docs/`) or to a public signature, stop as `blocked` and report what was found
 
 **Acceptance Criteria:**
 
-- [ ] The Notes record row 5's commit on `main`, the refit table, the two-start check and both R printouts
+- [x] The Notes record row 5's commit on `main`, the refit table, the two-start check and both R printouts
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_published.py` passes (the four cases as strict expected failures)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_published.py` passes (the four cases as strict expected failures)
 
 **Notes:**
 
@@ -101,6 +101,45 @@ src/tests`, as the run order requires.
   `src/metafopy/methods/ls_common.py` (`refit_ls`, unchanged), `src/tests/correctness/formulas.py` (`ls_profile_ll`, `ls_profile_bounds`, unchanged)
 - `<scratch>` is the session's scratch directory, outside the repository. Worktrees have no `.audit/Rlib`, hence `METAFOPY_AUDIT_RLIB`
 - This task changes no code; its commit holds this list's Notes only
+
+**Findings (2026-11-16):**
+
+- Row 5 is on `main`: `agents/tasks/ls-identity-polish/tasks-1.md` was last changed in commit `6c8f896c365fdbfd4c1fc9a03f7e6671a4009217`, it has no
+  `todo` or `in-progress` task, and `main` is an ancestor of `HEAD`.
+- Refit table, `2 (ll_max - ll(a))` of `dat.bcg` with `mods = scale = ~ ablat`, `link = "log"`: `refit_ls(r, alpha=[a, nan])` (slope), the reference
+  `formulas.ls_profile_ll`, and the best of the default start and the fitted line start (`alpha_init`):
+
+  | method | a | refit (slope) | reference | best of two starts |
+  |---|---|---|---|---|
+  | ML | 1.0 | 3.04141 (-0.0987) | 3.04141 | 3.04141 |
+  | ML | 1.1 | 3.86864 (-2.1891) | 3.13614 | 3.13614 |
+  | ML | 1.8 | 3.86864 (-2.2503) | 3.83830 | 3.83830 |
+  | ML | 2.3 | 3.86864 (-2.3022) | 3.86864 | 3.86864 |
+  | ML | 3.29 | 3.86864 (-2.4103) | 3.86864 | 3.86864 |
+  | ML | 3.4 | 3.86864 (-2.4356) | 3.86864 | 3.86864 |
+  | REML | 1.0 | 1.27269 (-0.0882) | 1.27269 | 1.27269 |
+  | REML | 1.1 | 1.35159 (-0.0909) | 1.35159 | 1.35159 |
+  | REML | 1.8 | 1.97312 (-0.1106) | 1.97312 | 1.97312 |
+  | REML | 2.3 | 2.49038 (-0.1250) | 2.49038 | 2.49038 |
+  | REML | 3.29 | 6.67605 (-0.5969) | 3.69056 | 3.69056 |
+  | REML | 3.4 | 6.67719 (-0.6056) | 3.83785 | 3.83785 |
+
+  The cause is confirmed: the default-start refit is below the reference's log-likelihood where its slope has jumped (ML 1.1 and 1.8, REML 3.29 and
+  3.4). The reference crosses the ML cut-off 3.84146 at 1.803009 (3.83830 at 1.8), where the single-start refit has already jumped to 3.86864.
+- The two-start check: keeping the higher log-likelihood of the default start and the fitted line start matches the reference to at most 1.1e-10 at
+  all twelve points. `alpha_init` reaches the optimiser when `alpha` fixes a coefficient (`rma_ls_fit.py` lines 515-529: `con.alpha_init` is taken
+  as given, only mapped through `imZ` when the scale model has an aliased column).
+- Search interval: `search_limits` gives -5.93003 for the Table 1 sample size coefficient (estimate -0.53909) and 5.72081 for the Table 2 social sciences
+  coefficient (estimate 0.52007; the item's 5.72067 is the figure to the item's precision, the printed bound is `>5.7208`). `confint(..., alpha=1,
+  xlim=(-20, 20))` on Table 1 gives `-7.1591`, and `confint(..., alpha=2, xlim=(-20, 20))` on Table 2 gives `7.7000` (lower `<-20.0000`).
+- R metafor 5.2-1 on the Table 2 model (`rma(yi, vi, mods = ~ ni100, scale = ~ sci + soc, test = "knha")`):
+
+  ```text
+  confint(r2)                                   alpha.3   0.5201 <-4.6807 >5.7208
+  confint(r2, alpha = 3, xlim = c(-20, 20))     alpha.3   0.5201 <-20.0000 7.7000
+  ```
+
+- Both fixes fit in `ls_profile.py` and `ls_confint.py`; no public signature changes.
 
 ---
 
