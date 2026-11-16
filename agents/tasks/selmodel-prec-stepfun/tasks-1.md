@@ -86,7 +86,7 @@ Preston et al. 2004) instead of the step function that Task 2 rejects, so the co
 
 ## Task 2: Reject a precision measure on a step-function selection model
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** API; Error handling, option (a); Implementation, option (a); Tests and records, item 1
@@ -96,41 +96,41 @@ log-likelihood is not a density and whose LRT overstates selection.
 
 **Subtasks:**
 
-- [ ] In the `'stepfun'` branch of `src/metafopy/models/sel_spec.py`, replace
+- [x] In the `'stepfun'` branch of `src/metafopy/models/sel_spec.py`, replace
       `warnings.warn('Adding a precision measure to this selection model is undocumented and experimental.', stacklevel=3)` by
       `raise metafopy.errors.InputError("Argument 'prec' cannot be used with type='stepfun': a step-function selection model with a precision
       measure is not defined (see docs/differences.md).")`, raised before any fitting. Leave the `type_ == 'stepcon' or decreasing` path (warning
       "Argument 'prec' ignored", `preci = numpy.ones(k)`) as it is, and leave `ll_stepfun` in `src/metafopy/models/sel_lik.py` unchanged
-- [ ] Update the `prec` description and `Raises` of `selmodel` in `src/metafopy/models/selmodel.py` as the spec's API section gives them: ignored
+- [x] Update the `prec` description and `Raises` of `selmodel` in `src/metafopy/models/selmodel.py` as the spec's API section gives them: ignored
       with a warning for `'beta'`, `'trunc'`, `'truncest'`, `'stepcon'` and `'stepfun'` with `decreasing=True`; `InputError` for `'stepfun'`
       otherwise, because no publication defines a step function with a precision measure and metafor's version is not a density
       (`docs/differences.md`, "Where metafor departs from its reference", the entry Task 3 adds)
-- [ ] In `src/tests/test_selmodel.py`, add a named mapping `DIFFERS = {'hack_stepfun_sei': '<reason>'}` (the reason: `prec` with `stepfun` raises
+- [x] In `src/tests/test_selmodel.py`, add a named mapping `DIFFERS = {'hack_stepfun_sei': '<reason>'}` (the reason: `prec` with `stepfun` raises
       `InputError` in metafopy, see `docs/differences.md`, "selmodel(type='stepfun') with a precision measure"), and drop its keys from `ALL_CASES`.
       The fixture `src/tests/reference/phase5/selmodel.json` and its generator `src/tests/r/generate_selmodel.R` stay unchanged, as the record of
       metafor
-- [ ] Add `test_stepfun_prec_raises`, parametrised over `metafopy.models.selmodel.PRECISIONS`, asserting `metafopy.errors.InputError` with a
+- [x] Add `test_stepfun_prec_raises`, parametrised over `metafopy.models.selmodel.PRECISIONS`, asserting `metafopy.errors.InputError` with a
       `match` on "cannot be used with type='stepfun'" for the `hack_stepfun_sei` spec (its base model and `steps`, with that `prec`) and for
       `type='stepfun'`, `steps=[0.025, 0.5, 1]` on an ML fit of `dat.bangertdrowns2004`
-- [ ] Add a test that `type='stepfun'` with `decreasing=True` and `prec='sei'` still warns "Argument 'prec' ignored" and gives the same estimates
+- [x] Add a test that `type='stepfun'` with `decreasing=True` and `prec='sei'` still warns "Argument 'prec' ignored" and gives the same estimates
       (`beta`, `tau2`, `delta`, `ll`) as the same call without `prec`, on the `hack_stepfun_decr` spec
-- [ ] Check that no other test calls `stepfun` with `prec`: `grep -rn "prec=" src/tests --include=*.py | grep -v scaleprec` finds only `halfnorm`
+- [x] Check that no other test calls `stepfun` with `prec`: `grep -rn "prec=" src/tests --include=*.py | grep -v scaleprec` finds only `halfnorm`
       calls and the tests this task adds (on 2026-11-15 it found `src/tests/test_escalc_ni.py` and two invalid-`prec` tests in
       `src/tests/test_selmodel.py`)
 
 **Acceptance Criteria:**
 
-- [ ] `selmodel(res, type='stepfun', steps=..., prec=p)` raises `InputError` for each `p` in `PRECISIONS`, before any fitting
-- [ ] `selmodel(..., type='stepfun', decreasing=True, prec=...)` and `type='stepcon'` with `prec` warn and fit as before
-- [ ] `hack_stepfun_sei` is in `DIFFERS` with its reason, and no parity test runs on it
+- [x] `selmodel(res, type='stepfun', steps=..., prec=p)` raises `InputError` for each `p` in `PRECISIONS`, before any fitting
+- [x] `selmodel(..., type='stepfun', decreasing=True, prec=...)` and `type='stepcon'` with `prec` warn and fit as before
+- [x] `hack_stepfun_sei` is in `DIFFERS` with its reason, and no parity test runs on it
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `ruff format --check src/metafopy/models/sel_spec.py src/metafopy/models/selmodel.py src/tests/test_selmodel.py` and `ruff check` on the same
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `ruff format --check src/metafopy/models/sel_spec.py src/metafopy/models/selmodel.py src/tests/test_selmodel.py` and `ruff check` on the same
       files pass
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_selmodel.py src/tests/test_stepcon.py src/tests/test_selmodel_parallel.py src/tests/correctness` passes
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_selmodel.py src/tests/test_stepcon.py src/tests/test_selmodel_parallel.py src/tests/correctness` passes
 
 **Notes:**
 

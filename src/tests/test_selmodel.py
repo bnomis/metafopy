@@ -21,6 +21,7 @@ import metafopy.datasets
 import metafopy.errors
 import metafopy.models.sel_opt
 import metafopy.models.sel_spec
+import metafopy.models.selmodel
 
 matplotlib.use('Agg')
 
@@ -47,7 +48,13 @@ NOISY_ATOL = 5e-3
 # auditme: accept[non-alphabetical-literal] metafor's column order
 # auditme: accept[literal-duplication] test cases spell out their own R arguments
 WALD = ('se', 'zval', 'pval', 'ci_lb', 'ci_ub')  # auditme: accept[non-alphabetical-literal] order follows the R fixture script
-ALL_CASES = sorted(k for k, v in REF['fits'].items() if 'error' not in v)
+# cases where metafopy departs from metafor on purpose, with the reason
+DIFFERS = {
+    'hack_stepfun_sei': (
+        "prec with type='stepfun' raises InputError in metafopy, see docs/differences.md, \"selmodel(type='stepfun') with a precision measure\""
+    ),
+}
+ALL_CASES = sorted(k for k, v in REF['fits'].items() if 'error' not in v and k not in DIFFERS)
 
 
 def data(name: str) -> pandas.DataFrame:
@@ -557,6 +564,36 @@ def test_reml_input_is_refitted_with_ml() -> None:
     ml = fit('hack_stepfun_b')
     close(reml.beta, ml.beta, 'reml input', rtol=1e-6)
     close(reml.ll, ml.ll, 'reml input ll', rtol=1e-6)
+
+
+@pytest.mark.parametrize('prec', metafopy.models.selmodel.PRECISIONS)
+def test_stepfun_prec_raises(prec: str) -> None:
+    """A step function with a precision measure is rejected before any fitting: for R's case (its steps) and for another cutpoint set."""
+    res = metafopy.rma(data=data('bang'), ni='ni', method='ML')  # has the sample sizes that ninv and sqrtninv need
+    for steps in (0.025, [0.025, 0.5, 1]):
+        with pytest.raises(metafopy.errors.InputError, match="cannot be used with type='stepfun'"):
+            metafopy.selmodel(res, type='stepfun', steps=steps, prec=prec)
+
+
+def test_stepfun_prec_raises_for_the_r_case() -> None:
+    """The spec of metafor's case ``hack_stepfun_sei`` itself raises."""
+    with pytest.raises(metafopy.errors.InputError, match="cannot be used with type='stepfun'"):
+        metafopy.selmodel(base_model('hack_stepfun_sei'), **sel_kwargs('hack_stepfun_sei'))
+
+
+def test_stepfun_decreasing_prec_is_ignored() -> None:
+    """With decreasing=True, as with stepcon, prec warns and the fit is that without prec."""
+    spec = sel_kwargs('hack_stepfun_decr')
+    base = base_model('hack_stepfun_decr')
+    with pytest.warns(UserWarning, match="Argument 'prec' ignored"):
+        with_prec = metafopy.selmodel(base, **spec, prec='sei')
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        without = metafopy.selmodel(base, **spec)
+    assert isinstance(with_prec, metafopy.SelmodelResult)
+    assert isinstance(without, metafopy.SelmodelResult)
+    for name in ('beta', 'tau2', 'delta', 'll'):
+        close(getattr(with_prec, name), getattr(without, name), f'prec ignored: {name}', rtol=1e-9)
 
 
 def test_unsupported_components() -> None:
