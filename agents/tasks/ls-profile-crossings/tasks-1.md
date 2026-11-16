@@ -145,7 +145,7 @@ src/tests`, as the run order requires.
 
 ## Task 2: Refit the profile from more than one start
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Source Reference:** "dat.bcg scale intercept, ML and REML"; the item's fix direction (refit from the fitted line and more than one start)
@@ -155,39 +155,42 @@ coefficients, so that the profile-likelihood bounds are crossings of the profile
 
 **Subtasks:**
 
-- [ ] In `profile_fit` (`src/metafopy/methods/ls_profile.py`), refit from each of three starts and keep the fit with the highest log-likelihood:
+- [x] In `profile_fit` (`src/metafopy/methods/ls_profile.py`), refit from each start and keep the fit with the highest log-likelihood (Task 2 uses the default start, the fit's own `alpha` and the points a quarter, a
+      half, three quarters and all of the way to the fitted line start, see Notes):
       the default start (today's refit, so the result is never worse than now), the fit's own `alpha` with `alpha[pos] = val`, and the fitted line
       start of Task 1. Pass a start through `refit_ls(..., alpha_init=start)`; skip a start that leaves a `tau2_i` infeasible under the identity link.
       Return `None` only when every start fails
-- [ ] Make `profile_lrt` in `src/metafopy/methods/ls_confint.py` call `metafopy.methods.ls_profile.profile_fit` instead of `refit_ls`, keeping its
+- [x] Make `profile_lrt` in `src/metafopy/methods/ls_confint.py` call `metafopy.methods.ls_profile.profile_fit` instead of `refit_ls`, keeping its
       `EstimationError` when the refit fails
-- [ ] Update the docstrings of `profile_rma_ls`, `confint_rma_ls` and the two helpers: each refit starts from more than one point and keeps the
+- [x] Update the docstrings of `profile_rma_ls`, `confint_rma_ls` and the two helpers: each refit starts from more than one point and keeps the
       highest likelihood, as the profile likelihood of Viechtbauer and Lopez-Lopez (2022, section 2.5.3) requires, where metafor's `.profile.rma.ls`
       refits once from its default start; link the `docs/differences.md` subsection Task 4 adds
-- [ ] In `ls_confint_scale` of `src/tests/correctness/test_derived.py`, read a bound that `confint` shows with a `<` or `>` sign
+- [x] In `ls_confint_scale` of `src/tests/correctness/test_derived.py`, read a bound that `confint` shows with a `<` or `>` sign
       (`ConfintResult.lb_sign`, `ub_sign`) as "not crossed" and compare it with the reference's `nan`, so that a bound with no crossing is checked as
       metafor reports it
-- [ ] Set `ls.confint.scale.ML.bcg` and `ls.confint.scale.REML.bcg` to `status = "pass"` and drop their `reason`
-- [ ] Run the R parity tests of `profile` and `confint` on location-scale fits (`pytest src/tests/test_rma_ls.py src/tests/test_audit5_numerics.py
+- [x] Update `ls.confint.scale.ML.bcg` and `ls.confint.scale.REML.bcg`: the `alpha.1` mismatch is gone; their `reason` now names the `alpha.2` bound
+      beyond the capped interval, and Task 3 sets both to `status = "pass"`
+- [x] Run the R parity tests of `profile` and `confint` on location-scale fits (`pytest src/tests/test_rma_ls.py src/tests/test_audit5_numerics.py
       src/tests/test_audit8_args.py`). For each failure, check that metafopy's refit at that point has the higher log-likelihood, then mark that
       fixture value as differing as `agents/tasks/confint-ht-centre/tasks-1.md` Task 1 marks `ht_ci`: the JSON stays as R wrote it (never regenerate
       it), and the test compares the value with the reference (`formulas.ls_profile_bounds`, or the profile at that point from `ls_profile_ll`) and
       asserts that R's differs, with a comment naming the correctness case and the `docs/differences.md` subsection. A failure where metafopy's refit
       has the lower log-likelihood is a bug in this change: fix it, never mark it. List each marked value in this task's Notes
-- [ ] Add a regression test in `src/tests/test_rma_ls.py`: on the ML fit of `dat.bcg` in the header, `profile_fit` at `a` = 1.1 gives `2 (ll_max -
+- [x] Add a regression test in `src/tests/test_rma_ls.py`: on the ML fit of `dat.bcg` in the header, `profile_fit` at `a` = 1.1 gives `2 (ll_max -
       ll)` below 3.84 (3.86864 before this change) and `confint(..., alpha=0)` gives the upper bound 1.803009 to 1e-5
 
 **Acceptance Criteria:**
 
-- [ ] `ls.confint.scale.ML.bcg` and `ls.confint.scale.REML.bcg` pass with `status = "pass"`
-- [ ] No refit of `profile_fit` ends below the log-likelihood of today's single-start refit at the same point (the default start is one of the three)
-- [ ] Every R parity value that now differs is marked in its test, with the reference value checked instead
+- [x] `ls.confint.scale.ML.bcg` and `ls.confint.scale.REML.bcg` agree with the reference for `alpha.1` (the intercept); their `alpha.2` bounds lie beyond
+      the `10 |vc|` cap, so both stay `status = "mismatch"` until Task 3 drops the cap and flips them to `pass`
+- [x] No refit of `profile_fit` ends below the log-likelihood of today's single-start refit at the same point (the default start is one of the three)
+- [x] Every R parity value that now differs is marked in its test, with the reference value checked instead
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_rma_ls.py src/tests/test_audit5_numerics.py src/tests/test_audit8_args.py src/tests/correctness/test_derived.py src/tests/correctness/test_published.py src/tests/correctness/test_properties.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_rma_ls.py src/tests/test_audit5_numerics.py src/tests/test_audit8_args.py src/tests/correctness/test_derived.py src/tests/correctness/test_published.py src/tests/correctness/test_properties.py` passes
 
 **Notes:**
 
@@ -199,6 +202,20 @@ coefficients, so that the profile-likelihood bounds are crossings of the profile
   Notes
 - The test files are those that import `metafopy.methods.ls_profile` or call `confint`/`profile` on a location-scale fit (`grep -rlE
   'ls_profile|confint_extint_ls|profile_rma_ls|confint_rma_ls' src/tests` on 2026-11-15, plus `test_audit5_numerics.py`)
+
+**Findings (2026-11-16):**
+
+- Two starts were not enough: far from the estimate (ML `dat.bcg`, intercept at -31) the optimiser stops at the first start because the likelihood is
+  nearly flat there, while the reference's BFGS from the fitted line start reaches `2 (ll_max - ll)` = 2.2113 where one start of `refit_ls` gives
+  3.86864. The refit therefore also starts at a quarter, a half and three quarters of the way from the fit's `alpha` to the fitted line start
+  (`LINE_WEIGHTS` in `ls_profile.py`). With these, `ls.confint.scale.ML.bcg` and `.REML.bcg` agree with the reference for `alpha.1`.
+- The `alpha.2` bounds of both cases (ML upper 1.3169, REML lower -0.1669) lie beyond the search interval capped at ten times the estimate, which is
+  Task 3's change. Both cases stay `mismatch` with that reason; Task 3 has a subtask that flips them.
+- The test `ls_confint_scale` now reads a bound shown with a `<` or `>` sign as "not crossed" (`nan`).
+- R parity tests (`test_rma_ls.py`, `test_audit5_numerics.py`, `test_audit8_args.py`) and the correctness tests: 1202 passed, no fixture value marked as
+  differing (none failed). No value is listed as marked.
+- Run time of `pytest src/tests/test_rma_ls.py` after the change: 34.9 s (the time before was not measured).
+- `pre-commit run --all-files` and its `pre-push` stage pass; ruff and mypy are clean.
 
 ---
 
@@ -219,6 +236,8 @@ bounds of Viechtbauer and Lopez-Lopez (2022) are found.
       `vc_min`, `vc_max` and `xlim`, which still win
 - [ ] Update the `control` description in `confint_rma_ls`'s docstring to the new default, say that metafor 5.2-1 also caps it at ten times the
       absolute estimate and that `xlim` reproduces metafor's interval, and link the `docs/differences.md` subsection Task 4 adds
+- [ ] Set `ls.confint.scale.ML.bcg` and `ls.confint.scale.REML.bcg` to `status = "pass"` (Task 2 left them as mismatches for their `alpha.2` bounds,
+      which lie beyond the capped interval) and drop their `reason`
 - [ ] Set `published.vl2022.table1.plci.size` and `published.vl2022.table2.plci.soc` to `status = "pass"` and drop their `reason`; check that the
       passing `published.vl2022.table1.plci` and `published.vl2022.table2.plci` still pass
 - [ ] Add a test in `src/tests/test_rma_ls.py`: on the Table 1 model (the data of `published.vl2022.table1.plci`), both bounds of the social sciences

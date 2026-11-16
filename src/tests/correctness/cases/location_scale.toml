@@ -490,7 +490,7 @@ args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML
 check = "test_derived.ls_confint_scale"
 covers = ["ls.confint.scale"]
 status = "mismatch"
-reason = "ls.confint.scale.ML.bcg: confint alpha.1: metafopy gives [-23.309450210583307, 1.0223537117081194], the reference gives (nan, 1.8030085946491885) (tolerance 1e-05)"
+reason = "ls.confint.scale.ML.bcg: confint alpha.2 upper bound: the profile crosses at 1.3169166758411897 (the reference), beyond the search interval capped at ten times the estimate, so metafopy gives a '>' bound (alpha.1 now agrees; Task 3 of agents/tasks/ls-profile-crossings/tasks-1.md drops the cap)"
 
 [[case]]
 id = "ls.confint.location.z.ML.bcg"
@@ -582,7 +582,7 @@ args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "RE
 check = "test_derived.ls_confint_scale"
 covers = ["ls.confint.scale"]
 status = "mismatch"
-reason = "ls.confint.scale.REML.bcg: confint alpha.1: metafopy gives upper bound 3.286218891717569, the reference gives 3.4026725323940052 (lower bound -16.0108623664 agrees; tolerance 1e-05)"
+reason = "ls.confint.scale.REML.bcg: confint alpha.2 lower bound: the profile crosses at -0.1668626676709003 (the reference), beyond the search interval capped at ten times the estimate, so metafopy gives a '<' bound (alpha.1 now agrees; Task 3 of agents/tasks/ls-profile-crossings/tasks-1.md drops the cap)"
 
 [[case]]
 id = "ls.confint.location.z.REML.bcg"

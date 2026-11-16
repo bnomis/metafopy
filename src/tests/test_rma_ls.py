@@ -257,6 +257,17 @@ def test_identity_fit_bd_is_a_stationary_point() -> None:
     assert res.fit_stats_ml.ll == pytest.approx(-17.058054672888, abs=1e-9)
 
 
+def test_profile_refit_keeps_the_highest_likelihood_on_bcg() -> None:
+    """On the ML fit of ``dat.bcg`` one start jumps to ``tau2 = 0`` at a = 1.1 (``2 (ll_max - ll)`` 3.86864); the best of the starts stays on the branch."""
+    res = ls(bcg(), '~ ablat', '~ ablat', method='ML')
+    fit = metafopy.methods.ls_profile.profile_fit(res, 0, 1.1)
+    assert fit is not None
+    assert 2 * (res.logLik() - fit[0]) == pytest.approx(3.13614, abs=1e-4)
+    table = metafopy.confint(res, alpha=0, tol=1e-12).random
+    assert table is not None
+    assert table['ci.ub'].iloc[0] == pytest.approx(1.803009, abs=1e-5)
+
+
 def test_identity_fit_bcg_is_a_constrained_maximum() -> None:
     """On ``dat.bcg`` the optimum is on the boundary: ``Z alpha >= 0``, a log-likelihood above R's, and the score zero on the free directions."""
     res = ls(bcg(), '~ ablat', '~ ablat', link='identity', method='ML')

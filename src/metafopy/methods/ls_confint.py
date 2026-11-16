@@ -17,7 +17,7 @@ import metafopy.core.timing
 import metafopy.core.zeroin
 import metafopy.errors
 import metafopy.methods.confint
-import metafopy.methods.ls_common
+import metafopy.methods.ls_profile
 import metafopy.mfopt
 import metafopy.models.rma_ls_result
 import metafopy.models.rma_uni
@@ -52,17 +52,18 @@ def search_limits(
 
 
 def profile_lrt(x: metafopy.models.rma_ls_result.RMALSResult, pos: int, val: float, objective: float) -> float:
-    """``-2 (ll(alpha[pos] = val) - ll) - objective`` from a refit with ``alpha[pos]`` fixed (metafor's ``.profile.rma.ls``).
+    """``-2 (ll(alpha[pos] = val) - ll) - objective`` from the best refit with ``alpha[pos]`` fixed (metafor's ``.profile.rma.ls``).
+
+    The refit is [profile_fit][metafopy.methods.ls_profile.profile_fit], which keeps the highest log-likelihood of several starts where metafor
+    refits once.
 
     Raises:
         metafopy.errors.EstimationError: the refit failed.
     """
-    arg = numpy.where(x.alpha_fix, x.alpha, numpy.nan)
-    arg[pos] = val
-    fit = metafopy.methods.ls_common.refit_ls(x, alpha=arg)
+    fit = metafopy.methods.ls_profile.profile_fit(x, pos, val)
     if fit is None:
         raise metafopy.errors.EstimationError('the model could not be fitted')
-    return -2 * (fit.logLik() - x.logLik()) - objective
+    return -2 * (fit[0] - x.logLik()) - objective
 
 
 @metafopy.methods.confint.confint.register
@@ -89,6 +90,11 @@ def confint_rma_ls(
 
     Intervals for the scale coefficients are profile-likelihood intervals. The
     intervals for the location coefficients (``fixed=True``) are of Wald type.
+
+    The profile maximises the likelihood over the other scale coefficients (Viechtbauer & Lopez-Lopez, 2022, section 2.5.3), so each refit at a
+    fixed value starts from several points and keeps the highest log-likelihood. metafor's ``.profile.rma.ls`` refits once from its default start,
+    which can end at a lower local maximum and then place a bound where the profile is not at the cut-off. See the subsection "Profile-likelihood
+    bounds of the scale coefficients" of ``docs/differences.md``.
 
     Args:
         model: Location-scale model fitted by [rma_uni][metafopy.rma_uni] with ``scale``.

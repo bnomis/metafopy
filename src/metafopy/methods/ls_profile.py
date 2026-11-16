@@ -30,6 +30,8 @@ __all__ = ['LSProfileResult', 'profile_rma_ls']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 
+LINE_WEIGHTS = (0.25, 0.5, 0.75, 1.0)
+
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class LSProfileResult:
@@ -84,14 +86,43 @@ class LSProfileResult:
         return metafopy.core.labelled.frame_text(self.to_frame())
 
 
+def profile_starts(x: metafopy.models.rma_ls_result.RMALSResult, pos: int, val: float) -> list[FloatArray | None]:
+    """The starting values of the refits at ``alpha[pos] = val``: the default start (``None``), then points from the fit's ``alpha`` to the line start.
+
+    The fitted line start sets the other coefficients by least squares so that ``Z alpha`` stays as near ``Z alpha_hat`` as it can with ``alpha[pos]``
+    at ``val``. Far from the estimate the optimiser stops at the first start whenever the likelihood is nearly flat there, so the starts between the
+    two (a quarter, a half and three quarters of the way) are tried as well. A start that leaves a ``tau2_i`` negative under the identity link is left out.
+    """
+    own = numpy.array(x.alpha, dtype=numpy.float64)
+    own[pos] = val
+    starts: list[FloatArray | None] = [None, own]
+    free = [i for i in range(x.q) if i != pos]
+    if free:
+        line = own.copy()
+        line[free] = numpy.linalg.lstsq(x.Z[:, free], x.Z @ x.alpha - x.Z[:, pos] * val, rcond=None)[0]
+        starts.extend(own + weight * (line - own) for weight in LINE_WEIGHTS)
+    if x.link == 'identity':
+        starts = [s for s in starts if s is None or float(numpy.min(x.Z @ s)) >= 0]
+    return starts
+
+
 def profile_fit(x: metafopy.models.rma_ls_result.RMALSResult, pos: int, val: float) -> tuple[float, FloatArray, FloatArray, FloatArray] | None:
-    """The refit of ``x`` with scale coefficient ``pos`` fixed at ``val``: log-likelihood, coefficients and CI bounds (``None`` if it fails)."""
+    """The refit of ``x`` with scale coefficient ``pos`` fixed at ``val``: log-likelihood, coefficients and CI bounds (``None`` if every start fails).
+
+    The model is refitted from each start of [profile_starts][metafopy.methods.ls_profile.profile_starts] and the fit with the highest log-likelihood is
+    kept, so that the profile is the maximum over the other coefficients (Viechtbauer & Lopez-Lopez, 2022, section 2.5.3) and not a local maximum that
+    one start ends at.
+    """
     arg = numpy.where(x.alpha_fix, x.alpha, numpy.nan)
     arg[pos] = val
-    fit = metafopy.methods.ls_common.refit_ls(x, alpha=arg)
-    if fit is None:
+    best: metafopy.models.rma_ls_result.RMALSResult | None = None
+    for start in profile_starts(x, pos, val):
+        fit = metafopy.methods.ls_common.refit_ls(x, alpha=arg) if start is None else metafopy.methods.ls_common.refit_ls(x, alpha=arg, alpha_init=start)
+        if fit is not None and (best is None or fit.logLik() > best.logLik()):
+            best = fit
+    if best is None:
         return None
-    return fit.logLik(), fit.beta, fit.ci_lb, fit.ci_ub
+    return best.logLik(), best.beta, best.ci_lb, best.ci_ub
 
 
 @metafopy.methods.profile.profile.register  # type: ignore[arg-type]  # returns a result class of its own
@@ -120,6 +151,10 @@ def profile_rma_ls(
 
     Without ``alpha`` every estimated scale coefficient is profiled and a list is returned (a single result if there is one). ``xlim`` defaults to the
     estimate plus and minus 2.576 standard errors, limited by ``alpha_min`` and ``alpha_max`` of the control settings.
+
+    Each refit at a grid value starts from several points and keeps the highest log-likelihood, as the profile likelihood of Viechtbauer &
+    Lopez-Lopez (2022, section 2.5.3) maximises over the other coefficients; metafor's ``.profile.rma.ls`` refits once from its default start. See the
+    subsection "Profile-likelihood bounds of the scale coefficients" of ``docs/differences.md``.
 
     R source: <https://github.com/wviechtb/metafor/blob/master/R/profile.rma.ls.r>
 
