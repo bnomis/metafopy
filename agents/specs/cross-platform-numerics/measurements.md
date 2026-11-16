@@ -40,3 +40,54 @@ decides each group.
 
 Found while building the script: GNU tar in the emulated amd64 container cannot create nested directories ("Function not implemented"), so the image
 installs `bsdtar` (`libarchive-tools`) and the script extracts with it.
+
+Correction to the section above, found on 2026-11-16 while running the probe: `bin/linux-tests.sh` then ran `uv run` without naming the interpreter, so uv
+re-selected the project's `.python-version` (3.14.7) and rebuilt the container's virtual environment before running pytest. The group runs above were
+therefore on Python 3.14.7, not CI's 3.14.8. The script now sets `UV_PYTHON` to 3.14.8 for `uv run` too; the probe run below shows 3.14.8. The group
+comparison above is not repeated: the probe's figures decide each group.
+
+## The probe on the development Mac and in the arm64 container (Task 3 of `tasks-1.md`)
+
+<!-- doc-counts: accept-start measured on 2026-11-16 - a dated record, not a claim about the present -->
+
+`bin/platform-probe.py` run on 2026-11-16 (outputs in `$TMPDIR/metafopy-platform-probe/probe-mac.json` and `probe-linux-arm64.json`, outside the
+repository). Every group ran in both without error. `environment()`:
+
+| | Development Mac | Linux arm64 container |
+|---|---|---|
+| `sys.platform`, machine | `darwin`, `arm64` | `linux`, `aarch64` |
+| OS | macOS 27.2.1 | Ubuntu 26.04.1 LTS, glibc 2.43 |
+| Python | 3.14.7 (Clang 21.0.0) | 3.14.8 (Clang 23.1.3) |
+| numpy, scipy | 2.5.4, 1.18.1 | 2.5.4, 1.18.1 |
+| BLAS, LAPACK | Accelerate | scipy-openblas 0.3.34.106.0 |
+
+The Mac's Python is the main checkout's venv (3.14.7), not CI's 3.14.8; the figures of the other three environments (CI Mac, Windows, Linux) come in
+Task 4. Figures below are the probe's, to the digits shown.
+
+| Group | Development Mac | Linux arm64 container |
+|---|---|---|
+| `ls-bcg-reference` (BFGS starts, message) | ML: all three start `success`; REML start0 "precision loss" (score 2.3e-06), start2 "precision loss" at another point (score 3.7), start1 success | ML start1 "precision loss" (score 2e-08); REML start0 success, start2 "precision loss" but at the same point as start1 (score 9e-09). Both: metafopy's `ll` -7.53929025 (ML), -8.087277925 (REML) equals the reference's; metafopy's score 5e-09 to 8e-09 (ML), 1e-09 to 6e-09 (REML) |
+| `ls-identity-alpha` (SLSQP) | ML reference `alpha` [-0.026658667, 0.002050667], `ll` -7.139288818, metafopy `ll` -7.139288823; REML starts 0, 2, 3 "Positive directional derivative" at [0.339135521, -0.0061661] (`ll` -7.988765268), start1 success at [0.01337, 0.001627] (`ll` -8.0808) | ML the same point to 1e-9; REML starts 0 and 2 succeed at [0.339135521, -0.0061661] and start4 ends at [0.01337, 0.001627]; reference `alpha` [0.33913552, -0.0061661], `ll` -7.988765268, equal to metafopy's. The scores of the free directions stay 742 (ML) and 98 (REML) on both: the optimum lies on the boundary `Z alpha = 0` |
+| `selmodel-decreasing` | reference converged: `ll` -17.421673311 against metafopy's -17.421673313, `ll` along the ray from metafopy's point to the end point constant to 1e-9 | reference ran away: end point beta -2.8667, tau2 1.3122, delta [1, 1e-06, 1e-06], `ll` -400.155; along the ray from metafopy's point `ll` falls from -17.42 to -56.2, -97.9, -135.4, -400.2. The reference's maximum is metafopy's point on both; no end point beats it |
+| `glmm-um-rs-score` (largest absolute score, steps 2e-5, 5e-5, 1e-4, 2e-4, 4e-4, Richardson) | pneumonia 1.4e-06 to 1.9e-06, Richardson 1.4e-06; bcg 4.7e-07 to 8.6e-06, Richardson 1.7e-06 | pneumonia 1.1e-06 to 1.8e-06, Richardson 1.7e-06; bcg 1.1e-06 to 1.1e-05, Richardson 1.1e-06. `loglik` equal to 1e-9 in both |
+| `cm-el-tight-se` | `se` at the tight optimum 0.136385477, 0.35104033, 0.888102302 (expected 0.13638547727, 0.35104032933, 0.88810229648); Nelder-Mead stops after 80, 63, 64 iterations | 0.136385479, 0.35104033, 0.888102302; stops after 66, 59, 62 iterations; end points differ from the Mac's in the eighth decimal (collins1985a `alpha` 0.174406202 against 0.174406193) |
+| `mv-reml-score` | `sigma2` [0.072265591, 0.032650196]; score [1e-09, -8e-09] on a scale `tr(PZ)` of [104.47, 962.61] | `sigma2` the same; score [2e-09, -5e-09] on the same scale |
+| `stepcon-rau-mods` | `ci_lb` [-0.001791281, -0.021703414] (R: [-0.0017894, -0.021703647]), `se` [0.068166661, 0.004925723], `delta` [1, 0.637551407] | `ci_lb` [-0.001790637, -0.021703416], `se` [0.068166654, 0.004925723], `delta` [1, 0.637554816]; `vd` 0.257365565 against 0.257367814 |
+| `ls-vif-sim` (NaN draws of the first 50) | seed: none in beta, draw 42 in alpha; stream: none in beta, draw 3 in alpha | seed: none in beta, draw 0 in alpha; stream: none in either |
+| `permutest-ls-boundary` | `pval_alpha` [0.1136, 0.5227, 0.2727] (R: [0.1064, 0.4894, 0.2553]), `QSp` 0.6818 (R: 0.6383); undefined permutations 4, 21, 24, 25, 40, 46 | `pval_alpha` [0.125, 0.55, 0.3], `QSp` 0.7; undefined permutations 4, 7, 21, 25, 32, 36 |
+| `ls-identity-maximum` | metafopy and reference `alpha` [-0.02665867, 0.020506669], `ll` -7.139288823 and -7.139288818; starts differ in which one SLSQP calls successful | the same point and `ll` to 1e-9 |
+| `selmodel-print-halfnorm` | `delta` 0.000137796 (at its bound), `se` 0.105032128, `ci_lb` 0.011259798, `vd` 1.120669121 | `delta` 0.000137796, `se` 0.105720076, `ci_lb` 0.009911444, `vd` 1.13981677 |
+
+What these two environments already show, before CI's three:
+
+- `ls-bcg-reference`: which BFGS starts report "precision loss" differs between the Mac and Linux, and no environment's metafopy point is beaten: the
+  reference's log-likelihood equals metafopy's wherever the reference returns. A reference defect candidate (the dropped starts), to be confirmed on the
+  CI platforms.
+- `selmodel-decreasing`: on Linux the reference's single SLSQP run leaves metafopy's point for a runaway of log-likelihood -400; nothing beats metafopy's
+  point. A reference defect candidate.
+- `glmm-um-rs-score`: the score at the optimum is 1e-06 to 1e-05 with a spread across step sizes of the same size, in both environments.
+- `permutest-ls-boundary`, `ls-vif-sim`: which draws are boundary fits or NaN differs between the Mac and Linux, as the spec's table says.
+- `selmodel-print-halfnorm`: `se` differs by 0.7 per cent between the two with `delta` at its bound.
+- `mv-reml-score`: the score is 1e-09 to 1e-08 on a scale of 100 to 1000 (about 1e-11 relative) in both: rounding size.
+
+<!-- doc-counts: accept-end -->

@@ -92,6 +92,7 @@ git ls-files -co --exclude-standard -z | while IFS= read -r -d '' f; do [ -e "$f
         ${MOUNT[@]+"${MOUNT[@]}"} \
         -e UV_CACHE_DIR=/uv-cache \
         -e UV_LINK_MODE=copy \
+        -e "UV_PYTHON=$PYTHON_VERSION" \
         -e PYTHONDONTWRITEBYTECODE=1 \
         "$IMAGE" \
         bash -c 'set -e; bsdtar -xf -; uv sync --locked --all-extras --python "$0"; exec "${@:1}"' "$PYTHON_VERSION" "${RUN[@]}"

@@ -109,7 +109,7 @@ architecture that reproduces CI's Linux failures is known.
 
 ## Task 3: The probe
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** API (`bin/platform-probe.py`), Tests of the new code, Error handling, Confirming the cause
@@ -119,31 +119,35 @@ environments can be compared.
 
 **Subtasks:**
 
-- [ ] Write `bin/platform-probe.py` with `GroupMeasurement`, `environment()`, `measure_groups()` and `main()` as the spec's API gives them, one measuring
+- [x] Write `bin/platform-probe.py` with `GroupMeasurement`, `environment()`, `measure_groups()` and `main()` as the spec's API gives them, one measuring
       function per group of the Failure groups table, each recording what that group's confirmation (spec, Confirming the cause) needs and calling the
       same helpers its tests call; and `bin/platform-probe.sh`, the wrapper (`source bin/activate.sh`, then the script), as the project's other `bin/`
       tools are wrapped
-- [ ] Write `src/tests/test_platform_probe.py` as Tests of the new code says (`measure_groups(['cm-el-tight-se'])`, an unknown group's `KeyError`, `main`
+- [x] Write `src/tests/test_platform_probe.py` as Tests of the new code says (`measure_groups(['cm-el-tight-se'])`, an unknown group's `KeyError`, `main`
       writing JSON with `environment` and `groups` to `tmp_path`)
-- [ ] Run the probe on the development Mac and in the container (`bin/linux-tests.sh --arch <the reproducing arch> --probe $TMPDIR/metafopy-platform-probe`),
+- [x] Run the probe on the development Mac and in the container (`bin/linux-tests.sh --arch <the reproducing arch> --probe $TMPDIR/metafopy-platform-probe`),
       outputs outside the repository
-- [ ] Add to `measurements.md` each environment's `environment()` and the figures per group
+- [x] Add to `measurements.md` each environment's `environment()` and the figures per group
 
 **Acceptance Criteria:**
 
-- [ ] The probe runs on the development Mac and in the container and writes one JSON each; a group that raises is recorded and the others run
-- [ ] `measurements.md` holds both environments' figures, dated
+- [x] The probe runs on the development Mac and in the container and writes one JSON each; a group that raises is recorded and the others run
+- [x] `measurements.md` holds both environments' figures, dated
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_platform_probe.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_platform_probe.py` passes
 
 **Notes:**
 
 - Depends on Task 2
 - Key files: `bin/platform-probe.py`, `bin/platform-probe.sh`, `src/tests/test_platform_probe.py`
+- Done on 2026-11-16: the probe ran on the development Mac and in the arm64 container (figures in `measurements.md`). Running it showed that
+  `bin/linux-tests.sh` ran `uv run` on the project's `.python-version` (3.14.7), not 3.14.8; the script now sets `UV_PYTHON`, and `measurements.md`
+  carries a correction for Task 2's runs
+- `bin/platform-probe.py` uses argparse, as the project has no `cappa` dependency and the spec gives the `--group`/`--out` interface
 
 ---
 
