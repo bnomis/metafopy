@@ -53,7 +53,7 @@ case is reported before it is set to `mismatch`. A probe of those cases passed o
 | 4 | `cm-el-information/tasks-1.md` | - | - | merged 93f1856 |
 | 5 | `ls-identity-polish/tasks-1.md` | - | - | merged 0cbb642 |
 | 6 | `ls-profile-crossings/tasks-1.md` | 5 | - | merged 81ea377 |
-| 7 | `selmodel-prec-stepfun/tasks-1.md` | 3 | a new halfnorm precision case fails, only if one does (Task 1) | running |
+| 7 | `selmodel-prec-stepfun/tasks-1.md` | 3 | a new halfnorm precision case fails, only if one does (Task 1) | waiting: audit findings from other work (Task 3) |
 | 8 | `sjit-scaled-convergence/tasks-1.md` | - | - | todo |
 
 Checkpoint after 3: passed 8499 passed, 37 skipped, 38 xfailed
