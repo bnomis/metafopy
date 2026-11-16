@@ -146,7 +146,7 @@ log-likelihood is not a density and whose LRT overstates selection.
 
 ## Task 3: Record the difference in the user guide and run the audit
 
-**Status:** todo
+**Status:** in-progress
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Tests and records, items 3, 5 and 6; External dependencies
@@ -156,24 +156,24 @@ the change, adding a `known.toml` entry only if the audit flags `selmodel` with 
 
 **Subtasks:**
 
-- [ ] Add a subsection `### selmodel(type="stepfun") with a precision measure` to the section `## Where metafor departs from its reference` of
+- [x] Add a subsection `### selmodel(type="stepfun") with a precision measure` to the section `## Where metafor departs from its reference` of
       `docs/differences.md`, after the entries already there, in their format: a short summary (metafopy raises `InputError`; metafor warns that the
       combination is undocumented and experimental and fits it), the R call and the Python call side by side with the output of both, and `*Why:*`
       with the check date
-- [ ] The R block: `selmodel(res, type="stepfun", steps=c(0.025, 0.5, 1), prec="sei")` on an ML fit of `dat.bangertdrowns2004`, showing its warning,
+- [x] The R block: `selmodel(res, type="stepfun", steps=c(0.025, 0.5, 1), prec="sei")` on an ML fit of `dat.bangertdrowns2004`, showing its warning,
       ll and LRT. Produce its output with
       `R_LIBS=/Users/simonb/src/metafopy/.audit/Rlib LC_ALL=C.UTF-8 Rscript -e '<the R block>'` and paste it as printed (the spec measured ll
       -4.1029 and LRT 28.3186 on 2026-11-15; a different value stops the task as `blocked`, naming both)
-- [ ] The Python block starts `# docs: skip` and shows the same call raising `InputError` with its message, run once with metafopy to paste the
+- [x] The Python block starts `# docs: skip` and shows the same call raising `InputError` with its message, run once with metafopy to paste the
       message as printed
-- [ ] The `*Why:*`: no publication defines a step function with a precision measure (`?selmodel` names `prec` only for the continuous types,
+- [x] The `*Why:*`: no publication defines a step function with a precision measure (`?selmodel` names `prec` only for the continuous types,
       Preston et al. 2004); metafor's first interval has weight 1 in the normalising constant but `delta[0] / preci` for the observed p-value, so its
       likelihood is not a density, its estimates are the maximum of density C (weight 1 in the first interval, `delta[j] / preci` in the others) and
       its ll exceeds C's by `sum(-log(preci_i))` over the studies in the first interval, which inflates the LRT and shifts AIC, BIC and AICc; Vevea
       and Hedges (1995, Psychometrika 60:419-435, pp. 424-425) fix the first weight at 1. Name the decision and its date (2026-11-15, D3 of
       `agents/reviews/order-numerical-fixes-specs.md`) and the correctness cases `selmodel.prec.*.halfnorm.bangertdrowns2004` of Task 1
-- [ ] Run `pytest src/tests/test_docs_examples.py`
-- [ ] Run the whole audit from the worktree, in the background:
+- [x] Run `pytest src/tests/test_docs_examples.py`
+- [x] Run the whole audit from the worktree, in the background:
       `METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib bin/metafor-audit.sh`. If `check-r` reports that the R library is missing or
       differs from `src/audit/data/r-versions.json`, stop as `blocked` and say so; never pass `--allow-r-drift`
 - [ ] If its report flags `selmodel` with `prec` and `type = "stepfun"`, add a `[[known]]` entry to `src/audit/data/known.toml` matching exactly
@@ -199,6 +199,12 @@ the change, adding a `known.toml` entry only if the audit flags `selmodel` with 
 
 **Notes:**
 
+- BLOCKED (2026-11-16): the whole audit, run directory `.audit/runs/20261116-050828` in this worktree, reports 10 findings (8 causes) that the
+  newest earlier report (`/Users/simonb/src/metafopy/.audit/runs/20261116-032822`, metafopy `4b356dc`, 0 findings) does not hold. None names
+  `stepfun` or `prec`: `options/permutest/uni_mods/exact=true` (R killed at 4 GiB), `options/selmodel/uni_factor/type="logistic"` and
+  `"logistic1"` (`$hessian` element 11), `options/vif/ls_na/table=true`, `options/permutest/ls_bangert/digits=*` (printed output),
+  an `rma` print line, an `rma` with `alpha.init` NA, and two `scripts` `coef(res)$alpha` values. No `known.toml` entry added; the recall run not
+  started. Needs the operator to say whether these are environmental or from other merged work
 - Depends on Task 2
 - Prerequisite outside this repository: R 4.6.2 with metafor 5.2-1 and the pinned packages in `/Users/simonb/src/metafopy/.audit/Rlib`, the main
   checkout's R library (present on 2026-11-15)
