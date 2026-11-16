@@ -146,7 +146,7 @@ log-likelihood is not a density and whose LRT overstates selection.
 
 ## Task 3: Record the difference in the user guide and run the audit
 
-**Status:** in-progress
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Tests and records, items 3, 5 and 6; External dependencies
@@ -176,30 +176,30 @@ the change, adding a `known.toml` entry only if the audit flags `selmodel` with 
 - [x] Run the whole audit from the worktree, in the background:
       `METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib bin/metafor-audit.sh`. If `check-r` reports that the R library is missing or
       differs from `src/audit/data/r-versions.json`, stop as `blocked` and say so; never pass `--allow-r-drift`
-- [ ] If its report flags `selmodel` with `prec` and `type = "stepfun"`, add a `[[known]]` entry to `src/audit/data/known.toml` matching exactly
+- [x] If its report flags `selmodel` with `prec` and `type = "stepfun"`, add a `[[known]]` entry to `src/audit/data/known.toml` matching exactly
       those case ids, with `kind`, `path`, a `reason` citing the decision and its date and `ref = "docs/differences.md"`, and rerun the same command
       to see it accepted. Otherwise add no entry: the spec expects none, since the audit's `options/selmodel/*/prec=` cases stop for want of `type`
       in both languages. Any other finding the newest earlier report under `/Users/simonb/src/metafopy/.audit/runs/` does not hold is new with this
       list: stop as `blocked`, naming it
-- [ ] Run `METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib bin/metafor-audit.sh --recall`, in the background. A miss stops the task as
+- [x] Run `METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib bin/metafor-audit.sh --recall`, in the background. A miss stops the task as
       `blocked`, naming the item (`AGENTS.md`: a miss is fixed in the harness, `src/audit/data/`, which is outside this list)
-- [ ] Record in this task's Notes the run directories of both runs and whether a `known.toml` entry was added
+- [x] Record in this task's Notes the run directories of both runs and whether a `known.toml` entry was added
 
 **Acceptance Criteria:**
 
-- [ ] `docs/differences.md` has the subsection under "Where metafor departs from its reference", with R's output and metafopy's error as printed
-- [ ] The whole audit reports no finding new with this list, and every `known.toml` entry added matches at least one case of that run
-- [ ] `bin/metafor-audit.sh --recall` reproduces every item
+- [x] `docs/differences.md` has the subsection under "Where metafor departs from its reference", with R's output and metafopy's error as printed
+- [x] The whole audit reports no finding new with this list, and every `known.toml` entry added matches at least one case of that run
+- [x] `bin/metafor-audit.sh --recall` reproduces every item
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_docs_examples.py src/tests/test_selmodel.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_docs_examples.py src/tests/test_selmodel.py` passes
 
 **Notes:**
 
-- BLOCKED (2026-11-16): the whole audit, run directory `.audit/runs/20261116-050828` in this worktree, reports 10 findings (8 causes) that the
+- Earlier block, resolved by the decision below (2026-11-16): the whole audit, run directory `.audit/runs/20261116-050828` in this worktree, reports 10 findings (8 causes) that the
   newest earlier report (`/Users/simonb/src/metafopy/.audit/runs/20261116-032822`, metafopy `4b356dc`, 0 findings) does not hold. None names
   `stepfun` or `prec`: `options/permutest/uni_mods/exact=true` (R killed at 4 GiB), `options/selmodel/uni_factor/type="logistic"` and
   `"logistic1"` (`$hessian` element 11), `options/vif/ls_na/table=true`, `options/permutest/ls_bangert/digits=*` (printed output),
@@ -213,6 +213,10 @@ the change, adding a `known.toml` entry only if the audit flags `selmodel` with 
   (`ls-identity-polish`), whose `known.toml` entry matched only `scripts/misc_rma_ls/*`. So: add one `known.toml` entry for those two tests, with
   the reason and `ref` of row 5's `scripts/misc_rma_ls` identity-link entry; re-render the run's report with `--rerender` to confirm only the eight
   filed findings remain; then run the recall check and finish the task as written
+- Run directories (2026-11-16): whole audit `.audit/runs/20261116-050828`, re-rendered with the new `known.toml` entry (eight findings remain, all
+  filed in `TODO.md` by row 1); recall check `.audit/runs/recall-20261116-055613` (176 of 176 items reproduced; the one item `a6-glmm-um-rs` is
+  reported as "oracle moved", not a miss). One `known.toml` entry was added, for `scripts/misc_rma_uni_ls/test/18` and `/21`; none for `selmodel`
+  with `prec` and `stepfun`, which the audit did not flag
 - Depends on Task 2
 - Prerequisite outside this repository: R 4.6.2 with metafor 5.2-1 and the pinned packages in `/Users/simonb/src/metafopy/.audit/Rlib`, the main
   checkout's R library (present on 2026-11-15)

@@ -1980,3 +1980,11 @@ kind = "value-diff"
 path = ["$random", "[]$random", "$vc", "$pred", "$se", "$ci.ub"]
 reason = "confint(), profile() and predict() of the identity-link location-scale fits of test_misc_rma_ls.r (link = 'identity'): R's constrOptim stops about 1e-5 short of the identity-link maximum, metafopy polishes the optimum on the analytic score within Z alpha >= 0, so the profile grids, intervals and predictions differ by up to 1e-2 relative."
 ref = "docs/differences.md"
+
+[[known]]
+match = ["scripts/misc_rma_uni_ls/test/18", "scripts/misc_rma_uni_ls/test/21"]
+kind = "value-diff"
+path = ""
+detail = "*coef(res)$alpha*"
+reason = "coef(res)$alpha of the identity-link ML location-scale fits of test_misc_rma_uni_ls.r (link = 'identity'): R's constrOptim stops about 1e-5 short of the identity-link maximum, metafopy polishes the optimum on the analytic score within Z alpha >= 0, so alpha differs by 3e-4 relative (checked 2026-11-16, R 4.6.2, metafor 5.2-1)."
+ref = "docs/differences.md"
