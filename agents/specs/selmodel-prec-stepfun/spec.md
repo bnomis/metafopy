@@ -1,7 +1,7 @@
 # selmodel: a precision measure on a step-function selection model
 
 **Version:** 1.1
-**Status:** approved (2026-11-15, `agents/reviews/order-numerical-fixes-specs.md`: option (a), reject)
+**Status:** implemented
 **Date:** 2026-11-15
 
 `selmodel(type='stepfun', prec=...)` fits a step-function selection model whose weights also depend on each study's precision. No publication

@@ -1905,6 +1905,84 @@ alpha.3   0.5201 <-31.1917 7.7000
 </div>
 </div>
 
+### selmodel(type="stepfun") with a precision measure
+
+metafopy raises `InputError` for `type="stepfun"` with `prec`. metafor warns that the combination is undocumented and experimental, and fits it.
+`type="stepfun"` with `decreasing=TRUE` and `type="stepcon"` keep metafor's behaviour: `prec` is ignored with a warning. The correctness cases
+`selmodel.prec.sei.halfnorm.bangertdrowns2004`, `selmodel.prec.vi.halfnorm.bangertdrowns2004`, `selmodel.prec.ninv.halfnorm.bangertdrowns2004` and
+`selmodel.prec.sqrtninv.halfnorm.bangertdrowns2004` cover `prec` on `type="halfnorm"`, the model `?selmodel` defines it for.
+
+<div class="compare" markdown>
+<div markdown>
+
+**R, metafor 5.2-1**
+
+```r
+library(metafor)
+res <- rma(yi, vi, data=dat.bangertdrowns2004, method="ML")
+selmodel(res, type="stepfun", steps=c(0.025, 0.5, 1), prec="sei")
+```
+
+```text
+Random-Effects Model (k = 48; tau^2 estimator: ML)
+
+tau^2 (estimated amount of total heterogeneity): 0.0308 (SE = 0.0227)
+tau (square root of estimated tau^2 value):      0.1755
+
+Test for Heterogeneity:
+LRT(df = 1) = 4.6718, p-val = 0.0307
+
+Model Results:
+
+estimate      se    zval    pval    ci.lb   ci.ub    
+  0.1378  0.0881  1.5642  0.1178  -0.0349  0.3105    
+
+Test for Selection Model Parameters:
+LRT(df = 2) = 28.3186, p-val < .0001
+
+Selection Model Results:
+
+                     k  estimate      se     zval    pval   ci.lb   ci.ub      
+0     < p <= 0.025  14    1.0000     ---      ---     ---     ---     ---      
+0.025 < p <= 0.5    23    0.2030  0.1347  -5.9191  <.0001  0.0000  0.4669  *** 
+0.5   < p <= 1      11    0.1575  0.1471  -5.7280  <.0001  0.0000  0.4458  *** 
+
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Warning message:
+Adding a precision measure to this selection model is undocumented and experimental.
+```
+
+The log-likelihood of that fit is -4.1029.
+
+</div>
+<div markdown>
+
+**Python, metafopy**
+
+```python
+# docs: skip
+from metafopy import datasets, rma_uni, selmodel
+
+res = rma_uni('yi', 'vi', data=datasets.load('dat.bangertdrowns2004'), method='ML')
+selmodel(res, type='stepfun', steps=[0.025, 0.5, 1], prec='sei')
+```
+
+```text
+metafopy.errors.InputError: Argument 'prec' cannot be used with type='stepfun': a step-function selection model with a precision measure is not defined (see docs/differences.md).
+```
+
+</div>
+</div>
+
+*Why:* no publication defines a step function with a precision measure: `?selmodel` names `prec` only for the continuous types (Preston et
+al. 2004). In metafor's version the first interval has weight 1 in the normalising constant but `delta[0] / preci` for the observed p-value, so
+its likelihood is not a density. Its estimates are the maximum of the density in which the first interval has weight 1 and the others
+`delta[j] / preci`, and its log-likelihood exceeds that density's by the sum of `-log(preci_i)` over the studies in the first interval. That
+inflates the LRT and shifts AIC, BIC and AICc. Vevea and Hedges (1995, Psychometrika 60:419-435, pp. 424-425) fix the first weight at 1. The
+user chose rejection on 2026-11-15 (decision D3 in `agents/reviews/order-numerical-fixes-specs.md`); checked 2026-11-16, R 4.6.2, metafor 5.2-1.
+
 ## Everything else
 
 The [detailed notes](differences-notes.md) hold the rest, grouped by topic:

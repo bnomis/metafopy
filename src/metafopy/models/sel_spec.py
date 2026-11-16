@@ -379,7 +379,10 @@ def build_spec(
                 warnings.warn("Argument 'prec' ignored (not applicable to this type of selection model).", stacklevel=3)
                 preci = numpy.ones(k)
             else:
-                warnings.warn('Adding a precision measure to this selection model is undocumented and experimental.', stacklevel=3)
+                raise metafopy.errors.InputError(
+                    "Argument 'prec' cannot be used with type='stepfun': a step-function selection model with a precision measure is not defined "
+                    '(see docs/differences.md).'
+                )
         deltas = steps.shape[0]
         lb_excl, ub_excl = (False,) * deltas, (False,) * deltas
         h0 = numpy.ones(deltas)

@@ -60,24 +60,22 @@ Fix direction: reproduce the R message with `rma(..., mods = ~ ablat * alloc, sc
 make metafopy refuse with the same error or accept the difference in `src/audit/data/known.toml` and `docs/differences.md`. A change to `src/metafopy/`
 goes through a spec first, or a small task list if the fix is local.
 
-## A precision measure on a step-function selection model makes the likelihood not a density
+## A fixed delta[0] other than 1 on a step-function selection model makes the likelihood a constant multiple
 
-<!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
-Found on 2026-11-15 by the cases `selmodel.prec.{sei,vi,ninv,sqrtninv}.bangertdrowns2004` in `src/tests/correctness/cases/selmodel.toml`
-(`agents/specs/correctness-publication-bias/mismatches.md`); the user answered *investigate* on 2026-11-15. With `type='stepfun'` and `prec` set,
-metafopy gives beta 0.13780 (`sei`), 0.16908 (`vi`), 0.16769 (`ninv`) and 0.13711 (`sqrtninv`); the maximum of the density with weights `delta[j] /
-preci` gives beta 0.10569 and ll -17.4217 for each. R metafor 5.2-1 gives metafopy's values (operator session, 2026-11-15), and warns that the
-combination is undocumented and experimental.
+<!-- doc-counts: accept-start found on 2026-11-16 - a dated record, not a claim about the present -->
+Found on 2026-11-16 while closing `agents/specs/selmodel-prec-stepfun/spec.md`. `selmodel(type='stepfun', steps=[0.025, 0.5, 1], delta=[0.5, nan,
+nan])` on an ML fit of `dat.bangertdrowns2004` gives the estimates of `delta=[1, nan, nan]` (beta 0.10569, delta 0.40141 and 0.27643) and an ll of
+-27.1257 against -17.4217, in metafopy and in R metafor 5.2-1 alike (`R_LIBS=/Users/simonb/src/metafopy/.audit/Rlib LC_ALL=C.UTF-8 Rscript`). The
+ll differs by `n1 * log(0.5)`, with `n1` the number of observed p-values in the first interval.
 <!-- doc-counts: accept-end -->
 
-Cause: metafopy, like metafor, normalises the first interval with weight 1 but weights the observed p-value by `delta[0] / preci`, so the likelihood is
-not a density and its maximum moves with the precision measure. The consistent likelihood makes `prec` a no-op, so neither is the intended model.
+Cause: the first interval's weight is hard-coded to 1 in the normalising constant, but the numerator uses the user's `delta[0]`, so a fixed `delta[0]`
+only adds `n1 * log(delta[0])` to the ll and never moves the estimates. See `.selmodel.ll.stepfun` (`R/misc.func.hidden.selmodel.r`) and
+`ll_stepfun` (`src/metafopy/models/sel_lik.py`).
 
-Fix direction: decide whether `selmodel` rejects the combination with an `InputError`, or defines it from a source (none found for step functions). Then
-set the four cases to `pass` or exempt them with the decision, mark the `hack_stepfun_sei` R parity fixture as differing if the behaviour changes, and
-name the decision in `docs/differences.md` under "Where metafor departs from its reference". A change to `src/metafopy/` goes through a spec first.
-
-Spec: `agents/specs/selmodel-prec-stepfun/spec.md`; tasks: `agents/tasks/selmodel-prec-stepfun/tasks-1.md`.
+Fix direction: decide whether `selmodel` rejects a `delta[0]` other than 1 on a step-function model, or normalises with the user's `delta[0]` (which
+departs from metafor). Name the decision in `docs/differences.md` under "Where metafor departs from its reference". A change to `src/metafopy/` goes
+through a spec first.
 
 ## Whether R metafor's SJIT converges on the scaled scale-invariance data was never checked
 

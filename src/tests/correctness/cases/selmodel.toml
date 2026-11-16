@@ -62,62 +62,6 @@ tolerance = 1e-4
 covers = ["selmodel.decreasing"]
 
 [[case]]
-id = "selmodel.prec.sei.bangertdrowns2004"
-kind = "derived"
-function = "selmodel"
-dataset = "dat.bangertdrowns2004"
-setup = { rma_uni = { method = "ML" } }
-args = { type = "stepfun", steps = [0.025, 0.50, 1.0], prec = "sei" }
-expect = {}
-check = "test_derived.selmodel_fit"
-tolerance = 1e-4
-status = "mismatch"
-reason = "metafopy gives beta 0.13780357 and ll -4.1029, the maximum of the density with weights delta[j] / preci gives beta 0.10568606 and ll -17.4217: metafopy (as metafor 5.2-1 does, see the stepfun prec fixture hack_stepfun_sei) normalises the first interval with weight 1 but weights the observed p-value by delta[0] / preci, so the likelihood is not a density and its maximum moves with the precision measure; no publication defines a precision measure for step functions and metafor warns that it is undocumented and experimental; answered investigate 2026-11-15, see the TODO.md item on a precision measure on a step-function selection model"
-covers = ["selmodel.prec.sei"]
-
-[[case]]
-id = "selmodel.prec.vi.bangertdrowns2004"
-kind = "derived"
-function = "selmodel"
-dataset = "dat.bangertdrowns2004"
-setup = { rma_uni = { method = "ML" } }
-args = { type = "stepfun", steps = [0.025, 0.50, 1.0], prec = "vi" }
-expect = {}
-check = "test_derived.selmodel_fit"
-tolerance = 1e-4
-status = "mismatch"
-reason = "metafopy gives beta 0.16908211 and ll 7.5714, the maximum of the density with weights delta[j] / preci gives beta 0.10568607 and ll -17.4217: metafopy (as metafor 5.2-1 does, see the stepfun prec fixture hack_stepfun_sei) normalises the first interval with weight 1 but weights the observed p-value by delta[0] / preci, so the likelihood is not a density and its maximum moves with the precision measure; no publication defines a precision measure for step functions and metafor warns that it is undocumented and experimental; answered investigate 2026-11-15, see the TODO.md item on a precision measure on a step-function selection model"
-covers = ["selmodel.prec.vi"]
-
-[[case]]
-id = "selmodel.prec.ninv.bangertdrowns2004"
-kind = "derived"
-function = "selmodel"
-dataset = "dat.bangertdrowns2004"
-setup = { rma_uni = { method = "ML" } }
-args = { type = "stepfun", steps = [0.025, 0.50, 1.0], prec = "ninv" }
-expect = {}
-check = "test_derived.selmodel_fit"
-tolerance = 1e-4
-status = "mismatch"
-reason = "metafopy gives beta 0.16769057 and ll 7.1307, the maximum of the density with weights delta[j] / preci gives beta 0.10568609 and ll -17.4217: metafopy (as metafor 5.2-1 does, see the stepfun prec fixture hack_stepfun_sei) normalises the first interval with weight 1 but weights the observed p-value by delta[0] / preci, so the likelihood is not a density and its maximum moves with the precision measure; no publication defines a precision measure for step functions and metafor warns that it is undocumented and experimental; answered investigate 2026-11-15, see the TODO.md item on a precision measure on a step-function selection model"
-covers = ["selmodel.prec.ninv"]
-
-[[case]]
-id = "selmodel.prec.sqrtninv.bangertdrowns2004"
-kind = "derived"
-function = "selmodel"
-dataset = "dat.bangertdrowns2004"
-setup = { rma_uni = { method = "ML" } }
-args = { type = "stepfun", steps = [0.025, 0.50, 1.0], prec = "sqrtninv" }
-expect = {}
-check = "test_derived.selmodel_fit"
-tolerance = 1e-4
-status = "mismatch"
-reason = "metafopy gives beta 0.13710917 and ll -4.3548, the maximum of the density with weights delta[j] / preci gives beta 0.10568609 and ll -17.4217: metafopy (as metafor 5.2-1 does, see the stepfun prec fixture hack_stepfun_sei) normalises the first interval with weight 1 but weights the observed p-value by delta[0] / preci, so the likelihood is not a density and its maximum moves with the precision measure; no publication defines a precision measure for step functions and metafor warns that it is undocumented and experimental; answered investigate 2026-11-15, see the TODO.md item on a precision measure on a step-function selection model"
-covers = ["selmodel.prec.sqrtninv"]
-
-[[case]]
 id = "selmodel.fixed_delta.cohen1981"
 kind = "derived"
 function = "selmodel"
@@ -158,6 +102,57 @@ expect = {}
 check = "test_derived.selmodel_fit"
 tolerance = 2e-3
 covers = ["selmodel.halfnorm"]
+
+# `stepfun` with `prec` is rejected (option (a), answered 2026-11-15 in agents/reviews/order-numerical-fixes-specs.md, D3; agents/specs/selmodel-prec-stepfun/spec.md),
+# so `prec` is covered by `halfnorm`, the model `?selmodel` defines it for (Preston et al. 2004).
+
+[[case]]
+id = "selmodel.prec.sei.halfnorm.bangertdrowns2004"
+kind = "derived"
+function = "selmodel"
+dataset = "dat.bangertdrowns2004"
+setup = { rma_uni = { method = "ML" } }
+args = { type = "halfnorm", prec = "sei", control = { intCtrl = { "rel.tol" = 1e-12 } } }
+expect = {}
+check = "test_derived.selmodel_fit"
+tolerance = 2e-3
+covers = ["selmodel.prec.sei"]
+
+[[case]]
+id = "selmodel.prec.vi.halfnorm.bangertdrowns2004"
+kind = "derived"
+function = "selmodel"
+dataset = "dat.bangertdrowns2004"
+setup = { rma_uni = { method = "ML" } }
+args = { type = "halfnorm", prec = "vi", control = { intCtrl = { "rel.tol" = 1e-12 } } }
+expect = {}
+check = "test_derived.selmodel_fit"
+tolerance = 2e-3
+covers = ["selmodel.prec.vi"]
+
+[[case]]
+id = "selmodel.prec.ninv.halfnorm.bangertdrowns2004"
+kind = "derived"
+function = "selmodel"
+dataset = "dat.bangertdrowns2004"
+setup = { rma_uni = { method = "ML" } }
+args = { type = "halfnorm", prec = "ninv", control = { intCtrl = { "rel.tol" = 1e-12 } } }
+expect = {}
+check = "test_derived.selmodel_fit"
+tolerance = 2e-3
+covers = ["selmodel.prec.ninv"]
+
+[[case]]
+id = "selmodel.prec.sqrtninv.halfnorm.bangertdrowns2004"
+kind = "derived"
+function = "selmodel"
+dataset = "dat.bangertdrowns2004"
+setup = { rma_uni = { method = "ML" } }
+args = { type = "halfnorm", prec = "sqrtninv", control = { intCtrl = { "rel.tol" = 1e-12 } } }
+expect = {}
+check = "test_derived.selmodel_fit"
+tolerance = 2e-3
+covers = ["selmodel.prec.sqrtninv"]
 
 [[case]]
 id = "selmodel.negexp.bangertdrowns2004"

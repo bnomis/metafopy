@@ -391,7 +391,9 @@ def selmodel(
             and ``'truncest'``); may be abbreviated.
         prec: Measure of precision the selection function may depend on: ``'sei'``, ``'vi'``, ``'ninv'`` or ``'sqrtninv'`` (the last two need the
             sample sizes stored in ``x``, else ``InputError``). Default (``None``) is no dependence on precision. It is rescaled by its maximum
-            unless ``scaleprec=False``. It is ignored with a warning for ``'beta'``, ``'trunc'`` and ``'truncest'``.
+            unless ``scaleprec=False``. It is ignored with a warning for ``'beta'``, ``'trunc'``, ``'truncest'``, ``'stepcon'`` and ``'stepfun'`` with
+            ``decreasing=True``. It raises ``InputError`` for ``'stepfun'`` otherwise: no publication defines a step function with a precision
+            measure, and metafor's version is not a density (``docs/differences.md``, "Where metafor departs from its reference").
         subset: Which studies the selection function applies to (the others are always observed): a boolean or 0-based index vector over the studies
             of ``x``. Default: all.
         delta: Fixed values of the selection parameters, one per parameter of the chosen type (``None`` or ``nan`` elements are estimated); a wrong
@@ -422,7 +424,7 @@ def selmodel(
     Raises:
         metafopy.errors.ArgumentError: ``x`` is not a model this can be applied to (a robust model, or not from ``rma_uni``).
         metafopy.errors.InputError: an argument or the data is invalid (unknown ``type``, ``prec`` or ``alternative``, unsuitable ``steps`` or
-            ``delta``, too few studies, no sample sizes for ``prec='ninv'``).
+            ``delta``, too few studies, no sample sizes for ``prec='ninv'``, ``prec`` with ``type='stepfun'`` and ``decreasing=False``).
         metafopy.errors.EstimationError: the optimiser did not converge or the likelihood could not be integrated.
         metafopy.errors.NotSupportedError: the optimiser chosen in ``control`` has no counterpart in metafopy.
 
