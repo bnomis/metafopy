@@ -17,7 +17,7 @@ import metafopy.core.timing
 import metafopy.core.zeroin
 import metafopy.errors
 import metafopy.methods.confint
-import metafopy.methods.ls_common
+import metafopy.methods.ls_profile
 import metafopy.mfopt
 import metafopy.models.rma_ls_result
 import metafopy.models.rma_uni
@@ -32,14 +32,19 @@ COLUMNS = ('estimate', 'ci.lb', 'ci.ub')  # auditme: accept[non-alphabetical-lit
 def search_limits(
     x: metafopy.models.rma_ls_result.RMALSResult, pos: int, alpha_level: float, control: collections.abc.Mapping[str, typing.Any]
 ) -> tuple[float, float]:
-    """The interval searched for the bounds of the CI of ``alpha[pos]`` (``vc.min`` and ``vc.max``)."""
+    """The interval searched for the bounds of the CI of ``alpha[pos]`` (``vc.min`` and ``vc.max``).
+
+    The default is the estimate plus and minus ten times the critical value times the standard error. metafor 5.2-1 also caps it at ten times the
+    absolute estimate, which cuts the interval short for a coefficient near zero; see the subsection "Profile-likelihood bounds of the scale
+    coefficients" of ``docs/differences.md``.
+    """
     vc = float(x.alpha[pos])
     se = float(x.se_alpha[pos])
     if math.isnan(se):
         lo, hi = vc - 10 * abs(vc), vc + 10 * abs(vc)
     else:
         crit = float(scipy.stats.norm.isf(alpha_level / 2))
-        lo, hi = max(vc - 10 * abs(vc), vc - 10 * crit * se), min(vc + 10 * abs(vc), vc + 10 * crit * se)
+        lo, hi = vc - 10 * crit * se, vc + 10 * crit * se
     amin = numpy.broadcast_to(numpy.asarray(x.control.alpha_min, dtype=numpy.float64), (x.q,))
     amax = numpy.broadcast_to(numpy.asarray(x.control.alpha_max, dtype=numpy.float64), (x.q,))
     lo = max(lo, float(amin[pos]))
@@ -52,17 +57,18 @@ def search_limits(
 
 
 def profile_lrt(x: metafopy.models.rma_ls_result.RMALSResult, pos: int, val: float, objective: float) -> float:
-    """``-2 (ll(alpha[pos] = val) - ll) - objective`` from a refit with ``alpha[pos]`` fixed (metafor's ``.profile.rma.ls``).
+    """``-2 (ll(alpha[pos] = val) - ll) - objective`` from the best refit with ``alpha[pos]`` fixed (metafor's ``.profile.rma.ls``).
+
+    The refit is [profile_fit][metafopy.methods.ls_profile.profile_fit], which keeps the highest log-likelihood of several starts where metafor
+    refits once.
 
     Raises:
         metafopy.errors.EstimationError: the refit failed.
     """
-    arg = numpy.where(x.alpha_fix, x.alpha, numpy.nan)
-    arg[pos] = val
-    fit = metafopy.methods.ls_common.refit_ls(x, alpha=arg)
+    fit = metafopy.methods.ls_profile.profile_fit(x, pos, val)
     if fit is None:
         raise metafopy.errors.EstimationError('the model could not be fitted')
-    return -2 * (fit.logLik() - x.logLik()) - objective
+    return -2 * (fit[0] - x.logLik()) - objective
 
 
 @metafopy.methods.confint.confint.register
@@ -90,6 +96,11 @@ def confint_rma_ls(
     Intervals for the scale coefficients are profile-likelihood intervals. The
     intervals for the location coefficients (``fixed=True``) are of Wald type.
 
+    The profile maximises the likelihood over the other scale coefficients (Viechtbauer & Lopez-Lopez, 2022, section 2.5.3), so each refit at a
+    fixed value starts from several points and keeps the highest log-likelihood. metafor's ``.profile.rma.ls`` refits once from its default start,
+    which can end at a lower local maximum and then place a bound where the profile is not at the cut-off. See the subsection "Profile-likelihood
+    bounds of the scale coefficients" of ``docs/differences.md``.
+
     Args:
         model: Location-scale model fitted by [rma_uni][metafopy.rma_uni] with ``scale``.
         fixed: Give Wald-type intervals for the location coefficients (t distribution if the test is ``'t'``, ``'knha'`` or ``'adhoc'``, else normal).
@@ -104,9 +115,10 @@ def confint_rma_ls(
         control: Settings of the root finding: ``vc_min`` and ``vc_max`` (also written ``vc.min``, ``vc.max``; the interval searched for the bounds),
             ``tol``, ``maxiter``, ``eptries`` and ``verbose`` (the entry ``verbose`` has no effect, see ``verbose``). Its entries replace the keyword
             arguments of the same name. Names must be given in full; entries that only other functions of metafor read are ignored and any other entry
-            raises ``InputError``. The default interval searched for the bounds of a coefficient is its estimate plus and minus the smaller of ten
-            times its absolute value and ten times the normal critical value times its standard error (the former only if the standard error is NaN),
-            limited by ``alpha_min`` and ``alpha_max`` of the control of the fitted model.
+            raises ``InputError``. The default interval searched for the bounds of a coefficient is its estimate plus and minus ten
+            times the normal critical value times its standard error (ten times its absolute value if the standard error is NaN), limited by
+            ``alpha_min`` and ``alpha_max`` of the control of the fitted model. metafor 5.2-1 also caps it at ten times the absolute estimate;
+            ``xlim`` reproduces its interval (see the subsection "Profile-likelihood bounds of the scale coefficients" of ``docs/differences.md``).
         tol: Convergence tolerance of the root finding (default ``eps^0.25``).
         maxiter: Maximum number of iterations of the root finding.
         eptries: Number of attempts to find the bounds: when the model cannot be fitted at an end of the interval searched, that end is moved towards the

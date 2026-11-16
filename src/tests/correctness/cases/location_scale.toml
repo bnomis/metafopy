@@ -490,7 +490,7 @@ args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML
 check = "test_derived.ls_confint_scale"
 covers = ["ls.confint.scale"]
 status = "mismatch"
-reason = "ls.confint.scale.ML.bcg: confint alpha.1: metafopy gives [-23.309450210583307, 1.0223537117081194], the reference gives (nan, 1.8030085946491885) (tolerance 1e-05)"
+reason = "ls.confint.scale.ML.bcg: confint alpha.2 upper bound: formulas.ls_profile_ll refits from two starts and ends on the tau2 = 0 branch at a = 1.3169166758 (2 (ll_max - ll) 3.8686, above the cut-off 3.8415), where metafopy keeps the continuous branch (3.6850); the profile does not cross within 10 crit se, so metafopy gives the interval end 1.3598 with a '>' sign (alpha.1 and the REML case agree)"
 
 [[case]]
 id = "ls.confint.location.z.ML.bcg"
@@ -581,8 +581,7 @@ setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di =
 args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log" }
 check = "test_derived.ls_confint_scale"
 covers = ["ls.confint.scale"]
-status = "mismatch"
-reason = "ls.confint.scale.REML.bcg: confint alpha.1: metafopy gives upper bound 3.286218891717569, the reference gives 3.4026725323940052 (lower bound -16.0108623664 agrees; tolerance 1e-05)"
+status = "pass"
 
 [[case]]
 id = "ls.confint.location.z.REML.bcg"
@@ -1053,7 +1052,7 @@ doi = "10.1002/jrsm.1562"
 locator = "Table 1, 95% PLCI column: the bounds printed as numbers and inside the range of the paper's plots (upper bound of the intercept, upper bound of sample size, lower bound of science vs. math)"
 read = 2026-11-15
 
-# The paper's lower profile bound of sample size is also the one formulas.ls_profile_bounds finds (-7.159061); metafopy's confint stops at -5.93003.
+# The paper's lower profile bound of sample size is the one formulas.ls_profile_bounds finds (-7.159061), and confint finds it too.
 [[case]]
 id = "published.vl2022.table1.plci.size"
 kind = "published"
@@ -1062,8 +1061,7 @@ data = { yi = [0.65, -0.75, -0.21, -0.04, 0.23, 0.03, 0.26, 0.06, 0.06, 0.12, 0.
 args = { yi = "yi", vi = "vi", mods = "~ ni100 + sci + soc", scale = "~ ni100 + sci + soc", method = "REML", link = "log", test = "knha" }
 check = "test_published.vl2022_profile"
 printed = { "plci_lb[1]" = "-7.159" }
-status = "mismatch"
-reason = "published.vl2022.table1.plci.size: plci_lb[1]: metafopy gives -5.93003, the paper prints -7.159 (tolerance 0.0005); formulas.ls_profile_bounds gives -7.159061"
+status = "pass"
 
 [case.source]
 citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Research Synthesis Methods 13(6):697-715."
@@ -1109,8 +1107,7 @@ data = { yi = [0.65, -0.75, -0.21, -0.04, 0.23, 0.03, 0.26, 0.06, 0.06, 0.12, 0.
 args = { yi = "yi", vi = "vi", mods = "~ ni100", scale = "~ sci + soc", method = "REML", link = "log", test = "knha" }
 check = "test_published.vl2022_profile"
 printed = { "plci_ub[2]" = "7.700" }
-status = "mismatch"
-reason = "published.vl2022.table2.plci.soc: plci_ub[2]: metafopy gives 5.72067, the paper prints 7.700 (tolerance 0.0005)"
+status = "pass"
 
 [case.source]
 citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Research Synthesis Methods 13(6):697-715."

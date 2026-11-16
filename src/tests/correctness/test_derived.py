@@ -862,10 +862,18 @@ def ls_confint_scale(case: correctness.cases.Case, result: typing.Any) -> None:
     yi, vi, X, Z = ls_inputs(case)
     link, method = case.args.get('link', 'log'), case.args['method']
     for j in range(Z.shape[1]):
-        table = metafopy.confint(result, alpha=j, tol=1e-12).random
+        interval = metafopy.confint(result, alpha=j, tol=1e-12)
+        table = interval.random
         assert table is not None
         expected = correctness.formulas.ls_profile_bounds(yi, vi, X, Z, link, method, j, 0.95)
-        ls_agree(case, f'confint alpha.{j + 1}', [table['ci.lb'].iloc[0], table['ci.ub'].iloc[0]], expected, LS_PROFILE)
+        # a bound shown with a '<' or '>' sign is not crossed within the interval searched, which the reference reports as nan
+        actual = [math.nan if interval.lb_sign else table['ci.lb'].iloc[0], math.nan if interval.ub_sign else table['ci.ub'].iloc[0]]
+        for name, bound, reference in zip(('lower', 'upper'), actual, expected, strict=True):
+            if math.isnan(reference) != math.isnan(bound):
+                raise AssertionError(f'{case.id}: confint alpha.{j + 1} {name} bound: metafopy gives {bound!r}, the reference gives {reference!r}')
+        found = [i for i in range(2) if not math.isnan(expected[i])]
+        if found:
+            ls_agree(case, f'confint alpha.{j + 1}', [actual[i] for i in found], [expected[i] for i in found], LS_PROFILE)
 
 
 def ls_confint_location(case: correctness.cases.Case, result: typing.Any) -> None:

@@ -7,11 +7,13 @@ import re
 import typing
 import warnings
 
+import correctness.cases
 import correctness.formulas
 import numpy
 import pandas
 import pytest
 import refutil
+import scipy.stats
 
 import metafopy
 import metafopy.errors
@@ -22,6 +24,7 @@ import metafopy.methods.ls_predict
 import metafopy.methods.ls_profile
 import metafopy.methods.ls_vif
 import metafopy.models.rma_ls_fit
+import metafopy.models.rma_ls_result
 import metafopy.printing
 
 REF: dict[str, typing.Any] = json.loads((pathlib.Path(__file__).parent / 'reference' / 'phase5' / 'location_scale.json').read_text(encoding='utf-8'))
@@ -255,6 +258,17 @@ def test_identity_fit_bd_is_a_stationary_point() -> None:
     score = correctness.formulas.ls_score(res.yi, res.vi, res.X, res.Z, res.alpha, 'identity', 'ML')
     assert numpy.max(numpy.abs(score)) < 1e-6
     assert res.fit_stats_ml.ll == pytest.approx(-17.058054672888, abs=1e-9)
+
+
+def test_profile_refit_keeps_the_highest_likelihood_on_bcg() -> None:
+    """On the ML fit of ``dat.bcg`` one start jumps to ``tau2 = 0`` at a = 1.1 (``2 (ll_max - ll)`` 3.86864); the best of the starts stays on the branch."""
+    res = ls(bcg(), '~ ablat', '~ ablat', method='ML')
+    fit = metafopy.methods.ls_profile.profile_fit(res, 0, 1.1)
+    assert fit is not None
+    assert 2 * (res.logLik() - fit[0]) == pytest.approx(3.13614, abs=1e-4)
+    table = metafopy.confint(res, alpha=0, tol=1e-12).random
+    assert table is not None
+    assert table['ci.ub'].iloc[0] == pytest.approx(1.803009, abs=1e-5)
 
 
 def test_identity_fit_bcg_is_a_constrained_maximum() -> None:
@@ -917,3 +931,29 @@ def test_permutest_errors() -> None:
     assert any('intercept-only scale model' in str(w.message) for w in caught)
     assert isinstance(pt, metafopy.methods.ls_permutest.LSPermutestResult)
     assert pt.skip_alpha
+
+
+NOT_CROSSED = ('<', '>')
+
+
+def test_confint_scale_interval_is_not_capped_at_ten_times_the_estimate() -> None:
+    """Table 1 of Viechtbauer and Lopez-Lopez (2022): the social sciences bounds are not crossed in ``10 crit se``; ``xlim`` gives metafor 5.2-1's."""
+    case = next(item for item in correctness.cases.load_cases('published') if item.id == 'published.vl2022.table1.plci.size')
+    res = typing.cast('metafopy.models.rma_ls_result.RMALSResult', correctness.cases.run_case(case))
+    pos = 3
+    vc = float(res.alpha[pos])
+    ci = metafopy.confint(res, alpha=pos)
+    assert isinstance(ci, metafopy.ConfintResult)
+    assert (ci.lb_sign, ci.ub_sign) == NOT_CROSSED
+    table = ci.random
+    assert table is not None
+    crit = float(scipy.stats.norm.isf(0.025))
+    se = float(res.se_alpha[pos])
+    assert table['ci.lb'].iloc[0] == pytest.approx(vc - 10 * crit * se, abs=1e-6)
+    assert table['ci.ub'].iloc[0] == pytest.approx(vc + 10 * crit * se, abs=1e-6)
+    capped = metafopy.confint(res, alpha=pos, xlim=(vc - 10 * abs(vc), vc + 10 * abs(vc)))
+    assert isinstance(capped, metafopy.ConfintResult)
+    assert capped.random is not None
+    assert (capped.lb_sign, capped.ub_sign) == NOT_CROSSED
+    assert capped.random['ci.lb'].iloc[0] == pytest.approx(-3.6100, abs=5e-5)
+    assert capped.random['ci.ub'].iloc[0] == pytest.approx(4.4122, abs=5e-5)
