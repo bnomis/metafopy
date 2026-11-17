@@ -1092,3 +1092,23 @@ across platforms with the date. A change to `src/metafopy/` goes through a spec 
 Spec: `agents/specs/cross-platform-numerics/spec.md`; tasks: `agents/tasks/cross-platform-numerics/tasks-1.md`.
 
 Done: 2026-11-17, agents/specs/cross-platform-numerics/spec.md, agents/tasks/cross-platform-numerics/tasks-1.md; CI run 44055240124 passed on all three platforms
+
+## The Docs workflow fails on three docstring links to docs/differences.md
+
+<!-- doc-counts: accept-start found on 2026-11-17 - a dated record, not a claim about the present -->
+Found on 2026-11-17 while `/rro agents/tasks/order-ci-platform-failures.md` ran: the Docs workflow has failed on every completed run on `main` since its
+last pass on `d58e1a3` (2026-11-14), and on draft pull request #74. `mkdocs build` runs in strict mode and stops with "Aborted with 3 warnings in strict
+mode!": `reference/bias.md`, `reference/methods.md` and `reference/models.md` contain a link `../../../docs/differences.md#...` whose target
+`../../docs/differences.md` "is not found among documentation files" (run of 2026-11-16 21:15 UTC on `77b7db7`).
+<!-- doc-counts: accept-end -->
+
+Cause: three docstrings link to `docs/differences.md` by a path relative to the source file, which mkdocstrings renders inside the reference pages:
+`src/metafopy/methods/confint.py` (added in `045f672`, 2026-11-14), `src/metafopy/models/selmodel.py` (`feeb97e`, 2026-11-15) and
+`src/metafopy/bias/fsn.py` (`24e2f96`, 2026-11-15). The docs site holds the page as `differences.md` (`mkdocs.yml`).
+
+Fix direction: write the links as the docs site resolves them from a reference page (`../differences.md#...`), or as plain text naming the page,
+check how the other docstrings link to docs pages, and run `mkdocs build --strict` locally before pushing.
+
+Spec: none (small item); tasks: `agents/tasks/docs-strict-links/tasks-1.md`.
+
+Done: 2026-11-17, agents/tasks/docs-strict-links/tasks-1.md; the three docstring links now resolve from the reference pages (../differences.md#...), mkdocs build --strict passes locally, and src/tests/test_docstring_links.py guards the form
