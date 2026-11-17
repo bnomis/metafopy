@@ -101,7 +101,7 @@ the BFGS stop no longer decides how close to the optimum a fit ends.
 
 ## Task 2: R parity and the output changes against the spec's bounds
 
-**Status:** in-progress
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Measured on 2026-11-17 ("Every fit of `CASES`"); Tests ("R parity"); Choices made ("When the polish runs, and how far it may move")
@@ -111,31 +111,31 @@ unchanged.
 
 **Subtasks:**
 
-- [ ] Write a scratch script (outside the repository) that fits every entry of `CASES` in `src/tests/test_rma_mv.py` twice, with the polish and with
+- [x] Write a scratch script (outside the repository) that fits every entry of `CASES` in `src/tests/test_rma_mv.py` twice, with the polish and with
       `metafopy.models.mv_opt.polish_score` patched to return its input, and prints per fit the largest relative change of `sigma2`, `tau2`, `rho`,
       `gamma2`, `phi`, `beta` and `se` (relative to `max(|value|, 1e-8)`), the change of the log-likelihood, and the time of each fit
-- [ ] Compare with the spec's bounds (measured 2026-11-17): largest relative change 7.1e-08 (`ass_mods`, `ass_mods_t`), every other fit at most
+- [x] Compare with the spec's bounds (measured 2026-11-17): largest relative change 7.1e-08 (`ass_mods`, `ass_mods_t`), every other fit at most
       5.7e-08; log-likelihood change at most 2e-14 except `kon_weights` (+7.4e-10); `kon_spexp`, `sim_R_known`, `sim_R_cov0`, `sim_R_none`,
       `sim_R_sparse`, `sim_gdiag`, `sim_s_and_g`, `sim_two_inner_outer` and the fits with nothing to estimate unchanged (identical values); the
       largest fit time 0.10 s (`sim_na_un`). A relative change above 1e-7 (the largest measured, rounded up), a log-likelihood change above the
       figures named, a change in a fit the spec lists as unchanged, or a fit time above 0.5 s goes beyond the bounds
-- [ ] Run every test file that names `rma_mv`, `RMAMV` or `mv_opt`, without editing any of them:
+- [x] Run every test file that names `rma_mv`, `RMAMV` or `mv_opt`, without editing any of them:
       `pytest $(grep -rlE 'rma_mv|RMAMV|mv_opt' src/tests --include='*.py') -m "not slow"` (the spec's run on 2026-11-17 with the prototype: 4098
       passed, 13 skipped, 1 xfailed, none failed). No fixture is regenerated and none is marked differing
-- [ ] **Stops for the operator: an output change beyond the spec's measured bounds, or a parity test that fails.** If either happens, stop the task as
+- [x] **Stops for the operator: an output change beyond the spec's measured bounds, or a parity test that fails.** If either happens, stop the task as
       `blocked` and report each fit or test with its figures beside the spec's, without changing a tolerance, a fixture or a `DIFFERS`/`FLAT` entry.
       The list resumes once the operator has answered in an operator session and the answer is committed in this task's Notes
-- [ ] Record in this task's Notes, dated: the largest change per fit group, the log-likelihood changes, the largest fit time, and the test counts
+- [x] Record in this task's Notes, dated: the largest change per fit group, the log-likelihood changes, the largest fit time, and the test counts
 
 **Acceptance Criteria:**
 
-- [ ] Every fit of `CASES` changes within the spec's bounds, and the fits the spec lists as unchanged are identical
-- [ ] Every test file that names `rma_mv`, `RMAMV` or `mv_opt` passes, `slow` tests skipped, with no test file changed by this task
+- [x] Every fit of `CASES` changes within the spec's bounds, and the fits the spec lists as unchanged are identical
+- [x] Every test file that names `rma_mv`, `RMAMV` or `mv_opt` passes, `slow` tests skipped, with no test file changed by this task
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest $(grep -rlE 'rma_mv|RMAMV|mv_opt' src/tests --include='*.py') -m "not slow"` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest $(grep -rlE 'rma_mv|RMAMV|mv_opt' src/tests --include='*.py') -m "not slow"` passes
 
 **Notes:**
 
@@ -153,6 +153,9 @@ unchanged.
   `src/tests/test_profile_plots.py::test_pipeline_through_figure_without_axes` (`assert 3 == 2`, an open matplotlib figure left by an earlier file). It
   passes alone and fails the same way, with the same 1116 passed, on the main checkout's code without the polish, so the polish does not cause it;
   filed as Task 7
+- 2026-11-17, answered by the operator (20:40 UTC, operator session): the two log-likelihood changes beyond 2e-14 (`ass_cs`
+  -3.34e-13, `kon_fix_sigma2` -2.13e-14) are accepted as rounding of the likelihood evaluation, within the approved change. The failing test was
+  closed by Task 7 (`8aadba6`), so the parity run stands
 
 ---
 
