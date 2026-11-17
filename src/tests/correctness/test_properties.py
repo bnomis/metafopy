@@ -223,10 +223,9 @@ def mv_score_is_zero(case: correctness.cases.Case, result: typing.Any) -> None:
             raise ValueError(f'{case.id}: mv_score_is_zero covers sigma2 components only')
         z = correctness.formulas.term_matrix(term, numpy.ones(1), numpy.zeros(0))
         trace = numpy.trace((p if s.scored == 'REML' else inverse) @ z)
-        # REML: the tolerance is relative to the score's scale ``tr(P Z_j Z_j')``. BFGS ends on "precision loss" on every platform and the stop is
-        # accepted under the gradient slack, so the score is 1e-11 of its scale on the development Mac and up to 1.1e-06 of it on CI Windows
-        # (probe run 44002318304 and the five environments of 2026-11-17, see agents/specs/cross-platform-numerics/measurements.md); the ML case
-        # stays absolute.
+        # REML: the tolerance is relative to the score's scale ``tr(P Z_j Z_j')``. BFGS's stop is finished by Newton steps on the score (mv_opt),
+        # so the score is a rounding-size fraction of its scale on every platform; before the polish it was up to 1.1e-06 of it on CI Windows
+        # (probe run 44002318304, 2026-11-17, see agents/specs/cross-platform-numerics/measurements.md). The ML case stays absolute.
         tolerance = case.tolerance * trace if s.scored == 'REML' else case.tolerance
         close(case.id, f'{s.scored} score of sigma2[{position}]', s.yi @ p @ z @ p @ s.yi - trace, 0.0, tolerance)
 

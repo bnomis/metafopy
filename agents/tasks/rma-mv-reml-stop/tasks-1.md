@@ -31,7 +31,7 @@ Rules every task follows:
 
 ## Task 1: The guarded Newton polish in `mv_opt`
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** API; Implementation; Error handling; Settings; Tests (`src/tests/test_mv_opt.py`); Records (the module docstring)
@@ -101,7 +101,7 @@ the BFGS stop no longer decides how close to the optimum a fit ends.
 
 ## Task 2: R parity and the output changes against the spec's bounds
 
-**Status:** todo
+**Status:** in-progress
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Measured on 2026-11-17 ("Every fit of `CASES`"); Tests ("R parity"); Choices made ("When the polish runs, and how far it may move")
@@ -149,7 +149,7 @@ unchanged.
 
 ## Task 3: Narrow the REML score property to 1e-10 of its scale
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Tests (`src/tests/correctness/cases/properties.toml`)
@@ -159,35 +159,36 @@ optimum fails the test again.
 
 **Subtasks:**
 
-- [ ] Starting point: `property.mv.reml-score.kon` in `src/tests/correctness/cases/properties.toml` has `tolerance = 2e-6`. Stop as `blocked`,
+- [x] Starting point: `property.mv.reml-score.kon` in `src/tests/correctness/cases/properties.toml` has `tolerance = 2e-6`. Stop as `blocked`,
       naming the value found, if not
-- [ ] Set its `tolerance` to `1e-10` and rewrite its comment: relative to the score's scale `tr(P Z Z')`; the Newton polish of `mv_opt` ends the fit at
+- [x] Set its `tolerance` to `1e-10` and rewrite its comment: relative to the score's scale `tr(P Z Z')`; the Newton polish of `mv_opt` ends the fit at
       a relative score of at most 8.6e-12 on the development Mac from every BFGS stop measured (default, `gtol` 1e-12, 1e-5 and 1e-4, `maxiter` 4),
       times 10 and rounded up (the margin rule of `agents/specs/cross-platform-numerics/spec.md`); measured 2026-11-17,
       `agents/specs/rma-mv-reml-stop/spec.md`
-- [ ] Rewrite the comment in `mv_score_is_zero` (`src/tests/correctness/test_properties.py`): BFGS's stop is finished by Newton steps on the score, so
+- [x] Rewrite the comment in `mv_score_is_zero` (`src/tests/correctness/test_properties.py`): BFGS's stop is finished by Newton steps on the score, so
       the REML score is a rounding-size fraction of its scale on every platform; it was up to 1.1e-06 of it on CI Windows before (probe run
       44002318304, 2026-11-17); the ML case stays absolute. No code change in the function
-- [ ] Confirm the case fails at 1e-10 without the polish under an early stop (by hand, not committed): with `polish_score` patched to return its input
+- [x] Confirm the case fails at 1e-10 without the polish under an early stop (by hand, not committed): with `polish_score` patched to return its input
       and the case refitted with `control={'gtol': 1e-5}`, the relative score is about 1.3e-07 (spec). Record the figure and the date in this task's
       Notes
-- [ ] Leave `property.mv.ml-score.kon` at its absolute 1e-6
+- [x] Leave `property.mv.ml-score.kon` at its absolute 1e-6
 
 **Acceptance Criteria:**
 
-- [ ] `property.mv.reml-score.kon` has `tolerance = 1e-10` with a dated comment, and passes
-- [ ] The case is shown to fail without the polish under `gtol=1e-5`
+- [x] `property.mv.reml-score.kon` has `tolerance = 1e-10` with a dated comment, and passes
+- [x] The case is shown to fail without the polish under `gtol=1e-5`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_properties.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_properties.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 
 - Depends on Task 1
 - Key files: `src/tests/correctness/cases/properties.toml`, `src/tests/correctness/test_properties.py`
+- 2026-11-17: with `polish_score` disabled (`POLISH_STEPS` patched to 0) and `gtol=1e-5`, `mv_score_is_zero` fails at 1e-10: the REML score of `sigma2[0]` is 1.34e-05 (absolute); with the polish the same refit passes. `pytest src/tests/correctness/test_properties.py src/tests/correctness/test_coverage.py`: 368 passed, 1 skipped
 
 ---
 
