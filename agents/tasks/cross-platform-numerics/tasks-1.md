@@ -362,7 +362,7 @@ five environments.
 
 ## Task 9: The stepcon interval and the halfnorm print
 
-**Status:** todo
+**Status:** in-progress
 **Priority:** medium
 **Complexity:** small
 **Spec Reference:** Failure groups (`stepcon-rau-mods`, `selmodel-print-halfnorm`), Confirming the cause, Verdicts
@@ -392,6 +392,9 @@ environments.
 **Notes:**
 
 - Depends on Task 4
+- Stopped on 2026-11-17 (`blocked`): `stepcon-rau-mods` is done (`LOOSE_ATOL` 2.5e-05, verdict 3). `selmodel-print-halfnorm` needs the operator: its
+  `ci.lb` deviates by up to 0.0075 (CI Mac) and `se` spreads 5 per cent of itself, and the margin rule's 0.075 is larger than the effect the test detects.
+  The three options are in `measurements.md` ("Verdicts: the stepcon interval and the halfnorm print"). The container run of both tests is also open
 
 ---
 

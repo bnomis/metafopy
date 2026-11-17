@@ -254,3 +254,27 @@ of this commit (Task 11), which records the three CI platforms' gradient and mes
 or stop as `blocked` with the figures if the gradient there is above the slack or the stop is not a convergence.
 
 <!-- doc-counts: accept-end -->
+
+## Verdicts: the stepcon interval and the halfnorm print (Task 9 of `tasks-1.md`)
+
+<!-- doc-counts: accept-start measured on 2026-11-17 - a dated record, not a claim about the present -->
+
+Judged on the figures of the five environments recorded above. `src/metafopy` is unchanged.
+
+**`stepcon-rau-mods`: verdict 3.** `ci_lb[0]` is -0.00179123 (CI Linux), -0.001791 (CI Mac), -0.00179168 (CI Windows), -0.001791281 (development Mac) and
+-0.001790637 (arm64 container) against R's -0.0017894: the largest deviation is 2.4e-06, on a standard error of 0.068 (3.5e-05 of it). The other compared
+quantities stay inside their relative tolerances (`se[0]` 0.0681664 to 0.0681667 against R's 0.0681675; `delta[1]` 0.637544 to 0.637555 against 0.637582).
+The old tolerance (5e-4 relative of 0.00179, plus 1e-6 absolute) allowed 1.9e-06. `LOOSE_ATOL` in `src/tests/test_stepcon.py` gives that case an absolute
+tolerance of 2.5e-05 (10 times the largest deviation, rounded up) on the Wald quantities; it is 3.7e-04 of the standard error, so the test still detects
+an interval error. `pytest src/tests/test_stepcon.py -k inference` passes on the development Mac.
+
+**`selmodel-print-halfnorm`: operator stop.** `delta` sits at its bound (0.000137796) on all environments and the Hessian moves with the platform: `se`
+0.104977 (CI Linux), 0.108272 (CI Mac), 0.103257 (CI Windows), 0.105032 (development Mac), 0.105720 (arm64 container) against R's 0.104459 (a spread of
+0.005, 5 per cent of the standard error); `ci_lb` 0.0113676, 0.00490912, 0.01474, 0.011260, 0.009911 against R's 0.0123831. The largest deviation is 0.0075
+(CI Mac). The printed `ci.lb` is compared at the larger of `NOISY_HESSIAN` 0.25 relative (0.0031) and `NOISY_ATOL` 5e-3, so 0.0075 fails. Verdict 3's margin
+(10 times the largest deviation) gives an absolute tolerance of 0.075, which is 72 per cent of the standard error and six times R's `ci.lb`: the spec
+refuses a tolerance larger than the effect the test exists to detect. Options for the operator: (a) assert the observed range, `NOISY_ATOL` 0.01 (1.3 times
+the largest deviation, against the spec's 10 times); (b) `NOISY_ATOL` 0.075 as the margin rule gives; (c) skip the case's print comparison on `darwin`
+and `win32`. Not changed.
+
+<!-- doc-counts: accept-end -->
