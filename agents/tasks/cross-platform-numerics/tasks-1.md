@@ -245,6 +245,14 @@ five environments.
   macos-26 (alpha differs from the reference's by about 2e-6 to 2e-7, so the reference's identity-link polish stops short of the tolerance on those
   platforms) and `test_derived[ls.permutest.location.exact.ML.z.bcglat]` fails on ubuntu-26.04 (pval (location) outside the reference's range). Fix the
   reference fit (verdict 2) or the tolerance (verdict 3), add the CI figures to `measurements.md`, then repeat Task 11
+- Decided 2026-11-17 by Claude, not yet reviewed (queue decision): the robust reference fit must also keep the test run's time near `main`'s. Measured
+  on the development Mac on 2026-11-17: the whole suite takes 48 min 37 s on this branch (`83a5400`) against 19 min 52 s on `main` (row 1's final log), and
+  three tests account for most of it: `test_simulation.py::test_random_permutation_p_values_follow_the_exact_ones` 843.7 s (43.6 s on `main` at
+  `fe73c5d`), `test_derived[ls.permutest.scale.exact.ML.z.bcglat]` 433.5 s (24.9 s) and `test_derived[ls.permutest.location.exact.ML.z.bcglat]` 414.8 s
+  (18.6 s), because every permutation refit runs the full multi-start search. CI's test jobs went from 20 to 38 min (`cd4081a`) to 63 to 70 min (`f57ab45`),
+  and Windows ran past two hours on `c069f04`. So: run the extra starts and the polish only when the first fit fails its score check (or use them for the
+  observed data only, not for each permutation), keep each of these three tests within twice its `main` time on the development Mac, record the
+  before and after durations in `measurements.md`, and check the whole suite's time once at Task 12
 - Key files: `src/tests/correctness/formulas.py` (`ls_reference_fit`, `ls_starts`, `ls_score`), `src/tests/correctness/test_derived.py` (`LS_RELATIVE`,
   `ls_agree`), `src/tests/test_rma_ls.py`
 
