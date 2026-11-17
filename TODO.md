@@ -4,38 +4,21 @@ Open work only, in implementation order, nearest first. Finished items move to
 `DONE.md` unchanged. See the shared `todo-add` and `todo-review` skills for
 the shape of an item.
 
-## Numerical tests whose results or tolerances hold only on the development machine
+## The rma_mv REML fit stops short of the optimum on Linux and Windows
 
-<!-- doc-counts: accept-start found on 2026-11-16 - a dated record, not a claim about the present -->
-Found on 2026-11-16 by a TODO review in CI run 43832306599 on `ff7eb2b` (Python 3.14.8; Linux `ubuntu-26.04`, macOS `macos-26`, Windows
-`windows-2025-vs2026`), while the final checkpoint of `agents/tasks/order-numerical-fixes.md` passed on the development Mac the same day. Failures
-beyond the two harness items above:
-
-- `ls.*.bcg` correctness cases: on Windows the ML reference fit ends at another optimum (`ls.fitstats.ML.bcg` ll -7.5393 against -9.4736;
-  `ls.predict.fitted.ML.z.bcg` "expected a nonnegative input, got -1.5653430049987447e+22"); on Linux every REML case says "the reference fit did not
-  converge" (`ls_reference_fit`: "no start converged (log link, REML): Desired error not necessarily achieved due to precision loss.").
-- `ls.fit.ML.identity.bcg` (Windows, Linux) and `ls.fit.REML.identity.bcg` (Linux): `alpha` off by 4e-8 to 3e-6 at tolerance 1e-6.
-- `selmodel.decreasing.bangertdrowns2004` on all three: the reference beta is -4.537 (Linux), -2248.16 (macOS) or the optimiser stops with "Positive
-  directional derivative for linesearch" (Windows); metafopy gives 0.10569.
-- `glmm.fit.or.um.rs.ml.jackson2018.pneumonia` and `glmm.cor.um.rs.ml.bcg` (Windows, Linux): "UM.RS: the score at the optimum is 1.05e-06 to 3.02e-06,
-  not below 1e-06".
-- `test_nchg.py::test_ml_se_matches_spec_measurement_at_tight_optimum`: `pneumonia` (Windows, 0.8881022865 against 0.88810229648 at 8.9e-09) and
-  `collins1985a` (Linux, 0.1363854789 against 0.13638547727 at 1.4e-09).
-- `property.mv.reml-score.kon` (Linux): REML score 1.3354e-05, theory 0.
-- `test_stepcon.py::test_inference[rau_stepcon_mods]` (Windows, Linux); `test_ls_vif.py::test_sim_permutes_the_data_variables_as_r` (all three);
-  `test_audit4_numerics.py::test_permutest_ls_boundary_fits_match_r` (all three); `test_rma_ls.py::test_identity_fit_is_the_maximum[bcg_year_identity]`
-  and `test_selmodel.py::test_print[hack_halfnorm_less]` (macOS).
+<!-- doc-counts: accept-start found on 2026-11-17 - a dated record, not a claim about the present -->
+Found on 2026-11-17 by Task 8 of `agents/tasks/cross-platform-numerics/tasks-1.md` (probe run 44002318304 of commit `f57ab45`; figures in
+`agents/specs/cross-platform-numerics/measurements.md`, "The rma_mv REML score"). The REML score of `sigma2` in `property.mv.reml-score.kon`, relative to
+its scale `tr(P Z Z')`, is 1e-11 on the development Mac and the containers, 1.3e-07 and 3.8e-08 on CI Linux, and up to 1.1e-06 on CI Windows; the BFGS
+gradient is 1.3e-10 (Mac), 6.0e-07 (Linux) and 1.8e-05 (Windows). The stop also varies from run to run on one platform.
 <!-- doc-counts: accept-end -->
 
-Cause: not confirmed. Suspected: the optimisers' stopping points and the floating-point results of the platforms' BLAS and libm builds differ, and the
-tests compare against a reference fit or an absolute tolerance measured on one machine. Some tests were added in the numerical fixes order on
-2026-11-15 and 2026-11-16 (the CM.EL tight-optimum check, the identity-link polish).
+Cause: `scipy.optimize.minimize` BFGS ends on "precision loss" with `success` false on every platform, and `mv_opt.maximise` accepts the stop because the
+gradient is under `SLACK_GRADIENT` (1e-4). Where the line search loses precision early, the fit is accepted up to 4 to 7 orders of magnitude from the
+optimum. The test asserts the measured range (2e-6 of the scale) meanwhile.
 
-Fix direction: reproduce one failure of each group on Linux (a container, or CI's artifacts), then decide per group whether metafopy, the reference fit
-or the tolerance is wrong: fix the code, make the reference fit robust (more starts, a tighter control), or set the tolerance from the measured spread
-across platforms with the date. A change to `src/metafopy/` goes through a spec first.
-
-Spec: `agents/specs/cross-platform-numerics/spec.md`; tasks: `agents/tasks/cross-platform-numerics/tasks-1.md`.
+Fix direction: tighten the stop in `src/metafopy` through a spec (for example a Newton polish on the analytic score after BFGS), then narrow the test's
+`tolerance` in `src/tests/correctness/cases/properties.toml` and the entry in `docs/differences-notes.md` ("Optimisers and flat likelihoods").
 
 ## The audit lists the exact permutest of uni_mods as an R kill and has no entry for it
 

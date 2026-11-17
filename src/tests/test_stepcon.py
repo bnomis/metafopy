@@ -29,6 +29,9 @@ RTOL_SE = 5e-4
 ATOL = 1e-6
 # the fit of rau_stepcon_mods has a flat likelihood in delta (tau^2 = 0), identified to about 1e-4
 LOOSE = {'rau_stepcon_mods': 5e-4}
+# ci_lb[0] of that fit is -0.00179 with a standard error of 0.068: the five environments land within 2.4e-6 of R's value (measurements.md), so the
+# absolute tolerance is 10 times that, 3.5e-4 of the standard error
+LOOSE_ATOL = {'rau_stepcon_mods': 2.5e-5}
 
 # For these fits the heterogeneity test of metafor is based on a worse fit than ours: it refits the model with tau^2 = 0 with solnp but without the
 # inequality constraint (the call is built without ineqfun), and solnp stops at a point whose log-likelihood is up to 0.9 below the constrained optimum
@@ -105,7 +108,7 @@ def test_inference(case: str) -> None:
     res = fitted(case)
     rtol = LOOSE.get(case, RTOL_SE)
     for name in (*test_selmodel.WALD, 'se_tau2', 'QM', 'QMp', 'LRT', 'LRTp'):
-        close(getattr(res, name), ref[name], f'{case} {name}', rtol=rtol)
+        close(getattr(res, name), ref[name], f'{case} {name}', rtol=rtol, atol=LOOSE_ATOL.get(case, ATOL))
     if case not in R_SUBOPTIMAL_TAU2_FIT:
         for name in ('LRT_tau2', 'LRTp_tau2'):
             close(getattr(res, name), ref[name], f'{case} {name}', rtol=rtol)

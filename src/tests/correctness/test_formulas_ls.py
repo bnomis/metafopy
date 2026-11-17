@@ -3,13 +3,16 @@
 The data come from the bundled datasets only; the effect sizes of ``dat.bcg`` are computed with ``formulas``, not with metafopy.
 """
 
+import collections.abc
 import itertools
 import pathlib
 import tomllib
+import typing
 
 import numpy
 import numpy.typing
 import pytest
+import scipy.optimize
 
 import correctness.formulas
 import metafopy.datasets
@@ -27,6 +30,14 @@ def bcg() -> Data:
     X = numpy.column_stack([numpy.ones(len(yi)), f['ablat'].to_numpy(dtype=float)])
     Z = numpy.column_stack([numpy.ones(len(yi)), (f['year'].to_numpy(dtype=float) - 1950) / 10])
     return yi, vi, X, Z
+
+
+def bcg_ablat() -> Data:
+    """The design of the case ``ls.fit.REML.identity.bcg``: absolute latitude in both the location and the scale model."""
+    yi, vi, _, _ = bcg()
+    ablat = metafopy.datasets.load('dat.bcg')['ablat'].to_numpy(dtype=float)
+    X = numpy.column_stack([numpy.ones(len(yi)), ablat])
+    return yi, vi, X, X
 
 
 def bangert() -> Data:
@@ -101,6 +112,56 @@ def test_reference_fit_has_a_zero_score_and_a_covariance(method: str) -> None:
     assert correctness.formulas.ls_score(yi, vi, X, Z, fit['alpha'], 'log', method) == pytest.approx(0.0, abs=1e-5)
     assert fit['ll'] == pytest.approx(correctness.formulas.ls_loglik(yi, vi, X, Z, fit['alpha'], 'log', method), rel=1e-12)
     assert numpy.all(numpy.linalg.eigvalsh(fit['va']) > 0)
+
+
+def relabel(monkeypatch: pytest.MonkeyPatch, method: str, success: collections.abc.Callable[[scipy.optimize.OptimizeResult], bool], message: str) -> None:
+    """Make ``formulas`` report each ``method`` result as the optimiser would on another platform: ``success`` says whether it is called a success."""
+    real = scipy.optimize.minimize
+
+    def minimize(*args: typing.Any, **kwargs: typing.Any) -> scipy.optimize.OptimizeResult:
+        res: scipy.optimize.OptimizeResult = real(*args, **kwargs)
+        if kwargs.get('method') == method:
+            res['success'] = success(res)
+            res['message'] = 'Optimization terminated successfully' if res['success'] else message
+        return res
+
+    monkeypatch.setattr(scipy.optimize, 'minimize', minimize)
+
+
+@pytest.mark.parametrize('method', METHODS)
+def test_reference_fit_accepts_starts_that_report_precision_loss(monkeypatch: pytest.MonkeyPatch, method: str) -> None:
+    """A BFGS stop called "precision loss" lies on the maximum on some platforms; the fit keeps it because its score is small."""
+    yi, vi, X, Z = bcg()
+    expected = correctness.formulas.ls_reference_fit(yi, vi, X, Z, 'log', method)
+    relabel(monkeypatch, 'BFGS', lambda res: False, 'Desired error not necessarily achieved due to precision loss.')
+    fit = correctness.formulas.ls_reference_fit(yi, vi, X, Z, 'log', method)
+    assert fit['ll'] == pytest.approx(expected['ll'], abs=1e-10)
+    assert float(numpy.max(numpy.abs(correctness.formulas.ls_score(yi, vi, X, Z, fit['alpha'], 'log', method)))) < correctness.formulas.LS_SCORE_TOLERANCE
+
+
+def test_reference_fit_does_not_choose_a_worse_optimum_that_reports_success(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The identity-link restricted likelihood of the case has two optima (log-likelihood -7.98877 and -8.08078): the fit returns the higher whatever the
+    optimiser calls successful."""
+    yi, vi, X, Z = bcg_ablat()
+    relabel(monkeypatch, 'SLSQP', lambda res: float(-res.fun) < -8.0, 'Positive directional derivative for linesearch')
+    fit = correctness.formulas.ls_reference_fit(yi, vi, X, Z, 'identity', 'REML')
+    assert fit['ll'] == pytest.approx(-7.988765268, abs=1e-8)
+
+
+def test_identity_polish_stays_feasible_and_finds_the_face_optimum() -> None:
+    """The identity link's polish never leaves ``Z alpha >= 0``. On a boundary optimum (the ``ls.fit.ML.identity.bcg`` design, where the score across the
+    constraint is 742) it ends with a score along the constraint below 1e-6: about 1e-7 in the arm64 container, 2e-5 without the polish, which left
+    ``alpha`` about 2e-6 off the other platforms' reference.
+    """
+    yi, vi, X, Z = bangert()
+    fit = correctness.formulas.ls_reference_fit(yi, vi, X, Z, 'identity', 'REML')
+    assert float(numpy.min(Z @ fit['alpha'])) >= -correctness.formulas.IDENTITY_SLACK
+    yi, vi, X, Z = bcg_ablat()
+    ml = correctness.formulas.ls_reference_fit(yi, vi, X, Z, 'identity', 'ML')
+    assert float(numpy.min(Z @ ml['alpha'])) >= -correctness.formulas.IDENTITY_SLACK
+    basis = correctness.formulas.ls_face_basis(Z, ml['alpha'], 'identity')
+    assert basis.shape[1] == 1
+    assert float(numpy.max(numpy.abs(basis.T @ correctness.formulas.ls_score(yi, vi, X, Z, ml['alpha'], 'identity', 'ML')))) < 1e-6
 
 
 def test_reference_fit_raises_when_nothing_converges() -> None:

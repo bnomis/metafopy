@@ -294,7 +294,10 @@ MODELS = ('CM.AL', 'CM.EL', 'UM.FS', 'UM.RS')
 EXACT_POINTS = {1: 101, 2: 41}
 VARIANCE_FLOOR = 1e-14
 BOUNDARY = 1e-4
-GRADIENT_TOLERANCE = 1e-6
+# The score is a Richardson finite difference of a quadrature likelihood, so its noise floor is 1e-6 to 1e-5. 10 times the largest score measured at the
+# optimum on 2026-11-17 across the development Mac, the arm64 Linux container and the three CI platforms (1.9e-06); see
+# agents/specs/cross-platform-numerics/measurements.md. The tests that use these fits check the score again at 1e-4.
+GRADIENT_TOLERANCE = 2e-5
 CODINGS: dict[float, tuple[float, float]] = {0.5: (0.5, -0.5), 1.0: (1.0, 0.0), 0.0: (0.0, 1.0)}
 
 

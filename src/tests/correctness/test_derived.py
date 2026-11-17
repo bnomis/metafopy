@@ -6,6 +6,7 @@ import itertools
 import math
 import re
 import typing
+import warnings
 
 import numpy
 import numpy.typing
@@ -126,6 +127,11 @@ SELMODEL_LL_TOLERANCE = 1e-8
 SELMODEL_FLAT_LL_TOLERANCE = 1e-6  # a case whose likelihood is flat in delta (tolerance above 1e-3) stops the optimisers 1e-7 apart in ll
 SELMODEL_DELTA_FLOOR = 1e-6
 SELMODEL_DELTA_CEILING = 20.0
+SELMODEL_BETA_SPAN = 100.0  # the coefficients are bounded to +-this many times the largest |yi| + sqrt(vi); a maximum never lies near it
+SELMODEL_TAU2_SPAN = 100.0  # tau2 is bounded to this many times the variance of yi plus the largest vi
+SLSQP_ITERATION_LIMIT = 9  # scipy's status for "Iteration limit reached", the one stop that says nothing about the end point
+SELMODEL_SHRINKS = (0.8, 0.5, 0.2)  # decreasing models also start from selection parameters ``shrink ** k`` for the ``k``-th free one, inside the constraints
+SELMODEL_START_SCALES = (1.0, 0.1, 10.0)  # multiples of metafopy's tau2 start tried after metafopy's own start
 
 
 def truncest_stretch_maximum(
@@ -173,6 +179,54 @@ def truncest_stretch_maximum(
     return best
 
 
+def selmodel_best_start(
+    case: correctness.cases.Case,
+    negative: collections.abc.Callable[[FloatArray], float],
+    start: FloatArray,
+    bounds: list[tuple[float | None, float | None]],
+    constraints: typing.Any,
+    p: int,
+    maxiter: int,
+    decreasing: bool = False,
+) -> scipy.optimize.OptimizeResult:
+    """The best SLSQP maximum of a selection-model likelihood over several starts.
+
+    The starts are metafopy's, ``tau2`` scaled by ``SELMODEL_START_SCALES`` and, for a decreasing model, the selection parameters at ``SELMODEL_SHRINKS``.
+
+    Whether a single run converges, or runs away along a flat ridge, depends on the platform's libm and BLAS, so the optimiser's message decides nothing
+    on its own: a run counts when its end point is finite, inside every bound (the coefficient and ``tau2`` bounds are far wider than any maximum, so a
+    point on one is a runaway) and not below the likelihood at its start, and did not stop at the iteration limit. The run of highest log-likelihood wins.
+
+    Raises:
+        AssertionError: no run counts, naming the case and each optimiser message.
+    """
+    starts: list[tuple[float, float | None]] = [(scale, None) for scale in SELMODEL_START_SCALES]
+    if decreasing:
+        starts += [(1.0, shrink) for shrink in SELMODEL_SHRINKS]
+    beta_span, tau2_span = bounds[0][1], bounds[p][1]
+    assert beta_span is not None
+    assert tau2_span is not None
+    best: scipy.optimize.OptimizeResult | None = None
+    messages: list[str] = []
+    for scale, shrink in starts:
+        begin = start.copy()
+        begin[p] = max(float(start[p]) * scale, 1e-3)
+        if shrink is not None:
+            begin[p + 1 :] = shrink ** numpy.arange(1, len(start) - p)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            fit = scipy.optimize.minimize(negative, begin, method='SLSQP', bounds=bounds, constraints=constraints, options={'maxiter': maxiter, 'ftol': 1e-15})
+        runaway = bool(numpy.any(numpy.abs(fit.x[:p]) >= (1 - 1e-6) * beta_span)) or float(fit.x[p]) >= (1 - 1e-6) * tau2_span
+        if not (numpy.all(numpy.isfinite(fit.x)) and numpy.isfinite(fit.fun)) or runaway or fit.status == SLSQP_ITERATION_LIMIT or fit.fun > negative(begin):
+            messages.append(str(fit.message))
+            continue
+        if best is None or fit.fun < best.fun:
+            best = fit
+    if best is None:
+        raise AssertionError(f'{case.id}: the optimiser did not converge: {"; ".join(messages)}')
+    return best
+
+
 def selmodel_maximum(case: correctness.cases.Case, result: typing.Any, maxiter: int = 1000) -> tuple[FloatArray, float, FloatArray, float, float]:
     """Maximise the case's selection-model log-likelihood (``formulas.selection_loglik`` for a step function or a parametric weight function,
     ``formulas.truncation_loglik`` for ``trunc`` and ``truncest``) from metafopy's start values: the coefficients, ``tau2``, the selection
@@ -201,7 +255,7 @@ def selmodel_maximum(case: correctness.cases.Case, result: typing.Any, maxiter: 
 
     def parts(par: FloatArray) -> tuple[FloatArray, float, FloatArray]:
         delta = given.copy()
-        delta[free] = par[p + 1 :]
+        delta[free] = par[p + 1 :] if truncated else numpy.maximum(par[p + 1 :], SELMODEL_DELTA_FLOOR)  # a trial step may leave the bound
         return par[:p], float(par[p]), delta
 
     def loglik(beta: FloatArray, tau2: float, delta: FloatArray) -> float:
@@ -214,8 +268,10 @@ def selmodel_maximum(case: correctness.cases.Case, result: typing.Any, maxiter: 
     def negative(par: FloatArray) -> float:
         return -loglik(*parts(par))
 
-    bounds: list[tuple[float | None, float | None]] = [(None, None) for _ in range(p)]
-    bounds += [(0.0, None)]
+    beta_span = SELMODEL_BETA_SPAN * float(numpy.max(numpy.abs(yi) + numpy.sqrt(vi)))
+    tau2_span = SELMODEL_TAU2_SPAN * (float(numpy.var(yi)) + float(numpy.max(vi)))
+    bounds: list[tuple[float | None, float | None]] = [(-beta_span, beta_span) for _ in range(p)]
+    bounds += [(0.0, tau2_span)]
     for index in numpy.flatnonzero(free):
         if kind == 'truncest' and index == 1:
             bounds.append((float(result.spec.delta_min[1]), float(result.spec.delta_max[1])))
@@ -227,9 +283,7 @@ def selmodel_maximum(case: correctness.cases.Case, result: typing.Any, maxiter: 
     if kind == 'truncest' and free[1]:
         fit = truncest_stretch_maximum(case, result, negative, start, bounds, int(free[:1].sum()) + p + 1, maxiter)
     else:
-        fit = scipy.optimize.minimize(negative, start, method='SLSQP', bounds=bounds, constraints=constraints, options={'maxiter': maxiter, 'ftol': 1e-15})
-        if not fit.success:
-            raise AssertionError(f'{case.id}: the optimiser did not converge: {fit.message}')
+        fit = selmodel_best_start(case, negative, start, bounds, constraints, p, maxiter, bool(result.decreasing))
     beta, tau2, delta = parts(fit.x)
 
     def negative_plain(par: FloatArray) -> float:
@@ -257,6 +311,27 @@ def selmodel_fit(case: correctness.cases.Case, result: typing.Any) -> None:
         raise AssertionError(f'{case.id}: ll: metafopy gives {result.ll!r}, the reference gives {loglik!r}')
     lrt = max(0.0, 2 * (loglik - plain))
     numbers_agree(case, 'LRT', result.LRT, lrt)
+
+
+def test_selmodel_maximum_ignores_a_run_that_leaves_the_coefficient_bounds(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Where the platform's SLSQP runs away along the ridge (beta -2248, tau2 2.7e6, called a success), the reference keeps a run that stays inside."""
+    case = next(param.values[0] for param in correctness.cases.case_params('derived') if param.values[0].id == 'selmodel.decreasing.bangertdrowns2004')
+    result = correctness.cases.run_case(case)
+    real = scipy.optimize.minimize
+    runs = []
+
+    def minimize(fun: typing.Any, x0: FloatArray, **kwargs: typing.Any) -> scipy.optimize.OptimizeResult:
+        fit: scipy.optimize.OptimizeResult = real(fun, x0, **kwargs)
+        runs.append(float(x0[0]))
+        if len(runs) == 1 and kwargs.get('method') == 'SLSQP' and kwargs.get('constraints'):
+            x = numpy.array(fit.x, dtype=float)
+            x[0], x[1] = -2248.16, 2683050.0
+            fit['x'], fit['fun'], fit['success'], fit['message'] = x, float(fun(x)), True, 'runaway'
+        return fit
+
+    monkeypatch.setattr(scipy.optimize, 'minimize', minimize)
+    _, _, _, loglik, _ = selmodel_maximum(case, result)
+    assert loglik == pytest.approx(result.ll, abs=SELMODEL_LL_TOLERANCE * abs(result.ll))
 
 
 def test_selmodel_fit_names_the_case_when_the_optimiser_does_not_converge() -> None:

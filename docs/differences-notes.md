@@ -72,6 +72,8 @@ Where metafopy and R stop at different points of the same likelihood.
 
 - `rma_mv(restart=)` takes a previous fit (an `RMAMVResult`) as well as `True`, which starts from the last parameters the optimiser tried in the session as metafor's `restart=TRUE` does. `RMAMVResult.p` is the number of columns of `X`; metafor's `p` (the number of estimated coefficients when `beta` is given) is `p_eff`. Only `hesspack='numDeriv'` is available for the Hessians of `optbeta` and `cvvc`. `lambda1` (lasso) is non-smooth, so the optimiser accepts the last iterate.
 
+- `rma_mv` BFGS ends on "precision loss" and the stop is accepted under a gradient slack of 1e-4, so the REML score of a `sigma2` component is up to 1.1e-6 of its scale `tr(P Z Z')` on Linux and Windows (about 1e-11 on macOS); the correctness test `property.mv.reml-score.kon` asserts 2e-6 of the scale (measured 2026-11-17).
+
 - `selmodel(type='stepcon')` uses SLSQP, not Rsolnp. Its `LRT.tau2` can be larger than R's, because R refits at tau2 = 0 without the delta ordering constraint and solnp stops at a worse point.
 
 - Location-scale models: the Hessian of the scale part uses the Richardson depth `hessian_r=4` (`LSControl`), where metafor's numDeriv call uses `r=8`. The eight steps amplify round-off in the log-likelihood, so R's own standard errors of the scale coefficients carry noise of about 1e-5; metafopy agrees with R's to about 2e-6 relative on the fixtures. `control={'hessian_r': 8}` gives the noisy variant.
@@ -107,6 +109,10 @@ Where metafopy and R stop at different points of the same likelihood.
 - `rma_mv(struct='GDIAG'/'GEN')` on `dat.konstantopoulos2011` (`~ year | district`) has more than one local maximum of the REML log-likelihood. R's `nlminb` stops at tau2 0.0826 (REML log-likelihood -32.21647, GDIAG) and tau2 3.487, rho -0.9997 (-32.20462, GEN); metafopy stops at tau2 0 (-32.21355) and tau2 3131.9, rho -1 (-31.86847), which are higher. `control={'tau2_init': [0.01, 0.01]}` gives R's GDIAG point.
 
 - Not matched, because metafopy's optimiser stops elsewhere on a flat surface (R's `nlminb` is PORT, which metafopy does not port): `rma_mv` GDIAG and GEN (metafopy reaches a higher log-likelihood than R), berkey1998 `UN` with fixed `tau2`, the fourth digit of location-scale `QM`, `QS` and `F`, `se.alpha` and the flat-profile `confint` step of `rma_ls`, selmodel fits with `nlminb`, and the `rma_glmm` cases listed above. An opt-in port of PORT is a possible way to remove most of these.
+
+- Permuted and simulated scale refits along a flat ridge (measured on 2026-11-16 and 2026-11-17 on the development Mac, the Linux container and the three CI platforms): which refits end on the boundary or with a NaN Hessian depends on the platform's BLAS and libm. In `vif(sim=)` of a location-scale model 0 or 1 of the first 50 draws is NaN where R's `nlminb` stops with a finite Hessian; in `permutest()` the permutations with a defined scale standard error number 40 to 44 of 50 where R has 47, so `pval_alpha` and `QSp` are counts over 40 to 47 and not a fixed value. The tests assert those ranges.
+
+- `selmodel(type='halfnorm')` with `delta` at its lower bound (`hack_halfnorm_less`, `delta` 1.4e-4): the numerical Hessian depends on the platform's BLAS, so the printed `ci.lb` (R: 0.0123831) is 0.0113676 (CI Linux), 0.00490912 (CI Mac), 0.01474 (CI Windows), 0.011260 (development Mac) and 0.009911 (arm64 container), up to 0.0075 from R's, on a standard error of 0.104 to 0.108. The test compares the print with an absolute tolerance of 0.01 (measured 2026-11-17).
 
 ## rma_glmm
 
