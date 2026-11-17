@@ -52,7 +52,7 @@ Any change to metafopy's output beyond what an approved spec lists waits for you
 | test pass line | `passed` |
 | test fail pattern | `FAILED\|ERROR` |
 | always wait for | `claude/rules/metafopy.md` |
-| progress page | |
+| progress page | https://claude.ai/artifact/YG6Q6y25VT3wZmEcxzsQUo |
 
 | # | Task list | Waits for | Stops for you | Status |
 |---|---|---|---|---|
