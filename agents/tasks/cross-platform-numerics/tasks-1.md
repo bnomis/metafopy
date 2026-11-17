@@ -457,7 +457,7 @@ environments.
 
 ## Task 11: The CI round
 
-**Status:** todo
+**Status:** in-progress
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Order of work step 5, Acceptance, Decisions (D1)
@@ -484,6 +484,14 @@ environments.
 **Notes:**
 
 - Depends on Tasks 5 to 10
+- Round 1 (CI run 44023680518, head c069f04, pushed 2026-11-17 05:22 UTC): `lint` passed; at 07:33 UTC, two hours on, the Windows test job was still
+  running, so the wait limit was reached. Failed tests so far:
+  - ubuntu-26.04: `test_derived[ls.fit.ML.identity.bcg]` (alpha: metafopy -0.02665867, 0.00205067 against reference -0.0266563, 0.00205048) and
+    `test_derived[ls.permutest.location.exact.ML.z.bcglat]` (pval (location): metafopy 0.61693862, 0.23931624, outside the reference's range)
+  - macos-26: `test_derived[ls.fit.ML.identity.bcg]` (alpha: metafopy -0.02665867, 0.00205067 against reference -0.02665862, 0.00205066)
+  - windows-2025-vs2026: not finished at 07:33 UTC
+  Next: take the Windows result when it ends, then reopen the tasks of the failing groups (Task 5, the location-scale reference fits, for `ls.fit`
+  and `ls.permutest`), and repeat this task
 - A pull request's CI tests the merge of the branch with `main`, so a pass here is the pass the merge will have, if `main` does not move meanwhile
 
 ---
