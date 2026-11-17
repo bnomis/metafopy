@@ -56,7 +56,7 @@ Any change to metafopy's output beyond what an approved spec lists waits for you
 
 | # | Task list | Waits for | Stops for you | Status |
 |---|---|---|---|---|
-| 1 | `docs-strict-links/tasks-1.md` | - | - | todo |
+| 1 | `docs-strict-links/tasks-1.md` | - | - | running |
 | 2 | `rma-mv-reml-stop/tasks-1.md` | - | an output change beyond the spec's measured bounds or a failing parity test (Task 2; Task 5 for the Linux container), or a new audit finding on the `rma_mv` fixtures (Task 5), only if one occurs | todo |
 | 3 | `selmodel-fixed-delta0/tasks-1.md` | 1 | an existing test or case that reaches the new error (Task 1), only if one does | todo |
 | 4 | `simmonds2016-fig1/tasks-1.md` | - | the marginal likelihood not higher at tau2 0.213 than at 0 (Task 1), only if it is not | todo |
