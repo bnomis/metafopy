@@ -196,7 +196,7 @@ environments can be compared.
 
 ## Task 5: The location-scale reference fits
 
-**Status:** done
+**Status:** in-progress
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** Failure groups (`ls-bcg-reference`, `ls-identity-alpha`, `ls-identity-maximum`), Confirming the cause, Verdicts, Tests of the new code
@@ -241,6 +241,10 @@ five environments.
   `test_identity_fit_bd_is_a_stationary_point` (asserts metafopy's own score below 1e-6, got 4.0e-06; it failed in the arm64 container before this task,
   in Task 2's run, and is not in CI's Linux list, so the group table does not name it). The last one is why the Definition of Done line for the
   container, whose `-k "ls"` also selects that file's tests, is ticked for the three groups' tests only
+- Reopened on 2026-11-17 by Task 11's round 1 (CI run 44023680518, head c069f04): `test_derived[ls.fit.ML.identity.bcg]` fails on ubuntu-26.04 and
+  macos-26 (alpha differs from the reference's by about 2e-6 to 2e-7, so the reference's identity-link polish stops short of the tolerance on those
+  platforms) and `test_derived[ls.permutest.location.exact.ML.z.bcglat]` fails on ubuntu-26.04 (pval (location) outside the reference's range). Fix the
+  reference fit (verdict 2) or the tolerance (verdict 3), add the CI figures to `measurements.md`, then repeat Task 11
 - Key files: `src/tests/correctness/formulas.py` (`ls_reference_fit`, `ls_starts`, `ls_score`), `src/tests/correctness/test_derived.py` (`LS_RELATIVE`,
   `ls_agree`), `src/tests/test_rma_ls.py`
 
