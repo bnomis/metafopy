@@ -356,6 +356,9 @@ five environments.
 - Stopped on 2026-11-17: the probe now records the optimiser message and gradient, and the three local environments give a gradient of 1e-10 and a score
   of 1e-11 of the scale, but CI Linux's score (1.1e-06 of the scale) is not reproduced locally and its gradient is unrecorded. Needs one CI probe run of this
   commit (Task 11's round) before the verdict; see `measurements.md`
+- Decided 2026-11-17 by Claude, not yet reviewed (queue decision): push this list's branch now to update draft pull request #74 and wait for its
+  CI and probe runs, as Task 4 waits, then judge this group on CI Linux's recorded gradient and score. The answer to D1 (*Draft pull request*,
+  2026-11-16) allows this list to push its branch and read CI; pushing before Task 11 is within it. Never push `main`
 - Key files: `src/tests/correctness/test_properties.py` (`mv_score_is_zero`), `src/tests/correctness/cases/*.toml`
 
 ---
@@ -395,6 +398,11 @@ environments.
 - Stopped on 2026-11-17 (`blocked`): `stepcon-rau-mods` is done (`LOOSE_ATOL` 2.5e-05, verdict 3). `selmodel-print-halfnorm` needs the operator: its
   `ci.lb` deviates by up to 0.0075 (CI Mac) and `se` spreads 5 per cent of itself, and the margin rule's 0.075 is larger than the effect the test detects.
   The three options are in `measurements.md` ("Verdicts: the stepcon interval and the halfnorm print"). The container run of both tests is also open
+- Decided 2026-11-17 by Claude, not yet reviewed (queue decision): option (a), as verdict 4, not verdict 3. Verdict 3 is refused (the margin's 0.075
+  exceeds the effect the test detects), so the spec sends the group to verdict 2 or 4; `delta` sits at its bound on every environment, which is verdict
+  4's case, and the spec's choice "Platform-dependent marks" is to assert the observed range. So `NOISY_ATOL` 0.01 for this case's printed `ci.lb` only
+  (the measured deviations, up to 0.0075, with the five environments and the date in its comment), every other printed field still compared as now,
+  and an entry in `docs/differences-notes.md` ("Optimisers and flat likelihoods") naming the measurement. Then run both tests in the container
 
 ---
 
