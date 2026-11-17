@@ -158,4 +158,6 @@ def test_ml_se_matches_spec_measurement_at_tight_optimum(frame: pandas.DataFrame
         return metafopy.core.nchg.neg_loglik(b, tables, X, True, TIGHT_RANDOM)
 
     result = scipy.optimize.minimize(objective, start, method='Nelder-Mead', options={'xatol': 1e-11, 'fatol': 1e-14, 'maxiter': 5000, 'maxfev': 10000})
-    assert ml_se(frame, result.x) == pytest.approx(expected, rel=1e-8)
+    # rel: 10 times the largest deviation measured on 2026-11-17 across the development Mac, the arm64 Linux container and the three CI platforms (2.2e-08,
+    # the Nelder-Mead end points differ in the eighth decimal); see agents/specs/cross-platform-numerics/measurements.md
+    assert ml_se(frame, result.x) == pytest.approx(expected, rel=2.5e-7)

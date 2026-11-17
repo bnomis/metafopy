@@ -203,3 +203,28 @@ the old code (`ll` -427.64 against -17.42) and passes. `pytest src/tests/correct
 arm64 container (`bin/linux-tests.sh`). The CI platforms are judged in Task 11.
 
 <!-- doc-counts: accept-end -->
+
+## Verdicts: the GLMM UM.RS score and the CM.EL tight-optimum check (Task 7 of `tasks-1.md`)
+
+<!-- doc-counts: accept-start measured on 2026-11-17 - a dated record, not a claim about the present -->
+
+Groups `glmm-um-rs-score` and `cm-el-tight-se`, judged on the figures of the five environments recorded above. `src/metafopy` is unchanged.
+
+**`glmm-um-rs-score`: verdict 3.** The log-likelihood at the reference optimum is equal to 1e-9 on all five environments, so the optimum is the same point. The
+score `fit_problem` checks (Richardson at steps 5e-5 and 1e-4) is 7.5e-07 to 1.9e-06 (pneumonia) and 1.1e-06 to 1.7e-06 (bcg) across the five environments,
+and the score at fixed steps from 2e-5 to 4e-4 spans 4.7e-07 to 1.1e-05: the score at the optimum is the finite-difference noise floor of the quadrature
+likelihood, the same size as its spread over step sizes. `GRADIENT_TOLERANCE` in `src/tests/correctness/glmm_formulas.py` goes from 1e-6 to 2e-5 (10 times
+the largest Richardson score, 1.9e-06). That is below `GLMM_GRADIENT_TOLERANCE` 1e-4 in `test_derived.py`, which still checks the score again, and far below
+the effect the fits detect (a mis-specified likelihood moves the score by order 1).
+
+**`cm-el-tight-se`: verdict 3.** The Nelder-Mead end points agree between environments only in the eighth decimal (collins1985a `alpha` 0.174406193 on
+the Mac, 0.174406202 in the arm64 container, 0.174406198 on CI Linux), and the standard error follows them. Largest relative deviation of the standard error
+at the tight optimum from the specification's figure: development Mac 6.5e-09, arm64 container 1.2e-08, CI Linux 2.2e-08, CI Mac 6.5e-09, CI Windows
+1.1e-08. `rel` in `test_ml_se_matches_spec_measurement_at_tight_optimum` (`src/tests/test_nchg.py`) goes from 1e-8 to 2.5e-7 (10 times the largest, 2.2e-08,
+rounded up); the same test's check at the default estimate uses 1e-5, so the tight-optimum check still detects an information error well below that.
+
+Tests: `pytest src/tests/test_nchg.py src/tests/correctness/test_derived.py -k "glmm or nchg"` passes on the development Mac; in the arm64 container
+(`bin/linux-tests.sh`) it passes except `glmm.fit.or.um.rs.fe.nielweise2007.beta` (beta[0] -1.22065947 against -1.22065944, tolerance 1e-8), an arm64-only
+failure already recorded for Task 2's run, absent from CI's Linux list and from the group table, so not this task's. The CI platforms are judged in Task 11.
+
+<!-- doc-counts: accept-end -->

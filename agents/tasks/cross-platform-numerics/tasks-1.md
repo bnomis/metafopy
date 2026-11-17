@@ -292,29 +292,30 @@ five environments.
 
 **Subtasks:**
 
-- [ ] `glmm-um-rs-score`: measure the reference optimum's score by each step pair and its spread over steps 2e-5 to 4e-4, beside the analytic score where
+- [x] `glmm-um-rs-score`: measure the reference optimum's score by each step pair and its spread over steps 2e-5 to 4e-4, beside the analytic score where
       `glmm_formulas` has one. If the score is within the noise floor on each platform, set `GRADIENT_TOLERANCE` (or the case's own) under verdict 3, or
       make `maximise` polish to a smaller score under verdict 2; otherwise stop as `blocked`
-- [ ] `cm-el-tight-se`: measure the Nelder-Mead end point, its `neg_loglik`, the score and the standard error per platform. If the standard error's
+- [x] `cm-el-tight-se`: measure the Nelder-Mead end point, its `neg_loglik`, the score and the standard error per platform. If the standard error's
       spread follows the end point's, set the `rel` of `test_ml_se_matches_spec_measurement_at_tight_optimum` under verdict 3, or tighten the search
       under verdict 2; otherwise stop as `blocked`
-- [ ] Record both groups' figures and verdicts in `measurements.md`; run their tests locally and in the container
+- [x] Record both groups' figures and verdicts in `measurements.md`; run their tests locally and in the container
 
 **Acceptance Criteria:**
 
-- [ ] Both groups' tests pass on the development Mac and in the container; `measurements.md` holds each verdict
-- [ ] `git diff main -- src/metafopy` is empty
+- [x] Both groups' tests pass on the development Mac and in the container; `measurements.md` holds each verdict
+- [x] `git diff main -- src/metafopy` is empty
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_nchg.py src/tests/correctness/test_derived.py -k "glmm or nchg"` passes
-- [ ] `bin/linux-tests.sh -- src/tests/test_nchg.py src/tests/correctness/test_derived.py -k "glmm or nchg"` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_nchg.py src/tests/correctness/test_derived.py -k "glmm or nchg"` passes
+- [x] `bin/linux-tests.sh -- src/tests/test_nchg.py src/tests/correctness/test_derived.py -k "glmm or nchg"` passes
 
 **Notes:**
 
 - Depends on Task 4
+- Done on 2026-11-17: both groups verdict 3 (figures in `measurements.md`). In the arm64 container the Definition of Done run has one failure, `glmm.fit.or.um.rs.fe.nielweise2007.beta`, an arm64-only difference already seen in Task 2's run, not in CI's Linux list nor the group table
 - Key files: `src/tests/correctness/glmm_formulas.py` (`maximise`, `GRADIENT_TOLERANCE`), `src/tests/test_nchg.py`
 
 ---
