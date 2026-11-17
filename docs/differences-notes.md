@@ -72,7 +72,7 @@ Where metafopy and R stop at different points of the same likelihood.
 
 - `rma_mv(restart=)` takes a previous fit (an `RMAMVResult`) as well as `True`, which starts from the last parameters the optimiser tried in the session as metafor's `restart=TRUE` does. `RMAMVResult.p` is the number of columns of `X`; metafor's `p` (the number of estimated coefficients when `beta` is given) is `p_eff`. Only `hesspack='numDeriv'` is available for the Hessians of `optbeta` and `cvvc`. `lambda1` (lasso) is non-smooth, so the optimiser accepts the last iterate.
 
-- `rma_mv` BFGS ends on "precision loss" and the stop is accepted under a gradient slack of 1e-4, so the REML score of a `sigma2` component is up to 1.1e-6 of its scale `tr(P Z Z')` on Linux and Windows (about 1e-11 on macOS); the correctness test `property.mv.reml-score.kon` asserts 2e-6 of the scale (measured 2026-11-17).
+- `rma_mv` BFGS ends on "precision loss" and the stop is accepted under a gradient slack of 1e-4, so its own stop leaves the REML score of a `sigma2` component up to 1.1e-6 of its scale `tr(P Z Z')` on Linux and Windows. The BFGS stop is therefore finished by Newton steps on the analytic score, capped at 1e-3 in the transformed parameters so that ridge and boundary fits stay where BFGS stopped; the correctness test `property.mv.reml-score.kon` asserts 1e-10 of the scale. R metafor 5.2-1's own estimates (`nlminb`) have a relative score of 8e-09 of it (measured 2026-11-17).
 
 - `selmodel(type='stepcon')` uses SLSQP, not Rsolnp. Its `LRT.tau2` can be larger than R's, because R refits at tau2 = 0 without the delta ordering constraint and solnp stops at a worse point.
 
