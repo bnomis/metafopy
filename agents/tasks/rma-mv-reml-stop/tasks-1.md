@@ -302,7 +302,7 @@ of the `rma_mv` fixtures shows nothing new.
 
 ## Task 6: The full test run, the records and closing
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Acceptance; Records (`TODO.md`); the spec as a whole
@@ -311,31 +311,31 @@ of the `rma_mv` fixtures shows nothing new.
 
 **Subtasks:**
 
-- [ ] Set the spec's `**Status:**` in `agents/specs/rma-mv-reml-stop/spec.md` to `implemented`, and its row in `agents/specs/index.md` from
+- [x] Set the spec's `**Status:**` in `agents/specs/rma-mv-reml-stop/spec.md` to `implemented`, and its row in `agents/specs/index.md` from
       "Approved (2026-11-17)" to "Implemented (2026-MM-DD)" with the date of the commit
-- [ ] Move the item "The rma_mv REML fit stops short of the optimum on Linux and Windows" from `TODO.md` to `DONE.md`: append its heading and body
+- [x] Move the item "The rma_mv REML fit stops short of the optimum on Linux and Windows" from `TODO.md` to `DONE.md`: append its heading and body
       unchanged at the end of `DONE.md`, then a line
       `Done: 2026-MM-DD, agents/tasks/rma-mv-reml-stop/tasks-1.md; a capped Newton polish on the score follows the BFGS stop of rma_mv, property.mv.reml-score.kon asserts 1e-10 of its scale; CI on Linux, macOS and Windows is checked by the operator after the merge`
       with the date of the commit. (The spec's Records move it once CI is green after the merge; the run order closes it here, and a CI failure is
       filed anew with the probe's figures, as the spec's Acceptance says)
-- [ ] Run the final tests from the worktree and save their whole output for the merge gate (the main checkout is the first entry of
+- [x] Run the final tests from the worktree and save their whole output for the merge gate (the main checkout is the first entry of
       `git worktree list --porcelain`, `/Users/simonb/src/metafopy`):
       `mkdir -p /Users/simonb/src/metafopy/ralpher-logs/rma-mv-reml-stop/tasks-1 && source bin/activate.sh && pytest src/tests 2>&1 | tee /Users/simonb/src/metafopy/ralpher-logs/rma-mv-reml-stop/tasks-1/final-tests.log`
 
 **Acceptance Criteria:**
 
-- [ ] The spec is `implemented`; the item is in `DONE.md` with its body unchanged and the `Done:` line, and no longer in `TODO.md`
-- [ ] `git diff main -- src/metafopy` changes `src/metafopy/models/mv_opt.py` only
+- [x] The spec is `implemented`; the item is in `DONE.md` with its body unchanged and the `Done:` line, and no longer in `TODO.md`
+- [x] `git diff main -- src/metafopy` changes `src/metafopy/models/mv_opt.py` only
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] The final test run above passes, `slow` tests included, and its log is saved at
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] The final test run above passes, `slow` tests included, and its log is saved at
       `/Users/simonb/src/metafopy/ralpher-logs/rma-mv-reml-stop/tasks-1/final-tests.log`
-- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/rma-mv-reml-stop/tasks-1.md):TODO.md > <scratch>/todo-before.md` (the `TODO.md`
+- [x] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/rma-mv-reml-stop/tasks-1.md):TODO.md > <scratch>/todo-before.md` (the `TODO.md`
       at the list's start) and `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0
       (`<scratch>` is the session's scratch directory, outside the repository)
 
@@ -346,6 +346,7 @@ of the `rma_mv` fixtures shows nothing new.
 - No version bump
 
 ---
+- 2026-11-17: `pytest src/tests`: 8586 passed, 37 skipped, 14 xfailed; log at `/Users/simonb/src/metafopy/ralpher-logs/rma-mv-reml-stop/tasks-1/final-tests.log`. `pre-commit run --all-files`, `auditme-all`, `mypy` pass; `verify_bodies.py`: 13 of 13 item bodies preserved
 
 ---
 

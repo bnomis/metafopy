@@ -4,24 +4,6 @@ Open work only, in implementation order, nearest first. Finished items move to
 `DONE.md` unchanged. See the shared `todo-add` and `todo-review` skills for
 the shape of an item.
 
-## The rma_mv REML fit stops short of the optimum on Linux and Windows
-
-<!-- doc-counts: accept-start found on 2026-11-17 - a dated record, not a claim about the present -->
-Found on 2026-11-17 by Task 8 of `agents/tasks/cross-platform-numerics/tasks-1.md` (probe run 44002318304 of commit `f57ab45`; figures in
-`agents/specs/cross-platform-numerics/measurements.md`, "The rma_mv REML score"). The REML score of `sigma2` in `property.mv.reml-score.kon`, relative to
-its scale `tr(P Z Z')`, is 1e-11 on the development Mac and the containers, 1.3e-07 and 3.8e-08 on CI Linux, and up to 1.1e-06 on CI Windows; the BFGS
-gradient is 1.3e-10 (Mac), 6.0e-07 (Linux) and 1.8e-05 (Windows). The stop also varies from run to run on one platform.
-<!-- doc-counts: accept-end -->
-
-Cause: `scipy.optimize.minimize` BFGS ends on "precision loss" with `success` false on every platform, and `mv_opt.maximise` accepts the stop because the
-gradient is under `SLACK_GRADIENT` (1e-4). Where the line search loses precision early, the fit is accepted up to 4 to 7 orders of magnitude from the
-optimum. The test asserts the measured range (2e-6 of the scale) meanwhile.
-
-Fix direction: tighten the stop in `src/metafopy` through a spec (for example a Newton polish on the analytic score after BFGS), then narrow the test's
-`tolerance` in `src/tests/correctness/cases/properties.toml` and the entry in `docs/differences-notes.md` ("Optimisers and flat likelihoods").
-
-Spec: `agents/specs/rma-mv-reml-stop/spec.md`; tasks: `agents/tasks/rma-mv-reml-stop/tasks-1.md`.
-
 ## The audit lists the exact permutest of uni_mods as an R kill and has no entry for it
 
 <!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
