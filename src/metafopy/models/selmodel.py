@@ -435,7 +435,7 @@ def selmodel(
     the best fit. Where the likelihood rises to an observed effect it has a supremum there and no maximum: the truncation point is then reported
     ``1e-8 * max(1, |effect|)`` inside the stretch, a warning says so, and the truncation point is left out of the Hessian (its standard error,
     test and Wald interval are ``nan``). A fixed truncation point (``delta=[nan, c]``) runs no search. See
-    [docs/differences.md](../../../docs/differences.md#where-metafor-departs-from-its-reference).
+    [docs/differences.md](../differences.md#where-metafor-departs-from-its-reference).
 
     Metafor reference:
         [selmodel](https://wviechtb.github.io/metafor/reference/selmodel.html)

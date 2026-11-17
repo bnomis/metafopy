@@ -201,7 +201,7 @@ def confint_rma_uni(
             test-based method of Higgins and Thompson, 2002, [doi:10.1002/sim.1186](https://doi.org/10.1002/sim.1186); only for models without
             moderators and ``k > 2``; centred on ``H`` from ``Q = (k - 1) H^2`` for every method, as in Higgins and Thompson and in Borenstein et al.,
             2009, which differs from metafor's ``confint.rma.uni``, which centres on the fit's ``H2``, see
-            [docs/differences.md](../../../docs/differences.md#where-metafor-departs-from-its-reference)), or a Wald
+            [docs/differences.md](../differences.md#where-metafor-departs-from-its-reference)), or a Wald
             type ``'wald'``, ``'wald.log'`` or ``'wald.sqrt'`` (in the metafor source but not described on its reference page).
             Default: ``'genq'`` for ``GENQ`` and ``GENQM`` fits, else ``'qp'``.
         level: Confidence level in percent (``95`` is 95%). As in metafor, a value below 1 is read as the confidence level if it is above 0.5

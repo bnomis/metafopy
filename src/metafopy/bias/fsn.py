@@ -242,7 +242,7 @@ def fsn(
     For the 'Rosenthal' type with `pool='fisher'` and for the 'General' type the fail-safe N is the least integer whose criterion holds,
     found by a search over the integers, as in Becker (2005, doi:10.1002/0470870168.ch7) and Viechtbauer (2024). metafor finds a real root
     with `uniroot` and rounds it up, which can be one off on these step functions, see
-    [docs/differences.md](../../../docs/differences.md#fsn-fisher-pooling-and-the-general-type).
+    [docs/differences.md](../differences.md#fsn-fisher-pooling-and-the-general-type).
 
     Args:
         x: either a fitted model without moderators (then `type='General'` is used) or the observed effect sizes (array-like, or the name of
