@@ -144,6 +144,15 @@ unchanged.
 - The spec's run of these files took about 13 minutes on the development Mac (2026-11-17); run it in the background
 - The uncapped alternative (moving `kon_spexp` `rho` and the `sim_R_*` boundary fits) was not chosen; a fit that moves like it is a change beyond the
   bounds
+- 2026-11-17 (blocked, for the operator): per-fit comparison with and without the polish over every entry of `CASES`: largest relative change 7.12e-08
+  (`ass_mods`, `ass_mods_t`; bound 1e-7), then `sim_gen` 5.69e-08; the fits the spec lists as unchanged are identical; the largest fit time is 0.15 s
+  (`sim_gen`; bound 0.5 s); `kon_weights` log-likelihood +7.44e-10 as measured. **Beyond the named log-likelihood figure (2e-14):** `ass_cs` -3.34e-13
+  (log-likelihood -50.5, so 6.6e-15 relative; the sign is a loss, so rounding in evaluating the likelihood, not a move) and `kon_fix_sigma2` -2.13e-14.
+  Question for the operator: accept these as rounding of the likelihood evaluation, or treat them as beyond the bounds
+- 2026-11-17: `pytest <the 47 files naming rma_mv, RMAMV or mv_opt> -m "not slow"`: 4107 passed, 13 skipped, 1 xfailed, 1 failed:
+  `src/tests/test_profile_plots.py::test_pipeline_through_figure_without_axes` (`assert 3 == 2`, an open matplotlib figure left by an earlier file). It
+  passes alone and fails the same way, with the same 1116 passed, on the main checkout's code without the polish, so the polish does not cause it;
+  filed as Task 7
 
 ---
 
@@ -330,3 +339,29 @@ of the `rma_mv` fixtures shows nothing new.
 - No version bump
 
 ---
+
+---
+
+## Task 7: Close the figure that leaks into `test_pipeline_through_figure_without_axes`
+
+**Status:** todo
+**Priority:** low
+**Complexity:** small
+**Spec Reference:** none (found by Task 2)
+
+**Technical Goal:** `src/tests/test_profile_plots.py::test_pipeline_through_figure_without_axes` passes whatever test files ran before it.
+
+**Subtasks:**
+
+- [ ] Find the earlier test file that leaves a matplotlib figure open (run the files named in Task 2's Notes in order up to `test_profile_plots.py`; the
+      failure shows with `src/tests/test_audit*.py`, `test_fits.py`, `test_plots.py` and `test_mv_diagnostics.py` before it) and close its figures, or
+      make the failing test count the axes of its own figure
+- [ ] Run the same selection and see it pass
+
+**Acceptance Criteria:**
+
+- [ ] The test passes in the combined run and alone
+
+**Notes:**
+
+- Fails identically without the polish, so it is not caused by this spec
