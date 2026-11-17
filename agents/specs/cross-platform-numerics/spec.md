@@ -1,7 +1,7 @@
 # Cross-platform numerics
 
 **Version:** 1.1
-**Status:** approved
+**Status:** implemented
 **Date:** 2026-11-16
 
 Numerical tests that pass on the development Mac fail in CI on Linux, macOS and Windows. This spec defines, per failure group, how the cause is confirmed,

@@ -515,7 +515,7 @@ environments.
 
 ## Task 12: The full test run, the records and closing
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Order of work step 6, Acceptance
@@ -525,32 +525,32 @@ is closed.
 
 **Subtasks:**
 
-- [ ] Check `measurements.md` holds every group's figures and verdict, and that every changed tolerance and platform-dependent mark has a comment with
+- [x] Check `measurements.md` holds every group's figures and verdict, and that every changed tolerance and platform-dependent mark has a comment with
       the measured spread, the environments and the date
-- [ ] Close the draft pull request without merging (`gh pr close <number> --delete-branch`), with a comment naming this list; the branch merges into
+- [x] Close the draft pull request without merging (`gh pr close <number> --delete-branch`), with a comment naming this list; the branch merges into
       `main` locally through the run order
-- [ ] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md`
-- [ ] Move the item "Numerical tests whose results or tolerances hold only on the development machine" from `TODO.md` to `DONE.md`: append its heading
+- [x] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md`
+- [x] Move the item "Numerical tests whose results or tolerances hold only on the development machine" from `TODO.md` to `DONE.md`: append its heading
       and body unchanged at the end of `DONE.md`, then a line `Done: 2026-MM-DD, agents/specs/cross-platform-numerics/spec.md,
       agents/tasks/cross-platform-numerics/tasks-1.md; CI run <id> passed on all three platforms` with the date of the commit. (The spec's Order of work
       moves it after the merge; the pull request's CI already tests the merge with `main`, so it moves here)
-- [ ] Run the final tests from the worktree and save their whole output for the merge gate (the main checkout is the first entry of
+- [x] Run the final tests from the worktree and save their whole output for the merge gate (the main checkout is the first entry of
       `git worktree list --porcelain`, `/Users/simonb/src/metafopy`):
       `mkdir -p /Users/simonb/src/metafopy/ralpher-logs/cross-platform-numerics/tasks-1 && source bin/activate.sh && pytest src/tests 2>&1 | tee /Users/simonb/src/metafopy/ralpher-logs/cross-platform-numerics/tasks-1/final-tests.log`
 
 **Acceptance Criteria:**
 
-- [ ] The spec is `implemented`; the item is in `DONE.md` with its body unchanged and no longer in `TODO.md`; no pull request of this branch is open
-- [ ] `git diff main -- src/metafopy` is empty, unless an operator stop confirmed a change
+- [x] The spec is `implemented`; the item is in `DONE.md` with its body unchanged and no longer in `TODO.md`; no pull request of this branch is open
+- [x] `git diff main -- src/metafopy` is empty, unless an operator stop confirmed a change
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] The final test run above passes
-- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/cross-platform-numerics/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] The final test run above passes
+- [x] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/cross-platform-numerics/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
       `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0 (`<scratch>` is the session's scratch
       directory, outside the repository)
 
