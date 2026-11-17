@@ -363,6 +363,13 @@ five environments.
   1.8e-05 (Windows), all under the 1e-4 slack, with "precision loss" and `success` false on every platform. The score is 1.3e-07 and 3.8e-08 of the scale on
   Linux and up to 1.1e-06 on Windows, against 1e-11 on the Mac, so the condition for verdict 3 (rounding-size score) is not met. The options are in
   `measurements.md` ("The CI probe run of commit `f57ab45`"). The CI test run of the same head also fails this case on Linux (1.3e-05 against 1e-6)
+- Answered by the operator on 2026-11-17 (03:40 UTC): *range now, file the fix*. (1) The test asserts the measured range: the REML score of `sigma2`
+  within 2e-06 of its scale `tr(P Z Z')` (the largest measured, 1.1e-06 on CI Windows, rounded up), as verdict 4, with a comment naming probe run
+  44002318304, the five environments and the date, and an entry in `docs/differences-notes.md` ("Optimisers and flat likelihoods"). (2) File a new
+  `TODO.md` item, at the top, in the shape of the others, dated 2026-11-17: "The rma_mv REML fit stops short of the optimum on Linux and Windows",
+  with the table of `measurements.md`, the cause (BFGS ends on "precision loss" and `mv_opt.maximise` accepts the stop under `SLACK_GRADIENT` 1e-4),
+  and the fix direction: tighten the stop in `src/metafopy` through a spec (for example a Newton polish on the analytic score), then narrow this
+  test's range. `src/metafopy` stays unchanged in this list
 - Key files: `src/tests/correctness/test_properties.py` (`mv_score_is_zero`), `src/tests/correctness/cases/*.toml`
 
 ---
