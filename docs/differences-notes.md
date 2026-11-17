@@ -112,6 +112,8 @@ Where metafopy and R stop at different points of the same likelihood.
 
 - Permuted and simulated scale refits along a flat ridge (measured on 2026-11-16 and 2026-11-17 on the development Mac, the Linux container and the three CI platforms): which refits end on the boundary or with a NaN Hessian depends on the platform's BLAS and libm. In `vif(sim=)` of a location-scale model 0 or 1 of the first 50 draws is NaN where R's `nlminb` stops with a finite Hessian; in `permutest()` the permutations with a defined scale standard error number 40 to 44 of 50 where R has 47, so `pval_alpha` and `QSp` are counts over 40 to 47 and not a fixed value. The tests assert those ranges.
 
+- `selmodel(type='halfnorm')` with `delta` at its lower bound (`hack_halfnorm_less`, `delta` 1.4e-4): the numerical Hessian depends on the platform's BLAS, so the printed `ci.lb` (R: 0.0123831) is 0.0113676 (CI Linux), 0.00490912 (CI Mac), 0.01474 (CI Windows), 0.011260 (development Mac) and 0.009911 (arm64 container), up to 0.0075 from R's, on a standard error of 0.104 to 0.108. The test compares the print with an absolute tolerance of 0.01 (measured 2026-11-17).
+
 ## rma_glmm
 
 Mixed-model and conditional fits.

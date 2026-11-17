@@ -44,6 +44,9 @@ RTOL_ROOT = 2e-3
 # delta sits next to its lower bound (1.4e-4), so the numerical Hessian, and with it the SE and CI bounds, depends on the BLAS in use
 NOISY_HESSIAN = {'hack_halfnorm_less': 0.25}
 NOISY_ATOL = 5e-3
+# The printed ci.lb of that case (R: 0.0123831) deviates by up to 0.0075 across the five environments (CI Linux, CI Mac, CI Windows, development Mac,
+# arm64 container; measured 2026-11-17, agents/specs/cross-platform-numerics/measurements.md): the range is asserted, 0.01 being 1.3 times the largest
+NOISY_PRINT_ATOL = 1e-2
 
 # auditme: accept[non-alphabetical-literal] metafor's column order
 # auditme: accept[literal-duplication] test cases spell out their own R arguments
@@ -190,7 +193,7 @@ def test_inference(case: str) -> None:
 @pytest.mark.parametrize('case', ALL_CASES)
 def test_print(case: str) -> None:
     ref = REF['fits'][case]
-    assert same_text(str(fit(case)), ref['print'], NOISY_HESSIAN.get(case, 0.0), NOISY_ATOL if case in NOISY_HESSIAN else 0.0), (
+    assert same_text(str(fit(case)), ref['print'], NOISY_HESSIAN.get(case, 0.0), NOISY_PRINT_ATOL if case in NOISY_HESSIAN else 0.0), (
         f'{case}\n{fit(case)}\n---\n{ref["print"]}'
     )
 

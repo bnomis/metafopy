@@ -376,7 +376,7 @@ five environments.
 
 ## Task 9: The stepcon interval and the halfnorm print
 
-**Status:** in-progress
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Spec Reference:** Failure groups (`stepcon-rau-mods`, `selmodel-print-halfnorm`), Confirming the cause, Verdicts
@@ -386,22 +386,22 @@ environments.
 
 **Subtasks:**
 
-- [ ] Measure each compared quantity and its standard error on each platform. If the spread is a small fraction of the standard error, set the
+- [x] Measure each compared quantity and its standard error on each platform. If the spread is a small fraction of the standard error, set the
       comparison's tolerance under verdict 3 (`LOOSE`/`ATOL` for the case in `src/tests/test_stepcon.py`; `NOISY_HESSIAN`/`NOISY_ATOL` for the case in
       `src/tests/test_selmodel.py`), for that case only; otherwise stop as `blocked`
-- [ ] Record both groups' figures and verdicts in `measurements.md`; run their tests locally and in the container
+- [x] Record both groups' figures and verdicts in `measurements.md`; run their tests locally and in the container
 
 **Acceptance Criteria:**
 
-- [ ] Both tests pass on the development Mac and in the container; no other case's tolerance changes
-- [ ] `git diff main -- src/metafopy` is empty
+- [x] Both tests pass on the development Mac and in the container; no other case's tolerance changes
+- [x] `git diff main -- src/metafopy` is empty
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_stepcon.py src/tests/test_selmodel.py` passes
-- [ ] `bin/linux-tests.sh -- src/tests/test_stepcon.py src/tests/test_selmodel.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_stepcon.py src/tests/test_selmodel.py` passes
+- [x] `bin/linux-tests.sh -- src/tests/test_stepcon.py src/tests/test_selmodel.py` passes
 
 **Notes:**
 
@@ -414,6 +414,7 @@ environments.
   4's case, and the spec's choice "Platform-dependent marks" is to assert the observed range. So `NOISY_ATOL` 0.01 for this case's printed `ci.lb` only
   (the measured deviations, up to 0.0075, with the five environments and the date in its comment), every other printed field still compared as now,
   and an entry in `docs/differences-notes.md` ("Optimisers and flat likelihoods") naming the measurement. Then run both tests in the container
+- Done on 2026-11-17: `NOISY_PRINT_ATOL` 0.01 applied to `hack_halfnorm_less`'s print; both tests pass on the development Mac and in the arm64 container (440 passed each)
 
 ---
 

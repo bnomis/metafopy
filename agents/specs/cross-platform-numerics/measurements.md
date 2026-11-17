@@ -296,6 +296,11 @@ refuses a tolerance larger than the effect the test exists to detect. Options fo
 the largest deviation, against the spec's 10 times); (b) `NOISY_ATOL` 0.075 as the margin rule gives; (c) skip the case's print comparison on `darwin`
 and `win32`. Not changed.
 
+**Answered (decided 2026-11-17 by Claude as a queue decision, not yet reviewed): option (a), as verdict 4.** `delta` sits at its bound, so the spec's
+choice "Platform-dependent marks" is to assert the observed range. `NOISY_PRINT_ATOL` 0.01 in `src/tests/test_selmodel.py` applies to this case's printed
+output only; every other printed field and every other case is compared as before, and `docs/differences-notes.md` ("Optimisers and flat likelihoods")
+names the measurement.
+
 <!-- doc-counts: accept-end -->
 
 ## Verdicts: the ridge stops of the vif simulation and the permutation boundary fits (Task 10 of `tasks-1.md`)
