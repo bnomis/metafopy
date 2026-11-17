@@ -359,6 +359,10 @@ five environments.
 - Decided 2026-11-17 by Claude, not yet reviewed (queue decision): push this list's branch now to update draft pull request #74 and wait for its
   CI and probe runs, as Task 4 waits, then judge this group on CI Linux's recorded gradient and score. The answer to D1 (*Draft pull request*,
   2026-11-16) allows this list to push its branch and read CI; pushing before Task 11 is within it. Never push `main`
+- Stopped on 2026-11-17 (`blocked`, operator): the CI probe run 44002318304 of commit `f57ab45` gives a gradient of 6.0e-07 (Linux), 1.3e-10 (Mac) and
+  1.8e-05 (Windows), all under the 1e-4 slack, with "precision loss" and `success` false on every platform. The score is 1.3e-07 and 3.8e-08 of the scale on
+  Linux and up to 1.1e-06 on Windows, against 1e-11 on the Mac, so the condition for verdict 3 (rounding-size score) is not met. The options are in
+  `measurements.md` ("The CI probe run of commit `f57ab45`"). The CI test run of the same head also fails this case on Linux (1.3e-05 against 1e-6)
 - Key files: `src/tests/correctness/test_properties.py` (`mv_score_is_zero`), `src/tests/correctness/cases/*.toml`
 
 ---

@@ -248,10 +248,25 @@ convergence" holds through that path only. Three local environments end at a gra
 score of 1e-3. If CI Linux's log-sigma2 gradient is about `sigma2 * score / 2` it is near 2e-5 (derived, not measured): between the three local figures and
 the slack, so the cause (an earlier BFGS stop on Linux's libm and BLAS, accepted by the slack) is not confirmed.
 
-**Verdict: not yet given.** The spec's condition for verdict 3 (the optimiser's message and gradient on every platform, the score a rounding-size
-fraction of its scale) cannot be checked for CI Linux from figures in hand, and 1.1e-06 of the scale is not rounding size. The next step is a CI probe run
-of this commit (Task 11), which records the three CI platforms' gradient and message; then set the case's `tolerance` relative to the scale under verdict 3,
-or stop as `blocked` with the figures if the gradient there is above the slack or the stop is not a convergence.
+### The CI probe run of commit `f57ab45` (probe run 44002318304, read on 2026-11-17)
+
+| Environment | BFGS message | Iterations | Largest absolute gradient | Score of `sigma2` | Score relative to scale |
+|---|---|---|---|---|---|
+| CI Linux | "precision loss", `success` false | 8 | 6.0e-07 | [1.3e-05, 3.7e-05] | 1.3e-07, 3.8e-08 |
+| CI Mac | the same | 11 | 1.3e-10 | [1.4e-09, -8.3e-09] | 1.3e-11, -8.6e-12 |
+| CI Windows | the same | 8 | 1.8e-05 | [5.1e-05, 1.1e-03] | 4.9e-07, 1.1e-06 |
+
+The log-likelihood agrees across the three to 1e-12 (-7.2404667768). The earlier guess (Linux's gradient near 2e-5) was wrong: Linux's gradient is
+6.0e-07 and it is Windows that stops at 1.8e-05. In the earlier probe run the same two platforms gave scores [5.1e-05, 1.1e-03] on Linux and
+[3.0e-07, -3.0e-08] on Windows, so the stop varies from run to run on one platform, not only between platforms.
+
+**Verdict: blocked (operator stop).** Every platform's optimiser ends on "precision loss" with `success` false, and `mv_opt.maximise` accepts the stop only
+because the gradient is under `SLACK_GRADIENT` (1e-4). CI Linux and CI Windows end 4 to 7 orders of magnitude further from the optimum than the Mac
+(relative score up to 1.1e-06 against 1e-11), which is a tolerance-sized stop, not a rounding-size one. The task's condition for verdict 3 (convergence
+reported, score a rounding-size fraction of the scale on every platform) is not met, so metafopy is off a theoretical value on two platforms and the
+spec sends this to the operator. The options for the operator: (a) set the case's `tolerance` relative to the scale (about 2e-06 of 962.6, i.e. 2e-03)
+as verdict 3 anyway; (b) tighten the optimiser's stop in `src/metafopy` (changes the library, outside this list's scope); (c) assert the measured range
+as verdict 4.
 
 <!-- doc-counts: accept-end -->
 
