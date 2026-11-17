@@ -41,52 +41,52 @@ the BFGS stop no longer decides how close to the optimum a fit ends.
 
 **Subtasks:**
 
-- [ ] Starting point: `grep -rnwE 'polish_score|score_jacobian|POLISH_GRADIENT|POLISH_MAX_STEP|POLISH_STEPS' src/metafopy` finds nothing,
+- [x] Starting point: `grep -rnwE 'polish_score|score_jacobian|POLISH_GRADIENT|POLISH_MAX_STEP|POLISH_STEPS' src/metafopy` finds nothing,
       `src/tests/test_mv_opt.py` does not exist, and `grep -n 'SLACK_GRADIENT = 1e-4' src/metafopy/models/mv_opt.py` finds the constant. Stop as
       `blocked`, naming what differs, if any is not so
-- [ ] Add to `src/metafopy/models/mv_opt.py` the constants `POLISH_GRADIENT = 1e-10`, `POLISH_MAX_STEP = 1e-3` and `POLISH_STEPS = 8`, each with the
+- [x] Add to `src/metafopy/models/mv_opt.py` the constants `POLISH_GRADIENT = 1e-10`, `POLISH_MAX_STEP = 1e-3` and `POLISH_STEPS = 8`, each with the
       comment of the spec's API, beside `SLACK_GRADIENT`
-- [ ] Add `score_jacobian(problem, par, free, reml)` as the spec's API gives it: central differences of `metafopy.models.mv_lik.gradient` in each free
+- [x] Add `score_jacobian(problem, par, free, reml)` as the spec's API gives it: central differences of `metafopy.models.mv_lik.gradient` in each free
       entry with step `1e-5 * max(1, |par_i|)`, symmetrised (`(H + H.T) / 2`), shape `len(free) x len(free)`
-- [ ] Add `polish_score(problem, par, free, reml)` returning `(par, -ll)`, with the step of the spec's Implementation: stop when the largest
+- [x] Add `polish_score(problem, par, free, reml)` returning `(par, -ll)`, with the step of the spec's Implementation: stop when the largest
       `|gradient|` is at most `POLISH_GRADIENT`; Cholesky of the Hessian (catch `numpy.linalg.LinAlgError` here only, and stop); `step = -H^-1 g` by
       the factor; stop if `max|step| > POLISH_MAX_STEP`; evaluate `-ll` and the gradient at `par + step`; stop if `-ll` or the gradient is not finite,
       `-ll` rose by more than `metafopy.core.stationarity.REL_TOL * (1 + |-ll|)`, or the largest gradient entry did not fall; else accept. At most
       `POLISH_STEPS` steps; it raises nothing of its own and returns the best point reached, at least its input. Docstring as the spec's API, with the
       reason the objective test is loose (the spec's paragraph under Implementation)
-- [ ] In `maximise`, default optimiser only (after the `choice is not None` return), after the L-BFGS-B fallback and its error check, and only when
+- [x] In `maximise`, default optimiser only (after the `choice is not None` return), after the L-BFGS-B fallback and its error check, and only when
       `not nonsmooth` and `free.size`: `par, val = polish_score(problem, expand(x), free, reml)` and return `OptResult(par=par, value=-val, ...)` with
       `iterations` still `int(res.nit)`. The polish runs whether BFGS reported success or not; it does not call `log` or `count` (spec, "Choices made,
       not decisions")
-- [ ] Add `polish_score` and `score_jacobian` (and the constants, if the module lists constants elsewhere) to `__all__`
-- [ ] Rewrite the module docstring's optimiser paragraph: BFGS is followed by a Newton polish on the score, because the gradient slack accepts BFGS
+- [x] Add `polish_score` and `score_jacobian` (and the constants, if the module lists constants elsewhere) to `__all__`
+- [x] Rewrite the module docstring's optimiser paragraph: BFGS is followed by a Newton polish on the score, because the gradient slack accepts BFGS
       stops ("precision loss") that vary by platform and by run, up to 1.1e-06 of the score's scale on CI Windows (measured 2026-11-17); the other
       optimisers of `control['optimizer']` are not polished. Link the spec and Nocedal and Wright (2006), ch. 3 (Newton's method with a step test)
-- [ ] Write `src/tests/test_mv_opt.py` with the spec's tests: (a) the `kon` model of `property.mv.reml-score.kon` (`dat.konstantopoulos2011`,
+- [x] Write `src/tests/test_mv_opt.py` with the spec's tests: (a) the `kon` model of `property.mv.reml-score.kon` (`dat.konstantopoulos2011`,
       `random='~ 1 | district/school'`, `mods='~ year'`, REML) with `control={'gtol': 1e-4}` ends with the largest log-`sigma2` gradient
       (`mv_lik.gradient` at the fit's parameters) at most `POLISH_GRADIENT`, and `sigma2` within 1e-9 relative of the default fit; (b) `polish_score`
       at the polished optimum of (a) takes no step (returns its input unchanged); (c) on the boundary fit `sim_R_known` of `src/tests/test_rma_mv.py`
       (import its `CASES` builder rather than copy it), `polish_score` from the BFGS stop returns the input unchanged (the cap); (d) `score_jacobian`
       on the `kon` fit agrees with a central difference of `mv_lik.negative_loglik` (second differences) to 1e-5 relative. Reach the `Problem`, `par`
       and `free` the way `maximise`'s caller in `src/metafopy/models/rma_mv.py` builds them, or by wrapping `maximise` in the test
-- [ ] Confirm test (a) fails with the polish call removed (patch `metafopy.models.mv_opt.polish_score` to return its input, by hand, not committed):
+- [x] Confirm test (a) fails with the polish call removed (patch `metafopy.models.mv_opt.polish_score` to return its input, by hand, not committed):
       the spec measured a gradient of 2.5e-05. Record the figure seen and the date in this task's Notes
-- [ ] Run `pytest src/tests/test_mv_opt.py src/tests/test_rma_mv.py src/tests/correctness/test_properties.py -m "not slow"`. A failure in
+- [x] Run `pytest src/tests/test_mv_opt.py src/tests/test_rma_mv.py src/tests/correctness/test_properties.py -m "not slow"`. A failure in
       `test_rma_mv.py` is Task 2's stop, not a reason to change this task's tolerances: record it and carry on to Task 2 only if this task's own tests
       pass
 
 **Acceptance Criteria:**
 
-- [ ] `polish_score`, `score_jacobian` and the three constants exist with the spec's signatures and values; `maximise`'s signature and `OptResult`
+- [x] `polish_score`, `score_jacobian` and the three constants exist with the spec's signatures and values; `maximise`'s signature and `OptResult`
       are unchanged
-- [ ] The four tests of `src/tests/test_mv_opt.py` pass, and (a) is shown to fail without the polish
-- [ ] `git diff main -- src/metafopy` touches `src/metafopy/models/mv_opt.py` only
+- [x] The four tests of `src/tests/test_mv_opt.py` pass, and (a) is shown to fail without the polish
+- [x] `git diff main -- src/metafopy` touches `src/metafopy/models/mv_opt.py` only
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_mv_opt.py src/tests/test_rma_mv.py src/tests/correctness/test_properties.py` passes, or fails only in `test_rma_mv.py`
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_mv_opt.py src/tests/test_rma_mv.py src/tests/correctness/test_properties.py` passes, or fails only in `test_rma_mv.py`
       with the failure recorded for Task 2
 
 **Notes:**
@@ -95,6 +95,7 @@ the BFGS stop no longer decides how close to the optimum a fit ends.
   unchanged), `src/metafopy/core/stationarity.py` (`REL_TOL`; unchanged), `src/tests/test_mv_opt.py` (new)
 - The spec's prototype (2026-11-17, not kept) took one Newton step on every `kon` stop, from the default control to `gtol=1e-4` and `maxiter=4`
 - `SLACK_GRADIENT` and the L-BFGS-B fallback are unchanged (spec, "Choices made, not decisions")
+- 2026-11-17: test (a) without the polish call ends with a largest log-`sigma2` gradient of 2.49e-05 (spec: 2.5e-05), so it fails there; with the polish it is at most 1e-10. `pytest src/tests/test_mv_opt.py src/tests/test_rma_mv.py src/tests/correctness/test_properties.py -m "not slow"`: 381 passed, 12 skipped, none failed
 
 ---
 
