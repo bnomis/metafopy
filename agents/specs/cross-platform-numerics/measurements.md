@@ -132,3 +132,47 @@ What the five environments show together (the development Mac and the arm64 cont
 - `selmodel-print-halfnorm`: `se` spreads over 0.1033 to 0.1083 across the CI platforms with `delta` at its bound.
 
 <!-- doc-counts: accept-end -->
+
+## Verdicts: the location-scale reference fits (Task 5 of `tasks-1.md`)
+
+<!-- doc-counts: accept-start measured on 2026-11-17 - a dated record, not a claim about the present -->
+
+Groups `ls-bcg-reference`, `ls-identity-alpha` and `ls-identity-maximum`, judged on the figures of the five environments recorded above (the probe runs of
+2026-11-16).
+
+**Cause, confirmed as a reference defect in all three.** In every environment metafopy's log-likelihood equals or exceeds the reference's wherever the
+reference returns (ML -7.53929 and REML -8.08728 for the log link; ML -7.13929 and REML -7.98877 for the identity link), and metafopy's score is
+1e-09 to 8e-09 on the log link. Nothing beats metafopy's point, so there is no operator stop and `src/metafopy` is unchanged. What moves with the platform
+is the reference:
+
+- `ls-bcg-reference`: which BFGS starts report "precision loss" differs per platform and the old code dropped them; on CI Windows the kept ML start was a
+  stationary-looking stop at `ll` -9.47361, below metafopy's -7.53929, and on CI Linux no REML start counted as converged.
+- `ls-identity-alpha`: the REML likelihood has two optima ([0.339136, -0.0061661], `ll` -7.98877, and [0.0133747, 0.00162732], `ll` -8.08078); the old
+  code kept the lowest `-fun` among the starts SLSQP called successful, and on CI Linux that was the lower optimum.
+- `ls-identity-maximum`: on the CI Mac the starts that reached metafopy's point reported "Positive directional derivative" and were dropped, leaving the
+  stop at [0.202511, -0.0368202] (`ll` -7.89187).
+
+**Verdict 2 (make the reference fit robust)** for the three groups, in `ls_reference_fit` and `ls_starts` of `src/tests/correctness/formulas.py`:
+
+- five starts (`LS_START_FACTORS`) instead of three; the optimiser's message is no longer used to drop a start;
+- log link: every start is polished by `ls_newton_polish` (Newton on the analytic score and information, a step accepted only if the log-likelihood does not
+  fall) and kept when its largest absolute score is at most `LS_SCORE_TOLERANCE` (1e-6); the search stops once two kept starts agree to `LS_AGREEMENT`
+  (1e-9), which keeps the cost of the many permutation refits below the old cost;
+- identity link: the score does not vanish on the boundary `Z alpha = 0` (742 and 98 in the free directions at the optimum, above), so every feasible finite
+  end point is kept and the highest log-likelihood wins;
+- the best point is polished by Nelder-Mead as before; `RuntimeError` when no start is kept.
+
+Tests (`src/tests/correctness/test_formulas_ls.py`): a BFGS start reported as "precision loss" is still accepted when its score is small (ML and REML);
+a worse optimum that the optimiser calls successful is not chosen over the better one (identity REML, `ablat` design). Each was run against the old code
+on 2026-11-17 and failed (`RuntimeError: no start converged` twice; `ll` -8.08078 against -7.98877).
+
+Runs of `test_derived.py`, `test_rma_ls.py` and `test_formulas_ls.py` with `-k "ls or identity or bcg"` on 2026-11-17 with the new reference: development
+Mac 480 passed, 1 xfailed; arm64 container 478 passed, 2 failed (below). The CI platforms are judged in Task 11. A first version that ran every start for every
+permutation refit made `ls.permutest.location.exact.ML.z.bcglat` fail in the container (11 of 1287 permutations without a reference fit); the log-link search
+now stops once two kept starts agree, and the case passes.
+
+Found while running the group tests in the arm64 container, not caused by this change and outside these three groups: `glmm.cor.um.rs.ml.bcg` (the
+`glmm-um-rs-score` group, Task 7) and `test_identity_fit_bd_is_a_stationary_point` (`src/tests/test_rma_ls.py`, which asserts metafopy's own score below
+1e-6 and got 4.0e-06; it also failed in the arm64 container run of Task 2 and is not in CI's Linux list).
+
+<!-- doc-counts: accept-end -->

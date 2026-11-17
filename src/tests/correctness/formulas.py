@@ -2534,6 +2534,9 @@ def saddlepoint_pvalue(X: FloatArray, W: FloatArray, theta: FloatArray, cluster:
 # --- Location-scale models: Viechtbauer and Lopez-Lopez (2022), Res Synth Methods 13:697-715, doi:10.1002/jrsm.1562 ---
 
 
+LS_START_FACTORS = (1.0, 0.1, 10.0, 0.01, 100.0)  # the multiples of the moment-based intercept that ``ls_starts`` returns
+LS_SCORE_TOLERANCE = 1e-6  # the largest absolute score at which ``ls_reference_fit`` accepts a log-link fit as stationary
+LS_AGREEMENT = 1e-9  # two log-link starts whose log-likelihoods differ by no more than this end the search over starts
 IDENTITY_SLACK = 1e-10  # the amount by which SLSQP may leave Z alpha >= 0 before the reference treats alpha as infeasible
 
 
@@ -2649,11 +2652,11 @@ def ls_information(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray,
 
 
 def ls_starts(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, link: str) -> list[FloatArray]:
-    """Starting values for ``ls_reference_fit``: a moment-based intercept, scaled up and down, with zero slopes."""
+    """Starting values for ``ls_reference_fit``: a moment-based intercept, scaled by each of ``LS_START_FACTORS``, with zero slopes."""
     resid = yi - X @ numpy.linalg.lstsq(X, yi, rcond=None)[0]
     t0 = max(float(numpy.sum(resid**2)) / max(len(yi) - X.shape[1], 1) - float(numpy.mean(vi)), 1e-3)
     out = []
-    for factor in (1.0, 0.1, 10.0):
+    for factor in LS_START_FACTORS:
         alpha = numpy.zeros(Z.shape[1])
         alpha[0] = math.log(t0 * factor) if link == 'log' else t0 * factor
         out.append(alpha)
@@ -2673,12 +2676,45 @@ def ls_identity_starts(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatAr
     return [alpha, shifted]
 
 
+def ls_newton_polish(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, alpha: FloatArray, link: str, method: str, maxiter: int) -> FloatArray:
+    """Newton steps on the analytic ``ls_score`` with the analytic ``ls_information``, each accepted only when the log-likelihood does not fall.
+
+    Stops when the largest absolute score is below ``1e-10``, when the information is not positive definite, or when a step cannot be halved into one
+    that does not lower the log-likelihood.
+    """
+    current = alpha
+    value = ls_loglik(yi, vi, X, Z, current, link, method)
+    for _ in range(maxiter):
+        score = ls_score(yi, vi, X, Z, current, link, method)
+        if float(numpy.max(numpy.abs(score))) < 1e-10:
+            break
+        info = ls_information(yi, vi, X, Z, current, link, method)
+        if not bool(numpy.all(numpy.linalg.eigvalsh(info) > 0)):
+            break
+        step = numpy.linalg.solve(info, score)
+        for _ in range(30):
+            trial = current + step
+            trial_value = ls_loglik(yi, vi, X, Z, trial, link, method)
+            if trial_value >= value:
+                current, value = trial, trial_value
+                break
+            step = step / 2
+        else:
+            break
+    return current
+
+
 def ls_reference_fit(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, link: str, method: str, maxiter: int = 2000) -> dict[str, typing.Any]:
     """Maximise ``ls_loglik`` with ``scipy.optimize``, independently of metafopy.
 
-    BFGS with the analytic ``ls_score`` from several starts (SLSQP with the constraint ``Z alpha >= 0`` for the identity link, as Viechtbauer and Lopez-Lopez
-    2022 suggest after equation 8), then Nelder-Mead from the best of them. Returns ``alpha``, ``beta`` (equation 6), ``vb`` (equation 10), ``tau2``, ``ll``
-    and ``va`` (the inverse of the analytic observed information). Raises ``RuntimeError`` with the optimiser's message when no start converges.
+    From each of ``ls_starts`` (and, for the identity link, ``ls_identity_starts``) BFGS with the analytic ``ls_score`` (SLSQP with the constraint
+    ``Z alpha >= 0`` for the identity link, as Viechtbauer and Lopez-Lopez 2022 suggest after equation 8). The optimiser's message is not trusted: a stop
+    at "precision loss" or a "positive directional derivative" can lie on the maximum, and a "success" can lie on a worse stationary point, and the
+    platform's libm and BLAS decide which. For the log link every start is polished by ``ls_newton_polish`` and kept when its largest absolute score is
+    at most ``LS_SCORE_TOLERANCE``; the search stops once two kept starts agree to ``LS_AGREEMENT``. For the identity link, where the score does not
+    vanish on the boundary ``Z alpha = 0``, every feasible finite end point is kept. The kept point of highest log-likelihood is polished by
+    Nelder-Mead. Returns ``alpha``, ``beta`` (equation 6), ``vb`` (equation 10), ``tau2``, ``ll`` and ``va`` (the inverse of the analytic observed
+    information). Raises ``RuntimeError`` with each start's message when no start is kept.
     """
 
     def negative(alpha: FloatArray) -> float:
@@ -2692,7 +2728,7 @@ def ls_reference_fit(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArra
             return numpy.full(len(alpha), numpy.nan)
         return -ls_score(yi, vi, X, Z, alpha, link, method)
 
-    converged: list[scipy.optimize.OptimizeResult] = []
+    kept: list[tuple[float, FloatArray]] = []
     messages: list[str] = []
     starts = ls_starts(yi, vi, X, Z, link)
     if link == 'identity':
@@ -2707,19 +2743,34 @@ def ls_reference_fit(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArra
                 res = scipy.optimize.minimize(
                     negative, start, jac=gradient, method='SLSQP', constraints=[feasible], options={'maxiter': maxiter, 'ftol': 1e-14}
                 )
-        if res.success and numpy.isfinite(res.fun):
-            converged.append(res)
-        else:
+        point = numpy.asarray(res.x, dtype=float)
+        if not bool(numpy.all(numpy.isfinite(point))):
             messages.append(str(res.message))
-    if not converged:
+            continue
+        if link == 'log':
+            point = ls_newton_polish(yi, vi, X, Z, point, link, method, maxiter)
+        value = negative(point)
+        if not math.isfinite(value):
+            messages.append(str(res.message))
+            continue
+        if link == 'log':
+            score = float(numpy.max(numpy.abs(ls_score(yi, vi, X, Z, point, link, method))))
+            if score > LS_SCORE_TOLERANCE:
+                messages.append(f'{res.message} (score {score:.3g})')
+                continue
+        kept.append((value, point))
+        if link == 'log' and len(kept) >= 2 and abs(sorted(v for v, _ in kept)[1] - min(v for v, _ in kept)) <= LS_AGREEMENT:
+            break
+    if not kept:
         raise RuntimeError(f'ls_reference_fit: no start converged ({link} link, {method}): {"; ".join(messages)}')
-    best = min(converged, key=lambda r: float(r.fun))
+    best_value, best_point = min(kept, key=lambda item: item[0])
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
-        polish = scipy.optimize.minimize(negative, best.x, method='Nelder-Mead', options={'maxiter': maxiter * 10, 'xatol': 1e-11, 'fatol': 1e-13})
-    alpha = polish.x if polish.fun <= best.fun else best.x
+        polish = scipy.optimize.minimize(negative, best_point, method='Nelder-Mead', options={'maxiter': maxiter * 10, 'xatol': 1e-11, 'fatol': 1e-13})
+    alpha = polish.x if polish.fun <= best_value else best_point
     parts = ls_components(yi, vi, X, Z, alpha, link)
-    assert parts is not None
+    if parts is None:
+        raise RuntimeError(f'ls_reference_fit: the best point leaves M not positive ({link} link, {method})')
     _, _, A_inv, beta, _ = parts
     return {
         'alpha': alpha,
