@@ -184,15 +184,15 @@ first `delta` other than 1.
 
 **Subtasks:**
 
-- [ ] Run the whole audit from the worktree, in the background:
+- [x] Run the whole audit from the worktree, in the background:
       `METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib bin/metafor-audit.sh`. If `check-r` reports that the R library is missing or
       differs from `src/audit/data/r-versions.json`, stop as `blocked` and say so; never pass `--allow-r-drift`
-- [ ] If its report flags `selmodel` with a first `delta` other than 1 (a step-function case whose `delta` starts with a value other than 1), add a
+- [x] If its report flags `selmodel` with a first `delta` other than 1 (a step-function case whose `delta` starts with a value other than 1), add a
       `[[known]]` entry to `src/audit/data/known.toml` matching exactly those case ids, with `kind`, `path`, a `reason` citing the decision and its
       date (D1 of `agents/reviews/order-todo-items-1-10-specs.md`, 2026-11-17) and `ref = "docs/differences.md"`, and re-render the run's report with
       `bin/metafor-audit.sh --rerender .audit/runs/<run>` to see it accepted. Otherwise add no entry: the spec expects none, since the audit's only
       `delta` value is `[1, 0.5]` (`src/audit/data/domains.toml`)
-- [ ] Any other finding that the newest earlier report under `/Users/simonb/src/metafopy/.audit/runs/` does not hold is new with this list: stop as
+- [x] Any other finding that the newest earlier report under `/Users/simonb/src/metafopy/.audit/runs/` does not hold is new with this list: stop as
       `blocked`, naming it
 - [ ] Run `METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib bin/metafor-audit.sh --recall`, in the background. A miss stops the task as
       `blocked`, naming the item (`AGENTS.md`: a miss is fixed in the harness, `src/audit/data/`, which is outside this list)
@@ -219,6 +219,12 @@ first `delta` other than 1.
   `construct/uni_mods_year/scale=~ 0 + I(1|ablat)` (last-digit rounding), and `construct/ls_na/mods=~ ablat * alloc` (metafopy accepts where R
   refuses: "No missing values allowed in 'alpha.init'"). The task says a finding the earlier report does not hold stops it as `blocked`, so
   `--recall` was not run. The worktree has no `.venv`; the run used `PATH=/Users/simonb/src/metafopy/.venv/bin:$PATH`
+- 2026-11-18, decided by Claude, not yet reviewed (queue decision): the seven findings are not new with this list. Each is in the `new` list of
+  the full audit `.audit/runs/20261115-160207` (`findings.json`), filed as the `TODO.md` items "The audit lists a selmodel logistic Hessian element
+  that is zero in both R and metafopy", "The audit lists printed fits of flat location-scale models that differ in the last digit" and "The audit has
+  no entry for ls_na with an interaction formula that R refuses", which row 6 of `agents/tasks/order-todo-items-1-10.md` (`audit-ledger-gaps`)
+  covers. The comparison report `20261117-215038` was a partial run, so it could not hold them. The stop is cleared; the task goes on with
+  `--recall`
 - Depends on Task 2
 - Key files: `src/audit/data/known.toml` (only if the audit flags the change), `src/audit/README.md`
 - If no file but this list changes, the commit records the Notes only
