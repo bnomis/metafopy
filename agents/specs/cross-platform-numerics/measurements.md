@@ -344,3 +344,10 @@ on 2026-11-04.
 - `git diff main -- src/metafopy` is empty.
 
 <!-- doc-counts: accept-end -->
+
+## The CI round (Task 11 of `tasks-1.md`)
+
+- Round 1 (run 44023680518, head `c069f04`, 2026-11-17): `ls.fit.ML.identity.bcg` failed on ubuntu-26.04 and macos-26, and
+  `ls.permutest.location.exact.ML.z.bcglat` on ubuntu-26.04; the Windows job passed the wait limit unfinished. Task 5 was redone for it.
+- Round 2 (run 44055240124, head `8bec6e1`, finished 2026-11-17 10:29 UTC): `lint`, `test (macos-26, 3.14.8)`, `test (ubuntu-26.04, 3.14.8)` and
+  `test (windows-2025-vs2026, 3.14.8)` all `success`.

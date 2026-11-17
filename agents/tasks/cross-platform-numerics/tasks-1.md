@@ -473,7 +473,7 @@ environments.
 
 ## Task 11: The CI round
 
-**Status:** in-progress
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Order of work step 5, Acceptance, Decisions (D1)
@@ -482,20 +482,20 @@ environments.
 
 **Subtasks:**
 
-- [ ] Push the branch (pre-push hooks run) and wait for the pull request's CI run of the new head, as Task 4 waits (at most two hours, then `blocked`)
-- [ ] If a test job fails, read its `FAILED` lines (`gh run view <id> --log-failed`), add the new figures to `measurements.md`, return to the task of the
+- [x] Push the branch (pre-push hooks run) and wait for the pull request's CI run of the new head, as Task 4 waits (at most two hours, then `blocked`)
+- [x] If a test job fails, read its `FAILED` lines (`gh run view <id> --log-failed`), add the new figures to `measurements.md`, return to the task of the
       failing group (reopen it as `in-progress` with a Notes line naming the run), and repeat this task after it. After three rounds with a job still
       failing, stop as `blocked` with the failing tests of each round
-- [ ] When all three test jobs and `lint` pass, record the run id and the date in `measurements.md` and in this task's Notes
+- [x] When all three test jobs and `lint` pass, record the run id and the date in `measurements.md` and in this task's Notes
 
 **Acceptance Criteria:**
 
-- [ ] The pull request's latest CI run has every job passing, recorded with its id
+- [x] The pull request's latest CI run has every job passing, recorded with its id
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `gh run view <id> --json jobs` shows every job `success`
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `gh run view <id> --json jobs` shows every job `success`
 
 **Notes:**
 
@@ -508,6 +508,7 @@ environments.
   - windows-2025-vs2026: not finished at 07:33 UTC
   Next: take the Windows result when it ends, then reopen the tasks of the failing groups (Task 5, the location-scale reference fits, for `ls.fit`
   and `ls.permutest`), and repeat this task
+- Round 2 (CI run 44055240124, head 8bec6e1, finished 2026-11-17 10:29 UTC): `lint` and all three test jobs `success`
 - A pull request's CI tests the merge of the branch with `main`, so a pass here is the pass the merge will have, if `main` does not move meanwhile
 
 ---
