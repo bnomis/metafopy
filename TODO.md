@@ -20,6 +20,8 @@ Cause: three docstrings link to `docs/differences.md` by a path relative to the 
 Fix direction: write the links as the docs site resolves them from a reference page (`../differences.md#...`), or as plain text naming the page,
 check how the other docstrings link to docs pages, and run `mkdocs build --strict` locally before pushing.
 
+Spec: none (small item); tasks: `agents/tasks/docs-strict-links/tasks-1.md`.
+
 ## The rma_mv REML fit stops short of the optimum on Linux and Windows
 
 <!-- doc-counts: accept-start found on 2026-11-17 - a dated record, not a claim about the present -->
@@ -36,6 +38,8 @@ optimum. The test asserts the measured range (2e-6 of the scale) meanwhile.
 Fix direction: tighten the stop in `src/metafopy` through a spec (for example a Newton polish on the analytic score after BFGS), then narrow the test's
 `tolerance` in `src/tests/correctness/cases/properties.toml` and the entry in `docs/differences-notes.md` ("Optimisers and flat likelihoods").
 
+Spec: `agents/specs/rma-mv-reml-stop/spec.md`; tasks: `agents/tasks/rma-mv-reml-stop/tasks-1.md`.
+
 ## The audit lists the exact permutest of uni_mods as an R kill and has no entry for it
 
 <!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
@@ -50,6 +54,8 @@ with (the same cause as the `ls_bcg` entry). Not yet checked that metafopy refus
 Fix direction: run the case by hand in metafopy; if it refuses with R's "Number of iterations requested too large." or finishes, add the case to the
 `r-killed` entry of `options/permutest/ls_bcg/exact=true` in `src/audit/data/known.toml` with the measurement and date.
 
+Spec: none (small item); tasks: `agents/tasks/audit-ledger-gaps/tasks-1.md`.
+
 ## The audit lists a selmodel logistic Hessian element that is zero in both R and metafopy
 
 <!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
@@ -62,6 +68,8 @@ Cause: both values are zero to rounding, so the relative difference is 1. The le
 `*(relative 0.00*` only. Not yet checked that the other elements agree to that level on both cases.
 
 Fix direction: check the two cases in R and Python, then widen the `detail` of that entry or add an entry for these two cases, with the values and date.
+
+Spec: none (small item); tasks: `agents/tasks/audit-ledger-gaps/tasks-1.md`.
 
 ## The audit lists printed fits of flat location-scale models that differ in the last digit
 
@@ -78,6 +86,8 @@ entries do not match these rows or options.
 Fix direction: compare the log-likelihoods of R and metafopy for each case; where they agree to 1e-6 add the case to the existing entry with the values
 and date, and file any that does not as a defect.
 
+Spec: none (small item); tasks: `agents/tasks/audit-ledger-gaps/tasks-1.md`.
+
 ## The audit has no entry for ls_na with an interaction formula that R refuses
 
 <!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
@@ -91,6 +101,8 @@ with `ablat` on the rows of `ls_na` that remain), which R refuses and metafopy h
 Fix direction: reproduce the R message with `rma(..., mods = ~ ablat * alloc, scale = ...)` on the `ls_na` data, read why `alpha.init` has NA, then either
 make metafopy refuse with the same error or accept the difference in `src/audit/data/known.toml` and `docs/differences.md`. A change to `src/metafopy/`
 goes through a spec first, or a small task list if the fix is local.
+
+Spec: none (small item); tasks: `agents/tasks/audit-ledger-gaps/tasks-1.md`.
 
 ## A fixed delta[0] other than 1 on a step-function selection model makes the likelihood a constant multiple
 
@@ -109,6 +121,8 @@ Fix direction: decide whether `selmodel` rejects a `delta[0]` other than 1 on a 
 departs from metafor). Name the decision in `docs/differences.md` under "Where metafor departs from its reference". A change to `src/metafopy/` goes
 through a spec first.
 
+Spec: `agents/specs/selmodel-fixed-delta0/spec.md`; tasks: `agents/tasks/selmodel-fixed-delta0/tasks-1.md`.
+
 ## ls.confint.scale.ML.bcg stays an expected failure with no decision
 
 <!-- doc-counts: accept-start found on 2026-11-16 - a dated record, not a claim about the present -->
@@ -123,6 +137,8 @@ Fix direction: find which branch is the profile likelihood's maximum at a = 1.31
 `tau2 = 0` branch is higher, metafopy's profile misses it and is a defect to fix; if the continuous branch is, the reference refit is wrong, so fix
 `formulas.ls_profile_ll` and set the case to `pass`.
 
+Spec: none (small item); tasks: `agents/tasks/ls-confint-scale-branch/tasks-1.md`.
+
 ## Simmonds and Higgins (2016) Fig 1 one-stage random effects differs from metafopy and R metafor
 
 <!-- doc-counts: accept-start found on 2026-11-14 - a dated record, not a claim about the present -->
@@ -134,6 +150,8 @@ Found on 2026-11-14 by the case `glmm.published.simmonds2016.hrt.random.mismatch
 
 Fix direction: compare the marginal likelihood at `tau2 = 0` and at 0.213 with the formulas of `src/tests/correctness/glmm_formulas.py`; if the
 likelihood is higher at 0.213, record the printed value as a source difference (a `glmer` that stopped at `tau2 = 0`); otherwise fix metafopy.
+
+Spec: none (small item); tasks: `agents/tasks/simmonds2016-fig1/tasks-1.md`.
 
 ## Stijnen et al. (2010) Table VII treated arm, PN, differs from metafopy and R metafor
 
@@ -147,6 +165,8 @@ of the last digit, so the difference is larger than rounding.
 Fix direction: check the transcription of the treated rows of Table VI against the paper, then the likelihood (SAS Proc NLMIXED against a Poisson
 log-normal model with an offset) with the formulas of `src/tests/correctness/glmm_formulas.py`; either correct the data, record the source difference
 with its reason, or fix metafopy.
+
+Spec: none (small item); tasks: `agents/tasks/stijnen2010-pn/tasks-1.md`.
 
 ## Find the data behind Table 5 of Bagos and Nikolopoulos (2009)
 
