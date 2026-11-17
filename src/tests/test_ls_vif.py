@@ -86,4 +86,5 @@ def test_sim_permutes_the_data_variables_as_r(bangert: metafopy.RMALSResult, how
             # one scale refit (iteration 35 with seed 42, 12 in the stream) runs along a ridge towards alpha = -inf: R's nlminb stops at
             # -17.5 with a finite Hessian and a VIF of 1, metafopy's optimiser goes on to -40.8 where the numerical Hessian is NaN, so the
             # draw is dropped (an optimiser stop on a flat scale likelihood, accepted by decision of the operator, 2026-11-04)
-            assert int(numpy.isnan(sims[:, 0]).sum()) == 1
+            # whether that refit is NaN depends on the platform: 0 or 1 draws on the five environments measured on 2026-11-16 and 2026-11-17
+            assert int(numpy.isnan(sims[:, 0]).sum()) <= 1

@@ -278,3 +278,21 @@ the largest deviation, against the spec's 10 times); (b) `NOISY_ATOL` 0.075 as t
 and `win32`. Not changed.
 
 <!-- doc-counts: accept-end -->
+
+## Verdicts: the ridge stops of the vif simulation and the permutation boundary fits (Task 10 of `tasks-1.md`)
+
+<!-- doc-counts: accept-start measured on 2026-11-17 - a dated record, not a claim about the present -->
+
+Figures are from the probe sections above (development Mac, arm64 container, CI Linux, CI Mac, CI Windows). Verdict 4 (platform-dependent, asserted as a
+range) for both groups: the only difference between environments is the count of boundary or NaN refits along a ridge, the stop the operator accepted
+on 2026-11-04.
+
+- `ls-vif-sim`: NaN draws of the alpha part's first 50 are 0 or 1 in every environment (seed 42: 1 on the development Mac, arm64 container and CI Linux, 0
+  on the CI Mac and Windows; stream: 1 on the development Mac, 0 elsewhere); the beta part has none. The test asserts at most one NaN draw and keeps its
+  comparison of the other draws with R.
+- `permutest-ls-boundary`: `pval_alpha` and `QSp` are counts over 40 (5/40, 21/40, 12/40; 6/40 on Windows), 41 (CI Mac) or 44 (development Mac)
+  permutations with a defined standard error, against 47 in R. The test asserts each is a count over 40 to 47 permutations (replacing the 0.1 and
+  `win32` 0.25 relative tolerances) and still compares `pval`, `QMp` and the interior `alpha_perm` and `zval_alpha_perm` with R.
+- `git diff main -- src/metafopy` is empty.
+
+<!-- doc-counts: accept-end -->

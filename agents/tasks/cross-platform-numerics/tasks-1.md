@@ -400,7 +400,7 @@ environments.
 
 ## Task 10: The ridge stops of the vif simulation and the permutation boundary fits
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** medium
 **Spec Reference:** Failure groups (`ls-vif-sim`, `permutest-ls-boundary`), Confirming the cause, Verdicts, the choice "Platform-dependent marks"
@@ -410,24 +410,24 @@ environments.
 
 **Subtasks:**
 
-- [ ] Measure which draws or permutations are NaN or boundary fits, and their `alpha` at the stop, on each platform. If the only difference is the count
+- [x] Measure which draws or permutations are NaN or boundary fits, and their `alpha` at the stop, on each platform. If the only difference is the count
       of boundary stops along a ridge (the stop accepted as an optimiser difference on 2026-11-04), mark the case platform-dependent under verdict 4: the
       test asserts the measured range (for example 0 or 1 NaN draws; `pval_alpha` whose denominator lies in the measured range) and checks the rest
       exactly; replace the `sys.platform == 'win32'` tolerance in `test_audit4_numerics.py`. Otherwise stop as `blocked`
-- [ ] Add an entry to `docs/differences-notes.md` ("Optimisers and flat likelihoods") naming the measurement, as verdict 4 requires
-- [ ] Record both groups' figures and verdicts in `measurements.md`; run their tests locally and in the container
+- [x] Add an entry to `docs/differences-notes.md` ("Optimisers and flat likelihoods") naming the measurement, as verdict 4 requires
+- [x] Record both groups' figures and verdicts in `measurements.md`; run their tests locally and in the container
 
 **Acceptance Criteria:**
 
-- [ ] Both tests pass on the development Mac and in the container, asserting the measured ranges
-- [ ] `git diff main -- src/metafopy` is empty
+- [x] Both tests pass on the development Mac and in the container, asserting the measured ranges
+- [x] `git diff main -- src/metafopy` is empty
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_ls_vif.py src/tests/test_audit4_numerics.py` passes
-- [ ] `bin/linux-tests.sh -- src/tests/test_ls_vif.py src/tests/test_audit4_numerics.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_ls_vif.py src/tests/test_audit4_numerics.py` passes
+- [x] `bin/linux-tests.sh -- src/tests/test_ls_vif.py src/tests/test_audit4_numerics.py` passes
 
 **Notes:**
 

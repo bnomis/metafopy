@@ -108,6 +108,8 @@ Where metafopy and R stop at different points of the same likelihood.
 
 - Not matched, because metafopy's optimiser stops elsewhere on a flat surface (R's `nlminb` is PORT, which metafopy does not port): `rma_mv` GDIAG and GEN (metafopy reaches a higher log-likelihood than R), berkey1998 `UN` with fixed `tau2`, the fourth digit of location-scale `QM`, `QS` and `F`, `se.alpha` and the flat-profile `confint` step of `rma_ls`, selmodel fits with `nlminb`, and the `rma_glmm` cases listed above. An opt-in port of PORT is a possible way to remove most of these.
 
+- Permuted and simulated scale refits along a flat ridge (measured on 2026-11-16 and 2026-11-17 on the development Mac, the Linux container and the three CI platforms): which refits end on the boundary or with a NaN Hessian depends on the platform's BLAS and libm. In `vif(sim=)` of a location-scale model 0 or 1 of the first 50 draws is NaN where R's `nlminb` stops with a finite Hessian; in `permutest()` the permutations with a defined scale standard error number 40 to 44 of 50 where R has 47, so `pval_alpha` and `QSp` are counts over 40 to 47 and not a fixed value. The tests assert those ranges.
+
 ## rma_glmm
 
 Mixed-model and conditional fits.
