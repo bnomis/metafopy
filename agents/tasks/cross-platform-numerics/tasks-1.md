@@ -248,7 +248,7 @@ five environments.
 
 ## Task 6: The decreasing selection model's reference maximum
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Failure groups (`selmodel-decreasing`), Confirming the cause, Verdicts
@@ -257,23 +257,23 @@ five environments.
 
 **Subtasks:**
 
-- [ ] Confirm the cause as the spec says (the log-likelihood at each platform's reference end point, at metafopy's point, and along the ray from
+- [x] Confirm the cause as the spec says (the log-likelihood at each platform's reference end point, at metafopy's point, and along the ray from
       metafopy's point to the runaway point). If any end point beats metafopy's by more than `SELMODEL_LL_TOLERANCE`, stop as `blocked` (operator stop)
-- [ ] For a confirmed reference defect, make `selmodel_maximum` (`src/tests/correctness/test_derived.py`) robust as verdict 2 says (several starts,
+- [x] For a confirmed reference defect, make `selmodel_maximum` (`src/tests/correctness/test_derived.py`) robust as verdict 2 says (several starts,
       bounds on `beta` wide enough not to bind at the maximum, a final small-score check), with a test that fails against the old code
-- [ ] Record the figures and verdict in `measurements.md`; run the case locally and in the container
+- [x] Record the figures and verdict in `measurements.md`; run the case locally and in the container
 
 **Acceptance Criteria:**
 
-- [ ] The case passes on the development Mac and in the container; `measurements.md` holds its verdict
-- [ ] `git diff main -- src/metafopy` is empty
+- [x] The case passes on the development Mac and in the container; `measurements.md` holds its verdict
+- [x] `git diff main -- src/metafopy` is empty
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_derived.py -k selmodel` passes
-- [ ] `bin/linux-tests.sh -- src/tests/correctness/test_derived.py -k selmodel` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_derived.py -k selmodel` passes
+- [x] `bin/linux-tests.sh -- src/tests/correctness/test_derived.py -k selmodel` passes
 
 **Notes:**
 

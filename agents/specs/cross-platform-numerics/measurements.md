@@ -176,3 +176,30 @@ Found while running the group tests in the arm64 container, not caused by this c
 1e-6 and got 4.0e-06; it also failed in the arm64 container run of Task 2 and is not in CI's Linux list).
 
 <!-- doc-counts: accept-end -->
+
+## Verdict: the decreasing selection model's reference maximum (Task 6 of `tasks-1.md`)
+
+<!-- doc-counts: accept-start measured on 2026-11-17 - a dated record, not a claim about the present -->
+
+Group `selmodel-decreasing` (`selmodel.decreasing.bangertdrowns2004`), judged on the figures of the five environments recorded above.
+
+**Cause, confirmed as a reference defect.** metafopy's point has `ll` -17.4217 on all three CI platforms. The reference's single SLSQP run converges to it on
+Linux and runs away on the Mac (beta -2248.16, `ll` -378.22) and Windows (beta -3059.28, `ll` -393.029); along the ray from metafopy's point the log-likelihood
+falls everywhere. No end point beats metafopy's, so there is no operator stop and `src/metafopy` is unchanged.
+
+Measured on 2026-11-17 in the arm64 container, the single-start runs of the new reference: from metafopy's start (`tau2` 0.048) the maximum, `ll` -17.421673;
+from `tau2` scaled by 0.1 an end point at `ll` -368.34 and by 10 at -28.26, both called "Optimization terminated successfully". So the optimiser's message and
+a second `tau2` scale are not enough; starts that move the selection parameters inside the decreasing constraints (0.8, 0.5, 0.2 powers) reach the maximum
+there.
+
+**Verdict 2 (make the reference fit robust)**, in `selmodel_maximum` and `selmodel_best_start` of `src/tests/correctness/test_derived.py`:
+
+- several starts (metafopy's, `tau2` scaled by `SELMODEL_START_SCALES`, and for a decreasing model the selection parameters at `SELMODEL_SHRINKS`); the
+  message is not used, a run counts when finite, off the bounds, not below its start and not at the iteration limit; the highest log-likelihood wins;
+- `beta` and `tau2` bounded far beyond any maximum (`SELMODEL_BETA_SPAN`, `SELMODEL_TAU2_SPAN`), and trial steps clipped at the `delta` floor.
+
+Test `test_selmodel_maximum_ignores_a_run_that_leaves_the_coefficient_bounds` makes the first run a reported success at the runaway point; it failed against
+the old code (`ll` -427.64 against -17.42) and passes. `pytest src/tests/correctness/test_derived.py -k selmodel` passes on the development Mac and in the
+arm64 container (`bin/linux-tests.sh`). The CI platforms are judged in Task 11.
+
+<!-- doc-counts: accept-end -->
