@@ -91,7 +91,7 @@ build the Docs workflow runs passes in strict mode.
 
 ## Task 2: A test that fails on a docstring link the site cannot resolve
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Source Reference:** the item's fix direction (catch such a link before CI)
@@ -101,32 +101,34 @@ Docs workflow after the push.
 
 **Subtasks:**
 
-- [ ] Add `src/tests/test_docstring_links.py`. It reads every `.py` file under `src/metafopy`, finds each Markdown link `[text](target)` whose target
+- [x] Add `src/tests/test_docstring_links.py`. It reads every `.py` file under `src/metafopy`, finds each Markdown link `[text](target)` whose target
       is not a URL (no scheme such as `https:`, `http:` or `mailto:`) and not a bare `#anchor`, and asserts for each that the target's path, resolved
       from `docs/reference/` (where mkdocstrings renders every docstring), is a file under `docs/`. Where the target has an `#anchor` and the file is
       Markdown, it also asserts the anchor is one of the file's heading slugs, computed as mkdocs' `toc` extension does by default (text of the heading
       without the leading hashes, characters other than word characters, hyphens and spaces removed, lowercased, spaces to hyphens). A failure names
       the source file, line and target
-- [ ] Follow the project's conventions (`claude/rules/`): full module imports, no leading-underscore names; locate the repository root as
+- [x] Follow the project's conventions (`claude/rules/`): full module imports, no leading-underscore names; locate the repository root as
       `src/tests/docsblocks.py` does (`pathlib.Path(__file__).resolve().parents[2]`). Add a one-line module docstring saying why the test exists
       (strict mkdocs builds abort on such links) and the rule it checks
-- [ ] Check the test both ways: it passes on this branch; with one link temporarily changed back to `../../../docs/differences.md#...` (not
+- [x] Check the test both ways: it passes on this branch; with one link temporarily changed back to `../../../docs/differences.md#...` (not
       committed) it fails and names that link; and with a wrong anchor it fails. Record both checks, dated, in this task's Notes
 
 **Acceptance Criteria:**
 
-- [ ] `pytest src/tests/test_docstring_links.py` passes on the branch and fails on each of the two broken forms above
-- [ ] The test runs with the project's `.venv` alone (no mkdocs import, no network)
+- [x] `pytest src/tests/test_docstring_links.py` passes on the branch and fails on each of the two broken forms above
+- [x] The test runs with the project's `.venv` alone (no mkdocs import, no network)
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_docstring_links.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_docstring_links.py` passes
 
 **Notes:**
 
 - Depends on Task 1
+- 2026-11-17: the test passes on the branch (three links). With the `fsn` link set back to `../../../docs/differences.md#...` it fails and names `src/metafopy/bias/fsn.py:245`; with the `selmodel` anchor changed to `#wrong-anchor` it fails and names `src/metafopy/models/selmodel.py:438`. Both edits were reverted, not committed
+- The worktree has no `.venv`; tests ran from the main checkout's `.venv` with the worktree's `src` on `PYTHONPATH`
 - The test checks only links from `src/metafopy` docstrings, the kind this item found; links inside `docs/*.md` are already checked by the strict
   build on every pull request that touches `docs/**`
 - If Task 1 fell back to plain text for all three links, the test still runs and passes with nothing to check; keep it as the guard
