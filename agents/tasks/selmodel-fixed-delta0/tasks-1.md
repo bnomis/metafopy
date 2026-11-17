@@ -174,7 +174,7 @@ weight other than 1 learns why it fails and how to rewrite it.
 
 ## Task 3: Run the audit and its recall check
 
-**Status:** in-progress
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Tests and records, item 5; Acceptance (the audit with `--recall`)
@@ -194,20 +194,20 @@ first `delta` other than 1.
       `delta` value is `[1, 0.5]` (`src/audit/data/domains.toml`)
 - [x] Any other finding that the newest earlier report under `/Users/simonb/src/metafopy/.audit/runs/` does not hold is new with this list: stop as
       `blocked`, naming it
-- [ ] Run `METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib bin/metafor-audit.sh --recall`, in the background. A miss stops the task as
+- [x] Run `METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib bin/metafor-audit.sh --recall`, in the background. A miss stops the task as
       `blocked`, naming the item (`AGENTS.md`: a miss is fixed in the harness, `src/audit/data/`, which is outside this list)
-- [ ] Record in this task's Notes the run directories of both runs and whether a `known.toml` entry was added
+- [x] Record in this task's Notes the run directories of both runs and whether a `known.toml` entry was added
 
 **Acceptance Criteria:**
 
-- [ ] The whole audit reports no finding new with this list, and every `known.toml` entry added matches at least one case of that run
-- [ ] `bin/metafor-audit.sh --recall` reproduces every item
-- [ ] This task's Notes name both run directories and whether a `known.toml` entry was added
+- [x] The whole audit reports no finding new with this list, and every `known.toml` entry added matches at least one case of that run
+- [x] `bin/metafor-audit.sh --recall` reproduces every item
+- [x] This task's Notes name both run directories and whether a `known.toml` entry was added
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/test_harness_accounts.py` passes if `src/audit/data/known.toml` changed
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/test_harness_accounts.py` passes if `src/audit/data/known.toml` changed
 
 **Notes:**
 
@@ -225,6 +225,9 @@ first `delta` other than 1.
   no entry for ls_na with an interaction formula that R refuses", which row 6 of `agents/tasks/order-todo-items-1-10.md` (`audit-ledger-gaps`)
   covers. The comparison report `20261117-215038` was a partial run, so it could not hold them. The stop is cleared; the task goes on with
   `--recall`
+- Recall run 2026-11-18: `/Users/simonb/src/metafopy/.audit/runs/recall-20261118-001816`, 176 of 176 items reproduced; the one item the log counts as
+  not reproduced (`a6-glmm-um-rs`, se 0.18214 against R's 0.18147) is listed by `recall.md` as "Oracle moved", not a miss. The whole audit is
+  `.audit/runs/20261117-233604`; no `known.toml` entry was added
 - Depends on Task 2
 - Key files: `src/audit/data/known.toml` (only if the audit flags the change), `src/audit/README.md`
 - If no file but this list changes, the commit records the Notes only
