@@ -162,6 +162,30 @@ is the reference:
   end point is kept and the highest log-likelihood wins;
 - the best point is polished by Nelder-Mead as before; `RuntimeError` when no start is kept.
 
+**Reopened on 2026-11-17 by CI round 1** (run 44023680518, head c069f04): `test_derived[ls.fit.ML.identity.bcg]` failed on ubuntu-26.04 (alpha
+-0.02665867, 0.00205067 against the reference's -0.0266563, 0.00205048) and macos-26 (against -0.02665862, 0.00205066), and
+`test_derived[ls.permutest.location.exact.ML.z.bcglat]` on ubuntu-26.04 (pval (location) 0.61693862, 0.23931624, outside the reference's range). Causes,
+measured on 2026-11-17 on the development Mac and in the arm64 container:
+
+- the identity-link ML optimum of the `bcg` `ablat` design lies on the boundary `Z alpha = 0` (score 742 across it), so the score along the constraint is
+  all that fixes `alpha`, and Nelder-Mead leaves it 2.4e-5 from zero (about 2e-6 in alpha). Fix: a Newton polish projected on the face of the active
+  constraints (`ls_face_basis`), after the optimiser and again after Nelder-Mead, never leaving `Z alpha >= 0` (an unprojected polish stepped to
+  `Z alpha = -2.9e-4` in `bd_identity_ni` and was refused by `test_identity_fit_is_the_maximum`). Tangent score after it: below 1e-9 on the Mac, 1.3e-7 in
+  the container (rounding of a log-likelihood of about -7 against a score scale of 742);
+- the permutation refits need the Nelder-Mead polish for the log link too: without it 7 of 1287 permutations end at a Newton point that is not the
+  maximum (pval 0.6169 against 0.6115), which is what CI's Linux run saw.
+
+Time, measured on the development Mac on 2026-11-17 (the Newton information is computed with vectors instead of diagonal matrices, a start gets at most
+`LS_NEWTON_STEPS` Newton steps, and the permutation refits keep the early stop of two agreeing starts):
+
+| Test | `main` (`fe73c5d`) | `83a5400` | now |
+|---|---|---|---|
+| `test_random_permutation_p_values_follow_the_exact_ones` | 43.6 s | 843.7 s | 54.2 s |
+| `test_derived[ls.permutest.scale.exact.ML.z.bcglat]` | 24.9 s | 433.5 s | 29.5 s |
+| `test_derived[ls.permutest.location.exact.ML.z.bcglat]` | 18.6 s | 414.8 s | 24.2 s |
+
+Each is within twice its `main` time. The whole suite's time is checked once at Task 12.
+
 Tests (`src/tests/correctness/test_formulas_ls.py`): a BFGS start reported as "precision loss" is still accepted when its score is small (ML and REML);
 a worse optimum that the optimiser calls successful is not chosen over the better one (identity REML, `ablat` design). Each was run against the old code
 on 2026-11-17 and failed (`RuntimeError: no start converged` twice; `ll` -8.08078 against -7.98877).

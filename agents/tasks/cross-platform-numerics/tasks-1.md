@@ -196,7 +196,7 @@ environments can be compared.
 
 ## Task 5: The location-scale reference fits
 
-**Status:** in-progress
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** Failure groups (`ls-bcg-reference`, `ls-identity-alpha`, `ls-identity-maximum`), Confirming the cause, Verdicts, Tests of the new code
@@ -253,6 +253,10 @@ five environments.
   and Windows ran past two hours on `c069f04`. So: run the extra starts and the polish only when the first fit fails its score check (or use them for the
   observed data only, not for each permutation), keep each of these three tests within twice its `main` time on the development Mac, record the
   before and after durations in `measurements.md`, and check the whole suite's time once at Task 12
+- Redone on 2026-11-17 for CI round 1: projected Newton polish on the identity link's active face (`ls_face_basis`), vector-form information, at most
+  `LS_NEWTON_STEPS` Newton steps per start, Nelder-Mead kept for both links; the three slow tests are back within twice `main`'s time (table in
+  `measurements.md`). Mac: 520 passed, 1 skipped, 1 xfailed over `test_derived.py`, `test_properties.py`, `test_rma_ls.py`, `test_formulas_ls.py`,
+  `test_audit4_numerics.py` (`-k "ls or identity or bcg"`); arm64 container: all pass except `test_identity_fit_bd_is_a_stationary_point` (known, above)
 - Key files: `src/tests/correctness/formulas.py` (`ls_reference_fit`, `ls_starts`, `ls_score`), `src/tests/correctness/test_derived.py` (`LS_RELATIVE`,
   `ls_agree`), `src/tests/test_rma_ls.py`
 

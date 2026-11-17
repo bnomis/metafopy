@@ -148,6 +148,22 @@ def test_reference_fit_does_not_choose_a_worse_optimum_that_reports_success(monk
     assert fit['ll'] == pytest.approx(-7.988765268, abs=1e-8)
 
 
+def test_identity_polish_stays_feasible_and_finds_the_face_optimum() -> None:
+    """The identity link's polish never leaves ``Z alpha >= 0``. On a boundary optimum (the ``ls.fit.ML.identity.bcg`` design, where the score across the
+    constraint is 742) it ends with a score along the constraint below 1e-6: about 1e-7 in the arm64 container, 2e-5 without the polish, which left
+    ``alpha`` about 2e-6 off the other platforms' reference.
+    """
+    yi, vi, X, Z = bangert()
+    fit = correctness.formulas.ls_reference_fit(yi, vi, X, Z, 'identity', 'REML')
+    assert float(numpy.min(Z @ fit['alpha'])) >= -correctness.formulas.IDENTITY_SLACK
+    yi, vi, X, Z = bcg_ablat()
+    ml = correctness.formulas.ls_reference_fit(yi, vi, X, Z, 'identity', 'ML')
+    assert float(numpy.min(Z @ ml['alpha'])) >= -correctness.formulas.IDENTITY_SLACK
+    basis = correctness.formulas.ls_face_basis(Z, ml['alpha'], 'identity')
+    assert basis.shape[1] == 1
+    assert float(numpy.max(numpy.abs(basis.T @ correctness.formulas.ls_score(yi, vi, X, Z, ml['alpha'], 'identity', 'ML')))) < 1e-6
+
+
 def test_reference_fit_raises_when_nothing_converges() -> None:
     yi, vi, X, Z = bcg()
     with pytest.raises(RuntimeError, match='no start converged'):

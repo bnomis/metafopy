@@ -2536,7 +2536,9 @@ def saddlepoint_pvalue(X: FloatArray, W: FloatArray, theta: FloatArray, cluster:
 
 LS_START_FACTORS = (1.0, 0.1, 10.0, 0.01, 100.0)  # the multiples of the moment-based intercept that ``ls_starts`` returns
 LS_SCORE_TOLERANCE = 1e-6  # the largest absolute score at which ``ls_reference_fit`` accepts a log-link fit as stationary
+LS_NEWTON_STEPS = 50  # the most Newton steps spent polishing one start: quadratic convergence needs few, and a start heading for tau2 = 0 never ends
 LS_AGREEMENT = 1e-9  # two log-link starts whose log-likelihoods differ by no more than this end the search over starts
+IDENTITY_ACTIVE = 1e-8  # ``z_i' alpha`` at most this far above zero makes the identity link's constraint of row i active in ``ls_face_basis``
 IDENTITY_SLACK = 1e-10  # the amount by which SLSQP may leave Z alpha >= 0 before the reference treats alpha as infeasible
 
 
@@ -2641,13 +2643,14 @@ def ls_information(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray,
     d1, d2 = ls_derivatives(Z, alpha, link)
     Py = P @ yi
     q = Z.shape[1]
+    t = numpy.diag(T)
     out = numpy.zeros((q, q))
     for j in range(q):
         for ell in range(q):
             dj, dl = d1 * Z[:, j], d1 * Z[:, ell]
             djl = d2 * Z[:, j] * Z[:, ell]
-            tr_cross = float(numpy.trace(T @ numpy.diag(dl) @ T @ numpy.diag(dj)))
-            out[j, ell] = 0.5 * tr_cross - 0.5 * float(numpy.sum(numpy.diag(T) * djl)) - float((Py * dl) @ P @ (dj * Py)) + 0.5 * float(numpy.sum(Py**2 * djl))
+            tr_cross = float(numpy.sum(T * T.T * numpy.outer(dl, dj)))
+            out[j, ell] = 0.5 * tr_cross - 0.5 * float(numpy.sum(t * djl)) - float((Py * dl) @ P @ (dj * Py)) + 0.5 * float(numpy.sum(Py**2 * djl))
     return -out
 
 
@@ -2676,25 +2679,47 @@ def ls_identity_starts(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatAr
     return [alpha, shifted]
 
 
-def ls_newton_polish(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, alpha: FloatArray, link: str, method: str, maxiter: int) -> FloatArray:
-    """Newton steps on the analytic ``ls_score`` with the analytic ``ls_information``, each accepted only when the log-likelihood does not fall.
+def ls_face_basis(Z: FloatArray, alpha: FloatArray, link: str) -> FloatArray:
+    """An orthonormal basis (columns) of the directions that keep the active constraints ``z_i' alpha = 0`` of the identity link where they are.
 
-    Stops when the largest absolute score is below ``1e-10``, when the information is not positive definite, or when a step cannot be halved into one
-    that does not lower the log-likelihood.
+    A row is active when ``z_i' alpha`` is within ``IDENTITY_ACTIVE`` of zero. With no active row, or for the log link, the basis is the identity.
+    """
+    q = Z.shape[1]
+    if link != 'identity':
+        return numpy.eye(q)
+    active = Z[Z @ alpha <= IDENTITY_ACTIVE]
+    if active.shape[0] == 0:
+        return numpy.eye(q)
+    _, singular, vt = numpy.linalg.svd(active)
+    rank = int(numpy.sum(singular > 1e-10 * max(float(singular[0]), 1.0)))
+    return vt[rank:].T
+
+
+def ls_newton_polish(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, alpha: FloatArray, link: str, method: str, maxiter: int) -> FloatArray:
+    """Newton steps on the analytic ``ls_score`` with the analytic ``ls_information``, projected on the face of the active constraints for the identity
+    link (``ls_face_basis``), each accepted only when the log-likelihood does not fall and, for the identity link, ``Z alpha >= 0`` holds.
+
+    Stops when the largest absolute projected score is below ``1e-10``, when the projected information is not positive definite, or when a step cannot be
+    halved into one that does not lower the log-likelihood. An identity-link optimum on the boundary has a score that does not vanish across the
+    constraint; along the face it does, and this finds that point to rounding error where Nelder-Mead stops about ``1e-6`` short.
     """
     current = alpha
     value = ls_loglik(yi, vi, X, Z, current, link, method)
+    basis = ls_face_basis(Z, current, link)
+    if basis.shape[1] == 0:
+        return current
     for _ in range(maxiter):
-        score = ls_score(yi, vi, X, Z, current, link, method)
+        score = basis.T @ ls_score(yi, vi, X, Z, current, link, method)
         if float(numpy.max(numpy.abs(score))) < 1e-10:
             break
-        info = ls_information(yi, vi, X, Z, current, link, method)
+        info = basis.T @ ls_information(yi, vi, X, Z, current, link, method) @ basis
         if not bool(numpy.all(numpy.linalg.eigvalsh(info) > 0)):
             break
-        step = numpy.linalg.solve(info, score)
+        step = basis @ numpy.linalg.solve(info, score)
         for _ in range(30):
             trial = current + step
-            trial_value = ls_loglik(yi, vi, X, Z, trial, link, method)
+            feasible = link != 'identity' or float(numpy.min(Z @ trial)) >= -IDENTITY_SLACK
+            trial_value = ls_loglik(yi, vi, X, Z, trial, link, method) if feasible else -math.inf
             if trial_value >= value:
                 current, value = trial, trial_value
                 break
@@ -2747,12 +2772,11 @@ def ls_reference_fit(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArra
         if not bool(numpy.all(numpy.isfinite(point))):
             messages.append(str(res.message))
             continue
-        if link == 'log':
-            point = ls_newton_polish(yi, vi, X, Z, point, link, method, maxiter)
-        value = negative(point)
-        if not math.isfinite(value):
+        if not math.isfinite(negative(point)):
             messages.append(str(res.message))
             continue
+        point = ls_newton_polish(yi, vi, X, Z, point, link, method, min(maxiter, LS_NEWTON_STEPS))
+        value = negative(point)
         if link == 'log':
             score = float(numpy.max(numpy.abs(ls_score(yi, vi, X, Z, point, link, method))))
             if score > LS_SCORE_TOLERANCE:
@@ -2768,6 +2792,8 @@ def ls_reference_fit(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArra
         warnings.simplefilter('ignore')
         polish = scipy.optimize.minimize(negative, best_point, method='Nelder-Mead', options={'maxiter': maxiter * 10, 'xatol': 1e-11, 'fatol': 1e-13})
     alpha = polish.x if polish.fun <= best_value else best_point
+    if link == 'identity':
+        alpha = ls_newton_polish(yi, vi, X, Z, alpha, link, method, min(maxiter, LS_NEWTON_STEPS))
     parts = ls_components(yi, vi, X, Z, alpha, link)
     if parts is None:
         raise RuntimeError(f'ls_reference_fit: the best point leaves M not positive ({link} link, {method})')
