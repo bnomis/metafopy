@@ -248,7 +248,7 @@ confirm the fix on Linux and Windows.
 
 ## Task 5: The records, the Linux container and the audit
 
-**Status:** in-progress
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Records; Acceptance (the Linux container check); Tests ("R parity", the audit)
@@ -263,7 +263,7 @@ of the `rma_mv` fixtures shows nothing new.
       `property.mv.reml-score.kon` asserts 1e-10 of the scale `tr(P Z Z')`; R metafor 5.2-1's own estimates (`nlminb`) have a relative score of
       8e-09 of it (measured 2026-11-17). Search `docs/` for any other copy of the "2e-6 of the scale" or "1.1e-6" figures and update each
 - [x] Run `pytest src/tests/test_docs_examples.py`
-- [ ] Check `docker info` exits 0; stop as `blocked` with "Docker is not running" if not. Run
+- [x] Check `docker info` exits 0; stop as `blocked` with "Docker is not running" if not. Run
       `bin/linux-tests.sh -- src/tests/correctness/test_properties.py src/tests/test_rma_mv.py src/tests/test_mv_opt.py` (arm64) in the background.
       A failure that the Mac run of the same files does not show stops for the operator (the same stop as Task 2), with the failing test and figures
 - [x] Run the audit slice in the background:
@@ -273,19 +273,19 @@ of the `rma_mv` fixtures shows nothing new.
 - [x] Compare its findings with the same case ids in the newest whole-audit run under `/Users/simonb/src/metafopy/.audit/runs/` (not a `recall-*`
       directory). **Stops for the operator: a new audit finding on the `rma_mv` fixtures.** A finding that run does not hold stops the task as
       `blocked`, naming it with its detail; do not add a `known.toml` entry for it
-- [ ] Record in this task's Notes, dated: the container's test counts, the audit run directory and the baseline run compared with
+- [x] Record in this task's Notes, dated: the container's test counts, the audit run directory and the baseline run compared with
 
 **Acceptance Criteria:**
 
 - [x] `docs/differences-notes.md` states the polish, the 1e-10 test and R's own relative score, with the date
-- [ ] The arm64 container passes the three test files
+- [x] The arm64 container passes the three test files
 - [x] The `mv_*` audit slice reports no finding the newest whole-audit run does not hold
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
 - [x] `pytest src/tests/test_docs_examples.py src/tests/test_mv_opt.py` passes
-- [ ] `bin/linux-tests.sh -- src/tests/correctness/test_properties.py src/tests/test_rma_mv.py src/tests/test_mv_opt.py` exits 0
+- [x] `bin/linux-tests.sh -- src/tests/correctness/test_properties.py src/tests/test_rma_mv.py src/tests/test_mv_opt.py` exits 0
 
 **Notes:**
 
@@ -296,6 +296,7 @@ of the `rma_mv` fixtures shows nothing new.
 - 2026-11-17 (blocked): docs line rewritten in `docs/differences-notes.md`; `pytest src/tests/test_docs_examples.py src/tests/test_mv_opt.py`: 22 passed. Audit slice `bin/metafor-audit.sh --only '*/mv_*'`: run `/Users/simonb/src/metafopy/.audit/runs/20261117-215038`, compared with the newest non-recall run `20261116-032822`: 0 new findings in both (all findings match `known.toml`). The Linux container run is not done: `docker info` exits 1, Docker is not running. Resume by starting Docker, then running `bin/linux-tests.sh -- src/tests/correctness/test_properties.py src/tests/test_rma_mv.py src/tests/test_mv_opt.py`
 - 2026-11-17 (blocked again, 20:59 UTC): `docker info` still exits 1, Docker is not running. Nothing else in the task remains but the container run and its record
 - 2026-11-17 (blocked again): `docker info` still exits 1, Docker is not running. Same remaining work
+- 2026-11-17 (21:20 UTC, Docker running): `bin/linux-tests.sh -- src/tests/correctness/test_properties.py src/tests/test_rma_mv.py src/tests/test_mv_opt.py` (arm64): 381 passed, 12 skipped, exit 0, the same counts as the Mac run. Audit run `/Users/simonb/src/metafopy/.audit/runs/20261117-215038`, compared with `20261116-032822`: no new finding
 
 ---
 
