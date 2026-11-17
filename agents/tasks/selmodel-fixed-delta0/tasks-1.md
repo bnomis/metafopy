@@ -114,7 +114,7 @@ me to give the weights relative to the first, so that I never get a fit of weigh
 
 ## Task 2: Record the difference in the user guide
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Tests and records, item 2; Acceptance (the `docs/differences.md` entry and `test_docs_examples.py`); External dependencies
@@ -124,42 +124,42 @@ weight other than 1 learns why it fails and how to rewrite it.
 
 **Subtasks:**
 
-- [ ] Add a subsection `### selmodel(type="stepfun") with a fixed first weight` to the section `## Where metafor departs from its reference` of
+- [x] Add a subsection `### selmodel(type="stepfun") with a fixed first weight` to the section `## Where metafor departs from its reference` of
       `docs/differences.md`, right after `### selmodel(type="stepfun") with a precision measure` and in its format: a short summary, the R call and the
       Python call side by side in a `compare` block, and `*Why:*` with the check date. The summary says that metafopy raises `InputError` for a
       first `delta` other than 1 or `nan` on `type="stepfun"`, with or without `decreasing=TRUE`, and on `type="stepcon"`; that metafor fits
       `"stepfun"` with the first weight as 1 in the normalising constant and `delta[1]` for the observed p-values, and silently replaces `delta[1]`
       by 1 for `decreasing=TRUE` and `"stepcon"`; and that dividing every weight by the first gives the model the user meant
-- [ ] The R block: `library(metafor)`, `res <- rma(yi, vi, data=dat.bangertdrowns2004, method="ML")`,
+- [x] The R block: `library(metafor)`, `res <- rma(yi, vi, data=dat.bangertdrowns2004, method="ML")`,
       `selmodel(res, type="stepfun", steps=c(0.025, 0.5, 1), delta=c(2, NA, NA))`. Run it on the day the entry is written with
       `export METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib; LC_ALL=C.UTF-8 R_LIBS=$METAFOPY_AUDIT_RLIB Rscript <script>` (the script in
       the scratch directory) and paste the printed output as printed. Also print `logLik` and the LRT of the same call with `delta=c(1, NA, NA)`,
       and add below the block the line "With `delta=c(1, NA, NA)` the log-likelihood is -17.4217 and LRT 1.6810." The spec measured, on 2026-11-17,
       ll -7.7176 and LRT 21.0891 (p 2.6e-5) for `c(2, NA, NA)` and ll -17.4217, LRT 1.6810 for `c(1, NA, NA)`; a different value stops the task as
       `blocked`, naming both. Stop as `blocked` too if metafor does not load or its version is not 5.2.1
-- [ ] The Python block starts `# docs: skip` and shows
+- [x] The Python block starts `# docs: skip` and shows
       `selmodel(res, type='stepfun', steps=[0.025, 0.5, 1], delta=[2, math.nan, math.nan])` (with `import math` and the `res` of the
       `stepfun`-with-`prec` entry) raising `InputError`; run it once with metafopy (`source bin/activate.sh`) to paste the message as printed
-- [ ] The `*Why:*`: with the other weights free, a fixed first weight `d0` only adds the constant `n1 * log(d0)` to the log-likelihood (`n1` the
+- [x] The `*Why:*`: with the other weights free, a fixed first weight `d0` only adds the constant `n1 * log(d0)` to the log-likelihood (`n1` the
       number of observed p-values in the first interval), so the estimates are those of `d0 = 1` while ll, LRT, AIC, BIC and AICc move; with every
       weight fixed, metafor fits `1, d1, d2` in place of the relative weights the user wrote (`c(0.5, 0.25, 0.125)` is fitted as `1 : 0.25 : 0.125`),
       so a sensitivity analysis with a priori weights (Vevea and Woods 2005) is given other weights; Vevea and Hedges (1995, Psychometrika
       60:419-435, pp. 424-425) and `?selmodel` fix the first weight at 1 to identify the model. Name the decision and its date (2026-11-17, D1 of
       `agents/reviews/order-todo-items-1-10-specs.md`; `agents/specs/selmodel-fixed-delta0/spec.md`) and the check date, R 4.6.2, metafor 5.2-1
-- [ ] Check that the entry says the same as the `delta` docstring and `Raises` Task 1 wrote (the forms covered, 1 or `nan`, relative weights)
-- [ ] Run `pytest src/tests/test_docs_examples.py`
+- [x] Check that the entry says the same as the `delta` docstring and `Raises` Task 1 wrote (the forms covered, 1 or `nan`, relative weights)
+- [x] Run `pytest src/tests/test_docs_examples.py`
 
 **Acceptance Criteria:**
 
-- [ ] `docs/differences.md` has the subsection under "Where metafor departs from its reference", after the `prec` entry, with R's output as printed
+- [x] `docs/differences.md` has the subsection under "Where metafor departs from its reference", after the `prec` entry, with R's output as printed
       on the day it was written and metafopy's error as printed
-- [ ] The summary names every step form the check covers, and the entry and the `delta` docstring agree
-- [ ] `pytest src/tests/test_docs_examples.py` passes
+- [x] The summary names every step form the check covers, and the entry and the `delta` docstring agree
+- [x] `pytest src/tests/test_docs_examples.py` passes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/test_docs_examples.py src/tests/test_selmodel.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/test_docs_examples.py src/tests/test_selmodel.py` passes
 
 **Notes:**
 

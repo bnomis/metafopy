@@ -1983,6 +1983,82 @@ its likelihood is not a density. Its estimates are the maximum of the density in
 inflates the LRT and shifts AIC, BIC and AICc. Vevea and Hedges (1995, Psychometrika 60:419-435, pp. 424-425) fix the first weight at 1. The
 user chose rejection on 2026-11-15 (decision D3 in `agents/reviews/order-numerical-fixes-specs.md`); checked 2026-11-16, R 4.6.2, metafor 5.2-1.
 
+### selmodel(type="stepfun") with a fixed first weight
+
+metafopy raises `InputError` for a first `delta` other than 1 or `nan` on `type="stepfun"`, with or without `decreasing=TRUE`, and on
+`type="stepcon"`. metafor fits `type="stepfun"` with the first weight as 1 in the normalising constant and `delta[1]` for the observed p-values, and
+silently replaces `delta[1]` by 1 for `decreasing=TRUE` and for `"stepcon"`. Dividing every weight by the first gives the model you meant.
+
+<div class="compare" markdown>
+<div markdown>
+
+**R, metafor 5.2-1**
+
+```r
+library(metafor)
+res <- rma(yi, vi, data=dat.bangertdrowns2004, method="ML")
+selmodel(res, type="stepfun", steps=c(0.025, 0.5, 1), delta=c(2, NA, NA))
+```
+
+```text
+Random-Effects Model (k = 48; tau^2 estimator: ML)
+
+tau^2 (estimated amount of total heterogeneity): 0.0274 (SE = 0.0262)
+tau (square root of estimated tau^2 value):      0.1655
+
+Test for Heterogeneity:
+LRT(df = 1) = 1.8660, p-val = 0.1719
+
+Model Results:
+
+estimate      se    zval    pval    ci.lb   ci.ub    
+  0.1057  0.0903  1.1703  0.2419  -0.0713  0.2827    
+
+Test for Selection Model Parameters:
+LRT(df = 2) = 21.0891, p-val < .0001
+
+Selection Model Results:
+
+                     k  estimate      se     zval    pval   ci.lb   ci.ub    
+0     < p <= 0.025  14    2.0000     ---      ---     ---     ---     ---    
+0.025 < p <= 0.5    23    0.4014  0.3273  -1.8290  0.0674  0.0000  1.0429  . 
+0.5   < p <= 1      11    0.2764  0.2964  -2.4412  0.0146  0.0000  0.8574  * 
+
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+```
+
+With `delta=c(1, NA, NA)` the log-likelihood is -17.4217 and LRT 1.6810.
+
+</div>
+<div markdown>
+
+**Python, metafopy**
+
+```python
+# docs: skip
+import math
+
+from metafopy import datasets, rma_uni, selmodel
+
+res = rma_uni('yi', 'vi', data=datasets.load('dat.bangertdrowns2004'), method='ML')
+selmodel(res, type='stepfun', steps=[0.025, 0.5, 1], delta=[2, math.nan, math.nan])
+```
+
+```text
+metafopy.errors.InputError: The first value of 'delta' must be 1 or nan for this type of selection model: the weight of the first p-value interval is fixed at 1, so give the other weights relative to it (see docs/differences.md).
+```
+
+</div>
+</div>
+
+*Why:* with the other weights free, a fixed first weight `d0` only adds the constant `n1 * log(d0)` to the log-likelihood (`n1` the number of
+observed p-values in the first interval), so the estimates are those of `d0 = 1` while the log-likelihood, LRT, AIC, BIC and AICc move. With every
+weight fixed, metafor fits `1, d1, d2` in place of the relative weights you wrote (`c(0.5, 0.25, 0.125)` is fitted as `1 : 0.25 : 0.125`), so a
+sensitivity analysis with a priori weights (Vevea and Woods 2005) is given other weights. Vevea and Hedges (1995, Psychometrika 60:419-435, pp.
+424-425) and `?selmodel` fix the first weight at 1 to identify the model. The user chose rejection on 2026-11-17 (decision D1 in
+`agents/reviews/order-todo-items-1-10-specs.md`; `agents/specs/selmodel-fixed-delta0/spec.md`); checked 2026-11-17, R 4.6.2, metafor 5.2-1.
+
 ## Everything else
 
 The [detailed notes](differences-notes.md) hold the rest, grouped by topic:
