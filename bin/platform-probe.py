@@ -284,7 +284,13 @@ def measure_cm_el_tight_se() -> Record:
 def measure_mv_reml_score() -> Record:
     record = Record()
     case = case_by_id(MV_CASE)
-    fit = correctness.test_properties.refit_with(case, control=correctness.test_properties.MV_CONTROL)
+    with captured_minimize() as calls:
+        fit = correctness.test_properties.refit_with(case, control=correctness.test_properties.MV_CONTROL)
+    for position, (_, res) in enumerate(calls):
+        record.put(f'optimiser{position}.gradient_max_abs', numpy.max(numpy.abs(res.jac)))
+        record.put(f'optimiser{position}.success', float(res.success))
+        record.put(f'optimiser{position}.nit', res.nit)
+        record.say(f'optimiser{position}: {res.message}')
     s = correctness.test_derived.mv_setup(case, fit)
     inverse = numpy.linalg.inv(s.V + s.extra())
     p = inverse - inverse @ s.X @ numpy.linalg.solve(s.X.T @ inverse @ s.X, s.X.T @ inverse)

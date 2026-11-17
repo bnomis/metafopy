@@ -283,7 +283,7 @@ five environments.
 
 ## Task 7: The GLMM UM.RS score and the CM.EL tight-optimum check
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Failure groups (`glmm-um-rs-score`, `cm-el-tight-se`), Confirming the cause, Verdicts
@@ -322,7 +322,7 @@ five environments.
 
 ## Task 8: The rma_mv REML score
 
-**Status:** todo
+**Status:** in-progress
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Failure groups (`mv-reml-score`), Confirming the cause, Verdicts, Operator stops
@@ -353,6 +353,9 @@ five environments.
 **Notes:**
 
 - Depends on Task 4
+- Stopped on 2026-11-17: the probe now records the optimiser message and gradient, and the three local environments give a gradient of 1e-10 and a score
+  of 1e-11 of the scale, but CI Linux's score (1.1e-06 of the scale) is not reproduced locally and its gradient is unrecorded. Needs one CI probe run of this
+  commit (Task 11's round) before the verdict; see `measurements.md`
 - Key files: `src/tests/correctness/test_properties.py` (`mv_score_is_zero`), `src/tests/correctness/cases/*.toml`
 
 ---

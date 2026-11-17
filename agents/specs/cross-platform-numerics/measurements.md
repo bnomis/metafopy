@@ -228,3 +228,29 @@ Tests: `pytest src/tests/test_nchg.py src/tests/correctness/test_derived.py -k "
 failure already recorded for Task 2's run, absent from CI's Linux list and from the group table, so not this task's. The CI platforms are judged in Task 11.
 
 <!-- doc-counts: accept-end -->
+
+## The rma_mv REML score: figures so far (Task 8 of `tasks-1.md`)
+
+<!-- doc-counts: accept-start measured on 2026-11-17 - a dated record, not a claim about the present -->
+
+Group `mv-reml-score` (`property.mv.reml-score.kon`, absolute `tolerance` 1e-6), measured on 2026-11-17 with `bin/platform-probe.py`, which now also records
+each `scipy.optimize.minimize` call's message, success flag, iteration count and largest absolute gradient in metafopy's own parameterisation.
+
+| Environment | BFGS message | Largest absolute gradient | Score of `sigma2` | Scale `tr(PZ)` | Score relative to scale |
+|---|---|---|---|---|---|
+| Development Mac | "precision loss", `success` false, 11 iterations | 1.3e-10 | [1.4e-09, -8.3e-09] | [104.475, 962.612] | 1.3e-11, -8.6e-12 |
+| arm64 container | the same | 8.6e-11 | [1.8e-09, -5.3e-09] | the same | 1.7e-11, -5.5e-12 |
+| amd64 container (emulated) | the same | 1.3e-10 | [1.8e-09, -8.1e-09] | the same | 1.7e-11, -8.4e-12 |
+| CI Linux, CI Mac, CI Windows | not recorded by the earlier probe | not recorded | see the CI table above: Linux [5.1e-05, 1.1e-03] | the same | Linux 4.9e-07, 1.1e-06 |
+
+The BFGS never reports success here: `mv_opt.maximise` accepts the stop because the gradient is under `SLACK_GRADIENT` (1e-4), so "reports
+convergence" holds through that path only. Three local environments end at a gradient of 1e-10; the emulated amd64 container does not reproduce CI Linux's
+score of 1e-3. If CI Linux's log-sigma2 gradient is about `sigma2 * score / 2` it is near 2e-5 (derived, not measured): between the three local figures and
+the slack, so the cause (an earlier BFGS stop on Linux's libm and BLAS, accepted by the slack) is not confirmed.
+
+**Verdict: not yet given.** The spec's condition for verdict 3 (the optimiser's message and gradient on every platform, the score a rounding-size
+fraction of its scale) cannot be checked for CI Linux from figures in hand, and 1.1e-06 of the scale is not rounding size. The next step is a CI probe run
+of this commit (Task 11), which records the three CI platforms' gradient and message; then set the case's `tolerance` relative to the scale under verdict 3,
+or stop as `blocked` with the figures if the gradient there is above the slack or the stop is not a convergence.
+
+<!-- doc-counts: accept-end -->
