@@ -72,6 +72,8 @@ Where metafopy and R stop at different points of the same likelihood.
 
 - `rma_mv(restart=)` takes a previous fit (an `RMAMVResult`) as well as `True`, which starts from the last parameters the optimiser tried in the session as metafor's `restart=TRUE` does. `RMAMVResult.p` is the number of columns of `X`; metafor's `p` (the number of estimated coefficients when `beta` is given) is `p_eff`. Only `hesspack='numDeriv'` is available for the Hessians of `optbeta` and `cvvc`. `lambda1` (lasso) is non-smooth, so the optimiser accepts the last iterate.
 
+- `rma_mv` BFGS ends on "precision loss" and the stop is accepted under a gradient slack of 1e-4, so the REML score of a `sigma2` component is up to 1.1e-6 of its scale `tr(P Z Z')` on Linux and Windows (about 1e-11 on macOS); the correctness test `property.mv.reml-score.kon` asserts 2e-6 of the scale (measured 2026-11-17).
+
 - `selmodel(type='stepcon')` uses SLSQP, not Rsolnp. Its `LRT.tau2` can be larger than R's, because R refits at tau2 = 0 without the delta ordering constraint and solnp stops at a worse point.
 
 - Location-scale models: the Hessian of the scale part uses the Richardson depth `hessian_r=4` (`LSControl`), where metafor's numDeriv call uses `r=8`. The eight steps amplify round-off in the log-likelihood, so R's own standard errors of the scale coefficients carry noise of about 1e-5; metafopy agrees with R's to about 2e-6 relative on the fixtures. `control={'hessian_r': 8}` gives the noisy variant.

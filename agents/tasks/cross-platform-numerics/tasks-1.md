@@ -322,7 +322,7 @@ five environments.
 
 ## Task 8: The rma_mv REML score
 
-**Status:** in-progress
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Failure groups (`mv-reml-score`), Confirming the cause, Verdicts, Operator stops
@@ -331,24 +331,24 @@ five environments.
 
 **Subtasks:**
 
-- [ ] Measure metafopy's optimiser message and gradient in its own parameterisation, the REML score in `sigma2`, and its scale `tr(P Z Z')`, per
+- [x] Measure metafopy's optimiser message and gradient in its own parameterisation, the REML score in `sigma2`, and its scale `tr(P Z Z')`, per
       platform
-- [ ] If the optimiser reports convergence and the score is a rounding-size fraction of its scale on every platform, set the case's `tolerance` relative
+- [x] If the optimiser reports convergence and the score is a rounding-size fraction of its scale on every platform, set the case's `tolerance` relative
       to that scale under verdict 3, with the comment the header asks for. Otherwise metafopy is off a theoretical value: stop as `blocked` (operator
       stop) with the figures
-- [ ] Record the figures and verdict in `measurements.md`; run the case locally and in the container
+- [x] Record the figures and verdict in `measurements.md`; run the case locally and in the container
 
 **Acceptance Criteria:**
 
-- [ ] The case passes on the development Mac and in the container, or the task is `blocked` with the figures
-- [ ] `git diff main -- src/metafopy` is empty
+- [x] The case passes on the development Mac and in the container, or the task is `blocked` with the figures
+- [x] `git diff main -- src/metafopy` is empty
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_properties.py -k mv` passes
-- [ ] `bin/linux-tests.sh -- src/tests/correctness/test_properties.py -k mv` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_properties.py -k mv` passes
+- [x] `bin/linux-tests.sh -- src/tests/correctness/test_properties.py -k mv` passes
 
 **Notes:**
 

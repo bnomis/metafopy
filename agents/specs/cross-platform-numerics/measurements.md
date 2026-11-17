@@ -268,6 +268,10 @@ spec sends this to the operator. The options for the operator: (a) set the case'
 as verdict 3 anyway; (b) tighten the optimiser's stop in `src/metafopy` (changes the library, outside this list's scope); (c) assert the measured range
 as verdict 4.
 
+**Answered 2026-11-17 (operator): option (c), range now, and file the fix.** `property.mv.reml-score.kon` asserts the REML score of each `sigma2`
+within 2e-06 of its scale `tr(P Z Z')` (the largest measured, 1.1e-06 on CI Windows, rounded up), verdict 4; the ML case stays absolute. The fix
+(tightening the stop in `src/metafopy`) is filed in `TODO.md`; `src/metafopy` is unchanged here.
+
 <!-- doc-counts: accept-end -->
 
 ## Verdicts: the stepcon interval and the halfnorm print (Task 9 of `tasks-1.md`)
