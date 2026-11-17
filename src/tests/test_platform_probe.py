@@ -9,6 +9,8 @@ import types
 
 import pytest
 
+import metafopy.models.mv_opt
+
 PROBE_PATH = pathlib.Path(__file__).resolve().parents[2] / 'bin' / 'platform-probe.py'
 
 
@@ -71,3 +73,11 @@ def test_main_exits_one_when_a_group_raised(tmp_path: pathlib.Path, monkeypatch:
     out = tmp_path / 'probe.json'
     assert probe.main(['--group', 'mv-reml-score', '--out', str(out)]) == 1
     assert json.loads(out.read_text(encoding='utf-8'))['groups']['mv-reml-score']['error'] == 'ValueError: boom'
+
+
+def test_mv_reml_score_records_the_polish() -> None:
+    values = probe.measure_groups(['mv-reml-score'])['mv-reml-score'].values
+    assert {'polish.hessians', 'polish.gradient_before', 'polish.gradient_after'} <= set(values)
+    assert values['polish.gradient_after']
+    assert all(math.isfinite(v) for v in values['polish.gradient_before'] + values['polish.gradient_after'])
+    assert max(values['polish.gradient_after']) <= metafopy.models.mv_opt.POLISH_GRADIENT

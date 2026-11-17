@@ -194,7 +194,7 @@ optimum fails the test again.
 
 ## Task 4: The platform probe records the polish
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Spec Reference:** Tests (`bin/platform-probe.py`); Module location (Records)
@@ -204,32 +204,33 @@ confirm the fix on Linux and Windows.
 
 **Subtasks:**
 
-- [ ] In `measure_mv_reml_score` of `bin/platform-probe.py`, record the polish beside the `scipy.optimize.minimize` calls: wrap
+- [x] In `measure_mv_reml_score` of `bin/platform-probe.py`, record the polish beside the `scipy.optimize.minimize` calls: wrap
       `metafopy.models.mv_opt.polish_score` during the refit the way `captured_minimize` wraps `minimize` (restoring it afterwards), and put
       `polish.steps` (the Newton steps taken, counted as the calls of `metafopy.models.mv_opt.score_jacobian` whose step was accepted, or, if that
       cannot be told from outside, `polish.hessians`, the calls of `score_jacobian`, with a `record.say` line saying it is an upper bound),
       `polish.gradient_before` and `polish.gradient_after` (the largest `|mv_lik.gradient|` at the input and the output of `polish_score`)
-- [ ] Keep the existing keys unchanged, so the earlier probe outputs in `agents/specs/cross-platform-numerics/measurements.md` stay comparable
-- [ ] Run `python bin/platform-probe.py --group mv-reml-score --out <scratch>/probe.json` and check the new keys hold finite values with
+- [x] Keep the existing keys unchanged, so the earlier probe outputs in `agents/specs/cross-platform-numerics/measurements.md` stay comparable
+- [x] Run `python bin/platform-probe.py --group mv-reml-score --out <scratch>/probe.json` and check the new keys hold finite values with
       `polish.gradient_after` at most `POLISH_GRADIENT`
-- [ ] Extend `src/tests/test_platform_probe.py` so the `mv-reml-score` group's values include the new keys
+- [x] Extend `src/tests/test_platform_probe.py` so the `mv-reml-score` group's values include the new keys
 
 **Acceptance Criteria:**
 
-- [ ] The probe's `mv-reml-score` group records the polish's steps (or Hessians) and its gradient before and after
-- [ ] `src/tests/test_platform_probe.py` passes and checks the new keys
+- [x] The probe's `mv-reml-score` group records the polish's steps (or Hessians) and its gradient before and after
+- [x] `src/tests/test_platform_probe.py` passes and checks the new keys
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_platform_probe.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_platform_probe.py` passes
 
 **Notes:**
 
 - Depends on Task 1
 - Key files: `bin/platform-probe.py`, `src/tests/test_platform_probe.py`
 - `polish_score` returns no step count (spec, API), so the count is taken from outside; do not change `polish_score`'s return type for the probe
+- 2026-11-17: the probe records `polish.hessians` (calls of `score_jacobian`, an upper bound on the steps, since acceptance cannot be told from outside), `polish.gradient_before` and `polish.gradient_after`. On the development Mac: 1 Hessian, gradient 1.3e-10 before, 2.5e-11 after (at most `POLISH_GRADIENT`). `pytest src/tests/test_platform_probe.py`: 6 passed
 
 ---
 
