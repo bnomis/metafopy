@@ -56,4 +56,12 @@ None beyond the items: each item's approve or flag is the decision.
 
 ## Answers
 
-(Empty until the review page is answered.)
+Answered on the review page on 2026-11-17 (12:02 UTC), read back from its `answers` store; no comments:
+
+| Item | Answer |
+|---|---|
+| 1. The halfnorm print asserts its observed range (Task 9, `f57ab45`) | approve |
+| 2. Push the branch before the CI round (Task 8, `f57ab45`) | approve |
+| 3. Bound the test-time cost of the robust reference fit (Task 5, `6e31308`) | approve |
+
+All three decisions stand; no follow-up is needed.
