@@ -46,4 +46,4 @@ missing, so starting Docker before the order lets it run straight through. Rows 
 | 2 | `audit-windows-tests/tasks-1.md` | 1 | - | merged 77b7db7 |
 | 3 | `cross-platform-numerics/tasks-1.md` | 2 | a group whose figures show metafopy wrong, only if one does (Tasks 5-10) | merged 0abbe0c |
 
-Checkpoint after 3: running
+Checkpoint after 3: passed 8578 passed, 37 skipped, 14 xfailed
