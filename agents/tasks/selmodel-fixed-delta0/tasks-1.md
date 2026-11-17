@@ -174,7 +174,7 @@ weight other than 1 learns why it fails and how to rewrite it.
 
 ## Task 3: Run the audit and its recall check
 
-**Status:** todo
+**Status:** in-progress
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Tests and records, item 5; Acceptance (the audit with `--recall`)
@@ -211,6 +211,14 @@ first `delta` other than 1.
 
 **Notes:**
 
+- Blocked 2026-11-18: the whole audit ran (`/Users/simonb/src/metafopy/.audit/runs/20261117-233604`, metafopy `dc7dd23`, R 4.6.2, metafor 5.2-1) and
+  flags no `selmodel` case with a first `delta` other than 1, so no `known.toml` entry was added. It reports seven findings (five causes) that the
+  newest earlier report, `20261117-215038` (a small run: no standalone, emmeans, datasets or scripts cases), does not hold; none touches a step-function
+  `delta`: `options/selmodel/uni_factor/type="logistic"` and `"logistic1"` (`$hessian` element 11, R -1.15e-08, Python 2.69e-15, a near-zero
+  element), print-diffs of `options/vif/ls_na/table=true`, `options/permutest/ls_bangert/digits=2` and `digits=[2,NA,1]`,
+  `construct/uni_mods_year/scale=~ 0 + I(1|ablat)` (last-digit rounding), and `construct/ls_na/mods=~ ablat * alloc` (metafopy accepts where R
+  refuses: "No missing values allowed in 'alpha.init'"). The task says a finding the earlier report does not hold stops it as `blocked`, so
+  `--recall` was not run. The worktree has no `.venv`; the run used `PATH=/Users/simonb/src/metafopy/.venv/bin:$PATH`
 - Depends on Task 2
 - Key files: `src/audit/data/known.toml` (only if the audit flags the change), `src/audit/README.md`
 - If no file but this list changes, the commit records the Notes only
