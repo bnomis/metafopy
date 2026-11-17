@@ -32,7 +32,7 @@ which fires only if a test, parity fit or correctness case the spec did not list
 
 ## Task 1: Re-check the starting point, and reject a first step weight other than 1
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** API; Error handling, option (a); Implementation, option (a); Choices made, "Which step-function forms the check covers" (i);
@@ -43,39 +43,39 @@ me to give the weights relative to the first, so that I never get a fit of weigh
 
 **Subtasks:**
 
-- [ ] Check that row 1 of the run order is merged on main: in the main checkout (the first entry of `git worktree list --porcelain`,
+- [x] Check that row 1 of the run order is merged on main: in the main checkout (the first entry of `git worktree list --porcelain`,
       `main=$(git worktree list --porcelain | sed -n '1s/^worktree //p')`), `git -C "$main" show main:DONE.md` holds the heading
       `## The Docs workflow fails on three docstring links to docs/differences.md`, `git -C "$main" show main:TODO.md` does not, and
       `git merge-base --is-ancestor main HEAD` exits 0. Stop as `blocked`, naming what is missing, if not
-- [ ] Check that row 1's edit is in this branch: `grep -nF '](../../../docs/differences.md' src/metafopy/models/selmodel.py` finds nothing. Stop as
+- [x] Check that row 1's edit is in this branch: `grep -nF '](../../../docs/differences.md' src/metafopy/models/selmodel.py` finds nothing. Stop as
       `blocked`, naming the line, if it finds one
-- [ ] Re-check the starting point, narrowly: `grep -nF "check_bounds('delta', delta_arg, spec)" src/metafopy/models/selmodel.py` finds the one call
+- [x] Re-check the starting point, narrowly: `grep -nF "check_bounds('delta', delta_arg, spec)" src/metafopy/models/selmodel.py` finds the one call
       in `selmodel()`, followed by the `if type_ == 'stepfun' and (decreasing or math.isnan(delta_arg[0])):` and `if type_ == 'stepcon':` lines;
       `grep -rnF "first value of 'delta' must be 1" src/metafopy` finds nothing; and
       `grep -nwE 'test_stepfun_first_delta_must_be_one|test_stepfun_first_delta_one_or_nan_fits' src/tests/test_selmodel.py` finds nothing. Stop as
       `blocked`, naming what differs, if any is not so
-- [ ] In `src/tests/test_selmodel.py`, beside `bangertdrowns_ml()`, add `test_stepfun_first_delta_must_be_one`, parametrised over `(type, decreasing)`
+- [x] In `src/tests/test_selmodel.py`, beside `bangertdrowns_ml()`, add `test_stepfun_first_delta_must_be_one`, parametrised over `(type, decreasing)`
       in `('stepfun', False)`, `('stepfun', True)`, `('stepcon', False)` and `d0` in `0.5` and `0.0`, plus `d0 = 2.0` for `('stepfun', False)` only
       (the other two forms bound `delta[0]` by 1, so `2.0` keeps its bounds error there): on `bangertdrowns_ml()` with `steps=[0.025, 0.5, 1]` and
       `delta=[d0, nan, nan]`, assert `metafopy.errors.InputError` with `match="first value of 'delta' must be 1"`
-- [ ] Add `test_stepfun_first_delta_one_or_nan_fits`: on `bangertdrowns_ml()` with `type='stepfun'` and `steps=[0.025, 0.5, 1]`, `delta=[1, nan, nan]`
+- [x] Add `test_stepfun_first_delta_one_or_nan_fits`: on `bangertdrowns_ml()` with `type='stepfun'` and `steps=[0.025, 0.5, 1]`, `delta=[1, nan, nan]`
       and `delta=[nan, nan, nan]` give the same fit, beta 0.10569 and ll -17.4217 (absolute tolerance 1e-4, the spec's values measured 2026-11-17),
       and `delta=[1, 0.5, 0.25]` fits with beta 0.09380 (the same tolerance)
-- [ ] Run the two new tests against the unchanged code and record in this task's Notes that `test_stepfun_first_delta_must_be_one` fails for every
+- [x] Run the two new tests against the unchanged code and record in this task's Notes that `test_stepfun_first_delta_must_be_one` fails for every
       parameter (a fit is returned, or `EstimationError` for `d0 = 0.0` on `'stepfun'`) and `test_stepfun_first_delta_one_or_nan_fits` passes. A
       parameter that already passes, or a value of the second test other than the spec's, stops the task as `blocked`, naming it
-- [ ] In `selmodel()` of `src/metafopy/models/selmodel.py`, right after `check_bounds('delta', delta_arg, spec)` and before the two lines that set
+- [x] In `selmodel()` of `src/metafopy/models/selmodel.py`, right after `check_bounds('delta', delta_arg, spec)` and before the two lines that set
       `delta_arg[0] = 1.0`, add
       `if type_ in metafopy.models.sel_spec.STEPWISE and not math.isnan(delta_arg[0]) and delta_arg[0] != 1.0:` raising
       `metafopy.errors.InputError("The first value of 'delta' must be 1 or nan for this type of selection model: the weight of the first p-value
       interval is fixed at 1, so give the other weights relative to it (see docs/differences.md).")`, before any fitting. Exact comparison with 1.0,
       no tolerance (settled in the spec's Implementation). Keep the two `delta_arg[0] = 1.0` lines; leave `ll_stepfun` and `w_step` in
       `src/metafopy/models/sel_lik.py` unchanged
-- [ ] Update the `delta` description of `selmodel`'s docstring to the spec's API text (for `'stepfun'` and `'stepcon'` the first value is the weight of
+- [x] Update the `delta` description of `selmodel`'s docstring to the spec's API text (for `'stepfun'` and `'stepcon'` the first value is the weight of
       the first p-value interval, fixed at 1 to identify the model (Vevea & Hedges, 1995): it must be 1 or ``nan``, and the other values are weights
       relative to it (``docs/differences.md``, "Where metafor departs from its reference")), and add "a first ``delta`` other than 1 or ``nan`` for
       ``type='stepfun'`` or ``'stepcon'``" to the `InputError` line of `Raises`. Write the reference as inline code, as the spec does, not as a link
-- [ ] Check that no other caller passes such a `delta`: `refit` in `src/metafopy/methods/selmodel.py` passes the fit's own `delta`, whose first value is
+- [x] Check that no other caller passes such a `delta`: `refit` in `src/metafopy/methods/selmodel.py` passes the fit's own `delta`, whose first value is
       1 for a step function (the spec's investigation). Run the Definition of Done's test files.
       **Stops for the operator: an existing test or case reaches the new error.** Only if an existing test, R parity fit or correctness case now
       raises the new `InputError` or changes value: do not edit it; stop the task as `blocked` and report each test id with the call it makes. The
@@ -83,22 +83,25 @@ me to give the weights relative to the first, so that I never get a fit of weigh
 
 **Acceptance Criteria:**
 
-- [ ] `selmodel` raises the spec's `InputError` for `'stepfun'` with and without `decreasing` and for `'stepcon'` with a first `delta` of 0.5 or 0.0,
+- [x] `selmodel` raises the spec's `InputError` for `'stepfun'` with and without `decreasing` and for `'stepcon'` with a first `delta` of 0.5 or 0.0,
       and for `'stepfun'` with 2.0, before any fitting; `'stepfun'` with `decreasing=True` and `'stepcon'` keep the bounds error "must be <= 1" for 2.0
-- [ ] A first value of 1 or `nan` fits as before; both new tests pass, and this task's Notes record the first failing on the code before the change
-- [ ] Every existing test in `src/tests/test_selmodel.py`, `src/tests/test_stepcon.py`, `src/tests/test_selmodel_parallel.py` and
+- [x] A first value of 1 or `nan` fits as before; both new tests pass, and this task's Notes record the first failing on the code before the change
+- [x] Every existing test in `src/tests/test_selmodel.py`, `src/tests/test_stepcon.py`, `src/tests/test_selmodel_parallel.py` and
       `src/tests/correctness` passes unchanged, with no fixture edited
-- [ ] The `delta` docstring and `Raises` say what the spec's API section gives
+- [x] The `delta` docstring and `Raises` say what the spec's API section gives
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `ruff format --check src/metafopy/models/selmodel.py src/tests/test_selmodel.py` and `ruff check` on the same files pass
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_selmodel.py src/tests/test_stepcon.py src/tests/test_selmodel_parallel.py src/tests/correctness` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `ruff format --check src/metafopy/models/selmodel.py src/tests/test_selmodel.py` and `ruff check` on the same files pass
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_selmodel.py src/tests/test_stepcon.py src/tests/test_selmodel_parallel.py src/tests/correctness` passes
 
 **Notes:**
 
+- Run on the unchanged code on 2026-11-17: `test_stepfun_first_delta_must_be_one` failed for all seven parameters (six returned a fit, `stepfun`
+  with `d0 = 0.0` raised `EstimationError`), and `test_stepfun_first_delta_one_or_nan_fits` passed with the spec's values. After the change both pass,
+  and `src/tests/test_selmodel.py`, `test_stepcon.py`, `test_selmodel_parallel.py` and `src/tests/correctness` pass with no existing test edited
 - Depends on `agents/tasks/docs-strict-links/tasks-1.md` (row 1 of `agents/tasks/order-todo-items-1-10.md`), merged on main
 - Key files: `src/metafopy/models/selmodel.py` (`selmodel`, `check_bounds`), `src/metafopy/models/sel_spec.py` (`STEPWISE`, unchanged),
   `src/metafopy/models/sel_lik.py` (`ll_stepfun`, unchanged), `src/tests/test_selmodel.py`, `src/tests/reference/phase5/selmodel.json` (unchanged)
