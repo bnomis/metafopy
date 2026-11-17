@@ -344,7 +344,7 @@ of the `rma_mv` fixtures shows nothing new.
 
 ## Task 7: Close the figure that leaks into `test_pipeline_through_figure_without_axes`
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** small
 **Spec Reference:** none (found by Task 2)
@@ -353,15 +353,16 @@ of the `rma_mv` fixtures shows nothing new.
 
 **Subtasks:**
 
-- [ ] Find the earlier test file that leaves a matplotlib figure open (run the files named in Task 2's Notes in order up to `test_profile_plots.py`; the
+- [x] Find the earlier test file that leaves a matplotlib figure open (run the files named in Task 2's Notes in order up to `test_profile_plots.py`; the
       failure shows with `src/tests/test_audit*.py`, `test_fits.py`, `test_plots.py` and `test_mv_diagnostics.py` before it) and close its figures, or
       make the failing test count the axes of its own figure
-- [ ] Run the same selection and see it pass
+- [x] Run the same selection and see it pass
 
 **Acceptance Criteria:**
 
-- [ ] The test passes in the combined run and alone
+- [x] The test passes in the combined run and alone
 
 **Notes:**
 
 - Fails identically without the polish, so it is not caused by this spec
+- 2026-11-17: no single file leaks; matplotlib keeps figures open across test files. `src/tests/conftest.py` now has an autouse fixture `no_open_figures` that closes all figures before and after each test. The selection `test_audit*.py`, `test_fits.py`, `test_plots.py`, `test_mv_diagnostics.py`, `test_profile_plots.py` passes (1730 passed, 6 skipped); the test passes alone too
