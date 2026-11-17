@@ -37,7 +37,7 @@ files. Only docstrings and a new test change; no metafopy result changes.
 
 ## Task 1: Rewrite the three links and pass the strict build
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item's cause and fix direction (links as the site resolves them from a reference page; `mkdocs build --strict` locally)
@@ -47,39 +47,44 @@ build the Docs workflow runs passes in strict mode.
 
 **Subtasks:**
 
-- [ ] Check the starting point: `grep -rnF '../../../docs/differences.md' src/metafopy` lists exactly the three links in this list's header. If
+- [x] Check the starting point: `grep -rnF '../../../docs/differences.md' src/metafopy` lists exactly the three links in this list's header. If
       none is found, they were fixed elsewhere: go straight to the build subtask. If a link outside the three is found, rewrite it the same way and
       name it in this task's Notes
-- [ ] In each of `src/metafopy/methods/confint.py`, `src/metafopy/models/selmodel.py` and `src/metafopy/bias/fsn.py`, change the link target from
+- [x] In each of `src/metafopy/methods/confint.py`, `src/metafopy/models/selmodel.py` and `src/metafopy/bias/fsn.py`, change the link target from
       `../../../docs/differences.md#<anchor>` to `../differences.md#<anchor>`, keeping the anchor and the link text `docs/differences.md` (which
       reads correctly in an editor's hover too). Change nothing else in the docstrings
-- [ ] Build the docs as the header says (create the virtual environment, install with the workflow's `uv pip install -e '.[interactive]' -r
+- [x] Build the docs as the header says (create the virtual environment, install with the workflow's `uv pip install -e '.[interactive]' -r
       docs/requirements.txt`, then `mkdocs build --strict --site-dir "$TMPDIR/metafopy-docs-site"`), saving the whole output to
       `$TMPDIR/metafopy-docs-build.log`. If `uv venv` or the install fails (no network, Python 3.14.8 unavailable), stop as `blocked` with its
       error
-- [ ] If the build still warns about any of the three links, rewrite that link as plain text in the form the other docstrings use (``` ``docs/differences.md`` ```,
+- [x] If the build still warns about any of the three links, rewrite that link as plain text in the form the other docstrings use (``` ``docs/differences.md`` ```,
       "<section title>"), rebuild, and say so in this task's Notes. If it fails on a warning unrelated to these links, stop as `blocked` with the
       warning lines: that is not this item
-- [ ] Confirm in the built site that each link works: `grep -o 'href="[^"]*differences/#[^"]*"'` over `$TMPDIR/metafopy-docs-site/reference/methods/index.html`,
+- [x] Confirm in the built site that each link works: `grep -o 'href="[^"]*differences/#[^"]*"'` over `$TMPDIR/metafopy-docs-site/reference/methods/index.html`,
       `models/index.html` and `bias/index.html` shows the anchor, and the anchor is an `id` in `$TMPDIR/metafopy-docs-site/differences/index.html`.
       Record the result, dated, in this task's Notes
 
 **Acceptance Criteria:**
 
-- [ ] `grep -rnF '../../../docs/' src/metafopy` finds nothing
-- [ ] `mkdocs build --strict` as above exits 0 and its log has no `WARNING` line
-- [ ] Each of the three rendered links points at an anchor that exists on the built differences page (or was rewritten as plain text, noted)
+- [x] `grep -rnF '../../../docs/' src/metafopy` finds nothing
+- [x] `mkdocs build --strict` as above exits 0 and its log has no `WARNING` line
+- [x] Each of the three rendered links points at an anchor that exists on the built differences page (or was rewritten as plain text, noted)
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_docs_examples.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_docs_examples.py` passes
 
 **Notes:**
 
 - Key files: `src/metafopy/methods/confint.py`, `src/metafopy/models/selmodel.py`, `src/metafopy/bias/fsn.py`, `mkdocs.yml`,
   `.github/workflows/docs.yml`, `docs/differences.md`
+- 2026-11-17: `mkdocs build --strict` exits 0. The log has two lines containing the word WARNING, neither from a link: the mkdocs 2 notice
+  and the notebook kernel's TCP-encryption message (IPKernelApp); no mkdocs `WARNING -` line. The three rendered links are
+  `../../differences/#where-metafor-departs-from-its-reference` (methods, models) and `../../differences/#fsn-fisher-pooling-and-the-general-type`
+  (bias); both ids exist in `differences/index.html`. No link needed the plain-text fallback.
+- The worktree has no `.venv`; mypy and pytest ran from the main checkout's `.venv` with the worktree's `src` on `PYTHONPATH`
 - The virtual environment, build log and site stay under `$TMPDIR`, outside the repository; nothing from them is committed
 
 ---
