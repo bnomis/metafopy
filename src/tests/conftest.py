@@ -6,6 +6,7 @@ import sys
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 
 import matplotlib
+import matplotlib.pyplot
 import pytest
 
 import metafopy.effects.measures
@@ -28,3 +29,11 @@ def fresh_yi_checks() -> None:
     """Each test starts as a new R session: metafor warns once per session about an unusually large ``yi`` vector (``.chkyisize``), so a vector
     an earlier test warned about would keep a later test from seeing the warning."""
     metafopy.effects.measures.YICHECKS.clear()
+
+
+@pytest.fixture(autouse=True)
+def no_open_figures() -> collections.abc.Iterator[None]:
+    """A test that counts the axes of the current figure must not see one an earlier test left open."""
+    matplotlib.pyplot.close('all')
+    yield
+    matplotlib.pyplot.close('all')

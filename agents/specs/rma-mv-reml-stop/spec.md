@@ -1,7 +1,7 @@
 # rma_mv REML stop
 
 **Version:** 1.1
-**Status:** approved
+**Status:** implemented
 **Date:** 2026-11-17
 
 `rma_mv` with the default optimiser maximises the (restricted) log-likelihood with SciPy's BFGS on the analytic score and accepts a stop that BFGS

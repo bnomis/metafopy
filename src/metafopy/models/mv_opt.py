@@ -2,10 +2,13 @@
 
 metafor minimises ``-ll`` with ``nlminb`` (a derivative-free-start quasi-Newton routine from the PORT library). Here the
 BFGS algorithm of SciPy is used with the analytic score of :func:`metafopy.models.mv_lik.gradient`, which reaches the same
-optimum to well within the tolerance of the parity tests (Nocedal and Wright, 2006, *Numerical Optimization*, ch. 6). The other
+optimum to well within the tolerance of the parity tests (Nocedal and Wright, 2006, *Numerical Optimization*, ch. 6). BFGS is
+followed by a Newton polish on the score (:func:`polish_score`; Nocedal and Wright, 2006, ch. 3, Newton's method with a step
+test), because the gradient slack accepts BFGS stops ("precision loss") that vary by platform and by run, up to 1.1e-06 of the
+score's scale on CI Windows (measured 2026-11-17; see ``agents/specs/rma-mv-reml-stop/spec.md``). The other
 optimisers of metafor's ``control$optimizer`` (``optim`` with ``optmethod``, ``nlm``, ``bobyqa``, ``hjk``, ...) are run through
 :func:`metafopy.models.sel_opt.minimize`, which ports ``optim``'s BFGS and Nelder-Mead and maps the others to SciPy methods;
-``mfmaxit`` limits the number of likelihood evaluations as in metafor.
+``mfmaxit`` limits the number of likelihood evaluations as in metafor; those optimisers are not polished.
 """
 
 import collections.abc
@@ -22,12 +25,15 @@ import metafopy.errors
 import metafopy.models.mv_lik
 import metafopy.models.sel_opt
 
-__all__ = ['OptResult', 'maximise']
+__all__ = ['POLISH_GRADIENT', 'POLISH_MAX_STEP', 'POLISH_STEPS', 'OptResult', 'maximise', 'polish_score', 'score_jacobian']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 
 HUGE = 1e100
 SLACK_GRADIENT = 1e-4
+POLISH_GRADIENT = 1e-10  # stop when the largest |gradient| entry of -ll is at most this
+POLISH_MAX_STEP = 1e-3  # a Newton step with a larger entry (transformed scale) means a ridge or a boundary: stop there
+POLISH_STEPS = 8
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -115,7 +121,70 @@ def maximise(
             gnorm = float(numpy.max(numpy.abs(rjac))) if rjac.size else 0.0
         if gnorm > SLACK_GRADIENT and not nonsmooth and (improved or decrement > metafopy.core.stationarity.REL_TOL * (1 + abs(val))):
             raise metafopy.errors.EstimationError(f'Optimizer (BFGS) did not achieve convergence ({res.message}).')
-    return OptResult(par=expand(x), value=-val, iterations=int(res.nit))
+    par = expand(x)
+    if not nonsmooth and free.size:
+        par, val = polish_score(problem, par, free, reml)
+    return OptResult(par=par, value=-val, iterations=int(res.nit))
+
+
+def score_jacobian(
+    problem: metafopy.models.mv_lik.Problem,
+    par: FloatArray,
+    free: numpy.typing.NDArray[numpy.intp],
+    reml: bool,
+) -> FloatArray:
+    """Hessian of ``-ll`` in the free entries of the transformed parameters: central differences of
+    :func:`metafopy.models.mv_lik.gradient` (step ``1e-5 * max(1, |par_i|)``), symmetrised. ``len(free) x len(free)``."""
+    hessian = numpy.empty((free.size, free.size))
+    for column, index in enumerate(free):
+        step = 1e-5 * max(1.0, abs(float(par[index])))
+        up = par.copy()
+        down = par.copy()
+        up[index] += step
+        down[index] -= step
+        hessian[:, column] = (metafopy.models.mv_lik.gradient(problem, up, reml, free) - metafopy.models.mv_lik.gradient(problem, down, reml, free)) / (
+            2 * step
+        )
+    return (hessian + hessian.T) / 2
+
+
+def polish_score(
+    problem: metafopy.models.mv_lik.Problem,
+    par: FloatArray,
+    free: numpy.typing.NDArray[numpy.intp],
+    reml: bool,
+) -> tuple[FloatArray, float]:
+    """Newton steps on the score from ``par`` (the BFGS stop) until the largest gradient entry is at most ``POLISH_GRADIENT``; returns the parameters
+    and ``-ll`` there. A step is taken only while the Hessian is positive definite, no entry of the step exceeds ``POLISH_MAX_STEP``, ``-ll`` does not
+    rise by more than ``metafopy.core.stationarity.REL_TOL * (1 + |-ll|)`` and the largest gradient entry falls; otherwise ``par`` as reached so far is
+    returned. At most ``POLISH_STEPS`` steps.
+
+    The objective test is loose on purpose: near the optimum ``-ll`` changes by less than its own rounding, so a tight test rejects every useful
+    step and the fall of the gradient is what accepts a step, as the score is what the tests check (Nocedal and Wright, 2006, ch. 3).
+    """
+    val = metafopy.models.mv_lik.negative_loglik(problem, par, reml)
+    grad = metafopy.models.mv_lik.gradient(problem, par, reml, free)
+    for _ in range(POLISH_STEPS):
+        gnorm = float(numpy.max(numpy.abs(grad)))
+        if gnorm <= POLISH_GRADIENT:
+            break
+        try:
+            factor = numpy.linalg.cholesky(score_jacobian(problem, par, free, reml))
+        except numpy.linalg.LinAlgError:
+            break
+        step = -numpy.linalg.solve(factor.T, numpy.linalg.solve(factor, grad))
+        if not numpy.all(numpy.isfinite(step)) or float(numpy.max(numpy.abs(step))) > POLISH_MAX_STEP:
+            break
+        trial = par.copy()
+        trial[free] += step
+        trial_val = metafopy.models.mv_lik.negative_loglik(problem, trial, reml)
+        if not math.isfinite(trial_val) or trial_val > val + metafopy.core.stationarity.REL_TOL * (1 + abs(val)):
+            break
+        trial_grad = metafopy.models.mv_lik.gradient(problem, trial, reml, free)
+        if not numpy.all(numpy.isfinite(trial_grad)) or float(numpy.max(numpy.abs(trial_grad))) >= gnorm:
+            break
+        par, val, grad = trial, trial_val, trial_grad
+    return par, val
 
 
 def maximise_other(

@@ -39,6 +39,8 @@ import test_stepcon  # noqa: E402
 
 import metafopy  # noqa: E402
 import metafopy.core.nchg  # noqa: E402
+import metafopy.models.mv_lik  # noqa: E402
+import metafopy.models.mv_opt  # noqa: E402
 
 FloatArray = numpy.typing.NDArray[numpy.float64]
 Values = dict[str, list[float]]
@@ -281,11 +283,44 @@ def measure_cm_el_tight_se() -> Record:
     return record
 
 
+@contextlib.contextmanager
+def captured_polish() -> collections.abc.Iterator[dict[str, list[float]]]:
+    """The Newton polish of ``mv_opt`` inside the block: the Hessians it formed and the largest gradient entry at the input and output of each call."""
+    seen: dict[str, list[float]] = {'hessians': [], 'gradient_before': [], 'gradient_after': []}
+    original_polish = metafopy.models.mv_opt.polish_score
+    original_jacobian = metafopy.models.mv_opt.score_jacobian
+
+    def largest(problem: typing.Any, par: FloatArray, free: typing.Any, reml: bool) -> float:
+        return float(numpy.max(numpy.abs(metafopy.models.mv_lik.gradient(problem, par, reml, free))))
+
+    def polish(problem: typing.Any, par: FloatArray, free: typing.Any, reml: bool) -> tuple[FloatArray, float]:
+        seen['gradient_before'].append(largest(problem, par, free, reml))
+        result = original_polish(problem, par, free, reml)
+        seen['gradient_after'].append(largest(problem, result[0], free, reml))
+        return result
+
+    def jacobian(*args: typing.Any, **kwargs: typing.Any) -> FloatArray:
+        seen['hessians'].append(1.0)
+        return original_jacobian(*args, **kwargs)
+
+    metafopy.models.mv_opt.polish_score = polish
+    metafopy.models.mv_opt.score_jacobian = jacobian
+    try:
+        yield seen
+    finally:
+        metafopy.models.mv_opt.polish_score = original_polish
+        metafopy.models.mv_opt.score_jacobian = original_jacobian
+
+
 def measure_mv_reml_score() -> Record:
     record = Record()
     case = case_by_id(MV_CASE)
-    with captured_minimize() as calls:
+    with captured_minimize() as calls, captured_polish() as polish:
         fit = correctness.test_properties.refit_with(case, control=correctness.test_properties.MV_CONTROL)
+    record.put('polish.hessians', len(polish['hessians']))
+    record.put('polish.gradient_before', polish['gradient_before'])
+    record.put('polish.gradient_after', polish['gradient_after'])
+    record.say('polish.hessians counts the calls of score_jacobian: an upper bound on the Newton steps taken')
     for position, (_, res) in enumerate(calls):
         record.put(f'optimiser{position}.gradient_max_abs', numpy.max(numpy.abs(res.jac)))
         record.put(f'optimiser{position}.success', float(res.success))
