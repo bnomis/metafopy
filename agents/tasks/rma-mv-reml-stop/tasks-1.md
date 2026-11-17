@@ -295,6 +295,7 @@ of the `rma_mv` fixtures shows nothing new.
 - Key files: `docs/differences-notes.md`, `bin/linux-tests.sh` (unchanged), `bin/metafor-audit.sh` (unchanged)
 - 2026-11-17 (blocked): docs line rewritten in `docs/differences-notes.md`; `pytest src/tests/test_docs_examples.py src/tests/test_mv_opt.py`: 22 passed. Audit slice `bin/metafor-audit.sh --only '*/mv_*'`: run `/Users/simonb/src/metafopy/.audit/runs/20261117-215038`, compared with the newest non-recall run `20261116-032822`: 0 new findings in both (all findings match `known.toml`). The Linux container run is not done: `docker info` exits 1, Docker is not running. Resume by starting Docker, then running `bin/linux-tests.sh -- src/tests/correctness/test_properties.py src/tests/test_rma_mv.py src/tests/test_mv_opt.py`
 - 2026-11-17 (blocked again, 20:59 UTC): `docker info` still exits 1, Docker is not running. Nothing else in the task remains but the container run and its record
+- 2026-11-17 (blocked again): `docker info` still exits 1, Docker is not running. Same remaining work
 
 ---
 
