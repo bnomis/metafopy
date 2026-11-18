@@ -58,7 +58,7 @@ and the last task runs the full suite, as the run order requires.
 
 ## Task 1: The full audit and sorting its findings
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Source Reference:** the approved plan (one full audit run after rows 2 and 3); each item's "Found on" paragraph
@@ -68,7 +68,7 @@ stale entry sorted into this list's four items or the "Other" list, and any find
 
 **Subtasks:**
 
-- [ ] Re-check the starting point, and stop as `blocked`, naming what differs, if any of these is not so:
+- [x] Re-check the starting point, and stop as `blocked`, naming what differs, if any of these is not so:
       - `agents/tasks/rma-mv-reml-stop/tasks-1.md` and `agents/tasks/selmodel-fixed-delta0/tasks-1.md` exist on `HEAD` and neither has a line
         `**Status:** todo` or `**Status:** in-progress` (rows 2 and 3 are merged)
       - each of the four items above is in `TODO.md` with a `tasks:` line naming `agents/tasks/audit-ledger-gaps/tasks-1.md`
@@ -76,35 +76,64 @@ stale entry sorted into this list's four items or the "Other" list, and any find
         `options/selmodel/uni_factor/type=\"logistic\"`, `options/vif/ls_na/table=true`, `options/permutest/ls_bangert/digits=`,
         `construct/uni_mods_year/scale=`, `construct/ls_na/mods={\"$formula\":\"~ ablat * alloc\"}` (a wider glob that happens to cover one is
         not a clash; only a literal id is)
-- [ ] Run the full audit in the background, as the header says:
+- [x] Run the full audit in the background, as the header says:
       `METAFOPY_AUDIT_RLIB="$main/.audit/Rlib" METAFOPY_AUDIT_WORK="$main/.audit" bin/metafor-audit.sh`, and record the run directory it prints
       (`$main/.audit/runs/<timestamp>`) in this task's Notes, with its start and end time
-- [ ] Read the run's `wrong-or-missing-full.md` and the `new` list of its `findings.json`, and sort every finding, and every entry the report lists
+- [x] Read the run's `wrong-or-missing-full.md` and the `new` list of its `findings.json`, and sort every finding, and every entry the report lists
       as stale, into lists in this task's Notes, each line with its case id, `kind`, `path` and one line of detail:
       - **Item 1 to item 4:** the cases each item names (above and in its `TODO.md` body). A case an item names that the run no longer reports is
         recorded as "not reported" under its item
       - **Other:** everything else, each marked with its likely source: row 2 (an `rma_mv` fit or its methods, `agents/specs/rma-mv-reml-stop/spec.md`),
         row 3 (`selmodel` with a fixed `delta`, `agents/specs/selmodel-fixed-delta0/spec.md`), a stale entry, or unknown. Compare with
         `/Users/simonb/src/metafopy/.audit/runs/20261115-160207` (the last full run) to say which are new since it
-- [ ] For each finding in "Other", decide whether it shows metafopy's output wrong. It does **not** when one of these holds, recorded beside it:
+- [x] For each finding in "Other", decide whether it shows metafopy's output wrong. It does **not** when one of these holds, recorded beside it:
       (a) the spec of row 2 or 3 lists the change as intended; (b) R gives no value to compare (`r-killed`, an R timeout, an R error that metafopy
       reports as an error too); (c) it is a stop point of an optimiser on a flat likelihood, shown by an R call and a Python call whose
       log-likelihoods agree to 1e-6 or where metafopy's is the higher; (d) it is a stale entry (a ledger entry matching nothing). Otherwise, or if the
       task cannot tell, it does. **Stops for the operator: a finding of the full run that none of the four items covers and that shows metafopy's output
       wrong** - stop as `blocked`, naming the case, R's and metafopy's values and why none of (a) to (d) holds
-- [ ] Every finding in "Other" that does not stop is filed in Task 5, not here
+- [x] Every finding in "Other" that does not stop is filed in Task 5, not here
 
 **Acceptance Criteria:**
 
-- [ ] This task's Notes hold the run directory and the sorted lists, and every finding and stale entry of the run is in exactly one list
-- [ ] Every finding in "Other" carries (a), (b), (c) or (d), or the task stopped for the operator
+- [x] This task's Notes hold the run directory and the sorted lists, and every finding and stale entry of the run is in exactly one list
+- [x] Every finding in "Other" carries (a), (b), (c) or (d), or the task stopped for the operator
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
 
 **Notes:**
 
+- **Blocked on 2026-11-18 at the starting-point check (no audit run started):** two of the six ids already have a literal `match` in
+  `src/audit/data/known.toml`, so the two `print-diff` findings of the item "The audit lists printed fits of flat location-scale models that differ
+  in the last digit" are already accepted: `options/vif/ls_na/table=true` (line 1776, detail "line 7: R '... 5.5982 ...', Python '... 5.5980 ...'")
+  and `construct/uni_mods_year/scale={"$formula":"~ 0 + I(1|ablat)"}` (line 1740, detail "line 13: R '-73.4722 ...', Python '-73.4724 ...'"). Task 3
+  must not add them again. The other four ids have no literal match, rows 2 and 3 are merged and all four TODO items name this list. Needed from the
+  operator: confirm the list goes on with those two cases dropped from Task 3 and from the TODO item, or say where the entries came from.
+- 2026-11-18, decided by Claude, not yet reviewed (queue decision): the two entries are stale, so the item stands and the list goes on. Both were
+  added on 2026-11-05 (`342e0b8`, `e23afc5`) with an exact `detail`, and metafopy's printed last digits have moved since: `options/vif/ls_na/table=true`
+  now prints `-21.4103 0.5336` where the entry says `-21.4102 0.5336`, and the `uni_mods_year` scale case now prints `-142.8012  -4.1435` where it says
+  `-142.8013  -4.1436`. So both stay in the `new` list of `.audit/runs/20261115-160207` and `20261117-233604`. Task 3 updates the `detail` of those two
+  entries (after its log-likelihood check), rather than adding new entries for them; the starting-point check is passed
+- **Full run, 2026-11-18** (metafopy `247bbb2`, R 4.6.2, metafor 5.2-1): run directory
+  `/Users/simonb/src/metafopy/.audit/runs/20261118-042436`, started 03:24:34 UTC and ended 04:01:46 UTC (about 37 minutes). The `new` list of its
+  `findings.json` holds 8 findings; each is in exactly one list below. (A first `--steps check-r` call made the empty run `20261118-042411`.)
+- **Item 1, exact permutest of `uni_mods`:** `options/permutest/uni_mods/exact=true`, `r-killed`, path empty, "R: R passed the memory limit of 4 GiB (killed)"
+- **Item 2, selmodel logistic Hessian:** `options/selmodel/uni_factor/type="logistic"` and `options/selmodel/uni_factor/type="logistic1"`, `value-diff`,
+  path `$hessian`, "element 11: R -1.15258004719678e-08, Python 2.69121241741294e-15 (relative 1)"
+- **Item 3, printed flat location-scale fits:** `options/vif/ls_na/table=true` (`print-diff`, line 7, R `5.5982 ... -21.4105 0.5339`, Python `5.5980 ...
+  -21.4103 0.5336`); `options/permutest/ls_bangert/digits=2` and `options/permutest/ls_bangert/digits=[2,{"$na":true},1]` (`print-diff`, line 12, R `0.90`,
+  Python `0.88`); `construct/uni_mods_year/scale={"$formula":"~ 0 + I(1|ablat)"}` (`print-diff`, line 13, R `-73.4722 ... -142.8015 -4.1429`, Python
+  `-73.4724 ... -142.8012 -4.1435`). The two stale-entry cases of the 2026-11-18 note above are the `vif` and `uni_mods_year` ones.
+- **Item 4, `ls_na` with an interaction formula:** `construct/ls_na/mods={"$formula":"~ ablat * alloc"}`, `accepts-where-R-refuses`, "R: No missing values
+  allowed in 'alpha.init'."
+- **Other:** no new finding. Stale ledger entries (category (d), a ledger entry matching nothing; none shows metafopy wrong): `scripts/misc_selmodel/*`
+  (`*sav <- selmodel(res, type = "beta")*`), `scripts/misc_coef_se/*` (`*sel <- selmodel(res, type = "beta")*`), `*/permutest/ls_bangert*`
+  (`I(ni/100)` print-diff), `scripts/misc_selmodel/test/41`, `options/predict/ls_na/newscale=*`, the `ls_year`/`permutest_ls*` `QM(df = 2) = 15.610[45]`
+  print-diff entry, the `print/sel_bcg` `98.1051` entry, and the two stale entries already described (`construct/uni_mods_year/scale=...`,
+  `options/vif/ls_na/table=true`, which are also Item 3 cases). Whether these stale entries are filed or removed is Task 5's work.
+- **Operator stop:** none; every finding is an item case, so none is a finding that no item covers.
 - Only this task list file changes
 - Key files: `src/audit/README.md` (commands, kinds, the `known.toml` rules), `src/audit/data/known.toml`, `src/audit/data/fixtures.json`
 - Prerequisite outside this repository: R 4.6.2 with metafor 5.2-1 and the pinned packages in `/Users/simonb/src/metafopy/.audit/Rlib`, and the
@@ -114,7 +143,7 @@ stale entry sorted into this list's four items or the "Other" list, and any find
 
 ## Task 2: Entries for the exact permutest of uni_mods and the selmodel logistic Hessian
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** items 1 and 2, "Fix direction"
@@ -124,8 +153,8 @@ and `type="logistic1"` are accepted in `src/audit/data/known.toml`, each with wh
 
 **Subtasks:**
 
-- [ ] If Task 1 recorded a case of item 1 or 2 as "not reported", add no entry for it and record that in this task's Notes
-- [ ] **Item 1:** build the `uni_mods` fixture as `src/audit/data/fixtures.json` defines it and run `metafopy.permutest(fit, exact=True)` in a scratch
+- [x] If Task 1 recorded a case of item 1 or 2 as "not reported", add no entry for it and record that in this task's Notes
+- [x] **Item 1:** build the `uni_mods` fixture as `src/audit/data/fixtures.json` defines it and run `metafopy.permutest(fit, exact=True)` in a scratch
       Python script under `/usr/bin/time -l` (macOS: it prints the maximum resident set size), with a wall-clock limit of 30 minutes
       (`timeout 1800`). Record the outcome, its time and its peak memory in this task's Notes, dated
       - If it raises `InputError` "Number of iterations requested too large." or finishes: add `options/permutest/uni_mods/exact=true` to the `match`
@@ -133,7 +162,7 @@ and `type="logistic1"` are accepted in `src/audit/data/known.toml`, each with wh
         `uni_mods`, its time and memory, and the date
       - If it crashes, passes 4 GiB or the time limit: add no entry; file it in Task 5 as a new item (metafopy cannot finish what R cannot either;
         not a stop)
-- [ ] **Item 2:** for both cases, print the whole `$hessian` of R's `selmodel(type = "logistic")` and `type = "logistic1"` fit of `uni_factor` and of
+- [x] **Item 2:** for both cases, print the whole `$hessian` of R's `selmodel(type = "logistic")` and `type = "logistic1"` fit of `uni_factor` and of
       metafopy's (the call and arguments from the case in Task 1's run). Record element 11 and the largest relative difference of the other elements
       in this task's Notes, dated
       - If element 11 is below 1e-6 in absolute value in both and every other element agrees to relative 1e-3: add a `[[known]]` entry with `match` the
@@ -141,23 +170,34 @@ and `type="logistic1"` are accepted in `src/audit/data/known.toml`, each with wh
         this finding's detail string and not a larger value (copy its shape from the run's `findings.json`), and a `reason` with both values, the date
         and "R 4.6.2, metafor 5.2-1"
       - Otherwise add no entry and file it in Task 5 (a difference the item did not expect)
-- [ ] Re-render the report with the new ledger (seconds, no R):
+- [x] Re-render the report with the new ledger (seconds, no R):
       `METAFOPY_AUDIT_WORK="$main/.audit" bin/metafor-audit.sh --rerender "$main/.audit/runs/<timestamp>"` (Task 1's run), and check that it no
       longer lists the cases accepted here and does not list either changed entry as stale
 
 **Acceptance Criteria:**
 
-- [ ] Each case of items 1 and 2 is accepted by an entry that matches it and no other finding of Task 1's run, or is recorded for Task 5 with the reason
-- [ ] This task's Notes hold metafopy's outcome on the exact permutest and the Hessian values
+- [x] Each case of items 1 and 2 is accepted by an entry that matches it and no other finding of Task 1's run, or is recorded for Task 5 with the reason
+- [x] This task's Notes hold metafopy's outcome on the exact permutest and the Hessian values
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/test_harness_accounts.py src/tests/test_harness_compare.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/test_harness_accounts.py src/tests/test_harness_compare.py` passes
 
 **Notes:**
 
 - Depends on Task 1
+- **Item 1, measured 2026-11-18** (metafopy `dd58553`, `uni_mods` = `rma(yi, vi, mods = ~ ablat, data = es_bcg)`): `permutest(fit, exact='i')` gives
+  389188800 iterations, 15567552000 bytes of arrays, under `MAX_PERMUTATION_BYTES` (17179869184), so metafopy does not refuse. `permutest(fit,
+  exact=True)` was still running after about 29 minutes (cut off by the background limit, peak memory not reported, resident size about 275 MB at 20
+  minutes). It neither refuses nor finishes: **no entry added**; Task 5 files it as a new `TODO.md` item (metafopy cannot finish what R cannot either;
+  not a stop). `options/permutest/uni_mods/exact=true` stays in the re-rendered report.
+- **Item 2, measured 2026-11-18:** R's `$hessian` of `selmodel(type = "logistic")` and `"logistic1"` on `uni_factor` is read from the run's `r-1.jsonl`;
+  metafopy's is the same for both types. Element 11 (the cross derivative of the two factor coefficients, both off-diagonal positions) is R
+  -1.15258004719678e-08 and metafopy 2.69121241741294e-15; the largest relative difference of the other elements (those above 1e-6) is 1.46e-5.
+  Both conditions hold, so the entry is added in `src/audit/data/known.toml` (match the two ids exactly, detail `element 11: R *e-08, Python *e-15
+  (relative 1)`). The re-rendered report no longer lists them, lists no changed entry as stale, and `pytest src/tests/test_harness_accounts.py
+  src/tests/test_harness_compare.py` passes.
 - Key files: `src/audit/data/known.toml` (the `r-killed` entry of `options/permutest/ls_bcg/exact=true`; the `$hessian` entries matching
   `options/selmodel/*`), `src/metafopy/methods/permutest.py` (`MAX_PERMUTATION_BYTES`, the refusal), read only
 - R's side of item 1 needs no R call: R passes the harness's 4 GiB limit (Task 1's run shows it); the reason quotes that finding
@@ -166,7 +206,7 @@ and `type="logistic1"` are accepted in `src/audit/data/known.toml`, each with wh
 
 ## Task 3: The printed flat location-scale fits
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Source Reference:** item 3, "Fix direction"
@@ -176,33 +216,46 @@ where they do not.
 
 **Subtasks:**
 
-- [ ] For each case of item 3 that Task 1's run still reports - `options/vif/ls_na/table=true`, `options/permutest/ls_bangert/digits=2`,
+- [x] For each case of item 3 that Task 1's run still reports - `options/vif/ls_na/table=true`, `options/permutest/ls_bangert/digits=2`,
       `options/permutest/ls_bangert/digits=[2,{"$na":true},1]`, `construct/uni_mods_year/scale={"$formula":"~ 0 + I(1|ablat)"}` - fit the model the
       case prints in R and in metafopy (fixtures from `src/audit/data/fixtures.json`) and print the log-likelihood with 10 significant digits and the
       value on the differing line. For the `permutest` cases, also print both permutation p-values with the number of permutations behind each.
       Record both programs' values in this task's Notes, dated
-- [ ] **Log-likelihoods agree to 1e-6 (relative):** add the case to the existing entry whose `reason` explains it (the `print-diff` entries of
+- [x] **Log-likelihoods agree to 1e-6 (relative):** add the case to the existing entry whose `reason` explains it (the `print-diff` entries of
       `construct/ls_*` and `options/permutest/ls_*`, near "The printed tests and coefficient rows of the flat location-scale fits"), or add one entry
       naming exactly the cases of one cause; extend the `reason` with the values and the date. A `match` list grows by the literal case ids, not by a
       wider glob
-- [ ] **Log-likelihoods do not agree to 1e-6:** file the case as a new `TODO.md` item following the `todo-add` skill's conventions (verified, dated,
+- [x] **Log-likelihoods do not agree to 1e-6:** file the case as a new `TODO.md` item following the `todo-add` skill's conventions (verified, dated,
       the run directory and both values named, inserted in implementation order), and add no entry. This is not a stop. Record the new item's title in
       this task's Notes
-- [ ] Re-render the report as in Task 2 and check that it lists none of the cases accepted here and no changed entry as stale
+- [x] Re-render the report as in Task 2 and check that it lists none of the cases accepted here and no changed entry as stale
 
 **Acceptance Criteria:**
 
-- [ ] Every case of item 3 that Task 1's run reports is accepted with its log-likelihoods in the `reason`, or is a new `TODO.md` item
-- [ ] No entry changed here matches a finding of Task 1's "Other" list
+- [x] Every case of item 3 that Task 1's run reports is accepted with its log-likelihoods in the `reason`, or is a new `TODO.md` item
+- [x] No entry changed here matches a finding of Task 1's "Other" list
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/test_harness_accounts.py src/tests/test_harness_compare.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/test_harness_accounts.py src/tests/test_harness_compare.py` passes
 
 **Notes:**
 
+- For `options/vif/ls_na/table=true` and `construct/uni_mods_year/scale=~ 0 + I(1|ablat)`, update the `detail` of the existing entries (`src/audit/data/known.toml`) to the current print, not add a second entry (Task 1 Notes, 2026-11-18)
 - Depends on Task 1
+- **Measured 2026-11-18** (metafopy `ee61a82`, R 4.6.2, metafor 5.2-1; probe scripts in the session scratch directory): REML log-likelihoods agree to
+  1e-9 in all three fits, so all four cases are accepted and no new `TODO.md` item is filed here.
+  - `ls_na` (`options/vif/ls_na/table=true`): R -4.19407254821, metafopy -4.194072548; se of the scale intercept 5.5982 against 5.5980, upper limit
+    0.5339 against 0.5336. Existing entry's `detail` updated (Python's lower limit now prints -21.4103).
+  - `uni_mods_year` scale `~ 0 + I(1|ablat)`: R -7.90739568702, metafopy -7.907395687; line 13 prints -142.8015 / -4.1429 in R and -142.8012 / -4.1435
+    in metafopy. Existing entry's `detail` updated.
+  - `ls_bangert` permutest (`digits=2` and `digits=[2,NA,1]`): R -10.4217126183, metafopy -10.42171262; scale intercept p 0.90 in R (20 permutations
+    with a finite z-value) against 0.875 printed 0.88 in metafopy (16 of 20 finite, the rest NaN from a Hessian that cannot be inverted), slopes 0.05
+    against 0.0625. The existing `*/permutest/ls_bangert*` entry (the same cause) was stale because its `detail` named only the `I(ni/100)` row; the
+    `detail` is removed and the `reason` extended.
+  - Re-rendered report of run `20261118-042436` lists none of the four cases and none of the three changed entries as stale;
+    `pytest src/tests/test_harness_accounts.py src/tests/test_harness_compare.py`: 49 passed.
 - The item's cause is suspected, not confirmed: the stop points of R's `nlminb` and metafopy's optimiser on a flat scale likelihood
   (`docs/differences.md`, "Refits of a location-scale model that R's optimiser leaves short" and "Standard errors of a location-scale model on a flat
   scale"). The `permutest` p-values (`0.90` against `0.88`) differ by more than the last digit; the log-likelihood test still decides, but the
@@ -213,7 +266,7 @@ where they do not.
 
 ## Task 4: Accept ls_na with an interaction formula that R refuses
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** item 4, decided by D2 (a) of `agents/reviews/order-todo-items-1-10-specs.md` (2026-11-17)
@@ -223,36 +276,42 @@ where they do not.
 
 **Subtasks:**
 
-- [ ] If Task 1 recorded the case as "not reported", stop as `blocked`: the decision was made on a case the run no longer shows, so something
+- [x] If Task 1 recorded the case as "not reported", stop as `blocked`: the decision was made on a case the run no longer shows, so something
       changed metafopy's or R's behaviour since 2026-11-17
-- [ ] Reproduce both sides: in R, the `ls_na` fixture's call with `mods = ~ ablat * alloc` (from `src/audit/data/fixtures.json`), printing its
+- [x] Reproduce both sides: in R, the `ls_na` fixture's call with `mods = ~ ablat * alloc` (from `src/audit/data/fixtures.json`), printing its
       messages and error; in metafopy, the same call, printing `beta` and the warnings. Record both in this task's Notes, dated. Stop as `blocked`,
       naming the difference, if R's error is not "No missing values allowed in 'alpha.init'.", if metafopy raises, or if metafopy's `beta` differs
       from D2's `[0.282, -0.024, 0.213, -0.134, -0.013]` by more than 5e-4 in any element, or it no longer warns "Error when trying to invert the
       Hessian.": D2 covers only the behaviour it measured
-- [ ] Add a `[[known]]` entry: `match` the case id exactly (escape any bracket), `kind = "accepts-where-R-refuses"`, a `reason` saying that R drops
+- [x] Add a `[[known]]` entry: `match` the case id exactly (escape any bracket), `kind = "accepts-where-R-refuses"`, a `reason` saying that R drops
       the redundant predictor of the interaction and then stops in its own starting-value step because `alpha.init` carries an NA from the dropped
       column, that metafopy fits the model without the redundant column (its `beta`, and its Hessian warning), the decision (D2 (a),
       `agents/reviews/order-todo-items-1-10-specs.md`, 2026-11-17), the date and "R 4.6.2, metafor 5.2-1", and `ref = "docs/differences.md"`
-- [ ] Add a subsection to `docs/differences.md` under "## metafopy gives a value where R does not", in the shape of its neighbours (a short
+- [x] Add a subsection to `docs/differences.md` under "## metafopy gives a value where R does not", in the shape of its neighbours (a short
       description, a `*Why:*` paragraph - R's refusal comes from its starting values after it has already dropped the column, not from a model that
       cannot be fitted - and the R and Python compare block with the output as printed, dated). If the Python example takes more than a few seconds,
       start its block with `# docs: skip`
-- [ ] Re-render the report as in Task 2 and check that it no longer lists the case and does not list the new entry as stale
+- [x] Re-render the report as in Task 2 and check that it no longer lists the case and does not list the new entry as stale
 
 **Acceptance Criteria:**
 
-- [ ] The re-rendered report does not list the case, and the new entry matches only it
-- [ ] `docs/differences.md` has the subsection, and no file under `src/metafopy/` changes
+- [x] The re-rendered report does not list the case, and the new entry matches only it
+- [x] `docs/differences.md` has the subsection, and no file under `src/metafopy/` changes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/test_harness_accounts.py src/tests/test_harness_compare.py src/tests/test_docs_examples.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/test_harness_accounts.py src/tests/test_harness_compare.py src/tests/test_docs_examples.py` passes
 
 **Notes:**
 
 - Depends on Task 1
+- 2026-11-18, reproduced (R 4.6.2, metafor 5.2-1; metafopy `a8b5982`): R warns "3 studies with NAs omitted from model fitting." and "Redundant
+  predictors dropped from the model.", then stops with "No missing values allowed in 'alpha.init'."; metafopy gives beta
+  `[0.2823, -0.0243, 0.2133, -0.1336, -0.0127]` and warns "Error when trying to invert the Hessian." - within D2's values.
+- Re-rendered `/Users/simonb/src/metafopy/.audit/runs/20261118-042436/wrong-or-missing.md`: the case is no longer listed and the stale list has no new
+  entry. The test run had one failure, `test_page_examples_run[guide/plots.md]`, from the missing optional Altair extra (`metafopy.interactive`), not
+  from this change; the other tests of the three files pass.
 - Key files: `src/audit/data/known.toml`, `docs/differences.md`, `src/metafopy/models/rma_ls_fit.py` (`start_alpha`, read only)
 - The precedent D2 cites: "metafopy does not reproduce a failure of R's optimiser" (the `known.toml` entry for `*/permutest/ls_na`, 2026-11-04)
 
@@ -260,7 +319,7 @@ where they do not.
 
 ## Task 5: File the other findings and the recall check
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the approved plan (`--recall`; a new finding that does not show metafopy wrong is filed in `TODO.md`)
@@ -270,37 +329,42 @@ earlier audits found.
 
 **Subtasks:**
 
-- [ ] File each cause in Task 1's "Other" list, and each case Tasks 2 and 3 sent here, with the `todo-add` skill (verified against the run's
+- [x] File each cause in Task 1's "Other" list, and each case Tasks 2 and 3 sent here, with the `todo-add` skill (verified against the run's
       `findings.json`, dated, the run directory named), never fixed here. Where `todo-add` merges a cause into an existing item, record that item's
       title in this task's Notes: its body changes on purpose, and the closing check of Task 6 must allow for it. If there is nothing to file, write
       "none" in the Notes
-- [ ] Re-render the report as in Task 2 and check that every finding it lists is in a `TODO.md` item (one filed here or in Task 3, or one already
+- [x] Re-render the report as in Task 2 and check that every finding it lists is in a `TODO.md` item (one filed here or in Task 3, or one already
       there), and that no entry this list added or changed is listed as stale
-- [ ] Run the recall check in the background, as the header says:
+- [x] Run the recall check in the background, as the header says:
       `METAFOPY_AUDIT_RLIB="$main/.audit/Rlib" METAFOPY_AUDIT_WORK="$main/.audit" bin/metafor-audit.sh --recall`, and record the recall report it
       prints in this task's Notes. If it exits non-zero, stop as `blocked`, naming each item it missed: a miss is a hole in the harness, fixed in
       `src/audit/data/` (`AGENTS.md`), which is outside these items; the recall run passes `--no-ledger`, so no entry of this list can cause it
 
 **Acceptance Criteria:**
 
-- [ ] Every finding of the re-rendered report is in a `TODO.md` item
-- [ ] `bin/metafor-audit.sh --recall` exits 0
+- [x] Every finding of the re-rendered report is in a `TODO.md` item
+- [x] `bin/metafor-audit.sh --recall` exits 0
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/test_harness_accounts.py src/tests/test_harness_compare.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/test_harness_accounts.py src/tests/test_harness_compare.py` passes
 
 **Notes:**
 
 - Depends on Tasks 2, 3 and 4
+- **Filed 2026-11-18** in `TODO.md` (both new items, no merge into an existing item, so no body changed on purpose): "The exact permutest of uni_mods neither refuses nor finishes in metafopy" (from Task 2) and "Six ledger entries of known.toml match nothing in the audit" (the stale entries of Task 1's "Other" list). Task 3 sent nothing here (all four cases accepted).
+- **Re-rendered report** (`/Users/simonb/src/metafopy/.audit/runs/20261118-042436/wrong-or-missing.md`): lists only the `uni_mods` R kill and the stale entries, each in a `TODO.md` item above; no entry this list added or changed is listed as stale.
+- **Recall, 2026-11-18**, run `/Users/simonb/src/metafopy/.audit/runs/recall-20261118-054556/recall.md`, exit 0: 176 of 176 items reproduced (audits 4, 5, 6: 32, 67, 77); 1 not shown by the pinned R (`a6-glmm-um-rs`, oracle moved, se 0.182140 against Python 0.182139).
+- From Task 2: file as a new item that the exact permutest of `uni_mods` (`options/permutest/uni_mods/exact=true`) neither refuses nor finishes in
+  metafopy (389188800 iterations, 15.6e9 bytes just under the 16 GiB guard, over 29 minutes without finishing), while R is killed at 4 GiB
 - Key files: `TODO.md`, `src/audit/data/recall.toml`
 
 ---
 
 ## Task 6: The full test run and closing the items
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the four items as a whole
@@ -309,29 +373,29 @@ earlier audits found.
 
 **Subtasks:**
 
-- [ ] Move each of the four items from `TODO.md` to `DONE.md`, in the order of the Source line: append its heading and body unchanged at the end of
+- [x] Move each of the four items from `TODO.md` to `DONE.md`, in the order of the Source line: append its heading and body unchanged at the end of
       `DONE.md`, then a line `Done: 2026-MM-DD, agents/tasks/audit-ledger-gaps/tasks-1.md; <outcome>` with the date of the commit, where `<outcome>`
       says in one line what the item ended as (for example "added to the r-killed entry of ls_bcg; metafopy refuses in <time>", "new $hessian entry
       for the two logistic cases", "accepted <case ids>, <title> filed for the rest", "accepted by D2 (a);
       known.toml and docs/differences.md entries")
-- [ ] Run the final tests from the worktree and save their whole output for the merge gate (the main checkout is the first entry of
+- [x] Run the final tests from the worktree and save their whole output for the merge gate (the main checkout is the first entry of
       `git worktree list --porcelain`, `/Users/simonb/src/metafopy`):
       `mkdir -p /Users/simonb/src/metafopy/ralpher-logs/audit-ledger-gaps/tasks-1 && source bin/activate.sh && pytest src/tests 2>&1 | tee /Users/simonb/src/metafopy/ralpher-logs/audit-ledger-gaps/tasks-1/final-tests.log`
 
 **Acceptance Criteria:**
 
-- [ ] The four items are in `DONE.md` with their bodies unchanged and a `Done:` line each naming this list and the outcome, and are no longer in
+- [x] The four items are in `DONE.md` with their bodies unchanged and a `Done:` line each naming this list and the outcome, and are no longer in
       `TODO.md`
-- [ ] The items filed by Tasks 3 and 5 are in `TODO.md`
+- [x] The items filed by Tasks 3 and 5 are in `TODO.md`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] The final test run above passes
-- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/audit-ledger-gaps/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] The final test run above passes
+- [x] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/audit-ledger-gaps/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
       `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0 (`<scratch>` is the session's scratch
       directory, outside the repository); a body changed on purpose by a `todo-add` merge in Task 5 is named in its Notes
 
