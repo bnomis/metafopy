@@ -74,6 +74,23 @@ def test_an_exact_test_too_large_to_allocate_is_refused_as_in_r(fit: metafopy.RM
         metafopy.permutest(fit, exact=True)
 
 
+def test_an_exact_test_whose_permutation_matrix_r_cannot_hold_is_refused() -> None:
+    # 389188800 x (2 x 2 + 1 + 13) x 8 = 56043187200 bytes (the arrays and R's matrix of every permutation), over 16 GiB: R is killed or stops for
+    # memory on this call, so metafopy refuses it at once
+    fit = metafopy.rma_uni('yi', 'vi', mods='~ ablat', data=refutil.bcg())
+    assert metafopy.permutest(fit, exact='i') == 389188800
+    with pytest.raises(metafopy.errors.InputError, match='Number of iterations requested too large'):
+        metafopy.permutest(fit, exact=True)
+
+
+def test_permutation_arrays_count_r_permutation_matrix(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(metafopy.methods.permutest, 'MAX_PERMUTATION_BYTES', 10000)
+    arrays = metafopy.methods.permutest.permutation_arrays(100, 2)
+    assert [a.shape for a in arrays] == [(100, 2), (100, 2), (100,)]
+    with pytest.raises(metafopy.errors.InputError, match='Number of iterations requested too large'):
+        metafopy.methods.permutest.permutation_arrays(100, 2, perm_cols=13)
+
+
 def test_unique_permutations_are_generated_one_at_a_time() -> None:
     perms = metafopy.methods.permutest.multiset_perms(numpy.array([1, 1, 3]))
     assert iter(perms) is perms

@@ -195,7 +195,7 @@ def beta_permutations(
     skiphes = not x.optbeta
     gen = None if exact else draw_generator(seed)
     n_col = 1 if x.int_only else p
-    zval, beta, QM = metafopy.methods.permutest.permutation_arrays(n_iter, n_col)
+    zval, beta, QM = metafopy.methods.permutest.permutation_arrays(n_iter, n_col, perm_cols=k if exact else 0)
 
     def store(i: int, fit: metafopy.models.rma_ls_result.RMALSResult | None) -> bool:
         if fit is None:
@@ -256,7 +256,7 @@ def alpha_permutations(
     alpha_arg = numpy.where(x.alpha_fix, x.alpha, numpy.nan)
     beta_arg = numpy.where(x.beta_fix, x.beta, numpy.nan) if x.optbeta else None
     gen = None if exact else draw_generator(seed)
-    zval, alpha, QS = metafopy.methods.permutest.permutation_arrays(n_iter, q)
+    zval, alpha, QS = metafopy.methods.permutest.permutation_arrays(n_iter, q, perm_cols=k if exact else 0)
 
     def store(i: int, fit: metafopy.models.rma_ls_result.RMALSResult | None) -> bool:
         if fit is None:
@@ -346,7 +346,8 @@ def permutest_rma_ls(
     Raises:
         metafopy.errors.InputError: ``iter`` is below 2; ``skip_beta`` and ``skip_alpha`` are both set (or the scale model has only an intercept
             and ``skip_beta`` is set); ``btt`` or ``att`` matches no coefficient; a ``control`` entry is not accepted; an exact test needs more
-            iterations than can be allocated (R stops with an error as well).
+            iterations than the largest float, or more memory than R's exact test can hold in 16 GiB (its arrays and its matrix of every
+            permutation; R stops with an error as well).
         metafopy.errors.ArgumentError: ``control`` has an unknown entry.
 
     Metafor reference:

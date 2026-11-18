@@ -1,7 +1,7 @@
 # permutest: refuse an exact test whose permutation matrix R cannot hold
 
 **Version:** 1.1
-**Status:** approved
+**Status:** implemented
 **Date:** 2026-11-18
 
 `permutest(fit, exact=True)` refuses a test only when its arrays of permutation statistics would pass `MAX_PERMUTATION_BYTES` (16 GiB). R's exact
@@ -80,7 +80,6 @@ very long time.
 One keyword is added to an internal helper; no public signature changes.
 
 ```python
-# auditme: accept[spec-api-signature-drift] approved 2026-11-18, not built yet: agents/tasks/permutest-exact-limit/tasks-1.md adds perm_cols and removes this line
 def permutation_arrays(n_iter: int, width: int, perm_cols: int = 0) -> tuple[FloatArray, FloatArray, FloatArray]:
     """Arrays for the test statistics, the coefficients (``n_iter`` x ``width`` each) and the omnibus statistic (``n_iter``) of each permutation.
 

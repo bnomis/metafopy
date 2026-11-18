@@ -1298,3 +1298,26 @@ Spec: none yet.
 Spec: `agents/specs/ls-profile-starts/spec.md`; tasks: `agents/tasks/ls-profile-starts/tasks-1.md`.
 
 Done: 2026-11-18, agents/tasks/ls-profile-starts/tasks-1.md; LINE_WEIGHTS gains 1.5 and 2.0, the upper bound of alpha.2 is the crossing 1.3812 and ls.confint.scale.ML.bcg passes (agents/specs/ls-profile-starts/spec.md)
+
+## The exact permutest of uni_mods neither refuses nor finishes in metafopy
+
+<!-- doc-counts: accept-start measured on 2026-11-18 - a dated record, not a claim about the present -->
+Measured on 2026-11-18 by Task 2 of `agents/tasks/audit-ledger-gaps/tasks-1.md` (metafopy `dd58553`; full audit run
+`.audit/runs/20261118-042436`, case `options/permutest/uni_mods/exact=true`, kind `r-killed`, "R passed the memory limit of 4 GiB (killed)"): for
+`rma(yi, vi, mods = ~ ablat, data = es_bcg)`, `permutest(fit, exact='i')` reports 389188800 iterations and 15567552000 bytes of arrays, just under
+`MAX_PERMUTATION_BYTES` (17179869184) in `src/metafopy/methods/permutest.py`, so metafopy does not refuse. `permutest(fit, exact=True)` was still running
+after about 29 minutes (cut off by the background limit) at about 275 MB resident at 20 minutes.
+<!-- doc-counts: accept-end -->
+
+Cause: the guard bounds the size of the arrays, not the run time, so a case R cannot hold in 4 GiB passes the guard and runs for a very long time. The
+case stays listed as an R kill in the audit report because no entry can say what metafopy does.
+
+Fix direction: decide whether metafopy should refuse an exact permutest whose iteration count R cannot hold (a limit on iterations, as R's "Number of
+iterations requested too large." is), or finish it faster; then add the case to the `r-killed` entry of `options/permutest/ls_bcg/exact=true` in
+`src/audit/data/known.toml`. Needs a spec if the guard changes.
+
+Spec: none yet.
+
+Spec: `agents/specs/permutest-exact-limit/spec.md`; tasks: `agents/tasks/permutest-exact-limit/tasks-1.md`.
+
+Done: 2026-11-18, agents/tasks/permutest-exact-limit/tasks-1.md; option (a), the byte guard counts R's matrix of every permutation, so the exact tests of uni_mods and ls_bcg raise InputError (agents/specs/permutest-exact-limit/spec.md, D1 answered 2026-11-18 in agents/reviews/order-todo-items-1-5-specs.md)

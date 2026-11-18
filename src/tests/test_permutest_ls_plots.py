@@ -99,3 +99,13 @@ def test_an_exact_test_too_large_to_allocate_is_refused_as_in_r() -> None:
         fit = metafopy.rma_uni('yi', 'vi', mods='~ ablat + year', scale='~ ablat + year', data=refutil.bcg())
     with pytest.raises(metafopy.errors.InputError, match='Number of iterations requested too large'):
         metafopy.permutest(fit, exact=True)
+
+
+def test_an_exact_test_whose_permutation_matrix_r_cannot_hold_is_refused() -> None:
+    # 389188800 location permutations x (2 x 2 + 1 + 13) x 8 bytes is over 16 GiB with R's matrix of every permutation: R is killed or stops for memory
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        fit = metafopy.rma_uni('yi', 'vi', mods='~ ablat', scale='~ alloc', data=refutil.bcg())
+        assert metafopy.permutest(fit, exact='i') == [389188800, 25740]
+        with pytest.raises(metafopy.errors.InputError, match='Number of iterations requested too large'):
+            metafopy.permutest(fit, exact=True)

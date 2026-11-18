@@ -1136,6 +1136,58 @@ NotSupportedError: Method not available for objects of class "rma.mh".
 </div>
 </div>
 
+### permutest(exact=TRUE) beyond what R can hold
+
+Both refuse. R's exact test holds three arrays of permutation statistics and the matrix of every permutation, so a test with hundreds of
+millions of permutations needs tens of gigabytes. R is killed or stops for memory; metafopy counts the same bytes against a fixed 16 GiB on every
+platform and raises R's own error at once. Use `exact=False` with a larger `iter` instead.
+
+<div class="compare" markdown>
+<div markdown>
+
+**R, metafor 5.2-1**
+
+```r
+library(metafor)
+dat <- escalc(measure = "RR", ai = tpos, bi = tneg, ci = cpos, di = cneg, data = dat.bcg)
+permutest(rma(yi, vi, mods = ~ ablat, data = dat), exact = TRUE)
+```
+
+```text
+Running 389188800 iterations for an exact permutation test.
+Error in permutest.rma.uni(res, exact = TRUE) :
+  Number of iterations requested too large.
+```
+
+R stops with this error only when its memory is limited (`R_MAX_VSIZE=4Gb` here). Without a limit it allocates 14.5 GiB of arrays and is
+killed or stops for memory.
+
+</div>
+<div markdown>
+
+**Python, metafopy**
+
+```python
+# docs: skip
+from metafopy import datasets, escalc, permutest, rma_uni
+
+dat = escalc(measure='RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=datasets.load('dat.bcg'))
+res = rma_uni('yi', 'vi', mods='~ ablat', data=dat)
+permutest(res, exact=True)
+```
+
+```text
+InputError: Number of iterations requested too large.
+```
+
+</div>
+</div>
+
+*Why:* 389188800 permutations need 389188800 x 5 x 8 = 15567552000 bytes of arrays and 389188800 x 13 x 8 = 40475635200 bytes of permutation
+matrix, 56043187200 bytes against 16 GiB. Without the matrix in the count metafopy would run for days where R could never confirm the result;
+the decision to count it was answered on 2026-11-18 (D1 of `agents/reviews/order-todo-items-1-5-specs.md`, `agents/specs/permutest-exact-limit/spec.md`).
+Checked on 2026-11-18 with R 4.6.2 and metafor 5.2-1. The same holds for the location-scale `ls_bcg` model of the audit.
+
 ### vcov(type="resid") under na.fail
 
 With `options(na.action="na.fail")` R stops with the internal error "object 'out' not found" when the fit has studies with missing

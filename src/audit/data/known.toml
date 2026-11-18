@@ -967,9 +967,9 @@ reason = "permutest(iter = 20, seed = 1) of ls_bangert: at the 17th permutation 
 ref = "docs/differences.md"
 
 [[known]]
-match = "options/permutest/ls_bcg/exact=true"
+match = ["options/permutest/ls_bcg/exact=true", "options/permutest/uni_mods/exact=true"]
 kind = "r-killed"
-reason = "The exact permutation test of ls_bcg enumerates every permutation of the scale model and R passes the harness's 4 GiB memory limit; metafopy has nothing to compare with."
+reason = "Both exact permutation tests need 389188800 permutations: R allocates 14.5 GiB of arrays and passes the harness's 4 GiB limit while filling them, and would next need 37.7 GiB for its matrix of every permutation. metafopy refuses with R's 'Number of iterations requested too large.' (checked 2026-11-18, R 4.6.2, metafor 5.2-1)."
 ref = "docs/differences.md"
 
 [[known]]
@@ -1993,6 +1993,13 @@ match = ["scripts/misc_rma_ls/test/21", "scripts/misc_rma_ls/test/42", "scripts/
 kind = "value-diff"
 path = ["$random", "[]$random", "$vc", "$pred", "$se", "$ci.ub"]
 reason = "confint(), profile() and predict() of the identity-link location-scale fits of test_misc_rma_ls.r (link = 'identity'): R's constrOptim stops about 1e-5 short of the identity-link maximum, metafopy polishes the optimum on the analytic score within Z alpha >= 0, so the profile grids, intervals and predictions differ by up to 1e-2 relative."
+ref = "docs/differences.md"
+
+[[known]]
+match = ["scripts/misc_rma_ls/test/65", "scripts/misc_rma_ls/test/67"]
+kind = "value-diff"
+path = ["$lb.sign", "[]$lb.sign"]
+reason = "confint(rma(yi, vi, scale = ~ grade, link = 'identity'), alpha = 1) of dat.bangertdrowns2004: R stops the lower bound of alpha.1 at -0.00137 with '<' because its refits fail below -0.005, while metafopy finds the crossing at -0.02498; the refit there is feasible (tau2_i at least 0.19 at every grade) and metafopy's profile equals R's where R has one (-19.30499 at -0.005). Checked 2026-11-18."
 ref = "docs/differences.md"
 
 [[known]]
