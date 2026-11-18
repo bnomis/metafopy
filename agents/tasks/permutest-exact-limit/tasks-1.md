@@ -186,7 +186,7 @@ error why metafopy refuses and what to use instead.
 
 ## Task 3: Run the audit and its recall check
 
-**Status:** in-progress
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Tests and records, item 6 (the audit); Acceptance, second item
@@ -196,31 +196,31 @@ stale, and no other case is newly refused.
 
 **Subtasks:**
 
-- [ ] Run the whole audit from the worktree, in the background:
+- [x] Run the whole audit from the worktree, in the background:
       `METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib bin/metafor-audit.sh` (a whole run, since only a whole run reports stale ledger
       entries, `src/audit/README.md`). If `check-r` reports that the R library is missing or differs from `src/audit/data/r-versions.json`, stop as
       `blocked` and say so; never pass `--allow-r-drift`
-- [ ] Check its report (`wrong-or-missing.md` of the run): it lists neither `options/permutest/uni_mods/exact=true` nor
+- [x] Check its report (`wrong-or-missing.md` of the run): it lists neither `options/permutest/uni_mods/exact=true` nor
       `options/permutest/ls_bcg/exact=true`, and does not report the changed `r-killed` entry as stale. If either case is listed under a kind other
       than `r-killed`, stop as `blocked`, naming the kind and detail (the spec's entry is `r-killed`)
-- [ ] Compare the run's findings with those of the full run `/Users/simonb/src/metafopy/.audit/runs/20261118-042436` (`findings.json`, the run the
+- [x] Compare the run's findings with those of the full run `/Users/simonb/src/metafopy/.audit/runs/20261118-042436` (`findings.json`, the run the
       spec measured): **stops for the operator: a test or audit case besides `uni_mods` and `ls_bcg` with `exact=True` is refused.** Only if another
       case's metafopy side now raises "Number of iterations requested too large": report each case id with its exact count. Any other finding that
       run does not hold stops the task as `blocked`, naming it
-- [ ] Run `METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib bin/metafor-audit.sh --recall`, in the background. A miss stops the task as
+- [x] Run `METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib bin/metafor-audit.sh --recall`, in the background. A miss stops the task as
       `blocked`, naming the item (`AGENTS.md`: a miss is fixed in the harness, `src/audit/data/`, which is outside this list)
-- [ ] Record in this task's Notes the run directories of both runs and what the report says of the two cases
+- [x] Record in this task's Notes the run directories of both runs and what the report says of the two cases
 
 **Acceptance Criteria:**
 
-- [ ] The whole audit lists neither exact case, reports no stale entry for the changed ledger entry and no finding new with this list
-- [ ] `bin/metafor-audit.sh --recall` reproduces every item
-- [ ] This task's Notes name both run directories
+- [x] The whole audit lists neither exact case, reports no stale entry for the changed ledger entry and no finding new with this list
+- [x] `bin/metafor-audit.sh --recall` reproduces every item
+- [x] This task's Notes name both run directories
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/test_harness_accounts.py` passes if `src/audit/data/known.toml` changed in this task
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/test_harness_accounts.py` passes if `src/audit/data/known.toml` changed in this task
 
 **Notes:**
 
@@ -240,6 +240,11 @@ stale, and no other case is newly refused.
   `scripts/misc_rma_ls/test/67` (`[]$lb.sign`), with a reason saying this, in the shape of the existing profile-bound entries; run
   `pytest src/tests/test_harness_accounts.py`; then run `bin/metafor-audit.sh --recall` as the subtask above says, and finish the task. If the
   `ci.lb` value of these cases is also listed and not yet accepted, cover it in the same entry; any other new finding still stops the task.
+
+- Done 2026-11-18: added the `known.toml` entry for `scripts/misc_rma_ls/test/65` and `/67` (`$lb.sign`, `[]$lb.sign`); `pytest
+  src/tests/test_harness_accounts.py` passes (13). Recall check `/Users/simonb/src/metafopy/.audit/runs/recall-20261118-164709`: 176 of 176 items
+  reproduced, one "oracle moved" item (`a6-glmm-um-rs`) as in the earlier recall run `recall-20261118-054556`. Whole audit run:
+  `/Users/simonb/src/metafopy/.audit/runs/20261118-153029`.
 
 - Depends on Task 2
 - If the worktree has no `.venv`, run with `PATH=/Users/simonb/src/metafopy/.venv/bin:$PATH`, as earlier lists did

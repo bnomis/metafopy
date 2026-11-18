@@ -1996,6 +1996,13 @@ reason = "confint(), profile() and predict() of the identity-link location-scale
 ref = "docs/differences.md"
 
 [[known]]
+match = ["scripts/misc_rma_ls/test/65", "scripts/misc_rma_ls/test/67"]
+kind = "value-diff"
+path = ["$lb.sign", "[]$lb.sign"]
+reason = "confint(rma(yi, vi, scale = ~ grade, link = 'identity'), alpha = 1) of dat.bangertdrowns2004: R stops the lower bound of alpha.1 at -0.00137 with '<' because its refits fail below -0.005, while metafopy finds the crossing at -0.02498; the refit there is feasible (tau2_i at least 0.19 at every grade) and metafopy's profile equals R's where R has one (-19.30499 at -0.005). Checked 2026-11-18."
+ref = "docs/differences.md"
+
+[[known]]
 match = ["scripts/misc_rma_uni_ls/test/18", "scripts/misc_rma_uni_ls/test/21"]
 kind = "value-diff"
 path = ""
