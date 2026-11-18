@@ -58,7 +58,7 @@ and the last task runs the full suite, as the run order requires.
 
 ## Task 1: The full audit and sorting its findings
 
-**Status:** in-progress
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Source Reference:** the approved plan (one full audit run after rows 2 and 3); each item's "Found on" paragraph
@@ -76,32 +76,32 @@ stale entry sorted into this list's four items or the "Other" list, and any find
         `options/selmodel/uni_factor/type=\"logistic\"`, `options/vif/ls_na/table=true`, `options/permutest/ls_bangert/digits=`,
         `construct/uni_mods_year/scale=`, `construct/ls_na/mods={\"$formula\":\"~ ablat * alloc\"}` (a wider glob that happens to cover one is
         not a clash; only a literal id is)
-- [ ] Run the full audit in the background, as the header says:
+- [x] Run the full audit in the background, as the header says:
       `METAFOPY_AUDIT_RLIB="$main/.audit/Rlib" METAFOPY_AUDIT_WORK="$main/.audit" bin/metafor-audit.sh`, and record the run directory it prints
       (`$main/.audit/runs/<timestamp>`) in this task's Notes, with its start and end time
-- [ ] Read the run's `wrong-or-missing-full.md` and the `new` list of its `findings.json`, and sort every finding, and every entry the report lists
+- [x] Read the run's `wrong-or-missing-full.md` and the `new` list of its `findings.json`, and sort every finding, and every entry the report lists
       as stale, into lists in this task's Notes, each line with its case id, `kind`, `path` and one line of detail:
       - **Item 1 to item 4:** the cases each item names (above and in its `TODO.md` body). A case an item names that the run no longer reports is
         recorded as "not reported" under its item
       - **Other:** everything else, each marked with its likely source: row 2 (an `rma_mv` fit or its methods, `agents/specs/rma-mv-reml-stop/spec.md`),
         row 3 (`selmodel` with a fixed `delta`, `agents/specs/selmodel-fixed-delta0/spec.md`), a stale entry, or unknown. Compare with
         `/Users/simonb/src/metafopy/.audit/runs/20261115-160207` (the last full run) to say which are new since it
-- [ ] For each finding in "Other", decide whether it shows metafopy's output wrong. It does **not** when one of these holds, recorded beside it:
+- [x] For each finding in "Other", decide whether it shows metafopy's output wrong. It does **not** when one of these holds, recorded beside it:
       (a) the spec of row 2 or 3 lists the change as intended; (b) R gives no value to compare (`r-killed`, an R timeout, an R error that metafopy
       reports as an error too); (c) it is a stop point of an optimiser on a flat likelihood, shown by an R call and a Python call whose
       log-likelihoods agree to 1e-6 or where metafopy's is the higher; (d) it is a stale entry (a ledger entry matching nothing). Otherwise, or if the
       task cannot tell, it does. **Stops for the operator: a finding of the full run that none of the four items covers and that shows metafopy's output
       wrong** - stop as `blocked`, naming the case, R's and metafopy's values and why none of (a) to (d) holds
-- [ ] Every finding in "Other" that does not stop is filed in Task 5, not here
+- [x] Every finding in "Other" that does not stop is filed in Task 5, not here
 
 **Acceptance Criteria:**
 
-- [ ] This task's Notes hold the run directory and the sorted lists, and every finding and stale entry of the run is in exactly one list
-- [ ] Every finding in "Other" carries (a), (b), (c) or (d), or the task stopped for the operator
+- [x] This task's Notes hold the run directory and the sorted lists, and every finding and stale entry of the run is in exactly one list
+- [x] Every finding in "Other" carries (a), (b), (c) or (d), or the task stopped for the operator
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
 
 **Notes:**
 
@@ -116,6 +116,24 @@ stale entry sorted into this list's four items or the "Other" list, and any find
   now prints `-21.4103 0.5336` where the entry says `-21.4102 0.5336`, and the `uni_mods_year` scale case now prints `-142.8012  -4.1435` where it says
   `-142.8013  -4.1436`. So both stay in the `new` list of `.audit/runs/20261115-160207` and `20261117-233604`. Task 3 updates the `detail` of those two
   entries (after its log-likelihood check), rather than adding new entries for them; the starting-point check is passed
+- **Full run, 2026-11-18** (metafopy `247bbb2`, R 4.6.2, metafor 5.2-1): run directory
+  `/Users/simonb/src/metafopy/.audit/runs/20261118-042436`, started 03:24:34 UTC and ended 04:01:46 UTC (about 37 minutes). The `new` list of its
+  `findings.json` holds 8 findings; each is in exactly one list below. (A first `--steps check-r` call made the empty run `20261118-042411`.)
+- **Item 1, exact permutest of `uni_mods`:** `options/permutest/uni_mods/exact=true`, `r-killed`, path empty, "R: R passed the memory limit of 4 GiB (killed)"
+- **Item 2, selmodel logistic Hessian:** `options/selmodel/uni_factor/type="logistic"` and `options/selmodel/uni_factor/type="logistic1"`, `value-diff`,
+  path `$hessian`, "element 11: R -1.15258004719678e-08, Python 2.69121241741294e-15 (relative 1)"
+- **Item 3, printed flat location-scale fits:** `options/vif/ls_na/table=true` (`print-diff`, line 7, R `5.5982 ... -21.4105 0.5339`, Python `5.5980 ...
+  -21.4103 0.5336`); `options/permutest/ls_bangert/digits=2` and `options/permutest/ls_bangert/digits=[2,{"$na":true},1]` (`print-diff`, line 12, R `0.90`,
+  Python `0.88`); `construct/uni_mods_year/scale={"$formula":"~ 0 + I(1|ablat)"}` (`print-diff`, line 13, R `-73.4722 ... -142.8015 -4.1429`, Python
+  `-73.4724 ... -142.8012 -4.1435`). The two stale-entry cases of the 2026-11-18 note above are the `vif` and `uni_mods_year` ones.
+- **Item 4, `ls_na` with an interaction formula:** `construct/ls_na/mods={"$formula":"~ ablat * alloc"}`, `accepts-where-R-refuses`, "R: No missing values
+  allowed in 'alpha.init'."
+- **Other:** no new finding. Stale ledger entries (category (d), a ledger entry matching nothing; none shows metafopy wrong): `scripts/misc_selmodel/*`
+  (`*sav <- selmodel(res, type = "beta")*`), `scripts/misc_coef_se/*` (`*sel <- selmodel(res, type = "beta")*`), `*/permutest/ls_bangert*`
+  (`I(ni/100)` print-diff), `scripts/misc_selmodel/test/41`, `options/predict/ls_na/newscale=*`, the `ls_year`/`permutest_ls*` `QM(df = 2) = 15.610[45]`
+  print-diff entry, the `print/sel_bcg` `98.1051` entry, and the two stale entries already described (`construct/uni_mods_year/scale=...`,
+  `options/vif/ls_na/table=true`, which are also Item 3 cases). Whether these stale entries are filed or removed is Task 5's work.
+- **Operator stop:** none; every finding is an item case, so none is a finding that no item covers.
 - Only this task list file changes
 - Key files: `src/audit/README.md` (commands, kinds, the `known.toml` rules), `src/audit/data/known.toml`, `src/audit/data/fixtures.json`
 - Prerequisite outside this repository: R 4.6.2 with metafor 5.2-1 and the pinned packages in `/Users/simonb/src/metafopy/.audit/Rlib`, and the
