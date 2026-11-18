@@ -35,3 +35,8 @@
 | [TODO.md: Simmonds and Higgins (2016) Fig 1](../../TODO.md) | [tasks-1.md](simmonds2016-fig1/tasks-1.md) - the marginal likelihood at tau2 0 and 0.213, the source difference and the coding=1 case, closing | 1 | 2026-11-17 |
 | [TODO.md: Stijnen et al. (2010) PN](../../TODO.md) | [tasks-1.md](stijnen2010-pn/tasks-1.md) - transcription and likelihood, the corrected treated data and the source difference, closing | 1 | 2026-11-17 |
 | [TODO.md: audit ledger gaps](../../TODO.md) | [tasks-1.md](audit-ledger-gaps/tasks-1.md) - the full audit, entries for the four items (ls_na by D2), other findings filed, recall, closing | 1 | 2026-11-17 |
+| [ls profile starts](../specs/ls-profile-starts/spec.md) | [tasks-1.md](ls-profile-starts/tasks-1.md) - regression tests and the two new starts, the records, the measured tests and closing | 1 | 2026-11-18 |
+| [permutest exact limit](../specs/permutest-exact-limit/spec.md) | [tasks-1.md](permutest-exact-limit/tasks-1.md) - count R's permutation matrix in the guard, the ledger and docs entries, the full audit, closing | 1 | 2026-11-18 |
+| [TODO.md: rma_mv funnel test skip](../../TODO.md) | [tasks-1.md](mv-funnel-skip/tasks-1.md) - remove has_mv_residuals and the skip, closing | 1 | 2026-11-18 |
+| [TODO.md: Bagos and Nikolopoulos (2009) Table 5](../../TODO.md) | [tasks-1.md](bagos2009-table5/tasks-1.md) - the ER-visit and school-absence cases, the mismatches.md correction, the Hooper item (D2), closing | 1 | 2026-11-18 |
+| [TODO.md: stale ledger entries](../../TODO.md) | [tasks-1.md](audit-stale-entries/tasks-1.md) - each entry's cases in R and metafopy, remove or narrow, the full audit and recall, closing | 1 | 2026-11-18 |

@@ -22,6 +22,8 @@ starts. Then `ls.confint.scale.ML.bcg` moves to `pass`.
 
 Spec: none yet.
 
+Spec: `agents/specs/ls-profile-starts/spec.md`; tasks: `agents/tasks/ls-profile-starts/tasks-1.md`.
+
 ## The exact permutest of uni_mods neither refuses nor finishes in metafopy
 
 <!-- doc-counts: accept-start measured on 2026-11-18 - a dated record, not a claim about the present -->
@@ -41,6 +43,8 @@ iterations requested too large." is), or finish it faster; then add the case to 
 
 Spec: none yet.
 
+Spec: `agents/specs/permutest-exact-limit/spec.md`; tasks: `agents/tasks/permutest-exact-limit/tasks-1.md`.
+
 ## Six ledger entries of known.toml match nothing in the audit
 
 <!-- doc-counts: accept-start found on 2026-11-18 - a dated record, not a claim about the present -->
@@ -59,6 +63,8 @@ another way, and rerun `bin/metafor-audit.sh` to see the report list no stale en
 
 Spec: none (small item).
 
+Spec: none (small item); tasks: `agents/tasks/audit-stale-entries/tasks-1.md`.
+
 ## Find the data behind Table 5 of Bagos and Nikolopoulos (2009)
 
 <!-- doc-counts: accept-start found on 2026-11-14 - a dated record, not a claim about the present -->
@@ -72,6 +78,8 @@ and standard deviations, not counts.
 Fix direction: find the original per-trial counts and person-times that reproduce Table 5 (the authors' supplementary data, or the primary trial
 reports), then write the published cases in `src/tests/correctness/cases/glmm_published.toml`.
 
+Spec: none (small item); tasks: `agents/tasks/bagos2009-table5/tasks-1.md`.
+
 ## The rma_mv funnel test still skips when rstandard is missing
 
 <!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
@@ -81,6 +89,8 @@ Found on 2026-11-15 by a TODO review. `test_funnel_matches_metafor` in `src/test
 <!-- doc-counts: accept-end -->
 
 Fix direction: confirm the `mvm` case runs, then remove `has_mv_residuals` and the skip.
+
+Spec: none (small item); tasks: `agents/tasks/mv-funnel-skip/tasks-1.md`.
 
 ## Correctness coverage the extension specs left for later
 
