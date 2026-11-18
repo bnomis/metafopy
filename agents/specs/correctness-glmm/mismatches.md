@@ -86,7 +86,7 @@ value as metafopy in every row, so none is a metafopy-only difference: the sourc
 Several rows differ by one unit of the last printed digit and are rounding or optimiser differences (the Jackson `tau2` rows, Stijnen BN and control
 rows); the Stijnen treated row (Table VII) and the Simmonds and Higgins random-effects row are larger. In the Simmonds and Higgins case the paper's
 random-effects result equals its fixed-effect result (1.74), which metafopy and R metafor reproduce for `FE` (1.74126) but not for `ML`
-(`tau2` 0.21307).
+(`tau2` 0.21307). Investigated on 2026-11-18 by `agents/tasks/simmonds2016-fig1/tasks-1.md`: the paper's model is `coding = 1`, whose maximum is at `tau2 = 0`, and the `coding = 0.5` likelihood is higher at 0.21307, so the row is a source difference.
 
 ## Conventions
 

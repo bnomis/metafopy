@@ -122,7 +122,7 @@ against 0.21307).
 
 ## Task 2: Record the printed value as a source difference, and the paper's model as a passing case
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item's fix direction (record the printed value as a source difference)
@@ -132,35 +132,35 @@ accepted published mismatches, and a passing case checks that `rma_glmm` with th
 
 **Subtasks:**
 
-- [ ] Read Task 1's verdict. If it is missing, or it is "not higher at 0.213", stop as `blocked`
-- [ ] In `src/tests/correctness/cases/glmm_published.toml`, append to the `reason` of `glmm.published.simmonds2016.hrt.random.mismatch`, after its
+- [x] Read Task 1's verdict. If it is missing, or it is "not higher at 0.213", stop as `blocked`
+- [x] In `src/tests/correctness/cases/glmm_published.toml`, append to the `reason` of `glmm.published.simmonds2016.hrt.random.mismatch`, after its
       values and in the form of the Jackson et al. cases: `; accepted as a source difference on <date> (the paper's glmer code puts the random
       effect on the treated arm only, coding = 1, where tau2 is 0 and the fit is the fixed-effect 1.74 (0.59, 5.17); with coding = 0.5 the marginal
       likelihood is higher at tau2 0.21307 than at 0, <the two formulas' values from Task 1>; metafopy and R metafor 5.2-1 agree)`. Keep `status =
       "mismatch"`, `printed`, `data` and `args` unchanged
-- [ ] Add a case `glmm.published.simmonds2016.hrt.random.coding1` after the mismatch case, with the same `data`, `args` plus `coding = 1.0`,
+- [x] Add a case `glmm.published.simmonds2016.hrt.random.coding1` after the mismatch case, with the same `data`, `args` plus `coding = 1.0`,
       `check = "test_published.glmm_printed"`, `printed = { "exp_beta[0]" = "1.74", "exp_ci_lb[0]" = "0.59", "exp_ci_ub[0]" = "5.17", "tau2" = "0" }`
       if the checker accepts a printed `"0"` (otherwise leave `tau2` out), `covers = ["rma_glmm.fit.OR.UM.FS.ML", "rma_glmm.coding.1"]`, and a
       `[case.source]` with the mismatch case's citation and doi, `locator = "Fig 1 (read from the page image), one-stage model, random effects; data
       of Table 1; model of the appendix R code (treat-1|study)"` and `read = <date>`. Update the comment above the Simmonds cases to say the paper's
       model is `coding = 1`
-- [ ] Append to the paragraph after the published-mismatches table in `agents/specs/correctness-glmm/mismatches.md` (the one ending "but not for
+- [x] Append to the paragraph after the published-mismatches table in `agents/specs/correctness-glmm/mismatches.md` (the one ending "but not for
       `ML` (`tau2` 0.21307).") one dated sentence: investigated on <date> by `agents/tasks/simmonds2016-fig1/tasks-1.md`; the paper's model is
       `coding = 1`, whose maximum is at `tau2 = 0`, and the `coding = 0.5` likelihood is higher at 0.21307, so the row is a source difference. Change
       nothing else in that file (its Answers section is a dated record)
-- [ ] Run `pytest src/tests/correctness/test_published.py src/tests/correctness/test_coverage.py`; the new case passes and the mismatch case stays a
+- [x] Run `pytest src/tests/correctness/test_published.py src/tests/correctness/test_coverage.py`; the new case passes and the mismatch case stays a
       strict expected failure. If the new case fails, stop as `blocked` with the values it got
 
 **Acceptance Criteria:**
 
-- [ ] The mismatch case's `reason` names the source difference with its date and both likelihoods; its status is unchanged
-- [ ] `glmm.published.simmonds2016.hrt.random.coding1` passes
-- [ ] No file under `src/metafopy/` changes
+- [x] The mismatch case's `reason` names the source difference with its date and both likelihoods; its status is unchanged
+- [x] `glmm.published.simmonds2016.hrt.random.coding1` passes
+- [x] No file under `src/metafopy/` changes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/correctness/test_published.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/correctness/test_published.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 
