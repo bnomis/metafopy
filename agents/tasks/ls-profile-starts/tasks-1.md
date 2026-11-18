@@ -160,7 +160,7 @@ names the new starts and every output that moves, so a user comparing with R or 
 
 ## Task 3: The measured tests, the full test run and closing the spec
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation, item 5; Not in scope; Acceptance; the spec as a whole
@@ -170,13 +170,13 @@ whole branch is checked once, the spec is marked implemented and its item moves 
 
 **Subtasks:**
 
-- [ ] Run the tests of measurements.md's "Tests and run time":
+- [x] Run the tests of measurements.md's "Tests and run time":
       `pytest src/tests/test_rma_ls.py src/tests/correctness/test_derived.py src/tests/correctness/test_formulas_ls.py src/tests/correctness/test_properties.py src/tests/correctness/test_published.py src/tests/test_audit5_numerics.py src/tests/test_audit8_args.py src/tests/test_profile_parallel.py src/tests/test_profile_plots.py src/tests/test_audit13_fixes.py src/tests/test_audit3_misc.py src/tests/test_audit5_plots.py src/tests/test_audit5_printing.py src/tests/test_audit8_crashes.py src/tests/test_audit8_fields.py src/tests/test_audit8_values_a.py src/tests/test_emmeans.py`
       (the spec measured about 839 s on 2026-11-18). The expected result is every test passing, `ls.confint.scale.ML.bcg` included, and no R parity
       fixture marked as differing.
       **Stops for the operator: an output moves beyond the spec's list.** Only if a test fails or changes outcome there: do not edit it; stop the task
       as `blocked` and report each test id with its old and new value. Otherwise there is no stop
-- [ ] File the spec's "Not in scope" as a new `TODO.md` item at the end of `TODO.md`, in the shape of the other items (a dated finding inside a
+- [x] File the spec's "Not in scope" as a new `TODO.md` item at the end of `TODO.md`, in the shape of the other items (a dated finding inside a
       `<!-- doc-counts: accept-start found on 2026-11-18 - a dated record, not a claim about the present -->` ... `<!-- doc-counts: accept-end -->`
       block, then `Cause:` and `Fix direction:` paragraphs; no `Spec:` or `tasks:` line), titled "The reference ls_profile_ll cannot fit the identity
       link at some feasible values". Its finding: found on 2026-11-18 by `agents/specs/ls-profile-starts/spec.md` ("Not in scope") and this list,
@@ -186,31 +186,31 @@ whole branch is checked once, the spec is marked implemented and its item moves 
       `ls_profile_ll` (`start[free]`, the adjusted start and the line between them) are infeasible there (`Z alpha < 0`), so no refit runs. Its Fix
       direction: give `ls_profile_ll` a feasible start for the identity link (for example the starts of `profile_starts`, filtered as it filters them),
       then add an identity-link `ls.confint.scale.*` case checked against the brute-force profile
-- [ ] Set the spec's `**Status:**` in `agents/specs/ls-profile-starts/spec.md` to `implemented`
-- [ ] Move the item "metafopy's profile of the ls scale coefficient leaves the highest branch before the crossing" from `TODO.md` to `DONE.md`: append
+- [x] Set the spec's `**Status:**` in `agents/specs/ls-profile-starts/spec.md` to `implemented`
+- [x] Move the item "metafopy's profile of the ls scale coefficient leaves the highest branch before the crossing" from `TODO.md` to `DONE.md`: append
       its heading and body unchanged at the end of `DONE.md`, then a line
       `Done: 2026-MM-DD, agents/tasks/ls-profile-starts/tasks-1.md; LINE_WEIGHTS gains 1.5 and 2.0, the upper bound of alpha.2 is the crossing 1.3812 and ls.confint.scale.ML.bcg passes (agents/specs/ls-profile-starts/spec.md)`
       with the date of the commit
-- [ ] Run the final tests from the worktree and save their whole output for the merge gate, in the main checkout (the first entry of
+- [x] Run the final tests from the worktree and save their whole output for the merge gate, in the main checkout (the first entry of
       `git worktree list --porcelain`, here `/Users/simonb/src/metafopy`):
       `mkdir -p /Users/simonb/src/metafopy/ralpher-logs/ls-profile-starts/tasks-1 && source bin/activate.sh && pytest src/tests 2>&1 | tee /Users/simonb/src/metafopy/ralpher-logs/ls-profile-starts/tasks-1/final-tests.log`
 
 **Acceptance Criteria:**
 
-- [ ] The tests of measurements.md's "Tests and run time" pass, `ls.confint.scale.ML.bcg` included
-- [ ] `TODO.md` ends with the new item on the reference's identity-link starts; it is the only item added
-- [ ] The spec's status is `implemented`
-- [ ] The item is in `DONE.md` with its body unchanged and the `Done:` line, and no longer in `TODO.md`
+- [x] The tests of measurements.md's "Tests and run time" pass, `ls.confint.scale.ML.bcg` included
+- [x] `TODO.md` ends with the new item on the reference's identity-link starts; it is the only item added
+- [x] The spec's status is `implemented`
+- [x] The item is in `DONE.md` with its body unchanged and the `Done:` line, and no longer in `TODO.md`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `ruff format --check`, `ruff check` and `mypy` pass
-- [ ] The final test run above passes, judged by its exit status, and its log is saved at
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `ruff format --check`, `ruff check` and `mypy` pass
+- [x] The final test run above passes, judged by its exit status, and its log is saved at
       `/Users/simonb/src/metafopy/ralpher-logs/ls-profile-starts/tasks-1/final-tests.log`
-- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/ls-profile-starts/tasks-1.md):TODO.md > <scratch>/todo-before.md` (the
+- [x] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/ls-profile-starts/tasks-1.md):TODO.md > <scratch>/todo-before.md` (the
       `TODO.md` at the list's start) and `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0
       (`<scratch>` is the session's scratch directory, outside the repository)
 
