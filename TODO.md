@@ -84,21 +84,6 @@ Fix direction: find which branch is the profile likelihood's maximum at a = 1.31
 
 Spec: none (small item); tasks: `agents/tasks/ls-confint-scale-branch/tasks-1.md`.
 
-## Stijnen et al. (2010) Table VII treated arm, PN, differs from metafopy and R metafor
-
-<!-- doc-counts: accept-start found on 2026-11-14 - a dated record, not a claim about the present -->
-Found on 2026-11-14 by the case `glmm.published.stijnen2010.table7.pn.treated.mismatch` (`agents/specs/correctness-glmm/mismatches.md`); the user
-answered *investigate* on 2026-11-14. The printed values are log rate 0.850, standard error 0.330 and `tau2` 0.654; metafopy and R metafor 5.2-1 both
-give 0.81997, 0.31962 and 0.59899 (0.59898 in R) for `measure='IRLN'`, `method='ML'` on the treated data of Table VI. The control arm agrees to one unit
-of the last digit, so the difference is larger than rounding.
-<!-- doc-counts: accept-end -->
-
-Fix direction: check the transcription of the treated rows of Table VI against the paper, then the likelihood (SAS Proc NLMIXED against a Poisson
-log-normal model with an offset) with the formulas of `src/tests/correctness/glmm_formulas.py`; either correct the data, record the source difference
-with its reason, or fix metafopy.
-
-Spec: none (small item); tasks: `agents/tasks/stijnen2010-pn/tasks-1.md`.
-
 ## Find the data behind Table 5 of Bagos and Nikolopoulos (2009)
 
 <!-- doc-counts: accept-start found on 2026-11-14 - a dated record, not a claim about the present -->

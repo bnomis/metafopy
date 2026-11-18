@@ -1169,3 +1169,20 @@ likelihood is higher at 0.213, record the printed value as a source difference (
 Spec: none (small item); tasks: `agents/tasks/simmonds2016-fig1/tasks-1.md`.
 
 Done: 2026-11-18, agents/tasks/simmonds2016-fig1/tasks-1.md; source difference: the paper's glmer model is coding = 1 (tau2 0, OR 1.74), and the coding = 0.5 likelihood is higher at tau2 0.213; case reason updated and a passing coding = 1 case added
+
+## Stijnen et al. (2010) Table VII treated arm, PN, differs from metafopy and R metafor
+
+<!-- doc-counts: accept-start found on 2026-11-14 - a dated record, not a claim about the present -->
+Found on 2026-11-14 by the case `glmm.published.stijnen2010.table7.pn.treated.mismatch` (`agents/specs/correctness-glmm/mismatches.md`); the user
+answered *investigate* on 2026-11-14. The printed values are log rate 0.850, standard error 0.330 and `tau2` 0.654; metafopy and R metafor 5.2-1 both
+give 0.81997, 0.31962 and 0.59899 (0.59898 in R) for `measure='IRLN'`, `method='ML'` on the treated data of Table VI. The control arm agrees to one unit
+of the last digit, so the difference is larger than rounding.
+<!-- doc-counts: accept-end -->
+
+Fix direction: check the transcription of the treated rows of Table VI against the paper, then the likelihood (SAS Proc NLMIXED against a Poisson
+log-normal model with an offset) with the formulas of `src/tests/correctness/glmm_formulas.py`; either correct the data, record the source difference
+with its reason, or fix metafopy.
+
+Spec: none (small item); tasks: `agents/tasks/stijnen2010-pn/tasks-1.md`.
+
+Done: 2026-11-18, agents/tasks/stijnen2010-pn/tasks-1.md; Table VI misprints the treated catheter-days; on dat.nielweise2008's the printed SE and tau2 pass, and the log rate (printed 0.850, metafopy 0.84940) is recorded as a source difference
