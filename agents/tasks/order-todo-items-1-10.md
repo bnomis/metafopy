@@ -63,3 +63,5 @@ Any change to metafopy's output beyond what an approved spec lists waits for you
 | 5 | `stijnen2010-pn/tasks-1.md` | 4 | metafopy differing from R or the reference formulas on the PN fit (Task 1), only if it does | todo |
 | 6 | `audit-ledger-gaps/tasks-1.md` | 2, 3 | a finding of the full audit that no item covers and that shows metafopy's output wrong (Task 1), only if one does | todo |
 | 7 | `ls-confint-scale-branch/tasks-1.md` | - | the fix of metafopy's own profile of `alpha.2`, expected (Task 2) | todo |
+
+Checkpoint after 3: running
