@@ -1,7 +1,7 @@
 # permutest: refuse an exact test whose permutation matrix R cannot hold
 
 **Version:** 1.1
-**Status:** approved
+**Status:** implemented
 **Date:** 2026-11-18
 
 `permutest(fit, exact=True)` refuses a test only when its arrays of permutation statistics would pass `MAX_PERMUTATION_BYTES` (16 GiB). R's exact

@@ -255,7 +255,7 @@ stale, and no other case is newly refused.
 
 ## Task 4: The full test run and closing the spec
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Tests and records, item 5; Acceptance; the spec as a whole
@@ -264,35 +264,42 @@ stale, and no other case is newly refused.
 
 **Subtasks:**
 
-- [ ] Set the spec's `**Status:**` in `agents/specs/permutest-exact-limit/spec.md` to `implemented`
-- [ ] Move the item "The exact permutest of uni_mods neither refuses nor finishes in metafopy" from `TODO.md` to `DONE.md`: append its heading and
+- [x] Set the spec's `**Status:**` in `agents/specs/permutest-exact-limit/spec.md` to `implemented`
+- [x] Move the item "The exact permutest of uni_mods neither refuses nor finishes in metafopy" from `TODO.md` to `DONE.md`: append its heading and
       body unchanged at the end of `DONE.md`, then a line
       `Done: 2026-MM-DD, agents/tasks/permutest-exact-limit/tasks-1.md; option (a), the byte guard counts R's matrix of every permutation, so the exact tests of uni_mods and ls_bcg raise InputError (agents/specs/permutest-exact-limit/spec.md, D1 answered 2026-11-18 in agents/reviews/order-todo-items-1-5-specs.md)`
       with the date of the commit
-- [ ] Run the final tests from the worktree and save their whole output for the merge gate, in the main checkout (the first entry of
+- [x] Run the final tests from the worktree and save their whole output for the merge gate, in the main checkout (the first entry of
       `git worktree list --porcelain`, here `/Users/simonb/src/metafopy`):
       `mkdir -p /Users/simonb/src/metafopy/ralpher-logs/permutest-exact-limit/tasks-1 && source bin/activate.sh && pytest src/tests 2>&1 | tee /Users/simonb/src/metafopy/ralpher-logs/permutest-exact-limit/tasks-1/final-tests.log`
 
 **Acceptance Criteria:**
 
-- [ ] The spec's status is `implemented`
-- [ ] The item is in `DONE.md` with its body unchanged and the `Done:` line, and no longer in `TODO.md`
+- [x] The spec's status is `implemented`
+- [x] The item is in `DONE.md` with its body unchanged and the `Done:` line, and no longer in `TODO.md`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `ruff format --check`, `ruff check` and `mypy` pass
-- [ ] The final test run above passes, judged by its exit status, and its log is saved at
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `ruff format --check`, `ruff check` and `mypy` pass
+- [x] The final test run above passes, judged by its exit status, and its log is saved at
       `/Users/simonb/src/metafopy/ralpher-logs/permutest-exact-limit/tasks-1/final-tests.log`
-- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/permutest-exact-limit/tasks-1.md):TODO.md > <scratch>/todo-before.md` (the
+- [x] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/permutest-exact-limit/tasks-1.md):TODO.md > <scratch>/todo-before.md` (the
       `TODO.md` at the list's start) and `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0
       (`<scratch>` is the session's scratch directory, outside the repository)
 
 **Notes:**
 
 - Depends on Task 3
+- **Run the tests against this worktree's code (added by the operator session, 2026-11-18 17:51 UTC).** The worktree has no `.venv`, and
+  `PATH=/Users/simonb/src/metafopy/.venv/bin:$PATH pytest ...` alone imports `metafopy` from the main checkout's `src/` (the venv's editable
+  install), not this worktree's: the full run of 2026-11-18 16:10 UTC did that, and `test_an_exact_test_whose_permutation_matrix_r_cannot_hold_is_refused`
+  then ran the 389188800 permutations for over an hour on the code without the guard (it was stopped; its log is not valid). Run every pytest as
+  `export PATH=/Users/simonb/src/metafopy/.venv/bin:$PATH PYTHONPATH=$PWD/src` from the worktree root, and check first with
+  `python -c 'import metafopy; print(metafopy.__file__)'` that it prints this worktree's path. Then rerun the full run and overwrite
+  `final-tests.log`.
 - The full `pytest src/tests` run is the run order's required final check
 
 ---
