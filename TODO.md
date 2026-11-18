@@ -4,6 +4,24 @@ Open work only, in implementation order, nearest first. Finished items move to
 `DONE.md` unchanged. See the shared `todo-add` and `todo-review` skills for
 the shape of an item.
 
+## metafopy's profile of the ls scale coefficient leaves the highest branch before the crossing
+
+<!-- doc-counts: accept-start found on 2026-11-18 - a dated record, not a claim about the present -->
+Found on 2026-11-18 by `agents/tasks/ls-confint-scale-branch/tasks-1.md` (Tasks 1 and 2) on `ls.confint.scale.ML.bcg` in
+`src/tests/correctness/cases/location_scale.toml`: the profile of `alpha.2` (the `ablat` coefficient of the scale model) has a continuous branch and a
+`tau2 = 0` plateau (3.868641), and the continuous branch is the maximum until it crosses the cut-off at 1.38120753375 (the fixed reference and R's best
+refits agree). metafopy's own profile jumps to the plateau earlier: 3.789459 at a = 1.36 and the plateau 3.868641 from 1.37, so `confint` gives the
+upper bound 1.3598 with no `>` sign, a jump in the profile and not the crossing 1.3812.
+<!-- doc-counts: accept-end -->
+
+Cause: `profile_starts` and `profile_fit` in `src/metafopy/methods/ls_profile.py` refit from too few starts, so the refit falls onto the plateau while a
+higher continuous branch exists (the reference had the same fault before Task 2 widened its starts).
+
+Fix direction: a spec is needed first, since the fix changes metafopy's `confint` and `profile` output and every `ls.confint.scale.*` case uses the same
+starts. Then `ls.confint.scale.ML.bcg` moves to `pass`.
+
+Spec: none yet.
+
 ## The exact permutest of uni_mods neither refuses nor finishes in metafopy
 
 <!-- doc-counts: accept-start measured on 2026-11-18 - a dated record, not a claim about the present -->
@@ -40,22 +58,6 @@ Fix direction: for each entry, run its case in R and metafopy; remove the entry 
 another way, and rerun `bin/metafor-audit.sh` to see the report list no stale entry.
 
 Spec: none (small item).
-
-## ls.confint.scale.ML.bcg stays an expected failure with no decision
-
-<!-- doc-counts: accept-start found on 2026-11-16 - a dated record, not a claim about the present -->
-Found on 2026-11-16 by a TODO review. Task list `agents/tasks/ls-profile-crossings/tasks-1.md` (its closing notes) left the case
-`ls.confint.scale.ML.bcg` in `src/tests/correctness/cases/location_scale.toml` as `status = "mismatch"`: for the upper bound of `alpha.2`,
-`formulas.ls_profile_ll` refits from two starts and ends on the `tau2 = 0` branch at a = 1.3169166758 (2 (ll_max - ll) 3.8686, above the cut-off
-3.8415), where metafopy keeps the continuous branch (3.6850) and returns the interval end 1.3598 with a `>` sign. Every other mismatch case is accepted as
-a source difference or has an item; this one has neither.
-<!-- doc-counts: accept-end -->
-
-Fix direction: find which branch is the profile likelihood's maximum at a = 1.3169 (refit over a grid of starts, compare both log-likelihoods). If the
-`tau2 = 0` branch is higher, metafopy's profile misses it and is a defect to fix; if the continuous branch is, the reference refit is wrong, so fix
-`formulas.ls_profile_ll` and set the case to `pass`.
-
-Spec: none (small item); tasks: `agents/tasks/ls-confint-scale-branch/tasks-1.md`.
 
 ## Find the data behind Table 5 of Bagos and Nikolopoulos (2009)
 

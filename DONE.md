@@ -1258,3 +1258,21 @@ goes through a spec first, or a small task list if the fix is local.
 Spec: none (small item); tasks: `agents/tasks/audit-ledger-gaps/tasks-1.md`.
 
 Done: 2026-11-18, agents/tasks/audit-ledger-gaps/tasks-1.md; accepted by D2 (a); known.toml and docs/differences.md entries
+
+## ls.confint.scale.ML.bcg stays an expected failure with no decision
+
+<!-- doc-counts: accept-start found on 2026-11-16 - a dated record, not a claim about the present -->
+Found on 2026-11-16 by a TODO review. Task list `agents/tasks/ls-profile-crossings/tasks-1.md` (its closing notes) left the case
+`ls.confint.scale.ML.bcg` in `src/tests/correctness/cases/location_scale.toml` as `status = "mismatch"`: for the upper bound of `alpha.2`,
+`formulas.ls_profile_ll` refits from two starts and ends on the `tau2 = 0` branch at a = 1.3169166758 (2 (ll_max - ll) 3.8686, above the cut-off
+3.8415), where metafopy keeps the continuous branch (3.6850) and returns the interval end 1.3598 with a `>` sign. Every other mismatch case is accepted as
+a source difference or has an item; this one has neither.
+<!-- doc-counts: accept-end -->
+
+Fix direction: find which branch is the profile likelihood's maximum at a = 1.3169 (refit over a grid of starts, compare both log-likelihoods). If the
+`tau2 = 0` branch is higher, metafopy's profile misses it and is a defect to fix; if the continuous branch is, the reference refit is wrong, so fix
+`formulas.ls_profile_ll` and set the case to `pass`.
+
+Spec: none (small item); tasks: `agents/tasks/ls-confint-scale-branch/tasks-1.md`.
+
+Done: 2026-11-18, agents/tasks/ls-confint-scale-branch/tasks-1.md; the continuous branch was the maximum, so the reference refit was fixed; the case stays a mismatch (metafopy jumps to the plateau, filed as a new item)

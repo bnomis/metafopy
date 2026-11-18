@@ -196,7 +196,7 @@ now give; or, if metafopy is the one that misses the maximum at a = 1.3169, the 
 
 ## Task 3: The full test run and closing the item
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item as a whole
@@ -205,32 +205,32 @@ now give; or, if metafopy is the one that misses the maximum at a = 1.3169, the 
 
 **Subtasks:**
 
-- [ ] Move the item from `TODO.md` to `DONE.md`: append its heading and body unchanged at the end of `DONE.md`, then a line
+- [x] Move the item from `TODO.md` to `DONE.md`: append its heading and body unchanged at the end of `DONE.md`, then a line
       `Done: 2026-MM-DD, agents/tasks/ls-confint-scale-branch/tasks-1.md; <outcome>` with the date of the commit and the outcome in a few words (which
       branch was the maximum, and the case's new status)
-- [ ] File the operator's answer of 2026-11-18 (Task 2 Notes) as a new `TODO.md` item, in the shape of the `todo-add` skill (a dated finding in a
+- [x] File the operator's answer of 2026-11-18 (Task 2 Notes) as a new `TODO.md` item, in the shape of the `todo-add` skill (a dated finding in a
       `doc-counts` accept block, Cause, Fix direction, `Spec: none yet.`), placed first in the file, titled "metafopy's profile of the ls scale
       coefficient leaves the highest branch before the crossing". Its finding gives Task 2's figures (metafopy 3.789459 at a = 1.36 and the plateau
       3.868641 from 1.37; `confint` upper bound 1.3598 with no `>` sign against the crossing 1.38120753375 of the fixed reference and R's best refits)
       and names this list; its Cause names `profile_starts` and `profile_fit` in `src/metafopy/methods/ls_profile.py`; its Fix direction says a spec
       is needed first, since the fix changes metafopy's `confint` and `profile` output and every `ls.confint.scale.*` case uses the same starts, and that
       `ls.confint.scale.ML.bcg` then moves to `pass`
-- [ ] Run the final tests from the worktree and save their whole output for the merge gate. The main checkout is the first entry of `git worktree list
+- [x] Run the final tests from the worktree and save their whole output for the merge gate. The main checkout is the first entry of `git worktree list
       --porcelain` (`/Users/simonb/src/metafopy`):
       `mkdir -p /Users/simonb/src/metafopy/ralpher-logs/ls-confint-scale-branch/tasks-1 && source bin/activate.sh && pytest src/tests 2>&1 | tee /Users/simonb/src/metafopy/ralpher-logs/ls-confint-scale-branch/tasks-1/final-tests.log`
 
 **Acceptance Criteria:**
 
-- [ ] The item is in `DONE.md` with its body unchanged and a `Done:` line naming this list and its outcome, and no longer in `TODO.md`
+- [x] The item is in `DONE.md` with its body unchanged and a `Done:` line naming this list and its outcome, and no longer in `TODO.md`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] The final test run above passes, judged by its exit status
-- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/ls-confint-scale-branch/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] The final test run above passes, judged by its exit status
+- [x] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/ls-confint-scale-branch/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
       `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0 (`<scratch>` is the session's scratch
       directory, outside the repository)
 
