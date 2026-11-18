@@ -39,18 +39,6 @@ reports), then write the published cases in `src/tests/correctness/cases/glmm_pu
 
 Spec: none (small item); tasks: `agents/tasks/bagos2009-table5/tasks-1.md`.
 
-## The rma_mv funnel test still skips when rstandard is missing
-
-<!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
-Found on 2026-11-15 by a TODO review. `test_funnel_matches_metafor` in `src/tests/test_fits.py` skips the `mvm` case when `has_mv_residuals` finds no
-`rstandard` for `rma_mv` fits ("rstandard() of rma_mv fits is not available yet"), but `rstandard_rma_mv` now exists in
-`src/metafopy/methods/mv_diagnostics.py`, so the skip guards a gap that has closed.
-<!-- doc-counts: accept-end -->
-
-Fix direction: confirm the `mvm` case runs, then remove `has_mv_residuals` and the skip.
-
-Spec: none (small item); tasks: `agents/tasks/mv-funnel-skip/tasks-1.md`.
-
 ## Correctness coverage the extension specs left for later
 
 <!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->

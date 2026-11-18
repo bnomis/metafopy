@@ -1321,3 +1321,17 @@ Spec: none yet.
 Spec: `agents/specs/permutest-exact-limit/spec.md`; tasks: `agents/tasks/permutest-exact-limit/tasks-1.md`.
 
 Done: 2026-11-18, agents/tasks/permutest-exact-limit/tasks-1.md; option (a), the byte guard counts R's matrix of every permutation, so the exact tests of uni_mods and ls_bcg raise InputError (agents/specs/permutest-exact-limit/spec.md, D1 answered 2026-11-18 in agents/reviews/order-todo-items-1-5-specs.md)
+
+## The rma_mv funnel test still skips when rstandard is missing
+
+<!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
+Found on 2026-11-15 by a TODO review. `test_funnel_matches_metafor` in `src/tests/test_fits.py` skips the `mvm` case when `has_mv_residuals` finds no
+`rstandard` for `rma_mv` fits ("rstandard() of rma_mv fits is not available yet"), but `rstandard_rma_mv` now exists in
+`src/metafopy/methods/mv_diagnostics.py`, so the skip guards a gap that has closed.
+<!-- doc-counts: accept-end -->
+
+Fix direction: confirm the `mvm` case runs, then remove `has_mv_residuals` and the skip.
+
+Spec: none (small item); tasks: `agents/tasks/mv-funnel-skip/tasks-1.md`.
+
+Done: 2026-11-18, agents/tasks/mv-funnel-skip/tasks-1.md; skip and has_mv_residuals removed; funnel_mvm matches R
