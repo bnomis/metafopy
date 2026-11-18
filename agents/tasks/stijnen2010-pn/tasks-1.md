@@ -46,7 +46,7 @@ Task 1's run disagrees with the probe in that way; otherwise the list runs to th
 
 ## Task 1: Re-check the starting point, the transcription and the likelihood
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item's fix direction (check the transcription of Table VI's treated rows, then the likelihood)
@@ -56,42 +56,49 @@ them, is known and recorded in this task's Notes with the figures of metafopy, R
 
 **Subtasks:**
 
-- [ ] Check that row 4 of the run order is merged on main: in the main checkout (the first entry of `git worktree list --porcelain`,
+- [x] Check that row 4 of the run order is merged on main: in the main checkout (the first entry of `git worktree list --porcelain`,
       `main=$(git worktree list --porcelain | sed -n '1s/^worktree //p')`), `git -C "$main" show main:DONE.md` holds the heading
       `## Simmonds and Higgins (2016) Fig 1 one-stage random effects differs from metafopy and R metafor`, `git -C "$main" show main:TODO.md` does
       not, and `git merge-base --is-ancestor main HEAD` exits 0. Stop as `blocked`, naming what is missing, if not
-- [ ] Re-check the starting point: `src/tests/correctness/cases/glmm_published.toml` holds the case
+- [x] Re-check the starting point: `src/tests/correctness/cases/glmm_published.toml` holds the case
       `glmm.published.stijnen2010.table7.pn.treated.mismatch` with `status = "mismatch"` and the treated data
       `xi = [7, 8, 3, 6, 1, 1, 17, 3, 2]`, `ti = [1.491, 1.638, 11.484, 1.446, 0.370, 0.786, 6.840, 1.156, 0.400]`, and no case id
       `glmm.published.stijnen2010.table7.pn.treated` (without `.mismatch`) exists. Stop as `blocked`, naming what differs, if not
-- [ ] Transcription: extract page 3054 of the paper (path in the header) with `pdftotext -layout -f 9 -l 9` (or the page that holds "Table VI. Data
+- [x] Transcription: extract page 3054 of the paper (path in the header) with `pdftotext -layout -f 9 -l 9` (or the page that holds "Table VI. Data
       of example 4") into the scratch directory, and compare the treated columns of Table VI with the case's `xi` and `ti * 1000`. Record any
       difference
-- [ ] Original data: print `dat.nielweise2008` from R metafor 5.2-1
+- [x] Original data: print `dat.nielweise2008` from R metafor 5.2-1
       (`export METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib; LC_ALL=C.UTF-8 R_LIBS=$METAFOPY_AUDIT_RLIB Rscript <script>`; stop as
       `blocked` if metafor does not load or `packageVersion("metafor")` is not 5.2.1), and compare its `x1i`, `t1i` with Table VI's treated columns
-- [ ] Likelihood: for each data set - Table VI's treated rows, and `dat.nielweise2008`'s `x1i` with `t1i / 1000` - fit
+- [x] Likelihood: for each data set - Table VI's treated rows, and `dat.nielweise2008`'s `x1i` with `t1i / 1000` - fit
       `rma.glmm(xi=, ti=, measure="IRLN", method="ML")` in R, `metafopy.rma_glmm(xi=, ti=, measure='IRLN', method='ML')` (after
       `source bin/activate.sh`), and `glmm_formulas.one_group_glmm_fit(xi, ti, 'poisson', 'log', 'ML')` (importing `tests.correctness.glmm_formulas`
       with `src` on `sys.path`), printing `beta`, `se` and `tau2` of each to at least six digits. Scripts stay in the scratch directory
-- [ ] Record in this task's Notes, dated: the transcription result, the figures of the three programs on each data set, and one verdict:
+- [x] Record in this task's Notes, dated: the transcription result, the figures of the three programs on each data set, and one verdict:
       - "Table VI misprints the treated catheter-days; `dat.nielweise2008` reproduces the printed SE and `tau2`" (the probe's finding), or
       - "neither data set reproduces the printed values, and metafopy, R metafor and the formulas agree" (a source difference on the case's data), or
       - "metafopy differs from the formulas or R metafor" (by more than 1e-4 relative on `beta`, `se` or `tau2` on either data set)
-- [ ] If the verdict is the third, **stops for the operator: metafopy differs from the formulas or R metafor on the PN fit**: stop as `blocked` with
+- [x] (not applicable: verdict is the first) If the verdict is the third, **stops for the operator: metafopy differs from the formulas or R metafor on the PN fit**: stop as `blocked` with
       the figures in the Notes and change nothing else; a change to `src/metafopy/` needs the user (`claude/rules/metafopy.md`)
 
 **Acceptance Criteria:**
 
-- [ ] This task's Notes record the transcription result, the three programs' figures on both data sets, and one of the three verdicts
+- [x] This task's Notes record the transcription result, the three programs' figures on both data sets, and one of the three verdicts
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
 
 **Notes:**
 
 - Only this task list file changes; no code, case or test changes
+- Result, 2026-11-18. Row 4 of the run order is merged on main; the case starts as described.
+- Transcription: Table VI's treated columns (PDF page 9) match the case's `xi` and `ti * 1000` exactly.
+- `dat.nielweise2008` (metafor 5.2-1) treated `x1i` equal Table VI's; `t1i` = 1344, 1600, 12012, 1536, 370, 729, 6760, 1107, 320 (differs from Table VI).
+- Fits of `IRLN`, `ML` (beta, se, tau2):
+  - Table VI treated rows: metafopy 0.819972, 0.319621, 0.598988; R metafor 0.8199682, 0.3196189, 0.5989783; formulas 0.819972, 0.319621, 0.598988.
+  - `dat.nielweise2008` treated rows (t1i / 1000): metafopy 0.849404, 0.330266, 0.654298; R metafor 0.8494055, 0.3302667, 0.6543036; formulas 0.849404, 0.330266, 0.654298.
+- Verdict: Table VI misprints the treated catheter-days; `dat.nielweise2008` reproduces the printed SE (0.330) and tau2 (0.654); the printed log rate 0.850 vs 0.8494 stays one unit of the last digit off. The three programs agree to well within 1e-4 relative.
 - The 2026-11-17 probe in the header expects the first verdict
 - Key files: `src/tests/correctness/cases/glmm_published.toml` (the `glmm.published.stijnen2010.table7.*` cases),
   `src/tests/correctness/glmm_formulas.py` (`one_group_problem`, `one_group_glmm_fit`)
