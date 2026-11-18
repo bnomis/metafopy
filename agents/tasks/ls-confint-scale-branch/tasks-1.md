@@ -48,7 +48,7 @@ The project has no affected-tests tool, so each task names its test files. Probe
 
 ## Task 1: Find which branch is the profile maximum
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item's fix direction (refit over a grid of starts, compare both log-likelihoods)
@@ -58,23 +58,23 @@ crosses the cut-off, recorded in this task's Notes with the figures.
 
 **Subtasks:**
 
-- [ ] Write a Python probe in the session's scratch directory that, with `src/tests` on `sys.path`, loads the case from
+- [x] Write a Python probe in the session's scratch directory that, with `src/tests` on `sys.path`, loads the case from
       `correctness.cases.load_cases()`, fits it with `correctness.cases.run_case`, builds `yi, vi, X, Z` with `correctness.test_derived.ls_inputs`,
       and for `a` in 1.3169166758, 1.3170, 1.36, 1.37, 1.38, 1.39, 1.40 prints `2 (ll_max - ll)` from: (a) a grid of starts, `alpha.1` from -130 to 10
       in steps of 5, each minimised by Nelder-Mead over `alpha.1` with `alpha.2 = a` on `formulas.ls_loglik`, keeping the best; (b)
       `formulas.ls_profile_ll(..., j=1, value=a, start=fit['alpha'])` with `fit = formulas.ls_reference_fit(...)`; (c)
       `metafopy.methods.ls_profile.profile_fit(res, 1, a)`. Print the `alpha.1` of each grid optimum, so the branch is visible
-- [ ] Find the crossing of the grid-of-starts profile with the cut-off `scipy.stats.chi2.ppf(0.95, 1)` by `brentq` on a bracket where it changes sign
+- [x] Find the crossing of the grid-of-starts profile with the cut-off `scipy.stats.chi2.ppf(0.95, 1)` by `brentq` on a bracket where it changes sign
       (the probe found 1.380 below and 1.382 above), and print `formulas.ls_profile_bounds(..., 1, 0.95)` and `metafopy.confint(res, alpha=1, tol=1e-12)`
       with its `ub_sign`
-- [ ] Write an R script in the scratch directory that loads metafor, prints `packageVersion("metafor")`, fits
+- [x] Write an R script in the scratch directory that loads metafor, prints `packageVersion("metafor")`, fits
       `rma(yi, vi, mods = ~ ablat, scale = ~ ablat, data = escalc(measure = "RR", ai = tpos, bi = tneg, ci = cpos, di = cneg, data = dat.bcg),
       method = "ML")` and, for the same values of `a`, refits with `alpha = c(NA, a)` from the default start and from
       `control = list(alpha.init = c(a0, a))` for `a0` in -100, -72, -60, printing `2 (logLik(res) - logLik(fit))` and `fit$alpha[1]` with
       `sprintf("%.6f", ...)`. Run it with the main checkout's R library (the main checkout is the first entry of `git worktree list --porcelain`):
       `export METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib; LC_ALL=C.UTF-8 R_LIBS=$METAFOPY_AUDIT_RLIB Rscript <script>`. Stop as
       `blocked` if metafor does not load or its version is not 5.2.1
-- [ ] Record in this task's Notes, dated, with the commit: the table of the three programs' values, the crossing found in the second subtask, both
+- [x] Record in this task's Notes, dated, with the commit: the table of the three programs' values, the crossing found in the second subtask, both
       programs' bounds, and one verdict at a = 1.3169166758 - "the continuous branch is higher (the reference is wrong)" or "the `tau2 = 0` branch is
       higher (metafopy misses it)". Judge it by the grid of starts, confirmed by R's best refit (agreement within 1e-5 in `2 (ll_max - ll)`); if the two
       disagree on which branch is higher, stop as `blocked` with both figures. Also record whether metafopy's own profile leaves the maximum branch
@@ -82,15 +82,40 @@ crosses the cut-off, recorded in this task's Notes with the figures.
 
 **Acceptance Criteria:**
 
-- [ ] This task's Notes record the values of the grid of starts, the reference, metafopy and R at each `a`, the crossing of the maximum profile, and one
+- [x] This task's Notes record the values of the grid of starts, the reference, metafopy and R at each `a`, the crossing of the maximum profile, and one
       of the two verdicts
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
 
 **Notes:**
 
+- Result, 2026-11-18 (metafopy at `326b63c`, R metafor 5.2-1 from `/Users/simonb/src/metafopy/.audit/Rlib`; probes in `/tmp/lsprobe`, outside the
+  repository). `2 (ll_max - ll)` with `ll_max` -7.539290250091879 and cut-off 3.841458820694124. Grid of starts: `alpha.1` -130 to 10 in steps of 5,
+  Nelder-Mead each. R best: the lowest of its refits from the default start and from `alpha.init` `a0` = -100, -72, -60 (`alpha.1` of the best in
+  brackets). Metafopy's `profile_fit` returns the log-likelihood first, so its value is `2 (ll_max - ll)`.
+
+  | a (`alpha.2`) | grid (`alpha.1`) | R best (`alpha.1`) | reference `ls_profile_ll` | metafopy `profile_fit` |
+  |---|---|---|---|---|
+  | 1.3169166758 | 3.685006 (-72.019) | 3.685006 (-72.019) | 3.685006 | 3.685006 |
+  | 1.3170 | 3.685207 (-72.024) | 3.685207 (-72.024) | 3.868641 | 3.685207 |
+  | 1.36 | 3.789459 (-74.314) | 3.789459 (-74.314) | 3.868641 | 3.868641 |
+  | 1.37 | 3.813933 (-74.848) | 3.813933 (-74.848) | 3.868641 | 3.868641 |
+  | 1.38 | 3.838488 (-75.382) | 3.838488 (-75.382) | 3.868641 | 3.868641 |
+  | 1.39 | 3.868641 (-108.938) | 3.863123 (-75.916) | 3.868641 | 3.868641 |
+  | 1.40 | 3.868641 (-110.289) | 3.868641 (-96.557, default start) | 3.868641 | 3.868641 |
+
+  At a = 1.39 the grid missed the continuous branch (R's `alpha.init = c(-72, a)` gives the lower 3.863123), so the grid is not the maximum there; the
+  crossing lies below 1.39 and is not affected. At 1.40 R's continuous branch from -72 gives 3.887835, above the plateau 3.868641, so the plateau
+  is the maximum. R from its default start sits on the plateau at every a (3.868641).
+- Crossing of the maximum profile (grid of starts, `brentq` on 1.380 to 1.382): 1.3812075337. Reference `ls_profile_bounds(..., 1, 0.95)`:
+  (-0.12713360567438, 1.316916702213052). `metafopy.confint(res, alpha=1, tol=1e-12)`: ci.lb -0.1271, ci.ub 1.3598, no `>` sign printed.
+- Verdict at a = 1.3169166758: the continuous branch is higher (the reference is wrong). The grid (3.685006) and R's best refit (3.685006) agree to
+  within 1e-5 and both lie below the plateau's 3.868641. The reference's upper bound 1.316916702 is the jump of its refit to the plateau, not a crossing.
+- Metafopy's own profile also leaves the maximum branch below the crossing: it is on the continuous branch at 1.3170 (3.685207) and on the plateau
+  at 1.36 (3.868641), earlier than the header's 2026-11-17 probe (1.36 to 1.38) found at 1.36 (3.788971), so its bound 1.3598 is a jump, not the
+  crossing 1.3812. The jump is in metafopy's `profile_fit` and is for the operator (Task 2).
 - Only this task list file changes; no code or test changes
 - The header's 2026-11-17 probe expects "the continuous branch is higher (the reference is wrong)" and a crossing at about 1.3812
 - Key files: `src/tests/correctness/formulas.py` (`ls_loglik`, `ls_profile_ll`, `ls_profile_bounds`, `ls_reference_fit`),
