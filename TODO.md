@@ -68,6 +68,43 @@ goes through a spec first, or a small task list if the fix is local.
 
 Spec: none (small item); tasks: `agents/tasks/audit-ledger-gaps/tasks-1.md`.
 
+## The exact permutest of uni_mods neither refuses nor finishes in metafopy
+
+<!-- doc-counts: accept-start measured on 2026-11-18 - a dated record, not a claim about the present -->
+Measured on 2026-11-18 by Task 2 of `agents/tasks/audit-ledger-gaps/tasks-1.md` (metafopy `dd58553`; full audit run
+`.audit/runs/20261118-042436`, case `options/permutest/uni_mods/exact=true`, kind `r-killed`, "R passed the memory limit of 4 GiB (killed)"): for
+`rma(yi, vi, mods = ~ ablat, data = es_bcg)`, `permutest(fit, exact='i')` reports 389188800 iterations and 15567552000 bytes of arrays, just under
+`MAX_PERMUTATION_BYTES` (17179869184) in `src/metafopy/methods/permutest.py`, so metafopy does not refuse. `permutest(fit, exact=True)` was still running
+after about 29 minutes (cut off by the background limit) at about 275 MB resident at 20 minutes.
+<!-- doc-counts: accept-end -->
+
+Cause: the guard bounds the size of the arrays, not the run time, so a case R cannot hold in 4 GiB passes the guard and runs for a very long time. The
+case stays listed as an R kill in the audit report because no entry can say what metafopy does.
+
+Fix direction: decide whether metafopy should refuse an exact permutest whose iteration count R cannot hold (a limit on iterations, as R's "Number of
+iterations requested too large." is), or finish it faster; then add the case to the `r-killed` entry of `options/permutest/ls_bcg/exact=true` in
+`src/audit/data/known.toml`. Needs a spec if the guard changes.
+
+Spec: none yet.
+
+## Six ledger entries of known.toml match nothing in the audit
+
+<!-- doc-counts: accept-start found on 2026-11-18 - a dated record, not a claim about the present -->
+Found on 2026-11-18 by the full audit `.audit/runs/20261118-042436` (`wrong-or-missing.md`, "Not covered", "Stale ledger entries"), and already listed by
+`.audit/runs/20261115-160207`: the entries of `src/audit/data/known.toml` matching `scripts/misc_selmodel/*` (`*sav <- selmodel(res, type = "beta")*`),
+`scripts/misc_coef_se/*` (`*sel <- selmodel(res, type = "beta")*`), `scripts/misc_selmodel/test/41` (`*[[]out <- capture.output(print(sav))[]]*`),
+`options/predict/ls_na/newscale=*`, the `ls_year`/`permutest_ls*` print-diff `*QM(df = 2) = 15.610[45]*` and the `print/sel_bcg` print entry
+`98.1051`. None shows metafopy's output wrong (a ledger entry that matches nothing hides nothing).
+<!-- doc-counts: accept-end -->
+
+Cause: the difference each entry accepted no longer occurs in the pinned R 4.6.2 with metafor 5.2-1 (the same kind of cause as the stale `delta.1`
+entry removed on 2026-11-03), or metafopy's output moved; not traced entry by entry.
+
+Fix direction: for each entry, run its case in R and metafopy; remove the entry where the two now agree, narrow its `detail` where they differ in
+another way, and rerun `bin/metafor-audit.sh` to see the report list no stale entry.
+
+Spec: none (small item).
+
 ## ls.confint.scale.ML.bcg stays an expected failure with no decision
 
 <!-- doc-counts: accept-start found on 2026-11-16 - a dated record, not a claim about the present -->

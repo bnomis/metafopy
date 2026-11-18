@@ -319,7 +319,7 @@ where they do not.
 
 ## Task 5: File the other findings and the recall check
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the approved plan (`--recall`; a new finding that does not show metafopy wrong is filed in `TODO.md`)
@@ -329,30 +329,33 @@ earlier audits found.
 
 **Subtasks:**
 
-- [ ] File each cause in Task 1's "Other" list, and each case Tasks 2 and 3 sent here, with the `todo-add` skill (verified against the run's
+- [x] File each cause in Task 1's "Other" list, and each case Tasks 2 and 3 sent here, with the `todo-add` skill (verified against the run's
       `findings.json`, dated, the run directory named), never fixed here. Where `todo-add` merges a cause into an existing item, record that item's
       title in this task's Notes: its body changes on purpose, and the closing check of Task 6 must allow for it. If there is nothing to file, write
       "none" in the Notes
-- [ ] Re-render the report as in Task 2 and check that every finding it lists is in a `TODO.md` item (one filed here or in Task 3, or one already
+- [x] Re-render the report as in Task 2 and check that every finding it lists is in a `TODO.md` item (one filed here or in Task 3, or one already
       there), and that no entry this list added or changed is listed as stale
-- [ ] Run the recall check in the background, as the header says:
+- [x] Run the recall check in the background, as the header says:
       `METAFOPY_AUDIT_RLIB="$main/.audit/Rlib" METAFOPY_AUDIT_WORK="$main/.audit" bin/metafor-audit.sh --recall`, and record the recall report it
       prints in this task's Notes. If it exits non-zero, stop as `blocked`, naming each item it missed: a miss is a hole in the harness, fixed in
       `src/audit/data/` (`AGENTS.md`), which is outside these items; the recall run passes `--no-ledger`, so no entry of this list can cause it
 
 **Acceptance Criteria:**
 
-- [ ] Every finding of the re-rendered report is in a `TODO.md` item
-- [ ] `bin/metafor-audit.sh --recall` exits 0
+- [x] Every finding of the re-rendered report is in a `TODO.md` item
+- [x] `bin/metafor-audit.sh --recall` exits 0
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/test_harness_accounts.py src/tests/test_harness_compare.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/test_harness_accounts.py src/tests/test_harness_compare.py` passes
 
 **Notes:**
 
 - Depends on Tasks 2, 3 and 4
+- **Filed 2026-11-18** in `TODO.md` (both new items, no merge into an existing item, so no body changed on purpose): "The exact permutest of uni_mods neither refuses nor finishes in metafopy" (from Task 2) and "Six ledger entries of known.toml match nothing in the audit" (the stale entries of Task 1's "Other" list). Task 3 sent nothing here (all four cases accepted).
+- **Re-rendered report** (`/Users/simonb/src/metafopy/.audit/runs/20261118-042436/wrong-or-missing.md`): lists only the `uni_mods` R kill and the stale entries, each in a `TODO.md` item above; no entry this list added or changed is listed as stale.
+- **Recall, 2026-11-18**, run `/Users/simonb/src/metafopy/.audit/runs/recall-20261118-054556/recall.md`, exit 0: 176 of 176 items reproduced (audits 4, 5, 6: 32, 67, 77); 1 not shown by the pinned R (`a6-glmm-um-rs`, oracle moved, se 0.182140 against Python 0.182139).
 - From Task 2: file as a new item that the exact permutest of `uni_mods` (`options/permutest/uni_mods/exact=true`) neither refuses nor finishes in
   metafopy (389188800 iterations, 15.6e9 bytes just under the 16 GiB guard, over 29 minutes without finishing), while R is killed at 4 GiB
 - Key files: `TODO.md`, `src/audit/data/recall.toml`
