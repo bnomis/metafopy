@@ -528,7 +528,7 @@ locator = "Section 4, normal random effect: mu-hat and sigma-hat"
 read = 2026-11-14
 
 # Simmonds and Higgins (2016), Fig 1: hormone replacement therapy and cardiovascular disease (Table 1), one-stage model (glmer, fixed study effects, random
-# treatment effect); the paper prints odds ratios to two decimals.
+# treatment effect); the paper prints odds ratios to two decimals. Its model (the appendix R code, (treat-1|study)) is coding = 1.
 
 [[case]]
 id = "glmm.published.simmonds2016.hrt.random.mismatch"
@@ -537,7 +537,7 @@ function = "rma_glmm"
 data = { ai = [5, 0, 1, 1, 1, 1, 3], n1i = [701, 15, 15, 20, 29, 84, 68], ci = [0, 1, 0, 1, 0, 3, 0], n2i = [174, 14, 16, 20, 26, 84, 66] }
 args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "UM.FS", method = "ML" }
 status = "mismatch"
-reason = "exp_beta[0] printed 1.74, metafopy 1.79068, R metafor 5.2-1 1.7907; exp_ci_lb[0] printed 0.59, metafopy 0.54155, R metafor 5.2-1 0.5415; exp_ci_ub[0] printed 5.17, metafopy 5.92107, R metafor 5.2-1 5.9211"
+reason = "exp_beta[0] printed 1.74, metafopy 1.79068, R metafor 5.2-1 1.7907; exp_ci_lb[0] printed 0.59, metafopy 0.54155, R metafor 5.2-1 0.5415; exp_ci_ub[0] printed 5.17, metafopy 5.92107, R metafor 5.2-1 5.9211; accepted as a source difference on 2026-11-18 (the paper's glmer code puts the random effect on the treated arm only, coding = 1, where tau2 is 0 and the fit is the fixed-effect 1.74 (0.59, 5.17); with coding = 0.5 the marginal likelihood is higher at tau2 0.21307 than at 0, -15.84707 against -15.87238 at the ML beta and -15.87111 at the FE beta; metafopy and R metafor 5.2-1 agree)"
 check = "test_published.glmm_printed"
 printed = { "exp_beta[0]" = "1.74", "exp_ci_lb[0]" = "0.59", "exp_ci_ub[0]" = "5.17" }
 covers = ["rma_glmm.fit.OR.UM.FS.ML"]
@@ -547,6 +547,22 @@ citation = "Simmonds MC, Higgins JPT (2016). A general framework for the use of 
 doi = "10.1177/0962280214534409"
 locator = "Fig 1 (read from the page image), one-stage model, random effects; data of Table 1"
 read = 2026-11-14
+
+[[case]]
+id = "glmm.published.simmonds2016.hrt.random.coding1"
+kind = "published"
+function = "rma_glmm"
+data = { ai = [5, 0, 1, 1, 1, 1, 3], n1i = [701, 15, 15, 20, 29, 84, 68], ci = [0, 1, 0, 1, 0, 3, 0], n2i = [174, 14, 16, 20, 26, 84, 66] }
+args = { ai = "ai", n1i = "n1i", ci = "ci", n2i = "n2i", measure = "OR", model = "UM.FS", method = "ML", coding = 1.0 }
+check = "test_published.glmm_printed"
+printed = { "exp_beta[0]" = "1.74", "exp_ci_lb[0]" = "0.59", "exp_ci_ub[0]" = "5.17" }
+covers = ["rma_glmm.fit.OR.UM.FS.ML", "rma_glmm.coding.1"]
+
+[case.source]
+citation = "Simmonds MC, Higgins JPT (2016). A general framework for the use of logistic regression models in meta-analysis. Stat Methods Med Res 25(6):2858-2877"
+doi = "10.1177/0962280214534409"
+locator = "Fig 1 (read from the page image), one-stage model, random effects; data of Table 1; model of the appendix R code (treat-1|study)"
+read = 2026-11-18
 
 [[case]]
 id = "glmm.published.simmonds2016.hrt.fixed"
