@@ -51,3 +51,5 @@ names the one that fires only if the run finds it.
 | 3 | `mv-funnel-skip/tasks-1.md` | - | the `funnel_mvm` case failing once the skip is removed (Task 1), only if it does | merged 87cd4df |
 | 4 | `bagos2009-table5/tasks-1.md` | - | a printed row of Table 5 not reproducing as the probe found (Task 1), only if one does not | merged 7253d10 |
 | 5 | `audit-stale-entries/tasks-1.md` | 1, 2 | an entry whose case shows metafopy's output wrong (Task 1), or a new full-audit finding no row caused or expects (Task 3), only if one occurs | merged 22518aa |
+
+Checkpoint after 5: running
