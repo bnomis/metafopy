@@ -30,7 +30,7 @@ __all__ = ['LSProfileResult', 'profile_rma_ls']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 
-LINE_WEIGHTS = (0.25, 0.5, 0.75, 1.0)
+LINE_WEIGHTS = (0.25, 0.5, 0.75, 1.0, 1.5, 2.0)
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -87,11 +87,13 @@ class LSProfileResult:
 
 
 def profile_starts(x: metafopy.models.rma_ls_result.RMALSResult, pos: int, val: float) -> list[FloatArray | None]:
-    """The starting values of the refits at ``alpha[pos] = val``: the default start (``None``), then points from the fit's ``alpha`` to the line start.
+    """The starting values of the refits at ``alpha[pos] = val``: the default start (``None``), then points from the fit's ``alpha`` along the line start.
 
     The fitted line start sets the other coefficients by least squares so that ``Z alpha`` stays as near ``Z alpha_hat`` as it can with ``alpha[pos]``
     at ``val``. Far from the estimate the optimiser stops at the first start whenever the likelihood is nearly flat there, so the starts between the
-    two (a quarter, a half and three quarters of the way) are tried as well. A start that leaves a ``tau2_i`` negative under the identity link is left out.
+    two (a quarter, a half and three quarters of the way) are tried as well, and two beyond the line start (one and a half and twice the way): the
+    profile optimum can lie past the line, where every start inside it ends on a ``tau2 = 0`` plateau. A start that leaves a ``tau2_i`` negative under
+    the identity link is left out.
     """
     own = numpy.array(x.alpha, dtype=numpy.float64)
     own[pos] = val

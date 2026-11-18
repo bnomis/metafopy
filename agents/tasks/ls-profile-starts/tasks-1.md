@@ -30,7 +30,7 @@ Every R call sets `METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib` (
 
 ## Task 1: Regression tests first, then the two new starts
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Module location; API; Error handling; Implementation, items 1 to 3; Choices made ("Which starts to add", "The identity-link moves
@@ -42,30 +42,30 @@ highest log-likelihood, so that a profile-likelihood bound is the crossing of th
 
 **Subtasks:**
 
-- [ ] Re-check the starting point, narrowly: `grep -nxF 'LINE_WEIGHTS = (0.25, 0.5, 0.75, 1.0)' src/metafopy/methods/ls_profile.py` finds one line;
+- [x] Re-check the starting point, narrowly: `grep -nxF 'LINE_WEIGHTS = (0.25, 0.5, 0.75, 1.0)' src/metafopy/methods/ls_profile.py` finds one line;
       `grep -nwE 'test_profile_keeps_the_continuous_branch_of_alpha2_on_bcg|test_confint_identity_lower_bound_is_a_crossing' src/tests/test_rma_ls.py`
       finds nothing; and the `[[case]]` with `id = "ls.confint.scale.ML.bcg"` in `src/tests/correctness/cases/location_scale.toml` has a
       `status = "mismatch"` line. Stop as `blocked`, naming what differs, if any is not so
-- [ ] In `src/tests/test_rma_ls.py`, after `test_profile_refit_keeps_the_highest_likelihood_on_bcg`, add
+- [x] In `src/tests/test_rma_ls.py`, after `test_profile_refit_keeps_the_highest_likelihood_on_bcg`, add
       `test_profile_keeps_the_continuous_branch_of_alpha2_on_bcg`: on `res = ls(bcg(), '~ ablat', '~ ablat', method='ML')`,
       `2 * (res.logLik() - metafopy.methods.ls_profile.profile_fit(res, 1, a)[0])` is 3.789459, 3.813933 and 3.838488 at a = 1.36, 1.37 and 1.38
       (`abs=1e-5`; assert each fit is not `None`), and `metafopy.confint(res, alpha=1, tol=1e-12)` gives `ci.ub` 1.3812075 (`abs=1e-6`) of its `random`
       table with `ub_sign == ''`. Its docstring says what it guards: every start of the line ends on the `tau2 = 0` plateau (3.868641) from a = 1.36,
       while the continuous branch, whose optimum has `alpha.1` near -74, stays below the cut-off until 1.3812
-- [ ] Add `test_confint_identity_lower_bound_is_a_crossing`: on `res = result('bcg_year_identity')` (`FITS['bcg_year_identity']`),
+- [x] Add `test_confint_identity_lower_bound_is_a_crossing`: on `res = result('bcg_year_identity')` (`FITS['bcg_year_identity']`),
       `metafopy.confint(res, alpha=1, tol=1e-12)` gives `ci.lb` -0.1356308 (`abs=1e-6`) of its `random` table with `lb_sign == ''`. Its docstring
       says the brute-force profile (a one-dimensional search over the feasible interval) crosses the cut-off there, and that before the new starts
       every line start left a `tau2_i` negative and was dropped, so the bound was a `<` at -0.0820267
-- [ ] Run the two new tests against the unchanged `LINE_WEIGHTS` (`pytest src/tests/test_rma_ls.py -k "continuous_branch_of_alpha2 or
+- [x] Run the two new tests against the unchanged `LINE_WEIGHTS` (`pytest src/tests/test_rma_ls.py -k "continuous_branch_of_alpha2 or
       identity_lower_bound_is_a_crossing"`) and record in this task's Notes that each fails, with the values it got (the spec expects the plateau
       3.868641 at 1.37 and 1.38 and `ci.ub` 1.3598266; `ci.lb` -0.0820267 with `lb_sign == '<'`). A test that already passes stops the task as
       `blocked`, naming it
-- [ ] In `src/metafopy/methods/ls_profile.py`, set `LINE_WEIGHTS = (0.25, 0.5, 0.75, 1.0, 1.5, 2.0)` and replace the docstring of `profile_starts`
+- [x] In `src/metafopy/methods/ls_profile.py`, set `LINE_WEIGHTS = (0.25, 0.5, 0.75, 1.0, 1.5, 2.0)` and replace the docstring of `profile_starts`
       with the spec's API text word for word. Leave the loop `starts.extend(own + weight * (line - own) for weight in LINE_WEIGHTS)`, the
       identity-link filter and `profile_fit` unchanged: the new starts come last, so a tie keeps the fit found now
-- [ ] In `src/tests/correctness/cases/location_scale.toml`, remove the `status` and `reason` lines of `ls.confint.scale.ML.bcg`, so it runs as a
+- [x] In `src/tests/correctness/cases/location_scale.toml`, remove the `status` and `reason` lines of `ls.confint.scale.ML.bcg`, so it runs as a
       passing case
-- [ ] Run the Definition of Done's test files. Both new tests pass, and so does `ls.confint.scale.ML.bcg`.
+- [x] Run the Definition of Done's test files. Both new tests pass, and so does `ls.confint.scale.ML.bcg`.
       **Stops for the operator: an output moves beyond the spec's list.** Only if a test or correctness case other than the two new tests and
       `ls.confint.scale.ML.bcg` changes outcome, or a new test fails with a value other than the spec's: do not edit the test, case or fixture; stop
       the task as `blocked` and report each test id with its old and new value. The spec lists none, so a hit is a change to metafopy's output it did
@@ -73,21 +73,27 @@ highest log-likelihood, so that a profile-likelihood bound is the crossing of th
 
 **Acceptance Criteria:**
 
-- [ ] `LINE_WEIGHTS` is `(0.25, 0.5, 0.75, 1.0, 1.5, 2.0)` and the docstring of `profile_starts` is the spec's API text; no signature changes
-- [ ] Both new tests pass, and this task's Notes record each failing against `LINE_WEIGHTS = (0.25, 0.5, 0.75, 1.0)` with the values it got
-- [ ] `ls.confint.scale.ML.bcg` has no `status` and passes: metafopy's upper bound of `alpha.2` is within `LS_PROFILE`
+- [x] `LINE_WEIGHTS` is `(0.25, 0.5, 0.75, 1.0, 1.5, 2.0)` and the docstring of `profile_starts` is the spec's API text; no signature changes
+- [x] Both new tests pass, and this task's Notes record each failing against `LINE_WEIGHTS = (0.25, 0.5, 0.75, 1.0)` with the values it got
+- [x] `ls.confint.scale.ML.bcg` has no `status` and passes: metafopy's upper bound of `alpha.2` is within `LS_PROFILE`
       (`src/tests/correctness/test_derived.py`) of the reference's 1.38120753377
-- [ ] Every other test of the Definition of Done's files passes unchanged, with no fixture edited
+- [x] Every other test of the Definition of Done's files passes unchanged, with no fixture edited
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `ruff format --check src/metafopy/methods/ls_profile.py src/tests/test_rma_ls.py` and `ruff check` on the same files pass
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_rma_ls.py src/tests/correctness/test_derived.py src/tests/correctness/test_formulas_ls.py src/tests/correctness/test_properties.py`
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `ruff format --check src/metafopy/methods/ls_profile.py src/tests/test_rma_ls.py` and `ruff check` on the same files pass
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_rma_ls.py src/tests/correctness/test_derived.py src/tests/correctness/test_formulas_ls.py src/tests/correctness/test_properties.py`
       passes
 
 **Notes:**
+
+- Run against the unchanged `LINE_WEIGHTS = (0.25, 0.5, 0.75, 1.0)` (2026-11-18): `test_profile_keeps_the_continuous_branch_of_alpha2_on_bcg`
+  failed with 3.868641238 (the plateau) where 3.789459 was expected at a = 1.36; `test_confint_identity_lower_bound_is_a_crossing` failed with
+  `ci.lb` -0.0820267 where -0.1356308 was expected. With the new starts both pass, and so do the Definition of Done's test files (820 passed, 1 skipped,
+  no XPASS)
+- The worktree has no `.venv`, so tests ran with the main checkout's `.venv/bin` and `PYTHONPATH` set to the worktree's `src`
 
 - Key files: `src/metafopy/methods/ls_profile.py` (`LINE_WEIGHTS`, `profile_starts`, `profile_fit`), `src/metafopy/methods/ls_confint.py`
   (`lb_sign`, `ub_sign`; unchanged), `src/tests/test_rma_ls.py` (`ls`, `bcg`, `result`, `FITS`), `src/tests/correctness/cases/location_scale.toml`,
