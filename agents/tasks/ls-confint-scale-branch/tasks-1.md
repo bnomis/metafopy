@@ -184,6 +184,8 @@ now give; or, if metafopy is the one that misses the maximum at a = 1.3169, the 
 - STOP for the operator: metafopy's `profile_fit` for `ls.confint.scale.ML.bcg` leaves the continuous branch (3.789459 at a = 1.36, 3.685207 at 1.3170) for the
   plateau (3.868641) between 1.36 and 1.37, so `confint` gives the upper bound 1.3598, a jump, not the crossing 1.3812 (no `>` sign). Fixing `profile_starts` or
   `profile_fit` in `src/metafopy/methods/ls_profile.py` would change metafopy's `confint` and `profile` output. Nothing under `src/metafopy/` changed and nothing is filed in `TODO.md`.
+- 2026-11-18, answered by the operator (operator session): the fix of metafopy's own profile of `alpha.2` becomes its own `TODO.md` item, filed by
+  Task 3, rather than a task of this list; the case stays an expected failure with the reason Task 2 wrote
 - Key files: `src/tests/correctness/formulas.py` (`ls_profile_ll`, `ls_profile_bounds`), `src/tests/correctness/cases/location_scale.toml`
   (`ls.confint.scale.ML.bcg`), `src/tests/correctness/test_derived.py` (`ls_confint_scale`, `LS_PROFILE`), `src/tests/correctness/test_formulas_ls.py`
 - `ls_profile_ll` is also used by `ls_profile_bounds` for every `ls.confint.scale.*` case and by the profile checks, hence the run over every
@@ -206,6 +208,13 @@ now give; or, if metafopy is the one that misses the maximum at a = 1.3169, the 
 - [ ] Move the item from `TODO.md` to `DONE.md`: append its heading and body unchanged at the end of `DONE.md`, then a line
       `Done: 2026-MM-DD, agents/tasks/ls-confint-scale-branch/tasks-1.md; <outcome>` with the date of the commit and the outcome in a few words (which
       branch was the maximum, and the case's new status)
+- [ ] File the operator's answer of 2026-11-18 (Task 2 Notes) as a new `TODO.md` item, in the shape of the `todo-add` skill (a dated finding in a
+      `doc-counts` accept block, Cause, Fix direction, `Spec: none yet.`), placed first in the file, titled "metafopy's profile of the ls scale
+      coefficient leaves the highest branch before the crossing". Its finding gives Task 2's figures (metafopy 3.789459 at a = 1.36 and the plateau
+      3.868641 from 1.37; `confint` upper bound 1.3598 with no `>` sign against the crossing 1.38120753375 of the fixed reference and R's best refits)
+      and names this list; its Cause names `profile_starts` and `profile_fit` in `src/metafopy/methods/ls_profile.py`; its Fix direction says a spec
+      is needed first, since the fix changes metafopy's `confint` and `profile` output and every `ls.confint.scale.*` case uses the same starts, and that
+      `ls.confint.scale.ML.bcg` then moves to `pass`
 - [ ] Run the final tests from the worktree and save their whole output for the merge gate. The main checkout is the first entry of `git worktree list
       --porcelain` (`/Users/simonb/src/metafopy`):
       `mkdir -p /Users/simonb/src/metafopy/ralpher-logs/ls-confint-scale-branch/tasks-1 && source bin/activate.sh && pytest src/tests 2>&1 | tee /Users/simonb/src/metafopy/ralpher-logs/ls-confint-scale-branch/tasks-1/final-tests.log`
