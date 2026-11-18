@@ -70,7 +70,7 @@ full suite, as the run order requires.
 
 ## Task 1: Run each entry's cases in R and metafopy
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Source Reference:** the item's "Fix direction" (run each entry's case in R and metafopy)
@@ -80,21 +80,21 @@ sorted into "remove" or "narrow", with the values behind the choice recorded; an
 
 **Subtasks:**
 
-- [ ] Re-check the starting point, and stop as `blocked`, naming what differs, if any of these is not so:
+- [x] Re-check the starting point, and stop as `blocked`, naming what differs, if any of these is not so:
       - `agents/tasks/ls-profile-starts/tasks-1.md` and `agents/tasks/permutest-exact-limit/tasks-1.md` exist on `HEAD` and neither has a line
         `**Status:** todo` or `**Status:** in-progress` (rows 1 and 2 are merged)
       - the item is in `TODO.md` with a `tasks:` line naming `agents/tasks/audit-stale-entries/tasks-1.md`
       - each of E1 to E6 is in `src/audit/data/known.toml` with the `match` and the `detail` (E4: the `path`) quoted in the header, found by
         `grep -n -F` of its `detail` string (E4: of `options/predict/ls_na/newscale=*`). Other entries that share a `match` glob, or a wording change in
         a `reason`, are not a difference
-- [ ] For each entry, run two slices of the audit over the cases its `match` names, as the header says, both with `--only` set to each glob of the
+- [x] For each entry, run two slices of the audit over the cases its `match` names, as the header says, both with `--only` set to each glob of the
       entry's `match` (repeated) and `--steps` set to the step that makes those cases (`scripts` for E1 to E3, `options` for E4, and for E5 and E6,
       whose globs start with `*/`, the steps whose case ids match them in the run `20261118-042436`, found with `grep -c` over its `findings.json`
       and its step results, or `options,construct,matrix` when that shows none):
       - with the ledger: `METAFOPY_AUDIT_RLIB="$main/.audit/Rlib" METAFOPY_AUDIT_WORK="$main/.audit" bin/metafor-audit.sh --only '<glob>' --steps <steps>`
       - without it: the same with `--no-ledger`, so every difference of those cases is reported, accepted or not
       Record both run directories in this task's Notes
-- [ ] Sort each entry, recording the reason and the values in this task's Notes, dated:
+- [x] Sort each entry, recording the reason and the values in this task's Notes, dated:
       - **No case:** the slice runs no case its `match` names (the case ids changed or were removed). Remove it
       - **Agree:** the ledger slice lists no unaccepted finding on its cases, and the `--no-ledger` slice has no finding of the entry's `kind` and
         `path` whose detail is the difference its `reason` describes (another entry accepts every finding it has). Record both programs' values at
@@ -114,15 +114,52 @@ sorted into "remove" or "narrow", with the values behind the choice recorded; an
 
 **Acceptance Criteria:**
 
-- [ ] Each of E1 to E6 is in exactly one of "No case", "Agree", "Moved" or "Otherwise" in this task's Notes, with its slice run directories and the
+- [x] Each of E1 to E6 is in exactly one of "No case", "Agree", "Moved" or "Otherwise" in this task's Notes, with its slice run directories and the
       values behind the choice, or the task stopped for the operator
-- [ ] No file but this task list changes
+- [x] No file but this task list changes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
 
 **Notes:**
+- Starting point re-checked 2026-11-18 20:33 UTC: `agents/tasks/ls-profile-starts/tasks-1.md` and `agents/tasks/permutest-exact-limit/tasks-1.md`
+  have only `done` tasks; `TODO.md` line 25 names this list; each of E1 to E6 was found by `grep -n -F` of its `detail` (E4 of its `match`).
+- Slice commands (every audit command run from this worktree with `METAFOPY_AUDIT_RLIB` and `METAFOPY_AUDIT_WORK` set as the header says; the `scripts`
+  step takes `--only` as plain substrings of the script ids `test/misc_selmodel` and `test/misc_coef_se`, so `--only 'scripts/misc_selmodel/*'` ran no
+  case (run `20261118-213347`, 0 expressions, discarded); the case-id globs work for the other steps).
+- Sorted on 2026-11-18, R 4.6.2, metafor 5.2-1 (slice runs under `/Users/simonb/src/metafopy/.audit/runs/`):
+
+| Entry | Ledger slice | `--no-ledger` slice | Sort |
+|---|---|---|---|
+| E1, E2, E3 | `20261118-213434` (`--only misc_selmodel --only misc_coef_se --steps scripts`; 161 expressions, 0 new) | `20261118-213634` | Agree |
+| E4 | `20261118-214021` (`--only 'options/predict/ls_na/newscale=*' --steps options`; 2 cases, 0 new) | `20261118-214058` | Agree |
+| E5, E6 | `20261118-214201` (the entries' own globs, `--steps matrix,options,construct,standalone`; 0 new) | `20261118-214759` | Agree |
+
+- **E1: Agree.** The `--no-ledger` slice has no `value-diff` finding on the `selmodel(res, type = "beta")` cases of `misc_selmodel` (21 findings of
+  other kinds, all `missing-field` and `label-diff` accepted by other entries). By hand on baskerville2012 (ML): R tau2 2.451189709e-06,
+  log-likelihood -2.792403414, delta 0.47311519 and 4.4613009; metafopy tau2 2.450923179e-06 (1.1e-4 relative), log-likelihood -2.792403397 (the
+  higher), delta 0.47311532 and 4.46130221. The entry's `reason` (R stops at -2.792404, tau2 differing by 2.6 %) no longer holds.
+- **E2: Agree.** Same as E1 for `misc_coef_se` (test 4, `sel <- selmodel(res, type = "beta")`): no `value-diff` finding; the same fit as E1's.
+- **E3: Agree.** No finding at all on the `capture.output(print(sav))` unit of the beta fit (case `scripts/misc_selmodel/test/41`). By hand both
+  programs print `delta.2    4.4613  2.1842   1.5847  0.1130  0.1803  8.7423`: the lower limit is 0.1803 in R and in metafopy (the entry accepted
+  0.1803 against 0.1804).
+- **E4: Agree.** No finding with path `$slab` in either slice. The raw results hold the same `slab` in R and metafopy: `[""]` for
+  `newscale=0.5` and `["year", "ablat"]` for the named `newscale`. The five findings of the slices (a `ci.ub` and a `ci.lb` of 5e-4 relative and
+  their printed lines) are accepted by other entries and are not E4's kind and path.
+- **E5: Agree, with a note.** The `--no-ledger` slice has no `print-diff` whose line reads R `QM(df = 2) = 15.6105` against metafopy
+  `QM(df = 2) = 15.6104`; the `QM(df = 2) = 15.610...` lines it has are the `construct/ls_year/control=*` refits (R 15.6064 against 15.6104 for
+  BFGS, 15.6127 against 15.6105 for Nelder-Mead, 15.6105 against 15.6136 for Rvmmin), each accepted by the broader entry of the flat
+  location-scale fits, and the default `ls_year` print is `QM(df = 2) = 1.2830` in R against `1.2828` in metafopy (accepted by the same entry).
+  By hand on a plain call (`rma(yi, vi, mods = ~ ablat + year, scale = ~ ablat + year)` on `escalc(measure = "RR", ...)` of `dat.bcg`): R QM
+  15.61050821, log-likelihood -7.602255955; metafopy QM 15.61043419 (prints 15.6104). So the one-digit print difference still exists for that call,
+  but no case of the audit reaches it, which is why the entry matched nothing; removing it hides nothing the audit can report.
+- **E6: Agree.** The slice has no finding on the step table of `matrix/print/sel_bcg` (its only finding there is a `$hessian` entry accepted by
+  another entry). By hand (`selmodel(type = "stepfun", steps = c(0.025, 0.1, 0.5, 1))` on the REML fit of `dat.bcg`, as the audit's `sel_bcg`
+  fixture, whose target is `uni_reml`): R third delta 98.1050604, metafopy 98.1050556; both print `0.1   < p <= 0.5     2   98.1051`; log-likelihood -11.78560532 in
+  both.
+- None of the six is "No case", "Moved" or "Otherwise", so none stops for the operator and Task 2 removes all six; E1 and E2 go together, so no
+  `reason` of E2 needs rewriting. `docs/differences.md` ("selmodel on a flat likelihood", last paragraph) describes E6's difference and is Task 2's.
 
 - Key files: `src/audit/README.md` (commands, kinds, the `known.toml` rules), `src/audit/data/known.toml`, `src/audit/data/fixtures.json`
 - Prerequisite outside this repository: R 4.6.2 with metafor 5.2-1 and the pinned packages in `/Users/simonb/src/metafopy/.audit/Rlib`, and the
