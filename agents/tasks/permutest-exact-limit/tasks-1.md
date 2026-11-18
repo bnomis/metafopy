@@ -30,7 +30,7 @@ has no `.audit/Rlib` of its own. Scratch scripts stay outside the repository. No
 
 ## Task 1: Count R's permutation matrix in the byte guard
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** API; Error handling; Implementation, steps 1-3; Tests and records, items 1, 2 and 6 (the tests); Acceptance, first and third
@@ -41,47 +41,47 @@ that I am not left with a run of several days whose result R could never confirm
 
 **Subtasks:**
 
-- [ ] Re-check the starting point, narrowly: `grep -nF 'def permutation_arrays(n_iter: int, width: int) ->' src/metafopy/methods/permutest.py`
+- [x] Re-check the starting point, narrowly: `grep -nF 'def permutation_arrays(n_iter: int, width: int) ->' src/metafopy/methods/permutest.py`
       finds the one definition; `grep -nF 'if n_iter * (2 * width + 1) * 8 > MAX_PERMUTATION_BYTES:' src/metafopy/methods/permutest.py` finds the
       one guard; `grep -rnw 'perm_cols' src/metafopy` finds nothing; `grep -cF 'permutation_arrays(' src/metafopy/methods/ls_permutest.py` prints 2;
       `grep -nwE 'test_an_exact_test_whose_permutation_matrix_r_cannot_hold_is_refused|test_permutation_arrays_count_r_permutation_matrix'
       src/tests/test_permutest_vif_plots.py src/tests/test_permutest_ls_plots.py` finds nothing; and
       `grep -cF 'auditme: accept[spec-api-signature-drift]' agents/specs/permutest-exact-limit/spec.md` prints 1. Stop as `blocked`, naming what
       differs, if any is not so
-- [ ] In `src/tests/test_permutest_vif_plots.py`, beside `test_an_exact_test_too_large_to_allocate_is_refused_as_in_r`, add
+- [x] In `src/tests/test_permutest_vif_plots.py`, beside `test_an_exact_test_too_large_to_allocate_is_refused_as_in_r`, add
       `test_an_exact_test_whose_permutation_matrix_r_cannot_hold_is_refused`: on `metafopy.rma_uni('yi', 'vi', mods='~ ablat', data=refutil.bcg())`,
       `metafopy.permutest(fit, exact='i') == 389188800` and `metafopy.permutest(fit, exact=True)` raises `metafopy.errors.InputError` with
       `match='Number of iterations requested too large'`. A comment gives the byte count from the spec (389188800 x (2 x 2 + 1 + 13) x 8 =
       56043187200, over 16 GiB) and that R is killed or stops for memory on this call
-- [ ] In the same file add `test_permutation_arrays_count_r_permutation_matrix`: with `monkeypatch.setattr(metafopy.methods.permutest,
+- [x] In the same file add `test_permutation_arrays_count_r_permutation_matrix`: with `monkeypatch.setattr(metafopy.methods.permutest,
       'MAX_PERMUTATION_BYTES', 10000)`, `metafopy.methods.permutest.permutation_arrays(100, 2)` returns three arrays of shapes `(100, 2)`, `(100, 2)`
       and `(100,)` (4000 bytes), and `permutation_arrays(100, 2, perm_cols=13)` raises `InputError` with the same `match` (14400 bytes)
-- [ ] In `src/tests/test_permutest_ls_plots.py`, beside `test_an_exact_test_too_large_to_allocate_is_refused_as_in_r`, add
+- [x] In `src/tests/test_permutest_ls_plots.py`, beside `test_an_exact_test_too_large_to_allocate_is_refused_as_in_r`, add
       `test_an_exact_test_whose_permutation_matrix_r_cannot_hold_is_refused`: on
       `metafopy.rma_uni('yi', 'vi', mods='~ ablat', scale='~ alloc', data=refutil.bcg())` (warnings ignored as the neighbouring test does),
       `metafopy.permutest(fit, exact='i') == [389188800, 25740]` and `metafopy.permutest(fit, exact=True)` raises `InputError` with the same `match`
-- [ ] Run the new tests against the unchanged code and record in this task's Notes: `test_permutation_arrays_count_r_permutation_matrix` fails with
+- [x] Run the new tests against the unchanged code and record in this task's Notes: `test_permutation_arrays_count_r_permutation_matrix` fails with
       `TypeError`; each `..._permutation_matrix_r_cannot_hold_is_refused` test does not raise within `timeout 60` (run each alone as
       `timeout 60 pytest <file>::<test>` and record that it was cut off, exit status 124), and its `exact='i'` assertion holds. Another outcome (an
       `exact='i'` count other than the spec's, a refusal before the change) stops the task as `blocked`, naming it
-- [ ] In `src/metafopy/methods/permutest.py`, give `permutation_arrays` the spec's signature
+- [x] In `src/metafopy/methods/permutest.py`, give `permutation_arrays` the spec's signature
       `def permutation_arrays(n_iter: int, width: int, perm_cols: int = 0) -> tuple[FloatArray, FloatArray, FloatArray]:` and the spec's docstring
       (API section), and make the guard `n_iter * (2 * width + 1 + perm_cols) * 8 > MAX_PERMUTATION_BYTES`, raising the same
       `InputError('Number of iterations requested too large.')`
-- [ ] Rewrite the comment above `MAX_PERMUTATION_BYTES` as Implementation step 1 gives it: R's exact test holds three arrays of permutation statistics
+- [x] Rewrite the comment above `MAX_PERMUTATION_BYTES` as Implementation step 1 gives it: R's exact test holds three arrays of permutation statistics
       and the matrix of every permutation (`.genuperms`, or `expand.grid` of the signs without moderators, `k` doubles per permutation); how much R can
       hold depends on the machine (on macOS its vector heap stops at the larger of 16 GB and the physical memory, R 3.5.0 NEWS), so metafopy counts
       the same bytes against a fixed 16 GiB on every platform. Keep the value `16 * 1024**3`
-- [ ] `run_permutations` passes `perm_cols=k if exact else 0` to `permutation_arrays`; in `src/metafopy/methods/ls_permutest.py`,
+- [x] `run_permutations` passes `perm_cols=k if exact else 0` to `permutation_arrays`; in `src/metafopy/methods/ls_permutest.py`,
       `beta_permutations` and `alpha_permutations` pass `perm_cols=x.k if exact else 0` (or the local `k` where the function has one). `exact` there
       is the caller's `use_exact`, so an exact test chosen because `iter` exceeds the count is counted too, as in R
-- [ ] Rewrite the exact-test clause of `Raises` in `permutest_rma_uni` (`permutest.py`) and `permutest_rma_ls` (`ls_permutest.py`) to Implementation
+- [x] Rewrite the exact-test clause of `Raises` in `permutest_rma_uni` (`permutest.py`) and `permutest_rma_ls` (`ls_permutest.py`) to Implementation
       step 3: "an exact test needs more iterations than the largest float, or more memory than R's exact test can hold in 16 GiB (its arrays and its
       matrix of every permutation; R stops with an error as well)"
-- [ ] Remove the line `# auditme: accept[spec-api-signature-drift] approved 2026-11-18, not built yet: ...` from the API block of
+- [x] Remove the line `# auditme: accept[spec-api-signature-drift] approved 2026-11-18, not built yet: ...` from the API block of
       `agents/specs/permutest-exact-limit/spec.md`, in this task's commit, so the hook compares the built signature with the spec's. If the hook then
       reports a drift, make the source match the spec's API block (never the other way round without the operator)
-- [ ] Run every test file that names `permutest`: `pytest $(grep -rlw permutest src/tests --include='test_*.py')`.
+- [x] Run every test file that names `permutest`: `pytest $(grep -rlw permutest src/tests --include='test_*.py')`.
       **Stops for the operator: a test or audit case besides `uni_mods` and `ls_bcg` with `exact=True` is refused.** Only if a test other than the
       two new refusal tests and the existing `test_an_exact_test_too_large_to_allocate_is_refused_as_in_r` pair now raises
       "Number of iterations requested too large": do not edit it; stop the task as `blocked` and report each test id with the call it makes and its
@@ -90,20 +90,20 @@ that I am not left with a run of several days whose result R could never confirm
 
 **Acceptance Criteria:**
 
-- [ ] `permutest(..., exact=True)` on `uni_mods` and `ls_bcg` raises `InputError` matching "Number of iterations requested too large" before any
+- [x] `permutest(..., exact=True)` on `uni_mods` and `ls_bcg` raises `InputError` matching "Number of iterations requested too large" before any
       refit, and `exact='i'` still returns 389188800 and `[389188800, 25740]`
-- [ ] `permutation_arrays(100, 2)` passes and `permutation_arrays(100, 2, perm_cols=13)` raises under a bound of 10000 bytes
-- [ ] This task's Notes record the new tests' outcomes on the code before the change
-- [ ] Every existing test in the files naming `permutest` passes unchanged, with no fixture edited
-- [ ] The spec's API block has no `auditme: accept` line, and the commit's `auditme-changed` hook passes on it
+- [x] `permutation_arrays(100, 2)` passes and `permutation_arrays(100, 2, perm_cols=13)` raises under a bound of 10000 bytes
+- [x] This task's Notes record the new tests' outcomes on the code before the change
+- [x] Every existing test in the files naming `permutest` passes unchanged, with no fixture edited
+- [x] The spec's API block has no `auditme: accept` line, and the commit's `auditme-changed` hook passes on it
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `ruff format --check` and `ruff check` on `src/metafopy/methods/permutest.py src/metafopy/methods/ls_permutest.py
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `ruff format --check` and `ruff check` on `src/metafopy/methods/permutest.py src/metafopy/methods/ls_permutest.py
       src/tests/test_permutest_vif_plots.py src/tests/test_permutest_ls_plots.py` pass
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_permutest_vif_plots.py src/tests/test_permutest_ls_plots.py src/tests/test_rma_ls.py src/tests/test_diagnostics.py`
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_permutest_vif_plots.py src/tests/test_permutest_ls_plots.py src/tests/test_rma_ls.py src/tests/test_diagnostics.py`
       passes, and so does the run over every test file naming `permutest` above
 
 **Notes:**
@@ -111,6 +111,10 @@ that I am not left with a run of several days whose result R could never confirm
 - Key files: `src/metafopy/methods/permutest.py` (`MAX_PERMUTATION_BYTES`, `permutation_arrays`, `run_permutations`, `permutest_rma_uni`),
   `src/metafopy/methods/ls_permutest.py` (`beta_permutations`, `alpha_permutations`, `permutest_rma_ls`), `src/tests/test_permutest_vif_plots.py`,
   `src/tests/test_permutest_ls_plots.py`, `agents/specs/permutest-exact-limit/spec.md` (the accept line only)
+- The permutest test run was made with `-m 'not slow'` (11 slow tests deselected): 1729 passed, 3 skipped, none refused.
+- Outcomes of the new tests on the unchanged code (2026-11-18): `test_permutation_arrays_count_r_permutation_matrix` failed with `TypeError`
+  (unexpected keyword `perm_cols`); each `..._permutation_matrix_r_cannot_hold_is_refused` test was cut off by `timeout 60` (exit status 124), the
+  `exact='i'` count being reached first. After the change all pass.
 - `refutil` is the test helper module both test files already import for `refutil.bcg()`
 - The spec's bound: `k = 13` with two coefficients refuses above 119304647 exact iterations; without moderators `k = 13` gives 8192 at most
 - `exact='i'` returns before any allocation, so it is unaffected (Error handling)

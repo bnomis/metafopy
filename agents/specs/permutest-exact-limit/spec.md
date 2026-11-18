@@ -80,7 +80,6 @@ very long time.
 One keyword is added to an internal helper; no public signature changes.
 
 ```python
-# auditme: accept[spec-api-signature-drift] approved 2026-11-18, not built yet: agents/tasks/permutest-exact-limit/tasks-1.md adds perm_cols and removes this line
 def permutation_arrays(n_iter: int, width: int, perm_cols: int = 0) -> tuple[FloatArray, FloatArray, FloatArray]:
     """Arrays for the test statistics, the coefficients (``n_iter`` x ``width`` each) and the omnibus statistic (``n_iter``) of each permutation.
 

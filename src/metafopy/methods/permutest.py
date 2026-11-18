@@ -184,21 +184,25 @@ CONTROL_DEFAULTS: dict[str, typing.Any] = {
 }
 
 
-# R's permutest allocates the arrays of the permutation statistics before running any permutation, and stops when it cannot. How much R can allocate
-# depends on the machine (on macOS its vector heap stops at 16 GB by default: R_MAX_VSIZE in R's ?Memory); the same bound here refuses such a test
-# on every platform before it exhausts the memory.
+# R's exact test holds three arrays of permutation statistics and the matrix of every permutation (`.genuperms`, or `expand.grid` of the signs without
+# moderators, `k` doubles per permutation), and stops when it cannot. How much R can hold depends on the machine (on macOS its vector heap stops at the
+# larger of 16 GB and the physical memory, R 3.5.0 NEWS), so metafopy counts the same bytes against a fixed 16 GiB on every platform and refuses such a
+# test before it exhausts the memory.
 MAX_PERMUTATION_BYTES = 16 * 1024**3
 
 
-def permutation_arrays(n_iter: int, width: int) -> tuple[FloatArray, FloatArray, FloatArray]:
+def permutation_arrays(n_iter: int, width: int, perm_cols: int = 0) -> tuple[FloatArray, FloatArray, FloatArray]:
     """Arrays for the test statistics, the coefficients (``n_iter`` x ``width`` each) and the omnibus statistic (``n_iter``) of each permutation.
 
     They are not filled, so memory is only taken as permutations are stored: the caller writes every row, NaN for a refit that fails.
+    ``perm_cols`` is the number of columns of the matrix of every permutation that R's exact test builds before its first refit (``k`` for an
+    exact test, 0 for random permutations); metafopy never builds it, but counts it so that it refuses what R cannot hold.
 
     Raises:
-        metafopy.errors.InputError: the arrays would take more than ``MAX_PERMUTATION_BYTES`` (R: "Number of iterations requested too large.").
+        metafopy.errors.InputError: the arrays and R's permutation matrix would take more than ``MAX_PERMUTATION_BYTES``
+            (R: "Number of iterations requested too large.").
     """
-    if n_iter * (2 * width + 1) * 8 > MAX_PERMUTATION_BYTES:
+    if n_iter * (2 * width + 1 + perm_cols) * 8 > MAX_PERMUTATION_BYTES:
         raise metafopy.errors.InputError('Number of iterations requested too large.')
     return numpy.empty((n_iter, width)), numpy.empty((n_iter, width)), numpy.empty(n_iter)
 
@@ -322,7 +326,8 @@ def permutest_rma_uni(
 
     Raises:
         metafopy.errors.InputError: ``iter`` is below 2; ``btt`` or ``permci`` names a coefficient that does not exist; a ``control`` entry is not
-            accepted; an exact test needs more iterations than the largest float, or more than can be allocated (R stops with an error as well).
+            accepted; an exact test needs more iterations than the largest float, or more memory than R's exact test can hold in 16 GiB (its arrays and its
+            matrix of every permutation; R stops with an error as well).
         metafopy.errors.ArgumentError: ``control`` has an unknown entry.
         metafopy.errors.NotSupportedError: ``x`` is a [robust][metafopy.robust] result.
 
@@ -448,7 +453,7 @@ def run_permutations(
     progbar: bool = False,
 ) -> tuple[FloatArray, FloatArray, FloatArray]:
     k, p = x.k, x.p
-    zval, beta, QM = permutation_arrays(n_iter, p)
+    zval, beta, QM = permutation_arrays(n_iter, p, perm_cols=k if exact else 0)
 
     def store(i: int, fit: metafopy.models.rma_uni.RMAResult | None) -> bool:
         if fit is None:
