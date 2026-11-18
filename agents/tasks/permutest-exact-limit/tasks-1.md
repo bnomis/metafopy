@@ -186,7 +186,7 @@ error why metafopy refuses and what to use instead.
 
 ## Task 3: Run the audit and its recall check
 
-**Status:** todo
+**Status:** in-progress
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Tests and records, item 6 (the audit); Acceptance, second item
@@ -223,6 +223,15 @@ stale, and no other case is newly refused.
 - [ ] `pytest src/tests/test_harness_accounts.py` passes if `src/audit/data/known.toml` changed in this task
 
 **Notes:**
+
+- Whole audit run 2026-11-18 on `28adcef`: `/Users/simonb/src/metafopy/.audit/runs/20261118-153029`. Neither `options/permutest/uni_mods/exact=true` nor
+  `options/permutest/ls_bcg/exact=true` is listed (the earlier run `20261118-042436`, on `a8b5982`, listed `uni_mods` as `r-killed`); no case besides
+  those two is refused; the stale-ledger list is identical to the earlier run's, so the changed `r-killed` entry is not stale.
+- **BLOCKED:** the run holds two findings the earlier run does not: `scripts/misc_rma_ls/test/65` (`$lb.sign`, `conf21 <- confint(res2, alpha = 1,
+  control = list(vc.min = -0.4, vc.max = 0.3))`: R `<`, Python empty) and `scripts/misc_rma_ls/test/67` (`[]$lb.sign`, the same value in a list). This
+  list changes only `permutest.py` and `ls_permutest.py` (guard) since `45bbfc3`, the merge of the profile-starts list that the earlier run predates;
+  the cause is probably that merge, not this list. Needs the operator: decide whether to file the two findings in `TODO.md`/ledger, then rerun the
+  recall check (`bin/metafor-audit.sh --recall`, not yet run).
 
 - Depends on Task 2
 - If the worktree has no `.venv`, run with `PATH=/Users/simonb/src/metafopy/.venv/bin:$PATH`, as earlier lists did
