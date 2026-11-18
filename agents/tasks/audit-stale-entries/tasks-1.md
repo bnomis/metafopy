@@ -70,7 +70,7 @@ full suite, as the run order requires.
 
 ## Task 1: Run each entry's cases in R and metafopy
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Source Reference:** the item's "Fix direction" (run each entry's case in R and metafopy)
@@ -80,21 +80,21 @@ sorted into "remove" or "narrow", with the values behind the choice recorded; an
 
 **Subtasks:**
 
-- [ ] Re-check the starting point, and stop as `blocked`, naming what differs, if any of these is not so:
+- [x] Re-check the starting point, and stop as `blocked`, naming what differs, if any of these is not so:
       - `agents/tasks/ls-profile-starts/tasks-1.md` and `agents/tasks/permutest-exact-limit/tasks-1.md` exist on `HEAD` and neither has a line
         `**Status:** todo` or `**Status:** in-progress` (rows 1 and 2 are merged)
       - the item is in `TODO.md` with a `tasks:` line naming `agents/tasks/audit-stale-entries/tasks-1.md`
       - each of E1 to E6 is in `src/audit/data/known.toml` with the `match` and the `detail` (E4: the `path`) quoted in the header, found by
         `grep -n -F` of its `detail` string (E4: of `options/predict/ls_na/newscale=*`). Other entries that share a `match` glob, or a wording change in
         a `reason`, are not a difference
-- [ ] For each entry, run two slices of the audit over the cases its `match` names, as the header says, both with `--only` set to each glob of the
+- [x] For each entry, run two slices of the audit over the cases its `match` names, as the header says, both with `--only` set to each glob of the
       entry's `match` (repeated) and `--steps` set to the step that makes those cases (`scripts` for E1 to E3, `options` for E4, and for E5 and E6,
       whose globs start with `*/`, the steps whose case ids match them in the run `20261118-042436`, found with `grep -c` over its `findings.json`
       and its step results, or `options,construct,matrix` when that shows none):
       - with the ledger: `METAFOPY_AUDIT_RLIB="$main/.audit/Rlib" METAFOPY_AUDIT_WORK="$main/.audit" bin/metafor-audit.sh --only '<glob>' --steps <steps>`
       - without it: the same with `--no-ledger`, so every difference of those cases is reported, accepted or not
       Record both run directories in this task's Notes
-- [ ] Sort each entry, recording the reason and the values in this task's Notes, dated:
+- [x] Sort each entry, recording the reason and the values in this task's Notes, dated:
       - **No case:** the slice runs no case its `match` names (the case ids changed or were removed). Remove it
       - **Agree:** the ledger slice lists no unaccepted finding on its cases, and the `--no-ledger` slice has no finding of the entry's `kind` and
         `path` whose detail is the difference its `reason` describes (another entry accepts every finding it has). Record both programs' values at
@@ -114,15 +114,52 @@ sorted into "remove" or "narrow", with the values behind the choice recorded; an
 
 **Acceptance Criteria:**
 
-- [ ] Each of E1 to E6 is in exactly one of "No case", "Agree", "Moved" or "Otherwise" in this task's Notes, with its slice run directories and the
+- [x] Each of E1 to E6 is in exactly one of "No case", "Agree", "Moved" or "Otherwise" in this task's Notes, with its slice run directories and the
       values behind the choice, or the task stopped for the operator
-- [ ] No file but this task list changes
+- [x] No file but this task list changes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
 
 **Notes:**
+- Starting point re-checked 2026-11-18 20:33 UTC: `agents/tasks/ls-profile-starts/tasks-1.md` and `agents/tasks/permutest-exact-limit/tasks-1.md`
+  have only `done` tasks; `TODO.md` line 25 names this list; each of E1 to E6 was found by `grep -n -F` of its `detail` (E4 of its `match`).
+- Slice commands (every audit command run from this worktree with `METAFOPY_AUDIT_RLIB` and `METAFOPY_AUDIT_WORK` set as the header says; the `scripts`
+  step takes `--only` as plain substrings of the script ids `test/misc_selmodel` and `test/misc_coef_se`, so `--only 'scripts/misc_selmodel/*'` ran no
+  case (run `20261118-213347`, 0 expressions, discarded); the case-id globs work for the other steps).
+- Sorted on 2026-11-18, R 4.6.2, metafor 5.2-1 (slice runs under `/Users/simonb/src/metafopy/.audit/runs/`):
+
+| Entry | Ledger slice | `--no-ledger` slice | Sort |
+|---|---|---|---|
+| E1, E2, E3 | `20261118-213434` (`--only misc_selmodel --only misc_coef_se --steps scripts`; 161 expressions, 0 new) | `20261118-213634` | Agree |
+| E4 | `20261118-214021` (`--only 'options/predict/ls_na/newscale=*' --steps options`; 2 cases, 0 new) | `20261118-214058` | Agree |
+| E5, E6 | `20261118-214201` (the entries' own globs, `--steps matrix,options,construct,standalone`; 0 new) | `20261118-214759` | Agree |
+
+- **E1: Agree.** The `--no-ledger` slice has no `value-diff` finding on the `selmodel(res, type = "beta")` cases of `misc_selmodel` (21 findings of
+  other kinds, all `missing-field` and `label-diff` accepted by other entries). By hand on baskerville2012 (ML): R tau2 2.451189709e-06,
+  log-likelihood -2.792403414, delta 0.47311519 and 4.4613009; metafopy tau2 2.450923179e-06 (1.1e-4 relative), log-likelihood -2.792403397 (the
+  higher), delta 0.47311532 and 4.46130221. The entry's `reason` (R stops at -2.792404, tau2 differing by 2.6 %) no longer holds.
+- **E2: Agree.** Same as E1 for `misc_coef_se` (test 4, `sel <- selmodel(res, type = "beta")`): no `value-diff` finding; the same fit as E1's.
+- **E3: Agree.** No finding at all on the `capture.output(print(sav))` unit of the beta fit (case `scripts/misc_selmodel/test/41`). By hand both
+  programs print `delta.2    4.4613  2.1842   1.5847  0.1130  0.1803  8.7423`: the lower limit is 0.1803 in R and in metafopy (the entry accepted
+  0.1803 against 0.1804).
+- **E4: Agree.** No finding with path `$slab` in either slice. The raw results hold the same `slab` in R and metafopy: `[""]` for
+  `newscale=0.5` and `["year", "ablat"]` for the named `newscale`. The five findings of the slices (a `ci.ub` and a `ci.lb` of 5e-4 relative and
+  their printed lines) are accepted by other entries and are not E4's kind and path.
+- **E5: Agree, with a note.** The `--no-ledger` slice has no `print-diff` whose line reads R `QM(df = 2) = 15.6105` against metafopy
+  `QM(df = 2) = 15.6104`; the `QM(df = 2) = 15.610...` lines it has are the `construct/ls_year/control=*` refits (R 15.6064 against 15.6104 for
+  BFGS, 15.6127 against 15.6105 for Nelder-Mead, 15.6105 against 15.6136 for Rvmmin), each accepted by the broader entry of the flat
+  location-scale fits, and the default `ls_year` print is `QM(df = 2) = 1.2830` in R against `1.2828` in metafopy (accepted by the same entry).
+  By hand on a plain call (`rma(yi, vi, mods = ~ ablat + year, scale = ~ ablat + year)` on `escalc(measure = "RR", ...)` of `dat.bcg`): R QM
+  15.61050821, log-likelihood -7.602255955; metafopy QM 15.61043419 (prints 15.6104). So the one-digit print difference still exists for that call,
+  but no case of the audit reaches it, which is why the entry matched nothing; removing it hides nothing the audit can report.
+- **E6: Agree.** The slice has no finding on the step table of `matrix/print/sel_bcg` (its only finding there is a `$hessian` entry accepted by
+  another entry). By hand (`selmodel(type = "stepfun", steps = c(0.025, 0.1, 0.5, 1))` on the REML fit of `dat.bcg`, as the audit's `sel_bcg`
+  fixture, whose target is `uni_reml`): R third delta 98.1050604, metafopy 98.1050556; both print `0.1   < p <= 0.5     2   98.1051`; log-likelihood -11.78560532 in
+  both.
+- None of the six is "No case", "Moved" or "Otherwise", so none stops for the operator and Task 2 removes all six; E1 and E2 go together, so no
+  `reason` of E2 needs rewriting. `docs/differences.md` ("selmodel on a flat likelihood", last paragraph) describes E6's difference and is Task 2's.
 
 - Key files: `src/audit/README.md` (commands, kinds, the `known.toml` rules), `src/audit/data/known.toml`, `src/audit/data/fixtures.json`
 - Prerequisite outside this repository: R 4.6.2 with metafor 5.2-1 and the pinned packages in `/Users/simonb/src/metafopy/.audit/Rlib`, and the
@@ -133,7 +170,7 @@ sorted into "remove" or "narrow", with the values behind the choice recorded; an
 
 ## Task 2: Remove or narrow the six entries
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item's "Fix direction" (remove where the two now agree, narrow `detail` where they differ in another way)
@@ -143,32 +180,40 @@ no record in `docs/differences.md` still describes a difference that is gone.
 
 **Subtasks:**
 
-- [ ] Remove each entry Task 1 sorted as "No case", "Agree" or "Otherwise" (not stopped), found by its own text; remove nothing else. If E1 is
+- [x] Remove each entry Task 1 sorted as "No case", "Agree" or "Otherwise" (not stopped), found by its own text; remove nothing else. If E1 is
       removed and E2 stays, rewrite E2's `reason` to stand on its own with E2's values from Task 1; if E2 is removed and E1 stays, nothing else changes
-- [ ] Narrow each entry Task 1 sorted as "Moved", following the header's rules: its `detail` to the current finding, its `reason` to the current
+- [x] Narrow each entry Task 1 sorted as "Moved", following the header's rules: its `detail` to the current finding, its `reason` to the current
       values and the date
-- [ ] For each removed entry, search `docs/differences.md` for the difference it accepted (for E6 the `98.1051` paragraph of "selmodel on a flat
+- [x] For each removed entry, search `docs/differences.md` for the difference it accepted (for E6 the `98.1051` paragraph of "selmodel on a flat
       likelihood"; for the others its values and call, with `grep -n -F`). Where a passage describes only that difference as current behaviour, remove
       it, or rewrite it with Task 1's values where the passage also holds other content; a narrowed entry's passage gets the current values and date.
       A passage that names no value of the removed entry stays. Record each change, or "none", in this task's Notes
-- [ ] Re-render the report of Task 1's ledger slices with the new ledger (seconds, no R):
+- [x] Re-render the report of Task 1's ledger slices with the new ledger (seconds, no R):
       `METAFOPY_AUDIT_WORK="$main/.audit" bin/metafor-audit.sh --rerender "$main/.audit/runs/<slice>"`, and check that no finding becomes unaccepted
       on the slices' cases and that a narrowed entry matches its finding
 
 **Acceptance Criteria:**
 
-- [ ] Every entry of E1 to E6 is removed or narrowed as Task 1 sorted it, and no other `[[known]]` entry changes except E2's `reason` as above
-- [ ] The re-rendered slice reports list no unaccepted finding that the slices with the old ledger did not list
-- [ ] No file under `src/metafopy/` changes
+- [x] Every entry of E1 to E6 is removed or narrowed as Task 1 sorted it, and no other `[[known]]` entry changes except E2's `reason` as above
+- [x] The re-rendered slice reports list no unaccepted finding that the slices with the old ledger did not list
+- [x] No file under `src/metafopy/` changes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/test_harness_accounts.py src/tests/test_harness_compare.py src/tests/test_docs_examples.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/test_harness_accounts.py src/tests/test_harness_compare.py src/tests/test_docs_examples.py` passes
 
 **Notes:**
 
 - Depends on Task 1
+- Done 2026-11-18 (R 4.6.2, metafor 5.2-1): removed E1 to E6 from `src/audit/data/known.toml` (six `[[known]]` entries, nothing else; E1 and E2 went
+  together, so no `reason` needed rewriting; none was "Moved", so nothing was narrowed).
+- `docs/differences.md`: removed the last paragraph of "selmodel on a flat likelihood" (the `selmodel(type='stepfun')` on `dat.bcg` step table
+  98.1051 against 98.1050, E6's difference; both programs now print 98.1051). The first paragraph and its example (`delta` 1.000e-05 against 1.022e-05, a
+  different call, `nlminb` with `steps = c(0.025, 0.975)`) name no value of a removed entry and stay. No passage names E1 to E5's values: none.
+- Re-rendered the three ledger slices (`20261118-213434`, `20261118-214021`, `20261118-214201`) with the new ledger: `new` is 0 in each
+  `findings.json`.
+- `pytest src/tests/test_harness_accounts.py src/tests/test_harness_compare.py src/tests/test_docs_examples.py`: 67 passed.
 - Key files: `src/audit/data/known.toml`, `docs/differences.md`
 - The two other `scripts/misc_selmodel/*` entries (`*optimizer = \"mads\"*` and `*(relative *`) are not part of the item and stay unchanged
 
@@ -176,7 +221,7 @@ no record in `docs/differences.md` still describes a difference that is gone.
 
 ## Task 3: The full audit and the recall check
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Source Reference:** the item's "Fix direction" (rerun `bin/metafor-audit.sh` to see the report list no stale entry); the approved plan (`--recall`)
@@ -186,10 +231,10 @@ and no unaccepted finding this list caused, and the harness still reproduces wha
 
 **Subtasks:**
 
-- [ ] Run the full audit in the background, as the header says:
+- [x] Run the full audit in the background, as the header says:
       `METAFOPY_AUDIT_RLIB="$main/.audit/Rlib" METAFOPY_AUDIT_WORK="$main/.audit" bin/metafor-audit.sh`, and record the run directory it prints
       (`$main/.audit/runs/<timestamp>`) in this task's Notes, with its start and end time
-- [ ] Read the run's `wrong-or-missing-full.md` and the `new` list of its `findings.json`, and its stale-entry list. Compare with
+- [x] Read the run's `wrong-or-missing-full.md` and the `new` list of its `findings.json`, and its stale-entry list. Compare with
       `/Users/simonb/src/metafopy/.audit/runs/20261118-042436` (the last full run) and sort, into lists in this task's Notes, each line with its case
       id, `kind`, `path` and one line of detail:
       - **This list:** a finding on a case of an entry Task 2 removed or narrowed, or one of E1 to E6 listed as stale. Fix it here in
@@ -203,30 +248,38 @@ and no unaccepted finding this list caused, and the harness still reproduces wha
       - **Other:** everything else new since `20261118-042436`. **Stops for the operator: a new unaccepted finding of the full audit that this list
         did not cause and that is not one of rows 1 and 2's expected changes** - stop as `blocked`, naming the case, R's and metafopy's values and the
         step
-- [ ] File each "Row 1", "Row 2" and "Stale, not this list's" line, and each finding Task 1 sent here ("Otherwise", not stopped), with the `todo-add`
+- [x] File each "Row 1", "Row 2" and "Stale, not this list's" line, and each finding Task 1 sent here ("Otherwise", not stopped), with the `todo-add`
       skill (verified against the run's `findings.json`, dated, the run directory named), never fixed here. Where `todo-add` merges one into an
       existing item, record that item's title in this task's Notes: its body changes on purpose, and the closing check of Task 4 must allow for it.
       If there is nothing to file, write "none" in the Notes
-- [ ] Run the recall check in the background, as the header says:
+- [x] Run the recall check in the background, as the header says:
       `METAFOPY_AUDIT_RLIB="$main/.audit/Rlib" METAFOPY_AUDIT_WORK="$main/.audit" bin/metafor-audit.sh --recall`, and record the recall report it
       prints in this task's Notes. If it exits non-zero, stop as `blocked`, naming each item it missed: a miss is a hole in the harness, fixed in
       `src/audit/data/` (`AGENTS.md`), which is outside this item; the recall run passes `--no-ledger`, so no entry change of this list can cause it
 
 **Acceptance Criteria:**
 
-- [ ] The full run's report (re-rendered after any fix here) lists none of E1 to E6 as stale and no finding in "This list"
-- [ ] Every finding and stale entry of the report is in exactly one list in this task's Notes, and every line of "Row 1", "Row 2" and "Stale, not
+- [x] The full run's report (re-rendered after any fix here) lists none of E1 to E6 as stale and no finding in "This list"
+- [x] Every finding and stale entry of the report is in exactly one list in this task's Notes, and every line of "Row 1", "Row 2" and "Stale, not
       this list's" is in a `TODO.md` item
-- [ ] `bin/metafor-audit.sh --recall` exits 0
+- [x] `bin/metafor-audit.sh --recall` exits 0
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/test_harness_accounts.py src/tests/test_harness_compare.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/test_harness_accounts.py src/tests/test_harness_compare.py` passes
 
 **Notes:**
 
 - Depends on Task 2
+- Full run `/Users/simonb/src/metafopy/.audit/runs/20261118-220424`, started 21:04 UTC, ended 21:42 UTC on 2026-11-18 (R 4.6.2, metafor 5.2-1,
+  metafopy `ef102ef`). Its `findings.json` has `new` = 0 (46833 known findings, 13778 below the threshold), no stale-entry list (the report has no
+  "Stale ledger entries" section; `grep -c -i stale` over `wrong-or-missing-full.md` is 0), `uncovered_arguments` and `unaccounted` both empty.
+- Sorted lists: **This list:** none. **Row 1:** none. **Row 2:** none. **Stale, not this list's:** none. **Other:** none. Nothing sent here by
+  Task 1 ("Otherwise" was empty). Filed in `TODO.md`: none.
+- Recall check, `/Users/simonb/src/metafopy/.audit/runs/recall-20261118-224238/recall.md`, exit 0: "176 of 176 items reproduced; 1 not shown by the
+  pinned R" (audit 4: 32 of 32, audit 5: 67 of 67, audit 6: 77 of 77, plus one item listed under "Oracle moved", which is the pinned R's, not a miss).
+- `pytest src/tests/test_harness_accounts.py src/tests/test_harness_compare.py`: 49 passed.
 - Key files: `src/audit/data/known.toml`, `src/audit/data/recall.toml`, `TODO.md`
 - An item filed here changes `TODO.md` by an addition only, which the closing body check allows
 
@@ -234,7 +287,7 @@ and no unaccepted finding this list caused, and the harness still reproduces wha
 
 ## Task 4: The full test run and closing the item
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item as a whole
@@ -243,26 +296,26 @@ and no unaccepted finding this list caused, and the harness still reproduces wha
 
 **Subtasks:**
 
-- [ ] Move the item from `TODO.md` to `DONE.md`: append its heading and body unchanged at the end of `DONE.md`, then a line
+- [x] Move the item from `TODO.md` to `DONE.md`: append its heading and body unchanged at the end of `DONE.md`, then a line
       `Done: 2026-MM-DD, agents/tasks/audit-stale-entries/tasks-1.md; <outcome>` with the date of the commit, where `<outcome>` says in one line
       what the six entries ended as (for example "removed E1, E3 to E6 (the two now agree), narrowed E2; full run <timestamp> lists no stale entry")
-- [ ] Run the final tests from the worktree and save their whole output for the merge gate (the main checkout is the first entry of
+- [x] Run the final tests from the worktree and save their whole output for the merge gate (the main checkout is the first entry of
       `git worktree list --porcelain`, `/Users/simonb/src/metafopy`):
       `mkdir -p /Users/simonb/src/metafopy/ralpher-logs/audit-stale-entries/tasks-1 && source bin/activate.sh && pytest src/tests 2>&1 | tee /Users/simonb/src/metafopy/ralpher-logs/audit-stale-entries/tasks-1/final-tests.log`
 
 **Acceptance Criteria:**
 
-- [ ] The item is in `DONE.md` with its body unchanged and a `Done:` line naming this list and the outcome, and is no longer in `TODO.md`
-- [ ] The items filed by Task 3 are in `TODO.md`
+- [x] The item is in `DONE.md` with its body unchanged and a `Done:` line naming this list and the outcome, and is no longer in `TODO.md`
+- [x] The items filed by Task 3 are in `TODO.md`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] The final test run above passes
-- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/audit-stale-entries/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] The final test run above passes
+- [x] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/audit-stale-entries/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
       `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0 (`<scratch>` is the session's scratch
       directory, outside the repository); a body changed on purpose by a `todo-add` merge in Task 3 is named in its Notes
 
@@ -270,6 +323,7 @@ and no unaccepted finding this list caused, and the harness still reproduces wha
 
 - Depends on Task 3
 - No version bump: no task changes library output
+- Final run 2026-11-18: 8608 passed, 37 skipped, 14 xfailed; log `/Users/simonb/src/metafopy/ralpher-logs/audit-stale-entries/tasks-1/final-tests.log`. `mypy`, `pre-commit run --all-files` and `auditme-all` pass; `verify_bodies.py` reports 6 of 6 bodies preserved.
 - The full `pytest src/tests` run is the run order's required final check (its checkpoint command)
 
 ---

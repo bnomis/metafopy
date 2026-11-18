@@ -4,26 +4,6 @@ Open work only, in implementation order, nearest first. Finished items move to
 `DONE.md` unchanged. See the shared `todo-add` and `todo-review` skills for
 the shape of an item.
 
-## Six ledger entries of known.toml match nothing in the audit
-
-<!-- doc-counts: accept-start found on 2026-11-18 - a dated record, not a claim about the present -->
-Found on 2026-11-18 by the full audit `.audit/runs/20261118-042436` (`wrong-or-missing.md`, "Not covered", "Stale ledger entries"), and already listed by
-`.audit/runs/20261115-160207`: the entries of `src/audit/data/known.toml` matching `scripts/misc_selmodel/*` (`*sav <- selmodel(res, type = "beta")*`),
-`scripts/misc_coef_se/*` (`*sel <- selmodel(res, type = "beta")*`), `scripts/misc_selmodel/test/41` (`*[[]out <- capture.output(print(sav))[]]*`),
-`options/predict/ls_na/newscale=*`, the `ls_year`/`permutest_ls*` print-diff `*QM(df = 2) = 15.610[45]*` and the `print/sel_bcg` print entry
-`98.1051`. None shows metafopy's output wrong (a ledger entry that matches nothing hides nothing).
-<!-- doc-counts: accept-end -->
-
-Cause: the difference each entry accepted no longer occurs in the pinned R 4.6.2 with metafor 5.2-1 (the same kind of cause as the stale `delta.1`
-entry removed on 2026-11-03), or metafopy's output moved; not traced entry by entry.
-
-Fix direction: for each entry, run its case in R and metafopy; remove the entry where the two now agree, narrow its `detail` where they differ in
-another way, and rerun `bin/metafor-audit.sh` to see the report list no stale entry.
-
-Spec: none (small item).
-
-Spec: none (small item); tasks: `agents/tasks/audit-stale-entries/tasks-1.md`.
-
 ## Find the Hooper data behind Table 5 of Bagos and Nikolopoulos (2009)
 
 <!-- doc-counts: accept-start probed on 2026-11-18 - a dated record, not a claim about the present -->
