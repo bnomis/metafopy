@@ -967,9 +967,9 @@ reason = "permutest(iter = 20, seed = 1) of ls_bangert: at the 17th permutation 
 ref = "docs/differences.md"
 
 [[known]]
-match = "options/permutest/ls_bcg/exact=true"
+match = ["options/permutest/ls_bcg/exact=true", "options/permutest/uni_mods/exact=true"]
 kind = "r-killed"
-reason = "The exact permutation test of ls_bcg enumerates every permutation of the scale model and R passes the harness's 4 GiB memory limit; metafopy has nothing to compare with."
+reason = "Both exact permutation tests need 389188800 permutations: R allocates 14.5 GiB of arrays and passes the harness's 4 GiB limit while filling them, and would next need 37.7 GiB for its matrix of every permutation. metafopy refuses with R's 'Number of iterations requested too large.' (checked 2026-11-18, R 4.6.2, metafor 5.2-1)."
 ref = "docs/differences.md"
 
 [[known]]

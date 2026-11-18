@@ -124,7 +124,7 @@ that I am not left with a run of several days whose result R could never confirm
 
 ## Task 2: Record the case in the ledger and the user guide
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Tests and records, items 3 and 4; External dependencies
@@ -134,7 +134,7 @@ error why metafopy refuses and what to use instead.
 
 **Subtasks:**
 
-- [ ] Check the R side on the day of the entry: write an R script in the scratch directory that loads metafor, prints `packageVersion("metafor")`
+- [x] Check the R side on the day of the entry: write an R script in the scratch directory that loads metafor, prints `packageVersion("metafor")`
       and R's version, and prints `permutest(rma(yi, vi, mods = ~ ablat, data = dat), exact = "i")` for
       `dat <- escalc(measure = "RR", ai = tpos, bi = tneg, ci = cpos, di = cneg, data = dat.bcg)`; then run
       `permutest(res, exact = TRUE)` in a second R process under `R_MAX_VSIZE=4Gb`, which the spec found refuses at once with
@@ -142,12 +142,12 @@ error why metafopy refuses and what to use instead.
       `export METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib; LC_ALL=C.UTF-8 R_LIBS=$METAFOPY_AUDIT_RLIB Rscript <script>` (the second
       with `R_MAX_VSIZE=4Gb` before `Rscript`). Never run the exact test without the heap limit (it allocates 14.5 GiB). Stop as `blocked` if metafor
       does not load, its version is not 5.2.1, the count is not 389188800 or the limited run does not print that error, naming what it printed
-- [ ] In `src/audit/data/known.toml`, change the `r-killed` entry `match = "options/permutest/ls_bcg/exact=true"` to
+- [x] In `src/audit/data/known.toml`, change the `r-killed` entry `match = "options/permutest/ls_bcg/exact=true"` to
       `match = ["options/permutest/ls_bcg/exact=true", "options/permutest/uni_mods/exact=true"]`, keep `kind = "r-killed"` and
       `ref = "docs/differences.md"`, and rewrite its `reason`: both exact tests need 389188800 permutations; R allocates 14.5 GiB of arrays and passes
       the harness's 4 GiB while filling them, and would next need 37.7 GiB for its matrix of every permutation; metafopy refuses with R's "Number of
       iterations requested too large." (checked on this task's date, R 4.6.2, metafor 5.2-1)
-- [ ] In `docs/differences.md`, section `## Stricter than R`, add `### permutest(exact=TRUE) beyond what R can hold` in the format of
+- [x] In `docs/differences.md`, section `## Stricter than R`, add `### permutest(exact=TRUE) beyond what R can hold` in the format of
       `### fsn() of a Mantel-Haenszel fit`: a short summary; a `compare` block whose R side is `library(metafor)`, the `escalc` of `dat.bcg` above and
       `permutest(rma(yi, vi, mods = ~ ablat, data = dat), exact = TRUE)`, with a `text` block saying in words that R is killed or stops for memory, and
       the error it prints at once under `R_MAX_VSIZE=4Gb` as printed by the first subtask; whose Python side starts `# docs: skip` and shows the same
@@ -156,23 +156,25 @@ error why metafopy refuses and what to use instead.
       permutation matrix, 56043187200 against 16 GiB), the decision and its date (D1 of `agents/reviews/order-todo-items-1-5-specs.md`, answered
       2026-11-18; `agents/specs/permutest-exact-limit/spec.md`) and the check date, R 4.6.2, metafor 5.2-1; and the advice to use `exact=False` with a
       larger `iter`. Put dated figures inside a `<!-- doc-counts: accept-start ... -->` block if the hooks ask for one
-- [ ] Check that the entry, the `known.toml` reason and the `Raises` Task 1 wrote say the same (16 GiB, arrays and the matrix of every permutation,
+- [x] Check that the entry, the `known.toml` reason and the `Raises` Task 1 wrote say the same (16 GiB, arrays and the matrix of every permutation,
       R's message)
-- [ ] Run `pytest src/tests/test_docs_examples.py src/tests/test_harness_accounts.py`
+- [x] Run `pytest src/tests/test_docs_examples.py src/tests/test_harness_accounts.py`
 
 **Acceptance Criteria:**
 
-- [ ] The ledger entry matches both case ids with the spec's reason, and `src/tests/test_harness_accounts.py` passes
-- [ ] `docs/differences.md` has the subsection under "Stricter than R", with R's output as printed on the day it was written and metafopy's error as
+- [x] The ledger entry matches both case ids with the spec's reason, and `src/tests/test_harness_accounts.py` passes
+- [x] `docs/differences.md` has the subsection under "Stricter than R", with R's output as printed on the day it was written and metafopy's error as
       printed
-- [ ] `pytest src/tests/test_docs_examples.py` passes
+- [x] `pytest src/tests/test_docs_examples.py` passes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/test_docs_examples.py src/tests/test_harness_accounts.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/test_docs_examples.py src/tests/test_harness_accounts.py` passes
 
 **Notes:**
+
+- R side checked 2026-11-18: metafor 5.2.1, R 4.6.2; `exact = "i"` gave 389188800; `exact = TRUE` under `R_MAX_VSIZE=4Gb` printed "Running 389188800 iterations for an exact permutation test." then "Number of iterations requested too large."
 
 - Depends on Task 1
 - Prerequisite outside this repository: R 4.6.2 with metafor 5.2-1 and the pinned packages in `/Users/simonb/src/metafopy/.audit/Rlib`, the main
