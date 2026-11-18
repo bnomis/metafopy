@@ -266,7 +266,7 @@ where they do not.
 
 ## Task 4: Accept ls_na with an interaction formula that R refuses
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** item 4, decided by D2 (a) of `agents/reviews/order-todo-items-1-10-specs.md` (2026-11-17)
@@ -276,36 +276,42 @@ where they do not.
 
 **Subtasks:**
 
-- [ ] If Task 1 recorded the case as "not reported", stop as `blocked`: the decision was made on a case the run no longer shows, so something
+- [x] If Task 1 recorded the case as "not reported", stop as `blocked`: the decision was made on a case the run no longer shows, so something
       changed metafopy's or R's behaviour since 2026-11-17
-- [ ] Reproduce both sides: in R, the `ls_na` fixture's call with `mods = ~ ablat * alloc` (from `src/audit/data/fixtures.json`), printing its
+- [x] Reproduce both sides: in R, the `ls_na` fixture's call with `mods = ~ ablat * alloc` (from `src/audit/data/fixtures.json`), printing its
       messages and error; in metafopy, the same call, printing `beta` and the warnings. Record both in this task's Notes, dated. Stop as `blocked`,
       naming the difference, if R's error is not "No missing values allowed in 'alpha.init'.", if metafopy raises, or if metafopy's `beta` differs
       from D2's `[0.282, -0.024, 0.213, -0.134, -0.013]` by more than 5e-4 in any element, or it no longer warns "Error when trying to invert the
       Hessian.": D2 covers only the behaviour it measured
-- [ ] Add a `[[known]]` entry: `match` the case id exactly (escape any bracket), `kind = "accepts-where-R-refuses"`, a `reason` saying that R drops
+- [x] Add a `[[known]]` entry: `match` the case id exactly (escape any bracket), `kind = "accepts-where-R-refuses"`, a `reason` saying that R drops
       the redundant predictor of the interaction and then stops in its own starting-value step because `alpha.init` carries an NA from the dropped
       column, that metafopy fits the model without the redundant column (its `beta`, and its Hessian warning), the decision (D2 (a),
       `agents/reviews/order-todo-items-1-10-specs.md`, 2026-11-17), the date and "R 4.6.2, metafor 5.2-1", and `ref = "docs/differences.md"`
-- [ ] Add a subsection to `docs/differences.md` under "## metafopy gives a value where R does not", in the shape of its neighbours (a short
+- [x] Add a subsection to `docs/differences.md` under "## metafopy gives a value where R does not", in the shape of its neighbours (a short
       description, a `*Why:*` paragraph - R's refusal comes from its starting values after it has already dropped the column, not from a model that
       cannot be fitted - and the R and Python compare block with the output as printed, dated). If the Python example takes more than a few seconds,
       start its block with `# docs: skip`
-- [ ] Re-render the report as in Task 2 and check that it no longer lists the case and does not list the new entry as stale
+- [x] Re-render the report as in Task 2 and check that it no longer lists the case and does not list the new entry as stale
 
 **Acceptance Criteria:**
 
-- [ ] The re-rendered report does not list the case, and the new entry matches only it
-- [ ] `docs/differences.md` has the subsection, and no file under `src/metafopy/` changes
+- [x] The re-rendered report does not list the case, and the new entry matches only it
+- [x] `docs/differences.md` has the subsection, and no file under `src/metafopy/` changes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/test_harness_accounts.py src/tests/test_harness_compare.py src/tests/test_docs_examples.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/test_harness_accounts.py src/tests/test_harness_compare.py src/tests/test_docs_examples.py` passes
 
 **Notes:**
 
 - Depends on Task 1
+- 2026-11-18, reproduced (R 4.6.2, metafor 5.2-1; metafopy `a8b5982`): R warns "3 studies with NAs omitted from model fitting." and "Redundant
+  predictors dropped from the model.", then stops with "No missing values allowed in 'alpha.init'."; metafopy gives beta
+  `[0.2823, -0.0243, 0.2133, -0.1336, -0.0127]` and warns "Error when trying to invert the Hessian." - within D2's values.
+- Re-rendered `/Users/simonb/src/metafopy/.audit/runs/20261118-042436/wrong-or-missing.md`: the case is no longer listed and the stale list has no new
+  entry. The test run had one failure, `test_page_examples_run[guide/plots.md]`, from the missing optional Altair extra (`metafopy.interactive`), not
+  from this change; the other tests of the three files pass.
 - Key files: `src/audit/data/known.toml`, `docs/differences.md`, `src/metafopy/models/rma_ls_fit.py` (`start_alpha`, read only)
 - The precedent D2 cites: "metafopy does not reproduce a failure of R's optimiser" (the `known.toml` entry for `*/permutest/ls_na`, 2026-11-04)
 

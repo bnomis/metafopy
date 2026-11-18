@@ -878,6 +878,13 @@ reason = "Same fit as ls_na above (flat scale intercept); every option variant r
 ref = "docs/differences.md"
 
 [[known]]
+match = "construct/ls_na/mods={\"$formula\":\"~ ablat * alloc\"}"
+kind = "accepts-where-R-refuses"
+detail = "R: No missing values allowed in 'alpha.init'.*"
+reason = "ls_na with mods = ~ ablat * alloc: R drops the redundant predictor of the interaction (\"Redundant predictors dropped from the model.\") and then stops in its own starting-value step, because alpha.init carries an NA from the dropped column; the model itself can be fitted. metafopy fits it without the redundant column (beta 0.282, -0.024, 0.213, -0.134, -0.013) and warns \"Error when trying to invert the Hessian.\". Decided as D2 (a) of agents/reviews/order-todo-items-1-10-specs.md on 2026-11-17, same stance as the */permutest/ls_na entry (metafopy does not reproduce a failure of R's optimiser); reproduced in R 4.6.2, metafor 5.2-1, on 2026-11-18."
+ref = "docs/differences.md"
+
+[[known]]
 match = ["construct/ls_year/control=*", "construct/ls_na/control=*"]
 kind = "print-diff"
 detail = "*R 'intrcpt *', Python 'intrcpt *'"
