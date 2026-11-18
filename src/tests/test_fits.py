@@ -142,19 +142,9 @@ FUNNEL_CASES: dict[str, tuple[str, dict[str, typing.Any]]] = {
 }
 
 
-def has_mv_residuals(fit: metafopy.RMAMVResult) -> bool:
-    try:
-        metafopy.rstandard(fit)
-    except metafopy.errors.ArgumentError:
-        return False
-    return True
-
-
 @pytest.mark.parametrize('key', list(FUNNEL_CASES))
 def test_funnel_matches_metafor(key: str, fits: dict[str, typing.Any], ax: matplotlib.axes.Axes) -> None:
     fit, kw = FUNNEL_CASES[key]
-    if fit == 'mvm' and not has_mv_residuals(fits['mvm']):
-        pytest.skip('rstandard() of rma_mv fits is not available yet')
     r = metafopy.funnel(fits[fit], ax=ax, **kw)
     case = ref()[key]
     rtol = rtol_for(key)

@@ -33,7 +33,7 @@ runs the full suite as the run order requires.
 
 ## Task 1: Remove the funnel skip and close the item
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Source Reference:** the item's "Fix direction"; the approved plan (item 3 of `agents/reviews/order-todo-items-1-5-specs.md`, 2026-11-18)
@@ -43,40 +43,40 @@ moves to `DONE.md`.
 
 **Subtasks:**
 
-- [ ] Re-check the starting point, and stop as `blocked`, naming what differs, if any of these is not so:
+- [x] Re-check the starting point, and stop as `blocked`, naming what differs, if any of these is not so:
       - `grep -rnw has_mv_residuals src` finds only `src/tests/test_fits.py` (its definition and its call in `test_funnel_matches_metafor`)
       - `src/tests/reference/phase7/fits.json` has the key `funnel_mvm` with `ret` and `rec`
       - the item is in `TODO.md` with a `tasks:` line naming `agents/tasks/mv-funnel-skip/tasks-1.md`
-- [ ] In `src/tests/test_fits.py`, delete the function `has_mv_residuals` and the two lines of `test_funnel_matches_metafor` that call it and skip
+- [x] In `src/tests/test_fits.py`, delete the function `has_mv_residuals` and the two lines of `test_funnel_matches_metafor` that call it and skip
       (`if fit == 'mvm' and not has_mv_residuals(...)` and its `pytest.skip`). Leave the imports that other tests still use (`metafopy.errors` is used
       elsewhere in the file; `ruff check` reports any import left unused)
-- [ ] Run `pytest src/tests/test_fits.py -k funnel -rs` and check that `test_funnel_matches_metafor[funnel_mvm]` passes and nothing in the file is
+- [x] Run `pytest src/tests/test_fits.py -k funnel -rs` and check that `test_funnel_matches_metafor[funnel_mvm]` passes and nothing in the file is
       skipped for `rstandard`. **Stops for the operator: the `funnel_mvm` case of `test_funnel_matches_metafor` fails once the skip is removed** -
       stop as `blocked`, naming the failing field (`x`, `y` or `slab`), R's and metafopy's values from the assertion message; do not change
       `src/metafopy/`, the tolerance or the fixture
-- [ ] Move the item from `TODO.md` to `DONE.md`: append its heading and body unchanged at the end of `DONE.md`, then a line
+- [x] Move the item from `TODO.md` to `DONE.md`: append its heading and body unchanged at the end of `DONE.md`, then a line
       `Done: 2026-MM-DD, agents/tasks/mv-funnel-skip/tasks-1.md; <outcome>` with the date of the commit, where `<outcome>` says in one line what the
       item ended as (for example "skip and has_mv_residuals removed; funnel_mvm matches R")
-- [ ] Run the final tests from the worktree and save their whole output for the merge gate (the main checkout is the first entry of
+- [x] Run the final tests from the worktree and save their whole output for the merge gate (the main checkout is the first entry of
       `git worktree list --porcelain`, `/Users/simonb/src/metafopy`):
       `mkdir -p /Users/simonb/src/metafopy/ralpher-logs/mv-funnel-skip/tasks-1 && source bin/activate.sh && pytest src/tests 2>&1 | tee /Users/simonb/src/metafopy/ralpher-logs/mv-funnel-skip/tasks-1/final-tests.log`
 
 **Acceptance Criteria:**
 
-- [ ] `grep -rnw has_mv_residuals src` finds nothing, and `test_funnel_matches_metafor` has no `pytest.skip`
-- [ ] `test_funnel_matches_metafor[funnel_mvm]` passes against the committed fixture
-- [ ] The item is in `DONE.md` with its body unchanged and a `Done:` line naming this list and the outcome, and is no longer in `TODO.md`
-- [ ] No file under `src/metafopy/` or `src/tests/reference/` changes
+- [x] `grep -rnw has_mv_residuals src` finds nothing, and `test_funnel_matches_metafor` has no `pytest.skip`
+- [x] `test_funnel_matches_metafor[funnel_mvm]` passes against the committed fixture
+- [x] The item is in `DONE.md` with its body unchanged and a `Done:` line naming this list and the outcome, and is no longer in `TODO.md`
+- [x] No file under `src/metafopy/` or `src/tests/reference/` changes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_fits.py` passes
-- [ ] The final test run above passes
-- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/mv-funnel-skip/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_fits.py` passes
+- [x] The final test run above passes
+- [x] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/mv-funnel-skip/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
       `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0 (`<scratch>` is the session's scratch
       directory, outside the repository)
 
