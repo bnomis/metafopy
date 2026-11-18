@@ -489,8 +489,6 @@ setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di =
 args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log" }
 check = "test_derived.ls_confint_scale"
 covers = ["ls.confint.scale"]
-status = "mismatch"
-reason = "ls.confint.scale.ML.bcg: confint alpha.2 upper bound: the reference (formulas.ls_profile_ll, best of a line and a grid of starts, 2026-11-18) crosses the cut-off 3.8415 at 1.3812075; metafopy gives 1.3598 with no '>' sign, because its profile_fit leaves the continuous branch (3.7895 at a = 1.36) for the tau2 = 0 plateau (3.8686) between 1.36 and 1.37, so its root search converges on that jump, not a crossing (alpha.1 and the REML case agree)"
 
 [[case]]
 id = "ls.confint.location.z.ML.bcg"

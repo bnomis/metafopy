@@ -1,7 +1,7 @@
 # Profile starts of location-scale models that reach the highest branch
 
 **Version:** 1.1
-**Status:** approved
+**Status:** implemented
 **Date:** 2026-11-18
 
 The profile likelihood of a scale coefficient of a location-scale model is the log-likelihood maximised over the other scale coefficients with that

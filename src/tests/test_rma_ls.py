@@ -271,6 +271,34 @@ def test_profile_refit_keeps_the_highest_likelihood_on_bcg() -> None:
     assert table['ci.ub'].iloc[0] == pytest.approx(1.803009, abs=1e-5)
 
 
+def test_profile_keeps_the_continuous_branch_of_alpha2_on_bcg() -> None:
+    """Every start of the line ends on the ``tau2 = 0`` plateau (3.868641) from a = 1.36 on.
+
+    The continuous branch, whose optimum has ``alpha.1`` near -74, stays below the cut-off until 1.3812.
+    """
+    res = ls(bcg(), '~ ablat', '~ ablat', method='ML')
+    for val, expected in ((1.36, 3.789459), (1.37, 3.813933), (1.38, 3.838488)):
+        fit = metafopy.methods.ls_profile.profile_fit(res, 1, val)
+        assert fit is not None
+        assert 2 * (res.logLik() - fit[0]) == pytest.approx(expected, abs=1e-5)
+    ci = metafopy.confint(res, alpha=1, tol=1e-12)
+    assert ci.random is not None
+    assert ci.random['ci.ub'].iloc[0] == pytest.approx(1.3812075, abs=1e-6)
+    assert ci.ub_sign == ''
+
+
+def test_confint_identity_lower_bound_is_a_crossing() -> None:
+    """The brute-force profile (a one-dimensional search over the feasible interval) crosses the cut-off at the lower bound.
+
+    Before the new starts every line start left a ``tau2_i`` negative and was dropped, so the bound was a ``<`` at -0.0820267.
+    """
+    res = result('bcg_year_identity')
+    ci = metafopy.confint(res, alpha=1, tol=1e-12)
+    assert ci.random is not None
+    assert ci.random['ci.lb'].iloc[0] == pytest.approx(-0.1356308, abs=1e-6)
+    assert ci.lb_sign == ''
+
+
 def test_identity_fit_bcg_is_a_constrained_maximum() -> None:
     """On ``dat.bcg`` the optimum is on the boundary: ``Z alpha >= 0``, a log-likelihood above R's, and the score zero on the free directions."""
     res = ls(bcg(), '~ ablat', '~ ablat', link='identity', method='ML')

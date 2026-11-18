@@ -1276,3 +1276,25 @@ Fix direction: find which branch is the profile likelihood's maximum at a = 1.31
 Spec: none (small item); tasks: `agents/tasks/ls-confint-scale-branch/tasks-1.md`.
 
 Done: 2026-11-18, agents/tasks/ls-confint-scale-branch/tasks-1.md; the continuous branch was the maximum, so the reference refit was fixed; the case stays a mismatch (metafopy jumps to the plateau, filed as a new item)
+
+## metafopy's profile of the ls scale coefficient leaves the highest branch before the crossing
+
+<!-- doc-counts: accept-start found on 2026-11-18 - a dated record, not a claim about the present -->
+Found on 2026-11-18 by `agents/tasks/ls-confint-scale-branch/tasks-1.md` (Tasks 1 and 2) on `ls.confint.scale.ML.bcg` in
+`src/tests/correctness/cases/location_scale.toml`: the profile of `alpha.2` (the `ablat` coefficient of the scale model) has a continuous branch and a
+`tau2 = 0` plateau (3.868641), and the continuous branch is the maximum until it crosses the cut-off at 1.38120753375 (the fixed reference and R's best
+refits agree). metafopy's own profile jumps to the plateau earlier: 3.789459 at a = 1.36 and the plateau 3.868641 from 1.37, so `confint` gives the
+upper bound 1.3598 with no `>` sign, a jump in the profile and not the crossing 1.3812.
+<!-- doc-counts: accept-end -->
+
+Cause: `profile_starts` and `profile_fit` in `src/metafopy/methods/ls_profile.py` refit from too few starts, so the refit falls onto the plateau while a
+higher continuous branch exists (the reference had the same fault before Task 2 widened its starts).
+
+Fix direction: a spec is needed first, since the fix changes metafopy's `confint` and `profile` output and every `ls.confint.scale.*` case uses the same
+starts. Then `ls.confint.scale.ML.bcg` moves to `pass`.
+
+Spec: none yet.
+
+Spec: `agents/specs/ls-profile-starts/spec.md`; tasks: `agents/tasks/ls-profile-starts/tasks-1.md`.
+
+Done: 2026-11-18, agents/tasks/ls-profile-starts/tasks-1.md; LINE_WEIGHTS gains 1.5 and 2.0, the upper bound of alpha.2 is the crossing 1.3812 and ls.confint.scale.ML.bcg passes (agents/specs/ls-profile-starts/spec.md)

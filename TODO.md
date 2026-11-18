@@ -4,26 +4,6 @@ Open work only, in implementation order, nearest first. Finished items move to
 `DONE.md` unchanged. See the shared `todo-add` and `todo-review` skills for
 the shape of an item.
 
-## metafopy's profile of the ls scale coefficient leaves the highest branch before the crossing
-
-<!-- doc-counts: accept-start found on 2026-11-18 - a dated record, not a claim about the present -->
-Found on 2026-11-18 by `agents/tasks/ls-confint-scale-branch/tasks-1.md` (Tasks 1 and 2) on `ls.confint.scale.ML.bcg` in
-`src/tests/correctness/cases/location_scale.toml`: the profile of `alpha.2` (the `ablat` coefficient of the scale model) has a continuous branch and a
-`tau2 = 0` plateau (3.868641), and the continuous branch is the maximum until it crosses the cut-off at 1.38120753375 (the fixed reference and R's best
-refits agree). metafopy's own profile jumps to the plateau earlier: 3.789459 at a = 1.36 and the plateau 3.868641 from 1.37, so `confint` gives the
-upper bound 1.3598 with no `>` sign, a jump in the profile and not the crossing 1.3812.
-<!-- doc-counts: accept-end -->
-
-Cause: `profile_starts` and `profile_fit` in `src/metafopy/methods/ls_profile.py` refit from too few starts, so the refit falls onto the plateau while a
-higher continuous branch exists (the reference had the same fault before Task 2 widened its starts).
-
-Fix direction: a spec is needed first, since the fix changes metafopy's `confint` and `profile` output and every `ls.confint.scale.*` case uses the same
-starts. Then `ls.confint.scale.ML.bcg` moves to `pass`.
-
-Spec: none yet.
-
-Spec: `agents/specs/ls-profile-starts/spec.md`; tasks: `agents/tasks/ls-profile-starts/tasks-1.md`.
-
 ## The exact permutest of uni_mods neither refuses nor finishes in metafopy
 
 <!-- doc-counts: accept-start measured on 2026-11-18 - a dated record, not a claim about the present -->
@@ -104,3 +84,18 @@ No spec, task list or item covers them; they are checked against R metafor only.
 
 Fix direction: deferred. When taken up, one spec per area with `/specdev`, listing the defining references and the coverage items in
 `src/tests/correctness/test_coverage.py`.
+
+## The reference ls_profile_ll cannot fit the identity link at some feasible values
+
+<!-- doc-counts: accept-start found on 2026-11-18 - a dated record, not a claim about the present -->
+Found on 2026-11-18 by `agents/specs/ls-profile-starts/spec.md` ("Not in scope") and `agents/tasks/ls-profile-starts/tasks-1.md`:
+`formulas.ls_profile_ll` in `src/tests/correctness/formulas.py` gives -1e10 at `alpha.2 = -0.00615` of the ML identity-link `dat.bcg` fit
+(`ls.fit.ML.identity.bcg` in `src/tests/correctness/cases/location_scale.toml`), where the brute-force profile is -8.045852. No
+`ls.confint.scale.*` case uses the identity link, so no case is affected.
+<!-- doc-counts: accept-end -->
+
+Cause: the SLSQP starts of `ls_profile_ll` (`start[free]`, the adjusted start and the line between them) are infeasible there (`Z alpha < 0`), so no
+refit runs.
+
+Fix direction: give `ls_profile_ll` a feasible start for the identity link (for example the starts of `profile_starts`, filtered as it filters them),
+then add an identity-link `ls.confint.scale.*` case checked against the brute-force profile.
