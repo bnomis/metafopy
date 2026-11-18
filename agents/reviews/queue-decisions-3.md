@@ -36,4 +36,10 @@ None beyond the items: each item's approve or flag is the decision.
 
 ## Answers
 
-(Empty until the review page is answered.)
+Answered on the review page on 2026-11-18 (04:56 UTC), read back from its `answers` store; no comments:
+
+| Item | Answer |
+|---|---|
+| 1. Clear the audit stop, the findings predate the list (Task 3, `93a96a4`) | approve |
+
+The decision stands; no follow-up is needed.
