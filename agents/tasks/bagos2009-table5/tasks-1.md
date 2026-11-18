@@ -198,7 +198,7 @@ against Bagos and Nikolopoulos (2009) Appendix III and Guevara et al. (2004) Tab
 
 ## Task 2: Correct the "Sources needed" record in mismatches.md
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Source Reference:** the approved plan (correct the "Sources needed" record of `agents/specs/correctness-glmm/mismatches.md`)
@@ -208,24 +208,24 @@ data were found and where, without the dated text of 2026-11-14 being rewritten.
 
 **Subtasks:**
 
-- [ ] In `agents/specs/correctness-glmm/mismatches.md`, section "Sources needed", add a paragraph after the one beginning "Neither source gives
+- [x] In `agents/specs/correctness-glmm/mismatches.md`, section "Sources needed", add a paragraph after the one beginning "Neither source gives
       per-study counts", without changing any existing text: "**Corrected <date of this task>** (`agents/tasks/bagos2009-table5/tasks-1.md`):" the
       ER-visit data are in Appendix III of Bagos and Nikolopoulos, and the school-absence data rebuild from Table 1 of Guevara, Berlin and Wolf (2004),
       BMC Med Res Methodol 4:17 (PMC481068); on them the fixed-effects, fixed-study-effects and random-study-effects rows of Table 5 reproduce in
       metafopy and R metafor, and have cases `glmm.published.bagos2009.table5.*` in `glmm_published.toml`, except the two school random-study-effects
       CI bounds, one unit of the last digit off, recorded as `glmm.published.bagos2009.table5.school.rs.mismatch`; the Hooper column still has no data
       that reproduce it, and has its own `TODO.md` item
-- [ ] Add the mismatch case `glmm.published.bagos2009.table5.school.rs.mismatch` to the file's "Mismatches" section as an item, in the form of the
+- [x] Add the mismatch case `glmm.published.bagos2009.table5.school.rs.mismatch` to the file's "Mismatches" section as an item, in the form of the
       section's other published-value items, with the figures from tasks-1.md Task 1's Notes, marked as written after the review of 2026-11-14 and not
       yet reviewed
 
 **Acceptance Criteria:**
 
-- [ ] The dated note and the mismatch item are present, and `git diff` of the file shows only added lines
+- [x] The dated note and the mismatch item are present, and `git diff` of the file shows only added lines
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
 
 **Notes:**
 
