@@ -125,7 +125,7 @@ crosses the cut-off, recorded in this task's Notes with the figures.
 
 ## Task 2: Fix the reference refit, or stop with the figures
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Source Reference:** the item's fix direction (fix `formulas.ls_profile_ll` and set the case to `pass`, or metafopy misses the branch)
@@ -135,25 +135,25 @@ now give; or, if metafopy is the one that misses the maximum at a = 1.3169, the 
 
 **Subtasks:**
 
-- [ ] Read Task 1's verdict. If it is missing, stop as `blocked`
-- [ ] **If the `tau2 = 0` branch is higher (metafopy misses it):** stops for the operator: metafopy's profile of `alpha.2` misses the higher
+- [x] Read Task 1's verdict. If it is missing, stop as `blocked`
+- [x] (not applicable: the continuous branch is higher) **If the `tau2 = 0` branch is higher (metafopy misses it):** stops for the operator: metafopy's profile of `alpha.2` misses the higher
       `tau2 = 0` branch at a = 1.3169166758 of `ls.confint.scale.ML.bcg`, and fixing it would change metafopy's `confint` and `profile` output. Put Task
       1's figures in the stop message. Change nothing under `src/metafopy/` or `src/tests/`, file nothing in `TODO.md`, and mark the other branch's
       subtasks ("In that branch") not applicable
-- [ ] **If the continuous branch is higher (the reference is wrong):** change `formulas.ls_profile_ll` in `src/tests/correctness/formulas.py` so it
+- [x] **If the continuous branch is higher (the reference is wrong):** change `formulas.ls_profile_ll` in `src/tests/correctness/formulas.py` so it
       keeps the best of a wider set of starts: besides `adjusted` and `start[free]`, starts along the line from `start[free]` to `adjusted` and a grid
       over the free coefficients wide enough to reach the continuous branch (Task 1's `alpha.1` optima give the range), keeping the minimum of all
       refits as now. Update its docstring to say why (the profile of `alpha.2` has a `tau2 = 0` plateau that two starts can fall onto while the
       continuous branch is higher). Keep the function's signature
-- [ ] In that branch, check the fixed reference against Task 1's grid of starts: at each `a` of Task 1 its `2 (ll_max - ll)` agrees within 1e-5, and
+- [x] In that branch, check the fixed reference against Task 1's grid of starts: at each `a` of Task 1 its `2 (ll_max - ll)` agrees within 1e-5, and
       `formulas.ls_profile_bounds(..., 1, 0.95)` gives an upper bound within 1e-5 of Task 1's crossing. If it does not, widen the starts; if it still
       does not, stop as `blocked` with the figures
-- [ ] In that branch, run `pytest src/tests/correctness/test_formulas_ls.py src/tests/correctness/test_derived.py -k "ls"` and check that no other
+- [x] In that branch, run `pytest src/tests/correctness/test_formulas_ls.py src/tests/correctness/test_derived.py -k "ls"` and check that no other
       location-scale case changes outcome; a case that changes stops the task as `blocked`, naming it and its old and new values
-- [ ] In that branch, run the case (`pytest src/tests/correctness/test_derived.py -k "ls.confint.scale.ML.bcg" -rX -rx`). If metafopy's bound now
+- [x] In that branch, run the case (`pytest src/tests/correctness/test_derived.py -k "ls.confint.scale.ML.bcg" -rX -rx`). If metafopy's bound now
       agrees with the reference within `LS_PROFILE` (`src/tests/correctness/test_derived.py`), remove the case's `status` and `reason` so it runs as a
       passing case, and mark the next subtask not applicable
-- [ ] In that branch, if metafopy's bound still differs (the header's probe expects metafopy's 1.3598 against a reference near 1.3812): keep
+- [x] In that branch, if metafopy's bound still differs (the header's probe expects metafopy's 1.3598 against a reference near 1.3812): keep
       `status = "mismatch"` and rewrite the case's `reason` with the new figures (the reference's bound, metafopy's bound and sign, and that metafopy's
       `profile_fit` leaves the continuous branch for the plateau between the values Task 1 found, so its root search converges on that jump). Commit
       that with the reference fix, then stops for the operator: metafopy's profile of `alpha.2` for `ls.confint.scale.ML.bcg` leaves the branch of
@@ -163,20 +163,27 @@ now give; or, if metafopy is the one that misses the maximum at a = 1.3169, the 
 
 **Acceptance Criteria:**
 
-- [ ] The `tau2 = 0` branch is higher: the list has stopped for the operator with Task 1's figures, and no file under `src/` changed
-- [ ] The continuous branch is higher: `formulas.ls_profile_ll` matches Task 1's grid of starts within 1e-5 at each `a` and its bound is Task 1's
+- [x] (not applicable: the continuous branch is higher) The `tau2 = 0` branch is higher: the list has stopped for the operator with Task 1's figures, and no file under `src/` changed
+- [x] The continuous branch is higher: `formulas.ls_profile_ll` matches Task 1's grid of starts within 1e-5 at each `a` and its bound is Task 1's
       crossing; no other location-scale case changes outcome; and the case either passes or is a `mismatch` whose `reason` gives the new figures, with
       the list stopped for the operator over metafopy's own jump
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/correctness/test_formulas_ls.py src/tests/correctness/test_derived.py` passes (expected failures as recorded)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/correctness/test_formulas_ls.py src/tests/correctness/test_derived.py` passes (expected failures as recorded)
 
 **Notes:**
 
 - Depends on Task 1
+- Result, 2026-11-18: `ls_profile_ll` now keeps the best of starts along the line from `start[free]` to `adjusted` and, for the log link, a grid of
+  shifts (-130 to 10 in steps of 10) of each free coefficient. At a = 1.3169166758, 1.3170, 1.36, 1.37, 1.38 and 1.40 it equals Task 1's grid within 1e-5;
+  at 1.39 it gives 3.863123, equal to R's best (the grid missed that branch). Its upper bound is 1.38120753377 against the crossing 1.38120753375.
+  `pytest` on `test_formulas_ls.py` and `test_derived.py` with `-k ls`: no other case changed outcome; the case stays an expected failure with its `reason` rewritten.
+- STOP for the operator: metafopy's `profile_fit` for `ls.confint.scale.ML.bcg` leaves the continuous branch (3.789459 at a = 1.36, 3.685207 at 1.3170) for the
+  plateau (3.868641) between 1.36 and 1.37, so `confint` gives the upper bound 1.3598, a jump, not the crossing 1.3812 (no `>` sign). Fixing `profile_starts` or
+  `profile_fit` in `src/metafopy/methods/ls_profile.py` would change metafopy's `confint` and `profile` output. Nothing under `src/metafopy/` changed and nothing is filed in `TODO.md`.
 - Key files: `src/tests/correctness/formulas.py` (`ls_profile_ll`, `ls_profile_bounds`), `src/tests/correctness/cases/location_scale.toml`
   (`ls.confint.scale.ML.bcg`), `src/tests/correctness/test_derived.py` (`ls_confint_scale`, `LS_PROFILE`), `src/tests/correctness/test_formulas_ls.py`
 - `ls_profile_ll` is also used by `ls_profile_bounds` for every `ls.confint.scale.*` case and by the profile checks, hence the run over every

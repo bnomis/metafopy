@@ -2860,11 +2860,19 @@ def ls_knha_s2w(yi: FloatArray, vi: FloatArray, X: FloatArray, tau2: FloatArray,
     return float(max(s2w, 1.0) if adhoc else s2w)
 
 
+LS_PROFILE_LINE = (0.0, 0.25, 0.5, 0.75, 1.0)
+LS_PROFILE_SHIFTS = tuple(float(shift) for shift in range(-130, 11, 10))
+
+
 def ls_profile_ll(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, link: str, method: str, j: int, value: float, start: FloatArray) -> float:
     """The log-likelihood maximised over the scale coefficients other than ``j``, with ``alpha_j`` held at ``value`` (the profile of section 2.5.3).
 
     BFGS with the analytic score (SLSQP with ``Z alpha >= 0`` for the identity link) from ``start``, then Nelder-Mead. A value that leaves no feasible
     ``tau2_i`` gives a large negative number, so that a root search treats it as far outside the interval.
+
+    The refit is run from several starts and the best kept: the profile of a coefficient can have a ``tau2 = 0`` plateau (an intercept running to minus
+    infinity) that a start near the estimate falls onto while a continuous branch with a higher log-likelihood exists. Besides the adjusted start and
+    ``start``, the starts lie along the line between them and, for the log link, on a grid of shifts of each free coefficient from the adjusted start.
     """
     free = [i for i in range(Z.shape[1]) if i != j]
 
@@ -2894,9 +2902,16 @@ def ls_profile_ll(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, 
     # whose change the others can mostly absorb is flat, and BFGS from the unadjusted start can run to tau2 = 0.
     adjusted = numpy.linalg.lstsq(Z[:, free], Z @ start - Z[:, j] * value, rcond=None)[0]
     best = math.inf
+    starts = [adjusted + fraction * (start[free] - adjusted) for fraction in LS_PROFILE_LINE]
+    if link == 'log':
+        for i in range(len(free)):
+            for shift in LS_PROFILE_SHIFTS:
+                shifted = adjusted.copy()
+                shifted[i] += shift
+                starts.append(shifted)
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
-        for first in (adjusted, start[free]):
+        for first in starts:
             if link == 'log':
                 res = scipy.optimize.minimize(negative, first, jac=gradient, method='BFGS', options={'gtol': 1e-9, 'maxiter': 2000})
             else:
