@@ -1063,6 +1063,14 @@ reason = "selmodel() Hessian (stepfun and the other types): entries that are zer
 ref = "docs/differences.md"
 
 [[known]]
+match = ['options/selmodel/uni_factor/type="logistic"', 'options/selmodel/uni_factor/type="logistic1"']
+kind = "value-diff"
+path = "$hessian"
+detail = "element 11: R *e-08, Python *e-15 (relative 1)"
+reason = "selmodel(type = 'logistic' and 'logistic1') of ~ factor(alloc) on dat.bcg: the cross derivative of the two factor coefficients is zero, R's finite-difference Hessian has -1.15258e-08 there and metafopy's 2.69e-15, while every other element agrees to a relative 1.5e-5 (measured 2026-11-18, R 4.6.2, metafor 5.2-1). The same finite-difference noise as the entry above, at a smaller size than its glob covers."
+ref = "docs/differences.md"
+
+[[known]]
 match = "construct/ls_bcg/*"
 kind = "value-diff"
 path = ["$b", "$beta", "$se", "$zval", "$pval", "$ci.lb", "$ci.ub", "$vb", "$QM", "$QMp", "$M", "$H", "$H2", "$I2", "$tau2", "$tau2.f", "$fit.stats$*", "$alpha", "$alpha$*", "$va", "$se.alpha", "$zval.alpha", "$pval.alpha", "$ci.lb.alpha", "$ci.ub.alpha", "$QS", "$QSp"]

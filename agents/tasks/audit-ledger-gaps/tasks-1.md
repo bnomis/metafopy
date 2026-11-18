@@ -143,7 +143,7 @@ stale entry sorted into this list's four items or the "Other" list, and any find
 
 ## Task 2: Entries for the exact permutest of uni_mods and the selmodel logistic Hessian
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** items 1 and 2, "Fix direction"
@@ -153,8 +153,8 @@ and `type="logistic1"` are accepted in `src/audit/data/known.toml`, each with wh
 
 **Subtasks:**
 
-- [ ] If Task 1 recorded a case of item 1 or 2 as "not reported", add no entry for it and record that in this task's Notes
-- [ ] **Item 1:** build the `uni_mods` fixture as `src/audit/data/fixtures.json` defines it and run `metafopy.permutest(fit, exact=True)` in a scratch
+- [x] If Task 1 recorded a case of item 1 or 2 as "not reported", add no entry for it and record that in this task's Notes
+- [x] **Item 1:** build the `uni_mods` fixture as `src/audit/data/fixtures.json` defines it and run `metafopy.permutest(fit, exact=True)` in a scratch
       Python script under `/usr/bin/time -l` (macOS: it prints the maximum resident set size), with a wall-clock limit of 30 minutes
       (`timeout 1800`). Record the outcome, its time and its peak memory in this task's Notes, dated
       - If it raises `InputError` "Number of iterations requested too large." or finishes: add `options/permutest/uni_mods/exact=true` to the `match`
@@ -162,7 +162,7 @@ and `type="logistic1"` are accepted in `src/audit/data/known.toml`, each with wh
         `uni_mods`, its time and memory, and the date
       - If it crashes, passes 4 GiB or the time limit: add no entry; file it in Task 5 as a new item (metafopy cannot finish what R cannot either;
         not a stop)
-- [ ] **Item 2:** for both cases, print the whole `$hessian` of R's `selmodel(type = "logistic")` and `type = "logistic1"` fit of `uni_factor` and of
+- [x] **Item 2:** for both cases, print the whole `$hessian` of R's `selmodel(type = "logistic")` and `type = "logistic1"` fit of `uni_factor` and of
       metafopy's (the call and arguments from the case in Task 1's run). Record element 11 and the largest relative difference of the other elements
       in this task's Notes, dated
       - If element 11 is below 1e-6 in absolute value in both and every other element agrees to relative 1e-3: add a `[[known]]` entry with `match` the
@@ -170,23 +170,34 @@ and `type="logistic1"` are accepted in `src/audit/data/known.toml`, each with wh
         this finding's detail string and not a larger value (copy its shape from the run's `findings.json`), and a `reason` with both values, the date
         and "R 4.6.2, metafor 5.2-1"
       - Otherwise add no entry and file it in Task 5 (a difference the item did not expect)
-- [ ] Re-render the report with the new ledger (seconds, no R):
+- [x] Re-render the report with the new ledger (seconds, no R):
       `METAFOPY_AUDIT_WORK="$main/.audit" bin/metafor-audit.sh --rerender "$main/.audit/runs/<timestamp>"` (Task 1's run), and check that it no
       longer lists the cases accepted here and does not list either changed entry as stale
 
 **Acceptance Criteria:**
 
-- [ ] Each case of items 1 and 2 is accepted by an entry that matches it and no other finding of Task 1's run, or is recorded for Task 5 with the reason
-- [ ] This task's Notes hold metafopy's outcome on the exact permutest and the Hessian values
+- [x] Each case of items 1 and 2 is accepted by an entry that matches it and no other finding of Task 1's run, or is recorded for Task 5 with the reason
+- [x] This task's Notes hold metafopy's outcome on the exact permutest and the Hessian values
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/test_harness_accounts.py src/tests/test_harness_compare.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/test_harness_accounts.py src/tests/test_harness_compare.py` passes
 
 **Notes:**
 
 - Depends on Task 1
+- **Item 1, measured 2026-11-18** (metafopy `dd58553`, `uni_mods` = `rma(yi, vi, mods = ~ ablat, data = es_bcg)`): `permutest(fit, exact='i')` gives
+  389188800 iterations, 15567552000 bytes of arrays, under `MAX_PERMUTATION_BYTES` (17179869184), so metafopy does not refuse. `permutest(fit,
+  exact=True)` was still running after about 29 minutes (cut off by the background limit, peak memory not reported, resident size about 275 MB at 20
+  minutes). It neither refuses nor finishes: **no entry added**; Task 5 files it as a new `TODO.md` item (metafopy cannot finish what R cannot either;
+  not a stop). `options/permutest/uni_mods/exact=true` stays in the re-rendered report.
+- **Item 2, measured 2026-11-18:** R's `$hessian` of `selmodel(type = "logistic")` and `"logistic1"` on `uni_factor` is read from the run's `r-1.jsonl`;
+  metafopy's is the same for both types. Element 11 (the cross derivative of the two factor coefficients, both off-diagonal positions) is R
+  -1.15258004719678e-08 and metafopy 2.69121241741294e-15; the largest relative difference of the other elements (those above 1e-6) is 1.46e-5.
+  Both conditions hold, so the entry is added in `src/audit/data/known.toml` (match the two ids exactly, detail `element 11: R *e-08, Python *e-15
+  (relative 1)`). The re-rendered report no longer lists them, lists no changed entry as stale, and `pytest src/tests/test_harness_accounts.py
+  src/tests/test_harness_compare.py` passes.
 - Key files: `src/audit/data/known.toml` (the `r-killed` entry of `options/permutest/ls_bcg/exact=true`; the `$hessian` entries matching
   `options/selmodel/*`), `src/metafopy/methods/permutest.py` (`MAX_PERMUTATION_BYTES`, the refusal), read only
 - R's side of item 1 needs no R call: R passes the harness's 4 GiB limit (Task 1's run shows it); the reason quotes that finding
@@ -324,6 +335,8 @@ earlier audits found.
 **Notes:**
 
 - Depends on Tasks 2, 3 and 4
+- From Task 2: file as a new item that the exact permutest of `uni_mods` (`options/permutest/uni_mods/exact=true`) neither refuses nor finishes in
+  metafopy (389188800 iterations, 15.6e9 bytes just under the 16 GiB guard, over 29 minutes without finishing), while R is killed at 4 GiB
 - Key files: `TODO.md`, `src/audit/data/recall.toml`
 
 ---
