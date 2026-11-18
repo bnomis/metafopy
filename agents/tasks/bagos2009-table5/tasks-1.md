@@ -236,7 +236,7 @@ data were found and where, without the dated text of 2026-11-14 being rewritten.
 
 ## Task 3: The full test run, and replacing the item
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item as a whole; D2 (a) of `agents/reviews/order-todo-items-1-5-specs.md`
@@ -246,11 +246,11 @@ takes its place.
 
 **Subtasks:**
 
-- [ ] Move the item from `TODO.md` to `DONE.md`: append its heading and body unchanged at the end of `DONE.md`, then a line
+- [x] Move the item from `TODO.md` to `DONE.md`: append its heading and body unchanged at the end of `DONE.md`, then a line
       `Done: 2026-MM-DD, agents/tasks/bagos2009-table5/tasks-1.md; ER-visit and school-absence rows of Table 5 have published cases (data from
       Appendix III and Guevara et al. 2004 Table 1); the school random-study-effects CI bounds are a recorded mismatch; Hooper narrowed to a new item`
       with the date of the commit
-- [ ] In `TODO.md`, where the old item was, add this item (fill in the date of the task):
+- [x] In `TODO.md`, where the old item was, add this item (fill in the date of the task):
 
       ```markdown
       ## Find the Hooper data behind Table 5 of Bagos and Nikolopoulos (2009)
@@ -270,23 +270,23 @@ takes its place.
       `src/tests/correctness/cases/glmm_published.toml` beside the `glmm.published.bagos2009.table5.*` cases.
       ```
 
-- [ ] Run the final tests from the worktree and save their whole output for the merge gate (the main checkout is the first entry of
+- [x] Run the final tests from the worktree and save their whole output for the merge gate (the main checkout is the first entry of
       `git worktree list --porcelain`, `/Users/simonb/src/metafopy`):
       `mkdir -p /Users/simonb/src/metafopy/ralpher-logs/bagos2009-table5/tasks-1 && source bin/activate.sh && pytest src/tests 2>&1 | tee /Users/simonb/src/metafopy/ralpher-logs/bagos2009-table5/tasks-1/final-tests.log`
 
 **Acceptance Criteria:**
 
-- [ ] The old item is in `DONE.md` with its body unchanged and a `Done:` line naming this list and the outcome, and no longer in `TODO.md`
-- [ ] The Hooper item is in `TODO.md` in the old item's place
+- [x] The old item is in `DONE.md` with its body unchanged and a `Done:` line naming this list and the outcome, and no longer in `TODO.md`
+- [x] The Hooper item is in `TODO.md` in the old item's place
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] The final test run above passes
-- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/bagos2009-table5/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] The final test run above passes
+- [x] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/bagos2009-table5/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
       `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0 (`<scratch>` is the session's scratch
       directory, outside the repository)
 
