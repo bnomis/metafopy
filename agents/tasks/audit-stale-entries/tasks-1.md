@@ -221,7 +221,7 @@ no record in `docs/differences.md` still describes a difference that is gone.
 
 ## Task 3: The full audit and the recall check
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Source Reference:** the item's "Fix direction" (rerun `bin/metafor-audit.sh` to see the report list no stale entry); the approved plan (`--recall`)
@@ -231,10 +231,10 @@ and no unaccepted finding this list caused, and the harness still reproduces wha
 
 **Subtasks:**
 
-- [ ] Run the full audit in the background, as the header says:
+- [x] Run the full audit in the background, as the header says:
       `METAFOPY_AUDIT_RLIB="$main/.audit/Rlib" METAFOPY_AUDIT_WORK="$main/.audit" bin/metafor-audit.sh`, and record the run directory it prints
       (`$main/.audit/runs/<timestamp>`) in this task's Notes, with its start and end time
-- [ ] Read the run's `wrong-or-missing-full.md` and the `new` list of its `findings.json`, and its stale-entry list. Compare with
+- [x] Read the run's `wrong-or-missing-full.md` and the `new` list of its `findings.json`, and its stale-entry list. Compare with
       `/Users/simonb/src/metafopy/.audit/runs/20261118-042436` (the last full run) and sort, into lists in this task's Notes, each line with its case
       id, `kind`, `path` and one line of detail:
       - **This list:** a finding on a case of an entry Task 2 removed or narrowed, or one of E1 to E6 listed as stale. Fix it here in
@@ -248,30 +248,38 @@ and no unaccepted finding this list caused, and the harness still reproduces wha
       - **Other:** everything else new since `20261118-042436`. **Stops for the operator: a new unaccepted finding of the full audit that this list
         did not cause and that is not one of rows 1 and 2's expected changes** - stop as `blocked`, naming the case, R's and metafopy's values and the
         step
-- [ ] File each "Row 1", "Row 2" and "Stale, not this list's" line, and each finding Task 1 sent here ("Otherwise", not stopped), with the `todo-add`
+- [x] File each "Row 1", "Row 2" and "Stale, not this list's" line, and each finding Task 1 sent here ("Otherwise", not stopped), with the `todo-add`
       skill (verified against the run's `findings.json`, dated, the run directory named), never fixed here. Where `todo-add` merges one into an
       existing item, record that item's title in this task's Notes: its body changes on purpose, and the closing check of Task 4 must allow for it.
       If there is nothing to file, write "none" in the Notes
-- [ ] Run the recall check in the background, as the header says:
+- [x] Run the recall check in the background, as the header says:
       `METAFOPY_AUDIT_RLIB="$main/.audit/Rlib" METAFOPY_AUDIT_WORK="$main/.audit" bin/metafor-audit.sh --recall`, and record the recall report it
       prints in this task's Notes. If it exits non-zero, stop as `blocked`, naming each item it missed: a miss is a hole in the harness, fixed in
       `src/audit/data/` (`AGENTS.md`), which is outside this item; the recall run passes `--no-ledger`, so no entry change of this list can cause it
 
 **Acceptance Criteria:**
 
-- [ ] The full run's report (re-rendered after any fix here) lists none of E1 to E6 as stale and no finding in "This list"
-- [ ] Every finding and stale entry of the report is in exactly one list in this task's Notes, and every line of "Row 1", "Row 2" and "Stale, not
+- [x] The full run's report (re-rendered after any fix here) lists none of E1 to E6 as stale and no finding in "This list"
+- [x] Every finding and stale entry of the report is in exactly one list in this task's Notes, and every line of "Row 1", "Row 2" and "Stale, not
       this list's" is in a `TODO.md` item
-- [ ] `bin/metafor-audit.sh --recall` exits 0
+- [x] `bin/metafor-audit.sh --recall` exits 0
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/test_harness_accounts.py src/tests/test_harness_compare.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/test_harness_accounts.py src/tests/test_harness_compare.py` passes
 
 **Notes:**
 
 - Depends on Task 2
+- Full run `/Users/simonb/src/metafopy/.audit/runs/20261118-220424`, started 21:04 UTC, ended 21:42 UTC on 2026-11-18 (R 4.6.2, metafor 5.2-1,
+  metafopy `ef102ef`). Its `findings.json` has `new` = 0 (46833 known findings, 13778 below the threshold), no stale-entry list (the report has no
+  "Stale ledger entries" section; `grep -c -i stale` over `wrong-or-missing-full.md` is 0), `uncovered_arguments` and `unaccounted` both empty.
+- Sorted lists: **This list:** none. **Row 1:** none. **Row 2:** none. **Stale, not this list's:** none. **Other:** none. Nothing sent here by
+  Task 1 ("Otherwise" was empty). Filed in `TODO.md`: none.
+- Recall check, `/Users/simonb/src/metafopy/.audit/runs/recall-20261118-224238/recall.md`, exit 0: "176 of 176 items reproduced; 1 not shown by the
+  pinned R" (audit 4: 32 of 32, audit 5: 67 of 67, audit 6: 77 of 77, plus one item listed under "Oracle moved", which is the pinned R's, not a miss).
+- `pytest src/tests/test_harness_accounts.py src/tests/test_harness_compare.py`: 49 passed.
 - Key files: `src/audit/data/known.toml`, `src/audit/data/recall.toml`, `TODO.md`
 - An item filed here changes `TODO.md` by an addition only, which the closing body check allows
 
