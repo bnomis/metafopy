@@ -1892,7 +1892,10 @@ the profile where metafor's is not. First, the profile refits the other coeffici
 from its default start, which can end at a lower local maximum: on the ML fit of `dat.bcg` log risk ratios with `mods = scale = ~
 ablat`, R's refit at `a = 1.1` has jumped to the `tau2 = 0` branch and gives `2 (ll_max - ll)` = 3.86864, above the cut-off 3.84146,
 where the continuous branch gives 3.13614. metafor therefore reports no lower bound ("Cannot obtain lower bound") and an upper bound
-of 1.0198, and metafopy keeps the highest log-likelihood of several starts and finds 1.8030. Second, metafor searches the estimate
+of 1.0198, and metafopy keeps the highest log-likelihood of several starts and finds 1.8030. On the same fit the upper bound of
+`alpha.2` is 1.3812 in metafopy, where R prints `>0.4245` (checked 2026-11-18, R 4.6.2, metafor 5.2-1): metafopy also tries starts
+beyond the line from the estimate, because the profile optimum there has `alpha.1` near -74, past every start of the line, while R's
+refits from its default start sit on the `tau2 = 0` plateau at every value. Second, metafor searches the estimate
 plus and minus the smaller of `10 |estimate|` and `10 crit se`, so a coefficient near zero gets a narrow interval: for the social
 sciences coefficient of Table 2 of Viechtbauer and Lopez-Lopez (2022) metafor prints `<-4.6807 >5.7208`, where the paper has an
 upper bound of 7.7000. metafopy searches `10 crit se` either side, so it finds 7.7000, and shows a bound that is still not crossed

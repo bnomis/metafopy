@@ -109,7 +109,7 @@ highest log-likelihood, so that a profile-likelihood bound is the crossing of th
 
 ## Task 2: Record the change in the user guide and the changelog
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation, item 4; "Every output that moves"; Motivation, "R"
@@ -119,35 +119,35 @@ names the new starts and every output that moves, so a user comparing with R or 
 
 **Subtasks:**
 
-- [ ] Check R's bound on the day: write an R script in the scratch directory that loads metafor, prints `packageVersion("metafor")`, fits
+- [x] Check R's bound on the day: write an R script in the scratch directory that loads metafor, prints `packageVersion("metafor")`, fits
       `rma(yi, vi, mods = ~ ablat, scale = ~ ablat, data = escalc(measure = "RR", ai = tpos, bi = tneg, ci = cpos, di = cneg, data = dat.bcg),
       method = "ML")` and prints `confint(res, alpha = 2)`. Run it with
       `export METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib; LC_ALL=C.UTF-8 R_LIBS=$METAFOPY_AUDIT_RLIB Rscript <script>`. The spec
       expects the upper bound `>0.4245`; a different value stops the task as `blocked`, naming both. Stop as `blocked` too if metafor does not load
       or its version is not 5.2.1
-- [ ] In `docs/differences.md`, section "Profile-likelihood bounds of the scale coefficients", add after the first difference (the refit from
+- [x] In `docs/differences.md`, section "Profile-likelihood bounds of the scale coefficients", add after the first difference (the refit from
       metafor's default start) a sentence that on the same fit metafopy's upper bound of `alpha.2` is 1.3812, where R prints `>0.4245`: metafopy also
       tries starts beyond the line from the estimate, because the profile optimum there has `alpha.1` near -74, past every start of the line, while R's
       refits from its default start sit on the `tau2 = 0` plateau at every value. Keep the section's other text and its list of correctness cases
-- [ ] In `CHANGELOG.md` under "Unreleased (1.0 candidate)", add a behaviour-change entry at the top, in the style of the others: the profile refits of
+- [x] In `CHANGELOG.md` under "Unreleased (1.0 candidate)", add a behaviour-change entry at the top, in the style of the others: the profile refits of
       a location-scale fit (`confint(res, alpha=j)` and `profile()`) also start one and a half and twice the way along the line start, so they keep
       the branch of highest log-likelihood. Name the outputs that move, from the spec's "Every output that moves": the ML `dat.bcg` log-link upper
       bound of `alpha.2`, 1.3598 (a jump) to 1.3812; the identity-link lower bounds that were a `<` or NaN and are now crossings (ML `dat.bcg`
       `alpha.2` -0.0082 to -0.0136, REML `dat.bcg` `alpha.1` 0 to -0.2686 and `alpha.2` NaN to -0.0288, `dat.bangertdrowns2004` with
       `scale = ~ meta + imag` `alpha.2` 0 to -0.0049), with the profile values that were NaN now fitted; and two log-link profile points of the
       Viechtbauer and Lopez-Lopez (2022) fits that rise to a higher refit, their bounds unchanged
-- [ ] Run `pytest src/tests/test_docs_examples.py`
+- [x] Run `pytest src/tests/test_docs_examples.py`
 
 **Acceptance Criteria:**
 
-- [ ] `docs/differences.md` gives metafopy's 1.3812 beside R's `>0.4245` (checked in R on the day) in the section named above
-- [ ] `CHANGELOG.md` has the behaviour-change entry naming the starts and every output of the spec's list, with no output the spec does not list
-- [ ] `pytest src/tests/test_docs_examples.py` passes
+- [x] `docs/differences.md` gives metafopy's 1.3812 beside R's `>0.4245` (checked in R on the day) in the section named above
+- [x] `CHANGELOG.md` has the behaviour-change entry naming the starts and every output of the spec's list, with no output the spec does not list
+- [x] `pytest src/tests/test_docs_examples.py` passes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/test_docs_examples.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/test_docs_examples.py` passes
 
 **Notes:**
 
