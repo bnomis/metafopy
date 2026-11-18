@@ -232,6 +232,14 @@ stale, and no other case is newly refused.
   list changes only `permutest.py` and `ls_permutest.py` (guard) since `45bbfc3`, the merge of the profile-starts list that the earlier run predates;
   the cause is probably that merge, not this list. Needs the operator: decide whether to file the two findings in `TODO.md`/ledger, then rerun the
   recall check (`bin/metafor-audit.sh --recall`, not yet run).
+- **Answered by the operator on 2026-11-18 (15:20 UTC): accept, with a ledger entry.** The move comes from row 1's profile starts (`45bbfc3`), and
+  the operator confirms it as part of that list's identity-link change: on `rma(yi, vi, scale = ~ grade, link = "identity")` of
+  `dat.bangertdrowns2004`, R stops the lower bound of `alpha.1` at -0.00137 with `<` (its refits fail below -0.005), while metafopy finds the
+  crossing -0.02498 (checked 2026-11-18: the refit there is feasible, `tau2_i` at least 0.19 at every grade, and metafopy's profile equals R's where R
+  has one, -19.30499 at -0.005). To do: add one `src/audit/data/known.toml` entry matching exactly `scripts/misc_rma_ls/test/65` (`$lb.sign`) and
+  `scripts/misc_rma_ls/test/67` (`[]$lb.sign`), with a reason saying this, in the shape of the existing profile-bound entries; run
+  `pytest src/tests/test_harness_accounts.py`; then run `bin/metafor-audit.sh --recall` as the subtask above says, and finish the task. If the
+  `ci.lb` value of these cases is also listed and not yet accepted, cover it in the same entry; any other new finding still stops the task.
 
 - Depends on Task 2
 - If the worktree has no `.venv`, run with `PATH=/Users/simonb/src/metafopy/.venv/bin:$PATH`, as earlier lists did
