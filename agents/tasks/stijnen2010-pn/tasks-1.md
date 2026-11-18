@@ -107,7 +107,7 @@ them, is known and recorded in this task's Notes with the figures of metafopy, R
 
 ## Task 2: Correct the treated data, and record what remains as a source difference
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item's fix direction (correct the data, or record the source difference with its reason)
@@ -117,8 +117,8 @@ and any printed value it still misses is a mismatch case whose reason says why, 
 
 **Subtasks:**
 
-- [ ] Read Task 1's verdict. If it is missing, or is the third, stop as `blocked`
-- [ ] **If the verdict is the first (Table VI misprints the treated catheter-days):**
+- [x] Read Task 1's verdict. If it is missing, or is the third, stop as `blocked`
+- [x] **If the verdict is the first (Table VI misprints the treated catheter-days):**
       - in `src/tests/correctness/cases/glmm_published.toml`, set the treated data of the case to `dat.nielweise2008`'s, divided by 1000 as the
         comment above the Table VII cases says: `xi = [7, 8, 3, 6, 1, 1, 17, 3, 2]`,
         `ti = [1.344, 1.600, 12.012, 1.536, 0.370, 0.729, 6.760, 1.107, 0.320]` (or the values Task 1 recorded, if they differ)
@@ -133,26 +133,26 @@ and any printed value it still misses is a mismatch case whose reason says why, 
       - extend the comment above the Table VII cases: the treated cases use `dat.nielweise2008`'s catheter-days, because Table VI's treated
         catheter-days are not the data Table VII was computed from (checked on the date of this task, `agents/tasks/stijnen2010-pn/tasks-1.md`)
       - leave the control cases and `glmm.published.stijnen2010.table8.bn` unchanged
-- [ ] **If the verdict is the second (neither data set reproduces the printed values; the three programs agree):** keep the data, and replace the
+- [x] (not applicable: verdict is the first) **If the verdict is the second (neither data set reproduces the printed values; the three programs agree):** keep the data, and replace the
       case's `reason` with one in the form above that records the values as a source difference accepted on the date of this task, naming the data
       sets tried. Mark the first branch's subtasks not applicable
-- [ ] In `agents/specs/correctness-glmm/mismatches.md`, add a dated paragraph after the paragraph that follows the published-values table (the one
+- [x] In `agents/specs/correctness-glmm/mismatches.md`, add a dated paragraph after the paragraph that follows the published-values table (the one
       beginning "Several rows differ by one unit"), without changing the table or the Answers: the result of the investigation of the Table VII treated
       row, the data now used, the values that now pass and the one recorded as a source difference, and this task list's path
-- [ ] Run `pytest src/tests/correctness/test_published.py src/tests/correctness/test_coverage.py`; the new passing case passes and the mismatch case
+- [x] Run `pytest src/tests/correctness/test_published.py src/tests/correctness/test_coverage.py`; the new passing case passes and the mismatch case
       is a strict expected failure. If the passing case fails, move the failing value to the mismatch case with its figures in the reason
 
 **Acceptance Criteria:**
 
-- [ ] The treated PN case uses the data Task 1 found Table VII was computed from, or keeps Table VI's with the reason naming the data sets tried
-- [ ] Every printed value of the treated PN row is in a passing case or in the mismatch case, and the mismatch case's reason names the printed value,
+- [x] The treated PN case uses the data Task 1 found Table VII was computed from, or keeps Table VI's with the reason naming the data sets tried
+- [x] Every printed value of the treated PN row is in a passing case or in the mismatch case, and the mismatch case's reason names the printed value,
       metafopy's and R metafor's, and why it is accepted
-- [ ] No file under `src/metafopy/` changes
+- [x] No file under `src/metafopy/` changes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/correctness/test_published.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/correctness/test_published.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 
