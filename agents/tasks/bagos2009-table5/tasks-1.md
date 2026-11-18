@@ -4,6 +4,12 @@
 **Created:** 2026-11-18
 **Version:** 1
 
+**Running tests in the worktree (added 2026-11-18, after row 2):** the worktree has no `.venv`, and the main checkout's venv imports `metafopy`
+from the main checkout's `src/` (its editable install), so `PATH=/Users/simonb/src/metafopy/.venv/bin:$PATH pytest ...` alone tests the code on
+`main`, not this list's. Run every pytest and Python check from the worktree root as
+`export PATH=/Users/simonb/src/metafopy/.venv/bin:$PATH PYTHONPATH=$PWD/src`, and check once with `python -c 'import metafopy; print(metafopy.__file__)'`
+that it prints this worktree's path.
+
 This list is row 4 of the run order `agents/tasks/order-todo-items-1-5.md` and waits for no other row. The plan was approved on 2026-11-18 (item 1, row 4
 of `agents/reviews/order-todo-items-1-5-specs.md`), with its decision D2 answered *(a) narrow the item to Hooper*: write published cases in
 `src/tests/correctness/cases/glmm_published.toml` for the ER-visit and school-absence columns of Table 5 (the fixed-effects Poisson row, the random

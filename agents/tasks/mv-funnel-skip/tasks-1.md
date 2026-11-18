@@ -4,6 +4,12 @@
 **Created:** 2026-11-18
 **Version:** 1
 
+**Running tests in the worktree (added 2026-11-18, after row 2):** the worktree has no `.venv`, and the main checkout's venv imports `metafopy`
+from the main checkout's `src/` (its editable install), so `PATH=/Users/simonb/src/metafopy/.venv/bin:$PATH pytest ...` alone tests the code on
+`main`, not this list's. Run every pytest and Python check from the worktree root as
+`export PATH=/Users/simonb/src/metafopy/.venv/bin:$PATH PYTHONPATH=$PWD/src`, and check once with `python -c 'import metafopy; print(metafopy.__file__)'`
+that it prints this worktree's path.
+
 The item was filed on 2026-11-15 by a TODO review: `test_funnel_matches_metafor` in `src/tests/test_fits.py` skips its `funnel_mvm` case when the
 test helper `has_mv_residuals` finds no `rstandard` for `rma_mv` fits, but `rstandard_rma_mv` now exists in `src/metafopy/methods/mv_diagnostics.py`.
 This list is row 3 of `agents/tasks/order-todo-items-1-5.md`. The plan was approved on 2026-11-18 (item 3 of

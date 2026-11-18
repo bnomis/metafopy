@@ -4,6 +4,12 @@
 **Created:** 2026-11-18
 **Version:** 1
 
+**Running tests in the worktree (added 2026-11-18, after row 2):** the worktree has no `.venv`, and the main checkout's venv imports `metafopy`
+from the main checkout's `src/` (its editable install), so `PATH=/Users/simonb/src/metafopy/.venv/bin:$PATH pytest ...` alone tests the code on
+`main`, not this list's. Run every pytest and Python check from the worktree root as
+`export PATH=/Users/simonb/src/metafopy/.venv/bin:$PATH PYTHONPATH=$PWD/src`, and check once with `python -c 'import metafopy; print(metafopy.__file__)'`
+that it prints this worktree's path.
+
 The item was filed on 2026-11-18 by Task 5 of `agents/tasks/audit-ledger-gaps/tasks-1.md`, from the stale list of the full audit run
 `/Users/simonb/src/metafopy/.audit/runs/20261118-042436` (`wrong-or-missing.md`, "Not covered", "Stale ledger entries"): each is an entry of
 `src/audit/data/known.toml` that matches no finding of that run. This list is row 5 of `agents/tasks/order-todo-items-1-5.md`. The plan was approved
