@@ -1153,3 +1153,19 @@ through a spec first.
 Spec: `agents/specs/selmodel-fixed-delta0/spec.md`; tasks: `agents/tasks/selmodel-fixed-delta0/tasks-1.md`.
 
 Done: 2026-11-18, agents/tasks/selmodel-fixed-delta0/tasks-1.md; option (a), a first delta other than 1 or nan on every step form raises InputError (agents/specs/selmodel-fixed-delta0/spec.md, D1 answered 2026-11-17 in agents/reviews/order-todo-items-1-10-specs.md)
+
+## Simmonds and Higgins (2016) Fig 1 one-stage random effects differs from metafopy and R metafor
+
+<!-- doc-counts: accept-start found on 2026-11-14 - a dated record, not a claim about the present -->
+Found on 2026-11-14 by the case `glmm.published.simmonds2016.hrt.random.mismatch` (`agents/specs/correctness-glmm/mismatches.md`); the user answered
+*investigate* on 2026-11-14. The paper prints OR 1.74 (0.59, 5.17) for the one-stage random-effects model (`glmer`); metafopy and R metafor 5.2-1 give
+1.79068 (0.54155, 5.92107) for `UM.FS`, `ML` on the same data, with `tau2` 0.21307. The paper's random-effects result equals its fixed-effect result
+(1.74), which metafopy and R reproduce for `FE` (1.74126), so the paper's fit may have a `tau2` of zero.
+<!-- doc-counts: accept-end -->
+
+Fix direction: compare the marginal likelihood at `tau2 = 0` and at 0.213 with the formulas of `src/tests/correctness/glmm_formulas.py`; if the
+likelihood is higher at 0.213, record the printed value as a source difference (a `glmer` that stopped at `tau2 = 0`); otherwise fix metafopy.
+
+Spec: none (small item); tasks: `agents/tasks/simmonds2016-fig1/tasks-1.md`.
+
+Done: 2026-11-18, agents/tasks/simmonds2016-fig1/tasks-1.md; source difference: the paper's glmer model is coding = 1 (tau2 0, OR 1.74), and the coding = 0.5 likelihood is higher at tau2 0.213; case reason updated and a passing coding = 1 case added
