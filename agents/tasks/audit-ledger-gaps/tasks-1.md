@@ -206,7 +206,7 @@ and `type="logistic1"` are accepted in `src/audit/data/known.toml`, each with wh
 
 ## Task 3: The printed flat location-scale fits
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Source Reference:** item 3, "Fix direction"
@@ -216,34 +216,46 @@ where they do not.
 
 **Subtasks:**
 
-- [ ] For each case of item 3 that Task 1's run still reports - `options/vif/ls_na/table=true`, `options/permutest/ls_bangert/digits=2`,
+- [x] For each case of item 3 that Task 1's run still reports - `options/vif/ls_na/table=true`, `options/permutest/ls_bangert/digits=2`,
       `options/permutest/ls_bangert/digits=[2,{"$na":true},1]`, `construct/uni_mods_year/scale={"$formula":"~ 0 + I(1|ablat)"}` - fit the model the
       case prints in R and in metafopy (fixtures from `src/audit/data/fixtures.json`) and print the log-likelihood with 10 significant digits and the
       value on the differing line. For the `permutest` cases, also print both permutation p-values with the number of permutations behind each.
       Record both programs' values in this task's Notes, dated
-- [ ] **Log-likelihoods agree to 1e-6 (relative):** add the case to the existing entry whose `reason` explains it (the `print-diff` entries of
+- [x] **Log-likelihoods agree to 1e-6 (relative):** add the case to the existing entry whose `reason` explains it (the `print-diff` entries of
       `construct/ls_*` and `options/permutest/ls_*`, near "The printed tests and coefficient rows of the flat location-scale fits"), or add one entry
       naming exactly the cases of one cause; extend the `reason` with the values and the date. A `match` list grows by the literal case ids, not by a
       wider glob
-- [ ] **Log-likelihoods do not agree to 1e-6:** file the case as a new `TODO.md` item following the `todo-add` skill's conventions (verified, dated,
+- [x] **Log-likelihoods do not agree to 1e-6:** file the case as a new `TODO.md` item following the `todo-add` skill's conventions (verified, dated,
       the run directory and both values named, inserted in implementation order), and add no entry. This is not a stop. Record the new item's title in
       this task's Notes
-- [ ] Re-render the report as in Task 2 and check that it lists none of the cases accepted here and no changed entry as stale
+- [x] Re-render the report as in Task 2 and check that it lists none of the cases accepted here and no changed entry as stale
 
 **Acceptance Criteria:**
 
-- [ ] Every case of item 3 that Task 1's run reports is accepted with its log-likelihoods in the `reason`, or is a new `TODO.md` item
-- [ ] No entry changed here matches a finding of Task 1's "Other" list
+- [x] Every case of item 3 that Task 1's run reports is accepted with its log-likelihoods in the `reason`, or is a new `TODO.md` item
+- [x] No entry changed here matches a finding of Task 1's "Other" list
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/test_harness_accounts.py src/tests/test_harness_compare.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/test_harness_accounts.py src/tests/test_harness_compare.py` passes
 
 **Notes:**
 
 - For `options/vif/ls_na/table=true` and `construct/uni_mods_year/scale=~ 0 + I(1|ablat)`, update the `detail` of the existing entries (`src/audit/data/known.toml`) to the current print, not add a second entry (Task 1 Notes, 2026-11-18)
 - Depends on Task 1
+- **Measured 2026-11-18** (metafopy `ee61a82`, R 4.6.2, metafor 5.2-1; probe scripts in the session scratch directory): REML log-likelihoods agree to
+  1e-9 in all three fits, so all four cases are accepted and no new `TODO.md` item is filed here.
+  - `ls_na` (`options/vif/ls_na/table=true`): R -4.19407254821, metafopy -4.194072548; se of the scale intercept 5.5982 against 5.5980, upper limit
+    0.5339 against 0.5336. Existing entry's `detail` updated (Python's lower limit now prints -21.4103).
+  - `uni_mods_year` scale `~ 0 + I(1|ablat)`: R -7.90739568702, metafopy -7.907395687; line 13 prints -142.8015 / -4.1429 in R and -142.8012 / -4.1435
+    in metafopy. Existing entry's `detail` updated.
+  - `ls_bangert` permutest (`digits=2` and `digits=[2,NA,1]`): R -10.4217126183, metafopy -10.42171262; scale intercept p 0.90 in R (20 permutations
+    with a finite z-value) against 0.875 printed 0.88 in metafopy (16 of 20 finite, the rest NaN from a Hessian that cannot be inverted), slopes 0.05
+    against 0.0625. The existing `*/permutest/ls_bangert*` entry (the same cause) was stale because its `detail` named only the `I(ni/100)` row; the
+    `detail` is removed and the `reason` extended.
+  - Re-rendered report of run `20261118-042436` lists none of the four cases and none of the three changed entries as stale;
+    `pytest src/tests/test_harness_accounts.py src/tests/test_harness_compare.py`: 49 passed.
 - The item's cause is suspected, not confirmed: the stop points of R's `nlminb` and metafopy's optimiser on a flat scale likelihood
   (`docs/differences.md`, "Refits of a location-scale model that R's optimiser leaves short" and "Standard errors of a location-scale model on a flat
   scale"). The `permutest` p-values (`0.90` against `0.88`) differ by more than the last digit; the log-likelihood test still decides, but the

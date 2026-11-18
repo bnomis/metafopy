@@ -956,8 +956,7 @@ ref = "docs/differences.md"
 [[known]]
 match = "*/permutest/ls_bangert*"
 kind = "print-diff"
-detail = "*R 'I(ni/100) *', Python 'I(ni/100) *'"
-reason = "permutest(iter = 20, seed = 1) of ls_bangert: at the 17th permutation of the scale model the coefficient of imag runs off on a flat likelihood and metafopy's numerical Hessian cannot be inverted (z-values NaN), while R's can (z of imag -0.0006); the permutation p-value of the scale slope I(ni/100) is then 1/19 in metafopy against R's 1/20, and its significance star differs (checked 2026-11-04, R 4.6.2, metafor 5.2-1). The same Hessian difference as construct/ls_bcg's warning-extra entry."
+reason = "permutest(iter = 20, seed = 1) of ls_bangert: at the 17th permutation of the scale model the coefficient of imag runs off on a flat likelihood and metafopy's numerical Hessian cannot be inverted (z-values NaN), while R's can (z of imag -0.0006); the permutation p-value of the scale slope I(ni/100) is then 1/19 in metafopy against R's 1/20, and its significance star differs (checked 2026-11-04, R 4.6.2, metafor 5.2-1). The same Hessian difference as construct/ls_bcg's warning-extra entry. The printed rows of the scale model that differ are the intercept (p 0.90 in R, 0.88 in metafopy, 20 permutations against 16 with finite z-values) and the two slopes (0.05 against 0.06, significance star); the REML log-likelihood of the fit is -10.42171262 in R and in metafopy (agreement to 1e-9), so the difference is in the permutation refits, not in the fit (checked 2026-11-18, R 4.6.2, metafor 5.2-1)."
 ref = "docs/differences.md"
 
 [[known]]
@@ -1747,8 +1746,8 @@ ref = "docs/differences.md"
 [[known]]
 match = 'construct/uni_mods_year/scale={"$formula":"~ 0 + I(1|ablat)"}'
 kind = "print-diff"
-detail = "line 13: R '-73.4722  35.3727  -2.0771  0.0378  -142.8015  -4.1429  *', Python '-73.4724  35.3725  -2.0771  0.0378  -142.8013  -4.1436  *'"
-reason = "The printed one-row scale table of rma(mods = ~ ablat + year, scale = ~ 0 + I(1/ablat)) of dat.bcg: its estimate, se and upper limit are the accepted value-diffs of the entry on construct/uni_mods*/scale=* above (the scale likelihood is flat; R's numerical Hessian). Shown since the row prints without a name as in R (2026-11-05)."
+detail = "line 13: R '-73.4722  35.3727  -2.0771  0.0378  -142.8015  -4.1429  *', Python '-73.4724  35.3725  -2.0771  0.0378  -142.8012  -4.1435  *'"
+reason = "The printed one-row scale table of rma(mods = ~ ablat + year, scale = ~ 0 + I(1/ablat)) of dat.bcg: its estimate, se and upper limit are the accepted value-diffs of the entry on construct/uni_mods*/scale=* above (the scale likelihood is flat; R's numerical Hessian). Shown since the row prints without a name as in R (2026-11-05). The REML log-likelihood is -7.907395687 in R and in metafopy (agreement to 1e-9); the printed upper limit and se of the scale intercept differ in the last digits (-142.8015 against -142.8012, -4.1429 against -4.1435), as the flat likelihood moves them (checked 2026-11-18, R 4.6.2, metafor 5.2-1)."
 ref = "docs/differences.md"
 
 [[known]]
@@ -1783,8 +1782,8 @@ ref = "docs/differences.md"
 [[known]]
 match = "options/vif/ls_na/table=true"
 kind = "print-diff"
-detail = "line 7: R 'intrcpt -10.4383 5.5982 -1.8646  <.1 -21.4105 0.5339     NA     NA', Python 'intrcpt -10.4383 5.5980 -1.8646  <.1 -21.4102 0.5336     NA     NA'"
-reason = "The printed values of vif() whose differences are accepted for the flat scale intercept of ls_na, which every option variant refits (the entry on */ls_na/* above)."
+detail = "line 7: R 'intrcpt -10.4383 5.5982 -1.8646  <.1 -21.4105 0.5339     NA     NA', Python 'intrcpt -10.4383 5.5980 -1.8646  <.1 -21.4103 0.5336     NA     NA'"
+reason = "The printed values of vif() whose differences are accepted for the flat scale intercept of ls_na, which every option variant refits (the entry on */ls_na/* above). The REML log-likelihood of the fit is -4.194072548 in R and in metafopy (agreement to 1e-9); the se of the scale intercept differs in the fourth decimal (5.5982 against 5.5980; checked 2026-11-18, R 4.6.2, metafor 5.2-1)."
 ref = "docs/differences.md"
 
 [[known]]
