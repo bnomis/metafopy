@@ -64,4 +64,6 @@ Any change to metafopy's output beyond what an approved spec lists waits for you
 | 6 | `audit-ledger-gaps/tasks-1.md` | 2, 3 | a finding of the full audit that no item covers and that shows metafopy's output wrong (Task 1), only if one does | merged 5e16b4d |
 | 7 | `ls-confint-scale-branch/tasks-1.md` | - | the fix of metafopy's own profile of `alpha.2`, expected (Task 2) | merged c1892b0 |
 
+Checkpoint after 7: running
+
 Checkpoint after 3: passed 8594 passed, 37 skipped, 14 xfailed
