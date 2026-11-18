@@ -364,7 +364,7 @@ earlier audits found.
 
 ## Task 6: The full test run and closing the items
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the four items as a whole
@@ -373,29 +373,29 @@ earlier audits found.
 
 **Subtasks:**
 
-- [ ] Move each of the four items from `TODO.md` to `DONE.md`, in the order of the Source line: append its heading and body unchanged at the end of
+- [x] Move each of the four items from `TODO.md` to `DONE.md`, in the order of the Source line: append its heading and body unchanged at the end of
       `DONE.md`, then a line `Done: 2026-MM-DD, agents/tasks/audit-ledger-gaps/tasks-1.md; <outcome>` with the date of the commit, where `<outcome>`
       says in one line what the item ended as (for example "added to the r-killed entry of ls_bcg; metafopy refuses in <time>", "new $hessian entry
       for the two logistic cases", "accepted <case ids>, <title> filed for the rest", "accepted by D2 (a);
       known.toml and docs/differences.md entries")
-- [ ] Run the final tests from the worktree and save their whole output for the merge gate (the main checkout is the first entry of
+- [x] Run the final tests from the worktree and save their whole output for the merge gate (the main checkout is the first entry of
       `git worktree list --porcelain`, `/Users/simonb/src/metafopy`):
       `mkdir -p /Users/simonb/src/metafopy/ralpher-logs/audit-ledger-gaps/tasks-1 && source bin/activate.sh && pytest src/tests 2>&1 | tee /Users/simonb/src/metafopy/ralpher-logs/audit-ledger-gaps/tasks-1/final-tests.log`
 
 **Acceptance Criteria:**
 
-- [ ] The four items are in `DONE.md` with their bodies unchanged and a `Done:` line each naming this list and the outcome, and are no longer in
+- [x] The four items are in `DONE.md` with their bodies unchanged and a `Done:` line each naming this list and the outcome, and are no longer in
       `TODO.md`
-- [ ] The items filed by Tasks 3 and 5 are in `TODO.md`
+- [x] The items filed by Tasks 3 and 5 are in `TODO.md`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] The final test run above passes
-- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/audit-ledger-gaps/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] The final test run above passes
+- [x] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/audit-ledger-gaps/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
       `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0 (`<scratch>` is the session's scratch
       directory, outside the repository); a body changed on purpose by a `todo-add` merge in Task 5 is named in its Notes
 
