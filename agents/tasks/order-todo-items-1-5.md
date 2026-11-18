@@ -48,6 +48,6 @@ names the one that fires only if the run finds it.
 |---|---|---|---|---|
 | 1 | `ls-profile-starts/tasks-1.md` | - | an output that moves beyond the spec's list (Tasks 1 and 3), only if one does | merged 45bbfc3 |
 | 2 | `permutest-exact-limit/tasks-1.md` | - | a test or audit case besides `uni_mods` and `ls_bcg` with `exact=True` refused (Tasks 1 and 3), only if one is | merged da2aa13 |
-| 3 | `mv-funnel-skip/tasks-1.md` | - | the `funnel_mvm` case failing once the skip is removed (Task 1), only if it does | todo |
+| 3 | `mv-funnel-skip/tasks-1.md` | - | the `funnel_mvm` case failing once the skip is removed (Task 1), only if it does | running |
 | 4 | `bagos2009-table5/tasks-1.md` | - | a printed row of Table 5 not reproducing as the probe found (Task 1), only if one does not | todo |
 | 5 | `audit-stale-entries/tasks-1.md` | 1, 2 | an entry whose case shows metafopy's output wrong (Task 1), or a new full-audit finding no row caused or expects (Task 3), only if one occurs | todo |
