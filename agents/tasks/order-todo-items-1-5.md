@@ -52,4 +52,4 @@ names the one that fires only if the run finds it.
 | 4 | `bagos2009-table5/tasks-1.md` | - | a printed row of Table 5 not reproducing as the probe found (Task 1), only if one does not | merged 7253d10 |
 | 5 | `audit-stale-entries/tasks-1.md` | 1, 2 | an entry whose case shows metafopy's output wrong (Task 1), or a new full-audit finding no row caused or expects (Task 3), only if one occurs | merged 22518aa |
 
-Checkpoint after 5: running
+Checkpoint after 5: passed 8608 passed, 37 skipped, 14 xfailed
