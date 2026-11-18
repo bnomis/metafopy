@@ -440,6 +440,8 @@ locator = "Table II, anti-infective catheter, BN column"
 read = 2026-11-14
 
 # Table VII prints the log incidence rate per 1000 catheter days, so the person-times below are the Table VI catheter-days divided by 1000.
+# The treated cases use dat.nielweise2008's catheter-days, because Table VI's treated catheter-days are not the data Table VII was computed from
+# (checked on 2026-11-18, agents/tasks/stijnen2010-pn/tasks-1.md).
 
 [[case]]
 id = "glmm.published.stijnen2010.table7.pn.control"
@@ -476,22 +478,38 @@ locator = "Table VII, not-treated, PN row (data of Table VI)"
 read = 2026-11-14
 
 [[case]]
-id = "glmm.published.stijnen2010.table7.pn.treated.mismatch"
+id = "glmm.published.stijnen2010.table7.pn.treated"
 kind = "published"
 function = "rma_glmm"
-data = { xi = [7, 8, 3, 6, 1, 1, 17, 3, 2], ti = [1.491, 1.638, 11.484, 1.446, 0.370, 0.786, 6.840, 1.156, 0.400] }
+data = { xi = [7, 8, 3, 6, 1, 1, 17, 3, 2], ti = [1.344, 1.600, 12.012, 1.536, 0.370, 0.729, 6.760, 1.107, 0.320] }
 args = { xi = "xi", ti = "ti", measure = "IRLN", method = "ML" }
-status = "mismatch"
-reason = "beta[0] printed 0.850, metafopy 0.81997, R metafor 5.2-1 0.81997; se[0] printed 0.330, metafopy 0.31962, R metafor 5.2-1 0.31962; tau2 printed 0.654, metafopy 0.59899, R metafor 5.2-1 0.59898"
 check = "test_published.glmm_printed"
-printed = { "beta[0]" = "0.850", "se[0]" = "0.330", tau2 = "0.654" }
+printed = { "se[0]" = "0.330", tau2 = "0.654" }
 covers = ["rma_glmm.fit.IRLN.none.ML"]
 
 [case.source]
 citation = "Stijnen T, Hamza TH, Ozdemir P (2010). Random effects meta-analysis of event outcome in the framework of the generalized linear mixed model with applications in sparse data. Stat Med 29(29):3046-3067"
 doi = "10.1002/sim.4040"
-locator = "Table VII, treated, PN row (data of Table VI)"
-read = 2026-11-14
+locator = "Table VII, treated, PN row (data of dat.nielweise2008, Niel-Weise et al. 2008: Table VI misprints the treated catheter-days)"
+read = 2026-11-18
+
+[[case]]
+id = "glmm.published.stijnen2010.table7.pn.treated.mismatch"
+kind = "published"
+function = "rma_glmm"
+data = { xi = [7, 8, 3, 6, 1, 1, 17, 3, 2], ti = [1.344, 1.600, 12.012, 1.536, 0.370, 0.729, 6.760, 1.107, 0.320] }
+args = { xi = "xi", ti = "ti", measure = "IRLN", method = "ML" }
+status = "mismatch"
+reason = "beta[0] printed 0.850, metafopy 0.84940, R metafor 5.2-1 0.84941; accepted as a source difference on 2026-11-18 (Table VI misprints the treated catheter-days; on the original data of dat.nielweise2008 the source used other software, metafopy and R metafor agree)"
+check = "test_published.glmm_printed"
+printed = { "beta[0]" = "0.850" }
+covers = ["rma_glmm.fit.IRLN.none.ML"]
+
+[case.source]
+citation = "Stijnen T, Hamza TH, Ozdemir P (2010). Random effects meta-analysis of event outcome in the framework of the generalized linear mixed model with applications in sparse data. Stat Med 29(29):3046-3067"
+doi = "10.1002/sim.4040"
+locator = "Table VII, treated, PN row (data of dat.nielweise2008, Niel-Weise et al. 2008: Table VI misprints the treated catheter-days)"
+read = 2026-11-18
 
 # van Houwelingen, Zwinderman and Stijnen (1993) model omega = theta_C - theta_T, control against treatment: the opposite sign to metafor's log odds ratio.
 

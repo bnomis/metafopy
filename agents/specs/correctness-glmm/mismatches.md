@@ -88,6 +88,11 @@ rows); the Stijnen treated row (Table VII) and the Simmonds and Higgins random-e
 random-effects result equals its fixed-effect result (1.74), which metafopy and R metafor reproduce for `FE` (1.74126) but not for `ML`
 (`tau2` 0.21307). Investigated on 2026-11-18 by `agents/tasks/simmonds2016-fig1/tasks-1.md`: the paper's model is `coding = 1`, whose maximum is at `tau2 = 0`, and the `coding = 0.5` likelihood is higher at 0.21307, so the row is a source difference.
 
+Investigated on 2026-11-18 by `agents/tasks/stijnen2010-pn/tasks-1.md`: Table VI's treated catheter-days are not the data Table VII was computed from.
+The treated catheter-days of `dat.nielweise2008` (Niel-Weise et al. 2008, the source Table VI cites) reproduce the printed SE (0.330) and `tau2`
+(0.654), so the case now uses them and those two values pass. The printed log rate 0.850 against 0.84940 (metafopy) and 0.84941 (R metafor) stays one
+unit of the last digit off and is recorded as a source difference; metafopy, R metafor and the formulas agree.
+
 ## Conventions
 
 ### The saturated-model Wald statistic of a moderator model
