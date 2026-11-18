@@ -86,21 +86,6 @@ reason = "selmodel(type='truncest', control=list(optimizer='mads')) on hackshaw1
 ref = "docs/differences.md"
 
 [[known]]
-match = "scripts/misc_selmodel/*"
-kind = "value-diff"
-path = "$*"
-detail = "*sav <- selmodel(res, type = \"beta\")*"
-reason = "selmodel(type='beta') on baskerville2012 (ML, tau2 near 0): R's PORT stops at log-likelihood -2.792404, metafopy at -2.792399 (higher), so tau2 of 2.4e-6 differs by 2.6 % (absolute 6e-8) and the other estimates by 1e-5 relative."
-ref = "docs/differences.md"
-
-[[known]]
-match = "scripts/misc_coef_se/*"
-kind = "value-diff"
-detail = "*sel <- selmodel(res, type = \"beta\")*"
-reason = "Same as the selmodel(type='beta') entry of misc_selmodel: tau2 near 0 on baskerville2012, the log-likelihood is higher in metafopy."
-ref = "docs/differences.md"
-
-[[known]]
 match = ["*/reporter*", "scripts/misc_reporter/*"]
 reason = "reporter() writes an R Markdown report; Jupyter notebooks are the Python equivalent."
 ref = "docs/differences.md"
@@ -1230,14 +1215,6 @@ reason = "selmodel() of the tests of metafor with a flat likelihood in the selec
 ref = "docs/differences.md"
 
 [[known]]
-match = "scripts/misc_selmodel/test/41"
-kind = "value-diff"
-path = ""
-detail = "*[[]out <- capture.output(print(sav))[]]*"
-reason = "Printed selection-model table: the lower limit of delta.2 differs in the last digit (0.1803 and 0.1804) where delta is flat."
-ref = "docs/differences.md"
-
-[[known]]
 match = "scripts/conv.delta/rd/31"
 kind = "value-diff"
 path = ["$ni", "$ni.f"]
@@ -1322,13 +1299,6 @@ reason = "influence() with na.action 'exclude' or 'pass': is.infl is NA in R for
 ref = "docs/differences.md"
 
 [[known]]
-match = "options/predict/ls_na/newscale=*"
-kind = "value-diff"
-path = "$slab"
-reason = "predict() of a location-scale model with newscale a named vector of two values for a model with one scale variable: R labels the prediction with the first name ('ablat'); metafopy labels a single prediction with the empty label."
-ref = "docs/differences.md"
-
-[[known]]
 match = "matrix/regplot/mv_ks_mods"
 kind = "value-diff"
 path = "$order"
@@ -1348,14 +1318,6 @@ kind = "shape-diff"
 path = ""
 detail = "*[[]class(dat)[]]*"
 reason = "class() of the result of aggregate() on an escalc object that was cut with a subscript: R gives data.frame only, metafopy keeps the measure and the class escalc."
-ref = "docs/differences.md"
-
-[[known]]
-match = ["*/ls_year", "*/ls_year/*", "*/permutest/ls_year", "*/permutest/ls_year/*", "*/permutest_ls*"]
-kind = "print-diff"
-path = ""
-detail = "*QM(df = 2) = 15.610[45]*"
-reason = "Printed QM of the flat location-scale fit ls_year: 15.6105 in R and 15.6104 in metafopy (relative 5e-6) where the scale coefficients differ by 1e-5; the log-likelihood is -7.602255955 in both."
 ref = "docs/differences.md"
 
 [[known]]
@@ -1666,14 +1628,6 @@ match = ["matrix/trimfill/trimfill_bcg#1", "matrix/trimfill/trimfill_bcg#3", "op
 kind = "print-diff"
 detail = "line 1: R 'Estimated number of missing studies on the * side: * (SE = *)', Python 'Estimated number of missing studies*"
 reason = "The printed se.k0 of the value-diff entry above (trimfill() of a trim-and-fill result, R's rounding breaks the tie of mirrored studies)."
-ref = "docs/differences.md"
-
-[[known]]
-match = ["*/print/sel_bcg", "*/print/sel_bcg/*", "*/print/sel_bcg#*"]
-kind = "value-diff"
-path = ""
-detail = "element *: R 0.1   < p <= 0.5     2   98.1051 *, Python 0.1   < p <= 0.5     2   98.1050 *"
-reason = "selmodel(type = 'stepfun', steps = c(0.025, 0.1, 0.5, 1)) on dat.bcg: the third delta is 98.1050604 in R and 98.1050385 here (2e-7 relative), so the step table prints 98.1051 against 98.1050. Both run the same ported optim BFGS; their first 13 likelihood evaluations agree, later ones differ by 1 to 3 ulp (metafopy's pnorm and qnorm are SciPy's ndtr and ndtri, not ports of R's), and the finite-difference gradient magnifies those bits on a surface that is flat in delta (the second interval holds no p-values; R cannot invert the Hessian). Accepted as an optimiser stop on a flat likelihood by decision of the operator (checked 2026-11-05, R 4.6.2, metafor 5.2-1)."
 ref = "docs/differences.md"
 
 [[known]]

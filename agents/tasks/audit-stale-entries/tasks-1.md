@@ -170,7 +170,7 @@ sorted into "remove" or "narrow", with the values behind the choice recorded; an
 
 ## Task 2: Remove or narrow the six entries
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item's "Fix direction" (remove where the two now agree, narrow `detail` where they differ in another way)
@@ -180,32 +180,40 @@ no record in `docs/differences.md` still describes a difference that is gone.
 
 **Subtasks:**
 
-- [ ] Remove each entry Task 1 sorted as "No case", "Agree" or "Otherwise" (not stopped), found by its own text; remove nothing else. If E1 is
+- [x] Remove each entry Task 1 sorted as "No case", "Agree" or "Otherwise" (not stopped), found by its own text; remove nothing else. If E1 is
       removed and E2 stays, rewrite E2's `reason` to stand on its own with E2's values from Task 1; if E2 is removed and E1 stays, nothing else changes
-- [ ] Narrow each entry Task 1 sorted as "Moved", following the header's rules: its `detail` to the current finding, its `reason` to the current
+- [x] Narrow each entry Task 1 sorted as "Moved", following the header's rules: its `detail` to the current finding, its `reason` to the current
       values and the date
-- [ ] For each removed entry, search `docs/differences.md` for the difference it accepted (for E6 the `98.1051` paragraph of "selmodel on a flat
+- [x] For each removed entry, search `docs/differences.md` for the difference it accepted (for E6 the `98.1051` paragraph of "selmodel on a flat
       likelihood"; for the others its values and call, with `grep -n -F`). Where a passage describes only that difference as current behaviour, remove
       it, or rewrite it with Task 1's values where the passage also holds other content; a narrowed entry's passage gets the current values and date.
       A passage that names no value of the removed entry stays. Record each change, or "none", in this task's Notes
-- [ ] Re-render the report of Task 1's ledger slices with the new ledger (seconds, no R):
+- [x] Re-render the report of Task 1's ledger slices with the new ledger (seconds, no R):
       `METAFOPY_AUDIT_WORK="$main/.audit" bin/metafor-audit.sh --rerender "$main/.audit/runs/<slice>"`, and check that no finding becomes unaccepted
       on the slices' cases and that a narrowed entry matches its finding
 
 **Acceptance Criteria:**
 
-- [ ] Every entry of E1 to E6 is removed or narrowed as Task 1 sorted it, and no other `[[known]]` entry changes except E2's `reason` as above
-- [ ] The re-rendered slice reports list no unaccepted finding that the slices with the old ledger did not list
-- [ ] No file under `src/metafopy/` changes
+- [x] Every entry of E1 to E6 is removed or narrowed as Task 1 sorted it, and no other `[[known]]` entry changes except E2's `reason` as above
+- [x] The re-rendered slice reports list no unaccepted finding that the slices with the old ledger did not list
+- [x] No file under `src/metafopy/` changes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/test_harness_accounts.py src/tests/test_harness_compare.py src/tests/test_docs_examples.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/test_harness_accounts.py src/tests/test_harness_compare.py src/tests/test_docs_examples.py` passes
 
 **Notes:**
 
 - Depends on Task 1
+- Done 2026-11-18 (R 4.6.2, metafor 5.2-1): removed E1 to E6 from `src/audit/data/known.toml` (six `[[known]]` entries, nothing else; E1 and E2 went
+  together, so no `reason` needed rewriting; none was "Moved", so nothing was narrowed).
+- `docs/differences.md`: removed the last paragraph of "selmodel on a flat likelihood" (the `selmodel(type='stepfun')` on `dat.bcg` step table
+  98.1051 against 98.1050, E6's difference; both programs now print 98.1051). The first paragraph and its example (`delta` 1.000e-05 against 1.022e-05, a
+  different call, `nlminb` with `steps = c(0.025, 0.975)`) name no value of a removed entry and stay. No passage names E1 to E5's values: none.
+- Re-rendered the three ledger slices (`20261118-213434`, `20261118-214021`, `20261118-214201`) with the new ledger: `new` is 0 in each
+  `findings.json`.
+- `pytest src/tests/test_harness_accounts.py src/tests/test_harness_compare.py src/tests/test_docs_examples.py`: 67 passed.
 - Key files: `src/audit/data/known.toml`, `docs/differences.md`
 - The two other `scripts/misc_selmodel/*` entries (`*optimizer = \"mads\"*` and `*(relative *`) are not part of the item and stay unchanged
 
