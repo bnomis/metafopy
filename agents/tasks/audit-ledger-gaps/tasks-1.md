@@ -58,7 +58,7 @@ and the last task runs the full suite, as the run order requires.
 
 ## Task 1: The full audit and sorting its findings
 
-**Status:** todo
+**Status:** in-progress
 **Priority:** high
 **Complexity:** medium
 **Source Reference:** the approved plan (one full audit run after rows 2 and 3); each item's "Found on" paragraph
@@ -105,6 +105,12 @@ stale entry sorted into this list's four items or the "Other" list, and any find
 
 **Notes:**
 
+- **Blocked on 2026-11-18 at the starting-point check (no audit run started):** two of the six ids already have a literal `match` in
+  `src/audit/data/known.toml`, so the two `print-diff` findings of the item "The audit lists printed fits of flat location-scale models that differ
+  in the last digit" are already accepted: `options/vif/ls_na/table=true` (line 1776, detail "line 7: R '... 5.5982 ...', Python '... 5.5980 ...'")
+  and `construct/uni_mods_year/scale={"$formula":"~ 0 + I(1|ablat)"}` (line 1740, detail "line 13: R '-73.4722 ...', Python '-73.4724 ...'"). Task 3
+  must not add them again. The other four ids have no literal match, rows 2 and 3 are merged and all four TODO items name this list. Needed from the
+  operator: confirm the list goes on with those two cases dropped from Task 3 and from the TODO item, or say where the entries came from.
 - Only this task list file changes
 - Key files: `src/audit/README.md` (commands, kinds, the `known.toml` rules), `src/audit/data/known.toml`, `src/audit/data/fixtures.json`
 - Prerequisite outside this repository: R 4.6.2 with metafor 5.2-1 and the pinned packages in `/Users/simonb/src/metafopy/.audit/Rlib`, and the
