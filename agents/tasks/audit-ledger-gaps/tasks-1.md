@@ -68,7 +68,7 @@ stale entry sorted into this list's four items or the "Other" list, and any find
 
 **Subtasks:**
 
-- [ ] Re-check the starting point, and stop as `blocked`, naming what differs, if any of these is not so:
+- [x] Re-check the starting point, and stop as `blocked`, naming what differs, if any of these is not so:
       - `agents/tasks/rma-mv-reml-stop/tasks-1.md` and `agents/tasks/selmodel-fixed-delta0/tasks-1.md` exist on `HEAD` and neither has a line
         `**Status:** todo` or `**Status:** in-progress` (rows 2 and 3 are merged)
       - each of the four items above is in `TODO.md` with a `tasks:` line naming `agents/tasks/audit-ledger-gaps/tasks-1.md`
@@ -111,6 +111,11 @@ stale entry sorted into this list's four items or the "Other" list, and any find
   and `construct/uni_mods_year/scale={"$formula":"~ 0 + I(1|ablat)"}` (line 1740, detail "line 13: R '-73.4722 ...', Python '-73.4724 ...'"). Task 3
   must not add them again. The other four ids have no literal match, rows 2 and 3 are merged and all four TODO items name this list. Needed from the
   operator: confirm the list goes on with those two cases dropped from Task 3 and from the TODO item, or say where the entries came from.
+- 2026-11-18, decided by Claude, not yet reviewed (queue decision): the two entries are stale, so the item stands and the list goes on. Both were
+  added on 2026-11-05 (`342e0b8`, `e23afc5`) with an exact `detail`, and metafopy's printed last digits have moved since: `options/vif/ls_na/table=true`
+  now prints `-21.4103 0.5336` where the entry says `-21.4102 0.5336`, and the `uni_mods_year` scale case now prints `-142.8012  -4.1435` where it says
+  `-142.8013  -4.1436`. So both stay in the `new` list of `.audit/runs/20261115-160207` and `20261117-233604`. Task 3 updates the `detail` of those two
+  entries (after its log-likelihood check), rather than adding new entries for them; the starting-point check is passed
 - Only this task list file changes
 - Key files: `src/audit/README.md` (commands, kinds, the `known.toml` rules), `src/audit/data/known.toml`, `src/audit/data/fixtures.json`
 - Prerequisite outside this repository: R 4.6.2 with metafor 5.2-1 and the pinned packages in `/Users/simonb/src/metafopy/.audit/Rlib`, and the
@@ -208,6 +213,7 @@ where they do not.
 
 **Notes:**
 
+- For `options/vif/ls_na/table=true` and `construct/uni_mods_year/scale=~ 0 + I(1|ablat)`, update the `detail` of the existing entries (`src/audit/data/known.toml`) to the current print, not add a second entry (Task 1 Notes, 2026-11-18)
 - Depends on Task 1
 - The item's cause is suspected, not confirmed: the stop points of R's `nlminb` and metafopy's optimiser on a flat scale likelihood
   (`docs/differences.md`, "Refits of a location-scale model that R's optimiser leaves short" and "Standard errors of a location-scale model on a flat
