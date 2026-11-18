@@ -36,4 +36,10 @@ None beyond the items: each item's approve or flag is the decision.
 
 ## Answers
 
-(Empty until the review page is answered.)
+Answered on the review page on 2026-11-18 (07:49 UTC), read back from its `answers` store; no comments:
+
+| Item | Answer |
+|---|---|
+| 1. Clear the starting-point stop, the ledger entries are stale (Task 1, `247bbb2`) | approve |
+
+The decision stands; no follow-up is needed.
