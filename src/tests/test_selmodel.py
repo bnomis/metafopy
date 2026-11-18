@@ -667,6 +667,35 @@ def bangertdrowns_ml() -> metafopy.RMAResult:
     return metafopy.rma_uni(yi=frame.yi, vi=frame.vi, method='ML')
 
 
+@pytest.mark.parametrize(
+    ('type_', 'decreasing', 'd0'),
+    [
+        ('stepfun', False, 0.5),
+        ('stepfun', False, 0.0),
+        ('stepfun', False, 2.0),
+        ('stepfun', True, 0.5),
+        ('stepfun', True, 0.0),
+        ('stepcon', False, 0.5),
+        ('stepcon', False, 0.0),
+    ],
+)
+def test_stepfun_first_delta_must_be_one(type_: str, decreasing: bool, d0: float) -> None:
+    with pytest.raises(metafopy.errors.InputError, match="first value of 'delta' must be 1"):
+        metafopy.selmodel(bangertdrowns_ml(), type=type_, steps=[0.025, 0.5, 1], delta=[d0, math.nan, math.nan], decreasing=decreasing)
+
+
+def test_stepfun_first_delta_one_or_nan_fits() -> None:
+    res = bangertdrowns_ml()
+    for delta in ([1, math.nan, math.nan], [math.nan, math.nan, math.nan]):
+        sel = metafopy.selmodel(res, type='stepfun', steps=[0.025, 0.5, 1], delta=delta)
+        assert isinstance(sel, metafopy.SelmodelResult)
+        assert sel.beta[0] == pytest.approx(0.10569, abs=1e-4)
+        assert sel.ll == pytest.approx(-17.4217, abs=1e-4)
+    fixed = metafopy.selmodel(res, type='stepfun', steps=[0.025, 0.5, 1], delta=[1, 0.5, 0.25])
+    assert isinstance(fixed, metafopy.SelmodelResult)
+    assert fixed.beta[0] == pytest.approx(0.09380, abs=1e-4)
+
+
 def test_truncest_searches_every_stretch() -> None:
     res = bangertdrowns_ml()
     with pytest.warns(UserWarning, match=SUPREMUM_WARNING):

@@ -1132,3 +1132,24 @@ Fix direction: tighten the stop in `src/metafopy` through a spec (for example a 
 Spec: `agents/specs/rma-mv-reml-stop/spec.md`; tasks: `agents/tasks/rma-mv-reml-stop/tasks-1.md`.
 
 Done: 2026-11-17, agents/tasks/rma-mv-reml-stop/tasks-1.md; a capped Newton polish on the score follows the BFGS stop of rma_mv, property.mv.reml-score.kon asserts 1e-10 of its scale; CI on Linux, macOS and Windows is checked by the operator after the merge
+
+## A fixed delta[0] other than 1 on a step-function selection model makes the likelihood a constant multiple
+
+<!-- doc-counts: accept-start found on 2026-11-16 - a dated record, not a claim about the present -->
+Found on 2026-11-16 while closing `agents/specs/selmodel-prec-stepfun/spec.md`. `selmodel(type='stepfun', steps=[0.025, 0.5, 1], delta=[0.5, nan,
+nan])` on an ML fit of `dat.bangertdrowns2004` gives the estimates of `delta=[1, nan, nan]` (beta 0.10569, delta 0.40141 and 0.27643) and an ll of
+-27.1257 against -17.4217, in metafopy and in R metafor 5.2-1 alike (`R_LIBS=/Users/simonb/src/metafopy/.audit/Rlib LC_ALL=C.UTF-8 Rscript`). The
+ll differs by `n1 * log(0.5)`, with `n1` the number of observed p-values in the first interval.
+<!-- doc-counts: accept-end -->
+
+Cause: the first interval's weight is hard-coded to 1 in the normalising constant, but the numerator uses the user's `delta[0]`, so a fixed `delta[0]`
+only adds `n1 * log(delta[0])` to the ll and never moves the estimates. See `.selmodel.ll.stepfun` (`R/misc.func.hidden.selmodel.r`) and
+`ll_stepfun` (`src/metafopy/models/sel_lik.py`).
+
+Fix direction: decide whether `selmodel` rejects a `delta[0]` other than 1 on a step-function model, or normalises with the user's `delta[0]` (which
+departs from metafor). Name the decision in `docs/differences.md` under "Where metafor departs from its reference". A change to `src/metafopy/` goes
+through a spec first.
+
+Spec: `agents/specs/selmodel-fixed-delta0/spec.md`; tasks: `agents/tasks/selmodel-fixed-delta0/tasks-1.md`.
+
+Done: 2026-11-18, agents/tasks/selmodel-fixed-delta0/tasks-1.md; option (a), a first delta other than 1 or nan on every step form raises InputError (agents/specs/selmodel-fixed-delta0/spec.md, D1 answered 2026-11-17 in agents/reviews/order-todo-items-1-10-specs.md)

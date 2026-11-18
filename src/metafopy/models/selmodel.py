@@ -397,7 +397,9 @@ def selmodel(
         subset: Which studies the selection function applies to (the others are always observed): a boolean or 0-based index vector over the studies
             of ``x``. Default: all.
         delta: Fixed values of the selection parameters, one per parameter of the chosen type (``None`` or ``nan`` elements are estimated); a wrong
-            length or a value outside the parameter space raises ``InputError``.
+            length or a value outside the parameter space raises ``InputError``. For ``'stepfun'`` and ``'stepcon'`` the first value is the weight
+            of the first p-value interval, fixed at 1 to identify the model (Vevea & Hedges, 1995): it must be 1 or ``nan``, and the other values are
+            weights relative to it (``docs/differences.md``, "Where metafor departs from its reference").
         steps: Values whose meaning depends on ``type``. ``'stepfun'`` (required): cutpoints of the p-values, sorted and de-duplicated, with 1
             appended if missing; the lowest must be above 0. ``'beta'``: the two truncation points (alpha1, alpha2) of the p-values. ``'halfnorm'``,
             ``'negexp'``, ``'logistic'``, ``'power'``, ``'negexppow'``: a single threshold below which the selection weight is 1 (stored in the
@@ -424,7 +426,8 @@ def selmodel(
     Raises:
         metafopy.errors.ArgumentError: ``x`` is not a model this can be applied to (a robust model, or not from ``rma_uni``).
         metafopy.errors.InputError: an argument or the data is invalid (unknown ``type``, ``prec`` or ``alternative``, unsuitable ``steps`` or
-            ``delta``, too few studies, no sample sizes for ``prec='ninv'``, ``prec`` with ``type='stepfun'`` and ``decreasing=False``).
+            ``delta``, a first ``delta`` other than 1 or ``nan`` for ``type='stepfun'`` or ``'stepcon'``, too few studies, no sample sizes for
+            ``prec='ninv'``, ``prec`` with ``type='stepfun'`` and ``decreasing=False``).
         metafopy.errors.EstimationError: the optimiser did not converge or the likelihood could not be integrated.
         metafopy.errors.NotSupportedError: the optimiser chosen in ``control`` has no counterpart in metafopy.
 
@@ -661,6 +664,11 @@ def selmodel(
         if delta_arg.shape[0] != deltas:
             raise metafopy.errors.InputError(f"Argument 'delta' should be of length {deltas} for this type of selection model.")
         check_bounds('delta', delta_arg, spec)
+        if type_ in metafopy.models.sel_spec.STEPWISE and not math.isnan(delta_arg[0]) and delta_arg[0] != 1.0:
+            raise metafopy.errors.InputError(
+                "The first value of 'delta' must be 1 or nan for this type of selection model: the weight of the first p-value interval is fixed "
+                'at 1, so give the other weights relative to it (see docs/differences.md).'
+            )
     if type_ == 'stepfun' and (decreasing or math.isnan(delta_arg[0])):
         delta_arg[0] = 1.0
     if type_ == 'stepcon':
