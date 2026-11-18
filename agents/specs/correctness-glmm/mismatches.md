@@ -82,6 +82,7 @@ value as metafopy in every row, so none is a metafopy-only difference: the sourc
 | Stijnen et al. Table VII, treated, PN | log rate; SE; tau2 | 0.850; 0.330; 0.654 | 0.81997; 0.31962; 0.59899 | 0.81997; 0.31962; 0.59898 |
 | Simmonds and Higgins (2016) Fig 1, one-stage random (`UM.FS`, `ML`) | OR; CI | 1.74 (0.59, 5.17) | 1.79068 (0.54155, 5.92107) | 1.7907 (0.5415, 5.9211) |
 | Turner et al. (2000) Table IV, fixed effect, pre-eclampsia (`UM.FS`, `FE`) | CI | (-0.59, -0.23) | (-0.58398, -0.23688) | (-0.58398, -0.23688) |
+| Bagos and Nikolopoulos (2009) Table 5, school absences, random study effects, z=0/1, cov!=0 (`UM.RS`, `ML`, `coding` 1, `cor`; `glmm.published.bagos2009.table5.school.rs.mismatch`; written after the review of 2026-11-14, recorded 2026-11-18, not yet reviewed) | CI | (0.579, 0.897) | (0.579941, 0.896414) | (0.579940, 0.896409) |
 
 Several rows differ by one unit of the last printed digit and are rounding or optimiser differences (the Jackson `tau2` rows, Stijnen BN and control
 rows); the Stijnen treated row (Table VII) and the Simmonds and Higgins random-effects row are larger. In the Simmonds and Higgins case the paper's
@@ -146,6 +147,12 @@ person-times, so no Poisson case could be written from it. Its data come from tw
 Neither source gives per-study counts and person-time that reproduce Table 5, so Table 5 of Bagos and Nikolopoulos has no case; the sources stay listed
 here as supplied. The values wanted were Table 5 of Bagos and Nikolopoulos (random study effects, `z` 0/1 and bivariate rows: Hooper 0.746 (0.592, 0.940), school
 absences 0.721 (0.579, 0.897), ER visits 0.525 (0.361, 0.764), as printed IRRs).
+
+**Corrected 2026-11-18** (`agents/tasks/bagos2009-table5/tasks-1.md`): the ER-visit data are in Appendix III of Bagos and Nikolopoulos, and the
+school-absence data rebuild from Table 1 of Guevara, Berlin and Wolf (2004), BMC Med Res Methodol 4:17 (PMC481068). On them the fixed-effects,
+fixed-study-effects and random-study-effects rows of Table 5 reproduce in metafopy and R metafor, and have cases `glmm.published.bagos2009.table5.*`
+in `glmm_published.toml`, except the two school random-study-effects CI bounds, one unit of the last digit off, recorded as
+`glmm.published.bagos2009.table5.school.rs.mismatch`. The Hooper column still has no data that reproduce it, and has its own `TODO.md` item.
 
 ## Harness limits
 

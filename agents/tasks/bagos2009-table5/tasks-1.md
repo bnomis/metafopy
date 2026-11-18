@@ -112,7 +112,7 @@ two school-absence random-study-effects bounds falls outside the printed toleran
 
 ## Task 1: Check the data and printed values against the sources, then write the published cases
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Source Reference:** the item's fix direction (find the per-study counts and person-times that reproduce Table 5, then write the published cases)
@@ -122,25 +122,25 @@ against Bagos and Nikolopoulos (2009) Appendix III and Guevara et al. (2004) Tab
 
 **Subtasks:**
 
-- [ ] Re-check the starting point: `grep -rnw 'bagos2009' src/tests/correctness/cases` finds nothing. Stop as `blocked`, naming what it finds, if not
-- [ ] Bagos and Nikolopoulos: extract the PDF (path in the header) with `pdftotext -layout` into `<scratch>`; compare the Appendix III `input` block
+- [x] Re-check the starting point: `grep -rnw 'bagos2009' src/tests/correctness/cases` finds nothing. Stop as `blocked`, naming what it finds, if not
+- [x] Bagos and Nikolopoulos: extract the PDF (path in the header) with `pdftotext -layout` into `<scratch>`; compare the Appendix III `input` block
       with the ER-visit table in the header, and the IRR column entries of the "Fixed effects", "Random effects (fixed study effects)" and "Random
       effects (random study effects, z=0/1, cov!=0)" rows of Table 5 (school absences, ER visits) with the "Printed" column of the probe table. Record
       any difference
-- [ ] Guevara et al.: fetch `https://www.ebi.ac.uk/europepmc/webservices/rest/PMC481068/fullTextXML` into its own new directory in `<scratch>`, and
+- [x] Guevara et al.: fetch `https://www.ebi.ac.uk/europepmc/webservices/rest/PMC481068/fullTextXML` into its own new directory in `<scratch>`, and
       compare its Table 1 (N, mean, duration of each arm) with the school-absence table in the header, and its Table 2 with the ER-visit rows
       (`N * duration` and `round(N * mean)`). Check that the events and person-months of the school table follow from Table 1 by the rule in the
       header. Read the licence statement in the XML's `<permissions>` and record it as stated. If the URL cannot be fetched, compare against the
       header's table (copied from that XML on 2026-11-18) and say so in this task's Notes
-- [ ] Fit both data sets with each of the three argument sets of the probe table, in metafopy (`source bin/activate.sh`,
+- [x] Fit both data sets with each of the three argument sets of the probe table, in metafopy (`source bin/activate.sh`,
       `metafopy.rma_glmm(measure='IRR', x1i=, t1i=, x2i=, t2i=, ...)`) and in R metafor 5.2-1 (`rma.glmm(measure="IRR", ...)`; stop as `blocked` if
       metafor does not load or `packageVersion("metafor")` is not 5.2.1), printing `exp` of `beta`, `ci_lb` and `ci_ub` to six digits. Scripts stay in
       `<scratch>`
-- [ ] Record the results in this task's Notes, dated: the transcription checks, the licence statement, and the figures of both programs
-- [ ] If a transcription differs, or a fit differs from the probe table by more than 1e-4, or a value other than the two school-absence
+- [x] Record the results in this task's Notes, dated: the transcription checks, the licence statement, and the figures of both programs
+- [x] If a transcription differs, or a fit differs from the probe table by more than 1e-4, or a value other than the two school-absence
       random-study-effects bounds falls outside half a unit of its last printed digit, **stops for the operator: a printed row of Table 5 does not
       reproduce as the probe found**: stop as `blocked` with the figures in the Notes and change nothing else
-- [ ] In `src/tests/correctness/cases/glmm_published.toml`, after the Stijnen et al. (2010) cases, add a comment naming the source, the data's origin
+- [x] In `src/tests/correctness/cases/glmm_published.toml`, after the Stijnen et al. (2010) cases, add a comment naming the source, the data's origin
       (ER visits from Appendix III; school absences rebuilt from Guevara et al. Table 1 by the rule in this list's header) and why the other rows have
       no case (as in the header), then these cases, each with `kind = "published"`, `function = "rma_glmm"`, inline `data` (`x1i`, `t1i`, `x2i`,
       `t2i` in study order of the header tables), `args` with `x1i = "x1i", t1i = "t1i", x2i = "x2i", t2i = "t2i", measure = "IRR"` and the row's
@@ -154,29 +154,40 @@ against Bagos and Nikolopoulos (2009) Appendix III and Guevara et al. (2004) Tab
         `"exp_ci_lb[0]" = "0.579"` and `"exp_ci_ub[0]" = "0.897"`, and `reason` naming each printed bound, metafopy's and R metafor's (from this task's
         Notes), "one unit of the last printed digit; the source fitted with Stata gllamm; metafopy and R metafor agree; recorded on <date of this
         task>, not yet reviewed"
-- [ ] Give each case a `[case.source]` with `citation = "Bagos PG, Nikolopoulos GK (2009). Mixed-effects Poisson regression models for meta-analysis
+- [x] Give each case a `[case.source]` with `citation = "Bagos PG, Nikolopoulos GK (2009). Mixed-effects Poisson regression models for meta-analysis
       of follow-up studies with constant or varying durations. Int J Biostat 5(1), article 21"`, `doi = "10.2202/1557-4679.1168"`, `read` the date of
       this task, and a `locator` naming the Table 5 row and column and the data's origin; for the school cases it names Guevara JP, Berlin JA, Wolf FM
       (2004), BMC Med Res Methodol 4:17, doi:10.1186/1471-2288-4-17, PMC481068, Table 1, and the licence as recorded in this task's Notes
-- [ ] Replace the header comment's sentences on Bagos and Nikolopoulos (the ones beginning "Bagos and Nikolopoulos (2009) prints no per-study data"
+- [x] Replace the header comment's sentences on Bagos and Nikolopoulos (the ones beginning "Bagos and Nikolopoulos (2009) prints no per-study data"
       and "Task 11 read the two reviews") with one that says the ER-visit and school-absence columns of Table 5 have cases (see the comment above them)
       and the Hooper column has none, its data not found (a `TODO.md` item)
-- [ ] Run `pytest src/tests/correctness/test_published.py src/tests/correctness/test_coverage.py`: the six passing cases pass and the mismatch case
+- [x] Run `pytest src/tests/correctness/test_published.py src/tests/correctness/test_coverage.py`: the six passing cases pass and the mismatch case
       is a strict expected failure. If a passing case fails, stop as for the operator stop above
 
 **Acceptance Criteria:**
 
-- [ ] This task's Notes record the transcription checks against both sources, the licence statement, and both programs' figures
-- [ ] Every printed IRR and CI bound of the three rows in both columns is in a passing case or in the mismatch case, whose reason gives the figures
-- [ ] No file under `src/metafopy/` changes
+- [x] This task's Notes record the transcription checks against both sources, the licence statement, and both programs' figures
+- [x] Every printed IRR and CI bound of the three rows in both columns is in a passing case or in the mismatch case, whose reason gives the figures
+- [x] No file under `src/metafopy/` changes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/correctness/test_published.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/correctness/test_published.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 
+- Results, 2026-11-18 (scripts and extractions in a scratch directory outside the repository):
+  - Transcription: the Appendix III `input` block of Bagos and Nikolopoulos matches the ER-visit table in the header row for row. Table 1 and Table 2
+    of Guevara et al. (Europe PMC full text XML) match the header's school-absence table and ER rows: `N * duration` and `round(N * mean)`, half up,
+    reproduce every events and person-months figure. The printed IRR (95% CI) of the three rows in both columns match the "Printed" column of the
+    probe table. No difference found.
+  - Licence statement of Guevara et al. (`<permissions>`), as stated: "Copyright (c) 2004 Guevara et al; licensee BioMed Central Ltd. This is an Open
+    Access article: verbatim copying and redistribution of this article are permitted in all media for any purpose, provided this notice is preserved
+    along with the article's original URL."
+  - Fits (`exp` of `beta`, `ci_lb`, `ci_ub`; metafopy from this worktree, R metafor 5.2.1): identical to the probe table's figures to six digits in
+    both programs (for example the school-absence random-study-effects row: metafopy 0.721018 (0.579941, 0.896414), R metafor 0.721015 (0.579940,
+    0.896409)). No operator stop.
 - Key files: `src/tests/correctness/cases/glmm_published.toml`, `src/tests/correctness/test_published.py` (`test_published`, `glmm_printed`),
   `src/tests/correctness/cases.py` (`check_printed`, `published_tolerance`, `case_param`: a `mismatch` case is `xfail(strict=True)`)
 - The exemplar for published Poisson cases is `agents/tasks/stijnen2010-pn/tasks-1.md` and its cases `glmm.published.stijnen2010.*`
@@ -187,7 +198,7 @@ against Bagos and Nikolopoulos (2009) Appendix III and Guevara et al. (2004) Tab
 
 ## Task 2: Correct the "Sources needed" record in mismatches.md
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Source Reference:** the approved plan (correct the "Sources needed" record of `agents/specs/correctness-glmm/mismatches.md`)
@@ -197,24 +208,24 @@ data were found and where, without the dated text of 2026-11-14 being rewritten.
 
 **Subtasks:**
 
-- [ ] In `agents/specs/correctness-glmm/mismatches.md`, section "Sources needed", add a paragraph after the one beginning "Neither source gives
+- [x] In `agents/specs/correctness-glmm/mismatches.md`, section "Sources needed", add a paragraph after the one beginning "Neither source gives
       per-study counts", without changing any existing text: "**Corrected <date of this task>** (`agents/tasks/bagos2009-table5/tasks-1.md`):" the
       ER-visit data are in Appendix III of Bagos and Nikolopoulos, and the school-absence data rebuild from Table 1 of Guevara, Berlin and Wolf (2004),
       BMC Med Res Methodol 4:17 (PMC481068); on them the fixed-effects, fixed-study-effects and random-study-effects rows of Table 5 reproduce in
       metafopy and R metafor, and have cases `glmm.published.bagos2009.table5.*` in `glmm_published.toml`, except the two school random-study-effects
       CI bounds, one unit of the last digit off, recorded as `glmm.published.bagos2009.table5.school.rs.mismatch`; the Hooper column still has no data
       that reproduce it, and has its own `TODO.md` item
-- [ ] Add the mismatch case `glmm.published.bagos2009.table5.school.rs.mismatch` to the file's "Mismatches" section as an item, in the form of the
+- [x] Add the mismatch case `glmm.published.bagos2009.table5.school.rs.mismatch` to the file's "Mismatches" section as an item, in the form of the
       section's other published-value items, with the figures from tasks-1.md Task 1's Notes, marked as written after the review of 2026-11-14 and not
       yet reviewed
 
 **Acceptance Criteria:**
 
-- [ ] The dated note and the mismatch item are present, and `git diff` of the file shows only added lines
+- [x] The dated note and the mismatch item are present, and `git diff` of the file shows only added lines
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
 
 **Notes:**
 
@@ -225,7 +236,7 @@ data were found and where, without the dated text of 2026-11-14 being rewritten.
 
 ## Task 3: The full test run, and replacing the item
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item as a whole; D2 (a) of `agents/reviews/order-todo-items-1-5-specs.md`
@@ -235,11 +246,11 @@ takes its place.
 
 **Subtasks:**
 
-- [ ] Move the item from `TODO.md` to `DONE.md`: append its heading and body unchanged at the end of `DONE.md`, then a line
+- [x] Move the item from `TODO.md` to `DONE.md`: append its heading and body unchanged at the end of `DONE.md`, then a line
       `Done: 2026-MM-DD, agents/tasks/bagos2009-table5/tasks-1.md; ER-visit and school-absence rows of Table 5 have published cases (data from
       Appendix III and Guevara et al. 2004 Table 1); the school random-study-effects CI bounds are a recorded mismatch; Hooper narrowed to a new item`
       with the date of the commit
-- [ ] In `TODO.md`, where the old item was, add this item (fill in the date of the task):
+- [x] In `TODO.md`, where the old item was, add this item (fill in the date of the task):
 
       ```markdown
       ## Find the Hooper data behind Table 5 of Bagos and Nikolopoulos (2009)
@@ -259,23 +270,23 @@ takes its place.
       `src/tests/correctness/cases/glmm_published.toml` beside the `glmm.published.bagos2009.table5.*` cases.
       ```
 
-- [ ] Run the final tests from the worktree and save their whole output for the merge gate (the main checkout is the first entry of
+- [x] Run the final tests from the worktree and save their whole output for the merge gate (the main checkout is the first entry of
       `git worktree list --porcelain`, `/Users/simonb/src/metafopy`):
       `mkdir -p /Users/simonb/src/metafopy/ralpher-logs/bagos2009-table5/tasks-1 && source bin/activate.sh && pytest src/tests 2>&1 | tee /Users/simonb/src/metafopy/ralpher-logs/bagos2009-table5/tasks-1/final-tests.log`
 
 **Acceptance Criteria:**
 
-- [ ] The old item is in `DONE.md` with its body unchanged and a `Done:` line naming this list and the outcome, and no longer in `TODO.md`
-- [ ] The Hooper item is in `TODO.md` in the old item's place
+- [x] The old item is in `DONE.md` with its body unchanged and a `Done:` line naming this list and the outcome, and no longer in `TODO.md`
+- [x] The Hooper item is in `TODO.md` in the old item's place
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] The final test run above passes
-- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/bagos2009-table5/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] The final test run above passes
+- [x] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/bagos2009-table5/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
       `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0 (`<scratch>` is the session's scratch
       directory, outside the repository)
 

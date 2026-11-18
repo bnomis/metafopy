@@ -1335,3 +1335,21 @@ Fix direction: confirm the `mvm` case runs, then remove `has_mv_residuals` and t
 Spec: none (small item); tasks: `agents/tasks/mv-funnel-skip/tasks-1.md`.
 
 Done: 2026-11-18, agents/tasks/mv-funnel-skip/tasks-1.md; skip and has_mv_residuals removed; funnel_mvm matches R
+
+## Find the data behind Table 5 of Bagos and Nikolopoulos (2009)
+
+<!-- doc-counts: accept-start found on 2026-11-14 - a dated record, not a claim about the present -->
+Found on 2026-11-14 by Tasks 9 and 11 of `agents/tasks/correctness-glmm/tasks-1.md` (`agents/specs/correctness-glmm/mismatches.md`, decision D3); the
+user answered *investigate* on 2026-11-14. Bagos and Nikolopoulos (2009) Table 5 prints random-study-effects incidence rate ratios (Hooper 0.746 (0.592,
+0.940), school absences 0.721 (0.579, 0.897), ER visits 0.525 (0.361, 0.764)) but no per-study counts or person-times, so no Poisson case could be
+written. The Table 1 trial rows of Hooper et al. (2001) give an IRR of 0.859 (`UM.FS`) against the printed 0.819, and Wolf et al. (2003) prints means
+and standard deviations, not counts.
+<!-- doc-counts: accept-end -->
+
+Fix direction: find the original per-trial counts and person-times that reproduce Table 5 (the authors' supplementary data, or the primary trial
+reports), then write the published cases in `src/tests/correctness/cases/glmm_published.toml`.
+
+Spec: none (small item); tasks: `agents/tasks/bagos2009-table5/tasks-1.md`.
+
+Done: 2026-11-18, agents/tasks/bagos2009-table5/tasks-1.md; ER-visit and school-absence rows of Table 5 have published cases (data from
+Appendix III and Guevara et al. 2004 Table 1); the school random-study-effects CI bounds are a recorded mismatch; Hooper narrowed to a new item

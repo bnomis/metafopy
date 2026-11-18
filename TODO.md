@@ -24,20 +24,21 @@ Spec: none (small item).
 
 Spec: none (small item); tasks: `agents/tasks/audit-stale-entries/tasks-1.md`.
 
-## Find the data behind Table 5 of Bagos and Nikolopoulos (2009)
+## Find the Hooper data behind Table 5 of Bagos and Nikolopoulos (2009)
 
-<!-- doc-counts: accept-start found on 2026-11-14 - a dated record, not a claim about the present -->
-Found on 2026-11-14 by Tasks 9 and 11 of `agents/tasks/correctness-glmm/tasks-1.md` (`agents/specs/correctness-glmm/mismatches.md`, decision D3); the
-user answered *investigate* on 2026-11-14. Bagos and Nikolopoulos (2009) Table 5 prints random-study-effects incidence rate ratios (Hooper 0.746 (0.592,
-0.940), school absences 0.721 (0.579, 0.897), ER visits 0.525 (0.361, 0.764)) but no per-study counts or person-times, so no Poisson case could be
-written. The Table 1 trial rows of Hooper et al. (2001) give an IRR of 0.859 (`UM.FS`) against the printed 0.819, and Wolf et al. (2003) prints means
-and standard deviations, not counts.
+<!-- doc-counts: accept-start probed on 2026-11-18 - a dated record, not a claim about the present -->
+Narrowed on 2026-11-18 from "Find the data behind Table 5 of Bagos and Nikolopoulos (2009)" (`agents/tasks/bagos2009-table5/tasks-1.md`; decision
+D2 (a) of `agents/reviews/order-todo-items-1-5-specs.md`, answered 2026-11-18): the ER-visit and school-absence columns now have cases; the
+Hooper column (dietary fat and combined cardiovascular events) does not. Probed on 2026-11-18: the ten trials of Table 1 of Hooper et al. (2001,
+BMJ 322:757) match Bagos and Nikolopoulos's person-years but carry 567 intervention and 638 control events against their 553 and 653, and a
+fixed-effects Poisson fit gives an IRR of 0.858 against the printed 0.819; no swap of arms or rounding of the London corn/olive control events
+reproduces it.
 <!-- doc-counts: accept-end -->
 
-Fix direction: find the original per-trial counts and person-times that reproduce Table 5 (the authors' supplementary data, or the primary trial
-reports), then write the published cases in `src/tests/correctness/cases/glmm_published.toml`.
-
-Spec: none (small item); tasks: `agents/tasks/bagos2009-table5/tasks-1.md`.
+Fix direction: find the full Cochrane review, Hooper L et al. (2001), Dietary fat intake and prevention of cardiovascular disease, Cochrane
+Database Syst Rev CD002137, DOI 10.1002/14651858.CD002137 (the 2001 issue), and its per-trial events and person-years; repository copies at UEA
+ePrints and LSHTM Research Online were not checked. If they reproduce Table 5's Hooper column, write its cases in
+`src/tests/correctness/cases/glmm_published.toml` beside the `glmm.published.bagos2009.table5.*` cases.
 
 ## Correctness coverage the extension specs left for later
 
