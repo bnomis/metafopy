@@ -236,7 +236,7 @@ first `delta` other than 1.
 
 ## Task 4: The full test run and closing the spec
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Tests and records, item 3; Acceptance; the spec as a whole
@@ -245,29 +245,29 @@ first `delta` other than 1.
 
 **Subtasks:**
 
-- [ ] Set the spec's `**Status:**` in `agents/specs/selmodel-fixed-delta0/spec.md` to `implemented`
-- [ ] Move the item "A fixed delta[0] other than 1 on a step-function selection model makes the likelihood a constant multiple" from `TODO.md` to
+- [x] Set the spec's `**Status:**` in `agents/specs/selmodel-fixed-delta0/spec.md` to `implemented`
+- [x] Move the item "A fixed delta[0] other than 1 on a step-function selection model makes the likelihood a constant multiple" from `TODO.md` to
       `DONE.md`: append its heading and body unchanged at the end of `DONE.md`, then a line
       `Done: 2026-MM-DD, agents/tasks/selmodel-fixed-delta0/tasks-1.md; option (a), a first delta other than 1 or nan on every step form raises InputError (agents/specs/selmodel-fixed-delta0/spec.md, D1 answered 2026-11-17 in agents/reviews/order-todo-items-1-10-specs.md)`
       with the date of the commit
-- [ ] Run the final tests from the worktree and save their whole output for the merge gate, in the main checkout (the first entry of
+- [x] Run the final tests from the worktree and save their whole output for the merge gate, in the main checkout (the first entry of
       `git worktree list --porcelain`, here `/Users/simonb/src/metafopy`):
       `mkdir -p /Users/simonb/src/metafopy/ralpher-logs/selmodel-fixed-delta0/tasks-1 && source bin/activate.sh && pytest src/tests 2>&1 | tee /Users/simonb/src/metafopy/ralpher-logs/selmodel-fixed-delta0/tasks-1/final-tests.log`
 
 **Acceptance Criteria:**
 
-- [ ] The spec's status is `implemented`
-- [ ] The item is in `DONE.md` with its body unchanged and the `Done:` line, and no longer in `TODO.md`
+- [x] The spec's status is `implemented`
+- [x] The item is in `DONE.md` with its body unchanged and the `Done:` line, and no longer in `TODO.md`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `ruff format --check`, `ruff check` and `mypy` pass
-- [ ] The final test run above passes, and its log is saved at
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `ruff format --check`, `ruff check` and `mypy` pass
+- [x] The final test run above passes, and its log is saved at
       `/Users/simonb/src/metafopy/ralpher-logs/selmodel-fixed-delta0/tasks-1/final-tests.log`
-- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/selmodel-fixed-delta0/tasks-1.md):TODO.md > <scratch>/todo-before.md` (the
+- [x] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/selmodel-fixed-delta0/tasks-1.md):TODO.md > <scratch>/todo-before.md` (the
       `TODO.md` at the list's start) and `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0
       (`<scratch>` is the session's scratch directory, outside the repository)
 

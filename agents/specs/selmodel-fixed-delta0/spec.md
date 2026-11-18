@@ -1,7 +1,7 @@
 # selmodel: a fixed first weight other than 1 on a step-function selection model
 
 **Version:** 1.1
-**Status:** approved
+**Status:** implemented
 **Date:** 2026-11-17
 
 `selmodel(type='stepfun', delta=[d0, ...])` with a fixed `d0` other than 1 fits a model that is neither the one Vevea and Hedges (1995) define nor
