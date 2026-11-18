@@ -47,7 +47,7 @@ formulas' likelihood is not higher at 0.213; the 2026-11-17 probe above expects 
 
 ## Task 1: Compare the marginal likelihood at tau2 0 and 0.213
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item's fix direction (compare the marginal likelihood at `tau2 = 0` and at 0.213)
@@ -57,36 +57,36 @@ in this task's Notes, with the figures of the formulas, metafopy and R metafor 5
 
 **Subtasks:**
 
-- [ ] Starting-point check: `src/tests/correctness/cases/glmm_published.toml` holds the case `glmm.published.simmonds2016.hrt.random.mismatch` with
+- [x] Starting-point check: `src/tests/correctness/cases/glmm_published.toml` holds the case `glmm.published.simmonds2016.hrt.random.mismatch` with
       `status = "mismatch"` and a `reason` without the words "accepted as a source difference"; if not, stop as `blocked`, naming what differs
-- [ ] Write a Python script in the session's scratch directory (outside the repository) that, on the case's data (`ai`, `n1i`, `ci`, `n2i` copied
+- [x] Write a Python script in the session's scratch directory (outside the repository) that, on the case's data (`ai`, `n1i`, `ci`, `n2i` copied
       from the case), prints with `repr`: `glmm_formulas.rma_glmm_fit(measure='OR', model='UM.FS', method=m, ...)` for `m` in `'ML'` and `'FE'`
       (`beta[0]`, `tau2`, `loglik`, `gradient_norm`); `glmm_formulas.profile_loglik_at(problem, 'ML', beta, tau2, rule=rule, points=points)` with the
       problem, rule and points of `glmm_formulas.rma_glmm_problem` for the `ML` call, at the `ML` and the `FE` `beta`, each at `tau2` 0 and at the `ML`
       `tau2`; and `metafopy.rma_glmm` for `method` `'ML'` and `'FE'`, and for `coding` in `0.5` and `1.0` with `nAGQ` in `1` and `7` (`exp` of
       `beta[0]`, `ci_lb[0]`, `ci_ub[0]`, `tau2`, `fit_stats_ml.ll`). Run it with `source bin/activate.sh` and `src/tests` on `sys.path`
-- [ ] Write an R script in the scratch directory that prints `packageVersion` of metafor and lme4, the same `rma.glmm` fits (`coding` 1/2 and 1,
+- [x] Write an R script in the scratch directory that prints `packageVersion` of metafor and lme4, the same `rma.glmm` fits (`coding` 1/2 and 1,
       `nAGQ` 1 and 7: OR, CI, `tau2`, `logLik`), and the paper's appendix call `glmer(cbind(event, n-event) ~ factor(study) + factor(treat) +
       (treat-1|study), family=binomial(link="logit"))` on the data in long form (`treat` 1 for the treated arm), printing the OR, its Wald interval
       (1.959964 standard errors), the variance and `logLik`. Run it with
       `export METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib; LC_ALL=C.UTF-8 R_LIBS=$METAFOPY_AUDIT_RLIB Rscript <script>`. Stop as
       `blocked` if metafor does not load or its version is not 5.2.1
-- [ ] Record in this task's Notes, dated, with the metafopy commit: every figure above, and the verdict "the likelihood is higher at 0.213" (the
+- [x] Record in this task's Notes, dated, with the metafopy commit: every figure above, and the verdict "the likelihood is higher at 0.213" (the
       formulas' `ML` `loglik` exceeds both `tau2 = 0` values by more than 1e-6) or "the likelihood is not higher at 0.213"
-- [ ] If the verdict is "not higher at 0.213": stops for the operator: the marginal likelihood is not higher at tau2 0.213 than at 0, so metafopy's
+- [x] If the verdict is "not higher at 0.213": stops for the operator: the marginal likelihood is not higher at tau2 0.213 than at 0, so metafopy's
       `ML` fit (and R metafor's, which agrees) is not the maximum. Change no file but this task list, record the figures, and stop as `blocked`
       naming this stop. Do not touch `src/metafopy/`
-- [ ] If the formulas, metafopy or R disagree with each other on the `coding=0.5`, `nAGQ` 7 fit beyond the case's last printed digit (OR 1.79068,
+- [x] If the formulas, metafopy or R disagree with each other on the `coding=0.5`, `nAGQ` 7 fit beyond the case's last printed digit (OR 1.79068,
       CI 0.54155 to 5.92107, `tau2` 0.21307), stop as `blocked`: that is a different difference from this item's
 
 **Acceptance Criteria:**
 
-- [ ] This task's Notes record the formulas' likelihood at `tau2` 0 and 0.213, metafopy's and R's fits at both codings, the appendix `glmer` fit, and
+- [x] This task's Notes record the formulas' likelihood at `tau2` 0 and 0.213, metafopy's and R's fits at both codings, the appendix `glmer` fit, and
       one of the two verdicts
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
 
 **Notes:**
 
@@ -94,6 +94,29 @@ in this task's Notes, with the figures of the formulas, metafopy and R metafor 5
 - Key files: `src/tests/correctness/glmm_formulas.py` (`rma_glmm_fit`, `rma_glmm_problem`, `profile_loglik_at`),
   `src/tests/correctness/cases/glmm_published.toml`
 - The header's 2026-11-17 probe expects "the likelihood is higher at 0.213"
+
+<!-- doc-counts: accept-start probed on 2026-11-18 - a dated record, not a claim about the present -->
+Probed on 2026-11-18 (metafopy at `cacd124`; R metafor 5.2-1 and lme4 2.1.0 from `/Users/simonb/src/metafopy/.audit/Rlib`), on the data of the case,
+with scratch scripts outside the repository:
+
+- Formulas (`rma_glmm_fit`, adaptive quadrature, 7 points): `ML` log OR 0.5825969412708869, `tau2` 0.2130791191682232, `loglik` -15.847070760361076,
+  `gradient_norm` 1.0e-10; `FE` log OR 0.5546096362424209, `tau2` 0, `loglik` -15.871109469687735, `gradient_norm` 6.8e-11.
+- `profile_loglik_at` (the `ML` problem, rule and points): at the `ML` beta, -15.872377748195099 at `tau2` 0 and -15.847070760361076 at 0.21307912; at
+  the `FE` beta, -15.871109469687726 at `tau2` 0 and -15.848182997147621 at 0.21307912.
+- metafopy `rma_glmm` (`OR`, `UM.FS`, `ML`; OR, CI, `tau2`, `fit_stats_ml.ll`): `coding` 0.5, `nAGQ` 1: 1.79826 (0.53559, 6.03772), 0.24701, -14.95930;
+  `coding` 0.5, `nAGQ` 7: 1.79068 (0.54155, 5.92107), 0.21308, -15.06184; `coding` 1, `nAGQ` 1 and 7: 1.74126 (0.58695, 5.16564), 0,
+  -15.87111. `FE`: 1.74126 (0.58695, 5.16564), 0, -15.87111 at both codings and both `nAGQ`.
+- R metafor 5.2.1 `rma.glmm` (`nAGQ` is an argument of `rma.glmm`, not of `control`): `coding` 1/2, `nAGQ` 1: 1.79826 (0.53559, 6.03767), `tau2`
+  0.24699, `logLik` -14.95934; `nAGQ` 7: 1.79067 (0.54154, 5.92104), 0.21307, -15.06186; `coding` 1, `nAGQ` 1 and 7: 1.74126 (0.58695, 5.16564), 0,
+  -15.87111.
+- The appendix `glmer(cbind(event, n-event) ~ factor(study) + factor(treat) + (treat-1|study), family=binomial(link="logit"))`, `treat` 1 for the
+  treated arm: OR 1.74126, Wald interval (0.58695, 5.16564), variance 0, `logLik` -15.87110947, singular fit.
+<!-- doc-counts: accept-end -->
+
+Verdict (2026-11-18): the likelihood is higher at 0.213. The formulas' `ML` `loglik` -15.847071 exceeds both `tau2 = 0` values (-15.872378 and
+-15.871109) by about 0.024 and 0.025, far more than 1e-6, so the printed value is a source difference and the task does not stop. The formulas,
+metafopy and R agree on the `coding = 0.5`, `nAGQ` 7 fit to the case's last printed digit (OR 1.79068 against 1.79067 and 1.7907, `tau2` 0.21308
+against 0.21307).
 
 ---
 
