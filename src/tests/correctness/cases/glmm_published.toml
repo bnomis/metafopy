@@ -16,8 +16,7 @@
 # BCG tables give odds ratios to two or three decimals only);Turner et al. (2000) fixed-effect rows of Tables III and IV (its random-effects rows are quasi-likelihood
 # fits in MLwiN, not maximum likelihood, so they are not compared); Hamza et al. (2008) Table 3, exact method. Zhou et al. (1999): Table IV prints the
 # weighted average, GEE and CIHM estimates on the proportion scale, none a generalised linear mixed model, so no case.
-# Bagos and Nikolopoulos (2009) Table 5: the ER-visit and school-absence columns have cases (see the comment above them) and the Hooper column has none,
-# its data not found (a TODO.md item).
+# Bagos and Nikolopoulos (2009) Table 5: the ER-visit, school-absence and Hooper columns have cases (see the comments above them).
 
 [[case]]
 id = "glmm.published.jackson2018.table4.model4.outcome1"
@@ -514,7 +513,7 @@ read = 2026-11-18
 # with fixed study effects row and the random effects with random study effects, z=0/1, cov!=0, row. The ER-visit data are the Stata input block of their
 # Appendix III; the school-absence data are rebuilt from Table 1 of Guevara et al (2004), events N x mean rounded half up and person-months N x duration, which
 # reproduces the printed IRRs. The other rows have no case: the summary-method rows are rma_uni fits of the log IRR, the bivariate rows are not rma_glmm fits,
-# and the z=+/-1/2, cov=0 row and the IRD columns are outside the plan. The Hooper column has none: its data were not found (a TODO.md item).
+# and the z=+/-1/2, cov=0 row and the IRD columns are outside the plan. The Hooper column's cases follow the school-absence cases.
 # Checked on 2026-11-18, agents/tasks/bagos2009-table5/tasks-1.md.
 
 [[case]]
@@ -630,6 +629,78 @@ citation = "Bagos PG, Nikolopoulos GK (2009). Mixed-effects Poisson regression m
 doi = "10.2202/1557-4679.1168"
 locator = "Table 5, School absences column (Wolf et al 2003), Random effects (random study effects, z=0/1, cov!=0); data rebuilt from Table 1 of Guevara JP, Berlin JA, Wolf FM (2004), BMC Med Res Methodol 4:17, doi:10.1186/1471-2288-4-17, PMC481068 (events N x mean rounded half up, person-months N x duration); BioMed Central's 2004 licence, as the article's record states, read 2026-11-18: \"This is an Open Access article: verbatim copying and redistribution of this article are permitted in all media for any purpose, provided this notice is preserved along with the article's original URL\""
 read = 2026-11-18
+
+
+# Bagos and Nikolopoulos (2009) Table 5, the IRR of the Dietary fat intake / combined cardiovascular events column (Hooper et al 2001): the same three rows as
+# above. The data are the trials of Table A of the BMJ article's data supplement, with person-years and combined CVD events from its Table 1; the London corn
+# and olive arms (each with the shared control group of 26) have their events read with the arms reversed and 5.5 rounded to 6, which gives Bagos and
+# Nikolopoulos's printed totals of 553 and 653 events. Checked on 2026-11-19, agents/tasks/bagos2009-hooper/tasks-1.md.
+
+[[case]]
+id = "glmm.published.bagos2009.table5.hooper.fe"
+kind = "published"
+function = "rma_glmm"
+data = { x1i = [136, 6, 6, 38, 134, 62, 66, 8, 97, 0], t1i = [1925, 41, 38, 374, 4823, 751, 895, 91, 1588, 123], x2i = [147, 15, 11, 42, 129, 74, 91, 20, 122, 2], t2i = [1917, 22, 22, 393, 4715, 715, 885, 88, 1544, 125] }
+args = { x1i = "x1i", t1i = "t1i", x2i = "x2i", t2i = "t2i", measure = "IRR", model = "UM.FS", method = "FE" }
+check = "test_published.glmm_printed"
+printed = { "exp_beta[0]" = "0.819", "exp_ci_lb[0]" = "0.731", "exp_ci_ub[0]" = "0.917" }
+covers = ["rma_glmm.fit.IRR.UM.FS.FE"]
+
+[case.source]
+citation = "Bagos PG, Nikolopoulos GK (2009). Mixed-effects Poisson regression models for meta-analysis of follow-up studies with constant or varying durations. Int J Biostat 5(1), article 21"
+doi = "10.2202/1557-4679.1168"
+locator = "Table 5, Dietary fat intake / combined cardiovascular events (Hooper et al, 2001) column, Individual data methods, Poisson regression, Fixed effects; data of Hooper L et al. (2001), BMJ 322:757-763, doi:10.1136/bmj.322.7289.757: the trials chosen by the numbers of the data supplement Table A, person-years and combined CVD events from Table 1, the London corn and olive events read with the arms reversed and 5.5 rounded to 6"
+read = 2026-11-19
+
+[[case]]
+id = "glmm.published.bagos2009.table5.hooper.fs"
+kind = "published"
+function = "rma_glmm"
+data = { x1i = [136, 6, 6, 38, 134, 62, 66, 8, 97, 0], t1i = [1925, 41, 38, 374, 4823, 751, 895, 91, 1588, 123], x2i = [147, 15, 11, 42, 129, 74, 91, 20, 122, 2], t2i = [1917, 22, 22, 393, 4715, 715, 885, 88, 1544, 125] }
+args = { x1i = "x1i", t1i = "t1i", x2i = "x2i", t2i = "t2i", measure = "IRR", model = "UM.FS", method = "ML", coding = 1 }
+check = "test_published.glmm_printed"
+printed = { "exp_beta[0]" = "0.819", "exp_ci_lb[0]" = "0.731", "exp_ci_ub[0]" = "0.917" }
+covers = ["rma_glmm.fit.IRR.UM.FS.ML"]
+
+[case.source]
+citation = "Bagos PG, Nikolopoulos GK (2009). Mixed-effects Poisson regression models for meta-analysis of follow-up studies with constant or varying durations. Int J Biostat 5(1), article 21"
+doi = "10.2202/1557-4679.1168"
+locator = "Table 5, Dietary fat intake / combined cardiovascular events (Hooper et al, 2001) column, Random effects (fixed study effects); data of Hooper L et al. (2001), BMJ 322:757-763, doi:10.1136/bmj.322.7289.757: the trials chosen by the numbers of the data supplement Table A, person-years and combined CVD events from Table 1, the London corn and olive events read with the arms reversed and 5.5 rounded to 6"
+read = 2026-11-19
+
+[[case]]
+id = "glmm.published.bagos2009.table5.hooper.rs"
+kind = "published"
+function = "rma_glmm"
+data = { x1i = [136, 6, 6, 38, 134, 62, 66, 8, 97, 0], t1i = [1925, 41, 38, 374, 4823, 751, 895, 91, 1588, 123], x2i = [147, 15, 11, 42, 129, 74, 91, 20, 122, 2], t2i = [1917, 22, 22, 393, 4715, 715, 885, 88, 1544, 125] }
+args = { x1i = "x1i", t1i = "t1i", x2i = "x2i", t2i = "t2i", measure = "IRR", model = "UM.RS", method = "ML", coding = 1, cor = true }
+check = "test_published.glmm_printed"
+printed = { "exp_beta[0]" = "0.746" }
+covers = ["rma_glmm.fit.IRR.UM.RS.ML"]
+
+[case.source]
+citation = "Bagos PG, Nikolopoulos GK (2009). Mixed-effects Poisson regression models for meta-analysis of follow-up studies with constant or varying durations. Int J Biostat 5(1), article 21"
+doi = "10.2202/1557-4679.1168"
+locator = "Table 5, Dietary fat intake / combined cardiovascular events (Hooper et al, 2001) column, Random effects (random study effects, z=0/1, cov!=0); data of Hooper L et al. (2001), BMJ 322:757-763, doi:10.1136/bmj.322.7289.757: the trials chosen by the numbers of the data supplement Table A, person-years and combined CVD events from Table 1, the London corn and olive events read with the arms reversed and 5.5 rounded to 6"
+read = 2026-11-19
+
+[[case]]
+id = "glmm.published.bagos2009.table5.hooper.rs.mismatch"
+kind = "published"
+function = "rma_glmm"
+data = { x1i = [136, 6, 6, 38, 134, 62, 66, 8, 97, 0], t1i = [1925, 41, 38, 374, 4823, 751, 895, 91, 1588, 123], x2i = [147, 15, 11, 42, 129, 74, 91, 20, 122, 2], t2i = [1917, 22, 22, 393, 4715, 715, 885, 88, 1544, 125] }
+args = { x1i = "x1i", t1i = "t1i", x2i = "x2i", t2i = "t2i", measure = "IRR", model = "UM.RS", method = "ML", coding = 1, cor = true }
+status = "mismatch"
+reason = "exp_ci_lb[0] printed 0.592, metafopy 0.597097, R metafor 5.2-1 0.597095; exp_ci_ub[0] printed 0.940, metafopy 0.932294, R metafor 5.2-1 0.932292; the source fitted with Stata gllamm; metafopy and R metafor agree; recorded on 2026-11-19, not yet reviewed"
+check = "test_published.glmm_printed"
+printed = { "exp_ci_lb[0]" = "0.592", "exp_ci_ub[0]" = "0.940" }
+covers = ["rma_glmm.fit.IRR.UM.RS.ML"]
+
+[case.source]
+citation = "Bagos PG, Nikolopoulos GK (2009). Mixed-effects Poisson regression models for meta-analysis of follow-up studies with constant or varying durations. Int J Biostat 5(1), article 21"
+doi = "10.2202/1557-4679.1168"
+locator = "Table 5, Dietary fat intake / combined cardiovascular events (Hooper et al, 2001) column, Random effects (random study effects, z=0/1, cov!=0); data of Hooper L et al. (2001), BMJ 322:757-763, doi:10.1136/bmj.322.7289.757: the trials chosen by the numbers of the data supplement Table A, person-years and combined CVD events from Table 1, the London corn and olive events read with the arms reversed and 5.5 rounded to 6"
+read = 2026-11-19
 
 
 # van Houwelingen, Zwinderman and Stijnen (1993) model omega = theta_C - theta_T, control against treatment: the opposite sign to metafor's log odds ratio.
