@@ -543,6 +543,8 @@ def broken(old: str, new: str) -> str:
             broken('covers = ["escalc.yi.MD"]', 'check = "test_published.back_transformed"\nprinted = { x = 1.0 }'),
             r'inline\.toml: case unit\.md: printed value of .x. must be a string',
         ),
+        (broken('covers = ["escalc.yi.MD"]', 'bounds = ["alpha.0.lower"]'), r'case unit\.md: bounds must be a non-empty list'),
+        (broken('covers = ["escalc.yi.MD"]', 'bounds = []'), r'case unit\.md: bounds must be a non-empty list'),
         (VALID + VALID, r"inline\.toml: duplicate case id 'unit\.md'"),
         ('[[case]\nid = 1', r'inline\.toml: invalid TOML'),
         ('[mystery]\nx = 1', r'inline\.toml: unknown top-level key'),
@@ -551,6 +553,12 @@ def broken(old: str, new: str) -> str:
 def test_an_invalid_case_file_raises_naming_file_and_case(text: str, message: str) -> None:
     with pytest.raises(ValueError, match=message):
         correctness.cases.parse_cases(text, 'inline.toml')
+
+
+def test_a_case_names_the_bounds_it_checks() -> None:
+    (case,) = correctness.cases.parse_cases(broken('covers = ["escalc.yi.MD"]', 'bounds = ["alpha.1.lower", "alpha.2.upper"]'), 'inline.toml')
+    assert case.bounds == ('alpha.1.lower', 'alpha.2.upper')
+    assert valid_case().bounds is None
 
 
 def test_a_duplicate_id_across_files_names_the_second_file(tmp_path: pathlib.Path) -> None:

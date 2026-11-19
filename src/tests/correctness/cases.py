@@ -53,6 +53,7 @@ FORMULA_MODULES = ('formulas', 'glmm_formulas')
 CASE_KEYS = frozenset(
     {
         'args',
+        'bounds',
         'check',
         'covers',
         'data',
@@ -78,6 +79,7 @@ VCONST_KEYS = frozenset({'cluster', 'rho', 'vi'})
 SUBSET_KEYS = frozenset({'column', 'equals'})
 TREE_R_KEYS = frozenset({'factor', 'tree'})
 SYMMETRY_TOLERANCE = 1e-12
+BOUND_PATTERN = re.compile(r'alpha\.[1-9][0-9]*\.(?:lower|upper)')
 SOURCE_KEYS = frozenset({'citation', 'doi', 'locator', 'read', 'url'})
 TOP_KEYS = frozenset({'case', 'derived_required', 'exempt', 'vtypes'})
 DERIVED_TOLERANCE = 1e-10
@@ -111,6 +113,7 @@ class Case:
     ``covers`` names the coverage items (see ``test_coverage.py``) the case checks. ``data`` is an inline dataset, used when ``dataset`` is not given.
     ``file`` is the name of the case file, for messages. ``printed`` holds values a source prints that no attribute of the result holds (a value on
     another scale, an interval of ``predict`` or ``confint``), as printed; the case's ``check`` function compares them with ``check_printed``.
+    ``bounds`` names the confidence bounds a ``confint`` check compares (``alpha.1.lower``, ``alpha.2.upper``, ...); ``None`` compares every bound.
     """
 
     id: str
@@ -131,6 +134,7 @@ class Case:
     printed: dict[str, str] = dataclasses.field(default_factory=dict)
     then: Step | None = None
     slow: bool = False
+    bounds: tuple[str, ...] | None = None
 
 
 @dataclasses.dataclass(frozen=True)
@@ -339,6 +343,9 @@ def parse_case(raw: object, name: str, index: int) -> Case:
     slow = raw.get('slow', False)
     if not isinstance(slow, bool):
         fail(name, f'case {ident}: slow must be true or false')
+    bounds = raw.get('bounds')
+    if bounds is not None and not (isinstance(bounds, list) and bounds and all(isinstance(b, str) and BOUND_PATTERN.fullmatch(b) for b in bounds)):
+        fail(name, f'case {ident}: bounds must be a non-empty list of names such as "alpha.1.lower"')
     covers = raw.get('covers', [])
     if not isinstance(covers, list) or not all(isinstance(c, str) for c in covers):
         fail(name, f'case {ident}: covers must be a list of coverage items')
@@ -361,6 +368,7 @@ def parse_case(raw: object, name: str, index: int) -> Case:
         printed=printed,
         then=then,
         slow=slow,
+        bounds=None if bounds is None else tuple(bounds),
     )
 
 
