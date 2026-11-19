@@ -107,7 +107,7 @@ run lets it go straight through. Task 5 stops for the review of the mismatch cas
 
 ## Task 3: The cases
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Cases; Implementation step 3
@@ -116,28 +116,29 @@ run lets it go straight through. Task 5 stops for the review of the mismatch cas
 
 **Subtasks:**
 
-- [ ] Add the cases of the spec's Cases table to `src/tests/correctness/cases/rma_mv.toml`, each `kind = "derived"` with the fit, `then` and `covers`
+- [x] Add the cases of the spec's Cases table to `src/tests/correctness/cases/rma_mv.toml`, each `kind = "derived"` with the fit, `then` and `covers`
       the table gives, `check = "test_derived.mv_deletion"` or `"test_derived.mv_ranef"`, and a `[case.source]` naming the definition it uses
       (`locator` to be completed by Task 4)
-- [ ] `mv.ranef.gen.crossed`: if it fails as the spec expects, give it `status = "mismatch"` and a `reason` with metafopy's, R metafor's (from
+- [x] `mv.ranef.gen.crossed`: if it fails as the spec expects, give it `status = "mismatch"` and a `reason` with metafopy's, R metafor's (from
       `measurements.md`) and the reference's values for the clusters that differ most, "metafopy and R metafor agree; recorded on <date of this
       task>, not yet reviewed"
-- [ ] Any other case that fails: give it `status = "mismatch"` and a `reason` with the figures, the same way, and list it in this task's Notes
-- [ ] Run `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_properties.py src/tests/correctness/test_coverage.py`
+- [x] Any other case that fails: give it `status = "mismatch"` and a `reason` with the figures, the same way, and list it in this task's Notes
+- [x] Run `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_properties.py src/tests/correctness/test_coverage.py`
 
 **Acceptance Criteria:**
 
-- [ ] The coverage gate passes: every new item has a case or the exemption
-- [ ] Every failing case is a strict `mismatch` with its figures in its `reason`
+- [x] The coverage gate passes: every new item has a case or the exemption
+- [x] Every failing case is a strict `mismatch` with its figures in its `reason`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] The pytest run of the last subtask passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The pytest run of the last subtask passes
 
 **Notes:**
 
 - Depends on Task 2
+- Mismatch: `mv.ranef.gen.crossed` only (as the spec expects); every other case passes.
 - None of the cases is `slow` (measurements.md: no fit took more than a few seconds with its reference)
 
 ---
