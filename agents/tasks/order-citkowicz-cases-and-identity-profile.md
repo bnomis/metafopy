@@ -37,9 +37,9 @@ names the one that fires only if the run finds it.
 | test pass line | `passed` |
 | test fail pattern | `FAILED\|ERROR` |
 | always wait for | `claude/rules/metafopy.md` |
-| progress page | |
+| progress page | https://claude.ai/artifact/Rka9m1cDRsTA4NtKhjUxx7 |
 
 | # | Task list | Waits for | Stops for you | Status |
 |---|---|---|---|---|
-| 1 | `citkowicz2017-cases/tasks-1.md` | - | a printed value not reproducing as the 2026-11-19 probe found (Task 1), only if one does not | todo |
+| 1 | `citkowicz2017-cases/tasks-1.md` | - | a printed value not reproducing as the 2026-11-19 probe found (Task 1), only if one does not | running |
 | 2 | `ls-profile-identity-start/tasks-1.md` | - | an existing reference value moving (Task 1), or metafopy's identity-link bounds differing from the reference (Task 2), only if one does | todo |
