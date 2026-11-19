@@ -42,6 +42,8 @@ LS_HETEROGENEITY = ('H2', 'I2', 'QE')
 LS_PREFIXES = ('ls.',)
 BIAS_PREFIXES = ('fsn.', 'hc.', 'ranktest.', 'regtest.', 'selmodel.', 'tes.', 'trimfill.')
 LS_PREDICT = ('both', 'fitted', 'newmods', 'newscale')
+MV_DELETIONS = ('cluster', 'fixed', 'obs')
+MV_DIAGNOSTICS = ('cooks_distance', 'dfbetas', 'rstudent')
 LS_ANOVA = ('X', 'Z', 'att', 'btt', 'lrt.ML', 'lrt.REML')
 MH_MEASURES = ('IRD', 'IRR', 'OR', 'RD', 'RR')
 FORMULA_FILES = tuple(pathlib.Path(__file__).parent / f'{module}.py' for module in correctness.cases.FORMULA_MODULES)
@@ -120,6 +122,7 @@ def coverage_items() -> list[str]:
     items += [f'rma_mh.{m}.{part}' for m in MH_MEASURES for part in ('estimate', 'variance')]
     items += ['rma_peto']
     items += mv_robust_items()
+    items += mv_diagnostics_items()
     items += glmm_items()
     items += ls_items()
     items += bias_items()
@@ -223,6 +226,16 @@ def mv_robust_items() -> list[str]:
     items += [f'robust.coef_test.{t}' for t in metafopy.methods.robust.COEF_TESTS]
     items += [f'robust.conf_test.{t}' for t in metafopy.methods.robust.CONF_TESTS]
     items += [f'robust.wald_test.{w}' for w in metafopy.core.clubsandwich.WALD_TESTS]
+    return items
+
+
+def mv_diagnostics_items() -> list[str]:
+    """The ``rma_mv`` diagnostics items: each diagnostic by the deletion it makes (``obs``: each row with ``reestimate=True``, ``cluster``: whole
+    clusters, ``fixed``: ``reestimate=False``), ``btt`` of Cook's distance, and ``ranef`` by term type and interval. The two constants name what no
+    list in the code does."""
+    items = [f'rma_mv.{name}.{deletion}' for name in MV_DIAGNOSTICS for deletion in MV_DELETIONS]
+    items += ['rma_mv.cooks_distance.btt']
+    items += [f'rma_mv.ranef.{kind}' for kind in ('G', 'GEN', 'H', 'R', 'pi.t', 'pi.z', 'sigma2')]
     return items
 
 

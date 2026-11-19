@@ -21,6 +21,7 @@ import correctness.glmm_formulas
 import metafopy
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
+type IntArray = numpy.typing.NDArray[numpy.intp]
 
 
 @pytest.mark.parametrize('case', correctness.cases.case_params('derived'))
@@ -631,6 +632,132 @@ def mv_predict_pi(case: correctness.cases.Case, result: typing.Any) -> None:
     lb, ub = correctness.formulas.mv_prediction_interval(s.yi, s.V + s.extra(), s.X, test, tests.ddf, s.X, total)
     mv_agree(case, 'pi_lb', result.pi_lb, lb, MV_TIGHT_TOLERANCE)
     mv_agree(case, 'pi_ub', result.pi_ub, ub, MV_TIGHT_TOLERANCE)
+
+
+def deletion_groups(frame: pandas.DataFrame, cluster: str | None) -> list[IntArray]:
+    """The rows of each deleted set: each row alone, or each cluster in the sorted order of its ids (metafopy's order)."""
+    if cluster is None:
+        return [numpy.array([row], dtype=numpy.intp) for row in range(len(frame))]
+    codes, _ = pandas.factorize(frame[cluster], sort=True)
+    return [numpy.flatnonzero(codes == code).astype(numpy.intp) for code in range(codes.max() + 1)]
+
+
+def deletion_agree(
+    case: correctness.cases.Case, name: str, actual: typing.Any, expected: typing.Any, owner: list[int], tolerance: float, sets: list[str]
+) -> None:
+    """``mv_agree`` for a value per deleted set (``owner`` = 0, 1, ...) or per row (``owner`` the set each row belongs to), where a NaN from
+    metafopy against a value from the reference names the deleted set."""
+    actual = numpy.asarray(actual, dtype=numpy.float64)
+    expected = numpy.asarray(expected, dtype=numpy.float64)
+    lost = numpy.isnan(actual) & ~numpy.isnan(expected)
+    if lost.any():
+        position = int(numpy.argwhere(lost)[0][0])
+        raise AssertionError(f'{case.id}: {name}: metafopy gives NaN for the deletion of {sets[owner[position]]}, where the reference converges')
+    mv_agree(case, name, actual, expected, tolerance)
+
+
+def mv_deletion(case: correctness.cases.Case, result: typing.Any) -> None:
+    """Cook's distance, DFBETAS and the deleted residuals of an ``rma_mv`` fit by explicit leave-out refits (Viechtbauer and Cheung 2010;
+    Christensen, Pearson and Johnson 1992; the ``residuals.rma`` help page for ``X2`` and ``reestimate=False``), from ``formulas.mv_deletion``.
+
+    The case's ``then`` gives ``cluster``, ``reestimate`` and ``btt``; the check calls ``cooks_distance``, ``dfbetas`` and ``rstudent`` with them on
+    the case's own fit. A reference refit that did not converge fails the case, and is never compared.
+    """
+    assert case.then is not None
+    fit = refit(case)
+    s = mv_setup(case, fit)
+    cluster = case.then.args.get('cluster')
+    reestimate = bool(case.then.args.get('reestimate', True))
+    btt = case.then.args.get('btt')
+    groups = deletion_groups(s.frame, cluster)
+    names = [f'row {rows[0]}' if cluster is None else f'cluster {s.frame[cluster].iloc[rows[0]]}' for rows in groups]
+    reference = correctness.formulas.mv_deletion(s.yi, s.V, s.X, s.terms, s.scored, s.variances, s.correlations, groups, reestimate, btt)
+    for position, ok in enumerate(reference.converged):
+        if not ok:
+            raise AssertionError(
+                f'{case.id}: the reference refit without {names[position]} did not converge: gradient norm {reference.gradient_norms[position]:g}; '
+                f'optimiser: {reference.messages[position]}'
+            )
+    tolerance = case.tolerance or (MV_COMPONENT_TOLERANCE if reestimate else MV_TIGHT_TOLERANCE)
+    per_set = list(range(len(groups)))
+    per_row = [0] * len(s.yi)
+    for position, rows in enumerate(groups):
+        for row in rows:
+            per_row[row] = position
+    kwargs: dict[str, typing.Any] = {'cluster': cluster, 'reestimate': reestimate}
+    cook = metafopy.cooks_distance(fit, btt=btt, **kwargs)
+    dfbetas = metafopy.dfbetas(fit, **kwargs)
+    deleted: typing.Any = metafopy.rstudent(fit, **kwargs)
+    obs = deleted if cluster is None else deleted.obs
+    deletion_agree(case, "Cook's distance", cook.to_numpy(), reference.cook, per_set, tolerance, names)
+    deletion_agree(case, 'DFBETAS', dfbetas.to_numpy(), reference.dfbetas, [p for p in per_set for _ in range(reference.dfbetas.shape[1])], tolerance, names)
+    deletion_agree(case, 'deleted residual', obs.resid, reference.resid, per_row, tolerance, names)
+    deletion_agree(case, 'deleted residual se', obs.se, reference.se, per_row, tolerance, names)
+    deletion_agree(case, 'deleted residual z', obs.z, reference.z, per_row, tolerance, names)
+    if cluster is not None:
+        deletion_agree(case, 'X2', deleted.X2, reference.X2, per_set, tolerance, names)
+
+
+def mv_ranef_labels(case: correctness.cases.Case, s: MVSetup) -> list[list[str]]:
+    """The row labels of each term's BLUPs, in the order ``formulas.mv_blups`` returns them: the levels of the grouping (``~ 1 | a``), the pairs
+    ``a/b`` of a nested term, ``inner | outer`` for a factor structure, and the outer levels for the random coefficients."""
+    args = case.args
+    formulas = [args['random']] if isinstance(args['random'], str) else list(args['random'])
+    labels: list[list[str]] = []
+    for text in formulas:
+        match = MV_TERM.fullmatch(text.strip())
+        if match is None:
+            raise ValueError(f'unsupported random formula {text!r}')
+        inner, outer, nested = match.groups()
+        outer_codes, outer_labels = pandas.factorize(s.frame[outer], sort=True)
+        if inner == '1':
+            labels.append([str(v) for v in outer_labels])
+            if nested is not None:
+                labels.append(sorted({f'{a}/{b}' for a, b in zip(s.frame[outer], s.frame[nested], strict=True)}))
+            continue
+        struct = s.terms[len(labels)].struct
+        if struct in correctness.formulas.SPATIAL_STRUCTS:
+            raise ValueError(f'{case.id}: mv_ranef does not cover the spatial structures')
+        if struct in correctness.formulas.COEFFICIENT_STRUCTS:
+            labels.append([str(v) for v in outer_labels])
+            continue
+        inner_codes, inner_labels = pandas.factorize(s.frame[inner], sort=True)
+        pairs = sorted(set(zip(outer_codes.tolist(), inner_codes.tolist(), strict=True)))
+        labels.append([f'{inner_labels[i]} | {outer_labels[o]}' for o, i in pairs])
+    return labels
+
+
+def mv_ranef(case: correctness.cases.Case, result: typing.Any) -> None:
+    """The BLUPs of the random effects, their standard errors and (with ``test = "z"``) prediction intervals of ``ranef(fit)``, against Henderson's
+    mixed model equations (``formulas.mv_blups``) at metafopy's components (Henderson 1975; Robinson 1991; Searle, Casella and McCulloch 1992),
+    rows matched by their labels. For random coefficients (``GEN``, ``GDIAG``) metafopy returns the matrix of BLUPs alone, without standard errors."""
+    fit = refit(case)
+    s = mv_setup(case, fit)
+    reference = correctness.formulas.mv_blups(s.yi, s.V, s.X, s.terms, s.variances, s.correlations)
+    labels = mv_ranef_labels(case, s)
+    coefficient = [i for i, term in enumerate(s.terms) if term.struct in correctness.formulas.COEFFICIENT_STRUCTS]
+    if isinstance(result, pandas.DataFrame):
+        position = coefficient[0]
+        shaped = reference.blups[position].reshape(len(labels[position]), -1)
+        mv_agree(case, 'BLUPs', result.loc[labels[position]].to_numpy(dtype=numpy.float64), shaped, MV_TIGHT_TOLERANCE)
+        return
+    shown = [i for i in range(len(s.terms)) if i not in coefficient]
+    frames = list(result.values())
+    if len(frames) != len(shown):
+        raise AssertionError(f'{case.id}: ranef returns {len(frames)} terms, the model has {len(shown)} without random coefficients')
+    z = case.args.get('test', 'z') == 'z'
+    level = float(case.then.args.get('level', case.args.get('level', 95))) if case.then is not None else float(case.args.get('level', 95))
+    crit = float(scipy.stats.norm.isf((1 - level / 100) / 2))
+    for position, frame in zip(shown, frames, strict=True):
+        if sorted(frame.index) != sorted(labels[position]):
+            raise AssertionError(f'{case.id}: term {position}: metafopy labels the rows {list(frame.index)!r}, the reference {labels[position]!r}')
+        ordered = frame.loc[labels[position]]
+        pred, se = reference.blups[position], numpy.sqrt(reference.pev[position])
+        mv_agree(case, f'BLUPs of term {position}', ordered['intrcpt'].to_numpy(), pred, MV_TIGHT_TOLERANCE)
+        mv_agree(case, f'se of term {position}', ordered['se'].to_numpy(), se, MV_TIGHT_TOLERANCE)
+        if z:
+            mv_agree(case, f'pi.lb of term {position}', ordered['pi.lb'].to_numpy(), pred - crit * se, MV_TIGHT_TOLERANCE)
+            mv_agree(case, f'pi.ub of term {position}', ordered['pi.ub'].to_numpy(), pred + crit * se, MV_TIGHT_TOLERANCE)
 
 
 ROBUST_TOLERANCE = 1e-8

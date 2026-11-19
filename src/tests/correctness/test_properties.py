@@ -326,6 +326,70 @@ def cr0_with_singleton_clusters_is_hc0(case: correctness.cases.Case, result: typ
     close(case.id, 'vb', result.vb, hc0, case.tolerance or ROBUST_AGREEMENT)
 
 
+UNI_CONTROL = {'maxiter': 1000, 'threshold': 1e-12}
+# auditme: accept[literal-duplication] the fields of a deleted-residual result, which the diagnostics' own tests list again
+DELETED_PARTS = ('resid', 'se', 'z')
+# the columns of an rma_mv ranef frame and the attributes of an rma_uni ranef result that hold the same quantities
+MV_RANEF_TO_UNI = {'intrcpt': 'pred', 'pi.lb': 'pi_lb', 'pi.ub': 'pi_ub', 'se': 'se'}
+
+
+def mv_diagnostics_equal_uni(case: correctness.cases.Case, result: typing.Any) -> None:
+    """With one row per ``id``, the ``rma_mv`` model ``~ 1 | id`` is the ``rma_uni`` random-effects model, so Cook's distance, DFBETAS, the deleted
+    residuals and the BLUPs of the two agree (Viechtbauer and Cheung 2010, whose rma.uni definitions the ``rma_mv`` ones generalise). ``rma_uni``
+    needs a tighter ``threshold`` than its default for its ``tau2`` to match the ``rma_mv`` optimum."""
+    frame = correctness.cases.case_frame(case)
+    assert frame is not None
+    uni = metafopy.rma_uni(yi=case.args['yi'], vi=case.args['V'], mods=case.args.get('mods'), data=frame, method='REML', control=UNI_CONTROL)
+    where = case.id
+    close(where, "Cook's distance", metafopy.cooks_distance(result).to_numpy(), metafopy.cooks_distance(uni).to_numpy(), case.tolerance)
+    close(where, 'DFBETAS', metafopy.dfbetas(result).to_numpy(), metafopy.dfbetas(uni).to_numpy(), case.tolerance)
+    mv_deleted, uni_deleted = metafopy.rstudent(result), metafopy.rstudent(uni)
+    for name in DELETED_PARTS:
+        close(where, f'deleted residual {name}', getattr(mv_deleted, name), getattr(uni_deleted, name), case.tolerance)
+    mv_ranef = next(iter(typing.cast(dict[str, pandas.DataFrame], metafopy.ranef(result)).values()))
+    uni_ranef = metafopy.ranef(uni)
+    for column, name in MV_RANEF_TO_UNI.items():
+        close(where, f'ranef {column}', mv_ranef[column].to_numpy(), getattr(uni_ranef, name), case.tolerance)
+
+
+def mv_row_clusters_equal_per_row(case: correctness.cases.Case, result: typing.Any) -> None:
+    """Deleting clusters that each hold one row is deleting each row: ``cluster`` set to a column with one value per row (here ``cluster`` in
+    the case's ``then``) gives the per-row Cook's distance, DFBETAS and deleted residuals, in the sorted order of the ids."""
+    assert case.then is not None
+    fit = refit_with(case)
+    column = case.then.args['cluster']
+    frame = correctness.cases.case_frame(case)
+    assert frame is not None
+    if not frame[column].is_unique or not frame[column].is_monotonic_increasing:
+        raise ValueError(f'{case.id}: {column} must have one value per row, in increasing order')
+    where = case.id
+    close(where, "Cook's distance", metafopy.cooks_distance(fit, cluster=column).to_numpy(), metafopy.cooks_distance(fit).to_numpy(), case.tolerance)
+    close(where, 'DFBETAS', metafopy.dfbetas(fit, cluster=column).to_numpy(), metafopy.dfbetas(fit).to_numpy(), case.tolerance)
+    by_cluster: typing.Any = metafopy.rstudent(fit, cluster=column)
+    by_row = metafopy.rstudent(fit)
+    for name in DELETED_PARTS:
+        close(where, f'deleted residual {name}', getattr(by_cluster.obs, name), getattr(by_row, name), case.tolerance)
+
+
+def mv_one_row_cluster_x2_is_z_squared(case: correctness.cases.Case, result: typing.Any) -> None:
+    """For a cluster of one row, the multivariate deleted residual's ``X2 = e' C^-1 e`` is a scalar quadratic form: ``X2`` is the square of the
+    row's ``z`` (the ``residuals.rma`` help page's definition of ``X2``)."""
+    assert case.then is not None
+    deleted: typing.Any = metafopy.rstudent(refit_with(case), cluster=case.then.args['cluster'])
+    close(case.id, 'X2', deleted.X2, deleted.obs.z**2, case.tolerance)
+
+
+def mv_reestimate_agrees_when_components_fixed(case: correctness.cases.Case, result: typing.Any) -> None:
+    """With every variance and correlation component fixed by the call, a refit after a deletion has nothing to re-estimate: ``reestimate=True`` and
+    ``reestimate=False`` give the same Cook's distance, DFBETAS and deleted residuals."""
+    where = case.id
+    close(where, "Cook's distance", metafopy.cooks_distance(result).to_numpy(), metafopy.cooks_distance(result, reestimate=False).to_numpy(), case.tolerance)
+    close(where, 'DFBETAS', metafopy.dfbetas(result).to_numpy(), metafopy.dfbetas(result, reestimate=False).to_numpy(), case.tolerance)
+    refitted, fixed = metafopy.rstudent(result), metafopy.rstudent(result, reestimate=False)
+    for name in DELETED_PARTS:
+        close(where, f'deleted residual {name}', getattr(refitted, name), getattr(fixed, name), case.tolerance)
+
+
 # The unconditional model with study-specific random effects (``UM.RS``) is left out of the invariances below: its Laplace approximation is not
 # invariant to the reparametrisation, so only the models whose integral is exact or adaptive are asserted. Read from the library's own list.
 GLMM_INVARIANT_MODELS = tuple(m for m in metafopy.models.rma_glmm.MODELS if m != 'UM.RS')

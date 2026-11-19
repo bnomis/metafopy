@@ -65,7 +65,7 @@ run lets it go straight through. Task 5 stops for the review of the mismatch cas
 
 ## Task 2: The checks, the coverage items and the exemption
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** API (test_derived.py); Coverage list; Implementation step 2
@@ -74,29 +74,29 @@ run lets it go straight through. Task 5 stops for the review of the mismatch cas
 
 **Subtasks:**
 
-- [ ] Add the checks `mv_deletion` and `mv_ranef` to `src/tests/correctness/test_derived.py` as the spec's API section describes, both built on the
+- [x] Add the checks `mv_deletion` and `mv_ranef` to `src/tests/correctness/test_derived.py` as the spec's API section describes, both built on the
       existing `mv_setup`; groups from `pandas.factorize(frame[cluster], sort=True)`; tolerances `MV_COMPONENT_TOLERANCE` (`reestimate=True`) and
       `MV_TIGHT_TOLERANCE` (`reestimate=False`, `ranef`); a reference refit that did not converge fails the case naming the case, the deleted set and
       the optimiser message, and a NaN from metafopy where the reference converges fails naming the set
-- [ ] Add the property checks of the spec's Cases section to `src/tests/correctness/test_properties.py` (`PROPERTY_TOLERANCE`): `rma_mv(random = ~ 1 |
+- [x] Add the property checks of the spec's Cases section to `src/tests/correctness/test_properties.py` (`PROPERTY_TOLERANCE`): `rma_mv(random = ~ 1 |
       id)` with one row per id on `dat.bcg` (`~ ablat`) gives `rma_uni`'s Cook's distance, DFBETAS, `rstudent` and `ranef` with
       `control={'threshold': 1e-12, 'maxiter': 1000}` on `rma_uni`; `cluster` with one value per row gives the per-row results; a one-row cluster's
       `X2` equals its `z` squared; `reestimate=True` and `False` agree when every component is fixed
-- [ ] Add `MV_DIAGNOSTICS`, `MV_DELETIONS` and `mv_diagnostics_items()` to `src/tests/correctness/test_coverage.py` and include them in
+- [x] Add `MV_DIAGNOSTICS`, `MV_DELETIONS` and `mv_diagnostics_items()` to `src/tests/correctness/test_coverage.py` and include them in
       `coverage_items()`: the items of the spec's Coverage list; add the `[[exempt]]` entry for `rma_mv.ranef.pi.t` with the spec's reason to
       `src/tests/correctness/cases/rma_mv.toml`
-- [ ] Run `pytest src/tests/correctness/test_properties.py src/tests/correctness/test_derived.py -k "mv"`: the property cases pass; the coverage
+- [x] Run `pytest src/tests/correctness/test_properties.py src/tests/correctness/test_derived.py -k "mv"`: the property cases pass; the coverage
       gate is expected to fail until Task 3, so do not run it here
 
 **Acceptance Criteria:**
 
-- [ ] The property cases pass
-- [ ] `coverage_items()` lists every item of the spec's Coverage list
+- [x] The property cases pass
+- [x] `coverage_items()` lists every item of the spec's Coverage list
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] The pytest run of the last subtask passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The pytest run of the last subtask passes
 
 **Notes:**
 

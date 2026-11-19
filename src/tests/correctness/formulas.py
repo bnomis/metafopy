@@ -2133,6 +2133,7 @@ class MVDeletion:
     X2: FloatArray
     converged: tuple[bool, ...]
     gradient_norms: FloatArray
+    messages: tuple[str, ...] = ()
 
 
 def cut_term(term: RandomTerm, kept: IntArray) -> RandomTerm:
@@ -2187,6 +2188,7 @@ def mv_deletion(
     z = numpy.full(k, numpy.nan)
     x2 = numpy.zeros(len(groups))
     converged: list[bool] = []
+    messages: list[str] = []
     norms = numpy.zeros(len(groups))
     for position, rows in enumerate(groups):
         deleted = numpy.asarray(rows, dtype=numpy.intp)
@@ -2197,10 +2199,12 @@ def mv_deletion(
             fit = mv_fit(yi[kept], V[numpy.ix_(kept, kept)], X[kept], [cut_term(term, kept) for term in terms], method)
             var_s, cor_s = list(fit.variances), list(fit.correlations)
             converged.append(fit.success)
+            messages.append(fit.message)
             norms[position] = fit.gradient_norm
         else:
             var_s, cor_s = variances, correlations
             converged.append(True)
+            messages.append('')
         M_s = V + marginal_extra(terms, var_s, cor_s, k)
         b_s, vb_s = gls(yi[kept], M_s[numpy.ix_(kept, kept)], X[kept])
         diff = b - b_s
@@ -2213,7 +2217,7 @@ def mv_deletion(
         se[deleted] = numpy.sqrt(numpy.diag(cov))
         z[deleted] = e / se[deleted]
         x2[position] = float(e @ numpy.linalg.solve(cov, e))
-    return MVDeletion(cook, dfbetas, resid, se, z, x2, tuple(converged), norms)
+    return MVDeletion(cook, dfbetas, resid, se, z, x2, tuple(converged), norms, tuple(messages))
 
 
 @dataclasses.dataclass(frozen=True)

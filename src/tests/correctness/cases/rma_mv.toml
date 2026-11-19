@@ -428,3 +428,7 @@ args = { yi = "yi", V = "vi", random = "~ 1 | district/school", mods = "~ year",
 check = "test_derived.mv_predict_pi"
 covers = ["rma_mv.predict.pi"]
 then = { function = "predict", args = {} }
+
+[[exempt]]
+item = "rma_mv.ranef.pi.t"
+reason = "defined only in metafor's code; R parity covers it"
