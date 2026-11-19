@@ -84,6 +84,9 @@ value as metafopy in every row, so none is a metafopy-only difference: the sourc
 | Turner et al. (2000) Table IV, fixed effect, pre-eclampsia (`UM.FS`, `FE`) | CI | (-0.59, -0.23) | (-0.58398, -0.23688) | (-0.58398, -0.23688) |
 | Bagos and Nikolopoulos (2009) Table 5, school absences, random study effects, z=0/1, cov!=0 (`UM.RS`, `ML`, `coding` 1, `cor`; `glmm.published.bagos2009.table5.school.rs.mismatch`; written after the review of 2026-11-14, recorded 2026-11-18, not yet reviewed) | CI | (0.579, 0.897) | (0.579941, 0.896414) | (0.579940, 0.896409) |
 
+Verdict (2026-11-19) on the Bagos and Nikolopoulos (2009) school-absence row: accepted as a source difference by the user on the review page of
+`agents/reviews/published-mismatches-2026-11-19.md`; the case stays a strict expected failure.
+
 Several rows differ by one unit of the last printed digit and are rounding or optimiser differences (the Jackson `tau2` rows, Stijnen BN and control
 rows); the Stijnen treated row (Table VII) and the Simmonds and Higgins random-effects row are larger. In the Simmonds and Higgins case the paper's
 random-effects result equals its fixed-effect result (1.74), which metafopy and R metafor reproduce for `FE` (1.74126) but not for `ML`

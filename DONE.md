@@ -1449,3 +1449,20 @@ Fix direction: a spec (an output change, `claude/rules/metafopy.md`) for refits 
 Spec: `agents/specs/ls-profile-feasible-start/spec.md`; tasks: `agents/tasks/ls-profile-feasible-start/tasks-1.md`.
 
 Done: 2026-11-19, agents/specs/ls-profile-feasible-start/spec.md and agents/tasks/ls-profile-feasible-start/tasks-1.md; profile_starts adds feasible_start when only the default start is left, and the lower bound is -0.2143
+
+## Judge the published-value mismatches recorded "not yet reviewed"
+
+<!-- doc-counts: accept-start found on 2026-11-19 - a dated record, not a claim about the present -->
+Found on 2026-11-19 by a TODO review: strict expected-failure cases where metafopy and R metafor 5.2-1 agree with each other but not with the printed
+value are recorded "not yet reviewed", and no review or item covers them. In `agents/specs/correctness-publication-bias/mismatches.md` (written
+2026-11-19 by `agents/tasks/citkowicz2017-cases/tasks-1.md`): `published.citkowicz2017.baskerville2012.article.unadjusted.se`, `.article.beta.b`,
+`.article.blind.unadjusted` and `.article.blind.beta.b_lrt`. In `agents/specs/correctness-glmm/mismatches.md` (recorded 2026-11-18):
+`glmm.published.bagos2009.table5.school.rs.mismatch`. The last review of such cases was `agents/reviews/correctness-harness-checks-mismatches.md`.
+<!-- doc-counts: accept-end -->
+
+Cause: not a known defect; both implementations agree, so each difference is suspected to lie in the source's own fit or rounding.
+
+Fix direction: a review page with one item per case (accept as a source difference, or investigate), its answers copied into the review document and
+into each `mismatches.md` entry with the date; an "investigate" answer becomes its own item.
+
+Done: 2026-11-19 - all five accepted as source differences on the review page of `agents/reviews/published-mismatches-2026-11-19.md`; the case reasons and both `mismatches.md` files record it.

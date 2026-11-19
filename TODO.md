@@ -4,21 +4,6 @@ Open work only, in implementation order, nearest first. Finished items move to
 `DONE.md` unchanged. See the shared `todo-add` and `todo-review` skills for
 the shape of an item.
 
-## Judge the published-value mismatches recorded "not yet reviewed"
-
-<!-- doc-counts: accept-start found on 2026-11-19 - a dated record, not a claim about the present -->
-Found on 2026-11-19 by a TODO review: strict expected-failure cases where metafopy and R metafor 5.2-1 agree with each other but not with the printed
-value are recorded "not yet reviewed", and no review or item covers them. In `agents/specs/correctness-publication-bias/mismatches.md` (written
-2026-11-19 by `agents/tasks/citkowicz2017-cases/tasks-1.md`): `published.citkowicz2017.baskerville2012.article.unadjusted.se`, `.article.beta.b`,
-`.article.blind.unadjusted` and `.article.blind.beta.b_lrt`. In `agents/specs/correctness-glmm/mismatches.md` (recorded 2026-11-18):
-`glmm.published.bagos2009.table5.school.rs.mismatch`. The last review of such cases was `agents/reviews/correctness-harness-checks-mismatches.md`.
-<!-- doc-counts: accept-end -->
-
-Cause: not a known defect; both implementations agree, so each difference is suspected to lie in the source's own fit or rounding.
-
-Fix direction: a review page with one item per case (accept as a source difference, or investigate), its answers copied into the review document and
-into each `mismatches.md` entry with the date; an "investigate" answer becomes its own item.
-
 ## Find the Hooper data behind Table 5 of Bagos and Nikolopoulos (2009)
 
 <!-- doc-counts: accept-start probed on 2026-11-18 - a dated record, not a claim about the present -->

@@ -240,7 +240,7 @@ function = "rma_uni"
 args = { yi = "yi", vi = "vi", method = "ML" }
 expect = { "se[0]" = "0.069" }
 status = "mismatch"
-reason = "se[0] printed 0.069, metafopy 0.0633, R metafor 5.2-1 0.0633; metafopy and R metafor agree; the article fitted with its own nlminb code; recorded on 2026-11-19, not yet reviewed"
+reason = "se[0] printed 0.069, metafopy 0.0633, R metafor 5.2-1 0.0633; metafopy and R metafor agree; the article fitted with its own nlminb code; recorded on 2026-11-19; accepted as a source difference on 2026-11-19 (metafopy and R metafor agree)"
 
 [case.data]
 yi = [1.01, 0.82, 0.59, 0.44, 0.84, 0.73, 1.12, 0.04, 0.24, 0.32, 1.04, 1.31, 0.59, 0.66, 0.62, 0.47, 1.08, 0.98, 0.26, 0.39, 0.6, 0.94, 0.11]
@@ -281,7 +281,7 @@ setup = { rma_uni = { method = "ML" } }
 args = { type = "beta" }
 expect = { "delta[1]" = "4.459" }
 status = "mismatch"
-reason = "delta[1] (b) printed 4.459, metafopy 4.4613, R metafor 5.2-1 4.4613; metafopy and R metafor agree; the article fitted with its own nlminb code; recorded on 2026-11-19, not yet reviewed"
+reason = "delta[1] (b) printed 4.459, metafopy 4.4613, R metafor 5.2-1 4.4613; metafopy and R metafor agree; the article fitted with its own nlminb code; recorded on 2026-11-19; accepted as a source difference on 2026-11-19 (metafopy and R metafor agree)"
 
 [case.data]
 yi = [1.01, 0.82, 0.59, 0.44, 0.84, 0.73, 1.12, 0.04, 0.24, 0.32, 1.04, 1.31, 0.59, 0.66, 0.62, 0.47, 1.08, 0.98, 0.26, 0.39, 0.6, 0.94, 0.11]
@@ -321,7 +321,7 @@ function = "rma_uni"
 args = { yi = "yi", vi = "vi", mods = "~ factor(blind) - 1", method = "ML" }
 expect = { "beta[0]" = "0.574", "se[0]" = "0.098", "beta[1]" = "0.538", "se[1]" = "0.090", "tau2" = "0.017" }
 status = "mismatch"
-reason = "printed beta[0] 0.574, se[0] 0.098, beta[1] 0.538, se[1] 0.090, tau2 0.017; metafopy and R metafor 5.2-1 both 0.5731, 0.0925, 0.5397, 0.0868, 0.0163; metafopy and R metafor agree; the article fitted with its own nlminb code; recorded on 2026-11-19, not yet reviewed"
+reason = "printed beta[0] 0.574, se[0] 0.098, beta[1] 0.538, se[1] 0.090, tau2 0.017; metafopy and R metafor 5.2-1 both 0.5731, 0.0925, 0.5397, 0.0868, 0.0163; metafopy and R metafor agree; the article fitted with its own nlminb code; recorded on 2026-11-19; accepted as a source difference on 2026-11-19 (metafopy and R metafor agree)"
 
 [case.data]
 yi = [1.01, 0.82, 0.59, 0.44, 0.84, 0.73, 1.12, 0.04, 0.24, 0.32, 1.04, 1.31, 0.59, 0.66, 0.62, 0.47, 1.08, 0.98, 0.26, 0.39, 0.6, 0.94, 0.11]
@@ -342,7 +342,7 @@ setup = { rma_uni = { method = "ML", mods = "~ factor(blind) - 1" } }
 args = { type = "beta" }
 expect = { "delta[1]" = "5.097", "LRT" = "9.045" }
 status = "mismatch"
-reason = "delta[1] (b) printed 5.097, metafopy and R metafor 5.2-1 both 5.0960; LRT printed 9.045, metafopy and R metafor 9.0432 (9.0443 with the mods = ~ blind coding); metafopy and R metafor agree; the article fitted with its own nlminb code; recorded on 2026-11-19, not yet reviewed"
+reason = "delta[1] (b) printed 5.097, metafopy and R metafor 5.2-1 both 5.0960; LRT printed 9.045, metafopy and R metafor 9.0432 (9.0443 with the mods = ~ blind coding); metafopy and R metafor agree; the article fitted with its own nlminb code; recorded on 2026-11-19; accepted as a source difference on 2026-11-19 (metafopy and R metafor agree)"
 
 [case.data]
 yi = [1.01, 0.82, 0.59, 0.44, 0.84, 0.73, 1.12, 0.04, 0.24, 0.32, 1.04, 1.31, 0.59, 0.66, 0.62, 0.47, 1.08, 0.98, 0.26, 0.39, 0.6, 0.94, 0.11]

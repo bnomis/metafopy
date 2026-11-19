@@ -188,6 +188,8 @@ Run 2026-11-15 in the worktree `/Users/simonb/src/metafopy/.claude/worktrees/cor
 - **Cause:** not known to be a defect. metafopy and R metafor agree, so the difference is in the article's own fit (its `nlminb` code). The
   beta-model means, standard errors, a and the mean-only likelihood ratio reproduce (passing `...article.*` cases).
 - **Options:** as for the item above; the user has not yet judged these.
+- **Verdict (2026-11-19):** all four accepted as source differences by the user on the review page of
+  `agents/reviews/published-mismatches-2026-11-19.md`; the cases stay strict expected failures, their reasons say so.
 
 ### Henmi-Copas interval at a DerSimonian-Laird tau2 of 0 is not the equal-effects interval (Task 10)
 
