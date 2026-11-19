@@ -66,7 +66,7 @@ estimate and `confint` finds its lower crossing.
 
 ## Task 2: the correctness case passes
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation step 4
@@ -75,20 +75,20 @@ estimate and `confint` finds its lower crossing.
 
 **Subtasks:**
 
-- [ ] In `src/tests/correctness/cases/location_scale.toml`, delete the case `ls.confint.scale.ML.identity.bcg.alpha1_lb` and add `"alpha.1.lower"` to
+- [x] In `src/tests/correctness/cases/location_scale.toml`, delete the case `ls.confint.scale.ML.identity.bcg.alpha1_lb` and add `"alpha.1.lower"` to
       the `bounds` of `ls.confint.scale.ML.identity.bcg`
-- [ ] Run `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py`
+- [x] Run `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_coverage.py`
 
 **Acceptance Criteria:**
 
-- [ ] `ls.confint.scale.ML.identity.bcg` checks the bounds `alpha.1.lower`, `alpha.1.upper`, `alpha.2.lower` and `alpha.2.upper` and
+- [x] `ls.confint.scale.ML.identity.bcg` checks the bounds `alpha.1.lower`, `alpha.1.upper`, `alpha.2.lower` and `alpha.2.upper` and
       passes, and no case id ends in `.alpha1_lb`
-- [ ] The coverage test passes (the `ls.confint.scale` coverage item is still covered)
+- [x] The coverage test passes (the `ls.confint.scale` coverage item is still covered)
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] The pytest run of the last subtask passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The pytest run of the last subtask passes
 
 **Notes:**
 

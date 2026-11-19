@@ -498,20 +498,7 @@ dataset = "dat.bcg"
 setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
 args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "identity" }
 check = "test_derived.ls_confint_scale"
-bounds = ["alpha.1.upper", "alpha.2.lower", "alpha.2.upper"]
-covers = ["ls.confint.scale"]
-
-[[case]]
-id = "ls.confint.scale.ML.identity.bcg.alpha1_lb"
-kind = "derived"
-function = "rma_uni"
-dataset = "dat.bcg"
-setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
-args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "identity" }
-check = "test_derived.ls_confint_scale"
-bounds = ["alpha.1.lower"]
-status = "mismatch"
-reason = "the lower bound of alpha.1 (the scale intercept) of the ML identity-link dat.bcg fit: metafopy gives NA (warnings: 'Error when trying to invert the Hessian', 'Cannot obtain lower bound of profile likelihood CI due to convergence problems'), R metafor 5.2-1 also gives NA with the same two warnings, the reference ls_profile_bounds gives -0.214322988803 (checked against a brute-force profile over the feasible alpha.2 interval); metafopy and R metafor agree; recorded on 2026-11-19, not yet reviewed"
+bounds = ["alpha.1.lower", "alpha.1.upper", "alpha.2.lower", "alpha.2.upper"]
 covers = ["ls.confint.scale"]
 
 [[case]]
