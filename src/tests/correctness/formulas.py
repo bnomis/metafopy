@@ -2864,6 +2864,37 @@ LS_PROFILE_LINE = (0.0, 0.25, 0.5, 0.75, 1.0)
 LS_PROFILE_SHIFTS = tuple(float(shift) for shift in range(-130, 11, 10))
 
 
+def ls_profile_identity_starts(
+    Z: FloatArray, free: list[int], j: int, value: float, start: FloatArray, adjusted: FloatArray, lines: list[FloatArray]
+) -> list[FloatArray]:
+    """The feasible starts (``Z alpha >= 0``) of an identity-link profile refit, in the reference's own code.
+
+    A start with a negative ``tau2_i`` makes every refit step infeasible, so the starts of ``lines`` (the line from ``adjusted`` to ``start``) are kept only
+    where feasible. A start of the largest minimum ``Z alpha`` with ``alpha_j`` at ``value`` (``scipy.optimize.linprog``, the minimum capped at the mean of
+    ``Z start`` so the problem is bounded) is added, with the points on its lines to ``start`` and to ``adjusted`` that are feasible.
+    """
+    offset = Z[:, j] * value
+    feasible = [first for first in lines if float(numpy.min(offset + Z[:, free] @ first)) >= 0]
+    cap = float(numpy.mean(Z @ start))
+    cap = cap if cap > 0 else 1.0
+    n = len(free)
+    # maximise t subject to Z_free p - t >= -offset, t <= cap
+    result = scipy.optimize.linprog(
+        c=numpy.append(numpy.zeros(n), -1.0),
+        A_ub=numpy.column_stack([-Z[:, free], numpy.ones(Z.shape[0])]),
+        b_ub=offset,
+        bounds=[(None, None)] * n + [(None, cap)],
+    )
+    if result.status == 0 and result.x is not None and result.x[n] > 0:
+        interior = numpy.asarray(result.x[:n], dtype=numpy.float64)
+        for other in (start[free], adjusted):
+            for fraction in LS_PROFILE_LINE:
+                point = interior + fraction * (other - interior)
+                if float(numpy.min(offset + Z[:, free] @ point)) >= 0:
+                    feasible.append(point)
+    return feasible
+
+
 def ls_profile_ll(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, link: str, method: str, j: int, value: float, start: FloatArray) -> float:
     """The log-likelihood maximised over the scale coefficients other than ``j``, with ``alpha_j`` held at ``value`` (the profile of section 2.5.3).
 
@@ -2873,6 +2904,8 @@ def ls_profile_ll(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, 
     The refit is run from several starts and the best kept: the profile of a coefficient can have a ``tau2 = 0`` plateau (an intercept running to minus
     infinity) that a start near the estimate falls onto while a continuous branch with a higher log-likelihood exists. Besides the adjusted start and
     ``start``, the starts lie along the line between them and, for the log link, on a grid of shifts of each free coefficient from the adjusted start.
+    For the identity link only feasible starts are used (``ls_profile_identity_starts``: those of the line that keep ``Z alpha >= 0``, and the points
+    of the feasible start that maximises ``min(Z alpha)`` and its lines to ``start`` and the adjusted start), since SLSQP cannot leave an infeasible one.
     """
     free = [i for i in range(Z.shape[1]) if i != j]
 
@@ -2909,6 +2942,8 @@ def ls_profile_ll(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, 
                 shifted = adjusted.copy()
                 shifted[i] += shift
                 starts.append(shifted)
+    if link == 'identity':
+        starts = ls_profile_identity_starts(Z, free, j, value, start, adjusted, starts)
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
         for first in starts:
