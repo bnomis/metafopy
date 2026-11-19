@@ -132,7 +132,7 @@ Table A and against Bagos and Nikolopoulos's printed totals, each compared with 
 
 ## Task 2: Records, the full test run, and closing the item
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item as a whole
@@ -141,31 +141,31 @@ Table A and against Bagos and Nikolopoulos's printed totals, each compared with 
 
 **Subtasks:**
 
-- [ ] In `agents/specs/correctness-glmm/mismatches.md`, add a row to the table that lists the Bagos and Nikolopoulos school-absence row: "Bagos and
+- [x] In `agents/specs/correctness-glmm/mismatches.md`, add a row to the table that lists the Bagos and Nikolopoulos school-absence row: "Bagos and
       Nikolopoulos (2009) Table 5, dietary fat, random study effects, z=0/1, cov!=0 (`UM.RS`, `ML`, `coding` 1, `cor`;
       `glmm.published.bagos2009.table5.hooper.rs.mismatch`; recorded <date>, not yet reviewed)", with the printed CI and both programs' bounds from
       Task 1's Notes
-- [ ] Move the item "Find the Hooper data behind Table 5 of Bagos and Nikolopoulos (2009)" from `TODO.md` to `DONE.md`: append its heading and body
+- [x] Move the item "Find the Hooper data behind Table 5 of Bagos and Nikolopoulos (2009)" from `TODO.md` to `DONE.md`: append its heading and body
       unchanged at the end of `DONE.md`, then a line
       `Done: 2026-MM-DD, agents/tasks/bagos2009-hooper/tasks-1.md; the data are the BMJ article's Table 1 for the trials its data supplement Table A gives, with the corn and olive events reversed; three rows of the Hooper column are published cases and the random-study-effects CI bounds a recorded mismatch`
       with the date of the commit
-- [ ] Run the final tests from the worktree and save their whole output for the merge gate (the main checkout is the first entry of
+- [x] Run the final tests from the worktree and save their whole output for the merge gate (the main checkout is the first entry of
       `git worktree list --porcelain`, `/Users/simonb/src/metafopy`):
       `mkdir -p /Users/simonb/src/metafopy/ralpher-logs/bagos2009-hooper/tasks-1 && export PATH=/Users/simonb/src/metafopy/.venv/bin:$PATH PYTHONPATH=$PWD/src && pytest src/tests 2>&1 | tee /Users/simonb/src/metafopy/ralpher-logs/bagos2009-hooper/tasks-1/final-tests.log`
 
 **Acceptance Criteria:**
 
-- [ ] `mismatches.md` lists the new mismatch case with its figures
-- [ ] The item is in `DONE.md` with its body unchanged and the `Done:` line, and no longer in `TODO.md`
+- [x] `mismatches.md` lists the new mismatch case with its figures
+- [x] The item is in `DONE.md` with its body unchanged and the `Done:` line, and no longer in `TODO.md`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] The final test run above passes
-- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/bagos2009-hooper/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] The final test run above passes
+- [x] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/bagos2009-hooper/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
       `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0 (`<scratch>` is a scratch directory
       outside the repository)
 

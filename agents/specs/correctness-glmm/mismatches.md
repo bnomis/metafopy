@@ -83,6 +83,7 @@ value as metafopy in every row, so none is a metafopy-only difference: the sourc
 | Simmonds and Higgins (2016) Fig 1, one-stage random (`UM.FS`, `ML`) | OR; CI | 1.74 (0.59, 5.17) | 1.79068 (0.54155, 5.92107) | 1.7907 (0.5415, 5.9211) |
 | Turner et al. (2000) Table IV, fixed effect, pre-eclampsia (`UM.FS`, `FE`) | CI | (-0.59, -0.23) | (-0.58398, -0.23688) | (-0.58398, -0.23688) |
 | Bagos and Nikolopoulos (2009) Table 5, school absences, random study effects, z=0/1, cov!=0 (`UM.RS`, `ML`, `coding` 1, `cor`; `glmm.published.bagos2009.table5.school.rs.mismatch`; written after the review of 2026-11-14, recorded 2026-11-18, not yet reviewed) | CI | (0.579, 0.897) | (0.579941, 0.896414) | (0.579940, 0.896409) |
+| Bagos and Nikolopoulos (2009) Table 5, dietary fat, random study effects, z=0/1, cov!=0 (`UM.RS`, `ML`, `coding` 1, `cor`; `glmm.published.bagos2009.table5.hooper.rs.mismatch`; recorded 2026-11-19, not yet reviewed) | CI | (0.592, 0.940) | (0.597097, 0.932294) | (0.597095, 0.932292) |
 
 Verdict (2026-11-19) on the Bagos and Nikolopoulos (2009) school-absence row: accepted as a source difference by the user on the review page of
 `agents/reviews/published-mismatches-2026-11-19.md`; the case stays a strict expected failure.
