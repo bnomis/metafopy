@@ -40,3 +40,5 @@
 | [TODO.md: rma_mv funnel test skip](../../TODO.md) | [tasks-1.md](mv-funnel-skip/tasks-1.md) - remove has_mv_residuals and the skip, closing | 1 | 2026-11-18 |
 | [TODO.md: Bagos and Nikolopoulos (2009) Table 5](../../TODO.md) | [tasks-1.md](bagos2009-table5/tasks-1.md) - the ER-visit and school-absence cases, the mismatches.md correction, the Hooper item (D2), closing | 1 | 2026-11-18 |
 | [TODO.md: stale ledger entries](../../TODO.md) | [tasks-1.md](audit-stale-entries/tasks-1.md) - each entry's cases in R and metafopy, remove or narrow, the full audit and recall, closing | 1 | 2026-11-18 |
+| [TODO.md: Citkowicz and Vevea (2017) printed cases](../../TODO.md) | [tasks-1.md](citkowicz2017-cases/tasks-1.md) - the article's Baskerville values as published and mismatch cases, the records that called it unavailable, closing | 1 | 2026-11-19 |
+| [TODO.md: identity-link start of ls_profile_ll](../../TODO.md) | [tasks-1.md](ls-profile-identity-start/tasks-1.md) - feasible identity-link starts in the reference, an identity-link scale confint case, closing | 1 | 2026-11-19 |

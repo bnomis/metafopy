@@ -35,6 +35,8 @@ judge. Keep the supplement cases, and say in their locator that the supplement's
 2026-11-15 "dropped" entry for the article: update it in `mismatches.md`, the note on line 124 of `agents/specs/correctness-publication-bias/spec.md`,
 the header comment of `selmodel_published.toml` ("the 2017 article itself was not available") and the Citkowicz entry of `NOTES.md`.
 
+Spec: none (small item); tasks: `agents/tasks/citkowicz2017-cases/tasks-1.md`.
+
 ## Find the Hooper data behind Table 5 of Bagos and Nikolopoulos (2009)
 
 <!-- doc-counts: accept-start probed on 2026-11-18 - a dated record, not a claim about the present -->
@@ -78,3 +80,5 @@ refit runs.
 
 Fix direction: give `ls_profile_ll` a feasible start for the identity link (for example the starts of `profile_starts`, filtered as it filters them),
 then add an identity-link `ls.confint.scale.*` case checked against the brute-force profile.
+
+Spec: none (small item); tasks: `agents/tasks/ls-profile-identity-start/tasks-1.md`.
