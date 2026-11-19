@@ -42,3 +42,4 @@
 | [TODO.md: stale ledger entries](../../TODO.md) | [tasks-1.md](audit-stale-entries/tasks-1.md) - each entry's cases in R and metafopy, remove or narrow, the full audit and recall, closing | 1 | 2026-11-18 |
 | [TODO.md: Citkowicz and Vevea (2017) printed cases](../../TODO.md) | [tasks-1.md](citkowicz2017-cases/tasks-1.md) - the article's Baskerville values as published and mismatch cases, the records that called it unavailable, closing | 1 | 2026-11-19 |
 | [TODO.md: identity-link start of ls_profile_ll](../../TODO.md) | [tasks-1.md](ls-profile-identity-start/tasks-1.md) - feasible identity-link starts in the reference, an identity-link scale confint case, closing | 1 | 2026-11-19 |
+| [ls profile feasible start](../specs/ls-profile-feasible-start/spec.md) | [tasks-1.md](ls-profile-feasible-start/tasks-1.md) - feasible_start for identity-link refits with only the default start, the correctness case passes, records and closing | 1 | 2026-11-19 |

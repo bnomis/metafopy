@@ -20,6 +20,8 @@ Cause: not traced; the refits below the estimate fail ("Cannot obtain lower boun
 
 Fix direction: a spec (an output change, `claude/rules/metafopy.md`) for refits that find the crossing, then the mismatch case becomes a passing case.
 
+Spec: `agents/specs/ls-profile-feasible-start/spec.md`; tasks: `agents/tasks/ls-profile-feasible-start/tasks-1.md`.
+
 ## Judge the published-value mismatches recorded "not yet reviewed"
 
 <!-- doc-counts: accept-start found on 2026-11-19 - a dated record, not a claim about the present -->
