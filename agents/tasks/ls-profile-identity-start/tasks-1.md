@@ -92,7 +92,7 @@ can check identity-link profile bounds.
 
 ## Task 2: An identity-link scale confint case
 
-**Status:** todo
+**Status:** in-progress
 **Priority:** medium
 **Complexity:** small
 **Source Reference:** the item's fix direction (add an identity-link `ls.confint.scale.*` case checked against the brute-force profile)
@@ -120,6 +120,30 @@ can check identity-link profile bounds.
 **Notes:**
 
 - Depends on Task 1
+- **Blocked for the operator (2026-11-19):** the case `ls.confint.scale.ML.identity.bcg` is added to `location_scale.toml` (uncommitted, because it
+  fails) and fails: for alpha.1 (the scale intercept) `confint(result, alpha=0, tol=1e-12)` gives a `nan` lower bound (warnings: "Error when trying to
+  invert the Hessian", "Cannot obtain lower bound of profile likelihood CI due to convergence problems"), while the reference gives
+  -0.214322988803. The reference is the one that checks out against a brute-force profile in `/tmp/scratch-ls`: at alpha.1 = -0.2143229888 a
+  40001-point grid over the feasible alpha.2 interval (`Z alpha >= 0`, alpha.2 >= 0.0164863838) gives -9.060018239, the reference
+  `ls_profile_ll` gives -9.060018228, and the crossing level `ll_max - chi2_{1,0.95}/2` is -9.060018228 (ll_max -7.139288818); the same
+  agreement holds at alpha.1 = -0.25, -0.2, -0.4 and -1.0 (to 1e-8). So metafopy's identity-link lower bound of alpha.1 is missing where a crossing
+  exists; the spec `agents/specs/ls-profile-starts/spec.md` expected this case to pass. Changing metafopy's output is the operator's to confirm
+  (`claude/rules/metafopy.md`); nothing under `src/metafopy/` was changed. The other bounds (alpha.1 upper `nan` in both; alpha.2 both) were not
+  reached because the check stops at the first mismatch.
+- **Operator's answer (2026-11-19, the user, through the operator session):** "Mismatch case + TODO item". Checked by the operator session on
+  2026-11-19 in this worktree: R metafor 5.2-1 also gives `NA` for the alpha.1 lower bound, with the same two warnings; the alpha.1 upper bound is
+  not found in any of the three (metafopy `>0.2399`, R `>0.2401`, reference `nan`); alpha.2 is metafopy (-0.0136, 0.0165), reference
+  (-0.013563, 0.016486), R `<-0.0082`, `>0.0082` (the approved `ls-profile-starts` change). Do this, then finish the task:
+  - make `ls.confint.scale.ML.identity.bcg` check every bound but the alpha.1 lower one (if `test_derived.ls_confint_scale` cannot leave one
+    bound out, add the smallest option it needs, for example a case field naming the bounds to skip, and test it), and pass;
+  - add `ls.confint.scale.ML.identity.bcg.alpha1_lb`, the same fit checking only the alpha.1 lower bound, with `status = "mismatch"` and a
+    `reason` giving metafopy's `NA`, R metafor's `NA` and the reference's -0.214322988803 (brute-force checked), "metafopy and R metafor agree;
+    recorded on 2026-11-19, not yet reviewed";
+  - add a `TODO.md` item after "The reference ls_profile_ll cannot fit the identity link at some feasible values", titled "metafopy's profile CI
+    misses the identity-link lower bound of the ls scale intercept", with the figures above dated 2026-11-19, "Cause: not traced; the refits
+    below the estimate fail ('Cannot obtain lower bound ... convergence problems'), as in R metafor", and "Fix direction: a spec (an output change,
+    `claude/rules/metafopy.md`) for refits that find the crossing, then the mismatch case becomes a passing case";
+  - then tick this task's subtasks and acceptance criterion as met by that answer.
 - `agents/specs/ls-profile-starts/spec.md` (approved 2026-11-18) says metafopy's identity-link `<` bounds became crossings with the new starts, so the
   case is expected to pass
 
