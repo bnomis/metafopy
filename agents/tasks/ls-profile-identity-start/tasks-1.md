@@ -92,7 +92,7 @@ can check identity-link profile bounds.
 
 ## Task 2: An identity-link scale confint case
 
-**Status:** in-progress
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Source Reference:** the item's fix direction (add an identity-link `ls.confint.scale.*` case checked against the brute-force profile)
@@ -101,21 +101,21 @@ can check identity-link profile bounds.
 
 **Subtasks:**
 
-- [ ] Add `ls.confint.scale.ML.identity.bcg` to `src/tests/correctness/cases/location_scale.toml` after `ls.confint.scale.ML.bcg`: the same fields,
+- [x] Add `ls.confint.scale.ML.identity.bcg` to `src/tests/correctness/cases/location_scale.toml` after `ls.confint.scale.ML.bcg`: the same fields,
       with `link = "identity"`, `check = "test_derived.ls_confint_scale"`, `covers = ["ls.confint.scale"]`
-- [ ] Run it. If metafopy's bounds and the reference's differ beyond the check's tolerance, record both in this task's Notes, check each against a
+- [x] Run it. If metafopy's bounds and the reference's differ beyond the check's tolerance, record both in this task's Notes, check each against a
       brute-force profile in `<scratch>`, and **stop as `blocked` for the operator** (a change to metafopy's output is the user's to confirm,
       `claude/rules/metafopy.md`); change nothing under `src/metafopy/`
-- [ ] Run `pytest src/tests/correctness/test_derived.py -k ls_confint_scale src/tests/correctness/test_coverage.py`
+- [x] Run `pytest src/tests/correctness/test_derived.py -k ls_confint_scale src/tests/correctness/test_coverage.py`
 
 **Acceptance Criteria:**
 
-- [ ] The new case passes
+- [x] The new case passes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] The pytest run of the last subtask passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The pytest run of the last subtask passes
 
 **Notes:**
 
