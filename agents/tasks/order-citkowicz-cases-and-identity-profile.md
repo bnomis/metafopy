@@ -44,4 +44,4 @@ names the one that fires only if the run finds it.
 | 1 | `citkowicz2017-cases/tasks-1.md` | - | a printed value not reproducing as the 2026-11-19 probe found (Task 1), only if one does not | merged 253d45e |
 | 2 | `ls-profile-identity-start/tasks-1.md` | - | an existing reference value moving (Task 1), or metafopy's identity-link bounds differing from the reference (Task 2), only if one does | merged 711e9fe |
 
-Checkpoint after 2: running
+Checkpoint after 2: passed 8616 passed, 37 skipped, 19 xfailed
