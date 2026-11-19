@@ -28,6 +28,18 @@ person-years, and it pools 23 comparisons (2020 and 2867 events, WHI 2006 includ
 Only the 2001 issue (DOI 10.1002/14651858.CD002137, no `.pub` suffix; the Cochrane Library's "Other versions" of the review) will do.
 <!-- doc-counts: accept-end -->
 
+<!-- doc-counts: accept-start checked on 2026-11-19 - a dated record, not a claim about the present -->
+Note 2026-11-19 (later): the premise above is corrected, not rewritten. Bagos and Nikolopoulos's reference "Hooper et al. (2001)" is the BMJ
+article (BMJ 322(7289):757-763), not the Cochrane review, and the first Cochrane version (2000, Issue 2, DOI 10.1002/14651858.CD002137; reprints of
+2009 and 2010 in the papers folder) carries the same per-trial data with person-years to one more decimal (all-trials totals 643 control and 573
+intervention combined events). Their printed totals are intervention 6636 people, 10649 person-years, 553 events, control 6631, 10426, 653. A search
+over every trial of that Table 1, each left out, as printed or with its arms swapped, matches the participants but misses the events by 10 or more
+and the person-years by about 9; 653 control events exceed every total the data allow. The 2011 (Issue 7) and 2012 updates have relative risks
+only. The authors' `metapoisson.do` (Google Drive folder linked from https://sites.google.com/compgen.org/lab/tools/poisson-meta-analysis) holds
+only the Wolf et al. ER-visit data, and the article's Stata appendix the Collins et al. ibuprofen data. Leads left: the BMJ article's web-extra
+trial table (doi:10.1136/bmj.322.7289.757), and asking the authors (Pantelis Bagos, pbagos@compgen.org) for the data behind the Hooper column.
+<!-- doc-counts: accept-end -->
+
 ## Correctness coverage the extension specs left for later
 
 <!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
