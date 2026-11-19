@@ -123,6 +123,10 @@ Before writing each case, read the value and locator from the source and confirm
 `dat.curtis1998` did not reproduce its paper; such a source gives no case. `docs/differences.md` records that `selmodel(type='beta')` on
 `dat.baskerville2012` has a flat likelihood, so Citkowicz and Vevea's values may not be reproducible.
 
+**Note, 2026-11-19:** Citkowicz and Vevea's article was found (`agents/tasks/citkowicz2017-cases/tasks-1.md`). On its 23 effects of
+`dat.baskerville2012`, the beta-model means, standard errors, a and the mean-only likelihood ratio reproduce; b and the moderator likelihood ratio are
+off in the last digit. The misses are recorded in `mismatches.md`.
+
 ## Error handling
 
 - `setup` with a key other than `where`, `drop`, `escalc`, `rma_uni`, a `where` column the dataset lacks, or a `drop` index out of range raises

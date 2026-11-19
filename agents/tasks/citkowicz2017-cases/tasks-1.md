@@ -53,7 +53,7 @@ by more than 1e-4 in either program, or a value the probe found inside the toler
 
 ## Task 1: Check the printed values and write the published cases
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Source Reference:** the item's fix direction (the matching values as published cases, each miss a strict expected failure)
@@ -63,20 +63,20 @@ so the beta weight function is tested against its defining publication's own num
 
 **Subtasks:**
 
-- [ ] Re-check the starting point: `grep -n 'citkowicz2017.baskerville2012.article' src/tests/correctness/cases/selmodel_published.toml` finds
+- [x] Re-check the starting point: `grep -n 'citkowicz2017.baskerville2012.article' src/tests/correctness/cases/selmodel_published.toml` finds
       nothing. Stop as `blocked`, naming what it finds, if not
-- [ ] Extract the PDF (path in the header) with `pdftotext` into `<scratch>` and compare the "Example" section's figures (the paragraphs on the
+- [x] Extract the PDF (path in the header) with `pdftotext` into `<scratch>` and compare the "Example" section's figures (the paragraphs on the
       random-effects analysis, Figure 3's weight function and the blinding moderator) with the "Printed" column of the probe table. Record any
       difference
-- [ ] Check the coding of `blind` in R's help page for `dat.baskerville2012` (`?dat.baskerville2012` in R metafor 5.2-1): 1 must mean the study was
+- [x] Check the coding of `blind` in R's help page for `dat.baskerville2012` (`?dat.baskerville2012` in R metafor 5.2-1): 1 must mean the study was
       blinded. Record what it says
-- [ ] Fit the six models of the probe table in metafopy and in R metafor 5.2-1 (stop as `blocked` if `packageVersion("metafor")` is not 5.2.1),
+- [x] Fit the six models of the probe table in metafopy and in R metafor 5.2-1 (stop as `blocked` if `packageVersion("metafor")` is not 5.2.1),
       printing each value to six digits. Scripts stay in `<scratch>`
-- [ ] Record the results in this task's Notes, dated: the transcription check, the `blind` coding and both programs' figures
-- [ ] If a printed value differs, the coding is not as stated, a fit differs from the probe table by more than 1e-4, or a value the probe found inside
+- [x] Record the results in this task's Notes, dated: the transcription check, the `blind` coding and both programs' figures
+- [x] If a printed value differs, the coding is not as stated, a fit differs from the probe table by more than 1e-4, or a value the probe found inside
       the tolerance falls outside it, **stops for the operator: a printed value does not reproduce as the probe found**: stop as `blocked` with the
       figures in the Notes and change nothing else
-- [ ] In `selmodel_published.toml`, after the two `published.citkowicz2017.baskerville2012.*` cases, add a comment naming the article's example and
+- [x] In `selmodel_published.toml`, after the two `published.citkowicz2017.baskerville2012.*` cases, add a comment naming the article's example and
       its data (the 23 rows of `dat.baskerville2012`, of which the supplement's 19 leave out the four blinded studies named in the header), then these
       cases, each on `dataset = "dat.baskerville2012"` with `yi = "smd"` and the sampling variances from `se` (use `sei = "se"` if the harness passes
       it to `rma_uni`; otherwise inline `data` with `yi`, `vi = se**2` to four decimals and `blind`, as the existing Citkowicz cases inline theirs),
@@ -86,7 +86,7 @@ so the beta weight function is tested against its defining publication's own num
         `["selmodel.beta", "selmodel.LRT"]`
       - `published.citkowicz2017.baskerville2012.article.blind.beta`: `selmodel` on `mods = "~ factor(blind) - 1"`, `type = "beta"`, `delta[0]`,
         `tau2`, `beta[0]`, `se[0]`, `beta[1]`, `se[1]`; covers `["selmodel.beta"]`
-- [ ] Add one mismatch case for each group of misses, with `status = "mismatch"` and a `reason` naming each printed value, metafopy's and R metafor's
+- [x] Add one mismatch case for each group of misses, with `status = "mismatch"` and a `reason` naming each printed value, metafopy's and R metafor's
       (from this task's Notes), "metafopy and R metafor agree; the article fitted with its own nlminb code; recorded on <date of this task>, not yet
       reviewed":
       - `published.citkowicz2017.baskerville2012.article.unadjusted.se`: `se[0]` = "0.069"
@@ -94,25 +94,25 @@ so the beta weight function is tested against its defining publication's own num
       - `published.citkowicz2017.baskerville2012.article.blind.unadjusted`: the five values of the unadjusted moderator model
       - `published.citkowicz2017.baskerville2012.article.blind.beta.b_lrt`: `delta[1]` = "5.097", `LRT` = "9.045" (the reason also gives the 9.0443 of
         the `~ blind` coding)
-- [ ] Give each new case a `[case.source]` with the existing Citkowicz `citation` without its "supplement" clause, `doi = "10.1037/met0000119"`,
+- [x] Give each new case a `[case.source]` with the existing Citkowicz `citation` without its "supplement" clause, `doi = "10.1037/met0000119"`,
       `read` the date of this task, and a `locator` naming the "Example" paragraph the values come from (and Figure 3 for a and b)
-- [ ] In the `locator` of the two existing supplement cases, add that the supplement's data are 19 of the article's 23 effects, without the four
+- [x] In the `locator` of the two existing supplement cases, add that the supplement's data are 19 of the article's 23 effects, without the four
       blinded studies named in the header
-- [ ] Replace the header comment's clause "(the 2017 article itself was not available)" with one saying the article's own printed values have the
+- [x] Replace the header comment's clause "(the 2017 article itself was not available)" with one saying the article's own printed values have the
       `...article.*` cases on the bundled 23-effect data
-- [ ] Run `pytest src/tests/correctness/test_published.py src/tests/correctness/test_coverage.py`: the passing cases pass and each mismatch case is a
+- [x] Run `pytest src/tests/correctness/test_published.py src/tests/correctness/test_coverage.py`: the passing cases pass and each mismatch case is a
       strict expected failure. If a passing case fails, stop as for the operator stop above
 
 **Acceptance Criteria:**
 
-- [ ] This task's Notes record the transcription check, the `blind` coding and both programs' figures
-- [ ] Every printed value of the probe table is in a passing case or in a mismatch case whose reason gives the figures
-- [ ] No file under `src/metafopy/` changes
+- [x] This task's Notes record the transcription check, the `blind` coding and both programs' figures
+- [x] Every printed value of the probe table is in a passing case or in a mismatch case whose reason gives the figures
+- [x] No file under `src/metafopy/` changes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/correctness/test_published.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/correctness/test_published.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 
@@ -121,12 +121,18 @@ so the beta weight function is tested against its defining publication's own num
 - `delta[0]` and `delta[1]` are the beta weight function's a and b (`sel.delta`); `src/tests/correctness/cases/other_bias.toml` uses `delta[i]` keys
 - The exemplar for published cases with mismatches is `agents/tasks/bagos2009-table5/tasks-1.md` Task 1
 - The probe expects no operator stop
+- Results, 2026-11-19 (no operator stop): every printed value in the article's "Example" section matches the probe table's "Printed" column
+  (pdftotext of the PDF); `?dat.baskerville2012` in R metafor 5.2-1 says `blind`: single- or double-blind study (0 = no, 1 = yes); R is 5.2.1.
+  metafopy and R agree to six digits: unadjusted 0.555211, se 0.063271, tau2 0.016219; beta a 0.473115, b 4.461302 (R 4.461301), LRT 7.846904,
+  tau2 0.000002, beta 0.114748, se 0.166414; moderator unadjusted 0.573060, 0.092547, 0.539653, 0.086767, tau2 0.016278; moderator beta a 0.420109,
+  b 5.095973, LRT 9.043166, tau2 0.000009, beta 0.134247, se 0.170787, -0.002094, se 0.199132; `mods = ~ blind` coding: b 5.095971, LRT 9.044252
+  (R) and 9.044252 (metafopy). Inline data are used because the bundled dataset has no `vi`
 
 ---
 
 ## Task 2: Correct the records that call the article unavailable
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Source Reference:** the item's fix direction (reverse the 2026-11-15 "dropped" entry and update its records)
@@ -136,29 +142,29 @@ without rewriting the dated text of 2026-11-15.
 
 **Subtasks:**
 
-- [ ] `agents/specs/correctness-publication-bias/mismatches.md`, "Sources needed", table "`selmodel` sources": after the table, add a paragraph
+- [x] `agents/specs/correctness-publication-bias/mismatches.md`, "Sources needed", table "`selmodel` sources": after the table, add a paragraph
       "**Corrected <date of this task>** (`agents/tasks/citkowicz2017-cases/tasks-1.md`):" the article is in the papers folder; its Baskerville
       example uses the 23 effects of `dat.baskerville2012` (the supplement's 19 leave out four blinded studies); its printed values have the
       `published.citkowicz2017.baskerville2012.article.*` cases, the misses recorded as mismatch cases. Leave the table row's text unchanged
-- [ ] In the same file's "Mismatches" section, add an item for the article's mismatch cases in the form of the section's other published-value items
+- [x] In the same file's "Mismatches" section, add an item for the article's mismatch cases in the form of the section's other published-value items
       ("Published selection-model values that differ from metafopy (Task 9)"), with the figures from Task 1's Notes, marked as written after the review
       of 2026-11-15 and not yet reviewed
-- [ ] `agents/specs/correctness-publication-bias/spec.md`: after the paragraph containing "`dat.baskerville2012` has a flat likelihood, so Citkowicz
+- [x] `agents/specs/correctness-publication-bias/spec.md`: after the paragraph containing "`dat.baskerville2012` has a flat likelihood, so Citkowicz
       and Vevea's values may not be reproducible", add a dated note that on the article's 23 effects the beta-model means, standard errors, a and the
       mean-only likelihood ratio reproduce, and b and the moderator likelihood ratio are off in the last digit, recorded in `mismatches.md`. Change no
       existing text and not the spec's version
-- [ ] `NOTES.md`: at the end of the entry "Citkowicz and Vevea (2017): revisit if the paper turns up", add one paragraph "Found <date of this task>:"
+- [x] `NOTES.md`: at the end of the entry "Citkowicz and Vevea (2017): revisit if the paper turns up", add one paragraph "Found <date of this task>:"
       the PDF is in the papers folder and its values are tested by the `...article.*` cases (`agents/tasks/citkowicz2017-cases/tasks-1.md`). Change
       nothing else in the file
 
 **Acceptance Criteria:**
 
-- [ ] `git diff` of the three files shows only added lines
-- [ ] Every mismatch case added by Task 1 has an item in the "Mismatches" section of `mismatches.md`
+- [x] `git diff` of the three files shows only added lines
+- [x] Every mismatch case added by Task 1 has an item in the "Mismatches" section of `mismatches.md`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
 
 **Notes:**
 
@@ -169,7 +175,7 @@ without rewriting the dated text of 2026-11-15.
 
 ## Task 3: The full test run, and closing the item
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** the item as a whole
@@ -178,25 +184,25 @@ without rewriting the dated text of 2026-11-15.
 
 **Subtasks:**
 
-- [ ] Move the item from `TODO.md` to `DONE.md`: append its heading and body unchanged at the end of `DONE.md`, then a line
+- [x] Move the item from `TODO.md` to `DONE.md`: append its heading and body unchanged at the end of `DONE.md`, then a line
       `Done: 2026-MM-DD, agents/tasks/citkowicz2017-cases/tasks-1.md; the article's Baskerville values have published cases on the 23 bundled effects; the misses are recorded mismatch cases, not yet reviewed`
       with the date of the commit
-- [ ] Run the final tests from the worktree and save their whole output for the merge gate (the main checkout is the first entry of
+- [x] Run the final tests from the worktree and save their whole output for the merge gate (the main checkout is the first entry of
       `git worktree list --porcelain`, `/Users/simonb/src/metafopy`):
       `mkdir -p /Users/simonb/src/metafopy/ralpher-logs/citkowicz2017-cases/tasks-1 && export PATH=/Users/simonb/src/metafopy/.venv/bin:$PATH PYTHONPATH=$PWD/src && pytest src/tests 2>&1 | tee /Users/simonb/src/metafopy/ralpher-logs/citkowicz2017-cases/tasks-1/final-tests.log`
 
 **Acceptance Criteria:**
 
-- [ ] The item is in `DONE.md` with its body unchanged and a `Done:` line naming this list and the outcome, and no longer in `TODO.md`
+- [x] The item is in `DONE.md` with its body unchanged and a `Done:` line naming this list and the outcome, and no longer in `TODO.md`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] The final test run above passes
-- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/citkowicz2017-cases/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] The final test run above passes
+- [x] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/citkowicz2017-cases/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
       `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0
 
 **Notes:**
