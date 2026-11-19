@@ -190,7 +190,7 @@ run lets it go straight through. Task 5 stops for the review of the mismatch cas
 
 ## Task 5: The mismatch review
 
-**Status:** todo
+**Status:** blocked (waiting for the mismatch review in agents/specs/correctness-mv-diagnostics/mismatches.md)
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation step 5
@@ -199,22 +199,22 @@ run lets it go straight through. Task 5 stops for the review of the mismatch cas
 
 **Subtasks:**
 
-- [ ] In `agents/specs/correctness-mv-diagnostics/mismatches.md`, add one item per `mismatch` case (from Tasks 3 and 4): the case, the source, the
+- [x] In `agents/specs/correctness-mv-diagnostics/mismatches.md`, add one item per `mismatch` case (from Tasks 3 and 4): the case, the source, the
       reference's, metafopy's and R metafor's values, and the options *follow the reference*, *keep metafor* and *investigate*, each with its
       consequence and a recommendation, in the shape of the shared `reviews.md` rule; add an empty `## Answers` section
-- [ ] Run `pytest src/tests/correctness -m 'not slow'` (the quick form before a human review)
-- [ ] **Stops for the operator: the mismatch review.** Set this task `blocked` with "waiting for the mismatch review in
+- [x] Run `pytest src/tests/correctness -m 'not slow'` (the quick form before a human review)
+- [x] **Stops for the operator: the mismatch review.** Set this task `blocked` with "waiting for the mismatch review in
       agents/specs/correctness-mv-diagnostics/mismatches.md". An operator session publishes the review page, and once every item has an answer it
       reads the page's answers, copies each into the Answers section with the date, commits that, and only then restarts the list
 
 **Acceptance Criteria:**
 
-- [ ] Every `mismatch` case has an item with its figures, options and a recommendation
+- [x] Every `mismatch` case has an item with its figures, options and a recommendation
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/correctness -m 'not slow'` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/correctness -m 'not slow'` passes
 
 **Notes:**
 
