@@ -28,3 +28,5 @@ No spec, task list or item covers them; they are checked against R metafor only.
 
 Fix direction: deferred. When taken up, one spec per area with `/specdev`, listing the defining references and the coverage items in
 `src/tests/correctness/test_coverage.py`.
+
+Spec: `agents/specs/correctness-mv-diagnostics/spec.md` (the rma_mv part); tasks: `agents/tasks/correctness-mv-diagnostics/tasks-1.md`.
