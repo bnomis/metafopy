@@ -132,7 +132,7 @@ so the beta weight function is tested against its defining publication's own num
 
 ## Task 2: Correct the records that call the article unavailable
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Source Reference:** the item's fix direction (reverse the 2026-11-15 "dropped" entry and update its records)
@@ -142,29 +142,29 @@ without rewriting the dated text of 2026-11-15.
 
 **Subtasks:**
 
-- [ ] `agents/specs/correctness-publication-bias/mismatches.md`, "Sources needed", table "`selmodel` sources": after the table, add a paragraph
+- [x] `agents/specs/correctness-publication-bias/mismatches.md`, "Sources needed", table "`selmodel` sources": after the table, add a paragraph
       "**Corrected <date of this task>** (`agents/tasks/citkowicz2017-cases/tasks-1.md`):" the article is in the papers folder; its Baskerville
       example uses the 23 effects of `dat.baskerville2012` (the supplement's 19 leave out four blinded studies); its printed values have the
       `published.citkowicz2017.baskerville2012.article.*` cases, the misses recorded as mismatch cases. Leave the table row's text unchanged
-- [ ] In the same file's "Mismatches" section, add an item for the article's mismatch cases in the form of the section's other published-value items
+- [x] In the same file's "Mismatches" section, add an item for the article's mismatch cases in the form of the section's other published-value items
       ("Published selection-model values that differ from metafopy (Task 9)"), with the figures from Task 1's Notes, marked as written after the review
       of 2026-11-15 and not yet reviewed
-- [ ] `agents/specs/correctness-publication-bias/spec.md`: after the paragraph containing "`dat.baskerville2012` has a flat likelihood, so Citkowicz
+- [x] `agents/specs/correctness-publication-bias/spec.md`: after the paragraph containing "`dat.baskerville2012` has a flat likelihood, so Citkowicz
       and Vevea's values may not be reproducible", add a dated note that on the article's 23 effects the beta-model means, standard errors, a and the
       mean-only likelihood ratio reproduce, and b and the moderator likelihood ratio are off in the last digit, recorded in `mismatches.md`. Change no
       existing text and not the spec's version
-- [ ] `NOTES.md`: at the end of the entry "Citkowicz and Vevea (2017): revisit if the paper turns up", add one paragraph "Found <date of this task>:"
+- [x] `NOTES.md`: at the end of the entry "Citkowicz and Vevea (2017): revisit if the paper turns up", add one paragraph "Found <date of this task>:"
       the PDF is in the papers folder and its values are tested by the `...article.*` cases (`agents/tasks/citkowicz2017-cases/tasks-1.md`). Change
       nothing else in the file
 
 **Acceptance Criteria:**
 
-- [ ] `git diff` of the three files shows only added lines
-- [ ] Every mismatch case added by Task 1 has an item in the "Mismatches" section of `mismatches.md`
+- [x] `git diff` of the three files shows only added lines
+- [x] Every mismatch case added by Task 1 has an item in the "Mismatches" section of `mismatches.md`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
 
 **Notes:**
 

@@ -27,3 +27,7 @@ values; the paper is marked dropped on 2026-11-15. If we find the paper
 later, revisit: add its printed estimates for `dat.baskerville2012` as a
 published case (they may not be reproducible, since that likelihood is
 flat; see `docs/differences.md`).
+
+Found 2026-11-19: the PDF is in the papers folder and its printed values are
+tested by the `published.citkowicz2017.baskerville2012.article.*` cases
+(`agents/tasks/citkowicz2017-cases/tasks-1.md`).

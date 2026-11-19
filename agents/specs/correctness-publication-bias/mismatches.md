@@ -170,6 +170,25 @@ Run 2026-11-15 in the worktree `/Users/simonb/src/metafopy/.claude/worktrees/cor
 - **Options:** follow the reference (nothing to change in `selmodel` is known; a `TODO.md` item to find which optimiser setting reproduces the paper);
   keep metafor (the cases become exemptions, or are loosened to the sources' digits citing this item); investigate (install R metafor and run each first).
 
+### Printed Baskerville values of Citkowicz and Vevea (2017) that differ from metafopy and R metafor (written 2026-11-19, after the review of 2026-11-15; not yet reviewed)
+
+- **Cases** (strict expected failures in `src/tests/correctness/cases/selmodel_published.toml`):
+  `published.citkowicz2017.baskerville2012.article.unadjusted.se`, `.article.beta.b`, `.article.blind.unadjusted` and `.article.blind.beta.b_lrt`.
+- **Source:** Citkowicz and Vevea (2017), Psychological Methods 22(1):28-41, doi:10.1037/met0000119, section "Example", on the 23 effects of
+  `dat.baskerville2012` (the supplement's 19 leave out four blinded studies). Task: `agents/tasks/citkowicz2017-cases/tasks-1.md`.
+- **Printed and computed values** (metafopy and R metafor 5.2-1 agree to six digits; ML):
+
+  | Case | Printed | metafopy and R |
+  |---|---|---|
+  | mean only, unadjusted `se[0]` | 0.069 | 0.0633 |
+  | mean only, beta weights, b (`delta[1]`) | 4.459 | 4.4613 |
+  | moderator, unadjusted `beta[0]`, `se[0]`, `beta[1]`, `se[1]`, `tau2` | 0.574, 0.098, 0.538, 0.090, 0.017 | 0.5731, 0.0925, 0.5397, 0.0868, 0.0163 |
+  | moderator, beta weights, b (`delta[1]`) and LRT | 5.097 and 9.045 | 5.0960 and 9.0432 (9.0443 with `mods = '~ blind'`) |
+
+- **Cause:** not known to be a defect. metafopy and R metafor agree, so the difference is in the article's own fit (its `nlminb` code). The
+  beta-model means, standard errors, a and the mean-only likelihood ratio reproduce (passing `...article.*` cases).
+- **Options:** as for the item above; the user has not yet judged these.
+
 ### Henmi-Copas interval at a DerSimonian-Laird tau2 of 0 is not the equal-effects interval (Task 10)
 
 - **Case** (strict expected failure in `src/tests/correctness/cases/properties.toml`): `property.hc.zero-tau2.interval`. Its sibling
@@ -273,6 +292,10 @@ Checked against `/Users/simonb/src/metafopy papers/download_report.md` and the f
 | Source | Citation and DOI | Table or example wanted | Status |
 |---|---|---|---|
 | Citkowicz and Vevea (2017) | Psychological Methods 22(1), doi:10.1037/met0000119 (needs APA access; the folder holds only the 2012 dissertation) | beta weight-function estimates on `dat.baskerville2012` | dropped 2026-11-15, supplement used (the authors' R code `MCitkowicz_suppmat.docx` and Table 1 data `MCitkowicz_suppmat_data.docx`; the case checks against that likelihood code, not printed estimates) |
+
+**Corrected 2026-11-19** (`agents/tasks/citkowicz2017-cases/tasks-1.md`): the article is in the papers folder. Its Baskerville example uses the 23
+effects of `dat.baskerville2012` (the supplement's 19 leave out four blinded studies). Its printed values have the
+`published.citkowicz2017.baskerville2012.article.*` cases; the values metafopy does not reproduce are recorded as mismatch cases.
 
 Found by Task 9 (read 2026-11-15). No `published` case is written for these:
 
