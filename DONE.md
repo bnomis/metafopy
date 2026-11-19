@@ -1410,3 +1410,22 @@ the header comment of `selmodel_published.toml` ("the 2017 article itself was no
 Spec: none (small item); tasks: `agents/tasks/citkowicz2017-cases/tasks-1.md`.
 
 Done: 2026-11-19, agents/tasks/citkowicz2017-cases/tasks-1.md; the article's Baskerville values have published cases on the 23 bundled effects; the misses are recorded mismatch cases, not yet reviewed
+
+## The reference ls_profile_ll cannot fit the identity link at some feasible values
+
+<!-- doc-counts: accept-start found on 2026-11-18 - a dated record, not a claim about the present -->
+Found on 2026-11-18 by `agents/specs/ls-profile-starts/spec.md` ("Not in scope") and `agents/tasks/ls-profile-starts/tasks-1.md`:
+`formulas.ls_profile_ll` in `src/tests/correctness/formulas.py` gives -1e10 at `alpha.2 = -0.00615` of the ML identity-link `dat.bcg` fit
+(`ls.fit.ML.identity.bcg` in `src/tests/correctness/cases/location_scale.toml`), where the brute-force profile is -8.045852. No
+`ls.confint.scale.*` case uses the identity link, so no case is affected.
+<!-- doc-counts: accept-end -->
+
+Cause: the SLSQP starts of `ls_profile_ll` (`start[free]`, the adjusted start and the line between them) are infeasible there (`Z alpha < 0`), so no
+refit runs.
+
+Fix direction: give `ls_profile_ll` a feasible start for the identity link (for example the starts of `profile_starts`, filtered as it filters them),
+then add an identity-link `ls.confint.scale.*` case checked against the brute-force profile.
+
+Spec: none (small item); tasks: `agents/tasks/ls-profile-identity-start/tasks-1.md`.
+
+Done: 2026-11-19, agents/tasks/ls-profile-identity-start/tasks-1.md; ls_profile_ll keeps only feasible identity-link starts and adds its own; case ls.confint.scale.ML.identity.bcg added

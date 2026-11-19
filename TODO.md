@@ -33,23 +33,6 @@ No spec, task list or item covers them; they are checked against R metafor only.
 Fix direction: deferred. When taken up, one spec per area with `/specdev`, listing the defining references and the coverage items in
 `src/tests/correctness/test_coverage.py`.
 
-## The reference ls_profile_ll cannot fit the identity link at some feasible values
-
-<!-- doc-counts: accept-start found on 2026-11-18 - a dated record, not a claim about the present -->
-Found on 2026-11-18 by `agents/specs/ls-profile-starts/spec.md` ("Not in scope") and `agents/tasks/ls-profile-starts/tasks-1.md`:
-`formulas.ls_profile_ll` in `src/tests/correctness/formulas.py` gives -1e10 at `alpha.2 = -0.00615` of the ML identity-link `dat.bcg` fit
-(`ls.fit.ML.identity.bcg` in `src/tests/correctness/cases/location_scale.toml`), where the brute-force profile is -8.045852. No
-`ls.confint.scale.*` case uses the identity link, so no case is affected.
-<!-- doc-counts: accept-end -->
-
-Cause: the SLSQP starts of `ls_profile_ll` (`start[free]`, the adjusted start and the line between them) are infeasible there (`Z alpha < 0`), so no
-refit runs.
-
-Fix direction: give `ls_profile_ll` a feasible start for the identity link (for example the starts of `profile_starts`, filtered as it filters them),
-then add an identity-link `ls.confint.scale.*` case checked against the brute-force profile.
-
-Spec: none (small item); tasks: `agents/tasks/ls-profile-identity-start/tasks-1.md`.
-
 ## metafopy's profile CI misses the identity-link lower bound of the ls scale intercept
 
 <!-- doc-counts: accept-start found on 2026-11-19 - a dated record, not a claim about the present -->
