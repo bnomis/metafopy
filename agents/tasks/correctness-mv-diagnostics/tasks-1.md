@@ -145,7 +145,7 @@ run lets it go straight through. Task 5 stops for the review of the mismatch cas
 
 ## Task 4: The sources
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Definitions and references; Implementation step 4
@@ -154,33 +154,37 @@ run lets it go straight through. Task 5 stops for the review of the mismatch cas
 
 **Subtasks:**
 
-- [ ] Create `agents/specs/correctness-mv-diagnostics/mismatches.md` (modelled on `agents/specs/correctness-mv-robust/mismatches.md`) with a
+- [x] Create `agents/specs/correctness-mv-diagnostics/mismatches.md` (modelled on `agents/specs/correctness-mv-robust/mismatches.md`) with a
       "Sources needed" section listing each "supply" row of the spec's reference table and the equations wanted
-- [ ] Look in `/Users/simonb/src/metafopy papers/` for each of those papers (by author and year in the file name or first page). **Stops for the
+- [x] Look in `/Users/simonb/src/metafopy papers/` for each of those papers (by author and year in the file name or first page). **Stops for the
       operator if any is missing:** set this task `blocked`, naming each missing paper and that the operator either places it in the papers folder
       or drops it in this task's Notes, and change nothing else
-- [ ] For each paper present, extract it with `pdftotext -layout` into a scratch directory outside the repository, and check the spec's definitions
+- [x] For each paper present, extract it with `pdftotext -layout` into a scratch directory outside the repository, and check the spec's definitions
       against it (Cook's distance, DFBETAS and the studentised residual of Viechtbauer and Cheung; Christensen et al.'s set deletion; the mixed model
       equations and their inverse). Record each check in this task's Notes. If a definition differs (a factor `1/p` in Cook's distance, another
       variance in DFBETAS), change the reference in `formulas.py` to the paper's, rerun Task 3's tests, and make any new disagreement a `mismatch`
       case as Task 3 does
-- [ ] Fill each case's `source.locator` with the paper and equation, and mark each row of "Sources needed" as read (or dropped, as the Notes say)
-- [ ] Run `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_properties.py src/tests/correctness/test_coverage.py`
+- [x] Fill each case's `source.locator` with the paper and equation, and mark each row of "Sources needed" as read (or dropped, as the Notes say)
+- [x] Run `pytest src/tests/correctness/test_derived.py src/tests/correctness/test_properties.py src/tests/correctness/test_coverage.py`
 
 **Acceptance Criteria:**
 
-- [ ] Every case's locator names its paper and equation, or the paper is recorded as dropped by the operator
-- [ ] The Notes record each definition check
+- [x] Every case's locator names its paper and equation, or the paper is recorded as dropped by the operator
+- [x] The Notes record each definition check
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] The pytest run of the last subtask passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The pytest run of the last subtask passes
 
 **Notes:**
 
 - Depends on Task 3
 - Robinson (1991, doi:10.1214/ss/1177011926) is open access on Project Euclid; the other papers need the operator
+- Read 2026-11-19; each definition check is recorded in `agents/specs/correctness-mv-diagnostics/mismatches.md` (Definition checks). Summary: Cook's
+  distance, DFBETAS, `rstudent` and the mixed model equations match the papers; Christensen et al. divide Cook's distance by `p` where Viechtbauer and
+  Cheung (and metafor) do not, so the reference keeps Viechtbauer and Cheung's form and no case changed.
+- Robinson (1991) could not be fetched (Project Euclid refused the download); it is not a "supply" paper and no case cites it.
 
 ---
 
