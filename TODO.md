@@ -40,6 +40,15 @@ only the Wolf et al. ER-visit data, and the article's Stata appendix the Collins
 trial table (doi:10.1136/bmj.322.7289.757), and asking the authors (Pantelis Bagos, pbagos@compgen.org) for the data behind the Hooper column.
 <!-- doc-counts: accept-end -->
 
+<!-- doc-counts: accept-start found on 2026-11-19 - a dated record, not a claim about the present -->
+Note 2026-11-19 (found): the BMJ article's data supplement, Table A, gives each trial's numbers, and with them the data are rebuilt: ten studies
+(London corn/olive split into two, each with the shared control of 26) match every printed total, and the corn and olive events of Table 1 read with
+the arms reversed (5.5 rounded to 6) give 553 and 653 events; the fixed-effects Poisson row then reproduces in R metafor 5.2-1. The data and the
+probe are in the task list below.
+<!-- doc-counts: accept-end -->
+
+Tasks: `agents/tasks/bagos2009-hooper/tasks-1.md`.
+
 ## Correctness coverage the extension specs left for later
 
 <!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
