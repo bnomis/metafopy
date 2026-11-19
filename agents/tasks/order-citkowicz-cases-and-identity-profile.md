@@ -42,4 +42,4 @@ names the one that fires only if the run finds it.
 | # | Task list | Waits for | Stops for you | Status |
 |---|---|---|---|---|
 | 1 | `citkowicz2017-cases/tasks-1.md` | - | a printed value not reproducing as the 2026-11-19 probe found (Task 1), only if one does not | merged 253d45e |
-| 2 | `ls-profile-identity-start/tasks-1.md` | - | an existing reference value moving (Task 1), or metafopy's identity-link bounds differing from the reference (Task 2), only if one does | running |
+| 2 | `ls-profile-identity-start/tasks-1.md` | - | an existing reference value moving (Task 1), or metafopy's identity-link bounds differing from the reference (Task 2), only if one does | waiting: metafopy's identity-link bounds differing from the reference (Task 2) |
