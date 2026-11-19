@@ -4,6 +4,37 @@ Open work only, in implementation order, nearest first. Finished items move to
 `DONE.md` unchanged. See the shared `todo-add` and `todo-review` skills for
 the shape of an item.
 
+## metafopy's profile CI misses the identity-link lower bound of the ls scale intercept
+
+<!-- doc-counts: accept-start found on 2026-11-19 - a dated record, not a claim about the present -->
+Found on 2026-11-19 by `agents/tasks/ls-profile-identity-start/tasks-1.md` (Task 2): on the ML identity-link `dat.bcg` fit
+(`ls.fit.ML.identity.bcg`, `mods = scale = ~ ablat`, `escalc` RR), `confint(result, alpha=0, tol=1e-12)` gives `nan` for the lower bound of alpha.1
+(the scale intercept), with the warnings "Error when trying to invert the Hessian" and "Cannot obtain lower bound of profile likelihood CI due to
+convergence problems". R metafor 5.2-1 also gives `NA` with the same two warnings. The reference `ls_profile_bounds` gives -0.214322988803, checked
+against a brute-force profile (-9.060018239 on a 40001-point grid, crossing level -9.060018228). The upper bound of alpha.1 is not found in any of
+the three (metafopy `>0.2399`, R `>0.2401`, reference `nan`); alpha.2 is metafopy (-0.0136, 0.0165), reference (-0.013563, 0.016486), R `<-0.0082`,
+`>0.0082`. The mismatch case is `ls.confint.scale.ML.identity.bcg.alpha1_lb` in `src/tests/correctness/cases/location_scale.toml`.
+<!-- doc-counts: accept-end -->
+
+Cause: not traced; the refits below the estimate fail ("Cannot obtain lower bound ... convergence problems"), as in R metafor.
+
+Fix direction: a spec (an output change, `claude/rules/metafopy.md`) for refits that find the crossing, then the mismatch case becomes a passing case.
+
+## Judge the published-value mismatches recorded "not yet reviewed"
+
+<!-- doc-counts: accept-start found on 2026-11-19 - a dated record, not a claim about the present -->
+Found on 2026-11-19 by a TODO review: strict expected-failure cases where metafopy and R metafor 5.2-1 agree with each other but not with the printed
+value are recorded "not yet reviewed", and no review or item covers them. In `agents/specs/correctness-publication-bias/mismatches.md` (written
+2026-11-19 by `agents/tasks/citkowicz2017-cases/tasks-1.md`): `published.citkowicz2017.baskerville2012.article.unadjusted.se`, `.article.beta.b`,
+`.article.blind.unadjusted` and `.article.blind.beta.b_lrt`. In `agents/specs/correctness-glmm/mismatches.md` (recorded 2026-11-18):
+`glmm.published.bagos2009.table5.school.rs.mismatch`. The last review of such cases was `agents/reviews/correctness-harness-checks-mismatches.md`.
+<!-- doc-counts: accept-end -->
+
+Cause: not a known defect; both implementations agree, so each difference is suspected to lie in the source's own fit or rounding.
+
+Fix direction: a review page with one item per case (accept as a source difference, or investigate), its answers copied into the review document and
+into each `mismatches.md` entry with the date; an "investigate" answer becomes its own item.
+
 ## Find the Hooper data behind Table 5 of Bagos and Nikolopoulos (2009)
 
 <!-- doc-counts: accept-start probed on 2026-11-18 - a dated record, not a claim about the present -->
@@ -32,19 +63,3 @@ No spec, task list or item covers them; they are checked against R metafor only.
 
 Fix direction: deferred. When taken up, one spec per area with `/specdev`, listing the defining references and the coverage items in
 `src/tests/correctness/test_coverage.py`.
-
-## metafopy's profile CI misses the identity-link lower bound of the ls scale intercept
-
-<!-- doc-counts: accept-start found on 2026-11-19 - a dated record, not a claim about the present -->
-Found on 2026-11-19 by `agents/tasks/ls-profile-identity-start/tasks-1.md` (Task 2): on the ML identity-link `dat.bcg` fit
-(`ls.fit.ML.identity.bcg`, `mods = scale = ~ ablat`, `escalc` RR), `confint(result, alpha=0, tol=1e-12)` gives `nan` for the lower bound of alpha.1
-(the scale intercept), with the warnings "Error when trying to invert the Hessian" and "Cannot obtain lower bound of profile likelihood CI due to
-convergence problems". R metafor 5.2-1 also gives `NA` with the same two warnings. The reference `ls_profile_bounds` gives -0.214322988803, checked
-against a brute-force profile (-9.060018239 on a 40001-point grid, crossing level -9.060018228). The upper bound of alpha.1 is not found in any of
-the three (metafopy `>0.2399`, R `>0.2401`, reference `nan`); alpha.2 is metafopy (-0.0136, 0.0165), reference (-0.013563, 0.016486), R `<-0.0082`,
-`>0.0082`. The mismatch case is `ls.confint.scale.ML.identity.bcg.alpha1_lb` in `src/tests/correctness/cases/location_scale.toml`.
-<!-- doc-counts: accept-end -->
-
-Cause: not traced; the refits below the estimate fail ("Cannot obtain lower bound ... convergence problems"), as in R metafor.
-
-Fix direction: a spec (an output change, `claude/rules/metafopy.md`) for refits that find the crossing, then the mismatch case becomes a passing case.
