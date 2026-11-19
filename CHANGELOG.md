@@ -2,6 +2,8 @@
 
 ## Unreleased (1.0 candidate)
 
+- Identity-link profile refits of a location-scale fit (`confint(res, alpha=j)` and `profile()`) that are left with only the default start also start from the point of the largest minimum `tau2_i` (behaviour change). The ML `dat.bcg` (`mods = scale = ~ ablat`, RR) lower bound of `alpha.1` is the crossing -0.2143, where it was NaN with "Cannot obtain lower bound".
+
 - The profile refits of a location-scale fit (`confint(res, alpha=j)` and `profile()`) also start one and a half and twice the way along the line start, so they keep the branch of highest log-likelihood (behaviour change). The outputs that move: the ML `dat.bcg` log-link upper bound of `alpha.2` is the crossing 1.3812 (it was a jump, 1.3598); the identity-link lower bounds that were a `<` or NaN are now crossings (ML `dat.bcg` `alpha.2` -0.0082 to -0.0136, REML `dat.bcg` `alpha.1` 0 to -0.2686 and `alpha.2` NaN to -0.0288, `dat.bangertdrowns2004` with `scale = ~ meta + imag` `alpha.2` 0 to -0.0049), and the profile values that were NaN are fitted; two log-link profile points of the Viechtbauer and Lopez-Lopez (2022) fits rise to a higher refit, their bounds unchanged.
 
 - The sparse matrix of `vcalc(sparse=True)` prints as Matrix prints a `dgCMatrix`: a column switches to scientific notation when that is narrower (`1e-03  6e-04`, where it printed `0.0010 0.0006`), zeros are padded and numbers right-aligned as Matrix's `formatSparseM` does, and row labels are right-aligned, so the table wraps where R's does.

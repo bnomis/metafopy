@@ -1945,7 +1945,7 @@ plus and minus the smaller of `10 |estimate|` and `10 crit se`, so a coefficient
 sciences coefficient of Table 2 of Viechtbauer and Lopez-Lopez (2022) metafor prints `<-4.6807 >5.7208`, where the paper has an
 upper bound of 7.7000. metafopy searches `10 crit se` either side, so it finds 7.7000, and shows a bound that is still not crossed
 with a `<` or `>` sign at the end of the interval, as metafor does. `confint(..., xlim=...)` reproduces metafor's interval, and
-`profile()` draws the same refits as `confint()`. The correctness cases are `ls.confint.scale.ML.bcg`, `ls.confint.scale.REML.bcg`,
+`profile()` draws the same refits as `confint()`. On the ML identity-link fit of `dat.bcg` log risk ratios with `mods = scale = ~ ablat`, metafor 5.2-1 gives NA for the lower bound of `alpha.1` because its refit from the default start fails, and metafopy gives the crossing -0.2143. The correctness cases are `ls.confint.scale.ML.bcg`, `ls.confint.scale.REML.bcg`,
 `published.vl2022.table1.plci.size` and `published.vl2022.table2.plci.soc`.
 
 *Why:* the profile likelihood of the paper (section 2.5.3) maximises the log-likelihood over the other coefficients, so a refit

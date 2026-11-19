@@ -1,7 +1,7 @@
 # A feasible start for identity-link profile refits that have none
 
 **Version:** 1.1
-**Status:** proposed
+**Status:** implemented
 **Date:** 2026-11-19
 
 The profile likelihood of a scale coefficient of a location-scale model is the log-likelihood maximised over the other scale coefficients with that

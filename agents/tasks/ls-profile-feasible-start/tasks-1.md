@@ -100,7 +100,7 @@ estimate and `confint` finds its lower crossing.
 
 ## Task 3: records, the full test run, and closing the item
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation step 5; Module location
@@ -110,35 +110,35 @@ item moves to `DONE.md`.
 
 **Subtasks:**
 
-- [ ] Add a `CHANGELOG.md` "Unreleased (1.0 candidate)" entry: identity-link profile refits left with only the default start also start from the
+- [x] Add a `CHANGELOG.md` "Unreleased (1.0 candidate)" entry: identity-link profile refits left with only the default start also start from the
       point of the largest minimum `tau2_i` (behaviour change); the ML `dat.bcg` (`mods = scale = ~ ablat`, RR) lower bound of `alpha.1` is the
       crossing -0.2143 where it was NaN with "Cannot obtain lower bound"
-- [ ] Add a sentence to `docs/differences.md`, section "Profile-likelihood bounds of the scale coefficients": on the ML identity-link fit of `dat.bcg`
+- [x] Add a sentence to `docs/differences.md`, section "Profile-likelihood bounds of the scale coefficients": on the ML identity-link fit of `dat.bcg`
       log risk ratios with `mods = scale = ~ ablat`, metafor 5.2-1 gives NA for the lower bound of `alpha.1` because its refit from the default start
       fails, and metafopy gives the crossing -0.2143
-- [ ] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` from "Approved (2026-11-19)" to "Implemented"
-- [ ] Move the item "metafopy's profile CI misses the identity-link lower bound of the ls scale intercept" from `TODO.md` to `DONE.md`: append its
+- [x] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` from "Approved (2026-11-19)" to "Implemented"
+- [x] Move the item "metafopy's profile CI misses the identity-link lower bound of the ls scale intercept" from `TODO.md` to `DONE.md`: append its
       heading and body unchanged at the end of `DONE.md`, then a line
       `Done: 2026-MM-DD, agents/specs/ls-profile-feasible-start/spec.md and agents/tasks/ls-profile-feasible-start/tasks-1.md; profile_starts adds feasible_start when only the default start is left, and the lower bound is -0.2143`
       with the date of the commit
-- [ ] Run the final tests from the worktree and save their whole output for the merge gate (the main checkout is the first entry of
+- [x] Run the final tests from the worktree and save their whole output for the merge gate (the main checkout is the first entry of
       `git worktree list --porcelain`, `/Users/simonb/src/metafopy`):
       `mkdir -p /Users/simonb/src/metafopy/ralpher-logs/ls-profile-feasible-start/tasks-1 && export PATH=/Users/simonb/src/metafopy/.venv/bin:$PATH PYTHONPATH=$PWD/src && pytest src/tests 2>&1 | tee /Users/simonb/src/metafopy/ralpher-logs/ls-profile-feasible-start/tasks-1/final-tests.log`
 
 **Acceptance Criteria:**
 
-- [ ] `CHANGELOG.md` and `docs/differences.md` name the new bound -0.2143, and no other copy of the old NaN for this bound is left in `docs/`
+- [x] `CHANGELOG.md` and `docs/differences.md` name the new bound -0.2143, and no other copy of the old NaN for this bound is left in `docs/`
       (`grep -rn 'alpha1_lb' docs src/tests` prints nothing)
-- [ ] The spec says `implemented`; the item is in `DONE.md` with its body unchanged and the `Done:` line, and no longer in `TODO.md`
+- [x] The spec says `implemented`; the item is in `DONE.md` with its body unchanged and the `Done:` line, and no longer in `TODO.md`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] The final test run above passes
-- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/ls-profile-feasible-start/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] The final test run above passes
+- [x] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/ls-profile-feasible-start/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
       `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0
 
 **Notes:**
