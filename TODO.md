@@ -20,6 +20,14 @@ Database Syst Rev CD002137, DOI 10.1002/14651858.CD002137 (the 2001 issue), and 
 ePrints and LSHTM Research Online were not checked. If they reproduce Table 5's Hooper column, write its cases in
 `src/tests/correctness/cases/glmm_published.toml` beside the `glmm.published.bagos2009.table5.*` cases.
 
+<!-- doc-counts: accept-start checked on 2026-11-19 - a dated record, not a claim about the present -->
+Note 2026-11-19: the 2012 update, "Reduced or modified dietary fat for preventing cardiovascular disease" (Cochrane Database Syst Rev 2012,
+Issue 5, DOI 10.1002/14651858.CD002137.pub3, in the papers folder), cannot reproduce the column: its history says the 2011 update re-ran every
+analysis "as relative risks (rather than as rate ratios)", Analysis 1.3 (combined cardiovascular events) gives events and participants with no
+person-years, and it pools 23 comparisons (2020 and 2867 events, WHI 2006 included) where the first version had 27 studies and 30901 person-years.
+Only the 2001 issue (DOI 10.1002/14651858.CD002137, no `.pub` suffix; the Cochrane Library's "Other versions" of the review) will do.
+<!-- doc-counts: accept-end -->
+
 ## Correctness coverage the extension specs left for later
 
 <!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
