@@ -19,7 +19,7 @@ correctness case named below is outside the approval, and the task that meets it
 
 ## Task 1: feasible_start and its use in profile_starts
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** API; Error handling; Implementation steps 1 to 3
@@ -29,30 +29,30 @@ estimate and `confint` finds its lower crossing.
 
 **Subtasks:**
 
-- [ ] Starting-point check: `grep -rnwE 'feasible_start|FEASIBLE_WEIGHTS' src/metafopy` prints nothing; if it prints a match, stop the task as
+- [x] Starting-point check: `grep -rnwE 'feasible_start|FEASIBLE_WEIGHTS' src/metafopy` prints nothing; if it prints a match, stop the task as
       `blocked`, naming the match
-- [ ] Add `FEASIBLE_WEIGHTS = (0.25, 0.5, 0.75)` beside `LINE_WEIGHTS` and `feasible_start(x, pos, val)` to `src/metafopy/methods/ls_profile.py`
+- [x] Add `FEASIBLE_WEIGHTS = (0.25, 0.5, 0.75)` beside `LINE_WEIGHTS` and `feasible_start(x, pos, val)` to `src/metafopy/methods/ls_profile.py`
       with the signature and docstring of the spec's API section: `scipy.optimize.linprog` with `c = [0, ..., 0, -1]`,
       `A_ub = [-Z[:, free], 1]`, `b_ub = Z[:, pos] * val`, bounds `(None, None)` per free coefficient and `(None, cap)` for `t`, `cap` the mean of
       `x.Z @ x.alpha` (1 where that is not positive); return `None` when `pos` has no other coefficient, the programme fails, or `t <= 0`
-- [ ] In `profile_starts`, under the identity link and after the feasibility filter, when the list holds no start but `None`: append
+- [x] In `profile_starts`, under the identity link and after the feasibility filter, when the list holds no start but `None`: append
       `feasible_start(x, pos, val)` if not `None`, and the points `start + w * (own - start)` for `w` in `FEASIBLE_WEIGHTS` whose `x.Z @ point` is
       nowhere negative; update its docstring (one sentence)
-- [ ] Add tests to `src/tests/test_rma_ls.py` on the ML identity-link `dat.bcg` fit (`escalc` RR, `mods = scale = ~ ablat`):
+- [x] Add tests to `src/tests/test_rma_ls.py` on the ML identity-link `dat.bcg` fit (`escalc` RR, `mods = scale = ~ ablat`):
       `feasible_start(x, 0, -0.2143)` has every `tau2_i > 0`; `profile_starts(x, 0, -0.2143)` contains it; `profile_starts(x, 0, 0.1)` equals the list
       it gives with `feasible_start` patched to raise (a feasible line start exists there, so it is not called); `confint(x, alpha=0, tol=1e-12)`
       gives a lower bound within 1e-8 of -0.214322988803 and no warning containing "Cannot obtain lower bound"
-- [ ] Run `pytest src/tests/test_rma_ls.py`
+- [x] Run `pytest src/tests/test_rma_ls.py`
 
 **Acceptance Criteria:**
 
-- [ ] The new tests pass, and every other test in `src/tests/test_rma_ls.py` passes unchanged
-- [ ] `profile_starts` returns the same list as before wherever a start other than `None` survives the filter
+- [x] The new tests pass, and every other test in `src/tests/test_rma_ls.py` passes unchanged
+- [x] `profile_starts` returns the same list as before wherever a start other than `None` survives the filter
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] The pytest run of the last subtask passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The pytest run of the last subtask passes
 
 **Notes:**
 

@@ -299,6 +299,34 @@ def test_confint_identity_lower_bound_is_a_crossing() -> None:
     assert ci.lb_sign == ''
 
 
+def test_feasible_start_gives_the_missing_identity_lower_bound_on_bcg() -> None:
+    """Below the estimate every start but the default leaves a ``tau2_i`` negative; the feasible start gives the refit a place to begin."""
+    res = ls(bcg(), '~ ablat', '~ ablat', link='identity', method='ML')
+    start = metafopy.methods.ls_profile.feasible_start(res, 0, -0.2143)
+    assert start is not None
+    assert numpy.min(res.Z @ start) > 0
+    assert any(s is not None and numpy.array_equal(s, start) for s in metafopy.methods.ls_profile.profile_starts(res, 0, -0.2143))
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter('always')
+        ci = metafopy.confint(res, alpha=0, tol=1e-12)
+    assert ci.random is not None
+    assert ci.random['ci.lb'].iloc[0] == pytest.approx(-0.214322988803, abs=1e-8)
+    assert not any('Cannot obtain lower bound' in str(w.message) for w in caught)
+
+
+def test_profile_starts_skip_the_feasible_start_when_a_line_start_is_feasible(monkeypatch: pytest.MonkeyPatch) -> None:
+    res = ls(bcg(), '~ ablat', '~ ablat', link='identity', method='ML')
+    before = metafopy.methods.ls_profile.profile_starts(res, 0, 0.1)
+
+    def refuse(*args: typing.Any) -> None:
+        raise AssertionError('feasible_start called')
+
+    monkeypatch.setattr(metafopy.methods.ls_profile, 'feasible_start', refuse)
+    after = metafopy.methods.ls_profile.profile_starts(res, 0, 0.1)
+    assert len(before) == len(after)
+    assert all((a is None and b is None) or (a is not None and b is not None and numpy.array_equal(a, b)) for a, b in zip(before, after, strict=True))
+
+
 def test_identity_fit_bcg_is_a_constrained_maximum() -> None:
     """On ``dat.bcg`` the optimum is on the boundary: ``Z alpha >= 0``, a log-likelihood above R's, and the score zero on the free directions."""
     res = ls(bcg(), '~ ablat', '~ ablat', link='identity', method='ML')
