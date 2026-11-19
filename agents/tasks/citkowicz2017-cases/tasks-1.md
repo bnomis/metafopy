@@ -53,7 +53,7 @@ by more than 1e-4 in either program, or a value the probe found inside the toler
 
 ## Task 1: Check the printed values and write the published cases
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Source Reference:** the item's fix direction (the matching values as published cases, each miss a strict expected failure)
@@ -63,20 +63,20 @@ so the beta weight function is tested against its defining publication's own num
 
 **Subtasks:**
 
-- [ ] Re-check the starting point: `grep -n 'citkowicz2017.baskerville2012.article' src/tests/correctness/cases/selmodel_published.toml` finds
+- [x] Re-check the starting point: `grep -n 'citkowicz2017.baskerville2012.article' src/tests/correctness/cases/selmodel_published.toml` finds
       nothing. Stop as `blocked`, naming what it finds, if not
-- [ ] Extract the PDF (path in the header) with `pdftotext` into `<scratch>` and compare the "Example" section's figures (the paragraphs on the
+- [x] Extract the PDF (path in the header) with `pdftotext` into `<scratch>` and compare the "Example" section's figures (the paragraphs on the
       random-effects analysis, Figure 3's weight function and the blinding moderator) with the "Printed" column of the probe table. Record any
       difference
-- [ ] Check the coding of `blind` in R's help page for `dat.baskerville2012` (`?dat.baskerville2012` in R metafor 5.2-1): 1 must mean the study was
+- [x] Check the coding of `blind` in R's help page for `dat.baskerville2012` (`?dat.baskerville2012` in R metafor 5.2-1): 1 must mean the study was
       blinded. Record what it says
-- [ ] Fit the six models of the probe table in metafopy and in R metafor 5.2-1 (stop as `blocked` if `packageVersion("metafor")` is not 5.2.1),
+- [x] Fit the six models of the probe table in metafopy and in R metafor 5.2-1 (stop as `blocked` if `packageVersion("metafor")` is not 5.2.1),
       printing each value to six digits. Scripts stay in `<scratch>`
-- [ ] Record the results in this task's Notes, dated: the transcription check, the `blind` coding and both programs' figures
-- [ ] If a printed value differs, the coding is not as stated, a fit differs from the probe table by more than 1e-4, or a value the probe found inside
+- [x] Record the results in this task's Notes, dated: the transcription check, the `blind` coding and both programs' figures
+- [x] If a printed value differs, the coding is not as stated, a fit differs from the probe table by more than 1e-4, or a value the probe found inside
       the tolerance falls outside it, **stops for the operator: a printed value does not reproduce as the probe found**: stop as `blocked` with the
       figures in the Notes and change nothing else
-- [ ] In `selmodel_published.toml`, after the two `published.citkowicz2017.baskerville2012.*` cases, add a comment naming the article's example and
+- [x] In `selmodel_published.toml`, after the two `published.citkowicz2017.baskerville2012.*` cases, add a comment naming the article's example and
       its data (the 23 rows of `dat.baskerville2012`, of which the supplement's 19 leave out the four blinded studies named in the header), then these
       cases, each on `dataset = "dat.baskerville2012"` with `yi = "smd"` and the sampling variances from `se` (use `sei = "se"` if the harness passes
       it to `rma_uni`; otherwise inline `data` with `yi`, `vi = se**2` to four decimals and `blind`, as the existing Citkowicz cases inline theirs),
@@ -86,7 +86,7 @@ so the beta weight function is tested against its defining publication's own num
         `["selmodel.beta", "selmodel.LRT"]`
       - `published.citkowicz2017.baskerville2012.article.blind.beta`: `selmodel` on `mods = "~ factor(blind) - 1"`, `type = "beta"`, `delta[0]`,
         `tau2`, `beta[0]`, `se[0]`, `beta[1]`, `se[1]`; covers `["selmodel.beta"]`
-- [ ] Add one mismatch case for each group of misses, with `status = "mismatch"` and a `reason` naming each printed value, metafopy's and R metafor's
+- [x] Add one mismatch case for each group of misses, with `status = "mismatch"` and a `reason` naming each printed value, metafopy's and R metafor's
       (from this task's Notes), "metafopy and R metafor agree; the article fitted with its own nlminb code; recorded on <date of this task>, not yet
       reviewed":
       - `published.citkowicz2017.baskerville2012.article.unadjusted.se`: `se[0]` = "0.069"
@@ -94,25 +94,25 @@ so the beta weight function is tested against its defining publication's own num
       - `published.citkowicz2017.baskerville2012.article.blind.unadjusted`: the five values of the unadjusted moderator model
       - `published.citkowicz2017.baskerville2012.article.blind.beta.b_lrt`: `delta[1]` = "5.097", `LRT` = "9.045" (the reason also gives the 9.0443 of
         the `~ blind` coding)
-- [ ] Give each new case a `[case.source]` with the existing Citkowicz `citation` without its "supplement" clause, `doi = "10.1037/met0000119"`,
+- [x] Give each new case a `[case.source]` with the existing Citkowicz `citation` without its "supplement" clause, `doi = "10.1037/met0000119"`,
       `read` the date of this task, and a `locator` naming the "Example" paragraph the values come from (and Figure 3 for a and b)
-- [ ] In the `locator` of the two existing supplement cases, add that the supplement's data are 19 of the article's 23 effects, without the four
+- [x] In the `locator` of the two existing supplement cases, add that the supplement's data are 19 of the article's 23 effects, without the four
       blinded studies named in the header
-- [ ] Replace the header comment's clause "(the 2017 article itself was not available)" with one saying the article's own printed values have the
+- [x] Replace the header comment's clause "(the 2017 article itself was not available)" with one saying the article's own printed values have the
       `...article.*` cases on the bundled 23-effect data
-- [ ] Run `pytest src/tests/correctness/test_published.py src/tests/correctness/test_coverage.py`: the passing cases pass and each mismatch case is a
+- [x] Run `pytest src/tests/correctness/test_published.py src/tests/correctness/test_coverage.py`: the passing cases pass and each mismatch case is a
       strict expected failure. If a passing case fails, stop as for the operator stop above
 
 **Acceptance Criteria:**
 
-- [ ] This task's Notes record the transcription check, the `blind` coding and both programs' figures
-- [ ] Every printed value of the probe table is in a passing case or in a mismatch case whose reason gives the figures
-- [ ] No file under `src/metafopy/` changes
+- [x] This task's Notes record the transcription check, the `blind` coding and both programs' figures
+- [x] Every printed value of the probe table is in a passing case or in a mismatch case whose reason gives the figures
+- [x] No file under `src/metafopy/` changes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/correctness/test_published.py src/tests/correctness/test_coverage.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/correctness/test_published.py src/tests/correctness/test_coverage.py` passes
 
 **Notes:**
 
@@ -121,6 +121,12 @@ so the beta weight function is tested against its defining publication's own num
 - `delta[0]` and `delta[1]` are the beta weight function's a and b (`sel.delta`); `src/tests/correctness/cases/other_bias.toml` uses `delta[i]` keys
 - The exemplar for published cases with mismatches is `agents/tasks/bagos2009-table5/tasks-1.md` Task 1
 - The probe expects no operator stop
+- Results, 2026-11-19 (no operator stop): every printed value in the article's "Example" section matches the probe table's "Printed" column
+  (pdftotext of the PDF); `?dat.baskerville2012` in R metafor 5.2-1 says `blind`: single- or double-blind study (0 = no, 1 = yes); R is 5.2.1.
+  metafopy and R agree to six digits: unadjusted 0.555211, se 0.063271, tau2 0.016219; beta a 0.473115, b 4.461302 (R 4.461301), LRT 7.846904,
+  tau2 0.000002, beta 0.114748, se 0.166414; moderator unadjusted 0.573060, 0.092547, 0.539653, 0.086767, tau2 0.016278; moderator beta a 0.420109,
+  b 5.095973, LRT 9.043166, tau2 0.000009, beta 0.134247, se 0.170787, -0.002094, se 0.199132; `mods = ~ blind` coding: b 5.095971, LRT 9.044252
+  (R) and 9.044252 (metafopy). Inline data are used because the bundled dataset has no `vi`
 
 ---
 

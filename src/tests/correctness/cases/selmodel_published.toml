@@ -1,7 +1,7 @@
 # Published selection-model cases (Task 9 of the publication-bias task list). Values are written as printed; each source's data were checked against the bundled
 # dataset before the case was written (the same studies and the same unadjusted estimate to the printed digits). Preston et al. (2004) prints no
 # selection-model estimate that maps to metafor's parameters, so its cases are the unadjusted and trim-and-fill figures; Citkowicz and Vevea (2017) is the
-# authors' own supplementary code run on its Table 1 data (the 2017 article itself was not available).
+# authors' own supplementary code run on its Table 1 data (the article's own printed values have the `...article.*` cases on the bundled 23-effect data).
 
 [[case]]
 id = "published.vevea2005.cohen1981.unadjusted.beta"
@@ -187,7 +187,7 @@ vi = [0.2704, 0.2116, 0.0529, 0.0324, 0.0841, 0.0841, 0.1296, 0.1369, 0.0225, 0.
 
 [case.source]
 citation = "Citkowicz M, Vevea JL (2017). A parsimonious weight function for modeling publication bias. Psychological Methods 22(1):28-41, supplement: R implementation of the beta density weight-function model."
-locator = "R code of the supplement (RE.models.txt, nlminb, abs.tol and rel.tol 1e-4) run on its Table 1 data (19 effects of Baskerville et al. 2012) from the starting values of its control file (a 1, b 1, vc 0, beta0 0.5): unadjusted vc 0.02247, beta0 0.59501"
+locator = "R code of the supplement (RE.models.txt, nlminb, abs.tol and rel.tol 1e-4) run on its Table 1 data (19 effects of Baskerville et al. 2012, the article's 23 without four blinded studies: Frijling et al., Margolis et al., Mold et al., Hogg et al.) from the starting values of its control file (a 1, b 1, vc 0, beta0 0.5): unadjusted vc 0.02247, beta0 0.59501"
 read = 2026-11-15
 doi = "10.1037/met0000119"
 
@@ -207,8 +207,152 @@ vi = [0.2704, 0.2116, 0.0529, 0.0324, 0.0841, 0.0841, 0.1296, 0.1369, 0.0225, 0.
 
 [case.source]
 citation = "Citkowicz M, Vevea JL (2017). A parsimonious weight function for modeling publication bias. Psychological Methods 22(1):28-41, supplement: R implementation of the beta density weight-function model."
-locator = "R code of the supplement (RE.models.txt, nlminb, abs.tol and rel.tol 1e-4) run on its Table 1 data (19 effects of Baskerville et al. 2012) from the starting values of its control file (a 1, b 1, vc 0, beta0 0.5): adjusted a 0.4378, b 4.729, vc 0, beta0 0.1162, likelihood ratio 6.724"
+locator = "R code of the supplement (RE.models.txt, nlminb, abs.tol and rel.tol 1e-4) run on its Table 1 data (19 effects of Baskerville et al. 2012, the article's 23 without four blinded studies: Frijling et al., Margolis et al., Mold et al., Hogg et al.) from the starting values of its control file (a 1, b 1, vc 0, beta0 0.5): adjusted a 0.4378, b 4.729, vc 0, beta0 0.1162, likelihood ratio 6.724"
 read = 2026-11-15
+doi = "10.1037/met0000119"
+
+# Citkowicz and Vevea (2017) article: the printed values of its Baskerville et al. (2012) example, fitted to the 23 effects of dat.baskerville2012
+# (yi = smd, vi = se**2, blind 1 = blinded). The supplement cases above use 19 of these 23 effects, without four blinded studies (Frijling et al.,
+# Margolis et al., Mold et al., Hogg et al.). A printed value outside half a unit of its last digit is a mismatch case, recorded not yet reviewed.
+
+[[case]]
+id = "published.citkowicz2017.baskerville2012.article.unadjusted"
+kind = "published"
+function = "rma_uni"
+args = { yi = "yi", vi = "vi", method = "ML" }
+expect = { "beta[0]" = "0.555", "tau2" = "0.016" }
+
+[case.data]
+yi = [1.01, 0.82, 0.59, 0.44, 0.84, 0.73, 1.12, 0.04, 0.24, 0.32, 1.04, 1.31, 0.59, 0.66, 0.62, 0.47, 1.08, 0.98, 0.26, 0.39, 0.6, 0.94, 0.11]
+vi = [0.2704, 0.2116, 0.0529, 0.0324, 0.0841, 0.0841, 0.1296, 0.1369, 0.0225, 0.16, 0.1024, 0.3249, 0.0841, 0.0361, 0.0961, 0.0729, 0.1024, 0.1024, 0.0324, 0.0324, 0.0961, 0.2809, 0.0729]
+blind = [1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1]
+
+[case.source]
+citation = "Citkowicz M, Vevea JL (2017). A parsimonious weight function for modeling publication bias. Psychological Methods 22(1):28-41."
+locator = "Example section, paragraph on the random-effects analysis: mean 0.555, variance component 0.016"
+read = 2026-11-19
+doi = "10.1037/met0000119"
+
+[[case]]
+id = "published.citkowicz2017.baskerville2012.article.unadjusted.se"
+kind = "published"
+function = "rma_uni"
+args = { yi = "yi", vi = "vi", method = "ML" }
+expect = { "se[0]" = "0.069" }
+status = "mismatch"
+reason = "se[0] printed 0.069, metafopy 0.0633, R metafor 5.2-1 0.0633; metafopy and R metafor agree; the article fitted with its own nlminb code; recorded on 2026-11-19, not yet reviewed"
+
+[case.data]
+yi = [1.01, 0.82, 0.59, 0.44, 0.84, 0.73, 1.12, 0.04, 0.24, 0.32, 1.04, 1.31, 0.59, 0.66, 0.62, 0.47, 1.08, 0.98, 0.26, 0.39, 0.6, 0.94, 0.11]
+vi = [0.2704, 0.2116, 0.0529, 0.0324, 0.0841, 0.0841, 0.1296, 0.1369, 0.0225, 0.16, 0.1024, 0.3249, 0.0841, 0.0361, 0.0961, 0.0729, 0.1024, 0.1024, 0.0324, 0.0324, 0.0961, 0.2809, 0.0729]
+blind = [1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1]
+
+[case.source]
+citation = "Citkowicz M, Vevea JL (2017). A parsimonious weight function for modeling publication bias. Psychological Methods 22(1):28-41."
+locator = "Example section, paragraph on the random-effects analysis: se 0.069"
+read = 2026-11-19
+doi = "10.1037/met0000119"
+
+[[case]]
+id = "published.citkowicz2017.baskerville2012.article.beta"
+kind = "published"
+function = "selmodel"
+setup = { rma_uni = { method = "ML" } }
+args = { type = "beta" }
+expect = { "delta[0]" = "0.473", "LRT" = "7.847", "tau2" = "0.0", "beta[0]" = "0.115", "se[0]" = "0.166" }
+covers = ["selmodel.beta", "selmodel.LRT"]
+
+[case.data]
+yi = [1.01, 0.82, 0.59, 0.44, 0.84, 0.73, 1.12, 0.04, 0.24, 0.32, 1.04, 1.31, 0.59, 0.66, 0.62, 0.47, 1.08, 0.98, 0.26, 0.39, 0.6, 0.94, 0.11]
+vi = [0.2704, 0.2116, 0.0529, 0.0324, 0.0841, 0.0841, 0.1296, 0.1369, 0.0225, 0.16, 0.1024, 0.3249, 0.0841, 0.0361, 0.0961, 0.0729, 0.1024, 0.1024, 0.0324, 0.0324, 0.0961, 0.2809, 0.0729]
+blind = [1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1]
+
+[case.source]
+citation = "Citkowicz M, Vevea JL (2017). A parsimonious weight function for modeling publication bias. Psychological Methods 22(1):28-41."
+locator = "Example section and Figure 3: a 0.473, likelihood ratio 7.847 on 2 df, variance component 0.0, mean 0.115 (se 0.166)"
+read = 2026-11-19
+doi = "10.1037/met0000119"
+
+[[case]]
+id = "published.citkowicz2017.baskerville2012.article.beta.b"
+kind = "published"
+function = "selmodel"
+setup = { rma_uni = { method = "ML" } }
+args = { type = "beta" }
+expect = { "delta[1]" = "4.459" }
+status = "mismatch"
+reason = "delta[1] (b) printed 4.459, metafopy 4.4613, R metafor 5.2-1 4.4613; metafopy and R metafor agree; the article fitted with its own nlminb code; recorded on 2026-11-19, not yet reviewed"
+
+[case.data]
+yi = [1.01, 0.82, 0.59, 0.44, 0.84, 0.73, 1.12, 0.04, 0.24, 0.32, 1.04, 1.31, 0.59, 0.66, 0.62, 0.47, 1.08, 0.98, 0.26, 0.39, 0.6, 0.94, 0.11]
+vi = [0.2704, 0.2116, 0.0529, 0.0324, 0.0841, 0.0841, 0.1296, 0.1369, 0.0225, 0.16, 0.1024, 0.3249, 0.0841, 0.0361, 0.0961, 0.0729, 0.1024, 0.1024, 0.0324, 0.0324, 0.0961, 0.2809, 0.0729]
+blind = [1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1]
+
+[case.source]
+citation = "Citkowicz M, Vevea JL (2017). A parsimonious weight function for modeling publication bias. Psychological Methods 22(1):28-41."
+locator = "Example section and Figure 3: b 4.459"
+read = 2026-11-19
+doi = "10.1037/met0000119"
+
+[[case]]
+id = "published.citkowicz2017.baskerville2012.article.blind.beta"
+kind = "published"
+function = "selmodel"
+setup = { rma_uni = { method = "ML", mods = "~ factor(blind) - 1" } }
+args = { type = "beta" }
+expect = { "delta[0]" = "0.420", "tau2" = "0.0", "beta[0]" = "0.134", "se[0]" = "0.171", "beta[1]" = "-0.002", "se[1]" = "0.199" }
+covers = ["selmodel.beta"]
+
+[case.data]
+yi = [1.01, 0.82, 0.59, 0.44, 0.84, 0.73, 1.12, 0.04, 0.24, 0.32, 1.04, 1.31, 0.59, 0.66, 0.62, 0.47, 1.08, 0.98, 0.26, 0.39, 0.6, 0.94, 0.11]
+vi = [0.2704, 0.2116, 0.0529, 0.0324, 0.0841, 0.0841, 0.1296, 0.1369, 0.0225, 0.16, 0.1024, 0.3249, 0.0841, 0.0361, 0.0961, 0.0729, 0.1024, 0.1024, 0.0324, 0.0324, 0.0961, 0.2809, 0.0729]
+blind = [1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1]
+
+[case.source]
+citation = "Citkowicz M, Vevea JL (2017). A parsimonious weight function for modeling publication bias. Psychological Methods 22(1):28-41."
+locator = "Example section, blinding moderator: a 0.420, variance component 0.0, means 0.134 (se 0.171) not blinded and -0.002 (se 0.199) blinded"
+read = 2026-11-19
+doi = "10.1037/met0000119"
+
+[[case]]
+id = "published.citkowicz2017.baskerville2012.article.blind.unadjusted"
+kind = "published"
+function = "rma_uni"
+args = { yi = "yi", vi = "vi", mods = "~ factor(blind) - 1", method = "ML" }
+expect = { "beta[0]" = "0.574", "se[0]" = "0.098", "beta[1]" = "0.538", "se[1]" = "0.090", "tau2" = "0.017" }
+status = "mismatch"
+reason = "printed beta[0] 0.574, se[0] 0.098, beta[1] 0.538, se[1] 0.090, tau2 0.017; metafopy and R metafor 5.2-1 both 0.5731, 0.0925, 0.5397, 0.0868, 0.0163; metafopy and R metafor agree; the article fitted with its own nlminb code; recorded on 2026-11-19, not yet reviewed"
+
+[case.data]
+yi = [1.01, 0.82, 0.59, 0.44, 0.84, 0.73, 1.12, 0.04, 0.24, 0.32, 1.04, 1.31, 0.59, 0.66, 0.62, 0.47, 1.08, 0.98, 0.26, 0.39, 0.6, 0.94, 0.11]
+vi = [0.2704, 0.2116, 0.0529, 0.0324, 0.0841, 0.0841, 0.1296, 0.1369, 0.0225, 0.16, 0.1024, 0.3249, 0.0841, 0.0361, 0.0961, 0.0729, 0.1024, 0.1024, 0.0324, 0.0324, 0.0961, 0.2809, 0.0729]
+blind = [1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1]
+
+[case.source]
+citation = "Citkowicz M, Vevea JL (2017). A parsimonious weight function for modeling publication bias. Psychological Methods 22(1):28-41."
+locator = "Example section, blinding moderator: conventional maximum-likelihood means 0.574 (se 0.098) and 0.538 (se 0.090), variance component 0.017"
+read = 2026-11-19
+doi = "10.1037/met0000119"
+
+[[case]]
+id = "published.citkowicz2017.baskerville2012.article.blind.beta.b_lrt"
+kind = "published"
+function = "selmodel"
+setup = { rma_uni = { method = "ML", mods = "~ factor(blind) - 1" } }
+args = { type = "beta" }
+expect = { "delta[1]" = "5.097", "LRT" = "9.045" }
+status = "mismatch"
+reason = "delta[1] (b) printed 5.097, metafopy and R metafor 5.2-1 both 5.0960; LRT printed 9.045, metafopy and R metafor 9.0432 (9.0443 with the mods = ~ blind coding); metafopy and R metafor agree; the article fitted with its own nlminb code; recorded on 2026-11-19, not yet reviewed"
+
+[case.data]
+yi = [1.01, 0.82, 0.59, 0.44, 0.84, 0.73, 1.12, 0.04, 0.24, 0.32, 1.04, 1.31, 0.59, 0.66, 0.62, 0.47, 1.08, 0.98, 0.26, 0.39, 0.6, 0.94, 0.11]
+vi = [0.2704, 0.2116, 0.0529, 0.0324, 0.0841, 0.0841, 0.1296, 0.1369, 0.0225, 0.16, 0.1024, 0.3249, 0.0841, 0.0361, 0.0961, 0.0729, 0.1024, 0.1024, 0.0324, 0.0324, 0.0961, 0.2809, 0.0729]
+blind = [1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1]
+
+[case.source]
+citation = "Citkowicz M, Vevea JL (2017). A parsimonious weight function for modeling publication bias. Psychological Methods 22(1):28-41."
+locator = "Example section, blinding moderator and Figure 3: b 5.097, likelihood ratio 9.045 on 2 df"
+read = 2026-11-19
 doi = "10.1037/met0000119"
 
 # Cases removed on the answer "keep metafor" (mismatches.md, answered 2026-11-15): the source printed a value metafopy, like metafor, does not reproduce.
