@@ -8,6 +8,7 @@ import collections.abc
 import dataclasses
 import importlib
 import inspect
+import math
 import pathlib
 import types
 import typing
@@ -16,6 +17,7 @@ import numpy
 import pytest
 
 import correctness.cases
+import correctness.formulas
 import correctness.glmm_formulas
 import correctness.test_published
 import metafopy
@@ -893,3 +895,81 @@ def test_literal_options_reads_a_type_alias_and_an_optional_literal() -> None:
 def test_literal_options_refuses_an_annotation_that_is_not_a_literal() -> None:
     with pytest.raises(TypeError, match=r"probe: parameter 'c'"):
         literal_options(probe, 'c')
+
+
+MV_YI = numpy.array([0.3, -0.2, 0.5, 0.1, 0.8, -0.4, 0.6])
+MV_VI = numpy.array([0.05, 0.08, 0.04, 0.06, 0.09, 0.07, 0.05])
+MV_X = numpy.column_stack([numpy.ones(7), [1.0, 2.0, 0.5, 3.0, 1.5, 2.5, 0.0]])
+MV_TAU2 = 0.12
+
+
+def sigma2_term(outer: list[int]) -> correctness.formulas.RandomTerm:
+    codes = numpy.array(outer, dtype=numpy.intp)
+    return correctness.formulas.RandomTerm(struct=correctness.formulas.SIGMA2, outer=codes, inner=numpy.zeros_like(codes), n_inner=1)
+
+
+def test_mv_deletion_without_reestimation_matches_the_rma_uni_closed_forms() -> None:
+    k = len(MV_YI)
+    result = correctness.formulas.mv_deletion(
+        MV_YI,
+        numpy.diag(MV_VI),
+        MV_X,
+        [sigma2_term(list(range(k)))],
+        'REML',
+        [numpy.array([MV_TAU2])],
+        [numpy.zeros(0)],
+        [numpy.array([i]) for i in range(k)],
+        False,
+    )
+    w = 1 / (MV_VI + MV_TAU2)
+    vb = numpy.linalg.inv(MV_X.T @ (w[:, None] * MV_X))
+    b = vb @ MV_X.T @ (w * MV_YI)
+    for i in range(k):
+        keep = numpy.arange(k) != i
+        vb_i = numpy.linalg.inv(MV_X[keep].T @ (w[keep, None] * MV_X[keep]))
+        b_i = vb_i @ MV_X[keep].T @ (w[keep] * MV_YI[keep])
+        diff = b - b_i
+        resid = MV_YI[i] - MV_X[i] @ b_i
+        se = math.sqrt(MV_VI[i] + MV_TAU2 + MV_X[i] @ vb_i @ MV_X[i])
+        assert result.cook[i] == pytest.approx(diff @ numpy.linalg.inv(vb) @ diff, abs=1e-10)
+        assert result.dfbetas[i] == pytest.approx(diff / numpy.sqrt(numpy.diag(vb)), abs=1e-10)
+        assert result.resid[i] == pytest.approx(resid, abs=1e-10)
+        assert result.se[i] == pytest.approx(se, abs=1e-10)
+        assert result.z[i] == pytest.approx(resid / se, abs=1e-10)
+        assert result.X2[i] == pytest.approx((resid / se) ** 2, abs=1e-10)
+    assert all(result.converged)
+
+
+def test_mv_deletion_refits_the_components_and_refuses_a_rank_deficient_deletion() -> None:
+    k = len(MV_YI)
+    term = sigma2_term(list(range(k)))
+    args = (MV_YI, numpy.diag(MV_VI), MV_X, [term], 'REML', [numpy.array([MV_TAU2])], [numpy.zeros(0)])
+    refit = correctness.formulas.mv_deletion(*args, [numpy.array([0])], True)
+    fixed = correctness.formulas.mv_deletion(*args, [numpy.array([0])], False)
+    assert refit.converged == (True,)
+    assert refit.cook[0] != pytest.approx(fixed.cook[0], abs=1e-6)
+    only = numpy.column_stack([numpy.ones(k), numpy.array([0.0] * 6 + [1.0])])
+    with pytest.raises(ValueError, match='rank deficient'):
+        correctness.formulas.mv_deletion(MV_YI, numpy.diag(MV_VI), only, [term], 'REML', [numpy.array([MV_TAU2])], [numpy.zeros(0)], [numpy.array([6])], False)
+
+
+def test_mv_blups_match_the_marginal_form_and_refuse_a_singular_g() -> None:
+    k = len(MV_YI)
+    terms = [sigma2_term([0, 0, 1, 1, 2, 2, 2]), sigma2_term(list(range(k)))]
+    sigma = [numpy.array([0.07]), numpy.array([0.03])]
+    cor = [numpy.zeros(0), numpy.zeros(0)]
+    V = numpy.diag(MV_VI)
+    result = correctness.formulas.mv_blups(MV_YI, V, MV_X, terms, sigma, cor)
+    M = V + sum(correctness.formulas.term_matrix(t, v, c) for t, v, c in zip(terms, sigma, cor, strict=True))
+    weight = numpy.linalg.inv(M)
+    vb = numpy.linalg.inv(MV_X.T @ weight @ MV_X)
+    b = vb @ MV_X.T @ weight @ MV_YI
+    p_matrix = weight - weight @ MV_X @ vb @ MV_X.T @ weight
+    assert result.beta == pytest.approx(b, abs=1e-10)
+    for term, value, blups, pev in zip(terms, sigma, result.blups, result.pev, strict=True):
+        z = (term.outer[:, None] == numpy.unique(term.outer)[None, :]).astype(numpy.float64)
+        g = float(value[0]) * numpy.eye(z.shape[1])
+        assert blups == pytest.approx(g @ z.T @ weight @ (MV_YI - MV_X @ b), abs=1e-10)
+        assert pev == pytest.approx(numpy.diag(g - g @ z.T @ p_matrix @ z @ g), abs=1e-10)
+    with pytest.raises(ValueError, match=r'term 1 \(SIGMA2\)'):
+        correctness.formulas.mv_blups(MV_YI, V, MV_X, terms, [sigma[0], numpy.array([0.0])], cor)

@@ -22,7 +22,7 @@ run lets it go straight through. Task 5 stops for the review of the mismatch cas
 
 ## Task 1: The references mv_deletion and mv_blups
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Definitions and references; API (formulas.py); Error handling; Implementation step 1
@@ -31,29 +31,29 @@ run lets it go straight through. Task 5 stops for the review of the mismatch cas
 
 **Subtasks:**
 
-- [ ] Starting-point check: `grep -nwE 'MVDeletion|mv_deletion|MVBlups|mv_blups' src/tests/correctness/formulas.py src/tests/correctness/test_derived.py`
+- [x] Starting-point check: `grep -nwE 'MVDeletion|mv_deletion|MVBlups|mv_blups' src/tests/correctness/formulas.py src/tests/correctness/test_derived.py`
       prints nothing; stop as `blocked`, naming the match, if it does
-- [ ] Add `MVDeletion`, `mv_deletion`, `MVBlups` and `mv_blups` to `src/tests/correctness/formulas.py` with the signatures and docstrings of the
+- [x] Add `MVDeletion`, `mv_deletion`, `MVBlups` and `mv_blups` to `src/tests/correctness/formulas.py` with the signatures and docstrings of the
       spec's API section, computed as its "Definitions and references" section says: for each deleted set (one row, or the rows of one cluster), a
       refit on the kept rows with `mv_fit` (`reestimate=True`) or the full-data components (`reestimate=False`), then GLS for `b_(S)` and `vb_(S)`,
       Cook's distance over `btt`, DFBETAS with `vb*`, the deleted residual, its standard error, `z` and `X2`; `mv_blups` by Henderson's mixed model
       equations with `R = V`, all terms at once, the prediction error variances from the lower block of the inverse coefficient matrix. `numpy` and
       `scipy` only; no metafopy import
-- [ ] The errors of the spec's Error handling section: `ValueError` naming the term for a singular `G`, `ValueError` for a deletion that leaves
+- [x] The errors of the spec's Error handling section: `ValueError` naming the term for a singular `G`, `ValueError` for a deletion that leaves
       `X[K]` rank deficient; each refit's `success` and gradient norm recorded in `converged` and `gradient_norms`
-- [ ] Harness tests in `src/tests/correctness/test_coverage.py` (beside the existing formula tests): on a small inline dataset, `mv_deletion` with
+- [x] Harness tests in `src/tests/correctness/test_coverage.py` (beside the existing formula tests): on a small inline dataset, `mv_deletion` with
       `reestimate=False` against the closed-form rma.uni deletion formulas, and `mv_blups` against the marginal form `G Z' M^-1 (y - X b)`
-- [ ] Run `pytest src/tests/correctness/test_coverage.py`
+- [x] Run `pytest src/tests/correctness/test_coverage.py`
 
 **Acceptance Criteria:**
 
-- [ ] Both references reproduce their closed forms on the inline data to `1e-10`
-- [ ] `formulas.py` still imports no metafopy module (the harness's import-ban test passes)
+- [x] Both references reproduce their closed forms on the inline data to `1e-10`
+- [x] `formulas.py` still imports no metafopy module (the harness's import-ban test passes)
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] The pytest run of the last subtask passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The pytest run of the last subtask passes
 
 **Notes:**
 
