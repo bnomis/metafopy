@@ -16,6 +16,7 @@ import matplotlib.axes
 import numpy
 import numpy.typing
 import pandas
+import scipy.optimize
 import scipy.stats
 
 import metafopy.core.labelled
@@ -31,6 +32,7 @@ __all__ = ['LSProfileResult', 'profile_rma_ls']
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 
 LINE_WEIGHTS = (0.25, 0.5, 0.75, 1.0, 1.5, 2.0)
+FEASIBLE_WEIGHTS = (0.25, 0.5, 0.75)
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -86,6 +88,33 @@ class LSProfileResult:
         return metafopy.core.labelled.frame_text(self.to_frame())
 
 
+def feasible_start(x: metafopy.models.rma_ls_result.RMALSResult, pos: int, val: float) -> FloatArray | None:
+    """A start of the identity-link refit at ``alpha[pos] = val`` whose smallest ``tau2_i`` is as large as it can be, or ``None`` if none is positive.
+
+    Solves the linear programme: maximise ``t`` over the other coefficients ``a`` subject to ``Z[:, free] a + Z[:, pos] val >= t`` for every study and
+    ``t <= mean(Z @ x.alpha)`` (1 where that mean is not positive), with ``scipy.optimize.linprog``. Returns ``x.alpha`` with ``alpha[pos] = val`` and
+    the solution's ``a``, or ``None`` when ``pos`` has no other coefficient, the programme fails, or its ``t`` is not positive.
+    """
+    free = [i for i in range(x.q) if i != pos]
+    if not free:
+        return None
+    n = len(free)
+    cap = float(numpy.mean(x.Z @ x.alpha))
+    cap = cap if cap > 0 else 1.0
+    result = scipy.optimize.linprog(
+        c=numpy.append(numpy.zeros(n), -1.0),
+        A_ub=numpy.column_stack([-x.Z[:, free], numpy.ones(x.Z.shape[0])]),
+        b_ub=x.Z[:, pos] * val,
+        bounds=[(None, None)] * n + [(None, cap)],
+    )
+    if result.status != 0 or result.x is None or result.x[n] <= 0:
+        return None
+    point = numpy.array(x.alpha, dtype=numpy.float64)
+    point[pos] = val
+    point[free] = result.x[:n]
+    return point
+
+
 def profile_starts(x: metafopy.models.rma_ls_result.RMALSResult, pos: int, val: float) -> list[FloatArray | None]:
     """The starting values of the refits at ``alpha[pos] = val``: the default start (``None``), then points from the fit's ``alpha`` along the line start.
 
@@ -93,7 +122,8 @@ def profile_starts(x: metafopy.models.rma_ls_result.RMALSResult, pos: int, val: 
     at ``val``. Far from the estimate the optimiser stops at the first start whenever the likelihood is nearly flat there, so the starts between the
     two (a quarter, a half and three quarters of the way) are tried as well, and two beyond the line start (one and a half and twice the way): the
     profile optimum can lie past the line, where every start inside it ends on a ``tau2 = 0`` plateau. A start that leaves a ``tau2_i`` negative under
-    the identity link is left out.
+    the identity link is left out; if that leaves only the default start, ``feasible_start`` and the feasible points from it towards the fit's ``alpha``
+    are added.
     """
     own = numpy.array(x.alpha, dtype=numpy.float64)
     own[pos] = val
@@ -105,6 +135,11 @@ def profile_starts(x: metafopy.models.rma_ls_result.RMALSResult, pos: int, val: 
         starts.extend(own + weight * (line - own) for weight in LINE_WEIGHTS)
     if x.link == 'identity':
         starts = [s for s in starts if s is None or float(numpy.min(x.Z @ s)) >= 0]
+        if all(s is None for s in starts):
+            start = feasible_start(x, pos, val)
+            if start is not None:
+                starts.append(start)
+                starts.extend(point for point in (start + w * (own - start) for w in FEASIBLE_WEIGHTS) if float(numpy.min(x.Z @ point)) >= 0)
     return starts
 
 

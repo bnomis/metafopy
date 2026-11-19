@@ -1429,3 +1429,23 @@ then add an identity-link `ls.confint.scale.*` case checked against the brute-fo
 Spec: none (small item); tasks: `agents/tasks/ls-profile-identity-start/tasks-1.md`.
 
 Done: 2026-11-19, agents/tasks/ls-profile-identity-start/tasks-1.md; ls_profile_ll keeps only feasible identity-link starts and adds its own; case ls.confint.scale.ML.identity.bcg added
+
+## metafopy's profile CI misses the identity-link lower bound of the ls scale intercept
+
+<!-- doc-counts: accept-start found on 2026-11-19 - a dated record, not a claim about the present -->
+Found on 2026-11-19 by `agents/tasks/ls-profile-identity-start/tasks-1.md` (Task 2): on the ML identity-link `dat.bcg` fit
+(`ls.fit.ML.identity.bcg`, `mods = scale = ~ ablat`, `escalc` RR), `confint(result, alpha=0, tol=1e-12)` gives `nan` for the lower bound of alpha.1
+(the scale intercept), with the warnings "Error when trying to invert the Hessian" and "Cannot obtain lower bound of profile likelihood CI due to
+convergence problems". R metafor 5.2-1 also gives `NA` with the same two warnings. The reference `ls_profile_bounds` gives -0.214322988803, checked
+against a brute-force profile (-9.060018239 on a 40001-point grid, crossing level -9.060018228). The upper bound of alpha.1 is not found in any of
+the three (metafopy `>0.2399`, R `>0.2401`, reference `nan`); alpha.2 is metafopy (-0.0136, 0.0165), reference (-0.013563, 0.016486), R `<-0.0082`,
+`>0.0082`. The mismatch case is `ls.confint.scale.ML.identity.bcg.alpha1_lb` in `src/tests/correctness/cases/location_scale.toml`.
+<!-- doc-counts: accept-end -->
+
+Cause: not traced; the refits below the estimate fail ("Cannot obtain lower bound ... convergence problems"), as in R metafor.
+
+Fix direction: a spec (an output change, `claude/rules/metafopy.md`) for refits that find the crossing, then the mismatch case becomes a passing case.
+
+Spec: `agents/specs/ls-profile-feasible-start/spec.md`; tasks: `agents/tasks/ls-profile-feasible-start/tasks-1.md`.
+
+Done: 2026-11-19, agents/specs/ls-profile-feasible-start/spec.md and agents/tasks/ls-profile-feasible-start/tasks-1.md; profile_starts adds feasible_start when only the default start is left, and the lower bound is -0.2143
