@@ -1375,3 +1375,38 @@ Spec: none (small item).
 Spec: none (small item); tasks: `agents/tasks/audit-stale-entries/tasks-1.md`.
 
 Done: 2026-11-18, agents/tasks/audit-stale-entries/tasks-1.md; removed all six entries (E1 to E6: R and metafopy now agree on each case; none was narrowed); full run 20261118-220424 lists no stale entry, recall check 176 of 176 reproduced
+
+## Add the printed Baskerville estimates of Citkowicz and Vevea (2017) as published cases
+
+<!-- doc-counts: accept-start found on 2026-11-19 - a dated record, not a claim about the present -->
+Found on 2026-11-19, when the user added the article to the papers folder (`/Users/simonb/src/metafopy papers/A Parsimonious Weight Function for
+Modeling Publication Bias paper.pdf`; Citkowicz M, Vevea JL (2017), Psychological Methods 22(1):28-41, doi:10.1037/met0000119). It was marked dropped
+on 2026-11-15 (`agents/specs/correctness-publication-bias/mismatches.md`, sources table) because it needed APA access, so the two
+`published.citkowicz2017.baskerville2012.*` cases in `src/tests/correctness/cases/selmodel_published.toml` check the authors' supplementary R code on
+the supplement's 19 effects. The article's example (section "Example", Figure 3) uses all 23 effects of Baskerville et al. (2012), the rows of the
+bundled `dat.baskerville2012` (`vi = se**2`). Fitted on 2026-11-19 with ML, metafopy and R metafor 5.2-1 agree to 4 decimals:
+
+| Model | Printed | metafopy and R |
+|---|---|---|
+| mean only, unadjusted: mean, se, tau2 | 0.555, 0.069, 0.016 | 0.5552, 0.0633, 0.0162 |
+| mean only, `type='beta'`: a, b, LRT, tau2, mean (se) | 0.473, 4.459, 7.847, 0.0, 0.115 (0.166) | 0.4731, 4.4613, 7.8469, 0.0000, 0.1147 (0.1664) |
+| `blind` moderator, unadjusted: not blinded (se), blinded (se), tau2 | 0.574 (0.098), 0.538 (0.090), 0.017 | 0.5731 (0.0925), 0.5397 (0.0868), 0.0163 |
+| `blind` moderator, `type='beta'`: a, b, LRT, tau2 | 0.420, 5.097, 9.045, 0.0 | 0.4201, 5.0960, 9.0432 (9.0443 with `~ blind` coding), 0.0000 |
+| `blind` moderator, `type='beta'`: not blinded (se), blinded (se) | 0.134 (0.171), -0.002 (0.199) | 0.1342 (0.1708), -0.0021 (0.1991) |
+
+Every adjusted mean and standard error, a, tau2 and the mean-only LRT match; b, the moderator LRT, the unadjusted standard errors and the whole
+unadjusted moderator model do not. The probe scripts were in the session scratchpad, not kept.
+<!-- doc-counts: accept-end -->
+
+Cause of the misses: not traced. Suspected: the article's own `nlminb` fit (tolerance 1e-4 in the supplement code) and its Hessian standard errors;
+the beta-model misses are in the last digit, where the likelihood is flat (`docs/differences.md`).
+
+Fix direction: write the matching values as published cases on `dat.baskerville2012` in `selmodel_published.toml` (locator: the "Example" section);
+record each miss as a strict expected failure marked "not yet reviewed" in `agents/specs/correctness-publication-bias/mismatches.md` for the user to
+judge. Keep the supplement cases, and say in their locator that the supplement's data are 19 of the article's 23 effects. This reverses the
+2026-11-15 "dropped" entry for the article: update it in `mismatches.md`, the note on line 124 of `agents/specs/correctness-publication-bias/spec.md`,
+the header comment of `selmodel_published.toml` ("the 2017 article itself was not available") and the Citkowicz entry of `NOTES.md`.
+
+Spec: none (small item); tasks: `agents/tasks/citkowicz2017-cases/tasks-1.md`.
+
+Done: 2026-11-19, agents/tasks/citkowicz2017-cases/tasks-1.md; the article's Baskerville values have published cases on the 23 bundled effects; the misses are recorded mismatch cases, not yet reviewed
