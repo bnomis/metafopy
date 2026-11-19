@@ -691,7 +691,7 @@ function = "rma_glmm"
 data = { x1i = [136, 6, 6, 38, 134, 62, 66, 8, 97, 0], t1i = [1925, 41, 38, 374, 4823, 751, 895, 91, 1588, 123], x2i = [147, 15, 11, 42, 129, 74, 91, 20, 122, 2], t2i = [1917, 22, 22, 393, 4715, 715, 885, 88, 1544, 125] }
 args = { x1i = "x1i", t1i = "t1i", x2i = "x2i", t2i = "t2i", measure = "IRR", model = "UM.RS", method = "ML", coding = 1, cor = true }
 status = "mismatch"
-reason = "exp_ci_lb[0] printed 0.592, metafopy 0.597097, R metafor 5.2-1 0.597095; exp_ci_ub[0] printed 0.940, metafopy 0.932294, R metafor 5.2-1 0.932292; the source fitted with Stata gllamm; metafopy and R metafor agree; recorded on 2026-11-19, not yet reviewed"
+reason = "exp_ci_lb[0] printed 0.592, metafopy 0.597097, R metafor 5.2-1 0.597095; exp_ci_ub[0] printed 0.940, metafopy 0.932294, R metafor 5.2-1 0.932292; the source fitted with Stata gllamm; metafopy and R metafor agree; recorded on 2026-11-19; accepted as a source difference on 2026-11-19 (metafopy and R metafor agree)"
 check = "test_published.glmm_printed"
 printed = { "exp_ci_lb[0]" = "0.592", "exp_ci_ub[0]" = "0.940" }
 covers = ["rma_glmm.fit.IRR.UM.RS.ML"]
