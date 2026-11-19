@@ -5,6 +5,7 @@ The data come from the bundled datasets only; the effect sizes of ``dat.bcg`` ar
 
 import collections.abc
 import itertools
+import math
 import pathlib
 import tomllib
 import typing
@@ -162,6 +163,30 @@ def test_identity_polish_stays_feasible_and_finds_the_face_optimum() -> None:
     basis = correctness.formulas.ls_face_basis(Z, ml['alpha'], 'identity')
     assert basis.shape[1] == 1
     assert float(numpy.max(numpy.abs(basis.T @ correctness.formulas.ls_score(yi, vi, X, Z, ml['alpha'], 'identity', 'ML')))) < 1e-6
+
+
+def test_ls_profile_ll_identity_link_starts_feasible() -> None:
+    """At ``alpha.2 = -0.00615`` of the ``ls.fit.ML.identity.bcg`` fit the identity-link profile is -8.045643 (the maximum of a brute-force profile
+    over the feasible interval of ``alpha.1``), not the -1e10 of a refit that never leaves an infeasible start."""
+    yi, vi, X, Z = bcg_ablat()
+    ml = correctness.formulas.ls_reference_fit(yi, vi, X, Z, 'identity', 'ML')
+    value = -0.00615
+    profile = correctness.formulas.ls_profile_ll(yi, vi, X, Z, 'identity', 'ML', 1, value, ml['alpha'])
+    assert profile == pytest.approx(-8.045643, abs=1e-6)
+    lower = float(numpy.max(-value * Z[:, 1]))  # Z alpha >= 0 for every row
+
+    def negative(a0: float) -> float:
+        ll = correctness.formulas.ls_loglik(yi, vi, X, Z, numpy.array([a0, value]), 'identity', 'ML')
+        return math.inf if ll == -math.inf else -ll
+
+    grid = lower + numpy.linspace(0.0, 0.2, 2001)
+    values = [negative(float(a0)) for a0 in grid]
+    k = int(numpy.argmin(values))
+    refined = scipy.optimize.minimize_scalar(
+        negative, bounds=(float(grid[max(k - 1, 0)]), float(grid[min(k + 1, len(grid) - 1)])), method='bounded', options={'xatol': 1e-13}
+    )
+    brute = -min(float(refined.fun), values[k])
+    assert profile == pytest.approx(brute, abs=1e-6)
 
 
 def test_reference_fit_raises_when_nothing_converges() -> None:

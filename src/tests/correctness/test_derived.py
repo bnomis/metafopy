@@ -933,7 +933,10 @@ def ls_qs(case: correctness.cases.Case, result: typing.Any) -> None:
 
 
 def ls_confint_scale(case: correctness.cases.Case, result: typing.Any) -> None:
-    """``confint(result, alpha=j, tol=1e-12)`` against the profile-likelihood bounds of ``formulas.ls_profile_bounds`` for each scale coefficient."""
+    """``confint(result, alpha=j, tol=1e-12)`` against the profile-likelihood bounds of ``formulas.ls_profile_bounds`` for each scale coefficient.
+
+    A case with ``bounds`` compares only the bounds it names (``alpha.1.lower``); every bound otherwise.
+    """
     yi, vi, X, Z = ls_inputs(case)
     link, method = case.args.get('link', 'log'), case.args['method']
     for j in range(Z.shape[1]):
@@ -943,10 +946,13 @@ def ls_confint_scale(case: correctness.cases.Case, result: typing.Any) -> None:
         expected = correctness.formulas.ls_profile_bounds(yi, vi, X, Z, link, method, j, 0.95)
         # a bound shown with a '<' or '>' sign is not crossed within the interval searched, which the reference reports as nan
         actual = [math.nan if interval.lb_sign else table['ci.lb'].iloc[0], math.nan if interval.ub_sign else table['ci.ub'].iloc[0]]
-        for name, bound, reference in zip(('lower', 'upper'), actual, expected, strict=True):
-            if math.isnan(reference) != math.isnan(bound):
-                raise AssertionError(f'{case.id}: confint alpha.{j + 1} {name} bound: metafopy gives {bound!r}, the reference gives {reference!r}')
-        found = [i for i in range(2) if not math.isnan(expected[i])]
+        sides = ('lower', 'upper')
+        chosen = [i for i, name in enumerate(sides) if case.bounds is None or f'alpha.{j + 1}.{name}' in case.bounds]
+        for i in chosen:
+            name = sides[i]
+            if math.isnan(expected[i]) != math.isnan(actual[i]):
+                raise AssertionError(f'{case.id}: confint alpha.{j + 1} {name} bound: metafopy gives {actual[i]!r}, the reference gives {expected[i]!r}')
+        found = [i for i in chosen if not math.isnan(expected[i])]
         if found:
             ls_agree(case, f'confint alpha.{j + 1}', [actual[i] for i in found], [expected[i] for i in found], LS_PROFILE)
 
