@@ -16,6 +16,8 @@ Methods 1:112-125, doi:10.1002/jrsm.11) define them directly. Decision D1 of `ag
 Fix direction: a spec with `/specdev`, modelled on `agents/specs/correctness-mv-diagnostics/spec.md` (brute-force leave-one-out references in
 `formulas.py`, coverage items in `src/tests/correctness/test_coverage.py`), its definitions checked against Viechtbauer and Cheung (2010).
 
+Spec: `agents/specs/correctness-uni-diagnostics/spec.md`; tasks: `agents/tasks/correctness-uni-diagnostics/tasks-1.md`.
+
 ## Correctness coverage the extension specs left for later
 
 <!-- doc-counts: accept-start found on 2026-11-15 - a dated record, not a claim about the present -->
