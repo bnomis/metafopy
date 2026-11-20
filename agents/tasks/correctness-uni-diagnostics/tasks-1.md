@@ -172,7 +172,7 @@ folder `/Users/simonb/src/metafopy papers/`.
 
 ## Task 4: Sources and the mismatch record
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Spec Reference:** Implementation steps 4 and 5 (the record)
@@ -181,25 +181,25 @@ folder `/Users/simonb/src/metafopy papers/`.
 
 **Subtasks:**
 
-- [ ] Check each case's `source.locator` against the paper it names in `/Users/simonb/src/metafopy papers/` (text extracted outside the
+- [x] Check each case's `source.locator` against the paper it names in `/Users/simonb/src/metafopy papers/` (text extracted outside the
       repository); correct any that names the wrong equation or table. No work stops here: every source is in the folder
-- [ ] Write `agents/specs/correctness-uni-diagnostics/mismatches.md` in the shape of `agents/specs/correctness-mv-diagnostics/mismatches.md`:
+- [x] Write `agents/specs/correctness-uni-diagnostics/mismatches.md` in the shape of `agents/specs/correctness-mv-diagnostics/mismatches.md`:
       header (task list, spec), "What is reviewed and how", "Automatic checks" (dated: the `not slow` run, and that every `status = "mismatch"`
       case of this list has an item), one item per mismatch case (case, source, reference, metafopy and R metafor values, cause if found), a
       "Decisions" entry per item with the options *follow the reference*, *keep metafor* and *investigate*, each with its consequence and a
       recommendation, and an empty `## Answers` section. If there is no mismatch case, say so under Automatic checks and write "None: no answer
       needed" under Answers
-- [ ] Run `pytest src/tests/correctness -m 'not slow'`
+- [x] Run `pytest src/tests/correctness -m 'not slow'`
 
 **Acceptance Criteria:**
 
-- [ ] Every locator names the equation or table its value comes from
-- [ ] Every `mismatch` case has an item with its figures, options and a recommendation, or the document says there is none
+- [x] Every locator names the equation or table its value comes from
+- [x] Every `mismatch` case has an item with its figures, options and a recommendation, or the document says there is none
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/correctness -m 'not slow'` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/correctness -m 'not slow'` passes
 
 **Notes:**
 
