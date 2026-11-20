@@ -402,6 +402,8 @@ def fit_rma_ls(
     # auditme: accept[literal-duplication] metafor option values and column labels repeated as in the R source
     if link not in ('log', 'identity'):
         raise metafopy.errors.InputError("The 'link' argument must be either 'log' or 'identity'.")
+    if optbeta and md.weights is not None:
+        raise metafopy.errors.InputError("Cannot use custom weights when 'optbeta=True'.")
     if optbeta and not weighted:
         raise metafopy.errors.InputError("Must use 'weighted=TRUE' when 'optbeta=TRUE'.")
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists

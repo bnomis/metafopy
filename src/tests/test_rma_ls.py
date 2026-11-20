@@ -568,6 +568,12 @@ def test_confint_fixed() -> None:
     refutil.close(ci3.random.to_numpy().ravel(), ref['random'], 'random row', rtol=OPT, atol=2e-4)
 
 
+def test_optbeta_with_weights_errors() -> None:
+    """metafor's rma.uni stops with "Cannot use custom weights when 'optbeta=TRUE'." for a location-scale fit with user weights."""
+    with pytest.raises(metafopy.errors.InputError, match='Cannot use custom weights'):
+        metafopy.rma_uni('yi', 'vi', mods=MODS3, scale=SCALE3, data=bd(), weights=bd()['ni'].to_numpy(), optbeta=True)
+
+
 def test_confint_errors() -> None:
     with pytest.raises(metafopy.errors.InputError, match='optbeta'):
         metafopy.confint(result('bd_optbeta'))

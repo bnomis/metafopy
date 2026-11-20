@@ -1582,3 +1582,20 @@ parity fixtures if any exist for it, add a `src/audit/data/known.toml` entry for
 `docs/differences.md` (metafor errors here, metafopy returns the maximum). Run `pytest src/tests/correctness -m 'not slow'` and the whole test suite.
 
 Done: 2026-11-20 - `clip_into_box` in `src/metafopy/models/rma_ls_fit.py` keeps a clipped start `BOX_START_MARGIN` (1e-4 of the width) inside the box; the case `ls.alpha.bounds.ML.bcg.wide` passes; `docs/differences.md` "A location-scale fit whose start lies on an alpha_max bound". No `known.toml` entry: no audit case fits this box, so an entry would be stale; the R parity case `bd_alpha_bounds` is unchanged.
+
+## A location-scale fit accepts optbeta=True with user weights
+
+<!-- doc-counts: accept-start found on 2026-11-20 - a dated record, not a claim about the present -->
+Found on 2026-11-20 at `0cc8edc` while writing `agents/specs/correctness-ls-weights/spec.md` (decision D2 of
+`agents/reviews/correctness-ls-weights-spec.md`, answered 2026-11-20: file it here). `rma_uni(yi, vi, weights="tpos", mods="~ ablat",
+scale="~ ablat", optbeta=True)` on `dat.bcg` (RR) returns a fit (`beta` (0.33244, -0.02878)), where R metafor 5.2-1 stops with "Cannot use custom
+weights when 'optbeta=TRUE'." (`rma.uni`, the check after "Extracting custom weights"). Cause: `fit_rma_ls` in
+`src/metafopy/models/rma_ls_fit.py:405` checks `optbeta` against `weighted` only; the custom-weights check exists in
+`src/metafopy/models/rma_mv.py:698`, not in the location-scale fit.
+<!-- doc-counts: accept-end -->
+
+Fix direction: small, no spec. Raise `metafopy.errors.InputError("Cannot use custom weights when 'optbeta=True'.")` in `fit_rma_ls` when the user
+gives `weights` with `optbeta=True`, with a regression test in `src/tests/test_rma_ls.py` (failing first); check whether an R parity fixture or a
+`src/audit/data/known.toml` entry records the old behaviour.
+
+Done: 2026-11-20 - `fit_rma_ls` in `src/metafopy/models/rma_ls_fit.py` raises `InputError("Cannot use custom weights when 'optbeta=True'.")` when user weights come with `optbeta=True`; regression test `test_optbeta_with_weights_errors` in `src/tests/test_rma_ls.py` (failed before the fix). No R parity fixture or `known.toml` entry recorded the old behaviour.
