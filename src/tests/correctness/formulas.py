@@ -2376,6 +2376,11 @@ def uni_deletion(
     return UniDeletion(cook, dfbetas, resid, se, resid / se, tau2_del, qe_del, dffits, cov_r, hat, rstandard)
 
 
+def study_term(k: int) -> RandomTerm:
+    """The ``~ 1 | study`` term of ``k`` studies, one level each: the random effect of the rma.uni model."""
+    return RandomTerm(struct=SIGMA2, outer=numpy.arange(k, dtype=numpy.intp), inner=numpy.zeros(k, dtype=numpy.intp), n_inner=1)
+
+
 @dataclasses.dataclass(frozen=True)
 class UniBlups:
     """Per study: the BLUP of the true effect ``x_i b + u_i`` and its prediction error standard error."""
@@ -2388,8 +2393,7 @@ def uni_blups(yi: FloatArray, vi: FloatArray, X: FloatArray, tau2: float) -> Uni
     """Henderson's mixed model equations with ``R = diag(vi)``, ``Z = I``, ``G = tau2 I`` (through ``mv_blups``); the variance of ``x_i b + u_i``
     from the inverse coefficient matrix, its ``b`` block, ``u`` block and their covariance."""
     k = X.shape[0]
-    term = RandomTerm(struct=SIGMA2, outer=numpy.arange(k, dtype=numpy.intp), inner=numpy.zeros(k, dtype=numpy.intp), n_inner=1)
-    solved = mv_blups(yi, numpy.diag(vi), X, [term], [numpy.array([tau2])], [numpy.zeros(0)])
+    solved = mv_blups(yi, numpy.diag(vi), X, [study_term(k)], [numpy.array([tau2])], [numpy.zeros(0)])
     w = numpy.diag(1 / vi)
     coefficients = numpy.block([[X.T @ w @ X, X.T @ w], [w @ X, w + numpy.eye(k) / tau2]])
     inverse = numpy.linalg.inv(coefficients)

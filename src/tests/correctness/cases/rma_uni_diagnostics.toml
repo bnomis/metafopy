@@ -1,0 +1,37 @@
+# The rma_uni diagnostics (cooks_distance, dfbetas, rstudent, influence, rstandard, ranef, blup): the cases, and the items that only metafor defines.
+
+[[exempt]]
+item = "rma_uni.cooks_distance.knha"
+reason = "defined only in metafor's code; R parity covers it"
+
+[[exempt]]
+item = "rma_uni.cooks_distance.unweighted"
+reason = "defined only in metafor's code; R parity covers it"
+
+[[exempt]]
+item = "rma_uni.cooks_distance.weights"
+reason = "defined only in metafor's code; R parity covers it"
+
+[[exempt]]
+item = "rma_uni.dfbetas.knha"
+reason = "defined only in metafor's code; R parity covers it"
+
+[[exempt]]
+item = "rma_uni.dfbetas.unweighted"
+reason = "defined only in metafor's code; R parity covers it"
+
+[[exempt]]
+item = "rma_uni.dfbetas.weights"
+reason = "defined only in metafor's code; R parity covers it"
+
+[[exempt]]
+item = "rma_uni.rstudent.knha"
+reason = "defined only in metafor's code; R parity covers it"
+
+[[exempt]]
+item = "rma_uni.rstudent.unweighted"
+reason = "defined only in metafor's code; R parity covers it"
+
+[[exempt]]
+item = "rma_uni.rstudent.weights"
+reason = "defined only in metafor's code; R parity covers it"

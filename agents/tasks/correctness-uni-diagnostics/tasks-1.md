@@ -73,7 +73,7 @@ folder `/Users/simonb/src/metafopy papers/`.
 
 ## Task 2: The checks, the coverage items and the exemptions
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** API (test_derived.py, test_published.py, test_properties.py); Coverage list; Error handling; Implementation step 2
@@ -82,35 +82,35 @@ folder `/Users/simonb/src/metafopy papers/`.
 
 **Subtasks:**
 
-- [ ] In `src/tests/correctness/test_derived.py`, add `uni_deletion`, `uni_ranef` and `uni_blup` with the spec's docstrings: `uni_deletion` refits
+- [x] In `src/tests/correctness/test_derived.py`, add `uni_deletion`, `uni_ranef` and `uni_blup` with the spec's docstrings: `uni_deletion` refits
       the case (`refit`) and compares `cooks_distance` (with the `btt` of the case's `then`), `dfbetas`, `rstudent`, `rstandard` and every
       `influence` column against `formulas.uni_deletion` at `DERIVED_TOLERANCE`, failing naming the study where metafopy gives NaN and the
       reference a value; `uni_ranef` compares `ranef`'s `pred`, `se` and bounds against `formulas.mv_blups` at metafopy's `tau2` (every value 0 for
       EE fits); `uni_blup` compares `blup`'s `pred`, `se` and bounds against `formulas.uni_blups`; bounds use the normal quantile, or the t quantile
       on `k - p` degrees of freedom when the fit's `test` is `t`, `knha`, `hksj` or `adhoc`
-- [ ] In `src/tests/correctness/test_published.py`, add `influence_printed` (`hat[i]`, `rstudent[i]`, `cook.d[i]`, `R[i]` = `100 (tau2 -
+- [x] In `src/tests/correctness/test_published.py`, add `influence_printed` (`hat[i]`, `rstudent[i]`, `cook.d[i]`, `R[i]` = `100 (tau2 -
       tau2.del) / tau2`, `dfbetas[i,j]`, `tau2`) and `blup_printed` (`pred[i]`, `min(pred)`, `max(pred)`), both through `check_values`; an unknown
       printed name raises the loader's existing error
-- [ ] In `src/tests/correctness/test_properties.py`, add `uni_mean_shift`: for each study, the z of a dummy for it added to `mods` equals its
+- [x] In `src/tests/correctness/test_properties.py`, add `uni_mean_shift`: for each study, the z of a dummy for it added to `mods` equals its
       `rstudent` `z`; raise `ValueError` for an ML case
-- [ ] In `src/tests/correctness/test_coverage.py`, add `UNI_FITS = ('ee', 'me', 're', 'tau2_fixed')`, `UNI_INFLUENCE = ('cov_r', 'dffits',
+- [x] In `src/tests/correctness/test_coverage.py`, add `UNI_FITS = ('ee', 'me', 're', 'tau2_fixed')`, `UNI_INFLUENCE = ('cov_r', 'dffits',
       'hat', 'qe_del', 'tau2_del')` and `uni_diagnostics_items()`, called from `coverage_items()`: `rma_uni.<f>.<fit>` for each `f` in
       `MV_DIAGNOSTICS` and `fit` in `UNI_FITS`; `rma_uni.cooks_distance.btt`; `rma_uni.ranef.{re,me,ee,pi.z,pi.t}`;
       `rma_uni.influence.<column>` for each column in `UNI_INFLUENCE`; `rma_uni.rstandard.marginal`; `rma_uni.blup.{re,me}`; and the exempt items
       `rma_uni.<f>.{knha,unweighted,weights}` for each `f` in `MV_DIAGNOSTICS`
-- [ ] Create `src/tests/correctness/cases/rma_uni_diagnostics.toml` holding only the `[[exempt]]` entries for the exempt items, each with reason
+- [x] Create `src/tests/correctness/cases/rma_uni_diagnostics.toml` holding only the `[[exempt]]` entries for the exempt items, each with reason
       "defined only in metafor's code; R parity covers it" (the shape of the `rma_mv.ranef.pi.t` entry in `cases/rma_mv.toml`)
-- [ ] Run `pytest src/tests/correctness/test_coverage.py`: the gate fails listing exactly the new non-exempt items, and every other test passes
+- [x] Run `pytest src/tests/correctness/test_coverage.py`: the gate fails listing exactly the new non-exempt items, and every other test passes
 
 **Acceptance Criteria:**
 
-- [ ] The gate names every item of the spec's Coverage list; the only failures are the new items with no case yet
-- [ ] The knha, unweighted and weights items are exempt with the spec's reason
+- [x] The gate names every item of the spec's Coverage list; the only failures are the new items with no case yet
+- [x] The knha, unweighted and weights items are exempt with the spec's reason
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] The pytest run of the last subtask behaves as stated there
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The pytest run of the last subtask behaves as stated there
 
 **Notes:**
 

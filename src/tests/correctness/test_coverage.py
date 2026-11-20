@@ -44,6 +44,9 @@ BIAS_PREFIXES = ('fsn.', 'hc.', 'ranktest.', 'regtest.', 'selmodel.', 'tes.', 't
 LS_PREDICT = ('both', 'fitted', 'newmods', 'newscale')
 MV_DELETIONS = ('cluster', 'fixed', 'obs')
 MV_DIAGNOSTICS = ('cooks_distance', 'dfbetas', 'rstudent')
+UNI_FITS = ('ee', 'me', 're', 'tau2_fixed')
+UNI_INFLUENCE = ('cov_r', 'dffits', 'hat', 'qe_del', 'tau2_del')
+UNI_EXEMPT = ('knha', 'unweighted', 'weights')
 LS_ANOVA = ('X', 'Z', 'att', 'btt', 'lrt.ML', 'lrt.REML')
 MH_MEASURES = ('IRD', 'IRR', 'OR', 'RD', 'RR')
 FORMULA_FILES = tuple(pathlib.Path(__file__).parent / f'{module}.py' for module in correctness.cases.FORMULA_MODULES)
@@ -123,6 +126,7 @@ def coverage_items() -> list[str]:
     items += ['rma_peto']
     items += mv_robust_items()
     items += mv_diagnostics_items()
+    items += uni_diagnostics_items()
     items += glmm_items()
     items += ls_items()
     items += bias_items()
@@ -236,6 +240,19 @@ def mv_diagnostics_items() -> list[str]:
     items = [f'rma_mv.{name}.{deletion}' for name in MV_DIAGNOSTICS for deletion in MV_DELETIONS]
     items += ['rma_mv.cooks_distance.btt']
     items += [f'rma_mv.ranef.{kind}' for kind in ('G', 'GEN', 'H', 'R', 'pi.t', 'pi.z', 'sigma2')]
+    return items
+
+
+def uni_diagnostics_items() -> list[str]:
+    """The ``rma_uni`` diagnostics items: each diagnostic by the kind of fit (``re``: estimated ``tau2``, no moderators; ``me``: with moderators; ``ee``:
+    equal effects; ``tau2_fixed``: ``tau2`` given), ``btt`` of Cook's distance, the ``influence`` columns, the marginal ``rstandard``, ``ranef`` by fit
+    and interval, and ``blup``; then the items the paper does not define (``knha``, ``unweighted``, ``weights``), which are exempt."""
+    items = [f'rma_uni.{name}.{fit}' for name in MV_DIAGNOSTICS for fit in UNI_FITS]
+    items += ['rma_uni.cooks_distance.btt']
+    items += [f'rma_uni.ranef.{kind}' for kind in ('re', 'me', 'ee', 'pi.z', 'pi.t')]
+    items += [f'rma_uni.influence.{column}' for column in UNI_INFLUENCE]
+    items += ['rma_uni.rstandard.marginal', 'rma_uni.blup.re', 'rma_uni.blup.me']
+    items += [f'rma_uni.{name}.{kind}' for name in MV_DIAGNOSTICS for kind in UNI_EXEMPT]
     return items
 
 
