@@ -632,6 +632,24 @@ def ls_profile_peaks_at_estimate(case: correctness.cases.Case, result: typing.An
                 raise AssertionError(f'{case.id}: the profile of alpha[{j}] is {value!r} at {alpha[j] + side!r}, above {peak!r} at the estimate {alpha[j]!r}')
 
 
+def ls_optbeta_va(case: correctness.cases.Case, result: typing.Any) -> None:
+    """The ``alpha`` block of the inverse joint information equals the inverse profile information (the Schur complement of ``beta`` drops out at the
+    maximum), so an ``optbeta`` fit's ``va`` is that of the ordinary fit of the same model.
+
+    Both are numerical Hessians, so the tolerance is ``LS_NUMERIC_HESSIAN`` of ``test_derived``.
+    """
+    ordinary = ls_fit_of(case, ls_case_frame(case), optbeta=None)
+    correctness.test_derived.ls_agree(case, 'va', result.va, ordinary.va, correctness.test_derived.LS_NUMERIC_HESSIAN)
+
+
+def ls_rstandard_types_agree(case: correctness.cases.Case, result: typing.Any) -> None:
+    """The marginal and the conditional standardised residuals have the same ``z``: the conditional residual and its standard error are both the marginal
+    ones times ``1 - lambda_i`` (the ``residuals.rma`` help page)."""
+    marginal = metafopy.rstandard(result, type='marginal')
+    conditional = metafopy.rstandard(result, type='conditional')
+    close(case.id, 'z of the conditional residuals', conditional.z, marginal.z, case.tolerance or 1e-12)
+
+
 def ls_optimisers_agree(case: correctness.cases.Case, result: typing.Any) -> None:
     """Every optimiser of ``metafopy.models.rma_ls_fit.OPTIMIZERS`` that runs on the case reaches the same maximum.
 

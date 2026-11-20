@@ -27,6 +27,7 @@ import metafopy.datasets
 import metafopy.effects.measures
 import metafopy.errors
 import metafopy.methods.confint
+import metafopy.methods.ls_resid
 import metafopy.methods.robust
 import metafopy.models.glmm_fit
 import metafopy.models.mv_structs
@@ -48,6 +49,7 @@ UNI_FITS = ('ee', 'me', 're', 'tau2_fixed')
 UNI_INFLUENCE = ('cov_r', 'dffits', 'hat', 'qe_del', 'tau2_del')
 UNI_EXEMPT = ('knha', 'unweighted', 'weights')
 LS_ANOVA = ('X', 'Z', 'att', 'btt', 'lrt.ML', 'lrt.REML')
+LS_VIF = ('location', 'reestimate', 'scale')
 MH_MEASURES = ('IRD', 'IRR', 'OR', 'RD', 'RR')
 FORMULA_FILES = tuple(pathlib.Path(__file__).parent / f'{module}.py' for module in correctness.cases.FORMULA_MODULES)
 
@@ -186,6 +188,13 @@ def ls_items() -> list[str]:
     items += [f'ls.predict.{situation}' for situation in LS_PREDICT]
     items += [f'ls.anova.{form}' for form in LS_ANOVA]
     items += ['ls.permutest.location.exact', 'ls.permutest.scale.exact']
+    items += [f'ls.profile.{link}' for link in links]
+    items += [f'ls.vif.{kind}' for kind in LS_VIF]
+    items += ['ls.blup', 'ls.ranef']
+    rstandard_types = typing.get_args(inspect.signature(metafopy.methods.ls_resid.rstandard_rma_ls).parameters['type'].annotation)
+    items += [f'ls.rstandard.{kind}' for kind in rstandard_types]
+    items += ['ls.unweighted', 'ls.alpha.fixed', 'ls.alpha.bounds', 'ls.beta.fixed.ML', 'ls.optbeta.REML', 'ls.optbeta.vb.ML']
+    items += ['ls.fitstats.deviance', 'ls.unweighted.fitstats', 'ls.beta.fixed.REML', 'ls.optbeta.vb.REML']
     return items
 
 

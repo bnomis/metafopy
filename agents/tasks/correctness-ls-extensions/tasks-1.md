@@ -71,7 +71,7 @@ residuals and the GVIF exist in `formulas.py`, with their own harness tests.
 
 ## Task 2: The checks, the coverage items and the exemptions
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** API (the checks); Coverage list; Error handling; Implementation step 2
@@ -80,35 +80,35 @@ residuals and the GVIF exist in `formulas.py`, with their own harness tests.
 
 **Subtasks:**
 
-- [ ] In `src/tests/correctness/test_derived.py`, add the checks the spec's API section lists, each at the tolerance it names: `ls_profile` (`ll`
+- [x] In `src/tests/correctness/test_derived.py`, add the checks the spec's API section lists, each at the tolerance it names: `ls_profile` (`ll`
       at each grid value of `profile(result, alpha=j, steps=7)` against `ls_profile_ll`, a reference -1e10 and metafopy NaN agreeing, NaN on one
       side failing naming the grid value, and `maxll`), `ls_vif`, `ls_vif_reestimate` (skipping, and saying so, a coefficient whose reference
       refit raises), `ls_blup`, `ls_ranef`, `ls_rstandard`, `ls_unweighted`, `ls_alpha_fixed`, `ls_alpha_bounds`, `ls_beta_fixed` and
       `ls_optbeta_vb` (against the inverse of `ls_joint_information` over the free coefficients, decision D1)
-- [ ] Generalise the existing `ls_optbeta` check to take the method from the case, so it serves REML as well as ML; keep its docstring's account of
+- [x] Generalise the existing `ls_optbeta` check to take the method from the case, so it serves REML as well as ML; keep its docstring's account of
       `vb` and point it at `ls_optbeta_vb`
-- [ ] In `src/tests/correctness/test_properties.py`, add `ls_optbeta_va` (an `optbeta` fit's `va` equals the ordinary fit's) and
+- [x] In `src/tests/correctness/test_properties.py`, add `ls_optbeta_va` (an `optbeta` fit's `va` equals the ordinary fit's) and
       `ls_rstandard_types_agree` (marginal and conditional `z` are equal)
-- [ ] In `src/tests/correctness/test_coverage.py`, add `LS_VIF = ('location', 'reestimate', 'scale')` and extend `ls_items()` with the spec's
+- [x] In `src/tests/correctness/test_coverage.py`, add `LS_VIF = ('location', 'reestimate', 'scale')` and extend `ls_items()` with the spec's
       Coverage list: `ls.profile.<link>` (links read from the code as for `ls.fit`), `ls.vif.<kind>`, `ls.blup`, `ls.ranef`, `ls.rstandard.<type>`
       (types from `typing.get_args(inspect.signature(metafopy.methods.ls_resid.rstandard_rma_ls).parameters['type'].annotation)`),
       `ls.unweighted`, `ls.alpha.fixed`, `ls.alpha.bounds`, `ls.beta.fixed.ML`, `ls.optbeta.REML`, `ls.optbeta.vb.ML`, and the exempt items
       `ls.fitstats.deviance`, `ls.unweighted.fitstats`, `ls.beta.fixed.REML`, `ls.optbeta.vb.REML`
-- [ ] In `src/tests/correctness/cases/location_scale.toml`, a new section with the `[[exempt]]` entries for the exempt items, each with reason
+- [x] In `src/tests/correctness/cases/location_scale.toml`, a new section with the `[[exempt]]` entries for the exempt items, each with reason
       "defined only in metafor's code; R parity covers it"
-- [ ] Run `pytest src/tests/correctness/test_coverage.py src/tests/correctness/test_formulas_ls.py`: the gate fails listing exactly the new
+- [x] Run `pytest src/tests/correctness/test_coverage.py src/tests/correctness/test_formulas_ls.py`: the gate fails listing exactly the new
       non-exempt items, and every other test passes
 
 **Acceptance Criteria:**
 
-- [ ] The gate names every item of the spec's Coverage list; the only failures are the new items with no case yet
-- [ ] The existing `ls.optbeta.*` ML cases still pass with the generalised check
+- [x] The gate names every item of the spec's Coverage list; the only failures are the new items with no case yet
+- [x] The existing `ls.optbeta.*` ML cases still pass with the generalised check
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] The pytest run of the last subtask behaves as stated there
-- [ ] `pytest src/tests/correctness -m 'not slow' -k optbeta` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The pytest run of the last subtask behaves as stated there
+- [x] `pytest src/tests/correctness -m 'not slow' -k optbeta` passes
 
 **Notes:**
 

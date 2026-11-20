@@ -11,7 +11,7 @@ derived_required = ["ls."]
 # Datasets: dat.bangertdrowns2004 with the moderator imag in both parts, dat.bcg (log risk ratio) with ablat in both parts. The identity-link fits
 # are polished on the analytic score within tau2_i >= 0 (R's constrOptim stops about 1e-5 short of the maximum there, see
 # agents/specs/correctness-location-scale/mismatches.md and docs/differences.md).
-# ls.optbeta is derived under ML only (see the check ls_optbeta). The deviance of ls.fitstats.* is not compared: the paper defines none, so only the
+# ls.optbeta takes its method from the case (see the check ls_optbeta). The deviance of ls.fitstats.* is not compared: the paper defines none, so only the
 # log-likelihood, AIC, BIC and AICc are. QE is Cochran Q with the inverse-variance weights, not the quadratic form at the fitted tau2_i. The inline
 # columns of ls.heterogeneity.bdni are dat.bangertdrowns2004 yi and vi, with ni100 = ni / 100 (the rescaling the paper's authors apply to total sample size);
 # test_formulas_ls.py checks them against the dataset.
@@ -1318,3 +1318,22 @@ citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta
 doi = "10.1002/jrsm.1562"
 locator = "Section 3, the likelihood ratio test of equation 15: X2 = 4.83 on 3 df, p = 0.18, both models refitted with ML"
 read = 2026-11-15
+
+# agents/specs/correctness-ls-extensions/spec.md: the exemptions of the location-scale extensions. The deviance, the fit statistics of a weighted = false
+# fit and the optbeta REML objective's own Hessian are defined only in metafor's code. The cases of the other items follow in Tasks 3 and 4 of
+# agents/tasks/correctness-ls-extensions/tasks-1.md.
+[[exempt]]
+item = "ls.fitstats.deviance"
+reason = "defined only in metafor's code; R parity covers it"
+
+[[exempt]]
+item = "ls.unweighted.fitstats"
+reason = "defined only in metafor's code; R parity covers it"
+
+[[exempt]]
+item = "ls.beta.fixed.REML"
+reason = "defined only in metafor's code; R parity covers it"
+
+[[exempt]]
+item = "ls.optbeta.vb.REML"
+reason = "defined only in metafor's code; R parity covers it"

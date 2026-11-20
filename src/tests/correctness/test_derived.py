@@ -19,6 +19,7 @@ import correctness.cases
 import correctness.formulas
 import correctness.glmm_formulas
 import metafopy
+import metafopy.methods.ls_vif
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type IntArray = numpy.typing.NDArray[numpy.intp]
@@ -1055,15 +1056,16 @@ def ls_fit(case: correctness.cases.Case, result: typing.Any) -> None:
 
 
 def ls_optbeta(case: correctness.cases.Case, result: typing.Any) -> None:
-    """With ``optbeta=True`` the joint and the profile ML maximum coincide, so ``alpha``, ``beta``, ``tau2_i`` and the log-likelihood match the profile fit.
+    """With ``optbeta=True`` the joint and the profile maximum coincide (equation 5 under ML; under REML the joint objective shares the maximiser of
+    equation 9, Verbyla 1993), so ``alpha``, ``beta``, ``tau2_i`` and the log-likelihood match the profile fit of the case's ``method``.
 
-    ``vb`` is not compared: the joint fit takes it from the information matrix of ``beta`` and ``alpha`` together, not from equation 10, which is the
-    covariance of ``beta`` with ``alpha`` held at its estimate.
+    ``vb`` is not compared here: the joint fit takes it from the information matrix of ``beta`` and ``alpha`` together, not from equation 10, which is
+    the covariance of ``beta`` with ``alpha`` held at its estimate. ``ls_optbeta_vb`` checks it against the joint information.
     """
     reference = ls_reference(case)
     for name in ('alpha', 'beta', 'tau2'):
         ls_agree(case, name, getattr(result, name), reference[name], LS_RELATIVE)
-    ls_agree(case, 'logLik', float(result.logLik(REML=False)), reference['ll'], LS_LOGLIK)
+    ls_agree(case, 'logLik', float(result.logLik(REML=case.args['method'] == 'REML')), reference['ll'], LS_LOGLIK)
 
 
 def ls_fitstats(case: correctness.cases.Case, result: typing.Any) -> None:
@@ -1360,3 +1362,166 @@ def ls_permutest_exact(case: correctness.cases.Case, result: typing.Any) -> None
                 f'{case.id}: {name}: metafopy gives {actual!r}, the reference lies between {low!r} and {high!r} '
                 f'({expected["failed"]:g} of {expected["count"]:g} permutations have no reference fit)'
             )
+
+
+LS_INFEASIBLE = -1e10
+LS_PROFILE_STEPS = 7
+
+
+def ls_free_block(matrix: typing.Any, free: list[int]) -> FloatArray:
+    """The rows and columns of ``matrix`` at the indices ``free``."""
+    return numpy.asarray(matrix, dtype=numpy.float64)[numpy.ix_(free, free)]
+
+
+def ls_constrained(case: correctness.cases.Case, fixed: FloatArray, lower: FloatArray | None = None, upper: FloatArray | None = None) -> dict[str, typing.Any]:
+    """``formulas.ls_constrained_fit`` for the case's data; a failure to converge names the case and the step."""
+    yi, vi, X, Z = ls_inputs(case)
+    try:
+        return correctness.formulas.ls_constrained_fit(yi, vi, X, Z, case.args.get('link', 'log'), case.args['method'], fixed, lower, upper)
+    except RuntimeError as err:
+        raise AssertionError(f'{case.id}: the reference fit did not converge (the optimiser messages are in the chained error)') from err
+
+
+def ls_profile(case: correctness.cases.Case, result: typing.Any) -> None:
+    """``profile(result, alpha=j, steps=7)`` for each scale coefficient: ``ll`` at each grid value against ``formulas.ls_profile_ll`` (section 2.5.3 of
+    Viechtbauer and Lopez-Lopez, 2022), and ``maxll`` against the reference maximum.
+
+    A reference value of ``-1e10`` (no feasible ``tau2_i``) and a NaN from metafopy agree; NaN on one side only fails naming the grid value.
+    """
+    yi, vi, X, Z = ls_inputs(case)
+    link, method = case.args.get('link', 'log'), case.args['method']
+    reference = ls_reference(case)
+    for j in range(Z.shape[1]):
+        profiled: typing.Any = metafopy.profile(result, alpha=j, steps=LS_PROFILE_STEPS)
+        for value, actual in zip(profiled.alpha, profiled.ll, strict=True):
+            name = f'll at alpha[{j}] = {float(value):g}'
+            expected = correctness.formulas.ls_profile_ll(yi, vi, X, Z, link, method, j, float(value), reference['alpha'])
+            if (expected <= LS_INFEASIBLE) != bool(numpy.isnan(actual)):
+                raise AssertionError(f'{case.id}: {name}: metafopy gives {float(actual)!r}, the reference gives {expected!r}')
+            if not numpy.isnan(actual):
+                ls_agree(case, name, actual, expected, LS_LOGLIK)
+        ls_agree(case, f'maxll of alpha[{j}]', profiled.maxll, reference['ll'], LS_LOGLIK)
+
+
+def ls_vif_parts(case: correctness.cases.Case, vifs: typing.Any) -> dict[str, typing.Any]:
+    """The location and the scale ``VIFResult`` of a ``vif`` result; both parts must have predictors."""
+    if not isinstance(vifs, metafopy.methods.ls_vif.LSVIFResult):
+        raise AssertionError(f'{case.id}: vif gives {type(vifs).__name__}, not both parts of a location-scale model')
+    return {'location': vifs.beta, 'scale': vifs.alpha}
+
+
+def ls_vif(case: correctness.cases.Case, result: typing.Any) -> None:
+    """``vif(result)`` of each coefficient other than the intercept against ``formulas.gvif`` on the reference covariance of its part (Fox and Monette
+    1992); the scale part uses the numerical Hessian, so its tolerance is ``LS_NUMERIC_HESSIAN``."""
+    reference = ls_reference(case)
+    parts = ls_vif_parts(case, metafopy.vif(result))
+    for kind, vcov, tolerance in (('location', reference['vb'], LS_RELATIVE), ('scale', reference['va'], LS_NUMERIC_HESSIAN)):
+        expected = [correctness.formulas.gvif(vcov, [i]) for i in range(vcov.shape[0] - 1)]
+        ls_agree(case, f'{kind} vif', [e.vif for e in parts[kind].vif], expected, tolerance)
+
+
+def ls_vif_reestimate(case: correctness.cases.Case, result: typing.Any) -> None:
+    """``vif(result, reestimate=True)`` against ``Var[b_j] / Var[b'_j]`` (the ``vif`` help page): ``b'`` is the coefficient of the reference refit that keeps
+    the intercept and the one coefficient, the other part unchanged. A coefficient whose reference refit raises is skipped, with a warning saying so."""
+    yi, vi, X, Z = ls_inputs(case)
+    link, method = case.args.get('link', 'log'), case.args['method']
+    reference = ls_reference(case)
+    parts = ls_vif_parts(case, metafopy.vif(result, reestimate=True))
+    for kind, key, tolerance in (('location', 'vb', LS_RELATIVE), ('scale', 'va', LS_NUMERIC_HESSIAN)):
+        matrix = X if kind == 'location' else Z
+        for i, entry in enumerate(parts[kind].vif, start=1):
+            reduced = matrix[:, [0, i]]
+            try:
+                refit_fit = correctness.formulas.ls_reference_fit(yi, vi, reduced if kind == 'location' else X, reduced if kind == 'scale' else Z, link, method)
+            except RuntimeError:
+                warnings.warn(f'{case.id}: skipped the {kind} coefficient {i}: the reference refit did not converge', stacklevel=2)
+                continue
+            ls_agree(case, f'{kind} vif of coefficient {i}', entry.vif, reference[key][i, i] / refit_fit[key][1, 1], tolerance)
+
+
+def ls_blup(case: correctness.cases.Case, result: typing.Any) -> None:
+    """``blup(fit)``: ``pred``, ``se`` and the interval bounds against ``formulas.ls_blups`` (Henderson 1975) with ``G = diag(tau2_i)`` at metafopy's
+    ``tau2_i``."""
+    fit = refit(case)
+    yi, vi, X, _ = ls_inputs(case)
+    solved = correctness.formulas.ls_blups(yi, vi, X, numpy.asarray(fit.tau2, dtype=numpy.float64))
+    uni_shrinkage_agree(case, fit, result, solved['pred'], solved['pred_se'])
+
+
+def ls_ranef(case: correctness.cases.Case, result: typing.Any) -> None:
+    """``ranef(fit)``: ``pred``, ``se`` and the interval bounds against the random effects ``u`` of ``formulas.ls_blups`` with their prediction error."""
+    fit = refit(case)
+    yi, vi, X, _ = ls_inputs(case)
+    solved = correctness.formulas.ls_blups(yi, vi, X, numpy.asarray(fit.tau2, dtype=numpy.float64))
+    uni_shrinkage_agree(case, fit, result, solved['u'], solved['u_se'])
+
+
+def ls_rstandard(case: correctness.cases.Case, result: typing.Any) -> None:
+    """``rstandard(fit, type=...)``: the residuals, standard errors and ``z`` against ``formulas.ls_rstandard`` (section 2.8) at metafopy's ``tau2_i``; the
+    type is the ``type`` argument of the case's ``then``."""
+    fit = refit(case)
+    yi, vi, X, _ = ls_inputs(case)
+    conditional = case.then is not None and case.then.args.get('type', 'marginal') == 'conditional'
+    resid, se, z = correctness.formulas.ls_rstandard(yi, vi, X, numpy.asarray(fit.tau2, dtype=numpy.float64), conditional)
+    numbers_agree(case, 'resid', result.resid, resid)
+    numbers_agree(case, 'se', result.se, se)
+    numbers_agree(case, 'z', result.z, z)
+
+
+def ls_unweighted(case: correctness.cases.Case, result: typing.Any) -> None:
+    """``weighted=False``: ``alpha`` against the reference fit, ``beta`` the ordinary least squares estimate and ``vb`` its sandwich variance
+    ``(X'X)^-1 X' M X (X'X)^-1`` with ``M = diag(v_i + tau2_i)`` at metafopy's ``tau2_i``."""
+    yi, vi, X, _ = ls_inputs(case)
+    ls_agree(case, 'alpha', result.alpha, ls_reference(case)['alpha'], LS_RELATIVE)
+    bread = numpy.linalg.inv(X.T @ X)
+    numbers_agree(case, 'beta', result.beta, bread @ X.T @ yi)
+    numbers_agree(case, 'vb', result.vb, bread @ X.T @ numpy.diag(vi + numpy.asarray(result.tau2, dtype=numpy.float64)) @ X @ bread)
+
+
+def ls_alpha_fixed(case: correctness.cases.Case, result: typing.Any) -> None:
+    """``alpha`` with some coefficients held (equation 17): ``alpha``, ``beta`` and the log-likelihood against ``formulas.ls_constrained_fit``, and ``va``
+    over the estimated coefficients."""
+    fixed = numpy.asarray(case.args['alpha'], dtype=numpy.float64)
+    expected = ls_constrained(case, fixed)
+    ls_agree(case, 'alpha', result.alpha, expected['alpha'], LS_RELATIVE)
+    ls_agree(case, 'beta', result.beta, expected['beta'], LS_RELATIVE)
+    ls_agree(case, 'logLik', float(result.logLik(REML=case.args['method'] == 'REML')), expected['ll'], LS_LOGLIK)
+    ls_agree(case, 'va', ls_free_block(result.va, [i for i in range(len(fixed)) if numpy.isnan(fixed[i])]), expected['va'], LS_NUMERIC_HESSIAN)
+
+
+def ls_alpha_bounds(case: correctness.cases.Case, result: typing.Any) -> None:
+    """``alpha_min`` and ``alpha_max`` of the control settings (the ``rma.uni`` help page): ``alpha``, ``beta`` and the log-likelihood against the
+    maximum of ``formulas.ls_constrained_fit`` within the box."""
+    q = ls_inputs(case)[3].shape[1]
+    control = case.args['control']
+    lower = numpy.broadcast_to(numpy.asarray(control['alpha_min'], dtype=numpy.float64), (q,))
+    upper = numpy.broadcast_to(numpy.asarray(control['alpha_max'], dtype=numpy.float64), (q,))
+    expected = ls_constrained(case, numpy.full(q, numpy.nan), lower, upper)
+    ls_agree(case, 'logLik', float(result.logLik(REML=case.args['method'] == 'REML')), expected['ll'], LS_LOGLIK)
+    ls_agree(case, 'alpha', result.alpha, expected['alpha'], LS_RELATIVE)
+    ls_agree(case, 'beta', result.beta, expected['beta'], LS_RELATIVE)
+
+
+def ls_beta_fixed(case: correctness.cases.Case, result: typing.Any) -> None:
+    """``optbeta`` with some ``beta`` held (equation 15 with the constraint at a value, ML): ``alpha``, ``beta`` and the log-likelihood against
+    ``formulas.ls_joint_fit``, and ``vb`` and ``va`` over the estimated coefficients."""
+    yi, vi, X, Z = ls_inputs(case)
+    try:
+        expected = correctness.formulas.ls_joint_fit(yi, vi, X, Z, case.args.get('link', 'log'), numpy.asarray(case.args['beta'], dtype=numpy.float64))
+    except RuntimeError as err:
+        raise AssertionError(f'{case.id}: the reference fit did not converge (the optimiser messages are in the chained error)') from err
+    ls_agree(case, 'alpha', result.alpha, expected['alpha'], LS_RELATIVE)
+    ls_agree(case, 'beta', result.beta, expected['beta'], LS_RELATIVE)
+    ls_agree(case, 'logLik', float(result.logLik(REML=False)), expected['ll'], LS_LOGLIK)
+    ls_agree(case, 'vb', ls_free_block(result.vb, expected['free_beta']), expected['vb'], LS_NUMERIC_HESSIAN)
+    ls_agree(case, 'va', result.va, expected['va'], LS_NUMERIC_HESSIAN)
+
+
+def ls_optbeta_vb(case: correctness.cases.Case, result: typing.Any) -> None:
+    """``vb`` of an ``optbeta`` ML fit against the inverse of the observed information of ``(beta, alpha)`` from equation 5
+    (``formulas.ls_joint_information``) at the reference maximum (decision D1 of the spec: the observed information, as in Harvey 1976, eqs 11 and 12,
+    and not the expected information)."""
+    yi, vi, X, Z = ls_inputs(case)
+    reference = ls_reference(case)
+    information = correctness.formulas.ls_joint_information(yi, vi, X, Z, reference['beta'], reference['alpha'], case.args.get('link', 'log'))
+    ls_agree(case, 'vb', result.vb, numpy.linalg.inv(information)[: X.shape[1], : X.shape[1]], LS_NUMERIC_HESSIAN)
