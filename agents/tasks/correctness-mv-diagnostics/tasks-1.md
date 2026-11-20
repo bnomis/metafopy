@@ -190,7 +190,7 @@ run lets it go straight through. Task 5 stops for the review of the mismatch cas
 
 ## Task 5: The mismatch review
 
-**Status:** blocked (waiting for the mismatch review in agents/specs/correctness-mv-diagnostics/mismatches.md)
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation step 5
