@@ -428,3 +428,179 @@ args = { yi = "yi", V = "vi", random = "~ 1 | district/school", mods = "~ year",
 check = "test_derived.mv_predict_pi"
 covers = ["rma_mv.predict.pi"]
 then = { function = "predict", args = {} }
+
+[[case]]
+id = "mv.diag.obs.kon"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.konstantopoulos2011"
+args = { yi = "yi", V = "vi", method = "REML", random = "~ 1 | district/school" }
+check = "test_derived.mv_deletion"
+covers = ["rma_mv.cooks_distance.obs", "rma_mv.dfbetas.obs", "rma_mv.rstudent.obs"]
+then = { function = "rstudent", args = {} }
+source = { citation = "Viechtbauer W, Cheung MW-L (2010). Outlier and influence diagnostics for meta-analysis. Res Synth Methods 1:112-125; Christensen R, Pearson LM, Johnson W (1992). Case-deletion diagnostics for mixed models. Technometrics 34:38-45; metafor 5.2-1, help pages residuals.rma and influence.rma.mv", doi = "10.1002/jrsm.11", locator = "Viechtbauer and Cheung (2010): equation 21 and its matrix form 20 for Cook's distance (the chi-square form, with no division by p), equation 23 for DFBETAS with the variance of the coefficients refitted without the case, equations 15 and 16 for the externally standardised residual; with the marginal covariance in place of diag(v + tau2) and a set of rows deleted, after Christensen, Pearson and Johnson (1992), section 2, the generalised Cook's distance and Propositions 2 and 3 (their form divides by p; this reference follows Viechtbauer and Cheung and metafor)", read = 2026-11-19 }
+
+[[case]]
+id = "mv.diag.cluster.kon"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.konstantopoulos2011"
+args = { yi = "yi", V = "vi", method = "REML", random = "~ 1 | district/school" }
+check = "test_derived.mv_deletion"
+covers = ["rma_mv.cooks_distance.cluster", "rma_mv.dfbetas.cluster", "rma_mv.rstudent.cluster"]
+then = { function = "rstudent", args = { cluster = "district" } }
+source = { citation = "Viechtbauer W, Cheung MW-L (2010). Outlier and influence diagnostics for meta-analysis. Res Synth Methods 1:112-125; Christensen R, Pearson LM, Johnson W (1992). Case-deletion diagnostics for mixed models. Technometrics 34:38-45; metafor 5.2-1, help pages residuals.rma and influence.rma.mv", doi = "10.1002/jrsm.11", locator = "Viechtbauer and Cheung (2010): equation 21 and its matrix form 20 for Cook's distance (the chi-square form, with no division by p), equation 23 for DFBETAS with the variance of the coefficients refitted without the case, equations 15 and 16 for the externally standardised residual; with the marginal covariance in place of diag(v + tau2) and a set of rows deleted, after Christensen, Pearson and Johnson (1992), section 2, the generalised Cook's distance and Propositions 2 and 3 (their form divides by p; this reference follows Viechtbauer and Cheung and metafor)", read = 2026-11-19 }
+
+[[case]]
+id = "mv.diag.fixed.kon"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.konstantopoulos2011"
+args = { yi = "yi", V = "vi", method = "REML", random = "~ 1 | district/school" }
+check = "test_derived.mv_deletion"
+covers = ["rma_mv.cooks_distance.fixed", "rma_mv.dfbetas.fixed", "rma_mv.rstudent.fixed"]
+then = { function = "rstudent", args = { reestimate = false } }
+source = { citation = "Viechtbauer W, Cheung MW-L (2010). Outlier and influence diagnostics for meta-analysis. Res Synth Methods 1:112-125; Christensen R, Pearson LM, Johnson W (1992). Case-deletion diagnostics for mixed models. Technometrics 34:38-45; metafor 5.2-1, help pages residuals.rma and influence.rma.mv", doi = "10.1002/jrsm.11", locator = "Viechtbauer and Cheung (2010): equation 21 and its matrix form 20 for Cook's distance (the chi-square form, with no division by p), equation 23 for DFBETAS with the variance of the coefficients refitted without the case, equations 15 and 16 for the externally standardised residual; with the marginal covariance in place of diag(v + tau2) and a set of rows deleted, after Christensen, Pearson and Johnson (1992), section 2, the generalised Cook's distance and Propositions 2 and 3 (their form divides by p; this reference follows Viechtbauer and Cheung and metafor)", read = 2026-11-19 }
+
+[[case]]
+id = "mv.diag.ml.kon"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.konstantopoulos2011"
+args = { yi = "yi", V = "vi", method = "ML", random = "~ 1 | district" }
+check = "test_derived.mv_deletion"
+covers = ["rma_mv.cooks_distance.obs", "rma_mv.dfbetas.obs", "rma_mv.rstudent.obs"]
+then = { function = "rstudent", args = {} }
+source = { citation = "Viechtbauer W, Cheung MW-L (2010). Outlier and influence diagnostics for meta-analysis. Res Synth Methods 1:112-125; Christensen R, Pearson LM, Johnson W (1992). Case-deletion diagnostics for mixed models. Technometrics 34:38-45; metafor 5.2-1, help pages residuals.rma and influence.rma.mv", doi = "10.1002/jrsm.11", locator = "Viechtbauer and Cheung (2010): equation 21 and its matrix form 20 for Cook's distance (the chi-square form, with no division by p), equation 23 for DFBETAS with the variance of the coefficients refitted without the case, equations 15 and 16 for the externally standardised residual; with the marginal covariance in place of diag(v + tau2) and a set of rows deleted, after Christensen, Pearson and Johnson (1992), section 2, the generalised Cook's distance and Propositions 2 and 3 (their form divides by p; this reference follows Viechtbauer and Cheung and metafor)", read = 2026-11-19 }
+
+[[case]]
+id = "mv.diag.obs.berkey"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.berkey1998"
+setup = { vblocks = { cluster = "trial", columns = ["v1i", "v2i"] } }
+args = { yi = "yi", mods = "~ 0 + outcome", random = "~ outcome | trial", struct = "UN" }
+check = "test_derived.mv_deletion"
+covers = ["rma_mv.cooks_distance.obs", "rma_mv.dfbetas.obs", "rma_mv.rstudent.obs"]
+then = { function = "rstudent", args = {} }
+source = { citation = "Viechtbauer W, Cheung MW-L (2010). Outlier and influence diagnostics for meta-analysis. Res Synth Methods 1:112-125; Christensen R, Pearson LM, Johnson W (1992). Case-deletion diagnostics for mixed models. Technometrics 34:38-45; metafor 5.2-1, help pages residuals.rma and influence.rma.mv", doi = "10.1002/jrsm.11", locator = "Viechtbauer and Cheung (2010): equation 21 and its matrix form 20 for Cook's distance (the chi-square form, with no division by p), equation 23 for DFBETAS with the variance of the coefficients refitted without the case, equations 15 and 16 for the externally standardised residual; with the marginal covariance in place of diag(v + tau2) and a set of rows deleted, after Christensen, Pearson and Johnson (1992), section 2, the generalised Cook's distance and Propositions 2 and 3 (their form divides by p; this reference follows Viechtbauer and Cheung and metafor)", read = 2026-11-19 }
+
+[[case]]
+id = "mv.diag.cluster.berkey"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.berkey1998"
+setup = { vblocks = { cluster = "trial", columns = ["v1i", "v2i"] } }
+args = { yi = "yi", mods = "~ 0 + outcome", random = "~ outcome | trial", struct = "UN" }
+check = "test_derived.mv_deletion"
+covers = ["rma_mv.cooks_distance.cluster", "rma_mv.dfbetas.cluster", "rma_mv.rstudent.cluster"]
+then = { function = "rstudent", args = { cluster = "trial" } }
+source = { citation = "Viechtbauer W, Cheung MW-L (2010). Outlier and influence diagnostics for meta-analysis. Res Synth Methods 1:112-125; Christensen R, Pearson LM, Johnson W (1992). Case-deletion diagnostics for mixed models. Technometrics 34:38-45; metafor 5.2-1, help pages residuals.rma and influence.rma.mv", doi = "10.1002/jrsm.11", locator = "Viechtbauer and Cheung (2010): equation 21 and its matrix form 20 for Cook's distance (the chi-square form, with no division by p), equation 23 for DFBETAS with the variance of the coefficients refitted without the case, equations 15 and 16 for the externally standardised residual; with the marginal covariance in place of diag(v + tau2) and a set of rows deleted, after Christensen, Pearson and Johnson (1992), section 2, the generalised Cook's distance and Propositions 2 and 3 (their form divides by p; this reference follows Viechtbauer and Cheung and metafor)", read = 2026-11-19 }
+
+[[case]]
+id = "mv.diag.fixed.berkey"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.berkey1998"
+setup = { vblocks = { cluster = "trial", columns = ["v1i", "v2i"] } }
+args = { yi = "yi", mods = "~ 0 + outcome", random = "~ outcome | trial", struct = "UN" }
+check = "test_derived.mv_deletion"
+covers = ["rma_mv.cooks_distance.fixed", "rma_mv.dfbetas.fixed", "rma_mv.rstudent.fixed"]
+then = { function = "rstudent", args = { reestimate = false } }
+source = { citation = "Viechtbauer W, Cheung MW-L (2010). Outlier and influence diagnostics for meta-analysis. Res Synth Methods 1:112-125; Christensen R, Pearson LM, Johnson W (1992). Case-deletion diagnostics for mixed models. Technometrics 34:38-45; metafor 5.2-1, help pages residuals.rma and influence.rma.mv", doi = "10.1002/jrsm.11", locator = "Viechtbauer and Cheung (2010): equation 21 and its matrix form 20 for Cook's distance (the chi-square form, with no division by p), equation 23 for DFBETAS with the variance of the coefficients refitted without the case, equations 15 and 16 for the externally standardised residual; with the marginal covariance in place of diag(v + tau2) and a set of rows deleted, after Christensen, Pearson and Johnson (1992), section 2, the generalised Cook's distance and Propositions 2 and 3 (their form divides by p; this reference follows Viechtbauer and Cheung and metafor)", read = 2026-11-19 }
+
+[[case]]
+id = "mv.diag.btt.berkey"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.berkey1998"
+setup = { vblocks = { cluster = "trial", columns = ["v1i", "v2i"] } }
+args = { yi = "yi", mods = "~ 0 + outcome", random = "~ outcome | trial", struct = "UN" }
+check = "test_derived.mv_deletion"
+covers = ["rma_mv.cooks_distance.btt"]
+then = { function = "cooks_distance", args = { btt = [1] } }
+source = { citation = "Viechtbauer W, Cheung MW-L (2010). Outlier and influence diagnostics for meta-analysis. Res Synth Methods 1:112-125; Christensen R, Pearson LM, Johnson W (1992). Case-deletion diagnostics for mixed models. Technometrics 34:38-45; metafor 5.2-1, help pages residuals.rma and influence.rma.mv", doi = "10.1002/jrsm.11", locator = "Viechtbauer and Cheung (2010): equation 21 and its matrix form 20 for Cook's distance (the chi-square form, with no division by p), equation 23 for DFBETAS with the variance of the coefficients refitted without the case, equations 15 and 16 for the externally standardised residual; with the marginal covariance in place of diag(v + tau2) and a set of rows deleted, after Christensen, Pearson and Johnson (1992), section 2, the generalised Cook's distance and Propositions 2 and 3 (their form divides by p; this reference follows Viechtbauer and Cheung and metafor)", read = 2026-11-19 }
+
+[[case]]
+id = "mv.ranef.nested.kon"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.konstantopoulos2011"
+args = { yi = "yi", V = "vi", random = "~ 1 | district/school", test = "z" }
+check = "test_derived.mv_ranef"
+covers = ["rma_mv.ranef.sigma2", "rma_mv.ranef.pi.z"]
+then = { function = "ranef", args = {} }
+source = { citation = "Henderson CR (1975). Best linear unbiased estimation and prediction under a selection model. Biometrics 31:423-447; Searle SR, Casella G, McCulloch CE (1992). Variance Components. Wiley, section 7.6; metafor 5.2-1, help page ranef.rma.mv", doi = "10.2307/2529430", locator = "Henderson (1975), equation 5, the mixed model equations, and the text after equation 8, Var(u-hat - u) = C22 sigma^2 from the inverse of their coefficient matrix; Searle, Casella and McCulloch (1992), section 7.6, equations 52 and 53, the same equations with R and D (Robinson 1991 was not read: its open copy could not be fetched on 2026-11-19)", read = 2026-11-19 }
+
+[[case]]
+id = "mv.ranef.r.moura"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.moura2021"
+setup = { escalc = { measure = "ZCOR", ri = "ri", ni = "ni" }, subset = { column = "phylum", equals = "Arthropoda" }, tree_r = { tree = "moura2021", factor = "species.id" } }
+args = { yi = "yi", V = "vi", random = ["~ 1 | study.id", "~ 1 | species.id"], sigma2 = [0.05, 0.03], Rscale = "cor" }
+check = "test_derived.mv_ranef"
+covers = ["rma_mv.ranef.R"]
+then = { function = "ranef", args = {} }
+source = { citation = "Henderson CR (1975). Best linear unbiased estimation and prediction under a selection model. Biometrics 31:423-447; Searle SR, Casella G, McCulloch CE (1992). Variance Components. Wiley, section 7.6; metafor 5.2-1, help page ranef.rma.mv", doi = "10.2307/2529430", locator = "Henderson (1975), equation 5, the mixed model equations, and the text after equation 8, Var(u-hat - u) = C22 sigma^2 from the inverse of their coefficient matrix; Searle, Casella and McCulloch (1992), section 7.6, equations 52 and 53, the same equations with R and D (Robinson 1991 was not read: its open copy could not be fetched on 2026-11-19)", read = 2026-11-19 }
+
+[[case]]
+id = "mv.ranef.un.berkey"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.berkey1998"
+setup = { vblocks = { cluster = "trial", columns = ["v1i", "v2i"] } }
+args = { yi = "yi", mods = "~ 0 + outcome", random = "~ outcome | trial", struct = "UN" }
+check = "test_derived.mv_ranef"
+covers = ["rma_mv.ranef.G"]
+then = { function = "ranef", args = {} }
+source = { citation = "Henderson CR (1975). Best linear unbiased estimation and prediction under a selection model. Biometrics 31:423-447; Searle SR, Casella G, McCulloch CE (1992). Variance Components. Wiley, section 7.6; metafor 5.2-1, help page ranef.rma.mv", doi = "10.2307/2529430", locator = "Henderson (1975), equation 5, the mixed model equations, and the text after equation 8, Var(u-hat - u) = C22 sigma^2 from the inverse of their coefficient matrix; Searle, Casella and McCulloch (1992), section 7.6, equations 52 and 53, the same equations with R and D (Robinson 1991 was not read: its open copy could not be fetched on 2026-11-19)", read = 2026-11-19 }
+
+[[case]]
+id = "mv.ranef.two_terms.berkey"
+kind = "derived"
+function = "rma_mv"
+dataset = "dat.berkey1998"
+setup = { vblocks = { cluster = "trial", columns = ["v1i", "v2i"] } }
+args = { yi = "yi", mods = "~ 0 + outcome", random = ["~ outcome | trial", "~ outcome | author"], struct = ["ID", "ID"] }
+check = "test_derived.mv_ranef"
+covers = ["rma_mv.ranef.H"]
+then = { function = "ranef", args = {} }
+source = { citation = "Henderson CR (1975). Best linear unbiased estimation and prediction under a selection model. Biometrics 31:423-447; Searle SR, Casella G, McCulloch CE (1992). Variance Components. Wiley, section 7.6; metafor 5.2-1, help page ranef.rma.mv", doi = "10.2307/2529430", locator = "Henderson (1975), equation 5, the mixed model equations, and the text after equation 8, Var(u-hat - u) = C22 sigma^2 from the inverse of their coefficient matrix; Searle, Casella and McCulloch (1992), section 7.6, equations 52 and 53, the same equations with R and D (Robinson 1991 was not read: its open copy could not be fetched on 2026-11-19)", read = 2026-11-19 }
+
+[[case]]
+id = "mv.ranef.gen.slopes"
+kind = "derived"
+function = "rma_mv"
+args = { yi = "yi", V = "vi", random = "~ x | cl", struct = "GEN" }
+check = "test_derived.mv_ranef"
+covers = ["rma_mv.ranef.GEN"]
+then = { function = "ranef", args = {} }
+source = { citation = "Henderson CR (1975). Best linear unbiased estimation and prediction under a selection model. Biometrics 31:423-447; Searle SR, Casella G, McCulloch CE (1992). Variance Components. Wiley, section 7.6; metafor 5.2-1, help page ranef.rma.mv", doi = "10.2307/2529430", locator = "Henderson (1975), equation 5, the mixed model equations, and the text after equation 8, Var(u-hat - u) = C22 sigma^2 from the inverse of their coefficient matrix; Searle, Casella and McCulloch (1992), section 7.6, equations 52 and 53, the same equations with R and D (Robinson 1991 was not read: its open copy could not be fetched on 2026-11-19)", read = 2026-11-19 }
+[case.data]
+cl = ["c00", "c00", "c00", "c00", "c00", "c00", "c01", "c01", "c01", "c01", "c01", "c01", "c02", "c02", "c02", "c02", "c02", "c02", "c03", "c03", "c03", "c03", "c03", "c03", "c04", "c04", "c04", "c04", "c04", "c04", "c05", "c05", "c05", "c05", "c05", "c05", "c06", "c06", "c06", "c06", "c06", "c06", "c07", "c07", "c07", "c07", "c07", "c07", "c08", "c08", "c08", "c08", "c08", "c08", "c09", "c09", "c09", "c09", "c09", "c09", "c10", "c10", "c10", "c10", "c10", "c10", "c11", "c11", "c11", "c11", "c11", "c11"]
+x = [0.02, 0.9, -0.71, 0.9, -0.38, -0.15, 0.66, -0.18, 0.1, -0.94, 0.51, 0.08, -0.34, 0.58, -0.39, -0.09, -0.73, -0.19, -0.59, -0.48, 0.5, -0.44, -0.03, 0.96, 0.92, 0.45, 0.08, -0.45, -0.68, 0.94, 0.03, -0.77, 0.25, 0.55, 0.23, 0.83, -0.92, 0.06, -0.08, -0.88, 0.28, 0.71, 0.19, -0.48, 0.68, 0.02, 0.02, 0.51, -0.7, 0.64, 0.37, 0.57, -0.62, 0.6, -0.62, -0.84, 0.71, 0.72, 0.75, -0.06, -0.45, -0.99, 0.29, 0.44, 0.67, -0.44, -0.57, 0.28, 0.61, 0.93, -0.7, -0.04]
+yi = [0.47, 0.7, 0.44, 0.26, 0.38, 0.39, -0.04, -0.08, -0.04, -0.34, 0.07, -0.15, -0.24, -0.04, 0.18, 0.02, 0.07, -0.19, 1.0, 0.64, 0.7, 0.43, 0.7, 0.77, 0.6, 0.32, 0.5, 0.23, -0.4, 0.59, 0.14, 0.7, 0.28, 0.24, 0.12, 0.39, 0.42, 0.32, 0.51, -0.08, 0.62, 0.6, 0.35, -0.02, -0.09, 0.13, -0.03, -0.06, -0.08, 0.25, 0.06, 0.18, -0.01, 0.23, -0.18, -0.28, 0.2, 0.04, 0.09, -0.19, 0.05, -0.09, 0.21, -0.07, 0.04, 0.18, 0.01, 0.19, 0.06, 0.57, -0.07, -0.13]
+vi = [0.013, 0.029, 0.021, 0.032, 0.03, 0.023, 0.036, 0.029, 0.034, 0.02, 0.026, 0.016, 0.04, 0.017, 0.018, 0.012, 0.018, 0.033, 0.031, 0.014, 0.021, 0.023, 0.03, 0.024, 0.028, 0.035, 0.032, 0.021, 0.023, 0.021, 0.013, 0.016, 0.019, 0.019, 0.019, 0.027, 0.039, 0.033, 0.034, 0.033, 0.028, 0.038, 0.031, 0.025, 0.012, 0.025, 0.016, 0.014, 0.025, 0.034, 0.019, 0.033, 0.026, 0.014, 0.039, 0.022, 0.019, 0.035, 0.014, 0.032, 0.016, 0.022, 0.017, 0.035, 0.022, 0.039, 0.029, 0.031, 0.026, 0.019, 0.022, 0.038]
+
+[[case]]
+id = "mv.ranef.gen.crossed"
+kind = "derived"
+function = "rma_mv"
+args = { yi = "yi", V = "vi", random = ["~ 1 | g", "~ x | cl"], struct = ["GEN", "GEN"], sigma2 = 0.05 }
+check = "test_derived.mv_ranef"
+covers = ["rma_mv.ranef.GEN"]
+then = { function = "ranef", args = {} }
+source = { citation = "Henderson CR (1975). Best linear unbiased estimation and prediction under a selection model. Biometrics 31:423-447; Searle SR, Casella G, McCulloch CE (1992). Variance Components. Wiley, section 7.6; metafor 5.2-1, help page ranef.rma.mv", doi = "10.2307/2529430", locator = "Henderson (1975), equation 5, the mixed model equations, and the text after equation 8, Var(u-hat - u) = C22 sigma^2 from the inverse of their coefficient matrix; Searle, Casella and McCulloch (1992), section 7.6, equations 52 and 53, the same equations with R and D (Robinson 1991 was not read: its open copy could not be fetched on 2026-11-19)", read = 2026-11-19 }
+status = "mismatch"
+reason = "ranef for GEN with a second term that crosses the clusters: BLUP of cluster c07 (intercept, slope) metafopy (-0.155422, -0.068466), reference (-0.165067, -0.099029), largest difference 0.0306; c03 metafopy (0.422449, 0.016976), reference (0.452740, 0.003167); c00 metafopy (0.210216, 0.030857), reference (0.222839, 0.040562). R metafor 5.2-1 prints metafopy's values for c00 and c01 to six decimals (measurements.md, 2026-11-19), so metafopy and R metafor agree; the reference solves the mixed model equations with the whole inverse marginal covariance, while ranef.rma.mv uses only its within-cluster block, which drops the links another term makes between clusters. Recorded on 2026-11-19; reviewed 2026-11-20: accepted as a difference from the reference on 2026-11-20 (keep metafor)"
+[case.data]
+cl = ["c00", "c00", "c00", "c00", "c00", "c00", "c01", "c01", "c01", "c01", "c01", "c01", "c02", "c02", "c02", "c02", "c02", "c02", "c03", "c03", "c03", "c03", "c03", "c03", "c04", "c04", "c04", "c04", "c04", "c04", "c05", "c05", "c05", "c05", "c05", "c05", "c06", "c06", "c06", "c06", "c06", "c06", "c07", "c07", "c07", "c07", "c07", "c07", "c08", "c08", "c08", "c08", "c08", "c08", "c09", "c09", "c09", "c09", "c09", "c09", "c10", "c10", "c10", "c10", "c10", "c10", "c11", "c11", "c11", "c11", "c11", "c11"]
+x = [0.02, 0.9, -0.71, 0.9, -0.38, -0.15, 0.66, -0.18, 0.1, -0.94, 0.51, 0.08, -0.34, 0.58, -0.39, -0.09, -0.73, -0.19, -0.59, -0.48, 0.5, -0.44, -0.03, 0.96, 0.92, 0.45, 0.08, -0.45, -0.68, 0.94, 0.03, -0.77, 0.25, 0.55, 0.23, 0.83, -0.92, 0.06, -0.08, -0.88, 0.28, 0.71, 0.19, -0.48, 0.68, 0.02, 0.02, 0.51, -0.7, 0.64, 0.37, 0.57, -0.62, 0.6, -0.62, -0.84, 0.71, 0.72, 0.75, -0.06, -0.45, -0.99, 0.29, 0.44, 0.67, -0.44, -0.57, 0.28, 0.61, 0.93, -0.7, -0.04]
+yi = [0.47, 0.7, 0.44, 0.26, 0.38, 0.39, -0.04, -0.08, -0.04, -0.34, 0.07, -0.15, -0.24, -0.04, 0.18, 0.02, 0.07, -0.19, 1.0, 0.64, 0.7, 0.43, 0.7, 0.77, 0.6, 0.32, 0.5, 0.23, -0.4, 0.59, 0.14, 0.7, 0.28, 0.24, 0.12, 0.39, 0.42, 0.32, 0.51, -0.08, 0.62, 0.6, 0.35, -0.02, -0.09, 0.13, -0.03, -0.06, -0.08, 0.25, 0.06, 0.18, -0.01, 0.23, -0.18, -0.28, 0.2, 0.04, 0.09, -0.19, 0.05, -0.09, 0.21, -0.07, 0.04, 0.18, 0.01, 0.19, 0.06, 0.57, -0.07, -0.13]
+vi = [0.013, 0.029, 0.021, 0.032, 0.03, 0.023, 0.036, 0.029, 0.034, 0.02, 0.026, 0.016, 0.04, 0.017, 0.018, 0.012, 0.018, 0.033, 0.031, 0.014, 0.021, 0.023, 0.03, 0.024, 0.028, 0.035, 0.032, 0.021, 0.023, 0.021, 0.013, 0.016, 0.019, 0.019, 0.019, 0.027, 0.039, 0.033, 0.034, 0.033, 0.028, 0.038, 0.031, 0.025, 0.012, 0.025, 0.016, 0.014, 0.025, 0.034, 0.019, 0.033, 0.026, 0.014, 0.039, 0.022, 0.019, 0.035, 0.014, 0.032, 0.016, 0.022, 0.017, 0.035, 0.022, 0.039, 0.029, 0.031, 0.026, 0.019, 0.022, 0.038]
+g = ["g0", "g1", "g2", "g0", "g1", "g2", "g0", "g1", "g2", "g0", "g1", "g2", "g0", "g1", "g2", "g0", "g1", "g2", "g0", "g1", "g2", "g0", "g1", "g2", "g0", "g1", "g2", "g0", "g1", "g2", "g0", "g1", "g2", "g0", "g1", "g2", "g0", "g1", "g2", "g0", "g1", "g2", "g0", "g1", "g2", "g0", "g1", "g2", "g0", "g1", "g2", "g0", "g1", "g2", "g0", "g1", "g2", "g0", "g1", "g2", "g0", "g1", "g2", "g0", "g1", "g2", "g0", "g1", "g2", "g0", "g1", "g2"]
+
+[[exempt]]
+item = "rma_mv.ranef.pi.t"
+reason = "defined only in metafor's code; R parity covers it"

@@ -2117,6 +2117,179 @@ def mv_fit(yi: FloatArray, V: FloatArray, X: FloatArray, terms: list[RandomTerm]
     return MVFit(tuple(variances), tuple(correlations), b, vb, mv_loglik(yi, V, X, extra, method, W), norm <= MV_GRADIENT_LIMIT, norm, message)
 
 
+@dataclasses.dataclass(frozen=True)
+class MVDeletion:
+    """Per deleted set: Cook's distance, DFBETAS (rows by set), deleted residuals, their standard errors, z, X2, and each refit's convergence.
+
+    ``cook``, ``X2``, ``converged`` and ``gradient_norms`` run over the deleted sets in the order given; ``dfbetas`` has one row per set. ``resid``,
+    ``se`` and ``z`` have one entry per row of the data (``nan`` for a row in no set), each from the deletion of the set that holds the row.
+    """
+
+    cook: FloatArray
+    dfbetas: FloatArray
+    resid: FloatArray
+    se: FloatArray
+    z: FloatArray
+    X2: FloatArray
+    converged: tuple[bool, ...]
+    gradient_norms: FloatArray
+    messages: tuple[str, ...] = ()
+
+
+def cut_term(term: RandomTerm, kept: IntArray) -> RandomTerm:
+    """``term`` restricted to the rows ``kept``; the outer codes keep indexing ``R``, so only the per-row fields are cut."""
+    return dataclasses.replace(
+        term,
+        outer=term.outer[kept],
+        inner=term.inner[kept],
+        design=None if term.design is None else term.design[kept],
+        dist=None if term.dist is None else term.dist[numpy.ix_(kept, kept)],
+    )
+
+
+def marginal_extra(terms: list[RandomTerm], variances: list[FloatArray], correlations: list[FloatArray], k: int) -> FloatArray:
+    """The sum over ``terms`` of the matrix each adds to ``M`` (``term_matrix``)."""
+    extra = numpy.zeros((k, k))
+    for term, var, cor in zip(terms, variances, correlations, strict=True):
+        extra = extra + term_matrix(term, var, cor)
+    return extra
+
+
+def mv_deletion(
+    yi: FloatArray,
+    V: FloatArray,
+    X: FloatArray,
+    terms: list[RandomTerm],
+    method: str,
+    variances: list[FloatArray],
+    correlations: list[FloatArray],
+    groups: list[IntArray],
+    reestimate: bool,
+    btt: list[int] | None = None,
+) -> MVDeletion:
+    """Leave-one-set-out diagnostics by explicit refits, the definitions of Viechtbauer and Cheung (2010) with ``M`` for ``diag(v + tau2)``.
+
+    ``groups`` holds, for each deleted set, the indices of its rows. For each set ``S``
+    with kept rows ``K``: the components ``c_(S)`` are a refit of ``mv_fit`` on ``K`` (``reestimate``) or the given ones; ``b_(S)``, ``vb_(S)`` are the
+    generalised least squares on ``K`` with ``M(c_(S))``. Cook's distance is ``(b - b_(S))' vb^-1 (b - b_(S))`` over the ``btt`` coefficients,
+    DFBETAS ``(b_j - b_(S)j) / sqrt(vb*_jj)`` with ``vb*`` the variance on all rows at ``c_(S)``, the deleted residual ``y_S - X_S b_(S)`` with
+    covariance ``M(c_(S))[S, S] + X_S vb_(S) X_S'``, ``z`` its standardised value and ``X2`` its quadratic form (the ``residuals.rma`` help page).
+    Christensen, Pearson and Johnson (1992) give the case-set deletion in mixed models.
+    """
+    k, p = X.shape
+    columns = list(range(p)) if btt is None else list(btt)
+    M_full = V + marginal_extra(terms, variances, correlations, k)
+    b, vb = gls(yi, M_full, X)
+    vb_btt = numpy.linalg.inv(vb[numpy.ix_(columns, columns)])
+    cook = numpy.zeros(len(groups))
+    dfbetas = numpy.zeros((len(groups), p))
+    resid = numpy.full(k, numpy.nan)
+    se = numpy.full(k, numpy.nan)
+    z = numpy.full(k, numpy.nan)
+    x2 = numpy.zeros(len(groups))
+    converged: list[bool] = []
+    messages: list[str] = []
+    norms = numpy.zeros(len(groups))
+    for position, rows in enumerate(groups):
+        deleted = numpy.asarray(rows, dtype=numpy.intp)
+        kept = numpy.setdiff1d(numpy.arange(k), deleted)
+        if numpy.linalg.matrix_rank(X[kept]) < p:
+            raise ValueError(f'mv_deletion: deleting set {position} (rows {deleted.tolist()}) leaves the model matrix rank deficient')
+        if reestimate:
+            fit = mv_fit(yi[kept], V[numpy.ix_(kept, kept)], X[kept], [cut_term(term, kept) for term in terms], method)
+            var_s, cor_s = list(fit.variances), list(fit.correlations)
+            converged.append(fit.success)
+            messages.append(fit.message)
+            norms[position] = fit.gradient_norm
+        else:
+            var_s, cor_s = variances, correlations
+            converged.append(True)
+            messages.append('')
+        M_s = V + marginal_extra(terms, var_s, cor_s, k)
+        b_s, vb_s = gls(yi[kept], M_s[numpy.ix_(kept, kept)], X[kept])
+        diff = b - b_s
+        cook[position] = float(diff[columns] @ vb_btt @ diff[columns])
+        _, vb_star = gls(yi, M_s, X)
+        dfbetas[position] = diff / numpy.sqrt(numpy.diag(vb_star))
+        e = yi[deleted] - X[deleted] @ b_s
+        cov = M_s[numpy.ix_(deleted, deleted)] + X[deleted] @ vb_s @ X[deleted].T
+        resid[deleted] = e
+        se[deleted] = numpy.sqrt(numpy.diag(cov))
+        z[deleted] = e / se[deleted]
+        x2[position] = float(e @ numpy.linalg.solve(cov, e))
+    return MVDeletion(cook, dfbetas, resid, se, z, x2, tuple(converged), norms, tuple(messages))
+
+
+@dataclasses.dataclass(frozen=True)
+class MVBlups:
+    """beta and, per term in the order of ``terms``, the BLUPs of the observed levels and their prediction error variances.
+
+    A ``sigma2`` term has one entry per outer level in sorted order of the codes; a factor structure one per observed (outer, inner) pair, sorted by
+    outer then inner; ``GEN`` and ``GDIAG`` one per (outer level, coefficient); a spatial structure one per row.
+    """
+
+    beta: FloatArray
+    blups: tuple[FloatArray, ...]
+    pev: tuple[FloatArray, ...]
+
+
+def term_design(term: RandomTerm, variances: FloatArray, correlations: FloatArray, k: int) -> tuple[FloatArray, FloatArray]:
+    """``Z`` and ``G`` of one term: the incidence of its random effects on the rows and their covariance matrix (Henderson 1975)."""
+    levels = numpy.unique(term.outer)
+    if term.struct == SIGMA2:
+        z = (term.outer[:, None] == levels[None, :]).astype(numpy.float64)
+        known = numpy.eye(len(levels)) if term.R is None else term.R[numpy.ix_(levels, levels)]
+        return z, float(variances[0]) * known
+    if term.struct in SPATIAL_STRUCTS:
+        same = (term.outer[:, None] == term.outer[None, :]).astype(numpy.float64)
+        return numpy.eye(k), numpy.asarray(struct_matrix(term.struct, numpy.zeros(0), variances, correlations, term.dist) * same, dtype=numpy.float64)
+    if term.struct in COEFFICIENT_STRUCTS:
+        assert term.design is not None
+        d = struct_matrix(term.struct, numpy.arange(term.n_inner, dtype=numpy.float64), variances, correlations)
+        z = numpy.zeros((k, len(levels) * term.n_inner))
+        for position, level in enumerate(levels):
+            rows = term.outer == level
+            z[rows, position * term.n_inner : (position + 1) * term.n_inner] = term.design[rows]
+        return z, numpy.asarray(numpy.kron(numpy.eye(len(levels)), d), dtype=numpy.float64)
+    inner_levels = numpy.arange(term.n_inner, dtype=numpy.float64) if term.levels is None else term.levels
+    g_inner = struct_matrix(term.struct, inner_levels, variances, correlations)
+    pairs = sorted({(int(o), int(i)) for o, i in zip(term.outer, term.inner, strict=True)})
+    z = numpy.array([[float(o == po and i == pi) for po, pi in pairs] for o, i in zip(term.outer, term.inner, strict=True)])
+    g = numpy.array([[g_inner[i1, i2] if o1 == o2 else 0.0 for o2, i2 in pairs] for o1, i1 in pairs])
+    return z, g
+
+
+def mv_blups(yi: FloatArray, V: FloatArray, X: FloatArray, terms: list[RandomTerm], variances: list[FloatArray], correlations: list[FloatArray]) -> MVBlups:
+    """Henderson's mixed model equations with ``R = V`` (Henderson 1975; Robinson 1991, equation 3.2; Searle, Casella and McCulloch 1992, section 7.4).
+
+    ``[X'V^-1 X, X'V^-1 Z; Z'V^-1 X, Z'V^-1 Z + G^-1] [b; u] = [X'V^-1 y; Z'V^-1 y]`` with ``Z`` and ``G`` of all terms side by side; the prediction
+    error variances are the diagonal of the lower block of the inverse coefficient matrix, which includes the uncertainty of ``b``. Raises
+    ``ValueError`` naming the term when a ``G`` is singular.
+    """
+    k, p = X.shape
+    zs: list[FloatArray] = []
+    gs: list[FloatArray] = []
+    for index, (term, var, cor) in enumerate(zip(terms, variances, correlations, strict=True)):
+        z, g = term_design(term, var, cor, k)
+        if numpy.linalg.matrix_rank(g) < g.shape[0]:
+            raise ValueError(f'mv_blups: the covariance matrix of term {index} ({term.struct}) is singular')
+        zs.append(z)
+        gs.append(g)
+    z_all = numpy.hstack(zs)
+    sizes = [z.shape[1] for z in zs]
+    g_all = numpy.zeros((z_all.shape[1], z_all.shape[1]))
+    start = 0
+    for g in gs:
+        g_all[start : start + len(g), start : start + len(g)] = g
+        start += len(g)
+    w = numpy.linalg.inv(V)
+    coefficients = numpy.block([[X.T @ w @ X, X.T @ w @ z_all], [z_all.T @ w @ X, z_all.T @ w @ z_all + numpy.linalg.inv(g_all)]])
+    solution = numpy.linalg.solve(coefficients, numpy.concatenate([X.T @ w @ yi, z_all.T @ w @ yi]))
+    pev_all = numpy.diag(numpy.linalg.inv(coefficients))[p:]
+    cuts = numpy.cumsum(sizes)[:-1]
+    return MVBlups(solution[:p], tuple(numpy.split(solution[p:], cuts)), tuple(numpy.split(pev_all, cuts)))
+
+
 # rma_mv: inference on the coefficients, QE and QM, containment degrees of freedom, and profile-likelihood intervals of the components.
 
 

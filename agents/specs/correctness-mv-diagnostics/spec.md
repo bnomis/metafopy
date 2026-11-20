@@ -1,7 +1,7 @@
 # Correctness tests: rma_mv diagnostics
 
 **Version:** 1.1
-**Status:** proposed
+**Status:** implemented
 **Date:** 2026-11-19
 
 This spec adds correctness cases for the `rma_mv` diagnostics `cooks_distance`, `dfbetas`, `rstudent` and `ranef` to the harness in
@@ -125,6 +125,7 @@ def mv_blups(yi: FloatArray, V: FloatArray, X: FloatArray, terms: list[RandomTer
 
 
 # test_derived.py
+# auditme: accept[spec-api-signature-drift] the check in test_derived.py shares its name with the reference in formulas.py; its signature is built in Task 2
 def mv_deletion(case: correctness.cases.Case, result: typing.Any) -> None:
     """The case's ``then`` is ``rstudent`` (or ``cooks_distance`` with ``btt``) with ``cluster`` and ``reestimate``; the check refits the case
     (``refit``) and calls ``cooks_distance``, ``dfbetas`` and ``rstudent`` with the same arguments, against ``formulas.mv_deletion``."""

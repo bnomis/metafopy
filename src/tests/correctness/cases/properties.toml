@@ -482,3 +482,46 @@ check = "test_properties.hc_with_zero_tau2_is_the_equal_effects_estimate"
 # Cases removed on the answer "keep metafor" (mismatches.md, answered 2026-11-15): the spec's property that the Henmi-Copas interval at a DerSimonian-Laird tau2 of 0 is the equal-effects interval does not hold (the interval allows for tau2 having been estimated).
 # Each was a strict expected failure; the values and the sources are in agents/specs/correctness-publication-bias/mismatches.md.
 #   property.hc.zero-tau2.interval
+
+# rma_mv diagnostics. One row per id: the diagnostics of ~ 1 | id are those of the rma_uni random-effects model (rma_uni with a tighter threshold).
+[[case]]
+id = "property.mv.diagnostics-one-row-per-id.bcg"
+kind = "property"
+function = "rma_mv"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", V = "vi", random = "~ 1 | trial", mods = "~ ablat", method = "REML" }
+expect = {}
+check = "test_properties.mv_diagnostics_equal_uni"
+
+# Clusters of one row each are the rows: `study` has one value per row of the data, in increasing order.
+[[case]]
+id = "property.mv.diagnostics-row-clusters.kon"
+kind = "property"
+function = "rma_mv"
+dataset = "dat.konstantopoulos2011"
+args = { yi = "yi", V = "vi", random = "~ 1 | district", method = "REML" }
+expect = {}
+check = "test_properties.mv_row_clusters_equal_per_row"
+then = { function = "rstudent", args = { cluster = "study" } }
+
+# A cluster of one row: X2 is the square of z.
+[[case]]
+id = "property.mv.diagnostics-x2-one-row.kon"
+kind = "property"
+function = "rma_mv"
+dataset = "dat.konstantopoulos2011"
+args = { yi = "yi", V = "vi", random = "~ 1 | district", method = "REML" }
+expect = {}
+check = "test_properties.mv_one_row_cluster_x2_is_z_squared"
+then = { function = "rstudent", args = { cluster = "study" } }
+
+# Every component fixed by the call: there is nothing to re-estimate, so reestimate does not matter.
+[[case]]
+id = "property.mv.diagnostics-fixed-components.kon"
+kind = "property"
+function = "rma_mv"
+dataset = "dat.konstantopoulos2011"
+args = { yi = "yi", V = "vi", random = "~ 1 | district/school", sigma2 = [0.06, 0.03], method = "REML" }
+expect = {}
+check = "test_properties.mv_reestimate_agrees_when_components_fixed"

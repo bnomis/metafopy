@@ -30,3 +30,6 @@ Fix direction: deferred. When taken up, one spec per area with `/specdev`, listi
 `src/tests/correctness/test_coverage.py`.
 
 Spec: `agents/specs/correctness-mv-diagnostics/spec.md` (the rma_mv part); tasks: `agents/tasks/correctness-mv-diagnostics/tasks-1.md`.
+
+Note 2026-11-20: the rma_mv diagnostics part is done (`agents/specs/correctness-mv-diagnostics/spec.md`,
+`agents/tasks/correctness-mv-diagnostics/tasks-1.md`); the location-scale part remains.
