@@ -1,7 +1,7 @@
 # Correctness tests: user weights
 
 **Version:** 1.1
-**Status:** approved
+**Status:** implemented
 **Date:** 2026-11-20
 
 This spec adds correctness cases for user-supplied `weights` in `rma_uni`: with a scale model (`rma_uni(..., weights=..., scale=...)`, a

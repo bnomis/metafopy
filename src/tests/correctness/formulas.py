@@ -1370,13 +1370,17 @@ def rma_tau2(
 def fixed_effects_fit(
     yi: FloatArray, vi: FloatArray, method: str, weights: FloatArray | None = None, mods: str | None = None, data: object | None = None
 ) -> tuple[float, FloatArray, FloatArray]:
-    """``(tau2, beta, se)``: the estimate of ``tau2`` and the weighted least squares coefficients with weights ``1 / (v + tau2)`` and their standard errors."""
+    """``(tau2, beta, se)``: ``tau2`` of ``method`` (``rma_tau2``, which uses ``weights`` only for GENQ and GENQM), then the weighted least squares
+    coefficients and their standard errors: with ``weights``, Hedges, Tipton and Johnson (2010) equations 3 and 4 with ``W = diag(weights)`` and
+    ``Sigma = diag(vi + tau2)``; without, the inverse-variance weights ``1 / (vi + tau2)`` and ``(X' W X)^-1``."""
     tau2 = rma_tau2(yi, vi, method, weights, mods, data)
     design = model_matrix(len(yi), mods, data)
     # auditme: accept[literal-duplication] this module imports numpy and scipy only, so it cannot share the tuple with test_properties.py
     if method in ('GENQ', 'GENQM'):
         assert weights is not None
-        # the supplied weights also weight the coefficients; the standard errors are then the sandwich of a misspecified weight matrix (Jackson et al. 2014)
+    if weights is not None:
+        # the supplied weights also weight the coefficients; the standard errors are then the sandwich of a misspecified weight matrix
+        # (Jackson et al. 2014; Hedges, Tipton and Johnson 2010, Res Synth Methods 1:39-65, doi:10.1002/jrsm.5, equations 3 and 4)
         a = numpy.diag(weights)
         bread = numpy.linalg.inv(design.T @ a @ design)
         cov = bread @ design.T @ a @ numpy.diag(vi + tau2) @ a @ design @ bread

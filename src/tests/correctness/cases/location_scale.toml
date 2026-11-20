@@ -1808,3 +1808,107 @@ dataset = "dat.bcg"
 setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
 args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log" }
 check = "test_properties.ls_rstandard_types_agree"
+
+# agents/specs/correctness-ls-weights/spec.md: user weights with a scale model (Task 3 of agents/tasks/correctness-ls-weights/tasks-1.md).
+
+[[case]]
+id = "ls.weights.ML.log.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", weights = "tpos", method = "ML", link = "log" }
+check = "test_derived.ls_weights"
+covers = ["ls.weights"]
+
+[case.source]
+citation = "Hedges LV, Tipton E, Johnson MC (2010). Robust variance estimation in meta-regression with dependent effect size estimates. Res Synth Methods 1:39-65; also Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Res Synth Methods 13:697-715"
+doi = "10.1002/jrsm.5"
+locator = "Equations 3 and 4, an arbitrary weight matrix W; for the scale part equation 5, which carries no user weights"
+read = 2026-11-20
+
+[[case]]
+id = "ls.weights.REML.log.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", weights = "tpos", method = "REML", link = "log" }
+check = "test_derived.ls_weights"
+covers = ["ls.weights"]
+
+[case.source]
+citation = "Hedges LV, Tipton E, Johnson MC (2010). Robust variance estimation in meta-regression with dependent effect size estimates. Res Synth Methods 1:39-65; also Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Res Synth Methods 13:697-715"
+doi = "10.1002/jrsm.5"
+locator = "Equations 3 and 4, an arbitrary weight matrix W; for the scale part equation 9, which carries no user weights"
+read = 2026-11-20
+
+[[case]]
+id = "ls.weights.ML.identity.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", weights = "tpos", method = "ML", link = "identity" }
+check = "test_derived.ls_weights"
+covers = ["ls.weights"]
+
+[case.source]
+citation = "Hedges LV, Tipton E, Johnson MC (2010). Robust variance estimation in meta-regression with dependent effect size estimates. Res Synth Methods 1:39-65; also Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Res Synth Methods 13:697-715"
+doi = "10.1002/jrsm.5"
+locator = "Equations 3 and 4, an arbitrary weight matrix W; for the scale part equation 5, which carries no user weights"
+read = 2026-11-20
+
+[[case]]
+id = "ls.weights.REML.identity.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", weights = "tpos", method = "REML", link = "identity" }
+check = "test_derived.ls_weights"
+covers = ["ls.weights"]
+
+[case.source]
+citation = "Hedges LV, Tipton E, Johnson MC (2010). Robust variance estimation in meta-regression with dependent effect size estimates. Res Synth Methods 1:39-65; also Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Res Synth Methods 13:697-715"
+doi = "10.1002/jrsm.5"
+locator = "Equations 3 and 4, an arbitrary weight matrix W; for the scale part equation 9, which carries no user weights"
+read = 2026-11-20
+
+[[case]]
+id = "ls.weights.ML.log.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", weights = "ni", method = "ML", link = "log" }
+check = "test_derived.ls_weights"
+covers = ["ls.weights"]
+
+[case.source]
+citation = "Hedges LV, Tipton E, Johnson MC (2010). Robust variance estimation in meta-regression with dependent effect size estimates. Res Synth Methods 1:39-65; also Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Res Synth Methods 13:697-715"
+doi = "10.1002/jrsm.5"
+locator = "Equations 3 and 4, an arbitrary weight matrix W; for the scale part equation 5, which carries no user weights"
+read = 2026-11-20
+
+[[case]]
+id = "ls.weights.REML.identity.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", weights = "ni", method = "REML", link = "identity" }
+check = "test_derived.ls_weights"
+covers = ["ls.weights"]
+
+[case.source]
+citation = "Hedges LV, Tipton E, Johnson MC (2010). Robust variance estimation in meta-regression with dependent effect size estimates. Res Synth Methods 1:39-65; also Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Res Synth Methods 13:697-715"
+doi = "10.1002/jrsm.5"
+locator = "Equations 3 and 4, an arbitrary weight matrix W; for the scale part equation 9, which carries no user weights"
+read = 2026-11-20
+
+[[exempt]]
+item = "ls.weights.fitstats"
+reason = "defined only in metafor's code; R parity covers it"
+
+[[exempt]]
+item = "ls.weights.knha"
+reason = "defined only in metafor's code; R parity covers it"

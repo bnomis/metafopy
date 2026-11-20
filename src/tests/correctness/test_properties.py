@@ -19,6 +19,7 @@ import correctness.cases
 import correctness.formulas
 import correctness.test_derived
 import metafopy
+import metafopy.datasets
 import metafopy.errors
 import metafopy.models.rma_glmm
 import metafopy.models.rma_ls_fit
@@ -788,3 +789,47 @@ def hc_with_zero_tau2_is_the_equal_effects_estimate(case: correctness.cases.Case
     assert result.tau2 == 0.0, f'{case.id}: the DerSimonian-Laird tau2 is {result.tau2!r}, the case must have 0'
     close(case.id, 'beta', result.beta, equal.beta, tolerance)
     close(case.id, 'se', result.se, equal.se, tolerance)
+
+
+def frame_weights() -> FloatArray:
+    """The ``tpos`` column of ``dat.bcg``, the weights of the user-weights cases."""
+    return metafopy.datasets.load('dat.bcg')['tpos'].to_numpy(dtype=numpy.float64)
+
+
+def weights_fits(weights: FloatArray | None, scaled: bool, weighted: bool = True) -> tuple[typing.Any, typing.Any]:
+    """The plain and the location-scale ``rma_uni`` fit of ``dat.bcg`` (RR, ``mods = ~ ablat``, ``scale = ~ ablat`` for the second) with ``weights``."""
+    frame = metafopy.escalc(data=metafopy.datasets.load('dat.bcg'), measure='RR', ai='tpos', bi='tneg', ci='cpos', di='cneg')
+    extra: dict[str, typing.Any] = {'scale': '~ ablat'} if scaled else {}
+    return (
+        metafopy.rma_uni(yi='yi', vi='vi', mods='~ ablat', data=frame, method='REML', weights=weights, weighted=weighted, control=CONTROL, **extra),
+        frame,
+    )
+
+
+WEIGHT_SHAPES = (False, True)
+
+
+@pytest.mark.parametrize('scaled', WEIGHT_SHAPES)
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(c=hypothesis.strategies.floats(1e-3, 1e3))
+def test_weights_constant_is_unweighted(scaled: bool, c: float) -> None:
+    """``weights`` all equal to ``c`` give the ``beta`` and ``vb`` of ``weighted=False`` (the rma.uni help page), for a plain and a location-scale fit."""
+    unweighted, frame = weights_fits(None, scaled, weighted=False)
+    constant, _ = weights_fits(numpy.full(len(frame), c), scaled)
+    where = f'constant weights {c!r}, scale model {scaled}'
+    close(where, 'beta', constant.beta, unweighted.beta, correctness.cases.DERIVED_TOLERANCE)
+    close(where, 'vb', constant.vb, unweighted.vb, correctness.cases.DERIVED_TOLERANCE)
+
+
+@pytest.mark.parametrize('scaled', WEIGHT_SHAPES)
+@hypothesis.settings(max_examples=20, deadline=10000)
+@hypothesis.given(c=hypothesis.strategies.floats(1e-3, 1e3))
+def test_weights_rescale_invariant(scaled: bool, c: float) -> None:
+    """``weights`` and ``c * weights`` give the same ``beta`` and ``vb`` (Hedges, Tipton and Johnson 2010, equations 3 and 4, are unchanged when ``W``
+    is multiplied by ``c``), for a plain and a location-scale fit."""
+    weights = frame_weights()
+    base, _ = weights_fits(weights, scaled)
+    rescaled, _ = weights_fits(c * weights, scaled)
+    where = f'weights times {c!r}, scale model {scaled}'
+    close(where, 'beta', rescaled.beta, base.beta, correctness.cases.DERIVED_TOLERANCE)
+    close(where, 'vb', rescaled.vb, base.vb, correctness.cases.DERIVED_TOLERANCE)

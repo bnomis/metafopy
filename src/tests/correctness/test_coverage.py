@@ -131,6 +131,7 @@ def coverage_items() -> list[str]:
     items += uni_diagnostics_items()
     items += glmm_items()
     items += ls_items()
+    items += uni_weights_items()
     items += bias_items()
     return items
 
@@ -195,7 +196,13 @@ def ls_items() -> list[str]:
     items += [f'ls.rstandard.{kind}' for kind in rstandard_types]
     items += ['ls.unweighted', 'ls.alpha.fixed', 'ls.alpha.bounds', 'ls.beta.fixed.ML', 'ls.optbeta.REML', 'ls.optbeta.vb.ML']
     items += ['ls.fitstats.deviance', 'ls.unweighted.fitstats', 'ls.beta.fixed.REML', 'ls.optbeta.vb.REML']
+    items += ['ls.weights', 'ls.weights.fitstats', 'ls.weights.knha']
     return items
+
+
+def uni_weights_items() -> list[str]:
+    """The user-weights items of a plain ``rma_uni`` fit: the estimates, then the fit statistics and ``knha``, which are exempt."""
+    return ['rma_uni.weights', 'rma_uni.weights.fitstats', 'rma_uni.weights.knha']
 
 
 def glmm_items() -> list[str]:
