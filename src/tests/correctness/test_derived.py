@@ -1414,7 +1414,7 @@ def ls_vif(case: correctness.cases.Case, result: typing.Any) -> None:
     """``vif(result)`` of each coefficient other than the intercept against ``formulas.gvif`` on the reference covariance of its part (Fox and Monette
     1992); the scale part uses the numerical Hessian, so its tolerance is ``LS_NUMERIC_HESSIAN``."""
     reference = ls_reference(case)
-    parts = ls_vif_parts(case, metafopy.vif(result))
+    parts = ls_vif_parts(case, result)
     for kind, vcov, tolerance in (('location', reference['vb'], LS_RELATIVE), ('scale', reference['va'], LS_NUMERIC_HESSIAN)):
         expected = [correctness.formulas.gvif(vcov, [i]) for i in range(vcov.shape[0] - 1)]
         ls_agree(case, f'{kind} vif', [e.vif for e in parts[kind].vif], expected, tolerance)
@@ -1422,12 +1422,15 @@ def ls_vif(case: correctness.cases.Case, result: typing.Any) -> None:
 
 def ls_vif_reestimate(case: correctness.cases.Case, result: typing.Any) -> None:
     """``vif(result, reestimate=True)`` against ``Var[b_j] / Var[b'_j]`` (the ``vif`` help page): ``b'`` is the coefficient of the reference refit that keeps
-    the intercept and the one coefficient, the other part unchanged. A coefficient whose reference refit raises is skipped, with a warning saying so."""
+    the intercept and the one coefficient, the other part unchanged. A coefficient whose reference refit raises is skipped, with a warning saying so.
+
+    Both parts use ``LS_NUMERIC_HESSIAN``: the ratio compares two refits, and the covariance of the location part of each depends on the optimiser's
+    ``alpha`` (the measured location difference reaches 5e-06)."""
     yi, vi, X, Z = ls_inputs(case)
     link, method = case.args.get('link', 'log'), case.args['method']
     reference = ls_reference(case)
-    parts = ls_vif_parts(case, metafopy.vif(result, reestimate=True))
-    for kind, key, tolerance in (('location', 'vb', LS_RELATIVE), ('scale', 'va', LS_NUMERIC_HESSIAN)):
+    parts = ls_vif_parts(case, result)
+    for kind, key, tolerance in (('location', 'vb', LS_NUMERIC_HESSIAN), ('scale', 'va', LS_NUMERIC_HESSIAN)):
         matrix = X if kind == 'location' else Z
         for i, entry in enumerate(parts[kind].vif, start=1):
             reduced = matrix[:, [0, i]]

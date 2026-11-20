@@ -119,7 +119,7 @@ residuals and the GVIF exist in `formulas.py`, with their own harness tests.
 
 ## Task 3: The profile, vif, blup, ranef and rstandard cases
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Cases (the `ls.profile`, `ls.vif`, `ls.blup`, `ls.ranef`, `ls.rstandard` rows); Implementation step 3
@@ -128,27 +128,27 @@ residuals and the GVIF exist in `formulas.py`, with their own harness tests.
 
 **Subtasks:**
 
-- [ ] In the new section of `src/tests/correctness/cases/location_scale.toml`, add the cases `ls.profile.ML.log.bd`, `ls.profile.REML.log.bcg`,
+- [x] In the new section of `src/tests/correctness/cases/location_scale.toml`, add the cases `ls.profile.ML.log.bd`, `ls.profile.REML.log.bcg`,
       `ls.profile.REML.identity.bd`, `ls.profile.ML.identity.bcg`, `ls.vif.ML.bd2`, `ls.vif.REML.bcg2`, `ls.vif.reestimate.ML.bd2`,
       `ls.vif.reestimate.ML.bcg2`, `ls.blup.ML.z.bd`, `ls.blup.REML.t.bcg`, `ls.ranef.REML.z.bd`, `ls.ranef.ML.t.bcg`,
       `ls.rstandard.marginal.REML.bd` and `ls.rstandard.conditional.ML.bcg`, on the datasets `measurements.md` defines (`bd`, `bcg`, `bd2`,
       `bcg2`), each with its check and `covers`
-- [ ] Each case's `source` has `citation`, `doi` where one exists, a `locator` from the spec's sources table and `read`; the `vif` cases cite Fox
+- [x] Each case's `source` has `citation`, `doi` where one exists, a `locator` from the spec's sources table and `read`; the `vif` cases cite Fox
       and Monette (1992) with locator "the GVIF definition", which Task 5 completes
-- [ ] A case whose check disagrees with metafopy beyond its tolerance is committed with `status = "mismatch"` and a `reason` naming both values,
+- [x] A case whose check disagrees with metafopy beyond its tolerance is committed with `status = "mismatch"` and a `reason` naming both values,
       the grid value or coefficient, whether R metafor 5.2-1 agrees with metafopy, and "Recorded on <date>, not yet reviewed"; the spec expects this
       for `ls.profile.ML.identity.bcg` only. Never loosen a tolerance or change a case's data to make it pass
-- [ ] Run `pytest src/tests/correctness/test_derived.py -m 'not slow' -k 'ls_'`
+- [x] Run `pytest src/tests/correctness/test_derived.py -m 'not slow' -k 'ls_'`
 
 **Acceptance Criteria:**
 
-- [ ] Every case of this group passes or is a strict expected failure with a reason
-- [ ] The coverage gate lists only the items of Task 4's group as missing
+- [x] Every case of this group passes or is a strict expected failure with a reason
+- [x] The coverage gate lists only the items of Task 4's group as missing
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] The pytest run of the last subtask passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The pytest run of the last subtask passes
 
 **Notes:**
 

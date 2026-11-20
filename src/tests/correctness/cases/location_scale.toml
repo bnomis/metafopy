@@ -1337,3 +1337,237 @@ reason = "defined only in metafor's code; R parity covers it"
 [[exempt]]
 item = "ls.optbeta.vb.REML"
 reason = "defined only in metafor's code; R parity covers it"
+
+# Task 3 of agents/tasks/correctness-ls-extensions/tasks-1.md: the cases of profile, vif, blup, ranef and rstandard. bd and bcg are
+# dat.bangertdrowns2004 (imag) and dat.bcg (ablat) in both parts; bd2 adds ni100 = ni / 100 (inline) and bcg2 adds year
+# (agents/specs/correctness-ls-extensions/measurements.md). The Fox and Monette (1992) locator is completed in Task 5.
+
+[[case]]
+id = "ls.profile.ML.log.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log" }
+check = "test_derived.ls_profile"
+covers = ["ls.profile.log"]
+
+[case.source]
+citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Res Synth Methods 13:697-715"
+doi = "10.1002/jrsm.1562"
+locator = "Section 2.6, the profile likelihood of each scale coefficient: equations 7 and 9 with that coefficient held (eq 17); the reference is formulas.ls_profile_ll"
+read = 2026-11-20
+
+[[case]]
+id = "ls.profile.REML.log.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log" }
+check = "test_derived.ls_profile"
+covers = ["ls.profile.log"]
+
+[case.source]
+citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Res Synth Methods 13:697-715"
+doi = "10.1002/jrsm.1562"
+locator = "Section 2.6, the profile likelihood of each scale coefficient: equations 7 and 9 with that coefficient held (eq 17); the reference is formulas.ls_profile_ll"
+read = 2026-11-20
+
+[[case]]
+id = "ls.profile.REML.identity.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "identity" }
+check = "test_derived.ls_profile"
+covers = ["ls.profile.identity"]
+
+[case.source]
+citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Res Synth Methods 13:697-715"
+doi = "10.1002/jrsm.1562"
+locator = "Section 2.6, the profile likelihood of each scale coefficient: equations 7 and 9 with that coefficient held (eq 17); the reference is formulas.ls_profile_ll"
+read = 2026-11-20
+
+[[case]]
+id = "ls.profile.ML.identity.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "identity" }
+check = "test_derived.ls_profile"
+status = "mismatch"
+reason = "profile ll at alpha[0] = -0.133293: metafopy -8.255095092551993, the reference -8.255095081966374 (1.06e-08 below it, tolerance 1e-09 of the largest absolute ll, 8.3e-09 allowed); R metafor 5.2-1 does not agree with metafopy: every alpha[0] refit fails (All model fits failed) and its alpha[1] values lie 1.3e-08 to 1.2e-07 below the reference. Recorded on 2026-11-20, not yet reviewed"
+covers = ["ls.profile.identity"]
+
+[case.source]
+citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Res Synth Methods 13:697-715"
+doi = "10.1002/jrsm.1562"
+locator = "Section 2.6, the profile likelihood of each scale coefficient: equations 7 and 9 with that coefficient held (eq 17); the reference is formulas.ls_profile_ll"
+read = 2026-11-20
+
+[[case]]
+id = "ls.vif.ML.bd2"
+kind = "derived"
+function = "rma_uni"
+data = { yi = [0.65, -0.75, -0.21, -0.04, 0.23, 0.03, 0.26, 0.06, 0.06, 0.12, 0.77, 0.0, 0.52, 0.54, 0.2, 0.2, -0.16, 0.42, 0.6, 0.51, 0.58, 0.54, 0.09, 0.37, -0.01, -0.13, 0.18, 0.27, -0.02, 0.33, 0.59, 0.84, -0.32, 0.12, 1.12, -0.12, -0.44, -0.07, 0.7, 0.49, 0.2, 0.58, 0.15, 0.63, 0.04, 1.46, 0.04, 0.25], vi = [0.07, 0.126, 0.042, 0.019, 0.022, 0.009, 0.106, 0.007, 0.04, 0.052, 0.107, 0.021, 0.037, 0.083, 0.086, 0.091, 0.167, 0.052, 0.091, 0.065, 0.073, 0.061, 0.1, 0.06, 0.083, 0.037, 0.069, 0.018, 0.009, 0.053, 0.017, 0.112, 0.06, 0.044, 0.129, 0.023, 0.205, 0.033, 0.265, 0.039, 0.021, 0.067, 0.014, 0.168, 0.016, 0.099, 0.087, 0.072], imag = [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], ni100 = [0.6, 0.34, 0.95, 2.09, 1.82, 4.62, 0.38, 5.42, 0.99, 0.77, 0.4, 1.9, 1.13, 0.5, 0.47, 0.44, 0.24, 0.78, 0.46, 0.64, 0.57, 0.68, 0.4, 0.68, 0.48, 1.07, 0.58, 2.25, 4.46, 0.77, 2.43, 0.39, 0.67, 0.91, 0.36, 1.77, 0.2, 1.2, 0.16, 1.05, 1.95, 0.62, 2.89, 0.25, 2.5, 0.51, 0.46, 0.56] }
+args = { yi = "yi", vi = "vi", mods = "~ imag + ni100", scale = "~ imag + ni100", method = "ML", link = "log" }
+check = "test_derived.ls_vif"
+covers = ["ls.vif.location", "ls.vif.scale"]
+then = { function = "vif", args = {} }
+
+[case.source]
+citation = "Fox J, Monette G (1992). Generalized collinearity diagnostics. JASA 87:178-183"
+doi = "10.1080/01621459.1992.10475190"
+locator = "the GVIF definition"
+read = 2026-11-20
+
+[[case]]
+id = "ls.vif.REML.bcg2"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat + year", scale = "~ ablat + year", method = "REML", link = "log" }
+check = "test_derived.ls_vif"
+covers = ["ls.vif.location", "ls.vif.scale"]
+then = { function = "vif", args = {} }
+
+[case.source]
+citation = "Fox J, Monette G (1992). Generalized collinearity diagnostics. JASA 87:178-183"
+doi = "10.1080/01621459.1992.10475190"
+locator = "the GVIF definition"
+read = 2026-11-20
+
+[[case]]
+id = "ls.vif.reestimate.ML.bd2"
+kind = "derived"
+function = "rma_uni"
+data = { yi = [0.65, -0.75, -0.21, -0.04, 0.23, 0.03, 0.26, 0.06, 0.06, 0.12, 0.77, 0.0, 0.52, 0.54, 0.2, 0.2, -0.16, 0.42, 0.6, 0.51, 0.58, 0.54, 0.09, 0.37, -0.01, -0.13, 0.18, 0.27, -0.02, 0.33, 0.59, 0.84, -0.32, 0.12, 1.12, -0.12, -0.44, -0.07, 0.7, 0.49, 0.2, 0.58, 0.15, 0.63, 0.04, 1.46, 0.04, 0.25], vi = [0.07, 0.126, 0.042, 0.019, 0.022, 0.009, 0.106, 0.007, 0.04, 0.052, 0.107, 0.021, 0.037, 0.083, 0.086, 0.091, 0.167, 0.052, 0.091, 0.065, 0.073, 0.061, 0.1, 0.06, 0.083, 0.037, 0.069, 0.018, 0.009, 0.053, 0.017, 0.112, 0.06, 0.044, 0.129, 0.023, 0.205, 0.033, 0.265, 0.039, 0.021, 0.067, 0.014, 0.168, 0.016, 0.099, 0.087, 0.072], imag = [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], ni100 = [0.6, 0.34, 0.95, 2.09, 1.82, 4.62, 0.38, 5.42, 0.99, 0.77, 0.4, 1.9, 1.13, 0.5, 0.47, 0.44, 0.24, 0.78, 0.46, 0.64, 0.57, 0.68, 0.4, 0.68, 0.48, 1.07, 0.58, 2.25, 4.46, 0.77, 2.43, 0.39, 0.67, 0.91, 0.36, 1.77, 0.2, 1.2, 0.16, 1.05, 1.95, 0.62, 2.89, 0.25, 2.5, 0.51, 0.46, 0.56] }
+args = { yi = "yi", vi = "vi", mods = "~ imag + ni100", scale = "~ imag + ni100", method = "ML", link = "log" }
+check = "test_derived.ls_vif_reestimate"
+covers = ["ls.vif.reestimate"]
+then = { function = "vif", args = { reestimate = true } }
+
+[case.source]
+citation = "Fox J, Monette G (1992). Generalized collinearity diagnostics. JASA 87:178-183; metafor 5.2-1, help page vif"
+doi = "10.1080/01621459.1992.10475190"
+locator = "the GVIF definition; vif(reestimate = TRUE) as Var[b_j] / Var[b'_j] from a refit with only that moderator (the vif help page, Details)"
+read = 2026-11-20
+
+[[case]]
+id = "ls.vif.reestimate.ML.bcg2"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat + year", scale = "~ ablat + year", method = "ML", link = "log" }
+check = "test_derived.ls_vif_reestimate"
+covers = ["ls.vif.reestimate"]
+then = { function = "vif", args = { reestimate = true } }
+
+[case.source]
+citation = "Fox J, Monette G (1992). Generalized collinearity diagnostics. JASA 87:178-183; metafor 5.2-1, help page vif"
+doi = "10.1080/01621459.1992.10475190"
+locator = "the GVIF definition; vif(reestimate = TRUE) as Var[b_j] / Var[b'_j] from a refit with only that moderator (the vif help page, Details)"
+read = 2026-11-20
+
+[[case]]
+id = "ls.blup.ML.z.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log", test = "z" }
+check = "test_derived.ls_blup"
+covers = ["ls.blup"]
+then = { function = "blup", args = {} }
+
+[case.source]
+citation = "Henderson CR (1975). Best linear unbiased estimation and prediction under a selection model. Biometrics 31:423-447; Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Res Synth Methods 13:697-715"
+doi = "10.2307/2529430"
+locator = "Henderson (1975), eq 5 and the text after eq 8: the mixed model equations with G = diag(tau2_i), prediction error variances from the inverse coefficient matrix"
+read = 2026-11-20
+
+[[case]]
+id = "ls.blup.REML.t.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log", test = "t" }
+check = "test_derived.ls_blup"
+covers = ["ls.blup"]
+then = { function = "blup", args = {} }
+
+[case.source]
+citation = "Henderson CR (1975). Best linear unbiased estimation and prediction under a selection model. Biometrics 31:423-447; Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Res Synth Methods 13:697-715"
+doi = "10.2307/2529430"
+locator = "Henderson (1975), eq 5 and the text after eq 8: the mixed model equations with G = diag(tau2_i), prediction error variances from the inverse coefficient matrix"
+read = 2026-11-20
+
+[[case]]
+id = "ls.ranef.REML.z.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log", test = "z" }
+check = "test_derived.ls_ranef"
+covers = ["ls.ranef"]
+then = { function = "ranef", args = {} }
+
+[case.source]
+citation = "Henderson CR (1975). Best linear unbiased estimation and prediction under a selection model. Biometrics 31:423-447; Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Res Synth Methods 13:697-715"
+doi = "10.2307/2529430"
+locator = "Henderson (1975), eq 5 and the text after eq 8: the mixed model equations with G = diag(tau2_i), prediction error variances from the inverse coefficient matrix"
+read = 2026-11-20
+
+[[case]]
+id = "ls.ranef.ML.t.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log", test = "t" }
+check = "test_derived.ls_ranef"
+covers = ["ls.ranef"]
+then = { function = "ranef", args = {} }
+
+[case.source]
+citation = "Henderson CR (1975). Best linear unbiased estimation and prediction under a selection model. Biometrics 31:423-447; Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Res Synth Methods 13:697-715"
+doi = "10.2307/2529430"
+locator = "Henderson (1975), eq 5 and the text after eq 8: the mixed model equations with G = diag(tau2_i), prediction error variances from the inverse coefficient matrix"
+read = 2026-11-20
+
+[[case]]
+id = "ls.rstandard.marginal.REML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log" }
+check = "test_derived.ls_rstandard"
+covers = ["ls.rstandard.marginal"]
+then = { function = "rstandard", args = { type = "marginal" } }
+
+[case.source]
+citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Res Synth Methods 13:697-715; metafor 5.2-1, help page residuals.rma"
+doi = "10.1002/jrsm.1562"
+locator = "Section 2.8: Var[e_i] = (1 - h_i)(v_i + tau2_i)"
+read = 2026-11-20
+
+[[case]]
+id = "ls.rstandard.conditional.ML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log" }
+check = "test_derived.ls_rstandard"
+covers = ["ls.rstandard.conditional"]
+then = { function = "rstandard", args = { type = "conditional" } }
+
+[case.source]
+citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Res Synth Methods 13:697-715; metafor 5.2-1, help page residuals.rma"
+doi = "10.1002/jrsm.1562"
+locator = "Section 2.8: Var[e_i] = (1 - h_i)(v_i + tau2_i); the conditional residual is y_i minus the BLUP over its standard error (the residuals.rma help page, Details)"
+read = 2026-11-20
+
