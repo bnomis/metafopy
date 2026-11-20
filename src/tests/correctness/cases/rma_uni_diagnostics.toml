@@ -1,0 +1,229 @@
+# The rma_uni diagnostics (cooks_distance, dfbetas, rstudent, influence, rstandard, ranef, blup): the cases, and the items that only metafor defines.
+
+[[exempt]]
+item = "rma_uni.cooks_distance.knha"
+reason = "defined only in metafor's code; R parity covers it"
+
+[[exempt]]
+item = "rma_uni.cooks_distance.unweighted"
+reason = "defined only in metafor's code; R parity covers it"
+
+[[exempt]]
+item = "rma_uni.cooks_distance.weights"
+reason = "defined only in metafor's code; R parity covers it"
+
+[[exempt]]
+item = "rma_uni.dfbetas.knha"
+reason = "defined only in metafor's code; R parity covers it"
+
+[[exempt]]
+item = "rma_uni.dfbetas.unweighted"
+reason = "defined only in metafor's code; R parity covers it"
+
+[[exempt]]
+item = "rma_uni.dfbetas.weights"
+reason = "defined only in metafor's code; R parity covers it"
+
+[[exempt]]
+item = "rma_uni.rstudent.knha"
+reason = "defined only in metafor's code; R parity covers it"
+
+[[exempt]]
+item = "rma_uni.rstudent.unweighted"
+reason = "defined only in metafor's code; R parity covers it"
+
+[[exempt]]
+item = "rma_uni.rstudent.weights"
+reason = "defined only in metafor's code; R parity covers it"
+
+# Published case: the values Viechtbauer and Cheung (2010) print in section 5.1 for the 13 BCG trials of their Table I.
+[[case]]
+id = "uni.diag.published.bcg"
+kind = "published"
+function = "rma_uni"
+data = { tpos = [4, 6, 3, 62, 33, 180, 8, 505, 29, 17, 186, 5, 27], tneg = [119, 300, 228, 13536, 5036, 1361, 2537, 87886, 7470, 1699, 50448, 2493, 16886], cpos = [11, 29, 11, 248, 47, 372, 10, 499, 45, 65, 141, 3, 29], cneg = [128, 274, 209, 12619, 5761, 1079, 619, 87892, 7232, 1600, 27197, 2338, 17825], ablat_c = [11, 22, 9, 19, -20, 11, -14, -20, -6, 9, -15, 0, 0], year_c = [-18, -17, -6, 11, 7, -13, 7, 14, 2, -5, 8, 3, 10] }
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "DL", mods = "~ ablat_c + year_c" }
+check = "test_published.influence_printed"
+printed = { "tau2" = "0.0790", "hat[3]" = "0.82", "rstudent[3]" = "-1.51", "cook.d[3]" = "9.64", "R[3]" = "14.50", "hat[6]" = "0.07", "rstudent[6]" = "-2.65", "cook.d[6]" = "0.41", "R[6]" = "43.24", "hat[12]" = "0.15", "rstudent[12]" = "2.06", "cook.d[12]" = "0.59", "R[12]" = "26.18", "dfbetas[3,0]" = "-0.87", "dfbetas[3,1]" = "-2.86", "dfbetas[3,2]" = "-2.47" }
+covers = ["rma_uni.cooks_distance.me", "rma_uni.dfbetas.me", "rma_uni.rstudent.me", "rma_uni.influence.hat", "rma_uni.influence.tau2_del"]
+source = { citation = "Viechtbauer W, Cheung MW-L (2010). Outlier and influence diagnostics for meta-analysis. Res Synth Methods 1:112-125; metafor 5.2-1, help pages influence.rma.uni and residuals.rma", doi = "10.1002/jrsm.11", locator = "section 5.1 and Table I (13 BCG trials; latitude centred at 33, year at 1966; DL, equation 9): tau2 0.0790, h, t, D and R of studies 4, 7 and 13 and the DFBETAS of study 4 (study 4 is index 3)", read = 2026-11-20 }
+
+# Derived cases: every deletion diagnostic against explicit leave-one-out refits (formulas.uni_deletion).
+# The paper's fit; also covers every influence column and rstandard.
+[[case]]
+id = "uni.diag.dl.bcg"
+kind = "derived"
+function = "rma_uni"
+data = { tpos = [4, 6, 3, 62, 33, 180, 8, 505, 29, 17, 186, 5, 27], tneg = [119, 300, 228, 13536, 5036, 1361, 2537, 87886, 7470, 1699, 50448, 2493, 16886], cpos = [11, 29, 11, 248, 47, 372, 10, 499, 45, 65, 141, 3, 29], cneg = [128, 274, 209, 12619, 5761, 1079, 619, 87892, 7232, 1600, 27197, 2338, 17825], ablat_c = [11, 22, 9, 19, -20, 11, -14, -20, -6, 9, -15, 0, 0], year_c = [-18, -17, -6, 11, 7, -13, 7, 14, 2, -5, 8, 3, 10] }
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "DL", mods = "~ ablat_c + year_c" }
+check = "test_derived.uni_deletion"
+covers = ["rma_uni.cooks_distance.me", "rma_uni.dfbetas.me", "rma_uni.rstudent.me", "rma_uni.influence.cov_r", "rma_uni.influence.dffits", "rma_uni.influence.hat", "rma_uni.influence.qe_del", "rma_uni.influence.tau2_del", "rma_uni.rstandard.marginal"]
+then = { function = "rstudent", args = {} }
+source = { citation = "Viechtbauer W, Cheung MW-L (2010). Outlier and influence diagnostics for meta-analysis. Res Synth Methods 1:112-125; metafor 5.2-1, help pages influence.rma.uni and residuals.rma", doi = "10.1002/jrsm.11", locator = "equation 20 for Cook's distance (the chi-square form, with no division by p), equation 23 for DFBETAS with the variance of the coefficients refitted without the study, equations 15 and 16 for the externally studentised residual, equation 19 for DFFITS, equation 25 for COVRATIO, equations 13 and 14 for the hat value and the internally studentised residual, tau2 and QE of the refit without the study (equation 27 for R)", read = 2026-11-20 }
+
+# Cook's distance over the two moderators only.
+[[case]]
+id = "uni.diag.btt.bcg"
+kind = "derived"
+function = "rma_uni"
+data = { tpos = [4, 6, 3, 62, 33, 180, 8, 505, 29, 17, 186, 5, 27], tneg = [119, 300, 228, 13536, 5036, 1361, 2537, 87886, 7470, 1699, 50448, 2493, 16886], cpos = [11, 29, 11, 248, 47, 372, 10, 499, 45, 65, 141, 3, 29], cneg = [128, 274, 209, 12619, 5761, 1079, 619, 87892, 7232, 1600, 27197, 2338, 17825], ablat_c = [11, 22, 9, 19, -20, 11, -14, -20, -6, 9, -15, 0, 0], year_c = [-18, -17, -6, 11, 7, -13, 7, 14, 2, -5, 8, 3, 10] }
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "DL", mods = "~ ablat_c + year_c" }
+check = "test_derived.uni_deletion"
+covers = ["rma_uni.cooks_distance.btt"]
+then = { function = "cooks_distance", args = { btt = [1, 2] } }
+source = { citation = "Viechtbauer W, Cheung MW-L (2010). Outlier and influence diagnostics for meta-analysis. Res Synth Methods 1:112-125; metafor 5.2-1, help pages influence.rma.uni and residuals.rma", doi = "10.1002/jrsm.11", locator = "equation 20 for Cook's distance (the chi-square form, with no division by p), equation 23 for DFBETAS with the variance of the coefficients refitted without the study, equations 15 and 16 for the externally studentised residual, equation 19 for DFFITS, equation 25 for COVRATIO, equations 13 and 14 for the hat value and the internally studentised residual, tau2 and QE of the refit without the study (equation 27 for R)", read = 2026-11-20 }
+
+# Table II of the paper (writing-to-learn, 26 studies), three moderators.
+[[case]]
+id = "uni.diag.dl.wtl"
+kind = "derived"
+function = "rma_uni"
+data = { yi = [0.65, -0.04, 0.03, 0.26, 0.06, 0.77, 0.0, 0.54, 0.2, 0.2, -0.16, 0.51, 0.54, 0.37, -0.13, 0.18, 0.27, -0.32, -0.12, -0.07, 0.7, 0.49, 0.58, 0.63, 1.46, 0.25], vi = [0.07, 0.019, 0.009, 0.106, 0.04, 0.107, 0.021, 0.083, 0.086, 0.091, 0.167, 0.065, 0.061, 0.06, 0.037, 0.069, 0.018, 0.06, 0.023, 0.033, 0.265, 0.039, 0.067, 0.168, 0.099, 0.072], length = [15, 9, 1, 4, 4, 15, 15, 4, 14, 15, 4, 3, 19, 12, 1, 1, 1, 11, 1, 15, 15, 2, 24, 15, 15, 15], meta = [1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0], college = [1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1] }
+args = { yi = "yi", vi = "vi", method = "DL", mods = "~ length + meta + college" }
+check = "test_derived.uni_deletion"
+covers = ["rma_uni.cooks_distance.me", "rma_uni.dfbetas.me", "rma_uni.rstudent.me"]
+then = { function = "rstudent", args = {} }
+source = { citation = "Viechtbauer W, Cheung MW-L (2010). Outlier and influence diagnostics for meta-analysis. Res Synth Methods 1:112-125; metafor 5.2-1, help pages influence.rma.uni and residuals.rma", doi = "10.1002/jrsm.11", locator = "equation 20 for Cook's distance (the chi-square form, with no division by p), equation 23 for DFBETAS with the variance of the coefficients refitted without the study, equations 15 and 16 for the externally studentised residual, equation 19 for DFFITS, equation 25 for COVRATIO, equations 13 and 14 for the hat value and the internally studentised residual, tau2 and QE of the refit without the study (equation 27 for R); the data are Table II of section 5.2", read = 2026-11-20 }
+
+# REML, no moderators.
+[[case]]
+id = "uni.diag.reml.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "REML", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+check = "test_derived.uni_deletion"
+covers = ["rma_uni.cooks_distance.re", "rma_uni.dfbetas.re", "rma_uni.rstudent.re"]
+then = { function = "rstudent", args = {} }
+source = { citation = "Viechtbauer W, Cheung MW-L (2010). Outlier and influence diagnostics for meta-analysis. Res Synth Methods 1:112-125; metafor 5.2-1, help pages influence.rma.uni and residuals.rma", doi = "10.1002/jrsm.11", locator = "equation 20 for Cook's distance (the chi-square form, with no division by p), equation 23 for DFBETAS with the variance of the coefficients refitted without the study, equations 15 and 16 for the externally studentised residual, equation 19 for DFFITS, equation 25 for COVRATIO, equations 13 and 14 for the hat value and the internally studentised residual, tau2 and QE of the refit without the study (equation 27 for R)", read = 2026-11-20 }
+
+# REML, no moderators, the teacher expectancy studies.
+[[case]]
+id = "uni.diag.reml.raudenbush"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "REML", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+check = "test_derived.uni_deletion"
+covers = []
+then = { function = "rstudent", args = {} }
+source = { citation = "Viechtbauer W, Cheung MW-L (2010). Outlier and influence diagnostics for meta-analysis. Res Synth Methods 1:112-125; metafor 5.2-1, help pages influence.rma.uni and residuals.rma", doi = "10.1002/jrsm.11", locator = "equation 20 for Cook's distance (the chi-square form, with no division by p), equation 23 for DFBETAS with the variance of the coefficients refitted without the study, equations 15 and 16 for the externally studentised residual, equation 19 for DFFITS, equation 25 for COVRATIO, equations 13 and 14 for the hat value and the internally studentised residual, tau2 and QE of the refit without the study (equation 27 for R)", read = 2026-11-20 }
+
+# ML with a moderator.
+[[case]]
+id = "uni.diag.ml.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "ML", mods = "~ ablat", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+check = "test_derived.uni_deletion"
+covers = []
+then = { function = "rstudent", args = {} }
+source = { citation = "Viechtbauer W, Cheung MW-L (2010). Outlier and influence diagnostics for meta-analysis. Res Synth Methods 1:112-125; metafor 5.2-1, help pages influence.rma.uni and residuals.rma", doi = "10.1002/jrsm.11", locator = "equation 20 for Cook's distance (the chi-square form, with no division by p), equation 23 for DFBETAS with the variance of the coefficients refitted without the study, equations 15 and 16 for the externally studentised residual, equation 19 for DFFITS, equation 25 for COVRATIO, equations 13 and 14 for the hat value and the internally studentised residual, tau2 and QE of the refit without the study (equation 27 for R)", read = 2026-11-20 }
+
+# Equal-effects fit: tau2 is 0 in every refit.
+[[case]]
+id = "uni.diag.ee.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "EE", mods = "~ ablat" }
+check = "test_derived.uni_deletion"
+covers = ["rma_uni.cooks_distance.ee", "rma_uni.dfbetas.ee", "rma_uni.rstudent.ee"]
+then = { function = "rstudent", args = {} }
+source = { citation = "Viechtbauer W, Cheung MW-L (2010). Outlier and influence diagnostics for meta-analysis. Res Synth Methods 1:112-125; metafor 5.2-1, help pages influence.rma.uni and residuals.rma", doi = "10.1002/jrsm.11", locator = "equation 20 for Cook's distance (the chi-square form, with no division by p), equation 23 for DFBETAS with the variance of the coefficients refitted without the study, equations 15 and 16 for the externally studentised residual, equation 19 for DFFITS, equation 25 for COVRATIO, equations 13 and 14 for the hat value and the internally studentised residual, tau2 and QE of the refit without the study (equation 27 for R)", read = 2026-11-20 }
+
+# tau2 given by the call: kept in every refit.
+[[case]]
+id = "uni.diag.fixed.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", tau2 = 0.05, mods = "~ ablat" }
+check = "test_derived.uni_deletion"
+covers = ["rma_uni.cooks_distance.tau2_fixed", "rma_uni.dfbetas.tau2_fixed", "rma_uni.rstudent.tau2_fixed"]
+then = { function = "rstudent", args = {} }
+source = { citation = "Viechtbauer W, Cheung MW-L (2010). Outlier and influence diagnostics for meta-analysis. Res Synth Methods 1:112-125; metafor 5.2-1, help pages influence.rma.uni and residuals.rma", doi = "10.1002/jrsm.11", locator = "equation 20 for Cook's distance (the chi-square form, with no division by p), equation 23 for DFBETAS with the variance of the coefficients refitted without the study, equations 15 and 16 for the externally studentised residual, equation 19 for DFFITS, equation 25 for COVRATIO, equations 13 and 14 for the hat value and the internally studentised residual, tau2 and QE of the refit without the study (equation 27 for R)", read = 2026-11-20 }
+
+# ranef and blup against Henderson's mixed model equations.
+# REML, normal intervals.
+[[case]]
+id = "uni.ranef.reml.raudenbush"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "REML", test = "z", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+check = "test_derived.uni_ranef"
+covers = ["rma_uni.ranef.re", "rma_uni.ranef.pi.z"]
+then = { function = "ranef", args = {} }
+source = { citation = "Henderson CR (1975). Best linear unbiased estimation and prediction under a selection model. Biometrics 31:423-447; Searle SR, Casella G, McCulloch CE (1992). Variance Components. Wiley, section 7.6; metafor 5.2-1, help page ranef.rma.uni", doi = "10.2307/2529430", locator = "Henderson (1975), equation 5, the mixed model equations, and the text after equation 8, Var(u-hat - u) = C22 sigma^2 from the inverse of their coefficient matrix; Searle, Casella and McCulloch (1992), section 7.6, equations 52 and 53 (Z = I, G = tau2 I, R = diag(vi)); the t intervals and the zero BLUPs of equal-effects fits from the metafor 5.2-1 ranef help page, read 2026-11-20", read = 2026-11-20 }
+
+# REML with a moderator, t intervals.
+[[case]]
+id = "uni.ranef.reml.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "REML", mods = "~ ablat", test = "t", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+check = "test_derived.uni_ranef"
+covers = ["rma_uni.ranef.me", "rma_uni.ranef.pi.t"]
+then = { function = "ranef", args = {} }
+source = { citation = "Henderson CR (1975). Best linear unbiased estimation and prediction under a selection model. Biometrics 31:423-447; Searle SR, Casella G, McCulloch CE (1992). Variance Components. Wiley, section 7.6; metafor 5.2-1, help page ranef.rma.uni", doi = "10.2307/2529430", locator = "Henderson (1975), equation 5, the mixed model equations, and the text after equation 8, Var(u-hat - u) = C22 sigma^2 from the inverse of their coefficient matrix; Searle, Casella and McCulloch (1992), section 7.6, equations 52 and 53 (Z = I, G = tau2 I, R = diag(vi)); the t intervals and the zero BLUPs of equal-effects fits from the metafor 5.2-1 ranef help page, read 2026-11-20", read = 2026-11-20 }
+
+# Equal-effects fit: every BLUP is 0.
+[[case]]
+id = "uni.ranef.ee.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "EE", mods = "~ ablat" }
+check = "test_derived.uni_ranef"
+covers = ["rma_uni.ranef.ee"]
+then = { function = "ranef", args = {} }
+source = { citation = "Henderson CR (1975). Best linear unbiased estimation and prediction under a selection model. Biometrics 31:423-447; Searle SR, Casella G, McCulloch CE (1992). Variance Components. Wiley, section 7.6; metafor 5.2-1, help page ranef.rma.uni", doi = "10.2307/2529430", locator = "Henderson (1975), equation 5, the mixed model equations, and the text after equation 8, Var(u-hat - u) = C22 sigma^2 from the inverse of their coefficient matrix; Searle, Casella and McCulloch (1992), section 7.6, equations 52 and 53 (Z = I, G = tau2 I, R = diag(vi)); the t intervals and the zero BLUPs of equal-effects fits from the metafor 5.2-1 ranef help page, read 2026-11-20", read = 2026-11-20 }
+
+# Published BLUPs: Raudenbush (2009), Table 16.2 and section 16.5.6.1, dat.raudenbush1985.
+[[case]]
+id = "uni.blup.published.raudenbush"
+kind = "published"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "REML", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+check = "test_published.blup_printed"
+printed = { "pred[3]" = "0.21", "min(pred)" = "-0.03", "max(pred)" = "0.25" }
+covers = ["rma_uni.blup.re"]
+source = { citation = "Raudenbush SW (2009). Analyzing effect sizes: random-effects models. In: Cooper H, Hedges LV, Valentine JC (eds), The Handbook of Research Synthesis and Meta-Analysis, 2nd ed. Russell Sage, 295-315; Henderson CR (1975). Biometrics 31:423-447; metafor 5.2-1, help page blup.rma.uni", locator = "Table 16.2 and section 16.5.6.1: theta*_4 0.21 (study 4 is index 3) and the range of the shrunken estimates (-0.03, 0.25) of the model with no moderator (the mixed-model range is not used)", read = 2026-11-20 }
+
+# The same fit, against the mixed model equations.
+[[case]]
+id = "uni.blup.reml.raudenbush"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.raudenbush1985"
+args = { yi = "yi", vi = "vi", method = "REML", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+check = "test_derived.uni_blup"
+covers = ["rma_uni.blup.re"]
+then = { function = "blup", args = {} }
+source = { citation = "Raudenbush SW (2009). Analyzing effect sizes: random-effects models. In: Cooper H, Hedges LV, Valentine JC (eds), The Handbook of Research Synthesis and Meta-Analysis, 2nd ed. Russell Sage, 295-315; Henderson CR (1975). Biometrics 31:423-447; metafor 5.2-1, help page blup.rma.uni", locator = "Raudenbush (2009), equations 16.23 to 16.25 for the shrunken estimate x b + u of each study, with its variance from the mixed model equations of Henderson (1975), equation 5 (the book omits the uncertainty of b, so only the estimates are compared with print)", read = 2026-11-20 }
+
+# REML with a moderator.
+[[case]]
+id = "uni.blup.reml.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "REML", mods = "~ ablat", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+check = "test_derived.uni_blup"
+covers = ["rma_uni.blup.me"]
+then = { function = "blup", args = {} }
+source = { citation = "Raudenbush SW (2009). Analyzing effect sizes: random-effects models. In: Cooper H, Hedges LV, Valentine JC (eds), The Handbook of Research Synthesis and Meta-Analysis, 2nd ed. Russell Sage, 295-315; Henderson CR (1975). Biometrics 31:423-447; metafor 5.2-1, help page blup.rma.uni", locator = "Raudenbush (2009), equations 16.23 to 16.25 for the shrunken estimate x b + u of each study, with its variance from the mixed model equations of Henderson (1975), equation 5 (the book omits the uncertainty of b, so only the estimates are compared with print)", read = 2026-11-20 }

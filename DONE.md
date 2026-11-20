@@ -1513,3 +1513,19 @@ probe are in the task list below.
 Tasks: `agents/tasks/bagos2009-hooper/tasks-1.md`.
 
 Done: 2026-11-19, agents/tasks/bagos2009-hooper/tasks-1.md; the data are the BMJ article's Table 1 for the trials its data supplement Table A gives, with the corn and olive events reversed; three rows of the Hooper column are published cases and the random-study-effects CI bounds a recorded mismatch
+
+## No correctness case covers the rma_uni diagnostics
+
+<!-- doc-counts: accept-start found on 2026-11-19 - a dated record, not a claim about the present -->
+Found on 2026-11-19 while writing `agents/specs/correctness-mv-diagnostics/spec.md`: no case in `src/tests/correctness` names the `rma_uni`
+diagnostics `cooks_distance`, `dfbetas`, `rstudent` or `ranef`, so only the R parity fixtures check them. Viechtbauer and Cheung (2010, Res Synth
+Methods 1:112-125, doi:10.1002/jrsm.11) define them directly. Decision D1 of `agents/reviews/correctness-mv-diagnostics-spec.md` (answered
+2026-11-19) keeps them out of the rma_mv spec and files them here.
+<!-- doc-counts: accept-end -->
+
+Fix direction: a spec with `/specdev`, modelled on `agents/specs/correctness-mv-diagnostics/spec.md` (brute-force leave-one-out references in
+`formulas.py`, coverage items in `src/tests/correctness/test_coverage.py`), its definitions checked against Viechtbauer and Cheung (2010).
+
+Spec: `agents/specs/correctness-uni-diagnostics/spec.md`; tasks: `agents/tasks/correctness-uni-diagnostics/tasks-1.md`.
+
+Done: 2026-11-20 - agents/specs/correctness-uni-diagnostics/spec.md, agents/tasks/correctness-uni-diagnostics/tasks-1.md.

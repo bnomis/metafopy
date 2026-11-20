@@ -352,6 +352,23 @@ def mv_diagnostics_equal_uni(case: correctness.cases.Case, result: typing.Any) -
         close(where, f'ranef {column}', mv_ranef[column].to_numpy(), getattr(uni_ranef, name), case.tolerance)
 
 
+def uni_mean_shift(case: correctness.cases.Case, result: typing.Any) -> None:
+    """Viechtbauer and Cheung (2010) section 3, eqs 17 and 18: for each study, the z statistic of a dummy for it added to ``mods`` equals the
+    externally studentised residual of the study. Holds for DL, REML and EE; an ML fit does not satisfy it, so an ML case is refused."""
+    if case.args.get('method') == 'ML':
+        raise ValueError(f'{case.id}: the mean-shift identity does not hold for ML fits')
+    frame = correctness.cases.case_frame(case)
+    assert frame is not None
+    deleted = metafopy.rstudent(result)
+    mods = case.args.get('mods')
+    shifted = '~ shift' if mods is None else f'{mods} + shift'
+    for i in range(len(frame)):
+        with_dummy = frame.assign(shift=(numpy.arange(len(frame)) == i).astype(numpy.float64))
+        args = {**case.args, 'data': with_dummy, 'mods': shifted}
+        fit = metafopy.rma_uni(**args)
+        close(case.id, f'z of the dummy for study {i}', fit.zval[-1], deleted.z[i], case.tolerance)
+
+
 def mv_row_clusters_equal_per_row(case: correctness.cases.Case, result: typing.Any) -> None:
     """Deleting clusters that each hold one row is deleting each row: ``cluster`` set to a column with one value per row (here ``cluster`` in
     the case's ``then``) gives the per-row Cook's distance, DFBETAS and deleted residuals, in the sorted order of the ids."""

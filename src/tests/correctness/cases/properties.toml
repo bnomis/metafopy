@@ -525,3 +525,27 @@ dataset = "dat.konstantopoulos2011"
 args = { yi = "yi", V = "vi", random = "~ 1 | district/school", sigma2 = [0.06, 0.03], method = "REML" }
 expect = {}
 check = "test_properties.mv_reestimate_agrees_when_components_fixed"
+
+# Mean-shift outlier model (the paper's fit): the z of a dummy for each study equals its externally studentised residual.
+[[case]]
+id = "property.uni.mean-shift.dl.bcg"
+kind = "property"
+function = "rma_uni"
+data = { tpos = [4, 6, 3, 62, 33, 180, 8, 505, 29, 17, 186, 5, 27], tneg = [119, 300, 228, 13536, 5036, 1361, 2537, 87886, 7470, 1699, 50448, 2493, 16886], cpos = [11, 29, 11, 248, 47, 372, 10, 499, 45, 65, 141, 3, 29], cneg = [128, 274, 209, 12619, 5761, 1079, 619, 87892, 7232, 1600, 27197, 2338, 17825], ablat_c = [11, 22, 9, 19, -20, 11, -14, -20, -6, 9, -15, 0, 0], year_c = [-18, -17, -6, 11, 7, -13, 7, 14, 2, -5, 8, 3, 10] }
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "DL", mods = "~ ablat_c + year_c" }
+expect = {}
+check = "test_properties.uni_mean_shift"
+source = { citation = "Viechtbauer W, Cheung MW-L (2010). Outlier and influence diagnostics for meta-analysis. Res Synth Methods 1:112-125; metafor 5.2-1, help pages influence.rma.uni and residuals.rma", doi = "10.1002/jrsm.11", locator = "section 3, equations 17 and 18 (the mean-shift outlier model)", read = 2026-11-20 }
+
+# Mean-shift outlier model (REML): the z of a dummy for each study equals its externally studentised residual.
+[[case]]
+id = "property.uni.mean-shift.reml.bcg"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", method = "REML", mods = "~ ablat", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = {}
+check = "test_properties.uni_mean_shift"
+source = { citation = "Viechtbauer W, Cheung MW-L (2010). Outlier and influence diagnostics for meta-analysis. Res Synth Methods 1:112-125; metafor 5.2-1, help pages influence.rma.uni and residuals.rma", doi = "10.1002/jrsm.11", locator = "section 3, equations 17 and 18 (the mean-shift outlier model)", read = 2026-11-20 }

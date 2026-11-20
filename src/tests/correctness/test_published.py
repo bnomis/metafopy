@@ -162,3 +162,29 @@ def vl2022_lrt(case: correctness.cases.Case, result: typing.Any) -> None:
     )
     test = metafopy.anova(result, reduced)
     check_values(case, {'LRT': float(test.LRT), 'pval': float(test.pval), 'df': float(test.df_full - test.df_reduced)})
+
+
+def influence_printed(case: correctness.cases.Case, result: typing.Any) -> None:
+    """``influence(fit)`` values a source prints (Viechtbauer and Cheung, 2010, Table I).
+
+    ``hat[i]``, ``rstudent[i]``, ``cook.d[i]`` and ``dfbetas[i,j]`` (0-based study ``i`` and coefficient ``j``) are the fit's; ``R[i]`` is
+    ``100 (tau2 - tau2.del[i]) / tau2``, the percentage change in ``tau2`` when study ``i`` is left out; ``tau2`` is the fit's.
+    """
+    influence = metafopy.influence(result)
+    values: dict[str, float] = {'tau2': scalar(result.tau2)}
+    for i in range(len(influence.hat)):
+        values[f'hat[{i}]'] = float(influence.hat[i])
+        values[f'rstudent[{i}]'] = float(influence.rstudent[i])
+        values[f'cook.d[{i}]'] = float(influence.cook_d[i])
+        values[f'R[{i}]'] = 100 * (scalar(result.tau2) - float(influence.tau2_del[i])) / scalar(result.tau2)
+        for j in range(influence.dfbs_array.shape[1]):
+            values[f'dfbetas[{i},{j}]'] = float(influence.dfbs_array[i, j])
+    check_values(case, values)
+
+
+def blup_printed(case: correctness.cases.Case, result: typing.Any) -> None:
+    """``blup(fit)`` values a source prints (Raudenbush, 2009, Table 16.2): ``pred[i]`` (0-based study), ``min(pred)`` and ``max(pred)``."""
+    predicted = metafopy.blup(result).pred
+    values = {f'pred[{i}]': float(value) for i, value in enumerate(predicted)}
+    values.update({'min(pred)': float(predicted.min()), 'max(pred)': float(predicted.max())})
+    check_values(case, values)

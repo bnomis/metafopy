@@ -760,6 +760,88 @@ def mv_ranef(case: correctness.cases.Case, result: typing.Any) -> None:
             mv_agree(case, f'pi.ub of term {position}', ordered['pi.ub'].to_numpy(), pred + crit * se, MV_TIGHT_TOLERANCE)
 
 
+def uni_inputs(case: correctness.cases.Case) -> tuple[pandas.DataFrame, FloatArray, FloatArray]:
+    """The case's data and its ``yi`` and ``vi`` as arrays."""
+    frame = correctness.cases.case_frame(case)
+    assert frame is not None
+    return frame, frame[case.args['yi']].to_numpy(dtype=numpy.float64), frame[case.args['vi']].to_numpy(dtype=numpy.float64)
+
+
+def uni_deletion_agree(case: correctness.cases.Case, name: str, actual: typing.Any, expected: typing.Any) -> None:
+    """``numbers_agree`` where a NaN from metafopy against a value from the reference names the study."""
+    actual = numpy.asarray(actual, dtype=numpy.float64)
+    expected = numpy.asarray(expected, dtype=numpy.float64)
+    lost = numpy.isnan(actual) & ~numpy.isnan(expected)
+    if lost.any():
+        study = int(numpy.argwhere(lost)[0][0])
+        raise AssertionError(f'{case.id}: {name}: metafopy gives NaN for the deletion of study {study}, where the reference has a value')
+    numbers_agree(case, name, actual, expected)
+
+
+# auditme: accept[spec-api-signature-drift] shares its name with formulas.uni_deletion; the spec gives the reference's signature
+def uni_deletion(case: correctness.cases.Case, result: typing.Any) -> None:
+    """``cooks_distance`` (with the ``btt`` of the case's ``then``), ``dfbetas``, ``rstudent``, ``rstandard`` and every ``influence`` column of the
+    case's fit against ``formulas.uni_deletion`` (Viechtbauer and Cheung 2010, eqs 13-27), refitting without each study; a NaN from metafopy where
+    the reference has a value fails naming the study."""
+    fit = refit(case)
+    frame, yi, vi = uni_inputs(case)
+    btt = case.then.args.get('btt') if case.then is not None else None
+    data = {name: frame[name].to_numpy() for name in frame.columns}
+    reference = correctness.formulas.uni_deletion(yi, vi, case.args.get('method', 'REML'), case.args.get('mods'), data, case.args.get('tau2'), btt)
+    deleted = metafopy.rstudent(fit)
+    influence: typing.Any = metafopy.influence(fit)
+    uni_deletion_agree(case, "Cook's distance", metafopy.cooks_distance(fit, btt=btt).to_numpy(), reference.cook)
+    uni_deletion_agree(case, 'DFBETAS', metafopy.dfbetas(fit).to_numpy(), reference.dfbetas)
+    uni_deletion_agree(case, 'deleted residual', deleted.resid, reference.resid)
+    uni_deletion_agree(case, 'deleted residual se', deleted.se, reference.se)
+    uni_deletion_agree(case, 'deleted residual z', deleted.z, reference.z)
+    uni_deletion_agree(case, 'influence rstudent', influence.rstudent, reference.z)
+    uni_deletion_agree(case, 'influence dffits', influence.dffits, reference.dffits)
+    uni_deletion_agree(case, 'influence cov.r', influence.cov_r, reference.cov_r)
+    uni_deletion_agree(case, 'influence tau2.del', influence.tau2_del, reference.tau2_del)
+    uni_deletion_agree(case, 'influence QE.del', influence.QE_del, reference.qe_del)
+    uni_deletion_agree(case, 'influence hat', influence.hat, reference.hat)
+    uni_deletion_agree(case, 'rstandard', metafopy.rstandard(fit).z, reference.rstandard)
+
+
+def uni_critical(case: correctness.cases.Case, fit: typing.Any) -> float:
+    """The quantile of the prediction intervals: normal, or t on ``k - p`` degrees of freedom for the tests that use it."""
+    level = float(case.then.args.get('level', case.args.get('level', 95))) if case.then is not None else float(case.args.get('level', 95))
+    return correctness.formulas.critical_value(fit.test, fit.k - fit.p, level)
+
+
+def uni_shrinkage_agree(case: correctness.cases.Case, fit: typing.Any, result: typing.Any, pred: FloatArray, se: FloatArray) -> None:
+    crit = uni_critical(case, fit)
+    numbers_agree(case, 'pred', result.pred, pred)
+    numbers_agree(case, 'se', result.se, se)
+    numbers_agree(case, 'pi.lb', result.pi_lb, pred - crit * se)
+    numbers_agree(case, 'pi.ub', result.pi_ub, pred + crit * se)
+
+
+def uni_ranef(case: correctness.cases.Case, result: typing.Any) -> None:
+    """``ranef(fit)``: ``pred``, ``se`` and the interval bounds against Henderson's mixed model equations with one ``~ 1 | study`` term
+    (``formulas.mv_blups``) at metafopy's ``tau2`` (Henderson 1975; Searle, Casella and McCulloch 1992, section 7.6); for an equal-effects fit every
+    value is 0 (the ``ranef`` help page of metafor 5.2-1)."""
+    fit = refit(case)
+    _, yi, vi = uni_inputs(case)
+    if fit.tau2 == 0 and case.args.get('method') in MV_FIXED_METHODS:
+        zeros = numpy.zeros(len(yi))
+        uni_shrinkage_agree(case, fit, result, zeros, zeros)
+        return
+    X = fit.X
+    solved = correctness.formulas.mv_blups(yi, numpy.diag(vi), X, [correctness.formulas.study_term(len(yi))], [numpy.array([fit.tau2])], [numpy.zeros(0)])
+    uni_shrinkage_agree(case, fit, result, solved.blups[0], numpy.sqrt(solved.pev[0]))
+
+
+def uni_blup(case: correctness.cases.Case, result: typing.Any) -> None:
+    """``blup(fit)``: ``pred``, ``se`` and the interval bounds against ``formulas.uni_blups`` at metafopy's ``tau2`` (Henderson 1975; Raudenbush 2009,
+    eqs 16.23-16.25), with the normal or t quantile as ``ranef``."""
+    fit = refit(case)
+    _, yi, vi = uni_inputs(case)
+    reference = correctness.formulas.uni_blups(yi, vi, fit.X, fit.tau2)
+    uni_shrinkage_agree(case, fit, result, reference.pred, reference.se)
+
+
 ROBUST_TOLERANCE = 1e-8
 
 
