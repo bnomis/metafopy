@@ -1571,3 +1571,242 @@ doi = "10.1002/jrsm.1562"
 locator = "Section 2.8: Var[e_i] = (1 - h_i)(v_i + tau2_i); the conditional residual is y_i minus the BLUP over its standard error (the residuals.rma help page, Details)"
 read = 2026-11-20
 
+
+# Task 4 of agents/tasks/correctness-ls-extensions/tasks-1.md: the option cases (weighted = false, fixed alpha and beta, alpha_min and alpha_max,
+# optbeta under REML, vb of optbeta fits) and, at the end, the two property cases of the spec.
+
+[[case]]
+id = "ls.unweighted.ML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log", weighted = false }
+check = "test_derived.ls_unweighted"
+covers = ["ls.unweighted"]
+
+[case.source]
+citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Res Synth Methods 13:697-715; metafor 5.2-1, help page rma.uni"
+doi = "10.1002/jrsm.1562"
+locator = "Equation 5 with unit weights: beta is the ordinary least squares estimate (the rma.uni help page, weighted), alpha the maximiser of the profile likelihood at it"
+read = 2026-11-20
+
+[[case]]
+id = "ls.unweighted.REML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log", weighted = false }
+check = "test_derived.ls_unweighted"
+covers = ["ls.unweighted"]
+
+[case.source]
+citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Res Synth Methods 13:697-715; metafor 5.2-1, help page rma.uni"
+doi = "10.1002/jrsm.1562"
+locator = "Equation 5 with unit weights: beta is the ordinary least squares estimate (the rma.uni help page, weighted), alpha the maximiser of the profile likelihood at it"
+read = 2026-11-20
+
+[[case]]
+id = "ls.alpha.fixed.ML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log", alpha = [nan, 2.7] }
+check = "test_derived.ls_alpha_fixed"
+covers = ["ls.alpha.fixed"]
+
+[case.source]
+citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Res Synth Methods 13:697-715"
+doi = "10.1002/jrsm.1562"
+locator = "Equation 17: the likelihood with some scale coefficients constrained to arbitrary values, maximised over the others; the reference is formulas.ls_constrained_fit"
+read = 2026-11-20
+
+[[case]]
+id = "ls.alpha.fixed.REML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log", alpha = [-3.5, nan] }
+check = "test_derived.ls_alpha_fixed"
+covers = ["ls.alpha.fixed"]
+
+[case.source]
+citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Res Synth Methods 13:697-715"
+doi = "10.1002/jrsm.1562"
+locator = "Equation 17: the likelihood with some scale coefficients constrained to arbitrary values, maximised over the others; the reference is formulas.ls_constrained_fit"
+read = 2026-11-20
+
+[[case]]
+id = "ls.beta.fixed.ML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log", optbeta = true, beta = [nan, 0.05] }
+check = "test_derived.ls_beta_fixed"
+covers = ["ls.beta.fixed.ML"]
+
+[case.source]
+citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Res Synth Methods 13:697-715"
+doi = "10.1002/jrsm.1562"
+locator = "Equation 15: the reduced model with location coefficients constrained, maximised jointly (equation 5) over the others; the reference is formulas.ls_joint_fit"
+read = 2026-11-20
+
+[[case]]
+id = "ls.beta.fixed.ML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log", optbeta = true, beta = [nan, 0.02] }
+check = "test_derived.ls_beta_fixed"
+covers = ["ls.beta.fixed.ML"]
+
+[case.source]
+citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Res Synth Methods 13:697-715"
+doi = "10.1002/jrsm.1562"
+locator = "Equation 15: the reduced model with location coefficients constrained, maximised jointly (equation 5) over the others; the reference is formulas.ls_joint_fit"
+read = 2026-11-20
+
+[[case]]
+id = "ls.alpha.bounds.ML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log", control = { alpha_min = [-10.0, -10.0], alpha_max = [10.0, 10.0] } }
+check = "test_derived.ls_alpha_bounds"
+covers = ["ls.alpha.bounds"]
+
+[case.source]
+citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Res Synth Methods 13:697-715; metafor 5.2-1, help page rma.uni"
+doi = "10.1002/jrsm.1562"
+locator = "The box alpha_min, alpha_max of the control settings (metafor 5.2-1, help page rma.uni) on equation 7 or 9; the reference is the L-BFGS-B maximum within the box (formulas.ls_constrained_fit)"
+read = 2026-11-20
+
+[[case]]
+id = "ls.alpha.bounds.REML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log", control = { alpha_min = [-20.0, -10.0], alpha_max = [20.0, 1.9] } }
+check = "test_derived.ls_alpha_bounds"
+covers = ["ls.alpha.bounds"]
+
+[case.source]
+citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Res Synth Methods 13:697-715; metafor 5.2-1, help page rma.uni"
+doi = "10.1002/jrsm.1562"
+locator = "The box alpha_min, alpha_max of the control settings (metafor 5.2-1, help page rma.uni) on equation 7 or 9; the reference is the L-BFGS-B maximum within the box (formulas.ls_constrained_fit)"
+read = 2026-11-20
+
+[[case]]
+id = "ls.alpha.bounds.ML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log", control = { alpha_min = [-20.0, -1.0], alpha_max = [20.0, 0.0] } }
+check = "test_derived.ls_alpha_bounds"
+covers = ["ls.alpha.bounds"]
+
+[case.source]
+citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Res Synth Methods 13:697-715; metafor 5.2-1, help page rma.uni"
+doi = "10.1002/jrsm.1562"
+locator = "The box alpha_min, alpha_max of the control settings (metafor 5.2-1, help page rma.uni) on equation 7 or 9; the reference is the L-BFGS-B maximum within the box (formulas.ls_constrained_fit)"
+read = 2026-11-20
+
+[[case]]
+id = "ls.alpha.bounds.ML.bcg.wide"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log", control = { alpha_min = [-10.0, -1.2], alpha_max = [0.0, 1.2] } }
+check = "test_derived.ls_alpha_bounds"
+status = "mismatch"
+reason = "metafopy returns alpha [0, -0.0795806] (ll -8.6762) with only the (almost) equal to their bound warning; the bounded maximum, inside the box, is alpha [-4.95749, 0.03859] (ll -7.5393), which a start inside the box reaches, so the start (clipped onto the upper bound, where the logistic map sends it to infinity) is the cause; R metafor 5.2-1 stops with Optimizer (nlminb) did not achieve convergence. Recorded on 2026-11-20, not yet reviewed"
+covers = ["ls.alpha.bounds"]
+
+[case.source]
+citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Res Synth Methods 13:697-715; metafor 5.2-1, help page rma.uni"
+doi = "10.1002/jrsm.1562"
+locator = "The box alpha_min, alpha_max of the control settings (metafor 5.2-1, help page rma.uni) on equation 7 or 9; the reference is the L-BFGS-B maximum within the box (formulas.ls_constrained_fit)"
+read = 2026-11-20
+
+[[case]]
+id = "ls.optbeta.REML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "REML", link = "log", optbeta = true }
+check = "test_derived.ls_optbeta"
+covers = ["ls.optbeta.REML"]
+
+[case.source]
+citation = "Verbyla AP (1993). Modelling variance heterogeneity: REML and diagnostics. JRSS B 55:493-508"
+doi = "10.1111/j.2517-6161.1993.tb01918.x"
+locator = "Verbyla (1993), section 2: the restricted likelihood; the optbeta REML objective shares its maximiser (equation 9 with beta given alpha, eq 6)"
+read = 2026-11-20
+
+[[case]]
+id = "ls.optbeta.REML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log", optbeta = true }
+check = "test_derived.ls_optbeta"
+covers = ["ls.optbeta.REML"]
+
+[case.source]
+citation = "Verbyla AP (1993). Modelling variance heterogeneity: REML and diagnostics. JRSS B 55:493-508"
+doi = "10.1111/j.2517-6161.1993.tb01918.x"
+locator = "Verbyla (1993), section 2: the restricted likelihood; the optbeta REML objective shares its maximiser (equation 9 with beta given alpha, eq 6)"
+read = 2026-11-20
+
+[[case]]
+id = "ls.optbeta.vb.ML.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log", optbeta = true }
+check = "test_derived.ls_optbeta_vb"
+covers = ["ls.optbeta.vb.ML"]
+
+[case.source]
+citation = "Harvey AC (1976). Estimating regression models with multiplicative heteroscedasticity. Econometrica 44:461-465"
+doi = "10.2307/1913974"
+locator = "Equations 11 and 12: the observed information of (beta, alpha) from equation 5, inverted (decision D1 of the spec); the reference is formulas.ls_joint_information"
+read = 2026-11-20
+
+[[case]]
+id = "ls.optbeta.vb.ML.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log", optbeta = true }
+check = "test_derived.ls_optbeta_vb"
+covers = ["ls.optbeta.vb.ML"]
+
+[case.source]
+citation = "Harvey AC (1976). Estimating regression models with multiplicative heteroscedasticity. Econometrica 44:461-465"
+doi = "10.2307/1913974"
+locator = "Equations 11 and 12: the observed information of (beta, alpha) from equation 5, inverted (decision D1 of the spec); the reference is formulas.ls_joint_information"
+read = 2026-11-20
+
+[[case]]
+id = "property.ls.optbeta.va.ML.bd"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", mods = "~ imag", scale = "~ imag", method = "ML", link = "log", optbeta = true }
+check = "test_properties.ls_optbeta_va"
+
+[[case]]
+id = "property.ls.rstandard.types.REML.bcg"
+kind = "property"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log" }
+check = "test_properties.ls_rstandard_types_agree"

@@ -159,7 +159,7 @@ residuals and the GVIF exist in `formulas.py`, with their own harness tests.
 
 ## Task 4: The option cases and the property cases
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Cases (the `ls.unweighted`, `ls.alpha`, `ls.beta`, `ls.optbeta` rows and the property cases); Implementation step 3
@@ -168,25 +168,25 @@ residuals and the GVIF exist in `formulas.py`, with their own harness tests.
 
 **Subtasks:**
 
-- [ ] Add the cases `ls.unweighted.ML.bd`, `ls.unweighted.REML.bcg`, `ls.alpha.fixed.ML.bd` (`alpha = [nan, 2.7]`), `ls.alpha.fixed.REML.bcg`
+- [x] Add the cases `ls.unweighted.ML.bd`, `ls.unweighted.REML.bcg`, `ls.alpha.fixed.ML.bd` (`alpha = [nan, 2.7]`), `ls.alpha.fixed.REML.bcg`
       (`[-3.5, nan]`), `ls.beta.fixed.ML.bd` (`optbeta`, `beta = [nan, 0.05]`), `ls.beta.fixed.ML.bcg` (`[nan, 0.02]`), `ls.alpha.bounds.ML.bd`,
       `ls.alpha.bounds.REML.bd`, `ls.alpha.bounds.ML.bcg` and `ls.alpha.bounds.ML.bcg.wide` (the boxes the spec's table gives),
       `ls.optbeta.REML.bd`, `ls.optbeta.REML.bcg`, `ls.optbeta.vb.ML.bd` and `ls.optbeta.vb.ML.bcg`, each with its check, `covers` and `source`
-- [ ] The property cases `property.ls.optbeta.va.ML.bd` and `property.ls.rstandard.types.REML.bcg` in
-      `src/tests/correctness/cases/properties.toml`, checks `test_properties.ls_optbeta_va` and `test_properties.ls_rstandard_types_agree`
-- [ ] A disagreement beyond tolerance is a `mismatch` case as in Task 3; the spec expects this for `ls.alpha.bounds.ML.bcg.wide` only (metafopy
+- [x] The property cases `property.ls.optbeta.va.ML.bd` and `property.ls.rstandard.types.REML.bcg` in
+      `src/tests/correctness/cases/location_scale.toml` (where the other `property.ls.*` cases live), checks `test_properties.ls_optbeta_va` and `test_properties.ls_rstandard_types_agree`
+- [x] A disagreement beyond tolerance is a `mismatch` case as in Task 3; the spec expects this for `ls.alpha.bounds.ML.bcg.wide` only (metafopy
       alpha 0, -0.0795806, ll -8.6762, against the bounded maximum -4.95749, 0.03859, ll -7.5393)
-- [ ] Run `pytest src/tests/correctness -m 'not slow'`
+- [x] Run `pytest src/tests/correctness -m 'not slow'`
 
 **Acceptance Criteria:**
 
-- [ ] The coverage gate passes: every new item has a case or an exemption
-- [ ] Every case passes or is a strict expected failure with a reason
+- [x] The coverage gate passes: every new item has a case or an exemption
+- [x] Every case passes or is a strict expected failure with a reason
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/correctness -m 'not slow'` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/correctness -m 'not slow'` passes
 
 **Notes:**
 
