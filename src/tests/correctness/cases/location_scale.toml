@@ -1722,8 +1722,6 @@ dataset = "dat.bcg"
 setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
 args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "ML", link = "log", control = { alpha_min = [-10.0, -1.2], alpha_max = [0.0, 1.2] } }
 check = "test_derived.ls_alpha_bounds"
-status = "mismatch"
-reason = "metafopy returns alpha [0, -0.0795806] (ll -8.6762) with only the (almost) equal to their bound warning; the bounded maximum, inside the box, is alpha [-4.95749, 0.03859] (ll -7.5393), which a start inside the box reaches, so the start (clipped onto the upper bound, where the logistic map sends it to infinity) is the cause; R metafor 5.2-1 stops with Optimizer (nlminb) did not achieve convergence. Recorded on 2026-11-20; reviewed 2026-11-20, follow the reference (D1 of agents/specs/correctness-ls-extensions/mismatches.md), the fix is filed in TODO.md"
 covers = ["ls.alpha.bounds"]
 
 [case.source]

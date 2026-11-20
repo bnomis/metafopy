@@ -1566,3 +1566,19 @@ Note 2026-11-20: the rma_mv diagnostics part is done (`agents/specs/correctness-
 Spec: `agents/specs/correctness-ls-extensions/spec.md` (the location-scale part); tasks: `agents/tasks/correctness-ls-extensions/tasks-1.md`.
 
 Done: 2026-11-20 - agents/specs/correctness-mv-diagnostics/spec.md (the rma_mv part) and agents/specs/correctness-ls-extensions/spec.md (the location-scale part), agents/tasks/correctness-ls-extensions/tasks-1.md.
+
+## A location-scale fit with a start on the alpha_max bound returns a non-maximum
+
+<!-- doc-counts: accept-start found on 2026-11-20 - a dated record, not a claim about the present -->
+Found on 2026-11-20 by the case `ls.alpha.bounds.ML.bcg.wide` in `src/tests/correctness/cases/location_scale.toml` (review answered 2026-11-20, D1 of
+`agents/specs/correctness-ls-extensions/mismatches.md`, *follow the reference*). `rma_uni` on `dat.bcg` (RR, `mods = ~ ablat`, `scale = ~ ablat`, ML,
+log link) with `alpha_min = [-10, -1.2]` and `alpha_max = [0, 1.2]` returns alpha [0, -0.0795806] (log-likelihood -8.6762) with only the "(almost)
+equal to their bound" warning; the maximum inside the box is alpha [-4.95749, 0.03859] (log-likelihood -7.5393). The start is clipped onto the upper
+bound, where the logistic map used for the box sends it to infinity. R metafor 5.2-1 stops with "Optimizer (nlminb) did not achieve convergence".
+<!-- doc-counts: accept-end -->
+
+Fix direction: move the start strictly inside the box, flip the case to a passing one (remove `status = "mismatch"` and its `reason`), mark the R
+parity fixtures if any exist for it, add a `src/audit/data/known.toml` entry for the case metafor cannot fit, and add a section to
+`docs/differences.md` (metafor errors here, metafopy returns the maximum). Run `pytest src/tests/correctness -m 'not slow'` and the whole test suite.
+
+Done: 2026-11-20 - `clip_into_box` in `src/metafopy/models/rma_ls_fit.py` keeps a clipped start `BOX_START_MARGIN` (1e-4 of the width) inside the box; the case `ls.alpha.bounds.ML.bcg.wide` passes; `docs/differences.md` "A location-scale fit whose start lies on an alpha_max bound". No `known.toml` entry: no audit case fits this box, so an entry would be stale; the R parity case `bd_alpha_bounds` is unchanged.

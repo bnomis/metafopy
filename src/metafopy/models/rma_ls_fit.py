@@ -45,6 +45,9 @@ NO_LOG_LINK = ('auglag', 'constrOptim', 'constrOptim.nl')
 OPTIMIZERS = (*metafopy.models.sel_opt.OPTIMIZERS, 'constrOptim')
 # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
 OPTIMIZER_SETTINGS = ('abstol', 'maxit', 'ndeps', 'reltol', 'tol')
+# how far inside alpha_min and alpha_max, as a fraction of the box's width, a start clipped into the box is placed: on a bound the logistic map
+# puts the start at infinity, where its gradient is zero and the optimiser cannot leave it
+BOX_START_MARGIN = 1e-4
 
 
 def make_ls_control(
@@ -158,6 +161,17 @@ def mapinvfun(x: FloatArray, lb: FloatArray, ub: FloatArray) -> FloatArray:
     with numpy.errstate(divide='ignore', invalid='ignore'):
         out[bounded] = numpy.log((x[bounded] - lb[bounded]) / (ub[bounded] - x[bounded]))
     return out
+
+
+def clip_into_box(x: FloatArray, lb: FloatArray, ub: FloatArray) -> FloatArray:
+    """Clip the starting scale coefficients into ``[lb, ub]``, keeping bounded ones ``BOX_START_MARGIN`` of the width inside each bound.
+
+    metafor clips onto the bound (``pmin(pmax(alpha.init, alpha.min), alpha.max)`` in ``rma.uni``), where its logistic map sends the start to
+    infinity, so a box that does not bind can end at a non-maximum; see ``docs/differences.md``. A start further inside than the margin is unchanged.
+    """
+    bounded = numpy.isfinite(lb) & numpy.isfinite(ub)
+    margin = numpy.where(bounded, BOX_START_MARGIN * (ub - lb), 0.0)
+    return numpy.minimum(numpy.maximum(x, lb + margin), ub - margin)
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -549,8 +563,7 @@ def fit_rma_ls(
             if numpy.any(numpy.isnan(beta_init)):
                 raise metafopy.errors.InputError("No missing values allowed in 'beta_init'.")
 
-    alpha_init = numpy.minimum(numpy.maximum(alpha_init, alpha_min), alpha_max)
-    alpha_init = mapinvfun(alpha_init, alpha_min, alpha_max)
+    alpha_init = mapinvfun(clip_into_box(alpha_init, alpha_min, alpha_max), alpha_min, alpha_max)
 
     tau2_min = con.tau2_min
     problem = LSProblem(

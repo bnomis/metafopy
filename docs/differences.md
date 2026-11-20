@@ -1443,6 +1443,57 @@ print(numpy.round(res.beta.ravel(), 3))
 </div>
 </div>
 
+### A location-scale fit whose start lies on an alpha_max bound
+
+With `alpha_min` and `alpha_max` set, R clips the starting values of the scale coefficients onto the box and then maps them
+through a logistic function, which sends a start lying on a bound to infinity. In the example below the start of the intercept
+lands on `alpha_max = 0`, and R stops with "Optimizer (nlminb) did not achieve convergence". metafopy keeps a clipped start
+1e-4 of the box's width inside each bound (`BOX_START_MARGIN` in `metafopy.models.rma_ls_fit`) and returns the maximum inside the box,
+alpha (-4.9575, 0.0386) with log-likelihood -7.5393; a start already further inside is unchanged.
+
+*Why:* the box does not bind here (the unconstrained maximum lies inside it), so the maximum is the answer the model defines
+(Viechtbauer and Lopez-Lopez 2022, equation 7, maximised within `alpha_min` and `alpha_max`); before this change metafopy stopped at
+alpha (0, -0.0796), log-likelihood -8.6762, with only a warning that coefficients are near their bound. Chosen by the user on
+2026-11-20 (decision D1 in `agents/specs/correctness-ls-extensions/mismatches.md`), checked by the correctness case
+`ls.alpha.bounds.ML.bcg.wide`; checked 2026-11-20, R 4.6.2, metafor 5.2-1.
+
+<div class="compare" markdown>
+<div markdown>
+
+**R, metafor 5.2-1**
+
+```r
+library(metafor)
+dat <- escalc(measure = "RR", ai = tpos, bi = tneg, ci = cpos, di = cneg, data = dat.bcg)
+rma(yi, vi, data = dat, mods = ~ ablat, scale = ~ ablat, method = "ML",
+    control = list(alpha.min = c(-10, -1.2), alpha.max = c(0, 1.2)))
+```
+
+```text
+Error: Optimizer (nlminb) did not achieve convergence (convergence = 1).
+```
+
+</div>
+<div markdown>
+
+**Python, metafopy**
+
+```python
+import numpy
+from metafopy import datasets, escalc, rma
+
+dat = escalc(measure='RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=datasets.load('dat.bcg'))
+res = rma(yi='yi', vi='vi', data=dat, mods='~ ablat', scale='~ ablat', method='ML', control={'alpha_min': [-10, -1.2], 'alpha_max': [0, 1.2]})
+print(numpy.round(res.alpha.ravel(), 4), round(float(res.logLik()), 4))
+```
+
+```text
+[-4.9575  0.0386] -7.5393
+```
+
+</div>
+</div>
+
 ## R's quirks copied on purpose
 
 ### blup() of a cluster-robust fit recycles quantiles
