@@ -586,6 +586,72 @@ check = "test_derived.confint_genq"
 tolerance = 1e-4
 covers = ["confint.genq"]
 
+# agents/specs/correctness-ls-weights/spec.md: user weights in rma_uni against Hedges, Tipton and Johnson (2010) equations 3 and 4 (Task 3 of
+# agents/tasks/correctness-ls-weights/tasks-1.md).
+
+[[case]]
+id = "uni.weights.dl.bcg"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", weights = "tpos", method = "DL" }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+covers = ["rma_uni.weights"]
+
+[case.source]
+citation = "Hedges LV, Tipton E, Johnson MC (2010). Robust variance estimation in meta-regression with dependent effect size estimates. Res Synth Methods 1:39-65"
+doi = "10.1002/jrsm.5"
+locator = "Equations 3 and 4, an arbitrary weight matrix W"
+read = 2026-11-20
+
+[[case]]
+id = "uni.weights.dl.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", weights = "tpos", method = "DL", mods = "~ ablat" }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+covers = ["rma_uni.weights"]
+
+[case.source]
+citation = "Hedges LV, Tipton E, Johnson MC (2010). Robust variance estimation in meta-regression with dependent effect size estimates. Res Synth Methods 1:39-65"
+doi = "10.1002/jrsm.5"
+locator = "Equations 3 and 4, an arbitrary weight matrix W"
+read = 2026-11-20
+
+[[case]]
+id = "uni.weights.reml.bcg.ablat"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bcg"
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", weights = "tpos", method = "REML", mods = "~ ablat", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+covers = ["rma_uni.weights"]
+
+[case.source]
+citation = "Hedges LV, Tipton E, Johnson MC (2010). Robust variance estimation in meta-regression with dependent effect size estimates. Res Synth Methods 1:39-65"
+doi = "10.1002/jrsm.5"
+locator = "Equations 3 and 4, an arbitrary weight matrix W"
+read = 2026-11-20
+
+[[case]]
+id = "uni.weights.reml.bd"
+kind = "derived"
+function = "rma_uni"
+dataset = "dat.bangertdrowns2004"
+args = { yi = "yi", vi = "vi", weights = "ni", method = "REML", control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 } }
+expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se = "formulas.rma_se" }
+covers = ["rma_uni.weights"]
+
+[case.source]
+citation = "Hedges LV, Tipton E, Johnson MC (2010). Robust variance estimation in meta-regression with dependent effect size estimates. Res Synth Methods 1:39-65"
+doi = "10.1002/jrsm.5"
+locator = "Equations 3 and 4, an arbitrary weight matrix W"
+read = 2026-11-20
+
 [[exempt]]
 item = "rma_uni.weights.fitstats"
 reason = "defined only in metafor's code; R parity covers it"

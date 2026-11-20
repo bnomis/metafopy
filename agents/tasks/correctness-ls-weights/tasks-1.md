@@ -105,7 +105,7 @@ cases.
 
 ## Task 3: The cases
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Cases; Implementation step 3
@@ -114,34 +114,34 @@ cases.
 
 **Subtasks:**
 
-- [ ] In a new section of `src/tests/correctness/cases/location_scale.toml`, add `ls.weights.ML.log.bcg`, `ls.weights.REML.log.bcg`,
+- [x] In a new section of `src/tests/correctness/cases/location_scale.toml`, add `ls.weights.ML.log.bcg`, `ls.weights.REML.log.bcg`,
       `ls.weights.ML.identity.bcg`, `ls.weights.REML.identity.bcg` (`dat.bcg`, `escalc` RR as the existing `dat.bcg` cases, `weights = "tpos"`,
       `mods = scale = ~ ablat`), `ls.weights.ML.log.bd` and `ls.weights.REML.identity.bd` (`dat.bangertdrowns2004`, `weights = "ni"`,
       `mods = scale = ~ imag`), each `check = "test_derived.ls_weights"`, `covers = ["ls.weights"]`
-- [ ] In `src/tests/correctness/cases/inference.toml`, add `uni.weights.dl.bcg` (DL), `uni.weights.dl.bcg.ablat` (DL, `~ ablat`),
+- [x] In `src/tests/correctness/cases/inference.toml`, add `uni.weights.dl.bcg` (DL), `uni.weights.dl.bcg.ablat` (DL, `~ ablat`),
       `uni.weights.reml.bcg.ablat` (REML, `~ ablat`) on `dat.bcg` RR with `weights = "tpos"`, and `uni.weights.reml.bd` (REML) on
       `dat.bangertdrowns2004` with `weights = "ni"`, each with `expect = { tau2 = "formulas.rma_tau2", beta = "formulas.rma_beta", se =
       "formulas.rma_se" }` and `covers = ["rma_uni.weights"]`; the REML ones pass `control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000,
       tau2_max = 1e6 }`
-- [ ] Each case's `source` has `citation` (Hedges LV, Tipton E, Johnson MC (2010). Robust variance estimation in meta-regression with dependent
+- [x] Each case's `source` has `citation` (Hedges LV, Tipton E, Johnson MC (2010). Robust variance estimation in meta-regression with dependent
       effect size estimates. Res Synth Methods 1:39-65; for the location-scale cases also Viechtbauer W, Lopez-Lopez JA (2022). Location-scale
       models for meta-analysis. Res Synth Methods 13:697-715), `doi`, the `locator` of the spec's Implementation step 3, and `read = 2026-11-20`
-- [ ] A case whose check disagrees with metafopy beyond its tolerance is committed with `status = "mismatch"` and a `reason` naming both values,
+- [x] A case whose check disagrees with metafopy beyond its tolerance is committed with `status = "mismatch"` and a `reason` naming both values,
       whether R metafor 5.2-1 agrees with metafopy, and "Recorded on <date>, not yet reviewed"; the spec expects none. Never loosen a tolerance or
       change a case's data to make it pass
-- [ ] Check each locator against the PDFs in `/Users/simonb/src/metafopy papers/` (`Robust variance estimation in meta-regression with dependent
+- [x] Check each locator against the PDFs in `/Users/simonb/src/metafopy papers/` (`Robust variance estimation in meta-regression with dependent
       effect size estimates.pdf`, equations 3 and 4; `Viechtbauer_2022_Locationscale_models_for_metaanalysis.pdf`, equations 5 and 9)
-- [ ] Run `pytest src/tests/correctness -m 'not slow' -k 'weights'` and `pytest src/tests/correctness/test_coverage.py`
+- [x] Run `pytest src/tests/correctness -m 'not slow' -k 'weights'` and `pytest src/tests/correctness/test_coverage.py`
 
 **Acceptance Criteria:**
 
-- [ ] Every case passes or is a strict expected failure with a reason
-- [ ] The coverage gate passes
+- [x] Every case passes or is a strict expected failure with a reason
+- [x] The coverage gate passes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] The pytest runs of the last subtask pass
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The pytest runs of the last subtask pass
 
 **Notes:**
 
