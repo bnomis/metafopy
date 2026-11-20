@@ -2,7 +2,7 @@
 
 **Task list:** `agents/tasks/correctness-ls-extensions/tasks-1.md`
 **Spec:** `agents/specs/correctness-ls-extensions/spec.md`
-**Review page:** published by the operator session when it handles this review
+**Review page:** https://claude.ai/artifact/P3xJRRt73swVK93rrvG9mC
 
 ## What is reviewed and how
 
@@ -86,7 +86,10 @@ Checked 2026-11-20:
 
 ## Answers
 
-Left empty for the review: the operator session fills it in with the date.
+Answered 2026-11-20 on the review page (https://claude.ai/artifact/P3xJRRt73swVK93rrvG9mC):
+
+- **D1, the non-binding box (`ls.alpha.bounds.ML.bcg.wide`):** *Follow the reference*. No comment.
+- **D2, the identity-link profile shortfall (`ls.profile.ML.identity.bcg`):** *Keep metafor*. No comment.
 
 ## Sources needed
 

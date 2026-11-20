@@ -233,7 +233,7 @@ residuals and the GVIF exist in `formulas.py`, with their own harness tests.
 
 ## Task 6: The mismatch review
 
-**Status:** blocked
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation step 5
@@ -261,7 +261,7 @@ residuals and the GVIF exist in `formulas.py`, with their own harness tests.
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
 - [x] `pytest src/tests/correctness -m 'not slow'` passes
 
 **Notes:**
