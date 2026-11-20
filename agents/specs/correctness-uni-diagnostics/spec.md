@@ -1,7 +1,7 @@
 # Correctness tests: rma_uni diagnostics
 
 **Version:** 1.1
-**Status:** proposed
+**Status:** implemented
 **Date:** 2026-11-20
 
 This spec adds correctness cases for the `rma_uni` diagnostics `cooks_distance`, `dfbetas`, `rstudent` and `ranef` to the harness in

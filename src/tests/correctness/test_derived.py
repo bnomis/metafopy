@@ -760,9 +760,6 @@ def mv_ranef(case: correctness.cases.Case, result: typing.Any) -> None:
             mv_agree(case, f'pi.ub of term {position}', ordered['pi.ub'].to_numpy(), pred + crit * se, MV_TIGHT_TOLERANCE)
 
 
-UNI_T_TESTS = ('adhoc', 'hksj', 'knha', 't')
-
-
 def uni_inputs(case: correctness.cases.Case) -> tuple[pandas.DataFrame, FloatArray, FloatArray]:
     """The case's data and its ``yi`` and ``vi`` as arrays."""
     frame = correctness.cases.case_frame(case)
@@ -810,10 +807,7 @@ def uni_deletion(case: correctness.cases.Case, result: typing.Any) -> None:
 def uni_critical(case: correctness.cases.Case, fit: typing.Any) -> float:
     """The quantile of the prediction intervals: normal, or t on ``k - p`` degrees of freedom for the tests that use it."""
     level = float(case.then.args.get('level', case.args.get('level', 95))) if case.then is not None else float(case.args.get('level', 95))
-    tail = (1 - level / 100) / 2
-    if fit.test in UNI_T_TESTS:
-        return float(scipy.stats.t.isf(tail, fit.k - fit.p))
-    return float(scipy.stats.norm.isf(tail))
+    return correctness.formulas.critical_value(fit.test, fit.k - fit.p, level)
 
 
 def uni_shrinkage_agree(case: correctness.cases.Case, fit: typing.Any, result: typing.Any, pred: FloatArray, se: FloatArray) -> None:
