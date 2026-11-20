@@ -233,7 +233,7 @@ residuals and the GVIF exist in `formulas.py`, with their own harness tests.
 
 ## Task 6: The mismatch review
 
-**Status:** todo
+**Status:** blocked
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation step 5
@@ -242,7 +242,7 @@ residuals and the GVIF exist in `formulas.py`, with their own harness tests.
 
 **Subtasks:**
 
-- [ ] Write (or complete) `agents/specs/correctness-ls-extensions/mismatches.md` in the shape of `agents/specs/correctness-mv-diagnostics/mismatches.md`:
+- [x] Write (or complete) `agents/specs/correctness-ls-extensions/mismatches.md` in the shape of `agents/specs/correctness-mv-diagnostics/mismatches.md`:
       header (task list, spec), "What is reviewed and how", "Automatic checks" (dated: the `not slow` run, and that every `status = "mismatch"`
       case of this list has an item), one item per mismatch case (case, source, reference, metafopy and R metafor values, cause if found), a
       "Decisions" entry per item with the options *follow the reference*, *keep metafor* and *investigate*, each with its consequence and a
@@ -250,19 +250,19 @@ residuals and the GVIF exist in `formulas.py`, with their own harness tests.
       `agents/specs/correctness-location-scale/mismatches.md` (item `ls_identity_opt`, *follow the reference*, implemented as the identity-link
       polish) and ask only whether the remaining shortfall needs a further fix. If there is no mismatch case, say so under Automatic checks, write
       "None: no answer needed" under Answers, mark the remaining subtasks done with the note "no mismatch case" and set this task `done`
-- [ ] Run `pytest src/tests/correctness -m 'not slow'` (the quick form before a human review)
-- [ ] **Stops for the operator: the mismatch review.** Set this task `blocked` with "waiting for the mismatch review in
+- [x] Run `pytest src/tests/correctness -m 'not slow'` (the quick form before a human review)
+- [x] **Stops for the operator: the mismatch review.** Set this task `blocked` with "waiting for the mismatch review in
       agents/specs/correctness-ls-extensions/mismatches.md". An operator session publishes the review page, and once every item has an answer it
       reads the page's answers, copies each into the Answers section with the date, commits that, and only then restarts the list
 
 **Acceptance Criteria:**
 
-- [ ] Every `mismatch` case has an item with its figures, options and a recommendation, or the document says there is none
+- [x] Every `mismatch` case has an item with its figures, options and a recommendation, or the document says there is none
 
 **Definition of Done:**
 
 - [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/correctness -m 'not slow'` passes
+- [x] `pytest src/tests/correctness -m 'not slow'` passes
 
 **Notes:**
 
