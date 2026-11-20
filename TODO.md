@@ -15,3 +15,5 @@ user weights for location-scale models is not yet checked.
 
 Fix direction: a spec with `/specdev`, after the location-scale extensions list: find the defining source (or, under the rule of 2026-11-13, metafor's
 documentation, or an exemption if only its code defines it) and add the coverage items in `src/tests/correctness/test_coverage.py`.
+
+Spec: `agents/specs/correctness-ls-weights/spec.md`; tasks: `agents/tasks/correctness-ls-weights/tasks-1.md`.
