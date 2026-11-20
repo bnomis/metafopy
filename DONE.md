@@ -1599,3 +1599,19 @@ gives `weights` with `optbeta=True`, with a regression test in `src/tests/test_r
 `src/audit/data/known.toml` entry records the old behaviour.
 
 Done: 2026-11-20 - `fit_rma_ls` in `src/metafopy/models/rma_ls_fit.py` raises `InputError("Cannot use custom weights when 'optbeta=True'.")` when user weights come with `optbeta=True`; regression test `test_optbeta_with_weights_errors` in `src/tests/test_rma_ls.py` (failed before the fix). No R parity fixture or `known.toml` entry recorded the old behaviour.
+
+## No correctness case covers user weights with a scale model
+
+<!-- doc-counts: accept-start found on 2026-11-20 - a dated record, not a claim about the present -->
+Found on 2026-11-20 while writing `agents/specs/correctness-ls-extensions/spec.md`: `rma_uni(..., weights=..., scale=...)` runs in metafopy, and no
+case in `src/tests/correctness` passes user `weights` with `scale`, so only R parity checks it. Decision D2 of
+`agents/reviews/correctness-ls-extensions-spec.md` (answered 2026-11-20) files it here rather than in that spec. Whether a publication defines
+user weights for location-scale models is not yet checked.
+<!-- doc-counts: accept-end -->
+
+Fix direction: a spec with `/specdev`, after the location-scale extensions list: find the defining source (or, under the rule of 2026-11-13, metafor's
+documentation, or an exemption if only its code defines it) and add the coverage items in `src/tests/correctness/test_coverage.py`.
+
+Spec: `agents/specs/correctness-ls-weights/spec.md`; tasks: `agents/tasks/correctness-ls-weights/tasks-1.md`.
+
+Done: 2026-11-20 - agents/specs/correctness-ls-weights/spec.md, agents/tasks/correctness-ls-weights/tasks-1.md.
