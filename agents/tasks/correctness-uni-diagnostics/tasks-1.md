@@ -209,7 +209,7 @@ folder `/Users/simonb/src/metafopy papers/`.
 
 ## Task 5: The mismatch review
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation step 5
@@ -218,21 +218,21 @@ folder `/Users/simonb/src/metafopy papers/`.
 
 **Subtasks:**
 
-- [ ] If `agents/specs/correctness-uni-diagnostics/mismatches.md` says there is no mismatch case, mark every remaining subtask done with the note
+- [x] If `agents/specs/correctness-uni-diagnostics/mismatches.md` says there is no mismatch case, mark every remaining subtask done with the note
       "no mismatch case" and set this task `done`
-- [ ] Otherwise run `pytest src/tests/correctness -m 'not slow'` (the quick form before a human review)
-- [ ] **Stops for the operator: the mismatch review.** Set this task `blocked` with "waiting for the mismatch review in
+- [x] Otherwise run `pytest src/tests/correctness -m 'not slow'` (the quick form before a human review) (no mismatch case)
+- [x] **Stops for the operator: the mismatch review.** Set this task `blocked` with "waiting for the mismatch review in (no mismatch case)
       agents/specs/correctness-uni-diagnostics/mismatches.md". An operator session publishes the review page, and once every item has an answer it
       reads the page's answers, copies each into the Answers section with the date, commits that, and only then restarts the list
 
 **Acceptance Criteria:**
 
-- [ ] Either the document says there is no mismatch, or its Answers section holds a dated answer for every item
+- [x] Either the document says there is no mismatch, or its Answers section holds a dated answer for every item
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/correctness -m 'not slow'` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/correctness -m 'not slow'` passes
 
 **Notes:**
 
