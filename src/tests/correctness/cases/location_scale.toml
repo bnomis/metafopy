@@ -1340,7 +1340,7 @@ reason = "defined only in metafor's code; R parity covers it"
 
 # Task 3 of agents/tasks/correctness-ls-extensions/tasks-1.md: the cases of profile, vif, blup, ranef and rstandard. bd and bcg are
 # dat.bangertdrowns2004 (imag) and dat.bcg (ablat) in both parts; bd2 adds ni100 = ni / 100 (inline) and bcg2 adds year
-# (agents/specs/correctness-ls-extensions/measurements.md). The Fox and Monette (1992) locator is completed in Task 5.
+# (agents/specs/correctness-ls-extensions/measurements.md). Each locator was checked against its paper in Task 5.
 
 [[case]]
 id = "ls.profile.ML.log.bd"
@@ -1354,7 +1354,7 @@ covers = ["ls.profile.log"]
 [case.source]
 citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Res Synth Methods 13:697-715"
 doi = "10.1002/jrsm.1562"
-locator = "Section 2.6, the profile likelihood of each scale coefficient: equations 7 and 9 with that coefficient held (eq 17); the reference is formulas.ls_profile_ll"
+locator = "Sections 2.5.3 and 2.6, the profile likelihood of each scale coefficient: equation 7 or 9 maximised over the other coefficients with this one held (equations 17 and 18); the reference is formulas.ls_profile_ll"
 read = 2026-11-20
 
 [[case]]
@@ -1370,7 +1370,7 @@ covers = ["ls.profile.log"]
 [case.source]
 citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Res Synth Methods 13:697-715"
 doi = "10.1002/jrsm.1562"
-locator = "Section 2.6, the profile likelihood of each scale coefficient: equations 7 and 9 with that coefficient held (eq 17); the reference is formulas.ls_profile_ll"
+locator = "Sections 2.5.3 and 2.6, the profile likelihood of each scale coefficient: equation 7 or 9 maximised over the other coefficients with this one held (equations 17 and 18); the reference is formulas.ls_profile_ll"
 read = 2026-11-20
 
 [[case]]
@@ -1385,7 +1385,7 @@ covers = ["ls.profile.identity"]
 [case.source]
 citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Res Synth Methods 13:697-715"
 doi = "10.1002/jrsm.1562"
-locator = "Section 2.6, the profile likelihood of each scale coefficient: equations 7 and 9 with that coefficient held (eq 17); the reference is formulas.ls_profile_ll"
+locator = "Sections 2.5.3 and 2.6, the profile likelihood of each scale coefficient: equation 7 or 9 maximised over the other coefficients with this one held (equations 17 and 18); the reference is formulas.ls_profile_ll"
 read = 2026-11-20
 
 [[case]]
@@ -1403,7 +1403,7 @@ covers = ["ls.profile.identity"]
 [case.source]
 citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Res Synth Methods 13:697-715"
 doi = "10.1002/jrsm.1562"
-locator = "Section 2.6, the profile likelihood of each scale coefficient: equations 7 and 9 with that coefficient held (eq 17); the reference is formulas.ls_profile_ll"
+locator = "Sections 2.5.3 and 2.6, the profile likelihood of each scale coefficient: equation 7 or 9 maximised over the other coefficients with this one held (equations 17 and 18); the reference is formulas.ls_profile_ll"
 read = 2026-11-20
 
 [[case]]
@@ -1419,7 +1419,7 @@ then = { function = "vif", args = {} }
 [case.source]
 citation = "Fox J, Monette G (1992). Generalized collinearity diagnostics. JASA 87:178-183"
 doi = "10.1080/01621459.1992.10475190"
-locator = "the GVIF definition"
+locator = "Section 3, equation 10: GVIF = det R11 det R22 / det R, R the correlation matrix of the coefficients (metafor takes it from the coefficient covariance matrix)"
 read = 2026-11-20
 
 [[case]]
@@ -1436,7 +1436,7 @@ then = { function = "vif", args = {} }
 [case.source]
 citation = "Fox J, Monette G (1992). Generalized collinearity diagnostics. JASA 87:178-183"
 doi = "10.1080/01621459.1992.10475190"
-locator = "the GVIF definition"
+locator = "Section 3, equation 10: GVIF = det R11 det R22 / det R, R the correlation matrix of the coefficients (metafor takes it from the coefficient covariance matrix)"
 read = 2026-11-20
 
 [[case]]
@@ -1452,7 +1452,7 @@ then = { function = "vif", args = { reestimate = true } }
 [case.source]
 citation = "Fox J, Monette G (1992). Generalized collinearity diagnostics. JASA 87:178-183; metafor 5.2-1, help page vif"
 doi = "10.1080/01621459.1992.10475190"
-locator = "the GVIF definition; vif(reestimate = TRUE) as Var[b_j] / Var[b'_j] from a refit with only that moderator (the vif help page, Details)"
+locator = "Section 3, equation 10 (GVIF); vif(reestimate = TRUE) as Var[b_j] / Var[b'_j] from a refit with only that moderator (the vif help page, Details)"
 read = 2026-11-20
 
 [[case]]
@@ -1469,7 +1469,7 @@ then = { function = "vif", args = { reestimate = true } }
 [case.source]
 citation = "Fox J, Monette G (1992). Generalized collinearity diagnostics. JASA 87:178-183; metafor 5.2-1, help page vif"
 doi = "10.1080/01621459.1992.10475190"
-locator = "the GVIF definition; vif(reestimate = TRUE) as Var[b_j] / Var[b'_j] from a refit with only that moderator (the vif help page, Details)"
+locator = "Section 3, equation 10 (GVIF); vif(reestimate = TRUE) as Var[b_j] / Var[b'_j] from a refit with only that moderator (the vif help page, Details)"
 read = 2026-11-20
 
 [[case]]
@@ -1485,7 +1485,7 @@ then = { function = "blup", args = {} }
 [case.source]
 citation = "Henderson CR (1975). Best linear unbiased estimation and prediction under a selection model. Biometrics 31:423-447; Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Res Synth Methods 13:697-715"
 doi = "10.2307/2529430"
-locator = "Henderson (1975), eq 5 and the text after eq 8: the mixed model equations with G = diag(tau2_i), prediction error variances from the inverse coefficient matrix"
+locator = "Henderson (1975), equation 5 (section 2.3) and the variances after equation 8 (section 2.4), Var(u-hat - u) = C22 sigma2 for g-inverse block C22: the mixed model equations with G = diag(tau2_i), prediction error variances from the inverse coefficient matrix"
 read = 2026-11-20
 
 [[case]]
@@ -1502,7 +1502,7 @@ then = { function = "blup", args = {} }
 [case.source]
 citation = "Henderson CR (1975). Best linear unbiased estimation and prediction under a selection model. Biometrics 31:423-447; Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Res Synth Methods 13:697-715"
 doi = "10.2307/2529430"
-locator = "Henderson (1975), eq 5 and the text after eq 8: the mixed model equations with G = diag(tau2_i), prediction error variances from the inverse coefficient matrix"
+locator = "Henderson (1975), equation 5 (section 2.3) and the variances after equation 8 (section 2.4), Var(u-hat - u) = C22 sigma2 for g-inverse block C22: the mixed model equations with G = diag(tau2_i), prediction error variances from the inverse coefficient matrix"
 read = 2026-11-20
 
 [[case]]
@@ -1518,7 +1518,7 @@ then = { function = "ranef", args = {} }
 [case.source]
 citation = "Henderson CR (1975). Best linear unbiased estimation and prediction under a selection model. Biometrics 31:423-447; Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Res Synth Methods 13:697-715"
 doi = "10.2307/2529430"
-locator = "Henderson (1975), eq 5 and the text after eq 8: the mixed model equations with G = diag(tau2_i), prediction error variances from the inverse coefficient matrix"
+locator = "Henderson (1975), equation 5 (section 2.3) and the variances after equation 8 (section 2.4), Var(u-hat - u) = C22 sigma2 for g-inverse block C22: the mixed model equations with G = diag(tau2_i), prediction error variances from the inverse coefficient matrix"
 read = 2026-11-20
 
 [[case]]
@@ -1535,7 +1535,7 @@ then = { function = "ranef", args = {} }
 [case.source]
 citation = "Henderson CR (1975). Best linear unbiased estimation and prediction under a selection model. Biometrics 31:423-447; Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Res Synth Methods 13:697-715"
 doi = "10.2307/2529430"
-locator = "Henderson (1975), eq 5 and the text after eq 8: the mixed model equations with G = diag(tau2_i), prediction error variances from the inverse coefficient matrix"
+locator = "Henderson (1975), equation 5 (section 2.3) and the variances after equation 8 (section 2.4), Var(u-hat - u) = C22 sigma2 for g-inverse block C22: the mixed model equations with G = diag(tau2_i), prediction error variances from the inverse coefficient matrix"
 read = 2026-11-20
 
 [[case]]
@@ -1618,7 +1618,7 @@ covers = ["ls.alpha.fixed"]
 [case.source]
 citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Res Synth Methods 13:697-715"
 doi = "10.1002/jrsm.1562"
-locator = "Equation 17: the likelihood with some scale coefficients constrained to arbitrary values, maximised over the others; the reference is formulas.ls_constrained_fit"
+locator = "Section 2.5.3, equation 17: the likelihood with some scale coefficients constrained to arbitrary values, maximised over the others; the reference is formulas.ls_constrained_fit"
 read = 2026-11-20
 
 [[case]]
@@ -1634,7 +1634,7 @@ covers = ["ls.alpha.fixed"]
 [case.source]
 citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Res Synth Methods 13:697-715"
 doi = "10.1002/jrsm.1562"
-locator = "Equation 17: the likelihood with some scale coefficients constrained to arbitrary values, maximised over the others; the reference is formulas.ls_constrained_fit"
+locator = "Section 2.5.3, equation 17: the likelihood with some scale coefficients constrained to arbitrary values, maximised over the others; the reference is formulas.ls_constrained_fit"
 read = 2026-11-20
 
 [[case]]
@@ -1649,7 +1649,7 @@ covers = ["ls.beta.fixed.ML"]
 [case.source]
 citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Res Synth Methods 13:697-715"
 doi = "10.1002/jrsm.1562"
-locator = "Equation 15: the reduced model with location coefficients constrained, maximised jointly (equation 5) over the others; the reference is formulas.ls_joint_fit"
+locator = "Section 2.5.3, equation 15: the reduced model with location coefficients constrained (to zero there, to any value here), maximised jointly (equation 5) over the others; the reference is formulas.ls_joint_fit"
 read = 2026-11-20
 
 [[case]]
@@ -1665,7 +1665,7 @@ covers = ["ls.beta.fixed.ML"]
 [case.source]
 citation = "Viechtbauer W, Lopez-Lopez JA (2022). Location-scale models for meta-analysis. Res Synth Methods 13:697-715"
 doi = "10.1002/jrsm.1562"
-locator = "Equation 15: the reduced model with location coefficients constrained, maximised jointly (equation 5) over the others; the reference is formulas.ls_joint_fit"
+locator = "Section 2.5.3, equation 15: the reduced model with location coefficients constrained (to zero there, to any value here), maximised jointly (equation 5) over the others; the reference is formulas.ls_joint_fit"
 read = 2026-11-20
 
 [[case]]
@@ -1744,7 +1744,7 @@ covers = ["ls.optbeta.REML"]
 [case.source]
 citation = "Verbyla AP (1993). Modelling variance heterogeneity: REML and diagnostics. JRSS B 55:493-508"
 doi = "10.1111/j.2517-6161.1993.tb01918.x"
-locator = "Verbyla (1993), section 2: the restricted likelihood; the optbeta REML objective shares its maximiser (equation 9 with beta given alpha, eq 6)"
+locator = "Verbyla (1993), section 3.2, equation 10: the restricted log-likelihood in the variance coefficients; the optbeta REML objective shares its maximiser (Viechtbauer and Lopez-Lopez equation 9 with beta given alpha, eq 6)"
 read = 2026-11-20
 
 [[case]]
@@ -1760,7 +1760,7 @@ covers = ["ls.optbeta.REML"]
 [case.source]
 citation = "Verbyla AP (1993). Modelling variance heterogeneity: REML and diagnostics. JRSS B 55:493-508"
 doi = "10.1111/j.2517-6161.1993.tb01918.x"
-locator = "Verbyla (1993), section 2: the restricted likelihood; the optbeta REML objective shares its maximiser (equation 9 with beta given alpha, eq 6)"
+locator = "Verbyla (1993), section 3.2, equation 10: the restricted log-likelihood in the variance coefficients; the optbeta REML objective shares its maximiser (Viechtbauer and Lopez-Lopez equation 9 with beta given alpha, eq 6)"
 read = 2026-11-20
 
 [[case]]
@@ -1775,7 +1775,7 @@ covers = ["ls.optbeta.vb.ML"]
 [case.source]
 citation = "Harvey AC (1976). Estimating regression models with multiplicative heteroscedasticity. Econometrica 44:461-465"
 doi = "10.2307/1913974"
-locator = "Equations 11 and 12: the observed information of (beta, alpha) from equation 5, inverted (decision D1 of the spec); the reference is formulas.ls_joint_information"
+locator = "Equation 11 (the normal log-likelihood with log-linear variance) differentiated twice and inverted: the observed information (decision D1 of the spec); his equation 12 is the expected information, which is not what is checked; the reference is formulas.ls_joint_information"
 read = 2026-11-20
 
 [[case]]
@@ -1791,7 +1791,7 @@ covers = ["ls.optbeta.vb.ML"]
 [case.source]
 citation = "Harvey AC (1976). Estimating regression models with multiplicative heteroscedasticity. Econometrica 44:461-465"
 doi = "10.2307/1913974"
-locator = "Equations 11 and 12: the observed information of (beta, alpha) from equation 5, inverted (decision D1 of the spec); the reference is formulas.ls_joint_information"
+locator = "Equation 11 (the normal log-likelihood with log-linear variance) differentiated twice and inverted: the observed information (decision D1 of the spec); his equation 12 is the expected information, which is not what is checked; the reference is formulas.ls_joint_information"
 read = 2026-11-20
 
 [[case]]

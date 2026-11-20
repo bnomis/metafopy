@@ -196,7 +196,7 @@ residuals and the GVIF exist in `formulas.py`, with their own harness tests.
 
 ## Task 5: Sources
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Spec Reference:** Definitions and references (sources table); Implementation step 4
@@ -205,25 +205,25 @@ residuals and the GVIF exist in `formulas.py`, with their own harness tests.
 
 **Subtasks:**
 
-- [ ] If no PDF of Fox and Monette (1992), "Generalized collinearity diagnostics", is in `/Users/simonb/src/metafopy papers/` (search the file
+- [x] If no PDF of Fox and Monette (1992), "Generalized collinearity diagnostics", is in `/Users/simonb/src/metafopy papers/` (search the file
       names and, with `pdftotext`, the first page of each PDF for "Generalized Collinearity"), write `agents/specs/correctness-ls-extensions/mismatches.md`
       with a "Sources needed" section naming it (JASA 87:178-183, doi:10.1080/01621459.1992.10475190) and what is wanted (the GVIF definition and
       its section), set this task `blocked` with "waiting for Fox and Monette (1992) in the papers folder", and stop. **Stops for the operator.**
       The operator places the paper in the folder and restarts the list
-- [ ] Otherwise read its GVIF definition (text extracted into a scratch directory outside the repository), check the `gvif` reference against it,
+- [x] Otherwise read its GVIF definition (text extracted into a scratch directory outside the repository), check the `gvif` reference against it,
       and set the `vif` cases' locators to its equation or section
-- [ ] Check each other case's `source.locator` against the paper it names in the folder; correct any that names the wrong equation or section
-- [ ] Run `pytest src/tests/correctness -m 'not slow'`
+- [x] Check each other case's `source.locator` against the paper it names in the folder; correct any that names the wrong equation or section
+- [x] Run `pytest src/tests/correctness -m 'not slow'`
 
 **Acceptance Criteria:**
 
-- [ ] Every locator names the equation or section its value comes from
-- [ ] A definition that differs from the reference changes the reference, and any resulting disagreement is a `mismatch` case as in Task 3
+- [x] Every locator names the equation or section its value comes from
+- [x] A definition that differs from the reference changes the reference, and any resulting disagreement is a `mismatch` case as in Task 3
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/correctness -m 'not slow'` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/correctness -m 'not slow'` passes
 
 **Notes:**
 
