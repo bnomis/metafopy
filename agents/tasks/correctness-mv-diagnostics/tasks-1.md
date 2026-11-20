@@ -224,7 +224,7 @@ run lets it go straight through. Task 5 stops for the review of the mismatch cas
 
 ## Task 6: Applying the answers, the full test run, and closing
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation step 6
@@ -234,32 +234,32 @@ its `rma_mv` part is done.
 
 **Subtasks:**
 
-- [ ] Read the answers from the Answers section of `agents/specs/correctness-mv-diagnostics/mismatches.md`, never from the page; if it is empty or
+- [x] Read the answers from the Answers section of `agents/specs/correctness-mv-diagnostics/mismatches.md`, never from the page; if it is empty or
       lacks an answer for any item, stop as `blocked`, naming what is missing
-- [ ] For each *follow the reference* answer, file a `TODO.md` item (the fix, flipping the case, marking the parity fixtures, `known.toml`,
+- [x] For each *follow the reference* answer, file a `TODO.md` item (the fix, flipping the case, marking the parity fixtures, `known.toml`,
       `docs/differences.md`), placed before "Correctness coverage the extension specs left for later"; for *keep metafor*, add "accepted as a
       difference from the reference on <date>" to the case's `reason`; for *investigate*, file a `TODO.md` item with the figures
-- [ ] In the `TODO.md` item "Correctness coverage the extension specs left for later", add after its last line a dated note: "Note <date>: the
+- [x] In the `TODO.md` item "Correctness coverage the extension specs left for later", add after its last line a dated note: "Note <date>: the
       rma_mv diagnostics part is done (`agents/specs/correctness-mv-diagnostics/spec.md`, `agents/tasks/correctness-mv-diagnostics/tasks-1.md`); the
       location-scale part remains." The item stays in `TODO.md`
-- [ ] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` from "Approved (2026-11-19)" to "Implemented"
-- [ ] Run the final tests from the worktree and save their whole output for the merge gate (the main checkout is the first entry of
+- [x] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` from "Approved (2026-11-19)" to "Implemented"
+- [x] Run the final tests from the worktree and save their whole output for the merge gate (the main checkout is the first entry of
       `git worktree list --porcelain`, `/Users/simonb/src/metafopy`):
       `mkdir -p /Users/simonb/src/metafopy/ralpher-logs/correctness-mv-diagnostics/tasks-1 && export PATH=/Users/simonb/src/metafopy/.venv/bin:$PATH PYTHONPATH=$PWD/src && pytest src/tests 2>&1 | tee /Users/simonb/src/metafopy/ralpher-logs/correctness-mv-diagnostics/tasks-1/final-tests.log`
 
 **Acceptance Criteria:**
 
-- [ ] Every answer is acted on as above
-- [ ] The spec says `implemented`; the `TODO.md` item carries the dated note and is unchanged otherwise
+- [x] Every answer is acted on as above
+- [x] The spec says `implemented`; the `TODO.md` item carries the dated note and is unchanged otherwise
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] The final test run above passes
-- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/correctness-mv-diagnostics/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] The final test run above passes
+- [x] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/correctness-mv-diagnostics/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
       `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0 (`<scratch>` is a scratch directory
       outside the repository)
 
