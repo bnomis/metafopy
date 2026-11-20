@@ -24,7 +24,7 @@ spec expects two mismatch cases, `ls.alpha.bounds.ML.bcg.wide` and `ls.profile.M
 
 ## Task 1: The references
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Definitions and references; API (formulas.py); Error handling; Implementation step 1
@@ -34,32 +34,32 @@ residuals and the GVIF exist in `formulas.py`, with their own harness tests.
 
 **Subtasks:**
 
-- [ ] Starting-point check: `grep -nE 'def (ls_constrained_fit|ls_joint_information|ls_joint_fit|ls_blups|ls_rstandard|gvif|ls_profile|ls_vif|ls_vif_reestimate|ls_blup|ls_ranef|ls_unweighted|ls_alpha_fixed|ls_alpha_bounds|ls_beta_fixed|ls_optbeta_vb|ls_optbeta_va|ls_rstandard_types_agree)\b|^LS_VIF ' src/tests/correctness/*.py`
+- [x] Starting-point check: `grep -nE 'def (ls_constrained_fit|ls_joint_information|ls_joint_fit|ls_blups|ls_rstandard|gvif|ls_profile|ls_vif|ls_vif_reestimate|ls_blup|ls_ranef|ls_unweighted|ls_alpha_fixed|ls_alpha_bounds|ls_beta_fixed|ls_optbeta_vb|ls_optbeta_va|ls_rstandard_types_agree)\b|^LS_VIF ' src/tests/correctness/*.py`
       prints nothing; stop as `blocked`, naming the match, if it does (the module `src/metafopy/methods/ls_profile.py` and the existing check
       `ls_optbeta` are not clashes)
-- [ ] Add to `src/tests/correctness/formulas.py`, with the signatures and docstrings of the spec's API section and coded from the equations its
+- [x] Add to `src/tests/correctness/formulas.py`, with the signatures and docstrings of the spec's API section and coded from the equations its
       "Definitions and references" section names: `ls_constrained_fit` (eq 7 or 9 over the free alpha, the rest held, eq 17; L-BFGS-B within
       `[lower, upper]` when given; starts include `ls_profile_ll`'s fitted-line start), `ls_joint_information` (the analytic observed information
       of eq 5), `ls_joint_fit` (eq 5 over the free beta and every alpha, eq 15), `ls_blups` (Henderson's equations with `G = diag(tau2)`),
       `ls_rstandard` (section 2.8, marginal and conditional) and `gvif` (Fox and Monette's ratio of determinants of the correlation matrix without
       the intercept). Reuse `ls_reference_fit`, `ls_profile_ll`, `model_matrix` and `uni_blups` by calling them; `numpy` and `scipy` only, no
       metafopy import
-- [ ] The errors of the spec's Error handling section: each reference raises `RuntimeError` naming the optimiser's message rather than return a
+- [x] The errors of the spec's Error handling section: each reference raises `RuntimeError` naming the optimiser's message rather than return a
       non-optimum
-- [ ] Harness tests in `src/tests/correctness/test_formulas_ls.py`: `ls_joint_information` against central finite differences of eq 5; `gvif` of a
+- [x] Harness tests in `src/tests/correctness/test_formulas_ls.py`: `ls_joint_information` against central finite differences of eq 5; `gvif` of a
       two-moderator OLS against `Var[b_j] / Var[b'_j]`; `ls_blups` with constant `tau2` against `uni_blups`; `ls_constrained_fit` with nothing held
       equal to `ls_reference_fit`
-- [ ] Run `pytest src/tests/correctness/test_formulas_ls.py`
+- [x] Run `pytest src/tests/correctness/test_formulas_ls.py`
 
 **Acceptance Criteria:**
 
-- [ ] Each reference reproduces its closed form or finite-difference check to the tolerance its harness test names
-- [ ] `formulas.py` still imports no metafopy module (the harness's import-ban test passes)
+- [x] Each reference reproduces its closed form or finite-difference check to the tolerance its harness test names
+- [x] `formulas.py` still imports no metafopy module (the harness's import-ban test passes)
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] The pytest run of the last subtask passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The pytest run of the last subtask passes
 
 **Notes:**
 

@@ -257,3 +257,121 @@ def test_exact_permutation_p_bounds_the_share_of_permutations_that_reach_the_obs
     assert numpy.allclose(high - low, exact['failed'] / exact['count'])
     with pytest.raises(ValueError, match='part must be'):
         correctness.formulas.ls_exact_permutation_p(yi[:8], vi[:8], design, design, 'log', 'ML', 'both')
+
+
+def joint_ll_at(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, theta: FloatArray, link: str) -> float:
+    p = X.shape[1]
+    return correctness.formulas.ls_joint_loglik(yi, vi, X, Z, theta[:p], theta[p:], link)
+
+
+@pytest.mark.parametrize('name', sorted(DATASETS))
+@pytest.mark.parametrize('link', sorted(ALPHAS))
+def test_joint_information_matches_central_differences_of_equation_5(name: str, link: str) -> None:
+    yi, vi, X, Z = DATASETS[name]()
+    beta, alpha = numpy.array([0.1, -0.05]), ALPHAS[link][0]
+    theta = numpy.concatenate([beta, alpha])
+    analytic = correctness.formulas.ls_joint_information(yi, vi, X, Z, beta, alpha, link)
+    step = 1e-4
+    numerical = numpy.zeros_like(analytic)
+    for i in range(len(theta)):
+        for j in range(len(theta)):
+            e_i, e_j = numpy.eye(len(theta))[i] * step, numpy.eye(len(theta))[j] * step
+            numerical[i, j] = -(
+                joint_ll_at(yi, vi, X, Z, theta + e_i + e_j, link)
+                - joint_ll_at(yi, vi, X, Z, theta + e_i - e_j, link)
+                - joint_ll_at(yi, vi, X, Z, theta - e_i + e_j, link)
+                + joint_ll_at(yi, vi, X, Z, theta - e_i - e_j, link)
+            ) / (4 * step**2)
+    assert numpy.max(numpy.abs(analytic - numerical)) / max(1.0, float(numpy.max(numpy.abs(analytic)))) < 1e-5
+
+
+def test_joint_information_of_the_wrong_sign_is_caught() -> None:
+    yi, vi, X, Z = bangert()
+    beta, alpha = numpy.array([0.1, -0.05]), ALPHAS['log'][0]
+    analytic = correctness.formulas.ls_joint_information(yi, vi, X, Z, beta, alpha, 'log')
+    assert float(numpy.max(numpy.abs(analytic + analytic.T))) > 1e-3
+
+
+def test_gvif_of_two_moderators_is_the_variance_ratio_of_the_ols_fit() -> None:
+    rng = numpy.random.default_rng(7)
+    x1 = rng.normal(size=40)
+    x2 = 0.6 * x1 + rng.normal(size=40)
+    full = numpy.column_stack([numpy.ones(40), x1, x2])
+    alone = numpy.column_stack([numpy.ones(40), x1])
+    vcov = numpy.linalg.inv(full.T @ full)
+    ratio = vcov[1, 1] / numpy.linalg.inv(alone.T @ alone)[1, 1]
+    assert correctness.formulas.gvif(vcov, [0]) == pytest.approx(ratio, rel=1e-10)
+    assert correctness.formulas.gvif(vcov, [0, 1]) == pytest.approx(1.0, rel=1e-10)
+
+
+def test_ls_blups_with_a_constant_tau2_is_the_uni_blups() -> None:
+    yi, vi, X, _ = bangert()
+    tau2 = 0.07
+    ours = correctness.formulas.ls_blups(yi, vi, X, numpy.full(len(yi), tau2))
+    theirs = correctness.formulas.uni_blups(yi, vi, X, tau2)
+    assert numpy.max(numpy.abs(ours['pred'] - theirs.pred)) < 1e-12
+    assert numpy.max(numpy.abs(ours['pred_se'] - theirs.se)) < 1e-12
+
+
+def test_ls_blups_refuses_a_zero_tau2() -> None:
+    yi, vi, X, _ = bangert()
+    with pytest.raises(ValueError, match='above zero'):
+        correctness.formulas.ls_blups(yi, vi, X, numpy.zeros(len(yi)))
+
+
+@pytest.mark.parametrize('method', METHODS)
+def test_ls_rstandard_types_share_z_and_agree_without_heterogeneity(method: str) -> None:
+    yi, vi, X, Z = bcg()
+    fit = correctness.formulas.ls_reference_fit(yi, vi, X, Z, 'log', method)
+    marginal = correctness.formulas.ls_rstandard(yi, vi, X, fit['tau2'], False)
+    conditional = correctness.formulas.ls_rstandard(yi, vi, X, fit['tau2'], True)
+    assert numpy.max(numpy.abs(marginal[2] - conditional[2])) < 1e-12
+    homogeneous = correctness.formulas.ls_rstandard(yi, vi, X, numpy.zeros(len(yi)), True)
+    plain = correctness.formulas.ls_rstandard(yi, vi, X, numpy.zeros(len(yi)), False)
+    assert numpy.max(numpy.abs(homogeneous[0] - plain[0])) == 0.0
+
+
+@pytest.mark.parametrize('name', sorted(DATASETS))
+@pytest.mark.parametrize('method', METHODS)
+def test_constrained_fit_with_nothing_held_is_the_reference_fit(name: str, method: str) -> None:
+    yi, vi, X, Z = DATASETS[name]()
+    reference = correctness.formulas.ls_reference_fit(yi, vi, X, Z, 'log', method)
+    constrained = correctness.formulas.ls_constrained_fit(yi, vi, X, Z, 'log', method, numpy.full(2, numpy.nan))
+    assert abs(constrained['ll'] - reference['ll']) < 1e-9
+    assert numpy.max(numpy.abs(constrained['alpha'] - reference['alpha'])) < 1e-6 * max(1.0, float(numpy.max(numpy.abs(reference['alpha']))))
+    assert numpy.max(numpy.abs(constrained['va'] - reference['va'])) < 1e-5 * float(numpy.max(numpy.abs(reference['va'])))
+
+
+def test_constrained_fit_holds_a_coefficient_and_respects_a_binding_bound() -> None:
+    yi, vi, X, Z = bangert()
+    held = correctness.formulas.ls_constrained_fit(yi, vi, X, Z, 'log', 'ML', numpy.array([numpy.nan, 0.5]))
+    assert held['alpha'][1] == 0.5
+    assert held['va'].shape == (1, 1)
+    free = correctness.formulas.ls_reference_fit(yi, vi, X, Z, 'log', 'ML')
+    assert held['ll'] < free['ll']
+    cap = float(free['alpha'][1]) - 0.3
+    boxed = correctness.formulas.ls_constrained_fit(
+        yi, vi, X, Z, 'log', 'ML', numpy.full(2, numpy.nan), numpy.array([-numpy.inf, -numpy.inf]), numpy.array([numpy.inf, cap])
+    )
+    assert boxed['alpha'][1] == pytest.approx(cap, abs=1e-8)
+    assert boxed['ll'] < free['ll']
+
+
+def test_joint_fit_has_a_zero_score_and_matches_the_profile_fit() -> None:
+    yi, vi, X, Z = bcg()
+    joint = correctness.formulas.ls_joint_fit(yi, vi, X, Z, 'log', numpy.full(2, numpy.nan))
+    profile = correctness.formulas.ls_reference_fit(yi, vi, X, Z, 'log', 'ML')
+    assert abs(joint['ll'] - profile['ll']) < 1e-9
+    assert numpy.max(numpy.abs(joint['alpha'] - profile['alpha'])) < 1e-6
+    assert numpy.max(numpy.abs(joint['va'] - profile['va'])) < 1e-5 * float(numpy.max(numpy.abs(profile['va'])))
+    held = correctness.formulas.ls_joint_fit(yi, vi, X, Z, 'log', numpy.array([numpy.nan, 0.02]))
+    assert held['free_beta'] == [0]
+    assert held['beta'][1] == 0.02
+    assert held['vb'].shape == (1, 1)
+    assert held['ll'] < joint['ll']
+
+
+def test_joint_fit_refuses_the_identity_link() -> None:
+    yi, vi, X, Z = bangert()
+    with pytest.raises(ValueError, match='log link'):
+        correctness.formulas.ls_joint_fit(yi, vi, X, Z, 'identity', numpy.full(2, numpy.nan))
