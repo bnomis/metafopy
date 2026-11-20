@@ -2389,6 +2389,16 @@ class UniBlups:
     se: FloatArray
 
 
+def blup_pred_se(X: FloatArray, inverse: FloatArray) -> FloatArray:
+    """The standard error of ``x_i b + u_i``: ``sqrt(c' C^-1 c)`` with ``c = (x_i, e_i)`` and ``inverse`` the inverse of the mixed model coefficient matrix."""
+    k = X.shape[0]
+    se = numpy.zeros(k)
+    for i in range(k):
+        c = numpy.concatenate([X[i], numpy.eye(k)[i]])
+        se[i] = math.sqrt(float(c @ inverse @ c))
+    return se
+
+
 def uni_blups(yi: FloatArray, vi: FloatArray, X: FloatArray, tau2: float) -> UniBlups:
     """Henderson's mixed model equations with ``R = diag(vi)``, ``Z = I``, ``G = tau2 I`` (through ``mv_blups``); the variance of ``x_i b + u_i``
     from the inverse coefficient matrix, its ``b`` block, ``u`` block and their covariance."""
@@ -2397,11 +2407,7 @@ def uni_blups(yi: FloatArray, vi: FloatArray, X: FloatArray, tau2: float) -> Uni
     w = numpy.diag(1 / vi)
     coefficients = numpy.block([[X.T @ w @ X, X.T @ w], [w @ X, w + numpy.eye(k) / tau2]])
     inverse = numpy.linalg.inv(coefficients)
-    se = numpy.zeros(k)
-    for i in range(k):
-        c = numpy.concatenate([X[i], numpy.eye(k)[i]])
-        se[i] = math.sqrt(float(c @ inverse @ c))
-    return UniBlups(X @ solved.beta + solved.blups[0], se)
+    return UniBlups(X @ solved.beta + solved.blups[0], blup_pred_se(X, inverse))
 
 
 # rma_mv: inference on the coefficients, QE and QM, containment degrees of freedom, and profile-likelihood intervals of the components.
@@ -3491,7 +3497,7 @@ def ls_blups(yi: FloatArray, vi: FloatArray, X: FloatArray, tau2: FloatArray) ->
     """
     if not bool(numpy.all(tau2 > 0)):
         raise ValueError('ls_blups needs every tau2_i above zero: G is inverted')
-    k, p = X.shape
+    p = X.shape[1]
     w = 1 / vi
     coefficients = numpy.block([[X.T @ (w[:, None] * X), X.T * w], [w[:, None] * X, numpy.diag(w + 1 / tau2)]])
     rhs = numpy.concatenate([X.T @ (w * yi), w * yi])
@@ -3499,11 +3505,7 @@ def ls_blups(yi: FloatArray, vi: FloatArray, X: FloatArray, tau2: FloatArray) ->
     inverse = numpy.linalg.inv(coefficients)
     beta, u = solution[:p], solution[p:]
     u_se = numpy.sqrt(numpy.diag(inverse)[p:])
-    pred_se = numpy.zeros(k)
-    for i in range(k):
-        c = numpy.concatenate([X[i], numpy.eye(k)[i]])
-        pred_se[i] = math.sqrt(float(c @ inverse @ c))
-    return {'beta': beta, 'u': u, 'u_se': u_se, 'pred': X @ beta + u, 'pred_se': pred_se}
+    return {'beta': beta, 'u': u, 'u_se': u_se, 'pred': X @ beta + u, 'pred_se': blup_pred_se(X, inverse)}
 
 
 def ls_rstandard(yi: FloatArray, vi: FloatArray, X: FloatArray, tau2: FloatArray, conditional: bool) -> tuple[FloatArray, FloatArray, FloatArray]:

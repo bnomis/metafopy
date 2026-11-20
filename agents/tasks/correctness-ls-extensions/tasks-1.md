@@ -272,7 +272,7 @@ residuals and the GVIF exist in `formulas.py`, with their own harness tests.
 
 ## Task 7: Applying the answers, the full test run, and closing
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation step 6
@@ -282,35 +282,35 @@ residuals and the GVIF exist in `formulas.py`, with their own harness tests.
 
 **Subtasks:**
 
-- [ ] Read the answers from the Answers section of `agents/specs/correctness-ls-extensions/mismatches.md`, never from a page; if a mismatch item has
+- [x] Read the answers from the Answers section of `agents/specs/correctness-ls-extensions/mismatches.md`, never from a page; if a mismatch item has
       no answer there, stop as `blocked`, naming what is missing
-- [ ] For each *follow the reference* answer, file a `TODO.md` item (the fix, flipping the case, marking the parity fixtures, `known.toml`,
+- [x] For each *follow the reference* answer, file a `TODO.md` item (the fix, flipping the case, marking the parity fixtures, `known.toml`,
       `docs/differences.md`) at the top of `TODO.md`; for *keep metafor*, add "accepted as a difference from the reference on <date>" to the case's
       `reason`; for *investigate*, file a `TODO.md` item with the figures
-- [ ] Hoist anything this list duplicates from the rma_uni and rma_mv diagnostics work to a single owner: grep `src/tests/correctness` for each
+- [x] Hoist anything this list duplicates from the rma_uni and rma_mv diagnostics work to a single owner: grep `src/tests/correctness` for each
       literal collection, constant and one-line helper the new code defines (the interval quantile, BLUP solves, NaN-naming loops), and import
       rather than copy. Choose the owner from the existing import graph; prefer a module the consumer already imports over adding a new edge
-- [ ] Move the `TODO.md` item "Correctness coverage the extension specs left for later" to the end of `DONE.md`: append its heading and body
+- [x] Move the `TODO.md` item "Correctness coverage the extension specs left for later" to the end of `DONE.md`: append its heading and body
       unchanged, then the line `Done: <date> - agents/specs/correctness-mv-diagnostics/spec.md (the rma_mv part) and agents/specs/correctness-ls-extensions/spec.md (the location-scale part), agents/tasks/correctness-ls-extensions/tasks-1.md.`,
       and remove it from `TODO.md`; the item "No correctness case covers user weights with a scale model" stays
-- [ ] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` from "Approved (2026-11-20)" to "Implemented"
-- [ ] Run the final tests from the worktree and save their whole output for the merge gate (the main checkout is the first entry of
+- [x] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` from "Approved (2026-11-20)" to "Implemented"
+- [x] Run the final tests from the worktree and save their whole output for the merge gate (the main checkout is the first entry of
       `git worktree list --porcelain`, `/Users/simonb/src/metafopy`):
       `mkdir -p /Users/simonb/src/metafopy/ralpher-logs/correctness-ls-extensions/tasks-1 && export PATH=/Users/simonb/src/metafopy/.venv/bin:$PATH PYTHONPATH=$PWD/src && pytest src/tests 2>&1 | tee /Users/simonb/src/metafopy/ralpher-logs/correctness-ls-extensions/tasks-1/final-tests.log`
 
 **Acceptance Criteria:**
 
-- [ ] Every answer is acted on as above
-- [ ] The spec says `implemented`; the item is in `DONE.md` with its body unchanged and gone from `TODO.md`
+- [x] Every answer is acted on as above
+- [x] The spec says `implemented`; the item is in `DONE.md` with its body unchanged and gone from `TODO.md`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] The final test run above passes
-- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/correctness-ls-extensions/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] The final test run above passes
+- [x] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/correctness-ls-extensions/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
       `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0 (`<scratch>` is a scratch directory
       outside the repository)
 
