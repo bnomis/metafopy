@@ -121,7 +121,7 @@ folder `/Users/simonb/src/metafopy papers/`.
 
 ## Task 3: The cases
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Cases; Definitions and references (published values, sources table); Implementation step 3
@@ -130,34 +130,34 @@ folder `/Users/simonb/src/metafopy papers/`.
 
 **Subtasks:**
 
-- [ ] In `src/tests/correctness/cases/rma_uni_diagnostics.toml`, add each case of the spec's Cases table with its kind, fit, `then`, check and
+- [x] In `src/tests/correctness/cases/rma_uni_diagnostics.toml`, add each case of the spec's Cases table with its kind, fit, `then`, check and
       `covers`; REML and ML cases pass `control = { threshold = 1e-13, tol = 1e-13, maxiter = 1000, tau2_max = 1e6 }` as `cases/inference.toml`
       does; DL and EE cases use the defaults
-- [ ] `uni.diag.published.bcg`: the Table I data of Viechtbauer and Cheung (2010) inline (counts, `ablat_c` = latitude minus 33, `year_c` = year
+- [x] `uni.diag.published.bcg`: the Table I data of Viechtbauer and Cheung (2010) inline (counts, `ablat_c` = latitude minus 33, `year_c` = year
       minus 1966), `escalc` RR, DL, `~ ablat_c + year_c`; its `expect` holds the printed values of `measurements.md` (study 4 is index 3): `tau2`,
       `hat`, `rstudent`, `cook.d` and `R` of studies 4, 7 and 13, and `dfbetas[3,0]` to `dfbetas[3,2]`, each as the printed string
-- [ ] `uni.diag.dl.wtl`: the Table II rows inline (the `dat.bangertdrowns2004` rows `measurements.md` names), DL, `~ length + meta + college`
-- [ ] `uni.blup.published.raudenbush`: `dat.raudenbush1985`, REML; `expect` `pred[3]` "0.21", `min(pred)` "-0.03", `max(pred)` "0.25"
+- [x] `uni.diag.dl.wtl`: the Table II rows inline (the `dat.bangertdrowns2004` rows `measurements.md` names), DL, `~ length + meta + college`
+- [x] `uni.blup.published.raudenbush`: `dat.raudenbush1985`, REML; `expect` `pred[3]` "0.21", `min(pred)` "-0.03", `max(pred)` "0.25"
       (Raudenbush 2009, Table 16.2 and section 16.5.6.1); the mixed-model range is not used
-- [ ] Each case's `source` has `citation`, `doi` where one exists, a `locator` naming the equations or table (from the spec's sources table:
+- [x] Each case's `source` has `citation`, `doi` where one exists, a `locator` naming the equations or table (from the spec's sources table:
       Viechtbauer and Cheung eqs 13-27, section 5.1 and Table I, section 5.2 and Table II; Henderson 1975 eq 5; Searle et al. 1992 section 7.6,
       eqs 52, 53; Raudenbush 2009 Table 16.2, eqs 16.23-16.25; the metafor 5.2-1 `ranef` help page for the t intervals and EE BLUPs) and `read`
-- [ ] The property cases `property.uni.mean-shift.dl.bcg` (the paper's fit) and `property.uni.mean-shift.reml.bcg` (`~ ablat`, tight control) in
+- [x] The property cases `property.uni.mean-shift.dl.bcg` (the paper's fit) and `property.uni.mean-shift.reml.bcg` (`~ ablat`, tight control) in
       `src/tests/correctness/cases/properties.toml`, check `test_properties.uni_mean_shift`
-- [ ] A case whose check disagrees with metafopy beyond its tolerance is committed with `status = "mismatch"` and a `reason` naming both values,
+- [x] A case whose check disagrees with metafopy beyond its tolerance is committed with `status = "mismatch"` and a `reason` naming both values,
       the deleted study or column, whether R metafor 5.2-1 agrees with metafopy, and "Recorded on <date>, not yet reviewed"; never loosen a
       tolerance or change a case's data to make it pass
-- [ ] Run `pytest src/tests/correctness -m 'not slow'`
+- [x] Run `pytest src/tests/correctness -m 'not slow'`
 
 **Acceptance Criteria:**
 
-- [ ] The coverage gate passes: every new item has a case or an exemption
-- [ ] Every case passes or is a strict expected failure with a reason
+- [x] The coverage gate passes: every new item has a case or an exemption
+- [x] Every case passes or is a strict expected failure with a reason
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/correctness -m 'not slow'` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/correctness -m 'not slow'` passes
 
 **Notes:**
 
@@ -165,6 +165,7 @@ folder `/Users/simonb/src/metafopy papers/`.
 - The printed values and the Table II rows are in `agents/specs/correctness-uni-diagnostics/measurements.md`; check each against the PDF
   `/Users/simonb/src/metafopy papers/Outlier and influence diagnostics for meta-analysis.pdf` (`pdftotext -layout` into a scratch directory outside
   the repository) before writing it
+- The `uni_deletion` check calls `influence` without `btt`: metafopy's `btt` also restricts `cov.r` to those coefficients, which the paper's eq 25 (all coefficients) does not define; `cooks_distance` keeps the case's `btt`
 - None of the cases is `slow` (each measured under 0.2 s with its reference)
 
 ---

@@ -792,7 +792,7 @@ def uni_deletion(case: correctness.cases.Case, result: typing.Any) -> None:
     data = {name: frame[name].to_numpy() for name in frame.columns}
     reference = correctness.formulas.uni_deletion(yi, vi, case.args.get('method', 'REML'), case.args.get('mods'), data, case.args.get('tau2'), btt)
     deleted = metafopy.rstudent(fit)
-    influence: typing.Any = metafopy.influence(fit, btt=btt)
+    influence: typing.Any = metafopy.influence(fit)
     uni_deletion_agree(case, "Cook's distance", metafopy.cooks_distance(fit, btt=btt).to_numpy(), reference.cook)
     uni_deletion_agree(case, 'DFBETAS', metafopy.dfbetas(fit).to_numpy(), reference.dfbetas)
     uni_deletion_agree(case, 'deleted residual', deleted.resid, reference.resid)
