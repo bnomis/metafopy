@@ -22,7 +22,7 @@ with `weights`) was filed and fixed separately (`0f1f1fc`); this list does not t
 
 ## Task 1: User weights in the rma_uni reference
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** API (formulas.py); Definitions and references; Implementation step 1
@@ -32,25 +32,25 @@ given `weights`, so the plain `rma_uni` cases can use the existing `expect` form
 
 **Subtasks:**
 
-- [ ] Starting-point check: `grep -nwE 'ls_weights|uni_weights_items|test_weights_constant_is_unweighted|test_weights_rescale_invariant' src/tests/correctness/*.py`
+- [x] Starting-point check: `grep -nwE 'ls_weights|uni_weights_items|test_weights_constant_is_unweighted|test_weights_rescale_invariant' src/tests/correctness/*.py`
       prints nothing; stop as `blocked`, naming the match, if it does (the existing `ls_unweighted` check and `UNI_EXEMPT` constant are not
       clashes)
-- [ ] In `src/tests/correctness/formulas.py`, change `fixed_effects_fit` so the branch that weights the coefficients by `diag(weights)` and returns
+- [x] In `src/tests/correctness/formulas.py`, change `fixed_effects_fit` so the branch that weights the coefficients by `diag(weights)` and returns
       the sandwich standard errors runs whenever `weights` is given, not only for `GENQ` and `GENQM`; keep the requirement (the `assert`) that
       `GENQ` and `GENQM` are given `weights`; give its docstring the spec's API text and cite Hedges, Tipton and Johnson (2010), Res Synth Methods
       1:39-65, doi:10.1002/jrsm.5, equations 3 and 4, beside the existing Jackson et al. (2014) comment; `rma_tau2` is unchanged
-- [ ] Run `pytest src/tests/correctness -m 'not slow' -k 'genq or GENQ'` (the existing `tau2.genq.*` and GENQ interval cases must still pass)
+- [x] Run `pytest src/tests/correctness -m 'not slow' -k 'genq or GENQ'` (the existing `tau2.genq.*` and GENQ interval cases must still pass)
 
 **Acceptance Criteria:**
 
-- [ ] `fixed_effects_fit(yi, vi, 'REML', weights=w)` returns the user-weighted coefficients and sandwich standard errors, and without `weights` the
+- [x] `fixed_effects_fit(yi, vi, 'REML', weights=w)` returns the user-weighted coefficients and sandwich standard errors, and without `weights` the
       inverse-variance ones, as before
-- [ ] `formulas.py` still imports no metafopy module (the harness's import-ban test passes)
+- [x] `formulas.py` still imports no metafopy module (the harness's import-ban test passes)
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] The pytest run of the last subtask passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The pytest run of the last subtask passes
 
 **Notes:**
 
