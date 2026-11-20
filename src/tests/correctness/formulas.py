@@ -2389,6 +2389,16 @@ class UniBlups:
     se: FloatArray
 
 
+def blup_pred_se(X: FloatArray, inverse: FloatArray) -> FloatArray:
+    """The standard error of ``x_i b + u_i``: ``sqrt(c' C^-1 c)`` with ``c = (x_i, e_i)`` and ``inverse`` the inverse of the mixed model coefficient matrix."""
+    k = X.shape[0]
+    se = numpy.zeros(k)
+    for i in range(k):
+        c = numpy.concatenate([X[i], numpy.eye(k)[i]])
+        se[i] = math.sqrt(float(c @ inverse @ c))
+    return se
+
+
 def uni_blups(yi: FloatArray, vi: FloatArray, X: FloatArray, tau2: float) -> UniBlups:
     """Henderson's mixed model equations with ``R = diag(vi)``, ``Z = I``, ``G = tau2 I`` (through ``mv_blups``); the variance of ``x_i b + u_i``
     from the inverse coefficient matrix, its ``b`` block, ``u`` block and their covariance."""
@@ -2397,11 +2407,7 @@ def uni_blups(yi: FloatArray, vi: FloatArray, X: FloatArray, tau2: float) -> Uni
     w = numpy.diag(1 / vi)
     coefficients = numpy.block([[X.T @ w @ X, X.T @ w], [w @ X, w + numpy.eye(k) / tau2]])
     inverse = numpy.linalg.inv(coefficients)
-    se = numpy.zeros(k)
-    for i in range(k):
-        c = numpy.concatenate([X[i], numpy.eye(k)[i]])
-        se[i] = math.sqrt(float(c @ inverse @ c))
-    return UniBlups(X @ solved.beta + solved.blups[0], se)
+    return UniBlups(X @ solved.beta + solved.blups[0], blup_pred_se(X, inverse))
 
 
 # rma_mv: inference on the coefficients, QE and QM, containment degrees of freedom, and profile-likelihood intervals of the components.
@@ -3267,6 +3273,274 @@ def ls_profile_bounds(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArr
         lo, hi = sorted((float(alpha_hat[j]), end))
         bounds.append(float(scipy.optimize.brentq(excess, lo, hi, xtol=1e-13, rtol=1e-13)))
     return bounds[0], bounds[1]
+
+
+def ls_constrained_fit(
+    yi: FloatArray,
+    vi: FloatArray,
+    X: FloatArray,
+    Z: FloatArray,
+    link: str,
+    method: str,
+    fixed: FloatArray,
+    lower: FloatArray | None = None,
+    upper: FloatArray | None = None,
+) -> dict[str, typing.Any]:
+    """Equation 7 or 9 maximised over the alpha that ``fixed`` leaves NaN, the others held (equation 17 of Viechtbauer and Lopez-Lopez, 2022), within
+    ``[lower, upper]`` when given (L-BFGS-B; SLSQP with ``Z alpha >= 0`` for the identity link).
+
+    Starts are the moment-based starts of ``ls_starts`` and the points on the line from the fitted-line start of ``ls_profile_ll`` (the free alpha that
+    keeps ``Z alpha`` closest to the unconstrained fit's, given the held ones) to the unconstrained fit, each with the held values written in and clipped
+    onto the box, then a Nelder-Mead polish of the best. Returns ``alpha``, ``beta`` (equation 6), ``ll`` and ``va``, the inverse information of the free
+    alpha. Raises ``RuntimeError`` with the optimiser's message when no start ends at a finite value.
+    """
+    q = Z.shape[1]
+    held = ~numpy.isnan(fixed)
+    free = [i for i in range(q) if not held[i]]
+    lo = numpy.full(q, -numpy.inf) if lower is None else numpy.asarray(lower, dtype=float)
+    hi = numpy.full(q, numpy.inf) if upper is None else numpy.asarray(upper, dtype=float)
+    box = scipy.optimize.Bounds(lo[free], hi[free])
+
+    def full(par: FloatArray) -> FloatArray:
+        alpha = numpy.where(held, fixed, 0.0)
+        alpha[free] = par
+        return alpha
+
+    def negative(par: FloatArray) -> float:
+        alpha = full(par)
+        if link == 'identity' and float(numpy.min(Z @ alpha)) < -IDENTITY_SLACK:
+            return math.inf
+        value = ls_loglik(yi, vi, X, Z, alpha, link, method)
+        return math.inf if value == -math.inf else -value
+
+    def gradient(par: FloatArray) -> FloatArray:
+        alpha = full(par)
+        if ls_components(yi, vi, X, Z, alpha, link) is None:
+            return numpy.full(len(par), numpy.nan)
+        return -ls_score(yi, vi, X, Z, alpha, link, method)[free]
+
+    starts = [start[free] for start in ls_starts(yi, vi, X, Z, link)]
+    try:
+        unconstrained = ls_reference_fit(yi, vi, X, Z, link, method)['alpha']
+    except RuntimeError:
+        unconstrained = None
+    if unconstrained is not None:
+        adjusted = numpy.linalg.lstsq(Z[:, free], Z @ unconstrained - Z[:, held] @ fixed[held], rcond=None)[0]
+        starts.extend(adjusted + fraction * (unconstrained[free] - adjusted) for fraction in LS_PROFILE_LINE)
+    best_value, best_point = math.inf, None
+    messages: list[str] = []
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        for start in starts:
+            first = numpy.clip(start, lo[free], hi[free])
+            if link == 'log':
+                res = scipy.optimize.minimize(
+                    negative, first, jac=gradient, method='L-BFGS-B', bounds=box, options={'maxiter': 2000, 'ftol': 1e-15, 'gtol': 1e-10, 'maxcor': 20}
+                )
+            else:
+                feasible = scipy.optimize.LinearConstraint(Z[:, free], -(Z[:, held] @ fixed[held]), numpy.inf)
+                res = scipy.optimize.minimize(
+                    negative, first, jac=gradient, method='SLSQP', bounds=box, constraints=[feasible], options={'maxiter': 2000, 'ftol': 1e-14}
+                )
+            point = numpy.asarray(res.x, dtype=float)
+            value = negative(point) if bool(numpy.all(numpy.isfinite(point))) else math.inf
+            if math.isfinite(value) and value < best_value:
+                best_value, best_point = value, point
+            elif not math.isfinite(value):
+                messages.append(str(res.message))
+        if best_point is not None:
+            polish = scipy.optimize.minimize(negative, best_point, method='Nelder-Mead', bounds=box, options={'maxiter': 20000, 'xatol': 1e-11, 'fatol': 1e-13})
+            if polish.fun <= best_value:
+                best_value, best_point = float(polish.fun), numpy.asarray(polish.x, dtype=float)
+    if best_point is None:
+        raise RuntimeError(f'ls_constrained_fit: no start ended at a finite value ({link} link, {method}): {"; ".join(messages)}')
+    alpha = full(best_point)
+    parts = ls_components(yi, vi, X, Z, alpha, link)
+    if parts is None:
+        raise RuntimeError(f'ls_constrained_fit: the best point leaves M not positive ({link} link, {method})')
+    information = ls_information(yi, vi, X, Z, alpha, link, method)[numpy.ix_(free, free)]
+    return {'alpha': alpha, 'beta': parts[3], 'll': -best_value, 'va': numpy.linalg.inv(information)}
+
+
+def ls_joint_information(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, beta: FloatArray, alpha: FloatArray, link: str) -> FloatArray:
+    """The analytic observed information of ``(beta, alpha)`` (minus the Hessian of equation 5 of Viechtbauer and Lopez-Lopez, 2022), ``beta`` first.
+
+    With ``r = y - X beta``, ``w = 1 / (v + tau2)`` and ``t1``, ``t2`` the first and second derivatives of ``tau2`` in ``z' alpha``: the blocks are
+    ``X'WX``, ``X' diag(w^2 t1 r) Z`` and, for ``alpha``, ``sum_i z_ij z_il (r^2 w^3 t1^2 - w^2 t1^2 / 2 + w t2 / 2 - r^2 w^2 t2 / 2)``.
+    """
+    m = vi + ls_tau2(Z, alpha, link)
+    w = 1 / m
+    r = yi - X @ beta
+    t1, t2 = ls_derivatives(Z, alpha, link)
+    bb = X.T @ (w[:, None] * X)
+    ba = X.T @ ((w**2 * t1 * r)[:, None] * Z)
+    aa = Z.T @ ((r**2 * w**3 * t1**2 - w**2 * t1**2 / 2 + w * t2 / 2 - r**2 * w**2 * t2 / 2)[:, None] * Z)
+    return numpy.block([[bb, ba], [ba.T, aa]])
+
+
+def ls_joint_loglik(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, beta: FloatArray, alpha: FloatArray, link: str) -> float:
+    """Equation 5 of Viechtbauer and Lopez-Lopez (2022): ``-k/2 ln 2pi - 1/2 sum ln(v_i + tau2_i) - 1/2 sum (y_i - x_i' beta)^2 / (v_i + tau2_i)``.
+
+    ``-inf`` where some ``v_i + tau2_i`` is not positive.
+    """
+    m = vi + ls_tau2(Z, alpha, link)
+    if not bool(numpy.all(m > 0)):
+        return -math.inf
+    r = yi - X @ beta
+    return float(-len(yi) / 2 * math.log(2 * math.pi) - numpy.sum(numpy.log(m)) / 2 - numpy.sum(r**2 / m) / 2)
+
+
+def ls_joint_fit(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, link: str, beta_fixed: FloatArray) -> dict[str, typing.Any]:
+    """Equation 5 (ML) maximised over the free beta (NaN in ``beta_fixed``) and every alpha: the model of equation 15 with the constraint at a given
+    value (log link only: the information of the identity link at a boundary optimum is not a covariance).
+
+    Starts are the profile fit (``ls_reference_fit``, ML) with the held beta written in, and the moment-based starts of ``ls_starts`` with the
+    generalised least squares beta; each is run by BFGS on the analytic score then polished by Newton steps on ``ls_joint_information``. Returns
+    ``beta`` and ``alpha`` (full), ``ll``, ``free_beta`` (the indices of the estimated beta) and ``vcov``, the inverse of ``ls_joint_information`` over
+    the free beta then every alpha, with its ``vb`` and ``va`` blocks. Raises ``RuntimeError`` when no start ends at a stationary point.
+    """
+    if link != 'log':
+        raise ValueError(f'ls_joint_fit supports the log link only, not {link!r}')
+    p, q = X.shape[1], Z.shape[1]
+    held = ~numpy.isnan(beta_fixed)
+    free_beta = [i for i in range(p) if not held[i]]
+    nfree = len(free_beta)
+
+    def split(par: FloatArray) -> tuple[FloatArray, FloatArray]:
+        beta = numpy.where(held, beta_fixed, 0.0)
+        beta[free_beta] = par[:nfree]
+        return beta, par[nfree:]
+
+    def negative(par: FloatArray) -> float:
+        beta, alpha = split(par)
+        value = ls_joint_loglik(yi, vi, X, Z, beta, alpha, link)
+        return math.inf if value == -math.inf else -value
+
+    def score(par: FloatArray) -> FloatArray:
+        beta, alpha = split(par)
+        m = vi + ls_tau2(Z, alpha, link)
+        w = 1 / m
+        r = yi - X @ beta
+        t1, _ = ls_derivatives(Z, alpha, link)
+        g_beta = X.T @ (w * r)
+        g_alpha = Z.T @ (t1 * (-w / 2 + r**2 * w**2 / 2))
+        return numpy.concatenate([g_beta[free_beta], g_alpha])
+
+    def negative_score(par: FloatArray) -> FloatArray:
+        return -score(par)
+
+    def information(par: FloatArray) -> FloatArray:
+        beta, alpha = split(par)
+        full_info = ls_joint_information(yi, vi, X, Z, beta, alpha, link)
+        keep = free_beta + list(range(p, p + q))
+        return full_info[numpy.ix_(keep, keep)]
+
+    starts = []
+    for start_alpha in ls_starts(yi, vi, X, Z, link):
+        w = 1 / (vi + ls_tau2(Z, start_alpha, link))
+        beta0 = numpy.linalg.solve(X.T @ (w[:, None] * X), X.T @ (w * yi))
+        starts.append(numpy.concatenate([beta0[free_beta], start_alpha]))
+    try:
+        fitted = ls_reference_fit(yi, vi, X, Z, link, 'ML')
+        starts.insert(0, numpy.concatenate([fitted['beta'][free_beta], fitted['alpha']]))
+    except RuntimeError:
+        pass
+    best_value, best_point = math.inf, None
+    messages: list[str] = []
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        for start in starts:
+            res = scipy.optimize.minimize(negative, start, jac=negative_score, method='BFGS', options={'maxiter': 2000, 'gtol': 1e-9})
+            point = numpy.asarray(res.x, dtype=float)
+            value = negative(point)
+            for _ in range(LS_NEWTON_STEPS):
+                g = score(point)
+                if float(numpy.max(numpy.abs(g))) < 1e-10:
+                    break
+                info = information(point)
+                if not bool(numpy.all(numpy.linalg.eigvalsh(info) > 0)):
+                    break
+                step = numpy.linalg.solve(info, g)
+                for _ in range(30):
+                    trial_value = negative(point + step)
+                    if trial_value <= value:
+                        point, value = point + step, trial_value
+                        break
+                    step = step / 2
+                else:
+                    break
+            if float(numpy.max(numpy.abs(score(point)))) > LS_SCORE_TOLERANCE or not math.isfinite(value):
+                messages.append(str(res.message))
+                continue
+            if value < best_value:
+                best_value, best_point = value, point
+    if best_point is None:
+        raise RuntimeError(f'ls_joint_fit: no start ended at a stationary point ({link} link): {"; ".join(messages)}')
+    beta, alpha = split(best_point)
+    vcov = numpy.linalg.inv(information(best_point))
+    return {
+        'beta': beta,
+        'alpha': alpha,
+        'll': -best_value,
+        'free_beta': free_beta,
+        'vcov': vcov,
+        'vb': vcov[:nfree, :nfree],
+        'va': vcov[nfree:, nfree:],
+    }
+
+
+def ls_blups(yi: FloatArray, vi: FloatArray, X: FloatArray, tau2: FloatArray) -> dict[str, FloatArray]:
+    """Henderson's (1975) mixed model equations with ``R = diag(vi)``, ``Z = I`` and ``G = diag(tau2)``, every ``tau2_i`` positive.
+
+    Returns ``beta`` and ``u`` (the solution), ``u_se`` (the root of the diagonal of the ``u`` block of the inverse coefficient matrix, the prediction
+    error), ``pred`` (``X beta + u``) and ``pred_se`` (``c' C^-1 c`` with ``c = (x_i, e_i)``). Raises ``ValueError`` for a ``tau2_i`` not above zero.
+    """
+    if not bool(numpy.all(tau2 > 0)):
+        raise ValueError('ls_blups needs every tau2_i above zero: G is inverted')
+    p = X.shape[1]
+    w = 1 / vi
+    coefficients = numpy.block([[X.T @ (w[:, None] * X), X.T * w], [w[:, None] * X, numpy.diag(w + 1 / tau2)]])
+    rhs = numpy.concatenate([X.T @ (w * yi), w * yi])
+    solution = numpy.linalg.solve(coefficients, rhs)
+    inverse = numpy.linalg.inv(coefficients)
+    beta, u = solution[:p], solution[p:]
+    u_se = numpy.sqrt(numpy.diag(inverse)[p:])
+    return {'beta': beta, 'u': u, 'u_se': u_se, 'pred': X @ beta + u, 'pred_se': blup_pred_se(X, inverse)}
+
+
+def ls_rstandard(yi: FloatArray, vi: FloatArray, X: FloatArray, tau2: FloatArray, conditional: bool) -> tuple[FloatArray, FloatArray, FloatArray]:
+    """Residual, standard error and z of the standardised residuals (section 2.8 of Viechtbauer and Lopez-Lopez, 2022).
+
+    Marginal: ``e_i = y_i - x_i' b`` with ``b`` the weighted least squares estimate at ``tau2_i``, ``Var[e_i] = (1 - h_i)(v_i + tau2_i)`` with ``h_i``
+    the hat value. Conditional: ``y_i`` minus the BLUP, ``(1 - lambda_i) e_i`` with ``lambda_i = tau2_i / (v_i + tau2_i)``, over ``(1 - lambda_i)``
+    times the marginal standard error (the metafor ``residuals.rma`` help page).
+    """
+    m = vi + tau2
+    w = 1 / m
+    a_inv = numpy.linalg.inv(X.T @ (w[:, None] * X))
+    e = yi - X @ (a_inv @ X.T @ (w * yi))
+    hat = numpy.einsum('ij,jk,ik->i', X, a_inv, X) * w
+    se = numpy.sqrt((1 - hat) * m)
+    if conditional:
+        factor = 1 - tau2 / m
+        return factor * e, factor * se, e / se
+    return e, se, e / se
+
+
+def gvif(vcov: FloatArray, group: list[int]) -> float:
+    """The generalised variance inflation factor of Fox and Monette (1992): ``det(R_gg) det(R_rr) / det(R)``.
+
+    ``R`` is the correlation matrix of ``vcov`` without its first row and column (the intercept), ``group`` the indices of the coefficients of
+    interest in that reduced matrix (0 is the first coefficient after the intercept) and ``rr`` the others. A group of one coefficient gives the
+    ordinary ``1 / (1 - R^2)``.
+    """
+    reduced = vcov[1:, 1:]
+    scale = numpy.sqrt(numpy.diag(reduced))
+    corr = reduced / numpy.outer(scale, scale)
+    rest = [i for i in range(corr.shape[0]) if i not in group]
+    det_group = numpy.linalg.det(corr[numpy.ix_(group, group)])
+    det_rest = numpy.linalg.det(corr[numpy.ix_(rest, rest)]) if rest else 1.0
+    return float(det_group * det_rest / numpy.linalg.det(corr))
 
 
 def ls_lrt(ll_full: float, ll_reduced: float, df: int) -> tuple[float, float]:

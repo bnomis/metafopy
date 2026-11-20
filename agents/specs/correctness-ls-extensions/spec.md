@@ -1,7 +1,7 @@
 # Correctness tests: location-scale extensions
 
 **Version:** 1.1
-**Status:** proposed
+**Status:** implemented
 **Date:** 2026-11-20
 
 This spec adds correctness cases for the parts of location-scale models (`rma_uni(..., scale=...)`) that the
