@@ -1808,3 +1808,11 @@ dataset = "dat.bcg"
 setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
 args = { yi = "yi", vi = "vi", mods = "~ ablat", scale = "~ ablat", method = "REML", link = "log" }
 check = "test_properties.ls_rstandard_types_agree"
+
+[[exempt]]
+item = "ls.weights.fitstats"
+reason = "defined only in metafor's code; R parity covers it"
+
+[[exempt]]
+item = "ls.weights.knha"
+reason = "defined only in metafor's code; R parity covers it"

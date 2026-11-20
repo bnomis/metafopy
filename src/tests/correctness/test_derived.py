@@ -1481,6 +1481,20 @@ def ls_unweighted(case: correctness.cases.Case, result: typing.Any) -> None:
     numbers_agree(case, 'vb', result.vb, bread @ X.T @ numpy.diag(vi + numpy.asarray(result.tau2, dtype=numpy.float64)) @ X @ bread)
 
 
+def ls_weights(case: correctness.cases.Case, result: typing.Any) -> None:
+    """User ``weights`` with a scale model: ``alpha`` against ``ls_reference`` of the case (equation 7 or 9, which carry no weights) at
+    ``LS_RELATIVE``; ``beta`` and ``vb`` against ``formulas.gls(yi, diag(vi + tau2_i), X, diag(weights))`` at metafopy's ``tau2_i``
+    (``numbers_agree``); ``va`` is not compared."""
+    yi, vi, X, _ = ls_inputs(case)
+    frame = correctness.cases.case_frame(case)
+    assert frame is not None
+    weights = frame[case.args['weights']].to_numpy(dtype=numpy.float64)
+    ls_agree(case, 'alpha', result.alpha, ls_reference(case)['alpha'], LS_RELATIVE)
+    beta, vb = correctness.formulas.gls(yi, numpy.diag(vi + numpy.asarray(result.tau2, dtype=numpy.float64)), X, numpy.diag(weights))
+    numbers_agree(case, 'beta', result.beta, beta)
+    numbers_agree(case, 'vb', result.vb, vb)
+
+
 def ls_alpha_fixed(case: correctness.cases.Case, result: typing.Any) -> None:
     """``alpha`` with some coefficients held (equation 17): ``alpha``, ``beta`` and the log-likelihood against ``formulas.ls_constrained_fit``, and ``va``
     over the estimated coefficients."""

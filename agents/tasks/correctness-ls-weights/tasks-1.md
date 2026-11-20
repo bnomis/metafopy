@@ -61,7 +61,7 @@ given `weights`, so the plain `rma_uni` cases can use the existing `expect` form
 
 ## Task 2: The check, the properties, the coverage items and the exemptions
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** API (test_derived.py, test_properties.py); Coverage list; Error handling; Implementation step 2
@@ -71,30 +71,30 @@ cases.
 
 **Subtasks:**
 
-- [ ] Add `ls_weights` to `src/tests/correctness/test_derived.py`, with the spec's signature and docstring: `alpha` against `ls_reference(case)` at
+- [x] Add `ls_weights` to `src/tests/correctness/test_derived.py`, with the spec's signature and docstring: `alpha` against `ls_reference(case)` at
       `LS_RELATIVE`; `beta` and `vb` against `correctness.formulas.gls(yi, numpy.diag(vi + tau2_i), X, numpy.diag(weights))` at metafopy's
       `tau2_i` with `numbers_agree`; the weights read from the case's frame by the column the case's `weights` argument names; `va` not compared.
       Model it on `ls_unweighted` and reuse `ls_inputs`
-- [ ] Add `test_weights_constant_is_unweighted` and `test_weights_rescale_invariant` to `src/tests/correctness/test_properties.py` as the spec's
+- [x] Add `test_weights_constant_is_unweighted` and `test_weights_rescale_invariant` to `src/tests/correctness/test_properties.py` as the spec's
       API section describes: each fits a plain and a location-scale model (`dat.bcg` RR, `mods = ~ ablat`, and `scale = ~ ablat` for the second),
       hypothesis draws `c` from `floats(1e-3, 1e3)`, `@hypothesis.settings(max_examples=20, deadline=10000)`, compared at `DERIVED_TOLERANCE`;
       reuse the module's existing data helpers where one fits
-- [ ] In `src/tests/correctness/test_coverage.py`: add `ls.weights`, `ls.weights.fitstats` and `ls.weights.knha` to `ls_items()`, and a new
+- [x] In `src/tests/correctness/test_coverage.py`: add `ls.weights`, `ls.weights.fitstats` and `ls.weights.knha` to `ls_items()`, and a new
       `uni_weights_items()` returning `rma_uni.weights`, `rma_uni.weights.fitstats` and `rma_uni.weights.knha`, called from `coverage_items()`
-- [ ] Add the `[[exempt]]` entries, reason "defined only in metafor's code; R parity covers it": `ls.weights.fitstats` and `ls.weights.knha` in
+- [x] Add the `[[exempt]]` entries, reason "defined only in metafor's code; R parity covers it": `ls.weights.fitstats` and `ls.weights.knha` in
       `src/tests/correctness/cases/location_scale.toml`, `rma_uni.weights.fitstats` and `rma_uni.weights.knha` in
       `src/tests/correctness/cases/inference.toml`
-- [ ] Run `pytest src/tests/correctness/test_properties.py -k weights` and `pytest src/tests/correctness/test_coverage.py`
+- [x] Run `pytest src/tests/correctness/test_properties.py -k weights` and `pytest src/tests/correctness/test_coverage.py`
 
 **Acceptance Criteria:**
 
-- [ ] Both properties pass
-- [ ] The coverage gate fails listing exactly `ls.weights` and `rma_uni.weights` as missing (the exempt items are not listed)
+- [x] Both properties pass
+- [x] The coverage gate fails listing exactly `ls.weights` and `rma_uni.weights` as missing (the exempt items are not listed)
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] The property run of the last subtask passes; the coverage run fails only as the acceptance criterion says
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The property run of the last subtask passes; the coverage run fails only as the acceptance criterion says
 
 **Notes:**
 

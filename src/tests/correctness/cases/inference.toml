@@ -585,3 +585,11 @@ expect = {}
 check = "test_derived.confint_genq"
 tolerance = 1e-4
 covers = ["confint.genq"]
+
+[[exempt]]
+item = "rma_uni.weights.fitstats"
+reason = "defined only in metafor's code; R parity covers it"
+
+[[exempt]]
+item = "rma_uni.weights.knha"
+reason = "defined only in metafor's code; R parity covers it"
