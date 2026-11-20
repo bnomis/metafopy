@@ -76,14 +76,17 @@ def meta_data(draw: collections.abc.Callable[..., typing.Any]) -> tuple[FloatArr
     k = draw(hypothesis.strategies.integers(min_value=4, max_value=8))
     effects = draw(hypothesis.strategies.lists(hypothesis.strategies.floats(-2, 2), min_size=k, max_size=k))
     variances = draw(hypothesis.strategies.lists(hypothesis.strategies.floats(0.01, 1), min_size=k, max_size=k))
-    # identical effects make the heterogeneity statistic Q zero, which the library does not handle for an equal-effects fit (see TODO.md)
-    hypothesis.assume(numpy.ptp(effects) > 0.01)
     return numpy.array(effects), numpy.array(variances)
+
+
+# identical effects (Q = 0, tau2 = 0) are drawn too rarely to be left to chance
+IDENTICAL_EFFECTS = (numpy.full(5, 0.3), numpy.array([0.1, 0.2, 0.05, 0.4, 0.3]))
 
 
 @pytest.mark.parametrize('method', metafopy.models.tau2.ESTIMATORS)
 @hypothesis.settings(max_examples=20, deadline=10000)
 @hypothesis.given(data=meta_data(), shift=hypothesis.strategies.floats(-5, 5))
+@hypothesis.example(data=IDENTICAL_EFFECTS, shift=1.5)
 def test_location_invariance(method: str, data: tuple[FloatArray, FloatArray], shift: float) -> None:
     """Adding ``c`` to every effect leaves ``tau2`` unchanged and adds ``c`` to the intercept."""
     yi, vi = data
@@ -96,6 +99,7 @@ def test_location_invariance(method: str, data: tuple[FloatArray, FloatArray], s
 @pytest.mark.parametrize('method', metafopy.models.tau2.ESTIMATORS)
 @hypothesis.settings(max_examples=20, deadline=10000)
 @hypothesis.given(data=meta_data(), scale=hypothesis.strategies.floats(0.25, 4))
+@hypothesis.example(data=IDENTICAL_EFFECTS, scale=2.0)
 def test_scale_invariance(method: str, data: tuple[FloatArray, FloatArray], scale: float) -> None:
     """Scaling every effect by ``c`` and every variance by ``c^2`` scales ``tau2`` by ``c^2`` and the intercept by ``c``.
 

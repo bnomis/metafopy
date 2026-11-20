@@ -1529,3 +1529,18 @@ Fix direction: a spec with `/specdev`, modelled on `agents/specs/correctness-mv-
 Spec: `agents/specs/correctness-uni-diagnostics/spec.md`; tasks: `agents/tasks/correctness-uni-diagnostics/tasks-1.md`.
 
 Done: 2026-11-20 - agents/specs/correctness-uni-diagnostics/spec.md, agents/tasks/correctness-uni-diagnostics/tasks-1.md.
+
+## A property test still excludes identical effects for a fixed bug
+
+<!-- doc-counts: accept-start found on 2026-11-20 - a dated record, not a claim about the present -->
+Found on 2026-11-20 by a TODO review: `meta_data` in `src/tests/correctness/test_properties.py:79-80` skips every draw whose effects are identical
+(`hypothesis.assume(numpy.ptp(effects) > 0.01)`), with the comment that identical effects make Q zero, "which the library does not handle for an
+equal-effects fit (see TODO.md)". No open item covers that: "rma_uni raises ZeroDivisionError for an equal-effects fit when every effect is
+identical" has been in `DONE.md` since 2026-11-14 (fixed in `src/metafopy/models/rma_uni.py`, case `property.i2-zero-q.identical`). Not yet
+checked whether every property that uses `meta_data` holds for identical effects.
+<!-- doc-counts: accept-end -->
+
+Fix direction: remove the `assume` and its comment, run `pytest src/tests/correctness/test_properties.py`; if a property fails for identical
+effects, keep a narrower exclusion with a comment naming why, or file the failure as a defect.
+
+Done: 2026-11-20 - the `assume` and its comment are removed from `meta_data` in `src/tests/correctness/test_properties.py`; `test_location_invariance` and `test_scale_invariance` gain an identical-effects `hypothesis.example`, and both properties hold on it for every estimator.
