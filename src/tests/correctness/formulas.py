@@ -2290,6 +2290,116 @@ def mv_blups(yi: FloatArray, V: FloatArray, X: FloatArray, terms: list[RandomTer
     return MVBlups(solution[:p], tuple(numpy.split(solution[p:], cuts)), tuple(numpy.split(pev_all, cuts)))
 
 
+@dataclasses.dataclass(frozen=True)
+class UniDeletion:
+    """Per study: Cook's distance, DFBETAS (rows by study), the deleted residual, its standard error and z, tau2(-i), QE(-i), DFFITS, COVRATIO,
+    the hat value and the internally studentised residual (eqs 13, 14, 19, 25 and 27)."""
+
+    cook: FloatArray
+    dfbetas: FloatArray
+    resid: FloatArray
+    se: FloatArray
+    z: FloatArray
+    tau2_del: FloatArray
+    qe_del: FloatArray
+    dffits: FloatArray
+    cov_r: FloatArray
+    hat: FloatArray
+    rstandard: FloatArray
+
+
+def uni_deletion(
+    yi: FloatArray,
+    vi: FloatArray,
+    method: str,
+    mods: str | None = None,
+    data: dict[str, FloatArray] | None = None,
+    tau2: float | None = None,
+    btt: list[int] | None = None,
+) -> UniDeletion:
+    """Leave-one-out diagnostics by explicit refits, Viechtbauer and Cheung (2010) eqs 15, 16, 20 and 23: each refit's tau2 from ``rma_tau2`` on
+    the kept studies (or the fixed ``tau2``), ``b(-i)`` and ``vb(-i)`` by weighted least squares; ``data`` is cut to the kept rows. Raises
+    ``ValueError`` naming the study when a deletion leaves the model matrix rank deficient.
+
+    The hat value is eq 13 (``h_i`` of ``H = X (X'WX)^-1 X'W``), the internally studentised residual eq 14 (``e_i / sqrt((1 - h_i)(v_i + tau2))``),
+    DFFITS eq 19 (``x_i (b - b(-i)) / sqrt(h_i (v_i + tau2(-i)))``), COVRATIO eq 25 (``det vb(-i) / det vb``) and the deleted residual's standard
+    error eq 16. ``QE(-i)`` is Cochran's Q (weights ``1 / v``) of the refit.
+    """
+    k = len(yi)
+    X = model_matrix(k, mods, data)
+    p = X.shape[1]
+    columns = list(range(p)) if btt is None else list(btt)
+
+    def refit_tau2(rows: IntArray) -> float:
+        if tau2 is not None:
+            return tau2
+        cut = None if data is None else {name: numpy.asarray(values)[rows] for name, values in data.items()}
+        return rma_tau2(yi[rows], vi[rows], method, mods=mods, data=cut)
+
+    def wls(rows: IntArray, tau2_fit: float) -> tuple[FloatArray, FloatArray]:
+        w = 1 / (vi[rows] + tau2_fit)
+        vb_fit = numpy.linalg.inv(X[rows].T @ (w[:, None] * X[rows]))
+        return vb_fit @ X[rows].T @ (w * yi[rows]), vb_fit
+
+    everyone = numpy.arange(k)
+    tau2_full = refit_tau2(everyone)
+    b, vb = wls(everyone, tau2_full)
+    w_full = 1 / (vi + tau2_full)
+    hat = w_full * numpy.einsum('ij,jk,ik->i', X, vb, X)
+    with numpy.errstate(divide='ignore', invalid='ignore'):  # a study with hat 1 has no standardised residual
+        rstandard = (yi - X @ b) / numpy.sqrt((1 - hat) * (vi + tau2_full))
+    vb_btt = numpy.linalg.inv(vb[numpy.ix_(columns, columns)])
+    cook = numpy.zeros(k)
+    dfbetas = numpy.zeros((k, p))
+    resid = numpy.zeros(k)
+    se = numpy.zeros(k)
+    tau2_del = numpy.zeros(k)
+    qe_del = numpy.zeros(k)
+    dffits = numpy.zeros(k)
+    cov_r = numpy.zeros(k)
+    for i in range(k):
+        kept = numpy.delete(everyone, i)
+        if numpy.linalg.matrix_rank(X[kept]) < p:
+            raise ValueError(f'uni_deletion: deleting study {i} leaves the model matrix rank deficient')
+        tau2_i = refit_tau2(kept)
+        b_i, vb_i = wls(kept, tau2_i)
+        diff = b - b_i
+        cook[i] = float(diff[columns] @ vb_btt @ diff[columns])
+        vb_star = numpy.linalg.inv(X.T @ ((1 / (vi + tau2_i))[:, None] * X))
+        dfbetas[i] = diff / numpy.sqrt(numpy.diag(vb_star))
+        resid[i] = yi[i] - X[i] @ b_i
+        se[i] = math.sqrt(vi[i] + tau2_i + X[i] @ vb_i @ X[i])
+        tau2_del[i] = tau2_i
+        qe_del[i] = random_effects_q(yi[kept], vi[kept], X[kept], 0.0)
+        dffits[i] = float(X[i] @ diff) / math.sqrt(hat[i] * (vi[i] + tau2_i))
+        cov_r[i] = float(numpy.linalg.det(vb_i) / numpy.linalg.det(vb))
+    return UniDeletion(cook, dfbetas, resid, se, resid / se, tau2_del, qe_del, dffits, cov_r, hat, rstandard)
+
+
+@dataclasses.dataclass(frozen=True)
+class UniBlups:
+    """Per study: the BLUP of the true effect ``x_i b + u_i`` and its prediction error standard error."""
+
+    pred: FloatArray
+    se: FloatArray
+
+
+def uni_blups(yi: FloatArray, vi: FloatArray, X: FloatArray, tau2: float) -> UniBlups:
+    """Henderson's mixed model equations with ``R = diag(vi)``, ``Z = I``, ``G = tau2 I`` (through ``mv_blups``); the variance of ``x_i b + u_i``
+    from the inverse coefficient matrix, its ``b`` block, ``u`` block and their covariance."""
+    k = X.shape[0]
+    term = RandomTerm(struct=SIGMA2, outer=numpy.arange(k, dtype=numpy.intp), inner=numpy.zeros(k, dtype=numpy.intp), n_inner=1)
+    solved = mv_blups(yi, numpy.diag(vi), X, [term], [numpy.array([tau2])], [numpy.zeros(0)])
+    w = numpy.diag(1 / vi)
+    coefficients = numpy.block([[X.T @ w @ X, X.T @ w], [w @ X, w + numpy.eye(k) / tau2]])
+    inverse = numpy.linalg.inv(coefficients)
+    se = numpy.zeros(k)
+    for i in range(k):
+        c = numpy.concatenate([X[i], numpy.eye(k)[i]])
+        se[i] = math.sqrt(float(c @ inverse @ c))
+    return UniBlups(X @ solved.beta + solved.blups[0], se)
+
+
 # rma_mv: inference on the coefficients, QE and QM, containment degrees of freedom, and profile-likelihood intervals of the components.
 
 

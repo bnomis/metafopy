@@ -23,7 +23,7 @@ folder `/Users/simonb/src/metafopy papers/`.
 
 ## Task 1: The references uni_deletion and uni_blups
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Definitions and references; API (formulas.py); Error handling; Implementation step 1
@@ -33,34 +33,34 @@ folder `/Users/simonb/src/metafopy papers/`.
 
 **Subtasks:**
 
-- [ ] Starting-point check: `grep -nE 'def (uni_deletion|uni_blups|influence_printed|blup_printed|uni_mean_shift|uni_blup)\b|class (UniDeletion|UniBlups)\b|^UNI_(FITS|INFLUENCE) ' src/tests/correctness/*.py`
+- [x] Starting-point check: `grep -nE 'def (uni_deletion|uni_blups|influence_printed|blup_printed|uni_mean_shift|uni_blup)\b|class (UniDeletion|UniBlups)\b|^UNI_(FITS|INFLUENCE) ' src/tests/correctness/*.py`
       prints nothing; stop as `blocked`, naming the match, if it does (the local variable `uni_ranef` in `test_properties.py` is not a clash, and
       the check function `uni_ranef` is added only in Task 2)
-- [ ] Add `UniDeletion` and `uni_deletion` to `src/tests/correctness/formulas.py` with the fields, signature and docstring of the spec's API
+- [x] Add `UniDeletion` and `uni_deletion` to `src/tests/correctness/formulas.py` with the fields, signature and docstring of the spec's API
       section, coded from Viechtbauer and Cheung (2010) as its "Definitions and references" section says: for each study, a refit on the kept
       studies with `rma_tau2` (or the fixed `tau2`; `0` for EE), `b(-i)` and `vb(-i)` by weighted least squares, Cook's distance (eq 20) over
       `btt`, DFBETAS (eq 23), the deleted residual, its standard error and `z` (eqs 15, 16), `tau2(-i)`, `QE(-i)` (Cochran's Q of the refit),
       DFFITS (eq 19), COVRATIO (eq 25), the hat values (eq 13) and the internally studentised residual (eq 14). Build `X` with `model_matrix`;
       `numpy` and `scipy` only, no metafopy import
-- [ ] Add `UniBlups` and `uni_blups`: Henderson's mixed model equations through `mv_blups` with one `~ 1 | study` term (`R = diag(vi)`, `Z = I`,
+- [x] Add `UniBlups` and `uni_blups`: Henderson's mixed model equations through `mv_blups` with one `~ 1 | study` term (`R = diag(vi)`, `Z = I`,
       `G = tau2 I`); `pred = x_i b + u_i` and its standard error from the inverse coefficient matrix (the `b` block, the `u` block and their
       covariance)
-- [ ] The errors of the spec's Error handling section: `ValueError` naming the study when a deletion leaves `X` rank deficient
-- [ ] Harness tests in `src/tests/correctness/test_coverage.py`, beside `test_mv_deletion_without_reestimation_matches_the_rma_uni_closed_forms`:
+- [x] The errors of the spec's Error handling section: `ValueError` naming the study when a deletion leaves `X` rank deficient
+- [x] Harness tests in `src/tests/correctness/test_coverage.py`, beside `test_mv_deletion_without_reestimation_matches_the_rma_uni_closed_forms`:
       on a small inline dataset, an intercept-only fit with `tau2` fixed, `uni_deletion` against eq 24 for DFBETAS and `(mu - mu(-i))^2 sum(w)`
       for Cook's distance; a rank-deficient deletion raises; `uni_blups` against the marginal form `x_i b + lambda_i (y_i - x_i b)` and the
       variance `lambda_i v_i + (1 - lambda_i)^2 x_i vb x_i'`
-- [ ] Run `pytest src/tests/correctness/test_coverage.py`
+- [x] Run `pytest src/tests/correctness/test_coverage.py`
 
 **Acceptance Criteria:**
 
-- [ ] Both references reproduce their closed forms on the inline data to `1e-10`
-- [ ] `formulas.py` still imports no metafopy module (the harness's import-ban test passes)
+- [x] Both references reproduce their closed forms on the inline data to `1e-10`
+- [x] `formulas.py` still imports no metafopy module (the harness's import-ban test passes)
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] The pytest run of the last subtask passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The pytest run of the last subtask passes
 
 **Notes:**
 

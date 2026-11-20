@@ -953,6 +953,37 @@ def test_mv_deletion_without_reestimation_matches_the_rma_uni_closed_forms() -> 
     assert all(result.converged)
 
 
+def test_uni_deletion_matches_the_intercept_only_closed_forms_and_refuses_a_rank_deficient_deletion() -> None:
+    k = len(MV_YI)
+    result = correctness.formulas.uni_deletion(MV_YI, MV_VI, 'REML', tau2=MV_TAU2)
+    w = 1 / (MV_VI + MV_TAU2)
+    mu = float(w @ MV_YI / w.sum())
+    for i in range(k):
+        keep = numpy.arange(k) != i
+        mu_i = float(w[keep] @ MV_YI[keep] / w[keep].sum())
+        assert result.dfbetas[i, 0] == pytest.approx((mu - mu_i) * math.sqrt(w.sum()), abs=1e-10)
+        assert result.cook[i] == pytest.approx((mu - mu_i) ** 2 * w.sum(), abs=1e-10)
+        assert result.resid[i] == pytest.approx(MV_YI[i] - mu_i, abs=1e-10)
+        assert result.se[i] == pytest.approx(math.sqrt(MV_VI[i] + MV_TAU2 + 1 / w[keep].sum()), abs=1e-10)
+        assert result.tau2_del[i] == MV_TAU2
+        assert result.hat[i] == pytest.approx(w[i] / w.sum(), abs=1e-10)
+    only = {'d': numpy.array([0.0] * 6 + [1.0])}
+    with pytest.raises(ValueError, match='study 6'):
+        correctness.formulas.uni_deletion(MV_YI, MV_VI, 'REML', mods='~ d', data=only, tau2=MV_TAU2)
+
+
+def test_uni_blups_match_the_marginal_form() -> None:
+    result = correctness.formulas.uni_blups(MV_YI, MV_VI, MV_X, MV_TAU2)
+    w = 1 / (MV_VI + MV_TAU2)
+    vb = numpy.linalg.inv(MV_X.T @ (w[:, None] * MV_X))
+    b = vb @ MV_X.T @ (w * MV_YI)
+    lam = MV_TAU2 / (MV_TAU2 + MV_VI)
+    fitted = MV_X @ b
+    variance = lam * MV_VI + (1 - lam) ** 2 * numpy.einsum('ij,jk,ik->i', MV_X, vb, MV_X)
+    assert result.pred == pytest.approx(fitted + lam * (MV_YI - fitted), abs=1e-10)
+    assert result.se == pytest.approx(numpy.sqrt(variance), abs=1e-10)
+
+
 def test_mv_deletion_refits_the_components_and_refuses_a_rank_deficient_deletion() -> None:
     k = len(MV_YI)
     term = sigma2_term(list(range(k)))

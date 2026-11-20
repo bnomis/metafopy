@@ -140,6 +140,7 @@ def uni_blups(yi: FloatArray, vi: FloatArray, X: FloatArray, tau2: float) -> Uni
 
 
 # test_derived.py
+# auditme: accept[spec-api-signature-drift] the check in test_derived.py shares its name with the reference formulas.uni_deletion; the signature above is the reference's
 def uni_deletion(case: correctness.cases.Case, result: typing.Any) -> None:
     """``cooks_distance`` (with the ``btt`` of the case's ``then``), ``dfbetas``, ``rstudent``, ``rstandard`` and every ``influence`` column of
     the case's fit (``refit``) against ``formulas.uni_deletion``, at ``DERIVED_TOLERANCE``; a NaN from metafopy where the reference has a value
