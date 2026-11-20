@@ -2,6 +2,7 @@
 
 **Task list:** `agents/tasks/correctness-mv-diagnostics/tasks-1.md`
 **Spec:** `agents/specs/correctness-mv-diagnostics/spec.md`
+**Review page:** https://claude.ai/artifact/ChqHuqirRtJ4eqEfpptZtk
 
 ## What is reviewed and how
 
@@ -58,7 +59,9 @@ Checked 2026-11-19:
 
 ## Answers
 
-Left empty for the operator's verdict: the operator session publishes the review page, copies the answer here with the date, and commits it.
+Answered 2026-11-20 on the review page (https://claude.ai/artifact/ChqHuqirRtJ4eqEfpptZtk):
+
+- **D1, ranef with GEN (`mv.ranef.gen.crossed`):** *Keep metafor*. No comment.
 
 ## Sources needed
 
