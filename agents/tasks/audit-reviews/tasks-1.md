@@ -107,7 +107,7 @@ files Phase B reads.
 
 ## Task 3: User guides whose examples or claims no longer match the code
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Source Reference:** F1 (Doc5), the guide pages
@@ -117,7 +117,7 @@ trust the page.
 
 **Subtasks:**
 
-- [ ] List the open Doc5 findings with the report command, and take those on these pages:
+- [x] List the open Doc5 findings with the report command, and take those on these pages:
   - `docs/getting-started.md`
   - `docs/guide/advanced.md`
   - `docs/guide/datasets.md`
@@ -125,21 +125,21 @@ trust the page.
   - `docs/guide/effect-sizes.md`
   - `docs/guide/emmeans.md`
   - `docs/guide/models.md`
-- [ ] For each, run the page's example in the worktree's environment and replace the shown output with what the code prints now. Change
+- [x] For each, run the page's example in the worktree's environment and replace the shown output with what the code prints now. Change
       the shown output only: if the output itself looks wrong (not merely moved), stop as `blocked` and name the example
-- [ ] Correct each contradicted statement:
+- [x] Correct each contradicted statement:
   - complete the `method` table (`'CO'`, `'VC'`) and the `selmodel` `type` list (`'trunc'`, `'truncest'`, the `'*1'`/`'*2'` variants);
   - add the second `hettest` block's output
-- [ ] Run `pytest src/tests/test_docs_examples.py`
+- [x] Run `pytest src/tests/test_docs_examples.py`
 
 **Acceptance Criteria:**
 
-- [ ] Every Doc5 finding on these pages is fixed; running each changed example prints exactly what the page shows
+- [x] Every Doc5 finding on these pages is fixed; running each changed example prints exactly what the page shows
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/test_docs_examples.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/test_docs_examples.py` passes
 
 **Notes:**
 

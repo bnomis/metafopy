@@ -45,8 +45,9 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 The first part of the output is the corrected random-effects model. The test of the selection model parameters asks whether
 there is evidence for selection at all.
 
-The `type` can be a parametric function (`'beta'`, `'halfnorm'`, `'negexp'`, `'logistic'`, `'power'`, `'negexppow'`) or a
-step function. Step functions need the cut points of the p-value, given as `steps`:
+The `type` can be a parametric function (`'beta'`, `'halfnorm'`, `'negexp'`, `'logistic'`, `'power'`, `'negexppow'`, `'trunc'`, `'truncest'`, and
+the variants `'halfnorm1'`, `'halfnorm2'`, `'negexp1'`, `'negexp2'`, `'logistic1'`, `'logistic2'`, `'power1'`, `'power2'`) or a
+step function (`'stepfun'`). Step functions need the cut points of the p-value, given as `steps`:
 
 ```python
 print(selmodel(res, type='stepfun', steps=[0.025, 0.10, 0.50, 1]))
@@ -149,7 +150,7 @@ print(predict(res, newmods=[5, 25], newscale=[5, 25]))
 ```
 
 ```text
-     pred      se   ci.lb   ci.ub   pi.lb   pi.ub
-1  0.1466  0.0516  0.0455  0.2477 -0.2315  0.5247
-2  0.4454  0.1278  0.1949  0.6960 -0.1899  1.0807
+    pred     se  ci.lb  ci.ub   pi.lb  pi.ub
+1 0.1466 0.0516 0.0455 0.2477 -0.2315 0.5247
+2 0.4454 0.1278 0.1949 0.6960 -0.1899 1.0807
 ```

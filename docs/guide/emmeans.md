@@ -26,13 +26,12 @@ print(grid)
 ```
 
 ```text
-     alloc ablat prediction     SE  df asymp.LCL asymp.UCL
- alternate 33.46    -0.6195 0.2935 Inf    -1.195  -0.04416
-    random 33.46     -0.887 0.1912 Inf    -1.262   -0.5123
-systematic 33.46     -0.561 0.2443 Inf     -1.04  -0.08215
+ alloc      ablat prediction    SE  df
+ alternate   33.5     -0.619 0.294 Inf
+ random      33.5     -0.887 0.191 Inf
+ systematic  33.5     -0.561 0.244 Inf
 
 Results are given on the log (not the response) scale.
-Confidence level used: 0.95
 ```
 
 `emmprep` knows the link from the effect size measure (log for the ratio measures, logit for `PLO`, and so on), so
@@ -44,10 +43,10 @@ print(means.summary(type='response'))
 ```
 
 ```text
-     alloc response      SE  df asymp.LCL asymp.UCL
- alternate   0.5382   0.158 Inf    0.3028    0.9568
-    random   0.4119 0.07875 Inf    0.2832    0.5991
-systematic   0.5706  0.1394 Inf    0.3535    0.9211
+ alloc      response     SE  df asymp.LCL asymp.UCL
+ alternate     0.538 0.1580 Inf     0.303     0.957
+ random        0.412 0.0787 Inf     0.283     0.599
+ systematic    0.571 0.1390 Inf     0.353     0.921
 
 Confidence level used: 0.95
 Intervals are back-transformed from the log scale
@@ -70,16 +69,16 @@ print(contrast(means, 'trt_vs_ctrl', ref='alternate').summary(type='response'))
 ```
 
 ```text
-              contrast  ratio     SE  df null z.ratio p.value
-    alternate / random  1.307 0.4579 Inf    1  0.7633  0.7255
-alternate / systematic 0.9432  0.358 Inf    1  -0.154  0.9870
-   random / systematic 0.7218 0.2241 Inf    1   -1.05  0.5452
+ contrast               ratio    SE  df null z.ratio p.value
+ alternate / random     1.307 0.458 Inf    1   0.763  0.7255
+ alternate / systematic 0.943 0.358 Inf    1  -0.154  0.9870
+ random / systematic    0.722 0.224 Inf    1  -1.050  0.5452
 
 P value adjustment: tukey method for comparing a family of 3 estimates
 Tests are performed on the log scale
-              contrast  ratio     SE  df null z.ratio p.value
-    random / alternate 0.7653 0.2682 Inf    1 -0.7633  0.6577
-systematic / alternate   1.06 0.4024 Inf    1   0.154  0.9750
+ contrast               ratio    SE  df null z.ratio p.value
+ random / alternate     0.765 0.268 Inf    1  -0.763  0.6577
+ systematic / alternate 1.060 0.402 Inf    1   0.154  0.9750
 
 P value adjustment: dunnettx method for 2 tests
 Tests are performed on the log scale
