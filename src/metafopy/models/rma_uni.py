@@ -24,7 +24,7 @@ import scipy.stats
 import metafopy.core.labelled
 import metafopy.core.linalg
 import metafopy.core.verbose
-import metafopy.effects.measures
+import metafopy.effects
 import metafopy.errors
 import metafopy.metadata
 import metafopy.mfopt
@@ -252,9 +252,9 @@ class RMAResult(metafopy.models.fit_methods.DataFields, metafopy.models.fit_meth
     def plot(self, *args: typing.Any, **kwargs: typing.Any) -> typing.Any:
         """Draw the forest, funnel, radial and residual plots with :func:`metafopy.plot.plot_rma`."""
         # auditme: accept[in-function-import] metafopy.plot imports the models, so the import is deferred to avoid a cycle
-        import metafopy.plot.rma
+        import metafopy.plot
 
-        return metafopy.plot.rma.plot_rma(self, *args, **kwargs)
+        return metafopy.plot.plot_rma(self, *args, **kwargs)
 
     def anova(self, *args: typing.Any, **kwargs: typing.Any) -> typing.Any:
         # auditme: accept[in-function-import] metafopy.methods imports this module, so the import is deferred to avoid a cycle
@@ -780,7 +780,7 @@ def rma_uni(
         mods = '~ ' + rhs
         intercept = False
 
-    if measure not in (*metafopy.effects.measures.MEASURES, 'HR', 'HD'):
+    if measure not in (*metafopy.effects.MEASURES, 'HR', 'HD'):
         raise metafopy.errors.InputError("Unknown 'measure' specified.")
 
     add_measure = measure  # rma.uni decides on the default of 'add' before it reads the measure of an escalc object

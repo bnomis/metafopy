@@ -12,8 +12,7 @@ import numpy
 import pandas
 
 import audit.config
-import metafopy.effects.reshape
-import metafopy.metadata
+import metafopy
 import metafopy.methods.accessors
 
 Node = dict[str, typing.Any]
@@ -124,7 +123,7 @@ def lookup(value: typing.Any, name: str, as_list: bool = True) -> tuple[bool, ty
     if name == '' and isinstance(value, (tuple, list)):
         return True, value  # a data frame column R leaves unnamed (the `hyp` of an anova)
     inputs = getattr(value, 'data', None)
-    if isinstance(inputs, metafopy.metadata.MetaData) and name in ('data', 'slab'):
+    if isinstance(inputs, metafopy.MetaData) and name in ('data', 'slab'):
         # R's `data` is the data frame the model was given and its `slab` has one label for every row of it; in metafopy `data` holds the model
         # inputs of the studies used (`MetaData`) and `slab` the labels of those, so the frame and all labels are looked up in the inputs
         if name == 'data':
@@ -204,7 +203,7 @@ def named_vector(value: typing.Any, guide: Node, path: str) -> typing.Any:
         return [value] * len(guide['v'])
     if isinstance(value, metafopy.methods.accessors.NobsAll):
         return list(dataclasses.asdict(value).values())
-    if isinstance(value, metafopy.effects.reshape.TableArray):
+    if isinstance(value, metafopy.TableArray):
         return value.values
     if isinstance(value, dict) and guide.get('n') and set(value) <= set(guide['n']):
         return [value.get(name) for name in guide['n']]

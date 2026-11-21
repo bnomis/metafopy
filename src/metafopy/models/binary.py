@@ -219,9 +219,9 @@ class FixedBinaryResult(metafopy.models.fit_methods.TableFields, metafopy.models
     def plot(self, *args: typing.Any, **kwargs: typing.Any) -> typing.Any:
         """Draw the forest, funnel, radial and residual plots with :func:`metafopy.plot.plot_rma`."""
         # auditme: accept[in-function-import] metafopy.plot imports the models, so the import is deferred to avoid a cycle
-        import metafopy.plot.rma
+        import metafopy.plot
 
-        return metafopy.plot.rma.plot_rma(self, *args, **kwargs)
+        return metafopy.plot.plot_rma(self, *args, **kwargs)
 
     @abc.abstractmethod
     def weight_values(self) -> FloatArray:

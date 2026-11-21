@@ -452,9 +452,9 @@ class SelmodelResult(metafopy.models.fit_methods.FitMethods):
     def plot(self, *args: typing.Any, **kwargs: typing.Any) -> typing.Any:
         """Draw the selection function with :func:`metafopy.plot.plot_selmodel`."""
         # auditme: accept[in-function-import] metafopy.plot imports the methods, so the import is deferred to avoid a cycle
-        import metafopy.plot.selmodel
+        import metafopy.plot
 
-        return metafopy.plot.selmodel.plot_selmodel(self, *args, **kwargs)
+        return metafopy.plot.plot_selmodel(self, *args, **kwargs)
 
     def vif(self, *args: typing.Any, **kwargs: typing.Any) -> typing.Any:
         # auditme: accept[in-function-import] metafopy.methods imports this module, so the import is deferred to avoid a cycle

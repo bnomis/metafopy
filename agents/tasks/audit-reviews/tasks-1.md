@@ -364,7 +364,7 @@ never read a file outside the dataset folder.
 
 ## Task 10: Reads that bypass a package's surface
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Source Reference:** F10 (A17)
@@ -373,9 +373,9 @@ never read a file outside the dataset folder.
 
 **Subtasks:**
 
-- [ ] List the open A17 findings with the report command (the `metafopy`, `effects` and `plot` candidates). Take only their
+- [x] List the open A17 findings with the report command (the `metafopy`, `effects` and `plot` candidates). Take only their
       submodule-bypass parts; the unconsumed `__all__` names were dismissed by decision D3
-- [ ] Change these reads to go through the package:
+- [x] Change these reads to go through the package:
   - `src/audit/valuetree.py`: `metafopy.metadata.MetaData` and `metafopy.effects.reshape.TableArray`;
   - `src/metafopy/models/rma_uni.py`: `metafopy.effects.measures.MEASURES`;
   - `binary.py`, `rma_uni.py` and `sel_result.py`: `metafopy.plot.rma` and `metafopy.plot.selmodel`;
@@ -383,17 +383,17 @@ never read a file outside the dataset folder.
 
   Where the deferred import exists to avoid an import cycle, import the package inside the function instead, and keep any `AGENTS.md`
   row or marker the deferred import needs
-- [ ] Run `python3 -c "import metafopy"` and the changed modules' own tests
+- [x] Run `python3 -c "import metafopy"` and the changed modules' own tests
 
 **Acceptance Criteria:**
 
-- [ ] No read of a name from a submodule remains where the package exports it, and `import metafopy` has no cycle
+- [x] No read of a name from a submodule remains where the package exports it, and `import metafopy` has no cycle
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes on every changed module
-- [ ] `pytest src/tests/test_plots.py src/tests/test_selmodel.py src/tests/test_profile_plots.py src/tests/test_harness_compare.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes on every changed module
+- [x] `pytest src/tests/test_plots.py src/tests/test_selmodel.py src/tests/test_profile_plots.py src/tests/test_harness_compare.py` passes
 
 ---
 
