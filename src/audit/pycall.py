@@ -63,6 +63,7 @@ def shift_index(value: typing.Any) -> typing.Any:
     return value
 
 
+# auditme: accept[A9] reads a bundled dataset only for a `$data` tag
 def resolve_value(x: typing.Any, env: Env) -> typing.Any:
     if isinstance(x, dict) and len(x) == 1:
         ((tag, val),) = x.items()

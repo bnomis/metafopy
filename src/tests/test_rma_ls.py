@@ -4,6 +4,7 @@ import collections.abc
 import json
 import pathlib
 import re
+import types
 import typing
 import warnings
 
@@ -96,47 +97,49 @@ def bdz() -> numpy.typing.NDArray[numpy.float64]:
 
 
 # auditme: accept[non-alphabetical-dict-keys] order follows the R script that generates the fixtures
-FITS: dict[str, Fit] = {
-    'bd_int': lambda: ls(bd()),
-    'bd_int_ml': lambda: ls(bd(), method='ML'),
-    'bd_int_identity': lambda: ls(bd(), link='identity'),
-    'bd_ni': lambda: ls(bd(), '~ ni100', '~ ni100'),
-    'bd_ni_ml': lambda: ls(bd(), '~ ni100', '~ ni100', method='ML'),
-    'bd_3': lambda: ls(bd(), MODS3, SCALE3),
-    'bd_3_ml': lambda: ls(bd(), MODS3, SCALE3, method='ML'),
-    'bd_3_t': lambda: ls(bd(), MODS3, SCALE3, test='t'),
-    'bd_3_knha': lambda: ls(bd(), MODS3, SCALE3, test='knha'),
-    'bd_3_adhoc': lambda: ls(bd(), MODS3, SCALE3, test='adhoc'),
-    'bd_3_btt': lambda: ls(bd(), MODS3, SCALE3, btt=[2], att=[1, 2]),
-    'bd_3_level': lambda: ls(bd(), MODS3, SCALE3, level=90),
-    'bd_3_unweighted': lambda: ls(bd(), MODS3, SCALE3, weighted=False),
-    'bd_3_weights': lambda: ls(bd(), MODS3, SCALE3, weights=bd()['ni'].to_numpy()),
-    'bd_3_alpha': lambda: ls(bd(), MODS3, SCALE3, alpha=[numpy.nan, 0, numpy.nan]),
-    'bd_3_alpha_ml': lambda: ls(bd(), MODS3, SCALE3, alpha=[numpy.nan, 0, numpy.nan], method='ML'),
-    'bd_3_alpha_ml_all': lambda: ls(bd(), MODS3, SCALE3, alpha=[numpy.nan, 0, 0], method='ML'),
-    'bd_optbeta': lambda: ls(bd(), MODS3, SCALE3, method='ML', optbeta=True),
-    'bd_optbeta_reml': lambda: ls(bd(), '~ ni100', '~ ni100', optbeta=True),
-    'bd_optbeta_beta': lambda: ls(bd(), MODS3, '~ 1', optbeta=True, beta=[numpy.nan, numpy.nan, 0.1], method='ML'),
-    'bd_identity': lambda: ls(bd(), '~ ni100', '~ imag', link='identity'),
-    'bd_identity_ml': lambda: ls(bd(), '~ ni100', '~ imag', link='identity', method='ML'),
-    'bd_identity_ni': lambda: ls(bd(), MODS3, '~ meta + imag', link='identity'),
-    'bd_na': lambda: ls(bd_na(), MODS3, '~ imag + ni100'),
-    'bd_matrix': lambda: ls(bd(), numpy.column_stack([bd()['ni100']]), bdz()),
-    'bd_poly': lambda: ls(bd(), '~ ni100', '~ ni100 + I(ni100**2)'),
-    'bd_alpha_bounds': lambda: ls(bd(), '~ ni100', '~ ni100', control=metafopy.LSControl(alpha_min=[-5, -3], alpha_max=[0, 3])),
-    'bd_alpha_init': lambda: ls(bd(), '~ ni100', '~ ni100', control=metafopy.LSControl(alpha_init=[-2, -0.5])),
-    'bd_noscaleZ': lambda: ls(bd(), '~ ni100', SCALE3, control=metafopy.LSControl(scaleZ=False)),
-    'bcg_ablat': lambda: ls(bcg(), '~ ablat', '~ ablat'),
-    'bcg_ablat_ml': lambda: ls(bcg(), '~ ablat', '~ ablat', method='ML'),
-    'bcg_ablat_t': lambda: ls(bcg(), '~ ablat', '~ ablat', test='t'),
-    'bcg_int_scale': lambda: ls(bcg(), '~ ablat', '~ 1'),
-    'bcg_year_identity': lambda: ls(bcg(), '~ ablat', '~ I(ablat/10)', link='identity', method='ML'),
-    'bd6_exact': lambda: ls(bd6(), '~ ni100', '~ ni100'),
-    'mo_int': lambda: ls(mo()),
-    'mo_quality': lambda: ls(mo(), '~ quality', '~ quality', method='ML'),
-    'mo_design': lambda: ls(mo(), None, '~ design'),
-    'mc_factors': lambda: ls(mc(), '~ type + struct', '~ struct', method='ML'),
-}
+FITS: collections.abc.Mapping[str, Fit] = types.MappingProxyType(
+    {
+        'bd_int': lambda: ls(bd()),
+        'bd_int_ml': lambda: ls(bd(), method='ML'),
+        'bd_int_identity': lambda: ls(bd(), link='identity'),
+        'bd_ni': lambda: ls(bd(), '~ ni100', '~ ni100'),
+        'bd_ni_ml': lambda: ls(bd(), '~ ni100', '~ ni100', method='ML'),
+        'bd_3': lambda: ls(bd(), MODS3, SCALE3),
+        'bd_3_ml': lambda: ls(bd(), MODS3, SCALE3, method='ML'),
+        'bd_3_t': lambda: ls(bd(), MODS3, SCALE3, test='t'),
+        'bd_3_knha': lambda: ls(bd(), MODS3, SCALE3, test='knha'),
+        'bd_3_adhoc': lambda: ls(bd(), MODS3, SCALE3, test='adhoc'),
+        'bd_3_btt': lambda: ls(bd(), MODS3, SCALE3, btt=[2], att=[1, 2]),
+        'bd_3_level': lambda: ls(bd(), MODS3, SCALE3, level=90),
+        'bd_3_unweighted': lambda: ls(bd(), MODS3, SCALE3, weighted=False),
+        'bd_3_weights': lambda: ls(bd(), MODS3, SCALE3, weights=bd()['ni'].to_numpy()),
+        'bd_3_alpha': lambda: ls(bd(), MODS3, SCALE3, alpha=[numpy.nan, 0, numpy.nan]),
+        'bd_3_alpha_ml': lambda: ls(bd(), MODS3, SCALE3, alpha=[numpy.nan, 0, numpy.nan], method='ML'),
+        'bd_3_alpha_ml_all': lambda: ls(bd(), MODS3, SCALE3, alpha=[numpy.nan, 0, 0], method='ML'),
+        'bd_optbeta': lambda: ls(bd(), MODS3, SCALE3, method='ML', optbeta=True),
+        'bd_optbeta_reml': lambda: ls(bd(), '~ ni100', '~ ni100', optbeta=True),
+        'bd_optbeta_beta': lambda: ls(bd(), MODS3, '~ 1', optbeta=True, beta=[numpy.nan, numpy.nan, 0.1], method='ML'),
+        'bd_identity': lambda: ls(bd(), '~ ni100', '~ imag', link='identity'),
+        'bd_identity_ml': lambda: ls(bd(), '~ ni100', '~ imag', link='identity', method='ML'),
+        'bd_identity_ni': lambda: ls(bd(), MODS3, '~ meta + imag', link='identity'),
+        'bd_na': lambda: ls(bd_na(), MODS3, '~ imag + ni100'),
+        'bd_matrix': lambda: ls(bd(), numpy.column_stack([bd()['ni100']]), bdz()),
+        'bd_poly': lambda: ls(bd(), '~ ni100', '~ ni100 + I(ni100**2)'),
+        'bd_alpha_bounds': lambda: ls(bd(), '~ ni100', '~ ni100', control=metafopy.LSControl(alpha_min=[-5, -3], alpha_max=[0, 3])),
+        'bd_alpha_init': lambda: ls(bd(), '~ ni100', '~ ni100', control=metafopy.LSControl(alpha_init=[-2, -0.5])),
+        'bd_noscaleZ': lambda: ls(bd(), '~ ni100', SCALE3, control=metafopy.LSControl(scaleZ=False)),
+        'bcg_ablat': lambda: ls(bcg(), '~ ablat', '~ ablat'),
+        'bcg_ablat_ml': lambda: ls(bcg(), '~ ablat', '~ ablat', method='ML'),
+        'bcg_ablat_t': lambda: ls(bcg(), '~ ablat', '~ ablat', test='t'),
+        'bcg_int_scale': lambda: ls(bcg(), '~ ablat', '~ 1'),
+        'bcg_year_identity': lambda: ls(bcg(), '~ ablat', '~ I(ablat/10)', link='identity', method='ML'),
+        'bd6_exact': lambda: ls(bd6(), '~ ni100', '~ ni100'),
+        'mo_int': lambda: ls(mo()),
+        'mo_quality': lambda: ls(mo(), '~ quality', '~ quality', method='ML'),
+        'mo_design': lambda: ls(mo(), None, '~ design'),
+        'mc_factors': lambda: ls(mc(), '~ type + struct', '~ struct', method='ML'),
+    }
+)
 
 # The scale coefficients are optimizer output (R: nlminb, here BFGS plus a polish): they agree to about 1e-7, the quantities derived from
 # them (location estimates, Hessian-based standard errors) to 1e-4. The log-likelihood at the optimum is closed-form given the optimum.

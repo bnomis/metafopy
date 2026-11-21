@@ -260,6 +260,7 @@ def set_seed(seed: int) -> RRandom:
     return GLOBAL
 
 
+# auditme: accept[A9] R seeds from the clock on first use too
 def get_rng() -> RRandom:
     """The module-level generator, seeded from the clock on first use (as R seeds from time and process id)."""
     global GLOBAL

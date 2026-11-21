@@ -412,7 +412,7 @@ def mv_terms(case: correctness.cases.Case, frame: pandas.DataFrame) -> list[corr
         if inner == '1':
             known = None
             if case.setup is not None and 'tree_r' in case.setup and case.setup['tree_r']['factor'] == outer:
-                tree = correctness.cases.build_tree_r(case.setup['tree_r']['tree'])
+                tree = correctness.cases.load_tree_r(case.setup['tree_r']['tree'])
                 known = correctness.formulas.rescale_r(tree.loc[labels.astype(str), labels.astype(str)].to_numpy(), str(args.get('Rscale', 'cor')))
             terms.append(sigma2_term(codes, known))
             if nested is not None:

@@ -1903,7 +1903,7 @@ def addpoly(
     preddist: PredDist | None = None,
     predtail: float | str | None = None,
     pi_se: float | None = None,
-    pi_dist: str = 'norm',
+    pi_dist: str | None = None,
     pi_ddf: float | None = None,
     pi_level: float | None = None,
     alim: collections.abc.Sequence[float] | None = None,
@@ -1978,8 +1978,9 @@ def addpoly(
             a single estimate.
         predtail: Cut point of the shading for ``'dist'``, as in [forest][metafopy.forest] (a number or a string such as ``'<2'``).
         pi_se: Vector form only: standard error of the predictive distribution, for ``'shade'`` and ``'dist'``. Taken from the model for a fitted
-            model or ``predict`` result.
-        pi_dist: Vector form only: the predictive distribution, ``'norm'`` (the default) or ``'t'``.
+            model or ``predict`` result; an explicit ``pi_se``, ``pi_dist`` or ``pi_ddf`` wins over the value stored in a ``predict`` result.
+        pi_dist: Vector form only: the predictive distribution, ``'norm'`` or ``'t'``. Default: from the model for a fitted model or ``predict``
+            result, else ``'norm'``.
         pi_ddf: Vector form only: degrees of freedom of the ``'t'`` distribution (must exceed 1 to draw it).
         pi_level: Vector form only: level of the prediction interval, as ``level``. Default: ``level``.
         alim: Limits of the x axis: polygons are cut off at them. Default: taken from the last forest call, else the limits of the axes.
@@ -2023,7 +2024,7 @@ def addpoly(
         nan = numpy.full(x.pred.shape[0], math.nan)
         if pi_se is None and x.pi_se is not None:
             pi_se = float(numpy.atleast_1d(x.pi_se)[0])
-        if x.pi_dist is not None and pi_dist == 'norm':
+        if pi_dist is None and x.pi_dist is not None:
             pi_dist = x.pi_dist
         if pi_ddf is None and x.pi_ddf is not None:
             pi_ddf = float(numpy.atleast_1d(x.pi_ddf)[0])
@@ -2111,6 +2112,7 @@ def addpoly(
                 raise metafopy.errors.InputError("Must specify either 'vi', 'sei', or ('ci_lb','ci_ub').")
             cl, cu = yi - crit * numpy.sqrt(v), yi + crit * numpy.sqrt(v)
         pi_alpha = lvl if pi_level is None else metafopy.plot.rutils.level_to_alpha(pi_level)
+        pi_dist = 'norm' if pi_dist is None else pi_dist
         if pdist is not None:
             if yi.shape[0] != 1:
                 raise metafopy.errors.InputError("Can only use 'preddist' when plotting a single estimate.")

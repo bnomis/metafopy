@@ -623,7 +623,7 @@ def fit_glmm(
         if nagq == 1 or not lme4_conventions:
             loglik += metafopy.core.glm.family_constant(prob.family, prob.y, prob.size)
         else:
-            loglik -= metafopy.core.glm.saturated_loglik(prob.family, prob.y, prob.size)
+            loglik -= sat
         cov = hessian_covariance(deviance, beta, theta, prob.structure, bounded=lme4_conventions)
         if cov is None:
             if not lme4_conventions:

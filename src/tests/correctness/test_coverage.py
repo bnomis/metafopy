@@ -819,7 +819,7 @@ def test_subset_keeps_the_rows_that_match() -> None:
 
 def test_tree_r_is_the_shared_branch_length_of_the_tips() -> None:
     reference = metafopy.datasets.load_tree('moura2021').vcv()
-    built = correctness.cases.build_tree_r('moura2021')
+    built = correctness.cases.load_tree_r('moura2021')
     assert list(built.index) == list(reference.index)
     numpy.testing.assert_allclose(built.to_numpy(), reference.to_numpy(), rtol=0, atol=1e-12)
     assert correctness.cases.run_case(one_case(TREE_R_CASE)).k == 2

@@ -3,6 +3,7 @@
 import collections.abc
 import json
 import pathlib
+import types
 import typing
 import warnings
 
@@ -77,77 +78,79 @@ YEAR = '~ I(year - 1990)'
 NESTED = '~ 1 | district/school'
 
 # auditme: accept[non-alphabetical-dict-keys] the order follows the R fixture generator
-CASES: dict[str, Fit] = {
-    'kon_nested': lambda: konst(),
-    'kon_nested_ml': lambda: konst(method='ML'),
-    'kon_list': lambda: konst(random=['~ 1 | district', '~ 1 | study']),
-    'kon_mods': lambda: konst(mods=YEAR),
-    'kon_t': lambda: konst(mods=YEAR, test='t'),
-    'kon_contain': lambda: konst(mods=YEAR, test='t', dfs='contain'),
-    'kon_dfs_num': lambda: konst(dfs=20),
-    'kon_knha': lambda: konst(mods=YEAR, test='knha'),
-    'kon_adhoc': lambda: konst(test='adhoc'),
-    'kon_fix_sigma2': lambda: konst(sigma2=[0.05, numpy.nan]),
-    'kon_fix_both': lambda: konst(sigma2=[0.05, 0.02]),
-    'kon_fix_all': lambda: konst(sigma2=0.03),
-    'kon_sparse': lambda: konst(sparse=True),
-    'kon_fe': lambda: metafopy.rma_mv('yi', 'vi', data=kon(), method='FE'),
-    'kon_ee_random_ignored': lambda: metafopy.rma_mv('yi', 'vi', random='~ 1 | district', data=kon(), method='EE'),
-    'kon_subset': lambda: konst(subset='district != 11'),
-    'kon_level90': lambda: konst(level=90),
-    'kon_btt': lambda: konst(mods='~ I(year - 1990) + I((year - 1990)**2)', btt=2),
-    'kon_formula': lambda: metafopy.rma_mv('yi ~ I(year - 1990)', 'vi', random=NESTED, data=kon()),
-    'kon_interaction': lambda: konst(random='~ 1 | interaction(district, school)'),
-    'kon_weights': lambda: konst(W=1 / kon()['vi'].to_numpy()),
-    'kon_spexp': lambda: konst(random='~ year | district', struct='SPEXP'),
-    # auditme: accept[literal-duplication] the fixture names repeat as the R script that generates them repeats them
-    'ass_cs': lambda: metafopy.rma_mv('yi', 'vi', random=['~ 1 | study', '~ 1 | esid'], data=ass()),
-    'ass_cs_ml': lambda: metafopy.rma_mv('yi', 'vi', random='~ 1 | study/esid', data=ass(), method='ML'),
-    'ass_mods': lambda: metafopy.rma_mv('yi', 'vi', mods='~ C(deltype) + year', random='~ 1 | study/esid', data=ass()),
-    'ass_mods_t': lambda: metafopy.rma_mv('yi', 'vi', mods='~ C(deltype) + year', random='~ 1 | study/esid', data=ass(), test='t', dfs='contain'),
-    'ass_vcalc': lambda: metafopy.rma_mv('yi', matrix('ass_V'), random='~ 1 | study/esid', data=ass()),
-    'ass_vcalc_sparse': lambda: metafopy.rma_mv('yi', matrix('ass_V'), random='~ 1 | study/esid', data=ass(), sparse=True),
-    'ber_un': lambda: berkey(random='~ outcome | trial', struct='UN'),
-    'ber_un_ml': lambda: berkey(random='~ outcome | trial', struct='UN', method='ML'),
-    'ber_un_nochol': lambda: berkey(random='~ outcome | trial', struct='UN', control={'cholesky': False}),
-    'ber_un_t': lambda: berkey(random='~ outcome | trial', struct='UN', test='t'),
-    'ber_un_mods': lambda: berkey(mods='~ 0 + outcome + I(year - 1985):outcome', random='~ outcome | trial', struct='UN'),
-    'ber_cs': lambda: berkey(random='~ outcome | trial', struct='CS'),
-    'ber_hcs': lambda: berkey(random='~ outcome | trial', struct='HCS'),
-    'ber_ar': lambda: berkey(random='~ outcome | trial', struct='AR'),
-    'ber_har': lambda: berkey(random='~ outcome | trial', struct='HAR'),
-    'ber_diag': lambda: berkey(random='~ outcome | trial', struct='DIAG'),
-    'ber_id': lambda: berkey(random='~ outcome | trial', struct='ID'),
-    'ber_un_fixrho': lambda: berkey(random='~ outcome | trial', struct='UN', rho=0.5),
-    'ber_un_fixtau2': lambda: berkey(random='~ outcome | trial', struct='UN', tau2=[numpy.nan, 0.01]),
-    'ber_hcs_fixrho': lambda: berkey(random='~ outcome | trial', struct='HCS', rho=0),
-    'ber_cs_sparse': lambda: berkey(random='~ outcome | trial', struct='CS', sparse=True),
-    'ber_un_sparse': lambda: berkey(random='~ outcome | trial', struct='UN', sparse=True),
-    'ber_gen': lambda: berkey(random='~ 0 + outcome | trial', struct='GEN'),
-    'ber_gdiag': lambda: berkey(random='~ 0 + outcome || trial', struct='GEN'),
-    'ber_car': lambda: berkey(random='~ as.numeric(outcome == "AL") | trial', struct='CAR'),
-    'sim_cs': lambda: simulated(random='~ outcome | study', struct='CS'),
-    'sim_un': lambda: simulated(random='~ outcome | study', struct='UN'),
-    'sim_hcs': lambda: simulated(random='~ outcome | study', struct='HCS'),
-    'sim_car': lambda: simulated(random='~ time | study', struct='CAR'),
-    'sim_spgau': lambda: simulated(random='~ time | study', struct='SPGAU'),
-    'sim_splin': lambda: simulated(random='~ time | study', struct='SPLIN'),
-    'sim_gen': lambda: simulated(mods='~ x1', random='~ x1 + x2 | study', struct='GEN'),
-    'sim_gdiag': lambda: simulated(mods='~ x1', random='~ x1 + x2 || study', struct='GEN'),
-    'sim_s_and_g': lambda: simulated(random=['~ 1 | id', '~ outcome | study'], struct='CS'),
-    'sim_two_inner_outer': lambda: simulated(random=['~ outcome | study', '~ outcome | group'], struct=['CS', 'HCS']),
-    # auditme: accept[literal-duplication] the fixture names repeat as the R script that generates them repeats them
-    'sim_R_known': lambda: simulated(random=['~ 1 | species', '~ 1 | study'], R={'species': species_matrix()}),
-    # auditme: accept[literal-duplication] the fixture names repeat as the R script that generates them repeats them
-    'sim_R_cov0': lambda: simulated(random=['~ 1 | species', '~ 1 | study'], R={'species': species_matrix()}, Rscale='cor0'),
-    # auditme: accept[literal-duplication] the fixture names repeat as the R script that generates them repeats them
-    'sim_R_none': lambda: simulated(random=['~ 1 | species', '~ 1 | study'], R={'species': species_matrix()}, Rscale='none'),
-    # auditme: accept[literal-duplication] the fixture names repeat as the R script that generates them repeats them
-    'sim_R_sparse': lambda: simulated(random=['~ 1 | species', '~ 1 | study'], R={'species': species_matrix()}, sparse=True),
-    'sim_na': lambda: simulated(mods='~ x1', random='~ 1 | study', data=sim_na()),
-    'sim_na_un': lambda: simulated(random='~ outcome | study', struct='UN', data=sim_na()),
-    'sim_subset': lambda: simulated(mods='~ x1 + x2', random='~ 1 | study', subset='x2 > 0.3'),
-}
+CASES: collections.abc.Mapping[str, Fit] = types.MappingProxyType(
+    {
+        'kon_nested': lambda: konst(),
+        'kon_nested_ml': lambda: konst(method='ML'),
+        'kon_list': lambda: konst(random=['~ 1 | district', '~ 1 | study']),
+        'kon_mods': lambda: konst(mods=YEAR),
+        'kon_t': lambda: konst(mods=YEAR, test='t'),
+        'kon_contain': lambda: konst(mods=YEAR, test='t', dfs='contain'),
+        'kon_dfs_num': lambda: konst(dfs=20),
+        'kon_knha': lambda: konst(mods=YEAR, test='knha'),
+        'kon_adhoc': lambda: konst(test='adhoc'),
+        'kon_fix_sigma2': lambda: konst(sigma2=[0.05, numpy.nan]),
+        'kon_fix_both': lambda: konst(sigma2=[0.05, 0.02]),
+        'kon_fix_all': lambda: konst(sigma2=0.03),
+        'kon_sparse': lambda: konst(sparse=True),
+        'kon_fe': lambda: metafopy.rma_mv('yi', 'vi', data=kon(), method='FE'),
+        'kon_ee_random_ignored': lambda: metafopy.rma_mv('yi', 'vi', random='~ 1 | district', data=kon(), method='EE'),
+        'kon_subset': lambda: konst(subset='district != 11'),
+        'kon_level90': lambda: konst(level=90),
+        'kon_btt': lambda: konst(mods='~ I(year - 1990) + I((year - 1990)**2)', btt=2),
+        'kon_formula': lambda: metafopy.rma_mv('yi ~ I(year - 1990)', 'vi', random=NESTED, data=kon()),
+        'kon_interaction': lambda: konst(random='~ 1 | interaction(district, school)'),
+        'kon_weights': lambda: konst(W=1 / kon()['vi'].to_numpy()),
+        'kon_spexp': lambda: konst(random='~ year | district', struct='SPEXP'),
+        # auditme: accept[literal-duplication] the fixture names repeat as the R script that generates them repeats them
+        'ass_cs': lambda: metafopy.rma_mv('yi', 'vi', random=['~ 1 | study', '~ 1 | esid'], data=ass()),
+        'ass_cs_ml': lambda: metafopy.rma_mv('yi', 'vi', random='~ 1 | study/esid', data=ass(), method='ML'),
+        'ass_mods': lambda: metafopy.rma_mv('yi', 'vi', mods='~ C(deltype) + year', random='~ 1 | study/esid', data=ass()),
+        'ass_mods_t': lambda: metafopy.rma_mv('yi', 'vi', mods='~ C(deltype) + year', random='~ 1 | study/esid', data=ass(), test='t', dfs='contain'),
+        'ass_vcalc': lambda: metafopy.rma_mv('yi', matrix('ass_V'), random='~ 1 | study/esid', data=ass()),
+        'ass_vcalc_sparse': lambda: metafopy.rma_mv('yi', matrix('ass_V'), random='~ 1 | study/esid', data=ass(), sparse=True),
+        'ber_un': lambda: berkey(random='~ outcome | trial', struct='UN'),
+        'ber_un_ml': lambda: berkey(random='~ outcome | trial', struct='UN', method='ML'),
+        'ber_un_nochol': lambda: berkey(random='~ outcome | trial', struct='UN', control={'cholesky': False}),
+        'ber_un_t': lambda: berkey(random='~ outcome | trial', struct='UN', test='t'),
+        'ber_un_mods': lambda: berkey(mods='~ 0 + outcome + I(year - 1985):outcome', random='~ outcome | trial', struct='UN'),
+        'ber_cs': lambda: berkey(random='~ outcome | trial', struct='CS'),
+        'ber_hcs': lambda: berkey(random='~ outcome | trial', struct='HCS'),
+        'ber_ar': lambda: berkey(random='~ outcome | trial', struct='AR'),
+        'ber_har': lambda: berkey(random='~ outcome | trial', struct='HAR'),
+        'ber_diag': lambda: berkey(random='~ outcome | trial', struct='DIAG'),
+        'ber_id': lambda: berkey(random='~ outcome | trial', struct='ID'),
+        'ber_un_fixrho': lambda: berkey(random='~ outcome | trial', struct='UN', rho=0.5),
+        'ber_un_fixtau2': lambda: berkey(random='~ outcome | trial', struct='UN', tau2=[numpy.nan, 0.01]),
+        'ber_hcs_fixrho': lambda: berkey(random='~ outcome | trial', struct='HCS', rho=0),
+        'ber_cs_sparse': lambda: berkey(random='~ outcome | trial', struct='CS', sparse=True),
+        'ber_un_sparse': lambda: berkey(random='~ outcome | trial', struct='UN', sparse=True),
+        'ber_gen': lambda: berkey(random='~ 0 + outcome | trial', struct='GEN'),
+        'ber_gdiag': lambda: berkey(random='~ 0 + outcome || trial', struct='GEN'),
+        'ber_car': lambda: berkey(random='~ as.numeric(outcome == "AL") | trial', struct='CAR'),
+        'sim_cs': lambda: simulated(random='~ outcome | study', struct='CS'),
+        'sim_un': lambda: simulated(random='~ outcome | study', struct='UN'),
+        'sim_hcs': lambda: simulated(random='~ outcome | study', struct='HCS'),
+        'sim_car': lambda: simulated(random='~ time | study', struct='CAR'),
+        'sim_spgau': lambda: simulated(random='~ time | study', struct='SPGAU'),
+        'sim_splin': lambda: simulated(random='~ time | study', struct='SPLIN'),
+        'sim_gen': lambda: simulated(mods='~ x1', random='~ x1 + x2 | study', struct='GEN'),
+        'sim_gdiag': lambda: simulated(mods='~ x1', random='~ x1 + x2 || study', struct='GEN'),
+        'sim_s_and_g': lambda: simulated(random=['~ 1 | id', '~ outcome | study'], struct='CS'),
+        'sim_two_inner_outer': lambda: simulated(random=['~ outcome | study', '~ outcome | group'], struct=['CS', 'HCS']),
+        # auditme: accept[literal-duplication] the fixture names repeat as the R script that generates them repeats them
+        'sim_R_known': lambda: simulated(random=['~ 1 | species', '~ 1 | study'], R={'species': species_matrix()}),
+        # auditme: accept[literal-duplication] the fixture names repeat as the R script that generates them repeats them
+        'sim_R_cov0': lambda: simulated(random=['~ 1 | species', '~ 1 | study'], R={'species': species_matrix()}, Rscale='cor0'),
+        # auditme: accept[literal-duplication] the fixture names repeat as the R script that generates them repeats them
+        'sim_R_none': lambda: simulated(random=['~ 1 | species', '~ 1 | study'], R={'species': species_matrix()}, Rscale='none'),
+        # auditme: accept[literal-duplication] the fixture names repeat as the R script that generates them repeats them
+        'sim_R_sparse': lambda: simulated(random=['~ 1 | species', '~ 1 | study'], R={'species': species_matrix()}, sparse=True),
+        'sim_na': lambda: simulated(mods='~ x1', random='~ 1 | study', data=sim_na()),
+        'sim_na_un': lambda: simulated(random='~ outcome | study', struct='UN', data=sim_na()),
+        'sim_subset': lambda: simulated(mods='~ x1 + x2', random='~ 1 | study', subset='x2 > 0.3'),
+    }
+)
 
 
 def run(name: str) -> metafopy.RMAMVResult:

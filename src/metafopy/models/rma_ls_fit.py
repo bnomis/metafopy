@@ -286,8 +286,9 @@ def quad_form(coef: FloatArray, V: FloatArray, idx: tuple[int, ...]) -> float:
 def marginal_residuals(yi: FloatArray, vi: FloatArray, X: FloatArray, tau2: FloatArray) -> tuple[FloatArray, FloatArray]:
     """Raw residuals and their standard errors for the weighted fit with heterogeneity ``tau2`` (metafor's ``rstandard``)."""
     w = 1.0 / (vi + tau2)
-    beta = metafopy.core.linalg.invcalc(X, w) @ (X.T @ (w * yi))
-    H = X @ metafopy.core.linalg.invcalc(X, w) @ (X.T * w)
+    inv = metafopy.core.linalg.invcalc(X, w)
+    beta = inv @ (X.T @ (w * yi))
+    H = X @ inv @ (X.T * w)
     ei = yi - X @ beta
     ei[numpy.abs(ei) < 100 * DBL_EPS] = 0.0
     ImH = numpy.eye(yi.shape[0]) - H

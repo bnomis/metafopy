@@ -207,7 +207,13 @@ def rerender(directory: pathlib.Path, no_ledger: bool = False) -> pathlib.Path:
         by_step.setdefault('drift', audit.steps.Outcome()).findings.append(audit.steps.Finding('drift', '', 'value-drift', '', ''))
     universe = audit.universe.Universe.load(audit.universe.snapshot_path())
     ctx = audit.steps.Context(
-        work=directory, jobs=1, timeout=0.0, quick=False, only=None if doc.get('full', True) else ['partial'], no_ledger=no_ledger, universe=universe
+        work=directory,
+        jobs=1,
+        timeout=0.0,
+        quick=False,
+        only=None if doc.get('full', True) else ['partial'],
+        no_ledger=no_ledger,
+        universe=universe,
+        coverage=doc.get('coverage', {}),
     )
-    ctx.coverage = doc.get('coverage', {})
     return write(ctx, by_step, directory)

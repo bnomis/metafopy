@@ -399,7 +399,7 @@ never read a file outside the dataset folder.
 
 ## Task 11: Small design defects
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** medium
 **Source Reference:** F13 (A5, A7, A8, A9, A10, A14, A22, A25, P3), F19 (S1, A20)
@@ -408,27 +408,27 @@ never read a file outside the dataset folder.
 
 **Subtasks:**
 
-- [ ] A5, `forest.py:2020` (`addpoly` with a predict result): document in its docstring that an explicit `pi_se`, `pi_dist` or `pi_ddf`
+- [x] A5, `forest.py:2020` (`addpoly` with a predict result): document in its docstring that an explicit `pi_se`, `pi_dist` or `pi_ddf`
       wins over the stored value, and make `pi_dist` follow that rule. Use `None` as its default, meaning "from the model"; this changes
       no output for a caller who passes nothing
-- [ ] A8: build each dataclass with its final fields instead of mutating it after construction, at:
+- [x] A8: build each dataclass with its final fields instead of mutating it after construction, at:
   - `src/audit/generate.py:351`
   - `src/audit/report.py:212`
   - `src/metafopy/models/rma_mv.py:826` and `:894`
-- [ ] A10: rename `selmodel.py:57` `has_tau2` to `estimates_tau2`, and `rlib.py:1238` `is_text` to `is_nonempty_text`, updating every
+- [x] A10: rename `selmodel.py:57` `has_tau2` to `estimates_tau2`, and `rlib.py:1238` `is_text` to `is_nonempty_text`, updating every
       caller
-- [ ] A14: build the per-generic `by_class` index once per `Universe` (`src/audit/universe.py:55`)
-- [ ] A22: make the `transf.` branch at `src/audit/rlib.py:73` re-raise `MissingFunctionError` instead of falling through
-- [ ] A25: make `Step` (`src/audit/steps.py:61`) `frozen=True`
-- [ ] P3: compute `invcalc(X, w)` once in `rma_ls_fit.py:288-289`, and reuse `sat` at `glmm.py:622`
-- [ ] A9:
+- [x] A14: build the per-generic `by_class` index once per `Universe` (`src/audit/universe.py:55`)
+- [x] A22: make the `transf.` branch at `src/audit/rlib.py:73` re-raise `MissingFunctionError` instead of falling through
+- [x] A25: make `Step` (`src/audit/steps.py:61`) `frozen=True`
+- [x] P3: compute `invcalc(X, w)` once in `rma_ls_fit.py:288-289`, and reuse `sat` at `glmm.py:622`
+- [x] A9:
   - rename `src/tests/correctness/cases.py:509` `build_tree_r` to `load_tree_r`;
   - add scoped `# auditme: accept[A9]` markers, with their reasons, for `src/audit/steps.py:74` (an audit step whose job is running R)
     and `src/metafopy/core/rng.py:263` (R seeds from the clock on first use too);
   - for `src/audit/pycall.py:65`, add a marker saying it reads a bundled dataset only for a `$data` tag
-- [ ] A7: add a scoped `# auditme: accept[A7]` marker at `mv_lik.py:128`. `Factorization` exists to factorise once
-- [ ] S1: annotate the return of `src/tests/test_harness_scripts.py:40` `stand_in`
-- [ ] A20: wrap the 11 test-module dicts in `types.MappingProxyType`:
+- [x] A7: add a scoped `# auditme: accept[A7]` marker at `mv_lik.py:128`. `Factorization` exists to factorise once
+- [x] S1: annotate the return of `src/tests/test_harness_scripts.py:40` `stand_in`
+- [x] A20: wrap the 11 test-module dicts in `types.MappingProxyType`:
   - `glmm_cases.py:44`, `:46`, `:48`, `:50`, `:58`
   - `test_rma_mv.py:80`
   - `glmm_extras_cases.py:31`, `:103`
@@ -437,17 +437,17 @@ never read a file outside the dataset folder.
   - `correctness/test_properties.py:203`
 
   Copy where a reader mutates one
-- [ ] Run the own tests of every changed module
+- [x] Run the own tests of every changed module
 
 **Acceptance Criteria:**
 
-- [ ] Each named site is fixed or carries the scoped marker above, and no output changes
+- [x] Each named site is fixed or carries the scoped marker above, and no output changes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes on every changed module
-- [ ] The own test files of every changed module pass, named in the commit body
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes on every changed module
+- [x] The own test files of every changed module pass, named in the commit body
 
 **Notes:**
 

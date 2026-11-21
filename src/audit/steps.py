@@ -59,7 +59,7 @@ class Outcome:
     notes: list[str] = dataclasses.field(default_factory=list)
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class Step:
     name: str
     title: str
@@ -72,6 +72,7 @@ def library_drift(lock: Json, installed: Json) -> dict[str, tuple[str | None, st
     return {name: (lock.get(name), installed.get(name)) for name in sorted(lock.keys() | installed.keys()) if lock.get(name) != installed.get(name)}
 
 
+# auditme: accept[A9] an audit step whose job is running R
 def check_r(ctx: Context) -> Outcome:
     """Check the installed R library against ``data/r-versions.json``. Drift becomes a note in the report when ``ctx.allow_r_drift``.
 

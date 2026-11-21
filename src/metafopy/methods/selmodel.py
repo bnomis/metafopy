@@ -54,7 +54,7 @@ def check_supported(x: Sel, what: str) -> None:
         raise metafopy.errors.NotSupportedError(NOT_IMPLEMENTED)
 
 
-def has_tau2(x: Sel) -> bool:
+def estimates_tau2(x: Sel) -> bool:
     return x.method not in metafopy.models.tau2.FIXED_EFFECTS and not x.tau2_fix
 
 
@@ -122,7 +122,7 @@ def predict(
 
 def refit(obj: Sel, comp: str, val: float, delta_pos: int, *, confint_: bool) -> Sel | None:
     """metafor's ``.profile.rma.uni.selmodel``: the selection model with one component fixed at ``val`` (``None`` if the fit fails)."""
-    tau2_arg = obj.tau2 if not has_tau2(obj) else math.nan
+    tau2_arg = obj.tau2 if not estimates_tau2(obj) else math.nan
     delta_arg = numpy.where(numpy.asarray(obj.delta_fix), obj.delta, math.nan).astype(numpy.float64)
     if comp == 'tau2':
         tau2_arg = val
@@ -164,7 +164,7 @@ def component(x: Sel, tau2: bool | None, delta: int | None) -> tuple[str, float,
     if tau2 is not None and delta is not None:
         raise metafopy.errors.InputError("Must specify only one of the 'tau2' or 'delta' arguments.")
     if tau2 is not None:
-        if not has_tau2(x):
+        if not estimates_tau2(x):
             raise metafopy.errors.InputError("Model does not contain an (estimated) 'tau2' component.")
         if not tau2:
             raise metafopy.errors.InputError("No such 'tau2' component in the model.")
@@ -231,11 +231,11 @@ def confint(
 
     random = tau2 is not None or delta is not None
     if not fixed and not random:
-        comps = int(has_tau2(x)) + int(sum(not f for f in x.delta_fix))
+        comps = int(estimates_tau2(x)) + int(sum(not f for f in x.delta_fix))
         if comps == 0:
             raise metafopy.errors.InputError('No components for which a CI can be obtained.')
         out: list[metafopy.methods.confint.ConfintResult] = []
-        if has_tau2(x):
+        if estimates_tau2(x):
             if verbose:
                 print('\nObtaining CI for tau2\n')
             out.append(confint_one(x, False, True, None, alpha, ctrl, transf, targs, verbose, extint, ndig))
@@ -487,11 +487,11 @@ def profile(
         raise metafopy.errors.InputError("Argument 'steps' must be >= 2.")
 
     if tau2 is None and delta is None:
-        comps = int(has_tau2(x)) + int(sum(not f for f in x.delta_fix))
+        comps = int(estimates_tau2(x)) + int(sum(not f for f in x.delta_fix))
         if comps == 0:
             raise metafopy.errors.InputError('No components in the model for which a profile likelihood can be constructed.')
         sav: list[SelProfileResult] = []
-        if has_tau2(x):
+        if estimates_tau2(x):
             sav.append(profile_one(x, 'tau2', -1, xlim, ylim, st, step_seq, lltol, exp, **pool))
         sav.extend(profile_one(x, 'delta', pos, xlim, ylim, st, step_seq, lltol, exp, **pool) for pos in range(x.deltas) if not x.delta_fix[pos])
         if plot:

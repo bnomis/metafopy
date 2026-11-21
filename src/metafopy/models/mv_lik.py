@@ -122,6 +122,7 @@ class Fit:
     phi: FloatArray | None
 
 
+# auditme: accept[A7] Factorization exists to factorise once
 class Factorization:
     """Cholesky (dense) or sparse LU factorisation of a positive-definite matrix."""
 
