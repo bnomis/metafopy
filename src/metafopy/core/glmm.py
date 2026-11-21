@@ -209,12 +209,14 @@ def general_row_terms(
                 info = (y / mu**2 + (size - y) / (1.0 - mu) ** 2) * terms.d1**2 - (y / mu - (size - y) / (1.0 - mu)) * terms.d2
             else:
                 info = size * terms.d1**2 / (mu * (1.0 - mu))
-        else:
+        elif prob.family == 'poisson':
             valid = terms.valid & (terms.mu > 0) if link != 'log' else terms.valid
             mu = numpy.maximum(terms.mu, eps)
             ell = numpy.where(y > 0, y * terms.log_mu, 0.0) - terms.mu
             score = (y / mu - 1.0) * terms.d1
             info = y * terms.d1**2 / mu**2 - (y / mu - 1.0) * terms.d2 if prob.observed else terms.d1**2 / mu
+        else:
+            typing.assert_never(prob.family)
     return numpy.where(valid, ell, numpy.nan), numpy.where(valid, score, 0.0), numpy.where(valid, info, 1.0)
 
 
@@ -392,9 +394,11 @@ def normalise_theta(theta: FloatArray, structure: Structure, *, snap: bool = Tru
             out[0], out[1] = -out[0], -out[1]
         out[2] = abs(out[2])
         diag = [0, 2]
-    else:
+    elif structure == 'scalar' or structure == 'independent':
         out = numpy.abs(out)
         diag = list(range(out.shape[0]))
+    else:
+        typing.assert_never(structure)
     if snap:
         for pos in diag:
             if out[pos] < BOUNDARY_TOL:

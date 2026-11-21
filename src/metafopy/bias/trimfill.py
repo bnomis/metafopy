@@ -217,17 +217,23 @@ def trimfill(
                 raise metafopy.errors.InputError('Trim and fill algorithm failed: no study to the left of the pooled estimate.')
             k0f = (k - float(numpy.max(-1 * neg))) - 1
             se_k0 = math.sqrt(2 * max(0.0, k0f) + 2)
-        else:
+        elif estimator == 'L0' or estimator == 'Q0':
             sr = float(numpy.sum(signed[signed > 0]))
             if estimator == 'L0':
                 k0f = (4 * sr - k * (k + 1)) / (2 * k - 1)
-            else:
+            elif estimator == 'Q0':
                 k0f = k - 1 / 2 - math.sqrt(2 * k**2 - 4 * sr + 1 / 4)
+            else:
+                typing.assert_never(estimator)
             var_sr = 1 / 24 * (k * (k + 1) * (2 * k + 1) + 10 * k0f**3 + 27 * k0f**2 + 17 * k0f - 18 * k * k0f**2 - 18 * k * k0f + 6 * k**2 * k0f)
             if estimator == 'L0':
                 se_k0 = 4 * sqrt_nan(var_sr) / (2 * k - 1)
-            else:
+            elif estimator == 'Q0':
                 se_k0 = 2 * sqrt_nan(var_sr) / sqrt_nan((k - 1 / 2) ** 2 - k0f * (2 * k - k0f - 1))
+            else:
+                typing.assert_never(estimator)
+        else:
+            typing.assert_never(estimator)
         k0 = max(0, round(k0f))
         se_k0 = se_k0 if math.isnan(se_k0) else max(0.0, se_k0)
         if verbose:

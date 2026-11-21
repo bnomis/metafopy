@@ -202,8 +202,10 @@ def strheight(ax: matplotlib.axes.Axes, ylim: tuple[float, float]) -> float:
 def arrow(ax: matplotlib.axes.Axes, side: typing.Literal['l', 'r'], alim: tuple[float, float], row: float, aw: float, ah: float, col: str) -> None:
     if side == 'l':
         xs = [alim[0], alim[0] + aw, alim[0] + aw, alim[0]]
-    else:
+    elif side == 'r':
         xs = [alim[1], alim[1] - aw, alim[1] - aw, alim[1]]
+    else:
+        typing.assert_never(side)
     metafopy.plot.draw.poly(ax, xs, [row, row + ah, row - ah, row], col=col, border=col)
 
 
@@ -2165,11 +2167,13 @@ def addpoly(
                 ef = [ef[1], ef[1], ef[0], ef[0]]
             if len(ef) == 3:
                 ef = [ef[1], ef[2], ef[0], ef[0]]
-        else:
+        elif ps == 'bar' or ps == 'dist' or ps == 'polygon' or ps == 'shade':
             if len(ef) == 2:
                 ef = [ef[0], ef[0], ef[0], ef[1]]
             if len(ef) == 3:
                 ef = [ef[2], ef[2], ef[0], ef[1]]
+        else:
+            typing.assert_never(ps)
     efv = [math.nan if v == 0 else v for v in ef]
     if rowadj is None:
         radj = list(st.get('rowadj', [0.0, 0.0, 0.0]))
@@ -2196,7 +2200,7 @@ def addpoly(
             ml = [''] * k
         else:
             ml = expand(mlab_use, k, 'mlab')
-    else:
+    elif ps == 'bar' or ps == 'dist' or ps == 'polygon' or ps == 'shade':
         ml = None
         what = 'Predictive Distribution' if ps == 'dist' else 'Prediction Interval'
         pi_text = f'{what}{asym[0]}{metafopy.plot.rutils.rround(100 * (1 - pi_alpha), dg):g}% PI{asym[2]}'
@@ -2206,6 +2210,8 @@ def addpoly(
             ml = [mlab_use] if isinstance(mlab_use, str) else list(mlab_use)
             if len(ml) == 1:
                 ml.append(pi_text)
+    else:
+        typing.assert_never(ps)
     if rows_use is None:
         rows_a = -numpy.arange(1, k + 1, dtype=float)
     elif numpy.ndim(rows_use) == 0:
@@ -2292,7 +2298,7 @@ def addpoly(
                     metafopy.plot.draw.seg(axx, pu[i], rows_a[i] - ciendheight, pu[i], rows_a[i] + ciendheight, lty=lt[1], col=lcol_l[i])
                 else:
                     arrow(axx, 'r', alim_t, rows_a[i], arrowwidth, arrowheight, lcol_l[i])
-        else:
+        elif ps == 'bar' or ps == 'dist' or ps == 'polygon' or ps == 'shade':
             curve: PredCurve | None = None
             if ps in DENSITY_STYLES:
                 curve = pred_curve(
@@ -2320,6 +2326,8 @@ def addpoly(
                 bord_l,
                 curve,
             )
+        else:
+            typing.assert_never(ps)
         xs, ys = diamond(cl[i], yi[i], cu[i], rows_a[i], float(polheight[i]))
         sel = (xs > alim_t[0]) & (xs < alim_t[1])
         metafopy.plot.draw.poly(axx, xs[sel], ys[sel], col=col_l[i], border=bord_l[i])

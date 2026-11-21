@@ -296,7 +296,6 @@ def predict_rma_ls(
 
     crit_alpha = crit_level / (k_new if adjust else 1)
     # auditme: accept[literal-duplication] metafor option values and column labels repeated as in the R source
-    t_test = x.test in ('knha', 'adhoc', 't')
     pi_dist: str | None = None
     pi_ddf: float | None = None
     pi_se: FloatArray | None = None
@@ -305,20 +304,24 @@ def predict_rma_ls(
         ddf = float(x.k - x.p) if x.ddf is None else float(x.ddf)
         pred = X_use @ x.beta
         vpred = quad_rows(X_use, x.vb)
-        if t_test:
+        if x.test == 'knha' or x.test == 'adhoc' or x.test == 't':
             crit = float(scipy.stats.t.isf(crit_alpha / 2, ddf)) if ddf > 0 else math.nan
             pi_dist = 't'
-        else:
+        elif x.test == 'z':
             crit = float(scipy.stats.norm.isf(crit_alpha / 2))
             pi_dist = 'norm'
+        else:
+            typing.assert_never(x.test)
     else:
         ddf = float(x.k - x.q) if x.ddf_alpha is None else float(x.ddf_alpha)
         pred = Z_use @ x.alpha
         vpred = quad_rows(Z_use, x.va)
-        if t_test:
+        if x.test == 'knha' or x.test == 'adhoc' or x.test == 't':
             crit = float(scipy.stats.t.isf(crit_alpha / 2, ddf)) if ddf > 0 else math.nan
-        else:
+        elif x.test == 'z':
             crit = float(scipy.stats.norm.isf(crit_alpha / 2))
+        else:
+            typing.assert_never(x.test)
     se = numpy.sqrt(vpred)
     ci_lb = pred - crit * se
     ci_ub = pred + crit * se

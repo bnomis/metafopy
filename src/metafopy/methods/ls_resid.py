@@ -153,10 +153,12 @@ def rstandard_rma_ls(
         ei = x.yi - x.X @ x.beta
         ei = numpy.where(numpy.abs(ei) < 100 * EPS, 0.0, ei)
         sei = numpy.sqrt(numpy.diag(ImH @ numpy.diag(x.vi + x.tau2) @ ImH.T))
-    else:
+    elif type == 'conditional':
         li = x.tau2 / (x.tau2 + x.vi)
         ei = x.yi - (li * x.yi + (1 - li) * (x.X @ x.beta))
         sei = numpy.sqrt(x.vi**2 / (x.vi + x.tau2) * (1 - numpy.diag(H)))
+    else:
+        typing.assert_never(type)
     if na_action == 'fail' and not x.data.keep.all():
         raise metafopy.errors.InputError('Missing values in results.')
     z = ei / sei

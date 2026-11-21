@@ -128,14 +128,16 @@ class TesResult(metafopy.printing.HtmlRepr):
         return self.summary()
 
 
-def tes_power(theta: FloatArray, sei: FloatArray, h0: float, alternative: str, crit: float) -> FloatArray:
+def tes_power(theta: FloatArray, sei: FloatArray, h0: float, alternative: Alternative, crit: float) -> FloatArray:
     mu = (theta - h0) / sei
     if alternative == 'two.sided':
         pw = scipy.stats.norm.sf(crit, loc=mu) + scipy.stats.norm.cdf(-crit, loc=mu)
     elif alternative == 'greater':
         pw = scipy.stats.norm.sf(crit, loc=mu)
-    else:
+    elif alternative == 'less':
         pw = scipy.stats.norm.cdf(crit, loc=mu)
+    else:
+        typing.assert_never(alternative)
     return numpy.asarray(pw, dtype=numpy.float64)
 
 
@@ -271,8 +273,10 @@ def tes(
         crit = float(scipy.stats.norm.isf(alpha / 2))
     elif alternative == 'greater':
         crit = float(scipy.stats.norm.isf(alpha))
-    else:
+    elif alternative == 'less':
         crit = float(scipy.stats.norm.ppf(alpha))
+    else:
+        typing.assert_never(alternative)
     k_f = yi.shape[0]
     if theta is None:
         single, est_theta = True, True
@@ -327,16 +331,20 @@ def tes(
         sig = numpy.abs(zi) >= crit
     elif alternative == 'greater':
         sig = zi >= crit
-    else:
+    elif alternative == 'less':
         sig = zi <= crit
+    else:
+        typing.assert_never(alternative)
     e = float(numpy.sum(pow_))
     o = int(numpy.sum(sig))
     if tes_alternative == 'two.sided':
         js = list(range(k + 1))
     elif tes_alternative == 'greater':
         js = list(range(o, k + 1))
-    else:
+    elif tes_alternative == 'less':
         js = list(range(o + 1))
+    else:
+        typing.assert_never(tes_alternative)
     if test is None:
         tot = sum(math.comb(k, j) for j in js)
         test = 'exact' if tot <= 10**6 else 'chi2'
@@ -355,17 +363,23 @@ def tes(
             pval = float(scipy.stats.chi2.sf(x2, 1))
         elif tes_alternative == 'greater':
             pval = float(scipy.stats.norm.sf(z))
-        else:
+        elif tes_alternative == 'less':
             pval = float(scipy.stats.norm.cdf(z))
+        else:
+            typing.assert_never(tes_alternative)
     elif test == 'binom':
         pval = float(scipy.stats.binomtest(o, k, p0, alternative=SCIPY_ALT[tes_alternative]).pvalue)
-    else:
+    elif test == 'exact':
         prj = poisson_binomial(pow_, progbar)[js]
         if tes_alternative == 'two.sided':
             pval = float(numpy.sum(prj[prj <= prj[o] + EPS**0.5]))
-        else:
+        elif tes_alternative == 'greater' or tes_alternative == 'less':
             pval = float(numpy.sum(prj))
+        else:
+            typing.assert_never(tes_alternative)
         pval = min(pval, 1.0)
+    else:
+        typing.assert_never(test)
 
     theta_lim: tuple[float, ...] | None = None
     if find_lim and single:
@@ -410,7 +424,7 @@ def tes(
                 theta_lim = (math.nan,)
             else:
                 theta_lim = (solve('downX', True) if theta_1 >= H0 else solve('upX', False),)
-        else:
+        elif tes_alternative == 'two.sided':
             lbs, ubs = (
                 tes(
                     yi,
@@ -432,6 +446,8 @@ def tes(
                 for alt in ('greater', 'less')
             )
             theta_lim = (lbs[0] if lbs else math.nan, ubs[0] if ubs else math.nan)
+        else:
+            typing.assert_never(tes_alternative)
     return TesResult(
         k=k,
         O=o,

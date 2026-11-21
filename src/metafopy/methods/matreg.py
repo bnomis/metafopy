@@ -289,10 +289,12 @@ class MatregResult:
                 f'Multiple R-squared: {fmt(self.R2, d)},  Adjusted R-squared: {fmt(typing.cast(float, self.R2adj), d)}',
                 f'F-statistic: {fmt(F[0], d)} on {df1} and {df2} DF,  p-value: {p_text}',
             ]
-        else:
+        elif self.test == 'z':
             qm = typing.cast(float, self.QM)
             qm_p = metafopy.models.rma_uni.pfmt(typing.cast(float, self.QMp), d)
             lines.append(f'R^2: {fmt(self.R2, d)}, QM(df = {self.p}) = {fmt(qm, d)}, p-val {qm_p}')
+        else:
+            typing.assert_never(self.test)
         return '\n'.join([*lines, ''])
 
     def __str__(self) -> str:
@@ -773,8 +775,10 @@ def confint_matreg(model: MatregResult, parm: typing.Any = None, level: float | 
     alpha = model.level if level is None else metafopy.models.rma_uni.level_to_alpha(level)
     if model.test == 't':
         crit = float(scipy.stats.t.isf(alpha / 2, typing.cast(float, model.df_residual)))
-    else:
+    elif model.test == 'z':
         crit = float(scipy.stats.norm.isf(alpha / 2))
+    else:
+        typing.assert_never(model.test)
     beta = model.tab['beta'].to_numpy(dtype=numpy.float64)
     se = model.tab['se'].to_numpy(dtype=numpy.float64)
     tab = pandas.DataFrame({'estimate': beta, 'ci.lb': beta - crit * se, 'ci.ub': beta + crit * se}, index=list(model.tab.index))
@@ -944,8 +948,10 @@ def predict_matreg(
     div = 2 * k_new if adjust else 2
     if x.test == 't':
         crit = float(scipy.stats.t.isf(alpha / div, typing.cast(float, x.df_residual)))
-    else:
+    elif x.test == 'z':
         crit = float(scipy.stats.norm.isf(alpha / div))
+    else:
+        typing.assert_never(x.test)
     vpred[vpred < 0] = numpy.nan
     se = numpy.sqrt(vpred)
     ci_lb = pred - crit * se

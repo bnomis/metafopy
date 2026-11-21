@@ -13,6 +13,7 @@ covariance matrix of the scale coefficients comes from the numerical Hessian of 
 import collections.abc
 import dataclasses
 import math
+import typing
 import warnings
 
 import numpy
@@ -705,18 +706,20 @@ def fit_rma_ls(
         se_alpha = numpy.sqrt(numpy.diag(va))
         zval_alpha = alpha_hat / se_alpha
     crit_level = metafopy.models.rma_uni.level_to_alpha(level)
-    if tdist:
+    if test == 'knha' or test == 'adhoc' or test == 't':
         assert ddf_alpha is not None  # auditme: accept[assert-in-product-code] narrowed by tdist above
         QS = QS / m_alpha
         QSdf: tuple[int, float | None] = (m_alpha, ddf_alpha)
         QSp = float(scipy.stats.f.sf(QS, m_alpha, ddf_alpha)) if ddf_alpha > 0 else math.nan
         pval_alpha = 2 * scipy.stats.t.sf(numpy.abs(zval_alpha), ddf_alpha) if ddf_alpha > 0 else numpy.full(q, math.nan)
         crit_alpha = float(scipy.stats.t.isf(crit_level / 2, ddf_alpha)) if ddf_alpha > 0 else math.nan
-    else:
+    elif test == 'z':
         QSdf = (m_alpha, None)
         QSp = float(scipy.stats.chi2.sf(QS, m_alpha)) if not math.isnan(QS) else math.nan
         pval_alpha = 2 * scipy.stats.norm.sf(numpy.abs(zval_alpha))
         crit_alpha = float(scipy.stats.norm.isf(crit_level / 2))
+    else:
+        typing.assert_never(test)
     ci_lb_alpha = alpha_hat - crit_alpha * se_alpha
     ci_ub_alpha = alpha_hat + crit_alpha * se_alpha
 
@@ -732,18 +735,20 @@ def fit_rma_ls(
     with numpy.errstate(invalid='ignore'):
         se = numpy.sqrt(numpy.diag(vb))
         zval = beta_out / se
-    if tdist:
+    if test == 'knha' or test == 'adhoc' or test == 't':
         assert ddf is not None  # auditme: accept[assert-in-product-code] narrowed by tdist above
         QM = QM / m
         QMdf: tuple[int, float | None] = (m, ddf)
         QMp = float(scipy.stats.f.sf(QM, m, ddf)) if ddf > 0 else math.nan
         pval = 2 * scipy.stats.t.sf(numpy.abs(zval), ddf) if ddf > 0 else numpy.full(p, math.nan)
         crit = float(scipy.stats.t.isf(crit_level / 2, ddf)) if ddf > 0 else math.nan
-    else:
+    elif test == 'z':
         QMdf = (m, None)
         QMp = float(scipy.stats.chi2.sf(QM, m)) if not math.isnan(QM) else math.nan
         pval = 2 * scipy.stats.norm.sf(numpy.abs(zval))
         crit = float(scipy.stats.norm.isf(crit_level / 2))
+    else:
+        typing.assert_never(test)
     ci_lb = beta_out - crit * se
     ci_ub = beta_out + crit * se
 

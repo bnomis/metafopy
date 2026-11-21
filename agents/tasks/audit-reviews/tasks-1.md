@@ -293,7 +293,7 @@ caller.
 
 ## Task 8: Literal chains without `assert_never`
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** medium
 **Source Reference:** F8 (A11)
@@ -302,20 +302,20 @@ caller.
 
 **Subtasks:**
 
-- [ ] List the open A11 findings with the report command (36)
-- [ ] For each chain, give every value its own arm and end with `else: typing.assert_never(x)`. For a two-way split on a bool computed from
+- [x] List the open A11 findings with the report command (36)
+- [x] For each chain, give every value its own arm and end with `else: typing.assert_never(x)`. For a two-way split on a bool computed from
       a Literal, test the Literal values instead
-- [ ] Run `mypy` on each changed module and the changed modules' own tests
+- [x] Run `mypy` on each changed module and the changed modules' own tests
 
 **Acceptance Criteria:**
 
-- [ ] Every A11 finding has an explicit arm per value and an `assert_never`; no behaviour changes
+- [x] Every A11 finding has an explicit arm per value and an `assert_never`; no behaviour changes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes on every changed module
-- [ ] The own test files of every changed module pass, named in the commit body
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes on every changed module
+- [x] The own test files of every changed module pass, named in the commit body
 
 **Notes:**
 

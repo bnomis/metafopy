@@ -10,6 +10,7 @@ https://github.com/wviechtb/metafor/blob/master/R/misc.func.hidden.selmodel.r.
 import dataclasses
 import math
 import sys
+import typing
 
 import numpy
 import numpy.typing
@@ -201,8 +202,10 @@ def evaluate(prob: Problem, par: FloatArray, *, delta_transf: bool, tau2_transf:
         ll = ll_cont(prob, yhat, tau2, delta)
     elif spec.kind == 'stepfun':
         ll = ll_stepfun(prob, yhat, tau2, delta)
-    else:
+    elif spec.kind == 'trunc':
         ll = ll_trunc(prob, yhat, tau2, delta)
+    else:
+        typing.assert_never(spec.kind)
     return Evaluation(ll=ll, beta=numpy.asarray(beta, dtype=numpy.float64), tau2=tau2, delta=delta)
 
 
