@@ -173,6 +173,7 @@ def rstandard_fixed_binary(
 
 @metafopy.methods.influence.rstudent.register
 @metafopy.core.timing.timed
+# auditme: accept[raises-section-drift] refit_tables passes cell arrays, never column names, so the NotFoundError of rma_mh and rma_peto never arises
 def rstudent_fixed_binary(
     model: metafopy.models.binary.FixedBinaryResult,
     digits: int | None = None,
@@ -272,6 +273,7 @@ def per_table_variable(x: metafopy.models.binary.FixedBinaryResult, values: nump
 
 @metafopy.methods.leave1out.leave1out.register
 @metafopy.core.timing.timed
+# auditme: accept[raises-section-drift] refit_tables passes cell arrays, never column names, so the NotFoundError of rma_mh and rma_peto never arises
 def leave1out_fixed_binary(
     x: metafopy.models.binary.FixedBinaryResult,
     cluster: numpy.typing.ArrayLike | str | None = None,
@@ -362,6 +364,7 @@ def leave1out_fixed_binary(
 
 @metafopy.methods.leave1out.cumul.register
 @metafopy.core.timing.timed
+# auditme: accept[raises-section-drift] refit_tables passes cell arrays, never column names, so the NotFoundError of rma_mh and rma_peto never arises
 def cumul_fixed_binary(
     x: metafopy.models.binary.FixedBinaryResult,
     order: numpy.typing.ArrayLike | str | None = None,

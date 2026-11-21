@@ -125,6 +125,8 @@ def collect(
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.NotFoundError: a column named by an argument does not exist in ``data``.
+        metafopy.errors.ArgumentError: an argument is not numeric.
     """
     E = metafopy.errors.InputError
     fam = family(measure)
@@ -433,6 +435,8 @@ def to_long(
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.NotFoundError: a column named by an argument does not exist in ``data``.
+        metafopy.errors.ArgumentError: an argument is not numeric.
     """
     measure = check_common(measure, to, na_action)
     has_data = data is not None
@@ -595,6 +599,8 @@ def to_table(
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.NotFoundError: a column named by an argument does not exist in ``data``.
+        metafopy.errors.ArgumentError: an argument is not numeric.
     """
     measure = check_common(measure, to, na_action)
     if data is not None and not isinstance(data, pandas.DataFrame):

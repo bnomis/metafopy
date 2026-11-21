@@ -227,7 +227,6 @@ def build_design(tab: metafopy.models.tables.TableSet, mods_all: FloatArray, nam
     """Model matrices for the three NA stages, with redundant columns dropped and the intercept moved first (as ``rma.glmm`` does).
 
     Raises:
-        metafopy.errors.InputError: no columns remain.
     """
     sub = mods_all if tab.subset is None else mods_all[tab.subset]
     X_f = sub

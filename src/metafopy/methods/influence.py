@@ -223,6 +223,9 @@ def influence(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> typ
 
     Raises:
         metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
+        metafopy.errors.InputError: raised by an implementation for an invalid argument.
+        metafopy.errors.NotSupportedError: an implementation does not support the model.
+        metafopy.errors.InternalError: an internal invariant does not hold.
 
     Metafor reference:
         [influence.rma.uni](https://wviechtb.github.io/metafor/reference/influence.rma.uni.html)
@@ -479,6 +482,9 @@ def rstudent(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> Resi
     Raises:
         metafopy.errors.ArgumentError: there is no implementation for the class of ``model`` (there is none for location-scale models).
         TypeError: the implementation does not accept a keyword argument.
+        metafopy.errors.InputError: raised by an implementation for an invalid argument.
+        metafopy.errors.NotSupportedError: an implementation does not support the model.
+        metafopy.errors.InternalError: an internal invariant does not hold.
     """
     raise metafopy.errors.ArgumentError(f'rstudent() not implemented for {type(model).__name__}')
 
@@ -557,6 +563,8 @@ def cooks_distance(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -
 
     Raises:
         metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
+        metafopy.errors.InputError: raised by an implementation for an invalid argument.
+        metafopy.errors.InternalError: an internal invariant does not hold.
 
     Metafor reference:
         [influence.rma.uni](https://wviechtb.github.io/metafor/reference/influence.rma.uni.html)
@@ -612,6 +620,9 @@ def dfbetas(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> panda
 
     Raises:
         metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
+        metafopy.errors.InputError: raised by an implementation for an invalid argument.
+        metafopy.errors.NotSupportedError: an implementation does not support the model.
+        metafopy.errors.InternalError: an internal invariant does not hold.
 
     Metafor reference:
         [influence.rma.uni](https://wviechtb.github.io/metafor/reference/influence.rma.uni.html)
@@ -663,6 +674,8 @@ def rstandard(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> Res
     Raises:
         metafopy.errors.ArgumentError: there is no implementation for the class of ``model``.
         TypeError: the implementation does not accept a keyword argument.
+        metafopy.errors.InputError: raised by an implementation for an invalid argument.
+        metafopy.errors.NotSupportedError: an implementation does not support the model.
     """
     raise metafopy.errors.ArgumentError(f'rstandard() not implemented for {type(model).__name__}')
 

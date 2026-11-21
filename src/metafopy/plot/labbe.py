@@ -257,6 +257,7 @@ def labbe(
             are not available or have the wrong length; ``pch``, ``col``, ``bg`` or ``psize`` has the wrong length; or no study has all the arm-level
             outcomes.
         metafopy.errors.NotSupportedError: ``x`` is an ``rma_mv``, location-scale or selection-model fit.
+        metafopy.errors.ArgumentError: ``x`` is not a fitted model.
 
     Metafor reference:
         [labbe](https://wviechtb.github.io/metafor/reference/labbe.html)

@@ -140,6 +140,7 @@ def confint_rma_ls(
     Raises:
         metafopy.errors.InputError: an argument is invalid, ``control`` has an unknown entry, the model was fitted with ``optbeta=True``, the model has
             no such (estimated) scale coefficient or no coefficient to give an interval for, or the interval searched does not contain the estimate.
+        metafopy.errors.InternalError: a refit of the location-scale model found an internal invariant broken.
 
     Metafor reference:
         [confint.rma](https://wviechtb.github.io/metafor/reference/confint.rma.html)

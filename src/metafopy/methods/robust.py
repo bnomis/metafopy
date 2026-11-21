@@ -62,6 +62,7 @@ def robust(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> typing
         metafopy.errors.ArgumentError: there is no implementation for the class of ``model``.
         metafopy.errors.InputError: raised by the implementation for an invalid argument.
         TypeError: ``cluster`` is missing, more than one positional argument is given or a keyword argument is not accepted.
+        metafopy.errors.EstimationError: the cluster-robust marginal matrix of an ``rma_mv`` fit is not invertible.
     """
     raise metafopy.errors.ArgumentError(f'robust() not implemented for {type(model).__name__}')
 

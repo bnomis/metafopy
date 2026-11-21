@@ -190,6 +190,9 @@ def leave1out(x: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> Leave1o
 
     Raises:
         metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
+        metafopy.errors.InputError: raised by an implementation for an invalid argument.
+        metafopy.errors.NotSupportedError: an implementation does not support the model.
+        metafopy.errors.InternalError: an internal invariant does not hold.
 
     Metafor reference:
         [leave1out](https://wviechtb.github.io/metafor/reference/leave1out.html)
@@ -372,6 +375,9 @@ def cumul(x: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> CumulResult
 
     Raises:
         metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
+        metafopy.errors.InputError: raised by an implementation for an invalid argument.
+        metafopy.errors.NotSupportedError: an implementation does not support the model.
+        metafopy.errors.InternalError: an internal invariant does not hold.
 
     Metafor reference:
         [cumul](https://wviechtb.github.io/metafor/reference/cumul.html)

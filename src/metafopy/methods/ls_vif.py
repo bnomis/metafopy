@@ -105,6 +105,7 @@ def part_vif(
 
     Raises:
         metafopy.errors.InputError: a coefficient set is invalid.
+        metafopy.errors.InternalError: a refit of the location-scale model found an internal invariant broken.
     """
     if which == 'beta':
         n, int_incl, names, vcov, M = res.p, res.int_incl, res.coef_names, res.vb, res.X

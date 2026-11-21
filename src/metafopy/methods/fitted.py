@@ -98,6 +98,7 @@ def fitted_values(x: typing.Any, na_action: metafopy.methods.common.NAAction = '
 
     Raises:
         metafopy.errors.InputError: ``na_action`` is unknown, or ``'fail'`` and studies were left out.
+        metafopy.errors.ArgumentError: ``x`` is not a fitted model.
     """
     metafopy.methods.common.check_na_action(na_action)
     rows = rows_of(x)

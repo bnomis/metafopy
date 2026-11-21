@@ -247,6 +247,8 @@ def funnel(
             sample-size ``yaxis``; ``vi``/``sei`` is missing or the wrong length in the vector form; fewer than 2 effect sizes remain; ``slab``, ``pch``,
             ``col`` or ``bg`` has the wrong length; or values are missing and ``na_action='fail'``.
         metafopy.errors.NotSupportedError: ``yaxis='wi'`` for a model without weights, or a robust fit with moderators.
+        metafopy.errors.ArgumentError: the fit has moderators and is an ``rma_glmm``, ``rma.ls`` or selection-model fit, which has no
+            residuals to plot against.
 
     Metafor reference:
         [funnel](https://wviechtb.github.io/metafor/reference/funnel.html)

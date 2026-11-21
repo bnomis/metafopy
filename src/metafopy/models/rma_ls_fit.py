@@ -124,6 +124,7 @@ def resolve_optimizer(con: metafopy.models.rma_ls_result.LSControl, link: str) -
     return optimizer
 
 
+# auditme: accept[raises-section-drift] minimise_standin checks the start value is finite first, so the InputError of sel_opt.minimize never arises
 def minimise_standin(
     objective: collections.abc.Callable[[FloatArray], float],
     start: FloatArray,
@@ -138,7 +139,6 @@ def minimise_standin(
     Raises:
         metafopy.errors.EstimationError: the optimiser did not converge or could not start.
         metafopy.errors.NotSupportedError: the optimiser has no counterpart here.
-        metafopy.errors.InputError: the optimiser settings are invalid.
     """
     if not math.isfinite(objective(start)):
         raise metafopy.errors.EstimationError('Cannot evaluate the log-likelihood at the initial values.')

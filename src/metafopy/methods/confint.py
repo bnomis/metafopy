@@ -146,6 +146,8 @@ def confint(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> typin
     Raises:
         metafopy.errors.ArgumentError: there is no implementation for the class of ``model`` (for example an ``rma_glmm`` fit, as in metafor). An
             argument the implementation does not have is a ``TypeError`` from Python, as for any function.
+        metafopy.errors.InputError: raised by an implementation for an invalid argument.
+        metafopy.errors.NotSupportedError: raised by the selection-model implementation for an unsupported request.
     """
     raise metafopy.errors.ArgumentError(f'confint() not implemented for {type(model).__name__}')
 

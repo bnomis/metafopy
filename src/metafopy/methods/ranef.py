@@ -47,6 +47,9 @@ def ranef(res: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> RanefResu
 
     Raises:
         metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
+        metafopy.errors.InputError: raised by an implementation for an invalid argument.
+        metafopy.errors.NotSupportedError: the model is an ``rma_glmm`` fit, for which there is no implementation of the random effects.
+        metafopy.errors.InternalError: an internal invariant does not hold.
 
     Metafor reference:
         [ranef](https://wviechtb.github.io/metafor/reference/ranef.html)

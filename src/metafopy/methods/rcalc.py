@@ -167,6 +167,7 @@ def rcalc_list(
 
     Raises:
         metafopy.errors.InputError: ``ni`` does not have one value per matrix.
+        metafopy.errors.ArgumentError: a value of ``x`` is not a 2-D array or data frame.
     """
     if len(x) != len(ni):
         raise metafopy.errors.InputError("Argument 'ni' must be of the same length as there are elements in 'x'.")
@@ -216,6 +217,7 @@ def formula_variables(formula: str) -> list[str]:
     return list(dict.fromkeys(names))
 
 
+# auditme: accept[raises-section-drift] rcalc_list gets matrices that rcalc_formula built itself, so its ArgumentError never arises
 def rcalc_formula(
     x: str,
     ni: metafopy.methods.vcalc.Variable,

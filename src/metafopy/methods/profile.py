@@ -160,6 +160,7 @@ def profile(fitted: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> Prof
     Raises:
         metafopy.errors.ArgumentError: there is no implementation for the class of ``fitted``.
         metafopy.errors.InputError: raised by the implementation for an invalid argument.
+        metafopy.errors.NotSupportedError: raised by the selection-model implementation for an unsupported request.
     """
     raise metafopy.errors.ArgumentError(f'profile() not implemented for {type(fitted).__name__}')
 

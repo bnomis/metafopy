@@ -127,6 +127,8 @@ def blup(res: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> BlupResult
 
     Raises:
         metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
+        metafopy.errors.InputError: raised by an implementation for an invalid argument.
+        metafopy.errors.NotSupportedError: the model is an ``rma_glmm`` fit, for which there is no implementation of the prediction.
 
     Metafor reference:
         [blup](https://wviechtb.github.io/metafor/reference/blup.html)

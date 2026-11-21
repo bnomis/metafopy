@@ -883,6 +883,8 @@ def forest(
         metafopy.errors.InputError: an argument or the data is invalid: both ``transf`` and ``atransf``; a length that does not match the number
             of studies; missing values with ``na_action='fail'``; ``subset`` for a fitted model; an unknown ``order``, ``predstyle``, ``shade`` or
             ``annosym``; ``showweights`` for a [rma_glmm][metafopy.rma_glmm] or [selmodel][metafopy.selmodel] result.
+        metafopy.errors.ArgumentError: ``order`` is ``'rstandard'`` or ``'abs.rstandard'`` for an ``rma_glmm`` or selection-model fit, which has no
+            standardised residuals.
 
     Metafor reference:
         - [forest](https://wviechtb.github.io/metafor/reference/forest.html)

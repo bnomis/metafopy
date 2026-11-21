@@ -231,6 +231,7 @@ def profile_rma_ls(
         metafopy.errors.InputError: the model was fitted with ``optbeta=True`` or has no estimated scale coefficient; ``alpha`` is out of range or
             fixed; ``steps`` has missing values or is a single number below 2; ``xlim`` or ``ylim`` does not have length 2; ``parallel`` is not one
             of the accepted values or ``ncpus`` is below 1.
+        metafopy.errors.InternalError: a refit of the location-scale model found an internal invariant broken.
 
     Metafor reference:
         [profile.rma](https://wviechtb.github.io/metafor/reference/profile.rma.html)

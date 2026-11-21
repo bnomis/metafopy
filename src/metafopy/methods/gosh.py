@@ -124,6 +124,7 @@ def gosh(x: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> GoshResult:
         metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
         metafopy.errors.NotSupportedError: the model is of a class metafor has no GOSH analysis for (``rma.ls``, ``rma.glmm``, ``rma.mv``,
             selection models, ``robust.rma`` and others).
+        metafopy.errors.InputError: raised by an implementation for an invalid argument.
 
     Metafor reference:
         [gosh](https://wviechtb.github.io/metafor/reference/gosh.html)

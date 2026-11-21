@@ -446,6 +446,7 @@ def predict(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> Predi
     Raises:
         metafopy.errors.ArgumentError: there is no implementation for the class of ``model``. An argument the implementation does not have is a ``TypeError``
             from Python, as for any function.
+        metafopy.errors.InputError: raised by an implementation for an invalid argument.
     """
     raise metafopy.errors.ArgumentError(f'predict() not implemented for {type(model).__name__}')
 

@@ -192,7 +192,7 @@ plan around a difference that has gone.
 
 ## Task 5: `Raises:` sections that miss or over-declare domain errors
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Source Reference:** F2 (A4), decision D1
@@ -202,21 +202,21 @@ caller.
 
 **Subtasks:**
 
-- [ ] List the open A4 findings with the report command (40 when measured on 2026-11-21). Each gives the names missing or extra
-- [ ] Add each missing name with a one-line reason, and remove each extra one. For the 16 `singledispatch` generics, list the errors their
+- [x] List the open A4 findings with the report command (40 when measured on 2026-11-21). Each gives the names missing or extra
+- [x] Add each missing name with a one-line reason, and remove each extra one. For the 16 `singledispatch` generics, list the errors their
       registered implementations raise, as decision D1 ruled. That includes implementations registered by call (`generic.register(Type, fn)`)
-- [ ] Run `python3 ~/.claude/skills/auditme/checks/audit.py .` and check that no `raises-section-drift` or `missing-raises-section` hit
+- [x] Run `python3 ~/.claude/skills/auditme/checks/audit.py .` and check that no `raises-section-drift` or `missing-raises-section` hit
       appears that is not accepted
-- [ ] Run the own tests of the changed modules (the docstring tests read the sections)
+- [x] Run the own tests of the changed modules (the docstring tests read the sections)
 
 **Acceptance Criteria:**
 
-- [ ] Each A4 finding in the report is fixed in the docstring it names; no code behaviour changes
+- [x] Each A4 finding in the report is fixed in the docstring it names; no code behaviour changes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/test_docstring_links.py src/tests/test_harness_errors.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/test_docstring_links.py src/tests/test_harness_errors.py` passes
 
 **Notes:**
 

@@ -47,7 +47,6 @@ def records_call[**P, R](fn: collections.abc.Callable[P, R]) -> collections.abc.
     """Decorate a fitting function so that its result keeps the call in its ``call`` field.
 
     Raises:
-        metafopy.errors.InternalError: the function was called with extra positional arguments.
     """
     sig = inspect.signature(fn, annotation_format=annotationlib.Format.FORWARDREF)
 

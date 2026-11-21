@@ -356,6 +356,8 @@ def anova(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> typing.
     Raises:
         metafopy.errors.ArgumentError: there is no implementation for the class of ``model``. An argument the implementation does not have is a
             ``TypeError`` from Python, as for any function.
+        metafopy.errors.InputError: raised by an implementation for an invalid argument or for models that cannot be compared.
+        metafopy.errors.InternalError: an internal invariant does not hold.
     """
     raise metafopy.errors.ArgumentError(f'anova() not implemented for {type(model).__name__}')
 
@@ -734,6 +736,7 @@ def wald_between(
 
     Raises:
         metafopy.errors.InputError: the models cannot be compared.
+        metafopy.errors.InternalError: the full model has lost its cluster-robust sandwich estimator.
     """
     check_same_class(a, b)
     if df is None and a.parms == b.parms:
