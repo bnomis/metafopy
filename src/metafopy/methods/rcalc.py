@@ -267,11 +267,14 @@ def rcalc_formula(
     v2_chr = metafopy.methods.vcalc.as_character(dat.iloc[:, 2].to_numpy())
     swap = [f'{i}.{a}' > f'{i}.{b}' for i, a, b in zip(id_chr, v1_chr, v2_chr, strict=True)]
     rowid = [f'{i}.{b}.{i}.{a}' if s else f'{i}.{a}.{i}.{b}' for i, a, b, s in zip(id_chr, v1_chr, v2_chr, swap, strict=True)]
-    levels = pandas.Series(ids).drop_duplicates().sort_values().to_numpy()
+    id_codes, id_uniq = pandas.factorize(ids)
+    id_groups = numpy.split(numpy.argsort(id_codes, kind='stable'), numpy.cumsum(numpy.bincount(id_codes))[:-1])
+    level_order = pandas.Series(id_uniq).sort_values().index.to_numpy()
     rlist: dict[str, Matrix] = {}
     nmi: list[float] = []
-    for level in levels:
-        idx = numpy.flatnonzero(ids == level)
+    for k in level_order:
+        level = id_uniq[k]
+        idx = id_groups[k]
         label = metafopy.methods.vcalc.as_character(numpy.array([level]))[0]
         ni_i = ni_[idx]
         if bool(numpy.any(ni_i[~numpy.isnan(ni_i)] <= 0)):

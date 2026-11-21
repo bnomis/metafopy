@@ -500,7 +500,7 @@ never read a file outside the dataset folder.
 
 ## Task 13: Rescanning loops
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** small
 **Source Reference:** F16 (P1)
@@ -509,22 +509,22 @@ never read a file outside the dataset folder.
 
 **Subtasks:**
 
-- [ ] Replace the per-level full-array masks with one grouping (`numpy.unique(..., return_inverse=True)` or a `groupby`), keeping the order
+- [x] Replace the per-level full-array masks with one grouping (`numpy.unique(..., return_inverse=True)` or a `groupby`), keeping the order
       of the results, at:
   - `src/metafopy/methods/robust.py:400`
   - `src/metafopy/methods/rcalc.py:272`
   - `src/metafopy/effects/reshape.py:752` and `:772`
-- [ ] Run the parity tests for the three modules; every value must stay identical to the fixtures
+- [x] Run the parity tests for the three modules; every value must stay identical to the fixtures
 
 **Acceptance Criteria:**
 
-- [ ] The parity tests pass with no tolerance change
+- [x] The parity tests pass with no tolerance change
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy src/metafopy/methods/robust.py src/metafopy/methods/rcalc.py src/metafopy/effects/reshape.py` passes
-- [ ] `pytest src/tests/test_robust.py src/tests/test_robust_extras.py src/tests/test_audit3_robust.py src/tests/test_audit4_robust.py src/tests/test_reshape.py`
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy src/metafopy/methods/robust.py src/metafopy/methods/rcalc.py src/metafopy/effects/reshape.py` passes
+- [x] `pytest src/tests/test_robust.py src/tests/test_robust_extras.py src/tests/test_audit3_robust.py src/tests/test_audit4_robust.py src/tests/test_reshape.py`
       and the `rcalc` tests (`grep -l rcalc src/tests/test_*.py`) pass
 
 ---

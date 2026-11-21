@@ -397,9 +397,12 @@ def nested_in_cluster(x: metafopy.models.mv_result.RMAMVResult, codes: IntArray)
         if grp is not None:
             factors.append(numpy.asarray(grp.outer.codes))
     for f in factors:
-        for level in numpy.unique(f[f >= 0]):
-            if len(numpy.unique(codes[f == level])) > 1:
-                return False
+        keep = f >= 0
+        if not bool(keep.any()):
+            continue
+        pairs = numpy.unique(numpy.column_stack([f[keep], codes[keep]]), axis=0)
+        if len(numpy.unique(pairs[:, 0])) < len(pairs):
+            return False
     return True
 
 
