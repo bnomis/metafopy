@@ -63,6 +63,7 @@ def weights_uni(
     return matrix(x, numpy.diag(wi), not_na, na_action)
 
 
+# auditme: accept[raises-section-drift] rows_of raises ArgumentError only for a class this function does not accept
 def weights_mv(
     x: metafopy.models.mv_result.RMAMVResult,
     # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them

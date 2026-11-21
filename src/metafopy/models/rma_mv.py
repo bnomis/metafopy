@@ -439,6 +439,7 @@ def remember_evaluations(
     return remember
 
 
+# auditme: accept[raises-section-drift] the parameters were evaluated without error by the fit that stored them, so evaluating them again raises nothing
 def last_evaluated() -> metafopy.models.mv_lik.Evaluated:
     """The variance components of the last evaluation of any ``rma_mv`` fit of the session.
 

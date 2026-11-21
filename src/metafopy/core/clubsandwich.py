@@ -151,6 +151,7 @@ def adjust_est_mats(type_: str, est_mats: list[FloatArray], adjustments: float |
     raise metafopy.errors.InternalError(f'unusable adjustment for {type_}')
 
 
+# auditme: accept[raises-section-drift] adjustments_for gives each type in CR_TYPES the adjustment adjust_est_mats expects, so its InternalError never arises
 def vcov_cr(
     X: FloatArray,
     resid: FloatArray,

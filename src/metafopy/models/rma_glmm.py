@@ -515,6 +515,7 @@ def rma_glmm(
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.NotFoundError: a column name given for an argument is not in ``data``.
         metafopy.errors.EstimationError: a model cannot be fitted.
         metafopy.errors.NotSupportedError: the optimiser chosen in ``control`` has no counterpart here.
         metafopy.errors.InternalError: a binomial model was built without its group sizes.
@@ -735,6 +736,7 @@ def length_of(
 
     Raises:
         metafopy.errors.InputError: the count arguments for the measure are missing.
+        metafopy.errors.NotFoundError: a column name given for an argument is not in ``data``.
     """
     two_group = measure in metafopy.models.glmm_fit.TWO_GROUP_BINOMIAL
     first = ai if two_group else (x1i if measure == 'IRR' else xi)

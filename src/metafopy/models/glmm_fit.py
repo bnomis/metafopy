@@ -343,6 +343,7 @@ def saturated_glm(
     return fit.loglik, coef[skip:], fit.vcov[skip:, skip:], True, fit
 
 
+# auditme: accept[raises-section-drift] a binomial problem built here always has its group sizes, so the InternalError of fit_mixed never arises
 def unconditional(spec: FitSpec) -> ModelFit:
     """Models ``UM.FS`` and ``UM.RS`` for two-group counts (``OR``) or rates (``IRR``).
 

@@ -309,6 +309,7 @@ def negative_loglik(problem: Problem, par: FloatArray, reml: bool, vctransf: boo
     return -val if math.isfinite(val) else math.inf
 
 
+# auditme: accept[raises-section-drift] every spatial term gets its distance matrix when the structures are set up, so the InternalError of con_e never arises
 def final_fit(problem: Problem, par: FloatArray) -> Fit:
     """The ``dofit=TRUE`` branch of ``.ll.rma.mv()``: coefficients, their covariance matrix and both log-likelihoods.
 

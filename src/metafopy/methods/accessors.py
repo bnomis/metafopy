@@ -168,6 +168,7 @@ def formula_of(obj: Fit, type: str = 'mods') -> str | None:
     ``None`` when the model was not specified by a formula (or for ``rma_mh`` and ``rma_peto`` fits).
 
     Raises:
+        metafopy.errors.ArgumentError: the object is not a model fit.
         metafopy.errors.InputError: ``type`` is unknown, or ``'scale'`` for a model that is not a location-scale model.
     """
     check_fit(obj, 'formula')
@@ -249,6 +250,7 @@ def update(obj: Fit, formula_: str | None = None, evaluate: bool = True, **kwarg
     With ``evaluate=False`` the updated :class:`~metafopy.models.call.Call` is returned.
 
     Raises:
+        metafopy.errors.ArgumentError: the object is not a model fit.
         metafopy.errors.InputError: the object has no recorded call, was made robust, or its ``mods`` is not a formula.
     """
     check_fit(obj, 'update')

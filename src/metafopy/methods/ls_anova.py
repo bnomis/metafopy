@@ -295,6 +295,7 @@ def wald_subset(
     return LSWaldResult(part=part, stat=stat, df=df, pval_omnibus=p, test=test, m=m, idx=idx)
 
 
+# auditme: accept[raises-section-drift] refit_ls catches estimation and input errors and reuses a working fit's optimiser, so NotSupportedError never arises
 def lrt(
     a: metafopy.models.rma_ls_result.RMALSResult, b: metafopy.models.rma_ls_result.RMALSResult, refit: bool, df_given: int | None = None
 ) -> metafopy.methods.anova.MVLRTResult:
@@ -302,6 +303,7 @@ def lrt(
 
     Raises:
         metafopy.errors.InputError: the models cannot be compared.
+        metafopy.errors.InternalError: a weight matrix an estimator needs is missing in a refit.
     """
     full, red = (a, b) if df_given is not None or a.parms >= b.parms else (b, a)
     if df_given is None and full.parms == red.parms:
@@ -439,6 +441,7 @@ def anova_rma_ls(
             with a list ``att``, ``X`` or ``Z`` with the wrong number of columns, ``btt`` or ``att`` selecting nothing, an unknown ``adjust``, or
             models that differ in class, data or number of parameters or cannot be compared).
         metafopy.errors.ArgumentError: ``test`` is neither ``'LRT'`` nor ``'Wald'``.
+        metafopy.errors.InternalError: a weight matrix an estimator needs is missing in a refit.
 
     Metafor reference:
         [anova.rma](https://wviechtb.github.io/metafor/reference/anova.rma.html)

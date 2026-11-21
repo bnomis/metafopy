@@ -177,11 +177,13 @@ def transform_delta(prob: Problem, delta: FloatArray, delta_transf: bool) -> Flo
     return numpy.asarray(delta, dtype=numpy.float64)
 
 
+# auditme: accept[raises-section-drift] every continuous selection type has a weight function, so the InternalError of ll_cont never arises
 def evaluate(prob: Problem, par: FloatArray, *, delta_transf: bool, tau2_transf: bool) -> Evaluation:
     """The log-likelihood at ``par`` = (beta, tau2, delta), the latter two on the transformed scale when requested.
 
     Raises:
         metafopy.errors.EstimationError: the normalising integral of a study cannot be computed.
+        metafopy.errors.InputError: a step-function model has no ``steps`` value below 1.
     """
     spec = prob.spec
     pX = prob.X.shape[1]

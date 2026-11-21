@@ -293,6 +293,7 @@ def sorted_rows(M: FloatArray) -> tuple[float, numpy.typing.NDArray[numpy.intp],
 
 @metafopy.methods.permutest.permutest.register
 @metafopy.core.timing.timed
+# auditme: accept[raises-section-drift] refit_ls catches estimation and input errors and reuses a working fit's optimiser, so NotSupportedError never arises
 def permutest_rma_ls(
     x: metafopy.models.rma_ls_result.RMALSResult,
     exact: bool | typing.Literal['i'] = False,
@@ -349,6 +350,7 @@ def permutest_rma_ls(
             iterations than the largest float, or more memory than R's exact test can hold in 16 GiB (its arrays and its matrix of every
             permutation; R stops with an error as well).
         metafopy.errors.ArgumentError: ``control`` has an unknown entry.
+        metafopy.errors.InternalError: a weight matrix an estimator needs is missing in a refit.
 
     Metafor reference:
         [permutest](https://wviechtb.github.io/metafor/reference/permutest.html)

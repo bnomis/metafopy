@@ -122,6 +122,7 @@ def scale_values(x: metafopy.models.rma_ls_result.RMALSResult, na_action: metafo
     return metafopy.methods.common.apply_na_action(numpy.asarray(scale_rows(x) @ x.alpha, dtype=numpy.float64), not_na, na_action)
 
 
+# auditme: accept[raises-section-drift] rows_of raises ArgumentError only for a class this function does not accept
 def hat_values(
     x: metafopy.models.rma_uni.RMAResult | metafopy.models.rma_ls_result.RMALSResult,
     hat: FloatArray,

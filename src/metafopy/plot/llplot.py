@@ -150,6 +150,7 @@ def llplot(
         metafopy.errors.ArgumentError: a count passed to [escalc][metafopy.escalc] has the wrong type.
         metafopy.errors.InputError: ``measure`` is not ``'GEN'`` or ``'OR'``; the required variables are missing, of different lengths or the counts are
             invalid; ``lty``, ``lwd`` or ``col`` has the wrong length; or no study remains.
+        metafopy.errors.NotFoundError: a column name given for an argument is not in ``data``.
 
     Metafor reference:
         [llplot](https://wviechtb.github.io/metafor/reference/llplot.html)

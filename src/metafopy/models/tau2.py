@@ -119,6 +119,7 @@ def qe(tau2: float, Y: FloatArray, vi: FloatArray, X: FloatArray) -> float:
     return float(Y @ P @ Y)
 
 
+# auditme: accept[raises-section-drift] genq_func calls farebrother without h or delta, so its InputError never arises
 def estimate_tau2(
     method: str,
     yi: FloatArray,

@@ -272,6 +272,7 @@ def influence_rma_uni(
         metafopy.errors.ArgumentError: the model is not a fitted model.
         metafopy.errors.InputError: an argument or the data is invalid.
         metafopy.errors.NotSupportedError: the model was passed through [robust][metafopy.robust].
+        metafopy.errors.InternalError: a weight matrix an estimator needs is missing in a refit.
 
     Metafor reference:
         [influence.rma.uni](https://wviechtb.github.io/metafor/reference/influence.rma.uni.html)
@@ -288,6 +289,7 @@ def influence_rma_uni(
     return res
 
 
+# auditme: accept[raises-section-drift] refit catches the EstimationError of fit_rma_uni (a failed refit gives NaN), so it never reaches the caller
 def influence_fit(
     model: metafopy.models.rma_uni.RMAResult,
     digits: int | None = None,
@@ -300,6 +302,7 @@ def influence_fit(
 
     Raises:
         metafopy.errors.InputError: ``na_action`` is unknown, there is a single study or values are missing with ``na_action='fail'``.
+        metafopy.errors.InternalError: a weight matrix an estimator needs is missing in a refit.
     """
     metafopy.methods.common.check_na_action(na_action)
     x = model
@@ -481,6 +484,7 @@ def rstudent(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> Resi
 
 
 @rstudent.register
+# auditme: accept[raises-section-drift] refit catches the EstimationError of fit_rma_uni (a failed refit gives NaN), so it never reaches the caller
 def rstudent_rma_uni(
     model: metafopy.models.rma_uni.RMAResult,
     digits: int | None = None,
@@ -511,6 +515,7 @@ def rstudent_rma_uni(
         metafopy.errors.ArgumentError: the model is not a fitted model.
         metafopy.errors.InputError: ``na_action`` is not valid, or is ``'fail'`` and studies were left out of the fit; the model has a single study.
         metafopy.errors.NotSupportedError: the model is a [robust][metafopy.robust] result.
+        metafopy.errors.InternalError: a weight matrix an estimator needs is missing in a refit.
 
     Metafor reference:
         [residuals.rma](https://wviechtb.github.io/metafor/reference/residuals.rma.html)
@@ -582,6 +587,7 @@ def cooks_rma_uni(
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InternalError: a weight matrix an estimator needs is missing in a refit.
     """
     res = influence_fit(model, btt=btt, na_action=na_action, progbar=progbar)
     return pandas.Series(res.cook_d, index=list(res.slab), name='cook.d')
@@ -632,6 +638,7 @@ def dfbetas_rma_uni(
         metafopy.errors.ArgumentError: the model is not a fitted model.
         metafopy.errors.InputError: an argument or the data is invalid.
         metafopy.errors.NotSupportedError: the model was passed through [robust][metafopy.robust].
+        metafopy.errors.InternalError: a weight matrix an estimator needs is missing in a refit.
     """
     metafopy.methods.fitview.check_class(model, notav=metafopy.methods.fitview.NOT_ROBUST)
     return influence_fit(model, na_action=na_action, progbar=progbar).dfbs_frame()

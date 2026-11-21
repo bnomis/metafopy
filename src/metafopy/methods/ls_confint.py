@@ -56,6 +56,7 @@ def search_limits(
     return lo, hi
 
 
+# auditme: accept[raises-section-drift] refit_ls catches estimation and input errors and reuses a working fit's optimiser, so NotSupportedError never arises
 def profile_lrt(x: metafopy.models.rma_ls_result.RMALSResult, pos: int, val: float, objective: float) -> float:
     """``-2 (ll(alpha[pos] = val) - ll) - objective`` from the best refit with ``alpha[pos]`` fixed (metafor's ``.profile.rma.ls``).
 
@@ -64,6 +65,7 @@ def profile_lrt(x: metafopy.models.rma_ls_result.RMALSResult, pos: int, val: flo
 
     Raises:
         metafopy.errors.EstimationError: the refit failed.
+        metafopy.errors.InternalError: a weight matrix an estimator needs is missing in a refit.
     """
     fit = metafopy.methods.ls_profile.profile_fit(x, pos, val)
     if fit is None:

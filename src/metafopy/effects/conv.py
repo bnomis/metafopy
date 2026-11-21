@@ -421,6 +421,7 @@ def scalar(value: typing.Any) -> float:
     return float(arr[0]) if arr.shape[0] >= 1 else math.nan
 
 
+# auditme: accept[raises-section-drift] finish passes escalc measure GEN with numeric yi, vi and data, so its argument, support and internal errors never arise
 def conv_delta(
     yi: Arg,
     vi: Arg,
@@ -516,6 +517,7 @@ def conv_delta(
 # conv.wald
 
 
+# auditme: accept[raises-section-drift] finish passes escalc a string measure with numeric yi and vi, so its argument and support errors never arise
 def conv_wald(
     out: Arg = None,
     ci_lb: Arg = None,

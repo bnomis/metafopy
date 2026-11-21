@@ -45,6 +45,7 @@ class BaujatResult:
         return pandas.DataFrame({'x': self.x, 'y': self.y, 'ids': list(self.ids), 'slab': list(self.slab)})
 
 
+# auditme: accept[raises-section-drift] refit catches the EstimationError of fit_rma_uni (a failed refit gives NaN), so it never reaches the caller
 def baujat(
     x: metafopy.models.rma_uni.RMAResult | metafopy.models.binary.FixedBinaryResult,
     xlim: collections.abc.Sequence[float] | None = None,
@@ -100,6 +101,7 @@ def baujat(
             not match the studies, or ``las`` is not 0 to 3.
         metafopy.errors.NotSupportedError: ``x`` is an ``rma_mv``, ``rma_glmm``, location-scale, robust or selection-model fit.
         metafopy.errors.ArgumentError: ``x`` is not a fitted model.
+        metafopy.errors.InternalError: a weight matrix an estimator needs is missing in a refit.
 
     Metafor reference:
         [baujat](https://wviechtb.github.io/metafor/reference/baujat.html)

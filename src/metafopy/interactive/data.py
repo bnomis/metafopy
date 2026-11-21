@@ -104,6 +104,7 @@ def pooled_row(label: str, fit: Fit, transf: Transf | None, level: float | None)
     }
 
 
+# auditme: accept[raises-section-drift] predict raises ArgumentError only for a class with no implementation, and rma_uni and rma_mv fits have one
 def chart_data(
     x: Fit,
     *,

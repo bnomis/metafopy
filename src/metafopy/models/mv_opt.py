@@ -43,6 +43,7 @@ class OptResult:
     iterations: int
 
 
+# auditme: accept[raises-section-drift] every spatial term gets its distance matrix when the structures are set up, so the InternalError of con_e never arises
 def maximise(
     problem: metafopy.models.mv_lik.Problem,
     par0: FloatArray,

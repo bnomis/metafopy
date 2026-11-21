@@ -127,6 +127,7 @@ def one_group_counts(
 
     Raises:
         metafopy.errors.InputError: an argument is missing.
+        metafopy.errors.NotFoundError: a column name given for an argument is not in ``data``.
     """
     x = metafopy.metadata.column(xi, data, 'xi')
     if measure == 'IRLN':

@@ -294,6 +294,7 @@ def marginal_residuals(yi: FloatArray, vi: FloatArray, X: FloatArray, tau2: Floa
     return ei, numpy.sqrt(numpy.diag(ve))
 
 
+# auditme: accept[raises-section-drift] fit_rma_uni is called here without control, so its ArgumentError for an unknown control argument never arises
 def start_alpha(md: metafopy.metadata.MetaData, Z: FloatArray, link: str, is_int: BoolArray) -> FloatArray:
     """Starting values for the scale coefficients: a regression of the transformed squared residuals of a HE fit on ``Z``.
 
@@ -363,6 +364,7 @@ def location_estimates(
     return beta, s2w * vb, rss_f, s2w
 
 
+# auditme: accept[raises-section-drift] fit_rma_uni is called here without control, so its ArgumentError for an unknown control argument never arises
 def fit_rma_ls(
     md: metafopy.metadata.MetaData,
     Z: FloatArray,

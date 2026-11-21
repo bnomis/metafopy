@@ -233,6 +233,7 @@ def collect(
 
 @leave1out.register
 @metafopy.core.timing.timed
+# auditme: accept[raises-section-drift] refit catches the EstimationError of fit_rma_uni (a failed refit gives NaN), so it never reaches the caller
 def leave1out_rma_uni(
     x: metafopy.models.rma_uni.RMAResult,
     cluster: numpy.typing.ArrayLike | str | None = None,
@@ -277,6 +278,7 @@ def leave1out_rma_uni(
         metafopy.errors.ArgumentError: the model is not a fitted model.
         metafopy.errors.InputError: an argument or the data is invalid, the model has moderators or there is a single study.
         metafopy.errors.NotSupportedError: the model was passed through [robust][metafopy.robust].
+        metafopy.errors.InternalError: a weight matrix an estimator needs is missing in a refit.
 
     Metafor reference:
         [leave1out](https://wviechtb.github.io/metafor/reference/leave1out.html)
@@ -379,6 +381,7 @@ def cumul(x: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> CumulResult
 
 @cumul.register
 @metafopy.core.timing.timed
+# auditme: accept[raises-section-drift] refit catches the EstimationError of fit_rma_uni (a failed refit gives NaN), so it never reaches the caller
 def cumul_rma_uni(
     x: metafopy.models.rma_uni.RMAResult,
     order: numpy.typing.ArrayLike | str | None = None,
@@ -426,6 +429,7 @@ def cumul_rma_uni(
         metafopy.errors.ArgumentError: the model is not a fitted model.
         metafopy.errors.InputError: an argument or the data is invalid, the model has moderators, or ``na_action='fail'`` and values are missing.
         metafopy.errors.NotSupportedError: the model was passed through [robust][metafopy.robust].
+        metafopy.errors.InternalError: a weight matrix an estimator needs is missing in a refit.
 
     Metafor reference:
         [cumul](https://wviechtb.github.io/metafor/reference/cumul.html)

@@ -933,6 +933,7 @@ def metadata_from_escalc(
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.NotFoundError: a column name given for an argument is not in ``data``.
         metafopy.errors.ArgumentError: an argument of escalc has the wrong type or is not accepted.
         metafopy.errors.NotSupportedError: escalc does not implement the requested combination of measure and inputs.
         metafopy.errors.InternalError: an internal invariant of escalc does not hold.
@@ -1021,6 +1022,7 @@ def fit_rma_uni(
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.ArgumentError: ``control`` names an unknown argument.
         metafopy.errors.EstimationError: every requested tau^2 estimator failed.
         metafopy.errors.InternalError: a weight matrix an estimator needs is missing.
     """

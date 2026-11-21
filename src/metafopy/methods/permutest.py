@@ -277,6 +277,7 @@ def nanmean(a: numpy.typing.NDArray[numpy.bool_] | FloatArray, valid: numpy.typi
 
 @permutest.register
 @metafopy.core.timing.timed
+# auditme: accept[raises-section-drift] refit_arrays catches the EstimationError of fit_rma_uni (a failed refit gives NaN), so it never reaches the caller
 def permutest_rma_uni(
     x: metafopy.models.rma_uni.RMAResult,
     exact: bool | typing.Literal['i'] = False,
@@ -330,6 +331,7 @@ def permutest_rma_uni(
             matrix of every permutation; R stops with an error as well).
         metafopy.errors.ArgumentError: ``control`` has an unknown entry.
         metafopy.errors.NotSupportedError: ``x`` is a [robust][metafopy.robust] result.
+        metafopy.errors.InternalError: a weight matrix an estimator needs is missing in a refit.
 
     Metafor reference:
         [permutest](https://wviechtb.github.io/metafor/reference/permutest.html)

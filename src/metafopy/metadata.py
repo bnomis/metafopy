@@ -275,6 +275,7 @@ class MetaData:
 
         Raises:
             metafopy.errors.InputError: an argument or the data is invalid.
+            metafopy.errors.NotFoundError: a column name given for an argument is not in ``data``.
         """
         if yi is None and data is not None and 'yi' in data.columns:
             yi = 'yi'
