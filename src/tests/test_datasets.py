@@ -2,6 +2,8 @@ import pytest
 
 import metafopy.core.labelled
 import metafopy.datasets
+import metafopy.datasets.base
+import metafopy.errors
 
 
 def test_list_and_load() -> None:
@@ -47,3 +49,28 @@ def test_escalc_dataset_keeps_digits_by_kind() -> None:
     assert dat.attrs['digits'] == {'est': 4, 'se': 4, 'test': 4, 'pval': 4, 'ci': 4, 'var': 5, 'sevar': 4, 'fit': 4, 'het': 4}
     effects = metafopy.core.labelled.escalc_frame(dat[dat.attrs['yi_names'] + dat.attrs['vi_names']], dat.attrs)
     assert '1    0.8790 0.00068' in [line.rstrip() for line in str(effects).splitlines()]
+
+
+@pytest.mark.parametrize('name', ['dat./../x', '../bcg', 'bcg/../bcg', 'dat.nope'])
+def test_load_refuses_a_name_outside_the_list(name: str) -> None:
+    with pytest.raises(metafopy.errors.NotFoundError):
+        metafopy.datasets.load(name)
+
+
+def test_load_tree_refuses_a_name_outside_the_list() -> None:
+    with pytest.raises(metafopy.errors.NotFoundError):
+        metafopy.datasets.load_tree('dat./../x')
+
+
+def test_damaged_file_is_an_internal_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    def broken(*args: object, **kwargs: object) -> None:
+        raise OSError('disk')
+
+    metafopy.datasets.base.read.cache_clear()
+    monkeypatch.setattr('pandas.read_csv', broken)
+    try:
+        with pytest.raises(metafopy.errors.InternalError):
+            metafopy.datasets.load('dat.bcg')
+    finally:
+        monkeypatch.undo()
+        metafopy.datasets.base.read.cache_clear()

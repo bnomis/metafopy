@@ -6,6 +6,7 @@ import subprocess
 
 import pytest
 
+import audit.cli
 import audit.config
 import audit.errors
 import audit.printdiff
@@ -313,3 +314,10 @@ def test_check_r_skips_the_arithmetic_comparison_for_a_source_without_fused(monk
     monkeypatch.delattr(metafopy.core.dbinom, 'FUSED')
     outcome = audit.steps.check_r(ctx)
     assert 'predates metafopy.core.dbinom.FUSED' in outcome.notes[0]
+
+
+@pytest.mark.parametrize('value', ['abc', '999', '1,x'])
+def test_recall_value_that_names_no_audit_is_a_usage_error(value: str) -> None:
+    with pytest.raises(SystemExit) as raised:
+        audit.cli.parse_args(['--recall', value])
+    assert raised.value.code == 2

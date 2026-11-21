@@ -49,14 +49,23 @@ def list_datasets() -> list[str]:
 
 @functools.cache
 def read(name: str) -> pandas.DataFrame:
-    path = importlib.resources.files(PACKAGE).joinpath(f'{name}.csv')
-    if not path.is_file():
+    """Read a bundled file by its exact name from [list_datasets][metafopy.datasets.list_datasets].
+
+    Raises:
+        metafopy.errors.NotFoundError: the name is not a bundled dataset (a name is never joined to a path before it is checked).
+        metafopy.errors.InternalError: the bundled file cannot be read or parsed.
+    """
+    if name not in list_datasets():
         raise metafopy.errors.NotFoundError(f'unknown dataset {name!r}; see metafopy.datasets.list_datasets()')
-    with path.open('rb') as fh:
-        frame = pandas.read_csv(fh, dtype={column: str for column in TEXT_COLUMNS.get(name, [])})
-    for column, missing in MISSING_STRINGS.get(name, {}).items():
+    path = importlib.resources.files(PACKAGE).joinpath(f'{name}.csv')
+    try:
         with path.open('rb') as fh:
-            frame[column] = pandas.read_csv(fh, usecols=[column], dtype=str, keep_default_na=False, na_values=list(missing))[column]
+            frame = pandas.read_csv(fh, dtype={column: str for column in TEXT_COLUMNS.get(name, [])})
+        for column, missing in MISSING_STRINGS.get(name, {}).items():
+            with path.open('rb') as fh:
+                frame[column] = pandas.read_csv(fh, usecols=[column], dtype=str, keep_default_na=False, na_values=list(missing))[column]
+    except (OSError, pandas.errors.ParserError, ValueError) as error:
+        raise metafopy.errors.InternalError(f'the bundled dataset {name!r} cannot be read') from error
     return frame
 
 
@@ -85,6 +94,7 @@ def load(name: str) -> pandas.DataFrame:
 
     Raises:
         metafopy.errors.NotFoundError: there is no dataset of that name.
+        metafopy.errors.InternalError: the bundled file cannot be read.
     """
     if not name.startswith('dat.'):
         name = f'dat.{name}'

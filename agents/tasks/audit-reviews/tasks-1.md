@@ -325,7 +325,7 @@ caller.
 
 ## Task 9: Bundled-dataset reads and unchecked inputs
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Source Reference:** F9 (A1, `datasets/base.py::read`), F17 (Sec2, Sec4)
@@ -335,25 +335,25 @@ never read a file outside the dataset folder.
 
 **Subtasks:**
 
-- [ ] Write failing tests in `src/tests/test_datasets.py`:
+- [x] Write failing tests in `src/tests/test_datasets.py`:
   - `load('dat./../x')` and `load_tree` with a name outside the list raise `metafopy.errors.NotFoundError` (or the error `load` already
     raises for an unknown name);
   - a stubbed `pandas.read_csv` raising `OSError` surfaces as `metafopy.errors.InternalError`
-- [ ] In `src/metafopy/datasets/base.py`, check the name against the known datasets before joining the path, in `load` and in `load_tree`
+- [x] In `src/metafopy/datasets/base.py`, check the name against the known datasets before joining the path, in `load` and in `load_tree`
       (`src/metafopy/datasets/trees.py`). Wrap both `pandas.read_csv` calls in `read()` in one handler for
       `(OSError, pandas.errors.ParserError, ValueError)` that raises `InternalError`, and update the `Raises:` sections
-- [ ] `src/audit/cli.py:103`: make a non-number or an unknown `--recall` value a usage error (`parser.error(...)`) naming the known audits,
+- [x] `src/audit/cli.py:103`: make a non-number or an unknown `--recall` value a usage error (`parser.error(...)`) naming the known audits,
       with a test
 
 **Acceptance Criteria:**
 
-- [ ] The new tests pass, and every existing dataset test passes unchanged
+- [x] The new tests pass, and every existing dataset test passes unchanged
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy src/metafopy/datasets src/audit/cli.py` passes
-- [ ] `pytest src/tests/test_datasets.py src/tests/test_audit5_datasets.py src/tests/test_audit7_datasets.py src/tests/test_harness_compare.py`
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy src/metafopy/datasets src/audit/cli.py` passes
+- [x] `pytest src/tests/test_datasets.py src/tests/test_audit5_datasets.py src/tests/test_audit7_datasets.py src/tests/test_harness_compare.py`
       passes
 
 **Notes:**
