@@ -21,6 +21,7 @@ import matplotlib.pyplot
 import numpy
 import pandas
 
+import audit.errors
 import audit.pycall
 import audit.valuetree
 import metafopy
@@ -798,13 +799,13 @@ def r_is_null(x: Value) -> Value:
 
 
 def r_stop(*args: Value, **kw: Value) -> Value:
-    raise ValueError(''.join(str(a) for a in args))
+    raise audit.errors.HarnessError(''.join(str(a) for a in args))
 
 
 def r_stopifnot(*args: Value, **kw: Value) -> Value:
     for a in args:
         if not numpy.all(numpy.asarray(a)):
-            raise ValueError('stopifnot failed')
+            raise audit.errors.HarnessError('stopifnot failed')
     return None
 
 

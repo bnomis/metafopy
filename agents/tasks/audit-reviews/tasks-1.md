@@ -256,7 +256,7 @@ caller.
 
 ## Task 7: Standard-library errors where a domain error exists
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Source Reference:** F7 (A3)
@@ -265,24 +265,24 @@ caller.
 
 **Subtasks:**
 
-- [ ] `src/metafopy/methods/predict.py:245`: raise `metafopy.errors.InputError` instead of `ValueError`, with a test
-- [ ] Add `src/audit/errors.py` with `class HarnessError(Exception)` (a docstring saying it is a step or run failure of the harness). Raise
+- [x] `src/metafopy/methods/predict.py:245`: raise `metafopy.errors.InputError` instead of `ValueError`, with a test
+- [x] Add `src/audit/errors.py` with `class HarnessError(Exception)` (a docstring saying it is a step or run failure of the harness). Raise
       it at `pycall.py:99`, `rlib.py:801`, `rlib.py:807`, `recall.py:59`, `steps.py:84`, `:87`, `:105`, `:110`, `rdriver.py:48`,
       `scripts.py:67` and `:209`
-- [ ] Grep `src/audit`, `bin` and `src/tests` for every `except ValueError` and `except RuntimeError` that catches one of these, and every
+- [x] Grep `src/audit`, `bin` and `src/tests` for every `except ValueError` and `except RuntimeError` that catches one of these, and every
       `pytest.raises(ValueError|RuntimeError)` that expects one, and update each to `HarnessError`. Before that, check whether any of
       them is R's `stop()` mapped deliberately to `ValueError`; if one is, stop as `blocked` and name it
-- [ ] Run the harness tests
+- [x] Run the harness tests
 
 **Acceptance Criteria:**
 
-- [ ] Each of the 12 sites raises a domain error, and every harness test passes
+- [x] Each of the 12 sites raises a domain error, and every harness test passes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy src/audit src/metafopy/methods/predict.py` passes
-- [ ] `pytest src/tests/test_harness_errors.py src/tests/test_harness_pycall.py src/tests/test_harness_compare.py src/tests/test_harness_engine.py src/tests/test_harness_scripts.py src/tests/test_harness_transpile.py src/tests/test_predict_args.py`
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy src/audit src/metafopy/methods/predict.py` passes
+- [x] `pytest src/tests/test_harness_errors.py src/tests/test_harness_pycall.py src/tests/test_harness_compare.py src/tests/test_harness_engine.py src/tests/test_harness_scripts.py src/tests/test_harness_transpile.py src/tests/test_predict_args.py`
       passes
 
 **Notes:**

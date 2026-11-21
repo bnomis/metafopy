@@ -25,6 +25,7 @@ import numpy
 import audit.cases
 import audit.config
 import audit.engine
+import audit.errors
 import audit.pyrun
 import audit.rdriver
 import audit.rlib
@@ -43,11 +44,16 @@ ENVIRONMENT_ERRORS = re.compile(r'there is no package|could not find function|un
 
 
 def fetch_source(work: pathlib.Path) -> pathlib.Path:
-    """Download the pinned source of metafor (its help pages and tests are the scripts), verified against ``data/metafor-source.sha256``."""
+    """Download the pinned source of metafor (its help pages and tests are the scripts), verified against ``data/metafor-source.sha256``.
+
+    Raises:
+        audit.errors.HarnessError: no mirror serves a source that matches the pinned checksum.
+    """
     target = work / 'source'
     done = target / 'metafor'
     if done.exists():
         return done
+    # auditme: accept[filesystem-op-without-envelope] an OSError on the run own work directory is an environment failure, reported as it is
     target.mkdir(parents=True, exist_ok=True)
     archive = target / 'metafor.tar.gz'
     expected = (audit.config.DATA_DIR / 'metafor-source.sha256').read_text().split()[0]
@@ -62,9 +68,9 @@ def fetch_source(work: pathlib.Path) -> pathlib.Path:
         if hashlib.sha256(data).hexdigest() == expected:
             archive.write_bytes(data)
             break
-        last = RuntimeError(f'{url} does not match the pinned checksum')
+        last = audit.errors.HarnessError(f'{url} does not match the pinned checksum')
     else:
-        raise RuntimeError(f'cannot fetch the source of metafor {audit.config.METAFOR_VERSION}: {last}')
+        raise audit.errors.HarnessError(f'cannot fetch the source of metafor {audit.config.METAFOR_VERSION}: {last}')
     with tarfile.open(archive) as tar:
         tar.extractall(target, filter='data')
     return done
@@ -188,9 +194,14 @@ class Script:
 
 
 def list_scripts(source: pathlib.Path, work: pathlib.Path, only: list[str] | None) -> list[Script]:
-    """Every script ``runscripts.R list`` finds in the metafor source, in R's order, filtered by ``only`` (substrings of a script id)."""
+    """Every script ``runscripts.R list`` finds in the metafor source, in R's order, filtered by ``only`` (substrings of a script id).
+
+    Raises:
+        audit.errors.HarnessError: the list of scripts could not be read.
+    """
     out_path = work / 'scripts.json'
     log = work / 'list.log'
+    # auditme: accept[filesystem-op-without-envelope] an OSError on the run own work directory is an environment failure, reported as it is
     out_path.unlink(missing_ok=True)
     env = audit.rdriver.environment()
     if only:
@@ -206,7 +217,7 @@ def list_scripts(source: pathlib.Path, work: pathlib.Path, only: list[str] | Non
     try:
         return [Script(**entry) for entry in json.loads(out_path.read_text())]
     except (OSError, ValueError, TypeError) as e:
-        raise RuntimeError(f'the list of scripts could not be read ({type(e).__name__}), see {log}') from e
+        raise audit.errors.HarnessError(f'the list of scripts could not be read ({type(e).__name__}), see {log}') from e
 
 
 def write_scripts(path: pathlib.Path, scripts: list[Script]) -> None:

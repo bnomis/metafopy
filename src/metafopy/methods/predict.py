@@ -215,7 +215,7 @@ def evaluate_cutoff(text: str) -> float | None:
     try:
         tree = ast.parse(text.strip().replace('^', '**'), mode='eval')
         return float(evaluate_node(tree.body))
-    except SyntaxError, ValueError, TypeError, ArithmeticError, KeyError:
+    except SyntaxError, ValueError, TypeError, ArithmeticError, KeyError, metafopy.errors.InputError:
         return None
 
 
@@ -242,7 +242,7 @@ def evaluate_node(node: ast.expr) -> float:
             return float(left**right)
     if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and len(node.args) == 1 and not node.keywords:
         return float(CUTOFF_FUNCTIONS[node.func.id](evaluate_node(node.args[0])))
-    raise ValueError('unsupported expression')
+    raise metafopy.errors.InputError('unsupported expression')
 
 
 def prob_values(prob: str | float, pred: FloatArray, pi_se: FloatArray | None, pi_dist: str, pi_ddf: float | FloatArray | None) -> FloatArray | None:

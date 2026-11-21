@@ -14,6 +14,7 @@ import audit.cases
 import audit.config
 import audit.domains
 import audit.engine
+import audit.errors
 import audit.generate
 import audit.pyrun
 import audit.rdriver
@@ -72,19 +73,24 @@ def library_drift(lock: Json, installed: Json) -> dict[str, tuple[str | None, st
 
 
 def check_r(ctx: Context) -> Outcome:
-    """Check the installed R library against ``data/r-versions.json``. A missing pin file or any drift raises RuntimeError naming each
-    difference and how to proceed, unless ``ctx.allow_r_drift``, when the drift becomes a note in the report."""
+    """Check the installed R library against ``data/r-versions.json``. Drift becomes a note in the report when ``ctx.allow_r_drift``.
+
+    Raises:
+        audit.errors.HarnessError: the installed metafor is not the oracle version, the pin file is missing, or there is drift (naming each
+            difference and how to proceed) without ``ctx.allow_r_drift``.
+    """
     audit.rdriver.run(
         audit.config.R_DIR / 'versions.R',
         str(ctx.work / 'r-versions.json'),
     )
+    # auditme: accept[filesystem-op-without-envelope] an OSError on the work directory the run itself wrote is an environment failure, reported as it is
     versions: Json = json.loads((ctx.work / 'r-versions.json').read_text())
     out = Outcome()
     if versions.get('metafor') != audit.config.METAFOR_VERSION:
-        raise RuntimeError(f'metafor {versions.get("metafor")} is installed, the oracle is {audit.config.METAFOR_VERSION}')
+        raise audit.errors.HarnessError(f'metafor {versions.get("metafor")} is installed, the oracle is {audit.config.METAFOR_VERSION}')
     lock_path = audit.config.DATA_DIR / 'r-versions.json'
     if not lock_path.exists():
-        raise RuntimeError(
+        raise audit.errors.HarnessError(
             'no data/r-versions.json: pin the R library first by copying the r-versions.json that `Rscript src/audit/r/versions.R <out.json>` '
             'writes to src/audit/data/r-versions.json'
         )
@@ -102,12 +108,12 @@ def check_r(ctx: Context) -> Outcome:
             "this platform and re-pin by copying a run's r-versions.json over src/audit/data/r-versions.json; or run once with --allow-r-drift"
         )
         if not ctx.allow_r_drift:
-            raise RuntimeError(message)
+            raise audit.errors.HarnessError(message)
         out.notes.append(f'{message} (--allow-r-drift)')
     if drift:
         listing = ', '.join(f'{name} {pinned} -> {installed}' for name, (pinned, installed) in drift.items())
         if not ctx.allow_r_drift:
-            raise RuntimeError(
+            raise audit.errors.HarnessError(
                 f'the R library differs from data/r-versions.json (pinned -> installed): {listing}. Either reinstall the pinned versions with '
                 "`Rscript src/audit/r/setup.R <library> <versions.json>`; or re-pin by copying a run's r-versions.json over "
                 'src/audit/data/r-versions.json after reviewing what the new versions change; or run once with --allow-r-drift'

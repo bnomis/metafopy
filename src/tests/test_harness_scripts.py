@@ -12,6 +12,7 @@ import refutil
 
 import audit.config
 import audit.engine
+import audit.errors
 import audit.rdriver
 import audit.scripts
 
@@ -66,7 +67,7 @@ def test_r_side_writes_a_record_for_every_script(tmp_path: pathlib.Path, monkeyp
 
 def test_list_failure_names_its_log(tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(audit.rdriver, 'rscript_command', lambda script, *args: [sys.executable, '-c', 'print("boom")'])
-    with pytest.raises(RuntimeError, match=r'list\.log'):
+    with pytest.raises(audit.errors.HarnessError, match=r'list\.log'):
         audit.scripts.list_scripts(tmp_path, tmp_path, None)
 
 
