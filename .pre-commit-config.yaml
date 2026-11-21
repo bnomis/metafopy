@@ -7,7 +7,7 @@ repos:
       - id: ruff-format
   # The shared audit hooks, pinned to one commit of the checker.
   - repo: git@github.com:bnomis/agents.git
-    rev: 49dab9d0a0df57f11845773a8366422cbdcef109
+    rev: 8d97d96d3dc96ab015ff12e1adf99496ed8d1177
     hooks:
       - id: auditme-changed
       - id: auditme-all
