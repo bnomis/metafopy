@@ -306,10 +306,12 @@ def profile_rma_uni(
             with warnings.catch_warnings():
                 warnings.simplefilter('ignore')
                 ci = metafopy.methods.confint.confint(x)
-            assert ci.random is not None
-            lb = min(x.tau2, float(numpy.asarray(ci.random.iloc[0, 1], dtype=numpy.float64)))
-            ub = max(0.1, x.tau2, float(numpy.asarray(ci.random.iloc[0, 2], dtype=numpy.float64)))
-        except ValueError, ArithmeticError, numpy.linalg.LinAlgError, AssertionError:
+            if ci.random is None:
+                lb = ub = math.nan
+            else:
+                lb = min(x.tau2, float(numpy.asarray(ci.random.iloc[0, 1], dtype=numpy.float64)))
+                ub = max(0.1, x.tau2, float(numpy.asarray(ci.random.iloc[0, 2], dtype=numpy.float64)))
+        except ValueError, ArithmeticError, numpy.linalg.LinAlgError:
             lb = ub = math.nan
         if math.isnan(lb) or math.isnan(ub):
             crit = float(scipy.stats.norm.ppf(0.995))

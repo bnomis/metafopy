@@ -23,7 +23,7 @@ into a decision the review did not make.
 
 ## Task 1: Asserts that validate user input
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** F3 (A12)
@@ -33,24 +33,24 @@ way it does without `-O`, so that optimised runs behave like normal ones.
 
 **Subtasks:**
 
-- [ ] Write a failing test in `src/tests/test_plots.py` (or the existing qqnorm test file): `qqnorm` on an `rma_mh` fit with an unrecognised
+- [x] Write a failing test in `src/tests/test_audit4_plots.py` (the qqnorm test file): `qqnorm` on an `rma_mh` fit with an unrecognised
       string `label` raises `metafopy.errors.InputError`
-- [ ] In `src/metafopy/plot/qqnorm.py:242-243`, replace the two `assert ... is not None` with an explicit check that raises `InputError`,
+- [x] In `src/metafopy/plot/qqnorm.py:242-243`, replace the two `assert ... is not None` with an explicit check that raises `InputError`,
       naming the accepted `label` values; add `InputError` to `qqnorm`'s `Raises:` section if it is not there
-- [ ] In `src/metafopy/methods/profile.py:309-312`, replace the `assert ci.random is not None` and its `except ... AssertionError` fallback
+- [x] In `src/metafopy/methods/profile.py:309-312`, replace the `assert ci.random is not None` and its `except ... AssertionError` fallback
       with an explicit `if ci.random is None:` branch that takes the same SE-based range
-- [ ] Run the two test files
+- [x] Run the two test files
 
 **Acceptance Criteria:**
 
-- [ ] `grep -n "assert" src/metafopy/plot/qqnorm.py src/metafopy/methods/profile.py` shows neither site
-- [ ] The new test passes, and the profile plot tests are unchanged
+- [x] `grep -n "assert" src/metafopy/plot/qqnorm.py src/metafopy/methods/profile.py` shows neither site
+- [x] The new test passes, and the profile plot tests are unchanged
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy src/metafopy/plot/qqnorm.py src/metafopy/methods/profile.py` passes
-- [ ] `pytest src/tests/test_plots.py src/tests/test_profile_plots.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy src/metafopy/plot/qqnorm.py src/metafopy/methods/profile.py` passes
+- [x] `pytest src/tests/test_plots.py src/tests/test_profile_plots.py` passes
 
 **Notes:**
 
