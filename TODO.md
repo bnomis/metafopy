@@ -20,7 +20,7 @@ through its caller, which T1 does not count for a public function.
 Fix direction: a spec with `/specdev` first. It chooses which helpers deserve a direct test (the branchy numerics and formatters first), and
 which should become private, or stay covered through their callers with a ledger dismissal giving the reason. Then a task list.
 
-Spec: `agents/specs/direct-tests-for-metafopy-helpers/spec.md`; tasks: (after the spec review).
+Spec: `agents/specs/direct-tests-for-metafopy-helpers/spec.md`; tasks: `agents/tasks/direct-tests-for-metafopy-helpers/tasks-1.md`.
 
 ## Numerical cores have no property-based tests
 
