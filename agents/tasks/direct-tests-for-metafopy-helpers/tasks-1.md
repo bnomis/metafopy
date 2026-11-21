@@ -104,7 +104,7 @@ fixed (`claude/rules/metafopy.md`).
 
 ## Task 3: Re-judge the 162 candidates and record what is still open
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** Implementation step 2
@@ -113,25 +113,25 @@ fixed (`claude/rules/metafopy.md`).
 
 **Subtasks:**
 
-- [ ] Run `python3 ~/.claude/skills/auditme/checks/phaseb.py plan . --question T1 --out <scratch>/t1`. Build `<scratch>/t1sel/` with one
+- [x] Run `python3 ~/.claude/skills/auditme/checks/phaseb.py plan . --question T1 --out <scratch>/t1`. Build `<scratch>/t1sel/` with one
       `batch-01.jsonl` (and more batches of up to 48 if needed) holding only the batch lines whose `id` is one of the 162 in `measurements.md`.
       Copy `plan.json` with its `batches` cut to those ids. `<scratch>` is a directory outside the repository
-- [ ] Judge each candidate by the T1 brief and the rulings above, by reading the tests (do not run them), and write `result-NN.jsonl` in the
+- [x] Judge each candidate by the T1 brief and the rulings above, by reading the tests (do not run them), and write `result-NN.jsonl` in the
       brief's format
-- [ ] `phaseb.py check <scratch>/t1sel` must report every batch complete. Then run `phaseb.py merge . --question T1 <scratch>/t1sel`
-- [ ] Write `agents/specs/direct-tests-for-metafopy-helpers/open-after-privatise.md`, a dated record ("measured on <date> at <commit>") of
+- [x] `phaseb.py check <scratch>/t1sel` must report every batch complete. Then run `phaseb.py merge . --question T1 <scratch>/t1sel`
+- [x] Write `agents/specs/direct-tests-for-metafopy-helpers/open-after-privatise.md`, a dated record ("measured on <date> at <commit>") of
       every candidate that `phaseb.py report . --question T1` still shows open under `src/metafopy`. Split it into "public" and "private" by the
       batch line's `private` flag
-- [ ] Stop as `blocked`, naming the candidate, if the brief and the rulings do not settle one
+- [x] Stop as `blocked`, naming the candidate, if the brief and the rulings do not settle one
 
 **Acceptance Criteria:**
 
-- [ ] All 162 have a fresh ledger verdict, and the open list is committed
+- [x] All 162 have a fresh ledger verdict, and the open list is committed
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `python3 ~/.claude/skills/auditme/checks/phaseb.py check <scratch>/t1sel` reports every batch complete
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `python3 ~/.claude/skills/auditme/checks/phaseb.py check <scratch>/t1sel` reports every batch complete
 
 **Notes:**
 
