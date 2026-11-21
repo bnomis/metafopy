@@ -26,7 +26,7 @@ import metafopy.models.rma_uni
 import metafopy.models.tables
 import metafopy.printing
 
-__all__ = ['NAN_STATS', 'FixedBinaryResult', 'fit_statistics', 'format_header', 'format_test_line', 'positive_max']
+__all__ = ['NAN_STATS', 'FixedBinaryResult', 'format_test_line', 'positive_max']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 

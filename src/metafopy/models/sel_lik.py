@@ -20,7 +20,7 @@ import metafopy.core.integrate
 import metafopy.errors
 import metafopy.models.sel_spec
 
-__all__ = ['Evaluation', 'Problem', 'evaluate', 'map_delta', 'map_inverse', 'negative_loglik']
+__all__ = ['Evaluation', 'Problem', 'negative_loglik']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type BoolArray = numpy.typing.NDArray[numpy.bool_]

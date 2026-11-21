@@ -28,7 +28,7 @@ import metafopy.models.rma_uni
 import metafopy.models.tau2
 import metafopy.transf
 
-__all__ = ['LSPredictResult', 'predict_rma_ls']
+__all__ = ['predict_rma_ls']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 

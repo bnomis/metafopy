@@ -21,7 +21,7 @@ import metafopy.metadata
 import metafopy.models.mv_factor
 import metafopy.models.mv_structs
 
-__all__ = ['RandomSpec', 'build_x', 'extract_random', 'prepare_v', 'prepare_w', 'prepare_yi', 'take_square']
+__all__ = ['RandomSpec']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type Mat = FloatArray | scipy.sparse.csc_array

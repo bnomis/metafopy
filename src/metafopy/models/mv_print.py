@@ -16,8 +16,6 @@ import metafopy.models.rma_uni
 import metafopy.models.robust_print
 import metafopy.printing
 
-__all__ = ['abbreviate', 'format_result']
-
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 
 SPATIAL_OR_GENERAL = (*metafopy.models.mv_structs.SPATIAL, 'GDIAG', 'GEN')

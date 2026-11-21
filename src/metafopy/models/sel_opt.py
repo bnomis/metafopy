@@ -32,7 +32,7 @@ import metafopy.core.bfgs
 import metafopy.core.optim
 import metafopy.errors
 
-__all__ = ['OPTIMIZERS', 'OPTIMIZERS_MV', 'OptimizerChoice', 'choose_optimizer', 'minimize']
+__all__ = ['OPTIMIZERS', 'OPTIMIZERS_MV', 'OptimizerChoice', 'choose_optimizer']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 

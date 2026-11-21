@@ -18,7 +18,7 @@ import scipy.sparse
 
 import metafopy.errors
 
-__all__ = ['Factor', 'evaluate_variable', 'indicator', 'interaction', 'split_top_level', 'to_categorical', 'to_factor']
+__all__ = ['Factor', 'to_categorical']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type IntArray = numpy.typing.NDArray[numpy.intp]

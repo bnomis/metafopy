@@ -27,7 +27,7 @@ import metafopy.methods.profile
 import metafopy.models.mv_result
 import metafopy.models.mv_structs
 
-__all__ = ['MVProfileResult', 'profile_rma_mv']
+__all__ = ['profile_rma_mv']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type MV = metafopy.models.mv_result.RMAMVResult

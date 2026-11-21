@@ -27,7 +27,7 @@ import metafopy.models.rma_ls_result
 import metafopy.models.rma_uni
 import metafopy.models.tau2
 
-__all__ = ['ScaleSpec', 'fit_scale', 'scale_matrix']
+__all__ = ['ScaleSpec', 'scale_matrix']
 
 type ScaleSpec = str | numpy.typing.ArrayLike | pandas.DataFrame
 type FloatArray = numpy.typing.NDArray[numpy.float64]

@@ -22,7 +22,7 @@ import metafopy.models.mv_result
 import metafopy.models.rma_ls_result
 import metafopy.models.rma_uni
 
-__all__ = ['weights_mv', 'weights_uni', 'weights_unsupported']
+__all__ = ['weights_unsupported']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 

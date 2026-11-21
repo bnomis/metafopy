@@ -30,7 +30,7 @@ import metafopy.models.sel_result
 import metafopy.models.tau2
 import metafopy.printing
 
-__all__ = ['LRTResult', 'ListAnovaResult', 'MVLRTResult', 'WaldResult', 'anova']
+__all__ = ['LRTResult', 'MVLRTResult', 'WaldResult', 'anova']
 
 FloatArray = numpy.typing.NDArray[numpy.float64]
 

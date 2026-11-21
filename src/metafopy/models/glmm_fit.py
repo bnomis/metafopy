@@ -41,7 +41,7 @@ import metafopy.core.numderiv
 import metafopy.errors
 import metafopy.models.sel_opt
 
-__all__ = ['FitSpec', 'GLMMControl', 'ModelFit', 'fit_model']
+__all__ = ['FitSpec', 'GLMMControl', 'ModelFit']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type IntArray = numpy.typing.NDArray[numpy.intp]

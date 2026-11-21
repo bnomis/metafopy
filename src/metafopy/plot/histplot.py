@@ -17,7 +17,7 @@ import metafopy.plot.draw
 import metafopy.plot.infl
 import metafopy.plot.rutils
 
-__all__ = ['Hist', 'draw_histogram', 'draw_tail', 'panels']
+__all__ = ['Hist']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 

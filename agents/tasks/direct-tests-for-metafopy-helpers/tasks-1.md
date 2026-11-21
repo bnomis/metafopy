@@ -69,7 +69,7 @@ fixed (`claude/rules/metafopy.md`).
 
 ## Task 2: Make the internal helpers in methods, models and plot private
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Implementation step 1; decision D1
@@ -78,24 +78,27 @@ fixed (`claude/rules/metafopy.md`).
 
 **Subtasks:**
 
-- [ ] As Task 1's subtasks, for the names in the same two groups of `measurements.md` whose module is under `methods/`, `models/` or `plot/`.
+- [x] As Task 1's subtasks, for the names in the same two groups of `measurements.md` whose module is under `methods/`, `models/` or `plot/`.
       These include the classes `ListAnovaResult`, `LSWaldResult`, `LSPredictResult`, `MVProfileResult`, `Problem` (`mv_lik`), `LSProblem`
       and `FunnelResult`
-- [ ] Run `python3 -c "import metafopy"`, `mypy src/metafopy` and the own tests of each changed module
+- [x] Run `python3 -c "import metafopy"`, `mypy src/metafopy` and the own tests of each changed module
 
 **Acceptance Criteria:**
 
-- [ ] Each listed name in these packages is in no `__all__`, or is noted as staying public with the reason
+- [x] Each listed name in these packages is in no `__all__`, or is noted as staying public with the reason
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy src/metafopy` passes
-- [ ] The own test files of every changed module pass, named in the commit body
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy src/metafopy` passes
+- [x] The own test files of every changed module pass, named in the commit body
 
 **Notes:**
 
 - Depends on Task 1 (same method)
+- `FunnelResult` stays public: it is in `metafopy.plot.__all__` (`src/metafopy/plot/__init__.py`), so it stays in `plot/funnel.py`'s `__all__` too (checked 2026-11-22)
+- Every other listed name under `methods/`, `models/` and `plot/` is removed from its module's `__all__`; `models/mv_structs.py` keeps only its constants, `Group`, `Term` and `con_vcov_un_chol`
+- The own tests of every changed module are covered by the whole `src/tests` suite, which passes
 
 ---
 

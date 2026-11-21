@@ -27,7 +27,7 @@ import metafopy.models.rma_ls_result
 import metafopy.models.rma_uni
 import metafopy.models.sel_result
 
-__all__ = ['Rows', 'fitted_values', 'hat_values', 'rows_of']
+__all__ = ['Rows', 'fitted_values']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type BoolArray = numpy.typing.NDArray[numpy.bool_]

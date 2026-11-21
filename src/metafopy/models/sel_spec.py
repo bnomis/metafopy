@@ -24,7 +24,7 @@ import numpy.typing
 import metafopy.errors
 
 # auditme: accept[non-alphabetical-literal] constants first, as ruff's RUF022 orders __all__
-__all__ = ['STEPWISE', 'TRUNCATED', 'TYPE_OPTIONS', 'SelSpec', 'build_spec', 'match_type']
+__all__ = ['STEPWISE', 'TRUNCATED', 'TYPE_OPTIONS', 'SelSpec', 'match_type']
 
 STEPWISE = ('stepcon', 'stepfun')
 TRUNCATED = ('trunc', 'truncest')

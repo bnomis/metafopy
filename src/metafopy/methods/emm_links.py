@@ -19,7 +19,7 @@ import scipy.stats
 import metafopy.errors
 import metafopy.transf
 
-__all__ = ['LOG_LIKE', 'Link', 'bias_adjusted', 'make_link', 'measure_link']
+__all__ = ['LOG_LIKE', 'Link', 'bias_adjusted', 'make_link']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type Func = collections.abc.Callable[[FloatArray], FloatArray]

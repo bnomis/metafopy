@@ -19,7 +19,7 @@ import metafopy.methods.emm_adjust
 import metafopy.methods.emm_grid
 import metafopy.methods.emm_links
 
-__all__ = ['EmmSummary', 'summary']
+__all__ = ['EmmSummary']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type Infer = bool | collections.abc.Sequence[bool]
