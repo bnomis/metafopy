@@ -25,10 +25,19 @@ import pathlib
 import subprocess
 import tempfile
 
+# auditme: accept[D1] declared in the PEP 723 script block at the top of this file
 import fontTools.pens.svgPathPen
+
+# auditme: accept[D1] declared in the PEP 723 script block at the top of this file
 import fontTools.pens.transformPen
+
+# auditme: accept[D1] declared in the PEP 723 script block at the top of this file
 import fontTools.ttLib
+
+# auditme: accept[D1] declared in the PEP 723 script block at the top of this file
 import PIL.Image
+
+# auditme: accept[D1] declared in the PEP 723 script block at the top of this file
 import uharfbuzz
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -262,6 +271,7 @@ def animated_gif(chrome: str, frames: list[Frame], gif: pathlib.Path, px: int, f
     images[0].save(gif, save_all=True, append_images=images[1:], duration=durations, loop=0, optimize=True)
 
 
+# auditme: accept[T3] one-off build tool for the logo files; the files it writes are the check
 def main() -> None:
     args = parse_args()
     out = args.out

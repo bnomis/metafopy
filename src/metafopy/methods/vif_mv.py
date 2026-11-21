@@ -173,17 +173,7 @@ def vif_coefficients(
     entries: list[metafopy.methods.vif.VIFEntry] = []
     for spec, g in zip(specs, groups, strict=True):
         gvif, used = metafopy.methods.vif.compvif_matrix(g, res.vb, int_incl, refit, res.X, intercept)
-        m = len(used)
-        entries.append(
-            metafopy.methods.vif.VIFEntry(
-                spec=metafopy.methods.vif.format_spec(spec),
-                coefs=metafopy.methods.vif.format_btt(i + 1 for i in used),
-                coefname=names[used[0]] if m == 1 else '',
-                m=m,
-                vif=gvif,
-                sif=gvif ** (1 / (2 * m)),
-            )
-        )
+        entries.append(metafopy.methods.vif.vif_entry(spec, used, names, gvif))
     tab = coef_table(res) if table and btt_missing else None
     result = metafopy.methods.vif.VIFResult(
         vif=tuple(entries), bttspec=not btt_missing, digits=metafopy.mfopt.stored_digits(digits, 4), table=tab, test=res.test if tab is not None else None

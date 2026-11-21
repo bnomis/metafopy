@@ -1,8 +1,9 @@
 # Scripts shard survival
 
-**Version:** 1.0
+**Version:** 1.1
 **Status:** implemented
 **Date:** 2026-11-02
+**Corrected:** 2026-11-21 (version 1.1): statements that no longer matched the code, from audit review-1 (`agents/audit-reviews/review-1.md`, finding group F6)
 
 The audit's `scripts` step runs metafor's own help examples and test files,
 one top-level expression (a unit) at a time, in R and then, translated, in
@@ -144,8 +145,9 @@ finished script's record is its closing line, with `units` taken from its
 parts. The `dead` result for a script whose process stopped is
 `{"id", "kind", "topic", "lost": true, "units": <its parts> + [dead unit]}`.
 The dead unit is `{"status": "error", "error": <reason>, "warnings": [],
-"src": "", "ast": null}`, and the reasons are the cases path's: `R passed
-the memory limit of <n> GiB (killed)`, `R process died on this case
+"src": "", "ast": null}`, and the reasons are the cases path's, from
+`audit.engine.r_stop_reason` with the unit word `unit`: `R passed
+the memory limit of <n> GiB (killed)`, `R process died on this unit
 (killed)`, and `R did not return within <s>s (timeout)` for a stall.
 
 Units stream one line each, so the output moves at least once per unit, and
@@ -212,7 +214,7 @@ limit `2 * timeout + 30` seconds of `engine.run_shard`.
 
 - `src/tests/test_harness_engine.py`: `read_outcomes` gathers part lines into
   a finished item's `parts` and returns the running item's parts;
-  `run_shard` with plain-dict items and its own `write`, where a stand-in
+  `run_shard` with items that are frozen dataclass instances (an item needs an `.id` attribute) and its own `write`, where a stand-in
   dies after two parts of its second item, passes those parts to `dead`.
 - `src/tests/test_harness_scripts.py` (new), with no R: a lost script record
   becomes an `r-killed` finding at the dead unit and one `not run` tally;

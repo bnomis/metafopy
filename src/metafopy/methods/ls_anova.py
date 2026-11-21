@@ -330,18 +330,7 @@ def lrt(
     use_reml = full.method == 'REML'
     fs_f = full.fit_stats_reml if use_reml else full.fit_stats_ml
     fs_r = red.fit_stats_reml if use_reml else red.fit_stats_ml
-    stat = max(0.0, fs_r.dev - fs_f.dev)
-    return metafopy.methods.anova.MVLRTResult(
-        df_full=full.parms + (0 if df_given is None else df_given),
-        df_reduced=red.parms,
-        LRT=stat,
-        pval=float(scipy.stats.chi2.sf(stat, full.parms - red.parms if df_given is None else df_given)),
-        fit_stats_full=fs_f.as_tuple(),
-        fit_stats_reduced=fs_r.as_tuple(),
-        QE_full=full.QE,
-        QE_reduced=red.QE,
-        method=full.method,
-    )
+    return metafopy.methods.anova.mv_lrt_result(full, red, fs_f, fs_r, df_given)
 
 
 def wald_between(a: metafopy.models.rma_ls_result.RMALSResult, b: metafopy.models.rma_ls_result.RMALSResult, df: int | None, digits: int) -> LSWaldResult:

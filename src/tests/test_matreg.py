@@ -78,10 +78,12 @@ def check_fit(res: metafopy.MatregResult, exp: dict[str, typing.Any], rtol: floa
         refutil.close(aic, exp['AIC'], 'AIC', rtol=rtol)
         refutil.close([res.BIC(), res.BIC(REML=True)], exp['BIC'], 'BIC', rtol=rtol)
         assert res.parms == exp['parms']
-    else:
+    elif res.test == 'z':
         refutil.close(res.tab['zval'], exp['zval'], 'zval', rtol=rtol)
         refutil.close(res.QM, exp['QM'], 'QM', rtol=rtol)
         refutil.close(res.QMp, exp['QMp'], 'QMp', rtol=rtol, atol=1e-12)
+    else:
+        typing.assert_never(res.test)
 
 
 def check_print(res: metafopy.MatregResult, exp: dict[str, typing.Any]) -> None:

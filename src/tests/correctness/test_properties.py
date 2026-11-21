@@ -6,6 +6,7 @@ A case that is not a comparison of values names a ``check`` function of this mod
 
 import collections.abc
 import dataclasses
+import types
 import typing
 
 import hypothesis
@@ -200,7 +201,7 @@ def i2_is_zero_for_identical_effects(case: correctness.cases.Case, result: typin
         raise AssertionError(f'{case.id}: no estimator fitted the identical effects')
 
 
-MV_CONTROL = {'gtol': 1e-12, 'maxiter': 10000}
+MV_CONTROL = types.MappingProxyType({'gtol': 1e-12, 'maxiter': 10000})
 MV_AGREEMENT = 1e-6
 # what two fits of one structured model share: the REML log-likelihood, the coefficients, the variances and the correlation
 STRUCTURED_FIT = ('beta', 'll', 'rho', 'tau2')

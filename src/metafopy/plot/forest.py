@@ -202,8 +202,10 @@ def strheight(ax: matplotlib.axes.Axes, ylim: tuple[float, float]) -> float:
 def arrow(ax: matplotlib.axes.Axes, side: typing.Literal['l', 'r'], alim: tuple[float, float], row: float, aw: float, ah: float, col: str) -> None:
     if side == 'l':
         xs = [alim[0], alim[0] + aw, alim[0] + aw, alim[0]]
-    else:
+    elif side == 'r':
         xs = [alim[1], alim[1] - aw, alim[1] - aw, alim[1]]
+    else:
+        typing.assert_never(side)
     metafopy.plot.draw.poly(ax, xs, [row, row + ah, row - ah, row], col=col, border=col)
 
 
@@ -883,6 +885,8 @@ def forest(
         metafopy.errors.InputError: an argument or the data is invalid: both ``transf`` and ``atransf``; a length that does not match the number
             of studies; missing values with ``na_action='fail'``; ``subset`` for a fitted model; an unknown ``order``, ``predstyle``, ``shade`` or
             ``annosym``; ``showweights`` for a [rma_glmm][metafopy.rma_glmm] or [selmodel][metafopy.selmodel] result.
+        metafopy.errors.ArgumentError: ``order`` is ``'rstandard'`` or ``'abs.rstandard'`` for an ``rma_glmm`` or selection-model fit, which has no
+            standardised residuals.
 
     Metafor reference:
         - [forest](https://wviechtb.github.io/metafor/reference/forest.html)
@@ -1482,11 +1486,8 @@ def forest(
             xs, ys = diamond(pred_ci_lb[i], pred[i], pred_ci_ub[i], rows_a[i], polheight)
             sel = (xs > alim_t[0]) & (xs < alim_t[1])
             metafopy.plot.draw.poly(axx, xs[sel], ys[sel], col=col_mr, border=bord_mr)
-    ciendheight = height / 150 * cx * efv[0]
-    arrowwidth = 1.4 / 100 * cx * (xl[1] - xl[0])
-    arrowheight = height / 150 * cx * efv[1]
-    barheight = min(0.25, height / 150 * cx * efv[3])
-    pipolheight = (height / 100) * cx * efv[3]
+    pred_geo = PredGeometry.of(alim_t, xl, height, cx, efv, ol)
+    ciendheight, arrowwidth, arrowheight = pred_geo.ciendheight, pred_geo.arrowwidth, pred_geo.arrowheight
 
     beta = beta_lb = beta_ub = pi_lb = pi_ub = math.nan
     if fit_row:
@@ -1538,7 +1539,7 @@ def forest(
                 pi_ub,
                 beta,
                 -1.0 if pstyle == 'line' else -2.0,
-                PredGeometry(alim_t, ciendheight, arrowwidth, arrowheight, barheight, pipolheight, efv[3], ol),
+                pred_geo,
                 lt[1],
                 pcol,
                 pborder,
@@ -1764,6 +1765,28 @@ class PredGeometry:
     ef4: float
     olim: tuple[float, float] | None = None
 
+    @classmethod
+    def of(
+        cls,
+        alim: tuple[float, float],
+        xlim: collections.abc.Sequence[float],
+        height: float,
+        cx: float,
+        efv: collections.abc.Sequence[float],
+        olim: tuple[float, float] | None,
+    ) -> typing.Self:
+        """The geometry for a plot of ``height`` rows at text size ``cx``, with ``efv`` the element-size factors and ``xlim`` the limits of the x axis."""
+        return cls(
+            alim,
+            height / 150 * cx * efv[0],
+            1.4 / 100 * cx * (xlim[1] - xlim[0]),
+            height / 150 * cx * efv[1],
+            min(0.25, height / 150 * cx * efv[3]),
+            (height / 100) * cx * efv[3],
+            efv[3],
+            olim,
+        )
+
 
 def draw_pred(
     ax: matplotlib.axes.Axes,
@@ -1899,7 +1922,7 @@ def addpoly(
     preddist: PredDist | None = None,
     predtail: float | str | None = None,
     pi_se: float | None = None,
-    pi_dist: str = 'norm',
+    pi_dist: str | None = None,
     pi_ddf: float | None = None,
     pi_level: float | None = None,
     alim: collections.abc.Sequence[float] | None = None,
@@ -1974,8 +1997,9 @@ def addpoly(
             a single estimate.
         predtail: Cut point of the shading for ``'dist'``, as in [forest][metafopy.forest] (a number or a string such as ``'<2'``).
         pi_se: Vector form only: standard error of the predictive distribution, for ``'shade'`` and ``'dist'``. Taken from the model for a fitted
-            model or ``predict`` result.
-        pi_dist: Vector form only: the predictive distribution, ``'norm'`` (the default) or ``'t'``.
+            model or ``predict`` result; an explicit ``pi_se``, ``pi_dist`` or ``pi_ddf`` wins over the value stored in a ``predict`` result.
+        pi_dist: Vector form only: the predictive distribution, ``'norm'`` or ``'t'``. Default: from the model for a fitted model or ``predict``
+            result, else ``'norm'``.
         pi_ddf: Vector form only: degrees of freedom of the ``'t'`` distribution (must exceed 1 to draw it).
         pi_level: Vector form only: level of the prediction interval, as ``level``. Default: ``level``.
         alim: Limits of the x axis: polygons are cut off at them. Default: taken from the last forest call, else the limits of the axes.
@@ -2019,7 +2043,7 @@ def addpoly(
         nan = numpy.full(x.pred.shape[0], math.nan)
         if pi_se is None and x.pi_se is not None:
             pi_se = float(numpy.atleast_1d(x.pi_se)[0])
-        if x.pi_dist is not None and pi_dist == 'norm':
+        if pi_dist is None and x.pi_dist is not None:
             pi_dist = x.pi_dist
         if pi_ddf is None and x.pi_ddf is not None:
             pi_ddf = float(numpy.atleast_1d(x.pi_ddf)[0])
@@ -2107,6 +2131,7 @@ def addpoly(
                 raise metafopy.errors.InputError("Must specify either 'vi', 'sei', or ('ci_lb','ci_ub').")
             cl, cu = yi - crit * numpy.sqrt(v), yi + crit * numpy.sqrt(v)
         pi_alpha = lvl if pi_level is None else metafopy.plot.rutils.level_to_alpha(pi_level)
+        pi_dist = 'norm' if pi_dist is None else pi_dist
         if pdist is not None:
             if yi.shape[0] != 1:
                 raise metafopy.errors.InputError("Can only use 'preddist' when plotting a single estimate.")
@@ -2163,11 +2188,13 @@ def addpoly(
                 ef = [ef[1], ef[1], ef[0], ef[0]]
             if len(ef) == 3:
                 ef = [ef[1], ef[2], ef[0], ef[0]]
-        else:
+        elif ps == 'bar' or ps == 'dist' or ps == 'polygon' or ps == 'shade':
             if len(ef) == 2:
                 ef = [ef[0], ef[0], ef[0], ef[1]]
             if len(ef) == 3:
                 ef = [ef[2], ef[2], ef[0], ef[1]]
+        else:
+            typing.assert_never(ps)
     efv = [math.nan if v == 0 else v for v in ef]
     if rowadj is None:
         radj = list(st.get('rowadj', [0.0, 0.0, 0.0]))
@@ -2194,7 +2221,7 @@ def addpoly(
             ml = [''] * k
         else:
             ml = expand(mlab_use, k, 'mlab')
-    else:
+    elif ps == 'bar' or ps == 'dist' or ps == 'polygon' or ps == 'shade':
         ml = None
         what = 'Predictive Distribution' if ps == 'dist' else 'Prediction Interval'
         pi_text = f'{what}{asym[0]}{metafopy.plot.rutils.rround(100 * (1 - pi_alpha), dg):g}% PI{asym[2]}'
@@ -2204,6 +2231,8 @@ def addpoly(
             ml = [mlab_use] if isinstance(mlab_use, str) else list(mlab_use)
             if len(ml) == 1:
                 ml.append(pi_text)
+    else:
+        typing.assert_never(ps)
     if rows_use is None:
         rows_a = -numpy.arange(1, k + 1, dtype=float)
     elif numpy.ndim(rows_use) == 0:
@@ -2270,11 +2299,8 @@ def addpoly(
         polheight = (height / 100) * cx * efv[2] * (1 / area)
     else:
         polheight = numpy.full(k, (height / 100) * cx * efv[2])
-    ciendheight = height / 150 * cx * efv[0]
-    arrowwidth = 1.4 / 100 * cx * (xlim[1] - xlim[0])
-    arrowheight = height / 150 * cx * efv[1]
-    barheight = min(0.25, height / 150 * cx * efv[3])
-    pipolheight = (height / 100) * cx * efv[3]
+    pred_geo = PredGeometry.of(alim_t, xlim, height, cx, efv, ol)
+    ciendheight, arrowwidth, arrowheight = pred_geo.ciendheight, pred_geo.arrowwidth, pred_geo.arrowheight
     for i in range(k):
         if ps == 'line':
             lo_x = math.nan if math.isnan(pl[i]) else max(float(pl[i]), alim_t[0])
@@ -2290,7 +2316,7 @@ def addpoly(
                     metafopy.plot.draw.seg(axx, pu[i], rows_a[i] - ciendheight, pu[i], rows_a[i] + ciendheight, lty=lt[1], col=lcol_l[i])
                 else:
                     arrow(axx, 'r', alim_t, rows_a[i], arrowwidth, arrowheight, lcol_l[i])
-        else:
+        elif ps == 'bar' or ps == 'dist' or ps == 'polygon' or ps == 'shade':
             curve: PredCurve | None = None
             if ps in DENSITY_STYLES:
                 curve = pred_curve(
@@ -2312,12 +2338,14 @@ def addpoly(
                 float(pu[i]),
                 float(yi[i]),
                 float(rows_a[1]),
-                PredGeometry(alim_t, ciendheight, arrowwidth, arrowheight, barheight, pipolheight, efv[3], ol),
+                pred_geo,
                 lt[1],
                 col_l,
                 bord_l,
                 curve,
             )
+        else:
+            typing.assert_never(ps)
         xs, ys = diamond(cl[i], yi[i], cu[i], rows_a[i], float(polheight[i]))
         sel = (xs > alim_t[0]) & (xs < alim_t[1])
         metafopy.plot.draw.poly(axx, xs[sel], ys[sel], col=col_l[i], border=bord_l[i])

@@ -15,6 +15,7 @@ import typing
 import metafopy.errors
 import metafopy.methods.blup
 import metafopy.models.glmm_result
+import metafopy.models.rma_ls_result
 import metafopy.models.rma_uni
 
 __all__ = ['RanefResult', 'ranef']
@@ -26,6 +27,23 @@ class RanefResult(metafopy.methods.blup.BlupResult):
 
     The attributes are those of [BlupResult][metafopy.BlupResult]: ``pred``, ``se``, ``pi_lb``, ``pi_ub``, ``slab``, ``digits`` and ``transf``.
     """
+
+
+def ranef_result(
+    res: metafopy.models.rma_uni.RMAResult | metafopy.models.rma_ls_result.RMALSResult,
+    level: float | None,
+    digits: int | None,
+    transf: metafopy.methods.blup.Transf | None,
+    targs: typing.Any,
+    na_action: metafopy.methods.blup.NAAction,
+) -> RanefResult:
+    """The [RanefResult][metafopy.RanefResult] of the BLUPs of ``res``, shared by the ``rma.uni`` and location-scale implementations.
+
+    Raises:
+        metafopy.errors.InputError: an argument or the data is invalid.
+    """
+    out = metafopy.methods.blup.shrinkage_predictions(res, 'ranef', level, digits, transf, targs, na_action)
+    return RanefResult(pred=out.pred, se=out.se, pi_lb=out.pi_lb, pi_ub=out.pi_ub, slab=out.slab, digits=out.digits, transf=out.transf)
 
 
 @functools.singledispatch
@@ -47,6 +65,9 @@ def ranef(res: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> RanefResu
 
     Raises:
         metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
+        metafopy.errors.InputError: raised by an implementation for an invalid argument.
+        metafopy.errors.NotSupportedError: the model is an ``rma_glmm`` fit, for which there is no implementation of the random effects.
+        metafopy.errors.InternalError: an internal invariant does not hold.
 
     Metafor reference:
         [ranef](https://wviechtb.github.io/metafor/reference/ranef.html)
@@ -90,8 +111,7 @@ def ranef_rma_uni(
     Metafor reference:
         [ranef](https://wviechtb.github.io/metafor/reference/ranef.html)
     """
-    out = metafopy.methods.blup.shrinkage_predictions(res, 'ranef', level, digits, transf, targs, na_action)
-    return RanefResult(pred=out.pred, se=out.se, pi_lb=out.pi_lb, pi_ub=out.pi_ub, slab=out.slab, digits=out.digits, transf=out.transf)
+    return ranef_result(res, level, digits, transf, targs, na_action)
 
 
 @ranef.register

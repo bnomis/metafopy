@@ -13,7 +13,7 @@ print(datasets.load('bcg').equals(dat))
 ```
 
 ```text
-['dat.assink2016', 'dat.bangertdrowns2004', 'dat.bcg', 'dat.berkey1998', 'dat.cohen1981']
+['dat.aloe2013', 'dat.anand1999', 'dat.anker2025', 'dat.assink2016', 'dat.axfors2021']
    trial                author  year  tpos  ...  cpos   cneg  ablat      alloc
 0      1               Aronson  1948     4  ...    11    128     44     random
 1      2      Ferguson & Simes  1949     6  ...    29    274     55     random

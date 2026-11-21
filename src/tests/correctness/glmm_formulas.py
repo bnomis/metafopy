@@ -467,7 +467,8 @@ class Problem:
     """Data and model of one fit; build it with ``glmm_problem``, ``poisson_problem`` or ``one_group_problem``.
 
     ``y`` holds the counts of each study (one column per group), ``size`` the binomial trials, ``offset`` the log person-times; ``n1`` and ``n2`` are the
-    group sizes (person-times) that ``CM.*`` conditions on.
+    group sizes (person-times) that ``CM.*`` conditions on. ``n1`` equals ``n2`` for one-group data (``one_group_problem``), where both hold the
+    single group's ``ni``.
     """
 
     kind: str

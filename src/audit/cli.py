@@ -96,7 +96,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         action='store_true',
         help='List the steps and exit',
     )
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+    if args.recall not in (None, 'all'):
+        known = audit.recall.Corpus.load().audits
+        if not all(n.isdecimal() and int(n) in known for n in args.recall.split(',')):
+            parser.error(f'--recall takes "all" or comma-separated audit numbers from {", ".join(str(n) for n in sorted(known))}, not {args.recall!r}')
+    return args
 
 
 def recall(args: argparse.Namespace) -> int:
@@ -115,6 +120,7 @@ def recall(args: argparse.Namespace) -> int:
     return 0 if ok else 1
 
 
+# auditme: accept[T3] bin/metafor-audit.sh --recall is its end-to-end check
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     if args.recall is not None:

@@ -93,17 +93,15 @@ def trimfill_fit(
 ) -> metafopy.models.rma_uni.RMAResult:
     k = yi.shape[0]
     X = numpy.ones((k, 1)) if mods is None else numpy.column_stack([numpy.ones(k), mods])
-    md = metafopy.metadata.MetaData(
-        yi=yi,
-        vi=vi,
-        X=X,
+    md = metafopy.metadata.MetaData.from_vectors(
+        yi,
+        vi,
+        X,
         # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
-        X_names=('intrcpt',) if mods is None else ('intrcpt', 'mods'),
-        slab=tuple(str(i + 1) for i in range(k)),
-        keep=numpy.ones(k, dtype=numpy.bool_),
-        weights=weights,
-        ni=ni,
-        intercept=True,
+        ('intrcpt',) if mods is None else ('intrcpt', 'mods'),
+        tuple(str(i + 1) for i in range(k)),
+        weights,
+        ni,
     )
     return metafopy.models.rma_uni.fit_rma_uni(
         md, method=res.method, weighted=res.weighted, control=dataclasses.asdict(res.control) if use_control else None, skip_r2=True, **kw
@@ -217,17 +215,23 @@ def trimfill(
                 raise metafopy.errors.InputError('Trim and fill algorithm failed: no study to the left of the pooled estimate.')
             k0f = (k - float(numpy.max(-1 * neg))) - 1
             se_k0 = math.sqrt(2 * max(0.0, k0f) + 2)
-        else:
+        elif estimator == 'L0' or estimator == 'Q0':
             sr = float(numpy.sum(signed[signed > 0]))
             if estimator == 'L0':
                 k0f = (4 * sr - k * (k + 1)) / (2 * k - 1)
-            else:
+            elif estimator == 'Q0':
                 k0f = k - 1 / 2 - math.sqrt(2 * k**2 - 4 * sr + 1 / 4)
+            else:
+                typing.assert_never(estimator)
             var_sr = 1 / 24 * (k * (k + 1) * (2 * k + 1) + 10 * k0f**3 + 27 * k0f**2 + 17 * k0f - 18 * k * k0f**2 - 18 * k * k0f + 6 * k**2 * k0f)
             if estimator == 'L0':
                 se_k0 = 4 * sqrt_nan(var_sr) / (2 * k - 1)
-            else:
+            elif estimator == 'Q0':
                 se_k0 = 2 * sqrt_nan(var_sr) / sqrt_nan((k - 1 / 2) ** 2 - k0f * (2 * k - k0f - 1))
+            else:
+                typing.assert_never(estimator)
+        else:
+            typing.assert_never(estimator)
         k0 = max(0, round(k0f))
         se_k0 = se_k0 if math.isnan(se_k0) else max(0.0, se_k0)
         if verbose:
@@ -250,16 +254,15 @@ def trimfill(
         ids = numpy.flatnonzero(md.keep) + 1
         default_slab = x.slab == tuple(str(i) for i in ids)
         slab = (tuple(f'Study {i}' for i in ids) if default_slab else tuple(x.slab)) + tuple(f'Filled {i + 1}' for i in range(k0))
-        mdf = metafopy.metadata.MetaData(
-            yi=yi_fill,
-            vi=vi_fill,
-            X=numpy.ones((yi_fill.shape[0], 1)),
-            X_names=tuple(x.coef_names),
-            slab=slab,
+        mdf = metafopy.metadata.MetaData.from_vectors(
+            yi_fill,
+            vi_fill,
+            numpy.ones((yi_fill.shape[0], 1)),
+            x.coef_names,
+            slab,
+            wi_fill,
+            ni_fill,
             keep=numpy.concatenate([md.keep, numpy.ones(k0, dtype=numpy.bool_)]),
-            weights=wi_fill,
-            ni=ni_fill,
-            intercept=True,
             slab_given=True,
             ids_all=numpy.concatenate([x.ids, int(x.ids.max()) + 1 + numpy.arange(k0)]).astype(numpy.intp),
         )

@@ -22,5 +22,5 @@ Development follows the rules, commands and skills in <https://github.com/bnomis
 
 ## Audit
 
-`bin/metafor-audit.sh` runs the whole audit against R metafor in one command and writes `wrong-or-missing.md`; `bin/metafor-audit.sh --recall` checks that it
+`bin/metafor-audit.sh` runs the whole audit against R metafor in one command and writes `wrong-or-missing.md` under the ignored `.audit/runs/<timestamp>/`; `bin/metafor-audit.sh --recall` checks that it
 reproduces what earlier audits found. See `src/audit/README.md`. Fix a miss of the recall check in the harness (`src/audit/data/`), not in a report.

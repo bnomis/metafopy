@@ -17,8 +17,10 @@ import refutil
 import metafopy
 import metafopy.core.bfgs
 import metafopy.core.integrate
+import metafopy.core.rng
 import metafopy.datasets
 import metafopy.errors
+import metafopy.methods.simulate
 import metafopy.models.sel_opt
 import metafopy.models.sel_spec
 import metafopy.models.selmodel
@@ -738,3 +740,21 @@ def test_truncest_fixed_cut_runs_no_search() -> None:
     sel = fit('hack_truncest')
     assert sel.delta[1] == 0.1
     assert sel.ll == pytest.approx(REF['fits']['hack_truncest']['ll'], abs=1e-8)
+
+
+def test_plot_boot_draws_with_the_r_exact_generator() -> None:
+    res = fit('hack_halfnorm_s')
+    out = metafopy.plot_selmodel(res, n=21, ci='boot', reps=50, seed=7, draw=False)
+    x = res
+    vd = numpy.array(x.vd, dtype=numpy.float64)
+    na = numpy.isnan(numpy.diag(vd))
+    vd[na, :] = 0
+    vd[:, na] = 0
+    dsim = metafopy.methods.simulate.mvrnorm(50, numpy.asarray(x.delta, dtype=numpy.float64), vd, metafopy.core.rng.RRandom(7))
+    dsim = numpy.clip(dsim, x.delta_min, x.delta_max)
+    ps = out.xs
+    assert x.spec.weight is not None
+    sims = numpy.array([numpy.asarray(x.spec.weight(ps, d, x.yi, x.vi, 1.0, x.alternative, x.steps), dtype=numpy.float64) for d in dsim])
+    lo, hi = numpy.quantile(sims, [x.level / 2, 1 - x.level / 2], axis=0)
+    numpy.testing.assert_allclose(out.ys_lb, numpy.maximum(lo, 0), rtol=1e-9, equal_nan=True)
+    numpy.testing.assert_allclose(out.ys_ub, numpy.maximum(hi, 0), rtol=1e-9, equal_nan=True)

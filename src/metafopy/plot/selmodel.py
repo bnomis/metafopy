@@ -14,7 +14,9 @@ import numpy
 import numpy.typing
 import pandas
 
+import metafopy.core.rng
 import metafopy.errors
+import metafopy.methods.simulate
 import metafopy.models.sel_result
 import metafopy.models.sel_spec
 import metafopy.plot.draw
@@ -73,8 +75,8 @@ def plot_selmodel(
 
     ``prec`` fixes the precision at which the function is drawn (``'min'``, ``'max'``, ``'mean'``, ``'median'`` or a number).
     ``ci`` adds a confidence region: ``'wald'`` transforms the Wald bounds of the selection parameters, ``'boot'`` (or ``True``)
-    simulates ``reps`` parameter vectors from their estimated multivariate normal distribution (with NumPy's generator seeded by
-    ``seed``, so the bounds agree with metafor only up to simulation error). ``scale`` rescales the curve to the unit interval,
+    simulates ``reps`` parameter vectors from their estimated multivariate normal distribution (with R's generator seeded by
+    ``seed``). ``scale`` rescales the curve to the unit interval,
     ``shade`` fills the region, ``rug`` marks the observed p-values and ``add`` draws into existing axes. ``draw=False`` only
     computes the curve. ``bty`` (the type of box around the plot) and ``col`` (the colour of the lines) are passed on to ``plot()`` and ``lines()`` by
     metafor. The curve is returned as ``SelPlotResult``.
@@ -104,7 +106,7 @@ def plot_selmodel(
             ``'twodash'``, ``'blank'``), R codes 0 to 6 or a matplotlib line style.
         lwd: Line widths of the selection function and of the confidence region bounds, as a pair (a single value serves the curve and the bounds get 1).
             Default: ``(2, 1)``.
-        seed: Seed of NumPy's generator for the ``'boot'`` region (not R's generator). Default: not seeded.
+        seed: Seed of the R-exact generator for the ``'boot'`` region. Default: the package generator.
         draw: If ``False`` only compute the curve and do not draw (the returned ``ax`` is ``None``). Default: ``True``.
         ax: Matplotlib axes to draw into. Default: the current axes.
         bty: Type of box around the plot: ``'o'`` (the default), ``'l'``, ``'7'``, ``'c'``, ``'u'``, ``']'`` or ``'n'`` (none). Ignored with ``add``.
@@ -176,7 +178,8 @@ def plot_selmodel(
             na = numpy.isnan(numpy.diag(vd))
             vd[na, :] = 0
             vd[:, na] = 0
-            dsim = numpy.random.default_rng(None if seed is None else int(seed)).multivariate_normal(delta, vd, size=reps)
+            gen = metafopy.core.rng.get_rng() if seed is None else metafopy.core.rng.RRandom(int(seed))
+            dsim = metafopy.methods.simulate.mvrnorm(int(reps), numpy.asarray(delta, dtype=numpy.float64), vd, gen)
             dsim = numpy.clip(dsim, x.delta_min, x.delta_max)
             sims = numpy.array([curve(d) for d in dsim])
             lo, hi = numpy.quantile(sims, [x.level / 2, 1 - x.level / 2], axis=0)

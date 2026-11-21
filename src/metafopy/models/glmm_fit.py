@@ -171,10 +171,60 @@ class ModelFit:
     qe_wld: float | None
     qe_converged: bool
     parms: int
+    """Number of parameters; equals ``p_eff`` for the fixed-effects fits of the exact conditional model (``tau2 = 0``, no variance component)."""
     p_eff: int
     k_eff: int
     method: str
     se_warn: bool = False
+
+    @classmethod
+    def assemble(
+        cls,
+        beta: FloatArray,
+        vb: FloatArray,
+        *,
+        p: int,
+        parms: int,
+        p_eff: int,
+        k_eff: int,
+        method: str,
+        ll_fe: float,
+        ll_qe: float,
+        qe: tuple[FloatArray, FloatArray, float | None, bool],
+        tau2: float = 0.0,
+        sigma2: float = NAN,
+        rho: float = NAN,
+        se_tau2: float = NAN,
+        ci_tau2: tuple[float, float] = (NAN, NAN),
+        ll_ml: float = NAN,
+    ) -> ModelFit:
+        """The fit with the first ``p`` coefficients of ``beta`` and their block of ``vb``; the variance components not given are missing.
+
+        ``qe`` is ``(b2_qe, vb2_qe, qe_wld, qe_converged)``, the saturated model's extra coefficients, their covariance matrix,
+        its Wald statistic (``None`` when not computed) and whether it converged.
+        """
+        b2, vb2, qe_wld, qe_converged = qe
+        return cls(
+            beta=beta[:p],
+            vb=vb[:p, :p],
+            tau2=tau2,
+            sigma2=sigma2,
+            rho=rho,
+            se_tau2=se_tau2,
+            ci_lb_tau2=ci_tau2[0],
+            ci_ub_tau2=ci_tau2[1],
+            ll_fe=ll_fe,
+            ll_qe=ll_qe,
+            ll_ml=ll_ml,
+            b2_qe=b2,
+            vb2_qe=vb2,
+            qe_wld=qe_wld,
+            qe_converged=qe_converged,
+            parms=parms,
+            p_eff=p_eff,
+            k_eff=k_eff,
+            method=method,
+        )
 
 
 def interleave(first: FloatArray, second: FloatArray) -> FloatArray:
@@ -189,6 +239,22 @@ def study_dummies(k: int) -> FloatArray:
 
 def empty_vcov() -> FloatArray:
     return numpy.zeros((0, 0))
+
+
+# auditme: accept[passthrough-shim] reorders GLMMProblem's arguments and defaults `structure` for five callers
+def mixed_problem(
+    X: FloatArray,
+    y: FloatArray,
+    size: FloatArray | None,
+    offset: FloatArray,
+    study: IntArray,
+    Z: FloatArray,
+    family: metafopy.core.glm.Family,
+    link: metafopy.core.glm.Link,
+    structure: metafopy.core.glmm.Structure = 'scalar',
+) -> metafopy.core.glmm.GLMMProblem:
+    """The mixed-model problem of ``study`` clusters with the random-effects design ``Z`` (one random intercept unless ``structure`` says otherwise)."""
+    return metafopy.core.glmm.GLMMProblem(X, y, size, offset, study, Z, family, structure, link)
 
 
 def fit_mixed(
@@ -298,26 +364,18 @@ def fixed_effects_result(
 ) -> ModelFit:
     """``ModelFit`` for the fixed-effects methods taken from a ``glm`` fit (``tau2 = 0``)."""
     ll_qe, b2, vb2, converged = qe
-    return ModelFit(
-        beta=fit.coef[:p],
-        vb=fit.vcov[:p, :p],
-        tau2=0.0,
-        sigma2=sigma2,
-        rho=NAN,
-        se_tau2=NAN,
-        ci_lb_tau2=NAN,
-        ci_ub_tau2=NAN,
-        ll_fe=fit.loglik,
-        ll_qe=ll_qe,
-        ll_ml=NAN,
-        b2_qe=b2,
-        vb2_qe=vb2,
-        qe_wld=None,
-        qe_converged=converged,
+    return ModelFit.assemble(
+        fit.coef,
+        fit.vcov,
+        p=p,
         parms=parms,
         p_eff=p_eff,
         k_eff=k_eff,
         method='FE',
+        sigma2=sigma2,
+        ll_fe=fit.loglik,
+        ll_qe=ll_qe,
+        qe=(b2, vb2, None, converged),
     )
 
 
@@ -396,29 +454,22 @@ def unconditional_fixed_study(
         ll_qe, b2, vb2, qe_ok, _ = saturated_glm(X_qe, y, size, offset, family, link, k + p)
     if spec.method != 'ML':
         return fixed_effects_result(fe, p, p + k, p + k, 2 * k, NAN, (ll_qe, b2, vb2, qe_ok))
-    problem = metafopy.core.glmm.GLMMProblem(numpy.column_stack([X_fit, dummies]), y, size, offset, study, group[:, None], family, 'scalar', link)
+    problem = mixed_problem(numpy.column_stack([X_fit, dummies]), y, size, offset, study, group[:, None], family, link)
     ml = fit_mixed(spec, problem)
     ll_ml = ml_loglik(spec, ml, ll_qe, nan_falls_back=True)
-    return ModelFit(
-        beta=ml.beta[:p],
-        vb=ml.vcov[:p, :p],
-        tau2=float(ml.theta[0] ** 2),
-        sigma2=NAN,
-        rho=NAN,
-        se_tau2=NAN,
-        ci_lb_tau2=NAN,
-        ci_ub_tau2=NAN,
-        ll_fe=fe.loglik,
-        ll_qe=ll_qe,
-        ll_ml=ll_ml,
-        b2_qe=b2,
-        vb2_qe=vb2,
-        qe_wld=None,
-        qe_converged=qe_ok,
+    return ModelFit.assemble(
+        ml.beta,
+        ml.vcov,
+        p=p,
         parms=p + k + 1,
         p_eff=p + k,
         k_eff=2 * k,
         method='ML',
+        tau2=float(ml.theta[0] ** 2),
+        ll_fe=fe.loglik,
+        ll_qe=ll_qe,
+        ll_ml=ll_ml,
+        qe=(b2, vb2, None, qe_ok),
     )
 
 
@@ -438,7 +489,7 @@ def unconditional_random_study(
     family, link = family_link
     nagq = 1 if spec.method == 'ML' and spec.control.package == 'lme4' else spec.nagq
     ones = const
-    fe_problem = metafopy.core.glmm.GLMMProblem(numpy.column_stack([X_fit, const]), y, size, offset, study, ones, family, 'scalar', link)
+    fe_problem = mixed_problem(numpy.column_stack([X_fit, const]), y, size, offset, study, ones, family, link)
     fe = fit_mixed(spec, fe_problem, nagq=nagq)
     ll_qe, b2, vb2, qe_ok = fe.loglik, numpy.zeros(0), empty_vcov(), True
     if k > 1:
@@ -446,7 +497,7 @@ def unconditional_random_study(
         X_qe = numpy.column_stack([X_fit, const, interaction])
         probe = metafopy.core.glm.glm_fit(X_qe, y, family=family, size=size, offset=offset, link=link)
         X_qe = X_qe[:, ~probe.aliased]
-        qe_problem = metafopy.core.glmm.GLMMProblem(X_qe, y, size, offset, study, ones, family, 'scalar', link)
+        qe_problem = mixed_problem(X_qe, y, size, offset, study, ones, family, link)
         try:
             d0 = fe.covariance() if family == 'binomial' else None
             qe = fit_mixed(spec, qe_problem, nagq=nagq, theta0=fe.theta, d0=d0, max_coef=GLMMADAPTIVE_MAX_COEF_SATURATED)
@@ -455,57 +506,42 @@ def unconditional_random_study(
             warnings.warn(SATURATED_WARNING, stacklevel=3)
             ll_qe, b2, vb2, qe_ok = NAN, numpy.zeros(0), empty_vcov(), False
     if spec.method != 'ML':
-        return ModelFit(
-            beta=fe.beta[:p],
-            vb=fe.vcov[:p, :p],
-            tau2=0.0,
-            sigma2=float(fe.theta[0] ** 2),
-            rho=NAN,
-            se_tau2=NAN,
-            ci_lb_tau2=NAN,
-            ci_ub_tau2=NAN,
-            ll_fe=fe.loglik,
-            ll_qe=ll_qe,
-            ll_ml=NAN,
-            b2_qe=b2,
-            vb2_qe=vb2,
-            qe_wld=None,
-            qe_converged=qe_ok,
+        return ModelFit.assemble(
+            fe.beta,
+            fe.vcov,
+            p=p,
             parms=p + 2,
             p_eff=p + 1,
             k_eff=2 * k,
             method='FE',
+            sigma2=float(fe.theta[0] ** 2),
+            ll_fe=fe.loglik,
+            ll_qe=ll_qe,
+            qe=(b2, vb2, None, qe_ok),
         )
     Z = numpy.column_stack([numpy.ones(2 * k), group])
-    ml_problem = metafopy.core.glmm.GLMMProblem(
-        numpy.column_stack([X_fit, const]), y, size, offset, study, Z, family, 'correlated' if spec.cor else 'independent', link
-    )
+    ml_problem = mixed_problem(numpy.column_stack([X_fit, const]), y, size, offset, study, Z, family, link, 'correlated' if spec.cor else 'independent')
     ml = fit_mixed(
         spec, ml_problem, nagq=1 if spec.control.package == 'lme4' else spec.nagq, max_coef=GLMMADAPTIVE_MAX_COEF_SATURATED if k > 1 else GLMMADAPTIVE_MAX_COEF
     )
     cov = ml.covariance()
     sigma2, tau2 = float(cov[0, 0]), float(cov[1, 1])
     rho = float(cov[0, 1] / math.sqrt(tau2 * sigma2)) if spec.cor and tau2 * sigma2 > 0 else NAN
-    return ModelFit(
-        beta=ml.beta[:p],
-        vb=ml.vcov[:p, :p],
-        tau2=tau2,
-        sigma2=sigma2,
-        rho=rho,
-        se_tau2=NAN,
-        ci_lb_tau2=NAN,
-        ci_ub_tau2=NAN,
-        ll_fe=fe.loglik,
-        ll_qe=ll_qe,
-        ll_ml=ml.loglik,
-        b2_qe=b2,
-        vb2_qe=vb2,
-        qe_wld=None,
-        qe_converged=qe_ok,
+    return ModelFit.assemble(
+        ml.beta,
+        ml.vcov,
+        p=p,
         parms=p + 1 + 2,
         p_eff=p + 1,
         k_eff=2 * k,
         method='ML',
+        tau2=tau2,
+        sigma2=sigma2,
+        rho=rho,
+        ll_fe=fe.loglik,
+        ll_qe=ll_qe,
+        ll_ml=ml.loglik,
+        qe=(b2, vb2, None, qe_ok),
     )
 
 
@@ -560,31 +596,24 @@ def single_level(spec: FitSpec) -> SingleLevel:
         ll_qe, b2, vb2, qe_ok, qe_fit = saturated_glm(X_qe, y, size, offset, family, link, p)
     if spec.method != 'ML':
         return SingleLevel(fixed_effects_result(fe, p, p, p, k, NAN, (ll_qe, b2, vb2, qe_ok)), fe, qe_fit, X_qe, fe.coef[:p], 0.0)
-    problem = metafopy.core.glmm.GLMMProblem(X, y, size, offset, numpy.arange(k), numpy.ones((k, 1)), family, 'scalar', link)
+    problem = mixed_problem(X, y, size, offset, numpy.arange(k), numpy.ones((k, 1)), family, link)
     ml = fit_mixed(spec, problem)
     # auditme: accept[literal-duplication] option and column lists repeat as metafor repeats them
     ll_ml = ml_loglik(spec, ml, ll_qe, nan_falls_back=spec.measure in ('OR', 'IRR'))
     tau2 = float(ml.theta[0] ** 2)
-    fit = ModelFit(
-        beta=ml.beta[:p],
-        vb=ml.vcov[:p, :p],
-        tau2=tau2,
-        sigma2=NAN,
-        rho=NAN,
-        se_tau2=NAN,
-        ci_lb_tau2=NAN,
-        ci_ub_tau2=NAN,
-        ll_fe=fe.loglik,
-        ll_qe=ll_qe,
-        ll_ml=ll_ml,
-        b2_qe=b2,
-        vb2_qe=vb2,
-        qe_wld=None,
-        qe_converged=qe_ok,
+    fit = ModelFit.assemble(
+        ml.beta,
+        ml.vcov,
+        p=p,
         parms=p + 1,
         p_eff=p,
         k_eff=k,
         method='ML',
+        tau2=tau2,
+        ll_fe=fe.loglik,
+        ll_qe=ll_qe,
+        ll_ml=ll_ml,
+        qe=(b2, vb2, None, qe_ok),
     )
     return SingleLevel(fit, fe, qe_fit, X_qe, ml.beta[:p], tau2)
 
@@ -689,7 +718,7 @@ def conditional_logistic(spec: FitSpec, base: SingleLevel) -> ModelFit:
                 warnings.warn(message, stacklevel=4)
         ll_qe = loglik(res_qe, X_qe)
         b2, vb2, qe_ok = res_qe.coef[p:], res_qe.vcov[p:, p:], True
-    return ModelFit(res_fe.coef[:p], res_fe.vcov[:p, :p], 0.0, NAN, NAN, NAN, NAN, NAN, ll_fe, ll_qe, NAN, b2, vb2, None, qe_ok, p, p, k, 'FE')
+    return ModelFit.assemble(res_fe.coef, res_fe.vcov, p=p, parms=p, p_eff=p, k_eff=k, method='FE', ll_fe=ll_fe, ll_qe=ll_qe, qe=(b2, vb2, None, qe_ok))
 
 
 def search(
@@ -801,7 +830,7 @@ def exact_conditional(spec: FitSpec, base: SingleLevel) -> ModelFit:
 
     if spec.method != 'ML':
         vb = invert_hessian(h_fe, spec.method)
-        return ModelFit(x_fe, vb, 0.0, NAN, NAN, NAN, NAN, NAN, ll_fe, ll_qe, NAN, b2, vb2, qe_wld, qe_ok, p, p, k, 'FE')
+        return ModelFit.assemble(x_fe, vb, p=p, parms=p, p_eff=p, k_eff=k, method='FE', ll_fe=ll_fe, ll_qe=ll_qe, qe=(b2, vb2, qe_wld, qe_ok))
 
     def f_ml(par: FloatArray) -> float:
         return metafopy.core.nchg.neg_loglik(par, tables, spec.X, True, smooth)
@@ -817,7 +846,21 @@ def exact_conditional(spec: FitSpec, base: SingleLevel) -> ModelFit:
     tau2 = math.exp(float(x_ml[p]))
     if tau2 < ctl.tau2tol:
         vb = invert_hessian(h_fe, 'ML')
-        return ModelFit(x_fe, vb, tau2, NAN, NAN, 0.0, NAN, NAN, ll_fe, ll_qe, ll_ml, b2, vb2, qe_wld, qe_ok, p + 1, p, k, 'ML')
+        return ModelFit.assemble(
+            x_fe,
+            vb,
+            p=p,
+            parms=p + 1,
+            p_eff=p,
+            k_eff=k,
+            method='ML',
+            tau2=tau2,
+            se_tau2=0.0,
+            ll_fe=ll_fe,
+            ll_qe=ll_qe,
+            ll_ml=ll_ml,
+            qe=(b2, vb2, qe_wld, qe_ok),
+        )
     if numerical:
         h_ml = metafopy.core.numderiv.hessian_by_package(f_ml_hessian, x_ml, hesspack, hessian_ctrl)
     else:
@@ -832,7 +875,22 @@ def exact_conditional(spec: FitSpec, base: SingleLevel) -> ModelFit:
         crit = float(scipy.stats.norm.isf(spec.alpha / 2))
         ci_lb = math.exp(float(x_ml[p]) - crit * math.sqrt(float(vb_full[p, p])))
         ci_ub = math.exp(float(x_ml[p]) + crit * math.sqrt(float(vb_full[p, p])))
-    return ModelFit(x_ml[:p], vb, tau2, NAN, NAN, se_tau2, ci_lb, ci_ub, ll_fe, ll_qe, ll_ml, b2, vb2, qe_wld, qe_ok, p + 1, p, k, 'ML')
+    return ModelFit.assemble(
+        x_ml,
+        vb,
+        p=p,
+        parms=p + 1,
+        p_eff=p,
+        k_eff=k,
+        method='ML',
+        tau2=tau2,
+        se_tau2=se_tau2,
+        ci_tau2=(ci_lb, ci_ub),
+        ll_fe=ll_fe,
+        ll_qe=ll_qe,
+        ll_ml=ll_ml,
+        qe=(b2, vb2, qe_wld, qe_ok),
+    )
 
 
 def fit_model(spec: FitSpec) -> ModelFit:

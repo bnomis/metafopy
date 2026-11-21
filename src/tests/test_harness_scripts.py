@@ -1,6 +1,7 @@
 """The scripts step of the audit harness (``src/audit/scripts.py``): a process that dies in a script must not stop the step."""
 
 import collections
+import collections.abc
 import json
 import os
 import pathlib
@@ -12,6 +13,7 @@ import refutil
 
 import audit.config
 import audit.engine
+import audit.errors
 import audit.rdriver
 import audit.scripts
 
@@ -37,7 +39,7 @@ def scripts() -> list[audit.scripts.Script]:
     return [audit.scripts.Script(f'rd/t{i}', 'rd', f't{i}', f'man/t{i}.Rd') for i in range(3)]
 
 
-def stand_in(mode: str):  # type: ignore[no-untyped-def]
+def stand_in(mode: str) -> collections.abc.Callable[..., subprocess.Popen[bytes]]:
     def start(script: pathlib.Path, log: pathlib.Path, *args: str) -> subprocess.Popen[bytes]:
         # args: 'run', source, scripts path, out path, timeout
         return subprocess.Popen([sys.executable, '-c', R_STAND_IN, args[2], args[3], mode], stdout=log.open('ab'), stderr=subprocess.STDOUT)
@@ -66,7 +68,7 @@ def test_r_side_writes_a_record_for_every_script(tmp_path: pathlib.Path, monkeyp
 
 def test_list_failure_names_its_log(tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(audit.rdriver, 'rscript_command', lambda script, *args: [sys.executable, '-c', 'print("boom")'])
-    with pytest.raises(RuntimeError, match=r'list\.log'):
+    with pytest.raises(audit.errors.HarnessError, match=r'list\.log'):
         audit.scripts.list_scripts(tmp_path, tmp_path, None)
 
 

@@ -95,8 +95,10 @@ def forest_chart(
         studies = studies.sort_values('est', kind='stable')
     elif order == 'weight':
         studies = studies.sort_values('weight', ascending=False, kind='stable')
-    else:
+    elif order == 'input':
         studies = studies.sort_values('order', kind='stable')
+    else:
+        typing.assert_never(order)
     rows = list(studies['row'])
     pooled = data.pooled.copy()
     pooled['est_text'] = [f'{e:.2f} [{lo:.2f}, {hi:.2f}]' for e, lo, hi in zip(pooled['estimate'], pooled['ci_lb'], pooled['ci_ub'], strict=True)]

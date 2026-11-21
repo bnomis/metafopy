@@ -282,10 +282,18 @@ def regtest(
         extra = numpy.sqrt(v)
     elif predictor == 'vi':
         extra = v
+    elif n is None:
+        raise metafopy.errors.InputError('No sample size information available to use this predictor.')
+    elif predictor == 'ni':
+        extra = n
+    elif predictor == 'ninv':
+        extra = 1 / n
+    elif predictor == 'sqrtni':
+        extra = numpy.sqrt(n)
+    elif predictor == 'sqrtninv':
+        extra = 1 / numpy.sqrt(n)
     else:
-        if n is None:
-            raise metafopy.errors.InputError('No sample size information available to use this predictor.')
-        extra = {'ni': n, 'ninv': 1 / n, 'sqrtni': numpy.sqrt(n), 'sqrtninv': 1 / numpy.sqrt(n)}[predictor]
+        typing.assert_never(predictor)
     Xn = numpy.column_stack([X, extra])
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
     names = (*coef_names, predictor if predictor in ('sei', 'vi', 'ninv') else 'ni')
@@ -315,7 +323,7 @@ def regtest(
         pval = float(fit.pval[p])
         ddf = fit.ddf
         meth_out = fit.method
-    else:
+    elif model == 'lm':
         w = 1 / v
         k = yi.shape[0]
         sw = numpy.sqrt(w)
@@ -330,6 +338,8 @@ def regtest(
         pval = float(2 * scipy.stats.t.sf(abs(zval), df))
         ddf = df
         meth_out = meth
+    else:
+        typing.assert_never(model)
 
     est = ci_lb = ci_ub = None
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
@@ -378,17 +388,7 @@ def fit_vectors(
     tau2: float | None,
     control: typing.Any,
 ) -> metafopy.models.rma_uni.RMAResult:
-    md = metafopy.metadata.MetaData(
-        yi=yi,
-        vi=vi,
-        X=X,
-        X_names=tuple(names),
-        slab=tuple(slab),
-        keep=numpy.ones(yi.shape[0], dtype=numpy.bool_),
-        weights=weights,
-        ni=ni,
-        intercept=True,
-    )
+    md = metafopy.metadata.MetaData.from_vectors(yi, vi, X, names, slab, weights, ni)
     ctrl = dataclasses.asdict(control) if dataclasses.is_dataclass(control) and not isinstance(control, type) else control
     return metafopy.models.rma_uni.fit_rma_uni(
         md, method=method, weighted=weighted, test=cast_test(test), level=1 - alpha, tau2=tau2, control=ctrl, skip_r2=False

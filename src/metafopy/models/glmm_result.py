@@ -84,6 +84,7 @@ class GLMMResult(metafopy.models.fit_methods.TableFields, metafopy.models.fit_me
     int_only: bool
     int_incl: bool
     intercept: bool
+    """Equals ``int_incl``: both record whether the model has an intercept."""
     X: FloatArray
     X_f: FloatArray
     coef_names: tuple[str, ...]

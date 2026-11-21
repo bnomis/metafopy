@@ -121,8 +121,9 @@ def qqnorm(
         The plotted theoretical quantiles and residuals, the envelope and the axes.
 
     Raises:
-        metafopy.errors.InputError: ``type`` or ``na_action`` is unknown, ``k`` is 1, ``label`` is a number outside 1 to ``k``, ``level`` is outside 0 to
-            100, or ``'fail'`` and studies were left out of the fit.
+        metafopy.errors.InputError: ``type`` or ``na_action`` is unknown, ``k`` is 1,
+            ``label`` is a number outside 1 to ``k`` or a string that selects no points (no envelope is drawn),
+            ``level`` is outside 0 to 100, or ``'fail'`` and studies were left out of the fit.
         metafopy.errors.NotSupportedError: ``y`` is an ``rma.mv``, ``rma.glmm``, robust or selection-model fit (``qqnorm.rma.mv`` only stops in metafor).
         metafopy.errors.ArgumentError: ``y`` is not a fitted model.
         metafopy.errors.InternalError: an envelope is drawn for a model class that has no hat matrix.
@@ -239,8 +240,8 @@ def qqnorm(
             if int(numpy.sum(dev > dev[i])) < nlab:
                 place(i)
     else:
-        assert temp_lb is not None
-        assert temp_ub is not None
+        if temp_lb is None or temp_ub is None:
+            raise metafopy.errors.InputError("Unrecognised 'label' argument: use True, False, 'all', 'none', 'out' (with an envelope) or a number from 1 to k.")
         for i in range(k):
             if pos_y[i] < temp_lb[1][i] or pos_y[i] > temp_ub[1][i]:
                 place(i)

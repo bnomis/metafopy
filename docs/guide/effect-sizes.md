@@ -101,8 +101,8 @@ print(predict(res, transf=numpy.tanh))
 ```
 
 ```text
-     pred   ci.lb   ci.ub   pi.lb   pi.ub
-0  0.1488  0.0878  0.2087 -0.0371  0.3248
+   pred  ci.lb  ci.ub   pi.lb  pi.ub
+ 0.1488 0.0878 0.2087 -0.0371 0.3248
 ```
 
 For proportions, the logit (`PLO`) is a common choice, with `transf.ilogit` to go back:
@@ -116,8 +116,8 @@ print(predict(rma('yi', 'vi', data=pri), transf=transf.ilogit))
 ```
 
 ```text
-     pred   ci.lb   ci.ub   pi.lb   pi.ub
-0  0.7575  0.6605  0.8337  0.4661  0.9179
+   pred  ci.lb  ci.ub  pi.lb  pi.ub
+ 0.7575 0.6605 0.8337 0.4661 0.9179
 ```
 
 ## Precomputed effect sizes

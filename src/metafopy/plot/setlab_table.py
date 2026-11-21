@@ -5,6 +5,7 @@ measure and each ``gentype``/``short`` combination (key ``'<gentype><s|l>'``) it
 without transformation (``none``), with an unrecognised ``transf``/``atransf`` function (``t``/``a``)
 and the labels for recognised functions (``ex``, keyed ``'t:<R function name>'`` / ``'a:<R function name>'``).
 Plotmath expressions were converted to mathtext.
+See https://github.com/wviechtb/metafor/blob/master/R/misc.func.hidden.r.
 """
 
 import types

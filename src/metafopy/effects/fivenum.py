@@ -153,6 +153,8 @@ def conv_fivenum(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
         metafopy.errors.EstimationError: ``'blue'`` met a singular covariance matrix.
+        metafopy.errors.NotFoundError: a column named by an argument does not exist in ``data``.
+        metafopy.errors.ArgumentError: an argument is not numeric.
     """
     if min is None and q1 is None and median is None and q3 is None and max is None:
         raise metafopy.errors.InputError("Must specify at least some of these arguments: 'min', 'q1', 'median', 'q3', 'max'.")

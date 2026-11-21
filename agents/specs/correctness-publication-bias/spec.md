@@ -1,8 +1,9 @@
 # Correctness tests: publication bias
 
-**Version:** 1.1
+**Version:** 1.2
 **Status:** implemented
 **Date:** 2026-11-12
+**Corrected:** 2026-11-21 (version 1.2): statements that no longer matched the code, from audit review-1 (`agents/audit-reviews/review-1.md`, finding group F6)
 
 The [correctness tests](../correctness-tests/spec.md) (implemented) check `escalc`, `rma_uni`, `rma_mh` and `rma_peto` against the publications that
 define them. Their introduction says "Later specs extend the same harness to `rma_mv`, `rma_glmm`, `rma_ls`, the bias methods, `selmodel` and `robust`";
@@ -11,16 +12,16 @@ publication-bias methods are checked only against R metafor. This spec covers th
 `ranktest` (Begg and Mazumdar), `trimfill` (Duval and Tweedie), `fsn` (fail-safe N), `tes` (test of excess significance), `hc` (Henmi and Copas) and
 `selmodel` (step-function, parametric and truncation selection models). The rule is unchanged (`NOTES.md`, decided 2026-11-11; `claude/rules/metafopy.md`):
 the defining publication is the first oracle and metafor the second, and metafopy's output changes only after the user confirms each disagreement.
-The sibling specs `correctness-mv-robust`, `correctness-glmm` and `correctness-location-scale` cover the other models.
+The sibling specs [correctness-mv-robust](../correctness-mv-robust/spec.md), [correctness-glmm](../correctness-glmm/spec.md) and [correctness-location-scale](../correctness-location-scale/spec.md) cover the other models.
 
 The spec reuses the harness as it stands: the case format, the five kinds of evidence and their tolerances, the rule that only `published` and
 `derived` cases satisfy the gate, `formulas.py` importing nothing from metafopy, and the mismatch flow (strict xfail, a review document, the user's
 answer before any fix). It adds case files, formulas, `check` functions, a fitted-model `setup` and coverage items.
 
-**Prerequisite:** the `TODO.md` item "The correctness harness cannot check exp(beta), prediction intervals or test-based tau2 and I2 intervals" adds
+**Prerequisite:** the item "The correctness harness cannot check exp(beta), prediction intervals or test-based tau2 and I2 intervals" (done 2026-11-14, now in `DONE.md`) added
 `check` functions for a back-transformed estimate, `predict` intervals and `confint` I2 and H2 bounds. Borenstein et al. and Preston et al. print
-pooled ratios, so the published cases that use them need it. Check it is in place: `grep -n 'def ' src/tests/correctness/test_derived.py` lists a
-back-transform check. Until then those cases wait; the others do not.
+pooled ratios, so the published cases that use them need it. Check it is in place: `grep -n 'def ' src/tests/correctness/test_published.py` lists a
+back-transform check (`back_transformed`). Until then those cases wait; the others do not.
 
 ## Module location
 
@@ -129,7 +130,7 @@ off in the last digit. The misses are recorded in `mismatches.md`.
 
 ## Error handling
 
-- `setup` with a key other than `where`, `drop`, `escalc`, `rma_uni`, a `where` column the dataset lacks, or a `drop` index out of range raises
+- `setup` with a key other than `where`, `drop`, `escalc`, `rma_uni`, `subset`, `tree_r`, `vblocks` or `vconst` (`SETUP_KEYS` in `cases.py`), a `where` column the dataset lacks, or a `drop` index out of range raises
   `ValueError` naming file and case.
 - `literal_options` on a parameter whose annotation is not a `Literal` (or `Literal | None`) raises `TypeError` naming the function and parameter,
   so a refactor that removes the `Literal` fails the gate instead of shrinking it.

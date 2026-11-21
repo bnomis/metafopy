@@ -823,7 +823,7 @@ def rma_mv(
         A_s = None if A_s is None else metafopy.models.mv_inputs.take_square(A_s, keep)
         vi = vi[keep]
         X_s = X_s[keep]
-        sinfo.factors = [f.take(keep) for f in sinfo.factors]
+        sinfo = dataclasses.replace(sinfo, factors=[f.take(keep) for f in sinfo.factors])
         k = int(keep.shape[0])
         warnings.warn(f'{int(has_na.sum())} {"rows" if has_na.sum() > 1 else "row"} with NAs omitted from model fitting.', stacklevel=2)
     if k <= 1:
@@ -891,7 +891,7 @@ def rma_mv(
     beta_est = numpy.isnan(beta_arg)
 
     # ~ 1 | id terms after missing values were dropped
-    sinfo.factors = [f.drop_unused() for f in sinfo.factors]
+    sinfo = dataclasses.replace(sinfo, factors=[f.drop_unused() for f in sinfo.factors])
     s_nlevels = tuple(f.nlevels for f in sinfo.factors)
     s_levels = tuple(tuple(f.levels) for f in sinfo.factors)
     sigma2_v = sinfo.sigma2.copy()

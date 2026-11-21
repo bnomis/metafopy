@@ -56,7 +56,12 @@ type Fit = (
 @dataclasses.dataclass(frozen=True, slots=True)
 class NobsAll:
     """``nobs(all=True)``: the numbers of studies, supplied rows, rows in the subset, rows without missing values,
-    effective observations and residual degrees of freedom."""
+    effective observations and residual degrees of freedom.
+
+    ``studies`` and ``not_na`` are both the number of studies the model used (``obj.k``), so they are always equal here; ``not_na`` is kept as
+    its own field to mirror the entry of metafor's ``nobs(all=TRUE)``. ``data`` equals ``studies`` when no row was dropped for missing values or
+    by ``subset``.
+    """
 
     studies: int
     data: int

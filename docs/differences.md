@@ -216,6 +216,7 @@ print(type(dat).__name__, dat.attrs['measure'])
 ```
 
 ```text
+   trial            author  year  tpos  ...  ablat   alloc        yi        vi
 0      1           Aronson  1948     4  ...     44  random -0.889311  0.325585
 1      2  Ferguson & Simes  1949     6  ...     55  random -1.585389  0.194581
 2      3   Rosenthal et al  1960     3  ...     42  random -1.348073  0.415368
@@ -300,11 +301,13 @@ Q(df = 12) = 152.23, p-val < .01
 Model Results:
 
 estimate    se   zval  pval  ci.lb  ci.ub
+   -0.71  0.18  -3.97  <.01  -1.07  -0.36  ***
 
 ---
 Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 
+    pred     se  ci.lb  ci.ub  pi.lb pi.ub
  -0.7145 0.1798 -1.067 -0.362 -1.867 0.438
 ```
 
@@ -345,7 +348,8 @@ AttributeError: module 'metafopy' has no attribute 'reporter'
 ## Optimiser stop points
 
 metafor maximises some likelihoods with R's `nlminb` (the PORT library) or `optim`. metafopy uses SciPy's optimisers, and ports
-R's `optim` BFGS and Nelder-Mead only for `rma_glmm` (`CM.EL`) and `selmodel`. PORT is not ported. Where the likelihood has a single clear maximum the two agree
+R's `optim` BFGS and Nelder-Mead where metafor uses them: `rma_glmm` (`CM.EL`), `selmodel`, location-scale fits with an identity link,
+`escalc(measure='RTET')`, `conv_fivenum`'s maximum-likelihood method and the diagnostic-cell solver of `conv_2x2`. PORT is not ported. Where the likelihood has a single clear maximum the two agree
 to about 1e-4 relative or better. Where it is flat, or has several maxima, the two stop at different points, and the examples
 below are those cases.
 
@@ -395,7 +399,7 @@ print(res.rho)
 
 ```text
 'log Lik.' -31.86847 (df=4)
-[3.13185220e+03 7.94227959e-04]
+[3.13185214e+03 7.94227943e-04]
 [-1.]
 ```
 
@@ -623,11 +627,20 @@ ulp below, so the p-value is 0.928 in R and 0.927 here.
 
 *Why:* R's answer depends on which way a rounding error falls (checked 2026-11-05, R 4.6.2, metafor 5.2-1).
 
+### emmeans mvt adjustment: the integrator's draws
+
+The `mvt` adjustment of the emmeans functions integrates the multivariate t (or normal) distribution by randomised quasi-Monte
+Carlo, as emmeans does through `mvtnorm`. metafopy seeds SciPy's integrator with a fixed seed (`MVT_SEED` in
+`metafopy.methods.emm_adjust`), which cannot reproduce R's `mvtnorm` draw for draw, so adjusted p-values and critical values
+agree with R only up to the integrator's error.
+
+*Why:* SciPy's integrator takes a NumPy generator, not R's, so the draws cannot be the same.
+
 ### selmodel on a flat likelihood
 
 `selmodel(type='beta')` on `dat.baskerville2012` has `tau2` near zero and a `delta` on its lower bound (both languages warn
 about it). The log-likelihood is identical to the printed digits and `tau2` agrees to six digits, but `delta`, which sits on its
-lower bound, is 1.000e-05 in R and 1.022e-05 here.
+lower bound, is 1.000e-05 in R and 1.013e-05 here.
 
 *Why:* R's PORT stops on `rel.tol` of 1e-10 on a flat likelihood, and SciPy's optimiser stops a little elsewhere on the same
 plateau.
@@ -677,8 +690,8 @@ print(sel.delta)
 UserWarning: One or more 'delta' estimates are (almost) equal to their lower or upper bound.
 Treat results with caution (or consider adjusting 'delta.min' and/or 'delta.max').
 'log Lik.' -1.945572 (df=4)
-0.057367159330093655
-[1.02207630e-05 1.74123073e+00]
+0.057367183357824106
+[1.01337247e-05 1.74123884e+00]
 ```
 
 </div>
@@ -950,6 +963,7 @@ print(conv_fivenum(min='mn', q1='q1', median='md', q3='q3', max='mx', n='n', dat
 ```
 
 ```text
+    n  mn  q1  md  q3  mx      mean        sd
 0  30   1   3   5   8  14  5.832434  3.930443
 1  40   2   4   6   9  16  6.905464  4.144375
 ```

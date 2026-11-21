@@ -166,6 +166,9 @@ def permutest(
     Raises:
         metafopy.errors.ArgumentError: there is no implementation for the class of ``x``.
         TypeError: the implementation does not accept a keyword argument.
+        metafopy.errors.InputError: raised by an implementation for an invalid argument.
+        metafopy.errors.NotSupportedError: an implementation does not support the model.
+        metafopy.errors.InternalError: an internal invariant does not hold.
     """
     raise metafopy.errors.ArgumentError(f'permutest() not implemented for {type(x).__name__}')
 

@@ -313,6 +313,7 @@ def expand_boot(boot: bool | int | collections.abc.Sequence[bool], tests: tuple[
     return [True if t in GOODNESS_OF_FIT else f for t, f in zip(tests, flags, strict=True)], 1000
 
 
+# auditme: accept[raises-section-drift] fit_view and check_class run only after is_rma(x) is true, so their ArgumentError never arises
 def hettest(
     x: metafopy.methods.fitview.Fit | numpy.typing.ArrayLike | str,
     vi: numpy.typing.ArrayLike | str | None = None,
@@ -373,7 +374,6 @@ def hettest(
         ``tau2i``, ``se_tau2i`` (Wald-type test) and the bootstrapped statistics ``statistic_boot``.
 
     Raises:
-        metafopy.errors.ArgumentError: ``x`` is not a fitted model.
         metafopy.errors.InputError: an argument or the data is invalid (unknown ``test``, ``method`` or ``control`` entry, wrong length of ``boot`` or
             ``tau2i_init``, ``k <= 1``, a model with moderators), the null model or the ``tau^2_i`` could not be estimated, or studies are missing and
             ``na_action='fail'``.

@@ -125,6 +125,8 @@ def collect(
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.NotFoundError: a column named by an argument does not exist in ``data``.
+        metafopy.errors.ArgumentError: an argument is not numeric.
     """
     E = metafopy.errors.InputError
     fam = family(measure)
@@ -433,6 +435,8 @@ def to_long(
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.NotFoundError: a column named by an argument does not exist in ``data``.
+        metafopy.errors.ArgumentError: an argument is not numeric.
     """
     measure = check_common(measure, to, na_action)
     has_data = data is not None
@@ -595,6 +599,8 @@ def to_table(
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.NotFoundError: a column named by an argument does not exist in ``data``.
+        metafopy.errors.ArgumentError: an argument is not numeric.
     """
     measure = check_common(measure, to, na_action)
     if data is not None and not isinstance(data, pandas.DataFrame):
@@ -747,9 +753,10 @@ def to_wide(
             gpos.append(pos)
     gpos = [grp_pos, *[p for p in gpos if p != grp_pos]]
 
+    study_groups = numpy.split(numpy.argsort(study_rank, kind='stable'), numpy.cumsum(numpy.bincount(study_rank, minlength=len(ustudy)))[:-1])
     pieces: list[pandas.DataFrame] = []
     for s in range(len(ustudy)):
-        x = data.loc[study_rank == s]
+        x = data.iloc[study_groups[s]]
         n = x.shape[0]
         left = x.iloc[: n - 1] if n > 1 else x
         right = x.iloc[[n - 1] * (n - 1), gpos] if n > 1 else pandas.DataFrame([[numpy.nan] * len(gpos)])
@@ -769,7 +776,7 @@ def to_wide(
     comp: list[str | None] = []
     design: list[str | None] = []
     for s in range(len(ustudy)):
-        g = [grps[i] for i in numpy.flatnonzero(study_rank == s)]
+        g = [grps[i] for i in study_groups[s]]
         if len(g) > 1:
             comp.extend(f'{a}-{g[-1]}' for a in g[:-1])
             design.extend(['-'.join(str(a) for a in g)] * (len(g) - 1))

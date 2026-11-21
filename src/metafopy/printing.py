@@ -226,5 +226,6 @@ class HtmlRepr:
 
     __slots__ = ()
 
+    # auditme: accept[S4] the name is fixed by IPython's display protocol
     def _repr_html_(self) -> str:  # auditme: accept[leading-underscore] the name is fixed by IPython's display protocol
         return f'<pre>{html.escape(str(self))}</pre>'

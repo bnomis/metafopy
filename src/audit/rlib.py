@@ -21,6 +21,7 @@ import matplotlib.pyplot
 import numpy
 import pandas
 
+import audit.errors
 import audit.pycall
 import audit.valuetree
 import metafopy
@@ -70,10 +71,7 @@ class Env:
                 raise UnsupportedError(f'dataset {name} is not bundled with metafopy') from e
         if name.startswith('transf.'):
             # the function itself, so that predict() and confint() recognise the integral and mode transformations that take tau2
-            try:
-                return audit.pycall.resolve_function(name, None)
-            except audit.pycall.MissingFunctionError:
-                pass
+            return audit.pycall.resolve_function(name, None)
         if name in SAME_FUNCTIONS:
             return SAME_FUNCTIONS[name]  # forest() and addpoly() recognise the transformations they can draw a distribution for by identity
         if name in BASE or name in METAFOR_FUNCTIONS:
@@ -798,13 +796,13 @@ def r_is_null(x: Value) -> Value:
 
 
 def r_stop(*args: Value, **kw: Value) -> Value:
-    raise ValueError(''.join(str(a) for a in args))
+    raise audit.errors.HarnessError(''.join(str(a) for a in args))
 
 
 def r_stopifnot(*args: Value, **kw: Value) -> Value:
     for a in args:
         if not numpy.all(numpy.asarray(a)):
-            raise ValueError('stopifnot failed')
+            raise audit.errors.HarnessError('stopifnot failed')
     return None
 
 
@@ -1235,7 +1233,7 @@ def r_assign_dimnames(x: Value, which: str, value: Value) -> Value:
     return x
 
 
-def is_text(x: Value) -> bool:
+def is_nonempty_text(x: Value) -> bool:
     arr = numpy.asarray(x)
     return arr.dtype.kind in 'USO' and arr.size > 0 and all(isinstance(v, str) for v in arr.ravel().tolist() if v is not None)
 
@@ -1250,8 +1248,8 @@ def as_text(x: Value) -> Value:
 
 def r_equal(a: Value, b: Value) -> Value:
     """``==``: a number compared with text is compared as text, as R coerces it."""
-    if is_text(a) != is_text(b):
-        a, b = (a, as_text(b)) if is_text(a) else (as_text(a), b)
+    if is_nonempty_text(a) != is_nonempty_text(b):
+        a, b = (a, as_text(b)) if is_nonempty_text(a) else (as_text(a), b)
     return numpy.equal(a, b)
 
 

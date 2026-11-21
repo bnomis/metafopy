@@ -494,6 +494,7 @@ def escalc(
         metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
         metafopy.errors.NotSupportedError: the requested combination is not implemented.
         metafopy.errors.InternalError: an internal invariant does not hold.
+        metafopy.errors.NotFoundError: a column named by an argument does not exist in ``data``.
 
     Metafor reference:
         [escalc](https://wviechtb.github.io/metafor/reference/escalc.html)

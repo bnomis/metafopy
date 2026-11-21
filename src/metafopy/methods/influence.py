@@ -223,6 +223,9 @@ def influence(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> typ
 
     Raises:
         metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
+        metafopy.errors.InputError: raised by an implementation for an invalid argument.
+        metafopy.errors.NotSupportedError: an implementation does not support the model.
+        metafopy.errors.InternalError: an internal invariant does not hold.
 
     Metafor reference:
         [influence.rma.uni](https://wviechtb.github.io/metafor/reference/influence.rma.uni.html)
@@ -314,12 +317,12 @@ def influence_fit(
         raise metafopy.errors.InputError('Missing values in results.')
     slab = x.slab
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
-    if na_action in ('exclude', 'pass'):
+    if na_action == 'exclude' or na_action == 'pass':
         (rs, df, ck, cr, td, qd, ht, wt, dfbs), slab = metafopy.methods.common.pad_to_supplied(
             x, inf['rstudent'], inf['dffits'], inf['cook.d'], inf['cov.r'], inf['tau2.del'], inf['QE.del'], inf['hat'], inf['weight'], core.dfbs
         )
         is_infl = flag(x, df, ck, ht, dfbs, core.m)
-    else:
+    elif na_action == 'omit' or na_action == 'fail':
         rs, df, ck, cr, td, qd, ht, wt, dfbs = (
             inf['rstudent'],
             inf['dffits'],
@@ -332,6 +335,8 @@ def influence_fit(
             core.dfbs,
         )
         is_infl = flag(x, df, ck, ht, dfbs, core.m)
+    else:
+        typing.assert_never(na_action)
     # metafor trims ids and not.na to the studies used under na.omit (influence.rma.uni.r)
     ids, not_na = (x.ids[x.not_na], x.not_na[x.not_na]) if na_action == 'omit' else (x.ids, x.not_na)
     return InfluenceResult(
@@ -479,6 +484,9 @@ def rstudent(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> Resi
     Raises:
         metafopy.errors.ArgumentError: there is no implementation for the class of ``model`` (there is none for location-scale models).
         TypeError: the implementation does not accept a keyword argument.
+        metafopy.errors.InputError: raised by an implementation for an invalid argument.
+        metafopy.errors.NotSupportedError: an implementation does not support the model.
+        metafopy.errors.InternalError: an internal invariant does not hold.
     """
     raise metafopy.errors.ArgumentError(f'rstudent() not implemented for {type(model).__name__}')
 
@@ -530,10 +538,12 @@ def rstudent_rma_uni(
     z = core.inf['rstudent']
     slab = model.slab
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
-    if na_action in ('exclude', 'pass'):
+    if na_action == 'exclude' or na_action == 'pass':
         (resid, se, z), slab = metafopy.methods.common.pad_to_supplied(model, core.resid, core.seresid, z)
-    else:
+    elif na_action == 'omit' or na_action == 'fail':
         resid, se = core.resid, core.seresid
+    else:
+        typing.assert_never(na_action)
     return ResidualResult(resid=resid, se=se, z=z, slab=slab, digits=metafopy.mfopt.option_digits(digits, model.digits))
 
 
@@ -557,6 +567,8 @@ def cooks_distance(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -
 
     Raises:
         metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
+        metafopy.errors.InputError: raised by an implementation for an invalid argument.
+        metafopy.errors.InternalError: an internal invariant does not hold.
 
     Metafor reference:
         [influence.rma.uni](https://wviechtb.github.io/metafor/reference/influence.rma.uni.html)
@@ -612,6 +624,9 @@ def dfbetas(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> panda
 
     Raises:
         metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
+        metafopy.errors.InputError: raised by an implementation for an invalid argument.
+        metafopy.errors.NotSupportedError: an implementation does not support the model.
+        metafopy.errors.InternalError: an internal invariant does not hold.
 
     Metafor reference:
         [influence.rma.uni](https://wviechtb.github.io/metafor/reference/influence.rma.uni.html)
@@ -663,6 +678,8 @@ def rstandard(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> Res
     Raises:
         metafopy.errors.ArgumentError: there is no implementation for the class of ``model``.
         TypeError: the implementation does not accept a keyword argument.
+        metafopy.errors.InputError: raised by an implementation for an invalid argument.
+        metafopy.errors.NotSupportedError: an implementation does not support the model.
     """
     raise metafopy.errors.ArgumentError(f'rstandard() not implemented for {type(model).__name__}')
 
@@ -721,11 +738,13 @@ def rstandard_rma_uni(
         ei = metafopy.methods.common.tzero(x.yi - x.X @ x.beta)
         M = numpy.diag(x.vi + x.tau2)
         sei = numpy.sqrt(numpy.diag(ImH @ M @ ImH.T))
-    else:
+    elif type == 'conditional':
         li = x.tau2 / (x.tau2 + x.vi)
         pred = li * x.yi + (1 - li) * (x.X @ x.beta)
         ei = x.yi - pred
         sei = numpy.sqrt(x.vi**2 / (x.vi + x.tau2) * (1 - numpy.diag(H)))
+    else:
+        typing.assert_never(type)
     if na_action == 'fail' and not x.data.keep.all():
         raise metafopy.errors.InputError('Missing values in results.')
     z = ei / sei

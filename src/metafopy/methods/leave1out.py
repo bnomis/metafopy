@@ -92,6 +92,46 @@ class Leave1outResult:
     slab_null: bool = False
     ids: numpy.typing.NDArray[numpy.intp] | None = None
 
+    @classmethod
+    def from_columns(
+        cls,
+        col: collections.abc.Mapping[str, FloatArray],
+        *,
+        tau2: FloatArray | None,
+        slab: tuple[str, ...],
+        stat_name: str,
+        digits: int,
+        transf: bool,
+        rows: numpy.typing.NDArray[typing.Any] | None = None,
+        **fields: typing.Any,
+    ) -> typing.Self:
+        """The result whose estimate, test, interval and heterogeneity columns come from ``col`` (those of :func:`collect`), restricted to ``rows`` when given.
+
+        ``fields`` holds the remaining attributes (``digit_map``, ``k``, ``order``, ``ids`` ...); it also serves the subclass :class:`CumulResult`.
+        """
+
+        def pick(key: str) -> FloatArray:
+            return col[key] if rows is None else col[key][rows]
+
+        return cls(
+            estimate=pick('estimate'),
+            se=pick('se'),
+            stat=pick('stat'),
+            pval=pick('pval'),
+            ci_lb=pick('ci_lb'),
+            ci_ub=pick('ci_ub'),
+            Q=pick('Q'),
+            Qp=pick('Qp'),
+            tau2=tau2,
+            I2=pick('I2'),
+            H2=pick('H2'),
+            slab=slab,
+            stat_name=stat_name,
+            digits=digits,
+            transf=transf,
+            **fields,
+        )
+
     @property
     def zval(self) -> FloatArray:
         """The test statistics of the pooled effects, metafor's ``zval`` (``tval`` for the t-based tests, see :attr:`stat_name`)."""
@@ -190,6 +230,9 @@ def leave1out(x: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> Leave1o
 
     Raises:
         metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
+        metafopy.errors.InputError: raised by an implementation for an invalid argument.
+        metafopy.errors.NotSupportedError: an implementation does not support the model.
+        metafopy.errors.InternalError: an internal invariant does not hold.
 
     Metafor reference:
         [leave1out](https://wviechtb.github.io/metafor/reference/leave1out.html)
@@ -312,18 +355,9 @@ def leave1out_rma_uni(
         col.update(dict(zip(keys, padded, strict=True)))
         slab = tuple(f'-{s}' for s in full_slab)
     fe = x.method in metafopy.models.tau2.FIXED_EFFECTS
-    return Leave1outResult(
-        estimate=col['estimate'],
-        se=col['se'],
-        stat=col['stat'],
-        pval=col['pval'],
-        ci_lb=col['ci_lb'],
-        ci_ub=col['ci_ub'],
-        Q=col['Q'],
-        Qp=col['Qp'],
+    return Leave1outResult.from_columns(
+        col,
         tau2=None if fe else col['tau2'],
-        I2=col['I2'],
-        H2=col['H2'],
         slab=slab,
         # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
         stat_name='tval' if x.test in ('knha', 'adhoc', 't') else 'zval',
@@ -372,6 +406,9 @@ def cumul(x: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> CumulResult
 
     Raises:
         metafopy.errors.ArgumentError: an argument has the wrong type or is not accepted.
+        metafopy.errors.InputError: raised by an implementation for an invalid argument.
+        metafopy.errors.NotSupportedError: an implementation does not support the model.
+        metafopy.errors.InternalError: an internal invariant does not hold.
 
     Metafor reference:
         [cumul](https://wviechtb.github.io/metafor/reference/cumul.html)
@@ -481,18 +518,9 @@ def cumul_rma_uni(
         labels = numpy.asarray(x.slab, dtype=object)
     slab = tuple(label(u) for u in uor) if collapse else tuple(labels[srt].tolist())
     fe = x.method in metafopy.models.tau2.FIXED_EFFECTS
-    return CumulResult(
-        estimate=col['estimate'],
-        se=col['se'],
-        stat=col['stat'],
-        pval=col['pval'],
-        ci_lb=col['ci_lb'],
-        ci_ub=col['ci_ub'],
-        Q=col['Q'],
-        Qp=col['Qp'],
+    return CumulResult.from_columns(
+        col,
         tau2=None if fe else col['tau2'],
-        I2=col['I2'],
-        H2=col['H2'],
         slab=slab,
         # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
         stat_name='tval' if x.test in ('knha', 'adhoc', 't') else 'zval',

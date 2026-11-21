@@ -28,6 +28,9 @@ type FloatArray = numpy.typing.NDArray[numpy.float64]
 # auditme: accept[non-alphabetical-literal] the order in which emmeans matches abbreviations
 TWO_SIDED_ONLY = ('tukey', 'scheffe', 'dunnettx')
 P_METHODS = ('sidak', 'tukey', 'scheffe', 'dunnettx', 'mvt', *metafopy.core.padjust.P_ADJUST_METHODS)
+# The mvt adjustment draws randomised quasi-Monte Carlo points; SciPy's integrator is seeded with MVT_SEED and cannot match R's mvtnorm draw for draw
+# (see docs/differences.md, "emmeans mvt adjustment").
+# auditme: accept[S4] SciPy's integrator takes a NumPy generator, so the R-exact RNG cannot drive it
 MVT_SEED = 20260101
 MVT_MAXPTS = 20000
 

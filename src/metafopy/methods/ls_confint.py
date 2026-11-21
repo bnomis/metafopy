@@ -140,6 +140,7 @@ def confint_rma_ls(
     Raises:
         metafopy.errors.InputError: an argument is invalid, ``control`` has an unknown entry, the model was fitted with ``optbeta=True``, the model has
             no such (estimated) scale coefficient or no coefficient to give an interval for, or the interval searched does not contain the estimate.
+        metafopy.errors.InternalError: a refit of the location-scale model found an internal invariant broken.
 
     Metafor reference:
         [confint.rma](https://wviechtb.github.io/metafor/reference/confint.rma.html)
@@ -227,11 +228,13 @@ def confint_rma_ls(
     res_fixed: pandas.DataFrame | None = None
     if fixed:
         # auditme: accept[literal-duplication] metafor option values and column labels repeated as in the R source
-        if x.test in ('knha', 'adhoc', 't'):
+        if x.test == 'knha' or x.test == 'adhoc' or x.test == 't':
             ddf = float(x.ddf) if x.ddf is not None else math.nan
             crit = float(scipy.stats.t.isf(level_alpha / 2, ddf)) if ddf > 0 else math.nan
-        else:
+        elif x.test == 'z':
             crit = float(scipy.stats.norm.isf(level_alpha / 2))
+        else:
+            typing.assert_never(x.test)
         beta, lb, ub = x.beta, x.beta - crit * x.se, x.beta + crit * x.se
         if transf is not None:
             beta, lb, ub = (metafopy.transf.apply_transf(a, transf, targs) for a in (beta, lb, ub))

@@ -8,6 +8,7 @@ ported rather than replaced by SciPy's BFGS. Sources (R 4.3.3, GPL-2 | GPL-3):
   Algorithm 21 (Fletcher's variable-metric method).
 - ``src/library/stats/src/optim.c``: ``fmingr`` (central differences with step ``ndeps``, or the analytic
   gradient ``gr``, and the ``parscale`` scaling of the parameters).
+See https://github.com/wch/r-source/blob/trunk/src/appl/optim.c and https://github.com/wch/r-source/blob/trunk/src/library/stats/src/optim.c.
 """
 
 import collections.abc

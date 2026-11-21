@@ -37,6 +37,7 @@ __all__ = ['ProfileList', 'ProfileResult', 'profile']
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 
 
+# auditme: accept[S4] metafor returns a list of profiles, so the result must index like one
 class ProfileList(list[typing.Any]):
     """The profiles of several components (metafor returns a list of profiles with the number of components in ``comps``)."""
 
@@ -160,6 +161,7 @@ def profile(fitted: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> Prof
     Raises:
         metafopy.errors.ArgumentError: there is no implementation for the class of ``fitted``.
         metafopy.errors.InputError: raised by the implementation for an invalid argument.
+        metafopy.errors.NotSupportedError: raised by the selection-model implementation for an unsupported request.
     """
     raise metafopy.errors.ArgumentError(f'profile() not implemented for {type(fitted).__name__}')
 
@@ -176,7 +178,7 @@ BLUP_KEYS = ('pred', 'se', 'pi_lb', 'pi_ub')
 def plot_all(results: collections.abc.Sequence[typing.Any], ax: typing.Any, plot_args: collections.abc.Mapping[str, typing.Any]) -> None:
     """Draw the profiles of a ``profile()`` call; several go into a grid of panels (metafor's ``par(mfrow = n2mfrow(comps))``)."""
     # metafopy.plot imports the methods, so it is imported when first needed, as profile_rma_uni does
-    importlib.import_module('metafopy.plot.profile').plot_profile(results[0] if len(results) == 1 else list(results), ax=ax, **plot_args)
+    importlib.import_module('metafopy.plot').plot_profile(results[0] if len(results) == 1 else list(results), ax=ax, **plot_args)
 
 
 def profile_fit(x: metafopy.models.rma_uni.RMAResult, tau2: float, pred: bool = False, blup: bool = False, newmods: typing.Any = None) -> FitResult | None:
@@ -306,10 +308,12 @@ def profile_rma_uni(
             with warnings.catch_warnings():
                 warnings.simplefilter('ignore')
                 ci = metafopy.methods.confint.confint(x)
-            assert ci.random is not None
-            lb = min(x.tau2, float(numpy.asarray(ci.random.iloc[0, 1], dtype=numpy.float64)))
-            ub = max(0.1, x.tau2, float(numpy.asarray(ci.random.iloc[0, 2], dtype=numpy.float64)))
-        except ValueError, ArithmeticError, numpy.linalg.LinAlgError, AssertionError:
+            if ci.random is None:
+                lb = ub = math.nan
+            else:
+                lb = min(x.tau2, float(numpy.asarray(ci.random.iloc[0, 1], dtype=numpy.float64)))
+                ub = max(0.1, x.tau2, float(numpy.asarray(ci.random.iloc[0, 2], dtype=numpy.float64)))
+        except ValueError, ArithmeticError, numpy.linalg.LinAlgError:
             lb = ub = math.nan
         if math.isnan(lb) or math.isnan(ub):
             crit = float(scipy.stats.norm.ppf(0.995))

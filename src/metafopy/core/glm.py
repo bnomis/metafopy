@@ -323,10 +323,12 @@ def glm_fit(
         with numpy.errstate(divide='ignore', invalid='ignore'):
             resp = numpy.where(weights > 0, y / weights, 0.0)
         mustart = (weights * resp + 0.5) / (weights + 1.0)
-    else:
+    elif family == 'poisson':
         weights = numpy.ones(n)
         resp = y.astype(numpy.float64)
         mustart = resp + 0.1
+    else:
+        typing.assert_never(family)
     eta = link_fun(lnk, mustart)
     mu = link_inv(lnk, eta)
     if not (valid_mu(family, mu) and valid_eta(lnk, eta)):

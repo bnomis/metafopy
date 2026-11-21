@@ -1,6 +1,7 @@
 """The universe the audit enumerates: metafor's functions, S3 methods and datasets as dumped by ``r/universe.R``."""
 
 import dataclasses
+import functools
 import json
 import pathlib
 import typing
@@ -50,9 +51,16 @@ class Universe:
         info = self.fixtures.get(fixture) or {}
         return [str(c) for c in info.get('class') or []]
 
+    @functools.cached_property
+    def by_generic_class(self) -> dict[str, dict[str, Json]]:
+        out: dict[str, dict[str, Json]] = {}
+        for m in self.methods:
+            out.setdefault(m['generic'], {})[m['class']] = m
+        return out
+
     def method_for(self, generic: str, classes: list[str]) -> Json | None:
         """The S3 method R dispatches to: the first class of the chain that has one."""
-        by_class = {m['class']: m for m in self.methods if m['generic'] == generic}
+        by_class = self.by_generic_class.get(generic, {})
         for cls in classes:
             if cls in by_class:
                 return by_class[cls]

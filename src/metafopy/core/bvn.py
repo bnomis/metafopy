@@ -4,6 +4,7 @@ Port of ``MVBVU``/``MVBVN`` from mvtnorm's ``src/mvt.f`` (GPL-2), which is
 Drezner & Wesolowsky (1990), doi:10.1080/00949659008811236, with Genz's
 double-precision modifications; see Genz (2004), doi:10.1023/B:STCO.0000035304.20635.31.
 Accurate to about 1e-15, so results agree with R's to rounding error.
+See https://github.com/cran/mvtnorm/blob/master/src/mvt.f.
 """
 
 import math

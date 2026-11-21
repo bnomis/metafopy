@@ -1,5 +1,7 @@
 """predict() arguments hetvar, prob, addx, vcov and adjust against R (src/tests/r/generate_predict_args.R)."""
 
+import ast
+
 import numpy
 import pandas
 import pytest
@@ -8,6 +10,7 @@ import scipy.linalg
 
 import metafopy
 import metafopy.errors
+import metafopy.methods.predict
 
 REF = refutil.load_phase7('predict_args')
 # rma.mv and rma.glmm estimates come from an optimiser, so they agree with R to its convergence tolerance only
@@ -77,3 +80,8 @@ def test_rma_glmm() -> None:
     dat = metafopy.datasets.load('bcg')
     res = metafopy.rma_glmm(measure='OR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=dat)
     check(metafopy.predict(res, prob='<0', hetvar=0.1, vcov=True, addx=True), 'glmm', GLMM)
+
+
+def test_unsupported_cutoff_expression_is_a_domain_error() -> None:
+    with pytest.raises(metafopy.errors.InputError, match='unsupported expression'):
+        metafopy.methods.predict.evaluate_node(ast.parse('[1]', mode='eval').body)

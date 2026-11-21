@@ -1,6 +1,8 @@
 """Tests of the analytic information of the exact conditional likelihood in ``metafopy.core.nchg``."""
 
+import collections.abc
 import math
+import types
 import typing
 
 import numpy
@@ -15,7 +17,9 @@ import metafopy.core.nchg
 import metafopy.datasets
 import metafopy.errors
 
-ARGS: dict[str, typing.Any] = {'ai': 'ai', 'ci': 'ci', 'measure': 'OR', 'method': 'FE', 'model': 'CM.EL', 'n1i': 'n1i', 'n2i': 'n2i'}
+ARGS: collections.abc.Mapping[str, typing.Any] = types.MappingProxyType(
+    {'ai': 'ai', 'ci': 'ci', 'measure': 'OR', 'method': 'FE', 'model': 'CM.EL', 'n1i': 'n1i', 'n2i': 'n2i'}
+)
 PNEUMONIA = {'ai': [1, 0, 1, 13, 2, 4, 6], 'bi': [155, 89, 43, 64, 157, 43, 76], 'ci': [12, 3, 6, 27, 5, 6, 0], 'di': [69, 40, 32, 53, 165, 43, 148]}
 TIGHT = metafopy.core.nchg.IntegrationControl(calc='dnoncenhypergeom')
 TIGHT_RANDOM = metafopy.core.nchg.IntegrationControl(rel_tol=1e-13, subdivisions=500, calc='dnoncenhypergeom')

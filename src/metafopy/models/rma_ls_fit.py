@@ -13,6 +13,7 @@ covariance matrix of the scale coefficients comes from the numerical Hessian of 
 import collections.abc
 import dataclasses
 import math
+import typing
 import warnings
 
 import numpy
@@ -124,6 +125,7 @@ def resolve_optimizer(con: metafopy.models.rma_ls_result.LSControl, link: str) -
     return optimizer
 
 
+# auditme: accept[raises-section-drift] minimise_standin checks the start value is finite first, so the InputError of sel_opt.minimize never arises
 def minimise_standin(
     objective: collections.abc.Callable[[FloatArray], float],
     start: FloatArray,
@@ -138,7 +140,6 @@ def minimise_standin(
     Raises:
         metafopy.errors.EstimationError: the optimiser did not converge or could not start.
         metafopy.errors.NotSupportedError: the optimiser has no counterpart here.
-        metafopy.errors.InputError: the optimiser settings are invalid.
     """
     if not math.isfinite(objective(start)):
         raise metafopy.errors.EstimationError('Cannot evaluate the log-likelihood at the initial values.')
@@ -285,8 +286,9 @@ def quad_form(coef: FloatArray, V: FloatArray, idx: tuple[int, ...]) -> float:
 def marginal_residuals(yi: FloatArray, vi: FloatArray, X: FloatArray, tau2: FloatArray) -> tuple[FloatArray, FloatArray]:
     """Raw residuals and their standard errors for the weighted fit with heterogeneity ``tau2`` (metafor's ``rstandard``)."""
     w = 1.0 / (vi + tau2)
-    beta = metafopy.core.linalg.invcalc(X, w) @ (X.T @ (w * yi))
-    H = X @ metafopy.core.linalg.invcalc(X, w) @ (X.T * w)
+    inv = metafopy.core.linalg.invcalc(X, w)
+    beta = inv @ (X.T @ (w * yi))
+    H = X @ inv @ (X.T * w)
     ei = yi - X @ beta
     ei[numpy.abs(ei) < 100 * DBL_EPS] = 0.0
     ImH = numpy.eye(yi.shape[0]) - H
@@ -705,18 +707,20 @@ def fit_rma_ls(
         se_alpha = numpy.sqrt(numpy.diag(va))
         zval_alpha = alpha_hat / se_alpha
     crit_level = metafopy.models.rma_uni.level_to_alpha(level)
-    if tdist:
+    if test == 'knha' or test == 'adhoc' or test == 't':
         assert ddf_alpha is not None  # auditme: accept[assert-in-product-code] narrowed by tdist above
         QS = QS / m_alpha
         QSdf: tuple[int, float | None] = (m_alpha, ddf_alpha)
         QSp = float(scipy.stats.f.sf(QS, m_alpha, ddf_alpha)) if ddf_alpha > 0 else math.nan
         pval_alpha = 2 * scipy.stats.t.sf(numpy.abs(zval_alpha), ddf_alpha) if ddf_alpha > 0 else numpy.full(q, math.nan)
         crit_alpha = float(scipy.stats.t.isf(crit_level / 2, ddf_alpha)) if ddf_alpha > 0 else math.nan
-    else:
+    elif test == 'z':
         QSdf = (m_alpha, None)
         QSp = float(scipy.stats.chi2.sf(QS, m_alpha)) if not math.isnan(QS) else math.nan
         pval_alpha = 2 * scipy.stats.norm.sf(numpy.abs(zval_alpha))
         crit_alpha = float(scipy.stats.norm.isf(crit_level / 2))
+    else:
+        typing.assert_never(test)
     ci_lb_alpha = alpha_hat - crit_alpha * se_alpha
     ci_ub_alpha = alpha_hat + crit_alpha * se_alpha
 
@@ -732,18 +736,20 @@ def fit_rma_ls(
     with numpy.errstate(invalid='ignore'):
         se = numpy.sqrt(numpy.diag(vb))
         zval = beta_out / se
-    if tdist:
+    if test == 'knha' or test == 'adhoc' or test == 't':
         assert ddf is not None  # auditme: accept[assert-in-product-code] narrowed by tdist above
         QM = QM / m
         QMdf: tuple[int, float | None] = (m, ddf)
         QMp = float(scipy.stats.f.sf(QM, m, ddf)) if ddf > 0 else math.nan
         pval = 2 * scipy.stats.t.sf(numpy.abs(zval), ddf) if ddf > 0 else numpy.full(p, math.nan)
         crit = float(scipy.stats.t.isf(crit_level / 2, ddf)) if ddf > 0 else math.nan
-    else:
+    elif test == 'z':
         QMdf = (m, None)
         QMp = float(scipy.stats.chi2.sf(QM, m)) if not math.isnan(QM) else math.nan
         pval = 2 * scipy.stats.norm.sf(numpy.abs(zval))
         crit = float(scipy.stats.norm.isf(crit_level / 2))
+    else:
+        typing.assert_never(test)
     ci_lb = beta_out - crit * se
     ci_ub = beta_out + crit * se
 

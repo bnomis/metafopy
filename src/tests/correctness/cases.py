@@ -506,7 +506,7 @@ def build_v(frame: pandas.DataFrame, setup: dict[str, typing.Any], where: str) -
     return matrix
 
 
-def build_tree_r(tree: str) -> pandas.DataFrame:
+def load_tree_r(tree: str) -> pandas.DataFrame:
     """The covariance matrix of a Brownian-motion trait along a bundled tree: entry ``(i, j)`` is the length of the edges that the root-to-tip paths
     of tips ``i`` and ``j`` share, computed with numpy from the edge table alone (Hadfield and Nakagawa 2010), rows and columns labelled by the tips."""
     edges = metafopy.datasets.load_tree(tree).edges
@@ -586,7 +586,7 @@ def run_case(case: Case) -> typing.Any:
         if case.setup is not None and ('vblocks' in case.setup or 'vconst' in case.setup):
             kwargs['V'] = build_v(frame, case.setup, f'{case.file}: case {case.id}')
         if case.setup is not None and 'tree_r' in case.setup:
-            kwargs['R'] = {case.setup['tree_r']['factor']: build_tree_r(case.setup['tree_r']['tree'])}
+            kwargs['R'] = {case.setup['tree_r']['factor']: load_tree_r(case.setup['tree_r']['tree'])}
     return apply_then(case, func(**kwargs))
 
 

@@ -69,8 +69,9 @@ class RMAMVResult(metafopy.models.fit_methods.RobustFields, metafopy.models.fit_
     Names follow metafor with ``.`` replaced by ``_``; ``btt`` holds 0-based coefficient indices.
     ``spec`` keeps the arguments of the call, which :func:`metafopy.confint` and :func:`metafopy.profile` use to refit the model.
     ``hessian`` and ``vvc`` are the Hessian of ``-ll`` and its inverse (``optbeta=True``, where the leading rows are the
-    coefficients, or ``cvvc``), with the row names ``vc_names``; ``p_eff`` is the number of estimated (not fixed) coefficients,
-    ``beta_est`` flags them, and ``vccon`` holds the group ids of constrained variance components. ``slab_f`` and
+    coefficients, or ``cvvc``), with the row names ``vc_names``; ``p_eff`` is the number of estimated (not fixed) coefficients
+    (``p`` is set to the same value in every fit, so ``p`` equals ``p_eff``), ``beta_est`` flags them, and ``vccon`` holds the group ids of
+    constrained variance components. ``slab_f`` and
     ``s_levels_f`` are the study labels and the levels of the ``~ 1 | id`` terms before rows with missing values were
     dropped (metafor's ``slab`` and ``s.levels.f``), used to pad results under ``na_action='exclude'``.
     ``X_f`` is the model matrix before rows with missing values were dropped (metafor's ``X.f``; NaN where a moderator value is missing),

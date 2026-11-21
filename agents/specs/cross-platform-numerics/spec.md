@@ -1,8 +1,9 @@
 # Cross-platform numerics
 
-**Version:** 1.1
+**Version:** 1.2
 **Status:** implemented
 **Date:** 2026-11-16
+**Corrected:** 2026-11-21 (version 1.2): statements that no longer matched the code, from audit review-1 (`agents/audit-reviews/review-1.md`, finding group F6)
 
 Numerical tests that pass on the development Mac fail in CI on Linux, macOS and Windows. This spec defines, per failure group, how the cause is confirmed,
 which verdicts are allowed, how Linux is reproduced locally and Windows checked through CI, and when the work is done: the CI test jobs green on all
@@ -232,7 +233,7 @@ only the figures copied into `measurements.md` are committed. How the workflow i
 
 ### Tests of the new code
 
-- `bin/platform-probe.py`: a test in `src/tests/test_platform_probe.py` that `measure_groups(['cm-el-tight-se'])` returns a `GroupMeasurement` with finite values
+- `bin/platform-probe.py`: a test in `src/tests/test_platform_probe.py` that `measure_groups(['cm-el-tight-se'])` returns a `dict[str, GroupMeasurement]` keyed by group name, whose entry for that group is a `GroupMeasurement` with finite values
   and no error, that an unknown group raises `KeyError`, and that `main` writes JSON with `environment` and `groups` keys (to `tmp_path`).
 - Each robust reference fit: a test that a start known to stop with "precision loss" (forced by `maxiter` or a perturbed start) is still accepted when
   its score passes, and that a start at a worse stationary point is not chosen over a better one; each test is run once against the old code and seen to
@@ -241,13 +242,13 @@ only the figures copied into `measurements.md` are committed. How the workflow i
 
 ## Error handling
 
-- Docker not running or the image not building: `linux-tests.sh` exits 2 with the message above; no fallback to the host.
+- Docker not running or the image not building: `linux-tests.sh` exits 2, with "Docker is not running: start Docker Desktop" in the first case and "The image <name> did not build" in the second; no fallback to the host.
 - `uv sync --locked` failing in the container (lock out of date for Linux): the script exits with uv's status and message; the task stops and reports,
   it never runs `uv lock` (project rule: `uv.lock` is not edited without instruction).
 - A probe group raising: recorded in its `GroupMeasurement.error`; the other groups run; `main` exits 1.
 - A CI probe artifact missing for a platform: the measuring task stops and names the run id and job; the group is not judged on fewer platforms.
-- A robust reference that still finds no point with a small score: it raises `RuntimeError` naming the case, every start's message and score, as
-  `ls_reference_fit` does now.
+- A robust reference that still finds no point with a small score: it raises `RuntimeError` naming the link and method and every start's message, as
+  `ls_reference_fit` does now (the case is named by the calling test's `AssertionError`).
 
 ## Settings
 

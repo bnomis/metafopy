@@ -7,6 +7,7 @@ import subprocess
 import threading
 
 import audit.config
+import audit.errors
 
 PORTS_LOCK = threading.Lock()
 PORTS_GIVEN: set[int] = set()
@@ -42,10 +43,14 @@ def rscript_command(script: pathlib.Path, *args: str) -> list[str]:
 
 
 def run(script: pathlib.Path, *args: str) -> subprocess.CompletedProcess[str]:
-    """Run an R script to completion; a non-zero exit raises with R's stderr."""
+    """Run an R script to completion.
+
+    Raises:
+        audit.errors.HarnessError: the script exits non-zero; the message holds R's stderr.
+    """
     proc = subprocess.run(rscript_command(script, *args), env=environment(), capture_output=True, text=True, check=False)
     if proc.returncode != 0:
-        raise RuntimeError(f'{script.name} failed:\n{proc.stderr[-3000:]}')
+        raise audit.errors.HarnessError(f'{script.name} failed:\n{proc.stderr[-3000:]}')
     return proc
 
 

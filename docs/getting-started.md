@@ -93,8 +93,8 @@ print(predict(res, transf=numpy.exp))
 ```
 
 ```text
-     pred   ci.lb   ci.ub   pi.lb  pi.ub
-0  0.4894  0.3441  0.6962  0.1546  1.549
+   pred  ci.lb  ci.ub  pi.lb  pi.ub
+ 0.4894 0.3441 0.6962 0.1546 1.5490
 ```
 
 The columns `pi.lb` and `pi.ub` are the prediction interval: where the true effect of a new trial would fall.
@@ -133,10 +133,10 @@ ablat     -0.0291  0.0072  -4.0444  <.0001  -0.0432  -0.0150  ***
 ---
 Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
-     pred   ci.lb   ci.ub   pi.lb   pi.ub
-0  0.9612  0.6668  1.3857  0.5000  1.8478
-1  0.5371  0.4355  0.6623  0.3005  0.9600
-2  0.3001  0.2144  0.4201  0.1586  0.5678
+    pred  ci.lb  ci.ub  pi.lb  pi.ub
+1 0.9612 0.6668 1.3857 0.5000 1.8478
+2 0.5371 0.4355 0.6623 0.3005 0.9600
+3 0.3001 0.2144 0.4201 0.1586 0.5678
 ```
 
 `newmods` lists the moderator values to predict at (the intercept is added for you).
@@ -150,11 +150,11 @@ print(confint(res))
 ```
 
 ```text
-        estimate    ci.lb    ci.ub
-tau^2     0.3132   0.1197   1.1115
-tau       0.5597   0.3460   1.0543
-I^2(%)   92.2214  81.9177  97.6781
-H^2      12.8558   5.5303  43.0680
+       estimate   ci.lb   ci.ub
+tau^2    0.3132  0.1197  1.1115
+tau      0.5597  0.3460  1.0543
+I^2(%)  92.2214 81.9177 97.6781
+H^2     12.8558  5.5303 43.0680
 ```
 
 ## Plots

@@ -100,8 +100,7 @@ def ranef_rma_ls(
     Metafor reference:
         [ranef](https://wviechtb.github.io/metafor/reference/ranef.html)
     """
-    out = metafopy.methods.blup.shrinkage_predictions(res, 'ranef', level, digits, transf, targs, na_action)
-    return metafopy.methods.ranef.RanefResult(pred=out.pred, se=out.se, pi_lb=out.pi_lb, pi_ub=out.pi_ub, slab=out.slab, digits=out.digits, transf=out.transf)
+    return metafopy.methods.ranef.ranef_result(res, level, digits, transf, targs, na_action)
 
 
 @metafopy.methods.influence.rstandard.register
@@ -153,10 +152,12 @@ def rstandard_rma_ls(
         ei = x.yi - x.X @ x.beta
         ei = numpy.where(numpy.abs(ei) < 100 * EPS, 0.0, ei)
         sei = numpy.sqrt(numpy.diag(ImH @ numpy.diag(x.vi + x.tau2) @ ImH.T))
-    else:
+    elif type == 'conditional':
         li = x.tau2 / (x.tau2 + x.vi)
         ei = x.yi - (li * x.yi + (1 - li) * (x.X @ x.beta))
         sei = numpy.sqrt(x.vi**2 / (x.vi + x.tau2) * (1 - numpy.diag(H)))
+    else:
+        typing.assert_never(type)
     if na_action == 'fail' and not x.data.keep.all():
         raise metafopy.errors.InputError('Missing values in results.')
     z = ei / sei

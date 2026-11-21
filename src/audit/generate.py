@@ -348,8 +348,7 @@ def generate(
         gen.cases.append(audit.cases.Case(id=f'datasets/{name}', axis='datasets', call={'fn': 'identity', 'args': {'x': {'$data': name}}}, meta={'fn': name}))
 
     gen.unaccounted.extend(unaccounted_functions(universe, recipes, fixtures, universe.generics(), fit_functions))
-    gen.uncovered = sorted(set(gen.uncovered))
-    return gen
+    return dataclasses.replace(gen, uncovered=sorted(set(gen.uncovered)))
 
 
 def unaccounted_functions(

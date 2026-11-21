@@ -84,6 +84,7 @@ def load_tree(name: str) -> PhyloTree:
 
     Raises:
         metafopy.errors.NotFoundError: there is no such tree.
+        metafopy.errors.InternalError: the bundled file cannot be read.
     """
     base = name if name.startswith('dat.') else f'dat.{name}'
     frame = metafopy.datasets.base.read(base.removesuffix('.tree') + '.tree').copy()

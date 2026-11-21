@@ -16,6 +16,7 @@ import numpy
 import pandas
 
 import audit.config
+import audit.errors
 import audit.valuetree
 import metafopy
 import metafopy.datasets
@@ -62,6 +63,7 @@ def shift_index(value: typing.Any) -> typing.Any:
     return value
 
 
+# auditme: accept[A9] reads a bundled dataset only for a `$data` tag
 def resolve_value(x: typing.Any, env: Env) -> typing.Any:
     if isinstance(x, dict) and len(x) == 1:
         ((tag, val),) = x.items()
@@ -96,7 +98,7 @@ def resolve_value(x: typing.Any, env: Env) -> typing.Any:
                 case '$call':
                     return run_call(val, env)
                 case _:
-                    raise ValueError(f'unknown value tag {tag}')
+                    raise audit.errors.HarnessError(f'unknown value tag {tag}')
     if isinstance(x, dict):
         return {k: resolve_value(v, env) for k, v in x.items()}
     if isinstance(x, list):

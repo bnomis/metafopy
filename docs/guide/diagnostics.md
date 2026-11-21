@@ -172,6 +172,24 @@ Bootstrapping:     Yes (1000/1000 iterations)
 
 X^2(df = 12) = 2.8884, p = 0.9920
 
+
+Test for Heteroscedastic Heterogeneity
+
+Estimation method: Restricted maximum likelihood
+Test type:         Likelihood ratio test
+Bootstrapping:     Yes (199/200 iterations)
+
+X^2(df = 12) = 6.0136, p = 0.9095
+
+
+Test for Heteroscedastic Heterogeneity
+
+Estimation method: Restricted maximum likelihood
+Test type:         Kolmogorov-Smirnov test (normal)
+Bootstrapping:     Yes (199/200 iterations)
+
+statistic = 0.1624, p = 0.4472
+
 ```
 
 The result holds the statistics (`statistic`), p-values (`pval`), the estimated study-specific variances (`tau2i`) and the

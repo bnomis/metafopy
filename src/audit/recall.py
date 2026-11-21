@@ -16,6 +16,7 @@ import tomllib
 import typing
 
 import audit.config
+import audit.errors
 
 Json = dict[str, typing.Any]
 
@@ -56,7 +57,7 @@ class Corpus:
         ids = [i.id for i in items]
         duplicates = sorted({i for i in ids if ids.count(i) > 1})
         if duplicates:
-            raise ValueError(f'duplicate recall items: {duplicates}')
+            raise audit.errors.HarnessError(f'duplicate recall items: {duplicates}')
         return cls({int(k): v for k, v in doc['audit'].items()}, items)
 
 

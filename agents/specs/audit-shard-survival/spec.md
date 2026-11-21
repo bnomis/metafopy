@@ -1,8 +1,9 @@
 # Audit shard survival
 
-**Version:** 1.0
+**Version:** 1.1
 **Status:** implemented
 **Date:** 2026-11-02
+**Corrected:** 2026-11-21 (version 1.1): statements that no longer matched the code, from audit review-1 (`agents/audit-reviews/review-1.md`, finding group F6)
 
 The audit harness runs its cases in shards (slices of the case list): first
 each shard in R, then each in Python against R's outcome. An R shard already
@@ -120,9 +121,11 @@ the pool.
 2. `watch` waits; `read_outcomes` (unchanged) gives the finished cases and the
    case running when it stopped.
 3. If a case was running, it gets `dead(case_id, stop)`. A process that
-   stopped with no case running (it died before its first case, for example
-   building fixtures) gives each remaining case `dead(case_id, stop)` and the
-   loop ends, so a broken environment cannot loop.
+   stopped with no case running and finished no case in that attempt (it died
+   before its first case, for example building fixtures) gives each remaining
+   case `dead(case_id, stop)` and the loop ends, so a broken environment cannot
+   loop. A process that stopped between cases, having finished some, is
+   restarted on the cases left.
 4. Rename the output to `<name>-attempt<k>.jsonl` and go round again on the
    remaining cases, at most `len(shard)` times, as today.
 
@@ -143,7 +146,7 @@ or, for `stalled`, `timeout` (compiled code ignores the in-process
 inherited environment, so `PYTHONPATH` from `bin/activate.sh` and
 `--metafopy-src` reach it as they reach the pool's workers today. The process
 calls `audit.config.limit_memory()`, builds the fixtures, and seeds 1234
-before each case, as `run_shard` does today, so a restarted process gives each
+before each case (in `audit.pyrun.load_shard` and `case_result`), as the earlier pool's `run_shard` did, so a restarted process gives each
 case the result it would have had. Its stdout and stderr go to
 `py-{i}.log`. When the loop ends, `py-{i}.json` is written as
 `{"results": [...]}` in shard order, so `run_cases`' merge is unchanged.
@@ -153,7 +156,7 @@ runs the R shards; each thread drives one process.
 
 ### The memory watch
 
-`watch` replaces `wait_or_kill`. Every `POLL_SECONDS` it checks the process
+`watch` replaces the earlier `wait_or_kill`, which no longer exists. Every `POLL_SECONDS` it checks the process
 has not exited, the output's size (stall, as today) and `resident_bytes(pid)`.
 Past `limit` it sends `SIGKILL` and returns `'memory'`. The resident size of
 the shard process alone is read: `Rscript` runs R in the same process, and the
@@ -177,8 +180,9 @@ system's out-of-memory killer; the process then dies, and the case is
   longer raises `BrokenProcessPool`, and every case gets a result.
 - `resident_bytes` returns None when `ps` fails or prints nothing (the
   process has gone); `watch` then relies on `proc.poll()`.
-- A non-zero exit with no case running ends the shard as in step 3 above,
-  with the exit status and the log path in each case's detail.
+- A non-zero exit with no case running, in an attempt that finished no case,
+  ends the shard as in step 3 above. The Python side puts the exit status and
+  the log path in each case's detail; R's dead detail gives neither.
 - An error in the harness itself (an unreadable job file) still raises in
   the parent: it is not a case's fault.
 
@@ -187,14 +191,14 @@ system's out-of-memory killer; the process then dies, and the case is
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
 | `audit.config.MEMORY_LIMIT` | `int` | `4 * 1024**3` | Bytes. The `RLIMIT_AS` cap where the platform allows it, and now also the resident size past which `watch` kills a shard |
-| `audit.config.POLL_SECONDS` | `float` | `2.0` | How often `watch` checks a shard (today's literal in `wait_or_kill`) |
+| `audit.config.POLL_SECONDS` | `float` | `2.0` | How often `watch` checks a shard (the literal the earlier `wait_or_kill` held) |
 
 The stall limit stays `2 * timeout + 30` seconds, now for both languages.
 
 ## Tests
 
 In `src/tests/test_harness_engine.py`, with small `python -c` processes as
-stand-ins for shards, as the existing `wait_or_kill` tests do:
+stand-ins for shards, as the tests of `watch` do:
 
 - `resident_bytes` of the test process is positive; of a finished process,
   None.
@@ -212,11 +216,12 @@ stand-ins for shards, as the existing `wait_or_kill` tests do:
 
 ## Out of scope
 
-The `scripts` step (`audit.scripts.run`) has the same hazard: a
-`ProcessPoolExecutor` for its Python side and R processes with no restart.
-Its shards have no per-unit start lines, so it needs its own change; it is
-filed in `TODO.md` as "The audit's scripts step stops when one of its
-processes dies" (review of 2026-11-02).
+The `scripts` step (`audit.scripts.run`) had the same hazard when this spec
+was written: a `ProcessPoolExecutor` for its Python side and R processes with
+no restart. Its shards have no per-unit start lines, so it needed its own
+change, made by the [scripts shard survival spec](../scripts-shard-survival/spec.md):
+both sides now run in a `ThreadPoolExecutor` and each shard goes through
+`audit.engine.run_shard` with restart.
 
 ## External dependencies
 

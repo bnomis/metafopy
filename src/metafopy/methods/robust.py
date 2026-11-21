@@ -62,6 +62,7 @@ def robust(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> typing
         metafopy.errors.ArgumentError: there is no implementation for the class of ``model``.
         metafopy.errors.InputError: raised by the implementation for an invalid argument.
         TypeError: ``cluster`` is missing, more than one positional argument is given or a keyword argument is not accepted.
+        metafopy.errors.EstimationError: the cluster-robust marginal matrix of an ``rma_mv`` fit is not invertible.
     """
     raise metafopy.errors.ArgumentError(f'robust() not implemented for {type(model).__name__}')
 
@@ -178,6 +179,30 @@ def sandwich_pieces(
         'dfs': dfs,
         'vb': sw.vcov,
     }
+
+
+def robust_info(
+    n: int,
+    codes: IntArray,
+    vbest: str,
+    club_sandwich: bool,
+    pieces: dict[str, typing.Any],
+    values: numpy.typing.NDArray[numpy.object_],
+    extra: dict[str, typing.Any],
+) -> metafopy.models.robust_info.RobustInfo:
+    """The [RobustInfo][metafopy.models.robust_info.RobustInfo] of a cluster-robust fit, shared by the ``rma.uni`` and ``rma.mv`` paths.
+
+    ``extra`` holds the fields that depend on the method (``coef_test``, ``conf_test``, ``wald_test`` and ``sandwich``, or ``meat``).
+    """
+    return metafopy.models.robust_info.RobustInfo(
+        n=n,
+        tcl=cluster_counts(codes, n),
+        vbest=vbest,
+        robumethod='clubSandwich' if club_sandwich else 'default',
+        dfs=pieces['dfs'],
+        cluster=values,
+        **extra,
+    )
 
 
 def cluster_counts(codes: IntArray, n: int) -> IntArray:
@@ -354,15 +379,7 @@ def robust_rma_uni(
             bread = metafopy.core.linalg.invcalc(X, numpy.ones(k)) @ X.T
         pieces, vbest = default_inference(bread, resid, codes, n, p, k, adjust, x.level, x.beta, x.btt, x.m)
         extra = {'meat': meat_matrix(resid, codes)}
-    info = metafopy.models.robust_info.RobustInfo(
-        n=n,
-        tcl=cluster_counts(codes, n),
-        vbest=vbest,
-        robumethod='clubSandwich' if club_sandwich else 'default',
-        dfs=pieces['dfs'],
-        cluster=values,
-        **extra,
-    )
+    info = robust_info(n, codes, vbest, club_sandwich, pieces, values, extra)
     ddf: int | None = None if club_sandwich else dfs
     return dataclasses.replace(
         x,
@@ -396,9 +413,12 @@ def nested_in_cluster(x: metafopy.models.mv_result.RMAMVResult, codes: IntArray)
         if grp is not None:
             factors.append(numpy.asarray(grp.outer.codes))
     for f in factors:
-        for level in numpy.unique(f[f >= 0]):
-            if len(numpy.unique(codes[f == level])) > 1:
-                return False
+        keep = f >= 0
+        if not bool(keep.any()):
+            continue
+        pairs = numpy.unique(numpy.column_stack([f[keep], codes[keep]]), axis=0)
+        if len(numpy.unique(pairs[:, 0])) < len(pairs):
+            return False
     return True
 
 
@@ -503,15 +523,7 @@ def robust_rma_mv(
             bread = metafopy.core.clubsandwich.chol2inv(X.T @ A @ X) @ (X.T @ A)
         pieces, vbest = default_inference(bread, resid, codes, n, p, k, adjust, alpha, x.beta, x.btt, x.m)
         extra = {'meat': meat_matrix(resid, codes)}
-    info = metafopy.models.robust_info.RobustInfo(
-        n=n,
-        tcl=cluster_counts(codes, n),
-        vbest=vbest,
-        robumethod='clubSandwich' if club_sandwich else 'default',
-        dfs=pieces['dfs'],
-        cluster=values,
-        **extra,
-    )
+    info = robust_info(n, codes, vbest, club_sandwich, pieces, values, extra)
     return dataclasses.replace(
         x,
         ddf=pieces['dfs'],

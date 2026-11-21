@@ -173,6 +173,7 @@ def rstandard_fixed_binary(
 
 @metafopy.methods.influence.rstudent.register
 @metafopy.core.timing.timed
+# auditme: accept[raises-section-drift] refit_tables passes cell arrays, never column names, so the NotFoundError of rma_mh and rma_peto never arises
 def rstudent_fixed_binary(
     model: metafopy.models.binary.FixedBinaryResult,
     digits: int | None = None,
@@ -272,6 +273,7 @@ def per_table_variable(x: metafopy.models.binary.FixedBinaryResult, values: nump
 
 @metafopy.methods.leave1out.leave1out.register
 @metafopy.core.timing.timed
+# auditme: accept[raises-section-drift] refit_tables passes cell arrays, never column names, so the NotFoundError of rma_mh and rma_peto never arises
 def leave1out_fixed_binary(
     x: metafopy.models.binary.FixedBinaryResult,
     cluster: numpy.typing.ArrayLike | str | None = None,
@@ -341,27 +343,14 @@ def leave1out_fixed_binary(
             slab = tuple(f'-{s}' for s in slab_all)
     else:
         slab = tuple(f'-{cid}' for cid in ids)
-    return metafopy.methods.leave1out.Leave1outResult(
-        estimate=col['estimate'],
-        se=col['se'],
-        stat=col['stat'],
-        pval=col['pval'],
-        ci_lb=col['ci_lb'],
-        ci_ub=col['ci_ub'],
-        Q=col['Q'],
-        Qp=col['Qp'],
-        tau2=None,
-        I2=col['I2'],
-        H2=col['H2'],
-        slab=slab,
-        stat_name='zval',
-        digits=metafopy.mfopt.stored_digits(digits, x.digits),
-        transf=fn is not None or transf is True,
+    return metafopy.methods.leave1out.Leave1outResult.from_columns(
+        col, tau2=None, slab=slab, stat_name='zval', digits=metafopy.mfopt.stored_digits(digits, x.digits), transf=fn is not None or transf is True
     )
 
 
 @metafopy.methods.leave1out.cumul.register
 @metafopy.core.timing.timed
+# auditme: accept[raises-section-drift] refit_tables passes cell arrays, never column names, so the NotFoundError of rma_mh and rma_peto never arises
 def cumul_fixed_binary(
     x: metafopy.models.binary.FixedBinaryResult,
     order: numpy.typing.ArrayLike | str | None = None,
@@ -439,18 +428,10 @@ def cumul_fixed_binary(
     fn = resolve_transf(x, transf)
     col = collect(fits, x, fn, targs)
     slab = tuple(metafopy.methods.leave1out.label(u) for u in uor[show]) if collapse else tuple(slab_o[show].tolist())
-    return metafopy.methods.leave1out.CumulResult(
-        estimate=col['estimate'][show],
-        se=col['se'][show],
-        stat=col['stat'][show],
-        pval=col['pval'][show],
-        ci_lb=col['ci_lb'][show],
-        ci_ub=col['ci_ub'][show],
-        Q=col['Q'][show],
-        Qp=col['Qp'][show],
+    return metafopy.methods.leave1out.CumulResult.from_columns(
+        col,
+        rows=show,
         tau2=None,
-        I2=col['I2'][show],
-        H2=col['H2'][show],
         slab=slab,
         stat_name='zval',
         digits=metafopy.mfopt.stored_digits(digits, x.digits),

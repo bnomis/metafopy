@@ -23,8 +23,10 @@ import metafopy.methods.pairmat
 import metafopy.methods.vif
 import metafopy.mfopt
 import metafopy.models.mv_result
+import metafopy.models.rma_ls_result
 import metafopy.models.rma_uni
 import metafopy.models.robust_info
+import metafopy.models.sel_result
 import metafopy.models.tau2
 import metafopy.printing
 
@@ -158,6 +160,7 @@ class WaldResult(metafopy.printing.HtmlRepr):
         return self.summary()
 
 
+# auditme: accept[S4] metafor's list.anova.rma returns a list, so the result must index like one
 class ListAnovaResult(list[WaldResult]):
     """The tests of a list of ``btt`` specifications (metafor's ``list.anova.rma``): a list of :class:`WaldResult`, one per specification.
 
@@ -356,6 +359,8 @@ def anova(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> typing.
     Raises:
         metafopy.errors.ArgumentError: there is no implementation for the class of ``model``. An argument the implementation does not have is a
             ``TypeError`` from Python, as for any function.
+        metafopy.errors.InputError: raised by an implementation for an invalid argument or for models that cannot be compared.
+        metafopy.errors.InternalError: an internal invariant does not hold.
     """
     raise metafopy.errors.ArgumentError(f'anova() not implemented for {type(model).__name__}')
 
@@ -527,20 +532,18 @@ def anova_rma_uni(
                 QMp = float(scipy.stats.f.sf(QM, m, x.ddf))
             else:
                 QMp = float(scipy.stats.chi2.sf(QM, m))
-        pval = numpy.asarray(pval, dtype=numpy.float64)
-        if method is not None:
-            pval = metafopy.core.padjust.p_adjust(pval, method)
-        return WaldResult(
-            QM=QM,
-            QMdf=(m, x.ddf),
-            QMp=QMp,
-            Xb=Xb,
-            se=se,
-            zval=zval,
-            pval=pval,
-            ddf=None if x.ddf is None else numpy.full(m, float(x.ddf)),
-            hyp=hypotheses(L, x.coef_names, numpy.broadcast_to(numpy.asarray(rhs, dtype=numpy.float64), (m,)), d),
-            digits=d,
+        return combinations_result(
+            L,
+            numpy.broadcast_to(numpy.asarray(rhs, dtype=numpy.float64), (m,)),
+            x.coef_names,
+            Xb,
+            se,
+            zval,
+            pval,
+            None if x.ddf is None else numpy.full(m, float(x.ddf)),
+            (QM, (m, x.ddf), QMp),
+            method,
+            d,
         )
 
     idx = select_btt(btt, x.p, x.int_incl, x.coef_names, x.btt, fixed)
@@ -698,20 +701,7 @@ def club_wald_x(
                 'Could not obtain the cluster-robust omnibus Wald test' + (f' ({err}).' if verbose else ' (use verbose=True for more details).')
             ) from err
         QM, QMdf, QMp = max(0.0, res.Fstat), (res.df_num, res.df_denom), res.p_val
-    if method is not None:
-        pval = metafopy.core.padjust.p_adjust(pval, method)
-    return WaldResult(
-        QM=QM,
-        QMdf=QMdf,
-        QMp=QMp,
-        Xb=Xb,
-        se=se,
-        zval=zval,
-        pval=numpy.asarray(pval, dtype=numpy.float64),
-        ddf=ddf,
-        hyp=hypotheses(C, names, numpy.zeros(m), digits),
-        digits=digits,
-    )
+    return combinations_result(C, numpy.zeros(m), names, Xb, se, zval, pval, ddf, (QM, QMdf, QMp), method, digits)
 
 
 def check_same_class(a: object, b: object) -> None:
@@ -734,6 +724,7 @@ def wald_between(
 
     Raises:
         metafopy.errors.InputError: the models cannot be compared.
+        metafopy.errors.InternalError: the full model has lost its cluster-robust sandwich estimator.
     """
     check_same_class(a, b)
     if df is None and a.parms == b.parms:
@@ -785,6 +776,105 @@ def check_scale_arguments(att: typing.Any, Z: typing.Any) -> None:
         raise metafopy.errors.InputError("Can only specify 'att' for location-scale models.")
     if Z is not None:
         raise metafopy.errors.InputError("Can only specify 'Z' for location-scale models.")
+
+
+def combinations_result(
+    L: FloatArray,
+    rhs: FloatArray,
+    names: collections.abc.Sequence[str],
+    Xb: FloatArray,
+    se: FloatArray,
+    zval: FloatArray,
+    pval: numpy.typing.ArrayLike,
+    ddf: FloatArray | None,
+    omnibus: tuple[float, tuple[int, float | None], float],
+    method: str | None,
+    digits: int,
+) -> WaldResult:
+    """The [WaldResult][metafopy.methods.anova.WaldResult] of a test of linear combinations ``L``, with ``pval`` adjusted by ``method`` if given.
+
+    ``omnibus`` is the triple ``(QM, QMdf, QMp)`` of the omnibus test.
+    """
+    p_values = numpy.asarray(pval, dtype=numpy.float64)
+    if method is not None:
+        p_values = metafopy.core.padjust.p_adjust(p_values, method)
+    QM, QMdf, QMp = omnibus
+    return WaldResult(
+        QM=QM,
+        QMdf=QMdf,
+        QMp=QMp,
+        Xb=Xb,
+        se=se,
+        zval=zval,
+        pval=numpy.asarray(p_values, dtype=numpy.float64),
+        ddf=ddf,
+        hyp=hypotheses(L, names, rhs, digits),
+        digits=digits,
+    )
+
+
+def lrt_result(
+    full: metafopy.models.rma_uni.RMAResult | metafopy.models.sel_result.SelmodelResult,
+    red: metafopy.models.rma_uni.RMAResult | metafopy.models.sel_result.SelmodelResult,
+    fs_f: metafopy.models.rma_uni.FitStats,
+    fs_r: metafopy.models.rma_uni.FitStats,
+    df_given: int | None,
+    method: str | None,
+) -> LRTResult:
+    """The [LRTResult][metafopy.methods.anova.LRTResult] of ``full`` against ``red`` from their fit statistics ``fs_f`` and ``fs_r``.
+
+    ``R2`` is the reduction in the residual variance for two fixed-effects models and in ``tau^2`` otherwise. A selection model has no ``QE`` (metafor
+    stores NA) and its fixed-effects residual variance comes from the model it was fitted on.
+    """
+    LRT = max(0.0, fs_r.dev - fs_f.dev)
+    df = full.parms - red.parms if df_given is None else df_given
+    if full.method in metafopy.models.tau2.FIXED_EFFECTS and red.method in metafopy.models.tau2.FIXED_EFFECTS:
+        s2f = sigma2(full.base if isinstance(full, metafopy.models.sel_result.SelmodelResult) else full)
+        s2r = sigma2(red.base if isinstance(red, metafopy.models.sel_result.SelmodelResult) else red)
+        R2 = 100 * max(0.0, (s2r - s2f) / s2r)
+    elif red.tau2 == 0:
+        R2 = 0.0
+    else:
+        R2 = 100 * max(0.0, (red.tau2 - full.tau2) / red.tau2)
+    return LRTResult(
+        df_full=full.parms + (0 if df_given is None else df_given),
+        df_reduced=red.parms,
+        LRT=LRT,
+        pval=float(scipy.stats.chi2.sf(LRT, df)),
+        fit_stats_full=fs_f.as_tuple(),
+        fit_stats_reduced=fs_r.as_tuple(),
+        QE_full=math.nan if isinstance(full, metafopy.models.sel_result.SelmodelResult) else full.QE,
+        QE_reduced=math.nan if isinstance(red, metafopy.models.sel_result.SelmodelResult) else red.QE,
+        tau2_full=full.tau2,
+        tau2_reduced=red.tau2,
+        R2=R2,
+        method=method,
+        class_f=metafopy.methods.fitview.r_class(full),
+    )
+
+
+def mv_lrt_result(
+    full: metafopy.models.mv_result.RMAMVResult | metafopy.models.rma_ls_result.RMALSResult,
+    red: metafopy.models.mv_result.RMAMVResult | metafopy.models.rma_ls_result.RMALSResult,
+    fs_f: metafopy.models.rma_uni.FitStats,
+    fs_r: metafopy.models.rma_uni.FitStats,
+    df_given: int | None,
+    digits: int = 4,
+) -> MVLRTResult:
+    """The [MVLRTResult][metafopy.methods.anova.MVLRTResult] of ``full`` against ``red`` from their fit statistics ``fs_f`` and ``fs_r``."""
+    stat = max(0.0, fs_r.dev - fs_f.dev)
+    return MVLRTResult(
+        df_full=full.parms + (0 if df_given is None else df_given),
+        df_reduced=red.parms,
+        LRT=stat,
+        pval=float(scipy.stats.chi2.sf(stat, full.parms - red.parms if df_given is None else df_given)),
+        fit_stats_full=fs_f.as_tuple(),
+        fit_stats_reduced=fs_r.as_tuple(),
+        QE_full=full.QE,
+        QE_reduced=red.QE,
+        digits=digits,
+        method=full.method,
+    )
 
 
 def hypotheses(L: FloatArray, names: collections.abc.Sequence[str], rhs: FloatArray, digits: int) -> tuple[str, ...]:
@@ -892,35 +982,7 @@ def lrt(a: metafopy.models.rma_uni.RMAResult, b: metafopy.models.rma_uni.RMAResu
     use_reml = full.method == 'REML'
     fs_f = full.fit_stats_reml if use_reml else full.fit_stats_ml
     fs_r = red.fit_stats_reml if use_reml else red.fit_stats_ml
-    LRT = max(0.0, fs_r.dev - fs_f.dev)
-    df = full.parms - red.parms if df_given is None else df_given
-    parms_full = full.parms + (0 if df_given is None else df_given)
-    pval = float(scipy.stats.chi2.sf(LRT, df))
-
-    if full.method in metafopy.models.tau2.FIXED_EFFECTS and red.method in metafopy.models.tau2.FIXED_EFFECTS:
-        s2f = sigma2(full)
-        s2r = sigma2(red)
-        R2 = 100 * max(0.0, (s2r - s2f) / s2r)
-    elif red.tau2 == 0:
-        R2 = 0.0
-    else:
-        R2 = 100 * max(0.0, (red.tau2 - full.tau2) / red.tau2)
-
-    return LRTResult(
-        df_full=parms_full,
-        df_reduced=red.parms,
-        LRT=LRT,
-        pval=pval,
-        fit_stats_full=fs_f.as_tuple(),
-        fit_stats_reduced=fs_r.as_tuple(),
-        QE_full=full.QE,
-        QE_reduced=red.QE,
-        tau2_full=full.tau2,
-        tau2_reduced=red.tau2,
-        R2=R2,
-        method=full.method,
-        class_f=metafopy.methods.fitview.r_class(full),
-    )
+    return lrt_result(full, red, fs_f, fs_r, df_given, full.method)
 
 
 def sigma2(res: metafopy.models.rma_uni.RMAResult) -> float:
@@ -1159,20 +1221,7 @@ def anova_rma_mv(
         warn_not_nested(full, red)
         fs_f = full.fit_stats_reml if use_reml else full.fit_stats_ml
         fs_r = red.fit_stats_reml if use_reml else red.fit_stats_ml
-        LRT = max(0.0, fs_r.dev - fs_f.dev)
-        df_diff = full.parms - red.parms if df is None else df
-        return MVLRTResult(
-            df_full=full.parms + (0 if df is None else df),
-            df_reduced=red.parms,
-            LRT=LRT,
-            pval=float(scipy.stats.chi2.sf(LRT, df_diff)),
-            fit_stats_full=fs_f.as_tuple(),
-            fit_stats_reduced=fs_r.as_tuple(),
-            QE_full=full.QE,
-            QE_reduced=red.QE,
-            digits=d,
-            method=full.method,
-        )
+        return mv_lrt_result(full, red, fs_f, fs_r, df, d)
 
     if X is not None and club is not None:
         return club_wald_x(x.beta, x.vb, club, X, x.p, x.int_incl, rhs_given, method, verbose, x.coef_names, d)
@@ -1190,8 +1239,6 @@ def anova_rma_mv(
         zval = Xb / se
         ddf = numpy.array([float(numpy.min(x.ddf[row != 0])) if numpy.any(row != 0) else math.nan for row in L])
         pval = 2 * scipy.stats.norm.sf(numpy.abs(zval)) if x.test == 'z' else 2 * scipy.stats.t.sf(numpy.abs(zval), ddf)
-        if method is not None:
-            pval = metafopy.core.padjust.p_adjust(numpy.asarray(pval, dtype=numpy.float64), method)
         QM = QMp = math.nan
         df2: int | None = None if x.test == 'z' else int(numpy.nanmin(ddf))
         if numpy.linalg.matrix_rank(L) == m:
@@ -1201,17 +1248,18 @@ def anova_rma_mv(
             else:
                 QM /= m
                 QMp = float(scipy.stats.f.sf(QM, m, df2))
-        return WaldResult(
-            QM=QM,
-            QMdf=(m, df2),
-            QMp=QMp,
-            Xb=Xb,
-            se=se,
-            zval=zval,
-            pval=numpy.asarray(pval, dtype=numpy.float64),
-            ddf=None if x.test == 'z' else ddf,
-            hyp=hypotheses(L, x.coef_names, numpy.broadcast_to(numpy.asarray(rhs, dtype=numpy.float64), (m,)), d),
-            digits=d,
+        return combinations_result(
+            L,
+            numpy.broadcast_to(numpy.asarray(rhs, dtype=numpy.float64), (m,)),
+            x.coef_names,
+            Xb,
+            se,
+            zval,
+            pval,
+            None if x.test == 'z' else ddf,
+            (QM, (m, df2), QMp),
+            method,
+            d,
         )
 
     if is_btt_list(btt):

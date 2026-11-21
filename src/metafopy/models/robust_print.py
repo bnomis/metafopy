@@ -1,4 +1,7 @@
-"""The extra lines and footnote marks of printed cluster-robust results (``print.rma.uni`` and ``print.rma.mv`` for ``robust.rma``)."""
+"""The extra lines and footnote marks of printed cluster-robust results (``print.rma.uni`` and ``print.rma.mv`` for ``robust.rma``).
+
+See https://github.com/wviechtb/metafor/blob/master/R/print.rma.uni.r and https://github.com/wviechtb/metafor/blob/master/R/print.rma.mv.r.
+"""
 
 import statistics
 

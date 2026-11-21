@@ -8,6 +8,7 @@ same tolerance; porting R's routine reproduces metafor's numbers exactly.
 
 Source: R ``src/library/stats/src/zeroin.c`` (GPL-2 | GPL-3), itself based on
 Brent (1973), *Algorithms for Minimization without Derivatives*, ch. 4.
+See https://github.com/wch/r-source/blob/trunk/src/library/stats/src/zeroin.c.
 """
 
 import collections.abc

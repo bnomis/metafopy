@@ -493,3 +493,11 @@ def test_forest_of_selmodel_fits_labels_the_studies_by_number(sel: metafopy.Selm
 
 def test_unchanged_layout_without_selmodel(plain: metafopy.RMAResult, ax: matplotlib.axes.Axes) -> None:
     check_layout(metafopy.forest(plain, ax=ax), FOREST['default'])
+
+
+def test_qqnorm_of_an_mh_fit_rejects_an_unrecognised_label(dat: pandas.DataFrame) -> None:
+    """An rma_mh fit draws no envelope, so a string label other than the known ones has nothing to select by."""
+    fit = metafopy.rma_mh(ai=dat['tpos'], bi=dat['tneg'], ci=dat['cpos'], di=dat['cneg'], measure='RR')
+    with pytest.raises(metafopy.errors.InputError, match="'label'"):
+        metafopy.qqnorm(fit, label='bogus')
+    matplotlib.pyplot.close('all')

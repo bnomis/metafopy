@@ -1,4 +1,7 @@
-"""Result of a location-scale model (metafor's class ``rma.ls``, fitted by ``rma.uni(..., scale=)``)."""
+"""Result of a location-scale model (metafor's class ``rma.ls``, fitted by ``rma.uni(..., scale=)``).
+
+See https://wviechtb.github.io/metafor/reference/rma.uni.html.
+"""
 
 import collections.abc
 import dataclasses

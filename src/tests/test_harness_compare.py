@@ -6,7 +6,9 @@ import subprocess
 
 import pytest
 
+import audit.cli
 import audit.config
+import audit.errors
 import audit.printdiff
 import audit.rdriver
 import audit.recall
@@ -240,14 +242,14 @@ def test_check_r_without_a_pin_raises_even_with_the_flag(monkeypatch: pytest.Mon
     installed = {'R': '4.6.2', 'metafor': audit.config.METAFOR_VERSION}
     ctx = pin_environment(monkeypatch, tmp_path, None, installed)
     ctx.allow_r_drift = True
-    with pytest.raises(RuntimeError, match='pin the R library first'):
+    with pytest.raises(audit.errors.HarnessError, match='pin the R library first'):
         audit.steps.check_r(ctx)
 
 
 def test_check_r_refuses_drift_naming_the_package_and_the_ways_on(monkeypatch: pytest.MonkeyPatch, tmp_path: pathlib.Path) -> None:
     pinned = {'R': '4.6.2', 'lme4': '2.1-0', 'metafor': audit.config.METAFOR_VERSION}
     ctx = pin_environment(monkeypatch, tmp_path, pinned, {**pinned, 'lme4': '2.0.6'})
-    with pytest.raises(RuntimeError, match=r'lme4 2\.1-0 -> 2\.0\.6') as info:
+    with pytest.raises(audit.errors.HarnessError, match=r'lme4 2\.1-0 -> 2\.0\.6') as info:
         audit.steps.check_r(ctx)
     message = str(info.value)
     assert 'setup.R' in message
@@ -281,7 +283,7 @@ def test_library_drift_names_a_different_r_platform_or_arithmetic() -> None:
 def test_check_r_names_a_different_r_platform(monkeypatch: pytest.MonkeyPatch, tmp_path: pathlib.Path) -> None:
     pinned = {'R': '4.6.2', 'R_platform': 'aarch64-apple-darwin27.0.0', 'metafor': audit.config.METAFOR_VERSION}
     ctx = pin_environment(monkeypatch, tmp_path, pinned, {**pinned, 'R_platform': 'x86_64-pc-linux-gnu'})
-    with pytest.raises(RuntimeError, match=r'R_platform aarch64-apple-darwin27\.0\.0 -> x86_64-pc-linux-gnu'):
+    with pytest.raises(audit.errors.HarnessError, match=r'R_platform aarch64-apple-darwin27\.0\.0 -> x86_64-pc-linux-gnu'):
         audit.steps.check_r(ctx)
 
 
@@ -290,7 +292,7 @@ def test_check_r_refuses_a_pinned_arithmetic_that_disagrees_with_python(monkeypa
     pinned = {'R': '4.6.2', 'R_fma': 'unfused' if fused else 'fused', 'metafor': audit.config.METAFOR_VERSION}
     ctx = pin_environment(monkeypatch, tmp_path, pinned, pinned)
     monkeypatch.setattr(metafopy.core.dbinom, 'FUSED', fused)
-    with pytest.raises(RuntimeError, match='R_fma') as info:
+    with pytest.raises(audit.errors.HarnessError, match='R_fma') as info:
         audit.steps.check_r(ctx)
     message = str(info.value)
     assert f'FUSED is {"fused" if fused else "unfused"}' in message
@@ -312,3 +314,10 @@ def test_check_r_skips_the_arithmetic_comparison_for_a_source_without_fused(monk
     monkeypatch.delattr(metafopy.core.dbinom, 'FUSED')
     outcome = audit.steps.check_r(ctx)
     assert 'predates metafopy.core.dbinom.FUSED' in outcome.notes[0]
+
+
+@pytest.mark.parametrize('value', ['abc', '999', '1,x'])
+def test_recall_value_that_names_no_audit_is_a_usage_error(value: str) -> None:
+    with pytest.raises(SystemExit) as raised:
+        audit.cli.parse_args(['--recall', value])
+    assert raised.value.code == 2

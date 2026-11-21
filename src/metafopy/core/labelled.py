@@ -325,6 +325,7 @@ class EscalcFrame(pandas.DataFrame):
     """
 
     @property
+    # auditme: accept[S4] the name is fixed by pandas' subclassing protocol
     def _constructor(self) -> collections.abc.Callable[..., pandas.DataFrame]:
         return pandas.DataFrame
 
@@ -385,6 +386,7 @@ class RFrame(pandas.DataFrame):
     """
 
     @property
+    # auditme: accept[S4] the name is fixed by pandas' subclassing protocol
     def _constructor(self) -> collections.abc.Callable[..., pandas.DataFrame]:
         return pandas.DataFrame
 

@@ -61,7 +61,7 @@ model with that estimator of the amount of heterogeneity tau^2:
 | `'REML'` (default) | Restricted maximum likelihood |
 | `'ML'` | Maximum likelihood |
 | `'DL'`, `'DLIT'` | DerSimonian-Laird, and its iterative version |
-| `'HE'` | Hedges |
+| `'HE'` (aliases `'CO'` and `'VC'`) | Hedges |
 | `'HS'`, `'HSk'` | Hunter-Schmidt, and its small-sample variant |
 | `'SJ'`, `'SJIT'` | Sidik-Jonkman, and its iterative version |
 | `'EB'` | Empirical Bayes |
@@ -202,12 +202,13 @@ print(predict(rma('yi', 'vi', data=dat), transf=numpy.exp))
 ```
 
 ```text
-     pred      se   ci.lb   ci.ub   pi.lb   pi.ub
-0 -0.0396  0.1866 -0.4053  0.3262 -0.6931  0.6140
-1 -0.6216  0.1069 -0.8312 -0.4120 -1.2023 -0.0409
-2 -1.2036  0.1716 -1.5400 -0.8672 -1.8412 -0.5660
-     pred   ci.lb   ci.ub   pi.lb  pi.ub
-0  0.4894  0.3441  0.6962  0.1546  1.549
+     pred     se   ci.lb   ci.ub   pi.lb   pi.ub
+1 -0.0396 0.1866 -0.4053  0.3262 -0.6931  0.6140
+2 -0.6216 0.1069 -0.8312 -0.4120 -1.2023 -0.0409
+3 -1.2036 0.1716 -1.5400 -0.8672 -1.8412 -0.5660
+
+   pred  ci.lb  ci.ub  pi.lb  pi.ub
+ 0.4894 0.3441 0.6962 0.1546 1.5490
 ```
 
 `transf=` applies a transformation to the predictions and their bounds. Prediction intervals (`pi.lb`, `pi.ub`) include the
@@ -263,9 +264,12 @@ print(anova(res, btt=[1]))
 ```
 
 ```text
-         df      AIC      BIC     AICc   logLik     LRT    pval        QE   tau^2      R^2
-Full      3  21.3713  23.0662  24.0380  -7.6857     NaN     NaN   30.7331  0.0344      NaN
-Reduced   2  29.3302  30.4601  30.5302 -12.6651  9.9588  0.0016  152.2330  0.2800  87.7302
+        df     AIC     BIC    AICc   logLik    LRT   pval       QE  tau^2
+Full     3 21.3713 23.0662 24.0380  -7.6857                30.7331 0.0344
+Reduced  2 29.3302 30.4601 30.5302 -12.6651 9.9588 0.0016 152.2330 0.2800
+             R^2
+Full
+Reduced 87.7302%
 Test of Moderators (coefficient 2):
 QM(df = 1) = 16.3571, p-val < .0001
 ```

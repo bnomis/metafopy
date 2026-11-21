@@ -283,6 +283,7 @@ def conv_2x2(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
         metafopy.errors.NotFoundError: a column named by an argument does not exist in ``data``.
+        metafopy.errors.ArgumentError: an argument is not numeric.
     """
     repl = match_replace(replace)
     # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
@@ -446,6 +447,7 @@ def conv_delta(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
         metafopy.errors.NotFoundError: a column named by an argument does not exist in ``data``.
+        metafopy.errors.ArgumentError: an argument is not numeric.
     """
     if yi is None or vi is None:
         raise metafopy.errors.InputError("Must specify the 'yi' and 'vi' arguments.")
@@ -548,6 +550,7 @@ def conv_wald(
         metafopy.errors.InputError: an argument or the data is invalid.
         metafopy.errors.NotFoundError: a column named by an argument does not exist in ``data``.
         metafopy.errors.InternalError: the new sampling variances cannot be determined.
+        metafopy.errors.ArgumentError: an argument is not numeric.
     """
     if out is None and ci_lb is None and ci_ub is None and zval is None and pval is None:
         raise metafopy.errors.InputError("Must specify at least some of these arguments: 'out', 'ci.lb', 'ci.ub', 'zval', 'pval'.")
