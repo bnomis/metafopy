@@ -4,6 +4,7 @@ This mirrors the argument handling at the top of metafor's ``rma.uni`` and
 ``rma.mv``: arguments may be arrays or column names in ``data``; ``subset`` is
 applied first, then the ``na.action`` rule; ``mods`` may be a one-sided formula
 or a matrix (in which case an intercept is added unless ``intercept=False``).
+See https://github.com/wviechtb/metafor/blob/master/R/rma.uni.r and https://github.com/wviechtb/metafor/blob/master/R/rma.mv.r.
 """
 
 import collections.abc

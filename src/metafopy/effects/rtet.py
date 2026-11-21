@@ -6,6 +6,7 @@ doi:10.1007/BF02291424). As in metafor, ``rho`` is first optimised with the
 thresholds fixed at the sample margins, then all three parameters jointly by
 Nelder-Mead, and the variance is the ``[0, 0]`` element of the inverse
 numerical Hessian.
+See https://wviechtb.github.io/metafor/reference/escalc.html.
 """
 
 import math

@@ -19,6 +19,7 @@ non-negative quadratic forms in normal variables. *Applied Statistics*, 26(1),
 Duchesne, P. & Lafaye de Micheaux, P. (2010). Computing the distribution of
 quadratic forms. *Computational Statistics & Data Analysis*, 54(4), 858-862.
 doi:10.1016/j.csda.2009.11.025
+See https://github.com/cran/CompQuadForm/tree/master/src.
 """
 
 import collections.abc

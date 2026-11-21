@@ -1,4 +1,7 @@
-"""Histograms drawn the way R's ``hist()`` does, with the tail shading of metafor's ``.coltail()`` (shared by the permutest and VIF plots)."""
+"""Histograms drawn the way R's ``hist()`` does, with the tail shading of metafor's ``.coltail()`` (shared by the permutest and VIF plots).
+
+See https://stat.ethz.ch/R-manual/R-devel/library/graphics/html/hist.html and https://wviechtb.github.io/metafor/reference/permutest.html.
+"""
 
 import collections.abc
 import contextlib

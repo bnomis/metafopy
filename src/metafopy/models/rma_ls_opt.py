@@ -8,6 +8,7 @@ followed by a Nelder-Mead polish, which reaches the same optimum to well within 
 ``constrOptim`` stops about 1e-5 short of the identity-link maximum, so :func:`polish_identity` finishes it on the analytic score (metafor does not).
 
 Source of ``constrOptim``: R ``src/library/stats/R/constrOptim.R`` (GPL-2 | GPL-3).
+See https://stat.ethz.ch/R-manual/R-devel/library/stats/html/constrOptim.html and https://stat.ethz.ch/R-manual/R-devel/library/stats/html/nlminb.html.
 """
 
 import collections.abc

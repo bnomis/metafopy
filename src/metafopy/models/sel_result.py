@@ -1,4 +1,7 @@
-"""The fitted selection model (:class:`SelmodelResult`) and its metafor-style printout."""
+"""The fitted selection model (:class:`SelmodelResult`) and its metafor-style printout.
+
+See https://wviechtb.github.io/metafor/reference/selmodel.html.
+"""
 
 import dataclasses
 import math

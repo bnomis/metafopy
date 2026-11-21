@@ -6,6 +6,7 @@ depend on moderators: ``y_i = x_i' beta + u_i + e_i`` with ``u_i ~ N(0, tau_i^2)
 Viechtbauer and Lopez-Lopez (2022), Location-scale models for meta-analysis, Research Synthesis Methods,
 doi:10.1002/jrsm.1562. The model is fitted by :func:`metafopy.rma_uni` when its ``scale`` argument is given;
 this module normalises the scale model matrix and calls :mod:`metafopy.models.rma_ls_fit`.
+See https://wviechtb.github.io/metafor/reference/rma.uni.html.
 """
 
 import collections.abc

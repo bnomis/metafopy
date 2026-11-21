@@ -104,6 +104,7 @@ def ci_columns() -> list[str]:
     return ['estimate', 'ci.lb', 'ci.ub']
 
 
+# auditme: accept[S4] metafor's list.confint.rma returns a list, so the result must index like one
 class ConfintList(list[ConfintResult]):
     """The confidence intervals of several variance components of an ``rma.mv`` fit (metafor's ``list.confint.rma``): one :class:`ConfintResult`
     per component, in the order of ``sigma2``, ``tau2``, ``rho``, ``gamma2`` and ``phi``."""

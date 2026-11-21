@@ -13,6 +13,7 @@ References
 DerSimonian & Laird (1986), doi:10.1016/0197-2456(86)90046-2;
 Viechtbauer (2005), doi:10.3102/10769986030003261;
 Veroniki et al. (2016), doi:10.1002/jrsm.1164.
+See https://wviechtb.github.io/metafor/reference/rma.uni.html and https://github.com/wviechtb/metafor/blob/master/R/rma.uni.r.
 """
 
 import dataclasses

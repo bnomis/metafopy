@@ -37,6 +37,7 @@ __all__ = ['ProfileList', 'ProfileResult', 'profile']
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 
 
+# auditme: accept[S4] metafor returns a list of profiles, so the result must index like one
 class ProfileList(list[typing.Any]):
     """The profiles of several components (metafor returns a list of profiles with the number of components in ``comps``)."""
 

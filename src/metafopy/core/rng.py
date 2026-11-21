@@ -6,6 +6,7 @@ linear congruential generator, turns the 32-bit outputs into doubles with
 ``fixup``, and (since R 3.6.0) draws ``sample()`` indices by rejection sampling.
 The sampling routines follow R's ``src/main/RNG.c`` and ``src/main/random.c``
 (GPL-2 | GPL-3).
+See https://github.com/wch/r-source/blob/trunk/src/main/RNG.c and https://github.com/wch/r-source/blob/trunk/src/main/random.c.
 """
 
 import collections.abc

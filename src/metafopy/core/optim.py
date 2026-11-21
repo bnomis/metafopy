@@ -13,6 +13,7 @@ Sources (R 4.3.3, GPL-2 | GPL-3):
   Methods for Computers*, 2nd ed., Algorithm 19.
 - ``src/library/stats/src/optim.c``: ``optimhess`` and ``fmingr`` (central
   differences with step ``ndeps``).
+See https://github.com/wch/r-source/blob/trunk/src/library/stats/src/optimize.c, https://github.com/wch/r-source/blob/trunk/src/appl/optim.c and https://github.com/wch/r-source/blob/trunk/src/library/stats/src/optim.c.
 """
 
 import collections.abc

@@ -627,6 +627,15 @@ ulp below, so the p-value is 0.928 in R and 0.927 here.
 
 *Why:* R's answer depends on which way a rounding error falls (checked 2026-11-05, R 4.6.2, metafor 5.2-1).
 
+### emmeans mvt adjustment: the integrator's draws
+
+The `mvt` adjustment of the emmeans functions integrates the multivariate t (or normal) distribution by randomised quasi-Monte
+Carlo, as emmeans does through `mvtnorm`. metafopy seeds SciPy's integrator with a fixed seed (`MVT_SEED` in
+`metafopy.methods.emm_adjust`), which cannot reproduce R's `mvtnorm` draw for draw, so adjusted p-values and critical values
+agree with R only up to the integrator's error.
+
+*Why:* SciPy's integrator takes a NumPy generator, not R's, so the draws cannot be the same.
+
 ### selmodel on a flat likelihood
 
 `selmodel(type='beta')` on `dat.baskerville2012` has `tau2` near zero and a `delta` on its lower bound (both languages warn

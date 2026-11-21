@@ -457,7 +457,7 @@ never read a file outside the dataset folder.
 
 ## Task 12: Project rules: RNG, links, protocol names and the R-list results
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** medium
 **Source Reference:** F18 (S4)
@@ -466,17 +466,17 @@ never read a file outside the dataset folder.
 
 **Subtasks:**
 
-- [ ] `src/metafopy/plot/selmodel.py:179`: draw the `ci='boot'` bands with the R-exact `metafopy.methods.simulate.mvrnorm` (which takes a `metafopy.core.rng.RRandom`) instead of
+- [x] `src/metafopy/plot/selmodel.py:179`: draw the `ci='boot'` bands with the R-exact `metafopy.methods.simulate.mvrnorm` (which takes a `metafopy.core.rng.RRandom`) instead of
       `numpy.random.default_rng().multivariate_normal`, seeded as the other R-exact procedures are. The review approved this output change
       (F18, 2026-11-21); compare against an R `plot(selmodel, ci="boot")` fixture if one exists, and otherwise test that a fixed seed
       reproduces
-- [ ] `src/metafopy/methods/emm_adjust.py:143-159`: add a comment and a line in `docs/differences.md` saying that the `mvt` adjustment
+- [x] `src/metafopy/methods/emm_adjust.py:143-159`: add a comment and a line in `docs/differences.md` saying that the `mvt` adjustment
       seeds SciPy's integrator with `MVT_SEED`, which cannot match R's `mvtnorm` draw for draw
-- [ ] Add scoped `# auditme: accept[S4]` markers at:
+- [x] Add scoped `# auditme: accept[S4]` markers at:
   - the protocol-named methods: `_repr_html_` at `printing.py:229` and `rma_uni.py:313` (IPython), `_constructor` at `labelled.py:328`
     and `:388` (pandas);
   - the `list`-subclass results (`ListAnovaResult`, `ConfintList`, `ProfileList`): R returns lists here and the result must index like one
-- [ ] Add the R source or paper link to the module docstring of each of these modules (each is named in the S4 block of the review):
+- [x] Add the R source or paper link to the module docstring of each of these modules (each is named in the S4 block of the review):
   - `core/bfgs.py`, `core/bvn.py`, `core/farebrother.py`, `core/optim.py`, `core/rng.py`, `core/zeroin.py`
   - `effects/rtet.py`, `metadata.py`
   - `models/rma_ls.py`, `models/rma_ls_opt.py`, `models/rma_ls_result.py`, `models/sel_result.py`, `models/tau2.py`,
@@ -484,17 +484,17 @@ never read a file outside the dataset folder.
   - `plot/histplot.py`, `plot/setlab_table.py`
 
   Use the URL forms the other modules use
-- [ ] Run the tests below
+- [x] Run the tests below
 
 **Acceptance Criteria:**
 
-- [ ] No `numpy.random` remains in a ported procedure apart from the documented `mvt` seeding, and every listed module links its source
+- [x] No `numpy.random` remains in a ported procedure apart from the documented `mvt` seeding, and every listed module links its source
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy src/metafopy/plot/selmodel.py src/metafopy/methods/emm_adjust.py` passes
-- [ ] `pytest src/tests/test_selmodel.py src/tests/test_docstring_links.py src/tests/test_emmeans_inference.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy src/metafopy/plot/selmodel.py src/metafopy/methods/emm_adjust.py` passes
+- [x] `pytest src/tests/test_selmodel.py src/tests/test_docstring_links.py src/tests/test_emmeans_inference.py` passes
 
 ---
 

@@ -158,6 +158,7 @@ class WaldResult(metafopy.printing.HtmlRepr):
         return self.summary()
 
 
+# auditme: accept[S4] metafor's list.anova.rma returns a list, so the result must index like one
 class ListAnovaResult(list[WaldResult]):
     """The tests of a list of ``btt`` specifications (metafor's ``list.anova.rma``): a list of :class:`WaldResult`, one per specification.
 
