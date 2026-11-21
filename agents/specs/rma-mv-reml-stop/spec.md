@@ -1,8 +1,9 @@
 # rma_mv REML stop
 
-**Version:** 1.1
+**Version:** 1.2
 **Status:** implemented
 **Date:** 2026-11-17
+**Corrected:** 2026-11-21 (version 1.2): statements that no longer matched the code, from audit review-1 (`agents/audit-reviews/review-1.md`, finding group F6)
 
 `rma_mv` with the default optimiser maximises the (restricted) log-likelihood with SciPy's BFGS on the analytic score and accepts a stop that BFGS
 itself reports as failed ("precision loss") whenever the largest gradient entry is under `SLACK_GRADIENT` (1e-4). Where the line search loses precision
@@ -145,7 +146,7 @@ cannot improve is accepted as before.
 - R parity: `src/tests/test_rma_mv.py`, `test_rma_mv_extras.py`, `test_mv_diagnostics.py`, `test_mv_inputs.py` and the other test files that import
   `rma_mv` pass unchanged (see Measured above); no fixture is regenerated and none is marked differing. Any that fails is a stop for the operator, not
   a tolerance change.
-- `bin/platform-probe.py` group `mv-reml-score` also records the polish's step count and final gradient, so the CI probe can confirm it; its test in
+- `bin/platform-probe.py` group `mv-reml-score` also records the polish's Hessian count (`polish.hessians`, the number of `score_jacobian` calls, an upper bound on the Newton steps) and final gradient, so the CI probe can confirm it; its test in
   `src/tests/test_platform_probe.py` still passes.
 
 ### Records

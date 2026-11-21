@@ -1,8 +1,9 @@
 # Correctness tests: rma_uni diagnostics
 
-**Version:** 1.1
+**Version:** 1.2
 **Status:** implemented
 **Date:** 2026-11-20
+**Corrected:** 2026-11-21 (version 1.2): statements that no longer matched the code, from audit review-1 (`agents/audit-reviews/review-1.md`, finding group F6)
 
 This spec adds correctness cases for the `rma_uni` diagnostics `cooks_distance`, `dfbetas`, `rstudent` and `ranef` to the harness in
 `src/tests/correctness/`: values printed by the defining publication, independent references computed from its equations (explicit leave-one-out
@@ -175,8 +176,8 @@ def uni_mean_shift(case: correctness.cases.Case, result: typing.Any) -> None:
 
 ## Coverage list
 
-`coverage_items()` gains `uni_diagnostics_items()`, with one new constant in `test_coverage.py`, `UNI_FITS = ('ee', 'me', 're', 'tau2_fixed')`
-(no list in the code names them), and the existing `MV_DIAGNOSTICS` for the function names:
+`coverage_items()` gains `uni_diagnostics_items()`, with new constants in `test_coverage.py`: `UNI_FITS = ('ee', 'me', 're', 'tau2_fixed')`
+(no list in the code names them), `UNI_INFLUENCE` (decision D1) and `UNI_EXEMPT`, and the existing `MV_DIAGNOSTICS` for the function names:
 
 - `rma_uni.<f>.<fit>` for each `f` in `MV_DIAGNOSTICS` and `fit` in `UNI_FITS` (`re`: estimated `tau2`, no moderators; `me`: estimated `tau2` with
   moderators; `ee`: an equal-effects fit; `tau2_fixed`: `tau2` given by the call), and `rma_uni.cooks_distance.btt`;
@@ -219,13 +220,13 @@ Every derived `uni.diag.*` case also checks every `influence` column and `rstand
 `rma_uni.rstandard.marginal`. The published `blup` case holds `pred[3]` "0.21", `min(pred)` "-0.03" and `max(pred)` "0.25" (Table 16.2 and section
 16.5.6.1; metafopy 0.2144, -0.0293 and 0.2485, measurements.md); the book's mixed-model range is not used (Decisions).
 
-The published case's `expect` holds the printed values of measurements.md (study 4 is index 3): `tau2` "0.0790", `hat`, `rstudent`, `cook.d` and
+The published case's `printed` key (it has no `expect`) holds the printed values of measurements.md (study 4 is index 3): `tau2` "0.0790", `hat`, `rstudent`, `cook.d` and
 `R` of studies 4, 7 and 13, and `dfbetas[3,0]` to `dfbetas[3,2]`; its locator names section 5.1 and Table I. No case is expected to be a `mismatch`:
 every reference measured agrees with metafopy to 1.6e-11 or better.
 
 Property cases (`properties.toml`, check `test_properties.uni_mean_shift`): `property.uni.mean-shift.dl.bcg` (the paper's fit) and
 `property.uni.mean-shift.reml.bcg` (`~ ablat`, tight control); measured differences 1.5e-14 and 3.9e-15. The existing
-`property.mv.diagnostics-equal-uni` case already ties the `rma_mv` and `rma_uni` diagnostics together.
+`property.mv.diagnostics-one-row-per-id.bcg` case (check `test_properties.mv_diagnostics_equal_uni`) already ties the `rma_mv` and `rma_uni` diagnostics together.
 
 ## Error handling
 

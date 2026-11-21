@@ -1,8 +1,9 @@
 # Correctness tests
 
-**Version:** 1.1
+**Version:** 1.2
 **Status:** implemented
 **Date:** 2026-11-11
+**Corrected:** 2026-11-21 (version 1.2): statements that no longer matched the code, from audit review-1 (`agents/audit-reviews/review-1.md`, finding group F6)
 
 Every numeric test in `src/tests/` today compares metafopy with R metafor: the JSON fixtures in `src/tests/reference/` are written by `src/tests/r/*.R`, and
 `bin/metafor-audit.sh` diffs the whole API against R. Those tests prove that metafopy reproduces metafor, not that either is right; a bug in metafor passes
@@ -131,7 +132,7 @@ replaced by the column). A case lists in `covers` the coverage items it checks, 
 and `derived` cases. `load_cases` takes a `directory` keyword for tests of the harness, and `[[exempt]]` entries (`item`, `reason`) and the `escalc` `vtypes`
 table (a `vtypes` array of `{ measure, vtype = [...] }`, the same data as `[[vtypes]]` entries) are read by `load_exemptions` and `load_vtypes`.
 
-`derived` and `property` cases whose check is not a single call carry `function = "formulas.<name>"` or a test-module function named in `check`; the
+`derived` and `property` cases whose check is not a single call carry `function = "formulas.<name>"` (or `glmm_formulas.<name>`; `FORMULA_MODULES` in `cases.py`) or a test-module function named in `check`; the
 loader resolves both and refuses anything else.
 
 ## Coverage list

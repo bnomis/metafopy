@@ -226,7 +226,7 @@ caller.
 
 ## Task 6: Specs that no longer match the code
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** medium
 **Source Reference:** F6 (Doc4)
@@ -235,18 +235,18 @@ caller.
 
 **Subtasks:**
 
-- [ ] List the open Doc4 findings with the report command (30, in 11 specs)
-- [ ] For each, correct the statement to what the code does. Bump the spec's `**Version:**` minor number, and add a dated line under the
+- [x] List the open Doc4 findings with the report command (30, in 11 specs)
+- [x] For each, correct the statement to what the code does. Bump the spec's `**Version:**` minor number, and add a dated line under the
       header saying what was corrected and that it came from audit review-1. Never edit a section that states its own date
-- [ ] For `auditme-clean`, the hooks now come from `bnomis/auditor` with `AUDITOR_DEPLOY_KEY` (changed in `31d809f`)
+- [x] For `auditme-clean`, the hooks now come from `bnomis/auditor` with `AUDITOR_DEPLOY_KEY` (changed in `31d809f`)
 
 **Acceptance Criteria:**
 
-- [ ] Every Doc4 finding is corrected; each touched spec has a new version and a dated change line
+- [x] Every Doc4 finding is corrected; each touched spec has a new version and a dated change line
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
 
 **Notes:**
 

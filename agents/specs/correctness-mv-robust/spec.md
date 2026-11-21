@@ -1,8 +1,9 @@
 # Correctness tests: rma_mv and robust
 
-**Version:** 1.1
+**Version:** 1.2
 **Status:** implemented
 **Date:** 2026-11-12
+**Corrected:** 2026-11-21 (version 1.2): statements that no longer matched the code, from audit review-1 (`agents/audit-reviews/review-1.md`, finding group F6)
 
 Found on 2026-11-12 while reviewing `TODO.md` (item "Extend the correctness tests beyond the core models"): the introduction of the
 [correctness-tests spec](../correctness-tests/spec.md) says "Later specs extend the same harness to `rma_mv`, `rma_glmm`, `rma_ls`, the bias methods,
@@ -93,8 +94,8 @@ def cluster_robust_vcov(X: FloatArray, W: FloatArray, resid: FloatArray, cluster
 
 
 def satterthwaite_dfs(...) -> FloatArray: ...        # Tipton (2015), equation 11; Pustejovsky and Tipton (2018), section 3
-def hotelling_wald(...) -> tuple[float, float, float]: ...  # HTA, HTB, HTZ, EDF, EDT of Tipton and Pustejovsky (2015), section 3
-def saddlepoint_pvalue(...) -> float: ...            # Kuonen (1999), equations 2 to 4
+def hotelling_wald(...) -> WaldTest: ...  # HTA, HTB, HTZ, EDF, EDT of Tipton and Pustejovsky (2015), section 3
+def saddlepoint_pvalue(...) -> FloatArray: ...            # Kuonen (1999), equations 2 to 4
 ```
 
 `RandomTerm` and `MVFit` are small frozen dataclasses in `formulas.py`. The check functions in `test_derived.py` read the case's `random`, `struct`, `mods`
@@ -163,7 +164,7 @@ Olkin's chapter. Every other row is supplied by the user or read open access wit
 - `then` with keys other than `function` and `args`, or a `setup` with both `vblocks` and `vconst`, or either without `cluster`, raises `ValueError`
   naming the file and case id, as every malformed case does; an unknown follow-on function raises `LookupError` naming it.
 - `build_v` raises `ValueError` naming the case when a `vblocks` cluster's row count differs from the number of `columns`, or a block is not symmetric.
-- `mv_fit` that does not converge (scipy's `success` false, or a gradient norm above `1e-6`) fails the case naming the structure and the optimiser
+- `mv_fit` that does not converge (a gradient norm above `1e-6`; scipy's `success` flag is not consulted) fails the case naming the structure and the optimiser
   message; it is never compared.
 - `r/other_software_mv.R` stops unless each package version equals the one pinned at its top, and unless `tools::package_dependencies` shows that
   none of `mvmeta`, `nlme`, `robumeta` and `sandwich` depends on metafor.

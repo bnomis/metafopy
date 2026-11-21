@@ -1,8 +1,9 @@
 # Auditme clean
 
-**Version:** 1.1
+**Version:** 1.2
 **Status:** implemented
 **Date:** 2026-10-31; amended 2026-11-01 (order of work, Implementation)
+**Corrected:** 2026-11-21 (version 1.2): the hooks come from `bnomis/auditor` with `AUDITOR_DEPLOY_KEY` (changed in `31d809f`), and `check_class` raises `ArgumentError` on every call whose `x` is not of class `must`; from audit review-1 (`agents/audit-reviews/review-1.md`, finding group F6)
 **Review document:** [review.md](review.md)
 **Review page:** https://claude.ai/artifact/QoVrK6ztdQZsb1KLd3Twng
 
@@ -75,8 +76,8 @@ def fsn(x: RMAResult | ArrayLike | str, vi: ArrayLike | str | None = None, *, ..
 
 Where a callee declares an error that cannot fire on this call, the hit is
 accepted, not copied into the section. `check_class` raises `ArgumentError`
-only when given `must`, and `fsn` passes only `notav`, so that hit is likely
-such a case; step 3 decides it from the code.
+whenever `x` is not of class `must` (default `'rma'`), given or not, so that
+hit is real for any call; step 3 decides each one from the code.
 
 ## Fix-or-accept policy
 
@@ -137,7 +138,7 @@ fixes pull in. Task 4 of the first task list stopped on this on 2026-11-01
 (72 hits in scope); the operator chose to clear by package.
 
 1. **Commit hook.** Run `/project-setup adopt`: add the
-   `git@github.com:bnomis/agents.git` hook block with `auditme-changed`
+   `git@github.com:bnomis/agents.git` hook block (now `git@github.com:bnomis/auditor.git`, since `31d809f`) with `auditme-changed`
    (commit stage) and `auditme-all` (manual stage), pinned at the shared
    repository's current `main`, then `pre-commit install --hook-type
    pre-commit --hook-type pre-push`. `project-setup` files a `TODO.md` item
@@ -178,21 +179,21 @@ Each step's Definition of Done: `ruff format`, `ruff check`, `mypy` and
   the environment dependence in the auditme `requests.md` rather than
   rewriting `uv.lock`, which `AGENTS.md` forbids without instruction.
 - **No access to the shared repository.** `project-setup` stops if
-  `git ls-remote` fails; CI needs the `AGENTS_DEPLOY_KEY` secret before the
+  `git ls-remote` fails; CI needs the `AUDITOR_DEPLOY_KEY` secret (`AGENTS_DEPLOY_KEY` before `31d809f`) before the
   gate is added.
 
 ## Settings
 
 | Setting | Type | Default | Description |
 |---|---|---|---|
-| `.pre-commit-config.yaml` agents `rev` | commit hash | shared `main` at step 1 | the checker version every hook and CI runs |
+| `.pre-commit-config.yaml` auditor `rev` (repository `git@github.com:bnomis/auditor.git`) | commit hash | shared `main` at step 1 | the checker version every hook and CI runs |
 | `auditme-all` `stages` | list | `[manual]`, then `[manual, pre-push]` at step 5 | when the whole-tree sweep runs |
-| `AGENTS_DEPLOY_KEY` | GitHub secret | none until step 5 | read-only key CI uses to fetch the shared hooks |
+| `AUDITOR_DEPLOY_KEY` | GitHub secret | none until step 5 | read-only key CI uses to fetch the shared hooks |
 
 ## External dependencies
 
-- The shared agents repository (`git@github.com:bnomis/agents.git`): the
+- The shared auditor repository (`git@github.com:bnomis/auditor.git`): the
   auditme checker and the `auditme-changed` / `auditme-all` hooks. Check it
-  is reachable with `git ls-remote git@github.com:bnomis/agents.git
+  is reachable with `git ls-remote git@github.com:bnomis/auditor.git
   refs/heads/main`.
 - `pre-commit`, already used for the ruff hooks.

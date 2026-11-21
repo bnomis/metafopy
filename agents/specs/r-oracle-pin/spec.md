@@ -1,8 +1,9 @@
 # R oracle pin
 
-**Version:** 1.0
+**Version:** 1.1
 **Status:** implemented
 **Date:** 2026-11-03
+**Corrected:** 2026-11-21 (version 1.1): statements that no longer matched the code, from audit review-1 (`agents/audit-reviews/review-1.md`, finding group F6)
 
 The audit harness compares metafopy with R metafor, so R and every package
 it loads are the oracle. Only metafor, metadat and gsl are pinned today, and
@@ -63,8 +64,8 @@ Decisions taken with the operator on 2026-11-03:
 - `src/audit/data/known.toml`, `src/audit/data/universe.json` - brought up to
   the pin
 - `src/audit/README.md`, `docs/differences.md` - the pinned versions
-- `src/tests/test_harness_errors.py`, `src/tests/test_harness_accounts.py` -
-  tests
+- `src/tests/test_harness_compare.py` - tests of `check_r`, `library_drift`,
+  `allow_r_drift` and `oracle_moved`
 
 ## API
 

@@ -1,8 +1,9 @@
 # Correctness tests for rma_glmm
 
-**Version:** 1.1
+**Version:** 1.2
 **Status:** implemented
 **Date:** 2026-11-12
+**Corrected:** 2026-11-21 (version 1.2): statements that no longer matched the code, from audit review-1 (`agents/audit-reviews/review-1.md`, finding group F6)
 
 `rma_glmm` fits generalised linear mixed models to binomial and Poisson counts: the unconditional models with fixed or random study effects (`UM.FS`,
 `UM.RS`), the conditional models with the approximate and exact likelihood (`CM.AL`, `CM.EL`), and the one-group logistic and Poisson models. Today its
@@ -174,7 +175,7 @@ def glmm_likelihood_at_estimate(case: correctness.cases.Case, result: GLMMResult
     """The formulas' log-likelihood at the reported estimates equals ``result.fit_stats_ml.ll`` and the formulas' maximum; the gradient is small."""
 ```
 
-Each model gets a `glmm_fit`-style entry point (`poisson_`, `one_group_`, `conditional_` variants with the arguments of its measure); `GLMMReference` is
+Each model gets a `glmm_fit`-style entry point (`poisson_glmm_fit` and `one_group_glmm_fit`, with the arguments of its measure; the conditional models are fitted by `glmm_fit` itself through its `model` argument); `GLMMReference` is
 a frozen dataclass in `glmm_formulas.py`. Case `args` are `rma_glmm`'s own arguments, so `formula_value` passes them by name as it does for `escalc`.
 
 ## Error handling
