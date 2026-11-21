@@ -49,13 +49,13 @@ mkdocs serve
 
 ## Validation against R
 
-R metafor is the numerical reference. `src/tests/r/` holds the R scripts that generate JSON fixtures in `src/tests/reference/` (currently metafor 5.2-1, metadat 1.6-0). The fixtures are committed, so the normal test run needs no R.
+The publication that defines each method is the first numerical oracle; R metafor is the second. `src/tests/r/` holds the R scripts that generate JSON fixtures in `src/tests/reference/` (`generate_fixtures.R` is one of them; currently metafor 5.2-1, metadat 1.6-0). The fixtures are committed, so the normal test run needs no R.
 
 To regenerate them:
 
 ```bash
-Rscript src/tests/r/export_datasets.R     # refresh bundled datasets
-Rscript src/tests/r/generate_fixtures.R   # refresh src/tests/reference/*.json
+LC_ALL=C.UTF-8 Rscript src/tests/r/export_datasets.R     # refresh bundled datasets
+LC_ALL=C.UTF-8 Rscript src/tests/r/generate_fixtures.R   # refresh src/tests/reference/*.json
 ```
 
 or reproducibly with the pinned image in `src/tests/r/Dockerfile`:

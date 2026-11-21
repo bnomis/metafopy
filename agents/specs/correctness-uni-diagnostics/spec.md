@@ -62,7 +62,7 @@ lambda_i^2 x_i vb x_i'` (the marginal form metafor computes). The reference solv
 tau2 I`, which is `formulas.mv_blups` with one `~ 1 | study` term: a different algorithm for the same definition, already checked for `rma_mv`.
 The intervals are `pred +- crit se`, `crit` the normal quantile, or with `test` `t`, `knha`, `hksj` or `adhoc` the t quantile on `k - p` degrees of
 freedom (the `ranef` help page of metafor 5.2-1, read 2026-11-20, coded from the documentation under the rule decided on 2026-11-13 in
-correctness-mv-robust, Decisions). For EE fits the help page says the BLUPs are 0.
+[correctness-mv-robust](../correctness-mv-robust/spec.md), Decisions). For EE fits the help page says the BLUPs are 0.
 
 `blup` (decision D2) returns `x_i b + u_i`, the shrunken estimate of each study's true effect (Raudenbush 2009, eqs 16.23-16.25), with its prediction
 error variance from the same mixed model equations (`formulas.uni_blups`, a thin wrapper of `mv_blups` that adds `x_i b` and the covariance of `b`

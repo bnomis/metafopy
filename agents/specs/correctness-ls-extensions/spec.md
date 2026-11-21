@@ -24,7 +24,7 @@ of `optbeta` fits) are checked against R metafor only. Its note of 2026-11-20 sa
 
 Re-checked on 2026-11-20 at `936021a`: no case in `src/tests/correctness` calls `profile`, `vif`, `blup`, `ranef` or `rstandard` on a location-scale
 fit, or passes `weighted`, `alpha`, `beta`, `alpha_min` or `alpha_max` with `scale`; the `ls.optbeta.*` cases are ML only and skip `vb`;
-`ls_fitstats` skips the deviance. The ls-profile-starts and ls-profile-feasible-start specs (2026-11-18) changed `profile_fit`, which `confint` and
+`ls_fitstats` skips the deviance. The [ls-profile-starts](../ls-profile-starts/spec.md) and [ls-profile-feasible-start](../ls-profile-feasible-start/spec.md) specs (2026-11-18) changed `profile_fit`, which `confint` and
 `profile` share, and are checked only through `ls.confint.scale.*` (the bounds) and `property.ls.profile.*` (the reference's own profile peaks at
 metafopy's estimate); neither compares `profile()`'s output.
 
@@ -51,7 +51,7 @@ reduced model with location coefficients constrained (eq 15, fixed `beta` under 
 `Var[e_i] = (1 - h_i)(v_i + tau2_i)` (section 2.8, marginal `rstandard`). Henderson (1975) defines BLUPs for any `G`, here `diag(tau2_i)`.
 Fox and Monette (1992) define the GVIF. metafor's help pages define the rest: `rstandard(type="conditional")` as `y_i` minus the BLUP over its
 standard error (`residuals.rma`), `vif(reestimate=TRUE)` as `Var[b_j] / Var[b'_j]` from a refit (`vif`), `weighted=FALSE` as unit weights and the
-box `alpha.min`/`alpha.max` (`rma.uni`); those are coded from the documentation (rule decided 2026-11-13, correctness-mv-robust Decisions).
+box `alpha.min`/`alpha.max` (`rma.uni`); those are coded from the documentation (rule decided 2026-11-13, [correctness-mv-robust](../correctness-mv-robust/spec.md) Decisions).
 
 Defined only in metafor's code, so exempt with reason "defined only in metafor's code; R parity covers it": the deviance of a location-scale fit
 (`-2 (ll - ll_sat)` under ML, `-2 ll` under REML; no help page defines it), the fit statistics of a `weighted=False` fit (equation 5 at the OLS

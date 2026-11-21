@@ -1,11 +1,15 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.14.7, <3.15"
 resolution-markers = [
     "sys_platform == 'win32'",
     "sys_platform == 'emscripten'",
     "sys_platform != 'emscripten' and sys_platform != 'win32'",
 ]
+
+[options]
+exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for backwards compatibility when using relative exclude-newer values.
+exclude-newer-span = "P14D"
 
 [[package]]
 name = "altair"
@@ -767,6 +771,7 @@ dev = [
     { name = "ipykernel" },
     { name = "mypy" },
     { name = "nbclient" },
+    { name = "nbformat" },
     { name = "pandas-stubs" },
     { name = "pre-commit" },
     { name = "pytest" },
@@ -794,6 +799,7 @@ dev = [
     { name = "ipykernel", specifier = ">=6.29" },
     { name = "mypy", specifier = ">=1.18" },
     { name = "nbclient", specifier = ">=0.10" },
+    { name = "nbformat", specifier = ">=5.10" },
     { name = "pandas-stubs", specifier = ">=2.1" },
     { name = "pre-commit", specifier = ">=3.7" },
     { name = "pytest", specifier = ">=8" },

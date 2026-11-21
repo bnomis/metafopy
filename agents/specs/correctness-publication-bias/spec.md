@@ -11,7 +11,7 @@ publication-bias methods are checked only against R metafor. This spec covers th
 `ranktest` (Begg and Mazumdar), `trimfill` (Duval and Tweedie), `fsn` (fail-safe N), `tes` (test of excess significance), `hc` (Henmi and Copas) and
 `selmodel` (step-function, parametric and truncation selection models). The rule is unchanged (`NOTES.md`, decided 2026-11-11; `claude/rules/metafopy.md`):
 the defining publication is the first oracle and metafor the second, and metafopy's output changes only after the user confirms each disagreement.
-The sibling specs `correctness-mv-robust`, `correctness-glmm` and `correctness-location-scale` cover the other models.
+The sibling specs [correctness-mv-robust](../correctness-mv-robust/spec.md), [correctness-glmm](../correctness-glmm/spec.md) and [correctness-location-scale](../correctness-location-scale/spec.md) cover the other models.
 
 The spec reuses the harness as it stands: the case format, the five kinds of evidence and their tolerances, the rule that only `published` and
 `derived` cases satisfy the gate, `formulas.py` importing nothing from metafopy, and the mismatch flow (strict xfail, a review document, the user's

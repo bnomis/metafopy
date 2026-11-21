@@ -115,6 +115,7 @@ def recall(args: argparse.Namespace) -> int:
     return 0 if ok else 1
 
 
+# auditme: accept[T3] bin/metafor-audit.sh --recall is its end-to-end check
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     if args.recall is not None:

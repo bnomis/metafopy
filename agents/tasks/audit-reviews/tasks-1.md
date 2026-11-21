@@ -60,7 +60,7 @@ way it does without `-O`, so that optimised runs behave like normal ones.
 
 ## Task 2: Declarations, small doc fixes and the dismissals that need a marker
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** F4 (Doc3), F5 (D1), F19 (Doc1, spec review), F20 (T3, D2)
@@ -70,33 +70,33 @@ files Phase B reads.
 
 **Subtasks:**
 
-- [ ] Run `uv add --dev 'nbformat>=5.10'` (`uv.lock` already holds 5.11.1). Stop as `blocked` if the lock changes any other package's
+- [x] Run `uv add --dev 'nbformat>=5.10'` (`uv.lock` already holds 5.11.1). Stop as `blocked` if the lock changes any other package's
       version
-- [ ] `bin/logo.py:28`, `:31`, `:32`: add a scoped `# auditme: accept[D1]` comment above the imports, saying the script's PEP 723 block
+- [x] `bin/logo.py:28`, `:31`, `:32`: add a scoped `# auditme: accept[D1]` comment above the imports, saying the script's PEP 723 block
       declares them
-- [ ] `src/audit/cli.py:118` and `bin/logo.py:265`: add `# auditme: accept[T3]` comments. The reason for `cli.main` is that
+- [x] `src/audit/cli.py:118` and `bin/logo.py:265`: add `# auditme: accept[T3]` comments. The reason for `cli.main` is that
       `bin/metafor-audit.sh --recall` is its end-to-end check; for the logo script, that it is a one-off build tool
-- [ ] `pyproject.toml:45`, `:48`, `:54` (`ipykernel`, `pandas-stubs`, `scipy-stubs`): add a TOML comment
+- [x] `pyproject.toml:45`, `:48`, `:54` (`ipykernel`, `pandas-stubs`, `scipy-stubs`): add a TOML comment
       `# auditme: accept[D2] <reason>` beside each. The reasons: ipykernel is the kernel nbclient starts; mypy reads the two stub packages
-- [ ] `README.md:52-58`: say the defining publication is the first oracle and R metafor the second; run fixtures with
+- [x] `README.md:52-58`: say the defining publication is the first oracle and R metafor the second; run fixtures with
       `LC_ALL=C.UTF-8 Rscript`; say the fixtures come from the scripts in `src/tests/r/`, with `generate_fixtures.R` as one of them
-- [ ] `AGENTS.md`, "Audit" section: say that `bin/metafor-audit.sh` writes `wrong-or-missing.md` under the ignored
+- [x] `AGENTS.md`, "Audit" section: say that `bin/metafor-audit.sh` writes `wrong-or-missing.md` under the ignored
       `.audit/runs/<timestamp>/`
-- [ ] Fix the five spec-template gaps from the review's "Spec review" section:
+- [x] Fix the five spec-template gaps from the review's "Spec review" section:
   - annotate the `fsn` signature in `agents/specs/auditme-clean/spec.md:65`;
   - turn the spec names in `correctness-ls-extensions/spec.md:27` and `:54`, `correctness-publication-bias/spec.md:14` and
     `correctness-uni-diagnostics/spec.md:65` into relative links
 
 **Acceptance Criteria:**
 
-- [ ] `uv lock --check` passes and `pyproject.toml` declares `nbformat`
-- [ ] Each marker names its question and a reason
-- [ ] `README.md` agrees with `AGENTS.md` on the oracle order and the `Rscript` command
+- [x] `uv lock --check` passes and `pyproject.toml` declares `nbformat`
+- [x] Each marker names its question and a reason
+- [x] `README.md` agrees with `AGENTS.md` on the oracle order and the `Rscript` command
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/test_showcase_notebook.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/test_showcase_notebook.py` passes
 
 **Notes:**
 

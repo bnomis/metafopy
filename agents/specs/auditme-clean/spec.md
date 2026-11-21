@@ -62,7 +62,7 @@ condition), with each condition read from the body and its callees. For `fsn`,
 whose section today names `InputError` and `NotSupportedError`:
 
 ```python
-def fsn(x, vi=None, *, ...) -> FsnResult:
+def fsn(x: RMAResult | ArrayLike | str, vi: ArrayLike | str | None = None, *, ...) -> FsnResult:
     """...
 
     Raises:
