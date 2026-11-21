@@ -149,7 +149,7 @@ trust the page.
 
 ## Task 4: The differences pages
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Source Reference:** F1 (Doc5), `docs/differences.md` and `docs/differences-notes.md`
@@ -159,29 +159,29 @@ plan around a difference that has gone.
 
 **Subtasks:**
 
-- [ ] Take the open Doc5 findings on `docs/differences.md` and `docs/differences-notes.md` from the report command
-- [ ] In `docs/differences-notes.md`, fix these statements:
+- [x] Take the open Doc5 findings on `docs/differences.md` and `docs/differences-notes.md` from the report command
+- [x] In `docs/differences-notes.md`, fix these statements:
   - the `control=` entries that are ignored, not raised, by `confint`, `hettest` and `permutest` (line 219);
   - `ni`, `ddf`, `progbar`, `res.control` and `p` for `rma_mv` and `rma_glmm` (lines 19-35 and 73);
   - the "Not ported" list (lines 229-231), keeping only what is still not ported;
   - the `vcalc(sparse=True)` printing (line 53).
-- [ ] In `docs/differences.md`, re-capture these undated output blocks:
+- [x] In `docs/differences.md`, re-capture these undated output blocks:
   - the `selmodel` flat-likelihood numbers;
   - the `rma_mv` `GEN` `tau2`;
   - the missing header lines in the `conv_fivenum`, `escalc` selection and `digits=` blocks;
   - the "Optimiser stop points" list of where the ported optimisers are used.
 
   Leave every section that states its own date as a record
-- [ ] Run `pytest src/tests/test_docs_examples.py`
+- [x] Run `pytest src/tests/test_docs_examples.py`
 
 **Acceptance Criteria:**
 
-- [ ] Every Doc5 finding on the two pages is fixed, and no dated section is rewritten
+- [x] Every Doc5 finding on the two pages is fixed, and no dated section is rewritten
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/test_docs_examples.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/test_docs_examples.py` passes
 
 **Notes:**
 
