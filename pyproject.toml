@@ -30,10 +30,7 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-interactive = [
-    "altair>=6.3",
-    "vl-convert-python>=1.9",
-]
+interactive = ["altair>=6.3", "vl-convert-python>=1.9"]
 
 [project.urls]
 Homepage = "https://github.com/bnomis/metafopy"
@@ -50,6 +47,7 @@ dev = [
     "pytest-cov>=5",
     "pytest-mpl>=0.17",
     "pytest>=8",
+    "ruff==0.17.4",
     "ruff>=0.6",
     "scipy-stubs>=1.14",
 ]
