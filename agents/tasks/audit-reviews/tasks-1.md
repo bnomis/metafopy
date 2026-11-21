@@ -579,7 +579,7 @@ never read a file outside the dataset folder.
 
 ## Task 15: The full check, the summary and closing
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** all; auditme step 8b
@@ -588,26 +588,26 @@ never read a file outside the dataset folder.
 
 **Subtasks:**
 
-- [ ] Run `python3 ~/.claude/skills/auditme/checks/audit.py . > <scratch>/audit.jsonl`. Every hit must be accepted; an unaccepted hit
+- [x] Run `python3 ~/.claude/skills/auditme/checks/audit.py . > <scratch>/audit.jsonl`. Every hit must be accepted; an unaccepted hit
       that this list introduced is fixed here
-- [ ] In `agents/audit-reviews/summary.md`, move every group this list fixed (F1-F10, F13-F20) from "Unresolved findings" to "Recently
+- [x] In `agents/audit-reviews/summary.md`, move every group this list fixed (F1-F10, F13-F20) from "Unresolved findings" to "Recently
       resolved" with "Resolved in: tasks-1 (date)"; F11 and F12 stay, pointing at their `TODO.md` items
-- [ ] Mark each task above `done` only if its commit is on the branch
-- [ ] Run the final tests from the worktree and save their whole output for the merge gate. The main checkout is the first entry of
+- [x] Mark each task above `done` only if its commit is on the branch
+- [x] Run the final tests from the worktree and save their whole output for the merge gate. The main checkout is the first entry of
       `git worktree list --porcelain`, `/Users/simonb/src/metafopy`:
       `mkdir -p /Users/simonb/src/metafopy/ralpher-logs/audit-reviews/tasks-1 && export PATH=/Users/simonb/src/metafopy/.venv/bin:$PATH PYTHONPATH=$PWD/src && pytest src/tests 2>&1 | tee /Users/simonb/src/metafopy/ralpher-logs/audit-reviews/tasks-1/final-tests.log`
 
 **Acceptance Criteria:**
 
-- [ ] `summary.md` lists each fixed group as resolved, and the final run passes
+- [x] `summary.md` lists each fixed group as resolved, and the final run passes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] The final test run above passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] The final test run above passes
 
 **Notes:**
 

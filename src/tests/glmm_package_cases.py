@@ -19,7 +19,7 @@ ONE_GROUP_ARGS: dict[str, typing.Any] = {'xi': 'tpos', 'mi': 'tneg'}
 RATE_ARGS: dict[str, typing.Any] = {'xi': 'tpos', 'ti': 'ti', 'measure': 'IRLN'}
 
 
-def case(data: collections.abc.Callable[[], typing.Any], args: dict[str, typing.Any], **kw: typing.Any) -> Case:
+def case(data: collections.abc.Callable[[], typing.Any], args: collections.abc.Mapping[str, typing.Any], **kw: typing.Any) -> Case:
     """A fit of ``args`` on ``data`` with the keyword arguments ``kw`` and the control settings handed in by the test."""
     return lambda control: metafopy.rma_glmm(**args, data=data(), control=control, **kw)
 
