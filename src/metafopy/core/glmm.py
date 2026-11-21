@@ -61,7 +61,7 @@ import metafopy.core.glm
 import metafopy.core.numderiv
 import metafopy.errors
 
-__all__ = ['GLMMFit', 'GLMMProblem', 'fit_glmm']
+__all__ = ['GLMMFit', 'GLMMProblem']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type IntArray = numpy.typing.NDArray[numpy.intp]

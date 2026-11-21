@@ -11,7 +11,7 @@ import math
 import numpy
 import scipy.optimize
 
-__all__ = ['REL_TOL', 'newton_decrement']
+__all__ = ['REL_TOL']
 
 REL_TOL = 1e-10
 

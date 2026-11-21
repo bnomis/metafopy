@@ -27,14 +27,11 @@ __all__ = [
     'Sandwich',
     'WaldResult',
     'coef_df',
-    'contrast_df',
     'matrix_power',
     'saddlepoint_p',
     'saddlepoint_pval',
     'satterthwaite_df',
     'uniroot',
-    'vcov_cr',
-    'wald_test',
 ]
 
 FloatArray = numpy.typing.NDArray[numpy.float64]

@@ -15,7 +15,7 @@ import typing
 
 import metafopy.errors
 
-__all__ = ['Parallel', 'map_sims', 'progress', 'resolve_parallel', 'tick']
+__all__ = ['Parallel', 'progress', 'resolve_parallel']
 
 # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
 type Parallel = typing.Literal['no', 'snow', 'multicore']

@@ -11,12 +11,10 @@ import metafopy.errors
 
 __all__ = [
     'NearPDResult',
-    'drop_redundant',
     'invcalc',
     'is_intercept',
     'is_nested',
     'is_positive_definite',
-    'is_symmetric',
     'logdet',
     'near_pd',
 ]

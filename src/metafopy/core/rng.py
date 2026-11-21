@@ -19,7 +19,7 @@ import scipy.special
 
 import metafopy.errors
 
-__all__ = ['RRandom', 'get_rng', 'set_seed']
+__all__ = ['set_seed']
 
 N = 624
 I2_32M1 = 2.328306437080797e-10

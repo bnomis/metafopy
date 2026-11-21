@@ -30,7 +30,7 @@ fixed (`claude/rules/metafopy.md`).
 
 ## Task 1: Make the internal helpers in core, effects, bias and the top-level modules private
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Implementation step 1; decision D1
@@ -39,28 +39,30 @@ fixed (`claude/rules/metafopy.md`).
 
 **Subtasks:**
 
-- [ ] For each name listed under "Named only in their own module's `__all__` (functions)" and under "Methods of classes named only in their own
+- [x] For each name listed under "Named only in their own module's `__all__` (functions)" and under "Methods of classes named only in their own
       module's `__all__`" (use the class name) in `measurements.md`, whose module is under `core/`, `effects/` or `bias/`, or is a top-level
       module (`formatters.py`, `formula.py`, `mfopt.py`, `printing.py`): remove it from that module's `__all__`. Delete an `__all__` that is
       left empty
-- [ ] Before each removal, check that the name is in neither `metafopy.__all__` nor a subpackage `__init__.py`'s `__all__`. If it is, keep it
+- [x] Before each removal, check that the name is in neither `metafopy.__all__` nor a subpackage `__init__.py`'s `__all__`. If it is, keep it
       and note it in the task's Notes as "stays public"
-- [ ] Run `python3 -c "import metafopy"`, then `mypy src/metafopy`, then the own tests of each changed module. If a removal breaks any of
+- [x] Run `python3 -c "import metafopy"`, then `mypy src/metafopy`, then the own tests of each changed module. If a removal breaks any of
       these, put the name back, keep it public, and note it
 
 **Acceptance Criteria:**
 
-- [ ] Each listed name in these packages is in no `__all__`, or is noted as staying public with the reason
-- [ ] `import metafopy` works and no test fails
+- [x] Each listed name in these packages is in no `__all__`, or is noted as staying public with the reason
+- [x] `import metafopy` works and no test fails
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy src/metafopy` passes
-- [ ] The own test files of every changed module pass, named in the commit body
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy src/metafopy` passes
+- [x] The own test files of every changed module pass, named in the commit body
 
 **Notes:**
 
+- No name stays public: none is in `metafopy.__all__` or a subpackage `__all__` (checked 2026-11-21)
+- Needs `uv sync --extra interactive` for mypy and the docs-example tests
 - No behaviour change: `__all__` lists only. No module does `import *` (checked 2026-11-21)
 
 ---

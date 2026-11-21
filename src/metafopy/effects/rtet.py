@@ -20,8 +20,6 @@ import metafopy.core.bvn
 import metafopy.core.optim
 import metafopy.effects.na
 
-__all__ = ['rtet']
-
 INF = math.inf
 
 

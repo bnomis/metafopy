@@ -38,12 +38,8 @@ __all__ = [
     'Strata',
     'cholesky2',
     'chsolve2',
-    'clogistic',
     'clogistic_settings',
-    'clogit',
-    'clogit_settings',
     'coxph_exact',
-    'coxph_ties',
 ]
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]

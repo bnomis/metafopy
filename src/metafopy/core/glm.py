@@ -38,19 +38,12 @@ __all__ = [
     'GLMFamily',
     'GLMFit',
     'Link',
-    'aliased_columns',
     'binomial',
     'canonical_link',
-    'check_link',
-    'deviance_residuals',
-    'family_constant',
-    'glm_fit',
     'link_fun',
     'link_inv',
     'poisson',
-    'saturated_loglik',
     'valid_eta',
-    'valid_mu',
 ]
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]

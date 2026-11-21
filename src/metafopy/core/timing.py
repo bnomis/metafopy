@@ -13,7 +13,7 @@ import inspect
 import time
 import typing
 
-__all__ = ['format_time', 'timed']
+__all__ = ['format_time']
 
 
 def number(x: float) -> str:
