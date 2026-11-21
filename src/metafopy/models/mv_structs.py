@@ -76,7 +76,11 @@ class Term:
 
 @dataclasses.dataclass(slots=True)
 class Group:
-    """A processed ``~ inner | outer`` term (metafor's ``g.*`` or ``h.*`` objects)."""
+    """A processed ``~ inner | outer`` term (metafor's ``g.*`` or ``h.*`` objects).
+
+    ``nlevels_f`` holds the numbers of levels before rows with missing values were removed, ``nlevels`` the numbers after; they are equal
+    when no row was removed.
+    """
 
     struct: str
     formula: metafopy.formula.RandomTerm

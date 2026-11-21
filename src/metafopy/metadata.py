@@ -254,6 +254,38 @@ class MetaData:
         return int(self.X.shape[1])
 
     @classmethod
+    def from_vectors(
+        cls,
+        yi: FloatArray,
+        vi: FloatArray,
+        X: FloatArray,
+        X_names: collections.abc.Sequence[str],
+        slab: collections.abc.Sequence[str],
+        weights: FloatArray | None,
+        ni: FloatArray | None,
+        keep: BoolArray | None = None,
+        slab_given: bool = False,
+        ids_all: numpy.typing.NDArray[numpy.intp] | None = None,
+    ) -> MetaData:
+        """The inputs of a model fitted again to vectors that are already subset and free of missing values, with an intercept.
+
+        ``keep`` is the mask back to the rows supplied; all rows are kept when it is None.
+        """
+        return cls(
+            yi=yi,
+            vi=vi,
+            X=X,
+            X_names=tuple(X_names),
+            slab=tuple(slab),
+            keep=numpy.ones(yi.shape[0], dtype=numpy.bool_) if keep is None else keep,
+            weights=weights,
+            ni=ni,
+            intercept=True,
+            slab_given=slab_given,
+            ids_all=ids_all,
+        )
+
+    @classmethod
     def from_inputs(
         cls,
         yi: Column | None = None,

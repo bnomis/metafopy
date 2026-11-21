@@ -43,6 +43,7 @@ class MVProfileResult(metafopy.methods.profile.ProfileResult):
     """Profile log-likelihood of one variance or correlation component of an [rma_mv][metafopy.rma_mv] fit. It has the attributes of
     [ProfileResult][metafopy.ProfileResult], with ``tau2`` holding the grid of the profiled component (whatever it is, also through the property
     named like the component: ``sigma2``, ``rho``, ``gamma2`` or ``phi``; the others raise AttributeError); ``I2`` and ``H2`` are NaN.
+    Both are the same all-NaN array (one object), since neither is defined for an ``rma.mv`` profile, so ``I2`` equals ``H2`` always.
 
     Attributes:
         comp: Name of the profiled component: ``'sigma2'``, ``'tau2'``, ``'rho'``, ``'gamma2'`` or ``'phi'``.

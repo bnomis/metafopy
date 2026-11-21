@@ -62,7 +62,10 @@ ZCOR_MEASURES = ('ZBIS', 'ZCOR', 'ZPB', 'ZPCOR', 'ZPHI', 'ZSPCOR', 'ZTET')
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class Link:
-    """A link function ``eta = linkfun(mu)`` with its inverse and the derivative ``d mu / d eta`` (emmeans' ``mu.eta``)."""
+    """A link function ``eta = linkfun(mu)`` with its inverse and the derivative ``d mu / d eta`` (emmeans' ``mu.eta``).
+
+    ``linkfun`` and ``linkinv`` are the same function (both the identity) only for the ``'identity'`` link; for every other link they are inverses.
+    """
 
     name: str
     linkfun: Func

@@ -1486,11 +1486,8 @@ def forest(
             xs, ys = diamond(pred_ci_lb[i], pred[i], pred_ci_ub[i], rows_a[i], polheight)
             sel = (xs > alim_t[0]) & (xs < alim_t[1])
             metafopy.plot.draw.poly(axx, xs[sel], ys[sel], col=col_mr, border=bord_mr)
-    ciendheight = height / 150 * cx * efv[0]
-    arrowwidth = 1.4 / 100 * cx * (xl[1] - xl[0])
-    arrowheight = height / 150 * cx * efv[1]
-    barheight = min(0.25, height / 150 * cx * efv[3])
-    pipolheight = (height / 100) * cx * efv[3]
+    pred_geo = PredGeometry.of(alim_t, xl, height, cx, efv, ol)
+    ciendheight, arrowwidth, arrowheight = pred_geo.ciendheight, pred_geo.arrowwidth, pred_geo.arrowheight
 
     beta = beta_lb = beta_ub = pi_lb = pi_ub = math.nan
     if fit_row:
@@ -1542,7 +1539,7 @@ def forest(
                 pi_ub,
                 beta,
                 -1.0 if pstyle == 'line' else -2.0,
-                PredGeometry(alim_t, ciendheight, arrowwidth, arrowheight, barheight, pipolheight, efv[3], ol),
+                pred_geo,
                 lt[1],
                 pcol,
                 pborder,
@@ -1767,6 +1764,28 @@ class PredGeometry:
     pipolheight: float
     ef4: float
     olim: tuple[float, float] | None = None
+
+    @classmethod
+    def of(
+        cls,
+        alim: tuple[float, float],
+        xlim: collections.abc.Sequence[float],
+        height: float,
+        cx: float,
+        efv: collections.abc.Sequence[float],
+        olim: tuple[float, float] | None,
+    ) -> typing.Self:
+        """The geometry for a plot of ``height`` rows at text size ``cx``, with ``efv`` the element-size factors and ``xlim`` the limits of the x axis."""
+        return cls(
+            alim,
+            height / 150 * cx * efv[0],
+            1.4 / 100 * cx * (xlim[1] - xlim[0]),
+            height / 150 * cx * efv[1],
+            min(0.25, height / 150 * cx * efv[3]),
+            (height / 100) * cx * efv[3],
+            efv[3],
+            olim,
+        )
 
 
 def draw_pred(
@@ -2280,11 +2299,8 @@ def addpoly(
         polheight = (height / 100) * cx * efv[2] * (1 / area)
     else:
         polheight = numpy.full(k, (height / 100) * cx * efv[2])
-    ciendheight = height / 150 * cx * efv[0]
-    arrowwidth = 1.4 / 100 * cx * (xlim[1] - xlim[0])
-    arrowheight = height / 150 * cx * efv[1]
-    barheight = min(0.25, height / 150 * cx * efv[3])
-    pipolheight = (height / 100) * cx * efv[3]
+    pred_geo = PredGeometry.of(alim_t, xlim, height, cx, efv, ol)
+    ciendheight, arrowwidth, arrowheight = pred_geo.ciendheight, pred_geo.arrowwidth, pred_geo.arrowheight
     for i in range(k):
         if ps == 'line':
             lo_x = math.nan if math.isnan(pl[i]) else max(float(pl[i]), alim_t[0])
@@ -2322,7 +2338,7 @@ def addpoly(
                 float(pu[i]),
                 float(yi[i]),
                 float(rows_a[1]),
-                PredGeometry(alim_t, ciendheight, arrowwidth, arrowheight, barheight, pipolheight, efv[3], ol),
+                pred_geo,
                 lt[1],
                 col_l,
                 bord_l,

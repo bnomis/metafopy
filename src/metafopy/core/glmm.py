@@ -128,6 +128,22 @@ class GLMMFit:
     converged: bool
     evaluations: int
 
+    @classmethod
+    def from_modes(
+        cls, prob: GLMMProblem, beta: FloatArray, theta: FloatArray, loglik: float, modes: Modes, vcov: FloatArray, converged: bool, evaluations: int
+    ) -> GLMMFit:
+        """The fit at ``beta`` and ``theta`` with the conditional deviance and the modes of ``modes`` (shared by the final and first-stage fits)."""
+        return cls(
+            beta=beta,
+            theta=theta,
+            loglik=loglik,
+            cond_deviance=conditional_deviance(prob, modes.eta),
+            vcov=vcov,
+            modes=modes.u,
+            converged=converged,
+            evaluations=evaluations,
+        )
+
     def covariance(self) -> FloatArray:
         """Covariance matrix of the random effects ``Lambda @ Lambda.T``."""
         lam = lambda_matrix(self.theta, 'scalar' if self.theta.shape[0] == 1 else ('independent' if self.theta.shape[0] == 2 else 'correlated'))
@@ -145,7 +161,10 @@ def lambda_matrix(theta: FloatArray, structure: Structure) -> FloatArray:
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class LinkTerms:
-    """The mean ``mu = g^-1(eta)``, its first two derivatives, ``log(mu)`` and ``log(1 - mu)`` for a link (no clamping); ``valid`` flags usable rows."""
+    """The mean ``mu = g^-1(eta)``, its first two derivatives, ``log(mu)`` and ``log(1 - mu)`` for a link (no clamping); ``valid`` flags usable rows.
+
+    For the log link ``mu``, ``d1`` and ``d2`` are the same array.
+    """
 
     mu: FloatArray
     d1: FloatArray
@@ -631,28 +650,10 @@ def fit_glmm(
             if not on_boundary(theta, prob.structure):
                 warnings.warn(HESSIAN_WARNING, stacklevel=3)
             cov = beta_covariance(prob, modes, A)
-    return GLMMFit(
-        beta=beta,
-        theta=theta,
-        loglik=loglik,
-        cond_deviance=conditional_deviance(prob, modes.eta),
-        vcov=cov,
-        modes=modes.u,
-        converged=bool(res.success),
-        evaluations=count,
-    )
+    return GLMMFit.from_modes(prob, beta, theta, loglik, modes, cov, bool(res.success), count)
 
 
 def stage_one_result(prob: GLMMProblem, beta: FloatArray, theta: FloatArray, modes: Modes, A: FloatArray, count: int) -> GLMMFit:
     """The first-stage estimates as the final fit (lme4 cannot improve them); the log-likelihood is undefined."""
     warnings.warn(HESSIAN_WARNING, stacklevel=4)
-    return GLMMFit(
-        beta=beta,
-        theta=theta,
-        loglik=-math.inf,
-        cond_deviance=conditional_deviance(prob, modes.eta),
-        vcov=beta_covariance(prob, modes, A),
-        modes=modes.u,
-        converged=True,
-        evaluations=count,
-    )
+    return GLMMFit.from_modes(prob, beta, theta, -math.inf, modes, beta_covariance(prob, modes, A), True, count)

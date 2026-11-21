@@ -2431,6 +2431,13 @@ class MVTests:
     QMp: float
     ddf: FloatArray
 
+    @classmethod
+    def from_estimates(
+        cls, b: FloatArray, se: FloatArray, zval: FloatArray, pval: FloatArray, crit: float | FloatArray, QM: float, QMp: float, ddf: FloatArray
+    ) -> MVTests:
+        """The tests of coefficients ``b`` with the interval ``b -/+ crit * se``."""
+        return cls(se, zval, pval, b - crit * se, b + crit * se, QM, QMp, ddf)
+
 
 def knapp_hartung_factor(yi: FloatArray, M: FloatArray, X: FloatArray, ad_hoc: bool) -> float:
     """The Knapp-Hartung variance factor ``r' M^-1 r / (k - p)`` (Knapp and Hartung 2003, equation 2, generalised from ``M = diag(vi + tau2)`` to a full
@@ -2478,12 +2485,12 @@ def mv_tests(yi: FloatArray, M: FloatArray, X: FloatArray, test: str, ddf: Float
     if test == 'z':
         crit = numpy.full(len(b), float(scipy.stats.norm.ppf(1 - half)))
         pval = 2 * scipy.stats.norm.sf(numpy.abs(zval))
-        return MVTests(se, zval, pval, b - crit * se, b + crit * se, qm, float(scipy.stats.chi2.sf(qm, len(btt))), numpy.full(len(b), math.nan))
+        return MVTests.from_estimates(b, se, zval, pval, crit, qm, float(scipy.stats.chi2.sf(qm, len(btt))), numpy.full(len(b), math.nan))
     crit = numpy.asarray(scipy.stats.t.ppf(1 - half, ddf), dtype=numpy.float64)
     pval = numpy.asarray(2 * scipy.stats.t.sf(numpy.abs(zval), ddf), dtype=numpy.float64)
     m = len(btt)
     qm = qm / m
-    return MVTests(se, zval, pval, b - crit * se, b + crit * se, qm, float(scipy.stats.f.sf(qm, m, float(numpy.min(ddf[btt])))), ddf)
+    return MVTests.from_estimates(b, se, zval, pval, crit, qm, float(scipy.stats.f.sf(qm, m, float(numpy.min(ddf[btt])))), ddf)
 
 
 def mv_qe(yi: FloatArray, V: FloatArray, X: FloatArray) -> tuple[float, float]:
@@ -2653,7 +2660,7 @@ def robust_tests(b: FloatArray, vb: FloatArray, n: int, btt: list[int], level: f
     m = len(btt)
     qm = float(b[btt] @ numpy.linalg.solve(vb[numpy.ix_(btt, btt)], b[btt])) / m
     pval = numpy.asarray(2 * scipy.stats.t.sf(numpy.abs(zval), n - p), dtype=numpy.float64)
-    return MVTests(se, zval, pval, b - crit * se, b + crit * se, qm, float(scipy.stats.f.sf(qm, m, n - p)), ddf)
+    return MVTests.from_estimates(b, se, zval, pval, crit, qm, float(scipy.stats.f.sf(qm, m, n - p)), ddf)
 
 
 def club_components(

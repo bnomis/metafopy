@@ -402,7 +402,8 @@ def profile_ci(
 class SelProfileResult(metafopy.methods.profile.ProfileResult):
     """Profile log-likelihood of ``tau^2`` or of one selection parameter of a [selmodel][metafopy.selmodel] fit. It has the attributes of
     [ProfileResult][metafopy.ProfileResult], with ``tau2`` holding the grid of the profiled component (also through the ``delta`` property for a
-    selection parameter, which raises AttributeError for a ``tau^2`` profile); ``I2`` and ``H2`` are NaN.
+    selection parameter, which raises AttributeError for a ``tau^2`` profile); ``I2`` and ``H2`` are NaN, and a profile holds one and the same NaN array
+    in both, so they are always equal (aliased), never different values.
 
     Attributes:
         comp: The profiled component, ``'tau2'`` or ``'delta'``.
@@ -675,33 +676,7 @@ def lrt(a: Sel, b: Sel | metafopy.models.rma_uni.RMAResult, df_given: int | None
     fs_f, fs_r = full.fit_stats_ml, red.fit_stats_ml
     if math.isnan(fs_f.dev) or math.isnan(fs_r.dev):
         raise metafopy.errors.InputError('models must be fitted by ML to be compared')
-    LRT = max(0.0, fs_r.dev - fs_f.dev)
-    df = full.parms - red.parms if df_given is None else df_given
-    # metafor stores QE = NA in a selection model
-    qe_f = math.nan if isinstance(full, metafopy.models.sel_result.SelmodelResult) else full.QE
-    qe_r = math.nan if isinstance(red, metafopy.models.sel_result.SelmodelResult) else red.QE
-    if full.method in metafopy.models.tau2.FIXED_EFFECTS and red.method in metafopy.models.tau2.FIXED_EFFECTS:
-        s2f = metafopy.methods.anova.sigma2(full.base if isinstance(full, metafopy.models.sel_result.SelmodelResult) else full)
-        s2r = metafopy.methods.anova.sigma2(red.base if isinstance(red, metafopy.models.sel_result.SelmodelResult) else red)
-        R2 = 100 * max(0.0, (s2r - s2f) / s2r)
-    elif red.tau2 == 0:
-        R2 = 0.0
-    else:
-        R2 = 100 * max(0.0, (red.tau2 - full.tau2) / red.tau2)
-    return metafopy.methods.anova.LRTResult(
-        df_full=full.parms + (0 if df_given is None else df_given),
-        df_reduced=red.parms,
-        LRT=LRT,
-        pval=float(scipy.stats.chi2.sf(LRT, df)),
-        fit_stats_full=fs_f.as_tuple(),
-        fit_stats_reduced=fs_r.as_tuple(),
-        QE_full=qe_f,
-        QE_reduced=qe_r,
-        tau2_full=full.tau2,
-        tau2_reduced=red.tau2,
-        R2=R2,
-        class_f=metafopy.methods.fitview.r_class(full),
-    )
+    return metafopy.methods.anova.lrt_result(full, red, fs_f, fs_r, df_given, None)
 
 
 metafopy.methods.predict.predict.register(metafopy.models.sel_result.SelmodelResult, predict)

@@ -26,9 +26,12 @@ import metafopy.models.rma_uni
 import metafopy.models.tables
 import metafopy.printing
 
-__all__ = ['FixedBinaryResult', 'fit_statistics', 'format_header', 'format_test_line', 'positive_max']
+__all__ = ['NAN_STATS', 'FixedBinaryResult', 'fit_statistics', 'format_header', 'format_test_line', 'positive_max']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
+
+NAN_STATS = metafopy.models.rma_uni.FitStats(math.nan, math.nan, math.nan, math.nan, math.nan)
+"""Fit statistics that are all missing, as metafor reports them for a method that does not apply or a fit with no data."""
 
 
 def positive_max(x: float) -> float:
@@ -38,9 +41,8 @@ def positive_max(x: float) -> float:
 
 def fit_statistics(yi: FloatArray, vi: FloatArray, fit: float, k_yi: int) -> tuple[metafopy.models.rma_uni.FitStats, metafopy.models.rma_uni.FitStats]:
     """ML and REML fit statistics of the equal-effects model; ``fit`` is ``QE`` (rma.mh) or ``RSS`` (rma.peto)."""
-    nan_stats = metafopy.models.rma_uni.FitStats(math.nan, math.nan, math.nan, math.nan, math.nan)
     if k_yi < 1:
-        return nan_stats, nan_stats
+        return NAN_STATS, NAN_STATS
     with numpy.errstate(all='ignore'):
         wi = 1.0 / vi
         k = k_yi

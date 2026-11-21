@@ -531,7 +531,7 @@ never read a file outside the dataset folder.
 
 ## Task 14: Duplicated construction of result objects, and same-value slots
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** large
 **Source Reference:** F14 (A15), F15 (A13)
@@ -540,7 +540,7 @@ never read a file outside the dataset folder.
 
 **Subtasks:**
 
-- [ ] For each of the 17 A15 sites in the review's A15 block, factor the shared assembly into one helper beside the class, or a
+- [x] For each of the 17 A15 sites in the review's A15 block, factor the shared assembly into one helper beside the class, or a
       `classmethod`, and call it from every site. The sites:
   - `glmm_fit.ModelFit`
   - `binary.CumulResult` and `Leave1outResult` (with `leave1out.py`)
@@ -557,19 +557,19 @@ never read a file outside the dataset folder.
   - `glmm.GLMMFit`
   - the all-NaN `FitStats`
   - `formulas.MVTests`
-- [ ] F15 (A13): at each of the 12 A13 sites, add a docstring line to the field saying when it equals its sibling, for example "`parms`
+- [x] F15 (A13): at each of the 12 A13 sites, add a docstring line to the field saying when it equals its sibling, for example "`parms`
       equals `p` when no coefficient is fixed". No code change
-- [ ] Run the own tests of every changed module; no value may change
+- [x] Run the own tests of every changed module; no value may change
 
 **Acceptance Criteria:**
 
-- [ ] Each duplicated assembly has one owner, every caller uses it, and every test passes unchanged
+- [x] Each duplicated assembly has one owner, every caller uses it, and every test passes unchanged
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes on every changed module
-- [ ] The own test files of every changed module pass, named in the commit body
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes on every changed module
+- [x] The own test files of every changed module pass, named in the commit body
 
 **Notes:**
 

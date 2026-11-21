@@ -137,7 +137,7 @@ class MatregResult:
         p: Number of estimated coefficients for a model fitted with ``n`` (the intercept included when ``cov=True``); the number of predictors
             for a model fitted with ``V``.
         parms: Number of estimated parameters: ``p + 1`` for a model fitted with ``n`` (the residual variance counts), ``p`` for one fitted
-            with ``V``.
+            with ``V``, so ``parms`` equals ``p`` exactly for a model fitted with ``V`` (``test == 'z'``).
         digits: Number of decimals used when the result is printed.
         test: ``'t'`` for a model fitted with ``n``, ``'z'`` for one fitted with ``V``.
         level: The alpha level of the confidence intervals.

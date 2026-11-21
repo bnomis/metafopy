@@ -181,6 +181,30 @@ def sandwich_pieces(
     }
 
 
+def robust_info(
+    n: int,
+    codes: IntArray,
+    vbest: str,
+    club_sandwich: bool,
+    pieces: dict[str, typing.Any],
+    values: numpy.typing.NDArray[numpy.object_],
+    extra: dict[str, typing.Any],
+) -> metafopy.models.robust_info.RobustInfo:
+    """The [RobustInfo][metafopy.models.robust_info.RobustInfo] of a cluster-robust fit, shared by the ``rma.uni`` and ``rma.mv`` paths.
+
+    ``extra`` holds the fields that depend on the method (``coef_test``, ``conf_test``, ``wald_test`` and ``sandwich``, or ``meat``).
+    """
+    return metafopy.models.robust_info.RobustInfo(
+        n=n,
+        tcl=cluster_counts(codes, n),
+        vbest=vbest,
+        robumethod='clubSandwich' if club_sandwich else 'default',
+        dfs=pieces['dfs'],
+        cluster=values,
+        **extra,
+    )
+
+
 def cluster_counts(codes: IntArray, n: int) -> IntArray:
     return numpy.bincount(codes, minlength=n).astype(numpy.intp)
 
@@ -355,15 +379,7 @@ def robust_rma_uni(
             bread = metafopy.core.linalg.invcalc(X, numpy.ones(k)) @ X.T
         pieces, vbest = default_inference(bread, resid, codes, n, p, k, adjust, x.level, x.beta, x.btt, x.m)
         extra = {'meat': meat_matrix(resid, codes)}
-    info = metafopy.models.robust_info.RobustInfo(
-        n=n,
-        tcl=cluster_counts(codes, n),
-        vbest=vbest,
-        robumethod='clubSandwich' if club_sandwich else 'default',
-        dfs=pieces['dfs'],
-        cluster=values,
-        **extra,
-    )
+    info = robust_info(n, codes, vbest, club_sandwich, pieces, values, extra)
     ddf: int | None = None if club_sandwich else dfs
     return dataclasses.replace(
         x,
@@ -507,15 +523,7 @@ def robust_rma_mv(
             bread = metafopy.core.clubsandwich.chol2inv(X.T @ A @ X) @ (X.T @ A)
         pieces, vbest = default_inference(bread, resid, codes, n, p, k, adjust, alpha, x.beta, x.btt, x.m)
         extra = {'meat': meat_matrix(resid, codes)}
-    info = metafopy.models.robust_info.RobustInfo(
-        n=n,
-        tcl=cluster_counts(codes, n),
-        vbest=vbest,
-        robumethod='clubSandwich' if club_sandwich else 'default',
-        dfs=pieces['dfs'],
-        cluster=values,
-        **extra,
-    )
+    info = robust_info(n, codes, vbest, club_sandwich, pieces, values, extra)
     return dataclasses.replace(
         x,
         ddf=pieces['dfs'],

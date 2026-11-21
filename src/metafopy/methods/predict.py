@@ -367,6 +367,53 @@ def interval_setup(
     return vpred, crit, pi_dist, pi_ddf
 
 
+def predict_result(
+    pred: FloatArray,
+    se: FloatArray,
+    ci_lb: FloatArray,
+    ci_ub: FloatArray,
+    pi_lb: FloatArray,
+    pi_ub: FloatArray,
+    slab: tuple[str, ...] | None,
+    pi_se: FloatArray | None,
+    pi_dist: str,
+    pi_ddf: float | FloatArray | None,
+    *,
+    ddf: float | FloatArray | None,
+    prob: FloatArray | None,
+    X_new: FloatArray | None,
+    coef_names: collections.abc.Sequence[str] | None,
+    vcov: FloatArray | None,
+    method: str | None,
+    transf: collections.abc.Callable[..., typing.Any] | None,
+    has_pi: bool,
+) -> PredictResult:
+    """The [PredictResult][metafopy.PredictResult] of ``predict_rma_uni``-style predictions, shared by the ``rma.uni``/``rma.glmm`` and ``rma.mv`` paths.
+
+    ``X_new`` is the model matrix of the predictions when ``addx`` was asked for, else None; ``pi_ddf`` is kept only for the ``'t'`` distribution.
+    """
+    return PredictResult(
+        pred=pred,
+        se=se,
+        ci_lb=ci_lb,
+        ci_ub=ci_ub,
+        pi_lb=pi_lb,
+        pi_ub=pi_ub,
+        slab=slab,
+        pi_se=pi_se,
+        pi_dist=pi_dist,
+        pi_ddf=pi_ddf if pi_dist == 't' else None,
+        ddf=ddf,
+        prob=prob,
+        X=None if X_new is None else X_new.copy(),
+        x_names=tuple(coef_names) if X_new is not None and coef_names is not None else None,
+        vcov=vcov,
+        method=method,
+        transf=transf is not None,
+        has_pi=has_pi,
+    )
+
+
 def restrict_rows(res: PredictResult, keep: numpy.typing.NDArray[numpy.bool_], blank: numpy.typing.NDArray[numpy.bool_] | None) -> PredictResult:
     """Keep the rows ``keep`` of a prediction and set the rows ``blank`` to NaN: the ``na.action`` step of ``predict.rma``.
 
@@ -451,8 +498,14 @@ def predict(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> Predi
     raise metafopy.errors.ArgumentError(f'predict() not implemented for {type(model).__name__}')
 
 
-def uni_location_model(x: metafopy.models.rma_uni.RMAResult, rows: metafopy.methods.fitted.Rows) -> LocationModel:
-    """What ``predict.rma`` needs from an ``rma.uni`` fit, with the rows of its subset ``rows``."""
+def location_model(
+    x: metafopy.models.rma_uni.RMAResult | metafopy.models.glmm_result.GLMMResult,
+    rows: metafopy.methods.fitted.Rows,
+    slab: tuple[str, ...],
+    sandwich: metafopy.core.clubsandwich.Sandwich | None = None,
+    coef_test: str | None = None,
+) -> LocationModel:
+    """What ``predict.rma`` needs from an ``rma.uni`` or ``rma.glmm`` fit, with the rows of its subset ``rows`` and the labels ``slab`` of its studies."""
     return LocationModel(
         k=x.k,
         p=x.p,
@@ -460,7 +513,7 @@ def uni_location_model(x: metafopy.models.rma_uni.RMAResult, rows: metafopy.meth
         int_only=x.int_only,
         int_incl=x.int_incl,
         X=x.X,
-        slab=x.slab,
+        slab=slab,
         beta=x.beta,
         vb=x.vb,
         ddf=x.ddf,
@@ -468,13 +521,18 @@ def uni_location_model(x: metafopy.models.rma_uni.RMAResult, rows: metafopy.meth
         tau2=x.tau2,
         fixed=x.method in metafopy.models.tau2.FIXED_EFFECTS,
         method=x.method,
-        sandwich=club_sandwich_of(x.robust),
-        coef_test=None if x.robust is None else x.robust.coef_test,
+        sandwich=sandwich,
+        coef_test=coef_test,
         X_f=rows.X_f,
         not_na=rows.not_na,
         slab_f=rows.slab,
         coef_names=x.coef_names,
     )
+
+
+def uni_location_model(x: metafopy.models.rma_uni.RMAResult, rows: metafopy.methods.fitted.Rows) -> LocationModel:
+    """What ``predict.rma`` needs from an ``rma.uni`` fit, with the rows of its subset ``rows``."""
+    return location_model(x, rows, x.slab, club_sandwich_of(x.robust), None if x.robust is None else x.robust.coef_test)
 
 
 @predict.register
@@ -717,26 +775,7 @@ def predict_rma_glmm(
     rows = metafopy.methods.fitted.rows_of(x)
     return metafopy.mfopt.with_digits(
         location_prediction(
-            LocationModel(
-                k=x.k,
-                p=x.p,
-                parms=x.parms,
-                int_only=x.int_only,
-                int_incl=x.int_incl,
-                X=x.X,
-                slab=tuple(s for s, ok in zip(x.slab, x.tables.not_na, strict=True) if ok),
-                beta=x.beta,
-                vb=x.vb,
-                ddf=x.ddf,
-                alpha=x.level,
-                tau2=x.tau2,
-                fixed=x.method in metafopy.models.tau2.FIXED_EFFECTS,
-                X_f=rows.X_f,
-                not_na=rows.not_na,
-                slab_f=rows.slab,
-                coef_names=x.coef_names,
-                method=x.method,
-            ),
+            location_model(x, rows, tuple(s for s, ok in zip(x.slab, x.tables.not_na, strict=True) if ok)),
             newmods,
             intercept,
             transf,
@@ -1053,24 +1092,24 @@ def location_prediction(
             pi_lb = numpy.full_like(pred, numpy.nan)
             pi_ub = numpy.full_like(pred, numpy.nan)
 
-    out = PredictResult(
-        pred=pred,
-        se=se,
-        ci_lb=ci_lb,
-        ci_ub=ci_ub,
-        pi_lb=pi_lb,
-        pi_ub=pi_ub,
-        slab=slab,
-        pi_se=pi_se,
-        pi_dist=pi_dist,
-        pi_ddf=pi_ddf if pi_dist == 't' else None,
+    out = predict_result(
+        pred,
+        se,
+        ci_lb,
+        ci_ub,
+        pi_lb,
+        pi_ub,
+        slab,
+        pi_se,
+        pi_dist,
+        pi_ddf,
         ddf=(ddf_rows if ddf_rows is not None else None if x.ddf is None else numpy.full(pred.shape, float(x.ddf))),
         prob=prob_out,
-        X=X_new.copy() if addx else None,
-        x_names=tuple(x.coef_names) if addx and x.coef_names is not None else None,
+        X_new=X_new if addx else None,
+        coef_names=x.coef_names,
         vcov=vcov_pred if transf is None else None,
         method=x.method,
-        transf=transf is not None,
+        transf=transf,
         has_pi=not (x.fixed or (transf is not None and metafopy.transf.is_tau2_transf(transf))),
     )
     keep, blank = rows_to_keep(pred, x.not_na, fitted_rows, na_action)
@@ -1361,24 +1400,24 @@ def predict_rma_mv(
         ci_lb, ci_ub = numpy.minimum(ci_lb, ci_ub), numpy.maximum(ci_lb, ci_ub)
         pi_lb, pi_ub = numpy.minimum(pi_lb, pi_ub), numpy.maximum(pi_lb, pi_ub)
 
-    out = PredictResult(
-        pred=pred,
-        se=se,
-        ci_lb=ci_lb,
-        ci_ub=ci_ub,
-        pi_lb=pi_lb,
-        pi_ub=pi_ub,
-        slab=slab,
-        pi_se=pi_se_all,
-        pi_dist=pi_dist,
-        pi_ddf=pi_ddf if pi_dist == 't' else None,
+    out = predict_result(
+        pred,
+        se,
+        ci_lb,
+        ci_ub,
+        pi_lb,
+        pi_ub,
+        slab,
+        pi_se_all,
+        pi_dist,
+        pi_ddf,
         ddf=ddf_row if pi_dist == 't' else None,
         prob=prob_out,
-        X=X_new.copy() if addx else None,
-        x_names=tuple(x.coef_names) if addx and x.coef_names is not None else None,
+        X_new=X_new if addx else None,
+        coef_names=x.coef_names,
         vcov=vcov_pred if transf is None else None,
         method=x.method,
-        transf=transf is not None,
+        transf=transf,
         has_pi=not (
             x.method in metafopy.models.tau2.FIXED_EFFECTS
             # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists

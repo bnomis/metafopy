@@ -40,6 +40,7 @@ import metafopy.core.verbose
 import metafopy.errors
 import metafopy.metadata
 import metafopy.mfopt
+import metafopy.models.binary
 import metafopy.models.call
 import metafopy.models.control_names
 import metafopy.models.glmm_fit
@@ -659,7 +660,6 @@ def rma_glmm(
     if vlevel > 1:
         metafopy.core.verbose.message('Computing fit statistics and log-likelihood ...')
         metafopy.core.verbose.message('Preparing the output ...')
-    nan_stats = metafopy.models.rma_uni.FitStats(math.nan, math.nan, math.nan, math.nan, math.nan)
     out = metafopy.models.glmm_result.GLMMResult(
         beta=beta,
         se=se,
@@ -714,7 +714,7 @@ def rma_glmm(
         to=to1,
         drop00=drop1,
         fit_stats_ml=stats_ml,
-        fit_stats_reml=nan_stats,
+        fit_stats_reml=metafopy.models.binary.NAN_STATS,
         se_warn=fit.se_warn,
         data=data,
         control=con,

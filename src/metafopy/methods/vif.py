@@ -68,6 +68,19 @@ class VIFEntry:
     sif: float
 
 
+def vif_entry(spec: BttSpec, used: collections.abc.Sequence[int], names: collections.abc.Sequence[str], gvif: float) -> VIFEntry:
+    """The [VIFEntry][metafopy.methods.vif.VIFEntry] of the set ``spec`` of coefficients, ``used`` being the 0-based positions the (G)VIF was computed for."""
+    m = len(used)
+    return VIFEntry(
+        spec=format_spec(spec),
+        coefs=format_btt(i + 1 for i in used),
+        coefname=names[used[0]] if m == 1 else '',
+        m=m,
+        vif=gvif,
+        sif=gvif ** (1 / (2 * m)),
+    )
+
+
 @dataclasses.dataclass(frozen=True, slots=True, eq=False)
 class VIFResult:
     """(Generalized) variance inflation factors and standard error inflation factors, as returned by [vif][metafopy.vif] (metafor's ``vif.rma`` object).
@@ -371,17 +384,7 @@ def vif_rma_uni(
     entries: list[VIFEntry] = []
     for spec, g in zip(specs, groups, strict=True):
         gvif, used = compvif(g, res.vb, int_incl, res if reestimate else None, intercept)
-        m = len(used)
-        entries.append(
-            VIFEntry(
-                spec=format_spec(spec),
-                coefs=format_btt(i + 1 for i in used),
-                coefname=names[used[0]] if m == 1 else '',
-                m=m,
-                vif=gvif,
-                sif=gvif ** (1 / (2 * m)),
-            )
-        )
+        entries.append(vif_entry(spec, used, names, gvif))
 
     tab: pandas.DataFrame | None = None
     if table and btt_missing:

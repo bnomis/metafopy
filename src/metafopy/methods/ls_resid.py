@@ -100,8 +100,7 @@ def ranef_rma_ls(
     Metafor reference:
         [ranef](https://wviechtb.github.io/metafor/reference/ranef.html)
     """
-    out = metafopy.methods.blup.shrinkage_predictions(res, 'ranef', level, digits, transf, targs, na_action)
-    return metafopy.methods.ranef.RanefResult(pred=out.pred, se=out.se, pi_lb=out.pi_lb, pi_ub=out.pi_ub, slab=out.slab, digits=out.digits, transf=out.transf)
+    return metafopy.methods.ranef.ranef_result(res, level, digits, transf, targs, na_action)
 
 
 @metafopy.methods.influence.rstandard.register

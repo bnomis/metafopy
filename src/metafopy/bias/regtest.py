@@ -388,17 +388,7 @@ def fit_vectors(
     tau2: float | None,
     control: typing.Any,
 ) -> metafopy.models.rma_uni.RMAResult:
-    md = metafopy.metadata.MetaData(
-        yi=yi,
-        vi=vi,
-        X=X,
-        X_names=tuple(names),
-        slab=tuple(slab),
-        keep=numpy.ones(yi.shape[0], dtype=numpy.bool_),
-        weights=weights,
-        ni=ni,
-        intercept=True,
-    )
+    md = metafopy.metadata.MetaData.from_vectors(yi, vi, X, names, slab, weights, ni)
     ctrl = dataclasses.asdict(control) if dataclasses.is_dataclass(control) and not isinstance(control, type) else control
     return metafopy.models.rma_uni.fit_rma_uni(
         md, method=method, weighted=weighted, test=cast_test(test), level=1 - alpha, tau2=tau2, control=ctrl, skip_r2=False

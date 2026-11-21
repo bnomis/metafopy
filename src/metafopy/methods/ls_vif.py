@@ -131,17 +131,7 @@ def part_vif(
     entries: list[metafopy.methods.vif.VIFEntry] = []
     for spec, g in zip(specs, groups, strict=True):
         gvif, used = metafopy.methods.vif.compvif_matrix(g, vcov, int_incl, refit, M, intercept)
-        m = len(used)
-        entries.append(
-            metafopy.methods.vif.VIFEntry(
-                spec=metafopy.methods.vif.format_spec(spec),
-                coefs=metafopy.methods.vif.format_btt(i + 1 for i in used),
-                coefname=names[used[0]] if m == 1 else '',
-                m=m,
-                vif=gvif,
-                sif=gvif ** (1 / (2 * m)),
-            )
-        )
+        entries.append(metafopy.methods.vif.vif_entry(spec, used, names, gvif))
     tab: pandas.DataFrame | None = None
     if table and missing:
         if which == 'beta':

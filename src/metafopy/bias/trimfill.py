@@ -93,17 +93,15 @@ def trimfill_fit(
 ) -> metafopy.models.rma_uni.RMAResult:
     k = yi.shape[0]
     X = numpy.ones((k, 1)) if mods is None else numpy.column_stack([numpy.ones(k), mods])
-    md = metafopy.metadata.MetaData(
-        yi=yi,
-        vi=vi,
-        X=X,
+    md = metafopy.metadata.MetaData.from_vectors(
+        yi,
+        vi,
+        X,
         # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
-        X_names=('intrcpt',) if mods is None else ('intrcpt', 'mods'),
-        slab=tuple(str(i + 1) for i in range(k)),
-        keep=numpy.ones(k, dtype=numpy.bool_),
-        weights=weights,
-        ni=ni,
-        intercept=True,
+        ('intrcpt',) if mods is None else ('intrcpt', 'mods'),
+        tuple(str(i + 1) for i in range(k)),
+        weights,
+        ni,
     )
     return metafopy.models.rma_uni.fit_rma_uni(
         md, method=res.method, weighted=res.weighted, control=dataclasses.asdict(res.control) if use_control else None, skip_r2=True, **kw
@@ -256,16 +254,15 @@ def trimfill(
         ids = numpy.flatnonzero(md.keep) + 1
         default_slab = x.slab == tuple(str(i) for i in ids)
         slab = (tuple(f'Study {i}' for i in ids) if default_slab else tuple(x.slab)) + tuple(f'Filled {i + 1}' for i in range(k0))
-        mdf = metafopy.metadata.MetaData(
-            yi=yi_fill,
-            vi=vi_fill,
-            X=numpy.ones((yi_fill.shape[0], 1)),
-            X_names=tuple(x.coef_names),
-            slab=slab,
+        mdf = metafopy.metadata.MetaData.from_vectors(
+            yi_fill,
+            vi_fill,
+            numpy.ones((yi_fill.shape[0], 1)),
+            x.coef_names,
+            slab,
+            wi_fill,
+            ni_fill,
             keep=numpy.concatenate([md.keep, numpy.ones(k0, dtype=numpy.bool_)]),
-            weights=wi_fill,
-            ni=ni_fill,
-            intercept=True,
             slab_given=True,
             ids_all=numpy.concatenate([x.ids, int(x.ids.max()) + 1 + numpy.arange(k0)]).astype(numpy.intp),
         )
