@@ -16,6 +16,7 @@ import metafopy.methods.blocks
 import metafopy.methods.permutest
 import metafopy.models.rma_mv
 import metafopy.models.sel_result
+import metafopy.plot.rutils
 import metafopy.transf
 
 matplotlib.use('Agg')
@@ -343,3 +344,11 @@ def test_baujat_fail_stops_on_missing_values() -> None:
         metafopy.baujat(res, na_action='fail')
     metafopy.baujat(res, na_action='exclude')
     matplotlib.pyplot.close('all')
+
+
+def test_plot_fmtx_formats_numbers_like_formatc() -> None:
+    # the helper behind the plots: fixed digits, NA and infinities spelt as R spells them, optional dropping of trailing zeros
+    fmtx = metafopy.plot.rutils.fmtx
+    assert fmtx([1.2345, 2.5, -0.001], 2) == ['1.23', '2.50', '-0.00']
+    assert fmtx([numpy.nan, numpy.inf, -numpy.inf], 1) == ['NA', 'Inf', '-Inf']
+    assert fmtx([2.5, 3.0], 2, drop0ifint=True) == ['2.5', '3']

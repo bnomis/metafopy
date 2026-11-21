@@ -8,6 +8,7 @@ import pytest
 import refutil
 
 import metafopy
+import metafopy.effects.measures
 import metafopy.errors
 
 REF = refutil.load_phase7('misc_helpers')
@@ -107,3 +108,14 @@ def test_replmiss_errors() -> None:
         metafopy.replmiss('x', 0)
     with pytest.raises(metafopy.errors.NotFoundError):
         metafopy.replmiss('z', 0, data=pandas.DataFrame({'x': [1.0]}))
+
+
+def test_replmiss_by_module_path() -> None:
+    # the function behind metafopy.replmiss takes arrays: a length-one y is recycled, a missing x is all-missing, no y leaves x
+    replmiss = metafopy.effects.measures.replmiss
+    x = numpy.array([1.0, numpy.nan, 3.0])
+    numpy.testing.assert_array_equal(replmiss(x, numpy.array([9.0])), [1.0, 9.0, 3.0])
+    numpy.testing.assert_array_equal(replmiss(None, numpy.array([5.0, 6.0])), [5.0, 6.0])
+    assert replmiss(x, None) is x
+    with pytest.raises(metafopy.errors.InputError, match="Length of 'x' and 'y' are not the same"):
+        replmiss(x, numpy.array([1.0, 2.0]))

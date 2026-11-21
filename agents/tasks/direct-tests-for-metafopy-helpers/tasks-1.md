@@ -142,7 +142,7 @@ fixed (`claude/rules/metafopy.md`).
 
 ## Task 4: Direct tests for the exported functions and the `metadata` and `methods` result classes
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Implementation step 3
@@ -152,23 +152,23 @@ regression in it is caught where it is.
 
 **Subtasks:**
 
-- [ ] For each public candidate in `open-after-privatise.md` from these places, write a direct test in the module's existing test file:
+- [x] For each public candidate in `open-after-privatise.md` from these places, write a direct test in the module's existing test file:
   - `effects/measures.py::replmiss` and `plot/rutils.py::fmtx`. These differ from the same-named `metafopy.replmiss` and
     `metafopy.fmtx`, so call them by their module path;
   - `metadata.py`;
   - `methods/` (`confint`, `leave1out`, `matreg`, `permutest`, `predict`, `rcalc`, `selmodel`).
 
   A `__post_init__` test builds the object itself. A property test reads the property on a fit
-- [ ] Run each changed test file
+- [x] Run each changed test file
 
 **Acceptance Criteria:**
 
-- [ ] Each of these candidates has a test that calls it and asserts a value
+- [x] Each of these candidates has a test that calls it and asserts a value
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] Each changed test file passes, named in the commit body
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] Each changed test file passes, named in the commit body
 
 **Notes:**
 
