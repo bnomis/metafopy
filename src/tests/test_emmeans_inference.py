@@ -1,6 +1,7 @@
 """One-sided and equivalence tests (side, delta) and matrix weights in emmeans against R's emmeans package (src/tests/r/generate_emmeans.R)."""
 
 import math
+import warnings
 
 import emmcheck
 import hypothesis
@@ -202,7 +203,7 @@ def test_pt_sf_symmetry(x: float, df: float) -> None:
 def test_qdunnx_between_tukey_and_sidak(p1: float, p2: float, k: float, df: float) -> None:
     """``qdunnx``: for k >= 1.005 the result lies between the Tukey and Sidak approximations (to uniroot's tolerance) and does not fall as p rises.
 
-    qtukey raises ZeroDivisionError for 17 or more means with a small p (filed in TODO.md), so k <= 40 (at most 10 means) and p >= 0.5.
+    qtukey gives NaN, as R's does, for 17 or more means with a small p, so k <= 40 (at most 10 means) and p >= 0.5.
     """
     fam = (1 + math.sqrt(1 + 8 * k)) / 2
     tol = 2e-3
@@ -213,3 +214,26 @@ def test_qdunnx_between_tukey_and_sidak(p1: float, p2: float, k: float, df: floa
         assert min(xtuk, xsid) - tol <= v <= max(xtuk, xsid) + tol
     lo, hi = min(p1, p2), max(p1, p2)
     assert metafopy.methods.emm_adjust.qdunnx(lo, k, df) <= metafopy.methods.emm_adjust.qdunnx(hi, k, df) + tol
+
+
+def test_tukey_family_of_17_means_with_small_level_gives_nan_limits_as_r(dat: pandas.DataFrame) -> None:
+    """R: ``pairs(emmeans(emmprep(res, at = list(ablat = seq(10, 58, by = 3))), ~ablat))`` summarised with ``infer = TRUE, level = 0.25``.
+
+    ``qtukey(0.25, 17, Inf)`` does not converge, so R gives NaN confidence limits with the warnings "convergence failed in 'qtukey'" and
+    "NaNs produced", and finite estimates, standard errors and p values.
+    """
+    fit = metafopy.rma_uni('yi', 'vi', mods='~ alloc + ablat', data=dat)
+    pairs = metafopy.pairs(metafopy.emmeans(metafopy.emmprep(fit, at={'ablat': list(range(10, 59, 3))}), 'ablat'))
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter('always')
+        frame = pairs.summary(infer=True, level=0.25).frame
+    assert sorted({str(w.message) for w in record}) == ['NaNs produced', "convergence failed in 'qtukey'"]
+    assert len(frame) == 136
+    assert frame['asymp.LCL'].isna().all()
+    assert frame['asymp.UCL'].isna().all()
+    first = frame.iloc[0]
+    assert first['contrast'] == 'ablat10 - ablat13'
+    assert first['estimate'] == pytest.approx(0.081827217306216879, rel=1e-9)
+    assert first['SE'] == pytest.approx(0.02759806086118044, rel=1e-9)
+    assert first['z.ratio'] == pytest.approx(2.9649625645008784, rel=1e-9)
+    assert first['p.value'] == pytest.approx(0.20055297938646921, rel=1e-9)

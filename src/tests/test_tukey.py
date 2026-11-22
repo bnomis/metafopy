@@ -1,6 +1,7 @@
 """The studentized range port must reproduce R's ptukey()/qtukey() including qtukey's 1e-4 stopping rule."""
 
 import math
+import warnings
 
 import hypothesis
 import hypothesis.strategies
@@ -62,10 +63,15 @@ def test_qtukey_invalid_arguments_give_nan() -> None:
     assert math.isnan(metafopy.core.tukey.qtukey(math.nan, 3, 10))
 
 
+def test_qtukey_non_convergence_gives_nan_with_r_warnings() -> None:
+    """R: ``qtukey(0.25, 17, Inf)`` is NaN with "convergence failed in 'qtukey'" and "NaNs produced"."""
+    with pytest.warns(UserWarning, match='NaNs produced'), pytest.warns(UserWarning, match="convergence failed in 'qtukey'"):
+        value = metafopy.core.tukey.qtukey(0.25, 17, math.inf)
+    assert math.isnan(value)
+
+
 TUKEY_TOLERANCE = 1e-6
-# qtukey's secant search diverges for many means and a small p (ptukey is flat at 0 there). R: qtukey(0.25, 17, Inf) gives NaN with the
-# warning "convergence failed in 'qtukey'", so R keeps no round trip there either; the round trip is tested where R converges.
-nmeans_values = hypothesis.strategies.floats(min_value=2.0, max_value=10.0)
+nmeans_values = hypothesis.strategies.floats(min_value=2.0, max_value=50.0)
 tukey_df_values = hypothesis.strategies.floats(min_value=2.0, max_value=1000.0) | hypothesis.strategies.just(math.inf)
 
 
@@ -83,8 +89,14 @@ def test_ptukey_property_bounds_monotone_and_complementary(q: float, nmeans: flo
 @hypothesis.settings(max_examples=100, deadline=None)
 @hypothesis.given(p=hypothesis.strategies.floats(min_value=0.01, max_value=0.99), nmeans=nmeans_values, df=tukey_df_values)
 def test_qtukey_property_round_trip_through_ptukey(p: float, nmeans: float, df: float) -> None:
-    """Candidate ``src/metafopy/core/tukey.py::qtukey``: ``ptukey(qtukey(p))`` is within 1e-4 of ``p`` (the stopping rule of R's ``qtukey``)."""
-    q = metafopy.core.tukey.qtukey(p, nmeans, df)
+    """Candidate ``src/metafopy/core/tukey.py::qtukey``: ``ptukey(qtukey(p))`` is within 1e-4 of ``p`` (the stopping rule of R's ``qtukey``).
+
+    Where R's ``qtukey`` does not converge it returns NaN, and so does the port.
+    """
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        q = metafopy.core.tukey.qtukey(p, nmeans, df)
+    hypothesis.assume(not math.isnan(q))
     assert metafopy.core.tukey.ptukey(q, nmeans, df) == pytest.approx(p, abs=1e-4)
 
 
@@ -92,7 +104,12 @@ def test_qtukey_property_round_trip_through_ptukey(p: float, nmeans: float, df: 
 @hypothesis.given(p=hypothesis.strategies.floats(min_value=0.01, max_value=0.9), nmeans=nmeans_values, df=tukey_df_values)
 def test_qtukey_property_non_decreasing_in_p(p: float, nmeans: float, df: float) -> None:
     """Candidate ``src/metafopy/core/tukey.py::qtukey``: a larger probability gives a quantile no smaller (probabilities 0.05 apart)."""
-    assert metafopy.core.tukey.qtukey(p, nmeans, df) <= metafopy.core.tukey.qtukey(p + 0.05, nmeans, df)
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        lower = metafopy.core.tukey.qtukey(p, nmeans, df)
+        upper = metafopy.core.tukey.qtukey(p + 0.05, nmeans, df)
+    hypothesis.assume(not (math.isnan(lower) or math.isnan(upper)))
+    assert lower <= upper
 
 
 @hypothesis.settings(max_examples=100, deadline=None)

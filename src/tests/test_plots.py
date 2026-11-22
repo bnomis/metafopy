@@ -1106,7 +1106,8 @@ def test_usr_range_extends_by_four_percent_each_side(a: float, b: float) -> None
     assert uhi >= hi
     scale = max(1.0, abs(lo), abs(hi))
     assert (lo - ulo) == pytest.approx(uhi - hi, rel=1e-6, abs=1e-9 * scale)
-    if hi - lo >= 1e-6 * scale or lo == hi:
+    # A zero-width range extends by 0.04 * |lo|, which underflows to 0 for a subnormal lo (as it does in R's C code).
+    if hi - lo >= 1e-6 * scale or (lo == hi and (lo == 0 or abs(lo) >= 1e-300)):
         assert ulo < lo
         assert uhi > hi
     if hi > lo:
