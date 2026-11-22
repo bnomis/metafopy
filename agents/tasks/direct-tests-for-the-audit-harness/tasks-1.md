@@ -16,7 +16,8 @@ dated record, so never edit it. The open list after the re-judge (Task 2) is the
 How to run things, in every task (from the worktree root):
 
 - **Tests:** `export PATH=/Users/simonb/src/metafopy/.venv/bin:$PATH PYTHONPATH=$PWD/src && pytest <files>`
-- **Type check:** `mypy <files>`, with the same `PATH`.
+- **Type check:** `MYPYPATH=src mypy <files>`, with the same `PATH` (without `MYPYPATH`, `audit` resolves to the main checkout's
+  installed package, which has no `py.typed`, and mypy reports `import-untyped`).
 - **R:** `LC_ALL=C.UTF-8 Rscript`, with the R library at `/Users/simonb/src/metafopy/.audit/Rlib` (`R_LIBS=` that path); the pin is
   `src/audit/data/r-versions.json`.
 - **T1 rule:** a public candidate is covered by a test that calls it; a private one also by a test of a caller that reaches it
